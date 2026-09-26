@@ -26,7 +26,7 @@ class TBD_SlotBodyDressing
 
 		Print(string.Format("[TBD][Identity] slot=%1 callsign='%2' rank='%3' stance='%4' unitName='%5' tag='%6' leader=%7",
 			slot.Key(), slot.callsign, slot.rank, slot.stance, slot.unitName, slot.tag,
-			TBD_MissionLoader.IsSquadLeader(slot)));
+			TBD_MissionOrbatQuery.IsSquadLeader(slot)));
 	}
 
 	//! Request the authored initial stance. SetStanceChange plays the transition, so it runs after

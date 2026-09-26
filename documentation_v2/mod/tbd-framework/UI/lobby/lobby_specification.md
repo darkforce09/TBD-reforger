@@ -75,14 +75,14 @@ The screen makes no HTTP call and sends no RPC. The wire it is meant to use, lis
 README's [roster wire](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/README.md#the-roster-wire):
 
 - `TBD_RpcAsk_LobbyRoster`, `TBD_RpcAsk_ClaimSlot(string)`, `TBD_RpcAsk_ReleaseSlot` and
-  `TBD_RpcAsk_Deploy` (`TBD_LobbyController.c`): the server takes the caller from
+  `TBD_RpcAsk_Deploy` (the Lobby folder's `SCR_PlayerController.c`): the server takes the caller from
   `GetPlayerId()`, applies the action through `TBD_SpawnManager` (`ClaimSlot`, `ReleaseSlot`,
   `DeployPlayerEx`), and answers with `TBD_RpcDo_LobbyRoster`: the whole roster as it stands after
   the action, parsed from `TBD_SpawnManager.BuildSlotRoster`, with a `V` verdict record naming
   the action and why it failed. The client replaces its roster with each reply, so a refused claim
   reverts in the message that explains it.
 - A deploy the platform is still deciding answers `AUTHORIZING`, one it cannot authorize now
-  `UNAUTHORIZED` (`TBD_LobbyServiceDeploymentAuthorization.c`).
+  `UNAUTHORIZED` (`TBD_LobbyService.ApplyDeploy`).
 - `TBD_SessionSelection` (`apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/TBD_SessionSelection.c`)
   carries the Mission Selector's pick to the lobby's title.
 

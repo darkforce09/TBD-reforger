@@ -23,7 +23,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 {
 	static const string IDENTITY_OVERRIDE_PHRASE = "I-ACCEPT-NO-ONE-LIFE"; //!< exact phrase an admin types to accept an unenforceable ONE LIFE; `#tbd` splits on spaces
 
-	[Attribute("1", desc: "T-941.2: when ON, also seat unclaimed players at BRIEFING (PIE). Claimed holders always deploy on LOBBY to BRIEFING. Never fires during LOBBY. TBD_GameMode.et leaves claimed-holder briefing deploy on regardless.")]
+	[Attribute("1", desc: "When ON, also seat unclaimed players at BRIEFING (PIE). Claimed holders always deploy on LOBBY to BRIEFING. Never fires during LOBBY. TBD_GameMode.et leaves claimed-holder briefing deploy on regardless.")]
 	protected bool m_bAutoDeploy; //!< default 1: the BRIEFING holder deploy also seats every unclaimed player (PIE); the game mode prefab sets 0
 
 	[Attribute("5000", desc: "Delay (ms) between death and automatic redeploy (auto-deploy worlds only).")]

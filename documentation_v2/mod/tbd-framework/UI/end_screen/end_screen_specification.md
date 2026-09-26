@@ -14,7 +14,7 @@ stage closes it, which only an admin moves; the DEBRIEF scoreboard follows.
   (`TBD_FrameworkManager.c`), which records the winner and the reason.
 - Layout: [`apps/mod/tbd-framework/UI/layouts/Session/PostGame/`](/apps/mod/tbd-framework/UI/layouts/Session/PostGame/README.md),
   `TBD_EndScreen.layout`, whose README lists every widget the handler binds.
-- Entry: `TBD_FrameworkManager.ApplyEndScreens`, which opens `TBD_EndScreen` on the `END` stage
+- Entry: `TBD_EndBanner.ApplyEndScreens`, which opens `TBD_EndScreen` on the `END` stage
   and closes it on every other stage.
 - Related features: the [debrief](/documentation_v2/mod/tbd-framework/UI/debrief_after_action_review/debrief_after_action_review_specification.md),
   the scoreboard the `DEBRIEF` stage opens; the
@@ -27,7 +27,7 @@ stage closes it, which only an admin moves; the DEBRIEF scoreboard follows.
 
 The server ends a round by moving the stage machine from `LIVE` to `END`. Five paths lead there:
 
-1. The objective end triggers, checked every 2 s while `LIVE` by `TickWinConditions`:
+1. The objective end triggers, checked every 2 s while `LIVE` by `TBD_FactionElimination`:
    `TBD_ObjectiveRegistry.EvaluateEndTriggers` returns `all_objectives_captured`,
    `objective_destroyed` or `hold_expired` with the winning faction.
 2. Attrition, in the same tick: when at least two factions claimed a
@@ -65,7 +65,7 @@ else `faction_eliminated` when exactly one of two or more contesting factions is
 
 The overlay is a workspace widget, never a menu, so no key it swallows and no failure inside it
 can refuse a stage change. On `END` the server also ends every life it opened on the platform
-(`TBD_SpawnManagerDeploymentAuthorization.OnStageChanged`), the dynamic spawner deletes the AI
+(`TBD_SpawnManager.OnStageChanged`, through `TBD_DeploymentAuthorization.EndAllLives`), the dynamic spawner deletes the AI
 groups it spawned (`TBD_DynamicSpawner`), and a mission's authored `mission_end` audio cues fire
 once (`TBD_AudioEmitter`).
 

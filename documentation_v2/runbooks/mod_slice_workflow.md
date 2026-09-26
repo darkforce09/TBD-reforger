@@ -65,7 +65,7 @@ output trying to fix it.
    collision), capped at `TBD_MAX_CONCURRENT` (default 8). Disk is not the limit: a worktree costs
    about 81 MB fresh and about 500 MB warm. Two costs grow with width: shared-file merges (each
    slice that adds a component touches `Prefabs/Systems/TBD_GameMode.et` and the roll-call in
-   `TBD_FrameworkManager.c`; the conflicts are additive and easy, but one per slice), and the
+   `TBD_FrameworkRollCall.c`; the conflicts are additive and easy, but one per slice), and the
    orchestrator's attention, since every agent returns a report that must be read and acted on.
 3. **Land when every slice of the wave is READY, then delete the worktrees at once.** Leftover
    worktrees fill the disk; `mod wave land` reaps them after a green gate.
@@ -78,7 +78,7 @@ output trying to fix it.
    otherwise it refuses.
 6. **Verify green: dispatch the next wave** without waiting to be asked.
 7. **Never give two concurrent agents write access to the same contended file.**
-   `Systems/Spawning/TBD_SpawnManager.c` and `Gamemode/Orchestrator/TBD_FrameworkManager.c` (under
+   `Systems/Spawning/Manager/TBD_SpawnManager.c` and `Gamemode/Orchestrator/TBD_FrameworkManager.c` (under
    `apps/mod/tbd-framework/Scripts/Game/TBD/`) are the usual ones. The limit is file collisions,
    not Workbench.
 8. **Agents never ship.** They implement, compile, gate their slice and report. The orchestrator

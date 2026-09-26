@@ -198,29 +198,39 @@ The same two patterns repeat at 38.853 (odd) and 39.852 (even). The heartbeat's 
 
 ## Forwarders
 
-Left by P3 slices for P3-C to remove: forwarder | owner file | external callers.
+Left by P3 slices; P3-C removed every one by pointing its callers at the owner.
 
-- `TBD_GameRuntimeHttp.JsonEscape` -> `TBD_BackendText` | API/Http | Spawning/Deployment/TBD_DeploymentRequestQueue, MissionSelector/TBD_MissionDeploymentRelay
-- `TBD_MissionLoader.IsSquadLeader` -> `TBD_MissionOrbatQuery` | Loaders/Mission | Spawning
-- `TBD_BriefingService.SelfCheckWire` -> `TBD_BriefingWireSelfCheck.Run` | Briefing/Service | Gamemode/Orchestrator/TBD_FrameworkManager
-- `TBD_MissionFlow.AllowsJoinAtStage`/`.JipPolicyName` -> `TBD_JipPolicy` | Gamemode/Orchestrator/Flow | Spawning/Identity/TBD_SpawnJoinAudit
-- `TBD_UITheme.ChipInk`/`PanelFill`/`PanelBorder`/`FactionRowFill`/`FactionRowBorder`/`FactionRowInk` -> `TBD_UITintColours` | UI/Core/Theme | Session panels
-- (removed by P3-13) `TBD_GameRuntimeHttp.JsonEscape` caller `TBD_MissionDeploymentRelay`; Spawning caller remains
-- `TBD_ZoneVolume.Clear`/`.Read` -> `TBD_ZoneVolumeBounds` | Zones/Volumes | internal
+- `TBD_GameRuntimeHttp.JsonEscape` -> `TBD_BackendText.JsonEscape` (DeploymentRequestQueue; MissionDeploymentRelay already switched): removed.
+- `TBD_MissionLoader.IsSquadLeader` -> `TBD_MissionOrbatQuery.IsSquadLeader` (SlotBodyDressing): removed.
+- `TBD_BriefingService.SelfCheckWire` -> `TBD_BriefingWireSelfCheck.Run` (FrameworkRollCall): removed.
+- `TBD_MissionFlow.AllowsJoinAtStage`/`.JipPolicyName` -> `TBD_JipPolicy.AllowsJoinAtStage`/`.Name` (SpawnJoinAudit): removed.
+- `TBD_UITheme.ChipInk`/`PanelFill`/`PanelBorder`/`FactionRowFill`/`FactionRowBorder`/`FactionRowInk` -> `TBD_UITintColours` (23 call sites in 12 Session files): removed.
+- `TBD_ZoneVolume.Clear`/`.Read` -> `TBD_ZoneVolumeBounds` (ObjectiveRegistry): removed.
+- Kept: the one-line `TBD_SpawnManager` members that hand off to its helpers (`ClaimSlot`, `ReleaseSlot`, `BuildSlotRoster`, `MaterializeSlotBodies`, `GetSlotBody`, `AdminRespawn`, ...) are the component's permanent API: Lobby, Admin, Briefing and fleet code reach the spawn system only through `TBD_SpawnManager.GetInstance()`, and the helpers are owned by `ref` and not reachable from outside.
 
 ## Leftovers
 
-Per slice, for the closing runs.
+Cleared by P3-C: stale names and paths in the framework scripts, READMEs, the named docs
+(pin catalogue rows, AI README sample in the template, two-client playtest runbooks, staging boot
+table, slice workflow, end-screen, lobby, safe-start and debrief specs, glossary, requirements.json,
+remaining milestones, Eden gap analysis, the two map-engine READMEs, `mission.schema.json`
+descriptions), plus `documentation_v2/standards/documentation_standards.md` (its Lobby examples named
+a deleted file); ticket ids in four runtime log strings and one attribute desc; dead
+`TBD_Objective` members (`HasEnemyPresent`, `ResolveActingFaction`, `LogKey`,
+`m_sPendingInsideMessage`).
 
-- All slices: run `hcargo fmt --check -p xtask` or format only owned files (`rustfmt` via `hcargo fmt -- <file>` is unsafe on module files); never plain `fmt -p xtask` while another session has xtask edits.
-- P1-3: box-drawing diagrams in 14 UI panel files; residual non-ASCII (x, <=, e-acute, bullet, section sign, check mark, emoji) e.g. `TBD_MissionSelectorScreen.c:4`, `TBD_LobbyScreen.c:4`; titles `TBD_UITheme.c:113`, `TBD_SpectatorCamera.c:49`. 165 above-line field docs left (over 120 columns). Owners fix via ECM-1/ECM-4/ECM-8.
-- Wave A stale comments/paths (P3-C unless the folder owner fixes them first): `TBD_WinConditionEvaluator.c:44`, `TBD_WaypointRuntime.c:13`, `TBD_FrameworkManager.c:796` (`ResolveWinner` now on `TBD_ResultsPayload`), `TBD_MissionVehicleStruct.c:165`, `TBD_MissionLoader` `SpawnMissionEntities` comments, Admin/Lobby DeploymentAuthorization files, `TBD_SpectatorHost`, `TBD_LobbyStage`, `TBD_MissionSlotStruct`; docs `documentation_v2/refactor_pin_catalogue.md:158,179,187`, `map-engine/.../extensions/modules/README.md`, runbooks `mod_slice_workflow`, `game_server_staging/boot_and_log_verification`, `two_client_playtest/*`, `end_screen_specification.md`, `eden_gap_analysis.md`, `remaining_milestones.md`, `mission.schema.json:88,705`; Core/Characters and Core/Players READMEs "Used by: none"; dead code `TBD_Objective.c:57,145,161,257`; `GetSpawnZoneForFaction` has no callers.
-- Wave B stale paths: `documentation_v2/glossary/n_to_z.md:117`, `apps/website/map-engine/src/data/scenario/extensions/objectives/win_conditions/README.md:40`, `documentation_v2/mod/tbd-framework/mod_design.md:72`, `apps/mod/tbd-framework/UI/layouts/Session/Lobby/README.md:91` (-> `UI/Pages/TBD_BriefingOrbatPage.c`), `UI/Mock/README.md:28` (BriefingCatalog path), `two_client_playtest/README.md:99` (`TBD_LoadoutEquipHelper.c`), `mission.schema.json` (`TBD_MarkerClient.SetRotation`). Stale member names: `TickWinConditions` (ObjectiveRegistry, ObjectivesComponent, MissionWinConditionChecks), `ArmRoundClock`/`ArmFactionEliminated`, `ApplyMissionFlow` (MissionFlowStruct), `ApplyEndScreens` (EndScreen), Safestart members in SpectatorHost/SpectatorHostEntity, `TBD_BriefingService.MAX_PAYLOAD_LINES`/`FIELD_MARK` (Lobby, Admin services), `TBD_BriefingController.c` (MissionBrowser, LobbyController, Spectator), `TBD_MissionBrowser.c:19`, `TBD_AdminService.c:47`, `TBD_SpectatorComponent.c:15-16`. Runtime log string with `T-941.7` in `TBD_RadioComponent.c`.
-- Wave C stale names: `Systems/Spawning/Slots/TBD_SlotRosterWire.c:7` (`TBD_LobbyData`), `TBD_LobbyController` in `MissionSelector/SCR_PlayerController.c` (was TBD_MissionBrowser), `Spectator/TBD_SpectatorComponent.c:15`, `Spectator/Host/TBD_SpectatorHost.c`; `TBD_MissionBrowser.c`/`TBD_AdminData` in Lobby and Spectator comments; `Session/Lobby/PreSlot/TBD_PreSlotCamera*` names `TBD_SpectatorHost.ResolveAnchor` (now `TBD_SpectatorHostLifecycle`); `UI/Mock/README.md` catalog paths; `Session/README.md` describes `TBD_<Feature>Data.c`; `documentation_v2/mod/tbd-framework/UI/lobby/lobby_specification.md:64,78`; `verification_evidence/requirements.json:425-426`; `refactor_pin_catalogue.md:189-192`; `Gamemode/Orchestrator/Stage/TBD_EndBanner.c:116` and `TBD_FrameworkManager.c:47` board format lacks the deaths field (comment).
-- P2-2: `TBD_TriggerRuntime.c:14-23` header rationale (P3-3); `documentation_v2/standards/templates/readme_mod_scripts.md:84` (P3-C).
+Remaining, outside P3-C's paths:
+
+- `TBD_MissionLoader.GetSpawnZoneForFaction` has no callers; kept (the loader's static read API keeps its names), ticketed as T-1219.
+- Stale member names in files no slice owns: `.world-boot-warning-baseline:41` (`TBD_FrameworkManager.ArmRoundClock`), `apps/website/map-engine/src/data/scenario/compiler/flatten/tests/cases_4.rs:256,264,268` (assert messages naming `OnEnterBriefing`, `ArmRoundClock`, the JIP door on `TBD_SpawnManager`), `apps/website/frontend/src/v2/apps/editor/ui/inspector/env.rs:154` (`TBD_FrameworkManager.ArmRoundClock`), `apps/website/map-engine/src/data/scenario/extensions/modules/spawns.rs:11` (`SpawnManager's EngineFactionKey`, now `TBD_SlotBodyMaterializer`).
+- All slices: run `hcargo fmt --check -p xtask` or format only owned files; never plain `fmt -p xtask` while another session has xtask edits.
 
 ## Ticket batch
 
 Bugs noticed but not fixed, collected by P3-C and P6-C.
 
-- P2-1: `Systems/AI/TBD_WaypointRuntime.c:481` leaks a non-group entity; `Session/Briefing/TBD_BriefingService.c:445` no null check on `doc`.
+- P2-1: `Systems/AI/TBD_WaypointRuntime.c:481` leaks a non-group entity: no ticket; resolved by P2-1's `TBD_AIGroupFactory.SpawnGroup`, which deletes a non-group spawn (WaypointRuntime calls it).
+- P2-1: `Session/Briefing/TBD_BriefingService.c:445` no null check on `doc`: no ticket; resolved by P2-1's `TBD_MissionFactionNames.DisplayName` (guards null), and `Build` returns before any read when `doc` is null.
+- P3-C: END reason and winner lost for extraction, VIP and trigger endings, and the false "round will NOT end" banner: still reproduce at `Gamemode/Stages/WinConditions/TBD_WinConditionEvaluator.c:139`, `Systems/Zones/Triggers/TBD_TriggerFlowEffects.c:85` (`SetStage(END)` without `EndRound`) and `Gamemode/Objectives/Runtime/TBD_ObjectivesComponent.c:303`: existing T-1082 (its paths predate the splits).
+- P3-C: session top bar count icon loads key `group`: still at `UI/Common/SessionChrome/TBD_SessionTopBar.c:104`: existing T-1098.
+- P3-C: `Systems/Mission/Loaders/Validation/TBD_MissionStructureChecks.c:239` warns that `GetSpawnZoneForFaction` cannot place from a spawn zone, but nothing calls it: T-1219.

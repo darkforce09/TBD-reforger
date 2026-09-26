@@ -340,7 +340,7 @@ class TBD_BriefingPage : Managed
 			if (entry.m_eTint == TBD_EUITint.NEUTRAL)
 				TBD_UITheme.Paint(value, TBD_UITheme.ON_SURFACE);
 			else
-				TBD_UITheme.Paint(value, TBD_UITheme.ChipInk(entry.m_eTint));
+				TBD_UITheme.Paint(value, TBD_UITintColours.ChipInk(entry.m_eTint));
 		}
 
 		if (entry.m_iCount > 0)

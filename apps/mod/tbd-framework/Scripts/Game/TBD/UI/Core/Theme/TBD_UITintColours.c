@@ -3,8 +3,8 @@
  * @brief Fill, border and ink of chips, panels and faction rows for each `TBD_EUITint`.
  *
  * Role: the one place a `TBD_EUITint` becomes a colour, so a chip and the panel around it agree.
- * Position: called by `TBD_ChipComponent`, `TBD_UITheme.TintGround` and, through the
- * `TBD_UITheme` forwarders, the lobby, briefing and admin panels; returns sRGB ARGB tokens.
+ * Position: called by `TBD_ChipComponent`, `TBD_UITheme.TintGround` and the lobby, briefing,
+ * mission selector and admin panels; returns sRGB ARGB tokens.
  * State: none; pure functions.
  * Invariants: every value is sRGB, and a translucent one is composited by `TBD_UITheme.Over`
  * before it reaches the engine; NEUTRAL falls through to the plain glass values.

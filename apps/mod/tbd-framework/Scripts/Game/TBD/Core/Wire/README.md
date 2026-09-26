@@ -33,9 +33,11 @@ one warning when it clips.
 ## Boundaries
 
 - Depends on: `TBD_Log` in `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`.
-- Used by: none at present; it replaces the `Field`, `Unmark`, `IsSet`, `Flag`,
-  `Sanitise`, `Join` and `Record*` copies in `TBD_LobbyService`, `TBD_BriefingService` and
-  `TBD_AdminSnapshotService`, byte for byte.
+- Used by: the briefing wire (`TBD_BriefingWire`, `TBD_BriefingWireSelfCheck`,
+  `TBD_BriefingService`, `TBD_BriefingText`), the lobby roster wire (`TBD_LobbyRosterWire`,
+  `TBD_LobbyRosterWireSelfCheck`, `TBD_LobbyService`), `TBD_AdminSnapshotService` and
+  `TBD_DebriefScreen` under `apps/mod/tbd-framework/Scripts/Game/TBD/Session/`; `TBD_MissionFactionNames` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/`.
 - Rules: the separators and marker never change without every reader and writer changing together;
   a record kind is never authored text; lines added stay ASCII; `cargo xtask mod compile` checks
   that the scripts compile.

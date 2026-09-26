@@ -164,28 +164,28 @@ tail -f "$LOG" | grep --line-buffered -E '\[TBD\] roll-call|\[TBD\]\[Mission\]|\
 
 | Line | Printed by | Means |
 |---|---|---|
-| `[TBD] roll-call: …=ok` nine times | `TBD_FrameworkManager.PrintComponentRollCall` | every component on `TBD_GameMode.et` instantiated |
+| `[TBD] roll-call: …=ok` nine times | `TBD_FrameworkRollCall` | every component on `TBD_GameMode.et` instantiated |
 | `[TBD][Mission] loaded id=… source=platform` | `TBD_Log.MissionLoaded` | the deployed artifact, fetched and SHA-256 verified; `cache` is the same artifact from the profile cache, `last-verified-cache` the fallback when the deployment could not be read |
 | `[TBD][Validate] mission result=PASS` | `TBD_Log.ValidationResult` | the mission is loadable |
-| `[TBD][Slots] loadout settle complete … 0 unplayable, M with a shortfall — spawn open` | `TBD_SpawnManager.TickLoadoutSettle` | the lineup is playable; `M` > 0 means some of it is not as authored |
-| `[TBD][Slots] loadout SHORTFALL on M of N slot(s)` | `TBD_SpawnManager.TickLoadoutSettle` | not a stop; names the slots carrying less or elsewhere |
-| `[TBD][Slots] loadout delivery REFUSED at spawn boundary … UNPLAYABLE` | `TBD_SpawnManager.TickLoadoutSettle` | stop: nobody leaves LOADING; names the slot and the item |
+| `[TBD][Slots] loadout settle complete … 0 unplayable, M with a shortfall — spawn open` | `TBD_SlotLoadoutSettle.TickLoadoutSettle` | the lineup is playable; `M` > 0 means some of it is not as authored |
+| `[TBD][Slots] loadout SHORTFALL on M of N slot(s)` | `TBD_SlotLoadoutSettle.TickLoadoutSettle` | not a stop; names the slots carrying less or elsewhere |
+| `[TBD][Slots] loadout delivery REFUSED at spawn boundary … UNPLAYABLE` | `TBD_SlotLoadoutSettle.TickLoadoutSettle` | stop: nobody leaves LOADING; names the slot and the item |
 | `[TBD] Stage → LOBBY` | `TBD_FrameworkManager.SetStage` | the lobby is open |
-| `[TBD][Spawn] LOBBY: no bodies this phase — …` | `TBD_SpawnManager.OnStageChanged` | nobody spawns until BRIEFING |
-| `[TBD][Spawn] claim player=N slot=K` | `TBD_SpawnManager.ClaimSlot` | a seat was taken on the server |
-| `[TBD][Spawn] claim rejected … (held by another player)` | `TBD_SpawnManager.ClaimSlot` | a contended claim refused |
-| `[TBD] SpawnManager: assigned slot … to player …` | `TBD_SpawnManager.AssignSlotForPlayer` | seated by roster or round-robin |
-| `[TBD][Spawn] slot=… Y=… jsonY=… heading=…` | `TBD_SpawnManager.SpawnSlotBody` | the authored transform applied |
-| `[TBD][Loadout][Slot] … loadout pass complete gear=x/x cargo=y/y` | `TBD_LoadoutEquipHelper` | the Arsenal gate's line |
-| `[TBD][Loadout][Slot] … worn-audit jacket=1 pants=1 boots=1` | `TBD_LoadoutEquipHelper.ReportWornAudit` | actually dressed, not only "equip OK" |
-| `[TBD][Loadout][Slot] … NAKED …` or `HALF-DRESSED …` | `TBD_LoadoutEquipHelper.ReportWornAudit` | the nakedness guard fired |
-| `[TBD] SpawnManager: bound player … to slot … body (kit …)` | `TBD_SpawnManager.DeployPlayerInternal` | the body handed over |
-| `[TBD][Spawn] player=N possess request accepted` | `TBD_SpawnManager.PossessSlotBody` | in the world |
-| `[TBD][Spawn] ready player=N … → path=slot result=DEPLOYED` | `TBD_SpawnManager.DeployOnReady` | the briefing's "Ready & Continue" deployed the player |
-| `[TBD][Spawn] player=N KILLED — one life spent` | `TBD_SpawnManager.OnPlayerKilled` | a terminal death |
-| `[TBD][Spawn] deploy DENIED player=N … one life spent` | `TBD_SpawnManager.DeployPlayerInternal` | one life enforced |
-| `[TBD][Admin] respawn player=N by=… — back in the world, life restored` | `TBD_SpawnManager.FinishAdminRespawn` | the admin respawn worked |
-| `[TBD][Slots] rematerialized body for slot … — freshly dressed from mission JSON` | `TBD_SpawnManager.DeployPlayerInternal` | the respawn applied the loadout again |
+| `[TBD][Spawn] LOBBY: no bodies this phase — …` | `TBD_DeployWaves.OnStageChanged` | nobody spawns until BRIEFING |
+| `[TBD][Spawn] claim player=N slot=K` | `TBD_SlotClaimBook.ClaimSlot` | a seat was taken on the server |
+| `[TBD][Spawn] claim rejected … (held by another player)` | `TBD_SlotClaimBook.ClaimSlot` | a contended claim refused |
+| `[TBD] SpawnManager: assigned slot … to player …` | `TBD_SlotClaimBook.AssignSlotForPlayer` | seated by roster or round-robin |
+| `[TBD][Spawn] slot=… Y=… jsonY=… heading=…` | `TBD_SlotBodyMaterializer.SpawnSlotBody` | the authored transform applied |
+| `[TBD][Loadout][Slot] … loadout pass complete gear=x/x cargo=y/y` | `TBD_LoadoutApplication` | the Arsenal gate's line |
+| `[TBD][Loadout][Slot] … worn-audit jacket=1 pants=1 boots=1` | `TBD_LoadoutWornAudit.ReportWornAudit` | actually dressed, not only "equip OK" |
+| `[TBD][Loadout][Slot] … NAKED …` or `HALF-DRESSED …` | `TBD_LoadoutWornAudit.ReportWornAudit` | the nakedness guard fired |
+| `[TBD] SpawnManager: bound player … to slot … body (kit …)` | `TBD_DeployExecutor.DeployPlayerInternal` | the body handed over |
+| `[TBD][Spawn] player=N possess request accepted` | `TBD_DeployExecutor.PossessSlotBody` | in the world |
+| `[TBD][Spawn] ready player=N … → path=slot result=DEPLOYED` | `TBD_ReadyDeploy.DeployOnReady` | the briefing's "Ready & Continue" deployed the player |
+| `[TBD][Spawn] player=N KILLED — one life spent` | `TBD_DeathRespawnFlow.OnPlayerKilled` | a terminal death |
+| `[TBD][Spawn] deploy DENIED player=N … one life spent` | `TBD_DeployExecutor.DeployPlayerInternal` | one life enforced |
+| `[TBD][Admin] respawn player=N by=… — back in the world, life restored` | `TBD_DeathRespawnFlow.FinishAdminRespawn` | the admin respawn worked |
+| `[TBD][Slots] rematerialized body for slot … — freshly dressed from mission JSON` | `TBD_DeployExecutor.DeployPlayerInternal` | the respawn applied the loadout again |
 | `WORLD (E): Unknown class '<name>'` | the engine | a prefab component's class does not resolve |
 | `GUI (E): Menu preset '<name>' not found!` | the engine | a screen cannot open |
 

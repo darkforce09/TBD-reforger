@@ -21,7 +21,7 @@ shapes each one in `$defs/spawnModule`: `{id, kind, factionKey, groupTemplate, x
 count, intervalSeconds?, maxAlive?, triggerId?}`. `kind` is one of `KINDS` (`wave`, `garrison`),
 and `factionKey` one of `FACTION_KEYS` (`blufor`, `opfor`, `indfor`, `civ`), the four sides the
 game's spawner maps to engine factions, in the order of `EngineFactionKey` in
-`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/TBD_SpawnManager.c`; the schema's
+`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Slots/TBD_SlotBodyMaterializer.c`; the schema's
 pattern alone would admit any lowercase key. Placement is exclusive (`placement_is_exclusive`): a
 world `x` and `z` together or a `zoneId`, never both and never neither. `count` and `maxAlive` are
 whole numbers from 1 to `MAX_ALIVE` (32), `intervalSeconds` is above zero, strings are non-empty,
@@ -32,7 +32,7 @@ the answer, a sentence with its path.
 `validate` is `parse` with the value dropped: the check of the `spawnModules` row of
 `AUTHORED_BLOCKS` in `crate::data::scenario::extensions`. The compile carries a valid block
 verbatim to the compiled document's root, and in the game
-`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/TBD_DynamicSpawner.c` spawns the groups
+`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Dynamic/TBD_DynamicSpawner.c` spawns the groups
 under the same cap of 32.
 
 ## Boundaries

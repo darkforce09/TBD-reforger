@@ -32,9 +32,10 @@ through `TBD_ZoneVolume.ContainsOrigin` when `checkHeightBand` is true, else
 
 - Depends on: `TBD_Zone` and `TBD_ZoneVolume` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Zones/`; the engine's
   `BaseWorld`, `Vehicle` and `ChimeraCharacter`.
-- Used by: none at present; it replaces the `s_Query*` scratch and `OnQuery*` callbacks in
-  `TBD_VehicleState`, `TBD_SpawnManager`, `TBD_WaypointRuntime`, `TBD_MissionVehicleStruct`,
-  `TBD_ObjectiveRegistry` and `TBD_TriggerRuntime`.
+- Used by: `TBD_ObjectiveDestroyTargets` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Registry/`;
+  `TBD_VehicleState` and `TBD_MissionVehicleRoster` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/`;
+  `TBD_VehicleSpawnDefaults`, `TBD_WaypointFactory` and `TBD_TriggerWorldEffects` under
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/`.
 - Rules: queries are synchronous and never nest; the scratch is empty between calls; lines added
   stay ASCII; `cargo xtask mod compile` checks that the scripts compile.
 

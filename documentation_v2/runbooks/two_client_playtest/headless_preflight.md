@@ -33,7 +33,7 @@ That `FAIL` is not about the session when all three hold:
 1. the failing line says `validator warnings rose:`; any other `FAIL` line is real;
 2. the log's `[TBD][Validate] mission result=` line reads `result=PASS errors=0`;
 3. every `[TBD][Validate] WARNING` line names one of the unconsumed-key subjects
-   (`TBD_MissionValidator.CheckUnconsumedKeys`):
+   (`TBD_MissionUnconsumedKeyCheck.CheckUnconsumedKeys`):
 
    | Subject | What the mod does not apply |
    |---|---|

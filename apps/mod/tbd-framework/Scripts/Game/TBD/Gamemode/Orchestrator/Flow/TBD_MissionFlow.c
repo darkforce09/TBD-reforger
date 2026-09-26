@@ -129,13 +129,4 @@ class TBD_MissionFlow
 		string source;
 		return ResolveSeconds(RawTimeLimitSeconds(), source);
 	}
-
-	//! Forwarder to [TBD_JipPolicy.AllowsJoinAtStage].
-	//! @param stage the round stage a player arrives in
-	//! @return true when the authored policy permits a join at `stage`
-	static bool AllowsJoinAtStage(TBD_EGameStage stage) { return TBD_JipPolicy.AllowsJoinAtStage(stage); }
-
-	//! Forwarder to [TBD_JipPolicy.Name].
-	//! @return the resolved policy as the schema spells it
-	static string JipPolicyName() { return TBD_JipPolicy.Name(); }
 }

@@ -70,8 +70,8 @@ parameters, assets and uniforms for both sides, and plans. Its `Get()` builds it
   `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/`; `TBD_MenuStack` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/`; `TBD_BriefingMock` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Mock/`.
-- Used by: `TBD_FrameworkManager`, which pushes `TBD_OnStageChanged` and arms
-  `TBD_BriefingService.SelfCheckWire`; `TBD_DockScreen` in
+- Used by: `TBD_FrameworkManager`, which pushes `TBD_OnStageChanged`, and its
+  `TBD_FrameworkRollCall`, which arms `TBD_BriefingWireSelfCheck.Run`; `TBD_DockScreen` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/` (the top-bar Briefing tab).
 - Rules: a player receives only their own side's briefing and tally, resolved on the server; the
   stage handler is the one opener and closer of the screen; lines added stay ASCII and

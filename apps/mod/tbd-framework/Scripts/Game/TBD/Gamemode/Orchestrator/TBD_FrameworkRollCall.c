@@ -36,7 +36,7 @@ class TBD_FrameworkRollCall
 		line += Entry(owner, TBD_ObjectivesComponent, "Objectives", missing);
 
 		// Armed here because a world boot has no players, so Serialise never runs; once-only inside.
-		TBD_BriefingService.SelfCheckWire();
+		TBD_BriefingWireSelfCheck.Run();
 
 		// PrintFormat, not Print: Print of a local variable emits its declaration, not its value.
 		if (missing.IsEmpty())

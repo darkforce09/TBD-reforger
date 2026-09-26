@@ -196,7 +196,7 @@ class TBD_PreSlotCameraArm
 		world.GetBoundBox(mins, maxs);
 
 		// A degenerate box means the engine answered nothing. Refusing is right: the alternative is
-		// a camera at the world origin, and `TBD_SpectatorHost.ResolveAnchor` already records why
+		// a camera at the world origin, and `TBD_SpectatorHostLifecycle.ResolveAnchor` already records why
 		// 0,0,0 is never an acceptable answer (CRF shouts the same thing in
 		// `CRF_EntityHelper.ZERO_SPAWN_VECTOR`).
 		if (mins[0] >= maxs[0] || mins[2] >= maxs[2])

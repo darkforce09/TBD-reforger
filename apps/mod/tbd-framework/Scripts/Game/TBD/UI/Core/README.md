@@ -79,9 +79,7 @@ its panels with `Mount` or `MountHandler`, and fills `GetScreenTitle`, `GetSessi
   constants name their GUIDs. `SelfCheck()` warns once if `Over()` drifts. It also holds the
   `TEXT_*` and `RADIUS_*` ladders. `TBD_UITintColours` turns a `TBD_EUITint` into chip, panel and
   faction-row colours and `TBD_UIStateColours` turns a `TBD_EUIState` into row colours: the only
-  places a tint or state becomes a colour. `TBD_UITheme` keeps one-line forwarders
-  (`ChipInk`, `PanelFill`, `FactionRowFill`, `FactionRowBorder`, `FactionRowInk`, `PanelBorder`) for
-  the Session panels that call them there.
+  places a tint or state becomes a colour; the Session panels call them directly.
 - `TBD_UIIcons.Load` shows the addon's own icon, `TBD_Icon_<key>_UI.edds` in
   `apps/mod/tbd-framework/UI/Textures/TBD/Icons/`, for the 38 keys `BuildShipped()` lists, addressed
   by path because `s_mTextureGuids` pins no GUID; otherwise a quad of the vanilla

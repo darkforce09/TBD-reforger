@@ -301,10 +301,10 @@ class TBD_DeploymentRequestQueue
 	protected static void Send(notnull TBD_DeploymentRequest request, string session)
 	{
 		string body = "{";
-		body += string.Format("\"event_mission_id\":\"%1\"", TBD_GameRuntimeHttp.JsonEscape(request.m_sEventMissionId));
-		body += string.Format(",\"orbat_slot_id\":\"%1\"", TBD_GameRuntimeHttp.JsonEscape(request.m_sOrbatSlotId));
-		body += string.Format(",\"arma_id\":\"%1\"", TBD_GameRuntimeHttp.JsonEscape(request.m_sArmaId));
-		body += string.Format(",\"player_life_id\":\"%1\"", TBD_GameRuntimeHttp.JsonEscape(request.m_sPlayerLifeId));
+		body += string.Format("\"event_mission_id\":\"%1\"", TBD_BackendText.JsonEscape(request.m_sEventMissionId));
+		body += string.Format(",\"orbat_slot_id\":\"%1\"", TBD_BackendText.JsonEscape(request.m_sOrbatSlotId));
+		body += string.Format(",\"arma_id\":\"%1\"", TBD_BackendText.JsonEscape(request.m_sArmaId));
+		body += string.Format(",\"player_life_id\":\"%1\"", TBD_BackendText.JsonEscape(request.m_sPlayerLifeId));
 		body += "}";
 
 		TBD_DeploymentRequestCall call = new TBD_DeploymentRequestCall();

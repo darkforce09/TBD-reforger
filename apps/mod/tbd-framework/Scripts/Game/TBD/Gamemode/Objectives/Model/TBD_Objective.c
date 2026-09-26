@@ -54,7 +54,6 @@ class TBD_Objective
 	float m_fSinceAnnounce; //!< Seconds since the last progress message to the players standing on this objective.
 	bool m_bAnnouncedContested; //!< contested state last logged, so only a transition is logged
 	int m_iHoldMarkIndex; //!< next rung of the hold announcement ladder (`TBD_ObjectiveProgression.NextHoldMark`)
-	string m_sPendingInsideMessage; //!< unused message slot, cleared by every `BeginSample`
 
 	ref array<string> m_aPresentFactions; //!< this tick's present faction keys, parallel to `m_aPresentCounts`; reused every tick
 	ref array<int> m_aPresentCounts; //!< this tick's living-body count per present faction
@@ -93,14 +92,13 @@ class TBD_Objective
 		return typename.EnumToString(TBD_EObjectiveKind, m_eKind);
 	}
 
-	//! Start a fresh presence sample for this tick and clear the message slot. Runs for every
+	//! Start a fresh presence sample for this tick. Runs for every
 	//! objective, usable or not, so nothing lingers on one that went inert.
 	void BeginSample()
 	{
 		m_aPresentFactions.Clear();
 		m_aPresentCounts.Clear();
 		m_aPresentPlayers.Clear();
-		m_sPendingInsideMessage = string.Empty;
 	}
 
 	//! Count one living body of `factionKey` inside this objective. An empty key is dropped: a
@@ -139,68 +137,6 @@ class TBD_Objective
 	int PresentFactionCount()
 	{
 		return m_aPresentFactions.Count();
-	}
-
-	//! Whether any side other than `factionKey` is inside in the current sample.
-	bool HasEnemyPresent(string factionKey)
-	{
-		foreach (int index, string present : m_aPresentFactions)
-		{
-			if (present != factionKey && m_aPresentCounts[index] > 0)
-				return true;
-		}
-
-		return false;
-	}
-
-	//! The side acting on this objective this tick, and sets `m_bContested`.
-	//! Contestable (the default): two or more sides inside freezes the objective. Not
-	//! contestable: the side with more living bodies acts and an exact tie freezes. Headcount
-	//! never scales the rate.
-	//! @return the acting faction key, or empty when nobody is inside or it is frozen
-	string ResolveActingFaction()
-	{
-		int sides = m_aPresentFactions.Count();
-
-		m_bContested = false;
-
-		if (sides == 0)
-			return string.Empty;
-
-		if (sides == 1)
-			return m_aPresentFactions[0];
-
-		if (m_bContestable)
-		{
-			m_bContested = true;
-			return string.Empty;
-		}
-
-		// Not contestable: weight of numbers, ties freeze.
-		int best = -1;
-		int bestCount = 0;
-		bool tied = false;
-		foreach (int index, int count : m_aPresentCounts)
-		{
-			if (count > bestCount)
-			{
-				bestCount = count;
-				best = index;
-				tied = false;
-				continue;
-			}
-
-			if (count == bestCount)
-				tied = true;
-		}
-
-		if (best == -1 || tied)
-		{
-			m_bContested = true;
-			return string.Empty;
-		}
-
-		return m_aPresentFactions[best];
 	}
 
 	//! Whether `factionKey` may ever own this objective (see `m_sFaction`).
@@ -250,16 +186,6 @@ class TBD_Objective
 			return 1.0;
 
 		return m_fCaptureSeconds / m_fNeutralizeSeconds;
-	}
-
-	//! Stable log identifier `<KIND>:<zone id>`, built in steps because a long `+` chain is too
-	//! complex for this compiler.
-	string LogKey()
-	{
-		string key = typename.EnumToString(TBD_EObjectiveKind, m_eKind);
-		key += ":";
-		key += m_sId;
-		return key;
 	}
 
 	//! Which side of this objective `viewerFaction` is on. The objective is for

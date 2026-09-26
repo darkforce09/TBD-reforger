@@ -194,7 +194,7 @@ class TBD_MissionInspectorCards : Managed
 
 		TextWidget text = TextWidget.Cast(inset.FindAnyWidget("Body"));
 		TBD_UITheme.Write(text, mission.m_sSummary);
-		TBD_UITheme.Paint(text, TBD_UITheme.ChipInk(TBD_EUITint.NEUTRAL));
+		TBD_UITheme.Paint(text, TBD_UITintColours.ChipInk(TBD_EUITint.NEUTRAL));
 	}
 
 	//! Rebuild the ORBAT card: the slot badge and one faction column of counted vehicles per faction.
@@ -264,7 +264,7 @@ class TBD_MissionInspectorCards : Managed
 
 				row.SetGround(m_iColumnGround);
 				row.Set(objective.m_sTitle, string.Empty);
-				row.SetIcon(objective.m_sIcon, TBD_UITheme.ChipInk(faction.m_eTint));
+				row.SetIcon(objective.m_sIcon, TBD_UITintColours.ChipInk(faction.m_eTint));
 			}
 		}
 	}
@@ -310,12 +310,12 @@ class TBD_MissionInspectorCards : Managed
 
 		TBD_ChipComponent.Mount(body.FindAnyWidget("FactionChipDock"), faction.m_sKey, faction.m_eTint, m_iColumnGround);
 		TBD_UITheme.Write(TextWidget.Cast(body.FindAnyWidget("RoleText")), faction.m_sRole);
-		TBD_UITheme.Paint(body.FindAnyWidget("RoleText"), TBD_UITheme.ChipInk(TBD_EUITint.NEUTRAL));
+		TBD_UITheme.Paint(body.FindAnyWidget("RoleText"), TBD_UITintColours.ChipInk(TBD_EUITint.NEUTRAL));
 		TBD_UITheme.Write(TextWidget.Cast(body.FindAnyWidget("CountText")), count.ToString());
 		TBD_UITheme.Paint(body.FindAnyWidget("CountText"), TBD_UITheme.BRIGHT_INK);
 		TBD_UITheme.Write(TextWidget.Cast(body.FindAnyWidget("CountLabel")), countLabel);
 		TBD_UITheme.Paint(body.FindAnyWidget("CountLabel"), TBD_UITheme.MUTED_INK);
-		TBD_UITheme.PaintOver(body.FindAnyWidget("HeaderRule"), TBD_UITheme.PanelBorder(faction.m_eTint), m_iColumnGround);
+		TBD_UITheme.PaintOver(body.FindAnyWidget("HeaderRule"), TBD_UITintColours.PanelBorder(faction.m_eTint), m_iColumnGround);
 
 		return body.FindAnyWidget("Rows");
 	}

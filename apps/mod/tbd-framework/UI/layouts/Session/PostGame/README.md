@@ -40,8 +40,8 @@ Each `.layout` sits beside its `.layout.meta`, so every line covers the pair.
 - `TBD_UILayouts.END_SCREEN` and `TBD_UILayouts.DEBRIEF_SCREEN` name the layouts by GUID and path.
 - `TBD_EndScreen` and `TBD_DebriefScreen` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/UI/` create them on the workspace root
-  in `Open` and remove them in `Close`; `TBD_FrameworkManager.ApplyEndScreens` in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/` opens the END screen on the
+  in `Open` and remove them in `Close`; `TBD_EndBanner.ApplyEndScreens` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/Stage/` opens the END screen on the
   `END` stage and the DEBRIEF screen on `DEBRIEF`, and closes each on every other stage.
 
 ## Boundaries

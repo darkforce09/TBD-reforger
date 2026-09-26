@@ -84,14 +84,14 @@ class TBD_DeployWaves : Managed
 	{
 		if (stage == TBD_EGameStage.LOBBY)
 		{
-			PrintFormat("[TBD][Spawn] LOBBY: no bodies this phase -- claimed holders deploy on BRIEFING (T-941.2). m_bAutoDeploy=%1 seats unclaimed players at briefing only.",
+			PrintFormat("[TBD][Spawn] LOBBY: no bodies this phase -- claimed holders deploy on BRIEFING. m_bAutoDeploy=%1 seats unclaimed players at briefing only.",
 				m_Spawn.IsAutoDeploy());
 			return;
 		}
 
 		if (previous == TBD_EGameStage.LOBBY && stage == TBD_EGameStage.BRIEFING)
 		{
-			PrintFormat("[TBD][Spawn] BRIEFING: deploying each claimed slot holder once (T-941.2).");
+			PrintFormat("[TBD][Spawn] BRIEFING: deploying each claimed slot holder once.");
 			ScheduleDeployClaimedHolders();
 		}
 	}

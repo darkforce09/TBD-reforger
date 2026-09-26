@@ -4,7 +4,7 @@
  *
  * Role: one tab-separated line per mission slot with its holder and whether it can be taken.
  * Position: built from TBD_SlotClaimBook and the one-life ledger on TBD_SpawnManager.BuildSlotRoster;
- * read by TBD_LobbyService and TBD_LobbyData.
+ * read by TBD_LobbyService.
  * State: the set of authored values already reported as replaced (static, per process).
  * Invariants: every line has exactly six fields, `<slotKey>\t<faction>\t<group>\t<role>\t<state>\t<holderPlayerId>`;
  * state is OPEN, HELD or DEAD (a spent life, connected or departed, holder -1 when departed);

@@ -75,7 +75,7 @@ class TBD_ObjectiveRegistry
 		s_iDestroyCount = 0;
 		s_iHoldCount = 0;
 		TBD_ObjectiveRulesReader.Clear();
-		TBD_ZoneVolume.Clear();
+		TBD_ZoneVolumeBounds.Clear();
 		TBD_ObjectiveEntityReader.Clear();
 	}
 
@@ -104,7 +104,7 @@ class TBD_ObjectiveRegistry
 		// The second typed pass over the same raw JSON. A failure here is not fatal: every objective
 		// then runs on documented defaults, which is reported ONCE below rather than per zone.
 		bool rulesOk = TBD_ObjectiveRulesReader.Read();
-		TBD_ZoneVolume.Read();
+		TBD_ZoneVolumeBounds.Read();
 
 
 		// The typed `objectives[]` pass. A document without the key reads a clean false and every
@@ -351,7 +351,7 @@ class TBD_ObjectiveRegistry
 
 	//! The `winConditions.endOn` trigger the objectives have fired, checked in schema enum order.
 	//! Each trigger is gated on `TBD_MissionLoader.HasEndTrigger`, so an undeclared trigger never
-	//! fires. Called by `TBD_FrameworkManager.TickWinConditions`, which owns ending the round.
+	//! fires. Called by `TBD_FactionElimination`, which owns ending the round.
 	//! @param winnerFaction set to the winning side; may be empty for a destroy objective whose
 	//! zone names no faction
 	//! @return the trigger name, or empty when none has fired

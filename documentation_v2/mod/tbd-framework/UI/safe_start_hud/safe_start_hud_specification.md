@@ -12,7 +12,7 @@ are the game's pop-up banners and chat lines.
 
 - Code: [`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/README.md)
   (`TBD_SafestartManager.c`: the shield, the countdown, the pop-ups and the chat lines).
-- Admin control: `#tbd safestart [status|go|<seconds>]`, served by `TBD_AdminService.Safestart` in
+- Admin control: `#tbd safestart [status|go|<seconds>]`, served by `TBD_AdminSubcommands.Safestart` in
   [`apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/README.md).
 - Entry: `TBD_SafestartManager.OnStageChanged`, which `TBD_FrameworkManager.SetStage` calls on
   every stage change.

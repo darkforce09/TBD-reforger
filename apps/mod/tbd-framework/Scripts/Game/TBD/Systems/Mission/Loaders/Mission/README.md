@@ -42,8 +42,8 @@ matches. `LoadDocument` refuses a document over `MISSION_FILE_MAX_BYTES` (8 MiB,
 `TBD_MissionLoader` answers every later query: `GetMission`, `GetMissionId`, `GetSlots`,
 `GetSlotById`, `GetFactions`, `GetZones`, `GetEntities`, `GetVehicles`, `GetSettings`,
 `GetRawJson` (for second-pass readers), `GetActiveVariantIds`, `HasEndTrigger`,
-`GetBriefingForFaction`, `GetSpawnZoneForFaction` and `IsSquadLeader`, which asks
-`TBD_MissionOrbatQuery`.
+`GetBriefingForFaction` and `GetSpawnZoneForFaction`. `TBD_MissionOrbatQuery` answers the squad
+questions (`IsSquadLeader`, a squad by callsign).
 
 ## Authority
 
@@ -66,8 +66,8 @@ matches. `LoadDocument` refuses a document over `MISSION_FILE_MAX_BYTES` (8 MiB,
   `TBD_DeployedMission`; `TBD_Registry`, `TBD_Log`, `TBD_SpectatorTargets`,
   `TBD_ResultsReporter` and `TBD_IdentityLink`.
 - Used by: `TBD_FrameworkManager` (`BeginLoad`, `IsLoaded`, `IsValid`); `TBD_DeployedMission`
-  (`LoadDocument`); `TBD_SpawnManager` (`IsSquadLeader`, the slot
-  queries); and every system under `apps/mod/tbd-framework/Scripts/Game/TBD/` that reads the loaded
+  (`LoadDocument`); the spawn system (the slot queries, and
+  `TBD_MissionOrbatQuery.IsSquadLeader` from `TBD_SlotBodyDressing`); and every system under `apps/mod/tbd-framework/Scripts/Game/TBD/` that reads the loaded
   document.
 - Rules: the static read API of `TBD_MissionLoader` keeps its names and signatures; nothing is parsed
   over the byte cap, and `MISSION_FILE_MAX_BYTES`, `x-tbd-missionFileMaxBytes` and the

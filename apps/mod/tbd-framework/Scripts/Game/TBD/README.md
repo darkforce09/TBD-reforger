@@ -43,9 +43,10 @@ Most features in `Session/` and `Systems/` split their code by role:
 
 | File | Runs on | Holds |
 |---|---|---|
-| `TBD_<X>Data.c` | both | plain model classes and wire structs |
+| `Catalog/` | both | the plain model classes, one per file |
 | `TBD_<X>Service.c` | server | the payloads built from the mission document |
-| `TBD_<X>Controller.c` | both | the RPC pairs on a `modded class SCR_PlayerController` |
+| `TBD_<X>Wire.c` | both | the text codec a payload crosses the network in |
+| `SCR_PlayerController.c` | both | the RPC pairs on the feature's `modded class SCR_PlayerController` block |
 | `TBD_<X>Client.c` | client | the received cache and the `ScriptInvoker`s screens bind to |
 | `TBD_<X>Component.c` | server | the `SCR_BaseGameModeComponent` that hosts the feature's lifecycle |
 

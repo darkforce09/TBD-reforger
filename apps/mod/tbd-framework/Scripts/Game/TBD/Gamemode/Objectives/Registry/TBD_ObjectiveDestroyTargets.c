@@ -19,7 +19,7 @@ class TBD_ObjectiveDestroyTargets
 	static const float QUERY_Y_EXTENT_M = 5000.0; //!< metres above and below Y = 0 of the zone query box; zones are footprints, so the box spans any terrain height
 
 	//! Find this objective's targets. Runs once, on the first LIVE evaluation, because a target
-	//! placed by another subsystem may not exist in LOBBY. `TBD_MissionLoader.SpawnMissionEntities`
+	//! placed by another subsystem may not exist in LOBBY. `TBD_MissionWorldApplier.SpawnMissionEntities`
 	//! places the authored `entities[]` rows; terrain-placed prefabs matching the alias count too.
 	//! An unresolved alias or an empty search makes the objective inert, with the reason logged,
 	//! and recounts the registry's usable objectives.

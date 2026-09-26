@@ -43,7 +43,7 @@ class TBD_BriefingAssetsPage : TBD_BriefingPage
 		if (!faction)
 			return TBD_UITheme.PRIMARY_CONTAINER;
 
-		return TBD_UITheme.FactionRowInk(faction.m_eTint);
+		return TBD_UITintColours.FactionRowInk(faction.m_eTint);
 	}
 
 	//! Add the side's role chip, and on the Assets page the vehicle count.

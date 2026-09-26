@@ -78,7 +78,7 @@ the one-life rule it tests is set out in
 
    Expected: `[TBD][Admin] respawn player=<n> by=<you> result=<…>` and
    `[TBD][Admin] respawn player=<n> by=<you> — back in the world, life restored`
-   (`TBD_SpawnManager.AdminRespawn`, `FinishAdminRespawn`). The player leaves spectator in a
+   (`TBD_SpawnManager.AdminRespawn`, `TBD_DeathRespawnFlow.FinishAdminRespawn`). The player leaves spectator in a
    freshly dressed body: `[TBD][Slots] rematerialized body for slot <key> (<reason>) — freshly dressed from mission JSON`.
    Check the loadout again, as in S10. On an event seat the respawn first waits for the platform:
    `[TBD][Admin] respawn player=<n> by=<you> - awaiting the platform's deployment decision, player stays DEAD until it allows the new life`.
@@ -95,7 +95,7 @@ the one-life rule it tests is set out in
    Expected, alive: `[TBD][JIP] player=<n> left ALIVE — seat <key> released, reclaim recorded under key <k> keyMode=<mode>`.
    Dead: `[TBD][JIP] player=<n> left DEAD — seat <key> retained under key <k> reclaimable=<0|1> …`,
    and on rejoin `[TBD][Spawn] player=<n> rejoined on a spent life — slot <key> handed back (still dead)`
-   (`TBD_SpawnManager.OnPlayerDisconnected`, `ReclaimDepartedSeat`). A dead player who rejoins
+   (`TBD_SpawnManager.OnPlayerDisconnected`, `TBD_SlotClaimBook.ReclaimDepartedSeat`). A dead player who rejoins
    alive means one life did not survive the reconnect, expected only after the S4 waiver. A
    hole in the world where the body stood is a known engine behaviour
    ([known limitations](/documentation_v2/runbooks/two_client_playtest/known_limitations.md)).

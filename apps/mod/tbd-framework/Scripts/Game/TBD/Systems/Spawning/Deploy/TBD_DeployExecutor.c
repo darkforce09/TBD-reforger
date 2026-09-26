@@ -111,7 +111,7 @@ class TBD_DeployExecutor : Managed
 
 		if (m_Spawn.GetStage() == TBD_EGameStage.LOBBY && !adminOverride)
 		{
-			Print(string.Format("[TBD][Spawn] deploy FAILED player=%1 -- T-941.2 bodies wait for BRIEFING", playerId), LogLevel.WARNING);
+			Print(string.Format("[TBD][Spawn] deploy FAILED player=%1 -- bodies wait for BRIEFING", playerId), LogLevel.WARNING);
 			return TBD_EDeployResult.FAILED;
 		}
 

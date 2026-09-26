@@ -125,12 +125,12 @@ Match the stable prefix, never a whole sentence: everything after it varies with
 | mission document loaded | `[TBD][Mission] loaded id=` | `TBD_Log.MissionLoaded` |
 | mission passed validation | `[TBD][Validate] mission result=PASS` | `TBD_Log.ValidationResult` |
 | registry aliases loaded | `[TBD] Registry loaded` (flat format) | `TBD_Registry.c` |
-| one line per slot body | `[TBD][Slots] Slot-` | `TBD_SpawnManager.c` |
-| all bodies materialized | `[TBD][Slots] materialized` | `TBD_SpawnManager.c` |
+| one line per slot body | `[TBD][Slots] Slot-` | `TBD_SlotBodyMaterializer.c` |
+| all bodies materialized | `[TBD][Slots] materialized` | `TBD_SlotBodyMaterializer.c` |
 | loadouts applied | `[TBD][Loadout][Slot]` | the slot-body loadout pass |
-| spawn opened | `[TBD][Slots] loadout settle` | `TBD_SpawnManager.c` |
+| spawn opened | `[TBD][Slots] loadout settle` | `TBD_SlotLoadoutSettle.c` |
 | reached LOBBY | `[TBD][Stage]` … `LOBBY`, or the flat `[TBD] Stage →` … `LOBBY` | `TBD_Log.Stage`, `TBD_FrameworkManager.c` |
-| a player was seated | `[TBD] SpawnManager: assigned slot` | `TBD_SpawnManager.c` |
+| a player was seated | `[TBD] SpawnManager: assigned slot` | `TBD_SlotClaimBook.c` |
 
 The loadout tag is `[TBD][Loadout][Slot]`; no line prints `[TBD][Loadout][Player]`. A mission
 that authors no loadouts prints no `[Loadout][Slot]` line, which `mod remote-logs` notes and does

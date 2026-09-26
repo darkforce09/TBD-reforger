@@ -24,8 +24,9 @@ Selector screen of `MissionSelector/`, whose top bar leads to the Lobby and Brie
 `BRIEFING`, `Briefing/` opens the Briefing screen, whose Ready & Continue deploys the player. A
 player whose life is spent enters `Spectator/`; `END` and `DEBRIEF` open the overlays of
 `PostGame/`; `Admin/` works in every stage. Each folder that talks to the server follows one
-pattern: models in a `TBD_<Feature>Data.c`, a server-only `TBD_<Feature>Service.c`, a modded
-`SCR_PlayerController` carrying owner-scoped RPCs, a client cache in `TBD_<Feature>Client.c`, and
+pattern: one model class per file (in `Catalog/` where there are several), a server-only
+`TBD_<Feature>Service.c`, a modded `SCR_PlayerController` in its own `SCR_PlayerController.c`
+carrying owner-scoped RPCs, a client cache in `TBD_<Feature>Client.c`, and
 screens in its `UI/` folder. The screens of the pre-game tabs read `Get()` catalogs that serve mock
 data from `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Mock/`.
 

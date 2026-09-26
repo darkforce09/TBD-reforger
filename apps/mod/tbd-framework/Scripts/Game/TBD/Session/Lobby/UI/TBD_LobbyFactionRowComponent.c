@@ -98,9 +98,9 @@ class TBD_LobbyFactionRowComponent : TBD_UIInteractive
 			return;
 
 		bool hovered = IsHighlighted() && m_bInteractive;
-		int fill = TBD_UITheme.FactionRowFill(m_eTint, hovered || m_bSelected); // selected = lit like hover
-		int border = TBD_UITheme.FactionRowBorder(m_eTint, m_bSelected);
-		int ink = TBD_UITheme.FactionRowInk(m_eTint);
+		int fill = TBD_UITintColours.FactionRowFill(m_eTint, hovered || m_bSelected); // selected = lit like hover
+		int border = TBD_UITintColours.FactionRowBorder(m_eTint, m_bSelected);
+		int ink = TBD_UITintColours.FactionRowInk(m_eTint);
 		if (m_eTint == TBD_EUITint.NEUTRAL && (hovered || m_bSelected))
 			ink = TBD_UITheme.ON_SURFACE;
 

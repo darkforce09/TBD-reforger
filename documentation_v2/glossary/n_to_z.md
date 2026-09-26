@@ -114,7 +114,7 @@ damage handling is off on every body, shots and grenades are deleted as they app
 safety is on. A countdown, 300 s unless the mission or an administrator sets 5 to 3600, runs it to
 `LIVE`; the same shield already holds in the lobby and the briefing. The code spells it safestart.
 
-In code: `TBD_SafestartManager` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/TBD_SafestartManager.c`; `SAFE_START` in `TBD_EGameStage` beside it; the mission's `flow.safeStartSeconds`.
+In code: `TBD_SafestartManager` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/Safestart/TBD_SafestartManager.c`; `SAFE_START` in `TBD_EGameStage` beside it; the mission's `flow.safeStartSeconds`.
 
 See: [Round stages and safe start](/apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/README.md), [Safe start HUD](/documentation_v2/mod/tbd-framework/UI/safe_start_hud/safe_start_hud_specification.md).
 

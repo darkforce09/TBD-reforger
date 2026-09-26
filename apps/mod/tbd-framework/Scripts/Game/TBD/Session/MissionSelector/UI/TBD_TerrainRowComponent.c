@@ -107,7 +107,7 @@ class TBD_TerrainRowComponent : TBD_UIInteractive
 			fill    = TBD_UITheme.TRANSPARENT;
 			border  = TBD_UITheme.TRANSPARENT;
 			accent  = TBD_UITheme.TRANSPARENT;
-			ink     = TBD_UITheme.ChipInk(TBD_EUITint.NEUTRAL);
+			ink     = TBD_UITintColours.ChipInk(TBD_EUITint.NEUTRAL);
 			iconInk = TBD_UITheme.DIM_INK;
 		}
 

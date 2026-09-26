@@ -43,7 +43,7 @@ before the session; it takes about 30 minutes.
 
    Expected: the last line is `WORLD BOOT: PASS`, and the log carries
    `[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok PlayArea=ok Markers=ok Radio=ok Objectives=ok`,
-   printed by `TBD_FrameworkManager.PrintComponentRollCall`. A `=MISSING` entry is a component of
+   printed by `TBD_FrameworkRollCall`. A `=MISSING` entry is a component of
    `Prefabs/Systems/TBD_GameMode.et` whose class did not resolve; nothing else reports it.
 
 3. Check the tree holds only the changes you mean to test.

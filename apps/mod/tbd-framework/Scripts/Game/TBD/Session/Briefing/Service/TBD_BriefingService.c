@@ -342,11 +342,4 @@ class TBD_BriefingService
 
 		return string.Format("%1 -- %2", label, TBD_WireCodec.Sanitise(zone.id));
 	}
-
-	//! Run the briefing wire self-check; forwards to TBD_BriefingWireSelfCheck.Run.
-	//! @return true when the round trip is lossless or the check has already run
-	static bool SelfCheckWire()
-	{
-		return TBD_BriefingWireSelfCheck.Run();
-	}
 }

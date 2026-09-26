@@ -96,7 +96,7 @@ Facts every topic relies on:
 - Used by: the two playtest tickets, which cite this README's path; the
   READMEs of `apps/mod/`, `apps/mod/tbd-framework/` and its `Missions/` and `worlds/` folders,
   the xtask `mod_ops/`, `playtest_server/`, `setup/` and `dedicated_server_profiles/` folders; a
-  code comment in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Loadouts/TBD_LoadoutEquipHelper.c`
+  code comment in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Loadouts/Application/TBD_LoadoutApplication.c`
   that relies on this runbook's `loadout INCOMPLETE` and `loadout DEGRADED` greps; the mod and
   game server staging docs.
 - Rules: this README keeps its path, because tickets and code cite it; a topic file stays at or

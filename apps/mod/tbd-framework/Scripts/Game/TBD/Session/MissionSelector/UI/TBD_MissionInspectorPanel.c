@@ -83,8 +83,8 @@ class TBD_MissionInspectorPanel
 		TBD_UILayouts.MountRounded(panelBG, TBD_UITheme.RADIUS_PANEL - 1);
 
 		int ground = TBD_UITheme.PanelGround();
-		int borderColour = TBD_UITheme.Over(TBD_UITheme.PanelBorder(TBD_EUITint.NEUTRAL), TBD_UITheme.Ground());
-		TBD_UITheme.PaintOver(panelBorder, TBD_UITheme.PanelBorder(TBD_EUITint.NEUTRAL), TBD_UITheme.Ground());
+		int borderColour = TBD_UITheme.Over(TBD_UITintColours.PanelBorder(TBD_EUITint.NEUTRAL), TBD_UITheme.Ground());
+		TBD_UITheme.PaintOver(panelBorder, TBD_UITintColours.PanelBorder(TBD_EUITint.NEUTRAL), TBD_UITheme.Ground());
 		TBD_UITheme.PaintOver(panelBG, TBD_UITheme.PANEL_FILL, TBD_UITheme.Ground());
 
 		m_wHeroImage = ImageWidget.Cast(root.FindAnyWidget("HeroImage"));

@@ -10,7 +10,7 @@
  * State: none; uncached, so "cannot see who this is" is never answered with a stale guess.
  * Invariants: both backend halves call `GetArmaId` and never resolve the identity themselves, so
  * the join compares identical bytes; a changed shape changes here for both. No identity returns
- * EMPTY, never a `player:<id>` seat lease (that fallback belongs to `TBD_SpawnManager.PlayerBindKey`,
+ * EMPTY, never a `player:<id>` seat lease (that fallback belongs to `TBD_SpawnIdentityKeys.PlayerBindKey`,
  * which bookkeeps one life on a key that must never be empty); callers drop such a player. An
  * ENGINE-resolved identity is still not a LINKED one: a player who never runs `#tbd link <code>`
  * has no `users.arma_id`, so match-results can return 200 while their rows match nobody.

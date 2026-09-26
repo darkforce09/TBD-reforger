@@ -3,7 +3,7 @@
  * @brief Answers ORBAT questions about the loaded mission: a squad by callsign and its leader.
  *
  * Role: squad and squad-leader lookups over the validated document.  Position: reads
- * `TBD_MissionLoader.GetMission` and `GetSlotById`; called by `TBD_MissionLoader.IsSquadLeader`
+ * `TBD_MissionLoader.GetMission` and `GetSlotById`; called by `TBD_SlotBodyDressing`
  * (for `TBD_SpawnManager`) and any system that needs a squad's group row.
  * State: none.  Invariants: answers null or false unless a valid mission is loaded; a leader is
  * returned only when `leaderSlotId` resolves to a seat of the same faction and squad, and no

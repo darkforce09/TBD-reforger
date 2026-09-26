@@ -16,7 +16,7 @@ last stage of a round; it stays up until an admin moves the round on.
   (`TBD_FrameworkManager.c`), which counts kills and holds the packed board.
 - Layout: [`apps/mod/tbd-framework/UI/layouts/Session/PostGame/`](/apps/mod/tbd-framework/UI/layouts/Session/PostGame/README.md),
   `TBD_DebriefScreen.layout`.
-- Entry: `TBD_FrameworkManager.ApplyEndScreens`, which opens `TBD_DebriefScreen` on the `DEBRIEF`
+- Entry: `TBD_EndBanner.ApplyEndScreens`, which opens `TBD_DebriefScreen` on the `DEBRIEF`
   stage and closes it on every other stage.
 - Related features: the [end screen](/documentation_v2/mod/tbd-framework/UI/end_screen/end_screen_specification.md),
   which precedes it and shares its winner; the

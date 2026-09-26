@@ -4,8 +4,7 @@
  *
  * Role: proves on the running engine build that TBD_BriefingWire keeps empty fields and keeps each
  * role under its own group, and reports whether the native `string.Split` keeps empty tokens.
- * Position: armed by TBD_FrameworkManager's component roll-call at boot (through
- * TBD_BriefingService.SelfCheckWire) and by TBD_BriefingWire.Serialise; writes one Briefing log line.
+ * Position: armed by TBD_FrameworkRollCall at boot and by TBD_BriefingWire.Serialise; writes one Briefing log line.
  * State: `s_bWireChecked`, a process-wide static, so the check runs once per process and a world
  * change does not repeat it.  Invariants: the flag is set before the round trip, so the
  * re-entry through Serialise returns at once; the verdict line is written whether the round trip

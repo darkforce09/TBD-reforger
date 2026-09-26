@@ -23,8 +23,9 @@ stays `0`; for `timeLimitSeconds` it means no limit.
 
 `TBD_JipPolicy` maps `flow.jip` onto `TBD_EJipPolicy` (absent or unknown values are `ALWAYS`) and
 answers `AllowsJoinAtStage`: every policy allows `LOADING` and `LOBBY`, `DISABLED` closes from
-`BRIEFING`, `UNTIL_SAFESTART_END` closes from `LIVE`. `TBD_MissionFlow` keeps two forwarders,
-`AllowsJoinAtStage` and `JipPolicyName`, for the join door in `TBD_SpawnManager`.
+`BRIEFING`, `UNTIL_SAFESTART_END` closes from `LIVE`. The join door, `TBD_SpawnJoinAudit` in
+`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Identity/`, calls `AllowsJoinAtStage` and
+`Name` directly.
 
 `TBD_MissionFlowReport.Apply` runs once per mission load, from `TBD_LoadingGate` before the round
 leaves `LOADING`: it hands `flow.safeStartSeconds` to `TBD_SafestartManager.AdminSetSeconds` (a

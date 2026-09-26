@@ -69,7 +69,7 @@ Reforger hands it nothing. **That gap is the program.**
 
 ## 3. The event loop
 
-`TBD_EGameStage` (`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/TBD_GameStage.c`) holds
+`TBD_EGameStage` (`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/TBD_EGameStage.c`) holds
 seven stages; `TBD_FrameworkManager` owns the current one.
 
 ```text

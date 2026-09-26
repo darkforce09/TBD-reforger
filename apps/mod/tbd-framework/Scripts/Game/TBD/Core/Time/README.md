@@ -29,9 +29,8 @@ a pop-up is transient, so its ladder is denser.
 ## Boundaries
 
 - Depends on: nothing.
-- Used by: none at present; it replaces `FormatClock`, `IsChatMilestone` and
-  `IsPopupMilestone` in `TBD_SafestartManager` and `IsRoundClockMilestone` in
-  `TBD_FrameworkManager`.
+- Used by: `TBD_SafestartManager` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/Safestart/`;
+  `TBD_RoundClock` and `TBD_MissionFlowReport` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/`.
 - Rules: the ladders are the player-facing contract of when time is announced; lines added stay
   ASCII; `cargo xtask mod compile` checks that the scripts compile.
 

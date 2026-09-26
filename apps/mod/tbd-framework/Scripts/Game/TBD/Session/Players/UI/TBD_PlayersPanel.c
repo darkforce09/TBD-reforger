@@ -38,7 +38,7 @@ class TBD_PlayersPanel : Managed
 		Widget background = m_wRoot.FindAnyWidget("WindowBG");
 		TBD_UILayouts.MountRounded(border, TBD_UITheme.RADIUS_PANEL);
 		TBD_UILayouts.MountRounded(background, TBD_UITheme.RADIUS_PANEL - 1);
-		TBD_UITheme.PaintOver(border, TBD_UITheme.PanelBorder(TBD_EUITint.NEUTRAL), TBD_UITheme.Ground());
+		TBD_UITheme.PaintOver(border, TBD_UITintColours.PanelBorder(TBD_EUITint.NEUTRAL), TBD_UITheme.Ground());
 		TBD_UITheme.PaintOver(background, TBD_UITheme.PANEL_FILL, TBD_UITheme.Ground());
 		int ground = TBD_UITheme.PanelGround();
 

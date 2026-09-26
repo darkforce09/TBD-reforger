@@ -47,7 +47,7 @@ slot. `TBD_SlotRosterWire` renders the seats as `OPEN`, `HELD` or `DEAD` lines.
   `TBD_LoadoutApplication`, `TBD_WaypointRuntime`, `TBD_MissionVehicleRoster`,
   `TBD_VehicleSpawnDefaults`, `TBD_VehicleState`, `TBD_EntityState`, `TBD_AdminAudit`,
   `TBD_DeploymentAuthorization`, and `TBD_SpawnManager` with its other helpers.
-- Used by: `TBD_SpawnManager` (`GetSlots`, `GetBodies`, `GetLoadoutSettle` and the forwarders
+- Used by: `TBD_SpawnManager` (`GetSlots`, `GetBodies`, `GetLoadoutSettle`, and behind its public component API
   `ClaimSlot`, `ReleaseSlot`, `BuildSlotRoster`, `MaterializeSlotBodies`, `GetSlotBody`), the deploy,
   identity and lives helpers, and `TBD_DynamicSpawnVolley` (`EngineFactionKey`).
 - Rules: a slot has at most one holder; a body is reused only alive and by the identity it was

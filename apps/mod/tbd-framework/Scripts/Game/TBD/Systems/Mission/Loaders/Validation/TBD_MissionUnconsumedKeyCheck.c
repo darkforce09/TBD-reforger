@@ -50,7 +50,7 @@ class TBD_MissionUnconsumedKeyCheck
 			if (!settings.respawn.IsEmpty() && settings.respawn != "none")
 			{
 				findings.AddWarning("settings", string.Format(
-					"respawn='%1' authored but the framework implements no respawn pool -- vanilla respawn is stood down (TBD_SCR_RespawnSystemComponent), one-life is the only mode, and the value is not honoured",
+					"respawn='%1' authored but the framework implements no respawn pool -- vanilla respawn is stood down (the modded SCR_RespawnSystemComponent), one-life is the only mode, and the value is not honoured",
 					settings.respawn));
 			}
 

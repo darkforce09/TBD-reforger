@@ -33,9 +33,11 @@ A runtime that re-arms per world or per mission calls `Rearm` when it resets.
 ## Boundaries
 
 - Depends on: `TBD_Log` in `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`.
-- Used by: none at present; they replace the `WarnOnce` copies in `TBD_UIIcons`,
-  `TBD_BriefingService` and `TBD_LoadoutPreviewDresser`, and the `AnnounceOnce` and
-  `AnnounceEmptyOnce` flags of the mission runtimes and the objective and play-area components.
+- Used by: `TBD_WarnOnce` by `TBD_UIIcons`, `TBD_BriefingService`, `TBD_LoadoutPreviewDresser` and
+  `TBD_LoadoutPreviewMount`; `TBD_AnnounceOnce` by the mission runtimes (`TBD_TriggerRuntime`,
+  `TBD_WeatherRuntime`, `TBD_AudioEmitter`, `TBD_DynamicSpawner`, `TBD_GroupState`,
+  `TBD_WaypointRuntime`), `TBD_TaskStateMachine`, `TBD_WinConditionEvaluator`,
+  `TBD_WinConditionModes`, `TBD_ObjectivesComponent` and `TBD_PlayAreaComponent`.
 - Rules: the line shape is exactly `[TBD][<channel>] <message>`; lines added stay ASCII;
   `cargo xtask mod compile` checks that the scripts compile.
 

@@ -125,7 +125,7 @@ class TBD_MissionCardComponent : TBD_UIInteractive
 			fill         = TBD_UITheme.CARD_IDLE_FILL;
 			border       = TBD_UITheme.CARD_IDLE_BORDER;
 			titleInk     = TBD_UITheme.ON_SURFACE;
-			slotInk      = TBD_UITheme.ChipInk(TBD_EUITint.NEUTRAL);
+			slotInk      = TBD_UITintColours.ChipInk(TBD_EUITint.NEUTRAL);
 			terrainInk   = TBD_UITheme.MUTED_INK;
 			indicatorInk = TBD_UITheme.DIM_INK;
 			indicatorIcon = "chevron_right";

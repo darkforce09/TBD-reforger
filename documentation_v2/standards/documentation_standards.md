@@ -224,14 +224,13 @@ class TBD_SlotCargoStruct
 }
 ```
 
-A method banner states the caller and the receiver when the call crosses machines, as
-`//! CLIENT (owner) -> SERVER: "what does the board look like right now".` does above
-`TBD_RequestLobbyRoster`
-(`apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/TBD_LobbyController.c:33`).
+A method banner states where the call runs when the call crosses machines, as
+`//! @authority owner` does on `TBD_RequestLobbyRoster`
+(`apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/SCR_PlayerController.c:20`).
 
 **Editor attributes.** Every `[Attribute]` carries a description (`desc:` or the third positional
 argument) with its unit and default, and every `[ComponentEditorProps]` a `description:`. From
-`apps/mod/tbd-framework/Scripts/Game/TBD/Session/Spectator/TBD_SpectatorComponent.c:68`:
+`apps/mod/tbd-framework/Scripts/Game/TBD/Session/Spectator/TBD_SpectatorComponent.c:43`:
 
 ```c
 	[Attribute("2000", desc: "Max metres a spectator may steer their streaming host from their own death position. Default 2000. 0 uses the default; never unlimited.")]
@@ -252,12 +251,12 @@ In a replicated game, which machine runs a method is part of its contract.
   attribute and repeats its channel and receiver.
 - `//! @replicated <prop>` sits directly above every `[RplProp]` field, naming who owns the value
   and the `onRplName` hook clients react in, when the attribute names one.
-- A server gate, `if (RplSession.Mode() == RplMode.Client) return;`, carries a
+- A server gate, `if (TBD_Authority.IsClient())`, carries a
   `// Authority only -- <reason>` comment above it, as at
-  `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/TBD_FrameworkManager.c:463`.
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/SCR_PlayerController.c:24`.
 
-From `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/TBD_LobbyController.c:45-48` and
-`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/TBD_FrameworkManager.c:285-287`:
+From `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/SCR_PlayerController.c:33-36` and
+`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/TBD_FrameworkManager.c:25-27`:
 
 ```c
 	//! @authority server
@@ -265,9 +264,9 @@ From `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/TBD_LobbyController.
 	[RplRpc(RplChannel.Reliable, RplRcver.Server)]
 	protected void TBD_RpcAsk_LobbyRoster()
 
-	//! @replicated m_Stage — server-owned; clients react in OnStageReplicated (onRplName hook).
+	//! @replicated m_Stage
 	[RplProp(onRplName: "OnStageReplicated")]
-	protected TBD_EGameStage m_Stage = TBD_EGameStage.LOADING;
+	protected TBD_EGameStage m_Stage = TBD_EGameStage.LOADING; //!< current round stage; server-owned, LOADING until the load settles
 ```
 
 ## 8. Documentation tree

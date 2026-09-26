@@ -187,7 +187,7 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 	}
 
 	//! The round just went LIVE: arm every destroy objective's target search (a search at load
-	//! could run before `TBD_MissionLoader.SpawnMissionEntities` and other subsystems place the
+	//! could run before `TBD_MissionWorldApplier.SpawnMissionEntities` and other subsystems place the
 	//! targets), and skip the hold ladder rungs at or above each hold's length so a short hold
 	//! does not log them all at once.
 	protected void OnEnterLive()
@@ -284,7 +284,7 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 	}
 
 	//! Log a met objective end trigger, with a banner, once per world. Ending the round belongs to
-	//! `TBD_FrameworkManager.TickWinConditions`, which calls `TBD_ObjectiveRegistry.EvaluateEndTriggers`
+	//! `TBD_FactionElimination`, whose 2 s tick calls `TBD_ObjectiveRegistry.EvaluateEndTriggers`
 	//! on its own cadence, so the banner can precede that end.
 	protected void CheckEndTriggers()
 	{
@@ -300,7 +300,7 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 
 		TBD_Log.Kv(TBD_ObjectiveRegistry.CH, "endTriggerMet", string.Format("trigger=%1 winner='%2'", trigger, winner));
 		TBD_Log.Banner(TBD_ObjectiveRegistry.CH,
-			"OBJECTIVE END CONDITION MET but nothing acted on it -- TBD_FrameworkManager.TickWinConditions must call TBD_ObjectiveRegistry.EvaluateEndTriggers(). The round will NOT end on its own.",
+			"OBJECTIVE END CONDITION MET but nothing acted on it -- TBD_FactionElimination must call TBD_ObjectiveRegistry.EvaluateEndTriggers(). The round will NOT end on its own.",
 			false);
 	}
 

@@ -3,8 +3,8 @@
  * @brief Resolves `flow.jip` and answers whether a player may join at a given stage.
  *
  * Role: turns the authored join policy into TBD_EJipPolicy, its schema name and a per-stage answer.
- * Position: fed by TBD_MissionFlow.RawJip; read by the join door in TBD_SpawnManager (through the
- * TBD_MissionFlow forwarders) and by TBD_MissionFlowReport.
+ * Position: fed by TBD_MissionFlow.RawJip; read by the join door in TBD_SpawnJoinAudit and by
+ * TBD_MissionFlowReport.
  * State: none.  Invariants: an absent or unrecognised value resolves to ALWAYS; every method is silent,
  * because the join path calls it; the permitted-stage label is derived from AllowsJoinAtStage.
  */
@@ -59,7 +59,7 @@ class TBD_JipPolicy
 
 	//! Whether the authored policy permits a player arriving at `stage` into the world. Answers the
 	//! author's rule only; one life, spent lives and slot bodies stay TBD_SpawnManager's guards.
-	//! LOADING is permitted because TBD_SpawnManager.IsStageDeployable already refuses it.
+	//! LOADING is permitted because TBD_SpawnJoinAudit.IsStageDeployable already refuses it.
 	//! @param stage the round stage the player arrives in
 	//! @return true when a join is permitted
 	static bool AllowsJoinAtStage(TBD_EGameStage stage)

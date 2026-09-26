@@ -59,7 +59,7 @@ class TBD_KitInspectorPanel
 		TBD_UILayouts.MountRounded(headerBG, TBD_UITheme.RADIUS_PANEL - 1); // Header clips its bottom arcs
 
 		m_iGround = TBD_UITheme.PanelGround();
-		TBD_UITheme.PaintOver(panelBorder, TBD_UITheme.PanelBorder(TBD_EUITint.NEUTRAL), TBD_UITheme.Ground());
+		TBD_UITheme.PaintOver(panelBorder, TBD_UITintColours.PanelBorder(TBD_EUITint.NEUTRAL), TBD_UITheme.Ground());
 		TBD_UITheme.PaintOver(panelBG, TBD_UITheme.PANEL_FILL, TBD_UITheme.Ground());
 		TBD_UITheme.PaintOver(headerBG, TBD_UITheme.KIT_HEADER_FILL, m_iGround);
 		TBD_UITheme.PaintOver(root.FindAnyWidget("HeaderRule"), TBD_UITheme.KIT_CARD_BORDER, m_iGround);

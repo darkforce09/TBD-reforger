@@ -85,9 +85,9 @@ class TBD_SpawnJoinAudit : Managed
 			action = "DENIED-life-spent";
 			deploy = false;
 		}
-		else if (!TBD_MissionFlow.AllowsJoinAtStage(stage))
+		else if (!TBD_JipPolicy.AllowsJoinAtStage(stage))
 		{
-			action = "DENIED-jip-" + TBD_MissionFlow.JipPolicyName();
+			action = "DENIED-jip-" + TBD_JipPolicy.Name();
 			deploy = false;
 		}
 		else if (!IsStageDeployable())

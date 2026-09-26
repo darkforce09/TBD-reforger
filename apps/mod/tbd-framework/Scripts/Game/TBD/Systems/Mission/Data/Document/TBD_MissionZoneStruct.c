@@ -31,7 +31,7 @@ class TBD_MissionShapeStruct
 
 //! The zone `rules` object, as far as a typed parser can see it. The schema closes the vocabulary;
 //! a key without a field here is invisible at runtime. Objective keys (`captureSeconds`,
-//! `holdSeconds`, ...) are read by the second pass in `TBD_ObjectiveRules`. `TBD_ZoneRegistry`
+//! `holdSeconds`, ...) are read by the second pass in `TBD_ObjectiveRulesReader`. `TBD_ZoneRegistry`
 //! reports a rules object with no legible key as a WARNING and an out-of-range value or unknown
 //! `penalty` as an ERROR with the default applied.
 //! @contract mission.schema.json#/$defs/zoneRules

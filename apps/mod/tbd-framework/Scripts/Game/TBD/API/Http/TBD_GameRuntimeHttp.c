@@ -321,11 +321,4 @@ class TBD_GameRuntimeHttp
 	{
 		return NowMs() - notBeforeMs >= 0;
 	}
-
-	//! Forwards to `TBD_BackendText.JsonEscape` for callers outside the platform bridge.
-	//! @return the escaped copy
-	static string JsonEscape(string value)
-	{
-		return TBD_BackendText.JsonEscape(value);
-	}
 }

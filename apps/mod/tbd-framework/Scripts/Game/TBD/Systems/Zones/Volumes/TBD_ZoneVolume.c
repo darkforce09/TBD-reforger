@@ -17,18 +17,6 @@ class TBD_ZoneVolume
 {
 	static const string CH = "ZoneVol"; //!< log channel
 
-	//! Drop the bounds of the previous mission; forwards to `TBD_ZoneVolumeBounds.Clear`.
-	static void Clear()
-	{
-		TBD_ZoneVolumeBounds.Clear();
-	}
-
-	//! Copy the volume keys off every loaded zone; forwards to `TBD_ZoneVolumeBounds.Read`.
-	static void Read()
-	{
-		TBD_ZoneVolumeBounds.Read();
-	}
-
 	//! Start a capture objective HELD (full progress) by its zone's `startingOwner` when that is a
 	//! declared faction the objective may be owned by; otherwise log and leave it neutral. On a
 	//! hold-until objective a `startingOwner` other than the holder is logged and ignored.
@@ -131,8 +119,9 @@ class TBD_ZoneVolume
 	}
 
 	//! The side acting on a capture objective this tick, applying the zone's counts and advantage;
-	//! with no volume keys authored this equals `TBD_Objective.ResolveActingFaction`. Clears and may
-	//! set `m_bContested`.
+	//! with no volume keys authored one side inside acts, two or more freeze a contestable objective,
+	//! and a non-contestable one goes to the larger side with ties frozen. Clears and may set
+	//! `m_bContested`.
 	//! @param objective the capture objective with this tick's presence
 	//! @return the acting faction key, or empty when nobody or a contest
 	static string ResolveActingFaction(notnull TBD_Objective objective)

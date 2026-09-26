@@ -15,9 +15,9 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Zones/Volumes/
 
 ## How it works
 
-`TBD_ObjectiveRegistry` calls `TBD_ZoneVolume.Clear` and `Read` when it builds; `Read` has
-`TBD_ZoneVolumeBounds` copy `attackerCount`, `defenderCount`, `advantagePercent`, `minHeight`,
-`maxHeight` and `startingOwner` off every loaded zone, keeping the loader's ABSENT sentinels, and log
+`TBD_ObjectiveRegistry` calls `TBD_ZoneVolumeBounds.Clear` and `Read` when it builds; `Read`
+copies `attackerCount`, `defenderCount`, `advantagePercent`, `minHeight`,
+`maxHeight` and `startingOwner` off every loaded zone, keeping the loader's ABSENT sentinels, and logs
 any zone whose `minHeight` is above its `maxHeight` (that volume contains nobody).
 
 - Height: `ContainsAgl` measures height above the ground at the body's own XZ

@@ -95,7 +95,8 @@ it asks for the snapshot each second.
   `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; `TBD_ObjectiveHud` and `TBD_TaskHud` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/`; the `zone`, `zoneRules`, `objective`, `task`
   and `winConditions` definitions in `contracts_v2/definitions/mission.schema.json`.
-- Used by: `TBD_FrameworkManager`, which calls `EvaluateEndTriggers` to end the round;
+- Used by: `TBD_FactionElimination` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/Stage/`,
+  which calls `EvaluateEndTriggers` to end the round, and `TBD_EndBanner`, which infers an admin end;
   `TBD_TriggerRuntime` (the `objective_complete` condition and `set_objective` effect) and
   `TBD_ZoneVolume`; `TBD_MissionValidator`, which reads the objective vocabulary; the HUD scripts in
   `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/`; `TBD_AudioEmitter`, which follows task states;

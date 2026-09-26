@@ -417,13 +417,13 @@
         "apps/website/api_v2/tests/live_slot_occupancy.rs",
         "contracts_v2/definitions/game-runtime-deployment.schema.json",
         "contracts_v2/definitions/game-runtime-roster.schema.json",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/TBD_DeploymentAuthorization.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/TBD_DeploymentRequest.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/TBD_DeploymentRequestQueue.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/TBD_DeploymentEndQueue.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/TBD_SpawnManagerDeploymentAuthorization.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/TBD_AdminServiceDeploymentAuthorization.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/TBD_LobbyServiceDeploymentAuthorization.c"
+        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Deployment/TBD_DeploymentAuthorization.c",
+        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Deployment/TBD_DeploymentRequest.c",
+        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Deployment/TBD_DeploymentRequestQueue.c",
+        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Deployment/TBD_DeploymentEndQueue.c",
+        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Deployment/TBD_SpawnDeploymentGate.c",
+        "apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/TBD_AdminService.c",
+        "apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/Service/TBD_LobbyService.c"
       ],
       "checks": [
         "events_live_occupancy",

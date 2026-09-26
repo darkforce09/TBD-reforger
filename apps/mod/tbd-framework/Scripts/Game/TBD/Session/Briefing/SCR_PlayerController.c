@@ -46,7 +46,7 @@ modded class SCR_PlayerController
 		// Not this machine's player. On a dedicated server `GetPlayerController()` is null, so this
 		// is false for every controller and nothing below ever runs. It is the same test vanilla
 		// itself makes inside `super` to decide `m_bIsLocalPlayerController`, and the same one
-		// `TBD_MissionBrowser` and `TBD_RadioController` already rely on -- if it could ever be true
+		// the mission browser and radio blocks of this controller already rely on -- if it could ever be true
 		// on a server, vanilla would be binding local input there.
 		if (GetGame().GetPlayerController() != this)
 			return;

@@ -61,8 +61,6 @@ payload stays one log line. `UtcNowIso8601` reads the engine's UTC date and cloc
 two digits. `DescribeBackend(noneText)` prints the configured backend URL for a log line, never a
 secret: `noneText` when no URL is set, `<url> (NO TOKEN)` when the server token is empty.
 `TBD_GameRuntimeHttp.DescribeBackend` keeps the machine-credential form of the same line.
-`TBD_GameRuntimeHttp.JsonEscape` forwards to `TBD_BackendText.JsonEscape` for its callers outside
-the platform bridge.
 
 ## Authority
 

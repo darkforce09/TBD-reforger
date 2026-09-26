@@ -115,7 +115,7 @@ class TBD_RadioComponent : SCR_BaseGameModeComponent
 		string world = TBD_RadioTuner.WorldFileName();
 		string fallback = TBD_RadioTuner.FallbackSourceName();
 		TBD_Log.Warn(TBD_RadioPlan.CH_RADIO, string.Format(
-			"backbone: MISSING -- world='%1' has no RadioManagerEntity; using script-side channel table (%2). Add RadioManagerEntity in Workbench (worlds/TBD_Dev_POC.ent) to restore the engine backbone. T-941.7 fallback is in use; the world edit is on the operator checklist.",
+			"backbone: MISSING -- world='%1' has no RadioManagerEntity; using script-side channel table (%2). Add RadioManagerEntity in Workbench (worlds/TBD_Dev_POC.ent) to restore the engine backbone. The script-side fallback is in use; the world edit is on the operator checklist.",
 			world, fallback));
 	}
 }

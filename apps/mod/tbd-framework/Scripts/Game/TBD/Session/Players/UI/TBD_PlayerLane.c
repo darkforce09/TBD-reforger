@@ -49,10 +49,10 @@ class TBD_PlayerLane : Managed
 		int nameInk = TBD_UITheme.BRIGHT_INK;
 		if (tint == TBD_EUITint.BLUFOR || tint == TBD_EUITint.OPFOR)
 		{
-			borderTone = TBD_UITheme.FactionRowBorder(tint);
-			laneFill = TBD_UITheme.PanelFill(tint);
-			headerFill = TBD_UITheme.FactionRowFill(tint);
-			nameInk = TBD_UITheme.FactionRowInk(tint);
+			borderTone = TBD_UITintColours.FactionRowBorder(tint);
+			laneFill = TBD_UITintColours.PanelFill(tint);
+			headerFill = TBD_UITintColours.FactionRowFill(tint);
+			nameInk = TBD_UITintColours.FactionRowInk(tint);
 		}
 
 		TBD_UITheme.PaintOver(border, borderTone, panelGround);
@@ -135,7 +135,7 @@ class TBD_PlayerLane : Managed
 			pingTint = TBD_EUITint.DANGER;
 		else if (player.m_iPing >= 40)
 			pingTint = TBD_EUITint.WARNING;
-		TBD_UITheme.Paint(ping, TBD_UITheme.ChipInk(pingTint));
+		TBD_UITheme.Paint(ping, TBD_UITintColours.ChipInk(pingTint));
 
 		TBD_UITheme.PaintOver(row.FindAnyWidget("Background"), TBD_UITheme.TRANSPARENT, ground);
 		// The rule's 1 px is the RowRuleSize SizeLayout in the layout: an untextured image in a

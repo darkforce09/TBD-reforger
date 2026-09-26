@@ -44,7 +44,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 
 	//! @replicated m_sDebriefBoard
 	[RplProp()]
-	protected string m_sDebriefBoard; //!< packed scoreboard (`kills\tfaction\trole\tname` per line); empty before END
+	protected string m_sDebriefBoard; //!< packed scoreboard (`kills\tdeaths\tfaction\trole\tname` per line); empty before END
 
 	protected string m_sLastStageRefusal; //!< why the last SetStage refused; empty when it did not
 

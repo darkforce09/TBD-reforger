@@ -54,12 +54,12 @@ every countdown.
 
 ### Zone volumes
 
-`TBD_ZoneVolume` in [Volumes/](Volumes/README.md) reads the objective half of `zoneRules`:
+`TBD_ZoneVolumeBounds` in [Volumes/](Volumes/README.md) reads the objective half of `zoneRules`:
 `minHeight` and `maxHeight` (height above the ground under the entity; an absent bound is open, and
 min above max is an empty volume), `attackerCount`, `defenderCount`, `advantagePercent` and
-`startingOwner`. The objective system calls it (`Read`, `ContainsAgl`, `ResolveActingFaction`,
-`EnemyContestsHold`, `HolderPresent`, `ApplyStartingOwner`) to decide who captures, contests and
-holds.
+`startingOwner`. The objective system calls `TBD_ZoneVolumeBounds.Read` and the `TBD_ZoneVolume`
+queries (`ContainsAgl`, `ResolveActingFaction`, `EnemyContestsHold`, `HolderPresent`,
+`ApplyStartingOwner`) to decide who captures, contests and holds.
 
 ### Editor triggers
 

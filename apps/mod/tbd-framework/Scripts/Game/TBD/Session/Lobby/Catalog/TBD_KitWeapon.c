@@ -3,7 +3,7 @@
  * @brief One weapon card of a kit: slot label, name, mounted attachments and ammunition.
  *
  * Role: one weapon slot of a kit.  Position: built by TBD_LobbyMock into TBD_KitInfo.m_aWeapons;
- * drawn by TBD_KitInspectorPanel.MountWeapon.
+ * drawn by TBD_KitInspectorCells.MountWeapon.
  * State: plain data.  Invariants: the arrays are never null.
  */
 

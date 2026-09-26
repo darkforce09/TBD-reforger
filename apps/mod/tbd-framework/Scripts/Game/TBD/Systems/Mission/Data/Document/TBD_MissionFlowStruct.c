@@ -4,7 +4,7 @@
  *
  * Role: the typed form of the `flow` and `winConditions` blocks.  Position: filled by
  * `TBD_MissionLoader`'s parse; `flow` is applied by `TBD_MissionFlow` and
- * `TBD_FrameworkManager.ApplyMissionFlow`, `winConditions` is read through
+ * `TBD_MissionFlowReport.Apply`, `winConditions` is read through
  * `TBD_MissionLoader.HasEndTrigger` and checked by `TBD_MissionWinConditionChecks`.
  * State: none; plain data.  Invariants: `flow` is always allocated, so each duration is tested
  * against `ABSENT`; an authored 0 is a real value (`timeLimitSeconds: 0` means no limit); nothing

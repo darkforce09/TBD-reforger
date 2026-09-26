@@ -12,14 +12,14 @@
  * played but may not end; so every reachability finding is a WARNING except `faction_eliminated`
  * with fewer than two sides holding slots, which is not a PvP event at all. This is a document
  * check: it proves the mission carries what each trigger watches, not that the piece resolves at
- * runtime (`TBD_ObjectiveRegistry.ArmDestroyTargets` names that).
+ * runtime (`TBD_ObjectiveDestroyTargets.ArmDestroyTargets` names that).
  */
 
 //! Static end-trigger checks.
 class TBD_MissionWinConditionChecks
 {
-	protected static const string TRIGGER_TIME_LIMIT         = "time_limit";         //!< `endOn` value `TBD_FrameworkManager.ArmRoundClock` evaluates.
-	protected static const string TRIGGER_FACTION_ELIMINATED = "faction_eliminated"; //!< `endOn` value `TBD_FrameworkManager.ArmFactionEliminated` evaluates.
+	protected static const string TRIGGER_TIME_LIMIT         = "time_limit";         //!< `endOn` value `TBD_RoundClock` evaluates.
+	protected static const string TRIGGER_FACTION_ELIMINATED = "faction_eliminated"; //!< `endOn` value `TBD_FactionElimination` evaluates.
 
 	//! End triggers must be schema values, and each must be reachable: `faction_eliminated` needs
 	//! two sides holding slots, `time_limit` needs `flow.timeLimitSeconds`, and the three objective
@@ -133,7 +133,7 @@ class TBD_MissionWinConditionChecks
 		return CheckObjectiveTriggerReachable(findings, subject, trigger, zoneType, kind, mission);
 	}
 
-	//! `faction_eliminated` needs two sides holding slots; `TBD_FrameworkManager.TickWinConditions`
+	//! `faction_eliminated` needs two sides holding slots; `TBD_FactionElimination`
 	//! refuses to end a round with fewer than two contesting factions, so a one-sided mission would
 	//! never end. The one end-trigger ERROR.
 	//! @param findings receives the findings
@@ -161,9 +161,9 @@ class TBD_MissionWinConditionChecks
 		return true;
 	}
 
-	//! `time_limit` needs a duration; `TBD_FrameworkManager.ArmRoundClock` refuses to guess one.
+	//! `time_limit` needs a duration; `TBD_RoundClock.Arm` refuses to guess one.
 	//! The absent, negative and zero rules come from `TBD_MissionFlow.ResolveSeconds`, never a copy.
-	//! A duration authored without the trigger is reported by `ArmRoundClock`, not here.
+	//! A duration authored without the trigger is reported by `TBD_RoundClock.Arm`, not here.
 	//! @param findings receives the findings
 	//! @param subject the trigger's finding subject
 	//! @param mission the document
@@ -181,7 +181,7 @@ class TBD_MissionWinConditionChecks
 
 		if (source == TBD_MissionFlow.SRC_DEFAULT)
 		{
-			findings.AddWarning(subject, "declares 'time_limit' but flow.timeLimitSeconds is not authored -- TBD_FrameworkManager.ArmRoundClock has no duration to arm, so this round CANNOT end on time. Author flow.timeLimitSeconds, or drop the trigger.");
+			findings.AddWarning(subject, "declares 'time_limit' but flow.timeLimitSeconds is not authored -- TBD_RoundClock.Arm has no duration to arm, so this round CANNOT end on time. Author flow.timeLimitSeconds, or drop the trigger.");
 			return false;
 		}
 

@@ -39,7 +39,7 @@ class TBD_BriefingUniformsPage : TBD_BriefingPage
 		if (!faction)
 			return TBD_UITheme.PRIMARY_CONTAINER;
 
-		return TBD_UITheme.FactionRowInk(faction.m_eTint);
+		return TBD_UITintColours.FactionRowInk(faction.m_eTint);
 	}
 
 	//! Add the side's role chip, and on the Assets page the vehicle count.
@@ -58,7 +58,7 @@ class TBD_BriefingUniformsPage : TBD_BriefingPage
 		TBD_BriefingFaction faction = m_Catalog.GetFaction(m_bFriendly);
 		int borderTone = TBD_UITheme.KIT_CARD_BORDER;
 		if (faction && !m_bFriendly)
-			borderTone = TBD_UITheme.FactionRowBorder(faction.m_eTint);
+			borderTone = TBD_UITintColours.FactionRowBorder(faction.m_eTint);
 
 		foreach (TBD_UniformInfo uniform : m_Catalog.GetUniforms(m_bFriendly))
 		{

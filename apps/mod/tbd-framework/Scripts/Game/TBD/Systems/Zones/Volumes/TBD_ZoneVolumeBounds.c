@@ -4,8 +4,8 @@
  *
  * Role: copies `attackerCount`, `defenderCount`, `advantagePercent`, `minHeight`, `maxHeight` and
  * `startingOwner` off every loaded zone and answers the per-zone counts with their defaults.
- * Position: filled from `TBD_MissionLoader.GetZones` when `TBD_ObjectiveRegistry` builds (through
- * `TBD_ZoneVolume.Read`); read by `TBD_ZoneVolume` and `TBD_ZoneContestResolver`.
+ * Position: filled from `TBD_MissionLoader.GetZones` when `TBD_ObjectiveRegistry` builds;
+ * read by `TBD_ZoneVolume` and `TBD_ZoneContestResolver`.
  * State: static bound list for the life of the script VM, replaced by each `Read`.
  * Invariants: absent keys keep the loader's ABSENT sentinels; an absent count reads as 1 and an authored 0
  * stays 0; min above max is logged and contains nobody.

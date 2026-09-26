@@ -73,14 +73,6 @@ class TBD_MissionLoader
 		return null;
 	}
 
-	//! Whether `slot` leads its own squad; see `TBD_MissionOrbatQuery.IsSquadLeader`.
-	//! @param slot the seat; null returns false
-	//! @return true when `slot` is its squad's authored leader
-	static bool IsSquadLeader(TBD_MissionSlotStruct slot)
-	{
-		return TBD_MissionOrbatQuery.IsSquadLeader(slot);
-	}
-
 	//! The held document, valid or not.
 	//! @return the document, or null when none is held
 	static TBD_MissionDocumentStruct GetMission()

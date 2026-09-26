@@ -17,7 +17,7 @@
 class TBD_MissionWorldApplier
 {
 	//! Spawn every `entities[]` row of the valid mission so destroy-alias resolution
-	//! (`TBD_ObjectiveRegistry.ArmDestroyTargets`) finds the prefabs in its zone. Each alias resolves
+	//! (`TBD_ObjectiveDestroyTargets.ArmDestroyTargets`) finds the prefabs in its zone. Each alias resolves
 	//! through `TBD_Registry` (loaded on demand); each spawned body is recorded under its uid and its
 	//! alias|x|z fingerprint so the `vehicles[]` roster row of the same vehicle claims it instead of
 	//! spawning a second copy.

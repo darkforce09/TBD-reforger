@@ -113,7 +113,7 @@ class TBD_EndBanner : Managed
 	}
 
 	//! Pack the debrief scoreboard from TBD_DebriefScoreboard.Fill.
-	//! @return the packed rows (`kills\tfaction\trole\tname` per line)
+	//! @return the packed rows (`kills\tdeaths\tfaction\trole\tname` per line)
 	static string PackDebriefBoard()
 	{
 		array<ref TBD_DebriefRow> rows = {};

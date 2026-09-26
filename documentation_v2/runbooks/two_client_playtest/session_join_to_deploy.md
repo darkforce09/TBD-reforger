@@ -163,7 +163,7 @@ from the briefing. Steps S7 to S10 say which checks this leaves open.
 
    Expected: `[TBD][Stage] LOBBY -> BRIEFING`, `[TBD] Stage → BRIEFING` and
    `[TBD][Spawn] BRIEFING: deploying each claimed slot holder once …` in the log, and the briefing
-   screen opening on both clients (`TBD_BriefingController` opens it on the stage change and
+   screen opening on both clients (the Briefing block of the modded `SCR_PlayerController` opens it on the stage change and
    closes it on any other stage). Its pages render mock content, so side-specific orders cannot be
    judged from them. Nothing leaves BRIEFING on its own: `flow.briefingSeconds` is announced, not
    enforced. A player who joins during BRIEFING logs `jip catch-up — local controller up,

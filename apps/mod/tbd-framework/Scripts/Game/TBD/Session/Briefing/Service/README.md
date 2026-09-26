@@ -27,8 +27,8 @@ shared win condition.
 `R`, `Z`, `W`, `E`), at most 400 lines; the orders ride beside it as three `array<string>` RPC
 parameters that `AdoptOrders` copies onto the parsed payload. `Parse` skips a malformed record, and a
 group record it cannot decode drops the role records under it. The first `Serialise` of a process,
-or `TBD_BriefingService.SelfCheckWire` from the framework roll-call, runs
-`TBD_BriefingWireSelfCheck`, which logs `wire self-check PASS` or `FAIL` with the measured
+or `TBD_FrameworkRollCall` at boot, runs
+`TBD_BriefingWireSelfCheck.Run`, which logs `wire self-check PASS` or `FAIL` with the measured
 `split-empties=` verdict.
 
 ## Authority
@@ -47,8 +47,8 @@ or `TBD_BriefingService.SelfCheckWire` from the framework roll-call, runs
   `TBD_MissionFactionNames` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/`;
   `TBD_WireCodec`, `TBD_WarnOnce` and `TBD_Log` in `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`;
   `TBD_BriefingPayload` in the parent folder.
-- Used by: the modded `SCR_PlayerController` in the parent folder; `TBD_FrameworkManager` in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/` (`SelfCheckWire`).
+- Used by: the modded `SCR_PlayerController` in the parent folder; `TBD_FrameworkRollCall` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/` (`TBD_BriefingWireSelfCheck.Run`).
 - Rules: another faction's slots, zones and orders never enter the payload; every authored display
   string passes `TBD_WireCodec.Sanitise`; the wire bytes stay what `Parse` and the self-check
   expect; lines added stay ASCII and `cargo xtask mod compile` checks that the scripts compile.

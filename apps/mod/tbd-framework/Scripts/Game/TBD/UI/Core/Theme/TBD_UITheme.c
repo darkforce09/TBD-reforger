@@ -363,40 +363,4 @@ class TBD_UITheme
 		if (w)
 			w.SetVisible(visible);
 	}
-
-	//! Forwarder to `TBD_UITintColours.ChipInk`.
-	static int ChipInk(TBD_EUITint tint)
-	{
-		return TBD_UITintColours.ChipInk(tint);
-	}
-
-	//! Forwarder to `TBD_UITintColours.PanelFill`.
-	static int PanelFill(TBD_EUITint tint)
-	{
-		return TBD_UITintColours.PanelFill(tint);
-	}
-
-	//! Forwarder to `TBD_UITintColours.FactionRowFill`.
-	static int FactionRowFill(TBD_EUITint tint, bool hovered = false)
-	{
-		return TBD_UITintColours.FactionRowFill(tint, hovered);
-	}
-
-	//! Forwarder to `TBD_UITintColours.FactionRowBorder`.
-	static int FactionRowBorder(TBD_EUITint tint, bool selected = false)
-	{
-		return TBD_UITintColours.FactionRowBorder(tint, selected);
-	}
-
-	//! Forwarder to `TBD_UITintColours.FactionRowInk`.
-	static int FactionRowInk(TBD_EUITint tint)
-	{
-		return TBD_UITintColours.FactionRowInk(tint);
-	}
-
-	//! Forwarder to `TBD_UITintColours.PanelBorder`.
-	static int PanelBorder(TBD_EUITint tint)
-	{
-		return TBD_UITintColours.PanelBorder(tint);
-	}
 }
