@@ -49,11 +49,11 @@ Commits of this program stage by pathspec only.
 | P3-3 | done | 5da30bce6 | Zones: Triggers/ (12), Registry/, Volumes/, PlayArea/; adds `TBD_ZoneRegistry.FindById`, `TBD_TriggerRuntime.FindById`/`HasFired(id, out unknownId)`; dead-body cast now `ChimeraCharacter`. |
 | P3-4 | done | 6270ea673 | Objectives: Model/, Registry/, Runtime/, Tasks/ (19 files). |
 | P3-5 | done | 0a4831cb0 | API: Http/, RuntimeSession/, Identity/, Results/, FleetCommands one type per file; `TBD_BackendConfigStruct` -> `TBD_BackendConfigFile`; new `TBD_RuntimeSessionLifecycle`. |
-| P3-6 | running | | |
-| P3-7 | running | | |
-| P3-8 | running | | |
-| P3-9 | running | | |
-| P3-10 | running | | |
+| P3-6 | done | 5c53cf2bb | Data/Vehicles (5 files); `TBD_MissionParamSelectionStruct` -> `...Wire`; GadgetFlags 471 lines (over 400 target). |
+| P3-7 | done | f8f8701c4 | Loadouts/Application (5 phases), Preview/, AI/Waypoints, AI/GroupState; export DTOs to `TBD_LoadoutExportStruct`. |
+| P3-8 | done | 03d9d83be | Audio (5), Markers (+Client/), Radio comment pass; modded PCs named `SCR_PlayerController.c` per folder. |
+| P3-9 | done | 0bf022275 | FrameworkManager 398 over Flow/ + Stage/; Safestart/, WinConditions/; `TBD_GameStage.c` -> `TBD_EGameStage.c`; Safestart OnDelete now cancels its timers. |
+| P3-10 | done | c7afddd02 | Briefing Service/, Catalog/, UI/Pages, UI/Navigation, map launcher; wire bytes unchanged; self-check armed from Serialise now runs. |
 | P3-11 | pending | | |
 | P3-12 | pending | | |
 | P3-13 | pending | | |
@@ -77,6 +77,34 @@ Additions to a launch prompt beyond concrete values, by slice id.
 | P1-3 onward | B0 gains: "Never run `hcargo fmt -p <package>` (it reformats the other session's files); check with `hcargo fmt -p xtask -- --check` and format only your own files." |
 | P1-2 | Concurrency note: P1-1 edits `language_bans/` and `node_free_tests.rs` at the same time; the other session's uncommitted `tools_v2/xtask` edits are reported, not fixed, if they break the build. |
 
+## Writer brief file
+
+Wave launches pass one file built from the plan's B0, CARD, SPLIT RULES and writer steps blocks (verbatim; B0 adds "Never run `hcargo fmt -p <package>`") plus these two sections, then a short per-slice parameter prompt. Rebuild it in the scratchpad on resume.
+
+```text
+### Parallel wave rules
+- Other slices run at the same time on other folders. Judge `mod compile` only by error lines that
+  name your files; ignore errors elsewhere (the orchestrator compiles after the wave).
+- `git mv` stages renames in the shared index; that is fine. Never `git add` anything else, never
+  `git reset`, and never touch another slice's folders.
+- Record forwarders you leave in your report (the orchestrator adds them to the checkpoint).
+
+### Lessons from wave A
+- ECM-9: every file is named after its primary type. Map names like `...Structs` or `...Types`
+  are intents, not file names: put a companion struct with its owner, give an enum its own file
+  (`TBD_EXxx.c`), and name the file after the class it declares.
+- Run `hcargo xtask verify readme-coverage --with-untracked --path <f>` and
+  `hcargo xtask verify link-check --with-untracked --path <f>`; without the flag, new untracked
+  files fail.
+- Shared helpers now also include `TBD_ZoneRegistry.FindById`, `TBD_TriggerRuntime.HasFired(id,
+  out bool unknownId)` and `TBD_TriggerRuntime.FindById`.
+- A stale comment in your folders that names a moved file or member is yours to fix.
+```
+
+## Pause point
+
+Session paused 2026-09-26 after wave B (operator: session budget). Next: launch wave C (P3-11 Lobby, P3-12 Spectator+Players+PostGame, P3-13 Admin+MissionSelector, P3-14 UI+Core) with the plan's slice parameters, then P3-C. Tree at pause: `mod compile` 0, `mod world-boot` PASS, 2074 comment findings in 78 of 324 framework scripts.
+
 ## Comment gate baseline
 
 Filled by P1-2 and P1-3.
@@ -85,6 +113,8 @@ Filled by P1-2 and P1-3.
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | tbd-framework (172 files) | after P1-2 | 2890 | 187 | 1179 | 2429 | 49 | 80 | 19 | 4105 | 46 | 10984 |
 | tbd-framework | after P1-3 | 126 | 187 | 1179 | 2312 | 49 | 80 | 19 | 1425 | 43 | 5420 |
+| tbd-framework | after wave A | 117 | 138 | 935 | 1538 | 36 | 37 | 19 | 773 | 31 | 3624 |
+| tbd-framework (324 files) | after wave B | 100 | 78 | 586 | 929 | 20 | 7 | 19 | 320 | 15 | 2074 |
 | tbd-emcp (19 files) | after P1-3 | 0 | | | 158 | | | | 0 | | 458 |
 
 ## Shared helper index
@@ -170,6 +200,8 @@ Left by P3 slices for P3-C to remove: forwarder | owner file | external callers.
 
 - `TBD_GameRuntimeHttp.JsonEscape` -> `TBD_BackendText` | API/Http | Spawning/Deployment/TBD_DeploymentRequestQueue, MissionSelector/TBD_MissionDeploymentRelay
 - `TBD_MissionLoader.IsSquadLeader` -> `TBD_MissionOrbatQuery` | Loaders/Mission | Spawning
+- `TBD_BriefingService.SelfCheckWire` -> `TBD_BriefingWireSelfCheck.Run` | Briefing/Service | Gamemode/Orchestrator/TBD_FrameworkManager
+- `TBD_MissionFlow.AllowsJoinAtStage`/`.JipPolicyName` -> `TBD_JipPolicy` | Gamemode/Orchestrator/Flow | Spawning/Identity/TBD_SpawnJoinAudit
 - `TBD_ZoneVolume.Clear`/`.Read` -> `TBD_ZoneVolumeBounds` | Zones/Volumes | internal
 
 ## Leftovers
@@ -179,6 +211,7 @@ Per slice, for the closing runs.
 - All slices: run `hcargo fmt --check -p xtask` or format only owned files (`rustfmt` via `hcargo fmt -- <file>` is unsafe on module files); never plain `fmt -p xtask` while another session has xtask edits.
 - P1-3: box-drawing diagrams in 14 UI panel files; residual non-ASCII (x, <=, e-acute, bullet, section sign, check mark, emoji) e.g. `TBD_MissionSelectorScreen.c:4`, `TBD_LobbyScreen.c:4`; titles `TBD_UITheme.c:113`, `TBD_SpectatorCamera.c:49`. 165 above-line field docs left (over 120 columns). Owners fix via ECM-1/ECM-4/ECM-8.
 - Wave A stale comments/paths (P3-C unless the folder owner fixes them first): `TBD_WinConditionEvaluator.c:44`, `TBD_WaypointRuntime.c:13`, `TBD_FrameworkManager.c:796` (`ResolveWinner` now on `TBD_ResultsPayload`), `TBD_MissionVehicleStruct.c:165`, `TBD_MissionLoader` `SpawnMissionEntities` comments, Admin/Lobby DeploymentAuthorization files, `TBD_SpectatorHost`, `TBD_LobbyStage`, `TBD_MissionSlotStruct`; docs `documentation_v2/refactor_pin_catalogue.md:158,179,187`, `map-engine/.../extensions/modules/README.md`, runbooks `mod_slice_workflow`, `game_server_staging/boot_and_log_verification`, `two_client_playtest/*`, `end_screen_specification.md`, `eden_gap_analysis.md`, `remaining_milestones.md`, `mission.schema.json:88,705`; Core/Characters and Core/Players READMEs "Used by: none"; dead code `TBD_Objective.c:57,145,161,257`; `GetSpawnZoneForFaction` has no callers.
+- Wave B stale paths: `documentation_v2/glossary/n_to_z.md:117`, `apps/website/map-engine/src/data/scenario/extensions/objectives/win_conditions/README.md:40`, `documentation_v2/mod/tbd-framework/mod_design.md:72`, `apps/mod/tbd-framework/UI/layouts/Session/Lobby/README.md:91` (-> `UI/Pages/TBD_BriefingOrbatPage.c`), `UI/Mock/README.md:28` (BriefingCatalog path), `two_client_playtest/README.md:99` (`TBD_LoadoutEquipHelper.c`), `mission.schema.json` (`TBD_MarkerClient.SetRotation`). Stale member names: `TickWinConditions` (ObjectiveRegistry, ObjectivesComponent, MissionWinConditionChecks), `ArmRoundClock`/`ArmFactionEliminated`, `ApplyMissionFlow` (MissionFlowStruct), `ApplyEndScreens` (EndScreen), Safestart members in SpectatorHost/SpectatorHostEntity, `TBD_BriefingService.MAX_PAYLOAD_LINES`/`FIELD_MARK` (Lobby, Admin services), `TBD_BriefingController.c` (MissionBrowser, LobbyController, Spectator), `TBD_MissionBrowser.c:19`, `TBD_AdminService.c:47`, `TBD_SpectatorComponent.c:15-16`. Runtime log string with `T-941.7` in `TBD_RadioComponent.c`.
 - P2-2: `TBD_TriggerRuntime.c:14-23` header rationale (P3-3); `documentation_v2/standards/templates/readme_mod_scripts.md:84` (P3-C).
 
 ## Ticket batch
