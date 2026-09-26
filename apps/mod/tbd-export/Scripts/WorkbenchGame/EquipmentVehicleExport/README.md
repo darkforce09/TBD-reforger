@@ -1,51 +1,115 @@
 # Equipment and vehicle source export
 
-The exporter reads installed Workbench configuration. It preserves native values, explicit empty values, enums, units when documented, effective inheritance, authored overrides, component instances, and gameplay references. It does not calculate inventory grids, loaded mass, tracer ratios, horsepower, compatibility lists, or vehicle classifications.
+The [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) exporter that captures the installed
+equipment, vehicles and their gameplay dependencies as source-backed records: every native value
+as the loaded configuration holds it, with its inheritance, its authored overrides and the method
+that read it. It computes nothing: no inventory grids, loaded mass, tracer ratios, horsepower,
+compatibility lists or vehicle classes. `cargo xtask` validates a finished generation and publishes
+it as one immutable bundle.
 
-## Complete export
+## Contents
 
-1. Open `TBD_Export` in Workbench. Cold restart after adding script files; reload scripts after editing existing files.
-2. Run **Plugins → TBD → Export Equipment and Vehicles**.
-3. Find the completed generation under `$profile:TBD_Export/equipment_vehicle_exports/generations/<generation_id>/`.
-4. Run `cargo xtask mod validate-equipment-vehicle-export --input <generation_directory>`.
-5. Run `cargo xtask mod publish-equipment-vehicle-export --input <generation_directory>`.
+```text
+apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/
+├── Capabilities/   organized records: facts by capability, field names, English names, type hierarchy
+├── Discovery/      the prefab search that classes each loaded prefab as equipment, vehicle or neither
+├── Generation/     one generation's run: queue, records, snapshots, environment, `generation.json`
+├── Plugins/        the "Export Equipment and Vehicles" menu entry and the shared diagnostic runner
+├── Serialization/  the JSON encoding and checked file writes every part uses
+├── Source/         the source reader: containers into typed facts, nodes and references
+└── Verification/   reader checks before every run, and the `EMCP_WB_SourceExport` Net API handler
+```
 
-The validator prints a readable result to stderr and a JSON report to stdout. Publication repeats validation, copies and verifies an immutable bundle in `published/<generation_id>/`, writes a SHA-256 manifest, then replaces `current.json` atomically. Consumers resolve the directory named by that pointer. They must not select the newest staging directory by timestamp.
+## How it works
 
-On first publication, the old sibling `equipment/` and `vehicles/` directories move to `equipment_vehicle_exports/legacy/<generation_id>/`. Other exports remain in place. A durable archive journal supports recovery after interruption. Previous published generations remain available for rollback. Publishing a previously validated staging generation selects it again without rewriting its sealed content.
+```text
+menu "Export Equipment and Vehicles" (Plugins/)   or   cargo xtask mcp wbcall EMCP_WB_SourceExport (Verification/)
+        │
+        ▼
+Generation/: reader verification (Verification/) ─▶ discovery census (Discovery/) ─▶ queue
+        │  per resource: Source/ reads the container tree ─▶ Capabilities/ builds the record
+        │                 gameplay references (.et .conf .gamemat .ragdoll) join the queue
+        ▼
+$profile:TBD_Export/equipment_vehicle_exports/generations/<generation id>/
+   generation.json · records/<addon>/<id prefix>/<id>.json · sources/<same path>
+        │
+        ▼
+cargo xtask mod validate-equipment-vehicle-export ─▶ publish-equipment-vehicle-export
+        ▼
+equipment_vehicle_exports/published/<generation id>/ + manifest.json, current.json ─▶ it
+```
 
-## Records and source evidence
+A resource's identity is its resource GUID, or its exact resource name when it has none. Each
+resource has a source snapshot, which holds its effective containers and, separately identified,
+their ancestors, and an organized record, whose facts are the same typed facts under snake_case
+field names, grouped into capabilities that each list their installations in order. Every fact
+names its resource, node, property and native read method, and its origin: declared, inherited,
+engine default or native getter. Zero, false, empty text, empty arrays and null references are
+kept as values; units appear only where the engine documents them, and nothing is converted.
+Gameplay configurations each get a record of their own, so every gameplay link resolves inside
+the bundle; models, textures, audio and other assets stay external references. Each child README
+holds the detail.
 
-`generation.json` contains the source resource index, equipment and vehicle identity indexes, discovery census, environment, extraction errors, reader verification, and native type hierarchy. `records/<addon>/<identifier_prefix>/` holds organized records; `sources/` holds matching typed snapshots.
+Diagnostic actions, in `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/` and
+`apps/mod/tbd-export/Scripts/WorkbenchGame/VehicleExport/`, run the same pipeline over a selected
+set; their generations have scope `diagnostic`, and the publisher rejects them.
 
-Identity is the native resource GUID, or the exact resource name when a GUID is unavailable. Component native container identifiers remain available alongside structural paths that distinguish repeated installations. Each capability is an array of component/configuration instances, each linked to a source node. Muzzles, compartments, pockets, wheels, effects, and attachment installations keep their separate identities and order.
+### Complete export
 
-Native container identifiers are scoped to the loaded configuration. Workbench can generate new identifiers for unauthored editor containers after a script reload. Structural paths preserve their context; resource GUIDs remain the catalog identity. Repeatability checks compare the same loaded source configuration, without treating changing native identifiers as authored gameplay changes.
+1. Open `apps/mod/tbd-export/addon.gproj` in Workbench. Cold-restart Workbench after adding a
+   script file; reload scripts after editing one.
+2. Run Plugins → TBD → Export Equipment and Vehicles, or drive it from outside with the
+   `start` action of `EMCP_WB_SourceExport` and `step` until it reports `completed`.
+3. Find the generation under `$profile:TBD_Export/equipment_vehicle_exports/generations/<generation id>/`.
+4. Validate and publish it:
 
-An organized fact is the same typed fact as its source snapshot. Its source names the resource, node, property, and native read method. `origin` distinguishes declared values, inherited values, engine defaults, and native getters. Values of zero, false, empty text, empty arrays, and null object references are retained. Source property spelling is unchanged; organized field names use snake_case. `AmmoTemplate` is exposed as `default_projectile`. The distinct native `Trigger Offset` vector uses `trigger_offset_vector3` to avoid colliding with the scalar `TriggerOffset`.
+```bash
+cargo xtask mod validate-equipment-vehicle-export --input <generation_directory>
+cargo xtask mod publish-equipment-vehicle-export --input <generation_directory>
+```
 
-Source snapshots include effective containers and separately identified ancestor containers. Gameplay configurations receive one resource record each, and links resolve within the bundle. Models, textures, audio, and other binary assets remain external resource references. Parent resources are linked through `BaseContainer.GetResourceName`. A source reference with that method points to node metadata; references read with `BaseContainer.Get` point to native properties.
+The validator prints a readable summary on stderr and the JSON report on stdout. Publication
+validates again under a lock, copies and hash-checks every file into `published/<generation id>/`,
+writes a SHA-256 `manifest.json`, and replaces `current.json` atomically. Consumers read the
+directory `current.json` names, never the newest staging folder. The first publication moves the
+unversioned `equipment/` and `vehicles/` export folders beside `equipment_vehicle_exports/` into
+`equipment_vehicle_exports/legacy/<generation id>/` under a durable journal, recovered on the
+next run after an interruption; other exports stay in place. Earlier published generations stay
+for rollback, and publishing an already published id again selects it without rewriting it.
 
-Vectors retain native coordinate order (`VECTOR2`: x/y; `VECTOR3`: x/y/z); colors retain r/g/b/a. Object arrays retain order, null entries, and explicit empty overrides. Shared containers receive distinct effective and ancestor views so inheritance evidence cannot replace an effective installation. Prefabs, configuration resources, game materials, and readable ragdoll configurations are closed gameplay dependencies.
+## Authority
 
-## Names, units, and absence
+None: Workbench runs these scripts in the editor.
 
-Original name text and localization keys remain in source facts. English names are resolved by `WidgetManager.Translate` with `en_us` active, restoring the prior locale afterwards. Unresolved names remain unavailable.
+## Boundaries
 
-No numeric unit conversions take place. Inventory weight, volume, and dimensions carry the units documented by `ItemPhysicalAttributes`: kg, cm3, and cm. Other units remain null unless documented by a supported source. FOV values retain native values without an assumed angle unit. Inventory size enums are separate from dimensions and volume.
+- Depends on: Workbench's `WorkbenchPlugin`, `NetApiHandler` and resource search; the engine's
+  `BaseContainer` reflection, `TypeName`, `WidgetManager`, `GameProject`, `JsonSaveContext` and
+  `FileIO`; the loaded addons' prefabs and configs; nothing from `tbd-framework`.
+- Used by: the diagnostic plugins in `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/`
+  and `apps/mod/tbd-export/Scripts/WorkbenchGame/VehicleExport/`, which call
+  `TBD_SourceDiagnosticExport`; `cargo xtask mcp wbcall`, which reaches `EMCP_WB_SourceExport`; the
+  validation and publication commands in `tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/`,
+  which read the generation files.
+- Rules: the exporter writes source facts only and every consumer derives its own values from
+  them; every enumerated property is read or fails the extraction, and an unread property cannot
+  be passed off as unavailable (`a_readable_property_cannot_be_dismissed_as_unavailable`); only a
+  complete, verified generation publishes (`partial_and_unverified_exports_cannot_publish`); the
+  published bytes are sealed by their hashes
+  (`finalized_hashes_detect_consistent_but_tampered_facts`); all three tests are in
+  `tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/tests/validation.rs`, which also
+  covers provenance, reference closure, repeated installations, statuses, publication and
+  rollback. The schema `contracts_v2/definitions/equipment-vehicle-export.schema.json` is the
+  contract for every file a generation writes. The scripts compile only when Workbench loads
+  `tbd-export`; `cargo xtask mod compile` compiles the framework addon alone
+  (`tools_v2/xtask/src/commands/mod_ops/compile/execution.rs`).
 
-Facts support `present`, `not_present`, `not_applicable`, `unavailable`, and `error`. Enumerated source properties must be read or fail extraction. An unread property cannot be marked unavailable to bypass validation. Optional capability blocks only exist when native configuration provides that capability. No synthetic empty capability blocks are created.
+## Related documentation
 
-## Diagnostics and automation
-
-Actions under **TBD Diagnostics** use the same pipeline for selected resource sets. Their `scope` is `diagnostic`, and the publisher rejects them.
-
-The `EMCP_WB_SourceExport` handler supports `verify`, `start`, `step`, `status`, and `diagnostic` (with an explicit `resources` array). A start performs discovery and reader verification. Each step captures one resource and queues gameplay dependencies; repeat until completed. The response reports extraction errors and the generation directory. `equipment_vehicle_exports/progress.json` is a transient progress file outside the generation.
-
-Reader verification checks native overrides and ordered object relationships on the installed M997, M16/M203 and IIFS backpack; isolated fixtures exercise component removal, zero/false/empty values, Unicode and large arrays, and explicit traversal failure. The fixtures are never part of the catalog. `verify_resources` checks an explicit resource list through the same native getters, and `discovery` inspects the discovery classification of that list. Rust regression tests cover provenance, reference closure, repeated installations, status handling, schemas, publication integrity, and rollback.
-
-The native type hierarchy uses script declarations as ancestor candidates and verifies relationships with `TypeName.IsInherited`. This includes addon-defined classes. Native container classes that have no script TypeName remain explicitly unavailable for that reflection operation; their source properties are still exported.
-
-An optional `$TBD_Export:exporter_revision.txt` build stamp is recorded verbatim. Without it, the revision is unavailable. Game build comes from `Game.GetBuildVersion`; addon identity/order comes from `GameProject.GetLoadedAddons`. Unexposed addon versions remain unavailable. No version numbers are guessed.
-
-The authoritative contract is `contracts_v2/definitions/equipment-vehicle-export.schema.json`. Implementation acceptance evidence and the field inventory live under `documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/`.
+- [Export validation and publication](/tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/README.md)
+  — every check the validator runs and the publication steps.
+- [Equipment and vehicle export documentation](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/README.md)
+  — the exporter's documentation index.
+- [Acceptance evidence](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/README.md)
+  — the frozen acceptance record, the field mapping and the before-and-after examples.
+- [MCP commands](/tools_v2/xtask/src/commands/mcp/README.md) — `cargo xtask mcp wbcall`.
