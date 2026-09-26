@@ -61,7 +61,7 @@ Commits of this program stage by pathspec only.
 | P3-C | done | 4518a8665 | Forwarders removed, stale references fixed across scripts and docs, dead `TBD_Objective` members dropped, T-1219 filed; order line matches baseline. P3-C2 (this commit) filed T-1220..T-1228 for the bugs the checkpoint had missed. |
 | P4-1 | done | a055c173d, f6f350b51 | tbd-framework pinned in `file-length` and `enfusion-comments`; `verify-coding-standards` and `ci.yml` language-gates run the comment gate; `task_definitions.rs` map steps split to `map_asset_steps.rs`; checkpoint moved here (plans/ takes only `t-<id>_plan.md`); CLAUDE.md law 7 and section 3 committed separately; the law 8 sentence ("machine-checked by `cargo xtask verify enfusion-comments`") sits inside the other session's uncommitted law 8 rewrite and lands with it. ci-local exit 1 only on the other session's work (editorconfig in untracked assets_v2/equipment, api_v2 rustfmt, 12 equipment route tags, tbd-export and website README coverage). |
 | OP-1 | pending | | operator playtest |
-| P5-1 | running | | |
+| P5-1 | done | 3499895f8, c5843279a | ModifyEntity/ split (6 files), 18 handlers documented, 38 JsonApiStruct request/response classes renamed `...Wire` (ECM-6; handler names, action names and JSON keys unchanged; broker calls handlers only); tbd-emcp pinned in both gates; CLAUDE.md law 7 names it. **Operator Workbench compile pending** (restart needed: 6 new .c files). |
 | P6-1 … P6-6 | blocked | | waits for the other session's tbd-export commit |
 | P6-C | pending | | |
 
@@ -228,6 +228,8 @@ Remaining, outside P3-C's paths:
 ## Ticket batch
 
 Bugs noticed but not fixed, collected by P3-C and P6-C.
+
+- P5-1 (to file at P6-C): `apps/mod/tbd-emcp/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_ExecuteAction.c:82,87` discards `Trim()` results; `ModifyEntity/EMCP_WB_ModifyEntityPropertyActions.c:31,59` setProperty/clearProperty run outside an entity action (not one undo step); `EMCP_WB_Layers.c:19` `visible`/`subScene` unused, no setVisible action; `EMCP_WB_SelectEntity.c:139` "select" only clears the selection yet answers ok; `EMCP_WB_EditorControl.c:97` saveAs runs Save.
 
 - P2-1: `Systems/AI/TBD_WaypointRuntime.c:481` leaks a non-group entity: no ticket; resolved by P2-1's `TBD_AIGroupFactory.SpawnGroup`, which deletes a non-group spawn (WaypointRuntime calls it).
 - P2-1: `Session/Briefing/TBD_BriefingService.c:445` no null check on `doc`: no ticket; resolved by P2-1's `TBD_MissionFactionNames.DisplayName` (guards null), and `Build` returns before any read when `doc` is null.
