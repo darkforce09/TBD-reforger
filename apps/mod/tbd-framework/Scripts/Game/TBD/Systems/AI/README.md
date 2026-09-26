@@ -16,9 +16,10 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Systems/AI/
 
 ## How it works
 
-Both files follow one pattern. Each adds a `modded class SCR_BaseGameMode` whose `OnGameStart`
-arms a one-second self-re-arming call-queue tick, on the server and only in a framework world
-(`TBD_FrameworkManager.IsFrameworkWorld()`). The tick parses the loaded mission once per mission id
+Both files follow one pattern.
+[`TBD_RuntimeHeartbeat`](../../Gamemode/Orchestrator/Heartbeat/README.md) ticks each runtime once a
+second, on the server and only in a framework world (`TBD_FrameworkManager.IsFrameworkWorld()`).
+The tick parses the loaded mission once per mission id
 with its own `JsonLoadContext` pass over `TBD_MissionLoader.GetRawJson()`, into wire structs that
 declare only the keys it reads, because Enfusion maps JSON keys onto named class fields only:
 `orbat.*.groups[].waypoints` for `TBD_WaypointRuntime`, and each group's `combatMode`, `behaviour`,

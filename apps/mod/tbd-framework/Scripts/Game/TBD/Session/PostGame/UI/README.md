@@ -8,7 +8,7 @@ neither can refuse a stage change.
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/UI/
-├── TBD_DebriefScreen.c  `TBD_DebriefScreen`: the scoreboard, its row packing, and `FillScoreboard`
+├── TBD_DebriefScreen.c  `TBD_DebriefScreen`: the scoreboard and its row packing
 └── TBD_EndScreen.c      `TBD_EndScreen`: the END banner with the winner and the reason
 ```
 
@@ -23,8 +23,8 @@ The banner reads `GetEndWinner` and `GetEndReason` from `TBD_FrameworkManager` u
 "MISSION ENDED".
 
 The scoreboard reads the board as one packed string. On the authority, `TBD_FrameworkManager`
-calls `TBD_ResultsReporter.FillScoreboard`, which this file adds to that class as a modded
-method: one `TBD_DebriefRow` per connected player with name, faction and role from
+calls `TBD_DebriefScoreboard.Fill` in `apps/mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/`:
+one `TBD_DebriefRow` per connected player with name, faction and role from
 the assigned slot, deaths 0 or 1 from the one-life record, and kills from
 `TBD_FrameworkManager.GetKills`. `PackRows` joins the rows into the replicated board and
 `UnpackRows` splits it on each client. The list sorts by kills, then deaths, then name, and its one
@@ -32,8 +32,8 @@ button, "SORT BY KILLS", and a click on the header row flip the order.
 
 ## Authority
 
-- Server: `FillScoreboard` returns nothing when `RplSession.Mode()` is `RplMode.Client`; only the
-  authority builds the board.
+- Server: `TBD_DebriefScoreboard.Fill` returns nothing on a remote client
+  (`TBD_Authority.IsClient()`); only the authority builds the board.
 - Client: both overlays, opened on each machine with a workspace.
 - Owner: nothing.
 - RPCs: none.

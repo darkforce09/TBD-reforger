@@ -9,6 +9,7 @@ the end banner and debrief board the post-game screens show.
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/
+├── Heartbeat/              TBD_RuntimeHeartbeat: the one game-mode loop that ticks the mission runtimes
 └── TBD_FrameworkManager.c  TBD_FrameworkManager: the stage machine; TBD_MissionFlow: the flow block
 ```
 
@@ -54,7 +55,7 @@ LOBBY ──▶ BRIEFING ──▶ SAFE_START ── countdown ──▶ LIVE �
   through `SetStage(END)`.
 - End and debrief: entering `END` fixes the winner and reason for the banner (inferred from the
   objective triggers and survivors when the caller named none, else `admin`) and packs the
-  scoreboard from `TBD_ResultsReporter.FillScoreboard`; kills are credited per player while
+  scoreboard from `TBD_DebriefScoreboard.Fill`; kills are credited per player while
   `LIVE`, team kills excluded. `LOADING` and `LOBBY` clear them. `NotifyLocalStageUI` opens or
   closes `TBD_EndScreen` and `TBD_DebriefScreen` and calls the local player controller's
   `TBD_OnStageChanged`, from `SetStage` on a listen host and from the replication hook on a

@@ -62,8 +62,9 @@ calls it (`Read`, `ContainsAgl`, `ResolveActingFaction`, `EnemyContestsHold`, `H
 
 ### Editor triggers
 
-`TBD_TriggerRuntime` adds a `modded class SCR_BaseGameMode` whose one-second tick, on the server in
-a framework world, reads `editorTriggers[]` with its own `JsonLoadContext` pass over
+`TBD_TriggerRuntime` is ticked each second by
+[`TBD_RuntimeHeartbeat`](../../Gamemode/Orchestrator/Heartbeat/README.md); on the server in a
+framework world the tick reads `editorTriggers[]` with its own `JsonLoadContext` pass over
 `TBD_MissionLoader.GetRawJson()` and prepares each trigger against the registry's zones:
 
 ```text

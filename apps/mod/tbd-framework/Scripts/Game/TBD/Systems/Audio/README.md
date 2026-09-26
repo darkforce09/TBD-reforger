@@ -13,8 +13,8 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Audio/
 
 ## How it works
 
-A `modded class SCR_BaseGameMode` arms a one-second self-re-arming tick on the server in a
-framework world. The tick reads the document's `audio` block once per mission id with its own
+[`TBD_RuntimeHeartbeat`](../../Gamemode/Orchestrator/Heartbeat/README.md) ticks
+`TBD_AudioEmitter` each second on the server in a framework world. The tick reads the document's `audio` block once per mission id with its own
 `JsonLoadContext` pass over `TBD_MissionLoader.GetRawJson()`: `emitters[]` (`id`, `x`, `z`,
 optional `y`, `sound`, `radiusM`, `loop`, `triggerId`) and `musicCues[]` (`id`, `event`, `track`).
 `event` is an Enforce keyword, so the pass rewrites that key to `cueEvent` in a copy of the JSON

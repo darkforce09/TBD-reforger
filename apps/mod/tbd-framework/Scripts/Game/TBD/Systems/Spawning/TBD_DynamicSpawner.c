@@ -538,37 +538,3 @@ class TBD_DynamicSpawner
 		TBD_Log.Kv(CH, "idle", "this mission authors no spawnModules");
 	}
 }
-
-modded class SCR_BaseGameMode
-{
-	protected bool m_bTBD_SpawnTickArmed;
-
-	//! @authority server - AI groups spawn here. Clients follow replication.
-	protected override void OnGameStart()
-	{
-		super.OnGameStart();
-
-		TBD_DynamicSpawner.Clear();
-
-		if (TBD_Authority.IsClient())
-			return;
-
-		if (!TBD_FrameworkManager.IsFrameworkWorld())
-			return;
-
-		if (m_bTBD_SpawnTickArmed)
-			return;
-
-		m_bTBD_SpawnTickArmed = true;
-		GetGame().GetCallqueue().CallLater(TBD_SpawnTick, TBD_DynamicSpawner.TICK_MS, false);
-	}
-
-	void TBD_SpawnTick()
-	{
-		if (GetGame().GetGameMode() != this)
-			return;
-
-		TBD_DynamicSpawner.Tick();
-		GetGame().GetCallqueue().CallLater(TBD_SpawnTick, TBD_DynamicSpawner.TICK_MS, false);
-	}
-}

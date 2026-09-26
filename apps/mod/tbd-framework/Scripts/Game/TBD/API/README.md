@@ -151,8 +151,7 @@ blocks the stage machine.
   `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/`; `TBD_PlayerIdentity` by the
   same relay, `TBD_RosterLoader` and `TBD_DeploymentAuthorization`; `TBD_BackendConfig.SetBackend`
   by `TBD_AdminCommands`; `TBD_IdentityLink` by `TBD_AdminCommands` and `TBD_MissionLoader`;
-  `TBD_ResultsReporter` by `TBD_MissionLoader`, `TBD_FrameworkManager` and `TBD_DebriefScreen`, which
-  adds `FillScoreboard` as a modded method.
+  `TBD_ResultsReporter` by `TBD_MissionLoader` and `TBD_FrameworkManager`.
 - Rules: every `arma_id` on the wire comes from `TBD_PlayerIdentity.GetArmaId`, and a player
   without one is dropped, never sent under a substitute; no secret is logged; answers are read by
   status and `details.code`, never by message text; a world's session starts only after its

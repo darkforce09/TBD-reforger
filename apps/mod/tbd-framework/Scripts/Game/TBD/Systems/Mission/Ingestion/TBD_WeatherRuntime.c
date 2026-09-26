@@ -371,39 +371,3 @@ class TBD_WeatherRuntime
 		return kf.m_fWindDirDeg.ToString();
 	}
 }
-
-modded class SCR_BaseGameMode
-{
-	protected bool m_bTBD_WeatherTickArmed;
-
-	//! @authority server - ForceWeatherTo is server-only; clients follow replication.
-	protected override void OnGameStart()
-	{
-		super.OnGameStart();
-
-		TBD_WeatherRuntime.Clear();
-
-		if (TBD_Authority.IsClient())
-			return;
-
-		if (!TBD_FrameworkManager.IsFrameworkWorld())
-			return;
-
-		if (m_bTBD_WeatherTickArmed)
-			return;
-
-		m_bTBD_WeatherTickArmed = true;
-		GetGame().GetCallqueue().CallLater(TBD_WeatherTick, TBD_WeatherRuntime.TICK_MS, false);
-	}
-
-	//! One-shot and self-re-arming rather than a repeating CallLater, for the same reason
-	//! TBD_WinConditionEvaluator's twin records: ScriptCallQueue.Remove cancels BY FUNCTION.
-	void TBD_WeatherTick()
-	{
-		if (GetGame().GetGameMode() != this)
-			return;
-
-		TBD_WeatherRuntime.Tick();
-		GetGame().GetCallqueue().CallLater(TBD_WeatherTick, TBD_WeatherRuntime.TICK_MS, false);
-	}
-}

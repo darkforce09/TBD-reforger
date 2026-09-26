@@ -117,8 +117,9 @@ and a rejected report dropped with an ERROR. A deployment without an event never
 
 ### AI spawn modules
 
-`TBD_DynamicSpawner` adds a `modded class SCR_BaseGameMode` whose one-second tick, on the server in
-a framework world, reads `spawnModules[]` once per mission id. A `wave` spawns its `count` groups
+`TBD_DynamicSpawner` is ticked each second by
+[`TBD_RuntimeHeartbeat`](../../Gamemode/Orchestrator/Heartbeat/README.md); on the server in a
+framework world the tick reads `spawnModules[]` once per mission id. A `wave` spawns its `count` groups
 at `intervalSeconds`, or once its `triggerId` has fired, while fewer than `maxAlive` (at most 32)
 groups live; a `garrison` spawns once and is not restocked. A module names either `x` and `z` or a
 `zoneId` from `TBD_ZoneRegistry`. Every spawned group is deleted when the round reaches `END`.

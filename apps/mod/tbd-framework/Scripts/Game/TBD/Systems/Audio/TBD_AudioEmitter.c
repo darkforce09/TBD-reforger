@@ -615,38 +615,3 @@ modded class SCR_PlayerController
 		SCR_UISoundEntity.SoundEvent(track);
 	}
 }
-
-modded class SCR_BaseGameMode
-{
-	protected bool m_bTBD_AudioTickArmed;
-
-	//! @authority server - the mission document lives here. Clients only spawn local sources
-	//! via the owner RPC.
-	protected override void OnGameStart()
-	{
-		super.OnGameStart();
-
-		TBD_AudioEmitter.Clear();
-
-		if (TBD_Authority.IsClient())
-			return;
-
-		if (!TBD_FrameworkManager.IsFrameworkWorld())
-			return;
-
-		if (m_bTBD_AudioTickArmed)
-			return;
-
-		m_bTBD_AudioTickArmed = true;
-		GetGame().GetCallqueue().CallLater(TBD_AudioTick, TBD_AudioEmitter.TICK_MS, false);
-	}
-
-	void TBD_AudioTick()
-	{
-		if (GetGame().GetGameMode() != this)
-			return;
-
-		TBD_AudioEmitter.Tick();
-		GetGame().GetCallqueue().CallLater(TBD_AudioTick, TBD_AudioEmitter.TICK_MS, false);
-	}
-}

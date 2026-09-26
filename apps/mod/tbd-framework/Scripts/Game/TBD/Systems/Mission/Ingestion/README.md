@@ -29,8 +29,8 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Ingestion/
   anything else over a disk. A group offset is shared by all its members (one seed per faction and
   callsign), and a slot's own offset adds to it; the seed of a slot comes from its key. The offset
   is horizontal: the spawn manager still decides height.
-- `TBD_WeatherRuntime` adds a `modded class SCR_BaseGameMode` whose `OnGameStart` arms a one-second
-  self-re-arming tick in a framework world. The tick reads `weatherTimeline.keyframes[]` once per
+- `TBD_WeatherRuntime` is ticked each second on the server in a framework world by
+  [`TBD_RuntimeHeartbeat`](../../../Gamemode/Orchestrator/Heartbeat/README.md). The tick reads `weatherTimeline.keyframes[]` once per
   mission id, and while the stage is `LIVE` it applies each keyframe whose `atMinutes` has passed
   since the round went live, once: `TimeAndWeatherManagerEntity.ForceWeatherTo` with the preset,
   looping so it holds until the next keyframe, plus an optional `fog` and `windDirDeg` through the

@@ -9,7 +9,7 @@
 //! Clients hold NO mission document - `TBD_FrameworkManager.OnPostInit` returns early for
 //! `RplMode.Client` before `BeginLoad()` - so a client that built this registry would build an
 //! empty one and conclude that no trigger exists. Everything here except the two `RplRcver.Owner`
-//! RPC bodies runs on the authority, and the heartbeat below refuses to start on a client.
+//! RPC bodies runs on the authority, and `TBD_RuntimeHeartbeat` never ticks it on a client.
 //!
 //! Every other TBD subsystem ticks from an `SCR_BaseGameModeComponent` listed in
 //! `Prefabs/Systems/TBD_GameMode.et`. That is the nicer shape and it is NOT what this uses, for
@@ -985,7 +985,7 @@ class TBD_TriggerRuntime
 
 	//  THE TICK
 
-	//! One evaluation pass. Called at `TICK_MS` by the heartbeat below.
+	//! One evaluation pass. Called at `TICK_MS` by `TBD_RuntimeHeartbeat`.
 	//!
 	//! @authority server - the mission document, the zone registry and every effect here are
 	//! server-owned. The heartbeat never schedules this on a client.
@@ -2019,67 +2019,5 @@ modded class SCR_PlayerController
 	protected void TBD_RpcDo_TriggerSound(string soundEvent)
 	{
 		SCR_UISoundEntity.SoundEvent(soundEvent);
-	}
-}
-
-//! T-676 - the trigger runtime's heartbeat. See `TBD_TriggerRuntime`'s header for why the tick
-//! hangs off the game mode class rather than a game-mode component.
-modded class SCR_BaseGameMode
-{
-	//! @authority server - triggers are evaluated where the mission document lives.
-	//!
-	//! Statics outlive a world inside one process (`TBD_FleetLoadMissionAction` restarts the scenario
-	//! in-process), so the registry is cleared HERE, at the start of each world, rather than in a
-	//! teardown hook this class does not have. Clearing on the way in is strictly stronger: it does
-	//! not depend on the previous world having shut down tidily.
-	protected override void OnGameStart()
-	{
-		super.OnGameStart();
-
-		TBD_TriggerRuntime.Clear();
-
-		// Clients hold no mission document, so a client-side evaluation would have no trigger to
-		// evaluate and no authority to act on one.
-		if (TBD_Authority.IsClient())
-			return;
-
-		// The fence that keeps this out of vanilla scenarios that merely have the mod loaded. It is
-		// the published test (`TBD_FrameworkManager.IsFrameworkWorld`) every vanilla-touching modded
-		// block in this addon already asks, and it resolves off the live game mode's components,
-		// which exist from construction - long before a game mode starts.
-		if (!TBD_FrameworkManager.IsFrameworkWorld())
-			return;
-
-		// T-946.19 - schedule AT MOST ONE tick per game mode instance. The stale-timer defence
-		// below is `GetGame().GetGameMode() != this`, which two timers on the SAME instance both
-		// pass: if OnGameStart ever ran twice here, the tick rate would double and every authored
-		// `timeoutSeconds` would be halved, silently and only on that server. A latch costs one
-		// bool and removes the whole class.
-		if (m_bTBD_TriggerTickArmed)
-			return;
-
-		m_bTBD_TriggerTickArmed = true;
-		GetGame().GetCallqueue().CallLater(TBD_TriggerTick, TBD_TriggerRuntime.TICK_MS, false);
-	}
-
-	protected bool m_bTBD_TriggerTickArmed; //!< T-946.19 - set once the heartbeat is scheduled; see OnGameStart.
-
-	//! One evaluation, then re-arm.
-	//!
-	//! `ScriptCallQueue.Remove` cancels BY FUNCTION, and this class has no teardown hook to call it
-	//! from - `OnDelete(IEntity)` is a COMPONENT lifecycle method and a game mode is an entity. A
-	//! repeating timer would therefore survive a world teardown and fire forever against a dead
-	//! game mode. A one-shot that re-arms itself only while it is still the LIVE game mode's timer
-	//! stops on its own the moment the world it belongs to is replaced: the stale callback runs
-	//! exactly once more, sees that it is not the current game mode, and does not re-arm. No
-	//! cancellation is needed and none can be forgotten.
-	void TBD_TriggerTick()
-	{
-		if (GetGame().GetGameMode() != this)
-			return;
-
-		TBD_TriggerRuntime.Tick();
-
-		GetGame().GetCallqueue().CallLater(TBD_TriggerTick, TBD_TriggerRuntime.TICK_MS, false);
 	}
 }

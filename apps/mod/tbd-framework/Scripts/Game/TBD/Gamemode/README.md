@@ -40,8 +40,8 @@ Five rules can end a live round, and every one ends it through `SetStage(END)`:
 
 Three game mode components live here, all on
 `apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et`: `TBD_FrameworkManager`,
-`TBD_SafestartManager` and `TBD_ObjectivesComponent`. The win rule and the task machine run from
-their own `modded class SCR_BaseGameMode` ticks, fenced by
+`TBD_SafestartManager` and `TBD_ObjectivesComponent`. The win rule and the task machine tick from
+the one game-mode heartbeat, [`TBD_RuntimeHeartbeat`](Orchestrator/Heartbeat/README.md), fenced by
 `TBD_FrameworkManager.IsFrameworkWorld()`. Every reader of the mission's JSON tests a block's
 presence with a sentinel, because `JsonLoadContext` allocates a nested block even when its key is
 absent, and every static is cleared when a new world starts, because statics outlive a world inside

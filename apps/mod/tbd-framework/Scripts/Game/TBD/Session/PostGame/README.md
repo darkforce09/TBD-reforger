@@ -7,7 +7,8 @@ stage machine and closed by the next stage.
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/
-└── UI/  the END banner and the DEBRIEF scoreboard overlays
+├── UI/                       the END banner and the DEBRIEF scoreboard overlays
+└── TBD_DebriefScoreboard.c  TBD_DebriefScoreboard: the scoreboard rows, built on the authority
 ```
 
 ## How it works
@@ -19,7 +20,7 @@ reason, and a packed board of kills and deaths per player.
 
 ## Authority
 
-- Server: only the scoreboard rows, built on the authority by `FillScoreboard` and replicated
+- Server: only the scoreboard rows, built on the authority by `TBD_DebriefScoreboard.Fill` and replicated
   through `TBD_FrameworkManager`.
 - Client: both overlays, opened on every machine with a workspace.
 - Owner: nothing.

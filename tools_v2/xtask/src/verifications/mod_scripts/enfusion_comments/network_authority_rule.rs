@@ -22,7 +22,10 @@ use super::findings::{Finding, RuleId};
 use super::script_outline::{ItemKind, ScriptAttribute};
 
 /// Body-code patterns that make a method depend on the machine it runs on.
-const LOCATION_SIGNALS: &str = r"\bRpc\s*\(|\bReplication\s*\.\s*(IsServer|IsClient|IsRunning)\s*\(|\bRplSession\s*\.\s*Mode\s*\(";
+///
+/// `TBD_Authority.IsClient()` and `TBD_Authority.IsServer()` are the mod's wrappers over
+/// `RplSession.Mode()`, so a call to either asks where the method runs.
+const LOCATION_SIGNALS: &str = r"\bRpc\s*\(|\bReplication\s*\.\s*(IsServer|IsClient|IsRunning)\s*\(|\bRplSession\s*\.\s*Mode\s*\(|\bTBD_Authority\s*\.\s*(IsClient|IsServer)\s*\(";
 
 /// Reports the missing and mismatched network tags of `script`.
 ///

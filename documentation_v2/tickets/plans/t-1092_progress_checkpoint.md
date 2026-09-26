@@ -43,7 +43,7 @@ Commits of this program stage by pathspec only.
 | P1-2 | done | 244e62813 | Gate built (13 rule modules, shared `enfusion_script_lexer.rs`), 17 tests; roots unpinned. |
 | P1-3 | done | 57339f19e | 177 files, -3103 separator/banner lines, 67 ticket tags, 117 field docs to trailing; compile 0. |
 | P2-1 | done | (this commit) | 19 helpers, 82 `TBD_Authority` replacements, presets in `UI/Core/ChimeraMenuPreset.c` (file named for its type); compile 0. |
-| P2-2 | running | | |
+| P2-2 | done | (this commit) | `Heartbeat/TBD_RuntimeHeartbeat.c` (1000 ms, WinCondition on even beats) replaces 8 drivers; `TBD_DebriefScoreboard.Fill`; world-boot 0, order matches baseline; ECM rule sees `TBD_Authority`. |
 | P3-1 | pending | | |
 | P3-2 | pending | | |
 | P3-3 | pending | | |
@@ -116,7 +116,51 @@ Paths are under `apps/mod/tbd-framework/Scripts/Game/TBD/`. All helpers are stat
 
 ## Tick-order baseline
 
-Filled by P2-2.
+Recorded by P2-2 from `hcargo xtask mod world-boot --keep-logs` (`TBD_WORLDBOOT_SETTLE=8`) with temporary `Print`s after each driver's `super.OnGameStart()` and before each static `Tick`; the `Print`s were removed before the heartbeat change.
+
+Driver hooks before the merge: each of the 8 `modded class SCR_BaseGameMode` blocks overrides only `OnGameStart`, calls `super.OnGameStart()` first, clears its runtime, returns on a client (Task instead arms its HUD tick there) or outside a framework world, sets its own armed flag, and arms a one-shot self-re-arming `CallLater` guarded by `GetGame().GetGameMode() != this`.
+
+| Driver | Armed flag | Interval | Client side |
+| --- | --- | --- | --- |
+| Task | `m_bTBD_TaskTickArmed` | 1000 ms | `TBD_TaskHud.RequestLocal` every 1000 ms |
+| WinCondition | `m_bTBD_WinConditionTickArmed` | 2000 ms, stops once `HasEnded()` | none |
+| GroupState | `m_bTBD_GroupStateTickArmed` | 1000 ms | none |
+| Waypoint | `m_bTBD_WaypointTickArmed` | 1000 ms | none |
+| Audio | `m_bTBD_AudioTickArmed` | 1000 ms | none |
+| Weather | `m_bTBD_WeatherTickArmed` | 1000 ms | none |
+| DynamicSpawner | `m_bTBD_SpawnTickArmed` | 1000 ms | none |
+| Trigger | `m_bTBD_TriggerTickArmed` | 1000 ms | none |
+
+Order derived from the log:
+
+- `OnGameStart` (clears): Task, WinCondition, GroupState, Waypoint, Audio, Weather, DynamicSpawner, Trigger.
+- Odd beats: Task, GroupState, Waypoint, Audio, Weather, DynamicSpawner, Trigger.
+- Even beats: WinCondition, then the odd-beat order.
+
+Evidence (`console.log`):
+
+```text
+13:32:35.997 SCRIPT       : TBD_TICKORDER start Task
+13:32:35.997 SCRIPT       : TBD_TICKORDER start WinCondition
+13:32:35.997 SCRIPT       : TBD_TICKORDER start GroupState
+13:32:35.997 SCRIPT       : TBD_TICKORDER start Waypoint
+13:32:35.997 SCRIPT       : TBD_TICKORDER start Audio
+13:32:35.997 SCRIPT       : TBD_TICKORDER start Weather
+13:32:35.997 SCRIPT       : TBD_TICKORDER start DynamicSpawner
+13:32:35.997 SCRIPT       : TBD_TICKORDER start Trigger
+13:32:36.853 SCRIPT       : TBD_TICKORDER tick Task TBD_TaskStateMachine.Tick
+13:32:36.853 SCRIPT       : TBD_TICKORDER tick GroupState TBD_GroupState.Tick
+13:32:36.853 SCRIPT       : TBD_TICKORDER tick Waypoint TBD_WaypointRuntime.Tick
+13:32:36.853 SCRIPT       : TBD_TICKORDER tick Audio TBD_AudioEmitter.Tick
+13:32:36.853 SCRIPT       : TBD_TICKORDER tick Weather TBD_WeatherRuntime.Tick
+13:32:36.853 SCRIPT       : TBD_TICKORDER tick DynamicSpawner TBD_DynamicSpawner.Tick
+13:32:36.853 SCRIPT       : TBD_TICKORDER tick Trigger TBD_TriggerRuntime.Tick
+13:32:37.853 SCRIPT       : TBD_TICKORDER tick WinCondition TBD_WinConditionEvaluator.Tick
+13:32:37.853 SCRIPT       : TBD_TICKORDER tick Task TBD_TaskStateMachine.Tick
+13:32:37.853 SCRIPT       : TBD_TICKORDER tick GroupState TBD_GroupState.Tick
+```
+
+The same two patterns repeat at 38.853 (odd) and 39.852 (even). The heartbeat's arm-time line must read `order=WinCondition/2,Task,GroupState,Waypoint,Audio,Weather,DynamicSpawner,Trigger` on the server.
 
 ## Forwarders
 
@@ -128,6 +172,7 @@ Per slice, for the closing runs.
 
 - All slices: run `hcargo fmt --check -p xtask` or format only owned files (`rustfmt` via `hcargo fmt -- <file>` is unsafe on module files); never plain `fmt -p xtask` while another session has xtask edits.
 - P1-3: box-drawing diagrams in 14 UI panel files; residual non-ASCII (x, <=, e-acute, bullet, section sign, check mark, emoji) e.g. `TBD_MissionSelectorScreen.c:4`, `TBD_LobbyScreen.c:4`; titles `TBD_UITheme.c:113`, `TBD_SpectatorCamera.c:49`. 165 above-line field docs left (over 120 columns). Owners fix via ECM-1/ECM-4/ECM-8.
+- P2-2: `TBD_TriggerRuntime.c:14-23` header rationale (P3-3); `documentation_v2/standards/templates/readme_mod_scripts.md:84` (P3-C).
 
 ## Ticket batch
 

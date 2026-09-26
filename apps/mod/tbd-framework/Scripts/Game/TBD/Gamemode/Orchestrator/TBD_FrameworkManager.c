@@ -298,7 +298,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	protected string m_sEndReason;
 
 	//! T-941.3 - packed scoreboard rows (`kills\tfaction\trole\tname` per line).
-	//! Built on the authority at END from TBD_ResultsReporter.FillScoreboard.
+	//! Built on the authority at END from TBD_DebriefScoreboard.Fill.
 	[RplProp()]
 	protected string m_sDebriefBoard;
 
@@ -842,7 +842,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 			return;
 
 		array<ref TBD_DebriefRow> rows = {};
-		TBD_ResultsReporter.FillScoreboard(rows);
+		TBD_DebriefScoreboard.Fill(rows);
 		m_sDebriefBoard = TBD_DebriefScreen.PackRows(rows);
 	}
 

@@ -8,7 +8,7 @@ class TBD_DebriefRow
 	int m_iDeaths;
 }
 
-//! T-941.3 - DEBRIEF scoreboard overlay. Rows come from TBD_ResultsReporter.FillScoreboard
+//! T-941.3 - DEBRIEF scoreboard overlay. Rows come from TBD_DebriefScoreboard.Fill
 //! (deaths = the reporter's ONE LIFE counter; kills counted on TBD_FrameworkManager because
 //! the reporter still omits kill tracking - T-181.13.1). Sorted by kills, then deaths, then name.
 //!
@@ -319,56 +319,6 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		{
 			m_bKillsDescending = !m_bKillsDescending;
 			Populate();
-		}
-	}
-}
-
-//! T-941.3 - public scoreboard snapshot. Lives as a modded method so T-940.4 can keep owning
-//! TBD_ResultsReporter.c. Deaths are the reporter's ONE LIFE counter (SpawnManager.IsPlayerDead).
-//! Kills are the live map TBD_FrameworkManager owns; the reporter still does not track them.
-modded class TBD_ResultsReporter
-{
-	static void FillScoreboard(notnull array<ref TBD_DebriefRow> outRows)
-	{
-		outRows.Clear();
-
-		if (TBD_Authority.IsClient())
-			return;
-
-		PlayerManager players = GetGame().GetPlayerManager();
-		TBD_SpawnManager sm = TBD_SpawnManager.GetInstance();
-		TBD_FrameworkManager fm = TBD_FrameworkManager.GetInstance();
-		if (!players)
-			return;
-
-		array<int> ids = {};
-		int count = players.GetPlayers(ids);
-		for (int i = 0; i < count; i++)
-		{
-			int playerId = ids[i];
-			TBD_DebriefRow row = new TBD_DebriefRow();
-			row.m_sName = players.GetPlayerName(playerId);
-			if (row.m_sName.IsEmpty())
-				row.m_sName = string.Format("Player %1", playerId);
-
-			TBD_MissionSlotStruct slot;
-			if (sm)
-				slot = sm.GetAssignedSlot(playerId);
-			if (slot)
-			{
-				row.m_sFaction = slot.faction;
-				row.m_sRole = slot.role;
-			}
-
-			row.m_iDeaths = 0;
-			if (sm && sm.IsPlayerDead(playerId))
-				row.m_iDeaths = 1;
-
-			row.m_iKills = 0;
-			if (fm)
-				row.m_iKills = fm.GetKills(playerId);
-
-			outRows.Insert(row);
 		}
 	}
 }

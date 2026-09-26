@@ -170,7 +170,7 @@ class TBD_WinConditionEvaluator
 		return s_Rule.mode;
 	}
 
-	//! One evaluation. Called by the heartbeat below; safe to call at any stage.
+	//! One evaluation. Called by `TBD_RuntimeHeartbeat`; safe to call at any stage.
 	//! @authority server - the mission document lives where the rule is evaluated.
 	static void Tick()
 	{
@@ -509,71 +509,5 @@ class TBD_WinConditionEvaluator
 
 		TBD_Log.Event(CH, string.Format("[TBD][Win] %1 - winner=%2", reason, winnerLabel));
 		fm.SetStage(TBD_EGameStage.END);
-	}
-}
-
-//! T-936.1 - the win-rule heartbeat. Same shape, and the same reasoning, as
-//! `TBD_TriggerRuntime`'s block: a game-mode COMPONENT this slice cannot add to
-//! `Prefabs/Systems/TBD_GameMode.et` would never be instantiated, and a runtime that can never fire
-//! is worse than an absent one - it reads as shipped in every grep and is dead in every round.
-modded class SCR_BaseGameMode
-{
-	//! T-946.19 - set once the heartbeat is scheduled. See `TBD_WinConditionOnStart`.
-	protected bool m_bTBD_WinConditionTickArmed;
-
-	//! @authority server - the win rule is evaluated where the mission document lives.
-	//!
-	//! Statics outlive a world inside one process, so the evaluator is cleared HERE, at the start of
-	//! each world, rather than in a teardown hook this class does not have. Clearing on the way in is
-	//! strictly stronger: it does not depend on the previous world having shut down tidily, and
-	//! without it mission B would inherit mission A's "already ended" latch and could never end.
-	protected override void OnGameStart()
-	{
-		super.OnGameStart();
-
-		TBD_WinConditionEvaluator.Clear();
-
-		if (TBD_Authority.IsClient())
-			return;
-
-		// The fence that keeps this out of vanilla scenarios that merely have the mod loaded. It is
-		// the published test every vanilla-touching modded block in this addon already asks, and it
-		// resolves off the live game mode's components, which exist from construction.
-		if (!TBD_FrameworkManager.IsFrameworkWorld())
-			return;
-
-		// T-946.19 - schedule AT MOST ONE tick per game mode instance. The stale-timer defence below
-		// is `GetGame().GetGameMode() != this`, which two timers on the SAME instance both pass: if
-		// OnGameStart ever ran twice here, the rule would be evaluated twice per beat. A latch costs
-		// one bool and removes the whole class.
-		if (m_bTBD_WinConditionTickArmed)
-			return;
-
-		m_bTBD_WinConditionTickArmed = true;
-		GetGame().GetCallqueue().CallLater(TBD_WinConditionTick, TBD_WinConditionEvaluator.TICK_MS, false);
-	}
-
-	//! One evaluation, then re-arm.
-	//!
-	//! One-shot and self-re-arming rather than a repeating CallLater, for the reason
-	//! `TBD_TriggerRuntime`'s twin records: `ScriptCallQueue.Remove` cancels BY FUNCTION and this
-	//! class has no teardown hook to call it from, so a repeating timer would survive a world
-	//! teardown and fire forever against a dead game mode. A one-shot that re-arms only while it is
-	//! still the LIVE game mode's timer stops on its own the moment the world is replaced.
-	//!
-	//! It also stops re-arming once the round has been ended by the evaluator: after an ending there
-	//! is nothing left to evaluate, and a timer that keeps waking to do nothing is a cost with no
-	//! reader.
-	void TBD_WinConditionTick()
-	{
-		if (GetGame().GetGameMode() != this)
-			return;
-
-		TBD_WinConditionEvaluator.Tick();
-
-		if (TBD_WinConditionEvaluator.HasEnded())
-			return;
-
-		GetGame().GetCallqueue().CallLater(TBD_WinConditionTick, TBD_WinConditionEvaluator.TICK_MS, false);
 	}
 }

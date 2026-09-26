@@ -189,6 +189,23 @@ fn network_authority_rule_passes_and_fails() {
 }
 
 #[test]
+fn authority_helper_calls_ask_where_a_method_runs() {
+    let report_code = "\t\tTBD_GameRuntimeHttp.Post(";
+    for helper in ["TBD_Authority.IsClient()", "TBD_Authority.IsServer()"] {
+        let asks = format!("\t\tif ({helper})\n\t\t\treturn;\n{report_code}");
+        let tagged = CLEAN.replacen(report_code, &asks, 1);
+        assert!(findings_of(CLEAN_NAME, &tagged, RuleId::NetworkAuthority).is_empty());
+        let untagged = tagged.replacen("\t//! @authority server\n\t//! @route", "\t//! @route", 1);
+        let found = fails(&untagged, RuleId::NetworkAuthority);
+        assert!(
+            found[0].message.contains("Report"),
+            "{helper}: {}",
+            found[0].message
+        );
+    }
+}
+
+#[test]
 fn boundary_tag_rule_passes_and_fails() {
     assert!(findings_of(CLEAN_NAME, CLEAN, RuleId::BoundaryTags).is_empty());
     let route = fails(

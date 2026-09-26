@@ -36,10 +36,11 @@ Three patterns hold across the folders:
 - Wiring: a folder whose code needs a place on the game mode is a `SCR_BaseGameModeComponent` on
   `apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et` (`TBD_SpawnManager`,
   `TBD_LoadoutEquipComponent`, `TBD_PlayAreaComponent`, `TBD_MarkerComponent`,
-  `TBD_RadioComponent`); the tickers (AI, audio, weather, triggers, spawn modules) add a
-  `modded class SCR_BaseGameMode` whose `OnGameStart` arms a self-re-arming tick, fenced by
-  `TBD_FrameworkManager.IsFrameworkWorld()` so a vanilla scenario with the mod loaded runs none of
-  it.
+  `TBD_RadioComponent`); the tickers (AI, audio, weather, triggers, spawn modules) expose a static
+  `Clear` and `Tick` that
+  [`TBD_RuntimeHeartbeat`](../Gamemode/Orchestrator/Heartbeat/README.md) calls in a fixed order,
+  fenced by `TBD_FrameworkManager.IsFrameworkWorld()` so a vanilla scenario with the mod loaded
+  runs none of it.
 - Presence: `JsonLoadContext` allocates a nested `ref` field even when its key is absent, so every
   folder tests presence with a sentinel, an empty string or a `Count()`, never a null test.
 - Statics outlive a world inside one process, so each folder clears its static state when the

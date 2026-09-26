@@ -64,8 +64,8 @@ the winning side; `TBD_FrameworkManager` asks it every 2 s and ends the round.
 `TBD_TaskStateMachine` reads `tasks[]` with its own `JsonLoadContext` pass. A task starts
 `assigned` and moves once, to `succeeded` when its `triggerId` names an editor trigger that fired,
 or to `failed` when that trigger is inert or missing, or when its `schedule` window closes while it
-is still assigned. A `modded class SCR_BaseGameMode` arms a self-re-arming 1 s tick in a framework
-world: on the server it runs the machine and, on a change, pushes the assigned tasks that have a
+is still assigned. [`TBD_RuntimeHeartbeat`](../Orchestrator/Heartbeat/README.md) ticks it each
+second in a framework world: on the server it runs the machine and, on a change, pushes the assigned tasks that have a
 position to every player through `TBD_TaskHud`; on a client it asks for the snapshot each second.
 
 ## Authority

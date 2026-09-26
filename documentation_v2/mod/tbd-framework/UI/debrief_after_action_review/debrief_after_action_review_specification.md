@@ -9,7 +9,8 @@ last stage of a round; it stays up until an admin moves the round on.
 ## Where it lives
 
 - Code: [`apps/mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/UI/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/UI/README.md)
-  (`TBD_DebriefScreen.c`, which also adds `TBD_ResultsReporter.FillScoreboard`) and the stage
+  (`TBD_DebriefScreen.c`), the row builder `TBD_DebriefScoreboard.c` in
+  [`apps/mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/README.md), and the stage
   machine in
   [`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/README.md)
   (`TBD_FrameworkManager.c`), which counts kills and holds the packed board.
@@ -36,7 +37,7 @@ last stage of a round; it stays up until an admin moves the round on.
 ### The board
 
 1. On entering `END`, and again on entering `DEBRIEF`, the server builds one row per connected
-   player (`FillScoreboard`): the player name ("Player <id>" when the name is empty), the faction
+   player (`TBD_DebriefScoreboard.Fill`): the player name ("Player <id>" when the name is empty), the faction
    and role of the assigned [slot](/documentation_v2/glossary/n_to_z.md#slot), the kills and the deaths. A
    player who disconnected before the snapshot has no row.
 2. An admin moves `END` to `DEBRIEF` with `#tbd stage next` or the admin screen's "Force stage";
