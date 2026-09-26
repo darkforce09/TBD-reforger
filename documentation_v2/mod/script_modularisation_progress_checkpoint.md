@@ -59,9 +59,9 @@ Commits of this program stage by pathspec only.
 | P3-13 | done | 8210e3784 | Admin (subcommands, audit, snapshot via codec), Admin/UI sections; MissionSelector Catalog/ and inspector cards; browser RPCs on the Admin player controller. |
 | P3-14 | done | 8e6fd61eb | UI Common Dropdown/Inputs/Layout/SessionChrome, Core Theme/Screens/Controls; HUD RPCs to `UI/Hud/SCR_PlayerController.c`. Framework: 0 findings in 370 scripts, max 477 lines, compile 0, world-boot PASS. |
 | P3-C | done | 4518a8665 | Forwarders removed, stale references fixed across scripts and docs, dead `TBD_Objective` members dropped, T-1219 filed; order line matches baseline. P3-C2 (this commit) filed T-1220..T-1228 for the bugs the checkpoint had missed. |
-| P4-1 | done | (this commit) | tbd-framework pinned in `file-length` and `enfusion-comments`; `verify-coding-standards` and `ci.yml` language-gates run the comment gate; `task_definitions.rs` map steps split to `map_asset_steps.rs`; checkpoint moved here (plans/ takes only `t-<id>_plan.md`); CLAUDE.md laws 7/8 and section 3 (separate commit). ci-local exit 1 only on the other session's work (editorconfig in untracked assets_v2/equipment, api_v2 rustfmt, 12 equipment route tags, tbd-export and website README coverage). |
+| P4-1 | done | a055c173d, f6f350b51 | tbd-framework pinned in `file-length` and `enfusion-comments`; `verify-coding-standards` and `ci.yml` language-gates run the comment gate; `task_definitions.rs` map steps split to `map_asset_steps.rs`; checkpoint moved here (plans/ takes only `t-<id>_plan.md`); CLAUDE.md law 7 and section 3 committed separately; the law 8 sentence ("machine-checked by `cargo xtask verify enfusion-comments`") sits inside the other session's uncommitted law 8 rewrite and lands with it. ci-local exit 1 only on the other session's work (editorconfig in untracked assets_v2/equipment, api_v2 rustfmt, 12 equipment route tags, tbd-export and website README coverage). |
 | OP-1 | pending | | operator playtest |
-| P5-1 | pending | | |
+| P5-1 | running | | |
 | P6-1 … P6-6 | blocked | | waits for the other session's tbd-export commit |
 | P6-C | pending | | |
 
