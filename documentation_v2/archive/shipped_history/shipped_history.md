@@ -83,7 +83,7 @@ Hub: [`t151_wgpu_engine_program.md`](/documentation_v2/tickets/specs/t151_wgpu_e
 
 **Language gate (D5):** Rust owns engine policy (geometry, GPU sync, LOD, camera math, pack).
 TypeScript = dumb UI only (React, pointer, thin wasm calls). Every T-151.x / W10 prompt must include
-`═══ LANGUAGE GATE ═══` — see [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](/.ai/tickets/CLAUDE_CODE_PROMPT.md).
+`═══ LANGUAGE GATE ═══` — see [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](/.ai/tickets/implementation_prompt.md).
 Do **not** grow fat `wgpu*Controller` logic in TS.
 
 **Program (W0–W11):** Deck runtime retired; Mission Creator is wgpu-only. **W10 audit + W11

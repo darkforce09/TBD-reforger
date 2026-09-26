@@ -23,7 +23,7 @@ Both folders are flat, and a file's name carries its ticket id:
 
 | Document | Path | Written from |
 |---|---|---|
-| spec | `documentation_v2/tickets/specs/t<id>_<subject>.md`, the id without `T-`, dots as underscores | `.ai/tickets/SPEC_TEMPLATE.md` |
+| spec | `documentation_v2/tickets/specs/t<id>_<subject>.md`, the id without `T-`, dots as underscores | `.ai/tickets/spec_template.md` |
 | plan | `documentation_v2/tickets/plans/t-<id>_plan.md`, the id lowercased, dots as underscores | `.ai/tickets/plan_template.md` |
 
 A document follows its ticket's status:
@@ -57,7 +57,7 @@ plan file is missing, and defaults an unset `plan` to the id-derived path.
 ## Boundaries
 
 - Depends on: the ticket registry in `.ai/tickets/`, whose `spec` and `plan` fields name these
-  files; the templates `.ai/tickets/SPEC_TEMPLATE.md` and `.ai/tickets/plan_template.md`.
+  files; the templates `.ai/tickets/spec_template.md` and `.ai/tickets/plan_template.md`.
 - Used by: the ticket engine and the `cargo xtask ticket` commands above; the ticketboard; the
   platform slice dispatch (`tools_v2/xtask/src/commands/platform/slice_execution.rs`), which reads
   a ticket's `spec`; `TICKET_DOCUMENTS_DIR` in `tools_v2/xtask/src/core/repository_layout.rs`,

@@ -1,32 +1,40 @@
 ---
-description: HARD — never dispatch a second agent onto a live ticket/worktree
+description: HARD — never dispatch a second agent onto a ticket or worktree that a live agent holds
 alwaysApply: true
 ---
 
-# No duplicate slice / worktree agents (HARD)
+# No duplicate slice or worktree agents (HARD)
 
-Launching a "fresh" or "redo" agent while another is still bound to the same ticket/worktree races the tree, doubles cost, and enrages the operator. This is not a soft preference.
+Launching a "fresh" or "redo" agent while another is still bound to the same ticket or worktree
+races the tree, doubles the cost and throws away the first agent's work. This is not a soft
+preference.
 
 ## Forbidden
 
 ```text
-❌ Task/subagent for T-XXX while any prior Task for T-XXX is still running
-❌ "Fresh redo" / "interrupt and take over" / second generalPurpose on the same
-   `.ai/artifacts/worktrees/T-XXX` because the first looks slow or stuck
-❌ Parallel agents that both write `tools_v2/xtask/src/main.rs` or the same owns paths
-   for the same ticket (even if you think the first is idle)
-❌ Interpreting a short transcript, long silence, or "only untracked files"
-   as permission to spawn a replacement
+❌ A sub-agent for ticket <id> while any earlier sub-agent for <id> is still running
+❌ A "fresh redo" / "interrupt and take over" / second agent on the same
+   .ai/artifacts/worktrees/<id> because the first looks slow or stuck
+❌ Parallel agents that both write the same file (tools_v2/xtask/src/main.rs, or any path in
+   the ticket's owns list) for the same ticket, even if you think the first is idle
+❌ Reading a short transcript, a long silence or "only untracked files" as permission to spawn
+   a replacement
 ```
 
 ## Required instead
 
-1. **One agent per ticket worktree until it completes or the operator says kill it.**
+1. **One agent per ticket worktree until it completes or the operator says to kill it.**
 2. If it looks stuck: **wait**, or ask the operator one line — do **not** spawn a twin.
-3. To nudge a live agent: `resume` **that same agent id** only (no `interrupt` unless the operator explicitly says interrupt/kill/replace).
-4. Before any new `Task` for `T-XXX`, check that no in-flight subagent for `T-XXX` exists in this conversation. If one does → **do not dispatch**.
-5. Factory command center: gate/land/verify on completed commits only; never "help" a live slice agent by opening a second coding agent on its tree.
+3. To nudge a live agent: resume **that same agent id** only (no interrupt unless the operator
+   explicitly says interrupt, kill or replace).
+4. Before dispatching a new sub-agent for ticket `<id>`, check that no sub-agent for `<id>` is
+   still in flight in this conversation. If one is → **do not dispatch**.
+5. The factory's orchestrator gates, lands and verifies completed commits only; it never "helps" a
+   live slice agent by opening a second coding agent on its tree
+   ([Factory waves](/documentation_v2/runbooks/factory_waves/README.md)).
 
-## Operator override (only legal exception)
+## Operator override (the only legal exception)
 
-The operator must **explicitly** say to kill/replace that agent, e.g. "kill T-XXX and start a new one" / "interrupt and replace". Silence, anger about delay, or your own impatience is **not** override.
+The operator must **explicitly** say to kill or replace that agent, for example "kill `<id>` and
+start a new one" or "interrupt and replace". Silence, frustration about a delay, or your own
+impatience is **not** an override.

@@ -1,57 +1,71 @@
 ---
-description: When user asks for Claude Code prompts — deliver full copy-paste code blocks (one per stream), not prose summaries.
+description: When the operator asks for prompts to hand another agent — deliver full copy-paste fenced blocks (one per stream), never prose summaries.
 alwaysApply: true
 ---
 
-# Claude Code prompt delivery (copy-paste)
+# Prompt delivery (copy-paste)
 
-When the user asks for prompts to send to Claude Code — including parallel streams, handoffs, "give me the prompt", "Stream A and B", or after Mode B setup — **deliver prompts as fenced code blocks only**, ready to copy in one click.
+When the operator asks for prompts to send to another coding agent — parallel streams, handoffs,
+"give me the prompt", "stream A and B", or after a mode B setup — **deliver each prompt as one
+fenced code block**, ready to copy in one click.
 
 ## Required format
 
 ### Single slice
 
-One fenced block containing the **entire** prompt (use `═══` sections per [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](../../.ai/tickets/CLAUDE_CODE_PROMPT.md)). Brief one-line intro above the block is OK; **do not** split the prompt across prose paragraphs.
+One fenced block holding the **entire** prompt, in the `═══` sections of
+[`implementation_prompt.md`](/.ai/tickets/implementation_prompt.md). A one-line intro above the
+block is fine; **do not** split the prompt across prose paragraphs.
 
-### Parallel streams (e.g. two independent slices both on `main`)
+### Parallel streams (for example two independent slices, both on `main`)
 
 **Exactly N code blocks for N streams** — typically **two**:
 
-1. Short heading: `# Stream A — {slice id} {title}` + CWD one-liner (`repo root`, `main`)
-2. **One complete fenced block** with the full prompt (everything Claude needs)
-3. Short heading: `# Stream B — …`
+1. A short heading: `# Stream A — <slice id> <title>`, and a working-directory line (repository
+   root, `main`)
+2. **One complete fenced block** with the full prompt (everything the agent needs)
+3. A short heading: `# Stream B — …`
 4. **One complete fenced block** with the full prompt
 
-Default is **main-only** (no `ticket/T-0xx` worktrees). Preflight bash may be a **third small block** at the end (optional) — never substitute it for the main prompt blocks.
+Streams share `main` by default; the only per-ticket branches are the factory's `slice/<id>`
+worktrees, which the xtask tooling creates ([Factory waves](/documentation_v2/runbooks/factory_waves/README.md)).
+A preflight shell block may follow as an optional extra block at the end — never in place of the
+prompt blocks.
 
 ## Forbidden
 
 - Summarizing the prompt in prose instead of a copy-paste block
-- "See handoff.md" as the only deliverable when user asked for the prompt
+- "See the handoff" as the only deliverable when the operator asked for the prompt
 - One block with both streams concatenated without clear separation
 - Partial prompts ("run these commands, then ask for part 2")
-- Bullet lists that duplicate content **outside** the fenced block when user wanted the full prompt
+- Bullet lists that repeat content **outside** the fenced block when the operator wanted the full
+  prompt
 
 ## Source of truth
 
-Build from: slice spec §Claude Code prompt, `.ai/artifacts/*_handoff.md`, `cargo xtask ticket brief`. If `cargo xtask ticket prompt` fails (no § in spec), **still** output the full handoff-derived block — do not tell the user to run the command instead of pasting.
+Build the prompt from the spec's `## Claude Code prompt` block (the heading
+`cargo xtask ticket prompt <id>` reads), the handoff `.ai/artifacts/<slug>_claude_code_handoff.md`
+when one exists (`cargo xtask ticket prompt <id> --header` prints its path), and
+`cargo xtask ticket brief <id>`. If `ticket prompt` fails because the spec has no prompt block,
+**still** output the full block built from the spec, the handoff and the brief — do not tell the
+operator to run the command instead of pasting.
 
 ## Example shape (parallel)
 
-```markdown
-# Stream A — T-0xx.Y {slice title}
+````markdown
+# Stream A — <slice id> <slice title>
 
-**CWD:** repo root (`main`)
+**Working directory:** repository root (`main`)
 
-```
+```text
 {full prompt — PREFLIGHT, READ, PROBLEM, DO, DO NOT, VERIFY, RETURN}
 ```
 
-# Stream B — T-0yy.Z {slice title}
+# Stream B — <slice id> <slice title>
 
-**CWD:** repo root (`main`)
+**Working directory:** repository root (`main`)
 
-```
+```text
 {full prompt — PREFLIGHT, READ, PROBLEM, DO, DO NOT, VERIFY, RETURN}
 ```
-```
+````

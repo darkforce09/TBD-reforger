@@ -149,7 +149,7 @@ Registry: `T-090.1.2.4` shipped_at · `active_slice` → **T-090.1.2.8** (or `.2
 ## Claude Code prompt — T-090.1.2.4 (copy-paste)
 
 Authority: this spec + handoff. **Do not edit docs/registry.**  
-Extract: `./scripts/ticket prompt T-090` · standard: [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](../../../.ai/tickets/CLAUDE_CODE_PROMPT.md)
+Extract: `./scripts/ticket prompt T-090` · standard: [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](/.ai/tickets/implementation_prompt.md)
 
 ```
 Read CLAUDE.md first.

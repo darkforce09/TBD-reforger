@@ -25,7 +25,7 @@ A ticket cites a spec in one of two ways, both as a repository-relative path:
 - its `spec` field in `.ai/tickets/T-<id>.toml`, the spec its work is accepted against;
 - a `Design: <path>.` line in its `citations` field, for a design document the ticket draws on.
 
-A new spec is written from `.ai/tickets/SPEC_TEMPLATE.md`, starts with `**Status:** live`, and
+A new spec is written from `.ai/tickets/spec_template.md`, starts with `**Status:** live`, and
 stays live while its ticket is `idea`, `queued` or `ready`. When the ticket ships or is cancelled
 the spec becomes a frozen record: its status line reads `**Status:** frozen record` and its text is
 never reworded again, only its links to moved documents. A spec meant for
@@ -45,7 +45,7 @@ which the command prints.
 ## Boundaries
 
 - Depends on: the `spec` and `citations` fields of the ticket files in `.ai/tickets/`; the spec
-  template `.ai/tickets/SPEC_TEMPLATE.md`.
+  template `.ai/tickets/spec_template.md`.
 - Used by: `cargo xtask ticket check`, `ticket mark-ready`, `ticket brief` and `ticket prompt`; the
   ticketboard; the platform slice dispatch
   (`tools_v2/xtask/src/commands/platform/slice_execution.rs`); runbooks and feature docs that link

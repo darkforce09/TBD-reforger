@@ -1,22 +1,26 @@
-<!-- Copy per ticket: documentation_v2/tickets/plans/<id-lowercased-dots-to-underscores>_plan.md
-     (T-917.6 ready-gate: `ticket mark-ready` refuses while this file is missing).
-     Four short sections, honest and specific — the plan is THIS ticket's own
-     execution document; the shared program authority stays in `spec`. -->
+**Status:** live
 
-# T-XXX — Plan
+# T-<id> — Plan
 
 ## Context
 
-Why this ticket, now — the one or two facts that make it next.
+{Why this ticket, now: the one or two facts, with file:line evidence, that make it next. The plan
+is this ticket's own execution document; the shared design stays in its spec. Copy this file to
+`documentation_v2/tickets/plans/t-<id>_plan.md` (the id lowercased, dots as underscores) before
+`cargo xtask ticket mark-ready`, which refuses while the file is missing. The plan is live while
+the ticket is `idea`, `queued` or `ready`; the landing commit sets its status line to
+`**Status:** frozen record`. Delete every `{…}` hint.}
 
 ## Approach
 
-The intended steps, in order, naming the files/modules they touch.
+{The intended steps, in order, naming the files and modules they touch, and the documentation
+each step updates in the same commit.}
 
 ## Risks
 
-What could go wrong or invalidate the approach, and the fallback.
+{What could go wrong or invalidate the approach, and the fallback.}
 
 ## Verification
 
-The commands/checks that prove it landed (mirror the ticket's verify/acceptance).
+{The commands and checks that prove it landed, matching the ticket's `verify` and `acceptance`
+fields.}

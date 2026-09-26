@@ -291,7 +291,7 @@ Update [`t090_1_2_satellite_backlog.md`](t090_1_2_satellite_backlog.md) seam row
 ## Claude Code prompt — T-090.1.2.2 (copy-paste)
 
 Authority: this spec + handoff. **Do not edit docs/registry.**  
-Extract: `./scripts/ticket prompt T-090` · standard: [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](../../../.ai/tickets/CLAUDE_CODE_PROMPT.md)
+Extract: `./scripts/ticket prompt T-090` · standard: [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](/.ai/tickets/implementation_prompt.md)
 
 ```
 Read CLAUDE.md first.

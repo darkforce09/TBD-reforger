@@ -97,7 +97,7 @@ Registry `shipped_at` · `docs/platform/CODEBASE_AUDIT_2026.md` add Fable S1–S
 ## Claude Code prompt — T-126 (copy-paste)
 
 Authority: this spec + handoff. **Do not edit docs/registry.**  
-Extract: `./scripts/ticket prompt T-126` · standard: [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](/.ai/tickets/CLAUDE_CODE_PROMPT.md)
+Extract: `./scripts/ticket prompt T-126` · standard: [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](/.ai/tickets/implementation_prompt.md)
 
 ```
 Read CLAUDE.md first.

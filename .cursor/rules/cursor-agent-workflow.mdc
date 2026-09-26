@@ -1,5 +1,5 @@
 ---
-description: HARD GATE — Cursor vs Claude Code workflow, step phrases, forbidden edits. Read before any plan/ticket/audit work.
+description: HARD GATE — the modes a Cursor chat infers from a message, what each may touch, and when to stop. Read before any plan, ticket, audit or code work.
 alwaysApply: true
 ---
 
@@ -7,118 +7,148 @@ alwaysApply: true
 
 These rules override helpfulness. When in doubt, **stop and ask** — do not guess.
 
-**No deferrals without operator word:** [`.cursor/rules/no-silent-deferrals.mdc`](no-silent-deferrals.mdc) — **HARD.** Finish the whole ask. No "fold forward", self-authored Out-of-scope, or MVP-as-done. Soft plan wording is not a skip. Only an explicit user "defer X" / "skip X" authorizes a deferral (quote it).
+**No deferrals without the operator's word:**
+[`no-silent-deferrals.mdc`](/.cursor/rules/no-silent-deferrals.mdc) — **HARD.** Finish the whole
+ask. No "fold forward", no self-authored out-of-scope list, no MVP reported as done. Soft plan
+wording is not a skip; only an explicit "defer X" / "skip X" from the operator defers a piece, and
+you quote it.
 
-## Subagent models
+## Sub-agent models
 
-Locate/map code → cheap default + `cavecrew-investigator` — **not** Grok. Grok subagents OK for hard analysis or coding when asked. Full table: [`subagent-model-routing.mdc`](subagent-model-routing.mdc).
+Locating and mapping code → the cheap default model and `cavecrew-investigator`, never the
+expensive tier. The expensive tier is for hard analysis and for coding when delegated. Full table:
+[`subagent-model-routing.mdc`](/.cursor/rules/subagent-model-routing.mdc).
 
-## Agent split (non-negotiable)
+## Who writes what
 
-| Agent | Owns | Must NOT |
-|-------|------|----------|
-| **Cursor (you)** | Plan review, critique, docs, the `.ai/tickets/T-*.toml` files, spec markdown, handoff artifacts (`.ai/artifacts/*_handoff.md`), `cargo xtask ticket sync` | Application code in `apps/website/api_v2/`, `apps/website/frontend/`, `apps/mod/`, `contracts_v2/` (except schema doc-only) |
-| **Claude Code** | Application code on `executor: claude-code` slices via `cargo xtask ticket run` (on **`main`**) | Documentation, ticket files, ticket sync |
+| Work | How it is done |
+|---|---|
+| Plan review, critique, tickets, specs, plans, documentation passes | in the Cursor chat (modes A and B below) |
+| Application code for a ticket | through the ticket tooling — `cargo xtask ticket run`, or `cargo xtask platform slice-run <id>` for one ticket — with any AI coding agent, or in the chat when the operator says so (mode C) |
+| Application code in the platform factory | slice agents the orchestrator dispatches into `slice/<id>` worktrees (mode F) |
+| Documentation of changed code | the agent or person who changes the code, in the same commit ([commit checklist](/documentation_v2/standards/commit_checklist.md)) |
 
-**Executor gate:** Only act on slices where `executor` is `cursor-docs` or `claude-code`. If `workbench`, `human`, or `ci` — **stop and wait**.
+**Executor gate:** act on a ticket only when its `executor` is `claude-code` (any AI coding agent)
+or `cursor-docs` (a ticket, spec or documentation pass). `workbench`, `human` or `ci` — **stop and
+wait** for that party.
 
-## Three modes — infer from intent (not magic phrases)
+## Four modes — infer them from intent, not from magic phrases
 
-You babble; that's fine. **Classify intent** from the message — never require exact wording.
+The operator speaks loosely; that is fine. **Classify the intent** of the message — never require
+exact wording.
 
 ### Mode A — Plan review (read-only)
 
-**User intent sounds like:**
-- Paste of a Claude Code plan + "what do you think", "is this right", "does this make sense"
-- "Look at this plan", "review claude's thing", "anything wrong here"
-- "Give me something to send back to claude", "fix the plan first"
-- First message in a thread that is *only* a plan with no "go write" / "ship" / "register"
+**The message sounds like:**
+- a pasted plan from another agent plus "what do you think", "is this right", "does this make
+  sense";
+- "look at this plan", "review this", "anything wrong here";
+- "give me something to send back", "fix the plan first";
+- a first message that is only a plan, with no "write it" / "ship it" / "file it".
 
-**Allowed:** Read-only exploration, critique, out-of-scope list, **one copy-paste prompt for Claude to revise the plan**.
+**Allowed:** read-only exploration, critique, a list of what the plan misses, and **one copy-paste
+prompt that asks the planning agent to revise its plan**.
 
-**FORBIDDEN:** Any file writes, registry, tickets, app code, "completing" plan todos.
+**FORBIDDEN:** any file write, ticket change, application code, or "completing" plan todos.
 
-**End with:** Claude prompt code block (revise plan only — no code, no files).
+**End with:** the revise-the-plan prompt as one fenced block (no code, no files).
 
-**Parallel / handoff prompts:** When user asks for prompts to paste into Claude Code, follow [`.cursor/rules/claude-prompt-delivery.mdc`](claude-prompt-delivery.mdc) — **one full fenced block per stream**, not prose summaries.
+**Prompts for other agents:** follow
+[`claude-prompt-delivery.mdc`](/.cursor/rules/claude-prompt-delivery.mdc) — **one complete fenced
+block per stream**, never a prose summary.
 
-### Mode B — Write ticket / docs (Cursor docs pass)
+### Mode B — Ticket, spec and documentation pass
 
-**User intent sounds like:**
-- "Write the ticket", "set it up", "queue it", "make the handoff", "do the docs"
-- "Ok looks good", "approved", "yeah do that", "set up claude", "prep for claude code"
-- After Mode A back-and-forth, user agrees and wants registry + spec + handoff
-- "Document this for claude", "same as we always do", "like the last ticket"
+**The message sounds like:**
+- "write the ticket", "set it up", "queue it", "make the handoff", "do the docs";
+- "ok looks good", "approved", "yeah do that", "prep it for the coding agent";
+- agreement after a mode A exchange, asking for the ticket, spec and plan;
+- "document this", "same as we always do", "like the last ticket".
 
-**Allowed:** ONE ticket (default), spec, `.ai/artifacts/*_handoff.md`, audit report if approved, registry, ticket sync, CLAUDE.md pointer. Prompt in spec §Claude Code prompt per [`CLAUDE_CODE_PROMPT.md`](../../.ai/tickets/CLAUDE_CODE_PROMPT.md).
+**Allowed:** ONE ticket by default, filed with `cargo xtask ticket add` and filled in the engine's
+canonical form; its spec from [`spec_template.md`](/.ai/tickets/spec_template.md) and its plan
+from [`plan_template.md`](/.ai/tickets/plan_template.md); the spec's copy-paste prompt block per
+[`implementation_prompt.md`](/.ai/tickets/implementation_prompt.md); a handoff from
+[`handoff_template.md`](/.ai/tickets/handoff_template.md) when the context is too long for the
+spec; an audit report the operator approved; documentation under `documentation_v2/`. Then
+`cargo xtask ticket check --strict`. The steps are
+[Taking a ticket from idea to shipped](/documentation_v2/runbooks/ticket_run_pipeline.md) steps 1
+to 5.
 
-**FORBIDDEN:** App source edits. Batch many tickets unless user explicitly asks.
+**FORBIDDEN:** application source edits. Many tickets at once, unless the operator asks.
 
-**If ambiguous between A and B:** ask one line — *"Review only, or write the ticket + handoff?"*
+**If A or B is unclear:** ask one line — *"Review only, or write the ticket and spec?"*
 
-### Mode C — Code (NOT Cursor)
+### Mode C — Code
 
-**User intent sounds like:**
-- "Fix C1", "implement", "ship the hotfix", "run the ticket"
-- "Implement the plan" without prior Mode B ticket
+**The message sounds like:**
+- "fix it", "implement", "ship the hotfix", "run the ticket";
+- "implement the plan" with no ticket written yet.
 
-**Default response:** Code is **Claude Code** — output handoff or say `cargo xtask ticket run`. Do not patch `.rs`/`.c` under `apps/website/{api,frontend}/` or `apps/mod/` unless user **clearly** overrides: *"Cursor, you write the code"*.
+**Default response:** code runs through the ticket tooling. Say `cargo xtask ticket run` (after
+`--dry-run`), or print the prompt with `cargo xtask ticket prompt <id>`. Do not patch application
+sources (`apps/website/api_v2/src/`, `apps/website/frontend/src/`, `apps/mod/`) in this chat unless
+the operator **clearly** says so: *"Cursor, you write the code"*. When the operator does, the code,
+its tests and its documentation land together in one commit.
 
-### Mode F — Platform factory (Cursor IS the code owner)
+### Mode F — Platform factory
 
-**This SUPERSEDES Mode C for platform-factory work.** If the operator says "run
-the factory" / "dispatch wave N" / "continue the factory", or names a platform wave or a platform
-ticket id, you are in **factory mode**. Factory mode has no Claude Code to hand off to: you dispatch
-slice agents into git worktrees, integrate, gate, run an adversarial verifier, triage, and push.
+**This SUPERSEDES mode C for platform-factory work.** When the operator says "run the factory",
+"dispatch wave N" or "continue the factory", or names a platform wave, the chat is the factory's
+orchestrator: it dispatches slice agents into git worktrees, integrates, gates, runs an
+adversarial verifier, triages and pushes — and never implements.
 
-Read [`platform-factory-mode.mdc`](platform-factory-mode.mdc), then the runbook
-[`documentation_v2/runbooks/factory_waves/README.md`](/documentation_v2/runbooks/factory_waves/README.md). Do **not** infer
-factory mode from a vague "implement this" — ask one line if it is not explicit.
+Read [`platform-factory-mode.mdc`](/.cursor/rules/platform-factory-mode.mdc), then
+[Factory waves](/documentation_v2/runbooks/factory_waves/README.md). Do **not** infer factory mode
+from a vague "implement this" — ask one line when it is not explicit.
 
-## Danger patterns — still over-interpret carefully
+## Danger patterns — still read carefully
 
-| Vague user vibe | Safe default |
-|-----------------|--------------|
-| "Implement / execute / build / go ahead" | If no ticket+handoff exists yet → **Mode A or B**, not code. Ask if one sentence unclear. |
-| "Don't stop until done" | Finish **Cursor** work only; code todos = handoff for Claude. |
-| Long ramble ending in "…so yeah" | Re-read whole message for: plan paste (A), approval (B), or fix request (C→Claude). |
+| Vague message | Safe default |
+|---|---|
+| "Implement / execute / build / go ahead" | No ticket and spec yet → **mode A or B**, not code. Ask if one sentence is unclear. |
+| "Don't stop until done" | Finish the work of the current mode; code for a ticket goes through the ticket tooling. |
+| Long ramble ending in "…so yeah" | Re-read the whole message for a pasted plan (A), an approval (B), or a fix request (C). |
 
 ## Pre-flight (before ANY edit)
 
-Before writing files, state **Mode (A/B/C)** and list **every path** you will touch.
+Before writing files, state the **mode (A/B/C/F)** and list **every path** you will touch.
 
 If the list includes any of:
 - `apps/website/api_v2/src/**`
-- `apps/website/frontend/src/**` (live Leptos SPA — Claude-owned)
+- `apps/website/frontend/src/**`
 - `apps/mod/**`
 
-and Mode is not explicit user-authorized code → **STOP**.
+and the operator has not explicitly authorized code in this chat → **STOP**.
 
 ## Typical thread flow
 
 ```text
-1. User → Cursor: paste Claude plan (often rambling — still Mode A)
-2. Cursor: critique + prompt for Claude to revise (no files)
-3. User → Claude Code: send prompt
-4. User → Cursor: paste revised plan back
-5. Cursor: confirm or nitpick (still Mode A until user wants setup)
-6. User: approval vibe ("ok", "set it up", "write the ticket", etc.) → Mode B
-7. Cursor: ONE ticket + spec + handoff
-8. User → Claude Code: handoff / ticket run
-9. After merge: Cursor doc sync if needed
+1. Operator → Cursor: a plan from another agent (often rambling — still mode A)
+2. Cursor: critique, plus a revise-the-plan prompt (no files)
+3. Operator → planning agent: sends the prompt
+4. Operator → Cursor: the revised plan
+5. Cursor: confirm or nitpick (still mode A until the operator wants it set up)
+6. Operator: approval ("ok", "set it up", "write the ticket") → mode B
+7. Cursor: ONE ticket + spec + plan (+ handoff when needed), marked ready; ticket check --strict
+8. Operator: cargo xtask ticket run (after --dry-run), or the prompt from cargo xtask ticket prompt
+9. The coding agent: code, tests and the documentation they change, in one commit
 ```
 
-## Codebase audit / tech-debt
+## Codebase audit and tech debt
 
-- **Default: ONE ticket, ALL fixes in one Claude pass** — do not split into several sibling tickets unless user asks.
-- Cursor: [`documentation_v2/archive/audits/codebase_audit_2026.md`](/documentation_v2/archive/audits/codebase_audit_2026.md) + ticket files + handoff. Claude: all code fixes (+ may append verify/shipped notes to audit doc).
-- Running in parallel with another ticket is OK when the file sets do not overlap.
+- **Default: ONE ticket whose spec lists every finding, all fixed in one pass** — do not split it
+  into sibling tickets unless the operator asks.
+- Running beside another ticket is fine when the two file sets do not overlap.
 
 ## Commits
 
-- Do not commit unless user asks.
-- Doc-only commits: Cursor. Code commits: Claude Code on **`main`** with `T-0xx` tag.
+- Commit only when the operator asks.
+- A commit carries the code and the documentation it changes together, on `main`, with the
+  ticket id in the subject ([commit checklist](/documentation_v2/standards/commit_checklist.md)).
 
 ## When you mess up
 
-If user says stop / undo: `git checkout` tracked files, delete only **your** new untracked files, confirm clean state. Do not argue.
+If the operator says stop or undo: revert only the edits you made, delete only the untracked files
+you created, and confirm the tree is back to where you found it. Another session's uncommitted
+work stays untouched. Do not argue.

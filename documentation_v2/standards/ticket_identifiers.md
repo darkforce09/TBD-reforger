@@ -46,8 +46,8 @@ those are never edited by hand.
 
 The plan path is `plan_path` in `tools_v2/ticket-engine/src/repository.rs`.
 `cargo xtask ticket mark-ready <id> [SPEC] [PLAN]` defaults an unset `plan` field to that path and
-refuses while the file is absent. The ticket templates are `.ai/tickets/SPEC_TEMPLATE.md`,
-`.ai/tickets/plan_template.md` and `.ai/tickets/HANDOFF_TEMPLATE.md`. A spec is live while its
+refuses while the file is absent. The ticket templates are `.ai/tickets/spec_template.md`,
+`.ai/tickets/plan_template.md` and `.ai/tickets/handoff_template.md`. A spec is live while its
 ticket is `idea`, `queued` or `ready` and frozen once the ticket ships or is cancelled; lasting
 knowledge then moves to the feature doc.
 

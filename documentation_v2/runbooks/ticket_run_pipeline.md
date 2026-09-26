@@ -104,7 +104,7 @@ Run every command from the repository root.
    needs an order, so an `idea` cannot go ready without this step.
 
 4. Write the spec and the plan: the spec in `documentation_v2/tickets/specs/`, from
-   `.ai/tickets/SPEC_TEMPLATE.md`, and the plan at the ticket's own plan path, from the plan
+   `.ai/tickets/spec_template.md`, and the plan at the ticket's own plan path, from the plan
    template. A spec meant for `cargo xtask ticket prompt` holds a `## Claude Code prompt` heading
    followed by a fenced block; `ticket run` does not read it.
 

@@ -1,51 +1,63 @@
 ---
-description: HARD — Never defer/fold/MVP-skip in-scope work unless the operator explicitly authorizes that deferral
+description: HARD — never defer, fold forward or MVP-skip in-scope work unless the operator explicitly authorizes that deferral
 alwaysApply: true
 ---
 
-# No deferrals without explicit operator word
+# No deferrals without the operator's explicit word
 
-**Default: finish it.** If the operator asked for a complete outcome (e.g. "replace React with Rust", "do the whole plan"), **ship the whole outcome**. Do not invent deferrals.
+**Default: finish it.** When the operator asks for a complete outcome ("port the whole page", "do
+the whole plan"), **ship the whole outcome**. Do not invent deferrals. This is `CLAUDE.md` law 1.
 
 ## The only legal deferral
 
-The operator **explicitly** says, in this conversation (or a quoted prior message they reaffirm), words like:
+The operator **explicitly** says, in this conversation (or in a quoted earlier message they
+reaffirm), words like:
 
 - "defer X"
 - "skip X"
 - "not this pass — X later"
 - "MVP only — leave Y"
 
-**Quote that authorization** in the verify log / commit body. No quote → **not deferred**.
+**Quote that authorization** in the verify log or the commit body. No quote → **not deferred**.
+Work the operator deferred is recorded as a ticket with status `deferred`
+(`cargo xtask ticket set-status <id> deferred`), never as `shipped`.
 
-Soft plan prose ("if feasible", "optional", "P1 later", "fold forward", "record as follow-up") is **not** authorization — including when **you** wrote that prose into the plan.
+Soft plan prose ("if feasible", "optional", "P1 later", "fold forward", "record as follow-up") is
+**not** authorization — including when **you** wrote that prose into the plan.
 
 ## Forbidden (these are failures, not process)
 
 ```text
-❌ "Folded forward" / "deferred to T-xxx" / "follow-on" for in-scope work
-❌ Shipping an MVP and calling the program/slice "complete" while listed scope remains
+❌ "Folded forward" / "deferred to <another ticket>" / "follow-on" for in-scope work
+❌ Shipping an MVP and calling the program or slice "complete" while listed scope remains
 ❌ Writing your own "Out of scope" / "Deferred" section to shrink an operator "do everything" ask
 ❌ "Document as deferred" in a verify log instead of implementing
-❌ Partial ship + "operator can do the rest later" without explicit defer approval
-❌ Treating audit P0/P1 labels as permission to skip P1 when the ask was complete cutover
+❌ A partial ship plus "the operator can do the rest later" without explicit defer approval
+❌ Treating audit P0/P1 labels as permission to skip P1 when the ask was a complete cutover
 ```
 
 ```text
-✅ Implement every item required by the operator ask / approved plan Scope / acceptance matrix
-✅ If truly blocked (secrets, Workbench down, missing GPU): STOP and ASK — do not invent a deferral ticket and mark done
-✅ Defer only after operator: "defer satellite" / "skip Smart Forge this pass"
+✅ Implement every item the operator ask, the approved plan's scope and the acceptance matrix require
+✅ If truly blocked (secrets, Workbench down, missing GPU): STOP and ASK — do not invent a deferral ticket and mark the work done
+✅ Defer only after the operator says "defer X" / "skip X this pass"
 ```
 
 ## Plans and audits
 
-When drafting a finish plan: **do not pre-load deferrals**. List remaining work as **must-do**. If something might need operator judgment, **ask before** writing "fold forward" into the plan. A plan that ships with a Deferred appendix the operator never approved is non-compliant.
+When drafting a finish plan: **do not pre-load deferrals**. List the remaining work as
+**must-do**. If something might need the operator's judgment, **ask before** writing "fold
+forward" into the plan. A plan that ships with a Deferred appendix the operator never approved is
+non-compliant.
 
-## Cursor Mode B / Claude handoffs
+## Specs, plans, handoffs and prompts
 
-- Do **not** put "fold forward X" / "out of scope: do Y later" in specs/handoffs unless the operator already authorized that deferral.
-- `═══ DO NOT ═══` may ban unrelated lanes; it must **not** silently drop the operator's complete-outcome ask.
+- Do **not** put "fold forward X" or "out of scope: do Y later" in a spec, plan, handoff or prompt
+  unless the operator already authorized that deferral.
+- A prompt's `═══ DO NOT ═══` section may ban unrelated lanes; it must **not** silently drop the
+  operator's complete-outcome ask.
 
-## Interaction with Mode A/B/C
+## Who it binds
 
-Does **not** authorize Cursor to write app code. It binds **every** agent (Cursor, Claude Code, Fable, auditors): no silent or self-authored deferrals.
+Every agent, whatever product runs it, and every person: planners, coding agents, slice agents,
+orchestrators and auditors. It grants no permission to write code — the modes in
+[`cursor-agent-workflow.mdc`](/.cursor/rules/cursor-agent-workflow.mdc) decide that.

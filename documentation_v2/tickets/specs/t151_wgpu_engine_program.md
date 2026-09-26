@@ -162,7 +162,7 @@ LOD gate authority: [`t090_render_lod_contract.md`](t090_render_lod_contract.md)
   React/DOM/pointer, hold Zustand UI state, generate canvas atlas *pixels* if needed, and keep
   the Deck oracle until T-151.9. Do **not** grow fat `wgpu*Controller` business logic in TS.
   **T-151.7.3** + **T-151.11.3** collapse TS policy twins; every later T-151.x prompt must include
-  `═══ LANGUAGE GATE ═══` (see [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](../../../.ai/tickets/CLAUDE_CODE_PROMPT.md)).
+  `═══ LANGUAGE GATE ═══` (see [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](/.ai/tickets/implementation_prompt.md)).
 
 ### Post-audit locked product decisions (T-151.11)
 

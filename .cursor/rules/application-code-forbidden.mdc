@@ -1,38 +1,47 @@
 ---
-description: HARD GATE — no Cursor edits to application source without explicit user code authorization
+description: HARD GATE — no application source edits in a Cursor chat without the operator's explicit word to write code
 globs: apps/website/api_v2/src/**/*.rs,apps/website/frontend/src/**/*.rs,apps/mod/**/*.{c,et,conf,lua}
 alwaysApply: false
 ---
 
-# Application code — Claude Code only
+# Application code — only on the operator's word
 
-> **EXCEPTION — PLATFORM FACTORY MODE.** If the operator has put you in platform-factory
-> mode, this entire rule is **suspended for factory work**: slice agents you dispatch DO edit
-> `apps/**` and `contracts_v2/**`, inside a slice worktree, scoped to the ticket's `owns`
-> paths. See [`platform-factory-mode.mdc`](platform-factory-mode.mdc). Outside factory mode this rule
-> applies unchanged. **Factory mode has no Claude Code to hand off to** — do not write a handoff
-> artifact and stop; dispatch a slice agent.
+> **EXCEPTION — PLATFORM FACTORY MODE.** When the operator has started the platform factory, this
+> rule is **suspended for factory work**: the slice agents the orchestrator dispatches DO edit
+> `apps/**` and `contracts_v2/**`, each inside its own slice worktree and scoped to its ticket's
+> `owns` paths. See [`platform-factory-mode.mdc`](/.cursor/rules/platform-factory-mode.mdc).
+> Outside factory mode this rule applies unchanged. The orchestrator itself still never edits
+> these files: it dispatches a slice agent instead.
 
-**Default: DO NOT EDIT these files in Cursor.**
+**Default: DO NOT EDIT these files in a Cursor chat.**
 
-Application code is shipped by **Claude Code** on `executor: claude-code` slices via `cargo xtask ticket run` (work lands on **`main`** — no `ticket/T-0xx` branches).
+Application code for a ticket runs through the ticket tooling — `cargo xtask ticket run`, or
+`cargo xtask platform slice-run <id>` for one ticket — with any AI coding agent, on `main` (see
+[Taking a ticket from idea to shipped](/documentation_v2/runbooks/ticket_run_pipeline.md)). The
+agent that writes the code updates the documentation it changes in the same commit.
 
-## Allowed in Cursor (without extra permission)
+## Allowed without extra permission
 
-- Read / search / explain / review
-- Point to lines in critique or handoff specs
+- Read, search, explain, review.
+- Point to lines in a critique, a spec or a handoff.
 
-## Forbidden unless user explicitly says "Cursor implement this code"
+## Forbidden unless the operator explicitly says "Cursor, implement this code"
 
-- Any patch under `apps/website/api_v2/src/`, `apps/website/frontend/src/`, `apps/mod/`
-- "Fixing" audit findings (C1, C2, etc.) yourself
-- Completing plan todos that say `claude-code`
+- Any patch under `apps/website/api_v2/src/`, `apps/website/frontend/src/` or `apps/mod/`.
+- "Fixing" audit findings yourself.
+- Completing plan steps that belong to the coding agent.
 
-## If the user wants a fix
+## If the operator wants a fix
 
-1. Write or update ticket + `.ai/artifacts/tXXX_claude_code_handoff.md`
-2. Tell user to paste handoff into Claude Code
+1. File or update the ticket and its spec and plan (mode B of
+   [`cursor-agent-workflow.mdc`](/.cursor/rules/cursor-agent-workflow.mdc)); write a handoff from
+   [`handoff_template.md`](/.ai/tickets/handoff_template.md) only when the context does not fit in
+   the spec.
+2. Tell the operator to run `cargo xtask ticket run`, or give them the prompt that
+   `cargo xtask ticket prompt <id>` prints, as one fenced block.
 
-## Exception
+## Documentation is not application code
 
-`executor: cursor-docs` slices that only touch docs under `documentation_v2/` or registry — still **no** app source edits.
+Documents under `documentation_v2/`, README.md files and the ticket files are edited in mode B
+without this permission. When the operator does authorize code in the chat, that code's
+documentation changes land in the same commit as the code.

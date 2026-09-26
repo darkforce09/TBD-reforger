@@ -1,11 +1,15 @@
 ---
-description: Use only main — never create feature branches
+description: Work on main only — never create a branch by hand; the xtask slice tooling's slice/<id> branches are the one exception
 alwaysApply: true
 ---
 
 # Single branch: main only
 
-- Work exclusively on **`main`**. Never create, checkout, or push feature branches (e.g. `phase1-slot-spawn`, `fix/…`, `feat/…`).
-- Commit directly to `main` with focused commit messages.
-- Do not run `git checkout -b`, `git switch -c`, or suggest PR workflows that require a separate branch unless the user explicitly overrides this rule.
-- If remote has stale feature branches from past work, prefer merging into `main` and deleting them when the user asks to consolidate.
+- Work on **`main`** and commit directly to it, with focused commit messages (`CLAUDE.md` law 2).
+- Never create, check out or push a branch by hand: no `git checkout -b`, no `git switch -c`, and
+  no workflow that needs a pull request.
+- The one exception is the `slice/<id>` branches that the xtask tooling creates, merges and
+  deletes itself: `cargo xtask platform slice-worktree` creates and drops them, and
+  `cargo xtask mod wave` (the mod program) or `cargo xtask platform wave` (the platform) lands them
+  ([Mod slice workflow](/documentation_v2/runbooks/mod_slice_workflow.md)).
+- A stray branch found on the remote or in the checkout is merged into `main` and deleted.

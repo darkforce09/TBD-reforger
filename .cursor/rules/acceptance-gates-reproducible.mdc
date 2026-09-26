@@ -1,33 +1,37 @@
 ---
-description: HARD — acceptance gates must be reproducible, pinned, and fail-fast; a gate that can't run is a P0 infra bug, never a silent skip or commit-anyway
+description: HARD — acceptance gates are reproducible, pinned and fail-fast; a gate that cannot run is a P0 infrastructure bug, never a silent skip or a commit-anyway
 alwaysApply: true
 ---
 
-# Acceptance gates must be reproducible + pinned + fail-fast
+# Acceptance gates are reproducible, pinned and fail-fast
 
-A gate is only worth trusting if it runs the same way every time and tells you loudly when it can't.
-A gate that leans on unpinned dev-machine state does neither: the editor CDP gate
-(`cargo xtask mk leptos-gates`) hangs for minutes on a cryptic browser fault instead of failing fast,
-and a routine ticket becomes a reverse-engineering session. Binds **every** agent (Claude Code,
-Cursor, Fable) and every human.
+A gate is only worth trusting if it runs the same way every time and says loudly when it cannot.
+A gate that leans on unpinned machine state does neither: a browser gate such as the editor CDP
+gate (`cargo xtask mk leptos-gates`) then hangs for minutes on a cryptic browser fault instead of
+failing fast, and a routine ticket becomes a reverse-engineering session. This binds **every**
+agent, whatever product runs it, and every person.
 
 ## Rules
 
-1. **Reproducible + pinned.** A gate's external tools (browser, toolchain, DB image) are **pinned** and
-   the pins are **committed and validated**, not floating dev-machine state. For the editor gate the
-   pins live in [`tools_v2/developer-tools/gate-env.json`](../../tools_v2/developer-tools/gate-env.json) + root
-   [`rust-toolchain.toml`](../../rust-toolchain.toml), validated by `gate doctor`. Bump a pin
+1. **Reproducible and pinned.** A gate's external tools (browser, toolchain, database image) are
+   **pinned**, and the pins are **committed and validated**, never floating machine state. For the
+   editor gate the pins live in
+   [`tools_v2/developer-tools/gate-env.json`](/tools_v2/developer-tools/gate-env.json) and the root
+   [`rust-toolchain.toml`](/rust-toolchain.toml), validated by `gate doctor`. Bump a pin
    **deliberately, in the same commit** as the thing it pins.
-2. **Fail-fast, never hang.** A gate that would wedge must fail in seconds with an **actionable
-   message** (what's wrong + how to diagnose), not a multi-minute timeout. New browser/GPU gates get a
-   preflight like `gate doctor` (a prerequisite of `cargo xtask mk leptos-gates`).
-3. **A gate that can't run is a P0 infra bug — fix the harness/env.** It is **never** a silent skip, a
-   "commit anyway", or a "document as deferred" (see [`no-silent-deferrals.mdc`](no-silent-deferrals.mdc)).
-   If you are truly blocked (missing GPU, secrets, Workbench down): STOP and ASK.
-4. **New GPU/browser gates get CI or a scheduled lane.** Do not leave a gate "local per stream" forever
-   — infra regressions must be caught by machines, not discovered mid-ticket. See
-   [`editor-gates.yml`](../../.github/workflows/editor-gates.yml).
-5. **When a gate breaks the environment, write it down.** Add/append a
-   [`documentation_v2/known_bugs/`](/documentation_v2/known_bugs/) entry and, for the editor gate, the
-   [`EDITOR_GATE_RUNBOOK.md`](/documentation_v2/runbooks/editor_gates.md) so the next person doesn't
-   re-derive it.
+2. **Fail fast, never hang.** A gate that would wedge fails in seconds with an **actionable
+   message** (what is wrong and how to diagnose it), not a multi-minute timeout. A new browser or
+   GPU gate gets a preflight like `gate doctor`, which `cargo xtask mk leptos-gates` runs before
+   its suites.
+3. **A gate that cannot run is a P0 infrastructure bug — fix the harness or the environment.** It
+   is **never** a silent skip, a "commit anyway" or a "document as deferred" (see
+   [`no-silent-deferrals.mdc`](/.cursor/rules/no-silent-deferrals.mdc)). If you are truly blocked
+   (no GPU, missing secrets, Workbench down): STOP and ASK.
+4. **A new GPU or browser gate gets CI or a scheduled lane.** Do not leave a gate local forever:
+   infrastructure regressions are caught by machines, not discovered mid-ticket. The editor gate's
+   lane is [`.github/workflows/editor-gates.yml`](/.github/workflows/editor-gates.yml), nightly and
+   on demand.
+5. **When a gate breaks the environment, write it down.** Add or extend an entry in
+   [`documentation_v2/known_bugs/`](/documentation_v2/known_bugs/README.md) and, for the editor
+   gate, the [Editor gates](/documentation_v2/runbooks/editor_gates.md) runbook, so the next person
+   does not re-derive it.

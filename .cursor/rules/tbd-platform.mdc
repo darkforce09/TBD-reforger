@@ -1,24 +1,48 @@
 ---
-description: TBD-Reforger monorepo — read CLAUDE.md first; Cursor owns docs, Claude Code owns code slices
+description: TBD Reforger monorepo — read CLAUDE.md first; documentation ships with the code it describes; tickets go through cargo xtask ticket
 alwaysApply: true
 ---
 
 # TBD Reforger platform
 
-- Read [`CLAUDE.md`](../../CLAUDE.md) first — status, run commands, conventions, agent roles.
-- **HARD GATE:** Read [`.cursor/rules/cursor-agent-workflow.mdc`](cursor-agent-workflow.mdc) — step phrases, three modes, forbidden code edits.
-- **HARD GATE:** [`.cursor/rules/no-silent-deferrals.mdc`](no-silent-deferrals.mdc) — never defer/fold in-scope work unless the operator **explicitly** says to defer that piece.
-- Every path in this file is relative to the repository root. Mission Creator specs: [`documentation_v2/website/frontend/apps/editor/`](/documentation_v2/website/frontend/apps/editor/).
-- Layout: `apps/website/api_v2/` (Axum, pkg `website-api`) · `apps/website/frontend/` (Leptos Trunk, pkg `website-frontend`) · `apps/website/map-engine/` (pkg `website-map-engine`) · `apps/website/graphics-engine/` (pkg `website-graphics-engine`). Conventions pin: [`documentation_v2/standards/where_does_x_go.md`](/documentation_v2/standards/where_does_x_go.md).
-- Frontend surface specs: `documentation_v2/website/frontend/` only — never under `apps/**/docs` (verify-doc-layout enforces).
-- Ticket source of truth: one `.ai/tickets/T-*.toml` file per ticket, beside the `.ai/tickets/ROOT` marker. After edits run `cargo xtask ticket sync` and `cargo xtask ticket check`. Work on **`main` only** — no `ticket/T-0xx` branches.
-- **Cursor:** docs, brainstorm, ticket files, spec markdown (`executor: cursor-docs` slices).
-- **Claude Code:** application code only for slices with `executor: claude-code` (via `cargo xtask ticket run`).
-- **Executor gate:** stop if active slice is `workbench`, `human`, or `ci` — wait for human completion.
-- Git: commit directly to `main` only; tag commits `T-0xx`; end with `Co-Authored-By` trailer.
-- **PLATFORM FACTORY MODE overrides the three lines above.** When the operator says "run
-  the factory" / "dispatch wave N", **Cursor owns application code** via slice agents, work happens on
-  `slice/T-XXX` branches in worktrees (the "`main` only, no branches" line above does **not** apply to
-  the factory), and `executor: claude-code` means "any AI coding agent may take this". See
-  [`platform-factory-mode.mdc`](platform-factory-mode.mdc) and
-  [`documentation_v2/runbooks/factory_waves/README.md`](/documentation_v2/runbooks/factory_waves/README.md).
+- Read [`CLAUDE.md`](/CLAUDE.md) first: the project laws, the directory atlas and the canonical
+  commands. Every path in the rules is relative to the repository root.
+- **HARD GATE:** [`no-silent-deferrals.mdc`](/.cursor/rules/no-silent-deferrals.mdc) — finish the
+  whole ask; only the operator's explicit "defer X" defers a piece.
+- **HARD GATE:** [`cursor-agent-workflow.mdc`](/.cursor/rules/cursor-agent-workflow.mdc) — which
+  mode a message asks for, and when to stop and ask.
+- Layout: `apps/website/api_v2/` (Axum, package `website-api`) · `apps/website/frontend/` (Leptos
+  and Trunk, package `website-frontend`) · `apps/website/map-engine/` (package
+  `website-map-engine`) · `apps/website/graphics-engine/` (package `website-graphics-engine`) ·
+  `apps/mod/` (the Enfusion addons). Where a new file goes:
+  [Where does X go?](/documentation_v2/standards/where_does_x_go.md).
+- **Documentation ships with its code.** A change updates, in the same commit, the comments of the
+  code it alters, the README.md of every folder whose contents, surface, commands or boundaries it
+  changes, and the feature docs whose behaviour it changes — whichever agent or person writes the
+  code. Documentation lives in `documentation_v2/` (entry:
+  [documentation_v2/README.md](/documentation_v2/README.md)); its rules are in
+  [documentation_v2/standards/](/documentation_v2/standards/README.md): the
+  [documentation standards](/documentation_v2/standards/documentation_standards.md), the
+  [README standard](/documentation_v2/standards/readme_standard.md) and the
+  [commit checklist](/documentation_v2/standards/commit_checklist.md). The code trees hold no
+  Markdown but README.md files (`cargo xtask verify markdown-placement`), and no application grows a
+  `docs` folder (`cargo xtask ci verify-doc-layout`). Mission Creator documentation lives under
+  [documentation_v2/website/frontend/apps/editor/](/documentation_v2/website/frontend/apps/editor/README.md).
+- **Tickets.** One `.ai/tickets/T-<id>.toml` file per ticket, parent and child alike, beside the
+  `.ai/tickets/ROOT` marker; the [ticket registry README](/.ai/tickets/README.md) lists the folder
+  and the commands. A ticket file is created only by `cargo xtask ticket add` (or `add-child`); a
+  hand edit keeps the ticket engine's canonical form; then run `cargo xtask ticket check --strict`.
+  The whole lifecycle is
+  [Taking a ticket from idea to shipped](/documentation_v2/runbooks/ticket_run_pipeline.md).
+- **Executor gate.** A ticket's `executor` says who may take it: `claude-code` means any AI coding
+  agent run through the ticket tooling, whoever makes it; `cursor-docs` a ticket, spec or
+  documentation pass; `workbench`, `human` and `ci` mean stop and wait for that party.
+- **Git.** Commit directly to `main` and create no branch (`CLAUDE.md` law 2). The one exception
+  is the `slice/<id>` branches that the xtask slice and wave tooling creates, merges and deletes
+  itself (`cargo xtask platform slice-worktree`, `cargo xtask platform wave`,
+  `cargo xtask mod wave`). A commit that lands a ticket names its id in the subject; a commit
+  written with an AI agent ends with a `Co-Authored-By:` trailer; commit only when asked.
+- **Factory mode.** When the operator starts the platform factory,
+  [`platform-factory-mode.mdc`](/.cursor/rules/platform-factory-mode.mdc) applies and the
+  orchestrating session follows
+  [Factory waves](/documentation_v2/runbooks/factory_waves/README.md).
