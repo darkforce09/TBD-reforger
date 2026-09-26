@@ -60,9 +60,9 @@ Commits of this program stage by pathspec only.
 | P3-14 | done | 8e6fd61eb | UI Common Dropdown/Inputs/Layout/SessionChrome, Core Theme/Screens/Controls; HUD RPCs to `UI/Hud/SCR_PlayerController.c`. Framework: 0 findings in 370 scripts, max 477 lines, compile 0, world-boot PASS. |
 | P3-C | done | 4518a8665 | Forwarders removed, stale references fixed across scripts and docs, dead `TBD_Objective` members dropped, T-1219 filed; order line matches baseline. P3-C2 (this commit) filed T-1220..T-1228 for the bugs the checkpoint had missed. |
 | P4-1 | done | a055c173d, f6f350b51 | tbd-framework pinned in `file-length` and `enfusion-comments`; `verify-coding-standards` and `ci.yml` language-gates run the comment gate; `task_definitions.rs` map steps split to `map_asset_steps.rs`; checkpoint moved here (plans/ takes only `t-<id>_plan.md`); CLAUDE.md law 7 and section 3 committed separately; the law 8 sentence ("machine-checked by `cargo xtask verify enfusion-comments`") sits inside the other session's uncommitted law 8 rewrite and lands with it. ci-local exit 1 only on the other session's work (editorconfig in untracked assets_v2/equipment, api_v2 rustfmt, 12 equipment route tags, tbd-export and website README coverage). |
-| OP-1 | pending | | operator playtest |
-| P5-1 | done | 3499895f8, c5843279a | ModifyEntity/ split (6 files), 18 handlers documented, 38 JsonApiStruct request/response classes renamed `...Wire` (ECM-6; handler names, action names and JSON keys unchanged; broker calls handlers only); tbd-emcp pinned in both gates; CLAUDE.md law 7 names it. **Operator Workbench compile pending** (restart needed: 6 new .c files). |
-| P6-1 … P6-6 | blocked | | waits for the other session's tbd-export commit |
+| OP-1 | done (waived) | | Operator 2026-09-26: playtest not relevant in pre-alpha; closed. |
+| P5-1 | done | 3499895f8, c5843279a | ModifyEntity/ split (6 files), 18 handlers documented, 38 JsonApiStruct request/response classes renamed `...Wire` (ECM-6; handler names, action names and JSON keys unchanged; broker calls handlers only); tbd-emcp pinned in both gates; CLAUDE.md law 7 names it. Operator Workbench compile: clean (2026-09-26). Operator accepted the `...Wire` rename. |
+| P6-1 … P6-6 | blocked | | Operator is working on tbd-export now and will say when P6 may start. |
 | P6-C | pending | | |
 
 ## Amendments
