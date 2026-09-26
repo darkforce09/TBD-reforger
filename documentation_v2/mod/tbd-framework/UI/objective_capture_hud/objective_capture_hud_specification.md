@@ -12,8 +12,9 @@ only paints it.
 - Code: [`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/`](/apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/README.md)
   (`TBD_ObjectiveHud.c`, the panel and its RPC pair) and
   [`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/README.md)
-  (`TBD_ObjectivesComponent.c`, which ticks the objectives and builds each player's board;
-  `TBD_Objective.c`, the status texts).
+  (`Runtime/TBD_ObjectivesComponent.c`, which ticks the objectives;
+  `Runtime/TBD_ObjectiveHudPublisher.c`, which builds each player's board;
+  `Model/TBD_ObjectiveText.c`, the status texts).
 - Layout: [`apps/mod/tbd-framework/UI/layouts/Hud/`](/apps/mod/tbd-framework/UI/layouts/Hud/README.md),
   `TBD_ObjectiveHud.layout`, whose README gives the geometry and every widget the handler binds.
 - Entry: `TBD_ObjectivesComponent.Deliver`, run by the component's 1 s server tick while the round
@@ -54,7 +55,8 @@ only paints it.
 ### Delivery
 
 1. Every second the server builds each connected player's board and sends it only when it differs
-   from the last board that player was sent (`ReplicateHud` compares a length-prefixed signature).
+   from the last board that player was sent (`TBD_ObjectiveHudPublisher.Replicate` compares a
+   length-prefixed signature).
    A player the server has not yet sent a board to, a new connection included, gets the whole
    board.
 2. The first board opens the panel; a repaint happens only when the board's signature changes.
@@ -97,7 +99,8 @@ The HUD makes no HTTP call. Its wire, on the modded `SCR_PlayerController` (the 
 
 - [T-946.55 — Objective HUD replicates to every player at 1 Hz](/documentation_v2/tickets/specs/t936_mission_logic.md)
   (ready, [plan](/documentation_v2/tickets/plans/t-946_55_plan.md)): sends a board only when it
-  changes; `ReplicateHud` already does, so the ticket's status is behind the code.
+  changes; `TBD_ObjectiveHudPublisher.Replicate` already does, so the ticket's status is behind
+  the code.
 - [T-212 — Typed per-side objectives with attributes](/documentation_v2/tickets/specs/t212_typed_objectives.md)
   (ready, [plan](/documentation_v2/tickets/plans/t-212_plan.md)): objectives become typed, placed,
   per-side entities, which changes the titles and task texts each side's board carries.

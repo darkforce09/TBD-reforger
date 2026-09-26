@@ -9,29 +9,29 @@ triggers.
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/
-├── TBD_Objective.c            TBD_Objective: one objective's rules, progress, owner and board text
-├── TBD_ObjectiveRegistry.c    builds objectives from zones and objectives[]; answers the end triggers
-├── TBD_ObjectiveRules.c       zoneRules objective keys, read by a second JSON pass per objective zone
-├── TBD_ObjectivesComponent.c  game mode component: the 1 Hz live tick, presence, progress, HUD push
-└── TBD_TaskStateMachine.c     tasks[]: assigned, succeeded or failed from triggers and schedules
+├── Model/     the prepared objective record, its kind, empty-zone and viewer-role enums, board text
+├── Registry/  builds objectives from zones and objectives[], destroy targets, the end triggers
+├── Runtime/   the game mode component: the 1 Hz tick, presence, progress, chat and HUD delivery
+└── Tasks/     tasks[]: assigned, succeeded or failed from triggers and schedule windows
 ```
 
 ## How it works
 
 ### Objectives
 
-`TBD_ObjectiveRegistry.Build()` runs once per world, after the mission has loaded and validated.
-It takes every prepared zone of type `objective_capture`, `objective_destroy` or
-`objective_hold_until` from `TBD_ZoneRegistry` and makes a `TBD_Objective` of it, with the rules
+[`Registry/`](Registry/README.md) builds the objectives once per world, after the mission has
+loaded and validated: `TBD_ObjectiveRegistry.Build()` makes a `TBD_Objective`
+([`Model/`](Model/README.md)) of every prepared zone of type `objective_capture`,
+`objective_destroy` or `objective_hold_until` in `TBD_ZoneRegistry`, with the rules
 `TBD_ObjectiveRulesReader` reads for that zone and the height, count and starting-owner rules
-`TBD_ZoneVolume` reads. `TBD_ObjectiveEntityReader`, in the same file as the registry, joins each
-top-level `objectives[]` row onto its zone by `zoneId`: its label and per-side `framing` give each
-viewer attacker or defender text, and where a row and its zone disagree the zone wins and the load
-log says so. `lock` and `autoLose` are parsed, validated and reported, and change nothing.
+`TBD_ZoneVolume` reads. `TBD_ObjectiveEntityReader` joins each top-level `objectives[]` row onto
+its zone by `zoneId`: its label and per-side `framing` give each viewer attacker or defender text,
+and where a row and its zone disagree the zone wins and the load log says so. `lock` and
+`autoLose` are parsed, validated and reported, and change nothing.
 
-`TBD_ObjectivesComponent`, a `SCR_BaseGameModeComponent` on
-`apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et`, ticks once a second on the server and
-acts only while the stage is `LIVE`:
+[`Runtime/`](Runtime/README.md) holds `TBD_ObjectivesComponent`, a `SCR_BaseGameModeComponent` on
+`apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et`, which ticks once a second on the server
+and acts only while the stage is `LIVE`:
 
 ```text
 tick ──▶ Build (until the mission is ready) ──▶ stage LIVE? ──no──▶ hide every HUD
@@ -42,7 +42,7 @@ tick ──▶ Build (until the mission is ready) ──▶ stage LIVE? ──no
 ```
 
 - Presence counts each connected player with a living body, a life left and a side, at the body's
-  origin in the zone's 2D footprint.
+  origin in the zone's 2D footprint and height band.
 - Capture: uninterrupted presence for `captureSeconds` (default 120) takes a neutral objective,
   `neutralizeSeconds` tears a held one back; an enemy inside pauses it when `contestable`, and with
   nobody inside partial progress holds (`onEmpty: "hold"`, the default) or decays.
@@ -61,20 +61,22 @@ the winning side; `TBD_FrameworkManager` asks it every 2 s and ends the round.
 
 ### Tasks
 
-`TBD_TaskStateMachine` reads `tasks[]` with its own `JsonLoadContext` pass. A task starts
-`assigned` and moves once, to `succeeded` when its `triggerId` names an editor trigger that fired,
-or to `failed` when that trigger is inert or missing, or when its `schedule` window closes while it
-is still assigned. [`TBD_RuntimeHeartbeat`](../Orchestrator/Heartbeat/README.md) ticks it each
-second in a framework world: on the server it runs the machine and, on a change, pushes the assigned tasks that have a
-position to every player through `TBD_TaskHud`; on a client it asks for the snapshot each second.
+[`Tasks/`](Tasks/README.md): `TBD_TaskStateMachine` reads `tasks[]` with its own typed pass. A
+task starts `assigned` and moves once, to `succeeded` when its `triggerId` names an editor trigger
+that fired, or to `failed` when that trigger is inert or missing, or when its `schedule` window
+closes while it is still assigned.
+[`TBD_RuntimeHeartbeat`](/apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/Heartbeat/README.md)
+ticks it each second in a framework world: on the server it runs the machine and, on a change,
+pushes the assigned tasks that have a position to every player through `TBD_TaskHud`; on a client
+it asks for the snapshot each second.
 
 ## Authority
 
-- Server: everything here. `TBD_ObjectivesComponent.OnPostInit` arms its tick only off
-  `RplMode.Client` (`@authority server`), and the task tick is armed only on the server; clients
-  hold no mission document, so the registry refuses to build there.
-- Client: the task HUD request tick, armed by the task machine's `OnGameStart` on
-  `RplMode.Client`; the HUD itself lives in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/`.
+- Server: everything here. `TBD_ObjectivesComponent.OnPostInit` arms its tick only off a client
+  (`@authority server`), and the task tick is armed only on the server; clients hold no mission
+  document, so no reader or registry builds there.
+- Client: the task HUD request tick, armed by `TBD_RuntimeHeartbeat` on a client; the HUD itself
+  lives in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/`.
 - Owner: each player receives only the board and capture bar built for their own side.
 - RPCs: none declared here; the objective board goes out through
   `SCR_PlayerController.TBD_PushObjectiveHud` and the tasks through `TBD_PushTaskHud`, whose
@@ -85,26 +87,27 @@ position to every player through `TBD_TaskHud`; on a client it asks for the snap
 
 - Depends on: `TBD_ZoneRegistry`, `TBD_Zone`, `TBD_ZoneVolume` and `TBD_TriggerRuntime` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Zones/`; `TBD_MissionLoader` (the raw JSON,
-  factions and `HasEndTrigger`) and `TBD_SpawnManager` (a player's
-  [slot](/documentation_v2/glossary/n_to_z.md#slot), side and life) under
-  `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/`; `TBD_FrameworkManager` (the stage);
-  `TBD_Registry` and `TBD_Log` in `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`;
-  `TBD_ObjectiveHud` and `TBD_TaskHud` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/`; the
-  `zone`, `zoneRules`, `objective`, `task` and `winConditions` definitions in
-  `contracts_v2/definitions/mission.schema.json`.
+  factions, entities and `HasEndTrigger`), `TBD_MissionJsonPass` and `TBD_MissionVariants` under
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/`; `TBD_SpawnManager` (a player's
+  [slot](/documentation_v2/glossary/n_to_z.md#slot), side and life); `TBD_FrameworkManager` (the
+  stage); `TBD_Registry`, `TBD_Log`, `TBD_AnnounceOnce`, `TBD_EntityQuery`, `TBD_CharacterUtil`,
+  `TBD_PlayerFaction`, `TBD_DeclaredFactions`, `TBD_PlayerChat` and `TBD_Rounding` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; `TBD_ObjectiveHud` and `TBD_TaskHud` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/`; the `zone`, `zoneRules`, `objective`, `task`
+  and `winConditions` definitions in `contracts_v2/definitions/mission.schema.json`.
 - Used by: `TBD_FrameworkManager`, which calls `EvaluateEndTriggers` to end the round;
   `TBD_TriggerRuntime` (the `objective_complete` condition and `set_objective` effect) and
-  `TBD_ZoneVolume`; `TBD_MissionValidator` and `TBD_MissionLoader`, which read the objective
-  vocabulary; the HUD scripts in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/`;
-  `TBD_AudioEmitter`, which follows task states; and
+  `TBD_ZoneVolume`; `TBD_MissionValidator`, which reads the objective vocabulary; the HUD scripts in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/`; `TBD_AudioEmitter`, which follows task states;
+  `TBD_RuntimeHeartbeat`, which ticks and clears the task machine; and
   `apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et`, which attaches
   `TBD_ObjectivesComponent`.
 - Rules: objectives advance only while `LIVE`; containment comes only from `TBD_Zone`, never a
-  second test here; the component's `OnDelete` clears the registry, the rules reader and the
-  entity reader, and the task machine clears in `OnGameStart`, because statics outlive a world; a
-  nested JSON block's presence is tested with a sentinel, never a null test; lines added to a
-  script stay ASCII, and `cargo xtask mod compile` checks that the scripts compile, while capture,
-  hold and destroy behaviour is checked in a round with players.
+  second test here; the component's `OnDelete` clears the registry and its readers, and
+  `TBD_RuntimeHeartbeat` clears the task machine, because statics outlive a world; a nested JSON
+  block's presence is tested with a sentinel, never a null test; sources stay ASCII, and
+  `cargo xtask mod compile` checks that the scripts compile, while capture, hold and destroy
+  behaviour is checked in a round with players.
 
 ## Related documentation
 

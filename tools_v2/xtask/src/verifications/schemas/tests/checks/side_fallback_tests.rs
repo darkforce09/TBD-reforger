@@ -29,10 +29,11 @@ fn invalid_side_is_neutral_but_absent_and_valid_sides_keep_their_roles() {
     let root = repo_root().expect("repo root");
     let lane = root.join("apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives");
     let objective = strip_enfusion_comments_and_strings(
-        &fs::read_to_string(lane.join("TBD_Objective.c")).expect("objective source"),
+        &fs::read_to_string(lane.join("Model/TBD_Objective.c")).expect("objective source"),
     );
     let registry = strip_enfusion_comments_and_strings(
-        &fs::read_to_string(lane.join("TBD_ObjectiveRegistry.c")).expect("registry source"),
+        &fs::read_to_string(lane.join("Registry/TBD_ObjectiveTypedBinder.c"))
+            .expect("typed binder source"),
     );
     let golden = read_json(&mission_fixtures_valid_dir(&root).join("schema-1_3-wire-fields.json"))
         .expect("staged golden");
@@ -56,8 +57,9 @@ struct TBD_Log {
     template<class... Args> static void Kv(Args...) {}
 };
 struct Row { string side; operator bool() const { return true; } };
-struct TBD_ObjectiveEntityReader {
-    static bool FactionExists(string key) {
+struct TBD_ObjectiveRegistry { static inline string CH; };
+struct TBD_DeclaredFactions {
+    static bool Exists(string key) {
         for (const auto& faction : factions) if (faction == key) return true;
         return false;
     }
@@ -83,10 +85,10 @@ struct Objective {
         program.push_str(signature);
         program.push_str(&body(&objective, signature));
     }
-    program.push_str("};\nstruct Registry { static inline string CH;\n");
+    program.push_str("};\nstruct Registry {\n");
     program.push_str("static void CheckTypedSide(Objective& objective, Row row, string subject)");
     program.push_str(&body(&registry, "void CheckTypedSide("));
-    program.push_str("};\nstd::vector<string> TBD_ObjectiveEntityReader::factions = {");
+    program.push_str("};\nstd::vector<string> TBD_DeclaredFactions::factions = {");
     for faction in golden["factions"].as_array().expect("golden factions") {
         program.push_str(&format!("{},", faction["key"]));
     }
@@ -148,7 +150,8 @@ return failures == 0 ? 0 : 1;
     );
     for namespace in [
         "TBD_EObjectiveRole",
-        "TBD_ObjectiveEntityReader",
+        "TBD_DeclaredFactions",
+        "TBD_ObjectiveRegistry",
         "TBD_Log",
         "string",
     ] {

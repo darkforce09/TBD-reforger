@@ -16,20 +16,21 @@ tools_v2/xtask/src/verifications/mod_scripts/destroy_target_diagnostics/
 
 ## How it works
 
-`verify_destroy_target_diagnostics` reads five files: `TBD_ObjectiveRegistry.c`,
-`TBD_ObjectivesComponent.c` and `TBD_ObjectiveRules.c` under
-`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`, `TBD_MissionValidator.c` under
-`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`, and
+`verify_destroy_target_diagnostics` reads five files: `Registry/TBD_ObjectiveDestroyTargets.c`,
+`Runtime/TBD_ObjectivesComponent.c` and `Registry/TBD_ObjectiveRulesReader.c` under
+`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`, `TBD_MissionUnconsumedKeyCheck.c`
+under `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/Validation/`, and
 `contracts_v2/definitions/mission.schema.json`. Then:
 
 1. Each file is scanned for the exact phrasings in `EXACT_LIES` and the regex paraphrases in
    `PARAPHRASES`.
-2. The registry source, with `//` and `/* */` comments stripped, must still define
+2. The destroy-target source, with `//` and `/* */` comments stripped, must still define
    `ArmDestroyTargets` and `DiagnoseEmptyDestroyTargets` with live return arms and the
    unresolved-alias `m_sInertReason` line.
 3. Each other file must keep its truth pin, such as `SpawnMissionEntities`.
-4. Four RED proofs perturb the registry text in memory (a paraphrased claim, collapsed returns, a
-   renamed function, a pin moved into a comment) and require the checks above to reject each.
+4. Four RED proofs perturb the destroy-target text in memory (a paraphrased claim, collapsed
+   returns, a renamed function, a pin moved into a comment) and require the checks above to
+   reject each.
    No file is written; the FAIL lines of a RED proof show a `/tmp/tmp.` display path.
 
 Exit codes: 0 every live pin holds and every RED proof failed as expected; 1 a missing file, a
