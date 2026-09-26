@@ -1,12 +1,23 @@
-//! Briefing rebuild (2026-09-14) -- Frequencies and ORBAT pages.
+/**
+ * @file TBD_BriefingFrequenciesPage.c
+ * @brief The Frequencies page: the long-range command net and the short-range squad nets.
+ *
+ * Role: draws one row per radio net with its frequency chip and auxiliary channels.  Position: TBD_BriefingNav.CreatePage creates it; TBD_BriefingScreen builds it into the page column.
+ * State: none beyond TBD_BriefingPage.  Invariants: long-range nets come first in gold; the reader's
+ * own squad net is highlighted.
+ */
 
 //! `frequencies_panel`: the LR command net (gold) and the SR squad nets; the reader's own squad
 //! net is highlighted.
 class TBD_BriefingFrequenciesPage : TBD_BriefingPage
 {
+	//! @return the panel title
 	override string Title() { return "Radio Frequencies Net"; }
+	//! @return the header icon key
 	override string Icon()  { return "cell_tower"; }
 
+	//! Fill the page: the long-range nets, then the short-range nets with their count.
+	//! @param content the scroll list column
 	override void Fill(Widget content)
 	{
 		array<ref TBD_NetInfo> nets = m_Catalog.GetNets();
@@ -33,6 +44,9 @@ class TBD_BriefingFrequenciesPage : TBD_BriefingPage
 		}
 	}
 
+	//! Add one net row, tinted gold for long range and highlighted for the reader's own net.
+	//! @param content the column to add to
+	//! @param net the net
 	protected void AddNet(Widget content, TBD_NetInfo net)
 	{
 		Widget row = TBD_UILayouts.CreateStretched(TBD_UILayouts.BRIEFING_FREQ_ROW, content);
@@ -81,82 +95,5 @@ class TBD_BriefingFrequenciesPage : TBD_BriefingPage
 		TBD_UITheme.Write(auxValue, net.AuxText());
 		TBD_UITheme.Paint(auxLabel, TBD_UITheme.DIM_INK);
 		TBD_UITheme.Paint(auxValue, TBD_UITheme.MUTED_INK);
-	}
-}
-
-//! ORBAT: the lobby's roster (read-only, the reader's side) beside the kit inspector, exactly the
-//! slotting screen's pair. No page panel of its own -- `TBD_OrbatPage.layout` holds the two docks.
-class TBD_BriefingOrbatPage : TBD_BriefingPage
-{
-	protected ref TBD_LobbyRosterPanel m_Roster;
-	protected ref TBD_KitInspectorPanel m_Kit;
-
-	override string Title() { return "ORBAT"; }
-	override string Icon()  { return "groups"; }
-	override bool UsesPanel() { return false; }
-
-	override void Fill(Widget content)
-	{
-		if (!m_Lobby)
-			return;
-
-		m_wRoot = TBD_UILayouts.Create(TBD_UILayouts.BRIEFING_ORBAT_PAGE, content);
-		if (!m_wRoot)
-			return;
-
-		Widget rosterRoot = TBD_UILayouts.Create(TBD_UILayouts.PANEL_FILL, m_wRoot.FindAnyWidget("RosterDock"));
-		m_Roster = new TBD_LobbyRosterPanel();
-		if (m_Roster.Build(rosterRoot, m_Lobby))
-		{
-			m_Roster.SetReadOnly(true);
-			m_Roster.SetShowLocate(true);
-			m_Roster.GetOnSelected().Insert(OnSlotSelected);
-			m_Roster.GetOnLocate().Insert(OnSquadLocate);
-		}
-
-		Widget kitRoot = TBD_UILayouts.Create(TBD_UILayouts.LOBBY_KIT_INSPECTOR, m_wRoot.FindAnyWidget("KitDock"));
-		m_Kit = new TBD_KitInspectorPanel();
-		m_Kit.Build(kitRoot, m_Lobby);
-
-		string factionKey;
-		TBD_BriefingFaction own = m_Catalog.GetOwnFaction();
-		if (own)
-			factionKey = own.m_sKey;
-
-		m_Roster.SetFaction(factionKey);
-		if (!m_Lobby.GetOwnKey().IsEmpty())
-			m_Roster.Select(m_Lobby.GetOwnKey(), true);
-	}
-
-	//! Squad positions are not on the wire yet (operator word: fine for now) -- the button exists,
-	//! the pan waits for the data.
-	protected void OnSquadLocate(TBD_LobbyRosterPanel panel, string callsign)
-	{
-		Print(string.Format("[TBD][briefing] locate squad %1 (no squad position on the wire yet)", callsign));
-	}
-
-	protected void OnSlotSelected(TBD_LobbyRosterPanel panel, string slotKey)
-	{
-		if (!m_Kit || !m_Lobby)
-			return;
-
-		m_Kit.Show(m_Lobby.GetSlot(slotKey), m_Lobby.GetSquadOf(slotKey));
-	}
-
-	override void Destroy()
-	{
-		if (m_Roster)
-		{
-			m_Roster.GetOnSelected().Remove(OnSlotSelected);
-			m_Roster.GetOnLocate().Remove(OnSquadLocate);
-			m_Roster.Destroy();
-		}
-
-		if (m_Kit)
-			m_Kit.Destroy();
-
-		m_Roster = null;
-		m_Kit = null;
-		super.Destroy();
 	}
 }

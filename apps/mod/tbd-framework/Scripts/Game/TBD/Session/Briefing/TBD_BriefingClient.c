@@ -1,38 +1,48 @@
-//! Briefing feature module - CLIENT payload cache + invokers the screen binds to. Split out of TBD_BriefingController.c (UI reorg 2026-09-12); logic unchanged.
-//!
-//! CLIENT -- the last briefing this player received, and the change notifications the screen
-//! binds to.
-//!
-//! Static because the screen is created and destroyed by the menu manager: parking the payload
-//! on the screen would re-request it on every open and lose it on every close. The screen still
-//! re-requests on open (the ORBAT moves while players slot up), but it always has something to
-//! draw in the meantime.
+/**
+ * @file TBD_BriefingClient.c
+ * @brief Client cache of the last briefing and ready tally, with the invokers the screen binds to.
+ *
+ * Role: holds this player's last briefing payload and readiness answer and notifies on change;
+ * sends the briefing and ready requests through the local player controller.  Position: the
+ * Briefing screen and SCR_PlayerController's stage handler call it; SCR_PlayerController's reply
+ * RPCs feed `Accept` and `AcceptTally`.
+ * State: static payload, ready flag, tally and two invokers on the client, for the life of the
+ * script VM; static because the menu manager creates and destroys the screen.  Invariants: the
+ * ready flag set by `ReportReady` is optimistic, and the authority's `AcceptTally` decides it; a
+ * request without a local player controller does nothing; `Reset` clears everything for a new
+ * briefing phase.
+ */
+
+//! Client-side briefing cache and change notifications.
 class TBD_BriefingClient
 {
-	protected static ref TBD_BriefingPayload m_Payload;
-	protected static bool m_bReady;
-	protected static string m_sTally;
+	protected static ref TBD_BriefingPayload m_Payload; //!< last payload received; null until one arrives
+	protected static bool m_bReady; //!< this player is ready; default false
+	protected static string m_sTally; //!< last tally text from the server
 
 	protected static ref ScriptInvoker m_OnPayloadChanged; //!< (TBD_BriefingPayload payload)
 
 	protected static ref ScriptInvoker m_OnReadyStateChanged; //!< (string tally)
 
+	//! @return the last payload received, or null
 	static TBD_BriefingPayload GetPayload()
 	{
 		return m_Payload;
 	}
 
+	//! @return true when this player is marked ready
 	static bool IsReady()
 	{
 		return m_bReady;
 	}
 
+	//! @return the last tally text, or empty
 	static string GetReadyTally()
 	{
 		return m_sTally;
 	}
 
-	//! (TBD_BriefingPayload) -- lazily created.
+	//! @return the invoker raised with (TBD_BriefingPayload payload) when a payload arrives; created on first use
 	static ScriptInvoker GetOnPayloadChanged()
 	{
 		if (!m_OnPayloadChanged)
@@ -41,7 +51,7 @@ class TBD_BriefingClient
 		return m_OnPayloadChanged;
 	}
 
-	//! (string tally) -- lazily created.
+	//! @return the invoker raised with (string tally) when a readiness answer arrives; created on first use
 	static ScriptInvoker GetOnReadyStateChanged()
 	{
 		if (!m_OnReadyStateChanged)
@@ -50,7 +60,8 @@ class TBD_BriefingClient
 		return m_OnReadyStateChanged;
 	}
 
-	//! Ask the server for this player's briefing. No-op without a local controller.
+	//! Ask the server for this player's briefing; does nothing without a local player controller.
+	//! @authority client
 	static void Request()
 	{
 		SCR_PlayerController pc = SCR_PlayerController.Cast(GetGame().GetPlayerController());
@@ -60,6 +71,9 @@ class TBD_BriefingClient
 		pc.TBD_RequestBriefing();
 	}
 
+	//! Report this player ready: set the flag optimistically and send the report; does nothing
+	//! without a local player controller.
+	//! @authority client
 	static void ReportReady()
 	{
 		SCR_PlayerController pc = SCR_PlayerController.Cast(GetGame().GetPlayerController());
@@ -72,7 +86,8 @@ class TBD_BriefingClient
 		pc.TBD_ReportReady();
 	}
 
-	//! A payload arrived (or was built locally on a host).
+	//! Store a payload that arrived, or was built in place on a listen host, and notify.
+	//! @param payload the new payload
 	static void Accept(TBD_BriefingPayload payload)
 	{
 		m_Payload = payload;
@@ -83,6 +98,8 @@ class TBD_BriefingClient
 
 	//! The authority's verdict on a readiness report. `accepted` false means the server refused
 	//! (no slot), so the button is released and the reason shows in the status line.
+	//! @param tally the tally text, or the refusal reason
+	//! @param accepted the server recorded the readiness
 	static void AcceptTally(string tally, bool accepted)
 	{
 		m_sTally = tally;
@@ -92,7 +109,7 @@ class TBD_BriefingClient
 			m_OnReadyStateChanged.Invoke(m_sTally);
 	}
 
-	//! New briefing phase: forget the last round's answers.
+	//! Forget the last payload and readiness for a new briefing phase.
 	static void Reset()
 	{
 		m_Payload = null;

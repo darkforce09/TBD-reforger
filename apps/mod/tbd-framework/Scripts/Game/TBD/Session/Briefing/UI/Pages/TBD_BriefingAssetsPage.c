@@ -1,18 +1,27 @@
-//! Briefing rebuild (2026-09-14) -- Assets and Uniforms pages, one builder each for both sides:
-//! the enemy page is the friendly page painted in the enemy tint (operator word), minus Locate.
+/**
+ * @file TBD_BriefingAssetsPage.c
+ * @brief The Assets page for either side: vehicle types, their specifications and each vehicle.
+ *
+ * Role: draws one collapsible group per vehicle type with a collapsed Vehicle Info section (3D
+ * preview and specifications) and one collapsible row per vehicle (ammunition, inventory grids).  Position: TBD_BriefingNav.CreatePage creates it; TBD_BriefingScreen builds it into the page column.
+ * State: which side it shows, fixed at construction.  Invariants: the enemy page is the friendly
+ * builder in the enemy tint, without Locate; Locate appears only for a vehicle with a position.
+ */
 
 //! `friendly_vehicles_panel`: per vehicle type a collapsible group (name - count) holding a
 //! collapsed "Vehicle Info" (3D render + specs) and one collapsible row per vehicle (ammunition,
 //! inventory grids, Locate on the friendly side).
 class TBD_BriefingAssetsPage : TBD_BriefingPage
 {
-	protected bool m_bFriendly;
+	protected bool m_bFriendly; //!< true for the reader's side
 
+	//! @param friendly true for the reader's side
 	void TBD_BriefingAssetsPage(bool friendly)
 	{
 		m_bFriendly = friendly;
 	}
 
+	//! @return the panel title
 	override string Title()
 	{
 		if (m_bFriendly)
@@ -21,10 +30,13 @@ class TBD_BriefingAssetsPage : TBD_BriefingPage
 		return "Enemy Assets";
 	}
 
+	//! @return the header icon key
 	override string Icon() { return "directions_car"; }
 
+	//! @return the side's row ink, or the primary container ink without a faction
 	override int IconTint() { return SideInk(); }
 
+	//! @return the side's row ink, or the primary container ink without a faction
 	protected int SideInk()
 	{
 		TBD_BriefingFaction faction = m_Catalog.GetFaction(m_bFriendly);
@@ -34,6 +46,8 @@ class TBD_BriefingAssetsPage : TBD_BriefingPage
 		return TBD_UITheme.FactionRowInk(faction.m_eTint);
 	}
 
+	//! Add the side's role chip, and on the Assets page the vehicle count.
+	//! @param badgeDock the header chip dock
 	override void AddBadges(Widget badgeDock)
 	{
 		TBD_BriefingFaction faction = m_Catalog.GetFaction(m_bFriendly);
@@ -43,6 +57,7 @@ class TBD_BriefingAssetsPage : TBD_BriefingPage
 		AddBadge(badgeDock, m_Catalog.CountAssets(m_bFriendly).ToString(), CountTint(), false);
 	}
 
+	//! @return PRIMARY for the reader's side, OPFOR for the other
 	protected TBD_EUITint CountTint()
 	{
 		if (m_bFriendly)
@@ -51,6 +66,8 @@ class TBD_BriefingAssetsPage : TBD_BriefingPage
 		return TBD_EUITint.OPFOR;
 	}
 
+	//! Fill the page with one group per vehicle type of the side.
+	//! @param content the scroll list column
 	override void Fill(Widget content)
 	{
 		TBD_BriefingFaction faction = m_Catalog.GetFaction(m_bFriendly);
@@ -83,6 +100,10 @@ class TBD_BriefingAssetsPage : TBD_BriefingPage
 		}
 	}
 
+	//! Add the collapsed Vehicle Info section: preview, weapons, mobility and crew.
+	//! @param parent the group body
+	//! @param type the vehicle type
+	//! @param ground the ARGB ground colour under the section
 	protected void AddVehicleInfo(Widget parent, TBD_AssetTypeInfo type, int ground)
 	{
 		TBD_SectionComponent info = TBD_SectionComponent.Mount(parent, "Vehicle Info", ground);
@@ -126,6 +147,12 @@ class TBD_BriefingAssetsPage : TBD_BriefingPage
 		}
 	}
 
+	//! Add one collapsed vehicle row with its ammunition and inventory.
+	//! @param parent the group body
+	//! @param type the vehicle type
+	//! @param instance the vehicle
+	//! @param ground the ARGB ground colour under the row
+	//! @param tint the side tint for the callsign badge
 	protected void AddInstance(Widget parent, TBD_AssetTypeInfo type, TBD_AssetInstanceInfo instance, int ground, TBD_EUITint tint)
 	{
 		TBD_SectionComponent row = TBD_SectionComponent.Mount(parent, type.m_sName, ground);
@@ -157,6 +184,11 @@ class TBD_BriefingAssetsPage : TBD_BriefingPage
 		AddInventory(body, "Miscellaneous", instance.m_aInvMisc, rowGround);
 	}
 
+	//! Add one captioned inventory grid; an empty list adds nothing.
+	//! @param parent the row body
+	//! @param title the caption
+	//! @param entries the items
+	//! @param ground the ARGB ground colour under the grid
 	protected void AddInventory(Widget parent, string title, array<ref TBD_KitEntry> entries, int ground)
 	{
 		if (!entries || entries.IsEmpty())
@@ -164,88 +196,5 @@ class TBD_BriefingAssetsPage : TBD_BriefingPage
 
 		TBD_Caption.Mount(parent, title);
 		AddCellGrid(parent, entries, 3, ground, true);
-	}
-}
-
-//! `visual_pid_uniforms_panel`: one card per faction component -- the doll wearing that
-//! component's rifleman prefab, its weapon chips and camo name.
-class TBD_BriefingUniformsPage : TBD_BriefingPage
-{
-	protected bool m_bFriendly;
-
-	void TBD_BriefingUniformsPage(bool friendly)
-	{
-		m_bFriendly = friendly;
-	}
-
-	override string Title()
-	{
-		if (m_bFriendly)
-			return "Friendly Uniforms";
-
-		return "Enemy Uniforms";
-	}
-
-	override string Icon() { return "checkroom"; }
-
-	override int IconTint()
-	{
-		TBD_BriefingFaction faction = m_Catalog.GetFaction(m_bFriendly);
-		if (!faction)
-			return TBD_UITheme.PRIMARY_CONTAINER;
-
-		return TBD_UITheme.FactionRowInk(faction.m_eTint);
-	}
-
-	override void AddBadges(Widget badgeDock)
-	{
-		TBD_BriefingFaction faction = m_Catalog.GetFaction(m_bFriendly);
-		if (faction)
-			AddBadge(badgeDock, faction.m_sRoleLabel, faction.m_eTint);
-	}
-
-	override void Fill(Widget content)
-	{
-		TBD_BriefingFaction faction = m_Catalog.GetFaction(m_bFriendly);
-		int borderTone = TBD_UITheme.KIT_CARD_BORDER;
-		if (faction && !m_bFriendly)
-			borderTone = TBD_UITheme.FactionRowBorder(faction.m_eTint);
-
-		foreach (TBD_UniformInfo uniform : m_Catalog.GetUniforms(m_bFriendly))
-		{
-			Widget card = TBD_UILayouts.CreateStretched(TBD_UILayouts.BRIEFING_UNIFORM_CARD, content);
-			if (!card)
-				continue;
-
-			Widget border = card.FindAnyWidget("Border");
-			Widget background = card.FindAnyWidget("Background");
-			TBD_UILayouts.MountRounded(border, TBD_UITheme.RADIUS_ROW);
-			TBD_UILayouts.MountRounded(background, TBD_UITheme.RADIUS_ROW - 1);
-			TBD_UITheme.PaintOver(border, borderTone, m_iGround);
-			TBD_UITheme.PaintOver(background, TBD_UITheme.KIT_CARD_FILL, m_iGround);
-			int cardGround = TBD_UITheme.Over(TBD_UITheme.KIT_CARD_FILL, m_iGround);
-
-			TextWidget name = TextWidget.Cast(card.FindAnyWidget("Name"));
-			TBD_UITheme.Write(name, uniform.m_sName);
-			TBD_UITheme.Paint(name, TBD_UITheme.BRIGHT_INK);
-			TBD_UITheme.PaintOver(card.FindAnyWidget("HeaderRule"), TBD_UITheme.KIT_CARD_BORDER, cardGround);
-
-			PaintPreviewBox(card, cardGround);
-			TBD_KitPreviewComponent preview = AttachPreview(card);
-			if (preview)
-				preview.ShowPrefab(uniform.Prefab(), null, uniform.m_sName);
-
-			Widget chips = card.FindAnyWidget("ChipsDock");
-			foreach (string chipText : uniform.m_aChips)
-			{
-				TBD_ChipComponent chip = TBD_ChipComponent.Mount(chips, chipText, TBD_EUITint.NEUTRAL, cardGround);
-				if (chip)
-					AlignableSlot.SetPadding(chip.GetRootWidget(), 0, 0, 6, 0);
-			}
-
-			TextWidget camo = TextWidget.Cast(card.FindAnyWidget("CamoLabel"));
-			TBD_UITheme.Write(camo, uniform.m_sCamo);
-			TBD_UITheme.Paint(camo, TBD_UITheme.MUTED_INK);
-		}
 	}
 }

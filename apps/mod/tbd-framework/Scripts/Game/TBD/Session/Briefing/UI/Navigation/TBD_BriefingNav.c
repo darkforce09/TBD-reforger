@@ -1,35 +1,20 @@
-//! Briefing rebuild (2026-09-14) -- the two navigation strips' tables and the page factory.
-//!
-//! Primary nav (LeftDock, `primary_navigation_panel`) is `TBD_BriefingPrimaryNav` (its own panel);
-//! `TBD_EBriefingMode` is its item order.
-//! Topic nav (CenterDock, `briefing_navigation_panel`): ten topics in three groups, separators
-//! between the groups. Page widths are the mockups' panel widths; the map behind never moves.
-enum TBD_EBriefingMode
-{
-	MAP,
-	BRIEFING,
-	PLAYERS,
-	MARKERS
-}
+/**
+ * @file TBD_BriefingNav.c
+ * @brief The topic navigation's item table, the page widths and the page factory.
+ *
+ * Role: lists the ten topics in three groups, gives each page its column width and creates its
+ * page.  Position: TBD_BriefingTopicNav reads the items; TBD_BriefingScreen.ShowPage reads the width and creates the page.
+ * State: none; pure functions.  Invariants: the item order matches TBD_EBriefingPage; widths are
+ * the mockups' panel widths in pixels; the map behind never moves.
+ */
 
-enum TBD_EBriefingPage
-{
-	FREQUENCIES,
-	ORBAT,
-	FRIENDLY_ASSETS,
-	FRIENDLY_UNIFORMS,
-	ENEMY_ASSETS,
-	ENEMY_UNIFORMS,
-	OBJECTIVES,
-	RULES,
-	BACKGROUND,
-	PARAMETERS
-}
-
+//! Topic table and page factory of the Briefing screen.
 class TBD_BriefingNav
 {
-	static const int WIDTH_MARKERS = 320;
+	static const int WIDTH_MARKERS = 320; //!< markers panel width, pixels
 
+	//! Append the ten topic items; Friendly Assets and Objectives carry a separator before them.
+	//! @param outItems receives the items in TBD_EBriefingPage order
 	static void TopicItems(notnull array<ref TBD_NavItemData> outItems)
 	{
 		outItems.Insert(new TBD_NavItemData("Frequencies", "radio"));
@@ -44,13 +29,17 @@ class TBD_BriefingNav
 		outItems.Insert(new TBD_NavItemData("Parameters", "tune"));
 	}
 
+	//! Mark `item` to draw a separator above it.
+	//! @return `item`
 	protected static TBD_NavItemData Separated(TBD_NavItemData item)
 	{
 		item.m_bSeparatorBefore = true;
 		return item;
 	}
 
-	//! Content dock width per page (mockup panel widths; ORBAT = lobby roster + kit inspector).
+	//! The page column width; ORBAT holds the lobby roster and the kit inspector side by side.
+	//! @param page the page
+	//! @return the width in pixels; 448 for an unknown page
 	static int PageWidth(TBD_EBriefingPage page)
 	{
 		switch (page)
@@ -70,6 +59,9 @@ class TBD_BriefingNav
 		return 448;
 	}
 
+	//! Create the page object for `page`; the caller builds it.
+	//! @param page the page
+	//! @return a new page, or null for an unknown page
 	static TBD_BriefingPage CreatePage(TBD_EBriefingPage page)
 	{
 		switch (page)

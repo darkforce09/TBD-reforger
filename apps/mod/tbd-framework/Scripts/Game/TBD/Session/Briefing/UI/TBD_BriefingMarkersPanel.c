@@ -1,12 +1,27 @@
-//! Briefing rebuild (2026-09-14) -- `markers_panel`: a plan dropdown and a Load Plan button.
-//! There is no plan store yet (operator word), so Load Plan logs the intent and nothing else.
+/**
+ * @file TBD_BriefingMarkersPanel.c
+ * @brief The Briefing screen's Markers mode panel: a plan dropdown and a Load Plan button.
+ *
+ * Role: builds `markers_panel` from TBD_BriefingCatalog's plans; Load Plan logs the chosen plan id.
+ * Position: TBD_BriefingScreen builds it in CenterDock in MARKERS mode and destroys it on mode change.
+ * State: the panel widgets, dropdown and button on the client, owned by the screen.
+ * Invariants: no plan store exists, so Load Plan changes nothing; the panel shares CenterDock with the topic
+ * navigation and removes its own widget.
+ */
+
+//! The Markers mode panel.
 class TBD_BriefingMarkersPanel : Managed
 {
-	protected Widget m_wRoot;
-	protected TBD_DropdownComponent m_Plans;
-	protected TBD_UIButton m_Load;
-	protected TBD_BriefingCatalog m_Catalog;
+	protected Widget m_wRoot; //!< the panel root
+	protected TBD_DropdownComponent m_Plans; //!< the plan dropdown; item tags are plan indices
+	protected TBD_UIButton m_Load; //!< the Load Plan button
+	protected TBD_BriefingCatalog m_Catalog; //!< the plans source
 
+	//! Build the panel into `dock`: caption, plan dropdown (first plan selected) and Load Plan.
+	//! @param dock the dock to build into
+	//! @param catalog the plans source
+	//! @param overlayHost the host for the dropdown's open menu
+	//! @return false when the dock, catalog or layout is missing
 	bool Build(Widget dock, TBD_BriefingCatalog catalog, Widget overlayHost)
 	{
 		m_Catalog = catalog;
@@ -62,6 +77,7 @@ class TBD_BriefingMarkersPanel : Managed
 		return true;
 	}
 
+	//! Unbind the button, close the dropdown and remove the panel widget.
 	void Destroy()
 	{
 		if (m_Load)
@@ -80,6 +96,8 @@ class TBD_BriefingMarkersPanel : Managed
 		m_Catalog = null;
 	}
 
+	//! Log the selected plan id, or `none`.
+	//! @param button the Load Plan button
 	protected void OnLoad(TBD_UIButton button)
 	{
 		string id = "none";

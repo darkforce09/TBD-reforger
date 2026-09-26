@@ -1,29 +1,40 @@
-//! Briefing rebuild (2026-09-14) -- one topic page of the Briefing screen.
-//!
-//! A page is a `TBD_PanelFill` (title - icon - badge chips) whose body is a `TBD_ScrollList` the
-//! subclass fills from `TBD_BriefingCatalog` with Common primitives (`TBD_Section`,
-//! `TBD_NumberedCard`, `TBD_KeyValueRow`, `TBD_Caption`, `STAT_CELL` grids). Pages that are not a
-//! single panel (ORBAT) override `UsesPanel()` and mount their own layout into the dock.
-//!
-//! Every 3D preview a page attaches is tracked here and destroyed with the page (the Pass-6
-//! rule: a `TBD_KitPreviewComponent` must be destroyed before its widget is cleared). Locate
-//! buttons pan the map through `TBD_BriefingScreen.LocateOnMap`.
+/**
+ * @file TBD_BriefingPage.c
+ * @brief The base of every Briefing topic page: fill panel, scroll list, chips, previews and Locate.
+ *
+ * Role: mounts a TBD_PanelFill (title, icon, badge chips) with a TBD_ScrollList body that a subclass
+ * fills from TBD_BriefingCatalog with Common primitives; pages that are not one panel override
+ * `UsesPanel()` and mount into the dock.  Position: TBD_BriefingNav.CreatePage creates a subclass;
+ * TBD_BriefingScreen builds and destroys it; Locate buttons pan through TBD_BriefingMapLauncher.
+ * State: the page's widgets, previews and Locate buttons on the client, owned by the screen.
+ * Invariants: every 3D preview it attaches is destroyed in `Destroy` before its widget is cleared;
+ * every Locate handler is unbound in `Destroy`; the screen reference is weak.
+ */
+
+//! One Briefing topic page; subclasses supply the title, icon, badges and content.
 class TBD_BriefingPage : Managed
 {
 	protected TBD_BriefingScreen m_Screen; //!< weak -- the screen owns the page
-	protected TBD_BriefingCatalog m_Catalog;
-	protected TBD_LobbyCatalog m_Lobby;
-	protected Widget m_wRoot;
-	protected TBD_PanelComponent m_Panel;
-	protected ref TBD_ScrollList m_List;
-	protected ref array<ref TBD_KitPreviewComponent> m_aPreviews;
-	protected ref array<TBD_UIButton> m_aLocateButtons;
-	protected ref array<float> m_aLocateX;
-	protected ref array<float> m_aLocateZ;
-	protected int m_iGround;
+	protected TBD_BriefingCatalog m_Catalog; //!< the data the page draws
+	protected TBD_LobbyCatalog m_Lobby; //!< the lobby data, for ORBAT
+	protected Widget m_wRoot; //!< the page root widget
+	protected TBD_PanelComponent m_Panel; //!< the fill panel; null when UsesPanel() is false
+	protected ref TBD_ScrollList m_List; //!< the panel's scroll list
+	protected ref array<ref TBD_KitPreviewComponent> m_aPreviews; //!< 3D previews to destroy with the page
+	protected ref array<TBD_UIButton> m_aLocateButtons; //!< Locate buttons, parallel to m_aLocateX and m_aLocateZ
+	protected ref array<float> m_aLocateX; //!< world X per Locate button, metres
+	protected ref array<float> m_aLocateZ; //!< world Z per Locate button, metres
+	protected int m_iGround; //!< ARGB ground colour under the content
 
-	static const int CELL_HEIGHT = 46;
+	static const int CELL_HEIGHT = 46; //!< stat cell height, pixels
 
+	//! Build the page into `dock`: the fill panel and scroll list, or the raw dock when
+	//! `UsesPanel()` is false, then `Fill`.
+	//! @param screen the owning screen
+	//! @param dock the page column
+	//! @param catalog the briefing data
+	//! @param lobby the lobby data
+	//! @return false when the dock, catalog, layout, panel or list is missing
 	bool Build(TBD_BriefingScreen screen, Widget dock, TBD_BriefingCatalog catalog, TBD_LobbyCatalog lobby)
 	{
 		m_Screen = screen;
@@ -66,6 +77,7 @@ class TBD_BriefingPage : Managed
 		return true;
 	}
 
+	//! Destroy the previews, unbind the Locate buttons and the list, and drop every reference.
 	void Destroy()
 	{
 		if (m_aPreviews)
@@ -100,17 +112,28 @@ class TBD_BriefingPage : Managed
 	}
 
 
+	//! @return the panel title
 	string Title()  { return "Page"; }
+	//! @return the header icon key; empty for none
 	string Icon()   { return ""; }
-	//! Header icon ink; faction pages return their side's ink.
+	//! @return the header icon ink; faction pages return their side's ink
 	int IconTint() { return TBD_UITheme.PRIMARY_CONTAINER; }
+	//! @return true when the page lives in the fill panel; false to mount into the raw dock
 	bool UsesPanel() { return true; }
-	//! Chips after the title (faction role, counts).
+	//! Add chips after the title, such as the faction role and counts.
+	//! @param badgeDock the header chip dock
 	void AddBadges(Widget badgeDock) {}
-	//! Fill `content` (the scroll list's column, or the raw dock when UsesPanel() is false).
+	//! Fill the page.
+	//! @param content the scroll list's column, or the raw dock when UsesPanel() is false
 	void Fill(Widget content) {}
 
 
+	//! Mount one header chip.
+	//! @param dock the header chip dock
+	//! @param text the chip text
+	//! @param tint the chip tint
+	//! @param pill round the chip ends
+	//! @return the chip, or null when it could not mount
 	protected TBD_ChipComponent AddBadge(Widget dock, string text, TBD_EUITint tint, bool pill = true)
 	{
 		int headerGround = TBD_UITheme.Over(TBD_UITheme.PANEL_HEADER_FILL, m_iGround);
@@ -124,7 +147,9 @@ class TBD_BriefingPage : Managed
 		return chip;
 	}
 
-	//! Attach a doll / vehicle preview to a mounted preview box (`Preview` + `Label`), tracked.
+	//! Attach a doll or vehicle preview to a mounted preview box (`Preview`, `Label`) and track it.
+	//! @param box the preview box
+	//! @return the preview, or null when the box is missing or the attach fails
 	protected TBD_KitPreviewComponent AttachPreview(Widget box)
 	{
 		if (!box)
@@ -138,6 +163,8 @@ class TBD_BriefingPage : Managed
 	}
 
 	//! Paint a preview box (`PreviewBorder`/`PreviewBG` or `Border`/`Background`, `GridImage`, `Label`).
+	//! @param box the preview box; null does nothing
+	//! @param ground the ARGB ground colour under it
 	protected void PaintPreviewBox(Widget box, int ground)
 	{
 		if (!box)
@@ -161,7 +188,12 @@ class TBD_BriefingPage : Managed
 			TBD_UITheme.PaintAlpha(grid, 0x3338BDF8);
 	}
 
-	//! A quiet "Locate" button that pans the map to (x, z). Mounted into `dock`.
+	//! Mount a quiet Locate button into `dock` that pans the map to (x, z).
+	//! @param dock the dock to mount into
+	//! @param x world X, metres
+	//! @param z world Z, metres
+	//! @param label the button text
+	//! @return the button, or null when it could not mount
 	protected TBD_UIButton AddLocate(Widget dock, float x, float z, string label = "Locate")
 	{
 		if (!dock)
@@ -184,16 +216,26 @@ class TBD_BriefingPage : Managed
 		return button;
 	}
 
+	//! Pan the map to the activated button's position through the screen's map launcher.
+	//! @param button the activated Locate button
 	protected void OnLocate(TBD_UIButton button)
 	{
 		int index = m_aLocateButtons.Find(button);
 		if (index < 0 || !m_Screen)
 			return;
 
-		m_Screen.LocateOnMap(m_aLocateX[index], m_aLocateZ[index]);
+		TBD_BriefingMapLauncher launcher = m_Screen.GetMapLauncher();
+		if (launcher)
+			launcher.LocateOnMap(m_aLocateX[index], m_aLocateZ[index]);
 	}
 
-	//! One key / value row over `ground`, mono value.
+	//! Mount one key-value row with a mono value.
+	//! @param parent the column to mount into
+	//! @param key the key text
+	//! @param value the value text
+	//! @param ground the ARGB ground colour under the row
+	//! @param valueTint the value tint
+	//! @return the row, or null when it could not mount
 	protected TBD_KeyValueRowComponent AddRow(Widget parent, string key, string value, int ground, TBD_EUITint valueTint = TBD_EUITint.NEUTRAL)
 	{
 		TBD_KeyValueRowComponent row = TBD_KeyValueRowComponent.Mount(parent);
@@ -205,7 +247,12 @@ class TBD_BriefingPage : Managed
 		return row;
 	}
 
-	//! Grid of `STAT_CELL`s, `columns` per row. `countOnly` = "Bandages  x4" cells.
+	//! Mount a grid of `STAT_CELL`s, `columns` per row; an empty list mounts nothing.
+	//! @param parent the column to mount into
+	//! @param entries the cells
+	//! @param columns cells per row: 2, 3, else 4
+	//! @param ground the ARGB ground colour under the grid
+	//! @param countOnly draw `label  x<count>` cells instead of label and value
 	protected void AddCellGrid(Widget parent, array<ref TBD_KitEntry> entries, int columns, int ground, bool countOnly)
 	{
 		if (!parent || !entries || entries.IsEmpty())
@@ -236,6 +283,8 @@ class TBD_BriefingPage : Managed
 		}
 	}
 
+	//! @param index the column index
+	//! @return `ColumnA` to `ColumnC` for 0 to 2, else `ColumnD`
 	protected static string ColumnName(int index)
 	{
 		switch (index)
@@ -248,7 +297,12 @@ class TBD_BriefingPage : Managed
 		return "ColumnD";
 	}
 
-	//! One `STAT_CELL`: label / value (+ amber count). `entry.m_eTint` SUCCESS / WARNING tints the value.
+	//! Mount one `STAT_CELL`: label and value, plus an amber count when positive; a non-neutral
+	//! `entry.m_eTint` tints the value.
+	//! @param column the column to mount into; null does nothing
+	//! @param entry the cell data; null does nothing
+	//! @param ground the ARGB ground colour under the cell
+	//! @param countOnly draw the label alone, in surface ink
 	protected void AddCell(Widget column, TBD_KitEntry entry, int ground, bool countOnly)
 	{
 		if (!column || !entry)

@@ -8,15 +8,11 @@ the player. The pages read `TBD_BriefingCatalog`, which serves mock data.
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Session/Briefing/UI/
-├── TBD_BriefingMarkersPanel.c  the Markers mode: a plan dropdown and a Load Plan button that logs
-├── TBD_BriefingNav.c           the mode and page enums, the two item tables, page widths, `CreatePage`
-├── TBD_BriefingPage.c          the page base: fill panel, scroll list, chips, 3D previews, Locate
-├── TBD_BriefingPageAssets.c    the Assets and Uniforms pages, friendly and enemy
-├── TBD_BriefingPageComms.c     the Frequencies page and the read-only ORBAT page
-├── TBD_BriefingPageInfo.c      the Objectives, Rules, Background and Parameters pages
-├── TBD_BriefingPrimaryNav.c    the primary navigation panel with slotted-count chips on Players
-├── TBD_BriefingScreen.c        `TBD_BriefingScreen`: map, docks, modes, pages, the ready action
-└── TBD_BriefingTopicNav.c      the topic navigation panel: ten topics in three groups
+├── Navigation/                  the mode and page enums, the two navigation panels, the page factory
+├── Pages/                       the page base and the ten topic pages
+├── TBD_BriefingMapLauncher.c    the full-screen map: open, frame the mission, close, Locate pans
+├── TBD_BriefingMarkersPanel.c   the Markers mode: a plan dropdown and a Load Plan button that logs
+└── TBD_BriefingScreen.c         `TBD_BriefingScreen`: docks, modes, pages, the ready action
 ```
 
 ## How it works
@@ -29,7 +25,9 @@ navigation sits in LeftDock and selects a `TBD_EBriefingMode` (`SetMode`); the t
 in CenterDock and selects a `TBD_EBriefingPage` (`ShowPage`), whose page `TBD_BriefingNav.CreatePage`
 builds in RightDock at the page's width. PLAYERS is a mode: `TBD_PlayersPanel` opens in `WideDock`
 beside the primary navigation with the map live behind it, and Markers is a mode with
-`TBD_BriefingMarkersPanel`. `LocateOnMap(x, z)` pans the map for every Locate button.
+`TBD_BriefingMarkersPanel`. `TBD_BriefingMapLauncher` opens the map when the screen opens, frames
+the mission centre, closes it with the screen, and its `LocateOnMap(x, z)` pans the map for every
+Locate button.
 
 Every page extends `TBD_BriefingPage` and reads `TBD_BriefingCatalog.Get()`. The ORBAT page reuses
 the lobby's `TBD_LobbyRosterPanel` read-only with Locate buttons, beside a `TBD_KitInspectorPanel`.
@@ -48,12 +46,13 @@ every menu through `TBD_MenuStack.CloseAll`. Load Plan logs the chosen plan id; 
 - Client: everything; the screen, navigation and pages run on the local player's machine.
 - Owner: nothing.
 - RPCs: none in this folder; the ready report and the deploy request travel through
-  `TBD_BriefingController` and `TBD_SpawnClient`.
+  the modded `SCR_PlayerController` in the parent folder and `TBD_SpawnClient`.
 - Replicated properties: none.
 
 ## Boundaries
 
-- Depends on: `TBD_BriefingCatalog` and `TBD_BriefingClient` in
+- Depends on: `TBD_BriefingCatalog` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Briefing/Catalog/`; `TBD_BriefingClient` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Briefing/`; `TBD_LobbyCatalog`,
   `TBD_LobbyRosterPanel` and `TBD_KitInspectorPanel` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/`; `TBD_PlayersCatalog` and
@@ -61,8 +60,8 @@ every menu through `TBD_MenuStack.CloseAll`. Load Plan logs the chosen plan id; 
   in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/`; the shared UI library in
   `apps/mod/tbd-framework/Scripts/Game/TBD/UI/`; the layouts in
   `apps/mod/tbd-framework/UI/layouts/Session/Briefing/`; the engine's `SCR_MapEntity`.
-- Used by: `TBD_BriefingController`, which opens and closes the `TBD_UIBriefing` preset on the
-  `BRIEFING` stage; `TBD_DockScreen` (the top-bar Briefing tab).
+- Used by: the modded `SCR_PlayerController` in the parent folder, which opens and closes the
+  `TBD_UIBriefing` preset on the `BRIEFING` stage; `TBD_DockScreen` (the top-bar Briefing tab).
 - Rules: pages read only `TBD_BriefingCatalog.Get()`; the map stays open under every mode, so no
   mode pushes a stacked menu; lines added stay ASCII and `cargo xtask mod compile` checks that the
   scripts compile.

@@ -8,12 +8,13 @@ marked ready, and opens the Briefing screen on every client when the round enter
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Session/Briefing/
-├── TBD_BriefingCatalog.c     the Briefing screen's read surface: nets, objectives, rules, assets, plans
-├── TBD_BriefingClient.c      client cache of the last briefing and ready tally, with invokers
-├── TBD_BriefingController.c  modded `SCR_PlayerController`: briefing and ready RPCs, the stage handler
-├── TBD_BriefingData.c        the briefing payload models: roles, groups, zones, kit lines
-├── TBD_BriefingService.c     server payload builder for one player's side, and the wire format
-└── UI/                       the Briefing screen: map, navigation and the ten pages
+├── Catalog/                      the Briefing screen's read surface and the records its pages draw
+├── SCR_PlayerController.c        modded `SCR_PlayerController`: briefing and ready RPCs, the stage handler
+├── Service/                      server payload builder for one player's side, and the wire format
+├── TBD_BriefingClient.c          client cache of the last briefing and ready tally, with invokers
+├── TBD_BriefingPayload.c         the briefing payload and its records: roles, groups, zones, kit lines
+├── TBD_BriefingReadyRegistry.c   server readiness per player and the per-side ready tally
+└── UI/                           the Briefing screen: map, navigation and the ten pages
 ```
 
 ## How it works
@@ -23,8 +24,10 @@ TBD_FrameworkManager (server) enters BRIEFING -> pushes TBD_OnStageChanged to ea
   (a joining client reads the replicated stage once instead)
 client TBD_OnStageChanged(BRIEFING) -> TBD_BriefingClient.Reset, TBD_MenuStack.Open(TBD_UIBriefing)
 client TBD_BriefingClient.Request -> TBD_RpcAsk_Briefing  --RPC-->  server
-server TBD_BriefingService builds the caller's side from TBD_SpawnManager and TBD_MissionLoader
-       <--RPC-- TBD_RpcDo_Briefing(wire, situation, mission, execution) -> TBD_BriefingClient.Accept
+server TBD_BriefingService builds the caller's side from TBD_SpawnManager and TBD_MissionLoader,
+       TBD_BriefingWire.Serialise flattens it
+       <--RPC-- TBD_RpcDo_Briefing(wire, situation, mission, execution) -> TBD_BriefingWire.Parse
+       -> TBD_BriefingClient.Accept
 client Ready & Continue -> TBD_BriefingClient.ReportReady -> TBD_RpcAsk_Ready  --RPC-->  server
 server TBD_BriefingReadyRegistry records it <--RPC-- TBD_RpcDo_ReadyTally(own side's tally, accepted)
 ```
@@ -32,9 +35,10 @@ server TBD_BriefingReadyRegistry records it <--RPC-- TBD_RpcDo_ReadyTally(own si
 `TBD_OnStageChanged` is the only thing that opens or closes the screen: it opens it on `BRIEFING`
 and closes it on any other stage. The server resolves the caller's side from its own state, so a
 player receives only their side's briefing and their own side's ready tally. The briefing wire is
-tab-separated lines of at most `MAX_PAYLOAD_LINES` (400), every field prefixed with `.`, with the
-orders' situation, mission and execution texts sent as separate string arrays; its log channel is
-`Briefing`.
+`TBD_WireCodec` records of at most `MAX_PAYLOAD_LINES` (400), every field prefixed with `.`, with
+the orders' situation, mission and execution texts sent as separate string arrays; its log channel
+is `Briefing`. `TBD_BriefingWireSelfCheck` round-trips a payload of empty fields once per process
+and logs the verdict.
 
 `TBD_BriefingCatalog` is what the pages draw: faction, nets, objectives, rule groups, lore,
 parameters, assets and uniforms for both sides, and plans. Its `Get()` builds it from
@@ -44,7 +48,7 @@ parameters, assets and uniforms for both sides, and plans. Its `Get()` builds it
 
 ## Authority
 
-- Server: `TBD_BriefingService` and `TBD_BriefingReadyRegistry`, and the server halves of the RPCs
+- Server: `TBD_BriefingService`, `TBD_BriefingWire.Serialise` and `TBD_BriefingReadyRegistry`, and the server halves of the RPCs
   (`@authority server`); the caller is `GetPlayerId()` of the controller the request arrived on.
 - Client: `TBD_BriefingClient`, `TBD_BriefingCatalog`, the stage handler (`@authority client` on the
   joining-client read) and the screen.
@@ -61,11 +65,13 @@ parameters, assets and uniforms for both sides, and plans. Its `Get()` builds it
 - Depends on: `TBD_SpawnManager` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/`;
   `TBD_MissionLoader` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`;
   `TBD_FrameworkManager` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/`;
-  `TBD_Registry` in `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; `TBD_SessionSelection` in
+  `TBD_MissionFactionNames` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/`;
+  `TBD_WireCodec`, `TBD_WarnOnce` and `TBD_Registry` in `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; `TBD_SessionSelection` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/`; `TBD_MenuStack` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/`; `TBD_BriefingMock` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Mock/`.
-- Used by: `TBD_FrameworkManager`, which pushes `TBD_OnStageChanged`; `TBD_DockScreen` in
+- Used by: `TBD_FrameworkManager`, which pushes `TBD_OnStageChanged` and arms
+  `TBD_BriefingService.SelfCheckWire`; `TBD_DockScreen` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/` (the top-bar Briefing tab).
 - Rules: a player receives only their own side's briefing and tally, resolved on the server; the
   stage handler is the one opener and closer of the screen; lines added stay ASCII and
