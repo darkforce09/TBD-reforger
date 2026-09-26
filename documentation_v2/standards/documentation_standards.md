@@ -108,7 +108,7 @@ narrative about another implementation and retired paths in the API crate's sour
 refuses ticket identifiers, retired names and deleted script names in every tracked file under
 `tools_v2/`. Elsewhere review holds them. The comment below states an engine constraint and the
 invariant that follows from it
-(`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/TBD_MissionSlotStruct.c:53-55`):
+(`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/TBD_MissionSlotStruct.c:61-63`):
 
 ```c
 	//! Sentinel for "y absent from JSON". JsonLoadContext leaves a missing key at the
@@ -211,7 +211,7 @@ file and what it does. From `apps/mod/tbd-export/Scripts/Game/TBD/Export/TBD_Roa
 name does not carry gets a trailing `//!<` comment with its unit, default or JSON key. A
 hand-written JSON DTO struct carries `//! @contract` and documents every field, because
 `JsonLoadContext` maps JSON keys to field names and the coupling is invisible otherwise. From
-`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/TBD_MissionSlotStruct.c:28-35`:
+`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/TBD_MissionSlotStruct.c:37-44`:
 
 ```c
 //! One container cargo row (loadout-export v2 {container,item,qty}).

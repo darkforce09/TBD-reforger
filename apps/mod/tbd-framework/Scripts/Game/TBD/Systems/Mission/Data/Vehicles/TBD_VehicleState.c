@@ -1,59 +1,49 @@
-//! T-680 - vehicle states: lock, fuel, ammo.
-//!
-//! T-706 put `lock` / `fuel` / `ammo` on `$defs/vehicle` (and the vehicle-shaped `$defs/entity`).
-//! `TBD_MissionVehicleStruct` does not declare those members, so the primary parse cannot see
-//! them. Spawned vehicles kept engine defaults regardless of the authored values. This file is
-//! the reader. Editor UI for the three attrs is NOT this slice.
-//!
-//! Same pattern as `TBD_WaypointRuntime.c`: a second pass over
-//! `TBD_MissionLoader.GetRawJson()` with a root that declares `vehicles[]` lock/fuel/ammo and
-//! nothing else. Backend/TBD_MissionLoader.c and TBD_MissionVehicleStruct.c stay out of this
-//! slice's owns list.
-//!
-//! `JsonLoadContext.ReadValue` ALLOCATES a nested `ref <class>` field even when the JSON key is
-//! ABSENT. `vehicles` is an ARRAY, so presence is a null-or-Count() test. Numeric fields that
-//! can be authored as 0 (`fuel`, `ammo`) carry an ABSENT sentinel. Bools cannot: `lock` false
-//! and an omitted `lock` are the same bound value (T-676 `repeat`). Apply lock only when the
-//! bound value is true; authored false and absent both leave the engine default (unlocked).
-//!
-//!   lock  -> VehicleControllerComponent.LockPilotControls (pilot controls, not door locks).
-//!   fuel  -> FuelManagerComponent nodes via BaseFuelNode.SetFuel (fraction 0..1 of max).
-//!            Slotted tanks (trailers / extra nodes) are included via SlotManagerComponent.
-//!   ammo  -> TURRET: BaseWeaponManagerComponent.GetWeapons -> GetCurrentMagazine
-//!            SetAmmoCount. CARGO: BaseInventoryStorageComponent.GetAll (child components
-//!            included) items that carry BaseMagazineComponent. Same fraction on both.
-//!            Spare magazines in cargo AND the currently loaded turret magazine are in
-//!            scope. Loose world magazines that are not in this vehicle's inventory are not.
-//!
-//! The gate is `cargo xtask mod compile`. It cannot run a round. Whether a locked half-fuel
-//! vehicle actually spawns locked with half fuel is a human checklist item.
-//! @contract mission.schema.json#/$defs/vehicle
+/**
+ * @file TBD_VehicleState.c
+ * @brief Applies authored `vehicles[]` lock, fuel and ammo to the placed vehicles.
+ *
+ * Role: a second `JsonLoadContext` pass over the held mission JSON whose root declares only
+ * `vehicles[]` lock, fuel and ammo, and the engine calls that apply them:
+ *   lock -> `VehicleControllerComponent.LockPilotControls` (pilot controls, not door locks);
+ *   fuel -> every `BaseFuelNode.SetFuel` as a fraction of its maximum, slotted tanks included;
+ *   ammo -> the loaded magazine of each turret weapon and every magazine in cargo, as a fraction.
+ * Position: `ApplySpawned` runs from `TBD_SlotBodyMaterializer` after
+ * `TBD_MissionVehicleRoster.SeatAuthoredCrews`; `Apply` is also called by
+ * `TBD_VehicleSpawnDefaults`. Reads `TBD_MissionJsonPass.LoadRoot`.
+ * State: the rows of the last pass (static), server only.  Invariants: an absent fuel or ammo key
+ * reads `ABSENT` and leaves the engine default; `lock` applies only when true, because an absent
+ * bool and an authored false bind the same; a fraction outside 0..1 is logged and skipped.
+ */
 
 //! One `vehicles[]` row's state fields. Field names are the JSON keys.
+//! @contract mission.schema.json#/$defs/vehicle
 class TBD_VehicleStateWireStruct
 {
-	static const float ABSENT = -1000000;
-	static const float XZ_M = 3.0;
-	static const float Y_M = 300.0;
+	static const float ABSENT = -1000000; //!< "key absent from JSON" sentinel for `fuel` and `ammo`
+	static const float XZ_M = 3.0; //!< metres, half-extent in X and Z of the box that finds the vehicle
+	static const float Y_M = 300.0; //!< metres, half-extent in Y of that box
 
-	string uid;
-	string alias;
-	float x;
-	float z;
+	string uid; //!< `uid`, or empty
+	string alias; //!< `alias`
+	float x; //!< `x`, world metres
+	float z; //!< `z`, world metres
 	bool lock;                 //!< Schema boolean. Absent and authored-false bind the same.
 	float fuel = ABSENT;       //!< Fraction 0..1. ABSENT when the key was omitted. 0 is authored.
 	float ammo = ABSENT;       //!< Fraction 0..1. ABSENT when the key was omitted. 0 is authored.
 
+	//! Whether the row authors `fuel`.
 	bool HasFuel()
 	{
 		return fuel != ABSENT;
 	}
 
+	//! Whether the row authors `ammo`.
 	bool HasAmmo()
 	{
 		return ammo != ABSENT;
 	}
 
+	//! Whether the row authors anything this reader applies: `lock` true, `fuel` or `ammo`.
 	bool HasAny()
 	{
 		if (lock)
@@ -67,22 +57,22 @@ class TBD_VehicleStateWireStruct
 }
 
 //! Root of the second parse. Declares `vehicles` and nothing else.
+//! @contract mission.schema.json#/properties/vehicles
 class TBD_VehicleStateDocStruct
 {
-	ref array<ref TBD_VehicleStateWireStruct> vehicles;
+	ref array<ref TBD_VehicleStateWireStruct> vehicles; //!< `vehicles[]`
 }
 
 //! Server-side reader: bind vehicles[] lock/fuel/ammo and apply them to the spawned body.
 class TBD_VehicleState
 {
-	//! Scratch for the AABB query. Static because QueryEntitiesByAABB takes a function.
-	protected static IEntity s_QueryHit;
-	protected static ref array<ref TBD_VehicleStateWireStruct> s_aRows;
+	protected static ref array<ref TBD_VehicleStateWireStruct> s_aRows; //!< rows of the last pass; empty when none
 
-	//! Called from `TBD_SpawnManager.MaterializeSlotBodies` AFTER `SeatAuthoredCrews`, so every
-	//! roster vehicle has either joined its entities[] twin or been spawned. No-ops when the
-	//! document has no vehicles[] or no authored lock/fuel/ammo, so a rosterless mission boots
-	//! unchanged.
+	//! Apply every authored row to the vehicle standing at its position. Runs after
+	//! `SeatAuthoredCrews`, so every roster vehicle has either joined its `entities[]` twin or
+	//! been spawned. Does nothing when the document has no `vehicles[]` or no authored
+	//! lock/fuel/ammo; a row with no vehicle at its position logs a WARNING and is skipped.
+	//! @authority server
 	static void ApplySpawned()
 	{
 		if (!Parse())
@@ -133,6 +123,10 @@ class TBD_VehicleState
 
 	//! Apply authored lock / fuel / ammo to one spawned vehicle. Unset numerics are ABSENT and
 	//! leave engine defaults. Lock applies only when the bound bool is true (see header).
+	//! @param vehicle the vehicle entity; null does nothing
+	//! @param fuel fraction 0..1, or `TBD_VehicleStateWireStruct.ABSENT`
+	//! @param ammo fraction 0..1, or `TBD_VehicleStateWireStruct.ABSENT`
+	//! @authority server
 	static void Apply(IEntity vehicle, bool lock, float fuel, float ammo)
 	{
 		if (!vehicle)
@@ -148,16 +142,19 @@ class TBD_VehicleState
 			ApplyAmmo(vehicle, ammo);
 	}
 
+	//! Run the vehicle-state pass into `s_aRows`.
+	//! @return false when no mission text is held; true otherwise, with an ERROR line and no rows
+	//! when the text or its root does not read
 	protected static bool Parse()
 	{
 		s_aRows = new array<ref TBD_VehicleStateWireStruct>();
 
-		string raw = TBD_MissionLoader.GetRawJson();
-		if (raw.IsEmpty())
+		TBD_EMissionJsonPassOutcome outcome;
+		JsonLoadContext ctx = TBD_MissionJsonPass.LoadRoot(outcome);
+		if (outcome == TBD_EMissionJsonPassOutcome.NO_DOCUMENT)
 			return false;
 
-		JsonLoadContext ctx = new JsonLoadContext();
-		if (!ctx.LoadFromString(raw))
+		if (!ctx)
 		{
 			Print("[TBD][VehicleState] the mission document did not parse as JSON on the vehicle-state pass - no lock/fuel/ammo applied this round", LogLevel.ERROR);
 			return true;
@@ -176,38 +173,14 @@ class TBD_VehicleState
 		return true;
 	}
 
+	//! The first vehicle standing within the row's box.
+	//! @return the vehicle, or null when none is there
 	protected static IEntity FindBody(TBD_VehicleStateWireStruct wire)
 	{
-		BaseWorld world = GetGame().GetWorld();
-		if (!world)
-			return null;
-
-		s_QueryHit = null;
-
-		float xz = TBD_VehicleStateWireStruct.XZ_M;
-		float y = TBD_VehicleStateWireStruct.Y_M;
-		vector mins = Vector(wire.x - xz, -y, wire.z - xz);
-		vector maxs = Vector(wire.x + xz, y, wire.z + xz);
-		world.QueryEntitiesByAABB(mins, maxs, OnQuery);
-
-		IEntity hit = s_QueryHit;
-		s_QueryHit = null;
-		return hit;
+		return TBD_EntityQuery.FirstVehicleNear(wire.x, wire.z, TBD_VehicleStateWireStruct.XZ_M, TBD_VehicleStateWireStruct.Y_M);
 	}
 
-	protected static bool OnQuery(IEntity entity)
-	{
-		if (!entity)
-			return true;
-		if (ChimeraCharacter.Cast(entity))
-			return true;
-		if (!Vehicle.Cast(entity))
-			return true;
-
-		s_QueryHit = entity;
-		return false;
-	}
-
+	//! Lock the pilot controls; logs a WARNING when the body has no `VehicleControllerComponent`.
 	protected static void ApplyLock(IEntity vehicle)
 	{
 		VehicleControllerComponent controller = VehicleControllerComponent.Cast(vehicle.FindComponent(VehicleControllerComponent));
@@ -220,6 +193,8 @@ class TBD_VehicleState
 		controller.LockPilotControls(true);
 	}
 
+	//! Set every fuel node of the vehicle and of its slotted entities to `fuel` of its maximum.
+	//! A fraction outside 0..1 logs a WARNING and applies nothing.
 	protected static void ApplyFuel(IEntity vehicle, float fuel)
 	{
 		if (fuel < 0 || fuel > 1)
@@ -247,6 +222,7 @@ class TBD_VehicleState
 		}
 	}
 
+	//! Set every fuel node of one entity's `FuelManagerComponent`; no component does nothing.
 	protected static void ApplyFuelOnEntity(IEntity entity, float fuel)
 	{
 		FuelManagerComponent fm = FuelManagerComponent.Cast(entity.FindComponent(FuelManagerComponent));
@@ -264,6 +240,8 @@ class TBD_VehicleState
 		}
 	}
 
+	//! Scale the magazines of the vehicle and of its slotted entities to `ammo` of their capacity.
+	//! A fraction outside 0..1 logs a WARNING and applies nothing.
 	protected static void ApplyAmmo(IEntity vehicle, float ammo)
 	{
 		if (ammo < 0 || ammo > 1)
@@ -323,6 +301,8 @@ class TBD_VehicleState
 		}
 	}
 
+	//! Set one magazine to `ammo` of its capacity, rounded to the nearest round; null or an
+	//! empty-capacity magazine does nothing.
 	protected static void ScaleMagazine(BaseMagazineComponent mag, float ammo)
 	{
 		if (!mag)

@@ -1,18 +1,27 @@
-//! Fixed gear ResourceNames of a slot loadout (T-068.11 compiled block).
+/**
+ * @file TBD_MissionSlotStruct.c
+ * @brief One compiled ORBAT slot: spawn position, kit, loadout and seat identity.
+ *
+ * Role: binds `$defs/slot` with its loadout gear and cargo.  Position: bound by `JsonLoadContext`
+ * onto `TBD_MissionDocumentStruct.slots`; read by spawning, loadouts, lobby, briefing, admin,
+ * objectives and results.
+ * State: none.  Invariants: field names equal the JSON keys; an absent `y` reads `Y_ABSENT`, an
+ * absent string reads empty, and `Key()` is the durable slot key.
+ */
+
+//! Fixed gear ResourceNames of a slot loadout.
 //! Empty string = slot not set (the compiler omits empty fields; JsonLoadContext
 //! leaves absent keys at the initializer).
 //! @contract mission.schema.json#/$defs/slot (loadout.gear)
 class TBD_SlotGearStruct
 {
 	string primary;  //!< Primary weapon ResourceName -- engine weapon slot 0 (slotType "primary").
-	string optic;    //!< Optic ResourceName. T-181.10 -- mounted into the PRIMARY weapon's storage only.
-	string magazine; //!< Magazine ResourceName. T-181.10 -- loaded into the PRIMARY weapon's storage only.
-	ref array<string> attachments; //!< T-310. Arsenal attachment ResourceNames. Empty/absent = none; Count() is presence.
-	// T-182 -- the other three authored weapon slots. The editor has always written all four
-	// (arsenal_rules.rs WEAPON_SLOTS); the compiler selected only slot 0 and dropped these three,
-	// so a player authored with an RPG spawned without it. Names are the EDITOR's own vocabulary
-	// so the compiled document reads the same words the Arsenal UI shows. None of the three carry
-	// optic/magazine sub-slots today -- those ride the primary alone.
+	string optic;    //!< Optic ResourceName, mounted into the PRIMARY weapon's storage only.
+	string magazine; //!< Magazine ResourceName, loaded into the PRIMARY weapon's storage only.
+	ref array<string> attachments; //!< Arsenal attachment ResourceNames. Empty/absent = none; Count() is presence.
+	// The other three authored weapon slots, named in the editor's own vocabulary so the compiled
+	// document reads the same words the Arsenal UI shows. Optic and magazine sub-slots ride the
+	// primary alone.
 	string launcher;  //!< Launcher ResourceName -- engine weapon slot 1 (the second untyped long slot).
 	string handgun;   //!< Sidearm ResourceName -- engine weapon slot 2 (slotType "secondary").
 	string throwable; //!< Throwable ResourceName -- engine weapon slot 3 (slotType "grenade").
@@ -34,10 +43,9 @@ class TBD_SlotCargoStruct
 	int qty = 1;      //!< Units to insert (>= 1).
 }
 
-//! Optional per-slot Arsenal loadout: the kit prefab stays the base
-//! character; T-068.12 layers this on the spawned HUMAN player.
-//! T-181.10 -- applied by TBD_LoadoutApplication on EVERY spawn of the slot body (mission
-//! load and every rematerialization), so a life never inherits the previous one's state.
+//! Optional per-slot Arsenal loadout: the kit prefab stays the base character and this layers
+//! on top. Applied by TBD_LoadoutApplication on EVERY spawn of the slot body (mission load and
+//! every rematerialization), so a life never inherits the previous one's state.
 //! @contract mission.schema.json#/$defs/slot (loadout)
 class TBD_SlotLoadoutStruct
 {
@@ -55,10 +63,10 @@ class TBD_MissionSlotStruct
 	//! doubles as the presence flag (standard JSON cannot carry NaN/Infinity).
 	//! Golden: `golden-missions/slot-y-absent-and-present.json` -- one slot omits y,
 	//! one authors it; schema gate refuses if that fixture is missing or one-sided.
-	static const float Y_ABSENT = -1000000;
+	static const float Y_ABSENT = -1000000; //!< metres; "`y` absent from JSON"
 
 	string id;            //!< Human-readable label: {faction}:{groupCallsign}:{role}:{index} -- DERIVED each compile.
-	string uid;           //!< Stable slot identity (B1): the editor doc slot id, survives recompiles. Empty on pre-B1 documents.
+	string uid;           //!< Stable slot identity: the editor doc slot id, survives recompiles. Empty on documents without one.
 	string faction;       //!< Faction key (matches mission factions[].key).
 	string groupCallsign; //!< Owning squad callsign.
 	string role;          //!< Role label within the squad.
@@ -67,19 +75,18 @@ class TBD_MissionSlotStruct
 	float z;              //!< Spawn world Z, metres.
 	float y = -1000000;   //!< Optional spawn height, metres ASL (schema 1.2). Y_ABSENT when not in JSON.
 	float headingDeg;     //!< Spawn heading, degrees.
-	ref TBD_SlotLoadoutStruct loadout; //!< Optional Arsenal loadout (T-068.11; null when absent).
+	ref TBD_SlotLoadoutStruct loadout; //!< Optional Arsenal loadout (null when absent).
 
-	// T-674.2 -- the per-seat identity block (schemaVersion 1.3), the five T-180.1 values the
-	// compile used to drop in silence (the T-216 ledger gap). Every one is OPTIONAL: the emitter
-	// skips the key entirely when there is nothing wire-safe to say, so JsonLoadContext leaves the
-	// field at "" and a pre-1.3 mission reads exactly as it did before.
+	// The per-seat identity block (schemaVersion 1.3). Every one is OPTIONAL: the emitter skips
+	// the key entirely when there is nothing wire-safe to say, so JsonLoadContext leaves the field
+	// at "" and a pre-1.3 mission reads with no identity.
 	//
 	// PRESENCE IS AN EMPTY-STRING TEST, never a null test. These are scalars, so the initializer
 	// IS the sentinel -- the `ref <class>` allocation landmine documented on `loadout` above does
 	// not apply, and `minLength: 1` on the schema side means an EMPTY value can never be authored:
 	// flatten drops a blank whole rather than emitting it (`emit_wire_safe_identity`). So
 	// non-empty == authored, with no third state to defend against.
-	string callsign;  //!< This SEAT's own callsign. NOT `groupCallsign` above -- that is the SQUAD's, and conflating the two is the mistake the T-216 ledger was opened over.
+	string callsign;  //!< This SEAT's own callsign. NOT `groupCallsign` above -- that is the SQUAD's.
 	string rank;      //!< Rank ladder token, lowercase: private|corporal|sergeant|lieutenant|colonel and the two between. Enum-gated by the emitter, so an off-ladder value never arrives.
 	string stance;    //!< Initial spawn pose: stand|crouch|prone. Enum-gated by the emitter.
 	string unitName;  //!< Authored unit name for this seat. camelCase on the wire; JsonLoadContext binds by field NAME, so the spelling here IS the contract.
@@ -91,8 +98,8 @@ class TBD_MissionSlotStruct
 		return y != Y_ABSENT;
 	}
 
-	//! B1 -- the durable key for spawn points / rosters / logs: uid when present
-	//! (survives recompiles), else the derived display id (pre-B1 documents).
+	//! The durable key for spawn points / rosters / logs: uid when present (survives
+	//! recompiles), else the derived display id (documents without slot uids).
 	string Key()
 	{
 		if (!uid.IsEmpty())
@@ -100,9 +107,9 @@ class TBD_MissionSlotStruct
 		return id;
 	}
 
-	//! T-674.2 -- did this slot author ANY of the five identity keys?
+	//! Whether this slot authors ANY of the five identity keys.
 	//!
-	//! One `||` per line rather than a chain, for the reason `TBD_SpawnManager.HasAuthoredLoadout`
+	//! One `||` per line rather than a chain, for the reason `TBD_SlotBodyMaterializer.HasAuthoredLoadout`
 	//! spells out: a long boolean chain is the shape of the measured "Formula too complex"
 	//! landmine, whose second diagnostic is a misleading "Incompatible parameter".
 	bool HasIdentity()
@@ -115,7 +122,7 @@ class TBD_MissionSlotStruct
 		return false;
 	}
 
-	//! T-674.2 -- the best human label this seat can offer, most specific first:
+	//! The best human label this seat can offer, most specific first:
 	//! authored unit name, else its own callsign, else the derived display `id` (which always
 	//! exists and already reads `faction:squad:role:n`).
 	//!

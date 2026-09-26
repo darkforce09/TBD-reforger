@@ -1,68 +1,64 @@
-//! T-705 - player gadget flags: map, compass, watch, GPS, radio.
-//!
-//! T-706 put `$defs/gadgetFlags` on `$defs/slot.gadgets`. `TBD_MissionSlotStruct` does not
-//! declare that member, so the primary parse cannot see it. Every spawned player kept the
-//! kit's gadgets regardless of the scenario. This file is the reader. Flatten does not emit
-//! the keys; hand-staged 1.3 JSON and golden `schema-1_3-wire-fields.json` reach
-//! this pass. Editor UI is NOT this slice (owns list has no panel).
-//!
-//! Same pattern as `TBD_PlacementScatter.c` / `TBD_EntityState.c`: a second
-//! pass over `TBD_MissionLoader.GetRawJson()` with a root that declares `slots[]` gadgets
-//! and nothing else. MissionSlotStruct stays out of this slice's owns list. MissionLoader
-//! calls `Bind()` after a valid parse (the T-682 EnvironmentReader seam).
-//!
-//! `JsonLoadContext.ReadValue` ALLOCATES a nested `ref` even when the JSON key is ABSENT.
-//! `if (slot.gadgets)` is ALWAYS TRUE. Bools cannot carry a sentinel (T-676 / T-946.37),
-//! so a struct of five bools cannot tell "gadgets omitted" from "all five authored false"
-//! -- applying false in that case would STRIP gadgets on every mission that never authored
-//! the block. `gadgets` is therefore a `map<string, bool>`: Count()==0 is omit/empty
-//! (keep kit defaults); Find(key) is per-flag presence; the bool is the authored on/off.
-//! @contract mission.schema.json#/$defs/gadgetFlags
-//! @contract mission.schema.json#/$defs/slot
+/**
+ * @file TBD_GadgetFlags.c
+ * @brief Adds or withholds each player's map, compass, watch, GPS and radio from `slots[].gadgets`.
+ *
+ * Role: a second `JsonLoadContext` pass over the held mission JSON whose root declares only
+ * `slots[]` gadgets, and the inventory edits that honour them after each player spawn.
+ * Position: `Bind` runs from `TBD_MissionLoader` after a valid parse and hooks
+ * `SCR_BaseGameMode.GetOnPlayerSpawned`; reads `TBD_MissionJsonPass.LoadRoot`,
+ * `TBD_SpawnManager.GetAssignedSlot` and the body's gadget and inventory managers.
+ * State: the static parsed rows keyed to the mission id, and the one-time spawn hook, server only.
+ * Invariants: `gadgets` binds as `map<string, bool>`, so an omitted block (Count 0) keeps the
+ * kit's gadgets and each flag's presence is `Find`; a flag authored true adds an item only when
+ * the body has none of that type; apply runs `POST_LOADOUT_MS` after spawn so loadout cargo
+ * cannot put a withheld gadget back.
+ */
 
 //! One `slots[]` row's gadget flags. Field names are the JSON keys.
+//! @contract mission.schema.json#/$defs/slot
 class TBD_GadgetFlagsSlotWireStruct
 {
-	string id;
-	string uid;
-	//! Per-flag presence is Find(), not a null check. Allocated-empty when the key is omitted.
-	ref map<string, bool> gadgets;
+	string id; //!< `id`
+	string uid; //!< `uid`, or empty
+	//! Per-flag presence is Find(), not a null check.
+	ref map<string, bool> gadgets; //!< `gadgets` (`$defs/gadgetFlags`); allocated empty when omitted
 }
 
 //! Root of the second parse. Declares `slots` and nothing else.
+//! @contract mission.schema.json#/properties/slots
 class TBD_GadgetFlagsDocStruct
 {
-	ref array<ref TBD_GadgetFlagsSlotWireStruct> slots;
+	ref array<ref TBD_GadgetFlagsSlotWireStruct> slots; //!< `slots[]`
 }
 
 //! Server-side reader: bind slot.gadgets and apply after loadout on player spawn.
 class TBD_GadgetFlags
 {
-	static const string CH = "Gadgets";
-	static const string KEY_MAP = "map";
-	static const string KEY_COMPASS = "compass";
-	static const string KEY_WATCH = "watch";
-	static const string KEY_GPS = "gps";
-	static const string KEY_RADIO = "radio";
+	static const string CH = "Gadgets"; //!< log channel
+	static const string KEY_MAP = "map"; //!< `gadgets.map`
+	static const string KEY_COMPASS = "compass"; //!< `gadgets.compass`
+	static const string KEY_WATCH = "watch"; //!< `gadgets.watch`
+	static const string KEY_GPS = "gps"; //!< `gadgets.gps`
+	static const string KEY_RADIO = "radio"; //!< `gadgets.radio`
 
 	//! Kit-neutral defaults used only when the flag is authored true and the body has none.
-	static const string PREFAB_MAP = "{7B6990100263E2B3}Prefabs/Items/Core/Map_Base.et";
-	static const string PREFAB_COMPASS = "{61D4F80E49BF9B12}Prefabs/Items/Equipment/Compass/Compass_SY183.et";
-	static const string PREFAB_WATCH = "{6FD6C96121905202}Prefabs/Items/Equipment/Watches/Watch_Vostok.et";
-	static const string PREFAB_RADIO = "{E1A5D4B878AA8980}Prefabs/Items/Equipment/Radios/Radio_R148.et";
+	static const string PREFAB_MAP = "{7B6990100263E2B3}Prefabs/Items/Core/Map_Base.et"; //!< map added for `map` true
+	static const string PREFAB_COMPASS = "{61D4F80E49BF9B12}Prefabs/Items/Equipment/Compass/Compass_SY183.et"; //!< compass added for `compass` true
+	static const string PREFAB_WATCH = "{6FD6C96121905202}Prefabs/Items/Equipment/Watches/Watch_Vostok.et"; //!< watch added for `watch` true
+	static const string PREFAB_RADIO = "{E1A5D4B878AA8980}Prefabs/Items/Equipment/Radios/Radio_R148.et"; //!< radio added for `radio` true
 
 	//! Loadout cargo lands in VerifyTick (500 ms after Run). Apply after that so a cargo
 	//! row cannot put a withheld gadget back.
-	protected static const int POST_LOADOUT_MS = 800;
+	protected static const int POST_LOADOUT_MS = 800; //!< milliseconds from spawn to apply
 
-	protected static ref array<ref TBD_GadgetFlagsSlotWireStruct> s_aSlots;
-	protected static bool s_bParsed;
-	protected static bool s_bArmed;
-	protected static string s_sParsedForMission;
+	protected static ref array<ref TBD_GadgetFlagsSlotWireStruct> s_aSlots; //!< parsed `slots[]` rows; empty when none
+	protected static bool s_bParsed; //!< `s_aSlots` is current for `s_sParsedForMission`
+	protected static bool s_bArmed; //!< the spawn hook is installed
+	protected static string s_sParsedForMission; //!< mission id `s_aSlots` was parsed for
 
-	//! Called from `TBD_MissionLoader.ParseMissionJson` after a valid parse, on the server-only
-	//! load path. Parses the gadgets block and arms the spawn hook. No-ops when no slot authors
-	//! the block, so missions without flags boot unchanged.
+	//! Parse the gadgets block and arm the spawn hook. Called from `TBD_MissionLoader` after a
+	//! valid parse. A mission whose slots author no gadgets keeps every kit's gadgets.
+	//! @authority server
 	static void Bind()
 	{
 		s_bParsed = false;
@@ -71,6 +67,7 @@ class TBD_GadgetFlags
 		ArmSpawnHook();
 	}
 
+	//! Hook `OnPlayerSpawned` on the game mode once; does nothing without a game mode.
 	protected static void ArmSpawnHook()
 	{
 		if (s_bArmed)
@@ -85,7 +82,8 @@ class TBD_GadgetFlags
 	}
 
 	//! Spawn-notify sink. Dressing already ran in SpawnSlotBody; cargo verify is still in
-	//! flight, so apply is deferred POST_LOADOUT_MS.
+	//! flight, so apply is deferred POST_LOADOUT_MS. Ignores clients and non-player ids.
+	//! @authority server
 	protected static void OnPlayerSpawned(int playerId, IEntity controlledEntity)
 	{
 		if (TBD_Authority.IsClient())
@@ -96,6 +94,9 @@ class TBD_GadgetFlags
 		GetGame().GetCallqueue().CallLater(ApplyForPlayer, POST_LOADOUT_MS, false, playerId);
 	}
 
+	//! Apply the flags of the player's assigned slot to the body the player controls; does nothing
+	//! when either is missing.
+	//! @authority server
 	protected static void ApplyForPlayer(int playerId)
 	{
 		if (TBD_Authority.IsClient())
@@ -120,6 +121,11 @@ class TBD_GadgetFlags
 		ApplyToBody(body, slot.Key(), slot.id);
 	}
 
+	//! Apply the flags authored for one slot to `body`. Does nothing when the slot authors none; a
+	//! body without a gadget manager logs a WARNING.
+	//! @param slotKey the slot's durable key (`uid`, else `id`)
+	//! @param slotId the slot's derived `id`
+	//! @authority server
 	static void ApplyToBody(IEntity body, string slotKey, string slotId)
 	{
 		if (!body)
@@ -160,6 +166,7 @@ class TBD_GadgetFlags
 			ApplyRadio(body, gadgets, radio);
 	}
 
+	//! Ensure or remove one gadget type.
 	protected static void ApplyOne(IEntity body, notnull SCR_GadgetManagerComponent gadgets, string key, bool want, EGadgetType type, string prefab)
 	{
 		if (want)
@@ -192,6 +199,7 @@ class TBD_GadgetFlags
 		RemoveByNeedle(body, key, needle);
 	}
 
+	//! Ensure a handheld or backpack radio, or remove both.
 	protected static void ApplyRadio(IEntity body, notnull SCR_GadgetManagerComponent gadgets, bool want)
 	{
 		if (want)
@@ -210,6 +218,7 @@ class TBD_GadgetFlags
 		RemoveType(gadgets, KEY_RADIO, EGadgetType.RADIO_BACKPACK);
 	}
 
+	//! Add `prefab` unless the body already carries a gadget of `type`.
 	protected static void EnsureType(IEntity body, notnull SCR_GadgetManagerComponent gadgets, string key, EGadgetType type, string prefab)
 	{
 		IEntity existing = gadgets.GetGadgetByType(type);
@@ -218,6 +227,8 @@ class TBD_GadgetFlags
 		EnsurePrefab(body, key, prefab);
 	}
 
+	//! Spawn `prefab` and insert it into the body's inventory; an empty prefab, a failed spawn or a
+	//! refused insert logs a WARNING and discards the item.
 	protected static void EnsurePrefab(IEntity body, string key, string prefab)
 	{
 		if (prefab.IsEmpty())
@@ -255,6 +266,7 @@ class TBD_GadgetFlags
 		SCR_EntityHelper.DeleteEntityAndChildren(item);
 	}
 
+	//! Delete every gadget of `type` the body carries and log the count.
 	protected static void RemoveType(notnull SCR_GadgetManagerComponent gadgets, string key, EGadgetType type)
 	{
 		array<SCR_GadgetComponent> found = gadgets.GetGadgetsByType(type);
@@ -279,6 +291,7 @@ class TBD_GadgetFlags
 			Print(string.Format("[TBD][%1] withheld %2 count=%3", CH, key, removed));
 	}
 
+	//! Whether any inventory item's prefab path matches `needle`.
 	protected static bool HasPrefabNeedle(IEntity body, string needle)
 	{
 		array<IEntity> items = CollectItems(body);
@@ -293,6 +306,7 @@ class TBD_GadgetFlags
 		return false;
 	}
 
+	//! Delete every inventory item whose prefab path matches `needle` and log the count.
 	protected static void RemoveByNeedle(IEntity body, string key, string needle)
 	{
 		array<IEntity> items = CollectItems(body);
@@ -312,6 +326,7 @@ class TBD_GadgetFlags
 			Print(string.Format("[TBD][%1] withheld %2 count=%3", CH, key, removed));
 	}
 
+	//! Whether the item's prefab path contains `needle` (`GPS` also matches `Gps`).
 	protected static bool PrefabMatchesNeedle(IEntity item, string needle)
 	{
 		if (!item)
@@ -319,7 +334,7 @@ class TBD_GadgetFlags
 		if (needle.IsEmpty())
 			return false;
 
-		string prefab = PrefabOf(item);
+		string prefab = TBD_LoadoutInventoryUtil.PrefabOf(item);
 		if (prefab.Contains(needle))
 			return true;
 		if (needle == "GPS" && prefab.Contains("Gps"))
@@ -327,6 +342,7 @@ class TBD_GadgetFlags
 		return false;
 	}
 
+	//! Every item in the body's inventory, or null without an inventory manager.
 	protected static array<IEntity> CollectItems(IEntity body)
 	{
 		if (!body)
@@ -342,16 +358,8 @@ class TBD_GadgetFlags
 		return items;
 	}
 
-	protected static string PrefabOf(IEntity ent)
-	{
-		if (!ent)
-			return string.Empty;
-		EntityPrefabData pd = ent.GetPrefabData();
-		if (!pd)
-			return string.Empty;
-		return pd.GetPrefabName();
-	}
-
+	//! Spawn `prefab` at the body's transform.
+	//! @return the item, or null when the prefab does not load
 	protected static IEntity SpawnItem(IEntity body, string prefab)
 	{
 		Resource resource = Resource.Load(prefab);
@@ -366,30 +374,23 @@ class TBD_GadgetFlags
 		return GetGame().SpawnEntityPrefab(resource, GetGame().GetWorld(), params);
 	}
 
-	protected static string CurrentMissionId()
-	{
-		TBD_MissionDocumentStruct doc = TBD_MissionLoader.GetMission();
-		if (!doc)
-			return string.Empty;
-		if (!doc.meta)
-			return string.Empty;
-		return doc.meta.id;
-	}
-
+	//! Parse the gadgets pass into `s_aSlots` once per mission id.
+	//! @return false when no mission text is held; true otherwise, with an ERROR line and no rows
+	//! when the text or its root does not read
 	protected static bool Parse()
 	{
-		string missionId = CurrentMissionId();
+		string missionId = TBD_MissionLoader.GetMissionId();
 		if (s_bParsed && missionId == s_sParsedForMission)
 			return true;
 
 		s_aSlots = new array<ref TBD_GadgetFlagsSlotWireStruct>();
 
-		string raw = TBD_MissionLoader.GetRawJson();
-		if (raw.IsEmpty())
+		TBD_EMissionJsonPassOutcome outcome;
+		JsonLoadContext ctx = TBD_MissionJsonPass.LoadRoot(outcome);
+		if (outcome == TBD_EMissionJsonPassOutcome.NO_DOCUMENT)
 			return false;
 
-		JsonLoadContext ctx = new JsonLoadContext();
-		if (!ctx.LoadFromString(raw))
+		if (!ctx)
 		{
 			Print(string.Format("[TBD][%1] the mission document did not parse as JSON on the gadgets pass -- kit defaults kept", CH), LogLevel.ERROR);
 			s_bParsed = true;
@@ -416,6 +417,7 @@ class TBD_GadgetFlags
 		return true;
 	}
 
+	//! How many parsed rows author at least one flag.
 	protected static int CountAuthored()
 	{
 		if (!s_aSlots)
@@ -435,6 +437,8 @@ class TBD_GadgetFlags
 		return n;
 	}
 
+	//! The parsed row of a slot: by `uid` equal to `slotKey` first, else by `id`.
+	//! @return the row, or null
 	protected static TBD_GadgetFlagsSlotWireStruct FindSlot(string slotKey, string slotId)
 	{
 		if (!s_aSlots)

@@ -1,54 +1,29 @@
-//! T-684 -- bind payload `missionParams[]` and expose Get(symbol) to consumers.
-//! The Enfusion half of `mission.schema.json#/$defs/missionParam`.
-//!
-//! T-706 put `missionParams[]` on the wire (name, titleKey, values, displays, default).
-//! Nothing in `apps/mod` bound the array or resolved a launch choice, so an authored
-//! parameter never reached gameplay without re-baking the mission. This file is the reader.
-//!
-//! There is no lobby on this build. Chosen values come from server config:
-//! `$profile:TBD_MissionParams.json`, shape:
-//!   { "selections": [ { "name": "time_of_day", "value": 2 } ] }
-//! `name` is the consuming symbol (`missionParams[].name`). Absent file, unreadable
-//! file, or a selection whose value is not in that row's `values[]` -> the authored
-//! default (when that default is itself in `values[]`). No guessing.
-//!
-//! The wire key is `default`. Enforce Script reserves `default` (switch), so a field of
-//! that name does not compile (measured: TBD_MissionParams.c "Syntax error" /
-//! "Unexpected scope"). JsonLoadContext still binds BY MEMBER NAME for the other keys
-//! on the primary parse. The integer itself is read on a second JsonLoadContext pass
-//! via ReadValue("default", authored) -- the key is a STRING, not an identifier --
-//! then stored on `authoredDefault`. Same array, same order (TBD_ObjectiveRules join).
-//!
-//! Unknown symbol, empty symbol, a row with no `values[]`, or a default that is not
-//! a member of `values[]` returns EMPTY (0) and logs. It does not pick values[0], a
-//! neighbour name, or a stale override. EMPTY collides with a legitimate authored 0;
-//! callers that must distinguish use Has(symbol).
-//!
-//! `JsonLoadContext.ReadValue` ALLOCATES a nested `ref <class>` even when the JSON key
-//! is ABSENT. `ref array<>` is the other shape: measured NULL when the key is absent
-//! (TBD_MissionValidator second-pass header). Either way, `if (doc.missionParams)` is
-//! not a presence test. Presence is Count() after allocate-on-absent. Missions that
-//! author no parameters have Count() == 0 and boot unchanged.
-//! `default: 0` is a real value, so authoredDefault initialises to ABSENT (-1e6).
-//!
-//! When `displays` is present it must line up 1:1 with `values` (the DTAS description.ext
-//! bug: a missing comma left values[] one short of texts[] and every later label mapped
-//! to the wrong integer). A mismatch is a WARNING; Get still returns the integer. There
-//! is no launcher UI here to index `displays`.
-//!
-//! The gate is `cargo xtask mod compile`. It proves the symbols exist. It cannot run a
-//! round. Changing a launch selection without re-baking is a human checklist item.
-//! @contract mission.schema.json#/properties/missionParams
-//! @contract mission.schema.json#/$defs/missionParam
+/**
+ * @file TBD_MissionParams.c
+ * @brief Binds `missionParams[]` and resolves the launch value of each parameter symbol.
+ *
+ * Role: resolves every authored launch parameter to one integer at mission parse and serves it
+ * by symbol through `Get` and `Has`.  Position: `Resolve` runs from `TBD_MissionLoader` after a
+ * valid parse; reads the loader's document, a second `JsonLoadContext` pass for each row's
+ * `default`, and the server config `$profile:TBD_MissionParams.json`, shaped
+ * `{ "selections": [ { "name": "time_of_day", "value": 2 } ] }`.
+ * State: the static chosen and known maps, server only.  Invariants: a launch selection counts
+ * only when it is in the row's `values[]`, else the authored default does when it is; an unknown
+ * symbol, an empty `values[]` or an unusable default returns `EMPTY` (0) and logs, never
+ * `values[0]` or a neighbour; `Has` tells a resolved 0 from `EMPTY`. The wire key `default` is an
+ * Enforce keyword, so it is read by string on the second pass into `authoredDefault`, joined to
+ * the primary parse by index. A `displays[]` whose length differs from `values[]` logs a WARNING.
+ */
 
 //! One authored launch parameter. Field names MUST equal the JSON keys (`JsonLoadContext`
 //! binds by member NAME), except the wire key `default` -- see the file header.
 //! Bound onto `TBD_MissionDocumentStruct.missionParams`.
+//! @contract mission.schema.json#/$defs/missionParam
 class TBD_MissionParamStruct
 {
-	//! "key absent from JSON". A presence flag, not a magic value -- `0` is a legal
-	//! launch value (see golden `time_of_day` dawn).
-	static const int ABSENT = -1000000;
+	//! A presence flag, not a magic value -- `0` is a legal launch value (see golden
+	//! `time_of_day` dawn).
+	static const int ABSENT = -1000000; //!< "`default` absent from JSON"
 
 	string name;                    //!< Consuming symbol. Schema pattern ^[a-z][a-z0-9_]*$.
 	string titleKey;                //!< i18n key for the launcher-facing title. Empty when omitted.
@@ -57,8 +32,9 @@ class TBD_MissionParamStruct
 	int authoredDefault = ABSENT;   //!< Filled from wire key `default` by TBD_MissionParams.
 }
 
-//! One row of `$profile:TBD_MissionParams.json` `selections[]`.
-class TBD_MissionParamSelectionStruct
+//! One row of `$profile:TBD_MissionParams.json` `selections[]`; the server config, not the
+//! mission schema.
+class TBD_MissionParamSelectionWire
 {
 	string name;  //!< Consuming symbol, same spelling as `TBD_MissionParamStruct.name`.
 	int value;    //!< Chosen integer. Rejected unless it is in the matching row's `values[]`.
@@ -67,7 +43,7 @@ class TBD_MissionParamSelectionStruct
 //! Server-config file. Absent / unreadable / empty `selections` -> authored defaults.
 class TBD_MissionParamLaunchFile
 {
-	ref array<ref TBD_MissionParamSelectionStruct> selections;
+	ref array<ref TBD_MissionParamSelectionWire> selections; //!< `selections[]`; null when absent
 }
 
 //! Resolves launch selection at mission parse and exposes Get(symbol) to consumers.
@@ -75,16 +51,17 @@ class TBD_MissionParams
 {
 	//! Documented fail-closed return for Get(symbol) when the symbol is unknown or the
 	//! row cannot be honoured. Collides with a legitimate 0 -- use Has(symbol).
-	static const int EMPTY = 0;
+	static const int EMPTY = 0; //!< fail-closed value of `Get`
 
-	static const string CONFIG_PATH = "$profile:TBD_MissionParams.json";
+	static const string CONFIG_PATH = "$profile:TBD_MissionParams.json"; //!< server config holding the launch selections
 
-	protected static ref map<string, int> s_Chosen;
-	protected static ref map<string, bool> s_Known;
+	protected static ref map<string, int> s_Chosen; //!< resolved value per symbol
+	protected static ref map<string, bool> s_Known; //!< symbols `Resolve` honoured; null before the first `Resolve`
 
-	//! Called from `TBD_MissionLoader.ParseMissionJson` after a valid parse, on the
-	//! server-only load path. Also safe to call from Get/Has (idempotent). No-ops when
-	//! `missionParams` is empty, so missions without parameters boot unchanged.
+	//! Resolve every row to its launch value. Called by `TBD_MissionLoader` after a valid parse
+	//! and by `Get`/`Has` before the first resolve; idempotent. Does nothing when `missionParams`
+	//! is empty or no mission is loaded.
+	//! @authority server
 	static void Resolve()
 	{
 		s_Chosen = new map<string, int>();
@@ -115,7 +92,7 @@ class TBD_MissionParams
 	}
 
 	//! Integer chosen for `symbol` at launch (server config, else authored default).
-	//! Unknown / unusable symbol -> EMPTY, never a guess.
+	//! @return the value, or `EMPTY` with a WARNING for an empty or unknown symbol
 	static int Get(string symbol)
 	{
 		if (!s_Known)
@@ -150,7 +127,7 @@ class TBD_MissionParams
 		return value;
 	}
 
-	//! True when Resolve honoured this consuming symbol (chosen value is in `values[]`).
+	//! True when `Resolve` honoured this consuming symbol (chosen value is in `values[]`).
 	static bool Has(string symbol)
 	{
 		if (!s_Known)
@@ -186,12 +163,9 @@ class TBD_MissionParams
 		if (!rows)
 			return;
 
-		string raw = TBD_MissionLoader.GetRawJson();
-		if (raw.IsEmpty())
-			return;
-
-		JsonLoadContext ctx = new JsonLoadContext();
-		if (!ctx.LoadFromString(raw))
+		TBD_EMissionJsonPassOutcome outcome;
+		JsonLoadContext ctx = TBD_MissionJsonPass.LoadRoot(outcome);
+		if (!ctx)
 			return;
 
 		int count;
@@ -229,6 +203,9 @@ class TBD_MissionParams
 		ctx.EndArray();
 	}
 
+	//! Resolve one row into `s_Chosen`/`s_Known`: the launch value when it is in `values[]`, else
+	//! the authored default when that is. An empty name, empty `values[]`, a duplicate name or an
+	//! unusable default logs a WARNING and leaves the symbol unresolved.
 	protected static void ResolveRow(TBD_MissionParamStruct row, map<string, int> launch)
 	{
 		if (!row)
@@ -298,6 +275,7 @@ class TBD_MissionParams
 		Print(string.Format("[TBD][MissionParams] symbol='%1' value=%2 source=%3", row.name, chosen, source), LogLevel.NORMAL);
 	}
 
+	//! Log a WARNING when a present `displays[]` does not pair 1:1 with `values[]`.
 	protected static void WarnDisplaysMismatch(TBD_MissionParamStruct row)
 	{
 		if (!row.displays)
@@ -314,6 +292,7 @@ class TBD_MissionParams
 		Print(string.Format("[TBD][MissionParams] name='%1' displays=%2 values=%3 -- labels will not pair", row.name, nDisp, nVal), LogLevel.WARNING);
 	}
 
+	//! Whether `v` is one of the row's `values[]`.
 	protected static bool InValues(TBD_MissionParamStruct row, int v)
 	{
 		if (!row.values)
@@ -330,8 +309,9 @@ class TBD_MissionParams
 		return false;
 	}
 
-	//! Absent file is the common case (authored defaults). A present but unreadable file
-	//! must not invent selections -- fail closed onto authored defaults.
+	//! Read the launch selections of `CONFIG_PATH` into `into`, first name wins. An absent file is
+	//! the common case (authored defaults); a present but unreadable file logs an ERROR and adds
+	//! nothing.
 	protected static void LoadLaunchSelections(map<string, int> into)
 	{
 		if (!into)
@@ -361,7 +341,7 @@ class TBD_MissionParams
 		int i;
 		for (i = 0; i < n; i++)
 		{
-			TBD_MissionParamSelectionStruct sel = file.selections.Get(i);
+			TBD_MissionParamSelectionWire sel = file.selections.Get(i);
 			if (!sel)
 				continue;
 
