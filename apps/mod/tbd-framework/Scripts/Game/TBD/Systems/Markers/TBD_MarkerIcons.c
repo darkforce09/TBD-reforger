@@ -1,77 +1,35 @@
-//! T-181.19 -- turning the mission JSON's authored `icon` string into something the engine will
-//! actually draw. T-276 closed the schema side: `#/$defs/marker.icon` is now an enum of the
-//! 64 Register() alias keys below (authored contract). Runtime still bridges to the engine.
-//!
-//! Reforger's placed-marker system does not take a string: `SCR_MapMarkerBase.SetIconEntry(int)`
-//! takes an INDEX into the icon array authored in the vanilla `Configs/Map/MapMarkerConfig.conf`.
-//! Something has to bridge the two. Authored missions that pass the schema validator already
-//! carry a known alias; FALLBACK still exists for empty/unknown strings that reach the loader
-//! without schema validation (hand-edits, engine quad names that are not in the authored enum,
-//! or a future game update that retires a name).
-//!
-//! Vanilla ships a named enum for exactly these indices and uses it itself --
-//! `SCR_BaseTutorialStage.CreateMarkerCustom()` does
-//! `marker.SetType(PLACED_CUSTOM); marker.SetIconEntry(<SCR_EScenarioFrameworkMarkerCustom>)`,
-//! and CRF's `CRF_RaidItemComponent.c:64` does the same thing with `.DESTROY2`. So the enum values
-//! ARE the config indices, by vanilla's own construction rather than by our inference.
-//!
-//! That enum is NOT in any oracle: it is not in the vanilla symbol index, it is not in the cached
-//! Doxygen (the identifier is not even hyperlinked there, meaning no indexed file defines it), and
-//! `Configs/Map/MapMarkerConfig.conf` is not in the pak file table this repo can read. Its
-//! vocabulary was therefore DISCOVERED BY COMPILATION: a probe naming one candidate member per
-//! line, compiled once, where a surviving line names a real member and a failing one does not.
-//! Two deliberate sentinels (`ZZ_DEFINITELY_NOT_A_MEMBER`, `ZZ_ROUND3_SENTINEL`) failed in the
-//! same runs, which is what makes the survivors evidence rather than hope. Every one of the 23
-//! members below is compile-verified against the retail runtime; nothing here is guessed.
-//!
-//! The enum is not the whole picture. `SCR_MapMarkerEntryPlaced.GetIconEntries()` exposes the live
-//! icon list with each entry's imageset-quad NAME, and a boot of the real scenario measured
-//! **91** of them (`[TBD][Markers] marker-manager ok placedIcons=91`, world-boot 2026-07-25). So
-//! `Resolve()` tries the engine's own names FIRST and the alias table second: that makes all 91
-//! authorable without this file knowing any of them, and a game update that adds icons needs no
-//! code change. The alias table stays because the website emits friendly words, not quad names.
-//!
-//! Which picture each name draws. No tool in this program returns a framebuffer, so the mapping
-//! from `"objective"` to a glyph an operator would call an objective is an educated reading of the
-//! member NAME. If the operator says an icon looks wrong, the fix is one line in `Register()` --
-//! not a redesign. The set of 91 quad names is likewise not enumerable offline, which is exactly
-//! why `DumpVocabularyOnce()` publishes it from the running game.
+/**
+ * @file TBD_MarkerIcons.c
+ * @brief Resolves a mission marker's authored `icon` string to a placed-marker icon entry index.
+ *
+ * Role: bridges authored icon names to `SCR_MapMarkerBase.SetIconEntry(int)`, which takes an index
+ * into the placed-marker icon array of the vanilla `MapMarkerConfig.conf`.  Position: called by
+ * `TBD_MarkerApplier` and `TBD_TaskHud`; reads the live config through
+ * `TBD_MarkerClient.FindMarkerManager`.
+ * State: static lookup caches and report latches on the client, dropped by `ResetForWorld`.
+ * Invariants: `Resolve` never fails: the engine's own quad names win over the alias table, and an
+ * empty or unknown name draws `FALLBACK_ICON`; the alias table maps friendly words and the
+ * compile-verified `SCR_EScenarioFrameworkMarkerCustom` members, whose values are the config
+ * indices (vanilla's `SCR_BaseTutorialStage.CreateMarkerCustom` uses them that way); an index
+ * outside the loaded config is clamped to 0 with a warning. The schema's `#/$defs/marker.icon`
+ * enum lists the alias keys; the runtime also accepts engine quad names outside it.
+ */
+
+//! Marker icon vocabulary.
+//! @authority client
 class TBD_MarkerIcons
 {
-	//! Fallback for an icon string we cannot place. DOT is the least presumptuous glyph in the
-	//! confirmed set: a marker whose icon we did not understand should still show WHERE it is.
-	//! Never a silent drop, and never a hard failure -- an unreadable icon must not cost the
-	//! mission a marker.
-	static const int FALLBACK_ICON = SCR_EScenarioFrameworkMarkerCustom.DOT;
+	static const int FALLBACK_ICON = SCR_EScenarioFrameworkMarkerCustom.DOT; //!< icon drawn for an empty or unknown name
+	static const int MARKER_COLOR = SCR_EScenarioFrameworkMarkerCustomColor.REFORGER_ORANGE; //!< palette entry for a marker without an authored colour
 
-	//! One colour for every mission marker. Per-marker colour is not authorable today (the schema
-	//! has no colour field), and inventing a colour policy the operator did not ask for would be a
-	//! silent product decision. REFORGER_ORANGE is what every vanilla example uses.
-	static const int MARKER_COLOR = SCR_EScenarioFrameworkMarkerCustomColor.REFORGER_ORANGE;
+	protected static ref map<string, int> s_mAliases; //!< normalised alias -> icon entry index; null until first use
+	protected static ref map<string, int> s_mConfigQuads; //!< normalised quad name -> icon entry index from the live config; null until first use
+	protected static int s_iConfigIconCount = -1; //!< placed icons in the live config; -1 not read, 0 unreadable
+	protected static ref map<string, bool> s_mReported; //!< normalised unknown names already reported
+	protected static bool s_bVocabularyDumped; //!< true once the accepted vocabulary was logged
 
-	protected static ref map<string, int> s_mAliases; //!< alias (already normalised) -> icon entry index.
-
-	//! Normalised imageset-quad name -> icon entry index, read from the config the RUNNING game
-	//! loaded. Null until first use; empty when the config could not be read (a headless machine
-	//! never gets here, because it never draws a marker).
-	protected static ref map<string, int> s_mConfigQuads;
-
-	//! How many placed-marker icons the live config carries; -1 = not read yet.
-	//! MEASURED at boot on the retail runtime: 91.
-	protected static int s_iConfigIconCount = -1;
-
-	//! Unknown icon strings already reported, so a 40-marker mission with one bad icon logs ONE
-	//! line rather than forty. Keyed on the normalised form.
-	protected static ref map<string, bool> s_mReported;
-
-	//! The full vocabulary is dumped at most once per world, however many distinct typos there are.
-	protected static bool s_bVocabularyDumped;
-
-	//! Lowercase, trim, and fold the separators an author might type. Returns the normalised key.
-	//!
-	//! RECORDED LANDMINE: `ToLower()` and `Replace()` MUTATE IN PLACE and return a COUNT -- writing
-	//! `s = s.ToLower()` does not compile. Proven both ways: `int n = s.ToLower();` compiles and
-	//! `string x = s.ToLower();` is a hard compile error (negative control NC5).
+	//! Trim, lower-case and fold `-` and space to `_`. `ToLower` and `Replace` mutate in place.
+	//! @return the normalised key
 	static string Normalise(string raw)
 	{
 		string key = raw;
@@ -83,24 +41,10 @@ class TBD_MarkerIcons
 		return key;
 	}
 
-	//! Resolve an authored icon string to a marker icon entry index.
-	//!
-	//! Two sources, tried in this order:
-	//!   1. **The live config.** Every placed-marker icon the running game loaded, keyed by its own
-	//!      imageset-quad name. MEASURED at boot: 91 of them. This is the widest possible surface
-	//!      and it costs no maintenance -- a game update that adds icons makes them authorable the
-	//!      same day, with no code change here.
-	//!   2. **The alias table.** The compile-verified enum members plus the friendly words a
-	//!      mission author is likely to type ("objective", "medevac", "rally"), which are what the
-	//!      website actually emits today and which no quad name is guaranteed to match.
-	//!
-	//! Config first, because a name the ENGINE recognises should never be overridden by a name we
-	//! invented; the alias table is the fallback vocabulary, not the authority.
-	//!
-	//! Never fails: an unrecognised or empty string yields FALLBACK_ICON and `recognised` false, so
-	//! the caller can log once and still draw the marker. Schema-validated missions cannot
-	//! author an empty or unknown alias -- the enum is the authored contract -- but Resolve still
-	//! defends the runtime path for hand-edits and live engine quad names outside that enum.
+	//! Resolve an authored icon: the live config's quad names first, then the alias table.
+	//! @param authoredIcon the marker's `icon`
+	//! @param recognised set true when either source knows the name
+	//! @return the icon entry index, or `FALLBACK_ICON` for an empty or unknown name
 	static int Resolve(string authoredIcon, out bool recognised)
 	{
 		recognised = false;
@@ -127,12 +71,8 @@ class TBD_MarkerIcons
 		return entry;
 	}
 
-	//! Report an icon string we could not place -- ONCE per distinct string.
-	//!
-	//! The line names the offending value AND prints the accepted vocabulary, because the person
-	//! who has to fix this is authoring on the website and has no other way to learn what the game
-	//! accepts. WARNING, not ERROR: the marker still drew, the round is fine, and `world-boot.sh`
-	//! fails closed on any `SCRIPT (E)` line the mod owns.
+	//! Report an icon name that could not be placed, once per normalised name: an empty name logs
+	//! one NORMAL line; an unknown one warns and dumps the accepted vocabulary once. Never ERROR.
 	static void ReportUnknown(string authoredIcon)
 	{
 		EnsureReported();
@@ -145,9 +85,7 @@ class TBD_MarkerIcons
 
 		s_mReported.Set(key, true);
 
-		// An EMPTY icon is not a typo, it is a document that bypassed schema validation (T-276
-		// forbids `""` in the authored enum). Treat it as information, not as a mistake, and do
-		// not bury the log in a 91-name dump for it.
+		// An empty icon means the document bypassed schema validation; it gets no vocabulary dump.
 		if (key.IsEmpty())
 		{
 			TBD_Log.Event(TBD_MarkerService.CH_MARKERS,
@@ -162,19 +100,15 @@ class TBD_MarkerIcons
 		DumpVocabularyOnce();
 	}
 
-	//! New mission, new set of complaints. Without this, an author who fixes a typo and reloads
-	//! sees no confirmation because the old key is still latched.
+	//! Let every unknown name and the vocabulary report again (a new mission).
 	static void ResetReported()
 	{
 		s_mReported = null;
 		s_bVocabularyDumped = false;
 	}
 
-	//! Drop everything, including the cached read of the game's marker config.
-	//!
-	//! Statics outlive a world inside one process (recorded landmine), and the config cache holds
-	//! indices into an array owned by a component that dies with the world. Keeping it across an
-	//! in-process scenario restart would silently pin the previous world's icon numbering.
+	//! Drop the report latches and the cached config read; the cache holds indices into an array
+	//! owned by a component that dies with the world.
 	static void ResetForWorld()
 	{
 		ResetReported();
@@ -182,13 +116,8 @@ class TBD_MarkerIcons
 		s_iConfigIconCount = -1;
 	}
 
-	//! Print everything `Resolve()` accepts -- once per world, however many bad icons there are.
-	//!
-	//! This is the whole answer to "what am I allowed to type?", and it is emitted at runtime for a
-	//! reason: the engine's 91 icon names live in packed vanilla data that nothing in this repo can
-	//! read offline, so the only honest place to publish them is the machine that loaded them.
-	//! Split into two lines because they are two different vocabularies with two different
-	//! stabilities -- the engine's names can change with a game update, ours cannot.
+	//! Log everything `Resolve` accepts, once until `ResetReported`: one line of engine quad names
+	//! (packed vanilla data, published from the machine that loaded it) and one of aliases.
 	static void DumpVocabularyOnce()
 	{
 		if (s_bVocabularyDumped)
@@ -208,16 +137,12 @@ class TBD_MarkerIcons
 	//! Comma-separated keys of a lookup table, for the vocabulary dump.
 	protected static string JoinKeys(map<string, int> table)
 	{
-		// `out` is a reserved word in Enforce Script (out parameters) -- naming a local that way
-		// fails with a bare `Broken expression (missing ';'?)` that never mentions the keyword.
 		string list;
 		foreach (string key, int entry : table)
 		{
 			if (!list.IsEmpty())
 			{
-				// Appended in steps on purpose. A long `+` chain hits `Formula too complex` at
-				// around nine terms in this compiler, and its SECOND diagnostic is a misleading
-				// `Incompatible parameter` that sends you hunting a type error that is not there.
+				// Appended in steps: a long `+` chain hits `Formula too complex`.
 				list = list + ", ";
 			}
 
@@ -227,18 +152,14 @@ class TBD_MarkerIcons
 		return list;
 	}
 
-	//! Cross-check a resolved index against the icon array the RUNNING game actually loaded.
-	//!
-	//! The enum-is-the-index contract is vanilla's own, but the config is data we do not ship and
-	//! cannot read offline. If a future game build ever shortens that array, `GetIconEntry()` would
-	//! quietly set no image at all and every marker would render blank with no diagnostic. This
-	//! turns that into one warning and a fallback. Returns the index to actually use.
+	//! Check a resolved index against the loaded icon array, so an out-of-range index warns
+	//! instead of drawing a blank marker.
+	//! @return `entry` when in range or when the config is unreadable; otherwise 0, with a warning
 	static int ClampToLoadedConfig(int entry)
 	{
 		EnsureConfigQuads();
 
-		// Config unreadable: nothing to check against, so trust the caller rather than second-guess
-		// it. A wrong index is a missing picture; refusing to draw would be a missing marker.
+		// Config unreadable: nothing to check against.
 		if (s_iConfigIconCount <= 0)
 			return entry;
 
@@ -252,11 +173,8 @@ class TBD_MarkerIcons
 		return 0;
 	}
 
-	//! Read the live placed-marker icon list once and index it by imageset-quad name.
-	//!
-	//! Best effort by design. On any machine where the marker system is not reachable this leaves
-	//! an empty table and `s_iConfigIconCount` at 0, and everything downstream keeps working off
-	//! the alias table alone -- a headless server never reaches here at all, because it never draws.
+	//! Read the live placed-marker icon list once and index it by normalised quad name. Without a
+	//! reachable marker system the table stays empty, the count 0, and lookups use aliases alone.
 	protected static void EnsureConfigQuads()
 	{
 		if (s_mConfigQuads)
@@ -299,8 +217,7 @@ class TBD_MarkerIcons
 			if (key.IsEmpty())
 				continue;
 
-			// First wins. Two entries can legitimately share a quad across categories, and the
-			// lower index is the one vanilla's own selection menu shows first.
+			// First wins: the lower index is the one vanilla's selection menu shows first.
 			if (s_mConfigQuads.Contains(key))
 				continue;
 
@@ -308,11 +225,8 @@ class TBD_MarkerIcons
 		}
 	}
 
-	//! The alias table. Left column = what a mission author may plausibly type on the website;
-	//! right column = a COMPILE-VERIFIED member of `SCR_EScenarioFrameworkMarkerCustom`.
-	//!
-	//! Every confirmed member is registered under its own name too, so an author who types the
-	//! engine's own vocabulary always wins regardless of what the friendly aliases do.
+	//! Build the alias table once: every compile-verified `SCR_EScenarioFrameworkMarkerCustom`
+	//! member under its own name, then the friendly words a mission maker is likely to type.
 	protected static void EnsureAliases()
 	{
 		if (s_mAliases)
@@ -344,9 +258,7 @@ class TBD_MarkerIcons
 		Register("circle", SCR_EScenarioFrameworkMarkerCustom.CIRCLE);
 		Register("circle2", SCR_EScenarioFrameworkMarkerCustom.CIRCLE2);
 
-		// The website has no icon picker yet (T-069 is the slice that would add one), so these are
-		// the words a mission maker is likely to reach for. Adding one is a one-line change and
-		// costs nothing if it is never used.
+		// Friendly words a mission maker is likely to type.
 		Register("objective", SCR_EScenarioFrameworkMarkerCustom.OBJECTIVE_MARKER);
 		Register("obj", SCR_EScenarioFrameworkMarkerCustom.OBJECTIVE_MARKER);
 		Register("target", SCR_EScenarioFrameworkMarkerCustom.OBJECTIVE_MARKER);
@@ -400,13 +312,13 @@ class TBD_MarkerIcons
 		Register("marker", SCR_EScenarioFrameworkMarkerCustom.DOT);
 	}
 
-	//! Aliases are registered pre-normalised at the call sites above, but running them through
-	//! `Normalise()` anyway means a table entry can never disagree with a lookup.
+	//! Register an alias under its normalised form, so an entry never disagrees with a lookup.
 	protected static void Register(string alias, int entry)
 	{
 		s_mAliases.Set(Normalise(alias), entry);
 	}
 
+	//! Allocate the report latch on first use.
 	protected static void EnsureReported()
 	{
 		if (!s_mReported)

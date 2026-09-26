@@ -9,10 +9,11 @@ about what was tuned.
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Radio/
+├── SCR_PlayerController.c  the request, reply and push RPCs on the player controller
+├── TBD_ERadioTuneResult.c  the outcome names of one tune attempt
 ├── TBD_RadioBridgeStub.c   partner voice bridge hooks, and the stage-change call that starts the radio sweep
 ├── TBD_RadioClient.c       the client's pull loop, the net list it holds, and the hint that shows it
 ├── TBD_RadioComponent.c    game mode component that starts the client and reports the radio backbone
-├── TBD_RadioController.c   the request, reply and push RPCs on the player controller
 ├── TBD_RadioPlan.c         radioPlan.nets[] structs and the validated nets of each faction
 ├── TBD_RadioService.c      which nets a player gets, the stage sweep, and the wire
 └── TBD_RadioTuner.c        tunes a player's radios to their nets and reads each frequency back
@@ -75,7 +76,7 @@ TBD_FrameworkManager stage change ──> TBD_RadioBridgeStub.OnStageChanged ─
 
 - Depends on: `TBD_MissionLoader` (the `radioPlan` field) and `TBD_SpawnManager` (the caller's
   slot) under `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/`; `TBD_FrameworkManager` (stage
-  changes); `TBD_Log`; the engine's `SCR_GadgetManagerComponent`, `BaseRadioComponent`,
+  changes); `TBD_Log` and `TBD_Rounding`; the engine's `SCR_GadgetManagerComponent`, `BaseRadioComponent`,
   `BaseTransceiver`, `ChimeraWorld.GetRadioManager`, `SCR_HintManagerComponent` and
   `SCR_PopUpNotification`; the `radioPlan` and `net` definitions in
   `contracts_v2/definitions/mission.schema.json`.

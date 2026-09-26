@@ -11,9 +11,10 @@ draw channel-scoped markers during play, is not built: the mod adds no marker UI
 ## Where it lives
 
 - Code: [`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/README.md):
-  `TBD_MarkerData.c`, whose `TBD_MarkerService` decides which markers a player may see and packs
-  them; `TBD_MarkerClient.c`, the client's request loop and map insertion; `TBD_MarkerIcons.c`,
-  authored icon names to the game's marker icons.
+  `TBD_MarkerService.c`, which decides which markers a player may see, and `TBD_MarkerWire.c` and
+  `TBD_MarkerStyleCodec.c`, which pack them; `Client/TBD_MarkerClient.c`, the client's request
+  loop, and `Client/TBD_MarkerApplier.c`, the map insertion; `TBD_MarkerIcons.c`, authored icon
+  names to the game's marker icons.
 - Task markers: `TBD_TaskHud` in
   [`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/`](/apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/README.md).
 - Entry: `TBD_MarkerComponent` on `apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et`, which

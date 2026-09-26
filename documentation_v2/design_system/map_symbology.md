@@ -16,8 +16,9 @@ APP-6 frames, no echelon modifiers and no civilian side.
   marker glyphs in `markers.rs`, and the marker lane's parse in
   `apps/website/map-engine/src/editing/lanes/markers.rs`.
 - Game: [`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/README.md):
-  `TBD_MarkerData.c` (which markers a player may see, and the wire), `TBD_MarkerIcons.c` (authored
-  icon to engine icon) and `TBD_MarkerClient.c` (drawing).
+  `TBD_MarkerService.c` (which markers a player may see), `TBD_MarkerWire.c` and
+  `TBD_MarkerStyleCodec.c` (the wire), `TBD_MarkerIcons.c` (authored icon to engine icon) and
+  `Client/TBD_MarkerApplier.c` (drawing).
 - Contract: the `marker` definition in `contracts_v2/definitions/mission.schema.json`.
 - Related: the [design tokens](/documentation_v2/design_system/design_tokens.md), whose palette the
   side tints come from, and the
@@ -108,8 +109,6 @@ Its `label` draws as a caption through the map's text pipeline.
 - The game's own interface paints BLUFOR and OPFOR from Tailwind's blue and red families and has
   no INDFOR tint (`ChipFill`, `FactionRowFill` in `TBD_UITheme.c`), while the map uses the three
   side tints above.
-- `TBD_MarkerIcons.c:51-53` says the schema has no colour field, but `marker.color` exists and
-  `TBD_MarkerData.c` carries it on the wire.
 
 ## Data
 

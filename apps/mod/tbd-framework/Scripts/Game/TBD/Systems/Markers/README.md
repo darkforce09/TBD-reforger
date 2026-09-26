@@ -8,11 +8,13 @@ own placed markers.
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/
-├── TBD_MarkerClient.c      the client's pull loop and map insertion, and the styled marker class
+├── Client/                 the client half: the pull loop, drawing the rows, the styled marker
+├── SCR_PlayerController.c  the request and reply RPCs on the player controller
 ├── TBD_MarkerComponent.c   game mode component that starts the client and reports the marker manager
-├── TBD_MarkerController.c  the request and reply RPCs on the player controller
-├── TBD_MarkerData.c        TBD_MarkerService: which markers a player may see, and the wire and style codec
-└── TBD_MarkerIcons.c       authored icon names to the engine's placed-marker icon indices
+├── TBD_MarkerIcons.c       authored icon names to the engine's placed-marker icon indices
+├── TBD_MarkerService.c     which markers a player may see, built on the server
+├── TBD_MarkerStyleCodec.c  the six style columns packed into and out of the `xs` trailer
+└── TBD_MarkerWire.c        one player's marker set in the shape the RPC takes
 ```
 
 ## How it works
@@ -23,7 +25,8 @@ TBD_MarkerClient: every 5 s until served, and on each map open (at most every 3 
   └─> SCR_PlayerController.TBD_RequestMarkers ──TBD_RpcAsk_Markers──> server
         TBD_MarkerService.BuildForPlayer(playerId): side = TBD_SpawnManager.GetAssignedSlot
         └─> TBD_MarkerStyleCodec.PackIntoX ──TBD_RpcDo_Markers──> owner client
-              TBD_MarkerClient.Accept ──> SCR_MapMarkerManagerComponent.InsertStaticMarker (local)
+              TBD_MarkerClient.Accept ──> TBD_MarkerApplier.ApplyRows
+                ──> SCR_MapMarkerManagerComponent.InsertStaticMarker (local)
 ```
 
 - Side discipline: `BuildForPlayer` takes only a player id and reads the side from the server's
@@ -51,7 +54,7 @@ TBD_MarkerClient: every 5 s until served, and on each map open (at most every 3 
 - Server: `TBD_MarkerService` (`@authority server` on `BuildForPlayer` and `Build`) and
   `TBD_RpcAsk_Markers` (`@authority server`). On a listen host, `TBD_RequestMarkers` builds and
   accepts the payload in place without an RPC.
-- Client: `TBD_MarkerClient`, started by `TBD_MarkerComponent` on any machine where
+- Client: `TBD_MarkerClient` and `TBD_MarkerApplier` in [Client/](Client/README.md), started by `TBD_MarkerComponent` on any machine where
   `GetGame().GetWorkspace()` is not null (`TBD_MarkerClient.Start` carries `@authority client`).
 - Owner: `TBD_RpcDo_Markers` runs on the requesting client only (`@authority owner`).
 - RPCs, on the modded `SCR_PlayerController`:
@@ -64,7 +67,7 @@ TBD_MarkerClient: every 5 s until served, and on each map open (at most every 3 
 
 - Depends on: `TBD_MissionLoader` (`TBD_MissionMarkerStruct` rows and the briefings) and
   `TBD_SpawnManager` (the caller's slot) under `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/`;
-  `TBD_Log`; the engine's `SCR_MapMarkerManagerComponent`, `SCR_MapMarkerBase`,
+  `TBD_Log`, `TBD_Rounding` and `TBD_Authority` under `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; the engine's `SCR_MapMarkerManagerComponent`, `SCR_MapMarkerBase`,
   `SCR_MapMarkerEntryPlaced` and `SCR_MapEntity`; the `marker` definition in
   `contracts_v2/definitions/mission.schema.json`.
 - Used by: `TBD_TaskHud` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/`

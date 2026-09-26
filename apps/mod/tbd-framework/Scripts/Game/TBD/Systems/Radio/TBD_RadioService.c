@@ -1,82 +1,46 @@
-//! T-181.40 -- the SERVER half of the radio plan: which nets a player is on, and in what shape
-//! they cross the wire.
-//!
-//! Clients hold NO mission document. `TBD_FrameworkManager.OnPostInit` returns early for
-//! `RplMode.Client` before `BeginLoad()`, so a client physically cannot read `radioPlan.nets[]`
-//! for itself. Nets are server-fed or they do not exist.
-//!
-//! `net.faction` scopes a net to one side. Frequencies ARE intelligence: knowing OPFOR is on
-//! 51.000 is knowing where to listen, and on a game whose radio the player can hand-tune, it is
-//! knowing where to listen with the radio they are already carrying. `bridgehead-at-levie` authors
-//! `net:cmd` on 41.0 for blufor and `net:cmd_op` on 51.0 for opfor; sending both to everyone and
-//! filtering in a widget would hand each side the other's command net.
-//!
-//! Three properties make that structural rather than a promise, copied deliberately from
-//! `TBD_MarkerData.c`, which is the model in this codebase:
-//!   1. `BuildForPlayer` takes a **playerId and nothing else**. There is no faction parameter, so
-//!      a client has nowhere to put a lie.
-//!   2. The side is read from `TBD_SpawnManager.GetAssignedSlot(playerId)` -- server-owned state a
-//!      client cannot influence (`m_mPlayerSlot` is a plain map, not an `RplProp`).
-//!   3. Only the resolved side's nets are ever placed in the arrays that get sent
-//!      (`TBD_RadioPlan.GetNetsForFaction` BUILDS the answer rather than filtering a full list),
-//!      so the other side's frequencies never leave the server process.
-//!
-//! **If a client asked for another faction's nets it could not phrase the question.** The request
-//! RPC takes no arguments; the answer is whatever `GetAssignedSlot` says the caller is. A player
-//! with no slot gets `served = false` and zero nets -- fail closed, not fail open.
-//!
-//! A net with an EMPTY `faction` is deliberately shared with everyone: the schema makes `faction`
-//! optional, so an unscoped net is an authoring choice meaning "common channel", not an oversight.
-//!
-//! Same reasoning as markers, and it is not hypothetical here either. `string.Split`'s empty-token
-//! behaviour is a RUNTIME property no probe on this lane can settle, and a net `label` is authored
-//! free text that may legally contain any delimiter we picked. So there is no delimiter: four
-//! parallel `array<...>` RPC parameters carry the fields positionally, element i of each being
-//! field i of net i. Both array types used here are `array<int>` / `array<string>` -- the only two
-//! that appear as replicated-method parameters in EITHER oracle, and the shape already proven and
-//! shipped by `TBD_MarkerController.TBD_RpcDo_Markers`. The long-range flag is therefore an int
-//! 0/1 rather than the `array<bool>` that would read more naturally.
-//!
-//! Frequencies cross the wire as INTEGER kHz, not as the schema's float MHz: kHz is the unit the
-//! engine's own radio API speaks, integers have no formatting ambiguity, and the client formats
-//! the display text from the integer so what a player reads is what a transceiver was set to.
+/**
+ * @file TBD_RadioService.c
+ * @brief Server half of the radio plan: which nets a player is on, and their tune.
+ *
+ * Role: builds one player's side-scoped net list, tunes their radio into it, and sweeps the
+ * connected roster at SAFE_START and LIVE.  Position: called by the modded `SCR_PlayerController`
+ * net request (RPC or in place on a listen host) and by `TBD_RadioBridgeStub.OnStageChanged`;
+ * reads `TBD_SpawnManager.GetAssignedSlot`, `TBD_RadioPlan` and `TBD_RadioTuner`.
+ * State: the per-player last logged outcome, static, on the server.
+ * Invariants: frequencies are side-scoped intelligence. The request takes a player id and nothing
+ * else, the side comes from server-owned slot state, and `TBD_RadioPlan.GetNetsForFaction` builds
+ * only that side's (and shared) nets, so another side's frequencies never leave the server. A
+ * player without a slot gets `served = false` and no nets (fail closed). Nets travel as parallel
+ * arrays with integer kHz, the engine's radio unit; the long-range flag is an int because
+ * `array<int>` is a proven RPC parameter type. The tune is part of the same call that builds the
+ * wire, so the player is shown the measured outcome.
+ */
+
+//! Server-side radio net builder and stage sweep.
+//! @authority server
 class TBD_RadioService
 {
-	//! Hard cap on nets sent to one client. `TBD_RadioPlan` already caps the document at 32; this
-	//! is the wire's own limit so a change there cannot silently widen a reliable RPC.
-	static const int MAX_NETS_ON_WIRE = 32;
+	static const int MAX_NETS_ON_WIRE = 32; //!< most nets sent to one client; the wire's own limit
+	protected static ref map<int, string> s_mLastLogged; //!< player id -> last logged outcome; null until first use
+	protected static const int MAX_LOG_STATES = 256; //!< entries after which `s_mLastLogged` is dropped whole
 
-	//! playerId -> last outcome logged for them, so a polling client cannot fill the console.
-	protected static ref map<int, string> s_mLastLogged;
-
-	//! Hard ceiling on that map. Player ids are RECYCLED on a dedicated server and this file has no
-	//! disconnect hook, so the whole table is dropped rather than leaked across a long session. The
-	//! only cost of dropping it is one repeated log line per player.
-	protected static const int MAX_LOG_STATES = 256;
-
-	//! @authority server -- build ONE player's net list, and try to tune their radio into it.
-	//!
-	//! Never returns null: an unslotted player, an unloaded mission and a mission with no nets for
-	//! their side are three different legal states, and each yields an empty served=false answer
-	//! carrying the reason.
-	//!
-	//! The tune attempt is deliberately part of the SAME call that builds the wire, so the outcome
-	//! the player is shown and the outcome the log records are the same measurement. There is no
-	//! path in this file that reports a tune it did not verify -- `TBD_RadioTuner` reads the
-	//! frequency back off the transceiver and the result rides the wire as `m_sTuneResult`.
+	//! Build one player's net list, tune their radio into it, and log the outcome when it changed.
+	//! Logging here covers the listen-host path, which skips the RPC handler.
+	//! @param playerId the requesting player
+	//! @return never null: `served = false` with a refusal reason when the player has no slot or
+	//! no mission is loaded; otherwise served, with the side's nets (possibly none) and the tune
+	//! result `TBD_RadioTuner` read back off the transceiver
 	static TBD_RadioWire BuildForPlayer(int playerId)
 	{
 		TBD_RadioWire wire = Build(playerId);
-
-		// Logged HERE, not at the RPC handler, because a listen host short-circuits the RPC
-		// entirely and would otherwise be the one topology that produced no radio log at all.
-		// Host/dedicated behaviour divergence is a recorded failure mode in this program.
 		LogOutcome(playerId, wire);
 
 		return wire;
 	}
 
-	//! @authority server -- the decision itself, with no logging in it.
+	//! The net decision and tune, without logging.
+	//! @param playerId the requesting player
+	//! @return the wire, never null
 	protected static TBD_RadioWire Build(int playerId)
 	{
 		TBD_RadioWire wire = new TBD_RadioWire();
@@ -91,7 +55,7 @@ class TBD_RadioService
 		TBD_MissionSlotStruct slot = spawn.GetAssignedSlot(playerId);
 		if (!slot)
 		{
-			// Fail closed. No seat means no side, and no side means no side's frequencies.
+			// Fail closed: no seat means no side.
 			wire.m_sRefusal = "no slot assigned";
 			return wire;
 		}
@@ -106,9 +70,7 @@ class TBD_RadioService
 		wire.m_sFactionKey = slot.faction;
 		wire.m_sMissionId = doc.meta.id;
 
-		// From here on the answer is authoritative even when it is empty: the player HAS a side and
-		// the server HAS a mission, so "this side authored no nets" is a real, served answer and
-		// the client should stop asking.
+		// From here on the answer is authoritative even when it has no nets.
 		wire.m_bServed = true;
 
 		array<TBD_MissionNetStruct> nets = TBD_RadioPlan.GetNetsForFaction(slot.faction);
@@ -134,17 +96,11 @@ class TBD_RadioService
 		return wire;
 	}
 
-	//! @authority server -- the whole connected roster, at a stage boundary.
-	//!
-	//! Called from `TBD_RadioBridgeStub.OnStageChanged`, which is an EXISTING call site
-	//! (`TBD_FrameworkManager.c:250`) -- no new hook was added to a file this slice does not own.
-	//! SAFE_START and LIVE are the two transitions at which everybody who is going to be in a body
-	//! is in one, which makes them the honest moments to push a tune.
-	//!
-	//! Retuning at the top of LIVE is also what recovers a player who slotted late: the pull path
-	//! in `TBD_RadioController` covers them too, and having both means neither is load-bearing
-	//! alone. T-181.28 records the briefing shipping push-only and silently missing late joiners;
-	//! this slice does not repeat that.
+	//! At SAFE_START and LIVE, build, tune and push every connected player's nets and log one
+	//! `sweep` line. With the client's pull, this also recovers a player who slotted late. Does
+	//! nothing on a client, at other stages, or with no players.
+	//! @param stage the stage entered
+	//! @authority server
 	static void OnStageChanged(TBD_EGameStage stage)
 	{
 		if (TBD_Authority.IsClient())
@@ -177,9 +133,7 @@ class TBD_RadioService
 			if (wire.m_iTuned > 0)
 				tuned++;
 
-			// Push the SAME wire that was just measured. `BuildForPlayer` performed the tune, so
-			// the player's display and their radio are updated from one measurement rather than
-			// two -- and a client whose poll already stopped still learns that its radio changed.
+			// Push the wire just measured, so a client whose poll stopped learns the new tune.
 			SCR_PlayerController controller = SCR_PlayerController.Cast(players.GetPlayerController(ids[i]));
 			if (controller)
 				controller.TBD_PushRadioNets(wire);
@@ -190,45 +144,26 @@ class TBD_RadioService
 			typename.EnumToString(TBD_EGameStage, stage), count, served, tuned));
 	}
 
-	//! Schema `range` -> "this net wants the long-range set", as 0/1.
-	//!
-	//! An `int` flag and not a `bool`, because this value goes into `m_aLongRange`, which IS an RPC
-	//! parameter -- and `array<int>` is proven in both oracles while `array<bool>` appears in
-	//! neither. See `TBD_RadioTuner.TunePlayer`.
-	//!
-	//! T-292 -- the schema admits exactly two values (`short` | `long`, default `short`), matching
-	//! Enfusion's two radio gadget classes. Only `long` returns 1 (backpack preference). `short`
-	//! and ABSENT (empty -- `JsonLoadContext` leaves a missing string at its initializer; schema
-	//! default is `short`) return 0 (handheld preference). The retired value `any` is rejected by
-	//! `mission.schema.json` but still maps to 0 here so a pre-T-292 document that somehow skipped
-	//! schema validation does not flip into backpack mode by accident.
-	//!
-	//! Compared case-sensitively against the schema's own lowercase enum, deliberately: `ToLower()`
-	//! MUTATES IN PLACE AND RETURNS A COUNT in Enfusion, so the obvious normalising one-liner does
-	//! not do what it looks like it does, and an authored value outside the enum is a document that
-	//! never passed schema validation.
+	//! Map a net's `range` to the long-range flag, compared case-sensitively with the schema's
+	//! lowercase enum.
+	//! @param range `long`, `short`, or empty when absent
+	//! @return 1 for `long` (backpack preference); 0 for anything else (handheld preference)
 	protected static int LongRangeFlag(string range)
 	{
 		if (range == "long")
 			return 1;
 
-		// Explicit `short` (and empty / legacy `any`) -> handheld. Named so the handheld path is not
-		// a silent fall-through that made `short` look discarded next to a three-value schema.
+		// `short`, empty and the schema-rejected `any` name the handheld path explicitly.
 		if (range == "short" || range.IsEmpty() || range == "any")
 			return 0;
 
 		return 0;
 	}
 
-	//! One line per player, only when the answer CHANGES.
-	//!
-	//! Both outcomes are NORMAL level. A refusal is not an error -- an unslotted player asking
-	//! during LOBBY is the ordinary case and is how the client knows to keep asking -- and
-	//! `world-boot.sh` triages any TBD-owned `SCRIPT (E)` line as a gate failure.
-	//!
-	//! The tune result is on the SAME line as the net count on purpose. That pairing is the whole
-	//! honesty contract of this slice in one string: `nets=2 tune=NO_BACKBONE` reads as "the player
-	//! was told about two nets and no radio was touched", which is exactly the truth today.
+	//! Log one line per player, only when the player's outcome changed, at NORMAL level. A served
+	//! line pairs the net count with the tune result (for example `nets=2 tune=NO_BACKBONE`).
+	//! @param playerId the requesting player
+	//! @param wire the built answer
 	protected static void LogOutcome(int playerId, TBD_RadioWire wire)
 	{
 		if (!wire.m_bServed)
@@ -267,11 +202,9 @@ class TBD_RadioService
 			wire.m_sTuneResult, wire.m_iTuned, detail));
 	}
 
-	//! True the FIRST time this player's outcome differs from the last one logged for them.
-	//!
-	//! An unserved client re-asks every few seconds, and a full server sitting in LOBBY would
-	//! otherwise emit a dozen identical "refused" lines a second -- a defect already on the books
-	//! against the admin service (T-181.30 item 4).
+	//! Record the player's outcome; an unserved client re-asks every few seconds, so identical
+	//! outcomes must not log again. The table is dropped whole past `MAX_LOG_STATES` entries.
+	//! @return true when the outcome differs from the last one logged for this player
 	protected static bool ShouldLog(int playerId, string outcome)
 	{
 		if (!s_mLastLogged)
@@ -288,8 +221,7 @@ class TBD_RadioService
 		return true;
 	}
 
-	//! Statics outlive a world inside one process (recorded landmine), so the log-state table and
-	//! the parsed plan are both released with the world.
+	//! Drop the log-state table and the parsed plan; statics outlive a world inside one process.
 	static void Reset()
 	{
 		s_mLastLogged = null;
@@ -297,41 +229,24 @@ class TBD_RadioService
 	}
 }
 
-//! One player's net list, server-side, in the exact shape the RPC takes.
-//!
-//! Deliberately parallel arrays rather than an array of row objects: these fields ARE the RPC
-//! parameter list, and keeping the class isomorphic to the wire means the packing step cannot
-//! reorder or drop a column without the compiler noticing.
+//! One player's net list, isomorphic to the RPC parameter list: element i of every column is net i.
 class TBD_RadioWire
 {
-	//! False = the server had no authoritative answer for this player yet (no slot, no mission).
-	//! The client keeps asking while this is false, and stops the moment it is true -- including
-	//! when it is true with zero nets, which is a real answer.
-	bool m_bServed;
+	bool m_bServed; //!< false while the server has no authoritative answer (no slot, no mission); the client keeps asking
+	string m_sFactionKey; //!< side the nets belong to; logged on the server, never sent
+	string m_sMissionId; //!< mission the nets belong to; tells a repeat from a mission switch
 
-	//! The side these nets belong to. Diagnostic only; the client never sends it back and never
-	//! makes a trust decision with it.
-	string m_sFactionKey;
+	ref array<string> m_aId = {}; //!< net id per net
+	ref array<string> m_aLabel = {}; //!< label per net, cut to `TBD_RadioPlan.MAX_LABEL_CHARS`
+	ref array<int> m_aFreqKHz = {}; //!< frequency in kHz per net
+	ref array<int> m_aLongRange = {}; //!< 1 for `range: long` (backpack), 0 otherwise (handheld), per net
 
-	string m_sMissionId; //!< Lets the client tell "same nets again" from "the admin switched missions".
+	string m_sTuneResult; //!< `TBD_ERadioTuneResult` by name, so the wire is not coupled to enum values
+	int m_iTuned; //!< nets read back off a transceiver after tuning; 0 on a world without a backbone
+	string m_sTuneDetail; //!< free-text detail of the tune; empty when none
+	string m_sRefusal; //!< why the server declined; logged, never shown to the player
 
-	ref array<string> m_aId = {};       //!< `net:<id>`, stable channel key.
-	ref array<string> m_aLabel = {};    //!< Display name, already length-capped.
-	ref array<int> m_aFreqKHz = {};     //!< Kilohertz -- the unit the engine's radio API speaks.
-	ref array<int> m_aLongRange = {};   //!< 1 when `range: long` (backpack); 0 when `range: short` / absent (handheld).
-
-	//! `TBD_ERadioTuneResult` by NAME, so the client can render the truth without importing the
-	//! enum's numeric values across a wire that would then be version-coupled to them.
-	string m_sTuneResult;
-
-	//! How many nets were VERIFIABLY placed on a transceiver (read back and compared). Zero with a
-	//! non-empty net list is the current, honest, expected state on a world with no radio backbone.
-	int m_iTuned;
-
-	string m_sTuneDetail; //!< Human-readable nuance about the tune, when there is any.
-
-	string m_sRefusal; //!< Why the server declined, when it did. Logged, not shown to the player.
-
+	//! @return the number of nets
 	int Count()
 	{
 		return m_aId.Count();

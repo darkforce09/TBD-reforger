@@ -46,7 +46,7 @@ pub(super) const MOD_MAX_NETS: usize = 32;
 /// `TBD_RadioPlan.MAX_LABEL_CHARS` (`TBD_RadioPlan.c:94`). Again mod-only — the schema puts no `maxLength` on `net.label`. `TBD_RadioPlan.CapLabel` truncates past it without a word to anyone, so the truncation is done here instead, where the compiled document a human can read already shows the string the player will see.
 pub(super) const MOD_MAX_LABEL_CHARS: usize = 48;
 
-/// `TBD_MarkerService.MAX_LABEL_CHARS` (`Markers/TBD_MarkerData.c:63`). A DIFFERENT consumer with a different budget from [`MOD_MAX_LABEL_CHARS`] — the radio plan's 48 is `TBD_RadioPlan`'s, this 64 is the marker wire's — so the two are deliberately separate constants rather than one shared number that would silently retune whichever mod class changed second.
+/// `TBD_MarkerService.MAX_LABEL_CHARS` (`Markers/TBD_MarkerService.c`). A DIFFERENT consumer with a different budget from [`MOD_MAX_LABEL_CHARS`] — the radio plan's 48 is `TBD_RadioPlan`'s, this 64 is the marker wire's — so the two are deliberately separate constants rather than one shared number that would silently retune whichever mod class changed second.
 pub(super) const MOD_MAX_MARKER_LABEL_CHARS: usize = 64;
 
 /// Bottom of `mission.schema.json#/$defs/net/freqMHz` (`minimum: 30`) and the base of the net frequency allocation. Deliberately the schema's own floor and not a number lifted from a golden mission — see [`derive_radio_plan`].

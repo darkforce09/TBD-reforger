@@ -1,188 +1,74 @@
-//! T-936.5 - positional audio emitters and music cues.
-//!
-//! Server reads `audio` from the raw mission JSON, arms each emitter (LIVE, or when its
-//! triggerId FIRED), and fires music cues on mission_start / task_succeeded / task_failed /
-//! mission_end. The server has no audio device, so playback is pushed to each client's
-//! SCR_PlayerController (same transport as T-676 play_sound). Each client spawns one
-//! TBD_AudioSourceEntity at the emitter origin and only raises the sound while the local
-//! player is inside radiusM. loop repeats inside the radius; a one-shot fires once on first
-//! enter.
-//!
-//! JsonLoadContext ALLOCATES nested refs when the key is absent. Presence is
-//! emitters.Count() / musicCues.Count(), NOT `if (doc.audio)`.
+/**
+ * @file TBD_AudioEmitter.c
+ * @brief Server side of mission audio: reads the `audio` block, arms emitters, fires music cues.
+ *
+ * Role: builds the authored emitters and cues once per mission id, arms each emitter at LIVE (or
+ * once its `triggerId` has fired) and fires cues on mission_start, task_succeeded, task_failed and
+ * mission_end.  Position: `TBD_RuntimeHeartbeat` calls `Tick` every `TICK_MS` on the server and
+ * `Clear` at world start; delivery goes to every player through the modded `SCR_PlayerController`.
+ * State: static registry, owned by the server.  Invariants: each emitter is pushed once per
+ * mission; mission_start and mission_end cue once each; a task cue fires only on a change of a
+ * task's state after it was first seen; a dangling `triggerId` warns once and stays silent.
+ */
 
-class TBD_AudioEmitterStruct
-{
-	string id;
-	float x;
-	float z;
-	float y;
-	string sound;
-	float radiusM;
-	bool loop;
-	string triggerId;
-
-	void TBD_AudioEmitterStruct()
-	{
-		y = TBD_AudioEmitter.ABSENT;
-		radiusM = 0;
-		loop = false;
-	}
-}
-
-class TBD_MusicCueStruct
-{
-	string id;
-	string cueEvent;
-	string track;
-}
-
-class TBD_AudioBlockStruct
-{
-	ref array<ref TBD_AudioEmitterStruct> emitters;
-	ref array<ref TBD_MusicCueStruct> musicCues;
-}
-
-//! The document root for the audio pass: declares `audio` and nothing else.
-class TBD_AudioDocStruct
-{
-	ref TBD_AudioBlockStruct audio;
-}
-
-[EntityEditorProps(category: "TBD/Gamemode", description: "TBD positional audio source")]
-class TBD_AudioSourceEntityClass : GenericEntityClass
-{
-};
-
-//! Local client sound source. Spawned by typename (no prefab). Radius is a listener gate:
-//! SCR_UISoundEntity is 2D, so being inside radiusM is what makes the emitter positional.
-class TBD_AudioSourceEntity : GenericEntity
-{
-	static const int LOOP_MS = 4000;
-
-	string m_sId;
-	string m_sSound;
-	float m_fRadiusM;
-	bool m_bLoop;
-	bool m_bOneShotPlayed;
-	float m_fNextPlayMs;
-
-	void TBD_AudioSourceEntity(IEntitySource src, IEntity parent)
-	{
-		SetEventMask(EntityEvent.FRAME);
-		SetFlags(EntityFlags.ACTIVE, true);
-	}
-
-	void Configure(string id, string sound, float radiusM, bool loop)
-	{
-		m_sId = id;
-		m_sSound = sound;
-		m_fRadiusM = radiusM;
-		m_bLoop = loop;
-		m_bOneShotPlayed = false;
-		m_fNextPlayMs = 0;
-	}
-
-	override protected void EOnFrame(IEntity owner, float timeSlice)
-	{
-		if (m_sSound.IsEmpty() || m_fRadiusM <= 0)
-			return;
-
-		IEntity listener = ListenerEntity();
-		if (!listener)
-			return;
-
-		float dist = vector.Distance(listener.GetOrigin(), GetOrigin());
-		bool inRange = dist <= m_fRadiusM;
-		if (!inRange)
-			return;
-
-		float now = GetGame().GetWorld().GetWorldTime();
-		if (m_bLoop)
-		{
-			if (now >= m_fNextPlayMs)
-			{
-				SCR_UISoundEntity.SoundEvent(m_sSound);
-				m_fNextPlayMs = now + LOOP_MS;
-			}
-			return;
-		}
-
-		if (m_bOneShotPlayed)
-			return;
-
-		SCR_UISoundEntity.SoundEvent(m_sSound);
-		m_bOneShotPlayed = true;
-	}
-
-	protected IEntity ListenerEntity()
-	{
-		PlayerController pc = GetGame().GetPlayerController();
-		if (!pc)
-			return null;
-		return pc.GetControlledEntity();
-	}
-}
-
-//! Reads `audio`, arms emitters, fires cues. Server-authoritative; clients play.
+//! The audio registry and its tick.
+//! @authority server
 class TBD_AudioEmitter
 {
-	static const string CH = "Audio";
-	static const float ABSENT = -1e6;
-	static const int TICK_MS = 1000;
+	static const string CH = "Audio"; //!< log channel
+	static const float ABSENT = -1e6; //!< sentinel for an omitted emitter `y`
+	static const int TICK_MS = 1000; //!< heartbeat period of `Tick` in milliseconds
 
-	static const string EV_START = "mission_start";
-	static const string EV_TASK_OK = "task_succeeded";
-	static const string EV_TASK_FAIL = "task_failed";
-	static const string EV_END = "mission_end";
+	static const string EV_START = "mission_start"; //!< cue event on entering LIVE
+	static const string EV_TASK_OK = "task_succeeded"; //!< cue event when a task succeeds
+	static const string EV_TASK_FAIL = "task_failed"; //!< cue event when a task fails
+	static const string EV_END = "mission_end"; //!< cue event on entering END
 
-	protected static ref array<ref TBD_AudioEmitterStruct> s_aEmitters;
-	protected static ref array<ref TBD_MusicCueStruct> s_aCues;
-	protected static ref array<string> s_aArmedIds;
-	protected static ref array<string> s_aMissingTriggers;
-	protected static ref array<string> s_aTaskSeen;
-	protected static ref array<TBD_AudioSourceEntity> s_aLocalSources;
-	protected static bool s_bBuilt;
-	protected static string s_sBuiltForMission;
-	protected static bool s_bAnnounced;
-	protected static bool s_bStartCued;
-	protected static bool s_bEndCued;
+	protected static const string ANNOUNCE_IDLE_KEY = "Audio.idle"; //!< `TBD_AnnounceOnce` key of the no-audio line
 
+	protected static ref array<ref TBD_AudioEmitterStruct> s_aEmitters; //!< valid authored emitters; null until built
+	protected static ref array<ref TBD_MusicCueStruct> s_aCues; //!< valid authored cues; null until built
+	protected static ref array<string> s_aArmedIds; //!< ids of emitters already pushed
+	protected static ref array<string> s_aMissingTriggers; //!< ids of emitters whose dangling trigger was reported
+	protected static ref array<string> s_aTaskSeen; //!< `taskId<TAB>state` rows of the last seen task states
+	protected static bool s_bBuilt; //!< true once `Build` ran for the current mission
+	protected static string s_sBuiltForMission; //!< mission id the registry was built for
+	protected static bool s_bStartCued; //!< true once the mission_start cues fired
+	protected static bool s_bEndCued; //!< true once the mission_end cues fired
+
+	//! Drop the registry, the client's spawned sources and the cue flags. Runs at world start and
+	//! when the loaded mission id changes.
 	static void Clear()
 	{
-		if (s_aLocalSources)
-		{
-			foreach (TBD_AudioSourceEntity src : s_aLocalSources)
-			{
-				if (src)
-					SCR_EntityHelper.DeleteEntityAndChildren(src);
-			}
-		}
+		TBD_AudioLocalSources.Clear();
 
 		s_aEmitters = null;
 		s_aCues = null;
 		s_aArmedIds = null;
 		s_aMissingTriggers = null;
 		s_aTaskSeen = null;
-		s_aLocalSources = null;
 		s_bBuilt = false;
 		s_sBuiltForMission = string.Empty;
-		s_bAnnounced = false;
+		TBD_AnnounceOnce.Rearm(ANNOUNCE_IDLE_KEY);
 		s_bStartCued = false;
 		s_bEndCued = false;
 	}
 
+	//! @return true once the registry is built for the current mission
 	static bool IsBuilt()
 	{
 		return s_bBuilt;
 	}
 
+	//! Read and validate the `audio` block once per mission. Rows without an id, a sound or track,
+	//! or a positive radius are skipped with a warning.
+	//! @return true when the registry is built (possibly empty); false while no mission id is held
 	static bool Build()
 	{
 		if (s_bBuilt)
 			return true;
 
-		string missionId = CurrentMissionId();
+		string missionId = TBD_MissionLoader.GetMissionId();
 		if (missionId.IsEmpty())
 			return false;
 
@@ -244,13 +130,16 @@ class TBD_AudioEmitter
 		return true;
 	}
 
+	//! One heartbeat: rebuild on a mission change, fire the stage cues, and during LIVE follow task
+	//! states and arm emitters. Logs the idle line once when the mission authors no audio.
+	//! @authority server
 	static void Tick()
 	{
 		TBD_FrameworkManager fm = TBD_FrameworkManager.GetInstance();
 		if (!fm)
 			return;
 
-		string liveId = CurrentMissionId();
+		string liveId = TBD_MissionLoader.GetMissionId();
 		if (s_bBuilt && !s_sBuiltForMission.IsEmpty() && liveId != s_sBuiltForMission)
 			Clear();
 
@@ -265,7 +154,7 @@ class TBD_AudioEmitter
 			nCue = s_aCues.Count();
 		if (nEm == 0 && nCue == 0)
 		{
-			AnnounceEmptyOnce();
+			TBD_AnnounceOnce.Kv(CH, ANNOUNCE_IDLE_KEY, "idle", "this mission authors no audio");
 			return;
 		}
 
@@ -288,49 +177,8 @@ class TBD_AudioEmitter
 		}
 	}
 
-	static void SpawnLocalSource(string id, float x, float y, float z, float radiusM, bool loop, string sound)
-	{
-		if (id.IsEmpty() || sound.IsEmpty())
-			return;
-
-		if (!s_aLocalSources)
-			s_aLocalSources = new array<TBD_AudioSourceEntity>();
-
-		foreach (TBD_AudioSourceEntity existing : s_aLocalSources)
-		{
-			if (existing && existing.m_sId == id)
-				return;
-		}
-
-		BaseWorld world = GetGame().GetWorld();
-		if (!world)
-			return;
-
-		float spawnY = y;
-		if (y == ABSENT)
-			spawnY = world.GetSurfaceY(x, z);
-
-		vector pos = Vector(x, spawnY, z);
-		EntitySpawnParams params = new EntitySpawnParams();
-		params.TransformMode = ETransformMode.WORLD;
-		Math3D.MatrixIdentity4(params.Transform);
-		params.Transform[3] = pos;
-
-		IEntity spawned = GetGame().SpawnEntity(TBD_AudioSourceEntity, world, params);
-		TBD_AudioSourceEntity src = TBD_AudioSourceEntity.Cast(spawned);
-		if (!src)
-		{
-			TBD_Log.Warn(CH, string.Format("could not spawn source id='%1'", id));
-			if (spawned)
-				SCR_EntityHelper.DeleteEntityAndChildren(spawned);
-			return;
-		}
-
-		src.Configure(id, sound, radiusM, loop);
-		s_aLocalSources.Insert(src);
-		TBD_Log.Kv(CH, "source", string.Format("id='%1' radiusM=%2 loop=%3", id, radiusM, loop));
-	}
-
+	//! Push every emitter that is not yet armed and whose trigger, when it names one, has fired.
+	//! @authority server
 	protected static void ArmEmitters()
 	{
 		if (!s_aEmitters)
@@ -342,7 +190,7 @@ class TBD_AudioEmitter
 				continue;
 			if (IsArmed(raw.id))
 				continue;
-			if (!raw.triggerId.IsEmpty() && !TriggerHasFired(raw.id, raw.triggerId))
+			if (!raw.triggerId.IsEmpty() && !IsTriggerFired(raw.id, raw.triggerId))
 				continue;
 
 			s_aArmedIds.Insert(raw.id);
@@ -351,6 +199,7 @@ class TBD_AudioEmitter
 		}
 	}
 
+	//! @return true when the emitter with this id was already pushed
 	protected static bool IsArmed(string id)
 	{
 		if (!s_aArmedIds)
@@ -363,41 +212,10 @@ class TBD_AudioEmitter
 		return false;
 	}
 
-	protected static bool TriggerHasFired(string emitterId, string triggerId)
-	{
-		array<ref TBD_Trigger> all = TBD_TriggerRuntime.GetAll();
-		if (!all)
-			return false;
 
-		foreach (TBD_Trigger t : all)
-		{
-			if (!t)
-				continue;
-			if (t.m_sId != triggerId)
-				continue;
-			return t.m_eState == TBD_ETriggerState.FIRED;
-		}
-
-		if (!s_aMissingTriggers)
-			s_aMissingTriggers = new array<string>();
-		bool seen = false;
-		foreach (string miss : s_aMissingTriggers)
-		{
-			if (miss == emitterId)
-			{
-				seen = true;
-				break;
-			}
-		}
-		if (!seen)
-		{
-			s_aMissingTriggers.Insert(emitterId);
-			TBD_Log.Warn(CH, string.Format("emitter '%1' triggerId '%2' is not a prepared trigger - stays silent",
-				emitterId, triggerId));
-		}
-		return false;
-	}
-
+	//! Compare every task's state with the last one seen and fire the task cues on a change to
+	//! succeeded or failed. A task's first sighting fires nothing.
+	//! @authority server
 	protected static void WatchTasks()
 	{
 		array<ref TBD_Task> tasks = TBD_TaskStateMachine.GetAll();
@@ -421,6 +239,7 @@ class TBD_AudioEmitter
 		}
 	}
 
+	//! @return `succeeded`, `failed` or `assigned` for a task state
 	protected static string TaskStateName(TBD_ETaskState st)
 	{
 		if (st == TBD_ETaskState.SUCCEEDED)
@@ -430,6 +249,7 @@ class TBD_AudioEmitter
 		return "assigned";
 	}
 
+	//! @return the last state recorded for the task, or empty when it was never seen
 	protected static string SeenTaskState(string id)
 	{
 		if (!s_aTaskSeen)
@@ -443,6 +263,7 @@ class TBD_AudioEmitter
 		return string.Empty;
 	}
 
+	//! Record the task's current state, replacing any earlier row for it.
 	protected static void RememberTask(string id, string state)
 	{
 		if (!s_aTaskSeen)
@@ -459,6 +280,9 @@ class TBD_AudioEmitter
 		s_aTaskSeen.Insert(prefix + state);
 	}
 
+	//! Push every cue bound to the event to all players and log how many fired.
+	//! @param eventName one of the `EV_*` names
+	//! @authority server
 	protected static void FireCues(string eventName)
 	{
 		if (!s_aCues)
@@ -476,6 +300,8 @@ class TBD_AudioEmitter
 			TBD_Log.Kv(CH, "cue", string.Format("event='%1' tracks=%2", eventName, n));
 	}
 
+	//! Hand the emitter to every player's controller and log how many received it.
+	//! @authority server
 	protected static void PushEmitter(notnull TBD_AudioEmitterStruct raw)
 	{
 		float y = raw.y;
@@ -497,6 +323,8 @@ class TBD_AudioEmitter
 		TBD_Log.Kv(CH, "pushEmitter", string.Format("id='%1' players=%2 sent=%3", raw.id, ids.Count(), sent));
 	}
 
+	//! Hand the cue track to every player's controller.
+	//! @authority server
 	protected static void PushCue(string track)
 	{
 		PlayerManager players = GetGame().GetPlayerManager();
@@ -514,36 +342,46 @@ class TBD_AudioEmitter
 		}
 	}
 
-	protected static string CurrentMissionId()
+	//! Whether the emitter's trigger has fired; a trigger id the registry does not hold warns once
+	//! per emitter and reads as not fired.
+	//! @return true when the trigger is FIRED
+	protected static bool IsTriggerFired(string emitterId, string triggerId)
 	{
-		TBD_MissionDocumentStruct doc = TBD_MissionLoader.GetMission();
-		if (!doc || !doc.meta)
-			return string.Empty;
-		return doc.meta.id;
+		bool unknownId;
+		if (TBD_TriggerRuntime.HasFired(triggerId, unknownId))
+			return true;
+
+		if (!unknownId)
+			return false;
+
+		if (!s_aMissingTriggers)
+			s_aMissingTriggers = new array<string>();
+		if (s_aMissingTriggers.Find(emitterId) < 0)
+		{
+			s_aMissingTriggers.Insert(emitterId);
+			TBD_Log.Warn(CH, string.Format("emitter '%1' triggerId '%2' is not a prepared trigger - stays silent",
+				emitterId, triggerId));
+		}
+		return false;
 	}
 
+	//! Read the `audio` block from the held mission JSON. `event` is an Enforce keyword, so the
+	//! key is renamed to `cueEvent` before the typed read.
+	//! @return the block, or null when no document is held, it does not parse, or it authors no
+	//! emitters and no cues
 	protected static TBD_AudioBlockStruct ReadWire()
 	{
-		string raw = TBD_MissionLoader.GetRawJson();
-		if (raw.IsEmpty())
-			return null;
-
-		// `event` is an Enforce keyword (`proto event void`), so the struct field is
-		// `cueEvent`. Rewrite the JSON key before JsonLoadContext binds by member name.
-		// Format copies: Replace mutates in place and must not touch MissionLoader's cache.
-		string rewritten = string.Format("%1", raw);
-		rewritten.Replace("\"event\":", "\"cueEvent\":");
-
-		JsonLoadContext ctx = new JsonLoadContext();
-		if (!ctx.LoadFromString(rewritten))
+		TBD_EMissionJsonPassOutcome outcome;
+		JsonLoadContext ctx = TBD_MissionJsonPass.LoadRoot(outcome, "event", "cueEvent");
+		if (!ctx)
 			return null;
 
 		TBD_AudioDocStruct doc = new TBD_AudioDocStruct();
 		if (!ctx.ReadValue("", doc))
 			return null;
 
-		// NOT `if (doc.audio)`. JsonLoadContext ALLOCATES a nested ref even when the
-		// key is absent. Presence is Count() on the arrays.
+		// JsonLoadContext allocates a nested ref even when its key is absent: presence is the
+		// arrays' Count().
 		if (!doc.audio)
 			return null;
 		int nEm = 0;
@@ -557,61 +395,5 @@ class TBD_AudioEmitter
 
 		return doc.audio;
 	}
-
-	protected static void AnnounceEmptyOnce()
-	{
-		if (s_bAnnounced)
-			return;
-		s_bAnnounced = true;
-		TBD_Log.Kv(CH, "idle", "this mission authors no audio");
-	}
 }
 
-//! Eighth modded SCR_PlayerController block (mission browser, briefing, lobby, markers, radio,
-//! spectator host, triggers, now audio). Overrides no vanilla method; every symbol is TBD_-prefixed.
-modded class SCR_PlayerController
-{
-	//! @authority server - start one positional emitter on the addressed client.
-	void TBD_PushAudioEmitter(string id, float x, float y, float z, float radiusM, bool loop, string sound)
-	{
-		if (id.IsEmpty() || sound.IsEmpty())
-			return;
-
-		if (GetGame().GetPlayerController() == this)
-		{
-			TBD_AudioEmitter.SpawnLocalSource(id, x, y, z, radiusM, loop, sound);
-			return;
-		}
-
-		Rpc(TBD_RpcDo_AudioEmitter, id, x, y, z, radiusM, loop, sound);
-	}
-
-	//! @rpc Reliable Owner
-	[RplRpc(RplChannel.Reliable, RplRcver.Owner)]
-	protected void TBD_RpcDo_AudioEmitter(string id, float x, float y, float z, float radiusM, bool loop, string sound)
-	{
-		TBD_AudioEmitter.SpawnLocalSource(id, x, y, z, radiusM, loop, sound);
-	}
-
-	//! @authority server - 2D music cue on the addressed client.
-	void TBD_PushAudioCue(string track)
-	{
-		if (track.IsEmpty())
-			return;
-
-		if (GetGame().GetPlayerController() == this)
-		{
-			SCR_UISoundEntity.SoundEvent(track);
-			return;
-		}
-
-		Rpc(TBD_RpcDo_AudioCue, track);
-	}
-
-	//! @rpc Reliable Owner
-	[RplRpc(RplChannel.Reliable, RplRcver.Owner)]
-	protected void TBD_RpcDo_AudioCue(string track)
-	{
-		SCR_UISoundEntity.SoundEvent(track);
-	}
-}

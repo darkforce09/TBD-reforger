@@ -26,8 +26,9 @@ written without a ternary, which Enforce Script does not have.
 ## Boundaries
 
 - Depends on: nothing.
-- Used by: none at present; it replaces `RoundToInt` in `TBD_TaskStateMachine` and
-  `TBD_MarkerData`.
+- Used by: `TBD_TaskStateMachine` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`;
+  `TBD_MarkerService` and `TBD_RadioPlan.FreqKHz` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/`.
 - Rules: lines added stay ASCII; `cargo xtask mod compile` checks that the scripts compile.
 
 ## Related documentation

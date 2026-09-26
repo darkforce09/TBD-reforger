@@ -21,7 +21,7 @@ the one-life rule it tests is set out in
    | Item | Do | Expect | If not |
    |---|---|---|---|
    | Objectives | open the map (`M`) | the mission's objectives, per side | no `[TBD][Obj]` line in the log: the registry never armed |
-   | Markers | open the map | the authored markers on the vanilla placed-marker system | read the `[TBD][Markers]` lines; labels are cut to a byte budget (`CapLabel` in `TBD_MarkerData.c`), so a multi-byte label can lose its tail |
+   | Markers | open the map | the authored markers on the vanilla placed-marker system | read the `[TBD][Markers]` lines; labels are cut to a byte budget (`CapLabel` in `TBD_MarkerService.c`), so a multi-byte label can lose its tail |
    | Play area | walk out of the boundary zone | private chat `TBD: you are outside the play area (<zone>) -- return within <n>s.`, plus ` ONE LIFE: you will be killed and cannot respawn.` on a kill zone (`TBD_PlayAreaComponent.c`) | no message: the mission authored no boundary zone (legal), or the enforcer is not ticking |
    | Radio | read the net hint and check the radio's frequency | the side's nets listed, and the carried radios tuned to them | the dev world has no `RadioManagerEntity`, so the log says `backbone: MISSING — … using script-side channel table …` (`TBD_RadioComponent.c`) and tuning runs through that table; when the hint says no tune was verified, dial by hand ([known limitations](/documentation_v2/runbooks/two_client_playtest/known_limitations.md)) |
 

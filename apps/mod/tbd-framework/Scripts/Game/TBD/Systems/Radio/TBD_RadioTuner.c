@@ -1,114 +1,60 @@
-//! T-181.40 -- the ENGINE half: actually putting a player's radio on the mission's frequency.
-//!
-//! `documentation_v2/mod/tbd-framework/mod_design.md` section 6 says radio is wanted but NOT via
-//! CRF's route, because CRF depends on the
-//! external CVON workshop mod and TBD must not. The open question that made that a risk was
-//! whether Reforger's radio is drivable from script at all without a partner mod. It is. The whole
-//! chain is `proto external` -- native, script-callable, and compile-proved on this lane with a
-//! failing negative control (a fabricated `SetFrequencyTbdDoesNotExist` and a fabricated
-//! `EGadgetType.RADIO_TBD_DOES_NOT_EXIST` both error, so the real ones passing means something):
-//!
-//!   SCR_GadgetManagerComponent.GetGadgetManager(body)
-//!     -> GetGadgetsByType(EGadgetType.RADIO | EGadgetType.RADIO_BACKPACK)   the player's radios
-//!     -> SCR_RadioComponent.GetRadioComponent()                             -> BaseRadioComponent
-//!     -> BaseRadioComponent.TransceiversCount() / GetTransceiver(i)         -> BaseTransceiver
-//!     -> BaseTransceiver.SetFrequency(int kHz) / GetFrequency()             tune + READ BACK
-//!     -> BaseRadioComponent.SetEncryptionKey(string) / IsPowered() / SetPower(bool)
-//!
-//! `BaseTransceiver.SetFrequency` is documented "Supports proxies and server" and takes kHz;
-//! `BaseRadioComponent.SetTransceiverFrequency` is the client-origin variant ("and sync with
-//! server"). The server-authoritative path used here is the former.
-//!
-//! The engine still emits this on every boot of `Missions/TBD_Dev_POC.conf` the first time a
-//! `BaseRadioComponent` is created (a transmitter tower in Eden):
-//!
-//!     DEFAULT (W): World doesn't contain RadioManagerEntity to support any BaseRadioComponent.
-//!
-//! `worlds/TBD_Dev_POC.ent` still does not place a `RadioManagerEntity` -- operator deferred that
-//! world edit 2026-09-04. `ChimeraWorld.GetRadioManager()` remains the runtime question, but a
-//! null answer is no longer a refuse-to-tune. `FallbackChannelTable` supplies the mission
-//! `radioPlan` frequencies when the caller already resolved them, else a script-side default
-//! pair, and `TunePlayer` still drives `SetFrequency` + read-back. The boot warning names the
-//! world, the entity to add, and which table is in use. Placing `RadioManagerEntity` stays on
-//! the operator checklist; it is not this slice.
-//!
-//! **Never report a tune that did not happen.** Every tune is verified by reading the frequency
-//! back off the same transceiver and comparing. A log line saying a player is on ALPHA while no
-//! radio changed is worse than no radio feature at all, because it would be believed -- and this
-//! program has repeatedly been bitten by things that looked like they worked. If the player
-//! carries no radio, or if the read-back disagrees, the outcome says so and the net list is
-//! still DELIVERED and DISPLAYED. Assignment and display do not depend on any of this; only
-//! the tuning does.
+/**
+ * @file TBD_RadioTuner.c
+ * @brief Tunes a player's carried radios into their mission nets and verifies each tune.
+ *
+ * Role: drives the native radio chain from script (no partner mod): gadget manager ->
+ * `GetGadgetsByType(RADIO | RADIO_BACKPACK)` -> `SCR_RadioComponent.GetRadioComponent` ->
+ * `BaseRadioComponent.GetTransceiver` -> `BaseTransceiver.SetFrequency(kHz)` and `GetFrequency`
+ * read-back.  Position: `TBD_RadioService.Build` calls `TunePlayer` on the server;
+ * `TBD_RadioComponent` asks `IsBackboneAvailable`, `WorldFileName` and `FallbackSourceName`.
+ * State: none.  Invariants: a tune counts only when the same transceiver reads the frequency back;
+ * a world without a `RadioManagerEntity` still tunes, from `FallbackChannelTable` (the player's
+ * `radioPlan` nets, else a default pair only when the mission has no plan), and the report says
+ * so; the net list is delivered and shown whatever the tune outcome.
+ */
 
-//! What happened when we tried to put one player on their nets. Ordered roughly worst to best so
-//! a reader can tell a blocker from a nuance at a glance.
-enum TBD_ERadioTuneResult
-{
-	//! World has no `RadioManagerEntity`. T-941.7 no longer refuses to tune on this path --
-	//! `FallbackChannelTable` is used instead. Kept so the wire/client contract stays stable.
-	NO_BACKBONE,
-	//! The player has no controlled entity yet (lobby, dead, mid-possess). Ordinary, not an error.
-	NO_BODY,
-	//! The body has no gadget manager -- it is not a character, or not a fully built one.
-	NO_GADGET_MANAGER,
-	//! The player carries no radio. Their kit simply has none; they still SEE their nets.
-	NO_RADIO,
-	//! A radio with zero transceivers, or every transceiver already used by an earlier net.
-	NO_TRANSCEIVER,
-	//! We asked, and the read-back disagreed. Treated as a FAILURE, never rounded up to success.
-	READBACK_MISMATCH,
-	//! Nothing to do: this player's side authored no nets.
-	NO_NETS,
-	//! At least one net is verifiably tuned into a real transceiver.
-	TUNED
-}
-
-//! Server-side outcome of one tune attempt, for logging and for the honest text the player reads.
+//! Outcome of one tune attempt, for the log and the player's tune line.
 class TBD_RadioTuneReport
 {
-	TBD_ERadioTuneResult m_eResult;
-	int m_iRequested;   //!< Nets we tried to place.
-	int m_iTuned;       //!< Nets whose frequency READ BACK correct.
-	int m_iRadios;      //!< Radios found on the player.
-	string m_sDetail;   //!< Human-readable nuance; may be empty.
+	TBD_ERadioTuneResult m_eResult; //!< the outcome
+	int m_iRequested; //!< nets the attempt tried to place
+	int m_iTuned; //!< nets whose frequency read back correct
+	int m_iRadios; //!< radios found on the player
+	string m_sDetail; //!< free-text detail; may be empty
 
+	//! @return the outcome's enum name, as it crosses the wire
 	string ResultName()
 	{
 		return typename.EnumToString(TBD_ERadioTuneResult, m_eResult);
 	}
 }
 
-//! One radio the player is carrying, plus how many of its transceivers are still free.
+//! One radio the player carries and how many of its transceivers are still free.
 class TBD_RadioSet
 {
-	BaseRadioComponent m_Radio;
-	bool m_bLongRange;   //!< True for RADIO_BACKPACK (long-range), false for a handheld.
-	int m_iNextFree;     //!< Index of the next unassigned transceiver.
-	int m_iCount;        //!< `TransceiversCount()`, cached.
+	BaseRadioComponent m_Radio; //!< the radio
+	bool m_bLongRange; //!< true for RADIO_BACKPACK (long range), false for a handheld
+	int m_iNextFree; //!< index of the next unassigned transceiver; default 0
+	int m_iCount; //!< cached `TransceiversCount()`
 }
 
-//! T-941.7 -- frequencies `TunePlayer` will actually set when the world has no RadioManagerEntity
-//! (and the copy-through of the caller's arrays when it does). `m_sSource` is `radioPlan` or
-//! `defaults` so the boot warning can name the table in use.
+//! The frequencies `TunePlayer` sets: the caller's nets, or the default pair on a world without a
+//! backbone and a mission without a plan.
 class TBD_RadioFallbackTable
 {
-	ref array<int> m_aFreqKHz;
-	ref array<int> m_aLongRange;
-	string m_sSource;
+	ref array<int> m_aFreqKHz; //!< frequency in kHz per channel
+	ref array<int> m_aLongRange; //!< 1 long range, 0 handheld, per channel
+	string m_sSource; //!< `radioPlan` or `defaults`, named in the boot warning; empty when neither
 }
 
+//! Server-side radio tuning.
+//! @authority server
 class TBD_RadioTuner
 {
-	//! Handheld default when the mission authored no radioPlan. 42.000 MHz, schema band 30..512.
-	static const int FALLBACK_DEFAULT_SHORT_KHZ = 42000;
-	//! Long-range default pair. 41.000 MHz -- same band as golden `net:cmd`.
-	static const int FALLBACK_DEFAULT_LONG_KHZ = 41000;
+	static const int FALLBACK_DEFAULT_SHORT_KHZ = 42000; //!< handheld default channel in kHz (42.000 MHz)
+	static const int FALLBACK_DEFAULT_LONG_KHZ = 41000; //!< long-range default channel in kHz (41.000 MHz)
 
-	//! The world's radio backbone, or null when this world has none.
-	//!
-	//! `ChimeraWorld.GetRadioManager()` is `proto external` on the world the game is actually
-	//! running (compile-proved here; the fabricated `GetRadioManagerTbdNotReal` fails). A null
-	//! answer is not an API problem -- it is the world file not placing the entity.
+	//! @return the running world's `RadioManagerEntity`, or null when the world places none
 	static RadioManagerEntity GetBackbone()
 	{
 		ChimeraWorld world = ChimeraWorld.CastFrom(GetGame().GetWorld());
@@ -118,15 +64,14 @@ class TBD_RadioTuner
 		return world.GetRadioManager();
 	}
 
-	//! True when the engine can support `BaseRadioComponent` on this world at all.
+	//! @return true when the world has a radio backbone
 	static bool IsBackboneAvailable()
 	{
 		return GetBackbone() != null;
 	}
 
-	//! World file the running mission header names, or `worlds/TBD_Dev_POC.ent` when the header
-	//! has not answered. Named in the once-per-boot warning so the operator knows WHICH world to
-	//! edit.
+	//! @return the world file the running mission header names, or `worlds/TBD_Dev_POC.ent` when
+	//! the header has none; named in the missing-backbone warning
 	static string WorldFileName()
 	{
 		MissionHeader header = GetGame().GetMissionHeader();
@@ -140,8 +85,8 @@ class TBD_RadioTuner
 		return path;
 	}
 
-	//! Which script-side table the missing-backbone path will use on this boot: `radioPlan` when
-	//! the loaded mission has accepted nets, else `defaults`.
+	//! @return `radioPlan` when the loaded mission has accepted nets, else `defaults`: the table the
+	//! missing-backbone path uses
 	static string FallbackSourceName()
 	{
 		if (TBD_MissionLoader.IsValid() && TBD_RadioPlan.GetTotalNetCount() > 0)
@@ -150,10 +95,13 @@ class TBD_RadioTuner
 		return "defaults";
 	}
 
-	//! Script-side channel table. Caller-resolved `radioPlan` frequencies win when present;
-	//! otherwise, and only when the backbone is missing, the default pair. Never returns null.
-	//!
-	//! Renaming this function is the T-941.7 perturbation: `TunePlayer` calls it by this name.
+	//! The channels to tune: a copy of the caller's nets when there are any; otherwise, only on a
+	//! world without a backbone, the default pair, or nothing when the mission has a plan (another
+	//! side's frequencies are never borrowed).
+	//! @param freqKHz the player's net frequencies in kHz
+	//! @param longRange the player's long-range flags; a missing flag reads 0
+	//! @param backboneMissing true when the world has no `RadioManagerEntity`
+	//! @return the table, never null
 	static TBD_RadioFallbackTable FallbackChannelTable(notnull array<int> freqKHz, notnull array<int> longRange, bool backboneMissing)
 	{
 		TBD_RadioFallbackTable table = new TBD_RadioFallbackTable();
@@ -180,8 +128,7 @@ class TBD_RadioTuner
 
 		if (backboneMissing && TBD_MissionLoader.IsValid() && TBD_RadioPlan.GetTotalNetCount() > 0)
 		{
-			// Plan exists but this player was given no nets. Do not invent defaults and do not
-			// leak another side's frequencies -- `TunePlayer` returns NO_NETS on the empty table.
+			// A plan without nets for this player: an empty table, so `TunePlayer` reports NO_NETS.
 			table.m_sSource = "radioPlan";
 			return table;
 		}
@@ -199,17 +146,14 @@ class TBD_RadioTuner
 		return table;
 	}
 
-	//! @authority server -- put one player on their nets, and PROVE it or say it did not happen.
-	//!
-	//! `freqKHz` and `longRange` are parallel: element i of each describes net i, in the order
-	//! `TBD_RadioService` resolved them for this player's side. Never returns null.
-	//!
-	//! `longRange` is `array<int>` carrying 0/1 rather than `array<bool>`, because these same two
-	//! arrays are the RPC parameters in `TBD_RadioController`: `array<int>` and `array<string>` are
-	//! the only array element types that appear in EITHER oracle's replicated methods (8 and 4 uses
-	//! in CRF, 1 in the carved vanilla source), and `array<bool>` appears in neither. It compiles,
-	//! but compiling is not the same as crossing the wire, and this program has been bitten by that
-	//! distinction repeatedly. The proven type costs nothing here.
+	//! Put one player's carried radios on their nets, one transceiver per net, powering each tuned
+	//! radio, and count only frequencies that read back correct.
+	//! @param playerId the player
+	//! @param freqKHz frequency in kHz per net, in the order `TBD_RadioService` resolved them
+	//! @param longRange 1 long range, 0 handheld, per net (int because the same array is an RPC
+	//! parameter)
+	//! @return the report, never null
+	//! @authority server
 	static TBD_RadioTuneReport TunePlayer(int playerId, notnull array<int> freqKHz, notnull array<int> longRange)
 	{
 		TBD_RadioTuneReport report = new TBD_RadioTuneReport();
@@ -278,21 +222,17 @@ class TBD_RadioTuner
 
 			int wanted = Constrain(transceiver, useFreq[i]);
 
-			// The authoritative setter. Documented "Supports proxies and server"; the sibling
-			// `BaseRadioComponent.SetTransceiverFrequency` is the client-origin variant that syncs
-			// UP to the server, which is not the direction wanted here.
+			// The server-side setter; `SetTransceiverFrequency` is the client-origin variant.
 			transceiver.SetFrequency(wanted);
 
-			// THE HONESTY GATE. An unverified `SetFrequency` would let this file log a player onto
-			// a net while nothing changed. Read it back off the same object and believe only that.
+			// Only a read-back off the same transceiver counts as tuned.
 			if (transceiver.GetFrequency() != wanted)
 			{
 				mismatches++;
 				continue;
 			}
 
-			// Powered radios only actually carry traffic. Turning it on is part of "the player is
-			// on this net"; leaving it off would be another way to look tuned and not be.
+			// Only a powered radio carries traffic.
 			if (!radioSet.m_Radio.IsPowered())
 				radioSet.m_Radio.SetPower(true);
 
@@ -331,9 +271,8 @@ class TBD_RadioTuner
 		return report;
 	}
 
-	//! Every radio the player is carrying, handhelds first so a `range: short` net (and the
-	//! flag-0 path in general) lands on the radio everybody has rather than on a backpack only
-	//! the RTO carries. T-292 retired schema `any` -- it was never a third hardware class.
+	//! @return every radio the player carries with at least one transceiver, handhelds first so a
+	//! handheld net lands on the radio everybody has
 	protected static array<ref TBD_RadioSet> CollectRadios(notnull SCR_GadgetManagerComponent gadgets)
 	{
 		array<ref TBD_RadioSet> sets = {};
@@ -344,6 +283,10 @@ class TBD_RadioTuner
 		return sets;
 	}
 
+	//! Append each found radio gadget that has transceivers.
+	//! @param sets the list to append to
+	//! @param found the gadgets of one type; may be null
+	//! @param longRange true for backpack radios
 	protected static void AppendRadios(notnull array<ref TBD_RadioSet> sets, array<SCR_GadgetComponent> found, bool longRange)
 	{
 		if (!found)
@@ -372,16 +315,10 @@ class TBD_RadioTuner
 		}
 	}
 
-	//! The radio a net of this range class should go into, or null when every transceiver is spoken
-	//! for.
-	//!
-	//! This is where `net.range` stops being a label and becomes hardware: a `long` net (flag 1)
-	//! wants the backpack set; a `short` net (flag 0) wants a handheld. Enfusion has only those
-	//! two gadget classes -- there is no third `any` hardware path (T-292 narrowed the schema).
-	//! The preference is a PREFERENCE -- a long-range net on a player who carries only a handheld
-	//! goes into the handheld rather than being dropped, because a squad that can hear command
-	//! badly is better off than one that cannot hear it at all. Enfusion has no ternary operator,
-	//! so the two passes are written out.
+	//! Pick the radio for a net: the first of the wanted class with a free transceiver, else any
+	//! radio with one, so a long-range net on a handheld-only player is not dropped.
+	//! @param wantLongRange true for a long-range net
+	//! @return the radio, or null when every transceiver is taken
 	protected static TBD_RadioSet PickRadio(notnull array<ref TBD_RadioSet> sets, bool wantLongRange)
 	{
 		foreach (TBD_RadioSet radioSet : sets)
@@ -402,16 +339,11 @@ class TBD_RadioTuner
 		return null;
 	}
 
-	//! The nearest frequency this transceiver can actually hold.
-	//!
-	//! Two corrections, both from the transceiver itself rather than from an assumption about what
-	//! Reforger radios do:
-	//!   * SNAP to `GetFrequencyResolution()`. A mission may author `42.5` MHz on a radio whose
-	//!     step is 25 kHz; setting an unrepresentable value is how a read-back check would
-	//!     otherwise fail for a reason that is not a bug.
-	//!   * CLAMP to the tunable band. BI's own doc comments for `GetMinFrequency` / `GetMaxFrequency`
-	//!     are transposed (each describes the other), so the two are ordered here by VALUE instead
-	//!     of by name -- the numbers are trusted, the doc strings are not.
+	//! The nearest frequency the transceiver can hold: snapped to `GetFrequencyResolution`, then
+	//! clamped to the band, whose ends are ordered by value (the engine's min and max docs are
+	//! transposed). A band that reads 0..0 does not clamp.
+	//! @param freqKHz the wanted frequency in kHz
+	//! @return the frequency to set in kHz
 	protected static int Constrain(notnull BaseTransceiver transceiver, int freqKHz)
 	{
 		int step = transceiver.GetFrequencyResolution();

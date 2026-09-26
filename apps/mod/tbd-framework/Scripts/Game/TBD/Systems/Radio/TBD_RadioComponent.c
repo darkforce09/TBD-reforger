@@ -1,61 +1,57 @@
-//! T-181.40 -- where the radio slice's lifecycle is hosted, and where the ONE question this lane
-//! could not answer offline gets answered on every boot.
-//!
-//! The seat is a component on the game mode prefab -- the same one `TBD_FrameworkManager`,
-//! `TBD_SpawnManager`, `TBD_LobbyComponent`, `TBD_SpectatorComponent` and `TBD_MarkerComponent`
-//! already occupy (`Prefabs/Systems/TBD_GameMode.et`). `TBD_MarkerComponent` sets the precedent and
-//! this is a deliberately close copy of it.
+/**
+ * @file TBD_RadioComponent.c
+ * @brief Game mode component that hosts the radio lifecycle and its boot report.
+ *
+ * Role: starts `TBD_RadioClient` on machines with a player, resets the radio statics with the
+ * world, and logs once whether the world has a radio backbone and how many nets the mission
+ * authored.  Position: on the game mode prefab (`TBD_GameMode.et`) beside the framework, spawn,
+ * lobby, spectator and marker components.
+ * State: two pending call-queue callbacks, cancelled in `OnDelete`; the once-per-world backbone
+ * report flag.  Invariants: the report runs on every machine and logs at NORMAL or WARNING level
+ * only; the client never starts on a dedicated server (`RplMode.Dedicated`; a dedicated server
+ * does have a workspace, so the workspace is not the test).
+ */
+
+//! Component class of `TBD_RadioComponent`; carries no data.
 [ComponentEditorProps(category: "TBD/Framework", description: "TBD radio nets -- assigns and displays the mission JSON's per-faction radioPlan nets, and tunes the player's radio where the world supports it.")]
 class TBD_RadioComponentClass : SCR_BaseGameModeComponentClass {}
 
+//! Hosts the radio client and the radio boot report on the game mode.
 class TBD_RadioComponent : SCR_BaseGameModeComponent
 {
-	//! The game mode component graph is up well before the local player has a controller or the
-	//! server has assigned a slot, so the client start is nudged past init rather than racing it.
-	//! Nothing is lost by being late: the client polls until it is served.
-	static const int START_DELAY_MS = 2500;
+	static const int START_DELAY_MS = 2500; //!< delay in ms before the client starts, past controller and slot setup
 
-	//! T-941.7 -- the missing-backbone warning is once per world. Statics outlive a world
-	//! inside one process, so OnDelete clears this.
-	protected static bool s_bBackboneReported;
+	protected static bool s_bBackboneReported; //!< true once the backbone line was logged this world; reset in OnDelete
 
-	//! The report is nudged past init so the answer is not "missing" merely because we asked first.
-	//!
-	//! 1500 ms and not longer, MEASURED: `world-boot.sh` breaks its wait as soon as the roll-call
-	//! (or the mission verdict) appears and then settles for only `TBD_WORLDBOOT_SETTLE` seconds,
-	//! default 4. A 3000 ms fuse landed inside that window on a plain boot and fell OFF THE END of
-	//! a `--mission=` boot, so the single most important diagnostic in this slice was missing from
-	//! exactly the run that had a radio plan to report. The world's entities are created during
-	//! `Game::LoadEntities`, which the boot log shows completing BEFORE the game mode entity is
-	//! constructed, so there is nothing left to wait for anyway.
-	static const int REPORT_DELAY_MS = 1500;
+	//! Delay in ms before the boot report. It must land inside the `world-boot.sh` settle window
+	//! (default 4 s after the roll-call); world entities already exist when the game mode is built.
+	static const int REPORT_DELAY_MS = 1500; //!< milliseconds
 
+	//! Schedule the boot report on every machine and, except on a dedicated server, the radio
+	//! client's start.
+	//! @param owner the game mode entity
 	override void OnPostInit(IEntity owner)
 	{
 		super.OnPostInit(owner);
 
-		// Runs on EVERY machine, headless included, because this is the line that answers the
-		// question no oracle in this repo could: whether this world can support radio at all.
-		// `world-boot.sh` prints the answer, so it is a fact in the boot log rather than an
-		// assumption in a comment.
 		GetGame().GetCallqueue().CallLater(ReportRadio, REPORT_DELAY_MS, false);
+		ScheduleClientStart();
+	}
 
-		// T-181.49 -- this was `if (!GetGame().GetWorkspace())`, on the belief that a dedicated
-		// server has no workspace. It does: `GetGame().GetWorkspace()` is MEASURED NON-NULL on the
-		// headless dedicated server `world-boot.sh` runs (engine 1.7.0.54), so this guard let the
-		// client-side radio poll start on the server and excluded nothing at all. The replication
-		// mode is the real answer to "am I a machine with a player at a screen", and it is what
-		// `TBD_FrameworkManager`, `TBD_AdminService` and `TBD_RadioController` already ask.
-		// No screen, nobody to show a net list to.
+	//! Schedule `TBD_RadioClient.Start` after `START_DELAY_MS`, except on a dedicated server,
+	//! which has nobody to show a net list to.
+	//! @authority client
+	protected void ScheduleClientStart()
+	{
 		if (RplSession.Mode() == RplMode.Dedicated)
 			return;
 
 		GetGame().GetCallqueue().CallLater(TBD_RadioClient.Start, START_DELAY_MS, false);
 	}
 
-	//! Statics outlive a world inside one process (recorded landmine), so both callbacks, the
-	//! client's timers and the parsed plan must be released or the next world starts with a poll
-	//! belonging to a world that no longer exists and a radio plan from the previous mission.
+	//! Cancel both pending callbacks, shut the client down and reset the service and plan; statics
+	//! outlive a world inside one process.
+	//! @param owner the game mode entity
 	override void OnDelete(IEntity owner)
 	{
 		ScriptCallQueue queue = GetGame().GetCallqueue();
@@ -72,36 +68,17 @@ class TBD_RadioComponent : SCR_BaseGameModeComponent
 		super.OnDelete(owner);
 	}
 
-	//! One line, once, saying whether this world can support radio at all.
-	//!
-	//! The engine already says it, once, buried in a wall of world-load output and attributed to
-	//! whichever prop happened to carry the first `BaseRadioComponent`:
-	//!
-	//!     DEFAULT (W): World doesn't contain RadioManagerEntity to support any BaseRadioComponent.
-	//!
-	//! That line is easy to miss and impossible to grep for by feature. This asks
-	//! `ChimeraWorld.GetRadioManager()` directly, tags the answer `[TBD][Radio]`, and states the
-	//! consequence in the same breath -- so "the radio half is not working" is never something an
-	//! operator has to infer from silence. Silence about a feature that never runs is exactly the
-	//! failure mode `world-boot.sh` was built to catch for prefab components.
-	//!
-	//! NORMAL / WARNING only, never ERROR: a world without a radio backbone is a legitimate world,
-	//! and `world-boot.sh` triages any TBD-owned `SCRIPT (E)` line as a gate failure.
+	//! Log the backbone and the plan report. The engine's own missing-backbone warning is buried
+	//! in world-load output under an arbitrary prop, so this tags the answer `[TBD][Radio]`.
 	protected void ReportRadio()
 	{
 		ReportBackbone();
 		ReportPlan();
 	}
 
-	//! @authority server -- how many nets this mission actually authored, once, at boot.
-	//!
-	//! This is what makes the `radioPlan` parse a RUNTIME fact rather than a compile-time hope. The
-	//! parse is otherwise lazy -- nothing touches it until a player asks -- so a headless boot with
-	//! zero players would exercise none of it, and `world-boot.sh --mission=<golden>` would pass
-	//! while the projection quietly bound nothing. Asking here means the gate reads
-	//! `plan mission=msn_8f3a2c authored=4 accepted=4 rejected=0` off a real golden document.
-	//!
-	//! Clients hold no mission document, so they have nothing to report and say nothing.
+	//! Force the lazy `radioPlan` parse at boot, so a headless boot with no players still logs the
+	//! `plan` line, then log the usable net count. Silent on a client (no mission document).
+	//! @authority server
 	protected void ReportPlan()
 	{
 		if (TBD_Authority.IsClient())
@@ -109,18 +86,18 @@ class TBD_RadioComponent : SCR_BaseGameModeComponent
 
 		if (!TBD_MissionLoader.IsValid())
 		{
-			// Ordinary on a boot with no configured mission -- the plan is parsed lazily the moment
-			// one loads, so there is nothing to fix and nothing to warn about.
+			// Ordinary on a boot without a mission: the plan parses when one loads.
 			TBD_Log.Kv(TBD_RadioPlan.CH_RADIO, "plan", "no mission loaded yet -- radio plan will parse on load.");
 			return;
 		}
 
-		// The call itself is what triggers `EnsureParsed`, which emits the detailed `plan` line
-		// (and one warning per rejected net). The count is logged too so the two can be compared.
+		// The call triggers `EnsureParsed`, which logs the `plan` line and each rejected net.
 		int nets = TBD_RadioPlan.GetTotalNetCount();
 		TBD_Log.Kv(TBD_RadioPlan.CH_RADIO, "plan-ready", string.Format("usableNets=%1", nets));
 	}
 
+	//! Log once per world whether the world has a `RadioManagerEntity`: `backbone ok`, or a warning
+	//! naming the world and the script-side channel table in use.
 	protected void ReportBackbone()
 	{
 		if (s_bBackboneReported)
