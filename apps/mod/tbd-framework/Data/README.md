@@ -42,7 +42,7 @@ server runs the mission deployed to it on the platform.
   `generatedAt`, `modset` (the vanilla addon `58D0FB3206B6F859`) and `entries`, each with `alias`
   (`<kind>:<name>`), `guid` (a full `{GUID}Prefabs/….et` resource name), `displayName` and, on two
   entries, a `footprint` the web map draws. `backend.example.json` holds the three string keys of
-  `TBD_BackendConfigStruct`.
+  `TBD_BackendConfigFile`.
 - Naming: the mod reads these two file names by path, so they do not change.
 - Adding an alias: add an entry to `registry.json` by hand; a `kit:` or `preset:` entry also goes
   into `contracts_v2/rules/kit-aliases.json`, and a `prop:` or `comp:` entry must match the
@@ -53,7 +53,7 @@ server runs the mission deployed to it on the platform.
 
 - `TBD_Registry` in `apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Registry.c` loads
   `registry.json` by path; `TBD_BackendConfig` in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_BackendConfig.c` reads the profile copy of
+  `apps/mod/tbd-framework/Scripts/Game/TBD/API/Http/TBD_BackendConfig.c` reads the profile copy of
   `backend.example.json`.
 - `cargo xtask setup server-profile` copies both files into the profile, `registry.json` as
   `TBD_Registry.json` (`tools_v2/xtask/src/commands/setup/server_profile.rs`);

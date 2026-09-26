@@ -10,18 +10,16 @@ also runs the mission's AI spawn modules.
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/
-├── TBD_DeploymentAuthorization.c              platform authorization of event-seat deploys; open lives
-├── TBD_DeploymentEndQueue.c                   bounded retry queue reporting ended lives
-├── TBD_DeploymentRequest.c                    a deployment request record and the decision struct
-├── TBD_DeploymentRequestQueue.c               deployment requests, one at a time, in order, retried
-├── TBD_DynamicSpawner.c                       spawnModules[]: AI group waves and garrisons
-├── TBD_SCR_MenuSpawnLogic.c                   vanilla menu spawn logic routed to the spawn manager
-├── TBD_SCR_PossessSpawnHandlerComponent.c     possess requests only for the authorized body
-├── TBD_SCR_RespawnSystemComponent.c           vanilla registration, audit and spawn requests stood down
-├── TBD_SpawnClient.c                          Ready & Continue on the client: request and answer
-├── TBD_SpawnController.c                      Ready & Continue request and reply RPCs
-├── TBD_SpawnManager.c                         slot bodies, claims, deploys, one life, vehicle defaults
-└── TBD_SpawnManagerDeploymentAuthorization.c  the spawn manager's authorization gate and life ends
+├── Client/         Ready and Continue on the client: the request, the answer and its RPC pair
+├── Deploy/         the deploy decision, scheduled deploys and retries, spawn tickets, the watchdog
+├── Deployment/     platform authorization of event-seat deploys, its request and end queues
+├── Dynamic/        spawnModules[]: AI group restocking modules and garrisons
+├── Identity/       bind keys, the ONE LIFE identity stage gate and the join door
+├── Lives/          the one-life ledger, deaths, admin respawns and disconnects
+├── Manager/        TBD_SpawnManager, the deploy result enum and connection epochs
+├── Slots/          seats, slot bodies and their dressing, the loadout settle, the roster wire
+├── VanillaBridge/  vanilla respawn system, possess handler and menu spawn logic stood down
+└── Vehicles/       default cargo and full fuel for mission roster vehicles
 ```
 
 ## How it works
@@ -29,7 +27,11 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/
 ### Slot bodies and deploys
 
 `TBD_SpawnManager` is a `SCR_BaseGameModeComponent` on
-`apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et`. Once the mission is valid,
+`apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et`. It keeps the engine hooks, the editor
+attributes and the public surface every caller uses through `GetInstance`, and owns one instance of
+each helper that does the work: the seat ledger and slot bodies in `Slots/`, bind keys and the join
+door in `Identity/`, the deploy decision and scheduled deploys in `Deploy/`, lives and departures in
+`Lives/`, and the connection epochs in `Manager/`. Once the mission is valid,
 `TBD_FrameworkManager` calls `MaterializeSlotBodies`: one body per compiled slot at its authored
 position (`TBD_PlacementScatter` offset, the JSON `y` or the terrain surface), with the kit prefab
 from `TBD_Registry`, its AI disabled unless `TBD_WaypointRuntime.ShouldEnableAIAtSpawn` says
@@ -37,7 +39,7 @@ otherwise, and a `TBD_LoadoutApplication` dressing it. The same pass seats vehic
 default cargo and full fuel to vehicles (`TBD_VehicleSpawnDefaults`, authored values win), and
 applies the vehicle and entity states. The lobby does not open until every loadout has settled
 (`IsLoadoutSettlePending`), and a blocking loadout failure refuses the lobby
-(`IsLoadoutDeliveryRefused`).
+(`TBD_SlotLoadoutSettle.IsRefused`).
 
 A player gets a slot from the event roster (`TBD_RosterLoader.GetSlotForIdentity`), from a claim
 in the lobby (`ClaimSlot`), or round-robin (`AssignSlotForPlayer`). `DeployPlayerEx(playerId)` is
@@ -104,8 +106,8 @@ When the running deployment names an event, `TBD_SpawnDeploymentGate.Admits` ask
   same id and backoff from 2 s to 30 s, and held while an ended life of the same player or slot
   is still being reported;
 - `allowed` remembers the life and its `occupancy_id` and continues the deploy
-  (`OnDeploymentAuthorized`); `denied` tells the player the reason in private chat and gives the
-  seat back (`OnDeploymentRefused`), except `SLOT_NOT_IN_LOADED_MISSION`, a server fault, where the
+  (`TBD_SpawnDeploymentGate.OnAuthorized`); `denied` tells the player the reason in private chat
+  and gives the seat back (`TBD_SpawnDeploymentGate.OnRefused`), except `SLOT_NOT_IN_LOADED_MISSION`, a server fault, where the
   player keeps the seat; a refusal that is not about the seat keeps it too. A dead player waiting
   on an admin respawn stays dead.
 
@@ -135,9 +137,10 @@ groups live; a `garrison` spawns once and is not restocked. A module names eithe
 ## Authority
 
 - Server: everything in `TBD_SpawnManager` (`@authority server` on the class and its entry points),
-  the deployment files (`@authority server` on each header), the vanilla overrides (each override
-  tagged `@authority server`) and `TBD_DynamicSpawner` (`@authority server` on `OnGameStart`, which
-  returns on `RplMode.Client`).
+  its helpers (`@authority server` on their entry points), the deployment files (`@authority server`
+  on each header), the vanilla overrides (each override tagged `@authority server`) and
+  `TBD_DynamicSpawner` (`@authority server` on `Tick`, which `TBD_RuntimeHeartbeat` calls on the
+  server).
 - Client: `TBD_SpawnClient`, which the briefing screen calls and binds to.
 - Owner: `TBD_RpcDo_ReadyDeployResult` runs on the requesting client (`@authority owner`). In local
   play or on a listen host, `TBD_RequestReadyDeploy` runs the deploy in place without an RPC.

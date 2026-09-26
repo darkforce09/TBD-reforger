@@ -1,26 +1,23 @@
-//! Platform authorization of deployments into event seats, and the player lives it opens.
-//!
-//! When the running mission is deployed for a platform event (the deployment names an `event_id`,
-//! TBD_DeployedMission), TBD_SpawnManager asks `Check` before it puts a player into a slot. Which slots are event seats comes from the event roster's
-//! slot table (TBD_RosterLoader), and until that table has loaded EVERY deployment is refused: the
-//! gate fails closed rather than let anyone into a seat the platform has not ruled on. Once the
-//! table has loaded, a slot it does not list is not an event seat and deploys without asking; a
-//! slot it lists goes to the platform with a fresh `player_life_id` per spawn attempt
-//! (TBD_DeploymentRequestQueue), and the deploy waits until the platform decides:
-//!   * allowed - the life is remembered with its `occupancy_id` and the spawn manager continues the
-//!     deploy (`TBD_SpawnManager.OnDeploymentAuthorized`);
-//!   * denied - the player is told the platform's reason and the spawn manager gives the seat back,
-//!     returning them to slot selection (`TBD_SpawnManager.OnDeploymentRefused`). A denial for
-//!     `SLOT_NOT_IN_LOADED_MISSION` is the exception: the platform does not run this server's
-//!     mission for the event, which is the server's problem, so the player keeps the seat.
-//! A deployment that cannot be authorized at all (no slot table, no runtime session, no game
-//! identity, a request the platform rejects) is refused with the reason and the seat kept, so the
-//! player deploys again once the cause is fixed. Every refusal reaches the admin audit trail.
-//! When a life ends - death, disconnect, a seat change, the round or the world ending - its end is
-//! reported through TBD_DeploymentEndQueue.
-//!
-//! A deployment without an event never asks.
-//! @authority server
+/**
+ * @file TBD_DeploymentAuthorization.c
+ * @brief Platform authorization of deployments into event seats, and the player lives it opens.
+ *
+ * Role: decides, for a mission deployed for a platform event, whether a slot deploy may proceed,
+ * and tracks and ends the lives the platform allows.  Position: TBD_SpawnDeploymentGate asks Check
+ * once a seat is assigned; requests go out through TBD_DeploymentRequestQueue and ends through
+ * TBD_DeploymentEndQueue; decisions come back to TBD_SpawnDeploymentGate.OnAuthorized and OnRefused.
+ * State: the open lives per player, the life counter, and the report-once sets (static, server).
+ * Invariants: until the event roster's slot table (TBD_RosterLoader) loads, every event deploy is
+ * refused (fail closed); a slot the table does not list deploys without asking; a listed slot asks
+ * with a fresh `player_life_id` per spawn attempt and waits for the decision; an allowed life is
+ * remembered with its `occupancy_id`; a denial returns the player to slot selection, except
+ * SLOT_NOT_IN_LOADED_MISSION (the server's problem), which keeps the seat; a deployment that cannot
+ * be authorized (no slot table, runtime session or game identity, or a rejected request) keeps the
+ * seat and tells the player why; every refusal reaches the admin audit trail; every end of a life
+ * (death, disconnect, seat change, round or world end) is reported; a deployment without an event
+ * never asks.
+ * @authority server
+ */
 
 //! TBD_DeploymentAuthorization.Check's answer to the spawn manager.
 enum TBD_EDeploymentGate
@@ -33,41 +30,31 @@ enum TBD_EDeploymentGate
 //! A life the platform allowed: one player in one slot, from the allowed decision until it ends.
 class TBD_OpenLife
 {
-	int m_iPlayerId;
-	int m_iConnectionEpoch;
-	string m_sArmaId;
-	string m_sSlotUid;
-	string m_sOrbatSlotId;
-	string m_sPlayerLifeId;
-	string m_sOccupancyId;
+	int m_iPlayerId; //!< the player the life belongs to
+	int m_iConnectionEpoch; //!< connection epoch the life was allowed under
+	string m_sArmaId; //!< the player's game identity
+	string m_sSlotUid; //!< the mission slot uid
+	string m_sOrbatSlotId; //!< the event roster slot
+	string m_sPlayerLifeId; //!< the `player_life_id` the request carried
+	string m_sOccupancyId; //!< the platform's occupancy id of the life
 	string m_sRuntimeSessionId; //!< The runtime session the life was opened in; its end is reported there.
 }
 
+//! Platform authorization of event-seat deploys.
 class TBD_DeploymentAuthorization
 {
-	//! Greppable channel: `grep '\[TBD\]\[Deployment\]' console.log`.
-	protected static const string CH_DEPLOYMENT = "Deployment";
+	protected static const string CH_DEPLOYMENT = "Deployment"; //!< log channel: `[TBD][Deployment]`
+	protected static const string TAG = "TBD: "; //!< prefix of every private message to the player
 
-	//! Every private message the player sees starts with this, like the other TBD replies.
-	protected static const string TAG = "TBD: ";
+	protected static const string ROSTER_NOT_LOADED = "the event roster has not loaded on this server yet, so event seats cannot be authorized - try again shortly."; //!< reply while the roster slot table is not loaded
+	protected static const string NOT_RUNNING_THAT_MISSION = "this server is not running the mission this seat belongs to on the platform, so the seat cannot be authorized - tell an admin. The seat stays yours."; //!< reply for SLOT_NOT_IN_LOADED_MISSION
 
-	protected static const string ROSTER_NOT_LOADED = "the event roster has not loaded on this server yet, so event seats cannot be authorized - try again shortly.";
-	protected static const string NOT_RUNNING_THAT_MISSION = "this server is not running the mission this seat belongs to on the platform, so the seat cannot be authorized - tell an admin. The seat stays yours.";
+	protected static const int AUDITED_REFUSALS_MAX = 256; //!< bound of s_mAuditedRefusals; the set starts over when full
 
-	//! Bound of s_mAuditedRefusals; the set starts over when full.
-	protected static const int AUDITED_REFUSALS_MAX = 256;
-
-	//! playerId -> the life the platform allowed that player.
-	protected static ref map<int, ref TBD_OpenLife> s_mLives;
-	//! Monotonic per process. Only the process that started a runtime session addresses it, so every
-	//! player_life_id is unique within its session.
-	protected static int s_iLifeCounter;
-	//! Slot keys already reported as missing from the roster.
-	protected static ref map<string, bool> s_mUnlistedSlotsReported;
-	//! Refusals already in the admin audit trail this round, see `AuditRefusal`.
-	protected static ref map<string, bool> s_mAuditedRefusals;
-
-	// THE GATE
+	protected static ref map<int, ref TBD_OpenLife> s_mLives; //!< playerId to the life the platform allowed that player
+	protected static int s_iLifeCounter; //!< monotonic per process, so every player_life_id is unique within its session
+	protected static ref map<string, bool> s_mUnlistedSlotsReported; //!< slot keys already reported as missing from the roster
+	protected static ref map<string, bool> s_mAuditedRefusals; //!< refusals already in the admin audit trail this round (AuditRefusal)
 
 	//! True when the running mission is deployed for a platform event, so its event seats need
 	//! authorization.
@@ -183,7 +170,7 @@ class TBD_DeploymentAuthorization
 
 		TBD_SpawnManager spawn = TBD_SpawnManager.GetInstance();
 		if (spawn)
-			spawn.OnDeploymentAuthorized(life.m_iPlayerId, life.m_iConnectionEpoch);
+			TBD_SpawnDeploymentGate.OnAuthorized(spawn, life.m_iPlayerId, life.m_iConnectionEpoch);
 	}
 
 	//! The platform denied `request`. Returns true when the request is to be asked again: the
@@ -224,7 +211,7 @@ class TBD_DeploymentAuthorization
 
 			TBD_SpawnManager seatKeeper = TBD_SpawnManager.GetInstance();
 			if (seatKeeper)
-				seatKeeper.OnDeploymentRefused(request.m_iPlayerId, request.m_iConnectionEpoch, false);
+				TBD_SpawnDeploymentGate.OnRefused(seatKeeper, request.m_iPlayerId, request.m_iConnectionEpoch, false);
 
 			return false;
 		}
@@ -238,7 +225,7 @@ class TBD_DeploymentAuthorization
 
 		TBD_SpawnManager spawn = TBD_SpawnManager.GetInstance();
 		if (spawn)
-			spawn.OnDeploymentRefused(request.m_iPlayerId, request.m_iConnectionEpoch, true);
+			TBD_SpawnDeploymentGate.OnRefused(spawn, request.m_iPlayerId, request.m_iConnectionEpoch, true);
 
 		return false;
 	}
@@ -258,10 +245,8 @@ class TBD_DeploymentAuthorization
 
 		TBD_SpawnManager spawn = TBD_SpawnManager.GetInstance();
 		if (spawn)
-			spawn.OnDeploymentRefused(request.m_iPlayerId, request.m_iConnectionEpoch, false);
+			TBD_SpawnDeploymentGate.OnRefused(spawn, request.m_iPlayerId, request.m_iConnectionEpoch, false);
 	}
-
-	// LIVES
 
 	//! The player's life is over (death, disconnect, a seat given back): its end is reported, and a
 	//! request the player still waits on is abandoned.
@@ -317,6 +302,7 @@ class TBD_DeploymentAuthorization
 			EndLife(playerId, reason);
 	}
 
+	//! The open life of `playerId`, or null.
 	protected static TBD_OpenLife FindLife(int playerId)
 	{
 		if (!s_mLives)
@@ -327,6 +313,7 @@ class TBD_DeploymentAuthorization
 		return life;
 	}
 
+	//! True when an open life carries `occupancyId`.
 	protected static bool IsTrackedOccupancy(string occupancyId)
 	{
 		if (!s_mLives)
@@ -353,13 +340,12 @@ class TBD_DeploymentAuthorization
 		return spawn.IsConnectionCurrent(request.m_iPlayerId, request.m_iConnectionEpoch);
 	}
 
+	//! A fresh `player_life_id` for one spawn attempt of `playerId`.
 	protected static string NewPlayerLifeId(int playerId)
 	{
 		s_iLifeCounter++;
 		return string.Format("life-%1-player-%2", s_iLifeCounter, playerId);
 	}
-
-	// MESSAGES AND THE AUDIT TRAIL
 
 	//! Say once per slot that the loaded roster does not list it: it is not an event seat.
 	protected static void ReportUnlistedSlot(notnull TBD_MissionSlotStruct slot)

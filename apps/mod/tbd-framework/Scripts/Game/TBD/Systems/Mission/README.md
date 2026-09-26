@@ -9,7 +9,7 @@ and placement to the world. Every other Systems folder reads the loaded document
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/
-├── Data/        slot and vehicle structs, and the readers for entity, vehicle, gadget and parameter state
+├── Data/        the typed mission document, slot and vehicle structs, and the entity, vehicle, gadget and parameter state readers
 ├── Ingestion/   environment, weather timeline and spawn placement scatter applied to the world
 └── Loaders/     the deployed artifact's load and verification, the parse and validator, the event roster
 ```

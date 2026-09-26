@@ -1,56 +1,57 @@
-//! Reports ended player lives to the platform: `POST /api/v1/game-runtime/sessions/{sessionId}/
-//! deployments/{occupancyId}/end`, one report per life TBD_DeploymentAuthorization closes.
-//!
-//! A bounded retry queue. At most CAPACITY reports wait at once (the one in flight included), and
-//! they are delivered one at a time in the order the lives ended. A report that gets no answer, a
-//! timeout or a server-side failure goes back to the head and is retried with exponential backoff;
-//! a report the platform rejects outright (unknown life or session, rejected credential) is dropped
-//! with an ERROR. When the queue is full, the oldest waiting report is dropped with an ERROR naming
-//! the life it could not report; the platform then closes that life when its runtime session ends.
-//!
-//! Repeating a report is harmless: the platform ends exactly the named life, answers a repeat with
-//! how that life ended, and never ends a newer life in the same slot. Each report names the session
-//! its life belongs to, so it stays deliverable after that session, or the world, has ended.
-//! @authority server
+/**
+ * @file TBD_DeploymentEndQueue.c
+ * @brief Reports ended player lives to the platform, one at a time, retried with backoff.
+ *
+ * Role: delivers `POST /api/v1/game-runtime/sessions/{sessionId}/deployments/{occupancyId}/end`
+ * for every life TBD_DeploymentAuthorization closes.  Position: fed by TBD_DeploymentAuthorization;
+ * sends through TBD_GameRuntimeHttp.
+ * State: the bounded queue, the report in flight and the pump flag (static; they outlive a world, so
+ * a report queued as a world ends is delivered in the next).
+ * Invariants: at most CAPACITY reports wait (the one in flight included), delivered in the order
+ * the lives ended; no answer, a timeout or a server failure retries with exponential backoff; an
+ * outright rejection drops the report with an ERROR; a full queue drops the oldest waiting report
+ * with an ERROR and the platform closes that life when its session ends; a repeat is harmless,
+ * because the platform ends exactly the named life.
+ * @authority server
+ */
 
 //! One ended life waiting to be reported.
 class TBD_DeploymentEndReport
 {
-	string m_sRuntimeSessionId;
-	string m_sOccupancyId;
-	string m_sArmaId;
+	string m_sRuntimeSessionId; //!< the runtime session the life belongs to
+	string m_sOccupancyId; //!< the life's occupancy id
+	string m_sArmaId; //!< the player's game identity
 	string m_sOrbatSlotId; //!< Empty when the report closes a life whose slot this server never learned.
 	string m_sReason; //!< Why this server ended the life; for the log only.
-	int m_iFailures;
+	int m_iFailures; //!< failed attempts so far; drives the backoff
 	int m_iNotBeforeMs; //!< `TBD_GameRuntimeHttp.NowMs()` from which the report may be sent.
 }
 
 //! An end-of-life report on its way to the platform.
 class TBD_DeploymentEndCall : TBD_GameRuntimeCall
 {
-	ref TBD_DeploymentEndReport m_Report;
+	ref TBD_DeploymentEndReport m_Report; //!< the report this call delivers
 
+	//! Hand the answer to the queue.
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_DeploymentEndQueue.OnCallAnswered(this, answer);
 	}
 }
 
+//! The ended-life report queue.
 class TBD_DeploymentEndQueue
 {
-	//! Greppable channel shared with the rest of the deployment flow.
-	protected static const string CH_DEPLOYMENT = "Deployment";
+	protected static const string CH_DEPLOYMENT = "Deployment"; //!< log channel shared with the deployment flow
+	static const int CAPACITY = 256; //!< waiting reports kept: one per concurrent life at a round end on the largest server, with headroom
 
-	//! One report per concurrent life at a round's end on the largest server, with headroom.
-	static const int CAPACITY = 256;
+	protected static const int RETRY_BASE_MS = 2000; //!< first retry delay (ms); doubles per failure
+	protected static const int RETRY_CAP_MS = 60000; //!< longest retry delay (ms)
+	protected static const int PUMP_MS = 1000; //!< pump period (ms) while reports wait
 
-	protected static const int RETRY_BASE_MS = 2000;
-	protected static const int RETRY_CAP_MS = 60000;
-	protected static const int PUMP_MS = 1000;
-
-	protected static ref array<ref TBD_DeploymentEndReport> s_aQueue;
-	protected static ref TBD_DeploymentEndCall s_InFlight;
-	protected static bool s_bTicking;
+	protected static ref array<ref TBD_DeploymentEndReport> s_aQueue; //!< waiting reports, oldest first
+	protected static ref TBD_DeploymentEndCall s_InFlight; //!< the report being delivered; null when none
+	protected static bool s_bTicking; //!< true while the pump repeats
 
 	//! Queue the end of one life. Delivery starts at once when nothing else is in flight.
 	static void Enqueue(string runtimeSessionId, string occupancyId, string armaId, string orbatSlotId, string reason)
@@ -105,6 +106,7 @@ class TBD_DeploymentEndQueue
 		return false;
 	}
 
+	//! True when `report` belongs to `runtimeSessionId` and names the player or the roster slot.
 	protected static bool Concerns(notnull TBD_DeploymentEndReport report, string runtimeSessionId, string armaId, string orbatSlotId)
 	{
 		if (report.m_sRuntimeSessionId != runtimeSessionId)
@@ -144,6 +146,7 @@ class TBD_DeploymentEndQueue
 		queue.CallLater(Pump, PUMP_MS, true);
 	}
 
+	//! Stop the pump.
 	protected static void StopTicking()
 	{
 		if (!s_bTicking)
@@ -156,6 +159,7 @@ class TBD_DeploymentEndQueue
 	}
 
 	//! Send the head report when it is due and nothing is in flight.
+	//! @route POST /api/v1/game-runtime/sessions/{sessionId}/deployments/{occupancyId}/end
 	protected static void Pump()
 	{
 		if (s_InFlight)

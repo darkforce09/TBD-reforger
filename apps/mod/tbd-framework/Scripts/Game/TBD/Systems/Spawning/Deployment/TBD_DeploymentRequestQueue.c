@@ -1,50 +1,49 @@
-//! Asks the platform for deployment decisions: `POST /api/v1/game-runtime/sessions/{sessionId}/
-//! deployments` with `{event_mission_id, orbat_slot_id, arma_id, player_life_id}`, one request at a
-//! time, and hands every answer to TBD_DeploymentAuthorization.
-//!
-//! A request keeps its `player_life_id` for as long as it exists, so a request whose answer was lost
-//! is repeated with the SAME id and the platform returns the decision it already recorded instead of
-//! opening a second life. A request with no answer, a timeout or a server-side failure is retried
-//! with exponential backoff until the platform decides.
-//!
-//! Two ordering rules keep the platform's view consistent:
-//!   * a player's requests are sent in the order they were made;
-//!   * a request waits while TBD_DeploymentEndQueue still has to report an ended life of the same
-//!     player or slot in the same session, so the old life is closed before the next one is asked for.
-//!
-//! A request goes to the runtime session TBD_RuntimeSession holds and waits while none is held.
-//! When that session changes, the platform has already ended every life of the old one: a request
-//! somebody still waits for is decided afresh in the new session, and an abandoned one is dropped.
-//! @authority server
+/**
+ * @file TBD_DeploymentRequestQueue.c
+ * @brief Asks the platform for deployment decisions, one request at a time, retried until decided.
+ *
+ * Role: delivers `POST /api/v1/game-runtime/sessions/{sessionId}/deployments` with
+ * `{event_mission_id, orbat_slot_id, arma_id, player_life_id}` and hands every answer to
+ * TBD_DeploymentAuthorization.  Position: fed by TBD_DeploymentAuthorization; sends to the session
+ * TBD_RuntimeSession holds through TBD_GameRuntimeHttp.
+ * State: the bounded queue, the request in flight and the pump flag (static).
+ * Invariants: a request keeps its `player_life_id`, so a repeat returns the recorded decision and
+ * never opens a second life; no answer, a timeout or a server failure retries with exponential
+ * backoff; a player's requests are sent in order; a request waits while TBD_DeploymentEndQueue
+ * still has to report an ended life of the same player or slot in the same session; a request waits
+ * while no session is held, and a session change decides waiting requests afresh and drops
+ * abandoned ones.
+ * @authority server
+ */
 
 //! A deployment request on its way to the platform.
 class TBD_DeploymentRequestCall : TBD_GameRuntimeCall
 {
-	ref TBD_DeploymentRequest m_Request;
+	ref TBD_DeploymentRequest m_Request; //!< the request this call delivers
 
+	//! Hand the answer to the queue.
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_DeploymentRequestQueue.OnCallAnswered(this, answer);
 	}
 }
 
+//! The deployment request queue.
 class TBD_DeploymentRequestQueue
 {
-	//! Greppable channel shared with the rest of the deployment flow.
-	protected static const string CH_DEPLOYMENT = "Deployment";
+	protected static const string CH_DEPLOYMENT = "Deployment"; //!< log channel shared with the deployment flow
 
 	static const int CAPACITY = 256; //!< Far beyond one request per player on the largest server.
 
-	protected static const int RETRY_BASE_MS = 2000;
-	protected static const int RETRY_CAP_MS = 30000;
-	protected static const int PUMP_MS = 1000;
+	protected static const int RETRY_BASE_MS = 2000; //!< first retry delay (ms); doubles per failure
+	protected static const int RETRY_CAP_MS = 30000; //!< longest retry delay (ms)
+	protected static const int PUMP_MS = 1000; //!< pump period (ms) while requests wait
 
-	protected static ref array<ref TBD_DeploymentRequest> s_aQueue;
-	protected static ref TBD_DeploymentRequestCall s_InFlight;
-	protected static bool s_bTicking;
+	protected static ref array<ref TBD_DeploymentRequest> s_aQueue; //!< waiting requests, oldest first
+	protected static ref TBD_DeploymentRequestCall s_InFlight; //!< the request being delivered; null when none
+	protected static bool s_bTicking; //!< true while the pump repeats
 
-	// QUEUE
-
+	//! Queue `request` (dropping the oldest when full) and try to send at once.
 	static void Enqueue(notnull TBD_DeploymentRequest request)
 	{
 		if (!s_aQueue)
@@ -92,6 +91,7 @@ class TBD_DeploymentRequestQueue
 			s_aQueue.RemoveOrdered(index);
 	}
 
+	//! Abandon every request `playerId` waits on.
 	static void AbandonFor(int playerId)
 	{
 		TBD_DeploymentRequest waiting = FindWaitingFor(playerId);
@@ -102,6 +102,8 @@ class TBD_DeploymentRequestQueue
 		}
 	}
 
+	//! Abandon every request: queued ones that never left this server are dropped, a sent one stays
+	//! until it is resolved.
 	static void AbandonAll()
 	{
 		TBD_DeploymentRequest sent = InFlightRequest();
@@ -123,6 +125,7 @@ class TBD_DeploymentRequestQueue
 		}
 	}
 
+	//! The request in flight, or null.
 	protected static TBD_DeploymentRequest InFlightRequest()
 	{
 		if (!s_InFlight)
@@ -188,6 +191,7 @@ class TBD_DeploymentRequestQueue
 		queue.CallLater(Pump, PUMP_MS, true);
 	}
 
+	//! Stop the pump.
 	protected static void StopTicking()
 	{
 		if (!s_bTicking)
@@ -198,8 +202,6 @@ class TBD_DeploymentRequestQueue
 		if (queue)
 			queue.Remove(Pump);
 	}
-
-	// SENDING
 
 	//! Send the first request that may go now, when nothing is in flight.
 	protected static void Pump()
@@ -269,6 +271,7 @@ class TBD_DeploymentRequestQueue
 		return !request.m_sRuntimeSessionId.IsEmpty() && request.m_sRuntimeSessionId != session;
 	}
 
+	//! True when a request of `armaId` waits ahead of `index`.
 	protected static bool HasEarlierRequestOf(int index, string armaId)
 	{
 		for (int i = 0; i < index; i++)
@@ -293,6 +296,8 @@ class TBD_DeploymentRequestQueue
 		}
 	}
 
+	//! Send `request` to `session` and record it in flight.
+	//! @route POST /api/v1/game-runtime/sessions/{sessionId}/deployments
 	protected static void Send(notnull TBD_DeploymentRequest request, string session)
 	{
 		string body = "{";
@@ -350,8 +355,8 @@ class TBD_DeploymentRequestQueue
 		Pump();
 	}
 
-	// ANSWERS
-
+	//! Apply a 2xx answer: allowed (for this request's life), denied (possibly requeued at the head)
+	//! or unreadable (retried, or undecided for an unknown decision).
 	protected static void SettleDecision(notnull TBD_DeploymentRequest request, notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_DeploymentDecisionStruct decision = ParseDecision(answer.m_sBody);
@@ -390,6 +395,7 @@ class TBD_DeploymentRequestQueue
 		TBD_DeploymentAuthorization.OnUndecided(request, "the TBD platform answered this server with something it cannot read - tell an admin.");
 	}
 
+	//! Read `body` as a decision, or null when it is empty or not a decision.
 	protected static TBD_DeploymentDecisionStruct ParseDecision(string body)
 	{
 		if (body.IsEmpty())
