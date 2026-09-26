@@ -2,7 +2,7 @@
 
 # API overview
 
-The cross-domain map of the website [API](/documentation_v2/glossary.md#api): how the `api`
+The cross-domain map of the website [API](/documentation_v2/glossary/a_to_f.md#api): how the `api`
 binary boots, how a request travels through the shared middleware to one of eight domains, who
 calls which part of `/api/v1`, and the layers every domain shares. Each domain's README states its
 routes, models and rules exactly; this document is the map that leads to them.
@@ -37,7 +37,7 @@ routes, models and rules exactly; this document is the map that leads to them.
 4. `AppState::new` builds the one shared state: the pool, the configuration, the token manager,
    the realtime hub, the rate limiters and the Discord and webhook clients.
 5. `background_workers::spawn_all` arms the twelve
-   [background workers](/documentation_v2/glossary.md#background-workers) and logs the interval
+   [background workers](/documentation_v2/glossary/a_to_f.md#background-workers) and logs the interval
    each got.
 6. `http_router::router` builds the application, and the binary serves it on `0.0.0.0:$PORT`
    until SIGINT or SIGTERM, draining requests in flight.
@@ -53,7 +53,7 @@ request ─▶ request id ─▶ access log ─▶ metrics ─▶ panic recovery
 ```
 
 The body limit is 1 MiB, raised per route for the CMS upload (6 MiB) and the
-[mission](/documentation_v2/glossary.md#mission) version save (`MISSION_VERSION_MAX_BODY_BYTES`,
+[mission](/documentation_v2/glossary/g_to_m.md#mission) version save (`MISSION_VERSION_MAX_BODY_BYTES`,
 256 MiB by default). The rate limit keeps an in-memory bucket per client address and, on
 `/api/v1/auth/` and `/api/v1/ingest/`, a second bucket in Postgres that survives a restart; a
 refusal is `429` with `Retry-After`. The [middleware README](/apps/website/api_v2/src/core/middleware/README.md)
@@ -65,9 +65,9 @@ Authentication is not a layer. A route's access tier is the extractor its handle
 |---|---|---|---|
 | public | none | none | — |
 | member | `AuthUser` | `Authorization: Bearer <access token>` of a live session | 401 |
-| role | `LeaderUser`, `MissionMakerUser`, `AdminUser` | the same, and a [role](/documentation_v2/glossary.md#role) rank at least `leader`, `mission_maker` or `admin` | 403 |
+| role | `LeaderUser`, `MissionMakerUser`, `AdminUser` | the same, and a [role](/documentation_v2/glossary/n_to_z.md#role) rank at least `leader`, `mission_maker` or `admin` | 403 |
 | service | `ServiceAuth` | `X-Service-Token` equal to `SERVICE_TOKEN`; every request fails while it is unset | 401 |
-| machine | `MachineCaller` | `Authorization: Bearer tbdm_…`, a per-server [machine credential](/documentation_v2/glossary.md#machine-credential) of the executor kind the route needs | 401, or 403 for another server's resource |
+| machine | `MachineCaller` | `Authorization: Bearer tbdm_…`, a per-server [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential) of the executor kind the route needs | 401, or 403 for another server's resource |
 
 Role ranks run `guest`, `enlisted`, `leader`, `mission_maker`, `admin`, lowest first. A member's
 role follows their Discord roles through the `discord_roles` mapping; the API never sets it by
@@ -79,24 +79,24 @@ hand.
   development its Trunk server on port 3000 proxies `/api` and `/map-assets` to the API on
   `127.0.0.1:8080`; on the deploy host, Caddy serves the built app and proxies API traffic to the
   same port (`tools_v2/xtask/deploy/Caddyfile.website`).
-- The [game runtime](/documentation_v2/glossary.md#game-runtime), the mod's
+- The [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime), the mod's
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/`, calls `/api/v1/game-runtime/*` with its
   `mod_runtime` credential: runtime sessions and heartbeats, the event roster, player
-  [deployments](/documentation_v2/glossary.md#deployment), and the
-  [mission deployment](/documentation_v2/glossary.md#mission-deployment) it should run with the
-  [artifact](/documentation_v2/glossary.md#artifact) bytes. Two ingest routes take the shared
+  [deployments](/documentation_v2/glossary/a_to_f.md#deployment), and the
+  [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) it should run with the
+  [artifact](/documentation_v2/glossary/a_to_f.md#artifact) bytes. Two ingest routes take the shared
   service token instead, as the mod's `serverToken`: `POST /api/v1/ingest/link-confirm` and
   `POST /api/v1/ingest/match-results`.
-- The [fleet host agent](/documentation_v2/glossary.md#fleet-host-agent) in
+- The [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) in
   `apps/fleet_host_agent/` polls `/api/v1/fleet-executor/*` outbound with its `host_agent`
-  credential and runs the [fleet commands](/documentation_v2/glossary.md#fleet-command) it claims.
+  credential and runs the [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command) it claims.
   No route reaches into a game host; the API only records commands for executors to claim.
 - A monitoring scraper reads `/metrics` with the service token; `/healthz` answers anyone with
   the status alone and adds the detail for the service token.
 
 ### Realtime streams
 
-Two routes answer [SSE](/documentation_v2/glossary.md#sse) streams, and each re-checks the
+Two routes answer [SSE](/documentation_v2/glossary/n_to_z.md#sse) streams, and each re-checks the
 viewer's session at least every five seconds, ending the stream with an `authorization_expired`
 SSE event once it stops qualifying:
 
@@ -147,7 +147,7 @@ because each domain owns the data its routes write.
 - `GET /metrics`: the Prometheus exposition, service token only.
 - `/uploads`: the files the CMS upload wrote into `UPLOAD_DIR`.
 - `/map-assets` and `/map-assets/glyphs`: the terrain tree (`MAP_ASSETS_DIR`) and the glyph atlas
-  (`GLYPH_ASSETS_DIR`) that the [Mission Creator](/documentation_v2/glossary.md#mission-creator)
+  (`GLYPH_ASSETS_DIR`) that the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)
   streams, below the rate limit.
 - The built app from `SPA_DIST_DIR`, with an `index.html` fallback and the cross-origin isolation
   headers, when that variable is set.
@@ -161,7 +161,7 @@ because each domain owns the data its routes write.
   every database that applied it. The [migrations README](/apps/website/api_v2/migrations/README.md)
   has the rules.
 - `apps/website/api_v2/seeds/`: the development data `cargo xtask db seed` applies once the API
-  has migrated the database, and the Workbench [registry](/documentation_v2/glossary.md#registry)
+  has migrated the database, and the Workbench [registry](/documentation_v2/glossary/n_to_z.md#registry)
   exports that `cargo xtask db registry-import` loads.
 - The upload directory, the only files the API writes.
 

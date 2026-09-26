@@ -4,7 +4,7 @@
 
 The documentation hub of the web platform's single-page app: every browser route with the code
 folder that renders it and the feature doc that describes it, the page areas, the full-screen
-workspaces such as the [Mission Creator](/documentation_v2/glossary.md#mission-creator), and the
+workspaces such as the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator), and the
 shared foundations they are built on. Developers and AI agents start here before changing a page.
 
 ## Contents
@@ -24,7 +24,7 @@ feature doc, named after its route component (`event_schedule_page.md` for `Even
 and written from the [feature doc template](/documentation_v2/standards/templates/feature_doc.md),
 and, where a design set exists, a `visual_references/` folder. The in-code README of each page
 folder holds what the code declares (routes, calls with their DTOs, states with their exact text);
-the feature doc holds the flows, what each call means in the [API](/documentation_v2/glossary.md#api),
+the feature doc holds the flows, what each call means in the [API](/documentation_v2/glossary/a_to_f.md#api),
 the design, the open work and the decisions. Open work lives only in the feature docs, as links to
 tickets in `.ai/tickets/`.
 
@@ -39,8 +39,8 @@ commands.
 in `apps/website/frontend/src/router.rs` gives each path its access tier and layout flags; the
 [source root README](/apps/website/frontend/src/README.md#public-surface) lists the flags. A tier
 is enforced in the browser after mount: `none` admits everyone, a `mission_maker` route sends a
-viewer below that [role](/documentation_v2/glossary.md#role) back to the
-[mission](/documentation_v2/glossary.md#mission) overview or the library, and an `admin` page
+viewer below that [role](/documentation_v2/glossary/n_to_z.md#role) back to the
+[mission](/documentation_v2/glossary/g_to_m.md#mission) overview or the library, and an `admin` page
 renders its own refusal through `AdminGate`. The rows below follow the sidebar's sections, as
 `apps/website/frontend/src/v2/pages/navigation/nav_config.rs` orders them.
 
@@ -85,22 +85,22 @@ Page folders sit under `apps/website/frontend/src/v2/pages/`, workspace folders 
 - `/events` asks `GET /api/v1/events` for its list with no `scope`, so the API's default,
   `upcoming`, applies (`list_events` in
   `apps/website/api_v2/src/operations/handlers/event_listing.rs`). The schedule embeds the
-  [event](/documentation_v2/glossary.md#event) hub, whose feature doc describes the hub view and
-  the [ORBAT](/documentation_v2/glossary.md#orbat) slotting once for the schedule, `/events/:id`
+  [event](/documentation_v2/glossary/a_to_f.md#event) hub, whose feature doc describes the hub view and
+  the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) slotting once for the schedule, `/events/:id`
   and the ORBAT selection page alike.
 - `/events/:id/missions/:emid/orbat` has no sidebar entry: the deployments page's "Modify
   Assignment" link and direct links lead to it, and its back link returns to the event hub.
 - `/missions/:id/edit` and the review workspace fill the viewport without the sidebar and the top
   bar; the review workspace opens the Mission Creator read-only on the version an
-  [artifact](/documentation_v2/glossary.md#artifact) was compiled from.
+  [artifact](/documentation_v2/glossary/a_to_f.md#artifact) was compiled from.
 - `/debug/building-viewer` and `/debug/world-los` are URL-only: no navigation entry leads to them.
 
 ### Page areas and workspaces
 
 [pages/](/documentation_v2/website/frontend/pages/README.md) indexes the eight areas: the six
-sidebar sections ([command center](/documentation_v2/glossary.md#command-center),
-[operations](/documentation_v2/glossary.md#operations), mission hub, field tools, doctrine and
-info, [administration](/documentation_v2/glossary.md#administration)), the account pages and the
+sidebar sections ([command center](/documentation_v2/glossary/a_to_f.md#command-center),
+[operations](/documentation_v2/glossary/n_to_z.md#operations), mission hub, field tools, doctrine and
+info, [administration](/documentation_v2/glossary/a_to_f.md#administration)), the account pages and the
 navigation frame. `apps/` holds the
 [Mission Creator documentation](/documentation_v2/website/frontend/apps/editor/README.md),
 starting from its [roadmap](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md),
@@ -116,7 +116,7 @@ here: its in-code READMEs describe it exactly, and the deeper documents are link
 | Module | What it holds | README |
 |---|---|---|
 | `core/` | the foundations every page and workspace shares, and the imports between them | [Shared foundations](/apps/website/frontend/src/v2/core/README.md) |
-| `core/api/` | the HTTP client, the typed endpoint calls, the wire types and the live server status stream over [SSE](/documentation_v2/glossary.md#sse) | [API layer](/apps/website/frontend/src/v2/core/api/README.md) |
+| `core/api/` | the HTTP client, the typed endpoint calls, the wire types and the live server status stream over [SSE](/documentation_v2/glossary/n_to_z.md#sse) | [API layer](/apps/website/frontend/src/v2/core/api/README.md) |
 | `core/auth/` | the session store, the five-tier role ladder (`guest`, `enlisted`, `leader`, `mission_maker`, `admin`), the route guard and the link guard | [Session and access](/apps/website/frontend/src/v2/core/auth/README.md) |
 | `core/ui/` | the interface primitives: the icon, page header, status pill, the two content gates, search box, select, slider, split pane, toasts, dialog and sheet | [Shared interface primitives](/apps/website/frontend/src/v2/core/ui/README.md) |
 | `core/utils/` | timestamps, UTC instants, the countdown, the avatar sanitiser and the clipboard write | [Utilities](/apps/website/frontend/src/v2/core/utils/README.md) |
@@ -157,7 +157,7 @@ its feature doc, and a row in the route table above.
 
 - Depends on: the [feature doc template](/documentation_v2/standards/templates/feature_doc.md)
   and the [documentation folder README template](/documentation_v2/standards/templates/readme_documentation_folder.md);
-  the [glossary](/documentation_v2/glossary.md); the route table in
+  the [glossary](/documentation_v2/glossary/README.md); the route table in
   `apps/website/frontend/src/app_routes.rs` and `apps/website/frontend/src/router.rs`, the sidebar
   in `apps/website/frontend/src/v2/pages/navigation/nav_config.rs` and the in-code READMEs, which
   this hub is written from.

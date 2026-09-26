@@ -1,7 +1,7 @@
 # World object and road builders
 
 The builders behind `world build-objects`, `world build-roads`, `world redensify` and `world
-gen-density-fixture`: they turn a staged [Workbench](/documentation_v2/glossary.md#workbench)
+gen-density-fixture`: they turn a staged [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)
 world export into a terrain's committed object chunks, prefab catalogue, density tiles, forest
 regions, census and road network, and re-derive the density tiles from what is committed.
 

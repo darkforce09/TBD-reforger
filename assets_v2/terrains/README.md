@@ -1,9 +1,9 @@
 # Built-in terrains
 
 The terrain datasets that ship in the repository, one folder per island, and the registry that
-lists them. The [API](/documentation_v2/glossary.md#api) serves this folder at `/map-assets`, the
+lists them. The [API](/documentation_v2/glossary/a_to_f.md#api) serves this folder at `/map-assets`, the
 map engine streams a terrain from it into the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator), and the developer tools and
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator), and the developer tools and
 gates read it from disk.
 
 ## Contents
@@ -31,7 +31,7 @@ browser: mission's terrain id ──▶ /map-assets/<terrain>/manifest.json ◀�
                                         └──▶ every other file, by the paths the manifest names
 ```
 
-The browser reaches a terrain by the id its [mission](/documentation_v2/glossary.md#mission)
+The browser reaches a terrain by the id its [mission](/documentation_v2/glossary/g_to_m.md#mission)
 names: the Mission Creator boots `/map-assets/<terrain>/manifest.json` directly
 (`apps/website/map-engine/src/streaming/host/bootstrap.rs`) and never reads the registry. Inside a
 terrain the manifest names every asset, so a dataset may ship a subset and the map engine loads
@@ -79,7 +79,7 @@ check branches on `status`, which records how far a terrain's export has come.
   `tools_v2/developer-tools/`, which resolve these paths through
   `tools_v2/developer-tools/src/repository_layout.rs`: the world export pipeline, the map raster
   pipeline and the blueprint compiler, from the raw exports of the `tbd-export` addon's
-  [Workbench](/documentation_v2/glossary.md#workbench) plugins.
+  [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) plugins.
 - Consumers:
   - the API's `/map-assets` mount, and its test
     `apps/website/api_v2/tests/map_assets_rate_limit_exemption.rs`, which fetches

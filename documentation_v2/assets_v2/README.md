@@ -18,7 +18,7 @@ documentation_v2/assets_v2/
 ## How it works
 
 Start with [terrain export and map assets](/documentation_v2/assets_v2/terrain_export_and_map_assets.md),
-the end-to-end flow from a [Workbench](/documentation_v2/glossary.md#workbench) world to a manifest the browser boots; it links the
+the end-to-end flow from a [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) world to a manifest the browser boots; it links the
 [map raster pipeline](/documentation_v2/tools_v2/developer-tools/map_raster_pipeline.md) for the
 image, label and water lanes. The [uploaded terrain volume](/documentation_v2/assets_v2/uploaded_terrain_volume.md)
 describes a tier no code implements yet. Both follow the

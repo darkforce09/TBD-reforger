@@ -1,7 +1,7 @@
 # Document viewer
 
-The [ticketboard](/documentation_v2/glossary.md#ticketboard) feature that opens a repository
-Markdown document, such as a [ticket](/documentation_v2/glossary.md#ticket)'s spec, plan or a
+The [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) feature that opens a repository
+Markdown document, such as a [ticket](/documentation_v2/glossary/n_to_z.md#ticket)'s spec, plan or a
 citation, in a read-only column beside the ticket details, and shows it as Markdown or, when it
 cannot, as raw text with a note saying why.
 

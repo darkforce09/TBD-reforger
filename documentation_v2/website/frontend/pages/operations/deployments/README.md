@@ -3,7 +3,7 @@
 # Deployments page documentation
 
 The feature documentation of the `/deployments` page, labelled "My Deployments", where a member
-reads their own [service record](/documentation_v2/glossary.md#service-record) and files leave,
+reads their own [service record](/documentation_v2/glossary/n_to_z.md#service-record) and files leave,
 and an administrator decides leave requests, with the page's design-phase reference.
 
 ## Contents
@@ -19,7 +19,7 @@ documentation_v2/website/frontend/pages/operations/deployments/
 Read [deployments_page.md](/documentation_v2/website/frontend/pages/operations/deployments/deployments_page.md)
 first. It follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md):
 it quotes the page's interface text, gives what the record and the leave calls mean in the
-[API](/documentation_v2/glossary.md#api), lists where the page and the API disagree, and compares
+[API](/documentation_v2/glossary/a_to_f.md#api), lists where the page and the API disagree, and compares
 the built page with the blueprint in `visual_references/`. The code folder's README lists the
 page's files, calls and states.
 
@@ -35,7 +35,7 @@ page's files, calls and states.
 - Depends on: the feature doc template; the page code, the operations handlers and the ticket
   registry in `.ai/tickets/`, which the feature doc is written from.
 - Used by: the page's in-code README, the operations pages README and the operations domain
-  README, which link the feature doc; the [service record](/documentation_v2/glossary.md#service-record)
+  README, which link the feature doc; the [service record](/documentation_v2/glossary/n_to_z.md#service-record)
   glossary entry; the ORBAT selection feature doc; the web app README's page table in
   `documentation_v2/website/frontend/`.
 - Rules: the feature doc keeps its name, which those links use; the blueprint set stays as it was

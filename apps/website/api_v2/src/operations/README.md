@@ -1,14 +1,14 @@
 # Operations domain
 
-The [API](/documentation_v2/glossary.md#api)'s
-[operations](/documentation_v2/glossary.md#operations) domain: the calendar of
-[events](/documentation_v2/glossary.md#event) and each event's hub, the
-[missions](/documentation_v2/glossary.md#mission) attached to an event with their
-[ORBAT](/documentation_v2/glossary.md#orbat), event access and reservation pools,
-[slot](/documentation_v2/glossary.md#slot) reservations with the waiting list and its promotion, the
-member directory leaders seat from, the [game runtime](/documentation_v2/glossary.md#game-runtime)'s
-roster and player [deployments](/documentation_v2/glossary.md#deployment), attendance derived from
-match results, a member's own [service record](/documentation_v2/glossary.md#service-record) and
+The [API](/documentation_v2/glossary/a_to_f.md#api)'s
+[operations](/documentation_v2/glossary/n_to_z.md#operations) domain: the calendar of
+[events](/documentation_v2/glossary/a_to_f.md#event) and each event's hub, the
+[missions](/documentation_v2/glossary/g_to_m.md#mission) attached to an event with their
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat), event access and reservation pools,
+[slot](/documentation_v2/glossary/n_to_z.md#slot) reservations with the waiting list and its promotion, the
+member directory leaders seat from, the [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime)'s
+roster and player [deployments](/documentation_v2/glossary/a_to_f.md#deployment), attendance derived from
+match results, a member's own [service record](/documentation_v2/glossary/n_to_z.md#service-record) and
 leave requests, and the saved mortar fire missions.
 
 ## Contents
@@ -43,8 +43,8 @@ account union, then an authority recheck), and producers outside the domain, suc
 membership changes, only queue a re-evaluation that a worker runs event-first. An event's status is
 derived inside Postgres from its schedule and the database's clock, so no read waits on the sweep
 that stores it. The roster and deployment authorization read the slot bindings a
-[mission deployment](/documentation_v2/glossary.md#mission-deployment) recorded, so the game, the
-roster and seat authorization name one [artifact](/documentation_v2/glossary.md#artifact). The
+[mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) recorded, so the game, the
+roster and seat authorization name one [artifact](/documentation_v2/glossary/a_to_f.md#artifact). The
 ballistics of the fire missions live in `website_map_engine::data::scenario::ballistics`; this
 domain solves through them and stores the solution.
 
@@ -126,7 +126,7 @@ domain solves through them and stores the solution.
   - `administration`, `command_center`, `identity_and_access`, `match_telemetry` and `missions`,
     through the surface above;
   - over HTTP, the operations pages in `apps/website/frontend/src/v2/pages/operations/`, the
-    [event manager](/documentation_v2/glossary.md#event-manager) in
+    [event manager](/documentation_v2/glossary/a_to_f.md#event-manager) in
     `apps/website/frontend/src/v2/pages/administration/event_manager/`, the mortar calculator in
     `apps/website/frontend/src/v2/pages/field_tools/mortar/`, and the game runtime's roster loader
     and deployment queues in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/`.

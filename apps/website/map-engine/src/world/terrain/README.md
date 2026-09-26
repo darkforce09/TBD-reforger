@@ -32,7 +32,7 @@ and the API serves under `/map-assets/<terrain>/`:
 `crate::streaming::host` drives the loads at boot. The elevation model and the satellite image
 load side by side: the elevation model becomes the hillshade texture, after which
 `relief::host::DemVectors` builds the 8 m vector grid that the contours, the sea band, the airfield
-apron and the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s height readout
+apron and the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s height readout
 sample, and the satellite image fills the basemap texture. The roads load with the world's
 objects, and the water files when the manifest declares them. Positions are world metres inside
 the manifest's `worldBounds` (0 to 12 800 m on both axes for Everon).

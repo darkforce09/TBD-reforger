@@ -3,7 +3,7 @@
 # Debrief screen documentation
 
 The documentation of the DEBRIEF scoreboard, the last screen of a round of an
-[event](/documentation_v2/glossary.md#event): the winner and each player's kills and deaths.
+[event](/documentation_v2/glossary/a_to_f.md#event): the winner and each player's kills and deaths.
 
 ## Contents
 

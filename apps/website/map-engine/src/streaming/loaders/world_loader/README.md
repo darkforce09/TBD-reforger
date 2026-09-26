@@ -1,7 +1,7 @@
 # World object loader
 
 `WorldHost`, the browser loader behind the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s world objects: it fetches a
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s world objects: it fetches a
 terrain's object manifest, prefabs, chunk index, glyph atlas, roads and regions from
 `/map-assets`, feeds the chunks each viewport pins into the world residency, and uploads what they
 compose to the render engine. It compiles only for wasm32 with `render`.

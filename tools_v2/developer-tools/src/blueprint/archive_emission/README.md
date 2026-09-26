@@ -4,7 +4,7 @@ The blueprint compiler's writers: the assembly of one building's interpretation 
 schema-checked blueprint JSON, the whole-catalogue prefab occluder library of
 `bvh-batch --all-prefabs`, and the archive that folds the library and every blueprint into
 `prefabs/building_blueprints.rkyv` for the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s line of sight.
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s line of sight.
 
 ## Contents
 

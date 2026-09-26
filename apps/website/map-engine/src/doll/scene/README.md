@@ -1,6 +1,6 @@
 # Doll scene
 
-The mannequin the [arsenal](/documentation_v2/glossary.md#arsenal)'s doll preview draws and picks:
+The mannequin the [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal)'s doll preview draws and picks:
 its 14 clickable equipment regions, the boxes and the tube that make up the soldier, the colours
 that show each region's state, and the unit meshes every part is scaled from. Pure data and
 functions, with no GPU and no browser.

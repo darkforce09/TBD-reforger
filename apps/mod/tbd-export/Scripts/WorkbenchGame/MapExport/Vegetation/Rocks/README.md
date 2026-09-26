@@ -1,7 +1,7 @@
 # Rock export
 
 Finds every placed rock, boulder and cliff in the open world in
-[Workbench](/documentation_v2/glossary.md#workbench), measures how far each one sits above or below
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench), measures how far each one sits above or below
 the ground, and writes the records to `rocks.json` with a summary in `rocks_meta.json`.
 
 ## Contents

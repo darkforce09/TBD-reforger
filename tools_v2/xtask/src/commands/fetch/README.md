@@ -1,7 +1,7 @@
 # Vanilla reference fetch commands
 
 The `cargo xtask fetch` group: mirrors of two public references for the vanilla Arma Reforger
-scripts that the [mod](/documentation_v2/glossary.md#mod) builds on, cached in the checkout for the
+scripts that the [mod](/documentation_v2/glossary/g_to_m.md#mod) builds on, cached in the checkout for the
 `enf` index and lookup commands. Mod developers run them by hand.
 
 ## Contents

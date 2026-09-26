@@ -37,7 +37,7 @@ apps/website/api_v2/src/identity_and_access/services/
   `DatabaseSessionAuthority`, which the `AuthUser` extractor in `core` calls. Session writers lock
   the account row before any session or token row (`account_authority::lock_account`), a session
   lasts 30 days, and a development session is refused by a production-configured
-  [API](/documentation_v2/glossary.md#api). `refresh_token_purge.rs` keeps revoked but unexpired
+  [API](/documentation_v2/glossary/a_to_f.md#api). `refresh_token_purge.rs` keeps revoked but unexpired
   tokens, because a replay of one is how rotation detects theft.
 - **Authority from Discord.** `account_authority.rs` reads the account's verified, guild-scoped
   Discord snapshot and never `users.role`. Cached grants last 48 hours
@@ -47,7 +47,7 @@ apps/website/api_v2/src/identity_and_access/services/
   (`discord_membership_cache.rs`), so a superseded request cannot restore older grants; a failed
   lookup never changes verified membership. The reconciler admits at most 25 Discord requests per
   second across replicas, and a changed membership queues a re-evaluation of the account's
-  [event](/documentation_v2/glossary.md#event) reservations.
+  [event](/documentation_v2/glossary/a_to_f.md#event) reservations.
 - **Arma identity.** A link code is six digits, valid ten minutes, one pending per account.
   Spending it (`identity_linking.rs`) takes the locks of `identity_ownership.rs` (sorted Arma
   identities, sorted accounts, link codes, match and attendance rows, the leaderboard), attributes
@@ -63,7 +63,7 @@ apps/website/api_v2/src/identity_and_access/services/
 - Used by: `core::application_state`, which holds `DiscordService` and `DatabaseSessionAuthority`;
   the `token_purge_worker`, `discord_role_synchronizer` and `discord_membership_reconciler` workers
   in `apps/website/api_v2/src/background_workers/`; `administration`
-  ([role](/documentation_v2/glossary.md#role) resync, grace extension, account locks); `missions`,
+  ([role](/documentation_v2/glossary/n_to_z.md#role) resync, grace extension, account locks); `missions`,
   `operations`, `server_infrastructure` and `match_telemetry` (`authorize_on_connection`,
   `lock_accounts`, `lock_identities`, `holds_administrator_authority`,
   `evaluate_cached_membership_permissions`, the membership enrollment); `command_center`

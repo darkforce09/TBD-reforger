@@ -1,6 +1,6 @@
 # Framework prefabs
 
-The entity templates of the framework [mod](/documentation_v2/glossary.md#mod), grouped by role.
+The entity templates of the framework [mod](/documentation_v2/glossary/g_to_m.md#mod), grouped by role.
 Today the addon carries one role, its system entities: the game mode and the player controller.
 
 ## Contents

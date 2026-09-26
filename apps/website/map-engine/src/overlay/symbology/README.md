@@ -1,10 +1,10 @@
 # Map symbology
 
 The map engine's cartographic vocabulary: the bespoke unit-role and vehicle glyphs with their side
-tints, the glyph atlases, the icon instances and [slot](/documentation_v2/glossary.md#slot) GPU
+tints, the glyph atlases, the icon instances and [slot](/documentation_v2/glossary/n_to_z.md#slot) GPU
 bridge, map labels, squad tether links,
 briefing marker glyphs and captions, and the label text packing. It holds what the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) and the streamed world draw, so the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) and the streamed world draw, so the
 graphics engine only ever sees cells, instances and uniforms.
 
 ## Contents
@@ -41,7 +41,7 @@ RenderEngine lanes (instances/ bridge, frame/)  ──► website-graphics-engin
 The symbology is bespoke: five unit roles, three vehicle kinds and three side tints, with no
 MIL-STD-2525 or APP-6 frames. `markers.rs` maps every marker `icon` alias of the mission schema to
 one of `MARKER_GLYPH_COUNT` (11) glyphs, folding case and separators and falling back to the disc,
-the same downgrade the game [mod](/documentation_v2/glossary.md#mod) makes; its atlas shares cells 0
+the same downgrade the game [mod](/documentation_v2/glossary/g_to_m.md#mod) makes; its atlas shares cells 0
 and 1 (ring, disc) with the slot
 atlas. Captions and place names go through one text pipeline: `text_packing.rs` lays glyphs of the
 graphics engine's baked ASCII atlas beside their anchors, and hands `LabelSpec` labels to the

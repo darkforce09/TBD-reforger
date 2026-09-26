@@ -3,8 +3,8 @@
 # Editing layer
 
 The map engine's headless editing layer: the editing host that holds the live
-[mission](/documentation_v2/glossary.md#mission) document the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) edits, the hosted commands that
+[mission](/documentation_v2/glossary/g_to_m.md#mission) document the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) edits, the hosted commands that
 change it, the undo drive, and the tool state machines. The Mission Creator supplies everything a
 browser owns as closures and function pointers, so every decision here runs under `cargo test`.
 Local drafts are a separate doc, [draft persistence](/documentation_v2/website/map-engine/draft_persistence.md).
@@ -97,7 +97,7 @@ The grouping clock and the cap are in the
 - Ruler and line-of-sight results are measurements, held for the session and never written to the
   document; the selection is app state, not document content.
 - Picks turn a frozen camera and a pixel into a spatial query; a
-  [slot](/documentation_v2/glossary.md#slot) beats a vehicle at equal distance, and a marquee lists
+  [slot](/documentation_v2/glossary/n_to_z.md#slot) beats a vehicle at equal distance, and a marquee lists
   slots before vehicles. `routing.rs` answers the hover affordance and the click with one
   resolution, so a row looks clickable only when a click reaches something.
 - Arrange edits (align, space, orient, pattern, rotate to face) commit as hosted commands over

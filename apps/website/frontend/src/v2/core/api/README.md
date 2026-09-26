@@ -1,8 +1,8 @@
 # API layer
 
-Everything the app talks to the [API](/documentation_v2/glossary.md#api) through: the HTTP client,
+Everything the app talks to the [API](/documentation_v2/glossary/a_to_f.md#api) through: the HTTP client,
 the typed endpoint calls, the wire types they carry, and the
-[SSE](/documentation_v2/glossary.md#sse) stream of one server's live status. A page imports one
+[SSE](/documentation_v2/glossary/n_to_z.md#sse) stream of one server's live status. A page imports one
 path to fetch and one path to name what comes back.
 
 ## Contents
@@ -32,8 +32,8 @@ the path and the body and calls the same verbs. The client injects the bearer to
 `(status, message)` pair, or as an `ApiRefusal` that keeps the reason for the callers that branch
 on it. Every `/api/v1` request the app makes goes through `client/`, with two exceptions: the
 status stream in `sse.rs`, and the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s measured fetch of a
-[mission](/documentation_v2/glossary.md#mission), which reads a 2xx answer itself for its progress
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s measured fetch of a
+[mission](/documentation_v2/glossary/g_to_m.md#mission), which reads a 2xx answer itself for its progress
 bar and hands anything else to `api_get`.
 
 `sse.rs` holds the one long-lived connection. `stream_server_status` opens

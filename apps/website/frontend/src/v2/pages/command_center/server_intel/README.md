@@ -1,9 +1,9 @@
 # Server intel page
 
 The `/server-intel` page in the
-[command center](/documentation_v2/glossary.md#command-center): one game server's live state, its
+[command center](/documentation_v2/glossary/a_to_f.md#command-center): one game server's live state, its
 connect address, population, theatre and environment, kept current by the server's
-[SSE](/documentation_v2/glossary.md#sse) status stream.
+[SSE](/documentation_v2/glossary/n_to_z.md#sse) status stream.
 
 ## Contents
 

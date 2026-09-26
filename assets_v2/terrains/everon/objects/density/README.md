@@ -2,7 +2,7 @@
 
 Everon's tree and rock density at 8 m resolution, one small tile per 512 m cell of the island
 grid. The map engine stitches them into one island texture that draws the forest fill and the
-canopy in the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map.
+canopy in the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map.
 
 ## Contents
 

@@ -3,10 +3,10 @@
 # Review workspace page
 
 The `/missions/:id/artifacts/:artifact_id/workspace` page, the review workspace of an
-[artifact](/documentation_v2/glossary.md#artifact): the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) opened read-only on exactly the
+[artifact](/documentation_v2/glossary/a_to_f.md#artifact): the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) opened read-only on exactly the
 version the artifact compiled from, so a reviewer or the
-[mission](/documentation_v2/glossary.md#mission)'s author inspects what was submitted with every
+[mission](/documentation_v2/glossary/g_to_m.md#mission)'s author inspects what was submitted with every
 editor tool while nothing is saved.
 
 ## Where it lives
@@ -30,7 +30,7 @@ editor tool while nothing is saved.
 
 ### Opening the workspace
 
-1. The route requires the `mission_maker` [role](/documentation_v2/glossary.md#role); a viewer
+1. The route requires the `mission_maker` [role](/documentation_v2/glossary/n_to_z.md#role); a viewer
    below it is sent to the mission's overview at `/missions/:id?role_notice=mission_maker`. The
    page body then sits in `AuthGate`, whose session states are in the README's
    [States](/apps/website/frontend/src/v2/pages/mission_hub/review_workspace/README.md#states).
@@ -42,7 +42,7 @@ editor tool while nothing is saved.
 4. A refused read shows a sentence for the status and a "Back to the mission" link to the
    mission's overview: 401 says the session has ended, 403 that only the author and
    administrators may open the workspace, 404 that the artifact does not exist or the mission is
-   hidden, and any other failure shows the [API](/documentation_v2/glossary.md#api)'s message or
+   hidden, and any other failure shows the [API](/documentation_v2/glossary/a_to_f.md#api)'s message or
    "The review workspace could not be opened".
 
 ### Inspecting the version

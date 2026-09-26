@@ -1,6 +1,6 @@
 # Footpath export
 
-Finds the open world's footpaths and trails in [Workbench](/documentation_v2/glossary.md#workbench)
+Finds the open world's footpaths and trails in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)
 and writes their centrelines, widths and endpoint connections to `paths.json`.
 
 ## Contents

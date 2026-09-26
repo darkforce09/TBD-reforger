@@ -57,7 +57,7 @@ which drops the GPU timer.
   `crate::camera` (orthographic and orbit), `crate::doll::renderer` and `crate::doll::scene` (the
   doll check), `crate::world::scene::ANCHOR`, and `website-graphics-engine` (`draw::encode`,
   `layout::QuadInstance`).
-- Used by: the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
+- Used by: the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
   `window.__selfChecks.texture` (`texture_self_check`, published in
   `apps/website/frontend/src/v2/apps/editor/bridge/viewport.rs` and called by the editor gate's
   `selfcheck` smoke); `crate::frame::pump` (`poll`, every frame); the Mission Creator's canvas boot

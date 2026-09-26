@@ -3,7 +3,7 @@
 # Editor gates
 
 Runs the headless browser gates of the single-page app: the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) smokes (`gate editor-suite`), the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) smokes (`gate editor-suite`), the
 frozen DOM oracle (`gate v-suite verify`) and the `gate doctor` preflight that runs before them,
 and shows how to diagnose a gate that hangs or fails. `cargo xtask mk leptos-gates` runs all three;
 after the release build, the doctor takes about 15 seconds and the whole suite a few minutes. What
@@ -24,7 +24,7 @@ does not repeat it.
   `rustc` and `trunk` lines.
 - **At least 1024 MiB of available memory** (`limits.min_mem_available_mib`): SwiftShader thrashes
   below it. Check: the doctor's `memory` line.
-- **The [API](/documentation_v2/glossary.md#api) on `127.0.0.1:8080`** for the `hydrate` smoke in the suite and for `gate smoke
+- **The [API](/documentation_v2/glossary/a_to_f.md#api) on `127.0.0.1:8080`** for the `hydrate` smoke in the suite and for `gate smoke
   mutations`; the other smokes need none. Start it as in
   [Local development](/documentation_v2/runbooks/local_development.md).
 - **The Everon map assets from Git LFS** (`assets_v2/terrains/everon/`) for the `fullmap` and
@@ -74,7 +74,7 @@ container's does not run inside that container.
    its JSON verdict, and the run exits 0. It stops at the first step that fails, with that step's
    exit code.
 
-An editor factory [wave](/documentation_v2/glossary.md#wave) runs step 3 after its wave gate
+An editor factory [wave](/documentation_v2/glossary/n_to_z.md#wave) runs step 3 after its wave gate
 passes and before it closes: `cargo xtask platform wave gate` runs no Chromium, so this is the only
 automated run of the rect smokes (`save-dialog-rect`, `entrance-motion-rect`). The wave procedure
 is in [Factory waves](/documentation_v2/runbooks/factory_waves/README.md).

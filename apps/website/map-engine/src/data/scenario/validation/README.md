@@ -1,9 +1,9 @@
 # Mission payload checks
 
-The two kinds of check on a [mission](/documentation_v2/glossary.md#mission) editor payload: the
-validation rules the [Mission Creator](/documentation_v2/glossary.md#mission-creator) evaluates
+The two kinds of check on a [mission](/documentation_v2/glossary/g_to_m.md#mission) editor payload: the
+validation rules the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) evaluates
 while a mission maker works, and the wire-safety scans the
-[API](/documentation_v2/glossary.md#api) runs before it stores or compiles a version.
+[API](/documentation_v2/glossary/a_to_f.md#api) runs before it stores or compiles a version.
 
 ## Contents
 
@@ -18,7 +18,7 @@ apps/website/map-engine/src/data/scenario/validation/
 
 The Mission Creator's validation panel compiles the live document into a payload
 (`crate::data::scenario::compile::compile_payload`), runs `validate::default_registry()` on it with
-the item [registry](/documentation_v2/glossary.md#registry)'s asset ids as context, and lists the
+the item [registry](/documentation_v2/glossary/n_to_z.md#registry)'s asset ids as context, and lists the
 findings beside the compile's own, which use the same `Finding` type. The API runs no rule: it runs
 `wire_safety::scan_editor_payload` and `wire_safety::scan_cargo_capacity` after the payload schema
 on every save (`POST /api/v1/missions/{id}/versions`), and the capacity scan again before every
@@ -32,7 +32,7 @@ same wherever it is reported.
   API re-exports for the compile's findings.
 - `wire_safety` (`wire_safety/`): `scan_editor_payload`, `scan_cargo_capacity`, `CargoPhys`,
   `CargoPhysCatalog` and `MAX_REPORTED`, used by the
-  [missions](/documentation_v2/glossary.md#missions) domain of the API;
+  [missions](/documentation_v2/glossary/g_to_m.md#missions) domain of the API;
   `is_wire_unsafe`, used by `crate::data::scenario::flatten`.
 
 ## Boundaries

@@ -1,7 +1,7 @@
 # Leaderboards page
 
 The `/leaderboards` page, titled Global Leaderboards: five orderings of the same operator table,
-ranked and searched by the [API](/documentation_v2/glossary.md#api), with a slide-over dossier of
+ranked and searched by the [API](/documentation_v2/glossary/a_to_f.md#api), with a slide-over dossier of
 one operator's statistics behind the first podium place and every roster row.
 
 ## Contents

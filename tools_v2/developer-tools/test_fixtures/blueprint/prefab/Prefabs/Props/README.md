@@ -1,6 +1,6 @@
 # Blueprint prop prefab fixtures
 
-The two synthetic [Enfusion](/documentation_v2/glossary.md#enfusion) props that the furniture
+The two synthetic [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) props that the furniture
 composition places: a table and a chair.
 
 ## Contents

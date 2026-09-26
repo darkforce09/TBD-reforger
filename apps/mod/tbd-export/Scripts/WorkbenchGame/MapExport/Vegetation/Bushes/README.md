@@ -1,6 +1,6 @@
 # Bush export
 
-Finds every placed bush in the open world in [Workbench](/documentation_v2/glossary.md#workbench)
+Finds every placed bush in the open world in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)
 and writes each one's species, position, rotation, scale and size to `bush.json`.
 
 ## Contents

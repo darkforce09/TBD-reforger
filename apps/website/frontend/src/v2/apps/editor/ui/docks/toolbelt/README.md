@@ -1,7 +1,7 @@
 # Bottom toolbelt
 
 The chrome along the bottom of the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map: the floating mode toolbar
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map: the floating mode toolbar
 (Select, Ruler, line of sight), the full-width status bar with its read-outs and scale bar, and the
 grid references along the map's top and left edges. The module root,
 `apps/website/frontend/src/v2/apps/editor/ui/docks/toolbelt.rs`, declares these files, re-exports
@@ -26,7 +26,7 @@ chrome. `ModeToolbar` sets the page's `tool_mode` to Select, Ruler or LoS, and a
 LoS switches its `LosMode` between ray and viewshed; the input layer reads both signals.
 
 `StatusBar` shows, from left to right: X, Y and Z in metres, of the cursor ("CUR") or of the one
-selected entity ("SEL"); "OBJ", the placed [slots](/documentation_v2/glossary.md#slot), and "SEL",
+selected entity ("SEL"); "OBJ", the placed [slots](/documentation_v2/glossary/n_to_z.md#slot), and "SEL",
 the selection count; "SZ", the estimated save payload; "SCL", metres per screen pixel; the ruler's
 total and last leg; the scale bar; the debug HUD line while Ctrl+Alt+D shows it; and an "OPEN"
 button with no action. The scale is `m_per_px`, 2 to the power of minus the zoom, which the render

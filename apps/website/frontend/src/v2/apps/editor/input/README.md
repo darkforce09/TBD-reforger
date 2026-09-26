@@ -1,7 +1,7 @@
 # Input layer
 
 Every DOM event the operator makes over the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map, turned into something the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map, turned into something the
 rest of the editor acts on: the pointer, wheel, context-menu and double-click gestures over the
 canvas, the two window-level keydown dispatches, and the browser half of the interactive map tools.
 
@@ -43,7 +43,7 @@ listener reads `code()`, so the bindings do not depend on the keyboard layout, c
 |---|---|
 | Escape | cancels an armed place, a zone or tactical draw, a vertex drag, a pending connection, the ruler, line-of-sight and viewshed; left to an open dialog when one is |
 | Ctrl/Cmd+C, X, V, Shift+V | copy, cut, paste at the cursor or the view centre, paste at the original place |
-| Ctrl/Cmd+A | select every [slot](/documentation_v2/glossary.md#slot) and vehicle in view |
+| Ctrl/Cmd+A | select every [slot](/documentation_v2/glossary/n_to_z.md#slot) and vehicle in view |
 | Ctrl/Cmd+Alt+D | show or hide the debug HUD |
 | Space | frame the selection |
 | Delete | delete the selected connection, tactical graphic or selection |

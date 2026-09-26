@@ -2,7 +2,7 @@
 
 How server administrators pick what runs next from inside the game: the list of missions the
 platform lets this server deploy, the admin browser keys that step through it, and the deployment
-request relayed to the platform as a [mission deployment](/documentation_v2/glossary.md#mission-deployment).
+request relayed to the platform as a [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment).
 The folder also holds the Mission Selector screen's models and the admin screen's RPC transport.
 
 ## Contents
@@ -37,7 +37,7 @@ sends the admin's `arma_id` from `TBD_PlayerIdentity`; the platform decides whet
 belongs to a platform administrator and validates the pick as it validates a website deployment.
 Picking the mission this world runs for an event names the running event mission, so its seats and
 reservations are kept. The relay restarts nothing: an accepted deployment runs when its
-[fleet command](/documentation_v2/glossary.md#fleet-command) does, as a `load_mission` in
+[fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) does, as a `load_mission` in
 `apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/` or a host restart. A refusal is told in
 words for its `details.code` (`IDENTITY_NOT_LINKED`, `NOT_AN_ADMINISTRATOR`,
 `DEPLOYMENT_IN_PROGRESS`, `ARTIFACT_NOT_APPROVED`, `EVENT_MISSION_NOT_ON_SERVER`, `SERVER_INACTIVE`,

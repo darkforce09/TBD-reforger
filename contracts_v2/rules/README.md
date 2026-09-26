@@ -1,8 +1,8 @@
 # Contract rules
 
 The deterministic lookup tables the platform applies while it produces data: the classification of
-every [Enfusion](/documentation_v2/glossary.md#enfusion) prefab the world export meets, and the kit
-and vehicle aliases a compiled [mission](/documentation_v2/glossary.md#mission) names. What they
+every [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) prefab the world export meets, and the kit
+and vehicle aliases a compiled [mission](/documentation_v2/glossary/g_to_m.md#mission) names. What they
 shape is a committed artifact or a compiled document, so an edit here takes effect only when that
 output is rebuilt.
 
@@ -41,14 +41,14 @@ rewrites the catalogue and its archives; a full rebuild is `cargo xtask map expo
 
 ### Kit aliases
 
-`kit-aliases.json` is the inverse of the [mod](/documentation_v2/glossary.md#mod)'s spawn registry
+`kit-aliases.json` is the inverse of the [mod](/documentation_v2/glossary/g_to_m.md#mod)'s spawn registry
 `apps/mod/tbd-framework/Data/registry.json`, which maps each alias to a prefab. `kits` (15 rows)
 maps a character prefab's resource name to its `kit:` alias, `vehicles` (222 rows) maps a vehicle
 prefab to its `veh:` alias, `factionDefaults` gives each side (`blufor`, `opfor`, `indfor`, `civ`)
-the `kit:` and `preset:` a [slot](/documentation_v2/glossary.md#slot) falls back to, and
+the `kit:` and `preset:` a [slot](/documentation_v2/glossary/n_to_z.md#slot) falls back to, and
 `fallbackFaction` names the side used when a faction is unknown. The map engine's mission flatten
 embeds the file at compile time and resolves aliases while compiling the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s payload into a mission: a slot
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s payload into a mission: a slot
 whose character has no kit row flattens to its faction's default kit with a warning, and a placed
 vehicle with no vehicle row fails the compile.
 
@@ -76,11 +76,11 @@ vehicle with no vehicle row fails the compile.
   - `cargo xtask schema map-object-enums`
     (`tools_v2/xtask/src/verifications/schemas/checks/object_enumerations.rs`), which checks every
     rule's and the fallback's `kind` and `class` against the closed enums;
-  - the [wave](/documentation_v2/glossary.md#wave) gate's catalogue-drift step in
+  - the [wave](/documentation_v2/glossary/n_to_z.md#wave) gate's catalogue-drift step in
     `tools_v2/xtask/src/commands/platform/wave_execution/gate/checkrun.rs`, which runs `reclassify`;
   - the map engine's mission compiler, which embeds `kit-aliases.json`
     (`apps/website/map-engine/src/data/scenario/compiler/kit/aliases.rs`), and through it the
-    [API](/documentation_v2/glossary.md#api)'s mission compile; the API's release image copies the
+    [API](/documentation_v2/glossary/a_to_f.md#api)'s mission compile; the API's release image copies the
     file (`apps/website/Dockerfile`);
   - `cargo xtask schema validate`
     (`tools_v2/xtask/src/verifications/schemas/checks/mission_validation.rs`), which requires every

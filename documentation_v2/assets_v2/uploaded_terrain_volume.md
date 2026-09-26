@@ -13,7 +13,7 @@ uploads, so the upload seam keeps the built-in tier's contract.
   [`assets_v2/storage_spec/`](/assets_v2/storage_spec/README.md); the built-in tier it mirrors is
   [`assets_v2/terrains/`](/assets_v2/terrains/README.md).
 - Entry: none yet. The design's entry is an upload endpoint on the
-  [API](/documentation_v2/glossary.md#api) that no route serves.
+  [API](/documentation_v2/glossary/a_to_f.md#api) that no route serves.
 - Related features: [terrain export and map assets](/documentation_v2/assets_v2/terrain_export_and_map_assets.md),
   the built-in tier's flow and gates.
 

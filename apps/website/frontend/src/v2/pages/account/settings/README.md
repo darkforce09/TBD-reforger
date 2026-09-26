@@ -1,6 +1,6 @@
 # Account settings page
 
-The `/settings` page: the signed-in viewer's profile and [role](/documentation_v2/glossary.md#role),
+The `/settings` page: the signed-in viewer's profile and [role](/documentation_v2/glossary/n_to_z.md#role),
 the link between their Discord account and their Arma identity, and their attendance figures.
 
 ## Contents

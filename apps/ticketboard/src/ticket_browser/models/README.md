@@ -1,6 +1,6 @@
 # Browser display models
 
-The projections the [ticketboard](/documentation_v2/glossary.md#ticketboard)'s browser paints from,
+The projections the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)'s browser paints from,
 built once per load so the paint path never sorts or formats: the status board's columns and
 cards, the program tree, the order of a ticket's detail sections, and the borrowed view the
 application lends the browser.

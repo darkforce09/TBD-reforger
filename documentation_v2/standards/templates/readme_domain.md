@@ -53,8 +53,8 @@ reads it as a README; the folder's own README.md is written from the same code a
 ````markdown
 # Missions domain
 
-The API's [mission](/documentation_v2/glossary.md#mission) domain: the mission library and the
-versions the [Mission Creator](/documentation_v2/glossary.md#mission-creator) saves, the armory,
+The API's [mission](/documentation_v2/glossary/g_to_m.md#mission) domain: the mission library and the
+versions the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) saves, the armory,
 the faction library and the Virtual Arsenal registries, and the path from a saved version to a
 running server through immutable artifacts, reviews, approvals and deployments.
 

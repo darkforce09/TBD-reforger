@@ -1,8 +1,8 @@
 # Authored-block list and carrier
 
-The one list of the optional blocks a [mission](/documentation_v2/glossary.md#mission) author
+The one list of the optional blocks a [mission](/documentation_v2/glossary/g_to_m.md#mission) author
 writes, each with its check, and the code that moves them: from the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s document onto the saved payload,
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s document onto the saved payload,
 and from the saved payload into the compiled document. Its items are reached as
 `data::scenario::extensions`, which re-exports them.
 
@@ -45,8 +45,8 @@ payload root ── EditorPayload's named fields ──▶ authored_blocks_root
 
 Both readers answer a refused block as `(key, clause)`: the compiler drops the block and reports
 a warning finding under `COMPILE-WIN-CONDITIONS`, whichever block it names, and a warning keeps
-the [API](/documentation_v2/glossary.md#api) from making an
-[artifact](/documentation_v2/glossary.md#artifact) of that version. A listed key reaches the
+the [API](/documentation_v2/glossary/a_to_f.md#api) from making an
+[artifact](/documentation_v2/glossary/a_to_f.md#artifact) of that version. A listed key reaches the
 readers only through its named field and `authored_block_value` arm in `EditorPayload`
 (`apps/website/map-engine/src/data/scenario/ast/authoring.rs`).
 

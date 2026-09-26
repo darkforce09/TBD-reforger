@@ -1,6 +1,6 @@
 # Undo groups and clocks
 
-How the [mission](/documentation_v2/glossary.md#mission) document's undo history groups edits:
+How the [mission](/documentation_v2/glossary/g_to_m.md#mission) document's undo history groups edits:
 the capture window that merges one gesture's transactions into one undo step, the clock that
 freezes while an explicit group is open, and the cap that forgets the oldest steps.
 

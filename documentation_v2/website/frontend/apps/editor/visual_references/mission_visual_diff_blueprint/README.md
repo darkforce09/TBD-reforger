@@ -2,8 +2,8 @@
 
 # Mission visual diff blueprint
 
-Design-phase reference for a visual diff of two [mission](/documentation_v2/glossary.md#mission)
-versions in the [Mission Creator](/documentation_v2/glossary.md#mission-creator): the changes
+Design-phase reference for a visual diff of two [mission](/documentation_v2/glossary/g_to_m.md#mission)
+versions in the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator): the changes
 between versions drawn on the map instead of read as text. It gives colour and layout context and
 is not an implementation source; the built UI is the Leptos code under
 `apps/website/frontend/src/v2/`.

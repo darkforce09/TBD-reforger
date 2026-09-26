@@ -31,9 +31,9 @@ The server ends a round by moving the stage machine from `LIVE` to `END`. Five p
    `TBD_ObjectiveRegistry.EvaluateEndTriggers` returns `all_objectives_captured`,
    `objective_destroyed` or `hold_expired` with the winning faction.
 2. Attrition, in the same tick: when at least two factions claimed a
-   [slot](/documentation_v2/glossary.md#slot) and only one still has a living player, the reason is
+   [slot](/documentation_v2/glossary/n_to_z.md#slot) and only one still has a living player, the reason is
    `faction_eliminated` and that faction wins.
-3. The round clock, armed at `LIVE` from the [mission](/documentation_v2/glossary.md#mission)'s
+3. The round clock, armed at `LIVE` from the [mission](/documentation_v2/glossary/g_to_m.md#mission)'s
    time limit: at zero it broadcasts "[TBD] TIME. The round is over." and ends the round with
    `time_limit`; the winner is the one faction still alive, else none.
 4. The authored win rule's `extraction` and `vip` modes (`TBD_WinConditionEvaluator`) and a

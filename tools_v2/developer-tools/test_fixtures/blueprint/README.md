@@ -1,7 +1,7 @@
 # Blueprint compiler test fixtures
 
 The recorded inputs and blessed outputs that pin the building blueprint compiler and the world
-line-of-sight model to the engine: [Workbench](/documentation_v2/glossary.md#workbench) recordings
+line-of-sight model to the engine: [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) recordings
 of one Everon farmhouse, a tilted garbage container and two terrain cells, the golden files the
 compiler must reproduce, and a synthetic prefab tree.
 

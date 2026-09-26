@@ -1,7 +1,7 @@
 # Point indexes and picking
 
 Two-dimensional indexes over map points in world metres: a uniform grid for box and nearest-point
-queries, the picks the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
+queries, the picks the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
 selection runs on it, a per-chunk index over the streamed world's objects, and the zoom-level
 clusters of the cluster layer.
 
@@ -25,7 +25,7 @@ points change. `pick_rect` returns the rows inside an inclusive box, in the grid
 order; `pick_nearest` returns the nearest row within a radius, the first one met winning a tie.
 
 `picking.rs` puts it to work for selection: `pick_slot_row` is the nearest
-[slot](/documentation_v2/glossary.md#slot) within a square around the cursor,
+[slot](/documentation_v2/glossary/n_to_z.md#slot) within a square around the cursor,
 `marquee_slot_rows` the slots inside a dragged rectangle, and `pick_point_row` and
 `marquee_point_rows` do the same over a plain point list in input order. The caller gives the cell
 size; `crate::editing::picking` passes the document's `MissionDocCore::GRID_CELL_M`.

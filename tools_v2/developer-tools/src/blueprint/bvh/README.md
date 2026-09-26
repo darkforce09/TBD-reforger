@@ -2,9 +2,9 @@
 
 The blueprint compiler's 3D side: it turns game models into `.bvh` occlusion sidecars (a
 triangle mesh with its bounding volume hierarchy, or BVH), walks a building prefab's children out
-of the [Enfusion](/documentation_v2/glossary.md#enfusion) game paks into an instances file, and
+of the [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) game paks into an instances file, and
 checks the result against the engine: line-of-sight parity with the
-[Workbench](/documentation_v2/glossary.md#workbench) oracle, socket placements against a recon
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) oracle, socket placements against a recon
 dump, and the Euler composition of prefab angles.
 
 ## Contents

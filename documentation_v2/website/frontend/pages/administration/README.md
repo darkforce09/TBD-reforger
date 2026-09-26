@@ -2,7 +2,7 @@
 
 # Administration pages
 
-The documentation of the six [administration](/documentation_v2/glossary.md#administration) pages
+The documentation of the six [administration](/documentation_v2/glossary/a_to_f.md#administration) pages
 under `/admin/*`, one folder per page: each holds the page's feature doc and, where a design set
 exists, its design references. Developers and AI agents read it before changing an administration
 page.
@@ -26,7 +26,7 @@ keep their spelling. Each holds a README index, the page's feature doc and, exce
 control, a `visual_references/` folder with one or two design-phase blueprint sets. A feature doc
 follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md): Where it
 lives, Behaviour (ending in the known discrepancies between the page and the
-[API](/documentation_v2/glossary.md#api), where there are any), Data (what each call means
+[API](/documentation_v2/glossary/a_to_f.md#api), where there are any), Data (what each call means
 server-side), Design (the layout as built and each difference from the blueprint), Open work and
 Decisions. Start with the feature doc of the page at hand; its Design section leads to the
 blueprint.
@@ -34,7 +34,7 @@ blueprint.
 Every page is declared in `apps/website/frontend/src/router.rs` for the `admin` tier, sits in the
 sidebar's Administration section and renders its body inside `AdminGate`
 (`apps/website/frontend/src/v2/core/ui/gates.rs`), so a viewer below the `admin`
-[role](/documentation_v2/glossary.md#role) sees "Admin access required." instead of the page.
+[role](/documentation_v2/glossary/n_to_z.md#role) sees "Admin access required." instead of the page.
 
 | Page | Route and component | Label on screen | Feature doc |
 |---|---|---|---|
@@ -56,23 +56,23 @@ Contents and a row in the table.
 - [Administration domain](/apps/website/api_v2/src/administration/) — the roster, bans, warnings,
   role resync and audit trail behind the personnel and audit logs pages.
 - [Missions domain](/apps/website/api_v2/src/missions/) — the approvals queue and decisions, and
-  the [mission deployments](/documentation_v2/glossary.md#mission-deployment) of server control.
+  the [mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment) of server control.
 - [Community content domain](/apps/website/api_v2/src/community_content/) — the announcements and
   uploads the content manager writes.
 - [Operations domain](/apps/website/api_v2/src/operations/) — the
-  [events](/documentation_v2/glossary.md#event), their attached
-  [missions](/documentation_v2/glossary.md#mission) and the access administration of the event
+  [events](/documentation_v2/glossary/a_to_f.md#event), their attached
+  [missions](/documentation_v2/glossary/g_to_m.md#mission) and the access administration of the event
   manager.
 - [Server infrastructure domain](/apps/website/api_v2/src/server_infrastructure/) — the servers,
-  [fleet commands](/documentation_v2/glossary.md#fleet-command),
-  [fleet scenarios](/documentation_v2/glossary.md#fleet-scenario) and
-  [machine credentials](/documentation_v2/glossary.md#machine-credential) of server control.
+  [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command),
+  [fleet scenarios](/documentation_v2/glossary/a_to_f.md#fleet-scenario) and
+  [machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential) of server control.
 
 ## Boundaries
 
 - Depends on: the [feature doc template](/documentation_v2/standards/templates/feature_doc.md) and
   the [documentation folder README template](/documentation_v2/standards/templates/readme_documentation_folder.md);
-  the [glossary](/documentation_v2/glossary.md); the page code, the API handlers it calls and the
+  the [glossary](/documentation_v2/glossary/README.md); the page code, the API handlers it calls and the
   ticket registry in `.ai/tickets/`, which the feature docs are written from.
 - Used by: the glossary's entries for the six pages and for administration; the in-code READMEs of
   the page folders, which link their feature docs under Related documentation; the API domain

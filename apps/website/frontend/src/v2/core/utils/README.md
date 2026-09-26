@@ -30,9 +30,9 @@ Every function is total: an input it cannot read gives a placeholder, never a pa
 | `clipboard.rs` | `write_clipboard` (browser-only): awaits `navigator.clipboard.writeText`, then toasts the caller's success message, or the browser's reason when the write is refused |
 
 Every surface that copies text calls `write_clipboard`, so "did the copy land" has one answer:
-the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s clipboard exporters, the
+the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s clipboard exporters, the
 server intel page's copy button and the
-[server control](/documentation_v2/glossary.md#server-control) page's credential sheet.
+[server control](/documentation_v2/glossary/n_to_z.md#server-control) page's credential sheet.
 
 ## Boundaries
 

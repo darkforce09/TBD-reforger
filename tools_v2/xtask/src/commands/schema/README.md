@@ -1,8 +1,8 @@
 # Schema command group
 
 The `cargo xtask schema` group: contract code generation, the contract and map asset gates, and
-two tools for [mission](/documentation_v2/glossary.md#mission) files. Developers run single gates
-while they change a schema or its data; CI and the [wave](/documentation_v2/glossary.md#wave)
+two tools for [mission](/documentation_v2/glossary/g_to_m.md#mission) files. Developers run single gates
+while they change a schema or its data; CI and the [wave](/documentation_v2/glossary/n_to_z.md#wave)
 gates run the `schema-validate` set.
 
 ## Contents
@@ -62,7 +62,7 @@ subcommand prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
 - Synopsis: `schema validate`; `schema validate-file <TARGET>`, where `-` reads stdin.
 - Does: `validate` runs the full contract suite over every fixture, sample, catalog and terrain
   document; `validate-file` checks one mission file against `mission.schema.json`, the 8 MiB
-  ceiling and, for schemaVersion 1.1, the [slot](/documentation_v2/glossary.md#slot) count and
+  ceiling and, for schemaVersion 1.1, the [slot](/documentation_v2/glossary/n_to_z.md#slot) count and
   unique slot ids, and prints `ok`.
 - Exit codes: 0 valid; 1 at least one document failed.
 - Example: `cargo xtask schema validate-file contracts_v2/fixtures/missions/valid/empty-warning-fields.json`
@@ -103,7 +103,7 @@ subcommand prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
 ### flatten-orbat-slots
 
 - Synopsis: `schema flatten-orbat-slots <PATH> [--in-place]`
-- Does: expands every [ORBAT](/documentation_v2/glossary.md#orbat) role of the mission at `PATH`
+- Does: expands every [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) role of the mission at `PATH`
   into `count` slots with the id `<faction>:<callsign>:<slot>:<n>`, placed in rings of eight
   around the faction's spawn zone,
   keeping each slot's `uid`, `loadout` and `y` from the role or from the prior slot with that id.

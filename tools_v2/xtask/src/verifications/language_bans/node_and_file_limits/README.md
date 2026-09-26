@@ -47,7 +47,7 @@ run; `no-node` 0 clean, 1 any check failed.
   `verify no-node`); `tools_v2/xtask/src/commands/generate/dispatch.rs` (`gen font-table`); the
   `verify-coding-standards` and `verify-no-node` rows of
   `tools_v2/xtask/src/commands/ci/task_definitions.rs`; the `language-gates` job of
-  `.github/workflows/ci.yml`; the platform [wave](/documentation_v2/glossary.md#wave) gate, which runs
+  `.github/workflows/ci.yml`; the platform [wave](/documentation_v2/glossary/n_to_z.md#wave) gate, which runs
   `verify no-node`.
 - Rules: a walk that reads nothing is never a pass (`walk_is_nonempty_anti_vacuity`,
   `missing_walk_root_is_did_not_run` and `empty_walk_is_not_ok` in

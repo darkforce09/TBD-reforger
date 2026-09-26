@@ -1,7 +1,7 @@
 # Loadout serialisation and transfer
 
-The pure loadout core of the [arsenal](/documentation_v2/glossary.md#arsenal): reading and writing
-one [slot](/documentation_v2/glossary.md#slot)'s persisted `SlotLoadoutV2` JSON, the downloadable
+The pure loadout core of the [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal): reading and writing
+one [slot](/documentation_v2/glossary/n_to_z.md#slot)'s persisted `SlotLoadoutV2` JSON, the downloadable
 loadout export and its import gate, the copy buffer that applies loadouts across a selection, and
 the receipts and refusals the Arsenal tab shows.
 
@@ -18,7 +18,7 @@ apps/website/frontend/src/v2/apps/editor/arsenal/loadout/
 
 ## How it works
 
-The Arsenal edits a picks map: one [registry](/documentation_v2/glossary.md#registry) resource
+The Arsenal edits a picks map: one [registry](/documentation_v2/glossary/n_to_z.md#registry) resource
 name per loadout row key, plus a synthetic `attachments@<weapon>` key per weapon whose value packs
 that weapon's attachment set with the U+001F separator, which no resource name can contain.
 `loadout_to_picks` reads a slot's `SlotLoadoutV2` JSON into that map, and `picks_to_loadout`
@@ -55,7 +55,7 @@ Apply and Remove Everything receipts count the writes the document took, not the
   (import, export, Copy, Apply and Remove Everything); the Arsenal panels in
   `apps/website/frontend/src/v2/apps/editor/ui/arsenal/panels.rs`, for the attachment sets.
 - Rules: a refused write mints no undo step and leaves the
-  [mission](/documentation_v2/glossary.md#mission) clean
+  [mission](/documentation_v2/glossary/g_to_m.md#mission) clean
   (`a_refused_write_mints_no_tail_and_does_not_dirty_the_mission`); a document that fails a check
   applies nothing (`a_document_that_does_not_validate_applies_nothing`); Apply uses the import gate
   (`the_apply_gate_is_the_import_gate`); the draw is uniform, independent and reproducible

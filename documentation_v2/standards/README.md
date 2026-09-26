@@ -4,7 +4,7 @@
 
 The rules every change in the repository follows: how code is written and commented, how READMEs
 and documents are built, where a new file goes, what a commit carries, how a
-[ticket](/documentation_v2/glossary.md#ticket) id is spelled and which crate may name which across
+[ticket](/documentation_v2/glossary/n_to_z.md#ticket) id is spelled and which crate may name which across
 the website's engines. Developers and AI agents read the matching standard before they write.
 
 ## Contents
@@ -55,7 +55,7 @@ these answers; a rule that fits an existing standard goes into it.
 
 - Depends on: `CLAUDE.md`, whose laws the standards expand; the gate code under
   `tools_v2/xtask/src/verifications/`, which is the final word where a standard and a gate differ;
-  the [glossary](/documentation_v2/glossary.md) for terms.
+  the [glossary](/documentation_v2/glossary/README.md) for terms.
 - Used by: every README and document under `documentation_v2/` and the code trees, which follow
   the README standard and the templates; gate code and CI that cite a standard by section
   (`tools_v2/xtask/src/commands/ci/task_definitions.rs`,

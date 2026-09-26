@@ -1,6 +1,6 @@
 # Authored win rule
 
-The check on a [mission](/documentation_v2/glossary.md#mission)'s authored `winConditions` block:
+The check on a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s authored `winConditions` block:
 the win rule, the triggers that may end the round, and the one parameter the rule takes. The
 compiled document has a typed field for this block, so the compiler reads the parsed value rather
 than carrying the author's JSON. The module is exposed as `data::scenario::win_conditions`.
@@ -18,7 +18,7 @@ apps/website/map-engine/src/data/scenario/extensions/objectives/win_conditions/
 
 `parse` reads `{mode, endOn, extractionZoneId?, vipSlotId?, timeoutMinutes?}`. `mode` is one of
 `AUTHORED_MODES` (`attrition`, `objective`, `extraction`, `vip`, `timeout`), the five the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) authors;
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) authors;
 `contracts_v2/definitions/mission.schema.json` admits two more, hand-authored values no editor
 payload produces, and this check refuses them. `endOn` holds one or more of `END_ON_TRIGGERS`
 (`time_limit`, `all_objectives_captured`, `faction_eliminated`, `objective_destroyed`,
@@ -34,7 +34,7 @@ The result is an `AuthoredWinConditions` holding `WinConditionParams`, which ser
 for an absent parameter. `validate`, `parse` with the value dropped, is the check of the
 `winConditions` row of `AUTHORED_BLOCKS` in `crate::data::scenario::extensions`, which lists this
 block among the document-owned ones and hands the parsed value to the compiler. The compiler
-checks the parameters against the zones and [slots](/documentation_v2/glossary.md#slot) it emitted
+checks the parameters against the zones and [slots](/documentation_v2/glossary/n_to_z.md#slot) it emitted
 and falls back to `FALLBACK_TRIGGER` when no trigger survives; with no valid block it derives an
 `attrition` rule. In the game,
 `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/TBD_WinConditionEvaluator.c` evaluates

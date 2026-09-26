@@ -1,6 +1,6 @@
 # Blueprint synthetic prefab tree
 
-A small synthetic [Enfusion](/documentation_v2/glossary.md#enfusion) prefab tree laid out as an
+A small synthetic [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) prefab tree laid out as an
 addon's `Prefabs/` folder: one wooden house with a door set, two glazed windows and a furniture
 composition, plus the door variants the prefab resolver must read.
 

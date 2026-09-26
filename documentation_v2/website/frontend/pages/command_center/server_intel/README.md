@@ -3,8 +3,8 @@
 # Server intel page documentation
 
 The feature documentation of the `/server-intel` page in the
-[command center](/documentation_v2/glossary.md#command-center), where a member watches one game
-server's live state through its [SSE](/documentation_v2/glossary.md#sse) status stream, with the
+[command center](/documentation_v2/glossary/a_to_f.md#command-center), where a member watches one game
+server's live state through its [SSE](/documentation_v2/glossary/n_to_z.md#sse) status stream, with the
 page's design-phase reference.
 
 ## Contents
@@ -20,7 +20,7 @@ documentation_v2/website/frontend/pages/command_center/server_intel/
 Read [server_intel_page.md](/documentation_v2/website/frontend/pages/command_center/server_intel/server_intel_page.md)
 first. It follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md):
 it quotes the page's interface text, gives what the server list and the status stream mean in
-the [API](/documentation_v2/glossary.md#api), names the fixed text the page shows as live, and
+the [API](/documentation_v2/glossary/a_to_f.md#api), names the fixed text the page shows as live, and
 compares the built page with the blueprint in `visual_references/`. The code folder's README lists
 the page's files, calls and states.
 

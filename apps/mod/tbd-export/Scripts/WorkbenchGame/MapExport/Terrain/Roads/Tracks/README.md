@@ -1,7 +1,7 @@
 # Track export
 
 Finds the open world's forestry and farm tracks in
-[Workbench](/documentation_v2/glossary.md#workbench) and writes their centrelines, widths and
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) and writes their centrelines, widths and
 endpoint connections to `tracks.json`.
 
 ## Contents

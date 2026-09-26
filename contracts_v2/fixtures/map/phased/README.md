@@ -19,7 +19,7 @@ contracts_v2/fixtures/map/phased/
 - Schema: `P1-buildings.json` and `P2-trees.json` are validation bundles of
   `contracts_v2/definitions/map-object-catalog.schema.json` (`schemaVersion`, `terrainId`,
   `prefabs`, `instances`). `P1-anchor-fixture.json` has no schema: `worldSizeM`, `chunkSizeM`,
-  `rawEntities` in the [Workbench](/documentation_v2/glossary.md#workbench) plugin's row format
+  `rawEntities` in the [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) plugin's row format
   (engine coordinates: `x` east, `y` altitude, `z` north) and `expected`, what a correct build
   produces after the axis remap and classification.
 - Adding a file: add the bundle, name it in the list of catalogue bundles in

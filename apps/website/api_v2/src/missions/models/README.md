@@ -1,11 +1,11 @@
 # Missions models
 
-The rows and wire shapes of the [missions](/documentation_v2/glossary.md#missions) domain: the
-[mission](/documentation_v2/glossary.md#mission) library row with its versions and
-[armory](/documentation_v2/glossary.md#armory), reviews of
-[artifacts](/documentation_v2/glossary.md#artifact),
-[mission deployments](/documentation_v2/glossary.md#mission-deployment), the faction library and
-the item [registry](/documentation_v2/glossary.md#registry). Keys are snake_case, absent values
+The rows and wire shapes of the [missions](/documentation_v2/glossary/g_to_m.md#missions) domain: the
+[mission](/documentation_v2/glossary/g_to_m.md#mission) library row with its versions and
+[armory](/documentation_v2/glossary/a_to_f.md#armory), reviews of
+[artifacts](/documentation_v2/glossary/a_to_f.md#artifact),
+[mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment), the faction library and
+the item [registry](/documentation_v2/glossary/n_to_z.md#registry). Keys are snake_case, absent values
 are skipped and timestamps are RFC 3339.
 
 ## Contents
@@ -27,7 +27,7 @@ apps/website/api_v2/src/missions/models/
 names in snake_case (`mission_status`, `terrain_type`, `game_mode`, `weather_type`), and a mission
 moves through `draft`, `pending_approval`, `live`, `rejected` and `archived`. `Mission` names its
 current version and, once approved, `approved_artifact_id`, the artifact
-[deployments](/documentation_v2/glossary.md#deployment) load. A `MissionVersion` is written once,
+[deployments](/documentation_v2/glossary/a_to_f.md#deployment) load. A `MissionVersion` is written once,
 unique per mission and semver, and carries its payload as `RawJson`, the bytes Postgres stored,
 never re-serialized. A `MissionArmory` line with no quantity is unlimited. No struct carries a
 soft-delete column; the queries filter deleted rows. The camelCase documents (the compiled mission
@@ -46,8 +46,8 @@ each transition's wire name and confirmation deadline: `scenario_restart` 600 s,
   the `@contract` tags of `faction-library.schema.json`, `registry-items.schema.json` and
   `registry-compat.schema.json`.
 - Used by: the domain's handlers and services; `operations` (`MissionArmory`, `TerrainType`,
-  `GameMode` in the [event](/documentation_v2/glossary.md#event) hub), `match_telemetry` and
-  `server_infrastructure` (`TerrainType`); the [API](/documentation_v2/glossary.md#api) tests
+  `GameMode` in the [event](/documentation_v2/glossary/a_to_f.md#event) hub), `match_telemetry` and
+  `server_infrastructure` (`TerrainType`); the [API](/documentation_v2/glossary/a_to_f.md#api) tests
   `apps/website/api_v2/tests/models_serde.rs`, `apps/website/api_v2/tests/models_fromrow.rs` and
   `apps/website/api_v2/tests/mission_review_contract.rs`, which decodes live answers into the
   generated types. The web app's DTOs in `apps/website/frontend/src/v2/core/api/dto/`

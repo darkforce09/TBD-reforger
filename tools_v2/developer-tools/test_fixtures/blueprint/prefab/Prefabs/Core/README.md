@@ -1,7 +1,7 @@
 # Blueprint prefab fixture bases
 
 The root prefabs that the synthetic building, prop and furniture prefabs inherit from, written in
-[Enfusion](/documentation_v2/glossary.md#enfusion) prefab text for the blueprint compiler's
+[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) prefab text for the blueprint compiler's
 prefab resolver and prefab walker tests.
 
 ## Contents

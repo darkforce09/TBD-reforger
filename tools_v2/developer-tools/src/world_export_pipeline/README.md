@@ -1,11 +1,11 @@
 # World export pipeline
 
 The library behind the `world` binary: it turns a terrain's
-[Workbench](/documentation_v2/glossary.md#workbench) world export and the game's own archives
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) world export and the game's own archives
 into the committed object chunks, prefab catalogue, density tiles, forest regions, census, road
 network and elevation files under `assets_v2/terrains/<terrain>/`, and runs the gates that prove
 those files match their export. The
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map streams what it writes.
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map streams what it writes.
 
 ## Contents
 

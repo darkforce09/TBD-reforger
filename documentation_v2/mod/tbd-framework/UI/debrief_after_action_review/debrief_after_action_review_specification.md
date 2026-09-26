@@ -37,7 +37,7 @@ last stage of a round; it stays up until an admin moves the round on.
 
 1. On entering `END`, and again on entering `DEBRIEF`, the server builds one row per connected
    player (`FillScoreboard`): the player name ("Player <id>" when the name is empty), the faction
-   and role of the assigned [slot](/documentation_v2/glossary.md#slot), the kills and the deaths. A
+   and role of the assigned [slot](/documentation_v2/glossary/n_to_z.md#slot), the kills and the deaths. A
    player who disconnected before the snapshot has no row.
 2. An admin moves `END` to `DEBRIEF` with `#tbd stage next` or the admin screen's "Force stage";
    nothing does it on a timer.
@@ -51,7 +51,7 @@ last stage of a round; it stays up until an admin moves the round on.
    closes this screen.".
 6. The layout's "BACK" button closes the scoreboard on that machine only.
 7. `#tbd stage next` goes no further than `DEBRIEF`; an admin names the next stage
-   (`#tbd stage LOBBY`) or deploys the next [mission](/documentation_v2/glossary.md#mission). Any
+   (`#tbd stage LOBBY`) or deploys the next [mission](/documentation_v2/glossary/g_to_m.md#mission). Any
    stage other than `DEBRIEF` closes the scoreboard; `LOADING` and `LOBBY` clear the board.
 
 ### Known discrepancies
@@ -78,7 +78,7 @@ properties:
 - Kills live in `m_mKills`, a server-only map from player id to kills, cleared with the board.
 
 The same round's results reach the platform separately: `TBD_ResultsReporter` posts them to
-`POST /api/v1/ingest/match-results`, the [match telemetry](/documentation_v2/glossary.md#match-telemetry)
+`POST /api/v1/ingest/match-results`, the [match telemetry](/documentation_v2/glossary/g_to_m.md#match-telemetry)
 ingest.
 
 ## Design

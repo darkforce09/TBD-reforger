@@ -1,6 +1,6 @@
 # Mod wave driver internals
 
-The subcommands of `cargo xtask mod wave`, the [wave](/documentation_v2/glossary.md#wave) driver
+The subcommands of `cargo xtask mod wave`, the [wave](/documentation_v2/glossary/n_to_z.md#wave) driver
 of the game-mod program: where the current wave stands, the mod wave gate, landing finished slices
 and pushing `main`.
 

@@ -3,7 +3,7 @@
 # Lobby screen documentation
 
 The documentation of the Lobby tab, where a player picks a faction and claims a
-[slot](/documentation_v2/glossary.md#slot) in the [ORBAT](/documentation_v2/glossary.md#orbat)
+[slot](/documentation_v2/glossary/n_to_z.md#slot) in the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat)
 before the briefing.
 
 ## Contents

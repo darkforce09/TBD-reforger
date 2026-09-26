@@ -1,7 +1,7 @@
 # Map label exporters
 
 The two JSON label sets a terrain commits: `locations.json`, the town, locality, airport and peak
-names read from the [Workbench](/documentation_v2/glossary.md#workbench) world export, and
+names read from the [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) world export, and
 `height-labels.json`, the spot heights found in the terrain elevation model. These files are the
 submodules `tools_v2/developer-tools/src/map_raster_pipeline/map_labels.rs` declares; it holds the
 required Everon towns and the locality thresholds, and re-exports the entry points. The binary label

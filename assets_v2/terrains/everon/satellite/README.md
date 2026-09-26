@@ -3,7 +3,7 @@
 Everon's satellite image as one file: a full-resolution mosaic of the island and its smaller
 levels, cut into lossless WebP tiles behind an index. The map engine streams the level a device can
 hold and uses it as the basemap of the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map.
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map.
 
 ## Contents
 
@@ -44,7 +44,7 @@ assets_v2/terrains/everon/satellite/
     the index with HTTP Range requests on `/map-assets/everon/satellite/everon-sat.tbd-sat`, shows
     a preview level first, then fetches every tile from the first level that fits the device's
     texture limit and memory budget down to 1 × 1; the
-    [API](/documentation_v2/glossary.md#api) serves `/map-assets` below its rate limiter, so these
+    [API](/documentation_v2/glossary/a_to_f.md#api) serves `/map-assets` below its rate limiter, so these
     requests are never refused;
   - `map verify-unified`, which checks the bundle against the manifest;
   - `cargo xtask ci lfs-sat`, which pulls only this LFS object, and the developer tools' headless

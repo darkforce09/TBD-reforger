@@ -3,7 +3,7 @@
 The terrain's elevation model: the manifest that places the height raster on the world, the
 decoders that turn the 16-bit PNG or the raw `TBDE` grid into a metres cache, bilinear sampling,
 and the downsampled grid that contours, the sea band, the airfield apron and the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s height readout read.
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s height readout read.
 
 ## Contents
 

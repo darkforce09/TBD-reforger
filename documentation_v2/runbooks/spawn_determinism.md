@@ -3,9 +3,9 @@
 # Spawn determinism
 
 Checks that Workbench Play, spawn and equip give the same player-visible outcome across several
-fresh [Workbench](/documentation_v2/glossary.md#workbench) processes: every run restarts Workbench,
+fresh [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) processes: every run restarts Workbench,
 plays the framework world, grades the log, and the normalised outcomes of all runs must be
-byte-identical. Run it after a change to the framework's spawn, [slot](/documentation_v2/glossary.md#slot)
+byte-identical. Run it after a change to the framework's spawn, [slot](/documentation_v2/glossary/n_to_z.md#slot)
 or loadout code. It needs a live Workbench and has no headless or CI path: `cargo xtask ci
 ci-local` and `cargo xtask platform wave gate` never run it. Five runs take about 15 minutes. What
 the spawn code does is in the [Spawning README](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/README.md).
@@ -89,7 +89,7 @@ A run passes when its log shows:
 
 The digest is the SHA-256 of the run's outcome lines: those tagged `[TBD][Spawn]`, `[TBD][Slots]`,
 `[TBD][Loadout]`, `[TBD][Audit]` and `[TBD][Stage]`, the line reporting the loaded
-[mission](/documentation_v2/glossary.md#mission), the roster lines and
+[mission](/documentation_v2/glossary/g_to_m.md#mission), the roster lines and
 the `bound player` and `assigned slot` lines, with timestamps, entity ids, positions and timings
 masked, an item already worn or equipped collapsed to `GEAR-ENSURED`, then sorted and
 deduplicated. Every run's digest must equal run 1's; a difference prints

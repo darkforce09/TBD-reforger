@@ -1,7 +1,7 @@
 # Doll shader
 
 The WGSL program of the doll renderer, the 3D mannequin preview in the
-[arsenal](/documentation_v2/glossary.md#arsenal). The map's own shaders live in the graphics engine,
+[arsenal](/documentation_v2/glossary/a_to_f.md#arsenal). The map's own shaders live in the graphics engine,
 under `apps/website/graphics-engine/src/shaders/`.
 
 ## Contents

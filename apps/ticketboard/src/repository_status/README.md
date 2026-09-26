@@ -1,7 +1,7 @@
 # Repository status
 
-The [ticketboard](/documentation_v2/glossary.md#ticketboard) feature that tells the viewer whether
-the [ticket](/documentation_v2/glossary.md#ticket) registry on disk can be trusted: the verdict of
+The [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) feature that tells the viewer whether
+the [ticket](/documentation_v2/glossary/n_to_z.md#ticket) registry on disk can be trusted: the verdict of
 `cargo xtask ticket check --strict`, a `git status` chip over the files the ticket commands write,
 and the file watch that reloads the board when those files change.
 

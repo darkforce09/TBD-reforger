@@ -1,11 +1,11 @@
 # Contract definitions
 
 The authoritative JSON Schemas of every shape that crosses a network, process or language boundary:
-the [API](/documentation_v2/glossary.md#api)'s web and game-runtime payloads, the
-[mission](/documentation_v2/glossary.md#mission) document and its editor payload, the item
-[registry](/documentation_v2/glossary.md#registry), the loadout and faction documents, the terrain
+the [API](/documentation_v2/glossary/a_to_f.md#api)'s web and game-runtime payloads, the
+[mission](/documentation_v2/glossary/g_to_m.md#mission) document and its editor payload, the item
+[registry](/documentation_v2/glossary/n_to_z.md#registry), the loadout and faction documents, the terrain
 and world-object data, the building geometry, the
-[Workbench](/documentation_v2/glossary.md#workbench) equipment export and the voice bridge. Code
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) equipment export and the voice bridge. Code
 generates types from them, embeds them for runtime validation, and gates fixtures and live responses
 against them.
 
@@ -30,9 +30,9 @@ A schema reaches code in one of three ways:
   `apps/website/api_v2/src/missions/contract/loadout_projection.rs`.
 - **Embedded validators.** Code embeds a schema with `include_str!` and validates at runtime: the
   API checks the editor payload of `POST /api/v1/missions/{id}/versions`, every compiled
-  [artifact](/documentation_v2/glossary.md#artifact), faction documents and registry envelopes
+  [artifact](/documentation_v2/glossary/a_to_f.md#artifact), faction documents and registry envelopes
   (`apps/website/api_v2/src/missions/contract/schema_validators.rs`); the
-  [Mission Creator](/documentation_v2/glossary.md#mission-creator) embeds `mission.schema.json` for
+  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) embeds `mission.schema.json` for
   its zone vocabulary and `loadout-export.schema.json` for its loadout export; the xtask
   equipment-export commands embed `equipment-vehicle-export.schema.json`. An unknown key in a closed
   object (`additionalProperties: false`) is then a validation error, not a dropped field.
@@ -51,9 +51,9 @@ A schema reaches code in one of three ways:
 |---|---|---|
 | Web API responses | `current-profile`, `reservation-response`, `event-hub`, `event-orbat`, `event-viewer-access`, `event-access-administration`, `waitlist-promotion-response` | generated API models; API contract tests |
 | Fleet and machine credentials | `machine-credential`, `fleet-command` | generated API models; the fleet host agent's ledger client; API contract tests |
-| Game runtime | `game-runtime-session`, `game-runtime-roster`, `game-runtime-deployment` | generated API models; API contract tests; the [mod](/documentation_v2/glossary.md#mod)'s API bridge, which calls these routes |
+| Game runtime | `game-runtime-session`, `game-runtime-roster`, `game-runtime-deployment` | generated API models; API contract tests; the [mod](/documentation_v2/glossary/g_to_m.md#mod)'s API bridge, which calls these routes |
 | Missions | `mission`, `mission-editor-payload`, `mission-review`, `mission-deployment` | API validators and generated models; the mod's mission DTOs; the Mission Creator; the map engine's tests |
-| Arsenal and factions | `registry-items`, `registry-compat`, `registry`, `loadout-export`, `faction-library` | API validators, generated and hand-written models; the registry export plugin; the mod's loadout equip path; the Mission Creator's [arsenal](/documentation_v2/glossary.md#arsenal) |
+| Arsenal and factions | `registry-items`, `registry-compat`, `registry`, `loadout-export`, `faction-library` | API validators, generated and hand-written models; the registry export plugin; the mod's loadout equip path; the Mission Creator's [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) |
 | Terrain | `terrain-manifest`, `terrain-anchors`, `terrain-registry`, `locations`, `height-labels` | the schema gate; the developer tools' map verifications |
 | World objects | `map-object-enums`, `map-object-prefab`, `map-object-instance`, `map-object-region`, `map-object-roads`, `map-object-resolved`, `map-object-catalog`, `map-object-type-inventory` | the schema gates; the developer tools' world export and golden gates |
 | Building geometry | `building-blueprint`, `building-instances`, `prefab-descriptor`, `blas-manifest` | the developer tools' blueprint compiler and map verifications |

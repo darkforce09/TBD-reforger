@@ -2,7 +2,7 @@
 
 The drivers behind the `capture` binary, declared in
 `tools_v2/developer-tools/src/browser_testing/screen_capture.rs`: they drive the running
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) in headless Chromium to write
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) in headless Chromium to write
 screenshots of its interface and of its map canvas, and crop a region out of a screenshot.
 
 ## Contents
@@ -17,7 +17,7 @@ tools_v2/developer-tools/src/browser_testing/screen_capture/
 
 Both drivers launch Chromium with `cdp::launch_with_gpu` and `GpuBackend::Vulkan` on debug port
 9222 and a 1920×1080 viewport, because the Mission Creator's WebGPU map boots only on ANGLE over
-Vulkan on the real device. They need the database, the [API](/documentation_v2/glossary.md#api)
+Vulkan on the real device. They need the database, the [API](/documentation_v2/glossary/a_to_f.md#api)
 and the app already running.
 
 - `shot` navigates each `<url> <waitMs>` step and sleeps for its wait, without waiting for the load

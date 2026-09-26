@@ -2,7 +2,7 @@
 
 Committed inputs and blessed outputs that the `developer_tools` library's unit tests load from
 disk. They pin the building blueprint compiler and the world line-of-sight model against
-[Workbench](/documentation_v2/glossary.md#workbench) recordings of the engine. The reference data
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) recordings of the engine. The reference data
 the browser gates compare against lives in `tools_v2/developer-tools/fixtures/`.
 
 ## Contents
@@ -19,7 +19,7 @@ time, through `test_repo_root()` or `find_repo_root()` in
 `tools_v2/developer-tools/src/repository_paths.rs` and the `fixture(name)` helper of the blueprint
 tests, and only read it. `cargo test -p developer-tools` runs every test that reads this tree, and
 none needs a game install, a browser or a database. The
-[Enfusion](/documentation_v2/glossary.md#enfusion) prefab text here is synthetic; every other file
+[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) prefab text here is synthetic; every other file
 is recorded from the engine or emitted by the compiler.
 
 ## Format

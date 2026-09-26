@@ -2,8 +2,8 @@
 
 # TBD Framework documentation
 
-The design documents of the TBD Framework, the shipping game [mod](/documentation_v2/glossary.md#mod)
-that runs a one-life [event](/documentation_v2/glossary.md#event) inside Arma Reforger: what it is
+The design documents of the TBD Framework, the shipping game [mod](/documentation_v2/glossary/g_to_m.md#mod)
+that runs a one-life [event](/documentation_v2/glossary/a_to_f.md#event) inside Arma Reforger: what it is
 for, which CRF capabilities it supplies, where vanilla source comes from, and one specification per
 in-game screen. Developers and agents read it before starting a mod slice.
 

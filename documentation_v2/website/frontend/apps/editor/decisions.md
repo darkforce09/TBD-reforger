@@ -2,8 +2,8 @@
 
 # Mission Creator decisions
 
-The dated log of the choices that shape the [Mission Creator](/documentation_v2/glossary.md#mission-creator):
-its layout, its input, how it stores a [mission](/documentation_v2/glossary.md#mission) and how it
+The dated log of the choices that shape the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator):
+its layout, its input, how it stores a [mission](/documentation_v2/glossary/g_to_m.md#mission) and how it
 scales. Developers and AI agents read it before changing any of them, so a settled question is not
 argued again.
 
@@ -61,13 +61,13 @@ entry is `full_bleed` and `chromeless` (`/apps/website/frontend/src/router.rs`),
 
 ### 2026-06-21 — The left dock holds editor layers, not the ORBAT
 
-**Context:** The ORBAT tree and the layers tree listed the same [slots](/documentation_v2/glossary.md#slot)
+**Context:** The ORBAT tree and the layers tree listed the same [slots](/documentation_v2/glossary/n_to_z.md#slot)
 twice.
 
 **Decision:** The left dock's tree is the editor layers: folders the mission maker files slots and
 comments into. It has a Layers tab and a Locations tab (`ui/docks/dock_left/`).
 
-**Consequences:** The [ORBAT](/documentation_v2/glossary.md#orbat) tree is drawn once, in the ORBAT
+**Consequences:** The [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) tree is drawn once, in the ORBAT
 Manager (see 2026-07-19). The planned waypoint, zone and logic stubs were never built there: zones
 and triggers are right-dock tabs.
 
@@ -376,7 +376,7 @@ layer toggles.
 **Decision:** The game server fetches a compiled mission from
 `GET /api/v1/game-runtime/artifacts/{artifactId}` (`/apps/website/api_v2/src/missions/routes.rs`)
 and the roster from `GET /api/v1/game-runtime/events/{id}/roster`
-(`/apps/website/api_v2/src/operations/routes.rs`), where an [event](/documentation_v2/glossary.md#event)
+(`/apps/website/api_v2/src/operations/routes.rs`), where an [event](/documentation_v2/glossary/a_to_f.md#event)
 is the scheduled session. Submission refuses authored data the compiled document cannot carry
 (`unsupported_authored_data`, used by
 `/apps/website/api_v2/src/missions/services/mission_artifacts/artifact_store.rs`).

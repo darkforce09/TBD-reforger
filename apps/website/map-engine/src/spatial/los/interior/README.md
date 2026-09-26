@@ -45,7 +45,7 @@ raster in batches of `WASH_BATCH_CELLS` (256) under a time budget, and can be ca
   runs a `WashJob` in budgeted steps; the debug building viewer
   (`apps/website/frontend/src/v2/apps/debug/building_viewer.rs` and
   `apps/website/frontend/src/v2/apps/debug/building_viewer/`);
-  the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s line-of-sight tool
+  the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s line-of-sight tool
   (`apps/website/frontend/src/v2/apps/editor/input/tools/los_world_wasm.rs`); and the blueprint
   tooling (`tools_v2/developer-tools/src/blueprint/bvh/construction.rs`).
 - Rules: both modules compile only with the `io` feature; `wash_cap_check` refuses a wash radius

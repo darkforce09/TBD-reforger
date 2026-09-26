@@ -1,6 +1,6 @@
 # Handler errors
 
-`ApiError`, the failure type the [API](/documentation_v2/glossary.md#api)'s handlers and services
+`ApiError`, the failure type the [API](/documentation_v2/glossary/a_to_f.md#api)'s handlers and services
 return, and the JSON envelope it renders into: `{"error": "<message>"}`, with a `details` value when the failure carries one.
 
 ## Contents
@@ -26,7 +26,7 @@ extractors and the rate limiter in `crate::core::middleware` answer with the sam
 - Depends on: `axum`, `serde_json` and `tracing`.
 - Used by: the handlers and services of all eight domains; the `event_reservation_reevaluator`
   and `runtime_session_expiry`
-  [background workers](/documentation_v2/glossary.md#background-workers);
+  [background workers](/documentation_v2/glossary/a_to_f.md#background-workers);
   `crate::core::authentication_primitives`, whose `SessionAuthority` refuses with it; two
   integration suites under `apps/website/api_v2/tests/`; and, over HTTP, the single-page app, which
   reads `error` and a string-array `details` in

@@ -1,6 +1,6 @@
 # Audit logs page
 
-The `/admin/audit` page: administrators read the [audit logs](/documentation_v2/glossary.md#audit-logs),
+The `/admin/audit` page: administrators read the [audit logs](/documentation_v2/glossary/a_to_f.md#audit-logs),
 the trail of administrative actions, newest first and a page at a time, filter the loaded entries
 by text, and inspect one entry's actor, target and metadata. Nothing on the page writes or removes
 an entry.
@@ -31,7 +31,7 @@ severity is a fixed vocabulary, shown as `INFO`, `WARN` or `CRIT`, `----` when e
 upper-cased otherwise (`level_label`). The filter runs in the browser over the loaded entries
 only: `haystack` joins an entry's local stamp, level, action, actor name, message and target type,
 `search_matches` compares them case-insensitively, and the text is never sent to the
-[API](/documentation_v2/glossary.md#api). An entry carries every field the inspector shows, so
+[API](/documentation_v2/glossary/a_to_f.md#api). An entry carries every field the inspector shows, so
 opening one fetches nothing, and a filter hides lines but never the open entry. Every request runs
 in the browser build only; a native build renders the failure branch.
 
@@ -39,7 +39,7 @@ in the browser build only; a native build renders the failure branch.
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/admin/audit` | `AuditLogsPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` [role](/documentation_v2/glossary.md#role) only | full-bleed inside the navigation frame; breadcrumb Administration / Audit Logs; sidebar entry "Audit Logs" |
+| `/admin/audit` | `AuditLogsPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` [role](/documentation_v2/glossary/n_to_z.md#role) only | full-bleed inside the navigation frame; breadcrumb Administration / Audit Logs; sidebar entry "Audit Logs" |
 
 ## Data
 
@@ -73,7 +73,7 @@ in the browser build only; a native build renders the failure branch.
   (`AuthStore`), `crate::v2::core::ui` (`AdminGate`, `SplitPane`, `SplitPaneEmpty`,
   `search_matches`, `badge_class`, `MaterialIcon`, `cn`) and `crate::v2::core::utils::datefmt`
   (`log_stamp`); over HTTP, the audit log route of the
-  [administration](/documentation_v2/glossary.md#administration) domain.
+  [administration](/documentation_v2/glossary/a_to_f.md#administration) domain.
 - Used by: the `/admin/audit` route in `apps/website/frontend/src/app_routes.rs` and
   `apps/website/frontend/src/router.rs`; the sidebar's "Audit Logs" link in
   `apps/website/frontend/src/v2/pages/navigation/nav_config.rs`; `audit_source` in

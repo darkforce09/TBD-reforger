@@ -1,7 +1,7 @@
 # Round orchestrator
 
 The framework manager: the game mode component that loads the deployed
-[mission](/documentation_v2/glossary.md#mission), owns the round's stage machine, applies the
+[mission](/documentation_v2/glossary/g_to_m.md#mission), owns the round's stage machine, applies the
 mission's pacing, weather and settings, runs the round clock and the elimination check, and keeps
 the end banner and debrief board the post-game screens show.
 
@@ -17,7 +17,7 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/
 `TBD_FrameworkManager` is a `SCR_BaseGameModeComponent` on
 `apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et`. `GetInstance()` and `IsFrameworkWorld()`
 resolve it off the live game mode on every call, never from a static, because statics outlive a
-world and a `load_mission` [fleet command](/documentation_v2/glossary.md#fleet-command) restarts the
+world and a `load_mission` [fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) restarts the
 world in-process; every modded vanilla class in the addon asks `IsFrameworkWorld()` before it acts.
 
 ```text
@@ -32,8 +32,8 @@ LOBBY ──▶ BRIEFING ──▶ SAFE_START ── countdown ──▶ LIVE �
 - Loading: `OnPostInit` prints the component roll-call one frame later, and on the server enters
   `LOADING`, starts `TBD_MissionLoader.BeginLoad()` and polls each second. Once the mission is
   loaded and valid it applies `flow`, `environment.windDirDeg` and `settings`, loads the registry,
-  materializes the [slot](/documentation_v2/glossary.md#slot) bodies, starts the
-  [event](/documentation_v2/glossary.md#event) roster fetch, and enters `LOBBY` when the roster has
+  materializes the [slot](/documentation_v2/glossary/n_to_z.md#slot) bodies, starts the
+  [event](/documentation_v2/glossary/a_to_f.md#event) roster fetch, and enters `LOBBY` when the roster has
   settled (force-settled after 2 s) and the loadout settle is no longer pending.
 - `SetStage` is the only way the stage changes. It refuses `SAFE_START` on a world without
   `TBD_SafestartManager`, and any stage `TBD_SpawnManager.StageRefusalFor` refuses, keeping the

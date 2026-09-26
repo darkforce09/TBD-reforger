@@ -2,7 +2,7 @@
 
 # API environment variables
 
-Every environment variable the website [API](/documentation_v2/glossary.md#api) reads, as the
+Every environment variable the website [API](/documentation_v2/glossary/a_to_f.md#api) reads, as the
 code reads it: its default, when it is required, what an unusable value does, and the file that
 reads it. Developers filling `apps/website/api_v2/.env` and operators setting up a host read it;
 where `apps/website/api_v2/.env.example` and the code disagree, this reference follows the code.
@@ -58,7 +58,7 @@ that needs it, and a malformed worker interval or token lifetime falls back to i
 `APP_ENV=development` is the only value that means development; any other value, or none,
 behaves as production. Development:
 
-- registers `GET /api/v1/auth/dev-login` (the [dev login](/documentation_v2/glossary.md#dev-login));
+- registers `GET /api/v1/auth/dev-login` (the [dev login](/documentation_v2/glossary/a_to_f.md#dev-login));
   outside development the route is not registered, and a session a dev login issued stops
   authorizing;
 - drops `; Secure` from the `oauth_state` cookie, so Discord sign-in works over plain HTTP;
@@ -130,7 +130,7 @@ The template sets `FRONTEND_URL=http://localhost:3000` and both local origins in
 | `DISCORD_CLIENT_ID` | empty | outside development | Config | the OAuth2 application id; empty sends sign-in back with `#error=oauth_unconfigured` |
 | `DISCORD_CLIENT_SECRET` | empty | outside development | Config | the OAuth2 secret for the token exchange; a wrong one ends sign-in with `#error=discord_unreachable` |
 | `DISCORD_REDIRECT_URL` | empty | outside development | Config | the callback registered byte-exact in the Discord Developer Portal; the template's is `http://localhost:8080/api/v1/auth/discord/callback` |
-| `DISCORD_GUILD_ID` | empty | no | Config | the guild whose members' roles decide website [roles](/documentation_v2/glossary.md#role) through `apps/website/api_v2/seeds/discord_roles.sql`; empty skips membership reads, enrolment and reconciliation |
+| `DISCORD_GUILD_ID` | empty | no | Config | the guild whose members' roles decide website [roles](/documentation_v2/glossary/n_to_z.md#role) through `apps/website/api_v2/seeds/discord_roles.sql`; empty skips membership reads, enrolment and reconciliation |
 | `DISCORD_BOT_TOKEN` | empty: no bot | no | Config, read only through `Config::require_discord_bot_token` | the bot token; an unset token is reported by name where a path needs it |
 | `DISCORD_WEBHOOK_URL` | empty: pushing off | no | Config; `apps/website/api_v2/src/community_content/services/discord_webhook.rs` | the channel webhook announcements are pushed to; while empty the push route answers 400 "discord webhook not configured" and a publish that asks to push writes a CRIT `webhook.push_failed` audit row |
 
@@ -140,9 +140,9 @@ The template sets `FRONTEND_URL=http://localhost:3000` and both local origins in
 |---|---|---|---|---|
 | `SERVICE_TOKEN` | empty: every service route refuses | no | Config; `ServiceAuth` in `apps/website/api_v2/src/core/middleware/authentication.rs` | the shared `X-Service-Token` of `POST /api/v1/ingest/link-confirm`, `POST /api/v1/ingest/match-results`, `GET /metrics` and the detailed `GET /healthz`; the game servers send the same value as `TBD_GAME_SERVER_TOKEN` in `tools_v2/xtask/deploy/deploy.env` |
 
-The [machine credentials](/documentation_v2/glossary.md#machine-credential) of the
-[fleet host agent](/documentation_v2/glossary.md#fleet-host-agent) and the
-[game runtime](/documentation_v2/glossary.md#game-runtime) are not environment variables:
+The [machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential) of the
+[fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) and the
+[game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) are not environment variables:
 administrators issue them per server with `POST /api/v1/servers/{id}/credentials`, and the API
 stores only their digests.
 

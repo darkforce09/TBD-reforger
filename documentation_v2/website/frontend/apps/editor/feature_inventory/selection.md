@@ -2,10 +2,10 @@
 
 # Selection
 
-How a mission maker selects in the [Mission Creator](/documentation_v2/glossary.md#mission-creator):
+How a mission maker selects in the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator):
 a click, a marquee and a Ctrl/Cmd toggle on the map, the double-click and the right-click on an
 entity, and the one selection that the map, the trees and the dialogs share. Selection is page
-state, never part of the [mission](/documentation_v2/glossary.md#mission).
+state, never part of the [mission](/documentation_v2/glossary/g_to_m.md#mission).
 
 ## Where it lives
 
@@ -51,7 +51,7 @@ SEL-MAP-005 and SEL-CTX-001 are rows added for shipped code.
 1. A left press opens a pending gesture against a copy of the camera taken at the press; a
    release less than 4 px away (`DRAG_THRESHOLD_PX`) is a click
    (`pointer_gestures/pointer_up.rs:183-185`).
-2. The click picks the [slot](/documentation_v2/glossary.md#slot) or placed vehicle under the
+2. The click picks the [slot](/documentation_v2/glossary/n_to_z.md#slot) or placed vehicle under the
    cursor: a square box decides slots, a circle decides vehicles, and a tie goes to the slot.
    Slots riding in a vehicle as crew are not on the map and cannot be picked
    (`map_render_slot_soa` in `apps/website/map-engine/src/editing/selection_universe.rs:107`).

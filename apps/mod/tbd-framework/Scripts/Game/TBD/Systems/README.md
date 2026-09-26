@@ -1,7 +1,7 @@
 # Framework systems
 
-The in-world machinery of the TBD framework [mod](/documentation_v2/glossary.md#mod): loading the
-[mission](/documentation_v2/glossary.md#mission) deployed to the server, standing slot bodies in the
+The in-world machinery of the TBD framework [mod](/documentation_v2/glossary/g_to_m.md#mod): loading the
+[mission](/documentation_v2/glossary/g_to_m.md#mission) deployed to the server, standing slot bodies in the
 world and deploying players onto them, dressing loadouts, and running the mission's zones,
 triggers, AI, audio, map markers and radio nets. The stage machine, objectives and win conditions
 in `Gamemode/` and the player-facing screens in `Session/` build on it.
@@ -23,7 +23,7 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Systems/
 ## How it works
 
 `Mission/` runs first: once per world, on the server, it loads the deployed artifact, verifies its
-SHA-256, validates the document and reads the [event](/documentation_v2/glossary.md#event) roster.
+SHA-256, validates the document and reads the [event](/documentation_v2/glossary/a_to_f.md#event) roster.
 Every other folder reads the loaded document through `TBD_MissionLoader`, either its typed structs
 or its raw JSON in a second `JsonLoadContext` pass of its own.
 `Spawning/` then materializes one body per slot, dressed by `Loadouts/`, placed with
@@ -68,8 +68,8 @@ Three patterns hold across the folders:
   registry); `apps/mod/tbd-framework/Scripts/Game/TBD/API/` (the platform bridge, the runtime
   session, player identity); `TBD_FrameworkManager` and the objective classes in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/`; over HTTP with the `mod_runtime`
-  [machine credential](/documentation_v2/glossary.md#machine-credential), the API's
-  [game runtime](/documentation_v2/glossary.md#game-runtime) deployment, artifact, roster and
+  [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential), the API's
+  [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) deployment, artifact, roster and
   deployment-authorization routes; the wire shapes in `contracts_v2/definitions/`.
 - Used by: the stage machine, objectives and win conditions in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/`; the admin, briefing, lobby, players,

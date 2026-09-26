@@ -19,7 +19,7 @@ documentation_v2/website/frontend/pages/administration/content_manager/
 Read [content_manager_page.md](/documentation_v2/website/frontend/pages/administration/content_manager/content_manager_page.md)
 first. It follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md):
 it quotes the page's interface text, gives what each call means in the
-[API](/documentation_v2/glossary.md#api), lists where the page's wording and the API disagree, and
+[API](/documentation_v2/glossary/a_to_f.md#api), lists where the page's wording and the API disagree, and
 compares the built page with the two blueprints in `visual_references/`. Both are design-phase
 references: the built editor follows the broadcast editor blueprint closely, and keeps only the
 list-beside-detail split of the announcements manager blueprint. The code folder's README lists the
@@ -36,7 +36,7 @@ page's files.
 
 - Depends on: the feature doc template; the page code, the community content handlers and the
   ticket registry the feature doc is written from.
-- Used by: the [content manager](/documentation_v2/glossary.md#content-manager) glossary entry, the
+- Used by: the [content manager](/documentation_v2/glossary/a_to_f.md#content-manager) glossary entry, the
   page's in-code README and the community content domain README, which link the feature doc; the
   administration pages README.
 - Rules: the feature doc keeps its name, which those links use; the blueprint sets stay as they

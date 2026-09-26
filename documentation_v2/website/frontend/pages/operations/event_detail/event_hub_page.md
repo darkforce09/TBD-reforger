@@ -2,11 +2,11 @@
 
 # Event hub page
 
-The `/events/:id` page in the [operations](/documentation_v2/glossary.md#operations) section:
-one [event](/documentation_v2/glossary.md#event)'s hub, with its start time, briefing and places,
-a dossier for each attached [mission](/documentation_v2/glossary.md#mission), and the inline
-[ORBAT](/documentation_v2/glossary.md#orbat) selector through which a signed-in member takes a
-[slot](/documentation_v2/glossary.md#slot), holds a place without a seat or joins a waiting list,
+The `/events/:id` page in the [operations](/documentation_v2/glossary/n_to_z.md#operations) section:
+one [event](/documentation_v2/glossary/a_to_f.md#event)'s hub, with its start time, briefing and places,
+a dossier for each attached [mission](/documentation_v2/glossary/g_to_m.md#mission), and the inline
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) selector through which a signed-in member takes a
+[slot](/documentation_v2/glossary/n_to_z.md#slot), holds a place without a seat or joins a waiting list,
 and through which a leader reserves and fills a squad.
 
 ## Where it lives
@@ -30,7 +30,7 @@ and through which a leader reserves and fills a squad.
   which mounts the same selector for one mission; the
   [event manager page](/documentation_v2/website/frontend/pages/administration/event_manager/event_manager_page.md),
   where administrators set an event's missions, access policies and pools; the
-  [API](/documentation_v2/glossary.md#api)'s
+  [API](/documentation_v2/glossary/a_to_f.md#api)'s
   [operations domain](/apps/website/api_v2/src/operations/README.md) and its
   [reservation services](/apps/website/api_v2/src/operations/services/event_reservations/README.md).
 
@@ -119,7 +119,7 @@ and through which a leader reserves and fills a squad.
 
 ### Squads and the waiting list for leaders
 
-1. A viewer with the `leader` [role](/documentation_v2/glossary.md#role) or above sees
+1. A viewer with the `leader` [role](/documentation_v2/glossary/n_to_z.md#role) or above sees
    " Reserve Squad" on a free squad; success toasts "Reserved <squad>". A held squad shows
    "Reserved by <name>" (or "a leader"), and its reserver or an administrator sees "Release"
    ("Squad released").

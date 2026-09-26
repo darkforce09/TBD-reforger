@@ -3,7 +3,7 @@
 # End screen documentation
 
 The documentation of the END banner, the overlay that names the winning faction and the reason a
-round of an [event](/documentation_v2/glossary.md#event) ended.
+round of an [event](/documentation_v2/glossary/a_to_f.md#event) ended.
 
 ## Contents
 

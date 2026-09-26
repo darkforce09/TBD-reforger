@@ -3,8 +3,8 @@
 # Mission overview page
 
 The `/missions/:id` page, the standalone dossier of one
-[mission](/documentation_v2/glossary.md#mission): its briefing, details and
-[armory](/documentation_v2/glossary.md#armory) for any signed-in member who may see it, and, for
+[mission](/documentation_v2/glossary/g_to_m.md#mission): its briefing, details and
+[armory](/documentation_v2/glossary/a_to_f.md#armory) for any signed-in member who may see it, and, for
 the mission's author and administrators, the Edit Armory dialog and the mission's review record.
 The same dossier body renders inside the mission library's slide-over.
 
@@ -21,7 +21,7 @@ The same dossier body renders inside the mission library's slide-over.
   whose dossier sheet renders the same body; the review record in
   [`apps/website/frontend/src/v2/pages/mission_hub/mission_review/`](/apps/website/frontend/src/v2/pages/mission_hub/mission_review/README.md),
   which links the [review workspace page](/documentation_v2/website/frontend/pages/mission_hub/review_workspace/review_workspace_page.md);
-  the [event](/documentation_v2/glossary.md#event) hub, which groups the armory by faction for
+  the [event](/documentation_v2/glossary/a_to_f.md#event) hub, which groups the armory by faction for
   the players of an event.
 
 ## Behaviour
@@ -32,7 +32,7 @@ The page body sits in `AuthGate`; the session, loading and failure texts are in 
 ### Reading the dossier
 
 1. The page fetches the mission named by `:id`. A mission that is not live and not the viewer's
-   own reads "Failed to load data.", since the [API](/documentation_v2/glossary.md#api) answers
+   own reads "Failed to load data.", since the [API](/documentation_v2/glossary/a_to_f.md#api) answers
    404 for it.
 2. The header gives the title and "by <author> — Terrain: <terrain> — v<semver>", the version
    part only when the mission has a current version.
@@ -43,16 +43,16 @@ The page body sits in `AuthGate`; the session, loading and failure texts are in 
 4. The status reads through `mission_status_label`, the one status wording of the platform:
    "Draft", "Open for review", "Live", "Returned" or "Archived".
 5. For the author or an administrator, the review record follows under the dossier: the approved
-   [artifact](/documentation_v2/glossary.md#artifact), every review with its decision, the thread
+   [artifact](/documentation_v2/glossary/a_to_f.md#artifact), every review with its decision, the thread
    and a reply box, each review linking its read-only review workspace.
 
 ### Editing the armory
 
 1. The author or an administrator sees "Edit Armory" in the header. It opens the dialog on a
    snapshot of the mission taken at the click.
-2. The dialog offers the faction keys of the mission's [ORBAT](/documentation_v2/glossary.md#orbat)
+2. The dialog offers the faction keys of the mission's [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat)
    as tabs, never a free-text field, because the event hub joins armory rows to
-   [slot](/documentation_v2/glossary.md#slot) factions by exact byte equality. The keys come from the current version's payload, from its top-level ORBAT
+   [slot](/documentation_v2/glossary/n_to_z.md#slot) factions by exact byte equality. The keys come from the current version's payload, from its top-level ORBAT
    when that is present and well formed and from the Mission Creator's factions otherwise, and a
    faction with no slot is left out. A key already stored that the ORBAT no longer names is still
    offered, marked, so saving does not delete its rows; a key the API would refuse (blank or

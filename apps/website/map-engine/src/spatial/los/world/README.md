@@ -88,7 +88,7 @@ total fits or nothing more may go.
     (`apps/website/map-engine/src/streaming/loaders/occluder_loader.rs`), the world loader's
     viewport and the host queries that lend the occluder out;
   - `crate::editing::tools::line_of_sight`, whose object wash places points with `map_to_engine`;
-  - the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s line-of-sight tool
+  - the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s line-of-sight tool
     (`apps/website/frontend/src/v2/apps/editor/input/tools/los_world_wasm.rs`) and the debug world
     line-of-sight bench (`apps/website/frontend/src/v2/apps/debug/world_los/`);
   - the world line-of-sight check

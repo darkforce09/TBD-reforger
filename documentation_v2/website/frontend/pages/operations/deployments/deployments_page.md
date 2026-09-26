@@ -2,9 +2,9 @@
 
 # Deployments page
 
-The `/deployments` page in the [operations](/documentation_v2/glossary.md#operations) section,
+The `/deployments` page in the [operations](/documentation_v2/glossary/n_to_z.md#operations) section,
 labelled "My Deployments": a signed-in member's own
-[service record](/documentation_v2/glossary.md#service-record), with the missions they are
+[service record](/documentation_v2/glossary/n_to_z.md#service-record), with the missions they are
 signed up for next, the matches they have played, the leave of absence they have filed and, for an
 administrator, the queue of leave requests to decide.
 
@@ -24,7 +24,7 @@ administrator, the queue of leave requests to decide.
   and the [ORBAT selection page](/documentation_v2/website/frontend/pages/operations/orbat_selection/orbat_selection_page.md),
   which the banner links to; the [leaderboards page](/documentation_v2/website/frontend/pages/operations/leaderboards/leaderboards_page.md),
   which shows the combat figures this page leaves out; the
-  [API](/documentation_v2/glossary.md#api)'s
+  [API](/documentation_v2/glossary/a_to_f.md#api)'s
   [operations domain](/apps/website/api_v2/src/operations/README.md), which serves the record and
   the leave requests.
 
@@ -36,14 +36,14 @@ administrator, the queue of leave requests to decide.
    the session states of the README's
    [States](/apps/website/frontend/src/v2/pages/operations/deployments/README.md#states) until the
    viewer is signed in.
-2. The signed-in half reads the viewer's name and [role](/documentation_v2/glossary.md#role)
+2. The signed-in half reads the viewer's name and [role](/documentation_v2/glossary/n_to_z.md#role)
    from the session through a memo, so a profile poll that changes neither does not rebuild the
    page and discard an unsent leave form. It fetches the record once and shows "Loading…", then
    "Failed to load data." or the record.
 3. The left column shows the viewer's name, their role, "Total Deployments" with the count of
    matches they have played, and "Personal Telemetry" reading "No telemetry recorded".
 4. The right column opens with "Active Orders". With no upcoming
-   [deployment](/documentation_v2/glossary.md#deployment) it reads "No Active Orders" and
+   [deployment](/documentation_v2/glossary/a_to_f.md#deployment) it reads "No Active Orders" and
    "Stand by for deployment tasking."; otherwise the banner shows the soonest one: its event's
    name (or "Untitled Operation"), a "Reservation: <state>" badge, an "Attendance: <state>" badge
    when there is one, the local start time, "T-MINUS " and the time left as one rounded unit,

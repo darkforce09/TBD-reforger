@@ -3,7 +3,7 @@
 # Rebuild a terrain's object and road data from a Workbench export
 
 Takes one full world-object export of a terrain out of
-[Workbench](/documentation_v2/glossary.md#workbench), stages it, builds the terrain's object and
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench), stages it, builds the terrain's object and
 road data for one import phase, verifies it and opens the next phase. It follows the operator steps
 `cargo xtask map export-terrain` prints (`tools_v2/xtask/src/commands/map/terrain_export.rs:61-84`)
 and the gate's own refusal text. The build and verify steps run for minutes on a full terrain.

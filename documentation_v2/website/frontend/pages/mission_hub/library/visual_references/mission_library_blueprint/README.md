@@ -3,7 +3,7 @@
 # Mission library blueprint
 
 Design-phase reference for the mission library page at `/missions`: a featured
-[mission](/documentation_v2/glossary.md#mission) hero above a search and filter toolbar and a grid
+[mission](/documentation_v2/glossary/g_to_m.md#mission) hero above a search and filter toolbar and a grid
 of mission cards. It gives colour and layout context and is not an implementation source; the
 built UI is the Leptos code under `apps/website/frontend/src/v2/pages/mission_hub/library/`.
 

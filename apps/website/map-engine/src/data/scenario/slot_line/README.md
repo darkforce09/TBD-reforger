@@ -1,8 +1,8 @@
 # ORBAT slot lines
 
-One plain-text line per [slot](/documentation_v2/glossary.md#slot) of an
-[ORBAT](/documentation_v2/glossary.md#orbat): its 1-based number, role, weapons, tag and leader
-mark, as the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s ORBAT manager
+One plain-text line per [slot](/documentation_v2/glossary/n_to_z.md#slot) of an
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat): its 1-based number, role, weapons, tag and leader
+mark, as the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s ORBAT manager
 lists it.
 
 ## Contents

@@ -3,7 +3,7 @@
 The browser entry point of map streaming: `bootstrap` loads a terrain's DEM and hillshade,
 satellite basemap, world objects, forest, water and labels into the render engine, and the
 `MapHost` it leaves behind refreshes them after each camera settle and answers the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s camera, place-name, water and
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s camera, place-name, water and
 line-of-sight queries. It compiles only for wasm32 with the `render` feature.
 
 ## Contents

@@ -1,6 +1,6 @@
 # Ticket action state
 
-The data the [ticketboard](/documentation_v2/glossary.md#ticketboard)'s ticket actions keep
+The data the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)'s ticket actions keep
 between frames: the running command and its output, the one open mutation dialog, the read-only
 context every control needs, and the toasts.
 

@@ -2,7 +2,7 @@
 
 A per-session ledger of the bytes the map's world assets hold in WebAssembly memory, kept against
 one ceiling: it chooses the finest satellite basemap level that fits, and reports the held, peak
-and measured bytes to the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s debug
+and measured bytes to the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s debug
 HUD and to the page.
 
 ## Contents

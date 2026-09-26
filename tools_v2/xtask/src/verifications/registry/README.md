@@ -1,8 +1,8 @@
 # Object registry alias check
 
 The body of `cargo xtask verify object-registry-aliases`: a census proving that every object the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s Objects palette can offer has a
-row in the [mod](/documentation_v2/glossary.md#mod)'s spawn registry, so a placed object is never
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s Objects palette can offer has a
+row in the [mod](/documentation_v2/glossary/g_to_m.md#mod)'s spawn registry, so a placed object is never
 skipped at mission load.
 
 ## Contents
@@ -16,7 +16,7 @@ tools_v2/xtask/src/verifications/registry/
 
 ## How it works
 
-The palette derives an object's alias from its [Workbench](/documentation_v2/glossary.md#workbench) resource name and display name
+The palette derives an object's alias from its [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) resource name and display name
 (`derive_object_alias` in `apps/website/map-engine/src/data/store/operations/assets.rs`), and the
 mod's `SpawnMissionEntities` looks that alias up in `apps/mod/tbd-framework/Data/registry.json`.
 Nothing joins the two ends at compile time, so the check recomputes the alias independently:
@@ -43,7 +43,7 @@ structure, or a pattern that did not compile.
 
 - Depends on: `developer_tools::repository_layout::registry_items_catalog_path`;
   `verification_core` (`Pattern`, `Verdict`, `Finding`, `NotRun`, `gate::require`); `serde_json`.
-- Used by: `tools_v2/xtask/src/commands/verify/dispatch.rs`; the platform [wave](/documentation_v2/glossary.md#wave) gate's
+- Used by: `tools_v2/xtask/src/commands/verify/dispatch.rs`; the platform [wave](/documentation_v2/glossary/n_to_z.md#wave) gate's
   `VERIFY_STEPS` (`tools_v2/xtask/src/commands/platform/wave_execution/gate.rs`), which prints the
   last 15 lines of a failure.
 - Rules:

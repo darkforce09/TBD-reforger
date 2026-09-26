@@ -1,6 +1,6 @@
 # Mission fixtures
 
-The [mission](/documentation_v2/glossary.md#mission) contract's golden corpus: complete missions
+The [mission](/documentation_v2/glossary/g_to_m.md#mission) contract's golden corpus: complete missions
 the contract must accept, and wrapped documents it must reject, each for one stated reason.
 
 ## Contents
@@ -17,11 +17,11 @@ contracts_v2/fixtures/missions/
 (`tools_v2/xtask/src/verifications/schemas/checks/mission_validation.rs`). Every file in `valid/`
 must pass `contracts_v2/definitions/mission.schema.json`, stay under the schema's
 `x-tbd-missionFileMaxBytes` ceiling (8 MiB, the value of `MISSION_FILE_MAX_BYTES` in the
-[mod](/documentation_v2/glossary.md#mod)'s mission loader) and use only kit aliases that the mod's
+[mod](/documentation_v2/glossary/g_to_m.md#mod)'s mission loader) and use only kit aliases that the mod's
 spawn registry defines. Every file in `invalid/` must be rejected by the gate its wrapper names,
 with every finding at or below the wrapper's JSON pointer, so a fixture rejected for an unrelated
 reason fails the run. Beyond the gate, the xtask mod commands stage missions from `valid/` by name,
-and the map engine's compiler, the [API](/documentation_v2/glossary.md#api)'s contract tests and the
+and the map engine's compiler, the [API](/documentation_v2/glossary/a_to_f.md#api)'s contract tests and the
 xtask schema tests each load single missions from it.
 
 ## Format

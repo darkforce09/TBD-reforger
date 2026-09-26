@@ -11,10 +11,10 @@ is drawn in the directory atlas of `CLAUDE.md`, and every code folder's README s
 | X | Home |
 |---|---|
 | a page of the app | `apps/website/frontend/src/v2/pages/<area>/<page>/`; its route in `apps/website/frontend/src/app_routes.rs` (the component) and `apps/website/frontend/src/router.rs` (layout flags and access tier) |
-| a standalone workspace, such as the [Mission Creator](/documentation_v2/glossary.md#mission-creator) | `apps/website/frontend/src/v2/apps/<workspace>/` |
+| a standalone workspace, such as the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) | `apps/website/frontend/src/v2/apps/<workspace>/` |
 | what every page shares: the API client, auth, design-system primitives, utilities | `apps/website/frontend/src/v2/core/` |
 | an app-side mirror of an API model | `apps/website/frontend/src/v2/core/api/dto/`, with its R-api golden test in that folder's `tests/` |
-| an [API](/documentation_v2/glossary.md#api) endpoint | `apps/website/api_v2/src/<domain>/handlers/<surface>.rs`, registered in that domain's `routes.rs`, with its `/// @route` tag |
+| an [API](/documentation_v2/glossary/a_to_f.md#api) endpoint | `apps/website/api_v2/src/<domain>/handlers/<surface>.rs`, registered in that domain's `routes.rs`, with its `/// @route` tag |
 | API logic that two surfaces share | that domain's `services/` |
 | an API wire or database model | that domain's `models/`, the snake_case contract |
 | API code that names no domain concept: pagination, SQLSTATE predicates, wire formats, text guards, token primitives | `apps/website/api_v2/src/core/` |
@@ -22,7 +22,7 @@ is drawn in the directory atlas of `CLAUDE.md`, and every code folder's README s
 | an API binary | `apps/website/api_v2/src/bin/` |
 | a database migration | `apps/website/api_v2/migrations/NNNN_<subject>.sql` (sqlx, embedded, applied at boot) |
 | a development seed | `apps/website/api_v2/seeds/`; `cargo xtask db seed` applies the files its `SEEDS` list names, and `mock_data.sql` is applied by hand |
-| map graphics, spatial computation, terrain formats, streaming, camera math, the [mission](/documentation_v2/glossary.md#mission) document model | `apps/website/map-engine/src/` |
+| map graphics, spatial computation, terrain formats, streaming, camera math, the [mission](/documentation_v2/glossary/g_to_m.md#mission) document model | `apps/website/map-engine/src/` |
 | GPU rendering primitives with no map concept | `apps/website/graphics-engine/src/` |
 
 The API has eight domains: `administration`, `command_center`, `community_content`,
@@ -50,9 +50,9 @@ engines and the app are in the [engine boundary rules](/documentation_v2/standar
 
 | X | Home |
 |---|---|
-| gameplay [EnfScript](/documentation_v2/glossary.md#enfscript) | `apps/mod/tbd-framework/Scripts/Game/TBD/<area>/` (`API`, `Core`, `Gamemode`, `Session`, `Systems`, `UI`) |
+| gameplay [EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript) | `apps/mod/tbd-framework/Scripts/Game/TBD/<area>/` (`API`, `Core`, `Gamemode`, `Session`, `Systems`, `UI`) |
 | a UI layout | `apps/mod/tbd-framework/UI/layouts/` (`Common`, `Hud`, `Session`) |
-| a [mission header](/documentation_v2/glossary.md#mission-header) | `apps/mod/tbd-framework/Missions/` |
+| a [mission header](/documentation_v2/glossary/g_to_m.md#mission-header) | `apps/mod/tbd-framework/Missions/` |
 | a Workbench export plugin | `apps/mod/tbd-export/Scripts/WorkbenchGame/` |
 | an Enfusion MCP handler | `apps/mod/tbd-emcp/Scripts/WorkbenchGame/EnfusionMCP/` |
 
@@ -64,7 +64,7 @@ engines and the app are in the [engine boundary rules](/documentation_v2/standar
 | a heavy tool: the gate harness, asset pipelines, the Enfusion unpacker, the MCP broker | a binary of `tools_v2/developer-tools/src/bin/` |
 | a browser smoke of the Mission Creator | the `gate` binary of `tools_v2/developer-tools`, wired into `cargo xtask mk leptos-gates` |
 | a deploy template or systemd unit | `tools_v2/xtask/deploy/` |
-| a [ticket](/documentation_v2/glossary.md#ticket) | `.ai/tickets/T-<id>.toml`, written through `cargo xtask ticket` commands; `cargo xtask ticket sync` writes the derived files, never a hand edit |
+| a [ticket](/documentation_v2/glossary/n_to_z.md#ticket) | `.ai/tickets/T-<id>.toml`, written through `cargo xtask ticket` commands; `cargo xtask ticket sync` writes the derived files, never a hand edit |
 | a ticket's spec and plan | `documentation_v2/tickets/specs/t<id>_<subject>.md` and `documentation_v2/tickets/plans/t-<id>_plan.md` (see [Ticket identifiers](/documentation_v2/standards/ticket_identifiers.md)) |
 
 ## Documentation
@@ -76,7 +76,7 @@ engines and the app are in the [engine boundary rules](/documentation_v2/standar
 | a procedure | `documentation_v2/runbooks/` |
 | a design reference image or export | the `visual_references/` folder of the feature it depicts |
 | a recorded defect | `documentation_v2/known_bugs/` |
-| a term | `documentation_v2/glossary.md` |
+| a term | the file of its first letter in `documentation_v2/glossary/`, with a line in its index |
 
 Two gates hold the documentation layout: `cargo xtask ci verify-doc-layout` refuses Markdown under
 a `docs` folder in the code trees, and `cargo xtask verify markdown-placement` refuses any Markdown

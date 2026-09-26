@@ -3,10 +3,10 @@
 # Connections
 
 How a mission maker links two placed entities in the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator): the context menu's "Connect"
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator): the context menu's "Connect"
 flow with its three relations ("Sync to", "Group to", "Set Trigger Owner"), the lines the map
 draws for them, the Connections panel with its graph findings, and deleting a connection. A
-connection is a row of the [mission](/documentation_v2/glossary.md#mission) document; it is saved
+connection is a row of the [mission](/documentation_v2/glossary/g_to_m.md#mission) document; it is saved
 with the mission and read by nothing outside the editor.
 
 ## Where it lives
@@ -48,8 +48,10 @@ with the mission and read by nothing outside the editor.
 | CONN-DEL-001 | Delete a connection | shipped |
 
 The status legend is in the [inventory index](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md#how-it-works).
-The four IDs Eden shares keep Eden's numbers; CONN-LINE-001, CONN-PANEL-001 and CONN-VALID-001
-are rows added for shipped code.
+The five IDs Eden shares keep Eden's numbers and match the
+[Eden gap analysis](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md),
+which scores CONN-GROUP-001 partial as here; CONN-LINE-001, CONN-PANEL-001 and CONN-VALID-001 are
+rows added for shipped code.
 
 ### CONN-START-001 — The Connect flow
 

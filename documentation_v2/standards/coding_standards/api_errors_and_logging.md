@@ -3,7 +3,7 @@
 # API errors and request logging
 
 Rules ERR-1, ERR-2, ERR-4, ERR-5 and LOG-3: the one error shape the
-[API](/documentation_v2/glossary.md#api) speaks, the status codes it answers with, and what it
+[API](/documentation_v2/glossary/a_to_f.md#api) speaks, the status codes it answers with, and what it
 logs about a failed request. The code number ERR-3 is not used; its logging requirement is part of
 LOG-3. The error type itself is described in the
 [handler errors README](/apps/website/api_v2/src/core/error_handling/README.md).
@@ -16,7 +16,7 @@ LOG-3. The error type itself is described in the
   for the extractors and the rate limiter. `details` is any JSON value: an array of strings for
   payload validation (`"invalid mission payload"` with one message per problem, in
   `apps/website/api_v2/src/missions/handlers/mission_versions.rs`), or an object carrying a `code`
-  or a `reason` elsewhere (the [mission deployment](/documentation_v2/glossary.md#mission-deployment) refusals, the modpack body error). The
+  or a `reason` elsewhere (the [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) refusals, the modpack body error). The
   single-page app folds `details` into the message it shows only when it is an array of strings
   (`apps/website/frontend/src/v2/core/api/client/errors.rs`). A `sqlx::Error` never reaches the
   client as text: it becomes a logged `500` with the message `internal error`. Status: live, held

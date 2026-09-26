@@ -2,11 +2,11 @@
 
 # Enfusion script oracle
 
-The mechanically generated answer to "does this [Enfusion](/documentation_v2/glossary.md#enfusion)
+The mechanically generated answer to "does this [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion)
 symbol exist, and where?". The `enf` binary indexes the upstream framework's scripts and the
 vanilla game scripts into committed TSV tables, answers lookups against them, and fails a
 document that cites a symbol the tables do not hold. Mod developers and the AI agents that write
-[mod](/documentation_v2/glossary.md#mod) code and its documentation rely on it instead of memory.
+[mod](/documentation_v2/glossary/g_to_m.md#mod) code and its documentation rely on it instead of memory.
 
 ## Where it lives
 
@@ -20,7 +20,7 @@ document that cites a symbol the tables do not hold. Mod developers and the AI a
   which sets when a slice consults the oracle and which oracle lanes it may read; the
   [capability verdicts](/documentation_v2/mod/tbd-framework/capability_verdicts.md), the table
   `enf capability` checks; the [Enfusion MCP tooling runbook](/documentation_v2/runbooks/enfusion_mcp_tooling.md),
-  for the live [Workbench](/documentation_v2/glossary.md#workbench) half of the same tooling.
+  for the live [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) half of the same tooling.
 
 ## Behaviour
 

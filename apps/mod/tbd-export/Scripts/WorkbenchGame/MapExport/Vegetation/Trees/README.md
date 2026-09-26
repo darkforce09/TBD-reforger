@@ -1,6 +1,6 @@
 # Tree export
 
-Finds every standing tree in the open world in [Workbench](/documentation_v2/glossary.md#workbench)
+Finds every standing tree in the open world in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)
 and writes each one's class, species, position, rotation, scale and size to `trees.json`.
 
 ## Contents

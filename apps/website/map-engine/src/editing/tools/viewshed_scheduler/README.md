@@ -1,7 +1,7 @@
 # Viewshed job scheduler
 
 One live visibility job per tool, advanced in budgeted batches and cancelled by the next placement:
-the terrain disc of the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
+the terrain disc of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
 line-of-sight tool and the per-floor visibility wash of a building.
 
 ## Contents

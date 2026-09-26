@@ -1,9 +1,9 @@
 # Arsenal, loadout and faction fixtures
 
-Samples of the item [registry](/documentation_v2/glossary.md#registry), its compatibility graph, the
+Samples of the item [registry](/documentation_v2/glossary/n_to_z.md#registry), its compatibility graph, the
 alias spawn registry, the loadout export, the faction library and the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s saved payload. The schema gate
-validates each against its contract, and the [API](/documentation_v2/glossary.md#api)'s tests load
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s saved payload. The schema gate
+validates each against its contract, and the [API](/documentation_v2/glossary/a_to_f.md#api)'s tests load
 several.
 
 ## Contents
@@ -31,11 +31,11 @@ the same referential checks as the live catalogues in `contracts_v2/catalogs/`: 
 both ends of every compatibility edge are items of the paired items file.
 
 The two layers stay apart. The item catalogue and the compatibility graph name every item by its
-full [Enfusion](/documentation_v2/glossary.md#enfusion) resource name; the alias registry maps the
-semantic keys a [mission](/documentation_v2/glossary.md#mission) names (`kit:`, `preset:`) to prefab
+full [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) resource name; the alias registry maps the
+semantic keys a [mission](/documentation_v2/glossary/g_to_m.md#mission) names (`kit:`, `preset:`) to prefab
 GUIDs, which the game resolves at load. A sample that mixed the two would hide a layering defect.
 The live catalogues are not here: they sit in `contracts_v2/catalogs/`, and the gate reads them from
-there, so a sample can never stand in for the [arsenal](/documentation_v2/glossary.md#arsenal) the
+there, so a sample can never stand in for the [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) the
 platform ingests.
 
 ## Format

@@ -3,7 +3,7 @@
 # Full-screen workspaces documentation
 
 The documentation of the web app's full-screen workspaces, one folder per workspace folder of the
-code: the [Mission Creator](/documentation_v2/glossary.md#mission-creator), the debug benches, and
+code: the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator), the debug benches, and
 the two workspaces that are planned but not built, the mission planner and the after-action
 review. Developers and AI agents read it before changing a workspace or starting a new one.
 
@@ -48,7 +48,7 @@ and a line in Contents and a row in the table.
 
 - Depends on: the [feature doc template](/documentation_v2/standards/templates/feature_doc.md) and
   the [documentation folder README template](/documentation_v2/standards/templates/readme_documentation_folder.md);
-  the [glossary](/documentation_v2/glossary.md); the workspace code and the ticket registry in
+  the [glossary](/documentation_v2/glossary/README.md); the workspace code and the ticket registry in
   `.ai/tickets/`, which the documents are written from.
 - Used by: the [frontend documentation README](/documentation_v2/website/frontend/README.md),
   whose Contents names this folder; the in-code READMEs of the workspace folders, which link their

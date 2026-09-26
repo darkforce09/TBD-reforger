@@ -36,12 +36,12 @@ any other path              ──▶ chrome: sidebar + top bar + <main>
 ```
 
 The chromeless paths are the four rows `apps/website/frontend/src/router.rs` flags: the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator), the review workspace and the two
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator), the review workspace and the two
 debug benches. Moving between two chromed routes swaps only the page inside `<main>`. The
 membership banner and the toast viewport sit beside the frame, so a frame swap never unmounts them.
 
 The sidebar renders `NAVIGATION` top to bottom through the browse-mode check `has_min_role`: a
-signed-out visitor, whose [role](/documentation_v2/glossary.md#role) is unknown, sees every
+signed-out visitor, whose [role](/documentation_v2/glossary/n_to_z.md#role) is unknown, sees every
 section, the "Administration" section included; a signed-in viewer sees the links their role
 clears, so "Administration" shows only for `admin`, and `guest` sees no link, since every other one
 asks for `enlisted`. `is_active` marks one link: `/` only on `/`, any other link on its own path and
@@ -62,7 +62,7 @@ The top bar shows the route's breadcrumb from `router::breadcrumb`. Its account 
 memo of the name, avatar and linked Arma identity, so a profile poll that changes none of them
 leaves an open menu alone. Signing out clears the local session at once, removes the stored session
 under the refresh lock when it belongs to this session, then asks the
-[API](/documentation_v2/glossary.md#api) to revoke the refresh token. `MembershipStatus` refetches
+[API](/documentation_v2/glossary/a_to_f.md#api) to revoke the refresh token. `MembershipStatus` refetches
 the profile every 30 seconds while a session is held, which keeps the membership flags current, and
 shows its banner while the membership is stale or the profile says the viewer may extend access.
 

@@ -2,10 +2,10 @@
 
 # Placement
 
-How a mission maker puts things into a [mission](/documentation_v2/glossary.md#mission) in the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator): a palette pick-up that the next
+How a mission maker puts things into a [mission](/documentation_v2/glossary/g_to_m.md#mission) in the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator): a palette pick-up that the next
 map release commits, the multi-place and cancel rules, where a placed character lands in the
-[ORBAT](/documentation_v2/glossary.md#orbat), and the other ways in: the empty-ground picker,
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat), and the other ways in: the empty-ground picker,
 compositions, briefing markers, zone and trigger areas and map comments.
 
 ## Where it lives
@@ -68,9 +68,9 @@ PLACE-MULTI-001 to PLACE-COMMENT-001 are rows added for shipped code.
 
 ### PLACE-DROP-002 — Kinds
 
-1. A leaf's kind comes from its [registry](/documentation_v2/glossary.md#registry) row, so a
+1. A leaf's kind comes from its [registry](/documentation_v2/glossary/n_to_z.md#registry) row, so a
    vehicle leaf places a vehicle and an object leaf a world object, never a
-   [slot](/documentation_v2/glossary.md#slot) (`placeable_palette`,
+   [slot](/documentation_v2/glossary/n_to_z.md#slot) (`placeable_palette`,
    `apps/website/frontend/src/v2/apps/editor/arsenal/asset_catalog.rs:195-209`).
 2. The arm gate lets a side chip arm characters and vehicles and the "Objects" chip arm objects
    only; compositions and markers arm in either (`placement_is_armable`,

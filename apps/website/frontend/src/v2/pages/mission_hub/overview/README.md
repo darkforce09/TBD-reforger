@@ -1,7 +1,7 @@
 # Mission overview page
 
-The `/missions/:id` page: one [mission](/documentation_v2/glossary.md#mission)'s dossier, with its
-briefing, details and [armory](/documentation_v2/glossary.md#armory), and for its author and
+The `/missions/:id` page: one [mission](/documentation_v2/glossary/g_to_m.md#mission)'s dossier, with its
+briefing, details and [armory](/documentation_v2/glossary/a_to_f.md#armory), and for its author and
 administrators the Edit Armory dialog and the mission's review record.
 
 ## Contents
@@ -23,8 +23,8 @@ apps/website/frontend/src/v2/pages/mission_hub/overview/
 `MissionOverviewPage` renders inside `AuthGate`. The signed-in half fetches the mission, keyed on
 `:id` and on the armory editor's saved counter, so a saved armory reads the mission again. The
 viewer's account id and administrator standing come from the session through a memo, and the page
-mirrors the [API](/documentation_v2/glossary.md#api)'s predicate: the author or an administrator,
-never a [role](/documentation_v2/glossary.md#role) tier, gets the Edit Armory button and the review
+mirrors the [API](/documentation_v2/glossary/a_to_f.md#api)'s predicate: the author or an administrator,
+never a [role](/documentation_v2/glossary/n_to_z.md#role) tier, gets the Edit Armory button and the review
 record (`MissionReviewRecord` from `apps/website/frontend/src/v2/pages/mission_hub/mission_review/`)
 under the dossier.
 
@@ -34,12 +34,12 @@ renders the same body, so it stays read-only; the page's one authoring surface i
 dialog, which only this route opens. `mission_status_label` is the platform's one status label
 ("Draft", "Open for review", "Live", "Returned", "Archived"), shared with the library's cards. There
 is one briefing section, not a tabbed one, and no map preview or per-side
-[slot](/documentation_v2/glossary.md#slot) census.
+[slot](/documentation_v2/glossary/n_to_z.md#slot) census.
 
 The dialog edits one faction at a time but always holds every faction's rows, because a save
 replaces the mission's whole armory. The faction keys come from the mission's own
-[ORBAT](/documentation_v2/glossary.md#orbat), compared byte for byte by the
-[event](/documentation_v2/glossary.md#event) hub, so they are picked, never typed; a stored key the
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat), compared byte for byte by the
+[event](/documentation_v2/glossary/a_to_f.md#event) hub, so they are picked, never typed; a stored key the
 ORBAT no longer names stays on offer, marked, so saving does not delete its rows. The guards run
 before anything is sent: an item needs a name, and a quantity is a number or blank for unlimited.
 

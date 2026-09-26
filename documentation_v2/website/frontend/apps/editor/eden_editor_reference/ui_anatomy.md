@@ -3,7 +3,7 @@
 # Eden editor UI anatomy
 
 The Arma 3 Eden editor's workspace, panel by panel, as the Bohemia wiki describes it: the reference
-design the [Mission Creator](/documentation_v2/glossary.md#mission-creator) is measured against.
+design the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) is measured against.
 Each panel cites its wiki pages, scraped into `.ai/artifacts/eden-wiki/`; the panel names in
 backticks are the UI surfaces of the
 [feature entry schema](/documentation_v2/website/frontend/apps/editor/feature_inventory/feds_schema.md#eden-reference-entries).
@@ -95,7 +95,7 @@ Quick-access buttons at top of workspace (below or integrated with menu area).
 **Evidence:** [Layer](https://community.bistudio.com/wiki/Eden_Editor:_Layer), [Group](https://community.bistudio.com/wiki/Eden_Editor:_Group), [Actions#SearchEdit](https://community.bistudio.com/wiki/Eden_Editor:_Actions).
 
 **Mission Creator counterpart:** Eden's Entity List and layers correspond to the Mission Creator's
-[ORBAT](/documentation_v2/glossary.md#orbat) tree (the export hierarchy) and **editor layers** (workflow folders). They are **not** the
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) tree (the export hierarchy) and **editor layers** (workflow folders). They are **not** the
 same data model: the [feature entry schema's terms](/documentation_v2/website/frontend/apps/editor/feature_inventory/feds_schema.md#terms)
 keep them apart.
 
@@ -254,7 +254,7 @@ and the feature inventory area named in each row lists the features.
 | Eden surface | Mission Creator counterpart | Code and inventory area |
 |---|---|---|
 | Asset Browser, modes F1–F6 | the right dock's seven tabs: "Factions", "Vehicles", "Zones", "Compositions", "Triggers", "Favourites" and "Markers", with no F-key bindings; the Factions tab's side chips "BLUFOR", "OPFOR", "INDFOR" and "Objects", and a disabled "Custom" chip; a search grammar of `class:`, `mod:`, wildcards and `/…/` expressions | [right dock](/apps/website/frontend/src/v2/apps/editor/ui/docks/dock_right/README.md); [right asset palette](/documentation_v2/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) |
-| Entity List and layers | the left dock's Layers tab (the editor layers tree, with search) and Locations tab, and the ORBAT tree of factions, squads and [slots](/documentation_v2/glossary.md#slot); editor layers are not Eden layers | [left dock](/apps/website/frontend/src/v2/apps/editor/ui/docks/dock_left/README.md), [outliner](/apps/website/frontend/src/v2/apps/editor/ui/outliner/README.md); [left sidebar](/documentation_v2/website/frontend/apps/editor/feature_inventory/left_sidebar.md) |
+| Entity List and layers | the left dock's Layers tab (the editor layers tree, with search) and Locations tab, and the ORBAT tree of factions, squads and [slots](/documentation_v2/glossary/n_to_z.md#slot); editor layers are not Eden layers | [left dock](/apps/website/frontend/src/v2/apps/editor/ui/docks/dock_left/README.md), [outliner](/apps/website/frontend/src/v2/apps/editor/ui/outliner/README.md); [left sidebar](/documentation_v2/website/frontend/apps/editor/feature_inventory/left_sidebar.md) |
 | Menu Bar, eight menus | the top strip's six menus: "File", "Edit", "Arrange", "Mission", "Environment" and "Help", each row running an action | [top strip](/apps/website/frontend/src/v2/apps/editor/ui/docks/top_strip/README.md); [top command strip](/documentation_v2/website/frontend/apps/editor/feature_inventory/top_command_strip.md) |
 | Toolbar | the top strip's undo and redo, the transform widget variants (none, translation, rotation), the snap grid toggle and step, the time of day and weather, "Save Version" and "Export"; no area widgets, vertical mode, surface snap, flashlight, vision mode, phase or tutorials | [top strip](/apps/website/frontend/src/v2/apps/editor/ui/docks/top_strip/README.md); [top command strip](/documentation_v2/website/frontend/apps/editor/feature_inventory/top_command_strip.md) |
 | Status Bar | the bottom status bar: X, Y and Z of the cursor ("CUR", Z sampled from the terrain's elevation grid once it loads) or of the one selected entity ("SEL"), the object and selection counts, the save size, the map scale and the ruler; no version, mods or server entries | [bottom toolbelt](/apps/website/frontend/src/v2/apps/editor/ui/docks/toolbelt/README.md); [bottom toolbelt area](/documentation_v2/website/frontend/apps/editor/feature_inventory/bottom_toolbelt.md) |

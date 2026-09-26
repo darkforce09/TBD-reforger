@@ -2,7 +2,7 @@
 
 How the platform wave gate finds and checks the commit its change-scoped steps diff against: the
 last `wave N CLOSED` marker commit, verified to cover the whole
-[wave](/documentation_v2/glossary.md#wave) before any step trusts it.
+[wave](/documentation_v2/glossary/n_to_z.md#wave) before any step trusts it.
 
 ## Contents
 

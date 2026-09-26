@@ -2,7 +2,7 @@
 
 # Adversarial verifier brief
 
-The brief for the one adversarial verifier each [wave](/documentation_v2/glossary.md#wave) runs
+The brief for the one adversarial verifier each [wave](/documentation_v2/glossary/n_to_z.md#wave) runs
 on merged `main`, its severity table, and how the orchestrator triages what it finds. Use it at
 step 9 of [Running a wave](/documentation_v2/runbooks/factory_waves/running_a_wave.md). The
 verifier documents and never fixes; its job is to find what the slice agents got wrong, not to
@@ -27,7 +27,7 @@ Retry instead, and ask the operator if a tier change seems warranted.
 
 - Every slice of the wave landed and the wave gate green on merged `main`
   ([Running a wave](/documentation_v2/runbooks/factory_waves/running_a_wave.md) step 7), and for a
-  [Mission Creator](/documentation_v2/glossary.md#mission-creator) wave the editor gates too.
+  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) wave the editor gates too.
 - The wave base (the `revert target:` sha `land` printed) and the merge sha of each slice.
 - Each slice report's highest-risk claims, above all anything its agent admitted it did not test.
 

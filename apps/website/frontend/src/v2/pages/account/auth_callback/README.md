@@ -1,9 +1,9 @@
 # Sign-in callback page
 
 The `/auth/callback` page that the sign-in redirect lands on: it reads the session the
-[API](/documentation_v2/glossary.md#api) put in the URL fragment, stores it, loads the viewer's
+[API](/documentation_v2/glossary/a_to_f.md#api) put in the URL fragment, stores it, loads the viewer's
 profile and sends the browser on to the dashboard. The Discord callback and the
-[dev login](/documentation_v2/glossary.md#dev-login) both redirect here.
+[dev login](/documentation_v2/glossary/a_to_f.md#dev-login) both redirect here.
 
 ## Contents
 

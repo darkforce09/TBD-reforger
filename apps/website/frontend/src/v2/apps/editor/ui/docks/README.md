@@ -1,7 +1,7 @@
 # Mission Creator docked chrome
 
-The five surfaces that frame the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
-map: the left dock (the editor layers tree, the [mission](/documentation_v2/glossary.md#mission)
+The five surfaces that frame the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
+map: the left dock (the editor layers tree, the [mission](/documentation_v2/glossary/g_to_m.md#mission)
 search, bookmarks and named locations), the right dock (the seven-tab asset browser), the top
 command strip, the bottom toolbelt with its mode toolbar, status bar and grid references, and the
 right-click context menu.
@@ -76,7 +76,7 @@ native test build compiles all five surfaces.
     `bridge` (placement, selection, the editor context, the document history), the asset catalog
     in `arsenal`, the outliner, the inspector's zones panel, validation panel and environment
     update, `ui::modals::help_modal`, and the page's toolbar dispatch in `mission_editor`;
-  - `crate::v2::core`: the [API](/documentation_v2/glossary.md#api) client and DTOs, the auth
+  - `crate::v2::core`: the [API](/documentation_v2/glossary/a_to_f.md#api) client and DTOs, the auth
     store, the UI primitives, the modal stack and the toasts;
   - `website_map_engine`: `editing::hosted_commands`, `editing::host`, `editing::tools`,
     `streaming::host`, `camera`, `overlay::symbology::markers` and
@@ -93,7 +93,7 @@ native test build compiles all five surfaces.
     `apps/website/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/`;
   - the right-click gesture in
     `apps/website/frontend/src/v2/apps/editor/input/pointer_gestures/context_menu.rs`;
-  - the Mission Settings and [ORBAT](/documentation_v2/glossary.md#orbat) manager dialogs in
+  - the Mission Settings and [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) manager dialogs in
     `apps/website/frontend/src/v2/apps/editor/ui/modals/`;
   - the headless editor smoke tests in
     `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/`, which drive the docks

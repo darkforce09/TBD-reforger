@@ -1,7 +1,7 @@
 # Attributes dialog parts
 
-The tabs, fields and writes of the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
-Attributes dialog, which edits one or several placed [slots](/documentation_v2/glossary.md#slot), or
+The tabs, fields and writes of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
+Attributes dialog, which edits one or several placed [slots](/documentation_v2/glossary/n_to_z.md#slot), or
 one placed vehicle. The dialog itself, `AttributesModal`, lives in the parent module
 `apps/website/frontend/src/v2/apps/editor/ui/inspector/attributes_modal.rs`, which declares these
 modules.
@@ -24,9 +24,9 @@ apps/website/frontend/src/v2/apps/editor/ui/inspector/attributes_modal/
 
 `AttributesModal` opens on the id that the bridge's `editor_context::open_attributes` sets: a
 double-click on the map, a double-click on an outliner or
-[ORBAT](/documentation_v2/glossary.md#orbat) Manager row, or the context menu. `open_arsenal`, from
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) Manager row, or the context menu. `open_arsenal`, from
 the context menu and the ORBAT Manager's slot inspector, opens it on the
-[Arsenal](/documentation_v2/glossary.md#arsenal) tab. The dialog snapshots every target on open and
+[Arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) tab. The dialog snapshots every target on open and
 re-reads its fields on each document change, so an undo taken while it is open refreshes them. Its
 tabs are "Transform", "Identity", "States" (a placeholder) and "Arsenal", which mounts the Arsenal
 tab of `apps/website/frontend/src/v2/apps/editor/arsenal/` for the id the dialog opened on.
@@ -43,7 +43,7 @@ tab of `apps/website/frontend/src/v2/apps/editor/arsenal/` for the id the dialog
   faction and squad pickers through `reassign_slots`; on a locked layer the Transform fields
   refuse and the tab says why. "Revert" writes every target's snapshot back, its squad included.
 - **Vehicles.** A vehicle id opens `vehicle_attrs_view`: the heading, "Cargo" rows from the item
-  [registry](/documentation_v2/glossary.md#registry)'s carriable kinds, and "Crew" seats (driver,
+  [registry](/documentation_v2/glossary/n_to_z.md#registry)'s carriable kinds, and "Crew" seats (driver,
   gunner, commander and four cargo seats) filled from the placed slots, each written through the
   map engine's vehicle commands.
 

@@ -1,9 +1,9 @@
 # Map engine
 
 The `website-map-engine` crate: everything between the platform's map data and the pixels, and
-the [mission](/documentation_v2/glossary.md#mission) domain the
-[API](/documentation_v2/glossary.md#api) and the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) share. It holds the mission
+the [mission](/documentation_v2/glossary/g_to_m.md#mission) domain the
+[API](/documentation_v2/glossary/a_to_f.md#api) and the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) share. It holds the mission
 compiler and CRDT document, the headless editing tools, the static world streamed from a terrain's
 assets, spatial queries and line of sight, the map's lanes and symbology, the cameras, and the
 render engine that hands frame packets to `website-graphics-engine`. It depends on no UI

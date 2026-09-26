@@ -2,9 +2,9 @@
 
 # Event hub page documentation
 
-The feature documentation of the `/events/:id` page, one [event](/documentation_v2/glossary.md#event)'s
-hub with its places, [mission](/documentation_v2/glossary.md#mission) dossiers and inline
-[ORBAT](/documentation_v2/glossary.md#orbat) slotting, which the schedule also embeds.
+The feature documentation of the `/events/:id` page, one [event](/documentation_v2/glossary/a_to_f.md#event)'s
+hub with its places, [mission](/documentation_v2/glossary/g_to_m.md#mission) dossiers and inline
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) slotting, which the schedule also embeds.
 
 ## Contents
 
@@ -18,7 +18,7 @@ documentation_v2/website/frontend/pages/operations/event_detail/
 Read [event_hub_page.md](/documentation_v2/website/frontend/pages/operations/event_detail/event_hub_page.md).
 It follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md): it
 quotes the hub's interface text, gives what each registration, squad and seat call means in the
-[API](/documentation_v2/glossary.md#api), lists where the page and the API disagree, and compares
+[API](/documentation_v2/glossary/a_to_f.md#api), lists where the page and the API disagree, and compares
 the hub with the design references it has. The slotting it describes is the same one the event
 schedule and the ORBAT selection page show, so their feature docs link here rather than repeat
 it. No blueprint set exists for this page; the event schedule's blueprint depicts the hub in its

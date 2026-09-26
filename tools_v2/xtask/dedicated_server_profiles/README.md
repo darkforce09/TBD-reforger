@@ -18,7 +18,7 @@ tools_v2/xtask/dedicated_server_profiles/
 - Network: `bindAddress` and `publicAddress`, `bindPort` and `publicPort` (2001), and the `a2s`
   query block (port 17777), which must differ from the game port.
 - `game`: `name` (`TBD Dev POC`), an empty join `password`, the development `passwordAdmin`,
-  `scenarioId`, the [mission header](/documentation_v2/glossary.md#mission-header) the server boots
+  `scenarioId`, the [mission header](/documentation_v2/glossary/g_to_m.md#mission-header) the server boots
   (`{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf`), `maxPlayers` (8), `visible` and
   `crossPlatform` (both false), an empty `mods` list, and `gameProperties` (view distances,
   BattlEye off, fast validation, the voice UI switches).

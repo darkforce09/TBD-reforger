@@ -3,8 +3,8 @@
 # Dashboard page documentation
 
 The feature documentation of the `/` page, the landing screen of the
-[command center](/documentation_v2/glossary.md#command-center), where a member sees the next
-[event](/documentation_v2/glossary.md#event), a game server's status, their own assignment, the
+[command center](/documentation_v2/glossary/a_to_f.md#command-center), where a member sees the next
+[event](/documentation_v2/glossary/a_to_f.md#event), a game server's status, their own assignment, the
 current modpack and the newest announcements, with the page's design-phase reference.
 
 ## Contents
@@ -20,7 +20,7 @@ documentation_v2/website/frontend/pages/command_center/dashboard/
 Read [dashboard_page.md](/documentation_v2/website/frontend/pages/command_center/dashboard/dashboard_page.md)
 first. It follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md):
 it quotes the page's interface text, gives what each part of the one
-[API](/documentation_v2/glossary.md#api) answer means server-side, lists where the page and the API
+[API](/documentation_v2/glossary/a_to_f.md#api) answer means server-side, lists where the page and the API
 disagree, and compares the built page with the blueprint in `visual_references/`. The code
 folder's README lists the page's files, its call and its states.
 

@@ -2,10 +2,10 @@
 
 # Right asset palette
 
-The [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s right dock, its asset
+The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s right dock, its asset
 browser: seven tabs from which a mission maker picks characters, vehicles, objects, saved
 compositions, briefing markers and zone and trigger areas for the
-[mission](/documentation_v2/glossary.md#mission), with the side chips, the search, the favourites
+[mission](/documentation_v2/glossary/g_to_m.md#mission), with the side chips, the search, the favourites
 and the faction library beside them.
 
 ## Where it lives
@@ -20,7 +20,7 @@ and the faction library beside them.
   the faction library dialog in `apps/website/frontend/src/v2/apps/editor/ui/modals/faction_manager.rs`
   ([dialogs README](/apps/website/frontend/src/v2/apps/editor/ui/modals/README.md)).
 - Entry: `MissionEditorPage` mounts `DockRight` and loads the item
-  [registry](/documentation_v2/glossary.md#registry) at boot
+  [registry](/documentation_v2/glossary/n_to_z.md#registry) at boot
   (`apps/website/frontend/src/v2/apps/editor/mission_editor/registry_loading.rs`).
 - Related features: [placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md)
   (what a pick-up does on the map).
@@ -69,7 +69,7 @@ name work.
    side, in folders that follow each row's category (`build_faction_catalog_tree`,
    `arsenal/asset_catalog/faction_catalog_trees.rs:9-86`). Only the top-level folders start open.
 3. The "Objects" chip switches to objects mode and shows the objects tree: world objects whose
-   `prop:` or `comp:` alias the [mod](/documentation_v2/glossary.md#mod)'s spawn registry holds
+   `prop:` or `comp:` alias the [mod](/documentation_v2/glossary/g_to_m.md#mod)'s spawn registry holds
    ("No placeable objects in the registry." when there are none). Choosing a side chip again
    restores the last side.
 4. Pressing a leaf arms its placement (PLACE-DROP-001) and records it in "Recently placed"; a star

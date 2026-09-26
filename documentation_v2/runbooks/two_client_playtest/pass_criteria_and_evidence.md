@@ -43,7 +43,7 @@ the items marked "no" stay open until the screens read the server's roster.
 
 | # | Item | Evidence | Step | Reachable |
 |---|---|---|---|---|
-| P1 | a loadout authored on a character slot in the [Mission Creator](/documentation_v2/glossary.md#mission-creator), version saved | app screenshot and the version number | [stack](/documentation_v2/runbooks/two_client_playtest/stack_and_mission.md) step 11 | yes |
+| P1 | a loadout authored on a character slot in the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator), version saved | app screenshot and the version number | [stack](/documentation_v2/runbooks/two_client_playtest/stack_and_mission.md) step 11 | yes |
 | P2 | `GET /api/v1/missions/<id>/artifacts/<artifact>/document` answers 200 with `slot.loadout.gear` and `slot.loadout.cargo` | the `curl` of stack step 14 | stack step 14 | yes |
 | P3 | the server loaded the deployed artifact, verified | `[TBD][Mission] loaded … source=platform` (or `source=cache`) | S1 | yes |
 | P4 | the slot was claimed through the lobby picker, not an automatic deploy | a `claim player=…` line | S8 | no; S10's `ready player=… → path=slot result=DEPLOYED` shows the player's own deploy |

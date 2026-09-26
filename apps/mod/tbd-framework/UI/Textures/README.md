@@ -13,7 +13,7 @@ apps/mod/tbd-framework/UI/Textures/
 
 ## How it works
 
-[Enfusion](/documentation_v2/glossary.md#enfusion) merges an addon's files with the game's data
+[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) merges an addon's files with the game's data
 into one resource tree, so `UI/Textures/TBD/…` sits beside the vanilla `UI/Textures/…` folders
 without replacing any of them. The framework's scripts and layouts address these textures by
 resource GUID or path through `TBD_UILayouts` and `TBD_UIIcons`
@@ -22,7 +22,7 @@ resource GUID or path through `TBD_UILayouts` and `TBD_UIIcons`
 ## Format
 
 - File type: PNG sources, each beside the `.edds` texture and `.edds.meta` that
-  [Workbench](/documentation_v2/glossary.md#workbench) writes on
+  [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) writes on
   import; the child's README gives the details.
 - Resource GUID: each texture's `.edds.meta`.
 - Naming: framework textures live under `TBD/`, never directly here.

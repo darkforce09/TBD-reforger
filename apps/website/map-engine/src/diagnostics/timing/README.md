@@ -21,7 +21,7 @@ apps/website/map-engine/src/diagnostics/timing/
 is in flight, the frame's render pass writes a timestamp at its start and end, the submit resolves
 them and copies them into the read buffer, and `kick_readback` maps it and stores
 (end − start) × period / 10⁶ in `last_ms`, which `stats()` reports as `gpu_frame_ms`. The
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s canvas boot and the debug
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s canvas boot and the debug
 benches call `disable_frame_timing`, which drops the timer, so their frames carry no timestamps.
 
 ## Boundaries

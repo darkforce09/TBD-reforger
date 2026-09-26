@@ -3,7 +3,7 @@
 # Coding standards
 
 The rules for how code is written across the repository's Rust crates, its
-[EnfScript](/documentation_v2/glossary.md#enfscript) mod and its tooling, each with a stable rule
+[EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript) mod and its tooling, each with a stable rule
 code and the one gate that enforces it, or a plain statement that nothing does. Every developer
 and AI agent that changes code reads the topic page for the layer they touch; how code is
 documented is in the sibling [documentation standards](/documentation_v2/standards/documentation_standards.md).
@@ -48,8 +48,8 @@ state the Rust form, and the prefixes stay because the code cites them.
 | Gate | Meaning |
 |---|---|
 | CI-BLOCK | a required GitHub job, or a test inside one, fails on a violation |
-| CI-SCRIPT | a `cargo xtask verify …` or `cargo xtask ci …` command exits non-zero on a violation, run by `cargo xtask ci ci-local` and by a job or the [wave](/documentation_v2/glossary.md#wave) gate |
-| MANUAL | only a run in [Workbench](/documentation_v2/glossary.md#workbench) or on a server can show it; allowed for [Enfusion](/documentation_v2/glossary.md#enfusion) runtime rules only (ENF-1, ENF-2) |
+| CI-SCRIPT | a `cargo xtask verify …` or `cargo xtask ci …` command exits non-zero on a violation, run by `cargo xtask ci ci-local` and by a job or the [wave](/documentation_v2/glossary/n_to_z.md#wave) gate |
+| MANUAL | only a run in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) or on a server can show it; allowed for [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) runtime rules only (ENF-1, ENF-2) |
 | none | "live, unenforced": the rule binds, and no tool checks it; or "retired": the rule no longer binds |
 
 There is no allowlist gate: no file may exempt a path from a rule (CLAUDE.md law 7).

@@ -1,8 +1,8 @@
 # Document building blocks
 
-The pieces the [mission](/documentation_v2/glossary.md#mission) document is built from, below its
+The pieces the [mission](/documentation_v2/glossary/g_to_m.md#mission) document is built from, below its
 rows: the ordered id arrays that let peers merge squad and layer membership, the columnar
-[slot](/documentation_v2/glossary.md#slot) projection the map draws and picks from, and the clocks
+[slot](/documentation_v2/glossary/n_to_z.md#slot) projection the map draws and picks from, and the clocks
 that group edits into undo steps.
 
 ## Contents
@@ -35,7 +35,7 @@ order during one materialize, and `NONE_IDX` marks a slot with no tag or no laye
 The document store re-exports what leaves this folder:
 
 - `soa::SlotSoa` with `NONE_IDX` and the `STANCE_*` codes: the columns `crate::editing` picks and
-  selects over, and the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s render
+  selects over, and the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s render
   lanes, select tool and canvas mount read.
 - `undo_groups::install_wasm_now`, `GESTURE_WINDOW_MS`, `MAX_UNDO_GROUPS` and `ManualClock`: the
   host clock hook the Mission Creator calls at wasm start, and the undo constants and test clock.

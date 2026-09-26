@@ -1,9 +1,9 @@
 # Setup command group
 
 The `cargo xtask setup` group: one-time preparation of a developer machine or a server for the
-[mod](/documentation_v2/glossary.md#mod): the dedicated-server profile, the base-game link
-[Workbench](/documentation_v2/glossary.md#workbench) asks for under Proton, the pak folder the
-[Enfusion](/documentation_v2/glossary.md#enfusion) MCP tools read, and the client addon staging
+[mod](/documentation_v2/glossary/g_to_m.md#mod): the dedicated-server profile, the base-game link
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) asks for under Proton, the pak folder the
+[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) MCP tools read, and the client addon staging
 link. The folder also holds the staging host bootstrap that `cargo xtask mod bootstrap-staging`
 runs.
 
@@ -55,11 +55,11 @@ command prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
   `machineCredential` from `TBD_MACHINE_CREDENTIAL` when that is set. It then copies
   `apps/mod/tbd-framework/Data/registry.json` to `profile/TBD_Registry.json`, best effort: the mod
   reads that copy only when its own `Data/registry.json` is missing. A profile without a
-  [machine credential](/documentation_v2/glossary.md#machine-credential) boots no
-  [mission](/documentation_v2/glossary.md#mission), since the mission comes from the server's
-  [mission deployment](/documentation_v2/glossary.md#mission-deployment). The Workbench checklist
+  [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential) boots no
+  [mission](/documentation_v2/glossary/g_to_m.md#mission), since the mission comes from the server's
+  [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment). The Workbench checklist
   it prints last does not match that boot path: it names a
-  [mission header](/documentation_v2/glossary.md#mission-header) and two components to set up by
+  [mission header](/documentation_v2/glossary/g_to_m.md#mission-header) and two components to set up by
   hand.
 - Exit codes: 0 profile written; 1 the backend example is missing (`cp: cannot stat …`).
 - Example: `cargo xtask setup server-profile`

@@ -2,7 +2,7 @@
 
 Recorded responses of the enfusion-mcp server, one file per response shape, that
 `cargo xtask mcp selftest` replays to pin the exit code each shape produces without a running
-[Workbench](/documentation_v2/glossary.md#workbench).
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench).
 
 ## Contents
 

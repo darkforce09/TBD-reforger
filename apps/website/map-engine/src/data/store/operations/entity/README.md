@@ -1,8 +1,8 @@
 # Entity authoring operations
 
-The headless operations the [Mission Creator](/documentation_v2/glossary.md#mission-creator) runs
-on each kind of placed thing in the [mission](/documentation_v2/glossary.md#mission) document:
-[slots](/documentation_v2/glossary.md#slot) and the [ORBAT](/documentation_v2/glossary.md#orbat)
+The headless operations the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) runs
+on each kind of placed thing in the [mission](/documentation_v2/glossary/g_to_m.md#mission) document:
+[slots](/documentation_v2/glossary/n_to_z.md#slot) and the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat)
 manager, vehicles, world objects, markers, comments, connections, zones and triggers, layer
 folders, the clipboard, and what a map release commits for an armed placement.
 

@@ -3,7 +3,7 @@
 # Rehearse the playtest mission headless
 
 Boots the dedicated server with no clients on a loadout-carrying
-[mission](/documentation_v2/glossary.md#mission) — first a golden, then the exact bytes of the
+[mission](/documentation_v2/glossary/g_to_m.md#mission) — first a golden, then the exact bytes of the
 mission you authored — and reads whether the loadout pass lets the round open. It catches the
 failure most likely to end the session, a mission whose bodies nobody can play, in about ten
 minutes and without a second player. Run it alone after

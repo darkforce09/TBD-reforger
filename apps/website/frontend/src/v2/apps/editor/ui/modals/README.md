@@ -1,8 +1,8 @@
 # Mission Creator dialogs
 
-The dialogs the [Mission Creator](/documentation_v2/glossary.md#mission-creator) raises over the
+The dialogs the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) raises over the
 whole workspace instead of framing the map: the Mission Settings dialog for the open
-[mission](/documentation_v2/glossary.md#mission), the [ORBAT](/documentation_v2/glossary.md#orbat)
+[mission](/documentation_v2/glossary/g_to_m.md#mission), the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat)
 Manager, the Faction Manager for the faction library, and the floating controls hint with its
 shortcut catalog.
 
@@ -38,7 +38,7 @@ hosted commands.
 
 The Faction Manager edits the signed-in mission maker's own faction library: each faction's side,
 name, role templates (role, tag and a character from the item
-[registry](/documentation_v2/glossary.md#registry)) and vehicles (a vehicle and an optional label);
+[registry](/documentation_v2/glossary/n_to_z.md#registry)) and vehicles (a vehicle and an optional label);
 a stored role's loadout is kept as it is. It loads
 the library with `GET /api/v1/factions`, saves a new faction with `POST /api/v1/factions` and an
 existing one with `PUT /api/v1/factions/{id}`, and deletes with `DELETE /api/v1/factions/{id}`
@@ -68,9 +68,9 @@ checks every such editor binding against the others and against the shortcut cat
   - the editor's shell in `apps/website/frontend/src/v2/apps/editor/shell/` (`layout` classes,
     `document_commands`, `review_mode`, `world_layer_prefs`) and its bridge (`editor_context`,
     `entity_selection`, the document handle);
-  - `crate::v2::core`: the [API](/documentation_v2/glossary.md#api) client and DTOs, `AuthStore`,
+  - `crate::v2::core`: the [API](/documentation_v2/glossary/a_to_f.md#api) client and DTOs, `AuthStore`,
     `modal_stack`, `Dialog`, toasts, `MaterialIcon`; over HTTP, `/api/v1/missions/{id}` and
-    `/api/v1/factions` of the API's [missions](/documentation_v2/glossary.md#missions) domain.
+    `/api/v1/factions` of the API's [missions](/documentation_v2/glossary/g_to_m.md#missions) domain.
 - Used by:
   - `apps/website/frontend/src/v2/apps/editor/mission_editor.rs` and
     `apps/website/frontend/src/v2/apps/editor/shell/eden_chrome.rs`;

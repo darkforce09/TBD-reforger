@@ -2,7 +2,7 @@
 
 # API code structure and route tags
 
-Rules GO-1 to GO-9: how the [API](/documentation_v2/glossary.md#api) crate
+Rules GO-1 to GO-9: how the [API](/documentation_v2/glossary/a_to_f.md#api) crate
 (`apps/website/api_v2/`, package `website-api`) is laid out, how it treats database errors, and how
 its handlers are tagged. The codes keep their GO prefix because the rules were first written for a
 Go backend; no Go remains, and each rule now states its Rust form or is retired. GO-7 is live and
@@ -19,7 +19,7 @@ snake_case database and wire contract. The eight domains are `administration`, `
 
 - **GO-1 (Scalability) — Business logic lives in `services/`; handlers do HTTP only.** A handler
   extracts and validates input, checks authorization, calls a service and maps the result to a
-  status and a body. Multi-step database work, [ORBAT](/documentation_v2/glossary.md#orbat) materialisation and telemetry math live in
+  status and a body. Multi-step database work, [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) materialisation and telemetry math live in
   the domain's `services/`. Status: live, unenforced: no gate measures how much logic a handler
   holds.
 - **GO-9 (Scalability) — Handlers reach other code through services and models only.** Rust form:
@@ -74,7 +74,7 @@ clippy and `cargo fmt` stand in for the Go-era rules GO-2 to GO-8 and FMT-1 toge
   that method for that handler, and every registered route carries a matching tag, keyed on
   method, path and handler function. Gate: CI-SCRIPT, `cargo xtask verify route-tags`, run by
   `cargo xtask ci verify-coding-standards` and by the platform
-  [wave](/documentation_v2/glossary.md#wave) gate and slice gate.
+  [wave](/documentation_v2/glossary/n_to_z.md#wave) gate and slice gate.
 
 GO-7 is the one GO rule clippy and `cargo fmt` cannot see: `@route` lives in a doc comment, clippy
 does not read doc comments and `cargo fmt` only reflows them. A tag that names a route which does

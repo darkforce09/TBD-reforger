@@ -1,8 +1,8 @@
 # Dedicated server config
 
 The Arma Reforger dedicated server's JSON config (the file its `-config` parameter names) and the
-one change the [fleet host agent](/documentation_v2/glossary.md#fleet-host-agent) makes to it:
-pointing `game.scenarioId` at another [mission header](/documentation_v2/glossary.md#mission-header).
+one change the [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) makes to it:
+pointing `game.scenarioId` at another [mission header](/documentation_v2/glossary/g_to_m.md#mission-header).
 
 ## Contents
 

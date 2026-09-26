@@ -3,7 +3,7 @@
 # Announcements page
 
 The `/announcements` and `/announcements/:id` pages in the
-[command center](/documentation_v2/glossary.md#command-center), headed "Comms Link": a signed-in
+[command center](/documentation_v2/glossary/a_to_f.md#command-center), headed "Comms Link": a signed-in
 member reads the unit's published announcements in a master list and opens one in a reading pane
 beside it. The `:id` in the address decides which announcement is open, so a link to one
 announcement opens exactly that one.
@@ -22,7 +22,7 @@ announcement opens exactly that one.
   where administrators write, publish, pin and push announcements to Discord; the
   [dashboard page](/documentation_v2/website/frontend/pages/command_center/dashboard/dashboard_page.md),
   whose "Recent Intelligence" rows link to `/announcements/{id}`; the
-  [API](/documentation_v2/glossary.md#api)'s
+  [API](/documentation_v2/glossary/a_to_f.md#api)'s
   [community content domain](/apps/website/api_v2/src/community_content/README.md), which serves
   the feed.
 

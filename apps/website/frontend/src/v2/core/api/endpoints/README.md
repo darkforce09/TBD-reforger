@@ -1,12 +1,12 @@
 # Typed endpoint calls
 
-One typed call per [API](/documentation_v2/glossary.md#api) route for
-[event](/documentation_v2/glossary.md#event) access and registration,
-[machine credentials](/documentation_v2/glossary.md#machine-credential),
-[mission](/documentation_v2/glossary.md#mission) reviews,
-[fleet commands](/documentation_v2/glossary.md#fleet-command),
-[mission deployments](/documentation_v2/glossary.md#mission-deployment) and
-[fleet scenarios](/documentation_v2/glossary.md#fleet-scenario), each naming its route's path, body
+One typed call per [API](/documentation_v2/glossary/a_to_f.md#api) route for
+[event](/documentation_v2/glossary/a_to_f.md#event) access and registration,
+[machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential),
+[mission](/documentation_v2/glossary/g_to_m.md#mission) reviews,
+[fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command),
+[mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment) and
+[fleet scenarios](/documentation_v2/glossary/a_to_f.md#fleet-scenario), each naming its route's path, body
 and answer in one place: a page calls `put_event_access_policy(store, event, &change)` instead of
 assembling a path, a body and a verb.
 
@@ -54,9 +54,9 @@ for a seatless place that joins the waitlist when none is free.
   `crate::v2::core::api::dto`, `crate::v2::core::auth::AuthStore`, and `serde` and `serde_json`
   for the bodies.
 - Used by: the pages under `apps/website/frontend/src/v2/pages/`: the
-  [approvals](/documentation_v2/glossary.md#approvals) review drawer, the
-  [event manager](/documentation_v2/glossary.md#event-manager)'s access panel, the
-  [server control](/documentation_v2/glossary.md#server-control) panels, the mission hub's submit
+  [approvals](/documentation_v2/glossary/a_to_f.md#approvals) review drawer, the
+  [event manager](/documentation_v2/glossary/a_to_f.md#event-manager)'s access panel, the
+  [server control](/documentation_v2/glossary/n_to_z.md#server-control) panels, the mission hub's submit
   action, review record and review workspace, and the event hub's registration and waitlist
   controls.
 - Rules: every path a builder produces fits a route template of the API's route tables

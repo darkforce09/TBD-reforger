@@ -2,8 +2,8 @@
 
 # Enfusion MCP Workbench bridge
 
-The `TBD_EMCP` addon of the [mod](/documentation_v2/glossary.md#mod) and the commands around it let
-agents and scripts drive a running [Workbench](/documentation_v2/glossary.md#workbench) from the
+The `TBD_EMCP` addon of the [mod](/documentation_v2/glossary/g_to_m.md#mod) and the commands around it let
+agents and scripts drive a running [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) from the
 command line: inspect and edit the open world, run editor actions, reload scripts and call the
 export handlers. Mod developers and agents working in Workbench read it.
 

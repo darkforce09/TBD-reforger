@@ -1,6 +1,6 @@
 # Blueprint door prefab fixtures
 
-Synthetic [Enfusion](/documentation_v2/glossary.md#enfusion) door prefabs: a door frame with a
+Synthetic [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) door prefabs: a door frame with a
 child leaf, and three leaf variants that each exercise one way the prefab resolver reads a door.
 
 ## Contents

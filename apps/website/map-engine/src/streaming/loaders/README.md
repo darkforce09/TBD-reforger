@@ -3,7 +3,7 @@
 The parsers and browser loaders for a terrain's served files: the manifest's object and binary
 blocks, prefab catalogues, object chunks in gzip JSON or `TBDC` binary form, roads and regions,
 the HTTP fetch helpers, and the two loaders that keep the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map fed: world objects and the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map fed: world objects and the
 line-of-sight occluder. The parsers compile natively for the tools and tests; `fetch.rs`,
 `occluder_loader.rs` and `world_loader/` compile only for wasm32 with the `render` feature.
 

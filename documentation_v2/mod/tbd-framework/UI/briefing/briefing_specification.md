@@ -3,9 +3,9 @@
 # Briefing screen
 
 The Briefing tab of the pre-game screens: during the `BRIEFING` stage every player reads their
-side's orders, radio nets, assets, uniforms and [ORBAT](/documentation_v2/glossary.md#orbat) over
+side's orders, radio nets, assets, uniforms and [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) over
 the live map, sees who is slotted, and presses "Ready & Continue" to be deployed into their
-[slot](/documentation_v2/glossary.md#slot). The pages render mock content; the deploy is live.
+[slot](/documentation_v2/glossary/n_to_z.md#slot). The pages render mock content; the deploy is live.
 
 ## Where it lives
 

@@ -1,6 +1,6 @@
 # Valid mission fixtures
 
-Positive goldens of the [mission](/documentation_v2/glossary.md#mission) contract: complete
+Positive goldens of the [mission](/documentation_v2/glossary/g_to_m.md#mission) contract: complete
 missions that must pass the schema, the size ceiling and the kit-alias check. Commands and tests
 also load them by name as sample missions.
 
@@ -17,22 +17,22 @@ contracts_v2/fixtures/missions/valid/
 (`tools_v2/xtask/src/verifications/schemas/checks/mission_validation.rs`) checks every file against
 `contracts_v2/definitions/mission.schema.json`, keeps every file under the schema's
 `x-tbd-missionFileMaxBytes` ceiling (8 MiB, the value of `MISSION_FILE_MAX_BYTES` in the
-[mod](/documentation_v2/glossary.md#mod)'s `TBD_MissionLoader.c`), and requires every `kit:` alias
-in `slots[]` and in the [ORBAT](/documentation_v2/glossary.md#orbat) roles to be defined in the
+[mod](/documentation_v2/glossary/g_to_m.md#mod)'s `TBD_MissionLoader.c`), and requires every `kit:` alias
+in `slots[]` and in the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) roles to be defined in the
 mod's spawn registry. The four UK kits of `last-stand-at-montfort.json` are the only waived aliases
 (`KNOWN_UNRESOLVABLE_KITS` in `tools_v2/xtask/src/verifications/schemas/checks.rs`), since vanilla
 Reforger ships no UK faction. Some files carry a further pin:
 
 | Fixture | Schema version | What it holds open |
 |---|---|---|
-| `bridgehead-at-levie.json` | 1.1 | a full playable mission; the offline [artifact](/documentation_v2/glossary.md#artifact) of the mod's dev server, and the briefings block the compiler must reproduce |
+| `bridgehead-at-levie.json` | 1.1 | a full playable mission; the offline [artifact](/documentation_v2/glossary/a_to_f.md#artifact) of the mod's dev server, and the briefings block the compiler must reproduce |
 | `compiler-shaped-two-faction.json` | 1.1 | the map engine compiler's exact output for a two-faction editor payload |
 | `empty-warning-fields.json` | 1.1 | every key the mod's validator warns is unconsumed (`environment`, `settings`, `layers`, faction `tickets`, role `radio`) plus `entities`, authored empty |
 | `last-stand-at-montfort.json` | 1.0 | an ORBAT-only mission with no `slots[]`; the base of the oversized-document checks |
 | `schema-1_3-tactical-graphics.json` | 1.3 | the 1.3 `tacticalGraphics` block |
 | `schema-1_3-tasks.json` | 1.3 | the 1.3 `tasks` and `editorTriggers` blocks |
 | `schema-1_3-wire-fields.json` | 1.3 | the 1.3 wire additions: `objectives`, `missionParams`, `variants` and the rest |
-| `slot-loadout-coverage.json` | 1.1 | seven [slot](/documentation_v2/glossary.md#slot)s with real gear and cargo loadouts, the mod's equip and spawn reference |
+| `slot-loadout-coverage.json` | 1.1 | seven [slot](/documentation_v2/glossary/n_to_z.md#slot)s with real gear and cargo loadouts, the mod's equip and spawn reference |
 | `slot-y-absent-and-present.json` | 1.2 | slots with and without an explicit spawn height `y` |
 
 The gate also pins two files by content: `slot-y-absent-and-present.json` must stay at schema
@@ -40,7 +40,7 @@ version 1.2 with at least one slot that has `y` and one that has none, since no 
 exercises the mod's `Y_ABSENT` spawn-height path; and `empty-warning-fields.json` must keep
 authoring every warned key, since it is the negative control for the unconsumed-key warnings of
 `TBD_MissionValidator.c`. The `schema-1_3-*` files are written ahead of the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) emitting their fields, so
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) emitting their fields, so
 readers can ship before writers.
 
 ## Format
@@ -72,7 +72,7 @@ readers can ship before writers.
     `apps/website/map-engine/src/data/scenario/compiler/flatten/tests/`, which load
     `bridgehead-at-levie.json`, `compiler-shaped-two-faction.json` and
     `last-stand-at-montfort.json`;
-  - the [API](/documentation_v2/glossary.md#api)'s contract test
+  - the [API](/documentation_v2/glossary/a_to_f.md#api)'s contract test
     `apps/website/api_v2/src/missions/contract/tests/schema_validators.rs`, which pads
     `last-stand-at-montfort.json` past the byte ceiling;
   - the xtask schema tests `staged_golden_tests.rs` and `side_fallback_tests.rs` in

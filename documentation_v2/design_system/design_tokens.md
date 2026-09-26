@@ -3,7 +3,7 @@
 # Design tokens
 
 The Aegis tokens as the code has them: colour, type, spacing, radii and motion for the website,
-and the mirror of them that paints the game [mod](/documentation_v2/glossary.md#mod)'s screens.
+and the mirror of them that paints the game [mod](/documentation_v2/glossary/g_to_m.md#mod)'s screens.
 Developers and agents read it before writing a class string, a layout colour or a new token.
 
 ## Where it lives
@@ -14,7 +14,7 @@ Developers and agents read it before writing a class string, a layout colour or 
   `text-label-sm`; its `:root` block sets the shadcn-style variables that `@theme inline` maps.
   `apps/website/frontend/index.html` puts `class="dark"` on `<html>` and loads the Material
   Symbols Outlined font.
-- [Mission Creator](/documentation_v2/glossary.md#mission-creator) chrome: the class constants in
+- [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) chrome: the class constants in
   `apps/website/frontend/src/v2/apps/editor/shell/layout.rs` (`HOVER_FILL`, `TOGGLED_PLATE`,
   `DISABLED_GLYPH`, the dock and strip panels), which the form controls in
   [`apps/website/frontend/src/v2/core/ui/`](/apps/website/frontend/src/v2/core/ui/README.md) also
@@ -152,7 +152,7 @@ constants taken from the mockups' Tailwind classes (`PANEL_FILL` is `bg-slate-90
 1. The engine reads colour bytes as linear, so a raw token renders about 2.2 times too bright.
    `Colour()` converts through `Color.FromSRGBA` and memoises one `Color` per token; every paint
    uses `SetColor(Color)`, never `SetColorInt`.
-2. [Enfusion](/documentation_v2/glossary.md#enfusion) blends alpha in linear space, where a browser
+2. [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) blends alpha in linear space, where a browser
    blends in sRGB, so white at 3% over the panel is a faint band in a mockup and a grey stripe in
    game. `Over(top, ground)` flattens a translucent token onto the opaque colour beneath it, in
    sRGB: `Paint` over the panel ground, `PaintOver` over a ground the caller names. Only

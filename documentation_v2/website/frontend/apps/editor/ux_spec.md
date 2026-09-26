@@ -2,9 +2,9 @@
 
 # Mission Creator UX specification
 
-How the [Mission Creator](/documentation_v2/glossary.md#mission-creator) looks and answers the
+How the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) looks and answers the
 mission maker: the docked layout around the map, what each pointer gesture and key does, and how a
-[mission](/documentation_v2/glossary.md#mission) loads, saves and resolves a conflict between the
+[mission](/documentation_v2/glossary/g_to_m.md#mission) loads, saves and resolves a conflict between the
 local draft and the server. The editor follows the layout and interactions of the Arma 3 Eden
 Editor on a top-down 2D map.
 
@@ -63,7 +63,7 @@ the canvas fills the viewport under the editor's own chrome.
    "SEL"; "SZ", the estimated save payload; "SCL", metres per screen pixel; the ruler's total and
    last leg; the scale bar; and the debug line while Ctrl+Alt+D shows it.
 6. Dialogs open over the whole workspace: Mission Settings, the
-   [ORBAT](/documentation_v2/glossary.md#orbat) Manager, the Faction Manager, the Attributes
+   [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) Manager, the Faction Manager, the Attributes
    dialog and the controls hint ("Controls — keyboard shortcuts"). They stack, and Escape closes
    only the topmost.
 
@@ -76,7 +76,7 @@ the canvas fills the viewport under the editor's own chrome.
 | Ctrl/Cmd + click an entity | toggles it in or out of the selection |
 | Click empty ground | clears the selection; with Ctrl/Cmd held it keeps the selection |
 | Click one member of a multi-selection | keeps the multi-selection, so the next drag moves the group |
-| Drag a [slot](/documentation_v2/glossary.md#slot), vehicle or comment | moves it, or the whole selection it belongs to, in one undo step on release |
+| Drag a [slot](/documentation_v2/glossary/n_to_z.md#slot), vehicle or comment | moves it, or the whole selection it belongs to, in one undo step on release |
 | Ctrl/Cmd + drag one slot onto another | regroups the dragged slot into the target slot's squad |
 | Shift + drag a selected entity, or drag the rotate ring | rotates the selection to face the pointer |
 | Drag the translate widget's Z arm | changes the elevation of the selection |
@@ -150,9 +150,9 @@ listeners together.
    successful save clears the unsaved-changes dot and drops the conflict snapshots.
 6. "Export" offers "Export JSON", `mission-<id>.json`, the editor document with its ORBAT, which
    re-imports into the editor, and "Export Compiled", `mission-<id>.compiled.json`, the compact
-   document the [mod](/documentation_v2/glossary.md#mod) loads; neither saves anything.
+   document the [mod](/documentation_v2/glossary/g_to_m.md#mod) loads; neither saves anything.
 7. In the review workspace the editor opens the version an
-   [artifact](/documentation_v2/glossary.md#artifact) compiled from: no draft is read or written,
+   [artifact](/documentation_v2/glossary/a_to_f.md#artifact) compiled from: no draft is read or written,
    and "Save Version" refuses.
 
 The loading overlay, its phases and the failure texts are listed in the canvas mount README's
@@ -166,7 +166,7 @@ The loading overlay, its phases and the failure texts are listed in the canvas m
   computed (`ui/docks/top_strip/`) — they render in a hidden element, so the author never sees
   them.
 - "OBJ" reads as a count of placed objects (`ui/docks/toolbelt/`) — it counts
-  [slots](/documentation_v2/glossary.md#slot) only; placed vehicles are left out.
+  [slots](/documentation_v2/glossary/n_to_z.md#slot) only; placed vehicles are left out.
 - The Save Version dialog always pre-fills `0.1.0` (`mission_editor.rs`) — after a first save the
   second "Save" with the pre-fill returns 409 (`create_version` in
   `apps/website/api_v2/src/missions/handlers/mission_versions.rs`), shown as "Version … already
@@ -180,7 +180,7 @@ The loading overlay, its phases and the failure texts are listed in the canvas m
 ## Data
 
 The editor README's [Boundaries](/apps/website/frontend/src/v2/apps/editor/README.md#boundaries)
-names the [API](/documentation_v2/glossary.md#api) client it uses. Server-side:
+names the [API](/documentation_v2/glossary/a_to_f.md#api) client it uses. Server-side:
 
 - `GET /api/v1/missions/{id}` (`get_mission` in
   `apps/website/api_v2/src/missions/handlers/mission_library.rs`): the mission row with its current
@@ -197,8 +197,8 @@ names the [API](/documentation_v2/glossary.md#api) client it uses. Server-side:
   from Mission Settings.
 - `GET /api/v1/registry` and `GET /api/v1/registry/compat` (`list_registry` in
   `registry_items.rs`, `list_registry_compat` in `registry_compat_graph.rs`, same folder): the item
-  [registry](/documentation_v2/glossary.md#registry), read in pages of 500, and the compatibility
-  feed the [arsenal](/documentation_v2/glossary.md#arsenal) and the palettes read.
+  [registry](/documentation_v2/glossary/n_to_z.md#registry), read in pages of 500, and the compatibility
+  feed the [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) and the palettes read.
 - `GET`, `POST`, `PUT` and `DELETE /api/v1/factions` and `/api/v1/factions/{id}` (`faction_library.rs`,
   same folder): the signed-in mission maker's faction library, which the ORBAT Manager and the
   Faction Manager read and write.
@@ -292,6 +292,6 @@ The dated record of each decision is the [decisions log](/documentation_v2/websi
 - A warm return fetches the server version like a cold one, and the conflict dialog guards every
   divergence: a draft is never overwritten without the author's answer.
 - Autosave writes only the local draft; the server receives explicit, immutable versions from
-  "Save Version": a version is a deliberate snapshot that [events](/documentation_v2/glossary.md#event) and reviews can point at.
+  "Save Version": a version is a deliberate snapshot that [events](/documentation_v2/glossary/a_to_f.md#event) and reviews can point at.
 - Time of day is a slider in the top strip, with fine control in Mission Settings, as Eden's
   environment control is.

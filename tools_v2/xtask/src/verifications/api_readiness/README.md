@@ -1,6 +1,6 @@
 # API readiness verification
 
-The check behind `cargo xtask verify api-readiness`: the [API](/documentation_v2/glossary.md#api)
+The check behind `cargo xtask verify api-readiness`: the [API](/documentation_v2/glossary/a_to_f.md#api)
 counts as complete only when every requirement in the acceptance register has current, passing
 evidence from every check it names. It judges receipts; with `--execute` it first runs the local
 checks and writes their receipts.

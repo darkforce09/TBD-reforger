@@ -2,7 +2,7 @@
 
 # Mission Creator canvas blueprint
 
-Design-phase reference for the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
+Design-phase reference for the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
 map canvas at `/missions/:id/edit`, titled "Mission Editor" in its export: floating panels over a
 topographic map. It gives colour and layout context and is not an implementation source; the built
 UI is the Leptos code under `apps/website/frontend/src/v2/apps/editor/`.

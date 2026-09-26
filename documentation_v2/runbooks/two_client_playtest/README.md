@@ -2,9 +2,9 @@
 
 # Two-client playtest
 
-How to run the live end-to-end playtest of the [mod](/documentation_v2/glossary.md#mod): one
+How to run the live end-to-end playtest of the [mod](/documentation_v2/glossary/g_to_m.md#mod): one
 dedicated server on a development machine, started with `cargo xtask mod playtest`, and two real
-Arma Reforger clients walking a [mission](/documentation_v2/glossary.md#mission) from join to
+Arma Reforger clients walking a [mission](/documentation_v2/glossary/g_to_m.md#mission) from join to
 round end. It is the only check in the repository that puts a player in the world; developers
 and the operator who closes the playtest tickets read it.
 
@@ -90,7 +90,7 @@ Facts every topic relies on:
 
 - Depends on: the [runbook template](/documentation_v2/standards/templates/runbook.md); the xtask
   `mod`, `db`, `mk`, `setup`, `verify` and `ticket` command trees; the website API's
-  [game runtime](/documentation_v2/glossary.md#game-runtime) and mission routes; the mod's log
+  [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) and mission routes; the mod's log
   lines under `apps/mod/tbd-framework/Scripts/Game/TBD/`; the golden missions in
   `contracts_v2/fixtures/missions/valid/`.
 - Used by: the two playtest tickets, which cite this README's path; the

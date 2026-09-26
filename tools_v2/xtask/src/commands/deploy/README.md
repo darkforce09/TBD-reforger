@@ -80,7 +80,7 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
 - Does: deploys the checkout to the staging host and boots the dedicated server in
   `TBD_SERVER_MODE` (`config` by default, or `addons`), asserting from the server's log that the
   synced addon won, a room registered and the config loaded; with `TBD_INSTALL_HOST_AGENT=1` it
-  also installs the [fleet host agent](/documentation_v2/glossary.md#fleet-host-agent).
+  also installs the [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent).
   `--render-only` writes the server config to a local file after the settings check;
   `--verify-boot` judges a log you already have; `--verify-boot-selftest` proves the verdict can
   fail. The last two need no `deploy.env`.

@@ -2,10 +2,10 @@
 
 # Ticket specs and plans
 
-The documents the [ticket](/documentation_v2/glossary.md#ticket) registry cites: each ticket's
+The documents the [ticket](/documentation_v2/glossary/n_to_z.md#ticket) registry cites: each ticket's
 spec, which says what to build and how it is accepted, and its plan, which says how the work
 runs. Agents read them before working a ticket, and the
-[ticketboard](/documentation_v2/glossary.md#ticketboard) and the ticket commands read their paths.
+[ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) and the ticket commands read their paths.
 
 ## Contents
 

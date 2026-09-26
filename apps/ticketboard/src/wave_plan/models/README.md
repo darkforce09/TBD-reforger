@@ -1,7 +1,7 @@
 # Wave plan display models
 
-The projection of the recorded [wave](/documentation_v2/glossary.md#wave) plan that the
-[ticketboard](/documentation_v2/glossary.md#ticketboard)'s Waves tab paints: the lanes exactly as
+The projection of the recorded [wave](/documentation_v2/glossary/n_to_z.md#wave) plan that the
+[ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)'s Waves tab paints: the lanes exactly as
 the lock stores them, wave 0, and the dispatchable tickets no wave holds.
 
 ## Contents

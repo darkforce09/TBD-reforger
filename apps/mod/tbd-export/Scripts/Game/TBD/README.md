@@ -1,7 +1,7 @@
 # Export addon game scripts
 
-The export addon's [EnfScript](/documentation_v2/glossary.md#enfscript) that compiles into the game
-rather than into [Workbench](/documentation_v2/glossary.md#workbench): the runtime road network
+The export addon's [EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript) that compiles into the game
+rather than into [Workbench](/documentation_v2/glossary/n_to_z.md#workbench): the runtime road network
 export, which runs inside a playing export world.
 
 ## Contents
@@ -15,7 +15,7 @@ apps/mod/tbd-export/Scripts/Game/TBD/
 
 The folder holds one subsystem, `Export/`. The export game mode prefab
 carries `TBD_RoadExportComponent`; playing the export
-[mission header](/documentation_v2/glossary.md#mission-header) starts it, and it writes the road
+[mission header](/documentation_v2/glossary/g_to_m.md#mission-header) starts it, and it writes the road
 files to `$profile:TBD_Export/everon/roads/`.
 
 ## Authority

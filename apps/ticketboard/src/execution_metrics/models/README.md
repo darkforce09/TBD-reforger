@@ -1,6 +1,6 @@
 # Metrics view
 
-The borrowed view the [ticketboard](/documentation_v2/glossary.md#ticketboard)'s application lends
+The borrowed view the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)'s application lends
 the Metrics tab for one frame.
 
 ## Contents

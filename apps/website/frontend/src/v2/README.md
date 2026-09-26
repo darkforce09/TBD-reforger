@@ -19,7 +19,7 @@ apps/website/frontend/src/v2/
 
 `apps/website/frontend/src/app_routes.rs` binds each path to a route component: a page under
 `pages/`, or a workspace under `apps/` for the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) and the debug benches. The
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) and the debug benches. The
 navigation frame in `pages/` wraps every route, and pages and workspaces fetch, gate and draw
 through `core/`. The imports between the three run mostly one way:
 
@@ -37,8 +37,8 @@ which walks every production file of the tree.
 
 ## Public surface
 
-- `core`: the [API](/documentation_v2/glossary.md#api) client, the wire types, the session store
-  and [role](/documentation_v2/glossary.md#role) checks, the interface primitives and the
+- `core`: the [API](/documentation_v2/glossary/a_to_f.md#api) client, the wire types, the session store
+  and [role](/documentation_v2/glossary/n_to_z.md#role) checks, the interface primitives and the
   utilities, read by `apps/website/frontend/src/router.rs` and throughout this tree.
 - `pages` and `apps`: the route components that `apps/website/frontend/src/app_routes.rs` mounts,
   and `pages::navigation::layout::AppLayout`, which `apps/website/frontend/src/main.rs` mounts at

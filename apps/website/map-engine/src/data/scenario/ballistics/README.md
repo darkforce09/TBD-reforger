@@ -2,9 +2,9 @@
 
 The mortar solver behind the field tools: from a firing position and a target on the flat game
 map, the distance, azimuth, elevation, charge and time of flight for one of the mortars whose
-charge tables it holds. The [API](/documentation_v2/glossary.md#api) serves it to the mortar
+charge tables it holds. The [API](/documentation_v2/glossary/a_to_f.md#api) serves it to the mortar
 calculator and records solved fire missions against an
-[event](/documentation_v2/glossary.md#event).
+[event](/documentation_v2/glossary/a_to_f.md#event).
 
 ## Contents
 

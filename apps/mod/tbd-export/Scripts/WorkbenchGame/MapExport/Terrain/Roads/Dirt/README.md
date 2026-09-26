@@ -1,6 +1,6 @@
 # Dirt road export
 
-Finds the open world's dirt and gravel roads in [Workbench](/documentation_v2/glossary.md#workbench)
+Finds the open world's dirt and gravel roads in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)
 and writes their centrelines, widths and endpoint connections to `roads_dirt.json`.
 
 ## Contents

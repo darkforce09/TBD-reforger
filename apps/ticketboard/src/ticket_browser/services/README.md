@@ -1,6 +1,6 @@
 # Browser filters and scope facets
 
-The filters of the [ticketboard](/documentation_v2/glossary.md#ticketboard)'s browser: per-ticket
+The filters of the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)'s browser: per-ticket
 facts computed once per load, the composable filter set applied over them, and the scope
 dropdowns narrowed from the scope vocabulary and the values the corpus holds.
 

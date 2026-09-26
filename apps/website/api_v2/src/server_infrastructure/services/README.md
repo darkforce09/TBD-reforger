@@ -1,10 +1,10 @@
 # Server infrastructure services
 
 The logic behind the game server fleet: the
-[machine credentials](/documentation_v2/glossary.md#machine-credential) that authenticate the
+[machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential) that authenticate the
 programs on a game host, the runtime sessions that fence each boot of a
-[game runtime](/documentation_v2/glossary.md#game-runtime), the
-[fleet command](/documentation_v2/glossary.md#fleet-command) ledger, and the publisher of each
+[game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime), the
+[fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) ledger, and the publisher of each
 server's live status topic.
 
 ## Contents
@@ -43,13 +43,13 @@ first snapshot carry one payload shape. The ledger in `fleet_commands/` has its 
 - `machine_credentials::MachineCaller` with the extractor in `machine_authentication.rs`: taken by
   the machine routes of this domain, of `match_telemetry`, of `missions` and of `operations`.
 - `runtime_sessions`: `admit_heartbeat` and `HeartbeatFence` for the heartbeat in `match_telemetry`;
-  `share_open_session` for the live [slot](/documentation_v2/glossary.md#slot) occupancy in
+  `share_open_session` for the live [slot](/documentation_v2/glossary/n_to_z.md#slot) occupancy in
   `operations`; `expire_silent_runtime_sessions` for the `runtime_session_expiry` worker.
 - `status_broadcast`: `publish_server_status` for the heartbeat, `publish_server_status_by_id` for
   the `runtime_session_expiry` worker, `publish_all_server_statuses` for the
   `server_status_publisher` worker.
 - `fleet_commands::command_ledger`: `enqueue_deployment_command` and `cancel_command` for
-  [mission deployments](/documentation_v2/glossary.md#mission-deployment) in `missions`;
+  [mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment) in `missions`;
   `fleet_commands::command_reconciliation::reconcile_fleet_commands` for the
   `fleet_command_reconciler` worker.
 

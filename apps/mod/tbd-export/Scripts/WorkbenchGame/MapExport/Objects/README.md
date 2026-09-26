@@ -1,7 +1,7 @@
 # World object export
 
 The placed-object layers of the map export, read from the world open in
-[Workbench](/documentation_v2/glossary.md#workbench): the full world-object export the developer
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench): the full world-object export the developer
 tools build the map's object data from, a classified object export, building blueprints,
 infrastructure, and a line-of-sight reference sampler.
 

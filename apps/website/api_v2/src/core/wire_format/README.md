@@ -1,6 +1,6 @@
 # JSON wire formats
 
-The serialization primitives the [API](/documentation_v2/glossary.md#api)'s wire models share:
+The serialization primitives the [API](/documentation_v2/glossary/a_to_f.md#api)'s wire models share:
 the spellings of instants and dates, and the passthrough type for `jsonb` columns.
 
 ## Contents

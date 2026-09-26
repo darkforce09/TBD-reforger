@@ -4,7 +4,7 @@
 
 Design-phase reference for the modpacks page at `/modpacks`: one wide card for the server's
 modpack, its size, its key dependencies and a button that connects and syncs the
-[mods](/documentation_v2/glossary.md#mod). It gives colour and layout context and is not an
+[mods](/documentation_v2/glossary/g_to_m.md#mod). It gives colour and layout context and is not an
 implementation source; the built UI is the Leptos code under
 `apps/website/frontend/src/v2/pages/doctrine_and_info/modpacks/`.
 

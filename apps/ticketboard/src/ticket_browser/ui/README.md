@@ -1,6 +1,6 @@
 # Browser rendering
 
-The egui views of the [ticketboard](/documentation_v2/glossary.md#ticketboard)'s browser: the
+The egui views of the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)'s browser: the
 filter bar, the status board and its cards, the program tree and the ticket detail panel. Each
 paints from a `BrowserView` and reports what the viewer did as `BrowserEvent`s.
 

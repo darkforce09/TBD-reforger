@@ -2,7 +2,7 @@
 
 Source checks for the deploy commands. One gate lives here:
 `cargo xtask verify staging-compose-paths` holds that the staging
-[deployment](/documentation_v2/glossary.md#deployment) starts its API and Postgres stack from
+[deployment](/documentation_v2/glossary/a_to_f.md#deployment) starts its API and Postgres stack from
 `apps/website/docker-compose.staging.yml`, in the dry-run plan and on the live remote shell alike.
 
 ## Contents
@@ -48,7 +48,7 @@ because the wave gate and CI record pass or fail from it.
     `cargo xtask verify staging-compose-paths`;
   - `tools_v2/xtask/src/commands/ci/task_definitions/verification_dispatch.rs`, for the
     `verify-staging-compose-paths` step of `ci-local`;
-  - the [wave](/documentation_v2/glossary.md#wave) gate's `VERIFY_STEPS` in
+  - the [wave](/documentation_v2/glossary/n_to_z.md#wave) gate's `VERIFY_STEPS` in
     `tools_v2/xtask/src/commands/platform/wave_execution/gate.rs`, and the `mod-gates-hosted`
     job of `.github/workflows/ci.yml`.
 - Rules:

@@ -2,7 +2,7 @@
 
 # Monorepo merge records
 
-The records of how the website and game [mod](/documentation_v2/glossary.md#mod) repositories became
+The records of how the website and game [mod](/documentation_v2/glossary/g_to_m.md#mod) repositories became
 this monorepo and how their documentation was first reorganised in it: the merge runbook, the
 changelog of moved document paths with before and after manifests, and the index READMEs of
 documentation folders the repository does not hold. Status: archived — frozen records.
@@ -36,7 +36,7 @@ None: the records concern the repository's layout, not a code folder.
 ## Boundaries
 
 - Depends on: nothing live; the records quote the repositories of their time.
-- Used by: the repository's root README and one [ticket](/documentation_v2/glossary.md#ticket) file
+- Used by: the repository's root README and one [ticket](/documentation_v2/glossary/n_to_z.md#ticket) file
   in `.ai/tickets/`, which link the merge runbook.
 - Rules: never reworded, only links change.
 

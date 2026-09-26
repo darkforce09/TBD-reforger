@@ -1,8 +1,8 @@
 # Framework mission headers
 
-The framework's [mission header](/documentation_v2/glossary.md#mission-header): the Enfusion
+The framework's [mission header](/documentation_v2/glossary/g_to_m.md#mission-header): the Enfusion
 config a dedicated server or Workbench boots to load the framework's world and game mode. The
-[mission](/documentation_v2/glossary.md#mission) played in it is not here; the running game loads
+[mission](/documentation_v2/glossary/g_to_m.md#mission) played in it is not here; the running game loads
 it from the platform.
 
 ## Contents
@@ -41,7 +41,7 @@ given as the dedicated-server config's `game.scenarioId`.
 - Naming: `TBD_<Name>.conf`, one header per world the framework boots.
 - Adding a header: create it in Workbench inside this addon, which writes the `.meta` with a new
   GUID; commit the pair with the rewritten `apps/mod/tbd-framework/resourceDatabase.rdb`, and
-  register its resource name as a [fleet scenario](/documentation_v2/glossary.md#fleet-scenario) for
+  register its resource name as a [fleet scenario](/documentation_v2/glossary/a_to_f.md#fleet-scenario) for
   its terrain so the platform can boot it.
 
 ## Referenced by

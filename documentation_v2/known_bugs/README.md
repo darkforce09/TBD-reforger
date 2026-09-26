@@ -18,7 +18,7 @@ documentation_v2/known_bugs/
 Each entry follows the [known bug template](/documentation_v2/standards/templates/known_bug.md):
 its number and title, then Status, Symptom, Cause, Workaround, Fix and Related tickets. An entry
 records a defect someone reproduced; a suspected defect, or one found by reading code, is a
-[ticket](/documentation_v2/glossary.md#ticket) until it is reproduced. A new entry takes the next
+[ticket](/documentation_v2/glossary/n_to_z.md#ticket) until it is reproduced. A new entry takes the next
 free number and gets a row below. A resolved entry stays in the folder with its status set to
 resolved and the proof of what resolved it.
 

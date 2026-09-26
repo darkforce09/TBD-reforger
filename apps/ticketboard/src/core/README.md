@@ -1,7 +1,7 @@
 # Ticketboard core
 
-The reusable foundations of the [ticketboard](/documentation_v2/glossary.md#ticketboard) that
-know nothing about [tickets](/documentation_v2/glossary.md#ticket): subprocess execution and
+The reusable foundations of the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) that
+know nothing about [tickets](/documentation_v2/glossary/n_to_z.md#ticket): subprocess execution and
 bounded logs, wall-clock labels, opening a path externally, and the small interface primitives the
 features share.
 

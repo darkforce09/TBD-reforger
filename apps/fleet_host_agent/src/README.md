@@ -1,9 +1,9 @@
 # Fleet host agent source
 
 The `fleet_host_agent` library and the `fleet-host-agent` binary: everything the
-[fleet host agent](/documentation_v2/glossary.md#fleet-host-agent) does between reading its
-configuration and reporting a [fleet command](/documentation_v2/glossary.md#fleet-command)'s
-outcome to the [API](/documentation_v2/glossary.md#api).
+[fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) does between reading its
+configuration and reporting a [fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command)'s
+outcome to the [API](/documentation_v2/glossary/a_to_f.md#api).
 
 ## Contents
 

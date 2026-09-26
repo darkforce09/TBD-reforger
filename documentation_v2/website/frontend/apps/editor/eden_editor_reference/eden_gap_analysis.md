@@ -2,7 +2,7 @@
 
 # Eden gap analysis
 
-Every ID of the two Eden catalogs, paired with the [Mission Creator](/documentation_v2/glossary.md#mission-creator)
+Every ID of the two Eden catalogs, paired with the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)
 feature that answers it and scored for parity, read from the code. Developers and AI agents read it
 to see which Eden capabilities the Mission Creator has, which it has in part, and what is left.
 
@@ -34,7 +34,7 @@ behaviour is the catalogs'; this file states only the Mission Creator's side.
 | **partial** | The capability exists but is incomplete, reached by another gesture, or not carried to the game |
 | **missing** | Not built in the Mission Creator |
 | **deferred** | Deliberately left for later, with no ticket |
-| **na** | Has no meaning for a top-down web editor of a [mission](/documentation_v2/glossary.md#mission): an Arma 3 engine concept, a scripting handle, or a precondition the Mission Creator does not have |
+| **na** | Has no meaning for a top-down web editor of a [mission](/documentation_v2/glossary/g_to_m.md#mission): an Arma 3 engine concept, a scripting handle, or a precondition the Mission Creator does not have |
 | **tbd_only** | A Mission Creator feature with no Eden ID |
 
 ### Build class (attribute rows only)
@@ -46,7 +46,7 @@ work. Interaction rows carry no class.
 |---|---|---|
 | **a** | The Mission Creator (and the website API) only: the value is editor-only, or the compiled mission already carries it | factory, `executor: claude-code` |
 | **b** | A key in `contracts_v2/definitions/mission.schema.json` that the compiler must emit | `executor: workbench` |
-| **c** | An Enfusion reader or runtime in the [mod](/documentation_v2/glossary.md#mod) as well | `executor: workbench` |
+| **c** | An Enfusion reader or runtime in the [mod](/documentation_v2/glossary/g_to_m.md#mod) as well | `executor: workbench` |
 | **d** | None: out of scope, so parity is `na` | closed |
 
 Every `d` row is `na`, and no other attribute row is. Several `b` and `c` rows already have their
@@ -141,7 +141,7 @@ so they have no rows; four of them carry local IDs in Part 3.
 | eden_id | tbd_id | parity | ticket | gap_notes |
 |---------|--------|--------|----------|-----------|
 | CONN-START-001 | CONN-START-001 | match | T-672 ✅ · T-768 ✅ | Right-click an entity › "Connect" › "Sync to", "Group to" or "Set Trigger Owner", then click the target; Esc cancels (`ui/docks/context_menu/`) |
-| CONN-GROUP-001 | CONN-GROUP-001 | match | T-672 ✅ | Ctrl/Cmd+drag of one slot onto another moves it into the target's squad (XFORM-REGROUP-001, `regroup_slot_onto`, `input/pointer_gestures/pointer_up.rs`); the ORBAT Manager edits squads as well. "Group to" only stores a `group` connection and changes no squad |
+| CONN-GROUP-001 | CONN-GROUP-001 | partial | T-672 ✅ | "Group to" only stores a `group` connection and changes no squad (`complete_connect` in `apps/website/map-engine/src/data/store/operations/entity/connections.rs`). Regrouping exists separately: a Ctrl/Cmd+drag of one slot onto another moves it into the target's squad (XFORM-REGROUP-001, `regroup_slot_onto`, `input/pointer_gestures/pointer_up.rs`), and the ORBAT Manager edits squads as well |
 | CONN-SYNC-001 | CONN-SYNC-001 | partial | T-672 ✅ | "Sync to" draws and stores a sync connection, saved with the mission; the compile carries no connection, so a sync does nothing in the game |
 | CONN-TRG-OWNER-001 | CONN-TRG-OWNER-001 | partial | T-079 ✅ | The trigger's "Owner" field sets it, with a dashed owner line; "Set Trigger Owner" only stores a `triggerOwner` connection between two slots or vehicles; triggers do not reach the game (RIGHT-MODE-003) |
 | CONN-RAND-START-001 | — | missing | — · wb | Needs waypoints (RIGHT-MODE-004) |
@@ -413,10 +413,10 @@ validation panel and the status bar's save size have no Eden ID and no row.
 
 | Source | match | partial | missing | deferred | na | tbd_only | total |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| Interactions (83) | 43 | 25 | 7 | 3 | 5 | 0 | **83** |
+| Interactions (83) | 42 | 26 | 7 | 3 | 5 | 0 | **83** |
 | Attributes (93) | 24 | 8 | 40 | 0 | 21 | 0 | **93** |
 | Mission Creator rows (15) | 6 | 6 | 1 | 0 | 0 | 2 | **15** |
-| **total** | **73** | **39** | **48** | **3** | **26** | **2** | **191** |
+| **total** | **72** | **40** | **48** | **3** | **26** | **2** | **191** |
 
 ### Interactions by domain (83)
 
@@ -428,13 +428,13 @@ validation panel and the status bar's save size have no Eden ID and no row.
 | WIDGET | 6 | 2 | 3 | 0 | 0 | 1 |
 | TOOLBAR | 2 | 0 | 1 | 0 | 1 | 0 |
 | COMP | 5 | 2 | 1 | 0 | 2 | 0 |
-| CONN | 8 | 3 | 2 | 3 | 0 | 0 |
+| CONN | 8 | 2 | 3 | 3 | 0 | 0 |
 | CREW | 4 | 0 | 3 | 1 | 0 | 0 |
 | SEL / LAYER / ATTR / CTX | 12 | 10 | 2 | 0 | 0 | 0 |
 | KEY | 4 | 1 | 2 | 1 | 0 | 0 |
 | ACTION | 10 | 5 | 3 | 1 | 0 | 1 |
 | STATUS | 7 | 4 | 0 | 0 | 0 | 3 |
-| **total** | **83** | **43** | **25** | **7** | **3** | **5** |
+| **total** | **83** | **42** | **26** | **7** | **3** | **5** |
 
 ### Attributes — parity by build class (93)
 

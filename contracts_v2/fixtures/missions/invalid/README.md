@@ -1,6 +1,6 @@
 # Invalid mission fixtures
 
-Negative goldens of the [mission](/documentation_v2/glossary.md#mission) contract: well-formed
+Negative goldens of the [mission](/documentation_v2/glossary/g_to_m.md#mission) contract: well-formed
 documents that the gates must reject, each for one stated reason at one JSON pointer. A gate that
 stops rejecting one of them names the rule that regressed.
 
@@ -18,7 +18,7 @@ contracts_v2/fixtures/missions/invalid/
 `mustFail.gate`, `mustFail.at` and `document`, and a wrapper missing any of them fails the run. A
 `schema` fixture must be rejected by `contracts_v2/definitions/mission.schema.json`, and every
 finding must sit at or below `mustFail.at`. A `registry` fixture must pass the schema and fail only
-the kit-alias cross-reference against the [mod](/documentation_v2/glossary.md#mod)'s spawn registry
+the kit-alias cross-reference against the [mod](/documentation_v2/glossary/g_to_m.md#mod)'s spawn registry
 `apps/mod/tbd-framework/Data/registry.json`, again at or below its pointer. A fixture rejected for
 any other reason fails the run, so each file stays pinned to its reason.
 

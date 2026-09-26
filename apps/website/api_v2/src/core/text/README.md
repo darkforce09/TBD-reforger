@@ -1,6 +1,6 @@
 # Text handling
 
-Text rules the whole [API](/documentation_v2/glossary.md#api) shares: the guard every stored URL
+Text rules the whole [API](/documentation_v2/glossary/a_to_f.md#api) shares: the guard every stored URL
 passes before it is written, and the HTML sanitizer with the preview helpers that shorten text for
 lists and Discord messages.
 
@@ -19,8 +19,8 @@ apps/website/api_v2/src/core/text/
 `is_http_url` accepts an absolute URL whose scheme is `http` or `https` and whose host is not
 empty, and refuses anything holding an ASCII control character or surrounding whitespace, so the
 bytes checked are the bytes a browser will follow. A handler that stores a URL (an announcement
-thumbnail, an [event](/documentation_v2/glossary.md#event) banner, a
-[mission](/documentation_v2/glossary.md#mission) thumbnail, a Discord avatar, a match replay)
+thumbnail, an [event](/documentation_v2/glossary/a_to_f.md#event) banner, a
+[mission](/documentation_v2/glossary/g_to_m.md#mission) thumbnail, a Discord avatar, a match replay)
 refuses a failing value instead of storing it. The guard is not a server-side request forgery
 check: a loopback or metadata address passes.
 

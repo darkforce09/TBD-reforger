@@ -2,7 +2,7 @@
 
 The two gates of `cargo xtask platform wave gate`: the cheap per-slice gate a slice agent runs in
 its worktree before reporting done, and the full wave gate that runs once per
-[wave](/documentation_v2/glossary.md#wave) on merged `main`.
+[wave](/documentation_v2/glossary/n_to_z.md#wave) on merged `main`.
 
 ## Contents
 

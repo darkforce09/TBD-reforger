@@ -3,7 +3,7 @@
 # Join the staging server and update its mod
 
 Joins an Arma Reforger client to the staging server by Direct Join, diagnoses a join that fails,
-and gets a script change of the [mod](/documentation_v2/glossary.md#mod) to the server and to the
+and gets a script change of the [mod](/documentation_v2/glossary/g_to_m.md#mod) to the server and to the
 players. The server side needs only a redeploy; players need a Workshop publish.
 
 ## Prerequisites
@@ -31,7 +31,7 @@ players. The server side needs only a redeploy; players need a Workshop publish.
 2. In the client, open Multiplayer, then Direct Join, and enter `<address>:2001` or the Direct
    Join Code. Then, as a listed admin, type `#tbd` in chat.
 
-   Expected: the client loads into the server's lobby, and `#tbd` answers with the [missions](/documentation_v2/glossary.md#mission) the
+   Expected: the client loads into the server's lobby, and `#tbd` answers with the [missions](/documentation_v2/glossary/g_to_m.md#mission) the
    platform lets this server deploy, numbered from 1; a player not in `game.admins[]` gets
    "TBD: admin only.".
 
@@ -66,7 +66,7 @@ The client stands in the lobby and the server's log shows it:
 cargo xtask mod remote-logs
 ```
 
-Expected: once the player has taken a [slot](/documentation_v2/glossary.md#slot), `VERDICT: PASS — boot healthy and at least one player
+Expected: once the player has taken a [slot](/documentation_v2/glossary/n_to_z.md#slot), `VERDICT: PASS — boot healthy and at least one player
 was seated.`, exit 0.
 
 ## Launch flags and ports
@@ -80,7 +80,7 @@ config:  ArmaReforgerServer -addonsDir <dir> -config <server.config.json> -profi
 addons:  ArmaReforgerServer -profile <dir> -addonsDir <dir> -addons <GUID> -server "<scenario>" -bindIP 0.0.0.0 -bindPort 2001 -a2sPort 17777 -maxFPS 60 -logStats 30000 -nothrow
 ```
 
-The standard layout is game 2001, A2S 17777, [RCON](/documentation_v2/glossary.md#rcon) 19999.
+The standard layout is game 2001, A2S 17777, [RCON](/documentation_v2/glossary/n_to_z.md#rcon) 19999.
 The A2S port is a separate UDP socket from the game port and must differ from it: equal ports log
 `Starting RPL server, listening on …:2001`, then `NETWORK (E): Unable to start replication`,
 `Unable to initialize the game` and `Game destroyed`, and the process exits with status 0, so
@@ -97,7 +97,7 @@ The server loads the synced checkout through `-addonsDir`, so a script change re
 redeploy:
 
 1. Compile the mod headless; exit 3 means `apps/mod/tbd-framework/resourceDatabase.rdb` is stale
-   and does not register a new `.c` file, which [Workbench](/documentation_v2/glossary.md#workbench)
+   and does not register a new `.c` file, which [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)
    fixes when it next loads the addon.
 
    ```bash

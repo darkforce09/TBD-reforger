@@ -1,8 +1,8 @@
 # Authored audio
 
-The check on a [mission](/documentation_v2/glossary.md#mission)'s authored `audio` block: the
+The check on a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s authored `audio` block: the
 positional sound emitters and the music cues the author places, typed from JSON and refused with a
-readable sentence when the [mod](/documentation_v2/glossary.md#mod) could not play them as
+readable sentence when the [mod](/documentation_v2/glossary/g_to_m.md#mod) could not play them as
 written. The module is exposed as `data::scenario::audio`.
 
 ## Contents
@@ -36,7 +36,7 @@ plays the cues.
 
 - Depends on: `serde_json`.
 - Used by: `crate::data::scenario::extensions`, whose `audio` row calls `validate`; the
-  [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s audio panel
+  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s audio panel
   (`apps/website/frontend/src/v2/apps/editor/ui/inspector/audio_emitters.rs` and its `view.rs`),
   which checks each edit with `validate` and offers `MUSIC_EVENTS` as the cue list.
 - Rules: a radius of zero or below is refused, as the schema's `exclusiveMinimum: 0` refuses it

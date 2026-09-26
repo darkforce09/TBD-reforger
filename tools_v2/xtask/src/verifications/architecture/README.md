@@ -1,9 +1,9 @@
 # Architecture verifications
 
 Source checks for three structural contracts: the layer walls between the map engine, the graphics
-engine and the frontend; the `@route` doc tags of the [API](/documentation_v2/glossary.md#api)
-against its route tables; and the [ORBAT](/documentation_v2/glossary.md#orbat) and placement
-guarantees of the [Mission Creator](/documentation_v2/glossary.md#mission-creator). Each gate is
+engine and the frontend; the `@route` doc tags of the [API](/documentation_v2/glossary/a_to_f.md#api)
+against its route tables; and the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) and placement
+guarantees of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator). Each gate is
 its own `cargo xtask verify` verb.
 
 ## Contents
@@ -93,7 +93,7 @@ the first failure.
   - `tools_v2/xtask/src/commands/ci/task_definitions/verification_dispatch.rs`, for the
     `verify-engine-layers` step of `ci-local` and the `route-tags` step of
     `verify-coding-standards`;
-  - the [wave](/documentation_v2/glossary.md#wave) gate, whose `VERIFY_STEPS` in
+  - the [wave](/documentation_v2/glossary/n_to_z.md#wave) gate, whose `VERIFY_STEPS` in
     `tools_v2/xtask/src/commands/platform/wave_execution/gate.rs` runs `verify route-tags`, and
     the `language-gates` job of `.github/workflows/ci.yml`, which runs `verify engine-layers`;
   - `tools_v2/xtask/src/verifications/ci/schema_parity/source_audit.rs` and

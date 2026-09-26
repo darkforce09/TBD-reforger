@@ -3,8 +3,8 @@
 # Mission approvals page
 
 The `/admin/approvals` page, titled Mission Approvals: administrators work through the
-[missions](/documentation_v2/glossary.md#mission) waiting for review, read the
-[artifact](/documentation_v2/glossary.md#artifact) each submission compiled into with its
+[missions](/documentation_v2/glossary/g_to_m.md#mission) waiting for review, read the
+[artifact](/documentation_v2/glossary/a_to_f.md#artifact) each submission compiled into with its
 provenance and compile findings, talk to the author in the review thread, and approve the artifact
 into the live library, approve it with conditions, or reject it with a reason.
 
@@ -22,11 +22,11 @@ into the live library, approve it with conditions, or reject it with a reason.
   file.
 - Entry: the route, its tier and its layout are in the README's
   [Routes](/apps/website/frontend/src/v2/pages/administration/approvals/README.md#routes).
-- Related: the [approvals](/documentation_v2/glossary.md#approvals) glossary entry; the
+- Related: the [approvals](/documentation_v2/glossary/a_to_f.md#approvals) glossary entry; the
   [mission overview page](/documentation_v2/website/frontend/pages/mission_hub/overview/mission_overview_page.md),
   where the author submits, reads the same review record and replies; the read-only review
   workspace ([README](/apps/website/frontend/src/v2/pages/mission_hub/review_workspace/README.md));
-  the [API](/documentation_v2/glossary.md#api)'s
+  the [API](/documentation_v2/glossary/a_to_f.md#api)'s
   [missions domain](/apps/website/api_v2/src/missions/README.md); the
   [mission artifacts evidence](/documentation_v2/website/api_v2/verification_evidence/mission_artifacts.md).
 
@@ -36,7 +36,7 @@ into the live library, approve it with conditions, or reject it with a reason.
    shows the session and access states of the README's
    [States](/apps/website/frontend/src/v2/pages/administration/approvals/README.md#states) in
    place of the page until a signed-in viewer holds the `admin`
-   [role](/documentation_v2/glossary.md#role).
+   [role](/documentation_v2/glossary/n_to_z.md#role).
 2. The queue loads on arrival. Its heading counts the missions pending in total. Each row names
    the mission, its author and terrain, and either the version and short artifact digest under
    review with the UTC submission time or, for a mission submitted before reviews existed, that

@@ -1,9 +1,9 @@
 # Mission Creator
 
-The [Mission Creator](/documentation_v2/glossary.md#mission-creator): the top-down 2D CAD
-workspace in which mission makers build a [mission](/documentation_v2/glossary.md#mission) on the
+The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator): the top-down 2D CAD
+workspace in which mission makers build a [mission](/documentation_v2/glossary/g_to_m.md#mission) on the
 map. This folder holds the editor page, the chrome docked around the map, the canvas mount and its overlays,
-the interactive map tools, the [arsenal](/documentation_v2/glossary.md#arsenal) loadout editor and
+the interactive map tools, the [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) loadout editor and
 the browser session they all run in.
 
 ## Contents
@@ -26,7 +26,7 @@ apps/website/frontend/src/v2/apps/editor/
 `MissionEditorPage` creates the page signals and hands them to the canvas mount in
 `mission_editor/`, which in the browser boots the render engine through `bridge/` while it
 restores the mission document from the server and the local draft (`shell/`), then loads the item
-[registry](/documentation_v2/glossary.md#registry) and the compatibility feed and raises the docks,
+[registry](/documentation_v2/glossary/n_to_z.md#registry) and the compatibility feed and raises the docks,
 toolbelt and overlays around the map. `mission_editor/` holds no `mod.rs`: `mission_editor.rs`
 declares each of its files by path.
 
@@ -36,7 +36,7 @@ the undo history, the selection and the armed placement; the panels read signals
 the document themselves. A module that touches `web_sys` or a live engine handle compiles for
 `wasm32` only, and its `pub mod` line carries the same gate, so the native test build still
 compiles the pure half of the workspace. When the review workspace opens an
-[artifact](/documentation_v2/glossary.md#artifact)'s version, the review mode in `shell/` holds it
+[artifact](/documentation_v2/glossary/a_to_f.md#artifact)'s version, the review mode in `shell/` holds it
 and every write path refuses.
 
 ## Routes
@@ -61,7 +61,7 @@ and every write path refuses.
 
 ## Boundaries
 
-- Depends on: `crate::v2::core` (the [API](/documentation_v2/glossary.md#api) client and DTOs, the
+- Depends on: `crate::v2::core` (the [API](/documentation_v2/glossary/a_to_f.md#api) client and DTOs, the
   auth store, the UI primitives and utilities, the test support), `website_map_engine` (its
   `data`, `editing`, `streaming`, `overlay`, `frame`, `camera`, `spatial`, `world` and `doll`
   modules) and `web_sys` in the browser build.

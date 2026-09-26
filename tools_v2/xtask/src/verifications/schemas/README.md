@@ -20,7 +20,7 @@ tools_v2/xtask/src/verifications/schemas/
 `cargo xtask schema <gate>` calls one entry of `checks`, which reads the contracts tree through
 `developer_tools::repository_layout` and returns 0 or 1. The six gates split into:
 
-- the document suite (`validate`) and the one-file [mission](/documentation_v2/glossary.md#mission) check (`validate-file`), in
+- the document suite (`validate`) and the one-file [mission](/documentation_v2/glossary/g_to_m.md#mission) check (`validate-file`), in
   `checks/contract_validation/`;
 - the code-to-schema check (`citations`), which walks `apps/` and `tools_v2/`;
 - the map-object gates (`map-object-enums`, `type-inventory`, `map-glyphs`), which keep the map
@@ -30,7 +30,7 @@ tools_v2/xtask/src/verifications/schemas/
 `type-inventory` from here with the map asset gates `map-object-golden` and `height-labels` from
 `tools_v2/xtask/src/verifications/map_assets/`, and `cargo xtask schema list-gates` prints that
 set. The unit tests in `tests/` go beyond the gates: they check that every property of the
-mission schema's objective spine appears as an identifier in the [mod](/documentation_v2/glossary.md#mod)'s objective scripts, that the
+mission schema's objective spine appears as an identifier in the [mod](/documentation_v2/glossary/g_to_m.md#mod)'s objective scripts, that the
 keys of the hand-staged schemaVersion 1.3 golden are members of the objective reader's structs,
 and the side-fallback branches of the objective sources.
 
@@ -53,7 +53,7 @@ The Rust contract types generated from the same schemas come from `cargo xtask s
   `assets_v2/terrains/`, and the mod sources under `apps/mod/tbd-framework/`.
 - Used by: `tools_v2/xtask/src/commands/schema/dispatch.rs`;
   `tools_v2/xtask/src/commands/ci/task_definitions.rs` (`schema-validate`, `verify-citations`, and
-  through them `ci-local-schema` and `ci-local`); the platform [wave](/documentation_v2/glossary.md#wave) gate's schema step
+  through them `ci-local-schema` and `ci-local`); the platform [wave](/documentation_v2/glossary/n_to_z.md#wave) gate's schema step
   (`tools_v2/xtask/src/commands/platform/wave_execution/schema.rs`); the `schema` job of
   `.github/workflows/ci.yml` and `.github/workflows/schema.yml`.
 - Rules:

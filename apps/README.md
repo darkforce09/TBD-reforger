@@ -1,9 +1,9 @@
 # Applications
 
 Every product the TBD Reforger platform ships: the web platform, the
-[Enfusion](/documentation_v2/glossary.md#enfusion) [mod](/documentation_v2/glossary.md#mod) that
+[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) [mod](/documentation_v2/glossary/g_to_m.md#mod) that
 game servers run, the agent that controls those servers, and the desktop viewer for the
-[ticket](/documentation_v2/glossary.md#ticket) registry. Developer tooling lives in `tools_v2/`,
+[ticket](/documentation_v2/glossary/n_to_z.md#ticket) registry. Developer tooling lives in `tools_v2/`,
 not here.
 
 ## Contents
@@ -18,19 +18,19 @@ apps/
 
 ## How it works
 
-The website's [API](/documentation_v2/glossary.md#api) is the hub. Members use the single-page
+The website's [API](/documentation_v2/glossary/a_to_f.md#api) is the hub. Members use the single-page
 app in a browser. On each game host, the dedicated server runs the mod, which reads its
-[mission deployment](/documentation_v2/glossary.md#mission-deployment) and
-[event](/documentation_v2/glossary.md#event) roster from the API's
+[mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) and
+[event](/documentation_v2/glossary/a_to_f.md#event) roster from the API's
 `/api/v1/game-runtime/` routes, reports server status and match results to `/api/v1/ingest/`,
 and carries out the in-game fleet commands, such as loading a
-[mission](/documentation_v2/glossary.md#mission), through `/api/v1/fleet-executor/`. Beside the
-server, the [fleet host agent](/documentation_v2/glossary.md#fleet-host-agent) polls the API's
+[mission](/documentation_v2/glossary/g_to_m.md#mission), through `/api/v1/fleet-executor/`. Beside the
+server, the [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) polls the API's
 `/api/v1/fleet-executor/` routes over outbound HTTPS, carries out each
-[fleet command](/documentation_v2/glossary.md#fleet-command) (process control,
-[RCON](/documentation_v2/glossary.md#rcon) commands, a switch of the server's
-[mission header](/documentation_v2/glossary.md#mission-header)) and reports every step to the
-command ledger. [Ticketboard](/documentation_v2/glossary.md#ticketboard) stands apart: it
+[fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) (process control,
+[RCON](/documentation_v2/glossary/n_to_z.md#rcon) commands, a switch of the server's
+[mission header](/documentation_v2/glossary/g_to_m.md#mission-header)) and reports every step to the
+command ledger. [Ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) stands apart: it
 reads `.ai/tickets/` through the `ticket-engine` crate in `tools_v2/` and talks to none of the
 others.
 

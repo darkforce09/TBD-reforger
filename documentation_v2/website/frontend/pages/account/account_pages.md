@@ -4,7 +4,7 @@
 
 The three pages that act on the viewer's own session: `/login` starts the Discord sign-in,
 `/auth/callback` installs the session the sign-in redirect carries, and `/settings` shows the
-signed-in viewer's profile and [role](/documentation_v2/glossary.md#role), links their Discord
+signed-in viewer's profile and [role](/documentation_v2/glossary/n_to_z.md#role), links their Discord
 account to their Arma identity, and gives their attendance figures.
 
 ## Where it lives
@@ -23,8 +23,8 @@ account to their Arma identity, and gives their attendance figures.
   doc, whose frame renders the first two pages bare and whose top bar links `/login` and
   `/settings`; the [session and access](/apps/website/frontend/src/v2/core/auth/README.md) code,
   which holds the session store, its persistence and the role ladder; the
-  [API](/documentation_v2/glossary.md#api)'s
-  [identity and access](/documentation_v2/glossary.md#identity-and-access) domain
+  [API](/documentation_v2/glossary/a_to_f.md#api)'s
+  [identity and access](/documentation_v2/glossary/g_to_m.md#identity-and-access) domain
   ([README](/apps/website/api_v2/src/identity_and_access/README.md)), which runs the sign-in and
   the link.
 
@@ -55,7 +55,7 @@ account to their Arma identity, and gives their attendance figures.
 ### Dev login
 
 With `APP_ENV=development`, `GET /api/v1/auth/dev-login?role=<role>` is the
-[dev login](/documentation_v2/glossary.md#dev-login): it signs in without Discord as a fixed local
+[dev login](/documentation_v2/glossary/a_to_f.md#dev-login): it signs in without Discord as a fixed local
 account of the role (`guest`, `enlisted`, `leader`, `mission_maker` or `admin`; any other value
 signs in as `admin`) and redirects to `/auth/callback` with the same fragment the Discord callback
 sends, so the callback page runs unchanged. Outside development the route is not registered and

@@ -14,7 +14,7 @@ apps/mod/tbd-framework/UI/layouts/Hud/
 
 ## Format
 
-- File type: an [Enfusion](/documentation_v2/glossary.md#enfusion) widget layout, plain text.
+- File type: an [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) widget layout, plain text.
   The root frame `HudRoot` (360 x 320 px, 24 px from the top-left corner) carries the
   `TBD_ObjectiveHud` handler and holds the `Panel` image, the `Title` text, a `List` frame with the
   `TBD_ListBox` component (`Scroll`, `Content`, `EmptyState`), the `CaptureLabel` text and the
@@ -26,7 +26,7 @@ apps/mod/tbd-framework/UI/layouts/Hud/
 - Naming: `TBD_<Element>Hud.layout`, one file per HUD element.
 - Adding a HUD element: take a free block from the ledger, author the layout and its `.meta`, add
   a `TBD_UILayouts` constant, and commit both files; the game finds a new path only after
-  [Workbench](/documentation_v2/glossary.md#workbench) has rewritten `resourceDatabase.rdb`.
+  [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) has rewritten `resourceDatabase.rdb`.
 
 ## Referenced by
 

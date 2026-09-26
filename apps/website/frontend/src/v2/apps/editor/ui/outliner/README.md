@@ -1,9 +1,9 @@
 # Editor layers outliner
 
-The [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s view of the
-[mission](/documentation_v2/glossary.md#mission) as editor layers: the folders an author files
-[slots](/documentation_v2/glossary.md#slot), comments and other layers into, and the
-[ORBAT](/documentation_v2/glossary.md#orbat) tree of factions, squads and slots. This folder holds
+The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s view of the
+[mission](/documentation_v2/glossary/g_to_m.md#mission) as editor layers: the folders an author files
+[slots](/documentation_v2/glossary/n_to_z.md#slot), comments and other layers into, and the
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) tree of factions, squads and slots. This folder holds
 the node model built from the document, the windowed tree the left dock draws, and the drag latch
 through which rows are refiled and reparented.
 

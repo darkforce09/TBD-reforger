@@ -1,6 +1,6 @@
 # Blueprint window prefab fixtures
 
-Synthetic [Enfusion](/documentation_v2/glossary.md#enfusion) window prefabs: a window frame that
+Synthetic [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) window prefabs: a window frame that
 maps a glass socket prefix and places two panes, and the pane with its destruction component.
 
 ## Contents

@@ -5,7 +5,7 @@
 Two checks read a dedicated server's `console.log`. The boot verdict,
 `cargo xtask deploy staging --verify-boot`, says whether the server runs the checkout that was
 deployed, registered a joinable room and accepted its admins. The log verdict,
-`cargo xtask mod remote-logs`, says whether the [mod](/documentation_v2/glossary.md#mod) booted
+`cargo xtask mod remote-logs`, says whether the [mod](/documentation_v2/glossary/g_to_m.md#mod) booted
 healthy and seated a player. A deploy runs both; this runbook runs them by hand, over the staging
 server's newest log or any saved one. Each takes seconds.
 
@@ -118,7 +118,7 @@ tagged-line count into a pass threshold: it varies by mission and grows as the m
 ## Log lines to match
 
 Match the stable prefix, never a whole sentence: everything after it varies with the
-[mission](/documentation_v2/glossary.md#mission) and the outcome, and a prefix stays stable only up to its last tag or `key=`.
+[mission](/documentation_v2/glossary/g_to_m.md#mission) and the outcome, and a prefix stays stable only up to its last tag or `key=`.
 
 | Expect | Prefix | Printed by |
 |---|---|---|
@@ -136,8 +136,8 @@ The loadout tag is `[TBD][Loadout][Slot]`; no line prints `[TBD][Loadout][Player
 that authors no loadouts prints no `[Loadout][Slot]` line, which `mod remote-logs` notes and does
 not fail.
 
-The [game runtime](/documentation_v2/glossary.md#game-runtime) lines of a server with a
-[machine credential](/documentation_v2/glossary.md#machine-credential):
+The [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) lines of a server with a
+[machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential):
 
 | Expect | Prefix | When |
 |---|---|---|
@@ -145,14 +145,14 @@ The [game runtime](/documentation_v2/glossary.md#game-runtime) lines of a server
 | session held | `[TBD][Runtime] session-started session=` | a credential is configured and the artifact loaded |
 | session lost | `[TBD][Runtime] runtime session loop STOPPED` (ERROR) | another runtime took over, or the credential was revoked; restart after fixing |
 | SHA-256 self-test | `[TBD][Sha256] self-test-passed vectors=` | once per process; `self-test FAILED` (ERROR) means every artifact will be refused |
-| deployment read | `[TBD][Mission] deployment deployment=` | a [mission deployment](/documentation_v2/glossary.md#mission-deployment) exists |
+| deployment read | `[TBD][Mission] deployment deployment=` | a [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) exists |
 | artifact verified | `[TBD][Mission] artifact-verified artifact=` … `from=` | the bytes hashed to the published digest |
 | mission loaded | `[TBD][Mission] loaded id=` … `source=platform` (or `cache`, `last-verified-cache`) | the artifact parsed and validated |
 | platform down at boot | `[TBD][Mission] RUNNING THE LAST VERIFIED ARTIFACT` (WARNING) | the cached artifact runs |
 | nothing deployed | `[TBD][Mission] NO MISSION -` (ERROR) | the server stays in LOADING |
 | not loaded yet | `[TBD][Mission] NO MISSION YET -` (ERROR, once per cause) | no credential and no cache, no answer, a refusal or a SHA-256 mismatch; retried |
 | fleet commands | `[TBD][Fleet]` with `claimed`, `executing`, `reported` or `ABANDONED` | a command for this runtime; `load_mission` ends in a restart line |
-| roster loaded | `[TBD][Roster] loaded event=` | the deployment names an [event](/documentation_v2/glossary.md#event) |
+| roster loaded | `[TBD][Roster] loaded event=` | the deployment names an [event](/documentation_v2/glossary/a_to_f.md#event) |
 | roster after seating | `[TBD][Roster] slot-table-loaded event=` | it arrived after seating settled |
 | no event | `[TBD][Roster] the running mission is deployed for no event` | not a failure |
 | roster refused | `[TBD][Roster] roster of event` … `not loaded` (ERROR) | 401, 403, 404, wrong wire version or no credential; retried every 60 s |

@@ -1,7 +1,7 @@
 # Framework data files
 
-The JSON data the framework [mod](/documentation_v2/glossary.md#mod) ships: the alias spawn
-registry that turns the aliases a [mission](/documentation_v2/glossary.md#mission) names into
+The JSON data the framework [mod](/documentation_v2/glossary/g_to_m.md#mod) ships: the alias spawn
+registry that turns the aliases a [mission](/documentation_v2/glossary/g_to_m.md#mission) names into
 prefabs, and the template of the backend config a dedicated server reads from its profile.
 
 ## Contents
@@ -30,9 +30,9 @@ lacks logs `[TBD] Unknown registry alias:` and resolves to nothing.
 |---|---|---|
 | `backendUrl` | `http://127.0.0.1:8080` | the API the server calls |
 | `serverToken` | `replace-with-SERVICE_TOKEN-value` | the `X-Service-Token` of the link confirmation and match result ingest routes |
-| `machineCredential` | a placeholder | this server's `mod_runtime` [machine credential](/documentation_v2/glossary.md#machine-credential); anything not starting `tbdm_` counts as not configured |
+| `machineCredential` | a placeholder | this server's `mod_runtime` [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential); anything not starting `tbdm_` counts as not configured |
 
-The mission and its [event](/documentation_v2/glossary.md#event) are not configured here: the
+The mission and its [event](/documentation_v2/glossary/a_to_f.md#event) are not configured here: the
 server runs the mission deployed to it on the platform.
 
 ## Format

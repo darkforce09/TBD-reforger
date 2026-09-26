@@ -53,7 +53,7 @@ systemd/           ──see that folder's README for what installs each unit
   `TBD_SERVER_MODE` defaults to `config`, which also needs a mod source: `TBD_WORKSHOP_MOD_ID`, or
   a modpack through `TBD_MODPACK_JSON` or `TBD_MODPACK_URL`; the `addons` mode needs none and
   registers no joinable room. Settings with defaults: `TBD_BACKEND_URL` (`http://127.0.0.1:8080`),
-  `TBD_ADDON_GUID`, `TBD_SCENARIO` (the [mission header](/documentation_v2/glossary.md#mission-header)
+  `TBD_ADDON_GUID`, `TBD_SCENARIO` (the [mission header](/documentation_v2/glossary/g_to_m.md#mission-header)
   the server boots, `{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf`), `TBD_SERVER_DIR`,
   `TBD_GAME_PORT` (2001), `TBD_A2S_PORT` (17777, which must differ from the game port),
   `TBD_BIND_IP` and `TBD_PUBLIC_ADDRESS`, `TBD_SERVER_NAME`, `TBD_ADMIN_PASSWORD`,
@@ -65,7 +65,7 @@ systemd/           ──see that folder's README for what installs each unit
   `TBD_HOST_AGENT_API_URL` to `TBD_BACKEND_URL`.
 
 `Caddyfile.website` listens on `:3080` and sends the cross-origin isolation headers the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s WebAssembly needs
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s WebAssembly needs
 (`Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Embedder-Policy: credentialless`). It
 proxies `/api/*`, `/uploads/*`, `/map-assets/*` and `/healthz` to `127.0.0.1:8080`, and serves every
 other path from the built app's `apps/website/frontend/dist` with an `index.html` fallback. Its

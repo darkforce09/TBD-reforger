@@ -1,6 +1,6 @@
 # Editor command decisions
 
-The decidable half of the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
+The decidable half of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
 document commands: the bytes an export writes, the wording of the compile, merge and save reports,
 and the selection digests a clipboard receives. Every function is pure over its arguments; how the
 result reaches a disk, a clipboard or a server belongs to the host.
@@ -30,7 +30,7 @@ apps/website/map-engine/src/editing/commands/
 - **Reports.** `format_merge_report` phrases a merge report as a summary naming only the non-zero
   counts plus one `kind id — reason` line per skipped row; a report that does not parse yields a
   line saying so. `duplicate_slot_id_report` phrases the save refusal, naming the squad callsign and
-  the [slot](/documentation_v2/glossary.md#slot) id on each line.
+  the [slot](/documentation_v2/glossary/n_to_z.md#slot) id on each line.
 - **Selection digests.** `resolve_selected_entities` looks each selected id up in the slots, then
   the vehicles, then the objects of the document's JSON views, and drops ids the document does not
   hold. `grid_position_text`, `classnames_text` and `selection_summary_text` build the three

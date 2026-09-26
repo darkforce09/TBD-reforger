@@ -2,9 +2,9 @@
 
 # Tactical marker palette
 
-The map markers a player sees in game. The [mod](/documentation_v2/glossary.md#mod) puts each
-side's briefing markers, authored with the [mission](/documentation_v2/glossary.md#mission) in the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator), on that side's in-game map, and
+The map markers a player sees in game. The [mod](/documentation_v2/glossary/g_to_m.md#mod) puts each
+side's briefing markers, authored with the [mission](/documentation_v2/glossary/g_to_m.md#mission) in the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator), on that side's in-game map, and
 the task markers beside them. The palette the specification designs, a toolbar with which leaders
 draw channel-scoped markers during play, is not built: the mod adds no marker UI of its own.
 
@@ -30,7 +30,7 @@ draw channel-scoped markers during play, is not built: the mod adds no marker UI
 
 1. Once started, the client asks the server for its markers every 5 s until it is served, and
    again each time the player opens the map, at most once every 3 s.
-2. The server reads the asker's side from the [slot](/documentation_v2/glossary.md#slot)
+2. The server reads the asker's side from the [slot](/documentation_v2/glossary/n_to_z.md#slot)
    `TBD_SpawnManager` assigned, never from the request, and answers with only that side's
    `briefings.<faction>.markers` rows. A player with no slot, or a server with no mission, gets an
    unserved answer and keeps asking; a served answer with no rows stops the loop.

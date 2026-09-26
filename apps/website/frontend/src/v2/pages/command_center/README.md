@@ -1,8 +1,8 @@
 # Command center pages
 
-The web app's [command center](/documentation_v2/glossary.md#command-center), the first section of
+The web app's [command center](/documentation_v2/glossary/a_to_f.md#command-center), the first section of
 the sidebar: the read-only screens a member lands on after signing in, reporting the unit's current
-situation (the next [event](/documentation_v2/glossary.md#event), the game server, the viewer's
+situation (the next [event](/documentation_v2/glossary/a_to_f.md#event), the game server, the viewer's
 assignment and the latest announcements).
 
 ## Contents
@@ -26,7 +26,7 @@ apps/website/frontend/src/v2/pages/command_center/
 Each page renders its content inside `AuthGate`, owns one fetch, and renders that one payload; none
 of them writes platform data. Every fetch runs in the browser build only, so a native build
 resolves it to `None` and renders the failure branch. The server intel page alone holds a live
-connection, its server's [SSE](/documentation_v2/glossary.md#sse) status stream. The dashboard's
+connection, its server's [SSE](/documentation_v2/glossary/n_to_z.md#sse) status stream. The dashboard's
 Recent Intelligence rows link into the announcement board, and its banner into the event hub page.
 
 ## Public surface
@@ -37,7 +37,7 @@ Recent Intelligence rows link into the announcement board, and its banner into t
 
 ## Boundaries
 
-- Depends on: `crate::v2::core` (the [API](/documentation_v2/glossary.md#api) client, its DTOs and
+- Depends on: `crate::v2::core` (the [API](/documentation_v2/glossary/a_to_f.md#api) client, its DTOs and
   the SSE subscriber, the `AuthStore` session, the UI primitives and the formatting helpers); over
   HTTP, the API's `command_center` domain (`/api/v1/dashboard`), its `community_content` domain
   (`/api/v1/announcements`) and its `server_infrastructure` domain (`/api/v1/servers` and the status

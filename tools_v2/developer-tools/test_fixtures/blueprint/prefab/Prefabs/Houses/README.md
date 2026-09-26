@@ -2,7 +2,7 @@
 
 The synthetic building the blueprint compiler's prefab tests start from: a base house that carries
 the mesh, the socket mappings and the architectural children, and a variant that adds a furniture
-composition, written in [Enfusion](/documentation_v2/glossary.md#enfusion) prefab text.
+composition, written in [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) prefab text.
 
 ## Contents
 

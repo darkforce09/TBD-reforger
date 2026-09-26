@@ -3,7 +3,7 @@
 # Map export documentation
 
 The deeper documents of the export addon's map exporters: what each layer writes, which of them
-run today, and the procedure that turns a full [Workbench](/documentation_v2/glossary.md#workbench)
+run today, and the procedure that turns a full [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)
 export into a terrain's committed object and road data.
 
 ## Contents

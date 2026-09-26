@@ -2,7 +2,7 @@
 
 # API restructuring records
 
-The records of the program that reorganised the website [API](/documentation_v2/glossary.md#api)
+The records of the program that reorganised the website [API](/documentation_v2/glossary/a_to_f.md#api)
 crate into `core/`, the background workers and eight domain folders: its inventory of the old
 layout, its target architecture and one handoff per phase. Status: archived — frozen records.
 

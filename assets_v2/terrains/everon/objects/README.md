@@ -3,7 +3,7 @@
 Everything placed on Everon, as the world export writes it: the object chunks and vegetation
 density tiles in their child folders, and beside them the prefab catalogue, the land-cover regions,
 the road network and the object census, most in a gzip JSON form and an rkyv archive form. The map
-engine streams them into the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
+engine streams them into the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
 map.
 
 ## Contents
@@ -24,7 +24,7 @@ assets_v2/terrains/everon/objects/
 ## How it works
 
 `world build-objects` writes the whole folder from one staged
-[Workbench](/documentation_v2/glossary.md#workbench) export: it partitions the objects into
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) export: it partitions the objects into
 chunks, derives the density tiles and the forest regions from the trees and rocks (on the
 vegetation phases), writes the catalogue and the census, and writes each archive by reading back
 the JSON it has just written through the map engine's own parsers, so the two forms decode to the

@@ -1,6 +1,6 @@
 # Slot symbology surface and its tests
 
-One flat re-export of the [slot](/documentation_v2/glossary.md#slot), vehicle and comment symbology
+One flat re-export of the [slot](/documentation_v2/glossary/n_to_z.md#slot), vehicle and comment symbology
 vocabulary (cell layout, colours,
 sizes, packers, row patches and drag helpers), and the unit tests that exercise that vocabulary
 end to end.

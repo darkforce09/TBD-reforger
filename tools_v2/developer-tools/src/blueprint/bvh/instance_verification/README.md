@@ -3,7 +3,7 @@
 The matching and the command behind `instance_verification.rs` in
 `tools_v2/developer-tools/src/blueprint/bvh/`: `cargo xtask map instances-verify` checks the
 instances file that `bvh-batch` placed from a model's sockets against a
-[Workbench](/documentation_v2/glossary.md#workbench) recon dump of the same building's live entity
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) recon dump of the same building's live entity
 tree.
 
 ## Contents

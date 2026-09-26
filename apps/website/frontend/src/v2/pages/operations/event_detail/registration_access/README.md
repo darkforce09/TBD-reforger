@@ -1,8 +1,8 @@
 # Event registration access
 
-What the viewer may register for in an [event](/documentation_v2/glossary.md#event), and why: the
-place outlook, the viewer's standing on each [mission](/documentation_v2/glossary.md#mission), the
-seat restrictions of the [ORBAT](/documentation_v2/glossary.md#orbat), the wording of a refused
+What the viewer may register for in an [event](/documentation_v2/glossary/a_to_f.md#event), and why: the
+place outlook, the viewer's standing on each [mission](/documentation_v2/glossary/g_to_m.md#mission), the
+seat restrictions of the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat), the wording of a refused
 registration, the Places panel and the leader's waiting-list promotion.
 
 ## Contents
@@ -21,9 +21,9 @@ apps/website/frontend/src/v2/pages/operations/event_detail/registration_access/
 
 ## How it works
 
-Everything here is a pure function of the `EventHub` the [API](/documentation_v2/glossary.md#api)
+Everything here is a pure function of the `EventHub` the [API](/documentation_v2/glossary/a_to_f.md#api)
 returned to this viewer, so a viewer admitted only by squad or
-[slot](/documentation_v2/glossary.md#slot) policies sees only the missions and seats open to them;
+[slot](/documentation_v2/glossary/n_to_z.md#slot) policies sees only the missions and seats open to them;
 the views only render the decisions, which are tested natively.
 
 - `place_outlook` mirrors the API's choice of pool: one place per participant for the whole event,
@@ -42,7 +42,7 @@ the views only render the decisions, which are tested natively.
   sentence for any other; times show in the viewer's zone beside UTC, and no sentence names
   another participant.
 - `waitlist_promotion` shows "Promote from waiting list" to the `leader`
-  [role](/documentation_v2/glossary.md#role) and above and sends
+  [role](/documentation_v2/glossary/n_to_z.md#role) and above and sends
   `POST /api/v1/event-missions/{emid}/waitlist/promote`; a toast reports the reply ("Seated 1
   participant from the waiting list.", "Nobody on the waiting list could be seated.") or words an
   `EVENT_FULL` refusal as "No place is free for anyone waiting: the operation or its pools are

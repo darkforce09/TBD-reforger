@@ -1,8 +1,8 @@
 # Event access administration
 
 The storage behind the access settings an administrator manages for one
-[event](/documentation_v2/glossary.md#event): the event, squad and
-[slot](/documentation_v2/glossary.md#slot) access policies, the event's groups and their rosters,
+[event](/documentation_v2/glossary/a_to_f.md#event): the event, squad and
+[slot](/documentation_v2/glossary/n_to_z.md#slot) access policies, the event's groups and their rosters,
 and the member, guest and open reservation pools, with the evidence that explains why each
 participant is or is not admitted.
 

@@ -2,9 +2,9 @@
 
 The `cargo xtask platform` group: the tools that run the platform factory. They manage slice
 worktrees, check a machine before an unattended run, run one slice through the agent CLI with a
-token receipt, and drive the platform [wave](/documentation_v2/glossary.md#wave) lifecycle from
+token receipt, and drive the platform [wave](/documentation_v2/glossary/n_to_z.md#wave) lifecycle from
 the next dispatch set to landing on `main`. The
-[orchestrator](/documentation_v2/glossary.md#orchestrator), factory dispatchers and slice agents
+[orchestrator](/documentation_v2/glossary/n_to_z.md#orchestrator), factory dispatchers and slice agents
 run them.
 
 ## Contents

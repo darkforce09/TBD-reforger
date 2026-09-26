@@ -1,7 +1,7 @@
 # Tasks panel view
 
 The view of the tasks panel: the primary, secondary and optional assignments a
-[mission](/documentation_v2/glossary.md#mission) authors in its `tasks` block, each with the
+[mission](/documentation_v2/glossary/g_to_m.md#mission) authors in its `tasks` block, each with the
 trigger that completes it, the marker the HUD points at and an optional schedule. The model and the
 document write live in the parent module,
 `apps/website/frontend/src/v2/apps/editor/ui/inspector/tasks_panel.rs`.

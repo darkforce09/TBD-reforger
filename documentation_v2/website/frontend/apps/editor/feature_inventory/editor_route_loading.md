@@ -2,10 +2,10 @@
 
 # Editor route and boot loading
 
-How a browser reaches the [Mission Creator](/documentation_v2/glossary.md#mission-creator) and
+How a browser reaches the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) and
 what it shows while the editor boots: the route and its access tier, the single application
 bundle, and the progress overlay that covers the map until the
-[mission](/documentation_v2/glossary.md#mission) and its terrain are loaded.
+[mission](/documentation_v2/glossary/g_to_m.md#mission) and its terrain are loaded.
 
 ## Where it lives
 

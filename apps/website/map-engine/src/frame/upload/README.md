@@ -59,14 +59,14 @@ and the adapter's largest 2D texture.
     `crate::world::terrain::satellite` (the texture limits), `crate::overlay::symbology` (the text
     atlas), and `crate::frame` and `crate::diagnostics::readback` (`TextAtlasGpu` and
     `text_uniform_bytes`);
-  - the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s input handlers, canvas
+  - the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s input handlers, canvas
     mount and document host under `apps/website/frontend/src/v2/apps/editor/` (the marquee, the
     connection and squad lines), and the debug benches under
     `apps/website/frontend/src/v2/apps/debug/` (building interiors).
 - Rules: every lane change goes through `upsert_lane` or `remove_lane`, which mark the frame damaged
   (`every_lane_mutation_marks_the_frame_damaged` in
   `apps/website/map-engine/src/frame/tests/damage_discipline.rs`); `connections_bind` uploads
-  its lane and never touches the pick bridge of the [slot](/documentation_v2/glossary.md#slot)
+  its lane and never touches the pick bridge of the [slot](/documentation_v2/glossary/n_to_z.md#slot)
   icons (`connections_bind_body_uploads_its_lane_and_skips_the_pick_bridge`), and the overlay's
   draw-order suites in `apps/website/map-engine/src/overlay/tests/tests/` read these files by path,
   so a moved or renamed file breaks them.

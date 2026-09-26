@@ -1,6 +1,6 @@
 # Mission environment and placement readers
 
-Applies a loaded [mission](/documentation_v2/glossary.md#mission)'s authored environment to the
+Applies a loaded [mission](/documentation_v2/glossary/g_to_m.md#mission)'s authored environment to the
 world: fog, wind and view distance at load, the weather timeline while the round is live, and the
 placement scatter that jitters slot spawn positions.
 

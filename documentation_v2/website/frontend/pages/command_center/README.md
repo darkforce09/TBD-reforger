@@ -2,7 +2,7 @@
 
 # Command center pages
 
-The documentation of the three [command center](/documentation_v2/glossary.md#command-center)
+The documentation of the three [command center](/documentation_v2/glossary/a_to_f.md#command-center)
 pages, the first section of the sidebar, one folder per page: each holds the page's feature doc
 and, where a design set exists, its design references. Developers and AI agents read it before
 changing a command center page.
@@ -23,7 +23,7 @@ and keep their spelling. Each holds a README index and the page's feature doc; t
 server intel folders add a `visual_references/` folder with one design-phase blueprint set. A
 feature doc follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md):
 Where it lives, Behaviour (ending in the known discrepancies between the page and the
-[API](/documentation_v2/glossary.md#api)), Data (what each call means server-side), Design (the
+[API](/documentation_v2/glossary/a_to_f.md#api)), Data (what each call means server-side), Design (the
 layout as built and each difference from the design target), Open work and Decisions. Start with
 the feature doc of the page at hand.
 
@@ -50,13 +50,13 @@ Contents and a row in the table.
 - [Community content domain](/apps/website/api_v2/src/community_content/) — the announcement feed
   and the current modpack.
 - [Server infrastructure domain](/apps/website/api_v2/src/server_infrastructure/) — the server
-  list and its [SSE](/documentation_v2/glossary.md#sse) status stream.
+  list and its [SSE](/documentation_v2/glossary/n_to_z.md#sse) status stream.
 
 ## Boundaries
 
 - Depends on: the [feature doc template](/documentation_v2/standards/templates/feature_doc.md) and
   the [documentation folder README template](/documentation_v2/standards/templates/readme_documentation_folder.md);
-  the [glossary](/documentation_v2/glossary.md); the page code, the API handlers it calls and the
+  the [glossary](/documentation_v2/glossary/README.md); the page code, the API handlers it calls and the
   ticket registry in `.ai/tickets/`, which the feature docs are written from.
 - Used by: the in-code READMEs of the page folders, which link their feature docs under Related
   documentation; the API READMEs that link the feature doc of the page they serve; the web app

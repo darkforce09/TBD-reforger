@@ -1,6 +1,6 @@
 # Framework input contexts
 
-The two input contexts of the framework [mod](/documentation_v2/glossary.md#mod): each groups the
+The two input contexts of the framework [mod](/documentation_v2/glossary/g_to_m.md#mod): each groups the
 framework's own key actions into a layer that scripts switch on by name, so the keys fire only while
 that layer is active and never collide with gameplay bindings.
 

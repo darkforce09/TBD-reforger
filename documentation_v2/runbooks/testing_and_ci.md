@@ -4,7 +4,7 @@
 
 Runs the repository's gates on a developer machine before a push to `main`, and shows where each
 gate runs besides: the local replay `cargo xtask ci ci-local`, the GitHub workflows, the platform
-[wave](/documentation_v2/glossary.md#wave) gate and the documentation gates. `ci-local` takes 15 to
+[wave](/documentation_v2/glossary/n_to_z.md#wave) gate and the documentation gates. `ci-local` takes 15 to
 40 minutes; a single gate takes seconds to a few minutes. What each `cargo xtask ci` task runs,
 step by step, is in the [CI task commands README](/tools_v2/xtask/src/commands/ci/README.md); this
 runbook does not repeat it.
@@ -89,7 +89,7 @@ Run every command from the repository root.
    ```
 
    Expected: the four command lines in turn, exit 0. Clippy runs without `-D warnings` here and in
-   the `website-frontend` job, so a warning prints and does not fail; the [API](/documentation_v2/glossary.md#api) and engine lanes
+   the `website-frontend` job, so a warning prints and does not fail; the [API](/documentation_v2/glossary/a_to_f.md#api) and engine lanes
    deny warnings.
 
 6. Run the API's integration tests on a database of their own.

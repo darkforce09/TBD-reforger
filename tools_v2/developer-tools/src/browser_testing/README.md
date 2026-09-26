@@ -2,7 +2,7 @@
 
 The code behind the `gate` and `capture` binaries: a DevTools protocol client that drives headless
 Chromium, a static server for the built single-page app, and the gates that hold the app to its
-frozen DOM, its route table and the [Mission Creator](/documentation_v2/glossary.md#mission-creator)
+frozen DOM, its route table and the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)
 smokes, plus the capture rig that photographs the running Mission Creator.
 
 ## Contents
@@ -45,13 +45,13 @@ a Tokio runtime, and exits with the code the command returns, or 3 when it retur
 gates render the built app from `apps/website/frontend/dist` through `server.rs`, which sends
 `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Embedder-Policy: credentialless` and
 `Cache-Control: no-store`, answers an extensionless path with `index.html`, streams `/api/`
-requests to an optional upstream so an [SSE](/documentation_v2/glossary.md#sse) response arrives
+requests to an optional upstream so an [SSE](/documentation_v2/glossary/n_to_z.md#sse) response arrives
 frame by frame, and serves `/map-assets/` from the terrain and glyph folders with byte ranges.
 
 | Command | Module | What it asserts | Exit |
 |---|---|---|---|
 | `gate doctor` | `diagnostics/` | Chromium, pins, memory, stray processes and fonts, then a 15 s Mission Creator liveness probe | 0, 1 |
-| `gate v-suite verify` | `dom_oracle/` | each of 25 routes' normalised DOM equals its golden, with every [API](/documentation_v2/glossary.md#api) call fed from fixtures | 0, 1, 2 |
+| `gate v-suite verify` | `dom_oracle/` | each of 25 routes' normalised DOM equals its golden, with every [API](/documentation_v2/glossary/a_to_f.md#api) call fed from fixtures | 0, 1, 2 |
 | `gate v-suite accept` | `dom_oracle/` | replaces one route's golden, with a note | 0, 2 |
 | `gate s-routes` | `route_drift.rs` | the `ROUTES` table of `apps/website/frontend/src/router.rs` equals `manifests/routes.csv` | 0, 1 |
 | `gate smoke <name>`, `gate editor-suite` | `editor_smoke_tests/` | the Mission Creator smokes, one or all in `EDITOR_SUITE` order | 0, 1, 2 |

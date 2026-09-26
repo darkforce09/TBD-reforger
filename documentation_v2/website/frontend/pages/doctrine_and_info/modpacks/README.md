@@ -3,7 +3,7 @@
 # Modpacks page documentation
 
 The feature documentation of the `/modpacks` page, where members see the modpacks the servers run
-and the [mods](/documentation_v2/glossary.md#mod) each needs, and administrators maintain them,
+and the [mods](/documentation_v2/glossary/g_to_m.md#mod) each needs, and administrators maintain them,
 with the page's design-phase reference.
 
 ## Contents
@@ -19,7 +19,7 @@ documentation_v2/website/frontend/pages/doctrine_and_info/modpacks/
 Read [modpacks_page.md](/documentation_v2/website/frontend/pages/doctrine_and_info/modpacks/modpacks_page.md)
 first. It follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md):
 it quotes the page's interface text, gives what each modpack route of the
-[API](/documentation_v2/glossary.md#api) does, including the delete refusal, and compares the
+[API](/documentation_v2/glossary/a_to_f.md#api) does, including the delete refusal, and compares the
 built page with the blueprint in `visual_references/`. The blueprint is a design-phase reference:
 it draws one wide card with a connect button, while the built page lists every pack beside one
 pack's dossier and adds the administrator's form. The code folder's README lists the page's

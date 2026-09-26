@@ -2,7 +2,7 @@
 
 # Operations pages
 
-The documentation of the five [operations](/documentation_v2/glossary.md#operations) pages, the
+The documentation of the five [operations](/documentation_v2/glossary/n_to_z.md#operations) pages, the
 second section of the sidebar and the pages it links into, one folder per page: each holds the
 page's feature doc and, where a design set exists, its design references. Developers and AI agents
 read it before changing an operations page.
@@ -26,11 +26,11 @@ deployments and leaderboards folders add a `visual_references/` folder with one 
 blueprint set. A feature doc follows the
 [feature doc template](/documentation_v2/standards/templates/feature_doc.md): Where it lives,
 Behaviour (ending in the known discrepancies between the page and the
-[API](/documentation_v2/glossary.md#api)), Data (what each call means server-side), Design (the
+[API](/documentation_v2/glossary/a_to_f.md#api)), Data (what each call means server-side), Design (the
 layout as built and each difference from the design target), Open work and Decisions.
 
-The [event](/documentation_v2/glossary.md#event) hub has one renderer and the
-[ORBAT](/documentation_v2/glossary.md#orbat) slotting one implementation, each shown in more than
+The [event](/documentation_v2/glossary/a_to_f.md#event) hub has one renderer and the
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) slotting one implementation, each shown in more than
 one place, so the event hub feature doc describes them once and the schedule and ORBAT selection
 feature docs link to it. Start with the feature doc of the page at hand; for anything about
 registering, squads or the waiting list, start with the event hub.
@@ -38,7 +38,7 @@ registering, squads or the waiting list, start with the event hub.
 Every page is declared in `apps/website/frontend/src/router.rs` with the route tier `none` and
 renders its body inside `AuthGate` (`apps/website/frontend/src/v2/core/ui/gates.rs`), so only a
 signed-in viewer sees data; the deployments page adds a review queue for the `admin`
-[role](/documentation_v2/glossary.md#role), and the slotting adds squad controls for `leader`
+[role](/documentation_v2/glossary/n_to_z.md#role), and the slotting adds squad controls for `leader`
 and above.
 
 | Page | Route and component | Label on screen | Feature doc |
@@ -68,7 +68,7 @@ and a row in the table.
 
 - Depends on: the [feature doc template](/documentation_v2/standards/templates/feature_doc.md) and
   the [documentation folder README template](/documentation_v2/standards/templates/readme_documentation_folder.md);
-  the [glossary](/documentation_v2/glossary.md); the page code, the API handlers it calls and the
+  the [glossary](/documentation_v2/glossary/README.md); the page code, the API handlers it calls and the
   ticket registry in `.ai/tickets/`, which the feature docs are written from.
 - Used by: the in-code READMEs of the page folders, which link their feature docs under Related
   documentation; the operations domain READMEs; the glossary's event and service record entries;

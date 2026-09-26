@@ -34,7 +34,7 @@ their closing line. A tracked path fails when:
   comment lines never count.
 
 There is no inventory or allowlist, and no path prefix is skipped: `apps/mod/` is scanned like
-everything else, and [Enfusion](/documentation_v2/glossary.md#enfusion) `.c` sources pass because `.c` is not in the table. A failed
+everything else, and [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) `.c` sources pass because `.c` is not in the table. A failed
 `git ls-files`, an empty listing or an unreadable tracked path fails the gate rather than passing
 it.
 
@@ -63,7 +63,7 @@ Exit codes: 0 clean; 1 a banned path, an over-long file or a walk that examined 
     `verify-no-node`, `verify-no-shell` and `verify-coding-standards` rows run these in process,
     and `ci-local`, which runs those rows;
   - the `language-gates` job of `.github/workflows/ci.yml`;
-  - the platform [wave](/documentation_v2/glossary.md#wave) gate
+  - the platform [wave](/documentation_v2/glossary/n_to_z.md#wave) gate
     (`tools_v2/xtask/src/commands/platform/wave_execution/gate/gate_dispatch.rs`), which runs
     `verify no-python`, `verify no-node` and `verify no-shell`.
 - Rules:

@@ -1,6 +1,6 @@
 # API client
 
-The one HTTP client the app calls the [API](/documentation_v2/glossary.md#api) through: the request
+The one HTTP client the app calls the [API](/documentation_v2/glossary/a_to_f.md#api) through: the request
 verbs with their bearer token and their single retry, the failure types they return, and the
 refresh policy that keeps a session alive across tabs without spending a refresh token twice.
 
@@ -53,7 +53,7 @@ uses them, and the pages read a failure as the `(status, message)` pair through
 - Used by: the endpoint calls in `apps/website/frontend/src/v2/core/api/endpoints/`; the session
   in `apps/website/frontend/src/v2/core/auth/session.rs`, for the refresh lock; the pages under
   `apps/website/frontend/src/v2/pages/`, the app layout's `bootstrap` among them; the
-  [Mission Creator](/documentation_v2/glossary.md#mission-creator) under
+  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) under
   `apps/website/frontend/src/v2/apps/editor/`.
 - Rules:
   - one refresh and one retry per 401 (`retries_once_after_refresh`,

@@ -1,6 +1,6 @@
 # Controls hint and shortcut catalog
 
-The [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s floating "Controls —
+The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s floating "Controls —
 keyboard shortcuts" card and the catalog of every editor key binding it lists. The parent module,
 `apps/website/frontend/src/v2/apps/editor/ui/modals/help_modal.rs`, declares both modules,
 re-exports their public items and mounts the keymap census and its tests.

@@ -1,9 +1,9 @@
 # Website API
 
-The `website-api` crate: the Axum REST [API](/documentation_v2/glossary.md#api) and
-[SSE](/documentation_v2/glossary.md#sse) streams behind the web platform. It serves `/api/v1` to
+The `website-api` crate: the Axum REST [API](/documentation_v2/glossary/a_to_f.md#api) and
+[SSE](/documentation_v2/glossary/n_to_z.md#sse) streams behind the web platform. It serves `/api/v1` to
 the single-page app, the game servers and the
-[fleet host agent](/documentation_v2/glossary.md#fleet-host-agent), owns the Postgres schema
+[fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent), owns the Postgres schema
 through its migrations, and serves uploads and terrain assets.
 
 ## Contents
@@ -25,7 +25,7 @@ apps/website/api_v2/
 ## How it works
 
 `src/bin/api.rs` loads the configuration, opens the Postgres pool, applies `migrations/` unless
-`SKIP_MIGRATE` is set, arms the [background workers](/documentation_v2/glossary.md#background-workers)
+`SKIP_MIGRATE` is set, arms the [background workers](/documentation_v2/glossary/a_to_f.md#background-workers)
 and serves the router on `0.0.0.0:$PORT` until SIGINT or SIGTERM. The router nests the eight
 domains' route tables under `/api/v1` and wraps everything in one middleware chain, outermost
 first: request id, access log, Prometheus metrics, panic recovery, CORS, body limit, rate limit.
@@ -34,12 +34,12 @@ The terrain and glyph mounts under `/map-assets` sit below the rate limit. Each 
 where the router and the application state compose them.
 
 A route's access tier is the extractor its handler takes: a signed-in member, a member of at
-least a given [role](/documentation_v2/glossary.md#role), or the `X-Service-Token` of game-server
-ingest; the [game runtime](/documentation_v2/glossary.md#game-runtime) and the fleet host agent
-authenticate with per-server [machine credentials](/documentation_v2/glossary.md#machine-credential).
-The [mission](/documentation_v2/glossary.md#mission) compiler and the mortar ballistics come from
+least a given [role](/documentation_v2/glossary/n_to_z.md#role), or the `X-Service-Token` of game-server
+ingest; the [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) and the fleet host agent
+authenticate with per-server [machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential).
+The [mission](/documentation_v2/glossary/g_to_m.md#mission) compiler and the mortar ballistics come from
 `website-map-engine`, which the crate takes with its default `scenario` tier alone. Game servers
-fetch compiled mission [artifacts](/documentation_v2/glossary.md#artifact) over HTTPS from
+fetch compiled mission [artifacts](/documentation_v2/glossary/a_to_f.md#artifact) over HTTPS from
 `/api/v1/game-runtime/artifacts/{artifactId}`; nothing is staged on disk for them.
 
 The integration suites in `tests/` build one test binary per top-level file. A binary that needs
@@ -64,12 +64,12 @@ cargo xtask mk rust-test # the library and binary unit tests, source rules inclu
 migrations create. `psql` carries on past a failed statement, so seeding before the API's first
 boot loads nothing and still exits 0. `db test-it` needs only `db up`: it creates the scratch
 databases, and each suite applies the migrations itself. `cargo xtask db registry-import` loads
-the committed Workbench [registry](/documentation_v2/glossary.md#registry) exports into the local
+the committed Workbench [registry](/documentation_v2/glossary/n_to_z.md#registry) exports into the local
 database, `cargo xtask mk leptos` serves the single-page app on port 3000, proxying `/api` and
 `/map-assets` to the API, `cargo xtask db down` stops Postgres and keeps its volume, and
 `cargo xtask ci ci-local` replays the whole CI suite once `db up` has run.
 
-With `APP_ENV=development`, the [dev login](/documentation_v2/glossary.md#dev-login)
+With `APP_ENV=development`, the [dev login](/documentation_v2/glossary/a_to_f.md#dev-login)
 `GET /api/v1/auth/dev-login?role=<role>` signs in without Discord
 (`guest`, `enlisted`, `leader`, `mission_maker` or `admin`; any other value signs in as `admin`)
 and answers with a 302 to the app's `/auth/callback`, the session's `access_token` in the URL

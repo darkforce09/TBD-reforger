@@ -1,7 +1,7 @@
 # Streaming bridge to the page
 
 What crosses between the streaming layer and the page that embeds it: the preference readers the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) supplies, the boot progress the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) supplies, the boot progress the
 loaders report, the asset counters published at `window.__mapAssets`, and the world-layer
 toggles the residency applies.
 
@@ -27,7 +27,7 @@ apps/website/map-engine/src/streaming/bridge/
   `WorldLayerPrefs` holds twelve serialised switches (`townLabels` and `roadNames` in camelCase),
   all on by default except props.
 - **Progress out.** Loaders report `BootEvent`s against four `BootSeg`ments
-  ([mission](/documentation_v2/glossary.md#mission), terrain, satellite, world): `Budget` sets a
+  ([mission](/documentation_v2/glossary/g_to_m.md#mission), terrain, satellite, world): `Budget` sets a
   segment's byte total from a `content-length` or the satellite index, `Files` declares a file
   count, `Done` counts units landed and `Finish` closes it. `STREAM_REPORT_BYTES` (512 KiB)
   batches a streamed body's reports; `split_range` cuts a tile into inclusive `Range` spans of

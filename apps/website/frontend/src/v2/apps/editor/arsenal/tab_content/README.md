@@ -1,8 +1,8 @@
 # Arsenal tab sections
 
-The three sections of the [arsenal](/documentation_v2/glossary.md#arsenal)'s loaded view, which the
+The three sections of the [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal)'s loaded view, which the
 parent file `apps/website/frontend/src/v2/apps/editor/arsenal/tab_content.rs` stacks around the
-cargo editor and the action bar once the [registry](/documentation_v2/glossary.md#registry) has
+cargo editor and the action bar once the [registry](/documentation_v2/glossary/n_to_z.md#registry) has
 loaded.
 
 ## Contents
@@ -25,7 +25,7 @@ regions, the active region's items behind a filter box, the doll from `doll_view
 `compat_panel`; a pick goes back through the `pick_item` callback the parent passes in, which
 writes the loadout at once. The status section lists every refusal of an import or an Apply, or
 the receipt of what landed, and ends with the persistence line: the last pick was refused, the
-[mission](/documentation_v2/glossary.md#mission) has unsaved changes, or it has none.
+[mission](/documentation_v2/glossary/g_to_m.md#mission) has unsaved changes, or it has none.
 
 ## Boundaries
 

@@ -61,7 +61,7 @@ README; the folder's own README.md is written from the same code and may differ.
 # Website platform
 
 The community's web platform: the REST API, the single-page app, and the two engines they share for
-maps, [missions](/documentation_v2/glossary.md#mission) and GPU rendering. The folder also holds
+maps, [missions](/documentation_v2/glossary/g_to_m.md#mission) and GPU rendering. The folder also holds
 the API's release image and the staging compose stack.
 
 ## Contents
@@ -84,7 +84,7 @@ compiled to WebAssembly; it calls `website-api` over `/api/v1` and Server-Sent E
 terrain from `/map-assets`. Both link `website-map-engine`: the API takes only its `scenario` tier,
 which compiles and validates missions, and the app takes the `world`, `io`, `store` and `editing`
 tiers, and `render` in its browser build, which the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) draws and edits with.
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) draws and edits with.
 `website-graphics-engine` sits below the map engine.
 
 ```text

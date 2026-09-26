@@ -1,7 +1,7 @@
 # Sign-in page
 
 The `/login` page: the card a signed-out visitor lands on, whose one button hands the browser to
-the Discord sign-in the [API](/documentation_v2/glossary.md#api) runs.
+the Discord sign-in the [API](/documentation_v2/glossary/a_to_f.md#api) runs.
 
 ## Contents
 

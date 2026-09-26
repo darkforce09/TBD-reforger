@@ -1,6 +1,6 @@
 # Database verifications
 
-Source checks that tie the [API](/documentation_v2/glossary.md#api)'s database inputs to the
+Source checks that tie the [API](/documentation_v2/glossary/a_to_f.md#api)'s database inputs to the
 code that uses them: the development seed list really applies the faction library and wiki seeds,
 and the API's SQL never reads `*` from a table with nullable columns. Each is a
 `cargo xtask verify` verb, and none needs a running database.
@@ -22,7 +22,7 @@ tools_v2/xtask/src/verifications/database/
 | Verb | Checks | Exit codes |
 |---|---|---|
 | `wiki-seeds` | `SEEDS` holds `wiki_pages.sql` (by equality), and `apps/website/api_v2/seeds/wiki_pages.sql` exists, is not empty and holds the `field-manual` slug; the first failing check is reported | 0 pass, 1 any failure, a missing file included |
-| `faction-library-seeds` | `apps/website/api_v2/seeds/faction_library.sql` holds a live `INSERT INTO user_factions` naming `'US Army 1980s'` once SQL comments are stripped; `SEEDS` holds `faction_library.sql` (by equality); the [wave](/documentation_v2/glossary.md#wave) gate's `VERIFY_STEPS` holds the `faction-library-seeds` row and both `gate_slice` and `cmd_gate` loop over it | 0 pass, 1 any failure, 2 a broken variant could not be built |
+| `faction-library-seeds` | `apps/website/api_v2/seeds/faction_library.sql` holds a live `INSERT INTO user_factions` naming `'US Army 1980s'` once SQL comments are stripped; `SEEDS` holds `faction_library.sql` (by equality); the [wave](/documentation_v2/glossary/n_to_z.md#wave) gate's `VERIFY_STEPS` holds the `faction-library-seeds` row and both `gate_slice` and `cmd_gate` loop over it | 0 pass, 1 any failure, 2 a broken variant could not be built |
 | `no-select-star` | every `.rs` file under `apps/website/api_v2/src`: a `SELECT * FROM <table>` or a `RETURNING *` line fails unless the table (for `RETURNING`, the line) names `modpack_mods` or `orbat_reservations`, the two tables with no nullable column | 0 clean, 1 a match, 2 the source tree could not be read |
 
 `SEEDS` is the constant in `tools_v2/xtask/src/commands/db/operations.rs` that

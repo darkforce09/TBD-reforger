@@ -1,8 +1,8 @@
 # Lobby and slotting
 
 The pre-game lobby: the stage watcher that raises the pre-game screens, the
-[ORBAT](/documentation_v2/glossary.md#orbat) roster wire through which a player claims, releases and
-deploys into a [slot](/documentation_v2/glossary.md#slot) under one life, the catalog behind the
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) roster wire through which a player claims, releases and
+deploys into a [slot](/documentation_v2/glossary/n_to_z.md#slot) under one life, the catalog behind the
 Lobby screen, and the overlook camera a player without a body sees.
 
 ## Contents

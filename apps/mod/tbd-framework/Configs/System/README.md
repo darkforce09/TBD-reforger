@@ -1,6 +1,6 @@
 # Framework system configs
 
-The engine-level configs of the framework [mod](/documentation_v2/glossary.md#mod): the menu
+The engine-level configs of the framework [mod](/documentation_v2/glossary/g_to_m.md#mod): the menu
 presets that bind each framework screen to its layout and script class, and the input contexts and
 key actions its screens and spectator camera listen to.
 

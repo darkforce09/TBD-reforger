@@ -1,7 +1,7 @@
 # Ticket detail panel
 
-The right-hand column of the [ticketboard](/documentation_v2/glossary.md#ticketboard) that shows
-one [ticket](/documentation_v2/glossary.md#ticket) in full: its header, the ticket actions strip,
+The right-hand column of the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) that shows
+one [ticket](/documentation_v2/glossary/n_to_z.md#ticket) in full: its header, the ticket actions strip,
 an optional ownership comparison with a second ticket, a metadata table, the typed body sections,
 and its links to other tickets and files.
 

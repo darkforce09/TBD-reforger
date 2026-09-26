@@ -1,7 +1,7 @@
 # Debug benches
 
 URL-only benches that drive one part of the map engine in isolation, with none of the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s document, persistence or
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s document, persistence or
 chrome around it: the building viewer, which loads one extracted building blueprint and probes
 line of sight and the viewshed through it, and the world line-of-sight bench, which loads the
 committed object catalogue around a map point and probes one segment through it.
@@ -61,7 +61,7 @@ build covers, and a browser half (the `live` modules), which compiles for `wasm3
 - Used by: the two routes in `apps/website/frontend/src/app_routes.rs`, with their rows in
   `apps/website/frontend/src/router.rs`; nothing in the navigation links to them.
 - Rules: a bench reads committed assets and engine code only; it never writes a
-  [mission](/documentation_v2/glossary.md#mission) document, never persists, and imports nothing
+  [mission](/documentation_v2/glossary/g_to_m.md#mission) document, never persists, and imports nothing
   from a page or a sibling workspace. The native `role_id` mirror in `building_interior.rs` must
   equal `apps/website/map-engine/src/overlay/lanes.rs` (`lane_ids_match_the_render_crate` in
   `tests/building_interior.rs`), and no wall may land on a borrowed lane

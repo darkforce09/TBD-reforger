@@ -1,6 +1,6 @@
 # Framework system prefabs
 
-The entity templates the framework [mod](/documentation_v2/glossary.md#mod) boots with: the game
+The entity templates the framework [mod](/documentation_v2/glossary/g_to_m.md#mod) boots with: the game
 mode that carries every framework manager component, and the player controller it hands each
 player.
 
@@ -16,7 +16,7 @@ apps/mod/tbd-framework/Prefabs/Systems/
 
 ## How it works
 
-A [mission header](/documentation_v2/glossary.md#mission-header) names a world; the world's layer
+A [mission header](/documentation_v2/glossary/g_to_m.md#mission-header) names a world; the world's layer
 places the game mode from `TBD_GameMode.et`; the game mode carries the framework's manager
 components and names `TBD_PlayerController.et` as the controller each connecting player gets. Each
 prefab derives from a vanilla prefab and holds only what the framework changes. Enfusion names a

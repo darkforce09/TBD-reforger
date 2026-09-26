@@ -36,7 +36,7 @@ breadcrumb and no tier.
 
 Access tiers are enforced in the browser after mount, since the server answers every app path with
 the same page. An open route (`none`) and an unmatched path admit everyone; a declared tier admits
-a signed-in viewer whose [role](/documentation_v2/glossary.md#role) clears it and never an
+a signed-in viewer whose [role](/documentation_v2/glossary/n_to_z.md#role) clears it and never an
 anonymous one; a tier the ladder does not know refuses everyone. A refused `mission_maker` route
 under `/missions/:id/` redirects to `/missions/:id?role_notice=mission_maker`, and any other to
 `/missions?role_notice=mission_maker`; a refused `admin` route stays put and its page renders the
@@ -94,7 +94,7 @@ renders padded in a scrolling one.
     no unit test compares the two;
   - every route declares a recognised tier (`every_route_declares_a_recognised_tier`), a
     misdeclared tier refuses every viewer (`a_misdeclared_tier_denies_every_viewer`), and each
-    `mission_maker` route redirects to its [mission](/documentation_v2/glossary.md#mission)'s
+    `mission_maker` route redirects to its [mission](/documentation_v2/glossary/g_to_m.md#mission)'s
     overview (`denial_redirects_to_overview_with_role_notice` and
     `the_review_workspace_declares_mission_maker_and_redirects_to_its_mission`), all in
     `tests/route_authorization.rs`;

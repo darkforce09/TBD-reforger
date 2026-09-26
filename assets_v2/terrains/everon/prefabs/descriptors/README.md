@@ -3,7 +3,7 @@
 One record per prefab of Everon's object catalogue, saying whether the prefab blocks a sight line
 and which meshes it places where. The map engine's world occluder reads them to build the
 line-of-sight geometry of every object in the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map.
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map.
 
 ## Contents
 

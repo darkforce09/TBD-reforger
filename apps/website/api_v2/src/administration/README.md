@@ -1,9 +1,9 @@
 # Administration domain
 
-The [API](/documentation_v2/glossary.md#api)'s
-[administration](/documentation_v2/glossary.md#administration) domain: the member roster and the
+The [API](/documentation_v2/glossary/a_to_f.md#api)'s
+[administration](/documentation_v2/glossary/a_to_f.md#administration) domain: the member roster and the
 moderation taken against it (bans, ban lifts, warnings), the Discord
-[role](/documentation_v2/glossary.md#role) resync, the membership grace extension, and the audit
+[role](/documentation_v2/glossary/n_to_z.md#role) resync, the membership grace extension, and the audit
 log that records every privileged action, with its live feed. The identity behind a member (sign-in,
 tokens, the account row) belongs to `identity_and_access`.
 
@@ -44,7 +44,7 @@ replaying from a client's `Last-Event-ID`.
   - `POST /api/v1/admin/roles/sync`: re-apply the Discord role mapping.
   - `GET /api/v1/admin/audit-logs`: the filtered, keyset-paged audit list.
   - `GET /api/v1/admin/audit-logs/export.csv`: the CSV export.
-  - `GET /api/v1/admin/audit-logs/stream`: the live [SSE](/documentation_v2/glossary.md#sse) feed.
+  - `GET /api/v1/admin/audit-logs/stream`: the live [SSE](/documentation_v2/glossary/n_to_z.md#sse) feed.
 - `services::required_audit`: `append_required_audit`, `append_actor_audit`,
   `append_actor_audit_with_severity` and `append_system_audit`, the transactional audit append
   every other domain writes through.
@@ -61,8 +61,8 @@ replaying from a client's `Last-Event-ID`.
   - `core::http_router`, which merges the route table, and the `audit_publication_worker` in
     `apps/website/api_v2/src/background_workers/`;
   - every other domain, through the audit services and `AuditSeverity`;
-  - over HTTP, the [personnel](/documentation_v2/glossary.md#personnel) and
-    [audit logs](/documentation_v2/glossary.md#audit-logs) pages in
+  - over HTTP, the [personnel](/documentation_v2/glossary/n_to_z.md#personnel) and
+    [audit logs](/documentation_v2/glossary/a_to_f.md#audit-logs) pages in
     `apps/website/frontend/src/v2/pages/administration/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`apps/website/api_v2/src/tests/architecture_rules.rs` checks both); every handler

@@ -4,8 +4,8 @@
 
 The documentation of the mission planner, a planned workspace that is not built: a tactical
 whiteboard on which squad leaders and commanders draw their plan over a published
-[mission](/documentation_v2/glossary.md#mission) before an
-[event](/documentation_v2/glossary.md#event), without editing the mission. Developers and AI agents
+[mission](/documentation_v2/glossary/g_to_m.md#mission) before an
+[event](/documentation_v2/glossary/a_to_f.md#event), without editing the mission. Developers and AI agents
 read it before starting the workspace.
 
 ## Contents

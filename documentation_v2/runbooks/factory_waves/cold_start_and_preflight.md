@@ -4,7 +4,7 @@
 
 Starts an orchestrating session for the factory: bring up the local services the gates and agents
 use, sweep leftover build caches, prove the machine and checkout can run an unattended
-[wave](/documentation_v2/glossary.md#wave), and read where the program stands. Run it at the start
+[wave](/documentation_v2/glossary/n_to_z.md#wave), and read where the program stands. Run it at the start
 of every orchestrating session; it takes a few minutes once the build cache is warm.
 
 The orchestrator is deliberately a short-lived session. Once a session has been compacted a few

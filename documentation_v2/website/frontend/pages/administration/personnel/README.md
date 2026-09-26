@@ -4,7 +4,7 @@
 
 The feature documentation of the `/admin/personnel` page, where administrators search the member
 roster, ban, unban and warn members, and resync every member's
-[role](/documentation_v2/glossary.md#role) from Discord, with the page's design-phase reference.
+[role](/documentation_v2/glossary/n_to_z.md#role) from Discord, with the page's design-phase reference.
 
 ## Contents
 
@@ -19,7 +19,7 @@ documentation_v2/website/frontend/pages/administration/personnel/
 Read [personnel_roster_page.md](/documentation_v2/website/frontend/pages/administration/personnel/personnel_roster_page.md)
 first. It follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md):
 it quotes the page's interface text, gives what each call means in the
-[API](/documentation_v2/glossary.md#api), including the role change the API refuses, and compares
+[API](/documentation_v2/glossary/a_to_f.md#api), including the role change the API refuses, and compares
 the built page with the blueprint in `visual_references/`. The blueprint is a design-phase
 reference: it filters by rank and shows photos, while the built page filters by ban status and shows
 initials. The code folder's README lists the page's files.
@@ -35,7 +35,7 @@ initials. The code folder's README lists the page's files.
 
 - Depends on: the feature doc template; the page code, the administration handlers and the ticket
   registry the feature doc is written from.
-- Used by: the [personnel](/documentation_v2/glossary.md#personnel) glossary entry, the page's
+- Used by: the [personnel](/documentation_v2/glossary/n_to_z.md#personnel) glossary entry, the page's
   in-code README and the administration domain README, which link the feature doc; the
   administration pages README.
 - Rules: the feature doc keeps its name, which those links use; the blueprint set stays as it was

@@ -4,7 +4,7 @@
 
 Nine frozen comparisons from the equipment and vehicle exporter's acceptance: for one resource
 each, the value the original export carried and the source-backed value the accepted generation
-`6A6E9885CF2F83F9` holds, checked against [Workbench](/documentation_v2/glossary.md#workbench)'s
+`6A6E9885CF2F83F9` holds, checked against [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)'s
 native getters.
 
 ## Contents

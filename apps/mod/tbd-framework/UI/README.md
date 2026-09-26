@@ -15,7 +15,7 @@ apps/mod/tbd-framework/UI/
 
 ## How it works
 
-[Enfusion](/documentation_v2/glossary.md#enfusion) resolves a resource by the GUID in its `.meta`
+[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) resolves a resource by the GUID in its `.meta`
 file, or by its path inside the addon, through the addon's resource database. Screens never spell
 a path: `TBD_UILayouts`
 (`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`) holds one constant per layout
@@ -49,7 +49,7 @@ is a committed PNG imported here.
   screen that uses them, textures under `Textures/TBD/`.
 - Adding or moving an asset: create or `git mv` it with its `.meta`, keep the `.meta` `Name` equal
   to the new path, update the `TBD_UILayouts` constant and, for a menu shell, the
-  menu config's preset, then let [Workbench](/documentation_v2/glossary.md#workbench) open
+  menu config's preset, then let [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) open
   the addon and rewrite `apps/mod/tbd-framework/resourceDatabase.rdb`, since the game finds a
   non-script resource at a new path only through that database.
 

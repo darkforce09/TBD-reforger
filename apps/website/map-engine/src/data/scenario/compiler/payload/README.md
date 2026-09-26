@@ -1,7 +1,7 @@
 # Editor payload and export envelope
 
-Turns the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s document into the
-editor payload a [mission](/documentation_v2/glossary.md#mission) version saves, wraps a payload in
+Turns the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s document into the
+editor payload a [mission](/documentation_v2/glossary/g_to_m.md#mission) version saves, wraps a payload in
 the JSON export envelope, and writes the request body of a version save. The module is exposed as
 `data::scenario::compile`.
 
@@ -19,7 +19,7 @@ apps/website/map-engine/src/data/scenario/compiler/payload/
 ## How it works
 
 `compile_payload(small_maps_json, slots_json, include_orbat)` reads the by-id maps and the
-[slots](/documentation_v2/glossary.md#slot) that the document store projects to JSON
+[slots](/documentation_v2/glossary/n_to_z.md#slot) that the document store projects to JSON
 (`MissionDocCore::small_maps_json` and `slots_json` in `crate::data::store`) and builds the payload:
 
 - `schemaVersion` (the document's, else 1), `map` with `terrain` (`everon` when unset) and
@@ -30,7 +30,7 @@ apps/website/map-engine/src/data/scenario/compiler/payload/
 - `title` when the document's title is not blank;
 - `orbat` only when `include_orbat` is true (the Export path), derived with
   `crate::data::scenario::orbat`; a saved payload has none, and the server derives the
-  [ORBAT](/documentation_v2/glossary.md#orbat);
+  [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat);
 - the authored blocks, which `crate::data::scenario::extensions` copies from the environment bag
   to the payload root, and every `payloadExtras` key that no known key or authored block claims;
   the store hands its `zones`, `compositions`, `triggers`, `comments` and `connections` rows over

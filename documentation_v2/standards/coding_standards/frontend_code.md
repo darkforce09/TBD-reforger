@@ -16,7 +16,7 @@ states its Rust form and whether anything checks it. Where the app's files go is
   `cargo xtask mk ci-local-leptos`. Clippy runs there without `-D warnings`, so a warning prints and
   does not fail the job. Status: retired as a separate rule; the Rust compiler carries it.
 - **TS-3 (Debuggability) — Contract data is fully typed.** Rust form: every
-  [API](/documentation_v2/glossary.md#api) answer deserialises into a `serde` DTO under
+  [API](/documentation_v2/glossary/a_to_f.md#api) answer deserialises into a `serde` DTO under
   `apps/website/frontend/src/v2/core/api/dto/`. Status: retired as a separate rule; the Rust type
   system carries it.
 - **TS-6 (Readability) — A cross-boundary type mirrors its API model exactly.** Rust form: each
@@ -38,7 +38,7 @@ states its Rust form and whether anything checks it. Where the app's files go is
 - **TS-2 (Scalability) — Layer boundaries hold.** Rust form: `src/v2/core/` holds what every
   page shares (the API client and DTOs, auth, the design-system primitives, utilities);
   `src/v2/pages/` holds the platform pages, one folder per area and page; `src/v2/apps/` holds
-  the standalone workspaces, such as the [Mission Creator](/documentation_v2/glossary.md#mission-creator);
+  the standalone workspaces, such as the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator);
   the routes live in `apps/website/frontend/src/app_routes.rs`. The app never names the graphics
   engine: it reaches the GPU only through the map engine. Gate: CI-SCRIPT for the engine wall
   only, rule 6 of `cargo xtask verify engine-layers`

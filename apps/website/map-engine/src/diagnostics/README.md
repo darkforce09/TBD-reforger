@@ -2,7 +2,7 @@
 
 How the render engine measures itself in the browser: byte-exact readback checks of its pipelines,
 the calibration check, the frame benchmark and engine statistics, the frame clocks, and the console
-macros the crate logs with. The [Mission Creator](/documentation_v2/glossary.md#mission-creator)
+macros the crate logs with. The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)
 publishes the checks and the benchmark to the editor gate.
 
 ## Contents

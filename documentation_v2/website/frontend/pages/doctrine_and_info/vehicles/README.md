@@ -18,7 +18,7 @@ documentation_v2/website/frontend/pages/doctrine_and_info/vehicles/
 Read [vehicle_database_page.md](/documentation_v2/website/frontend/pages/doctrine_and_info/vehicles/vehicle_database_page.md)
 first. It follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md):
 it quotes the page's interface text, gives what the vehicle routes of the
-[API](/documentation_v2/glossary.md#api) do, and compares the built page with the sets in
+[API](/documentation_v2/glossary/a_to_f.md#api) do, and compares the built page with the sets in
 `visual_references/`. Both sets are design-phase references: the blueprint draws a dossier full of
 speed, crew and armament figures and a manual sidebar, while the built dossier shows only the
 armour class, amphibious value and threat a vehicle row stores. The code folder's README lists

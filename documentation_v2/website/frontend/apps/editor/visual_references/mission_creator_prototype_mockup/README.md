@@ -2,7 +2,7 @@
 
 # Mission Creator prototype mock-up
 
-Design-phase reference for the [Mission Creator](/documentation_v2/glossary.md#mission-creator) at
+Design-phase reference for the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) at
 `/missions/:id/edit`, titled "TBD Mission Creator - Aegis Tactical Command" in its export: a layout
 exploration with drag-and-drop objective logic, and the set the Aegis design tokens were exported
 with. It gives colour and layout context and is not an implementation source; the built UI is the

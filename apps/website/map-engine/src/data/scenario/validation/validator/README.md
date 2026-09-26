@@ -1,7 +1,7 @@
 # Mission validation rules
 
-The rule engine that checks a [mission](/documentation_v2/glossary.md#mission) editor payload and
-answers the findings the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
+The rule engine that checks a [mission](/documentation_v2/glossary/g_to_m.md#mission) editor payload and
+answers the findings the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
 validation panel shows: an ordered list of rules, each gated on the payload's shape and on the
 facts the caller supplies. The module is exposed as `data::scenario::validate`.
 
@@ -31,7 +31,7 @@ V4 field shape), its evaluator, and a trip fixture with an optional trip context
 on. `Registry::self_check` reports a rule whose gate excludes its own fixture or that stays silent
 on it, and `Registry::new` panics on a duplicate id. A `Finding` names its rule, severity and
 primitive, a message, the payload path it concerns (`/editor/slots/3/position`) and, when one
-exists, the id of the object at fault, such as a [slot](/documentation_v2/glossary.md#slot)'s, so
+exists, the id of the object at fault, such as a [slot](/documentation_v2/glossary/n_to_z.md#slot)'s, so
 the panel can select it.
 
 `EvalContext` carries the facts a rule may need: `known_asset_ids`, `cargo_phys` (the
@@ -66,11 +66,11 @@ the panel can select it.
   - the Mission Creator's validation panel
     (`apps/website/frontend/src/v2/apps/editor/ui/inspector/validation_panel/`), which evaluates
     the compiled payload with `known_asset_ids` from the item
-    [registry](/documentation_v2/glossary.md#registry) and no other fact, and renders every
+    [registry](/documentation_v2/glossary/n_to_z.md#registry) and no other fact, and renders every
     `Finding`, compile findings included;
   - `crate::data::scenario::flatten`, whose compile findings are `Finding` values, and
     `crate::editing::commands`, which summarises those findings for the compiled export;
-  - the [API](/documentation_v2/glossary.md#api), which re-exports `Finding` and `Severity` from
+  - the [API](/documentation_v2/glossary/a_to_f.md#api), which re-exports `Finding` and `Severity` from
     `apps/website/api_v2/src/missions/services/mission_compile.rs` and runs no rule.
 - Rules:
   - every rule fires on its own trip fixture, and the ids are distinct

@@ -3,7 +3,7 @@
 # Eden editor reference
 
 The reference catalogs of the Arma 3 Eden editor, the design the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) is measured against, and the gap
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) is measured against, and the gap
 analysis that pairs them with the Mission Creator's features. Developers and AI agents read it to
 learn what Eden does before building or judging a Mission Creator feature.
 
@@ -44,7 +44,7 @@ kept by hand: `cargo xtask ticket sync` rewrites only a table whose header holds
 head that column `ticket`, so the sync writes the file back unchanged.
 
 Eden calls the document it edits a scenario and works in a 3D scene as well as on a 2D map. The
-Mission Creator's document is the [mission](/documentation_v2/glossary.md#mission), and its map
+Mission Creator's document is the [mission](/documentation_v2/glossary/g_to_m.md#mission), and its map
 view is top-down, so a catalog entry that exists only in 3D is marked `N/A (3D)`. The catalogs
 keep Eden's words where they describe Eden's interface.
 

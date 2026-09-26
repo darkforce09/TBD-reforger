@@ -3,7 +3,7 @@
 # Spectator combat details panel mockup
 
 Design-phase reference for the spectator's death forensics: a panel that tells a dead player how they died and what they did. It gives layout and colour context and is not an implementation source; the built UI is the
-[EnfScript](/documentation_v2/glossary.md#enfscript) code the Code section links.
+[EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript) code the Code section links.
 
 ## Contents
 

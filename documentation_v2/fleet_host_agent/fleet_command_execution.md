@@ -3,11 +3,11 @@
 # Fleet command execution on the game host
 
 How an operator's server command reaches a self-hosted game host and becomes a process action, an
-[RCON](/documentation_v2/glossary.md#rcon) read or a
-[mission header](/documentation_v2/glossary.md#mission-header) switch, without the
-[API](/documentation_v2/glossary.md#api) ever connecting to the host. The
-[fleet host agent](/documentation_v2/glossary.md#fleet-host-agent) is the host's half; the API's
-[fleet command](/documentation_v2/glossary.md#fleet-command) ledger is the other. Operators, and
+[RCON](/documentation_v2/glossary/n_to_z.md#rcon) read or a
+[mission header](/documentation_v2/glossary/g_to_m.md#mission-header) switch, without the
+[API](/documentation_v2/glossary/a_to_f.md#api) ever connecting to the host. The
+[fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) is the host's half; the API's
+[fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) ledger is the other. Operators, and
 developers changing either half, read this for the design and its limits.
 
 ## Where it lives
@@ -21,7 +21,7 @@ developers changing either half, read this for the design and its limits.
 - Related features: the API's [fleet command ledger](/documentation_v2/website/api_v2/verification_evidence/fleet_command_ledger.md)
   and [machine credentials](/documentation_v2/website/api_v2/verification_evidence/machine_credentials.md);
   the [server control page](/documentation_v2/website/frontend/pages/administration/server_control/server_control_page.md),
-  where operators issue commands; the [game runtime](/documentation_v2/glossary.md#game-runtime)'s own executor in
+  where operators issue commands; the [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime)'s own executor in
   [`apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/`](/apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/README.md);
   the [game server staging runbook](/documentation_v2/runbooks/game_server_staging/README.md).
 
@@ -52,7 +52,7 @@ never act.
    refusal abandons the command untouched.
 4. It performs the action: a `systemctl --user` start, stop or restart judged by the unit state
    read back after a dwell; `#players` over RCON; or, for a cross-terrain
-   [mission deployment](/documentation_v2/glossary.md#mission-deployment), a surgical switch of
+   [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment), a surgical switch of
    `game.scenarioId` in the server config followed by a restart.
 5. It reports the result, retrying the report, never the effect, until the API acknowledges or
    refuses it. An outcome that is never reported leaves the ledger to mark the command
@@ -111,7 +111,7 @@ broadcasts run in the game runtime.
 - Effects happen at most once: nothing runs before an acknowledged `executing` report, the report
   is retried and the effect never is, and a lost outcome becomes indeterminate for an operator to
   judge.
-- The agent never fetches a mission [artifact](/documentation_v2/glossary.md#artifact): for a cross-terrain deployment it only points the
+- The agent never fetches a mission [artifact](/documentation_v2/glossary/a_to_f.md#artifact): for a cross-terrain deployment it only points the
   server config at the new mission header, and the game runtime loads, verifies and reports the
   artifact when it boots, which confirms the deployment.
 

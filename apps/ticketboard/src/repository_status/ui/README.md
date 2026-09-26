@@ -1,6 +1,6 @@
 # Status banner
 
-The egui banner across the top of the [ticketboard](/documentation_v2/glossary.md#ticketboard):
+The egui banner across the top of the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard):
 the strict check's verdict, its output, the state of the file watch and the `git status` chip.
 
 ## Contents

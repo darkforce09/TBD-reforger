@@ -22,14 +22,14 @@ apps/website/frontend/src/v2/pages/doctrine_and_info/wiki/
 `WikiPage` renders inside `AuthGate` and fetches every manual, bodies included, in one list; both
 panes of the `GlassSplit` read that list, and the page never fetches a single manual. The route's
 `:slug` picks the open manual when it names one in the list; otherwise the first row opens, which
-the [API](/documentation_v2/glossary.md#api) orders by `nav_order` and then title. A click in the
+the [API](/documentation_v2/glossary/a_to_f.md#api) orders by `nav_order` and then title. A click in the
 index navigates to `/wiki/<slug>` instead of setting local state, and a change of manual returns
 the pane to reading and clears the save error. Categories group in the order their first manual
 appears, a manual without a category stays out of the index, and the search matches a manual's
 title or category.
 
 `is_admin` is a memo over `has_min_role_authed` and the session's
-[role](/documentation_v2/glossary.md#role), so the edit switch and the save button appear only for
+[role](/documentation_v2/glossary/n_to_z.md#role), so the edit switch and the save button appear only for
 a signed-in administrator. Edits go into `drafts`, one unsaved body per slug; a draft outlives a
 switch back to reading, which renders the draft, and only a successful save drops it and refetches
 the list. `render_markdown` knows a fixed subset: `#` and `##` headings, `- ` and `* ` bullets,

@@ -2,7 +2,7 @@
 
 The body of `cargo xtask mod remote-logs`: it fetches the newest `console.log` of the staging game
 server over ssh, or reads a local one, and grades the boot of the
-[mod](/documentation_v2/glossary.md#mod) with one of four exit codes. The log patterns sit in
+[mod](/documentation_v2/glossary/g_to_m.md#mod) with one of four exit codes. The log patterns sit in
 `tools_v2/xtask/src/commands/debug/remote_logs.rs`, which declares both files and re-exports `run`.
 
 ## Contents

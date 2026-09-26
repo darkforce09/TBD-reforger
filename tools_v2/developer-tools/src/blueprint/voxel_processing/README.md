@@ -4,7 +4,7 @@ The voxel dump side of the blueprint compiler: the in-memory model of a `tbd-vox
 its strict reader, the tunables every interpretation stage reads, the generator that writes a dump
 from a game model's triangles, and the analytic buildings the tests march. A voxel dump is the
 record of axis-aligned ray marches through one building that the
-[Workbench](/documentation_v2/glossary.md#workbench) dump action or `voxels-from-mesh` writes.
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) dump action or `voxels-from-mesh` writes.
 
 ## Contents
 

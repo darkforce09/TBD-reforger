@@ -2,10 +2,10 @@
 
 # Terrain export and map assets
 
-How a game terrain becomes the map the [Mission Creator](/documentation_v2/glossary.md#mission-creator)
-draws: the [Workbench](/documentation_v2/glossary.md#workbench) exports, the developer-tools
+How a game terrain becomes the map the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)
+draws: the [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) exports, the developer-tools
 pipelines that turn them into committed datasets under `assets_v2/terrains/<terrain>/`, the gates
-that prove them, and how the [API](/documentation_v2/glossary.md#api) serves them. Developers and
+that prove them, and how the [API](/documentation_v2/glossary/a_to_f.md#api) serves them. Developers and
 AI agents read it before exporting a terrain again or adding a new one.
 
 ## Where it lives
@@ -85,7 +85,7 @@ follows `contracts_v2/rules/prefab-classify.json`, whose render keys name the gl
 
 The API mounts `assets_v2/terrains/` at `/map-assets` and `assets_v2/glyphs/` at
 `/map-assets/glyphs`, below the rate limiter; the Mission Creator boots
-`/map-assets/<terrain>/manifest.json` for the terrain its [mission](/documentation_v2/glossary.md#mission) names, and
+`/map-assets/<terrain>/manifest.json` for the terrain its [mission](/documentation_v2/glossary/g_to_m.md#mission) names, and
 loads every other file by the path the manifest gives. A terrain may ship a subset of files, and the map engine degrades
 on what the manifest lists. The [assets README](/assets_v2/README.md#how-it-works) and the
 [terrains README](/assets_v2/terrains/README.md#how-it-works) give the mounts and the rules.

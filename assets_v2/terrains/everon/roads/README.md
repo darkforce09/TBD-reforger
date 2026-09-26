@@ -2,7 +2,7 @@
 
 Everon's roads as one binary archive: every road, track, path and runway segment with its class,
 width and centreline. The map engine draws the road layer of the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map from it.
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map from it.
 
 ## Contents
 

@@ -1,8 +1,8 @@
 # Duplicate slot id check
 
-Finds [slot](/documentation_v2/glossary.md#slot) ids that a squad of the
-[mission](/documentation_v2/glossary.md#mission) document lists more than once, so the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) can refuse a save and name the
+Finds [slot](/documentation_v2/glossary/n_to_z.md#slot) ids that a squad of the
+[mission](/documentation_v2/glossary/g_to_m.md#mission) document lists more than once, so the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) can refuse a save and name the
 squad and the id. It reports and never repairs: the document's ids stay as they are.
 
 ## Contents

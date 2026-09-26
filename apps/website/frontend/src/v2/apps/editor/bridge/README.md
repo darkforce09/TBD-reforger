@@ -1,8 +1,8 @@
 # Engine seam
 
-The frontend's side of the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
+The frontend's side of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
 boundary with the map engine: the boot machine and its progress, the viewport and frame-timing belt,
-the hosted [mission](/documentation_v2/glossary.md#mission) document with its undo driver, the host
+the hosted [mission](/documentation_v2/glossary/g_to_m.md#mission) document with its undo driver, the host
 signal state the engine's commands read, the overlays laid over the map, the tactical-graphics lane
 and the map-asset host.
 
@@ -44,7 +44,7 @@ canvas mount
 progress events the engine's streaming bridge reports, and names a failed segment in the error
 overlay. `viewport.rs` also publishes the harness gates (`__selfChecks`, `__editorBench`,
 `__editorCam`, `__editorCamSet`, `__wgpuSlotStats`) and keeps `registry_session`, a tab cache of the
-item [registry](/documentation_v2/glossary.md#registry) and its compatibility feed that a second
+item [registry](/documentation_v2/glossary/n_to_z.md#registry) and its compatibility feed that a second
 editor mount reuses. `world_assets.rs` feeds the streaming host the live world-layer, basemap and
 hillshade preferences and registers the engine and host pair with a cleanup that clears only the
 pair it registered. The tactical-graphics lane parses the `tacticalGraphics` environment rows once

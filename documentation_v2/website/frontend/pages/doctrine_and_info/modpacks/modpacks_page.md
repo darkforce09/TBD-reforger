@@ -16,9 +16,9 @@ collection; administrators create, edit, make current and delete packs in place.
   file.
 - Entry: the route, its tier and its layout are in the README's
   [Routes](/apps/website/frontend/src/v2/pages/doctrine_and_info/modpacks/README.md#routes).
-- Related: the [API](/documentation_v2/glossary.md#api)'s
+- Related: the [API](/documentation_v2/glossary/a_to_f.md#api)'s
   [community content domain](/apps/website/api_v2/src/community_content/README.md), which owns the
-  modpack routes; the servers and [events](/documentation_v2/glossary.md#event) that name a
+  modpack routes; the servers and [events](/documentation_v2/glossary/a_to_f.md#event) that name a
   required modpack, which the API checks before a delete.
 
 ## Behaviour
@@ -35,7 +35,7 @@ README's [States](/apps/website/frontend/src/v2/pages/doctrine_and_info/modpacks
    addon names.
 3. The first pack is selected on arrival; choosing another returns the detail pane to reading.
 4. The dossier shows the pack's name, "v<version>", "<size> total" and "<n> mods included", then
-   each [mod](/documentation_v2/glossary.md#mod) with its Workshop id and "[ REQUIRED ]" when it is
+   each [mod](/documentation_v2/glossary/g_to_m.md#mod) with its Workshop id and "[ REQUIRED ]" when it is
    a key dependency.
 5. "[ Launch Game & Auto-Download ]" launches nothing: it toasts "Launch requires the Reforger
    client". "View collection in Reforger Workshop ↗" opens the pack's Workshop URL in a new tab,

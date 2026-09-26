@@ -3,7 +3,7 @@
 # Mortar calculator page documentation
 
 The feature documentation of the `/tools/mortar` page, where members compute a mortar firing
-solution and save it to an [event](/documentation_v2/glossary.md#event), with the page's
+solution and save it to an [event](/documentation_v2/glossary/a_to_f.md#event), with the page's
 design-phase reference.
 
 ## Contents
@@ -19,7 +19,7 @@ documentation_v2/website/frontend/pages/field_tools/mortar/
 Read [mortar_calculator_page.md](/documentation_v2/website/frontend/pages/field_tools/mortar/mortar_calculator_page.md)
 first. It follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md):
 it quotes the page's interface text, gives the solver's model and what each fire-mission route of
-the [API](/documentation_v2/glossary.md#api) does, and compares the built page with the blueprint
+the [API](/documentation_v2/glossary/a_to_f.md#api) does, and compares the built page with the blueprint
 in `visual_references/`. The blueprint is a design-phase reference: it drags markers on a map,
 while the built page takes four typed coordinates and adds the tube and event pickers, the charge,
 the time of flight and the saved list. The code folder's README lists the page's files.

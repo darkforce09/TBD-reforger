@@ -1,11 +1,11 @@
 # Missions services
 
-The logic the [missions](/documentation_v2/glossary.md#missions) handlers share and other domains
-call: [mission](/documentation_v2/glossary.md#mission) row reads, the author-or-admin write lock,
+The logic the [missions](/documentation_v2/glossary/g_to_m.md#missions) handlers share and other domains
+call: [mission](/documentation_v2/glossary/g_to_m.md#mission) row reads, the author-or-admin write lock,
 the compile of a mission version into the mission document, immutable
-[artifacts](/documentation_v2/glossary.md#artifact) with their reviews and
-[mission deployments](/documentation_v2/glossary.md#mission-deployment), the export document, and
-the import of the item [registry](/documentation_v2/glossary.md#registry).
+[artifacts](/documentation_v2/glossary/a_to_f.md#artifact) with their reviews and
+[mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment), the export document, and
+the import of the item [registry](/documentation_v2/glossary/n_to_z.md#registry).
 
 ## Contents
 
@@ -52,12 +52,12 @@ in chunks of 10,000 rows; a re-run of the same envelope changes no row.
 ## Public surface
 
 - `mission_lookup`: `mission_title_terrain` for the dashboard in `command_center` and the
-  [service record](/documentation_v2/glossary.md#service-record) in `operations`, and
+  [service record](/documentation_v2/glossary/n_to_z.md#service-record) in `operations`, and
   `historical_mission_title_terrain`, which still reads a deleted mission, for the service record.
 - `mission_deployments`: `deployment_reads::deployment_in_effect` and
-  `deployment_settlement::lock_and_settle` for the [event](/documentation_v2/glossary.md#event)
+  `deployment_settlement::lock_and_settle` for the [event](/documentation_v2/glossary/a_to_f.md#event)
   roster in `operations`; `deployment_settlement::reconcile_mission_deployments` for the
-  [deployment](/documentation_v2/glossary.md#deployment) reconciler worker.
+  [deployment](/documentation_v2/glossary/a_to_f.md#deployment) reconciler worker.
 - `registry_import`: `import_items`, `import_compat` and `ImportCounts` for the `import-registry`
   binary.
 
@@ -66,15 +66,15 @@ in chunks of 10,000 rows; a re-run of the same envelope changes no row.
 - Depends on: the domain's `models` and `contract`; `core` for configuration, errors and wire
   formats; `administration` for the audit rows; `identity_and_access` for account locks, session
   authorization and administrator authority; `server_infrastructure` for the
-  [fleet command](/documentation_v2/glossary.md#fleet-command) ledger; `operations::services` for
-  the [ORBAT](/documentation_v2/glossary.md#orbat) template a deployment binds;
+  [fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) ledger; `operations::services` for
+  the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) template a deployment binds;
   `website_map_engine::data::scenario` for the compile, the cargo catalog and the wire-safety scans.
 - Used by:
   - the domain's handlers, for everything above;
   - `command_center` and `operations`, through the public surface;
   - the `mission_deployment_reconciler` worker in `apps/website/api_v2/src/background_workers/`
     and the `import-registry` binary in `apps/website/api_v2/src/bin/`;
-  - the [API](/documentation_v2/glossary.md#api) tests
+  - the [API](/documentation_v2/glossary/a_to_f.md#api) tests
     `apps/website/api_v2/tests/registry_compat.rs`, `apps/website/api_v2/tests/models_fromrow.rs`
     and `apps/website/api_v2/tests/mission_deployment_transitions.rs`.
 - Rules: the compile refuses over-capacity cargo with the same check and wording as the save, so

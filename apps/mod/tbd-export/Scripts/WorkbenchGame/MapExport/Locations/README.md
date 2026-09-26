@@ -1,7 +1,7 @@
 # Location export
 
 The place layers of the map export: the named towns and villages of the world open in
-[Workbench](/documentation_v2/glossary.md#workbench), read from its location compositions, and the
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench), read from its location compositions, and the
 landmark anchors in `Anchors/`.
 
 ## Contents

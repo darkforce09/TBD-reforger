@@ -2,7 +2,7 @@
 
 # Ticket plans
 
-One plan per work [ticket](/documentation_v2/glossary.md#ticket) that went ready: how the work
+One plan per work [ticket](/documentation_v2/glossary/n_to_z.md#ticket) that went ready: how the work
 runs, what can go wrong and how it is verified. The agent working the ticket reads the plan beside
 its spec; the spec says what to build, the plan how.
 

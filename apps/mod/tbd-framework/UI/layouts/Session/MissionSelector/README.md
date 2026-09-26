@@ -1,7 +1,7 @@
 # Mission Selector screen layouts
 
 The layouts of the Scenario Browser tab, where a player picks a terrain, a
-[mission](/documentation_v2/glossary.md#mission) and its version: a dock shell, the terrain and
+[mission](/documentation_v2/glossary/g_to_m.md#mission) and its version: a dock shell, the terrain and
 mission column bodies with their pooled rows and cards, and the mission inspector with its photo
 hero. `TBD_MissionSelectorScreen` fills the shell from `TBD_MissionCatalog`, which serves mock data.
 
@@ -41,7 +41,7 @@ reference pixels:
 The terrain and browser panels pool their rows and cards, rebinding them on each search keystroke.
 The inspector stacks four `TBD_Panel` cards from `apps/mod/tbd-framework/UI/layouts/Common/` in
 `CardsContent`: the required modset (`TBD_ModGridItem`s in `TBD_Columns2`), the summary
-(`TBD_InsetText`), and the [ORBAT](/documentation_v2/glossary.md#orbat) and objectives, each a
+(`TBD_InsetText`), and the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) and objectives, each a
 `TBD_Columns2` pair of faction-tinted `TBD_Panel`s whose body is a `TBD_FactionColumn`, with
 `TBD_KeyValueRow`s in its `Rows`.
 
@@ -65,7 +65,7 @@ between them. The textures live in `apps/mod/tbd-framework/UI/Textures/TBD/`.
 
 ## Format
 
-- File type: [Enfusion](/documentation_v2/glossary.md#enfusion) widget layouts (`.layout`), plain
+- File type: [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) widget layouts (`.layout`), plain
   text, each beside a `.layout.meta` whose `Name` holds
   `{GUID}UI/layouts/Session/MissionSelector/<file>.layout`. Every `*Border`, `*BG` and
   `Background` is an empty `FrameWidgetClass` dock that the handler fills with a rounded shape
@@ -80,7 +80,7 @@ between them. The textures live in `apps/mod/tbd-framework/UI/Textures/TBD/`.
 - Naming: `TBD_<Element>.layout`; a layout another screen needs moves to `Common/`.
 - Adding a layout: take a free block from the ledger, author the layout and its `.meta`, add a
   `MISSION_SELECTOR_*` constant to `TBD_UILayouts`, and commit both files; the game finds a new
-  path only after [Workbench](/documentation_v2/glossary.md#workbench) has rewritten
+  path only after [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) has rewritten
   `resourceDatabase.rdb`.
 
 ## Referenced by

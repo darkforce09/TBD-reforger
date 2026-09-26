@@ -1,6 +1,6 @@
 # Ticket registry readers
 
-The read side of the [ticket](/documentation_v2/glossary.md#ticket) files: the registry as one
+The read side of the [ticket](/documentation_v2/glossary/n_to_z.md#ticket) files: the registry as one
 JSON value that the query, sync and validation commands consume, the field helpers they read it
 with, and three narrower readers for the platform wave driver (shipping status, ticket statuses at
 a past revision, and titles). Mutations never pass through here; they go through `crate::ops`.

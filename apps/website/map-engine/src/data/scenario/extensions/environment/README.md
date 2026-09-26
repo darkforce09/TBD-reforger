@@ -1,6 +1,6 @@
 # Environment blocks
 
-The authored blocks that change a [mission](/documentation_v2/glossary.md#mission)'s surroundings
+The authored blocks that change a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s surroundings
 while it runs: the weather timeline, and the audio emitters and music cues. Each child types and
 checks one block, and `apps/website/map-engine/src/data/scenario/mod.rs` exposes them as
 `data::scenario::weather` and `data::scenario::audio`.
@@ -21,11 +21,11 @@ Both children have the shape every block module of `crate::data::scenario::exten
 naming its path, and `validate`, `parse` with the value dropped, is the check the block's row in
 `AUTHORED_BLOCKS` holds. Both blocks are carried: the compile copies a valid one verbatim to the
 compiled document's root, where `TBD_WeatherRuntime` and `TBD_AudioEmitter` in the
-[mod](/documentation_v2/glossary.md#mod) read it.
+[mod](/documentation_v2/glossary/g_to_m.md#mod) read it.
 
 The static environment a mission starts with (its `time` and `weather`, then wind direction, fog,
 wind and view distance) lives in the same environment bag of the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s document but is not an authored
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s document but is not an authored
 block: the compiler reads it itself into the compiled `meta` and `environment`, in
 `apps/website/map-engine/src/data/scenario/compiler/flatten/environment.rs`.
 

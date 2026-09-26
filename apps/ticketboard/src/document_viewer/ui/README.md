@@ -1,6 +1,6 @@
 # Document column
 
-The egui column in which the [ticketboard](/documentation_v2/glossary.md#ticketboard) shows one
+The egui column in which the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) shows one
 repository document beside the ticket details.
 
 ## Contents

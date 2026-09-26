@@ -1,6 +1,6 @@
 # Request middleware and authentication extractors
 
-The layers every request of the [API](/documentation_v2/glossary.md#api) passes through
+The layers every request of the [API](/documentation_v2/glossary/a_to_f.md#api) passes through
 (correlation id, access log, CORS, rate limiting) and the extractors through which a handler
 states who may call it.
 
@@ -24,7 +24,7 @@ apps/website/api_v2/src/core/middleware/
 `crate::core::http_router` applies the chain, outermost first: `request_id`, `logging`, the
 metrics observer of `crate::core::observability`, panic recovery, `cors`, the default body limit
 `MAX_JSON_BODY` (1 MiB), and `rate_limit`. The `/api/v1/cms/uploads` route raises its own limit to
-`MAX_MULTIPART_BODY` (6 MiB), and the [mission](/documentation_v2/glossary.md#mission) version save
+`MAX_MULTIPART_BODY` (6 MiB), and the [mission](/documentation_v2/glossary/g_to_m.md#mission) version save
 route takes the limit that `MISSION_VERSION_MAX_BODY_BYTES` sets.
 
 ```text
@@ -48,17 +48,17 @@ two prefixes also pass the durable tier, `PgRateLimiter`, with the same strict n
 `429` with `Retry-After` and `{"error": "rate limit exceeded"}`; a durable tier that cannot reach
 Postgres answers `503` instead of letting the request through. `/map-assets` and
 `/map-assets/glyphs` are mounted below the layer and never reach it; `/uploads` stays limited. The
-`ratelimit_cleanup_worker` [background worker](/documentation_v2/glossary.md#background-workers)
+`ratelimit_cleanup_worker` [background worker](/documentation_v2/glossary/a_to_f.md#background-workers)
 deletes buckets idle for an hour.
 
 Authentication is not a layer. A handler takes an extractor, and the tier travels with it:
 `AuthUser` needs `Authorization: Bearer <token>`, verifies the token and asks the session
 authority in `AppState` for the member's current session (401 when either fails); `LeaderUser`,
 `MissionMakerUser` and `AdminUser` also need a `role_rank` at least that of their
-[role](/documentation_v2/glossary.md#role) (403 otherwise). The ranks run `guest` 0, `enlisted`
+[role](/documentation_v2/glossary/n_to_z.md#role) (403 otherwise). The ranks run `guest` 0, `enlisted`
 1, `leader` 2, `mission_maker` 3, `admin` 4, and an unknown role ranks below `guest`. `ServiceAuth`
 compares `X-Service-Token` with `SERVICE_TOKEN` in constant time and refuses every request while
-the token is unset. `authorize_event_stream` wraps an [SSE](/documentation_v2/glossary.md#sse)
+the token is unset. `authorize_event_stream` wraps an [SSE](/documentation_v2/glossary/n_to_z.md#sse)
 stream: before each delivery, and at least every five seconds, it asks the session authority
 again, and it ends the stream with an `authorization_expired` SSE event as soon as the session or
 its role stops qualifying.
@@ -72,9 +72,9 @@ its role stops qualifying.
 - Used by:
   - `crate::core::http_router`, which mounts the chain and the exempt asset mounts;
   - the handlers of all eight domains, through the extractors and `json_error`; `role_rank` in the
-    mission write lock, [mission deployments](/documentation_v2/glossary.md#mission-deployment), the
+    mission write lock, [mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment), the
     approval queue, reservation authority and
-    [fleet commands](/documentation_v2/glossary.md#fleet-command); `MAX_MULTIPART_BODY` in the
+    [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command); `MAX_MULTIPART_BODY` in the
     `community_content` route table;
   - `authorize_event_stream`, in the audit log feed of `administration` and the server status
     stream of `server_infrastructure`;

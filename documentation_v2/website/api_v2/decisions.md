@@ -2,7 +2,7 @@
 
 # API decisions
 
-The decisions that shape the website [API](/documentation_v2/glossary.md#api) as a whole, one
+The decisions that shape the website [API](/documentation_v2/glossary/a_to_f.md#api) as a whole, one
 entry each in the [decisions entry](/documentation_v2/standards/templates/decisions_entry.md)
 format, oldest first. A decision that concerns one domain alone lives in that domain's evidence
 note under [verification evidence](/documentation_v2/website/api_v2/verification_evidence/README.md).
@@ -34,7 +34,7 @@ lists them.
 ### 2026-08-01 — Map assets are mounted below the rate limiter
 
 **Context:** Every route sat behind an in-memory token bucket of 20 requests a second with a burst
-of 40 per client. A cold [Mission Creator](/documentation_v2/glossary.md#mission-creator) boot
+of 40 per client. A cold [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) boot
 fetches hundreds of terrain files from `/map-assets` at once, the satellite image as dozens of
 range requests among them. Measured on the live stack, 145,858 of the 145,861 `429`s the limiter
 had issued were `/map-assets`, and none were on `/auth/` or `/ingest/`, the routes it exists for.
@@ -118,18 +118,18 @@ in Postgres, so two API processes never handle the same item at once.
 ### 2026-09-23 — Game hosts are reached only through work they claim
 
 **Context:** Operators control game servers (start, stop, restart, broadcast, kick, list players,
-load a [mission](/documentation_v2/glossary.md#mission)), and game servers need the compiled
+load a [mission](/documentation_v2/glossary/g_to_m.md#mission)), and game servers need the compiled
 missions they run. An API that reaches into hosts needs inbound access to each of them, and
 missions staged as files on a host drift from what was approved.
 
 **Decision:** An administrator's request becomes a durable
-[fleet command](/documentation_v2/glossary.md#fleet-command) row. The
-[fleet host agent](/documentation_v2/glossary.md#fleet-host-agent) and the
-[game runtime](/documentation_v2/glossary.md#game-runtime) poll the API outbound, each with a
-per-server [machine credential](/documentation_v2/glossary.md#machine-credential), claim the
+[fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) row. The
+[fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) and the
+[game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) poll the API outbound, each with a
+per-server [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential), claim the
 commands of their executor kind and report the outcome. A game runtime fetches the bytes of the
-[artifact](/documentation_v2/glossary.md#artifact) its server's
-[mission deployment](/documentation_v2/glossary.md#mission-deployment) names from
+[artifact](/documentation_v2/glossary/a_to_f.md#artifact) its server's
+[mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) names from
 `GET /api/v1/game-runtime/artifacts/{artifactId}`; nothing is staged on disk. The API has no RCON
 console route.
 

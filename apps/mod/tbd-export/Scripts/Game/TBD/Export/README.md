@@ -2,8 +2,8 @@
 
 A game mode component that, once the export world is running, reads Everon's road network from the
 engine's AI road graph and writes it as one JSON file per road class plus a junction summary. It is
-the game-side counterpart of the [Workbench](/documentation_v2/glossary.md#workbench) road plugins,
-and it runs when the export [mission header](/documentation_v2/glossary.md#mission-header) is
+the game-side counterpart of the [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) road plugins,
+and it runs when the export [mission header](/documentation_v2/glossary/g_to_m.md#mission-header) is
 played.
 
 ## Contents

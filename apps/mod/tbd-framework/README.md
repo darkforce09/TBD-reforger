@@ -1,8 +1,8 @@
 # TBD Framework addon
 
-The `TBD_Framework` Enfusion addon: the shipping game [mod](/documentation_v2/glossary.md#mod)
+The `TBD_Framework` Enfusion addon: the shipping game [mod](/documentation_v2/glossary/g_to_m.md#mod)
 that runs TBD sessions on a dedicated server. It loads the
-[mission](/documentation_v2/glossary.md#mission) the platform deploys to the server, stands up its
+[mission](/documentation_v2/glossary/g_to_m.md#mission) the platform deploys to the server, stands up its
 slots, loadouts, objectives, zones and radio nets, and gives players the lobby, briefing, spectator
 and admin screens. It holds only TBD's own code and depends on vanilla Arma Reforger alone.
 
@@ -23,7 +23,7 @@ apps/mod/tbd-framework/
 
 ## How it works
 
-A dedicated server boots the [mission header](/documentation_v2/glossary.md#mission-header)
+A dedicated server boots the [mission header](/documentation_v2/glossary/g_to_m.md#mission-header)
 `Missions/TBD_Dev_POC.conf`. Its world, `worlds/TBD_Dev_POC.ent`, is a sub-scene of vanilla Eden
 whose layer places `Prefabs/Systems/TBD_GameMode.et`, and that game mode carries the framework's
 manager components, so every system in `Scripts/Game/TBD/` starts from it. A vanilla scenario with
@@ -142,8 +142,8 @@ minute apart, so a credential pasted in later takes effect without a restart.
 ## Boundaries
 
 - Depends on: the vanilla Arma Reforger data addon; over HTTP, the API's
-  [game runtime](/documentation_v2/glossary.md#game-runtime) routes with the server's
-  `mod_runtime` [machine credential](/documentation_v2/glossary.md#machine-credential) and its
+  [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) routes with the server's
+  `mod_runtime` [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential) and its
   ingest routes with the service token; the wire shapes in `contracts_v2/definitions/`.
 - Used by: the dedicated servers that `cargo xtask mod playtest`, `cargo xtask deploy staging` and
   the fleet host agent in `apps/fleet_host_agent/` boot; the gates of `cargo xtask mod` in

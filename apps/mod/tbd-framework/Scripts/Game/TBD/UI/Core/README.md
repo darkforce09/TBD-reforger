@@ -61,7 +61,7 @@ its panels with `Mount` or `MountHandler`, and fills `GetScreenTitle`, `GetSessi
   through `Repaint()`; `TBD_UIButton` and `TBD_ListBoxRow` derive from it.
 - `TBD_ListBox` creates each row once per index from `TBD_ListRow.layout` (its `[Attribute]`) and
   afterwards only re-binds text and colour, hiding surplus rows, so a list refreshed on every
-  [slot](/documentation_v2/glossary.md#slot) claim costs no widget churn. A build is `BeginUpdate`,
+  [slot](/documentation_v2/glossary/n_to_z.md#slot) claim costs no widget churn. A build is `BeginUpdate`,
   `AddSection` and `AddItem`, `EndUpdate`.
 - `TBD_UIScrollBar` is mounted by the owner of a scroll widget with
   `Mount(dock, scroll, content, ground)` into the list's 4 px `ScrollBarDock`, repainted with
@@ -117,7 +117,7 @@ its panels with `Mount` or `MountHandler`, and fills `GetScreenTitle`, `GetSessi
 - Rules: a layout or texture resource is named once, in `TBD_UILayouts`, and a new GUID block is
   checked against the ledger in its header; a colour is a `TBD_UITheme` token or a `TBD_EUITint`,
   never a literal, and a translucent token is composited over its ground; a moved or new layout is
-  invisible to the engine until [Workbench](/documentation_v2/glossary.md#workbench) rewrites
+  invisible to the engine until [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) rewrites
   `resourceDatabase.rdb`, while a new script compiles without it; lines added to a script stay
   ASCII, and `cargo xtask mod compile` checks that the scripts compile, while how a screen looks is
   checked in Workbench.

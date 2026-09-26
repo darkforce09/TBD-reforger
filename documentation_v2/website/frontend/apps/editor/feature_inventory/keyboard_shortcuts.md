@@ -2,7 +2,7 @@
 
 # Keyboard shortcuts
 
-Every key the [Mission Creator](/documentation_v2/glossary.md#mission-creator) binds: the
+Every key the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) binds: the
 window-level chords, the keys a single surface handles, the guard that keeps typing in a field
 from triggering them, and the in-editor list that documents them.
 
@@ -58,7 +58,7 @@ keyboard layout, and only a handled chord suppresses the browser's default.
 ### Window chords
 
 1. Space (no modifier): moves the camera to the average position of the selected
-   [slots](/documentation_v2/glossary.md#slot) and keeps the zoom (MAP-FLY-001).
+   [slots](/documentation_v2/glossary/n_to_z.md#slot) and keeps the zoom (MAP-FLY-001).
 2. Delete: removes the selected connection, else the selected tactical graphic, else the
    selection, as one undo step. Backspace instead hides or shows all the chrome.
 3. Ctrl/Cmd+Z undoes; Ctrl/Cmd+Shift+Z and Ctrl/Cmd+Y redo; Alt disqualifies the chord. The top

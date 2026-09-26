@@ -5,7 +5,7 @@
 How a player ties their game identity to their TBD platform account, and so to their Discord
 identity: a code made on the website, typed in game. The link lets the platform credit a
 player's attendance and statistics from the round results the server reports. In game it is a
-private chat command; the [mod](/documentation_v2/glossary.md#mod) draws no dialog.
+private chat command; the [mod](/documentation_v2/glossary/g_to_m.md#mod) draws no dialog.
 
 ## Where it lives
 

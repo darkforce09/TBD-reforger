@@ -1,7 +1,7 @@
 # XOB model parsers
 
 The byte-level halves of `mesh_format.rs` in `tools_v2/developer-tools/src/blueprint/mesh_decoding/`:
-the reader of an [Enfusion](/documentation_v2/glossary.md#enfusion) `.xob` model's visual LODs and
+the reader of an [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) `.xob` model's visual LODs and
 the reader of its fire-collision (COLL) chunk, both returning the parent's `XobMesh`.
 
 ## Contents

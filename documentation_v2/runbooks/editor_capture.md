@@ -2,7 +2,7 @@
 
 # Editor capture
 
-Screenshots a running [Mission Creator](/documentation_v2/glossary.md#mission-creator) in headless
+Screenshots a running [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) in headless
 Chromium on the real GPU: the interface through the DevTools protocol and the map straight off its
 canvas. Run it to judge layout, copy and the map by eye, or to hand an agent an image of the live
 editor. A capture takes about half a minute once the stack is up. The drivers are the `capture`
@@ -16,13 +16,13 @@ binary of `tools_v2/developer-tools`, described in the
 - The full Chromium build the [editor gates](/documentation_v2/runbooks/editor_gates.md) use,
   found the same way (`CHROME_HEADLESS_SHELL` or the Playwright cache). Check:
   `cargo run -q -p developer-tools --bin gate -- doctor` prints a `✓ chromium` line.
-- The database, the [API](/documentation_v2/glossary.md#api) on port 8080 and the app on port 3000 running, as in
+- The database, the [API](/documentation_v2/glossary/a_to_f.md#api) on port 8080 and the app on port 3000 running, as in
   [Local development](/documentation_v2/runbooks/local_development.md): `cargo xtask db up`,
   `cargo xtask mk rust-api`, then `cargo xtask mk leptos` (release) or `cargo xtask mk leptos-debug`
   (`trunk serve` without `--release`). Check: `http://localhost:3000/` answers.
 - `APP_ENV=development` in `apps/website/api_v2/.env`, for the
-  [dev login](/documentation_v2/glossary.md#dev-login) the capture signs in with.
-- The id of a [mission](/documentation_v2/glossary.md#mission) to open, from the mission library.
+  [dev login](/documentation_v2/glossary/a_to_f.md#dev-login) the capture signs in with.
+- The id of a [mission](/documentation_v2/glossary/g_to_m.md#mission) to open, from the mission library.
 
 ## Steps
 

@@ -3,8 +3,8 @@
 # Product plans
 
 The platform's original product planning: the master build plan with its five design pillars and
-phases, the [mod](/documentation_v2/glossary.md#mod) milestones that end each phase with a real
-[event](/documentation_v2/glossary.md#event), and the community announcement of the first milestone.
+phases, the [mod](/documentation_v2/glossary/g_to_m.md#mod) milestones that end each phase with a real
+[event](/documentation_v2/glossary/a_to_f.md#event), and the community announcement of the first milestone.
 Status: archived — frozen records.
 
 ## Contents
@@ -24,7 +24,7 @@ None: the plans describe the product, not a code folder.
 
 - Depends on: nothing live; the plans state the intent of their time.
 - Used by: the [mod documentation](/documentation_v2/mod/README.md), which links the milestones and
-  the announcement; a [ticket](/documentation_v2/glossary.md#ticket) spec in
+  the announcement; a [ticket](/documentation_v2/glossary/n_to_z.md#ticket) spec in
   `documentation_v2/tickets/specs/` that links the build plan.
 - Rules: never reworded, only links change; the items still planned live in the product roadmap,
   which the operator curates, not here.

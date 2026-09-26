@@ -1,7 +1,7 @@
 # Field tools pages
 
 The standalone tactical aids: pages that stand on their own rather than hanging off a
-[mission](/documentation_v2/glossary.md#mission) or an [event](/documentation_v2/glossary.md#event).
+[mission](/documentation_v2/glossary/g_to_m.md#mission) or an [event](/documentation_v2/glossary/a_to_f.md#event).
 The folder holds one page, the mortar calculator.
 
 ## Contents
@@ -17,8 +17,8 @@ apps/website/frontend/src/v2/pages/field_tools/
 Each page here owns a route under `/tools/`, its own fetches and its own signals; outside the
 folder only the route table and the sidebar's "Field Tools" section refer to it, so a page can be
 removed without touching the rest of the tree. The mortar calculator sends its geometry to the
-fire-mission routes of the [operations](/documentation_v2/glossary.md#operations) domain of the
-[API](/documentation_v2/glossary.md#api), which solve the ballistics, and saves the answer against
+fire-mission routes of the [operations](/documentation_v2/glossary/n_to_z.md#operations) domain of the
+[API](/documentation_v2/glossary/a_to_f.md#api), which solve the ballistics, and saves the answer against
 an event when one is selected. The debug benches at `/debug/building-viewer` and `/debug/world-los`
 are apps, in `apps/website/frontend/src/v2/apps/debug/`, not field tools.
 

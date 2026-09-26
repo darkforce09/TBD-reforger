@@ -1,8 +1,8 @@
 # Arsenal panels
 
-The views the [arsenal](/documentation_v2/glossary.md#arsenal) draws around one
-[slot](/documentation_v2/glossary.md#slot)'s loadout inside the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s Attributes dialog: the doll that
+The views the [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) draws around one
+[slot](/documentation_v2/glossary/n_to_z.md#slot)'s loadout inside the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s Attributes dialog: the doll that
 previews the loadout in 3D with a flat SVG fallback, the compatibility panel with its attachment
 toggles, and the cargo editor.
 

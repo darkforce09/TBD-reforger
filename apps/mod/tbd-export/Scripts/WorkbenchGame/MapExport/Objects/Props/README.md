@@ -2,7 +2,7 @@
 
 A placeholder for a props layer of the map export (containers, barriers, crates, street furniture
 and clutter). It resolves its output path in the world open in
-[Workbench](/documentation_v2/glossary.md#workbench) and writes nothing.
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) and writes nothing.
 
 ## Contents
 

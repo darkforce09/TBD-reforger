@@ -1,7 +1,7 @@
 # Id array tests through a whole document
 
 Unit tests that run the squad and layer id arrays through a whole
-[mission](/documentation_v2/glossary.md#mission) document, `MissionDocCore`, rather than a bare
+[mission](/documentation_v2/glossary/g_to_m.md#mission) document, `MissionDocCore`, rather than a bare
 `yrs` map: two peers appending at once, the undo of one peer's append, and a hydrate whose id
 lists arrive as plain JSON arrays.
 

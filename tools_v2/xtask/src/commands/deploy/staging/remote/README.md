@@ -52,7 +52,7 @@ and no `--delete-excluded`, each exclusion also keeps rsync from deleting that p
 the Workshop rival pak on the host, and runs `boot::verify_boot_log` in config mode; addons mode
 runs only the addon check and says the room and admin checks were skipped.
 `deployed_scenario` keeps a valid `game.scenarioId` of the live config, since the
-[fleet host agent](/documentation_v2/glossary.md#fleet-host-agent) rewrites it to restart
+[fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) rewrites it to restart
 missions, and `TBD_SCENARIO` seeds only a server without one.
 
 ## Boundaries

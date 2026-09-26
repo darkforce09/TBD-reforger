@@ -1,8 +1,8 @@
 # Mission compiler
 
-The two compile steps of a [mission](/documentation_v2/glossary.md#mission): the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s document into the editor payload
-a version saves, and a saved payload into the document the [mod](/documentation_v2/glossary.md#mod)
+The two compile steps of a [mission](/documentation_v2/glossary/g_to_m.md#mission): the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s document into the editor payload
+a version saves, and a saved payload into the document the [mod](/documentation_v2/glossary/g_to_m.md#mod)
 loads, with characters and vehicles resolved through the kit-alias table.
 
 ## Contents
@@ -29,9 +29,9 @@ ModMissionDocument ─▶ the artifact bytes the game server loads, plus finding
 
 The Mission Creator runs the first step on every save and both steps for its compiled export, so
 the file it offers comes from the same code as the server's. The
-[API](/documentation_v2/glossary.md#api) runs the second step when a mission is submitted, and the
-bytes become the mission's [artifact](/documentation_v2/glossary.md#artifact). The Export path
-adds the derived [ORBAT](/documentation_v2/glossary.md#orbat) to the payload and wraps it in
+[API](/documentation_v2/glossary/a_to_f.md#api) runs the second step when a mission is submitted, and the
+bytes become the mission's [artifact](/documentation_v2/glossary/a_to_f.md#artifact). The Export path
+adds the derived [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) to the payload and wraps it in
 `compile::compile_export`'s envelope; a saved payload carries no ORBAT, which the API derives
 itself.
 
@@ -56,7 +56,7 @@ The three modules are reached through the aliases of `data::scenario`:
   `contracts_v2/rules/kit-aliases.json`; `serde`, `serde_json` and `thiserror`.
 - Used by: the Mission Creator in `apps/website/frontend/src/v2/apps/editor/` and the mission
   library in `apps/website/frontend/src/v2/pages/mission_hub/library/`; the
-  [missions](/documentation_v2/glossary.md#missions) domain in
+  [missions](/documentation_v2/glossary/g_to_m.md#missions) domain in
   `apps/website/api_v2/src/missions/`; inside the crate, `crate::data::store::operations`,
   `crate::editing::persist` and `crate::data::scenario::validate` (`terrain_bounds`,
   `compile_payload`).

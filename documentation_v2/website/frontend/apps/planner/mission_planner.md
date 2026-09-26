@@ -3,8 +3,8 @@
 # Mission planner
 
 A planned workspace, not built: a tactical whiteboard on which squad leaders and commanders plan an
-[event](/documentation_v2/glossary.md#event)'s operation on the map of its published
-[mission](/documentation_v2/glossary.md#mission), drawing markers and control measures over it
+[event](/documentation_v2/glossary/a_to_f.md#event)'s operation on the map of its published
+[mission](/documentation_v2/glossary/g_to_m.md#mission), drawing markers and control measures over it
 without editing the mission, and carry that plan into the game.
 
 ## Where it lives
@@ -17,17 +17,17 @@ without editing the mission, and carry that plan into the game.
 - Related features: the [Mission Creator](/documentation_v2/website/frontend/apps/editor/README.md),
   whose map, briefing markers and tactical graphics the planner would draw on; the
   [event hub page](/documentation_v2/website/frontend/pages/operations/event_detail/event_hub_page.md),
-  where an event's missions and [ORBAT](/documentation_v2/glossary.md#orbat) are read today.
+  where an event's missions and [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) are read today.
 
 ## Behaviour
 
 None: no code serves the planner. The nearest built pieces are these:
 
-1. The [Mission Creator](/documentation_v2/glossary.md#mission-creator) lets the mission maker drop
+1. The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) lets the mission maker drop
    briefing markers for one side and draw tactical graphics (phase lines, boundaries, axes of
    advance and curved arrows) into the mission itself; the checks live in
    `apps/website/map-engine/src/data/scenario/extensions/tactical_graphics/`.
-2. The [mod](/documentation_v2/glossary.md#mod) puts a mission's briefing markers on the in-game
+2. The [mod](/documentation_v2/glossary/g_to_m.md#mod) puts a mission's briefing markers on the in-game
    map and sends each player only their own side's markers
    (`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/`).
 3. Nothing stores a plan per member or per event, and no in-game menu loads a plan from the

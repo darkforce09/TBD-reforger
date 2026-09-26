@@ -1,6 +1,6 @@
 # Execution metrics
 
-What running a [ticket](/documentation_v2/glossary.md#ticket) cost: the run receipts an agent run
+What running a [ticket](/documentation_v2/glossary/n_to_z.md#ticket) cost: the run receipts an agent run
 leaves under `.ai/tickets/metrics/<id>/`, with their token counts, timestamps and landing commit,
 and, in `estimates/`, the token counts reconstructed for shipped tickets without a receipt. The
 two trees have separate files, schemas and checks, so an estimate can never pass for a

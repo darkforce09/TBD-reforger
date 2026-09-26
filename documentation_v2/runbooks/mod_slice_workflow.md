@@ -2,8 +2,8 @@
 
 # Mod slice workflow
 
-How work on the TBD [mod](/documentation_v2/glossary.md#mod) runs: an orchestrating session splits a
-[wave](/documentation_v2/glossary.md#wave) of the mod program into slices, one agent builds each
+How work on the TBD [mod](/documentation_v2/glossary/g_to_m.md#mod) runs: an orchestrating session splits a
+[wave](/documentation_v2/glossary/n_to_z.md#wave) of the mod program into slices, one agent builds each
 slice in its own git worktree, and `cargo xtask mod wave` merges, gates, reaps and pushes them.
 The rules below are operator-defined and binding; read them before dispatching any slice agent.
 The program is the [mod program spec](/documentation_v2/tickets/specs/t181_event_mod_program.md),
@@ -34,11 +34,11 @@ reason in.
 - The Arma Reforger dedicated server under Steam and a host bridge (`distrobox-host-exec` or
   `host-spawn`), which `mod compile` and the world boot need; the
   [mod commands](/tools_v2/xtask/src/commands/mod_ops/README.md) list the exit codes.
-- The wave plan: the program's dotted child [tickets](/documentation_v2/glossary.md#ticket) in
+- The wave plan: the program's dotted child [tickets](/documentation_v2/glossary/n_to_z.md#ticket) in
   `.ai/tickets/wave.lock`, each with an `owns` list. `cargo xtask wave repack` is the only writer
   of the lock; the corpus pin `game_mod_programme_ticket` in `.ai/tickets/corpus-pins.toml` names
   the program.
-- [Workbench](/documentation_v2/glossary.md#workbench) only for world, prefab and play-in-editor
+- [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) only for world, prefab and play-in-editor
   work: `cargo xtask mod dev-bootstrap` brings it and the MCP bridge up, as the
   [Workbench MCP bridge](/documentation_v2/mod/tbd-emcp/workbench_mcp_bridge.md#bringing-the-bridge-up)
   describes.
@@ -272,8 +272,8 @@ holds the real files.
 ## Sources
 
 Every slice prompt points at these; an agent proves an Enfusion fact rather than guessing it. Do
-not let an agent rely on what it believes about [Enfusion](/documentation_v2/glossary.md#enfusion):
-[EnfScript](/documentation_v2/glossary.md#enfscript) is a niche language and a model's priors are
+not let an agent rely on what it believes about [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion):
+[EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript) is a niche language and a model's priors are
 wrong. An agent asked to summarise one CRF file once invented four APIs that do not exist
 (`RequestSlotChange`, `ReleaseSlot`, `GetInstance` and a wrong base class), which is why every index
 is generated and `enf citations` gates prose citations.

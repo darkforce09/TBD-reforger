@@ -1,7 +1,7 @@
 # Stump and deadwood export
 
 Finds every placed tree stump, cut trunk, log, root base and woodpile in the open world in
-[Workbench](/documentation_v2/glossary.md#workbench) and writes each one's kind, wood species,
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) and writes each one's kind, wood species,
 position, rotation, scale, size and diameter to `stumps.json`.
 
 ## Contents

@@ -1,7 +1,7 @@
 # Ticket registry loading
 
-How the [ticketboard](/documentation_v2/glossary.md#ticketboard) finds the repository and reads
-its [tickets](/documentation_v2/glossary.md#ticket): the repository-root discovery, and the
+How the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) finds the repository and reads
+its [tickets](/documentation_v2/glossary/n_to_z.md#ticket): the repository-root discovery, and the
 all-or-nothing load of every ticket file.
 
 ## Contents

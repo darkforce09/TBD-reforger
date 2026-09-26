@@ -3,7 +3,7 @@
 The geometry behind line of sight on Everon: a collision mesh library shared by every prefab, one
 collision record per catalogue prefab, the floor-by-floor building models, and the index and
 archive that tie them together. The map engine's world occluder reads them to trace sight lines
-through the objects of the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map.
+through the objects of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map.
 
 ## Contents
 
@@ -22,7 +22,7 @@ assets_v2/terrains/everon/prefabs/
 The blueprint compiler writes the folder in two passes. `cargo xtask map bvh-batch --all-prefabs
 --terrain everon` walks every prefab of the object catalogue
 (`assets_v2/terrains/everon/objects/prefabs.json.gz`) out of the
-[Enfusion](/documentation_v2/glossary.md#enfusion) game paks and writes the mesh library in
+[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) game paks and writes the mesh library in
 `blas/`, one descriptor per prefab in `descriptors/`, and `blas-manifest.json`, which indexes both
 and lists the most-placed blocking prefabs as the `hot` list (`--hot`, 100 by default).
 `cargo xtask map blueprint-from-voxels archive` then folds the manifest, every descriptor and

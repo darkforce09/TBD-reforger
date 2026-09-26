@@ -4,7 +4,7 @@
 
 The documentation of the after-action review, a planned workspace that is not built: a replay of
 a finished match from server telemetry over a read-only map, for members and leaders reviewing an
-[event](/documentation_v2/glossary.md#event) after it ends. Developers and AI agents read it
+[event](/documentation_v2/glossary/a_to_f.md#event) after it ends. Developers and AI agents read it
 before starting the workspace.
 
 ## Contents

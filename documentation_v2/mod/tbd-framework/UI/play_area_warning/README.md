@@ -3,7 +3,7 @@
 # Play area warning documentation
 
 The documentation of the out-of-bounds warning a player gets when they leave the area of
-operations of a round of an [event](/documentation_v2/glossary.md#event).
+operations of a round of an [event](/documentation_v2/glossary/a_to_f.md#event).
 
 ## Contents
 

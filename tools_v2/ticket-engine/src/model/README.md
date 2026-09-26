@@ -1,6 +1,6 @@
 # Ticket model
 
-The typed [ticket](/documentation_v2/glossary.md#ticket): the two ticket kinds, the status with the
+The typed [ticket](/documentation_v2/glossary/n_to_z.md#ticket): the two ticket kinds, the status with the
 fields each status requires, the four-level scope, and the field limits and predicates that the
 operations and `ticket check` share, so each rule has one definition.
 

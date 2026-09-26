@@ -1,7 +1,7 @@
 # Fleet command executor
 
-The [game runtime](/documentation_v2/glossary.md#game-runtime) as an executor of
-[fleet commands](/documentation_v2/glossary.md#fleet-command): while this world holds a runtime
+The [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) as an executor of
+[fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command): while this world holds a runtime
 session, it claims the commands addressed to it and runs `broadcast`, `kick` and `load_mission`,
 each through the same report-before-effect protocol.
 

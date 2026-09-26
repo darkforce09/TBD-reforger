@@ -1,8 +1,8 @@
 # Measured run receipts
 
-The [ticketboard](/documentation_v2/glossary.md#ticketboard)'s reading of the measured run receipts
+The [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)'s reading of the measured run receipts
 under `.ai/tickets/metrics/<id>/`: each file checked by the same rules `cargo xtask ticket check`
-applies, then summed per [ticket](/documentation_v2/glossary.md#ticket), per agent and in total,
+applies, then summed per [ticket](/documentation_v2/glossary/n_to_z.md#ticket), per agent and in total,
 with every malformed file named instead of counted.
 
 ## Contents

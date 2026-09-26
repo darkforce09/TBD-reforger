@@ -3,9 +3,9 @@
 # Website documentation
 
 The documentation of the community's web platform in `apps/website/`: the REST
-[API](/documentation_v2/glossary.md#api) and its [SSE](/documentation_v2/glossary.md#sse)
+[API](/documentation_v2/glossary/a_to_f.md#api) and its [SSE](/documentation_v2/glossary/n_to_z.md#sse)
 streams, and the single-page app with every page and the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator). Developers and AI agents read it
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator). Developers and AI agents read it
 below the code READMEs, for behaviour, design, open work and decisions.
 
 ## Contents
@@ -32,7 +32,7 @@ The four crates of the platform, and where their documentation starts:
 |---|---|---|
 | `website-api` | [`apps/website/api_v2/`](/apps/website/api_v2/README.md): Axum and sqlx on Postgres, serving `/api/v1` on port 8080 | [API documentation](/documentation_v2/website/api_v2/README.md) |
 | `website-frontend` | [`apps/website/frontend/`](/apps/website/frontend/README.md): Leptos 0.8 compiled to WebAssembly, served by Trunk on port 3000 in development | [frontend documentation](/documentation_v2/website/frontend/README.md) |
-| `website-map-engine` | [`apps/website/map-engine/`](/apps/website/map-engine/README.md): the world, streaming, spatial queries, the map and the [mission](/documentation_v2/glossary.md#mission) domain, with no UI dependency | [map engine documentation](/documentation_v2/website/map-engine/README.md) |
+| `website-map-engine` | [`apps/website/map-engine/`](/apps/website/map-engine/README.md): the world, streaming, spatial queries, the map and the [mission](/documentation_v2/glossary/g_to_m.md#mission) domain, with no UI dependency | [map engine documentation](/documentation_v2/website/map-engine/README.md) |
 | `website-graphics-engine` | [`apps/website/graphics-engine/`](/apps/website/graphics-engine/README.md): the `wgpu` renderer on WebGPU, with a WebGL backend a caller can force, which knows no map concept | [graphics engine documentation](/documentation_v2/website/graphics-engine/README.md) |
 
 The browser runs the app, which calls the API over `/api/v1` and SSE and streams terrain from
@@ -67,4 +67,4 @@ it.
   database and the app locally.
 - [Website deployment](/documentation_v2/runbooks/website_deployment.md) — deploying the API and
   the app to the deploy host.
-- [Glossary](/documentation_v2/glossary.md) — the platform's terms.
+- [Glossary](/documentation_v2/glossary/README.md) — the platform's terms.

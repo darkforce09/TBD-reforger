@@ -1,9 +1,9 @@
 # Top command strip
 
 The two-row strip across the top of the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator): the
-[mission](/documentation_v2/glossary.md#mission) title, the menu bar, the
-[ORBAT](/documentation_v2/glossary.md#orbat) manager button, undo and redo, the transform widget
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator): the
+[mission](/documentation_v2/glossary/g_to_m.md#mission) title, the menu bar, the
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) manager button, undo and redo, the transform widget
 and snap controls, the time of day and weather, the validation chip, "Save Version" and "Export".
 The module root, `apps/website/frontend/src/v2/apps/editor/ui/docks/top_strip.rs`, declares these
 files, holds the strip's button and menu classes, re-exports the items below and mounts the
@@ -52,7 +52,7 @@ Escape closes, in order, an open menu, the export list, the findings dropdown, t
 dialog and the Controls Hint, unless the modal stack has consumed the key, and the strip registers
 its closer with the modal stack so that a dialog opening elsewhere closes them. The draft chip
 reads the shell's last local-draft write and refreshes every second ("Draft saved just now" under
-5 s). `census_from_rows` counts [slots](/documentation_v2/glossary.md#slot) per side from the ORBAT
+5 s). `census_from_rows` counts [slots](/documentation_v2/glossary/n_to_z.md#slot) per side from the ORBAT
 rows the map engine returns, and `summary_line` prints
 "<mode> <total> on <Terrain> — WEST n v EAST n", adding "(+n IND)" and "(n unassigned)" when
 nonzero; both render in a hidden element of the menu row.
@@ -84,7 +84,7 @@ nonzero; both render in a hidden element of the menu row.
   - `website_map_engine`: `editing::hosted_commands` (`census_input`, `selection_transform`),
     `editing::host::selection_len` and the placement kinds of `editing::tools::placement`;
   - over HTTP, `PATCH /api/v1/missions/{id}` of the
-    [missions](/documentation_v2/glossary.md#missions) domain.
+    [missions](/documentation_v2/glossary/g_to_m.md#missions) domain.
 - Used by: the callers above; the tests in
   `apps/website/frontend/src/v2/apps/editor/ui/docks/tests/top_strip/`; the outliner smoke test in
   `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/outliner_palette.rs`, which

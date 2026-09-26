@@ -2,7 +2,7 @@
 
 The body of `gate v-suite`, declared in
 `tools_v2/developer-tools/src/browser_testing/dom_oracle.rs`: the route list, the per-route capture
-against the committed [API](/documentation_v2/glossary.md#api) fixture corpus, the request router
+against the committed [API](/documentation_v2/glossary/a_to_f.md#api) fixture corpus, the request router
 that feeds it, and the verify and accept modes that compare the capture with the frozen goldens.
 
 ## Contents
@@ -19,8 +19,8 @@ tools_v2/developer-tools/src/browser_testing/dom_oracle/
 `run` (`gate v-suite <verify|accept> [--leptos-dir <dist>] [--only <slug>] [--note <why>]`) checks
 its arguments, launches one Chromium on debug port 9341 and hands the selected routes to
 `run_modes`. The routes are the platform's leaf pages, 23 signed in with the admin seed and two
-signed out (`login`, `callback`); the [mission](/documentation_v2/glossary.md#mission),
-[event](/documentation_v2/glossary.md#event) and [ORBAT](/documentation_v2/glossary.md#orbat) pages
+signed out (`login`, `callback`); the [mission](/documentation_v2/glossary/g_to_m.md#mission),
+[event](/documentation_v2/glossary/a_to_f.md#event) and [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) pages
 use the committed seed ids.
 
 ```text

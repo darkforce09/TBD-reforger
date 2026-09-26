@@ -3,7 +3,7 @@
 # Graphics engine documentation
 
 The documentation of `website-graphics-engine`, the web platform's `wgpu` renderer, which knows no
-map concept and draws the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map
+map concept and draws the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map
 for the map engine. Developers and AI agents read it below the crate's code READMEs, for the frame
 flow across modules, the design, the open work and the decisions.
 

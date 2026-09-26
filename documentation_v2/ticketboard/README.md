@@ -2,7 +2,7 @@
 
 # Ticketboard documentation
 
-The documents on the [ticketboard](/documentation_v2/glossary.md#ticketboard), the native desktop
+The documents on the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard), the native desktop
 viewer of the ticket registry in `apps/ticketboard/`. Developers and operators read them below the
 crate's code READMEs, for the flows, the reasons and the open work.
 

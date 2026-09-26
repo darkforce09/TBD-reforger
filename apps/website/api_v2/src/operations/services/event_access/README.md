@@ -1,8 +1,8 @@
 # Event access evaluation
 
-Who may see and who may take part in an [event](/documentation_v2/glossary.md#event): the pure
+Who may see and who may take part in an [event](/documentation_v2/glossary/a_to_f.md#event): the pure
 evaluation of an access policy against one account's facts, the effective policy of each
-[ORBAT](/documentation_v2/glossary.md#orbat) [slot](/documentation_v2/glossary.md#slot), the
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) [slot](/documentation_v2/glossary/n_to_z.md#slot), the
 membership facts loaded under both evidence standards, and what one viewer may see of each event.
 
 ## Contents
@@ -25,7 +25,7 @@ A policy is a list of grants and each grant a list of conditions (`authenticated
 one grant must all hold. A slot policy replaces its squad's, which replaces the event's; a missing
 policy inherits, and an empty grant list admits nobody. `evaluate_access` checks the mandatory gates
 apart from the policy, and no grant overrides them: a valid session, an available account, open
-registration, the pool's opening time, [deployment](/documentation_v2/glossary.md#deployment)
+registration, the pool's opening time, [deployment](/documentation_v2/glossary/a_to_f.md#deployment)
 conditions and capacity.
 
 `subject_loading.rs` builds an account's facts under two standards. Current authority accepts
@@ -46,7 +46,7 @@ Registration status, capacity and opening times never hide an event.
   the overrides; `core` for errors; the `discord_membership_snapshots`,
   `discord_membership_grace_overrides`, `user_discord_roles`, `event_groups` and
   `event_group_roster` tables.
-- Used by: the [operations](/documentation_v2/glossary.md#operations) handlers `event_listing.rs`,
+- Used by: the [operations](/documentation_v2/glossary/n_to_z.md#operations) handlers `event_listing.rs`,
   `event_hub.rs`, `orbat_view.rs` and `event_group_administration.rs`;
   `operations::services::event_reservations`, `operations::services::access_administration` and
   `operations::services::live_slot_occupancy`; the models `event_access_administration.rs` and

@@ -2,13 +2,13 @@
 
 # Arsenal loadout editor
 
-The Arsenal tab of the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
+The Arsenal tab of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
 Attributes dialog: a full loadout editor in which a mission maker dresses and arms one
-[slot](/documentation_v2/glossary.md#slot) from the item
-[registry](/documentation_v2/glossary.md#registry), sees it on a 3D doll, fills its containers
+[slot](/documentation_v2/glossary/n_to_z.md#slot) from the item
+[registry](/documentation_v2/glossary/n_to_z.md#registry), sees it on a 3D doll, fills its containers
 with cargo, and copies loadouts across a selection. It is the
-[arsenal](/documentation_v2/glossary.md#arsenal), not the mission's
-[armory](/documentation_v2/glossary.md#armory).
+[arsenal](/documentation_v2/glossary/a_to_f.md#arsenal), not the mission's
+[armory](/documentation_v2/glossary/a_to_f.md#armory).
 
 ## Where it lives
 
@@ -59,7 +59,7 @@ with cargo, and copies loadouts across a selection. It is the
    Every other row lists the registry's items of its kind, without abstract or variant rows,
    sorted by name. A current pick the graph rejects stays listed, in the error colour, so it can
    be seen and cleared.
-4. A click on an option writes the loadout to the [mission](/documentation_v2/glossary.md#mission)
+4. A click on an option writes the loadout to the [mission](/documentation_v2/glossary/g_to_m.md#mission)
    document at once, as one undo step. There is no Save button.
 5. For a weapon region the compatibility panel adds "Attachments", the one multi-select: each
    toggle writes the weapon's whole attachment set as one pick.
@@ -151,7 +151,7 @@ the tab; the tab makes no call of its own.
 - `GET /api/v1/registry?limit=500&offset=…` (`list_registry` in
   `apps/website/api_v2/src/missions/handlers/registry_items.rs`): read as `RegistryResponse` pages
   of `RegistryItem` until `total` is reached; the current modpack's flat catalog, for the
-  `mission_maker` [role](/documentation_v2/glossary.md#role) and above, with a weak ETag.
+  `mission_maker` [role](/documentation_v2/glossary/n_to_z.md#role) and above, with a weak ETag.
 - `GET /api/v1/registry/compat?edge_type=optic_on_weapon,mag_in_weapon,attachment_on_weapon`
   (`list_registry_compat` in `apps/website/api_v2/src/missions/handlers/registry_compat_graph.rs`):
   read as `RegistryCompatResponse`; the compatibility edges of those three families, which build

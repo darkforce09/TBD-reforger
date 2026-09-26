@@ -1,7 +1,7 @@
 # Placement geometry
 
-The arrange commands of the [Mission Creator](/documentation_v2/glossary.md#mission-creator) as
-pure point math over a selection of the [mission](/documentation_v2/glossary.md#mission)'s placed
+The arrange commands of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) as
+pure point math over a selection of the [mission](/documentation_v2/glossary/g_to_m.md#mission)'s placed
 entities: the four patterns, align, space and orient, and garrison firing positions around a
 building. Nothing here reads or writes the document.
 

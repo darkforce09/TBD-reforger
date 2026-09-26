@@ -1,7 +1,7 @@
 # Streaming memory accounting
 
 Two records of what map streaming holds for the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map: the memory budget, a
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map: the memory budget, a
 ledger of the world assets' bytes that also chooses the satellite basemap's finest affordable
 level, and the world residency's counters as one JSON snapshot.
 

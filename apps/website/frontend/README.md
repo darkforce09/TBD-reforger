@@ -2,8 +2,8 @@
 
 The `website-frontend` crate: the web platform's single-page app, written in Rust with Leptos 0.8
 and rendered in the browser as WebAssembly. It holds every page members use, the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator), and the client that talks to the
-[API](/documentation_v2/glossary.md#api); Trunk builds it into a static bundle that the dev server,
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator), and the client that talks to the
+[API](/documentation_v2/glossary/a_to_f.md#api); Trunk builds it into a static bundle that the dev server,
 the API or the deployed host serves.
 
 ## Contents
@@ -73,7 +73,7 @@ rates mean nothing, and `cargo xtask mk leptos-build` writes a release build int
 serving it. `cargo run -q -p developer-tools --bin gate -- render-check --dir apps/website/frontend/dist`
 checks that a built bundle mounts and renders in a headless browser.
 
-To sign in without Discord through the [dev login](/documentation_v2/glossary.md#dev-login), open
+To sign in without Discord through the [dev login](/documentation_v2/glossary/a_to_f.md#dev-login), open
 `/api/v1/auth/dev-login?role=admin` on the host `FRONTEND_URL` names (`http://localhost:3000` in
 `apps/website/api_v2/.env.example`); the proxy hands the redirect to `/auth/callback` back
 unfollowed, so the session in its URL fragment reaches the app.
@@ -96,7 +96,7 @@ The app reads no environment variable: the settings are the build files'.
 | API root | `/api/v1` on the page's origin, `API_BASE` | the client's verbs, from `src/v2/core/api/client/mod.rs` |
 | stored session | the `tbd-auth` key of local storage; `tbd-auth-refresh` names the Web Lock and the broadcast channel of a token refresh | `src/v2/core/auth/session.rs` and `src/v2/core/api/client/refresh.rs` |
 
-The [mission](/documentation_v2/glossary.md#mission) store and compiler are in the native build
+The [mission](/documentation_v2/glossary/g_to_m.md#mission) store and compiler are in the native build
 too, so `cargo test` checks the metadata the Mission Creator's export compiles from
 (`compiled_meta_is_the_row_the_server_compiles_from` in
 `src/v2/core/api/dto/tests/r_api_missions.rs`). The token refresh needs the Web Locks API, which
@@ -146,7 +146,7 @@ only a secure context offers: `localhost`, `127.0.0.1` or HTTPS.
     `apps/website/api_v2/seeds/content_golden.sql`, by the recipe that closes that file, and every
     one but `GET__registry.json` reproduces that way, since
     `apps/website/api_v2/seeds/registry_dev.sql` leaves the ids of the
-    [registry](/documentation_v2/glossary.md#registry) items to Postgres;
+    [registry](/documentation_v2/glossary/n_to_z.md#registry) items to Postgres;
   - every production file under `src/v2/` passes the documentation audit of
     `src/v2/tests/doc_audit/mod.rs`.
 

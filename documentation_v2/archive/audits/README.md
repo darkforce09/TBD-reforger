@@ -3,7 +3,7 @@
 # Audit records
 
 Whole-repository audits of the codebase and the website's architecture, with the verification of
-their claims and the maps from each finding to the [ticket](/documentation_v2/glossary.md#ticket)
+their claims and the maps from each finding to the [ticket](/documentation_v2/glossary/n_to_z.md#ticket)
 that fixed it. Status: archived — frozen records.
 
 ## Contents

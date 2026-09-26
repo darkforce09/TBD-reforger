@@ -50,7 +50,7 @@ raster's world rectangle; its rows must be at least four bytes a texel and 256-b
   `crate::editing::tools::viewshed_scheduler`, whose terrain lane runs a `ViewshedJob`;
   `crate::spatial::los::interior`, whose wash reuses `Visibility` and `ViewshedCapRefused`;
   `crate::world::terrain::dem::sample`, which re-exports the profile and viewshed items and holds
-  their tests; and the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s input
+  their tests; and the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s input
   handlers (`apps/website/frontend/src/v2/apps/editor/input/`) and canvas mount
   (`apps/website/frontend/src/v2/apps/editor/mission_editor/canvas_mount.rs`) and the debug
   building viewer (`apps/website/frontend/src/v2/apps/debug/building_viewer/`), which upload and

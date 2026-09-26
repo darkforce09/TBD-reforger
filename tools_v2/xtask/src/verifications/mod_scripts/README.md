@@ -1,9 +1,9 @@
 # Mod script checks
 
-Checks over the [EnfScript](/documentation_v2/glossary.md#enfscript) sources and `.layout` files of
-the `tbd-framework` [mod](/documentation_v2/glossary.md#mod): source pins that stop false comments
+Checks over the [EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript) sources and `.layout` files of
+the `tbd-framework` [mod](/documentation_v2/glossary/g_to_m.md#mod): source pins that stop false comments
 and a size bypass from returning, the structural gate for UI layouts, and the two
-[Workbench](/documentation_v2/glossary.md#workbench) spawn checks behind `cargo xtask mod`.
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) spawn checks behind `cargo xtask mod`.
 
 ## Contents
 
@@ -77,7 +77,7 @@ folder).
   - the `ci-local` step `verify-mission-rest-size-limits` in
     `tools_v2/xtask/src/commands/ci/task_definitions.rs`, and the `mod-gates-hosted` job of
     `.github/workflows/ci.yml`;
-  - the platform [wave](/documentation_v2/glossary.md#wave) gate's `VERIFY_STEPS`
+  - the platform [wave](/documentation_v2/glossary/n_to_z.md#wave) gate's `VERIFY_STEPS`
     (`tools_v2/xtask/src/commands/platform/wave_execution/gate.rs`): mission-rest-size-limits,
     destroy-target-diagnostics and both identity-comment checks;
   - the mod wave gate (`tools_v2/xtask/src/commands/mod_ops/wave_execution/execution.rs`), which

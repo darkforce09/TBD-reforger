@@ -1,7 +1,7 @@
 # Round rules and stage machine
 
 The referee of a TBD round: the stage machine that carries it from loading to debrief, the safe
-start before it goes live, the [mission](/documentation_v2/glossary.md#mission)'s objectives and
+start before it goes live, the [mission](/documentation_v2/glossary/g_to_m.md#mission)'s objectives and
 tasks, and every rule that ends it. The in-world machinery these rules read lives in
 `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/`.
 
@@ -18,8 +18,8 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/
 
 `TBD_FrameworkManager` in `Orchestrator/` owns the one stage value and the one way to change it,
 `SetStage`. It loads the mission, enters `LOBBY` once the
-[event](/documentation_v2/glossary.md#event) roster and the
-[slot](/documentation_v2/glossary.md#slot) loadouts have settled, and from there an admin advances
+[event](/documentation_v2/glossary/a_to_f.md#event) roster and the
+[slot](/documentation_v2/glossary/n_to_z.md#slot) loadouts have settled, and from there an admin advances
 the round (`#tbd stage next`), except that the safe start countdown in `Stages/` moves `SAFE_START`
 to `LIVE` itself.
 
@@ -81,6 +81,6 @@ one process.
 ## Related documentation
 
 - [Mod design](/documentation_v2/mod/tbd-framework/mod_design.md) — the event loop, one life and the
-  [Enfusion](/documentation_v2/glossary.md#enfusion) facts the stage machine relies on
+  [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) facts the stage machine relies on
 - [Mod UI screens](/documentation_v2/mod/tbd-framework/UI/README.md) — the screens each stage opens, the safe start,
   objective, end and debrief screens among them

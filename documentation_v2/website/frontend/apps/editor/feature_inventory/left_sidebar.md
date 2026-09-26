@@ -2,9 +2,9 @@
 
 # Left sidebar and ORBAT tree
 
-The [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s left dock and the trees a
+The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s left dock and the trees a
 mission maker files entities with: the editor layers (workflow folders) and the Locations tab in
-the dock, and the [ORBAT](/documentation_v2/glossary.md#orbat) tree, which lives in the ORBAT
+the dock, and the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) tree, which lives in the ORBAT
 Manager dialog.
 
 ## Where it lives
@@ -59,7 +59,7 @@ The last four rows are added for shipped code.
    and "Expand All" / "Collapse All". A side without squads reads "No squads on this side yet —
    place a unit or add a squad."
 2. The tree rebuilds after every document change. Clicking a slot row selects the
-   [slot](/documentation_v2/glossary.md#slot); double-clicking opens Attributes; dragging a slot
+   [slot](/documentation_v2/glossary/n_to_z.md#slot); double-clicking opens Attributes; dragging a slot
    onto a squad row refiles it, as one undo step.
 
 ### API-ORBAT-001 — Factions and squads

@@ -3,7 +3,7 @@
 The handlers behind the reusable sub-layouts every TBD screen is built from: panels, chips,
 search boxes, tab strips, dropdowns, key-value rows, section and numbered cards, captions, scroll
 lists, and the top and bottom bars of the pre-game screens. They bind widgets and nothing else:
-no screen knowledge, no network, no [mission](/documentation_v2/glossary.md#mission) data.
+no screen knowledge, no network, no [mission](/documentation_v2/glossary/g_to_m.md#mission) data.
 
 ## Contents
 
@@ -115,7 +115,7 @@ which screen a tab opens is `TBD_DockScreen`'s decision.
   both files together; a component that sits on a translucent surface paints over its ground,
   never with engine alpha; a component holds no screen or network logic; lines added to a script
   stay ASCII, and `cargo xtask mod compile` checks that the scripts compile, while how a
-  component looks is checked in [Workbench](/documentation_v2/glossary.md#workbench).
+  component looks is checked in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench).
 
 ## Related documentation
 

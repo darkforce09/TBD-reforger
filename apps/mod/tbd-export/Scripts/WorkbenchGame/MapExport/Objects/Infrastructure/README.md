@@ -2,7 +2,7 @@
 
 The infrastructure layers of the map export: fences and walls as cover lines, bridges and piers,
 runways and helipads, and the power grid, each found among the placed entities of the world open in
-[Workbench](/documentation_v2/glossary.md#workbench) and written as JSON to one folder.
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) and written as JSON to one folder.
 
 ## Contents
 

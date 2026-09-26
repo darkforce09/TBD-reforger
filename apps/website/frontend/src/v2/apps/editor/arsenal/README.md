@@ -1,8 +1,8 @@
 # Arsenal
 
-The [arsenal](/documentation_v2/glossary.md#arsenal) of the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator): the Attributes dialog's Arsenal
-tab, where a mission maker edits one [slot](/documentation_v2/glossary.md#slot)'s loadout, and the
+The [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) of the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator): the Attributes dialog's Arsenal
+tab, where a mission maker edits one [slot](/documentation_v2/glossary/n_to_z.md#slot)'s loadout, and the
 loadout domain behind it. The folder also holds the asset catalog trees every palette and picker
 of the Mission Creator reads.
 
@@ -28,7 +28,7 @@ apps/website/frontend/src/v2/apps/editor/arsenal/
 
 The Attributes dialog, `apps/website/frontend/src/v2/apps/editor/ui/inspector/attributes_modal.rs`,
 mounts `ArsenalTab` with the slot's id, its `loadout` JSON, the
-[registry](/documentation_v2/glossary.md#registry) rows and the compatibility feed. In the browser
+[registry](/documentation_v2/glossary/n_to_z.md#registry) rows and the compatibility feed. In the browser
 build the tab first asks the map engine to seed the character's default cargo when the loadout has
 no `cargo` key, then turns the JSON into picks and holds the picks, the cargo and every outcome in
 `ArsenalTabState`. It shows "Loading catalog…" until the registry arrives; `tab_content.rs` then
@@ -44,7 +44,7 @@ Remove Everything ──> loadout::plan_remove ──> map engine: commit_loadou
 ```
 
 The Arsenal has no Save button: every pick and cargo edit is written to the
-[mission](/documentation_v2/glossary.md#mission) document at once, as one undo step, and the tab
+[mission](/documentation_v2/glossary/g_to_m.md#mission) document at once, as one undo step, and the tab
 repeats the mission's unsaved state because the dialog's backdrop hides the top strip's marker. A
 write the document refuses, because the entity is gone, shows its own warning instead. `rules/`
 decides the options, validity, capacity and weight, `loadout/` serialises and gates, and `doll.rs`

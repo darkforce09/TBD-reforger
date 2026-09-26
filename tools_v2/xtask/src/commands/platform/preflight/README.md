@@ -1,7 +1,7 @@
 # Platform factory preflight checks
 
 The checks behind `cargo xtask platform preflight`: whether this machine and checkout can run an
-unattended factory [wave](/documentation_v2/glossary.md#wave) before one starts.
+unattended factory [wave](/documentation_v2/glossary/n_to_z.md#wave) before one starts.
 
 ## Contents
 

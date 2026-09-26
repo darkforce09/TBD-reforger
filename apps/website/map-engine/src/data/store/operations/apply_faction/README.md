@@ -1,9 +1,9 @@
 # Faction library apply
 
 Writes a faction library template, a flat list of roles and a vehicle pool, onto one side of the
-[mission](/documentation_v2/glossary.md#mission) document as that side's
-[ORBAT](/documentation_v2/glossary.md#orbat): one faction, one squad, a
-[slot](/documentation_v2/glossary.md#slot) per role and the vehicles attached to the squad. It
+[mission](/documentation_v2/glossary/g_to_m.md#mission) document as that side's
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat): one faction, one squad, a
+[slot](/documentation_v2/glossary/n_to_z.md#slot) per role and the vehicles attached to the squad. It
 refuses, before writing anything, when the side holds squads the author built by hand.
 
 ## Contents

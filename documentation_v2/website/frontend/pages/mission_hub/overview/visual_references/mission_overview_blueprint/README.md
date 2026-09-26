@@ -3,7 +3,7 @@
 # Mission overview blueprint
 
 Design-phase reference for the mission dossier of the mission overview page at `/missions/:id`,
-drawn as the slide-over the library opens: one [mission](/documentation_v2/glossary.md#mission)'s
+drawn as the slide-over the library opens: one [mission](/documentation_v2/glossary/g_to_m.md#mission)'s
 briefing, required assets and order of battle. It gives colour and layout context and is not an
 implementation source; the built UI is the Leptos code under
 `apps/website/frontend/src/v2/pages/mission_hub/overview/`.

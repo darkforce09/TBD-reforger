@@ -2,8 +2,8 @@
 
 # Draft persistence
 
-The decisions behind the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s local
-drafts of a [mission](/documentation_v2/glossary.md#mission): which key a draft lives under,
+The decisions behind the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s local
+drafts of a [mission](/documentation_v2/glossary/g_to_m.md#mission): which key a draft lives under,
 whether a stored blob is worth keeping, how a record on disk merges with the one about to replace
 it, whether the local draft and the server's version differ, how a server version replaces the
 document, and the snapshot pair that makes a replacement reversible. The map engine makes these
@@ -40,7 +40,7 @@ decisions; the Mission Creator stores the bytes in IndexedDB and fetches the ser
 5. A saved version with a local draft is classified by `classify_local_draft`, cheapest test
    first:
    - `Empty`: the draft holds no authored content; the server version is adopted as in step 4;
-   - `MatchesServer`: the draft has the same [slot](/documentation_v2/glossary.md#slot) count and
+   - `MatchesServer`: the draft has the same [slot](/documentation_v2/glossary/n_to_z.md#slot) count and
      compiles to the same `editor`, `loadouts`, `objectives`, `vehicles` and `markers` as the
      server version (hydrated into a throwaway document); nothing is asked, and the mission is
      marked clean;

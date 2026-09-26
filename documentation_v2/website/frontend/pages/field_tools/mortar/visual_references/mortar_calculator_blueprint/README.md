@@ -23,7 +23,7 @@ with the same three figures, and the hint "Drag markers on the map to recalculat
 
 The built page differs: the positions are typed into four number fields, and the preview draws
 the points on a plain frame with nothing to drag; the solution adds the charge and the time of
-flight; and the tube and [event](/documentation_v2/glossary.md#event) pickers, the saved state
+flight; and the tube and [event](/documentation_v2/glossary/a_to_f.md#event) pickers, the saved state
 line and the saved fire missions are additions. The
 [mortar calculator page](/documentation_v2/website/frontend/pages/field_tools/mortar/mortar_calculator_page.md)
 feature doc holds the full comparison.

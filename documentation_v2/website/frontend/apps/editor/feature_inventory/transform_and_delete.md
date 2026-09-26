@@ -3,9 +3,9 @@
 # Transform and delete
 
 How a mission maker moves, rotates, raises, arranges and deletes what is placed in the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator): the drag on the map, the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator): the drag on the map, the
 transform widget and its snap ladders, the Arrange commands, the formation command and the
-delete. Every change is one undo step in the [mission](/documentation_v2/glossary.md#mission)
+delete. Every change is one undo step in the [mission](/documentation_v2/glossary/g_to_m.md#mission)
 document.
 
 ## Where it lives
@@ -54,7 +54,7 @@ rows added for shipped code.
 
 ### XFORM-MOVE-001 and MAP-DRAG-PREVIEW-001 — Drag
 
-1. A left press on a [slot](/documentation_v2/glossary.md#slot), placed vehicle or map comment
+1. A left press on a [slot](/documentation_v2/glossary/n_to_z.md#slot), placed vehicle or map comment
    that moves past 4 px becomes a move (`pointer_move.rs:250-272`). Pressing a selected entity
    moves the whole selection; pressing an unselected one selects it and moves it alone
    (`compute_move_ids`).

@@ -1,6 +1,6 @@
 # Ticketboard application
 
-The composition layer of the [ticketboard](/documentation_v2/glossary.md#ticketboard):
+The composition layer of the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard):
 `TicketboardApp`, the eframe application that owns the session state and the preferences, starts
 and drains every background job, paints the feature views, and applies the actions they emit.
 

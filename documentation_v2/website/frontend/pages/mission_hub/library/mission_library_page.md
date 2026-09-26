@@ -3,9 +3,9 @@
 # Mission library page
 
 The `/missions` page, titled "Mission Library": signed-in members browse the community's
-[missions](/documentation_v2/glossary.md#mission) in three scopes, open any mission's dossier in a
+[missions](/documentation_v2/glossary/g_to_m.md#mission) in three scopes, open any mission's dossier in a
 slide-over without leaving the list, and mission makers create a new mission there and hand it to
-the [Mission Creator](/documentation_v2/glossary.md#mission-creator). A mission's author and
+the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator). A mission's author and
 administrators also manage it from the dossier: upload a version, submit it for review, archive,
 restore or delete it.
 
@@ -22,10 +22,10 @@ restore or delete it.
   [Routes](/apps/website/frontend/src/v2/pages/mission_hub/library/README.md#routes) give.
 - Related: the [mission overview page](/documentation_v2/website/frontend/pages/mission_hub/overview/mission_overview_page.md),
   whose read-only dossier body the slide-over renders; the review record shared with the
-  [approvals](/documentation_v2/glossary.md#approvals) page, described in the
+  [approvals](/documentation_v2/glossary/a_to_f.md#approvals) page, described in the
   [mission review record README](/apps/website/frontend/src/v2/pages/mission_hub/mission_review/README.md);
   the [review workspace page](/documentation_v2/website/frontend/pages/mission_hub/review_workspace/review_workspace_page.md)
-  that the review record links; the [API](/documentation_v2/glossary.md#api)'s
+  that the review record links; the [API](/documentation_v2/glossary/a_to_f.md#api)'s
   [missions domain](/apps/website/api_v2/src/missions/README.md).
 
 ## Behaviour
@@ -61,7 +61,7 @@ is signed in. Every text quoted below is listed there with the state that shows 
 ### Creating a mission
 
 1. "New Mission", the empty-state button or Ctrl or Cmd+N opens the New Mission dialog, for the
-   `mission_maker` [role](/documentation_v2/glossary.md#role) and above only. The shortcut is
+   `mission_maker` [role](/documentation_v2/glossary/n_to_z.md#role) and above only. The shortcut is
    ignored while an input, a text area or a select has focus, and opening the dialog closes the
    dossier first, so one overlay shows at a time.
 2. The dialog asks for the "Operation Designation", the terrain (Everon or Arland, Everon first),
@@ -97,7 +97,7 @@ is signed in. Every text quoted below is listed there with the state that shows 
 1. The author picks a mission document. A file over 8 MiB is refused before a byte is read, with
    both sizes named and a pointer to saving from the Mission Creator instead.
 2. The panel accepts an exported mission file or a bare editor payload, refuses a document that
-   repeats a [slot](/documentation_v2/glossary.md#slot) id within a callsign, and suggests the
+   repeats a [slot](/documentation_v2/glossary/n_to_z.md#slot) id within a callsign, and suggests the
    next patch version after the current one.
 3. It previews what the document changes against the current version, matching rows by `id`, so a
    reordered list is not an edit.
@@ -108,13 +108,13 @@ is signed in. Every text quoted below is listed there with the state that shows 
 
 1. "Submit for review" (or "Resubmit for review" on a returned mission) shows on a draft or a
    returned mission. It compiles the current version into an
-   [artifact](/documentation_v2/glossary.md#artifact) and opens its review; a refusal stays under
+   [artifact](/documentation_v2/glossary/a_to_f.md#artifact) and opens its review; a refusal stays under
    the button with its reason and up to twenty findings.
 2. "Archive mission" archives it; on an archived mission the button reads "Unarchive (restore to
    draft)".
 3. "Delete mission" opens "Delete this mission?", which says that the mission and its versions
    leave the library for everyone and that deletion is refused while an
-   [event](/documentation_v2/glossary.md#event) uses the mission. A delete closes the sheet.
+   [event](/documentation_v2/glossary/a_to_f.md#event) uses the mission. A delete closes the sheet.
 4. Every write refetches the dossier and the grid.
 
 ### Known discrepancies

@@ -1,11 +1,11 @@
 # Ticket engine
 
-The `ticket-engine` crate: everything about the [ticket](/documentation_v2/glossary.md#ticket)
+The `ticket-engine` crate: everything about the [ticket](/documentation_v2/glossary/n_to_z.md#ticket)
 registry in `.ai/tickets/` that is not a process side effect. It stores, validates and changes the
 ticket files, regenerates the files derived from them, compiles the
-[wave](/documentation_v2/glossary.md#wave) lock, and keeps the run metrics. `cargo xtask` mounts it
+[wave](/documentation_v2/glossary/n_to_z.md#wave) lock, and keeps the run metrics. `cargo xtask` mounts it
 as the `ticket` and `wave` command groups and the platform wave driver, and the
-[ticketboard](/documentation_v2/glossary.md#ticketboard) reads tickets through it.
+[ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) reads tickets through it.
 
 ## Contents
 

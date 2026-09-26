@@ -3,7 +3,7 @@
 # Operations schedule blueprint
 
 Design-phase reference for the event schedule page at `/events`: a list of upcoming operations
-beside the selected operation's briefing and [ORBAT](/documentation_v2/glossary.md#orbat). It
+beside the selected operation's briefing and [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat). It
 gives colour and layout context and is not an implementation source; the built UI is the Leptos
 code under `apps/website/frontend/src/v2/pages/operations/schedule/`.
 
@@ -21,11 +21,11 @@ The blueprint shows "UPCOMING OPS" with the line "Select an operation to view te
 three cards, each with a date and time, a status ("OPEN", "PLANNED", "CLOSED"), a name, a terrain
 and a "REGISTRATION" bar with a count. Beside them sit a banner image stamped
 "CLASSIFIED // EYES ONLY" with the operation's name, a "MISSION BRIEFING", tabs for two
-[missions](/documentation_v2/glossary.md#mission), and an "ORDER OF BATTLE" with faction tabs, a
+[missions](/documentation_v2/glossary/g_to_m.md#mission), and an "ORDER OF BATTLE" with faction tabs, a
 squad list with fill counts, and slot rows with "ASSIGN" and "LOCKED".
 
 The built page keeps the list beside the detail and differs: a card shows mission and
-[slot](/documentation_v2/glossary.md#slot) counts, a countdown and a fill bar instead of a
+[slot](/documentation_v2/glossary/n_to_z.md#slot) counts, a countdown and a fill bar instead of a
 terrain; the list holds upcoming events only; and the detail is the event hub, a hero without a
 banner, the Places panel and one card per mission, each with its own briefing and ORBAT, instead
 of mission tabs. The

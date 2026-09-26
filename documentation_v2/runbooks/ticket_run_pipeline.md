@@ -2,10 +2,10 @@
 
 # Taking a ticket from idea to shipped
 
-Moves one [ticket](/documentation_v2/glossary.md#ticket) through its whole life: file it, fill it,
+Moves one [ticket](/documentation_v2/glossary/n_to_z.md#ticket) through its whole life: file it, fill it,
 queue it, give it a spec and a plan, mark it ready, run an AI coding agent on it with
 `cargo xtask ticket run`, then ship it and stamp its landing commit. Use it for tickets taken one
-at a time; tickets that run in parallel go through a [wave](/documentation_v2/glossary.md#wave)
+at a time; tickets that run in parallel go through a [wave](/documentation_v2/glossary/n_to_z.md#wave)
 instead, as [Factory waves](/documentation_v2/runbooks/factory_waves/README.md) describes. The
 commands take seconds; the agent run takes as long as the work.
 
@@ -223,7 +223,7 @@ rewrites it and the diff grows:
 - never `status`, `order`, `shipped_at` or `completed_at` by hand: those belong to `reorder`,
   `set-status`, `mark-ready`, `ship` and `stamp-sha`, which check what they write;
 - never the files `ticket sync` writes: `.ai/tickets/queue.json`, the next-work block of the
-  [Mission Creator](/documentation_v2/glossary.md#mission-creator) roadmap and the ticket column
+  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) roadmap and the ticket column
   of the Eden gap analysis.
 
 `ticket check` validates the schema and the rules but not the key order; the test
@@ -254,7 +254,7 @@ prints `(no run files under .ai/tickets/metrics/)` when the work ran outside `sl
 | `No ready tickets. Steps:` and exit 1 | no `ready` ticket with a spec and the `claude-code` executor in `queue.json` | steps 3 to 5; the hint's "Composer" and `T-0xx` lines are stale wording, the steps are these |
 | `ticket run --stream <S>` always finds no ticket | ticket files carry no `stream` key, so no ticket matches | run without `--stream`, or run one ticket with `platform slice-run` |
 | `[<id>] SKIP — spec missing: <spec>` | the spec path in the ticket names no file | fix the `spec` field with `mark-ready <id> <spec path>` |
-| `[<id>] refusing slice-run: executor is <x> (not claude-code)` | the ticket or its active slice is for a person, [Workbench](/documentation_v2/glossary.md#workbench), CI or a documentation pass | do that work by hand; ship as in step 9 |
+| `[<id>] refusing slice-run: executor is <x> (not claude-code)` | the ticket or its active slice is for a person, [Workbench](/documentation_v2/glossary/n_to_z.md#workbench), CI or a documentation pass | do that work by hand; ship as in step 9 |
 | `agent CLI stdout is not JSON — cannot extract usage, run FAILED` | the agent command prints text, not its JSON answer | set `TBD_SLICE_RUN_AGENT_CMD` to a command with JSON output |
 | `[<id>] run FAILED — no metrics file written` | the answer had no usage object | the run did not count; re-run it, or finish by hand and land with `--bookkeeping` in a wave |
 | `Plan file not found: <path> — nothing goes ready without its own plan document; …` | step 4's plan is missing | copy the plan template to the path it names |

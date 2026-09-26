@@ -1,7 +1,7 @@
 # Squad links
 
 The leader-to-member tether hairlines of each squad on the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map, tinted by side, at rest and
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map, tinted by side, at rest and
 during a drag.
 
 ## Contents
@@ -20,7 +20,7 @@ apps/website/map-engine/src/overlay/symbology/links/
 `crate::overlay::symbology::roles::classify::side_rgba` of the squad's side. A squad with no
 leader, or whose member list does not include its leader, draws nothing, and a member with no
 position is skipped. `pack_squad_link_drag_preview` offsets the dragged
-[slot](/documentation_v2/glossary.md#slot) ids by `(dx, dy)` and
+[slot](/documentation_v2/glossary/n_to_z.md#slot) ids by `(dx, dy)` and
 repacks only the squads a dragged id belongs to; an empty drag or a zero delta returns the rest
 layout.
 

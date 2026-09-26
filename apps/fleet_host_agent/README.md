@@ -1,11 +1,11 @@
 # Fleet host agent
 
-The `fleet-host-agent` crate: the [fleet host agent](/documentation_v2/glossary.md#fleet-host-agent)
+The `fleet-host-agent` crate: the [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent)
 that runs on each game host beside the Arma Reforger dedicated server. It polls the
-[API](/documentation_v2/glossary.md#api) outbound over HTTPS for the
-[fleet commands](/documentation_v2/glossary.md#fleet-command) addressed to its server, performs each
-one through fixed process-control actions, [RCON](/documentation_v2/glossary.md#rcon) reads or a
-[mission header](/documentation_v2/glossary.md#mission-header) switch in the server's JSON config,
+[API](/documentation_v2/glossary/a_to_f.md#api) outbound over HTTPS for the
+[fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command) addressed to its server, performs each
+one through fixed process-control actions, [RCON](/documentation_v2/glossary/n_to_z.md#rcon) reads or a
+[mission header](/documentation_v2/glossary/g_to_m.md#mission-header) switch in the server's JSON config,
 and reports every step to the API's command ledger.
 
 ## Contents
@@ -21,7 +21,7 @@ apps/fleet_host_agent/
 
 The API never connects to the host: a host behind NAT or a firewall needs only outbound HTTPS.
 The agent authenticates with a `host_agent`
-[machine credential](/documentation_v2/glossary.md#machine-credential) and runs one loop, one
+[machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential) and runs one loop, one
 command at a time:
 
 1. `POST /api/v1/fleet-executor/commands/claim` with the body `{}`. A 204 means nothing is
@@ -43,9 +43,9 @@ command at a time:
 The host performs `start`, `stop` and `restart` of the game server's systemd user unit, judged by
 the unit state read back after a dwell rather than by `systemctl`'s exit status; `list_players`
 over RCON (`#players`); and `restart_with_mission`, a cross-terrain
-[mission deployment](/documentation_v2/glossary.md#mission-deployment) that rewrites only
+[mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) that rewrites only
 `game.scenarioId` in the server config and then restarts the unit. `broadcast`, `kick` and
-`load_mission` run in the [game runtime](/documentation_v2/glossary.md#game-runtime), and the agent
+`load_mission` run in the [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime), and the agent
 refuses them. `src/command_execution/README.md` tables each action's success rule and outcome.
 
 ### Safety model

@@ -3,7 +3,7 @@
 # Deploy the checkout to the staging game server
 
 `cargo xtask deploy staging` syncs the checkout to the staging host, refreshes the
-[mod](/documentation_v2/glossary.md#mod)'s server profile,
+[mod](/documentation_v2/glossary/g_to_m.md#mod)'s server profile,
 checks the platform's game-runtime routes, renders the server config, restarts the dedicated
 server, and then proves from the server's own log that it loaded the checkout it just synced. Run
 it after every change the staging server should run; a deploy takes a few minutes, most of it the
@@ -34,7 +34,7 @@ environment; a key it leaves out may come from the environment.
 | `TBD_BACKEND_URL` | `http://127.0.0.1:8080` | the `backendUrl` the mod calls |
 | `TBD_SERVER_MODE` | `config` | `config` (`-addonsDir` + `-config`, joinable) or `addons` (`-server` + `-addons`, log checks only) |
 | `TBD_ADDON_GUID` | `B2C3D4E5F6A78901` | must equal the GUID in `apps/mod/tbd-framework/addon.gproj` |
-| `TBD_SCENARIO` | `{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf` | the [mission header](/documentation_v2/glossary.md#mission-header) a new server boots; a server config that exists keeps its own `scenarioId` |
+| `TBD_SCENARIO` | `{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf` | the [mission header](/documentation_v2/glossary/g_to_m.md#mission-header) a new server boots; a server config that exists keeps its own `scenarioId` |
 | `TBD_WORKSHOP_MOD_ID`, `TBD_WORKSHOP_MOD_NAME` | none, `TBD_Framework` | the single-mod `game.mods[]` entry |
 | `TBD_MODPACK_JSON` | none | a file holding a `GET /api/v1/modpacks/current` body; its mods become `game.mods[]` |
 | `TBD_MODPACK_URL`, `TBD_MODPACK_TOKEN` | none | fetch that body from the API; the route needs a user's bearer access token |
@@ -59,7 +59,7 @@ Before anything is sent, the deploy refuses, with exit 1:
 - a `TBD_SERVER_MODE` other than `config` or `addons`;
 - in config mode: no mod source, equal game and A2S ports, or an admin id matching neither the
   identityId pattern (lowercase) nor the 17-digit SteamID pattern, the engine's own two patterns;
-- with the host agent: config mode missing, an [RCON](/documentation_v2/glossary.md#rcon) password outside 3 to 256 bytes or holding
+- with the host agent: config mode missing, an [RCON](/documentation_v2/glossary/n_to_z.md#rcon) password outside 3 to 256 bytes or holding
   whitespace, quotes or backslashes, an RCON port outside 1 to 65535, or an agent API URL that is
   neither https nor http on a loopback host.
 
@@ -128,10 +128,10 @@ In addons mode it is `-profile … -addonsDir … -addons <TBD_ADDON_GUID> -serv
 
 ## Host agent
 
-The [fleet host agent](/documentation_v2/glossary.md#fleet-host-agent) runs the start, stop,
-restart and player-list [fleet commands](/documentation_v2/glossary.md#fleet-command) of
-[server control](/documentation_v2/glossary.md#server-control) on the host, and restarts the server
-on another terrain's scenario for a [mission](/documentation_v2/glossary.md#mission) on that terrain. Without it those commands stay
+The [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) runs the start, stop,
+restart and player-list [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command) of
+[server control](/documentation_v2/glossary/n_to_z.md#server-control) on the host, and restarts the server
+on another terrain's scenario for a [mission](/documentation_v2/glossary/g_to_m.md#mission) on that terrain. Without it those commands stay
 `queued` until they expire. To install it, set in `deploy.env`: `TBD_INSTALL_HOST_AGENT=1`,
 `TBD_HOST_AGENT_CREDENTIAL` (its `host_agent` credential), `TBD_RCON_PASSWORD`, and optionally
 `TBD_RCON_PORT` (default `19999`) and `TBD_HOST_AGENT_API_URL` (default `TBD_BACKEND_URL`). Then

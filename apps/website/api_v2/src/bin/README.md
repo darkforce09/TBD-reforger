@@ -1,7 +1,7 @@
 # API executables
 
 The two binaries of the `website-api` crate: the `api` server behind the web platform, and
-`import-registry`, which loads the item [registry](/documentation_v2/glossary.md#registry) that
+`import-registry`, which loads the item [registry](/documentation_v2/glossary/n_to_z.md#registry) that
 Workbench exports into Postgres.
 
 ## Contents
@@ -39,7 +39,7 @@ Run from `apps/website/api_v2/` as `cargo run --bin <name> -- <arguments>`; both
 - Does: sets the log filter from `RUST_LOG` (`info` when unset), loads the configuration, connects
   to Postgres, applies the pending migrations unless `SKIP_MIGRATE` is set and logs
   `migrations applied`, arms the
-  [background workers](/documentation_v2/glossary.md#background-workers), and serves every route
+  [background workers](/documentation_v2/glossary/a_to_f.md#background-workers), and serves every route
   on `0.0.0.0:$PORT`. It stays in the foreground until SIGINT or SIGTERM, then drains the
   requests in flight. It needs Postgres running.
 - Exit codes: 0 after a signal and a clean drain; 1 when the configuration, the database
@@ -83,6 +83,6 @@ Run from `apps/website/api_v2/` as `cargo run --bin <name> -- <arguments>`; both
 ## Related documentation
 
 - [Local development](/documentation_v2/runbooks/local_development.md) — running the
-  [API](/documentation_v2/glossary.md#api) and importing the registry locally.
+  [API](/documentation_v2/glossary/a_to_f.md#api) and importing the registry locally.
 - [Website deployment](/documentation_v2/runbooks/website_deployment.md) — building and running
   the release `api` on the home server.

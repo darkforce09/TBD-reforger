@@ -35,7 +35,7 @@ build the repository makes.
   (`#root>:first-child`). The screenshots are PNG. Files are named by the route's slug, such as
   `dashboard`, `orbat` or `wikislug`. A `*.react.dom.json` file keeps the same tree shape.
 - Schema: `manifest.json` holds `frozenFrom`, `distSha256`, `viewport` (`1440x900`), `excluded` (the
-  [Mission Creator](/documentation_v2/glossary.md#mission-creator) route, whose check is the editor
+  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) route, whose check is the editor
   smoke suite), `scope`, and `routes`: one row per slug with `path`, `authed`, `bytes` and `sha256`,
   and, once a route is accepted, `goldenSource` (`leptos`) and `acceptedDelta` (the `--note` text).
 - Adding a file: a route joins by adding it to the route list in `routes.rs` and to the manifest,

@@ -3,8 +3,8 @@
 # Schema evolution policy
 
 How a contract schema in `contracts_v2/definitions/` may change, and what a change must carry with
-it. The [API](/documentation_v2/glossary.md#api), the single-page app, the game servers running the
-[mod](/documentation_v2/glossary.md#mod) and the external voice bridge update independently, so a schema change that one reader does not
+it. The [API](/documentation_v2/glossary/a_to_f.md#api), the single-page app, the game servers running the
+[mod](/documentation_v2/glossary/g_to_m.md#mod) and the external voice bridge update independently, so a schema change that one reader does not
 yet understand fails in production, not in a test. Developers and AI agents read this before
 editing a schema.
 
@@ -60,7 +60,7 @@ editing a schema.
    writer puts it on the wire; a field emitted first is a deserialisation failure on the game
    server, the API or the app that has not updated.
 
-The [mission](/documentation_v2/glossary.md#mission) schema shows the pattern. Its `schemaVersion` is
+The [mission](/documentation_v2/glossary/g_to_m.md#mission) schema shows the pattern. Its `schemaVersion` is
 `1.0` to `1.3` in one file, each minor version additive, selected by `if`/`then` blocks. The compiler emits the lowest version whose
 keys actually reach the wire: a document with no `1.3` key still goes out as `1.1` or `1.2`, so an
 older server keeps loading it (`mission_compile_flatten.rs` in
@@ -77,7 +77,7 @@ row when its reader lands.
 2. The API keeps parsing the previous version for as long as servers in the field speak it.
 3. Servers advertise the schema versions they read at boot, and the API refuses to stage a mission
    a target server cannot parse: a mission that fails to load has already wasted an
-   [event](/documentation_v2/glossary.md#event).
+   [event](/documentation_v2/glossary/a_to_f.md#event).
 
 No schema has had a major version yet. Rule 3 has no implementation: no game-runtime route
 carries a server's schema versions, and today the protection is the compiler's lowest-version
@@ -96,7 +96,7 @@ emission and the mod's own version check.
 
 - The mission schema's description names `GET /missions/:id/compiled` as the enforcer of the
   8 MiB document ceiling (`contracts_v2/definitions/mission.schema.json:5`) — no such route
-  exists; the API validates a compiled [artifact](/documentation_v2/glossary.md#artifact) when it
+  exists; the API validates a compiled [artifact](/documentation_v2/glossary/a_to_f.md#artifact) when it
   compiles it, and game servers fetch it from `GET /api/v1/game-runtime/artifacts/{artifactId}`
   (`apps/website/api_v2/src/missions/routes.rs`).
 

@@ -1,14 +1,14 @@
 # Missions domain
 
-The [API](/documentation_v2/glossary.md#api)'s [missions](/documentation_v2/glossary.md#missions)
-domain: the library of [missions](/documentation_v2/glossary.md#mission) and the versions the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) saves, the
-[armory](/documentation_v2/glossary.md#armory), the faction library, the item
-[registry](/documentation_v2/glossary.md#registry) with its compatibility graph, the export
+The [API](/documentation_v2/glossary/a_to_f.md#api)'s [missions](/documentation_v2/glossary/g_to_m.md#missions)
+domain: the library of [missions](/documentation_v2/glossary/g_to_m.md#mission) and the versions the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) saves, the
+[armory](/documentation_v2/glossary/a_to_f.md#armory), the faction library, the item
+[registry](/documentation_v2/glossary/n_to_z.md#registry) with its compatibility graph, the export
 document, and the path from a saved version to a running server through immutable
-[artifacts](/documentation_v2/glossary.md#artifact), reviews,
-[approvals](/documentation_v2/glossary.md#approvals) and
-[mission deployments](/documentation_v2/glossary.md#mission-deployment).
+[artifacts](/documentation_v2/glossary/a_to_f.md#artifact), reviews,
+[approvals](/documentation_v2/glossary/a_to_f.md#approvals) and
+[mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment).
 
 ## Contents
 
@@ -28,7 +28,7 @@ apps/website/api_v2/src/missions/
 A request reaches a handler through `routes.rs`, and the extractor the handler takes sets its
 tier: `AuthUser`, `MissionMakerUser`, `AdminUser`, or `MachineCaller` with the `mod_runtime`
 executor kind on `/api/v1/game-runtime/*`. A mission document crosses three boundaries (the Mission
-Creator, this API and the [mod](/documentation_v2/glossary.md#mod)), so this is the only domain
+Creator, this API and the [mod](/documentation_v2/glossary/g_to_m.md#mod)), so this is the only domain
 with a `contract/` and a `validation/` folder: authored input passes the `validation/` predicates
 and the schemas in `contract/` before a row is written, and the compiled document is checked
 against `mission.schema.json` before it is stored.
@@ -48,11 +48,11 @@ Submission writes the artifact, the review, the status and the audit row in one 
 the mission write lock that the metadata patch, the delete and review comments also take. The
 compile itself lives in `website_map_engine::data::scenario`; `services/mission_compile.rs` only
 adapts a mission row and its payload to it. An approved artifact stays the one
-[deployments](/documentation_v2/glossary.md#deployment) load while its author saves later versions.
+[deployments](/documentation_v2/glossary/a_to_f.md#deployment) load while its author saves later versions.
 A deployment runs as a `load_mission` or `restart_with_mission`
-[fleet command](/documentation_v2/glossary.md#fleet-command) of `server_infrastructure`, and its
-[slot](/documentation_v2/glossary.md#slot) bindings pair the
-[event](/documentation_v2/glossary.md#event)'s [ORBAT](/documentation_v2/glossary.md#orbat) seats
+[fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) of `server_infrastructure`, and its
+[slot](/documentation_v2/glossary/n_to_z.md#slot) bindings pair the
+[event](/documentation_v2/glossary/a_to_f.md#event)'s [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) seats
 with the artifact's compiled slots, which the event roster in `operations` reads.
 
 ## Public surface
@@ -139,10 +139,10 @@ with the artifact's compiled slots, which the event roster in `operations` reads
     surface above;
   - over HTTP, the Mission Creator in `apps/website/frontend/src/v2/apps/editor/`, the mission hub
     pages in `apps/website/frontend/src/v2/pages/mission_hub/`, the
-    [event manager](/documentation_v2/glossary.md#event-manager), approvals and
-    [server control](/documentation_v2/glossary.md#server-control) pages in
+    [event manager](/documentation_v2/glossary/a_to_f.md#event-manager), approvals and
+    [server control](/documentation_v2/glossary/n_to_z.md#server-control) pages in
     `apps/website/frontend/src/v2/pages/administration/`, the
-    [game runtime](/documentation_v2/glossary.md#game-runtime) in
+    [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) in
     `apps/mod/tbd-framework/Scripts/Game/TBD/`, and the `cargo xtask mod` commands through
     `tools_v2/xtask/src/commands/mod_ops/website_api_client/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the

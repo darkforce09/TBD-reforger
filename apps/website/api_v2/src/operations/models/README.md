@@ -1,11 +1,11 @@
 # Operations models
 
-The rows and wire shapes of the [operations](/documentation_v2/glossary.md#operations) domain: the
-[event](/documentation_v2/glossary.md#event) with its
-[missions](/documentation_v2/glossary.md#mission), [ORBAT](/documentation_v2/glossary.md#orbat)
+The rows and wire shapes of the [operations](/documentation_v2/glossary/n_to_z.md#operations) domain: the
+[event](/documentation_v2/glossary/a_to_f.md#event) with its
+[missions](/documentation_v2/glossary/g_to_m.md#mission), [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat)
 seats and registrations, access policies and groups, reservation pools and allocations, the
-[game runtime](/documentation_v2/glossary.md#game-runtime)'s roster and player
-[deployments](/documentation_v2/glossary.md#deployment), leave requests and saved fire missions.
+[game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime)'s roster and player
+[deployments](/documentation_v2/glossary/a_to_f.md#deployment), leave requests and saved fire missions.
 Keys are snake_case, absent values are skipped and timestamps are RFC 3339.
 
 ## Contents
@@ -38,7 +38,7 @@ container of missions in sequence, each an `EventMission` with its own start tim
 `OrbatSlot` seats. No struct carries a soft-delete column; the queries filter deleted rows.
 
 An `EventAccessPolicy` is a list of grants, each a list of conditions; a missing squad or
-[slot](/documentation_v2/glossary.md#slot) policy inherits, and an empty grant list admits nobody.
+[slot](/documentation_v2/glossary/n_to_z.md#slot) policy inherits, and an empty grant list admits nobody.
 `validate` bounds a policy to 32 grants of 1 to 16 conditions each, and every Discord or account id
 to 1 to 128 unpadded bytes. A pool limit of zero closes the pool and an explicit `null` leaves it
 uncapped. A registration answer reports the reservation and the attendance separately, and a refused
@@ -51,7 +51,7 @@ player deployment is a `DeploymentDecision` with its `DeploymentDenial`, not an 
   `waitlist-promotion-response`, `game-runtime-roster`, `game-runtime-deployment` and
   `reservation-response` in `contracts_v2/definitions/`.
 - Used by: the domain's handlers and services; the dashboard in `command_center` (`Event`,
-  `EventMission`, `OrbatSlot`); the [API](/documentation_v2/glossary.md#api) tests
+  `EventMission`, `OrbatSlot`); the [API](/documentation_v2/glossary/a_to_f.md#api) tests
   `apps/website/api_v2/tests/models_serde.rs`, `apps/website/api_v2/tests/event_access_contract.rs`,
   `apps/website/api_v2/tests/game_runtime_contract.rs` and
   `apps/website/api_v2/tests/reservation_attendance_transactions.rs`, which decode live answers into

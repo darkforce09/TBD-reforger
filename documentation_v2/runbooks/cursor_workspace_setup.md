@@ -3,8 +3,8 @@
 # Setting up the Cursor workspace
 
 Opens this repository in Cursor so that its project rules load, the local stack runs, the
-[Enfusion](/documentation_v2/glossary.md#enfusion) MCP server reaches
-[Workbench](/documentation_v2/glossary.md#workbench) for [mod](/documentation_v2/glossary.md#mod)
+[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) MCP server reaches
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) for [mod](/documentation_v2/glossary/g_to_m.md#mod)
 work, and the health checks pass. Run it once per machine, and again after a clone to a new
 path; it changes no code and takes about ten minutes plus the first builds.
 
@@ -25,7 +25,7 @@ path; it changes no code and takes about ten minutes plus the first builds.
 | `apps/mod/.cursor/rules/single-branch-main.mdc` | yes | a nested rule for the mod folder: work on `main` only, never a feature branch |
 | `apps/mod/.cursor/mcp.json` | yes | the Enfusion MCP server entry to copy from: `node` on the pinned package, and the three `ENFUSION_*` paths |
 | `apps/mod/.mcp.json` | yes | the same server for an agent started inside `apps/mod/`, launched as `npx -y enfusion-mcp` |
-| `.ai/tickets/`, `.ai/artifacts/` | tickets yes, artifacts partly | the [ticket](/documentation_v2/glossary.md#ticket) files and the agents' working files; Cursor loads no rule from `.ai/` |
+| `.ai/tickets/`, `.ai/artifacts/` | tickets yes, artifacts partly | the [ticket](/documentation_v2/glossary/n_to_z.md#ticket) files and the agents' working files; Cursor loads no rule from `.ai/` |
 
 Both tracked MCP files hard-code one workstation's absolute paths, and `apps/mod/.mcp.json` starts
 whatever `enfusion-mcp` release npm serves rather than the pinned 0.6.1 in
@@ -41,7 +41,7 @@ Cursor applies each rule in `.cursor/rules/` to every chat (`alwaysApply: true`)
 |---|---|---|
 | `tbd-platform.mdc` | always | read `CLAUDE.md` first; the ticket files; `main` only; the executor gate; factory mode overrides the single-ticket lines |
 | `cursor-agent-workflow.mdc` | always | the modes Cursor infers from a message: plan review (read-only), ticket and docs, code (not Cursor), platform factory |
-| `application-code-forbidden.mdc` | [API](/documentation_v2/glossary.md#api), app and mod sources | no Cursor edit of application code without the operator's word, except in factory mode |
+| `application-code-forbidden.mdc` | [API](/documentation_v2/glossary/a_to_f.md#api), app and mod sources | no Cursor edit of application code without the operator's word, except in factory mode |
 | `platform-factory-mode.mdc` | always | when the operator starts the factory, Cursor orchestrates slice agents that edit code in `slice/<id>` worktrees |
 | `no-silent-deferrals.mdc` | always | the whole ask is done; only the operator defers a piece (`CLAUDE.md` law 1) |
 | `no-duplicate-slice-agents.mdc` | always | one agent per ticket worktree until it finishes or the operator replaces it |
@@ -62,7 +62,7 @@ coding agent run through the ticket tooling; `cursor-docs` a ticket, spec or doc
 `workbench`, `human` and `ci` mean an agent stops and waits for that party.
 
 **Branches.** Work lands on `main` (`CLAUDE.md` law 2). The one exception is the `slice/<id>`
-branches that `cargo xtask platform slice-worktree` and the [wave](/documentation_v2/glossary.md#wave)
+branches that `cargo xtask platform slice-worktree` and the [wave](/documentation_v2/glossary/n_to_z.md#wave)
 tooling create, merge and delete themselves, which is what factory mode uses; the nested mod rule
 agrees with law 2 and needs no copy at the root.
 
@@ -97,10 +97,10 @@ Run every command from the repository root.
    curl -sf http://127.0.0.1:8080/healthz
    ```
 
-   Expected: `{"status":"ok"}`. The [dev login](/documentation_v2/glossary.md#dev-login) is
+   Expected: `{"status":"ok"}`. The [dev login](/documentation_v2/glossary/a_to_f.md#dev-login) is
    `http://localhost:3000/api/v1/auth/dev-login?role=mission_maker`, and the
-   [Mission Creator](/documentation_v2/glossary.md#mission-creator) opens at
-   `/missions/<id>/edit` once a [mission](/documentation_v2/glossary.md#mission) exists.
+   [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) opens at
+   `/missions/<id>/edit` once a [mission](/documentation_v2/glossary/g_to_m.md#mission) exists.
 
 4. For mod work only, give Cursor the Enfusion MCP server: copy the tracked entry into the
    workspace's own, gitignored file.

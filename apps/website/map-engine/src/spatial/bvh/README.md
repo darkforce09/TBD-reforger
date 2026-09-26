@@ -63,7 +63,7 @@ as the file stores them, which makes the output deterministic: two builds emit t
   - the debug building viewer and building interior benches
     (`apps/website/frontend/src/v2/apps/debug/building_viewer.rs`,
     `apps/website/frontend/src/v2/apps/debug/building_interior.rs`) and the
-    [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s line-of-sight tool
+    [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s line-of-sight tool
     (`apps/website/frontend/src/v2/apps/editor/input/tools/los_world_wasm.rs`);
   - the blueprint tooling in `tools_v2/developer-tools/src/blueprint/`, whose emitters in
     `tools_v2/developer-tools/src/blueprint/bvh/` write the sidecars, and the library checks in

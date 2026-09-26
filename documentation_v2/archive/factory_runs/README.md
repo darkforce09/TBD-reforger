@@ -26,11 +26,11 @@ documentation_v2/archive/factory_runs/
 
 A file here is named after its subject and the year and month it was written for; each is a snapshot
 of the factory at that time, written for the agent that ran it. The two platform factory procedures
-and the [Mission Creator](/documentation_v2/glossary.md#mission-creator) factory's start file,
+and the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) factory's start file,
 briefs and handoff carry a status line pointing at the factory waves runbooks, which hold the
 lasting procedure and rules. The ledger, the eye-pass checklist and the two
-[wave](/documentation_v2/glossary.md#wave) kickoffs have no live replacement: the landed commits and
-the [ticket](/documentation_v2/glossary.md#ticket) files record what the runs shipped.
+[wave](/documentation_v2/glossary/n_to_z.md#wave) kickoffs have no live replacement: the landed commits and
+the [ticket](/documentation_v2/glossary/n_to_z.md#ticket) files record what the runs shipped.
 
 ## Code
 

@@ -42,7 +42,7 @@ follows the [feature doc template](/documentation_v2/standards/templates/feature
   `tools_v2/xtask/src/verifications/schemas/`, which every claim is checked against; the feature
   doc template; the ticket registry in `.ai/tickets/` for open work.
 - Used by: the READMEs of `contracts_v2/`, `contracts_v2/definitions/` and
-  `contracts_v2/fixtures/bridge_samples/`, which link these documents; the [mod](/documentation_v2/glossary.md#mod)'s radio hook class
+  `contracts_v2/fixtures/bridge_samples/`, which link these documents; the [mod](/documentation_v2/glossary/g_to_m.md#mod)'s radio hook class
   `TBD_RadioBridgeStub`, whose header cites the bridge contract.
 - Rules: a document describes the committed schemas and code, and a disagreement goes under Known
   discrepancies with both places; the archived relocation plan stays frozen, and the live policy

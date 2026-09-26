@@ -2,10 +2,10 @@
 
 # Server intel page
 
-The `/server-intel` page in the [command center](/documentation_v2/glossary.md#command-center): a
+The `/server-intel` page in the [command center](/documentation_v2/glossary/a_to_f.md#command-center): a
 signed-in member sees one game server's live state, its connect address, its population and
 frame rate, the theatre of its current match, the in-game time and weather, and the modpack it
-requires, kept current by the server's [SSE](/documentation_v2/glossary.md#sse) status stream.
+requires, kept current by the server's [SSE](/documentation_v2/glossary/n_to_z.md#sse) status stream.
 
 ## Where it lives
 
@@ -23,7 +23,7 @@ requires, kept current by the server's [SSE](/documentation_v2/glossary.md#sse) 
   where administrators run the servers this page reports on; the
   [dashboard page](/documentation_v2/website/frontend/pages/command_center/dashboard/dashboard_page.md),
   whose "Server Uplink" card summarises one server; the
-  [API](/documentation_v2/glossary.md#api)'s
+  [API](/documentation_v2/glossary/a_to_f.md#api)'s
   [server infrastructure domain](/apps/website/api_v2/src/server_infrastructure/README.md), which
   serves the server list and the stream.
 

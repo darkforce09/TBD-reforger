@@ -2,10 +2,10 @@
 
 # Shell route and layout
 
-The frame the [Mission Creator](/documentation_v2/glossary.md#mission-creator) runs in: the
+The frame the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) runs in: the
 chromeless route that gives the editor the whole viewport, the chrome laid over the map, the
 read-only review workspace that mounts the same page, and the notices the page shows when the
-[mission](/documentation_v2/glossary.md#mission) id or the map cannot be used.
+[mission](/documentation_v2/glossary/g_to_m.md#mission) id or the map cannot be used.
 
 ## Where it lives
 
@@ -99,7 +99,7 @@ above the toolbelt reads "Map unavailable" with the reason, and editing goes on 
 ### SHELL-REVIEW-001 — Review workspace
 
 1. `/missions/:id/artifacts/:artifact_id/workspace` opens review mode on the version an
-   [artifact](/documentation_v2/glossary.md#artifact) compiled from, then mounts the same
+   [artifact](/documentation_v2/glossary/a_to_f.md#artifact) compiled from, then mounts the same
    `MissionEditorPage` (see the [review workspace page](/documentation_v2/website/frontend/pages/mission_hub/review_workspace/review_workspace_page.md)).
 2. While review mode is open, the boot restores the reviewed version, no draft is written, the
    row mirrors patch nothing, and Save Version answers "The review workspace of artifact …,

@@ -1,6 +1,6 @@
 # Radio nets panel view
 
-The view of the radio nets panel: the nets a [mission](/documentation_v2/glossary.md#mission)
+The view of the radio nets panel: the nets a [mission](/documentation_v2/glossary/g_to_m.md#mission)
 authors in its `radioPlan` block (id, label, frequency, faction assignment and range) and the action
 that returns the mission to the plan the compiler derives. The model and the document write live in
 the parent module, `apps/website/frontend/src/v2/apps/editor/ui/inspector/radio_panel.rs`.

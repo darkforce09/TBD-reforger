@@ -1,7 +1,7 @@
 # Enfusion mission DTO samples
 
-One sample document for each part of the [mission](/documentation_v2/glossary.md#mission)
-contract that the game [mod](/documentation_v2/glossary.md#mod)'s JSON classes read, from the
+One sample document for each part of the [mission](/documentation_v2/glossary/g_to_m.md#mission)
+contract that the game [mod](/documentation_v2/glossary/g_to_m.md#mod)'s JSON classes read, from the
 whole mission down to a zone's circle. The schema gate validates each against its definition in
 the mission schema.
 

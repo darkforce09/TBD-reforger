@@ -2,7 +2,7 @@
 
 The on-disk formats of a terrain's served map data, shared by the developer tools that write them
 and the map engine that reads them in the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator): the fixed-header containers, the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator): the fixed-header containers, the
 object instance row, the rkyv archives and the vegetation density tiles. Every format is
 little-endian and validated on read.
 

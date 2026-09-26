@@ -21,7 +21,7 @@ gate: driver error: cdp: ws call timed out (Runtime.evaluate)
 The suite stops at its first smoke, `selfcheck`, whose first evaluation looks for the canvas, so
 the run fails once, after the full timeout, with no diagnosis. When the browser process aborts
 instead, the crash comes a few hundred milliseconds after the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) page is navigated, and the harness
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) page is navigated, and the harness
 reports the same timeout or `timeout waiting for Page.loadEventFired`.
 
 ## Cause

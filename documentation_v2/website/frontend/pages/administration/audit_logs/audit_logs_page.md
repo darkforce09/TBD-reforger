@@ -2,7 +2,7 @@
 
 # Audit logs page
 
-The `/admin/audit` page, one of the [administration](/documentation_v2/glossary.md#administration)
+The `/admin/audit` page, one of the [administration](/documentation_v2/glossary/a_to_f.md#administration)
 pages: administrators read the platform's trail of administrative actions, newest first and a page
 at a time, and inspect one entry's actor, target and metadata. The screen only reads.
 
@@ -16,7 +16,7 @@ at a time, and inspect one entry's actor, target and metadata. The screen only r
   each file.
 - Entry: the route, its tier and its layout are in the README's
   [Routes](/apps/website/frontend/src/v2/pages/administration/audit_logs/README.md#routes).
-- Related: the [API](/documentation_v2/glossary.md#api)'s
+- Related: the [API](/documentation_v2/glossary/a_to_f.md#api)'s
   [administration domain](/apps/website/api_v2/src/administration/README.md), which serves the
   trail; every page that changes state writes to it.
 
@@ -26,7 +26,7 @@ at a time, and inspect one entry's actor, target and metadata. The screen only r
    shows the session and access states of the README's
    [States](/apps/website/frontend/src/v2/pages/administration/audit_logs/README.md#states) in
    place of the page until a signed-in viewer holds the `admin`
-   [role](/documentation_v2/glossary.md#role). The route redirects no one.
+   [role](/documentation_v2/glossary/n_to_z.md#role). The route redirects no one.
 2. The page fetches the newest page of the trail; a failed fetch offers no retry, so the viewer
    reloads the page.
 3. The master column lists one line per entry, in the format the README's
@@ -63,18 +63,18 @@ the DTO it reads. Server-side:
 - The API serves two more routes the page does not call: `GET /api/v1/admin/audit-logs/export.csv`
   (`export_audit_logs_csv`), the newest 10 000 entries as the attachment `audit-logs.csv` with
   every cell escaped against spreadsheet formulas, and `GET /api/v1/admin/audit-logs/stream`
-  (`stream_audit_logs`), an [SSE](/documentation_v2/glossary.md#sse) feed that replays from the
+  (`stream_audit_logs`), an [SSE](/documentation_v2/glossary/n_to_z.md#sse) feed that replays from the
   `Last-Event-ID` it is given and is woken by Postgres notifications, falling back to a 2-second
   poll.
 - Most entries are appended inside the transaction of the change they record, through
   `append_actor_audit` and its siblings in
   `apps/website/api_v2/src/administration/services/required_audit.rs`, so the entry and its change
   commit or fail together; triggers from `apps/website/api_v2/migrations/0025_audit_notify.sql`
-  write the entries for creating an [event](/documentation_v2/glossary.md#event), soft-deleting a
-  [mission](/documentation_v2/glossary.md#mission) and removing a member from a
-  [slot](/documentation_v2/glossary.md#slot) in the statement that makes the change. The role
+  write the entries for creating an [event](/documentation_v2/glossary/a_to_f.md#event), soft-deleting a
+  [mission](/documentation_v2/glossary/g_to_m.md#mission) and removing a member from a
+  [slot](/documentation_v2/glossary/n_to_z.md#slot) in the statement that makes the change. The role
   resync, warnings, modpack and announcement administration, the server
-  [registry](/documentation_v2/glossary.md#registry) and mission versions write best-effort instead,
+  [registry](/documentation_v2/glossary/n_to_z.md#registry) and mission versions write best-effort instead,
   through `write_audit` in `apps/website/api_v2/src/administration/services/audit_writer.rs`, after
   their change has committed, as do the system warnings for a failed Discord push, a failed
   statistics or leaderboard refresh and a low server FPS: a failed write is only logged, and the

@@ -1,10 +1,10 @@
 # Operations pages
 
-The [operations](/documentation_v2/glossary.md#operations) pages, the second section of the sidebar:
-the schedule of upcoming [events](/documentation_v2/glossary.md#event), each event's hub with its
-inline [ORBAT](/documentation_v2/glossary.md#orbat) slotting, one
-[mission](/documentation_v2/glossary.md#mission)'s slotting on a page of its own, the viewer's own
-[service record](/documentation_v2/glossary.md#service-record), and the global leaderboards.
+The [operations](/documentation_v2/glossary/n_to_z.md#operations) pages, the second section of the sidebar:
+the schedule of upcoming [events](/documentation_v2/glossary/a_to_f.md#event), each event's hub with its
+inline [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) slotting, one
+[mission](/documentation_v2/glossary/g_to_m.md#mission)'s slotting on a page of its own, the viewer's own
+[service record](/documentation_v2/glossary/n_to_z.md#service-record), and the global leaderboards.
 
 ## Contents
 
@@ -32,7 +32,7 @@ Every page renders its content inside `AuthGate` and fetches in the browser buil
 hub has one renderer and the slotting one implementation, each shown in two places: the schedule's
 detail column renders `event_hub_view` from `event_detail/`, and the ORBAT selection page mounts its
 `OrbatSelector` with the `MissionStanding` it takes. The service record page links into both, from
-the banner of the viewer's next [deployment](/documentation_v2/glossary.md#deployment).
+the banner of the viewer's next [deployment](/documentation_v2/glossary/a_to_f.md#deployment).
 
 ## Public surface
 
@@ -42,9 +42,9 @@ the banner of the viewer's next [deployment](/documentation_v2/glossary.md#deplo
 
 ## Boundaries
 
-- Depends on: `crate::v2::core` (the [API](/documentation_v2/glossary.md#api) client, its DTOs and
+- Depends on: `crate::v2::core` (the [API](/documentation_v2/glossary/a_to_f.md#api) client, its DTOs and
   the `event_registration` endpoint helpers, the `AuthStore` session and
-  [role](/documentation_v2/glossary.md#role) checks, the UI primitives and the date and countdown
+  [role](/documentation_v2/glossary/n_to_z.md#role) checks, the UI primitives and the date and countdown
   helpers); over HTTP, the `operations` domain of the API (`/api/v1/events`,
   `/api/v1/event-missions/…`, `/api/v1/members`, `/api/v1/me/deployments`,
   `/api/v1/me/leave-requests` and `/api/v1/admin/leave-requests`), its `command_center` domain

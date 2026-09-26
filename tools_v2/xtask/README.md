@@ -2,7 +2,7 @@
 
 The `xtask` crate: the `cargo xtask` command router of the repository. It runs the repository's
 operations (database, deploys, mod servers, map pipelines,
-[ticket](/documentation_v2/glossary.md#ticket) and [wave](/documentation_v2/glossary.md#wave)
+[ticket](/documentation_v2/glossary/n_to_z.md#ticket) and [wave](/documentation_v2/glossary/n_to_z.md#wave)
 commands, the platform factory) and orchestrates its verifications and CI tasks. Developers, AI agents, the GitHub workflows and the host's systemd
 timers all run it.
 

@@ -1,7 +1,7 @@
 # Ticket browser
 
-The [ticketboard](/documentation_v2/glossary.md#ticketboard) feature that presents the loaded
-[ticket](/documentation_v2/glossary.md#ticket) registry: the status board, the program tree, the
+The [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) feature that presents the loaded
+[ticket](/documentation_v2/glossary/n_to_z.md#ticket) registry: the status board, the program tree, the
 filters, a ticket's full details, and the ownership comparison of two tickets. It reads the
 registry and never changes it.
 

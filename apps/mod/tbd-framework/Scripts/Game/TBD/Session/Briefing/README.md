@@ -1,7 +1,7 @@
 # Briefing
 
 The pre-game briefing: the server builds each player's side-specific briefing from the loaded
-[mission](/documentation_v2/glossary.md#mission) and sends it to that player alone, tallies who has
+[mission](/documentation_v2/glossary/g_to_m.md#mission) and sends it to that player alone, tallies who has
 marked ready, and opens the Briefing screen on every client when the round enters `BRIEFING`.
 
 ## Contents

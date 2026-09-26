@@ -1,8 +1,8 @@
 # Ticket engine source
 
-The `ticket_engine` library: the typed [ticket](/documentation_v2/glossary.md#ticket) model and its
+The `ticket_engine` library: the typed [ticket](/documentation_v2/glossary/n_to_z.md#ticket) model and its
 TOML encoding, the corpus store and the operations that change it, the checks, the derived files
-(`queue.json`, the roadmap block, the gap-analysis column, the [wave](/documentation_v2/glossary.md#wave)
+(`queue.json`, the roadmap block, the gap-analysis column, the [wave](/documentation_v2/glossary/n_to_z.md#wave)
 lock), the run metrics, and the one module that spells every repository path the ticket domain
 touches.
 

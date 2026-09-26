@@ -2,10 +2,10 @@
 
 # Event schedule page
 
-The `/events` page in the [operations](/documentation_v2/glossary.md#operations) section: a
-signed-in member browses the upcoming [events](/documentation_v2/glossary.md#event) in a list and
+The `/events` page in the [operations](/documentation_v2/glossary/n_to_z.md#operations) section: a
+signed-in member browses the upcoming [events](/documentation_v2/glossary/a_to_f.md#event) in a list and
 reads any event's full hub beside it, briefing, places and
-[ORBAT](/documentation_v2/glossary.md#orbat) slotting included, without leaving the list.
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) slotting included, without leaving the list.
 
 ## Where it lives
 
@@ -20,7 +20,7 @@ reads any event's full hub beside it, briefing, places and
   whose hub view (`event_hub_view`) the detail column renders; the
   [event manager page](/documentation_v2/website/frontend/pages/administration/event_manager/event_manager_page.md),
   where administrators create the events listed here; the
-  [API](/documentation_v2/glossary.md#api)'s
+  [API](/documentation_v2/glossary/a_to_f.md#api)'s
   [operations domain](/apps/website/api_v2/src/operations/README.md), which serves the list and
   the hub.
 
@@ -44,7 +44,7 @@ reads any event's full hub beside it, briefing, places and
    colour, `completed` tertiary, `cancelled` red, any other value (such as `scheduled`) neutral;
    the admin event manager uses the same colours.
 5. The fill bar follows the server's `percent`, clamped to 0 to 100; `total_slots` is zero until
-   [missions](/documentation_v2/glossary.md#mission) are attached, and the bar then stays empty.
+   [missions](/documentation_v2/glossary/g_to_m.md#mission) are attached, and the bar then stays empty.
 6. With no events the list reads "No upcoming operations scheduled." beside the detail's
    "Select an operation to view its hub."
 
@@ -56,7 +56,7 @@ reads any event's full hub beside it, briefing, places and
 2. The detail column fetches the selected event's hub and renders it with `event_hub_view`, the
    body `/events/:id` also shows, without that route's back link and backdrop. The viewer reads
    the briefing, the places and each mission's dossier, and registers for a
-   [slot](/documentation_v2/glossary.md#slot) in place, as the
+   [slot](/documentation_v2/glossary/n_to_z.md#slot) in place, as the
    [event hub page](/documentation_v2/website/frontend/pages/operations/event_detail/event_hub_page.md)
    describes.
 3. A hub fetched for one event never shows under another: the result carries the id it was

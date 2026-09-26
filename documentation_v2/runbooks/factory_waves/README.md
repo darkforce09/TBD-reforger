@@ -2,9 +2,9 @@
 
 # Factory waves
 
-How the platform factory turns planned [tickets](/documentation_v2/glossary.md#ticket) into
+How the platform factory turns planned [tickets](/documentation_v2/glossary/n_to_z.md#ticket) into
 shipped code: an orchestrating session (the orchestrator) takes one
-[wave](/documentation_v2/glossary.md#wave) of file-disjoint tickets at a time, gives each to a
+[wave](/documentation_v2/glossary/n_to_z.md#wave) of file-disjoint tickets at a time, gives each to a
 slice agent in its own git worktree, lands the gate-green slices on `main`, has one adversarial
 verifier attack the result, and closes the wave with a marker commit. `cargo xtask platform wave`
 automates the mechanics; these runbooks hold the procedure and the rules, which are
@@ -68,10 +68,10 @@ itself: `cargo xtask platform slice-worktree -- new <id>` creates `slice/<id>` f
 `reap` deletes the merged ones (`tools_v2/xtask/src/commands/platform/slice_worktree/drop.rs`);
 `platform wave land` merges them with `--no-ff`
 (`tools_v2/xtask/src/commands/platform/wave_execution/land/merge_execution.rs`); and
-`cargo xtask mod wave` uses the same names for the [mod](/documentation_v2/glossary.md#mod)
+`cargo xtask mod wave` uses the same names for the [mod](/documentation_v2/glossary/g_to_m.md#mod)
 program. No agent and no orchestrator creates a branch by hand, and there are no pull requests.
 
-**Editor pre-close.** A [Mission Creator](/documentation_v2/glossary.md#mission-creator) wave runs
+**Editor pre-close.** A [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) wave runs
 `cargo xtask mk leptos-gates` after its wave gate passes and before it closes. The wave gate
 deliberately runs no browser, so that command is the only automated run of the editor smokes,
 the rect guards among them; adding a browser smoke to `platform wave gate` is not the fix for a

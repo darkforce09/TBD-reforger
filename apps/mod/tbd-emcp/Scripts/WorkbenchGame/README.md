@@ -1,7 +1,7 @@
 # Enfusion MCP Workbench scripts
 
 The addon's WorkbenchGame script module: the scripts
-[Workbench](/documentation_v2/glossary.md#workbench) compiles into the editor when the TBD_EMCP
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) compiles into the editor when the TBD_EMCP
 addon is loaded. It holds the Enfusion MCP bridge handlers and nothing else.
 
 ## Contents

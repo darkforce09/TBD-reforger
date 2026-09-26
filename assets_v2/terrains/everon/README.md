@@ -2,8 +2,8 @@
 
 The whole of Everon, the 12.8 km × 12.8 km island the platform's map is built on: its elevation,
 satellite image, 1,216,066 placed objects, roads, labels and line-of-sight geometry. The map engine
-streams it into the [Mission Creator](/documentation_v2/glossary.md#mission-creator) whenever a
-[mission](/documentation_v2/glossary.md#mission) names the `everon` terrain, and the developer tools
+streams it into the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) whenever a
+[mission](/documentation_v2/glossary/g_to_m.md#mission) names the `everon` terrain, and the developer tools
 and gates read it from disk.
 
 ## Contents
@@ -85,7 +85,7 @@ towns and road names from the archive and finds the spot heights on the elevatio
 - Producers:
   - the world export pipeline (`tools_v2/developer-tools/src/world_export_pipeline/`), run by
     `cargo xtask map export-terrain everon --phase <phase>` from a staged
-    [Workbench](/documentation_v2/glossary.md#workbench) export: `objects/`, `roads/` and the
+    [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) export: `objects/`, `roads/` and the
     manifest's `objects` block;
   - the map raster pipeline (`tools_v2/developer-tools/src/map_raster_pipeline/`): the satellite
     container, `map export-locations` for `locations.json`, `map export-height-labels` for

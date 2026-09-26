@@ -3,8 +3,8 @@
 # Review workspace page documentation
 
 The feature documentation of the `/missions/:id/artifacts/:artifact_id/workspace` page, where the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) opens read-only on the version an
-[artifact](/documentation_v2/glossary.md#artifact) compiled from.
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) opens read-only on the version an
+[artifact](/documentation_v2/glossary/a_to_f.md#artifact) compiled from.
 
 ## Contents
 

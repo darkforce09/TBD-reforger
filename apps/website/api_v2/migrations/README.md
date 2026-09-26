@@ -1,6 +1,6 @@
 # Database migrations
 
-The Postgres schema of the [API](/documentation_v2/glossary.md#api), as the ordered SQL migrations
+The Postgres schema of the [API](/documentation_v2/glossary/a_to_f.md#api), as the ordered SQL migrations
 that build it. The binaries embed this folder when they compile and apply what a database lacks
 before they use it.
 

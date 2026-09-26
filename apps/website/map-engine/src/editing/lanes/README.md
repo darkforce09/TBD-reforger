@@ -1,7 +1,7 @@
 # Editor-authored map lanes
 
-The overlay lanes the [Mission Creator](/documentation_v2/glossary.md#mission-creator) draws from
-the [mission](/documentation_v2/glossary.md#mission) document's own rows (connections, comments and
+The overlay lanes the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) draws from
+the [mission](/documentation_v2/glossary/g_to_m.md#mission) document's own rows (connections, comments and
 briefing markers) and the hit tests a click on them resolves through. Each lane is a pure function
 of the document's JSON and world coordinates.
 
@@ -32,7 +32,7 @@ metres on the map plane; a comment's and a marker's stored `{x, z}` is read as e
   `comment_lane_ids` and `comment_drag_lane_xy` are packed from that list, and
   `dragged_comment_points` serves both the drag preview and the move commit. `pick_comment` takes
   the nearest glyph within the tolerance; `COMMENT_PICK_PX` (4 px) restates the
-  [slot](/documentation_v2/glossary.md#slot) pick radius
+  [slot](/documentation_v2/glossary/n_to_z.md#slot) pick radius
   `MissionDocCore::PICK_RADIUS_PX`.
 - **Markers.** `marker_lane_fields` parses `briefing_marker_rows_json` once into positions, side
   tints (from `crate::overlay::symbology::roles::classify::side_rgba`), icon aliases and captions.

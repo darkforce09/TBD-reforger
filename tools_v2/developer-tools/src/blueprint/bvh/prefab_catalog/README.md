@@ -1,7 +1,7 @@
 # Prefab text tokenizer
 
 The low-level half of `prefab_catalog.rs` in `tools_v2/developer-tools/src/blueprint/bvh/`: the
-tokenizer and block parser for [Enfusion](/documentation_v2/glossary.md#enfusion) `.et` entity
+tokenizer and block parser for [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) `.et` entity
 templates, and the readers that pull one file's own facts out of the parsed blocks before the
 parent resolves the inheritance chain.
 

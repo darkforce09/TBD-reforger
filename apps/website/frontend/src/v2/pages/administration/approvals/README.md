@@ -1,8 +1,8 @@
 # Mission approvals page
 
-The `/admin/approvals` page, the [approvals](/documentation_v2/glossary.md#approvals) queue:
-administrators work through the [missions](/documentation_v2/glossary.md#mission) waiting for
-review, read the [artifact](/documentation_v2/glossary.md#artifact) each submission compiled into,
+The `/admin/approvals` page, the [approvals](/documentation_v2/glossary/a_to_f.md#approvals) queue:
+administrators work through the [missions](/documentation_v2/glossary/g_to_m.md#mission) waiting for
+review, read the [artifact](/documentation_v2/glossary/a_to_f.md#artifact) each submission compiled into,
 talk to its author in the review thread, and approve the artifact, approve it with conditions, or
 reject it with a reason.
 
@@ -37,14 +37,14 @@ wording. A decision is offered only while a review is under way and always names
 artifact; a conditional approval needs its conditions and a rejection its reason, trimmed and 1 to
 8000 bytes. `decision_refusal.rs` reads `409 NO_PENDING_REVIEW`, `409 REVIEWED_ARTIFACT_CHANGED`
 and a 409 without a code as a stale queue, which is read again; any other refusal shows the
-[API](/documentation_v2/glossary.md#api)'s sentence. Every request runs in the browser build only;
+[API](/documentation_v2/glossary/a_to_f.md#api)'s sentence. Every request runs in the browser build only;
 a native build renders the failure branch.
 
 ## Routes
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/admin/approvals` | `MissionApprovalsPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` [role](/documentation_v2/glossary.md#role) only | full-bleed inside the navigation frame; breadcrumb Administration / Mission Approvals; sidebar entry "Mission Approvals" |
+| `/admin/approvals` | `MissionApprovalsPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` [role](/documentation_v2/glossary/n_to_z.md#role) only | full-bleed inside the navigation frame; breadcrumb Administration / Mission Approvals; sidebar entry "Mission Approvals" |
 
 ## Data
 
@@ -94,7 +94,7 @@ a native build renders the failure branch.
   `crate::v2::core::ui` (`AdminGate`, `SplitPane`, `SplitPaneEmpty`, `MaterialIcon`, `cn`, the
   toast queue), `crate::v2::core::utils` (date and UTC formatting), and the review views in
   `apps/website/frontend/src/v2/pages/mission_hub/mission_review/`; over HTTP, the approval,
-  mission and review routes of the [missions](/documentation_v2/glossary.md#missions) domain.
+  mission and review routes of the [missions](/documentation_v2/glossary/g_to_m.md#missions) domain.
 - Used by: the `/admin/approvals` route in `apps/website/frontend/src/app_routes.rs` and
   `apps/website/frontend/src/router.rs`; the sidebar's "Mission Approvals" link in
   `apps/website/frontend/src/v2/pages/navigation/nav_config.rs`; the DOM oracle's `approvals`

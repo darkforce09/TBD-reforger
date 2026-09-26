@@ -283,7 +283,7 @@ into is:
 ```text
 documentation_v2/
 ├── README.md              entry: the map, the authority ladder, where to find things
-├── glossary.md            project terms and abbreviations
+├── glossary/              project terms and abbreviations, one file per letter range
 ├── product_roadmap.md     the operator-curated plan
 ├── website/               mirrors apps/website/: api_v2/, frontend/ (pages/<area>/,
 │                          apps/editor/ for the Mission Creator), map-engine/, graphics-engine/
@@ -361,7 +361,7 @@ of its own.
 - **Terms.** The editor is the Mission Creator; the document a mission maker authors is a mission;
   Enfusion's world plus game-mode configuration is the mission header; an event is a scheduled
   session record; operations is the domain around events. A document links a term's first use to
-  its [glossary](/documentation_v2/glossary.md) entry and quotes code identifiers as the code
+  its [glossary](/documentation_v2/glossary/README.md) entry and quotes code identifiers as the code
   spells them.
 - **Diagrams.** ASCII, in `text` blocks.
 - **Hosts and paths.** No IP address of a host and no personal absolute path: the deploy host is
@@ -444,7 +444,7 @@ The citation check reads code, never documents, so a citation in prose is held b
   Contents grammar and writing rules.
 - [Templates](/documentation_v2/standards/templates/README.md) — the skeleton and worked sample of
   every README kind and document type.
-- [Glossary](/documentation_v2/glossary.md) — the project's terms.
+- [Glossary](/documentation_v2/glossary/README.md) — the project's terms.
 - [Coding standards](/documentation_v2/standards/coding_standards/README.md) — the code rules that
   sit beside these comment rules.
 - [Where does X go](/documentation_v2/standards/where_does_x_go.md) — where code, fixtures and

@@ -1,7 +1,7 @@
 # Symbology instances and the slot GPU bridge
 
-Packs the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map entities
-([slots](/documentation_v2/glossary.md#slot), vehicles, comments, briefing markers, clusters) into
+Packs the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map entities
+([slots](/documentation_v2/glossary/n_to_z.md#slot), vehicles, comments, briefing markers, clusters) into
 20-byte icon instances, and the browser-side bridge on `RenderEngine` that binds, patches and drags
 those lanes on the GPU. Compiled with the `streaming` feature; the bridge and lane files only on
 `wasm32` with `render`.

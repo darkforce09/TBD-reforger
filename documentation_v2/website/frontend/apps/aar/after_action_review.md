@@ -4,7 +4,7 @@
 
 A planned workspace, not built: a replay of a finished match from server telemetry over a
 read-only map, with a timeline scrubber, so members and leaders can review what happened in an
-[event](/documentation_v2/glossary.md#event)'s [mission](/documentation_v2/glossary.md#mission)
+[event](/documentation_v2/glossary/a_to_f.md#event)'s [mission](/documentation_v2/glossary/g_to_m.md#mission)
 after it ends.
 
 ## Where it lives

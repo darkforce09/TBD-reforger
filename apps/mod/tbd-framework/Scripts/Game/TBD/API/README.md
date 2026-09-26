@@ -1,7 +1,7 @@
 # Platform API bridge
 
-The dedicated server's side of the platform [API](/documentation_v2/glossary.md#api): the
-[game runtime](/documentation_v2/glossary.md#game-runtime) session with its heartbeats, the shared
+The dedicated server's side of the platform [API](/documentation_v2/glossary/a_to_f.md#api): the
+[game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) session with its heartbeats, the shared
 transport of every `/api/v1/game-runtime/` and `/api/v1/fleet-executor/` call, in-game identity
 linking, and the end-of-round match results.
 
@@ -39,7 +39,7 @@ apps/mod/tbd-framework/Scripts/Game/TBD/API/
 | `machineCredential` | none | `Authorization: Bearer tbdm_…` | every `/api/v1/game-runtime/` and `/api/v1/fleet-executor/` route |
 
 The `machineCredential` is this server's `mod_runtime`
-[machine credential](/documentation_v2/glossary.md#machine-credential), issued by an administrator.
+[machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential), issued by an administrator.
 A value that does not start with `tbdm_`, such as the example's placeholder, counts as unset: no
 deployment is read, no runtime session starts, no roster loads and no fleet command is claimed.
 `Reload` re-reads the file while the server runs and keeps the settings in force when the file does
@@ -47,7 +47,7 @@ not read or parse; the loops that wait on the platform (`TBD_DeployedMission` an
 `TBD_RosterLoader` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`) call it,
 so a credential pasted in later is picked up without a restart. `SetBackend`, behind the admin
 chat command `#tbd backend`, repoints the URL and token and saves the file. Neither secret is
-logged. The mission and its [event](/documentation_v2/glossary.md#event) are not configured here:
+logged. The mission and its [event](/documentation_v2/glossary/a_to_f.md#event) are not configured here:
 they come with the deployment the platform holds for this server.
 
 ### The machine-credential transport
@@ -79,8 +79,8 @@ SCR_BaseGameMode.OnGameEnd
      then POST /api/v1/game-runtime/sessions/{sessionId}/end
 ```
 
-The start reports the loaded [artifact](/documentation_v2/glossary.md#artifact), and that report
-confirms a [mission deployment](/documentation_v2/glossary.md#mission-deployment); a report the
+The start reports the loaded [artifact](/documentation_v2/glossary/a_to_f.md#artifact), and that report
+confirms a [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment); a report the
 platform rejects (422 `UNKNOWN_ARTIFACT`, 400) is an ERROR and the session starts without one.
 Starting a session ends the server's previous one as `superseded`. The heartbeat sequence rises
 strictly within a session, and one start or heartbeat is in flight at a time. A refused heartbeat

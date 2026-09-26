@@ -1,6 +1,6 @@
 # Untyped ticket file storage
 
-The key-order-preserving TOML encoding of an untyped [ticket](/documentation_v2/glossary.md#ticket)
+The key-order-preserving TOML encoding of an untyped [ticket](/documentation_v2/glossary/n_to_z.md#ticket)
 file, one `T-<id>.toml` per parent, read into and written from the registry's JSON value; with it,
 the path helpers every registry reader shares and the key sets that govern what a ticket file may
 carry.

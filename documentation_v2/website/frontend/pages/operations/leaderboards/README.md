@@ -4,7 +4,7 @@
 
 The feature documentation of the `/leaderboards` page, titled "Global Leaderboards", where a
 member ranks and searches the community's players by statistics from
-[match telemetry](/documentation_v2/glossary.md#match-telemetry) and opens one player's dossier,
+[match telemetry](/documentation_v2/glossary/g_to_m.md#match-telemetry) and opens one player's dossier,
 with the page's design-phase reference.
 
 ## Contents
@@ -20,7 +20,7 @@ documentation_v2/website/frontend/pages/operations/leaderboards/
 Read [leaderboards_page.md](/documentation_v2/website/frontend/pages/operations/leaderboards/leaderboards_page.md)
 first. It follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md):
 it quotes the page's interface text, gives what the board and the dossier calls mean in the
-[API](/documentation_v2/glossary.md#api), lists where the page and the API disagree, and compares
+[API](/documentation_v2/glossary/a_to_f.md#api), lists where the page and the API disagree, and compares
 the built page with the blueprint in `visual_references/`. The code folder's README lists the
 page's files, calls and states.
 

@@ -1,7 +1,7 @@
 # Local draft persistence decisions
 
-The decidable half of how the [Mission Creator](/documentation_v2/glossary.md#mission-creator)
-keeps a local draft of a [mission](/documentation_v2/glossary.md#mission): which key a record lives
+The decidable half of how the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)
+keeps a local draft of a [mission](/documentation_v2/glossary/g_to_m.md#mission): which key a record lives
 under, whether a stored blob is worth keeping, how a record on disk merges with the one about to
 replace it, whether the local draft and the server's version differ, and how a server payload
 replaces the document. Where the bytes live and how they travel is the host's; no storage or
@@ -51,7 +51,7 @@ save a draft (host)
   refused for another mission's record) and returns the re-encode, or the original bytes when
   nothing merged. A failed read is retried after `backoff_before_attempt_ms` (80, 160, 320 ms).
 - **Local against server.** `classify_local_draft` answers in three tiers, cheapest first: no
-  authored content, a different [slot](/documentation_v2/glossary.md#slot) count, then a compile of
+  authored content, a different [slot](/documentation_v2/glossary/n_to_z.md#slot) count, then a compile of
   both documents (the server's side
   hydrated into a throwaway document) compared over the authored keys `editor`, `loadouts`,
   `objectives`, `vehicles` and `markers`. Terrain, environment and row fields never raise a prompt.

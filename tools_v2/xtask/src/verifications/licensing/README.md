@@ -1,7 +1,7 @@
 # Upstream code leak gate
 
 The licensing check `cargo xtask verify no-crf-leak`: the upstream frameworks that sit beside the
-[mod](/documentation_v2/glossary.md#mod) as read-only references (the Coalition Reforger
+[mod](/documentation_v2/glossary/g_to_m.md#mod) as read-only references (the Coalition Reforger
 Framework, under the Arma Public License, and PlayableSelector, which carries no licence) are read
 and cited, never copied, so neither their identifiers nor their asset GUIDs may reach the addons
 this repository ships.
@@ -65,7 +65,7 @@ On the committed tree, with a local game install and no PlayableSelector folder,
   the `grep` binary; `crate::core::repository_layout::documentation` (`MOD_DESIGN`,
   `SLICE_WORKFLOW_RUNBOOK`).
 - Used by: `tools_v2/xtask/src/commands/verify/dispatch.rs`; people following the mod slice
-  workflow runbook, which runs the gate before a slice lands. The mod [wave](/documentation_v2/glossary.md#wave) driver names a
+  workflow runbook, which runs the gate before a slice lands. The mod [wave](/documentation_v2/glossary/n_to_z.md#wave) driver names a
   `no-crf-leak` step, but that step runs `make verify-no-crf-leak`
   (`tools_v2/xtask/src/commands/mod_ops/wave_execution/execution.rs`), not this command.
 - Rules:

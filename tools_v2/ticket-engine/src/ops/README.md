@@ -1,6 +1,6 @@
 # Ticket operations
 
-The typed mutations of the [ticket](/documentation_v2/glossary.md#ticket) corpus: minting,
+The typed mutations of the [ticket](/documentation_v2/glossary/n_to_z.md#ticket) corpus: minting,
 removing, ordering, status changes, readiness, shipping and the landing-commit stamp. Each
 operation computes the whole corpus after the change, validates it, and only then replaces the
 in-memory corpus; it never touches a file itself.

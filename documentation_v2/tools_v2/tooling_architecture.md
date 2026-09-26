@@ -28,9 +28,9 @@ module to the tooling; each crate's README then says what its own folders hold.
 | Unit | Kind | Owns |
 |---|---|---|
 | `xtask` | binary | the command router: database, deploys, mod servers, map helpers, the platform factory, and every repository verification and CI task |
-| `ticket-engine` | library | the [ticket](/documentation_v2/glossary.md#ticket) registry: typed storage and operations, validation, `queue.json` and the roadmap and gap-analysis markers, the [wave](/documentation_v2/glossary.md#wave) lock, run receipts and estimates |
+| `ticket-engine` | library | the [ticket](/documentation_v2/glossary/n_to_z.md#ticket) registry: typed storage and operations, validation, `queue.json` and the roadmap and gap-analysis markers, the [wave](/documentation_v2/glossary/n_to_z.md#wave) lock, run receipts and estimates |
 | `verification-core` | library | the fail-closed primitives: verdicts, findings, pattern scans, child processes with deadlines, the report and the shared verification lock |
-| `developer-tools` | library and six binaries | the heavy offline work: [Enfusion](/documentation_v2/glossary.md#enfusion) archives and the script oracle, the MCP broker, the headless browser gates, the blueprint compiler, the world export and map raster pipelines, map verification |
+| `developer-tools` | library and six binaries | the heavy offline work: [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) archives and the script oracle, the MCP broker, the headless browser gates, the blueprint compiler, the world export and map raster pipelines, map verification |
 | `enfusion_mcp_node_package` | npm data, not a crate | the pinned `enfusion-mcp` server that `mcpd` and `cargo xtask mcp` start |
 
 One word names one thing. A gate is a repository verification that reaches a verdict; the

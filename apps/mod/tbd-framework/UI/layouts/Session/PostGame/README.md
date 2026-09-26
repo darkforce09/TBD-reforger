@@ -16,7 +16,7 @@ Each `.layout` sits beside its `.layout.meta`, so every line covers the pair.
 
 ## Format
 
-- File type: [Enfusion](/documentation_v2/glossary.md#enfusion) widget layouts (`.layout`), plain
+- File type: [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) widget layouts (`.layout`), plain
   text, each beside a `.layout.meta` whose `Name` holds
   `{GUID}UI/layouts/Session/PostGame/<file>.layout`. Both follow the shape of
   `apps/mod/tbd-framework/UI/layouts/Common/TBD_ScreenShell.layout`: a `Backdrop` image, a
@@ -33,7 +33,7 @@ Each `.layout` sits beside its `.layout.meta`, so every line covers the pair.
 - Naming: `TBD_<Stage>Screen.layout`, one per post-game stage.
 - Adding a layout: take a free block from the ledger, author the layout and its `.meta`, add a
   `TBD_UILayouts` constant, and commit both files; the game finds a new path only after
-  [Workbench](/documentation_v2/glossary.md#workbench) has rewritten `resourceDatabase.rdb`.
+  [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) has rewritten `resourceDatabase.rdb`.
 
 ## Referenced by
 

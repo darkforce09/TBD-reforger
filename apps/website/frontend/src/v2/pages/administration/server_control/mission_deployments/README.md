@@ -1,10 +1,10 @@
 # Mission deployments panel
 
 The "Mission deployments" section of the
-[server control](/documentation_v2/glossary.md#server-control) card: an administrator requests a
-[mission deployment](/documentation_v2/glossary.md#mission-deployment) of an approved
-[artifact](/documentation_v2/glossary.md#artifact) to the selected server, optionally bound to an
-[event](/documentation_v2/glossary.md#event) mission's seats, follows it until a runtime session
+[server control](/documentation_v2/glossary/n_to_z.md#server-control) card: an administrator requests a
+[mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) of an approved
+[artifact](/documentation_v2/glossary/a_to_f.md#artifact) to the selected server, optionally bound to an
+[event](/documentation_v2/glossary/a_to_f.md#event) mission's seats, follows it until a runtime session
 confirms it, reads the server's deployments and cancels one whose command no executor has claimed.
 
 ## Contents
@@ -37,12 +37,12 @@ request ─► POST, answered 202 ─► toast "Deployment of <mission> recorded
 
 A 202 records a deployment and nothing more: only `confirmed`, reported when a runtime session
 loads the artifact, is announced as success. A newer follow or the card going away retires the
-current one. `DeploymentRefusal` reads every refusal code the [API](/documentation_v2/glossary.md#api)
+current one. `DeploymentRefusal` reads every refusal code the [API](/documentation_v2/glossary/a_to_f.md#api)
 names, with its details, and words what to change before asking again, listing each unbound seat
-and unseated [slot](/documentation_v2/glossary.md#slot) of an
-[ORBAT](/documentation_v2/glossary.md#orbat) mismatch; a code this build does not know falls back to
+and unseated [slot](/documentation_v2/glossary/n_to_z.md#slot) of an
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) mismatch; a code this build does not know falls back to
 the API's sentence. Only a deployment in flight offers "Cancel this deployment".
-`latest_confirmed_session` hands the [fleet command](/documentation_v2/glossary.md#fleet-command)
+`latest_confirmed_session` hands the [fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command)
 console's kick form the runtime session that confirmed the newest confirmed deployment. Every
 request runs in the browser build only.
 
@@ -56,8 +56,8 @@ request runs in the browser build only.
   `apps/website/frontend/src/v2/pages/administration/server_control/fleet_commands/` (command
   states and `OutcomeAnnouncer`); `short_digest` from
   `apps/website/frontend/src/v2/pages/mission_hub/mission_review/`; over HTTP, the deployment
-  routes of the [missions](/documentation_v2/glossary.md#missions) domain and the event reads of
-  the [operations](/documentation_v2/glossary.md#operations) domain.
+  routes of the [missions](/documentation_v2/glossary/g_to_m.md#missions) domain and the event reads of
+  the [operations](/documentation_v2/glossary/n_to_z.md#operations) domain.
 - Used by: `server_cards.rs` in `apps/website/frontend/src/v2/pages/administration/server_control/`,
   which builds the panel, renders `deployment_request` and `deployment_list`, and passes
   `latest_confirmed_session` to the kick form; `server_control_source` in

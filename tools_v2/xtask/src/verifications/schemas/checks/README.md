@@ -30,12 +30,12 @@ tools_v2/xtask/src/verifications/schemas/checks/
 | Gate | Checks |
 |---|---|
 | `schema citations` | walks `.c`, `.go`, `.js`, `.mjs`, `.rs`, `.ts` and `.tsx` files under `apps/` and `tools_v2/` (skipping `node_modules`, `dist`, `.git`, `build`, `coverage`, `vendor`) for `@contract <file>.schema.json#<pointer>`, and resolves each against `contracts_v2/definitions/`; a missing root or zero citations fails as an unexamined scan |
-| `schema validate` | the suite in `contract_validation/`, with the [mission](/documentation_v2/glossary.md#mission) and registry sections here |
+| `schema validate` | the suite in `contract_validation/`, with the [mission](/documentation_v2/glossary/g_to_m.md#mission) and registry sections here |
 | `schema map-object-enums` | the golden prefabs, `contracts_v2/rules/prefab-classify.json`, the Everon region sample and the glyph manifest keys use only the kinds and classes of `map-object-enums.schema.json` |
 | `schema type-inventory` | `INSTANCE_KINDS` matches the schema's kinds and the world-export pipeline's list, then every committed type inventory passes its schema and invariants I1 to I5 and I7 (kind sums, class sums, closed class keys, a complete census, manifest counts) |
 | `schema map-glyphs` | every icon key the golden prefabs and the committed Everon catalog use has a glyph, each glyph's SVG exists with a view box and sane render fields, and a built atlas, when present, matches the manifest |
 
-Two pins inside the suite fail on purpose when the [mod](/documentation_v2/glossary.md#mod) changes: `UNREAD_WIRE_FIELDS` requires each
+Two pins inside the suite fail on purpose when the [mod](/documentation_v2/glossary/g_to_m.md#mod) changes: `UNREAD_WIRE_FIELDS` requires each
 schemaVersion 1.3 wire field to keep exactly its baseline count of identifiers in the mod's
 comment- and string-stripped `.c` sources, so a new reader must update the schema's "no reader"
 wording; and every `kit:` alias a golden mission cites must exist in

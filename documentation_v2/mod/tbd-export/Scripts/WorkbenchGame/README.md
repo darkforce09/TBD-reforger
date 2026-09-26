@@ -2,7 +2,7 @@
 
 # Export addon Workbench exporter documentation
 
-The deeper documents of the export addon's [Workbench](/documentation_v2/glossary.md#workbench)
+The deeper documents of the export addon's [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)
 exporters: the map exporters that feed the terrain data, and the acceptance evidence of the
 equipment and vehicle source exporter.
 

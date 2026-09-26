@@ -42,11 +42,11 @@ sections in this order; the account pages and the not-found page sit outside it.
 | `mission_hub/` | Mission Hub | `/missions`, `/missions/:id`, `/missions/:id/artifacts/:artifact_id/workspace` | [Mission hub pages](/documentation_v2/website/frontend/pages/mission_hub/README.md) |
 | `field_tools/` | Field Tools | `/tools/mortar` | [Field tools pages](/documentation_v2/website/frontend/pages/field_tools/README.md) |
 | `doctrine_and_info/` | Doctrine & Info | `/wiki`, `/wiki/:slug`, `/vehicles`, `/modpacks` | [Doctrine and info pages](/documentation_v2/website/frontend/pages/doctrine_and_info/README.md) |
-| `administration/` | Administration, for the `admin` [role](/documentation_v2/glossary.md#role) | `/admin/events`, `/admin/approvals`, `/admin/server`, `/admin/personnel`, `/admin/content`, `/admin/audit` | [Administration pages](/documentation_v2/website/frontend/pages/administration/README.md) |
+| `administration/` | Administration, for the `admin` [role](/documentation_v2/glossary/n_to_z.md#role) | `/admin/events`, `/admin/approvals`, `/admin/server`, `/admin/personnel`, `/admin/content`, `/admin/audit` | [Administration pages](/documentation_v2/website/frontend/pages/administration/README.md) |
 | `account/` | none; `/settings` is in the top bar's account menu | `/login`, `/auth/callback`, `/settings` | [account_pages.md](/documentation_v2/website/frontend/pages/account/account_pages.md) |
 | `navigation/` | none; the frame around every route | any path no route matches | [app_layout_and_navigation.md](/documentation_v2/website/frontend/pages/navigation/app_layout_and_navigation.md) |
 
-The [Mission Creator](/documentation_v2/glossary.md#mission-creator) at `/missions/:id/edit` and
+The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) at `/missions/:id/edit` and
 the debug benches are workspaces, not pages; their documentation sits under
 `documentation_v2/website/frontend/apps/`. Two mission hub code folders render no route of their
 own, the New Mission dialog (`create_dialog/`) and the review record (`mission_review/`); the
@@ -66,7 +66,7 @@ and a row in the table; a new page gets a folder in its area, as the area README
 
 - Depends on: the [feature doc template](/documentation_v2/standards/templates/feature_doc.md)
   and the [documentation folder README template](/documentation_v2/standards/templates/readme_documentation_folder.md);
-  the [glossary](/documentation_v2/glossary.md); the page code under
+  the [glossary](/documentation_v2/glossary/README.md); the page code under
   `apps/website/frontend/src/v2/pages/`, the route table in `apps/website/frontend/src/router.rs`
   and the ticket registry in `.ai/tickets/`, which the feature docs are written from.
 - Used by: the [frontend documentation](/documentation_v2/website/frontend/README.md), which

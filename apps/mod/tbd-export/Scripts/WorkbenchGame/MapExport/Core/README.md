@@ -1,7 +1,7 @@
 # Map export core
 
 The shared base of every map-export layer: the settings a run takes, the handle on the world open in
-[Workbench](/documentation_v2/glossary.md#workbench), and the path and JSON helpers every exporter
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench), and the path and JSON helpers every exporter
 writes through.
 
 ## Contents

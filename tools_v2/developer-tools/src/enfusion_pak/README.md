@@ -1,7 +1,7 @@
 # Enfusion pak archive access
 
 Reads the game's `.pak` archives, the `FORM`/`PAC1` files an
-[Enfusion](/documentation_v2/glossary.md#enfusion) install ships under `addons/`, and loose
+[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) install ships under `addons/`, and loose
 extracted folders, behind one virtual file system. One parser and one decompressor serve two
 consumers with different rules: the building-blueprint compiler and the world-export and map
 tooling.

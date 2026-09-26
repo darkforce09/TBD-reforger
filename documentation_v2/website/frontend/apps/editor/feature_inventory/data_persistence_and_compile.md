@@ -2,8 +2,8 @@
 
 # Data persistence and compile
 
-Where a [mission](/documentation_v2/glossary.md#mission) lives while the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) edits it: the local draft in the
+Where a [mission](/documentation_v2/glossary/g_to_m.md#mission) lives while the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) edits it: the local draft in the
 browser, the restore and server reconciliation at boot, the compile to the saved payload, and what
 stands in for collaboration.
 

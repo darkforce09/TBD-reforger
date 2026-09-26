@@ -1,7 +1,7 @@
 # Undo drive
 
-Undo, redo and the post-change tail for the [mission](/documentation_v2/glossary.md#mission)
-document the [Mission Creator](/documentation_v2/glossary.md#mission-creator) edits. There is no
+Undo, redo and the post-change tail for the [mission](/documentation_v2/glossary/g_to_m.md#mission)
+document the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) edits. There is no
 second stack: the drive steps the document's own undo manager, which tracks only the local origin,
 so operator edits are undoable and a boot seed, a restore or a hydrate is not.
 

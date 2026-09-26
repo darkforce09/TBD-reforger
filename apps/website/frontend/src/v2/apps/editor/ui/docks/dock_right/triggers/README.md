@@ -24,9 +24,9 @@ The author picks an activation from the map engine's `TRIGGER_ACTIVATIONS` ("pre
 `trigger_rows`; selecting a row opens "Attributes — <id>" with "Name", "Activation", "Owner" (the
 engine's placed-owner options, plus "<id> (deleted)" for an owner that no longer exists), "Redraw
 circle" and "Redraw polygon", the "Rules" controls and "Delete trigger". The rules reuse the
-[mission](/documentation_v2/glossary.md#mission) schema's `$defs/zoneRules` vocabulary that the
+[mission](/documentation_v2/glossary/g_to_m.md#mission) schema's `$defs/zoneRules` vocabulary that the
 zones panel reads (`zone_rule_fields`), and clearing a control removes its key, so the
-[mod](/documentation_v2/glossary.md#mod)'s default applies.
+[mod](/documentation_v2/glossary/g_to_m.md#mod)'s default applies.
 
 `TriggerOwnerLine` redraws each animation frame while a trigger is selected: it asks the engine for
 the two world points (`owner_line_world`), projects them through the selection tool's

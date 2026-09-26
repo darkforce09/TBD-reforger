@@ -1,8 +1,8 @@
 # Ticketboard source
 
-The source tree of the [ticketboard](/documentation_v2/glossary.md#ticketboard) binary: the entry
+The source tree of the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) binary: the entry
 point, one composition module, one module of shared foundations, and seven feature modules, each
-owning one part of the viewer of the [ticket](/documentation_v2/glossary.md#ticket) registry.
+owning one part of the viewer of the [ticket](/documentation_v2/glossary/n_to_z.md#ticket) registry.
 
 ## Contents
 

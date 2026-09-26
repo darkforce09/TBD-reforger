@@ -3,7 +3,7 @@
 The powers listed admins hold over a running round, and the two surfaces that reach them: the
 `#tbd` chat commands and the admin screen. Every power passes one server-side permission gate and
 lands in one audit trail, because under one life a respawn or a forced stage decides the
-[event](/documentation_v2/glossary.md#event).
+[event](/documentation_v2/glossary/a_to_f.md#event).
 
 ## Contents
 

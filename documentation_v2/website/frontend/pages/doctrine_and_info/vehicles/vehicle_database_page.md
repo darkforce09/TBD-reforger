@@ -16,7 +16,7 @@ armour class, whether it swims and what threatens it. The page only reads.
 - Entry: the route, its tier and its layout are in the README's
   [Routes](/apps/website/frontend/src/v2/pages/doctrine_and_info/vehicles/README.md#routes).
 - Related: the [doctrine wiki page](/documentation_v2/website/frontend/pages/doctrine_and_info/wiki/wiki_page.md),
-  which holds the written manuals; the [API](/documentation_v2/glossary.md#api)'s
+  which holds the written manuals; the [API](/documentation_v2/glossary/a_to_f.md#api)'s
   [community content domain](/apps/website/api_v2/src/community_content/README.md), which owns the
   vehicle rows.
 
@@ -47,7 +47,7 @@ README's [States](/apps/website/frontend/src/v2/pages/doctrine_and_info/vehicles
   `apps/website/frontend/src/v2/pages/doctrine_and_info/vehicles/` sets no error handler), and the
   API stores any text as `profile_image_url` without checking it is an `http` or `https` URL
   (`create_vehicle` in `apps/website/api_v2/src/community_content/handlers/vehicle_database.rs`),
-  unlike the [mission](/documentation_v2/glossary.md#mission) library, which guards its
+  unlike the [mission](/documentation_v2/glossary/g_to_m.md#mission) library, which guards its
   thumbnails on both sides.
 
 ## Data

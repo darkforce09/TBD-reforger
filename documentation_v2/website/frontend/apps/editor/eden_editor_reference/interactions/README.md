@@ -3,7 +3,7 @@
 # Eden editor interactions
 
 The interactions catalog of the Arma 3 Eden editor, the reference design the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) is measured against: every Eden
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) is measured against: every Eden
 interaction as an ID with its wiki source, one topic per file. Developers and AI agents read it to
 learn what Eden does before building or judging the Mission Creator's counterpart.
 

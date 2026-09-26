@@ -5,7 +5,7 @@
 Rules CI-1 and CI-2, the rules about the CI configuration itself, and the `verify-coding-standards`
 task that bundles four of the code gates. Code comments and help strings that cite "§0.3" or
 "§11" point here. Where every gate runs (the local replay, each GitHub job, the
-[wave](/documentation_v2/glossary.md#wave) gate) is the gate matrix of
+[wave](/documentation_v2/glossary/n_to_z.md#wave) gate) is the gate matrix of
 [Testing and CI](/documentation_v2/runbooks/testing_and_ci.md#gate-matrix); this page does not
 repeat it.
 
@@ -54,4 +54,4 @@ A new rule gets the next free number of its family, a pillar, one gate and a lin
 index of the [README](/documentation_v2/standards/coding_standards/README.md). The gate is wired
 into `cargo xtask ci ci-local` and into a GitHub job: a gate that only a local replay runs blocks no
 push. A rule no tool can check is stated as unenforced, and only an
-[Enfusion](/documentation_v2/glossary.md#enfusion) runtime rule may be MANUAL.
+[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) runtime rule may be MANUAL.

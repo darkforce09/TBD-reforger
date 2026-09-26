@@ -2,9 +2,9 @@
 
 # Leaderboards page
 
-The `/leaderboards` page in the [operations](/documentation_v2/glossary.md#operations) section,
+The `/leaderboards` page in the [operations](/documentation_v2/glossary/n_to_z.md#operations) section,
 titled "Global Leaderboards": a signed-in member ranks the community's players by one of five
-statistics from [match telemetry](/documentation_v2/glossary.md#match-telemetry), searches them
+statistics from [match telemetry](/documentation_v2/glossary/g_to_m.md#match-telemetry), searches them
 by name, and opens one player's full statistics in a slide-over dossier.
 
 ## Where it lives
@@ -20,7 +20,7 @@ by name, and opens one player's full statistics in a slide-over dossier.
   sidebar lists the page as "Global Leaderboards" in the "Operations" section.
 - Related: the [deployments page](/documentation_v2/website/frontend/pages/operations/deployments/deployments_page.md),
   whose API reads the same aggregate view for the viewer's own figures; the
-  [API](/documentation_v2/glossary.md#api)'s
+  [API](/documentation_v2/glossary/a_to_f.md#api)'s
   [command center domain](/apps/website/api_v2/src/command_center/README.md), which serves the
   board and the dossier.
 

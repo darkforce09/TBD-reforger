@@ -5,11 +5,11 @@
 ## Status
 
 Resolved: not reproducible from the code. The defect was seen in the React
-[Mission Creator](/documentation_v2/glossary.md#mission-creator), whose whole tree, the selection,
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator), whose whole tree, the selection,
 picking and icon code it names included, commit `50bba633e` deleted when the Leptos app became the
 only frontend. The Rust selection pipeline that replaced it shares no code with it, and no run of
 it has shown the symptom. Severity low while it lasted: it appeared only far above the realistic
-envelope. Real missions stay well under about 10,000 [slots](/documentation_v2/glossary.md#slot),
+envelope. Real missions stay well under about 10,000 [slots](/documentation_v2/glossary/n_to_z.md#slot),
 and the defect showed at 517,968 objects. Area: Mission Creator selection, picking and slot icon
 drawing.
 

@@ -1,8 +1,8 @@
 # Ticketboard
 
 The `ticketboard` crate: the native egui/eframe desktop viewer of the
-[ticket](/documentation_v2/glossary.md#ticket) registry in `.ai/tickets/`. It shows every parent
-and child ticket on a status board, the recorded [wave](/documentation_v2/glossary.md#wave) lanes,
+[ticket](/documentation_v2/glossary/n_to_z.md#ticket) registry in `.ai/tickets/`. It shows every parent
+and child ticket on a status board, the recorded [wave](/documentation_v2/glossary/n_to_z.md#wave) lanes,
 the program tree, measured run receipts and historical estimates, with each ticket's details and
 the repository's Markdown documents beside the board. Developers and operators run it on a
 desktop.

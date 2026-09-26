@@ -52,7 +52,7 @@ a pin red while a wrongly kept one leaves it green over code the build never run
 - Depends on: the standard library only.
 - Used by: the source pins in the unit tests of `apps/website/frontend/src/v2/apps/editor/`,
   `apps/website/frontend/src/v2/pages/` and `apps/website/frontend/src/v2/core/` (the
-  [API](/documentation_v2/glossary.md#api) client, the live status stream, the UI primitives and
+  [API](/documentation_v2/glossary/a_to_f.md#api) client, the live status stream, the UI primitives and
   the clipboard write), through `crate::v2::core::test_support::class_r_scrub`.
 - Rules: under `live_code`, every decoy shape (comments, literals, `if false`, dead `cfg` items,
   code after a `return;`, constants folded to false) comes out removed, and an unknown condition

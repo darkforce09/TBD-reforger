@@ -1,7 +1,7 @@
 # Paved road export
 
 Finds the open world's secondary asphalt and cobblestone roads in
-[Workbench](/documentation_v2/glossary.md#workbench) and writes their centrelines, widths and
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) and writes their centrelines, widths and
 endpoint connections to `roads_paved.json`.
 
 ## Contents

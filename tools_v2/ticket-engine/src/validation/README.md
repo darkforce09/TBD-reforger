@@ -1,6 +1,6 @@
 # Ticket validation
 
-`cargo xtask ticket check`: every rule the [ticket](/documentation_v2/glossary.md#ticket) files
+`cargo xtask ticket check`: every rule the [ticket](/documentation_v2/glossary/n_to_z.md#ticket) files
 and the files derived from them must hold, returned as one ordered list of findings, and the
 preflight every ticket mutation runs before it writes.
 

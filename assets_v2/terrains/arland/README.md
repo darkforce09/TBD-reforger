@@ -23,7 +23,7 @@ assets_v2/terrains/arland/
   names exists.
 - Adding a file: an export writes the data beside this manifest and fills its blocks; the
   [Everon dataset](/assets_v2/terrains/everon/README.md) shows the full layout. The height map
-  comes from the `tbd-export` DEM plugin in [Workbench](/documentation_v2/glossary.md#workbench),
+  comes from the `tbd-export` DEM plugin in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench),
   the objects from `cargo xtask map export-terrain arland --phase <phase>` once the manifest has an
   `objects` block, up to the registry's `importPhaseMax` (`P1_buildings`);
   `cargo xtask schema terrain-manifest --terrain arland` checks the manifest.
@@ -42,7 +42,7 @@ assets_v2/terrains/arland/
   - `world validate-exports`
     (`tools_v2/developer-tools/src/world_export_pipeline/export_preparation/export_validation/artifact_integrity.rs`),
     which walks every registry entry and skips Arland because the manifest has no objects export;
-  - the map engine, when a [mission](/documentation_v2/glossary.md#mission) names the `arland`
+  - the map engine, when a [mission](/documentation_v2/glossary/g_to_m.md#mission) names the `arland`
     terrain: the mission library's create dialog offers it
     (`apps/website/frontend/src/v2/pages/mission_hub/create_dialog/dialog.rs`), and the host
     fetches `/map-assets/arland/manifest.json`, then finds none of the files it names. The map

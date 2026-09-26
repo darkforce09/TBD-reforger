@@ -20,7 +20,7 @@ keeps their spelling. A page's folder holds a README index, its feature doc, whi
 [feature doc template](/documentation_v2/standards/templates/feature_doc.md), and a
 `visual_references/` folder of design-phase sets.
 
-A field tool stands on its own: it hangs off no [mission](/documentation_v2/glossary.md#mission),
+A field tool stands on its own: it hangs off no [mission](/documentation_v2/glossary/g_to_m.md#mission),
 owns a route under `/tools/`, renders inside `AuthGate`, and sits in the sidebar's "Field Tools"
 section. The debug benches are apps, documented under
 [the debug benches documentation](/documentation_v2/website/frontend/apps/debug/README.md).
@@ -43,7 +43,7 @@ a line in Contents and a row in the table.
 
 - Depends on: the [feature doc template](/documentation_v2/standards/templates/feature_doc.md) and
   the [documentation folder README template](/documentation_v2/standards/templates/readme_documentation_folder.md);
-  the [glossary](/documentation_v2/glossary.md); the page code, the API handlers it calls and the
+  the [glossary](/documentation_v2/glossary/README.md); the page code, the API handlers it calls and the
   ticket registry in `.ai/tickets/`, which the feature docs are written from.
 - Used by: the in-code READMEs of `field_tools/` and its page folders, which link the feature docs
   under Related documentation.

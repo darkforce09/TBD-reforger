@@ -1,6 +1,6 @@
 # Mission Creator smoke tests
 
-The headless browser smokes of the [Mission Creator](/documentation_v2/glossary.md#mission-creator),
+The headless browser smokes of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator),
 declared in `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests.rs`, and the auxiliary
 gates that share their harness: the session-refresh gate, the generic render check and the
 performance probe.
@@ -46,18 +46,18 @@ no-panic check, and shuts Chromium's process group down before the next one star
 | Smoke | What it asserts |
 |---|---|
 | `selfcheck` | every `window.__selfChecks` GPU readback matches byte for byte; runs first to prove the harness |
-| `arsenal` | the [Arsenal](/documentation_v2/glossary.md#arsenal) loadout tab against the committed registry fixture |
+| `arsenal` | the [Arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) loadout tab against the committed registry fixture |
 | `attributes` | the Attributes modal opens, edits and undoes |
 | `cur` | the toolbelt coordinate read-out matches the camera arithmetic |
-| `doc` | the hosted [mission](/documentation_v2/glossary.md#mission) document is live, seeded and round-trips |
+| `doc` | the hosted [mission](/documentation_v2/glossary/g_to_m.md#mission) document is live, seeded and round-trips |
 | `editor` | the canvas mounts, the engine renders and a wheel zoom changes the view |
 | `entrance-motion-rect` | dialog and menu entrance animations move the surface under 8 px, finish within 0.15 s, and not at all under reduced motion |
 | `fullmap` | the map-asset host wiring with the full terrain assets |
 | `hillshade` | the elevation raster is fetched, decoded and uploaded |
-| `hydrate` | a mission saved through the live [API](/documentation_v2/glossary.md#api) hydrates back intact |
+| `hydrate` | a mission saved through the live [API](/documentation_v2/glossary/a_to_f.md#api) hydrates back intact |
 | `keyboard-settings` | delete and undo, copy and paste, and Mission Settings |
 | `marquee-drag` | marquee selection and drag-move |
-| `outliner-drag` | outliner, [ORBAT](/documentation_v2/glossary.md#orbat) and height drags over controlled missions |
+| `outliner-drag` | outliner, [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) and height drags over controlled missions |
 | `outliner-palette` | the dock layout and palette placement |
 | `pan` | right-button pan and a wheel zoom mid-pan |
 | `persist` | the mission survives a reload through IndexedDB |

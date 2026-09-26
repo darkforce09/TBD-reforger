@@ -2,9 +2,9 @@
 
 The images the framework's screens draw that the game's data cannot supply: the disc the rounded
 shapes are cut from, the masks and fade of the
-[mission](/documentation_v2/glossary.md#mission) inspector's hero band, the hero art itself,
+[mission](/documentation_v2/glossary/g_to_m.md#mission) inspector's hero band, the hero art itself,
 and the icon set. Vanilla texture GUIDs live only inside the game's packed data, so every image the
-interface needs is a committed PNG that [Workbench](/documentation_v2/glossary.md#workbench)
+interface needs is a committed PNG that [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)
 imports here.
 
 ## Contents
@@ -43,7 +43,7 @@ pixels from y 1600, scaled to 1024 x 140.
 ## Format
 
 - File type: the `.png` is an RGBA source image; the `.edds` is
-  [Enfusion](/documentation_v2/glossary.md#enfusion)'s imported texture; the
+  [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion)'s imported texture; the
   `.edds.meta` is a `MetaFileClass` whose `Name` holds `{GUID}UI/Textures/TBD/<name>.edds` and whose
   per-platform `PNGResourceClass` entries inherit the vanilla `TextureUI.conf`.
 - Resource GUID: the `.edds.meta` file. The GUID is written once by the import and copied into

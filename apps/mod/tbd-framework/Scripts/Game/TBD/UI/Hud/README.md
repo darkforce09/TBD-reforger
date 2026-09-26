@@ -1,7 +1,7 @@
 # Objective and task HUD
 
 The live-round displays a player sees: the objective board with its capture bar, drawn over the
-game, and the [mission](/documentation_v2/glossary.md#mission)'s assigned tasks, drawn as markers
+game, and the [mission](/documentation_v2/glossary/g_to_m.md#mission)'s assigned tasks, drawn as markers
 on the map. The server composes both and sends each client its own snapshot.
 
 ## Contents

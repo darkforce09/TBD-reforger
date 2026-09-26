@@ -15,7 +15,7 @@ apps/website/frontend/src/v2/apps/editor/ui/docks/dock_right/palette/
 `palette_rows` draws a catalog tree whose leaves all share one `PaletteKind`; the Objects tree
 uses it. `faction_palette_rows` draws the merged per-faction tree of the Factions and Vehicles
 tabs, where each leaf's kind (character, vehicle or object) comes from its
-[registry](/documentation_v2/glossary.md#registry) row through the asset catalog's
+[registry](/documentation_v2/glossary/n_to_z.md#registry) row through the asset catalog's
 `find_catalog_item` and `placeable_palette`, and pressing a leaf also records it in the session's
 recently placed list. A folder row toggles its id in the tab's collapsed set; `collapsed_seed`
 starts collapsed every folder whose `default_expanded` is false, so only the top-level faction
@@ -27,7 +27,7 @@ headless gates' synthesized mouse events drive it. The chrome layer stops the pr
 the map, and the canvas release commits the armed placement
 (`apps/website/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/`). The kind decides
 which arm a press calls, because a vehicle leaf that armed a character placement would write a
-[slot](/documentation_v2/glossary.md#slot) row.
+[slot](/documentation_v2/glossary/n_to_z.md#slot) row.
 
 ## Boundaries
 

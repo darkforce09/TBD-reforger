@@ -2,9 +2,9 @@
 
 # Enfusion MCP tooling
 
-Drives a running [Workbench](/documentation_v2/glossary.md#workbench) from a terminal through the
+Drives a running [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) from a terminal through the
 pinned `enfusion-mcp` server: brings the bridge up, calls MCP tools and raw Net API handlers, reads
-back a Workbench Play log, and cleans up the broker. [Mod](/documentation_v2/glossary.md#mod) developers and agents run it whenever a
+back a Workbench Play log, and cleans up the broker. [Mod](/documentation_v2/glossary/g_to_m.md#mod) developers and agents run it whenever a
 task needs Workbench. The first call pays a one-time index load of about 35 seconds; later calls go
 to the warm broker. How the bridge is built, and the `mcp call` against `mcp wbcall` choice, is in
 [Enfusion MCP bridge](/documentation_v2/mod/tbd-emcp/workbench_mcp_bridge.md); every command's
@@ -90,7 +90,7 @@ Run every command from the repository root.
    cargo xtask mcp wb-logs
    ```
 
-   Expected: the matching log extract and a verdict: exit 0 PASS (a player was assigned a [slot](/documentation_v2/glossary.md#slot)),
+   Expected: the matching log extract and a verdict: exit 0 PASS (a player was assigned a [slot](/documentation_v2/glossary/n_to_z.md#slot)),
    1 FAIL, 2 PARTIAL (no player deployed yet), 3 ENVIRONMENT (no log found, or a usage error).
    `--file <path>` grades a given log.
 

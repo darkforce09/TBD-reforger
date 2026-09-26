@@ -1,6 +1,6 @@
 # Database seeds
 
-Development data for the [API](/documentation_v2/glossary.md#api)'s Postgres database: the five
+Development data for the [API](/documentation_v2/glossary/a_to_f.md#api)'s Postgres database: the five
 files `cargo xtask db seed` applies to a fresh local database, the golden content the frontend's
 recorded API fixtures come from, and sample data applied by hand.
 
@@ -29,11 +29,11 @@ after the API has logged `migrations applied`: `psql` runs without `ON_ERROR_STO
 against a missing table prints an error, the rest of the file still runs, and the command still
 exits 0. Each of the five upserts on its key, so running it again converges.
 
-`discord_roles.sql` decides members' [roles](/documentation_v2/glossary.md#role): a member's role
+`discord_roles.sql` decides members' [roles](/documentation_v2/glossary/n_to_z.md#role): a member's role
 is the mapped role of their highest-priority matching Discord role, and `enlisted` when none
 matches. Its role ids are the TBD guild's, so another guild replaces them. `registry_dev.sql`
 upserts the current modpack itself, so it needs no other seed. `faction_library.sql` owns its
-factions by the Discord id the admin [dev login](/documentation_v2/glossary.md#dev-login) signs
+factions by the Discord id the admin [dev login](/documentation_v2/glossary/a_to_f.md#dev-login) signs
 in as, so they show once that account exists.
 
 `content_golden.sql` pins every id and timestamp, so capturing the fixtures in

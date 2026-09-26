@@ -2,8 +2,8 @@
 
 # Running a wave
 
-Runs one [wave](/documentation_v2/glossary.md#wave) of the platform factory end to end: prove the
-tickets are not stale, create one worktree per [ticket](/documentation_v2/glossary.md#ticket),
+Runs one [wave](/documentation_v2/glossary/n_to_z.md#wave) of the platform factory end to end: prove the
+tickets are not stale, create one worktree per [ticket](/documentation_v2/glossary/n_to_z.md#ticket),
 dispatch a slice agent into each, land the gate-green slices on `main`, run one adversarial
 verifier, ship the tickets and close the wave with its marker commit. The orchestrator runs every
 step from the main checkout unless a step says otherwise. A wave takes hours of agent time and a
@@ -129,7 +129,7 @@ land ─▶ merge each ─▶ wave gate on merged main ─▶ drop worktrees ─
    wave is unfinished. `land` lands only tickets of the current wave and refuses the whole run
    (exit 2) when any slice lacks a green verdict for its tip, so nothing lands half-examined.
 
-8. For a [Mission Creator](/documentation_v2/glossary.md#mission-creator) wave, run the editor
+8. For a [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) wave, run the editor
    gates after the wave gate and before the close: the wave gate runs no browser, so this is the
    only automated run of the editor smokes, the rect guards among them.
 

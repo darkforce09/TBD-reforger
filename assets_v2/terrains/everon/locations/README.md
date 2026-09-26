@@ -2,7 +2,7 @@
 
 Everon's cartographic labels in one binary archive: the town and place names, the spot heights and
 the road names already placed along their roads. The map engine reads it at boot to label the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map.
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map.
 
 ## Contents
 

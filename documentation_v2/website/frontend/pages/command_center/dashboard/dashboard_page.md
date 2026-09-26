@@ -2,10 +2,10 @@
 
 # Dashboard page
 
-The `/` page, the landing screen of the [command center](/documentation_v2/glossary.md#command-center):
-a signed-in member sees the countdown to the next [event](/documentation_v2/glossary.md#event), one
-game server's status, their own [slot](/documentation_v2/glossary.md#slot) in an upcoming
-[mission](/documentation_v2/glossary.md#mission), the current modpack and the three newest
+The `/` page, the landing screen of the [command center](/documentation_v2/glossary/a_to_f.md#command-center):
+a signed-in member sees the countdown to the next [event](/documentation_v2/glossary/a_to_f.md#event), one
+game server's status, their own [slot](/documentation_v2/glossary/n_to_z.md#slot) in an upcoming
+[mission](/documentation_v2/glossary/g_to_m.md#mission), the current modpack and the three newest
 announcements, all read from one request.
 
 ## Where it lives
@@ -22,7 +22,7 @@ announcements, all read from one request.
 - Related: the [event hub page](/documentation_v2/website/frontend/pages/operations/event_detail/event_hub_page.md),
   which the banner opens; the [announcements page](/documentation_v2/website/frontend/pages/command_center/announcements/announcements_page.md),
   which each feed row opens; the [server intel page](/documentation_v2/website/frontend/pages/command_center/server_intel/server_intel_page.md),
-  the live view of a server; the [API](/documentation_v2/glossary.md#api)'s
+  the live view of a server; the [API](/documentation_v2/glossary/a_to_f.md#api)'s
   [command center domain](/apps/website/api_v2/src/command_center/README.md), which composes the
   payload.
 

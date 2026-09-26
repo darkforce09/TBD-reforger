@@ -1,8 +1,8 @@
 # Wave plan
 
-The [ticketboard](/documentation_v2/glossary.md#ticketboard) feature behind the Waves tab: it
-reads `.ai/tickets/wave.lock` itself, shows the recorded [wave](/documentation_v2/glossary.md#wave)
-lanes exactly as stored, lists the dispatchable [tickets](/documentation_v2/glossary.md#ticket)
+The [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) feature behind the Waves tab: it
+reads `.ai/tickets/wave.lock` itself, shows the recorded [wave](/documentation_v2/glossary/n_to_z.md#wave)
+lanes exactly as stored, lists the dispatchable [tickets](/documentation_v2/glossary/n_to_z.md#ticket)
 no wave holds, and supplies the ownership collision rule the ticket comparison explains.
 
 ## Contents

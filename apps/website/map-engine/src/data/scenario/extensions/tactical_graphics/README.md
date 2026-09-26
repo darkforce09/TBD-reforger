@@ -1,6 +1,6 @@
 # Tactical graphics
 
-The check on a [mission](/documentation_v2/glossary.md#mission)'s authored `tacticalGraphics`
+The check on a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s authored `tacticalGraphics`
 block: the control measures a one-point map marker cannot draw (phase lines, boundaries, axes of
 advance and curved arrows), each an ordered run of world vertices with an optional label, side and
 stroke style. The module is exposed as `data::scenario::tactical_graphics`.
@@ -32,8 +32,8 @@ refuses the block. The first problem found is the answer, a sentence with its pa
 `validate` is `parse` with the value dropped: the check of the `tacticalGraphics` row of
 `AUTHORED_BLOCKS` in `crate::data::scenario::extensions`. The compile carries a valid block
 verbatim to the compiled document's root, where it stops: no script of the
-[mod](/documentation_v2/glossary.md#mod) reads it. The
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) draws the graphics on its map,
+[mod](/documentation_v2/glossary/g_to_m.md#mod) reads it. The
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) draws the graphics on its map,
 and its draw tool takes the same floor and cap, so a drawn graphic always has a vertex count this
 check accepts.
 

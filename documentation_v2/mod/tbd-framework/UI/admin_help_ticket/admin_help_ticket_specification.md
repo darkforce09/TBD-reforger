@@ -23,7 +23,7 @@ implements either; this document records the design target and what exists inste
 
 Nothing is built. Today a player who needs an admin types in chat, and a listed admin acts with the
 admin screen (respawn or deploy the player) or a `#tbd` command; the rest of the target's powers
-(teleport, heal, uniform repair) do not exist in the [mod](/documentation_v2/glossary.md#mod).
+(teleport, heal, uniform repair) do not exist in the [mod](/documentation_v2/glossary/g_to_m.md#mod).
 
 ### Known discrepancies
 
@@ -32,7 +32,7 @@ admin screen (respawn or deploy the player) or a `#tbd` command; the rest of the
 
 ## Data
 
-None: no RPC, [API](/documentation_v2/glossary.md#api) call or storage exists for a ticket.
+None: no RPC, [API](/documentation_v2/glossary/a_to_f.md#api) call or storage exists for a ticket.
 
 ## Design
 

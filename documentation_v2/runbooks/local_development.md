@@ -3,8 +3,8 @@
 # Local development
 
 Brings up the whole web platform on a developer machine: Postgres, the website
-[API](/documentation_v2/glossary.md#api) on port 8080 and the single-page app on port 3000, signed
-in through the [dev login](/documentation_v2/glossary.md#dev-login) or through Discord. Run it on
+[API](/documentation_v2/glossary/a_to_f.md#api) on port 8080 and the single-page app on port 3000, signed
+in through the [dev login](/documentation_v2/glossary/a_to_f.md#dev-login) or through Discord. Run it on
 a fresh checkout or worktree, and after a reboot from step 2 on. The first API and app builds take
 several minutes; later starts take seconds. Database work beyond the first seed (backups,
 restores, the checksum repair, sample data) is in
@@ -23,7 +23,7 @@ restores, the checksum repair, sample data) is in
   inside a distrobox container. `podman compose` also needs `podman-compose` or the
   `docker-compose` plugin installed. Check: `podman compose version` or `docker compose version`.
 - Git LFS, for the terrain binaries the
-  [Mission Creator](/documentation_v2/glossary.md#mission-creator) draws: `git lfs version`.
+  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) draws: `git lfs version`.
 - Node is not needed. It serves only the Enfusion MCP tools
   ([Enfusion MCP tooling](/documentation_v2/runbooks/enfusion_mcp_tooling.md)).
 
@@ -69,7 +69,7 @@ Run every command from the repository root unless a step says otherwise.
    after a change to the API; `cargo run` does not reload.
 
 4. Load the development seeds: the Discord role mapping, a small item
-   [registry](/documentation_v2/glossary.md#registry), the starter factions, the vehicle database
+   [registry](/documentation_v2/glossary/n_to_z.md#registry), the starter factions, the vehicle database
    and the wiki pages. Run it only after step 3 has logged `migrations applied`: the tables come
    from the migrations.
 
@@ -122,7 +122,7 @@ Run every command from the repository root unless a step says otherwise.
    value of `access_token` is the bearer token.
 
 2. Call a route with it, here the item registry, which needs at least the mission maker
-   [role](/documentation_v2/glossary.md#role).
+   [role](/documentation_v2/glossary/n_to_z.md#role).
 
    ```bash
    curl -s -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/v1/registry | jq .
@@ -130,8 +130,8 @@ Run every command from the repository root unless a step says otherwise.
 
    Expected: the registry page of the current modpack, with a weak `ETag` header; the same
    request with `If-None-Match` answers 304. `GET /api/v1/registry/compat` takes an
-   `?edge_type=` filter. A [mission](/documentation_v2/glossary.md#mission)'s compiled
-   [artifact](/documentation_v2/glossary.md#artifact) reads the same way from
+   `?edge_type=` filter. A [mission](/documentation_v2/glossary/g_to_m.md#mission)'s compiled
+   [artifact](/documentation_v2/glossary/a_to_f.md#artifact) reads the same way from
    `GET /api/v1/missions/{id}/reviews` and
    `GET /api/v1/missions/{id}/artifacts/{artifact_id}/document`; every route is listed in the
    [API overview](/documentation_v2/website/api_v2/api_overview.md).

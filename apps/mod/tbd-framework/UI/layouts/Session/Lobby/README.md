@@ -1,7 +1,7 @@
 # Lobby screen layouts
 
 The layouts of the Lobby tab, where a player picks a faction and claims a
-[slot](/documentation_v2/glossary.md#slot) in the [ORBAT](/documentation_v2/glossary.md#orbat): a
+[slot](/documentation_v2/glossary/n_to_z.md#slot) in the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat): a
 dock shell, the faction and roster column bodies, the squad cards and seat rows, and the kit
 inspector with its 3D preview. `TBD_LobbyScreen` fills the shell from `TBD_LobbyCatalog`, which
 serves mock data, so claims stay on the local client.
@@ -32,7 +32,7 @@ The shell holds a `Backdrop`, a `WindowFrame` inset 16 px, and the docks, in ref
 
 | Dock | Geometry | Mounted there | By |
 |---|---|---|---|
-| `TopDock` | full width, 56 high | the session top bar, the [mission](/documentation_v2/glossary.md#mission) id as the title | `TBD_DockScreen` |
+| `TopDock` | full width, 56 high | the session top bar, the [mission](/documentation_v2/glossary/g_to_m.md#mission) id as the title | `TBD_DockScreen` |
 | `LeftDock` | x 0, 320 wide, y 68 to 76 above the bottom | `TBD_PanelFill` with the `TBD_LobbyFactionList` body | `TBD_LobbyFactionPanel` |
 | `CenterDock` | x 332, 500 wide | `TBD_PanelFill` with the `TBD_LobbyRoster` body | `TBD_LobbyRosterPanel` |
 | `RightDock` | x 844 to the right edge | `TBD_KitInspector` | `TBD_KitInspectorPanel` |
@@ -63,7 +63,7 @@ recipe of `TBD_ScrollList`, with a `TBD_UIScrollBar` in each `ScrollBarDock`.
 
 ## Format
 
-- File type: [Enfusion](/documentation_v2/glossary.md#enfusion) widget layouts (`.layout`), plain
+- File type: [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) widget layouts (`.layout`), plain
   text, each beside a `.layout.meta` whose `Name` holds
   `{GUID}UI/layouts/Session/Lobby/<file>.layout`. Every `*Border`, `*BG` and card `Background` is
   an empty `FrameWidgetClass` dock that the handler fills with a rounded shape (columns and the kit
@@ -78,7 +78,7 @@ recipe of `TBD_ScrollList`, with a `TBD_UIScrollBar` in each `ScrollBarDock`.
   the kit inspector; a layout another screen needs moves to `Common/`.
 - Adding a layout: take a free block from the ledger, author the layout and its `.meta`, add a
   `LOBBY_*` constant to `TBD_UILayouts`, and commit both files; the game finds a new path only
-  after [Workbench](/documentation_v2/glossary.md#workbench) has rewritten `resourceDatabase.rdb`.
+  after [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) has rewritten `resourceDatabase.rdb`.
 
 ## Referenced by
 

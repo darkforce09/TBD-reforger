@@ -1,11 +1,11 @@
 # Background workers
 
-The interval tasks the [API](/documentation_v2/glossary.md#api) binary starts at boot and never
+The interval tasks the [API](/documentation_v2/glossary/a_to_f.md#api) binary starts at boot and never
 awaits. Each keeps shared state current when no request would: expired credentials, the stored
-[event](/documentation_v2/glossary.md#event) status, the leaderboard view, live server status,
-silent [game runtimes](/documentation_v2/glossary.md#game-runtime),
-[fleet commands](/documentation_v2/glossary.md#fleet-command) and
-[mission deployments](/documentation_v2/glossary.md#mission-deployment) in flight, queued
+[event](/documentation_v2/glossary/a_to_f.md#event) status, the leaderboard view, live server status,
+silent [game runtimes](/documentation_v2/glossary/g_to_m.md#game-runtime),
+[fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command) and
+[mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment) in flight, queued
 reservation re-evaluations, unpublished audit facts, and Discord changes nobody signed in to pick
 up.
 

@@ -1,8 +1,8 @@
 # Prefab and weapon catalog export
 
 Two catalog layers of the map export: a taxonomy of every prefab placed in the world open in
-[Workbench](/documentation_v2/glossary.md#workbench), with its size and cover class, and a fixed
-list of weapons and magazines. Neither is the item [registry](/documentation_v2/glossary.md#registry)
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench), with its size and cover class, and a fixed
+list of weapons and magazines. Neither is the item [registry](/documentation_v2/glossary/n_to_z.md#registry)
 the platform imports, which another Workbench plugin of the addon writes.
 
 ## Contents

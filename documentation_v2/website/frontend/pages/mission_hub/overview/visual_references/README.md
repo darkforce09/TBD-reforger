@@ -2,7 +2,7 @@
 
 # Mission overview design references
 
-The design references of the [mission](/documentation_v2/glossary.md#mission) dossier that the
+The design references of the [mission](/documentation_v2/glossary/g_to_m.md#mission) dossier that the
 `/missions/:id` page and the library's slide-over share: one design-phase blueprint set, kept for
 colour and layout context rather than as an implementation source.
 

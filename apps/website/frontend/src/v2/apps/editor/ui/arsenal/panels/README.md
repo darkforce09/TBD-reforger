@@ -1,7 +1,7 @@
 # Arsenal cargo editor
 
-The cargo editor of the [arsenal](/documentation_v2/glossary.md#arsenal): what one
-[slot](/documentation_v2/glossary.md#slot) carries inside its vest, pants, jacket and backpack, with
+The cargo editor of the [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal): what one
+[slot](/documentation_v2/glossary/n_to_z.md#slot) carries inside its vest, pants, jacket and backpack, with
 each container's weight and volume against the worn garment's capacity. It is a submodule of the
 `panels` module in the parent folder, which re-exports `cargo_panel`.
 
@@ -18,7 +18,7 @@ apps/website/frontend/src/v2/apps/editor/ui/arsenal/panels/
 (`vest`, `pants`, `jacket`, `backpack`) that has a garment picked or holds cargo; the `vest` group
 also takes an armoured vest (`rules::cargo_garment`). A group's rows carry "−", "+" and "✕"
 buttons, and its "+ Add item…" picker offers the item
-[registry](/documentation_v2/glossary.md#registry)'s concrete items of the kinds `magazine`,
+[registry](/documentation_v2/glossary/n_to_z.md#registry)'s concrete items of the kinds `magazine`,
 `ammo`, `gear_item`, `gear_throwable` and `gear_explosive`, sorted by display name; adding an item
 the container already holds raises its quantity. The budget line sums the rows' weight and volume
 (`rules::cargo_budget`) against the garment's `max_weight_kg` and `max_volume_cm3`, and turns to

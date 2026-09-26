@@ -2,7 +2,7 @@
 
 Everon's ground height as one 16-bit greyscale image, 2 m per pixel. The map engine turns it into
 the hillshade, the contour lines, the sea band and the height readout of the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map, and the tools and gates
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map, and the tools and gates
 sample it for spot heights, water and the anchor check.
 
 ## Contents
@@ -31,7 +31,7 @@ assets_v2/terrains/everon/dem/
 
 ## Producers and consumers
 
-- Producers: the `tbd-export` DEM plugin in [Workbench](/documentation_v2/glossary.md#workbench)
+- Producers: the `tbd-export` DEM plugin in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)
   (`apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/DEM/`) samples the engine's
   surface height into a raw grid and its metadata; `cargo run -p developer-tools --bin world --
   raw-u16-dem-png --raster <grid> --meta <meta> --out <png>` packs them into this image.

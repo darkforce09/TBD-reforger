@@ -1,8 +1,8 @@
 # Mission document operations
 
-The headless queries and edits the [Mission Creator](/documentation_v2/glossary.md#mission-creator)
-runs on the [mission](/documentation_v2/glossary.md#mission) document: reading rows for its docks
-and dialogs, placing and arranging entities, the [ORBAT](/documentation_v2/glossary.md#orbat) and
+The headless queries and edits the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)
+runs on the [mission](/documentation_v2/glossary/g_to_m.md#mission) document: reading rows for its docks
+and dialogs, placing and arranging entities, the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) and
 faction templates, loadouts, compositions, zones and tactical graphics. Each works on an explicit
 `MissionDocCore` with plain values, and no UI type enters it.
 
@@ -67,11 +67,11 @@ abandoned drag costs no undo step and a finished one costs one.
 
 - `entity`: the entity operations, for `crate::editing::hosted_commands` and the Mission Creator's
   host state, input and outliner.
-- `attrs`, `reassign`, `projections` and `rows`: the [slot](/documentation_v2/glossary.md#slot)
+- `attrs`, `reassign`, `projections` and `rows`: the [slot](/documentation_v2/glossary/n_to_z.md#slot)
   attributes and squad reassignment commands, the Attributes dialog, the outliner and the editor
   context.
 - `cargo` and `cargo_rules`: the slot loadout and ORBAT roster commands, and the
-  [arsenal](/documentation_v2/glossary.md#arsenal) in
+  [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) in
   `apps/website/frontend/src/v2/apps/editor/arsenal/`.
 - `transform`, `rotation` and `placement`: the selection transform command, the canvas transform
   and, through `crate::editing::tools::placement`, the arrange menu.

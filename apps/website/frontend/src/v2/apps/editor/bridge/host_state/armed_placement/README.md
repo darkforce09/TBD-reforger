@@ -1,9 +1,9 @@
 # Armed placement
 
-The in-flight placement of the [Mission Creator](/documentation_v2/glossary.md#mission-creator):
+The in-flight placement of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator):
 what the operator picked up from a palette and has not yet dropped on the map, the zone and trigger
 draw that rides the same arm, and the map release that commits it to the
-[mission](/documentation_v2/glossary.md#mission).
+[mission](/documentation_v2/glossary/g_to_m.md#mission).
 
 ## Contents
 

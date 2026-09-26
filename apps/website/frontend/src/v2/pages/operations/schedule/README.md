@@ -1,6 +1,6 @@
 # Event schedule page
 
-The `/events` page: every upcoming [event](/documentation_v2/glossary.md#event) in a master list,
+The `/events` page: every upcoming [event](/documentation_v2/glossary/a_to_f.md#event) in a master list,
 with the full hub of the selected event beside it.
 
 ## Contents
@@ -26,11 +26,11 @@ slotting included; its change callback fetches the hub again.
 
 `upcoming_ops.rs` draws each card from the untyped event row: the local start time, the status badge
 (`open`, `locked`, `live`, `completed`, `cancelled`, any other value neutral), the name or "Untitled
-Operation", the [mission](/documentation_v2/glossary.md#mission) and
-[slot](/documentation_v2/glossary.md#slot) counts, a countdown or `LOCKED` when registration is
+Operation", the [mission](/documentation_v2/glossary/g_to_m.md#mission) and
+[slot](/documentation_v2/glossary/n_to_z.md#slot) counts, a countdown or `LOCKED` when registration is
 locked, and a fill bar driven by the server's `percent`, clamped to 0 to 100, since `total_slots` is
 zero until missions are attached. The list shows in the order the
-[API](/documentation_v2/glossary.md#api) returns it: there is no date picker, no week or month
+[API](/documentation_v2/glossary/a_to_f.md#api) returns it: there is no date picker, no week or month
 window, no archive of past events and no after-action link.
 
 ## Routes

@@ -3,7 +3,7 @@
 # Export addon script documentation
 
 The deeper documents of the export addon's scripts, mirroring `apps/mod/tbd-export/Scripts/`. Only
-the [Workbench](/documentation_v2/glossary.md#workbench) module has documents here; the game
+the [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) module has documents here; the game
 module's runtime road export is covered by the map export feature doc.
 
 ## Contents

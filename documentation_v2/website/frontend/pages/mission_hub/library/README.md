@@ -3,7 +3,7 @@
 # Mission library page documentation
 
 The feature documentation of the `/missions` page, where members browse
-[missions](/documentation_v2/glossary.md#mission), open a mission's dossier in a slide-over, create
+[missions](/documentation_v2/glossary/g_to_m.md#mission), open a mission's dossier in a slide-over, create
 a new mission and manage their own, with the page's design-phase reference.
 
 ## Contents
@@ -19,7 +19,7 @@ documentation_v2/website/frontend/pages/mission_hub/library/
 Read [mission_library_page.md](/documentation_v2/website/frontend/pages/mission_hub/library/mission_library_page.md)
 first. It follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md):
 it quotes the page's interface text, gives what each call means in the
-[API](/documentation_v2/glossary.md#api), including the controls the API refuses to a demoted
+[API](/documentation_v2/glossary/a_to_f.md#api), including the controls the API refuses to a demoted
 author, and covers the New Mission dialog, which has no route of its own. The blueprint in
 `visual_references/` is a design-phase reference: it has no New Mission button, labels its
 filters and offers a custom map, while the built page adds bookmarks and status badges. The code

@@ -30,7 +30,7 @@ matter, kept as exported.
 
 | Export | Primary | Surface | Text | Design target of |
 |---|---|---|---|---|
-| Aegis Tactical Command | `#d8e2ff`, container `#adc6ff`; `#3b82f6` as the action blue | `#0d1322` | `#dde2f7` | the website and the [Mission Creator](/documentation_v2/glossary.md#mission-creator), the arsenal included |
+| Aegis Tactical Command | `#d8e2ff`, container `#adc6ff`; `#3b82f6` as the action blue | `#0d1322` | `#dde2f7` | the website and the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator), the arsenal included |
 | Dark Tactical Operations | `#adc6ff`, container `#4d8eff` | `#0d1322` | `#dde2f8` | the mod's HUD and spectator screens |
 | Reforger Dark Tactical | `#3b82f6` | `#0b1120` | `#ffffff` | the mod's end screen and debrief, with BLUFOR `#3b82f6`, OPFOR `#ef4444` and INDFOR `#22c55e` |
 

@@ -1,8 +1,8 @@
 # Mission review record
 
-One rendering of a [mission](/documentation_v2/glossary.md#mission)'s review, shared by every page
+One rendering of a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s review, shared by every page
 that shows it: the review history and thread with a reply box, an
-[artifact](/documentation_v2/glossary.md#artifact)'s provenance and compile findings, the submit
+[artifact](/documentation_v2/glossary/a_to_f.md#artifact)'s provenance and compile findings, the submit
 control with its refusal panel, and the wording under all of them, so the author and the reviewer
 read the same record in the same words.
 
@@ -24,7 +24,7 @@ apps/website/frontend/src/v2/pages/mission_hub/mission_review/
 ## How it works
 
 `MissionReviewRecord` shows under the mission overview's dossier and in the library's dossier
-sheet, for the author and administrators, the two the [API](/documentation_v2/glossary.md#api)
+sheet, for the author and administrators, the two the [API](/documentation_v2/glossary/a_to_f.md#api)
 serves the history to. It reads the history unasked only once the mission row shows a review
 happened (otherwise "This mission has not been submitted for review." and "Look for earlier
 reviews"), and again after a posted reply. It names the approved artifact ("… — deployments run
@@ -49,11 +49,11 @@ the API spells them, and comments trimmed to 1 to 8000 bytes, as the API checks 
   `crate::v2::core::ui` (`MaterialIcon`, the toasts) and `crate::v2::core::utils::utc_timestamp`.
 - Used by: in the mission hub, the overview page (`MissionReviewRecord`), the library's dossier
   (`MissionReviewRecord`, `SubmitForReview`) and the review workspace banner (`short_digest`,
-  `diagnostics_list`); the [approvals](/documentation_v2/glossary.md#approvals) page's review
+  `diagnostics_list`); the [approvals](/documentation_v2/glossary/a_to_f.md#approvals) page's review
   drawer, decision form and submission queue
   (`apps/website/frontend/src/v2/pages/administration/approvals/`); and the
-  [server control](/documentation_v2/glossary.md#server-control) page's
-  [mission deployment](/documentation_v2/glossary.md#mission-deployment) wording, which reads
+  [server control](/documentation_v2/glossary/n_to_z.md#server-control) page's
+  [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) wording, which reads
   `short_digest` (`apps/website/frontend/src/v2/pages/administration/server_control/`).
 - Rules: one rendering of a review, a thread entry and a compile finding for every page; the
   count a refusal reports is never below the findings it lists

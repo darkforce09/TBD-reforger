@@ -1,7 +1,7 @@
 # Hosted mission document
 
-The document the open [mission](/documentation_v2/glossary.md#mission) lives in while the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) runs, and the undo driver that
+The document the open [mission](/documentation_v2/glossary/g_to_m.md#mission) lives in while the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) runs, and the undo driver that
 moves it: the document handle, its seed and smoke bridge, and the tail every committed change runs
 to put the renderer, the counters and the docks back in step with the document.
 
@@ -18,7 +18,7 @@ apps/website/frontend/src/v2/apps/editor/bridge/document_host/
 ## How it works
 
 The canvas mount builds the document with `new_seeded_doc` (eight deterministic seed
-[slots](/documentation_v2/glossary.md#slot) on a 12 800 m square, written under the init origin so
+[slots](/documentation_v2/glossary/n_to_z.md#slot) on a 12 800 m square, written under the init origin so
 they are no undo step), publishes it to the headless harness as `window.__missionDoc`, and installs
 the history context with `set_ctx`. The context holds the document, engine and selection handles,
 the document version, the mission id and the page signals for the undo and redo buttons, the OBJ and

@@ -24,7 +24,7 @@ states the rules and why they exist.
   [shell_scripts.rs](/tools_v2/xtask/src/verifications/language_bans/shell_scripts.rs), covers
   shell, Make, Python and the Node script extensions `.mjs` and `.cjs`. Any tracked match fails.
   There is no inventory, no allowlist and no "may only shrink" count. No path prefix is skipped:
-  `apps/mod/` is scanned like everything else, and [EnfScript](/documentation_v2/glossary.md#enfscript)
+  `apps/mod/` is scanned like everything else, and [EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript)
   sources pass only because `.c` is not in the table. A failed `git ls-files`, an empty listing or
   an unreadable tracked path fails the gate. Gate: CI-SCRIPT, both command names.
 
@@ -34,7 +34,7 @@ outside the git tree; a tracked copy fails the gate. A script that parses anythi
 tooling is Rust.
 
 A companion gate, `cargo xtask verify no-node`, holds Node to the
-[Enfusion](/documentation_v2/glossary.md#enfusion) MCP runtime: no tracked `.mjs` or `.cjs` file
+[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) MCP runtime: no tracked `.mjs` or `.cjs` file
 outside `apps/mod/`, no `node` or `npx` call in a workflow or shell line under `.github/`, and no
 `actions/setup-node` step. It has no rule code; the
 [file length and Node ban README](/tools_v2/xtask/src/verifications/language_bans/node_and_file_limits/README.md)
@@ -59,7 +59,7 @@ the reason LANG-3 makes an unreadable input a failure rather than a pass.
 
 `no-shell`, `no-python` and `no-node` run as steps of `cargo xtask ci ci-local`, in the
 `language-gates` job of `.github/workflows/ci.yml` on every push and pull request to `main`, and in
-the platform [wave](/documentation_v2/glossary.md#wave) gate. The full matrix is in
+the platform [wave](/documentation_v2/glossary/n_to_z.md#wave) gate. The full matrix is in
 [Testing and CI](/documentation_v2/runbooks/testing_and_ci.md#gate-matrix).
 
 The tests that hold the rules: `planted_sh_fails`, `makefile_is_banned` and

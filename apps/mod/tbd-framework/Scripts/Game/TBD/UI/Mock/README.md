@@ -1,7 +1,7 @@
 # Pre-game screen mock data
 
 The mock catalogs behind the rebuilt pre-game screens: fixed datasets taken from the Stitch mockups
-that the [mission](/documentation_v2/glossary.md#mission) selector, lobby, briefing and players
+that the [mission](/documentation_v2/glossary/g_to_m.md#mission) selector, lobby, briefing and players
 screens render when no live catalog has been handed to them.
 
 ## Contents

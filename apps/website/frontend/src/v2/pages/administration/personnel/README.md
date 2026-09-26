@@ -1,8 +1,8 @@
 # Personnel roster page
 
-The `/admin/personnel` page, [personnel](/documentation_v2/glossary.md#personnel), titled
+The `/admin/personnel` page, [personnel](/documentation_v2/glossary/n_to_z.md#personnel), titled
 "Personnel Roster": administrators search the member roster, open one member's dossier beside it,
-ban, unban or warn a member, and resync every member's [role](/documentation_v2/glossary.md#role)
+ban, unban or warn a member, and resync every member's [role](/documentation_v2/glossary/n_to_z.md#role)
 from Discord. A role follows the member's Discord roles, so the dossier explains it and never sets
 it.
 
@@ -36,7 +36,7 @@ once, without a dialog. "Edit Roles" opens a note that sends nothing: the websit
 the page has no role picker and never calls the role route. "Sync Roles" posts the resync and
 reports the `updated` count it answers; an answer without the count is reported as unexpected,
 never as a completed sync. The page asks for no further page, so it lists the first page the
-[API](/documentation_v2/glossary.md#api) returns. Every request runs in the browser build only; a
+[API](/documentation_v2/glossary/a_to_f.md#api) returns. Every request runs in the browser build only; a
 native build renders the failure branch.
 
 ## Routes
@@ -82,7 +82,7 @@ native build renders the failure branch.
   `api_error_message`, `Paginated`, `AdminUserRow`), `crate::v2::core::auth` (`AuthStore`) and
   `crate::v2::core::ui` (`AdminGate`, `Dialog`, `MaterialIcon`, `cn`, the toast queue); over HTTP,
   the roster, ban, warning and role resync routes of the
-  [administration](/documentation_v2/glossary.md#administration) domain.
+  [administration](/documentation_v2/glossary/a_to_f.md#administration) domain.
 - Used by: the `/admin/personnel` route in `apps/website/frontend/src/app_routes.rs` and
   `apps/website/frontend/src/router.rs`; the sidebar's "Personnel Roster" link in
   `apps/website/frontend/src/v2/pages/navigation/nav_config.rs`; `personnel_source` in

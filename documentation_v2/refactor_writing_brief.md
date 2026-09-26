@@ -21,7 +21,7 @@ Repo: <repo> = the checkout root, `git rev-parse --show-toplevel` (git, main). Y
 (logs under <scratchpad>/logs/<your-id>/).
 Read first: CLAUDE.md; documentation_v2/refactor_writing_brief.md (decisions, rules, contradiction
 resolutions, terminology); from Phase 2 on documentation_v2/refactor_move_manifest.tsv; from Phase 3 on
-documentation_v2/standards/readme_standard.md, standards/templates/, glossary.md.
+documentation_v2/standards/readme_standard.md, standards/templates/, glossary/ (README index).
 RULES
 1 Ownership: edit ONLY files under "YOU OWN". Anything else that needs changing goes in your report
   under "Outside my scope".
@@ -40,7 +40,8 @@ RULES
   ([x](/documentation_v2/…), [y](/apps/…)); ASCII diagrams in ```text; snake_case names (exceptions:
   README.md, t-<id>_plan.md, hyphenated evidence JSON); status line on documentation_v2 docs only;
   ≤500 lines per live doc (split into a folder with a README index); terminology: Mission Creator,
-  mission, mission header, event, operations (glossary links on first use); never hard-code IPs (name
+  mission, mission header, event, operations (glossary links on first use, to the entry in its
+  letter-range file under documentation_v2/glossary/); never hard-code IPs (name
   TBD_SSH_HOST from tools_v2/xtask/deploy/deploy.env); no personal absolute paths.
 6 Preservation: before merging, replacing or dropping text, list every fact of the source and give each
   a disposition — carried to <target>, archived, or dropped as wrong (cite the proving code). Frozen
@@ -107,6 +108,11 @@ Verbatim from the plan. A decision overrides any document that disagrees with it
 | Server IP | Unknown. The docs name `TBD_SSH_HOST` and are checked live at checkpoint 2. |
 | In-flight work | Never stage a foreign hunk; stage by hunk with `git apply --cached`. `apps/mod/tbd-export/resourceDatabase.rdb` is never staged. |
 | Checkpoints | CP1 manifest, CP2 cutover, CP3a standard, CP3b pilot slices, CP4 roadmap |
+
+At checkpoint 4 the operator split the glossary by letter range: the single `glossary.md` of the
+Glossary and Tree layout rows is now the folder
+[glossary/](/documentation_v2/glossary/README.md), whose README indexes every term and whose
+letter-range files (`a_to_f.md`, `g_to_m.md`, `n_to_z.md`) hold the entries.
 
 ## README and document standard
 

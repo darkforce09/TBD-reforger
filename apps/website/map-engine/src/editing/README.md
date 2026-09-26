@@ -1,10 +1,10 @@
 # Mission editing
 
 The headless editing layer of the map engine, behind the crate's `editing` feature: the editing
-host that holds the live [mission](/documentation_v2/glossary.md#mission) document, the commands
+host that holds the live [mission](/documentation_v2/glossary/g_to_m.md#mission) document, the commands
 and undo drive that edit it, the overlay lanes and picks drawn from it, the decisions behind local
 drafts, and the interactive map tools. The
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) supplies everything a browser owns
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) supplies everything a browser owns
 (clocks, frame pumps, prompts, storage) as closures and function pointers, so every decision here
 is answerable by `cargo test`.
 
@@ -55,7 +55,7 @@ redo end in the same hook. `with_batch` closes its undo group through a drop gua
 return or an unwind never leaves the document grouping. The picks in `picking.rs` turn a frozen
 camera and a pixel into a world query, ask `crate::spatial::indexing::picking` for rows, and let
 `MissionDocCore` map rows to ids and break ties
-(a [slot](/documentation_v2/glossary.md#slot) beats a vehicle at equal distance).
+(a [slot](/documentation_v2/glossary/n_to_z.md#slot) beats a vehicle at equal distance).
 `selection_universe.rs` reads membership from the post-change document's raw maps rather than the
 materialized slots, so hiding a slot never deselects it, and `routing.rs` answers the affordance
 probe and the click with one resolution, so a row is clickable only when a click reaches something.

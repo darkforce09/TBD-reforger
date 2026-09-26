@@ -1,6 +1,6 @@
 # Road network export
 
-Exports the open world's road network from [Workbench](/documentation_v2/glossary.md#workbench), one
+Exports the open world's road network from [Workbench](/documentation_v2/glossary/n_to_z.md#workbench), one
 JSON file per road class, and joins the classes into one junction graph in a metadata file. Each
 class folder decides which entities belong to it; this folder runs them together.
 

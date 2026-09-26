@@ -44,7 +44,7 @@ returns false, and then drops itself; a missing `window` ends the loop.
 - Used by: `website-map-engine`, which re-exports `FrameTarget` and `RafPump` in
   `apps/website/map-engine/src/frame/pump.rs` and implements `FrameTarget` for `RenderEngine`
   there; through that re-export, the frontend starts a pump for the
-  [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s viewport
+  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s viewport
   (`apps/website/frontend/src/v2/apps/editor/bridge/viewport.rs`) and for the debug building
   viewer and world line-of-sight views (`apps/website/frontend/src/v2/apps/debug/`).
 - Rules: a frame renders, then polls, then counts, then calls the hook

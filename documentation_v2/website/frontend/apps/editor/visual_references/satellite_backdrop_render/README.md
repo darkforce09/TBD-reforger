@@ -3,7 +3,7 @@
 # Satellite backdrop render
 
 Design-phase reference for the mood of the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s satellite map: a rendered
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s satellite map: a rendered
 satellite view of a wooded island. It gives colour context and is not an implementation source;
 the built map is drawn by the map engine the editor under `apps/website/frontend/src/v2/apps/editor/`
 drives.

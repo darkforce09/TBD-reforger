@@ -1,9 +1,9 @@
 # Line-of-sight tool
 
-The headless half of the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
+The headless half of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
 line-of-sight tool: the two-click sight ray and the one-click viewshed disc, the terrain and object
 verdicts over them, and the bytes and screen geometry the browser draws. A sight check is a
-measurement, never [mission](/documentation_v2/glossary.md#mission) content.
+measurement, never [mission](/documentation_v2/glossary/g_to_m.md#mission) content.
 
 ## Contents
 

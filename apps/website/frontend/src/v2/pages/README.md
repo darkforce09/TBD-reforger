@@ -3,7 +3,7 @@
 Every standard page of the web app, grouped by the sidebar section its route belongs to, and the
 persistent navigation frame they render inside. A page is a folder whose route component the
 route table mounts, with one file per panel it renders; the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) and the other full-screen
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) and the other full-screen
 workspaces live in `apps/website/frontend/src/v2/apps/` instead.
 
 ## Contents
@@ -40,7 +40,7 @@ frame reads, and the breadcrumb the top bar shows.
 | none | `account/` | `/login`, `/auth/callback`, `/settings` |
 | none | `navigation/` | the not-found page for any path no route matches |
 
-The six [administration](/documentation_v2/glossary.md#administration) routes declare the `admin`
+The six [administration](/documentation_v2/glossary/a_to_f.md#administration) routes declare the `admin`
 tier and each of their pages also wraps its body in `AdminGate`; the Mission Creator route
 `/missions/:id/edit` and the review workspace declare `mission_maker`; every other route declares
 `none`. The signed-in pages put their data behind `AuthGate`, so a signed-out viewer sees a sign-in
@@ -55,7 +55,7 @@ chromeless: they render without the sidebar and the top bar.
 
 ## Boundaries
 
-- Depends on: `crate::v2::core` (the [API](/documentation_v2/glossary.md#api) client and DTOs, the
+- Depends on: `crate::v2::core` (the [API](/documentation_v2/glossary/a_to_f.md#api) client and DTOs, the
   session and route guard, the UI primitives, the utilities), the map engine
   (`website_map_engine`), and the workspaces under `apps/website/frontend/src/v2/apps/`, which the
   review workspace and the mission library import.

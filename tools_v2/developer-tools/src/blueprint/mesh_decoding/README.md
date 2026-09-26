@@ -1,6 +1,6 @@
 # Game model decoding
 
-The blueprint compiler's reader of [Enfusion](/documentation_v2/glossary.md#enfusion) `.xob`
+The blueprint compiler's reader of [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) `.xob`
 models: their triangles, their fire-collision (COLL) colliders with each triangle's game material,
 and their node table of sockets, plus the two inspection commands that print what the reader sees
 and peek into the game paks.

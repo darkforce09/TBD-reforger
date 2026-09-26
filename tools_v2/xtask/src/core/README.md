@@ -3,7 +3,7 @@
 The helpers every xtask command group shares: finding the checkout root, the one spelling of each
 repository location xtask reads, running host binaries from inside the development container, the
 cargo target directory policy, and the `PATH` guard tests use. The command groups use them
-without owning [ticket](/documentation_v2/glossary.md#ticket) storage or map processing, which stay in `ticket-engine` and
+without owning [ticket](/documentation_v2/glossary/n_to_z.md#ticket) storage or map processing, which stay in `ticket-engine` and
 `developer-tools`.
 
 ## Contents
@@ -27,11 +27,11 @@ and joins the constants of `repository_layout` onto it: the deploy files and sys
 dedicated-server profiles, the MCP transcript fixtures, the ticket locations re-exported from
 `ticket_engine::repository` (`TICKETS_DIR`, `WAVE_LOCK`, `WORKTREES_DIR` and others), and, in the
 `documentation` submodule, every document or documentation root a command names or walks: the
-runbooks that refusals cite, the [API](/documentation_v2/glossary.md#api) readiness register, and the roots and exemptions of the
+runbooks that refusals cite, the [API](/documentation_v2/glossary/a_to_f.md#api) readiness register, and the roots and exemptions of the
 documentation gates.
 
 `host_execution::Host` exists because the development container cannot run host-linked binaries
-(Steam, [Workbench](/documentation_v2/glossary.md#workbench), `ArmaReforgerServer`). `Host::detect` asks whether this process is in a
+(Steam, [Workbench](/documentation_v2/glossary/n_to_z.md#workbench), `ArmaReforgerServer`). `Host::detect` asks whether this process is in a
 container (`/run/.containerenv` or `/.dockerenv`) and which bridge is on `PATH`
 (`distrobox-host-exec`, then `host-spawn`); a command goes through the bridge only when both
 hold, and runs directly otherwise. With no bridge in a container, `run` prints a refusal and
@@ -61,7 +61,7 @@ returns 127 and `capture` returns nothing. Cargo is never routed through the bri
     `tools_v2/xtask/src/`;
   - `host_execution`: the `db` group (`tools_v2/xtask/src/commands/db/operations.rs`), the
     playtest server of the `mod` group
-    (`tools_v2/xtask/src/commands/mod_ops/playtest_server/host.rs`) and the platform [wave](/documentation_v2/glossary.md#wave) driver
+    (`tools_v2/xtask/src/commands/mod_ops/playtest_server/host.rs`) and the platform [wave](/documentation_v2/glossary/n_to_z.md#wave) driver
     (`tools_v2/xtask/src/commands/platform/wave_execution/host.rs`);
   - `cargo_target_directory`: the `mk` recipes (`tools_v2/xtask/src/commands/build/recipes.rs`)
     and the wave driver's flush (`tools_v2/xtask/src/commands/platform/wave_execution/flush.rs`);

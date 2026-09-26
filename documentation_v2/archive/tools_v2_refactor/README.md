@@ -19,7 +19,7 @@ documentation_v2/archive/tools_v2_refactor/
 
 Read the architecture plan first, then the phase records in order: one, relocation of the crates;
 two, the heavy services into `developer-tools`; three, the
-[ticket](/documentation_v2/glossary.md#ticket) subsystem into `ticket-engine`; four, the split of
+[ticket](/documentation_v2/glossary/n_to_z.md#ticket) subsystem into `ticket-engine`; four, the split of
 the two large crates by responsibility; five, the closing of the tree, the longest record. Paths,
 commands and counts in them are as they stood when each was written.
 

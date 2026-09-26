@@ -4,7 +4,7 @@
 
 The feature documentation of the URL-only debug benches: routes that drive one part of the map
 engine in isolation, with none of the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s document, persistence or chrome
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s document, persistence or chrome
 around it. Developers and AI agents read it before changing a bench or the line-of-sight code a
 bench probes.
 

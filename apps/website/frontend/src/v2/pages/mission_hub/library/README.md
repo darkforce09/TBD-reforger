@@ -1,9 +1,9 @@
 # Mission library page
 
-The `/missions` page: the catalogue of [missions](/documentation_v2/glossary.md#mission) in three
+The `/missions` page: the catalogue of [missions](/documentation_v2/glossary/g_to_m.md#mission) in three
 scopes with search and filters, a featured mission above the grid, and a slide-over dossier from
 which an author uploads versions, submits for review, archives or deletes a mission and opens it in
-the [Mission Creator](/documentation_v2/glossary.md#mission-creator).
+the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator).
 
 ## Contents
 
@@ -35,7 +35,7 @@ the grid's fetch, so every keystroke and every select fetches again; a second fe
 open. An empty filter is left out of the query. The page requests one page of the list and has no
 paging controls. The New Mission button and the Ctrl or Cmd+N shortcut (ignored while a field has
 focus) open the create dialog from `apps/website/frontend/src/v2/pages/mission_hub/create_dialog/`,
-for the `mission_maker` [role](/documentation_v2/glossary.md#role) and above, read through the
+for the `mission_maker` [role](/documentation_v2/glossary/n_to_z.md#role) and above, read through the
 authenticated reactive role so a page still bootstrapping never counts as a maker. Only one overlay
 is open at a time: opening the dialog closes the dossier.
 
@@ -43,7 +43,7 @@ A card or the hero opens `MissionDossierSheet` in a `Sheet` without leaving the 
 the mission and withholds the heavy dossier until the slide finishes. `can_edit` (a mission maker
 who is the author, or an administrator) gates the Mission Creator link, the collaboration controls
 and the upload panel; `can_manage` (the author or an administrator, any role) gates the Manage row,
-the review feedback and the review record. The [API](/documentation_v2/glossary.md#api) is
+the review feedback and the review record. The [API](/documentation_v2/glossary/a_to_f.md#api) is
 stricter: every write to an existing mission (update, delete, submit, review comment) takes
 `lock_editable_mission` in `apps/website/api_v2/src/missions/services/mission_write_lock.rs`, which
 requires the `mission_maker` role as well as authorship or administrator rights, so an author

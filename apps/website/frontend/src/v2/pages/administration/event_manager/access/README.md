@@ -1,10 +1,10 @@
 # Event access sheet
 
-The side sheet the [event manager](/documentation_v2/glossary.md#event-manager) opens on one
-[event](/documentation_v2/glossary.md#event), which the screen calls an operation: who may see and
+The side sheet the [event manager](/documentation_v2/glossary/a_to_f.md#event-manager) opens on one
+[event](/documentation_v2/glossary/a_to_f.md#event), which the screen calls an operation: who may see and
 join it, which groups a policy can admit, how many places each pool holds, and why each participant
 is admitted, with the waiting-list promotion of each
-[mission](/documentation_v2/glossary.md#mission).
+[mission](/documentation_v2/glossary/g_to_m.md#mission).
 
 ## Contents
 
@@ -30,7 +30,7 @@ apps/website/frontend/src/v2/pages/administration/event_manager/access/
 
 The day panel's "Access, Groups & Places" calls `AccessPanel::open_on`, which opens the sheet on
 the Policies tab and starts three reads: the access view, the participant evidence, and the
-missions with their [ORBAT](/documentation_v2/glossary.md#orbat), read as the event's hub and then
+missions with their [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat), read as the event's hub and then
 each event mission's squads. A read writes its signal only while the sheet is still open on the
 event it asked about, so a late answer never shows against another event. Nothing is editable
 until the access view has loaded, because every change names the revision it was read at; a
@@ -51,7 +51,7 @@ click ──► busy? or no view yet? ──► ignore
 
 | Tab | Files | What it changes |
 |---|---|---|
-| Policies | `policy_lists.rs`, `policy_editor.rs`, `policy_draft.rs`, `policy_inheritance.rs`, `waitlist_promotion.rs` | the event's policy; a squad's or a [slot](/documentation_v2/glossary.md#slot)'s own policy, set or removed; a mission's waiting list |
+| Policies | `policy_lists.rs`, `policy_editor.rs`, `policy_draft.rs`, `policy_inheritance.rs`, `waitlist_promotion.rs` | the event's policy; a squad's or a [slot](/documentation_v2/glossary/n_to_z.md#slot)'s own policy, set or removed; a mission's waiting list |
 | Groups | `groups/`, `member_search.rs` | event groups and managed-roster members |
 | Places | `quota_editor.rs` | the three reservation pools, replaced together |
 | Participants | `participants_table.rs` | nothing: it reads the evidence |
@@ -63,7 +63,7 @@ The invariants that span the tabs:
   the two visibly apart. A slot's own policy wins, then its squad's, then the event's.
 - The open policy editor shuts whenever the view's revision moves, so a draft prepared against an
   older view is never saved over a newer one; a new own policy starts from the inherited one.
-- The draft enforces the [API](/documentation_v2/glossary.md#api)'s bounds before sending: at most
+- The draft enforces the [API](/documentation_v2/glossary/a_to_f.md#api)'s bounds before sending: at most
   32 grants (`policy_draft::MAX_GRANTS`) of 1 to 16 conditions (`MAX_CONDITIONS`), identifiers of
   1 to 128 bytes without control characters.
 - An uncapped pool is sent as an explicit null limit and zero closes a pool; an opening time left
@@ -88,7 +88,7 @@ The invariants that span the tabs:
   (`AuthStore`), `crate::v2::core::ui` (`Sheet`, `SearchBox`, `MaterialIcon`, the toast queue) and
   `crate::v2::core::utils` (`utc_timestamp`, `safe_avatar_url`); over HTTP, the access, group,
   quota, waitlist, member directory and ORBAT routes of the
-  [operations](/documentation_v2/glossary.md#operations) domain.
+  [operations](/documentation_v2/glossary/n_to_z.md#operations) domain.
 - Used by: `state.rs`, `event_table.rs` and `page.rs` of
   `apps/website/frontend/src/v2/pages/administration/event_manager/`; `event_manager_source` in
   `apps/website/frontend/src/v2/core/test_support/pins.rs`, which joins these sources for the

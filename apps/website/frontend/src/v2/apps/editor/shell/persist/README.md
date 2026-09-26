@@ -1,7 +1,7 @@
 # Draft writer parts
 
-The local draft store of the [Mission Creator](/documentation_v2/glossary.md#mission-creator):
-IndexedDB records of each open [mission](/documentation_v2/glossary.md#mission) under the signed-in
+The local draft store of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator):
+IndexedDB records of each open [mission](/documentation_v2/glossary/g_to_m.md#mission) under the signed-in
 account, and the debounced write that never replaces a good record with a worse one. The parent
 module, `apps/website/frontend/src/v2/apps/editor/shell/persist.rs` (wasm only), declares these
 files, re-exports their entry points, and holds the database coordinates, the write counters, the

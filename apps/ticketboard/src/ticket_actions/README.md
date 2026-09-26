@@ -1,7 +1,7 @@
 # Ticket actions
 
-The [ticketboard](/documentation_v2/glossary.md#ticketboard) feature that changes
-[tickets](/documentation_v2/glossary.md#ticket): it builds each `cargo xtask ticket` command,
+The [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) feature that changes
+[tickets](/documentation_v2/glossary/n_to_z.md#ticket): it builds each `cargo xtask ticket` command,
 guards it against a ticket file changed on disk, queues commands one at a time, and renders the
 menus, dialogs and command feedback. It never writes a ticket file itself.
 

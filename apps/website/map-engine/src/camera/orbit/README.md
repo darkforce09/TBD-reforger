@@ -1,6 +1,6 @@
 # Orbit camera
 
-The perspective camera of the doll preview in the [arsenal](/documentation_v2/glossary.md#arsenal):
+The perspective camera of the doll preview in the [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal):
 it circles the mannequin at a fixed distance and height and turns by yaw alone. Pitch, distance
 and pan are constants, with no control that changes them.
 

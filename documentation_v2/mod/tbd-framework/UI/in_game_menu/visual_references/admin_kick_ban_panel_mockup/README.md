@@ -3,7 +3,7 @@
 # Admin kick and ban panel mockup
 
 Design-phase reference for the admin menu's Kick and Ban module: discipline. It gives layout and colour context and is not an implementation source; the built UI is the
-[EnfScript](/documentation_v2/glossary.md#enfscript) code the Code section links.
+[EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript) code the Code section links.
 
 ## Contents
 
@@ -17,7 +17,7 @@ documentation_v2/mod/tbd-framework/UI/in_game_menu/visual_references/admin_kick_
 
 The set shows tabs for "CONNECTED PLAYERS", "DISCIPLINARY AUDIT LOG" and "GLOBAL BANLIST & BOLO", a player list filtered by side with ping, platform UID and a flag ("SAFE-START VIOLATION", "TEAMKILL (x2)", "CLEAN RECORD", "VERIFIED"), and for the selection its billet, status, "Session Warnings" against a three-warning kick threshold, team damage and ping.
 
-The built admin screen, `TBD_AdminScreen`, is one list of [mission](/documentation_v2/glossary.md#mission), stage, players and audit with a single respawn or deploy action; it has no such module. The [in-game menu specification](/documentation_v2/mod/tbd-framework/UI/in_game_menu/in_game_menu_specification.md) feature doc holds the full comparison.
+The built admin screen, `TBD_AdminScreen`, is one list of [mission](/documentation_v2/glossary/g_to_m.md#mission), stage, players and audit with a single respawn or deploy action; it has no such module. The [in-game menu specification](/documentation_v2/mod/tbd-framework/UI/in_game_menu/in_game_menu_specification.md) feature doc holds the full comparison.
 
 ## Code
 

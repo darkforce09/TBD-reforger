@@ -1,8 +1,8 @@
 # Cameras
 
 The map engine's cameras: the orthographic camera the tactical map of the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) draws with, the orbit camera of
-the [arsenal](/documentation_v2/glossary.md#arsenal)'s doll preview, the matrix math both are built
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) draws with, the orbit camera of
+the [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal)'s doll preview, the matrix math both are built
 from, and the grid reference printed on the map's edges. In the browser build it also gives the
 render engine the entry points that move its camera.
 
@@ -23,7 +23,7 @@ apps/website/map-engine/src/camera/
 `ortho::OrthoCamera` is plain f64 state and arithmetic that reproduces deck.gl's orthographic
 viewport; `orbit/` builds the doll's perspective matrices from a yaw; both compose their matrices
 with `math/`. Neither touches a GPU, so the module compiles in every build of the crate, the
-[API](/documentation_v2/glossary.md#api)'s included.
+[API](/documentation_v2/glossary/a_to_f.md#api)'s included.
 
 The one exception is `viewport.rs`, compiled only for wasm32 with the `render` feature. The render
 engine (`crate::frame::engine::RenderEngine`) owns one `OrthoCamera`, and `viewport.rs` adds the
@@ -37,7 +37,7 @@ engine's JavaScript-facing methods that move it:
 
 Every method that changes the camera or the surface marks the frame damaged, and each rendered
 frame uploads `wgpu_clip_matrix` at the world anchor. `on_camera_changed`, which a host calls after
-moving the camera, does nothing until the atlas of [slot](/documentation_v2/glossary.md#slot) icons
+moving the camera, does nothing until the atlas of [slot](/documentation_v2/glossary/n_to_z.md#slot) icons
 is ready; then it refreshes the slot lanes' zoom uniform, asks
 `crate::overlay::symbology::instances::symbols::cluster_mode` whether symbols cluster at the new
 zoom, rebuilds the slot lane when that answer flips and no drag is live, and feeds the cluster

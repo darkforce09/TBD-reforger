@@ -1,8 +1,8 @@
 # Mortar calculator page
 
 The `/tools/mortar` page: a fire position, a target and a mortar tube go in, and the firing solution
-the [API](/documentation_v2/glossary.md#api) computes comes back. With an
-[event](/documentation_v2/glossary.md#event) selected the solution is saved against it, and the page
+the [API](/documentation_v2/glossary/a_to_f.md#api) computes comes back. With an
+[event](/documentation_v2/glossary/a_to_f.md#event) selected the solution is saved against it, and the page
 reloads that event's saved fire missions.
 
 ## Contents

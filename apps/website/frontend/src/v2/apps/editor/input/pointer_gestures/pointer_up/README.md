@@ -1,6 +1,6 @@
 # Special drag release
 
-The release of the two drags in the [Mission Creator](/documentation_v2/glossary.md#mission-creator)
+The release of the two drags in the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)
 that bypass the left-button gesture machine: the elevation drag on the transform widget's Z arm and
 the drag of a tactical-graphic vertex. The parent module,
 `apps/website/frontend/src/v2/apps/editor/input/pointer_gestures/pointer_up.rs`, declares this
@@ -19,7 +19,7 @@ apps/website/frontend/src/v2/apps/editor/input/pointer_gestures/pointer_up/
 pointer-up closure then stops. A release from another pointer while a drag is active is consumed
 without committing it. The elevation release takes the `ZDrag`, releases the pointer capture, clears
 the height readout, computes the snapped height change with the same arithmetic as the live preview,
-and commits every dragged [slot](/documentation_v2/glossary.md#slot) and vehicle height as one undo
+and commits every dragged [slot](/documentation_v2/glossary/n_to_z.md#slot) and vehicle height as one undo
 step before running `after_local_edit`. The vertex release commits the tactical-graphic drag through
 `tactical_graphics_authoring::commit_tactical_vertex_drag` and repaints the tactical lane when
 nothing was written.

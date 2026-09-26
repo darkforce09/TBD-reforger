@@ -2,11 +2,11 @@
 
 # Website deployment
 
-Deploys the website [API](/documentation_v2/glossary.md#api) and the single-page app to the home
+Deploys the website [API](/documentation_v2/glossary/a_to_f.md#api) and the single-page app to the home
 server: `cargo xtask deploy website` copies the checkout to the host, starts the staging Postgres,
 builds the release API and the app there and restarts the API's systemd user unit; Caddy serves
 the app on port 3080 and a Cloudflare Tunnel can publish it. The first
-[deployment](/documentation_v2/glossary.md#deployment) runs Phases A to E once, about an hour with
+[deployment](/documentation_v2/glossary/a_to_f.md#deployment) runs Phases A to E once, about an hour with
 the server-side builds; every later one is the single command under
 [Redeploy](#redeploy). The dedicated game server on the same host has its own runbook,
 [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md).
@@ -145,9 +145,9 @@ disappears at the next deploy, so the server keeps its own files only at `apps/w
 under `assets_v2/terrains/` and outside the checkout. The glyph atlas `assets_v2/glyphs/` is not
 excluded; it is tracked and arrives with every deploy.
 
-A host that serves only the [mission](/documentation_v2/glossary.md#mission) library needs no map assets: every `/map-assets` request
+A host that serves only the [mission](/documentation_v2/glossary/g_to_m.md#mission) library needs no map assets: every `/map-assets` request
 answers 404 and the deploy warns and continues. For the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator), the host needs its own copy of
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator), the host needs its own copy of
 the terrain tree (about 590 MB of LFS content, never rsynced) at `assets_v2/terrains/` in the
 checkout, with `terrain-registry.json` at its top; see
 [Terrain assets](/assets_v2/terrains/README.md) for what the tree holds.
@@ -167,7 +167,7 @@ checkout, with `terrain-registry.json` at its top; see
    | Variable | Value on the host |
    |---|---|
    | `PORT` | `8080`, which Caddy and the smoke hints expect |
-   | `APP_ENV` | `production` (any value but `development`). `development` registers the [dev login](/documentation_v2/glossary.md#dev-login) and relaxes the checks below: use it only for a LAN-only first smoke, never behind the tunnel |
+   | `APP_ENV` | `production` (any value but `development`). `development` registers the [dev login](/documentation_v2/glossary/a_to_f.md#dev-login) and relaxes the checks below: use it only for a LAN-only first smoke, never behind the tunnel |
    | `FRONTEND_URL`, `ALLOWED_ORIGINS` | the public origin, `https://<site host>` |
    | `DATABASE_URL` | `postgres://tbd:<POSTGRES_PASSWORD>@127.0.0.1:<TBD_POSTGRES_HOST_PORT>/tbd_reforger?sslmode=disable` |
    | `JWT_SECRET` | the output of `openssl rand -hex 32` |
@@ -289,17 +289,17 @@ run one or the other.
 ### Game server credentials
 
 Each game server signs in to the API with its own
-[machine credentials](/documentation_v2/glossary.md#machine-credential), which an administrator
-issues on the [Server Control](/documentation_v2/glossary.md#server-control) page (`/admin/server`; `POST /api/v1/servers/{id}/credentials`). The
+[machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential), which an administrator
+issues on the [Server Control](/documentation_v2/glossary/n_to_z.md#server-control) page (`/admin/server`; `POST /api/v1/servers/{id}/credentials`). The
 secret, `tbdm_…`, is shown once; revoking it stops its executor at the next request.
 
 | Executor | Credential kind | Where the secret goes | Commands it runs |
 |---|---|---|---|
 | the game runtime (the mod) | `mod_runtime` | `TBD_MOD_RUNTIME_CREDENTIAL` in `deploy.env`, written into the server profile's `TBD_BackendConfig.json` as `machineCredential` | `broadcast`, `kick`, `load_mission`; runtime sessions, heartbeats, roster reads |
-| the [fleet host agent](/documentation_v2/glossary.md#fleet-host-agent) | `host_agent` | `TBD_HOST_AGENT_CREDENTIAL` in `deploy.env`, written to `~/.config/fleet-host-agent/machine-credential` | `start`, `stop`, `restart`, `list_players`, `restart_with_mission` |
+| the [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) | `host_agent` | `TBD_HOST_AGENT_CREDENTIAL` in `deploy.env`, written to `~/.config/fleet-host-agent/machine-credential` | `start`, `stop`, `restart`, `list_players`, `restart_with_mission` |
 
 `cargo xtask deploy staging` installs both; which mission a server runs is a
-[mission deployment](/documentation_v2/glossary.md#mission-deployment). Issuing them step by step,
+[mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment). Issuing them step by step,
 and the first deployment, are in
 [Give the staging server its credentials and a mission](/documentation_v2/runbooks/game_server_staging/machine_credentials_and_mission_deployment.md).
 

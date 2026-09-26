@@ -1,9 +1,9 @@
 # Host signal state
 
 What the browser knows and the map engine must be told while the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) runs: the editor context installed
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) runs: the editor context installed
 at load, the in-flight placement, the selected entities and the host half of undo grouping. None of
-it is state of the [mission](/documentation_v2/glossary.md#mission) document.
+it is state of the [mission](/documentation_v2/glossary/g_to_m.md#mission) document.
 
 ## Contents
 
@@ -26,7 +26,7 @@ selection handles are `!Send` `Rc`s, and each entry point opens exactly one borr
 
 `entity_selection.rs` writes the set, then the renderer's tint, then the dock mirrors, in that order
 from one place, so a tint and a dock row never disagree: a click on a
-[slot](/documentation_v2/glossary.md#slot) that is already part of a multi-selection keeps the set,
+[slot](/documentation_v2/glossary/n_to_z.md#slot) that is already part of a multi-selection keeps the set,
 since it grabs the set for a drag, and an empty id list is refused rather than read as clear. It
 also selects a folder's direct slots or its whole subtree, selects every slot and vehicle in view
 (Ctrl+A), and moves the camera to the selection's centroid at the same zoom.

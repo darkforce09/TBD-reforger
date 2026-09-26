@@ -2,8 +2,8 @@
 
 The framework's one world, TBD Dev POC: vanilla Everon (the Eden world) as a parent sub-scene,
 plus a layer that places the TBD game mode. The
-[mission header](/documentation_v2/glossary.md#mission-header) `Missions/TBD_Dev_POC.conf` boots
-it, and the [mission](/documentation_v2/glossary.md#mission) itself arrives from the platform at
+[mission header](/documentation_v2/glossary/g_to_m.md#mission-header) `Missions/TBD_Dev_POC.conf` boots
+it, and the [mission](/documentation_v2/glossary/g_to_m.md#mission) itself arrives from the platform at
 runtime, so this one development and test world serves every mission on Everon.
 
 ## Contents
@@ -29,21 +29,21 @@ Missions/TBD_Dev_POC.conf ──World──▶ worlds/TBD_Dev_POC.ent ──Pare
 `TBD_Dev_POC.ent` holds nothing but its parent: Everon's terrain, buildings and vegetation come from
 the game's own Eden world, and the layer adds the TBD game mode, whose components load the deployed
 mission and run the round. Everything a mission authors
-([slots](/documentation_v2/glossary.md#slot), zones, objectives, entities) is built at runtime from
+([slots](/documentation_v2/glossary/n_to_z.md#slot), zones, objectives, entities) is built at runtime from
 the mission document, never saved into the world. The world places no `RadioManagerEntity`, so
 `TBD_RadioComponent` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Radio/` logs the radio
 backbone as missing and falls back to its script-side channel table.
 
 ## Format
 
-- File type: `TBD_Dev_POC.ent` is an [Enfusion](/documentation_v2/glossary.md#enfusion) world, plain
+- File type: `TBD_Dev_POC.ent` is an [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) world, plain
   text, a `SubScene` block whose `Parent` names the vanilla world by resource; its layers sit in the
   sibling `TBD_Dev_POC_Layers/` folder.
 - Resource GUID: `TBD_Dev_POC.ent.meta` holds `Name "{F652B97A6F497348}worlds/TBD_Dev_POC.ent"`
   and one `ENTResourceClass` per platform configuration; the mission header names the world by
   that GUID, so it never changes.
 - Naming: a world is `<Name>.ent` with a `<Name>_Layers/` folder beside it;
-  [Workbench](/documentation_v2/glossary.md#workbench)'s per-world editor data sits under
+  [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)'s per-world editor data sits under
   `<world>/.EditorData/`.
 - Adding a world: create it in Workbench inside this addon, which writes the `.ent`, its `.meta`
   and the layer folder; commit them together with a mission header in
@@ -57,7 +57,7 @@ backbone as missing and falls back to its script-side channel table.
   (`tools_v2/xtask/src/commands/mod_ops/dispatch.rs`).
 - Through the mission header, `cargo xtask mod world-boot`, `cargo xtask mod playtest`, the
   dedicated-server profiles, the deploy settings and the
-  [fleet scenario](/documentation_v2/glossary.md#fleet-scenario) seeds.
+  [fleet scenario](/documentation_v2/glossary/a_to_f.md#fleet-scenario) seeds.
 
 ## Boundaries
 

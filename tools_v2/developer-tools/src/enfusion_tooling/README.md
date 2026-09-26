@@ -1,7 +1,7 @@
 # Enfusion script oracle and MCP broker
 
 The library behind two binaries. For `enf`, it turns
-[Enfusion](/documentation_v2/glossary.md#enfusion) script sources (the gitignored upstream framework
+[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) script sources (the gitignored upstream framework
 in `apps/mod/crf_framework/` and the vanilla game scripts) into committed TSV symbol indexes,
 answers lookups against them, and checks the `@idx` citations in `documentation_v2/` and the
 framework capability verdicts. For `mcpd`, it runs the persistent enfusion-mcp broker that `cargo
@@ -56,7 +56,7 @@ index TSVs ─▶ enf lookup | enf dirs | enf citations | enf capability ─▶ 
   (`crate::repository_layout::ENFUSION_MCP_ENTRYPOINT`), then a copy in the npx cache, then `npx -y
   enfusion-mcp`.
 - `mcp_broker::run` starts that server once, initialises it, and serves tool calls over a Unix
-  socket one at a time, because the [Workbench](/documentation_v2/glossary.md#workbench) NetAPI
+  socket one at a time, because the [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) NetAPI
   takes one stream; it relabels each reply's id to 2 for `cargo xtask mcp consume`. It stops on
   SIGTERM or SIGINT, after `MCP_DAEMON_IDLE` seconds idle (1800) or `MCP_DAEMON_MAX_LIFE` seconds of
   life (14400), killing the child and removing the socket and pid file. `--stub` or `MCP_STUB=1`

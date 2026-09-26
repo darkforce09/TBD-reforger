@@ -1,7 +1,7 @@
 # Game server staging deploy
 
 The implementation of `cargo xtask deploy staging`: it puts the checkout on the staging host, boots
-the dedicated game server on the [mod](/documentation_v2/glossary.md#mod) it just synced, and
+the dedicated game server on the [mod](/documentation_v2/glossary/g_to_m.md#mod) it just synced, and
 proves the boot from the server's own log instead of assuming it. The entry point, `Paths`, the
 argument parser and the mode order live in `tools_v2/xtask/src/commands/deploy/staging.rs`, which
 declares every module here.

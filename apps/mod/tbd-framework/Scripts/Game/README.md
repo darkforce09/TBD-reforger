@@ -1,8 +1,8 @@
 # Game script module
 
-The addon's [Enfusion](/documentation_v2/glossary.md#enfusion) game script module: every script here
+The addon's [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) game script module: every script here
 compiles into the game itself, on dedicated servers, clients and in
-[Workbench](/documentation_v2/glossary.md#workbench) play mode. The framework's scripts all sit
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) play mode. The framework's scripts all sit
 under one `TBD/` namespace folder.
 
 ## Contents
@@ -23,7 +23,7 @@ under `TBD/`.
 
 ## Authority
 
-- Server: the round, the [mission](/documentation_v2/glossary.md#mission) and every platform call,
+- Server: the round, the [mission](/documentation_v2/glossary/g_to_m.md#mission) and every platform call,
   as the scripts under `TBD/` decide it.
 - Client: the screens and HUD under `TBD/`.
 - Owner: server answers go to the asking player's controller only.

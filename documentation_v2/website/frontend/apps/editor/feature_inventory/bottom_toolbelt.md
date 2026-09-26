@@ -2,7 +2,7 @@
 
 # Bottom toolbelt
 
-The chrome along the bottom of the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
+The chrome along the bottom of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
 map: the floating mode toolbar with the Select, Ruler and Line of Sight tools, the status bar with
 its read-outs and scale bar, and the grid references along the map's edges.
 
@@ -63,7 +63,7 @@ action.
 
 ### BOTTOM-OBJCOUNT-001 — Object and selection counts
 
-1. "OBJ" counts the placed [slots](/documentation_v2/glossary.md#slot) only
+1. "OBJ" counts the placed [slots](/documentation_v2/glossary/n_to_z.md#slot) only
    (`MissionDocCore::slot_count`); "SEL" counts every selected entity, vehicles included, so SEL
    can exceed OBJ.
 2. The tooltip reads "Placed slots on map / current selection". Both update on document and

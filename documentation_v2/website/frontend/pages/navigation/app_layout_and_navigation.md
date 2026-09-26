@@ -21,7 +21,7 @@ extend cached access during a Discord outage.
 - Related: the [account pages](/documentation_v2/website/frontend/pages/account/account_pages.md),
   which the frame renders bare or links from its account menu; the
   [session and access](/apps/website/frontend/src/v2/core/auth/README.md) code, whose store the
-  frame creates and whose [role](/documentation_v2/glossary.md#role) ladder the sidebar applies;
+  frame creates and whose [role](/documentation_v2/glossary/n_to_z.md#role) ladder the sidebar applies;
   the route table in `apps/website/frontend/src/router.rs`, which declares each route's layout
   flags and breadcrumb.
 
@@ -42,7 +42,7 @@ extend cached access during a Discord outage.
    ```
 
 3. The route table flags four chromeless routes: the
-   [Mission Creator](/documentation_v2/glossary.md#mission-creator) at `/missions/:id/edit`, the
+   [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) at `/missions/:id/edit`, the
    review workspace and the two debug benches. The frame is rebuilt only when the kind changes, so
    moving between two chromed routes swaps the page inside `<main>` and leaves the sidebar and the
    top bar mounted.
@@ -68,7 +68,7 @@ extend cached access during a Discord outage.
 5. Below the `lg` breakpoint (1024px) the sidebar gives way to a fixed "Open menu" toggle. It opens
    a drawer holding the same brand block and links, which a backdrop click, a link click or the
    Escape key closes.
-6. Creating a [mission](/documentation_v2/glossary.md#mission) is not a sidebar item: the Mission
+6. Creating a [mission](/documentation_v2/glossary/g_to_m.md#mission) is not a sidebar item: the Mission
    Library's "New Mission" button opens the create dialog.
 
 ### Top bar
@@ -90,7 +90,7 @@ extend cached access during a Discord outage.
    Mission Creator drafts.
 2. Under the cross-tab refresh lock it removes the stored session, unless another tab has already
    stored a different session in its place.
-3. It asks the [API](/documentation_v2/glossary.md#api) to revoke the refresh token. A storage
+3. It asks the [API](/documentation_v2/glossary/a_to_f.md#api) to revoke the refresh token. A storage
    failure or a failed revocation shows a toast; the viewer stays signed out locally either way.
 
 ### Membership status panel
@@ -102,7 +102,7 @@ extend cached access during a Discord outage.
    - stale: the API last verified the viewer's Discord membership more than 60 seconds ago, or
      never. The viewer keeps their cached role for 48 hours after that verification, and
      afterwards drops to `guest` unless an administrator extends access. A
-     [dev login](/documentation_v2/glossary.md#dev-login) session is never stale.
+     [dev login](/documentation_v2/glossary/a_to_f.md#dev-login) session is never stale.
    - "An administrative access extension is active." shows while an extension keeps the cached
      role.
    - A verified administrator whose guild membership is confirmed sees "Extend cached access"
@@ -150,7 +150,7 @@ with the body it sends or the DTO it reads. Server-side:
   non-development session and be a verified administrator who is still a guild member; the
   target must be a verified guild member who is neither banned nor deleted (409 otherwise). In
   one transaction the API writes the override, records `membership.grace_extended` in the
-  [audit logs](/documentation_v2/glossary.md#audit-logs) with the previous and the new expiry and
+  [audit logs](/documentation_v2/glossary/a_to_f.md#audit-logs) with the previous and the new expiry and
   the reason, and answers `{discord_id, expires_at}`.
 - The sidebar, the breadcrumb and the not-found page make no call: `NAVIGATION` and the route
   table are static.

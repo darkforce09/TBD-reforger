@@ -1,9 +1,9 @@
 # Ledger client
 
-The executor side of the [API](/documentation_v2/glossary.md#api)'s
-[fleet command](/documentation_v2/glossary.md#fleet-command) ledger: claim the next command for
+The executor side of the [API](/documentation_v2/glossary/a_to_f.md#api)'s
+[fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) ledger: claim the next command for
 this server, report that its effect is starting, perform it, and report its outcome, over
-outbound HTTPS with this host's [machine credential](/documentation_v2/glossary.md#machine-credential).
+outbound HTTPS with this host's [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential).
 
 ## Contents
 

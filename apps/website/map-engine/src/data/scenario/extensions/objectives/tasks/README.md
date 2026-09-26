@@ -1,6 +1,6 @@
 # Authored tasks
 
-The check on a [mission](/documentation_v2/glossary.md#mission)'s authored `tasks` block: the
+The check on a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s authored `tasks` block: the
 primary, secondary and optional assignments the game's HUD and briefing list, each starting
 `assigned` and ending `succeeded` or `failed`, with the transition table between those states and
 the rules for a timed window. The module is exposed as `data::scenario::tasks`.
@@ -22,7 +22,7 @@ apps/website/map-engine/src/data/scenario/extensions/objectives/tasks/
 `succeeded`, `failed`), every string non-blank once trimmed and every id unique. A key the schema
 does not declare refuses the block, and the first problem found is the answer, a sentence with its
 path. Unlike the other list blocks, an empty array passes, as the schema allows; the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) clears the block with `null`
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) clears the block with `null`
 instead.
 
 A `schedule` is `{startAfterS, windowS}` in whole seconds from mission start. `validate_schedule`

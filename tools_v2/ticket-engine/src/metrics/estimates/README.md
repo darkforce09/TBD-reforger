@@ -1,6 +1,6 @@
 # Token estimates
 
-Token counts reconstructed for shipped [tickets](/documentation_v2/glossary.md#ticket) that have no
+Token counts reconstructed for shipped [tickets](/documentation_v2/glossary/n_to_z.md#ticket) that have no
 measured run receipt: from the lines their commits changed where commits exist, from the median of
 similar tickets otherwise. Estimates live in `.ai/tickets/estimates/`, apart from the measured
 receipts, so one can never pass for the other.

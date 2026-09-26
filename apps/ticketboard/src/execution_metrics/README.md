@@ -1,7 +1,7 @@
 # Execution metrics
 
-The [ticketboard](/documentation_v2/glossary.md#ticketboard) feature that shows what running
-[tickets](/documentation_v2/glossary.md#ticket) cost: the measured run receipts in
+The [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) feature that shows what running
+[tickets](/documentation_v2/glossary/n_to_z.md#ticket) cost: the measured run receipts in
 `.ai/tickets/metrics/<id>/` and the historical token estimates in `.ai/tickets/estimates/`, loaded,
 checked, summed and drawn as two datasets that never share a total.
 

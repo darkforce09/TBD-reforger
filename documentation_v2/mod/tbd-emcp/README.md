@@ -2,9 +2,9 @@
 
 # Enfusion MCP bridge documentation
 
-The deeper document of `TBD_EMCP`, the [mod](/documentation_v2/glossary.md#mod) addon that carries
+The deeper document of `TBD_EMCP`, the [mod](/documentation_v2/glossary/g_to_m.md#mod) addon that carries
 the nineteen Net API handlers through which the Enfusion MCP tools and `cargo xtask mcp wbcall`
-drive a running [Workbench](/documentation_v2/glossary.md#workbench).
+drive a running [Workbench](/documentation_v2/glossary/n_to_z.md#workbench).
 
 ## Contents
 

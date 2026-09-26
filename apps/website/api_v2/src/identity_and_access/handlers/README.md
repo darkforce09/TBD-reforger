@@ -30,10 +30,10 @@ apps/website/api_v2/src/identity_and_access/handlers/
   refuses a banned account, issues a session and redirects (302) to the SPA's `/auth/callback`
   with the tokens in the URL fragment. Every failure redirects with an `#error=` reason instead,
   and every exit after the state check clears the cookie with `OAUTH_STATE_CLEAR`.
-- **[Dev login](/documentation_v2/glossary.md#dev-login).** `dev_login` is registered only in
+- **[Dev login](/documentation_v2/glossary/a_to_f.md#dev-login).** `dev_login` is registered only in
   development and answers 404 when the configuration says otherwise. `?role=` takes `guest`,
   `enlisted`, `leader`, `mission_maker` or `admin`; anything else signs in as `admin`. Each
-  [role](/documentation_v2/glossary.md#role) has its own fixed Discord id and Arma id, and the
+  [role](/documentation_v2/glossary/n_to_z.md#role) has its own fixed Discord id and Arma id, and the
   redirect is the one the Discord callback sends.
 - **Sessions.** `POST /api/v1/auth/refresh` rotates a single-use refresh token and answers the new
   access token, its expiry and the next refresh token; replaying a consumed token revokes the
@@ -57,7 +57,7 @@ apps/website/api_v2/src/identity_and_access/handlers/
   extractors, `authentication_primitives`, `http_url_guard` and the RFC 3339 wire format.
 - Used by: the domain's `routes.rs`; over HTTP, the account pages (login, auth callback, settings)
   and the navigation frame under `apps/website/frontend/src/v2/pages/`, the
-  [API](/documentation_v2/glossary.md#api) client's token refresh in
+  [API](/documentation_v2/glossary/a_to_f.md#api) client's token refresh in
   `apps/website/frontend/src/v2/core/api/client/refresh.rs`, and the mod's
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_IdentityLink.c`, which confirms link codes.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler

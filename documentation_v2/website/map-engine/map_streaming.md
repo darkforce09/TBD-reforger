@@ -3,7 +3,7 @@
 # Map streaming
 
 How the map engine gets a terrain's served map data into the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map and keeps only what the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map and keeps only what the
 view needs: the boot sequence, the viewport passes that pin, fetch, ingest and evict world chunks,
 the memory budget the loads report to, and the loaders that parse the served files. It runs in the
 browser, and its residency, parsers and budget also run natively for the offline tools and the
@@ -125,7 +125,7 @@ The ledger's figures and `decide` answers are in the
 
 ## Data
 
-Files read under `/map-assets/<terrain>/`, which the [API](/documentation_v2/glossary.md#api)
+Files read under `/map-assets/<terrain>/`, which the [API](/documentation_v2/glossary/a_to_f.md#api)
 serves from `assets_v2/terrains/` (or `MAP_ASSETS_DIR`):
 
 - `manifest.json`: the terrain manifest, with the `objects` block (`prefabsPath`, `chunksPath`,

@@ -1,7 +1,7 @@
 # Blueprint prefab fixtures
 
 The root of a loose-file prefab source for the blueprint compiler's prefab tests: synthetic
-[Enfusion](/documentation_v2/glossary.md#enfusion) `.et` prefabs in the grammar's real shape, laid
+[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) `.et` prefabs in the grammar's real shape, laid
 out so their resource paths (`Prefabs/…`) resolve against this folder. Nothing here is game
 content; the IDs, GUIDs and paths are invented.
 

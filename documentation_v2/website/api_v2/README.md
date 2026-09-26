@@ -2,7 +2,7 @@
 
 # API documentation
 
-The documentation of the website [API](/documentation_v2/glossary.md#api), the `website-api`
+The documentation of the website [API](/documentation_v2/glossary/a_to_f.md#api), the `website-api`
 crate in `apps/website/api_v2/`: the cross-domain overview, the environment variable reference,
 the decisions behind the design, and the verification evidence the API is accepted against.
 Developers and AI agents read it before changing the API or deploying it.

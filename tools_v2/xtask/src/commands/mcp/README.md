@@ -1,7 +1,7 @@
 # Enfusion MCP commands
 
 The `cargo xtask mcp` group: tool calls to the pinned `enfusion-mcp` server that drives
-[Workbench](/documentation_v2/glossary.md#workbench), through a persistent broker when one is up,
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench), through a persistent broker when one is up,
 the broker's lifecycle, raw calls to the Workbench NET API, and the read-back of a Workbench Play
 log. Mod developers and agents run them; the offline self-test is the check any change here must
 pass.

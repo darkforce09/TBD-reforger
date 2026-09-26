@@ -3,9 +3,9 @@
 # Map symbology
 
 The symbols that stand for units, vehicles and briefing markers: how the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map draws a
-[slot](/documentation_v2/glossary.md#slot), a vehicle and a marker, which colour marks each side,
-and how the game [mod](/documentation_v2/glossary.md#mod) draws the same markers in game. The set
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map draws a
+[slot](/documentation_v2/glossary/n_to_z.md#slot), a vehicle and a marker, which colour marks each side,
+and how the game [mod](/documentation_v2/glossary/g_to_m.md#mod) draws the same markers in game. The set
 is bespoke: five unit roles, three vehicle kinds and three side tints, with no MIL-STD-2525 or
 APP-6 frames, no echelon modifiers and no civilian side.
 

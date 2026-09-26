@@ -1,9 +1,9 @@
 # Slot loadout equipping and kit preview
 
-Dresses characters in the loadout a [slot](/documentation_v2/glossary.md#slot) authors: on the
+Dresses characters in the loadout a [slot](/documentation_v2/glossary/n_to_z.md#slot) authors: on the
 server, the equip pass that puts a slot body's gear, weapons and cargo on it and verifies they
 arrived; on the client, the lobby's kit preview doll wearing the same kit and loadout; and a
-development harness that equips an [arsenal](/documentation_v2/glossary.md#arsenal) export file.
+development harness that equips an [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) export file.
 
 ## Contents
 

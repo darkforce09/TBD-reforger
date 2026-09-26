@@ -27,7 +27,7 @@ re-exports the two step functions.
   migration's sha384 against the file on disk, then applies the pending ones through `psql`, one
   transaction per migration with its bookkeeping row. Last it re-applies
   `apps/website/api_v2/seeds/content_golden.sql` and checks a population floor, including a
-  claimed [ORBAT](/documentation_v2/glossary.md#orbat) seat.
+  claimed [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) seat.
 - `audit` mode, from the slice gate, and `platform wave gate --migrate-persist audit` roll each
   pending migration back. `advance` mode, from the wave gate on merged `main` and
   `--migrate-persist advance` under the gate lock, commits them.

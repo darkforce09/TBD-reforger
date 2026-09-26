@@ -1,7 +1,7 @@
 # Terrain rasterization export
 
 Renders the open world into a flat-coloured cartographic image with Enfusion's `MapDataExporter` in
-[Workbench](/documentation_v2/glossary.md#workbench), and records the call and its parameters in a
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench), and records the call and its parameters in a
 metadata file. The image is a shaded land, sea, forest and other-area map, not a photograph of the
 ground textures.
 

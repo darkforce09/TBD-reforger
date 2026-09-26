@@ -1,7 +1,7 @@
 # Community content domain
 
-The [API](/documentation_v2/glossary.md#api)'s
-[community content](/documentation_v2/glossary.md#community-content) domain: what members read and
+The [API](/documentation_v2/glossary/a_to_f.md#api)'s
+[community content](/documentation_v2/glossary/a_to_f.md#community-content) domain: what members read and
 administrators author. It holds the announcement feed and the CMS that writes it, the push that
 mirrors an announcement to Discord, CMS image uploads, the doctrine wiki, the vehicle database, and
 the modpack manifests that game servers and players resolve against.
@@ -21,7 +21,7 @@ apps/website/api_v2/src/community_content/
 
 Reads take `AuthUser`, so any signed-in member sees the published feed, the wiki, the vehicle
 table and the modpacks; every write takes `AdminUser`. The CMS routes under `/api/v1/cms/*` serve
-the [content manager](/documentation_v2/glossary.md#content-manager) page: an announcement is pushed
+the [content manager](/documentation_v2/glossary/a_to_f.md#content-manager) page: an announcement is pushed
 to Discord through `services::discord_webhook::WebhookService` when it is published, and archiving
 it keeps the row. An uploaded image lands in the directory `UPLOAD_DIR` names
 (`Config::upload_dir`), which `core::http_router` serves at `/uploads`. A modpack is always written
@@ -48,7 +48,7 @@ leave best-effort audit lines through `administration::services::audit_writer`.
   `server_infrastructure`.
 - `services::discord_webhook::WebhookService`: the webhook sink `core::application_state` holds.
 - `models`: `Announcement`, read by the dashboard, and `Modpack` with `ModpackMod`, read by
-  `server_infrastructure` and by the [registry](/documentation_v2/glossary.md#registry) items in
+  `server_infrastructure` and by the [registry](/documentation_v2/glossary/n_to_z.md#registry) items in
   `missions`.
 
 ## Boundaries

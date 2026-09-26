@@ -1,7 +1,7 @@
 # Landmark anchor export
 
 Finds tall landmark structures (churches, lighthouses, control towers, radio masts, castles) in the
-world open in [Workbench](/documentation_v2/glossary.md#workbench) and records where each stands,
+world open in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) and records where each stands,
 the ground height under it and how high it rises, as reference points for checking a map against
 the engine.
 

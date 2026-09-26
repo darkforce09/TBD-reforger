@@ -1,8 +1,8 @@
 # Contracts
 
 Every data shape that crosses a network, process or language boundary on the platform: between the
-[API](/documentation_v2/glossary.md#api), the single-page app, the map engine, the game
-[mod](/documentation_v2/glossary.md#mod), the developer tools and the external voice bridge. The
+[API](/documentation_v2/glossary/a_to_f.md#api), the single-page app, the map engine, the game
+[mod](/documentation_v2/glossary/g_to_m.md#mod), the developer tools and the external voice bridge. The
 tree holds data only (JSON Schemas, lookup tables, exported catalogues and golden samples) and no
 code; the code that follows it lives in `apps/` and `tools_v2/`.
 
@@ -23,13 +23,13 @@ The four folders hold four kinds of data, and each is changed differently:
 | Folder | What it holds | Changing it means |
 |---|---|---|
 | `definitions/` | the shape of a wire message or file; nothing puts a property on the wire that its schema does not define | a contract change: regenerated types, updated fixtures and citing code in the same change |
-| `rules/` | deterministic tables consulted while producing data: prefab classification, kit and vehicle aliases | a data change that takes effect only when the output it shapes (a terrain catalogue, a compiled [mission](/documentation_v2/glossary.md#mission)) is rebuilt |
-| `catalogs/` | the live item [registry](/documentation_v2/glossary.md#registry), production content exported from the [Enfusion](/documentation_v2/glossary.md#enfusion) [Workbench](/documentation_v2/glossary.md#workbench) and imported by the platform | new game content, replaced whole by a re-export and never edited by hand |
+| `rules/` | deterministic tables consulted while producing data: prefab classification, kit and vehicle aliases | a data change that takes effect only when the output it shapes (a terrain catalogue, a compiled [mission](/documentation_v2/glossary/g_to_m.md#mission)) is rebuilt |
+| `catalogs/` | the live item [registry](/documentation_v2/glossary/n_to_z.md#registry), production content exported from the [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) and imported by the platform | new game content, replaced whole by a re-export and never edited by hand |
 | `fixtures/` | ground truth for tests: samples that must parse, and wrapped missions that must be rejected | a test-surface change; an invalid fixture that starts passing is a regression in a rejection gate |
 
 The live catalogues stay out of `fixtures/` on purpose: the gates and the import read each from its
 own folder, so an import can never fall back to a sample and fill the
-[arsenal](/documentation_v2/glossary.md#arsenal) with sample data while every test passes.
+[arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) with sample data while every test passes.
 
 ```text
 definitions/ ──schema codegen──▶ API models/generated/ and contract/generated/
@@ -71,7 +71,7 @@ once `cargo xtask db up` has started it.
 - Used by:
   - `apps/website/api_v2/`: generated models, embedded validators, the registry import binary and
     the contract test suites;
-  - `apps/website/frontend/`: the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
+  - `apps/website/frontend/`: the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
     schema embeds for zones and loadout export;
   - `apps/website/map-engine/`: the embedded kit-alias table and the compiler's fixture tests;
   - `apps/mod/`: DTO classes whose `@contract` tags cite the mission, loadout and registry schemas;

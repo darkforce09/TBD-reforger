@@ -3,7 +3,7 @@
 # Admin help ticket documentation
 
 The documentation of the admin help ticket, a designed but unbuilt way for a player to ask the
-admins for help during a round of an [event](/documentation_v2/glossary.md#event).
+admins for help during a round of an [event](/documentation_v2/glossary/a_to_f.md#event).
 
 ## Contents
 

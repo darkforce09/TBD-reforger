@@ -1,6 +1,6 @@
 # Mission audio emitters and music cues
 
-Plays the sound a [mission](/documentation_v2/glossary.md#mission) authors: emitters that sound
+Plays the sound a [mission](/documentation_v2/glossary/g_to_m.md#mission) authors: emitters that sound
 while a player stands within their radius, armed when the round goes live or when their trigger
 fires, and music cues played on the round's start and end and on each task's success or failure.
 

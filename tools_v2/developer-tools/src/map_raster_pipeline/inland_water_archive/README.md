@@ -1,7 +1,7 @@
 # Inland water archives
 
 `map water`: the two water binaries a terrain serves, built from the
-[Workbench](/documentation_v2/glossary.md#workbench) inland-water export. `water/water_vectors.rkyv`
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) inland-water export. `water/water_vectors.rkyv`
 holds the lakes, ponds and river lines with their surface heights; `water/bathymetry.tbd-bath` is
 the `TBDB` pyramid of depth and water mask. These files are the submodules
 `tools_v2/developer-tools/src/map_raster_pipeline/inland_water_archive.rs` declares; it holds the

@@ -1,6 +1,6 @@
 # Building blueprint export
 
-Turns the buildings of the world open in [Workbench](/documentation_v2/glossary.md#workbench) into
+Turns the buildings of the world open in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) into
 building blueprints (floors, walls, doors, windows, stairs, furniture and roof heights), measures
 line-of-sight reference pairs against the engine, and lists every placed building by type. A Net
 API handler lets the developer tools drive the blueprint steps from outside Workbench.

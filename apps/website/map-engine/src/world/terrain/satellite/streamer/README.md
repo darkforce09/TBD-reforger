@@ -62,7 +62,7 @@ the `map` binary (`tools_v2/developer-tools/src/map_raster_pipeline/`) writes ei
 - Depends on: `crate::io::containers` (the `TBDS` header) and `crate::io::archives` (the archived
   index and its validation); `serde_json` for the version 1 index.
 - Used by: `crate::world::terrain::satellite::quadtree`, which reads the index and picks the
-  levels; and the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s tests in
+  levels; and the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s tests in
   `apps/website/frontend/src/v2/apps/editor/tests/`, which parse Everon's index and check the level
   choice.
 - Rules: the folder compiles only with the `streaming` feature; both container versions of one

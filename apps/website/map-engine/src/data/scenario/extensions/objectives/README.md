@@ -1,6 +1,6 @@
 # Objective blocks
 
-The authored blocks that say what a [mission](/documentation_v2/glossary.md#mission)'s sides work
+The authored blocks that say what a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s sides work
 towards and how its round ends: the tasks with their state machine, and the win rule. Each child
 types and checks one block, and `apps/website/map-engine/src/data/scenario/mod.rs` exposes them as
 `data::scenario::tasks` and `data::scenario::win_conditions`.
@@ -26,13 +26,13 @@ the block is absent or refused, so every compiled document has one.
 
 The blocks stay apart as the schema keeps them apart: a task watches a trigger and never ends the
 round, while the win rule's `endOn` lists the only triggers that may end it. In the
-[mod](/documentation_v2/glossary.md#mod), `TBD_TaskStateMachine` and `TBD_TaskHud` read the tasks,
+[mod](/documentation_v2/glossary/g_to_m.md#mod), `TBD_TaskStateMachine` and `TBD_TaskHud` read the tasks,
 and `TBD_WinConditionEvaluator` evaluates the rule.
 
 ## Public surface
 
 - `tasks`, exposed as `data::scenario::tasks`: `validate`, for the `tasks` row of
-  `AUTHORED_BLOCKS` and the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
+  `AUTHORED_BLOCKS` and the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
   tasks panel, and `validate_schedule`, `TIERS` and `STATES`, which the panel also imports.
 - `win_conditions`, exposed as `data::scenario::win_conditions`: `parse`, `validate`,
   `AUTHORED_MODES`, `END_ON_TRIGGERS`, `FALLBACK_TRIGGER`, the timeout limits, the parameter maps,

@@ -4,8 +4,8 @@
 
 Every operator procedure in the repository, written to be run step by step: bringing the web
 platform up, testing and deploying it, running the browser gates, driving
-[Workbench](/documentation_v2/glossary.md#workbench), playtesting the
-[mod](/documentation_v2/glossary.md#mod) and moving [tickets](/documentation_v2/glossary.md#ticket)
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench), playtesting the
+[mod](/documentation_v2/glossary/g_to_m.md#mod) and moving [tickets](/documentation_v2/glossary/n_to_z.md#ticket)
 through the agent pipelines. Developers, the operator and AI agents read the runbook for the task
 at hand before running any of its commands.
 
@@ -46,13 +46,13 @@ Start from the task:
 | First checkout, or after a reboot | [local development](/documentation_v2/runbooks/local_development.md), then [Cursor workspace setup](/documentation_v2/runbooks/cursor_workspace_setup.md) when working in Cursor |
 | Database work beyond the first seed | [database operations](/documentation_v2/runbooks/database_operations.md) |
 | Before a push to `main` | [testing and CI](/documentation_v2/runbooks/testing_and_ci.md); [editor gates](/documentation_v2/runbooks/editor_gates.md) for the browser gates |
-| Looking at the live [Mission Creator](/documentation_v2/glossary.md#mission-creator) | [editor capture](/documentation_v2/runbooks/editor_capture.md) |
+| Looking at the live [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) | [editor capture](/documentation_v2/runbooks/editor_capture.md) |
 | Shipping the website | [website deployment](/documentation_v2/runbooks/website_deployment.md) |
 | Running the dedicated game server | [game server staging](/documentation_v2/runbooks/game_server_staging/README.md), or [two-client playtest](/documentation_v2/runbooks/two_client_playtest/README.md) on a development machine |
 | Mod work that needs Workbench | [Enfusion MCP tooling](/documentation_v2/runbooks/enfusion_mcp_tooling.md), then [spawn determinism](/documentation_v2/runbooks/spawn_determinism.md) after a spawn or loadout change |
 | Rebuilding a terrain's object and road data | [terrain export runbook](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/MapExport/terrain_export_runbook.md) |
 | One ticket, one agent | [ticket run pipeline](/documentation_v2/runbooks/ticket_run_pipeline.md) |
-| A [wave](/documentation_v2/glossary.md#wave) of tickets in parallel | [factory waves](/documentation_v2/runbooks/factory_waves/README.md) for the platform, [mod slice workflow](/documentation_v2/runbooks/mod_slice_workflow.md) for the mod |
+| A [wave](/documentation_v2/glossary/n_to_z.md#wave) of tickets in parallel | [factory waves](/documentation_v2/runbooks/factory_waves/README.md) for the platform, [mod slice workflow](/documentation_v2/runbooks/mod_slice_workflow.md) for the mod |
 
 The terrain export runbook lives beside the exporter it drives, in the Workbench map export
 feature folder, rather than here; this index lists it so every procedure is found from one place.

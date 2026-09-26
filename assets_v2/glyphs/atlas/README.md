@@ -1,7 +1,7 @@
 # World glyph atlas
 
 The packed raster form of the world-object glyph set: one WebP image and the index of its cells.
-The map engine fetches both from the [API](/documentation_v2/glossary.md#api) at world boot and
+The map engine fetches both from the [API](/documentation_v2/glossary/a_to_f.md#api) at world boot and
 draws every world-object icon from them.
 
 ## Contents

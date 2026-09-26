@@ -3,7 +3,7 @@
 # Start the playtest server
 
 Starts a joinable dedicated server on the development machine with `cargo xtask mod playtest`: it
-stages a run folder, deploys the authored [mission](/documentation_v2/glossary.md#mission) through
+stages a run folder, deploys the authored [mission](/documentation_v2/glossary/g_to_m.md#mission) through
 the platform, boots the server with the checkout's `tbd-framework`, and prints the join details
 only once a backend room registered and the local addon won. The admin list needs the player's
 identity id, which the engine prints only when that player joins, so the server starts twice:
@@ -76,7 +76,7 @@ once without an admin, and again with the id. Each start takes a few minutes.
    command it prints, and check `pgrep -af '[A]rmaReforgerServer'` comes back empty, because a
    survivor holds 2001 and 17777 and the next boot dies on `Unable to start replication`.
 
-5. With an [event](/documentation_v2/glossary.md#event), bind it to `SID` now (step 16 of
+5. With an [event](/documentation_v2/glossary/a_to_f.md#event), bind it to `SID` now (step 16 of
    [Stack and mission](/documentation_v2/runbooks/two_client_playtest/stack_and_mission.md)).
    Then restart with the admin id, and with the event mission when there is one; `--admin` is
    repeatable, so add the second player's id once they have joined.
@@ -114,12 +114,12 @@ full order.
   and `server.json` rendered from `tools_v2/xtask/dedicated_server_profiles/tbd-dev-server.config.json`
   with the ports, `visible`, `maxPlayers`, `admins` and one mod entry keyed by the GUID in
   `apps/mod/tbd-framework/addon.gproj`.
-- With `--mission`, it logs in through the [dev login](/documentation_v2/glossary.md#dev-login)
-  as an administrator, takes the mission's approved [artifact](/documentation_v2/glossary.md#artifact)
+- With `--mission`, it logs in through the [dev login](/documentation_v2/glossary/a_to_f.md#dev-login)
+  as an administrator, takes the mission's approved [artifact](/documentation_v2/glossary/a_to_f.md#artifact)
   (submitting and approving the current version when there is none), makes sure Everon has its
-  [fleet scenario](/documentation_v2/glossary.md#fleet-scenario), issues this run a `mod_runtime`
-  [machine credential](/documentation_v2/glossary.md#machine-credential), and requests the
-  [mission deployment](/documentation_v2/glossary.md#mission-deployment), bound to
+  [fleet scenario](/documentation_v2/glossary/a_to_f.md#fleet-scenario), issues this run a `mod_runtime`
+  [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential), and requests the
+  [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment), bound to
   `--event-mission` when given. It revokes the credential when the server stops.
 - With `--artifact-file`, it stages the document as the mod's last verified artifact instead: no
   API and no credential; the log then reads `source=last-verified-cache`.

@@ -6,7 +6,7 @@ The `/debug/world-los` bench: it loads the committed object catalogue around one
 Everon map, draws the placed objects as plan footprints with every nearby building cut at eye
 height, and probes one segment from A to B through the world occluder, reporting the verdict, the
 hits and how much of the catalogue was loaded. It exists so a developer can check the object
-line of sight that the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
+line of sight that the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
 line-of-sight tool relies on, over the same loader, without the editor around it.
 
 ## Where it lives
@@ -62,7 +62,7 @@ sign-in.
 
 The README's [Data](/apps/website/frontend/src/v2/apps/debug/world_los/README.md#data) lists
 every file the bench fetches. They are static files under `/map-assets/everon/`, which the
-[API](/documentation_v2/glossary.md#api) serves and Trunk proxies in development: the manifest,
+[API](/documentation_v2/glossary/a_to_f.md#api) serves and Trunk proxies in development: the manifest,
 the prefab table, the object chunks and the descriptors and BLAS files the loader reads. The bench
 calls no `/api/v1` route and writes nothing.
 

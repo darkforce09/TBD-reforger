@@ -4,7 +4,7 @@
 
 Prepares a Linux host once to run the staging game server: the deploy settings on the development
 machine, the host's folders, the Arma Reforger dedicated server, the platform API the
-[mod](/documentation_v2/glossary.md#mod) talks to, and the firewall. Run the steps in order; after
+[mod](/documentation_v2/glossary/g_to_m.md#mod) talks to, and the firewall. Run the steps in order; after
 them a server needs its credentials
 ([machine credentials and mission deployment](/documentation_v2/runbooks/game_server_staging/machine_credentials_and_mission_deployment.md))
 before the first [staging deploy](/documentation_v2/runbooks/game_server_staging/staging_deploy.md).

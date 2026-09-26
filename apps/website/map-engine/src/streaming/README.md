@@ -1,7 +1,7 @@
 # Map streaming
 
 Everything that gets a terrain's served map data into the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map and keeps it there:
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map and keeps it there:
 fetching the files under `/map-assets`, deciding which world chunks stay resident, composing their
 draw buffers, accounting for the memory they hold, and reporting progress and statistics to the
 page. It hands finished data to the render engine and depends on no UI crate.
@@ -87,7 +87,7 @@ and the crate's tests use them.
     `crate::camera` or `crate::doll`;
   - `serde`, `serde_json`, `flate2`, `bytemuck`, `thiserror` and `futures`, and on wasm32
     `gloo-net`, `web-sys`, `js-sys`, `wasm-bindgen` and `wasm-bindgen-futures`;
-  - the [API](/documentation_v2/glossary.md#api)'s `/map-assets` mount, which serves
+  - the [API](/documentation_v2/glossary/a_to_f.md#api)'s `/map-assets` mount, which serves
     `assets_v2/terrains/` and `assets_v2/glyphs/` unless `MAP_ASSETS_DIR` or `GLYPH_ASSETS_DIR`
     names another folder (`apps/website/api_v2/src/core/http_router.rs`).
 - Used by:

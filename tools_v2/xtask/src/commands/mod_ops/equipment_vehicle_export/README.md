@@ -1,7 +1,7 @@
 # Equipment and vehicle export validation and publication
 
 Checks a source-only equipment and vehicle generation that the `tbd-export`
-[Workbench](/documentation_v2/glossary.md#workbench) plugins wrote, and publishes a valid one as
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) plugins wrote, and publishes a valid one as
 an immutable, sealed copy with a `current.json` pointer. It serves
 `cargo xtask mod validate-equipment-vehicle-export` and
 `cargo xtask mod publish-equipment-vehicle-export`.

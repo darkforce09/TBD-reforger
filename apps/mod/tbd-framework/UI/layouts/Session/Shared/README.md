@@ -48,7 +48,7 @@ anchored so they resize with the dock. Each dock takes a `TBD_PlayerLane`, whose
 
 ## Format
 
-- File type: [Enfusion](/documentation_v2/glossary.md#enfusion) widget layouts (`.layout`), plain
+- File type: [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) widget layouts (`.layout`), plain
   text, each beside a `.layout.meta` whose `Name` holds
   `{GUID}UI/layouts/Session/Shared/<file>.layout`. The bars carry their handler as a component on
   the root; every `*Border` and `*BG` is an empty `FrameWidgetClass` dock that the handler fills
@@ -61,7 +61,7 @@ anchored so they resize with the dock. Each dock takes a `TBD_PlayerLane`, whose
   or when any screen may host it, as with the players panel.
 - Adding a layout: take a free block from the ledger, author the layout and its `.meta`, add a
   `TBD_UILayouts` constant, and commit both files; the game finds a new path only after
-  [Workbench](/documentation_v2/glossary.md#workbench) has rewritten `resourceDatabase.rdb`.
+  [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) has rewritten `resourceDatabase.rdb`.
 
 ## Referenced by
 

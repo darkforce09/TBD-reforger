@@ -1,9 +1,9 @@
 # Ticket sync
 
 `cargo xtask ticket sync`: regenerates the outputs derived from the
-[ticket](/documentation_v2/glossary.md#ticket) files, the dispatch queue
+[ticket](/documentation_v2/glossary/n_to_z.md#ticket) files, the dispatch queue
 `.ai/tickets/queue.json` and the recommended-next-work block of the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) roadmap, and runs the ticket
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) roadmap, and runs the ticket
 column writer over the Eden gap analysis, which finds no table to rewrite there; it writes no
 other file.
 

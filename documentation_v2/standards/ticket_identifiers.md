@@ -2,7 +2,7 @@
 
 # Ticket identifiers
 
-How a [ticket](/documentation_v2/glossary.md#ticket) id is formed, where tickets and their
+How a [ticket](/documentation_v2/glossary/n_to_z.md#ticket) id is formed, where tickets and their
 documents live, and how the tooling reads ids out of commit subjects and documents. Every planned
 piece of work, shipped or open, carries one `T-` id; the ticket files are the source of truth, and
 the commands that read and write them are in the
@@ -34,7 +34,7 @@ One TOML file per ticket, parent and child alike: `.ai/tickets/T-<id>.toml`, bes
 
 `.ai/tickets/schema.json` defines every field, and `cargo xtask ticket check` validates each file
 against it. After a change, `cargo xtask ticket sync` writes `.ai/tickets/queue.json`, the
-next-work block of the [Mission Creator](/documentation_v2/glossary.md#mission-creator) roadmap and the ticket column of the Eden gap analysis;
+next-work block of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) roadmap and the ticket column of the Eden gap analysis;
 those are never edited by hand.
 
 ## Spec and plan files

@@ -1,6 +1,6 @@
 # Blueprint furniture composition fixture
 
-One synthetic [Enfusion](/documentation_v2/glossary.md#enfusion) furniture composition: a table
+One synthetic [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) furniture composition: a table
 and a `$grp` group of two chairs, placed by their prefab coordinates rather than by model sockets.
 
 ## Contents

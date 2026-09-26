@@ -1,10 +1,10 @@
 # Mission document core
 
 `MissionDocCore`, the `yrs` document that holds one open
-[mission](/documentation_v2/glossary.md#mission) while the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) edits it: its root maps, every
+[mission](/documentation_v2/glossary/g_to_m.md#mission) while the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) edits it: its root maps, every
 field-level write, the JSON views the compiler and the docks read, the
-[slot](/documentation_v2/glossary.md#slot) projection, load, merge and paste, peer updates and undo.
+[slot](/documentation_v2/glossary/n_to_z.md#slot) projection, load, merge and paste, peer updates and undo.
 
 ## Contents
 

@@ -244,9 +244,9 @@ configures or runs by hand, such as a crate's `rustfmt.toml`, needs only its Con
   scheduled session record (its time, missions, ORBAT slots, sign-ups and waitlist), and operations
   is the domain around events, the ORBAT and service records. Code identifiers keep their spelling
   (`scenario`, `EventHub`), and interface text is quoted as the code writes it. The glossary at the
-  documentation root defines these terms, one `###` entry per term; a README links a term's first
-  use to its entry, as `[mission](/documentation_v2/glossary.md#mission)`, whenever the glossary
-  holds one.
+  documentation root defines these terms, one `###` entry per term in the file of its first letter
+  (`documentation_v2/glossary/`); a README links a term's first use to its entry, as
+  `[mission](/documentation_v2/glossary/g_to_m.md#mission)`, whenever the glossary holds one.
 - **Parents and children.** A parent summarises each child in its one Contents line and, where it
   helps, one clause in How it works. Its kind sections state what holds at its own boundary or
   across all its children (an item, route or setting that crosses the boundary; a format every

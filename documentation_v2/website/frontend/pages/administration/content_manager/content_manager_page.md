@@ -18,9 +18,9 @@ announcements only; the doctrine wiki has no editor here.
   describes each file.
 - Entry: the route, its tier and its layout are in the README's
   [Routes](/apps/website/frontend/src/v2/pages/administration/content_manager/README.md#routes).
-- Related: the [content manager](/documentation_v2/glossary.md#content-manager) glossary entry;
+- Related: the [content manager](/documentation_v2/glossary/a_to_f.md#content-manager) glossary entry;
   the [announcements page](/documentation_v2/website/frontend/pages/command_center/announcements/announcements_page.md),
-  where members read what this page publishes; the [API](/documentation_v2/glossary.md#api)'s
+  where members read what this page publishes; the [API](/documentation_v2/glossary/a_to_f.md#api)'s
   [community content domain](/apps/website/api_v2/src/community_content/README.md).
 
 ## Behaviour
@@ -30,7 +30,7 @@ announcements only; the doctrine wiki has no editor here.
    of the README's
    [States](/apps/website/frontend/src/v2/pages/administration/content_manager/README.md#states)
    in place of the page until a signed-in viewer holds the `admin`
-   [role](/documentation_v2/glossary.md#role).
+   [role](/documentation_v2/glossary/n_to_z.md#role).
 2. The master column holds the heading and a "New" button. The first successful fetch seeds the
    working set of posts once, and the first post opens; later fetches never overwrite it, so
    local edits survive. A failed fetch shows its reason with a "Retry" button, and an empty

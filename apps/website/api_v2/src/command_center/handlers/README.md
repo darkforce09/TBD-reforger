@@ -21,7 +21,7 @@ apps/website/api_v2/src/command_center/handlers/
 ranking (`kd`, the default, `command_win`, `missions`, `longest_kill` or `team_kills`) from a fixed
 list, any other value is a 400, and every ordering ends on `discord_id` so tied scores page
 deterministically. `GET /api/v1/users/{discordId}/stats` reads the same projection for one account.
-`GET /api/v1/dashboard` composes the next [event](/documentation_v2/glossary.md#event), the caller's
+`GET /api/v1/dashboard` composes the next [event](/documentation_v2/glossary/a_to_f.md#event), the caller's
 assignment in it, the live server status, the current modpack and the latest announcements; each
 lookup is best-effort, so a missing piece is `null` rather than a failed dashboard.
 

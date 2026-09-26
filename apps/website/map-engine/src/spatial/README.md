@@ -47,7 +47,7 @@ map point and its elevation.
     viewshed scheduler), `crate::overlay` (the cluster layer), `crate::streaming` (the world
     object index and the occluder loader), `crate::world::architecture` (the BVH) and
     `crate::world::terrain::dem::sample` (terrain line-of-sight re-exports);
-  - the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s line-of-sight tool and
+  - the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s line-of-sight tool and
     input handlers in `apps/website/frontend/src/v2/apps/editor/input/`, and the debug benches in
     `apps/website/frontend/src/v2/apps/debug/`;
   - the blueprint tooling and the map checks in `tools_v2/developer-tools/src/`.

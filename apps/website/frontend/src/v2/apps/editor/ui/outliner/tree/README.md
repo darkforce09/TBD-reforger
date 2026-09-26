@@ -26,7 +26,7 @@ Up to `VIRTUAL_SLOT_THRESHOLD` (50) rows it draws them all; above that it draws 
 of 16 px rows (`ROW_H`), plus six rows of overscan, between two spacers in a measured scroller
 (`data-testid="outliner-window-scroller"`), and publishes its counts to `window.__outlinerStats`.
 The "Placed vehicles" rows close the list and select and open their attributes like
-[slot](/documentation_v2/glossary.md#slot) rows.
+[slot](/documentation_v2/glossary/n_to_z.md#slot) rows.
 
 `single_row` draws one row by kind. The "Unfiled" root and faction headers are inert. A folder
 click makes the folder the active layer and selects its direct slots, or its whole subtree with Alt
@@ -52,7 +52,7 @@ window blur or unmounting the tree cancels them at once.
   `apps/website/frontend/src/v2/apps/editor/ui/docks/dock_left/view/full_dock.rs`, the only caller
   of `virtual_tree`; the right dock (`apps/website/frontend/src/v2/apps/editor/ui/docks/dock_right.rs`
   and its panels) and the zones panel in `apps/website/frontend/src/v2/apps/editor/ui/inspector/`,
-  for the row helpers and classes; the [ORBAT](/documentation_v2/glossary.md#orbat) manager in
+  for the row helpers and classes; the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) manager in
   `apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager/`, for `drag_set_for`;
   `apps/website/frontend/src/v2/apps/editor/bridge/host_state/entity_selection.rs`, for the folder
   slot reads; the outliner smoke tests in

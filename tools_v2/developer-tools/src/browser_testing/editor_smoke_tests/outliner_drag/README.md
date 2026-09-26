@@ -2,8 +2,8 @@
 
 The parts of the `outliner-drag` smoke declared in
 `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/outliner_drag.rs`: it drives the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s real drag handlers over four
-controlled [missions](/documentation_v2/glossary.md#mission) and reads every verdict from the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s real drag handlers over four
+controlled [missions](/documentation_v2/glossary/g_to_m.md#mission) and reads every verdict from the
 editor's own compiled save payload and undo history.
 
 ## Contents
@@ -30,7 +30,7 @@ a gesture made with trusted DevTools input at coordinates taken from the rendere
 - the height drag of a mixed slot and vehicle selection previews without writing, keeps each
   height offset, commits as one undo step and releases pointer capture;
 - a cancelled pointer, or a release by another pointer id, never commits;
-- five-row outliner and [ORBAT](/documentation_v2/glossary.md#orbat) drops move all five as one
+- five-row outliner and [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) drops move all five as one
   undo step, and undo restores the authored structure;
 - tactical-graphic drawing, picking, deletion and cancel behave, and a stale tactical selection
   does not swallow a delete;

@@ -15,7 +15,7 @@ assets_v2/terrains/everon/prefabs/scenes/
 
 - Encoding: UTF-8 JSON named `<slug>.scene.spec.json` after the building it surrounds. The file
   holds a `$comment` and `entries[]`, each with an `id`, the
-  [Enfusion](/documentation_v2/glossary.md#enfusion) `prefab` path, `pos` in the building's local
+  [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) `prefab` path, `pos` in the building's local
   frame (metres, y up), and optionally `anglesDeg` as `[pitch, yaw, roll]` in degrees (default all
   zero) and a uniform `scale` (default 1).
 - Schema: no JSON Schema; the reader is `SceneSpec` in

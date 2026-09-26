@@ -1,7 +1,7 @@
 # Ticket command services
 
 The body of every `cargo xtask ticket` subcommand: queries and briefs that read the registry
-projection, mutations that change [ticket](/documentation_v2/glossary.md#ticket) files through the
+projection, mutations that change [ticket](/documentation_v2/glossary/n_to_z.md#ticket) files through the
 typed operations, shipping and the landing-commit stamp, batch selection and configuration. Each
 command is a `cmd_*` function that takes the checkout root; xtask parses the arguments and adds the
 side effects this crate leaves out: running an agent and deleting worktrees and branches.

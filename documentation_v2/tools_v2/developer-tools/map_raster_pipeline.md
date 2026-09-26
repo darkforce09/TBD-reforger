@@ -2,10 +2,10 @@
 
 # Map raster pipeline
 
-The offline pipeline that turns the game's archives and the [Workbench](/documentation_v2/glossary.md#workbench)
+The offline pipeline that turns the game's archives and the [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)
 exports into the image and label assets a terrain serves: the satellite container and tile
 pyramid, the stylised Map view pyramid, the location and height labels, the water archives and
-the world-glyph atlas. The [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map
+the world-glyph atlas. The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map
 draws all of them. Developers run it when a terrain's imagery or labels change; the
 [terrain export and map assets](/documentation_v2/assets_v2/terrain_export_and_map_assets.md)
 document places it in the whole terrain flow.

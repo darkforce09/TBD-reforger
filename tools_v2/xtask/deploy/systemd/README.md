@@ -1,7 +1,7 @@
 # Systemd user unit templates
 
 The systemd user units of the home server and the game server: the website API, the dedicated game
-server, the [fleet host agent](/documentation_v2/glossary.md#fleet-host-agent), and the nightly
+server, the [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent), and the nightly
 database backup with its weekly restore drill. Every unit runs as the deploy user from
 `~/.config/systemd/user/`, never as root.
 

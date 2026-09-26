@@ -1,6 +1,6 @@
 # Repository status models
 
-The pure state behind the [ticketboard](/documentation_v2/glossary.md#ticketboard)'s status banner:
+The pure state behind the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)'s status banner:
 the progress and verdict of the strict registry check, the `git status` chip over the files the
 registry commands write, and the borrowed view the banner paints from.
 
@@ -30,7 +30,7 @@ at the output instead of claiming zero errors.
 starts exactly one follow-up. The application uses one for the check and one for `git status`.
 
 `GIT_ARGS` asks `git status --porcelain` about `.ai/tickets/`, the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) roadmap, the Eden gap analysis
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) roadmap, the Eden gap analysis
 and `CLAUDE.md`. `chip_from_exit` parses the output only on exit code 0, keeping
 porcelain `XY path` lines verbatim and dropping any other line, since standard error is merged in;
 any other exit is "git unavailable" with the reason.

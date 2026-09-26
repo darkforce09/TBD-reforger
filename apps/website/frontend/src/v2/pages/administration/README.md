@@ -1,9 +1,9 @@
 # Administration pages
 
-The [administration](/documentation_v2/glossary.md#administration) pages, the last section of the
-sidebar and the only one reserved for the `admin` [role](/documentation_v2/glossary.md#role):
-the operations calendar of [events](/documentation_v2/glossary.md#event), the
-[mission](/documentation_v2/glossary.md#mission) approval queue, the game servers, the member
+The [administration](/documentation_v2/glossary/a_to_f.md#administration) pages, the last section of the
+sidebar and the only one reserved for the `admin` [role](/documentation_v2/glossary/n_to_z.md#role):
+the operations calendar of [events](/documentation_v2/glossary/a_to_f.md#event), the
+[mission](/documentation_v2/glossary/g_to_m.md#mission) approval queue, the game servers, the member
 roster, the announcements and the audit trail.
 
 ## Contents
@@ -37,13 +37,13 @@ signed-out viewer and "Admin access required." below `admin`, in place of the pa
 its own fetches and signals, and nothing is shared between pages. Every request runs in the browser
 build only; a native build resolves each fetch to nothing and renders the failure branch.
 
-The pages reach five [API](/documentation_v2/glossary.md#api) domains: `operations` for events,
+The pages reach five [API](/documentation_v2/glossary/a_to_f.md#api) domains: `operations` for events,
 their missions and their access; `missions` for
-[approvals](/documentation_v2/glossary.md#approvals), reviews, the library and mission
-[deployments](/documentation_v2/glossary.md#mission-deployment); `server_infrastructure` for
-servers, [fleet commands](/documentation_v2/glossary.md#fleet-command),
-[fleet scenarios](/documentation_v2/glossary.md#fleet-scenario) and
-[machine credentials](/documentation_v2/glossary.md#machine-credential); `administration` for the
+[approvals](/documentation_v2/glossary/a_to_f.md#approvals), reviews, the library and mission
+[deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment); `server_infrastructure` for
+servers, [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command),
+[fleet scenarios](/documentation_v2/glossary/a_to_f.md#fleet-scenario) and
+[machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential); `administration` for the
 roster, bans, warnings, the role resync and the audit trail; `community_content` for announcements
 and uploads.
 

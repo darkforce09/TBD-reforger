@@ -1,7 +1,7 @@
 # Terrain export
 
 The terrain layers of the map export: ground height, a cartographic rasterization, the road network
-and water, each read from the open world in [Workbench](/documentation_v2/glossary.md#workbench) and
+and water, each read from the open world in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) and
 written as text, JSON or image files to the export profile.
 
 ## Contents

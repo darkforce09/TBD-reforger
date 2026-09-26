@@ -47,7 +47,7 @@ Selector, lobby and briefing read mock catalogs from
 
 ## Format
 
-- File type: [Enfusion](/documentation_v2/glossary.md#enfusion) widget layouts (`.layout`), each
+- File type: [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) widget layouts (`.layout`), each
   beside a `.layout.meta` that holds its resource GUID; each child README lists its widget names.
 - Resource GUID: `7BD1A7000000XX01`, one block per layout from the ledger in
   `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`. A shell a menu preset names
@@ -55,7 +55,7 @@ Selector, lobby and briefing read mock catalogs from
 - Naming: one folder per screen; a layout two screens share goes in
   `Shared/`, and a primitive any screen may use in `apps/mod/tbd-framework/UI/layouts/Common/`.
 - Adding a layout: as each child README describes, with a `TBD_UILayouts` constant and a
-  [Workbench](/documentation_v2/glossary.md#workbench) pass that rewrites `resourceDatabase.rdb`.
+  [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) pass that rewrites `resourceDatabase.rdb`.
 
 ## Referenced by
 

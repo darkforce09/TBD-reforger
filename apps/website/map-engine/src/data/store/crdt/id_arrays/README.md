@@ -1,6 +1,6 @@
 # Ordered id arrays
 
-The ordered id lists of the [mission](/documentation_v2/glossary.md#mission) document: a squad's
+The ordered id lists of the [mission](/documentation_v2/glossary/g_to_m.md#mission) document: a squad's
 `slotIds` and a layer's `entityIds` held as native `yrs` arrays, so that two peers appending at the
 same moment both keep their id, and the helpers that read, append, remove and move ids in that
 form or as a plain array.
@@ -44,7 +44,7 @@ missing, so a payload that omitted a list does not gain an empty one on the wire
   `apps/website/map-engine/src/data/store/rows/` writes and reads.
 - `append_id`, `insert_empty_native`, `replace_native`, `retain_in`, `retain_ids`,
   `read_id_array`, `read_field_ids` and `migrate_legacy_id_lists`: the id list operations the row
-  module's [slot](/documentation_v2/glossary.md#slot), squad, layer, vehicle, composition, paste,
+  module's [slot](/documentation_v2/glossary/n_to_z.md#slot), squad, layer, vehicle, composition, paste,
   hydrate, merge and materialize code runs inside its own transactions.
 - `read_field`, `read_ids`, `is_native_array` and `move_id`: public, with callers in this folder
   only (`read_id_array` and the tests).

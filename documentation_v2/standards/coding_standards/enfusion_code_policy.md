@@ -2,8 +2,8 @@
 
 # Enfusion code policy
 
-Rules ENF-1 to ENF-4: how [EnfScript](/documentation_v2/glossary.md#enfscript) code in the
-[mod](/documentation_v2/glossary.md#mod) addons under `apps/mod/` behaves. The comment tags that
+Rules ENF-1 to ENF-4: how [EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript) code in the
+[mod](/documentation_v2/glossary/g_to_m.md#mod) addons under `apps/mod/` behaves. The comment tags that
 networked code carries (`@authority`, `@rpc`, `@replicated`, `@contract`) and the Doxygen comment
 rules belong to the
 [documentation standards](/documentation_v2/standards/documentation_standards.md#6-enfusion-comments)
@@ -16,7 +16,7 @@ and are not restated here.
   on a hot path; a developer test switch defaults to off (`[Attribute("0")]`). The framework's
   logger, `apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Log.c`, and the phase managers cite
   ENF-1 at the places they keep a path silent. Gate: MANUAL. Log levels and attribute defaults
-  show only when [Workbench](/documentation_v2/glossary.md#workbench) or a server runs the code;
+  show only when [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) or a server runs the code;
   no static analyser for EnfScript exists in this repository.
 - **ENF-2 (Debuggability) — An authority gate says why.** Every early return on the wrong
   replication side, such as `if (RplSession.Mode() == RplMode.Client) return;`, carries a comment
@@ -26,7 +26,7 @@ and are not restated here.
   (`cargo xtask schema citations`), which reads `.c` and `.rs` files under `apps/` and `tools_v2/`.
   The `@authority`, `@rpc` and `@replicated` tags are unenforced: no gate reads them.
 - **ENF-4 (Usability) — A JSON document the mod parses has a golden sample that validates.** The
-  ten samples in `contracts_v2/fixtures/enfusion_samples/` cover the parts of the [mission](/documentation_v2/glossary.md#mission) schema
+  ten samples in `contracts_v2/fixtures/enfusion_samples/` cover the parts of the [mission](/documentation_v2/glossary/g_to_m.md#mission) schema
   the mod's DTO classes read; the schema gate validates each against its definition, and a sample
   whose name has no definition fails. Gate: CI-SCRIPT, the Enfusion DTO branch of
   `cargo xtask ci schema-validate`. That every DTO class has a sample is unenforced: the gate

@@ -2,9 +2,9 @@
 
 # Ticket engine documentation
 
-The documents on `ticket-engine`, the library that owns the [ticket](/documentation_v2/glossary.md#ticket)
+The documents on `ticket-engine`, the library that owns the [ticket](/documentation_v2/glossary/n_to_z.md#ticket)
 registry in `.ai/tickets/`: its typed storage and operations, validation, sync outputs,
-[wave](/documentation_v2/glossary.md#wave) lock and metrics. Developers and AI agents read them
+[wave](/documentation_v2/glossary/n_to_z.md#wave) lock and metrics. Developers and AI agents read them
 below the crate's code READMEs, which say what each module declares.
 
 ## Contents

@@ -2,7 +2,7 @@
 
 # Mission approvals blueprint
 
-Design-phase reference for the [mission](/documentation_v2/glossary.md#mission) approvals page at
+Design-phase reference for the [mission](/documentation_v2/glossary/g_to_m.md#mission) approvals page at
 `/admin/approvals`: a dossier in which a reviewer reads one community-submitted mission and decides
 it. It gives colour and layout context and is not an implementation source; the built UI is the
 Leptos code under `apps/website/frontend/src/v2/pages/administration/approvals/`.
@@ -21,12 +21,12 @@ The blueprint shows the heading "Mission Approvals" with the line "Review and au
 community-submitted missions for the live database.", a "Pending Queue (2)" column of cards, each
 with a title, a date and the author's avatar, and the selected mission's dossier: title, author,
 date and terrain, a map image, a "Tactical Briefing", tiles for BLUFOR
-[slots](/documentation_v2/glossary.md#slot), OPFOR and the expected duration, a "Launch Tactical
+[slots](/documentation_v2/glossary/n_to_z.md#slot), OPFOR and the expected duration, a "Launch Tactical
 Planner for Deep Review" button, a "Review Activity" thread with a comment box, and the buttons
 "Request Changes" and "Approve & Publish".
 
 The built page differs: it has no heading of its own; its queue rows name the version and the
-[artifact](/documentation_v2/glossary.md#artifact) under review instead of showing avatars; its
+[artifact](/documentation_v2/glossary/a_to_f.md#artifact) under review instead of showing avatars; its
 drawer reviews an immutable artifact, with its provenance and compile findings in place of the map
 and the settings tiles in place of the side counts; a link to the read-only review workspace
 replaces the planner button; and three decisions, two of them with a required text, replace the two

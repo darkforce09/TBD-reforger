@@ -1,7 +1,7 @@
 # Ticket command group
 
 The `cargo xtask ticket` group and the top-level `cargo xtask registry-get`: every read and write
-of the [ticket](/documentation_v2/glossary.md#ticket) registry, the TOML files under
+of the [ticket](/documentation_v2/glossary/n_to_z.md#ticket) registry, the TOML files under
 `.ai/tickets/`. Agents, the command center, the ticketboard and people run them; the storage,
 validation, sync and shipping logic lives in the `ticket-engine` crate, and this folder adds the
 side effects that need xtask: running an agent and deleting worktrees and branches.

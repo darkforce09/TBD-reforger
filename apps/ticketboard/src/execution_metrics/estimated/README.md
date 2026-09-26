@@ -1,8 +1,8 @@
 # Token estimates
 
-The [ticketboard](/documentation_v2/glossary.md#ticketboard)'s reading of the token estimates in
+The [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)'s reading of the token estimates in
 `.ai/tickets/estimates/`, the counts reconstructed for shipped
-[tickets](/documentation_v2/glossary.md#ticket) that have no run receipt: each file checked, summed
+[tickets](/documentation_v2/glossary/n_to_z.md#ticket) that have no run receipt: each file checked, summed
 per class and per domain in a model of its own, and projected into the estimated rows of the ticket
 details.
 

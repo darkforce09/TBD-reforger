@@ -21,7 +21,7 @@ Read [app_layout_and_navigation.md](/documentation_v2/website/frontend/pages/nav
 first. It follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md)
 and covers the whole code folder in one doc, since the frame's parts render together on every
 route. It links the in-code README for the link table, the calls and every interface text, gives
-what each call means in the [API](/documentation_v2/glossary.md#api), and compares the built top
+what each call means in the [API](/documentation_v2/glossary/a_to_f.md#api), and compares the built top
 bar with the blueprint in `visual_references/`. The blueprint is a design-phase reference: it
 draws the bar in a solid navy with a brighter blue, while the built bar uses the theme's
 translucent surface.
@@ -38,13 +38,13 @@ translucent surface.
 - [Route table](/apps/website/frontend/src/router.rs) — the layout flags and breadcrumbs the frame
   reads for each route.
 - [Session and access](/apps/website/frontend/src/v2/core/auth/) — the session store the frame
-  creates and the [role](/documentation_v2/glossary.md#role) checks the sidebar applies.
+  creates and the [role](/documentation_v2/glossary/n_to_z.md#role) checks the sidebar applies.
 
 ## Boundaries
 
 - Depends on: the [feature doc template](/documentation_v2/standards/templates/feature_doc.md) and
   the [documentation folder README template](/documentation_v2/standards/templates/readme_documentation_folder.md);
-  the [glossary](/documentation_v2/glossary.md); the frame code, the identity and access and
+  the [glossary](/documentation_v2/glossary/README.md); the frame code, the identity and access and
   administration handlers it calls, and the ticket registry in `.ai/tickets/`, which the feature
   doc is written from.
 - Used by: the [frontend documentation](/documentation_v2/website/frontend/README.md) route table

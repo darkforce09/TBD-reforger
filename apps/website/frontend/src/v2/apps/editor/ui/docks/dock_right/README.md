@@ -1,8 +1,8 @@
 # Right dock
 
-The [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s right dock, its asset
+The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s right dock, its asset
 browser: seven tabs from which an author places characters, vehicles, objects, compositions,
-markers and trigger and zone areas into the [mission](/documentation_v2/glossary.md#mission), with
+markers and trigger and zone areas into the [mission](/documentation_v2/glossary/g_to_m.md#mission), with
 the side chips, favourites and recently placed assets beside them. The module root is
 `apps/website/frontend/src/v2/apps/editor/ui/docks/dock_right.rs`: it declares these folders so
 they share one scope, holds the vehicle tab's "Place with crew" checkbox, re-exports the items
@@ -25,7 +25,7 @@ apps/website/frontend/src/v2/apps/editor/ui/docks/dock_right/
 ## How it works
 
 `DockRight` in `shell/` receives what the editor page loads and owns (the catalog states, the
-[registry](/documentation_v2/glossary.md#registry) rows, `doc_tick`, `active_side`, `objects_mode`
+[registry](/documentation_v2/glossary/n_to_z.md#registry) rows, `doc_tick`, `active_side`, `objects_mode`
 and the collapse flag) and draws one tab body at a time:
 
 | Tab | Drawn by |
@@ -57,7 +57,7 @@ registers both at mount, and each cleanup removes only its own registration.
 - `record_placed`: adds an off-dock placement to the recently placed list; called by the canvas
   release in
   `apps/website/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/map_release.rs` and
-  the [ORBAT](/documentation_v2/glossary.md#orbat) manager's vehicle picker in
+  the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) manager's vehicle picker in
   `apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager/tree_rows.rs`.
 - `marker_icon_is_authorable`: the closed marker icon test `begin_place_marker` applies in
   `apps/website/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/palette_arming.rs`.
@@ -70,7 +70,7 @@ registers both at mount, and each cleanup removes only its own registration.
     catalog in `arsenal::asset_catalog`, `bridge::host_state` (`armed_placement`,
     `editor_context`), the inspector's zones panel, the outliner's tree rows and styles, and the
     left dock's `collapse_chevron`;
-  - `crate::v2::core`: the [API](/documentation_v2/glossary.md#api) client and `RegistryItem`, the
+  - `crate::v2::core`: the [API](/documentation_v2/glossary/a_to_f.md#api) client and `RegistryItem`, the
     auth store and `MaterialIcon`;
   - `website_map_engine`: `editing::hosted_commands`, `editing::host`, `editing::tools::selection`,
     `streaming::host` and `overlay::symbology::markers`;

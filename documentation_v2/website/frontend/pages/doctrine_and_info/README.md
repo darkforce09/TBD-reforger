@@ -23,11 +23,11 @@ and keep their spelling. Each holds a README index and the page's feature doc; t
 database and the modpacks also hold a `visual_references/` folder of design-phase sets. A feature
 doc follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md): Where
 it lives, Behaviour (ending in the known discrepancies between the page and the
-[API](/documentation_v2/glossary.md#api), where there are any), Data (what each call means
+[API](/documentation_v2/glossary/a_to_f.md#api), where there are any), Data (what each call means
 server-side), Design, Open work and Decisions.
 
 The three pages share one shape: each renders inside `AuthGate`, fetches its whole list from the
-[community content](/documentation_v2/glossary.md#community-content) domain once, and lays it out
+[community content](/documentation_v2/glossary/a_to_f.md#community-content) domain once, and lays it out
 in a `GlassSplit`, a searchable list beside the selected item. The wiki and the modpacks give an
 administrator an edit mode; the vehicle database only reads.
 
@@ -51,7 +51,7 @@ and its feature doc, a line in Contents and a row in the table.
 
 - Depends on: the [feature doc template](/documentation_v2/standards/templates/feature_doc.md) and
   the [documentation folder README template](/documentation_v2/standards/templates/readme_documentation_folder.md);
-  the [glossary](/documentation_v2/glossary.md); the page code, the API handlers it calls and the
+  the [glossary](/documentation_v2/glossary/README.md); the page code, the API handlers it calls and the
   ticket registry in `.ai/tickets/`, which the feature docs are written from.
 - Used by: the in-code READMEs of the page folders and of `doctrine_and_info/`, which link the
   feature docs under Related documentation.

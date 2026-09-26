@@ -2,12 +2,12 @@
 
 # Prepare the stack and the mission for a playtest
 
-Proves the mod compiles and boots, starts the website [API](/documentation_v2/glossary.md#api)
+Proves the mod compiles and boots, starts the website [API](/documentation_v2/glossary/a_to_f.md#api)
 and single-page app on the development machine, and authors the
-[mission](/documentation_v2/glossary.md#mission) the session plays: one whose
-[slots](/documentation_v2/glossary.md#slot) carry loadouts authored in the
-[Arsenal](/documentation_v2/glossary.md#arsenal). An optional last part attaches the mission to an
-[event](/documentation_v2/glossary.md#event). Run it alone, from the repository root, the day
+[mission](/documentation_v2/glossary/g_to_m.md#mission) the session plays: one whose
+[slots](/documentation_v2/glossary/n_to_z.md#slot) carry loadouts authored in the
+[Arsenal](/documentation_v2/glossary/a_to_f.md#arsenal). An optional last part attaches the mission to an
+[event](/documentation_v2/glossary/a_to_f.md#event). Run it alone, from the repository root, the day
 before the session; it takes about 30 minutes.
 
 ## Prerequisites
@@ -104,7 +104,7 @@ before the session; it takes about 30 minutes.
    Expected: the API mints a session and redirects to the app's callback; you land logged in as an
    administrator.
 
-10. Author the mission in the [Mission Creator](/documentation_v2/glossary.md#mission-creator).
+10. Author the mission in the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator).
     Open `http://127.0.0.1:3000/missions`, press "New Mission", choose Everon, and in
     `/missions/:id/edit` place at least four character slots across two factions and two squads.
     Open the Arsenal on a slot (the Attributes dialog's Arsenal tab, or "OPEN ARSENAL" in the ORBAT
@@ -122,7 +122,7 @@ before the session; it takes about 30 minutes.
 11. Press "Save Version", then "Submit for review" in the mission library's dossier.
 
     Expected: submission compiles the saved version into an immutable
-    [artifact](/documentation_v2/glossary.md#artifact). A refusal names its code:
+    [artifact](/documentation_v2/glossary/a_to_f.md#artifact). A refusal names its code:
     `NO_PLACED_SLOTS`, `UNCOMPILABLE_VERSION`, `DOCUMENT_CONTRACT_VIOLATION`, or
     `UNSUPPORTED_AUTHORED_DATA` with every authored path the compiler cannot carry (for example a
     kit prefab missing from `contracts_v2/rules/kit-aliases.json`).

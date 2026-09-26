@@ -1,6 +1,6 @@
 # Mission radio nets
 
-Gives each player their side's radio nets from the [mission](/documentation_v2/glossary.md#mission)'s
+Gives each player their side's radio nets from the [mission](/documentation_v2/glossary/g_to_m.md#mission)'s
 radio plan: the server picks the nets for the player's side, tunes them into the radios the player
 carries and verifies each tune by reading it back, and the client shows the list with the truth
 about what was tuned.

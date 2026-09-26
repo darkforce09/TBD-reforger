@@ -1,8 +1,8 @@
 # Framework scripts
 
 The addon's script root. It holds the one script module the framework ships, `Game/`; the
-[Workbench](/documentation_v2/glossary.md#workbench) export plugins and the
-[Enfusion](/documentation_v2/glossary.md#enfusion) MCP handlers live in their own addons,
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) export plugins and the
+[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) MCP handlers live in their own addons,
 `apps/mod/tbd-export/` and `apps/mod/tbd-emcp/`.
 
 ## Contents

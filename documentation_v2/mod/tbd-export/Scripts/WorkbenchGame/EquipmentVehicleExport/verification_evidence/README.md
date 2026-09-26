@@ -4,7 +4,7 @@
 
 The frozen record that accepted the export addon's equipment and vehicle source exporter: the 24
 audit findings and their dispositions, the old-to-new field mapping, the
-[Workbench](/documentation_v2/glossary.md#workbench) cases, the hashes of the code and of the
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) cases, the hashes of the code and of the
 original files, and concrete before-and-after examples. Developers changing the exporter, its
 validator or its contract read it to see what was proven and how.
 

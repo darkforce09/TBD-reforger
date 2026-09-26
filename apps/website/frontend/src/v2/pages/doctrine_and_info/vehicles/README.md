@@ -20,7 +20,7 @@ apps/website/frontend/src/v2/pages/doctrine_and_info/vehicles/
 `VehicleDatabasePage` renders inside `AuthGate` and fetches the vehicle list once; both panes of
 the `GlassSplit` read that one list. The selection starts on the first row and falls back to it
 whenever the selected id names no vehicle. `faction_order` groups the rows by faction in the order
-each faction first appears, which is the name order the [API](/documentation_v2/glossary.md#api)
+each faction first appears, which is the name order the [API](/documentation_v2/glossary/a_to_f.md#api)
 returns; a row without a faction is left out of the list. The search matches a vehicle's name,
 armour class or faction, and a group whose rows all filter out disappears. The dossier renders
 every field as optional: an empty image URL shows a vehicle icon, an empty amphibious value drops

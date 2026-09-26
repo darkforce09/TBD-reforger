@@ -1,6 +1,6 @@
 # Fleet command ledger
 
-The durable ledger of [fleet commands](/documentation_v2/glossary.md#fleet-command): an operator's
+The durable ledger of [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command): an operator's
 command to one server is recorded before any executor can act on it, claimed under a lease and a
 fencing token, reported as starting and finished, and reconciled by time when an executor goes
 silent.
@@ -30,13 +30,13 @@ cancelled         new fencing token      otherwise: indeterminate
 ```
 
 `command_ledger.rs` accepts an operator's command with arguments that passed
-`command_arguments.rs`; the actions only a [mission deployment](/documentation_v2/glossary.md#mission-deployment)
+`command_arguments.rs`; the actions only a [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment)
 issues (`load_mission`, `restart_with_mission`) arrive through `enqueue_deployment_command`, which
 commits with the deployment. `executor_claims.rs` hands the oldest claimable command to the
 executor whose kind the action needs, checks that the requester still holds administrator
 authority, and requires the current fencing token on every later report, so an executor whose
 lease lapsed cannot overwrite a newer claim; a
-[game runtime](/documentation_v2/glossary.md#game-runtime) names its open runtime session, and a
+[game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) names its open runtime session, and a
 command bound to another session fails. `command_reconciliation.rs` runs every pass over all
 servers, skipping rows another transaction holds. Lock order: server, runtime session, command rows.
 

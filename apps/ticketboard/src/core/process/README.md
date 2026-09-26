@@ -1,6 +1,6 @@
 # Process helpers
 
-The subprocess plumbing of the [ticketboard](/documentation_v2/glossary.md#ticketboard): starting a
+The subprocess plumbing of the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard): starting a
 program off the UI thread and streaming its output, keeping a bounded copy of that output, finding
 the `cargo` binary a desktop session can run, and opening a path with the operating system's
 handler.

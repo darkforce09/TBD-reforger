@@ -1,7 +1,7 @@
 # Fleet command console
 
-The "Fleet commands" section of the [server control](/documentation_v2/glossary.md#server-control)
-card: an administrator requests a [fleet command](/documentation_v2/glossary.md#fleet-command) for
+The "Fleet commands" section of the [server control](/documentation_v2/glossary/n_to_z.md#server-control)
+card: an administrator requests a [fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) for
 the selected server, follows it until an executor reports how it ended, reads the server's command
 history and cancels a command no executor has claimed.
 
@@ -35,9 +35,9 @@ follow through its generation. Only `succeeded` is announced as a success; `inde
 announced as an unknown outcome that nothing repeats, and a state this build does not know is
 announced as unknown rather than followed forever. The request controls offer only the six actions
 an operator may request, never the two a
-[mission deployment](/documentation_v2/glossary.md#mission-deployment) issues, and
+[mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) issues, and
 `validated_broadcast` and `validated_kick` check a request as the
-[API](/documentation_v2/glossary.md#api) does before it is sent: a broadcast of 1 to 256 bytes
+[API](/documentation_v2/glossary/a_to_f.md#api) does before it is sent: a broadcast of 1 to 256 bytes
 without line breaks or control characters, and a kick with an Arma identity and an optional reason
 of at most 128 bytes each and a runtime session id. The kick form offers the players of the newest
 successful player listing and the session that confirmed the server's newest confirmed deployment,
@@ -52,7 +52,7 @@ browser build only.
   `badge_class`, `MaterialIcon`), `crate::v2::core::utils` (`utc_label`), and `executor_label` from
   `apps/website/frontend/src/v2/pages/administration/server_control/machine_credentials/`; over
   HTTP, the fleet command routes of the
-  [server infrastructure](/documentation_v2/glossary.md#server-infrastructure) domain.
+  [server infrastructure](/documentation_v2/glossary/n_to_z.md#server-infrastructure) domain.
 - Used by: `server_cards.rs` in
   `apps/website/frontend/src/v2/pages/administration/server_control/`, which builds the console
   and renders `command_requests` and `command_history`; the deployments panel in

@@ -1,8 +1,8 @@
 # Account pages
 
 The pages that act on the viewer's own session rather than on
-[mission](/documentation_v2/glossary.md#mission) or
-[operations](/documentation_v2/glossary.md#operations) data: sign-in, the callback the sign-in
+[mission](/documentation_v2/glossary/g_to_m.md#mission) or
+[operations](/documentation_v2/glossary/n_to_z.md#operations) data: sign-in, the callback the sign-in
 redirect lands on, and the account settings.
 
 ## Contents
@@ -45,8 +45,8 @@ imports another.
   `crate::v2::core::api` (the request client and the shapes in
   `apps/website/frontend/src/v2/core/api/dto/auth.rs`) and
   `crate::v2::core::ui` (`AuthGate`, the page header, the toast queue); over HTTP, the
-  [identity and access](/documentation_v2/glossary.md#identity-and-access) routes of the
-  [API](/documentation_v2/glossary.md#api).
+  [identity and access](/documentation_v2/glossary/g_to_m.md#identity-and-access) routes of the
+  [API](/documentation_v2/glossary/a_to_f.md#api).
 - Used by: the route table in `apps/website/frontend/src/app_routes.rs` and
   `apps/website/frontend/src/router.rs`; the frame in
   `apps/website/frontend/src/v2/pages/navigation/`, which renders `/login` and `/auth/callback`

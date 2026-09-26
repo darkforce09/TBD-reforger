@@ -3,10 +3,10 @@
 # Game server staging
 
 How to run the Arma Reforger dedicated server of the staging host on the checkout: preparing the
-host once, issuing its [machine credentials](/documentation_v2/glossary.md#machine-credential),
+host once, issuing its [machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential),
 deploying with `cargo xtask deploy staging`, proving the boot from the server's own log, and
-joining it from a client. Developers and agents working on the [mod](/documentation_v2/glossary.md#mod)
-or on the platform's [game runtime](/documentation_v2/glossary.md#game-runtime) routes read it.
+joining it from a client. Developers and agents working on the [mod](/documentation_v2/glossary/g_to_m.md#mod)
+or on the platform's [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) routes read it.
 
 ## Contents
 
@@ -23,8 +23,8 @@ documentation_v2/runbooks/game_server_staging/
 
 The staging host is the machine `TBD_SSH_HOST` names in `tools_v2/xtask/deploy/deploy.env`. It runs
 the platform's API and Postgres and one dedicated game server; the server's mod asks the API which
-[mission deployment](/documentation_v2/glossary.md#mission-deployment) it runs and fetches that
-[mission](/documentation_v2/glossary.md#mission)'s [artifact](/documentation_v2/glossary.md#artifact).
+[mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) it runs and fetches that
+[mission](/documentation_v2/glossary/g_to_m.md#mission)'s [artifact](/documentation_v2/glossary/a_to_f.md#artifact).
 
 ```text
 development machine                         staging host (TBD_SSH_HOST)
@@ -68,7 +68,7 @@ Facts every topic relies on:
 - **Two ids for one mod.** `game.mods[].modId` is the Workshop id; the addon GUID is the gproj's.
   For `tbd-framework` both are `B2C3D4E5F6A78901`. A modpack row carries both (`workshop_id` and
   `mod_guid`), because another mod's two ids can differ.
-- **Ports.** Game `2001`, A2S `17777`, [RCON](/documentation_v2/glossary.md#rcon) `19999`. The A2S
+- **Ports.** Game `2001`, A2S `17777`, [RCON](/documentation_v2/glossary/n_to_z.md#rcon) `19999`. The A2S
   port must differ from the game port: equal ports make the engine log `NETWORK (E): Unable to start replication` and exit with status
   0, so `Restart=on-failure` does not restart it.
 - **Log format.** Every current mod line reads `[TBD][<channel>] …`; a line with no channel tag
@@ -119,4 +119,4 @@ Facts every topic relies on:
 - [Mod documentation](/documentation_v2/mod/README.md) — the addons the server loads.
 - [Spawn determinism](/documentation_v2/runbooks/spawn_determinism.md) and
   [Enfusion MCP tooling](/documentation_v2/runbooks/enfusion_mcp_tooling.md) — the
-  [Workbench](/documentation_v2/glossary.md#workbench)-side checks before a deploy.
+  [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)-side checks before a deploy.

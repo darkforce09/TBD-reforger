@@ -1,7 +1,7 @@
 # Mission document compiler
 
-Compiles a saved [mission](/documentation_v2/glossary.md#mission) payload into the document the
-[mod](/documentation_v2/glossary.md#mod) loads, as `contracts_v2/definitions/mission.schema.json`
+Compiles a saved [mission](/documentation_v2/glossary/g_to_m.md#mission) payload into the document the
+[mod](/documentation_v2/glossary/g_to_m.md#mod) loads, as `contracts_v2/definitions/mission.schema.json`
 defines it, with the findings and kit substitutions of the same compile. The module is exposed as
 `data::scenario::flatten`.
 
@@ -50,7 +50,7 @@ entities and vehicles ─▶ vehicle roster ─▶ zones ─▶ authored blocks 
 meta, environment, radio plan, briefings, settings ─▶ ModMissionDocument
 ```
 
-A [slot](/documentation_v2/glossary.md#slot)'s `id` is `faction:callsign:role:occurrence` and its
+A [slot](/documentation_v2/glossary/n_to_z.md#slot)'s `id` is `faction:callsign:role:occurrence` and its
 `uid` is the editor's slot id. Editor `position.x`, `.y`, `.z` and `.rotation` become `x`, `z`,
 `y` (only when non-zero and finite) and `headingDeg` (normalised to 0–360). `schemaVersion` is
 `1.3` when a 1.3 key reaches the document (a slot identity key, a squad leader, a roster vehicle,
@@ -71,8 +71,8 @@ stay inside the schema, which closes the document. A finding never refuses the c
 is dropped or replaced by the derivation, and the finding says which. Only an unparsable payload,
 a payload whose squads emit no slot, and a placed vehicle whose `resourceName` has no `veh:` alias
 fail it. `unsupported_authored_data` lists what changes gameplay (warning findings, substitutions,
-authored editor triggers), and the [API](/documentation_v2/glossary.md#api) makes no
-[artifact](/documentation_v2/glossary.md#artifact) of a version that has any.
+authored editor triggers), and the [API](/documentation_v2/glossary/a_to_f.md#api) makes no
+[artifact](/documentation_v2/glossary/a_to_f.md#artifact) of a version that has any.
 
 ## Boundaries
 
@@ -85,7 +85,7 @@ authored editor triggers), and the [API](/documentation_v2/glossary.md#api) make
     `apps/website/api_v2/src/missions/services/mission_artifacts/artifact_store.rs` calls
     `unsupported_authored_data`, and `apps/website/api_v2/src/missions/handlers/mission_versions.rs`
     runs `scan_editor_payload_types` on every save;
-  - the [Mission Creator](/documentation_v2/glossary.md#mission-creator): its compiled export
+  - the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator): its compiled export
     (`apps/website/frontend/src/v2/apps/editor/shell/document_commands/imp/compilation.rs`), the
     flow defaults of `apps/website/frontend/src/v2/apps/editor/ui/inspector/env.rs`, and the
     `compiled_meta` builders in `apps/website/frontend/src/v2/core/api/dto/`.

@@ -2,9 +2,9 @@
 
 # Export addon documentation
 
-The deeper documents of `TBD_Export`, the [Workbench](/documentation_v2/glossary.md#workbench)
-addon of the [mod](/documentation_v2/glossary.md#mod) that exports the terrain, object, building,
-equipment, vehicle and item [registry](/documentation_v2/glossary.md#registry) data the platform
+The deeper documents of `TBD_Export`, the [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)
+addon of the [mod](/documentation_v2/glossary/g_to_m.md#mod) that exports the terrain, object, building,
+equipment, vehicle and item [registry](/documentation_v2/glossary/n_to_z.md#registry) data the platform
 ingests. Nothing in the addon ships to players or servers.
 
 ## Contents
@@ -31,7 +31,7 @@ exporter. Start from the exporter you need:
 | Registry items and compatibility | `apps/mod/tbd-export/Scripts/WorkbenchGame/TBD_RegistryItemsExportPlugin.c` | none: its menu entry is commented out | the [contract catalogs](/contracts_v2/catalogs/README.md) it feeds |
 
 The addon also carries its own export world and
-[mission header](/documentation_v2/glossary.md#mission-header) (`apps/mod/tbd-export/worlds/`,
+[mission header](/documentation_v2/glossary/g_to_m.md#mission-header) (`apps/mod/tbd-export/worlds/`,
 `apps/mod/tbd-export/Missions/`) and the export game mode prefab
 (`apps/mod/tbd-export/Prefabs/Systems/`), which the runtime road export needs.
 

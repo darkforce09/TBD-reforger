@@ -1,10 +1,10 @@
 # Mod commands
 
 The `cargo xtask mod` group: gates, launchers and workstation setup for the
-[Enfusion](/documentation_v2/glossary.md#enfusion) [mod](/documentation_v2/glossary.md#mod). It
+[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) [mod](/documentation_v2/glossary/g_to_m.md#mod). It
 compiles the scripts and boots the world headless, runs a local playtest server, prepares a
-[Workbench](/documentation_v2/glossary.md#workbench) session, publishes the Workbench equipment
-export, and drives the mod program's [waves](/documentation_v2/glossary.md#wave). Mod developers,
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) session, publishes the Workbench equipment
+export, and drives the mod program's [waves](/documentation_v2/glossary/n_to_z.md#wave). Mod developers,
 mod slice agents and the `mod-gates` CI workflow run them.
 
 ## Contents
@@ -160,7 +160,7 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
 - Synopsis: `mod test-game-runtime-api`, configured by `TBD_MACHINE_CREDENTIAL` (required) and
   `TBD_API_BASE` (default `http://127.0.0.1:8080`).
 - Does: calls `GET /api/v1/game-runtime/deployment` with the server's `mod_runtime`
-  [machine credential](/documentation_v2/glossary.md#machine-credential); with a deployment,
+  [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential); with a deployment,
   checks that `GET /api/v1/game-runtime/artifacts/{artifactId}` returns bytes hashing to the
   deployment's SHA-256 and entity tag, and that an event's
   `GET /api/v1/game-runtime/events/{id}/roster` answers version 2; checks that the deployment read

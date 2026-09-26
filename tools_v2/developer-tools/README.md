@@ -2,9 +2,9 @@
 
 The `developer-tools` crate: the `developer_tools` library and six executables (`enf`, `gate`,
 `mcpd`, `world`, `map`, `capture`) that do the heavy offline work around the platform. They index
-[Enfusion](/documentation_v2/glossary.md#enfusion) scripts and read the game's archives, run the
+[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) scripts and read the game's archives, run the
 headless browser gates of the single-page app and the [Mission
-Creator](/documentation_v2/glossary.md#mission-creator), compile building blueprints, and build and
+Creator](/documentation_v2/glossary/g_to_m.md#mission-creator), compile building blueprints, and build and
 verify the terrain and map assets under `assets_v2/`. Developers run the binaries, and `cargo xtask`
 recipes, CI tasks and xtask verifications call them or the library.
 
@@ -68,7 +68,7 @@ ci-local` nor the CI workflow runs them.
 | `CHROME_HEADLESS_SHELL` | the Chromium the harness finds | `src/browser_testing/cdp/sleep_ms.rs`: the browser executable |
 | `LEPTOS_DIST` | `apps/website/frontend/dist` | `src/browser_testing/editor_smoke_tests/mutations.rs`: the built app `gate r-auth` serves without `--dist` |
 | `TOKEN`, `REFRESH` | none; the smoke exits 2 without them | `src/browser_testing/editor_smoke_tests/mutations.rs`: dev-login tokens for `gate smoke mutations` |
-| `PROFILE`, `ENFUSION_PROFILE_PATH` | none | `src/world_export_pipeline/export_preparation/export_profile.rs`: the [Workbench](/documentation_v2/glossary.md#workbench) profile `world copy-export-profile` reads |
+| `PROFILE`, `ENFUSION_PROFILE_PATH` | none | `src/world_export_pipeline/export_preparation/export_profile.rs`: the [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) profile `world copy-export-profile` reads |
 
 ## Public surface
 

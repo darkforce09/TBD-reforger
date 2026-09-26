@@ -1,9 +1,9 @@
 # Event manager page
 
-The `/admin/events` page, the [event manager](/documentation_v2/glossary.md#event-manager), headed
-"Operations Calendar": administrators schedule [events](/documentation_v2/glossary.md#event), which
+The `/admin/events` page, the [event manager](/documentation_v2/glossary/a_to_f.md#event-manager), headed
+"Operations Calendar": administrators schedule [events](/documentation_v2/glossary/a_to_f.md#event), which
 the screen calls operations, on a month grid, attach
-[missions](/documentation_v2/glossary.md#mission) to them, edit and delete them, and open the access
+[missions](/documentation_v2/glossary/g_to_m.md#mission) to them, edit and delete them, and open the access
 sheet that decides who may join each one.
 
 ## Contents
@@ -45,7 +45,7 @@ the day panel and the forms agree on which day an event is on; only the value se
 
 The edit form compares start times as instants, sends an empty string to clear the briefing or the
 banner, and sends nothing when nothing changed. Its Status picker offers only the moves
-`lifecycle::can_transition` allows, which mirror the [API](/documentation_v2/glossary.md#api)'s
+`lifecycle::can_transition` allows, which mirror the [API](/documentation_v2/glossary/a_to_f.md#api)'s
 rules; a rule the browser cannot check comes back as the API's own sentence. Neither form sets an
 event's server or modpack, and neither posts to Discord. The detach confirmation renders last
 because it shares a stacking level with the edit form that opens it. Every request runs in the
@@ -55,7 +55,7 @@ browser build only; a native build resolves each fetch to nothing.
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/admin/events` | `EventManagerPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` [role](/documentation_v2/glossary.md#role) only | padded, not full-bleed, inside the navigation frame; breadcrumb Administration / Event Manager; sidebar entry "Event Manager" |
+| `/admin/events` | `EventManagerPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` [role](/documentation_v2/glossary/n_to_z.md#role) only | padded, not full-bleed, inside the navigation frame; breadcrumb Administration / Event Manager; sidebar entry "Event Manager" |
 
 ## Data
 
@@ -133,7 +133,7 @@ browser build only; a native build resolves each fetch to nothing.
   `MissionCard` and the access DTOs), `crate::v2::core::auth` (`AuthStore`), `crate::v2::core::ui`
   (`AdminGate`, `Dialog`, `MaterialIcon`, the badge classes, the toast queue) and
   `crate::v2::core::utils` (local date formatting); over HTTP, the events, event mission and access
-  routes of the [operations](/documentation_v2/glossary.md#operations) domain and the mission
+  routes of the [operations](/documentation_v2/glossary/n_to_z.md#operations) domain and the mission
   library of the missions domain.
 - Used by: the `/admin/events` route in `apps/website/frontend/src/app_routes.rs` and
   `apps/website/frontend/src/router.rs`; the sidebar's "Event Manager" link in

@@ -21,7 +21,7 @@ apps/mod/tbd-export/worlds/TBD_Export_Everon_Layers/
 - Resource GUID: a layer has no `.meta`; the world `TBD_Export_Everon.ent` loads it from the
   `TBD_Export_Everon_Layers/` folder beside it.
 - Naming: Workbench names the folder `<world>_Layers/` and the default layer `default.layer`.
-- Adding an entity: place it in [Workbench](/documentation_v2/glossary.md#workbench) with the
+- Adding an entity: place it in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) with the
   export world open and save the world, which rewrites the layer.
 
 ## Referenced by
@@ -33,6 +33,6 @@ apps/mod/tbd-export/worlds/TBD_Export_Everon_Layers/
 - Depends on: `apps/mod/tbd-export/Prefabs/Systems/TBD_Export_GameMode.et` and the vanilla AI
   world prefab.
 - Used by: the export world, and through it the export
-  [mission header](/documentation_v2/glossary.md#mission-header).
+  [mission header](/documentation_v2/glossary/g_to_m.md#mission-header).
 - Rules: the layer keeps the AI world, without which `TBD_RoadExportComponent` finds no road
   network manager and exports nothing; Workbench writes the file.

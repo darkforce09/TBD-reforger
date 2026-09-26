@@ -1,7 +1,7 @@
 # Database lane
 
 The `cargo xtask db` group: the local Postgres container of the website
-[API](/documentation_v2/glossary.md#api), its seeds and registry import, verified backups and
+[API](/documentation_v2/glossary/a_to_f.md#api), its seeds and registry import, verified backups and
 restores, the isolated integration-test run, the migration checksum repair and the lane's
 self-test. Developers run it locally; the folder also holds the announcement seed that
 `cargo xtask mod seed-announcement` runs.
@@ -92,7 +92,7 @@ A clap usage error exits 2.
 - Does: runs the API's `import-registry` binary in `apps/website/api_v2` over
   `contracts_v2/catalogs/registry-items.workbench.json` and
   `contracts_v2/catalogs/registry-compat.workbench.json`, loading the item
-  [registry](/documentation_v2/glossary.md#registry) into the database `DATABASE_URL` names (the
+  [registry](/documentation_v2/glossary/n_to_z.md#registry) into the database `DATABASE_URL` names (the
   environment or `apps/website/api_v2/.env`), after applying pending migrations.
 - Exit codes: cargo's own code.
 - Example: `cargo xtask db registry-import`

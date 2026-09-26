@@ -1,6 +1,6 @@
 # Interactive map tools
 
-The browser half of the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s measure
+The browser half of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s measure
 and selection tools: the ruler and line-of-sight overlays, the seam between the line-of-sight object
 layer and the streamed world occluder, the frame pump of the viewshed scheduler, and the select
 tool's drag preview and smoke bridge. Each tool's state machine, geometry and verdicts live in

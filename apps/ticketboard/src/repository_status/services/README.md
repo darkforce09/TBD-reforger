@@ -1,6 +1,6 @@
 # File watch
 
-The [ticketboard](/documentation_v2/glossary.md#ticketboard)'s watch on the registry files: the
+The [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)'s watch on the registry files: the
 `notify` watches that report a relevant change, and the debouncer that turns a burst of changes into
 one reload and, when no ticket command is running, one strict check.
 
@@ -16,7 +16,7 @@ apps/ticketboard/src/repository_status/services/
 ## How it works
 
 `spawn(root, tx, on_event)` arms three watches, on `.ai/tickets/`, on the repository root and on
-the folder of the [Mission Creator](/documentation_v2/glossary.md#mission-creator) roadmap, and
+the folder of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) roadmap, and
 returns a `WatchHandle` that keeps them alive:
 
 | Watch | Mode | Relevant paths | On failure |

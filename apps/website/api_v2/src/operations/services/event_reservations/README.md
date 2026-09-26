@@ -1,6 +1,6 @@
 # Event reservations
 
-Every writer of [event](/documentation_v2/glossary.md#event) reservations, interactive and
+Every writer of [event](/documentation_v2/glossary/a_to_f.md#event) reservations, interactive and
 background alike: one lock order, pure planning, the quota allocation each participant holds, seat
 claims, releases, waitlist promotion and the re-evaluation of eligibility.
 
@@ -41,7 +41,7 @@ lock the scope ──▶ scope_snapshot ──▶ reservation_planning (no datab
 ```
 
 - A new claim needs current authority for the seat, a quota place, event and
-  [mission](/documentation_v2/glossary.md#mission) capacity, and must leave every seatless place
+  [mission](/documentation_v2/glossary/g_to_m.md#mission) capacity, and must leave every seatless place
   holder seatable (`seat_matching.rs`, a bipartite matching in priority order); an existing
   reservation keeps its allocation and is never charged twice.
 - A participant holds one allocation per event, shared by their reservations in every mission of
@@ -66,7 +66,7 @@ lock the scope ──▶ scope_snapshot ──▶ reservation_planning (no datab
   locks and session authorization; `administration` for the audit rows; `command_center` for the
   user-statistics recompute (`services::user_stats::recompute_user_stats_on_connection`); `core`
   for configuration, errors and `AuthUser`.
-- Used by: the [operations](/documentation_v2/glossary.md#operations) handlers for registration,
+- Used by: the [operations](/documentation_v2/glossary/n_to_z.md#operations) handlers for registration,
   assignment, promotion, events, attachments, access administration and the event hub;
   `operations::services::access_administration`; the ban handler in
   `apps/website/api_v2/src/administration/handlers/disciplinary.rs` and the membership cache in

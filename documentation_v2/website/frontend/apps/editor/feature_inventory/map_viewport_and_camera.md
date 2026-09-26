@@ -2,7 +2,7 @@
 
 # Map viewport and camera
 
-How the [Mission Creator](/documentation_v2/glossary.md#mission-creator) shows the terrain and
+How the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) shows the terrain and
 how a mission maker moves around it: the flat north-up map, pan, zoom, the kilometre grid,
 centring on the selection, the cursor readout and the terrain the map loads.
 
@@ -72,7 +72,7 @@ The status legend is in the [inventory index](/documentation_v2/website/frontend
 
 1. The graphics engine draws 1000 m minor lines, 5000 m major lines and the map border.
 2. The grid is on by default. The "Grid" checkbox in the "Mission Settings…" dialog toggles it;
-   the setting is stored in the [mission](/documentation_v2/glossary.md#mission) document, so it
+   the setting is stored in the [mission](/documentation_v2/glossary/g_to_m.md#mission) document, so it
    applies to everyone who opens the mission.
 3. Three-digit grid references run along the top and left edges of the map (6400 m reads
    "064"); the [bottom toolbelt](/documentation_v2/website/frontend/apps/editor/feature_inventory/bottom_toolbelt.md)
@@ -81,7 +81,7 @@ The status legend is in the [inventory index](/documentation_v2/website/frontend
 ### MAP-FLY-001 — Centre on the selection
 
 1. Space, with no modifier and focus outside a text field, moves the camera at once to the
-   average position of the selected [slots](/documentation_v2/glossary.md#slot) and keeps the
+   average position of the selected [slots](/documentation_v2/glossary/n_to_z.md#slot) and keeps the
    zoom. There is no animation and no zoom to fit.
 2. The average counts slots only, so a selection of vehicles alone does nothing.
 3. A click never moves the camera.

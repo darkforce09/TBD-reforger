@@ -1,15 +1,15 @@
 # Server infrastructure domain
 
-The [API](/documentation_v2/glossary.md#api)'s
-[server infrastructure](/documentation_v2/glossary.md#server-infrastructure) domain: the game server
-fleet. It holds the [registry](/documentation_v2/glossary.md#registry) row that describes a server
+The [API](/documentation_v2/glossary/a_to_f.md#api)'s
+[server infrastructure](/documentation_v2/glossary/n_to_z.md#server-infrastructure) domain: the game server
+fleet. It holds the [registry](/documentation_v2/glossary/n_to_z.md#registry) row that describes a server
 and the modpack it requires, the per-server
-[machine credentials](/documentation_v2/glossary.md#machine-credential) of its host agent and
-[game runtime](/documentation_v2/glossary.md#game-runtime), the runtime sessions that fence each
-boot of the game runtime, the [fleet command](/documentation_v2/glossary.md#fleet-command) ledger
+[machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential) of its host agent and
+[game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime), the runtime sessions that fence each
+boot of the game runtime, the [fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) ledger
 through which operators control servers and executors report what they did, the
-[fleet scenario](/documentation_v2/glossary.md#fleet-scenario) registry, the server intel reads, and
-the [SSE](/documentation_v2/glossary.md#sse) feed of one server's live status.
+[fleet scenario](/documentation_v2/glossary/a_to_f.md#fleet-scenario) registry, the server intel reads, and
+the [SSE](/documentation_v2/glossary/n_to_z.md#sse) feed of one server's live status.
 
 ## Contents
 
@@ -32,10 +32,10 @@ domain's, so `core` names no server concept.
 
 Operators never reach a game host directly. An administrator's command becomes a durable row in
 the ledger, and the program that performs it polls the API outbound with its own machine
-credential: the [fleet host agent](/documentation_v2/glossary.md#fleet-host-agent) runs process
-control and the [RCON](/documentation_v2/glossary.md#rcon) player list, and the game runtime runs
-broadcasts, kicks and in-process [mission](/documentation_v2/glossary.md#mission) loads. A
-[mission deployment](/documentation_v2/glossary.md#mission-deployment) in `missions` issues its
+credential: the [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) runs process
+control and the [RCON](/documentation_v2/glossary/n_to_z.md#rcon) player list, and the game runtime runs
+broadcasts, kicks and in-process [mission](/documentation_v2/glossary/g_to_m.md#mission) loads. A
+[mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) in `missions` issues its
 `load_mission` or `restart_with_mission` command through the same ledger and needs a fleet scenario
 for its terrain. The platform has no RCON console route.
 
@@ -63,7 +63,7 @@ for its terrain. The platform has no RCON console route.
   and `/api/v1/fleet-executor/*` handler takes, in this domain, `match_telemetry`, `missions` and
   `operations`.
 - `services::runtime_sessions`: the heartbeat fence for `match_telemetry`, the open-session share
-  lock for live [slot](/documentation_v2/glossary.md#slot) occupancy in `operations`, and silence
+  lock for live [slot](/documentation_v2/glossary/n_to_z.md#slot) occupancy in `operations`, and silence
   expiry for its worker.
 - `services::status_broadcast`: `publish_server_status`, `publish_server_status_by_id` and
   `publish_all_server_statuses`, for the heartbeat and the status workers.
@@ -87,7 +87,7 @@ for its terrain. The platform has no RCON console route.
     `runtime_session_expiry` and `fleet_command_reconciler` workers in
     `apps/website/api_v2/src/background_workers/`;
   - `match_telemetry`, `missions`, `operations` and `command_center`, through the surface above;
-  - over HTTP, the [server control](/documentation_v2/glossary.md#server-control) and server intel
+  - over HTTP, the [server control](/documentation_v2/glossary/n_to_z.md#server-control) and server intel
     pages in `apps/website/frontend/src/v2/pages/`, the fleet host agent in
     `apps/fleet_host_agent/`, and the game runtime in `apps/mod/tbd-framework/Scripts/Game/TBD/API/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the

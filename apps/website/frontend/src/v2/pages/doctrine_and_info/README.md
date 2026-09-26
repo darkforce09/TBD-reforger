@@ -3,8 +3,8 @@
 The reference pages the community consults: the doctrine wiki of standard operating procedures and
 manuals, the vehicle identification index, and the modpack manifests a server expects a client to
 have. Their data comes from the
-[community content](/documentation_v2/glossary.md#community-content) domain of the
-[API](/documentation_v2/glossary.md#api).
+[community content](/documentation_v2/glossary/a_to_f.md#community-content) domain of the
+[API](/documentation_v2/glossary/a_to_f.md#api).
 
 ## Contents
 
@@ -24,7 +24,7 @@ lays it out in the `GlassSplit` master-detail view from `crate::v2::core::ui::sp
 pane, both reading the one fetched list. The wiki and vehicle rows arrive as untyped JSON, read
 through each folder's total `vstr` helper; the modpacks arrive as the typed `ModpackDto`. The wiki
 and the modpacks give an administrator a read/edit switch, gated by a memo over
-`has_min_role_authed` and the session's [role](/documentation_v2/glossary.md#role), so a
+`has_min_role_authed` and the session's [role](/documentation_v2/glossary/n_to_z.md#role), so a
 signed-out visitor never sees it; the vehicle index only reads.
 
 ## Public surface

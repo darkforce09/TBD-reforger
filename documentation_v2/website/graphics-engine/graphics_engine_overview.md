@@ -6,7 +6,7 @@
 told and knows no map concept. It defines the frame vocabulary a caller describes a frame in, and
 supplies the pipelines, the WGSL shader, geometry and text packing, sprite culling, the swapchain
 steps and the animation-frame loop. Its one caller is the map engine, which draws the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map with it.
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map with it.
 
 ## Where it lives
 

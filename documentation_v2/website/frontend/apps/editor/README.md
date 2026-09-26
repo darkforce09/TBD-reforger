@@ -2,8 +2,8 @@
 
 # Mission Creator documentation
 
-Everything written about the [Mission Creator](/documentation_v2/glossary.md#mission-creator), the
-workspace in which mission makers build a [mission](/documentation_v2/glossary.md#mission) on a
+Everything written about the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator), the
+workspace in which mission makers build a [mission](/documentation_v2/glossary/g_to_m.md#mission) on a
 top-down 2D map: what it does, how it should look and answer, where it is going, why it is built
 the way it is, and the Arma 3 Eden editor it is measured against. Developers and AI agents start
 here before changing the editor.
@@ -33,7 +33,7 @@ question at hand:
 | What is open, in which order, and what is deferred? | [roadmap](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) |
 | Why is it built this way? | [decisions log](/documentation_v2/website/frontend/apps/editor/decisions.md) |
 | What does Eden do, and how close is the editor to it? | [Eden reference](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/README.md) |
-| How does one [slot](/documentation_v2/glossary.md#slot)'s loadout get edited? | [arsenal](/documentation_v2/website/frontend/apps/editor/arsenal/README.md) |
+| How does one [slot](/documentation_v2/glossary/n_to_z.md#slot)'s loadout get edited? | [arsenal](/documentation_v2/website/frontend/apps/editor/arsenal/README.md) |
 | What did the design phase draw? | [visual references](/documentation_v2/website/frontend/apps/editor/visual_references/README.md) |
 
 The feature inventory and the UX specification describe the committed code and win over every
@@ -43,7 +43,7 @@ layout and interactions of the Eden editor, styled with the Aegis glass tokens; 
 styling only, never layout or behaviour.
 
 The editor has one route, `/missions/:id/edit`, for the `mission_maker`
-[role](/documentation_v2/glossary.md#role) and above, full-bleed and chromeless; the mission hub's
+[role](/documentation_v2/glossary/n_to_z.md#role) and above, full-bleed and chromeless; the mission hub's
 review workspace mounts the same page read-only. The editor README's
 [Routes](/apps/website/frontend/src/v2/apps/editor/README.md#routes) gives both.
 
@@ -60,14 +60,14 @@ in `feature_inventory/`, an Eden catalog in `eden_editor_reference/`, a design s
   [editing](/apps/website/map-engine/src/editing/) in the map engine — the mission document, its
   compiler and validation, and the editing commands and tools the editor drives.
 - [Missions domain](/apps/website/api_v2/src/missions/) — the mission versions the editor loads
-  and saves, and the item [registry](/documentation_v2/glossary.md#registry) the palettes and the
+  and saves, and the item [registry](/documentation_v2/glossary/n_to_z.md#registry) the palettes and the
   Arsenal read.
 
 ## Boundaries
 
 - Depends on: the [feature doc template](/documentation_v2/standards/templates/feature_doc.md),
   the [documentation folder README template](/documentation_v2/standards/templates/readme_documentation_folder.md)
-  and the [glossary](/documentation_v2/glossary.md); the editor code, the map engine's data and
+  and the [glossary](/documentation_v2/glossary/README.md); the editor code, the map engine's data and
   editing modules, the missions API and the ticket registry in `.ai/tickets/`, which the documents
   are written from; the Bohemia wiki's Eden pages, which the Eden catalogs cite.
 - Used by: the glossary's Mission Creator entry; the documentation root README; the frontend,

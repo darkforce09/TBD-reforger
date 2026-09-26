@@ -2,9 +2,9 @@
 
 # Wave planning
 
-How the factory decides which [tickets](/documentation_v2/glossary.md#ticket) run together: the
+How the factory decides which [tickets](/documentation_v2/glossary/n_to_z.md#ticket) run together: the
 wave lock, the `owns` lists it is compiled from, the collision analysis, the width of a
-[wave](/documentation_v2/glossary.md#wave) and how waves are numbered. Read it before promoting
+[wave](/documentation_v2/glossary/n_to_z.md#wave) and how waves are numbered. Read it before promoting
 tickets or before a wave looks wrong in `platform wave status`. The commands are read-only except
 `wave repack`, which rewrites `.ai/tickets/wave.lock`.
 

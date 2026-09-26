@@ -2,9 +2,9 @@
 
 # Arsenal mock-up
 
-Design-phase reference for the [arsenal](/documentation_v2/glossary.md#arsenal), the Arsenal tab of
-the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s Attributes dialog: a
-"Loadout Forge" dialog that arms one [slot](/documentation_v2/glossary.md#slot). It gives colour
+Design-phase reference for the [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal), the Arsenal tab of
+the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s Attributes dialog: a
+"Loadout Forge" dialog that arms one [slot](/documentation_v2/glossary/n_to_z.md#slot). It gives colour
 and layout context and is not an implementation source; the built UI is the Leptos code under
 `apps/website/frontend/src/v2/apps/editor/arsenal/`.
 
@@ -27,7 +27,7 @@ the buttons "Cancel" and "Save & Close Forge".
 
 The built tab differs: it is a tab of the Attributes dialog rather than its own dialog; it has no
 templates, breadcrumb or Save and Cancel buttons, since every pick is written to the
-[mission](/documentation_v2/glossary.md#mission) at once; a rail of 14 regions, a filtered item
+[mission](/documentation_v2/glossary/g_to_m.md#mission) at once; a rail of 14 regions, a filtered item
 list and a 3D doll replace the three cards; attachments are compatibility toggles, and ammunition
 is cargo in a worn container; and Copy and Apply over the current selection stand in for the two
 "Apply Kit" buttons. The

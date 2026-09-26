@@ -1,8 +1,8 @@
 # Deployments page
 
 The `/deployments` page, titled "My Deployments": the viewer's own [service
-record](/documentation_v2/glossary.md#service-record), with what they are slotted into next, the
-[missions](/documentation_v2/glossary.md#mission) they have played, the leave they have filed, and
+record](/documentation_v2/glossary/n_to_z.md#service-record), with what they are slotted into next, the
+[missions](/documentation_v2/glossary/g_to_m.md#mission) they have played, the leave they have filed, and
 for an administrator the leave review queue.
 
 ## Contents
@@ -22,18 +22,18 @@ apps/website/frontend/src/v2/pages/operations/deployments/
 ## How it works
 
 `DeploymentsPage` renders inside `AuthGate`. The signed-in half reads the viewer's name and
-[role](/documentation_v2/glossary.md#role) from the session through a memo, so a profile poll that
+[role](/documentation_v2/glossary/n_to_z.md#role) from the session through a memo, so a profile poll that
 changes neither does not rebuild the page (a rebuild discards the leave form's unsent input), and
-fetches the [deployments](/documentation_v2/glossary.md#deployment) payload once: both lists arrive
+fetches the [deployments](/documentation_v2/glossary/a_to_f.md#deployment) payload once: both lists arrive
 in it, so nothing on the page can go stale against anything else on it.
 
 The left column shows the name, the role, "Total Deployments" and a "Personal Telemetry" block that
 reads "No telemetry recorded". The right column holds the "Active Orders" banner, the "Combat
 History" table, the leave panel and, for the `admin` role only, the "LOA Review Queue". The banner
-shows the soonest upcoming deployment: its [event](/documentation_v2/glossary.md#event) name,
+shows the soonest upcoming deployment: its [event](/documentation_v2/glossary/a_to_f.md#event) name,
 reservation and attendance badges, local start time, countdown, terrain and assigned
-[slot](/documentation_v2/glossary.md#slot), a "Modify Assignment" link to the
-[ORBAT](/documentation_v2/glossary.md#orbat) selection page and an "Operation Hub" link to the event
+[slot](/documentation_v2/glossary/n_to_z.md#slot), a "Modify Assignment" link to the
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) selection page and an "Operation Hub" link to the event
 hub page, each rendered only when the ids it needs are on the wire; the others follow under "Also
 Awaiting Deployment". The history table's replay cell emits a link only for an `http(s)` URL; any
 other stored value, `javascript:` and `data:` included, shows the same em dash as an absent replay.
@@ -91,7 +91,7 @@ again after a submit or a decision; approve and deny show only on a pending requ
   files.
 - Rules: the replay cell emits an `href` only for an `http(s)` URL
   (`aar_cell_emits_an_href_only_for_http_urls` in `tests/deployments.rs`); the leave form's date
-  rules match the [API](/documentation_v2/glossary.md#api)'s and the body carries bare dates
+  rules match the [API](/documentation_v2/glossary/a_to_f.md#api)'s and the body carries bare dates
   (`loa_date_validation_matches_backend_rules`, `create_leave_body_is_bare_ymd_json`); no invented
   personal figures appear, and the empty telemetry text stays
   (`no_fabricated_personal_telemetry_survives_in_this_module`,

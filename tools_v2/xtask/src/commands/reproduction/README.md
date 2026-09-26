@@ -1,10 +1,10 @@
 # Mission upload reproduction commands
 
 The `cargo xtask repro` group: a scripted reproduction of large
-[mission](/documentation_v2/glossary.md#mission) version uploads against a local
-[API](/documentation_v2/glossary.md#api), and the two helpers it is built from. Developers run it
+[mission](/documentation_v2/glossary/g_to_m.md#mission) version uploads against a local
+[API](/documentation_v2/glossary/a_to_f.md#api), and the two helpers it is built from. Developers run it
 by hand when the version save of the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) fails on a large document.
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) fails on a large document.
 
 ## Contents
 
@@ -34,7 +34,7 @@ mission-upload   (API, ROLE and SIZES_MB from the environment)
 ```
 
 `API` defaults to `http://localhost:8080/api/v1` and `ROLE` to `mission_maker`; the API must run
-with `APP_ENV=development` so the [dev login](/documentation_v2/glossary.md#dev-login) answers. A
+with `APP_ENV=development` so the [dev login](/documentation_v2/glossary/a_to_f.md#dev-login) answers. A
 failed upload prints `curl exit <n>` and the loop goes on, because a connection the server cuts
 is the result being reproduced; the version route's body limit comes from
 `mission_version_body_limit` in `apps/website/api_v2/src/core/configuration/mod.rs`. The temp

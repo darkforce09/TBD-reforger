@@ -1,7 +1,7 @@
 # Doll preview
 
-The 3D character preview of the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
-[arsenal](/documentation_v2/glossary.md#arsenal): a schematic soldier whose equipment regions show
+The 3D character preview of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
+[arsenal](/documentation_v2/glossary/a_to_f.md#arsenal): a schematic soldier whose equipment regions show
 what a loadout fills, turn with a drag, highlight under the pointer and answer clicks. The module
 holds the scene, the picking and the renderer; the page holds only the DOM around the canvas.
 

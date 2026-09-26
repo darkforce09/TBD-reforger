@@ -2,7 +2,7 @@
 
 # Mod UI screens
 
-The in-game screens of the TBD Framework [mod](/documentation_v2/glossary.md#mod): where each
+The in-game screens of the TBD Framework [mod](/documentation_v2/glossary/g_to_m.md#mod): where each
 screen's code and layouts live, how the pre-game screens are built, and one folder per screen with
 its specification and design references. Developers and agents read it before adding or moving a
 screen, a panel or a layout.
@@ -96,7 +96,7 @@ draws the whole flow.
   carries placeholder colours only.
 - Moving a layout is `git mv`, the `.meta` `Name`, the `TBD_UILayouts` constant and, for a menu
   shell, `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf`; then
-  [Workbench](/documentation_v2/glossary.md#workbench) opens `addon.gproj` and rewrites
+  [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) opens `addon.gproj` and rewrites
   `resourceDatabase.rdb`, since non-script resources are not found by a directory scan.
 - New `.c` files compile headless with `cargo xtask mod compile`; the
   [framework README](/apps/mod/tbd-framework/README.md) covers the Workbench restart they need.

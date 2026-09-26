@@ -1,9 +1,9 @@
 # Mod suite
 
-The Arma Reforger [mod](/documentation_v2/glossary.md#mod) of the TBD platform, as three
-[Enfusion](/documentation_v2/glossary.md#enfusion) addons: the game mod that runs every TBD
-session from the [mission](/documentation_v2/glossary.md#mission) JSON the platform deploys, and
-two [Workbench](/documentation_v2/glossary.md#workbench) addons, one that exports the game data
+The Arma Reforger [mod](/documentation_v2/glossary/g_to_m.md#mod) of the TBD platform, as three
+[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) addons: the game mod that runs every TBD
+session from the [mission](/documentation_v2/glossary/g_to_m.md#mission) JSON the platform deploys, and
+two [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) addons, one that exports the game data
 the platform ingests and one that lets the Enfusion MCP tools drive Workbench.
 
 ## Contents
@@ -21,7 +21,7 @@ apps/mod/
 ## How it works
 
 Only `tbd-framework/` reaches players and servers. A dedicated server loads it as a loose addon or
-from the Workshop, boots its [mission header](/documentation_v2/glossary.md#mission-header), and the
+from the Workshop, boots its [mission header](/documentation_v2/glossary/g_to_m.md#mission-header), and the
 framework fetches the mission deployed to that server from the website API, verifies it and runs it.
 The other two addons run inside Workbench only: `tbd-export/` holds the export plugins and its own
 export world, and `tbd-emcp/` holds the Net API handlers of the Enfusion MCP bridge.

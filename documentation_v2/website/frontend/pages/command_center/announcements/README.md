@@ -3,7 +3,7 @@
 # Announcements page documentation
 
 The feature documentation of the `/announcements` and `/announcements/:id` pages in the
-[command center](/documentation_v2/glossary.md#command-center), where a member reads the unit's
+[command center](/documentation_v2/glossary/a_to_f.md#command-center), where a member reads the unit's
 published announcements in a list beside a reading pane.
 
 ## Contents
@@ -19,7 +19,7 @@ Read [announcements_page.md](/documentation_v2/website/frontend/pages/command_ce
 It follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md) and
 covers both routes, since `/announcements/:id` is the same page with one announcement open. It
 quotes the page's interface text, gives what the feed means in the
-[API](/documentation_v2/glossary.md#api), and compares the page with the archived design spec,
+[API](/documentation_v2/glossary/a_to_f.md#api), and compares the page with the archived design spec,
 since no blueprint set exists for it. The code folder's README lists the page's files, its call
 and its states.
 

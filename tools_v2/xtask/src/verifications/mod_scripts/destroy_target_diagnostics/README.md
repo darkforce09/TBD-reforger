@@ -1,7 +1,7 @@
 # Destroy target diagnostics audit
 
 The body of `cargo xtask verify destroy-target-diagnostics`: a check that the destroy-objective
-diagnostics in the [mod](/documentation_v2/glossary.md#mod) never claim that [mission](/documentation_v2/glossary.md#mission) `entities[]`
+diagnostics in the [mod](/documentation_v2/glossary/g_to_m.md#mod) never claim that [mission](/documentation_v2/glossary/g_to_m.md#mission) `entities[]`
 go unspawned, and that the check itself still fails when such a claim returns. The parent file
 `tools_v2/xtask/src/verifications/mod_scripts/destroy_target_diagnostics.rs` holds the target
 paths, the banned phrasings and the pinned signatures.
@@ -42,7 +42,7 @@ up.
   `Verdict`, `gate`); `regex`; `developer_tools::repository_layout::definition_path` for the
   schema path.
 - Used by: the parent file, which re-exports the entry to
-  `tools_v2/xtask/src/commands/verify/dispatch.rs`; the platform [wave](/documentation_v2/glossary.md#wave) gate runs
+  `tools_v2/xtask/src/commands/verify/dispatch.rs`; the platform [wave](/documentation_v2/glossary/n_to_z.md#wave) gate runs
   `verify destroy-target-diagnostics` as one of its `VERIFY_STEPS`
   (`tools_v2/xtask/src/commands/platform/wave_execution/gate.rs`).
 - Rules: structural pins read comment-stripped source, so a pin kept only in a comment fails

@@ -17,10 +17,10 @@ The web platform draws its map with three crates, each with one job:
 | Crate | Code | Job |
 |---|---|---|
 | `website-graphics-engine` | [`apps/website/graphics-engine/`](/apps/website/graphics-engine/README.md) | the renderer: device buffers, pipelines, the WGSL shader, draw batching, text packing, sprite culling and the animation-frame pump; it knows no map concept |
-| `website-map-engine` | [`apps/website/map-engine/`](/apps/website/map-engine/README.md) | the [mission](/documentation_v2/glossary.md#mission) domain, the static world, streaming, spatial queries, the overlay, the cameras, the headless editing layer and `RenderEngine`, which builds each frame |
-| `website-frontend` | [`apps/website/frontend/`](/apps/website/frontend/README.md) | the single-page app, including the [Mission Creator](/documentation_v2/glossary.md#mission-creator): pages, UI, input and the browser shell |
+| `website-map-engine` | [`apps/website/map-engine/`](/apps/website/map-engine/README.md) | the [mission](/documentation_v2/glossary/g_to_m.md#mission) domain, the static world, streaming, spatial queries, the overlay, the cameras, the headless editing layer and `RenderEngine`, which builds each frame |
+| `website-frontend` | [`apps/website/frontend/`](/apps/website/frontend/README.md) | the single-page app, including the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator): pages, UI, input and the browser shell |
 
-The [API](/documentation_v2/glossary.md#api) (`website-api`) links the map engine too, for the
+The [API](/documentation_v2/glossary/a_to_f.md#api) (`website-api`) links the map engine too, for the
 mission compiler and validator alone.
 
 ### Dependency direction — non-negotiable

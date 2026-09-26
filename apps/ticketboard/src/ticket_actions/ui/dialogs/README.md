@@ -1,7 +1,7 @@
 # Mutation dialogs
 
-The modal forms through which the [ticketboard](/documentation_v2/glossary.md#ticketboard) confirms
-every change to a [ticket](/documentation_v2/glossary.md#ticket): each shows the exact
+The modal forms through which the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) confirms
+every change to a [ticket](/documentation_v2/glossary/n_to_z.md#ticket): each shows the exact
 `cargo xtask ticket` command line it will run and emits it only when the viewer presses "Run".
 
 ## Contents

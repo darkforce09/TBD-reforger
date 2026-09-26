@@ -1,6 +1,6 @@
 # Mission map markers
 
-Puts a [mission](/documentation_v2/glossary.md#mission)'s briefing markers on the in-game map: the
+Puts a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s briefing markers on the in-game map: the
 server sends each player only their own side's markers, and each client draws them as the engine's
 own placed markers.
 

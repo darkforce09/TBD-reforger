@@ -1,6 +1,6 @@
 # Eden editor data
 
-[Workbench](/documentation_v2/glossary.md#workbench)'s per-world editor data for Eden, the vanilla
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench)'s per-world editor data for Eden, the vanilla
 Everon world the TBD Dev POC world is a sub-scene of. Nothing in the game reads it.
 
 ## Contents
@@ -23,7 +23,7 @@ apps/mod/tbd-framework/worlds/Eden/
 ## Referenced by
 
 - Workbench, when it opens the Eden world with this addon loaded. No script, prefab, config or
-  [mission header](/documentation_v2/glossary.md#mission-header) names the file.
+  [mission header](/documentation_v2/glossary/g_to_m.md#mission-header) names the file.
 
 ## Boundaries
 

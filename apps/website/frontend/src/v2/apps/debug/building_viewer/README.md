@@ -3,9 +3,9 @@
 The `/debug/building-viewer` bench: one extracted building blueprint drawn as a floor plan, with a
 draggable observer and target whose line of sight is traced through the building's occlusion
 mesh, and a per-floor viewshed wash. It exists to check what the
-[Workbench](/documentation_v2/glossary.md#workbench) extractor produced for a building, and how
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) extractor produced for a building, and how
 the line-of-sight code reads it, without the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) around it.
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) around it.
 
 ## Contents
 
@@ -55,7 +55,7 @@ uses).
 - `GET` of `<slug>.instances.json`, with `<slug>.scene.json` under `?scene=1`, read as
   `InstancesFile`, then every BLAS those instances name, resolved against the prefab folder's
   parent; together they assemble the `CompoundBuilding`.
-- The `/map-assets` paths are static files the [API](/documentation_v2/glossary.md#api) serves,
+- The `/map-assets` paths are static files the [API](/documentation_v2/glossary/a_to_f.md#api) serves,
   proxied by Trunk in development; the bench calls no `/api/v1` route, reads no context or
   storage, and writes nothing.
 

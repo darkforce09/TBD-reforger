@@ -1,7 +1,7 @@
 # Orthographic map camera
 
 The top-down camera of the tactical map in the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) and the debug benches:
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) and the debug benches:
 `OrthoCamera`, its matrices, its pan and zoom controls, and the conversion between screen pixels
 and world metres. It reproduces deck.gl's orthographic viewport, bit for bit at integer zooms.
 

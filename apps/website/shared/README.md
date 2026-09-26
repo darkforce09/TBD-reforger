@@ -1,7 +1,7 @@
 # Shared URL-guard test table
 
 The one table of inputs and expected verdicts for `is_http_url`, the scheme guard that the
-[API](/documentation_v2/glossary.md#api) and the single-page app each implement. Both crates'
+[API](/documentation_v2/glossary/a_to_f.md#api) and the single-page app each implement. Both crates'
 tests include this file, so the two implementations cannot drift apart without a test failing.
 
 ## Contents

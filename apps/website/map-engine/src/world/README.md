@@ -54,12 +54,12 @@ viewer reach it through this crate.
 - Used by:
   - `crate::streaming`, `crate::spatial`, `crate::frame`, `crate::overlay`, `crate::diagnostics`
     and `crate::editing::tools::line_of_sight`;
-  - the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s canvas and input
+  - the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s canvas and input
     handlers in `apps/website/frontend/src/v2/apps/editor/`, which read the elevation model, and
     the debug benches in `apps/website/frontend/src/v2/apps/debug/`, which draw buildings;
   - the blueprint tooling, the world export, the map raster pipeline and the map checks in
     `tools_v2/developer-tools/src/`.
-- Rules: the static world and the authored [mission](/documentation_v2/glossary.md#mission)
+- Rules: the static world and the authored [mission](/documentation_v2/glossary/g_to_m.md#mission)
   document share nothing: no file here names `crate::data` or `yrs`, and no file under
   `apps/website/map-engine/src/data/` names this module (`cargo xtask verify engine-layers`,
   rule 7); a type here never gains a dirty flag; the module compiles only with the `world`

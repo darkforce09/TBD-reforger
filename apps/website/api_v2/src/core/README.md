@@ -1,6 +1,6 @@
 # API core
 
-The foundations every domain of the [API](/documentation_v2/glossary.md#api) rests on:
+The foundations every domain of the [API](/documentation_v2/glossary/a_to_f.md#api) rests on:
 configuration, the database pool and migrations, the shared application state, the handler error
 type, the router with its middleware chain, authentication primitives, observability, and the
 HTTP, text and wire-format helpers the domains reuse instead of writing their own.
@@ -30,7 +30,7 @@ apps/website/api_v2/src/core/
 
 The `api` binary loads `Config`, opens the pool with `database::connect`, applies the migrations
 with `database::migrate`, builds `AppState::new(pool, config)`, arms the
-[background workers](/documentation_v2/glossary.md#background-workers), and
+[background workers](/documentation_v2/glossary/a_to_f.md#background-workers), and
 serves `http_router::router(state)`. `AppState` is the one dependency container: handlers and
 middleware extract it whole or take one part (the pool, the config, the token manager, the hub,
 the Discord and webhook clients, the session authority) through its `FromRef` implementations.
@@ -62,7 +62,7 @@ predicates, wire formats, the URL guard, the 429 retry, the token primitives.
   `postgres_errors` for handlers that answer a constraint violation with a 4xx.
 - `error_handling::api_error::ApiError`: the error every domain returns.
 - `middleware`: the extractors, `json_error`, `role_rank`, `MAX_MULTIPART_BODY`,
-  `authorized_event_stream::authorize_event_stream` for [SSE](/documentation_v2/glossary.md#sse)
+  `authorized_event_stream::authorize_event_stream` for [SSE](/documentation_v2/glossary/n_to_z.md#sse)
   handlers, and `PgRateLimiter` for the
   bucket-pruning worker.
 - `authentication_primitives`: `Manager` and `Claims`, `hash_token`, `random_token`,

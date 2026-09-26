@@ -2,7 +2,7 @@
 
 The `cargo xtask gen` group, and the contract codegen behind `cargo xtask schema codegen`: the
 JSON Schemas in `contracts_v2/definitions/` become the Rust serde types the website
-[API](/documentation_v2/glossary.md#api) compiles, with no Node in the pipeline. Developers run
+[API](/documentation_v2/glossary/a_to_f.md#api) compiles, with no Node in the pipeline. Developers run
 the codegen after changing a schema, and CI checks its output is fresh.
 
 ## Contents

@@ -1,8 +1,8 @@
 # Canvas mount parts
 
-The parts the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s canvas mount runs
+The parts the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s canvas mount runs
 once the canvas element loads: the document setup, the two boot tasks and their handshake, the
-review workspace's restore, the item [registry](/documentation_v2/glossary.md#registry) loading and
+review workspace's restore, the item [registry](/documentation_v2/glossary/n_to_z.md#registry) loading and
 the page-level input listeners. The parent module,
 `apps/website/frontend/src/v2/apps/editor/mission_editor/canvas_mount.rs`, declares these modules
 and runs them from `install_canvas_mount`.
@@ -22,7 +22,7 @@ apps/website/frontend/src/v2/apps/editor/mission_editor/canvas_mount/
 ## How it works
 
 `document_setup::initialize` builds the seeded document, writes the template comments of a new
-[mission](/documentation_v2/glossary.md#mission), publishes `window.__missionDoc` and hands the
+[mission](/documentation_v2/glossary/g_to_m.md#mission), publishes `window.__missionDoc` and hands the
 document to the session's document commands. `boot_tasks::start` then runs two tasks that meet in a
 handshake:
 

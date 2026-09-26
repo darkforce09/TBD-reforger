@@ -3,7 +3,7 @@
 # Equipment and vehicle export documentation
 
 The acceptance evidence of the export addon's equipment and vehicle source exporter: the
-[Workbench](/documentation_v2/glossary.md#workbench) exporter that captures installed equipment,
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) exporter that captures installed equipment,
 vehicles and their gameplay dependencies as source-backed records, which xtask validates and
 publishes as one immutable bundle.
 

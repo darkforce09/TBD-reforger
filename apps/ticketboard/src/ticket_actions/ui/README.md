@@ -1,6 +1,6 @@
 # Ticket action rendering
 
-The egui controls of the [ticketboard](/documentation_v2/glossary.md#ticketboard)'s ticket actions:
+The egui controls of the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)'s ticket actions:
 the card context menu and the detail panel's action strip, the mutation dialogs, and the feedback
 of a running command (footer chip, drawer and toasts).
 

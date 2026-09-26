@@ -42,8 +42,8 @@ draw path       overlay: lanes, symbols ──▶ frame ◀── camera
                                    website-graphics-engine
 ```
 
-`data` holds the [mission](/documentation_v2/glossary.md#mission) domain and the CRDT document the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) edits; it reads no other module
+`data` holds the [mission](/documentation_v2/glossary/g_to_m.md#mission) domain and the CRDT document the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) edits; it reads no other module
 of the crate. `world` holds the static ground and never names `data`, so inside the crate the
 authored mission and the streamed world meet only in `editing`, which drives the document and the
 map tools with no browser in reach and asks `spatial` where a click or a sight line lands.
@@ -53,7 +53,7 @@ composes the ground and what stands on it, and `spatial` answers geometric queri
 render engine, which uploads the lanes both sides produce and hands the graphics engine a frame
 packet whenever something changed; `camera` places the view. `diagnostics` measures the render
 engine, and `doll` is a second, small renderer for the
-[arsenal](/documentation_v2/glossary.md#arsenal)'s preview, with its WGSL in `shaders/`.
+[arsenal](/documentation_v2/glossary/a_to_f.md#arsenal)'s preview, with its WGSL in `shaders/`.
 
 `lib.rs` gates each module on the lowest tier that holds everything it needs:
 
@@ -69,7 +69,7 @@ engine, and `doll` is a second, small renderer for the
 ## Public surface
 
 - `data::scenario`: the mission compiler and validator, for the
-  [API](/documentation_v2/glossary.md#api) at the default `scenario` tier and for the Mission
+  [API](/documentation_v2/glossary/a_to_f.md#api) at the default `scenario` tier and for the Mission
   Creator.
 - `data::store` and `editing`: the mission's Yjs document and the headless editing layer, for the
   Mission Creator.

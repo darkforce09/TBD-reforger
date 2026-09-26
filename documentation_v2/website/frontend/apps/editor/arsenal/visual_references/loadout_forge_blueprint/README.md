@@ -2,10 +2,10 @@
 
 # Loadout Forge blueprint
 
-Design-phase reference for the [arsenal](/documentation_v2/glossary.md#arsenal), the Arsenal tab
-of the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s Attributes dialog: the
+Design-phase reference for the [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal), the Arsenal tab
+of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s Attributes dialog: the
 "Loadout Forge" dialog, titled "Loadout Forge - Aegis Tactical" in its export, that arms one
-[slot](/documentation_v2/glossary.md#slot). It gives colour and layout context and is not an
+[slot](/documentation_v2/glossary/n_to_z.md#slot). It gives colour and layout context and is not an
 implementation source; the built UI is the Leptos code under
 `apps/website/frontend/src/v2/apps/editor/arsenal/`.
 
@@ -30,7 +30,7 @@ and "Standard Barrel". Breadcrumb, template cards, Ammunition row, "Standardizat
 
 The built tab differs as it does from the mock-up: a tab rather than a dialog; no templates,
 breadcrumb, Save or Cancel, since every pick is written to the
-[mission](/documentation_v2/glossary.md#mission) at once; a rail of 14 regions, a filtered item
+[mission](/documentation_v2/glossary/g_to_m.md#mission) at once; a rail of 14 regions, a filtered item
 list and a 3D doll instead of seven cards; attachments offered by the compatibility graph rather
 than fixed dropdowns; ammunition as cargo; and Copy and Apply over the selection instead of
 "Apply Kit to Entire Squad" and "Apply Kit to Entire Faction". The

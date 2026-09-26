@@ -39,8 +39,8 @@ every group in its `TopCmd` enum and `tools_v2/xtask/src/cli/dispatch.rs` calls 
 which returns the process exit code as `Result<u8>`.
 
 Groups that wrap a library pass it the checkout root and keep its result: `ticket` and `wave` call
-`ticket-engine` for [ticket](/documentation_v2/glossary.md#ticket) storage and the
-[wave](/documentation_v2/glossary.md#wave) lock; `map` and the map rows of `ci` call
+`ticket-engine` for [ticket](/documentation_v2/glossary/n_to_z.md#ticket) storage and the
+[wave](/documentation_v2/glossary/n_to_z.md#wave) lock; `map` and the map rows of `ci` call
 `developer-tools` for engine-backed map work and blueprint compilation, as a library or through its
 binaries; `verify` calls the checks under `tools_v2/xtask/src/verifications/`. Each group's own
 README gives its commands, flags and exit codes.

@@ -1,8 +1,8 @@
 # Enfusion MCP node package
 
 The private npm package `enfusion-mcp-node-package`, whose only job is to pin the `enfusion-mcp`
-server, the Model Context Protocol bridge to the [Enfusion](/documentation_v2/glossary.md#enfusion)
-[Workbench](/documentation_v2/glossary.md#workbench), so the repository's MCP commands start one
+server, the Model Context Protocol bridge to the [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion)
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench), so the repository's MCP commands start one
 known version from disk instead of resolving one over the network.
 
 ## Contents

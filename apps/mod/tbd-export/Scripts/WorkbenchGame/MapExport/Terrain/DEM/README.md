@@ -1,7 +1,7 @@
 # Terrain elevation export
 
 Samples the open world's ground height on a regular grid in
-[Workbench](/documentation_v2/glossary.md#workbench) and writes it as an ASCII 16-bit height matrix
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) and writes it as an ASCII 16-bit height matrix
 with a metadata file. The developer tools pack that matrix into the terrain's elevation model.
 
 ## Contents

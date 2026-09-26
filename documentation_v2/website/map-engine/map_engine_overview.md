@@ -3,9 +3,9 @@
 # Map engine overview
 
 The `website-map-engine` crate holds everything between the platform's map data and the pixels,
-and the [mission](/documentation_v2/glossary.md#mission) domain that the
-[API](/documentation_v2/glossary.md#api) and the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) share. This overview covers its
+and the [mission](/documentation_v2/glossary/g_to_m.md#mission) domain that the
+[API](/documentation_v2/glossary/a_to_f.md#api) and the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) share. This overview covers its
 layers, the feature tiers its consumers take, and the path from a mounted canvas to a drawn frame.
 The code READMEs it links hold the exact detail.
 
@@ -51,7 +51,7 @@ never names the document; they meet only in `editing`
 | draw | `frame` | `RenderEngine`, its batch list and upload belts, the frame vocabulary | `world`; GPU half `render` | [README](/apps/website/map-engine/src/frame/README.md) |
 | draw | `camera` | the map's orthographic camera, the doll's orbit camera, the grid reference | always | [README](/apps/website/map-engine/src/camera/README.md) |
 | support | `diagnostics` | readback checks, the frame benchmark, clocks and console macros | `render` | [README](/apps/website/map-engine/src/diagnostics/README.md) |
-| support | `doll` | the [arsenal](/documentation_v2/glossary.md#arsenal)'s 3D mannequin preview, a second small renderer | `render` | [README](/apps/website/map-engine/src/doll/README.md) |
+| support | `doll` | the [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal)'s 3D mannequin preview, a second small renderer | `render` | [README](/apps/website/map-engine/src/doll/README.md) |
 
 Browser code (canvas, fetch, image decoding, timers, the console) compiles only for wasm32, most
 of it only with `render` as well; everything else builds and tests natively, which is how the API

@@ -4,8 +4,8 @@
 
 Session steps S1 to S10 of the two-client playtest: the server settles, both players join, the
 first becomes an admin, the identity gate is checked, the optional
-[event](/documentation_v2/glossary.md#event) seating is exercised, the lobby and briefing screens
-open, and both players deploy into a [slot](/documentation_v2/glossary.md#slot) wearing the
+[event](/documentation_v2/glossary/a_to_f.md#event) seating is exercised, the lobby and briefing screens
+open, and both players deploy into a [slot](/documentation_v2/glossary/n_to_z.md#slot) wearing the
 authored loadout. It takes about 25 minutes with both players present; S11 to S16 follow in
 [Session: live round](/documentation_v2/runbooks/two_client_playtest/session_live_round.md).
 
@@ -76,7 +76,7 @@ from the briefing. Steps S7 to S10 say which checks this leaves open.
 
    Expected: `TBD: #tbd missions | mission <n> | backend <url> [token] | refresh | validate | dead | respawn <playerId> | deploy <playerId> | stage [next|<NAME>] | safestart [status|go|<seconds>] | identity [status|override <phrase>|enforce] | audit | menu`,
    the reply to any subcommand the handler does not know (`TBD_AdminCommands.c`); `#tbd` alone
-   lists the [missions](/documentation_v2/glossary.md#mission) the platform lets this server
+   lists the [missions](/documentation_v2/glossary/g_to_m.md#mission) the platform lets this server
    deploy. `TBD: admin only.` means you are not in `game.admins[]`: the only admin source
    `TBD_AdminService.IsAdmin` reads is vanilla's `SCR_PlayerListedAdminManagerComponent`, filled
    from `game.admins[]` at connect, which exists only in `-config` mode; `#login` with

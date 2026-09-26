@@ -1,6 +1,6 @@
 # Framework configs
 
-The Enfusion config files of the framework [mod](/documentation_v2/glossary.md#mod): the menu
+The Enfusion config files of the framework [mod](/documentation_v2/glossary/g_to_m.md#mod): the menu
 presets of its screens and the input contexts and key actions its scripts listen to.
 
 ## Contents

@@ -1,6 +1,6 @@
 # Everon surface anchors
 
-Ground heights that [Enfusion](/documentation_v2/glossary.md#enfusion) itself reports at eleven
+Ground heights that [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) itself reports at eleven
 named points of Everon, the oracle a gate checks the elevation model against. Because the height
 map is a resample of the same engine probe, an anchor that drifts means a re-export has moved the
 ground under the placed objects.
@@ -23,7 +23,7 @@ assets_v2/terrains/everon/anchors/
     `surfaceYM`.
   - `verification.example.json`: the same shape with one placeholder anchor.
   - `surface-y-log.txt`: the text log of one `getHeight` probe per anchor, run through the
-    Enfusion MCP `wb_terrain` tool in [Workbench](/documentation_v2/glossary.md#workbench) against
+    Enfusion MCP `wb_terrain` tool in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) against
     the Eden world, with the full-precision heights that `verification.json` rounds.
 - Schema: both JSON files follow `contracts_v2/definitions/terrain-anchors.schema.json`.
 - Adding a file: probe the new points in Workbench, record the log, and add the anchors to

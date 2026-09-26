@@ -1,10 +1,10 @@
 # TBD framework scripts
 
-Every game script of the TBD framework [mod](/documentation_v2/glossary.md#mod), in six
+Every game script of the TBD framework [mod](/documentation_v2/glossary/g_to_m.md#mod), in six
 folders: the platform bridge, shared utilities, the round rules, the in-world systems, the
 player and admin session flows, and the UI library. Together they load the
-[mission](/documentation_v2/glossary.md#mission) the platform deploys to a dedicated server and
-run the [event](/documentation_v2/glossary.md#event) from lobby to debrief.
+[mission](/documentation_v2/glossary/g_to_m.md#mission) the platform deploys to a dedicated server and
+run the [event](/documentation_v2/glossary/a_to_f.md#event) from lobby to debrief.
 
 ## Contents
 
@@ -36,7 +36,7 @@ Core/ ── used by all: TBD_Log, TBD_Registry, TBD_PlayerChat, hashing
 `apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et`, is where a round starts: it loads the
 mission through `Systems/`, runs the stage machine, and every other folder reads its stage. Every
 modded vanilla class checks `TBD_FrameworkManager.IsFrameworkWorld()` first, so a vanilla [mission
-header](/documentation_v2/glossary.md#mission-header) with the addon loaded runs none of the
+header](/documentation_v2/glossary/g_to_m.md#mission-header) with the addon loaded runs none of the
 framework.
 
 Most features in `Session/` and `Systems/` split their code by role:
@@ -61,7 +61,7 @@ each folder clears its static state when a new world starts.
 ## Authority
 
 - Server: the mission document, the stage machine, spawning, loadouts, zones, objectives, AI,
-  admin commands and every call to the platform [API](/documentation_v2/glossary.md#api).
+  admin commands and every call to the platform [API](/documentation_v2/glossary/a_to_f.md#api).
 - Client: the screens, the HUD, the spectator camera, and the pull loops that ask the server for
   markers, radio nets, the briefing and the HUD snapshots.
 - Owner: every server-to-client answer is an owner RPC to the asking or addressed player only.
@@ -74,7 +74,7 @@ each folder clears its static state when a new world starts.
 ## Boundaries
 
 - Depends on: vanilla Arma Reforger's script API; the platform API over HTTP, with the server's
-  `mod_runtime` [machine credential](/documentation_v2/glossary.md#machine-credential); the wire
+  `mod_runtime` [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential); the wire
   shapes in `contracts_v2/definitions/`; the layouts in `apps/mod/tbd-framework/UI/`, the prefabs
   in `apps/mod/tbd-framework/Prefabs/`, the configs in `apps/mod/tbd-framework/Configs/` and
   `Data/registry.json` in `apps/mod/tbd-framework/Data/`.
@@ -88,13 +88,13 @@ each folder clears its static state when a new world starts.
   carry `@rpc` and `@replicated` tags and context-dependent methods an `@authority` tag; a new game
   mode component is added to `TBD_GameMode.et` and to the manager's roll-call, which `cargo xtask
   mod world-boot` checks; a new script file needs a
-  [Workbench](/documentation_v2/glossary.md#workbench) restart to appear there; lines added to a
+  [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) restart to appear there; lines added to a
   script stay ASCII, and `cargo xtask mod compile` checks that the scripts compile.
 
 ## Related documentation
 
 - [Mod design](/documentation_v2/mod/tbd-framework/mod_design.md) — what the framework is for, its
-  non-negotiables and the [Enfusion](/documentation_v2/glossary.md#enfusion) facts it relies on
+  non-negotiables and the [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) facts it relies on
 - [Mod UI documentation](/documentation_v2/mod/tbd-framework/UI/README.md) — the specification of
   each in-game screen
 - [Mod slice workflow](/documentation_v2/runbooks/mod_slice_workflow.md) — how mod work runs through

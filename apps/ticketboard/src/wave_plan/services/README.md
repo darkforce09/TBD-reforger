@@ -1,7 +1,7 @@
 # Wave lock reader
 
-The [ticketboard](/documentation_v2/glossary.md#ticketboard)'s own read-only reader of
-`.ai/tickets/wave.lock`, the recorded [wave](/documentation_v2/glossary.md#wave) plan, and its copy
+The [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)'s own read-only reader of
+`.ai/tickets/wave.lock`, the recorded [wave](/documentation_v2/glossary/n_to_z.md#wave) plan, and its copy
 of the ownership collision rule that decides which tickets may share a wave.
 
 ## Contents

@@ -32,7 +32,7 @@ before booking the second player.
    server running the checkout, so it may refuse on a content mismatch or join and run old
    script. At S5 they type `#tbd`: a current build answers (`TBD: admin only.` for a non-admin),
    the old build has no such command. On silence, publish `tbd-framework` from
-   [Workbench](/documentation_v2/glossary.md#workbench) so the Workshop copy matches the checkout
+   [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) so the Workshop copy matches the checkout
    ([getting a change to the players](/documentation_v2/runbooks/game_server_staging/client_join_and_mod_updates.md#getting-a-script-change-to-the-server-and-the-players)),
    then restart the server.
 

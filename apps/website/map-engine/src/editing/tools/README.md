@@ -1,7 +1,7 @@
 # Interactive map tools
 
 The headless state machines, geometry and verdicts of the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s interactive map tools: select,
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s interactive map tools: select,
 ruler, line of sight and its viewshed, and the placement vocabulary the arrange commands share. A
 tool here holds phase and geometry, driven by explicit world coordinates; the browser half, with
 the pointer events, overlays and frame pump, lives in
@@ -32,7 +32,7 @@ the ruler chain or the line-of-sight capture. A viewshed placement goes through
 line-of-sight state.
 
 The ruler and line-of-sight results are measurements, held for the session and never written to
-the [mission](/documentation_v2/glossary.md#mission) document; selection is app state. Edits that
+the [mission](/documentation_v2/glossary/g_to_m.md#mission) document; selection is app state. Edits that
 arrange a selection run as hosted commands in `crate::editing::hosted_commands::selection_transform`
 over the same `placement` vocabulary the arrange strip names, so a preview and its commit use one
 set of patterns, edges, axes and thresholds.
@@ -55,7 +55,7 @@ set of patterns, edges, axes and thresholds.
 ## Boundaries
 
 - Depends on: `crate::data::store`
-  (the [slot](/documentation_v2/glossary.md#slot) projection, the grid cell, the placement algebra),
+  (the [slot](/documentation_v2/glossary/n_to_z.md#slot) projection, the grid cell, the placement algebra),
   `crate::camera::ortho` for the frozen camera, `crate::spatial` (the point index and the terrain,
   world and interior line-of-sight cores), `crate::world::terrain::dem::manifest`, and
   `crate::editing::picking`.

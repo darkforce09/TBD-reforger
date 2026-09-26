@@ -1,7 +1,7 @@
 # Ticket registry models
 
-The [ticket](/documentation_v2/glossary.md#ticket) data every
-[ticketboard](/documentation_v2/glossary.md#ticketboard) feature reads: the loaded corpus and its
+The [ticket](/documentation_v2/glossary/n_to_z.md#ticket) data every
+[ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) feature reads: the loaded corpus and its
 refusal, and the shared projections of a ticket (field access over both ticket kinds, status
 columns, id order, class, scope breadcrumb and accent colours).
 

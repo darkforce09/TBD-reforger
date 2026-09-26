@@ -2,7 +2,7 @@
 
 The entity templates of the export addon. The addon has one, the game mode that the export world
 places to run the road export when the export
-[mission header](/documentation_v2/glossary.md#mission-header) is played.
+[mission header](/documentation_v2/glossary/g_to_m.md#mission-header) is played.
 
 ## Contents
 
@@ -25,7 +25,7 @@ the road files.
 - Resource GUID: each `.et` has a `.et.meta` file whose `Name` line holds the GUID other resources
   refer to it by; a referenced GUID never changes.
 - Naming: `TBD_Export_<Subject>.et`, grouped in a subfolder per role (`Systems/` for the game mode).
-- Adding a prefab: create it in [Workbench](/documentation_v2/glossary.md#workbench) inside this
+- Adding a prefab: create it in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) inside this
   addon and commit the `.et` with its `.meta`.
 
 ## Referenced by

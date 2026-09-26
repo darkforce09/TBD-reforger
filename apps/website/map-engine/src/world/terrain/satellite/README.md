@@ -59,7 +59,7 @@ bytes than its base level in the diagnostics.
   - `crate::frame`, whose engine keeps the `TexLane`s it draws, and
     `crate::spatial::los::terrain` and `crate::world::environment::vegetation`, which build
     `TexLane`s for the viewshed overlay and the forest density texture;
-  - the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s tests in
+  - the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s tests in
     `apps/website/frontend/src/v2/apps/editor/tests/`, which parse Everon's index and read the
     loading code.
 - Rules: `textures.rs` and `quadtree/` compile only for wasm32 with the `render` feature, and

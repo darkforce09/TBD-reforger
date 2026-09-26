@@ -68,7 +68,7 @@ may differ.
 ````markdown
 # Event schedule page
 
-The `/events` page: every upcoming [event](/documentation_v2/glossary.md#event) in a master list,
+The `/events` page: every upcoming [event](/documentation_v2/glossary/a_to_f.md#event) in a master list,
 with the full hub of the selected event beside it.
 
 ## Contents
@@ -90,7 +90,7 @@ first event when nothing is picked, and keys a second fetch for that event's hub
 carries the id it was fetched for, and the detail column renders a hub only when that id is the
 selected one, so one event's hub never shows under another event's selection. `upcoming_ops.rs`
 draws each card from the untyped event row: local start time, status badge,
-[mission](/documentation_v2/glossary.md#mission) and slot counts, a countdown or `LOCKED`, and a
+[mission](/documentation_v2/glossary/g_to_m.md#mission) and slot counts, a countdown or `LOCKED`, and a
 fill bar driven by the server's `percent`, clamped to 0 to 100.
 
 ## Routes

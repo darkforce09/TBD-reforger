@@ -3,7 +3,7 @@
 # Eden editor attribute fields
 
 The attribute fields of the Arma 3 Eden editor, the reference design the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) is measured against: every field
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) is measured against: every field
 of every entity type as an ID with its label, dialog section, SQM property and value type, read
 from the Bohemia wiki. The last section says which of them the Mission Creator's Attributes dialog
 holds.
@@ -140,7 +140,7 @@ Source: [Layer#Attributes](https://community.bistudio.com/wiki/Eden_Editor:_Laye
 Source: [Scenario Attributes](https://community.bistudio.com/wiki/Eden_Editor:_Scenario_Attributes)
 
 Eden calls the document it edits a scenario; the Mission Creator's equivalent is the
-[mission](/documentation_v2/glossary.md#mission); this section keeps Eden's word for it.
+[mission](/documentation_v2/glossary/g_to_m.md#mission); this section keeps Eden's word for it.
 
 ### General (Presentation)
 
@@ -240,7 +240,7 @@ and the dialog's entries are in the feature inventory's
 area.
 
 The Mission Creator's Attributes dialog edits one or several placed
-[slots](/documentation_v2/glossary.md#slot), or one placed vehicle, in four tabs: "Transform",
+[slots](/documentation_v2/glossary/n_to_z.md#slot), or one placed vehicle, in four tabs: "Transform",
 "Identity", "States" and "Arsenal" (`TABS` in
 `apps/website/frontend/src/v2/apps/editor/ui/inspector/attributes_modal/field_gates_and_labels.rs`).
 Over a multi-selection, a field whose values differ stays locked until its "Apply to all" box is

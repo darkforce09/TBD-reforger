@@ -1,11 +1,11 @@
 # Building blueprint compiler
 
 The offline compiler behind line of sight through buildings and prefabs in the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator): it reads voxel dumps and
-[Enfusion](/documentation_v2/glossary.md#enfusion) game models, extracts each building's floors,
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator): it reads voxel dumps and
+[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) game models, extracts each building's floors,
 walls and roof into a blueprint, builds bounding volume hierarchy (BVH) occlusion sidecars and the
 prefab occluder library, folds them into one archive, and checks every step against
-[Workbench](/documentation_v2/glossary.md#workbench) recordings of the engine.
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) recordings of the engine.
 
 ## Contents
 

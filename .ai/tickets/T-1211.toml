@@ -1,0 +1,12 @@
+id = "T-1211"
+kind = "work"
+title = "Correct map-engine doc comments on connection arm and grouping"
+summary = "map-engine: complete_connect's comment (src/editing/hosted_commands/entity_connections.rs:57-58) says any pick consumes the arm, but its caller (frontend pointer_up.rs:196-200) calls it only on a hit; ConnectionKind::Group (src/data/store/rows/connection_types.rs:21) says from joins to's group; no squad changes."
+class = "docs"
+status = "idea"
+notes = "Paths under apps/website/map-engine/src. (1) complete_connect in editing/hosted_commands/entity_connections.rs:57-58 says the arm is consumed whatever follows, so a pick on nothing ends the gesture; its only map caller, apps/website/frontend/src/v2/apps/editor/input/pointer_gestures/pointer_up.rs:196-200, calls it only when a slot or vehicle is hit, so a click on empty ground leaves the arm live. (2) ConnectionKind::Group in data/store/rows/connection_types.rs:21 says from joins to's group, but add_connection (data/store/rows/connections.rs:80-107, reached through complete_connect in data/store/operations/entity/connections.rs:144-147) only stores a group row and changes no squad; T-848 (ready) would make the comment true, so reword it now or together with T-848. Both are recorded under Known discrepancies in documentation_v2/website/frontend/apps/editor/feature_inventory/connections.md. Source: Phase 5 doc writer P5f, verified by P5g."
+created_at = "2026-09-26T05:29:05Z"
+
+[scope]
+domain = "engine"
+layer = "core"

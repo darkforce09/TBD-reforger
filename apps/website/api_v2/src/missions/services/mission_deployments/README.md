@@ -1,8 +1,8 @@
 # Mission deployments
 
-The path from an approved [artifact](/documentation_v2/glossary.md#artifact) to a running game
-server. A [mission deployment](/documentation_v2/glossary.md#mission-deployment) is validated before
-anything is stored, performed by one [fleet command](/documentation_v2/glossary.md#fleet-command),
+The path from an approved [artifact](/documentation_v2/glossary/a_to_f.md#artifact) to a running game
+server. A [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) is validated before
+anything is stored, performed by one [fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command),
 and confirmed only when a runtime session of that server reports the artifact it loaded.
 
 ## Contents
@@ -21,13 +21,13 @@ apps/website/api_v2/src/missions/services/mission_deployments/
 ## How it works
 
 `request_deployment` serves the administrator's route and the
-[game runtime](/documentation_v2/glossary.md#game-runtime)'s relayed in-game request alike, in one
+[game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime)'s relayed in-game request alike, in one
 transaction: it locks the server and settles its
-[deployment](/documentation_v2/glossary.md#deployment) in flight, validates the selection
-(`validate_selection` locks the [mission](/documentation_v2/glossary.md#mission), then the
-[event](/documentation_v2/glossary.md#event) mission when one is named), locks the requester's
+[deployment](/documentation_v2/glossary/a_to_f.md#deployment) in flight, validates the selection
+(`validate_selection` locks the [mission](/documentation_v2/glossary/g_to_m.md#mission), then the
+[event](/documentation_v2/glossary/a_to_f.md#event) mission when one is named), locks the requester's
 account and rechecks their administrator authority, then records the fleet command, the
-`mission_deployments` row, its [slot](/documentation_v2/glossary.md#slot) bindings and the audit
+`mission_deployments` row, its [slot](/documentation_v2/glossary/n_to_z.md#slot) bindings and the audit
 row.
 
 A refused selection stores nothing and answers with a `code`:
@@ -38,7 +38,7 @@ A refused selection stores nothing and answers with a `code`:
 | `DEPLOYMENT_IN_PROGRESS` | 409 | another deployment of the server is in flight |
 | `ARTIFACT_NOT_APPROVED` | 409 | the mission is not live, or its latest approval decided another artifact |
 | `MODPACK_MISMATCH` | 422 | the artifact was compiled against another modpack than the server requires |
-| `TERRAIN_NOT_RUNNABLE` | 422 | no [fleet scenario](/documentation_v2/glossary.md#fleet-scenario) is registered for the artifact's terrain |
+| `TERRAIN_NOT_RUNNABLE` | 422 | no [fleet scenario](/documentation_v2/glossary/a_to_f.md#fleet-scenario) is registered for the artifact's terrain |
 | `EVENT_MISSION_NOT_ON_SERVER` | 409 | the event mission runs another mission, or its event names another server |
 | `ORBAT_ARTIFACT_MISMATCH` | 422 | the event mission's seats and the artifact's slots do not pair one to one |
 | `IDENTITY_NOT_LINKED` | 403 | the in-game requester's Arma identity is linked to no account |
@@ -49,7 +49,7 @@ A deployment to a server whose open runtime session reported an artifact of the 
 any other is a `host_restart` (a `restart_with_mission` command for the host agent, carrying the
 terrain's fleet scenario, 1200 s to confirm).
 
-`slot_bindings.rs` pairs each [ORBAT](/documentation_v2/glossary.md#orbat) slot of the event
+`slot_bindings.rs` pairs each [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) slot of the event
 mission with the compiled slot at the same faction, squad and position, read from the artifact's
 own version payload, when both carry the same role; a role authored empty counts as `unassigned`,
 as the compiler writes it. The bindings are stored in `mission_deployment_slots`, where the event

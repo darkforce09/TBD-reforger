@@ -3,7 +3,7 @@
 # Discord identity link documentation
 
 The documentation of how a player links their game identity to their platform account with
-`#tbd link`, so an [event](/documentation_v2/glossary.md#event)'s attendance and statistics reach
+`#tbd link`, so an [event](/documentation_v2/glossary/a_to_f.md#event)'s attendance and statistics reach
 their profile.
 
 ## Contents

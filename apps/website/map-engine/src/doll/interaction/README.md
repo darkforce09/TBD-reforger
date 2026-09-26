@@ -1,6 +1,6 @@
 # Doll picking and callout anchors
 
-The pointer math of the doll preview in the [arsenal](/documentation_v2/glossary.md#arsenal): which
+The pointer math of the doll preview in the [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal): which
 clickable part of the mannequin lies under a pixel, and where each part's callout anchors on
 screen. Pure functions over the scene model and the orbit camera, with no GPU.
 

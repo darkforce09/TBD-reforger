@@ -1,6 +1,6 @@
 # Ticket action services
 
-The egui-free half of the [ticketboard](/documentation_v2/glossary.md#ticketboard)'s ticket
+The egui-free half of the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)'s ticket
 actions: the command rules, and the constructors that open each mutation dialog with the data and
 file-change guard it needs.
 

@@ -3,8 +3,8 @@
 # Mission selection screen
 
 The Mission Selector, the "Scenario Browser" tab of the pre-game screens: a player browses
-terrains, the [missions](/documentation_v2/glossary.md#mission) built for each, and one mission's
-versions, modset, summary, [ORBAT](/documentation_v2/glossary.md#orbat) and objectives, and picks
+terrains, the [missions](/documentation_v2/glossary/g_to_m.md#mission) built for each, and one mission's
+versions, modset, summary, [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) and objectives, and picks
 the mission and version the lobby and briefing are titled with. The screen renders mock data and
 requests no deployment.
 
@@ -78,7 +78,7 @@ MissionSelector README's [How it works](/apps/mod/tbd-framework/Scripts/Game/TBD
   or `#tbd refresh`): the missions the platform lets this server deploy, by title; the browser
   numbers them from 1 and marks the running one.
 - `POST /api/v1/game-runtime/deployments` (`TBD_MissionDeploymentRelay.RequestByNumber`): the
-  admin's pick as a [mission deployment](/documentation_v2/glossary.md#mission-deployment)
+  admin's pick as a [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment)
   request with the admin's `arma_id`; the platform decides whether that identity is an
   administrator and validates the pick as it validates a website deployment. The relay restarts
   nothing; a refusal reaches the admin's chat in words for its `details.code`.

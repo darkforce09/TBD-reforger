@@ -2,7 +2,7 @@
 
 The vegetation layers of the map export: trees, rocks, bushes, wild plants, crops, and stumps with
 other deadwood, each found among the placed entities of the open world in
-[Workbench](/documentation_v2/glossary.md#workbench) and written as one JSON file per layer, with a
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) and written as one JSON file per layer, with a
 summary file for the whole run.
 
 ## Contents

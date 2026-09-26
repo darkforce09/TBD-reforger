@@ -2,8 +2,8 @@
 
 # Map basemap and world objects
 
-What the [Mission Creator](/documentation_v2/glossary.md#mission-creator) draws under a
-[mission](/documentation_v2/glossary.md#mission): the satellite or map basemap, the terrain's
+What the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) draws under a
+[mission](/documentation_v2/glossary/g_to_m.md#mission): the satellite or map basemap, the terrain's
 world objects (roads, buildings, forest, props, labels) and the per-user switches for them, plus
 the world-object interactions that are not built yet.
 

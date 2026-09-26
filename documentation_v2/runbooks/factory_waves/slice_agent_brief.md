@@ -4,7 +4,7 @@
 
 The brief the orchestrator pastes into every slice agent's dispatch, the report schema the agent
 returns, and the conditions under which the orchestrator sends a report back. One slice agent
-implements one [ticket](/documentation_v2/glossary.md#ticket) in one worktree and never ships it.
+implements one [ticket](/documentation_v2/glossary/n_to_z.md#ticket) in one worktree and never ships it.
 Use this page at step 4 of [Running a wave](/documentation_v2/runbooks/factory_waves/running_a_wave.md)
 and again at step 6.
 

@@ -1,7 +1,7 @@
 # World export preparation
 
 The export-lane stages around the main object build: staging a
-[Workbench](/documentation_v2/glossary.md#workbench) export into the scratch folder, packing the
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) export into the scratch folder, packing the
 exported height grid, indexing the aerial supertexture cells, the type census, the subregion spike
 checks, and the validation of the committed export artifacts.
 

@@ -29,7 +29,7 @@ walker and reduces the crossings the same way: an opaque surface stops the ray, 
 add concealment. The world occluder's `blocked_fn` has the shape of blocking test the interior's
 `wash_band` takes, so a floor-style raster can be washed over the streamed world's objects
 (`the_blocked_closure_drives_a_wash_over_two_chunks` in `world/tests/occluder.rs`). The
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s line-of-sight tool instead
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s line-of-sight tool instead
 refines the terrain viewshed with its own budgeted pass in `crate::editing::tools::line_of_sight`,
 asking the world occluder cell by cell.
 

@@ -1,6 +1,6 @@
 # Map export
 
-The [Workbench](/documentation_v2/glossary.md#workbench) scripts that read a terrain's data out of
+The [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) scripts that read a terrain's data out of
 the world open in the editor: ground height, rasters, roads and water, vegetation, placed objects
 and buildings, places, and prefab catalogs. They write text, JSON and image files to the Workbench
 profile, where the developer tools pick up the ones the platform's terrain data is built from.

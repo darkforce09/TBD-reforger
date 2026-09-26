@@ -83,7 +83,7 @@ feature doc is written from the same code and may differ.
 
 # Event schedule page
 
-The `/events` page: members browse the upcoming [events](/documentation_v2/glossary.md#event) in
+The `/events` page: members browse the upcoming [events](/documentation_v2/glossary/a_to_f.md#event) in
 a list and open any event's full hub beside it, briefing and ORBAT included, without leaving the
 list.
 
@@ -101,7 +101,7 @@ list.
 1. The list loads only for a signed-in viewer; anyone else gets `AuthGate`'s sign-in prompt.
 2. The master column, headed "Upcoming Ops", shows each upcoming event the viewer may see as a
    card: local start time, status badge, title (`name_override`, else "Untitled Operation"),
-   [mission](/documentation_v2/glossary.md#mission) and slot counts, a countdown or `LOCKED` when
+   [mission](/documentation_v2/glossary/g_to_m.md#mission) and slot counts, a countdown or `LOCKED` when
    registration is locked, and a fill bar.
 3. The first event is selected until the viewer picks another. The detail column fetches the
    selected event's hub and renders it with the view `/events/:id` uses, so the viewer reads the

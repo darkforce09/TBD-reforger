@@ -3,7 +3,7 @@
 # In-game menu documentation
 
 The documentation of what a player reaches in game during a round of an
-[event](/documentation_v2/glossary.md#event): the pause menu's added action and the admin screen,
+[event](/documentation_v2/glossary/a_to_f.md#event): the pause menu's added action and the admin screen,
 with the design references of the fuller menu and admin suite.
 
 ## Contents

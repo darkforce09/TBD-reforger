@@ -3,7 +3,7 @@
 # ORBAT selection page documentation
 
 The feature documentation of the `/events/:id/missions/:emid/orbat` page, where one
-[mission](/documentation_v2/glossary.md#mission)'s [ORBAT](/documentation_v2/glossary.md#orbat)
+[mission](/documentation_v2/glossary/g_to_m.md#mission)'s [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat)
 slotting stands on a page of its own for direct links.
 
 ## Contents

@@ -1,6 +1,6 @@
 # Shared interface primitives
 
-The small egui pieces every [ticketboard](/documentation_v2/glossary.md#ticketboard) feature
+The small egui pieces every [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) feature
 draws with: the accent colours shared across tabs, the height of an output row, and the
 identifier link.
 

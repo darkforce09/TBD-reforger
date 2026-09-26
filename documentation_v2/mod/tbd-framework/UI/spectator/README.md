@@ -3,7 +3,7 @@
 # Spectator documentation
 
 The documentation of the spectator, where a dead player watches the rest of an
-[event](/documentation_v2/glossary.md#event) under one life: its camera, its roster and the design
+[event](/documentation_v2/glossary/a_to_f.md#event) under one life: its camera, its roster and the design
 references its overlays were drawn from.
 
 ## Contents

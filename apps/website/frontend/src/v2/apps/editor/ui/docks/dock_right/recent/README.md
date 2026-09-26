@@ -18,7 +18,7 @@ never stored. A leaf press in the merged faction tree records through it directl
 installs a recorder hook at mount (`install_recent_recorder`) and removes it on cleanup, but only
 while it is still the registered hook, so a remount's newer hook survives the older cleanup.
 `record_placed` calls that hook, so a composition stamp and a vehicle the
-[ORBAT](/documentation_v2/glossary.md#orbat) manager adds to a squad land in the same list; with no
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) manager adds to a squad land in the same list; with no
 dock mounted it does nothing, since the placement has already committed.
 
 ## Boundaries

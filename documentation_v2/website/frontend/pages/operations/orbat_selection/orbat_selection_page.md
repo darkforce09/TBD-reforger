@@ -3,10 +3,10 @@
 # ORBAT selection page
 
 The `/events/:id/missions/:emid/orbat` page in the
-[operations](/documentation_v2/glossary.md#operations) section: one
-[mission](/documentation_v2/glossary.md#mission)'s slotting on a page of its own, for a link that
+[operations](/documentation_v2/glossary/n_to_z.md#operations) section: one
+[mission](/documentation_v2/glossary/g_to_m.md#mission)'s slotting on a page of its own, for a link that
 should open straight onto the seats, such as a pinned Discord message or the "Modify Assignment"
-link on the deployments page. It mounts the same [ORBAT](/documentation_v2/glossary.md#orbat)
+link on the deployments page. It mounts the same [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat)
 selector the event hub shows under each mission.
 
 ## Where it lives

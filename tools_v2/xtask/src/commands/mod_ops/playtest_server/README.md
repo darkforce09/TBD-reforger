@@ -2,7 +2,7 @@
 
 The implementation of `cargo xtask mod playtest`: a local dedicated server that loads the
 checkout's `tbd-framework` addon, registers a joinable backend room, and runs a
-[mission](/documentation_v2/glossary.md#mission) that the platform deploys to it or that a
+[mission](/documentation_v2/glossary/g_to_m.md#mission) that the platform deploys to it or that a
 compiled document supplies offline.
 
 ## Contents
@@ -44,13 +44,13 @@ usage_fail::run ─ parse flags (a token acts where it stands: `--help` exits 0 
   `visible`, `admins` and one `TBD_Framework` mod entry whose id is the GUID read from
   `apps/mod/tbd-framework/addon.gproj`.
 - With `--mission`, `platform_deployment` logs in through the
-  [dev login](/documentation_v2/glossary.md#dev-login) as an administrator. It takes the mission's
-  approved [artifact](/documentation_v2/glossary.md#artifact), submitting and approving the current
+  [dev login](/documentation_v2/glossary/a_to_f.md#dev-login) as an administrator. It takes the mission's
+  approved [artifact](/documentation_v2/glossary/a_to_f.md#artifact), submitting and approving the current
   version when there is none, and makes sure the artifact's terrain has a
-  [fleet scenario](/documentation_v2/glossary.md#fleet-scenario). It then uses `--server` or the
+  [fleet scenario](/documentation_v2/glossary/a_to_f.md#fleet-scenario). It then uses `--server` or the
   "TBD Playtest" server row, issues a `mod_runtime`
-  [machine credential](/documentation_v2/glossary.md#machine-credential) for this run, and
-  requests the [deployment](/documentation_v2/glossary.md#deployment). Once the server is up it
+  [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential) for this run, and
+  requests the [deployment](/documentation_v2/glossary/a_to_f.md#deployment). Once the server is up it
   waits up to 180 s for the runtime to confirm the deployment and cancels the unclaimed transition
   command; when the server stops it revokes the credential.
 - `logread::assert_local_addon_won` is a hard gate. The engine's `Loaded addons:` block must name
@@ -75,7 +75,7 @@ usage_fail::run ─ parse flags (a token acts where it stands: `--help` exits 0 
   deployments, artifact cache), `verification_core` (`Pattern`, `proc::Run`), the `serde_json`,
   `regex` and `libc` crates; the dedicated server under
   `$HOME/.local/share/Steam/steamapps/common/Arma Reforger Server`; the website
-  [API](/documentation_v2/glossary.md#api) for `--mission`.
+  [API](/documentation_v2/glossary/a_to_f.md#api) for `--mission`.
 - Used by: `cargo xtask mod playtest` and `cargo xtask mod dev-server`; people running a local
   two-client playtest.
 - Rules: the help lists exactly the flags the parser accepts

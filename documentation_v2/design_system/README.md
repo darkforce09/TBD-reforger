@@ -2,7 +2,7 @@
 
 # Design system
 
-The visual language the website and the game [mod](/documentation_v2/glossary.md#mod) share: the
+The visual language the website and the game [mod](/documentation_v2/glossary/g_to_m.md#mod) share: the
 tokens for colour, type, spacing, radii and motion, the map symbology, the interaction patterns
 the pages follow, and the Stitch token exports they were designed from. Developers and agents
 read it before styling a page, a Mission Creator panel or a mod screen.

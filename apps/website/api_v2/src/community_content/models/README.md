@@ -25,6 +25,6 @@ structs, because the queries filter them.
 - Depends on: `core::wire_format` for timestamps, serde and sqlx.
 - Used by: the domain's handlers and services; `command_center`'s dashboard (`Announcement`);
   `server_infrastructure`'s server intel (`Modpack`, `ModpackMod`); `missions`'
-  [registry](/documentation_v2/glossary.md#registry) items (`Modpack`); the web app's
+  [registry](/documentation_v2/glossary/n_to_z.md#registry) items (`Modpack`); the web app's
   `apps/website/frontend/src/v2/core/api/dto/content.rs` mirrors the modpack wire shape.
 - Rules: an enum here and its Postgres enum in `apps/website/api_v2/migrations/` change together.

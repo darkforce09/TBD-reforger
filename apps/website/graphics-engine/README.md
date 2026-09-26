@@ -4,7 +4,7 @@ The `website-graphics-engine` crate: the web platform's WebGPU renderer, which k
 concept. It defines the frame vocabulary a caller describes a frame in, and supplies the render
 pipelines, the WGSL shader, geometry and text packing, sprite culling and the shared animation
 loop. Its one caller is `website-map-engine`, which draws the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map with it.
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map with it.
 
 ## Contents
 

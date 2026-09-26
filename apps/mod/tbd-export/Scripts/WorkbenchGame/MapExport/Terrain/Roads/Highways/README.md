@@ -1,7 +1,7 @@
 # Highway export
 
 Finds the open world's highways and major arterial roads in
-[Workbench](/documentation_v2/glossary.md#workbench) and writes their centrelines, widths and
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) and writes their centrelines, widths and
 endpoint connections to `highways.json`. The folder also holds a diagnostic plugin that prints what
 the engine's road network holds.
 

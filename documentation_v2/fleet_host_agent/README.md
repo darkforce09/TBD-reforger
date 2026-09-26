@@ -2,7 +2,7 @@
 
 # Fleet host agent documentation
 
-The documents on the [fleet host agent](/documentation_v2/glossary.md#fleet-host-agent), the
+The documents on the [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent), the
 program in `apps/fleet_host_agent/` that performs server commands on a self-hosted game host.
 Operators and developers read them below the crate's code READMEs, for the design, its limits and
 the open work.

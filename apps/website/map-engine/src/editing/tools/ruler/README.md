@@ -1,9 +1,9 @@
 # Ruler tool
 
-The headless half of the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s ruler:
+The headless half of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s ruler:
 a session-local polyline, what each leg measures (distance, bearing, rise and slope), its screen
 projection, and the tool mode that decides what a left click means. A measurement is never
-[mission](/documentation_v2/glossary.md#mission) content.
+[mission](/documentation_v2/glossary/g_to_m.md#mission) content.
 
 ## Contents
 

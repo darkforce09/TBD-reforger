@@ -61,8 +61,8 @@ gate reads it as a README; the folder's own README.md is written from the same c
 ````markdown
 # Mission Creator
 
-The [Mission Creator](/documentation_v2/glossary.md#mission-creator): the 2D/3D CAD workspace in
-which mission makers build a [mission](/documentation_v2/glossary.md#mission) on the map. This
+The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator): the 2D/3D CAD workspace in
+which mission makers build a [mission](/documentation_v2/glossary/g_to_m.md#mission) on the map. This
 folder holds the editor page, the chrome docked around the map, the canvas mount and its overlays,
 the interactive map tools, the loadout editor and the browser session they all run in.
 

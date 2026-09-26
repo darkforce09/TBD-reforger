@@ -52,7 +52,7 @@ poll never remounts the page under it. `Toasts`, provided once at the shell root
 through `success`, `error` or `message` that removes itself after four seconds, and its viewport
 renders no DOM while the list is empty. `SearchBox`, `Select` and `Slider` take their hover and
 disabled classes, `HOVER_FILL` and `DISABLED_GLYPH`, from the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
 `apps/website/frontend/src/v2/apps/editor/shell/layout.rs`.
 
 ## Boundaries

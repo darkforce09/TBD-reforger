@@ -3,7 +3,7 @@
 # Objective capture HUD documentation
 
 The documentation of the objective board and capture bar a player sees during the live stage of
-a round of an [event](/documentation_v2/glossary.md#event).
+a round of an [event](/documentation_v2/glossary/a_to_f.md#event).
 
 ## Contents
 

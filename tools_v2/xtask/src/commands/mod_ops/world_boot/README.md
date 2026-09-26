@@ -1,7 +1,7 @@
 # Headless world boot driver
 
 The boot half of `cargo xtask mod world-boot`: it stages a throwaway run folder, optionally seeds
-a compiled [mission](/documentation_v2/glossary.md#mission) through the platform, boots the
+a compiled [mission](/documentation_v2/glossary/g_to_m.md#mission) through the platform, boots the
 dedicated server headless, and hands the console log to the verdict in
 `tools_v2/xtask/src/commands/mod_ops/world_boot_verdict.rs`.
 

@@ -1,7 +1,7 @@
 # Wild plant export
 
 Finds every placed wild plant, weed strip and seaweed in the open world in
-[Workbench](/documentation_v2/glossary.md#workbench) and writes each one's species, environment,
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) and writes each one's species, environment,
 position, rotation, scale and size to `plants.json`.
 
 ## Contents

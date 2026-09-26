@@ -2,7 +2,7 @@
 
 The Workbench side of the Enfusion MCP bridge: nineteen Net API handlers that let the `wb_*` tools
 of the pinned `enfusion-mcp` package, and `cargo xtask mcp wbcall`, read and drive a running
-[Workbench](/documentation_v2/glossary.md#workbench). They are the handlers `enfusion-mcp@0.6.1`
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench). They are the handlers `enfusion-mcp@0.6.1`
 ships, with one local addition in `EMCP_WB_ScriptEditor.c`.
 
 ## Contents

@@ -1,7 +1,7 @@
 # Test support
 
 The helpers the crate's own tests share: the source scrubber, the captured
-[API](/documentation_v2/glossary.md#api) responses, the text of production files for source pins,
+[API](/documentation_v2/glossary/a_to_f.md#api) responses, the text of production files for source pins,
 and the text of the files outside `apps/website/frontend/src/` that the guard tests read.
 Everything here is test-only and resolved at compile time.
 
@@ -38,7 +38,7 @@ changes one path here.
   first, because the scrubber cuts from the first `#[cfg(test)]` and would otherwise hide every
   shard after the first.
 - `editor_operations.rs`: `ENTITY`, `CONTEXT` and `DOMAIN_ENTITY` hold the
-  [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s host-state shards (armed
+  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s host-state shards (armed
   placement, entity selection, the installed editor context) and the map engine's hosted document
   commands and entity operations, as the structural checks of the editor's tests read them.
 - `class_r_scrub/`: reduces such a text to what a build compiles and runs.

@@ -1,6 +1,6 @@
 # Framework widget layouts
 
-Every [Enfusion](/documentation_v2/glossary.md#enfusion) widget layout the framework's interface
+Every [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) widget layout the framework's interface
 draws: the shared primitives, the in-game HUD, and the session screens. Scripts instantiate them by
 the resource names registered in `TBD_UILayouts`
 (`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`).
@@ -43,7 +43,7 @@ stage change / RPC ──> workspace overlay (Hud/, Session/PostGame/)
   `Common/`.
 - Adding a layout: take a free block after a `git grep` for it, author the layout and its `.meta`,
   add the `TBD_UILayouts` constant, and commit both files.
-  [Workbench](/documentation_v2/glossary.md#workbench) must then open the addon and rewrite
+  [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) must then open the addon and rewrite
   `apps/mod/tbd-framework/resourceDatabase.rdb`, because the game finds a non-script resource at a
   new path only through that database.
 

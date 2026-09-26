@@ -1,7 +1,7 @@
 # Announcements page
 
 The `/announcements` and `/announcements/:id` pages in the
-[command center](/documentation_v2/glossary.md#command-center): the unit's published announcements
+[command center](/documentation_v2/glossary/a_to_f.md#command-center): the unit's published announcements
 in a master list, with the one the address names open in a reading pane beside it.
 
 ## Contents
@@ -32,7 +32,7 @@ opens nothing and a deep link opens exactly one. The reading pane shows the tag 
 thumbnail when its address is an `http(s)` URL, and the body. The body is stored as plain text and
 unsanitised, so it renders as one text node per blank-line separated paragraph, escaped once; inline
 markup shows as written, and rendering it as markup would need a sanitiser on the write path first.
-An optional field the [API](/documentation_v2/glossary.md#api) leaves out is not drawn.
+An optional field the [API](/documentation_v2/glossary/a_to_f.md#api) leaves out is not drawn.
 
 ## Routes
 

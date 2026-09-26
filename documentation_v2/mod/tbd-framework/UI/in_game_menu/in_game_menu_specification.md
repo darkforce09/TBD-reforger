@@ -3,8 +3,8 @@
 # In-game menu
 
 What a player reaches in game without leaving the round: the game's own pause menu, to which the
-[mod](/documentation_v2/glossary.md#mod) adds one button, and the admin screen, one list through which a listed server admin reads the
-[mission](/documentation_v2/glossary.md#mission), the stage and every player, and recovers a
+[mod](/documentation_v2/glossary/g_to_m.md#mod) adds one button, and the admin screen, one list through which a listed server admin reads the
+[mission](/documentation_v2/glossary/g_to_m.md#mission), the stage and every player, and recovers a
 player. The chat commands `#tbd …` cover the admin powers the screen does not.
 
 ## Where it lives
@@ -53,14 +53,14 @@ player. The chat commands `#tbd …` cover the admin powers the screen does not.
 6. PLAYERS: every connected player with an admin tag, faction, group and role (or "no slot"), and
    "in world", "LIFE SPENT" or "NO BODY".
 7. The one primary action follows the selected player: "RESPAWN <name>" for a spent life, which
-   gives the life back and rebuilds the player on their own [slot](/documentation_v2/glossary.md#slot), and "DEPLOY <name>" for a live
+   gives the life back and rebuilds the player on their own [slot](/documentation_v2/glossary/n_to_z.md#slot), and "DEPLOY <name>" for a live
    player with no body. The footer explains the action before it runs and shows the server's answer
    after; nothing opens a modal.
 8. ADMIN ACTIONS: "Show the audit trail" unfolds the newest 20 entries with their times.
 
 ### Chat commands
 
-Every other power is a `#tbd` command for listed admins: the mission list and [mission deployment](/documentation_v2/glossary.md#mission-deployment), the
+Every other power is a `#tbd` command for listed admins: the mission list and [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment), the
 backend address, validation, the dead list, respawn and deploy by player id, forcing any stage,
 safe start, the one-life identity waiver, the audit replay and `menu`. Everyone else reads "TBD:
 admin only."; `#tbd link` alone is open to every player. The Admin README's

@@ -2,8 +2,8 @@
 
 The `TBD_EMCP` Enfusion addon: the Workbench Net API handlers of the
 [enfusion-mcp](https://www.npmjs.com/package/enfusion-mcp) bridge, packaged on their own so a
-[Workbench](/documentation_v2/glossary.md#workbench) session gets the `wb_*` MCP tools without any
-other addon of the [mod](/documentation_v2/glossary.md#mod) carrying editor-only code. Nothing in
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) session gets the `wb_*` MCP tools without any
+other addon of the [mod](/documentation_v2/glossary/g_to_m.md#mod) carrying editor-only code. Nothing in
 it ships to players or servers.
 
 ## Contents

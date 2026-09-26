@@ -23,11 +23,11 @@ dispatches every command group, runs the repository's verifications and CI tasks
 platform's agent, worktree and wave orchestration. It keeps the work that belongs to a library in
 that library and passes it the checkout root:
 
-- `ticket-engine` owns the [ticket](/documentation_v2/glossary.md#ticket) files: typed storage and
+- `ticket-engine` owns the [ticket](/documentation_v2/glossary/n_to_z.md#ticket) files: typed storage and
   operations, validation, the sync outputs (`queue.json`, the roadmap markers and the gap-analysis
-  ticket column), the [wave](/documentation_v2/glossary.md#wave) lock and its history, run
+  ticket column), the [wave](/documentation_v2/glossary/n_to_z.md#wave) lock and its history, run
   receipts and estimates. The `ticket` and `wave` command groups of xtask delegate to it, and
-  [ticketboard](/documentation_v2/glossary.md#ticketboard) (`apps/ticketboard/`) reads the
+  [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) (`apps/ticketboard/`) reads the
   registry through it; process invocation and worktree cleanup stay with xtask.
 - `verification-core` holds the fail-closed primitives the gates share: verdicts and findings,
   pattern scans, process-group isolation with deadlines, and the `flock` on the shared

@@ -1,11 +1,11 @@
 # Mission data shapes
 
-The [mission](/documentation_v2/glossary.md#mission) shapes on both sides of the compiler: the
+The [mission](/documentation_v2/glossary/g_to_m.md#mission) shapes on both sides of the compiler: the
 editor payload it parses, and the rows of the compiled document the
-[mod](/documentation_v2/glossary.md#mod) loads, each written to a definition of
+[mod](/documentation_v2/glossary/g_to_m.md#mod) loads, each written to a definition of
 `contracts_v2/definitions/mission.schema.json`.
-The [ORBAT](/documentation_v2/glossary.md#orbat) templates the
-[API](/documentation_v2/glossary.md#api) reads live here too.
+The [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) templates the
+[API](/documentation_v2/glossary/a_to_f.md#api) reads live here too.
 
 ## Contents
 
@@ -21,7 +21,7 @@ apps/website/map-engine/src/data/scenario/ast/
 ## How it works
 
 `authoring.rs` is the input side: `EditorPayload` with its `editor` graph of factions, squads and
-[slots](/documentation_v2/glossary.md#slot), and its zones, entities, vehicles and settings,
+[slots](/documentation_v2/glossary/n_to_z.md#slot), and its zones, entities, vehicles and settings,
 visible only inside `data::scenario`. Every field has a default and unknown keys are dropped, so a
 missing key never fails a parse. `environment` and the authored blocks (`winConditions`, `tasks`,
 `radioPlan`, `weatherTimeline`, `audio`, `spawnModules`, `tacticalGraphics`) stay
@@ -40,11 +40,11 @@ sits in `crate::data::scenario::flatten`, which re-exports these rows.
 
 - `factions`, exposed as `data::scenario::orbat`: `OrbatSquadTemplate`, `OrbatSlotTemplate`,
   `parse_orbat_template`, `derive_orbat_from_editor` and `validate_faction_join_key`, read by the
-  [operations](/documentation_v2/glossary.md#operations) and
-  [missions](/documentation_v2/glossary.md#missions) domains of the API.
+  [operations](/documentation_v2/glossary/n_to_z.md#operations) and
+  [missions](/documentation_v2/glossary/g_to_m.md#missions) domains of the API.
 - `entities` and `scenario`: the compiled rows, which code outside `data::scenario` names through
   `data::scenario::flatten` (the API's `ModSlot`, and `ModZoneShape` in the tests of the
-  [Mission Creator](/documentation_v2/glossary.md#mission-creator)).
+  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)).
 
 ## Boundaries
 

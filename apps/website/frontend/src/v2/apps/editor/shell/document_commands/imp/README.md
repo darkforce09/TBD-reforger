@@ -1,8 +1,8 @@
 # Document command transport
 
-The browser half of the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s document
+The browser half of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s document
 commands: Save Version, the two exports, the merge of another
-[mission](/documentation_v2/glossary.md#mission) and the clipboard exporters, each as the request,
+[mission](/documentation_v2/glossary/g_to_m.md#mission) and the clipboard exporters, each as the request,
 download, clipboard write and toast around a decision the map engine makes. The parent module,
 `apps/website/frontend/src/v2/apps/editor/shell/document_commands.rs`, declares these files inside
 its wasm-only `imp` module and re-exports them.
@@ -25,7 +25,7 @@ store, the mission id and the current-semver signal), which the canvas mount ins
 `set_ctx`.
 
 - `save_now` refuses in review mode and refuses a document with duplicate
-  [slot](/documentation_v2/glossary.md#slot) ids before it compiles anything, then compiles the
+  [slot](/documentation_v2/glossary/n_to_z.md#slot) ids before it compiles anything, then compiles the
   save-shaped payload (the `orbat` left out, since the server derives it) and sends
   `POST /api/v1/missions/{id}/versions` with `{semver, editor_notes, payload}`. On success it clears
   the dirty flag, drops the hydrate's conflict backups and moves the current semver; the status
@@ -33,11 +33,11 @@ store, the mission id and the current-semver signal), which the canvas mount ins
   (401), or the error's headline with one finding per problem.
 - `export_now` downloads `mission-<id>.json`, the `MissionExport` envelope: the editor superset with
   the `orbat`, which re-imports into the editor and which the
-  [mod](/documentation_v2/glossary.md#mod) cannot load.
+  [mod](/documentation_v2/glossary/g_to_m.md#mod) cannot load.
 - `export_compiled_now` downloads `mission-<id>.compiled.json`, the compact mod document that
   `flatten_mod_document_json_with_diagnostics` compiles from the mission row (under the live
   document's title) and the save-shaped payload, as the
-  [artifact](/documentation_v2/glossary.md#artifact) compile does; it refuses while the row never
+  [artifact](/documentation_v2/glossary/a_to_f.md#artifact) compile does; it refuses while the row never
   arrived, naming an expired sign-in apart from a missing row, publishes the findings to the
   validation panel, and says in the toast when unsaved edits make it differ from any saved version.
   `begin_export_gesture` drops a second activation carrying the same DOM event timestamp.
@@ -62,7 +62,7 @@ store, the mission id and the current-semver signal), which the canvas mount ins
   `GET /api/v1/missions?scope=mine`.
 - Used by: through the parent's re-exports, the top strip's save dialog and export buttons in
   `apps/website/frontend/src/v2/apps/editor/ui/docks/top_strip/`; the
-  [Arsenal](/documentation_v2/glossary.md#arsenal) tab's loadout download (`download_json`) in
+  [Arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) tab's loadout download (`download_json`) in
   `apps/website/frontend/src/v2/apps/editor/arsenal/tab_content.rs`; the parent's `__editorCommands`
   bridge; the source contracts in
   `apps/website/frontend/src/v2/apps/editor/shell/tests/document_commands/`.

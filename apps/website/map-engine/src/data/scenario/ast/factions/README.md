@@ -1,8 +1,8 @@
 # ORBAT templates
 
-The [ORBAT](/documentation_v2/glossary.md#orbat) as a saved
-[mission](/documentation_v2/glossary.md#mission) payload states it: an ordered list of squads, each
-with its ordered [slots](/documentation_v2/glossary.md#slot) (role, loadout summary, tag), read
+The [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) as a saved
+[mission](/documentation_v2/glossary/g_to_m.md#mission) payload states it: an ordered list of squads, each
+with its ordered [slots](/documentation_v2/glossary/n_to_z.md#slot) (role, loadout summary, tag), read
 from the payload's top-level `orbat` array or derived from its editor graph. The module is exposed
 as `data::scenario::orbat`.
 
@@ -19,7 +19,7 @@ apps/website/map-engine/src/data/scenario/ast/factions/
 
 `parse_orbat_template` returns the payload's top-level `orbat` array when it holds at least one
 squad; otherwise it calls `derive_orbat_from_editor`, because a version saved from the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) carries no `orbat` key. The
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) carries no `orbat` key. The
 derivation walks `editor.factions` in array order, each faction's `squadIds`, and each squad's
 slots sorted by `index`; a squad or slot id that resolves nothing is skipped. A slot's position in
 its squad's list is its 1-based ORBAT number. Each slot's loadout is its loadout's `summary` when
@@ -27,10 +27,10 @@ set, otherwise the display names of its `primary` and `launcher` joined with `" 
 name of the resource path without `.et`), otherwise empty.
 
 `validate_faction_join_key` refuses an empty or whitespace-only faction and one with leading or
-trailing whitespace, and never trims: the [event](/documentation_v2/glossary.md#event) side
+trailing whitespace, and never trims: the [event](/documentation_v2/glossary/a_to_f.md#event) side
 stores `faction` verbatim in `orbat_slots.faction`, which the
-[API](/documentation_v2/glossary.md#api) matches byte for byte against the mission's
-[armory](/documentation_v2/glossary.md#armory) rows.
+[API](/documentation_v2/glossary/a_to_f.md#api) matches byte for byte against the mission's
+[armory](/documentation_v2/glossary/a_to_f.md#armory) rows.
 
 ## Boundaries
 
@@ -43,7 +43,7 @@ stores `faction` verbatim in `orbat_slots.faction`, which the
     (`apps/website/api_v2/src/operations/handlers/event_mission_attachment.rs`, which also calls
     `validate_faction_join_key`), the reservation restore in
     `apps/website/api_v2/src/operations/services/event_reservations/` and the
-    [mission deployment](/documentation_v2/glossary.md#mission-deployment) slot bindings in
+    [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) slot bindings in
     `apps/website/api_v2/src/missions/services/mission_deployments/`.
 - Rules:
   - a non-empty top-level `orbat` wins, and a payload that does not decode derives from the editor

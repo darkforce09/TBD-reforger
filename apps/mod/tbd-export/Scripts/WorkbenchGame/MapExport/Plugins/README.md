@@ -1,7 +1,7 @@
 # Full map export plugin
 
 The one plugin that runs every map-export layer in a single pass over the world open in
-[Workbench](/documentation_v2/glossary.md#workbench): terrain, vegetation, objects and
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench): terrain, vegetation, objects and
 infrastructure, locations and anchors, and the prefab and arsenal registries.
 
 ## Contents

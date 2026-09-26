@@ -1,8 +1,8 @@
 # Dashboard page
 
 The `/` page, the members' landing screen in the
-[command center](/documentation_v2/glossary.md#command-center): the countdown to the next
-[event](/documentation_v2/glossary.md#event), the primary game server's status, the viewer's own
+[command center](/documentation_v2/glossary/a_to_f.md#command-center): the countdown to the next
+[event](/documentation_v2/glossary/a_to_f.md#event), the primary game server's status, the viewer's own
 assignment, the current modpack and the latest announcements, all from one fetch.
 
 ## Contents

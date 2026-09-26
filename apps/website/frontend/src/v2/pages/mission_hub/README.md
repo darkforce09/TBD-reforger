@@ -1,10 +1,10 @@
 # Mission hub pages
 
-The [mission](/documentation_v2/glossary.md#mission) hub, the third section of the sidebar: the
+The [mission](/documentation_v2/glossary/g_to_m.md#mission) hub, the third section of the sidebar: the
 library of missions, one mission's overview, the read-only review workspace of an
-[artifact](/documentation_v2/glossary.md#artifact), the New Mission dialog that hands an author to
-the [Mission Creator](/documentation_v2/glossary.md#mission-creator), and the review record these
-pages share with the [approvals](/documentation_v2/glossary.md#approvals) page.
+[artifact](/documentation_v2/glossary/a_to_f.md#artifact), the New Mission dialog that hands an author to
+the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator), and the review record these
+pages share with the [approvals](/documentation_v2/glossary/a_to_f.md#approvals) page.
 
 ## Contents
 
@@ -43,15 +43,15 @@ the Mission Creator itself in its read-only review mode, not a copy of it.
 - `review_wording`, `artifact_provenance_view`, `comment_composer` and `review_history_view` in
   `mission_review/`: the review wording and views the approvals page in
   `apps/website/frontend/src/v2/pages/administration/approvals/` renders; the [server
-  control](/documentation_v2/glossary.md#server-control) page's [mission
-  deployment](/documentation_v2/glossary.md#mission-deployment) wording reads
+  control](/documentation_v2/glossary/n_to_z.md#server-control) page's [mission
+  deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) wording reads
   `review_wording::short_digest`.
 
 ## Boundaries
 
-- Depends on: `crate::v2::core` (the [API](/documentation_v2/glossary.md#api) client, its DTOs and
+- Depends on: `crate::v2::core` (the [API](/documentation_v2/glossary/a_to_f.md#api) client, its DTOs and
   the `mission_reviews` endpoint helpers, the `AuthStore` session and
-  [role](/documentation_v2/glossary.md#role) checks, the UI primitives); the Mission Creator in
+  [role](/documentation_v2/glossary/n_to_z.md#role) checks, the UI primitives); the Mission Creator in
   `apps/website/frontend/src/v2/apps/editor/`, which `review_workspace/page.rs`,
   `library/dossier_upload.rs` and `library/dossier_upload_panel.rs` import directly;
   `website_map_engine::data::scenario::compile` for the upload body; over HTTP, the API's `missions`

@@ -1,7 +1,7 @@
 # Server hydrate parts
 
-How the [Mission Creator](/documentation_v2/glossary.md#mission-creator) reconciles the local draft
-with the server's saved version of the [mission](/documentation_v2/glossary.md#mission) at boot, and
+How the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) reconciles the local draft
+with the server's saved version of the [mission](/documentation_v2/glossary/g_to_m.md#mission) at boot, and
 the snapshot pair that is the way back from a server adopt or a restore. The parent module,
 `apps/website/frontend/src/v2/apps/editor/shell/hydrate.rs` (wasm only), declares both files,
 re-exports their entry points and publishes the snapshot pair as `window.__missionBackup`.

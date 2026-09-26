@@ -49,7 +49,7 @@ under `apps/website/api_v2/src/missions/contract/generated/` are held to the sam
 
 Outside the walk, and so unenforced by this gate:
 
-- [EnfScript](/documentation_v2/glossary.md#enfscript) `.c` files under `apps/mod/`. CLAUDE.md
+- [EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript) `.c` files under `apps/mod/`. CLAUDE.md
   law 7 applies to them, but no gate measures them, and 52 tracked scripts of the three TBD
   addons run past 500 lines.
 - Markdown. Live documents under `documentation_v2/` have their own 500-line limit, checked by

@@ -3,7 +3,7 @@
 The shared library of collision meshes behind Everon's line of sight: one `.bvh` sidecar per game
 model that a prefab places, each a triangle mesh with its bounding volume hierarchy (BVH). The map
 engine's world occluder tests sight lines in the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) against these meshes.
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) against these meshes.
 
 ## Contents
 
@@ -36,7 +36,7 @@ assets_v2/terrains/everon/prefabs/blas/
 
 - Producers: `cargo xtask map bvh-batch`, through the blueprint compiler in
   `tools_v2/developer-tools/src/blueprint/` (`bvh/batch_processing/` and `bvh/construction.rs`),
-  which reads the models from the [Enfusion](/documentation_v2/glossary.md#enfusion) game paks.
+  which reads the models from the [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) game paks.
 - Consumers:
   - the map engine's occluder loader
     (`apps/website/map-engine/src/streaming/loaders/occluder_loader.rs`), which fetches the files

@@ -2,7 +2,7 @@
 
 The `cargo xtask verify` group: the command line of every repository verification. Each verb
 calls one check in `tools_v2/xtask/src/verifications/` and exits with that check's code, so a
-developer, a CI job or a [wave](/documentation_v2/glossary.md#wave) gate runs any single check
+developer, a CI job or a [wave](/documentation_v2/glossary/n_to_z.md#wave) gate runs any single check
 by name.
 
 ## Contents
@@ -43,8 +43,8 @@ Run each as `cargo xtask verify <verb>` from the repository root.
 
 - Synopsis: `verify engine-layers`; `verify route-tags`; `verify editor-orbat-coherency`
 - Does: the layer rules between the graphics engine and the map engine; every `@route` tag matches
-  a registered Axum route and back; the [ORBAT](/documentation_v2/glossary.md#orbat) and Eden
-  lock coherency of the [Mission Creator](/documentation_v2/glossary.md#mission-creator).
+  a registered Axum route and back; the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) and Eden
+  lock coherency of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator).
   Body: `tools_v2/xtask/src/verifications/architecture/`.
 - Example: `cargo xtask verify engine-layers`
 
@@ -76,8 +76,8 @@ Run each as `cargo xtask verify <verb>` from the repository root.
 - Synopsis: `verify mission-rest-size-limits`; `verify player-identity-comments`;
   `verify results-reporter-identity-comments`; `verify destroy-target-diagnostics`;
   `verify ui-layouts`
-- Does: the 8 MiB [mission](/documentation_v2/glossary.md#mission) ceiling is checked before the
-  [mod](/documentation_v2/glossary.md#mod) parses a document; three comment contracts in the mod
+- Does: the 8 MiB [mission](/documentation_v2/glossary/g_to_m.md#mission) ceiling is checked before the
+  [mod](/documentation_v2/glossary/g_to_m.md#mod) parses a document; three comment contracts in the mod
   sources; the structure of the mod's `.layout` files. Body:
   `tools_v2/xtask/src/verifications/mod_scripts/`.
 - Example: `cargo xtask verify mission-rest-size-limits`
@@ -101,7 +101,7 @@ Run each as `cargo xtask verify <verb>` from the repository root.
 
 - Synopsis: `verify api-readiness [--evidence <DIR>] [--execute]`; `--evidence` defaults to
   `target/api-readiness`.
-- Does: judges every requirement of the [API](/documentation_v2/glossary.md#api) acceptance
+- Does: judges every requirement of the [API](/documentation_v2/glossary/a_to_f.md#api) acceptance
   register against the evidence receipts in `DIR`; `--execute` first runs the registered local
   checks. Body:
   `tools_v2/xtask/src/verifications/api_readiness/`.

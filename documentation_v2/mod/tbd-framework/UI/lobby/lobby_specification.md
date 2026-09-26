@@ -3,9 +3,9 @@
 # Lobby screen
 
 The Lobby tab of the pre-game screens: a player picks a faction, reads its squads and
-[slots](/documentation_v2/glossary.md#slot), claims a seat in the
-[ORBAT](/documentation_v2/glossary.md#orbat) and inspects the seat's kit on a 3D doll before the
-[event](/documentation_v2/glossary.md#event) goes to the briefing. The screen renders mock data;
+[slots](/documentation_v2/glossary/n_to_z.md#slot), claims a seat in the
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) and inspects the seat's kit on a 3D doll before the
+[event](/documentation_v2/glossary/a_to_f.md#event) goes to the briefing. The screen renders mock data;
 the server-side roster wire it will use exists beside it.
 
 ## Where it lives

@@ -1,6 +1,6 @@
 # Mission data structs and state readers
 
-The typed shape of a loaded [mission](/documentation_v2/glossary.md#mission)'s slots and vehicles,
+The typed shape of a loaded [mission](/documentation_v2/glossary/g_to_m.md#mission)'s slots and vehicles,
 and the readers that apply the per-row states the primary parse does not bind: entity and vehicle
 state, player gadget flags and launch parameters. The server fills and applies them while a mission
 loads and while its slot bodies materialize.

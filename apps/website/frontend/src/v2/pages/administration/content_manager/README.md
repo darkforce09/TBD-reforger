@@ -1,6 +1,6 @@
 # Content manager page
 
-The `/admin/content` page, the [content manager](/documentation_v2/glossary.md#content-manager),
+The `/admin/content` page, the [content manager](/documentation_v2/glossary/a_to_f.md#content-manager),
 headed "Comms Broadcaster": administrators write announcements in Markdown, give each a category and
 a hero image, publish it to the members' announcements feed with an optional push to Discord, and
 archive it. The page manages announcements only.
@@ -28,7 +28,7 @@ working set, so the two panes agree on every post's title and state.
 
 A post created with "New" lives only in the browser, under a local id, until its first publish.
 `is_server_id` tells a server id from a local one: publishing a local post creates it and keeps
-the id the [API](/documentation_v2/glossary.md#api) mints, and publishing a saved post updates it;
+the id the [API](/documentation_v2/glossary/a_to_f.md#api) mints, and publishing a saved post updates it;
 when the Discord switch is on and the post was already published, the page then asks for the push
 again, since an update pushes only on a first publish. "Save Draft" writes the fields back into
 the working set and sends nothing. "Delete" acts without a confirmation: a saved post is archived
@@ -42,7 +42,7 @@ because a publish refuses a relative one. Every request runs in the browser buil
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/admin/content` | `ContentManagerPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` [role](/documentation_v2/glossary.md#role) only | full-bleed inside the navigation frame, over the topographic backdrop; breadcrumb Administration / Comms Broadcaster; sidebar entry "Comms Broadcaster" |
+| `/admin/content` | `ContentManagerPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` [role](/documentation_v2/glossary/n_to_z.md#role) only | full-bleed inside the navigation frame, over the topographic backdrop; breadcrumb Administration / Comms Broadcaster; sidebar entry "Comms Broadcaster" |
 
 ## Data
 
@@ -85,7 +85,7 @@ because a publish refuses a relative one. Every request runs in the browser buil
   (`AuthStore`) and `crate::v2::core::ui` (`AdminGate`, `SplitPane`, `SplitPaneEmpty`,
   `ListDetailItem`, `MaterialIcon`, the toast queue); over HTTP, the
   announcement and upload routes of the
-  [community content](/documentation_v2/glossary.md#community-content) domain.
+  [community content](/documentation_v2/glossary/a_to_f.md#community-content) domain.
 - Used by: the `/admin/content` route in `apps/website/frontend/src/app_routes.rs` and
   `apps/website/frontend/src/router.rs`; the sidebar's "Comms Broadcaster" link in
   `apps/website/frontend/src/v2/pages/navigation/nav_config.rs`; `content_source` in

@@ -19,7 +19,7 @@ apps/website/api_v2/src/match_telemetry/handlers/
 ## How it works
 
 - **Heartbeat.** `ingest_server_status` takes a `MachineCaller` that must be a `mod_runtime`
-  [machine credential](/documentation_v2/glossary.md#machine-credential); the server is the
+  [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential); the server is the
   credential's, never a value in the body. The body names the runtime session's generation and a
   sequence that strictly increases within the session, and
   `server_infrastructure::services::runtime_sessions::admit_heartbeat` fences it in the same
@@ -27,14 +27,14 @@ apps/website/api_v2/src/match_telemetry/handlers/
   state. Every reading is optional: an absent one keeps the stored value, `current_match_id` is
   cleared by an explicit `""`, and a heartbeat with no reading at all is a 400. The handler appends
   a `server_status_histories` sample, writes a `server.low_fps` warning when the server falls below
-  20 FPS, and publishes the stored row on the server's [SSE](/documentation_v2/glossary.md#sse)
+  20 FPS, and publishes the stored row on the server's [SSE](/documentation_v2/glossary/n_to_z.md#sse)
   topic.
 - **Match results.** `ingest_match_results` takes `ServiceAuth` (`X-Service-Token`). It validates
   the complete roster, serialises reports of the same match, locks the identities and accounts in
   the shared order, upserts the match by `source_match_id` (`match_upsert.rs`), stores each
   player's line, attributes attendance through `operations::services::participation_attribution`,
   retracts what a previous report attributed to another
-  [event mission](/documentation_v2/glossary.md#event), and recomputes the affected statistics and
+  [event mission](/documentation_v2/glossary/a_to_f.md#event), and recomputes the affected statistics and
   the leaderboard before it commits. Players whose Arma identity no account owns keep their gameplay
   facts and are listed in the answer and in a system audit row.
 - **Contract.** `outcome` is required; every other match field is optional, where absent keeps the
@@ -50,7 +50,7 @@ apps/website/api_v2/src/match_telemetry/handlers/
   (audit writers); `missions::models::mission::TerrainType`; the domain's models and
   `services::result_serialization`; `core` for errors, the URL guard and the Postgres error codes.
 - Used by: the domain's `routes.rs`; over HTTP, the
-  [game runtime](/documentation_v2/glossary.md#game-runtime)'s session loop in
+  [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime)'s session loop in
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_RuntimeSession.c` and its results reporter in
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_ResultsReporter.c`.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler

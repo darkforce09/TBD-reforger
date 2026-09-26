@@ -1,12 +1,12 @@
 # Server control page
 
-The `/admin/server` page, [server control](/documentation_v2/glossary.md#server-control):
+The `/admin/server` page, [server control](/documentation_v2/glossary/n_to_z.md#server-control):
 administrators pick one of the configured game servers, read its live state, issue
-[fleet commands](/documentation_v2/glossary.md#fleet-command) to it, deploy a
-[mission](/documentation_v2/glossary.md#mission)'s approved
-[artifact](/documentation_v2/glossary.md#artifact) to it, keep the
-[fleet scenario](/documentation_v2/glossary.md#fleet-scenario) registry, and issue and revoke its
-[machine credentials](/documentation_v2/glossary.md#machine-credential).
+[fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command) to it, deploy a
+[mission](/documentation_v2/glossary/g_to_m.md#mission)'s approved
+[artifact](/documentation_v2/glossary/a_to_f.md#artifact) to it, keep the
+[fleet scenario](/documentation_v2/glossary/a_to_f.md#fleet-scenario) registry, and issue and revoke its
+[machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential).
 
 ## Contents
 
@@ -32,12 +32,12 @@ server's `CommandConsole`, `DeploymentPanel` and `CredentialPanel`, so switching
 shows one server's commands, deployments, credentials or fresh secret under another's name.
 
 Nothing here reaches a host directly. A command or a deployment is a request the
-[API](/documentation_v2/glossary.md#api) records and answers with 202; the page then reads its
+[API](/documentation_v2/glossary/a_to_f.md#api) records and answers with 202; the page then reads its
 receipt every two seconds and announces the outcome only once an executor or a runtime session
 reports it. The card shows only what the server row carries: a server with no status reads as
 zeros and dashes, the terrain is capitalised or a dash between matches, and "Active Mission" shows
 the current match id, since the row names no mission. The launch control only says the game client
-is needed. The page has no [RCON](/documentation_v2/glossary.md#rcon) console, and no control adds,
+is needed. The page has no [RCON](/documentation_v2/glossary/n_to_z.md#rcon) console, and no control adds,
 edits or deactivates a server. Every request runs in the browser build only; a native build
 renders the failure branch.
 
@@ -45,7 +45,7 @@ renders the failure branch.
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/admin/server` | `ServerControlPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` [role](/documentation_v2/glossary.md#role) only | full-bleed inside the navigation frame, over the topographic backdrop; breadcrumb Administration / Server Control; sidebar entry "Server Control" |
+| `/admin/server` | `ServerControlPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` [role](/documentation_v2/glossary/n_to_z.md#role) only | full-bleed inside the navigation frame, over the topographic backdrop; breadcrumb Administration / Server Control; sidebar entry "Server Control" |
 
 ## Data
 
@@ -59,7 +59,7 @@ renders the failure branch.
     read back as the `FleetCommandReceipt`.
   - `GET /api/v1/servers/{id}/commands/{commandId}`: the followed receipt, every two seconds.
   - `POST /api/v1/servers/{id}/commands/{commandId}/cancel` with `{}`: read as the receipt.
-- [Mission deployments](/documentation_v2/glossary.md#mission-deployment) (`mission_deployments/`):
+- [Mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment) (`mission_deployments/`):
   - `GET /api/v1/servers/{id}/deployments`: read as `MissionDeploymentPage` of `MissionDeployment`.
   - `POST /api/v1/servers/{id}/deployments`: sends a `DeploymentRequest` (`mission_id`,
     `artifact_id`, optional `event_mission_id`), read back as the `MissionDeployment`.
@@ -69,7 +69,7 @@ renders the failure branch.
   - The form's choices, read when it first opens: `GET /api/v1/missions?limit=100`
     (`Paginated<MissionCard>`), `GET /api/v1/events?scope=upcoming&limit=100`
     (`Paginated<EventListItem>`), and `GET /api/v1/events/{id}` (`EventHub`) for each
-    [event](/documentation_v2/glossary.md#event) whose `server_id` is this server.
+    [event](/documentation_v2/glossary/a_to_f.md#event) whose `server_id` is this server.
 - Fleet scenarios (`fleet_scenarios/`): `GET /api/v1/fleet/scenarios`, read as
   `FleetScenarioList`; `PUT /api/v1/fleet/scenarios/{terrainKey}`, sending a `FleetScenarioUpdate`
   (`scenario_id`, `display_name`); `DELETE` on the same path.
@@ -148,9 +148,9 @@ renders the failure branch.
   `crate::v2::core::auth` (`AuthStore`), `crate::v2::core::ui` (`AdminGate`, `SplitPane`, `Sheet`,
   `MaterialIcon`, `cn`, the toast queue) and `crate::v2::core::utils` (`utc_timestamp`,
   `clipboard`); over HTTP, the server, command, scenario and credential routes of the
-  [server infrastructure](/documentation_v2/glossary.md#server-infrastructure) domain, the
-  deployment routes and mission library of the [missions](/documentation_v2/glossary.md#missions)
-  domain, and the event reads of the [operations](/documentation_v2/glossary.md#operations) domain.
+  [server infrastructure](/documentation_v2/glossary/n_to_z.md#server-infrastructure) domain, the
+  deployment routes and mission library of the [missions](/documentation_v2/glossary/g_to_m.md#missions)
+  domain, and the event reads of the [operations](/documentation_v2/glossary/n_to_z.md#operations) domain.
 - Used by: the `/admin/server` route in `apps/website/frontend/src/app_routes.rs` and
   `apps/website/frontend/src/router.rs`; the sidebar's "Server Control" link in
   `apps/website/frontend/src/v2/pages/navigation/nav_config.rs`; `server_control_source` in

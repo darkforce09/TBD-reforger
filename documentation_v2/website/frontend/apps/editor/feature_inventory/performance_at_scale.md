@@ -2,9 +2,9 @@
 
 # Performance at scale
 
-How the [Mission Creator](/documentation_v2/glossary.md#mission-creator) behaves when a
-[mission](/documentation_v2/glossary.md#mission) holds tens of thousands of
-[slots](/documentation_v2/glossary.md#slot): bulk paste, the windowed trees, the clustered map at
+How the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) behaves when a
+[mission](/documentation_v2/glossary/g_to_m.md#mission) holds tens of thousands of
+[slots](/documentation_v2/glossary/n_to_z.md#slot): bulk paste, the windowed trees, the clustered map at
 far zoom, the drag and pick paths, the per-edit redraw, and the load and save of a large
 document. Each entry states what the code does; none records a measured frame rate or duration.
 

@@ -1,10 +1,10 @@
 # Authored mission blocks
 
-The optional blocks a [mission](/documentation_v2/glossary.md#mission) maker writes beside the
-[ORBAT](/documentation_v2/glossary.md#orbat) and the map: the radio plan, the win rule, tasks, the
+The optional blocks a [mission](/documentation_v2/glossary/g_to_m.md#mission) maker writes beside the
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) and the map: the radio plan, the win rule, tasks, the
 weather timeline, audio, spawn modules and tactical graphics. A module per block types and checks
 it, and `authored/` lists every block and moves them from the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s document to the saved payload
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s document to the saved payload
 and on to the compiled document.
 
 ## Contents
@@ -40,8 +40,8 @@ and checks each edit with the block's `validate`. On save, `compile_payload` cop
 block onto the payload root unchecked, so work in progress survives, and an unlisted key stays in
 the bag. On compile, each block is checked again: the two document-owned blocks are parsed into
 the document's typed fields, the other five are carried verbatim to its root, and a refused block
-is dropped with a warning finding, which keeps the [API](/documentation_v2/glossary.md#api) from
-making an [artifact](/documentation_v2/glossary.md#artifact) of that version. `authored/` holds
+is dropped with a warning finding, which keeps the [API](/documentation_v2/glossary/a_to_f.md#api) from
+making an [artifact](/documentation_v2/glossary/a_to_f.md#artifact) of that version. `authored/` holds
 that path in detail.
 
 Every block module has one shape: `parse` types the block from a `serde_json::Value` and answers

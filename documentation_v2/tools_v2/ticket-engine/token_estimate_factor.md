@@ -4,7 +4,7 @@
 
 The declared constant the `diff_loc` token estimator multiplies changed lines by, the one
 measurement behind it, and the paths whose churn it leaves out. A shipped
-[ticket](/documentation_v2/glossary.md#ticket) with no measured run receipt gets its token count
+[ticket](/documentation_v2/glossary/n_to_z.md#ticket) with no measured run receipt gets its token count
 from this factor, so everyone who reads the ticketboard's token totals or recalibrates the factor
 reads this first.
 

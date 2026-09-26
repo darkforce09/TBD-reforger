@@ -2,7 +2,7 @@
 
 # Mission Creator shell blueprint
 
-Design-phase reference for the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
+Design-phase reference for the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
 chrome at `/missions/:id/edit`, titled "AEGIS COMMAND - Mission Editor" in its export: an early
 exploration of the editor shell. It gives colour and layout context and is not an implementation
 source; the built UI is the Leptos code under `apps/website/frontend/src/v2/apps/editor/`.

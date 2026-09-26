@@ -2,7 +2,7 @@
 
 # Feature entry schema (FEDS)
 
-The rules every feature entry of the [Mission Creator](/documentation_v2/glossary.md#mission-creator)
+The rules every feature entry of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)
 inventory and of the Eden editor reference follows: how a feature is named and numbered, what an
 entry holds, the terms both catalogues share, and the row format of the Eden gap analysis, which
 links the two by ID. An entry exists so that a developer or an agent can build, check or compare
@@ -37,11 +37,13 @@ entry. An ID is never reused or renumbered, because the gap analysis and other d
 | `TBD` | features Eden has no counterpart for |
 | `WP`, `TRG`, `MRK`, `VEH` | waypoints, triggers and modules, markers, vehicles |
 | `MEAS` | ruler, elevation, distance |
-| `COMP`, `TOOLBAR`, `WIDGET`, `CTX`, `CONN`, `MENU` | Eden compositions, toolbar buttons, transformation widget, context menu entries, connection types, menu bar items |
+| `CONN` | connections: in Eden, its connection types; in the Mission Creator, the Connect flow under Eden's IDs plus the map lines, the Connections panel and the graph findings (`CONN-LINE-001`, `CONN-PANEL-001`, `CONN-VALID-001`) |
+| `COMP`, `TOOLBAR`, `WIDGET`, `CTX`, `MENU` | Eden compositions, toolbar buttons, transformation widget, context menu entries, menu bar items |
 
 The Eden reference adds these patterns: `RIGHT-MODE-00N` (the asset browser's F1 to F6 modes),
 `RIGHT-SEARCH-00N` (search syntax), `COMP-00N`, `TOOLBAR-00N`, `WIDGET-00N`, `CTX-00N`,
-`CONN-00N`, `MENU-{MENU}-{ITEM}`, `ACTION-{NAME}` (an engine action from the
+`CONN-{TYPE}-00N` (a connection type, such as `CONN-GROUP-001`), `MENU-{MENU}-{ITEM}`,
+`ACTION-{NAME}` (an engine action from the
 [Eden actions](https://community.bistudio.com/wiki/Eden_Editor:_Actions) page) and
 `ATTR-FIELD-{TYPE}-{NAME}` (one attribute field, such as `ATTR-FIELD-OBJ-TYPE`). Attribute
 fields are rows of a table in the [Eden attributes reference](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/attributes.md),

@@ -1,7 +1,7 @@
 # World glyphs
 
 The icon set the map draws world objects with: the glyph manifest, the SVG sources and the packed
-raster atlas built from them. The [API](/documentation_v2/glossary.md#api) serves the folder at
+raster atlas built from them. The [API](/documentation_v2/glossary/a_to_f.md#api) serves the folder at
 `/map-assets/glyphs`, beside the terrain mount rather than inside it, because every terrain shares
 one glyph set.
 

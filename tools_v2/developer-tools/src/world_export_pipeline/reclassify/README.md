@@ -2,7 +2,7 @@
 
 The body of `world reclassify`: it rebuilds the classification lane of a terrain's committed
 prefab catalogue from `contracts_v2/rules/prefab-classify.json` and the committed chunks alone,
-with no [Workbench](/documentation_v2/glossary.md#workbench) export, and by default only reports
+with no [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) export, and by default only reports
 where the catalogue and the rules disagree.
 
 ## Contents

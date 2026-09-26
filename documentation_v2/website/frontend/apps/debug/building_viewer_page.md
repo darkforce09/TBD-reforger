@@ -3,11 +3,11 @@
 # Building viewer bench
 
 The `/debug/building-viewer` bench: one building blueprint, extracted from the game by the
-[Workbench](/documentation_v2/glossary.md#workbench) exporter, drawn as a floor plan, with a
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) exporter, drawn as a floor plan, with a
 draggable observer and target whose line of sight is traced through the building's occlusion mesh,
 and a per-floor viewshed wash. It exists so a developer can check what the extractor produced for
 a building, and how the line-of-sight code reads it, before the data reaches the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator).
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator).
 
 ## Where it lives
 
@@ -78,7 +78,7 @@ needs no sign-in.
 
 The README's [Data](/apps/website/frontend/src/v2/apps/debug/building_viewer/README.md#data)
 lists every file the bench fetches. They are static files under `/map-assets`, which the
-[API](/documentation_v2/glossary.md#api) serves and Trunk proxies in development; the bench calls
+[API](/documentation_v2/glossary/a_to_f.md#api) serves and Trunk proxies in development; the bench calls
 no `/api/v1` route and writes nothing. The blueprint follows
 `contracts_v2/definitions/building-blueprint.schema.json`; the sidecar and the instances come
 from the same export.

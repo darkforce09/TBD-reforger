@@ -45,7 +45,7 @@ OverlayDock (full screen, last): dropdown menus
 The primary navigation picks a mode. In the briefing mode the topic navigation fills CenterDock
 and the chosen page mounts into `PageFrame`; the page width is `PageHost`'s width override, set
 per page from `TBD_BriefingNav.PageWidth`: Frequencies 448,
-[ORBAT](/documentation_v2/glossary.md#orbat) 1200, Friendly and Enemy Assets 576, Friendly and
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) 1200, Friendly and Enemy Assets 576, Friendly and
 Enemy Uniforms 768, Objectives 440, Rules 480, Background 440, Parameters 440.
 The Markers mode puts the markers panel in CenterDock, and the Players mode builds
 `apps/mod/tbd-framework/UI/layouts/Session/Shared/TBD_PlayersPanel.layout` into WideDock. While
@@ -72,7 +72,7 @@ only. Enemy pages reuse the friendly builders painted in the `TBD_EUITint.OPFOR`
 
 ## Format
 
-- File type: [Enfusion](/documentation_v2/glossary.md#enfusion) widget layouts (`.layout`), plain
+- File type: [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) widget layouts (`.layout`), plain
   text, each beside a `.layout.meta` whose `Name` holds
   `{GUID}UI/layouts/Session/Briefing/<file>.layout`. Every `*Border`, `*BG` and `Background` is an
   empty `FrameWidgetClass` dock that the handler fills with a rounded shape (panels 12, rows and
@@ -87,7 +87,7 @@ only. Enemy pages reuse the friendly builders painted in the `TBD_EUITint.OPFOR`
   `Common/`.
 - Adding a layout: take a free block from the ledger, author the layout and its `.meta`, add a
   `BRIEFING_*` constant to `TBD_UILayouts`, and commit both files; the game finds a new path only
-  after [Workbench](/documentation_v2/glossary.md#workbench) has rewritten `resourceDatabase.rdb`.
+  after [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) has rewritten `resourceDatabase.rdb`.
 
 ## Referenced by
 

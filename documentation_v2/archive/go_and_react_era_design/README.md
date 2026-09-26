@@ -4,7 +4,7 @@
 
 The platform's first design documents: the product blueprint and context handoff, a backend plan for
 a Go server, the frontend documentation hub with its roadmap and page specs, and the first [Mission
-Creator](/documentation_v2/glossary.md#mission-creator) problem statement, design, engineering plan,
+Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) problem statement, design, engineering plan,
 roadmap and UX specs. Status: archived — frozen records.
 
 ## Contents
@@ -45,7 +45,7 @@ live document took over a file's subject, the file's status line links it:
 | the Mission Creator UX spec and the editor page spec | [Mission Creator UX spec](/documentation_v2/website/frontend/apps/editor/ux_spec.md) |
 | the setup wizard page | [mission library page](/documentation_v2/website/frontend/pages/mission_hub/library/mission_library_page.md) |
 
-The [event](/documentation_v2/glossary.md#event) registration redesign, the Go backend plan, the
+The [event](/documentation_v2/glossary/a_to_f.md#event) registration redesign, the Go backend plan, the
 Mission Creator design, engineering plan and problem statement, and the platform context handoff
 have no single replacement: the [API documentation](/documentation_v2/website/api_v2/README.md) and
 the [Mission Creator documentation](/documentation_v2/website/frontend/apps/editor/README.md)
@@ -62,7 +62,7 @@ describe what was built.
 
 - Depends on: nothing live; the documents quote a codebase the repository does not hold.
 - Used by: the page feature docs and folder READMEs under `documentation_v2/website/frontend/` that
-  link the design a page came from; the [ticket](/documentation_v2/glossary.md#ticket) files in
+  link the design a page came from; the [ticket](/documentation_v2/glossary/n_to_z.md#ticket) files in
   `.ai/tickets/` whose citations name these documents, most often the platform context handoff; a
   comment in `apps/website/frontend/src/v2/apps/editor/ui/inspector/env.rs` that cites the
   engineering plan; the stubs in the [redirect

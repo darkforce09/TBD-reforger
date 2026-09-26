@@ -1,6 +1,6 @@
 # Document viewer state
 
-The state machine of the [ticketboard](/documentation_v2/glossary.md#ticketboard)'s document
+The state machine of the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)'s document
 column: which repository document is open, whether its read is still running, and what the read
 produced.
 

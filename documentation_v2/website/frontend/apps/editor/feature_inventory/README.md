@@ -2,7 +2,7 @@
 
 # Mission Creator feature inventory
 
-Every feature of the [Mission Creator](/documentation_v2/glossary.md#mission-creator), one area
+Every feature of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator), one area
 per file: what the mission maker does, what the code does in reply, and whether the committed code
 ships it. Developers and agents read it to find a feature's code and state, and the Eden gap
 analysis reads it to pair each feature with its Eden counterpart.

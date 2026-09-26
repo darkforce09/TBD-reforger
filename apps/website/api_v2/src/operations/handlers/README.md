@@ -1,12 +1,12 @@
 # Operations handlers
 
-The HTTP handlers of the [operations](/documentation_v2/glossary.md#operations) domain, one module
-per surface: the [event](/documentation_v2/glossary.md#event) calendar and its hub, event writes and
-[mission](/documentation_v2/glossary.md#mission) attachments, access administration, the
-[ORBAT](/documentation_v2/glossary.md#orbat) and its [slots](/documentation_v2/glossary.md#slot),
-the member directory, the [service record](/documentation_v2/glossary.md#service-record), leave
-requests, fire missions, and the [game runtime](/documentation_v2/glossary.md#game-runtime)'s roster
-and player [deployments](/documentation_v2/glossary.md#deployment).
+The HTTP handlers of the [operations](/documentation_v2/glossary/n_to_z.md#operations) domain, one module
+per surface: the [event](/documentation_v2/glossary/a_to_f.md#event) calendar and its hub, event writes and
+[mission](/documentation_v2/glossary/g_to_m.md#mission) attachments, access administration, the
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) and its [slots](/documentation_v2/glossary/n_to_z.md#slot),
+the member directory, the [service record](/documentation_v2/glossary/n_to_z.md#service-record), leave
+requests, fire missions, and the [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime)'s roster
+and player [deployments](/documentation_v2/glossary/a_to_f.md#deployment).
 
 ## Contents
 
@@ -47,9 +47,9 @@ server.
   refusals carry a stable `details.code`, and access changes also check the access revision their
   form was loaded at.
 - `event_mission_attachment.rs` copies the mission's ORBAT into `orbat_slots` rows of the new event
-  mission, the only ORBAT the [API](/documentation_v2/glossary.md#api) writes, so it refuses an
+  mission, the only ORBAT the [API](/documentation_v2/glossary/a_to_f.md#api) writes, so it refuses an
   unreadable template, one that seats nobody, and a blank or padded faction, which no
-  [armory](/documentation_v2/glossary.md#armory) line could match.
+  [armory](/documentation_v2/glossary/a_to_f.md#armory) line could match.
 - `game_runtime_roster.rs` reads the slot bindings of the deployment the server runs and compiles
   nothing; `game_runtime_deployments.rs` answers a refused player life with 200 and
   `decision = "denied"`.
@@ -67,7 +67,7 @@ server.
   ballistics.
 - Used by: the domain's `routes.rs`; over HTTP, the operations pages in
   `apps/website/frontend/src/v2/pages/operations/`, the
-  [event manager](/documentation_v2/glossary.md#event-manager) in
+  [event manager](/documentation_v2/glossary/a_to_f.md#event-manager) in
   `apps/website/frontend/src/v2/pages/administration/event_manager/`, the mortar calculator in
   `apps/website/frontend/src/v2/pages/field_tools/mortar/`, the endpoint helpers in
   `apps/website/frontend/src/v2/core/api/endpoints/`, and the game runtime's roster loader in

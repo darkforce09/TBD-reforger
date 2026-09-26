@@ -1,7 +1,7 @@
 # World chunk residency scheduler
 
 Decides which world chunks, 512 m squares unless the manifest sets another size, the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map keeps in memory: the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map keeps in memory: the
 chunk math that turns a viewport into chunk ids, `WorldResidency` with its pin, in-flight marks,
 fetch-failure cap and LRU eviction, the per-frame ingest budget, and the picking and lookups over
 the resident chunks.

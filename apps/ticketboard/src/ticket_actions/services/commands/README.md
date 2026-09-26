@@ -1,7 +1,7 @@
 # Ticket command rules
 
-The egui-free rules behind every change the [ticketboard](/documentation_v2/glossary.md#ticketboard)
-makes to a [ticket](/documentation_v2/glossary.md#ticket): one builder per `cargo xtask ticket`
+The egui-free rules behind every change the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)
+makes to a [ticket](/documentation_v2/glossary/n_to_z.md#ticket): one builder per `cargo xtask ticket`
 verb, the file-change guard, the single-flight queue, and which transitions each status offers.
 
 ## Contents

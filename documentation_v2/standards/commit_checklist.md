@@ -14,10 +14,10 @@ working context.
 
 | Work | Read first |
 |---|---|
-| any work | the [ticket](/documentation_v2/glossary.md#ticket), its spec and its plan (`cargo xtask ticket brief <id>`) |
+| any work | the [ticket](/documentation_v2/glossary/n_to_z.md#ticket), its spec and its plan (`cargo xtask ticket brief <id>`) |
 | the app's pages | [Frontend documentation](/documentation_v2/website/frontend/README.md): every route, its page folder and its feature doc |
-| the [Mission Creator](/documentation_v2/glossary.md#mission-creator) | its [roadmap](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) and [decisions](/documentation_v2/website/frontend/apps/editor/decisions.md) |
-| the [API](/documentation_v2/glossary.md#api) | the [API overview](/documentation_v2/website/api_v2/api_overview.md) and the code in `apps/website/api_v2/` |
+| the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) | its [roadmap](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) and [decisions](/documentation_v2/website/frontend/apps/editor/decisions.md) |
+| the [API](/documentation_v2/glossary/a_to_f.md#api) | the [API overview](/documentation_v2/website/api_v2/api_overview.md) and the code in `apps/website/api_v2/` |
 | where a new file goes | [Where does X go?](/documentation_v2/standards/where_does_x_go.md) |
 | comments and cross-boundary tags | [Documentation standards](/documentation_v2/standards/documentation_standards.md) |
 | code rules and their gates | [Coding standards](/documentation_v2/standards/coding_standards/README.md) |
@@ -91,7 +91,7 @@ it runs.
 
 - Commit directly to `main`; create no branch (CLAUDE.md law 2). The one exception is the
   `slice/<id>` branches that `cargo xtask platform slice-worktree` and the
-  [wave](/documentation_v2/glossary.md#wave) tooling create, merge and delete themselves.
+  [wave](/documentation_v2/glossary/n_to_z.md#wave) tooling create, merge and delete themselves.
 - Subject: `type(scope): summary`, with the type one of `feat`, `fix`, `refactor`, `test`, `docs`
   or `chore`. A commit that lands a ticket names its id in the subject: `ticket stamp-sha` and the
   token estimator read ticket ids from commit subjects, as

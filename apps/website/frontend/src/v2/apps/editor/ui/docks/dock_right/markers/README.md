@@ -1,7 +1,7 @@
 # Right dock markers
 
 The right dock's Markers tab: the closed marker icon vocabulary read from the
-[mission](/documentation_v2/glossary.md#mission) schema, the icon picker that arms a marker
+[mission](/documentation_v2/glossary/g_to_m.md#mission) schema, the icon picker that arms a marker
 placement, the list of authored markers and the selected marker's form. A marker belongs to one
 side's briefing.
 

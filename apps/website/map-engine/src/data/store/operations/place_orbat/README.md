@@ -1,8 +1,8 @@
 # Character placement into the ORBAT
 
-Files a character placed on the map into its side's [ORBAT](/documentation_v2/glossary.md#orbat)
-in the [mission](/documentation_v2/glossary.md#mission) document: the side's faction, the squad the
-new [slot](/documentation_v2/glossary.md#slot) joins, its place in that squad and its leadership.
+Files a character placed on the map into its side's [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat)
+in the [mission](/documentation_v2/glossary/g_to_m.md#mission) document: the side's faction, the squad the
+new [slot](/documentation_v2/glossary/n_to_z.md#slot) joins, its place in that squad and its leadership.
 
 ## Contents
 

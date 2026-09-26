@@ -2,7 +2,7 @@
 
 # Mission Creator design references
 
-The design references of the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
+The design references of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
 shell, map canvas and version diff: five design-phase sets, kept for colour and layout context
 rather than as an implementation source. The Arsenal's sets sit in
 [its own folder](/documentation_v2/website/frontend/apps/editor/arsenal/visual_references/README.md).

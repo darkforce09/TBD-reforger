@@ -1,9 +1,9 @@
 # Contract catalogs
 
-The live item [registry](/documentation_v2/glossary.md#registry) of the current modpack, exported
-from the [Enfusion](/documentation_v2/glossary.md#enfusion)
-[Workbench](/documentation_v2/glossary.md#workbench): every item the
-[arsenal](/documentation_v2/glossary.md#arsenal) offers and the compatibility graph between them.
+The live item [registry](/documentation_v2/glossary/n_to_z.md#registry) of the current modpack, exported
+from the [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion)
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench): every item the
+[arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) offers and the compatibility graph between them.
 This is production content the platform imports, not test data.
 
 ## Contents
@@ -19,10 +19,10 @@ contracts_v2/catalogs/
 A Workbench plugin scans every loaded addon's prefabs, classifies each by its components and writes
 both envelopes into the Workbench profile; the two files here are that output, copied in and
 replacing the previous export whole. `cargo xtask db registry-import` runs the
-[API](/documentation_v2/glossary.md#api)'s `import-registry` binary over both files, which loads
+[API](/documentation_v2/glossary/a_to_f.md#api)'s `import-registry` binary over both files, which loads
 them into the Postgres registry tables of the modpack their `modpackId` names. The API then serves
 them as `GET /api/v1/registry` and `GET /api/v1/registry/compat`, and the arsenal of the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) offers only what they contain.
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) offers only what they contain.
 
 ```text
 Workbench plugin ──▶ $profile:TBD_RegistryItems.json, $profile:TBD_RegistryCompat.json

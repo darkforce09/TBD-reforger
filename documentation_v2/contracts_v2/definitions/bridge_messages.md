@@ -3,10 +3,10 @@
 # TBD Voice game bridge contract
 
 The wire between the game and an external voice client: the messages an in-game TBD-Radio bridge
-[mod](/documentation_v2/glossary.md#mod) sends to the TBD Voice client, so that voice channels
+[mod](/documentation_v2/glossary/g_to_m.md#mod) sends to the TBD Voice client, so that voice channels
 follow each player's slot, radio nets, life state and the game-mode stage. Both ends are built
 outside this repository; the framework's side of the contract is its hook points and the
-[mission](/documentation_v2/glossary.md#mission) document's `radioPlan`.
+[mission](/documentation_v2/glossary/g_to_m.md#mission) document's `radioPlan`.
 
 ## Where it lives
 
@@ -43,7 +43,7 @@ Every message carries the same envelope:
 | `v` | integer | protocol version, the constant `1` |
 | `type` | string | `hello`, `ack`, `spawn`, `death`, `net_change`, `ptt` or `stage_change` |
 | `ts` | integer | Unix epoch milliseconds |
-| `session` | string | the scope a voice room binds to: the [event](/documentation_v2/glossary.md#event) or server session |
+| `session` | string | the scope a voice room binds to: the [event](/documentation_v2/glossary/a_to_f.md#event) or server session |
 | `player` | object | `identityId`, `platform` (`pc`, `xbox`, `psn`) and an optional `name`; required on `spawn`, `death`, `net_change` and `ptt` |
 | `payload` | object | the type's body |
 

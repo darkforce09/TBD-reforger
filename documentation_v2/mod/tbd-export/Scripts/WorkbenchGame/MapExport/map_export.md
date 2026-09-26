@@ -2,8 +2,8 @@
 
 # Map export
 
-The [Workbench](/documentation_v2/glossary.md#workbench) side of the terrain data pipeline: the
-`tbd-export` [mod](/documentation_v2/glossary.md#mod) addon's exporters read a world open in the
+The [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) side of the terrain data pipeline: the
+`tbd-export` [mod](/documentation_v2/glossary/g_to_m.md#mod) addon's exporters read a world open in the
 editor (ground height, rasters, roads, water, vegetation, placed objects, buildings, places and
 prefab lists) and write files to the Workbench profile, where the developer tools pick up the ones
 the committed terrain data is built from. Developers and agents rebuilding a terrain read it.
@@ -13,7 +13,7 @@ the committed terrain data is built from. Developers and agents rebuilding a ter
 - Code: [`apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/`](/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/README.md),
   one folder per layer, and the runtime road export in
   [`apps/mod/tbd-export/Scripts/Game/TBD/Export/`](/apps/mod/tbd-export/Scripts/Game/TBD/Export/README.md).
-  The export world and its [mission header](/documentation_v2/glossary.md#mission-header) are
+  The export world and its [mission header](/documentation_v2/glossary/g_to_m.md#mission-header) are
   [`apps/mod/tbd-export/worlds/`](/apps/mod/tbd-export/worlds/README.md) and
   [`apps/mod/tbd-export/Missions/`](/apps/mod/tbd-export/Missions/README.md).
 - Entry: the Net API handler `EMCP_WB_TbdBlueprint`
@@ -52,7 +52,7 @@ file's format.
 | Runtime road network | [`Scripts/Game/TBD/Export/`](/apps/mod/tbd-export/Scripts/Game/TBD/Export/README.md) | `everon/roads/`, the Workbench road file names | nothing |
 
 The committed road archive does not come from either road export: `world build-roads` decodes the
-road topology from the game paks. The item [registry](/documentation_v2/glossary.md#registry)
+road topology from the game paks. The item [registry](/documentation_v2/glossary/n_to_z.md#registry)
 catalogs in `contracts_v2/catalogs/` come from a separate plugin,
 `apps/mod/tbd-export/Scripts/WorkbenchGame/TBD_RegistryItemsExportPlugin.c`, whose two
 `$profile:TBD_Registry*.json` files are copied into the catalog folder by hand.

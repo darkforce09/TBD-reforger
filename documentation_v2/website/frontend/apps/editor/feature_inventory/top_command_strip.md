@@ -2,9 +2,9 @@
 
 # Top command strip
 
-The two rows across the top of the [Mission Creator](/documentation_v2/glossary.md#mission-creator):
-the [mission](/documentation_v2/glossary.md#mission)'s title and menus, the
-[ORBAT](/documentation_v2/glossary.md#orbat) Manager button, undo and redo, the time of day and
+The two rows across the top of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator):
+the [mission](/documentation_v2/glossary/g_to_m.md#mission)'s title and menus, the
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) Manager button, undo and redo, the time of day and
 weather, the validation chip, "Save Version" and "Export", and the Mission Settings dialog the
 strip opens.
 

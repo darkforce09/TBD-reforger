@@ -39,7 +39,7 @@ path.
 
 - File type: each icon is three files. The `.png` is a 64 x 64 RGBA raster of the outlined Material
   Symbols glyph, white on alpha. The `.edds` is the texture
-  [Workbench](/documentation_v2/glossary.md#workbench) writes when it imports the PNG, and the
+  [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) writes when it imports the PNG, and the
   `.edds.meta` holds its resource GUID under `Name` and the per-platform
   `PNGResourceClass` settings, which inherit the vanilla `TextureUI.conf` for each platform.
 - Resource GUID: the `.edds.meta` file; a GUID never changes once written.
@@ -54,7 +54,7 @@ path.
   path built from the key; nothing refers to these textures by GUID.
 - The icon keys come from the screens and their data: the briefing's navigation and pages in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Briefing/UI/`, the
-  [mission](/documentation_v2/glossary.md#mission) inspector and mission browser in
+  [mission](/documentation_v2/glossary/g_to_m.md#mission) inspector and mission browser in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/UI/`, the kit inspector and
   roster in `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/UI/`, the players panel in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Players/UI/`, the search box and the session top

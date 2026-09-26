@@ -2,8 +2,8 @@
 
 # Shipped history
 
-The log of what the platform and the [mod](/documentation_v2/glossary.md#mod) shipped, program by
-program and [ticket](/documentation_v2/glossary.md#ticket) by ticket, kept out of the agent
+The log of what the platform and the [mod](/documentation_v2/glossary/g_to_m.md#mod) shipped, program by
+program and [ticket](/documentation_v2/glossary/n_to_z.md#ticket) by ticket, kept out of the agent
 instruction file so agents do not load it as working context. Status: archived — frozen records.
 
 ## Contents

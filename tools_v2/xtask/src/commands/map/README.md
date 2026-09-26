@@ -3,7 +3,7 @@
 The `cargo xtask map` group: the terrain export that turns a staged Workbench world export into
 the committed object and road artifacts, and the building-blueprint and line-of-sight tools that
 build and check the occlusion data the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s line-of-sight tool uses. Map
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s line-of-sight tool uses. Map
 and mod developers run them by hand; the work itself lives in the `developer-tools` crate.
 
 ## Contents

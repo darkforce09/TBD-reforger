@@ -2,7 +2,7 @@
 
 # Database operations
 
-The procedures on the website [API](/documentation_v2/glossary.md#api)'s Postgres database beyond
+The procedures on the website [API](/documentation_v2/glossary/a_to_f.md#api)'s Postgres database beyond
 starting it: running SQL, loading and removing sample data, the isolated integration-test run,
 repairing a migration checksum after a comments-only edit, and taking, verifying, drilling and
 restoring backups, locally and on the home server. Starting the local database, the first seed
@@ -58,7 +58,7 @@ Run every command from the repository root.
 ### Load and remove the sample data
 
 `apps/website/api_v2/seeds/mock_data.sql` holds sample users, modpacks and four
-[missions](/documentation_v2/glossary.md#mission) with fixed ids. `cargo xtask db seed` never
+[missions](/documentation_v2/glossary/g_to_m.md#mission) with fixed ids. `cargo xtask db seed` never
 applies it.
 
 1. Apply it after the API has migrated the database.
@@ -80,9 +80,9 @@ applies it.
      '00000000-0000-4000-c000-000000000003', '00000000-0000-4000-c000-000000000004')"
    ```
 
-   Expected: `DELETE 4`. An [event](/documentation_v2/glossary.md#event), an
-   [artifact](/documentation_v2/glossary.md#artifact), a review or a
-   [mission deployment](/documentation_v2/glossary.md#mission-deployment) that refers to one of
+   Expected: `DELETE 4`. An [event](/documentation_v2/glossary/a_to_f.md#event), an
+   [artifact](/documentation_v2/glossary/a_to_f.md#artifact), a review or a
+   [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) that refers to one of
    them blocks the delete with a foreign-key error; remove that row first.
 
 ### Run the integration tests

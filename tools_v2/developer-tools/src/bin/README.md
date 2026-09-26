@@ -1,9 +1,9 @@
 # Developer tool executables
 
 The six executables of the `developer-tools` crate: the
-[Enfusion](/documentation_v2/glossary.md#enfusion) script oracle, the headless browser gates, the
+[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) script oracle, the headless browser gates, the
 enfusion-mcp broker, the world-export and map-image pipelines, and [Mission
-Creator](/documentation_v2/glossary.md#mission-creator) captures. Developers run them by hand, and
+Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) captures. Developers run them by hand, and
 xtask recipes and CI tasks run them by name.
 
 ## Contents
@@ -83,7 +83,7 @@ a subcommand prints its usage, and a clap usage error exits 2.
 ### world
 
 - Synopsis: `world <COMMAND>`; `--help` lists its eighteen subcommands.
-- Does: turns a [Workbench](/documentation_v2/glossary.md#workbench) world export into the committed
+- Does: turns a [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) world export into the committed
   terrain artifacts (object chunks, the catalogue, density grids, the road network, the elevation
   raster) and runs the gates that verify them, `verify-phase`, `validate-exports` and `reclassify`
   among them.

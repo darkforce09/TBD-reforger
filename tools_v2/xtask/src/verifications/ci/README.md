@@ -3,7 +3,7 @@
 Two gates that keep continuous integration honest: `cargo xtask verify ci-shell` keeps the logic
 out of the GitHub workflow YAML, so every `run:` step is a `cargo xtask` call or one of a few
 setup commands, and `cargo xtask verify ci-schema-parity` keeps the CI schema job, the CI task
-table and the [wave](/documentation_v2/glossary.md#wave) gate wired to the full set of schema and
+table and the [wave](/documentation_v2/glossary/n_to_z.md#wave) gate wired to the full set of schema and
 verification steps.
 
 ## Contents

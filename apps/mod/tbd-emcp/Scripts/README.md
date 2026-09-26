@@ -13,7 +13,7 @@ apps/mod/tbd-emcp/Scripts/
 ## How it works
 
 Enfusion builds one script module per folder under an addon's `Scripts/`. This addon carries only
-`WorkbenchGame/`, which [Workbench](/documentation_v2/glossary.md#workbench) compiles into the
+`WorkbenchGame/`, which [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) compiles into the
 editor; with no `Game/` folder it adds nothing to the game module the framework and the dedicated
 server compile.
 

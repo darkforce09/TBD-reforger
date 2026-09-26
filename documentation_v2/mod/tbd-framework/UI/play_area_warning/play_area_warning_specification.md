@@ -4,8 +4,8 @@
 
 What a player is told when they leave the area of operations, or walk into another side's
 protected base, while the round is live: how long they have to return and what happens if they do
-not. Under one life a terminal penalty ends the player's [event](/documentation_v2/glossary.md#event),
-so the warning must come early and repeat. The warning is private chat; the [mod](/documentation_v2/glossary.md#mod) draws no overlay.
+not. Under one life a terminal penalty ends the player's [event](/documentation_v2/glossary/a_to_f.md#event),
+so the warning must come early and repeat. The warning is private chat; the [mod](/documentation_v2/glossary/g_to_m.md#mod) draws no overlay.
 
 ## Where it lives
 
@@ -25,7 +25,7 @@ so the warning must come early and repeat. The warning is private chat; the [mod
 ### When it applies
 
 1. Enforcement runs only while the stage is `LIVE`; leaving `LIVE` drops every running countdown.
-2. A [mission](/documentation_v2/glossary.md#mission) with no `boundary` zone restricts nobody,
+2. A [mission](/documentation_v2/glossary/g_to_m.md#mission) with no `boundary` zone restricts nobody,
    and the server logs that once. A boundary may apply to one side or to all.
 3. A `base_protection` zone names a faction; a player of any other side standing in it is in
    violation. The boundary is checked first, so its message wins when a player breaks both.
@@ -57,7 +57,7 @@ so the warning must come early and repeat. The warning is private chat; the [mod
   `base_protection` and `rules.penalty`, `rules.graceSeconds` and `rules.warnEverySeconds`, read on
   the server by `TBD_ZoneRegistry`; clients hold no mission document, so the check cannot run
   there.
-- The player's side comes from the [slot](/documentation_v2/glossary.md#slot) `TBD_SpawnManager` assigned.
+- The player's side comes from the [slot](/documentation_v2/glossary/n_to_z.md#slot) `TBD_SpawnManager` assigned.
 - Per-player state (`TBD_PlayAreaViolation`) exists only while the player is in violation, keyed
   by player id and checked against the body, so a recycled id cannot inherit a countdown.
 

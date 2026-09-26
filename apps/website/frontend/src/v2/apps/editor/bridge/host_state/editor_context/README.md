@@ -1,8 +1,8 @@
 # Editor context
 
-The context the [Mission Creator](/documentation_v2/glossary.md#mission-creator) installs once at
+The context the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) installs once at
 load: the document, render-engine and selection handles every panel reaches the open
-[mission](/documentation_v2/glossary.md#mission) through, the Leptos signals that mirror the
+[mission](/documentation_v2/glossary/g_to_m.md#mission) through, the Leptos signals that mirror the
 document into the docks, and the side signals that open the asset picker, the comment editor and the
 Connections panel.
 
@@ -23,13 +23,13 @@ The canvas mount calls `install` once, after the document is seeded, and registe
 picker, comment editor, Connections panel and connection selection signals beside it. The
 `EditorContext` it installs holds the `DocHandle`, the `EngineHandle` and the `SelectionHandle`, the
 active layer, active side and Objects-mode signals, the dock mirrors (outliner nodes,
-[ORBAT](/documentation_v2/glossary.md#orbat) nodes, selected ids), the Attributes dialog's open id
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) nodes, selected ids), the Attributes dialog's open id
 and tab, the document tick, the armed `Pending` of a placement and the id minter. The handles are
 `!Send` `Rc`s, so the context lives in the `EDITOR_CONTEXT` thread-local rather than down the
 component tree, and a remount installs a new one over the old.
 
 `MissionDocCore` has no change subscription, so the undo driver's tail calls `refresh_docks` after
-every mutation: it rebuilds the outliner tree (layers, [slots](/documentation_v2/glossary.md#slot),
+every mutation: it rebuilds the outliner tree (layers, [slots](/documentation_v2/glossary/n_to_z.md#slot),
 comments) and the ORBAT tree (factions, squads, slots) from the document's projections, mirrors the
 selection, clears a connection selection that an entity selection or a delete has made stale, and
 bumps the document tick the panels re-read on; `bump_doc_tick` bumps it alone, for a draw that has

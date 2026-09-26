@@ -1,7 +1,7 @@
 # Wave lock
 
-The compiler, reader and checker of `.ai/tickets/wave.lock`, the [wave](/documentation_v2/glossary.md#wave)
-plan of the open [tickets](/documentation_v2/glossary.md#ticket): which dispatchable tickets can run
+The compiler, reader and checker of `.ai/tickets/wave.lock`, the [wave](/documentation_v2/glossary/n_to_z.md#wave)
+plan of the open [tickets](/documentation_v2/glossary/n_to_z.md#ticket): which dispatchable tickets can run
 together because they own no common files, numbered on from the wave-close commits in git
 history. The lock is compiled from the ticket files alone and has one writer.
 

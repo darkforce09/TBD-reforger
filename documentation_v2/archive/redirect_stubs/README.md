@@ -16,7 +16,7 @@ documentation_v2/archive/redirect_stubs/
 
 A stub's name spells the path it stood at, lowercased: `docs__website__backend_architecture.md`
 stood at docs/website/BACKEND_ARCHITECTURE.md, and the [Mission
-Creator](/documentation_v2/glossary.md#mission-creator) architecture stubs stood in
+Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) architecture stubs stood in
 docs/specs/Mission_Creator_Architecture/ under their numbered names. Each stub is a few lines: a
 "Moved" line that links its target and, where a live document now holds the subject, a status line
 that links it. A link that still needs one of these documents goes to the target, never to the stub.

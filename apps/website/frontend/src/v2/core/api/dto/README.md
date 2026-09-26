@@ -1,6 +1,6 @@
 # Wire types
 
-The data transfer objects: one Rust shape per JSON body the [API](/documentation_v2/glossary.md#api)
+The data transfer objects: one Rust shape per JSON body the [API](/documentation_v2/glossary/a_to_f.md#api)
 sends or accepts, grouped by domain and re-exported flat from `mod.rs`, so a caller names the type
 (`MissionDetail`) rather than the file it lives in.
 
@@ -37,23 +37,23 @@ up, found by poisoning each value) are exactly the ones the test lists. The `tes
 files hold one domain's goldens each; `tests/shapes.rs` checks the shapes that need no capture.
 
 - A value set the API may extend (review states,
-  [fleet command](/documentation_v2/glossary.md#fleet-command) actions and states,
-  [mission deployment](/documentation_v2/glossary.md#mission-deployment) states, leave statuses,
+  [fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) actions and states,
+  [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) states, leave statuses,
   reservation values) travels as a string, so a new value lists instead of failing the read.
 - A null the capture carries stays explicit when serialising: an unclaimed
-  [ORBAT](/documentation_v2/glossary.md#orbat) [slot](/documentation_v2/glossary.md#slot), a
+  [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) [slot](/documentation_v2/glossary/n_to_z.md#slot), a
   finding with no subject, a pool with no limit.
-- The [event](/documentation_v2/glossary.md#event) access conditions and group sources are tagged
+- The [event](/documentation_v2/glossary/a_to_f.md#event) access conditions and group sources are tagged
   by `kind` and refuse unknown fields, because the
-  [event manager](/documentation_v2/glossary.md#event-manager) sends them back and must not
+  [event manager](/documentation_v2/glossary/a_to_f.md#event-manager) sends them back and must not
   rewrite a shape it does not know; `MissionDetail` has no catch-all either.
 - `IssuedMachineCredential`, the one answer that carries a
-  [machine credential](/documentation_v2/glossary.md#machine-credential)'s secret, derives no
+  [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential)'s secret, derives no
   `Debug`, so the secret cannot reach a log line.
-- `decode_server_status_frame` turns one [SSE](/documentation_v2/glossary.md#sse) frame into a
+- `decode_server_status_frame` turns one [SSE](/documentation_v2/glossary/n_to_z.md#sse) frame into a
   status or a named rejection, here rather than beside the browser-only stream reader so the
   native tests reach it; `compiled_meta` on `MissionDetail` and `ArtifactMetadata` gives the
-  metadata the shared [mission](/documentation_v2/glossary.md#mission) compiler reads.
+  metadata the shared [mission](/documentation_v2/glossary/g_to_m.md#mission) compiler reads.
 
 ## Boundaries
 
@@ -64,7 +64,7 @@ files hold one domain's goldens each; `tests/shapes.rs` checks the shapes that n
   `apps/website/frontend/src/v2/core/api/`, the auth store in
   `apps/website/frontend/src/v2/core/auth/store.rs`, the pages under
   `apps/website/frontend/src/v2/pages/`, and the
-  [Mission Creator](/documentation_v2/glossary.md#mission-creator) under
+  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) under
   `apps/website/frontend/src/v2/apps/editor/`.
 - Rules: the API model changes first and the DTO follows; a golden round-trips, and its unread
   keys match its list, so drift either way fails (`cargo test -p website-frontend`);

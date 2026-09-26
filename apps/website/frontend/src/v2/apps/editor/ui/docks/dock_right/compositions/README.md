@@ -1,7 +1,7 @@
 # Right dock compositions
 
 The right dock's Compositions tab: reusable multi-entity stamps saved from the current selection
-into the [mission](/documentation_v2/glossary.md#mission) document, listed by category, armed from
+into the [mission](/documentation_v2/glossary/g_to_m.md#mission) document, listed by category, armed from
 their row and stamped onto the map.
 
 ## Contents

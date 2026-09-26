@@ -1,8 +1,8 @@
 # Hosted editor commands
 
-The [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s document commands that run
+The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s document commands that run
 against the installed editing host: each names what to change, opens the hosted
-[mission](/documentation_v2/glossary.md#mission) document, calls the matching
+[mission](/documentation_v2/glossary/g_to_m.md#mission) document, calls the matching
 `crate::data::store::operations` edit, and runs the post-change tail. A caller passes no document
 handle, selection set or undo bookkeeping.
 
@@ -80,6 +80,6 @@ folder's thread-locals: the copied rows of `entity_clipboard.rs` and the armed c
 - [Mission document store](/apps/website/map-engine/src/data/store/README.md) — the document and
   the operations these commands drive.
 - [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
-  — the [ORBAT](/documentation_v2/glossary.md#orbat), layers, markers, zones, triggers,
+  — the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat), layers, markers, zones, triggers,
   connections and clipboard features.
 - [Mission Creator feature inventory: transform and delete](/documentation_v2/website/frontend/apps/editor/feature_inventory/transform_and_delete.md) — the arrange, rotate, formation and delete commands.

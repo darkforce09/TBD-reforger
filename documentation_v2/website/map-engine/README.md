@@ -3,9 +3,9 @@
 # Map engine documentation
 
 The documentation of `website-map-engine`, the crate that holds the
-[mission](/documentation_v2/glossary.md#mission) domain, the static world, streaming, spatial
+[mission](/documentation_v2/glossary/g_to_m.md#mission) domain, the static world, streaming, spatial
 queries, the map overlay and the render engine of the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator). Developers and AI agents read it
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator). Developers and AI agents read it
 below the crate's code READMEs, for the flows across modules, the reasons, the open work and the
 decisions.
 

@@ -1,8 +1,8 @@
 # Mission write-boundary checks
 
-The predicates the [missions](/documentation_v2/glossary.md#missions) handlers apply to authored
+The predicates the [missions](/documentation_v2/glossary/g_to_m.md#missions) handlers apply to authored
 input before a row is written: who may read or change a
-[mission](/documentation_v2/glossary.md#mission), the scalar fields of a mission row, the semver of
+[mission](/documentation_v2/glossary/g_to_m.md#mission), the scalar fields of a mission row, the semver of
 a version, and whether a version payload is worth becoming the current version.
 
 ## Contents
@@ -30,7 +30,7 @@ display text that is stored trimmed.
   absolute `http://` or `https://` URL, because the library renders it as an image source; the
   terrain, game mode and weather must name a value of their Postgres enum, and a blank weather is
   never `clear`; the time of day is `HH:MM` or `HH:MM:SS` within 23:59:59, which the
-  [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s clock can read back, and is
+  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s clock can read back, and is
   stored as sent.
 - `semver.rs`: the full SemVer 2.0.0 grammar, pre-release and build metadata included, with no
   padding and no leading zeros, so `' 0.1.0 '` never stands beside `0.1.0` as a second version.

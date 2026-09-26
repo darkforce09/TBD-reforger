@@ -1,6 +1,6 @@
 # Metrics and health probe
 
-Everything that reports on the running [API](/documentation_v2/glossary.md#api): the Prometheus
+Everything that reports on the running [API](/documentation_v2/glossary/a_to_f.md#api): the Prometheus
 metrics every request feeds and `GET /metrics` exposes, and the `GET /healthz` probe that
 preflight checks and gates read.
 
@@ -49,7 +49,7 @@ each check's status, latency and error, the migration counts and the pool gauges
   - the integration suite `apps/website/api_v2/tests/observability.rs`;
   - over HTTP: the Caddy site in `tools_v2/xtask/deploy/Caddyfile.website` publishes
     `/healthz`, and `cargo xtask platform preflight`, the `editor-api-boot` task of
-    `cargo xtask ci` and the [Mission Creator](/documentation_v2/glossary.md#mission-creator)
+    `cargo xtask ci` and the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)
     smoke gates in `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/` probe it
     without credentials.
 - Rules: `observe` stays outside panic recovery and the rate limiter, which the router's own tests

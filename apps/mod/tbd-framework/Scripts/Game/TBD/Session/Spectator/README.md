@@ -1,6 +1,6 @@
 # Spectator
 
-Where a dead player spends the rest of the [event](/documentation_v2/glossary.md#event) under one
+Where a dead player spends the rest of the [event](/documentation_v2/glossary/a_to_f.md#event) under one
 life: a free, follow or first-person camera, a roster of who may be watched, and a server-side
 streaming host that keeps the world around the camera loaded.
 

@@ -3,7 +3,7 @@
 The two submodules of `mesh_voxelization.rs` in
 `tools_v2/developer-tools/src/blueprint/voxel_processing/`: the `cargo xtask map voxels-from-mesh`
 entry and the ray-march that turns a game model's triangles into the same voxel dump the
-[Workbench](/documentation_v2/glossary.md#workbench) dump action writes, so the offline blueprint
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) dump action writes, so the offline blueprint
 interpreter runs on real model geometry without the engine.
 
 ## Contents

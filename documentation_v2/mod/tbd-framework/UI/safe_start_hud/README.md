@@ -3,7 +3,7 @@
 # Safe start HUD documentation
 
 The documentation of the safe start notices: the countdown and the weapons-cold and weapons-live
-messages players see before a round of an [event](/documentation_v2/glossary.md#event) goes live.
+messages players see before a round of an [event](/documentation_v2/glossary/a_to_f.md#event) goes live.
 
 ## Contents
 

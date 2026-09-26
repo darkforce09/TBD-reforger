@@ -1,7 +1,7 @@
 # Contract fixtures
 
 The golden test data of every contract boundary: samples each schema must accept, and
-[mission](/documentation_v2/glossary.md#mission) documents it must reject. A fixture pins
+[mission](/documentation_v2/glossary/g_to_m.md#mission) documents it must reject. A fixture pins
 agreement between components that no single unit test can state: one committed file is read by
 the schema gate, by the tests of the crates on each side of the boundary, and by the commands that
 stage it into a game server.
@@ -25,14 +25,14 @@ pointer, and cross-checks kit aliases and registry references.
 `cargo xtask schema map-object-golden` adds the world export's semantic gates over `map/`, including
 the byte-level checks of its binary twins. Both run in the `schema-validate` CI task, and the
 `schema.yml` workflow runs the first on every change under `contracts_v2/`. Beyond the gates, the
-[API](/documentation_v2/glossary.md#api)'s and the map engine's tests load single fixtures by path,
-and the xtask [mod](/documentation_v2/glossary.md#mod) commands stage missions from
+[API](/documentation_v2/glossary/a_to_f.md#api)'s and the map engine's tests load single fixtures by path,
+and the xtask [mod](/documentation_v2/glossary/g_to_m.md#mod) commands stage missions from
 `missions/valid/` into a game server.
 
 The negative fixtures matter as much as the positive ones. Each invalid mission isolates one
 defect at one pointer, so a gate that grows permissive fails here, naming the rule that broke,
 instead of letting malformed missions through until one reaches a live
-[event](/documentation_v2/glossary.md#event).
+[event](/documentation_v2/glossary/a_to_f.md#event).
 
 ## Format
 
@@ -66,5 +66,5 @@ instead of letting malformed missions through until one reaches a live
   (`cargo xtask schema validate`); a binary fixture is the exact encoding of its JSON twin
   (`cargo xtask schema map-object-golden`); a golden that stops validating means the schema changed
   or a validator regressed, and is never edited just to pass; live
-  [Workbench](/documentation_v2/glossary.md#workbench) exports stay in `contracts_v2/catalogs/`,
+  [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) exports stay in `contracts_v2/catalogs/`,
   never here.

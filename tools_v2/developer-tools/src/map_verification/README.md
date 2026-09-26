@@ -4,7 +4,7 @@ The gates that check a terrain's committed map assets under `assets_v2/terrains/
 golden fixtures under `contracts_v2/fixtures/map/`: the terrain manifest, the prefab BLAS library,
 the labels and the elevation model, the map-object goldens, and a line-of-sight probe over the
 world occluder. Each runs the map engine's own parsers and geometry, so a passing gate means the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map reads the files as checked.
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map reads the files as checked.
 
 ## Contents
 

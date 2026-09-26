@@ -1,6 +1,6 @@
 # Arsenal loadout rules
 
-The decisions the [arsenal](/documentation_v2/glossary.md#arsenal) makes about a loadout, with no
+The decisions the [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) makes about a loadout, with no
 rendering and no browser: the compatibility graph and the options each row offers, cargo
 defaults and capacity, the loadout-export schema check, and the paper-doll regions and weight.
 
@@ -17,7 +17,7 @@ apps/website/frontend/src/v2/apps/editor/arsenal/rules/
 
 ## How it works
 
-Every function takes the flat [registry](/documentation_v2/glossary.md#registry) rows, the
+Every function takes the flat [registry](/documentation_v2/glossary/n_to_z.md#registry) rows, the
 compatibility edges and the current picks, and returns a value; the parent file
 `apps/website/frontend/src/v2/apps/editor/arsenal/rules.rs` declares the 14 `LOADOUT_ROWS`, of
 which optic and magazine are edge rows fed by the graph, and re-exports this folder's items.
@@ -31,10 +31,10 @@ which optic and magazine are edge rows fed by the graph, and re-exports this fol
 - Cargo sits in `CARGO_CONTAINERS` (vest, pants, jacket, backpack). `cargo_capacity_errors` refuses
   cargo over the catalogued capacity of the garment that wears the container, but never invents a
   limit the catalog lacks; `cargo_unworn_container_errors` names cargo in a container no picked
-  garment wears as a warning only, because the [slot](/documentation_v2/glossary.md#slot)'s kit
+  garment wears as a warning only, because the [slot](/documentation_v2/glossary/n_to_z.md#slot)'s kit
   may supply the garment. `cargo_defaults_by_character` derives default cargo from raw
   `character_default_cargo` edges; only the tests call it, since the
-  [Mission Creator](/documentation_v2/glossary.md#mission-creator) reads the server's aggregated
+  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) reads the server's aggregated
   cargo defaults.
 - `validate_against_loadout_export_schema` checks a document against
   `contracts_v2/definitions/loadout-export.schema.json`, embedded at compile time. It first audits
@@ -62,7 +62,7 @@ which optic and magazine are edge rows fed by the graph, and re-exports this fol
   refusal (`the_unworn_warning_never_becomes_an_export_refusal`); the tests live in
   `apps/website/frontend/src/v2/apps/editor/arsenal/tests/rules/`. `CARGO_CONTAINERS` has a hand
   copy in `apps/website/map-engine/src/data/scenario/validation/wire_safety/scan.rs`, which checks
-  cargo when a [mission](/documentation_v2/glossary.md#mission) saves; no test holds the two equal.
+  cargo when a [mission](/documentation_v2/glossary/g_to_m.md#mission) saves; no test holds the two equal.
 
 ## Related documentation
 

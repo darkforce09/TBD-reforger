@@ -1,6 +1,6 @@
 # Role, vehicle and side classes
 
-The one table that turns a [slot](/documentation_v2/glossary.md#slot)'s role or kit string into
+The one table that turns a [slot](/documentation_v2/glossary/n_to_z.md#slot)'s role or kit string into
 one of five unit glyph classes, a vehicle alias into one of three silhouettes, and a faction key
 into its side tint. The symbology is bespoke: no MIL-STD-2525 or APP-6 affiliation frames, no
 echelon modifiers and no civilian side.
@@ -33,7 +33,7 @@ included, tints as BLUFOR.
   - the symbology packers in `crate::overlay::symbology::instances` (re-exported by its `slots`
     module), `crate::overlay::symbology::links::squad_links` and
     `crate::editing::lanes::markers`;
-  - the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s document host and canvas
+  - the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s document host and canvas
     mount
     (`apps/website/frontend/src/v2/apps/editor/bridge/document_host/history.rs`,
     `apps/website/frontend/src/v2/apps/editor/bridge/document_host/history/render_lanes.rs`,

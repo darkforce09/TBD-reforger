@@ -1,7 +1,7 @@
 # Audio panel view
 
 The view of the audio panel: the positional sound emitters and the music cues a
-[mission](/documentation_v2/glossary.md#mission) authors in its `audio` block, and the gesture that
+[mission](/documentation_v2/glossary/g_to_m.md#mission) authors in its `audio` block, and the gesture that
 places an emitter by clicking the map. The model and the document write live in the parent module,
 `apps/website/frontend/src/v2/apps/editor/ui/inspector/audio_emitters.rs`.
 

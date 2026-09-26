@@ -1,6 +1,6 @@
 # Water export
 
-Reads the open world's water in [Workbench](/documentation_v2/glossary.md#workbench) two ways: a
+Reads the open world's water in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) two ways: a
 full-map raster of water class and depth probed from the engine's water surfaces, and vector records
 of the rivers, lakes and ponds the world places. Each lands as ASCII or JSON files in the export
 profile.

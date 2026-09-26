@@ -2,8 +2,8 @@
 
 # Mod design
 
-What the TBD Framework [mod](/documentation_v2/glossary.md#mod) is, the rules every slice of it
-keeps, and the [Enfusion](/documentation_v2/glossary.md#enfusion) facts it stands on. When a slice
+What the TBD Framework [mod](/documentation_v2/glossary/g_to_m.md#mod) is, the rules every slice of it
+keeps, and the [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) facts it stands on. When a slice
 conflicts with this document, this document wins. The program spec is
 [t181_event_mod_program.md](/documentation_v2/tickets/specs/t181_event_mod_program.md).
 
@@ -22,8 +22,8 @@ cargo run -q -p developer-tools --bin enf -- lookup UpdateSlotPlayerID
 
 | Arma 3 | TBD Reforger |
 |---|---|
-| Eden editor | the website [Mission Creator](/documentation_v2/glossary.md#mission-creator) (`apps/website/frontend`) |
-| `.pbo` mission file | the compiled [mission](/documentation_v2/glossary.md#mission) [artifact](/documentation_v2/glossary.md#artifact), which the game server fetches from `GET /api/v1/game-runtime/artifacts/{artifactId}` |
+| Eden editor | the website [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) (`apps/website/frontend`) |
+| `.pbo` mission file | the compiled [mission](/documentation_v2/glossary/g_to_m.md#mission) [artifact](/documentation_v2/glossary/a_to_f.md#artifact), which the game server fetches from `GET /api/v1/game-runtime/artifacts/{artifactId}` |
 | Engine-native lobby, briefing, slotting, respawn, spectator | **Reforger ships none of it** |
 | Mission calls into a framework | the mission document drives slots, loadouts, objectives, AO, radio and win conditions |
 
@@ -32,7 +32,7 @@ Reforger hands it nothing. **That gap is the program.**
 
 ## 2. Non-negotiables
 
-- **One life.** TBD [events](/documentation_v2/glossary.md#event) are one life. Death is terminal
+- **One life.** TBD [events](/documentation_v2/glossary/a_to_f.md#event) are one life. Death is terminal
   by design. An **admin can respawn** a player who died to a glitch, and that path always exists
   (`#tbd respawn <playerId>`, see the
   [admin scripts](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/README.md)). CRF is
@@ -184,7 +184,7 @@ TBD events are a known community, not a public server.
    The [vanilla source coverage](/documentation_v2/mod/tbd-framework/vanilla_source_coverage.md)
    says which lane answers which vanilla question.
 2. **Compile on the fast lane** — `cargo xtask mod compile` takes seconds and needs no Workbench.
-   [Workbench](/documentation_v2/glossary.md#workbench) is only for world, prefab and play-in-editor
+   [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) is only for world, prefab and play-in-editor
    visual work, and it is serial.
 3. **Cite what you claim** — `@idx`, or it is an opinion.
 4. **Make it work → right → fast.** Working is not half-assed.

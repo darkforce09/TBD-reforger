@@ -39,7 +39,7 @@ document.
 Every archived file starts with `**Status:** archived`, followed by `— see [its replacement](…)`
 when a live document replaces it, and is never reworded after it lands: only its links change,
 and a link to code that no longer exists becomes a GitHub permalink with the full commit id.
-Archived files keep the text, dates and [ticket](/documentation_v2/glossary.md#ticket) ids of
+Archived files keep the text, dates and [ticket](/documentation_v2/glossary/n_to_z.md#ticket) ids of
 their time, so a path, command or name inside one may no longer exist; the live documents are the
 authority.
 

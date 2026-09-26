@@ -1,6 +1,6 @@
 # Framework input actions
 
-The framework [mod](/documentation_v2/glossary.md#mod)'s own key actions: each file binds one
+The framework [mod](/documentation_v2/glossary/g_to_m.md#mod)'s own key actions: each file binds one
 named action to one keyboard key, and the scripts listen for the action by name while its input
 context is active.
 

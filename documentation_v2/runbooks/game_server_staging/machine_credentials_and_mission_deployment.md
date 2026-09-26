@@ -3,20 +3,20 @@
 # Give the staging server its credentials and a mission
 
 Connects the staging game server to the platform: its
-[machine credentials](/documentation_v2/glossary.md#machine-credential), the
-[event](/documentation_v2/glossary.md#event) it serves, and the
-[mission deployment](/documentation_v2/glossary.md#mission-deployment) it runs. The credentials are
+[machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential), the
+[event](/documentation_v2/glossary/a_to_f.md#event) it serves, and the
+[mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) it runs. The credentials are
 issued once per server; binding an event and deploying a
-[mission](/documentation_v2/glossary.md#mission) repeat whenever either changes.
+[mission](/documentation_v2/glossary/g_to_m.md#mission) repeat whenever either changes.
 
 ## Prerequisites
 
 - The API running on the staging host
   ([host preparation](/documentation_v2/runbooks/game_server_staging/host_preparation.md)).
 - An administrator login on the website, and the staging server registered in
-  [server control](/documentation_v2/glossary.md#server-control) (`/admin/server`); its server
+  [server control](/documentation_v2/glossary/n_to_z.md#server-control) (`/admin/server`); its server
   uuid is on its card.
-- An approved [artifact](/documentation_v2/glossary.md#artifact) of the mission to deploy.
+- An approved [artifact](/documentation_v2/glossary/a_to_f.md#artifact) of the mission to deploy.
 - For the `curl` forms: `$ADMIN_TOKEN`, an administrator's access token, and `$API`, the API
   origin (`http://127.0.0.1:8080` on the host).
 
@@ -35,7 +35,7 @@ issued once per server; binding an event and deploying a
    `$TBD_PROFILE_DIR/profile/TBD_BackendConfig.json` as `machineCredential`, and the deploy
    refuses to run without a well-formed one.
 
-2. Only when the deploy installs the [fleet host agent](/documentation_v2/glossary.md#fleet-host-agent)
+2. Only when the deploy installs the [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent)
    (`TBD_INSTALL_HOST_AGENT=1`): issue its separate `host_agent` credential ("Host agent" in the
    credentials panel).
 
@@ -44,10 +44,10 @@ issued once per server; binding an event and deploying a
    ```
 
    Expected: `201` with a second secret. Put it in `deploy.env` as `TBD_HOST_AGENT_CREDENTIAL`.
-   Each executor claims only its own [fleet commands](/documentation_v2/glossary.md#fleet-command):
+   Each executor claims only its own [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command):
    the host agent starts, stops and restarts the unit and lists players over
-   [RCON](/documentation_v2/glossary.md#rcon); the
-   [game runtime](/documentation_v2/glossary.md#game-runtime) runs `broadcast`, `kick` and
+   [RCON](/documentation_v2/glossary/n_to_z.md#rcon); the
+   [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) runs `broadcast`, `kick` and
    `load_mission`.
 
 3. For an event: bind it to this server. An event bound elsewhere answers the server's roster
@@ -75,7 +75,7 @@ issued once per server; binding an event and deploying a
 ## Verify
 
 After the first [staging deploy](/documentation_v2/runbooks/game_server_staging/staging_deploy.md),
-check the game-runtime routes the way the [mod](/documentation_v2/glossary.md#mod) calls them, from any machine that reaches the API.
+check the game-runtime routes the way the [mod](/documentation_v2/glossary/g_to_m.md#mod) calls them, from any machine that reaches the API.
 
 ```bash
 TBD_API_BASE="$API" TBD_MACHINE_CREDENTIAL='<mod_runtime secret>' cargo xtask mod test-game-runtime-api

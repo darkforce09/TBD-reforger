@@ -1,8 +1,8 @@
 # Asset catalog trees and search
 
-The catalog trees the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
+The catalog trees the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
 palettes and pickers show, built from the flat item
-[registry](/documentation_v2/glossary.md#registry) rows, and the search that filters them.
+[registry](/documentation_v2/glossary/n_to_z.md#registry) rows, and the search that filters them.
 
 ## Contents
 
@@ -27,7 +27,7 @@ folders follow the row's `category` path.
   registered objects into one tree; `build_picker_catalog_tree` does the same across every side.
   `build_vehicle_catalog_tree` drops abstract templates, which the engine cannot spawn, and
   `build_object_catalog_tree` keeps a `crate` or `other` row only when the
-  [mod](/documentation_v2/glossary.md#mod) spawn registry holds its `prop:` or `comp:` alias.
+  [mod](/documentation_v2/glossary/g_to_m.md#mod) spawn registry holds its `prop:` or `comp:` alias.
 - `parse_search_query` reads an optional leading `class:` or `mod:` operator, then the pattern: a
   case-insensitive substring, a whole-string glob with `*` and `?`, or a `/…/` regular expression.
   `filter_catalog` keeps a label match with its whole subtree, matches `class:` against a leaf's

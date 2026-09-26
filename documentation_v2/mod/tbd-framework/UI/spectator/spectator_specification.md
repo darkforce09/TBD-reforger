@@ -2,9 +2,9 @@
 
 # Spectator
 
-Where a dead player spends the rest of the [event](/documentation_v2/glossary.md#event) under one
+Where a dead player spends the rest of the [event](/documentation_v2/glossary/a_to_f.md#event) under one
 life: a free, follow or first-person camera, and a roster of the living players they may watch.
-The [mission](/documentation_v2/glossary.md#mission)'s spectator policy decides who may be watched and when.
+The [mission](/documentation_v2/glossary/g_to_m.md#mission)'s spectator policy decides who may be watched and when.
 
 ## Where it lives
 
@@ -114,7 +114,7 @@ lists it):
   - world billboards: nameplates for the living, vehicle occupant tags and mine markers;
   - a UI toggle for a clean view, a map key, night vision and thermal cycling, and nameplate
     toggles;
-  - a spectator voice channel apart from the living players' radios; the [mod](/documentation_v2/glossary.md#mod) changes no voice
+  - a spectator voice channel apart from the living players' radios; the [mod](/documentation_v2/glossary/g_to_m.md#mod) changes no voice
     routing on death.
 - No open ticket covers these differences.
 
@@ -129,7 +129,7 @@ lists it):
   behaviour lives in a prefab, it is the editor camera, and it cannot follow a player.
 - Free flight reuses the game's manual-camera actions, so it needs no new input resource; the TBD
   keys are also clicks on the roster, so every action still works before
-  [Workbench](/documentation_v2/glossary.md#workbench) registers the new ones.
+  [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) registers the new ones.
 - The client polls for a living body instead of hooking a death event: whether it controls a living
   character is a question the client answers itself, reconnects included.
 - The range defaults to 2000 m and is never unlimited: a modified client could otherwise stream the

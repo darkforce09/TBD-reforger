@@ -1,6 +1,6 @@
 # Mission objectives and tasks
 
-Runs a [mission](/documentation_v2/glossary.md#mission)'s objectives on the server while the round
+Runs a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s objectives on the server while the round
 is live: capture, hold and destroy objectives on the mission's zones, with per-side task text, the
 objective end triggers the round can end on, and the mission's `tasks[]` that follow its editor
 triggers.
@@ -86,7 +86,7 @@ position to every player through `TBD_TaskHud`; on a client it asks for the snap
 - Depends on: `TBD_ZoneRegistry`, `TBD_Zone`, `TBD_ZoneVolume` and `TBD_TriggerRuntime` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Zones/`; `TBD_MissionLoader` (the raw JSON,
   factions and `HasEndTrigger`) and `TBD_SpawnManager` (a player's
-  [slot](/documentation_v2/glossary.md#slot), side and life) under
+  [slot](/documentation_v2/glossary/n_to_z.md#slot), side and life) under
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/`; `TBD_FrameworkManager` (the stage);
   `TBD_Registry` and `TBD_Log` in `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`;
   `TBD_ObjectiveHud` and `TBD_TaskHud` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/`; the

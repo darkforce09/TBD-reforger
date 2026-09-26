@@ -1,8 +1,8 @@
 # Mission loading pipeline
 
-Brings the [mission](/documentation_v2/glossary.md#mission) deployed to this server into the running
+Brings the [mission](/documentation_v2/glossary/g_to_m.md#mission) deployed to this server into the running
 game: loads and verifies its artifact, parses and validates the document, reads the
-[event](/documentation_v2/glossary.md#event) roster, and applies the authored states, environment
+[event](/documentation_v2/glossary/a_to_f.md#event) roster, and applies the authored states, environment
 and placement to the world. Every other Systems folder reads the loaded document from here.
 
 ## Contents
@@ -47,7 +47,7 @@ Two rules hold across the three folders:
   (`TBD_GameRuntimeHttp`, `TBD_LoadedArtifactReport`); `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`
   (hashing, logging, the prefab registry); `TBD_FrameworkManager` (the stage); `TBD_SpawnManager`;
   the engine's weather, damage, fuel, weapon and gadget classes; over HTTP, the
-  [game runtime](/documentation_v2/glossary.md#game-runtime) deployment, artifact and roster routes;
+  [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) deployment, artifact and roster routes;
   the wire shape in `contracts_v2/definitions/mission.schema.json`.
 - Used by: the stage machine in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/`; the services
   under `apps/mod/tbd-framework/Scripts/Game/TBD/Session/`; the platform reports in

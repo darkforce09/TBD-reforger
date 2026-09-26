@@ -1,10 +1,10 @@
 # Selection tool
 
-The headless half of the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s select
+The headless half of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s select
 tool: the left-button gesture model, the click and marquee picks over
-[slots](/documentation_v2/glossary.md#slot) and placed vehicles, the drag-move math, and the
+[slots](/documentation_v2/glossary/n_to_z.md#slot) and placed vehicles, the drag-move math, and the
 brute-force self-checks of the spatial index. Selection is app state: a
-[mission](/documentation_v2/glossary.md#mission) is the same mission whatever is highlighted.
+[mission](/documentation_v2/glossary/g_to_m.md#mission) is the same mission whatever is highlighted.
 
 ## Contents
 

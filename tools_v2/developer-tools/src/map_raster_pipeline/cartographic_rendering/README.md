@@ -1,7 +1,7 @@
 # Cartographic map rendering
 
 The stylised Map view of a terrain: land-cover masks classified from the stitched orthophoto, the
-cartographic image drawn from the [Workbench](/documentation_v2/glossary.md#workbench) satellite
+cartographic image drawn from the [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) satellite
 export with tints, inland water and roads, the WebP tile pyramid built from it, and the manifest
 patches and checks around them. These files are the submodules
 `tools_v2/developer-tools/src/map_raster_pipeline/cartographic_rendering.rs` declares; it holds the

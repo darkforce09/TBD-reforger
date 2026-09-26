@@ -10,7 +10,7 @@ the integration test database and its options are in
 ## Rules
 
 - **TEST-1 (Debuggability) — A change to a handler's behaviour ships with the
-  [API](/documentation_v2/glossary.md#api)'s tests green against Postgres.** The integration tests
+  [API](/documentation_v2/glossary/a_to_f.md#api)'s tests green against Postgres.** The integration tests
   in `apps/website/api_v2/tests/` run against a real database; a clean compile is not proof of the
   HTTP contract. Locally: `cargo xtask db test-it` (a new randomly named database, dropped at the
   end) or `cargo xtask ci rust-test-it`, the `ci-local` step, both after `cargo xtask db up`. Gate:
@@ -29,7 +29,7 @@ the integration test database and its options are in
 
 The map and graphics engines have no rule code of their own; `cargo xtask mk wasm-ci` runs their
 tests in the `map-engine` job. The browser gates of the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) (`cargo xtask mk leptos-gates`) run
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) (`cargo xtask mk leptos-gates`) run
 outside `ci-local`, as described in [Editor gates](/documentation_v2/runbooks/editor_gates.md).
 
 ## Test placement

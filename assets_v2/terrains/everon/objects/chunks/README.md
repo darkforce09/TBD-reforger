@@ -2,7 +2,7 @@
 
 Everon's world objects, one file pair per populated 512 m cell of the island grid, plus the index
 of which cells hold anything. The map engine streams these into the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map as the camera moves.
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map as the camera moves.
 
 ## Contents
 

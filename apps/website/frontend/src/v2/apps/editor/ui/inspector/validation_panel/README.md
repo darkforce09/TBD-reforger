@@ -1,6 +1,6 @@
 # Mission validation loop
 
-The live validation of the open [mission](/documentation_v2/glossary.md#mission): the loop that
+The live validation of the open [mission](/documentation_v2/glossary/g_to_m.md#mission): the loop that
 re-runs the map engine's validation rules after each document change, the findings list the top
 strip's findings chip drops down, and the routes that select the subject a finding names. The
 finding model and the timing constants live in the parent module,
@@ -32,7 +32,7 @@ sink signal ──> top strip chip (Rollup) ──opens──> findings_dropdown
   most `INITIAL_EVAL_MAX_TICKS`, 32 times), then `REEVAL_DEBOUNCE_MS`, 250 ms, after the last
   document change. It renders nothing itself.
 - `evaluate_now` runs `default_registry()` of `website_map_engine::data::scenario::validate` over
-  the compiled payload, with the asset ids the item [registry](/documentation_v2/glossary.md#registry)
+  the compiled payload, with the asset ids the item [registry](/documentation_v2/glossary/n_to_z.md#registry)
   knows, and appends the findings the latest compile published through `publish_compile_findings`;
   `clear_compile_findings` empties them when another mission loads. A rule that panics yields no
   findings for that pass.
@@ -46,7 +46,7 @@ sink signal ──> top strip chip (Rollup) ──opens──> findings_dropdown
 
 - Depends on: `website_map_engine::data::scenario::validate` (`default_registry`, `EvalContext`,
   `Finding`, `Severity`, `Primitive`); the parent module's model; `derive_object_alias` from the
-  [Arsenal](/documentation_v2/glossary.md#arsenal)'s `asset_catalog` in `apps/website/frontend/src/v2/apps/editor/arsenal/`; `MaterialIcon`
+  [Arsenal](/documentation_v2/glossary/a_to_f.md#arsenal)'s `asset_catalog` in `apps/website/frontend/src/v2/apps/editor/arsenal/`; `MaterialIcon`
   and the `RegistryItem` DTO from `crate::v2::core`.
 - Used by: the modules below, through the parent module's re-exports:
   - `apps/website/frontend/src/v2/apps/editor/mission_editor.rs`, which mounts `ValidationPanel`,

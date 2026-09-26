@@ -1,7 +1,7 @@
 # Ticket registry
 
-The [ticketboard](/documentation_v2/glossary.md#ticketboard)'s shared
-[ticket](/documentation_v2/glossary.md#ticket) data: it finds the repository root, loads every
+The [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)'s shared
+[ticket](/documentation_v2/glossary/n_to_z.md#ticket) data: it finds the repository root, loads every
 parent and child ticket from `.ai/tickets/` or refuses with the file at fault, and gives every
 other feature the same ticket fields, status columns, classes, scope breadcrumbs and colours.
 

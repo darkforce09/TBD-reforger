@@ -1,6 +1,6 @@
 # Document reading
 
-The file side of the [ticketboard](/documentation_v2/glossary.md#ticketboard)'s document column:
+The file side of the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)'s document column:
 which clicked paths open in the viewer, the fence that keeps every read inside the repository, the
 bounded read on a worker thread, and the sorting of the bytes read into Markdown or a named
 raw-text fallback.

@@ -4,7 +4,7 @@
 
 The `/admin/personnel` page, titled "Personnel Roster": administrators search the member roster,
 open one member's dossier beside it, ban or unban a member, issue a warning, and resync every
-member's website [role](/documentation_v2/glossary.md#role) from Discord. A role follows the
+member's website [role](/documentation_v2/glossary/n_to_z.md#role) from Discord. A role follows the
 member's Discord roles, so the page explains it and never sets it.
 
 ## Where it lives
@@ -18,8 +18,8 @@ member's Discord roles, so the page explains it and never sets it.
   file.
 - Entry: the route, its tier and its layout are in the README's
   [Routes](/apps/website/frontend/src/v2/pages/administration/personnel/README.md#routes).
-- Related: the [personnel](/documentation_v2/glossary.md#personnel) glossary entry; the
-  [API](/documentation_v2/glossary.md#api)'s
+- Related: the [personnel](/documentation_v2/glossary/n_to_z.md#personnel) glossary entry; the
+  [API](/documentation_v2/glossary/a_to_f.md#api)'s
   [administration domain](/apps/website/api_v2/src/administration/README.md), which owns the
   roster, bans, warnings and the role resync; the membership grace extension, which the
   navigation frame's membership control sends, not this page.
@@ -77,7 +77,7 @@ lists each call with the DTO it reads or sends. Server-side:
   `apps/website/api_v2/src/administration/handlers/disciplinary.rs`): answers `{banned: true}`.
   In one transaction the API marks the member banned with the reason, the banning administrator
   and the time, revokes their refresh tokens (so the ban takes hold when the current access token
-  expires), queues a re-evaluation of their [event](/documentation_v2/glossary.md#event)
+  expires), queues a re-evaluation of their [event](/documentation_v2/glossary/a_to_f.md#event)
   reservations and records `user.ban` at warning severity. A blank reason is refused with 400
   "reason is required"; an unknown member with 404.
 - `DELETE /api/v1/admin/users/{discordId}/ban` (`unban_user`): answers `{banned: false}`, queues

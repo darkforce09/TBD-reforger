@@ -1,11 +1,11 @@
 # Match telemetry domain
 
-The [API](/documentation_v2/glossary.md#api)'s
-[match telemetry](/documentation_v2/glossary.md#match-telemetry) domain: the write half of the
-game-server channel. A running [game runtime](/documentation_v2/glossary.md#game-runtime) posts its
+The [API](/documentation_v2/glossary/a_to_f.md#api)'s
+[match telemetry](/documentation_v2/glossary/g_to_m.md#match-telemetry) domain: the write half of the
+game-server channel. A running [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) posts its
 live server status as heartbeats within its runtime session, and posts a finished-match report when
-a [mission](/documentation_v2/glossary.md#mission) ends. Presenting these figures back to members
-belongs to `command_center`; the server [registry](/documentation_v2/glossary.md#registry), the
+a [mission](/documentation_v2/glossary/g_to_m.md#mission) ends. Presenting these figures back to members
+belongs to `command_center`; the server [registry](/documentation_v2/glossary/n_to_z.md#registry), the
 runtime sessions and the live status topic belong to `server_infrastructure`.
 
 ## Contents
@@ -22,15 +22,15 @@ apps/website/api_v2/src/match_telemetry/
 ## How it works
 
 A heartbeat is authenticated by the server's `mod_runtime`
-[machine credential](/documentation_v2/glossary.md#machine-credential) and fenced by the runtime
+[machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential) and fenced by the runtime
 session's generation and a sequence that strictly increases within the session; the fence, the
 partial status update and the history sample commit together, a low-FPS warning follows
 best-effort, and the stored row is then published on the server's
-[SSE](/documentation_v2/glossary.md#sse) topic.
+[SSE](/documentation_v2/glossary/n_to_z.md#sse) topic.
 
 A match report is authenticated by the shared service token and is idempotent: a report that
 repeats a `source_match_id` merges into the stored match, re-derives attendance for the
-registrants of the old and the new [event](/documentation_v2/glossary.md#event) mission, and
+registrants of the old and the new [event](/documentation_v2/glossary/a_to_f.md#event) mission, and
 retracts what the previous report attributed. The whole report (roster checks, player lines,
 attendance attribution, statistics and leaderboard recomputation, audit) commits in one transaction,
 behind the source-match guard and the shared identity and account lock order.
@@ -43,7 +43,7 @@ behind the source-match guard and the shared identity and account lock order.
   - `POST /api/v1/ingest/match-results`: `ServiceAuth` (`X-Service-Token`); the finished-match
     report.
 - `models::match_record`: `Match`, `MissionOutcome` and `MatchPlayerStat`, read by the member
-  [service record](/documentation_v2/glossary.md#service-record) in `operations`.
+  [service record](/documentation_v2/glossary/n_to_z.md#service-record) in `operations`.
 
 ## Boundaries
 

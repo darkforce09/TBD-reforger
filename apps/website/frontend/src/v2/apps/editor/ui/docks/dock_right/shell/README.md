@@ -16,7 +16,7 @@ apps/website/frontend/src/v2/apps/editor/ui/docks/dock_right/shell/
 ## How it works
 
 `DockRight` takes what the editor page loads and owns: the character and vehicle catalog states,
-the raw [registry](/documentation_v2/glossary.md#registry) rows, the registry failure flag and fetch
+the raw [registry](/documentation_v2/glossary/n_to_z.md#registry) rows, the registry failure flag and fetch
 generation, `doc_tick`, the faction manager's open flag, `active_side`, `objects_mode` and the
 collapse flag. Collapsed, it draws only the chevron in a 24 px stub. Expanded, its strip holds seven
 20 px glyph tabs, each named by its title and `aria-label`, in the order Factions, Vehicles, Zones,
@@ -38,7 +38,7 @@ registry fetch fails, the browser build probes `GET /api/v1/registry?limit=1&off
 answer makes the failure view say that no modpack is configured.
 
 A zone's selection lives in this component, apart from the
-[slot](/documentation_v2/glossary.md#slot) selection. At mount `DockRight` installs a hook
+[slot](/documentation_v2/glossary/n_to_z.md#slot) selection. At mount `DockRight` installs a hook
 (`install_select_zone`) that selects a zone, raises the Zones tab and expands the dock; the editor's
 selection router calls `route_select_zone` for a zone subject, which reports whether a dock was
 there to take it. Cleanup removes the hook only while it is still the registered one, so an older

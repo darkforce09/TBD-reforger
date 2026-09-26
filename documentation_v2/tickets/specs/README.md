@@ -2,7 +2,7 @@
 
 # Ticket specs
 
-The specifications [tickets](/documentation_v2/glossary.md#ticket) cite: what a ticket or a
+The specifications [tickets](/documentation_v2/glossary/n_to_z.md#ticket) cite: what a ticket or a
 program of tickets builds, its design and how it is accepted. An agent working a ticket reads its
 spec as the source of truth for the work.
 

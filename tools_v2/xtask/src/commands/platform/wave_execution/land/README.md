@@ -2,7 +2,7 @@
 
 The irreversible half of `cargo xtask platform wave`: `land` merges ready slices into `main`,
 `revert` rolls `main` back, `verified` records the adversarial verifier's sha, and `wave --close`
-writes the [wave](/documentation_v2/glossary.md#wave)-close marker commit.
+writes the [wave](/documentation_v2/glossary/n_to_z.md#wave)-close marker commit.
 
 ## Contents
 

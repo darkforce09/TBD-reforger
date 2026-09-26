@@ -3,7 +3,7 @@
 # Mission selection documentation
 
 The documentation of the Mission Selector, the "Scenario Browser" tab where a player browses
-terrains and [missions](/documentation_v2/glossary.md#mission) and picks one for the lobby and
+terrains and [missions](/documentation_v2/glossary/g_to_m.md#mission) and picks one for the lobby and
 briefing.
 
 ## Contents

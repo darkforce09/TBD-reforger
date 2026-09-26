@@ -1,7 +1,7 @@
 # Waves tab
 
-The egui view of the [ticketboard](/documentation_v2/glossary.md#ticketboard)'s Waves tab: the
-recorded [wave](/documentation_v2/glossary.md#wave) lanes as chips, or the refusal when the lock
+The egui view of the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)'s Waves tab: the
+recorded [wave](/documentation_v2/glossary/n_to_z.md#wave) lanes as chips, or the refusal when the lock
 is missing or unreadable.
 
 ## Contents

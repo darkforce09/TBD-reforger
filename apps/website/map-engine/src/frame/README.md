@@ -67,7 +67,7 @@ it culls.
 
 - `RenderEngine` (at `engine::RenderEngine` and re-exported here) and `EngineHandle`, the shared
   and optional holder a host keeps it in: for the
-  [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s canvas, bridge and input
+  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s canvas, bridge and input
   handlers, the debug benches, and `crate::editing`'s selection gesture.
 - `RenderEngine::create`, `render`, `mark_dirty`, `set_continuous_render`, `backend`,
   `set_place_preview`, `clear_place_preview`, `clear_vector_lane` and `hide_calibration`, plus the

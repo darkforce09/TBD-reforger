@@ -1,6 +1,6 @@
 # AI group runtime
 
-Moves the AI groups a [mission](/documentation_v2/glossary.md#mission) authors: reads each group's
+Moves the AI groups a [mission](/documentation_v2/glossary/g_to_m.md#mission) authors: reads each group's
 waypoints and AI defaults from the loaded mission, puts the unclaimed seats of waypointed groups
 under AI control when the round goes live, and issues their waypoints in order.
 

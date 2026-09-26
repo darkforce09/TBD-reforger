@@ -1,7 +1,7 @@
 # Player and admin session flows
 
-The human-facing side of an [event](/documentation_v2/glossary.md#event) on the game server: picking
-a mission, slotting into the [ORBAT](/documentation_v2/glossary.md#orbat), reading the briefing,
+The human-facing side of an [event](/documentation_v2/glossary/a_to_f.md#event) on the game server: picking
+a mission, slotting into the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat), reading the briefing,
 spectating after death, closing the round, and administering it.
 
 ## Contents

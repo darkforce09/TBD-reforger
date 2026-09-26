@@ -3,10 +3,10 @@
 # Event manager page
 
 The `/admin/events` page, titled "Operations Calendar": administrators schedule
-[events](/documentation_v2/glossary.md#event), which the screen calls operations, on a month
-calendar, attach [missions](/documentation_v2/glossary.md#mission) whose
-[ORBAT](/documentation_v2/glossary.md#orbat) becomes each event mission's
-[slots](/documentation_v2/glossary.md#slot), edit an operation's time, briefing, capacity, lifecycle
+[events](/documentation_v2/glossary/a_to_f.md#event), which the screen calls operations, on a month
+calendar, attach [missions](/documentation_v2/glossary/g_to_m.md#mission) whose
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) becomes each event mission's
+[slots](/documentation_v2/glossary/n_to_z.md#slot), edit an operation's time, briefing, capacity, lifecycle
 state and registration, delete it, and decide in an access sheet who may join, from which pools, and
 why each participant is admitted.
 
@@ -23,11 +23,11 @@ why each participant is admitted.
   each file.
 - Entry: the route, its tier and its layout are in the README's
   [Routes](/apps/website/frontend/src/v2/pages/administration/event_manager/README.md#routes).
-- Related: the [event manager](/documentation_v2/glossary.md#event-manager) glossary entry; the
+- Related: the [event manager](/documentation_v2/glossary/a_to_f.md#event-manager) glossary entry; the
   [event schedule page](/documentation_v2/website/frontend/pages/operations/schedule/event_schedule_page.md)
   and the [event hub page](/documentation_v2/website/frontend/pages/operations/event_detail/event_hub_page.md),
   where members see and join what this page schedules; the
-  [API](/documentation_v2/glossary.md#api)'s
+  [API](/documentation_v2/glossary/a_to_f.md#api)'s
   [operations domain](/apps/website/api_v2/src/operations/README.md); the
   [event administration evidence](/documentation_v2/website/api_v2/verification_evidence/event_administration.md),
   [eligibility and allocation evidence](/documentation_v2/website/api_v2/verification_evidence/event_eligibility_allocation.md)
@@ -39,7 +39,7 @@ The page body sits in `AdminGate` (`apps/website/frontend/src/v2/core/ui/gates.r
 the session and access states of the README's
 [States](/apps/website/frontend/src/v2/pages/administration/event_manager/README.md#states) in
 place of the page until a signed-in viewer holds the `admin`
-[role](/documentation_v2/glossary.md#role). The README's States quote every text the steps below
+[role](/documentation_v2/glossary/n_to_z.md#role). The README's States quote every text the steps below
 mention.
 
 ### Calendar and day panel

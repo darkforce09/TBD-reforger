@@ -2,7 +2,7 @@
 
 The map data the web platform serves and draws: the built-in terrain datasets, the world-object
 glyph set, and the specification of a production volume for uploaded terrains. The
-[API](/documentation_v2/glossary.md#api) serves the first two under `/map-assets`, the map engine
+[API](/documentation_v2/glossary/a_to_f.md#api) serves the first two under `/map-assets`, the map engine
 streams and decodes them, and the developer tools write them.
 
 ## Contents

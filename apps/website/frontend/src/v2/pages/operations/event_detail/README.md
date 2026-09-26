@@ -1,9 +1,9 @@
 # Event hub page
 
-The `/events/:id` page: one [event](/documentation_v2/glossary.md#event) with its start time,
-briefing and places, a dossier for each attached [mission](/documentation_v2/glossary.md#mission),
-and the inline [ORBAT](/documentation_v2/glossary.md#orbat) selector through which the viewer takes a
-[slot](/documentation_v2/glossary.md#slot) or joins a waiting list.
+The `/events/:id` page: one [event](/documentation_v2/glossary/a_to_f.md#event) with its start time,
+briefing and places, a dossier for each attached [mission](/documentation_v2/glossary/g_to_m.md#mission),
+and the inline [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) selector through which the viewer takes a
+[slot](/documentation_v2/glossary/n_to_z.md#slot) or joins a waiting list.
 
 ## Contents
 
@@ -42,7 +42,7 @@ a mutation ─► the selector refetches its ORBAT ─► on_change ─► the p
 ```
 
 The hub builds each mission's `MissionStanding` from the dossier and hands it to the card and its
-selector, so the offered actions follow what the [API](/documentation_v2/glossary.md#api) returned
+selector, so the offered actions follow what the [API](/documentation_v2/glossary/a_to_f.md#api) returned
 to this viewer. A viewer admitted only by squad or slot policies receives only the missions and
 seats open to them and no event briefing, and the page says the view is partial. A seat whose policy
 does not admit the viewer shows a lock naming that policy and cannot be selected; only a free seat
@@ -50,7 +50,7 @@ that admits the viewer is selectable. Joining the waiting list is a registration
 which the API waitlists when no place is free, and a viewer who holds a place without a seat may
 pick a free seat and register for it.
 
-The tier checks read the session's [role](/documentation_v2/glossary.md#role) as memos through
+The tier checks read the session's [role](/documentation_v2/glossary/n_to_z.md#role) as memos through
 `has_min_role_authed`: the `leader` role reserves a free squad and promotes from the waiting list; a
 squad's reserver or an administrator releases it and assigns or clears its seats, and a reserved
 squad is read-only for everyone else. Each card renders only what the dossier carries: terrain, game

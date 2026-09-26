@@ -3,13 +3,13 @@
 # Server control page
 
 The `/admin/server` page, titled Server Control: administrators pick one of the configured game
-servers, read its live state, issue [fleet commands](/documentation_v2/glossary.md#fleet-command) to
-it and follow each to its outcome, deploy a [mission](/documentation_v2/glossary.md#mission)'s
-approved [artifact](/documentation_v2/glossary.md#artifact) to it, keep the
-[registry](/documentation_v2/glossary.md#registry) of
-[fleet scenarios](/documentation_v2/glossary.md#fleet-scenario), and issue and revoke the server's
-[machine credentials](/documentation_v2/glossary.md#machine-credential). Nothing here reaches a host
-directly: a command or a deployment is a request the [API](/documentation_v2/glossary.md#api)
+servers, read its live state, issue [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command) to
+it and follow each to its outcome, deploy a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s
+approved [artifact](/documentation_v2/glossary/a_to_f.md#artifact) to it, keep the
+[registry](/documentation_v2/glossary/n_to_z.md#registry) of
+[fleet scenarios](/documentation_v2/glossary/a_to_f.md#fleet-scenario), and issue and revoke the server's
+[machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential). Nothing here reaches a host
+directly: a command or a deployment is a request the [API](/documentation_v2/glossary/a_to_f.md#api)
 records and answers with 202, and the page follows it to the outcome an executor or a runtime
 session reports.
 
@@ -25,12 +25,12 @@ session reports.
   each file.
 - Entry: the route, its tier and its layout are in the README's
   [Routes](/apps/website/frontend/src/v2/pages/administration/server_control/README.md#routes).
-- Related: the [server control](/documentation_v2/glossary.md#server-control) glossary entry; the
+- Related: the [server control](/documentation_v2/glossary/n_to_z.md#server-control) glossary entry; the
   [server intel page](/documentation_v2/website/frontend/pages/command_center/server_intel/server_intel_page.md),
   the members' read-only view of the same servers; the API's
   [server infrastructure domain](/apps/website/api_v2/src/server_infrastructure/README.md) and
   [missions domain](/apps/website/api_v2/src/missions/README.md); the
-  [fleet host agent](/documentation_v2/glossary.md#fleet-host-agent) and its
+  [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) and its
   [README](/apps/fleet_host_agent/README.md); the
   [fleet command ledger evidence](/documentation_v2/website/api_v2/verification_evidence/fleet_command_ledger.md)
   and [machine credentials evidence](/documentation_v2/website/api_v2/verification_evidence/machine_credentials.md).
@@ -41,7 +41,7 @@ The page body sits in `AdminGate` (`apps/website/frontend/src/v2/core/ui/gates.r
 the session and access states of the README's
 [States](/apps/website/frontend/src/v2/pages/administration/server_control/README.md#states) in
 place of the page until a signed-in viewer holds the `admin`
-[role](/documentation_v2/glossary.md#role). The README's States quote every text the steps below
+[role](/documentation_v2/glossary/n_to_z.md#role). The README's States quote every text the steps below
 mention.
 
 ### Servers and the server card
@@ -68,7 +68,7 @@ mention.
    player listing are offered for the identity, and the session that confirmed the latest
    deployment is offered for the session.
 3. An accepted request is toasted as waiting for its executor, the host agent or the
-   [game runtime](/documentation_v2/glossary.md#game-runtime), and the "Your command" panel
+   [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime), and the "Your command" panel
    follows it, re-read every two seconds. The follow stops when the card goes away, when a newer
    request replaces it, or after five failed reads in a row.
 4. Only `succeeded` is announced as a success, with what the command observed. `failed` gives the
@@ -85,7 +85,7 @@ mention.
 
 1. The "Mission deployments" section offers "Request a deployment". The form reads its choices
    when it first opens: the live missions whose latest approval names an artifact, and the
-   [event](/documentation_v2/glossary.md#event) missions of upcoming operations scheduled on this
+   [event](/documentation_v2/glossary/a_to_f.md#event) missions of upcoming operations scheduled on this
    server. With no deployable mission it says that a mission becomes deployable once a reviewer
    approves its artifact.
 2. The form takes a mission and optionally an event mission, whose seats the deployment binds,
@@ -95,7 +95,7 @@ mention.
 3. A refusal is worded per code, below the form: the artifact is not the approved one of a live
    mission; its modpack differs from the server's; no fleet scenario is registered for its
    terrain; the event mission is not on an operation scheduled on this server; the event mission's
-   seats and the artifact's [slots](/documentation_v2/glossary.md#slot) do not correspond one to
+   seats and the artifact's [slots](/documentation_v2/glossary/n_to_z.md#slot) do not correspond one to
    one, listing every unbound seat and unseated slot; another deployment of the server is in
    flight; or the server is deactivated.
 4. "Deployments" lists the server's deployments, newest first, each with its state. Opened, one
@@ -195,7 +195,7 @@ lists each call with the DTO it reads or sends. Server-side:
   `DELETE /api/v1/servers/{id}/credentials/{credentialId}?reason=<text>`
   (`revoke_server_credential`) revokes one credential, keeping the reason in the audit trail and
   ending the game-runtime sessions it authenticated.
-- The API has no [RCON](/documentation_v2/glossary.md#rcon) route. RCON is the host agent's
+- The API has no [RCON](/documentation_v2/glossary/n_to_z.md#rcon) route. RCON is the host agent's
   business: it lists players over RCON when it carries out `list_players`.
 
 ## Design

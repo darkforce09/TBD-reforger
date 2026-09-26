@@ -2,7 +2,7 @@
 
 The stage vocabulary of a TBD round, the safe start that keeps everyone unhurt from the lobby until
 the round goes live, and the evaluator that ends the round on a
-[mission](/documentation_v2/glossary.md#mission)'s authored `extraction` or `vip` win rule.
+[mission](/documentation_v2/glossary/g_to_m.md#mission)'s authored `extraction` or `vip` win rule.
 
 ## Contents
 
@@ -26,7 +26,7 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/
 and `SAFE_START` and lifts on any other stage:
 
 1. Arm: every player body, every AI agent's body and every unpossessed
-   [slot](/documentation_v2/glossary.md#slot) body from `TBD_SpawnManager` gets
+   [slot](/documentation_v2/glossary/n_to_z.md#slot) body from `TBD_SpawnManager` gets
    `EnableDamageHandling(false)`, weapon safety on, and shot and grenade handlers that delete the
    projectile the moment it exists. A `TBD_SafestartHold` per body records the damage-handling value
    found before the first change, and a re-sweep every `SWEEP_MS` (3 s) covers bodies that appear
@@ -99,4 +99,4 @@ SCR_BaseGameMode` arms a self-re-arming 2 s tick (`TICK_MS`) in a framework worl
 - [End screen specification](/documentation_v2/mod/tbd-framework/UI/end_screen/end_screen_specification.md)
   — the END banner that names the win rule's endings
 - [Mod design](/documentation_v2/mod/tbd-framework/mod_design.md) — one life and the
-  [event](/documentation_v2/glossary.md#event) loop the stages follow
+  [event](/documentation_v2/glossary/a_to_f.md#event) loop the stages follow

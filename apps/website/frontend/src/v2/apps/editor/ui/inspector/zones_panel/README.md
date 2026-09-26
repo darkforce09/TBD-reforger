@@ -1,6 +1,6 @@
 # Zones panel parts
 
-The zones tab of the right dock: the zones a [mission](/documentation_v2/glossary.md#mission)
+The zones tab of the right dock: the zones a [mission](/documentation_v2/glossary/g_to_m.md#mission)
 declares (play areas, objectives and the other zone types of the mission schema), drawn on the map
 as circles or polygons and edited here with their label, faction and rules, plus the tactical
 graphics draw. The parent module,

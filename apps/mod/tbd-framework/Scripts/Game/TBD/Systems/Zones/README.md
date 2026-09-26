@@ -1,6 +1,6 @@
 # Mission zones, play area and triggers
 
-Turns a [mission](/documentation_v2/glossary.md#mission)'s zones into prepared shapes the server
+Turns a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s zones into prepared shapes the server
 can test positions against, confines players to the authored play area with a warning, a grace
 countdown and the authored penalty, and runs the mission's editor triggers and the effects they
 fire. The objective system reads the same zones.

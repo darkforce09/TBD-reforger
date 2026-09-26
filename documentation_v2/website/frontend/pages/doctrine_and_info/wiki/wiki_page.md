@@ -18,7 +18,7 @@ manual being read, and an administrator edits a manual's Markdown in place.
   [Routes](/apps/website/frontend/src/v2/pages/doctrine_and_info/wiki/README.md#routes).
 - Related: the [vehicle database page](/documentation_v2/website/frontend/pages/doctrine_and_info/vehicles/vehicle_database_page.md),
   which holds vehicle identification apart from the manuals; the
-  [API](/documentation_v2/glossary.md#api)'s
+  [API](/documentation_v2/glossary/a_to_f.md#api)'s
   [community content domain](/apps/website/api_v2/src/community_content/README.md), which owns
   the wiki routes.
 

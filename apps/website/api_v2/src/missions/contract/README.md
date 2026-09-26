@@ -1,6 +1,6 @@
 # Mission contract validation
 
-The [missions](/documentation_v2/glossary.md#missions) domain's contract layer: JSON Schema
+The [missions](/documentation_v2/glossary/g_to_m.md#missions) domain's contract layer: JSON Schema
 validation of every document the domain accepts or serves, against the schemas in
 `contracts_v2/definitions/`, and the Rust types projected from those schemas.
 
@@ -27,13 +27,13 @@ callers show them and never match on their text.
 | Entry point | Checks | Called by |
 |---|---|---|
 | `validate_mission_editor_payload_with_catalog` | `mission-editor-payload.schema.json`, control characters in authored strings, cargo over capacity, the zone pass | `missions::handlers::mission_versions`, on every payload stored |
-| `validate_mission_document` | `mission.schema.json` and the 8 MiB `MISSION_FILE_MAX_BYTES` ceiling | [artifact](/documentation_v2/glossary.md#artifact) compilation in `missions::services::mission_artifacts` |
+| `validate_mission_document` | `mission.schema.json` and the 8 MiB `MISSION_FILE_MAX_BYTES` ceiling | [artifact](/documentation_v2/glossary/a_to_f.md#artifact) compilation in `missions::services::mission_artifacts` |
 | `validate_faction_library_doc` | `faction-library.schema.json` | `missions::handlers::faction_library` |
 | `validate_registry_items_envelope` | `registry-items.schema.json` | `missions::services::registry_import` |
 | `validate_registry_compat_envelope` | `registry-compat.schema.json` | `missions::services::registry_import` |
 
 `zone_quantisation.rs` closes the gap between saving and compiling a
-[mission](/documentation_v2/glossary.md#mission). The compile rounds zone coordinates to 0.1 m, so
+[mission](/documentation_v2/glossary/g_to_m.md#mission). The compile rounds zone coordinates to 0.1 m, so
 a circle of radius 0.04 m is valid as authored and invalid once compiled. The zone pass validates
 the row the compile will emit against `#/$defs/zone`, lifted from the same embedded
 `mission.schema.json` bytes the compiled document is checked against, so a saved zone is a zone the
@@ -50,10 +50,10 @@ both sample exports in `contracts_v2/fixtures/registry/`.
   catalog type and the kit-alias table.
 - Used by: `missions::handlers` (`mission_versions`, `faction_library`) and `missions::services`
   (`mission_artifacts`, `registry_import`, whose import decodes envelopes into the generated
-  [registry](/documentation_v2/glossary.md#registry) types).
+  [registry](/documentation_v2/glossary/n_to_z.md#registry) types).
 - Rules: `generated/` is written by `cargo xtask ci schema-codegen` and never edited by hand
   (`cargo xtask ci verify-codegen-fresh` checks it), and `loadout_projection.rs` stays outside the
-  generator; `MISSION_FILE_MAX_BYTES`, the [mod](/documentation_v2/glossary.md#mod) mission
+  generator; `MISSION_FILE_MAX_BYTES`, the [mod](/documentation_v2/glossary/g_to_m.md#mod) mission
   loader's 8 MiB limit, equals the schema's `x-tbd-missionFileMaxBytes`
   (`schema_x_tbd_mission_file_max_bytes_matches_mod_constant` in `tests/schema_validators.rs`); the
   zone pass rounds exactly as the compile does

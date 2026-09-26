@@ -2,8 +2,8 @@
 
 # Arsenal design references
 
-The design references of the [arsenal](/documentation_v2/glossary.md#arsenal), the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s loadout editor: two design-phase
+The design references of the [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal), the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s loadout editor: two design-phase
 sets of the "Loadout Forge" dialog, kept for colour and layout context rather than as an
 implementation source.
 
@@ -21,7 +21,7 @@ A set is a folder named after its subject and kind. A blueprint holds the Stitch
 file and its screenshot as a png, both named after the set; the mock-up holds only its screenshot.
 Each set has a README that says what it shows and how the built tab differs. Both sets draw the
 same dialog: a template list on the left, the slot cards of one
-[slot](/documentation_v2/glossary.md#slot) in the middle, the weapon's configuration and the
+[slot](/documentation_v2/glossary/n_to_z.md#slot) in the middle, the weapon's configuration and the
 "Standardization" buttons on the right, and "Cancel" and "Save & Close Forge" at the foot. Their
 colour tokens are the Aegis export in the
 [design system](/documentation_v2/design_system/token_exports/aegis_design_tokens.md). The built

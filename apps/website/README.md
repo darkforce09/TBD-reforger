@@ -1,10 +1,10 @@
 # Website platform
 
-The community's web platform: Discord sign-in, [events](/documentation_v2/glossary.md#event) and
-[ORBAT](/documentation_v2/glossary.md#orbat) slotting, the
-[mission](/documentation_v2/glossary.md#mission) library and the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator), server telemetry, the doctrine
-wiki and the admin tools. The folder holds the REST [API](/documentation_v2/glossary.md#api),
+The community's web platform: Discord sign-in, [events](/documentation_v2/glossary/a_to_f.md#event) and
+[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) slotting, the
+[mission](/documentation_v2/glossary/g_to_m.md#mission) library and the
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator), server telemetry, the doctrine
+wiki and the admin tools. The folder holds the REST [API](/documentation_v2/glossary/a_to_f.md#api),
 the single-page app, the two engines they share for maps, missions and GPU rendering, and the
 API's release image and staging stack.
 
@@ -25,7 +25,7 @@ apps/website/
 
 The four crates are members of the root Cargo workspace. The browser runs `website-frontend`, a
 Leptos 0.8 app compiled to WebAssembly; it calls `website-api`, an Axum and sqlx server on
-Postgres, over `/api/v1` and [SSE](/documentation_v2/glossary.md#sse), and streams terrain from
+Postgres, over `/api/v1` and [SSE](/documentation_v2/glossary/n_to_z.md#sse), and streams terrain from
 `/map-assets`. Both link `website-map-engine`: the API takes only its default `scenario` tier,
 which compiles and validates missions, and the app takes the `world`, `io`, `store` and `editing`
 tiers, adding `render` and `streaming` in its browser build, which the Mission Creator draws and
@@ -95,9 +95,9 @@ guide to frame rate. The map needs the Everon height map and satellite bundle fr
 - Depends on: `contracts_v2/`, whose schemas and kit-alias rules the API and the map engine embed;
   `assets_v2/terrains/` and `assets_v2/glyphs/`, served under `/map-assets`; Postgres 18; and
   Discord's OAuth2 and REST APIs.
-- Used by: the game servers, through the [mod](/documentation_v2/glossary.md#mod)'s API bridge in
+- Used by: the game servers, through the [mod](/documentation_v2/glossary/g_to_m.md#mod)'s API bridge in
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/`; the
-  [fleet host agent](/documentation_v2/glossary.md#fleet-host-agent) in `apps/fleet_host_agent/`;
+  [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) in `apps/fleet_host_agent/`;
   the developer tools in `tools_v2/developer-tools/`, which link `website-map-engine` and drive the
   app in a headless browser; and the build, database and deploy commands of `tools_v2/xtask/`.
 - Rules: the graphics engine imports nothing from the map engine and names no map concept; inside

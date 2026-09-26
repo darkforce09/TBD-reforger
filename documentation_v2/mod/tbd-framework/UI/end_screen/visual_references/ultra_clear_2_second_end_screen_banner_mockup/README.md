@@ -3,7 +3,7 @@
 # End screen banner mockup
 
 Design-phase reference for the END banner: a verdict card read at a glance. It gives layout and
-colour context and is not an implementation source; the built banner is the [EnfScript](/documentation_v2/glossary.md#enfscript) and layout
+colour context and is not an implementation source; the built banner is the [EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript) and layout
 code the Code section links.
 
 ## Contents

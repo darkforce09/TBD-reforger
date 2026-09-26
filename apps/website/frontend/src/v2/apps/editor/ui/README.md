@@ -1,9 +1,9 @@
 # Mission Creator interface
 
-Every surface of the [Mission Creator](/documentation_v2/glossary.md#mission-creator) drawn around
+Every surface of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) drawn around
 the map, grouped by what it draws: the chrome docked around the viewport, the Editor Layers
 outliner the docks host, the inspectors that edit one subject of the
-[mission](/documentation_v2/glossary.md#mission), the [Arsenal](/documentation_v2/glossary.md#arsenal)
+[mission](/documentation_v2/glossary/g_to_m.md#mission), the [Arsenal](/documentation_v2/glossary/a_to_f.md#arsenal)
 panels, and the dialogs raised over all of it.
 
 ## Contents
@@ -67,7 +67,7 @@ compiles every surface.
 - Depends on: `website_map_engine` (`editing::hosted_commands` and `editing::host`, the
   `data::scenario` and `data::store` modules); the editor's `arsenal/`, `bridge/` and `shell/` in
   `apps/website/frontend/src/v2/apps/editor/`; `crate::v2::core` (the
-  [API](/documentation_v2/glossary.md#api) client and DTOs, the auth store, `modal_stack` and the
+  [API](/documentation_v2/glossary/a_to_f.md#api) client and DTOs, the auth store, `modal_stack` and the
   UI primitives); `contracts_v2/definitions/mission.schema.json`, embedded for the zone and
   settings vocabulary; `web_sys` in the browser build.
 - Used by:

@@ -6,7 +6,7 @@ The index of [capability_verdicts.tsv](/documentation_v2/mod/tbd-framework/capab
 the hand-authored table that gives every CRF source file a TBD verdict: build it, replace it, leave
 it for later, skip it, or defer it by operator word. Reforger ships no lobby, briefing, slotting,
 respawn, spectator or admin tooling, and CRF covers that ground, so a CRF file with no verdict is a
-subsystem the [mod](/documentation_v2/glossary.md#mod) could forget; the check turns that into a
+subsystem the [mod](/documentation_v2/glossary/g_to_m.md#mod) could forget; the check turns that into a
 build error.
 
 ## Format

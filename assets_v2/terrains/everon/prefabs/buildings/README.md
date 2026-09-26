@@ -4,7 +4,7 @@ The buildings of Everon modelled floor by floor for looking inside them: three f
 blueprints, and for the wooden farmhouse its shell mesh, its placed interior and a hand-placed set
 of trees around it. The debug building viewer draws them, the map engine's building model and line
 of sight trace them, and the building archive folds the blueprints in for the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s map.
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map.
 
 ## Contents
 
@@ -56,7 +56,7 @@ scene file under `?scene=1`; without the sidecar it draws the plan from the blue
 - Producers: the blueprint compiler in `tools_v2/developer-tools/src/blueprint/`: voxel
   interpretation and `ingest.rs` for the blueprints, which write here by default; `bvh/` for the
   sidecar, the instances file and the scene file. `ingest-blueprints` copies the blueprints the
-  `tbd-export` building plugins write in the [Workbench](/documentation_v2/glossary.md#workbench)
+  `tbd-export` building plugins write in the [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)
   profile (`apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/Buildings/`).
 - Consumers:
   - the debug building viewer and interior bench

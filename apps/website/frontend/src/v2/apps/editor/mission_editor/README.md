@@ -1,9 +1,9 @@
 # Mission Creator page parts
 
-The parts of the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s route component:
+The parts of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s route component:
 the canvas mount that installs the editor's handles and starts the boot of the
-[mission](/documentation_v2/glossary.md#mission) document, the page's reactive effects, the loading
-of the item [registry](/documentation_v2/glossary.md#registry), the transform and snap model, the
+[mission](/documentation_v2/glossary/g_to_m.md#mission) document, the page's reactive effects, the loading
+of the item [registry](/documentation_v2/glossary/n_to_z.md#registry), the transform and snap model, the
 toolbar dispatch and the helpers the input layer picks and draws with. The route component
 `MissionEditorPage` lives in the page module,
 `apps/website/frontend/src/v2/apps/editor/mission_editor.rs`, which declares these files with
@@ -47,7 +47,7 @@ two entities selected (`ARRANGE_MIN_SELECTION`). The six key codes are written o
 `page_effects.rs` as well as in the top strip's shared `ARRANGE` list, whose `arrange_for_code`
 lookup only the strip's tests call. `registry_loading.rs` fetches the item registry in pages of 500
 until the reported total and the compatibility feed the
-[arsenal](/documentation_v2/glossary.md#arsenal) reads. `transform.rs` holds the snap model:
+[arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) reads. `transform.rs` holds the snap model:
 translate rungs of 0, 1, 5 and 10 m, the map engine's rotate ladder, the G toggle and the `[` and
 `]` steps, and the widget variants None, Translate and Rotate on the keys 1, 2 and 3.
 `armed_place.rs` decides what a release does while a place is armed: a left release on the map
@@ -72,7 +72,7 @@ Everything reaches the rest of the editor through the page module's declarations
   layer, the session's layout, draft writer, hydrate, review mode, mission size and document
   commands in `shell/`, the top strip's Arrange commands and the validation panel in `ui/`, and the
   asset catalog and rules of `arsenal/`; `crate::v2::core` (the
-  [API](/documentation_v2/glossary.md#api) client, `AuthStore`, the `RegistryItem` DTOs);
+  [API](/documentation_v2/glossary/a_to_f.md#api) client, `AuthStore`, the `RegistryItem` DTOs);
   `website_map_engine` (`frame`, `streaming::host`, `editing`, `data::store`, `overlay::symbology`,
   `camera`); over HTTP, `GET /api/v1/registry` and `GET /api/v1/registry/compat`.
 - Used by: the page module `apps/website/frontend/src/v2/apps/editor/mission_editor.rs`, and through

@@ -2,9 +2,9 @@
 
 # Mission Creator roadmap
 
-The planning view of the [Mission Creator](/documentation_v2/glossary.md#mission-creator): what the
+The planning view of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator): what the
 editor ships today, area by area, the open work that changes it, grouped into tracks, the work
-deferred for now, and the questions no [ticket](/documentation_v2/glossary.md#ticket) answers yet.
+deferred for now, and the questions no [ticket](/documentation_v2/glossary/n_to_z.md#ticket) answers yet.
 Every status here is the ticket's `status` field in `.ai/tickets/`; the feature inventory and the
 code READMEs hold the detail.
 
@@ -32,7 +32,7 @@ list is never edited by hand.
 ## Where the Mission Creator stands
 
 The editor is a Leptos page over the graphics engine's wgpu renderer, a top-down 2D map of the
-[mission](/documentation_v2/glossary.md#mission)'s terrain; the
+[mission](/documentation_v2/glossary/g_to_m.md#mission)'s terrain; the
 [UX specification](/documentation_v2/website/frontend/apps/editor/ux_spec.md) gives its layout,
 gestures and shortcuts. What ships, by area:
 
@@ -44,8 +44,8 @@ gestures and shortcuts. What ships, by area:
 | Placement | characters, vehicles, objects, compositions, markers, triggers and zones from the seven-tab asset browser; the asset picker on a double-click | [placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md), [asset palette](/documentation_v2/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) |
 | Selection | click, Ctrl/Cmd toggle, marquee, select all in view, the mission search and the narrowing chips | [selection](/documentation_v2/website/frontend/apps/editor/feature_inventory/selection.md) |
 | Transform | drag-move, the translate and rotate widget, the Z arm, the snap grid, nineteen Arrange commands, Delete | [transform and delete](/documentation_v2/website/frontend/apps/editor/feature_inventory/transform_and_delete.md) |
-| Layers and ORBAT | editor layers with hide and lock; the [ORBAT](/documentation_v2/glossary.md#orbat) Manager over sides, squads, [slots](/documentation_v2/glossary.md#slot) and squad vehicles; the faction library | [left dock](/documentation_v2/website/frontend/apps/editor/feature_inventory/left_sidebar.md) |
-| Attributes and arsenal | the Attributes dialog, single and multi-edit, with the Transform, Identity and [Arsenal](/documentation_v2/glossary.md#arsenal) tabs and the vehicle heading, cargo and crew | [attributes and settings](/documentation_v2/website/frontend/apps/editor/feature_inventory/attributes_and_settings.md) |
+| Layers and ORBAT | editor layers with hide and lock; the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) Manager over sides, squads, [slots](/documentation_v2/glossary/n_to_z.md#slot) and squad vehicles; the faction library | [left dock](/documentation_v2/website/frontend/apps/editor/feature_inventory/left_sidebar.md) |
+| Attributes and arsenal | the Attributes dialog, single and multi-edit, with the Transform, Identity and [Arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) tabs and the vehicle heading, cargo and crew | [attributes and settings](/documentation_v2/website/frontend/apps/editor/feature_inventory/attributes_and_settings.md) |
 | Mission logic | win conditions, spawn modules, tasks, radio nets, audio, the weather timeline, tactical graphics, connections and comments | [inspectors README](/apps/website/frontend/src/v2/apps/editor/ui/inspector/README.md) |
 | Measuring tools | the ruler, the line of sight and the viewshed | [toolbelt](/documentation_v2/website/frontend/apps/editor/feature_inventory/bottom_toolbelt.md) |
 | Persistence and versions | the per-account IndexedDB draft, the server hydrate and conflict dialog, one writer tab per mission, Save Version, Export JSON and Export Compiled, the read-only review mode | [persistence and compile](/documentation_v2/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) |
@@ -90,12 +90,12 @@ Each row links the ticket's spec, or its ticket file when it has none, then its 
 | Ticket | Status | What changes |
 |---|---|---|
 | [T-212 — Typed per-side objectives with attributes](/documentation_v2/tickets/specs/t212_typed_objectives.md) | ready, [plan](/documentation_v2/tickets/plans/t-212_plan.md) | objectives become typed, placed, per-side entities |
-| [T-290 — Nine dead flatten fields mod never reads](/documentation_v2/tickets/specs/t290_dead_flatten_fields.md) | ready, [plan](/documentation_v2/tickets/plans/t-290_plan.md) | the [mod](/documentation_v2/glossary.md#mod) reads, or the compiler drops, nine compiled fields |
+| [T-290 — Nine dead flatten fields mod never reads](/documentation_v2/tickets/specs/t290_dead_flatten_fields.md) | ready, [plan](/documentation_v2/tickets/plans/t-290_plan.md) | the [mod](/documentation_v2/glossary/g_to_m.md#mod) reads, or the compiler drops, nine compiled fields |
 | [T-674 — Slot identity reaches the wire](/documentation_v2/tickets/specs/t674_slot_identity_wire.md) | queued, [plan](/documentation_v2/tickets/plans/t-674_plan.md) | slot identity fields reach the compiled document |
 | [T-675 — Vehicle roster reaches game](/documentation_v2/tickets/specs/t675_vehicle_roster_wire.md) | queued, [plan](/documentation_v2/tickets/plans/t-675_plan.md) | placed vehicles and crews reach the compiled document |
 | [T-932 — Parked briefing markers survive server save/reload](/documentation_v2/tickets/specs/t932_parked_markers_persist.md) | queued, [plan](/documentation_v2/tickets/plans/t-932_plan.md) | parked briefing markers survive a save and reload |
 | [T-309 — FactionDoc squad level for Apply Template](/documentation_v2/tickets/specs/t309_faction_doc_squads.md) | ready, [plan](/documentation_v2/tickets/plans/t-309_plan.md) | faction templates keep their squads |
-| [T-146 — Asset Browser Data Wiring](/documentation_v2/tickets/specs/t146_asset_browser_data_wiring.md) | ready, [plan](/documentation_v2/tickets/plans/t-146_plan.md) | [registry](/documentation_v2/glossary.md#registry) vehicles and crates placeable from the asset browser |
+| [T-146 — Asset Browser Data Wiring](/documentation_v2/tickets/specs/t146_asset_browser_data_wiring.md) | ready, [plan](/documentation_v2/tickets/plans/t-146_plan.md) | [registry](/documentation_v2/glossary/n_to_z.md#registry) vehicles and crates placeable from the asset browser |
 | [T-140 — Mission client payload budget](/documentation_v2/tickets/specs/t131_north_star_backlog.md) | ready, [plan](/documentation_v2/tickets/plans/t-140_plan.md) | compile reports a payload-budget diagnostic |
 | [T-141 — Procedural slot naming](/documentation_v2/tickets/specs/t131_north_star_backlog.md) | ready, [plan](/documentation_v2/tickets/plans/t-141_plan.md) | generated slot display names with a manual override |
 | [T-068.14 — Phase 2 E2E gate editor to player](/documentation_v2/tickets/specs/t068_14_phase2_e2e_gate.md) | queued, no plan | a human sign-off from an editor loadout to a dressed player in game |

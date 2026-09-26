@@ -1,7 +1,7 @@
 # Machine credential sheet
 
 The side sheet the selected server's "Credentials" button opens: every
-[machine credential](/documentation_v2/glossary.md#machine-credential) of that server without its
+[machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential) of that server without its
 secret, the form that issues one and shows its secret once, and the revocation that asks for a
 reason.
 
@@ -19,7 +19,7 @@ apps/website/frontend/src/v2/pages/administration/server_control/machine_credent
 
 The server card builds one `CredentialPanel` for the server it shows, so one server's credentials
 or freshly issued secret never show under another's name. `open_sheet` opens the sheet and reads
-the list; an issue or a revocation the [API](/documentation_v2/glossary.md#api) accepts reads it
+the list; an issue or a revocation the [API](/documentation_v2/glossary/a_to_f.md#api) accepts reads it
 again. The list puts live credentials first and the newest first within each, and states for each
 its program, its label, who issued it and when, and either its last use or who revoked it, when
 and why ("you" for the viewer).
@@ -30,8 +30,8 @@ reports a copy only once the browser confirms it, and the signal is cleared when
 says it is stored or the sheet closes. It is never written to storage or a log. `credential_text.rs`
 checks a request as the API bounds it before it is sent: a trimmed label of 1 to 128 bytes, and a
 trimmed revocation reason of 1 to 512 bytes, which the audit trail keeps. The issue form offers the
-two program kinds, `mod_runtime` (the [game runtime](/documentation_v2/glossary.md#game-runtime))
-and `host_agent` (the [fleet host agent](/documentation_v2/glossary.md#fleet-host-agent)); a kind
+two program kinds, `mod_runtime` (the [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime))
+and `host_agent` (the [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent)); a kind
 this build does not know shows as the API spells it. Every request runs in the browser build only.
 
 ## Boundaries
@@ -41,11 +41,11 @@ this build does not know shows as the API spells it. Every request runs in the b
   endpoint module `machine_credentials`), `crate::v2::core::auth` (`AuthStore`),
   `crate::v2::core::ui` (`Sheet`, `MaterialIcon`, the toast queue) and `crate::v2::core::utils`
   (`clipboard`, `utc_timestamp`); over HTTP, the credential routes of the
-  [server infrastructure](/documentation_v2/glossary.md#server-infrastructure) domain.
+  [server infrastructure](/documentation_v2/glossary/n_to_z.md#server-infrastructure) domain.
 - Used by: `server_cards.rs` in
   `apps/website/frontend/src/v2/pages/administration/server_control/`, which builds the panel, opens
   the sheet and renders it; `executor_label`, which the
-  [fleet command](/documentation_v2/glossary.md#fleet-command) console in
+  [fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) console in
   `apps/website/frontend/src/v2/pages/administration/server_control/fleet_commands/` names executors
   with; `server_control_source` in `apps/website/frontend/src/v2/core/test_support/pins.rs`.
 - Rules: the secret is shown once and never stored; labels and reasons are bounded as the API

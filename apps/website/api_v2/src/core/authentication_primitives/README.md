@@ -1,7 +1,7 @@
 # Authentication primitives
 
 The credential building blocks every authenticated surface of the
-[API](/documentation_v2/glossary.md#api) shares: signed access tokens, opaque tokens stored only
+[API](/documentation_v2/glossary/a_to_f.md#api) shares: signed access tokens, opaque tokens stored only
 as hashes, constant-time comparison, and the trait through which a verified token's session is
 checked against the database.
 
@@ -29,13 +29,13 @@ or at or after `exp`.
 A verified token is not yet an identity. The `AuthUser` extractor in `crate::core::middleware`
 hands the claims to the `SessionAuthority` that `AppState` holds, which reads the session and the
 account from Postgres and answers with the member's current
-[role](/documentation_v2/glossary.md#role) and account state, or refuses. The trait lives here so
+[role](/documentation_v2/glossary/n_to_z.md#role) and account state, or refuses. The trait lives here so
 the extractor depends on `core` alone: `DatabaseSessionAuthority` in
 `apps/website/api_v2/src/identity_and_access/services/session_authorization.rs` implements it,
 and `apps/website/api_v2/src/core/application_state.rs` wires it in.
 
 Opaque tokens (the OAuth `state`, refresh tokens,
-[machine credential](/documentation_v2/glossary.md#machine-credential) secrets) come from
+[machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential) secrets) come from
 `random_token`, hex-encoded random bytes. The database stores only `hash_token`, their hex SHA-256,
 so a leaked table holds nothing a caller can present. `constant_time_equal` compares secrets
 without leaking timing, and `numeric_code` draws the zero-padded decimal code of the Arma identity

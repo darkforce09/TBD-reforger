@@ -1,7 +1,7 @@
 # Crop export
 
 Finds every placed garden crop and vegetable row in the open world in
-[Workbench](/documentation_v2/glossary.md#workbench) and writes each one's crop, layout, position,
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) and writes each one's crop, layout, position,
 rotation, scale and size to `crops.json`.
 
 ## Contents

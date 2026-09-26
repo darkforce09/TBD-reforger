@@ -1,9 +1,9 @@
 # Wire-safe names and cargo capacity
 
-Two scans of a [mission](/documentation_v2/glossary.md#mission) editor payload that the
-[API](/documentation_v2/glossary.md#api) runs before it saves or compiles one: authored names that
+Two scans of a [mission](/documentation_v2/glossary/g_to_m.md#mission) editor payload that the
+[API](/documentation_v2/glossary/a_to_f.md#api) runs before it saves or compiles one: authored names that
 would carry a control character into the compiled document, which the schema's `wireSafeString`
-forbids, and [slot](/documentation_v2/glossary.md#slot) cargo heavier or bulkier than the garment
+forbids, and [slot](/documentation_v2/glossary/n_to_z.md#slot) cargo heavier or bulkier than the garment
 that holds it. The module is exposed as `data::scenario::wire_safety`.
 
 ## Contents
@@ -34,7 +34,7 @@ count as nothing, and an empty catalog reports nothing.
 ## Boundaries
 
 - Depends on: `serde_json` only; the caller supplies the `CargoPhysCatalog`, so the module reads
-  no item [registry](/documentation_v2/glossary.md#registry) of its own.
+  no item [registry](/documentation_v2/glossary/n_to_z.md#registry) of its own.
 - Used by:
   - the API: `apps/website/api_v2/src/missions/contract/schema_validators.rs` runs both scans
     after the payload schema on every save;

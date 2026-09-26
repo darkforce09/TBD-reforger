@@ -1,6 +1,6 @@
 # Weather timeline
 
-The check on a [mission](/documentation_v2/glossary.md#mission)'s authored `weatherTimeline`
+The check on a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s authored `weatherTimeline`
 block: the weather keyframes a round moves through once it goes live, each a preset at a minute
 offset with an optional wind direction and fog density. The weather a mission starts with is the
 separate `environment.weatherPreset`. The module is exposed as `data::scenario::weather`.
@@ -37,7 +37,7 @@ each keyframe at its offset.
 
 - Depends on: `serde_json`.
 - Used by: `crate::data::scenario::extensions`, whose `weatherTimeline` row calls `validate`; the
-  [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s weather timeline panel
+  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s weather timeline panel
   (`apps/website/frontend/src/v2/apps/editor/ui/inspector/weather_timeline.rs`), which checks each
   edit with `validate` and offers `WEATHER_PRESETS`.
 - Rules: an offset equal to or below the one before it is refused (`equal_at_minutes_are_refused`

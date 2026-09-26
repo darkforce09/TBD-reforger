@@ -30,8 +30,8 @@ browser API u32
 `lane_order` ranks every `LaneRole` from the basemap up: satellite, sea, hillshade, landcover and
 contours, roads, buildings, fences and forest, world glyphs and labels, the building interior
 lanes, the viewshed and the interior probe, the 1 km grid, then the
-[mission](/documentation_v2/glossary.md#mission) lanes (zones, markers,
-comments, connections, squad links, vehicles, [slots](/documentation_v2/glossary.md#slot), place
+[mission](/documentation_v2/glossary/g_to_m.md#mission) lanes (zones, markers,
+comments, connections, squad links, vehicles, [slots](/documentation_v2/glossary/n_to_z.md#slot), place
 preview, drag, clusters) and the marquee
 on top. `lane_id` doubles the rank so `Stress` and `Calibration`, which share rank 0, get distinct
 keys. The browser speaks two disjoint `u32` namespaces: `role_id` for the vector-lane uploads and
@@ -51,7 +51,7 @@ its lanes, `set_lane_opacity` re-tints a texture lane in place, and `set_grid` b
 
 - `lanes`: `LaneRole`, `lane_order`, `lane_id`, `ALL_LANES`, `role_id`, `tex_role_id` and their
   `u32` conversions, for `crate::frame`, `crate::streaming`, `crate::world`, `crate::spatial`,
-  `crate::diagnostics`, the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
+  `crate::diagnostics`, the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
   document host and tools, and the debug apps in
   `apps/website/frontend/src/v2/apps/debug/`.
 - `lod`: the zoom gates, `REF_ZOOM`, `INSTANCE_BUDGET` and the contour interval, for

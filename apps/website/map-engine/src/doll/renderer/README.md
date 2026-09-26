@@ -1,8 +1,8 @@
 # Doll renderer
 
 The GPU side of the doll preview in the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
-[arsenal](/documentation_v2/glossary.md#arsenal):
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
+[arsenal](/documentation_v2/glossary/a_to_f.md#arsenal):
 `DollEngine`, a second wgpu engine with its own device and canvas surface that draws the mannequin
 as instanced cubes and one cylinder with depth testing, and the byte packing of the instance
 stream it draws from.

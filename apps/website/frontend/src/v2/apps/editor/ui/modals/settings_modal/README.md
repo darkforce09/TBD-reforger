@@ -1,7 +1,7 @@
 # Mission Settings dialog parts
 
-The [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s Mission Settings dialog for
-the open [mission](/documentation_v2/glossary.md#mission), and the two dialogs it raises: the
+The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s Mission Settings dialog for
+the open [mission](/documentation_v2/glossary/g_to_m.md#mission), and the two dialogs it raises: the
 read-only All Settings list and the per-browser Editor Preferences. The parent module,
 `apps/website/frontend/src/v2/apps/editor/ui/modals/settings_modal.rs`, declares these modules and
 re-exports `MissionSettingsDialog` and the settings catalog.
@@ -36,11 +36,11 @@ the document on every `doc_tick`, so an undo refreshes it, and it holds three ki
 - **Row settings.** "Presentation" (briefing and thumbnail link) and "Mission shape" (game mode)
   live on the mission's row: `ShapeMirror` reads `GET /api/v1/missions/{id}` and writes each change
   with `PATCH /api/v1/missions/{id}`, optimistically, putting the stored value back and raising a
-  toast when the [API](/documentation_v2/glossary.md#api) refuses. `ShapeSeq` drops a load that
+  toast when the [API](/documentation_v2/glossary/a_to_f.md#api) refuses. `ShapeSeq` drops a load that
   would overwrite a patch in flight. A saved briefing is also mirrored into the document's meta. The
-  players figure is the count of [slots](/documentation_v2/glossary.md#slot) placed, beside the
+  players figure is the count of [slots](/documentation_v2/glossary/n_to_z.md#slot) placed, beside the
   maximum declared at creation. In a review workspace the dialog shows the row values the
-  [artifact](/documentation_v2/glossary.md#artifact) compiled from.
+  [artifact](/documentation_v2/glossary/a_to_f.md#artifact) compiled from.
 - **Browser settings.** "Editor Preferences" (basemap and world layers) are saved to this browser
   through `shell::world_layer_prefs`, never to the mission.
 

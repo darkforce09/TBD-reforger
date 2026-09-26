@@ -2,7 +2,7 @@
 
 # API verification evidence
 
-The acceptance record of the website [API](/documentation_v2/glossary.md#api): the register of
+The acceptance record of the website [API](/documentation_v2/glossary/a_to_f.md#api): the register of
 requirements that `cargo xtask verify api-readiness` judges, the acceptance contract behind it,
 the program's checkpoint and remaining milestones, and the design notes that state what each
 domain's transactions, locks and refusals must do. Developers changing a domain's behaviour and
@@ -45,10 +45,10 @@ The design notes by domain:
 
 | Domain | Notes |
 |---|---|
-| [identity and access](/documentation_v2/glossary.md#identity-and-access) | `identity_transactions.md` |
-| [operations](/documentation_v2/glossary.md#operations) | `event_administration.md`, `event_eligibility_allocation.md`, `reservation_attendance.md`, `reservation_mutation_guards.md`, `reservation_transaction_design.md`, `live_occupancy.md` |
-| [missions](/documentation_v2/glossary.md#missions) | `mission_artifacts.md` |
-| [server infrastructure](/documentation_v2/glossary.md#server-infrastructure) | `machine_credentials.md`, `fleet_command_ledger.md` |
+| [identity and access](/documentation_v2/glossary/g_to_m.md#identity-and-access) | `identity_transactions.md` |
+| [operations](/documentation_v2/glossary/n_to_z.md#operations) | `event_administration.md`, `event_eligibility_allocation.md`, `reservation_attendance.md`, `reservation_mutation_guards.md`, `reservation_transaction_design.md`, `live_occupancy.md` |
+| [missions](/documentation_v2/glossary/g_to_m.md#missions) | `mission_artifacts.md` |
+| [server infrastructure](/documentation_v2/glossary/n_to_z.md#server-infrastructure) | `machine_credentials.md`, `fleet_command_ledger.md` |
 | verification | `property_test_evidence.md` |
 
 Requirement identifiers start with their area: `events` (14), `identity` (13), `verification`

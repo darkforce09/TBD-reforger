@@ -4,8 +4,8 @@
 
 Documents written to start or hand over one agent session: the kickoff of a Mission Creator UI
 session, the phased agent execution contract of the first
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) program, and a pointer that sent
-[mod](/documentation_v2/glossary.md#mod) agents to the monorepo ticketing. Status: archived —
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) program, and a pointer that sent
+[mod](/documentation_v2/glossary/g_to_m.md#mod) agents to the monorepo ticketing. Status: archived —
 frozen records.
 
 ## Contents

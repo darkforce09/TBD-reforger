@@ -1,9 +1,9 @@
 # Export mission header
 
-The export addon's [mission header](/documentation_v2/glossary.md#mission-header): the Enfusion
+The export addon's [mission header](/documentation_v2/glossary/g_to_m.md#mission-header): the Enfusion
 config that boots the export world with the export game mode, whose one component writes Everon's
 road network to the profile folder once the world has started. It carries no
-[mission](/documentation_v2/glossary.md#mission) and no player-facing content.
+[mission](/documentation_v2/glossary/g_to_m.md#mission) and no player-facing content.
 
 ## Contents
 
@@ -26,7 +26,7 @@ Missions/TBD_Export_Everon.conf ──World──▶ worlds/TBD_Export_Everon.en
                                                                                           └─places──▶ {70CCCF16487C927F}Prefabs/AI/SCR_AIWorld_Eden.et
 ```
 
-Playing the header, in [Workbench](/documentation_v2/glossary.md#workbench) or on a server that
+Playing the header, in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) or on a server that
 loads the `TBD_Export` addon, starts the game mode; its `TBD_RoadExportComponent` (in
 `apps/mod/tbd-export/Scripts/Game/TBD/Export/`) runs half a second after it initialises and writes
 the road files under `$profile:TBD_Export/everon/roads/`.

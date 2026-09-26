@@ -1,8 +1,8 @@
 # Mission Creator inspectors
 
-The [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s editing surfaces for one
-subject at a time: the Attributes dialog for placed [slots](/documentation_v2/glossary.md#slot) and
-vehicles, the zones tab, the live validation of the [mission](/documentation_v2/glossary.md#mission),
+The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s editing surfaces for one
+subject at a time: the Attributes dialog for placed [slots](/documentation_v2/glossary/n_to_z.md#slot) and
+vehicles, the zones tab, the live validation of the [mission](/documentation_v2/glossary/g_to_m.md#mission),
 and the panels that author the mission's own settings blocks (win conditions, spawn modules, radio
 nets, tasks, audio, weather timeline).
 
@@ -48,7 +48,7 @@ apps/website/frontend/src/v2/apps/editor/ui/inspector/
 `tasks`, `audio`, `weatherTimeline`, `spawnModules`, `winConditions`): its panel reads the key back
 through the bridge's `editor_context::read_env_value` and writes the whole rebuilt block as a merge
 patch through `editor_context::update_environment`, with `null` to clear it, and its `*_READERS`
-table names the key's readers from the compiler to the [mod](/documentation_v2/glossary.md#mod).
+table names the key's readers from the compiler to the [mod](/documentation_v2/glossary/g_to_m.md#mod).
 Single keys that the top strip and the Mission Settings dialog write go through `env::author_env`,
 which refuses any key missing from `CARRIED_ENV_KEYS` (`time`, `weather`, `showHillshade`,
 `hillshadeOpacity`, `showGrid`) and `AUTHORED_FLOW_KEYS` (`briefingSeconds`, `safeStartSeconds`,
@@ -89,7 +89,7 @@ handlers, and each view has a native stand-in that renders nothing.
     modules `validate`, `radio_plan`, `tasks`, `audio`, `weather`, `spawn_modules`,
     `win_conditions`, `flatten`, `compile` and `tactical_graphics`; `data::store::operations`;
   - the editor's bridge (`host_state::editor_context`, `host_state::armed_placement`,
-    `tactical_graphics_authoring`), the [Arsenal](/documentation_v2/glossary.md#arsenal)
+    `tactical_graphics_authoring`), the [Arsenal](/documentation_v2/glossary/a_to_f.md#arsenal)
     (`ArsenalTab`, `asset_catalog`, `rules::CompatFeed`), the outliner's row classes and
     `shell::layout::HOVER_FILL`;
   - `crate::v2::core`: `ui::modal_stack`, `MaterialIcon`, `cn` and the `RegistryItem` DTO;

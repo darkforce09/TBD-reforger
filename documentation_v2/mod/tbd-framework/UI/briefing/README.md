@@ -3,7 +3,7 @@
 # Briefing screen documentation
 
 The documentation of the Briefing tab, where every player reads their side's orders over the map
-and deploys into their [slot](/documentation_v2/glossary.md#slot).
+and deploys into their [slot](/documentation_v2/glossary/n_to_z.md#slot).
 
 ## Contents
 

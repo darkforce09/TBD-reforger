@@ -2,8 +2,8 @@
 
 # Attributes dialog
 
-The [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s per-entity property
-editor: one dialog that edits a [slot](/documentation_v2/glossary.md#slot)'s transform, identity
+The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s per-entity property
+editor: one dialog that edits a [slot](/documentation_v2/glossary/n_to_z.md#slot)'s transform, identity
 and loadout, or a vehicle's heading, cargo and crew, for one entity or a whole selection.
 
 ## Where it lives
@@ -85,9 +85,9 @@ rows "Medic (soon)" and "Engineer (soon)", with no controls.
 
 ### ATTR-TAB-004 — Arsenal
 
-1. The tab mounts the [arsenal](/documentation_v2/glossary.md#arsenal) for the slot the dialog
+1. The tab mounts the [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) for the slot the dialog
    opened on and shows "Loading catalog…" until the item
-   [registry](/documentation_v2/glossary.md#registry) arrives; the dialog widens while it is
+   [registry](/documentation_v2/glossary/n_to_z.md#registry) arrives; the dialog widens while it is
    open.
 2. A region rail, the item list, a 3D doll (with a flat fallback) and a compatibility panel edit
    the loadout and its cargo. Every pick is written at once as one undo step; there is no save

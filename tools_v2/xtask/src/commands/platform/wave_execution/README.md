@@ -1,7 +1,7 @@
 # Platform wave driver
 
 The implementation of `cargo xtask platform wave`, the platform factory: it reads the
-[wave](/documentation_v2/glossary.md#wave) plan, creates slice worktrees, runs the slice and wave
+[wave](/documentation_v2/glossary/n_to_z.md#wave) plan, creates slice worktrees, runs the slice and wave
 gates, lands slices on `main`, closes waves and pushes. It also keeps launched binaries and slice
 tests off the shared cargo cache.
 

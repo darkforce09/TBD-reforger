@@ -4,8 +4,8 @@
 
 What a player is told during safe start, the warm-up before a round goes live in which no one can
 be hurt: the countdown and the weapons-cold and weapons-live notices. Under one life a single
-negligent discharge before the start would end a player's [event](/documentation_v2/glossary.md#event),
-so the notices must be impossible to miss. The [mod](/documentation_v2/glossary.md#mod) has no safe start panel of its own: the notices
+negligent discharge before the start would end a player's [event](/documentation_v2/glossary/a_to_f.md#event),
+so the notices must be impossible to miss. The [mod](/documentation_v2/glossary/g_to_m.md#mod) has no safe start panel of its own: the notices
 are the game's pop-up banners and chat lines.
 
 ## Where it lives
@@ -38,7 +38,7 @@ are the game's pop-up banners and chat lines.
 
 ### The countdown
 
-1. The countdown runs on `SAFE_START` only, from the configured length: the [mission](/documentation_v2/glossary.md#mission)'s
+1. The countdown runs on `SAFE_START` only, from the configured length: the [mission](/documentation_v2/glossary/g_to_m.md#mission)'s
    `flow.safeStartSeconds`, else 300 s; an admin's `#tbd safestart <seconds>` sets it within 5 to
    3600 s.
 2. On arming, every player reads the chat line "[TBD] SAFESTART — damage OFF, weapons cold. Live
@@ -94,7 +94,7 @@ The HUD makes no HTTP call and sends no RPC of its own:
     8 s with no sound;
   - the panel dimming while the player aims down sights.
 - A pop-up rather than a mod screen: a mod menu preset resolves only after
-  [Workbench](/documentation_v2/glossary.md#workbench) regenerates `resourceDatabase.rdb`, and a
+  [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) regenerates `resourceDatabase.rdb`, and a
   countdown nobody can see is not a countdown.
 - No open ticket covers these differences.
 

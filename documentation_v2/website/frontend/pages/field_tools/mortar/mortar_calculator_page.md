@@ -3,8 +3,8 @@
 # Mortar calculator page
 
 The `/tools/mortar` page, titled "Mortar Calculator": a signed-in member enters a firing position,
-a target and a mortar tube, and the [API](/documentation_v2/glossary.md#api) returns the firing
-solution. With an [event](/documentation_v2/glossary.md#event) selected, the solution is saved
+a target and a mortar tube, and the [API](/documentation_v2/glossary/a_to_f.md#api) returns the firing
+solution. With an [event](/documentation_v2/glossary/a_to_f.md#event) selected, the solution is saved
 against it, so the gun line can reload that event's fire missions.
 
 ## Where it lives
@@ -17,7 +17,7 @@ against it, so the gun line can reload that event's fire missions.
   [README](/apps/website/frontend/src/v2/pages/field_tools/mortar/README.md) describes each file.
 - Entry: the route, its tier and its layout are in the README's
   [Routes](/apps/website/frontend/src/v2/pages/field_tools/mortar/README.md#routes).
-- Related: the [operations](/documentation_v2/glossary.md#operations) domain's fire-mission
+- Related: the [operations](/documentation_v2/glossary/n_to_z.md#operations) domain's fire-mission
   routes, in the [operations domain README](/apps/website/api_v2/src/operations/README.md); the
   solver `solve_fire_mission` in
   `apps/website/map-engine/src/data/scenario/ballistics/mortar_fire_solution.rs`, which the API

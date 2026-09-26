@@ -1,6 +1,6 @@
 # Win conditions card view
 
-The view of the rule that ends a [mission](/documentation_v2/glossary.md#mission)'s round, a card
+The view of the rule that ends a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s round, a card
 of the Mission Settings dialog: the mission authors it in its `winConditions` block as a mode, the
 mode's own field and the checklist of triggers that end the round. The model and the document
 write live in the parent module,

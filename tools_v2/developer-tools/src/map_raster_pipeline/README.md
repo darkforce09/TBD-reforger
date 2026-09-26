@@ -1,7 +1,7 @@
 # Map raster pipeline
 
 The library behind the `map` binary: it turns game and
-[Workbench](/documentation_v2/glossary.md#workbench) exports into the image and label assets a
+[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) exports into the image and label assets a
 terrain serves under `assets_v2/terrains/<terrain>/` (the unified satellite container, the satellite
 and Map view tile pyramids, the label sets and archives, the water archives) and the world-glyph
 atlas under `assets_v2/glyphs/atlas/`, and verifies each against the terrain's `manifest.json`.

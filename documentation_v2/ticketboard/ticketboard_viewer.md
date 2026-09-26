@@ -2,9 +2,9 @@
 
 # Ticketboard viewer
 
-The desktop window onto the [ticket](/documentation_v2/glossary.md#ticket) registry: the
-[ticketboard](/documentation_v2/glossary.md#ticketboard) shows every ticket on a status board, the
-program tree, the recorded [wave](/documentation_v2/glossary.md#wave) lanes and the token metrics,
+The desktop window onto the [ticket](/documentation_v2/glossary/n_to_z.md#ticket) registry: the
+[ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) shows every ticket on a status board, the
+program tree, the recorded [wave](/documentation_v2/glossary/n_to_z.md#wave) lanes and the token metrics,
 opens the repository's documents beside them, and changes a ticket only by running the same
 `cargo xtask ticket` command a developer would type. Developers and operators use it to see the
 state of the work and to move tickets through their statuses.

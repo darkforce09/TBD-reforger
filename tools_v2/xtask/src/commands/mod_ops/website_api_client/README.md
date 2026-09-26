@@ -1,8 +1,8 @@
 # Website API client for the mod tooling
 
-A small client that drives the website [API](/documentation_v2/glossary.md#api) the way an
-administrator does in development: log in, publish a [mission](/documentation_v2/glossary.md#mission),
-provision the fleet and request a [deployment](/documentation_v2/glossary.md#deployment). It also
+A small client that drives the website [API](/documentation_v2/glossary/a_to_f.md#api) the way an
+administrator does in development: log in, publish a [mission](/documentation_v2/glossary/g_to_m.md#mission),
+provision the fleet and request a [deployment](/documentation_v2/glossary/a_to_f.md#deployment). It also
 stages a compiled mission document in a profile's artifact cache.
 
 ## Contents

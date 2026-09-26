@@ -1,6 +1,6 @@
 # Metrics tab
 
-The egui drawing of the [ticketboard](/documentation_v2/glossary.md#ticketboard)'s Metrics tab: a
+The egui drawing of the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)'s Metrics tab: a
 measured panel over the run receipts and, below a double rule, an estimated panel over the token
 estimates, each with its own headline, tables, sorting and colour.
 

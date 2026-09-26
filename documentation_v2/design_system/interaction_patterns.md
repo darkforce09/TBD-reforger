@@ -75,7 +75,7 @@ None: the patterns are layout. Each page's calls are in its README's Data sectio
 The design target is the desktop-app methodology the platform adopted for its pages. The split
 pane, create-over-list dialog and slide-over dossier are built as described; the inline row
 toggles are the one pattern not built, and no open ticket plans them. The
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) follows the principles in its own
+[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) follows the principles in its own
 chrome: collapsible docks beside the map, its dialogs on the same modal stack.
 
 ## Open work

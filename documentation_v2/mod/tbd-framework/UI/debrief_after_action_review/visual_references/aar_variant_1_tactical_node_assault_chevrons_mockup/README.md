@@ -4,7 +4,7 @@
 
 Design-phase reference for the debrief: a personal after-action card for one player. It gives
 layout and colour context and is not an implementation source; the built scoreboard is the
-[EnfScript](/documentation_v2/glossary.md#enfscript) and layout code the Code section links.
+[EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript) and layout code the Code section links.
 
 ## Contents
 

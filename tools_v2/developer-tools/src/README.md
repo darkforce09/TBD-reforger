@@ -1,7 +1,7 @@
 # Developer tools source tree
 
 The source of the `developer_tools` library and its six executables: offline tooling for
-[Enfusion](/documentation_v2/glossary.md#enfusion) archives and scripts, the headless browser gates
+[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) archives and scripts, the headless browser gates
 of the single-page app, the building-blueprint compiler, and the pipelines that build and verify the
 terrain and map assets under `assets_v2/`.
 

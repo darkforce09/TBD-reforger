@@ -1,7 +1,7 @@
 # SHA-256 hashing
 
-SHA-256 (FIPS 180-4) in [EnfScript](/documentation_v2/glossary.md#enfscript), since the engine
-exposes no cryptographic hash to script. A mission [artifact](/documentation_v2/glossary.md#artifact)
+SHA-256 (FIPS 180-4) in [EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript), since the engine
+exposes no cryptographic hash to script. A mission [artifact](/documentation_v2/glossary/a_to_f.md#artifact)
 loads only when the SHA-256 of its exact bytes equals the digest the platform published for it.
 
 ## Contents

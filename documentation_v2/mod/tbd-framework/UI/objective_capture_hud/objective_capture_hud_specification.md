@@ -3,7 +3,7 @@
 # Objective capture HUD
 
 The objective board a player sees during live play: a panel in the top-left corner that lists each
-objective of the [mission](/documentation_v2/glossary.md#mission) from the player's side, and a
+objective of the [mission](/documentation_v2/glossary/g_to_m.md#mission) from the player's side, and a
 capture bar while the player stands in a capture zone. The server composes every word; the client
 only paints it.
 
@@ -74,7 +74,7 @@ The HUD makes no HTTP call. Its wire, on the modded `SCR_PlayerController` (the 
 
 - `TBD_RpcDo_ObjectiveHud`, Reliable, Owner: three string arrays (glyphs, titles, details), the
   bar's label, percentage and visibility, and `show`. The server fills it from
-  `TBD_ObjectiveRegistry`'s objectives and the viewer's faction, resolved from the [slot](/documentation_v2/glossary.md#slot)
+  `TBD_ObjectiveRegistry`'s objectives and the viewer's faction, resolved from the [slot](/documentation_v2/glossary/n_to_z.md#slot)
   `TBD_SpawnManager` assigned; a client holds no mission document and computes nothing.
 - On a listen host, the host's own board is applied in place without an RPC.
 

@@ -1,7 +1,7 @@
 # Commit subject mining
 
 The one reading of git history that answers which commits claim a
-[ticket](/documentation_v2/glossary.md#ticket) and when each landed: every commit subject that
+[ticket](/documentation_v2/glossary/n_to_z.md#ticket) and when each landed: every commit subject that
 names a ticket id, with the commit's author date in UTC.
 
 ## Contents

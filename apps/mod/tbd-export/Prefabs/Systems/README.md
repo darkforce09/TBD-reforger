@@ -2,7 +2,7 @@
 
 The game mode the export world places: a plain vanilla game mode that carries the runtime road
 exporter as a component, so playing the export
-[mission header](/documentation_v2/glossary.md#mission-header) runs the road export.
+[mission header](/documentation_v2/glossary/g_to_m.md#mission-header) runs the road export.
 
 ## Contents
 
@@ -29,7 +29,7 @@ respawn (`m_bAutoPlayerRespawn 0`) and faction changes (`m_bAllowFactionChange 0
   `Name "{C3D4E5F6A7B80001}Prefabs/Systems/TBD_Export_GameMode.et"`; the world layer refers to the
   prefab by that GUID, so it never changes.
 - Naming: `TBD_Export_<Subject>.et` for the export addon's system entities.
-- Adding a prefab: create it in [Workbench](/documentation_v2/glossary.md#workbench) inside this
+- Adding a prefab: create it in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) inside this
   addon, which writes the `.meta` with a new GUID, and commit the `.et` and its `.meta` together.
 
 ## Referenced by

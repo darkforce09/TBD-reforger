@@ -2,7 +2,7 @@
 
 The export addon's world: a sub-scene of the vanilla Eden (Everon) terrain that adds only the export
 game mode and an AI world, so the runtime road exporter can read Everon's road network when the
-export [mission header](/documentation_v2/glossary.md#mission-header) is played.
+export [mission header](/documentation_v2/glossary/g_to_m.md#mission-header) is played.
 
 ## Contents
 
@@ -26,7 +26,7 @@ Missions/TBD_Export_Everon.conf ──World──▶ TBD_Export_Everon.ent ─�
 ```
 
 The Workbench map-export plugins in `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/` work on
-whichever world is open in [Workbench](/documentation_v2/glossary.md#workbench) and need neither
+whichever world is open in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) and need neither
 this world nor its game mode.
 
 ## Format

@@ -1,6 +1,6 @@
 # Symbology glyph atlas
 
-The CPU rasteriser of the [slot](/documentation_v2/glossary.md#slot) and symbology glyph atlas, and
+The CPU rasteriser of the [slot](/documentation_v2/glossary/n_to_z.md#slot) and symbology glyph atlas, and
 the browser upload of a finished
 atlas to the GPU. The cells are the map's own vocabulary (unit roles, vehicle silhouettes, the
 comment bubble), which is why they are drawn here rather than in the graphics engine.

@@ -112,7 +112,7 @@ check is the only structural rule: section order, headings and wording are not c
    `tests`, `generated` or `.`-prefixed folder.
 2. The retired documentation root (`RETIRED_DOCS_ROOT`: `docs`) holds no tracked file.
 3. Every tracked `.md` file, in any letter case, under the documentation root is at most 500 lines,
-   except under the [ticket](/documentation_v2/glossary.md#ticket) records
+   except under the [ticket](/documentation_v2/glossary/n_to_z.md#ticket) records
    (`TICKET_DOCUMENTS_DIR`), the archive (`ARCHIVE_DIR`) and the pending-merge area, the program
    records whose path begins with `PROGRAM_RECORDS_PREFIX`, and the two documents that
    `cargo xtask ticket sync` rewrites between markers (`ROADMAP`, `GAP_ANALYSIS`), whose

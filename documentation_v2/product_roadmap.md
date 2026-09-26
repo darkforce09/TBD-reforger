@@ -3,10 +3,10 @@
 # Product roadmap
 
 The product items of the TBD Reforger platform that are planned and not yet built, grouped by area:
-the [Mission Creator](/documentation_v2/glossary.md#mission-creator),
-[missions](/documentation_v2/glossary.md#mission) and [operations](/documentation_v2/glossary.md#operations), the [mod](/documentation_v2/glossary.md#mod)
+the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator),
+[missions](/documentation_v2/glossary/g_to_m.md#mission) and [operations](/documentation_v2/glossary/n_to_z.md#operations), the [mod](/documentation_v2/glossary/g_to_m.md#mod)
 and game runtime, the map and terrain, and the platform and its tooling. The operator curates the
-list: an item without a [ticket](/documentation_v2/glossary.md#ticket) stays only while the
+list: an item without a [ticket](/documentation_v2/glossary/n_to_z.md#ticket) stays only while the
 operator keeps it, and the open product questions close with a ticket or a decision.
 
 ## How to read it
@@ -45,10 +45,10 @@ The Source column names where the item comes from:
 | Command palette | one searchable palette over every editor command | [T-704](/documentation_v2/tickets/specs/t704_command_palette.md) | open (ready) | feature docs |
 | Typed per-side objectives | objectives become typed, placed, per-side entities with attributes | [T-212](/documentation_v2/tickets/specs/t212_typed_objectives.md) | open (ready) | feature docs |
 | Shell layout polish | toolbelt placement, grouping in the Attributes dialog, and hidden stub tools | [T-142](/documentation_v2/tickets/specs/t131_north_star_backlog.md) | open (ready) | backlog |
-| Procedural slot naming | generated [slot](/documentation_v2/glossary.md#slot) display names from word lists, with a manual override | [T-141](/documentation_v2/tickets/specs/t131_north_star_backlog.md) | open (ready) | backlog |
+| Procedural slot naming | generated [slot](/documentation_v2/glossary/n_to_z.md#slot) display names from word lists, with a manual override | [T-141](/documentation_v2/tickets/specs/t131_north_star_backlog.md) | open (ready) | backlog |
 | Building floor selector | placement on a chosen floor of a building | [T-129](/documentation_v2/tickets/specs/t090_eden_map_reference.md) | open (ready) | backlog, feature docs |
-| Virtual Arsenal close-out | the [arsenal](/documentation_v2/glossary.md#arsenal) program closes with a human two-client sign-off from an editor loadout to a dressed player | [T-068](/documentation_v2/tickets/specs/t068_virtual_arsenal_program.md) | deferred | feature docs |
-| Guided mission wizard | a linear flow, one decision per screen, that builds a mission from a template, a terrain, zones, faction presets and player counts, with the [ORBAT](/documentation_v2/glossary.md#orbat) generated | none | no ticket (candidate for strike) | build plan §B2 |
+| Virtual Arsenal close-out | the [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) program closes with a human two-client sign-off from an editor loadout to a dressed player | [T-068](/documentation_v2/tickets/specs/t068_virtual_arsenal_program.md) | deferred | feature docs |
+| Guided mission wizard | a linear flow, one decision per screen, that builds a mission from a template, a terrain, zones, faction presets and player counts, with the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) generated | none | no ticket (candidate for strike) | build plan §B2 |
 | Developer mode | a raw JSON editor with schema completion beside the map | none | no ticket (candidate for strike) | build plan §B2 |
 | Mission cloning | a copy of a mission as the start of a new one | none | no ticket (candidate for strike) | build plan §B2 |
 | Second mission template | a meeting-engagement template beside attack and defend | none | no ticket (candidate for strike) | build plan §9 |
@@ -58,11 +58,11 @@ The Source column names where the item comes from:
 
 | Item | What it adds | Ticket | Status | Source |
 |---|---|---|---|---|
-| [After-action review](/documentation_v2/glossary.md#after-action-review) replay | a match's timeline served by the [API](/documentation_v2/glossary.md#api) and a map scrubber with play, pause and speed, linked from the deployments page | [T-136](/documentation_v2/tickets/specs/t131_north_star_backlog.md) | open (ready) | build plan §B6, backlog |
+| [After-action review](/documentation_v2/glossary/a_to_f.md#after-action-review) replay | a match's timeline served by the [API](/documentation_v2/glossary/a_to_f.md#api) and a map scrubber with play, pause and speed, linked from the deployments page | [T-136](/documentation_v2/tickets/specs/t131_north_star_backlog.md) | open (ready) | build plan §B6, backlog |
 | Combat, medical and vehicle telemetry events | a telemetry-events schema and an ingest that stores the events the replay plays | [T-940.13](/documentation_v2/tickets/specs/t940_website_platform.md) | open (ready) | build plan §A10 |
-| Live telemetry bridge | live game-server events in the telemetry ingest, the feed a ticker of captures, kills and score during an [event](/documentation_v2/glossary.md#event) would read | [T-096](/.ai/tickets/T-096.toml) | deferred | build plan §B5 |
+| Live telemetry bridge | live game-server events in the telemetry ingest, the feed a ticker of captures, kills and score during an [event](/documentation_v2/glossary/a_to_f.md#event) would read | [T-096](/.ai/tickets/T-096.toml) | deferred | build plan §B5 |
 | Mission modset manager | a mod set per mission, alias checks against it at export, and a join gate on a mismatch | [T-135](/documentation_v2/tickets/specs/t131_north_star_backlog.md) | open (ready) | build plan §7, backlog |
-| Combat figures on the [service record](/documentation_v2/glossary.md#service-record) | kills, deaths and K/D on the deployments page, which the API already sends | [T-1031](/.ai/tickets/T-1031.toml) | open (idea) | feature docs |
+| Combat figures on the [service record](/documentation_v2/glossary/n_to_z.md#service-record) | kills, deaths and K/D on the deployments page, which the API already sends | [T-1031](/.ai/tickets/T-1031.toml) | open (idea) | feature docs |
 | Discord platform rework | a bot for slot confirmations, reminders before an event and the replay link after it, and a channel and role layout | [T-137](/documentation_v2/tickets/specs/t131_north_star_backlog.md) | deferred | build plan §B3, backlog |
 | Mission planner workspace | a whiteboard where each planner draws over a published mission, beside the unchanged mission | none | no ticket (candidate for strike) | feature docs |
 | Sign-up windows and check-in | sign-up open and close times per event, and a check-in window that releases the claims of no-shows | none | no ticket (candidate for strike) | build plan §B3 |
@@ -94,7 +94,7 @@ The Source column names where the item comes from:
 | Schema version handshake | the mod advertises the mission schema versions it runs, and the platform refuses to deploy a mission it cannot | none | no ticket (candidate for strike) | build plan §2.2 |
 | Console release gate | every screen navigable by gamepad, and a console checklist per release tested on Xbox and PlayStation | none | no ticket (candidate for strike) | build plan §A8, §A12 |
 | Workshop release channels | development, staging and release copies of each addon on the Workshop | none | no ticket (candidate for strike) | build plan §A12 |
-| In-game build mode | a build session on the staging server whose placed props export as a decoration layer, and the same layer format from a [Workbench](/documentation_v2/glossary.md#workbench) plugin | none | no ticket (candidate for strike) | build plan §12 |
+| In-game build mode | a build session on the staging server whose placed props export as a decoration layer, and the same layer format from a [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) plugin | none | no ticket (candidate for strike) | build plan §12 |
 | Mission maker SDK | custom-objective, stage-hook, telemetry and marker interfaces for a custom mission mod built on the framework, with a sample mission | none | no ticket (candidate for strike) | build plan §12 |
 
 ## Map and terrain
@@ -116,7 +116,7 @@ The Source column names where the item comes from:
 | One-command self-host setup | one xtask command that checks the dependencies, writes the environment file, migrates and seeds the database and pulls the map assets | [T-138](/documentation_v2/tickets/specs/t131_north_star_backlog.md) | open (ready) | backlog |
 | Wiki Markdown renderer | doctrine wiki pages rendered from Markdown | [T-085](/.ai/tickets/T-085.toml) | deferred | feature docs |
 | Rich text in the content manager | a rich text editor for announcements and other CMS content | [T-087](/.ai/tickets/T-087.toml) | deferred | feature docs |
-| Server control and [RCON](/documentation_v2/glossary.md#rcon) | a live server control panel wired to an RCON backend | [T-086](/.ai/tickets/T-086.toml) | deferred | feature docs |
+| Server control and [RCON](/documentation_v2/glossary/n_to_z.md#rcon) | a live server control panel wired to an RCON backend | [T-086](/.ai/tickets/T-086.toml) | deferred | feature docs |
 | Multi-server picker | a choice among several game servers in the server intel views | [T-088](/.ai/tickets/T-088.toml) | deferred | build plan §9, feature docs |
 | Scenario to mission rename | code, data and mod identifiers that say scenario say mission | [T-1000](/.ai/tickets/T-1000.toml) | deferred | feature docs |
 | Supporter payments | a supporter subscription and paid supporter-only event nights through Stripe, with an entitlement check when a player joins | none | no ticket (candidate for strike) | build plan §B4 |
@@ -133,7 +133,7 @@ The Source column names where the item comes from:
 The feature writers raised these and no ticket settles them; each needs a decision, then a ticket
 or a strike.
 
-1. **Mission armory and slot loadouts.** The [armory](/documentation_v2/glossary.md#armory)
+1. **Mission armory and slot loadouts.** The [armory](/documentation_v2/glossary/a_to_f.md#armory)
    (`GET` and `PUT /api/v1/missions/{id}/armory`, `mission_armory.rs` in
    `apps/website/api_v2/src/missions/handlers/`) is a separate list that a write replaces whole;
    nothing derives it from the slots' loadouts. Does an Arsenal edit update the armory, or do the

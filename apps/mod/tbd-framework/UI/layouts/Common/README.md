@@ -50,7 +50,7 @@ skipped.
 |---|---|---|---|---|
 | `TBD_ScreenShell` | `TBD_ShellScreen` menu | `07` | `Backdrop`, `Panel`, `Title`, `Subtitle`, `BackAction`, `List`, `Status`, `PrimaryAction` | the `TBD_UIShell`, `TBD_Spectator` and `TBD_UIAdmin` presets |
 | `TBD_ListRow` | `TBD_ListBoxRow` | `07` | `Background`, `Accent`, `Title`, `Detail` | `TBD_ListBox`, the default of its row-layout attribute |
-| `TBD_Panel`, `TBD_PanelFill` | `TBD_PanelComponent` | `10`, `25` | `PanelBorder`, `PanelBG`, `HeaderRow`, `HeaderBG`, `HeaderIcon`, `HeaderTitle`, `HeaderBadgeDock`, `HeaderRule`, `BodyDock`, `FooterDock` | Panel: [mission](/documentation_v2/glossary.md#mission) and kit inspector cards; PanelFill: selector, lobby and briefing columns and pages |
+| `TBD_Panel`, `TBD_PanelFill` | `TBD_PanelComponent` | `10`, `25` | `PanelBorder`, `PanelBG`, `HeaderRow`, `HeaderBG`, `HeaderIcon`, `HeaderTitle`, `HeaderBadgeDock`, `HeaderRule`, `BodyDock`, `FooterDock` | Panel: [mission](/documentation_v2/glossary/g_to_m.md#mission) and kit inspector cards; PanelFill: selector, lobby and briefing columns and pages |
 | `TBD_Chip` | `TBD_ChipComponent` | `11` | `ChipBorder`, `ChipBG`, `ChipDot`, `ChipText` | every badge, tag and count |
 | `TBD_SearchBox` | `TBD_SearchBoxComponent` | `12` | `SearchBorder`, `SearchBG`, `SearchIcon`, `SearchInput`, `SearchClear`, `SearchClearGlyph` | terrain and mission search |
 | `TBD_NavItem` | `TBD_NavItemComponent` | `13` | `Border`, `Background`, `Icon`, `Label`, `Badge`, `SeparatorSize`, `Separator` | `TBD_TabStripComponent` only |
@@ -95,7 +95,7 @@ skipped.
 
 ## Format
 
-- File type: [Enfusion](/documentation_v2/glossary.md#enfusion) widget layouts (`.layout`), plain
+- File type: [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) widget layouts (`.layout`), plain
   text: a tree of `<Type>WidgetClass "{GUID}" { Name "…" Slot … components { … } { children } }`.
   The `.layout.meta` beside each is a `MetaFileClass` whose `Name` holds
   `{GUID}UI/layouts/Common/<file>.layout` and whose `LayoutResourceClass` entries cover each
@@ -108,7 +108,7 @@ skipped.
 - Adding a primitive: take a free block from the ledger, author the layout with `FrameWidgetClass`
   docks for its rounded surfaces and a `FontProperties` block on each text, write the `.meta`, add
   the constant to `TBD_UILayouts`, and commit both files;
-  [Workbench](/documentation_v2/glossary.md#workbench) must rewrite
+  [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) must rewrite
   `resourceDatabase.rdb` before the game can find the new path.
 
 ## Referenced by
