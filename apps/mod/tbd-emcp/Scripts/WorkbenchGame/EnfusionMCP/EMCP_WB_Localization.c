@@ -1,19 +1,25 @@
 /**
- * EMCP_WB_Localization.c - Localization editor handler
+ * @file EMCP_WB_Localization.c
+ * @brief Net API handler that inserts, deletes, modifies and counts localization rows.
  *
- * Actions: insert, delete, modify, getTable
- * Uses the LocalizationEditor Workbench module.
- * Called via NET API TCP protocol: APIFunc = "EMCP_WB_Localization"
+ * Role: edits the string table open in the LocalizationEditor module.
+ * Position: Workbench's Net API dispatches each call whose APIFunc is `EMCP_WB_Localization` here;
+ * the enfusion-mcp `wb_localization` tool and `cargo xtask mcp wbcall` send them.
+ * State: none; the table is Workbench's.  Invariants: every edit runs inside one
+ * BeginModify/EndModify pair; modify finds the row by its "Id" and the property by
+ * name, answering "error" when either is missing.
  */
 
-class EMCP_WB_LocalizationRequest : JsonApiStruct
+//! Request wire of `EMCP_WB_Localization`: the call's JSON body, decoded by Workbench.
+class EMCP_WB_LocalizationRequestWire : JsonApiStruct
 {
-	string action;
-	string itemId;
-	string property;
-	string value;
+	string action; //!< JSON "action": insert, delete, modify or getTable
+	string itemId; //!< JSON "itemId": the row Id
+	string property; //!< JSON "property": the row property for modify
+	string value; //!< JSON "value": the new property value for modify
 
-	void EMCP_WB_LocalizationRequest()
+	//! Registers each field as the JSON key of the same name.
+	void EMCP_WB_LocalizationRequestWire()
 	{
 		RegV("action");
 		RegV("itemId");
@@ -22,15 +28,17 @@ class EMCP_WB_LocalizationRequest : JsonApiStruct
 	}
 }
 
-class EMCP_WB_LocalizationResponse : JsonApiStruct
+//! Response wire of `EMCP_WB_Localization`: encoded as the call's JSON reply.
+class EMCP_WB_LocalizationResponseWire : JsonApiStruct
 {
-	string status;
-	string message;
-	string action;
-	string itemId;
-	int tableItemCount;
+	string status; //!< JSON "status": "ok" or "error"
+	string message; //!< JSON "message": human-readable outcome or error
+	string action; //!< JSON "action": echo of the request action
+	string itemId; //!< JSON "itemId": echo of the request row Id
+	int tableItemCount; //!< JSON "tableItemCount": rows in the table for getTable
 
-	void EMCP_WB_LocalizationResponse()
+	//! Registers each scalar field as the JSON key of the same name.
+	void EMCP_WB_LocalizationResponseWire()
 	{
 		RegV("status");
 		RegV("message");
@@ -40,17 +48,22 @@ class EMCP_WB_LocalizationResponse : JsonApiStruct
 	}
 }
 
+//! Net API handler `EMCP_WB_Localization`: string table edits.
 class EMCP_WB_Localization : NetApiHandler
 {
+	//! Returns a new request wire for Workbench to fill from the call's JSON.
 	override JsonApiStruct GetRequest()
 	{
-		return new EMCP_WB_LocalizationRequest();
+		return new EMCP_WB_LocalizationRequestWire();
 	}
 
+	//! Runs `action` (insert, delete, modify or getTable) on the open string table and
+	//! returns the response wire. Answers "error" when the LocalizationEditor, a required
+	//! parameter, the table, the row or the property is missing, or the action is unknown.
 	override JsonApiStruct GetResponse(JsonApiStruct request)
 	{
-		EMCP_WB_LocalizationRequest req = EMCP_WB_LocalizationRequest.Cast(request);
-		EMCP_WB_LocalizationResponse resp = new EMCP_WB_LocalizationResponse();
+		EMCP_WB_LocalizationRequestWire req = EMCP_WB_LocalizationRequestWire.Cast(request);
+		EMCP_WB_LocalizationResponseWire resp = new EMCP_WB_LocalizationResponseWire();
 		resp.action = req.action;
 		resp.itemId = req.itemId;
 

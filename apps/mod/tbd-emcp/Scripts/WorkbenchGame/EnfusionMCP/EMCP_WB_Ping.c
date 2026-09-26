@@ -1,25 +1,33 @@
 /**
- * EMCP_WB_Ping.c - Health check handler for EnfusionMCP Workbench bridge
+ * @file EMCP_WB_Ping.c
+ * @brief Net API handler that answers the bridge health check with the editor mode.
  *
- * Returns status and current editor mode (edit vs game).
- * Called via NET API TCP protocol: APIFunc = "EMCP_WB_Ping"
+ * Role: proves the Net API bridge is loaded and reports edit or game mode.
+ * Position: Workbench's Net API dispatches each call whose APIFunc is `EMCP_WB_Ping` here;
+ * the enfusion-mcp `wb_connect` tool and `cargo xtask mcp wbcall` send them.
+ * State: none.  Invariants: always answers "ok"; `mode` is "edit", "game" or
+ * "no_world_editor"; `cargo xtask mod dev-bootstrap` requires this file to exist.
  */
 
-class EMCP_WB_PingRequest : JsonApiStruct
+//! Request wire of `EMCP_WB_Ping`: the call's JSON body, decoded by Workbench.
+class EMCP_WB_PingRequestWire : JsonApiStruct
 {
-	void EMCP_WB_PingRequest()
+	//! Takes no parameters.
+	void EMCP_WB_PingRequestWire()
 	{
 		// No request parameters needed for ping
 	}
 }
 
-class EMCP_WB_PingResponse : JsonApiStruct
+//! Response wire of `EMCP_WB_Ping`: encoded as the call's JSON reply.
+class EMCP_WB_PingResponseWire : JsonApiStruct
 {
-	string status;
-	string mode;
-	string message;
+	string status; //!< JSON "status": "ok" or "error"
+	string mode; //!< JSON "mode": "edit", "game" or "no_world_editor"
+	string message; //!< JSON "message": human-readable outcome or error
 
-	void EMCP_WB_PingResponse()
+	//! Registers each scalar field as the JSON key of the same name.
+	void EMCP_WB_PingResponseWire()
 	{
 		RegV("status");
 		RegV("mode");
@@ -27,16 +35,19 @@ class EMCP_WB_PingResponse : JsonApiStruct
 	}
 }
 
+//! Net API handler `EMCP_WB_Ping`: the bridge health check.
 class EMCP_WB_Ping : NetApiHandler
 {
+	//! Returns a new request wire for Workbench to fill from the call's JSON.
 	override JsonApiStruct GetRequest()
 	{
-		return new EMCP_WB_PingRequest();
+		return new EMCP_WB_PingRequestWire();
 	}
 
+	//! Returns the response wire with status "ok" and the current editor mode. Never fails.
 	override JsonApiStruct GetResponse(JsonApiStruct request)
 	{
-		EMCP_WB_PingResponse resp = new EMCP_WB_PingResponse();
+		EMCP_WB_PingResponseWire resp = new EMCP_WB_PingResponseWire();
 
 		WorldEditor worldEditor = Workbench.GetModule(WorldEditor);
 		if (!worldEditor)

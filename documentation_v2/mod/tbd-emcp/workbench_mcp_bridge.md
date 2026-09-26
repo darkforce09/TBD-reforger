@@ -144,11 +144,17 @@ plugin's menu entry is commented out today, so the registry step has no entry po
 
 ## Design
 
-The handlers are the files `enfusion-mcp` 0.6.1 ships, kept byte-identical apart from one local
-action, `getAllText` in `EMCP_WB_ScriptEditor.c`, which returns every line of the open script. The
+The handlers derive from the files `enfusion-mcp` 0.6.1 ships and keep its handler class names,
+JSON keys and actions, which the package's tools call. They differ from the package's files in
+four ways: every file carries the repository's Enfusion comment card; the request and response
+classes carry the `Wire` suffix; `EMCP_WB_GetEntityResponseWire` has a file of its own; and
+`EMCP_WB_ModifyEntity` is split by action family into `EnfusionMCP/ModifyEntity/`, so it is not
+byte-identical to the upstream file. One action is local: `getAllText` in
+`EMCP_WB_ScriptEditor.c`, which returns every line of the open script. The
 [addon README](/apps/mod/tbd-emcp/README.md#upgrading-enfusion-mcp) gives the upgrade procedure: pin
-the new version, compare the package's handlers with these, copy them over, restore `getAllText`,
-restart Workbench and run `cargo xtask mcp smoke`. No visual design applies.
+the new version, compare the package's handlers with these, port the upstream changes by hand,
+run the comment and file-length gates, restart Workbench and run `cargo xtask mcp smoke`. No
+visual design applies.
 
 ## Open work
 

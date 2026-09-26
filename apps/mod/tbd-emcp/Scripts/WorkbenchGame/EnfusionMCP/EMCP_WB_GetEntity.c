@@ -1,16 +1,24 @@
 /**
- * EMCP_WB_GetEntity.c - Entity detail retrieval
+ * @file EMCP_WB_GetEntity.c
+ * @brief Net API handler that returns one entity's details, found by name or index.
  *
- * Finds an entity by name or index and returns detailed information.
- * Called via NET API TCP protocol: APIFunc = "EMCP_WB_GetEntity"
+ * Role: reads an entity source's name, class, layer, transform, variables and
+ * components into EMCP_WB_GetEntityResponseWire.
+ * Position: Workbench's Net API dispatches each call whose APIFunc is `EMCP_WB_GetEntity` here;
+ * the enfusion-mcp `wb_entity_inspect` tool and `cargo xtask mcp wbcall` send them.
+ * State: none.  Invariants: `name` wins over `index`; at most 50 variables are
+ * reported, `varCount` gives the full count; an entity with no runtime entity reports
+ * "0 0 0" for position and rotation.
  */
 
-class EMCP_WB_GetEntityRequest : JsonApiStruct
+//! Request wire of `EMCP_WB_GetEntity`: the call's JSON body, decoded by Workbench.
+class EMCP_WB_GetEntityRequestWire : JsonApiStruct
 {
-	string name;
-	int index;
+	string name; //!< JSON "name": entity name; wins over index
+	int index; //!< JSON "index": editor entity index; default -1 (unset)
 
-	void EMCP_WB_GetEntityRequest()
+	//! Registers each field as the JSON key of the same name; `index` defaults to -1 (unset).
+	void EMCP_WB_GetEntityRequestWire()
 	{
 		RegV("name");
 		RegV("index");
@@ -18,79 +26,22 @@ class EMCP_WB_GetEntityRequest : JsonApiStruct
 	}
 }
 
-class EMCP_WB_GetEntityResponse : JsonApiStruct
-{
-	string status;
-	string message;
-	string name;
-	string className;
-	string position;
-	string rotation;
-	int componentCount;
-	int layerID;
-	int subScene;
-	int varCount;
-
-	// Properties collected before OnPack
-	ref array<string> m_aVarNames;
-	ref array<string> m_aVarValues;
-	ref array<string> m_aComponentClasses;
-
-	void EMCP_WB_GetEntityResponse()
-	{
-		RegV("status");
-		RegV("message");
-		RegV("name");
-		RegV("className");
-		RegV("position");
-		RegV("rotation");
-		RegV("componentCount");
-		RegV("layerID");
-		RegV("subScene");
-		RegV("varCount");
-
-		m_aVarNames = {};
-		m_aVarValues = {};
-		m_aComponentClasses = {};
-	}
-
-	override void OnPack()
-	{
-		// Pack properties array
-		StartArray("properties");
-		for (int i = 0; i < m_aVarNames.Count(); i++)
-		{
-			StartObject("");
-			StoreString("name", m_aVarNames[i]);
-			StoreString("value", m_aVarValues[i]);
-			EndObject();
-		}
-		EndArray();
-
-		// Pack components array
-		StartArray("components");
-		for (int i = 0; i < m_aComponentClasses.Count(); i++)
-		{
-			StartObject("");
-			StoreString("className", m_aComponentClasses[i]);
-			StoreInteger("index", i);
-			EndObject();
-		}
-		EndArray();
-	}
-}
-
+//! Net API handler `EMCP_WB_GetEntity`: one entity's details.
 class EMCP_WB_GetEntity : NetApiHandler
 {
+	//! Returns a new request wire for Workbench to fill from the call's JSON.
 	override JsonApiStruct GetRequest()
 	{
-		return new EMCP_WB_GetEntityRequest();
+		return new EMCP_WB_GetEntityRequestWire();
 	}
 
+	//! Finds the entity by `name`, or by `index` when the name is empty, and returns its
+	//! details in an EMCP_WB_GetEntityResponseWire. Answers "error" when the World Editor or
+	//! its API is missing, when neither selector is given, or when no entity matches.
 	override JsonApiStruct GetResponse(JsonApiStruct request)
 	{
-		EMCP_WB_GetEntityRequest req = EMCP_WB_GetEntityRequest.Cast(request);
-		EMCP_WB_GetEntityResponse resp = new EMCP_WB_GetEntityResponse();
+		EMCP_WB_GetEntityRequestWire req = EMCP_WB_GetEntityRequestWire.Cast(request);
+		EMCP_WB_GetEntityResponseWire resp = new EMCP_WB_GetEntityResponseWire();
 
 		WorldEditor worldEditor = Workbench.GetModule(WorldEditor);
 		if (!worldEditor)

@@ -1,19 +1,26 @@
 /**
- * EMCP_WB_ScriptEditor.c - Script editor operations handler
+ * @file EMCP_WB_ScriptEditor.c
+ * @brief Net API handler that reads and edits the open script line by line or whole.
  *
- * Actions: getCurrentFile, getLine, setLine, insertLine, removeLine, getLinesCount, openFile
- * Uses the ScriptEditor Workbench module.
- * Called via NET API TCP protocol: APIFunc = "EMCP_WB_ScriptEditor"
+ * Role: runs the ScriptEditor module's file, line and open calls, plus getAllText,
+ * which returns every line of the open file.
+ * Position: Workbench's Net API dispatches each call whose APIFunc is `EMCP_WB_ScriptEditor` here;
+ * the enfusion-mcp `wb_script_editor` tool and `cargo xtask mcp wbcall` send them.
+ * State: none; the open file is Workbench's.  Invariants: getAllText reads lines 1 to
+ * the line count and ends each with a newline, an unreadable line as an empty one;
+ * setLine, insertLine and removeLine answer "ok" without checking the result.
  */
 
-class EMCP_WB_ScriptEditorRequest : JsonApiStruct
+//! Request wire of `EMCP_WB_ScriptEditor`: the call's JSON body, decoded by Workbench.
+class EMCP_WB_ScriptEditorRequestWire : JsonApiStruct
 {
-	string action;
-	int line;
-	string text;
-	string path;
+	string action; //!< JSON "action": the script editor action
+	int line; //!< JSON "line": line number for the line actions; default -1
+	string text; //!< JSON "text": line text for setLine and insertLine
+	string path; //!< JSON "path": file for openFile
 
-	void EMCP_WB_ScriptEditorRequest()
+	//! Registers each field as the JSON key of the same name; `line` defaults to -1.
+	void EMCP_WB_ScriptEditorRequestWire()
 	{
 		RegV("action");
 		RegV("line");
@@ -23,18 +30,20 @@ class EMCP_WB_ScriptEditorRequest : JsonApiStruct
 	}
 }
 
-class EMCP_WB_ScriptEditorResponse : JsonApiStruct
+//! Response wire of `EMCP_WB_ScriptEditor`: encoded as the call's JSON reply.
+class EMCP_WB_ScriptEditorResponseWire : JsonApiStruct
 {
-	string status;
-	string message;
-	string action;
-	string currentFile;
-	int currentLine;
-	int linesCount;
-	string lineText;
-	string text; // getAllText payload (full file)
+	string status; //!< JSON "status": "ok" or "error"
+	string message; //!< JSON "message": human-readable outcome or error
+	string action; //!< JSON "action": echo of the request action
+	string currentFile; //!< JSON "currentFile": the open file for getCurrentFile
+	int currentLine; //!< JSON "currentLine": the cursor line for getCurrentFile
+	int linesCount; //!< JSON "linesCount": lines in the open file
+	string lineText; //!< JSON "lineText": the line for getLine; the whole file for getAllText
+	string text; //!< JSON "text": the whole open file for getAllText
 
-	void EMCP_WB_ScriptEditorResponse()
+	//! Registers each scalar field as the JSON key of the same name.
+	void EMCP_WB_ScriptEditorResponseWire()
 	{
 		RegV("status");
 		RegV("message");
@@ -47,17 +56,23 @@ class EMCP_WB_ScriptEditorResponse : JsonApiStruct
 	}
 }
 
+//! Net API handler `EMCP_WB_ScriptEditor`: script editor reads and edits.
 class EMCP_WB_ScriptEditor : NetApiHandler
 {
+	//! Returns a new request wire for Workbench to fill from the call's JSON.
 	override JsonApiStruct GetRequest()
 	{
-		return new EMCP_WB_ScriptEditorRequest();
+		return new EMCP_WB_ScriptEditorRequestWire();
 	}
 
+	//! Runs `action` (getCurrentFile, getLine, setLine, insertLine, removeLine,
+	//! getLinesCount, getAllText or openFile) and returns the response wire. Answers "error"
+	//! when the ScriptEditor is missing, getLine fails, openFile has no `path`, or the action
+	//! is unknown.
 	override JsonApiStruct GetResponse(JsonApiStruct request)
 	{
-		EMCP_WB_ScriptEditorRequest req = EMCP_WB_ScriptEditorRequest.Cast(request);
-		EMCP_WB_ScriptEditorResponse resp = new EMCP_WB_ScriptEditorResponse();
+		EMCP_WB_ScriptEditorRequestWire req = EMCP_WB_ScriptEditorRequestWire.Cast(request);
+		EMCP_WB_ScriptEditorResponseWire resp = new EMCP_WB_ScriptEditorResponseWire();
 		resp.action = req.action;
 
 		ScriptEditor scriptEditor = Workbench.GetModule(ScriptEditor);

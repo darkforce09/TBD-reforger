@@ -209,8 +209,8 @@ TBD events are a known community, not a public server.
   ([spec](/documentation_v2/tickets/specs/t1092_mod_script_modularisation.md),
   [plan](/documentation_v2/tickets/plans/t-1092_plan.md)): this addon's scripts are split to Law 7
   and documented to Law 8, and `apps/mod/tbd-framework/Scripts` is pinned in
-  `cargo xtask verify file-length` and `cargo xtask verify enfusion-comments`; the export and
-  Enfusion MCP addons follow.
+  `cargo xtask verify file-length` and `cargo xtask verify enfusion-comments`, as is
+  `apps/mod/tbd-emcp/Scripts`; the export addon follows.
 
 ## Related documentation
 

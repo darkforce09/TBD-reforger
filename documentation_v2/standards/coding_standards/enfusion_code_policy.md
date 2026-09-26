@@ -26,7 +26,7 @@ and are not restated here.
   (`cargo xtask schema citations`), which reads `.c` and `.rs` files under `apps/` and `tools_v2/`.
   `cargo xtask verify enfusion-comments` (ECM-5 and ECM-6) requires the `@authority`, `@rpc`,
   `@replicated`, `@route` and `@contract` tags where they belong over the pinned mod Scripts
-  roots, today `apps/mod/tbd-framework/Scripts`.
+  roots, today `apps/mod/tbd-framework/Scripts` and `apps/mod/tbd-emcp/Scripts`.
 - **ENF-4 (Usability) — A JSON document the mod parses has a golden sample that validates.** The
   ten samples in `contracts_v2/fixtures/enfusion_samples/` cover the parts of the [mission](/documentation_v2/glossary/g_to_m.md#mission) schema
   the mod's DTO classes read; the schema gate validates each against its definition, and a sample
@@ -42,7 +42,8 @@ rule names an automated gate or is stated as unenforced.
 
 No gate of `cargo xtask ci ci-local` compiles EnfScript: the API's tests and the app build never
 compile a `.c` file. Its `verify-coding-standards` step does read the pinned mod Scripts roots,
-today `apps/mod/tbd-framework/Scripts`, through `cargo xtask verify file-length` and
+today `apps/mod/tbd-framework/Scripts` and `apps/mod/tbd-emcp/Scripts`, through
+`cargo xtask verify file-length` and
 `cargo xtask verify enfusion-comments`. A mod change is checked by `cargo xtask mod compile` (the
 compile gate, which also probes whether an engine API exists), those two gates, the mod wave gate,
 and a pass in Workbench or on a dedicated server for the MANUAL rules. The procedure is in

@@ -1,40 +1,43 @@
 /**
- * EMCP_WB_SelectEntity.c - Selection management handler
+ * @file EMCP_WB_SelectEntity.c
+ * @brief Net API handler that deselects, clears and reads the World Editor selection.
  *
- * Actions: select, deselect, clear, getSelected
- * Note: The WorldEditorAPI does not expose AddToEntitySelection publicly.
- * "select" uses ClearEntitySelection + a workaround via entity iteration.
- * "deselect" uses RemoveFromEntitySelection.
- * "clear" uses ClearEntitySelection.
- * "getSelected" iterates GetSelectedEntity.
- *
- * Called via NET API TCP protocol: APIFunc = "EMCP_WB_SelectEntity"
+ * Role: edits and reads the entity selection through WorldEditorAPI.
+ * Position: Workbench's Net API dispatches each call whose APIFunc is `EMCP_WB_SelectEntity` here;
+ * the enfusion-mcp `wb_entity_select` tool and `cargo xtask mcp wbcall` send them.
+ * State: none; the selection is Workbench's.  Invariants: select clears the selection
+ * and adds nothing, because the script API offers no call that adds an entity to it;
+ * getSelected reports at most 100 entities.
  */
 
-class EMCP_WB_SelectEntityRequest : JsonApiStruct
+//! Request wire of `EMCP_WB_SelectEntity`: the call's JSON body, decoded by Workbench.
+class EMCP_WB_SelectEntityRequestWire : JsonApiStruct
 {
-	string action;
-	string name;
+	string action; //!< JSON "action": select, deselect, clear or getSelected
+	string name; //!< JSON "name": the entity for select and deselect
 
-	void EMCP_WB_SelectEntityRequest()
+	//! Registers each field as the JSON key of the same name.
+	void EMCP_WB_SelectEntityRequestWire()
 	{
 		RegV("action");
 		RegV("name");
 	}
 }
 
-class EMCP_WB_SelectEntityResponse : JsonApiStruct
+//! Response wire of `EMCP_WB_SelectEntity`: encoded as the call's JSON reply.
+class EMCP_WB_SelectEntityResponseWire : JsonApiStruct
 {
-	string status;
-	string message;
-	string action;
-	int selectedCount;
+	string status; //!< JSON "status": "ok" or "error"
+	string message; //!< JSON "message": human-readable outcome or error
+	string action; //!< JSON "action": echo of the request action
+	int selectedCount; //!< JSON "selectedCount": selected entities after the action
 
 	// Selected entity names for getSelected
-	ref array<string> m_aSelectedNames;
-	ref array<string> m_aSelectedClasses;
+	ref array<string> m_aSelectedNames; //!< selected names for getSelected; packed into "selectedEntities" by OnPack
+	ref array<string> m_aSelectedClasses; //!< selected classes, parallel to m_aSelectedNames
 
-	void EMCP_WB_SelectEntityResponse()
+	//! Registers each scalar field as the JSON key of the same name.
+	void EMCP_WB_SelectEntityResponseWire()
 	{
 		RegV("status");
 		RegV("message");
@@ -45,6 +48,8 @@ class EMCP_WB_SelectEntityResponse : JsonApiStruct
 		m_aSelectedClasses = {};
 	}
 
+	//! Writes the "selectedEntities" array of {name, className} objects when getSelected
+	//! collected any; writes nothing otherwise.
 	override void OnPack()
 	{
 		if (m_aSelectedNames.Count() > 0)
@@ -62,8 +67,11 @@ class EMCP_WB_SelectEntityResponse : JsonApiStruct
 	}
 }
 
+//! Net API handler `EMCP_WB_SelectEntity`: selection edits and reads.
 class EMCP_WB_SelectEntity : NetApiHandler
 {
+	//! Returns the first editor entity source named `name`, or null when no entity has
+	//! that name.
 	static IEntitySource FindEntityByName(WorldEditorAPI api, string name)
 	{
 		int count = api.GetEditorEntityCount();
@@ -76,15 +84,19 @@ class EMCP_WB_SelectEntity : NetApiHandler
 		return null;
 	}
 
+	//! Returns a new request wire for Workbench to fill from the call's JSON.
 	override JsonApiStruct GetRequest()
 	{
-		return new EMCP_WB_SelectEntityRequest();
+		return new EMCP_WB_SelectEntityRequestWire();
 	}
 
+	//! Runs `action` (select, deselect, clear or getSelected) and returns the response wire
+	//! with the selection count. Answers "error" when the World Editor, its API, a required
+	//! `name` or the named entity is missing, or the action is unknown.
 	override JsonApiStruct GetResponse(JsonApiStruct request)
 	{
-		EMCP_WB_SelectEntityRequest req = EMCP_WB_SelectEntityRequest.Cast(request);
-		EMCP_WB_SelectEntityResponse resp = new EMCP_WB_SelectEntityResponse();
+		EMCP_WB_SelectEntityRequestWire req = EMCP_WB_SelectEntityRequestWire.Cast(request);
+		EMCP_WB_SelectEntityResponseWire resp = new EMCP_WB_SelectEntityResponseWire();
 		resp.action = req.action;
 
 		WorldEditor worldEditor = Workbench.GetModule(WorldEditor);

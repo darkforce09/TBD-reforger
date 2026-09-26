@@ -19,9 +19,14 @@ apps/mod/tbd-emcp/
 ## How it works
 
 The addon holds no game scripts, prefabs or configs: only `Scripts/WorkbenchGame/EnfusionMCP/`,
-the nineteen `EMCP_WB_*.c` handlers from `enfusion-mcp@0.6.1` with one local addition, the
-`getAllText` action of `EMCP_WB_ScriptEditor.c`. Workbench compiles them when it loads the addon
-and serves them over its Net API; the MCP tools and `cargo xtask mcp wbcall` call them there.
+the nineteen `EMCP_WB_*` Net API handlers, derived from `enfusion-mcp@0.6.1`. They keep the
+package's handler names, JSON keys and actions, carry the repository's Enfusion comment card, name
+their request and response classes `*RequestWire` and `*ResponseWire`, and add one action, the
+`getAllText` action of `EMCP_WB_ScriptEditor.c`. `EMCP_WB_ModifyEntity` derives from the
+package's single `EMCP_WB_ModifyEntity.c` and is not byte-identical to that upstream file: it is
+split by action family into `EnfusionMCP/ModifyEntity/`. Workbench compiles the handlers when it
+loads the addon and serves them over its Net API; the MCP tools and `cargo xtask mcp wbcall` call
+them there.
 
 ```text
 cargo xtask mcp call ──▶ MCP daemon ──▶ enfusion-mcp wb_* tool ─┐
@@ -60,9 +65,13 @@ script list when it loads the project.
    that folder.
 2. Compare the package's handlers with these:
    `diff -r tools_v2/enfusion_mcp_node_package/node_modules/enfusion-mcp/mod/Scripts/WorkbenchGame/EnfusionMCP apps/mod/tbd-emcp/Scripts/WorkbenchGame/EnfusionMCP`.
-   The only expected difference is the `getAllText` action.
-3. Copy the new handlers over, add `getAllText` back to `EMCP_WB_ScriptEditor.c`, restart
-   Workbench on the export addon, and run `cargo xtask mcp smoke`.
+   The expected local differences are the comment card, the `Wire` class names, the separate
+   `EMCP_WB_GetEntityResponseWire.c`, the `ModifyEntity/` split and `getAllText`; every other
+   difference is an upstream change.
+3. Port the upstream changes into the local files by hand, never by copying the package files
+   over them, then run `cargo xtask verify enfusion-comments` and
+   `cargo xtask verify file-length`, restart Workbench on the export addon, and run
+   `cargo xtask mcp smoke`.
 
 ## Configuration
 

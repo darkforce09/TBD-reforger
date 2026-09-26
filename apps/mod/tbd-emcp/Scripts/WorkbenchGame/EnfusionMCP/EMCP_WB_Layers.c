@@ -1,21 +1,25 @@
 /**
- * EMCP_WB_Layers.c - Layer management handler
+ * @file EMCP_WB_Layers.c
+ * @brief Net API handler that lists layers, reports the active one and an entity's layer.
  *
- * Actions: list, getActive, setVisible, getEntityLayer
- * Layer operations in WorldEditorAPI are limited in the public API.
- * Layers are identified by IDs from IEntitySource.GetLayerID().
- *
- * Called via NET API TCP protocol: APIFunc = "EMCP_WB_Layers"
+ * Role: derives layer information from the layer IDs of the editor's entity sources.
+ * Position: Workbench's Net API dispatches each call whose APIFunc is `EMCP_WB_Layers` here;
+ * the enfusion-mcp `wb_layers` tool and `cargo xtask mcp wbcall` send them.
+ * State: none.  Invariants: list reports only layers that hold at least one entity;
+ * the actions are list, getActive and getEntityLayer, and any other action answers
+ * "error"; `subScene` and `visible` are decoded but read by no action.
  */
 
-class EMCP_WB_LayersRequest : JsonApiStruct
+//! Request wire of `EMCP_WB_Layers`: the call's JSON body, decoded by Workbench.
+class EMCP_WB_LayersRequestWire : JsonApiStruct
 {
-	string action;
-	int subScene;
-	string entityName;
-	bool visible;
+	string action; //!< JSON "action": list, getActive or getEntityLayer
+	int subScene; //!< JSON "subScene": default -1; read by no action
+	string entityName; //!< JSON "entityName": entity for getEntityLayer
+	bool visible; //!< JSON "visible": read by no action
 
-	void EMCP_WB_LayersRequest()
+	//! Registers each field as the JSON key of the same name; `subScene` defaults to -1.
+	void EMCP_WB_LayersRequestWire()
 	{
 		RegV("action");
 		RegV("subScene");
@@ -25,19 +29,21 @@ class EMCP_WB_LayersRequest : JsonApiStruct
 	}
 }
 
-class EMCP_WB_LayersResponse : JsonApiStruct
+//! Response wire of `EMCP_WB_Layers`: encoded as the call's JSON reply.
+class EMCP_WB_LayersResponseWire : JsonApiStruct
 {
-	string status;
-	string message;
-	string action;
-	int currentSubScene;
-	int layerID;
+	string status; //!< JSON "status": "ok" or "error"
+	string message; //!< JSON "message": human-readable outcome or error
+	string action; //!< JSON "action": echo of the request action
+	int currentSubScene; //!< JSON "currentSubScene": the active sub-scene index
+	int layerID; //!< JSON "layerID": the entity's layer for getEntityLayer
 
 	// Layer data collected for list
-	ref array<int> m_aLayerIDs;
-	ref array<int> m_aEntityCounts;
+	ref array<int> m_aLayerIDs; //!< layer IDs for the list action; packed into "layers" by OnPack
+	ref array<int> m_aEntityCounts; //!< entity count per layer, parallel to m_aLayerIDs
 
-	void EMCP_WB_LayersResponse()
+	//! Registers each scalar field as the JSON key of the same name.
+	void EMCP_WB_LayersResponseWire()
 	{
 		RegV("status");
 		RegV("message");
@@ -49,6 +55,8 @@ class EMCP_WB_LayersResponse : JsonApiStruct
 		m_aEntityCounts = {};
 	}
 
+	//! Writes the "layers" array of {layerID, entityCount} objects when the list action
+	//! collected any; writes nothing otherwise.
 	override void OnPack()
 	{
 		if (m_aLayerIDs.Count() > 0)
@@ -66,17 +74,22 @@ class EMCP_WB_LayersResponse : JsonApiStruct
 	}
 }
 
+//! Net API handler `EMCP_WB_Layers`: layer listing and lookup.
 class EMCP_WB_Layers : NetApiHandler
 {
+	//! Returns a new request wire for Workbench to fill from the call's JSON.
 	override JsonApiStruct GetRequest()
 	{
-		return new EMCP_WB_LayersRequest();
+		return new EMCP_WB_LayersRequestWire();
 	}
 
+	//! Runs `action` (list, getActive or getEntityLayer) and returns the response wire with
+	//! the current sub-scene. Answers "error" when the World Editor, its API or the named
+	//! entity is missing, or the action is unknown.
 	override JsonApiStruct GetResponse(JsonApiStruct request)
 	{
-		EMCP_WB_LayersRequest req = EMCP_WB_LayersRequest.Cast(request);
-		EMCP_WB_LayersResponse resp = new EMCP_WB_LayersResponse();
+		EMCP_WB_LayersRequestWire req = EMCP_WB_LayersRequestWire.Cast(request);
+		EMCP_WB_LayersResponseWire resp = new EMCP_WB_LayersResponseWire();
 		resp.action = req.action;
 
 		WorldEditor worldEditor = Workbench.GetModule(WorldEditor);

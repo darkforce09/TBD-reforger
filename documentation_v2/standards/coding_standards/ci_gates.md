@@ -41,7 +41,8 @@ repeat it.
    [comment gate README](/tools_v2/xtask/src/verifications/mod_scripts/enfusion_comments/README.md),
    sections 6 and 7 of the
    [documentation standards](/documentation_v2/standards/documentation_standards.md#6-enfusion-comments))
-   over the pinned mod Scripts roots, today `apps/mod/tbd-framework/Scripts`.
+   over the pinned mod Scripts roots, today `apps/mod/tbd-framework/Scripts` and
+   `apps/mod/tbd-emcp/Scripts`.
 3. `cargo xtask verify no-select-star`: no `SELECT *` or `RETURNING *` in the API's SQL, outside
    the two tables with no nullable column; the
    [database verifications README](/tools_v2/xtask/src/verifications/database/README.md) has the

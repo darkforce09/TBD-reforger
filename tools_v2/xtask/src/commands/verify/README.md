@@ -37,7 +37,8 @@ Run each as `cargo xtask verify <verb>` from the repository root.
 - Does: the hard-zero ban on tracked shell, Make, Python and Node scripts (`no-python` and
   `no-shell` run one walk); Node only as the enfusion-mcp runtime; 500 lines per production file
   and 1000 per test file, over the Rust source trees and the pinned mod Scripts roots
-  (`apps/mod/tbd-framework/Scripts`). Body: `tools_v2/xtask/src/verifications/language_bans/`.
+  (`apps/mod/tbd-framework/Scripts`, `apps/mod/tbd-emcp/Scripts`). Body:
+  `tools_v2/xtask/src/verifications/language_bans/`.
 - Example: `cargo xtask verify no-shell`
 
 ### Architecture gates
@@ -80,7 +81,8 @@ Run each as `cargo xtask verify <verb>` from the repository root.
 - Does: the 8 MiB [mission](/documentation_v2/glossary/g_to_m.md#mission) ceiling is checked before the
   [mod](/documentation_v2/glossary/g_to_m.md#mod) parses a document; three comment contracts in the mod
   sources; the in-code documentation card (rules ECM-1 to ECM-9) over the scripts under the pinned
-  roots (`apps/mod/tbd-framework/Scripts`; `cargo xtask ci verify-coding-standards` and the CI
+  roots (`apps/mod/tbd-framework/Scripts` and `apps/mod/tbd-emcp/Scripts`;
+  `cargo xtask ci verify-coding-standards` and the CI
   `language-gates` job run it that way), or under `--path` (a file or folder in `apps/mod`),
   exiting 2 when a root is missing or the walk is empty; the structure of the mod's `.layout` files. Body:
   `tools_v2/xtask/src/verifications/mod_scripts/`.

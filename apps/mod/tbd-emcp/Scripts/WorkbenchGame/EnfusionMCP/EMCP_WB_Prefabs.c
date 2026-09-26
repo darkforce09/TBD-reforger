@@ -1,17 +1,24 @@
 /**
- * EMCP_WB_Prefabs.c - Prefab operations handler
+ * @file EMCP_WB_Prefabs.c
+ * @brief Net API handler that creates a prefab from an entity, saves it and reads its ancestor.
  *
- * Actions: createTemplate, save, getAncestor
- * Called via NET API TCP protocol: APIFunc = "EMCP_WB_Prefabs"
+ * Role: runs the prefab (entity template) operations of WorldEditorAPI on a named entity.
+ * Position: Workbench's Net API dispatches each call whose APIFunc is `EMCP_WB_Prefabs` here;
+ * the enfusion-mcp `wb_prefabs` tool and `cargo xtask mcp wbcall` send them.
+ * State: none.  Invariants: createTemplate runs inside one Begin/EndEntityAction pair;
+ * getAncestor answers "ok" with an empty `ancestorPath` for an entity that is not a
+ * prefab instance.
  */
 
-class EMCP_WB_PrefabsRequest : JsonApiStruct
+//! Request wire of `EMCP_WB_Prefabs`: the call's JSON body, decoded by Workbench.
+class EMCP_WB_PrefabsRequestWire : JsonApiStruct
 {
-	string action;
-	string entityName;
-	string templatePath;
+	string action; //!< JSON "action": createTemplate, save or getAncestor
+	string entityName; //!< JSON "entityName": the entity to act on
+	string templatePath; //!< JSON "templatePath": the new prefab path for createTemplate
 
-	void EMCP_WB_PrefabsRequest()
+	//! Registers each field as the JSON key of the same name.
+	void EMCP_WB_PrefabsRequestWire()
 	{
 		RegV("action");
 		RegV("entityName");
@@ -19,15 +26,17 @@ class EMCP_WB_PrefabsRequest : JsonApiStruct
 	}
 }
 
-class EMCP_WB_PrefabsResponse : JsonApiStruct
+//! Response wire of `EMCP_WB_Prefabs`: encoded as the call's JSON reply.
+class EMCP_WB_PrefabsResponseWire : JsonApiStruct
 {
-	string status;
-	string message;
-	string action;
-	string entityName;
-	string ancestorPath;
+	string status; //!< JSON "status": "ok" or "error"
+	string message; //!< JSON "message": human-readable outcome or error
+	string action; //!< JSON "action": echo of the request action
+	string entityName; //!< JSON "entityName": echo of the request entity name
+	string ancestorPath; //!< JSON "ancestorPath": the ancestor prefab resource for getAncestor; empty for none
 
-	void EMCP_WB_PrefabsResponse()
+	//! Registers each scalar field as the JSON key of the same name.
+	void EMCP_WB_PrefabsResponseWire()
 	{
 		RegV("status");
 		RegV("message");
@@ -37,8 +46,11 @@ class EMCP_WB_PrefabsResponse : JsonApiStruct
 	}
 }
 
+//! Net API handler `EMCP_WB_Prefabs`: prefab creation, save and ancestry.
 class EMCP_WB_Prefabs : NetApiHandler
 {
+	//! Returns the first editor entity source named `name`, or null when no entity has
+	//! that name.
 	static IEntitySource FindEntityByName(WorldEditorAPI api, string name)
 	{
 		int count = api.GetEditorEntityCount();
@@ -51,15 +63,19 @@ class EMCP_WB_Prefabs : NetApiHandler
 		return null;
 	}
 
+	//! Returns a new request wire for Workbench to fill from the call's JSON.
 	override JsonApiStruct GetRequest()
 	{
-		return new EMCP_WB_PrefabsRequest();
+		return new EMCP_WB_PrefabsRequestWire();
 	}
 
+	//! Runs `action` (createTemplate, save or getAncestor) on the entity named `entityName`
+	//! and returns the response wire. Answers "error" when a parameter, the World Editor, its
+	//! API or the entity is missing, when the API returns false, or the action is unknown.
 	override JsonApiStruct GetResponse(JsonApiStruct request)
 	{
-		EMCP_WB_PrefabsRequest req = EMCP_WB_PrefabsRequest.Cast(request);
-		EMCP_WB_PrefabsResponse resp = new EMCP_WB_PrefabsResponse();
+		EMCP_WB_PrefabsRequestWire req = EMCP_WB_PrefabsRequestWire.Cast(request);
+		EMCP_WB_PrefabsResponseWire resp = new EMCP_WB_PrefabsResponseWire();
 		resp.action = req.action;
 		resp.entityName = req.entityName;
 

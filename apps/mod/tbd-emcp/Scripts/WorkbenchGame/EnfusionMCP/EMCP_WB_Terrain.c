@@ -1,17 +1,23 @@
 /**
- * EMCP_WB_Terrain.c - Terrain operations handler
+ * @file EMCP_WB_Terrain.c
+ * @brief Net API handler that reports the terrain height at a point and the terrain bounds.
  *
- * Actions: getHeight, getBounds
- * Called via NET API TCP protocol: APIFunc = "EMCP_WB_Terrain"
+ * Role: reads terrain height through WorldEditorAPI and bounds through WorldEditor.
+ * Position: Workbench's Net API dispatches each call whose APIFunc is `EMCP_WB_Terrain` here;
+ * the enfusion-mcp `wb_terrain` tool and `cargo xtask mcp wbcall` send them.
+ * State: none.  Invariants: getHeight needs WorldEditorAPI (edit mode); getBounds
+ * works in either mode; coordinates travel as strings and parse with ToFloat.
  */
 
-class EMCP_WB_TerrainRequest : JsonApiStruct
+//! Request wire of `EMCP_WB_Terrain`: the call's JSON body, decoded by Workbench.
+class EMCP_WB_TerrainRequestWire : JsonApiStruct
 {
-	string action;
-	string x;
-	string z;
+	string action; //!< JSON "action": getHeight or getBounds
+	string x; //!< JSON "x": world x in metres, as a string
+	string z; //!< JSON "z": world z in metres, as a string
 
-	void EMCP_WB_TerrainRequest()
+	//! Registers each field as the JSON key of the same name.
+	void EMCP_WB_TerrainRequestWire()
 	{
 		RegV("action");
 		RegV("x");
@@ -19,16 +25,18 @@ class EMCP_WB_TerrainRequest : JsonApiStruct
 	}
 }
 
-class EMCP_WB_TerrainResponse : JsonApiStruct
+//! Response wire of `EMCP_WB_Terrain`: encoded as the call's JSON reply.
+class EMCP_WB_TerrainResponseWire : JsonApiStruct
 {
-	string status;
-	string message;
-	string action;
-	float height;
-	string boundsMin;
-	string boundsMax;
+	string status; //!< JSON "status": "ok" or "error"
+	string message; //!< JSON "message": human-readable outcome or error
+	string action; //!< JSON "action": echo of the request action
+	float height; //!< JSON "height": terrain surface y at (x, z), in metres
+	string boundsMin; //!< JSON "boundsMin": terrain minimum corner, "x y z" in metres
+	string boundsMax; //!< JSON "boundsMax": terrain maximum corner, "x y z" in metres
 
-	void EMCP_WB_TerrainResponse()
+	//! Registers each scalar field as the JSON key of the same name.
+	void EMCP_WB_TerrainResponseWire()
 	{
 		RegV("status");
 		RegV("message");
@@ -39,17 +47,22 @@ class EMCP_WB_TerrainResponse : JsonApiStruct
 	}
 }
 
+//! Net API handler `EMCP_WB_Terrain`: terrain height and bounds.
 class EMCP_WB_Terrain : NetApiHandler
 {
+	//! Returns a new request wire for Workbench to fill from the call's JSON.
 	override JsonApiStruct GetRequest()
 	{
-		return new EMCP_WB_TerrainRequest();
+		return new EMCP_WB_TerrainRequestWire();
 	}
 
+	//! Runs `action` (getHeight or getBounds) and returns the response wire. Answers
+	//! "error" when the World Editor or, for getHeight, its API is missing, when there are
+	//! no terrain bounds, or when the action is unknown.
 	override JsonApiStruct GetResponse(JsonApiStruct request)
 	{
-		EMCP_WB_TerrainRequest req = EMCP_WB_TerrainRequest.Cast(request);
-		EMCP_WB_TerrainResponse resp = new EMCP_WB_TerrainResponse();
+		EMCP_WB_TerrainRequestWire req = EMCP_WB_TerrainRequestWire.Cast(request);
+		EMCP_WB_TerrainResponseWire resp = new EMCP_WB_TerrainResponseWire();
 		resp.action = req.action;
 
 		WorldEditor worldEditor = Workbench.GetModule(WorldEditor);

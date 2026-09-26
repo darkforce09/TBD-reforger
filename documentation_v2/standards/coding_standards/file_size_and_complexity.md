@@ -45,6 +45,7 @@ files included, since it reads the working tree, and prints
 | `apps/website/api_v2/src`, `apps/website/frontend/src` | the API and the app |
 | every `src/` and `tests/` folder directly under `apps/website/` | the engines, and any crate added there |
 | `apps/mod/tbd-framework/Scripts` | the shipping game mod's EnfScript |
+| `apps/mod/tbd-emcp/Scripts` | the Enfusion MCP bridge's Workbench handlers |
 
 A pinned root that is missing, an unreadable file or a walk that finds no source file is a check
 that did not run (exit 2 or 1), never a pass. Generated Rust is not excluded: the contract types
@@ -52,12 +53,12 @@ under `apps/website/api_v2/src/missions/contract/generated/` are held to the sam
 
 Outside the walk, and so unenforced by this gate:
 
-- The addon scripts of `apps/mod/tbd-emcp` and `apps/mod/tbd-export`, until each is pinned.
+- The addon scripts of `apps/mod/tbd-export`, until they are pinned.
   `MOD_SCRIPT_ROOTS` in
   [node_and_file_limits.rs](/tools_v2/xtask/src/verifications/language_bans/node_and_file_limits.rs)
   names the three roots the gate may pin, and T-1092 pins them one addon at a time once its
-  scripts meet the ceilings: `apps/mod/tbd-framework/Scripts` is pinned,
-  `apps/mod/tbd-emcp/Scripts` follows at P5-1 and `apps/mod/tbd-export/Scripts` at P6-C. The gitignored
+  scripts meet the ceilings: `apps/mod/tbd-framework/Scripts` and `apps/mod/tbd-emcp/Scripts`
+  are pinned, and `apps/mod/tbd-export/Scripts` follows at P6-C. The gitignored
   references `apps/mod/crf_framework` and `apps/mod/vanilla_reference` are never pinned; a
   compile-time assertion rejects any `apps/mod` pin outside the three roots.
 - Markdown. Live documents under `documentation_v2/` have their own 500-line limit, checked by

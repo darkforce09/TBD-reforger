@@ -18,7 +18,7 @@ tools_v2/xtask/src/verifications/language_bans/node_and_file_limits/
 `verify file-length` walks every `.rs` and `.c` file (`LENGTH_GATED_EXTENSIONS`) under the roots
 in `FILE_LENGTH_PINS` (the four `tools_v2` crates, `apps/ticketboard/src`,
 `apps/fleet_host_agent/src` and `tests`, `apps/website/api_v2/src`, `apps/website/frontend/src`,
-`apps/mod/tbd-framework/Scripts`)
+`apps/mod/tbd-framework/Scripts`, `apps/mod/tbd-emcp/Scripts`)
 plus every `src/` and `tests/` folder directly under `apps/website/`. A file is a test file when a
 path component is `tests` or its stem ends in `_tests` (`.rs` or `.c`); a test file may hold 1000
 lines (`SIZE_3_TEST_MAX_LINES`), any other file 500 (`SIZE_3_PRODUCTION_MAX_LINES`). There is no
@@ -29,9 +29,9 @@ not run, never a pass, and so is a walk that found no source file at all.
 `MOD_SCRIPT_ROOTS` names the three addon script roots (`apps/mod/tbd-framework/Scripts`,
 `apps/mod/tbd-emcp/Scripts`, `apps/mod/tbd-export/Scripts`), the only `apps/mod` trees the gate may
 pin; a compile-time assertion (`mod_pins_are_script_roots`) rejects any other `apps/mod` pin, so the
-gitignored `crf_framework` and `vanilla_reference` references never enter the walk. None is pinned
-yet: T-1092 adds the framework root at P4-1, the tbd-emcp root at P5-1 and the tbd-export root at
-P6-C, each once that addon's scripts sit under the ceilings.
+gitignored `crf_framework` and `vanilla_reference` references never enter the walk. The framework
+and tbd-emcp roots are pinned; T-1092 adds the tbd-export root at P6-C, once that addon's scripts
+sit under the ceilings.
 
 `verify no-node` runs three checks and counts each failure:
 

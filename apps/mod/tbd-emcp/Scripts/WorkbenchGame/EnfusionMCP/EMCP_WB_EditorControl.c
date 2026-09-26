@@ -1,18 +1,25 @@
 /**
- * EMCP_WB_EditorControl.c - Editor mode control handler
+ * @file EMCP_WB_EditorControl.c
+ * @brief Net API handler that plays, stops, saves, undoes, redoes and opens resources.
  *
- * Supports actions: play, stop, save, undo, redo, openResource
- * Called via NET API TCP protocol: APIFunc = "EMCP_WB_EditorControl"
+ * Role: drives the World Editor's mode switch, save, undo and redo, and resource opening.
+ * Position: Workbench's Net API dispatches each call whose APIFunc is `EMCP_WB_EditorControl` here;
+ * the enfusion-mcp `wb_play`, `wb_stop`, `wb_save`, `wb_undo_redo`, `wb_open_resource` and `wb_projects` tool and `cargo xtask mcp wbcall` send them.
+ * State: none.  Invariants: saveAs runs a plain Save; undo and redo run the Edit menu
+ * actions; save, saveAs and openResource answer "ok" even when the call returns false,
+ * with the result in `message`.
  */
 
-class EMCP_WB_EditorControlRequest : JsonApiStruct
+//! Request wire of `EMCP_WB_EditorControl`: the call's JSON body, decoded by Workbench.
+class EMCP_WB_EditorControlRequestWire : JsonApiStruct
 {
-	string action;
-	bool debugMode;
-	bool fullScreen;
-	string path;
+	string action; //!< JSON "action": play, stop, save, saveAs, undo, redo or openResource
+	bool debugMode; //!< JSON "debugMode": play with the debug flag
+	bool fullScreen; //!< JSON "fullScreen": play full screen
+	string path; //!< JSON "path": resource path for openResource
 
-	void EMCP_WB_EditorControlRequest()
+	//! Registers each field as the JSON key of the same name.
+	void EMCP_WB_EditorControlRequestWire()
 	{
 		RegV("action");
 		RegV("debugMode");
@@ -21,13 +28,15 @@ class EMCP_WB_EditorControlRequest : JsonApiStruct
 	}
 }
 
-class EMCP_WB_EditorControlResponse : JsonApiStruct
+//! Response wire of `EMCP_WB_EditorControl`: encoded as the call's JSON reply.
+class EMCP_WB_EditorControlResponseWire : JsonApiStruct
 {
-	string status;
-	string action;
-	string message;
+	string status; //!< JSON "status": "ok" or "error"
+	string action; //!< JSON "action": echo of the request action
+	string message; //!< JSON "message": human-readable outcome or error
 
-	void EMCP_WB_EditorControlResponse()
+	//! Registers each scalar field as the JSON key of the same name.
+	void EMCP_WB_EditorControlResponseWire()
 	{
 		RegV("status");
 		RegV("action");
@@ -35,17 +44,22 @@ class EMCP_WB_EditorControlResponse : JsonApiStruct
 	}
 }
 
+//! Net API handler `EMCP_WB_EditorControl`: World Editor mode, save, undo and redo.
 class EMCP_WB_EditorControl : NetApiHandler
 {
+	//! Returns a new request wire for Workbench to fill from the call's JSON.
 	override JsonApiStruct GetRequest()
 	{
-		return new EMCP_WB_EditorControlRequest();
+		return new EMCP_WB_EditorControlRequestWire();
 	}
 
+	//! Runs `action` (play, stop, save, saveAs, undo, redo or openResource) on the World
+	//! Editor and returns the response wire. Answers "error" when the World Editor is missing,
+	//! undo finds no API, openResource has no `path`, or the action is unknown.
 	override JsonApiStruct GetResponse(JsonApiStruct request)
 	{
-		EMCP_WB_EditorControlRequest req = EMCP_WB_EditorControlRequest.Cast(request);
-		EMCP_WB_EditorControlResponse resp = new EMCP_WB_EditorControlResponse();
+		EMCP_WB_EditorControlRequestWire req = EMCP_WB_EditorControlRequestWire.Cast(request);
+		EMCP_WB_EditorControlResponseWire resp = new EMCP_WB_EditorControlResponseWire();
 		resp.action = req.action;
 
 		WorldEditor worldEditor = Workbench.GetModule(WorldEditor);

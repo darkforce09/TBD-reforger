@@ -1,28 +1,37 @@
 /**
- * EMCP_WB_ExecuteAction.c - Generic menu action executor
+ * @file EMCP_WB_ExecuteAction.c
+ * @brief Net API handler that runs a World Editor menu action by its menu path.
  *
- * Executes arbitrary Workbench menu actions by path.
- * menuPath is comma-separated, e.g. "Edit,Select All" or "Tools,Reload Scripts"
- * Called via NET API TCP protocol: APIFunc = "EMCP_WB_ExecuteAction"
+ * Role: turns a comma-separated menu path such as "Edit,Select All" into a
+ * WorldEditor.ExecuteAction call.
+ * Position: Workbench's Net API dispatches each call whose APIFunc is `EMCP_WB_ExecuteAction` here;
+ * the enfusion-mcp `wb_execute_action` tool and `cargo xtask mcp wbcall` send them.
+ * State: none.  Invariants: the reply is "ok" whenever the call is made, with its
+ * boolean in `message`; an empty path, a missing World Editor or a path with no parts
+ * answers "error".
  */
 
-class EMCP_WB_ExecuteActionRequest : JsonApiStruct
+//! Request wire of `EMCP_WB_ExecuteAction`: the call's JSON body, decoded by Workbench.
+class EMCP_WB_ExecuteActionRequestWire : JsonApiStruct
 {
-	string menuPath;
+	string menuPath; //!< JSON "menuPath": comma-separated menu path, e.g. "Edit,Select All"
 
-	void EMCP_WB_ExecuteActionRequest()
+	//! Registers each field as the JSON key of the same name.
+	void EMCP_WB_ExecuteActionRequestWire()
 	{
 		RegV("menuPath");
 	}
 }
 
-class EMCP_WB_ExecuteActionResponse : JsonApiStruct
+//! Response wire of `EMCP_WB_ExecuteAction`: encoded as the call's JSON reply.
+class EMCP_WB_ExecuteActionResponseWire : JsonApiStruct
 {
-	string status;
-	string menuPath;
-	string message;
+	string status; //!< JSON "status": "ok" or "error"
+	string menuPath; //!< JSON "menuPath": echo of the request menu path
+	string message; //!< JSON "message": human-readable outcome or error
 
-	void EMCP_WB_ExecuteActionResponse()
+	//! Registers each scalar field as the JSON key of the same name.
+	void EMCP_WB_ExecuteActionResponseWire()
 	{
 		RegV("status");
 		RegV("menuPath");
@@ -30,17 +39,22 @@ class EMCP_WB_ExecuteActionResponse : JsonApiStruct
 	}
 }
 
+//! Net API handler `EMCP_WB_ExecuteAction`: run a World Editor menu action.
 class EMCP_WB_ExecuteAction : NetApiHandler
 {
+	//! Returns a new request wire for Workbench to fill from the call's JSON.
 	override JsonApiStruct GetRequest()
 	{
-		return new EMCP_WB_ExecuteActionRequest();
+		return new EMCP_WB_ExecuteActionRequestWire();
 	}
 
+	//! Splits `menuPath` on commas, runs the menu action it names and returns the response
+	//! wire. Answers "error" when `menuPath` is empty or has no parts or the World Editor is
+	//! missing.
 	override JsonApiStruct GetResponse(JsonApiStruct request)
 	{
-		EMCP_WB_ExecuteActionRequest req = EMCP_WB_ExecuteActionRequest.Cast(request);
-		EMCP_WB_ExecuteActionResponse resp = new EMCP_WB_ExecuteActionResponse();
+		EMCP_WB_ExecuteActionRequestWire req = EMCP_WB_ExecuteActionRequestWire.Cast(request);
+		EMCP_WB_ExecuteActionResponseWire resp = new EMCP_WB_ExecuteActionResponseWire();
 		resp.menuPath = req.menuPath;
 
 		if (req.menuPath == "")

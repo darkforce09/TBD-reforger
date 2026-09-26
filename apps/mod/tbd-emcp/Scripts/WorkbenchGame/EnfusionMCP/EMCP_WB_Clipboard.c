@@ -1,29 +1,37 @@
 /**
- * EMCP_WB_Clipboard.c - Clipboard operations handler
+ * @file EMCP_WB_Clipboard.c
+ * @brief Net API handler for copy, cut, paste and duplicate on the World Editor selection.
  *
- * Actions: copy, cut, paste, pasteAtCursor, duplicate, hasCopied
- * All operate on the current editor selection.
- * Called via NET API TCP protocol: APIFunc = "EMCP_WB_Clipboard"
+ * Role: runs the World Editor clipboard actions and reports their boolean result.
+ * Position: Workbench's Net API dispatches each call whose APIFunc is `EMCP_WB_Clipboard` here;
+ * the enfusion-mcp `wb_clipboard` tool and `cargo xtask mcp wbcall` send them.
+ * State: none; the clipboard itself is Workbench's.  Invariants: every action but an
+ * unknown one answers "ok" with the API's boolean in `result`; an unknown action or a
+ * missing World Editor answers "error".
  */
 
-class EMCP_WB_ClipboardRequest : JsonApiStruct
+//! Request wire of `EMCP_WB_Clipboard`: the call's JSON body, decoded by Workbench.
+class EMCP_WB_ClipboardRequestWire : JsonApiStruct
 {
-	string action;
+	string action; //!< JSON "action": copy, cut, paste, pasteAtCursor, duplicate or hasCopied
 
-	void EMCP_WB_ClipboardRequest()
+	//! Registers each field as the JSON key of the same name.
+	void EMCP_WB_ClipboardRequestWire()
 	{
 		RegV("action");
 	}
 }
 
-class EMCP_WB_ClipboardResponse : JsonApiStruct
+//! Response wire of `EMCP_WB_Clipboard`: encoded as the call's JSON reply.
+class EMCP_WB_ClipboardResponseWire : JsonApiStruct
 {
-	string status;
-	string message;
-	string action;
-	bool result;
+	string status; //!< JSON "status": "ok" or "error"
+	string message; //!< JSON "message": human-readable outcome or error
+	string action; //!< JSON "action": echo of the request action
+	bool result; //!< JSON "result": the boolean the WorldEditorAPI call returned
 
-	void EMCP_WB_ClipboardResponse()
+	//! Registers each scalar field as the JSON key of the same name.
+	void EMCP_WB_ClipboardResponseWire()
 	{
 		RegV("status");
 		RegV("message");
@@ -32,17 +40,22 @@ class EMCP_WB_ClipboardResponse : JsonApiStruct
 	}
 }
 
+//! Net API handler `EMCP_WB_Clipboard`: clipboard actions on the World Editor selection.
 class EMCP_WB_Clipboard : NetApiHandler
 {
+	//! Returns a new request wire for Workbench to fill from the call's JSON.
 	override JsonApiStruct GetRequest()
 	{
-		return new EMCP_WB_ClipboardRequest();
+		return new EMCP_WB_ClipboardRequestWire();
 	}
 
+	//! Runs `action` (copy, cut, paste, pasteAtCursor, duplicate or hasCopied) through
+	//! WorldEditorAPI and returns the response wire with the API's boolean in `result`.
+	//! Answers "error" when the World Editor or its API is missing or the action is unknown.
 	override JsonApiStruct GetResponse(JsonApiStruct request)
 	{
-		EMCP_WB_ClipboardRequest req = EMCP_WB_ClipboardRequest.Cast(request);
-		EMCP_WB_ClipboardResponse resp = new EMCP_WB_ClipboardResponse();
+		EMCP_WB_ClipboardRequestWire req = EMCP_WB_ClipboardRequestWire.Cast(request);
+		EMCP_WB_ClipboardResponseWire resp = new EMCP_WB_ClipboardResponseWire();
 		resp.action = req.action;
 
 		WorldEditor worldEditor = Workbench.GetModule(WorldEditor);

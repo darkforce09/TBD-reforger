@@ -1,31 +1,36 @@
 /**
- * EMCP_WB_DeleteEntity.c - Delete entity by name
+ * @file EMCP_WB_DeleteEntity.c
+ * @brief Net API handler that deletes an entity found by name.
  *
- * Finds an entity by name and deletes it using the WorldEditorAPI.
- * Uses the confirmed DeleteEntity method from the 84-method WorldEditorAPI.
- * Falls back to selection + CutSelectedEntities if direct delete is unavailable.
- *
- * Called via NET API TCP protocol: APIFunc = "EMCP_WB_DeleteEntity"
+ * Role: removes one named entity source from the open world.
+ * Position: Workbench's Net API dispatches each call whose APIFunc is `EMCP_WB_DeleteEntity` here;
+ * the enfusion-mcp `wb_entity_delete` tool and `cargo xtask mcp wbcall` send them.
+ * State: none.  Invariants: the delete runs inside one Begin/EndEntityAction pair; the
+ * name and class are read before deletion so the reply can report them.
  */
 
-class EMCP_WB_DeleteEntityRequest : JsonApiStruct
+//! Request wire of `EMCP_WB_DeleteEntity`: the call's JSON body, decoded by Workbench.
+class EMCP_WB_DeleteEntityRequestWire : JsonApiStruct
 {
-	string name;
+	string name; //!< JSON "name": name of the entity to delete
 
-	void EMCP_WB_DeleteEntityRequest()
+	//! Registers each field as the JSON key of the same name.
+	void EMCP_WB_DeleteEntityRequestWire()
 	{
 		RegV("name");
 	}
 }
 
-class EMCP_WB_DeleteEntityResponse : JsonApiStruct
+//! Response wire of `EMCP_WB_DeleteEntity`: encoded as the call's JSON reply.
+class EMCP_WB_DeleteEntityResponseWire : JsonApiStruct
 {
-	string status;
-	string message;
-	string deletedName;
-	string deletedClass;
+	string status; //!< JSON "status": "ok" or "error"
+	string message; //!< JSON "message": human-readable outcome or error
+	string deletedName; //!< JSON "deletedName": name of the deleted entity
+	string deletedClass; //!< JSON "deletedClass": class of the deleted entity
 
-	void EMCP_WB_DeleteEntityResponse()
+	//! Registers each scalar field as the JSON key of the same name.
+	void EMCP_WB_DeleteEntityResponseWire()
 	{
 		RegV("status");
 		RegV("message");
@@ -34,8 +39,11 @@ class EMCP_WB_DeleteEntityResponse : JsonApiStruct
 	}
 }
 
+//! Net API handler `EMCP_WB_DeleteEntity`: delete an entity by name.
 class EMCP_WB_DeleteEntity : NetApiHandler
 {
+	//! Returns the first editor entity source named `name`, or null when no entity has
+	//! that name.
 	static IEntitySource FindEntityByName(WorldEditorAPI api, string name)
 	{
 		int count = api.GetEditorEntityCount();
@@ -48,15 +56,19 @@ class EMCP_WB_DeleteEntity : NetApiHandler
 		return null;
 	}
 
+	//! Returns a new request wire for Workbench to fill from the call's JSON.
 	override JsonApiStruct GetRequest()
 	{
-		return new EMCP_WB_DeleteEntityRequest();
+		return new EMCP_WB_DeleteEntityRequestWire();
 	}
 
+	//! Deletes the entity named `name` through WorldEditorAPI.DeleteEntity and returns the
+	//! response wire with its name and class. Answers "error" when `name` is empty, the World
+	//! Editor, its API or the entity is missing, or DeleteEntity returns false.
 	override JsonApiStruct GetResponse(JsonApiStruct request)
 	{
-		EMCP_WB_DeleteEntityRequest req = EMCP_WB_DeleteEntityRequest.Cast(request);
-		EMCP_WB_DeleteEntityResponse resp = new EMCP_WB_DeleteEntityResponse();
+		EMCP_WB_DeleteEntityRequestWire req = EMCP_WB_DeleteEntityRequestWire.Cast(request);
+		EMCP_WB_DeleteEntityResponseWire resp = new EMCP_WB_DeleteEntityResponseWire();
 
 		if (req.name == "")
 		{

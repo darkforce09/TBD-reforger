@@ -1,18 +1,25 @@
 /**
- * EMCP_WB_ListEntities.c - Entity listing with pagination and name filter
+ * @file EMCP_WB_ListEntities.c
+ * @brief Net API handler that lists editor entities, paginated and filtered by name.
  *
- * Lists editor entities with offset/limit pagination.
- * Uses OnPack() to build JSON array dynamically via StartArray/EndArray.
- * Called via NET API TCP protocol: APIFunc = "EMCP_WB_ListEntities"
+ * Role: pages through the editor's entity sources with an optional case-insensitive
+ * name filter.
+ * Position: Workbench's Net API dispatches each call whose APIFunc is `EMCP_WB_ListEntities` here;
+ * the enfusion-mcp `wb_entity_list` tool and `cargo xtask mcp wbcall` send them.
+ * State: none.  Invariants: `totalCount` counts every match, `returnedCount` the page;
+ * a non-positive limit is 50 and a negative offset is 0; an entity with no runtime
+ * entity reports position "0 0 0".
  */
 
-class EMCP_WB_ListEntitiesRequest : JsonApiStruct
+//! Request wire of `EMCP_WB_ListEntities`: the call's JSON body, decoded by Workbench.
+class EMCP_WB_ListEntitiesRequestWire : JsonApiStruct
 {
-	int offset;
-	int limit;
-	string nameFilter;
+	int offset; //!< JSON "offset": matches to skip; negative is 0
+	int limit; //!< JSON "limit": page size; 0 or less is 50
+	string nameFilter; //!< JSON "nameFilter": case-insensitive substring; empty matches all
 
-	void EMCP_WB_ListEntitiesRequest()
+	//! Registers each field as the JSON key of the same name.
+	void EMCP_WB_ListEntitiesRequestWire()
 	{
 		RegV("offset");
 		RegV("limit");
@@ -20,20 +27,22 @@ class EMCP_WB_ListEntitiesRequest : JsonApiStruct
 	}
 }
 
-class EMCP_WB_ListEntitiesResponse : JsonApiStruct
+//! Response wire of `EMCP_WB_ListEntities`: encoded as the call's JSON reply.
+class EMCP_WB_ListEntitiesResponseWire : JsonApiStruct
 {
-	string status;
-	string message;
-	int totalCount;
-	int returnedCount;
-	int offset;
+	string status; //!< JSON "status": "ok" or "error"
+	string message; //!< JSON "message": human-readable outcome or error
+	int totalCount; //!< JSON "totalCount": entities matching the filter
+	int returnedCount; //!< JSON "returnedCount": entities in this page
+	int offset; //!< JSON "offset": the offset applied
 
 	// Entity data collected before OnPack
-	ref array<string> m_aNames;
-	ref array<string> m_aClassNames;
-	ref array<string> m_aPositions;
+	ref array<string> m_aNames; //!< entity names of the page; packed into "entities" by OnPack
+	ref array<string> m_aClassNames; //!< entity class names, parallel to m_aNames
+	ref array<string> m_aPositions; //!< entity positions, "x y z" in metres, parallel to m_aNames
 
-	void EMCP_WB_ListEntitiesResponse()
+	//! Registers each scalar field as the JSON key of the same name.
+	void EMCP_WB_ListEntitiesResponseWire()
 	{
 		RegV("status");
 		RegV("message");
@@ -46,6 +55,7 @@ class EMCP_WB_ListEntitiesResponse : JsonApiStruct
 		m_aPositions = {};
 	}
 
+	//! Writes the "entities" array of {name, className, position} objects for the page.
 	override void OnPack()
 	{
 		StartArray("entities");
@@ -61,17 +71,22 @@ class EMCP_WB_ListEntitiesResponse : JsonApiStruct
 	}
 }
 
+//! Net API handler `EMCP_WB_ListEntities`: paginated entity listing.
 class EMCP_WB_ListEntities : NetApiHandler
 {
+	//! Returns a new request wire for Workbench to fill from the call's JSON.
 	override JsonApiStruct GetRequest()
 	{
-		return new EMCP_WB_ListEntitiesRequest();
+		return new EMCP_WB_ListEntitiesRequestWire();
 	}
 
+	//! Collects the page of entities matching `nameFilter` from `offset` up to `limit` and
+	//! returns the response wire. Answers "error" when the World Editor or its API is
+	//! missing.
 	override JsonApiStruct GetResponse(JsonApiStruct request)
 	{
-		EMCP_WB_ListEntitiesRequest req = EMCP_WB_ListEntitiesRequest.Cast(request);
-		EMCP_WB_ListEntitiesResponse resp = new EMCP_WB_ListEntitiesResponse();
+		EMCP_WB_ListEntitiesRequestWire req = EMCP_WB_ListEntitiesRequestWire.Cast(request);
+		EMCP_WB_ListEntitiesResponseWire resp = new EMCP_WB_ListEntitiesResponseWire();
 
 		WorldEditor worldEditor = Workbench.GetModule(WorldEditor);
 		if (!worldEditor)

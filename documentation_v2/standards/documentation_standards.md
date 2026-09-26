@@ -244,7 +244,8 @@ on the method that posts match results: ``//! @route POST /api/v1/ingest/match-r
 **Gate.** `cargo xtask verify enfusion-comments` checks the rules of this section and section 7
 (rules ECM-1 to ECM-9, specified in the
 [comment gate README](/tools_v2/xtask/src/verifications/mod_scripts/enfusion_comments/README.md))
-over the pinned mod Scripts roots, today `apps/mod/tbd-framework/Scripts`; `--path` narrows it to
+over the pinned mod Scripts roots, today `apps/mod/tbd-framework/Scripts` and
+`apps/mod/tbd-emcp/Scripts`; `--path` narrows it to
 any folder or file under `apps/mod/`. `cargo xtask ci verify-coding-standards` and the CI
 language-gates job run it without `--path`.
 

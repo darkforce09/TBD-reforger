@@ -1,18 +1,23 @@
 /**
- * EMCP_WB_Resources.c - Resource operations handler
+ * @file EMCP_WB_Resources.c
+ * @brief Net API handler that registers, rebuilds and opens resource files.
  *
- * Actions: register, rebuild, open
- * Uses the ResourceManager Workbench module.
- * Called via NET API TCP protocol: APIFunc = "EMCP_WB_Resources"
+ * Role: runs the ResourceManager module's register, rebuild and open calls on a path.
+ * Position: Workbench's Net API dispatches each call whose APIFunc is `EMCP_WB_Resources` here;
+ * the enfusion-mcp `wb_resources` tool and `cargo xtask mcp wbcall` send them.
+ * State: none.  Invariants: register and open answer "ok" with the call's result in
+ * `message`; rebuild is fire-and-forget; an empty path answers "error".
  */
 
-class EMCP_WB_ResourcesRequest : JsonApiStruct
+//! Request wire of `EMCP_WB_Resources`: the call's JSON body, decoded by Workbench.
+class EMCP_WB_ResourcesRequestWire : JsonApiStruct
 {
-	string action;
-	string path;
-	bool buildRuntime;
+	string action; //!< JSON "action": register, rebuild or open
+	string path; //!< JSON "path": the resource file path
+	bool buildRuntime; //!< JSON "buildRuntime": register also builds the runtime resource
 
-	void EMCP_WB_ResourcesRequest()
+	//! Registers each field as the JSON key of the same name.
+	void EMCP_WB_ResourcesRequestWire()
 	{
 		RegV("action");
 		RegV("path");
@@ -20,14 +25,16 @@ class EMCP_WB_ResourcesRequest : JsonApiStruct
 	}
 }
 
-class EMCP_WB_ResourcesResponse : JsonApiStruct
+//! Response wire of `EMCP_WB_Resources`: encoded as the call's JSON reply.
+class EMCP_WB_ResourcesResponseWire : JsonApiStruct
 {
-	string status;
-	string message;
-	string action;
-	string path;
+	string status; //!< JSON "status": "ok" or "error"
+	string message; //!< JSON "message": human-readable outcome or error
+	string action; //!< JSON "action": echo of the request action
+	string path; //!< JSON "path": echo of the request path
 
-	void EMCP_WB_ResourcesResponse()
+	//! Registers each scalar field as the JSON key of the same name.
+	void EMCP_WB_ResourcesResponseWire()
 	{
 		RegV("status");
 		RegV("message");
@@ -36,17 +43,22 @@ class EMCP_WB_ResourcesResponse : JsonApiStruct
 	}
 }
 
+//! Net API handler `EMCP_WB_Resources`: resource file operations.
 class EMCP_WB_Resources : NetApiHandler
 {
+	//! Returns a new request wire for Workbench to fill from the call's JSON.
 	override JsonApiStruct GetRequest()
 	{
-		return new EMCP_WB_ResourcesRequest();
+		return new EMCP_WB_ResourcesRequestWire();
 	}
 
+	//! Runs `action` (register, rebuild or open) on `path` and returns the response wire.
+	//! Answers "error" when `path` is empty, the ResourceManager is missing, or the action
+	//! is unknown.
 	override JsonApiStruct GetResponse(JsonApiStruct request)
 	{
-		EMCP_WB_ResourcesRequest req = EMCP_WB_ResourcesRequest.Cast(request);
-		EMCP_WB_ResourcesResponse resp = new EMCP_WB_ResourcesResponse();
+		EMCP_WB_ResourcesRequestWire req = EMCP_WB_ResourcesRequestWire.Cast(request);
+		EMCP_WB_ResourcesResponseWire resp = new EMCP_WB_ResourcesResponseWire();
 		resp.action = req.action;
 		resp.path = req.path;
 

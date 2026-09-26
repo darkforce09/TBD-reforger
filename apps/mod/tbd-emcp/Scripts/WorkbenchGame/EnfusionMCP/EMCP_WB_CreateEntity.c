@@ -1,25 +1,27 @@
 /**
- * EMCP_WB_CreateEntity.c - Create entity from prefab in WorldEditor
+ * @file EMCP_WB_CreateEntity.c
+ * @brief Net API handler that creates an entity from a prefab at a position and rotation.
  *
- * Creates a new entity from a prefab resource path at the specified position.
- * Position and rotation are passed as "x y z" strings.
- * Called via NET API TCP protocol: APIFunc = "EMCP_WB_CreateEntity"
- *
- * NOTE: WorldEditorAPI.CreateEntity() is confirmed to exist in the 84-method API
- * (used by GameModeSetupConfigEntry and SCR_PrefabEditingPlugin internally).
- * The signature is: IEntitySource CreateEntity(string prefab, string name, int layerID,
- *                                              IEntitySource parent, vector pos, vector angles)
+ * Role: instantiates a prefab in the open world through WorldEditorAPI.CreateEntity.
+ * Position: Workbench's Net API dispatches each call whose APIFunc is `EMCP_WB_CreateEntity` here;
+ * the enfusion-mcp `wb_entity_create` tool and `cargo xtask mcp wbcall` send them.
+ * State: none.  Invariants: creation runs inside one Begin/EndEntityAction pair; a
+ * negative layer becomes layer 0; a requested name the API did not apply is set by
+ * RenameEntity; a null result is answered "error" and the action is still closed.
  */
 
-class EMCP_WB_CreateEntityRequest : JsonApiStruct
+//! Request wire of `EMCP_WB_CreateEntity`: the call's JSON body, decoded by Workbench.
+class EMCP_WB_CreateEntityRequestWire : JsonApiStruct
 {
-	string prefab;
-	string position;
-	string rotation;
-	string name;
-	int layerID;
+	string prefab; //!< JSON "prefab": prefab resource name, "{GUID}path.et"
+	string position; //!< JSON "position": "x y z" in metres; empty is the origin
+	string rotation; //!< JSON "rotation": "x y z" angles in degrees; empty is no rotation
+	string name; //!< JSON "name": entity name; empty lets Workbench generate one
+	int layerID; //!< JSON "layerID": target layer; default -1 (layer 0)
 
-	void EMCP_WB_CreateEntityRequest()
+	//! Registers each field as the JSON key of the same name; `layerID` defaults to -1
+	//! (layer 0).
+	void EMCP_WB_CreateEntityRequestWire()
 	{
 		RegV("prefab");
 		RegV("position");
@@ -30,15 +32,17 @@ class EMCP_WB_CreateEntityRequest : JsonApiStruct
 	}
 }
 
-class EMCP_WB_CreateEntityResponse : JsonApiStruct
+//! Response wire of `EMCP_WB_CreateEntity`: encoded as the call's JSON reply.
+class EMCP_WB_CreateEntityResponseWire : JsonApiStruct
 {
-	string status;
-	string message;
-	string entityName;
-	string entityClass;
-	string position;
+	string status; //!< JSON "status": "ok" or "error"
+	string message; //!< JSON "message": human-readable outcome or error
+	string entityName; //!< JSON "entityName": name of the created entity
+	string entityClass; //!< JSON "entityClass": class of the created entity
+	string position; //!< JSON "position": the parsed position, "x y z" in metres
 
-	void EMCP_WB_CreateEntityResponse()
+	//! Registers each scalar field as the JSON key of the same name.
+	void EMCP_WB_CreateEntityResponseWire()
 	{
 		RegV("status");
 		RegV("message");
@@ -48,8 +52,11 @@ class EMCP_WB_CreateEntityResponse : JsonApiStruct
 	}
 }
 
+//! Net API handler `EMCP_WB_CreateEntity`: create an entity from a prefab.
 class EMCP_WB_CreateEntity : NetApiHandler
 {
+	//! Parses an "x y z" string into a vector. Returns "0 0 0" for an empty string and
+	//! for one with fewer than three space-separated parts.
 	static vector ParseVectorString(string str)
 	{
 		vector result = "0 0 0";
@@ -67,15 +74,19 @@ class EMCP_WB_CreateEntity : NetApiHandler
 		return result;
 	}
 
+	//! Returns a new request wire for Workbench to fill from the call's JSON.
 	override JsonApiStruct GetRequest()
 	{
-		return new EMCP_WB_CreateEntityRequest();
+		return new EMCP_WB_CreateEntityRequestWire();
 	}
 
+	//! Creates an entity from `prefab` at `position` with `rotation` on `layerID` and
+	//! returns the response wire naming it. Answers "error" when `prefab` is empty, when the
+	//! World Editor or its API is missing, or when CreateEntity returns null.
 	override JsonApiStruct GetResponse(JsonApiStruct request)
 	{
-		EMCP_WB_CreateEntityRequest req = EMCP_WB_CreateEntityRequest.Cast(request);
-		EMCP_WB_CreateEntityResponse resp = new EMCP_WB_CreateEntityResponse();
+		EMCP_WB_CreateEntityRequestWire req = EMCP_WB_CreateEntityRequestWire.Cast(request);
+		EMCP_WB_CreateEntityResponseWire resp = new EMCP_WB_CreateEntityResponseWire();
 
 		if (req.prefab == "")
 		{
