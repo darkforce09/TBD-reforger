@@ -1,28 +1,36 @@
-//! T-936.2 - HUD markers for assigned tasks.
-//!
-//! One marker per assigned task, drawn through the existing placed-custom marker path
-//! (`TBD_MarkerIcons.Resolve` + `SCR_MapMarkerManagerComponent.InsertStaticMarker`). Hidden the
-//! moment the task leaves `assigned` (succeeded or failed): the server snapshot simply omits it.
-//!
-//! Transport hangs off SCR_PlayerController for the same reason markers and radio do: Owner RPC
-//! delivers to one client. Tasks are not side-scoped on the wire, so every seated player gets the
-//! same assigned snapshot.
-//! @contract mission.schema.json#/$defs/task
+/**
+ * @file TBD_TaskHud.c
+ * @brief Map markers for assigned tasks: the server snapshot and the client draw.
+ *
+ * Role: builds the snapshot of ASSIGNED tasks with a world position on the server and draws one
+ * placed-custom map marker per task on each client (`TBD_MarkerIcons.Resolve` and
+ * `SCR_MapMarkerManagerComponent.InsertStaticMarker`).
+ * Position: `PushToPlayers` is called by the task state machine on the server; clients ask
+ * through `RequestLocal`; this folder's `SCR_PlayerController.c` carries the Server ask and the
+ * Owner answer, the same transport markers and radio use.
+ * State: the markers drawn and the last snapshot signature, static, on each client.
+ * Invariants: a task leaves the map the moment it leaves ASSIGNED, because the snapshot omits it;
+ * tasks are not side-scoped on the wire, so every seated player gets the same snapshot; an
+ * unchanged snapshot redraws nothing.
+ */
 
+//! Assigned-task map markers: snapshot build on the server, marker draw on the client.
 class TBD_TaskHud
 {
-	static const string CH = "TaskHud";
+	static const string CH = "TaskHud"; //!< log channel
 
-	protected static ref array<ref SCR_MapMarkerBase> s_aApplied;
-	protected static string s_sLastSignature;
+	protected static ref array<ref SCR_MapMarkerBase> s_aApplied; //!< the markers this client drew; removed before each redraw
+	protected static string s_sLastSignature; //!< signature of the last drawn snapshot; empty forces a redraw
 
+	//! Remove the drawn markers and forget the snapshot.
 	static void Clear()
 	{
 		ClearApplied();
 		s_sLastSignature = string.Empty;
 	}
 
-	//! Server: push the current assigned snapshot to every connected player.
+	//! Push the current assigned snapshot to every connected player; does nothing on a client.
+	//! @authority server
 	static void PushToPlayers()
 	{
 		if (TBD_Authority.IsClient())
@@ -53,7 +61,8 @@ class TBD_TaskHud
 		}
 	}
 
-	//! Client (and listen-host): ask the authority for the current snapshot.
+	//! Ask the authority for this player's snapshot through the local player controller.
+	//! @authority client
 	static void RequestLocal()
 	{
 		SCR_PlayerController pc = SCR_PlayerController.Cast(GetGame().GetPlayerController());
@@ -147,6 +156,7 @@ class TBD_TaskHud
 		}
 	}
 
+	//! @return a string that changes whenever a task id, state or position in the snapshot changes
 	protected static string Signature(array<string> ids, array<string> states, array<int> xs, array<int> zs)
 	{
 		string sig;
@@ -172,6 +182,7 @@ class TBD_TaskHud
 		return sig;
 	}
 
+	//! Remove every drawn marker from the marker manager and empty the list.
 	protected static void ClearApplied()
 	{
 		if (!s_aApplied || s_aApplied.IsEmpty())
@@ -193,67 +204,10 @@ class TBD_TaskHud
 		s_aApplied.Clear();
 	}
 
+	//! Create the drawn-marker list on first use.
 	protected static void EnsureApplied()
 	{
 		if (!s_aApplied)
 			s_aApplied = new array<ref SCR_MapMarkerBase>();
-	}
-}
-
-modded class SCR_PlayerController
-{
-	void TBD_RequestTaskHud()
-	{
-		if (TBD_Authority.IsClient())
-		{
-			Rpc(TBD_RpcAsk_TaskHud);
-			return;
-		}
-
-		array<int> xs;
-		array<int> zs;
-		array<string> icons;
-		array<string> labels;
-		array<string> ids;
-		array<string> states;
-		TBD_TaskHud.BuildSnapshot(xs, zs, icons, labels, ids, states);
-		TBD_TaskHud.Accept(xs, zs, icons, labels, ids, states);
-	}
-
-	void TBD_PushTaskHud(array<int> xs, array<int> zs, array<string> icons, array<string> labels,
-		array<string> ids, array<string> states)
-	{
-		if (TBD_Authority.IsClient())
-			return;
-
-		if (GetGame().GetPlayerController() == this)
-		{
-			TBD_TaskHud.Accept(xs, zs, icons, labels, ids, states);
-			return;
-		}
-
-		Rpc(TBD_RpcDo_TaskHud, xs, zs, icons, labels, ids, states);
-	}
-
-	//! @rpc Reliable Server
-	[RplRpc(RplChannel.Reliable, RplRcver.Server)]
-	protected void TBD_RpcAsk_TaskHud()
-	{
-		array<int> xs;
-		array<int> zs;
-		array<string> icons;
-		array<string> labels;
-		array<string> ids;
-		array<string> states;
-		TBD_TaskHud.BuildSnapshot(xs, zs, icons, labels, ids, states);
-		Rpc(TBD_RpcDo_TaskHud, xs, zs, icons, labels, ids, states);
-	}
-
-	//! @rpc Reliable Owner
-	[RplRpc(RplChannel.Reliable, RplRcver.Owner)]
-	protected void TBD_RpcDo_TaskHud(array<int> xs, array<int> zs, array<string> icons,
-		array<string> labels, array<string> ids, array<string> states)
-	{
-		TBD_TaskHud.Accept(xs, zs, icons, labels, ids, states);
 	}
 }

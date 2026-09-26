@@ -29,7 +29,7 @@ Each `.layout` sits beside its `.layout.meta`, so every line covers the pair.
   the engine's default font, and the surfaces are square images.
 - Resource GUID: `{7BD1A70000000801}` (`TBD_EndScreen`) and `{7BD1A70000000901}`
   (`TBD_DebriefScreen`) in the `.meta` files, blocks `08` and `09` of the ledger in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`; they never change.
+  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UILayouts.c`; they never change.
 - Naming: `TBD_<Stage>Screen.layout`, one per post-game stage.
 - Adding a layout: take a free block from the ledger, author the layout and its `.meta`, add a
   `TBD_UILayouts` constant, and commit both files; the game finds a new path only after

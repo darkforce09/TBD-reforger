@@ -9,18 +9,10 @@ no screen knowledge, no network, no [mission](/documentation_v2/glossary/g_to_m.
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/UI/Common/
-├── TBD_Caption.c                TBD_Caption: the uppercase mono label that opens a list section
-├── TBD_ChipComponent.c          TBD_ChipComponent: a tinted tag or pill badge
-├── TBD_DropdownComponent.c      TBD_DropdownComponent: a trigger with a single- or multi-select menu
-├── TBD_KeyValueRowComponent.c   TBD_KeyValueRowComponent: a key chip beside a value, tintable
-├── TBD_NumberedCardComponent.c  TBD_NumberedCardComponent: a numbered card with chip, body and footer
-├── TBD_PanelComponent.c         TBD_PanelComponent: the glass panel: header, badge, body, footer
-├── TBD_ScrollList.c             TBD_ScrollList: a scrolling list that wears the TBD scrollbar
-├── TBD_SearchBoxComponent.c     TBD_SearchBoxComponent: a search field with a clear button
-├── TBD_SectionComponent.c       TBD_SectionComponent: a collapsible card with badge and action dock
-├── TBD_SessionBottomBar.c       TBD_SessionBottomBar: the pre-game action bar, one primary action
-├── TBD_SessionTopBar.c          TBD_SessionTopBar: pre-game title, screen tabs, identity and count
-└── TBD_TabStripComponent.c      TBD_TabStripComponent, TBD_NavItemComponent: a row or column of tabs
+├── Dropdown/       the popover: trigger handler, its items, the open menu and the scrim bridge
+├── Inputs/         controls a player types into or picks from: search box, tab strip, nav items
+├── Layout/         display building blocks: panels, sections, cards, rows, chips, captions, lists
+└── SessionChrome/  the pre-game top and bottom bars and the session tab vocabulary
 ```
 
 ## How it works
@@ -85,9 +77,9 @@ Four conventions hold across the folder:
   numbered-card and caption mounts create it with `TBD_UILayouts.CreateStretched`, which re-applies
   the stretch inside a layout widget.
 
-The dropdown menu opens into the owning screen's overlay dock (`SetOverlayHost`) under the
-trigger; its full-bleed `Scrim` closes it, forwarded by `TBD_DropdownMenuBridge`, and its rows are
-a `TBD_ListBox`. The bottom bar holds no buttons of its own: a screen adds each action with
+The dropdown menu (`TBD_DropdownMenu`) opens into the owning screen's overlay dock
+(`SetOverlayHost`) under the trigger; its full-bleed `Scrim` closes it, forwarded by
+`TBD_DropdownMenuBridge`, and its rows are a `TBD_ListBox`. The bottom bar holds no buttons of its own: a screen adds each action with
 `AddAction()`, which creates `Common/TBD_Button.layout`, and a second primary action demotes the
 first. The top bar's tabs are `TBD_ESessionTab` (`SCENARIO_BROWSER`, `LOBBY`, `BRIEFING`);
 which screen a tab opens is `TBD_DockScreen`'s decision.
@@ -102,11 +94,12 @@ which screen a tab opens is `TBD_DockScreen`'s decision.
 
 ## Boundaries
 
-- Depends on: `TBD_UILayouts`, `TBD_UITheme`, `TBD_UIIcons`, `TBD_UIInteractive`, `TBD_UIButton`,
-  `TBD_ListBox` and `TBD_UIScrollBar` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/`; the
+- Depends on: `TBD_UILayouts`, `TBD_UITheme`, `TBD_UITintColours` and `TBD_UIIcons` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/`; `TBD_UIInteractive`, `TBD_UIButton`,
+  `TBD_ListBox` and `TBD_UIScrollBar` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Controls/`; the
   layouts in `apps/mod/tbd-framework/UI/layouts/Common/` and
   `apps/mod/tbd-framework/UI/layouts/Session/Shared/`.
-- Used by: `TBD_DockScreen` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/`, which mounts
+- Used by: `TBD_DockScreen` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Screens/`, which mounts
   both bars; the briefing, lobby, mission selector and players screens under
   `apps/mod/tbd-framework/Scripts/Game/TBD/Session/`; the mock catalogs in
   `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Mock/`, which build `TBD_SessionIdentity`; and the

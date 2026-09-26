@@ -196,7 +196,7 @@ set in the `visual_references/` folder of the feature it depicts. A set is named
 `<set>.png` and, when the export carries tokens, `design_tokens.md`. The built interface wins; the
 [feature doc](/documentation_v2/glossary/a_to_f.md#feature-doc)'s Design section says how it differs.
 
-In code: none; the built styles a set is compared with are `apps/website/frontend/style/aegis.css` on the website and `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UITheme.c` in the mod.
+In code: none; the built styles a set is compared with are `apps/website/frontend/style/aegis.css` on the website and `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UITheme.c` in the mod.
 
 See: [Design system](/documentation_v2/design_system/README.md), [Stitch token exports](/documentation_v2/design_system/token_exports/README.md).
 

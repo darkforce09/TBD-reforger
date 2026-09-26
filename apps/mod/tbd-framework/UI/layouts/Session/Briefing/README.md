@@ -79,7 +79,7 @@ only. Enemy pages reuse the friendly builders painted in the `TBD_EUITint.OPFOR`
   cards 8, preview boxes 6), and every text widget carries a `FontProperties` block. `Preview` in
   the asset preview and the uniform card is an `ItemPreviewWidgetClass`.
 - Resource GUID: `7BD1A7000000XX01` in each `.meta`, from the ledger in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`: the shell `0D`, then
+  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UILayouts.c`: the shell `0D`, then
   `TBD_FreqRow` `3E`, `TBD_OrbatPage` `3F`, `TBD_AssetPreview` `40`, `TBD_UniformCard` `41`,
   `TBD_MarkersPanel` `42`, `TBD_PrimaryNav` `46`, `TBD_PrimaryNavItem` `47`, `TBD_TopicNavItem`
   `48` and `TBD_TopicNav` `49`. The shell's GUID is named by the menu config and never changes.

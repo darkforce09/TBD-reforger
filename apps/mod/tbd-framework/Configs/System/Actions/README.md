@@ -53,10 +53,10 @@ four admin and mission keys to `TBD_BrowserContext`, the five spectator keys to
 
 - `apps/mod/tbd-framework/Configs/System/ActionContext/TBD_BrowserContext.conf` and
   `TBD_SpectatorContext.conf` list the actions by name.
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/TBD_MissionBrowser.c` listens for
+- `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/SCR_PlayerController.c` listens for
   `TBD_MissionCycle`, `TBD_MissionLoad`, `TBD_AdminMenu` and `TBD_MissionSelector`.
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Spectator/TBD_SpectatorController.c` listens for
-  the five `TBD_Spec*` actions.
+- `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Spectator/Controller/TBD_SpectatorInputActions.c`
+  listens for the five `TBD_Spec*` actions.
 - `apps/mod/tbd-framework/resourceDatabase.rdb` registers every file.
 
 ## Boundaries

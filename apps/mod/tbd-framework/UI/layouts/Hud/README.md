@@ -22,7 +22,7 @@ apps/mod/tbd-framework/UI/layouts/Hud/
   wide, the `BAR_WIDTH` the handler scales it by. Its texts carry no `FontProperties` block and
   draw in the engine's default font.
 - Resource GUID: `{7BD1A70000000A01}` in the `.meta`, block `0A` of the ledger in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`; it never changes.
+  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UILayouts.c`; it never changes.
 - Naming: `TBD_<Element>Hud.layout`, one file per HUD element.
 - Adding a HUD element: take a free block from the ledger, author the layout and its `.meta`, add
   a `TBD_UILayouts` constant, and commit both files; the game finds a new path only after

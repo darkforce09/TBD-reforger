@@ -175,7 +175,7 @@ value takes 8): `RADIUS_PANEL` 12, `RADIUS_PILL` 10, `RADIUS_ROW` 8 and `RADIUS_
 
 ### Known discrepancies
 
-- `TBD_UITheme.c:4-6` says the tokens are ported one to one, same names and same hex, but
+- `TBD_UITheme` names its tokens after the `aegis.css` design tokens, but
   `PRIMARY_CONTAINER` is `#4d8eff` (`TBD_UITheme.c:55`) where `aegis.css:19` sets
   `--color-primary-container` to `#adc6ff`, and `TERTIARY_WARM`, `TERTIARY_CONTAINER` (`#df7412`)
   and `CARD_BORDER` (`TBD_UITheme.c:61-63`) cite `--color-*` tokens that `aegis.css` does not

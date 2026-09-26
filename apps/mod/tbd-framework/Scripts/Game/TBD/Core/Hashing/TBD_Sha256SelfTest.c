@@ -1,3 +1,14 @@
+/**
+ * @file TBD_Sha256SelfTest.c
+ * @brief The FIPS 180-4 test vectors, run through `TBD_Sha256` once per process.
+ *
+ * Role: proves the script hasher before it judges an artifact, so a later SHA-256 mismatch can be
+ * told apart as a defective engine build rather than a damaged artifact.
+ * Position: asked by the mission artifact cache through `Passed()` on the server; logs on the
+ * `Sha256` channel and writes one round-trip file under `$profile:`.
+ * State: whether the vectors ran, whether they passed and how many were checked, per script VM.
+ * Invariants: a defective hasher can refuse a good artifact but cannot accept a wrong one.
+ */
 //! The FIPS 180-4 test vectors, run through TBD_Sha256 once per process before it judges an
 //! artifact.
 //!
@@ -14,19 +25,20 @@
 //! Holder of the decoded non-ASCII test text. The field name is the JSON key.
 class TBD_Sha256SelfTestText
 {
-	string text;
+	string text; //!< the decoded test text; JSON key "text"
 }
 
+//! FIPS test vector runner.
 class TBD_Sha256SelfTest
 {
 	protected static const string CH_SHA256 = "Sha256"; //!< Greppable channel: `grep '\[TBD\]\[Sha256\]' console.log`.
 
-	protected static const string DIGEST_896_BIT = "cf5b16a778af8380036ce59e7b0492370b249b11e8f07a51afac45037afee9d1";
-	protected static const string ROUND_TRIP_PATH = "$profile:TBD_Sha256SelfTest.bin";
+	protected static const string DIGEST_896_BIT = "cf5b16a778af8380036ce59e7b0492370b249b11e8f07a51afac45037afee9d1"; //!< expected digest of the 896-bit two-block vector
+	protected static const string ROUND_TRIP_PATH = "$profile:TBD_Sha256SelfTest.bin"; //!< file written and read back by the round-trip vector
 
-	protected static bool s_bRan;
-	protected static bool s_bPassed;
-	protected static int s_iChecked;
+	protected static bool s_bRan; //!< true once the vectors ran
+	protected static bool s_bPassed; //!< true when every vector held
+	protected static int s_iChecked; //!< how many vectors were checked
 
 	//! Runs the vectors on the first call. True when every vector held.
 	static bool Passed()
@@ -37,6 +49,7 @@ class TBD_Sha256SelfTest
 		return s_bPassed;
 	}
 
+	//! Run every vector once and log a pass line or each failure.
 	protected static void Run()
 	{
 		s_bRan = true;
@@ -78,6 +91,7 @@ class TBD_Sha256SelfTest
 			failed.Count(), s_iChecked, names));
 	}
 
+	//! Hash `message` and record `name` in `failed` when the digest differs from `expected`.
 	protected static void Check(string name, string message, string expected, notnull array<string> failed)
 	{
 		s_iChecked++;
@@ -167,6 +181,7 @@ class TBD_Sha256SelfTest
 		TBD_Log.Error(CH_SHA256, string.Format("vector 'file round trip' (%1 bytes written, read back with ReadArray): computed %2, expected %3", message.Length(), computed, expected));
 	}
 
+	//! @return `unit` repeated `count` times
 	protected static string Repeat(string unit, int count)
 	{
 		string repeated;

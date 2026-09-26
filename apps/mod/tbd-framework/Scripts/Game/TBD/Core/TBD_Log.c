@@ -1,18 +1,20 @@
-//! Thin structured event log for the TBD framework.
-//!
-//! One tag vocabulary, one call per event, no state. Everything an operator greps for during
-//! an event goes out as `[TBD][<channel>] <event> key=value ...`, so
-//! `grep '\[TBD\]\[Validate\]' console.log` returns the whole validation pass and nothing else.
-//!
-//! Deliberately small. CRF solves the same problem with `CRF_LoggingManager` -- 888 lines of
-//! per-subsystem toggles, ring buffers and RPC fan-out for a framework that ships ten game
-//! modes. TBD runs one event, on one server: it needs a fixed prefix, an explicit level and a
-//! greppable shape. If this ever needs filtering, add a channel allowlist here -- do not grow
-//! it into a manager component.
-//!
-//! ENF-1: every call carries an explicit LogLevel and nothing here sits on a per-frame or
-//! per-replication-tick path (the validator runs once per mission parse; the stage helper
-//! once per transition).
+/**
+ * @file TBD_Log.c
+ * @brief Thin structured event log for the TBD framework: `[TBD][<channel>] <event> key=value ...`.
+ *
+ * Role: writes every framework log line in one greppable shape with an explicit level, so
+ * `grep '\[TBD\]\[Validate\]' console.log` returns a whole validation pass and nothing else.
+ * Position: called by every framework module on client and server.
+ * State: none.
+ * Invariants: every call carries an explicit LogLevel; nothing here sits on a per-frame or
+ * per-replication-tick path (the validator runs once per mission parse, the stage helper once per
+ * transition).
+ */
+
+//! Structured log helpers. One tag vocabulary, one call per event, no state: TBD runs one event
+//! on one server and needs a fixed prefix, an explicit level and a greppable shape, not a logging
+//! manager with per-subsystem toggles, ring buffers and RPC fan-out. Filtering, when needed, is a
+//! channel allowlist here.
 class TBD_Log
 {
 	//! Fixed channel vocabulary. Prefer a constant over a literal at the call site so the set
@@ -20,10 +22,10 @@ class TBD_Log
 	static const string CH_MISSION  = "Mission";  //!< Mission document fetch / parse / cache.
 	static const string CH_VALIDATE = "Validate"; //!< TBD_MissionValidator findings and verdict.
 	static const string CH_STAGE    = "Stage";    //!< Gamemode stage machine transitions.
-	static const string CH_SAFESTART = "Safestart"; //!< T-181.17 warmup: damage-off, countdown, lift.
+	static const string CH_SAFESTART = "Safestart"; //!< safe-start warmup: damage off, countdown, lift
 
 	//! Rule used by Banner(). Wide enough that it cannot be mistaken for a normal line.
-	protected static const string RULE = "========================================================";
+	protected static const string RULE = "========================================================"; //!< the banner rule line
 
 	//! `[TBD][<channel>] <message>` -- the one line shape everything else composes.
 	protected static string Compose(string channel, string message)

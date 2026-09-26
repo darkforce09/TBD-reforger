@@ -27,8 +27,10 @@ read as "on no side" rather than as an error.
 
 - Depends on: `TBD_SpawnManager` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/` and
   `TBD_MissionSlotStruct` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/`.
-- Used by: none at present; it replaces `ResolveFaction` in `TBD_ObjectivesComponent` and
-  `TBD_PlayAreaComponent`.
+- Used by: `TBD_ObjectivesComponent` and `TBD_ObjectiveHudPublisher` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`, and `TBD_PlayAreaComponent`,
+  `TBD_TriggerEffects` and `TBD_TriggerPlayerSnapshot` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Zones/`.
 - Rules: lines added stay ASCII; `cargo xtask mod compile` checks that the scripts compile.
 
 ## Related documentation

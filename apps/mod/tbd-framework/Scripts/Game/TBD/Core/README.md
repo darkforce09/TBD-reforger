@@ -69,13 +69,14 @@ announcements go through it. `Hashing/` holds the SHA-256 that gates every missi
   `SCR_BaseGameModeComponent`, `SCR_ChatComponent`, `PlayerManager`, `RplSession` and
   `JsonLoadContext`; the subfolders' own READMEs list theirs.
 - Used by: `TBD_Log` by nearly every framework script; `TBD_Authority` by every script that gates
-  work on the replication side; `TBD_Registry` by `TBD_MissionLoader`,
-  `TBD_MissionValidator`, `TBD_SpawnManager`, `TBD_TriggerRuntime`, `TBD_MissionVehicleStruct`,
-  `TBD_FrameworkManager`, `TBD_ObjectiveRegistry`, `TBD_LobbyCatalog` and `TBD_BriefingCatalog`;
-  `TBD_PlayerChat` by `TBD_FrameworkManager`, `TBD_SafestartManager`, `TBD_DeploymentAuthorization`,
-  the fleet actions in `apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/`, and
-  `TBD_MissionBrowser` and `TBD_MissionDeploymentRelay` in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/`. No prefab attaches
+  work on the replication side; `TBD_Registry` by the mission world applier, slot checks and
+  vehicle roster, `TBD_SlotBodyMaterializer`, `TBD_ObjectiveDestroyTargets`,
+  `TBD_TriggerWorldEffects`, the lobby's `TBD_LoadingGate` and the briefing's `TBD_UniformInfo`;
+  `TBD_PlayerChat` by the round orchestration (`TBD_MissionFlowReport`, `TBD_EndBanner`,
+  `TBD_RoundClock`), safe start (`TBD_SafestartManager`, `TBD_SafestartWatchdog`), the objectives,
+  play area and trigger effects, `TBD_DeploymentAuthorization`, `TBD_MissionDeploymentRelay`, the
+  identity link confirmation and the fleet actions in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/`. No prefab attaches
   `TBD_RegistryPocComponent`.
 - Rules: every log line starts `[TBD][<channel>]`, and log scrapers such as
   `cargo xtask mod remote-logs` pin that prefix, never the sentence; the registry's shape follows

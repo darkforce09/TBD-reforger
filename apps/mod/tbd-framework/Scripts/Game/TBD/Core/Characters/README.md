@@ -27,8 +27,10 @@ for the spawn path, which rebuilds a body it cannot read rather than hand it on.
 ## Boundaries
 
 - Depends on: the engine's `ChimeraCharacter` and `CharacterControllerComponent`.
-- Used by: none at present; it replaces the `IsBodyDead` copies in `TBD_ObjectivesComponent`,
-  `TBD_PlayAreaComponent`, `TBD_TriggerRuntime` and `TBD_SpawnManager`.
+- Used by: `TBD_ObjectivesComponent` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`, `TBD_PlayAreaComponent` and
+  `TBD_TriggerPlayerSnapshot` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Zones/`, and
+  `TBD_DeployExecutor` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Deploy/`.
 - Rules: never throws on null; lines added stay ASCII; `cargo xtask mod compile` checks that the
   scripts compile.
 

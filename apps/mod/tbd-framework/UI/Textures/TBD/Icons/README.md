@@ -16,7 +16,7 @@ apps/mod/tbd-framework/UI/Textures/TBD/Icons/
 ## How it works
 
 A screen calls `TBD_UIIcons.Load(widget, key)`
-(`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UIIcons.c`). When the key is one of the 38 in
+(`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UIIcons.c`). When the key is one of the 38 in
 `BuildShipped`, `Texture(key)` returns `UI/Textures/TBD/Icons/TBD_Icon_<key>_UI.edds` and `Load`
 puts it on the image widget; the screen then paints the widget with a `TBD_UITheme` colour, which
 is why every glyph is white. A key with no file here falls back to a quad of the vanilla
@@ -50,7 +50,7 @@ path.
 
 ## Referenced by
 
-- `TBD_UIIcons.Texture` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UIIcons.c`, by bare
+- `TBD_UIIcons.Texture` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UIIcons.c`, by bare
   path built from the key; nothing refers to these textures by GUID.
 - The icon keys come from the screens and their data: the briefing's navigation and pages in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Briefing/UI/`, the

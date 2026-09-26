@@ -3,7 +3,7 @@
 Every [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) widget layout the framework's interface
 draws: the shared primitives, the in-game HUD, and the session screens. Scripts instantiate them by
 the resource names registered in `TBD_UILayouts`
-(`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`).
+(`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UILayouts.c`).
 
 ## Contents
 
@@ -37,7 +37,7 @@ stage change / RPC ──> workspace overlay (Hud/, Session/PostGame/)
   `Name` holds `{GUID}UI/layouts/<path>` and whose `LayoutResourceClass` entries cover each
   platform.
 - Resource GUID: `7BD1A7000000XXnn`, where `XX` is the layout's block from the ledger in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`, `nn` numbers its widgets and
+  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UILayouts.c`, `nn` numbers its widgets and
   the `.meta` takes `01`. A GUID never changes once a script constant or a config names it.
 - Naming: `TBD_<Element>.layout`, in the folder of the screen that uses it; shared primitives go in
   `Common/`.
@@ -51,7 +51,7 @@ stage change / RPC ──> workspace overlay (Hud/, Session/PostGame/)
 
 - `TBD_UILayouts` names every layout by GUID and path.
 - `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf` names the menu shells by GUID.
-- `TBD_ListBox` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_ListBox.c` names
+- `TBD_ListBox` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Controls/TBD_ListBox.c` names
   `Common/TBD_ListRow.layout` by GUID as its default row.
 
 ## Boundaries

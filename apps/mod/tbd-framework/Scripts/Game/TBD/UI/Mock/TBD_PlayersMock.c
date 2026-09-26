@@ -1,11 +1,19 @@
-//! Briefing pass (2026-09-14) -- the mock catalog behind the PLAYERS modal.
-//!
-//! The players_panel mockup: BLUFOR Defending 36 / 40, OPFOR Attacking 48 / 50, 4 spectators,
-//! 6 unslotted, TOTAL 94. The mockup draws the first nine names of each lane; the rest are
-//! generated so the counts, the scrollbars and the nav badge are real. Consumed only through
-//! `TBD_PlayersCatalog.Get()`.
+/**
+ * @file TBD_PlayersMock.c
+ * @brief The mock catalog behind the players panel.
+ *
+ * Role: builds the players_panel mockup's roster: BLUFOR Defending 36 / 40, OPFOR Attacking
+ * 48 / 50, 4 spectators, 6 unslotted, 94 in total.
+ * Position: consumed only through `TBD_PlayersCatalog.Get()` until a live catalog is set.
+ * State: none; a static builder.
+ * Invariants: the first nine names of each faction are the mockup's; the rest are generated so
+ * the counts, the scrollbars and the navigation badge are real.
+ */
+
+//! Players panel mock data.
 class TBD_PlayersMock
 {
+	//! @return a new catalog holding the mock roster
 	static TBD_PlayersCatalog Build()
 	{
 		TBD_PlayersCatalog c = new TBD_PlayersCatalog();
@@ -34,7 +42,7 @@ class TBD_PlayersMock
 		return c;
 	}
 
-	//! The named rows, then generated ones up to `slotted`.
+	//! Add `slotted` players to `faction`: the named rows, then generated `<stem>_<n>` ones.
 	protected static void Lane(TBD_PlayersCatalog c, string faction, array<string> names, array<int> pings, int slotted, string stem)
 	{
 		int i;

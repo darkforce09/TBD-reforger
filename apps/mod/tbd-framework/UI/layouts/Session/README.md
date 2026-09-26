@@ -23,7 +23,7 @@ apps/mod/tbd-framework/UI/layouts/Session/
 
 The three pre-game screens are dock shells: a layout of empty named docks that a
 `TBD_DockScreen` subclass fills at open. `TBD_DockScreen`
-(`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_DockScreen.c`) mounts the `Shared/` bars
+(`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Screens/TBD_DockScreen.c`) mounts the `Shared/` bars
 into `TopDock` and `BottomDock`, the screen mounts its columns into `LeftDock`, `CenterDock` and
 `RightDock`, and dropdown menus open in `OverlayDock`, the full-screen last child that stays hidden
 while empty. Column widths belong to each shell. The top bar's tabs move between the three
@@ -50,7 +50,7 @@ Selector, lobby and briefing read mock catalogs from
 - File type: [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) widget layouts (`.layout`), each
   beside a `.layout.meta` that holds its resource GUID; each child README lists its widget names.
 - Resource GUID: `7BD1A7000000XX01`, one block per layout from the ledger in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`. A shell a menu preset names
+  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UILayouts.c`. A shell a menu preset names
   keeps its GUID and path.
 - Naming: one folder per screen; a layout two screens share goes in
   `Shared/`, and a primitive any screen may use in `apps/mod/tbd-framework/UI/layouts/Common/`.

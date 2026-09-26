@@ -72,7 +72,7 @@ something calls their `Set()`, and no script does, so those screens show sample 
 ### The pre-game dock shell
 
 The Mission Selector, lobby and briefing are dock shells: a layout of empty named docks that a
-`TBD_DockScreen` subclass (`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_DockScreen.c`)
+`TBD_DockScreen` subclass (`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Screens/TBD_DockScreen.c`)
 fills at open. `TopDock` (56 high) and `BottomDock` (64 high) take the shared bars from
 `apps/mod/tbd-framework/UI/layouts/Session/Shared/`; `LeftDock`, `CenterDock` and `RightDock` take
 the screen's panels, at widths the shell sets; `OverlayDock`, full screen, last and hidden while
@@ -86,7 +86,7 @@ draws the whole flow.
 - A shell holds only its backdrop or map and empty docks; a screen whose layout would grow large
   splits into a shell plus sub-layouts mounted into the docks.
 - Every layout is named once, as a constant in `TBD_UILayouts`
-  (`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`), and screens use the
+  (`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UILayouts.c`), and screens use the
   constant. `TBD_UILayouts.Create` falls back to the bare path when a GUID does not resolve, which
   does not replace a resource database pass.
 - Layout GUIDs are `7BD1A7000000XXnn`: `XX` a block per layout, `nn` `00` the root widget, `01`
@@ -116,7 +116,7 @@ draws the whole flow.
 - Depends on: the [feature doc template](/documentation_v2/standards/templates/feature_doc.md) and
   the [style lock](/documentation_v2/refactor_style_lock.md) for the screen specifications; the
   code folders above.
-- Used by: `TBD_UILayouts.c`, `TBD_MissionSelectorData.c` and `TBD_PlayersCatalog.c`, whose
+- Used by: `TBD_UILayouts.c` and `TBD_PlayersCatalog.c`, whose
   comments cite this index; the in-code READMEs of the screens, which link their specification;
   the [mod design](/documentation_v2/mod/tbd-framework/mod_design.md).
 - Rules: one folder per screen, named in snake_case after the screen; a specification describes

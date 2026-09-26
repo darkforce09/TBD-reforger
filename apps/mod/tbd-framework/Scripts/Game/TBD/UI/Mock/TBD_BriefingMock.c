@@ -1,21 +1,29 @@
-//! Briefing pass (2026-09-14) -- the mock catalog behind the Briefing screen.
-//!
-//! Dataset = the Stitch pre-game mockups verbatim (frequencies, objectives, rules, lore,
-//! parameters, markers, friendly/enemy assets, friendly/enemy uniforms). Where a mockup names a
-//! thing vanilla does not ship (BMP-2, T-72B, GAZ-66; the CDF / VDV uniforms) the row keeps the
-//! mockup's words and the 3D preview uses a vanilla prefab that exists on record
-//! (`contracts_v2/catalogs/registry-items.workbench.json`, `Data/registry.json`), so the
-//! previews are real renders, not placeholders. Consumed only through `TBD_BriefingCatalog.Get()`.
+/**
+ * @file TBD_BriefingMock.c
+ * @brief The mock catalog behind the briefing screen.
+ *
+ * Role: builds the pre-game mockups' briefing verbatim: frequencies, objectives, rules, lore,
+ * parameters, markers, friendly and enemy assets, friendly and enemy uniforms.
+ * Position: consumed only through `TBD_BriefingCatalog.Get()` until a live catalog is set.
+ * State: none; a static builder.
+ * Invariants: where a mockup names a thing vanilla does not ship (BMP-2, T-72B, GAZ-66; the CDF
+ * and VDV uniforms) the row keeps the mockup's words and the 3D preview uses a vanilla prefab on
+ * record (`contracts_v2/catalogs/registry-items.workbench.json`, `Data/registry.json`), so the
+ * previews are real renders.
+ */
+
+//! Briefing mock data.
 class TBD_BriefingMock
 {
-	static const ResourceName VEH_BTR70    = "{1C5FE7B7FF49BB8D}Prefabs/Vehicles/Wheeled/BTR70/BTR70_Base.et";
-	static const ResourceName VEH_BRDM2    = "{254289B9C09904AB}Prefabs/Vehicles/Wheeled/BRDM2/BRDM2.et";
-	static const ResourceName VEH_URAL     = "{16C1F16C9B053801}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport.et";
-	static const ResourceName VEH_UAZ469   = "{259EE7B78C51B624}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469.et";
-	static const ResourceName VEH_M1025    = "{3EA6F47D95867114}Prefabs/Vehicles/Wheeled/M998/M1025_armed_M2HB.et";
-	static const ResourceName VEH_M923     = "{3F2AA823B6C65E1E}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_MERDC.et";
-	static const ResourceName VEH_M151     = "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et";
+	static const ResourceName VEH_BTR70    = "{1C5FE7B7FF49BB8D}Prefabs/Vehicles/Wheeled/BTR70/BTR70_Base.et"; //!< BTR-70 preview prefab
+	static const ResourceName VEH_BRDM2    = "{254289B9C09904AB}Prefabs/Vehicles/Wheeled/BRDM2/BRDM2.et"; //!< BRDM-2 preview prefab
+	static const ResourceName VEH_URAL     = "{16C1F16C9B053801}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport.et"; //!< Ural-4320 transport preview prefab
+	static const ResourceName VEH_UAZ469   = "{259EE7B78C51B624}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469.et"; //!< UAZ-469 preview prefab
+	static const ResourceName VEH_M1025    = "{3EA6F47D95867114}Prefabs/Vehicles/Wheeled/M998/M1025_armed_M2HB.et"; //!< M1025 (M2HB) preview prefab
+	static const ResourceName VEH_M923     = "{3F2AA823B6C65E1E}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_MERDC.et"; //!< M923A1 transport preview prefab
+	static const ResourceName VEH_M151     = "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et"; //!< M151A2 (M2HB) preview prefab
 
+	//! @return a new catalog holding the mock briefing
 	static TBD_BriefingCatalog Build()
 	{
 		TBD_BriefingCatalog c = new TBD_BriefingCatalog();
@@ -36,6 +44,7 @@ class TBD_BriefingMock
 		return c;
 	}
 
+	//! Add the command net and the six squad nets.
 	protected static void BuildNets(TBD_BriefingCatalog c)
 	{
 		Net(c, "", "LR Command Net", 76.2, true, false, 50.6, 35.4, 71.3);
@@ -47,6 +56,7 @@ class TBD_BriefingMock
 		Net(c, "A2-2", "2nd Platoon, 2nd Squad", 388.8, false, false, 457.1, 461.7, 366.1);
 	}
 
+	//! Add one net with its three auxiliary channels (MHz).
 	protected static void Net(TBD_BriefingCatalog c, string callsign, string label, float freq, bool longRange, bool own, float a, float b, float d)
 	{
 		TBD_NetInfo net = new TBD_NetInfo(callsign, label, freq, longRange, own);
@@ -54,6 +64,7 @@ class TBD_BriefingMock
 		c.m_aNets.Insert(net);
 	}
 
+	//! Add the two sector objectives, on Everon so Locate has somewhere to pan.
 	protected static void BuildObjectives(TBD_BriefingCatalog c)
 	{
 		// Coordinates are on Everon so Locate has somewhere to pan.
@@ -61,6 +72,7 @@ class TBD_BriefingMock
 		c.m_aObjectives.Insert(new TBD_ObjectiveInfo(2, "Northern Zone", "Defend", "Sector", "90s", "Permanent (Locked)", 5420, 6140));
 	}
 
+	//! Add the mission rules and the general rules.
 	protected static void BuildRules(TBD_BriefingCatalog c)
 	{
 		TBD_RuleGroup mission = new TBD_RuleGroup("Mission Rules", true);
@@ -78,11 +90,13 @@ class TBD_BriefingMock
 		c.m_aRuleGroups.Insert(general);
 	}
 
+	//! Add the lore paragraph.
 	protected static void BuildLore(TBD_BriefingCatalog c)
 	{
 		c.m_aLore.Insert("In the early morning hours of October 12th, motorized vanguard elements of the 7th Guards Airborne Division crossed the southern perimeter into the valley under dense low-hanging mist. With primary communications corridors pre-sighted and electronic countermeasures active across the operational sector, defending forces must establish perimeter fortifications and maintain forward observation outposts before the primary mechanized assault arrives.");
 	}
 
+	//! Add the five mission parameters.
 	protected static void BuildParams(TBD_BriefingCatalog c)
 	{
 		c.m_aParams.Insert(new TBD_ParamInfo("visibility", "View Distance", "2,500 m"));
@@ -92,6 +106,7 @@ class TBD_BriefingMock
 		c.m_aParams.Insert(new TBD_ParamInfo("thermostat", "Thermals (TI)", "Disabled"));
 	}
 
+	//! Add the friendly and enemy vehicle types with their instances.
 	protected static void BuildAssets(TBD_BriefingCatalog c)
 	{
 		// Friendly (Soviet motor pool, as the lobby's kits).
@@ -143,6 +158,7 @@ class TBD_BriefingMock
 		c.m_aEnemyAssets.Insert(m151);
 	}
 
+	//! @return a vehicle type with its road speed, amphibious flag, water speed and crew line
 	protected static TBD_AssetTypeInfo Type(string name, ResourceName prefab, int count, string speedRoad, string amphibious, string speedWater, string crew)
 	{
 		TBD_AssetTypeInfo type = new TBD_AssetTypeInfo(name, prefab, count);
@@ -160,6 +176,7 @@ class TBD_BriefingMock
 		return v;
 	}
 
+	//! @return a scout car carrying heavy MG belts and the standard stock
 	protected static TBD_AssetInstanceInfo Scout(string callsign, float x = 0, float z = 0)
 	{
 		TBD_AssetInstanceInfo v = new TBD_AssetInstanceInfo(callsign, x, z);
@@ -168,6 +185,7 @@ class TBD_BriefingMock
 		return v;
 	}
 
+	//! @return a truck carrying the standard stock
 	protected static TBD_AssetInstanceInfo Truck(string callsign)
 	{
 		TBD_AssetInstanceInfo v = new TBD_AssetInstanceInfo(callsign);
@@ -175,6 +193,7 @@ class TBD_BriefingMock
 		return v;
 	}
 
+	//! Fill a vehicle's inventory with the standard ammunition, weapons, grenades, medical and misc stock.
 	protected static void Stock(TBD_AssetInstanceInfo v)
 	{
 		v.m_aInvAmmo.Insert(new TBD_KitEntry("AK-74 5.45 Mag", "", 30));
@@ -194,6 +213,7 @@ class TBD_BriefingMock
 		v.m_aInvMisc.Insert(new TBD_KitEntry("E-Tool", "", 2));
 	}
 
+	//! Add the friendly and enemy uniform cards.
 	protected static void BuildUniforms(TBD_BriefingCatalog c)
 	{
 		TBD_UniformInfo cdf = new TBD_UniformInfo("CDF (12th Mechanized)", "kit:sov_rifleman", "", "TTsKO / Dubok");
@@ -215,6 +235,7 @@ class TBD_BriefingMock
 		c.m_aEnemyUniforms.Insert(chdkz);
 	}
 
+	//! Add the four marker plans.
 	protected static void BuildPlans(TBD_BriefingCatalog c)
 	{
 		c.m_aPlans.Insert(new TBD_PlanInfo("plan_alpha", "Plan Alpha - Main Axis of Advance"));

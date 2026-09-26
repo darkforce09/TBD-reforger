@@ -73,7 +73,7 @@ between them. The textures live in `apps/mod/tbd-framework/UI/Textures/TBD/`.
   the lower edge of each panel header stay square; every text widget carries a `FontProperties`
   block.
 - Resource GUID: `7BD1A7000000XX01` in each `.meta`, from the ledger in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`: the shell `0B`, then
+  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UILayouts.c`: the shell `0B`, then
   `TBD_TerrainSelector` `1D`, `TBD_ScenarioBrowser` `1E`, `TBD_MissionInspector` `1F`,
   `TBD_ModGridItem` `20`, `TBD_FactionColumn` `21`, `TBD_TerrainRow` `22` and `TBD_MissionCard`
   `23`. The shell's GUID is named by the menu config and never changes.

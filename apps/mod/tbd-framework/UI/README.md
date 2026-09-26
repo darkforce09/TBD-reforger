@@ -18,7 +18,7 @@ apps/mod/tbd-framework/UI/
 [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) resolves a resource by the GUID in its `.meta`
 file, or by its path inside the addon, through the addon's resource database. Screens never spell
 a path: `TBD_UILayouts`
-(`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`) holds one constant per layout
+(`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UILayouts.c`) holds one constant per layout
 and per texture, `TBD_UIIcons` (same folder) maps icon keys to the icon textures, and
 `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf` binds each menu preset to its shell
 layout and screen class.
@@ -43,7 +43,7 @@ is a committed PNG imported here.
   that the import writes); every resource has a `.meta` beside it whose `Name` holds
   `{GUID}UI/<path>`.
 - Resource GUID: the `.meta` file. The layouts use `7BD1A7000000XXnn`, one block per layout from the
-  ledger in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`; the textures keep the
+  ledger in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UILayouts.c`; the textures keep the
   GUID the import wrote. A GUID never changes once a script constant or a config names it.
 - Naming: `TBD_<Element>.layout` and `TBD_<Subject>_UI` textures; layouts sit in the folder of the
   screen that uses them, textures under `Textures/TBD/`.

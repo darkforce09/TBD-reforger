@@ -1,16 +1,21 @@
-//! Pre-game rebuild (2026-09-12) -- the mock catalog behind the Mission Selector.
-//!
-//! Dataset is the Stitch pre-game mockup (terrain_selector / scenario_browser /
-//! mission_inspector): Everon - Arland - Kolguyev, three missions each so every filter has
-//! something to do, the PVP Test 1 inspector (v2.14.99 LATEST, TBD CORE COMPETITIVE V1.8 with six
-//! mods, BLUFOR Defending 24 vs OPFOR Attacking 24, two objectives a side), identity
-//! `Mission Maker` / `ADMIN`, one player connected.
-//!
-//! Counts in the UI (`N AVAILABLE`, the Modes badge, per-mode checkbox counts) are COMPUTED from
-//! this data by the screen, never typed in -- the mockup's `30 Available` is a picture, the screen
-//! is data-driven. Consumed only through `TBD_MissionCatalog.Get()`.
+/**
+ * @file TBD_MissionSelectorMock.c
+ * @brief The mock catalog behind the mission selector.
+ *
+ * Role: builds the pre-game mockup's dataset (terrain_selector, scenario_browser,
+ * mission_inspector): Everon, Arland and Kolguyev with three missions each, the PVP Test 1
+ * inspector (v2.14.99 LATEST, TBD CORE COMPETITIVE V1.8 with six mods, BLUFOR Defending 24 vs
+ * OPFOR Attacking 24, two objectives a side), identity `Mission Maker` / `ADMIN`, one player.
+ * Position: consumed only through `TBD_MissionCatalog.Get()` until a live catalog is set.
+ * State: none; a static builder.
+ * Invariants: counts in the UI (`N AVAILABLE`, the Modes badge, per-mode counts) are computed
+ * from this data by the screen, never typed in.
+ */
+
+//! Mission selector mock data.
 class TBD_MissionSelectorMock
 {
+	//! @return a new catalog holding the mock terrains, modes and missions
 	static TBD_MissionCatalog Build()
 	{
 		TBD_MissionCatalog catalog = new TBD_MissionCatalog();
@@ -124,7 +129,6 @@ class TBD_MissionSelectorMock
 		return catalog;
 	}
 
-
 	//! Every mock mission shares the inspector's version ladder and modset; the screen shows the
 	//! same picture the mockup does whichever card is picked.
 	protected static TBD_MissionSummary AddMission(string id, string title, string tag, string terrain, int slots, TBD_MissionCatalog catalog)
@@ -148,6 +152,8 @@ class TBD_MissionSelectorMock
 		return mission;
 	}
 
+	//! Add a faction summary to `mission`.
+	//! @return the new faction, for chained vehicle and objective adds
 	protected static TBD_MissionFactionSummary AddFaction(TBD_MissionSummary mission, string key, string role, int slots, TBD_EUITint tint)
 	{
 		TBD_MissionFactionSummary faction = new TBD_MissionFactionSummary(key, role, slots, tint);

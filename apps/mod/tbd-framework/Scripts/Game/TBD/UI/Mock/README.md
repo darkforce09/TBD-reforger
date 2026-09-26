@@ -23,9 +23,9 @@ in the addon calls a catalog's `Set(...)` today, so these datasets are what the 
 
 | Mock | Catalog, read through `Get()` | Dataset |
 |---|---|---|
-| `TBD_MissionSelectorMock` | `TBD_MissionCatalog` in `Session/MissionSelector/TBD_MissionSelectorData.c` | three terrains (Everon, Arland, Kolguyev), five modes, nine missions, the `PVP Test 1` inspector |
-| `TBD_LobbyMock` | `TBD_LobbyCatalog` in `Session/Lobby/TBD_LobbyCatalog.c` | BLUFOR (92 seats), OPFOR (95) and spectators (10), the drawn squads and holders, four kits keyed by role |
-| `TBD_BriefingMock` | `TBD_BriefingCatalog` in `Session/Briefing/TBD_BriefingCatalog.c` | seven radio nets, objectives, rules, lore, parameters, both sides' assets and uniforms, plans |
+| `TBD_MissionSelectorMock` | `TBD_MissionCatalog` in `Session/MissionSelector/Catalog/TBD_MissionCatalog.c` | three terrains (Everon, Arland, Kolguyev), five modes, nine missions, the `PVP Test 1` inspector |
+| `TBD_LobbyMock` | `TBD_LobbyCatalog` in `Session/Lobby/Catalog/TBD_LobbyCatalog.c` | BLUFOR (92 seats), OPFOR (95) and spectators (10), the drawn squads and holders, four kits keyed by role |
+| `TBD_BriefingMock` | `TBD_BriefingCatalog` in `Session/Briefing/Catalog/TBD_BriefingCatalog.c` | seven radio nets, objectives, rules, lore, parameters, both sides' assets and uniforms, plans |
 | `TBD_PlayersMock` | `TBD_PlayersCatalog` in `Session/Players/TBD_PlayersCatalog.c` | BLUFOR 36 of 40, OPFOR 48 of 50, four spectators, six unslotted |
 
 The catalog paths are under `apps/mod/tbd-framework/Scripts/Game/TBD/`. Counts a screen shows

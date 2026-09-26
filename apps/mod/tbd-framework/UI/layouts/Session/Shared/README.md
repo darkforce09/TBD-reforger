@@ -3,7 +3,7 @@
 The layouts more than one session screen wears unchanged: the top and bottom bars of the
 Mission Selector, lobby and briefing, and the PLAYERS panel with its lanes and rows. The bars'
 handlers live in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Common/`, and
-`TBD_DockScreen` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_DockScreen.c` mounts them.
+`TBD_DockScreen` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Screens/TBD_DockScreen.c` mounts them.
 
 ## Contents
 
@@ -54,7 +54,7 @@ anchored so they resize with the dock. Each dock takes a `TBD_PlayerLane`, whose
   the root; every `*Border` and `*BG` is an empty `FrameWidgetClass` dock that the handler fills
   with a rounded shape, and every text widget carries a `FontProperties` block.
 - Resource GUID: `7BD1A7000000XX01` in each `.meta`, from the ledger in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`: `TBD_SessionTopBar` `1B`,
+  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UILayouts.c`: `TBD_SessionTopBar` `1B`,
   `TBD_SessionBottomBar` `1C`, `TBD_PlayersPanel` `43`, `TBD_PlayerLane` `44` and `TBD_PlayerRow`
   `45`; a GUID never changes.
 - Naming: `TBD_<Element>.layout`. A layout belongs here when two or more session screens use it,

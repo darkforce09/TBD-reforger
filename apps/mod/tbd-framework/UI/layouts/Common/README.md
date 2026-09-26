@@ -39,7 +39,7 @@ Each `.layout` sits beside its `.layout.meta`, so every line covers the pair.
 ## How it works
 
 A screen never names a file here by path: `TBD_UILayouts`
-(`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`) holds one constant per layout,
+(`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UILayouts.c`) holds one constant per layout,
 and `TBD_UILayouts.Create`, `CreateStretched` or `CreateHandler` instantiates it under a parent.
 Most primitives carry their handler as a widget component on the root, and several handlers add a
 static `Mount(dock, …)` that creates and binds in one call. The handler finds each named widget
@@ -113,12 +113,12 @@ skipped.
 
 ## Referenced by
 
-- `TBD_UILayouts` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`, by GUID and
+- `TBD_UILayouts` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UILayouts.c`, by GUID and
   path, one constant per layout; the handlers and screens under
   `apps/mod/tbd-framework/Scripts/Game/TBD/` use those constants.
 - `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf`, by GUID: the `TBD_UIShell`,
   `TBD_Spectator` and `TBD_UIAdmin` menu presets open `TBD_ScreenShell.layout`.
-- `TBD_ListBox` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_ListBox.c`, by GUID: its
+- `TBD_ListBox` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Controls/TBD_ListBox.c`, by GUID: its
   row-layout attribute defaults to `TBD_ListRow.layout`.
 - The layouts in `apps/mod/tbd-framework/UI/layouts/Session/` and `Hud/` name the handler classes
   and repeat the dock and scroll conventions; they do not include these files.

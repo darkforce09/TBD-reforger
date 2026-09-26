@@ -15,7 +15,7 @@ apps/mod/tbd-framework/UI/layouts/Session/Admin/
 - File type: none here; a layout added for the admin menu alone is an
   [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) widget layout with its `.layout.meta`, named
   `TBD_Admin<Element>.layout`, with a block from the ledger in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c` and a `TBD_UILayouts`
+  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UILayouts.c` and a `TBD_UILayouts`
   constant.
 
 ## Referenced by

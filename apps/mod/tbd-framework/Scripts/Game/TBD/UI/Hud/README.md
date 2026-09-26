@@ -8,16 +8,18 @@ on the map. The server composes both and sends each client its own snapshot.
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/
-├── TBD_ObjectiveHud.c  TBD_ObjectiveHud: the objective board and capture bar, and its RPC pair
-└── TBD_TaskHud.c       TBD_TaskHud: assigned tasks as map markers, and its RPC pair
+├── SCR_PlayerController.c  modded SCR_PlayerController: the objective and task snapshot RPC pairs
+├── TBD_ObjectiveHud.c      TBD_ObjectiveHud: the objective board and capture bar
+└── TBD_TaskHud.c           TBD_TaskHud: assigned tasks as map markers, snapshot build and draw
 ```
 
 ## How it works
 
 `TBD_ObjectiveHud` is the `ScriptedWidgetComponent` on the root of
 `apps/mod/tbd-framework/UI/layouts/Hud/TBD_ObjectiveHud.layout` (`TBD_UILayouts.OBJECTIVE_HUD`).
-`TBD_ObjectivesComponent` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/` calls
-`SCR_PlayerController.TBD_PushObjectiveHud` with one player's icons, titles, details and bar; on a
+`TBD_ObjectiveHudPublisher`, owned by `TBD_ObjectivesComponent` in
+`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`, calls
+`SCR_PlayerController.TBD_PushObjectiveHud` (in `SCR_PlayerController.c`) with one player's icons, titles, details and bar; on a
 listen host the host's own snapshot is applied directly, anyone else's goes out as an owner RPC.
 `Accept` stores the snapshot, opens the layout when it is closed and repaints only when the
 snapshot's signature changed: a `TBD_ListBox` row per objective, `[icon] title` with the detail
@@ -34,12 +36,15 @@ not side-scoped: every player gets the same snapshot.
 
 ## Authority
 
-- Server: the snapshots, built by `TBD_ObjectivesComponent` and `TBD_TaskHud.BuildSnapshot`
+- Server: the snapshots, built by `TBD_ObjectiveHudPublisher` and `TBD_TaskHud.BuildSnapshot`
   from server-owned state; `TBD_PushObjectiveHud`, `TBD_PushTaskHud` and `TBD_TaskHud.PushToPlayers`
-  return on `RplMode.Client`. These methods carry no `@authority` tag.
-- Client: `Accept` in both classes paints what arrives; `TBD_RequestTaskHud` asks the server for
-  the task snapshot.
-- Owner: each RPC reply goes to the requesting or addressed player's controller only.
+  (`@authority server`) return on a client (`TBD_Authority.IsClient()`), and the two `RpcAsk`
+  handlers answer there.
+- Client: `Accept` in both classes paints what arrives; `TBD_TaskHud.RequestLocal`
+  (`@authority client`) asks for the task snapshot.
+- Owner: `TBD_RequestObjectiveHud` and `TBD_RequestTaskHud` (`@authority owner`) ask from the
+  local player's controller, and the two `RpcDo` handlers run there; each reply goes to that
+  player's controller only.
 - RPCs, on the modded `SCR_PlayerController`, as their `@rpc` tags state:
   - `TBD_RpcAsk_ObjectiveHud`: Reliable, Server; answers with that player's board;
   - `TBD_RpcDo_ObjectiveHud`: Reliable, Owner; the board, the bar and `show`;
@@ -49,13 +54,14 @@ not side-scoped: every player gets the same snapshot.
 
 ## Boundaries
 
-- Depends on: `TBD_ObjectivesComponent` and `TBD_TaskStateMachine` in
+- Depends on: `TBD_ObjectivesComponent`, `TBD_ObjectiveHudPublisher` and `TBD_TaskStateMachine` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`; `TBD_MarkerClient` and
   `TBD_MarkerIcons` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/`; `TBD_UILayouts`,
-  `TBD_UITheme` and `TBD_ListBox` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/`; `TBD_Log`;
+  `TBD_UITheme` and `TBD_ListBox` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/` and
+  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Controls/`; `TBD_Log`;
   the engine's `SCR_MapMarkerManagerComponent`; the `task` definition in
   `contracts_v2/definitions/mission.schema.json`.
-- Used by: `TBD_ObjectivesComponent`, which pushes the objective board; `TBD_TaskStateMachine`,
+- Used by: `TBD_ObjectiveHudPublisher`, which pushes the objective board; `TBD_TaskStateMachine`,
   which pushes task changes, clears the markers when a world starts and runs the client request
   tick; `apps/mod/tbd-framework/UI/layouts/Hud/TBD_ObjectiveHud.layout`, which attaches
   `TBD_ObjectiveHud` by class.

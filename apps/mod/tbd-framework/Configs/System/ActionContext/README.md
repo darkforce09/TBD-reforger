@@ -40,7 +40,7 @@ active.
 
 ## Referenced by
 
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/TBD_MissionBrowser.c` activates
+- `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/SCR_PlayerController.c` activates
   `TBD_BrowserContext` by name.
 - `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Spectator/TBD_SpectatorCamera.c` activates
   `TBD_SpectatorContext` by name (`CTX_SPECTATOR`).

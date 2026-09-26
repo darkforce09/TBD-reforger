@@ -1,3 +1,16 @@
+/**
+ * @file TBD_Sha256.c
+ * @brief SHA-256 (FIPS 180-4) over bytes held one per `array<int>` element, as lowercase hex.
+ *
+ * Role: hashes mission artifact bytes, because the engine exposes no cryptographic hash to script
+ * and an artifact is accepted only when the SHA-256 of the bytes received equals the published one.
+ * Position: driven by `TBD_Sha256Job` and the mission artifact cache; checked by
+ * `TBD_Sha256SelfTest` against FIPS vectors.
+ * State: one hash state per instance (H0..H7, the schedule, the partial word and block, the
+ * length and the finished digest); the round constants are built once per script VM.
+ * Invariants: signed 32-bit script ints carry the unsigned words (see the class banner); input up
+ * to 256 MiB, since the bit length is kept in one 31-bit word; every byte is masked to 0..255.
+ */
 //! SHA-256 (FIPS 180-4) over bytes held one per element of an `array<int>`, as lowercase hex. The
 //! engine exposes no cryptographic hash to script, and a mission artifact is accepted only when the
 //! SHA-256 of the exact bytes received equals the one the platform published for it.
@@ -23,40 +36,41 @@
 //! are supported, since the bit length is kept in one 31-bit word.
 class TBD_Sha256
 {
-	protected static const string HEX_DIGITS = "0123456789abcdef";
+	protected static const string HEX_DIGITS = "0123456789abcdef"; //!< lowercase hex digits, indexed by nibble
 
 	//! 2^n - 1: what survives an arithmetic right shift by 32 - n once the sign copies are masked off.
-	protected static const int LOW_7_BITS = 127;
-	protected static const int LOW_10_BITS = 1023;
-	protected static const int LOW_13_BITS = 8191;
-	protected static const int LOW_14_BITS = 16383;
-	protected static const int LOW_15_BITS = 32767;
-	protected static const int LOW_19_BITS = 524287;
-	protected static const int LOW_21_BITS = 2097151;
-	protected static const int LOW_22_BITS = 4194303;
-	protected static const int LOW_25_BITS = 33554431;
-	protected static const int LOW_26_BITS = 67108863;
-	protected static const int LOW_29_BITS = 536870911;
-	protected static const int LOW_30_BITS = 1073741823;
+	protected static const int LOW_7_BITS = 127; //!< 2^7 - 1
+	protected static const int LOW_10_BITS = 1023; //!< 2^10 - 1
+	protected static const int LOW_13_BITS = 8191; //!< 2^13 - 1
+	protected static const int LOW_14_BITS = 16383; //!< 2^14 - 1
+	protected static const int LOW_15_BITS = 32767; //!< 2^15 - 1
+	protected static const int LOW_19_BITS = 524287; //!< 2^19 - 1
+	protected static const int LOW_21_BITS = 2097151; //!< 2^21 - 1
+	protected static const int LOW_22_BITS = 4194303; //!< 2^22 - 1
+	protected static const int LOW_25_BITS = 33554431; //!< 2^25 - 1
+	protected static const int LOW_26_BITS = 67108863; //!< 2^26 - 1
+	protected static const int LOW_29_BITS = 536870911; //!< 2^29 - 1
+	protected static const int LOW_30_BITS = 1073741823; //!< 2^30 - 1
 
 	protected static ref array<int> s_aRoundConstants; //!< The 64 round constants K (FIPS 180-4, 4.2.2).
 
-	protected int m_iH0; //!< The hash state H0..H7.
-	protected int m_iH1;
-	protected int m_iH2;
-	protected int m_iH3;
-	protected int m_iH4;
-	protected int m_iH5;
-	protected int m_iH6;
-	protected int m_iH7;
+	protected int m_iH0; //!< hash state H0
+	protected int m_iH1; //!< hash state H1
+	protected int m_iH2; //!< hash state H2
+	protected int m_iH3; //!< hash state H3
+	protected int m_iH4; //!< hash state H4
+	protected int m_iH5; //!< hash state H5
+	protected int m_iH6; //!< hash state H6
+	protected int m_iH7; //!< hash state H7
 
 	protected ref array<int> m_aSchedule; //!< The message schedule W; its first 16 words are the block being filled.
-	protected int m_iWord; //!< Bytes of the word being assembled, and how many (0..3).
-	protected int m_iWordBytes;
+	protected int m_iWord; //!< the bytes of the word being assembled
+	protected int m_iWordBytes; //!< how many bytes the word holds (0..3)
 	protected int m_iBlockWords; //!< Words of the block being filled (0..15).
 	protected int m_iLength; //!< Bytes absorbed so far.
-	protected string m_sDigest;
+	protected string m_sDigest; //!< the finished digest; empty until HexDigest
 
+	//! Start a hash at the FIPS 180-4 initial state.
 	void TBD_Sha256()
 	{
 		m_aSchedule = new array<int>();
@@ -184,6 +198,8 @@ class TBD_Sha256
 		return m_sDigest;
 	}
 
+	//! Absorb one byte into the current word; a full word enters the block, and a full block is
+	//! compressed.
 	protected void AbsorbByte(int value)
 	{
 		m_iWord = (m_iWord << 8) | (value & 255);
@@ -267,6 +283,7 @@ class TBD_Sha256
 		return digits;
 	}
 
+	//! @return the 64 round constants K, built on first use
 	protected static array<int> RoundConstants()
 	{
 		if (s_aRoundConstants)

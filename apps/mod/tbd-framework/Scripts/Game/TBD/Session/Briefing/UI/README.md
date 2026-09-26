@@ -19,7 +19,7 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Session/Briefing/UI/
 
 `TBD_BriefingScreen` extends `TBD_DockScreen` over a full-screen `SCR_MapEntity` and opens through
 `TBD_MenuStack` on the `TBD_UIBriefing` preset, which
-`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/ChimeraMenuPreset.c` adds and `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf` binds to
+`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Screens/ChimeraMenuPreset.c` adds and `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf` binds to
 `apps/mod/tbd-framework/UI/layouts/Session/Briefing/TBD_BriefingScreen.layout`. The primary
 navigation sits in LeftDock and selects a `TBD_EBriefingMode` (`SetMode`); the topic navigation sits
 in CenterDock and selects a `TBD_EBriefingPage` (`ShowPage`), whose page `TBD_BriefingNav.CreatePage`

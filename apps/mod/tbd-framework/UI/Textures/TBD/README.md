@@ -23,7 +23,7 @@ apps/mod/tbd-framework/UI/Textures/TBD/
 
 Each texture is three files: the source `.png`, the `.edds` that Workbench writes when it imports
 the PNG, and the `.edds.meta` that holds the resource GUID. `TBD_UILayouts`
-(`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`) pins each GUID in a constant,
+(`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UILayouts.c`) pins each GUID in a constant,
 and `TBD_UILayouts.LoadTexture` puts a texture on an image widget; when the texture does not
 resolve it hides the widget and logs the miss once, so a missing import shows an empty slot, never
 a white square.
@@ -57,7 +57,7 @@ pixels from y 1600, scaled to 1024 x 140.
 
 - `apps/mod/tbd-framework/UI/layouts/Common/TBD_Rounded5.layout` to `TBD_Rounded12.layout` name
   `TBD_Disc_UI` by resource GUID in their `DiscTL`, `DiscTR`, `DiscBL` and `DiscBR` images.
-- `TBD_UILayouts` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c` names all
+- `TBD_UILayouts` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UILayouts.c` names all
   five by GUID and path; the callers use its constants:
   - `TBD_MissionInspectorPanel` in
     `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/UI/` loads `FADE_DOWN`,
@@ -67,7 +67,7 @@ pixels from y 1600, scaled to 1024 x 140.
   - `TBD_KitInspectorPanel` in `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/UI/` and
     `TBD_BriefingPage` in `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Briefing/UI/` load
     `HERO_TOPO` behind their 3D previews.
-- `TBD_UIIcons` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UIIcons.c` loads the icons
+- `TBD_UIIcons` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UIIcons.c` loads the icons
   by path.
 
 ## Boundaries

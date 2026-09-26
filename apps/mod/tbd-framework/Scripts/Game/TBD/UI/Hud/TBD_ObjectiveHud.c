@@ -1,34 +1,44 @@
-//! T-941.4 -- objective list + capture bar. Replaces the per-tick chat pump.
-//!
-//! Layout is `TBD_UILayouts.OBJECTIVE_HUD` (UI reorg 2026-09-12; used to be pinned here). Transport hangs off SCR_PlayerController so Owner RPC delivers
-//! one snapshot per client, the same pattern TBD_TaskHud uses.
+/**
+ * @file TBD_ObjectiveHud.c
+ * @brief The live-round objective list and capture bar.
+ *
+ * Role: handler of `TBD_UILayouts.OBJECTIVE_HUD`; paints one objective snapshot (icon, title and
+ * detail per row, a capture bar) and closes when the snapshot says the stage left LIVE.
+ * Position: fed by `TBD_ObjectiveHudPublisher` through `SCR_PlayerController.TBD_PushObjectiveHud`
+ * (this folder's `SCR_PlayerController.c`), one snapshot per client over an Owner RPC.
+ * State: the static root, instance and last snapshot with its signature, on the client.
+ * Invariants: an unchanged snapshot does not repaint (signature check); the bar percent is clamped
+ * to 0..100; a HUD never opens without a workspace.
+ */
 
+//! Objective HUD handler and its static snapshot.
 class TBD_ObjectiveHud : ScriptedWidgetComponent
 {
-	static const ResourceName LAYOUT = TBD_UILayouts.OBJECTIVE_HUD;
+	static const ResourceName LAYOUT = TBD_UILayouts.OBJECTIVE_HUD; //!< the HUD layout resource
 
-	static const float BAR_WIDTH = 328.0; //!< Matches CaptureFill SizeX in TBD_ObjectiveHud.layout (C3: 328).
-	static const float BAR_HEIGHT = 10.0;
+	static const float BAR_WIDTH = 328.0; //!< capture fill width at 100 %, reference px; matches CaptureFill SizeX in the layout
+	static const float BAR_HEIGHT = 10.0; //!< capture fill height, reference px
 
-	protected static Widget s_wRoot;
-	protected static TBD_ObjectiveHud s_Instance;
+	protected static Widget s_wRoot; //!< the open HUD root; null while closed
+	protected static TBD_ObjectiveHud s_Instance; //!< the handler on the open root
 
-	protected static ref array<string> s_aIcons;
-	protected static ref array<string> s_aTitles;
-	protected static ref array<string> s_aDetails;
-	protected static string s_sBarLabel;
-	protected static int s_iBarPercent;
-	protected static int s_iBarVisible;
-	protected static string s_sLastSignature;
+	protected static ref array<string> s_aIcons; //!< per-row status glyph of the last snapshot (`!`, `v`, `+`, `-`)
+	protected static ref array<string> s_aTitles; //!< per-row objective title of the last snapshot
+	protected static ref array<string> s_aDetails; //!< per-row detail text of the last snapshot
+	protected static string s_sBarLabel; //!< capture bar label of the last snapshot
+	protected static int s_iBarPercent; //!< capture progress of the last snapshot, percent
+	protected static int s_iBarVisible; //!< 1 shows the capture bar, 0 hides it
+	protected static string s_sLastSignature; //!< signature of the last painted snapshot; empty forces a repaint
 
-	protected Widget m_wRoot;
-	protected Widget m_wPanel;
-	protected Widget m_wCaptureBar;
-	protected Widget m_wCaptureFill;
-	protected TextWidget m_wTitle;
-	protected TextWidget m_wCaptureLabel;
-	protected TBD_ListBox m_List;
+	protected Widget m_wRoot; //!< the widget this handler sits on
+	protected Widget m_wPanel; //!< `Panel`, painted with real alpha over the world
+	protected Widget m_wCaptureBar; //!< `CaptureBar`
+	protected Widget m_wCaptureFill; //!< `CaptureFill`, sized by percent
+	protected TextWidget m_wTitle; //!< `Title`
+	protected TextWidget m_wCaptureLabel; //!< `CaptureLabel`
+	protected TBD_ListBox m_List; //!< the `List` of objectives
 
+	//! Create the HUD layout under the workspace root; does nothing when open or without a workspace.
 	static void Open()
 	{
 		if (s_wRoot)
@@ -48,6 +58,7 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 		s_wRoot = root;
 	}
 
+	//! Remove the HUD and forget the painted snapshot.
 	static void Close()
 	{
 		if (!s_wRoot)
@@ -59,6 +70,7 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 		s_sLastSignature = string.Empty;
 	}
 
+	//! @return true while the HUD is open
 	static bool IsOpen()
 	{
 		return s_wRoot != null;
@@ -88,6 +100,7 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 			s_Instance.PaintPending();
 	}
 
+	//! Bind the widgets, paint the chrome, title the panel and paint the pending snapshot.
 	override void HandlerAttached(Widget w)
 	{
 		super.HandlerAttached(w);
@@ -113,6 +126,7 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 		PaintPending();
 	}
 
+	//! Forget this instance and root when the handler leaves its widget.
 	override void HandlerDeattached(Widget w)
 	{
 		if (s_Instance == this)
@@ -123,6 +137,7 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 		super.HandlerDeattached(w);
 	}
 
+	//! Repaint list and bar when the snapshot signature changed (always on the first paint).
 	protected void PaintPending()
 	{
 		string signature = SnapshotSignature();
@@ -135,6 +150,7 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 		PaintBar();
 	}
 
+	//! Rebuild the objective list, one `[glyph] title` row per objective, rows not clickable.
 	protected void PaintList()
 	{
 		if (!m_List)
@@ -168,6 +184,7 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 		m_List.EndUpdate();
 	}
 
+	//! Show or hide the capture bar; write `label  N%` and size the fill (at least 1 px).
 	protected void PaintBar()
 	{
 		bool show = s_iBarVisible != 0;
@@ -202,6 +219,7 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 		FrameSlot.SetSize(m_wCaptureFill, width, BAR_HEIGHT);
 	}
 
+	//! @return the row state for a status glyph: `!` danger, `v` or `+` active, `-` taken, else normal
 	protected TBD_EUIState StateForIcon(string icon)
 	{
 		if (icon == "!")
@@ -214,6 +232,7 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 		return TBD_EUIState.NORMAL;
 	}
 
+	//! @return a string that changes whenever any field of the snapshot changes
 	protected string SnapshotSignature()
 	{
 		string sig = s_sBarLabel;
@@ -239,6 +258,7 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 		return sig;
 	}
 
+	//! @return the widget `name` under the root, or null
 	protected Widget Find(string name)
 	{
 		if (!m_wRoot)
@@ -247,11 +267,13 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 		return m_wRoot.FindAnyWidget(name);
 	}
 
+	//! @return the text widget `name` under the root, or null
 	protected TextWidget FindText(string name)
 	{
 		return TextWidget.Cast(Find(name));
 	}
 
+	//! @return the handler of class `handler` on the widget `name`, or null
 	protected ScriptedWidgetComponent FindHandlerOn(string name, typename handler)
 	{
 		Widget w = Find(name);
@@ -259,53 +281,5 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 			return null;
 
 		return ScriptedWidgetComponent.Cast(w.FindHandler(handler));
-	}
-}
-
-modded class SCR_PlayerController
-{
-	void TBD_RequestObjectiveHud()
-	{
-		if (TBD_Authority.IsClient())
-		{
-			Rpc(TBD_RpcAsk_ObjectiveHud);
-			return;
-		}
-
-		TBD_ObjectivesComponent runner = TBD_ObjectivesComponent.GetInstance();
-		if (runner)
-			runner.PushHudTo(GetPlayerId());
-	}
-
-	void TBD_PushObjectiveHud(array<string> icons, array<string> titles, array<string> details,
-		string barLabel, int barPercent, int barVisible, int show)
-	{
-		if (TBD_Authority.IsClient())
-			return;
-
-		if (GetGame().GetPlayerController() == this)
-		{
-			TBD_ObjectiveHud.Accept(icons, titles, details, barLabel, barPercent, barVisible, show);
-			return;
-		}
-
-		Rpc(TBD_RpcDo_ObjectiveHud, icons, titles, details, barLabel, barPercent, barVisible, show);
-	}
-
-	//! @rpc Reliable Server
-	[RplRpc(RplChannel.Reliable, RplRcver.Server)]
-	protected void TBD_RpcAsk_ObjectiveHud()
-	{
-		TBD_ObjectivesComponent runner = TBD_ObjectivesComponent.GetInstance();
-		if (runner)
-			runner.PushHudTo(GetPlayerId());
-	}
-
-	//! @rpc Reliable Owner
-	[RplRpc(RplChannel.Reliable, RplRcver.Owner)]
-	protected void TBD_RpcDo_ObjectiveHud(array<string> icons, array<string> titles,
-		array<string> details, string barLabel, int barPercent, int barVisible, int show)
-	{
-		TBD_ObjectiveHud.Accept(icons, titles, details, barLabel, barPercent, barVisible, show);
 	}
 }

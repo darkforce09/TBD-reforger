@@ -39,11 +39,11 @@ panels live under `apps/mod/tbd-framework/Scripts/Game/TBD/Session/` and use thi
 
 ## Authority
 
-- Server: `Hud/` builds and sends each player's snapshot; `TBD_UILayouts.Create` returns null on
-  a dedicated server, which has no workspace.
+- Server: `Hud/` builds and sends each player's snapshot; `TBD_UILayouts.Create` returns null
+  without a workspace.
 - Client: every screen, component, mock catalog and HUD painter.
 - Owner: each HUD snapshot goes to its own player's controller.
-- RPCs: four, all Reliable on the modded `SCR_PlayerController` in `Hud/`: the objective board
+- RPCs: four, all Reliable on the modded `SCR_PlayerController` in `Hud/SCR_PlayerController.c`: the objective board
   and the task snapshot, each an ask to the Server and an answer to the Owner.
 - Replicated properties: none.
 
