@@ -1,148 +1,34 @@
-//! Pre-game rebuild (2026-09-13) -- the FACTIONS column of the Lobby (lobby_sidebar mockup).
-//!
-//! ```
-//!   ┌ FACTIONS ─────────────────────────┐
-//!   │ BLUFOR  [DEFENDING]      [0 / 92] │  <- selected: brighter tinted border
-//!   │ OPFOR   [ATTACKING]      [0 / 95] │
-//!   │                                   │
-//!   │ Spectators               [0 / 10] │
-//!   │ (VoiceDock -- voice panel, later)  │
-//!   └───────────────────────────────────┘
-//! ```
-//!
-//! Two classes, one file:
-//!   * `TBD_LobbyFactionRowComponent` -- one pooled row (`TBD_LobbyFactionRow.layout`). Contract:
-//!     `Border`, `Background`, `Name`, `RoleChipDock`, `CountChipDock`.
-//!   * `TBD_LobbyFactionPanel` -- the controller: fills a mounted `TBD_PanelFill` (title FACTIONS),
-//!     owns the selection. `GetOnSelected()(panel, factionKey)` is its only output; the seat
-//!     counts are recomputed from the catalog on every `Refresh()`.
+/**
+ * @file TBD_LobbyFactionPanel.c
+ * @brief The FACTIONS column of the Lobby screen: one pooled row per catalog faction.
+ *
+ * Role: fills a mounted TBD_PanelFill.layout titled FACTIONS with TBD_LobbyFactionRowComponent rows,
+ * spectators in their own dock, and owns the faction selection.  Position: built by TBD_LobbyScreen
+ * from TBD_LobbyCatalog; raises GetOnSelected, which the screen routes to TBD_LobbyRosterPanel.
+ * State: the catalog, the pooled rows and their faction keys, and the selected key; client UI only.
+ * Invariants: rows are pooled by index and surplus rows hidden; claimed counts are recomputed from
+ * the catalog on every Refresh.
+ */
 
-class TBD_LobbyFactionRowComponent : TBD_UIInteractive
-{
-	protected Widget m_wBorder;
-	protected Widget m_wBackground;
-	protected TextWidget m_wName;
-	protected Widget m_wRoleDock;
-	protected Widget m_wCountDock;
-	protected TBD_ChipComponent m_RoleChip;
-	protected TBD_ChipComponent m_CountChip;
-
-	protected TBD_LobbyFactionPanel m_Owner; //!< weak
-	protected int m_iIndex = -1;
-	protected TBD_EUITint m_eTint = TBD_EUITint.NEUTRAL;
-	protected bool m_bSelected;
-	protected int m_iGround;
-
-	override protected void OnBind(Widget w)
-	{
-		m_wBorder = w.FindAnyWidget("Border");
-		m_wBackground = w.FindAnyWidget("Background");
-		m_wName = TextWidget.Cast(w.FindAnyWidget("Name"));
-		m_wRoleDock = w.FindAnyWidget("RoleChipDock");
-		m_wCountDock = w.FindAnyWidget("CountChipDock");
-
-		TBD_UILayouts.MountRounded(m_wBorder, TBD_UITheme.RADIUS_ROW);
-		TBD_UILayouts.MountRounded(m_wBackground, TBD_UITheme.RADIUS_ROW - 1);
-	}
-
-	void Bind(TBD_LobbyFactionPanel owner, int index, TBD_LobbyFactionInfo faction, int claimed, int ground)
-	{
-		m_Owner = owner;
-		m_iIndex = index;
-		m_eTint = faction.m_eTint;
-		m_iGround = ground;
-
-		TBD_UITheme.Write(m_wName, faction.m_sName);
-
-		if (faction.m_sRoleLabel.IsEmpty())
-		{
-			if (m_RoleChip)
-				m_RoleChip.SetChipVisible(false);
-		}
-		else
-		{
-			if (!m_RoleChip)
-				m_RoleChip = TBD_ChipComponent.Mount(m_wRoleDock, faction.m_sRoleLabel, TBD_EUITint.NEUTRAL);
-			else
-				m_RoleChip.SetText(faction.m_sRoleLabel);
-
-			if (m_RoleChip)
-				m_RoleChip.SetChipVisible(true);
-		}
-
-		string count = string.Format("%1 / %2", claimed, faction.m_iSeats);
-		if (!m_CountChip)
-			m_CountChip = TBD_ChipComponent.Mount(m_wCountDock, count, TBD_EUITint.NEUTRAL);
-		else
-			m_CountChip.SetText(count);
-
-		Repaint();
-	}
-
-	void SetSelected(bool selected)
-	{
-		if (m_bSelected == selected)
-			return;
-
-		m_bSelected = selected;
-		Repaint();
-	}
-
-	override void Repaint()
-	{
-		if (!m_wRoot)
-			return;
-
-		bool hovered = IsHighlighted() && m_bInteractive;
-		int fill = TBD_UITheme.FactionRowFill(m_eTint, hovered || m_bSelected); // selected = lit like hover
-		int border = TBD_UITheme.FactionRowBorder(m_eTint, m_bSelected);
-		int ink = TBD_UITheme.FactionRowInk(m_eTint);
-		if (m_eTint == TBD_EUITint.NEUTRAL && (hovered || m_bSelected))
-			ink = TBD_UITheme.ON_SURFACE;
-
-		int ground = m_iGround;
-		if (ground == 0)
-			ground = TBD_UITheme.PanelGround();
-
-		TBD_UITheme.PaintOver(m_wBackground, fill, ground);
-		TBD_UITheme.PaintOver(m_wBorder, border, ground);
-		TBD_UITheme.Paint(m_wName, ink);
-
-		int rowGround = TBD_UITheme.Over(fill, ground);
-		if (m_RoleChip)
-			m_RoleChip.SetGround(rowGround);
-
-		if (m_CountChip)
-			m_CountChip.SetGround(rowGround);
-	}
-
-	override protected void OnActivated()
-	{
-		if (m_Owner)
-			m_Owner.OnRowActivated(m_iIndex);
-	}
-
-	void SetRowVisible(bool visible)
-	{
-		TBD_UITheme.Show(m_wRoot, visible);
-	}
-}
-
+//! Controller of the FACTIONS column.
 class TBD_LobbyFactionPanel
 {
-	protected TBD_PanelComponent m_Panel;
-	protected Widget m_wBody;
-	protected Widget m_wContent;
-	protected Widget m_wSpectatorDock;
+	protected TBD_PanelComponent m_Panel; //!< the host panel; null after Destroy
+	protected Widget m_wBody; //!< TBD_LobbyFactionList.layout body
+	protected Widget m_wContent; //!< `Content`: the faction rows
+	protected Widget m_wSpectatorDock; //!< `SpectatorDock`: the spectator row
 
-	protected TBD_LobbyCatalog m_Catalog;
-	protected ref array<TBD_LobbyFactionRowComponent> m_aRows; //!< handlers owned by their widgets
-	protected ref array<string> m_aRowKeys;
-	protected string m_sSelectedKey;
+	protected TBD_LobbyCatalog m_Catalog; //!< the data source; its changes refresh the rows
+	protected ref array<TBD_LobbyFactionRowComponent> m_aRows; //!< pooled row handlers, owned by their widgets
+	protected ref array<string> m_aRowKeys; //!< faction key of each visible row, index-aligned with m_aRows
+	protected string m_sSelectedKey; //!< the selected faction key; empty for none
 
-	protected ref ScriptInvoker m_OnSelected; //!< (TBD_LobbyFactionPanel panel, string factionKey)
+	protected ref ScriptInvoker m_OnSelected; //!< (TBD_LobbyFactionPanel panel, string factionKey); created on first GetOnSelected
 
-	//! `panelRoot` is a mounted `TBD_PanelFill.layout`.
+	//! Mount the faction list into a TBD_PanelFill.layout, subscribe to `catalog` and fill the rows.
+	//! @param panelRoot a mounted TBD_PanelFill.layout
+	//! @param catalog the data source; may be null (nothing is drawn)
+	//! @return false when the panel handler or the body layout is missing
 	bool Build(Widget panelRoot, TBD_LobbyCatalog catalog)
 	{
 		m_Catalog = catalog;
@@ -172,6 +58,7 @@ class TBD_LobbyFactionPanel
 		return true;
 	}
 
+	//! Unsubscribe from the catalog and forget the widgets and rows.
 	void Destroy()
 	{
 		if (m_Catalog)
@@ -186,7 +73,7 @@ class TBD_LobbyFactionPanel
 			m_aRows.Clear();
 	}
 
-	//! Rebind every row from the catalog (seat counts included).
+	//! Rebind every row from the catalog, claimed counts included, and hide surplus pooled rows.
 	void Refresh()
 	{
 		if (!m_wContent || !m_Catalog)
@@ -219,7 +106,9 @@ class TBD_LobbyFactionPanel
 		}
 	}
 
-	//! Pick a faction. `notify` false = visual only.
+	//! Pick a faction.
+	//! @param factionKey the faction to select
+	//! @param notify true raises GetOnSelected; false is visual only
 	void Select(string factionKey, bool notify)
 	{
 		m_sSelectedKey = factionKey;
@@ -233,12 +122,13 @@ class TBD_LobbyFactionPanel
 			m_OnSelected.Invoke(this, factionKey);
 	}
 
+	//! @return the selected faction key; empty for none
 	string GetSelectedKey()
 	{
 		return m_sSelectedKey;
 	}
 
-	//! Key of the first faction in catalog order, or empty.
+	//! @return the key of the first faction in catalog order, or empty; requires a catalog
 	string GetFirstKey()
 	{
 		array<ref TBD_LobbyFactionInfo> factions = m_Catalog.GetFactions();
@@ -248,7 +138,8 @@ class TBD_LobbyFactionPanel
 		return factions[0].m_sKey;
 	}
 
-	//! Put focus on the selected row (else the first). False when there is no row to focus.
+	//! Give keyboard focus to the selected row, else the first.
+	//! @return false when there is no row to focus
 	bool FocusSelected()
 	{
 		WorkspaceWidget workspace = GetGame().GetWorkspace();
@@ -267,7 +158,7 @@ class TBD_LobbyFactionPanel
 		return true;
 	}
 
-	//! (TBD_LobbyFactionPanel panel, string factionKey)
+	//! @return the (TBD_LobbyFactionPanel panel, string factionKey) invoker raised by a selection
 	ScriptInvoker GetOnSelected()
 	{
 		if (!m_OnSelected)
@@ -277,6 +168,7 @@ class TBD_LobbyFactionPanel
 	}
 
 
+	//! Select the faction of row `index` and notify; out-of-range indices are ignored.
 	void OnRowActivated(int index)
 	{
 		if (index < 0 || index >= m_aRowKeys.Count())
@@ -286,11 +178,14 @@ class TBD_LobbyFactionPanel
 	}
 
 
+	//! Refresh on any catalog change.
 	protected void OnCatalogChanged(TBD_LobbyCatalog catalog)
 	{
 		Refresh();
 	}
 
+	//! The pooled row at `index`, created in `container` when the pool is shorter.
+	//! @return the row, or null when the row layout fails
 	protected TBD_LobbyFactionRowComponent AcquireRow(int index, Widget container)
 	{
 		if (index < m_aRows.Count())

@@ -83,7 +83,7 @@ README's [roster wire](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/RE
   reverts in the message that explains it.
 - A deploy the platform is still deciding answers `AUTHORIZING`, one it cannot authorize now
   `UNAUTHORIZED` (`TBD_LobbyServiceDeploymentAuthorization.c`).
-- `TBD_SessionSelection` (`apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/TBD_MissionSelectorData.c`)
+- `TBD_SessionSelection` (`apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/TBD_SessionSelection.c`)
   carries the Mission Selector's pick to the lobby's title.
 
 ## Design

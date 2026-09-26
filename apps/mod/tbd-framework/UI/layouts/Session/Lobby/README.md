@@ -54,7 +54,7 @@ briefing's ORBAT page reuses `TBD_KitInspector` and the roster column, read only
 | `TBD_LobbySlotRow` | `TBD_LobbySlotRowComponent` | `Background`, `RoleText`, `ChipsDock`, `HolderText`, `StatusChipDock`, `RowRule` |
 | `TBD_KitInspector` | `TBD_KitInspectorPanel` | `PanelBorder`, `PanelBG`, `Header`, `HeaderBG`, `HeaderIcon`, `Title`, `SlotRow`, `SlotTitle`, `SlotChipsDock`, `HeaderRule`, `BodyFrame`, `Scroll`, `CardsContent`, `ScrollBarDock`, `EmptyState` |
 | `TBD_KitPreview` | `TBD_KitInspectorPanel`; `TBD_KitPreviewComponent.Attach` on `Preview` | `CardBorder`, `CardBG`, `Box`, `Border`, `Background`, `GridClip`, `GridImage`, `Preview`, `Label` |
-| `TBD_KitWeaponCard` | `TBD_KitInspectorPanel` | `Border`, `Background`, `SlotChipDock`, `NameBorder`, `NameBG`, `Name`, `AttachmentsTitle`, `AttachmentsContent`, `AmmoRule`, `AmmoTitle`, `AmmoSummary`, `AmmoContent` |
+| `TBD_KitWeaponCard` | `TBD_KitInspectorCells.MountWeapon` | `Border`, `Background`, `SlotChipDock`, `NameBorder`, `NameBG`, `Name`, `AttachmentsTitle`, `AttachmentsContent`, `AmmoRule`, `AmmoTitle`, `AmmoSummary`, `AmmoContent` |
 
 `VoiceDock` is an empty frame: no script mounts anything into it. The seat rows use a square image
 `Background`, since they sit inside a rounded card; the squad header's fill is taller than its
@@ -70,7 +70,7 @@ recipe of `TBD_ScrollList`, with a `TBD_UIScrollBar` in each `ScrollBarDock`.
   inspector 12, rows and cards 8, chips and cells 6); every text widget carries a `FontProperties`
   block; `Preview` is an `ItemPreviewWidgetClass`.
 - Resource GUID: `7BD1A7000000XX01` in each `.meta`, from the ledger in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`: the shell `0C`, then
+  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UILayouts.c`: the shell `0C`, then
   `TBD_LobbyFactionList` `2F`, `TBD_LobbyFactionRow` `30`, `TBD_LobbyRoster` `31`,
   `TBD_LobbySquadCard` `32`, `TBD_LobbySlotRow` `33`, `TBD_KitInspector` `34`, `TBD_KitPreview`
   `35` and `TBD_KitWeaponCard` `37`. The shell's GUID is named by the menu config and never changes.
@@ -88,7 +88,7 @@ recipe of `TBD_ScrollList`, with a `TBD_UIScrollBar` in each `ScrollBarDock`.
   the panels in `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/UI/` use them, as the
   handler table shows.
 - `TBD_BriefingOrbatPage` in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Briefing/UI/TBD_BriefingPageComms.c` mounts
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Briefing/UI/Pages/TBD_BriefingOrbatPage.c` mounts
   `LOBBY_KIT_INSPECTOR` and, through `TBD_LobbyRosterPanel`, the roster layouts.
 
 ## Boundaries

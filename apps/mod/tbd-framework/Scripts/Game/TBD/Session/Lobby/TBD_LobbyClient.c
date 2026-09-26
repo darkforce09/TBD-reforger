@@ -1,121 +1,83 @@
-//! Lobby feature module - CLIENT roster cache, optimistic edit + reconciliation. Screens bind here. Split out of TBD_LobbyController.c (UI reorg 2026-09-12); logic unchanged.
-//!
-//! CLIENT - the roster this player is looking at, the optimistic edit, and the reconciliation.
-//!
-//! Static because the screen is created and destroyed by the menu manager: parking the roster on
-//! the screen would lose it on every close and re-request it on every open with nothing to draw in
-//! the meantime.
-//!
-//! A claim is reflected **immediately** - the row goes to your name before a single packet leaves
-//! the machine - because under ONE LIFE the moment between clicking and being sure is the worst
-//! moment of the whole lobby, and a spinner does not shorten it.
-//!
-//! It is reconciled by **replacement**, not by merge: `Accept()` throws the local roster away and
-//! rebuilds from the server's string. So an optimistic claim survives exactly as long as the
-//! server agrees with it, and a rejection reverts the row in the same message that explains why.
-//! There is no state machine to get stuck in, and a dropped or reordered reply cannot leave a
-//! phantom claim on screen - the next refresh (2 s, at worst) overwrites it regardless.
+/**
+ * @file TBD_LobbyClient.c
+ * @brief The client's lobby roster: the cache the screen draws, the optimistic edit, and the reconciliation.
+ *
+ * Role: sends the roster requests, shows a claim or release at once, and replaces the whole roster
+ * with every server reply, re-applying any intent the server has not ruled on yet.
+ * Position: calls the modded SCR_PlayerController's TBD_Request* methods; receives
+ * TBD_RpcDo_LobbyRoster through Accept; TBD_LobbyScreen and TBD_LobbyStage read it.
+ * State: the roster, status line, rejected seat, deploy latches and pending intents, as statics
+ * so they survive the screen closing; reset by TBD_LobbyStage on entering LOBBY and on teardown.
+ * Invariants: a reply replaces the roster, never merges; only the matching verdict retires a
+ * pending intent; a deploy is never optimistic; m_bDeployed latches for the round while
+ * m_bInWorld follows every roster; a refusal marks its seat for REJECT_HIGHLIGHT_MS.
+ */
+
+//! Client roster cache; static because the screen is created and destroyed by the menu manager.
 class TBD_LobbyClient
 {
-	//! How long a refused seat stays marked. Long enough to read the reason under it, short enough
-	//! that it does not become part of the furniture.
-	static const int REJECT_HIGHLIGHT_MS = 5000;
+	static const int REJECT_HIGHLIGHT_MS = 5000; //!< ms a refused seat stays marked with its reason
 
-	protected static ref TBD_LobbyRoster m_Roster;
+	protected static ref TBD_LobbyRoster m_Roster; //!< the roster on screen; null until the first reply
 
-	protected static string m_sStatus; //!< Non-blocking feedback line. Never a modal - design law.
+	protected static string m_sStatus; //!< non-blocking feedback line, never a modal
 
-	protected static string m_sRejectedKey; //!< The seat the authority most recently refused us, or empty.
+	protected static string m_sRejectedKey; //!< the seat the server last refused; empty when none
 
-	//! Set once the server has accepted a deploy, so the screen can stand down.
-	//!
-	//! T-181.29 - note what this is and is NOT. It is "the authority accepted MY deploy click", and
-	//! only a `V DEPLOY ok` verdict sets it. It is not "I am in the world" - see `m_bInWorld`, which
-	//! is the fact that answers that, and which is what the screen actually needed.
-	protected static bool m_bDeployed;
+	protected static bool m_bDeployed; //!< the server accepted this player's own DEPLOY click; latched for the round
 
-	//! T-181.29 - the authority's answer to "does this player already have a body", refreshed from
-	//! every roster that arrives (2 s at worst, immediately on screen open).
-	//!
-	//! The screen only ever stood down on `m_bDeployed`, and `m_bDeployed` is set by exactly one
-	//! event: the reply to a deploy the player CLICKED. `TBD_SpawnManager`'s LOBBY auto-deploy wave
-	//! (`m_bAutoDeploy`, still 1 - it deploys everyone ~250 ms into LOBBY) never sets it, and neither
-	//! does the JIP `DeployJoiner` path or `AdminRespawn`. All three are server-side and silent to
-	//! this client, so a player any of them deployed got a character AND kept the picker on top of
-	//! it, permanently: `TBD_LobbyStage.Tick`'s T-181.28 guard suppresses the RE-raise but has
-	//! nothing to say about a screen that is already up.
-	//!
-	//! Folding this into `m_bDeployed` would have been one line fewer and wrong in two directions.
-	//! `m_bDeployed` is LATCHED and must stay latched - `AcceptDeployVerdict` sets it on a verdict
-	//! that will not be repeated, and a later roster must not un-set it. This one must NOT latch:
-	//! it is an observation, so a wrong reading self-corrects on the next refresh and the picker
-	//! returns via `TBD_LobbyStage.Tick`'s unconditional re-raise. Keeping them apart is what lets
-	//! each have the lifetime it needs.
-	protected static bool m_bInWorld;
+	protected static bool m_bInWorld; //!< the last roster says this player controls a body; follows every roster
 
-	//! A deploy request is in flight. Lives here rather than on the screen so the footer derives
-	//! the button's enabled state from ONE place - a screen that disabled its own button would be
-	//! re-enabled by the very next roster refresh.
-	protected static bool m_bDeployPending;
+	protected static bool m_bDeployPending; //!< a deploy request is in flight; the one source of the button's enabled state
 
-	//! The screen re-asks for the roster every 2 s, so a refresh REQUESTED BEFORE the click can
-	//! land AFTER it. Without this, the sequence is: click (row goes to your name) -> stale
-	//! refresh arrives and replaces everything (row goes back to OPEN) -> claim verdict arrives
-	//! (row goes to your name again). The player sees their seat flicker away and back, which
-	//! reads exactly like losing it.
-	//!
-	//! So an optimistic edit is remembered until the server rules ON THAT EXACT INTENT, and any
-	//! roster arriving in the meantime is overlaid with it. Keyed on the slot, so double-clicking
-	//! two different seats resolves in order instead of the first verdict cancelling the second
-	//! click's optimism.
-	protected static string m_sPendingClaimKey;
-	protected static bool m_bPendingRelease;
+	protected static string m_sPendingClaimKey; //!< the claim the server has not ruled on; empty when none
+	protected static bool m_bPendingRelease; //!< a release the server has not ruled on
 
-	protected static ref ScriptInvoker m_OnRosterChanged; //!< (TBD_LobbyRoster roster)
+	protected static ref ScriptInvoker m_OnRosterChanged; //!< (TBD_LobbyRoster roster); created on first GetOnRosterChanged
 
+	//! @return the roster on screen; null before the first reply
 	static TBD_LobbyRoster GetRoster()
 	{
 		return m_Roster;
 	}
 
+	//! @return the feedback line; empty when there is nothing to say
 	static string GetStatus()
 	{
 		return m_sStatus;
 	}
 
+	//! @return the seat the server last refused; empty when none
 	static string GetRejectedKey()
 	{
 		return m_sRejectedKey;
 	}
 
+	//! @return true once the server accepted this player's own deploy
 	static bool IsDeployed()
 	{
 		return m_bDeployed;
 	}
 
-	//! T-181.29 - is this player already in the world, by the authority's own reckoning? True for a
-	//! body that arrived by ANY door, including the ones this client never asked for.
+	//! @return true when the last roster says this player controls a body, however it arrived
 	static bool IsInWorld()
 	{
 		return m_bInWorld;
 	}
 
-	//! T-181.29 - the one question the screen asks before deciding to stand down: is there a
-	//! character under this menu? Either half is sufficient and they cover different windows -
-	//! `IsDeployed` fires on the player's own verdict with no round trip to wait for, `IsInWorld`
-	//! catches every server-side deploy the client was never told about.
+	//! @return true when a character is under the menu: the player's own accepted deploy (no round trip to wait for) or a body from any server-side door
 	static bool ShouldStandDown()
 	{
 		return m_bDeployed || m_bInWorld;
 	}
 
+	//! @return true while a deploy request is in flight
 	static bool IsDeployPending()
 	{
 		return m_bDeployPending;
 	}
 
-	//! (TBD_LobbyRoster) - lazily created. Fires on every change, whether it came from the server
-	//! or from an optimistic local edit, so the screen has exactly one thing to listen to.
+	//! @return the (TBD_LobbyRoster roster) invoker raised on every change, from the server or an optimistic edit
 	static ScriptInvoker GetOnRosterChanged()
 	{
 		if (!m_OnRosterChanged)
@@ -124,8 +86,8 @@ class TBD_LobbyClient
 		return m_OnRosterChanged;
 	}
 
-
-	//! Ask the server for the board. No-op without a local controller.
+	//! Ask the server for the roster; no-op without a local controller.
+	//! @authority client
 	static void Request()
 	{
 		SCR_PlayerController pc = SCR_PlayerController.Cast(GetGame().GetPlayerController());
@@ -135,7 +97,8 @@ class TBD_LobbyClient
 		pc.TBD_RequestLobbyRoster();
 	}
 
-	//! Take a seat. Reflected locally first, then asked for.
+	//! Take `slotKey`: shown locally first, then asked for; no-op without a local controller.
+	//! @authority client
 	static void Claim(string slotKey)
 	{
 		SCR_PlayerController pc = SCR_PlayerController.Cast(GetGame().GetPlayerController());
@@ -149,7 +112,8 @@ class TBD_LobbyClient
 		pc.TBD_RequestClaimSlot(slotKey);
 	}
 
-	//! Give the seat back.
+	//! Give the seat back: shown locally first, then asked for; no-op without a local controller.
+	//! @authority client
 	static void Release()
 	{
 		SCR_PlayerController pc = SCR_PlayerController.Cast(GetGame().GetPlayerController());
@@ -163,17 +127,16 @@ class TBD_LobbyClient
 		pc.TBD_RequestReleaseSlot();
 	}
 
-	//! The one consequential click. Deliberately NOT optimistic: a deploy that turns out to have
-	//! been refused must not have already torn the lobby down, or a refused player is left staring
-	//! at a world they were never put into with no way back to the picker.
+	//! Ask to deploy. Not optimistic: a refused deploy must not have torn the lobby down already. No-op without a local controller.
+	//! @authority client
 	static void Deploy()
 	{
 		SCR_PlayerController pc = SCR_PlayerController.Cast(GetGame().GetPlayerController());
 		if (!pc)
 			return;
 
-		// Latch BEFORE the request and announce it, so the button is already dead when the click
-		// finishes. A double-click on the one irreversible action must not become two deploys.
+		// Latched before the request so the button is dead when the click finishes: a double click
+		// on the one irreversible action never becomes two deploys.
 		m_bDeployPending = true;
 		SetStatus("Deploying...");
 		Changed();
@@ -181,10 +144,8 @@ class TBD_LobbyClient
 		pc.TBD_RequestDeploy();
 	}
 
-
-	//! Move our own flag onto `slotKey` locally. Refuses to touch a seat that is not open, so the
-	//! optimistic path can never show something the authority would obviously refuse - and so
-	//! re-applying it over a fresher roster that already shows the seat lost is a no-op.
+	//! Move the player's flag onto `slotKey` locally. Refuses a seat that is not OPEN, so the optimistic path never shows what the server would refuse and re-applying it over a fresher roster that shows the seat lost is a no-op.
+	//! @return true when the roster changed
 	protected static bool MutateClaim(string slotKey)
 	{
 		if (!m_Roster)
@@ -210,6 +171,8 @@ class TBD_LobbyClient
 		return true;
 	}
 
+	//! Clear the player's own seat locally.
+	//! @return true when the roster changed
 	protected static bool MutateRelease()
 	{
 		if (!m_Roster)
@@ -227,6 +190,7 @@ class TBD_LobbyClient
 		return true;
 	}
 
+	//! Show a claim at once with a `Taking ...` status and raise the change.
 	protected static void ApplyOptimisticClaim(string slotKey)
 	{
 		if (!MutateClaim(slotKey))
@@ -237,6 +201,7 @@ class TBD_LobbyClient
 		Changed();
 	}
 
+	//! Show a release at once with a `Giving the seat up...` status and raise the change.
 	protected static void ApplyOptimisticRelease()
 	{
 		if (!MutateRelease())
@@ -246,9 +211,7 @@ class TBD_LobbyClient
 		Changed();
 	}
 
-	//! Re-state, on top of a roster that just arrived, whatever the server has not yet answered.
-	//! Silent by design: the caller owns the status line and the change notification, and this
-	//! runs on every incoming message.
+	//! Re-state, on a roster that just arrived, the intent the server has not answered; silent, because the caller owns the status line and the change notification.
 	protected static void ReapplyPendingIntent()
 	{
 		if (!m_sPendingClaimKey.IsEmpty())
@@ -261,28 +224,22 @@ class TBD_LobbyClient
 			MutateRelease();
 	}
 
-
-	//! The authority has spoken. Replace everything, then say what it said.
+	//! Take a server reply: replace the roster, refresh the in-world fact, retire the intent its verdict answers, re-apply the rest, and show the verdict.
+	//! @param wire a TBD_LobbyRosterWire string
 	static void Accept(string wire)
 	{
-		TBD_LobbyRoster incoming = TBD_LobbyService.Parse(wire);
+		TBD_LobbyRoster incoming = TBD_LobbyRosterWire.Parse(wire);
 		if (!incoming)
 			return;
 
 		m_Roster = incoming;
 
-		// T-181.29 - refreshed from EVERY reply, including a plain refresh and an unavailable
-		// roster, because the doors that make it true (the LOBBY auto-deploy wave, JIP, admin
-		// respawn) send no verdict of their own. Assigned rather than OR-ed into: this is an
-		// observation with the lifetime of the roster that carried it, so a body that goes away
-		// takes the fact with it and the picker is allowed back. `m_bDeployed` above is the one
-		// that latches.
+		// Taken from every reply, a plain refresh and an unavailable roster included, because the
+		// server-side doors into the world send no verdict of their own; assigned, not latched.
 		m_bInWorld = incoming.m_bInWorld;
 
-		// Has the authority ruled on the intent we are still holding? Only the MATCHING verdict
-		// retires it. A verdict for a seat the player has already moved on from is stale: it must
-		// neither retire the current intent nor put its reason in the status line, or clicking
-		// two seats quickly would leave "someone got there first" under a seat you now hold.
+		// Only the matching verdict retires the held intent; a verdict for a seat the player has moved
+		// on from is stale and puts neither its reason nor its retirement on screen.
 		bool current = true;
 
 		if (incoming.m_sAction == TBD_LobbyService.ACTION_CLAIM)
@@ -297,15 +254,13 @@ class TBD_LobbyClient
 			m_bPendingRelease = false;
 		}
 
-		// Anything the server has NOT yet ruled on is re-applied on top of its answer, so a stale
-		// refresh cannot flicker a claim away and back. See m_sPendingClaimKey.
+		// Whatever the server has not ruled on is re-applied over its answer, so a refresh requested
+		// before the click cannot flicker the seat away and back.
 		ReapplyPendingIntent();
 
 		if (incoming.m_sAction.IsEmpty() || !current)
 		{
-			// A plain refresh. It must NOT clear a rejection message the player has not had time
-			// to read - the 2 s poll would otherwise wipe every explanation half a second after it
-			// appeared. The rejection expires on its own timer instead.
+			// A plain refresh keeps an unread rejection: it expires on its own timer, not on the 2 s poll.
 			Changed();
 			return;
 		}
@@ -318,16 +273,14 @@ class TBD_LobbyClient
 
 		if (incoming.m_bActionOk)
 		{
-			// Deliberately silent. The screen derives a better line from the roster it just
-			// received ("You hold ALPHA . SL") than any fixed acknowledgement could be, and a
-			// sticky "Seat taken." would still be sitting there ten minutes later.
+			// Silent on success: the screen derives a better line from the roster ("You hold ALPHA . SL").
 			ClearRejection();
 			SetStatus(string.Empty);
 			Changed();
 			return;
 		}
 
-		// REFUSED. Mark the seat, say why, and let the replaced roster show who actually has it.
+		// Refused: mark the seat and say why; the replaced roster shows who holds it.
 		m_sRejectedKey = incoming.m_sActionKey;
 		SetStatus(incoming.m_sActionReason);
 
@@ -337,13 +290,10 @@ class TBD_LobbyClient
 		Changed();
 	}
 
-	//! A deploy verdict is the only one that ends the screen, so it is handled apart from the
-	//! claim/release path rather than sharing its "ok = quietly proceed" shape.
+	//! Handle a DEPLOY verdict, the only one that ends the screen: release the pending latch, show the reason, and latch m_bDeployed on success.
 	protected static void AcceptDeployVerdict(TBD_LobbyRoster incoming)
 	{
-		// Released either way. A RETRY ("the server is not ready to deploy you yet") has to leave
-		// the button live again, or the player is stranded on a dead control with a seat they
-		// cannot use.
+		// Released either way: a RETRY leaves the button live, or the player is stranded on a dead control.
 		m_bDeployPending = false;
 		SetStatus(incoming.m_sActionReason);
 
@@ -353,9 +303,7 @@ class TBD_LobbyClient
 		Changed();
 	}
 
-	//! The refusal has had its five seconds. Drop the mark AND the sentence - leaving the sentence
-	//! behind would keep telling the player they were beaten to a seat long after they took
-	//! another one.
+	//! Drop the refusal mark and its sentence after REJECT_HIGHLIGHT_MS; no-op when there is none.
 	protected static void ClearRejection()
 	{
 		if (m_sRejectedKey.IsEmpty())
@@ -366,19 +314,20 @@ class TBD_LobbyClient
 		Changed();
 	}
 
+	//! Set the feedback line; the caller raises the change.
 	static void SetStatus(string status)
 	{
 		m_sStatus = status;
 	}
 
+	//! Raise GetOnRosterChanged with the roster.
 	protected static void Changed()
 	{
 		if (m_OnRosterChanged)
 			m_OnRosterChanged.Invoke(m_Roster);
 	}
 
-	//! What to write in our own row while the claim is in flight. The server will overwrite it
-	//! with the same name a moment later; this is only ever on screen for one round trip.
+	//! @return the local player's name for the optimistic row, or `You`; the server's reply overwrites it one round trip later
 	protected static string LocalPlayerName()
 	{
 		PlayerController pc = GetGame().GetPlayerController();
@@ -393,14 +342,7 @@ class TBD_LobbyClient
 		return name;
 	}
 
-	//! New lobby phase: forget the last round's answers, and drop any pending rejection timer so
-	//! it cannot fire into a screen that no longer exists.
-	//!
-	//! T-181.49 - the queue is null-checked now. This used to be reached only behind
-	//! `TBD_LobbyComponent.OnDelete`'s workspace test; that test is gone (it never excluded a
-	//! server anyway), so this runs on world teardown on every machine, which is exactly the
-	//! moment a subsystem is most likely to already be down. Same shape `TBD_RadioComponent`
-	//! already uses in its own `OnDelete`.
+	//! Forget the last round: roster, status, latches and intents, and cancel the rejection timer; runs on entering LOBBY and on teardown, when the call queue may already be gone.
 	static void Reset()
 	{
 		ScriptCallQueue queue = GetGame().GetCallqueue();

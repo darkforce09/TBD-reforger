@@ -1,52 +1,59 @@
-//! Kit-preview pass (2026-09-13) -- the 3D doll in the KIT INSPECTOR's preview card.
-//!
-//! Owns the `Preview` render target of `TBD_KitPreview.layout`: asks `TBD_LoadoutPreviewDresser`
-//! for the preview entity wearing the seat's exact kit, hands it to the `ItemPreviewManagerEntity`
-//! with the character's own `SCR_CharacterInventoryPreviewAttributes` (full-body framing), and
-//! turns / zooms that camera on input the way vanilla's inventory does
-//! (`SCR_InventoryCharacterWidgetHelper`: `RotateItemCamera` limits "-30 -180 0" / "0 180 0",
-//! `ZoomCamera`, then `SetPreviewItem` again). Input is read the TBD way -- a workspace handler for
-//! the button / wheel edges plus a 30 Hz `CallLater` poll of `WidgetManager.GetMousePos` while a
-//! drag is held (the `TBD_UIScrollBar` recipe) -- because the vanilla `Inventory_Inspect*` actions
-//! are only live inside the inventory context.
-//!
-//! Lifecycle: `Attach()` once per mounted preview card, `Show(kit)` per seat, `Destroy()` before
-//! the card is cleared. The preview entity itself stays with the manager (vanilla behaviour).
-//! When anything is missing the caption says PREVIEW UNAVAILABLE and the reason is one WARNING.
+/**
+ * @file TBD_KitPreviewComponent.c
+ * @brief The 3D doll in the kit preview card: a dressed character or a vehicle, turned and zoomed.
+ *
+ * Role: owns the `Preview` ItemPreviewWidget of TBD_KitPreview.layout; asks TBD_LoadoutPreviewDresser
+ * for a preview entity wearing a kit, hands it to the ItemPreviewManagerEntity with the character's
+ * SCR_CharacterInventoryPreviewAttributes (full-body framing), and turns the camera on a left drag
+ * and zooms it on the wheel, as vanilla's SCR_InventoryCharacterWidgetHelper does.
+ * Position: attached by TBD_KitInspectorPanel per preview card and by the briefing's uniform and
+ * vehicle cards; input arrives through a workspace handler plus a 30 Hz drag poll, because the
+ * vanilla Inventory_Inspect actions are live only inside the inventory context.
+ * State: the widgets, manager, entity and attributes of the current doll, the hook and drag state
+ * (client UI only), and a process-wide per-prefab zoom tracker.
+ * Invariants: Destroy runs before the card is cleared and unhooks the handler and poll; the preview
+ * entity stays with the manager; a missing prefab or dress failure captions PREVIEW UNAVAILABLE
+ * and logs one WARNING; the tracked zoom stays within ZOOM_TRACK_MIN..ZOOM_TRACK_MAX.
+ */
+
+//! Preview driver for one kit preview card.
 class TBD_KitPreviewComponent : ScriptedWidgetComponent
 {
-	static const int TICK_MS = 33;
-	static const float YAW_DEG_PER_PX = 0.6;
-	static const float PITCH_DEG_PER_PX = 0.3;
-	static const float ZOOM_PER_NOTCH = 4;
-	//! FOV delta applied on every Show (negative = closer). The character attributes frame a full body
-	//! at ~75 % of the widget (MEASURED run 1); -10 fills it. Tracked per prefab because the
-	//! attributes object is shared and `ZoomCamera` is additive with no getter.
-	static const float DEFAULT_ZOOM = -10;
-	static const float MIN_FOV = 15;
-	static const float MAX_FOV = 90;
-	static const float ZOOM_TRACK_MIN = -30;
-	static const float ZOOM_TRACK_MAX = 60;
-	//! Vehicles carry no PreviewRenderAttributes; a script-created one lets the camera turn / zoom.
-	static const bool SCRIPT_ATTRIBUTES_FOR_VEHICLES = true;
-	protected static ref map<string, float> s_mZoomApplied;
-	protected string m_sPrefabKey;
-	static const vector ROTATION_MIN = "-30 -180 0";
-	static const vector ROTATION_MAX = "0 180 0";
+	static const int TICK_MS = 33; //!< ms between drag polls (30 Hz)
+	static const float YAW_DEG_PER_PX = 0.6; //!< degrees of yaw per pointer pixel
+	static const float PITCH_DEG_PER_PX = 0.3; //!< degrees of pitch per pointer pixel
+	static const float ZOOM_PER_NOTCH = 4; //!< FOV degrees per wheel notch
+	//! FOV delta applied on every Show (negative = closer): the character attributes frame a full
+	//! body at about 75 % of the widget and -10 fills it. Tracked per prefab because the attributes
+	//! object is shared and ZoomCamera is additive with no getter.
+	static const float DEFAULT_ZOOM = -10; //!< FOV degrees relative to the prefab's framing
+	static const float MIN_FOV = 15; //!< FOV floor, degrees
+	static const float MAX_FOV = 90; //!< FOV ceiling, degrees
+	static const float ZOOM_TRACK_MIN = -30; //!< lowest tracked zoom delta, degrees
+	static const float ZOOM_TRACK_MAX = 60; //!< highest tracked zoom delta, degrees
+	//! Vehicles carry no PreviewRenderAttributes; a script-created one lets the camera turn and zoom.
+	static const bool SCRIPT_ATTRIBUTES_FOR_VEHICLES = true; //!< default true; false frames a vehicle with the manager's prefab path and no input
+	protected static ref map<string, float> s_mZoomApplied; //!< prefab -> zoom delta applied to its shared attributes; null until the first zoom
+	protected string m_sPrefabKey; //!< prefab of the current doll, the zoom tracker's key
+	static const vector ROTATION_MIN = "-30 -180 0"; //!< camera rotation floor (pitch, yaw, roll), vanilla's limits
+	static const vector ROTATION_MAX = "0 180 0"; //!< camera rotation ceiling (pitch, yaw, roll), vanilla's limits
 
-	protected ItemPreviewWidget m_wPreview;
-	protected Widget m_wCaption;
-	protected WorkspaceWidget m_wWorkspace;
-	protected ItemPreviewManagerEntity m_Manager;
-	protected IEntity m_Entity;
-	protected PreviewRenderAttributes m_Attributes;
-	protected ref PreviewRenderAttributes m_OwnedAttributes; //!< the script-created one for vehicles (kept alive here)
-	protected bool m_bHooked;
-	protected bool m_bDragging;
-	protected int m_iLastX;
-	protected int m_iLastY;
+	protected ItemPreviewWidget m_wPreview; //!< the layout's `Preview`; null after Destroy
+	protected Widget m_wCaption; //!< the layout's `Label`: PREVIEW or PREVIEW UNAVAILABLE
+	protected WorkspaceWidget m_wWorkspace; //!< the workspace the handler is added to while hooked
+	protected ItemPreviewManagerEntity m_Manager; //!< the preview manager from TBD_LoadoutPreviewDresser
+	protected IEntity m_Entity; //!< the entity on show; null without one
+	protected PreviewRenderAttributes m_Attributes; //!< the camera attributes on show; null disables input
+	protected ref PreviewRenderAttributes m_OwnedAttributes; //!< the script-created attributes for vehicles, kept alive here
+	protected bool m_bHooked; //!< handler and poll are installed
+	protected bool m_bDragging; //!< a left drag is held
+	protected int m_iLastX; //!< pointer x at the last poll, px
+	protected int m_iLastY; //!< pointer y at the last poll, px
 
-	//! `previewWidget` is the layout's `Preview` (ItemPreviewWidget); `caption` its `Label`.
+	//! Create a driver for one preview card.
+	//! @param previewWidget the layout's `Preview` (ItemPreviewWidget)
+	//! @param caption the layout's `Label`
+	//! @return the driver, or null when `previewWidget` is not an ItemPreviewWidget
 	static TBD_KitPreviewComponent Attach(Widget previewWidget, Widget caption)
 	{
 		ItemPreviewWidget preview = ItemPreviewWidget.Cast(previewWidget);
@@ -59,7 +66,7 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		return component;
 	}
 
-	//! Dress and show `kit`; null kit shows the plain PREVIEW caption.
+	//! Dress and show `kit`; a null kit shows the plain PREVIEW caption.
 	void Show(TBD_KitInfo kit)
 	{
 		if (!kit)
@@ -74,8 +81,8 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		ShowPrefab(kit.BasePrefab(), kit.m_Loadout, kit.m_sKey);
 	}
 
-	//! A character prefab wearing `loadout` (null = as shipped): the uniform cards use this with
-	//! a faction rifleman and no loadout. `label` names the doll in the one WARNING on failure.
+	//! Show a character prefab wearing `loadout` (null = as shipped); the uniform cards pass a faction rifleman and no loadout.
+	//! @param label names the doll in the one WARNING on failure
 	void ShowPrefab(ResourceName prefab, TBD_SlotLoadoutStruct loadout, string label)
 	{
 		Unhook();
@@ -121,8 +128,7 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		Hook();
 	}
 
-	//! A vehicle (or any item) prefab rendered as shipped -- the assets page's Vehicle Info box.
-	//! No dresser, no camera input: the manager frames it with the prefab's own attributes.
+	//! Show a vehicle or item prefab as shipped (the assets page's Vehicle Info box): the item's own attributes, else a script-created one, else the manager's prefab path without input.
 	void ShowVehicle(ResourceName prefab)
 	{
 		Unhook();
@@ -138,7 +144,7 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 
 		// Vanilla frames a prefab with the attributes on its InventoryItemComponent (vehicles have
 		// none). To turn / zoom it we need an attributes object: the item's own when it has one, else
-		// a script-created one (MEASURE: if the vehicle frames wrong, flip SCRIPT_ATTRIBUTES_FOR_VEHICLES).
+		// a script-created one; SCRIPT_ATTRIBUTES_FOR_VEHICLES switches that fallback off.
 		m_Entity = m_Manager.ResolvePreviewEntityForPrefab(prefab);
 		if (m_Entity)
 		{
@@ -170,6 +176,7 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		TBD_UITheme.Show(m_wCaption, false);
 	}
 
+	//! Unhook and forget the widgets, manager and entity.
 	void Destroy()
 	{
 		Unhook();
@@ -181,6 +188,8 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 	}
 
 
+	//! Start a drag on a left press inside the preview.
+	//! @return true when the press starts a drag
 	override bool OnMouseButtonDown(Widget w, int x, int y, int button)
 	{
 		if (button != 0 || !m_Attributes || !Inside(x, y))
@@ -191,6 +200,8 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		return true;
 	}
 
+	//! End a drag on the left release.
+	//! @return true when a drag ended
 	override bool OnMouseButtonUp(Widget w, int x, int y, int button)
 	{
 		if (button != 0 || !m_bDragging)
@@ -200,6 +211,8 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		return true;
 	}
 
+	//! Zoom by ZOOM_PER_NOTCH per notch inside the preview.
+	//! @return true when the wheel was consumed
 	override bool OnMouseWheel(Widget w, int x, int y, int wheel)
 	{
 		if (!m_Attributes || !Inside(x, y))
@@ -210,7 +223,7 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		return true;
 	}
 
-	//! Drag poll: pointer delta since the last tick turns the camera.
+	//! Drag poll: the pointer delta since the last poll turns the camera within ROTATION_MIN..ROTATION_MAX.
 	protected void Tick()
 	{
 		if (!m_bDragging || !m_Attributes)
@@ -230,7 +243,7 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 	}
 
 
-	//! Additive FOV change, mirrored into the per-prefab tracker so the next Show can rebase.
+	//! Add `delta` to the FOV, clamped by the per-prefab tracker so the next Show can rebase.
 	protected void ApplyZoom(float delta)
 	{
 		if (!m_Attributes || delta == 0)
@@ -248,6 +261,7 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		s_mZoomApplied.Set(m_sPrefabKey, applied);
 	}
 
+	//! @return the zoom delta tracked for the current prefab; 0 when none
 	protected float ZoomApplied()
 	{
 		float applied;
@@ -257,12 +271,14 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		return 0;
 	}
 
+	//! Re-submit the current entity and attributes to the manager.
 	protected void Refresh()
 	{
 		if (m_Manager && m_wPreview && m_Entity)
 			m_Manager.SetPreviewItem(m_wPreview, m_Entity, m_Attributes);
 	}
 
+	//! @return true when screen point (x, y) lies inside the preview widget
 	protected bool Inside(int x, int y)
 	{
 		if (!m_wPreview)
@@ -274,6 +290,7 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		return x >= posX && x <= posX + sizeX && y >= posY && y <= posY + sizeY;
 	}
 
+	//! Hide the preview and show `caption`.
 	protected void Fallback(string caption)
 	{
 		if (m_wPreview)
@@ -283,6 +300,7 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		TBD_UITheme.Show(m_wCaption, true);
 	}
 
+	//! Add the workspace handler and start the drag poll; no-op when hooked or without a workspace.
 	protected void Hook()
 	{
 		if (m_bHooked)
@@ -297,6 +315,7 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		m_bHooked = true;
 	}
 
+	//! End any drag, remove the handler and stop the poll.
 	protected void Unhook()
 	{
 		m_bDragging = false;

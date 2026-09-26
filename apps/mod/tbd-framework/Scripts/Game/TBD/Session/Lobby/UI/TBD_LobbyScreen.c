@@ -1,34 +1,33 @@
-//! Pre-game rebuild (2026-09-13) -- the Lobby, second Dock & Sub-Layout screen.
-//!
-//! ```
-//!   TopDock     TBD_SessionTopBar        wog_187_chollima... - tabs (Lobby) - Mission Maker ADMIN - 👥 1
-//!   LeftDock    TBD_PanelFill + TBD_LobbyFactionPanel   FACTIONS (+ VoiceDock, later pass)
-//!   CenterDock  TBD_PanelFill + TBD_LobbyRosterPanel    ROLES
-//!   RightDock   TBD_KitInspector + TBD_KitInspectorPanel
-//!   BottomDock  TBD_SessionBottomBar     [ Lock Lobby ] [ Ready & Continue ]
-//!   OverlayDock popovers
-//! ```
-//!
-//! The screen owns wiring and nothing else: faction -> roster -> kit inspector is two invokers,
-//! claim / release live in the catalog. Data comes from `TBD_LobbyCatalog.Get()` (mock today, a
-//! `TBD_LobbyClient` adapter later); this file never touches a widget by name outside the docks.
-//!
-//! Opened through `TBD_MenuStack` (preset `TBD_UILobby`, bound in `Configs/System/chimeraMenus.conf`
-//! to `TBD_LobbyScreen.layout` -- the shell that replaced the monolith at the same GUID). Reached
-//! from the selector's top-bar tab, from the pause menu ("Change slot"), or by `TBD_LobbyStage`.
+/**
+ * @file TBD_LobbyScreen.c
+ * @brief The Lobby dock screen: factions, roles and kit inspector wired together, Lock and Ready.
+ *
+ * Role: mounts TBD_LobbyFactionPanel (LeftDock), TBD_LobbyRosterPanel (CenterDock) and
+ * TBD_KitInspectorPanel (RightDock) over TBD_LobbyCatalog and wires faction -> roster -> kit
+ * through their invokers; TopDock and BottomDock are TBD_DockScreen's session bars.
+ * Position: opened through TBD_MenuStack on the TBD_UILobby preset (TBD_LobbyScreen.layout) from the
+ * top-bar Lobby tab or from PauseMenuUI's "Change slot"; TBD_LobbyStage closes it after LOBBY.
+ * State: the three panels, the catalog, and the local Lock and Ready toggles; client UI only.
+ * Invariants: the screen owns wiring only and touches no widget by name outside the docks; claim and
+ * release live in the catalog; Lock and Ready change labels and log, and reach no server.
+ */
+
+//! Lobby screen on the TBD_UILobby preset.
 class TBD_LobbyScreen : TBD_DockScreen
 {
-	protected ref TBD_LobbyFactionPanel m_Factions;
-	protected ref TBD_LobbyRosterPanel m_Roster;
-	protected ref TBD_KitInspectorPanel m_Kit;
-	protected TBD_LobbyCatalog m_Catalog;
+	protected ref TBD_LobbyFactionPanel m_Factions; //!< FACTIONS column; null when closed
+	protected ref TBD_LobbyRosterPanel m_Roster; //!< ROLES column; null when closed
+	protected ref TBD_KitInspectorPanel m_Kit; //!< KIT INSPECTOR column; null when closed
+	protected TBD_LobbyCatalog m_Catalog; //!< TBD_LobbyCatalog.Get() at open
 
-	protected bool m_bLocked;
-	protected bool m_bReady;
+	protected bool m_bLocked; //!< Lock Lobby toggle; default false
+	protected bool m_bReady; //!< Ready & Continue toggle; default false
 
-	static const string ACTION_LOCK = "lock_lobby";
-	static const string ACTION_READY = "ready";
+	static const string ACTION_LOCK = "lock_lobby"; //!< bottom-bar action id of Lock Lobby
+	static const string ACTION_READY = "ready"; //!< bottom-bar action id of Ready & Continue
 
+	//! Open the lobby unless it is already open; PauseMenuUI calls it a frame after the pause menu closes.
+	//! @authority client
 	static void OpenFromPause()
 	{
 		if (TBD_MenuStack.IsOpen(ChimeraMenuPreset.TBD_UILobby))
@@ -37,6 +36,7 @@ class TBD_LobbyScreen : TBD_DockScreen
 		TBD_MenuStack.Open(ChimeraMenuPreset.TBD_UILobby);
 	}
 
+	//! Build the three panels and the two bottom actions, then select the player's own faction (else the first) and own seat.
 	override protected void OnScreenOpen()
 	{
 		m_Catalog = TBD_LobbyCatalog.Get();
@@ -72,6 +72,7 @@ class TBD_LobbyScreen : TBD_DockScreen
 		Print("[TBD][lobby] Lobby opened (dock shell).");
 	}
 
+	//! Unsubscribe and destroy the three panels.
 	override protected void OnScreenClose()
 	{
 		if (m_Factions)
@@ -97,7 +98,7 @@ class TBD_LobbyScreen : TBD_DockScreen
 		super.OnScreenClose();
 	}
 
-	//! Focus lands on your seat, else the first seat: the next click is "pick a slot".
+	//! Focus the player's seat, else the first seat, else the selected faction.
 	override void FocusDefault()
 	{
 		if (m_Roster && m_Roster.FocusSelected())
@@ -110,6 +111,7 @@ class TBD_LobbyScreen : TBD_DockScreen
 	}
 
 
+	//! @return the catalog's mission id, or `Lobby` without a catalog
 	override protected string GetScreenTitle()
 	{
 		if (m_Catalog)
@@ -118,16 +120,19 @@ class TBD_LobbyScreen : TBD_DockScreen
 		return "Lobby";
 	}
 
+	//! @return true: the title is a mission id, set in the mono face
 	override protected bool IsTitleMono()
 	{
 		return true;
 	}
 
+	//! @return TBD_ESessionTab.LOBBY
 	override protected int GetSessionTab()
 	{
 		return TBD_ESessionTab.LOBBY;
 	}
 
+	//! @return the catalog's session identity, or null without a catalog
 	override protected TBD_SessionIdentity GetSessionIdentity()
 	{
 		if (!m_Catalog)
@@ -136,8 +141,7 @@ class TBD_LobbyScreen : TBD_DockScreen
 		return m_Catalog.GetIdentity();
 	}
 
-	//! Mock pass: the two toggles are the mockup's script (label + tint flip, one log line each).
-	//! The wire step routes them to the lobby service; the labels and tints stay.
+	//! Flip Lock Lobby or Ready & Continue: label, tint and one log line each; neither reaches the server.
 	override protected void OnBottomAction(TBD_SessionBottomBar bar, string id)
 	{
 		if (id == ACTION_LOCK)
@@ -183,6 +187,7 @@ class TBD_LobbyScreen : TBD_DockScreen
 	}
 
 
+	//! Show `factionKey`'s squads and clear the kit inspector.
 	protected void OnFactionSelected(TBD_LobbyFactionPanel panel, string factionKey)
 	{
 		if (m_Roster)
@@ -192,6 +197,7 @@ class TBD_LobbyScreen : TBD_DockScreen
 			m_Kit.Show(null, null);
 	}
 
+	//! Show the kit of `slotKey` and its squad.
 	protected void OnSlotSelected(TBD_LobbyRosterPanel panel, string slotKey)
 	{
 		if (!m_Kit || !m_Catalog)
@@ -200,7 +206,7 @@ class TBD_LobbyScreen : TBD_DockScreen
 		m_Kit.Show(m_Catalog.GetSlot(slotKey), m_Catalog.GetSquadOf(slotKey));
 	}
 
-	//! Faction key of the seat you hold, empty when unslotted.
+	//! @return the faction key of the seat the player holds; empty when unslotted
 	protected string OwnFactionKey()
 	{
 		if (!m_Catalog || m_Catalog.GetOwnKey().IsEmpty())
@@ -220,65 +226,5 @@ class TBD_LobbyScreen : TBD_DockScreen
 		}
 
 		return string.Empty;
-	}
-}
-
-modded class PauseMenuUI
-{
-	protected SCR_ButtonTextComponent m_TbdChangeSlotButton;
-
-	override void OnMenuOpen()
-	{
-		super.OnMenuOpen();
-		HookTbdChangeSlot();
-	}
-
-	override void OnMenuClose()
-	{
-		if (m_TbdChangeSlotButton)
-		{
-			m_TbdChangeSlotButton.m_OnClicked.Remove(OnTbdChangeSlot);
-			m_TbdChangeSlotButton = null;
-		}
-		super.OnMenuClose();
-	}
-
-	protected void HookTbdChangeSlot()
-	{
-		if (!TBD_FrameworkManager.IsFrameworkWorld())
-			return;
-
-		TBD_FrameworkManager fm = TBD_FrameworkManager.GetInstance();
-		if (!fm)
-			return;
-
-		TBD_EGameStage stage = fm.GetStage();
-		if (stage != TBD_EGameStage.BRIEFING
-			&& stage != TBD_EGameStage.SAFE_START
-			&& stage != TBD_EGameStage.LIVE)
-			return;
-
-		Widget root = GetRootWidget();
-		if (!root)
-			return;
-
-		SCR_ButtonTextComponent btn = SCR_ButtonTextComponent.GetButtonText("LeaveFaction", root);
-		if (!btn)
-			return;
-
-		Widget row = btn.GetRootWidget();
-		if (row)
-			row.SetVisible(true);
-
-		btn.SetText("Change slot");
-		btn.SetEnabled(true);
-		btn.m_OnClicked.Insert(OnTbdChangeSlot);
-		m_TbdChangeSlotButton = btn;
-	}
-
-	protected void OnTbdChangeSlot()
-	{
-		Close();
-		GetGame().GetCallqueue().CallLater(TBD_LobbyScreen.OpenFromPause, 0, false);
 	}
 }
