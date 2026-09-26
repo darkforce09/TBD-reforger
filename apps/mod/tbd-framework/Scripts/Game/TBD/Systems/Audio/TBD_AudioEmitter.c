@@ -11,7 +11,6 @@
 //! JsonLoadContext ALLOCATES nested refs when the key is absent. Presence is
 //! emitters.Count() / musicCues.Count(), NOT `if (doc.audio)`.
 
-//------------------------------------------------------------------------------------------------
 class TBD_AudioEmitterStruct
 {
 	string id;
@@ -31,7 +30,6 @@ class TBD_AudioEmitterStruct
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 class TBD_MusicCueStruct
 {
 	string id;
@@ -39,21 +37,18 @@ class TBD_MusicCueStruct
 	string track;
 }
 
-//------------------------------------------------------------------------------------------------
 class TBD_AudioBlockStruct
 {
 	ref array<ref TBD_AudioEmitterStruct> emitters;
 	ref array<ref TBD_MusicCueStruct> musicCues;
 }
 
-//------------------------------------------------------------------------------------------------
 //! The document root for the audio pass: declares `audio` and nothing else.
 class TBD_AudioDocStruct
 {
 	ref TBD_AudioBlockStruct audio;
 }
 
-//------------------------------------------------------------------------------------------------
 [EntityEditorProps(category: "TBD/Gamemode", description: "TBD positional audio source")]
 class TBD_AudioSourceEntityClass : GenericEntityClass
 {
@@ -72,14 +67,12 @@ class TBD_AudioSourceEntity : GenericEntity
 	bool m_bOneShotPlayed;
 	float m_fNextPlayMs;
 
-	//------------------------------------------------------------------------------------------------
 	void TBD_AudioSourceEntity(IEntitySource src, IEntity parent)
 	{
 		SetEventMask(EntityEvent.FRAME);
 		SetFlags(EntityFlags.ACTIVE, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Configure(string id, string sound, float radiusM, bool loop)
 	{
 		m_sId = id;
@@ -90,7 +83,6 @@ class TBD_AudioSourceEntity : GenericEntity
 		m_fNextPlayMs = 0;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected void EOnFrame(IEntity owner, float timeSlice)
 	{
 		if (m_sSound.IsEmpty() || m_fRadiusM <= 0)
@@ -123,7 +115,6 @@ class TBD_AudioSourceEntity : GenericEntity
 		m_bOneShotPlayed = true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected IEntity ListenerEntity()
 	{
 		PlayerController pc = GetGame().GetPlayerController();
@@ -133,7 +124,6 @@ class TBD_AudioSourceEntity : GenericEntity
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 //! Reads `audio`, arms emitters, fires cues. Server-authoritative; clients play.
 class TBD_AudioEmitter
 {
@@ -158,7 +148,6 @@ class TBD_AudioEmitter
 	protected static bool s_bStartCued;
 	protected static bool s_bEndCued;
 
-	//------------------------------------------------------------------------------------------------
 	static void Clear()
 	{
 		if (s_aLocalSources)
@@ -183,13 +172,11 @@ class TBD_AudioEmitter
 		s_bEndCued = false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static bool IsBuilt()
 	{
 		return s_bBuilt;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static bool Build()
 	{
 		if (s_bBuilt)
@@ -257,7 +244,6 @@ class TBD_AudioEmitter
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void Tick()
 	{
 		TBD_FrameworkManager fm = TBD_FrameworkManager.GetInstance();
@@ -302,7 +288,6 @@ class TBD_AudioEmitter
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void SpawnLocalSource(string id, float x, float y, float z, float radiusM, bool loop, string sound)
 	{
 		if (id.IsEmpty() || sound.IsEmpty())
@@ -346,7 +331,6 @@ class TBD_AudioEmitter
 		TBD_Log.Kv(CH, "source", string.Format("id='%1' radiusM=%2 loop=%3", id, radiusM, loop));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ArmEmitters()
 	{
 		if (!s_aEmitters)
@@ -367,7 +351,6 @@ class TBD_AudioEmitter
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool IsArmed(string id)
 	{
 		if (!s_aArmedIds)
@@ -380,7 +363,6 @@ class TBD_AudioEmitter
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool TriggerHasFired(string emitterId, string triggerId)
 	{
 		array<ref TBD_Trigger> all = TBD_TriggerRuntime.GetAll();
@@ -416,7 +398,6 @@ class TBD_AudioEmitter
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void WatchTasks()
 	{
 		array<ref TBD_Task> tasks = TBD_TaskStateMachine.GetAll();
@@ -440,7 +421,6 @@ class TBD_AudioEmitter
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string TaskStateName(TBD_ETaskState st)
 	{
 		if (st == TBD_ETaskState.SUCCEEDED)
@@ -450,7 +430,6 @@ class TBD_AudioEmitter
 		return "assigned";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string SeenTaskState(string id)
 	{
 		if (!s_aTaskSeen)
@@ -464,7 +443,6 @@ class TBD_AudioEmitter
 		return string.Empty;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void RememberTask(string id, string state)
 	{
 		if (!s_aTaskSeen)
@@ -481,7 +459,6 @@ class TBD_AudioEmitter
 		s_aTaskSeen.Insert(prefix + state);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void FireCues(string eventName)
 	{
 		if (!s_aCues)
@@ -499,7 +476,6 @@ class TBD_AudioEmitter
 			TBD_Log.Kv(CH, "cue", string.Format("event='%1' tracks=%2", eventName, n));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void PushEmitter(notnull TBD_AudioEmitterStruct raw)
 	{
 		float y = raw.y;
@@ -521,7 +497,6 @@ class TBD_AudioEmitter
 		TBD_Log.Kv(CH, "pushEmitter", string.Format("id='%1' players=%2 sent=%3", raw.id, ids.Count(), sent));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void PushCue(string track)
 	{
 		PlayerManager players = GetGame().GetPlayerManager();
@@ -539,7 +514,6 @@ class TBD_AudioEmitter
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string CurrentMissionId()
 	{
 		TBD_MissionDocumentStruct doc = TBD_MissionLoader.GetMission();
@@ -548,7 +522,6 @@ class TBD_AudioEmitter
 		return doc.meta.id;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_AudioBlockStruct ReadWire()
 	{
 		string raw = TBD_MissionLoader.GetRawJson();
@@ -585,7 +558,6 @@ class TBD_AudioEmitter
 		return doc.audio;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void AnnounceEmptyOnce()
 	{
 		if (s_bAnnounced)
@@ -595,12 +567,10 @@ class TBD_AudioEmitter
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 //! Eighth modded SCR_PlayerController block (mission browser, briefing, lobby, markers, radio,
 //! spectator host, triggers, now audio). Overrides no vanilla method; every symbol is TBD_-prefixed.
 modded class SCR_PlayerController
 {
-	//------------------------------------------------------------------------------------------------
 	//! @authority server - start one positional emitter on the addressed client.
 	void TBD_PushAudioEmitter(string id, float x, float y, float z, float radiusM, bool loop, string sound)
 	{
@@ -616,7 +586,6 @@ modded class SCR_PlayerController
 		Rpc(TBD_RpcDo_AudioEmitter, id, x, y, z, radiusM, loop, sound);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! @rpc Reliable Owner
 	[RplRpc(RplChannel.Reliable, RplRcver.Owner)]
 	protected void TBD_RpcDo_AudioEmitter(string id, float x, float y, float z, float radiusM, bool loop, string sound)
@@ -624,7 +593,6 @@ modded class SCR_PlayerController
 		TBD_AudioEmitter.SpawnLocalSource(id, x, y, z, radiusM, loop, sound);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! @authority server - 2D music cue on the addressed client.
 	void TBD_PushAudioCue(string track)
 	{
@@ -640,7 +608,6 @@ modded class SCR_PlayerController
 		Rpc(TBD_RpcDo_AudioCue, track);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! @rpc Reliable Owner
 	[RplRpc(RplChannel.Reliable, RplRcver.Owner)]
 	protected void TBD_RpcDo_AudioCue(string track)
@@ -649,12 +616,10 @@ modded class SCR_PlayerController
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 modded class SCR_BaseGameMode
 {
 	protected bool m_bTBD_AudioTickArmed;
 
-	//------------------------------------------------------------------------------------------------
 	//! @authority server - the mission document lives here. Clients only spawn local sources
 	//! via the owner RPC.
 	protected override void OnGameStart()
@@ -676,7 +641,6 @@ modded class SCR_BaseGameMode
 		GetGame().GetCallqueue().CallLater(TBD_AudioTick, TBD_AudioEmitter.TICK_MS, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void TBD_AudioTick()
 	{
 		if (GetGame().GetGameMode() != this)

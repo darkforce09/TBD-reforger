@@ -16,7 +16,6 @@ class TBD_EndScreen : ScriptedWidgetComponent
 	protected TextWidget m_wStatus;
 	protected TBD_UIButton m_BackAction;
 
-	//------------------------------------------------------------------------------------------------
 	static void Open()
 	{
 		if (s_wRoot)
@@ -36,7 +35,6 @@ class TBD_EndScreen : ScriptedWidgetComponent
 		s_wRoot = root;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void Close()
 	{
 		if (!s_wRoot)
@@ -47,13 +45,11 @@ class TBD_EndScreen : ScriptedWidgetComponent
 		s_Instance = null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static bool IsOpen()
 	{
 		return s_wRoot != null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerAttached(Widget w)
 	{
 		super.HandlerAttached(w);
@@ -88,7 +84,6 @@ class TBD_EndScreen : ScriptedWidgetComponent
 		Populate();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerDeattached(Widget w)
 	{
 		if (m_BackAction)
@@ -102,7 +97,6 @@ class TBD_EndScreen : ScriptedWidgetComponent
 		super.HandlerDeattached(w);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void Populate()
 	{
 		TBD_UITheme.Write(m_wTitle, "MISSION ENDED");
@@ -127,7 +121,6 @@ class TBD_EndScreen : ScriptedWidgetComponent
 		TBD_UITheme.Show(m_wStatus, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected string DescribeReason(string reason)
 	{
 		if (reason.IsEmpty())
@@ -141,7 +134,6 @@ class TBD_EndScreen : ScriptedWidgetComponent
 		return reason;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected Widget Find(string name)
 	{
 		if (!m_wRoot)
@@ -150,13 +142,11 @@ class TBD_EndScreen : ScriptedWidgetComponent
 		return m_wRoot.FindAnyWidget(name);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected TextWidget FindText(string name)
 	{
 		return TextWidget.Cast(Find(name));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected ScriptedWidgetComponent FindHandlerOn(string name, typename handler)
 	{
 		Widget w = Find(name);
@@ -166,7 +156,6 @@ class TBD_EndScreen : ScriptedWidgetComponent
 		return ScriptedWidgetComponent.Cast(w.FindHandler(handler));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnBackClicked(TBD_UIButton button)
 	{
 		Close();

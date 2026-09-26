@@ -1,14 +1,13 @@
-//! Briefing rebuild (2026-09-14) — the PLAYERS panel (`players_panel` mockup) as a briefing MODE:
+//! Briefing rebuild (2026-09-14) -- the PLAYERS panel (`players_panel` mockup) as a briefing MODE:
 //! press Players in the primary nav and it pops out directly right of it, the way Briefing and
-//! Markers do (operator word) — no scrim, no window. Layout `Session/Shared/TBD_PlayersPanel.layout`
-//! fills its dock: header (title · TOTAL) and four lanes — BLUFOR and OPFOR on top, Spectators and
-//! Unslotted below — each a `TBD_PlayerLane`. Build into the host's `WideDock`; `Destroy` removes it.
+//! Markers do (operator word) -- no scrim, no window. Layout `Session/Shared/TBD_PlayersPanel.layout`
+//! fills its dock: header (title - TOTAL) and four lanes -- BLUFOR and OPFOR on top, Spectators and
+//! Unslotted below -- each a `TBD_PlayerLane`. Build into the host's `WideDock`; `Destroy` removes it.
 class TBD_PlayersPanel : Managed
 {
 	protected Widget m_wRoot;
 	protected ref array<ref TBD_PlayerLane> m_aLanes;
 
-	//------------------------------------------------------------------------------------------------
 	bool Build(Widget dock)
 	{
 		m_aLanes = {};
@@ -47,7 +46,6 @@ class TBD_PlayersPanel : Managed
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Destroy()
 	{
 		if (m_aLanes)
@@ -67,7 +65,6 @@ class TBD_PlayersPanel : Managed
 		Print("[TBD][players] panel closed.");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void AddLane(string dockName, string name, string role, TBD_EUITint tint, array<TBD_PlayerInfo> rows, string countLabel, string countText)
 	{
 		TBD_PlayerLane lane = new TBD_PlayerLane();
@@ -75,7 +72,6 @@ class TBD_PlayersPanel : Managed
 			m_aLanes.Insert(lane);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string RoleOf(TBD_LobbyCatalog lobby, string factionKey)
 	{
 		if (!lobby)
@@ -95,7 +91,6 @@ class TBD_PlayersPanel : Managed
 		return first + role.Substring(1, role.Length() - 1);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string CountText(int slotted, int capacity)
 	{
 		if (capacity > 0)
@@ -105,13 +100,12 @@ class TBD_PlayersPanel : Managed
 	}
 }
 
-//! One lane of the panel: tinted header (name · role chip · count), column header, scrolling rows.
+//! One lane of the panel: tinted header (name - role chip - count), column header, scrolling rows.
 class TBD_PlayerLane : Managed
 {
 	protected Widget m_wRoot;
 	protected ref TBD_ScrollList m_List;
 
-	//------------------------------------------------------------------------------------------------
 	bool Build(Widget dock, string name, string role, TBD_EUITint tint, array<TBD_PlayerInfo> rows, string countLabel, string countText)
 	{
 		if (!dock)
@@ -183,7 +177,6 @@ class TBD_PlayerLane : Managed
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected bool AddRow(Widget content, int index, TBD_PlayerInfo player, int ground)
 	{
 		Widget row = TBD_UILayouts.CreateStretched(TBD_UILayouts.PLAYERS_ROW, content);
@@ -225,7 +218,6 @@ class TBD_PlayerLane : Managed
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Destroy()
 	{
 		if (m_List)

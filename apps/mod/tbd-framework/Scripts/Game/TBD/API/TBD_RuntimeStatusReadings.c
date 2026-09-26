@@ -8,7 +8,6 @@
 //! @authority server
 class TBD_RuntimeStatusReadings
 {
-	//------------------------------------------------------------------------------------------------
 	//! The reading keys of a heartbeat from a running server, `"is_online":true,...` without braces.
 	static string BuildOnlineFields()
 	{
@@ -42,7 +41,6 @@ class TBD_RuntimeStatusReadings
 		return fields;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The reading keys of the last heartbeat of a runtime that is shutting down: offline, and
 	//! serving nobody. The platform flips a server offline on its own only when a session expires,
 	//! so a clean shutdown says so itself.
@@ -51,7 +49,6 @@ class TBD_RuntimeStatusReadings
 		return "\"is_online\":false,\"player_count\":0";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The server's player limit, else the scenario header's player count, else 0 (omitted).
 	protected static int MaxPlayers()
 	{
@@ -70,7 +67,6 @@ class TBD_RuntimeStatusReadings
 		return 0;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! In-game time of day as `HH:MM`, or empty when the world has no time manager.
 	protected static string InGameTime()
 	{
@@ -85,7 +81,6 @@ class TBD_RuntimeStatusReadings
 		return string.Format("%1:%2", Pad2(hours), Pad2(minutes));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The current weather state's name in lower case (`clear`, `overcast`, ...), or empty.
 	protected static string InGameWeather()
 	{
@@ -103,7 +98,6 @@ class TBD_RuntimeStatusReadings
 		return name;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TimeAndWeatherManagerEntity TimeAndWeather()
 	{
 		ChimeraWorld world = ChimeraWorld.CastFrom(GetGame().GetWorld());
@@ -113,7 +107,6 @@ class TBD_RuntimeStatusReadings
 		return world.GetTimeAndWeatherManager();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Zero-padded to two digits (`string.Format` has no width specifier).
 	protected static string Pad2(int value)
 	{

@@ -1,4 +1,4 @@
-//! Ready & Continue (2026-09-14) — CLIENT: the authority's answer to the last deploy request and
+//! Ready & Continue (2026-09-14) -- CLIENT: the authority's answer to the last deploy request and
 //! the invoker the briefing screen binds to. Static for the same reason TBD_BriefingClient is:
 //! the screen is created and destroyed by the menu manager.
 class TBD_SpawnClient
@@ -6,11 +6,9 @@ class TBD_SpawnClient
 	protected static bool m_bLastOk;
 	protected static string m_sLastWhy;
 
-	//! (bool ok, string why)
-	protected static ref ScriptInvoker m_OnDeployResult;
+	protected static ref ScriptInvoker m_OnDeployResult; //!< (bool ok, string why)
 
-	//------------------------------------------------------------------------------------------------
-	//! (bool ok, string why) — lazily created.
+	//! (bool ok, string why) -- lazily created.
 	static ScriptInvoker GetOnDeployResult()
 	{
 		if (!m_OnDeployResult)
@@ -19,7 +17,6 @@ class TBD_SpawnClient
 		return m_OnDeployResult;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Ask the authority for a body (Ready & Continue). The answer arrives through GetOnDeployResult.
 	static void Request()
 	{
@@ -33,7 +30,6 @@ class TBD_SpawnClient
 		pc.TBD_RequestReadyDeploy();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void AcceptResult(bool ok, string why)
 	{
 		m_bLastOk = ok;
@@ -42,19 +38,16 @@ class TBD_SpawnClient
 			m_OnDeployResult.Invoke(ok, why);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static bool LastOk()
 	{
 		return m_bLastOk;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static string LastWhy()
 	{
 		return m_sLastWhy;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void Reset()
 	{
 		m_bLastOk = false;

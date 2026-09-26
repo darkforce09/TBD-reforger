@@ -1,13 +1,12 @@
-//! T-181.18 — a mission zone PREPARED for use at runtime, and the vocabulary that goes with it.
+//! T-181.18 -- a mission zone PREPARED for use at runtime, and the vocabulary that goes with it.
 //!
 //! The mission document's `TBD_MissionZoneStruct` is the wire shape: nullable, nested, and shaped
-//! for JSON. This is what the enforcer actually reads — flattened, validated once at load, with
+//! for JSON. This is what the enforcer actually reads -- flattened, validated once at load, with
 //! its rules resolved and its bounding box precomputed. Building it is a one-off; asking it a
 //! question is hot-path (once per player per tick), so nothing here allocates or re-parses.
 
-//------------------------------------------------------------------------------------------------
 //! Which of the schema's two `oneOf` shapes a zone actually carries. `NONE` is not an error state
-//! in itself — it is what a zone that authored neither (or authored a degenerate polygon) resolves
+//! in itself -- it is what a zone that authored neither (or authored a degenerate polygon) resolves
 //! to, and it is why `TBD_Zone.Contains` can always answer without a null check at the call site.
 enum TBD_EZoneShapeKind
 {
@@ -16,13 +15,11 @@ enum TBD_EZoneShapeKind
 	POLYGON
 }
 
-//------------------------------------------------------------------------------------------------
 //! What happens when a player stays in violation past the grace period.
 //!
-//! ══ THE ONE-LIFE DECISION, IN THE PLACE IT IS MADE ══════════════════════════════════════════
 //! TBD events are ONE LIFE: death is terminal
 //! (documentation_v2/mod/tbd-framework/mod_design.md section 2). "Kill the player for leaving
-//! the AO" therefore does not mean "teleport them back with a slap" — it means **permanent removal
+//! the AO" therefore does not mean "teleport them back with a slap" -- it means **permanent removal
 //! from the event**, recoverable only by an admin `#tbd respawn`. That is a big enough consequence
 //! that it must be an authored choice, never an inherited one.
 //!
@@ -41,7 +38,6 @@ enum TBD_EZonePenalty
 	KILL    //!< Terminal under one life. Routed through the engine's own kill, never a second path.
 }
 
-//------------------------------------------------------------------------------------------------
 //! One prepared zone.
 class TBD_Zone
 {
@@ -57,8 +53,8 @@ class TBD_Zone
 
 	string m_sId;
 	string m_sType;      //!< Raw schema enum value: boundary | base_protection | spawn | objective_*.
-	string m_sLabel;     //!< May be empty — the schema does not require it.
-	string m_sFaction;   //!< May be empty — the schema does not require it. Meaning is per zone type.
+	string m_sLabel;     //!< May be empty -- the schema does not require it.
+	string m_sFaction;   //!< May be empty -- the schema does not require it. Meaning is per zone type.
 
 	TBD_EZoneShapeKind m_eShape;
 
@@ -67,7 +63,7 @@ class TBD_Zone
 	float m_fCz;
 	float m_fR;
 
-	// Polygon: flat x0,z0,x1,z1,… (see TBD_ZoneGeometry).
+	// Polygon: flat x0,z0,x1,z1,... (see TBD_ZoneGeometry).
 	ref array<float> m_aFlat;
 
 	// Axis-aligned bounds, in world XZ. Precomputed so the common case (a player nowhere near this
@@ -77,7 +73,7 @@ class TBD_Zone
 	float m_fMaxX;
 	float m_fMaxZ;
 
-	// Resolved rules — never sentinels, never null. See TBD_ZoneRegistry.ResolveRules.
+	// Resolved rules -- never sentinels, never null. See TBD_ZoneRegistry.ResolveRules.
 	float m_fGraceSeconds;
 	float m_fWarnEverySeconds;
 	TBD_EZonePenalty m_ePenalty;
@@ -91,11 +87,10 @@ class TBD_Zone
 		return m_eShape != TBD_EZoneShapeKind.NONE;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Is this world XZ position inside the zone?
 	//!
 	//! Inclusive of the boundary within `EDGE_MARGIN_M` for BOTH shapes, so the two never disagree
-	//! about what "on the line" means. An unusable zone answers `false` — see `IsUsable`; callers
+	//! about what "on the line" means. An unusable zone answers `false` -- see `IsUsable`; callers
 	//! must not read that as "outside the play area", which is why the enforcer filters on
 	//! `IsUsable()` before it ever asks.
 	bool Contains(float px, float pz)
@@ -121,7 +116,6 @@ class TBD_Zone
 		return TBD_ZoneGeometry.DistanceToPolygonEdge(px, pz, m_aFlat) <= EDGE_MARGIN_M;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! What a human should be shown. The schema does not require `label`, so this falls back
 	//! through id and then type rather than rendering an empty name in a warning a player has
 	//! seconds to act on.
@@ -134,7 +128,6 @@ class TBD_Zone
 		return m_sType;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Stable identifier for logs. Built in steps, not one long `+` chain: a 9-term concatenation
 	//! is a measured `Formula too complex` in this compiler, whose SECOND diagnostic is a
 	//! misleading `Incompatible parameter`.

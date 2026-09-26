@@ -1,22 +1,20 @@
-//! Pre-game rebuild (2026-09-12) — the popover: a trigger pill plus a menu that floats over the
+//! Pre-game rebuild (2026-09-12) -- the popover: a trigger pill plus a menu that floats over the
 //! screen. Three mockup surfaces are this widget: the browser's *Modes* multi-select, the
 //! inspector's *version* single-select, the markers panel's *plan* picker.
 //!
-//! ── Shape ────────────────────────────────────────────────────────────────────────────────
 //!   * The trigger is `TBD_Dropdown.layout` (a ButtonWidget; this handler sits on it). Widget
 //!     contract: `TriggerBorder`, `TriggerBG`, `TriggerLabel`, `TriggerBadgeDock`, `Chevron`.
 //!   * The menu is `TBD_DropdownMenu.layout`, created on demand into the owning screen's
 //!     **OverlayDock** (`SetOverlayHost`) and positioned under the trigger with FrameSlot. Widget
-//!     contract: `Scrim` (full-bleed ButtonWidget — click outside closes), `Menu`, `MenuBorder`,
+//!     contract: `Scrim` (full-bleed ButtonWidget -- click outside closes), `Menu`, `MenuBorder`,
 //!     `MenuBG`, `MenuTitle`, `SelectAll`, `DeselectAll`, `MenuRule`, `MenuList` (a TBD_ListBox).
 //!   * Items are pooled TBD_ListRows: title = label, detail = badge or count. Reuse, not a fourth
 //!     row widget.
 //!
-//! ── Behaviour ────────────────────────────────────────────────────────────────────────────
 //!   * Single-select: click a row -> selection, menu closes, `OnChanged(dropdown, tag)`.
 //!   * Multi-select: click a row -> toggles its check, menu stays, `OnChanged(dropdown, tag)`;
 //!     the trigger badge shows the checked count; Select All / Deselect All appear in the header.
-//!   * Direct manipulation throughout — no OK button, no confirm.
+//!   * Direct manipulation throughout -- no OK button, no confirm.
 
 //! One entry of a dropdown. `m_iTag` is the caller's id; `m_sBadge` is the trailing mono text
 //! (`LATEST`, `STABLE`, a count).
@@ -93,11 +91,10 @@ class TBD_DropdownComponent : TBD_UIInteractive
 	protected ref TBD_DropdownMenuBridge m_Bridge;
 
 	protected ref array<ref TBD_DropdownItem> m_aItems;
-	//! Opaque colour under the trigger; 0 = glass panel.
-	protected int m_iGround;
+	protected int m_iGround; //!< Opaque colour under the trigger; 0 = glass panel.
 	protected int m_iSelectedTag = -1;
 
-	//! (TBD_DropdownComponent dropdown, int tag) — the row the user clicked. Read state with
+	//! (TBD_DropdownComponent dropdown, int tag) -- the row the user clicked. Read state with
 	//! GetSelectedTag() / IsChecked().
 	protected ref ScriptInvoker m_OnChanged;
 
@@ -106,7 +103,6 @@ class TBD_DropdownComponent : TBD_UIInteractive
 	static const int MENU_PADDING = 8;
 	static const int MENU_GAP = 6;      //!< space between trigger and menu
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnBind(Widget w)
 	{
 		m_wBorder = w.FindAnyWidget("TriggerBorder");
@@ -126,24 +122,20 @@ class TBD_DropdownComponent : TBD_UIInteractive
 		UpdateChevron();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerDeattached(Widget w)
 	{
 		Close();
 		super.HandlerDeattached(w);
 	}
 
-	// ── Public surface ──────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
-	//! The full-bleed widget the menu is created under — the owning screen's OverlayDock. Without
+	//! The full-bleed widget the menu is created under -- the owning screen's OverlayDock. Without
 	//! it the menu falls back to the trigger's own parent, which usually clips it.
 	void SetOverlayHost(Widget host)
 	{
 		m_wOverlayHost = host;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Opaque colour under the trigger (the owning panel's GetGround()).
 	void SetGround(int opaqueArgb)
 	{
@@ -153,7 +145,6 @@ class TBD_DropdownComponent : TBD_UIInteractive
 			m_BadgeChip.SetGround(TBD_UITheme.Over(TBD_UITheme.INPUT_FILL, opaqueArgb));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetItems(notnull array<ref TBD_DropdownItem> items)
 	{
 		m_aItems = {};
@@ -171,27 +162,23 @@ class TBD_DropdownComponent : TBD_UIInteractive
 			RebuildRows();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetLabel(string label)
 	{
 		m_sLabel = label;
 		RefreshTrigger();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetMenuTitle(string title)
 	{
 		m_sMenuTitle = title;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetMultiSelect(bool multi)
 	{
 		m_bMultiSelect = multi;
 		RefreshTrigger();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Single-select: pick by tag without firing OnChanged (restoring state).
 	void SetSelectedTag(int tag)
 	{
@@ -201,19 +188,16 @@ class TBD_DropdownComponent : TBD_UIInteractive
 			RebuildRows();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	int GetSelectedTag()
 	{
 		return m_iSelectedTag;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	TBD_DropdownItem GetSelectedItem()
 	{
 		return FindItem(m_iSelectedTag);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	bool IsChecked(int tag)
 	{
 		TBD_DropdownItem item = FindItem(tag);
@@ -223,7 +207,6 @@ class TBD_DropdownComponent : TBD_UIInteractive
 		return item.m_bChecked;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	int GetCheckedCount()
 	{
 		int count;
@@ -236,7 +219,6 @@ class TBD_DropdownComponent : TBD_UIInteractive
 		return count;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Multi-select: set every item at once without firing OnChanged.
 	void SetAllChecked(bool checked)
 	{
@@ -250,7 +232,6 @@ class TBD_DropdownComponent : TBD_UIInteractive
 			RebuildRows();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! (TBD_DropdownComponent dropdown, int tag)
 	ScriptInvoker GetOnChanged()
 	{
@@ -260,13 +241,11 @@ class TBD_DropdownComponent : TBD_UIInteractive
 		return m_OnChanged;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	bool IsOpen()
 	{
 		return m_wMenuRoot != null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Open()
 	{
 		if (IsOpen() || !m_wRoot)
@@ -332,7 +311,6 @@ class TBD_DropdownComponent : TBD_UIInteractive
 			m_MenuList.FocusFirst();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Close()
 	{
 		if (!m_wMenuRoot)
@@ -368,7 +346,6 @@ class TBD_DropdownComponent : TBD_UIInteractive
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Toggle()
 	{
 		if (IsOpen())
@@ -377,15 +354,12 @@ class TBD_DropdownComponent : TBD_UIInteractive
 			Open();
 	}
 
-	// ── TBD_UIInteractive ───────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnActivated()
 	{
 		Toggle();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void Repaint()
 	{
 		if (!m_wRoot)
@@ -412,9 +386,7 @@ class TBD_DropdownComponent : TBD_UIInteractive
 		TBD_UITheme.Paint(m_wChevron, TBD_UITheme.MUTED_INK);
 	}
 
-	// ── Internals ───────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnRowActivated(TBD_ListBox list, int tag)
 	{
 		TBD_DropdownItem item = FindItem(tag);
@@ -438,7 +410,6 @@ class TBD_DropdownComponent : TBD_UIInteractive
 			m_OnChanged.Invoke(this, tag);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnSelectAll(TBD_UIButton button)
 	{
 		SetAllChecked(true);
@@ -446,7 +417,6 @@ class TBD_DropdownComponent : TBD_UIInteractive
 			m_OnChanged.Invoke(this, -1);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnDeselectAll(TBD_UIButton button)
 	{
 		SetAllChecked(false);
@@ -454,7 +424,6 @@ class TBD_DropdownComponent : TBD_UIInteractive
 			m_OnChanged.Invoke(this, -1);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Rows are pooled by the list; this is O(items) property writes.
 	protected void RebuildRows()
 	{
@@ -488,7 +457,6 @@ class TBD_DropdownComponent : TBD_UIInteractive
 			m_MenuList.SetSelectedTag(m_iSelectedTag);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Anchor the menu under the trigger inside `host`. Screen coordinates come back in real
 	//! pixels; FrameSlot wants reference pixels, hence DPIUnscale.
 	protected void PlaceMenu(Widget host)
@@ -518,7 +486,6 @@ class TBD_DropdownComponent : TBD_UIInteractive
 		FrameSlot.SetSize(m_wMenu, m_iMenuWidth, height);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void RefreshTrigger()
 	{
 		if (m_bMultiSelect)
@@ -543,8 +510,7 @@ class TBD_DropdownComponent : TBD_UIInteractive
 			SetBadge(chosen.m_sBadge, BadgeTint(chosen.m_sBadge));
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! LATEST is green, everything else the quiet blue — the mockup's two badge colours.
+	//! LATEST is green, everything else the quiet blue -- the mockup's two badge colours.
 	protected TBD_EUITint BadgeTint(string badge)
 	{
 		if (badge == "LATEST")
@@ -553,7 +519,6 @@ class TBD_DropdownComponent : TBD_UIInteractive
 		return TBD_EUITint.PRIMARY;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void SetBadge(string text, TBD_EUITint tint)
 	{
 		if (!m_wBadgeDock)
@@ -583,7 +548,6 @@ class TBD_DropdownComponent : TBD_UIInteractive
 		TBD_UITheme.Show(m_wBadgeDock, m_BadgeChip != null);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void UpdateChevron()
 	{
 		if (!m_wChevron)
@@ -595,7 +559,6 @@ class TBD_DropdownComponent : TBD_UIInteractive
 			m_wChevron.SetText("v");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected TBD_DropdownItem FindItem(int tag)
 	{
 		foreach (TBD_DropdownItem item : m_aItems)
@@ -607,7 +570,6 @@ class TBD_DropdownComponent : TBD_UIInteractive
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static ScriptedWidgetComponent FindHandlerIn(Widget root, string name, typename handler)
 	{
 		if (!root)
@@ -620,7 +582,6 @@ class TBD_DropdownComponent : TBD_UIInteractive
 		return ScriptedWidgetComponent.Cast(w.FindHandler(handler));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Mount a trigger into `dock` and return its handler.
 	static TBD_DropdownComponent Mount(Widget dock, Widget overlayHost, string label, bool multi)
 	{

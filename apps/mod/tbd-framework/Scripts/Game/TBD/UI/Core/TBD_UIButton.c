@@ -1,8 +1,8 @@
-//! T-181.7 — the TBD button.
+//! T-181.7 -- the TBD button.
 //!
 //! Two variants only, because design law allows exactly ONE obvious primary action per screen:
-//!   * `m_bPrimary = true`  — the single loud trigger (Deploy, Confirm). Filled ACTION blue.
-//!   * `m_bPrimary = false` — everything else. Quiet: no fill until you touch it.
+//!   * `m_bPrimary = true`  -- the single loud trigger (Deploy, Confirm). Filled ACTION blue.
+//!   * `m_bPrimary = false` -- everything else. Quiet: no fill until you touch it.
 //!
 //! Every colour comes from TBD_UITheme; the hover state of the primary button reuses the existing
 //! PRIMARY / ON_PRIMARY pair rather than inventing a lighter blue, so the palette stays closed.
@@ -12,7 +12,7 @@
 //! buttons carry; layouts without one lose nothing.
 class TBD_UIButton : TBD_UIInteractive
 {
-	[Attribute("0", UIWidgets.CheckBox, "Primary action styling — at most one per screen")]
+	[Attribute("0", UIWidgets.CheckBox, "Primary action styling -- at most one per screen")]
 	protected bool m_bPrimary;
 
 	[Attribute("", UIWidgets.EditBox, "Label text, if the layout does not already carry it")]
@@ -22,7 +22,7 @@ class TBD_UIButton : TBD_UIInteractive
 	protected Widget m_wBorder;
 	protected TextWidget m_wLabel;
 
-	//! (TBD_UIButton button) — fires on the click itself. There is no separate confirm step.
+	//! (TBD_UIButton button) -- fires on the click itself. There is no separate confirm step.
 	protected ref ScriptInvoker m_OnActivate;
 
 	//! Opaque colour under the button; 0 = the backdrop (bottom bars). See TBD_UITheme colour law.
@@ -31,7 +31,6 @@ class TBD_UIButton : TBD_UIInteractive
 	//! lobby's Ready / Lock buttons. Other tints fall back to PRIMARY.
 	protected TBD_EUITint m_eTint = TBD_EUITint.PRIMARY;
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnBind(Widget w)
 	{
 		m_wBackground = w.FindAnyWidget("Background");
@@ -46,7 +45,6 @@ class TBD_UIButton : TBD_UIInteractive
 			TBD_UITheme.Write(m_wLabel, m_sLabel);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The opaque colour this button sits on (a panel, a menu, the backdrop).
 	void SetGround(int opaqueArgb)
 	{
@@ -54,18 +52,15 @@ class TBD_UIButton : TBD_UIInteractive
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnActivated()
 	{
 		if (m_OnActivate)
 			m_OnActivate.Invoke(this);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Highlight is not a commitment, so a button has nothing to preview.
 	override protected void OnHighlighted() {}
 
-	//------------------------------------------------------------------------------------------------
 	override void Repaint()
 	{
 		if (!m_wRoot)
@@ -135,21 +130,18 @@ class TBD_UIButton : TBD_UIInteractive
 		TBD_UITheme.Paint(m_wLabel, ink);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetLabel(string label)
 	{
 		m_sLabel = label;
 		TBD_UITheme.Write(m_wLabel, label);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetPrimary(bool primary)
 	{
 		m_bPrimary = primary;
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! SUCCESS / WARNING recolour a primary or quiet button for a toggled state; PRIMARY restores.
 	void SetTint(TBD_EUITint tint)
 	{
@@ -157,8 +149,7 @@ class TBD_UIButton : TBD_UIInteractive
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! (TBD_UIButton) — created lazily so a button nobody listens to costs nothing.
+	//! (TBD_UIButton) -- created lazily so a button nobody listens to costs nothing.
 	ScriptInvoker GetOnActivate()
 	{
 		if (!m_OnActivate)
@@ -167,7 +158,6 @@ class TBD_UIButton : TBD_UIInteractive
 		return m_OnActivate;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Focus()
 	{
 		if (!m_wRoot)

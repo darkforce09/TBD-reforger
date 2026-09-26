@@ -27,7 +27,6 @@ class TBD_ArtifactFetchCall : TBD_GameRuntimeCall
 {
 	TBD_MissionArtifactVerification m_Verification;
 
-	//------------------------------------------------------------------------------------------------
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		if (m_Verification)
@@ -40,7 +39,6 @@ class TBD_ArtifactDigestJob : TBD_Sha256Job
 {
 	TBD_MissionArtifactVerification m_Verification;
 
-	//------------------------------------------------------------------------------------------------
 	override void OnHashed(string digest, int elapsedMs)
 	{
 		if (m_Verification)
@@ -52,25 +50,19 @@ class TBD_MissionArtifactVerification
 {
 	string m_sArtifactId;
 	string m_sExpectedSha256;
-	//! The byte count the platform published, or 0 when unknown (the cache records none).
-	int m_iExpectedBytes;
-	//! True when the bytes came from the local cache rather than the platform.
-	bool m_bFromCache;
+	int m_iExpectedBytes; //!< The byte count the platform published, or 0 when unknown (the cache records none).
+	bool m_bFromCache; //!< True when the bytes came from the local cache rather than the platform.
 
 	TBD_EArtifactVerificationResult m_eResult = TBD_EArtifactVerificationResult.PENDING;
-	//! The verified bytes; empty unless the result is VERIFIED.
-	string m_sDocument;
+	string m_sDocument; //!< The verified bytes; empty unless the result is VERIFIED.
 	string m_sComputedSha256;
-	//! One log-ready sentence on a result other than VERIFIED.
-	string m_sFailure;
-	//! Wall-clock milliseconds of the hash, and the part of them spent hashing.
-	int m_iHashMs;
+	string m_sFailure; //!< One log-ready sentence on a result other than VERIFIED.
+	int m_iHashMs; //!< Wall-clock milliseconds of the hash, and the part of them spent hashing.
 	int m_iHashWorkMs;
 
 	protected string m_sPending;
 	protected ref TBD_ArtifactDigestJob m_Digest;
 
-	//------------------------------------------------------------------------------------------------
 	//! Fetch `artifactId` from the platform and verify it against `expectedSha256`.
 	void FetchFromPlatform(string artifactId, string expectedSha256, int expectedBytes)
 	{
@@ -89,7 +81,6 @@ class TBD_MissionArtifactVerification
 		Finish(TBD_EArtifactVerificationResult.UNANSWERED, "the artifact fetch could not be sent: " + failure);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Verify the cached `document` of `artifactId`, read as `bytes`, against `expectedSha256`.
 	void CheckCachedBytes(string artifactId, string expectedSha256, string document, notnull array<int> bytes)
 	{
@@ -100,7 +91,6 @@ class TBD_MissionArtifactVerification
 		Verify(document, bytes);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Stop: no outcome is reported any more.
 	void Abandon()
 	{
@@ -110,13 +100,11 @@ class TBD_MissionArtifactVerification
 			m_Digest.Cancel();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Receives the outcome; `m_eResult` says which.
 	void OnFinished()
 	{
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Called by TBD_ArtifactFetchCall with the platform's answer.
 	void OnFetchAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
@@ -169,7 +157,6 @@ class TBD_MissionArtifactVerification
 		Verify(document, bytes);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Called by TBD_ArtifactDigestJob with the SHA-256 of the pending bytes.
 	void OnHashed(string digest, int elapsedMs)
 	{
@@ -199,7 +186,6 @@ class TBD_MissionArtifactVerification
 		Finish(TBD_EArtifactVerificationResult.VERIFIED, string.Empty);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A short description of where the bytes came from and how the check went, for log lines.
 	string Describe()
 	{
@@ -211,7 +197,6 @@ class TBD_MissionArtifactVerification
 			m_sArtifactId, m_sComputedSha256, m_sDocument.Length(), origin, m_iHashMs, m_iHashWorkMs);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void Verify(string document, notnull array<int> bytes)
 	{
 		m_sPending = document;
@@ -220,7 +205,6 @@ class TBD_MissionArtifactVerification
 		m_Digest.Start(bytes);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void Finish(TBD_EArtifactVerificationResult result, string failure)
 	{
 		m_eResult = result;

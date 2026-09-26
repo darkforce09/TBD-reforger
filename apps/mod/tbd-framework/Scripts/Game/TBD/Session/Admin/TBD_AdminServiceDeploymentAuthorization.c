@@ -4,7 +4,6 @@
 //! @authority server
 modded class TBD_AdminService
 {
-	//------------------------------------------------------------------------------------------------
 	override protected static string Respawn(int callerId, int targetId, out bool ok)
 	{
 		TBD_SpawnManager spawn = TBD_SpawnManager.GetInstance();
@@ -25,7 +24,6 @@ modded class TBD_AdminService
 		return message;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected static string Deploy(int callerId, int targetId, out bool ok)
 	{
 		TBD_SpawnManager spawn = TBD_SpawnManager.GetInstance();

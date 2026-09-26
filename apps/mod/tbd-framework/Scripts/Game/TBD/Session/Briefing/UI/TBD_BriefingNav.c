@@ -1,4 +1,4 @@
-//! Briefing rebuild (2026-09-14) — the two navigation strips' tables and the page factory.
+//! Briefing rebuild (2026-09-14) -- the two navigation strips' tables and the page factory.
 //!
 //! Primary nav (LeftDock, `primary_navigation_panel`) is `TBD_BriefingPrimaryNav` (its own panel);
 //! `TBD_EBriefingMode` is its item order.
@@ -30,7 +30,6 @@ class TBD_BriefingNav
 {
 	static const int WIDTH_MARKERS = 320;
 
-	//------------------------------------------------------------------------------------------------
 	static void TopicItems(notnull array<ref TBD_NavItemData> outItems)
 	{
 		outItems.Insert(new TBD_NavItemData("Frequencies", "radio"));
@@ -45,14 +44,12 @@ class TBD_BriefingNav
 		outItems.Insert(new TBD_NavItemData("Parameters", "tune"));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_NavItemData Separated(TBD_NavItemData item)
 	{
 		item.m_bSeparatorBefore = true;
 		return item;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Content dock width per page (mockup panel widths; ORBAT = lobby roster + kit inspector).
 	static int PageWidth(TBD_EBriefingPage page)
 	{
@@ -73,7 +70,6 @@ class TBD_BriefingNav
 		return 448;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static TBD_BriefingPage CreatePage(TBD_EBriefingPage page)
 	{
 		switch (page)

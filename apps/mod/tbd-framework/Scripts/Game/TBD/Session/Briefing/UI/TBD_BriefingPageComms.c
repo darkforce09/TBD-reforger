@@ -1,4 +1,4 @@
-//! Briefing rebuild (2026-09-14) — Frequencies and ORBAT pages.
+//! Briefing rebuild (2026-09-14) -- Frequencies and ORBAT pages.
 
 //! `frequencies_panel`: the LR command net (gold) and the SR squad nets; the reader's own squad
 //! net is highlighted.
@@ -33,7 +33,6 @@ class TBD_BriefingFrequenciesPage : TBD_BriefingPage
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void AddNet(Widget content, TBD_NetInfo net)
 	{
 		Widget row = TBD_UILayouts.CreateStretched(TBD_UILayouts.BRIEFING_FREQ_ROW, content);
@@ -86,7 +85,7 @@ class TBD_BriefingFrequenciesPage : TBD_BriefingPage
 }
 
 //! ORBAT: the lobby's roster (read-only, the reader's side) beside the kit inspector, exactly the
-//! slotting screen's pair. No page panel of its own — `TBD_OrbatPage.layout` holds the two docks.
+//! slotting screen's pair. No page panel of its own -- `TBD_OrbatPage.layout` holds the two docks.
 class TBD_BriefingOrbatPage : TBD_BriefingPage
 {
 	protected ref TBD_LobbyRosterPanel m_Roster;
@@ -129,15 +128,13 @@ class TBD_BriefingOrbatPage : TBD_BriefingPage
 			m_Roster.Select(m_Lobby.GetOwnKey(), true);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Squad positions are not on the wire yet (operator word: fine for now) — the button exists,
+	//! Squad positions are not on the wire yet (operator word: fine for now) -- the button exists,
 	//! the pan waits for the data.
 	protected void OnSquadLocate(TBD_LobbyRosterPanel panel, string callsign)
 	{
 		Print(string.Format("[TBD][briefing] locate squad %1 (no squad position on the wire yet)", callsign));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnSlotSelected(TBD_LobbyRosterPanel panel, string slotKey)
 	{
 		if (!m_Kit || !m_Lobby)
@@ -146,7 +143,6 @@ class TBD_BriefingOrbatPage : TBD_BriefingPage
 		m_Kit.Show(m_Lobby.GetSlot(slotKey), m_Lobby.GetSquadOf(slotKey));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void Destroy()
 	{
 		if (m_Roster)

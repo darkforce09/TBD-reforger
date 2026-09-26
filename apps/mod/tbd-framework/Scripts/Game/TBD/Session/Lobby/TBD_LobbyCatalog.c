@@ -1,4 +1,4 @@
-//! Pre-game rebuild (2026-09-13) — the read surface behind the Lobby screen.
+//! Pre-game rebuild (2026-09-13) -- the read surface behind the Lobby screen.
 //!
 //! Shaped like the wire (`TBD_LobbyRoster`: sides -> groups -> slots, each slot a key / role /
 //! state / holder / isOwn) plus the presentation the mockups draw and the wire does not carry yet:
@@ -13,7 +13,7 @@
 //! One row of the FACTIONS panel (plus the Spectators row: `m_bSpectators`).
 class TBD_LobbyFactionInfo
 {
-	string m_sKey;          //!< "BLUFOR" — matches TBD_LobbySide.m_sKey
+	string m_sKey;          //!< "BLUFOR" -- matches TBD_LobbySide.m_sKey
 	string m_sName;         //!< "BLUFOR" / "Spectators"
 	string m_sRoleLabel;    //!< "DEFENDING"; empty = no chip
 	TBD_EUITint m_eTint;    //!< BLUFOR / OPFOR / NEUTRAL
@@ -34,7 +34,7 @@ class TBD_LobbyFactionInfo
 //! One seat. `m_sState` is the wire vocabulary verbatim: OPEN | HELD | DEAD.
 class TBD_LobbySlotInfo
 {
-	string m_sKey;          //!< durable slot key — the string Claim() takes
+	string m_sKey;          //!< durable slot key -- the string Claim() takes
 	int m_iIndex;           //!< 1-based position in the squad ("1: Platoon Commander")
 	string m_sRole;         //!< "Platoon Commander"
 	ref array<string> m_aWeapons; //!< weapon chips: "AK-74", "RPG-7"
@@ -64,7 +64,7 @@ class TBD_LobbySlotInfo
 		return m_sState == "DEAD";
 	}
 
-	//! "8: Rifleman (AT)" — the roster row and the kit inspector headline.
+	//! "8: Rifleman (AT)" -- the roster row and the kit inspector headline.
 	string Headline()
 	{
 		return string.Format("%1: %2", m_iIndex, m_sRole);
@@ -171,7 +171,7 @@ class TBD_KitWeapon
 
 //! Everything the KIT INSPECTOR draws for one slot. Sections in mockup order.
 //!
-//! Kit-preview pass (2026-09-13): the sheet is WIRE-SHAPED — `m_sKitAlias` + `m_Loadout` are exactly
+//! Kit-preview pass (2026-09-13): the sheet is WIRE-SHAPED -- `m_sKitAlias` + `m_Loadout` are exactly
 //! the two inputs `TBD_SpawnManager.SpawnSlotBody` hands to the server equip pass (kit alias through
 //! `TBD_Registry`, then `TBD_LoadoutApplication` layers the JSON loadout). The 3D preview
 //! (`TBD_KitPreviewComponent` / `TBD_LoadoutPreviewDresser`) consumes the same two, so what the
@@ -179,7 +179,7 @@ class TBD_KitWeapon
 class TBD_KitInfo
 {
 	string m_sKey;
-	string m_sKitAlias;              //!< "kit:sov_rifleman" — the slot's `kit`; resolved through TBD_Registry
+	string m_sKitAlias;              //!< "kit:sov_rifleman" -- the slot's `kit`; resolved through TBD_Registry
 	ResourceName m_sBasePrefab;      //!< resolved character prefab; empty = resolve m_sKitAlias on demand
 	ref TBD_SlotLoadoutStruct m_Loadout; //!< the JSON loadout the server applies; null = kit-only slot
 	ref array<ref TBD_KitEntry> m_aGear;
@@ -202,7 +202,6 @@ class TBD_KitInfo
 		m_aMisc = {};
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The character prefab the preview dresses: the pinned one, else the alias through the registry
 	//! (the addon ships `Data/registry.json`, so this resolves on clients too). Empty = unknown kit.
 	ResourceName BasePrefab()
@@ -234,10 +233,9 @@ class TBD_LobbyCatalog
 	ref map<string, ref TBD_KitInfo> m_mKits;
 	protected string m_sOwnKey;
 
-	//! (TBD_LobbyCatalog catalog) — after any roster change (claim / release / live update)
+	//! (TBD_LobbyCatalog catalog) -- after any roster change (claim / release / live update)
 	protected ref ScriptInvoker m_OnChanged;
 
-	//------------------------------------------------------------------------------------------------
 	void TBD_LobbyCatalog()
 	{
 		m_aFactions = {};
@@ -245,7 +243,6 @@ class TBD_LobbyCatalog
 		m_mKits = new map<string, ref TBD_KitInfo>();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static TBD_LobbyCatalog Get()
 	{
 		if (!s_Instance)
@@ -254,14 +251,12 @@ class TBD_LobbyCatalog
 		return s_Instance;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Replace the catalog (the live adapter, or a fixture). Null restores the mock on the next Get().
 	static void Set(TBD_LobbyCatalog catalog)
 	{
 		s_Instance = catalog;
 	}
 
-	// ── Reads ───────────────────────────────────────────────────────────────────────────────
 
 	array<ref TBD_LobbyFactionInfo> GetFactions()
 	{
@@ -364,9 +359,7 @@ class TBD_LobbyCatalog
 		return m_sMissionId;
 	}
 
-	// ── Intents (mock: synchronous; live: the adapter overrides) ────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! Take an OPEN seat; releases the current one first. False when the seat is not claimable.
 	bool Claim(string slotKey)
 	{
@@ -388,7 +381,6 @@ class TBD_LobbyCatalog
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Release()
 	{
 		if (m_sOwnKey.IsEmpty())
@@ -406,7 +398,6 @@ class TBD_LobbyCatalog
 		NotifyChanged();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	ScriptInvoker GetOnChanged()
 	{
 		if (!m_OnChanged)
@@ -415,7 +406,6 @@ class TBD_LobbyCatalog
 		return m_OnChanged;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void NotifyChanged()
 	{
 		if (m_OnChanged)

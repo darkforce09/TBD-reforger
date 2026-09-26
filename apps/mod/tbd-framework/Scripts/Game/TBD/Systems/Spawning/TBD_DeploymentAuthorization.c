@@ -40,8 +40,7 @@ class TBD_OpenLife
 	string m_sOrbatSlotId;
 	string m_sPlayerLifeId;
 	string m_sOccupancyId;
-	//! The runtime session the life was opened in; its end is reported there.
-	string m_sRuntimeSessionId;
+	string m_sRuntimeSessionId; //!< The runtime session the life was opened in; its end is reported there.
 }
 
 class TBD_DeploymentAuthorization
@@ -68,11 +67,8 @@ class TBD_DeploymentAuthorization
 	//! Refusals already in the admin audit trail this round, see `AuditRefusal`.
 	protected static ref map<string, bool> s_mAuditedRefusals;
 
-	//------------------------------------------------------------------------------------------------
 	// THE GATE
-	//------------------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! True when the running mission is deployed for a platform event, so its event seats need
 	//! authorization.
 	static bool AppliesToThisMission()
@@ -80,7 +76,6 @@ class TBD_DeploymentAuthorization
 		return !TBD_DeployedMission.GetEventId().IsEmpty();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! May this player deploy into `slot` now? `connectionEpoch` is TBD_SpawnManager's stamp of the
 	//! player's current connection; a decision is honoured only for that same connection.
 	static TBD_EDeploymentGate Check(int playerId, int connectionEpoch, notnull TBD_MissionSlotStruct slot)
@@ -151,11 +146,8 @@ class TBD_DeploymentAuthorization
 		return TBD_EDeploymentGate.WAIT;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	// DECISIONS (TBD_DeploymentRequestQueue)
-	//------------------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! The platform allowed `request` and opened the life `occupancyId` in the request's session.
 	static void OnAllowed(notnull TBD_DeploymentRequest request, string occupancyId, string authorizedBy)
 	{
@@ -194,7 +186,6 @@ class TBD_DeploymentAuthorization
 			spawn.OnDeploymentAuthorized(life.m_iPlayerId, life.m_iConnectionEpoch);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The platform denied `request`. Returns true when the request is to be asked again: the
 	//! platform still holds an open life of this player that this server does not track (its end
 	//! report was lost or dropped), and that life is ended first.
@@ -252,7 +243,6 @@ class TBD_DeploymentAuthorization
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The platform will not decide `request` (it rejected the request itself, or this server holds
 	//! no session): the waiting player is refused with `sentence` and keeps the seat.
 	static void OnUndecided(notnull TBD_DeploymentRequest request, string sentence)
@@ -271,11 +261,8 @@ class TBD_DeploymentAuthorization
 			spawn.OnDeploymentRefused(request.m_iPlayerId, request.m_iConnectionEpoch, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	// LIVES
-	//------------------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! The player's life is over (death, disconnect, a seat given back): its end is reported, and a
 	//! request the player still waits on is abandoned.
 	static void EndLife(int playerId, string reason)
@@ -284,7 +271,6 @@ class TBD_DeploymentAuthorization
 		CloseLife(playerId, reason);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The player took another seat: a life or a waiting request in the previous seat ends, while one
 	//! for the new seat, asked for as the claim deployed the player, stays.
 	static void OnSeatChanged(int playerId, string previousSlotUid)
@@ -298,7 +284,6 @@ class TBD_DeploymentAuthorization
 			CloseLife(playerId, "changed seat");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Forget the player's open life and report its end.
 	protected static void CloseLife(int playerId, string reason)
 	{
@@ -314,7 +299,6 @@ class TBD_DeploymentAuthorization
 		TBD_DeploymentEndQueue.Enqueue(life.m_sRuntimeSessionId, life.m_sOccupancyId, life.m_sArmaId, life.m_sOrbatSlotId, reason);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The round or the world is over: every life ends, no request is waited on any more, and the
 	//! next round's refusals reach the audit trail afresh.
 	static void EndAllLives(string reason)
@@ -333,7 +317,6 @@ class TBD_DeploymentAuthorization
 			EndLife(playerId, reason);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_OpenLife FindLife(int playerId)
 	{
 		if (!s_mLives)
@@ -344,7 +327,6 @@ class TBD_DeploymentAuthorization
 		return life;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool IsTrackedOccupancy(string occupancyId)
 	{
 		if (!s_mLives)
@@ -360,7 +342,6 @@ class TBD_DeploymentAuthorization
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Is the player the request was made for still on the connection it was made on? A recycled
 	//! player id is a different person.
 	protected static bool IsCurrentConnection(notnull TBD_DeploymentRequest request)
@@ -372,18 +353,14 @@ class TBD_DeploymentAuthorization
 		return spawn.IsConnectionCurrent(request.m_iPlayerId, request.m_iConnectionEpoch);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string NewPlayerLifeId(int playerId)
 	{
 		s_iLifeCounter++;
 		return string.Format("life-%1-player-%2", s_iLifeCounter, playerId);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	// MESSAGES AND THE AUDIT TRAIL
-	//------------------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! Say once per slot that the loaded roster does not list it: it is not an event seat.
 	protected static void ReportUnlistedSlot(notnull TBD_MissionSlotStruct slot)
 	{
@@ -399,7 +376,6 @@ class TBD_DeploymentAuthorization
 			key, slot.uid));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A deployment this server cannot have authorized: logged, told to the player, recorded.
 	protected static void Refuse(int playerId, notnull TBD_MissionSlotStruct slot, string sentence)
 	{
@@ -408,7 +384,6 @@ class TBD_DeploymentAuthorization
 		TBD_PlayerChat.Tell(playerId, TAG + "deployment refused - " + sentence);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A refusal whose cause is this server's state, not the player: one trail entry per cause, naming
 	//! the first player it refused.
 	protected static void AuditServerRefusal(string sentence, int playerId, string slotKey)
@@ -417,7 +392,6 @@ class TBD_DeploymentAuthorization
 			sentence, PlayerLabel(playerId), slotKey));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Record a refusal in the admin audit trail (TBD_AdminAudit), which the admin screen and
 	//! `#tbd audit` show. The first refusal under `key` in a round takes a slot in the bounded trail;
 	//! a repeat is already in the console through the caller's own log line, so players retrying
@@ -434,7 +408,6 @@ class TBD_DeploymentAuthorization
 		TBD_AdminAudit.Record(text, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `name(id)` for the audit trail.
 	protected static string PlayerLabel(int playerId)
 	{
@@ -446,7 +419,6 @@ class TBD_DeploymentAuthorization
 		return string.Format("%1(%2)", name, playerId);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! What the player can do about a denial.
 	protected static string HintFor(string reason)
 	{

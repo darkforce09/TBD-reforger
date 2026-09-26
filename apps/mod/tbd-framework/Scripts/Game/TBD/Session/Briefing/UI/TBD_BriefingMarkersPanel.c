@@ -1,4 +1,4 @@
-//! Briefing rebuild (2026-09-14) — `markers_panel`: a plan dropdown and a Load Plan button.
+//! Briefing rebuild (2026-09-14) -- `markers_panel`: a plan dropdown and a Load Plan button.
 //! There is no plan store yet (operator word), so Load Plan logs the intent and nothing else.
 class TBD_BriefingMarkersPanel : Managed
 {
@@ -7,7 +7,6 @@ class TBD_BriefingMarkersPanel : Managed
 	protected TBD_UIButton m_Load;
 	protected TBD_BriefingCatalog m_Catalog;
 
-	//------------------------------------------------------------------------------------------------
 	bool Build(Widget dock, TBD_BriefingCatalog catalog, Widget overlayHost)
 	{
 		m_Catalog = catalog;
@@ -63,7 +62,6 @@ class TBD_BriefingMarkersPanel : Managed
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Destroy()
 	{
 		if (m_Load)
@@ -82,7 +80,6 @@ class TBD_BriefingMarkersPanel : Managed
 		m_Catalog = null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnLoad(TBD_UIButton button)
 	{
 		string id = "none";

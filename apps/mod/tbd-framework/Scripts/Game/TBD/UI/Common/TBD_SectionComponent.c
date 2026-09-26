@@ -1,7 +1,7 @@
-//! Briefing pass (2026-09-14) — the collapsible card every long list is made of.
+//! Briefing pass (2026-09-14) -- the collapsible card every long list is made of.
 //!
-//! Generalises the lobby squad card's header: a full-width button (icon · title · badge chip ·
-//! action dock · chevron) over a rule and a `Body` vertical layout the owner fills. Clicking the
+//! Generalises the lobby squad card's header: a full-width button (icon - title - badge chip -
+//! action dock - chevron) over a rule and a `Body` vertical layout the owner fills. Clicking the
 //! header folds the body. Widget contract of `TBD_Section.layout`: `Border`, `Background`,
 //! `HeaderButton`, `HeaderOverlay` (clips the header band's bottom arcs), `HeaderBG`, `HeaderIcon`,
 //! `Title`, `BadgeDock`, `ActionDock`, `Chevron`, `HeaderRule`, `Body`.
@@ -28,10 +28,8 @@ class TBD_SectionComponent : ScriptedWidgetComponent
 	protected int m_iGround;
 	protected TBD_EUITint m_eTint = TBD_EUITint.NEUTRAL;
 
-	//! (TBD_SectionComponent section, bool expanded)
-	protected ref ScriptInvoker m_OnToggled;
+	protected ref ScriptInvoker m_OnToggled; //!< (TBD_SectionComponent section, bool expanded)
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerAttached(Widget w)
 	{
 		super.HandlerAttached(w);
@@ -59,14 +57,12 @@ class TBD_SectionComponent : ScriptedWidgetComponent
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerDeattached(Widget w)
 	{
 		m_wRoot = null;
 		super.HandlerDeattached(w);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Create a section under `parent` (a vertical layout), titled, over an opaque ground.
 	static TBD_SectionComponent Mount(Widget parent, string title, int ground)
 	{
@@ -83,7 +79,6 @@ class TBD_SectionComponent : ScriptedWidgetComponent
 		return section;
 	}
 
-	// ── API ─────────────────────────────────────────────────────────────────────────────────
 
 	void SetTitle(string title)
 	{
@@ -198,9 +193,7 @@ class TBD_SectionComponent : ScriptedWidgetComponent
 		return m_OnToggled;
 	}
 
-	// ── Internals ───────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! Clicks bubble up from the header button; a button in the ActionDock consumes its own first.
 	override bool OnClick(Widget w, int x, int y, int button)
 	{
@@ -214,13 +207,11 @@ class TBD_SectionComponent : ScriptedWidgetComponent
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected int CardGround()
 	{
 		return TBD_UITheme.Over(TBD_UITheme.SQUAD_CARD_FILL, m_iGround);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void Repaint()
 	{
 		if (!m_wRoot)

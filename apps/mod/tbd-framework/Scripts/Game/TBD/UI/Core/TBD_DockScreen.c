@@ -1,4 +1,4 @@
-//! Pre-game rebuild (2026-09-12) — the base class of every Dock & Sub-Layout screen.
+//! Pre-game rebuild (2026-09-12) -- the base class of every Dock & Sub-Layout screen.
 //!
 //! A screen's `.layout` is a shell under 200 lines: a backdrop and empty, named docks. The script
 //! mounts sub-layouts into them at open and drops them at close. This class is that mechanism plus
@@ -10,13 +10,13 @@
 //!   │  LeftDock  │         CenterDock           │       RightDock         │  per-screen panels
 //!   ├────────────┴──────────────────────────────┴─────────────────────────┤
 //!   └─────────────────────────── BottomDock (64) ─────────────────────────┘  TBD_SessionBottomBar
-//!     OverlayDock — full-bleed, last child, hidden until a popover floats in it
+//!     OverlayDock -- full-bleed, last child, hidden until a popover floats in it
 //! ```
 //!
 //! Dock names are a contract shared with `TBD_DropdownComponent` (OverlayDock) and the shared
 //! bars; column widths are each shell's own business.
 //!
-//! **Subclass it**: override `OnScreenOpen()` (call `super` first — the bars are up by then), mount
+//! **Subclass it**: override `OnScreenOpen()` (call `super` first -- the bars are up by then), mount
 //! your panels with `Mount()` / `MountHandler()`, and override the small hooks below
 //! (`GetScreenTitle`, `GetSessionTab`, `GetSessionIdentity`, `OnBottomAction`). `OnScreenClose`
 //! unmounts everything; override it only to release your own listeners, and call `super` last.
@@ -26,7 +26,6 @@ class TBD_DockScreen : TBD_MenuBase
 	protected TBD_SessionTopBar m_TopBar;
 	protected TBD_SessionBottomBar m_BottomBar;
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnScreenOpen()
 	{
 		super.OnScreenOpen();
@@ -38,7 +37,6 @@ class TBD_DockScreen : TBD_MenuBase
 		MountChrome();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnScreenClose()
 	{
 		if (m_TopBar)
@@ -53,7 +51,6 @@ class TBD_DockScreen : TBD_MenuBase
 		super.OnScreenClose();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Land on the primary action when a subclass has nothing better; subclasses usually do.
 	override void FocusDefault()
 	{
@@ -66,7 +63,6 @@ class TBD_DockScreen : TBD_MenuBase
 		super.FocusDefault();
 	}
 
-	// ── Subclass hooks ──────────────────────────────────────────────────────────────────────
 
 	//! Top-bar title. Screen-name style (`Scenario Browser`) unless IsTitleMono() says otherwise.
 	protected string GetScreenTitle()
@@ -107,7 +103,6 @@ class TBD_DockScreen : TBD_MenuBase
 	//! A bottom-bar action fired. `id` is what the screen passed to AddAction.
 	protected void OnBottomAction(TBD_SessionBottomBar bar, string id) {}
 
-	//------------------------------------------------------------------------------------------------
 	//! A top-bar tab was clicked. Default: swap this screen for the one the tab names. A screen
 	//! that must confirm first (unsaved slot?) overrides and calls super when it is happy.
 	protected void OnTabSelected(TBD_SessionTopBar bar, int tab)
@@ -118,7 +113,7 @@ class TBD_DockScreen : TBD_MenuBase
 		int preset = PresetForTab(tab);
 		if (preset < 0)
 		{
-			// Nothing to open for that tab yet — put the highlight back where the screen is.
+			// Nothing to open for that tab yet -- put the highlight back where the screen is.
 			if (m_TopBar)
 				m_TopBar.SetActiveTab(GetSessionTab());
 			return;
@@ -127,11 +122,9 @@ class TBD_DockScreen : TBD_MenuBase
 		TBD_MenuStack.Replace(preset);
 	}
 
-	// ── Mounting ────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! Instantiate `layout` inside the dock named `dockName`. The root is remembered and removed
-	//! on close. Null when the dock is missing or the layout does not resolve — and a WARNING says
+	//! on close. Null when the dock is missing or the layout does not resolve -- and a WARNING says
 	//! which, because a silent empty dock is the hardest UI bug to see.
 	protected Widget Mount(string dockName, ResourceName layout)
 	{
@@ -153,7 +146,6 @@ class TBD_DockScreen : TBD_MenuBase
 		return created;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Mount() and pull the layout's handler off the new root in one step.
 	protected ScriptedWidgetComponent MountHandler(string dockName, ResourceName layout, typename handler)
 	{
@@ -168,7 +160,6 @@ class TBD_DockScreen : TBD_MenuBase
 		return found;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void UnmountAll()
 	{
 		if (!m_aMounted)
@@ -183,33 +174,28 @@ class TBD_DockScreen : TBD_MenuBase
 		m_aMounted.Clear();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The named dock, or null. Panels that build their own children use this.
 	Widget GetDock(string dockName)
 	{
 		return Find(dockName);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Full-bleed host for popovers and modals. Hidden while empty (see TBD_DropdownComponent).
 	Widget GetOverlayDock()
 	{
 		return Find("OverlayDock");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	TBD_SessionTopBar GetTopBar()
 	{
 		return m_TopBar;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	TBD_SessionBottomBar GetBottomBar()
 	{
 		return m_BottomBar;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Tab -> preset. -1 when the tab has no screen yet.
 	static int PresetForTab(int tab)
 	{
@@ -223,9 +209,7 @@ class TBD_DockScreen : TBD_MenuBase
 		return -1;
 	}
 
-	// ── Internals ───────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	protected void MountChrome()
 	{
 		if (UsesTopBar())

@@ -1,13 +1,12 @@
-//! T-181.12 — the spectator camera. Under ONE LIFE this is where a dead player spends the rest
+//! T-181.12 -- the spectator camera. Under ONE LIFE this is where a dead player spends the rest
 //! of the event, so it is a first-class view, not a fallback.
 //!
-//! ── Why this is a reimplementation and not `SCR_ManualCamera` ────────────────────────────────
 //! Read before assuming this is NIH. `SCR_ManualCamera` was read from real vanilla source
 //! (`apps/mod/vanilla_reference/Source/SCR_ManualCamera.c`), and the answer is in its own
 //! declaration:
 //!
 //!   1. **All of its behaviour lives in a prefab.** Movement, acceleration, terrain collision and
-//!      UI are `[Attribute] array<ref SCR_BaseManualCameraComponent> m_aComponents` — authored in
+//!      UI are `[Attribute] array<ref SCR_BaseManualCameraComponent> m_aComponents` -- authored in
 //!      an `.et`, dispatched by `ProcessComponents()`. Spawn the class bare and you get an inert
 //!      camera that never moves. Deriving therefore forces a NEW `.et`, and an `.et` is a
 //!      non-script resource, which means the SAME `resourceDatabase.rdb` blocker that already
@@ -17,31 +16,29 @@
 //!      None of that is spectator behaviour and all of it is surface we would have to fight.
 //!   3. **It cannot follow anything.** Half this slice is follow / first-person on a living
 //!      player, which `SCR_ManualCamera` has no concept of. CRF derived from it and *still* drove
-//!      `SetTransform` itself every frame for both follow modes — i.e. the base class bought them
+//!      `SetTransform` itself every frame for both follow modes -- i.e. the base class bought them
 //!      nothing for the part that matters.
 //!
 //! What we DO reuse is the part that is load-bearing: `SCR_CameraBase : CameraBase` for the
-//! camera itself, `CameraManager.SetCamera()` for activation, `Math3D` for the transform, and —
-//! crucially — vanilla's own `ManualCameraContext` input actions, so free-flight uses the keys the
+//! camera itself, `CameraManager.SetCamera()` for activation, `Math3D` for the transform, and --
+//! crucially -- vanilla's own `ManualCameraContext` input actions, so free-flight uses the keys the
 //! player has already bound and needs no new input resource at all.
 //!
-//! ── MEASURED (probe, `compile.sh --probe=/tmp/…`, 2026-07-25) ───────────────────────────────
-//!   * `GetGame().SpawnEntity(TBD_SpectatorCamera, world, EntitySpawnParams)` compiles — a
+//!   * `GetGame().SpawnEntity(TBD_SpectatorCamera, world, EntitySpawnParams)` compiles -- a
 //!     scripted camera can be spawned BY TYPENAME with **no prefab**. That is what makes the
 //!     rdb-free path possible.
 //!   * `SetEventMask(EntityEvent.POSTFRAME)` + `override protected void EOnPostFrame(IEntity,
-//!     float)` is the correct per-frame hook (same one `SCR_ManualCamera` uses) — POSTFRAME so a
+//!     float)` is the correct per-frame hook (same one `SCR_ManualCamera` uses) -- POSTFRAME so a
 //!     followed character has already moved this frame and the camera is not one frame behind.
 //!   * `CameraManager.SetCamera(CameraBase)` / `CurrentCamera()` exist; `ChimeraWorld` has NO
-//!     `GetCameraManager` — it is on `Game`.
-//!   * `CharacterHeadAimingComponent.GetAimingDirectionWorld()` exists — real first person, not a
+//!     `GetCameraManager` -- it is on `Game`.
+//!   * `CharacterHeadAimingComponent.GetAimingDirectionWorld()` exists -- real first person, not a
 //!     body-yaw approximation.
 //!
-//! ── Not compile-provable, needs the operator's eyes ─────────────────────────────────────────
-//! Nothing here returns a framebuffer. Feel — speed, acceleration ramp, orbit distance, mouse
-//! sensitivity — is tuned from constants at the top of this file and can only be judged live.
+//! Nothing here returns a framebuffer. Feel -- speed, acceleration ramp, orbit distance, mouse
+//! sensitivity -- is tuned from constants at the top of this file and can only be judged live.
 //! MEASURED: this descriptor needs the trailing `;` that `SCR_BaseGameModeComponentClass`
-//! descriptors elsewhere in the mod do without — omit it and the parser mis-associates the next
+//! descriptors elsewhere in the mod do without -- omit it and the parser mis-associates the next
 //! class ("Syntax error / Unexpected scope"). Vanilla's own SCR_ManualCameraClass writes it too.
 [EntityEditorProps(category: "TBD/Spectator", description: "TBD spectator camera")]
 class TBD_SpectatorCameraClass : SCR_CameraBaseClass {};
@@ -56,7 +53,7 @@ class TBD_SpectatorCamera : SCR_CameraBase
 	static const string CTX_CAMERA      = "ManualCameraContext";
 
 	//! TBD's own accelerators (roster / cycle / view / free). Unlike the camera actions above these
-	//! ARE new resources and share the menu preset's Workbench dependency — which is exactly why
+	//! ARE new resources and share the menu preset's Workbench dependency -- which is exactly why
 	//! every one of them is also a click in the roster screen.
 	static const string CTX_SPECTATOR   = "TBD_SpectatorContext";
 
@@ -67,7 +64,6 @@ class TBD_SpectatorCamera : SCR_CameraBase
 	static const string ACT_PITCH       = "ManualCameraRotatePitch";
 	static const string ACT_SPEED       = "ManualCameraSpeedAdjust";
 
-	// ── Feel. One place, so tuning after an operator pass is a constant edit, never a hunt. ──
 	static const float  BASE_SPEED_MS       = 18.0;  //!< m/s at speed scale 1.0
 	static const float  SPEED_SCALE_MIN     = 0.15;
 	static const float  SPEED_SCALE_MAX     = 12.0;
@@ -76,7 +72,7 @@ class TBD_SpectatorCamera : SCR_CameraBase
 	//! Degrees per unit of mouse delta. **SIGNED ON PURPOSE.** Whether
 	//! `ManualCameraRotateYaw`/`Pitch` report positive for right/up is a runtime fact no compile
 	//! can settle, and an inverted spectator camera is the first thing an operator will notice. So
-	//! the correction is a single minus sign here rather than a hunt through the math — flip the
+	//! the correction is a single minus sign here rather than a hunt through the math -- flip the
 	//! sign, do not touch ReadLook().
 	static const float  LOOK_SENSITIVITY_YAW   = -12.0;
 	static const float  LOOK_SENSITIVITY_PITCH = -12.0;
@@ -97,7 +93,7 @@ class TBD_SpectatorCamera : SCR_CameraBase
 
 	protected TBD_ESpectatorCameraMode m_eMode = TBD_ESpectatorCameraMode.FREE;
 
-	//! Weak — the world owns the followed entity, we only look at it. Cleared the moment it dies
+	//! Weak -- the world owns the followed entity, we only look at it. Cleared the moment it dies
 	//! or leaves our streaming range, which is why every read is re-validated.
 	protected IEntity m_Target;
 
@@ -116,7 +112,6 @@ class TBD_SpectatorCamera : SCR_CameraBase
 	protected BaseWorld m_World;
 	protected InputManager m_Input;
 
-	//------------------------------------------------------------------------------------------------
 	void TBD_SpectatorCamera(IEntitySource src, IEntity parent)
 	{
 		// POSTFRAME, not FRAME: a followed character has already been moved by the time this runs,
@@ -125,7 +120,6 @@ class TBD_SpectatorCamera : SCR_CameraBase
 		SetFlags(EntityFlags.ACTIVE, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Place the camera and take over. Called once by TBD_SpectatorController straight after spawn;
 	//! the entity is spawned by typename so there is no prefab to carry defaults.
 	void Configure(vector position, vector angles)
@@ -141,11 +135,9 @@ class TBD_SpectatorCamera : SCR_CameraBase
 		ApplyTransform();
 	}
 
-	// ── Modes ───────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! Fly the AO. Keeps the current position and heading, so leaving a follow does not teleport
-	//! you — the camera simply stops being tethered (immediate feedback, no disorientation).
+	//! you -- the camera simply stops being tethered (immediate feedback, no disorientation).
 	void SetModeFree()
 	{
 		m_eMode = TBD_ESpectatorCameraMode.FREE;
@@ -153,10 +145,9 @@ class TBD_SpectatorCamera : SCR_CameraBase
 		m_vVelocity = vector.Zero;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Follow an entity. `firstPerson` puts the camera at the target's eyes and aligns it with what
 	//! they are actually aiming at; otherwise it orbits them at the current distance.
-	//! Passing null is the same as SetModeFree() — a target that just died can never strand us.
+	//! Passing null is the same as SetModeFree() -- a target that just died can never strand us.
 	void SetModeFollow(IEntity target, bool firstPerson)
 	{
 		if (!target)
@@ -178,20 +169,17 @@ class TBD_SpectatorCamera : SCR_CameraBase
 			m_fOrbitDistance = ORBIT_START_M;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	TBD_ESpectatorCameraMode GetMode()
 	{
 		return m_eMode;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The entity being followed, or null in free flight (or once the target went away).
 	IEntity GetTarget()
 	{
 		return m_Target;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Suppress look/move without stopping the camera. Used while a text field owns the keyboard.
 	void SetInputEnabled(bool enabled)
 	{
@@ -200,22 +188,18 @@ class TBD_SpectatorCamera : SCR_CameraBase
 			m_vVelocity = vector.Zero;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Current speed multiplier, for a status readout.
 	float GetSpeedScale()
 	{
 		return m_fSpeedScale;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	vector GetPosition()
 	{
 		return m_vPosition;
 	}
 
-	// ── Frame ───────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	override protected void EOnPostFrame(IEntity owner, float timeSlice)
 	{
 		if (timeSlice <= 0)
@@ -251,11 +235,9 @@ class TBD_SpectatorCamera : SCR_CameraBase
 		ApplyTransform();
 	}
 
-	// ── Free flight ─────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! Fly the AO. Deliberately NO collision: a spectator that gets stuck inside a wall is worse
-	//! than one that can pass through it. The one constraint is a FLOOR — the camera will not go
+	//! than one that can pass through it. The one constraint is a FLOOR -- the camera will not go
 	//! below terrain, because under the map you cannot see anything and cannot tell which way is
 	//! out. A floor you can slide along is not a jail.
 	protected void StepFree(float timeSlice)
@@ -297,10 +279,8 @@ class TBD_SpectatorCamera : SCR_CameraBase
 		ClampToWorld();
 	}
 
-	// ── Follow ──────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
-	//! Orbit the target. Mouse drives yaw/pitch around them, scroll drives distance — the same two
+	//! Orbit the target. Mouse drives yaw/pitch around them, scroll drives distance -- the same two
 	//! inputs free flight uses, so there is one thing to learn, not two.
 	protected void StepFollow(float timeSlice)
 	{
@@ -327,7 +307,6 @@ class TBD_SpectatorCamera : SCR_CameraBase
 		ClampToWorld();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Through their eyes. `CharacterHeadAimingComponent.GetAimingDirectionWorld()` (probed) is the
 	//! real look vector, so this is genuine first person and not a body-yaw approximation. If the
 	//! target has no head-aiming component we fall back to its own facing, which is still correct
@@ -354,10 +333,8 @@ class TBD_SpectatorCamera : SCR_CameraBase
 		m_fPitch = Math.Clamp(angles[1], -PITCH_LIMIT_DEG, PITCH_LIMIT_DEG);
 	}
 
-	// ── Shared ──────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
-	//! Mouse look. Pitch is clamped short of vertical so the view can never invert — an inverted
+	//! Mouse look. Pitch is clamped short of vertical so the view can never invert -- an inverted
 	//! spectator camera is the single fastest way to lose a player's bearings.
 	protected void ReadLook(float timeSlice)
 	{
@@ -376,8 +353,7 @@ class TBD_SpectatorCamera : SCR_CameraBase
 			m_fYaw += 360;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! The floor and the ceiling. Not collision — see StepFree.
+	//! The floor and the ceiling. Not collision -- see StepFree.
 	protected void ClampToWorld()
 	{
 		if (!m_World)
@@ -402,7 +378,6 @@ class TBD_SpectatorCamera : SCR_CameraBase
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void ApplyTransform()
 	{
 		vector transform[4];

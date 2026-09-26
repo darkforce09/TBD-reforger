@@ -1,13 +1,13 @@
-//! Thin structured event log for the TBD framework (T-181.14).
+//! Thin structured event log for the TBD framework.
 //!
 //! One tag vocabulary, one call per event, no state. Everything an operator greps for during
-//! an event goes out as `[TBD][<channel>] <event> key=value …`, so
+//! an event goes out as `[TBD][<channel>] <event> key=value ...`, so
 //! `grep '\[TBD\]\[Validate\]' console.log` returns the whole validation pass and nothing else.
 //!
-//! Deliberately small. CRF solves the same problem with `CRF_LoggingManager` — 888 lines of
+//! Deliberately small. CRF solves the same problem with `CRF_LoggingManager` -- 888 lines of
 //! per-subsystem toggles, ring buffers and RPC fan-out for a framework that ships ten game
 //! modes. TBD runs one event, on one server: it needs a fixed prefix, an explicit level and a
-//! greppable shape. If this ever needs filtering, add a channel allowlist here — do not grow
+//! greppable shape. If this ever needs filtering, add a channel allowlist here -- do not grow
 //! it into a manager component.
 //!
 //! ENF-1: every call carries an explicit LogLevel and nothing here sits on a per-frame or
@@ -25,37 +25,32 @@ class TBD_Log
 	//! Rule used by Banner(). Wide enough that it cannot be mistaken for a normal line.
 	protected static const string RULE = "========================================================";
 
-	//------------------------------------------------------------------------------------------------
-	//! `[TBD][<channel>] <message>` — the one line shape everything else composes.
+	//! `[TBD][<channel>] <message>` -- the one line shape everything else composes.
 	protected static string Compose(string channel, string message)
 	{
 		return "[TBD][" + channel + "] " + message;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Normal-level framework event.
 	static void Event(string channel, string message)
 	{
 		Print(Compose(channel, message), LogLevel.NORMAL);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Something is wrong but the round can still run.
 	static void Warn(string channel, string message)
 	{
 		Print(Compose(channel, message), LogLevel.WARNING);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Something is wrong and the caller is about to refuse to proceed.
 	static void Error(string channel, string message)
 	{
 		Print(Compose(channel, message), LogLevel.ERROR);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Structured event line: `[TBD][Mission] loaded id=msn_8f3a2c slots=18`.
-	//! `keyValues` is a pre-built `k=v k=v` string — Enforce Script has no varargs, and a
+	//! `keyValues` is a pre-built `k=v k=v` string -- Enforce Script has no varargs, and a
 	//! key/value builder object would cost more than it saves at this scale.
 	static void Kv(string channel, string eventName, string keyValues)
 	{
@@ -68,7 +63,6 @@ class TBD_Log
 		Event(channel, eventName + " " + keyValues);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `[TBD][Mission] loaded id=... name='...' slots=... source=platform|cache|last-verified-cache`:
 	//! the deployment's artifact fetched and verified, the deployment's artifact from the profile
 	//! cache, or the last verified artifact because the deployment could not be read
@@ -79,8 +73,7 @@ class TBD_Log
 			missionId, name, slotCount, source));
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! `[TBD][Validate] mission result=PASS errors=0 warnings=2` — the single line an operator
+	//! `[TBD][Validate] mission result=PASS errors=0 warnings=2` -- the single line an operator
 	//! (or a log scraper) reads to know whether the mission is loadable. A failure is logged at
 	//! ERROR so it survives a level filter.
 	static void ValidationResult(bool passed, int errorCount, int warningCount)
@@ -99,13 +92,12 @@ class TBD_Log
 		Error(CH_VALIDATE, line);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `[TBD][Stage] LOADING -> LOBBY`.
-	//! Wired at TBD_FrameworkManager.SetStage (T-181.17), logged before the subsystem fan-out so
+	//! Wired at TBD_FrameworkManager.SetStage, logged before the subsystem fan-out so
 	//! the transition line precedes whatever the subsystems say about it. SetStage also keeps the
 	//! `[TBD] Stage <arrow> <stage>` Print verbatim (README.md and
 	//! documentation_v2/runbooks/game_server_staging/README.md quote it), so both
-	//! formats appear on every transition — detectors should accept either and never depend on the
+	//! formats appear on every transition -- detectors should accept either and never depend on the
 	//! non-ASCII arrow (`cargo xtask mod remote-logs` pins the prefix only).
 	static void Stage(TBD_EGameStage from, TBD_EGameStage to)
 	{
@@ -114,8 +106,7 @@ class TBD_Log
 			typename.EnumToString(TBD_EGameStage, to)));
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! A rule an operator cannot scroll past. Reserved for load-blocking failures — using it
+	//! A rule an operator cannot scroll past. Reserved for load-blocking failures -- using it
 	//! for anything routine destroys the signal it exists to carry.
 	static void Banner(string channel, string title, bool isError)
 	{

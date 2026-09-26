@@ -1,4 +1,4 @@
-//! Pre-game rebuild (2026-09-12) — what the Mission Selector screen reads. Plain models plus the
+//! Pre-game rebuild (2026-09-12) -- what the Mission Selector screen reads. Plain models plus the
 //! one read surface (`TBD_MissionCatalog`) the screen talks to.
 //!
 //! Role (documentation_v2/mod/tbd-framework/UI/README.md table): `TBD_XData.c`, runs on both
@@ -14,11 +14,10 @@
 //! One entry of the TERRAINS list.
 class TBD_TerrainInfo
 {
-	string m_sKey;           //!< "everon" — matches TBD_MissionSummary.m_sTerrainKey
+	string m_sKey;           //!< "everon" -- matches TBD_MissionSummary.m_sTerrainKey
 	string m_sName;          //!< "Everon"
 	string m_sIcon;          //!< TBD_UIIcons key ("water", "landscape", "ac_unit")
-	//! Inspector hero texture (TBD_UILayouts.HERO_*). Empty = the topo-grid art.
-	ResourceName m_sHeroImage;
+	ResourceName m_sHeroImage; //!< Inspector hero texture (TBD_UILayouts.HERO_*). Empty = the topo-grid art.
 
 	void TBD_TerrainInfo(string key, string name, string icon, ResourceName heroImage = "")
 	{
@@ -32,7 +31,7 @@ class TBD_TerrainInfo
 //! One mode / tag a mission carries and the browser filters on (COOP, PvP, Warlords, RHS, Zeus).
 class TBD_MissionMode
 {
-	string m_sKey;           //!< "PVP" — matches TBD_MissionSummary.m_sTag
+	string m_sKey;           //!< "PVP" -- matches TBD_MissionSummary.m_sTag
 	string m_sLabel;         //!< "PvP"
 	TBD_EUITint m_eTint;     //!< chip colour on the card
 
@@ -48,7 +47,7 @@ class TBD_MissionMode
 class TBD_MissionVersion
 {
 	string m_sLabel;         //!< "v2.14.99"
-	string m_sBadge;         //!< "LATEST", "STABLE", "" — drives the badge chip
+	string m_sBadge;         //!< "LATEST", "STABLE", "" -- drives the badge chip
 	string m_sNote;          //!< "Release build"
 
 	void TBD_MissionVersion(string label, string badge, string note)
@@ -138,7 +137,7 @@ class TBD_MissionSummary
 {
 	string m_sId;            //!< stable id, also the catalog tag ("everon/pvp_test_1")
 	string m_sTitle;         //!< "PVP Test 1"
-	string m_sTag;           //!< mode key: "PVP", "COOP", …
+	string m_sTag;           //!< mode key: "PVP", "COOP", ...
 	string m_sTerrainKey;    //!< "everon"
 	int m_iSlots;            //!< 48
 	string m_sAuthor;        //!< "Bohemia Interactive"
@@ -232,7 +231,6 @@ class TBD_MissionCatalog
 	ref array<ref TBD_MissionSummary> m_aMissions;
 	ref TBD_SessionIdentity m_Identity;
 
-	//------------------------------------------------------------------------------------------------
 	void TBD_MissionCatalog()
 	{
 		m_aTerrains = {};
@@ -240,7 +238,6 @@ class TBD_MissionCatalog
 		m_aMissions = {};
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The catalog in force. Mock until a client cache calls Set().
 	static TBD_MissionCatalog Get()
 	{
@@ -250,7 +247,6 @@ class TBD_MissionCatalog
 		return s_Instance;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Replace the catalog (a live client cache, or a test fixture). Null restores the mock on the
 	//! next Get().
 	static void Set(TBD_MissionCatalog catalog)
@@ -258,15 +254,12 @@ class TBD_MissionCatalog
 		s_Instance = catalog;
 	}
 
-	// ── Reads ───────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	array<ref TBD_TerrainInfo> GetTerrains()
 	{
 		return m_aTerrains;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Terrain by key, null when unknown.
 	TBD_TerrainInfo GetTerrain(string key)
 	{
@@ -279,19 +272,16 @@ class TBD_MissionCatalog
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	array<ref TBD_MissionMode> GetModes()
 	{
 		return m_aModes;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	TBD_SessionIdentity GetIdentity()
 	{
 		return m_Identity;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Missions on one terrain, in catalog order. Returns the count appended.
 	int GetMissions(string terrainKey, notnull array<TBD_MissionSummary> outMissions)
 	{
@@ -308,7 +298,6 @@ class TBD_MissionCatalog
 		return added;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	int CountMissions(string terrainKey)
 	{
 		int count;
@@ -321,8 +310,7 @@ class TBD_MissionCatalog
 		return count;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! How many missions on `terrainKey` carry `modeKey` — the count beside each Modes checkbox.
+	//! How many missions on `terrainKey` carry `modeKey` -- the count beside each Modes checkbox.
 	int CountMode(string terrainKey, string modeKey)
 	{
 		int count;
@@ -335,7 +323,6 @@ class TBD_MissionCatalog
 		return count;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	TBD_MissionSummary FindMission(string id)
 	{
 		foreach (TBD_MissionSummary mission : m_aMissions)
@@ -347,7 +334,6 @@ class TBD_MissionCatalog
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	TBD_TerrainInfo FindTerrain(string key)
 	{
 		foreach (TBD_TerrainInfo terrain : m_aTerrains)
@@ -359,7 +345,6 @@ class TBD_MissionCatalog
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	TBD_MissionMode FindMode(string key)
 	{
 		foreach (TBD_MissionMode mode : m_aModes)
@@ -371,7 +356,6 @@ class TBD_MissionCatalog
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Tint for a mode key, NEUTRAL when the mode is unknown.
 	TBD_EUITint ModeTint(string key)
 	{
@@ -382,7 +366,6 @@ class TBD_MissionCatalog
 		return mode.m_eTint;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Display label for a mode key, the key itself when unknown.
 	string ModeLabel(string key)
 	{

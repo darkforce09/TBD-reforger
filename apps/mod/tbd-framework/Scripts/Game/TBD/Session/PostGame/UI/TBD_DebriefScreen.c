@@ -30,7 +30,6 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 	protected TBD_UIButton m_PrimaryAction;
 	protected bool m_bKillsDescending = true;
 
-	//------------------------------------------------------------------------------------------------
 	static void Open()
 	{
 		if (s_wRoot)
@@ -50,7 +49,6 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		s_wRoot = root;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void Close()
 	{
 		if (!s_wRoot)
@@ -61,13 +59,11 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		s_Instance = null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static bool IsOpen()
 	{
 		return s_wRoot != null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static string PackRows(notnull array<ref TBD_DebriefRow> rows)
 	{
 		string packed;
@@ -87,7 +83,6 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		return packed;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void UnpackRows(string packed, notnull array<ref TBD_DebriefRow> outRows)
 	{
 		outRows.Clear();
@@ -122,7 +117,6 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string SanitizeField(string value)
 	{
 		string cleaned = string.Format("%1", value);
@@ -131,7 +125,6 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		return cleaned;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerAttached(Widget w)
 	{
 		super.HandlerAttached(w);
@@ -168,7 +161,6 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		Populate();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerDeattached(Widget w)
 	{
 		if (m_BackAction)
@@ -188,7 +180,6 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		super.HandlerDeattached(w);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void Populate()
 	{
 		TBD_UITheme.Write(m_wTitle, "DEBRIEF");
@@ -252,7 +243,6 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		TBD_UITheme.Show(m_wStatus, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void SortByKills(notnull array<ref TBD_DebriefRow> rows)
 	{
 		int n = rows.Count();
@@ -270,7 +260,6 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected bool KillsSortBefore(TBD_DebriefRow a, TBD_DebriefRow b, bool descending)
 	{
 		if (!a)
@@ -291,7 +280,6 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		return a.m_sName < b.m_sName;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected Widget Find(string name)
 	{
 		if (!m_wRoot)
@@ -300,13 +288,11 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		return m_wRoot.FindAnyWidget(name);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected TextWidget FindText(string name)
 	{
 		return TextWidget.Cast(Find(name));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected ScriptedWidgetComponent FindHandlerOn(string name, typename handler)
 	{
 		Widget w = Find(name);
@@ -316,20 +302,17 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		return ScriptedWidgetComponent.Cast(w.FindHandler(handler));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnBackClicked(TBD_UIButton button)
 	{
 		Close();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnSortClicked(TBD_UIButton button)
 	{
 		m_bKillsDescending = !m_bKillsDescending;
 		Populate();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnRowClicked(TBD_ListBox list, int tag)
 	{
 		if (tag == -2)
@@ -345,7 +328,6 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 //! Kills are the live map TBD_FrameworkManager owns; the reporter still does not track them.
 modded class TBD_ResultsReporter
 {
-	//------------------------------------------------------------------------------------------------
 	static void FillScoreboard(notnull array<ref TBD_DebriefRow> outRows)
 	{
 		outRows.Clear();

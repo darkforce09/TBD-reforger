@@ -1,7 +1,6 @@
 //! T-675.2 -- the compiled `vehicles[]` ROSTER: the mission-placed vehicles and the crew plan
 //! T-076 authors, read in the mod and turned into seated crew.
 //!
-//! == THE DOUBLE-SPAWN TRAP, WHICH IS THE WHOLE DIFFICULTY OF THIS FILE ==
 //! ONE authored vehicle emits TWO rows on the wire, deliberately (`flatten.rs` ModVehicle):
 //!
 //!   * an `entities[]` alias row -- `{alias, uid?, x, z, headingDeg?, faction?, inventory}` -- which
@@ -10,12 +9,11 @@
 //!     `additionalProperties: false` and has nowhere to put a crew plan.
 //!
 //! So a roster reader that simply spawns every row it reads spawns every crewed vehicle TWICE. The
-//! guard is a JOIN, not a heuristic: `uid` is carried on BOTH rows for exactly this purpose (T-946.18),
+//! guard is a JOIN, not a heuristic: `uid` is carried on BOTH rows for exactly this purpose,
 //! so a roster row first tries to CLAIM the world entity its `entities[]` twin already produced and
 //! only spawns when there is nothing to claim. `TBD_MissionVehicleRoster` owns that index, the claim,
 //! and the census that proves the result -- see `SeatAuthoredCrews`.
 //!
-//! == PRESENCE ==
 //! `JsonLoadContext.ReadValue` ALLOCATES a nested `ref` field even when the JSON key is ABSENT
 //! (measured; TBD_MissionLoader.c:31-42). So `if (v.seats)` is ALWAYS TRUE and is NOT a presence
 //! test. Presence here is `seats.Count()` for the container and an empty string / the `INDEX_ABSENT`
@@ -51,7 +49,6 @@ class TBD_MissionVehicleSeatStruct
 	//! because 0 is a REAL authored ordinal.
 	int index = INDEX_ABSENT;
 
-	//------------------------------------------------------------------------------------------------
 	//! True when the mission JSON carried an explicit `index` for this seat.
 	//!
 	//! The distinction is load-bearing, not cosmetic: an AUTHORED ordinal is exact and a seat that
@@ -78,7 +75,6 @@ class TBD_MissionVehicleStruct
 	//! key), so presence is `Count()`, never a null test. An uncrewed vehicle is a legal roster row.
 	ref array<ref TBD_MissionVehicleSeatStruct> seats;
 
-	//------------------------------------------------------------------------------------------------
 	//! How many crew stations this row authors. 0 for an uncrewed vehicle AND for an absent key --
 	//! the two are indistinguishable on the wire by design (flatten omits an empty `seats`).
 	int CrewCount()
@@ -88,7 +84,6 @@ class TBD_MissionVehicleStruct
 		return seats.Count();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The SECONDARY join key to the `entities[]` twin: alias plus exact position.
 	//!
 	//! Why it is sound. flatten derives both rows of one authored vehicle from the same source in the
@@ -106,7 +101,6 @@ class TBD_MissionVehicleStruct
 		return string.Format("%1|%2|%3", alias, x, z);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The best identifying label for a log line: the authored uid when there is one, else the
 	//! fingerprint, which always exists. Never a bare index into `vehicles[]` -- that shifts.
 	string Label()
@@ -172,7 +166,6 @@ class TBD_MissionVehicleRoster
 	protected static ResourceName s_CensusPrefab;
 	protected static int s_iCensusHits;
 
-	//------------------------------------------------------------------------------------------------
 	//! Drop the entities[] -> world index.
 	//!
 	//! Called at the TOP of `SpawnMissionEntities`, before its own early return, so a reload whose
@@ -183,7 +176,6 @@ class TBD_MissionVehicleRoster
 		s_aTwins = new array<ref TBD_MissionVehicleTwin>();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Record one `entities[]` row that reached the world. Skipped rows are deliberately NOT
 	//! recorded: a roster row must then spawn its own vehicle, because nothing exists to claim.
 	static void RecordEntitySpawn(string uid, string alias, float x, float z, IEntity body)
@@ -201,7 +193,6 @@ class TBD_MissionVehicleRoster
 		s_aTwins.Insert(twin);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! THE ANTI-DOUBLE-SPAWN GUARD. Claim the world entity this roster row's `entities[]` twin
 	//! already produced, or null when there is none to claim.
 	//!
@@ -249,7 +240,6 @@ class TBD_MissionVehicleRoster
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! T-675.2 -- read the compiled `vehicles[]` roster, put exactly one vehicle in the world per
 	//! authored row, and seat the slots each row names.
 	//!
@@ -337,7 +327,6 @@ class TBD_MissionVehicleRoster
 			GetGame().GetCallqueue().CallLater(VerifySeatedCrews, SEAT_VERIFY_DELAY_MS, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The world entity for one roster row: the twin it claims, else a fresh spawn.
 	//! `spawnedHere` says which, so the caller's census can separate the two.
 	protected static IEntity ResolveVehicleBody(TBD_MissionVehicleStruct veh, ResourceName prefab, out bool spawnedHere)
@@ -366,7 +355,6 @@ class TBD_MissionVehicleRoster
 		return body;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Spawn one roster vehicle at its authored transform.
 	//!
 	//! This CAN fire and is not a dead path: the profile artifact cache (TBD_MissionArtifactCache)
@@ -407,7 +395,6 @@ class TBD_MissionVehicleRoster
 		return body;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Seat every slot this roster row names.
 	//!
 	//! Returns how many seats the engine ACCEPTED; `skipped` counts the ones that could not be
@@ -438,7 +425,6 @@ class TBD_MissionVehicleRoster
 		return accepted;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Move one authored slot's body into one authored crew station.
 	//!
 	//! Every failure is REPORTED and skips only that seat: a seat that cannot be filled must never
@@ -537,7 +523,6 @@ class TBD_MissionVehicleRoster
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Hold one accepted seat for the deferred verification pass.
 	protected static void QueuePendingSeat(IEntity body, IEntity vehicle, string slotKey, string vehicleLabel, string role)
 	{
@@ -553,7 +538,6 @@ class TBD_MissionVehicleRoster
 		s_aPendingSeats.Insert(pending);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! THE SEATING PROOF. Ask the engine, one second after the requests, which bodies are actually in
 	//! the vehicle they were told to get into.
 	//!
@@ -598,7 +582,6 @@ class TBD_MissionVehicleRoster
 		s_aPendingSeats = null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Which compartment of the resolved type this seat takes.
 	//!
 	//! An AUTHORED `index` is EXACT: if that ordinal does not exist or is already taken, the seat is
@@ -659,7 +642,6 @@ class TBD_MissionVehicleRoster
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `$defs/vehicle.seats[].role` to the engine's compartment type.
 	//!
 	//! The engine models crew stations as three types only (PILOT / TURRET / CARGO), so this is the
@@ -693,7 +675,6 @@ class TBD_MissionVehicleRoster
 		return ECompartmentType.CARGO;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The station ordinal a role takes when the author gave no `index`.
 	//!
 	//! Only `copilot` is not 0, and that is what the word means: the second PILOT station. A vehicle
@@ -706,7 +687,6 @@ class TBD_MissionVehicleRoster
 		return 0;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! How many entities of `prefab` the WORLD holds at this roster position.
 	//!
 	//! This is the census that proves the double-spawn guard, and it deliberately does not consult
@@ -730,7 +710,6 @@ class TBD_MissionVehicleRoster
 		return s_iCensusHits;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Census callback. Static because the query API takes a plain function; the scratch it writes
 	//! into is documented on `s_CensusPrefab`.
 	protected static bool OnCensusEntity(IEntity entity)

@@ -5,7 +5,6 @@
 //! `TBD_LobbyStage.c` (CLIENT stage watcher that raises/drops the screen). Models are in
 //! `TBD_LobbyData.c`, the server builder + wire in `TBD_LobbyService.c`.
 //!
-//! -- Why the transport hangs off SCR_PlayerController ----------------------------------------
 //! The player controller is replicated and owned by exactly one client, so `RplRcver.Owner`
 //! delivers a reply to the requester and to nobody else. Two precedents already in the tree do
 //! this: `TBD_MissionBrowser.c` (admin mission list) and `TBD_BriefingController.c` (briefing
@@ -13,23 +12,19 @@
 //! slice report; the compile gate proves it compiles, nothing here can prove how three blocks
 //! behave at runtime.
 //!
-//! -- ONE reply, not three -------------------------------------------------------------------
 //! Claim, release, deploy and a plain refresh all answer with the SAME message: a whole fresh
 //! roster, optionally carrying a `V` verdict record saying what just happened. That is what makes
 //! optimistic reconciliation a **wholesale replace** instead of a merge - the client never has to
 //! reason about whether a partial update arrived before or after the refresh that overlapped it.
 //! Out-of-order replies converge on the truth because every one of them IS the truth.
 //!
-//! -- Host vs dedicated ----------------------------------------------------------------------
 //! On a listen host the requester IS the authority, so the request short-circuits and builds the
 //! payload in place rather than round-tripping an RPC to itself. It still goes through
 //! `Serialise` -> `Accept` -> `Parse`, so both topologies run one code path and a serialisation
 //! bug cannot hide on the host.
 modded class SCR_PlayerController
 {
-	// -- Roster ------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! CLIENT (owner) -> SERVER: "what does the board look like right now".
 	void TBD_RequestLobbyRoster()
 	{
@@ -58,9 +53,7 @@ modded class SCR_PlayerController
 		TBD_LobbyClient.Accept(wire);
 	}
 
-	// -- Claim -------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! CLIENT (owner) -> SERVER: "I want this seat."
 	//!
 	//! The slot key is client-supplied and that is safe: `ClaimSlot` resolves it against the
@@ -86,7 +79,6 @@ modded class SCR_PlayerController
 		Rpc(TBD_RpcDo_LobbyRoster, TBD_BuildClaimReply(GetPlayerId(), slotKey));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! @authority server - do it, then answer with the board as it stands AFTER doing it.
 	//! Building the roster second is what makes a rejection self-explaining: the same message that
 	//! says "no" already shows who does hold the seat.
@@ -104,9 +96,7 @@ modded class SCR_PlayerController
 		return TBD_LobbyService.Serialise(roster);
 	}
 
-	// -- Release -----------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! CLIENT (owner) -> SERVER: "I have changed my mind." No argument - you can only give up the
 	//! seat you hold, and the server already knows which one that is.
 	void TBD_RequestReleaseSlot()
@@ -128,7 +118,6 @@ modded class SCR_PlayerController
 		Rpc(TBD_RpcDo_LobbyRoster, TBD_BuildReleaseReply(GetPlayerId()));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! @authority server
 	protected string TBD_BuildReleaseReply(int playerId)
 	{
@@ -143,9 +132,7 @@ modded class SCR_PlayerController
 		return TBD_LobbyService.Serialise(roster);
 	}
 
-	// -- Deploy ------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! CLIENT (owner) -> SERVER: the one consequential click. Takes no argument for the same
 	//! reason release does not - the seat is server state, and a client cannot name one.
 	void TBD_RequestDeploy()
@@ -167,7 +154,6 @@ modded class SCR_PlayerController
 		Rpc(TBD_RpcDo_LobbyRoster, TBD_BuildDeployReply(GetPlayerId()));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! @authority server
 	protected string TBD_BuildDeployReply(int playerId)
 	{

@@ -1,6 +1,6 @@
 //! Briefing feature module - CLIENT payload cache + invokers the screen binds to. Split out of TBD_BriefingController.c (UI reorg 2026-09-12); logic unchanged.
 //!
-//! CLIENT — the last briefing this player received, and the change notifications the screen
+//! CLIENT -- the last briefing this player received, and the change notifications the screen
 //! binds to.
 //!
 //! Static because the screen is created and destroyed by the menu manager: parking the payload
@@ -13,32 +13,26 @@ class TBD_BriefingClient
 	protected static bool m_bReady;
 	protected static string m_sTally;
 
-	//! (TBD_BriefingPayload payload)
-	protected static ref ScriptInvoker m_OnPayloadChanged;
+	protected static ref ScriptInvoker m_OnPayloadChanged; //!< (TBD_BriefingPayload payload)
 
-	//! (string tally)
-	protected static ref ScriptInvoker m_OnReadyStateChanged;
+	protected static ref ScriptInvoker m_OnReadyStateChanged; //!< (string tally)
 
-	//------------------------------------------------------------------------------------------------
 	static TBD_BriefingPayload GetPayload()
 	{
 		return m_Payload;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static bool IsReady()
 	{
 		return m_bReady;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static string GetReadyTally()
 	{
 		return m_sTally;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! (TBD_BriefingPayload) — lazily created.
+	//! (TBD_BriefingPayload) -- lazily created.
 	static ScriptInvoker GetOnPayloadChanged()
 	{
 		if (!m_OnPayloadChanged)
@@ -47,8 +41,7 @@ class TBD_BriefingClient
 		return m_OnPayloadChanged;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! (string tally) — lazily created.
+	//! (string tally) -- lazily created.
 	static ScriptInvoker GetOnReadyStateChanged()
 	{
 		if (!m_OnReadyStateChanged)
@@ -57,7 +50,6 @@ class TBD_BriefingClient
 		return m_OnReadyStateChanged;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Ask the server for this player's briefing. No-op without a local controller.
 	static void Request()
 	{
@@ -68,7 +60,6 @@ class TBD_BriefingClient
 		pc.TBD_RequestBriefing();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void ReportReady()
 	{
 		SCR_PlayerController pc = SCR_PlayerController.Cast(GetGame().GetPlayerController());
@@ -81,7 +72,6 @@ class TBD_BriefingClient
 		pc.TBD_ReportReady();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A payload arrived (or was built locally on a host).
 	static void Accept(TBD_BriefingPayload payload)
 	{
@@ -91,7 +81,6 @@ class TBD_BriefingClient
 			m_OnPayloadChanged.Invoke(m_Payload);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The authority's verdict on a readiness report. `accepted` false means the server refused
 	//! (no slot), so the button is released and the reason shows in the status line.
 	static void AcceptTally(string tally, bool accepted)
@@ -103,7 +92,6 @@ class TBD_BriefingClient
 			m_OnReadyStateChanged.Invoke(m_sTally);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! New briefing phase: forget the last round's answers.
 	static void Reset()
 	{

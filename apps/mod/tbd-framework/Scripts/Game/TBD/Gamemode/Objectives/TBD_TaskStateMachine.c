@@ -20,7 +20,6 @@
 //! RPC (the existing marker icon path draws only assigned tasks).
 //! @contract mission.schema.json#/$defs/task
 
-//------------------------------------------------------------------------------------------------
 //! Optional `tasks[].schedule`. JsonLoadContext ALLOCATES this nested ref even when the key is
 //! absent, so presence is the ABSENT sentinel (startAfterS may legally be 0).
 class TBD_TaskScheduleStruct
@@ -31,7 +30,6 @@ class TBD_TaskScheduleStruct
 	int windowS = -1000000;
 }
 
-//------------------------------------------------------------------------------------------------
 //! One `tasks[]` entry on the wire. Field names must equal the JSON keys - JsonLoadContext maps
 //! by name. Empty strings are the absent-key sentinel (schema minLength 1, so they cannot be
 //! authored).
@@ -47,14 +45,12 @@ class TBD_TaskStruct
 	ref TBD_TaskScheduleStruct schedule;
 }
 
-//------------------------------------------------------------------------------------------------
 //! The document root for the TASK pass: declares `tasks` and nothing else.
 class TBD_TaskDocStruct
 {
 	ref array<ref TBD_TaskStruct> tasks;
 }
 
-//------------------------------------------------------------------------------------------------
 enum TBD_ETaskState
 {
 	ASSIGNED,
@@ -62,7 +58,6 @@ enum TBD_ETaskState
 	FAILED
 }
 
-//------------------------------------------------------------------------------------------------
 enum TBD_ETaskTier
 {
 	PRIMARY,
@@ -70,7 +65,6 @@ enum TBD_ETaskTier
 	OPTIONAL
 }
 
-//------------------------------------------------------------------------------------------------
 //! One prepared task. Server-owned; clients see a snapshot, not this object.
 class TBD_Task
 {
@@ -90,7 +84,6 @@ class TBD_Task
 	bool m_bWindowOpened;
 }
 
-//------------------------------------------------------------------------------------------------
 //! Reads `tasks[]`, applies the transition table, and asks TBD_TaskHud to replicate assigned
 //! markers to clients.
 class TBD_TaskStateMachine
@@ -118,7 +111,6 @@ class TBD_TaskStateMachine
 	protected static float s_fLiveStartMs;
 	protected static int s_iMissionElapsedS;
 
-	//------------------------------------------------------------------------------------------------
 	static void Clear()
 	{
 		s_aTasks = null;
@@ -131,19 +123,16 @@ class TBD_TaskStateMachine
 		s_iMissionElapsedS = 0;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static bool IsBuilt()
 	{
 		return s_bBuilt;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static array<ref TBD_Task> GetAll()
 	{
 		return s_aTasks;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Parse. Returns false while there is no document yet so the heartbeat keeps waiting.
 	static bool Build()
 	{
@@ -179,7 +168,6 @@ class TBD_TaskStateMachine
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void Tick()
 	{
 		TBD_FrameworkManager fm = TBD_FrameworkManager.GetInstance();
@@ -211,7 +199,6 @@ class TBD_TaskStateMachine
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The ONE mutation. Illegal pairs are logged and ignored.
 	static bool TryTransition(notnull TBD_Task task, TBD_ETaskState to)
 	{
@@ -235,7 +222,6 @@ class TBD_TaskStateMachine
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static bool IsLegal(TBD_ETaskState from, TBD_ETaskState to)
 	{
 		if (from != TBD_ETaskState.ASSIGNED)
@@ -250,7 +236,6 @@ class TBD_TaskStateMachine
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void SyncFromTriggers(int t)
 	{
 		if (!TBD_TriggerRuntime.IsBuilt())
@@ -288,7 +273,6 @@ class TBD_TaskStateMachine
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_Trigger FindTriggerById(string id)
 	{
 		array<ref TBD_Trigger> triggers = TBD_TriggerRuntime.GetAll();
@@ -312,7 +296,6 @@ class TBD_TaskStateMachine
 		return value - 0.5;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ResolvePositions()
 	{
 		foreach (TBD_Task task : s_aTasks)
@@ -349,7 +332,6 @@ class TBD_TaskStateMachine
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_Task Prepare(notnull TBD_TaskStruct raw, int index)
 	{
 		if (raw.id.IsEmpty())
@@ -380,7 +362,6 @@ class TBD_TaskStateMachine
 		return task;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Presence is the ABSENT sentinel, never `if (raw.schedule)` - JsonLoadContext allocates the
 	//! nested ref when the key is missing. startAfterS may be 0.
 	protected static void BindSchedule(notnull TBD_Task task, notnull TBD_TaskStruct raw)
@@ -407,7 +388,6 @@ class TBD_TaskStateMachine
 		task.m_iWindowS = windowS;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Mission seconds since LIVE. 0 before LIVE. World time is milliseconds (same unit
 	//! TBD_MarkerClient uses for MAP_REQUEST_MIN_GAP_MS).
 	protected static int MissionElapsedS()
@@ -447,7 +427,6 @@ class TBD_TaskStateMachine
 		return elapsed;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Open the window once (log assigned-at-time) and fail when the window has closed.
 	protected static void EvaluateSchedule(int t)
 	{
@@ -487,7 +466,6 @@ class TBD_TaskStateMachine
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Untimed tasks always evaluate. Timed tasks evaluate only inside [startAfterS, startAfterS+windowS).
 	protected static bool IsEvaluating(notnull TBD_Task task, int t)
 	{
@@ -504,7 +482,6 @@ class TBD_TaskStateMachine
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_ETaskTier ParseTier(string raw)
 	{
 		if (raw == TIER_SECONDARY)
@@ -516,7 +493,6 @@ class TBD_TaskStateMachine
 		return TBD_ETaskTier.PRIMARY;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_ETaskState ParseState(string raw)
 	{
 		if (raw == STATE_SUCCEEDED)
@@ -528,7 +504,6 @@ class TBD_TaskStateMachine
 		return TBD_ETaskState.ASSIGNED;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static string StateName(TBD_ETaskState state)
 	{
 		if (state == TBD_ETaskState.SUCCEEDED)
@@ -540,7 +515,6 @@ class TBD_TaskStateMachine
 		return STATE_ASSIGNED;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static string IconFor(notnull TBD_Task task)
 	{
 		if (!task.m_sMarkerId.IsEmpty())
@@ -549,7 +523,6 @@ class TBD_TaskStateMachine
 		return DEFAULT_ICON;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string CurrentMissionId()
 	{
 		TBD_MissionDocumentStruct doc = TBD_MissionLoader.GetMission();
@@ -559,7 +532,6 @@ class TBD_TaskStateMachine
 		return doc.meta.id;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static array<ref TBD_TaskStruct> ReadWire()
 	{
 		string raw = TBD_MissionLoader.GetRawJson();
@@ -585,7 +557,6 @@ class TBD_TaskStateMachine
 		return doc.tasks;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void AnnounceEmptyOnce()
 	{
 		if (s_bAnnounced)
@@ -596,12 +567,10 @@ class TBD_TaskStateMachine
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 modded class SCR_BaseGameMode
 {
 	protected bool m_bTBD_TaskTickArmed;
 
-	//------------------------------------------------------------------------------------------------
 	protected override void OnGameStart()
 	{
 		super.OnGameStart();
@@ -626,7 +595,6 @@ modded class SCR_BaseGameMode
 		GetGame().GetCallqueue().CallLater(TBD_TaskTick, TBD_TaskStateMachine.TICK_MS, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void TBD_TaskTick()
 	{
 		if (GetGame().GetGameMode() != this)
@@ -636,7 +604,6 @@ modded class SCR_BaseGameMode
 		GetGame().GetCallqueue().CallLater(TBD_TaskTick, TBD_TaskStateMachine.TICK_MS, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void TBD_TaskHudTick()
 	{
 		if (GetGame().GetGameMode() != this)

@@ -19,13 +19,10 @@ class TBD_DeploymentEndReport
 	string m_sRuntimeSessionId;
 	string m_sOccupancyId;
 	string m_sArmaId;
-	//! Empty when the report closes a life whose slot this server never learned.
-	string m_sOrbatSlotId;
-	//! Why this server ended the life; for the log only.
-	string m_sReason;
+	string m_sOrbatSlotId; //!< Empty when the report closes a life whose slot this server never learned.
+	string m_sReason; //!< Why this server ended the life; for the log only.
 	int m_iFailures;
-	//! `TBD_GameRuntimeHttp.NowMs()` from which the report may be sent.
-	int m_iNotBeforeMs;
+	int m_iNotBeforeMs; //!< `TBD_GameRuntimeHttp.NowMs()` from which the report may be sent.
 }
 
 //! An end-of-life report on its way to the platform.
@@ -33,7 +30,6 @@ class TBD_DeploymentEndCall : TBD_GameRuntimeCall
 {
 	ref TBD_DeploymentEndReport m_Report;
 
-	//------------------------------------------------------------------------------------------------
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_DeploymentEndQueue.OnCallAnswered(this, answer);
@@ -56,7 +52,6 @@ class TBD_DeploymentEndQueue
 	protected static ref TBD_DeploymentEndCall s_InFlight;
 	protected static bool s_bTicking;
 
-	//------------------------------------------------------------------------------------------------
 	//! Queue the end of one life. Delivery starts at once when nothing else is in flight.
 	static void Enqueue(string runtimeSessionId, string occupancyId, string armaId, string orbatSlotId, string reason)
 	{
@@ -90,7 +85,6 @@ class TBD_DeploymentEndQueue
 		Pump();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True while a report of `runtimeSessionId` for the player `armaId`, or for the slot
 	//! `orbatSlotId`, has not been delivered. A deployment request waits on this, so the platform
 	//! closes the old life before it is asked to open the next one.
@@ -111,7 +105,6 @@ class TBD_DeploymentEndQueue
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool Concerns(notnull TBD_DeploymentEndReport report, string runtimeSessionId, string armaId, string orbatSlotId)
 	{
 		if (report.m_sRuntimeSessionId != runtimeSessionId)
@@ -123,7 +116,6 @@ class TBD_DeploymentEndQueue
 		return !orbatSlotId.IsEmpty() && report.m_sOrbatSlotId == orbatSlotId;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Reports waiting or in flight.
 	protected static int Pending()
 	{
@@ -137,7 +129,6 @@ class TBD_DeploymentEndQueue
 		return count;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One repeating tick while reports wait, for the backoff schedule. Statics outlive a world, and
 	//! so does this tick: a report queued as a world ends is still delivered in the next one.
 	protected static void StartTicking()
@@ -153,7 +144,6 @@ class TBD_DeploymentEndQueue
 		queue.CallLater(Pump, PUMP_MS, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void StopTicking()
 	{
 		if (!s_bTicking)
@@ -165,7 +155,6 @@ class TBD_DeploymentEndQueue
 			queue.Remove(Pump);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Send the head report when it is due and nothing is in flight.
 	protected static void Pump()
 	{
@@ -199,7 +188,6 @@ class TBD_DeploymentEndQueue
 		RetryLater(report, failure);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Called by TBD_DeploymentEndCall with the answer to the report in flight. A report its watchdog
 	//! answered may have been admitted, and repeating it is harmless, so a TRANSIENT answer sends it
 	//! again.
@@ -229,7 +217,6 @@ class TBD_DeploymentEndQueue
 		Pump();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Back to the head of the queue with exponential backoff.
 	protected static void RetryLater(notnull TBD_DeploymentEndReport report, string detail)
 	{

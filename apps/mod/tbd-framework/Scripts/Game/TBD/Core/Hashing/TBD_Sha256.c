@@ -39,11 +39,9 @@ class TBD_Sha256
 	protected static const int LOW_29_BITS = 536870911;
 	protected static const int LOW_30_BITS = 1073741823;
 
-	//! The 64 round constants K (FIPS 180-4, 4.2.2).
-	protected static ref array<int> s_aRoundConstants;
+	protected static ref array<int> s_aRoundConstants; //!< The 64 round constants K (FIPS 180-4, 4.2.2).
 
-	//! The hash state H0..H7.
-	protected int m_iH0;
+	protected int m_iH0; //!< The hash state H0..H7.
 	protected int m_iH1;
 	protected int m_iH2;
 	protected int m_iH3;
@@ -52,18 +50,13 @@ class TBD_Sha256
 	protected int m_iH6;
 	protected int m_iH7;
 
-	//! The message schedule W; its first 16 words are the block being filled.
-	protected ref array<int> m_aSchedule;
-	//! Bytes of the word being assembled, and how many (0..3).
-	protected int m_iWord;
+	protected ref array<int> m_aSchedule; //!< The message schedule W; its first 16 words are the block being filled.
+	protected int m_iWord; //!< Bytes of the word being assembled, and how many (0..3).
 	protected int m_iWordBytes;
-	//! Words of the block being filled (0..15).
-	protected int m_iBlockWords;
-	//! Bytes absorbed so far.
-	protected int m_iLength;
+	protected int m_iBlockWords; //!< Words of the block being filled (0..15).
+	protected int m_iLength; //!< Bytes absorbed so far.
 	protected string m_sDigest;
 
-	//------------------------------------------------------------------------------------------------
 	void TBD_Sha256()
 	{
 		m_aSchedule = new array<int>();
@@ -71,7 +64,6 @@ class TBD_Sha256
 		Reset();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Start a new message.
 	void Reset()
 	{
@@ -91,7 +83,6 @@ class TBD_Sha256
 		m_sDigest = string.Empty;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The SHA-256 of `bytes`, in one call.
 	static string Of(notnull array<int> bytes)
 	{
@@ -100,7 +91,6 @@ class TBD_Sha256
 		return hash.HexDigest();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The bytes of a SHORT string, one per element. Quadratic in the string's length (see above),
 	//! so large inputs are read from a file instead.
 	static array<int> BytesOf(string text)
@@ -114,7 +104,6 @@ class TBD_Sha256
 		return bytes;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True for 64 lowercase hex characters, the form of every digest here and on the platform.
 	static bool IsHexDigest(string text)
 	{
@@ -130,7 +119,6 @@ class TBD_Sha256
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Add up to `maxBytes` bytes of `bytes` from index `start` on. Returns the index after the last
 	//! byte taken, which is where the next call continues.
 	int Absorb(notnull array<int> bytes, int start, int maxBytes)
@@ -171,7 +159,6 @@ class TBD_Sha256
 		return end;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Pad, finish and return the digest as 64 lowercase hex characters. Repeated calls return the
 	//! same digest; Reset starts over.
 	string HexDigest()
@@ -197,7 +184,6 @@ class TBD_Sha256
 		return m_sDigest;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void AbsorbByte(int value)
 	{
 		m_iWord = (m_iWord << 8) | (value & 255);
@@ -217,7 +203,6 @@ class TBD_Sha256
 		m_iBlockWords = 0;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Process the 16 words of the current block (FIPS 180-4, 6.2.2).
 	protected void Compress()
 	{
@@ -272,7 +257,6 @@ class TBD_Sha256
 		m_iH7 = m_iH7 + h;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Eight lowercase hex digits of a 32-bit word, most significant first.
 	protected static string Hex(int word)
 	{
@@ -283,7 +267,6 @@ class TBD_Sha256
 		return digits;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static array<int> RoundConstants()
 	{
 		if (s_aRoundConstants)

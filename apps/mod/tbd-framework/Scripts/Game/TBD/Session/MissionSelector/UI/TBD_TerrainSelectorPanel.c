@@ -1,4 +1,4 @@
-//! Pre-game rebuild (2026-09-12) — the TERRAINS column of the Mission Selector.
+//! Pre-game rebuild (2026-09-12) -- the TERRAINS column of the Mission Selector.
 //!
 //! ```
 //!   ┌ TERRAINS ─────────────────────┐
@@ -11,9 +11,9 @@
 //! ```
 //!
 //! Two classes, one file:
-//!   * `TBD_TerrainRowComponent` — one pooled row (`TBD_TerrainRow.layout`). Widget contract:
+//!   * `TBD_TerrainRowComponent` -- one pooled row (`TBD_TerrainRow.layout`). Widget contract:
 //!     `Border`, `Background`, `Accent`, `Icon`, `Title`, `CountBadgeDock`, `Chevron`.
-//!   * `TBD_TerrainSelectorPanel` — the controller. Not a widget handler: the screen mounts a
+//!   * `TBD_TerrainSelectorPanel` -- the controller. Not a widget handler: the screen mounts a
 //!     `TBD_Panel` into LeftDock and hands its root here; this class fills it (search box, rows)
 //!     and owns the selection. `GetOnSelected()(panel, terrainKey)` is its only output.
 //!
@@ -31,12 +31,11 @@ class TBD_TerrainRowComponent : TBD_UIInteractive
 	protected TextWidget m_wChevron;
 	protected TBD_ChipComponent m_CountChip;
 
-	protected TBD_TerrainSelectorPanel m_Owner; //!< weak — the panel outlives its rows only by a frame
+	protected TBD_TerrainSelectorPanel m_Owner; //!< weak -- the panel outlives its rows only by a frame
 	protected int m_iIndex = -1;
 	protected bool m_bSelected;
 	protected bool m_bIconShown;
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnBind(Widget w)
 	{
 		m_wBorder = w.FindAnyWidget("Border");
@@ -51,7 +50,6 @@ class TBD_TerrainRowComponent : TBD_UIInteractive
 		TBD_UILayouts.MountRounded(m_wBackground, TBD_UITheme.RADIUS_ROW - 1);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Bind(TBD_TerrainSelectorPanel owner, int index, TBD_TerrainInfo terrain, int missionCount)
 	{
 		m_Owner = owner;
@@ -68,7 +66,6 @@ class TBD_TerrainRowComponent : TBD_UIInteractive
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetSelected(bool selected)
 	{
 		if (m_bSelected == selected)
@@ -78,7 +75,6 @@ class TBD_TerrainRowComponent : TBD_UIInteractive
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void Repaint()
 	{
 		if (!m_wRoot)
@@ -134,14 +130,12 @@ class TBD_TerrainRowComponent : TBD_UIInteractive
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnActivated()
 	{
 		if (m_Owner)
 			m_Owner.OnRowActivated(m_iIndex);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetRowVisible(bool visible)
 	{
 		TBD_UITheme.Show(m_wRoot, visible);
@@ -164,10 +158,8 @@ class TBD_TerrainSelectorPanel
 	protected string m_sSelectedKey;
 	protected string m_sQuery;
 
-	//! (TBD_TerrainSelectorPanel panel, string terrainKey)
-	protected ref ScriptInvoker m_OnSelected;
+	protected ref ScriptInvoker m_OnSelected; //!< (TBD_TerrainSelectorPanel panel, string terrainKey)
 
-	//------------------------------------------------------------------------------------------------
 	//! `panelRoot` is a mounted `TBD_Panel.layout`. Returns false when the layout tree is missing
 	//! pieces; the screen then shows an empty column rather than crashing.
 	bool Build(Widget panelRoot, TBD_MissionCatalog catalog)
@@ -208,7 +200,6 @@ class TBD_TerrainSelectorPanel
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Destroy()
 	{
 		if (m_ScrollBar)
@@ -226,7 +217,6 @@ class TBD_TerrainSelectorPanel
 			m_aRows.Clear();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Rebind every visible row from the catalog through the current search query.
 	void Refresh()
 	{
@@ -261,7 +251,6 @@ class TBD_TerrainSelectorPanel
 		TBD_UITheme.Show(m_wEmptyState, m_iLiveRows == 0);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Pick a terrain. `notify` false = visual only (restoring state).
 	void Select(string terrainKey, bool notify)
 	{
@@ -276,13 +265,11 @@ class TBD_TerrainSelectorPanel
 			m_OnSelected.Invoke(this, terrainKey);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	string GetSelectedKey()
 	{
 		return m_sSelectedKey;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Key of the first terrain in catalog order, or empty.
 	string GetFirstKey()
 	{
@@ -293,7 +280,6 @@ class TBD_TerrainSelectorPanel
 		return terrains[0].m_sKey;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Put focus on the selected row (else the first). False when there is no row to focus.
 	bool FocusSelected()
 	{
@@ -313,7 +299,6 @@ class TBD_TerrainSelectorPanel
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! (TBD_TerrainSelectorPanel panel, string terrainKey)
 	ScriptInvoker GetOnSelected()
 	{
@@ -323,9 +308,7 @@ class TBD_TerrainSelectorPanel
 		return m_OnSelected;
 	}
 
-	// ── Called by TBD_TerrainRowComponent ───────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	void OnRowActivated(int index)
 	{
 		if (index < 0 || index >= m_iLiveRows)
@@ -334,16 +317,13 @@ class TBD_TerrainSelectorPanel
 		Select(m_aRowKeys[index], true);
 	}
 
-	// ── Internals ───────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnSearchChanged(TBD_SearchBoxComponent box, string query)
 	{
 		m_sQuery = query;
 		Refresh();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected TBD_TerrainRowComponent AcquireRow(int index)
 	{
 		if (index < m_aRows.Count())

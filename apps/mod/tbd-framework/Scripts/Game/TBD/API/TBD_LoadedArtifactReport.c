@@ -13,7 +13,6 @@ class TBD_LoadedArtifactReport
 	protected static string s_sArtifactId;
 	protected static string s_sArtifactSha256;
 
-	//------------------------------------------------------------------------------------------------
 	//! Nothing decided: a new world is loading, or the running one is about to be replaced.
 	static void Reset()
 	{
@@ -22,7 +21,6 @@ class TBD_LoadedArtifactReport
 		s_sArtifactSha256 = string.Empty;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! This world runs `artifactId`, whose exact bytes hash to `sha256`.
 	static void DeclareLoaded(string artifactId, string sha256)
 	{
@@ -32,7 +30,6 @@ class TBD_LoadedArtifactReport
 		TBD_RuntimeSession.OnLoadedArtifactDecided();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! This world runs no mission artifact.
 	static void DeclareNone()
 	{
@@ -42,20 +39,17 @@ class TBD_LoadedArtifactReport
 		TBD_RuntimeSession.OnLoadedArtifactDecided();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static bool IsDecided()
 	{
 		return s_bDecided;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True when the decided report names an artifact.
 	static bool NamesArtifact()
 	{
 		return s_bDecided && !s_sArtifactId.IsEmpty();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! For log lines: `artifact=<id> sha256=<digest>`, or `artifact=none`.
 	static string Describe()
 	{
@@ -65,7 +59,6 @@ class TBD_LoadedArtifactReport
 		return string.Format("artifact=%1 sha256=%2", s_sArtifactId, s_sArtifactSha256);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The session start body: both fields together, or `{}` when the world runs no artifact.
 	static string BuildStartBody()
 	{

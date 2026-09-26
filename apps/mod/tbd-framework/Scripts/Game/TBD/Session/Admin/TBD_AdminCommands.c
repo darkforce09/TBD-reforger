@@ -5,17 +5,16 @@
 //!                               the server restarts only when the platform runs the deployment
 //!   #tbd backend <url> [tok]  - repoint the backend (and the service token) + refresh the list
 //!   #tbd refresh              - refresh the mission list
-//!   #tbd validate             — replay the mission validation findings (T-181.14)
-//!   #tbd dead                 — who has spent their life
-//!   #tbd respawn <playerId>   — the one-life escape hatch (T-181.11.1)
-//!   #tbd deploy  <playerId>   — put a live player with no body into the world (T-181.11.2)
-//!   #tbd stage [next|<NAME>]  — force the stage machine (T-181.11.2)
-//!   #tbd safestart [status|go|<seconds>] — warmup phase: is damage off, end it, set its length (T-181.17)
-//!   #tbd identity [status|override <phrase>|enforce] — can this host enforce ONE LIFE (T-181.32)
-//!   #tbd audit                — replay the admin audit trail (T-181.11.2)
-//!   #tbd menu                 — raise the admin screen on the caller's client (T-181.11.2)
+//!   #tbd validate             -- replay the mission validation findings
+//!   #tbd dead                 -- who has spent their life
+//!   #tbd respawn <playerId>   -- the one-life escape hatch
+//!   #tbd deploy  <playerId>   -- put a live player with no body into the world
+//!   #tbd stage [next|<NAME>]  -- force the stage machine
+//!   #tbd safestart [status|go|<seconds>] -- warmup phase: is damage off, end it, set its length
+//!   #tbd identity [status|override <phrase>|enforce] -- can this host enforce ONE LIFE
+//!   #tbd audit                -- replay the admin audit trail
+//!   #tbd menu                 -- raise the admin screen on the caller's client
 //!
-//! ── T-181.11.2 — chat is a FRONT-END, not a second implementation ───────────────────────────
 //! The admin menu (`TBD_AdminScreen`) and this file are two doors into the same room. The powers
 //! themselves moved to `TBD_AdminService`, which re-checks the admin list and writes the audit
 //! trail, so both surfaces enforce identically and both feed one history. The reply strings here
@@ -26,28 +25,27 @@
 //! file depends on that.
 modded class SCR_ChatComponent
 {
-	//------------------------------------------------------------------------------------------------
-	//! @authority server — admin chat commands are intercepted and executed on the server.
+	//! @authority server -- admin chat commands are intercepted and executed on the server.
 	override void OnNewMessage(string msg, int channelId, int senderId)
 	{
-		// T-941.6 — consume `#tbd link …` BEFORE vanilla distributes. `super.OnNewMessage` is
+		// T-941.6 -- consume `#tbd link ...` BEFORE vanilla distributes. `super.OnNewMessage` is
 		// the broadcast/display path (vanilla forwards it to `SCR_ChatPanelManager`). TRUE from
 		// this guard means: do not call super; the code must never reach public chat. Authority
 		// POSTs the code; every peer suppresses the echo. A bare token without this prefix is
-		// ordinary chat — we do not filter beyond the command.
+		// ordinary chat -- we do not filter beyond the command.
 		if (TBD_IdentityLink.TryConsumeBeforeBroadcast(this, msg, senderId, RplSession.Mode() != RplMode.Client))
 			return;
 
 		super.OnNewMessage(msg, channelId, senderId);
 
-		// Authority only — commands execute on the server.
+		// Authority only -- commands execute on the server.
 		if (RplSession.Mode() == RplMode.Client)
 			return;
 
 		if (!msg.StartsWith("#tbd"))
 			return;
 
-		// One permission oracle for every admin surface — the vanilla listed-admin manager, asked
+		// One permission oracle for every admin surface -- the vanilla listed-admin manager, asked
 		// through TBD_AdminService so chat and the menu can never drift apart on who counts as an
 		// admin.
 		if (!TBD_AdminService.IsAdmin(senderId))
@@ -70,7 +68,6 @@ modded class SCR_ChatComponent
 //! Parses and executes #tbd admin commands, replying to the sending admin.
 class TBD_AdminCommands
 {
-	//------------------------------------------------------------------------------------------------
 	static void Dispatch(SCR_ChatComponent chat, string msg, int senderId)
 	{
 		array<string> parts = new array<string>();
@@ -80,12 +77,12 @@ class TBD_AdminCommands
 		if (parts.Count() > 1)
 			sub = parts[1];
 
-		// T-181.14 — a mission rejected by TBD_MissionValidator is invisible from in-game: the
+		// T-181.14 -- a mission rejected by TBD_MissionValidator is invisible from in-game: the
 		// stage machine simply never leaves LOADING and nothing on screen says why. Lead with it
 		// on every #tbd reply rather than waiting for an admin to think of asking.
 		if (TBD_MissionValidator.HasRun() && !TBD_MissionValidator.Passed())
 		{
-			Reply(chat, senderId, string.Format("TBD: !! mission FAILED validation (%1 error(s)) — run '#tbd validate'.",
+			Reply(chat, senderId, string.Format("TBD: !! mission FAILED validation (%1 error(s)) -- run '#tbd validate'.",
 				TBD_MissionValidator.GetErrorCount()));
 		}
 
@@ -104,7 +101,7 @@ class TBD_AdminCommands
 			return;
 		}
 
-		//! T-181.14 — replay the mission validation findings in game. Every problem from the
+		//! T-181.14 -- replay the mission validation findings in game. Every problem from the
 		//! last parse, errors first, so an admin can diagnose a rejected mission without SSHing
 		//! to the server and reading console.log.
 		if (sub == "validate")
@@ -138,10 +135,10 @@ class TBD_AdminCommands
 			return;
 		}
 
-		//! T-181.11.1 — the one-life escape hatch. TBD events are one life, so a player who dies
+		//! T-181.11.1 -- the one-life escape hatch. TBD events are one life, so a player who dies
 		//! is out; this exists for GLITCH deaths only (fell through terrain, killed by a broken
 		//! prop). Rematerializes a fresh dressed body on their own slot and writes an audit line.
-		//! T-181.11.2 — now routed through TBD_AdminService, so it re-checks the admin list and
+		//! T-181.11.2 -- now routed through TBD_AdminService, so it re-checks the admin list and
 		//! records the attempt in the same trail the admin screen shows.
 		if (sub == "respawn")
 		{
@@ -154,7 +151,7 @@ class TBD_AdminCommands
 			return;
 		}
 
-		//! T-181.11.2 — the other half of "spawn it if it breaks": a player who still has their
+		//! T-181.11.2 -- the other half of "spawn it if it breaks": a player who still has their
 		//! life but never got a body. AdminRespawn refuses anyone who is not dead, so this is a
 		//! different lever, not the same one under another name.
 		if (sub == "deploy")
@@ -168,7 +165,7 @@ class TBD_AdminCommands
 			return;
 		}
 
-		//! T-181.11.2 — force the stage machine. The recovery for a round that cannot advance on
+		//! T-181.11.2 -- force the stage machine. The recovery for a round that cannot advance on
 		//! its own, which is precisely what a rejected mission produces.
 		if (sub == "stage")
 		{
@@ -181,9 +178,9 @@ class TBD_AdminCommands
 			return;
 		}
 
-		//! T-181.17 — the warmup phase. `status` answers "is damage actually off right now" in one
+		//! T-181.17 -- the warmup phase. `status` answers "is damage actually off right now" in one
 		//! command; `go` ends it early; a number sets/extends the countdown. Entering SAFE_START at
-		//! all is still `#tbd stage` — this controls the phase, it does not start it.
+		//! all is still `#tbd stage` -- this controls the phase, it does not start it.
 		if (sub == "safestart")
 		{
 			string safestartArg = "status";
@@ -195,9 +192,9 @@ class TBD_AdminCommands
 			return;
 		}
 
-		//! T-181.32 — can this host enforce ONE LIFE at all, and the waiver if it cannot.
+		//! T-181.32 -- can this host enforce ONE LIFE at all, and the waiver if it cannot.
 		//! `status` answers it in one line; `override <phrase>` signs for running without it;
-		//! `enforce` re-arms. The phrase is a separate argument on purpose — see
+		//! `enforce` re-arms. The phrase is a separate argument on purpose -- see
 		//! TBD_AdminService.Identity for why a waiver is not shaped like a flag.
 		if (sub == "identity")
 		{
@@ -214,7 +211,7 @@ class TBD_AdminCommands
 			return;
 		}
 
-		//! T-181.11.2 — who did what to whom, newest first. The same trail the admin screen
+		//! T-181.11.2 -- who did what to whom, newest first. The same trail the admin screen
 		//! renders, readable without the screen.
 		if (sub == "audit")
 		{
@@ -224,7 +221,7 @@ class TBD_AdminCommands
 			return;
 		}
 
-		//! T-181.11.2 — raise the admin screen on the caller's own client. The server pushes it
+		//! T-181.11.2 -- raise the admin screen on the caller's own client. The server pushes it
 		//! over an owner-targeted RPC, so it needs no keybind bound and no client-side state.
 		if (sub == "menu")
 		{
@@ -232,7 +229,7 @@ class TBD_AdminCommands
 			return;
 		}
 
-		//! Who has spent their life — the roster an admin needs before using `respawn`.
+		//! Who has spent their life -- the roster an admin needs before using `respawn`.
 		if (sub == "dead")
 		{
 			TBD_SpawnManager sm = TBD_SpawnManager.GetInstance();
@@ -256,7 +253,6 @@ class TBD_AdminCommands
 		Reply(chat, senderId, "TBD: #tbd missions | mission <n> | backend <url> [token] | refresh | validate | dead | respawn <playerId> | deploy <playerId> | stage [next|<NAME>] | safestart [status|go|<seconds>] | identity [status|override <phrase>|enforce] | audit | menu");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Repoint the backend URL (and the service token when given), then refresh the mission list.
 	protected static string SetBackend(string url, string token)
 	{
@@ -270,9 +266,8 @@ class TBD_AdminCommands
 		return string.Format("TBD: backend set to %1 - refreshing the mission list...", url);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Parse a playerId argument and run one admin power through the shared authority. The gate
-	//! and the audit line both live in TBD_AdminService — this only turns text into an int.
+	//! and the audit line both live in TBD_AdminService -- this only turns text into an int.
 	protected static string RunAction(int senderId, TBD_EAdminAction action, string targetArg)
 	{
 		int target = targetArg.ToInt();
@@ -283,8 +278,7 @@ class TBD_AdminCommands
 		return TBD_AdminService.Execute(senderId, action, target, ok);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! @authority server — push the admin screen onto the requesting admin's own client.
+	//! @authority server -- push the admin screen onto the requesting admin's own client.
 	protected static string OpenMenuFor(int senderId)
 	{
 		PlayerManager players = GetGame().GetPlayerManager();
@@ -300,10 +294,9 @@ class TBD_AdminCommands
 
 		// Honest about the one thing that can stop it appearing, so an admin does not stare at an
 		// unchanged screen wondering whether the command worked.
-		return "TBD: opening the admin menu… (if nothing appears, the menu preset is not in resourceDatabase.rdb yet — chat commands still work).";
+		return "TBD: opening the admin menu... (if nothing appears, the menu preset is not in resourceDatabase.rdb yet -- chat commands still work).";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Logs to the server console and sends a private chat message back to the admin.
 	static void Reply(SCR_ChatComponent chat, int senderId, string text)
 	{

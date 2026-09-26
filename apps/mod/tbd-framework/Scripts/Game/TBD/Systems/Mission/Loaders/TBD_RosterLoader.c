@@ -75,7 +75,6 @@ class TBD_RosterFetchCall : TBD_GameRuntimeCall
 {
 	int m_iGeneration;
 
-	//------------------------------------------------------------------------------------------------
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_RosterLoader.OnFetchAnswered(this, answer);
@@ -84,50 +83,40 @@ class TBD_RosterFetchCall : TBD_GameRuntimeCall
 
 class TBD_RosterLoader
 {
-	//! Greppable channel: `grep '\[TBD\]\[Roster\]' console.log`.
-	protected static const string CH_ROSTER = "Roster";
+	protected static const string CH_ROSTER = "Roster"; //!< Greppable channel: `grep '\[TBD\]\[Roster\]' console.log`.
 
 	//! `%1` = the event the running mission is deployed for.
 	protected static const string ROSTER_PATH = "/api/v1/game-runtime/events/%1/roster";
 
-	//! The only roster wire this client reads.
-	protected static const int WIRE_VERSION = 2;
+	protected static const int WIRE_VERSION = 2; //!< The only roster wire this client reads.
 
 	protected static const int RETRY_BASE_MS = 2000;
 	protected static const int RETRY_CAP_MS = 60000;
 
 	//! armaId -> that player's reserved seat.
 	protected static ref map<string, ref TBD_RosterAssignmentStruct> s_Assignments;
-	//! slotUid -> that slot's platform ids.
-	protected static ref map<string, ref TBD_RosterSlotStruct> s_Slots;
-	//! Seating has settled; the stage machine waits on this.
-	protected static bool s_Loaded;
+	protected static ref map<string, ref TBD_RosterSlotStruct> s_Slots; //!< slotUid -> that slot's platform ids.
+	protected static bool s_Loaded; //!< Seating has settled; the stage machine waits on this.
 	//! How seating settled ("loaded"/"no-event"/"unconfigured"/"failed"/"timeout"), for the
 	//! `[TBD][Spawn] roster settled=...` line.
 	protected static string s_SettleReason = "pending";
 	//! A version-2 roster has been read: s_Slots lists every event seat, possibly none.
 	protected static bool s_bSlotTableLoaded;
 	protected static bool s_bFetchInFlight;
-	//! Consecutive fetches that got no answer, for the backoff.
-	protected static int s_iUnansweredFetches;
-	//! Refusals already reported at ERROR.
-	protected static ref map<string, bool> s_mReportedRefusals;
-	//! Bumped by Reset; a fetch answered for an earlier world is dropped.
-	protected static int s_iGeneration;
+	protected static int s_iUnansweredFetches; //!< Consecutive fetches that got no answer, for the backoff.
+	protected static ref map<string, bool> s_mReportedRefusals; //!< Refusals already reported at ERROR.
+	protected static int s_iGeneration; //!< Bumped by Reset; a fetch answered for an earlier world is dropped.
 
-	//------------------------------------------------------------------------------------------------
 	static bool IsLoaded()
 	{
 		return s_Loaded;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static string GetSettleReason()
 	{
 		return s_SettleReason;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static int GetAssignmentCount()
 	{
 		if (!s_Assignments)
@@ -135,14 +124,12 @@ class TBD_RosterLoader
 		return s_Assignments.Count();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True once a version-2 roster has been read, whether or not it lists any slot.
 	static bool IsSlotTableLoaded()
 	{
 		return s_bSlotTableLoaded;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The stage machine's roster deadline passed with the fetch in flight: seating settles empty
 	//! (round-robin). The slot table keeps loading.
 	static void ForceSettle()
@@ -154,7 +141,6 @@ class TBD_RosterLoader
 		TBD_Log.Warn(CH_ROSTER, "settle deadline hit with the fetch in flight - round-robin slots only; the slot table keeps loading, and deployments into event seats are refused until it has.");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The compiled slot uid this player reserved, or empty.
 	static string GetSlotForIdentity(string identityId)
 	{
@@ -168,7 +154,6 @@ class TBD_RosterLoader
 		return string.Empty;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The platform ids a deployment of player `armaId` into the compiled slot `slotUid` names: the
 	//! player's own reservation when it is this slot, else the slot's roster listing. False when the
 	//! slot table has not loaded or does not list the slot.
@@ -199,7 +184,6 @@ class TBD_RosterLoader
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A new world: nothing loaded, nothing in flight, nothing reported.
 	static void Reset()
 	{
@@ -218,7 +202,6 @@ class TBD_RosterLoader
 			queue.Remove(FetchAgain);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void BeginLoad()
 	{
 		if (s_Loaded || s_bFetchInFlight)
@@ -234,7 +217,6 @@ class TBD_RosterLoader
 		Fetch();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void Fetch()
 	{
 		string eventId = TBD_DeployedMission.GetEventId();
@@ -256,7 +238,6 @@ class TBD_RosterLoader
 			Refused("unconfigured", string.Format("%1; backend=%2", failure, TBD_GameRuntimeHttp.DescribeBackend()));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Called by TBD_RosterFetchCall with the platform's answer.
 	static void OnFetchAnswered(notnull TBD_RosterFetchCall call, notnull TBD_GameRuntimeAnswer answer)
 	{
@@ -280,7 +261,6 @@ class TBD_RosterLoader
 		Refused(typename.EnumToString(HttpCode, answer.m_eCode), answer.m_sDetail);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Parse and check the wire version, then load the slot table, and seating when it has not
 	//! settled yet.
 	protected static void Store(string body)
@@ -368,7 +348,6 @@ class TBD_RosterLoader
 			roster.eventId, roster.version, s_Assignments.Count(), s_Slots.Count()));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The fetch got no answer (network, server error, watchdog): back off and fetch again.
 	protected static void Unanswered(string detail)
 	{
@@ -382,7 +361,6 @@ class TBD_RosterLoader
 		ScheduleFetch(delay);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The platform refused the fetch, or its answer cannot be used: an ERROR the first time this
 	//! refusal happens, then a new fetch every 60 s.
 	protected static void Refused(string refusal, string detail)
@@ -408,7 +386,6 @@ class TBD_RosterLoader
 		ScheduleFetch(RETRY_CAP_MS);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ScheduleFetch(int delayMs)
 	{
 		ScriptCallQueue queue = GetGame().GetCallqueue();
@@ -419,7 +396,6 @@ class TBD_RosterLoader
 		queue.CallLater(FetchAgain, delayMs, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void FetchAgain()
 	{
 		if (s_bSlotTableLoaded || s_bFetchInFlight)
@@ -429,7 +405,6 @@ class TBD_RosterLoader
 		Fetch();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Settle seating with a fresh lookup (filled by Store when the roster arrives in time).
 	protected static void SettleSeating(string reason)
 	{

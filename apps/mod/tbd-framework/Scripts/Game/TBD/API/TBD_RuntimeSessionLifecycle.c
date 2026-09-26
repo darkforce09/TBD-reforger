@@ -9,7 +9,6 @@ modded class SCR_BaseGameMode
 {
 	protected bool m_bTBD_RuntimeSessionStarted;
 
-	//------------------------------------------------------------------------------------------------
 	//! @authority server - the session belongs to the authority of a framework world.
 	protected override void OnGameStart()
 	{
@@ -30,7 +29,6 @@ modded class SCR_BaseGameMode
 		TBD_FleetCommandPoller.Start();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The world is ending. The game mode components end their player lives inside super; the
 	//! session ends after them.
 	override void OnGameEnd()

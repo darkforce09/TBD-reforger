@@ -1,4 +1,4 @@
-//! Briefing pass (2026-09-14) — a scrolling vertical list with the TBD scrollbar, ready to fill.
+//! Briefing pass (2026-09-14) -- a scrolling vertical list with the TBD scrollbar, ready to fill.
 //!
 //! `TBD_ScrollList.layout` is the clip recipe every TBD list uses (`ListFrame` clips, `Scroll`
 //! overhangs 24 px so the engine bar is cut off, `Content` pads 34, `ScrollBarDock` hosts
@@ -12,10 +12,9 @@ class TBD_ScrollList : Managed
 	protected Widget m_wContent;
 	protected ref TBD_UIScrollBar m_Bar;
 
-	//------------------------------------------------------------------------------------------------
 	//! The list sits 12 px inside the dock (the layout's `ListFrame` offsets). `inset` is kept for
 	//! callers but NOT applied at runtime: `FrameSlot.SetSize(frame, 0, 0)` zeroes an anchored frame
-	//! (MEASURED 2026-09-14, empty player lanes) — change the layout if another inset is needed.
+	//! (MEASURED 2026-09-14, empty player lanes) -- change the layout if another inset is needed.
 	static TBD_ScrollList Mount(Widget dock, int ground, int inset = 12)
 	{
 		if (!dock)
@@ -35,7 +34,6 @@ class TBD_ScrollList : Managed
 		return list;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Destroy()
 	{
 		if (m_Bar)
@@ -48,7 +46,6 @@ class TBD_ScrollList : Managed
 		m_wContent = null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	Widget GetContent()
 	{
 		return m_wContent;
@@ -59,15 +56,13 @@ class TBD_ScrollList : Managed
 		return m_wRoot;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Drop every row.
 	void Clear()
 	{
 		TBD_UILayouts.Clear(m_wContent);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Back to the top — a rebuilt shorter list under an old slider offset shows nothing (Pass 5).
+	//! Back to the top -- a rebuilt shorter list under an old slider offset shows nothing (Pass 5).
 	void ResetScroll()
 	{
 		if (m_wScroll)

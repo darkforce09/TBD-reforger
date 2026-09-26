@@ -1,29 +1,27 @@
 //! The THIN end-of-round results POST.
 //!
-//! ══ WHAT "THIN" MEANS HERE ═════════════════════════════════════════════════════════════════
 //! It is an operator instruction, not laziness. Section 6 of
 //! `documentation_v2/mod/tbd-framework/mod_design.md` defers full AAR /
 //! statistics recording in the operator's own words: *"that's also the AAR, which is not easy to
-//! do… we have to record everything. That's very complex. I don't feel like we have the time."*
+//! do... we have to record everything. That's very complex. I don't feel like we have the time."*
 //! So there is deliberately NO kill tracking, NO longest-kill measurement and NO
 //! vehicle-destruction counting in this slice, and none is faked.
 //!
 //! This sends only what the mod already knows with no new machinery:
-//!   * outcome + winning faction — recomputed from the same `TBD_SpawnManager` primitives the
+//!   * outcome + winning faction -- recomputed from the same `TBD_SpawnManager` primitives the
 //!     stage machine's own win evaluator uses (`CountClaimedForFaction` / `CountAliveForFaction`);
-//!   * started_at / ended_at, terrain, mission id — already on hand;
+//!   * started_at / ended_at, terrain, mission id -- already on hand;
 //!   * per player: `arma_id`, `role_played` from the assigned slot, and `deaths` = 0 or 1, which
 //!     ONE LIFE makes exactly knowable.
 //!
 //! T-940.4: each player row emits a complete nested `counters` block (unmeasured fields are 0 /
 //! false / null so the block is all-or-nothing) and **keeps** the flat `deaths` key for one
 //! release. `kills`, `team_kills`, `longest_kill_m`, `vehicles_destroyed` and `is_command` are
-//! still not measured here — they go in the nested block as zeros rather than being omitted,
+//! still not measured here -- they go in the nested block as zeros rather than being omitted,
 //! because ingest treats a present `counters` object as the full scoreline. `aar_replay_url` stays
 //! omitted from the match object: that is a different field, not a player counter.
 //!
-//! ══ IDENTITY LINKING SHIPS ═════════════════════════════════════════════════════════════════
-//! The endpoint marks attendance, recomputes user stats and refreshes the leaderboard — all three
+//! The endpoint marks attendance, recomputes user stats and refreshes the leaderboard -- all three
 //! hang off `SELECT discord_id FROM users WHERE arma_id = $1`
 //! (`apps/website/api_v2/src/handlers/telemetry.rs:238`). `users.arma_id` is written by the dev seed
 //! and by `POST /api/v1/ingest/link-confirm` (service-token). The mod **does** implement that
@@ -35,36 +33,34 @@
 //! `#tbd link <code>` have no `users.arma_id`, so this POST can still return 200 with a
 //! `match_id` while attendance / stats / leaderboard match nobody for those rows.
 //! `LogIdentityCensus` prints, once per round, durable vs synthetic vs unresolved counts so that
-//! gap stays visible. Both halves MUST use `TBD_PlayerIdentity.GetArmaId` — byte-identical ids
+//! gap stays visible. Both halves MUST use `TBD_PlayerIdentity.GetArmaId` -- byte-identical ids
 //! or the join matches nobody forever with no error.
 //!
-//! ══ FAILURE BEHAVIOUR ══════════════════════════════════════════════════════════════════════
 //! The round must end correctly whether or not the backend is reachable. Everything here is
 //! callqueue/REST-callback driven and nothing blocks the stage machine: a failed POST is a logged
 //! warning plus a bounded retry (`MAX_ATTEMPTS`, idempotent because `source_match_id` is stable for
-//! the round), and then it gives up. `TBD_BackendConfig` may be absent entirely — that is a LEGAL
+//! the round), and then it gives up. `TBD_BackendConfig` may be absent entirely -- that is a LEGAL
 //! state on a local/PIE host, logged at NORMAL and not retried, never an error.
 //!
-//! ══ HOW IT LEARNS THE ROUND ENDED ══════════════════════════════════════════════════════════
 //! By polling `TBD_FrameworkManager.GetStage()` once a second. This slice owns
 //! `Scripts/Game/TBD/Backend/**` and `TBD_FrameworkManager.c` belongs to another lane, so it does
-//! not write into it — the same call the lobby watcher makes for the same reason
+//! not write into it -- the same call the lobby watcher makes for the same reason
 //! (`TBD_LobbyStage` in TBD_LobbyController.c). `OnStageChanged` below is public and
 //! side-effect-complete precisely so that replacing the poll is a ONE-LINE hook next to the
 //! existing `TBD_RadioBridgeStub.OnStageChanged(stage)` in `TBD_FrameworkManager.SetStage`:
 //!
 //!     TBD_ResultsReporter.OnStageChanged(stage);
 //!
-//! Until that lands, the poll costs one enum compare per second and is at most one second late —
+//! Until that lands, the poll costs one enum compare per second and is at most one second late --
 //! which cannot change the numbers, because nothing mutates claimed/alive counts after END.
 //!
 //! @route POST /api/v1/ingest/match-results (service-token tier; `X-Service-Token`)
-//! @authority server — only the server has the mission document, the slot map and the identities.
+//! @authority server -- only the server has the mission document, the slot map and the identities.
 class TBD_ResultsReporter
 {
 	//! Greppable channel for this subsystem: `grep '\[TBD\]\[Results\]' console.log`.
 	//! Kept local rather than added to `TBD_Log`'s vocabulary because `Core/TBD_Log.c` is outside
-	//! this slice's ownership — see the slice report.
+	//! this slice's ownership -- see the slice report.
 	protected static const string CH_RESULTS = "Results";
 
 	protected static const string INGEST_PATH = "/api/v1/ingest/match-results";
@@ -96,10 +92,9 @@ class TBD_ResultsReporter
 
 	protected static ref RestCallback s_RestCallback;
 
-	//------------------------------------------------------------------------------------------------
 	//! Start watching this world's round. Called from `TBD_MissionLoader.ParseMissionJson` once a
 	//! valid mission document exists, which is the earliest moment a results report could mean
-	//! anything — and, conveniently, a server-only path.
+	//! anything -- and, conveniently, a server-only path.
 	//!
 	//! Idempotent, and safe across a scenario restart: statics outlive a world inside one process
 	//! (measured landmine), so `Remove` before `CallLater` guarantees exactly one live tick rather
@@ -124,7 +119,6 @@ class TBD_ResultsReporter
 			UtcNowIso8601(), DescribeBackend(), TBD_DeployedMission.GetEventId()));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Stop watching and drop any pending retry. Must be called on world teardown if this ever
 	//! gains a component host; today `Arm()` re-arming is what keeps a stale tick from surviving.
 	static void Shutdown()
@@ -140,7 +134,6 @@ class TBD_ResultsReporter
 		ResetRound();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ResetRound()
 	{
 		s_LastStage = TBD_EGameStage.LOADING;
@@ -153,7 +146,6 @@ class TBD_ResultsReporter
 		s_iAttempt = 0;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Poll the replicated stage. Self-healing: a world that is not a framework world disarms the
 	//! tick, and a stage that has gone back to LOADING is a new round.
 	protected static void Tick()
@@ -176,7 +168,6 @@ class TBD_ResultsReporter
 		OnStageChanged(stage);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The single entry point for "the round changed phase" as far as results are concerned.
 	//! Public, idempotent and side-effect-complete so wiring it to `TBD_FrameworkManager.SetStage`
 	//! is one line and the poll above can then be deleted.
@@ -224,11 +215,8 @@ class TBD_ResultsReporter
 		Report();
 	}
 
-	//------------------------------------------------------------------------------------
 	// REPORT
-	//------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! Build the payload once, log it, then start the (bounded) send.
 	protected static void Report()
 	{
@@ -263,8 +251,7 @@ class TBD_ResultsReporter
 		SendAttempt();
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Who won, evaluated exactly the way `TBD_FrameworkManager.TickWinConditions` evaluates it —
+	//! Who won, evaluated exactly the way `TBD_FrameworkManager.TickWinConditions` evaluates it --
 	//! same two public `TBD_SpawnManager` primitives, same guards.
 	//!
 	//! Recomputed rather than read off the stage machine because that file is another lane's and
@@ -304,12 +291,11 @@ class TBD_ResultsReporter
 			winner = string.Empty;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `matches.outcome` is `"" | success | failure | aborted | pending` and **anything else is a
 	//! 400** (telemetry.rs, ingest_match_results), so this only ever returns a member of that set.
 	//!
 	//! The mapping is deliberately conservative. `success` is claimed ONLY when the mission itself
-	//! declared `faction_eliminated` and the survivor arithmetic actually resolved to one side —
+	//! declared `faction_eliminated` and the survivor arithmetic actually resolved to one side --
 	//! i.e. the round reached the conclusion its author wrote. Everything else is `aborted`: an
 	//! admin ended it, both sides were wiped, or fewer than two sides were ever fielded. TBD events
 	//! are PvP, so `failure` has no side-independent meaning and is never sent; who actually won is
@@ -328,12 +314,11 @@ class TBD_ResultsReporter
 		return "success";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One JSON row per participating player.
 	//!
 	//! The participant set is "connected AND holding a claimed slot". Two honest limitations, both
 	//! inherent rather than lazy:
-	//!   * a player who died and then DISCONNECTED is not reported — the engine stops answering the
+	//!   * a player who died and then DISCONNECTED is not reported -- the engine stops answering the
 	//!     identity lookup once a player is torn down, so there is no `arma_id` left to report them
 	//!     under. Their seat still counts toward the winner arithmetic above (TBD_SpawnManager
 	//!     keeps departed seats), which is where it actually matters.
@@ -396,10 +381,9 @@ class TBD_ResultsReporter
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Say plainly, once per round, whether this POST can possibly do anything.
 	//!
-	//! "Resolved" here means the ENGINE gave us an identity — NOT that the backend has
+	//! "Resolved" here means the ENGINE gave us an identity -- NOT that the backend has
 	//! `users.arma_id` for them. Linking is `TBD_IdentityLink` (`#tbd link <code>`, armed by
 	//! MissionLoader). Unlinked durable ids still resolve to zero users on the join. Saying so
 	//! every round is the difference between a visible no-op and a silent one.
@@ -412,7 +396,7 @@ class TBD_ResultsReporter
 		if (synthetic > 0)
 		{
 			TBD_Log.Warn(CH_RESULTS, string.Format(
-				"%1 player(s) reported under a NAME-DERIVED identity (vanilla's 00bbbddd- fallback, listen/hosted host). Those ids are not durable — a rename makes a new person and a shared name makes one. Run events on a dedicated server.",
+				"%1 player(s) reported under a NAME-DERIVED identity (vanilla's 00bbbddd- fallback, listen/hosted host). Those ids are not durable -- a rename makes a new person and a shared name makes one. Run events on a dedicated server.",
 				synthetic));
 		}
 
@@ -424,14 +408,11 @@ class TBD_ResultsReporter
 		}
 
 		TBD_Log.Event(CH_RESULTS,
-			"NOTE: attendance / user-stat recompute / leaderboard refresh only hit players with users.arma_id set. Link via `#tbd link <code>` (TBD_IdentityLink, Arm()'d by MissionLoader → POST /api/v1/ingest/link-confirm). An engine-resolved identity without that link still matches nobody.");
+			"NOTE: attendance / user-stat recompute / leaderboard refresh only hit players with users.arma_id set. Link via `#tbd link <code>` (TBD_IdentityLink, Arm()'d by MissionLoader -> POST /api/v1/ingest/link-confirm). An engine-resolved identity without that link still matches nobody.");
 	}
 
-	//------------------------------------------------------------------------------------
 	// SEND
-	//------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! One attempt. Never throws, never blocks, never touches the stage machine.
 	protected static void SendAttempt()
 	{
@@ -443,7 +424,7 @@ class TBD_ResultsReporter
 		{
 			// LEGAL STATE, not an error: a local/PIE host has no backend config at all. Logged at
 			// NORMAL so it neither alarms an operator nor trips the world-boot error triage.
-			TBD_Log.Event(CH_RESULTS, "not reported — no backend configured (backendUrl/serverToken empty). This is a legal state on a local host.");
+			TBD_Log.Event(CH_RESULTS, "not reported -- no backend configured (backendUrl/serverToken empty). This is a legal state on a local host.");
 			return;
 		}
 
@@ -469,7 +450,7 @@ class TBD_ResultsReporter
 		s_RestCallback.SetOnError(OnSendError);
 
 		// Content-Type is NOT optional: the handler takes an Axum `Json<MatchResultsInput>`
-		// extractor, which rejects a body without `application/json` before the handler ever runs —
+		// extractor, which rejects a body without `application/json` before the handler ever runs --
 		// the request would come back 400 "match and players are required" with a perfectly valid
 		// payload. Same X-Service-Token tier the mission fetch already uses (TBD_MissionLoader).
 		ctx.SetHeaders(string.Format("X-Service-Token,%1,Content-Type,application/json,Accept,application/json", token));
@@ -480,13 +461,11 @@ class TBD_ResultsReporter
 		ctx.POST(s_RestCallback, INGEST_PATH, s_sPayload);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void OnSendSuccess(RestCallback cb)
 	{
 		TBD_Log.Kv(CH_RESULTS, "posted", string.Format("attempt=%1 response=%2", s_iAttempt, cb.GetData()));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void OnSendError(RestCallback cb)
 	{
 		// The body is where the backend says WHY (e.g. `{"error":"invalid outcome"}`), and a 400
@@ -495,7 +474,6 @@ class TBD_ResultsReporter
 		Retry(string.Format("backend rejected or unreachable, response='%1'", cb.GetData()));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Bounded retry. Idempotent by construction: the payload is byte-identical each time and the
 	//! backend upserts the match on `source_match_id`, so a retry after a response we never saw
 	//! cannot create a second match row.
@@ -504,28 +482,25 @@ class TBD_ResultsReporter
 		if (s_iAttempt >= MAX_ATTEMPTS)
 		{
 			TBD_Log.Warn(CH_RESULTS, string.Format(
-				"GIVING UP after %1 attempt(s) — %2. The round is unaffected; the payload is above in this log and the endpoint is idempotent on source_match_id='%3', so it can be replayed by hand.",
+				"GIVING UP after %1 attempt(s) -- %2. The round is unaffected; the payload is above in this log and the endpoint is idempotent on source_match_id='%3', so it can be replayed by hand.",
 				s_iAttempt, why, s_sSourceMatchId));
 			return;
 		}
 
 		int delay = RETRY_BASE_MS * s_iAttempt;
-		TBD_Log.Warn(CH_RESULTS, string.Format("attempt=%1/%2 failed (%3) — retrying in %4 ms",
+		TBD_Log.Warn(CH_RESULTS, string.Format("attempt=%1/%2 failed (%3) -- retrying in %4 ms",
 			s_iAttempt, MAX_ATTEMPTS, why, delay));
 
 		GetGame().GetCallqueue().CallLater(SendAttempt, delay, false);
 	}
 
-	//------------------------------------------------------------------------------------
 	// PAYLOAD
-	//------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! The wire body, hand-built.
 	//!
 	//! Hand-built rather than via `JsonSaveContext` for two reasons that both come down to being
 	//! able to defend the bytes: a save context serialises every declared field, so the omissions
-	//! that make this report honest (`kills`, `longest_kill_m`, …) would come back as zeros; and
+	//! that make this report honest (`kills`, `longest_kill_m`, ...) would come back as zeros; and
 	//! its exact output shape is a RUNTIME property this lane cannot observe, whereas this function
 	//! is fully determined by code that compiles.
 	//!
@@ -560,8 +535,7 @@ class TBD_ResultsReporter
 		return json;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! One `players[]` entry. Nested `counters` is the contract (T-940.4); flat `deaths` is kept
+	//! One `players[]` entry. Nested `counters` is the contract; flat `deaths` is kept
 	//! for one release so a backend that still folds the old shape stores the same row.
 	protected static string BuildPlayerRow(string armaId, string role, int deaths, string sourceEventId)
 	{
@@ -575,7 +549,6 @@ class TBD_ResultsReporter
 		return row;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Terrain key from the mission header, or empty. The backend allowlists `everon|arland|custom`
 	//! and stores NULL for anything else, so an unexpected key degrades rather than 400s.
 	protected static string GetTerrain()
@@ -587,9 +560,8 @@ class TBD_ResultsReporter
 		return mission.meta.terrain;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Stable, unique-per-round idempotency key. Computed ONCE when the round goes LIVE and reused
-	//! by every retry — recomputing it would defeat the upsert and create duplicate match rows.
+	//! by every retry -- recomputing it would defeat the upsert and create duplicate match rows.
 	//! `GetTickCount()` disambiguates two rounds of the same mission starting in the same second.
 	protected static string BuildSourceMatchId(string startedAtUtc)
 	{
@@ -600,7 +572,6 @@ class TBD_ResultsReporter
 		return string.Format("%1@%2#%3", missionId, startedAtUtc, System.GetTickCount());
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Backend description for the armed line, without ever printing the service token.
 	protected static string DescribeBackend()
 	{
@@ -614,11 +585,8 @@ class TBD_ResultsReporter
 		return url;
 	}
 
-	//------------------------------------------------------------------------------------
 	// PRIMITIVES
-	//------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! RFC 3339 UTC, which is what the backend's `DateTime<Utc>` (serde/chrono) parses:
 	//! `2026-07-25T16:31:28Z`.
 	//!
@@ -626,7 +594,7 @@ class TBD_ResultsReporter
 	//! `System.GetYearMonthDayUTCZZ` -> `Undefined function`): `System.GetYearMonthDayUTC` and
 	//! `System.GetHourMinuteSecondUTC` both resolve against the real dedicated-server script API.
 	//! `Arm()` prints the resulting value on every boot so the FORMAT is proved by a run, not by a
-	//! compile — measured `utcNow=2026-07-25T14:41:45Z` on a host running UTC+2.
+	//! compile -- measured `utcNow=2026-07-25T14:41:45Z` on a host running UTC+2.
 	//!
 	//! Date and clock are two separate reads, so a call that straddles midnight could pair
 	//! tomorrow's date with 23:59:59. Left alone deliberately: it is a one-second-per-day window on
@@ -644,8 +612,7 @@ class TBD_ResultsReporter
 		return date + "T" + time + "Z";
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Zero-pad to two digits — `string.Format` has no width specifier, and RFC 3339 is fixed-width.
+	//! Zero-pad to two digits -- `string.Format` has no width specifier, and RFC 3339 is fixed-width.
 	//! No ternary: Enforce Script has none (`cond ? a : b` fails with `Broken expression`).
 	protected static string Pad2(int value)
 	{
@@ -655,7 +622,6 @@ class TBD_ResultsReporter
 		return string.Format("%1", value);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Make a string safe to sit inside a JSON double-quoted scalar.
 	//!
 	//! Load-bearing: `role_played`, `winning_faction` and `terrain` all come from the authored
@@ -663,7 +629,7 @@ class TBD_ResultsReporter
 	//! malformed JSON and the whole round's report would 400.
 	//!
 	//! TWO measured landmines in five lines:
-	//!   * `string.Replace()` MUTATES IN PLACE and returns a COUNT — `s = s.Replace(a, b)` does not
+	//!   * `string.Replace()` MUTATES IN PLACE and returns a COUNT -- `s = s.Replace(a, b)` does not
 	//!     compile. The calls below are statements, and their return value is deliberately unused.
 	//!   * because it mutates in place, `string escaped = value;` risks mutating the CALLER's
 	//!     string (here: a live field of the parsed mission document). `string.Format("%1", value)`

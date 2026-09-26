@@ -1,10 +1,10 @@
-//! Briefing pass (2026-09-14) — the read surface behind the rebuilt Briefing screen.
+//! Briefing pass (2026-09-14) -- the read surface behind the rebuilt Briefing screen.
 //!
 //! Presentation catalog, wire-shaped: every model here is what ONE briefing page draws, in the
-//! words the mockups use, and each has an obvious source on the wire when the adapter lands —
-//! `TBD_BriefingPayload` (orders → Background, zones + win mode → Objectives, end conditions →
-//! Rules), `TBD_RadioClient` (nets → Frequencies), `TBD_MarkerClient` (plans → Markers),
-//! `TBD_LobbyCatalog` (ORBAT, identity), `TBD_MissionVehicleRoster` (assets — server-only today,
+//! words the mockups use, and each has an obvious source on the wire when the adapter lands --
+//! `TBD_BriefingPayload` (orders -> Background, zones + win mode -> Objectives, end conditions ->
+//! Rules), `TBD_RadioClient` (nets -> Frequencies), `TBD_MarkerClient` (plans -> Markers),
+//! `TBD_LobbyCatalog` (ORBAT, identity), `TBD_MissionVehicleRoster` (assets -- server-only today,
 //! so that one needs a wire line first). `TBD_BriefingMock.Build()` fills it until then; screens
 //! never hold the mock class (`Get()` / `Set()` is the swap point, as for the lobby).
 //!
@@ -17,7 +17,7 @@ class TBD_BriefingFaction
 {
 	string m_sKey;        //!< "BLUFOR"
 	string m_sName;       //!< "BLUFOR"
-	string m_sRoleLabel;  //!< "DEFENDERS" / "ATTACKERS" — the header chip
+	string m_sRoleLabel;  //!< "DEFENDERS" / "ATTACKERS" -- the header chip
 	TBD_EUITint m_eTint;
 
 	void TBD_BriefingFaction(string key, string name, string roleLabel, TBD_EUITint tint)
@@ -92,7 +92,7 @@ class TBD_ObjectiveInfo
 {
 	int m_iIndex;
 	string m_sTitle;        //!< "Southern Zone"
-	string m_sRoleLabel;    //!< "Defend" / "Capture" — the pill
+	string m_sRoleLabel;    //!< "Defend" / "Capture" -- the pill
 	string m_sType;         //!< "Sector"
 	string m_sCaptureTime;  //!< "60s"
 	string m_sRetake;       //!< "Permanent (Locked)"
@@ -124,7 +124,7 @@ class TBD_RuleInfo
 	}
 }
 
-//! "Mission Rules" / "General Rules" — a collapsible group of numbered rules.
+//! "Mission Rules" / "General Rules" -- a collapsible group of numbered rules.
 class TBD_RuleGroup
 {
 	string m_sTitle;
@@ -144,7 +144,7 @@ class TBD_RuleGroup
 	}
 }
 
-//! One parameters row: icon · label · mono value.
+//! One parameters row: icon - label - mono value.
 class TBD_ParamInfo
 {
 	string m_sIcon;   //!< TBD_UIIcons key
@@ -188,7 +188,7 @@ class TBD_AssetInstanceInfo
 	}
 }
 
-//! One vehicle TYPE group of the assets page: header (name · count), Vehicle Info, instances.
+//! One vehicle TYPE group of the assets page: header (name - count), Vehicle Info, instances.
 class TBD_AssetTypeInfo
 {
 	string m_sName;           //!< "BTR-70"
@@ -230,7 +230,7 @@ class TBD_AssetTypeInfo
 class TBD_UniformInfo
 {
 	string m_sName;        //!< "CDF (12th Mechanized)"
-	string m_sKitAlias;    //!< "kit:sov_rifleman" — the doll's prefab through TBD_Registry
+	string m_sKitAlias;    //!< "kit:sov_rifleman" -- the doll's prefab through TBD_Registry
 	ResourceName m_sPrefab; //!< pinned prefab; empty = resolve the alias
 	ref array<string> m_aChips; //!< "MAG", "AK"
 	string m_sCamo;        //!< "TTsKO / Dubok"
@@ -291,7 +291,6 @@ class TBD_BriefingCatalog
 	ref array<ref TBD_UniformInfo> m_aEnemyUniforms;
 	ref array<ref TBD_PlanInfo> m_aPlans;
 
-	//------------------------------------------------------------------------------------------------
 	void TBD_BriefingCatalog()
 	{
 		m_aNets = {};
@@ -306,7 +305,6 @@ class TBD_BriefingCatalog
 		m_aPlans = {};
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static TBD_BriefingCatalog Get()
 	{
 		if (!s_Instance)
@@ -315,14 +313,12 @@ class TBD_BriefingCatalog
 		return s_Instance;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Replace the catalog (the live adapter, or a fixture). Null restores the mock on the next Get().
 	static void Set(TBD_BriefingCatalog catalog)
 	{
 		s_Instance = catalog;
 	}
 
-	// ── Reads ───────────────────────────────────────────────────────────────────────────────
 
 	//! Mono top-bar title: the scenario picked in the selector, else the catalog's own.
 	string GetMissionId()

@@ -1,6 +1,5 @@
 //! THE single accessor for the `arma_id` this mod puts on the wire.
 //!
-//! ══ WHY THIS IS ITS OWN FILE ═══════════════════════════════════════════════════════════════
 //! Two halves of one contract have to agree on a string, byte for byte, or the whole identity
 //! system silently matches nobody, forever, with no error anywhere:
 //!
@@ -14,12 +13,12 @@
 //!     (telemetry.rs:238). That is `TBD_ResultsReporter`.
 //!
 //! A join on a string is a join on a string: if either half sends anything other than the engine
-//! identity this returns — a cached value, a lower-cased value, a `player:<id>` lease — the match
+//! identity this returns -- a cached value, a lower-cased value, a `player:<id>` lease -- the match
 //! returns zero rows and the backend cheerfully reports success. Nothing logs. Nothing 500s.
 //! Attendance, the user-stat recompute and the leaderboard refresh all just do nothing.
 //!
 //! So there is ONE function, `GetArmaId`, and both halves call it. **`TBD_IdentityLink` must not
-//! resolve the identity itself** — and it does not; it calls this accessor. If the shape ever
+//! resolve the identity itself** -- and it does not; it calls this accessor. If the shape ever
 //! needs to change (trimmed, prefixed, whatever), the change goes HERE so both halves move together.
 //!
 //! What stays true: an ENGINE-resolved identity is still not a LINKED one. Players who never run
@@ -28,11 +27,10 @@
 //! `users.arma_id` therefore depends on players actually linking, not merely on this accessor
 //! returning a durable id.
 //!
-//! ══ WHY NOT REUSE TBD_SpawnManager.PlayerBindKey ═══════════════════════════════════════════
 //! `PlayerBindKey` (TBD_SpawnManager.c) answers a different question and has a deliberately
 //! different failure mode. It must ALWAYS return a non-empty key because ONE LIFE is bookkept on
 //! it, so when the engine issues no identity it falls back to a cached value and finally to
-//! `player:<numeric id>` — a SEAT NUMBER, which dedicated servers recycle.
+//! `player:<numeric id>` -- a SEAT NUMBER, which dedicated servers recycle.
 //!
 //! That fallback is exactly right for one-life bookkeeping and exactly wrong for a backend
 //! identity. Writing `player:7` into `users.arma_id` would bind a Discord account to whoever
@@ -41,26 +39,25 @@
 //! It is also uncached on purpose: for the backend, "I cannot see who this is right now" must not
 //! be answered with a stale guess.
 //!
-//! @authority server — identity is a server-side lookup; a client has no business resolving it.
+//! @authority server -- identity is a server-side lookup; a client has no business resolving it.
 class TBD_PlayerIdentity
 {
-	//! Vanilla stamps a SYNTHESIZED identity with this prefix (`SCR_PlayerIdentityUtils.c:33` —
-	//! `string.Format("00bbbddd-%1-%2-%3-%4%5", …)` over a hash of the player's display NAME). It
+	//! Vanilla stamps a SYNTHESIZED identity with this prefix (`SCR_PlayerIdentityUtils.c:33` --
+	//! `string.Format("00bbbddd-%1-%2-%3-%4%5", ...)` over a hash of the player's display NAME). It
 	//! is the one reliable way to tell a real backend uuid from a name hash.
 	protected static const string SYNTHETIC_PREFIX = "00bbbddd-";
 
-	//------------------------------------------------------------------------------------------------
 	//! The player's engine identity, formatted exactly as it goes on the wire, or EMPTY when this
 	//! host issues none.
 	//!
 	//! Three cases, and only the first is acceptable for a real event:
-	//!   1. BACKEND identity — a correctly configured dedicated server. Durable. Returned.
-	//!   2. SYNTHESIZED `00bbbddd-…` name hash — listen / hosted / local host only; vanilla only
+	//!   1. BACKEND identity -- a correctly configured dedicated server. Durable. Returned.
+	//!   2. SYNTHESIZED `00bbbddd-...` name hash -- listen / hosted / local host only; vanilla only
 	//!      synthesizes when `RplSession.Mode() != RplMode.Dedicated`. Returned as-is so the two
 	//!      halves of the contract can never disagree, but `IsDurable()` reports it false and the
 	//!      caller is expected to say so out loud. A name change makes a new "person"; two players
 	//!      sharing a name are one person.
-	//!   3. NO identity — misconfigured dedicated server, or a player mid-teardown. Returns EMPTY.
+	//!   3. NO identity -- misconfigured dedicated server, or a player mid-teardown. Returns EMPTY.
 	//!      Callers MUST drop the player rather than substitute anything.
 	//!
 	//! Proven, not assumed (compile probe; negative control
@@ -78,14 +75,12 @@ class TBD_PlayerIdentity
 		return string.Format("%1", identity);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! True for a name-hash identity (case 2 above). Not an error — just not a person.
+	//! True for a name-hash identity (case 2 above). Not an error -- just not a person.
 	static bool IsSynthetic(string armaId)
 	{
 		return armaId.StartsWith(SYNTHETIC_PREFIX);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True only for an identity that will still mean the same human next session: a real backend
 	//! uuid. This is the test to gate anything PERSISTED against.
 	static bool IsDurable(string armaId)

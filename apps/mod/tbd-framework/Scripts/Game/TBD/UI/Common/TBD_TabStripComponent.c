@@ -1,13 +1,13 @@
-//! Pre-game rebuild (2026-09-12) — the segmented control and the tab inside it.
+//! Pre-game rebuild (2026-09-12) -- the segmented control and the tab inside it.
 //!
 //! Four mockup surfaces are this widget: the top bar's Scenario Browser / Lobby / Briefing switch
 //! (horizontal), the briefing's primary navigation and topic tree (vertical), and the lobby
 //! header's ORBAT / Briefing toggle that the top bar supersedes.
 //!
 //! Two classes, one file, because a nav item never exists outside a strip:
-//!   * `TBD_NavItemComponent`  — one tab. Attached in `TBD_NavItem.layout`. Widget contract:
+//!   * `TBD_NavItemComponent`  -- one tab. Attached in `TBD_NavItem.layout`. Widget contract:
 //!     `Background`, `Border`, `Icon`, `Label`, `Badge`.
-//!   * `TBD_TabStripComponent` — the strip. Attached in `TBD_TabStrip.layout`. Widget contract:
+//!   * `TBD_TabStripComponent` -- the strip. Attached in `TBD_TabStrip.layout`. Widget contract:
 //!     `StripBorder`, `StripBG`, `ItemsRow` (horizontal), `ItemsColumn` (vertical). The
 //!     `m_bVertical` attribute picks which container is used; the other stays hidden.
 //!
@@ -42,11 +42,10 @@ class TBD_NavItemComponent : TBD_UIInteractive
 	protected Widget m_wSeparatorSize;
 	protected Widget m_wSeparator;
 
-	protected TBD_TabStripComponent m_Owner; //!< weak — the strip owns its items
+	protected TBD_TabStripComponent m_Owner; //!< weak -- the strip owns its items
 	protected int m_iIndex = -1;
 	protected bool m_bActive;
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnBind(Widget w)
 	{
 		m_wBackground = w.FindAnyWidget("Background");
@@ -62,7 +61,6 @@ class TBD_NavItemComponent : TBD_UIInteractive
 		TBD_UILayouts.MountRounded(m_wBackground, TBD_UITheme.RADIUS_ROW - 1);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Bind(TBD_TabStripComponent owner, int index, TBD_NavItemData data)
 	{
 		m_Owner = owner;
@@ -85,7 +83,6 @@ class TBD_NavItemComponent : TBD_UIInteractive
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetActive(bool active)
 	{
 		if (m_bActive == active)
@@ -95,7 +92,6 @@ class TBD_NavItemComponent : TBD_UIInteractive
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void Repaint()
 	{
 		if (!m_wRoot)
@@ -139,14 +135,12 @@ class TBD_NavItemComponent : TBD_UIInteractive
 		TBD_UITheme.PaintOver(m_wSeparator, TBD_UITheme.STRIP_BORDER, ground);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnActivated()
 	{
 		if (m_Owner)
 			m_Owner.OnItemActivated(m_iIndex);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	int GetIndex()
 	{
 		return m_iIndex;
@@ -171,13 +165,10 @@ class TBD_TabStripComponent : ScriptedWidgetComponent
 	protected ref array<TBD_NavItemComponent> m_aItems;
 	protected int m_iLive;
 	protected int m_iActive = -1;
-	//! Opaque colour under the strip; 0 = the backdrop.
-	protected int m_iGround;
+	protected int m_iGround; //!< Opaque colour under the strip; 0 = the backdrop.
 
-	//! (TBD_TabStripComponent strip, int index)
-	protected ref ScriptInvoker m_OnSelected;
+	protected ref ScriptInvoker m_OnSelected; //!< (TBD_TabStripComponent strip, int index)
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerAttached(Widget w)
 	{
 		super.HandlerAttached(w);
@@ -197,7 +188,6 @@ class TBD_TabStripComponent : ScriptedWidgetComponent
 		RepaintChrome();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Opaque colour under the strip (the top bar sits on the backdrop; a briefing nav column
 	//! sits on a panel). Items recompute their ground from it.
 	//! Stack the items vertically (call before SetItems; the layout attribute is the default).
@@ -208,7 +198,6 @@ class TBD_TabStripComponent : ScriptedWidgetComponent
 		TBD_UITheme.Show(m_wItemsColumn, vertical);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetGround(int opaqueArgb)
 	{
 		m_iGround = opaqueArgb;
@@ -220,7 +209,6 @@ class TBD_TabStripComponent : ScriptedWidgetComponent
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! What the items sit on: the strip's own fill when it draws chrome, else the strip's ground.
 	int GetItemGround()
 	{
@@ -234,7 +222,6 @@ class TBD_TabStripComponent : ScriptedWidgetComponent
 		return ground;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void RepaintChrome()
 	{
 		int ground = m_iGround;
@@ -253,7 +240,6 @@ class TBD_TabStripComponent : ScriptedWidgetComponent
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerDeattached(Widget w)
 	{
 		if (m_aItems)
@@ -264,7 +250,6 @@ class TBD_TabStripComponent : ScriptedWidgetComponent
 		super.HandlerDeattached(w);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Rebuild the strip from a table. Items are pooled: widgets are created only for indices the
 	//! strip has never reached, surplus ones are hidden.
 	void SetItems(notnull array<ref TBD_NavItemData> items)
@@ -292,8 +277,7 @@ class TBD_TabStripComponent : ScriptedWidgetComponent
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Visual echo only — does not fire OnSelected. Use it to reflect the screen that is open.
+	//! Visual echo only -- does not fire OnSelected. Use it to reflect the screen that is open.
 	void SetActive(int index)
 	{
 		m_iActive = index;
@@ -303,19 +287,16 @@ class TBD_TabStripComponent : ScriptedWidgetComponent
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	int GetActive()
 	{
 		return m_iActive;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	int GetItemCount()
 	{
 		return m_iLive;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! (TBD_TabStripComponent strip, int index)
 	ScriptInvoker GetOnSelected()
 	{
@@ -325,7 +306,6 @@ class TBD_TabStripComponent : ScriptedWidgetComponent
 		return m_OnSelected;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Focus the active tab (or the first) so a gamepad user lands on the strip.
 	bool FocusActive()
 	{
@@ -345,15 +325,12 @@ class TBD_TabStripComponent : ScriptedWidgetComponent
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	Widget GetRootWidget()
 	{
 		return m_wRoot;
 	}
 
-	// ── Called by TBD_NavItemComponent ──────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	void OnItemActivated(int index)
 	{
 		if (index < 0 || index >= m_iLive)
@@ -365,9 +342,7 @@ class TBD_TabStripComponent : ScriptedWidgetComponent
 			m_OnSelected.Invoke(this, index);
 	}
 
-	// ── Internals ───────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	protected Widget GetContainer()
 	{
 		if (m_bVertical && m_wItemsColumn)
@@ -379,7 +354,6 @@ class TBD_TabStripComponent : ScriptedWidgetComponent
 		return m_wRoot;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected TBD_NavItemComponent AcquireItem(int index, Widget container)
 	{
 		if (index < m_aItems.Count())

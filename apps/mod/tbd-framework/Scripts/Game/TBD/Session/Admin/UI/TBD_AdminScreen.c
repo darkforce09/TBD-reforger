@@ -1,44 +1,41 @@
-//! T-181.11.2 — the admin menu. Under ONE LIFE this screen is the event's safety valve: it is the
+//! T-181.11.2 -- the admin menu. Under ONE LIFE this screen is the event's safety valve: it is the
 //! only way a player who died to a glitch gets back in.
 //!
 //! ```
 //!   ┌──────────────────────────────────────────────────────────────┐
 //!   │  ADMIN                                          [ Back ]     │
-//!   │  LIVE · 12 connected · 2 lives spent                         │
+//!   │  LIVE - 12 connected - 2 lives spent                         │
 //!   ├──────────────────────────────────────────────────────────────┤
 //!   │  MISSION                              Bridgehead at Levie    │  <- section
-//!   │    Validation             FAILED — 3 error(s), 1 warning  +  │  <- pick to disclose
+//!   │    Validation             FAILED -- 3 error(s), 1 warning  +  │  <- pick to disclose
 //!   │  STAGE                                            LIVE       │  <- section
-//!   │    Force stage -> END               irreversible · pick twice │  <- arm, then confirm
-//!   │  PLAYERS                            12 · 2 lives spent       │  <- section
-//!   │    Cpl. Hicks             ADMIN · us_army · ALPHA/SL · in    │
-//!   │    Pvt. Vasquez         us_army · ALPHA/RFL · LIFE SPENT     │  <- pick, then RESPAWN
+//!   │    Force stage -> END               irreversible - pick twice │  <- arm, then confirm
+//!   │  PLAYERS                            12 - 2 lives spent       │  <- section
+//!   │    Cpl. Hicks             ADMIN - us_army - ALPHA/SL - in    │
+//!   │    Pvt. Vasquez         us_army - ALPHA/RFL - LIFE SPENT     │  <- pick, then RESPAWN
 //!   │  ADMIN ACTIONS                              4 this session   │  <- section
 //!   │    Show the audit trail                              +       │
 //!   ├──────────────────────────────────────────────────────────────┤
-//!   │  ONE LIFE — Respawn hands Vasquez …    [ RESPAWN VASQUEZ ]   │  <- ONE primary action
+//!   │  ONE LIFE -- Respawn hands Vasquez ...    [ RESPAWN VASQUEZ ]   │  <- ONE primary action
 //!   └──────────────────────────────────────────────────────────────┘
 //! ```
 //!
-//! -- Design law this screen obeys -----------------------------------------------------------
 //! (documentation_v2/mod/tbd-framework/mod_design.md section 2, section 6)
 //! * **ONE obvious primary action.** Whatever recovers the currently selected player, and nothing
 //!   else. The shell physically cannot grow a second loud button.
 //! * **Progressive disclosure.** Validator findings and the audit trail are one pick away, not a
 //!   wall of text an admin has to scroll past to reach the player they came here for.
 //! * **Immediate feedback, nothing blocking.** The server's verdict lands in the footer status
-//!   line. No modal, ever — an admin fixing a broken round must never be stuck behind a dialog.
+//!   line. No modal, ever -- an admin fixing a broken round must never be stuck behind a dialog.
 //! * **Aegis tokens only.** Every colour comes from `TBD_UITheme`; this file contains no literal.
 //!
-//! ── Honesty about what the buttons do ───────────────────────────────────────────────────────
-//! "Respawn" under ONE LIFE is not a normal respawn — TBD events are one life, death is terminal
+//! "Respawn" under ONE LIFE is not a normal respawn -- TBD events are one life, death is terminal
 //! by design, and this spends the event's single sanctioned exception. The screen says so in the
 //! status line every time a dead player is selected, in those words, because an admin under
 //! pressure should not have to remember the design doc.
 //!
-//! ── Why this screen is dumb ─────────────────────────────────────────────────────────────────
 //! It renders a `TBD_AdminPayload` and nothing else. It cannot read `TBD_SpawnManager`,
-//! `TBD_MissionLoader` or `TBD_MissionValidator` — on a dedicated server none of them hold
+//! `TBD_MissionLoader` or `TBD_MissionValidator` -- on a dedicated server none of them hold
 //! anything in the client's process (see the header of `TBD_AdminData.c`). Every list here was
 //! built on the authority and sent to this one client. There is therefore no local state a
 //! patched client could render instead, and no local path from a widget to a power.
@@ -62,7 +59,7 @@ class TBD_AdminScreen : TBD_ShellScreen
 	//! person by a refresh.
 	protected int m_iSelectedPlayer = -1;
 
-	//! Disclosure state. Survives a refresh — a rebuild must not collapse what the admin opened.
+	//! Disclosure state. Survives a refresh -- a rebuild must not collapse what the admin opened.
 	protected bool m_bValidationExpanded;
 	protected bool m_bAuditExpanded;
 
@@ -79,7 +76,6 @@ class TBD_AdminScreen : TBD_ShellScreen
 	//! the footer a heartbeat after it arrives. Cleared the moment the admin picks something else.
 	protected string m_sPendingResult;
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnScreenOpen()
 	{
 		super.OnScreenOpen();
@@ -102,7 +98,6 @@ class TBD_AdminScreen : TBD_ShellScreen
 		GetGame().GetCallqueue().CallLater(Poll, REFRESH_MS, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnScreenClose()
 	{
 		// Statics outlive the screen; a live repeat pointed at a destroyed menu is exactly the kind
@@ -121,42 +116,36 @@ class TBD_AdminScreen : TBD_ShellScreen
 		super.OnScreenClose();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected string GetScreenTitle()
 	{
 		return "ADMIN";
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Stage, headcount and how many lives the round has already spent — the three numbers an admin
+	//! Stage, headcount and how many lives the round has already spent -- the three numbers an admin
 	//! wants before they have read anything else.
 	override protected string GetScreenSubtitle()
 	{
 		if (!m_Payload)
-			return "Asking the server…";
+			return "Asking the server...";
 
 		if (!m_Payload.m_bAuthorised)
 			return "Not authorised";
 
-		return string.Format("%1 · %2 connected · %3 lives spent",
+		return string.Format("%1 - %2 connected - %3 lives spent",
 			m_Payload.m_sStage, m_Payload.m_iConnected, m_Payload.m_iSpent);
 	}
 
-	// ── Data ────────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	protected void Poll()
 	{
 		TBD_AdminClient.Request();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnPayloadChanged(TBD_AdminPayload payload)
 	{
 		AdoptPayload(payload);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Take a new snapshot without throwing away what the admin was doing: disclosure stays open,
 	//! the selected player survives if they are still connected, and the server's last verdict
 	//! stays on the footer.
@@ -187,10 +176,9 @@ class TBD_AdminScreen : TBD_ShellScreen
 		RefreshFooter();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The authority's own words, verbatim, and they STAY on screen.
 	//!
-	//! A fresh snapshot follows on the same round trip and the poll fires every 3 s after that —
+	//! A fresh snapshot follows on the same round trip and the poll fires every 3 s after that --
 	//! so without holding this, the one line telling the admin whether the respawn worked would be
 	//! overwritten by contextual guidance within a heartbeat of arriving.
 	protected void OnActionResult(string message, bool ok)
@@ -199,10 +187,8 @@ class TBD_AdminScreen : TBD_ShellScreen
 		SetStatus(message);
 	}
 
-	// ── Rendering ───────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
-	//! Write the whole list from the snapshot plus the disclosure flags. Cheap by construction —
+	//! Write the whole list from the snapshot plus the disclosure flags. Cheap by construction --
 	//! `TBD_ListBox` pools its rows, so a rebuild is property writes on widgets that already exist.
 	protected void Rebuild()
 	{
@@ -214,14 +200,14 @@ class TBD_AdminScreen : TBD_ShellScreen
 
 		if (!m_Payload)
 		{
-			list.AddSection("Asking the server…");
+			list.AddSection("Asking the server...");
 			list.EndUpdate();
 			return;
 		}
 
 		if (!m_Payload.m_bAuthorised)
 		{
-			// An empty state says why. Never a void — and never anything the server did not send.
+			// An empty state says why. Never a void -- and never anything the server did not send.
 			list.AddSection(Reason());
 			list.EndUpdate();
 			return;
@@ -239,7 +225,6 @@ class TBD_AdminScreen : TBD_ShellScreen
 		list.SetSelectedTag(PlayerTag(m_iSelectedPlayer));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Mission identity, and the validator verdict.
 	//!
 	//! T-181.14: a mission the validator REJECTED never leaves LOADING and nothing in game says so.
@@ -251,7 +236,7 @@ class TBD_AdminScreen : TBD_ShellScreen
 		if (name.IsEmpty())
 			name = "none loaded";
 		else if (!m_Payload.m_sTerrain.IsEmpty())
-			name = string.Format("%1 · %2", name, m_Payload.m_sTerrain);
+			name = string.Format("%1 - %2", name, m_Payload.m_sTerrain);
 
 		list.AddSection("MISSION", name);
 
@@ -261,12 +246,12 @@ class TBD_AdminScreen : TBD_ShellScreen
 			return;
 		}
 
-		string verdict = string.Format("PASSED — %1 warning(s)", m_Payload.m_iValidationWarnings);
+		string verdict = string.Format("PASSED -- %1 warning(s)", m_Payload.m_iValidationWarnings);
 		TBD_EUIState state = TBD_EUIState.NORMAL;
 
 		if (!m_Payload.m_bValidationPassed)
 		{
-			verdict = string.Format("FAILED — %1 error(s), %2 warning(s)",
+			verdict = string.Format("FAILED -- %1 error(s), %2 warning(s)",
 				m_Payload.m_iValidationErrors, m_Payload.m_iValidationWarnings);
 			state = TBD_EUIState.DANGER;
 		}
@@ -286,7 +271,6 @@ class TBD_AdminScreen : TBD_ShellScreen
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Stage, and the force-advance lever.
 	//!
 	//! Exposed on purpose: the stage machine is exactly what strands an event (a rejected mission
@@ -308,26 +292,25 @@ class TBD_AdminScreen : TBD_ShellScreen
 			return;
 		}
 
-		// ASCII arrow on purpose. `·`, `—` and `…` are already rendered by the shipped briefing
-		// screen so they are the established set; `→` appears nowhere in a widget in this codebase,
+		// ASCII arrow on purpose. `-`, `--` and `...` are already rendered by the shipped briefing
+		// screen so they are the established set; `->` appears nowhere in a widget in this codebase,
 		// and nothing in this lane can render a framebuffer to find out whether the UI font has it.
 		// A missing glyph would draw as a tofu box on the one control that moves the whole round.
 		string label = string.Format("    Force stage -> %1", m_Payload.m_sNextStage);
 
 		if (m_bStageArmed)
 		{
-			list.AddItem(label, "ARMED — pick again to move the whole round", TAG_STAGE, TBD_EUIState.DANGER, true);
+			list.AddItem(label, "ARMED -- pick again to move the whole round", TAG_STAGE, TBD_EUIState.DANGER, true);
 			return;
 		}
 
-		list.AddItem(label, "irreversible · pick twice", TAG_STAGE, TBD_EUIState.NORMAL, true);
+		list.AddItem(label, "irreversible - pick twice", TAG_STAGE, TBD_EUIState.NORMAL, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Who is here, and what state they are in. This is the list the headline action operates on.
 	protected void EmitPlayers(TBD_ListBox list)
 	{
-		list.AddSection("PLAYERS", string.Format("%1 connected · %2 lives spent",
+		list.AddSection("PLAYERS", string.Format("%1 connected - %2 lives spent",
 			m_Payload.m_iConnected, m_Payload.m_iSpent));
 
 		if (m_Payload.m_aPlayers.IsEmpty())
@@ -343,8 +326,7 @@ class TBD_AdminScreen : TBD_ShellScreen
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! `ADMIN · us_army · ALPHA/RFL · LIFE SPENT` — seat first, then the thing an admin acts on.
+	//! `ADMIN - us_army - ALPHA/RFL - LIFE SPENT` -- seat first, then the thing an admin acts on.
 	protected string DescribePlayer(TBD_AdminPlayerRow row)
 	{
 		string detail;
@@ -354,18 +336,18 @@ class TBD_AdminScreen : TBD_ShellScreen
 
 		if (row.m_bHasSlot)
 		{
-			string seat = string.Format("%1 · %2/%3", row.m_sFaction, row.m_sGroup, row.m_sRole);
+			string seat = string.Format("%1 - %2/%3", row.m_sFaction, row.m_sGroup, row.m_sRole);
 			if (detail.IsEmpty())
 				detail = seat;
 			else
-				detail = detail + " · " + seat;
+				detail = detail + " - " + seat;
 		}
 		else
 		{
 			if (detail.IsEmpty())
 				detail = "no slot";
 			else
-				detail = detail + " · no slot";
+				detail = detail + " - no slot";
 		}
 
 		string status = "in world";
@@ -374,10 +356,9 @@ class TBD_AdminScreen : TBD_ShellScreen
 		else if (!row.m_bInWorld)
 			status = "NO BODY";
 
-		return detail + " · " + status;
+		return detail + " - " + status;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Colour carries the triage: a spent life is the thing this screen exists for, and a player
 	//! with no body is the other thing that needs an admin.
 	protected TBD_EUIState PlayerState(TBD_AdminPlayerRow row)
@@ -391,8 +372,7 @@ class TBD_AdminScreen : TBD_ShellScreen
 		return TBD_EUIState.NORMAL;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! The audit trail — who did what to whom. These are powers, not conveniences, so their use is
+	//! The audit trail -- who did what to whom. These are powers, not conveniences, so their use is
 	//! on the same screen that grants them rather than in a log nobody opens.
 	protected void EmitAudit(TBD_ListBox list)
 	{
@@ -420,10 +400,8 @@ class TBD_AdminScreen : TBD_ShellScreen
 		}
 	}
 
-	// ── The one primary action ──────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
-	//! The recovery the selected player needs — and the honest sentence about what it costs.
+	//! The recovery the selected player needs -- and the honest sentence about what it costs.
 	//!
 	//! Respawn and Deploy are deliberately NOT one button. `AdminRespawn` refuses a player who is
 	//! not dead and `DeployPlayerEx` refuses one who is, so a merged button would silently do
@@ -434,8 +412,7 @@ class TBD_AdminScreen : TBD_ShellScreen
 		SetStatus(ComposeStatus());
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! The footer line. The server's last verdict wins over guidance — an admin who just pressed
+	//! The footer line. The server's last verdict wins over guidance -- an admin who just pressed
 	//! RESPAWN needs to know what happened more than they need to be told what the button does.
 	protected string ComposeStatus()
 	{
@@ -443,7 +420,7 @@ class TBD_AdminScreen : TBD_ShellScreen
 			return m_sPendingResult;
 
 		if (!m_Payload)
-			return "Waiting for the server…";
+			return "Waiting for the server...";
 
 		if (!m_Payload.m_bAuthorised)
 			return Reason();
@@ -456,20 +433,19 @@ class TBD_AdminScreen : TBD_ShellScreen
 		{
 			// Say what it actually costs, in the words the design doc uses. TBD events are ONE
 			// LIFE and death is terminal by design; this is the single sanctioned exception.
-			return string.Format("ONE LIFE — this hands %1 their life back and rebuilds them on their own slot. It is the event's escape hatch: use it for glitch deaths, not for losing a fight.",
+			return string.Format("ONE LIFE -- this hands %1 their life back and rebuilds them on their own slot. It is the event's escape hatch: use it for glitch deaths, not for losing a fight.",
 				row.m_sName);
 		}
 
 		if (!row.m_bInWorld)
 		{
-			return string.Format("%1 still has their life but no body — this puts them in the world. It neither spends nor restores a life.",
+			return string.Format("%1 still has their life but no body -- this puts them in the world. It neither spends nor restores a life.",
 				row.m_sName);
 		}
 
-		return string.Format("%1 is alive and in the world — nothing to recover.", row.m_sName);
+		return string.Format("%1 is alive and in the world -- nothing to recover.", row.m_sName);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected string PrimaryLabel()
 	{
 		TBD_AdminPlayerRow row = SelectedActionable();
@@ -482,15 +458,13 @@ class TBD_AdminScreen : TBD_ShellScreen
 		return string.Format("DEPLOY %1", row.m_sName);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected bool PrimaryEnabled()
 	{
 		return SelectedActionable() != null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The selected player IF there is something an admin can actually do for them. Null otherwise,
-	//! which is what hides the loud button — a screen with nothing to commit shows no primary at all.
+	//! which is what hides the loud button -- a screen with nothing to commit shows no primary at all.
 	protected TBD_AdminPlayerRow SelectedActionable()
 	{
 		if (!m_Payload || !m_Payload.m_bAuthorised)
@@ -506,7 +480,6 @@ class TBD_AdminScreen : TBD_ShellScreen
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnPrimaryPressed(TBD_ShellScreen screen)
 	{
 		TBD_AdminPlayerRow row = SelectedActionable();
@@ -514,32 +487,29 @@ class TBD_AdminScreen : TBD_ShellScreen
 			return;
 
 		// The client picks which action to ASK for; the server decides whether it happens. This
-		// branch is a convenience, never a permission — `TBD_AdminService` re-derives the caller,
+		// branch is a convenience, never a permission -- `TBD_AdminService` re-derives the caller,
 		// re-checks the admin list, and refuses a respawn for a live player or a deploy for a dead
 		// one regardless of which one the client asked for.
 		if (row.m_bDead)
 		{
 			TBD_AdminClient.Act(TBD_EAdminAction.RESPAWN, row.m_iPlayerId);
-			Announce(string.Format("Respawning %1 — waiting for the server…", row.m_sName));
+			Announce(string.Format("Respawning %1 -- waiting for the server...", row.m_sName));
 			return;
 		}
 
 		TBD_AdminClient.Act(TBD_EAdminAction.DEPLOY, row.m_iPlayerId);
-		Announce(string.Format("Deploying %1 — waiting for the server…", row.m_sName));
+		Announce(string.Format("Deploying %1 -- waiting for the server...", row.m_sName));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Put a line in the footer and hold it there until the admin picks something else. Used for
-	//! optimistic "asking the server…" feedback, which the server's real answer then overwrites.
+	//! optimistic "asking the server..." feedback, which the server's real answer then overwrites.
 	protected void Announce(string text)
 	{
 		m_sPendingResult = text;
 		SetStatus(text);
 	}
 
-	// ── Interaction ─────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnRowPicked(TBD_ListBox list, int tag)
 	{
 		if (tag == TAG_STAGE)
@@ -578,7 +548,6 @@ class TBD_AdminScreen : TBD_ShellScreen
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! First pick arms, second pick fires.
 	protected void OnStagePicked()
 	{
@@ -597,18 +566,15 @@ class TBD_AdminScreen : TBD_ShellScreen
 		m_bStageArmed = false;
 		TBD_AdminClient.Act(TBD_EAdminAction.STAGE_ADVANCE, 0);
 		Rebuild();
-		Announce("Forcing the stage — waiting for the server…");
+		Announce("Forcing the stage -- waiting for the server...");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void DisarmStage()
 	{
 		m_bStageArmed = false;
 	}
 
-	// ── Helpers ─────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! Player rows carry `TAG_PLAYER_BASE + playerId`, so a tag decodes straight back to a player
 	//! without a side table that a rebuild could desynchronise.
 	protected int PlayerTag(int playerId)
@@ -619,7 +585,6 @@ class TBD_AdminScreen : TBD_ShellScreen
 		return TAG_PLAYER_BASE + playerId;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected string Reason()
 	{
 		if (m_Payload && !m_Payload.m_sDeniedReason.IsEmpty())
@@ -628,10 +593,9 @@ class TBD_AdminScreen : TBD_ShellScreen
 		return "The server did not answer.";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The only affordance a row has for "there is more behind me". Deliberately plain ASCII:
 	//! nothing in this lane can render a framebuffer, so the UI font's glyph coverage is
-	//! unverifiable here — a geometric triangle the font lacks would draw as a tofu box.
+	//! unverifiable here -- a geometric triangle the font lacks would draw as a tofu box.
 	protected string DisclosureMark(bool expanded)
 	{
 		if (expanded)
@@ -643,7 +607,6 @@ class TBD_AdminScreen : TBD_ShellScreen
 
 //! The admin preset. Bound to a layout and this class in `Configs/System/chimeraMenus.conf`.
 //!
-//! ── KNOWN BLOCKER, expected, not this slice's ──────────────────────────────────────────────
 //! Adding this enum value and the `.conf` block is necessary but NOT sufficient. Until the addon's
 //! `resourceDatabase.rdb` lists `Configs/System/chimeraMenus.conf`, the engine cannot see the
 //! preset and logs, at every startup:
@@ -652,7 +615,7 @@ class TBD_AdminScreen : TBD_ShellScreen
 //!
 //! Only a Workbench pass regenerates that index; the headless compile lane cannot. Everything in
 //! this slice compiles and is structurally complete; the screen cannot OPEN until that one pass.
-//! Same wall the shell hit at T-181.7 and the briefing at T-181.9.2 — see the measured note in
+//! Same wall the shell hit at T-181.7 and the briefing at T-181.9.2 -- see the measured note in
 //! `TBD_UILayouts`.
 //!
 //! **The `#tbd` chat commands are unaffected and remain the operable admin surface meanwhile**,

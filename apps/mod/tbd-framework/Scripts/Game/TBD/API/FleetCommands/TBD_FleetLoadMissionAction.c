@@ -19,7 +19,6 @@ class TBD_LoadMissionDeploymentReadCall : TBD_GameRuntimeCall
 {
 	string m_sCommandId;
 
-	//------------------------------------------------------------------------------------------------
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_FleetLoadMissionAction.OnDeploymentAnswered(this, answer);
@@ -32,7 +31,6 @@ class TBD_LoadMissionArtifactVerification : TBD_MissionArtifactVerification
 	string m_sCommandId;
 	ref TBD_RuntimeDeploymentStruct m_Identity;
 
-	//------------------------------------------------------------------------------------------------
 	override void OnFinished()
 	{
 		TBD_FleetLoadMissionAction.OnVerificationFinished(m_sCommandId);
@@ -43,7 +41,6 @@ class TBD_FleetLoadMissionAction
 {
 	protected static ref TBD_LoadMissionArtifactVerification s_Verification;
 
-	//------------------------------------------------------------------------------------------------
 	static void Start(notnull TBD_FleetCommand command)
 	{
 		TBD_LoadMissionDeploymentReadCall call = new TBD_LoadMissionDeploymentReadCall();
@@ -54,7 +51,6 @@ class TBD_FleetLoadMissionAction
 			TBD_FleetCommandExecution.Fail(command, "the deployment could not be read: " + failure);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Called by TBD_LoadMissionDeploymentReadCall with the platform's answer.
 	static void OnDeploymentAnswered(notnull TBD_LoadMissionDeploymentReadCall call, notnull TBD_GameRuntimeAnswer answer)
 	{
@@ -92,7 +88,6 @@ class TBD_FleetLoadMissionAction
 		s_Verification.FetchFromPlatform(artifactId, sha256, deployment.artifact_bytes);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Called by TBD_LoadMissionArtifactVerification when it ends. Acted on in the next frame, once the
 	//! verification's own call stack has unwound.
 	static void OnVerificationFinished(string commandId)
@@ -102,7 +97,6 @@ class TBD_FleetLoadMissionAction
 			queue.CallLater(SettleVerification, 0, false, commandId);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void SettleVerification(string commandId)
 	{
 		TBD_LoadMissionArtifactVerification verification = s_Verification;
@@ -131,7 +125,6 @@ class TBD_FleetLoadMissionAction
 			TBD_GameRuntimeHttp.JsonEscape(verification.m_sArtifactId)), true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The success is recorded: close this world's session and restart the scenario in-process. A
 	//! world that already ended since the claim is not restarted again; the next boot reads the same
 	//! deployment.
@@ -154,7 +147,6 @@ class TBD_FleetLoadMissionAction
 		GameStateTransitions.RequestScenarioRestart();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The `load_mission` command being executed under `commandId`, or null.
 	protected static TBD_FleetCommand CurrentCommand(string commandId)
 	{

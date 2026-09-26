@@ -2,7 +2,6 @@
 //! @authority server
 modded class TBD_LobbyService
 {
-	//------------------------------------------------------------------------------------------------
 	//! An AUTHORIZING or UNAUTHORIZED deploy is not `accepted`: the screen latches a deploy as done,
 	//! and the platform may still refuse. `resultName` is set only when this click reached
 	//! DeployPlayerEx, so an earlier deploy never colours the answer.

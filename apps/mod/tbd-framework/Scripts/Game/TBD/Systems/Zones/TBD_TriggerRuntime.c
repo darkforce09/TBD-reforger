@@ -1,19 +1,16 @@
 //! T-676 - editor-authored TRIGGERS: activation (condition / owner side / repeat / timeout) and
 //! the effects they fire. The Enfusion half of `mission.schema.json#/properties/editorTriggers`.
 //!
-//! == What was missing, and what this is ======================================================
 //! T-079 shipped the geometry palette and T-706 put `editorTriggers[]` on the wire. Nothing read
 //! it: a word-boundary grep for `editorTriggers` over `apps/mod` returned ZERO hits on every
 //! shipped build, so an author could draw a trigger, compile it into the document, and the round
 //! would run as if it were not there. This file is the reader and the runtime.
 //!
-//! == Server-side only ========================================================================
 //! Clients hold NO mission document - `TBD_FrameworkManager.OnPostInit` returns early for
 //! `RplMode.Client` before `BeginLoad()` - so a client that built this registry would build an
 //! empty one and conclude that no trigger exists. Everything here except the two `RplRcver.Owner`
 //! RPC bodies runs on the authority, and the heartbeat below refuses to start on a client.
 //!
-//! == Why the heartbeat is a `modded class SCR_BaseGameMode` and not a game-mode component =====
 //! Every other TBD subsystem ticks from an `SCR_BaseGameModeComponent` listed in
 //! `Prefabs/Systems/TBD_GameMode.et`. That is the nicer shape and it is NOT what this uses, for
 //! one reason: a component this slice cannot add to the prefab would never be instantiated, and a
@@ -25,7 +22,6 @@
 //! nothing at all. If a later slice moves the tick onto a real component, the seam is
 //! `TBD_TriggerRuntime.Tick()` and nothing else changes.
 //!
-//! == Why the wire is parsed a SECOND time ====================================================
 //! `TBD_MissionDocumentStruct` (Backend/TBD_MissionLoader.c) declares no `editorTriggers` field,
 //! and Enfusion's `JsonLoadContext` maps JSON keys onto NAMED class fields only - a key no class
 //! declares is invisible at runtime, not rejected, not logged, simply absent. Rather than grow the
@@ -36,14 +32,12 @@
 //! it, and the cost is one extra parse of a document that is at most 8 MB and is parsed exactly
 //! ONCE per world.
 //!
-//! == `zoneRules` keeps today's semantics =====================================================
 //! The sixteen `#/$defs/zoneRules` keys are read where they always were - the play-area three in
 //! `TBD_MissionZoneRulesStruct`, the objective thirteen in `TBD_ObjectiveRulesStruct`. This file
 //! declares NONE of them and changes NONE of them. It consumes the zone the registry already
 //! prepared (`TBD_ZoneRegistry.GetAll()`), so a trigger's area is the same volume the play-area
 //! and objective subsystems see, resolved once, with one owner.
 //!
-//! == Presence, and the nested-ref landmine ===================================================
 //! `JsonLoadContext.ReadValue` ALLOCATES a nested `ref <class>` field even when the JSON key is
 //! ABSENT (measured - see the landmine on `TBD_MissionShapeStruct`). So `if (trigger.activation)`
 //! is ALWAYS TRUE and is not a presence test. Every numeric and string field below therefore
@@ -52,14 +46,12 @@
 //! indistinguishable and always will be; `repeat = false` is the schema's own default, so nothing
 //! is lost behaviourally and the limitation is stated rather than papered over.
 //!
-//! == What this file CANNOT prove =============================================================
 //! The gate is `cargo xtask mod compile` - a headless compile against the native dedicated server.
 //! It proves every symbol here exists and every signature matches. It cannot run a round. Whether
 //! a trigger authored in the editor actually fires with players in the zone is a human checklist
 //! item and is written up as one; nothing in this header claims otherwise.
 //! @contract mission.schema.json#/$defs/editorTrigger
 
-//------------------------------------------------------------------------------------------------
 //! The `effects[].params` bag, as much of it as a TYPED parser can see.
 //!
 //! `#/$defs/editorTrigger` declares `params` as an OPEN object - "Effect-specific parameters,
@@ -74,7 +66,6 @@
 //! effect go INERT with the reason naming the param it wanted, instead of a trigger that fires and
 //! does nothing.
 //!
-//! -- The vocabulary, by effect `type` --------------------------------------------------------
 //! `spawn`         `alias` (required, registry alias) * `x` `z` (world metres; default = the
 //!                 trigger zone's centre) * `headingDeg` (default 0) * `count` (default 1)
 //! `delete`        `alias` (required) - every matching entity inside the trigger's zone
@@ -118,7 +109,6 @@ class TBD_TriggerParamsStruct
 	int count = ABSENT_INT;
 }
 
-//------------------------------------------------------------------------------------------------
 //! One `effects[]` record on the wire.
 //! @contract mission.schema.json#/$defs/editorTrigger/properties/effects/items
 class TBD_TriggerEffectStruct
@@ -129,7 +119,6 @@ class TBD_TriggerEffectStruct
 	ref TBD_TriggerParamsStruct params;
 }
 
-//------------------------------------------------------------------------------------------------
 //! The `activation` object on the wire. Schema-required on a trigger, but `JsonLoadContext`
 //! allocates it either way, so its presence is decided by `condition` being non-empty.
 //! @contract mission.schema.json#/$defs/editorTrigger/properties/activation
@@ -141,7 +130,6 @@ class TBD_TriggerActivationStruct
 	float timeoutSeconds = TBD_TriggerParamsStruct.ABSENT;
 }
 
-//------------------------------------------------------------------------------------------------
 //! One `editorTriggers[]` entry on the wire.
 //! @contract mission.schema.json#/$defs/editorTrigger
 class TBD_EditorTriggerStruct
@@ -157,7 +145,6 @@ class TBD_EditorTriggerStruct
 	string variantId;   //!< T-654. Empty = ungated. See TBD_TriggerRuntime's variant note.
 }
 
-//------------------------------------------------------------------------------------------------
 //! The document root for the TRIGGER pass: declares `editorTriggers` and nothing else, so this
 //! reader stays structurally blind to every other top-level key. That is not a claim about the
 //! primary loader - `TBD_MissionDocumentStruct` models meta/zones/slots/entities/settings and more;
@@ -167,7 +154,6 @@ class TBD_TriggerDocStruct
 	ref array<ref TBD_EditorTriggerStruct> editorTriggers;
 }
 
-//------------------------------------------------------------------------------------------------
 //! What makes a trigger fire. `NONE` is not a condition - it is what an unrecognised or unauthored
 //! `activation.condition` resolves to, and a trigger that resolves to it is INERT and says so.
 enum TBD_ETriggerCondition
@@ -181,7 +167,6 @@ enum TBD_ETriggerCondition
 	OBJECTIVE_COMPLETE   //!< The named objective (or every objective) is complete.
 }
 
-//------------------------------------------------------------------------------------------------
 //! What an effect does. `NONE` is an unrecognised `effects[].type`; such an effect is dropped at
 //! load with its index named, and never silently swallowed.
 enum TBD_ETriggerEffect
@@ -196,7 +181,6 @@ enum TBD_ETriggerEffect
 	SET_VARIANT
 }
 
-//------------------------------------------------------------------------------------------------
 //! One prepared effect: the wire record with its type resolved and its params flattened, validated
 //! ONCE at load. `m_bUsable` false means this effect can never do anything and `m_sInertReason`
 //! says why, by trigger id and effect index.
@@ -224,7 +208,6 @@ class TBD_TriggerEffect
 	string m_sInertReason;
 }
 
-//------------------------------------------------------------------------------------------------
 //! Where a trigger is in its life. The state machine is deliberately four states and no flags:
 //! "has it fired" and "is it counting down" are different questions and a bool pair would let them
 //! disagree.
@@ -236,7 +219,6 @@ enum TBD_ETriggerState
 	FIRED      //!< The effects have run. Terminal unless `repeat`.
 }
 
-//------------------------------------------------------------------------------------------------
 //! One prepared trigger.
 class TBD_Trigger
 {
@@ -263,7 +245,6 @@ class TBD_Trigger
 	int m_iFireCount;
 	string m_sInertReason;
 
-	//------------------------------------------------------------------------------------------------
 	//! Stable identifier for logs. Built in steps, not one long `+` chain: a 9-term concatenation is
 	//! a measured `Formula too complex` in this compiler, whose SECOND diagnostic is a misleading
 	//! `Incompatible parameter`.
@@ -274,7 +255,6 @@ class TBD_Trigger
 		return key;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! How many prepared effects this trigger can actually run.
 	int UsableEffectCount()
 	{
@@ -292,11 +272,9 @@ class TBD_Trigger
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 //! The trigger runtime: reads `editorTriggers[]`, prepares them against the zone registry,
 //! evaluates activation once a second while the round is LIVE, and fires the effects.
 //!
-//! -- Static, and therefore explicitly cleared ------------------------------------------------
 //! A recorded landmine in this program is that statics OUTLIVE A WORLD inside one process
 //! (`TBD_FleetLoadMissionAction` restarts the scenario in-process via
 //! `GameStateTransitions.RequestScenarioRestart()`). Mission A's triggers left standing would fire
@@ -309,7 +287,6 @@ class TBD_Trigger
 //!     world it was built for: a trigger array says "a player is inside zone z3", and z3 means
 //!     nothing without the document it came from.
 //!
-//! -- Variants (T-654), and what `set_variant` is for -----------------------------------------
 //! `editorTrigger.variantId` is a COMPILE-time gate in the schema: the compiler emits the subtree
 //! only when the variant is selected. T-654 has not landed, so nothing strips them today and a
 //! `variantId` arrives verbatim on the wire. This runtime therefore starts in NO-SELECTION mode,
@@ -360,8 +337,7 @@ class TBD_TriggerRuntime
 	static const string AUD_OWNER = "owner";
 	static const string AUD_ENEMY = "enemy";
 
-	//! `params.state` for `set_objective`.
-	static const string STATE_COMPLETE   = "complete";
+	static const string STATE_COMPLETE   = "complete"; //!< `params.state` for `set_objective`.
 	static const string STATE_INCOMPLETE = "incomplete";
 
 	//! How near a friendly must be to an intruder for `detected_by` to hold, in metres.
@@ -425,27 +401,23 @@ class TBD_TriggerRuntime
 	//! second occurrence still gets said.
 	protected static bool s_bAnnouncedNoSnapshot;
 
-	//------------------------------------------------------------------------------------------------
 	static bool IsBuilt()
 	{
 		return s_bBuilt;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Triggers that can fire. Zero is a legitimate answer for a mission that authors none.
 	static int GetArmedCount()
 	{
 		return s_iArmedCount;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Triggers that were authored but can never fire. Every one of them was reported by id at load.
 	static int GetInertCount()
 	{
 		return s_iInertCount;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Every prepared trigger, INERT ones included so a count here matches the document. Null until
 	//! `Build()` has run.
 	static array<ref TBD_Trigger> GetAll()
@@ -453,7 +425,6 @@ class TBD_TriggerRuntime
 		return s_aTriggers;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Drop everything. MUST run on every world start - see the class header.
 	static void Clear()
 	{
@@ -475,11 +446,8 @@ class TBD_TriggerRuntime
 		s_bAnnouncedNoSnapshot = false;
 	}
 
-	// ============================================================================================
 	//  THE WIRE
-	// ============================================================================================
 
-	//------------------------------------------------------------------------------------------------
 	//! The mission id this registry belongs to, or empty when none is loaded.
 	protected static string CurrentMissionId()
 	{
@@ -490,7 +458,6 @@ class TBD_TriggerRuntime
 		return doc.meta.id;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Second typed pass over the raw mission JSON for `editorTriggers[]`.
 	//!
 	//! Returns null on every honest "nothing to read": no raw document (a client, or a mission that
@@ -519,11 +486,8 @@ class TBD_TriggerRuntime
 		return doc.editorTriggers;
 	}
 
-	// ============================================================================================
 	//  BUILD
-	// ============================================================================================
 
-	//------------------------------------------------------------------------------------------------
 	//! Prepare every authored trigger. Safe to call repeatedly; only the first call after a
 	//! `Clear()` does work.
 	//!
@@ -598,7 +562,6 @@ class TBD_TriggerRuntime
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One line per armed trigger, at load. Same two jobs the zone registry's equivalent has: an
 	//! operator can read what will fire straight out of the boot log and check it against the
 	//! mission before an event, and the line is computed from the parsed fields, so a run that
@@ -621,7 +584,6 @@ class TBD_TriggerRuntime
 			trigger.m_sVariantId));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Flatten one wire trigger into its runtime form, reporting every defect by trigger id.
 	protected static TBD_Trigger Prepare(notnull TBD_EditorTriggerStruct rawTrigger, int index)
 	{
@@ -651,7 +613,6 @@ class TBD_TriggerRuntime
 		return trigger;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `activation` -> condition enum, owner side, repeat and dwell time.
 	//!
 	//! `TIMEOUT IS A DWELL, NOT A STOPWATCH.` The schema calls `timeoutSeconds` the "delay between
@@ -721,7 +682,6 @@ class TBD_TriggerRuntime
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Schema enum string -> condition. Returns `NONE` for absent and for anything outside the
 	//! closed vocabulary; the caller turns that into an INERT trigger with the authored value named.
 	protected static TBD_ETriggerCondition ConditionFromString(string raw)
@@ -742,7 +702,6 @@ class TBD_TriggerRuntime
 		return TBD_ETriggerCondition.NONE;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Bind `zoneId` to the zone the registry already prepared.
 	//!
 	//! An absent `zoneId` is LEGAL and means "document-wide" (the schema says so). An authored
@@ -798,7 +757,6 @@ class TBD_TriggerRuntime
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `effects[]` -> prepared effects, each validated once, each defect reported by index.
 	protected static void ResolveEffects(notnull TBD_Trigger trigger, array<ref TBD_TriggerEffectStruct> effects)
 	{
@@ -831,7 +789,6 @@ class TBD_TriggerRuntime
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Flatten one effect record and decide, once, whether it can ever run.
 	protected static TBD_TriggerEffect PrepareEffect(notnull TBD_Trigger trigger, notnull TBD_TriggerEffectStruct rawEffect)
 	{
@@ -871,7 +828,6 @@ class TBD_TriggerRuntime
 		return effect;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Schema enum string -> effect kind. `NONE` for absent and for anything outside the closed
 	//! `effects[].type` vocabulary.
 	protected static TBD_ETriggerEffect EffectFromString(string raw)
@@ -894,7 +850,6 @@ class TBD_TriggerRuntime
 		return TBD_ETriggerEffect.NONE;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Everything that can be decided about an effect BEFORE the round starts is decided here, so a
 	//! defect is a line in the boot log an operator reads before an event rather than a trigger that
 	//! fires into nothing an hour in.
@@ -1028,11 +983,8 @@ class TBD_TriggerRuntime
 		// end.
 	}
 
-	// ============================================================================================
 	//  THE TICK
-	// ============================================================================================
 
-	//------------------------------------------------------------------------------------------------
 	//! One evaluation pass. Called at `TICK_MS` by the heartbeat below.
 	//!
 	//! @authority server - the mission document, the zone registry and every effect here are
@@ -1101,7 +1053,6 @@ class TBD_TriggerRuntime
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One informational line per world, the moment the registry becomes known-good.
 	protected static void AnnounceOnce()
 	{
@@ -1120,7 +1071,6 @@ class TBD_TriggerRuntime
 			s_iArmedCount, s_iInertCount, TICK_MS, DETECT_RADIUS_M));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Drop every in-progress dwell. Called whenever the round is not LIVE - see `Tick`.
 	protected static void ResetDwell()
 	{
@@ -1137,7 +1087,6 @@ class TBD_TriggerRuntime
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Rebuild the per-tick view of who is where. Returns false when the view could not be built at
 	//! all, which is NOT the same as "nobody is anywhere".
 	//!
@@ -1147,7 +1096,6 @@ class TBD_TriggerRuntime
 	//! SPECTATOR STREAMING HOST, which is somewhere over the map and is emphatically not a soldier
 	//! standing in the zone. Counting it would let a corpse hold an objective area open.
 	//!
-	//! == WHY THIS FAILS CLOSED, AND WHICH DIRECTION "CLOSED" IS =================================
 	//! Without a `TBD_SpawnManager` there is no way to tell a spent life from a living player, and
 	//! this must NOT resolve to an empty snapshot: `not_present` reads an empty snapshot as TRUE.
 	//! A mission whose `not_present` trigger fires `end_mission` would then end the round the moment
@@ -1199,7 +1147,6 @@ class TBD_TriggerRuntime
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Is this body a corpse? Asked separately from `TBD_SpawnManager.IsPlayerDead` because the two
 	//! answer different questions - one is "has this identity spent its life", the other is "is the
 	//! thing standing here alive right now" - and either being true means it is not present.
@@ -1216,10 +1163,8 @@ class TBD_TriggerRuntime
 		return controller.IsDead();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Advance one trigger's state machine by one tick.
 	//!
-	//! -- Re-arming requires the condition to FALL first --------------------------------------
 	//! A `repeat` trigger returns to ARMED only once its condition stops holding. Without that, a
 	//! `present` trigger with `repeat: true` and no timeout would fire every single second for as
 	//! long as anybody stood in the zone. Eden's repeatable flag behaves the same way, and it is the
@@ -1301,7 +1246,6 @@ class TBD_TriggerRuntime
 		Fire(trigger);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Is this trigger's variant selected? See the class header for the two-mode contract.
 	protected static bool IsVariantActive(notnull TBD_Trigger trigger)
 	{
@@ -1317,11 +1261,8 @@ class TBD_TriggerRuntime
 		return s_aSelectedVariants.Find(trigger.m_sVariantId) != -1;
 	}
 
-	// ============================================================================================
 	//  CONDITIONS
-	// ============================================================================================
 
-	//------------------------------------------------------------------------------------------------
 	//! Does this trigger's condition hold RIGHT NOW, against the current tick's snapshot?
 	protected static bool ConditionHolds(notnull TBD_Trigger trigger)
 	{
@@ -1364,7 +1305,6 @@ class TBD_TriggerRuntime
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! How many snapshot players are inside `zone` and on the side selected by `factionKey`.
 	//!
 	//! `zone` null means the whole world - that is the schema's "document-wide condition", and it is
@@ -1408,7 +1348,6 @@ class TBD_TriggerRuntime
 		return hits;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! T-946.19 - how many live players inside `zone` have no resolved faction.
 	//!
 	//! A player in the snapshot with an empty faction key is a real body standing on real ground
@@ -1443,7 +1382,6 @@ class TBD_TriggerRuntime
 		return hits;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `detected_by`: somebody who is not of `ownerSide` is inside the zone, and somebody of
 	//! `ownerSide` is within `DETECT_RADIUS_M` of them.
 	//!
@@ -1484,7 +1422,6 @@ class TBD_TriggerRuntime
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `objective_complete`: with a `zoneId`, that one objective; without one, EVERY usable
 	//! objective in the mission.
 	//!
@@ -1523,11 +1460,8 @@ class TBD_TriggerRuntime
 		return usable > 0;
 	}
 
-	// ============================================================================================
 	//  EFFECTS
-	// ============================================================================================
 
-	//------------------------------------------------------------------------------------------------
 	//! Run every usable effect on this trigger, in authored order, then latch it FIRED.
 	//!
 	//! Order is the document's order and is honoured deliberately: an author who writes a `hint`
@@ -1557,7 +1491,6 @@ class TBD_TriggerRuntime
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Dispatch one effect. Every branch logs what it did, by trigger id and effect index, because
 	//! nothing else in the round records that a trigger acted.
 	protected static void RunEffect(notnull TBD_Trigger trigger, notnull TBD_TriggerEffect effect, int index)
@@ -1610,7 +1543,6 @@ class TBD_TriggerRuntime
 			trigger.m_sId, index, typename.EnumToString(TBD_ETriggerEffect, effect.m_eKind)));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `hint` - one private chat line per player in the audience.
 	//!
 	//! Chat rather than a HUD widget for the reason `TBD_PlayAreaComponent.Tell` records: a new
@@ -1638,7 +1570,6 @@ class TBD_TriggerRuntime
 			trigger.m_sId, effect.m_sAudience, audience.Count(), sent, effect.m_sText));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Server -> one client, over the channel this codebase already uses for per-player replies
 	//! (`TBD_AdminCommands.Reply`, `TBD_PlayAreaComponent.Tell`). Returns whether the message could
 	//! be handed to a chat component at all, so the caller can report delivery honestly rather than
@@ -1657,7 +1588,6 @@ class TBD_TriggerRuntime
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `play_sound` - raise a 2D UI sound event on each client in the audience.
 	//!
 	//! The server has no audio device, so this cannot be played where it is decided: the sound event
@@ -1692,7 +1622,6 @@ class TBD_TriggerRuntime
 			trigger.m_sId, effect.m_sSound, effect.m_sAudience, audience.Count(), sent));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Which connected players an audience string selects.
 	//!
 	//! Built from the LIVE player list rather than the tick snapshot: the snapshot deliberately drops
@@ -1769,7 +1698,6 @@ class TBD_TriggerRuntime
 		return selected;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `spawn` - place `count` copies of a registry alias.
 	//!
 	//! The alias resolution, `Resource.Load`, ground snap and transform are the shape
@@ -1844,7 +1772,6 @@ class TBD_TriggerRuntime
 			trigger.m_sId, effect.m_sAlias, pos.ToString(), effect.m_fHeadingDeg, effect.m_iCount, spawned));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `delete` - remove every entity of the aliased prefab that is inside the trigger's zone.
 	//!
 	//! Collected first and deleted after, deliberately: `QueryEntitiesByAABB` is walking the world's
@@ -1896,7 +1823,6 @@ class TBD_TriggerRuntime
 			trigger.m_sId, effect.m_sAlias, trigger.m_Zone.LogKey(), hits.Count(), deleted));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! World-query callback for `delete`. Static because the query API takes a plain function; the
 	//! scratch it writes into is documented on `s_QueryResource`.
 	//!
@@ -1922,7 +1848,6 @@ class TBD_TriggerRuntime
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `set_objective` - force one objective's completion state, and optionally its owner.
 	//!
 	//! `m_bComplete = true` is exactly what `TBD_ObjectiveRegistry.EvaluateDestroy` and
@@ -1970,7 +1895,6 @@ class TBD_TriggerRuntime
 			trigger.m_sId, target.m_sId, complete, target.m_sOwner));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `set_variant` - select a variant at runtime. See the class header for the two-mode contract.
 	protected static void EffectSetVariant(notnull TBD_Trigger trigger, notnull TBD_TriggerEffect effect)
 	{
@@ -1990,7 +1914,6 @@ class TBD_TriggerRuntime
 			trigger.m_sId, effect.m_sVariantId, s_aSelectedVariants.Count()));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `end_mission` - take the round to END through the stage machine's own door.
 	//!
 	//! `TBD_FrameworkManager.SetStage` is the single authority on the stage, exactly as
@@ -2027,7 +1950,6 @@ class TBD_TriggerRuntime
 		TBD_Log.Kv(CH, "endMission", string.Format("id=%1 winner='%2'", trigger.m_sId, effect.m_sWinner));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A zone's centre in X. For a circle that is the authored centre; for a polygon it is the
 	//! midpoint of the precomputed bounds, which is inside any convex ring and is at least always
 	//! within the drawn extent. Returns 0 for no zone, which callers never reach - `ValidateEffect`
@@ -2043,7 +1965,6 @@ class TBD_TriggerRuntime
 		return (zone.m_fMinX + zone.m_fMaxX) * 0.5;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A zone's centre in Z. See `ZoneCentreX`.
 	protected static float ZoneCentreZ(TBD_Zone zone)
 	{
@@ -2057,7 +1978,6 @@ class TBD_TriggerRuntime
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 //! T-676 - the client half of the `play_sound` effect.
 //!
 //! This is the SEVENTH `modded class SCR_PlayerController` block in the addon (mission browser,
@@ -2068,7 +1988,6 @@ class TBD_TriggerRuntime
 //! filed as T-181.25 and this adds one more block to it, which is stated rather than hidden.
 modded class SCR_PlayerController
 {
-	//------------------------------------------------------------------------------------------------
 	//! @authority server - called from `TBD_TriggerRuntime.EffectPlaySound` on the machine that owns
 	//! the mission document.
 	//!
@@ -2090,7 +2009,6 @@ modded class SCR_PlayerController
 		Rpc(TBD_RpcDo_TriggerSound, soundEvent);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! @authority owner - executes on the addressed client and no other (RplRcver.Owner).
 	//!
 	//! A 2D UI sound, not a positioned one: this is a cue attached to a mission event, not a noise
@@ -2104,12 +2022,10 @@ modded class SCR_PlayerController
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 //! T-676 - the trigger runtime's heartbeat. See `TBD_TriggerRuntime`'s header for why the tick
 //! hangs off the game mode class rather than a game-mode component.
 modded class SCR_BaseGameMode
 {
-	//------------------------------------------------------------------------------------------------
 	//! @authority server - triggers are evaluated where the mission document lives.
 	//!
 	//! Statics outlive a world inside one process (`TBD_FleetLoadMissionAction` restarts the scenario
@@ -2146,13 +2062,10 @@ modded class SCR_BaseGameMode
 		GetGame().GetCallqueue().CallLater(TBD_TriggerTick, TBD_TriggerRuntime.TICK_MS, false);
 	}
 
-	//! T-946.19 - set once the heartbeat is scheduled; see OnGameStart.
-	protected bool m_bTBD_TriggerTickArmed;
+	protected bool m_bTBD_TriggerTickArmed; //!< T-946.19 - set once the heartbeat is scheduled; see OnGameStart.
 
-	//------------------------------------------------------------------------------------------------
 	//! One evaluation, then re-arm.
 	//!
-	//! -- Why one-shot and self-re-arming rather than a repeating CallLater -------------------
 	//! `ScriptCallQueue.Remove` cancels BY FUNCTION, and this class has no teardown hook to call it
 	//! from - `OnDelete(IEntity)` is a COMPONENT lifecycle method and a game mode is an entity. A
 	//! repeating timer would therefore survive a world teardown and fire forever against a dead

@@ -35,7 +35,6 @@ class TBD_FleetClaimCall : TBD_GameRuntimeCall
 	int m_iWorld;
 	string m_sSessionId;
 
-	//------------------------------------------------------------------------------------------------
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_FleetCommandPoller.OnClaimAnswered(this, answer);
@@ -44,22 +43,19 @@ class TBD_FleetClaimCall : TBD_GameRuntimeCall
 
 class TBD_FleetCommandPoller
 {
-	//! Greppable channel: `grep '\[TBD\]\[Fleet\]' console.log`.
-	static const string CH_FLEET = "Fleet";
+	static const string CH_FLEET = "Fleet"; //!< Greppable channel: `grep '\[TBD\]\[Fleet\]' console.log`.
 	static const string ROUTE_PREFIX = "/api/v1/fleet-executor/commands";
 
 	protected static const int CLAIM_INTERVAL_MS = 5000;
 	protected static const int FAILURE_LOG_INTERVAL_MS = 60000;
 
-	//! Bumped by Start and Stop; a claim answered for another world is dropped.
-	protected static int s_iWorld;
+	protected static int s_iWorld; //!< Bumped by Start and Stop; a claim answered for another world is dropped.
 	protected static bool s_bRunning;
 	protected static bool s_bClaimInFlight;
 	protected static bool s_bFailureLogged;
 	protected static int s_iFailuresSinceLog;
 	protected static int s_iLastFailureLogMs;
 
-	//------------------------------------------------------------------------------------------------
 	//! Claim from now on, while the world holds a runtime session.
 	static void Start()
 	{
@@ -75,7 +71,6 @@ class TBD_FleetCommandPoller
 		ScheduleClaim();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Claim nothing more in this world. A command already claimed finishes its reports.
 	static void Stop()
 	{
@@ -87,20 +82,17 @@ class TBD_FleetCommandPoller
 			queue.Remove(Claim);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static int GetWorld()
 	{
 		return s_iWorld;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True while `world` is the world claiming now.
 	static bool IsCurrentWorld(int world)
 	{
 		return s_bRunning && world == s_iWorld;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ScheduleClaim()
 	{
 		ScriptCallQueue queue = GetGame().GetCallqueue();
@@ -111,7 +103,6 @@ class TBD_FleetCommandPoller
 		queue.CallLater(Claim, CLAIM_INTERVAL_MS, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void Claim()
 	{
 		if (!s_bRunning)
@@ -141,7 +132,6 @@ class TBD_FleetCommandPoller
 		NoteFailure("not sent: " + failure);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Called by TBD_FleetClaimCall with the platform's answer.
 	static void OnClaimAnswered(notnull TBD_FleetClaimCall call, notnull TBD_GameRuntimeAnswer answer)
 	{
@@ -177,7 +167,6 @@ class TBD_FleetCommandPoller
 		NoteFailure(answer.m_sDetail);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The command in a claim answer, or null with `problem` saying why it cannot be read. Arguments
 	//! that cannot be read as text leave `m_mArguments` null; the argument check refuses them.
 	protected static TBD_FleetCommand ParseClaim(string body, out string problem)
@@ -211,7 +200,6 @@ class TBD_FleetCommandPoller
 		return command;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void NoteAnswered()
 	{
 		if (s_bFailureLogged)
@@ -221,7 +209,6 @@ class TBD_FleetCommandPoller
 		s_iFailuresSinceLog = 0;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A claim failed: logged when it is the first since claims were last answered, then at most once
 	//! a minute with the count since.
 	protected static void NoteFailure(string detail)

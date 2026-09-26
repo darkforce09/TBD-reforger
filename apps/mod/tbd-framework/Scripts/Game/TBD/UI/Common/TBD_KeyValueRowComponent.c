@@ -1,7 +1,7 @@
-//! Pre-game rebuild (2026-09-12) — "label left, mono value right" in an inset box.
+//! Pre-game rebuild (2026-09-12) -- "label left, mono value right" in an inset box.
 //!
 //! Parameters (`View Distance  2,500 m`), frequencies (`Aux Channels:  133.3, 276.9 MHz`), the
-//! kit inspector's attachment lines, the inspector's vehicle / objective rows (`2x  BMP-2`) —
+//! kit inspector's attachment lines, the inspector's vehicle / objective rows (`2x  BMP-2`) --
 //! all one row shape. Either side may carry a small chip instead of plain text.
 //!
 //! Widget contract on `TBD_KeyValueRow.layout`: `RowBorder`, `RowBG`, `KeyIcon`, `KeyChipDock`,
@@ -20,12 +20,9 @@ class TBD_KeyValueRowComponent : ScriptedWidgetComponent
 	protected TBD_ChipComponent m_KeyChip;
 	protected TBD_ChipComponent m_ValueChip;
 	protected TBD_EUITint m_eTint = TBD_EUITint.NEUTRAL;
-	//! Opaque colour under the row; 0 = glass panel. Faction columns pass their GetGround().
-	protected int m_iGround;
-	//! Our composited fill — what the key / value chips sit on.
-	protected int m_iFill;
+	protected int m_iGround; //!< Opaque colour under the row; 0 = glass panel. Faction columns pass their GetGround().
+	protected int m_iFill; //!< Our composited fill -- what the key / value chips sit on.
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerAttached(Widget w)
 	{
 		super.HandlerAttached(w);
@@ -46,15 +43,13 @@ class TBD_KeyValueRowComponent : ScriptedWidgetComponent
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerDeattached(Widget w)
 	{
 		m_wRoot = null;
 		super.HandlerDeattached(w);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Plain key / value. `valueTint` colours the value text (amber safe-start, red Disabled…).
+	//! Plain key / value. `valueTint` colours the value text (amber safe-start, red Disabled...).
 	void Set(string key, string value, TBD_EUITint valueTint = TBD_EUITint.NEUTRAL)
 	{
 		TBD_UITheme.Write(m_wKeyText, key);
@@ -68,7 +63,6 @@ class TBD_KeyValueRowComponent : ScriptedWidgetComponent
 			TBD_UITheme.Paint(m_wValueText, TBD_UITheme.ChipInk(valueTint));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Leading chip before the key (`2x`, `1x`).
 	void SetKeyChip(string text, TBD_EUITint tint)
 	{
@@ -89,7 +83,6 @@ class TBD_KeyValueRowComponent : ScriptedWidgetComponent
 		TBD_UITheme.Show(m_wKeyChipDock, m_KeyChip != null);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Trailing chip instead of a value (`v2.4.0`, `Disabled`).
 	void SetValueChip(string text, TBD_EUITint tint)
 	{
@@ -106,7 +99,6 @@ class TBD_KeyValueRowComponent : ScriptedWidgetComponent
 		TBD_UITheme.Show(m_wValueChipDock, m_ValueChip != null);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetIcon(string iconKey, int argb)
 	{
 		if (!m_wKeyIcon)
@@ -116,7 +108,6 @@ class TBD_KeyValueRowComponent : ScriptedWidgetComponent
 			TBD_UITheme.Paint(m_wKeyIcon, argb);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Row chrome tint (faction columns paint their rows in the faction hue on hover only; the
 	//! resting state is the neutral inset).
 	void SetTint(TBD_EUITint tint)
@@ -125,7 +116,6 @@ class TBD_KeyValueRowComponent : ScriptedWidgetComponent
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Opaque colour under the row (the owning panel's / faction column's GetGround()).
 	void SetGround(int opaqueArgb)
 	{
@@ -137,19 +127,16 @@ class TBD_KeyValueRowComponent : ScriptedWidgetComponent
 			m_ValueChip.SetGround(m_iFill);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetRowVisible(bool visible)
 	{
 		TBD_UITheme.Show(m_wRoot, visible);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	Widget GetRootWidget()
 	{
 		return m_wRoot;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void Repaint()
 	{
 		int ground = m_iGround;
@@ -162,7 +149,6 @@ class TBD_KeyValueRowComponent : ScriptedWidgetComponent
 		TBD_UITheme.Paint(m_wKeyText, TBD_UITheme.ON_SURFACE);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Mount a row into a vertical container and return its handler.
 	static TBD_KeyValueRowComponent Mount(Widget container)
 	{

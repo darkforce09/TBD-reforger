@@ -18,14 +18,12 @@ class TBD_MissionArtifactCache
 	protected static const string IDENTITY_PATH = "$profile:TBD_MissionArtifactCache/identity.json";
 	protected static const string RECEIVED_PATH = "$profile:TBD_MissionArtifactCache/received.json";
 
-	//------------------------------------------------------------------------------------------------
 	//! Where the cache lives, for log lines.
 	static string DescribeLocation()
 	{
 		return DIRECTORY;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The identity of the cached artifact, or null when nothing usable is cached.
 	static TBD_RuntimeDeploymentStruct ReadIdentity()
 	{
@@ -46,7 +44,6 @@ class TBD_MissionArtifactCache
 		return identity;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The cached artifact, as text for the parser and as bytes for the hash. False, with `failure`
 	//! saying why, when it cannot be read whole.
 	static bool ReadDocument(out string document, out array<int> bytes, out string failure)
@@ -59,7 +56,6 @@ class TBD_MissionArtifactCache
 		return ReadBytes(DOCUMENT_PATH, bytes, failure);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Stage `body`, bytes just received, in `received.json` and read them back as `bytes`: what the
 	//! hash judges is exactly what is on disk. False, with `failure` saying why, when the file does not
 	//! hold the body whole.
@@ -73,7 +69,6 @@ class TBD_MissionArtifactCache
 		return ReadBytes(RECEIVED_PATH, bytes, failure);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Replace the cached artifact with the verified `document` of `identity`. False, with `failure`
 	//! saying why, when it cannot be written whole; nothing is cached then.
 	static bool Store(string document, notnull TBD_RuntimeDeploymentStruct identity, out string failure)
@@ -102,7 +97,6 @@ class TBD_MissionArtifactCache
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Rewrite the identity of the cached artifact, keeping its bytes: a later read of the same
 	//! artifact's deployment names its event and mission afresh.
 	static bool StoreIdentity(notnull TBD_RuntimeDeploymentStruct identity)
@@ -114,7 +108,6 @@ class TBD_MissionArtifactCache
 		return context.SaveToFile(IDENTITY_PATH);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Write exactly the bytes of `data` to `path`, and check the file holds all of them.
 	protected static bool WriteExact(string path, string data, out string failure)
 	{
@@ -140,7 +133,6 @@ class TBD_MissionArtifactCache
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool ReadText(string path, out string text, out string failure)
 	{
 		text = string.Empty;
@@ -172,7 +164,6 @@ class TBD_MissionArtifactCache
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The bytes of `path`, one per element, in one linear read.
 	protected static bool ReadBytes(string path, out array<int> bytes, out string failure)
 	{
@@ -207,7 +198,6 @@ class TBD_MissionArtifactCache
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static int FileSize(string path)
 	{
 		FileHandle handle = FileIO.OpenFile(path, FileMode.READ);

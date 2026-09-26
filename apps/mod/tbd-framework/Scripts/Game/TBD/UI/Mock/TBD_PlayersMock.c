@@ -1,4 +1,4 @@
-//! Briefing pass (2026-09-14) — the mock catalog behind the PLAYERS modal.
+//! Briefing pass (2026-09-14) -- the mock catalog behind the PLAYERS modal.
 //!
 //! The players_panel mockup: BLUFOR Defending 36 / 40, OPFOR Attacking 48 / 50, 4 spectators,
 //! 6 unslotted, TOTAL 94. The mockup draws the first nine names of each lane; the rest are
@@ -6,7 +6,6 @@
 //! `TBD_PlayersCatalog.Get()`.
 class TBD_PlayersMock
 {
-	//------------------------------------------------------------------------------------------------
 	static TBD_PlayersCatalog Build()
 	{
 		TBD_PlayersCatalog c = new TBD_PlayersCatalog();
@@ -35,7 +34,6 @@ class TBD_PlayersMock
 		return c;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The named rows, then generated ones up to `slotted`.
 	protected static void Lane(TBD_PlayersCatalog c, string faction, array<string> names, array<int> pings, int slotted, string stem)
 	{

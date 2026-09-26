@@ -3,7 +3,7 @@
 //! Spawn-authority contract (determinism program, slice A1): when a framework mission is
 //! active, TBD_SpawnManager is the ONLY thing that may spawn a player. `DeployPlayerEx`
 //! returns a tri-state result and this hook NEVER falls through to `super.DoSpawn_S`
-//! except on NOT_MINE (client side / no framework mission) — the silent fall-through on
+//! except on NOT_MINE (client side / no framework mission) -- the silent fall-through on
 //! "already deployed" was the double-body / slot-transfer / vanilla-kit bug.
 //!
 //! Registration/audit are swallowed on framework worlds (see TBD_SCR_RespawnSystemComponent
@@ -15,10 +15,9 @@
 //! ordinary scenarios working.
 modded class SCR_MenuSpawnLogic
 {
-	//------------------------------------------------------------------------------------------------
 	//! Never wait for spawn points on a framework world: slot bodies replaced them, so
 	//! there are zero SCR_SpawnPoint entities and vanilla's own answer here is "keep
-	//! waiting" forever — which is what pinned the client on the loading screen even
+	//! waiting" forever -- which is what pinned the client on the loading screen even
 	//! after TBD_SpawnManager had bound it to a body (measured 2026-07-25).
 	override bool GetWaitForSpawnPoints()
 	{
@@ -28,8 +27,7 @@ modded class SCR_MenuSpawnLogic
 		return super.GetWaitForSpawnPoints();
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! @authority server — vanilla's per-player entry into the spawn logic; swallowed on
+	//! @authority server -- vanilla's per-player entry into the spawn logic; swallowed on
 	//! framework worlds so the deploy flow never starts hunting a faction.
 	override void OnPlayerRegistered_S(int playerId)
 	{
@@ -39,14 +37,13 @@ modded class SCR_MenuSpawnLogic
 		super.OnPlayerRegistered_S(playerId);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! @authority server — the _S suffix is vanilla's server-side audit hook.
+	//! @authority server -- the _S suffix is vanilla's server-side audit hook.
 	//!
-	//! T-181.22 — DEAD ON A FRAMEWORK WORLD, and nothing here should be relied on. Vanilla only
+	//! T-181.22 -- DEAD ON A FRAMEWORK WORLD, and nothing here should be relied on. Vanilla only
 	//! reaches this through `SCR_RespawnSystemComponent.OnPlayerAuditSuccess_S ->
 	//! m_SpawnLogic.OnPlayerAuditSuccess_S(playerId)` (vanilla SCR_RespawnSystemComponent.c:196-199),
 	//! and TBD_SCR_RespawnSystemComponent swallows that call on framework worlds. So the
-	//! `AssignSlotForPlayer` below runs on VANILLA worlds only — where TBD_SpawnManager does not
+	//! `AssignSlotForPlayer` below runs on VANILLA worlds only -- where TBD_SpawnManager does not
 	//! exist and the guard short-circuits anyway. It is kept purely so a framework mission left
 	//! loaded on a non-framework world still seats people.
 	//!
@@ -66,8 +63,7 @@ modded class SCR_MenuSpawnLogic
 		super.OnPlayerAuditSuccess_S(playerId);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! @authority server — _S = server-side spawn; routes through TBD_SpawnManager.
+	//! @authority server -- _S = server-side spawn; routes through TBD_SpawnManager.
 	override void DoSpawn_S(int playerId)
 	{
 		TBD_SpawnManager sm = TBD_SpawnManager.GetInstance();
@@ -93,10 +89,10 @@ modded class SCR_MenuSpawnLogic
 		// DEPLOYED / ALREADY / FAILED / DENIED / AUTHORIZING / UNAUTHORIZED: never let vanilla spawn a
 		// second body on a framework mission. FAILED keeps the player on the wait screen (logged
 		// ERROR); the platform's decision finishes an AUTHORIZING deploy on its own.
-		// T-181.21 — DENIED means the player has spent their one life. It is NOT retried here,
+		// T-181.21 -- DENIED means the player has spent their one life. It is NOT retried here,
 		// on purpose: retrying a policy decision would just re-log the refusal forever, and the
 		// only legitimate way back in is an admin (TBD_SpawnManager.AdminRespawn). Nothing extra
-		// is needed at this call site — DeployPlayerEx already refused, and the vanilla request
+		// is needed at this call site -- DeployPlayerEx already refused, and the vanilla request
 		// route is refused independently by TBD_SCR_RespawnSystemComponent.CanRequestSpawn_S.
 	}
 }

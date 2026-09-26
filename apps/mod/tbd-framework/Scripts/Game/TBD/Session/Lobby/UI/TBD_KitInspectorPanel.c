@@ -1,4 +1,4 @@
-//! Pre-game rebuild (2026-09-13) — the KIT INSPECTOR column of the Lobby (slot_kit_inspector
+//! Pre-game rebuild (2026-09-13) -- the KIT INSPECTOR column of the Lobby (slot_kit_inspector
 //! mockup).
 //!
 //! ```
@@ -6,8 +6,8 @@
 //!   │    8: RIFLEMAN (AT) [AK-74] [RPG-7] [Alpha 2-1]               │
 //!   ├───────────────────────────────────────────────────────────────┤
 //!   │ ┌ PREVIEW ── the 3D doll wearing the seat's exact kit ─┐        │
-//!   │ ┌ GEAR ─────┐ 4 cells a row · BACKPACK spans the last row     │
-//!   │ ┌ WEAPONS ──┐ 3 slot cards: name · MOUNTED ATTACHMENTS · AMMO │
+//!   │ ┌ GEAR ─────┐ 4 cells a row - BACKPACK spans the last row     │
+//!   │ ┌ WEAPONS ──┐ 3 slot cards: name - MOUNTED ATTACHMENTS - AMMO │
 //!   │ ┌ GRENADES ─┐ ┌ GADGETS ─┐ ┌ TOOLS ─┐ ┌ MEDICAL ─┐ ┌ MISC ─┐   │
 //!   └───────────────────────────────────────────────────────────────┘
 //! ```
@@ -37,7 +37,6 @@ class TBD_KitInspectorPanel
 
 	static const int CARD_GAP = 12;
 
-	//------------------------------------------------------------------------------------------------
 	//! `root` is a mounted `TBD_KitInspector.layout`.
 	bool Build(Widget root, TBD_LobbyCatalog catalog)
 	{
@@ -83,7 +82,6 @@ class TBD_KitInspectorPanel
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Destroy()
 	{
 		DestroyPreview();
@@ -96,7 +94,6 @@ class TBD_KitInspectorPanel
 		m_Catalog = null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Rebind to a seat. Null shows the empty state.
 	void Show(TBD_LobbySlotInfo slot, TBD_LobbySquadInfo squad)
 	{
@@ -148,7 +145,6 @@ class TBD_KitInspectorPanel
 		ResetScroll();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A rebuilt (shorter) stack under a scroll offset from the previous kit shows nothing until the
 	//! player scrolls (MEASURED run 1) - the viewport is parked past the new content. Back to top.
 	protected void ResetScroll()
@@ -160,9 +156,7 @@ class TBD_KitInspectorPanel
 			m_wCardsContent.Update();
 	}
 
-	// ── Cards ───────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	protected void AddHeaderChip(string text, TBD_EUITint tint, int ground)
 	{
 		TBD_ChipComponent chip = TBD_ChipComponent.Mount(m_wSlotChipsDock, text, tint, ground);
@@ -173,7 +167,6 @@ class TBD_KitInspectorPanel
 		AlignableSlot.SetPadding(chip.GetRootWidget(), 0, 0, 6, 0);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void MountPreview(TBD_KitInfo kit)
 	{
 		Widget preview = TBD_UILayouts.CreateStretched(TBD_UILayouts.LOBBY_KIT_PREVIEW, m_wCardsContent);
@@ -208,7 +201,6 @@ class TBD_KitInspectorPanel
 			TBD_UITheme.Write(TextWidget.Cast(caption), "PREVIEW UNAVAILABLE");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void DestroyPreview()
 	{
 		if (m_Preview)
@@ -217,7 +209,6 @@ class TBD_KitInspectorPanel
 		m_Preview = null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected TBD_PanelComponent MountCard(string title)
 	{
 		if (!m_wCardsContent)
@@ -236,7 +227,6 @@ class TBD_KitInspectorPanel
 		return panel;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Body container of a card with the mockup's inner padding.
 	protected Widget CardBody(TBD_PanelComponent panel)
 	{
@@ -263,7 +253,6 @@ class TBD_KitInspectorPanel
 		return columnA;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! GEAR: four cells a row; a trailing partial row keeps its cell width by padding with blanks.
 	protected void FillGear(TBD_KitInfo kit)
 	{
@@ -275,7 +264,6 @@ class TBD_KitInspectorPanel
 		FillCells(body, kit.m_aGear, 4, card.GetGround(), false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void FillLabelGrid(string title, array<ref TBD_KitEntry> entries, int columns)
 	{
 		if (entries.IsEmpty())
@@ -288,7 +276,6 @@ class TBD_KitInspectorPanel
 		FillCells(CardBody(card), entries, columns, card.GetGround(), false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! GRENADES / MEDICAL: the item name is the value, the count is the story.
 	protected void FillCountGrid(string title, array<ref TBD_KitEntry> entries, int columns)
 	{
@@ -302,7 +289,6 @@ class TBD_KitInspectorPanel
 		FillCells(CardBody(card), entries, columns, card.GetGround(), true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Lay `entries` out `columns` wide, one TBD_Columns3/4 row per `columns` entries.
 	protected void FillCells(Widget body, array<ref TBD_KitEntry> entries, int columns, int cardGround, bool countOnly)
 	{
@@ -333,7 +319,6 @@ class TBD_KitInspectorPanel
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string ColumnName(int index)
 	{
 		switch (index)
@@ -346,7 +331,6 @@ class TBD_KitInspectorPanel
 		return "ColumnD";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void MountCell(Widget column, TBD_KitEntry entry, int cardGround, bool countOnly)
 	{
 		if (!column)
@@ -407,7 +391,6 @@ class TBD_KitInspectorPanel
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! WEAPONS: up to three slot cards side by side.
 	protected void FillWeapons(TBD_KitInfo kit)
 	{
@@ -437,7 +420,6 @@ class TBD_KitInspectorPanel
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void MountWeapon(Widget column, TBD_KitWeapon weapon, int cardGround)
 	{
 		if (!column)

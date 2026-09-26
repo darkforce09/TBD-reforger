@@ -18,11 +18,9 @@
 //! answer; `OnAnswered` receives exactly one answer per sent call.
 class TBD_GameRuntimeCall
 {
-	//! The engine's handle of the request, owned by TBD_GameRuntimeHttp.
-	ref RestCallback m_Callback;
+	ref RestCallback m_Callback; //!< The engine's handle of the request, owned by TBD_GameRuntimeHttp.
 	int m_iTicket;
 
-	//------------------------------------------------------------------------------------------------
 	void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 	}
@@ -35,8 +33,7 @@ class TBD_GameRuntimeHttp
 	//! Every issued credential starts with this (`tbdm_<credential id>_<64 hex>`).
 	static const string CREDENTIAL_PREFIX = "tbdm_";
 
-	//! Transport timeout of one request.
-	static const int REQUEST_TIMEOUT_S = 15;
+	static const int REQUEST_TIMEOUT_S = 15; //!< Transport timeout of one request.
 
 	//! A call with no callback by now is answered TRANSIENT. It sits safely beyond the transport
 	//! timeout, so it only fires when the engine never reports the request at all.
@@ -47,15 +44,11 @@ class TBD_GameRuntimeHttp
 	protected static const int RETIRED_CALLBACKS_MAX = 16;
 	protected static ref array<ref RestCallback> s_aRetiredCallbacks;
 
-	//! Calls sent and not answered yet.
-	protected static ref array<ref TBD_GameRuntimeCall> s_aCallsInFlight;
+	protected static ref array<ref TBD_GameRuntimeCall> s_aCallsInFlight; //!< Calls sent and not answered yet.
 	protected static int s_iLastTicket;
 
-	//------------------------------------------------------------------------------------------------
 	// CONFIGURATION
-	//------------------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! True when a backend URL and a usable machine credential are configured.
 	static bool IsConfigured()
 	{
@@ -65,7 +58,6 @@ class TBD_GameRuntimeHttp
 		return IsCredentialUsable(TBD_BackendConfig.GetMachineCredential());
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The backend for a log line. Never prints the credential.
 	static string DescribeBackend()
 	{
@@ -83,7 +75,6 @@ class TBD_GameRuntimeHttp
 		return url;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A credential this client can send. A value without the issued prefix is a placeholder (the
 	//! shipped example config carries one) and counts as absent. `RestContext.SetHeaders` takes
 	//! `Key,Value,Key,Value`, so a comma would split the header list; issued credentials contain
@@ -99,7 +90,6 @@ class TBD_GameRuntimeHttp
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A context against the configured backend carrying the bearer credential, the JSON content
 	//! type and the request timeout, or null with `failure` saying why.
 	protected static RestContext OpenContext(out string failure)
@@ -139,11 +129,8 @@ class TBD_GameRuntimeHttp
 		return context;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	// SENDING
-	//------------------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! `POST path` with `body`. False, with `failure` saying why and nothing sent, when no context can
 	//! be opened; otherwise `call.OnAnswered` receives the answer later.
 	static bool Post(notnull TBD_GameRuntimeCall call, string path, string body, out string failure)
@@ -157,7 +144,6 @@ class TBD_GameRuntimeHttp
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `GET path`, answered like `Post`.
 	static bool Get(notnull TBD_GameRuntimeCall call, string path, out string failure)
 	{
@@ -170,7 +156,6 @@ class TBD_GameRuntimeHttp
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void Track(notnull TBD_GameRuntimeCall call)
 	{
 		if (!s_aCallsInFlight)
@@ -190,19 +175,16 @@ class TBD_GameRuntimeHttp
 			queue.CallLater(OnCallWatchdog, WATCHDOG_MS, false, call.m_iTicket);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void OnCallSuccess(RestCallback callback)
 	{
 		Answer(callback, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void OnCallError(RestCallback callback)
 	{
 		Answer(callback, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void Answer(RestCallback callback, bool arrivedOnSuccess)
 	{
 		TBD_GameRuntimeCall call = TakeCallAnsweredBy(callback);
@@ -216,7 +198,6 @@ class TBD_GameRuntimeHttp
 		call.OnAnswered(TBD_GameRuntimeAnswer.Read(callback, arrivedOnSuccess));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Reached for every call; answers the ones the engine has not reported by now.
 	protected static void OnCallWatchdog(int ticket)
 	{
@@ -229,7 +210,6 @@ class TBD_GameRuntimeHttp
 		call.OnAnswered(TBD_GameRuntimeAnswer.Unanswered(string.Format("no answer within %1 ms", WATCHDOG_MS)));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_GameRuntimeCall TakeCallAnsweredBy(RestCallback callback)
 	{
 		if (!s_aCallsInFlight || !callback)
@@ -248,7 +228,6 @@ class TBD_GameRuntimeHttp
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_GameRuntimeCall TakeCallWithTicket(int ticket)
 	{
 		if (!s_aCallsInFlight)
@@ -267,7 +246,6 @@ class TBD_GameRuntimeHttp
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void RetireCallback(RestCallback callback)
 	{
 		if (!callback)
@@ -282,7 +260,6 @@ class TBD_GameRuntimeHttp
 		s_aRetiredCallbacks.Insert(callback);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ForgetRetiredCallback(RestCallback callback)
 	{
 		if (!s_aRetiredCallbacks || !callback)
@@ -293,11 +270,8 @@ class TBD_GameRuntimeHttp
 			s_aRetiredCallbacks.RemoveOrdered(index);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	// HELPERS
-	//------------------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! Exponential backoff: `baseMs` after the first failure, doubling with every further one, never
 	//! more than `capMs`.
 	static int BackoffMs(int failures, int baseMs, int capMs)
@@ -317,14 +291,12 @@ class TBD_GameRuntimeHttp
 		return delay;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Milliseconds since the game started, the clock every retry schedule here is kept on.
 	static int NowMs()
 	{
 		return System.GetTickCount();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True once `notBeforeMs` has been reached. Compared as a difference so the comparison stays
 	//! correct when the millisecond counter wraps.
 	static bool IsDue(int notBeforeMs)
@@ -332,7 +304,6 @@ class TBD_GameRuntimeHttp
 		return NowMs() - notBeforeMs >= 0;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Make a string safe inside a JSON double-quoted scalar. `Replace` mutates in place and returns
 	//! a count, so the copy comes from `string.Format` and every call is a statement. Backslash goes
 	//! first so the quotes' escapes are not escaped again; control characters become spaces.

@@ -12,7 +12,6 @@ class TBD_StartedRuntimeSessionStruct
 	int heartbeat_interval_seconds;
 	int expires_after_seconds;
 
-	//------------------------------------------------------------------------------------------------
 	//! The started session in `body`, or null when the body is not a usable start answer.
 	static TBD_StartedRuntimeSessionStruct Parse(string body)
 	{
@@ -47,10 +46,8 @@ class TBD_RuntimeSessionCall : TBD_GameRuntimeCall
 	TBD_ERuntimeSessionRequest m_eRequest;
 	int m_iWorld;
 	string m_sSessionId;
-	//! A start that reported a loaded artifact.
-	bool m_bReportedArtifact;
+	bool m_bReportedArtifact; //!< A start that reported a loaded artifact.
 
-	//------------------------------------------------------------------------------------------------
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_RuntimeSession.OnCallAnswered(this, answer);

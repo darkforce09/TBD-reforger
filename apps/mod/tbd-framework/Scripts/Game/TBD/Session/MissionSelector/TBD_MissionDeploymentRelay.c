@@ -27,7 +27,6 @@ class TBD_MissionDeploymentRelayCall : TBD_GameRuntimeCall
 	int m_iAdminPlayerId;
 	string m_sTitle;
 
-	//------------------------------------------------------------------------------------------------
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_MissionDeploymentRelay.OnAnswered(this, answer);
@@ -36,7 +35,6 @@ class TBD_MissionDeploymentRelayCall : TBD_GameRuntimeCall
 
 class TBD_MissionDeploymentRelay
 {
-	//------------------------------------------------------------------------------------------------
 	//! Ask the platform to deploy mission `number` of the list on behalf of admin `adminPlayerId`.
 	//! Returns the immediate reply; the platform's decision reaches the admin in chat.
 	static string RequestByNumber(int adminPlayerId, int number)
@@ -80,7 +78,6 @@ class TBD_MissionDeploymentRelay
 		return reply + "...";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Called by TBD_MissionDeploymentRelayCall with the platform's decision.
 	static void OnAnswered(notnull TBD_MissionDeploymentRelayCall call, notnull TBD_GameRuntimeAnswer answer)
 	{
@@ -107,7 +104,6 @@ class TBD_MissionDeploymentRelay
 		TBD_PlayerChat.Tell(call.m_iAdminPlayerId, text);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The platform's refusal in words the admin can act on, with its code.
 	protected static string Explain(notnull TBD_GameRuntimeAnswer answer)
 	{
@@ -129,7 +125,6 @@ class TBD_MissionDeploymentRelay
 		return string.Format("the platform refused it (%1).", status);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! What a refusal code means for the admin, or empty for a code without its own words.
 	protected static string WordsFor(string code)
 	{

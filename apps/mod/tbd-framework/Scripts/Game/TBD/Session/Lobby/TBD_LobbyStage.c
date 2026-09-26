@@ -2,16 +2,14 @@
 //!
 //! CLIENT - watches the replicated game stage and raises/drops the pre-game screens.
 //!
-//! -- 2026-09-12: the first screen is the MISSION SELECTOR, not the lobby -------------------
 //! On the transition into LOBBY this watcher raises `TBD_UIMissionSelector`; the lobby is reached
 //! from its top bar (`TBD_DockScreen.OnTabSelected` -> `TBD_MenuStack.Replace(TBD_UILobby)`).
 //! The soft-modal re-raise below treats ANY pre-game screen (selector, lobby, briefing) as
 //! "the picker is up" - see `IsPreGameScreenOpen()` - so switching tabs never fights the poll.
 //!
-//! -- Why a poll, and why it is hosted on a game-mode component ------------------------------
 //! `TBD_FrameworkManager.m_Stage` is an `[RplProp(onRplName: "OnStageReplicated")]`, so the VALUE
 //! is replicated and `GetStage()` is correct on a client. But `OnStageReplicated()` is an empty
-//! stub, and `TBD_FrameworkManager.c` belongs to another slice this wave (T-181.23) - so this
+//! stub, and `TBD_FrameworkManager.c` belongs to another slice this wave - so this
 //! slice must not write into it. A 500 ms poll of the replicated value is the self-contained way
 //! to be correct today; it costs one enum compare per tick.
 //!
@@ -59,7 +57,6 @@ class TBD_LobbyStage
 	protected static int s_iArmAttempts;
 	protected static int s_iLastRaiseOutcome;
 
-	//------------------------------------------------------------------------------------------------
 	//! One line, one shape, one grep. `PrintFormat` and NEVER `Print(localVariable)` - MEASURED in
 	//! this codebase: `Print` emits the DECLARATION of a local, not its value, which is why the
 	//! roll-call assertion in `world-boot.sh` has to strip a trailing quote.
@@ -68,7 +65,6 @@ class TBD_LobbyStage
 		PrintFormat("%1", LOG_TAG + message, level: LogLevel.NORMAL);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! WARNING, not ERROR, and deliberately: `world-boot.sh` triages any TBD-owned `SCRIPT (E)`
 	//! line as a gate failure, so shouting at ERROR about a state the gate can legitimately reach
 	//! would turn a diagnostic into a false red. MEASURED this slice: WARNING lines DO reach
@@ -78,10 +74,8 @@ class TBD_LobbyStage
 		PrintFormat("%1", LOG_TAG + message, level: LogLevel.WARNING);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! @authority client - only a machine with a local player may open a menu.
 	//!
-	//! -- T-181.49: this used to be a one-shot with three silent exits -------------------------
 	//! `TBD_LobbyComponent.OnPostInit` arms this with `CallLater(..., false)` at +2000 ms. That
 	//! made `IsFrameworkWorld()` a COIN FLIP, and losing it was permanent AND invisible:
 	//!
@@ -99,7 +93,6 @@ class TBD_LobbyStage
 	//! forever, and the give-up is logged - the point of this whole slice is that no exit on this
 	//! path is silent.
 	//!
-	//! -- Statics are reset HERE, not only in Shutdown() ---------------------------------------
 	//! `TBD_GameMode` is constructed TWICE per Workbench session (once for the World Editor, once
 	//! for Play) while every static below survives between them. If the editor instance's
 	//! `OnDelete` is skipped, `Shutdown()` never runs and the Play instance inherits `s_bRunning`
@@ -135,7 +128,6 @@ class TBD_LobbyStage
 		// for it, before anything on THIS world has opened a screen.
 		TBD_MenuStack.Reset();
 
-		// -- The real authority test ----------------------------------------------------------
 		// NOT `GetGame().GetWorkspace()`, which this line used to ask: that is MEASURED NON-NULL
 		// on the headless dedicated server `world-boot.sh` runs, so it never excluded anything.
 		// `RplSession.Mode() == RplMode.Dedicated` is what both oracles use for this question and
@@ -152,7 +144,6 @@ class TBD_LobbyStage
 		queue.CallLater(TryArm, ARM_RETRY_MS, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Retry until this world admits it is a framework world, then promote to the real `Tick` and
 	//! cancel this. Bounded so a world that will never qualify says so once and stops.
 	protected static void TryArm()
@@ -185,7 +176,6 @@ class TBD_LobbyStage
 			s_iArmAttempts, s_iArmAttempts * ARM_RETRY_MS, POLL_MS));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Statics outlive a world inside one process, so this MUST run on world teardown or the next
 	//! round starts with a tick pointed at a framework manager that no longer exists.
 	//!
@@ -220,7 +210,6 @@ class TBD_LobbyStage
 		TBD_LobbyClient.Reset();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void Tick()
 	{
 		TBD_FrameworkManager fm = TBD_FrameworkManager.GetInstance();
@@ -236,7 +225,6 @@ class TBD_LobbyStage
 			return;
 		}
 
-		// -- LOBBY is a phase you are IN, not a screen you visit -----------------------------
 		// Esc closes any menu and no script can stop it. For the briefing that is fine - you can
 		// re-open your orders from the lobby. For the LOBBY it is a dead end: a player who
 		// dismisses the picker has no seat, no way to get one, and one life to lose by missing
@@ -258,7 +246,6 @@ class TBD_LobbyStage
 		// mean the picker silently never appears, which is a far worse failure than one that can
 		// be dismissed.
 		//
-		// -- T-181.29: this guard was only ever HALF the answer -------------------------------
 		// Standing the re-raise down does nothing for a screen that is ALREADY OPEN, and that is the
 		// case the auto-deploy wave produces: the wave fires ~250 ms into LOBBY, this watcher raises
 		// the picker on the same transition, and the result was a picker sitting over a live
@@ -283,7 +270,6 @@ class TBD_LobbyStage
 		Raise();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True while any of the three pre-game screens is on the TBD stack.
 	static bool IsPreGameScreenOpen()
 	{
@@ -292,10 +278,8 @@ class TBD_LobbyStage
 			|| TBD_MenuStack.IsOpen(ChimeraMenuPreset.TBD_UIBriefing);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Put the picker up, at most once per round if the preset cannot resolve.
 	//!
-	//! -- T-181.42: this is where "do I have a screen" is actually decided --------------------
 	//! **`GetGame().GetWorkspace()` is NON-NULL on a headless dedicated server** (engine 1.7.0.54).
 	//! It is not a dedicated-server test, and this class used to treat it as one. MEASURED in this
 	//! repo: `world-boot.sh --mission=bridgehead-at-levie` with `TBD_WORLDBOOT_SETTLE=12` failed
@@ -314,7 +298,6 @@ class TBD_LobbyStage
 	//! would mean the picker silently NEVER appears, which is far worse than raising it late. Same
 	//! reasoning the `Tick` comment already gives for keeping the first open unconditional.
 	//!
-	//! -- T-181.49: all four exits are now observable ------------------------------------------
 	//! Every one of these used to `return` in silence. Nine of the eleven guards on the whole
 	//! raise path did, which made "the picker did not open" a fact with no evidence attached -
 	//! the real defect this slice fixes. `LogOutcome` latches on the OUTCOME so the 500 ms poll
@@ -350,7 +333,6 @@ class TBD_LobbyStage
 		LogOutcome(RAISE_OPENED, "picker OPEN - TBD_UIMissionSelector raised (Lobby is the next tab).");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One line per CHANGE of raise outcome. `Raise` is called from a 500 ms poll, so this latch is
 	//! what keeps four honest diagnostics from becoming a log flood that hides them.
 	protected static void LogOutcome(int outcome, string message)
@@ -362,11 +344,9 @@ class TBD_LobbyStage
 		Log(message);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The single entry point for "the round changed phase" as far as the lobby is concerned.
 	//! Kept public and complete so wiring it to the real replication hook is one line.
 	//!
-	//! -- T-181.29: the other OnStageChanged, and why m_bAutoDeploy is still 1 ----------------
 	//! `TBD_SpawnManager.OnStageChanged` reacts to this same transition by scheduling
 	//! `DeployAllConnectedPlayers` 250 ms out. Two handlers, one transition: this one raises the
 	//! picker, that one puts everybody in the world. They race, and until this slice the race had no

@@ -1,9 +1,8 @@
-//! Briefing pass (2026-09-14) — the small uppercase mono label a list section starts with
+//! Briefing pass (2026-09-14) -- the small uppercase mono label a list section starts with
 //! ("LONG RANGE (LR) COMMAND", "INVENTORY"), with an optional trailing note ("4 Available").
 //! `TBD_Caption.layout`: `Caption`, `Trailing`. No handler; this helper writes and paints it.
 class TBD_Caption
 {
-	//------------------------------------------------------------------------------------------------
 	static Widget Mount(Widget parent, string text, string trailing = "")
 	{
 		Widget w = TBD_UILayouts.CreateStretched(TBD_UILayouts.CAPTION, parent);

@@ -19,7 +19,6 @@ class TBD_RuntimeDeploymentStruct
 	string event_id;
 	string event_mission_id;
 
-	//------------------------------------------------------------------------------------------------
 	//! The deployment in `body`, or null with `problem` saying why it cannot be used.
 	static TBD_RuntimeDeploymentStruct Parse(string body, out string problem)
 	{

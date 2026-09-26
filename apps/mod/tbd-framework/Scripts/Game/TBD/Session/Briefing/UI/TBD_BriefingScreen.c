@@ -1,14 +1,14 @@
-//! Briefing rebuild (2026-09-14) — the Briefing screen on the dock shell, over the live map.
+//! Briefing rebuild (2026-09-14) -- the Briefing screen on the dock shell, over the live map.
 //!
 //! ```
 //!  MapFrame (full-screen SCR_MapEntity, never resized)                       TBD_BriefingScreen.layout
-//!  ┌ TopDock ─ TBD_SessionTopBar (mono mission id · BRIEFING tab · identity · count) ───────────┐
+//!  ┌ TopDock ─ TBD_SessionTopBar (mono mission id - BRIEFING tab - identity - count) ───────────┐
 //!  │ LeftDock 288        CenterDock 340            RightDock <page width>                       │
-//!  │ primary nav         topic nav (3 groups)      topic page          — BRIEFING mode          │
-//!  │ Map·Briefing·       markers panel (CenterDock)  hidden            — MARKERS mode           │
-//!  │ Players·Markers     players panel (WideDock, to the right edge)   — PLAYERS mode           │
-//!  │ Players·Markers     hidden                    hidden              — MAP mode               │
-//!  └ BottomDock ─ TBD_SessionBottomBar (Lock Lobby mock · Ready & Continue deploys) ──────────┘
+//!  │ primary nav         topic nav (3 groups)      topic page          -- BRIEFING mode          │
+//!  │ Map-Briefing-       markers panel (CenterDock)  hidden            -- MARKERS mode           │
+//!  │ Players-Markers     players panel (WideDock, to the right edge)   -- PLAYERS mode           │
+//!  │ Players-Markers     hidden                    hidden              -- MAP mode               │
+//!  └ BottomDock ─ TBD_SessionBottomBar (Lock Lobby mock - Ready & Continue deploys) ──────────┘
 //! ```
 //! Everything floats over the map; the shell has no Backdrop. Pages are `TBD_BriefingPage`s
 //! built by `TBD_BriefingNav.CreatePage` from `TBD_BriefingCatalog` (mock until the adapter
@@ -36,7 +36,6 @@ class TBD_BriefingScreen : TBD_DockScreen
 	protected TBD_EBriefingPage m_ePage = TBD_EBriefingPage.FREQUENCIES;
 	protected bool m_bLocked;
 
-	//------------------------------------------------------------------------------------------------
 	override void OnMenuInit()
 	{
 		super.OnMenuInit();
@@ -44,10 +43,9 @@ class TBD_BriefingScreen : TBD_DockScreen
 			m_MapEntity = SCR_MapEntity.GetMapInstance();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! MapContext only while the cursor is off our chrome. TBD_MenuBase arms this every tick BEFORE
 	//! OnScreenUpdate, so a gate there never released it (the preset's ActionContext went at the
-	//! rebuild and this override replaced it — unconditionally, 2026-09-14). Empty = arm nothing =
+	//! rebuild and this override replaced it -- unconditionally, 2026-09-14). Empty = arm nothing =
 	//! the wheel scrolls the panel under the cursor instead of reaching SCR_MapCursorModule's
 	//! OnInputZoomWheelUp/Down listeners.
 	override protected string GetInputContext()
@@ -58,7 +56,6 @@ class TBD_BriefingScreen : TBD_DockScreen
 		return "MapContext";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnScreenOpen()
 	{
 		m_Catalog = TBD_BriefingCatalog.Get();
@@ -101,7 +98,6 @@ class TBD_BriefingScreen : TBD_DockScreen
 		Print("[TBD][briefing] Briefing opened (dock shell over the map).");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnScreenClose()
 	{
 		TBD_SpawnClient.GetOnDeployResult().Remove(OnDeployResult);
@@ -137,7 +133,6 @@ class TBD_BriefingScreen : TBD_DockScreen
 		super.OnScreenClose();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void FocusDefault()
 	{
 		if (m_PrimaryNav && m_PrimaryNav.FocusActive())
@@ -146,21 +141,17 @@ class TBD_BriefingScreen : TBD_DockScreen
 		super.FocusDefault();
 	}
 
-	// ── Modes and pages ─────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnPrimarySelected(TBD_BriefingPrimaryNav nav, int index)
 	{
 		SetMode(index);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnTopicSelected(TBD_BriefingTopicNav nav, int index)
 	{
 		ShowPage(index);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetMode(TBD_EBriefingMode mode)
 	{
 		m_eMode = mode;
@@ -199,7 +190,6 @@ class TBD_BriefingScreen : TBD_DockScreen
 		Print(string.Format("[TBD][briefing] mode %1", typename.EnumToString(TBD_EBriefingMode, mode)));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void ShowPage(TBD_EBriefingPage page)
 	{
 		m_ePage = page;
@@ -216,13 +206,12 @@ class TBD_BriefingScreen : TBD_DockScreen
 			Print(string.Format("[TBD][briefing] page %1", typename.EnumToString(TBD_EBriefingPage, page)));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Pan the map to a world position (objective / vehicle Locate).
 	void LocateOnMap(float x, float z)
 	{
 		if (!m_MapEntity || !m_MapEntity.IsOpen())
 		{
-			Print(string.Format("[TBD][briefing] locate %1 %2 — map not open", x, z));
+			Print(string.Format("[TBD][briefing] locate %1 %2 -- map not open", x, z));
 			return;
 		}
 
@@ -230,13 +219,12 @@ class TBD_BriefingScreen : TBD_DockScreen
 		Print(string.Format("[TBD][briefing] locate %1 %2", x, z));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True when the pointer is over a visible piece of our chrome. Probes the panels, not the docks:
 	//! LeftDock and CenterDock run the full height between the bars while the navs and the markers
 	//! panel are short, so a dock rect would also swallow the map under them. Rule: a dock's visible
 	//! children are chrome; a panel whose root outruns its glass names the glass `PanelBorder` (the
 	//! navs stretch it over a shrink-wrapped root, the markers panel's is the 132 px box). RightDock
-	//! probes `PageHost`, the page column — ORBAT mounts two panels side by side, so one border
+	//! probes `PageHost`, the page column -- ORBAT mounts two panels side by side, so one border
 	//! would under-cover.
 	protected bool CursorOverChrome()
 	{
@@ -274,7 +262,6 @@ class TBD_BriefingScreen : TBD_DockScreen
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool Contains(Widget w, int mouseX, int mouseY)
 	{
 		if (!w)
@@ -286,7 +273,6 @@ class TBD_BriefingScreen : TBD_DockScreen
 		return mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void SetRightWidth(int width)
 	{
 		SizeLayoutWidget host = SizeLayoutWidget.Cast(Find("PageHost"));
@@ -301,17 +287,15 @@ class TBD_BriefingScreen : TBD_DockScreen
 		Print(string.Format("[TBD][briefing] page width %1", width));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The page column inside RightDock: `PageHost` is a SizeLayout whose width override IS the
 	//! page width (RightDock runs to the screen edge so any page fits); `PageFrame` is the
-	//! FrameWidget inside it that page roots (FrameWidgetSlot) mount into — a frame-slotted root
+	//! FrameWidget inside it that page roots (FrameWidgetSlot) mount into -- a frame-slotted root
 	//! straight under a SizeLayout gets no rect (MEASURED run 4).
 	protected Widget PageHost()
 	{
 		return Find("PageFrame");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void DestroyPage()
 	{
 		if (m_Page)
@@ -321,7 +305,6 @@ class TBD_BriefingScreen : TBD_DockScreen
 		TBD_UILayouts.Clear(PageHost());
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void DestroyPlayers()
 	{
 		if (m_PlayersPanel)
@@ -330,7 +313,6 @@ class TBD_BriefingScreen : TBD_DockScreen
 		m_PlayersPanel = null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void DestroyMarkers()
 	{
 		if (m_Markers)
@@ -339,7 +321,6 @@ class TBD_BriefingScreen : TBD_DockScreen
 		m_Markers = null;
 	}
 
-	// ── TBD_DockScreen hooks ────────────────────────────────────────────────────────────────
 
 	override protected string GetScreenTitle()
 	{
@@ -371,7 +352,6 @@ class TBD_BriefingScreen : TBD_DockScreen
 		return new TBD_SessionIdentity(identity.m_sName, identity.m_sRoleLabel, m_Players.Total(), m_Players.CapacityAll());
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Lock Lobby is still the lobby's mock toggle; Ready & Continue reports readiness and asks the
 	//! authority for a body (TBD_SpawnClient -> TBD_SpawnManager.DeployOnReady).
 	override protected void OnBottomAction(TBD_SessionBottomBar bar, string id)
@@ -402,7 +382,7 @@ class TBD_BriefingScreen : TBD_DockScreen
 			// Ready & Continue = "I have read my orders, put me in a body". The tally is the existing
 			// one (TBD_ReportReady); the body comes from TBD_SpawnManager.DeployOnReady through
 			// TBD_SpawnClient, and the answer lands in OnDeployResult.
-			bar.SetActionLabel(ACTION_READY, "Deploying…");
+			bar.SetActionLabel(ACTION_READY, "Deploying...");
 			bar.SetActionEnabled(ACTION_READY, false);
 			TBD_BriefingClient.ReportReady();
 			TBD_SpawnClient.Request();
@@ -410,9 +390,8 @@ class TBD_BriefingScreen : TBD_DockScreen
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The authority's answer to Ready & Continue. Deployed: every pre-game screen goes (the map
-	//! closes with this one; TBD_LobbyStage does not re-raise — the stage is off LOBBY or the
+	//! closes with this one; TBD_LobbyStage does not re-raise -- the stage is off LOBBY or the
 	//! player now controls a body). Deferred one tick so the stack never tears this screen down
 	//! from inside the invoker it is bound to. Refused: the button carries the reason and can be
 	//! pressed again.
@@ -420,7 +399,7 @@ class TBD_BriefingScreen : TBD_DockScreen
 	{
 		if (ok)
 		{
-			Print("[TBD][briefing] deployed — closing the pre-game screens");
+			Print("[TBD][briefing] deployed -- closing the pre-game screens");
 			GetGame().GetCallqueue().Call(CloseAfterDeploy);
 			return;
 		}
@@ -436,21 +415,17 @@ class TBD_BriefingScreen : TBD_DockScreen
 			button.SetTint(TBD_EUITint.WARNING);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void CloseAfterDeploy()
 	{
 		TBD_MenuStack.CloseAll();
 	}
 
-	// ── Map lifecycle (kept verbatim from the previous screen) ──────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	void OpenMap()
 	{
 		GetGame().GetCallqueue().Call(OpenMapWrap);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void OpenMapWrap()
 	{
 		if (!m_MapEntity)
@@ -471,13 +446,11 @@ class TBD_BriefingScreen : TBD_DockScreen
 		GetGame().GetCallqueue().Call(OpenMapWrapZoomChange);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void OpenMapWrapZoomChange()
 	{
 		GetGame().GetCallqueue().Call(OpenMapWrapZoomChangeWrap);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void OpenMapWrapZoomChangeWrap()
 	{
 		if (!m_MapEntity)
@@ -490,7 +463,6 @@ class TBD_BriefingScreen : TBD_DockScreen
 			m_MapEntity.ZoomPanSmooth(0.3, center[0], center[2]);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected vector GetMissionCenter()
 	{
 		PlayerController controller = GetGame().GetPlayerController();

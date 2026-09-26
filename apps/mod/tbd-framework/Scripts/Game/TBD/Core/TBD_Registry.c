@@ -11,7 +11,7 @@ class TBD_RegistryDocumentStruct
 	ref array<ref TBD_RegistryEntryStruct> entries;
 }
 
-//! Alias → prefab resource name resolution. Registry ships in mod Data/registry.json.
+//! Alias -> prefab resource name resolution. Registry ships in mod Data/registry.json.
 class TBD_Registry
 {
 	protected static ref map<string, ResourceName> s_AliasToResource;
@@ -20,7 +20,6 @@ class TBD_Registry
 	protected static const string REGISTRY_PATH_MOD = "$TBD_Framework:Data/registry.json";
 	protected static const string REGISTRY_PATH_PROFILE = "$profile:TBD_Registry.json";
 
-	//------------------------------------------------------------------------------------------------
 	static bool Load()
 	{
 		if (s_Loaded)
@@ -65,7 +64,6 @@ class TBD_Registry
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static ResourceName Resolve(string alias, out bool ok)
 	{
 		ok = false;
@@ -83,7 +81,6 @@ class TBD_Registry
 		return res;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static array<string> GetAllAliases()
 	{
 		array<string> aliases = {};

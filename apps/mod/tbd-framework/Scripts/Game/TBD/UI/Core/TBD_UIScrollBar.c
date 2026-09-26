@@ -1,13 +1,13 @@
-//! Pre-game rebuild (2026-09-12) — the 4 px scrollbar every TBD list wears.
+//! Pre-game rebuild (2026-09-12) -- the 4 px scrollbar every TBD list wears.
 //!
 //! Enfusion's `ScrollLayoutWidget` draws its own scrollbar: unstyled, ~10 px, white, and it
 //! overlaps the right edge of the content. The vanilla UI hides it the same way we do
-//! (`SCR_PooledListComponent.ShowScrollbar` — "clip scroll bar to hide"): the scroll widget
+//! (`SCR_PooledListComponent.ShowScrollbar` -- "clip scroll bar to hide"): the scroll widget
 //! extends past its clipping parent, so the engine bar lands outside the clip. This class draws
 //! the mockup's bar in a `ScrollBarDock` instead: a track and a thumb whose height and position
 //! follow the scroll widget. The dock recipe lives in `UI/layouts/Common/README.md`.
 //!
-//! Not a widget handler — `Mount()` it from the owner that already holds the scroll widget and
+//! Not a widget handler -- `Mount()` it from the owner that already holds the scroll widget and
 //! `Destroy()` it with the owner. It ticks at 30 Hz through the call queue; there is no scroll
 //! event to subscribe to, and reading two widget sizes per tick is free.
 class TBD_UIScrollBar : Managed
@@ -25,7 +25,6 @@ class TBD_UIScrollBar : Managed
 	protected bool m_bHovered;
 	protected bool m_bShown = true;
 
-	//------------------------------------------------------------------------------------------------
 	//! `dock` is the 4 px `ScrollBarDock` frame; `scroll` the list's ScrollLayoutWidget; `content`
 	//! its single child (the layout whose desired height is the scroll range). `ground` is the
 	//! opaque colour under the dock. Null when the layout or any widget is missing.
@@ -52,7 +51,6 @@ class TBD_UIScrollBar : Managed
 		return bar;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Destroy()
 	{
 		GetGame().GetCallqueue().Remove(Update);
@@ -63,14 +61,12 @@ class TBD_UIScrollBar : Managed
 		m_wThumb = null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetGround(int opaqueArgb)
 	{
 		m_iGround = opaqueArgb;
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void Repaint()
 	{
 		int thumb = TBD_UITheme.SCROLL_THUMB;
@@ -81,7 +77,6 @@ class TBD_UIScrollBar : Managed
 		TBD_UITheme.PaintOver(m_wThumb, thumb, TBD_UITheme.Over(TBD_UITheme.SCROLL_TRACK, m_iGround));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One tick: size the thumb to viewport/content, place it by the slider, hide when nothing
 	//! scrolls, brighten under the pointer.
 	protected void Update()
@@ -125,7 +120,6 @@ class TBD_UIScrollBar : Managed
 		UpdateHover();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void UpdateHover()
 	{
 		int mouseX, mouseY;

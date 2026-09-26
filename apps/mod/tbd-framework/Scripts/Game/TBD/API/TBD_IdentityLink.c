@@ -1,12 +1,11 @@
-//! T-181.35 — in-game identity linking. `#tbd link <code>`.
+//! T-181.35 -- in-game identity linking. `#tbd link <code>`.
 //!
-//! ══ WHAT THIS CLOSES ═══════════════════════════════════════════════════════════════════════
 //! `POST /api/v1/ingest/match-results` (T-181.13.1, `TBD_ResultsReporter`) resolves every player
 //! with `SELECT discord_id FROM users WHERE arma_id = $1`
 //! (`apps/website/api_v2/src/handlers/telemetry.rs:238`). `users.arma_id` is written by exactly two
 //! things: the dev seed, and `POST /api/v1/ingest/link-confirm`
 //! (`apps/website/api_v2/src/handlers/me.rs:160-205`, service-token tier, registered at
-//! `apps/website/api_v2/src/app.rs:39-40`) — the GAME SERVER confirming a link code. Until this file
+//! `apps/website/api_v2/src/app.rs:39-40`) -- the GAME SERVER confirming a link code. Until this file
 //! existed the mod never called it, so in production nobody had an `arma_id`, the results POST
 //! returned 200, the match rows were written, and attendance marking, the user-stat recompute and
 //! the leaderboard refresh all silently did nothing. `TBD_ResultsReporter.LogIdentityCensus` prints
@@ -19,9 +18,8 @@
 //!      arma_character}` to `/api/v1/ingest/link-confirm` with the server's `X-Service-Token`;
 //!   3. the backend consumes the code and sets `users.arma_id`.
 //!
-//! ══ THE IDENTITY IS NOT RESOLVED HERE, ON PURPOSE ══════════════════════════════════════════
 //! The `arma_id` sent here MUST be byte-identical to the one `TBD_ResultsReporter` sends, or the
-//! join matches nobody, forever, with no error anywhere — the backend cheerfully returns 200 at
+//! join matches nobody, forever, with no error anywhere -- the backend cheerfully returns 200 at
 //! both ends. So both halves call the ONE accessor, `TBD_PlayerIdentity.GetArmaId`, and neither
 //! reimplements it. If the shape ever has to change it changes THERE, so the two halves move
 //! together.
@@ -30,12 +28,11 @@
 //! (which is what `TBD_SpawnManager.PlayerBindKey` correctly does for one-life bookkeeping). This
 //! file honours that: **a player with no durable identity cannot link, and is told why.**
 //! `users.arma_id` is UNIQUE, so writing a seat number or a name hash into it does not fail
-//! loudly — it binds one Discord account to whoever occupies that seat/name next week, and blocks
+//! loudly -- it binds one Discord account to whoever occupies that seat/name next week, and blocks
 //! every other account from ever claiming it. A refusal the player can read beats a permanent
 //! mis-binding nobody notices.
 //!
-//! ══ WHY A SERIAL QUEUE ═════════════════════════════════════════════════════════════════════
-//! `RestCallbackFunc` is `void f(RestCallback cb)` — the callback carries no user data, so a
+//! `RestCallbackFunc` is `void f(RestCallback cb)` -- the callback carries no user data, so a
 //! response cannot be correlated back to a player unless exactly one request is outstanding.
 //! Subclassing `RestCallback` and casting in the handler would avoid that, but inheriting from a
 //! native `Managed` proto class is a RUNTIME property this lane cannot observe, and "compiles" is
@@ -44,19 +41,18 @@
 //! linking is a once-per-human action, so head-of-line blocking costs nothing real. The queue is
 //! bounded and every entry has a watchdog, so it cannot wedge.
 //!
-//! ══ T-941.6 — ACCOUNT-LINK OFF PUBLIC CHAT ══════════════════════════════════════════════════
-//! `#tbd link …` is consumed in `TBD_AdminCommands` BEFORE `super.OnNewMessage`, so vanilla
+//! `#tbd link ...` is consumed in `TBD_AdminCommands` BEFORE `super.OnNewMessage`, so vanilla
 //! never forwards the line to `SCR_ChatPanelManager`. Replies go only through
-//! `SCR_ChatComponent.SendPrivateMessage` (server → that one client). The code is POSTed to
+//! `SCR_ChatComponent.SendPrivateMessage` (server -> that one client). The code is POSTed to
 //! `/ingest/link-confirm` from the server and is never echoed in chat or logs. A token typed
-//! without the `#tbd link` prefix is ordinary public chat — we do not filter beyond that command.
+//! without the `#tbd link` prefix is ordinary public chat -- we do not filter beyond that command.
 //! On failure the code may still be live on the website; the player is told to mint a fresh one.
-//! * **Compile-verified plus a real HTTP round trip against a capture endpoint** — see the slice
+//! * **Compile-verified plus a real HTTP round trip against a capture endpoint** -- see the slice
 //!   report. Nothing here has been exercised by a live player on a dedicated server, because no
 //!   gate on the fast lane connects a client.
 //!
 //! @route POST /api/v1/ingest/link-confirm (service-token tier; `X-Service-Token`)
-//! @authority server — the identity lookup, the service token and the chat intercept are all
+//! @authority server -- the identity lookup, the service token and the chat intercept are all
 //!                     server-side; a client has no business resolving any of the three.
 
 //! One queued confirm request. Everything needed to answer the player is captured at enqueue,
@@ -75,7 +71,7 @@ class TBD_IdentityLink
 {
 	//! Greppable channel for this subsystem: `grep '\[TBD\]\[Link\]' console.log`.
 	//! Kept local rather than added to `TBD_Log`'s vocabulary because `Core/TBD_Log.c` is outside
-	//! this slice's ownership — same reason `TBD_ResultsReporter` keeps `CH_RESULTS` local.
+	//! this slice's ownership -- same reason `TBD_ResultsReporter` keeps `CH_RESULTS` local.
 	protected static const string CH_LINK = "Link";
 
 	protected static const string CONFIRM_PATH = "/api/v1/ingest/link-confirm";
@@ -94,7 +90,7 @@ class TBD_IdentityLink
 	protected static const int MAX_QUEUE = 16;
 
 	//! Purely a sanity bound so a pasted essay never reaches the wire. The backend is the only
-	//! authority on whether a code is valid — it answers 404 for anything it does not recognise.
+	//! authority on whether a code is valid -- it answers 404 for anything it does not recognise.
 	protected static const int CODE_MAX_CHARS = 32;
 
 	protected static ref array<ref TBD_IdentityLinkPending> s_aQueue;
@@ -106,13 +102,10 @@ class TBD_IdentityLink
 	//! successor.
 	protected static int s_iTicket;
 
-	//------------------------------------------------------------------------------------
 	// LIFECYCLE
-	//------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! Reset per-world state and say once, in the log, whether linking can work on this host.
-	//! Called from `TBD_MissionLoader.ParseMissionJson` next to `TBD_ResultsReporter.Arm()` — a
+	//! Called from `TBD_MissionLoader.ParseMissionJson` next to `TBD_ResultsReporter.Arm()` -- a
 	//! server-only path (`TBD_FrameworkManager.OnPostInit` returns early for `RplMode.Client`
 	//! before `BeginLoad`), and the earliest moment a link could mean anything.
 	//!
@@ -137,13 +130,10 @@ class TBD_IdentityLink
 		}
 	}
 
-	//------------------------------------------------------------------------------------
 	// CHAT SURFACE
-	//------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! T-941.6 consume-before-broadcast guard. TRUE means the caller MUST NOT call
-	//! `super.OnNewMessage` — vanilla would put the code in public chat. Authority runs the
+	//! `super.OnNewMessage` -- vanilla would put the code in public chat. Authority runs the
 	//! link flow (POST /ingest/link-confirm); every peer, including clients, suppresses the echo.
 	//! A bare code without the `#tbd link` prefix returns FALSE (ordinary chat).
 	static bool TryConsumeBeforeBroadcast(SCR_ChatComponent chat, string msg, int senderId, bool authority)
@@ -157,8 +147,7 @@ class TBD_IdentityLink
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! `#tbd link` / `#tbd Link` / `#tbd LINK` — the command prefix only, no extra filtering.
+	//! `#tbd link` / `#tbd Link` / `#tbd LINK` -- the command prefix only, no extra filtering.
 	protected static bool IsLinkCommand(string msg)
 	{
 		if (!msg.StartsWith("#tbd"))
@@ -174,11 +163,9 @@ class TBD_IdentityLink
 		return sub == "link";
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! The `#tbd link …` chat surface. Returns TRUE when the message was a link command and has
+	//! The `#tbd link ...` chat surface. Returns TRUE when the message was a link command and has
 	//! been fully handled, so the caller must not fall through to anything else.
 	//!
-	//! ── THIS IS NOT ADMIN-GATED, AND THAT IS THE POINT ──────────────────────────────────────
 	//! `TBD_AdminCommands` rejects a non-admin before it dispatches. Every player needs to link,
 	//! so this has to be reached BEFORE that gate. It is a separate entry point rather than a
 	//! branch inside `Dispatch` for exactly that reason: nothing about it should be able to drift
@@ -189,7 +176,7 @@ class TBD_IdentityLink
 	//! the player's controller, the same way `TBD_ObjectivesComponent.Tell` and
 	//! `TBD_PlayAreaComponent` do, because the original component may be gone by then.
 	//!
-	//! @authority server — callers must already have established authority.
+	//! @authority server -- callers must already have established authority.
 	static bool TryHandleChat(SCR_ChatComponent chat, string msg, int senderId)
 	{
 		array<string> parts = new array<string>();
@@ -199,7 +186,7 @@ class TBD_IdentityLink
 			return false;
 
 		// Case-folded so `#tbd Link` works. `ToLower()` MUTATES IN PLACE and returns a COUNT
-		// (measured) — so this is a statement, never `x = x.ToLower()`, and it runs on a
+		// (measured) -- so this is a statement, never `x = x.ToLower()`, and it runs on a
 		// `string.Format` copy so it can never reach back into `parts`. The CODE is deliberately
 		// not folded: it is the backend's token, not ours to normalise.
 		string sub = string.Format("%1", parts[1]);
@@ -229,7 +216,6 @@ class TBD_IdentityLink
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Usage, with the whole flow in it. A player who types `#tbd link` should not have to ask
 	//! anyone where the code comes from.
 	protected static array<string> Usage()
@@ -238,11 +224,10 @@ class TBD_IdentityLink
 		lines.Insert(TAG + "usage: #tbd link <code>   (also: #tbd link status)");
 		lines.Insert(TAG + "1. on the website, open the avatar menu -> 'Link Arma Identity' -> Generate Link Code");
 		lines.Insert(TAG + "2. type that 6-digit code here within 10 minutes. It links this game identity to your TBD account so attendance and stats count.");
-		lines.Insert(TAG + "NOTE: this command is private — other players do not see the code. If a link fails, generate a NEW code before retrying.");
+		lines.Insert(TAG + "NOTE: this command is private -- other players do not see the code. If a link fails, generate a NEW code before retrying.");
 		return lines;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! What this host can currently do, without touching the backend. There is no service-token
 	//! endpoint that answers "is this arma id linked" (`GET /me/link/status` is JWT-tier and
 	//! answers for the CALLER, who is a browser), so this reports only what the server knows:
@@ -273,22 +258,19 @@ class TBD_IdentityLink
 		return lines;
 	}
 
-	//------------------------------------------------------------------------------------
 	// SUBMIT
-	//------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! Validate everything that can be validated locally, then queue one confirm request.
 	//!
 	//! Everything refused here is refused with a reason the player can act on. The one thing this
-	//! deliberately does NOT judge is whether the code itself is good — that is the backend's
+	//! deliberately does NOT judge is whether the code itself is good -- that is the backend's
 	//! call, and it answers 404 for wrong/used/expired.
 	protected static void Submit(SCR_ChatComponent chat, int playerId, string rawCode)
 	{
 		// `Trim()` is the ONE member of that family that genuinely RETURNS a string rather than
 		// mutating in place and returning a count (measured, and the distinction is exactly
 		// backwards from `Replace`/`ToUpper`/`ToLower` two functions up). So this is an
-		// assignment — written as a bare `code.Trim();` it would silently do nothing.
+		// assignment -- written as a bare `code.Trim();` it would silently do nothing.
 		string code = rawCode.Trim();
 
 		if (code.IsEmpty())
@@ -303,7 +285,6 @@ class TBD_IdentityLink
 			return;
 		}
 
-		// ── The identity gate. See the file header: EMPTY is a refusal, never a substitution. ──
 		string armaId = TBD_PlayerIdentity.GetArmaId(playerId);
 		if (armaId.IsEmpty())
 		{
@@ -358,12 +339,11 @@ class TBD_IdentityLink
 		pending.code = code;
 		s_aQueue.Insert(pending);
 
-		ReplyLine(chat, playerId, TAG + "checking that code with the website…");
+		ReplyLine(chat, playerId, TAG + "checking that code with the website...");
 		Pump();
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! One request per player at a time — in flight or queued.
+	//! One request per player at a time -- in flight or queued.
 	protected static bool HasOutstanding(int playerId)
 	{
 		if (s_InFlight && s_InFlight.playerId == playerId)
@@ -381,11 +361,8 @@ class TBD_IdentityLink
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------
 	// SEND
-	//------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! Start the next request if nothing is outstanding. Every completion path ends by calling
 	//! this, so the queue always drains.
 	//!
@@ -402,13 +379,12 @@ class TBD_IdentityLink
 			return;
 
 		s_InFlight = s_aQueue[0];
-		// Enforce Script removes BY INDEX (measured landmine) — `Remove(value)` is not this API.
+		// Enforce Script removes BY INDEX (measured landmine) -- `Remove(value)` is not this API.
 		s_aQueue.Remove(0);
 
 		SendConfirm();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One POST. Never throws, never blocks, never touches the stage machine.
 	protected static void SendConfirm()
 	{
@@ -450,7 +426,7 @@ class TBD_IdentityLink
 		s_RestCallback.SetOnError(OnConfirmError);
 
 		// Content-Type is NOT optional. The handler takes an Axum `Json<LinkConfirmRequest>`
-		// extractor, which rejects a body without `application/json` BEFORE the handler runs — a
+		// extractor, which rejects a body without `application/json` BEFORE the handler runs -- a
 		// perfectly valid payload comes back 400 "code and arma_id required" and you hunt a bug
 		// that is not there. Same `X-Service-Token` tier the mission fetch and the results POST
 		// already use (`TBD_MissionLoader`, `TBD_ResultsReporter`).
@@ -466,7 +442,7 @@ class TBD_IdentityLink
 			// `ScriptCallQueue.Remove` cancels BY FUNCTION, not by argument (measured landmine).
 			// That is exactly right here and only because the queue is SERIAL: there is never
 			// more than one armed watchdog, so cancelling "all of them" cancels precisely this
-			// one. The ticket is the second belt — a watchdog that somehow survives cancellation
+			// one. The ticket is the second belt -- a watchdog that somehow survives cancellation
 			// still cannot fire against a later request.
 			queue.Remove(OnWatchdog);
 			queue.CallLater(OnWatchdog, WATCHDOG_MS, false, s_iTicket);
@@ -478,10 +454,9 @@ class TBD_IdentityLink
 		ctx.POST(s_RestCallback, CONFIRM_PATH, payload);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The wire body. Hand-built rather than via a save context so the exact bytes are determined
 	//! by code that compiles, not by a serializer whose output shape is a runtime property this
-	//! lane cannot observe — the same reasoning `TBD_ResultsReporter.BuildPayload` records.
+	//! lane cannot observe -- the same reasoning `TBD_ResultsReporter.BuildPayload` records.
 	//!
 	//! Assembled in steps, never one long `+` chain: a 9-field chain is a measured
 	//! `Formula too complex`, whose SECOND diagnostic is a misleading `Incompatible parameter`.
@@ -489,17 +464,16 @@ class TBD_IdentityLink
 	//! Field names are the backend's `LinkConfirmRequest` (`handlers/me.rs`), all snake_case:
 	//! `code`, `arma_id`, `arma_character`.
 	//!
-	//! ── ALL THREE KEYS ARE MANDATORY. NEVER MAKE ONE CONDITIONAL. ───────────────────────────
 	//! T-319 removed `#[serde(default)]` from `arma_character`, so OMITTING that key is now a
 	//! serde DECODE failure: Axum's `Json` extractor rejects the body with a 400 before the handler
 	//! runs, nothing is written, and the player is told this server sent something malformed.
 	//! `code` and `arma_id` do still carry `#[serde(default)]`, but that only turns "absent" into
-	//! "empty" — and the handler's first check rejects an empty one with its own 400. So the
+	//! "empty" -- and the handler's first check rejects an empty one with its own 400. So the
 	//! effective contract is identical for all three: ALWAYS EMIT THE KEY.
 	//!
 	//! An empty VALUE is still legal, and that asymmetry is the whole point of the rule: `""`
 	//! decodes fine, and `users.arma_character` is cosmetic (nothing joins on it), which is why
-	//! `PlayerName` is allowed to return empty. Empty value, present key — never a missing key.
+	//! `PlayerName` is allowed to return empty. Empty value, present key -- never a missing key.
 	protected static string BuildPayload(notnull TBD_IdentityLinkPending pending)
 	{
 		string json = "{";
@@ -510,12 +484,9 @@ class TBD_IdentityLink
 		return json;
 	}
 
-	//------------------------------------------------------------------------------------
 	// RESPONSE
-	//------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
-	//! 2xx. The backend answers `{"linked":true,"discord_id":…,"arma_id":…,"arma_character":…}`.
+	//! 2xx. The backend answers `{"linked":true,"discord_id":...,"arma_id":...,"arma_character":...}`.
 	//!
 	//! Whether a 404/409 arrives here or on `OnConfirmError` is an engine-internal choice this
 	//! lane cannot observe (does "success" mean 2xx, or does it mean the transport worked?). Both
@@ -535,13 +506,12 @@ class TBD_IdentityLink
 			return;
 		}
 
-		string ok = TAG + "linked. Your game identity is now attached to your TBD account — attendance and stats count from your next round.";
+		string ok = TAG + "linked. Your game identity is now attached to your TBD account -- attendance and stats count from your next round.";
 		TBD_Log.Kv(CH_LINK, "linked", string.Format("player=%1 armaId=%2 response=%3",
 			s_InFlight.playerId, s_InFlight.armaId, body));
 		Finish(ok, "ok");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Everything else: an HTTP error status, or no status at all (transport failure).
 	protected static void OnConfirmError(RestCallback cb)
 	{
@@ -551,16 +521,15 @@ class TBD_IdentityLink
 		HandleFailure(cb.GetHttpCode(), cb.GetRestResult(), cb.GetData());
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Turn the backend's real answers into something a player can act on.
 	//!
 	//! The statuses are the handler's own, read from `handlers/me.rs`:
-	//!   404 `invalid or expired code`             — wrong / already used / older than 10 minutes
+	//!   404 `invalid or expired code`             -- wrong / already used / older than 10 minutes
 	//!   409 `arma id already linked to another account`
-	//!   400 `code and arma_id required`           — our bug, not theirs
-	//!   401/403                                   — the SERVER's `X-Service-Token` is rejected
-	//!   5xx                                       — the website broke
-	//!   no code at all                            — never reached the website
+	//!   400 `code and arma_id required`           -- our bug, not theirs
+	//!   401/403                                   -- the SERVER's `X-Service-Token` is rejected
+	//!   5xx                                       -- the website broke
+	//!   no code at all                            -- never reached the website
 	//!
 	//! Distinguishing them needs the HTTP STATUS, and `RestCallback.GetHttpCode()` is what gives
 	//! it. Compile-proved (the failing control in the same run was
@@ -570,7 +539,7 @@ class TBD_IdentityLink
 	//!
 	//! **Never match on the response TEXT.** Two reasons, and the second is measured:
 	//!   1. it breaks the first time someone rewords a backend error string;
-	//!   2. on a transport failure `GetData()` returns the REQUEST body, not a response — measured
+	//!   2. on a transport failure `GetData()` returns the REQUEST body, not a response -- measured
 	//!      on that same run, where a dead-port POST came back carrying our own payload verbatim.
 	//!      A body-text matcher would have been reading its own request.
 	protected static void HandleFailure(HttpCode code, ERestResult result, string body)
@@ -580,7 +549,7 @@ class TBD_IdentityLink
 
 		if (code == HttpCode.HTTP_CODE_404)
 		{
-			player = TAG + "that code is not valid — wrong, already used, or expired (codes last 10 minutes).";
+			player = TAG + "that code is not valid -- wrong, already used, or expired (codes last 10 minutes).";
 			ReplyAsync(player);
 			ReplyAsync(TAG + "generate a fresh one on the website (avatar menu -> 'Link Arma Identity') and type it here. You are NOT linked.");
 			FinishQuiet(reason, body);
@@ -598,7 +567,7 @@ class TBD_IdentityLink
 
 		if (code == HttpCode.HTTP_CODE_401 || code == HttpCode.HTTP_CODE_403)
 		{
-			player = TAG + "this game server is not authorised to talk to the website — nothing you can do. Tell an admin (the server's service token is being rejected). You are NOT linked.";
+			player = TAG + "this game server is not authorised to talk to the website -- nothing you can do. Tell an admin (the server's service token is being rejected). You are NOT linked.";
 			ReplyAsync(player);
 			ReplyAsync(NewCodeAdvice());
 			FinishQuiet(reason, body);
@@ -610,10 +579,10 @@ class TBD_IdentityLink
 			// The backend answers 400 before it touches `identity_link_codes`, so the code is NOT
 			// consumed and stays live. This does NOT re-send it: `FinishQuiet` drops the entry and
 			// pumps the NEXT queued one, so a malformed request fails exactly once and the human
-			// decides whether to type again. That is deliberate — a 400 means THIS server built a
+			// decides whether to type again. That is deliberate -- a 400 means THIS server built a
 			// bad body, and automatically retrying a body that cannot change is an infinite loop
 			// against the website carrying the player's still-live code.
-			player = TAG + "the website rejected this server's request as malformed. That is a bug on our side, not your code — tell an admin. You are NOT linked.";
+			player = TAG + "the website rejected this server's request as malformed. That is a bug on our side, not your code -- tell an admin. You are NOT linked.";
 			ReplyAsync(player);
 			ReplyAsync(NewCodeAdvice());
 			FinishQuiet(reason, body);
@@ -626,10 +595,10 @@ class TBD_IdentityLink
 			// `ERestResult` says which, and it goes in the log rather than at the player.
 			//
 			// The body is deliberately DROPPED here. Measured on the live run: with no response to
-			// return, `GetData()` hands back the REQUEST — so logging it would print the player's
+			// return, `GetData()` hands back the REQUEST -- so logging it would print the player's
 			// link code into console.log while claiming it was the website's answer. Neither half
 			// of that is acceptable.
-			player = TAG + "could not reach the website (network). Your code was not used — try again in a moment.";
+			player = TAG + "could not reach the website (network). Your code was not used -- try again in a moment.";
 			ReplyAsync(player);
 			FinishQuiet(reason + "/" + typename.EnumToString(ERestResult, result), "(no response)");
 			return;
@@ -641,16 +610,14 @@ class TBD_IdentityLink
 		FinishQuiet(reason + "/" + typename.EnumToString(ERestResult, result), body);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Said after every failure, and only after a failure. On success the backend has already set
 	//! `consumed_at`, so the code is dead the moment it works; on failure it is still live AND it
 	//! was not consumed by the website, so it may still be live.
 	protected static string NewCodeAdvice()
 	{
-		return TAG + "your code was not consumed — generate a NEW one before retrying.";
+		return TAG + "your code was not consumed -- generate a NEW one before retrying.";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The watchdog. Reaches a request only if neither callback ever fired.
 	//!
 	//! Arity IS compile-checked for `CallLater` callbacks (measured: `Not enough parameters in
@@ -664,17 +631,14 @@ class TBD_IdentityLink
 			return;
 
 		TBD_Log.Warn(CH_LINK, string.Format(
-			"no response after %1 ms for player=%2 — treating as unreachable. If this repeats, the REST callback is not firing.",
+			"no response after %1 ms for player=%2 -- treating as unreachable. If this repeats, the REST callback is not firing.",
 			WATCHDOG_MS, s_InFlight.playerId));
 
-		Finish(TAG + "the website did not answer in time. Your code was not used — try again in a moment.", "watchdog-timeout");
+		Finish(TAG + "the website did not answer in time. Your code was not used -- try again in a moment.", "watchdog-timeout");
 	}
 
-	//------------------------------------------------------------------------------------
 	// COMPLETION
-	//------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! Complete the in-flight request: tell the player one line, log the outcome, drain the queue.
 	protected static void Finish(string playerLine, string outcome)
 	{
@@ -684,7 +648,6 @@ class TBD_IdentityLink
 		FinishQuiet(outcome, string.Empty);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Complete without adding a player line (the caller already sent its own, possibly several).
 	protected static void FinishQuiet(string outcome, string body)
 	{
@@ -704,11 +667,8 @@ class TBD_IdentityLink
 		Pump();
 	}
 
-	//------------------------------------------------------------------------------------
 	// REPLY
-	//------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! Reply to the in-flight request's player, from a callback that may fire seconds after the
 	//! command was typed.
 	//!
@@ -716,7 +676,7 @@ class TBD_IdentityLink
 	//! sent. A dedicated server RECYCLES connection ids, so a raw id held across an async gap can
 	//! address a different human (measured: the same hazard made a deferred respawn deploy a
 	//! fresh joiner into a dead player's slot). Comparing the current identity to the stamped one
-	//! is the epoch check, using data this file already holds — if they differ, the original
+	//! is the epoch check, using data this file already holds -- if they differ, the original
 	//! player is gone and the line is logged instead of sent to a stranger.
 	protected static void ReplyAsync(string text)
 	{
@@ -727,7 +687,7 @@ class TBD_IdentityLink
 		if (nowId != s_InFlight.armaId)
 		{
 			TBD_Log.Event(CH_LINK, string.Format(
-				"player=%1 left before the answer arrived (id now '%2', was '%3') — reply not delivered: %4",
+				"player=%1 left before the answer arrived (id now '%2', was '%3') -- reply not delivered: %4",
 				s_InFlight.playerId, nowId, s_InFlight.armaId, text));
 			return;
 		}
@@ -735,7 +695,6 @@ class TBD_IdentityLink
 		Tell(s_InFlight.playerId, text);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Server -> one client, over the channel this codebase already uses for per-player replies
 	//! (`TBD_AdminCommands.Reply`, `TBD_ObjectivesComponent.Tell`, `TBD_PlayAreaComponent`).
 	protected static void Tell(int playerId, string text)
@@ -757,8 +716,7 @@ class TBD_IdentityLink
 		chat.SendPrivateMessage(text, playerId);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Immediate reply on the component the message arrived on — the synchronous path, where that
+	//! Immediate reply on the component the message arrived on -- the synchronous path, where that
 	//! component is known-good and re-resolving it would be pointless.
 	protected static void ReplyLine(SCR_ChatComponent chat, int playerId, string text)
 	{
@@ -767,26 +725,21 @@ class TBD_IdentityLink
 			chat.SendPrivateMessage(text, playerId);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ReplyLines(SCR_ChatComponent chat, int playerId, notnull array<string> lines)
 	{
 		foreach (string line : lines)
 			ReplyLine(chat, playerId, line);
 	}
 
-	//------------------------------------------------------------------------------------
 	// HELPERS
-	//------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
-	//! `TBD_BackendConfig` may be absent entirely — a LEGAL state on a local/PIE host, never an
+	//! `TBD_BackendConfig` may be absent entirely -- a LEGAL state on a local/PIE host, never an
 	//! error. Its getters already return empty rather than null-deref, so this is a value test.
 	protected static bool BackendConfigured()
 	{
 		return !TBD_BackendConfig.GetBackendUrl().IsEmpty() && !TBD_BackendConfig.GetServerToken().IsEmpty();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The backend URL for a log line, never the token.
 	protected static string DescribeBackend()
 	{
@@ -800,9 +753,8 @@ class TBD_IdentityLink
 		return url;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Display name, for `users.arma_character`. Cosmetic on the backend (it is not joined on),
-	//! so an empty one is acceptable — the column is NOT NULL and takes `''`.
+	//! so an empty one is acceptable -- the column is NOT NULL and takes `''`.
 	protected static string PlayerName(int playerId)
 	{
 		PlayerManager players = GetGame().GetPlayerManager();
@@ -812,7 +764,6 @@ class TBD_IdentityLink
 		return players.GetPlayerName(playerId);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `Replace` MUTATES IN PLACE and returns a COUNT (measured), so this is a sequence of
 	//! statements and never `s = s.Replace(...)`. `string.Format("%1", value)` first, to get a
 	//! copy the caller's string does not alias.

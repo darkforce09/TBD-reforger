@@ -1,25 +1,21 @@
 //! T-679 - placement scatter: radius and area shape.
 //!
-//! == What was missing ========================================================================
 //! T-706 put `placementRadius` / `placementShape` on `$defs/slot` and `$defs/group`.
 //! `TBD_MissionSlotStruct` and `TBD_MissionOrbatGroupStruct` do not declare those members, so
 //! the primary parse cannot see them. Spawn put every body on the exact authored (x, z).
-//! This file is the reader. Flatten does not emit the keys (T-946.36); hand-staged 1.3 JSON
+//! This file is the reader. Flatten does not emit the keys; hand-staged 1.3 JSON
 //! and golden `schema-1_3-wire-fields.json` reach this pass. Editor UI is NOT this slice.
 //!
-//! == Why a second JsonLoadContext pass =======================================================
-//! Same pattern as `TBD_VehicleState.c` (T-680) / `TBD_GroupState.c` (T-678): a second pass
+//! Same pattern as `TBD_VehicleState.c` / `TBD_GroupState.c`: a second pass
 //! over `TBD_MissionLoader.GetRawJson()` with a root that declares `slots[]` and
 //! `orbat.*.groups[]` placementRadius/placementShape and nothing else. MissionLoader and
 //! MissionSlotStruct stay out of this slice's owns list.
 //!
-//! == Presence, and the nested-ref landmine ===================================================
 //! `JsonLoadContext.ReadValue` ALLOCATES a nested `ref <class>` field even when the JSON key
 //! is ABSENT. `slots` / `groups` are ARRAYS, so presence is a null-or-Count() test. Radius
 //! can be authored as 0 (exact spawn), so it carries an ABSENT sentinel. Shape is a STRING;
 //! presence is emptiness. Absent radius and authored 0 both scatter as exact spawn.
 //!
-//! == Scatter contract ========================================================================
 //! `Scatter(center, radius, shape, seed)` is deterministic. Radius <= 0 returns `center`
 //! unchanged (byte-identical spawn to pre-T-679). Shape `square` is axis-aligned
 //! [-radius, +radius] on X and Z; anything else (including empty / `circle`) is a uniform
@@ -32,14 +28,12 @@
 //!
 //! Horizontal only. SpawnSlotBody still owns Y (JSON y, else surface + capsule).
 //!
-//! == What this file CANNOT prove =============================================================
 //! The gate is `cargo xtask mod compile`. It cannot run a round. Whether a squad with
 //! radius 20 actually spreads, and whether radius 0 matches today's pin, is a human
 //! checklist item. Compiled artifacts will not carry the keys until flatten emits them.
 //! @contract mission.schema.json#/$defs/slot
 //! @contract mission.schema.json#/$defs/group
 
-//------------------------------------------------------------------------------------------------
 //! One `slots[]` row's scatter fields. Field names are the JSON keys.
 class TBD_PlacementScatterSlotWireStruct
 {
@@ -50,14 +44,12 @@ class TBD_PlacementScatterSlotWireStruct
 	float placementRadius = -1000000; //!< Metres. ABSENT when omitted. 0 is authored exact.
 	string placementShape;             //!< circle|square. Empty when omitted.
 
-	//------------------------------------------------------------------------------------------------
 	bool HasRadius()
 	{
 		return placementRadius != ABSENT;
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 //! One `$defs/group` object's scatter fields. Field names are the JSON keys.
 class TBD_PlacementScatterGroupWireStruct
 {
@@ -67,20 +59,17 @@ class TBD_PlacementScatterGroupWireStruct
 	float placementRadius = -1000000; //!< Metres. ABSENT when omitted. 0 is authored exact.
 	string placementShape;             //!< circle|square. Empty when omitted.
 
-	//------------------------------------------------------------------------------------------------
 	bool HasRadius()
 	{
 		return placementRadius != ABSENT;
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 class TBD_PlacementScatterFactionWireStruct
 {
 	ref array<ref TBD_PlacementScatterGroupWireStruct> groups;
 }
 
-//------------------------------------------------------------------------------------------------
 //! Root of the second parse. Declares `slots` and `orbat` and nothing else.
 class TBD_PlacementScatterDocStruct
 {
@@ -88,7 +77,6 @@ class TBD_PlacementScatterDocStruct
 	ref map<string, ref TBD_PlacementScatterFactionWireStruct> orbat;
 }
 
-//------------------------------------------------------------------------------------------------
 //! Flattened group row after parse (faction key is the orbat map key, not a JSON field).
 class TBD_PlacementScatterGroupRow
 {
@@ -98,7 +86,6 @@ class TBD_PlacementScatterGroupRow
 	string placementShape;
 }
 
-//------------------------------------------------------------------------------------------------
 //! Server-side reader: bind placementRadius/placementShape and scatter slot spawn points.
 class TBD_PlacementScatter
 {
@@ -111,7 +98,6 @@ class TBD_PlacementScatter
 	protected static bool s_bParsed;
 	protected static string s_sParsedForMission;
 
-	//------------------------------------------------------------------------------------------------
 	//! Deterministic scatter. Radius <= 0 returns center unchanged.
 	static vector Scatter(vector center, float radius, string shape, int seed)
 	{
@@ -133,7 +119,6 @@ class TBD_PlacementScatter
 		return Vector(center[0] + cx, center[1], center[2] + cz);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Slot + group scatter for one spawn. Call from SpawnSlotBody (initial and respawn).
 	//! Zero / absent radius on both layers returns Vector(x, 0, z) -- the authored point.
 	static vector ForSlot(string slotKey, string slotId, string faction, string groupCallsign, float x, float z)
@@ -182,7 +167,6 @@ class TBD_PlacementScatter
 		return outPos;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string CurrentMissionId()
 	{
 		TBD_MissionDocumentStruct doc = TBD_MissionLoader.GetMission();
@@ -192,7 +176,6 @@ class TBD_PlacementScatter
 		return doc.meta.id;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool EnsureParsed()
 	{
 		string missionId = CurrentMissionId();
@@ -240,7 +223,6 @@ class TBD_PlacementScatter
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void CollectFaction(string factionKey, TBD_PlacementScatterFactionWireStruct faction)
 	{
 		if (!faction || !faction.groups)
@@ -262,7 +244,6 @@ class TBD_PlacementScatter
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_PlacementScatterSlotWireStruct FindSlot(string slotKey, string slotId)
 	{
 		if (!s_aSlots)
@@ -293,7 +274,6 @@ class TBD_PlacementScatter
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_PlacementScatterGroupRow FindGroup(string faction, string groupCallsign)
 	{
 		if (!s_aGroups)
@@ -317,7 +297,6 @@ class TBD_PlacementScatter
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! djb2 over bytes. Slot ids are ASCII (faction:callsign:role:n / uid).
 	protected static int SeedFromString(string s)
 	{
@@ -337,7 +316,6 @@ class TBD_PlacementScatter
 		return h;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Deterministic unit float in [0, 1). Not Math.Random* (those are global / non-repeatable).
 	protected static float UnitFloat(int seed, int salt)
 	{

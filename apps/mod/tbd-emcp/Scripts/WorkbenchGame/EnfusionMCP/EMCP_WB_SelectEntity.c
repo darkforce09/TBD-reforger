@@ -64,7 +64,6 @@ class EMCP_WB_SelectEntityResponse : JsonApiStruct
 
 class EMCP_WB_SelectEntity : NetApiHandler
 {
-	//------------------------------------------------------------------------------------------------
 	static IEntitySource FindEntityByName(WorldEditorAPI api, string name)
 	{
 		int count = api.GetEditorEntityCount();
@@ -77,13 +76,11 @@ class EMCP_WB_SelectEntity : NetApiHandler
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override JsonApiStruct GetRequest()
 	{
 		return new EMCP_WB_SelectEntityRequest();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override JsonApiStruct GetResponse(JsonApiStruct request)
 	{
 		EMCP_WB_SelectEntityRequest req = EMCP_WB_SelectEntityRequest.Cast(request);

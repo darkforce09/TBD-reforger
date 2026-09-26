@@ -1,4 +1,4 @@
-//! Pre-game UI rebuild (2026-09-12) — the one place an icon key becomes an image.
+//! Pre-game UI rebuild (2026-09-12) -- the one place an icon key becomes an image.
 //!
 //! Briefing pass (2026-09-14): icons are OUR textures first. `UI/Textures/TBD/Icons/TBD_Icon_<key>_UI.png`
 //! is a 64 px white-on-alpha raster of the Material Symbols outlined glyph the mockups use
@@ -8,12 +8,11 @@
 //! `s_mTextureGuids`; until then `Load()` addresses the `.edds` by bare path. The vanilla quad
 //! table below is the fallback for keys without a PNG.
 //!
-//! The Stitch mockups draw Material Symbols (`search`, `grid_view`, `water`, …). Enfusion has no
+//! The Stitch mockups draw Material Symbols (`search`, `grid_view`, `water`, ...). Enfusion has no
 //! icon font, so every icon slot is an `ImageWidget` fed from the vanilla wrapper-UI imageset via
 //! `ImageWidget.LoadImageFromSet(0, imageset, quad)`. Screens name icons by the mockup key and
 //! this table decides the quad.
 //!
-//! ── HONEST STATUS (measured on the 2026-09-12 Workbench run) ────────────────────────────
 //! The `.imageset` is pak-only under a codec nothing offline can open, so quads are learned by
 //! trying them. `Load()` hides the slot and warns once when a quad does not resolve; the engine
 //! adds its own `GUI (E): Can't find image` line. To keep the log clean the table below holds
@@ -37,7 +36,6 @@ class TBD_UIIcons
 	protected static ref map<string, string> m_mQuads;
 	protected static ref set<string> m_sWarned;
 
-	//------------------------------------------------------------------------------------------------
 	//! Mockup icon key -> imageset quad. Empty string = draw nothing for this key.
 	static string Quad(string key)
 	{
@@ -51,7 +49,6 @@ class TBD_UIIcons
 		return string.Empty;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Load `key` into `w`. Hides the widget when the key has no quad or the quad does not resolve,
 	//! so a caller never has to special-case a missing icon. Returns true when an image is showing.
 	static bool Load(ImageWidget w, string key)
@@ -89,7 +86,6 @@ class TBD_UIIcons
 		return loaded;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool TextureMissed(string key)
 	{
 		if (!s_sTextureMisses)
@@ -98,7 +94,6 @@ class TBD_UIIcons
 		return s_sTextureMisses.Contains(key);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Our own raster for `key`, or empty when none was shipped for it.
 	static ResourceName Texture(string key)
 	{
@@ -115,7 +110,6 @@ class TBD_UIIcons
 		return ICON_DIR + "TBD_Icon_" + key + "_UI.edds";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The 38 PNGs under UI/Textures/TBD/Icons/ (keep in step with the folder).
 	protected static void BuildShipped()
 	{
@@ -137,7 +131,6 @@ class TBD_UIIcons
 		s_mTextureGuids = new map<string, ResourceName>();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void WarnOnce(string key, string quad)
 	{
 		if (!m_sWarned)
@@ -150,7 +143,6 @@ class TBD_UIIcons
 		Print(string.Format("[TBD][ui] icon '%1' -> quad '%2' did not resolve in %3; slot hidden. Fix TBD_UIIcons.", key, quad, IMAGESET), LogLevel.WARNING);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void BuildTable()
 	{
 		m_mQuads = new map<string, string>();

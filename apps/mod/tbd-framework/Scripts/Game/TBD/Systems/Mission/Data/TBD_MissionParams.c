@@ -1,12 +1,10 @@
 //! T-684 -- bind payload `missionParams[]` and expose Get(symbol) to consumers.
 //! The Enfusion half of `mission.schema.json#/$defs/missionParam`.
 //!
-//! == What was missing ========================================================================
 //! T-706 put `missionParams[]` on the wire (name, titleKey, values, displays, default).
 //! Nothing in `apps/mod` bound the array or resolved a launch choice, so an authored
 //! parameter never reached gameplay without re-baking the mission. This file is the reader.
 //!
-//! == Launch-selection surface (honest) =======================================================
 //! There is no lobby on this build. Chosen values come from server config:
 //! `$profile:TBD_MissionParams.json`, shape:
 //!   { "selections": [ { "name": "time_of_day", "value": 2 } ] }
@@ -14,7 +12,6 @@
 //! file, or a selection whose value is not in that row's `values[]` -> the authored
 //! default (when that default is itself in `values[]`). No guessing.
 //!
-//! == Why authoredDefault, not a member named default ========================================
 //! The wire key is `default`. Enforce Script reserves `default` (switch), so a field of
 //! that name does not compile (measured: TBD_MissionParams.c "Syntax error" /
 //! "Unexpected scope"). JsonLoadContext still binds BY MEMBER NAME for the other keys
@@ -22,13 +19,11 @@
 //! via ReadValue("default", authored) -- the key is a STRING, not an identifier --
 //! then stored on `authoredDefault`. Same array, same order (TBD_ObjectiveRules join).
 //!
-//! == Get(symbol) fail-closed =================================================================
 //! Unknown symbol, empty symbol, a row with no `values[]`, or a default that is not
 //! a member of `values[]` returns EMPTY (0) and logs. It does not pick values[0], a
 //! neighbour name, or a stale override. EMPTY collides with a legitimate authored 0;
 //! callers that must distinguish use Has(symbol).
 //!
-//! == Presence: the nested-ref / array landmine ===============================================
 //! `JsonLoadContext.ReadValue` ALLOCATES a nested `ref <class>` even when the JSON key
 //! is ABSENT. `ref array<>` is the other shape: measured NULL when the key is absent
 //! (TBD_MissionValidator second-pass header). Either way, `if (doc.missionParams)` is
@@ -36,19 +31,16 @@
 //! author no parameters have Count() == 0 and boot unchanged.
 //! `default: 0` is a real value, so authoredDefault initialises to ABSENT (-1e6).
 //!
-//! == displays[] pairing ======================================================================
 //! When `displays` is present it must line up 1:1 with `values` (the DTAS description.ext
 //! bug: a missing comma left values[] one short of texts[] and every later label mapped
 //! to the wrong integer). A mismatch is a WARNING; Get still returns the integer. There
 //! is no launcher UI here to index `displays`.
 //!
-//! == What this file CANNOT prove =============================================================
 //! The gate is `cargo xtask mod compile`. It proves the symbols exist. It cannot run a
 //! round. Changing a launch selection without re-baking is a human checklist item.
 //! @contract mission.schema.json#/properties/missionParams
 //! @contract mission.schema.json#/$defs/missionParam
 
-//------------------------------------------------------------------------------------------------
 //! One authored launch parameter. Field names MUST equal the JSON keys (`JsonLoadContext`
 //! binds by member NAME), except the wire key `default` -- see the file header.
 //! Bound onto `TBD_MissionDocumentStruct.missionParams`.
@@ -65,7 +57,6 @@ class TBD_MissionParamStruct
 	int authoredDefault = ABSENT;   //!< Filled from wire key `default` by TBD_MissionParams.
 }
 
-//------------------------------------------------------------------------------------------------
 //! One row of `$profile:TBD_MissionParams.json` `selections[]`.
 class TBD_MissionParamSelectionStruct
 {
@@ -73,14 +64,12 @@ class TBD_MissionParamSelectionStruct
 	int value;    //!< Chosen integer. Rejected unless it is in the matching row's `values[]`.
 }
 
-//------------------------------------------------------------------------------------------------
 //! Server-config file. Absent / unreadable / empty `selections` -> authored defaults.
 class TBD_MissionParamLaunchFile
 {
 	ref array<ref TBD_MissionParamSelectionStruct> selections;
 }
 
-//------------------------------------------------------------------------------------------------
 //! Resolves launch selection at mission parse and exposes Get(symbol) to consumers.
 class TBD_MissionParams
 {
@@ -93,7 +82,6 @@ class TBD_MissionParams
 	protected static ref map<string, int> s_Chosen;
 	protected static ref map<string, bool> s_Known;
 
-	//------------------------------------------------------------------------------------------------
 	//! Called from `TBD_MissionLoader.ParseMissionJson` after a valid parse, on the
 	//! server-only load path. Also safe to call from Get/Has (idempotent). No-ops when
 	//! `missionParams` is empty, so missions without parameters boot unchanged.
@@ -126,7 +114,6 @@ class TBD_MissionParams
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Integer chosen for `symbol` at launch (server config, else authored default).
 	//! Unknown / unusable symbol -> EMPTY, never a guess.
 	static int Get(string symbol)
@@ -163,7 +150,6 @@ class TBD_MissionParams
 		return value;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True when Resolve honoured this consuming symbol (chosen value is in `values[]`).
 	static bool Has(string symbol)
 	{
@@ -180,7 +166,6 @@ class TBD_MissionParams
 		return known;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Authored row count. Presence of the array: this number, never a null check.
 	static int Count()
 	{
@@ -194,7 +179,6 @@ class TBD_MissionParams
 		return mission.missionParams.Count();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Second JsonLoadContext pass: read the wire key `default` (a reserved word, so it
 	//! cannot be a class member) by STRING name, joined to the primary parse by index.
 	protected static void FillAuthoredDefaults(array<ref TBD_MissionParamStruct> rows)
@@ -245,7 +229,6 @@ class TBD_MissionParams
 		ctx.EndArray();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ResolveRow(TBD_MissionParamStruct row, map<string, int> launch)
 	{
 		if (!row)
@@ -315,7 +298,6 @@ class TBD_MissionParams
 		Print(string.Format("[TBD][MissionParams] symbol='%1' value=%2 source=%3", row.name, chosen, source), LogLevel.NORMAL);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void WarnDisplaysMismatch(TBD_MissionParamStruct row)
 	{
 		if (!row.displays)
@@ -332,7 +314,6 @@ class TBD_MissionParams
 		Print(string.Format("[TBD][MissionParams] name='%1' displays=%2 values=%3 -- labels will not pair", row.name, nDisp, nVal), LogLevel.WARNING);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool InValues(TBD_MissionParamStruct row, int v)
 	{
 		if (!row.values)
@@ -349,7 +330,6 @@ class TBD_MissionParams
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Absent file is the common case (authored defaults). A present but unreadable file
 	//! must not invent selections -- fail closed onto authored defaults.
 	protected static void LoadLaunchSelections(map<string, int> into)

@@ -1,6 +1,6 @@
-//! Briefing rebuild (2026-09-14) — one topic page of the Briefing screen.
+//! Briefing rebuild (2026-09-14) -- one topic page of the Briefing screen.
 //!
-//! A page is a `TBD_PanelFill` (title · icon · badge chips) whose body is a `TBD_ScrollList` the
+//! A page is a `TBD_PanelFill` (title - icon - badge chips) whose body is a `TBD_ScrollList` the
 //! subclass fills from `TBD_BriefingCatalog` with Common primitives (`TBD_Section`,
 //! `TBD_NumberedCard`, `TBD_KeyValueRow`, `TBD_Caption`, `STAT_CELL` grids). Pages that are not a
 //! single panel (ORBAT) override `UsesPanel()` and mount their own layout into the dock.
@@ -10,7 +10,7 @@
 //! buttons pan the map through `TBD_BriefingScreen.LocateOnMap`.
 class TBD_BriefingPage : Managed
 {
-	protected TBD_BriefingScreen m_Screen; //!< weak — the screen owns the page
+	protected TBD_BriefingScreen m_Screen; //!< weak -- the screen owns the page
 	protected TBD_BriefingCatalog m_Catalog;
 	protected TBD_LobbyCatalog m_Lobby;
 	protected Widget m_wRoot;
@@ -24,7 +24,6 @@ class TBD_BriefingPage : Managed
 
 	static const int CELL_HEIGHT = 46;
 
-	//------------------------------------------------------------------------------------------------
 	bool Build(TBD_BriefingScreen screen, Widget dock, TBD_BriefingCatalog catalog, TBD_LobbyCatalog lobby)
 	{
 		m_Screen = screen;
@@ -67,7 +66,6 @@ class TBD_BriefingPage : Managed
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Destroy()
 	{
 		if (m_aPreviews)
@@ -101,7 +99,6 @@ class TBD_BriefingPage : Managed
 		m_Lobby = null;
 	}
 
-	// ── Subclass hooks ──────────────────────────────────────────────────────────────────────
 
 	string Title()  { return "Page"; }
 	string Icon()   { return ""; }
@@ -113,9 +110,7 @@ class TBD_BriefingPage : Managed
 	//! Fill `content` (the scroll list's column, or the raw dock when UsesPanel() is false).
 	void Fill(Widget content) {}
 
-	// ── Helpers for subclasses ──────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	protected TBD_ChipComponent AddBadge(Widget dock, string text, TBD_EUITint tint, bool pill = true)
 	{
 		int headerGround = TBD_UITheme.Over(TBD_UITheme.PANEL_HEADER_FILL, m_iGround);
@@ -129,7 +124,6 @@ class TBD_BriefingPage : Managed
 		return chip;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Attach a doll / vehicle preview to a mounted preview box (`Preview` + `Label`), tracked.
 	protected TBD_KitPreviewComponent AttachPreview(Widget box)
 	{
@@ -143,7 +137,6 @@ class TBD_BriefingPage : Managed
 		return preview;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Paint a preview box (`PreviewBorder`/`PreviewBG` or `Border`/`Background`, `GridImage`, `Label`).
 	protected void PaintPreviewBox(Widget box, int ground)
 	{
@@ -168,7 +161,6 @@ class TBD_BriefingPage : Managed
 			TBD_UITheme.PaintAlpha(grid, 0x3338BDF8);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A quiet "Locate" button that pans the map to (x, z). Mounted into `dock`.
 	protected TBD_UIButton AddLocate(Widget dock, float x, float z, string label = "Locate")
 	{
@@ -192,7 +184,6 @@ class TBD_BriefingPage : Managed
 		return button;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnLocate(TBD_UIButton button)
 	{
 		int index = m_aLocateButtons.Find(button);
@@ -202,7 +193,6 @@ class TBD_BriefingPage : Managed
 		m_Screen.LocateOnMap(m_aLocateX[index], m_aLocateZ[index]);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One key / value row over `ground`, mono value.
 	protected TBD_KeyValueRowComponent AddRow(Widget parent, string key, string value, int ground, TBD_EUITint valueTint = TBD_EUITint.NEUTRAL)
 	{
@@ -215,7 +205,6 @@ class TBD_BriefingPage : Managed
 		return row;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Grid of `STAT_CELL`s, `columns` per row. `countOnly` = "Bandages  x4" cells.
 	protected void AddCellGrid(Widget parent, array<ref TBD_KitEntry> entries, int columns, int ground, bool countOnly)
 	{
@@ -247,7 +236,6 @@ class TBD_BriefingPage : Managed
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string ColumnName(int index)
 	{
 		switch (index)
@@ -260,7 +248,6 @@ class TBD_BriefingPage : Managed
 		return "ColumnD";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One `STAT_CELL`: label / value (+ amber count). `entry.m_eTint` SUCCESS / WARNING tints the value.
 	protected void AddCell(Widget column, TBD_KitEntry entry, int ground, bool countOnly)
 	{

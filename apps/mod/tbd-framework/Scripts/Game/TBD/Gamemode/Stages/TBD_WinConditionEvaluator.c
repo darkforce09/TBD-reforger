@@ -1,6 +1,5 @@
 //! T-936.1 - the AUTHORED win rule: the Enfusion half of `mission.schema.json#/$defs/winConditions`.
 //!
-//! == What was missing, and what this is ======================================================
 //! `winConditions.endOn` has always been read - `TBD_ObjectiveRegistry.EvaluateEndTriggers` drives
 //! three of the five triggers and `TBD_FrameworkManager.TickWinConditions` the other two.
 //! `winConditions.mode` was read by exactly one line in the whole tree:
@@ -8,7 +7,6 @@
 //! mission could SAY it was a VIP mission and the round still ended on attrition. This file is the
 //! reader that makes the mode mean something, for the two modes that need runtime observation.
 //!
-//! == The division of labour, and why it is not five branches ==================================
 //! Five modes, three of which already have a runtime:
 //!   * `attrition` - `TBD_FrameworkManager.TickWinConditions` counts the sides that still have a
 //!     living player. Nothing here.
@@ -22,26 +20,22 @@
 //!   * `extraction` and `vip` - nothing observes a player standing in a zone or a named player
 //!     dying, so those two are evaluated HERE.
 //!
-//! == Ends the round exactly once =============================================================
 //! `s_bEnded` is a LATCH, set before `SetStage` is called and cleared only by `Clear()` on the way
-//! into a new world. A heartbeat with no latch is the wave-241 defect (T-946.19): the tick fires
+//! into a new world. A heartbeat with no latch is the wave-241 defect: the tick fires
 //! every 2 s, and a condition that stays true - a dead VIP stays dead - would call `SetStage(END)`
 //! on every one of them. The tick also stops re-arming once the latch is set, so the cost after an
 //! ending is zero rather than one no-op evaluation per tick.
 //!
-//! == Server-side only ========================================================================
 //! Clients hold NO mission document (`TBD_FrameworkManager.OnPostInit` returns early for
 //! `RplMode.Client` before `BeginLoad()`), so a client would read an empty rule and conclude the
 //! mission authored none. The heartbeat refuses to start on a client; `Read()` returns false there
 //! anyway, which is the correct answer for a machine that is not the authority.
 //!
-//! == Static, and therefore explicitly cleared ================================================
 //! Statics OUTLIVE A WORLD inside one process (recorded landmine - `TBD_FleetLoadMissionAction` restarts
 //! the scenario in-process). Cleared in `OnGameStart` on the way IN, which is strictly stronger
 //! than a teardown hook: it does not depend on the previous world having shut down tidily. Without
 //! it, mission B would inherit mission A's `s_bEnded` and could never end at all.
 //!
-//! == Why the wire is parsed a SECOND time ====================================================
 //! `TBD_MissionWinConditionsStruct` (Backend/TBD_MissionLoader.c) declares `mode` and `endOn` and
 //! nothing else, and `JsonLoadContext` maps JSON keys onto NAMED class fields only - a key no class
 //! declares is invisible at runtime, not rejected, not logged, simply absent. So the three params
@@ -53,7 +47,6 @@
 //! and is parsed exactly ONCE per world.
 //! @contract mission.schema.json#/$defs/winConditions
 
-//------------------------------------------------------------------------------------------------
 //! The params half of `$defs/winConditions`. Field names must equal the JSON keys - JsonLoadContext
 //! maps by name.
 //!
@@ -75,7 +68,6 @@ class TBD_WinConditionsStruct
 	int timeoutMinutes = ABSENT_INT; //!< Round length. Read for reporting only - see the header.
 }
 
-//------------------------------------------------------------------------------------------------
 //! The document root for the win-rule second pass: declares `winConditions` and nothing else, so
 //! this reader stays blind to every other top-level key.
 class TBD_WinConditionDocStruct
@@ -83,7 +75,6 @@ class TBD_WinConditionDocStruct
 	ref TBD_WinConditionsStruct winConditions;
 }
 
-//------------------------------------------------------------------------------------------------
 //! Reads the authored win rule once, evaluates the two modes nothing else observes, and ends the
 //! round exactly once.
 class TBD_WinConditionEvaluator
@@ -121,7 +112,6 @@ class TBD_WinConditionEvaluator
 	protected static bool s_bAnnounced;
 	protected static bool s_bVipMissingReported;
 
-	//------------------------------------------------------------------------------------------------
 	//! Reset for a new world. See the header on why this runs on the way IN.
 	static void Clear()
 	{
@@ -132,14 +122,12 @@ class TBD_WinConditionEvaluator
 		s_bVipMissingReported = false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Has the round already been ended by this evaluator? The latch, readable for tests and logs.
 	static bool HasEnded()
 	{
 		return s_bEnded;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Parse. Idempotent: only the first call after a `Clear()` does work.
 	static bool Read()
 	{
@@ -173,7 +161,6 @@ class TBD_WinConditionEvaluator
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The authored mode, or empty when this mission authored no win rule.
 	static string Mode()
 	{
@@ -183,7 +170,6 @@ class TBD_WinConditionEvaluator
 		return s_Rule.mode;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One evaluation. Called by the heartbeat below; safe to call at any stage.
 	//! @authority server - the mission document lives where the rule is evaluated.
 	static void Tick()
@@ -222,7 +208,6 @@ class TBD_WinConditionEvaluator
 		// the ending. Doing nothing here is the whole point - see the header's division of labour.
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One block of lines per world, the first time the round is LIVE, saying what this rule needs
 	//! and whether the mission can satisfy it.
 	//!
@@ -283,7 +268,6 @@ class TBD_WinConditionEvaluator
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The usable zone with this id, or null.
 	//!
 	//! `IsUsable()` is asked here rather than at the containment call for the reason
@@ -310,7 +294,6 @@ class TBD_WinConditionEvaluator
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `mode: extraction` - a side has every one of its LIVING players inside the extraction zone.
 	//!
 	//! Two guards that are the whole difference between a rule and a bug:
@@ -389,7 +372,6 @@ class TBD_WinConditionEvaluator
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `mode: vip` - the named player died (their side loses) or reached the extraction zone (their
 	//! side wins).
 	//!
@@ -471,7 +453,6 @@ class TBD_WinConditionEvaluator
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The one side that is not `factionKey` and has claimed slots, or empty when there is not
 	//! exactly one.
 	//!
@@ -506,7 +487,6 @@ class TBD_WinConditionEvaluator
 		return only;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! End the round. THE LATCH LIVES HERE, and it is set BEFORE `SetStage` so a re-entrant call
 	//! from inside the stage transition cannot get past it either.
 	//!
@@ -532,7 +512,6 @@ class TBD_WinConditionEvaluator
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 //! T-936.1 - the win-rule heartbeat. Same shape, and the same reasoning, as
 //! `TBD_TriggerRuntime`'s block: a game-mode COMPONENT this slice cannot add to
 //! `Prefabs/Systems/TBD_GameMode.et` would never be instantiated, and a runtime that can never fire
@@ -542,7 +521,6 @@ modded class SCR_BaseGameMode
 	//! T-946.19 - set once the heartbeat is scheduled. See `TBD_WinConditionOnStart`.
 	protected bool m_bTBD_WinConditionTickArmed;
 
-	//------------------------------------------------------------------------------------------------
 	//! @authority server - the win rule is evaluated where the mission document lives.
 	//!
 	//! Statics outlive a world inside one process, so the evaluator is cleared HERE, at the start of
@@ -575,7 +553,6 @@ modded class SCR_BaseGameMode
 		GetGame().GetCallqueue().CallLater(TBD_WinConditionTick, TBD_WinConditionEvaluator.TICK_MS, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One evaluation, then re-arm.
 	//!
 	//! One-shot and self-re-arming rather than a repeating CallLater, for the reason

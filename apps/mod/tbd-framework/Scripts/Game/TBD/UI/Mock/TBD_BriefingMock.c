@@ -1,4 +1,4 @@
-//! Briefing pass (2026-09-14) — the mock catalog behind the Briefing screen.
+//! Briefing pass (2026-09-14) -- the mock catalog behind the Briefing screen.
 //!
 //! Dataset = the Stitch pre-game mockups verbatim (frequencies, objectives, rules, lore,
 //! parameters, markers, friendly/enemy assets, friendly/enemy uniforms). Where a mockup names a
@@ -16,7 +16,6 @@ class TBD_BriefingMock
 	static const ResourceName VEH_M923     = "{3F2AA823B6C65E1E}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_MERDC.et";
 	static const ResourceName VEH_M151     = "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et";
 
-	//------------------------------------------------------------------------------------------------
 	static TBD_BriefingCatalog Build()
 	{
 		TBD_BriefingCatalog c = new TBD_BriefingCatalog();
@@ -37,7 +36,6 @@ class TBD_BriefingMock
 		return c;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void BuildNets(TBD_BriefingCatalog c)
 	{
 		Net(c, "", "LR Command Net", 76.2, true, false, 50.6, 35.4, 71.3);
@@ -49,7 +47,6 @@ class TBD_BriefingMock
 		Net(c, "A2-2", "2nd Platoon, 2nd Squad", 388.8, false, false, 457.1, 461.7, 366.1);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void Net(TBD_BriefingCatalog c, string callsign, string label, float freq, bool longRange, bool own, float a, float b, float d)
 	{
 		TBD_NetInfo net = new TBD_NetInfo(callsign, label, freq, longRange, own);
@@ -57,7 +54,6 @@ class TBD_BriefingMock
 		c.m_aNets.Insert(net);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void BuildObjectives(TBD_BriefingCatalog c)
 	{
 		// Coordinates are on Everon so Locate has somewhere to pan.
@@ -65,7 +61,6 @@ class TBD_BriefingMock
 		c.m_aObjectives.Insert(new TBD_ObjectiveInfo(2, "Northern Zone", "Defend", "Sector", "90s", "Permanent (Locked)", 5420, 6140));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void BuildRules(TBD_BriefingCatalog c)
 	{
 		TBD_RuleGroup mission = new TBD_RuleGroup("Mission Rules", true);
@@ -83,13 +78,11 @@ class TBD_BriefingMock
 		c.m_aRuleGroups.Insert(general);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void BuildLore(TBD_BriefingCatalog c)
 	{
 		c.m_aLore.Insert("In the early morning hours of October 12th, motorized vanguard elements of the 7th Guards Airborne Division crossed the southern perimeter into the valley under dense low-hanging mist. With primary communications corridors pre-sighted and electronic countermeasures active across the operational sector, defending forces must establish perimeter fortifications and maintain forward observation outposts before the primary mechanized assault arrives.");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void BuildParams(TBD_BriefingCatalog c)
 	{
 		c.m_aParams.Insert(new TBD_ParamInfo("visibility", "View Distance", "2,500 m"));
@@ -99,7 +92,6 @@ class TBD_BriefingMock
 		c.m_aParams.Insert(new TBD_ParamInfo("thermostat", "Thermals (TI)", "Disabled"));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void BuildAssets(TBD_BriefingCatalog c)
 	{
 		// Friendly (Soviet motor pool, as the lobby's kits).
@@ -151,7 +143,6 @@ class TBD_BriefingMock
 		c.m_aEnemyAssets.Insert(m151);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_AssetTypeInfo Type(string name, ResourceName prefab, int count, string speedRoad, string amphibious, string speedWater, string crew)
 	{
 		TBD_AssetTypeInfo type = new TBD_AssetTypeInfo(name, prefab, count);
@@ -159,7 +150,6 @@ class TBD_BriefingMock
 		return type;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The mockup's fully stocked APC.
 	protected static TBD_AssetInstanceInfo Apc(string callsign, float x, float z)
 	{
@@ -204,7 +194,6 @@ class TBD_BriefingMock
 		v.m_aInvMisc.Insert(new TBD_KitEntry("E-Tool", "", 2));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void BuildUniforms(TBD_BriefingCatalog c)
 	{
 		TBD_UniformInfo cdf = new TBD_UniformInfo("CDF (12th Mechanized)", "kit:sov_rifleman", "", "TTsKO / Dubok");
@@ -226,7 +215,6 @@ class TBD_BriefingMock
 		c.m_aEnemyUniforms.Insert(chdkz);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void BuildPlans(TBD_BriefingCatalog c)
 	{
 		c.m_aPlans.Insert(new TBD_PlanInfo("plan_alpha", "Plan Alpha - Main Axis of Advance"));

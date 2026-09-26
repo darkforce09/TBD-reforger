@@ -5,17 +5,15 @@
 //! that when Workbench next rewrites `resourceDatabase.rdb`, a changed GUID or a moved file is a
 //! one-line edit here rather than a hunt through screens.
 //!
-//! -- Tree (UI reorg 2026-09-12) ----------------------------------------------------------------
 //! `UI/layouts/` mirrors the 7-domain architecture. See
 //! `documentation_v2/mod/tbd-framework/UI/README.md`.
 //!   Common/      shared component library                     blocks 07, 10-14, 16-18, 24-2E, 36, 38-3D
 //!   Hud/         ObjectiveHud                                  0A
-//!   Session/     Shared 1B-1C · MissionSelector 0B, 1D-23 · Lobby 0C, 2F-37 ·
-//!                Briefing 0D, 3E-42, 46-49 · Shared 1B-1C, 43-45 · Spectator 1A · Admin 19 · PostGame 08/09
+//!   Session/     Shared 1B-1C - MissionSelector 0B, 1D-23 - Lobby 0C, 2F-37 -
+//!                Briefing 0D, 3E-42, 46-49 - Shared 1B-1C, 43-45 - Spectator 1A - Admin 19 - PostGame 08/09
 //! GUIDs are `7BD1A7000000XXnn`: `XX` = block, `nn` = 00 root widget, 01 the `.meta` resource id,
 //! 02+ child widgets.
 //!
-//! -- Block ledger (grep `7BD1A7000000XX` before taking one) ---------------------------------
 //!   07 ScreenShell + ListRow          10 Panel            11 Chip             12 SearchBox
 //!   13 NavItem + TabStrip             14 Button           16 KeyValueRow      17 Dropdown + Menu
 //!   24 Columns2                       18 InsetText        25 PanelFill        1B SessionTopBar    1C SessionBottomBar
@@ -31,7 +29,6 @@
 //!   20 ModGridItem                    21 FactionColumn    22 TerrainRow       23 MissionCard
 //!   0E/0F lobby shell children        A0 lobby header     B0 misc
 //!
-//! -- Resource visibility (measured on the headless server) ----------------------------------
 //!   * **Scripts do not need an rdb entry.** Script discovery is a directory scan, so moved or
 //!     new `.c` files compile without Workbench.
 //!   * **Non-script resources ARE indexed by the rdb.** A `.layout` / `.conf` at a new path is
@@ -41,7 +38,6 @@
 //!     class of first-run failure but does not replace the rdb pass.
 class TBD_UILayouts
 {
-	// -- Common Component Library -----------------------------------------------------------------
 	//! The chrome every TBD screen sits in: backdrop, header, content frame, one primary action.
 	static const ResourceName SCREEN_SHELL = "{7BD1A70000000701}UI/layouts/Common/TBD_ScreenShell.layout";
 	//! One pooled row of a TBD_ListBox.
@@ -98,14 +94,14 @@ class TBD_UILayouts
 	static const ResourceName ROUNDED_6      = "{7BD1A70000002801}UI/layouts/Common/TBD_Rounded6.layout";
 	static const ResourceName ROUNDED_10     = "{7BD1A70000002901}UI/layouts/Common/TBD_Rounded10.layout";
 	//! Odd radii = the 1 px-inset fill under a border of the even radius above (concentric arcs;
-	//! the same radius twice reads as bracket arcs at every corner — MEASURED 2026-09-12).
+	//! the same radius twice reads as bracket arcs at every corner -- MEASURED 2026-09-12).
 	static const ResourceName ROUNDED_11     = "{7BD1A70000002A01}UI/layouts/Common/TBD_Rounded11.layout";
 	static const ResourceName ROUNDED_7      = "{7BD1A70000002B01}UI/layouts/Common/TBD_Rounded7.layout";
 	static const ResourceName ROUNDED_5      = "{7BD1A70000002C01}UI/layouts/Common/TBD_Rounded5.layout";
 	static const ResourceName ROUNDED_9      = "{7BD1A70000002D01}UI/layouts/Common/TBD_Rounded9.layout";
 
 	//! Filled white disc the corner quarters are cut from: `UI/Textures/TBD/TBD_Disc_UI.png` (128 px,
-	//! anti-aliased, ours — vanilla `circleFull.edds` is a ring). Registered in Workbench 2026-09-12;
+	//! anti-aliased, ours -- vanilla `circleFull.edds` is a ring). Registered in Workbench 2026-09-12;
 	//! the GUID below is the one its `.meta` was given. Referenced by the eight shape layouts.
 	static const ResourceName CORNER_DISC    = "{1F2DC726318EC5AF}UI/Textures/TBD/TBD_Disc_UI.edds";
 	//! Inverse of CORNER_DISC: an opaque square with a transparent disc. Clipped quarters of it,
@@ -114,7 +110,6 @@ class TBD_UILayouts
 	//! 4 px track + thumb driven by TBD_UIScrollBar; mounted into a list's `ScrollBarDock`.
 	static const ResourceName SCROLL_BAR      = "{7BD1A70000002E01}UI/layouts/Common/TBD_ScrollBar.layout";
 
-	// -- Textures (ours; PNG source committed next to the Workbench-written .edds + .meta) --------
 	// GUIDs come from the `.meta` Workbench writes on import; a new PNG starts as a bare path and is
 	// pinned here after its import (the rdb resolves the bare path meanwhile).
 	//! Vertical fade, alpha 0 (top) -> 1 (bottom); tinted to the colour it fades into.
@@ -124,13 +119,11 @@ class TBD_UILayouts
 	//! The Stitch hero art (40 px grid, contours, dashed circle) for terrains without imagery.
 	static const ResourceName HERO_TOPO       = "{B546577F58DCE62A}UI/Textures/TBD/TBD_HeroTopo_UI.edds";
 
-	// -- Session / Shared (pre-game chrome) ----------------------------------------------------
-	//! Title · Scenario Browser / Lobby / Briefing strip · identity · player count. `TBD_SessionTopBar`.
+	//! Title - Scenario Browser / Lobby / Briefing strip - identity - player count. `TBD_SessionTopBar`.
 	static const ResourceName SESSION_TOP_BAR    = "{7BD1A70000001B01}UI/layouts/Session/Shared/TBD_SessionTopBar.layout";
 	//! Left / right action docks filled with BUTTON at runtime. `TBD_SessionBottomBar`.
 	static const ResourceName SESSION_BOTTOM_BAR = "{7BD1A70000001C01}UI/layouts/Session/Shared/TBD_SessionBottomBar.layout";
 
-	// -- Session / MissionSelector -------------------------------------------------------------
 	//! Dock shell only (TopDock, LeftDock, CenterDock, RightDock, BottomDock, OverlayDock).
 	//! Same GUID + path as the retired monolith so `chimeraMenus.conf` and the rdb row stay valid.
 	static const ResourceName MISSION_SELECTOR              = "{7BD1A70000000B01}UI/layouts/Session/MissionSelector/TBD_MissionSelector.layout";
@@ -149,7 +142,6 @@ class TBD_UILayouts
 	//! One faction column (ORBAT overview / objectives).
 	static const ResourceName MISSION_SELECTOR_FACTION_COL  = "{7BD1A70000002101}UI/layouts/Session/MissionSelector/TBD_FactionColumn.layout";
 
-	// -- Session / Lobby (rebuilt 2026-09-13; contracts: `UI/layouts/Session/Lobby/README.md`) ------
 	//! Dock shell only (TopDock, LeftDock 320, CenterDock 500, RightDock, BottomDock, OverlayDock).
 	//! Same GUID + path as the retired monolith so `chimeraMenus.conf` and the rdb row stay valid.
 	static const ResourceName LOBBY_SCREEN        = "{7BD1A70000000C01}UI/layouts/Session/Lobby/TBD_LobbyScreen.layout";
@@ -171,42 +163,38 @@ class TBD_UILayouts
 	//! One WEAPON SLOT card: name, mounted attachments, ammunition.
 	static const ResourceName LOBBY_KIT_WEAPON    = "{7BD1A70000003701}UI/layouts/Session/Lobby/TBD_KitWeaponCard.layout";
 
-	// -- Session / Briefing --------------------------------------------------------------------
 	static const ResourceName BRIEFING_SCREEN    = "{7BD1A70000000D01}UI/layouts/Session/Briefing/TBD_BriefingScreen.layout";
 	// Briefing rebuild (2026-09-14). Contracts: `UI/layouts/Session/Briefing/README.md`.
-	//! One radio net (name · MHz chip · aux channels).
+	//! One radio net (name - MHz chip - aux channels).
 	static const ResourceName BRIEFING_FREQ_ROW      = "{7BD1A70000003E01}UI/layouts/Session/Briefing/TBD_FreqRow.layout";
 	//! ORBAT page: `RosterDock` 500 + `KitDock` (the lobby roster + kit inspector, read-only).
 	static const ResourceName BRIEFING_ORBAT_PAGE    = "{7BD1A70000003F01}UI/layouts/Session/Briefing/TBD_OrbatPage.layout";
 	//! Vehicle Info render box (`Preview` ItemPreviewWidget, 168 tall).
 	static const ResourceName BRIEFING_ASSET_PREVIEW = "{7BD1A70000004001}UI/layouts/Session/Briefing/TBD_AssetPreview.layout";
-	//! One faction uniform card (name · doll · chips · camo).
+	//! One faction uniform card (name - doll - chips - camo).
 	static const ResourceName BRIEFING_UNIFORM_CARD  = "{7BD1A70000004101}UI/layouts/Session/Briefing/TBD_UniformCard.layout";
 	//! Markers panel (plan dropdown + Load Plan).
 	static const ResourceName BRIEFING_MARKERS_PANEL = "{7BD1A70000004201}UI/layouts/Session/Briefing/TBD_MarkersPanel.layout";
-	//! Primary navigation glass panel (Map · Briefing · Players · Markers) + one item. `TBD_BriefingPrimaryNav`.
+	//! Primary navigation glass panel (Map - Briefing - Players - Markers) + one item. `TBD_BriefingPrimaryNav`.
 	static const ResourceName BRIEFING_PRIMARY_NAV      = "{7BD1A70000004601}UI/layouts/Session/Briefing/TBD_PrimaryNav.layout";
 	static const ResourceName BRIEFING_PRIMARY_NAV_ITEM = "{7BD1A70000004701}UI/layouts/Session/Briefing/TBD_PrimaryNavItem.layout";
 	//! Topic navigation glass panel (10 topics, 3 groups) + one item. `TBD_BriefingTopicNav`.
 	static const ResourceName BRIEFING_TOPIC_NAV      = "{7BD1A70000004901}UI/layouts/Session/Briefing/TBD_TopicNav.layout";
 	static const ResourceName BRIEFING_TOPIC_NAV_ITEM = "{7BD1A70000004801}UI/layouts/Session/Briefing/TBD_TopicNavItem.layout";
 
-	// Players panel (2026-09-14) — a briefing MODE beside the primary nav, `TBD_PlayersPanel`.
+	// Players panel (2026-09-14) -- a briefing MODE beside the primary nav, `TBD_PlayersPanel`.
 	static const ResourceName PLAYERS_PANEL  = "{7BD1A70000004301}UI/layouts/Session/Shared/TBD_PlayersPanel.layout";
 	static const ResourceName PLAYERS_LANE   = "{7BD1A70000004401}UI/layouts/Session/Shared/TBD_PlayerLane.layout";
 	static const ResourceName PLAYERS_ROW    = "{7BD1A70000004501}UI/layouts/Session/Shared/TBD_PlayerRow.layout";
 
-	// -- Hud -----------------------------------------------------------------------------------
 	//! T-941.4 - objective list + capture bar.
 	static const ResourceName OBJECTIVE_HUD      = "{7BD1A70000000A01}UI/layouts/Hud/TBD_ObjectiveHud.layout";
 
-	// -- Session / PostGame --------------------------------------------------------------------
 	//! T-941.3 - END stage banner: winning faction + reason.
 	static const ResourceName END_SCREEN     = "{7BD1A70000000801}UI/layouts/Session/PostGame/TBD_EndScreen.layout";
 	//! T-941.3 - DEBRIEF stage scoreboard.
 	static const ResourceName DEBRIEF_SCREEN = "{7BD1A70000000901}UI/layouts/Session/PostGame/TBD_DebriefScreen.layout";
 
-	//------------------------------------------------------------------------------------------------
 	//! Put one of OUR textures (the constants above) on an image widget. False = not found (not
 	//! imported yet, rdb stale): the widget is hidden so no white quad shows, and the miss is logged
 	//! once per texture.
@@ -237,7 +225,6 @@ class TBD_UILayouts
 
 	protected static ref array<string> s_aMissingTextures;
 
-	//------------------------------------------------------------------------------------------------
 	//! Instantiate a layout under `parent`, retrying without the GUID prefix if the GUID does not
 	//! resolve. Returns null on a dead workspace (server-side) or an unresolvable layout - every
 	//! caller must handle null, because on a dedicated server there is no workspace at all.
@@ -262,7 +249,6 @@ class TBD_UILayouts
 		return workspace.CreateWidgets(bare, parent);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Fill a `Border` / `Background` frame dock with the rounded shape nearest `radius`
 	//! (TBD_UITheme.RADIUS_*). The dock keeps its name and is what the handler paints; the seven
 	//! images inside inherit that colour. A dock that is not a FrameWidget (a layout that was not
@@ -291,9 +277,8 @@ class TBD_UILayouts
 		return Create(layout, dock);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Create() and pin the new root to the full width of a layout-widget parent. Every row, card
-	//! and chip that lands in a Vertical/HorizontalLayout goes through here — see the T-181.47 note
+	//! and chip that lands in a Vertical/HorizontalLayout goes through here -- see the T-181.47 note
 	//! in TBD_ListBox.AcquireRow for why the layout file alone cannot be trusted for this.
 	static Widget CreateStretched(ResourceName layout, Widget parent)
 	{
@@ -304,7 +289,6 @@ class TBD_UILayouts
 		return created;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Create() and pull one of our handlers off the new root in a single step. Null when either
 	//! half fails; the half-built widget is removed so a screen never keeps an unbound stub.
 	static ScriptedWidgetComponent CreateHandler(ResourceName layout, Widget parent, typename handler)
@@ -324,7 +308,6 @@ class TBD_UILayouts
 		return found;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Remove every child of `parent`. Panels that rebuild small lists on selection use this instead
 	//! of a pool; lists that refresh on replication must pool (see TBD_ListBox).
 	static void Clear(Widget parent)
@@ -341,7 +324,6 @@ class TBD_UILayouts
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `"{GUID}UI/x.layout"` -> `"UI/x.layout"`. Returns the input unchanged when there is no
 	//! `{...}` prefix.
 	static string StripGuid(string resource)

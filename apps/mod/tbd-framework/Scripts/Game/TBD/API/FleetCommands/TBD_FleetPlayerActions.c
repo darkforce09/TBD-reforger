@@ -11,7 +11,6 @@ class TBD_FleetPlayerActions
 	protected static const int KICK_DELAY_MS = 2000;
 	protected static const string TAG = "TBD: ";
 
-	//------------------------------------------------------------------------------------------------
 	static void Broadcast(notnull TBD_FleetCommand command)
 	{
 		string message = command.Argument("message").Trim();
@@ -20,7 +19,6 @@ class TBD_FleetPlayerActions
 		TBD_FleetCommandExecution.Succeed(command, string.Format("{\"delivered_to\":%1}", reached), false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void Kick(notnull TBD_FleetCommand command)
 	{
 		string text = TAG + "an administrator is removing you from this server";
@@ -37,7 +35,6 @@ class TBD_FleetPlayerActions
 			KickNow(command.m_sCommandId);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The kick itself, against whoever holds the identity now: a reconnect changes the player id.
 	protected static void KickNow(string commandId)
 	{

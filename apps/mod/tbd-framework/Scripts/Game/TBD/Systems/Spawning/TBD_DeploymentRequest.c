@@ -5,8 +5,7 @@
 class TBD_DeploymentRequest
 {
 	int m_iPlayerId;
-	//! TBD_SpawnManager's connection epoch of the player when the request was made.
-	int m_iConnectionEpoch;
+	int m_iConnectionEpoch; //!< TBD_SpawnManager's connection epoch of the player when the request was made.
 	string m_sArmaId;
 	string m_sSlotUid;
 	string m_sEventMissionId;
@@ -14,19 +13,15 @@ class TBD_DeploymentRequest
 	//! Chosen once per spawn attempt and kept for every retry of it, so a repeated request returns
 	//! the decision the platform already recorded.
 	string m_sPlayerLifeId;
-	//! The runtime session the request was last sent to; empty before the first send.
-	string m_sRuntimeSessionId;
+	string m_sRuntimeSessionId; //!< The runtime session the request was last sent to; empty before the first send.
 	//! Nobody waits for this decision any more (the player left, changed seat, or the round ended).
 	//! A request that may already have reached the platform is still resolved, so a life the
 	//! platform opened for it is ended.
 	bool m_bAbandoned;
-	//! At least one attempt left this server.
-	bool m_bSent;
-	//! The recovery from PLAYER_ALREADY_DEPLOYED has been used once for this request.
-	bool m_bUntrackedLifeEnded;
+	bool m_bSent; //!< At least one attempt left this server.
+	bool m_bUntrackedLifeEnded; //!< The recovery from PLAYER_ALREADY_DEPLOYED has been used once for this request.
 	int m_iFailures;
-	//! `TBD_GameRuntimeHttp.NowMs()` from which the request may be sent.
-	int m_iNotBeforeMs;
+	int m_iNotBeforeMs; //!< `TBD_GameRuntimeHttp.NowMs()` from which the request may be sent.
 }
 
 //! `POST .../deployments` answer: `allowed` with the opened life, or `denied` with a reason.

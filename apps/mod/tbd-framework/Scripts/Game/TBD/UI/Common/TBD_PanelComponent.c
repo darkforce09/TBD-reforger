@@ -1,4 +1,4 @@
-//! Pre-game rebuild (2026-09-12) — the glass card every Stitch panel sits in.
+//! Pre-game rebuild (2026-09-12) -- the glass card every Stitch panel sits in.
 //!
 //! `TBD_Panel.layout` is one shape reused by the terrain selector, the scenario browser, the four
 //! inspector cards, the briefing panels and the lobby sidebar:
@@ -8,7 +8,7 @@
 //!   │ [icon] TITLE                     [badge dock] │  HeaderRow (44)
 //!   ├──────────────────────────────────────────────┤  HeaderRule
 //!   │                                              │
-//!   │  BodyDock — the owning screen mounts here    │  fills the rest
+//!   │  BodyDock -- the owning screen mounts here    │  fills the rest
 //!   │                                              │
 //!   └──────────────────────────────────────────────┘  FooterDock (hidden until used)
 //! ```
@@ -21,10 +21,10 @@
 //! colours live in TBD_UITheme.PanelFill / PanelBorder, never here.
 //!
 //! Two layouts share this handler and widget contract:
-//!   * `TBD_Panel.layout`     — content-sized (a VerticalLayout); stacks inside a scrolling list.
-//!   * `TBD_PanelFill.layout` — frame-anchored; fills the dock it is mounted into and gives the
+//!   * `TBD_Panel.layout`     -- content-sized (a VerticalLayout); stacks inside a scrolling list.
+//!   * `TBD_PanelFill.layout` -- frame-anchored; fills the dock it is mounted into and gives the
 //!     body the remaining height. MEASURED 2026-09-12: a frame-anchored body mounted into the
-//!     content-sized variant collapses to zero height (empty TERRAINS column) — columns must use
+//!     content-sized variant collapses to zero height (empty TERRAINS column) -- columns must use
 //!     PANEL_FILL.
 class TBD_PanelComponent : ScriptedWidgetComponent
 {
@@ -54,10 +54,8 @@ class TBD_PanelComponent : ScriptedWidgetComponent
 	//! Opaque colour under this panel (0 = the screen backdrop). Cards inside another panel are
 	//! told `PanelGround()` by whoever mounts them. See the colour law in TBD_UITheme.
 	protected int m_iGround;
-	//! Our own composited fill — what children sit on. Read through GetGround().
-	protected int m_iFill;
+	protected int m_iFill; //!< Our own composited fill -- what children sit on. Read through GetGround().
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerAttached(Widget w)
 	{
 		super.HandlerAttached(w);
@@ -87,14 +85,12 @@ class TBD_PanelComponent : ScriptedWidgetComponent
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerDeattached(Widget w)
 	{
 		m_wRoot = null;
 		super.HandlerDeattached(w);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Header text. Titles are uppercase in every mockup; the caller passes the words, we shout.
 	void SetTitle(string title)
 	{
@@ -104,7 +100,6 @@ class TBD_PanelComponent : ScriptedWidgetComponent
 		TBD_UITheme.Write(m_wHeaderTitle, shout);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetIcon(string iconKey)
 	{
 		m_sIcon = iconKey;
@@ -121,14 +116,12 @@ class TBD_PanelComponent : ScriptedWidgetComponent
 		TBD_UITheme.Paint(m_wHeaderIcon, TBD_UITheme.PRIMARY_CONTAINER);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Header icon ink (default PRIMARY_CONTAINER): faction pages paint it BLUFOR / OPFOR.
 	void SetIconTint(int argb)
 	{
 		TBD_UITheme.Paint(m_wHeaderIcon, argb);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void ShowHeader(bool shown)
 	{
 		m_bHeader = shown;
@@ -136,14 +129,12 @@ class TBD_PanelComponent : ScriptedWidgetComponent
 		TBD_UITheme.Show(m_wHeaderRule, shown);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetTint(TBD_EUITint tint)
 	{
 		m_eTint = tint;
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The opaque colour this panel sits on. Columns on the backdrop keep the default; a card
 	//! mounted inside another panel is given that panel's GetGround().
 	void SetGround(int opaqueArgb)
@@ -152,21 +143,18 @@ class TBD_PanelComponent : ScriptedWidgetComponent
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Our composited fill — the ground for everything mounted into the body or header.
+	//! Our composited fill -- the ground for everything mounted into the body or header.
 	int GetGround()
 	{
 		return m_iFill;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Where a chip or count pill goes, right-aligned in the header. Null-safe for callers.
 	Widget GetBadgeDock()
 	{
 		return m_wHeaderBadgeDock;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Where the panel's content is mounted. Falls back to the root so a stripped layout still
 	//! receives children somewhere visible.
 	Widget GetBodyDock()
@@ -177,7 +165,6 @@ class TBD_PanelComponent : ScriptedWidgetComponent
 		return m_wRoot;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Optional bottom strip; showing it is the only way to make it take space.
 	Widget GetFooterDock()
 	{
@@ -185,13 +172,11 @@ class TBD_PanelComponent : ScriptedWidgetComponent
 		return m_wFooterDock;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	Widget GetRootWidget()
 	{
 		return m_wRoot;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void Repaint()
 	{
 		int ground = m_iGround;

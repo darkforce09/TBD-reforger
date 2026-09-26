@@ -9,7 +9,6 @@
 //! same assigned snapshot.
 //! @contract mission.schema.json#/$defs/task
 
-//------------------------------------------------------------------------------------------------
 class TBD_TaskHud
 {
 	static const string CH = "TaskHud";
@@ -17,14 +16,12 @@ class TBD_TaskHud
 	protected static ref array<ref SCR_MapMarkerBase> s_aApplied;
 	protected static string s_sLastSignature;
 
-	//------------------------------------------------------------------------------------------------
 	static void Clear()
 	{
 		ClearApplied();
 		s_sLastSignature = string.Empty;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Server: push the current assigned snapshot to every connected player.
 	static void PushToPlayers()
 	{
@@ -56,7 +53,6 @@ class TBD_TaskHud
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Client (and listen-host): ask the authority for the current snapshot.
 	static void RequestLocal()
 	{
@@ -67,7 +63,6 @@ class TBD_TaskHud
 		pc.TBD_RequestTaskHud();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Apply one snapshot. Assigned tasks with a position become markers; everything else is hidden
 	//! by not being in the snapshot.
 	static void Accept(array<int> xs, array<int> zs, array<string> icons, array<string> labels,
@@ -117,7 +112,6 @@ class TBD_TaskHud
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Fill the parallel arrays the RPC carries. Only ASSIGNED tasks with a world position.
 	static void BuildSnapshot(out array<int> xs, out array<int> zs, out array<string> icons,
 		out array<string> labels, out array<string> ids, out array<string> states)
@@ -153,7 +147,6 @@ class TBD_TaskHud
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string Signature(array<string> ids, array<string> states, array<int> xs, array<int> zs)
 	{
 		string sig;
@@ -179,7 +172,6 @@ class TBD_TaskHud
 		return sig;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ClearApplied()
 	{
 		if (!s_aApplied || s_aApplied.IsEmpty())
@@ -201,7 +193,6 @@ class TBD_TaskHud
 		s_aApplied.Clear();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void EnsureApplied()
 	{
 		if (!s_aApplied)
@@ -209,10 +200,8 @@ class TBD_TaskHud
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 modded class SCR_PlayerController
 {
-	//------------------------------------------------------------------------------------------------
 	void TBD_RequestTaskHud()
 	{
 		if (RplSession.Mode() == RplMode.Client)
@@ -231,7 +220,6 @@ modded class SCR_PlayerController
 		TBD_TaskHud.Accept(xs, zs, icons, labels, ids, states);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void TBD_PushTaskHud(array<int> xs, array<int> zs, array<string> icons, array<string> labels,
 		array<string> ids, array<string> states)
 	{
@@ -247,7 +235,6 @@ modded class SCR_PlayerController
 		Rpc(TBD_RpcDo_TaskHud, xs, zs, icons, labels, ids, states);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! @rpc Reliable Server
 	[RplRpc(RplChannel.Reliable, RplRcver.Server)]
 	protected void TBD_RpcAsk_TaskHud()
@@ -262,7 +249,6 @@ modded class SCR_PlayerController
 		Rpc(TBD_RpcDo_TaskHud, xs, zs, icons, labels, ids, states);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! @rpc Reliable Owner
 	[RplRpc(RplChannel.Reliable, RplRcver.Owner)]
 	protected void TBD_RpcDo_TaskHud(array<int> xs, array<int> zs, array<string> icons,

@@ -1,14 +1,13 @@
-//! T-181.12 — the unit list. Who is still alive, by faction and by group, and one click to watch
+//! T-181.12 -- the unit list. Who is still alive, by faction and by group, and one click to watch
 //! any of them.
 //!
 //! Built on the T-181.7 framework rather than a bespoke widget, and reusing
-//! `TBD_ScreenShell.layout` unchanged — the shell was designed to be subclassed exactly like this
+//! `TBD_ScreenShell.layout` unchanged -- the shell was designed to be subclassed exactly like this
 //! ("register the subclass in chimeraMenus.conf against your own preset"). Reusing it means this
 //! slice ships **no new `.layout`**, so the only non-script resource it adds is the preset line
 //! itself. `TBD_ListBox` pools its rows, so the refresh timer below costs property writes, not
 //! widget churn, for the whole rest of the event.
 //!
-//! ── The interaction, and why it is shaped this way ──────────────────────────────────────────
 //! One obvious primary action: **FREE CAMERA**. It is the way out of anything, it is always
 //! available, and it is the only loud button on the screen.
 //!
@@ -20,7 +19,7 @@
 //! button: design law allows exactly one.
 //!
 //! The backdrop is repainted transparent and the panel to `SURFACE_GLASS`, so the world you are
-//! flying stays visible behind the list. Nothing blocking — the camera keeps moving while this is
+//! flying stays visible behind the list. Nothing blocking -- the camera keeps moving while this is
 //! open, because a spectator who has to close a menu to look at something has been given a modal
 //! dialog with extra steps.
 class TBD_SpectatorScreen : TBD_ShellScreen
@@ -32,7 +31,6 @@ class TBD_SpectatorScreen : TBD_ShellScreen
 	protected ref array<ref TBD_SpectatorTarget> m_aTargets;
 	protected int m_iNotInView;
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnScreenOpen()
 	{
 		super.OnScreenOpen();
@@ -55,7 +53,6 @@ class TBD_SpectatorScreen : TBD_ShellScreen
 		GetGame().GetCallqueue().CallLater(Refresh, REFRESH_MS, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnScreenClose()
 	{
 		GetGame().GetCallqueue().Remove(Refresh);
@@ -69,13 +66,11 @@ class TBD_SpectatorScreen : TBD_ShellScreen
 		super.OnScreenClose();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected string GetScreenTitle()
 	{
 		return "SPECTATOR";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected string GetScreenSubtitle()
 	{
 		if (TBD_SpectatorTargets.IsFactionRestricted())
@@ -84,11 +79,9 @@ class TBD_SpectatorScreen : TBD_ShellScreen
 		return "Your life is spent. All sides visible.";
 	}
 
-	// ── Content ─────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! Rebuild the list. Progressive disclosure: faction is a section, group is a section, and only
-	//! the people are rows — so a full 128-slot mission reads as a handful of headings and the
+	//! the people are rows -- so a full 128-slot mission reads as a handful of headings and the
 	//! dozen names that are actually near you, not a wall.
 	void Refresh()
 	{
@@ -144,7 +137,7 @@ class TBD_SpectatorScreen : TBD_ShellScreen
 		// would be a promise we cannot keep. Counting them is the truth; hiding them silently is
 		// not, because "the list is empty" and "everyone is far away" are very different facts.
 		if (m_iNotInView > 0)
-			list.AddSection(string.Format("%1 more not in view — fly closer", m_iNotInView));
+			list.AddSection(string.Format("%1 more not in view -- fly closer", m_iNotInView));
 
 		list.EndUpdate();
 
@@ -153,14 +146,13 @@ class TBD_SpectatorScreen : TBD_ShellScreen
 		SetStatus(BuildStatus());
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! What the camera is doing plus, when there is nothing to watch, why.
 	protected string BuildStatus()
 	{
 		if (m_aTargets.IsEmpty())
 		{
 			if (TBD_SpectatorTargets.IsFactionRestricted() && TBD_SpectatorTargets.GetViewerFactionKey().IsEmpty())
-				return "Your faction could not be resolved — no targets shown.";
+				return "Your faction could not be resolved -- no targets shown.";
 
 			if (m_iNotInView > 0)
 				return "Nobody alive nearby. Fly toward the AO to pick players up.";
@@ -171,10 +163,8 @@ class TBD_SpectatorScreen : TBD_ShellScreen
 		return TBD_SpectatorController.GetStatusLine();
 	}
 
-	// ── Interaction ─────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
-	//! One click follows. A second click on the same player toggles first person — the status line
+	//! One click follows. A second click on the same player toggles first person -- the status line
 	//! advertises it, so there is nothing to memorise.
 	protected void OnTargetPicked(TBD_ListBox list, int tag)
 	{
@@ -189,7 +179,7 @@ class TBD_SpectatorScreen : TBD_ShellScreen
 		{
 			// The player died between the last refresh and this click. Say so instead of leaving
 			// the camera pointed at a corpse and the row looking selected.
-			SetStatus("That player is no longer alive — back to free camera.");
+			SetStatus("That player is no longer alive -- back to free camera.");
 			Refresh();
 			return;
 		}
@@ -197,7 +187,6 @@ class TBD_SpectatorScreen : TBD_ShellScreen
 		Refresh();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnFreeCameraPicked(TBD_ShellScreen screen)
 	{
 		TBD_SpectatorController.SetFree();

@@ -1,24 +1,20 @@
 //! T-682 -- apply payload `environment.fog` / `wind` / `windDirDeg` / `viewDistance` at mission
 //! boot. The Enfusion half of `mission.schema.json#/$defs/environment` for those four axes.
 //!
-//! == What was missing ========================================================================
 //! T-706 put the keys on the wire. `ModEnvironment` did not even serialise `windDirDeg`, and
 //! nothing in `apps/mod` read `fog` / `wind` / `viewDistance`. An author (or a hand-staged
 //! 1.3 document) could carry the values to the dedicated server and the round would still run
 //! at the world's default weather and camera far-plane. This file is the reader.
 //!
-//! == Reader before control ===================================================================
 //! The editor's `author_env` gate still refuses to author these keys. That is deliberate: a
 //! control whose value stops at the editor boundary is worse than no control. This reader is
 //! the missing destination. Editor fog/wind/view controls stay out of this slice.
 //!
-//! == Server-side only ========================================================================
 //! `TBD_FrameworkManager.OnPostInit` returns early for `RplMode.Client` before `BeginLoad()`,
 //! so this runs on the authority. `BaseWeatherManagerEntity.SetFogAmountOverride` (and the
 //! wind overrides) are documented as authority-only; replication carries the weather. View
 //! distance is `ChimeraGame.SetViewDistance` on the same server-only path.
 //!
-//! == Presence: the nested-ref landmine =======================================================
 //! `JsonLoadContext.ReadValue` ALLOCATES a nested `ref <class>` field even when the JSON key
 //! is ABSENT. `if (doc.environment)` is ALWAYS TRUE. Fog `0` is clear, wind `0` is calm,
 //! windDirDeg `0` is north -- a zero-test would erase authored statements. Every numeric field
@@ -27,12 +23,10 @@
 //! keys, and applying them here would change boot for missions that never authored fog/wind/
 //! viewDistance.
 //!
-//! == What this file CANNOT prove =============================================================
 //! The gate is `cargo xtask mod compile`. It proves the symbols exist. It cannot run a round.
 //! Whether authored fog is visible in-game is a human checklist item.
 //! @contract mission.schema.json#/$defs/environment
 
-//------------------------------------------------------------------------------------------------
 //! Bound by `JsonLoadContext` onto `TBD_MissionDocumentStruct.environment`. Field names MUST
 //! equal the JSON keys.
 class TBD_MissionEnvironmentStruct
@@ -48,11 +42,9 @@ class TBD_MissionEnvironmentStruct
 	float viewDistance = ABSENT;  //!< Metres; schema exclusiveMinimum 0.
 }
 
-//------------------------------------------------------------------------------------------------
 //! Applies authored fog / wind / viewDistance through the world's weather manager and ChimeraGame.
 class TBD_EnvironmentReader
 {
-	//------------------------------------------------------------------------------------------------
 	//! Called from `TBD_MissionLoader.ParseMissionJson` after a valid parse, on the server-only
 	//! load path. No-ops when none of the four axes were authored, so missions without them boot
 	//! unchanged.
@@ -81,7 +73,6 @@ class TBD_EnvironmentReader
 			ApplyViewDistance(env.viewDistance);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplyFogAndWind(TBD_MissionEnvironmentStruct env)
 	{
 		BaseWorld baseWorld = GetGame().GetWorld();
@@ -110,7 +101,6 @@ class TBD_EnvironmentReader
 			ApplyWindDir(weather, env.windDirDeg);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplyFog(BaseWeatherManagerEntity weather, float fog)
 	{
 		if (fog < 0 || fog > 1)
@@ -128,7 +118,6 @@ class TBD_EnvironmentReader
 		Print(string.Format("[TBD][Environment] fog=%1 applied", fog), LogLevel.NORMAL);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplyWindSpeed(BaseWeatherManagerEntity weather, float wind)
 	{
 		if (wind < 0)
@@ -146,7 +135,6 @@ class TBD_EnvironmentReader
 		Print(string.Format("[TBD][Environment] wind=%1 m/s applied", wind), LogLevel.NORMAL);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplyWindDir(BaseWeatherManagerEntity weather, float windDirDeg)
 	{
 		if (windDirDeg < 0 || windDirDeg > 360)
@@ -164,7 +152,6 @@ class TBD_EnvironmentReader
 		Print(string.Format("[TBD][Environment] windDirDeg=%1 applied", windDirDeg), LogLevel.NORMAL);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplyViewDistance(float viewDistance)
 	{
 		if (viewDistance <= 0)

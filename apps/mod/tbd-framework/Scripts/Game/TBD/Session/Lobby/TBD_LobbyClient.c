@@ -6,7 +6,6 @@
 //! the screen would lose it on every close and re-request it on every open with nothing to draw in
 //! the meantime.
 //!
-//! -- Optimistic feedback, authoritative truth ------------------------------------------------
 //! A claim is reflected **immediately** - the row goes to your name before a single packet leaves
 //! the machine - because under ONE LIFE the moment between clicking and being sure is the worst
 //! moment of the whole lobby, and a spinner does not shorten it.
@@ -24,11 +23,9 @@ class TBD_LobbyClient
 
 	protected static ref TBD_LobbyRoster m_Roster;
 
-	//! Non-blocking feedback line. Never a modal - design law.
-	protected static string m_sStatus;
+	protected static string m_sStatus; //!< Non-blocking feedback line. Never a modal - design law.
 
-	//! The seat the authority most recently refused us, or empty.
-	protected static string m_sRejectedKey;
+	protected static string m_sRejectedKey; //!< The seat the authority most recently refused us, or empty.
 
 	//! Set once the server has accepted a deploy, so the screen can stand down.
 	//!
@@ -40,7 +37,6 @@ class TBD_LobbyClient
 	//! T-181.29 - the authority's answer to "does this player already have a body", refreshed from
 	//! every roster that arrives (2 s at worst, immediately on screen open).
 	//!
-	//! -- The bug this closes -----------------------------------------------------------------
 	//! The screen only ever stood down on `m_bDeployed`, and `m_bDeployed` is set by exactly one
 	//! event: the reply to a deploy the player CLICKED. `TBD_SpawnManager`'s LOBBY auto-deploy wave
 	//! (`m_bAutoDeploy`, still 1 - it deploys everyone ~250 ms into LOBBY) never sets it, and neither
@@ -49,7 +45,6 @@ class TBD_LobbyClient
 	//! it, permanently: `TBD_LobbyStage.Tick`'s T-181.28 guard suppresses the RE-raise but has
 	//! nothing to say about a screen that is already up.
 	//!
-	//! -- Separate from m_bDeployed on purpose ------------------------------------------------
 	//! Folding this into `m_bDeployed` would have been one line fewer and wrong in two directions.
 	//! `m_bDeployed` is LATCHED and must stay latched - `AcceptDeployVerdict` sets it on a verdict
 	//! that will not be repeated, and a later roster must not un-set it. This one must NOT latch:
@@ -63,7 +58,6 @@ class TBD_LobbyClient
 	//! re-enabled by the very next roster refresh.
 	protected static bool m_bDeployPending;
 
-	//! -- The in-flight intent, and why it has to exist ----------------------------------------
 	//! The screen re-asks for the roster every 2 s, so a refresh REQUESTED BEFORE the click can
 	//! land AFTER it. Without this, the sequence is: click (row goes to your name) -> stale
 	//! refresh arrives and replaces everything (row goes back to OPEN) -> claim verdict arrives
@@ -77,34 +71,28 @@ class TBD_LobbyClient
 	protected static string m_sPendingClaimKey;
 	protected static bool m_bPendingRelease;
 
-	//! (TBD_LobbyRoster roster)
-	protected static ref ScriptInvoker m_OnRosterChanged;
+	protected static ref ScriptInvoker m_OnRosterChanged; //!< (TBD_LobbyRoster roster)
 
-	//------------------------------------------------------------------------------------------------
 	static TBD_LobbyRoster GetRoster()
 	{
 		return m_Roster;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static string GetStatus()
 	{
 		return m_sStatus;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static string GetRejectedKey()
 	{
 		return m_sRejectedKey;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static bool IsDeployed()
 	{
 		return m_bDeployed;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! T-181.29 - is this player already in the world, by the authority's own reckoning? True for a
 	//! body that arrived by ANY door, including the ones this client never asked for.
 	static bool IsInWorld()
@@ -112,7 +100,6 @@ class TBD_LobbyClient
 		return m_bInWorld;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! T-181.29 - the one question the screen asks before deciding to stand down: is there a
 	//! character under this menu? Either half is sufficient and they cover different windows -
 	//! `IsDeployed` fires on the player's own verdict with no round trip to wait for, `IsInWorld`
@@ -122,13 +109,11 @@ class TBD_LobbyClient
 		return m_bDeployed || m_bInWorld;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static bool IsDeployPending()
 	{
 		return m_bDeployPending;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! (TBD_LobbyRoster) - lazily created. Fires on every change, whether it came from the server
 	//! or from an optimistic local edit, so the screen has exactly one thing to listen to.
 	static ScriptInvoker GetOnRosterChanged()
@@ -139,9 +124,7 @@ class TBD_LobbyClient
 		return m_OnRosterChanged;
 	}
 
-	// -- Requests ----------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! Ask the server for the board. No-op without a local controller.
 	static void Request()
 	{
@@ -152,7 +135,6 @@ class TBD_LobbyClient
 		pc.TBD_RequestLobbyRoster();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Take a seat. Reflected locally first, then asked for.
 	static void Claim(string slotKey)
 	{
@@ -167,7 +149,6 @@ class TBD_LobbyClient
 		pc.TBD_RequestClaimSlot(slotKey);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Give the seat back.
 	static void Release()
 	{
@@ -182,7 +163,6 @@ class TBD_LobbyClient
 		pc.TBD_RequestReleaseSlot();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The one consequential click. Deliberately NOT optimistic: a deploy that turns out to have
 	//! been refused must not have already torn the lobby down, or a refused player is left staring
 	//! at a world they were never put into with no way back to the picker.
@@ -201,9 +181,7 @@ class TBD_LobbyClient
 		pc.TBD_RequestDeploy();
 	}
 
-	// -- Optimistic edits --------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! Move our own flag onto `slotKey` locally. Refuses to touch a seat that is not open, so the
 	//! optimistic path can never show something the authority would obviously refuse - and so
 	//! re-applying it over a fresher roster that already shows the seat lost is a no-op.
@@ -232,7 +210,6 @@ class TBD_LobbyClient
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool MutateRelease()
 	{
 		if (!m_Roster)
@@ -250,7 +227,6 @@ class TBD_LobbyClient
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplyOptimisticClaim(string slotKey)
 	{
 		if (!MutateClaim(slotKey))
@@ -261,7 +237,6 @@ class TBD_LobbyClient
 		Changed();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplyOptimisticRelease()
 	{
 		if (!MutateRelease())
@@ -271,7 +246,6 @@ class TBD_LobbyClient
 		Changed();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Re-state, on top of a roster that just arrived, whatever the server has not yet answered.
 	//! Silent by design: the caller owns the status line and the change notification, and this
 	//! runs on every incoming message.
@@ -287,9 +261,7 @@ class TBD_LobbyClient
 			MutateRelease();
 	}
 
-	// -- Reconciliation ----------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! The authority has spoken. Replace everything, then say what it said.
 	static void Accept(string wire)
 	{
@@ -365,7 +337,6 @@ class TBD_LobbyClient
 		Changed();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A deploy verdict is the only one that ends the screen, so it is handled apart from the
 	//! claim/release path rather than sharing its "ok = quietly proceed" shape.
 	protected static void AcceptDeployVerdict(TBD_LobbyRoster incoming)
@@ -382,7 +353,6 @@ class TBD_LobbyClient
 		Changed();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The refusal has had its five seconds. Drop the mark AND the sentence - leaving the sentence
 	//! behind would keep telling the player they were beaten to a seat long after they took
 	//! another one.
@@ -396,20 +366,17 @@ class TBD_LobbyClient
 		Changed();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void SetStatus(string status)
 	{
 		m_sStatus = status;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void Changed()
 	{
 		if (m_OnRosterChanged)
 			m_OnRosterChanged.Invoke(m_Roster);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! What to write in our own row while the claim is in flight. The server will overwrite it
 	//! with the same name a moment later; this is only ever on screen for one round trip.
 	protected static string LocalPlayerName()
@@ -426,7 +393,6 @@ class TBD_LobbyClient
 		return name;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! New lobby phase: forget the last round's answers, and drop any pending rejection timer so
 	//! it cannot fire into a screen that no longer exists.
 	//!

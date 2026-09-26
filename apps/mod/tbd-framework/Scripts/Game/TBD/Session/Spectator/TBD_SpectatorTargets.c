@@ -1,21 +1,20 @@
-//! T-181.12 — who a spectator is allowed to watch, and how that list is grouped.
+//! T-181.12 -- who a spectator is allowed to watch, and how that list is grouped.
 //!
 //! Deliberately pure: no widgets, no camera, no lifecycle. The roster screen renders what this
 //! returns and the controller cycles through it, so the policy question ("may I see the enemy?")
 //! is answered in exactly one place and can be read without opening a UI file.
 //!
-//! ── FACTION DISCIPLINE — the decision and why ────────────────────────────────────────────────
 //! **Default: own side only.** `s_bFactionRestricted` starts true.
 //!
 //! TBD events are ONE LIFE, which is precisely what makes this non-negotiable rather than
 //! stylistic. In a wave/ticket mode a dead player is out for thirty seconds; here they are out for
 //! the rest of the event, so by the back half of an op a large fraction of the server is
-//! spectating — and every one of them is still sitting in their squad's voice channel. An
+//! spectating -- and every one of them is still sitting in their squad's voice channel. An
 //! unrestricted spectator is therefore not a viewer, it is a live intel feed: one dead man
 //! watching the enemy assault form up can hand his side the whole enemy plan for free. That is
 //! why milsim groups restrict spectator, and it is why TBD does.
 //!
-//! **It is configurable and cheap to flip** — `SetFactionRestricted(false)` — because the same
+//! **It is configurable and cheap to flip** -- `SetFactionRestricted(false)` -- because the same
 //! framework runs training nights and AARs where watching the other side is the entire point.
 //!
 //! **Honest about what it is.** This is a *discipline* measure, not a security boundary. It runs
@@ -23,7 +22,7 @@
 //! engine's own replication range: an entity that was never streamed to you does not exist on your
 //! machine and cannot be rendered by any camera, honest or otherwise. This filter is the policy
 //! layer on top of that, and it is the layer that stops an *unmodified* client from becoming an
-//! intel leak — which is every client in an organised event.
+//! intel leak -- which is every client in an organised event.
 //!
 //! **It fails CLOSED.** If the viewer's own faction cannot be resolved while the restriction is
 //! on, the list comes back empty with a status line saying so, rather than quietly showing
@@ -35,18 +34,17 @@ class TBD_SpectatorTargets
 	protected static bool s_bFactionRestricted = true;
 
 	//! Latched the first time the local player's faction resolves. A spectator's corpse can be
-	//! deleted and their faction lookup can then fail — that must not silently widen what they are
+	//! deleted and their faction lookup can then fail -- that must not silently widen what they are
 	//! allowed to see, so the answer is remembered rather than re-derived.
 	protected static string s_sViewerFactionKey;
 
-	//------------------------------------------------------------------------------------------------
 	//! Restrict spectators to their own faction? Default true.
 	static void SetFactionRestricted(bool restricted)
 	{
 		s_bFactionRestricted = restricted;
 
 		// MEASURED: Enfusion has NO ternary operator. `cond ? a : b` fails with
-		// "Broken expression (missing ';'?)" — which points at the whole statement and says
+		// "Broken expression (missing ';'?)" -- which points at the whole statement and says
 		// nothing about `?`, so it is worth knowing rather than rediscovering.
 		string mode = "OFF (all sides)";
 		if (restricted)
@@ -55,20 +53,17 @@ class TBD_SpectatorTargets
 		Print(string.Format("[TBD][spectator] faction restriction %1", mode));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static bool IsFactionRestricted()
 	{
 		return s_bFactionRestricted;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Drop the latched faction. Called on mission teardown so a new round starts clean.
 	static void Reset()
 	{
 		s_sViewerFactionKey = string.Empty;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The local player's faction key, latched. Empty only if it has never once resolved.
 	static string GetViewerFactionKey()
 	{
@@ -79,7 +74,7 @@ class TBD_SpectatorTargets
 		if (localId <= 0)
 			return string.Empty;
 
-		// Own body first — it is authoritative and survives death, which is exactly when we need it.
+		// Own body first -- it is authoritative and survives death, which is exactly when we need it.
 		string key = FactionKeyOf(SCR_PlayerController.GetLocalControlledEntity());
 
 		if (key.IsEmpty())
@@ -100,11 +95,10 @@ class TBD_SpectatorTargets
 		return key;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Every player this spectator may watch, sorted faction -> group -> name.
 	//!
 	//! `notInView` reports how many living players were skipped because their entity is not
-	//! streamed to this client. That count is not noise — see the streaming note on
+	//! streamed to this client. That count is not noise -- see the streaming note on
 	//! `TBD_SpectatorController`. Showing it is the difference between "nobody else is alive" and
 	//! "nobody else is alive *near you*", and the spectator must not be lied to about which.
 	static void Collect(notnull array<ref TBD_SpectatorTarget> targets, out int notInView)
@@ -138,14 +132,14 @@ class TBD_SpectatorTargets
 			if (!entity)
 			{
 				// Connected, but their character is not on this machine. We cannot know whether
-				// they are alive, whose side they are on, or where they are — so we cannot offer
+				// they are alive, whose side they are on, or where they are -- so we cannot offer
 				// them as a target, only count them.
 				//
 				// T-181.24 makes this count slightly noisier and that is accepted, not overlooked.
 				// A dead player possessing the built-in (server-only, unreplicated) streaming host
 				// resolves to null here where their corpse might previously have resolved to a
 				// visibly-dead body, so they now land in `notInView` instead of being skipped
-				// silently. Fixing it would mean shipping the server's dead-list to every client —
+				// silently. Fixing it would mean shipping the server's dead-list to every client --
 				// a second source of truth for a question this class deliberately answers from what
 				// the client can see. A slightly high "not in view" is the honest error direction:
 				// it over-reports "there may be more out there", never under-reports it.
@@ -179,7 +173,6 @@ class TBD_SpectatorTargets
 		Sort(targets);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The entity a target resolves to right now, or null if it died / left our range since the
 	//! list was built. Every follow goes through this so a stale row can never point the camera at
 	//! a corpse.
@@ -199,15 +192,13 @@ class TBD_SpectatorTargets
 		return entity;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Alive, from the character controller. A destroyed damage state is the fallback for anything
 	//! that is not a character (a spectator could be watching a manned turret).
 	//!
-	//! ── T-181.24: A STREAMING HOST IS NEVER ALIVE, AND THIS IS THE GUARD THAT MATTERS MOST ──────
 	//! A dead player possesses a `TBD_SpectatorHostEntity` so the server keeps streaming the world
 	//! around their camera. That dummy has no character controller and no damage manager, so the
-	//! `return true` at the bottom of this function — the "anything we cannot classify is alive"
-	//! fallback, which is right for a turret — would call it ALIVE. Two things would break, both
+	//! `return true` at the bottom of this function -- the "anything we cannot classify is alive"
+	//! fallback, which is right for a turret -- would call it ALIVE. Two things would break, both
 	//! badly:
 	//!
 	//!   1. `TBD_SpectatorController.Tick` asks this about the LOCAL controlled entity. A spectator
@@ -215,7 +206,7 @@ class TBD_SpectatorTargets
 	//!      down the camera and hand the view to a body that does not exist, leaving the player
 	//!      driving an invisible dummy with no camera and no way out. Then the next tick would see
 	//!      "alive" again, so it would never recover.
-	//!   2. Every OTHER spectator would see the dead player as a living, followable target — and
+	//!   2. Every OTHER spectator would see the dead player as a living, followable target -- and
 	//!      following one would point their camera at an invisible nothing.
 	//!
 	//! Checked FIRST, ahead of every other test, because it must hold no matter what components a
@@ -239,9 +230,7 @@ class TBD_SpectatorTargets
 		return true;
 	}
 
-	// ── Internals ───────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	protected static string FactionKeyOf(IEntity entity)
 	{
 		if (!entity)
@@ -266,7 +255,6 @@ class TBD_SpectatorTargets
 		return string.Empty;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Display name for a faction, falling back to the key so a section heading is never blank.
 	protected static string FactionNameOf(IEntity entity, string factionKey)
 	{
@@ -288,7 +276,6 @@ class TBD_SpectatorTargets
 		return factionKey;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Group label. `GetCustomName()` is what a squad leader typed; the numeric id is the fallback
 	//! so every player still lands under a heading rather than in a flat wall of names.
 	protected static string GroupNameOf(SCR_GroupsManagerComponent groups, int playerId)
@@ -307,9 +294,8 @@ class TBD_SpectatorTargets
 		return string.Format("GROUP %1", group.GetGroupID());
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Insertion sort on faction -> group -> name. A spectator list is tens of rows, not thousands,
-	//! and an insertion sort is stable and allocation-free — which matters because this runs on a
+	//! and an insertion sort is stable and allocation-free -- which matters because this runs on a
 	//! refresh timer for the whole rest of the event.
 	protected static void Sort(notnull array<ref TBD_SpectatorTarget> targets)
 	{
@@ -328,7 +314,6 @@ class TBD_SpectatorTargets
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! <0 when `a` sorts first.
 	protected static int Compare(TBD_SpectatorTarget a, TBD_SpectatorTarget b)
 	{
@@ -343,8 +328,7 @@ class TBD_SpectatorTargets
 		return StringCompare(a.m_sName, b.m_sName);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Enforce has no string comparison operator that yields an ordering, only equality — so it is
+	//! Enforce has no string comparison operator that yields an ordering, only equality -- so it is
 	//! done by hand, character by character, once, here.
 	protected static int StringCompare(string a, string b)
 	{
@@ -376,7 +360,7 @@ class TBD_SpectatorTargets
 	}
 }
 
-//! One spectate-able player. A view record, rebuilt on every refresh — it holds no authority and
+//! One spectate-able player. A view record, rebuilt on every refresh -- it holds no authority and
 //! must never be cached across a refresh, because `m_Entity` can be destroyed under it.
 class TBD_SpectatorTarget
 {
@@ -387,6 +371,6 @@ class TBD_SpectatorTarget
 	string m_sGroupName;
 
 	//! Weak. Re-resolve through TBD_SpectatorTargets.ResolveLivingEntity before pointing a camera
-	//! at it — the row can outlive the character by a frame.
+	//! at it -- the row can outlive the character by a frame.
 	IEntity m_Entity;
 }

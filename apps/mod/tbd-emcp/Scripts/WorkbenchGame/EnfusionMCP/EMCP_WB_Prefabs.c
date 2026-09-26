@@ -39,7 +39,6 @@ class EMCP_WB_PrefabsResponse : JsonApiStruct
 
 class EMCP_WB_Prefabs : NetApiHandler
 {
-	//------------------------------------------------------------------------------------------------
 	static IEntitySource FindEntityByName(WorldEditorAPI api, string name)
 	{
 		int count = api.GetEditorEntityCount();
@@ -52,13 +51,11 @@ class EMCP_WB_Prefabs : NetApiHandler
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override JsonApiStruct GetRequest()
 	{
 		return new EMCP_WB_PrefabsRequest();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override JsonApiStruct GetResponse(JsonApiStruct request)
 	{
 		EMCP_WB_PrefabsRequest req = EMCP_WB_PrefabsRequest.Cast(request);

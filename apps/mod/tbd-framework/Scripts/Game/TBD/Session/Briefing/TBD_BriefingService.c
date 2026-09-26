@@ -6,7 +6,6 @@
 //! the tree (`TBD_MissionBrowserService`): it keeps the RPC signature to a single string, needs
 //! no schema registration, and is greppable in a log when something goes wrong.
 //!
-//! ══ T-181.26 — every field carries a MARKER, so no field is ever the empty string ═══════════
 //! `string.Split(sep, out, trim)` is a NATIVE engine call. Whether it emits a token for an empty
 //! field between two separators is a RUNTIME property; no compile probe on this lane can settle
 //! it and no oracle documents it (documentation_v2/runbooks/mod_slice_workflow.md section
@@ -15,7 +14,7 @@
 //!
 //!   * if `Split` DROPS empties, an empty field shortens the record and every later field shifts
 //!     left. `Record3("G", callsign, seats, own)` with a blank callsign arrives as three tokens,
-//!     fails the `f.Count() >= 4` guard, and the group line vanishes — taking its identity with
+//!     fails the `f.Count() >= 4` guard, and the group line vanishes -- taking its identity with
 //!     it while its `R` role lines still arrive and fold into whichever group came BEFORE it.
 //!     That is a squad's seats attributed to another squad, which is the one error a briefing
 //!     must not make;
@@ -23,21 +22,20 @@
 //!     behaviour nobody in this program has ever observed.
 //!
 //! The fix removes the question rather than answering it. `Field()` writes `<TAB>.<value>`, so the
-//! smallest token any field can produce is the one-character string `.` — which no tokeniser can
+//! smallest token any field can produce is the one-character string `.` -- which no tokeniser can
 //! drop and no trim can erase. `Unmark()` strips the marker back off. The format is now correct
 //! under BOTH behaviours, and an EMPTY field is distinguishable from a MISSING one.
 //!
-//! ── The behaviour has since been MEASURED, and the marker still earns its place ─────────────
 //! T-181.26 then went and observed it, because "unprovable from the compile lane" is not the same
 //! as "unobservable". `SelfCheckWire` splits `"a<TAB><TAB>b"` on a live dedicated boot and counts
-//! the tokens. **Engine 1.7.0.54, 2026-07-25: `string.Split(sep, out, false)` KEEPS empty tokens —
+//! the tokens. **Engine 1.7.0.54, 2026-07-25: `string.Split(sep, out, false)` KEEPS empty tokens --
 //! three tokens, not two.** Negative control in the same lane: with the sample changed to
 //! `"a<TAB>b"` the same code reported `dropped`, so the verdict is a real read of the count and not
 //! a constant.
 //!
 //! So the OLD code was accidentally correct on this build, and the empty-field defect was latent
 //! rather than live. Say that plainly rather than overclaim the fix. The marker stays because:
-//!   * a latent correctness bet is still a bet — nothing in the engine contract promises this, and
+//!   * a latent correctness bet is still a bet -- nothing in the engine contract promises this, and
 //!     a future build, or one caller passing `trim = true`, resurrects it silently;
 //!   * `f.Count()` is only a meaningful guard when the count cannot vary with content, and the
 //!     `G` record's failure mode is not a missing line but a squad's seats attributed to another
@@ -47,26 +45,24 @@
 //! a tab in a hand-staged `slot.faction` would push the `M` record to six tokens, sail past the
 //! `>= 5` guard, and render the wrong two fields. That one bit under BOTH split behaviours.
 //!
-//! ── Why the marker and not `TBD_LobbyData`'s `~` sentinel ───────────────────────────────────
 //! Both schemes exist in the tree. `TBD_LobbyData.EMPTY = "~"` maps empty->`~` on write and
 //! `~`->empty on read, and defends the choice as "`~` is not a plausible whole-field value". That
 //! is a plausibility argument, and it is LOSSY where it is wrong: a field authored as literally
 //! `~` round-trips to the empty string. The briefing carries the most free-authored text of the
-//! three delimited payloads — `meta.name` (120 chars of anything), `zone.label`, a faction
-//! `displayName` — so it is the worst place to rest on what an author would not type.
+//! three delimited payloads -- `meta.name` (120 chars of anything), `zone.label`, a faction
+//! `displayName` -- so it is the worst place to rest on what an author would not type.
 //! `TBD_AdminData.FIELD_MARK` is BIJECTIVE instead: `Unmark(Field(x)) == x` for every `x`,
 //! including `.` and the empty string, at a cost of one byte per field. This file takes that one.
-//! Recorded so the next reader knows the divergence is a decision, not drift — and so the command
+//! Recorded so the next reader knows the divergence is a decision, not drift -- and so the command
 //! centre can converge `TBD_LobbyData` onto the same helper rather than keeping three answers.
 //!
-//! ── Why the marker must stay a single ASCII byte ────────────────────────────────────────────
 //! `Unmark` is `Substring(1, length - 1)`, and MEASURED: `string.Length()` counts BYTES and
-//! `Substring` is BYTE-indexed (`"·".Length()` is 2; `"café latte".Substring(0, 4)` returns a
+//! `Substring` is BYTE-indexed (`"-".Length()` is 2; `"café latte".Substring(0, 4)` returns a
 //! broken UTF-8 sequence). A one-byte ASCII marker is therefore skipped safely no matter what the
 //! value's own encoding is. A prettier multi-byte marker would corrupt every accented field.
 class TBD_BriefingService
 {
-	//! Log channel. Deliberately a local constant rather than an edit to `TBD_Log`'s vocabulary —
+	//! Log channel. Deliberately a local constant rather than an edit to `TBD_Log`'s vocabulary --
 	//! two slices adding a channel to that one enum block in the same wave is a merge conflict for
 	//! no benefit. Fold it into `TBD_Log.CH_*` when the UI slices are next consolidated.
 	static const string CH_BRIEFING = "Briefing";
@@ -78,17 +74,17 @@ class TBD_BriefingService
 	protected static const string FIELD_SEP = "\t";
 	protected static const string LINE_SEP = "\n";
 
-	//! T-181.26 — the per-field marker. See the class header for why this exists and why it is one
+	//! T-181.26 -- the per-field marker. See the class header for why this exists and why it is one
 	//! ASCII byte. Same character and same semantics as `TBD_AdminData.FIELD_MARK`, deliberately:
 	//! one convention, not a fourth.
 	protected static const string FIELD_MARK = ".";
 
-	//! T-181.27 — bounds on one side's written orders. The schema puts no `maxLength` on any of
+	//! T-181.27 -- bounds on one side's written orders. The schema puts no `maxLength` on any of
 	//! the three fields, so a pathological document could otherwise push an unbounded string down a
 	//! reliable channel. Both caps are generous next to a real OPORD (a full Arma 3 briefing runs
-	//! well under 2,000 bytes) and neither is ever applied SILENTLY — see `WarnOnce`.
+	//! well under 2,000 bytes) and neither is ever applied SILENTLY -- see `WarnOnce`.
 	//!
-	//! BYTES, not characters: `string.Length()` was measured returning 3 for `"…"` and 2 for `"·"`.
+	//! BYTES, not characters: `string.Length()` was measured returning 3 for `"..."` and 2 for `"-"`.
 	//! Accented prose therefore spends the budget slightly faster than its glyph count suggests,
 	//! which errs on the safe side for a reliable channel.
 	protected static const int MAX_ORDER_CHARS = 6000;
@@ -107,17 +103,15 @@ class TBD_BriefingService
 	//! than leaked if a long session of mission switches ever grows it past this.
 	protected static const int MAX_WARN_STATES = 64;
 
-	//! T-181.26 — the wire self-check has run once this session. A static, so it survives a world
+	//! T-181.26 -- the wire self-check has run once this session. A static, so it survives a world
 	//! change inside one process; that is deliberate here (unlike the watcher `TBD_LobbyComponent`
 	//! has to tear down) because the thing being proven is a property of the ENGINE BUILD and the
 	//! format, neither of which a new round can change.
 	protected static bool s_bWireChecked;
 
-	// ── SERVER ──────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
-	//! Build the briefing this player — and only this player — is entitled to.
-	//! @authority server — reads `TBD_SpawnManager` and `TBD_MissionLoader`, neither of which
+	//! Build the briefing this player -- and only this player -- is entitled to.
+	//! @authority server -- reads `TBD_SpawnManager` and `TBD_MissionLoader`, neither of which
 	//! exists on a client.
 	static TBD_BriefingPayload BuildForPlayer(int playerId)
 	{
@@ -136,7 +130,6 @@ class TBD_BriefingService
 			payload.m_sTerrain = Sanitise(doc.meta.terrain);
 		}
 
-		// ── The one question that decides everything below: which side is this player on? ──
 		// Answered from server-owned state only. The client never supplies it.
 		TBD_SpawnManager spawn = TBD_SpawnManager.GetInstance();
 		TBD_MissionSlotStruct own;
@@ -145,12 +138,12 @@ class TBD_BriefingService
 
 		if (!own)
 		{
-			// FAIL CLOSED. No slot means no side, and no side means no ORBAT — not "all of it".
+			// FAIL CLOSED. No slot means no side, and no side means no ORBAT -- not "all of it".
 			payload.m_sUnavailableReason = "No slot assigned yet. Claim a slot in the lobby first.";
 			return payload;
 		}
 
-		// T-181.26 — SANITISED like every other authored string that reaches the payload. It was the
+		// T-181.26 -- SANITISED like every other authored string that reaches the payload. It was the
 		// one that was not, and a hand-staged artifact in the profile cache (TBD_MissionArtifactCache)
 		// meets NO json-schema validation, so `slot.faction`'s `^[a-z][a-z0-9_]*$` pattern is not
 		// enforced on a hand-staged mission. Only the display copy is flattened; the comparisons
@@ -172,17 +165,14 @@ class TBD_BriefingService
 		return payload;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-181.27 — the WRITTEN ORDERS for the reader's side, and no other side's.
+	//! T-181.27 -- the WRITTEN ORDERS for the reader's side, and no other side's.
 	//!
-	//! ── Why this is the same side-discipline boundary as the ORBAT ──────────────────────
 	//! `briefings` is keyed by faction exactly like `orbat`, so orders are SIDE-SCOPED
-	//! INTELLIGENCE — "Grom defends the eastern bank and the checkpoint" is precisely what BLUFOR
+	//! INTELLIGENCE -- "Grom defends the eastern bank and the checkpoint" is precisely what BLUFOR
 	//! must not read. The key handed to `GetBriefingForFaction` is `own.faction`, resolved from
 	//! `TBD_SpawnManager.GetAssignedSlot(playerId)` on the server. The other side's prose is never
 	//! read out of the document, so it never enters the payload, the RPC or the screen.
 	//!
-	//! ── The three legal empty states, all rendering nothing ──────────────────────────
 	//! `briefing` declares NO `required` in the schema, so every field is optional and `required`
 	//! would not have meant non-empty even if it were there:
 	//!   1. no `briefings` block at all        -> `GetBriefingForFaction` returns null;
@@ -196,7 +186,7 @@ class TBD_BriefingService
 	//! returns null from a MAP LOOKUP MISS, which is a real signal; the struct's own string fields
 	//! are then tested for CONTENT, never for null. `JsonLoadContext` allocates a nested `ref`
 	//! whether or not the key was present, so a null test on one is always false and tells you
-	//! nothing — the landmine documented on `TBD_MissionShapeStruct`.
+	//! nothing -- the landmine documented on `TBD_MissionShapeStruct`.
 	//! @authority server
 	protected static void BuildOrders(TBD_BriefingPayload payload, string factionKey)
 	{
@@ -212,10 +202,9 @@ class TBD_BriefingService
 		AppendParagraphs(payload.m_aExecution, briefing.execution, budget, factionKey, "execution");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Split one authored field into display paragraphs, and return what is left of the budget.
 	//!
-	//! Blank paragraphs are dropped — an author's double newline between paragraphs is a separator,
+	//! Blank paragraphs are dropped -- an author's double newline between paragraphs is a separator,
 	//! not an empty line to render.
 	protected static int AppendParagraphs(array<string> destination, string raw, int budget, string factionKey, string field)
 	{
@@ -240,7 +229,7 @@ class TBD_BriefingService
 			}
 
 			// Not `budget <= 0`: a handful of bytes left would render the field as a meaningless
-			// stub ("Alp…" was observed in a probe log). Below a useful remainder, drop the rest of
+			// stub ("Alp..." was observed in a probe log). Below a useful remainder, drop the rest of
 			// the field and say so, rather than showing a fragment that reads like corruption.
 			if (budget < MIN_ORDER_TAIL)
 			{
@@ -252,7 +241,7 @@ class TBD_BriefingService
 
 			if (paragraph.Length() > budget)
 			{
-				paragraph = ClipToWord(paragraph, budget) + "…";
+				paragraph = ClipToWord(paragraph, budget) + "...";
 				WarnOnce(factionKey, field, string.Format(
 					"faction '%1' orders exceed the %2-byte budget; %3 was truncated.",
 					factionKey, MAX_ORDER_CHARS, field));
@@ -266,14 +255,13 @@ class TBD_BriefingService
 		return budget;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! How the round ends. An Arma 3 briefing always states the win condition, and the mission
-	//! document already carries it — a planning screen that omits it is asking players to plan
+	//! document already carries it -- a planning screen that omits it is asking players to plan
 	//! blind.
 	//!
 	//! Both sides share one win condition, so unlike the ORBAT and the zones there is nothing to
 	//! filter. `endOn` values are the schema enum (`time_limit`, `all_objectives_captured`,
-	//! `faction_eliminated`, …); TBD one-life events only *evaluate* `faction_eliminated` today,
+	//! `faction_eliminated`, ...); TBD one-life events only *evaluate* `faction_eliminated` today,
 	//! but every declared trigger is shown, because hiding an authored condition would misinform
 	//! the plan.
 	protected static void BuildEndConditions(TBD_BriefingPayload payload, TBD_MissionDocumentStruct doc)
@@ -293,8 +281,7 @@ class TBD_BriefingService
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! The reader's own loadout, if the mission defined one. Only non-empty gear is listed —
+	//! The reader's own loadout, if the mission defined one. Only non-empty gear is listed --
 	//! progressive disclosure means a slot with three items shows three lines, not ten blanks.
 	//!
 	//! Row order: Primary, Launcher, Handgun, Throwable, Optic, Magazine, Uniform, Vest,
@@ -336,7 +323,6 @@ class TBD_BriefingService
 			string.Format("%1 item(s), %2 unit(s)", own.loadout.cargo.Count(), units)));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void AddKitLine(TBD_BriefingPayload payload, string label, string resource)
 	{
 		if (resource.IsEmpty())
@@ -345,7 +331,6 @@ class TBD_BriefingService
 		payload.m_aKit.Insert(new TBD_BriefingKitLine(label, PrettyResourceName(resource)));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Fold the flattened slot array into groups -> roles, **for one faction only**.
 	//!
 	//! This loop is the side-discipline boundary. A slot whose faction differs from the reader's
@@ -364,7 +349,6 @@ class TBD_BriefingService
 			if (!slot)
 				continue;
 
-			// ── THE FILTER. Everything downstream is already same-side. ──
 			if (slot.faction != own.faction)
 				continue;
 
@@ -378,7 +362,6 @@ class TBD_BriefingService
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_BriefingGroup AcquireGroup(TBD_BriefingPayload payload, string callsign)
 	{
 		foreach (TBD_BriefingGroup existing : payload.m_aGroups)
@@ -391,9 +374,8 @@ class TBD_BriefingService
 		return payload.m_aGroups[payload.m_aGroups.Count() - 1];
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Zones the reader may see: their own faction's, plus every shared one (objectives,
-	//! boundary). A zone belonging to the OTHER faction — notably the enemy spawn — is dropped
+	//! boundary). A zone belonging to the OTHER faction -- notably the enemy spawn -- is dropped
 	//! here and therefore never crosses the wire. Knowing where the enemy spawns is exactly the
 	//! kind of thing a briefing must not leak.
 	protected static void BuildZones(TBD_BriefingPayload payload, TBD_MissionDocumentStruct doc, string factionKey)
@@ -410,13 +392,13 @@ class TBD_BriefingService
 			bool isShared = zone.faction.IsEmpty();
 
 			if (!isOwn && !isShared)
-				continue; // the other side's ground — not ours to show
+				continue; // the other side's ground -- not ours to show
 
-			// T-181.18 — BOTH claims in the comment that used to sit here were wrong, and the
+			// T-181.18 -- BOTH claims in the comment that used to sit here were wrong, and the
 			// code below followed them. Polygon zones do NOT parse to a null circle:
 			// `JsonLoadContext` allocates a nested `ref` field whether or not the JSON key was
 			// present, so `zone.shape.circle` is ALWAYS non-null and this branch was ALWAYS
-			// taken — a polygon-only boundary rendered as the literal "0, 0 · r0" rather than
+			// taken -- a polygon-only boundary rendered as the literal "0, 0 - r0" rather than
 			// falling through to "area". And polygons are modelled as of T-181.18, so there are
 			// real vertices to describe. Test CONTENT, never non-null; see the landmine on
 			// TBD_MissionShapeStruct in TBD_MissionLoader.c.
@@ -425,14 +407,14 @@ class TBD_BriefingService
 			{
 				if (zone.shape.circle && zone.shape.circle.r > 0)
 				{
-					detail = string.Format("%1, %2 · r%3",
+					detail = string.Format("%1, %2 - r%3",
 						Math.Round(zone.shape.circle.x),
 						Math.Round(zone.shape.circle.z),
 						Math.Round(zone.shape.circle.r));
 				}
 				else if (zone.shape.polygon && zone.shape.polygon.Count() > 0)
 				{
-					detail = string.Format("area · %1 pts", zone.shape.polygon.Count());
+					detail = string.Format("area - %1 pts", zone.shape.polygon.Count());
 				}
 			}
 
@@ -440,13 +422,12 @@ class TBD_BriefingService
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The authored name when the mission gave one ("Levie Bridge"), else the honest fallback built
-	//! from type + id ("Objective capture — z3").
+	//! from type + id ("Objective capture -- z3").
 	//!
 	//! T-181.23 modelled `label` on `TBD_MissionZoneStruct`, so the human name the mission author
-	//! actually wrote is finally reachable here. The key stays OPTIONAL in the schema — spawn and
-	//! boundary zones routinely omit it — so the type+id fallback is kept, not replaced.
+	//! actually wrote is finally reachable here. The key stays OPTIONAL in the schema -- spawn and
+	//! boundary zones routinely omit it -- so the type+id fallback is kept, not replaced.
 	protected static string PrettyZoneTitle(TBD_MissionZoneStruct zone)
 	{
 		if (!zone.label.IsEmpty())
@@ -456,10 +437,9 @@ class TBD_BriefingService
 		if (zone.id.IsEmpty())
 			return label;
 
-		return string.Format("%1 — %2", label, Sanitise(zone.id));
+		return string.Format("%1 -- %2", label, Sanitise(zone.id));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string ResolveFactionName(TBD_MissionDocumentStruct doc, string factionKey)
 	{
 		if (doc.factions)
@@ -474,12 +454,10 @@ class TBD_BriefingService
 		return Sanitise(factionKey);
 	}
 
-	// ── WIRE ────────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! Flatten a payload to one string. Record types:
 	//!   `M` mission   name / terrain / factionKey / factionName
-	//!   `X` unavailable reason (terminal — nothing else follows)
+	//!   `X` unavailable reason (terminal -- nothing else follows)
 	//!   `S` own seat  group / role / kit
 	//!   `K` kit line  label / value
 	//!   `G` group     callsign / seats / isOwn      (subsequent `R` lines attach to it)
@@ -490,15 +468,15 @@ class TBD_BriefingService
 	//!
 	//! One line per record. The KIND is written bare; every field after it is `<TAB>.<value>`, so a
 	//! record with an empty field reads `G<TAB>.<TAB>.4<TAB>.1` and no token is ever the empty
-	//! string. See the class header for why — and note the field counts above are what `Parse`
+	//! string. See the class header for why -- and note the field counts above are what `Parse`
 	//! guards on, which is only trustworthy because of the marker.
 	//!
-	//! The WRITTEN ORDERS are deliberately absent from this record set — they ride parallel
+	//! The WRITTEN ORDERS are deliberately absent from this record set -- they ride parallel
 	//! `array<string>` RPC parameters instead. See `AdoptOrders` for why free prose must not be
 	//! put through a delimited format.
 	static string Serialise(TBD_BriefingPayload payload)
 	{
-		// T-181.26 — arm the wire self-check on the first real serialisation of the session, so the
+		// T-181.26 -- arm the wire self-check on the first real serialisation of the session, so the
 		// format is PROVEN on the machine that will run it rather than argued about here. The flag is
 		// set BEFORE the call because `SelfCheckWire` re-enters this method; setting it after would
 		// recurse forever. See `SelfCheckWire` for what the log line settles.
@@ -554,8 +532,7 @@ class TBD_BriefingService
 		return Join(lines);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Rebuild a payload on the client. A malformed line is skipped rather than fatal — a briefing
+	//! Rebuild a payload on the client. A malformed line is skipped rather than fatal -- a briefing
 	//! that renders most of itself beats a blank screen (design law: nothing blocking).
 	static TBD_BriefingPayload Parse(string wire)
 	{
@@ -605,7 +582,7 @@ class TBD_BriefingService
 			}
 			else if (kind == "G")
 			{
-				// T-181.26 — a REJECTED group must also clear `current`, or the `R` lines that
+				// T-181.26 -- a REJECTED group must also clear `current`, or the `R` lines that
 				// follow it attach to whichever group came before and that squad silently grows
 				// another squad's seats. Misattribution is worse than omission on a briefing, so a
 				// group we could not decode takes its roles down with it instead of donating them.
@@ -648,15 +625,13 @@ class TBD_BriefingService
 		return payload;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-181.27 — attach the orders arrays a client just received to the payload it just parsed.
+	//! T-181.27 -- attach the orders arrays a client just received to the payload it just parsed.
 	//!
-	//! ── Why orders do NOT ride the delimited wire above ─────────────────────────────
 	//! Everything `Serialise` carries is a short structured field that `Sanitise` can safely flatten
-	//! — a callsign, a role, a rounded coordinate. Orders are the opposite: free prose, authored by
+	//! -- a callsign, a role, a rounded coordinate. Orders are the opposite: free prose, authored by
 	//! a human, containing newlines by design and any punctuation at all. Pushing that through a
 	//! tab-and-newline record format would mean flattening the author's paragraph breaks into
-	//! spaces AND resting the result on `string.Split`'s unproven empty-token behaviour — the exact
+	//! spaces AND resting the result on `string.Split`'s unproven empty-token behaviour -- the exact
 	//! fragility T-181.26 exists to put a sentinel under. Adding the single most delimiter-hostile
 	//! payload in the mod to that format, in the same wave, would be a choice rather than an
 	//! oversight.
@@ -678,9 +653,8 @@ class TBD_BriefingService
 		CopyInto(payload.m_aExecution, execution);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! A null `source` is a real state here — it is what an RPC parameter is when the sender had
-	//! nothing to send — and is not the dead nested-`ref` null test the header warns about.
+	//! A null `source` is a real state here -- it is what an RPC parameter is when the sender had
+	//! nothing to send -- and is not the dead nested-`ref` null test the header warns about.
 	protected static void CopyInto(array<string> destination, array<string> source)
 	{
 		destination.Clear();
@@ -694,12 +668,9 @@ class TBD_BriefingService
 		}
 	}
 
-	// ── PROOF ───────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
-	//! T-181.26 — round-trip an empty field through the real wire, on the machine that will run it.
+	//! T-181.26 -- round-trip an empty field through the real wire, on the machine that will run it.
 	//!
-	//! ── Why this exists at all ──────────────────────────────────────────────────────────────
 	//! Everything the marker scheme claims is a claim about a NATIVE call's runtime behaviour, and
 	//! this program has been wrong three times about what it can prove from the compile lane. The
 	//! honest position after the edit above is "compile-verified"; this is the mechanism that turns
@@ -707,16 +678,14 @@ class TBD_BriefingService
 	//! measured it. Same reasoning `TBD_ZoneRegistry` records for its per-boot polygon diagnostic:
 	//! prove it in every run, not only in the run that was measured.
 	//!
-	//! ── What it settles beyond this file ────────────────────────────────────────────────────
 	//! The `split-empties=` field answers, in one log line, the question FOUR shipped files
-	//! currently hand-roll their own splitters to avoid — `TBD_BriefingService.SplitLines`,
+	//! currently hand-roll their own splitters to avoid -- `TBD_BriefingService.SplitLines`,
 	//! `TBD_BriefingScreen`'s word wrap, and the equivalent notes in `TBD_LobbyData` and
 	//! `TBD_AdminData`. It is deliberately reported whether the round-trip passes or fails, because
 	//! the correctness of THIS format no longer depends on the answer and the rest of the program
 	//! still wants it.
 	//!
-	//! ── When it runs, and the gate coverage it does NOT have ───────────────────────────────
-	//! Armed from `Serialise`, once per process — so it fires on the first briefing any player
+	//! Armed from `Serialise`, once per process -- so it fires on the first briefing any player
 	//! actually requests, on the server that will serve it. It is deliberately NOT hooked into a
 	//! game-mode component, because the only honest place for that is the framework roll-call and
 	//! this slice does not own that file.
@@ -726,17 +695,17 @@ class TBD_BriefingService
 	//! never called, and `grep -i briefing` over the whole console log returns only `flow.
 	//! briefingSeconds` and the JIP stage list. Anyone reading the gate as coverage of the briefing
 	//! wire is reading it wrong. Wiring one call into `TBD_FrameworkManager.PrintComponentRollCall`
-	//! would buy that coverage for one line — the check was proven against exactly that hook during
+	//! would buy that coverage for one line -- the check was proven against exactly that hook during
 	//! T-181.26 and the temporary edit was then reverted.
 	//!
 	//! Server-only in practice, allocation-free apart from one throwaway payload, runs in
-	//! microseconds, and happens once — cheap enough to be unconditional.
+	//! microseconds, and happens once -- cheap enough to be unconditional.
 	//!
 	//! @return true when the round trip is lossless. Callers may ignore it; the log line is the
 	//! product.
 	static bool SelfCheckWire()
 	{
-		// T-181.30 — the once-only guard lives HERE, not only in `Serialise`. It used to be set
+		// T-181.30 -- the once-only guard lives HERE, not only in `Serialise`. It used to be set
 		// solely by `Serialise` before it called in, which made this method safe from that one
 		// caller and from nowhere else: the roll-call arming added at boot called it directly, the
 		// flag was still false, `SelfCheckWire` re-entered `Serialise`, and the check ran and
@@ -747,7 +716,6 @@ class TBD_BriefingService
 
 		s_bWireChecked = true;
 
-		// ── Direct observation of the behaviour this whole scheme refuses to depend on ──
 		array<string> probe = {};
 		string sample = "a" + FIELD_SEP + FIELD_SEP + "b";
 		sample.Split(FIELD_SEP, probe, false);
@@ -756,7 +724,6 @@ class TBD_BriefingService
 		if (probe.Count() >= 3)
 			splitVerdict = "kept";
 
-		// ── A payload that is empty in EVERY position an empty can legally reach ──
 		TBD_BriefingPayload sent = new TBD_BriefingPayload();
 		sent.m_bHasSlot = true;
 		sent.m_sMissionName = string.Empty;   // meta.name: minLength 1 in the schema, unenforced on the profile path
@@ -827,7 +794,7 @@ class TBD_BriefingService
 
 		if (faults.IsEmpty())
 		{
-			// PrintFormat/string.Format, never Print(localVariable) — MEASURED: Print emits the
+			// PrintFormat/string.Format, never Print(localVariable) -- MEASURED: Print emits the
 			// DECLARATION of a local, not its value.
 			TBD_Log.Event(CH_BRIEFING, string.Format(
 				"wire self-check PASS empty-fields=lossless split-empties=%1", splitVerdict));
@@ -844,14 +811,12 @@ class TBD_BriefingService
 		}
 
 		TBD_Log.Error(CH_BRIEFING, string.Format(
-			"wire self-check FAIL split-empties=%1 lost=%2 — an empty briefing field does not survive the wire",
+			"wire self-check FAIL split-empties=%1 lost=%2 -- an empty briefing field does not survive the wire",
 			splitVerdict, detail));
 		return false;
 	}
 
-	// ── Helpers ─────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	protected static string Join(array<string> lines)
 	{
 		int shown = lines.Count();
@@ -873,14 +838,13 @@ class TBD_BriefingService
 
 		if (clipped)
 		{
-			TBD_Log.Warn(CH_BRIEFING, string.Format("payload clipped at %1 lines (mission has more) — raise MAX_PAYLOAD_LINES", MAX_PAYLOAD_LINES));
+			TBD_Log.Warn(CH_BRIEFING, string.Format("payload clipped at %1 lines (mission has more) -- raise MAX_PAYLOAD_LINES", MAX_PAYLOAD_LINES));
 		}
 
 		return result;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! The RECORD KIND is written bare — it is the one token that is never empty by construction and
+	//! The RECORD KIND is written bare -- it is the one token that is never empty by construction and
 	//! never authored, so marking it would buy nothing and would only make the wire harder to read
 	//! in a log. Every field after it goes through `Field`.
 	protected static string Record1(string kind, string a)
@@ -888,19 +852,16 @@ class TBD_BriefingService
 		return kind + Field(a);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string Record2(string kind, string a, string b)
 	{
 		return kind + Field(a) + Field(b);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string Record3(string kind, string a, string b, string c)
 	{
 		return kind + Field(a) + Field(b) + Field(c);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! MEASURED elsewhere in this tree (`TBD_AdminData.RecordPlayer`): a NINE-field `+` chain trips
 	//! Enfusion's expression-complexity ceiling with `Formula too complex`, and the second
 	//! diagnostic on the line is a misleading `Incompatible parameter`. Four fields is well under
@@ -911,8 +872,7 @@ class TBD_BriefingService
 		return kind + Field(a) + Field(b) + Field(c) + Field(d);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! `<TAB>.<value>` — separator, marker, value. The marker is what guarantees a NON-EMPTY token
+	//! `<TAB>.<value>` -- separator, marker, value. The marker is what guarantees a NON-EMPTY token
 	//! for an empty value; see FIELD_MARK and the class header.
 	//!
 	//! `Sanitise` runs here as well as at build time. That is deliberate belt-and-braces: this is
@@ -925,11 +885,10 @@ class TBD_BriefingService
 		return FIELD_SEP + FIELD_MARK + Sanitise(value);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Strip the marker back off a parsed field.
 	//!
-	//! A token of length <= 1 is the marker alone (an authored empty), or — if a truncated wire ever
-	//! produced a bare token — nothing at all. Both mean "empty", and rendering an empty string beats
+	//! A token of length <= 1 is the marker alone (an authored empty), or -- if a truncated wire ever
+	//! produced a bare token -- nothing at all. Both mean "empty", and rendering an empty string beats
 	//! refusing the whole record: design law, an empty state says what it can rather than showing a
 	//! void. Total by construction: `Unmark(Field(x)) == Sanitise(x)` for every `x`, `.` and the
 	//! empty string included.
@@ -942,7 +901,6 @@ class TBD_BriefingService
 		return field.Substring(1, length - 1);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A marked boolean. Anything that is not a marked `1` reads as false, so a corrupt token fails
 	//! to the safe answer rather than to "this is your own squad".
 	protected static bool IsSet(string field)
@@ -950,7 +908,6 @@ class TBD_BriefingService
 		return Unmark(field) == "1";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string Flag(bool value)
 	{
 		if (value)
@@ -959,7 +916,6 @@ class TBD_BriefingService
 		return "0";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Strip the field and line separators out of authored text so a mission name containing a
 	//! tab cannot shift every field of its record.
 	protected static string Sanitise(string value)
@@ -971,7 +927,7 @@ class TBD_BriefingService
 		// COUNT, not the new string (same shape the tree already relies on in
 		// Scripts/WorkbenchGame/TBD_ExportPaths.c). Assigning its result to a string does not
 		// compile. A probe that only `Print`ed the result passed for the wrong reason, because
-		// Print happily takes an int — the compile gate is what caught it.
+		// Print happily takes an int -- the compile gate is what caught it.
 		string clean = value;
 		clean.Replace(FIELD_SEP, " ");
 		clean.Replace(LINE_SEP, " ");
@@ -979,18 +935,16 @@ class TBD_BriefingService
 		return clean;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Break a string on newlines WITHOUT using `string.Split`.
 	//!
-	//! ── Why this is hand-rolled ───────────────────────────────────────────────
 	//! `string.Split`'s empty-token behaviour is a RUNTIME property: no compile probe can settle it
-	//! and no oracle documents it. Orders are free prose — the one input most likely to contain a
-	//! leading newline, a double newline between paragraphs, or a trailing one — so "does Split emit
+	//! and no oracle documents it. Orders are free prose -- the one input most likely to contain a
+	//! leading newline, a double newline between paragraphs, or a trailing one -- so "does Split emit
 	//! an empty token, or swallow it?" decides whether paragraphs land in the right order.
 	//!
 	//! T-181.26 has since MEASURED the answer on a live boot (`SelfCheckWire`): on engine 1.7.0.54
 	//! it KEEPS empties, which is the behaviour this loop reproduces. So `Split` would in fact work
-	//! here today — and this stays hand-rolled anyway, because the measurement pins one build of one
+	//! here today -- and this stays hand-rolled anyway, because the measurement pins one build of one
 	//! engine while this loop's output is determined by its own code: N newlines always yield exactly
 	//! N+1 parts, empty ones included, on every build there will ever be. The cost is nine lines.
 	//!
@@ -1027,23 +981,21 @@ class TBD_BriefingService
 	//! paragraph cap would have discarded the tail anyway.
 	protected static const int MAX_LINE_SCAN = 512;
 
-	//------------------------------------------------------------------------------------------------
 	//! Strip leading and trailing SPACES.
 	//!
-	//! ── `string.Trim()` does exist. This is still hand-rolled, deliberately ───────────────
 	//! MEASURED T-181.27, with negative controls, because `string` is a native type and neither
 	//! index covers it:
-	//!   * a bogus method errors  -> `Undefined function 'string.ZZ…'`, so silence means EXISTS;
+	//!   * a bogus method errors  -> `Undefined function 'string.ZZ...'`, so silence means EXISTS;
 	//!   * `string x = s.Trim();`      compiles;
 	//!   * `array<string> x = s.Trim();` FAILS  -> the return is neither void nor a container;
 	//!   * `string x = s.Replace(a,b);` FAILS, and so do `ToUpper()` / `ToLower()` -> those three
 	//!     really do return the documented COUNT;
-	//!   * `int n = <a string>;` compiles but `string s = <an int>;` does NOT — Enfusion coerces
+	//!   * `int n = <a string>;` compiles but `string s = <an int>;` does NOT -- Enfusion coerces
 	//!     string->int implicitly and never the other way. That asymmetry is what makes
 	//!     `string x = s.Foo();` the DISCRIMINATING test and `int n = s.Foo();` a useless one.
 	//! Together: `Trim()` returns a real string and is NOT a member of the mutate-in-place family.
 	//!
-	//! What no probe on this lane can settle is WHICH characters it strips — spaces only, or
+	//! What no probe on this lane can settle is WHICH characters it strips -- spaces only, or
 	//! tabs/newlines/other Unicode whitespace too. That is a runtime property, and orders are the
 	//! one input where it would matter. So this keeps a splitter whose behaviour is fully
 	//! determined: it runs AFTER `Sanitise` has already turned tabs and carriage returns into
@@ -1070,22 +1022,20 @@ class TBD_BriefingService
 		return value.Substring(first, last - first + 1);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Cut `value` to at most `limit` BYTES, preferring the last word boundary.
 	//!
-	//! ── Why a word boundary, and not just `Substring(0, limit)` ───────────────────────
 	//! MEASURED T-181.27 on a live boot: **`string.Length()` counts BYTES and `Substring` is
-	//! byte-indexed**, not character-indexed. `"…".Length()` is 3, `"·".Length()` is 2, and
-	//! `"café latte".Substring(0, 4)` returns `caf` plus the FIRST BYTE of `é` — a broken UTF-8
+	//! byte-indexed**, not character-indexed. `"...".Length()` is 3, `"-".Length()` is 2, and
+	//! `"café latte".Substring(0, 4)` returns `caf` plus the FIRST BYTE of `é` -- a broken UTF-8
 	//! sequence that renders as a replacement glyph. A blind cut at a byte offset can therefore
 	//! sever a multi-byte character, and Everon place names are exactly the accented prose that
 	//! would hit it.
 	//!
 	//! Backing off to the last space fixes that for free: 0x20 cannot appear inside a multi-byte
 	//! UTF-8 sequence, so a cut at a space is always on a character boundary. It also reads better
-	//! — orders are truncated at a word, not mid-syllable.
+	//! -- orders are truncated at a word, not mid-syllable.
 	//!
-	//! The fallback (no space within the limit — one unbroken 6,000-byte token) keeps the blind
+	//! The fallback (no space within the limit -- one unbroken 6,000-byte token) keeps the blind
 	//! cut, because refusing to truncate would be worse than one malformed trailing glyph.
 	protected static string ClipToWord(string value, int limit)
 	{
@@ -1104,7 +1054,6 @@ class TBD_BriefingService
 		return head;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Warn once per faction+field. Truncating a player's orders is never silent, and never spammy.
 	protected static void WarnOnce(string factionKey, string field, string message)
 	{
@@ -1124,7 +1073,6 @@ class TBD_BriefingService
 		TBD_Log.Warn(CH_BRIEFING, message);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `{ABC123}Prefabs/Weapons/Rifles/M4A1.et` -> `M4A1`. A briefing shows equipment, not paths.
 	static string PrettyResourceName(string resource)
 	{
@@ -1148,7 +1096,6 @@ class TBD_BriefingService
 		return s;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `objective_capture` -> `Objective capture`. Snake-case keys are authored data; a planning
 	//! screen should read like prose.
 	static string Humanise(string key)
@@ -1160,7 +1107,7 @@ class TBD_BriefingService
 		s.Replace("_", " "); // in-place; see the note in Sanitise()
 
 		string head = s.Substring(0, 1);
-		head.ToUpper(); // in-place, like Replace — the return value is not the new string
+		head.ToUpper(); // in-place, like Replace -- the return value is not the new string
 		string tail = s.Substring(1, s.Length() - 1);
 		return head + tail;
 	}

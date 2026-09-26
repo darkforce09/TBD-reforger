@@ -4,7 +4,6 @@
 //! @authority server
 class TBD_PlayerChat
 {
-	//------------------------------------------------------------------------------------------------
 	//! Send `text` to one player's chat feed. False when the player has no controller or chat.
 	static bool Tell(int playerId, string text)
 	{
@@ -24,7 +23,6 @@ class TBD_PlayerChat
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Send `text` to every connected player's chat feed. Returns how many players it reached.
 	static int TellEveryone(string text)
 	{

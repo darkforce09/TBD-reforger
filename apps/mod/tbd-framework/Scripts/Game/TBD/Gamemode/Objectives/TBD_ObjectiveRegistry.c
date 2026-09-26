@@ -1,7 +1,6 @@
-//! T-181.39 — turns the mission document's objective zones into prepared `TBD_Objective`s, once,
+//! T-181.39 -- turns the mission document's objective zones into prepared `TBD_Objective`s, once,
 //! and is the ONE authority on whether the round's objective-driven end conditions are met.
 //!
-//! ── What this closes ────────────────────────────────────────────────────────────────────────
 //! `mission.schema.json` has offered `objective_capture`, `objective_destroy` and
 //! `objective_hold_until` since the beginning, and `winConditions.endOn` has offered
 //! `all_objectives_captured`, `objective_destroyed` and `hold_expired` alongside them. Nothing
@@ -9,26 +8,21 @@
 //! and `TBD_FrameworkManager.TickWinConditions` implemented only `faction_eliminated`. Missions
 //! that declared those triggers ran until an admin ended them.
 //!
-//! ── Built ON TOP of T-181.18, not beside it ─────────────────────────────────────────────────
 //! `TBD_ZoneRegistry` already parses every zone in the document, resolves its shape, precomputes
 //! its bounds and answers containment for circles and polygons against an independently-oracled
 //! implementation. This registry consumes those prepared zones and adds only what T-181.18 has no
 //! opinion about: objective rules, progress, ownership and completion. There is no second
 //! containment test in this file and there must never be one.
 //!
-//! ── Server-side only ────────────────────────────────────────────────────────────────────────
 //! Clients hold NO mission document (recorded landmine), so a client `Build()` would produce an
 //! empty registry. `Build()` refuses rather than caching emptiness as an answer, and the only
-//! caller — `TBD_ObjectivesComponent` — is authority-gated.
+//! caller -- `TBD_ObjectivesComponent` -- is authority-gated.
 //!
-//! ── Static, and therefore explicitly cleared ────────────────────────────────────────────────
 //! Statics OUTLIVE A WORLD inside one process (recorded landmine - `TBD_FleetLoadMissionAction` restarts
 //! the scenario in-process). `TBD_ObjectivesComponent.OnDelete` MUST call `Clear()`, or mission B
 //! inherits mission A's captured objectives and can win at kickoff.
-//! ============================================================================================
 //! T-212 -- TYPED PER-SIDE OBJECTIVES: the top-level `objectives[]` array
 //!
-//! == What was missing =========================================================================
 //! T-706 put `objectives[]` on the wire and `#/$defs/objective` gave it the uniform attribute
 //! spine (`id`, `type` in capture|destroy|hold|defend, `side`, `zoneId`, `label`, per-side
 //! `framing`, `lock`, `autoLose`, `variantId`). Nothing read it. Measured on main before this
@@ -38,7 +32,6 @@
 //! identically-named class MEMBERS and no class spelled them. An author could type per-side task
 //! text and the round would run as if it were not there.
 //!
-//! == An OVERLAY, never a replacement ==========================================================
 //! `zones[]` of `type: objective_*` stays the thing the runtime enforces. `Build()` still walks
 //! prepared zones and nothing else; a typed row is joined onto a zone by `zoneId` and adds
 //! identity, per-side framing and the two WOG scalars. An objective with no typed row behaves
@@ -50,14 +43,12 @@
 //! whichever was parsed last is how a player ends up with a task that does not match the rules
 //! actually being applied to them.
 //!
-//! == ONE ENTITY, TWO FRAMINGS =================================================================
 //! FNF v4's insight is that an objective reads differently to attacker and defender. Its shape --
 //! two modules per objective -- is rejected by `#/$defs/objective` outright, and this reader
 //! enforces that: two `objectives[]` rows naming the same `zoneId` is a WARNING quoting the ban,
 //! and the first row wins deterministically. See `TBD_EObjectiveRole` for the four defects
 //! (fnf_v4.md 14.4) that shape costs.
 //!
-//! == WOG caveat: `lock` and `autoLose` are CARRIED, NOT ENACTED ===============================
 //! wog.md marks the SEMANTICS of the `WMT_Task_Point` parameters INFERRED: the addon that
 //! implements `WMT_*` is absent from the corpus (wog.md:88-95), so parameter NAMES and observed
 //! VALUES are hard evidence and the reading of what they DO is inference. T-685 took that caveat
@@ -81,7 +72,6 @@
 //! Neither is a write nobody reads: both are parsed, validated and named in the load log, which
 //! is where an operator finds out that a document authored something this build does not run.
 //!
-//! == What this file CANNOT prove ==============================================================
 //! The gate is `cargo xtask mod compile`. `flatten.rs` emits NO `objectives[]` into compiled artifacts
 //! (that is T-946.36, not this slice), so the only document that reaches this reader today is a
 //! hand-staged schemaVersion 1.3 one -- `contracts_v2/fixtures/missions/valid/schema-1_3-wire-fields.json`
@@ -90,7 +80,6 @@
 //! item and is written up as one. Nothing here claims a live wire it does not have.
 //! @contract mission.schema.json#/$defs/objective
 
-//------------------------------------------------------------------------------------------------
 //! One side's framing: `#/$defs/objectiveFraming`. Both keys optional, so both may be empty.
 class TBD_ObjectiveFramingSideStruct
 {
@@ -98,7 +87,6 @@ class TBD_ObjectiveFramingSideStruct
 	string text;
 }
 
-//------------------------------------------------------------------------------------------------
 //! `objectives[].framing` -- the attacker's and defender's readings of ONE objective.
 //!
 //! `JsonLoadContext.ReadValue` ALLOCATES a nested `ref <class>` field even when the JSON key is
@@ -111,7 +99,6 @@ class TBD_ObjectiveFramingStruct
 	ref TBD_ObjectiveFramingSideStruct defender;
 }
 
-//------------------------------------------------------------------------------------------------
 //! One `objectives[]` row: the uniform attribute spine of `#/$defs/objective`.
 //!
 //! Field names must equal the JSON keys -- `JsonLoadContext` maps by member name and a key no
@@ -136,7 +123,6 @@ class TBD_ObjectiveEntityStruct
 	string variantId;
 }
 
-//------------------------------------------------------------------------------------------------
 //! The document root for the typed-objective pass: declares `objectives` and NOTHING else.
 //!
 //! `TBD_MissionDocumentStruct` has no `objectives` field and `TBD_MissionLoader.c` says so
@@ -151,15 +137,12 @@ class TBD_ObjectiveEntityDocStruct
 	ref array<ref TBD_ObjectiveEntityStruct> objectives;
 }
 
-//------------------------------------------------------------------------------------------------
 //! Reads the top-level `objectives[]` array once and hands rows out by `zoneId`.
 //!
-//! ── Server-side only ────────────────────────────────────────────────────────────────────────
 //! Reads `TBD_MissionLoader.GetRawJson()`, which is empty on a client (clients hold NO mission
 //! document). A client calling `Read()` gets a clean `false` and no rows, which is the correct
 //! answer for a machine that is not the authority.
 //!
-//! ── Static, and therefore explicitly cleared ────────────────────────────────────────────────
 //! Statics OUTLIVE A WORLD inside one process (recorded landmine -- `TBD_FleetLoadMissionAction`
 //! restarts the scenario in-process). `TBD_ObjectiveRegistry.Clear()` calls `Clear()` here, or
 //! mission B's objectives inherit mission A's framing.
@@ -185,7 +168,6 @@ class TBD_ObjectiveEntityReader
 	protected static bool s_bOk;
 	protected static int s_iGatedOut;
 
-	//------------------------------------------------------------------------------------------------
 	static void Clear()
 	{
 		s_aRows = null;
@@ -195,7 +177,6 @@ class TBD_ObjectiveEntityReader
 		s_iGatedOut = 0;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True when the pass produced an `objectives[]` array. False is NOT an error: every document
 	//! authored before schemaVersion 1.3 has no such key, which is the whole shipped corpus.
 	static bool IsOk()
@@ -203,7 +184,6 @@ class TBD_ObjectiveEntityReader
 		return s_bOk;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! How many rows survived variant gating.
 	static int Count()
 	{
@@ -213,13 +193,11 @@ class TBD_ObjectiveEntityReader
 		return s_aRows.Count();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static int GatedOutCount()
 	{
 		return s_iGatedOut;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Parse. Idempotent: only the first call after a `Clear()` does work.
 	static bool Read()
 	{
@@ -266,7 +244,6 @@ class TBD_ObjectiveEntityReader
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! T-654 -- gate one row on the loader's ACTIVE VARIANT SET.
 	//!
 	//! `TBD_MissionLoader` filters the collections it owns and states that readers still parsing
@@ -291,7 +268,6 @@ class TBD_ObjectiveEntityReader
 		return active.Find(variantId) != -1;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The row for one zone, or null when nothing named it.
 	//!
 	//! Joined by `zoneId` and NOT by index, unlike `TBD_ObjectiveRulesReader.ForZone`. That reader
@@ -312,7 +288,6 @@ class TBD_ObjectiveEntityReader
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Record that a prepared objective took this zone's row.
 	static void MarkClaimed(string zoneId)
 	{
@@ -325,7 +300,6 @@ class TBD_ObjectiveEntityReader
 		s_aClaimedZoneIds.Insert(zoneId);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Every row that bound to no objective, by name. A row pointing at a zone that does not exist,
 	//! or at one that is not an objective zone, is carried on the wire and does nothing -- exactly
 	//! the failure the whole ticket exists to end, so it is reported rather than dropped.
@@ -355,7 +329,6 @@ class TBD_ObjectiveEntityReader
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The v4 defect the schema bans, caught by name. Two rows for one zone is "two modules that
 	//! are the same objective", which is precisely what `#/$defs/objective` forbids; the FIRST row
 	//! wins so the outcome is deterministic rather than parse-order luck.
@@ -382,7 +355,6 @@ class TBD_ObjectiveEntityReader
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Task type -> the zone kind that task belongs on. `defend` maps to CAPTURE because a defend
 	//! task IS the far side of a capture: one enforcement volume, two framings.
 	static TBD_EObjectiveKind KindOfTaskType(string taskType)
@@ -399,7 +371,6 @@ class TBD_ObjectiveEntityReader
 		return TBD_EObjectiveKind.NONE;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Does `objectives[].side` DEFEND under this task type? `hold` and `defend` are the defender
 	//! framings; `capture` and `destroy` are the attacker framings.
 	static bool IsDefenderFraming(string taskType)
@@ -407,7 +378,6 @@ class TBD_ObjectiveEntityReader
 		return taskType == TASK_HOLD || taskType == TASK_DEFEND;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Is `key` a declared `factions[].key`?
 	//!
 	//! A near-twin of `TBD_ZoneVolume.FactionExists`, which is `protected` and therefore out of
@@ -449,8 +419,7 @@ class TBD_ObjectiveRegistry
 	static const string TRIGGER_DESTROYED    = "objective_destroyed";
 	static const string TRIGGER_HOLD_EXPIRED = "hold_expired";
 
-	//! `rules.onEmpty` vocabulary.
-	static const string ON_EMPTY_HOLD  = "hold";
+	static const string ON_EMPTY_HOLD  = "hold"; //!< `rules.onEmpty` vocabulary.
 	static const string ON_EMPTY_DECAY = "decay";
 
 	//! Defaults applied when a rule is absent, out of range, or unreadable. Every one is also named
@@ -492,31 +461,26 @@ class TBD_ObjectiveRegistry
 	protected static int s_iQueryAlive;
 	protected static int s_iQueryMatched;
 
-	//------------------------------------------------------------------------------------------------
 	static bool IsBuilt()
 	{
 		return s_bBuilt;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static int GetCaptureCount()
 	{
 		return s_iCaptureCount;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static int GetDestroyCount()
 	{
 		return s_iDestroyCount;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static int GetHoldCount()
 	{
 		return s_iHoldCount;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Every prepared objective, including inert ones (kept so the summary count matches the
 	//! document). Null until `Build()` has run.
 	static array<ref TBD_Objective> GetAll()
@@ -524,8 +488,7 @@ class TBD_ObjectiveRegistry
 		return s_aObjectives;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Drop everything. MUST be called on world teardown — see the class header.
+	//! Drop everything. MUST be called on world teardown -- see the class header.
 	static void Clear()
 	{
 		s_aObjectives = null;
@@ -540,11 +503,10 @@ class TBD_ObjectiveRegistry
 		TBD_ObjectiveEntityReader.Clear();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Prepare every objective zone in the loaded mission. Safe to call repeatedly; only the first
 	//! call after a `Clear()` does work.
 	//!
-	//! Returns false when there is no valid mission to build from — the caller keeps waiting rather
+	//! Returns false when there is no valid mission to build from -- the caller keeps waiting rather
 	//! than caching an empty registry as if it were the answer. This mirrors
 	//! `TBD_ZoneRegistry.Build()` exactly, and for the same reason.
 	static bool Build()
@@ -555,7 +517,7 @@ class TBD_ObjectiveRegistry
 		// The zone layer is the source of geometry. It is idempotent, so calling it here costs
 		// nothing when `TBD_PlayAreaComponent` has already built it and makes objectives work when
 		// that component is not on the prefab. Note this deliberately does NOT call
-		// `TBD_ZoneRegistry.Clear()` — that belongs to its owner, and two components racing to tear
+		// `TBD_ZoneRegistry.Clear()` -- that belongs to its owner, and two components racing to tear
 		// down one static is a coordination hazard for no gain. `TBD_Objective.m_Zone` is a strong
 		// reference precisely so this file does not care who clears first.
 		if (!TBD_ZoneRegistry.Build())
@@ -616,19 +578,19 @@ class TBD_ObjectiveRegistry
 			// Said out loud rather than left to be inferred from every objective sitting on a
 			// default. This is the one failure mode of the second-parse design and it must never be
 			// silent.
-			TBD_Log.Warn(CH, "objective rules could not be re-read from the raw mission JSON — every objective below is running on documented defaults. See TBD_ObjectiveRulesReader.");
+			TBD_Log.Warn(CH, "objective rules could not be re-read from the raw mission JSON -- every objective below is running on documented defaults. See TBD_ObjectiveRulesReader.");
 		}
 		else if (rulesOk && TBD_ObjectiveRulesReader.Count() != zones.Count())
 		{
 			// The two passes disagree about how many zones the document has. The per-zone join
 			// verifies ids and falls back to a by-id search, so this is a warning rather than a
-			// refusal — but it means one of the two parses dropped something and an operator should
+			// refusal -- but it means one of the two parses dropped something and an operator should
 			// know before they wonder why an objective is on defaults.
-			TBD_Log.Warn(CH, string.Format("zone count differs between the mission loader (%1) and the objective rules pass (%2) — rules are joined by id where the index disagrees",
+			TBD_Log.Warn(CH, string.Format("zone count differs between the mission loader (%1) and the objective rules pass (%2) -- rules are joined by id where the index disagrees",
 				zones.Count(), TBD_ObjectiveRulesReader.Count()));
 		}
 
-		// One greppable summary line, always, even at zero — "this mission has no objectives" is
+		// One greppable summary line, always, even at zero -- "this mission has no objectives" is
 		// exactly as important to see in a boot log as "this mission has four".
 		TBD_Log.Kv(CH, "built", string.Format("objectives=%1 usable=%2 capture=%3 destroy=%4 hold=%5",
 			s_aObjectives.Count(), usable, s_iCaptureCount, s_iDestroyCount, s_iHoldCount));
@@ -639,11 +601,10 @@ class TBD_ObjectiveRegistry
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Cross-check what the mission SAYS ends the round against what it actually contains.
 	//!
 	//! A mission that declares `all_objectives_captured` with no usable capture objective has an end
-	//! trigger that can never fire — the round will run to the time limit and an author will call
+	//! trigger that can never fire -- the round will run to the time limit and an author will call
 	//! that a bug in the framework. Catching it at load, by name, costs one pass over a five-element
 	//! array and turns a mid-event mystery into a line in the boot log.
 	//!
@@ -652,31 +613,30 @@ class TBD_ObjectiveRegistry
 	protected static void ReportTriggerCoverage()
 	{
 		if (TBD_MissionLoader.HasEndTrigger(TRIGGER_ALL_CAPTURED) && s_iCaptureCount == 0)
-			TBD_Log.Warn(CH, string.Format("winConditions.endOn declares '%1' but this mission has no usable %2 zone — that trigger can NEVER fire",
+			TBD_Log.Warn(CH, string.Format("winConditions.endOn declares '%1' but this mission has no usable %2 zone -- that trigger can NEVER fire",
 				TRIGGER_ALL_CAPTURED, TYPE_CAPTURE));
 
 		if (TBD_MissionLoader.HasEndTrigger(TRIGGER_DESTROYED) && s_iDestroyCount == 0)
-			TBD_Log.Warn(CH, string.Format("winConditions.endOn declares '%1' but this mission has no usable %2 zone — that trigger can NEVER fire",
+			TBD_Log.Warn(CH, string.Format("winConditions.endOn declares '%1' but this mission has no usable %2 zone -- that trigger can NEVER fire",
 				TRIGGER_DESTROYED, TYPE_DESTROY));
 
 		if (TBD_MissionLoader.HasEndTrigger(TRIGGER_HOLD_EXPIRED) && s_iHoldCount == 0)
-			TBD_Log.Warn(CH, string.Format("winConditions.endOn declares '%1' but this mission has no usable %2 zone — that trigger can NEVER fire",
+			TBD_Log.Warn(CH, string.Format("winConditions.endOn declares '%1' but this mission has no usable %2 zone -- that trigger can NEVER fire",
 				TRIGGER_HOLD_EXPIRED, TYPE_HOLD_UNTIL));
 
 		if (s_iCaptureCount > 0 && !TBD_MissionLoader.HasEndTrigger(TRIGGER_ALL_CAPTURED))
-			TBD_Log.Kv(CH, "note", string.Format("%1 capture objective(s) but endOn does not declare '%2' — they are tracked and announced, and will not end the round",
+			TBD_Log.Kv(CH, "note", string.Format("%1 capture objective(s) but endOn does not declare '%2' -- they are tracked and announced, and will not end the round",
 				s_iCaptureCount, TRIGGER_ALL_CAPTURED));
 
 		if (s_iDestroyCount > 0 && !TBD_MissionLoader.HasEndTrigger(TRIGGER_DESTROYED))
-			TBD_Log.Kv(CH, "note", string.Format("%1 destroy objective(s) but endOn does not declare '%2' — tracked, will not end the round",
+			TBD_Log.Kv(CH, "note", string.Format("%1 destroy objective(s) but endOn does not declare '%2' -- tracked, will not end the round",
 				s_iDestroyCount, TRIGGER_DESTROYED));
 
 		if (s_iHoldCount > 0 && !TBD_MissionLoader.HasEndTrigger(TRIGGER_HOLD_EXPIRED))
-			TBD_Log.Kv(CH, "note", string.Format("%1 hold objective(s) but endOn does not declare '%2' — tracked, will not end the round",
+			TBD_Log.Kv(CH, "note", string.Format("%1 hold objective(s) but endOn does not declare '%2' -- tracked, will not end the round",
 				s_iHoldCount, TRIGGER_HOLD_EXPIRED));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Schema zone type -> objective kind. Anything else (spawn, boundary, base_protection) is
 	//! `NONE` and is skipped: those belong to T-181.18.
 	static TBD_EObjectiveKind KindOf(string zoneType)
@@ -691,14 +651,13 @@ class TBD_ObjectiveRegistry
 		return TBD_EObjectiveKind.NONE;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One line per objective at load, plus its resolved rules.
 	//!
 	//! Two jobs, both borrowed from `TBD_ZoneRegistry.LogPrepared` because they are the right ones:
-	//!   * OPERATIONAL — an operator reads the objective's extents and timings straight out of the
+	//!   * OPERATIONAL -- an operator reads the objective's extents and timings straight out of the
 	//!     boot log and checks them against the map BEFORE an event, instead of discovering at
 	//!     H-hour that the capture takes twenty minutes.
-	//!   * PROOF — the numbers are computed from parsed floats, so a run printing plausible values
+	//!   * PROOF -- the numbers are computed from parsed floats, so a run printing plausible values
 	//!     has demonstrated that the second JSON pass really did populate. A compile probe cannot
 	//!     show that; this shows it in every single run.
 	protected static void LogPrepared(notnull TBD_Objective objective)
@@ -756,7 +715,6 @@ class TBD_ObjectiveRegistry
 			objective.m_iTargetCount,
 			objective.m_fPoints));
 	}
-	//------------------------------------------------------------------------------------------------
 	//! T-212 -- the typed half of one objective's load line, or nothing when no row bound.
 	//!
 	//! Same two jobs as `LogPrepared`, and the second is the one that matters here. OPERATIONAL: an
@@ -792,7 +750,6 @@ class TBD_ObjectiveRegistry
 			objective.m_sId, objective.m_sDefenderTitle, objective.m_sDefenderText));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Flatten one prepared zone plus its rules into a runnable objective, reporting every defect by
 	//! zone id.
 	protected static TBD_Objective Prepare(notnull TBD_Zone zone, TBD_EObjectiveKind kind, TBD_ObjectiveRulesStruct rules, int index)
@@ -862,7 +819,6 @@ class TBD_ObjectiveRegistry
 		return objective;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Rules every objective kind shares.
 	protected static void ResolveCommonRules(notnull TBD_Objective objective, TBD_ObjectiveRulesStruct rules, string subject)
 	{
@@ -873,7 +829,7 @@ class TBD_ObjectiveRegistry
 		{
 			if (rules.points < 0)
 			{
-				TBD_Log.Warn(CH, string.Format("objective '%1' rules.points=%2 is negative — using 0",
+				TBD_Log.Warn(CH, string.Format("objective '%1' rules.points=%2 is negative -- using 0",
 					subject, rules.points));
 			}
 			else
@@ -886,7 +842,7 @@ class TBD_ObjectiveRegistry
 		{
 			if (rules.announceEverySeconds <= 0)
 			{
-				TBD_Log.Warn(CH, string.Format("objective '%1' rules.announceEverySeconds=%2 must be > 0 — using %3 s",
+				TBD_Log.Warn(CH, string.Format("objective '%1' rules.announceEverySeconds=%2 must be > 0 -- using %3 s",
 					subject, rules.announceEverySeconds, objective.m_fAnnounceEverySeconds));
 			}
 			else
@@ -896,13 +852,11 @@ class TBD_ObjectiveRegistry
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `objective_capture`.
 	//!
-	//! ══ Why an absent `captureSeconds` DEFAULTS rather than going inert ══════════════════════
 	//! The two failure modes are not symmetric. An objective that defaults to 120 s is playable and
 	//! says so loudly in the log. An objective that goes inert takes `all_objectives_captured` with
-	//! it — the trigger can then never fire and the round silently runs to the time limit. Between
+	//! it -- the trigger can then never fire and the round silently runs to the time limit. Between
 	//! "the capture took a length nobody chose" and "the mission can no longer be won", the first is
 	//! plainly the lesser harm, so this defaults and shouts. Contrast `objective_hold_until` below,
 	//! where the reasoning runs the other way.
@@ -914,7 +868,7 @@ class TBD_ObjectiveRegistry
 		{
 			if (rules.captureSeconds <= 0 || rules.captureSeconds > MAX_DURATION_SECONDS)
 			{
-				TBD_Log.Warn(CH, string.Format("objective '%1' rules.captureSeconds=%2 is outside 0..%3 — using the default %4 s",
+				TBD_Log.Warn(CH, string.Format("objective '%1' rules.captureSeconds=%2 is outside 0..%3 -- using the default %4 s",
 					subject, rules.captureSeconds, MAX_DURATION_SECONDS, DEFAULT_CAPTURE_SECONDS));
 			}
 			else
@@ -925,7 +879,7 @@ class TBD_ObjectiveRegistry
 		}
 
 		if (!captureAuthored)
-			TBD_Log.Warn(CH, string.Format("objective '%1' (%2) has no readable rules.captureSeconds — using the default %3 s. Either none was authored, or one was authored under a key this build does not declare and therefore cannot see; a typed JSON parser cannot tell those apart.",
+			TBD_Log.Warn(CH, string.Format("objective '%1' (%2) has no readable rules.captureSeconds -- using the default %3 s. Either none was authored, or one was authored under a key this build does not declare and therefore cannot see; a typed JSON parser cannot tell those apart.",
 				subject, TYPE_CAPTURE, DEFAULT_CAPTURE_SECONDS));
 
 		// Teardown defaults to a symmetric 1:1 rate with the build.
@@ -935,7 +889,7 @@ class TBD_ObjectiveRegistry
 		{
 			if (rules.neutralizeSeconds < 0 || rules.neutralizeSeconds > MAX_DURATION_SECONDS)
 			{
-				TBD_Log.Warn(CH, string.Format("objective '%1' rules.neutralizeSeconds=%2 is outside 0..%3 — using captureSeconds (%4 s)",
+				TBD_Log.Warn(CH, string.Format("objective '%1' rules.neutralizeSeconds=%2 is outside 0..%3 -- using captureSeconds (%4 s)",
 					subject, rules.neutralizeSeconds, MAX_DURATION_SECONDS, objective.m_fCaptureSeconds));
 			}
 			else
@@ -959,7 +913,7 @@ class TBD_ObjectiveRegistry
 			}
 			else
 			{
-				TBD_Log.Warn(CH, string.Format("objective '%1' rules.onEmpty='%2' is not one of hold|decay — using 'hold' (partial progress is kept)",
+				TBD_Log.Warn(CH, string.Format("objective '%1' rules.onEmpty='%2' is not one of hold|decay -- using 'hold' (partial progress is kept)",
 					subject, rules.onEmpty));
 			}
 		}
@@ -968,7 +922,7 @@ class TBD_ObjectiveRegistry
 		{
 			if (rules.decayRate <= 0)
 			{
-				TBD_Log.Warn(CH, string.Format("objective '%1' rules.decayRate=%2 must be > 0 — using %3",
+				TBD_Log.Warn(CH, string.Format("objective '%1' rules.decayRate=%2 must be > 0 -- using %3",
 					subject, rules.decayRate, DEFAULT_DECAY_RATE));
 			}
 			else
@@ -978,18 +932,16 @@ class TBD_ObjectiveRegistry
 		}
 
 		// An authored `faction` on a capture zone is a real restriction and must never be applied
-		// silently — a side that cannot take an objective and is not told why will report it as a
+		// silently -- a side that cannot take an objective and is not told why will report it as a
 		// bug in the capture logic.
 		if (!objective.m_sFaction.IsEmpty())
-			TBD_Log.Kv(CH, "note", string.Format("objective '%1' names faction '%2' — ONLY that side can own it; any other side can neutralise it but never take it",
+			TBD_Log.Kv(CH, "note", string.Format("objective '%1' names faction '%2' -- ONLY that side can own it; any other side can neutralise it but never take it",
 				subject, objective.m_sFaction));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `objective_hold_until`.
 	//!
-	//! ══ Why a missing rule here goes INERT rather than defaulting ════════════════════════════
-	//! `holdSeconds` has no defensible default. `captureSeconds` does — every capture in the genre
+	//! `holdSeconds` has no defensible default. `captureSeconds` does -- every capture in the genre
 	//! is tens of seconds to a couple of minutes and being wrong costs a slightly odd pace. A hold
 	//! is the length of the ROUND: `last-stand-at-montfort.json` authors 2700 s inside a 3000 s time
 	//! limit. Guessing it means guessing when the round ends and who won, and ending an event at the
@@ -1028,7 +980,6 @@ class TBD_ObjectiveRegistry
 		objective.m_bRequireHolderPresent = rules.requireHolderPresent;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `objective_destroy`.
 	//!
 	//! Only the rules are resolved here. Finding the actual target is deferred to the first LIVE
@@ -1050,7 +1001,7 @@ class TBD_ObjectiveRegistry
 		{
 			if (rules.targetCount < 0)
 			{
-				TBD_Log.Warn(CH, string.Format("objective '%1' rules.targetCount=%2 is negative — using 0 (destroy everything found)",
+				TBD_Log.Warn(CH, string.Format("objective '%1' rules.targetCount=%2 is negative -- using 0 (destroy everything found)",
 					subject, rules.targetCount));
 			}
 			else
@@ -1060,11 +1011,10 @@ class TBD_ObjectiveRegistry
 		}
 
 		if (objective.m_sFaction.IsEmpty())
-			TBD_Log.Warn(CH, string.Format("objective '%1' (%2) names no `faction` — if it completes, '%3' will fire with no winning side named. Set `faction` to the side that must destroy it.",
+			TBD_Log.Warn(CH, string.Format("objective '%1' (%2) names no `faction` -- if it completes, '%3' will fire with no winning side named. Set `faction` to the side that must destroy it.",
 				subject, TYPE_DESTROY, TRIGGER_DESTROYED));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! T-212 -- join the typed `objectives[]` row for this zone onto the prepared objective.
 	//!
 	//! No row is the NORMAL case, not a degraded one: every document authored before schemaVersion
@@ -1101,7 +1051,6 @@ class TBD_ObjectiveRegistry
 		SeedHolderFromSide(objective, subject);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Copy `framing.attacker` / `framing.defender` onto the objective.
 	//!
 	//! The nested refs are ALWAYS non-null (`JsonLoadContext` allocates them whether or not the key
@@ -1126,7 +1075,6 @@ class TBD_ObjectiveRegistry
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `objectives[].label` is the OBJECTIVE's display name; `zones[].label` names the VOLUME.
 	//!
 	//! The objective row is the more specific record, so it wins when authored -- but never
@@ -1148,7 +1096,6 @@ class TBD_ObjectiveRegistry
 		objective.m_sLabel = row.label;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Does the row's TASK type agree with the zone's VOLUME type?
 	//!
 	//! THE ZONE WINS in every disagreement, because the zone is what the runtime enforces -- the
@@ -1185,7 +1132,6 @@ class TBD_ObjectiveRegistry
 			subject, row.type, objective.m_Zone.m_sType));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Validate `objectives[].side` and say what it does NOT mean.
 	//!
 	//! `side` and `zones[].faction` are different claims and both are kept. The faction is the
@@ -1212,7 +1158,6 @@ class TBD_ObjectiveRegistry
 			subject, row.side, objective.m_sFaction));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `objectives[].autoLose` -- validated, reported, and NOT acted on. See the T-212 block in the
 	//! file header for why enacting an INFERRED round-loss from here would be two mistakes at once.
 	//!
@@ -1235,7 +1180,6 @@ class TBD_ObjectiveRegistry
 			subject, objective.m_sAutoLoseFaction));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! An authored `side` supplies the holder an `objective_hold_until` zone did not name.
 	//!
 	//! Narrow on purpose, and CAPTURE is deliberately excluded. On a hold zone an empty `faction`
@@ -1260,7 +1204,6 @@ class TBD_ObjectiveRegistry
 			subject, objective.m_sSide));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! What the typed pass produced, always, even at zero -- and every row that bound to nothing.
 	//!
 	//! `locked` is reported and NOT enforced; the line says so, because an operator reading a boot
@@ -1306,16 +1249,12 @@ class TBD_ObjectiveRegistry
 		TBD_ObjectiveEntityReader.ReportUnclaimed();
 	}
 
-	// ════════════════════════════════════════════════════════════════════════════════════════════
 	//  DESTROY: finding the target, and counting what is left of it
-	// ════════════════════════════════════════════════════════════════════════════════════════════
 
-	//------------------------------------------------------------------------------------------------
 	//! Find this objective's destroy targets. Runs ONCE, on the first LIVE evaluation.
 	//!
-	//! ══ THE HONEST STATE OF THIS FEATURE — read before trusting it ═══════════════════════════
 	//! The DESTRUCTION SIGNAL is real and proven: `DamageManagerComponent.GetState()` returns
-	//! `EDamageState`, and `EDamageState.DESTROYED` is what vanilla itself tests for — see
+	//! `EDamageState`, and `EDamageState.DESTROYED` is what vanilla itself tests for -- see
 	//! `SCR_SpectateTargetComponent.IsAlive()` and `SCR_InventoryStorageManagerComponent`, both of
 	//! which read exactly this. Compile-proven against this engine build with a failing negative
 	//! control (`DamageManagerComponent.ZZ_GetStateThatDoesNotExist` -> `Undefined function`).
@@ -1324,8 +1263,8 @@ class TBD_ObjectiveRegistry
 	//! `TBD_MissionDocumentStruct` models `entities[]` and `TBD_MissionLoader.SpawnMissionEntities`
 	//! places every resolvable row after parse. `ArmDestroyTargets` then AABB-queries the zone for
 	//! the prefab resolved from `rules.targetAlias`. When that query returns zero, the inert
-	//! reason names the real cause — unresolved registry alias, no matching `entities[]` row,
-	//! authored position outside the zone, or spawn/query miss — never a "build does not spawn
+	//! reason names the real cause -- unresolved registry alias, no matching `entities[]` row,
+	//! authored position outside the zone, or spawn/query miss -- never a "build does not spawn
 	//! entities[]" lie.
 	//!
 	//! Terrain-placed prefabs still work when `targetAlias` matches something already in the zone.
@@ -1361,10 +1300,9 @@ class TBD_ObjectiveRegistry
 			objective.m_sId, objective.m_sTargetAlias, objective.m_iTargetsFound, objective.RequiredKills()));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Why the zone AABB query found zero matches for an already-resolved `targetAlias`.
-	//! Distinguishes missing/skipped spawn vs out-of-zone authorship (T-437). Never claims the
-	//! build refuses to spawn `entities[]` — that path shipped at T-254.
+	//! Distinguishes missing/skipped spawn vs out-of-zone authorship. Never claims the
+	//! build refuses to spawn `entities[]` -- that path shipped at T-254.
 	protected static string DiagnoseEmptyDestroyTargets(notnull TBD_Objective objective)
 	{
 		string alias = objective.m_sTargetAlias;
@@ -1387,7 +1325,7 @@ class TBD_ObjectiveRegistry
 
 		if (authoredMatching == 0)
 		{
-			return string.Format("no entity matching alias '%1' was found inside the zone at LIVE. No `entities[]` row with that alias was authored (and no terrain prefab matched) — SpawnMissionEntities only places authored rows whose alias resolves in the registry.", alias);
+			return string.Format("no entity matching alias '%1' was found inside the zone at LIVE. No `entities[]` row with that alias was authored (and no terrain prefab matched) -- SpawnMissionEntities only places authored rows whose alias resolves in the registry.", alias);
 		}
 
 		if (authoredInsideZone == 0)
@@ -1395,10 +1333,9 @@ class TBD_ObjectiveRegistry
 			return string.Format("no entity matching alias '%1' was found inside the zone at LIVE. %2 `entities[]` row(s) with that alias were authored, but none sit inside this objective's zone (out-of-zone placement).", alias, authoredMatching);
 		}
 
-		return string.Format("no entity matching alias '%1' was found inside the zone at LIVE. %2 `entities[]` row(s) with that alias are authored inside the zone, so spawn likely skipped or failed for this alias — check `[TBD][Entities]` warnings (unknown registry alias / Resource.Load / SpawnEntityPrefab).", alias, authoredInsideZone);
+		return string.Format("no entity matching alias '%1' was found inside the zone at LIVE. %2 `entities[]` row(s) with that alias are authored inside the zone, so spawn likely skipped or failed for this alias -- check `[TBD][Entities]` warnings (unknown registry alias / Resource.Load / SpawnEntityPrefab).", alias, authoredInsideZone);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! How many matching, NOT-destroyed entities are inside this objective's zone right now.
 	//!
 	//! Deliberately re-queried rather than caching entity handles. Two reasons, both about being
@@ -1408,7 +1345,7 @@ class TBD_ObjectiveRegistry
 	//!     on every single tick;
 	//!   * re-querying makes "gone" and "present but DESTROYED" produce the same answer, which is
 	//!     the answer an objective wants in both cases.
-	//! The cost is one AABB query per destroy objective per evaluation — at most a handful, at
+	//! The cost is one AABB query per destroy objective per evaluation -- at most a handful, at
 	//! 1 Hz, over a box a few tens of metres across.
 	//!
 	//! KNOWN LIMIT: a target that MOVES out of the zone reads as destroyed. Acceptable for the
@@ -1437,7 +1374,6 @@ class TBD_ObjectiveRegistry
 		return s_iQueryAlive;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! World-query callback. Static because the query API takes a plain function; the scratch it
 	//! writes into is documented on `s_QueryResource`.
 	protected static bool OnQueryEntity(IEntity entity)
@@ -1476,7 +1412,6 @@ class TBD_ObjectiveRegistry
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Re-derive the per-kind usable counts. Needed because a destroy objective can go inert AFTER
 	//! the build, when arming discovers there is nothing to destroy.
 	protected static void RecountUsable()
@@ -1502,7 +1437,6 @@ class TBD_ObjectiveRegistry
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Count this objective's destroyed targets and complete it if enough have died.
 	//! Returns true on the tick it completes, so the caller can announce exactly once.
 	static bool EvaluateDestroy(notnull TBD_Objective objective)
@@ -1524,24 +1458,21 @@ class TBD_ObjectiveRegistry
 		return true;
 	}
 
-	// ════════════════════════════════════════════════════════════════════════════════════════════
 	//  THE END-TRIGGER AUTHORITY
 	//
 	//  This is the seam `TBD_FrameworkManager.TickWinConditions` consumes. It is the only place in
 	//  the mod that answers "have the objectives ended the round", and it deliberately does NOT end
 	//  the round itself: the stage machine has one owner and adding a second component that can
 	//  call SetStage(END) would split that authority across two files.
-	// ════════════════════════════════════════════════════════════════════════════════════════════
 
-	//------------------------------------------------------------------------------------------------
-	//! `all_objectives_captured` — every usable capture objective is owned by the SAME faction.
+	//! `all_objectives_captured` -- every usable capture objective is owned by the SAME faction.
 	//!
 	//! Three guards, each of which matters:
 	//!   * at least one usable capture objective must exist, so a mission with none never "wins by
 	//!     capturing nothing";
 	//!   * every one must have a non-empty owner, so a fresh round (all neutral) cannot fire it;
 	//!   * all owners must agree, so a two-objective split is a stalemate rather than a win.
-	//! Inert objectives are excluded entirely — they can neither fire this nor block it, which is
+	//! Inert objectives are excluded entirely -- they can neither fire this nor block it, which is
 	//! the only reading that lets a mission with one broken objective still be winnable.
 	static bool AreAllObjectivesCaptured(out string winnerFaction)
 	{
@@ -1580,8 +1511,7 @@ class TBD_ObjectiveRegistry
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! `objective_destroyed` — any usable destroy objective has been completed.
+	//! `objective_destroyed` -- any usable destroy objective has been completed.
 	//! The winner is the zone's `faction`, i.e. the side that was told to destroy it. Empty when the
 	//! zone named none, which is reported at load.
 	static bool HasObjectiveBeenDestroyed(out string winnerFaction)
@@ -1606,8 +1536,7 @@ class TBD_ObjectiveRegistry
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! `hold_expired` — any usable hold objective ran its clock out.
+	//! `hold_expired` -- any usable hold objective ran its clock out.
 	//! The winner is the HOLDER: the side that survived the timer is the side that wins by holding.
 	static bool HasHoldExpired(out string winnerFaction)
 	{
@@ -1631,7 +1560,6 @@ class TBD_ObjectiveRegistry
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! ONE call for `TBD_FrameworkManager.TickWinConditions`.
 	//!
 	//! Returns the name of the `winConditions.endOn` trigger that has fired, or an empty string when
@@ -1665,13 +1593,11 @@ class TBD_ObjectiveRegistry
 		return string.Empty;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The objective board, one line per objective, from `factionKey`'s point of view.
 	//!
-	//! ── This is the server-fed seam for anything a player must see ──────────────────────────
 	//! Clients hold no mission document, so a client cannot compute any of this. `factionKey` is
 	//! resolved from SERVER-OWNED state (the caller reads the player's assigned slot) and is never
-	//! taken from anything a client sends — the same discipline `TBD_MarkerService.BuildForPlayer`
+	//! taken from anything a client sends -- the same discipline `TBD_MarkerService.BuildForPlayer`
 	//! uses, and the reason its request RPC takes no arguments.
 	//!
 	//! Today's consumer is the chat feed in `TBD_ObjectivesComponent`. A HUD cannot be the consumer

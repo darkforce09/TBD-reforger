@@ -1,12 +1,11 @@
-//! T-181.7 — the Aegis style layer for every TBD screen.
+//! T-181.7 -- the Aegis style layer for every TBD screen.
 //!
 //! ONE place holds colour. Screens call TBD_UITheme.Paint(...) with a named token; they never
 //! write a literal colour. Tokens are ported 1:1 from the website's design system,
-//! `apps/website/frontend/style/aegis.css` (@theme block) — same names, same hex, so the mod and
+//! `apps/website/frontend/style/aegis.css` (@theme block) -- same names, same hex, so the mod and
 //! the site cannot drift.
 //!
-//! ── Colour law (three parts, all measured 2026-09-12 on the rebuilt selector) ──────────────
-//! 1. **Tokens are CSS sRGB**, packed 0xAARRGGBB — the hex you read off aegis.css / the Stitch
+//! 1. **Tokens are CSS sRGB**, packed 0xAARRGGBB -- the hex you read off aegis.css / the Stitch
 //!    mockups. The engine works in LINEAR space: `Widget.SetColorInt(int)` and `Color.FromInt`
 //!    read their bytes as linear, so a raw token renders ~2.2x too bright (`#0D1322` came out as
 //!    `#405273`). `Colour()` converts through `Color.FromSRGBA(r, g, b, a)` and every paint uses
@@ -16,13 +15,12 @@
 //!    `#343434` grey band in the engine; 25 % blue-950 is a whisper in CSS and a saturated navy
 //!    column in the engine; white/12 hairlines came out `#616161`. So `Paint()` hands the engine
 //!    an OPAQUE colour: a translucent token is flattened with `Over(token, ground)` first, where
-//!    `ground` is the opaque colour the widget actually sits on (`PanelGround()` by default —
+//!    `ground` is the opaque colour the widget actually sits on (`PanelGround()` by default --
 //!    components that know better pass theirs through `PaintOver`). Only `PaintAlpha()` sends
 //!    real alpha, and only for surfaces over the 3D world (SCRIM, SURFACE_GLASS).
 //! 3. **Fonts are layout-side.** `TextWidget` has no font setter, so the `.layout` files carry
-//!    `Font "{GUID}…fnt"`; the FONT_* constants below are the single list of which GUID is which.
+//!    `Font "{GUID}...fnt"`; the FONT_* constants below are the single list of which GUID is which.
 //!
-//! ── Typography / spacing ───────────────────────────────────────────────────────────────────
 //! Enfusion layouts carry absolute font sizes, authored against a 1920x1080 reference surface,
 //! so the CSS px scale maps across unchanged. The constants exist so a `.layout` and a runtime
 //! `SetText` agree on the same ladder; the engine has no stylesheet to read them from, so they
@@ -31,10 +29,9 @@
 //! Design law this file encodes (documentation_v2/mod/tbd-framework/mod_design.md section 2):
 //!   * ONE accent colour. ACTION is the single high-priority trigger blue; PRIMARY is the
 //!     everyday "active/selected" blue. Nothing else is allowed to shout.
-//!   * Generous whitespace — the spacing ladder starts at 8 and the screen gutter is 24.
+//!   * Generous whitespace -- the spacing ladder starts at 8 and the screen gutter is 24.
 class TBD_UITheme
 {
-	// ── Surfaces — "Midnight Navy" foundation ────────────────────────────────────────────────
 	static const int SURFACE                  = 0xFF0D1322; //!< --color-surface / --color-background
 	static const int SURFACE_CONTAINER_LOWEST = 0xFF080E1D; //!< --color-surface-container-lowest
 	static const int SURFACE_CONTAINER_LOW    = 0xFF151B2B; //!< --color-surface-container-low
@@ -44,11 +41,9 @@ class TBD_UITheme
 	static const int SURFACE_VARIANT          = 0xFF2F3445; //!< --color-surface-variant
 	static const int SURFACE_BRIGHT           = 0xFF333949; //!< --color-surface-bright
 
-	// ── Content ──────────────────────────────────────────────────────────────────────────────
 	static const int ON_SURFACE               = 0xFFDDE2F7; //!< --color-on-surface (body text)
 	static const int ON_SURFACE_VARIANT       = 0xFFC4C6D0; //!< --color-on-surface-variant (secondary)
 
-	// ── Accents. PRIMARY = active/selected. ACTION = the one primary trigger. ────────────────
 	static const int PRIMARY                  = 0xFFADC6FF; //!< --color-primary
 	static const int ON_PRIMARY               = 0xFF122F5F; //!< --color-on-primary
 	static const int PRIMARY_FIXED            = 0xFFD8E2FF; //!< --color-primary-fixed
@@ -62,30 +57,25 @@ class TBD_UITheme
 	static const int TERTIARY_CONTAINER       = 0xFFDF7412; //!< --color-tertiary-container (#df7412 in stitch mockup)
 	static const int CARD_BORDER              = 0xFF38BDF8; //!< --color-card-border (#38bdf8 in stitch mockup)
 
-	// ── Lines ────────────────────────────────────────────────────────────────────────────────
 	static const int OUTLINE                  = 0xFF8E909A; //!< --color-outline
 	static const int OUTLINE_VARIANT          = 0xFF44474F; //!< --color-outline-variant
 	static const int BORDER_SUBTLE            = 0xFF374151; //!< --color-border-subtle
 
-	// ── Semantic ─────────────────────────────────────────────────────────────────────────────
 	static const int SUCCESS                  = 0xFF22C55E; //!< --color-success
 	static const int WARNING                  = 0xFFEAB308; //!< --color-warning
 	static const int ERROR                    = 0xFFEF4444; //!< --color-error
 	static const int ERROR_ALERT              = 0xFFF87171; //!< --color-error-alert
 	static const int TACTICAL_YELLOW          = 0xFFFACC15; //!< --color-tactical-yellow
 
-	// ── Composites the CSS expresses with rgba() ─────────────────────────────────────────────
 	static const int SURFACE_GLASS            = 0xB31F2937; //!< --color-surface-glass  rgba(31,41,55,.70)
 	static const int SCRIM                    = 0xB8080E1D; //!< full-bleed backdrop     rgba(8,14,29,.72)
 	static const int TRANSPARENT              = 0x00000000;
 
-	// ── Derived interaction tints. Nothing outside this file may invent one. ─────────────────
 	static const int ROW_IDLE                 = 0x00000000; //!< rows sit on the panel, not on a chip
 	static const int ROW_HOVER                = 0xFF242A3A; //!< surface-container-high
 	static const int ROW_SELECTED             = 0xFF2F3445; //!< surface-container-highest
 	static const int ROW_DISABLED_TEXT        = 0xFF8E909A; //!< outline, used as "unavailable" ink
 
-	// ── Type scale (px @ 1920x1080). Mirrors aegis.css --text-*. ─────────────────────────────
 	static const int TEXT_HEADLINE_LG = 30;
 	static const int TEXT_HEADLINE_MD = 24;
 	static const int TEXT_HEADLINE_SM = 20;
@@ -99,7 +89,6 @@ class TBD_UITheme
 	static const int TEXT_MONO_SM     = 12; //!< slot counts, versions, values (mockup 11)
 	static const int TEXT_TAG         = 11; //!< chips, tags, badges (mockup 10)
 
-	// ── Fonts. Layout-side only (`Font "{GUID}…"`); TextWidget has no setter. ────────────────
 	//! Uppercase headers, card titles, nav + button labels (mockup: Inter 600).
 	static const ResourceName FONT_HEAD      = "{CD2634D279AB011A}UI/Fonts/Roboto/Roboto_Bold.fnt";
 	//! Body copy, row titles, key text (mockup: Inter 400/500).
@@ -109,13 +98,11 @@ class TBD_UITheme
 	//! Chips, counts, versions, values, search input (mockup: JetBrains Mono).
 	static const ResourceName FONT_MONO      = "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt";
 
-	// ── Corner radii (reference px). Applied by TBD_UILayouts.MountRounded. ──────────────────
 	static const int RADIUS_PANEL = 12; //!< rounded-xl: panels, inspector, dropdown menu
 	static const int RADIUS_ROW   = 8;  //!< rounded-lg: rows, cards, inputs, buttons, nav items
 	static const int RADIUS_TAG   = 6;  //!< rounded-md: chips / tags
 	static const int RADIUS_PILL  = 10; //!< rounded-full on a 20 px pill
 
-	// ── Spacing ladder. GUTTER mirrors --spacing-gutter (1.5rem). ────────────────────────────
 	static const int SPACE_XS = 4;
 	static const int SPACE_SM = 8;
 	static const int SPACE_MD = 16;
@@ -138,14 +125,12 @@ class TBD_UITheme
 	static const int DIM_INK                  = 0xFF64748B; //!< text-slate-500
 	static const int BRIGHT_INK               = 0xFFF8FAFC; //!< text-white / slate-50
 
-	// ── Nav item / tab strip ────────────────────────────────────────────────────────────────
 	static const int STRIP_FILL               = 0xB3020617; //!< bg-slate-950/70
 	static const int STRIP_BORDER             = 0xCC1E293B; //!< border-slate-800/80
 	static const int NAV_ACTIVE_FILL          = 0xCC334155; //!< bg-slate-700/80
 	static const int NAV_ACTIVE_BORDER        = 0x99475569; //!< border-slate-600/60
 	static const int NAV_HOVER_FILL           = 0x661E293B; //!< hover:bg-slate-800/40
 
-	// ── Cards (scenario browser) ────────────────────────────────────────────────────────────
 	static const int CARD_IDLE_FILL           = 0xB3141D2E; //!< rgba(20,29,46,.7)
 	static const int CARD_IDLE_BORDER         = 0x14FFFFFF; //!< rgba(255,255,255,.08)
 	static const int CARD_HOVER_FILL          = 0xE61A253A; //!< rgba(26,37,58,.9)
@@ -165,14 +150,13 @@ class TBD_UITheme
 	static const int SCROLL_THUMB             = 0x99334155; //!< rgba(51,65,85,.6)
 	static const int SCROLL_THUMB_HOVER       = 0xCC64748B; //!< rgba(100,116,139,.8)
 
-	// ── Lobby (pass 5): faction rows, ORBAT squads / slots, kit inspector, bottom-bar toggles ──
-	static const int HOLDER_INK               = 0xFFFBBF24; //!< text-amber-400 — a seat's holder, and kit counts (`x4`)
-	static const int SLOT_OPEN_FILL           = 0x660F172A; //!< bg-slate-900/40 — an unslotted row
+	static const int HOLDER_INK               = 0xFFFBBF24; //!< text-amber-400 -- a seat's holder, and kit counts (`x4`)
+	static const int SLOT_OPEN_FILL           = 0x660F172A; //!< bg-slate-900/40 -- an unslotted row
 	static const int SLOT_HOVER_FILL          = 0x331E293B; //!< hover:bg-slate-800/20
 	static const int SLOT_RULE                = 0x801E293B; //!< divide-slate-800/50 between slot rows
 	static const int SQUAD_CARD_FILL          = 0x80080E1D; //!< bg-surface-dim/50
-	static const int SQUAD_HEADER_FILL        = 0x661E293B; //!< bg-slate-800/40 — the callsign strip
-	static const int SQUAD_BODY_FILL          = 0xCC080D19; //!< bg-[#080d19]/80 — the slot list under it
+	static const int SQUAD_HEADER_FILL        = 0x661E293B; //!< bg-slate-800/40 -- the callsign strip
+	static const int SQUAD_BODY_FILL          = 0xCC080D19; //!< bg-[#080d19]/80 -- the slot list under it
 	static const int KIT_HEADER_FILL          = 0xFF0D1527; //!< kit inspector title band
 	static const int KIT_CARD_FILL            = 0xFF0E172A; //!< kit section card
 	static const int KIT_CARD_BORDER          = 0xFF1F293D;
@@ -192,7 +176,7 @@ class TBD_UITheme
 	static const int NAV_ITEM_ACTIVE_FILL    = 0xE63078F0; //!< blue-600 -> blue-500 gradient mean at .9
 	static const int NAV_ITEM_ACTIVE_BORDER  = 0x4D60A5FA; //!< blue-400/30
 	static const int NAV_ITEM_HOVER_FILL     = 0x0DFFFFFF; //!< white/5
-	static const int NAV_ACCENT              = 0x99FFFFFF; //!< white/60 — the active item's right bar
+	static const int NAV_ACCENT              = 0x99FFFFFF; //!< white/60 -- the active item's right bar
 	static const int ICON_BOX_FILL           = 0x0AFFFFFF; //!< white/4
 	static const int ICON_BOX_BORDER         = 0x0FFFFFFF; //!< white/6
 	static const int ICON_BOX_HOVER_FILL     = 0x1A3B82F6; //!< primary/10
@@ -206,11 +190,10 @@ class TBD_UITheme
 	static const int TOPIC_ITEM_HOVER_FILL   = 0x801E293B; //!< slate-800/50
 	static const int TOPIC_ITEM_HOVER_BORDER = 0x66334155; //!< slate-700/40
 
-	//! Memoised linear Color per sRGB token — one allocation per distinct colour, ever. Every
+	//! Memoised linear Color per sRGB token -- one allocation per distinct colour, ever. Every
 	//! paint goes through here (`SetColor(Color)`); nothing in the framework uses SetColorInt.
 	protected static ref map<int, ref Color> m_mColours;
 
-	//------------------------------------------------------------------------------------------------
 	//! sRGB ARGB token -> LINEAR Color, memoised. Never allocate a Color per frame.
 	static Color Colour(int argb)
 	{
@@ -229,13 +212,12 @@ class TBD_UITheme
 		int g = (argb >> 8) & 0xFF;
 		int b = argb & 0xFF;
 
-		// Insert the new instance straight into the owning map — never park a freshly `new`ed
+		// Insert the new instance straight into the owning map -- never park a freshly `new`ed
 		// managed object in a non-ref local first.
 		m_mColours.Insert(argb, Color.FromSRGBA(r, g, b, a));
 		return m_mColours.Get(argb);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Runs once, on the first colour ever built. The two values are the ones from the colour law
 	//! above (white/3 % and blue-600/28 over the panel fill); a mismatch means Over() drifted and
 	//! every tint on screen is wrong, so it is a WARNING, not a debug line.
@@ -247,7 +229,6 @@ class TBD_UITheme
 			Print(string.Format("[TBD][ui] WARNING sRGB compositing self-check failed: header %1 selected %2", header, selected), LogLevel.WARNING);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! CSS source-over in sRGB: `top` (any alpha) flattened onto an opaque `ground`. Integer math,
 	//! rounds to nearest. This is the only place a translucent token may be resolved.
 	static int Over(int top, int ground)
@@ -265,14 +246,13 @@ class TBD_UITheme
 		return 0xFF000000 | (r << 16) | (g << 8) | b;
 	}
 
-	// ── Grounds: the opaque colour a widget actually sits on. Derived, never typed. ──────────
 	//! The screen backdrop.
 	static int Ground()
 	{
 		return SURFACE_CONTAINER_LOWEST;
 	}
 
-	//! A glass panel on the backdrop — what almost everything sits on.
+	//! A glass panel on the backdrop -- what almost everything sits on.
 	static int PanelGround()
 	{
 		return Over(PANEL_FILL, SURFACE_CONTAINER_LOWEST);
@@ -296,7 +276,6 @@ class TBD_UITheme
 		return Over(PanelFill(tint), PanelGround());
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Null-safe tint over the default ground (a glass panel). A translucent token is flattened
 	//! in sRGB first; the engine only ever receives opaque or fully transparent colours.
 	static void Paint(Widget w, int argb)
@@ -304,7 +283,6 @@ class TBD_UITheme
 		PaintOver(w, argb, PanelGround());
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Same, over a known ground. Components that know what they sit on use this.
 	static void PaintOver(Widget w, int argb, int ground)
 	{
@@ -327,8 +305,7 @@ class TBD_UITheme
 		Tint(w, Colour(argb));
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Real engine alpha (linear blend). ONLY for surfaces over the 3D world — SCRIM, SURFACE_GLASS.
+	//! Real engine alpha (linear blend). ONLY for surfaces over the 3D world -- SCRIM, SURFACE_GLASS.
 	//! Chrome never comes through here; it would render brighter than the mockup.
 	static void PaintAlpha(Widget w, int argb)
 	{
@@ -336,10 +313,9 @@ class TBD_UITheme
 			Tint(w, Colour(argb));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! SetColor on `w`, and on every image of a rounded shape mounted inside it. MEASURED
 	//! 2026-09-12: a colour set on a FrameWidget dock does not reach its children even with
-	//! `"Inherit Color"` — the shapes rendered white — so the seven images are painted by hand.
+	//! `"Inherit Color"` -- the shapes rendered white -- so the seven images are painted by hand.
 	//! Only subtrees rooted at a `Rounded*` widget are walked; a dock's other children (text,
 	//! icons) keep their own ink.
 	protected static void Tint(Widget w, Color colour)
@@ -347,7 +323,7 @@ class TBD_UITheme
 		w.SetColor(colour);
 
 		// A transparent paint HIDES the shape rather than trusting alpha 0 to reach seven
-		// children (MEASURED 2026-09-12: it did not — idle rows drew white outlines).
+		// children (MEASURED 2026-09-12: it did not -- idle rows drew white outlines).
 		bool visible = colour.A() > 0;
 
 		Widget child = w.GetChildren();
@@ -364,7 +340,6 @@ class TBD_UITheme
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void TintTree(Widget w, Color colour)
 	{
 		w.SetColor(colour);
@@ -377,7 +352,6 @@ class TBD_UITheme
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Null-safe text write.
 	static void Write(TextWidget w, string text)
 	{
@@ -385,7 +359,6 @@ class TBD_UITheme
 			w.SetText(text);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Null-safe visibility.
 	static void Show(Widget w, bool visible)
 	{
@@ -393,9 +366,8 @@ class TBD_UITheme
 			w.SetVisible(visible);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Background tint for an interactive surface (list row, button) given its semantic state.
-	//! Hover beats selection beats idle — immediate feedback is design law, so the pointer
+	//! Hover beats selection beats idle -- immediate feedback is design law, so the pointer
 	//! always wins the readout.
 	static int StateBackground(TBD_EUIState state, bool hovered, bool selected)
 	{
@@ -411,7 +383,6 @@ class TBD_UITheme
 		return ROW_IDLE;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Ink for the primary line of an interactive surface.
 	static int StateTitle(TBD_EUIState state)
 	{
@@ -426,7 +397,6 @@ class TBD_UITheme
 		return ON_SURFACE;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Ink for the secondary/right-hand line.
 	static int StateDetail(TBD_EUIState state)
 	{
@@ -440,8 +410,7 @@ class TBD_UITheme
 		return ON_SURFACE_VARIANT;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! The 2px leading rail that marks the active row. TRANSPARENT means "draw nothing" —
+	//! The 2px leading rail that marks the active row. TRANSPARENT means "draw nothing" --
 	//! progressive disclosure, not a permanent cage of borders.
 	static int StateAccent(TBD_EUIState state, bool selected)
 	{
@@ -453,10 +422,8 @@ class TBD_UITheme
 
 		return TRANSPARENT;
 	}
-	// ── Tinted surfaces: chips, badges and faction-coloured panels ──────────────────────────
 	// One tint enum drives fill / border / ink so a chip and the panel around it always agree.
 
-	//------------------------------------------------------------------------------------------------
 	static int ChipFill(TBD_EUITint tint)
 	{
 		switch (tint)
@@ -474,7 +441,6 @@ class TBD_UITheme
 		return 0xCC1E293B; // slate-800/80
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static int ChipBorder(TBD_EUITint tint)
 	{
 		switch (tint)
@@ -492,7 +458,6 @@ class TBD_UITheme
 		return 0x99334155; // slate-700/60
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static int ChipInk(TBD_EUITint tint)
 	{
 		switch (tint)
@@ -510,7 +475,6 @@ class TBD_UITheme
 		return 0xFFCBD5E1; // slate-300
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Faction columns and inset cards. NEUTRAL is the plain glass card.
 	static int PanelFill(TBD_EUITint tint)
 	{
@@ -525,7 +489,6 @@ class TBD_UITheme
 		return PANEL_FILL;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Lobby faction rows (lobby_sidebar mockup): BLUFOR `bg-blue-950/80 border-blue-500/40
 	//! text-blue-300`, OPFOR `bg-red-500/20 border-red-500/30 text-rose-400`, spectators neutral.
 	static int FactionRowFill(TBD_EUITint tint, bool hovered = false)
@@ -546,7 +509,6 @@ class TBD_UITheme
 		return 0x660F172A;                   // bg-slate-900/40
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static int FactionRowBorder(TBD_EUITint tint, bool selected = false)
 	{
 		switch (tint)
@@ -565,7 +527,6 @@ class TBD_UITheme
 		return 0x991E293B;                   // border-slate-800/60
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static int FactionRowInk(TBD_EUITint tint)
 	{
 		switch (tint)
@@ -579,7 +540,6 @@ class TBD_UITheme
 		return MUTED_INK;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static int PanelBorder(TBD_EUITint tint)
 	{
 		switch (tint)

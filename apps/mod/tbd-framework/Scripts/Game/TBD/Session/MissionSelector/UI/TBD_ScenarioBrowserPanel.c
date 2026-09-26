@@ -1,4 +1,4 @@
-//! Pre-game rebuild (2026-09-12) — the <TERRAIN> MISSIONS column of the Mission Selector.
+//! Pre-game rebuild (2026-09-12) -- the <TERRAIN> MISSIONS column of the Mission Selector.
 //!
 //! ```
 //!   ┌ ▦ EVERON MISSIONS                      [3 AVAILABLE] ┐
@@ -13,12 +13,12 @@
 //! ```
 //!
 //! Two classes, one file:
-//!   * `TBD_MissionCardComponent` — one pooled card (`TBD_MissionCard.layout`). Widget contract:
+//!   * `TBD_MissionCardComponent` -- one pooled card (`TBD_MissionCard.layout`). Widget contract:
 //!     `Border`, `Background`, `TagChipDock`, `TerrainText`, `SlotCount`, `PulseDot`, `Title`,
 //!     `Indicator` (image), `IndicatorGlyph` (text fallback).
-//!   * `TBD_ScenarioBrowserPanel` — the controller. Filters = terrain ∩ checked modes ∩ query; all
+//!   * `TBD_ScenarioBrowserPanel` -- the controller. Filters = terrain ∩ checked modes ∩ query; all
 //!     counts (`N AVAILABLE`, the Modes badge, per-mode counts) are computed from the catalog.
-//!     Output: `GetOnSelected()(panel, missionId)` — empty id when nothing is visible.
+//!     Output: `GetOnSelected()(panel, missionId)` -- empty id when nothing is visible.
 
 class TBD_MissionCardComponent : TBD_UIInteractive
 {
@@ -38,7 +38,6 @@ class TBD_MissionCardComponent : TBD_UIInteractive
 	protected bool m_bSelected;
 	protected TBD_EUITint m_eTagTint = TBD_EUITint.NEUTRAL;
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnBind(Widget w)
 	{
 		m_wBorder = w.FindAnyWidget("Border");
@@ -55,7 +54,6 @@ class TBD_MissionCardComponent : TBD_UIInteractive
 		TBD_UILayouts.MountRounded(m_wBackground, TBD_UITheme.RADIUS_ROW - 1);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Bind(TBD_ScenarioBrowserPanel owner, int index, TBD_MissionSummary mission, string terrainName, string tagLabel, TBD_EUITint tagTint)
 	{
 		m_Owner = owner;
@@ -74,7 +72,6 @@ class TBD_MissionCardComponent : TBD_UIInteractive
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetSelected(bool selected)
 	{
 		if (m_bSelected == selected)
@@ -84,7 +81,6 @@ class TBD_MissionCardComponent : TBD_UIInteractive
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void Repaint()
 	{
 		if (!m_wRoot)
@@ -152,7 +148,7 @@ class TBD_MissionCardComponent : TBD_UIInteractive
 				m_TagChip.SetTint(m_eTagTint);
 		}
 
-		// Icon when the imageset has one, glyph otherwise — never both, never neither.
+		// Icon when the imageset has one, glyph otherwise -- never both, never neither.
 		bool iconShown = TBD_UIIcons.Load(m_wIndicator, indicatorIcon);
 		TBD_UITheme.Paint(m_wIndicator, indicatorInk);
 		TBD_UITheme.Show(m_wIndicatorGlyph, !iconShown);
@@ -160,14 +156,12 @@ class TBD_MissionCardComponent : TBD_UIInteractive
 		TBD_UITheme.Paint(m_wIndicatorGlyph, indicatorInk);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnActivated()
 	{
 		if (m_Owner)
 			m_Owner.OnCardActivated(m_iIndex);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetCardVisible(bool visible)
 	{
 		TBD_UITheme.Show(m_wRoot, visible);
@@ -196,10 +190,8 @@ class TBD_ScenarioBrowserPanel
 	//! Modes the user unticked. Kept across terrain changes so a filter survives browsing.
 	protected ref set<string> m_sHiddenModes;
 
-	//! (TBD_ScenarioBrowserPanel panel, string missionId)
-	protected ref ScriptInvoker m_OnSelected;
+	protected ref ScriptInvoker m_OnSelected; //!< (TBD_ScenarioBrowserPanel panel, string missionId)
 
-	//------------------------------------------------------------------------------------------------
 	bool Build(Widget panelRoot, Widget overlayHost, TBD_MissionCatalog catalog)
 	{
 		m_Catalog = catalog;
@@ -250,7 +242,6 @@ class TBD_ScenarioBrowserPanel
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Destroy()
 	{
 		if (m_ScrollBar)
@@ -275,7 +266,6 @@ class TBD_ScenarioBrowserPanel
 			m_aCards.Clear();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Point the browser at a terrain: retitles, recounts the mode checklist, refilters the cards.
 	void SetTerrain(string terrainKey)
 	{
@@ -294,7 +284,6 @@ class TBD_ScenarioBrowserPanel
 		Refresh();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Rebind the visible cards from the catalog through terrain, modes and query. Keeps the
 	//! current selection when it survives the filter, else picks the first card, else clears.
 	void Refresh()
@@ -352,7 +341,6 @@ class TBD_ScenarioBrowserPanel
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Select(string missionId, bool notify)
 	{
 		m_sSelectedId = missionId;
@@ -366,13 +354,11 @@ class TBD_ScenarioBrowserPanel
 			m_OnSelected.Invoke(this, missionId);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	string GetSelectedId()
 	{
 		return m_sSelectedId;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! (TBD_ScenarioBrowserPanel panel, string missionId)
 	ScriptInvoker GetOnSelected()
 	{
@@ -382,9 +368,7 @@ class TBD_ScenarioBrowserPanel
 		return m_OnSelected;
 	}
 
-	// ── Called by TBD_MissionCardComponent ──────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	void OnCardActivated(int index)
 	{
 		if (index < 0 || index >= m_iLiveCards)
@@ -393,16 +377,13 @@ class TBD_ScenarioBrowserPanel
 		Select(m_aCardIds[index], true);
 	}
 
-	// ── Internals ───────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnSearchChanged(TBD_SearchBoxComponent box, string query)
 	{
 		m_sQuery = query;
 		Refresh();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Mirror the checklist into the hidden-modes set, then refilter.
 	protected void OnModesChanged(TBD_DropdownComponent dropdown, int tag)
 	{
@@ -418,7 +399,6 @@ class TBD_ScenarioBrowserPanel
 		Refresh();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One checklist row per mode, count = missions on this terrain with that mode. Tag = mode
 	//! index so OnModesChanged can map back without string compares.
 	protected void RebuildModes()
@@ -439,7 +419,6 @@ class TBD_ScenarioBrowserPanel
 		m_Modes.SetItems(items);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected TBD_MissionCardComponent AcquireCard(int index)
 	{
 		if (index < m_aCards.Count())

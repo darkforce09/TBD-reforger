@@ -1,4 +1,4 @@
-//! Briefing rebuild (2026-09-14) — the topic navigation panel (`briefing_navigation_panel`).
+//! Briefing rebuild (2026-09-14) -- the topic navigation panel (`briefing_navigation_panel`).
 //!
 //! A glass panel (`TBD_TopicNav.layout`: `PanelBorder`, `PanelBG`, `Items`) directly right of the
 //! primary nav, holding the ten topics of `TBD_BriefingNav.TopicItems` in three groups; an item
@@ -14,13 +14,12 @@ class TBD_TopicNavItemComponent : TBD_UIInteractive
 	protected ImageWidget m_wIcon;
 	protected TextWidget m_wLabel;
 
-	protected TBD_BriefingTopicNav m_Owner; //!< weak — the nav owns its items
+	protected TBD_BriefingTopicNav m_Owner; //!< weak -- the nav owns its items
 	protected int m_iIndex = -1;
 	protected bool m_bActive;
 	protected bool m_bHasIcon;
 	protected int m_iGround;
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnBind(Widget w)
 	{
 		m_wSeparatorSize = w.FindAnyWidget("SeparatorSize");
@@ -35,7 +34,6 @@ class TBD_TopicNavItemComponent : TBD_UIInteractive
 		TBD_UITheme.Show(m_wSeparatorSize, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Bind(TBD_BriefingTopicNav owner, int index, TBD_NavItemData data, int ground)
 	{
 		m_Owner = owner;
@@ -48,7 +46,6 @@ class TBD_TopicNavItemComponent : TBD_UIInteractive
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetActive(bool active)
 	{
 		if (m_bActive == active)
@@ -58,7 +55,6 @@ class TBD_TopicNavItemComponent : TBD_UIInteractive
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void Repaint()
 	{
 		if (!m_wRoot)
@@ -98,7 +94,6 @@ class TBD_TopicNavItemComponent : TBD_UIInteractive
 			TBD_UITheme.Paint(m_wIcon, ink);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnActivated()
 	{
 		if (m_Owner)
@@ -115,10 +110,8 @@ class TBD_BriefingTopicNav : Managed
 	protected int m_iActive = -1;
 	protected int m_iGround;
 
-	//! (TBD_BriefingTopicNav nav, int index) — index is a TBD_EBriefingPage
-	protected ref ScriptInvoker m_OnSelected;
+	protected ref ScriptInvoker m_OnSelected; //!< (TBD_BriefingTopicNav nav, int index) -- index is a TBD_EBriefingPage
 
-	//------------------------------------------------------------------------------------------------
 	bool Build(Widget dock)
 	{
 		m_aItems = {};
@@ -153,7 +146,6 @@ class TBD_BriefingTopicNav : Managed
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Destroy()
 	{
 		if (m_aItems)
@@ -163,7 +155,6 @@ class TBD_BriefingTopicNav : Managed
 		m_wItems = null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetActive(int index)
 	{
 		m_iActive = index;
@@ -185,7 +176,6 @@ class TBD_BriefingTopicNav : Managed
 		TBD_UITheme.Show(m_wRoot, visible);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	bool FocusActive()
 	{
 		WorkspaceWidget workspace = GetGame().GetWorkspace();
@@ -204,7 +194,6 @@ class TBD_BriefingTopicNav : Managed
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	ScriptInvoker GetOnSelected()
 	{
 		if (!m_OnSelected)
@@ -213,7 +202,6 @@ class TBD_BriefingTopicNav : Managed
 		return m_OnSelected;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void OnItemActivated(int index)
 	{
 		if (m_OnSelected)

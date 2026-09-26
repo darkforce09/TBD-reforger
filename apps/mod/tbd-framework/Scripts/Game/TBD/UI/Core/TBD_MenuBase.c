@@ -1,4 +1,4 @@
-//! T-181.7 — the base class every TBD screen derives from.
+//! T-181.7 -- the base class every TBD screen derives from.
 //!
 //! Derived from vanilla `ChimeraMenuBase` (read from real source at
 //! `apps/mod/vanilla_reference/Source/ChimeraMenuBase.c`, not from memory). ChimeraMenuBase gives
@@ -6,11 +6,10 @@
 //! forwards each one to `SCR_MenuHelper`'s global invokers. It gives us nothing else: no stack,
 //! no input ownership, no focus policy. That is what this class and TBD_MenuStack add.
 //!
-//! ── Two facts this design is built on (both probed against the engine, not assumed) ──────────
 //!  1. `MenuBase.GetPresetID()` DOES NOT EXIST. A menu cannot tell you which preset opened it, so
 //!     TBD_MenuStack stamps the preset onto the screen as it opens (`SetPreset`).
 //!  2. Input contexts decay: `InputManager.ActivateContext()` must be re-called every frame while
-//!     the context should be live. `OnMenuUpdate` does that — but ONLY for the top screen, which
+//!     the context should be live. `OnMenuUpdate` does that -- but ONLY for the top screen, which
 //!     is how a stacked screen is prevented from stealing input from the one above it.
 //!
 //! Subclasses override the `OnScreen*` hooks, never the `OnMenu*` ones, so the stack bookkeeping
@@ -20,16 +19,15 @@ class TBD_MenuBase : ChimeraMenuBase
 	protected Widget m_wRoot;
 
 	//! ChimeraMenuPreset this screen was opened with, stamped by TBD_MenuStack. -1 = opened
-	//! outside the stack (e.g. a raw MenuManager.OpenMenu somewhere) — still tracked, just not
+	//! outside the stack (e.g. a raw MenuManager.OpenMenu somewhere) -- still tracked, just not
 	//! closable by preset.
 	protected int m_iPreset = -1;
 
 	protected bool m_bScreenOpen;
 
-	//! (TBD_MenuBase screen) — fired once, after the screen has closed and left the stack.
+	//! (TBD_MenuBase screen) -- fired once, after the screen has closed and left the stack.
 	protected ref ScriptInvoker m_OnScreenClosed;
 
-	//------------------------------------------------------------------------------------------------
 	override void OnMenuOpen()
 	{
 		super.OnMenuOpen();
@@ -43,14 +41,12 @@ class TBD_MenuBase : ChimeraMenuBase
 		OnScreenOpen();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void OnMenuOpened()
 	{
 		super.OnMenuOpened();
 		FocusDefault();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void OnMenuUpdate(float tDelta)
 	{
 		super.OnMenuUpdate(tDelta);
@@ -71,8 +67,7 @@ class TBD_MenuBase : ChimeraMenuBase
 		OnScreenUpdate(tDelta);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Runs for every close path — ours, and the engine's (Esc, menu manager teardown, mission
+	//! Runs for every close path -- ours, and the engine's (Esc, menu manager teardown, mission
 	//! restart). That is why the stack is popped from here and not from TBD_MenuStack.Close().
 	override void OnMenuClose()
 	{
@@ -90,7 +85,6 @@ class TBD_MenuBase : ChimeraMenuBase
 			m_OnScreenClosed.Invoke(this);
 	}
 
-	// ── Subclass hooks ──────────────────────────────────────────────────────────────────────
 
 	//! Bind widgets here. The root widget is already available via GetRoot().
 	protected void OnScreenOpen() {}
@@ -108,7 +102,6 @@ class TBD_MenuBase : ChimeraMenuBase
 		return "MenuContext";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Where focus lands when this screen becomes the top one. The stack calls this after every
 	//! push and every pop, so a keyboard/gamepad user is never left with focus on a dead widget.
 	//!
@@ -136,37 +129,31 @@ class TBD_MenuBase : ChimeraMenuBase
 		workspace.SetFocusedWidget(m_wRoot);
 	}
 
-	// ── Public surface ──────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	Widget GetRoot()
 	{
 		return m_wRoot;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The ChimeraMenuPreset this screen was opened with, or -1 when it was opened outside the
-	//! stack. The engine cannot answer this — see the class header.
+	//! stack. The engine cannot answer this -- see the class header.
 	int GetPreset()
 	{
 		return m_iPreset;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! TBD_MenuStack only. Public because Enfusion has no friend classes.
 	void SetPreset(int preset)
 	{
 		m_iPreset = preset;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	bool IsScreenOpen()
 	{
 		return m_bScreenOpen;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! (TBD_MenuBase) — lazily created.
+	//! (TBD_MenuBase) -- lazily created.
 	ScriptInvoker GetOnScreenClosed()
 	{
 		if (!m_OnScreenClosed)
@@ -175,16 +162,13 @@ class TBD_MenuBase : ChimeraMenuBase
 		return m_OnScreenClosed;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Close this screen through the stack so input and focus are handed back correctly.
 	void CloseScreen()
 	{
 		TBD_MenuStack.CloseScreen(this);
 	}
 
-	// ── Widget helpers. Every screen needs these; none should hand-roll a null check. ───────
 
-	//------------------------------------------------------------------------------------------------
 	protected Widget Find(string name)
 	{
 		if (!m_wRoot)
@@ -193,13 +177,11 @@ class TBD_MenuBase : ChimeraMenuBase
 		return m_wRoot.FindAnyWidget(name);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected TextWidget FindText(string name)
 	{
 		return TextWidget.Cast(Find(name));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Find a widget by name and pull one of our handlers off it in a single step.
 	protected ScriptedWidgetComponent FindHandlerOn(string name, typename handler)
 	{
@@ -210,7 +192,6 @@ class TBD_MenuBase : ChimeraMenuBase
 		return ScriptedWidgetComponent.Cast(w.FindHandler(handler));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void SetTextOn(string name, string text)
 	{
 		TBD_UITheme.Write(FindText(name), text);

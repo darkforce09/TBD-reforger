@@ -1,4 +1,4 @@
-//! Pre-game rebuild (2026-09-12) — the right column of the Mission Selector.
+//! Pre-game rebuild (2026-09-12) -- the right column of the Mission Selector.
 //!
 //! ```
 //!   ┌─────────────────────────────────────────────────────────────────┐
@@ -24,7 +24,7 @@ class TBD_MissionInspectorPanel
 	protected Widget m_wRoot;
 	protected TextWidget m_wHeroTitle;
 	protected Widget m_wHeroTagDock;
-	//! Composited hero band colour — ground for the tag chip, author chip and version pill.
+	//! Composited hero band colour -- ground for the tag chip, author chip and version pill.
 	protected int m_iHeroGround;
 	//! Ground of the faction column most recently built by MountFactionColumn (for its rows).
 	protected int m_iColumnGround;
@@ -55,13 +55,11 @@ class TBD_MissionInspectorPanel
 	protected TBD_MissionCatalog m_Catalog;
 	protected TBD_MissionSummary m_Mission;
 
-	//! (TBD_MissionInspectorPanel panel, int versionIndex)
-	protected ref ScriptInvoker m_OnVersionChanged;
+	protected ref ScriptInvoker m_OnVersionChanged; //!< (TBD_MissionInspectorPanel panel, int versionIndex)
 
 	static const int CARD_GAP = 12;
 	static const int CARD_INSET = 14;
 
-	//------------------------------------------------------------------------------------------------
 	//! `root` is a mounted `TBD_MissionInspector.layout`.
 	bool Build(Widget root, Widget overlayHost, TBD_MissionCatalog catalog)
 	{
@@ -138,7 +136,6 @@ class TBD_MissionInspectorPanel
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One quarter of the inverse disc, painted in the colour that lies BEHIND the hero there.
 	protected void MountCornerMask(Widget root, string name, int opaqueArgb)
 	{
@@ -147,7 +144,6 @@ class TBD_MissionInspectorPanel
 			TBD_UITheme.Paint(mask, opaqueArgb);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Satellite band for terrains that have one, the topo art (at 25 %) for the rest.
 	protected void ShowHeroImage(string terrainKey)
 	{
@@ -170,7 +166,6 @@ class TBD_MissionInspectorPanel
 			TBD_UITheme.Paint(m_wHeroImage, TBD_UITheme.BRIGHT_INK);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Destroy()
 	{
 		if (m_ScrollBar)
@@ -189,7 +184,6 @@ class TBD_MissionInspectorPanel
 		m_Mission = null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Rebind everything to `mission`. Null shows the empty state.
 	void Show(TBD_MissionSummary mission)
 	{
@@ -226,7 +220,6 @@ class TBD_MissionInspectorPanel
 		FillObjectives(mission);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Index into the mission's version list, -1 when none.
 	int GetSelectedVersionIndex()
 	{
@@ -236,7 +229,6 @@ class TBD_MissionInspectorPanel
 		return m_Version.GetSelectedTag();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Label of the chosen version ("v2.14.99"), empty when none.
 	string GetSelectedVersionLabel()
 	{
@@ -250,7 +242,6 @@ class TBD_MissionInspectorPanel
 		return m_Mission.m_aVersions[index].m_sLabel;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! (TBD_MissionInspectorPanel panel, int versionIndex)
 	ScriptInvoker GetOnVersionChanged()
 	{
@@ -260,9 +251,7 @@ class TBD_MissionInspectorPanel
 		return m_OnVersionChanged;
 	}
 
-	// ── Cards ───────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	protected void BuildCards()
 	{
 		m_ModsPanel = MountCard("Required Modset & Mods", "extension");
@@ -290,7 +279,6 @@ class TBD_MissionInspectorPanel
 			m_ObjectivesChip = TBD_ChipComponent.Mount(m_ObjectivesPanel.GetBadgeDock(), "", TBD_EUITint.NEUTRAL, m_ObjectivesPanel.GetGround());
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected TBD_PanelComponent MountCard(string title, string icon)
 	{
 		if (!m_wCardsContent)
@@ -311,7 +299,6 @@ class TBD_MissionInspectorPanel
 		return panel;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void FillVersions(TBD_MissionSummary mission)
 	{
 		if (!m_Version)
@@ -330,7 +317,6 @@ class TBD_MissionInspectorPanel
 			m_Version.SetSelectedTag(0);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void FillMods(TBD_MissionSummary mission)
 	{
 		if (!m_ModsPanel)
@@ -400,7 +386,6 @@ class TBD_MissionInspectorPanel
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void FillSummary(TBD_MissionSummary mission)
 	{
 		if (!m_SummaryPanel)
@@ -426,7 +411,6 @@ class TBD_MissionInspectorPanel
 		TBD_UITheme.Paint(text, TBD_UITheme.ChipInk(TBD_EUITint.NEUTRAL));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void FillOrbat(TBD_MissionSummary mission)
 	{
 		if (!m_OrbatPanel)
@@ -462,7 +446,6 @@ class TBD_MissionInspectorPanel
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void FillObjectives(TBD_MissionSummary mission)
 	{
 		if (!m_ObjectivesPanel)
@@ -498,9 +481,7 @@ class TBD_MissionInspectorPanel
 		}
 	}
 
-	// ── Builders ────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! Two-column grid inset inside a card body.
 	protected Widget MountColumns(Widget body)
 	{
@@ -511,7 +492,6 @@ class TBD_MissionInspectorPanel
 		return columns;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A faction-tinted panel with a `TBD_FactionColumn` body in column `index % 2`. Returns the
 	//! `Rows` container to fill, or null. `ground` is the owning card's fill; the column's own
 	//! composited fill is left in `m_iColumnGround` for the rows the caller adds.
@@ -551,7 +531,6 @@ class TBD_MissionInspectorPanel
 		return body.FindAnyWidget("Rows");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnVersionChanged(TBD_DropdownComponent dropdown, int tag)
 	{
 		if (m_OnVersionChanged)

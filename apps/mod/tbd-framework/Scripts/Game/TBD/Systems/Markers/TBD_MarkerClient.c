@@ -1,6 +1,5 @@
-//! T-181.19 — the CLIENT half of map markers: asking for them, and putting them on the map.
+//! T-181.19 -- the CLIENT half of map markers: asking for them, and putting them on the map.
 //!
-//! ── Which map ───────────────────────────────────────────────────────────────────────────────
 //! The real one. This does not draw anything itself: it hands rows to Reforger's own placed-marker
 //! system (`SCR_MapMarkerManagerComponent` + `SCR_MapMarkerBase`, type `PLACED_CUSTOM`), which is
 //! what the in-game map already uses for player-placed markers. Consequences worth stating:
@@ -9,13 +8,11 @@
 //!   * the markers pan, zoom, label and layer-fade exactly like every other marker on that map,
 //!     because they ARE that kind of marker.
 //!
-//! ── Markers are inserted LOCAL, on purpose ──────────────────────────────────────────────────
 //! `InsertStaticMarker(marker, isLocal: true)` keeps the marker on this client and out of the
 //! replication path entirely. That is the second lock on side discipline: the server already sends
 //! a player only their own side's rows (`TBD_MarkerData.c`), and a local insert guarantees those
 //! rows cannot then be re-broadcast to anyone else by the vanilla marker sync component.
 //!
-//! ── Late joiners (the defect this slice refuses to repeat) ──────────────────────────────────
 //! T-181.28 records the briefing shipping push-only and therefore silently missing anyone who
 //! joins while the round is already sitting in BRIEFING. Markers are PULL-driven instead, and the
 //! pull has two independent triggers, either of which alone is enough for a late joiner:
@@ -26,19 +23,18 @@
 //!      player would otherwise notice stale markers.
 //!
 //! The poll is deliberate, not laziness: the client has no locally readable signal for "my slot was
-//! assigned" — `m_mPlayerSlot` is a plain map on the server, not an `RplProp` — so there is nothing
+//! assigned" -- `m_mPlayerSlot` is a plain map on the server, not an `RplProp` -- so there is nothing
 //! to catch up ON. This is the same call the lobby made, and the lobby is the JIP-safe screen.
 //!
-//! ── Two consequences of riding the vanilla marker system, stated not hidden ─────────────────
 //!  1. **UGC restriction.** `SCR_MapMarkerManagerComponent.CheckMarkersUserRestrictions()` runs on
 //!     every map open and blocks EVERY static marker on an account without the
-//!     `EUserInteraction.UserGeneratedContent` privilege — it cannot tell a mission briefing from a
+//!     `EUserInteraction.UserGeneratedContent` privilege -- it cannot tell a mission briefing from a
 //!     player scribble. A console account with UGC off would therefore see no mission markers. Not
 //!     fixable without leaving this system; recorded so nobody reports it as a mod bug.
 //!  2. **Removing a marker while the map is CLOSED.** `RemoveStaticMarker` -> `OnDelete()` ->
 //!     `m_wRoot.RemoveFromHierarchy()` on a widget whose parent map frame may already have been
 //!     destroyed. `m_wRoot` is a `ref Widget` so the object is still alive, and removing an
-//!     already-orphaned widget should be a no-op — but vanilla only ever removes markers FROM the
+//!     already-orphaned widget should be a no-op -- but vanilla only ever removes markers FROM the
 //!     open map, so this ordering is ours alone and is UNVERIFIED on this lane.
 class TBD_MarkerClient
 {
@@ -53,11 +49,11 @@ class TBD_MarkerClient
 	protected static bool s_bRunning;
 
 	//! The server has given an authoritative answer at least once for the CURRENT mission+side.
-	//! Note this is true even when the answer was "your side authored none" — that is an answer.
+	//! Note this is true even when the answer was "your side authored none" -- that is an answer.
 	protected static bool s_bServed;
 
 	//! What is currently on this player's map, so a re-apply can take it back off. Strong refs on
-	//! both sides (the manager holds one too) — the same shape CRF uses for its own marker handles.
+	//! both sides (the manager holds one too) -- the same shape CRF uses for its own marker handles.
 	protected static ref array<ref SCR_MapMarkerBase> s_aApplied;
 
 	//! What the applied set is FOR. A change in either means the map is stale and must be rebuilt.
@@ -74,8 +70,7 @@ class TBD_MarkerClient
 	//! One warning per world when an area shape arrives: the placed-marker widget cannot fill.
 	protected static bool s_bAreaFillNoted;
 
-	//------------------------------------------------------------------------------------------------
-	//! @authority client — arm the pull. Called by `TBD_MarkerComponent` on any machine with a
+	//! @authority client -- arm the pull. Called by `TBD_MarkerComponent` on any machine with a
 	//! workspace (a dedicated server has none and has no map to draw on).
 	static void Start()
 	{
@@ -92,8 +87,7 @@ class TBD_MarkerClient
 		Request();
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! (Re)start the unserved poll. `Remove` first so arming twice cannot stack two timers —
+	//! (Re)start the unserved poll. `Remove` first so arming twice cannot stack two timers --
 	//! `ScriptCallQueue.Remove` cancels by FUNCTION, which is precisely the semantics wanted here.
 	protected static void ArmPoll()
 	{
@@ -105,7 +99,6 @@ class TBD_MarkerClient
 		queue.CallLater(Tick, POLL_MS, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Statics outlive a world inside one process (a recorded landmine in this program), so every
 	//! timer, invoker and cached marker has to be released here. Without this an in-process
 	//! scenario restart leaves a poll firing against a dead world and marker objects pointing at
@@ -140,8 +133,7 @@ class TBD_MarkerClient
 		TBD_MarkerIcons.ResetForWorld();
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Ask the server for THIS player's markers. No arguments — see `TBD_MarkerData.c` on why the
+	//! Ask the server for THIS player's markers. No arguments -- see `TBD_MarkerData.c` on why the
 	//! request being unparameterised is what makes side discipline structural.
 	static void Request()
 	{
@@ -152,7 +144,6 @@ class TBD_MarkerClient
 		pc.TBD_RequestMarkers();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A payload arrived (or was built in place on a listen host).
 	//!
 	//! Re-application is a full replace, never a merge: the arrays are positional and carry no ids,
@@ -163,7 +154,7 @@ class TBD_MarkerClient
 		if (!served)
 		{
 			// The server has nothing authoritative for us (usually: no slot yet). Drop whatever we
-			// were showing — a player who has lost their seat must not keep the old side's
+			// were showing -- a player who has lost their seat must not keep the old side's
 			// intelligence on their map.
 			bool wasServed = s_bServed;
 
@@ -177,12 +168,12 @@ class TBD_MarkerClient
 
 			// Going served -> unserved has to RE-ARM the poll. `Tick()` cancels itself the moment it
 			// is served, so without this a player who loses and retakes a seat would only recover
-			// their markers by opening the map — which is exactly the kind of "works if you happen
+			// their markers by opening the map -- which is exactly the kind of "works if you happen
 			// to do the right thing" gap T-181.28 records against the briefing.
 			if (wasServed)
 			{
 				TBD_Log.Event(TBD_MarkerService.CH_MARKERS,
-					"lost the authoritative marker answer (no slot?) — cleared the map and resumed asking.");
+					"lost the authoritative marker answer (no slot?) -- cleared the map and resumed asking.");
 				ArmPoll();
 			}
 
@@ -232,11 +223,10 @@ class TBD_MarkerClient
 			alpha255, factionKey, missionId);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The marker manager, or null on a machine that has none.
 	//!
 	//! Two routes because they can disagree: `GetInstance()` is a static assigned in the
-	//! component's own `OnPostInit`, while `FindComponent` walks the live game-mode entity — which
+	//! component's own `OnPostInit`, while `FindComponent` walks the live game-mode entity -- which
 	//! is the route vanilla's own `SCR_BaseTutorialStage.CreateMarkerCustom()` uses. Trying both
 	//! costs nothing and removes an init-order assumption this lane cannot test.
 	static SCR_MapMarkerManagerComponent FindMarkerManager()
@@ -252,7 +242,6 @@ class TBD_MarkerClient
 		return SCR_MapMarkerManagerComponent.Cast(gameMode.FindComponent(SCR_MapMarkerManagerComponent));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! How many markers this client currently has on its map. Exists so a live check (or a future
 	//! test screen) can read the outcome instead of inferring it from the log.
 	static int AppliedCount()
@@ -263,14 +252,12 @@ class TBD_MarkerClient
 		return s_aApplied.Count();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static bool IsServed()
 	{
 		return s_bServed;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! The poll. Runs only while unserved — the moment the server gives a real answer this
+	//! The poll. Runs only while unserved -- the moment the server gives a real answer this
 	//! cancels itself, so a settled server carries no marker traffic at all.
 	protected static void Tick()
 	{
@@ -283,10 +270,9 @@ class TBD_MarkerClient
 		Request();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The player opened the map. Re-ask, rate-limited.
 	//!
-	//! Only ASKS — never inserts. Inserting synchronously from here would race
+	//! Only ASKS -- never inserts. Inserting synchronously from here would race
 	//! `SCR_MapMarkersUI.OnMapOpen`, which walks every static marker and builds its widget; a
 	//! marker inserted mid-walk could end up with two root widgets, one of them orphaned. The RPC
 	//! round trip lands well after that walk, and `InsertStaticMarker` builds the widget itself
@@ -306,10 +292,9 @@ class TBD_MarkerClient
 		Request();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Build one `SCR_MapMarkerBase` per row and hand it to the engine.
 	//!
-	//! The four-setter recipe is not invented — it is exactly what vanilla's own
+	//! The four-setter recipe is not invented -- it is exactly what vanilla's own
 	//! `SCR_BaseTutorialStage.CreateMarkerCustom()` does for a placed custom marker
 	//! (`SetType(PLACED_CUSTOM)` / `SetIconEntry` / `SetColorEntry` / `SetCustomText`).
 	protected static void ApplyRows(array<int> xs, array<int> zs, array<string> icons,
@@ -437,7 +422,6 @@ class TBD_MarkerClient
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Take every marker this slice put on the map back off it.
 	protected static void ClearApplied()
 	{
@@ -465,14 +449,12 @@ class TBD_MarkerClient
 		s_aApplied.Clear();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void EnsureApplied()
 	{
 		if (!s_aApplied)
 			s_aApplied = new array<ref SCR_MapMarkerBase>();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! T-673 -- area shape/brush is on the wire but SCR_MapMarkerBase has no fill surface.
 	//! The icon still carries the caption; one note per world, not per row.
 	protected static void NoteAreaShape(int rowShapeIdx, int rowBrushIdx)
@@ -490,9 +472,7 @@ class TBD_MarkerClient
 				rowShapeIdx, rowBrushIdx));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Parse `#rrggbb` to 0xRRGGBB. Empty -> -1 (absent). Malformed -> -2.
-	//------------------------------------------------------------------------------------------------
 	//! Map an authored 0xRRGGBB onto the nearest `SCR_EScenarioFrameworkMarkerCustomColor`
 	//! index (the placed-marker palette). Hex stays on TBD_MissionMarkerStruct; SetColorEntry
 	//! takes the enum index. Unreadable colour or an empty palette falls back to MARKER_COLOR.
@@ -566,7 +546,6 @@ class TBD_StyledMapMarker : SCR_MapMarkerBase
 
 	protected static bool s_bSizeUnsupportedWarned;
 
-	//------------------------------------------------------------------------------------------------
 	override void OnCreateMarker(bool skipProfanityFilter = false)
 	{
 		super.OnCreateMarker(skipProfanityFilter);
@@ -581,7 +560,6 @@ class TBD_StyledMapMarker : SCR_MapMarkerBase
 			GetGame().GetCallqueue().CallLater(ApplyTbdSize, 0, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void ApplyTbdSize()
 	{
 		if (!m_wRoot)
@@ -598,7 +576,6 @@ class TBD_StyledMapMarker : SCR_MapMarkerBase
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected int ScaleImagesUnder(Widget parent, float factor)
 	{
 		int scaled = 0;

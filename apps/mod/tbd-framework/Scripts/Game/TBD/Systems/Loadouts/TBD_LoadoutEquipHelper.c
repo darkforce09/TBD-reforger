@@ -16,10 +16,10 @@
  *  - cargo runs strictly AFTER the wear verify (FinishRest) so container resolution
  *    sees the NEW garments.
  *
- * T-181.10 — JSON-driven loadouts are now COMPLETE and HONEST:
+ * T-181.10 -- JSON-driven loadouts are now COMPLETE and HONEST:
  *  - WEAPON PHASE: `gear.optic` and `gear.magazine` were previously parsed and dropped
  *    ("informational until the attachments slice"). They are now mounted into the primary
- *    weapon's own storage — the mechanic CRF uses for gearscript attachments
+ *    weapon's own storage -- the mechanic CRF uses for gearscript attachments
  *    (TrySpawnPrefabToStorage into the weapon's BaseInventoryStorageComponent, which on a
  *    Reforger weapon is the SCR_WeaponAttachmentsStorageComponent that carries both
  *    attachment slots and the magazine well). The phase runs AFTER the wear verify so the
@@ -31,50 +31,49 @@
  *    that ends up with no jacket and/or no pants is an ERROR naming the slot, so a bad kit
  *    prefab or a bad loadout can never quietly ship a naked player.
  *
- * T-415 — DELIVERY VERIFICATION IS REAL (durable fix for T-240's client-half):
- *  - CARGO Can* PRECHECK: InsertCargo mirrors the weapon-slot path — CanInsertItemInStorage
+ * T-415 -- DELIVERY VERIFICATION IS REAL (durable fix for T-240's client-half):
+ *  - CARGO Can* PRECHECK: InsertCargo mirrors the weapon-slot path -- CanInsertItemInStorage
  *    before TryInsertItemInStorage on the authored container, CanInsertItem before the
  *    any-storage fallback. A container that will not accept the item is never "tried" blind.
  *  - IsComplete IS CONSUMED: ReportVerdict branches on IsComplete() and a non-complete pass
  *    emits a loadout delivery REFUSED ERROR. Computing completeness and discarding it is the
  *    defect; the answer now drives the loud refuse.
  *
- * T-181.41 — THE NAKEDNESS GUARD GETS A REAL ANCHOR.
+ * T-181.41 -- THE NAKEDNESS GUARD GETS A REAL ANCHOR.
  *  The guard above was written to catch a bad KIT PREFAB, and until now it only ever reached
  *  a kit-only body BY ACCIDENT: `if (slot.loadout)` is always true under JsonLoadContext's
  *  ref-field over-allocation, so every slot looked like it carried a JSON loadout and every
  *  slot therefore got an application whose tail happened to run the audit. T-181.32 fixed that
- *  presence test correctly and the guard stopped covering its own use case — measured on
+ *  presence test correctly and the guard stopped covering its own use case -- measured on
  *  golden-missions/bridgehead-at-levie.json, which is "0 with a JSON loadout, 18 kit-only".
  *  `RunKitWornAudit` is the public entry point that re-homes it onto the kit-only path, and it
  *  POLLS to decency rather than firing once after a chosen delay, because a false NAKED is a
  *  TBD-owned script ERROR and those hard-fail world-boot.sh for everyone.
  *
- * T-605 — THREE SEVERITIES, BECAUSE TWO WERE ONE TOO FEW.
+ * T-605 -- THREE SEVERITIES, BECAUSE TWO WERE ONE TOO FEW.
  *  The file had FAILED (never reached the character) and DEGRADED (reached it, wrong place), and
  *  `IsComplete()` = neither. T-415 consumed that answer here; T-541 then wired it to the SPAWN
- *  BOUNDARY, where `IsComplete()=0` on ONE slot kept EVERY client in LOADING. The split is real —
- *  a degraded item is provably on the body — but it is the wrong AXIS for a gate, because
+ *  BOUNDARY, where `IsComplete()=0` on ONE slot kept EVERY client in LOADING. The split is real --
+ *  a degraded item is provably on the body -- but it is the wrong AXIS for a gate, because
  *  `m_aFailures` mixes "the mission named a prefab that does not exist" with "the soldier had no
  *  room for the fifth magazine", and those are not the same kind of problem at all.
  *
  *  So FAILED now carries `blocking`: the BLOCKING subset (`m_aBlocking`) is the ones that leave the
  *  slot unplayable, and it is the only list the spawn boundary reads. Log level follows it, which
- *  makes a genuinely useful invariant true — a TBD loadout `SCRIPT (E)` means the session will not
+ *  makes a genuinely useful invariant true -- a TBD loadout `SCRIPT (E)` means the session will not
  *  open, a `SCRIPT (W)` means it will and somebody is carrying less than the mission said.
  *  `IsComplete()` is untouched and still answers the delivery question it was written for.
  *
  *  MEASURED, on the committed golden `slot-loadout-coverage.json` (7 slots, real gear, real cargo)
  *  before the change: 3 of 7 applications refused the world, one of them (`blufor:Ranger:SL:0`)
- *  while reporting `gear=10/10 cargo=8/8` — nothing missing, six magazines simply displaced out of
+ *  while reporting `gear=10/10 cargo=8/8` -- nothing missing, six magazines simply displaced out of
  *  a full vest. That golden had never been booted by the wave gate, which boots only
- *  `bridgehead-at-levie` (0 gear, 0 cargo) — so the whole gate had never executed.
+ *  `bridgehead-at-levie` (0 gear, 0 cargo) -- so the whole gate had never executed.
  *
  * The whole file is server-authority code: it spawns entities and mutates inventories.
  * @authority server
  */
 
-//------------------------------------------------------------------------------------------------
 //! One issued equip awaiting its deferred worn-verify pass.
 class TBD_PendingEquip
 {
@@ -87,7 +86,7 @@ class TBD_PendingEquip
 	ref map<typename, IEntity> incumbents;   // pre-equip worn garment per candidate area
 	IEntity oldWeapon;                       // pre-equip occupant of THIS weapon slot (weapon rows)
 
-	// T-182 — weapon rows are SLOT-INDEXED. The engine's weapon slots 0 and 1 are both untyped
+	// T-182 -- weapon rows are SLOT-INDEXED. The engine's weapon slots 0 and 1 are both untyped
 	// long slots (a rifle and a launcher are equally legal in either), so "equip a weapon" without
 	// naming a slot lets the four authored weapons fight over one. These two fields are the target
 	// slot, captured at issue time and re-read at verify time so the check proves the item landed
@@ -96,8 +95,7 @@ class TBD_PendingEquip
 	BaseInventoryStorageComponent weaponStorage; // the character's EquipedWeaponStorageComponent
 }
 
-//------------------------------------------------------------------------------------------------
-//! T-181.10 — one weapon-mounted item (optic / magazine) awaiting its mount verify.
+//! T-181.10 -- one weapon-mounted item (optic / magazine) awaiting its mount verify.
 //! These do not go through EquipCloth/EquipWeapon: they are spawned straight into the
 //! primary weapon's storage, so they need their own (much shorter) verify loop.
 class TBD_PendingWeaponItem
@@ -107,7 +105,6 @@ class TBD_PendingWeaponItem
 	bool mountIssued; //!< TrySpawnPrefabToStorage accepted the spawn-to-weapon call
 }
 
-//------------------------------------------------------------------------------------------------
 //! One loadout application: equip gear -> poll worn-verify (+swap) -> mount weapon items
 //! -> cargo -> worn audit + verdict.
 //! The owner must hold a strong ref until `IsDone()` (CallLater does not keep one).
@@ -116,14 +113,14 @@ class TBD_LoadoutApplication : Managed
 	protected const int VERIFY_TICK_MS = 500;
 	protected const int VERIFY_MAX_ATTEMPTS = 6;
 	//! Weapon-mounted items settle far faster than worn garments (no animation graph in
-	//! the way) — 4 x 250 ms is a full second of grace, measured against nothing but the
+	//! the way) -- 4 x 250 ms is a full second of grace, measured against nothing but the
 	//! same async-settle class the A2 rework found for EquipCloth.
 	protected const int WEAPON_TICK_MS = 250;
 	protected const int WEAPON_MAX_ATTEMPTS = 4;
 
-	// T-181.41 — AUDIT-ONLY MODE (kit-only slots). See RunKitWornAudit.
+	// T-181.41 -- AUDIT-ONLY MODE (kit-only slots). See RunKitWornAudit.
 	//
-	// THE ANCHOR, MEASURED — kit clothing is present SYNCHRONOUSLY.
+	// THE ANCHOR, MEASURED -- kit clothing is present SYNCHRONOUSLY.
 	// The real question this slice had to answer was "what signal says the body has finished
 	// dressing?", because auditing early emits a false NAKED, and a TBD-owned script ERROR is a
 	// hard fail in world-boot.sh. The answer is not a timer at all: it is `SpawnEntityPrefab`
@@ -142,21 +139,21 @@ class TBD_LoadoutApplication : Managed
 	//
 	// WHY POLL AT ALL, THEN. Because the requirement is 0 ms and the cost of insurance is also
 	// ~0: the happy path exits on the first tick and never schedules a second. A poll that stops
-	// the instant the body is decent CANNOT accuse a body that was merely still dressing — it can
+	// the instant the body is decent CANNOT accuse a body that was merely still dressing -- it can
 	// only be LATE, and lateness is bounded. Reading once and reporting would trade a free
 	// guarantee for a bet on an unobserved slow case (a future engine build, a modded kit), and
 	// losing that bet breaks the gate for every slice, not just this one.
 	//
 	// THE DEADLINE IS 1 s (4 x 250 ms), bounded from BOTH sides:
-	//   * Lower — measured need is 0 ms across 17/17 real kits, on two independent readings
+	//   * Lower -- measured need is 0 ms across 17/17 real kits, on two independent readings
 	//     (synchronous, and a 25 ms tick). 1 s is 40x the first observation point.
-	//   * Upper — the verdict has to land inside world-boot's capture window or the guard is not
+	//   * Upper -- the verdict has to land inside world-boot's capture window or the guard is not
 	//     gated at all, and that window is SHORT. Bodies materialise ~3.0 s after the
 	//     `mission result=` line the harness polls for, and the server is killed ~3.0 s after
 	//     THAT (poll granularity 0.5 s + TBD_WORLDBOOT_SETTLE, default 4 s, + engine shutdown).
 	//     Two independent boots: run A bodies at +2.947 s, `Game destroyed` +2.985 s later; run B
 	//     (the negative control) bodies at +2.983 s, NAKED at exactly +1.000 s, `Game destroyed`
-	//     +2.968 s. So the 3 s deadline this started with is not merely "tight" — in run B it
+	//     +2.968 s. So the 3 s deadline this started with is not merely "tight" -- in run B it
 	//     would have fired 32 ms AFTER the capture ended and the NAKED verdict would simply not
 	//     exist. 1 s left 1.97 s of margin. That margin is TBD_WORLDBOOT_SETTLE; if the settle is
 	//     ever shortened below ~2 s, this deadline has to come down with it or the guard silently
@@ -164,7 +161,7 @@ class TBD_LoadoutApplication : Managed
 	//   * It is also exactly the grace this file already gives its other fast-settling class
 	//     (WEAPON_TICK_MS x WEAPON_MAX_ATTEMPTS), so it is not a fresh invented number.
 	//
-	// PROVEN TO FAIL, not just to pass — and re-proven independently rather than taken on trust:
+	// PROVEN TO FAIL, not just to pass -- and re-proven independently rather than taken on trust:
 	// pointing kit:us_sl at a bare `Character_US_Base.et` ({520EC961A090BBD5}) put out
 	// `NAKED after kit spawn` on exactly that slot, left the other 17 clean, and drove
 	// world-boot.sh to FAIL on its TBD-script-error check. A guard that has only ever been seen
@@ -180,25 +177,24 @@ class TBD_LoadoutApplication : Managed
 	protected ref array<ref TBD_PendingEquip> m_aVerified = {};
 	protected bool m_bDone;
 
-	//! T-181.41 — audit-only mode: no equips were issued, only the kit prefab dressed this body.
+	//! T-181.41 -- audit-only mode: no equips were issued, only the kit prefab dressed this body.
 	protected bool m_bAuditOnly;
 	//! The kit alias the body was spawned from ("kit:sov_rifleman"). Named in the failure line
 	//! because on a kit-only slot the KIT is the thing an operator has to go and fix.
 	protected string m_sKit;
 
-	// --- T-181.10 accounting: what the JSON asked for vs what the character got --------
 	protected ref array<ref TBD_PendingWeaponItem> m_aWeaponPending = {};
 	protected IEntity m_PrimaryWeapon;
-	//! One-shot guard for the magazine-well swap retry (below) — never loop on it.
+	//! One-shot guard for the magazine-well swap retry (below) -- never loop on it.
 	protected bool m_bWeaponSwapRetried;
 	protected ref array<string> m_aFailures = {};  //!< item never reached the character
 	protected ref array<string> m_aDegraded = {};  //!< item reached the character, wrong place
-	//! T-605 — the BLOCKING subset of m_aFailures: the ones that make this slot body unplayable.
+	//! T-605 -- the BLOCKING subset of m_aFailures: the ones that make this slot body unplayable.
 	//! Strictly a subset (every entry here is also in m_aFailures), so the delivery accounting and
 	//! IsComplete() are untouched by its existence. This is the ONLY list the spawn boundary reads.
 	//! See Fail()'s `blocking` parameter for the rule and why it defaults to true.
 	protected ref array<string> m_aBlocking = {};
-	//! T-605 — the LABEL ("vest", "optic", "cargo:backpack") of every non-blocking shortfall, one
+	//! T-605 -- the LABEL ("vest", "optic", "cargo:backpack") of every non-blocking shortfall, one
 	//! entry per occurrence, in the order they happened. Recorded at the call site rather than
 	//! parsed back out of the issue strings, so ShortfallBrief() survives any rewording of them.
 	protected ref array<string> m_aShortfallLabels = {};
@@ -207,7 +203,6 @@ class TBD_LoadoutApplication : Managed
 	protected int m_iCargoRequested;
 	protected int m_iCargoInserted;
 
-	//------------------------------------------------------------------------------------------------
 	void TBD_LoadoutApplication(IEntity character, TBD_SlotLoadoutStruct loadout, string tag, string label)
 	{
 		m_Character = character;
@@ -216,30 +211,27 @@ class TBD_LoadoutApplication : Managed
 		m_sLabel = label;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	bool IsDone()
 	{
 		return m_bDone;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	IEntity GetCharacter()
 	{
 		return m_Character;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-181.10 — true when the finished pass delivered everything the JSON asked for.
+	//! T-181.10 -- true when the finished pass delivered everything the JSON asked for.
 	//! Meaningless before IsDone().
 	//!
-	//! T-415 — CONSUMED by ReportVerdict (was zero callers). External readers may call it too.
+	//! T-415 -- CONSUMED by ReportVerdict (was zero callers). External readers may call it too.
 	//!
-	//! T-605 — THIS IS A DELIVERY QUESTION, NOT A GATE. It answers "did the character get exactly
+	//! T-605 -- THIS IS A DELIVERY QUESTION, NOT A GATE. It answers "did the character get exactly
 	//! what the JSON asked for, in the place it asked for", and it is exactly right for that. It is
 	//! the WRONG predicate for "may the session open", and T-541 wired it to that boundary anyway:
 	//! `m_bSlotBodiesMaterialized` stayed false unless every slot answered true, so ONE misplaced
 	//! magazine on ONE slot kept EVERY client in LOADING. Measured on the committed golden
-	//! `slot-loadout-coverage.json`, which does exactly that today — `blufor:Ranger:SL:0` reported
+	//! `slot-loadout-coverage.json`, which does exactly that today -- `blufor:Ranger:SL:0` reported
 	//! `gear=10/10 cargo=8/8` (every single item delivered) and still refused the world, because six
 	//! rifle magazines landed in the backpack instead of the vest that had no room left for them.
 	//!
@@ -249,10 +241,9 @@ class TBD_LoadoutApplication : Managed
 		return m_aFailures.IsEmpty() && m_aDegraded.IsEmpty();
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-605 — THE SPAWN-BOUNDARY PREDICATE: is this body unplayable?
+	//! T-605 -- THE SPAWN-BOUNDARY PREDICATE: is this body unplayable?
 	//!
-	//! True only when the pass hit something that leaves the slot unusable — an authored asset that
+	//! True only when the pass hit something that leaves the slot unusable -- an authored asset that
 	//! does not exist, a storage or weapon slot that does not exist on this character, or a garment
 	//! that would not go on. Everything else (a full vest, an optic that would not seat, a container
 	//! the kit does not wear) is a SHORTFALL: the player is dressed, armed and can play, just not
@@ -264,29 +255,26 @@ class TBD_LoadoutApplication : Managed
 		return !m_aBlocking.IsEmpty();
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-605 — true when the pass delivered a PLAYABLE body that is nonetheless not what was
+	//! T-605 -- true when the pass delivered a PLAYABLE body that is nonetheless not what was
 	//! authored. The complement of the gate: never refuses anything, must never be silent.
 	bool HasShortfall()
 	{
 		return !IsComplete() && !HasBlockingFailure();
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-605 — one line naming every blocking failure, for the spawn-boundary refusal banner.
+	//! T-605 -- one line naming every blocking failure, for the spawn-boundary refusal banner.
 	string BlockingSummary()
 	{
 		return JoinIssues(m_aBlocking);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-605 — the shortfall in a form a human can read in one glance: `cargo:vest x6, optic x1`.
+	//! T-605 -- the shortfall in a form a human can read in one glance: `cargo:vest x6, optic x1`.
 	//!
 	//! DELIBERATELY NOT THE FULL ITEMISATION. The per-item detail is already on the console, one
 	//! WARNING per item plus the `loadout DEGRADED` / `loadout INCOMPLETE` roll-up, and it is long:
 	//! a six-magazine overflow produces six near-identical lines each carrying a 90-character
-	//! ResourceName. Feeding that into a session-wide summary — and from there into an in-game chat
-	//! reply capped at a dozen lines — produces something nobody reads, which is functionally the
+	//! ResourceName. Feeding that into a session-wide summary -- and from there into an in-game chat
+	//! reply capped at a dozen lines -- produces something nobody reads, which is functionally the
 	//! same as not reporting it. So the summary answers WHICH SLOT and WHAT KIND, and the console
 	//! answers exactly which item.
 	//!
@@ -318,16 +306,14 @@ class TBD_LoadoutApplication : Managed
 		return brief;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-605 — the slot id / harness label this pass ran for. The SpawnManager needs it to name the
+	//! T-605 -- the slot id / harness label this pass ran for. The SpawnManager needs it to name the
 	//! offending slot in the consolidated report without keeping a parallel map of its own.
 	string GetLabel()
 	{
 		return m_sLabel;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! A2 — abort an in-flight application whose body was reaped (vanilla
+	//! A2 -- abort an in-flight application whose body was reaped (vanilla
 	//! double-spawn) or superseded by a respawn: loose not-yet-rooted spawned items are
 	//! deleted; equipped ones die with the body. Idempotent.
 	void Cancel(string reason)
@@ -341,7 +327,7 @@ class TBD_LoadoutApplication : Managed
 		}
 		m_aPending.Clear();
 		m_aWeaponPending.Clear();
-		// T-181.41 — an audit-only pass never issued an equip, so calling it a cancelled loadout
+		// T-181.41 -- an audit-only pass never issued an equip, so calling it a cancelled loadout
 		// application would send an operator hunting for gear that was never asked for.
 		if (m_bAuditOnly)
 			Print(string.Format("%1 slot=%2 kit worn-audit stood down (%3)", m_sTag, m_sLabel, reason));
@@ -350,27 +336,26 @@ class TBD_LoadoutApplication : Managed
 		m_bDone = true;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! HONEST FAILURE (T-181.10): the item never made it onto the character. One line,
+	//! HONEST FAILURE: the item never made it onto the character. One line,
 	//! naming the slot AND the offending item AND why, plus a counted entry that the
 	//! end-of-pass verdict repeats so a failure can never scroll away unnoticed.
 	//!
-	//! T-605 — `blocking` says whether this failure makes the SLOT UNPLAYABLE, which is a different
+	//! T-605 -- `blocking` says whether this failure makes the SLOT UNPLAYABLE, which is a different
 	//! question from whether the item arrived. It is the only input to the spawn-boundary gate.
 	//!
 	//! THE RULE, so a future call site does not have to guess:
-	//!   BLOCKING  — the mission named something that DOES NOT EXIST (a prefab that will not load),
+	//!   BLOCKING  -- the mission named something that DOES NOT EXIST (a prefab that will not load),
 	//!               or the character does not have the storage / weapon slot the row needs, or a
 	//!               garment would not go on. None of these fix themselves on the next life; every
 	//!               one of them either leaves the body undressed/unarmed or means the document is
 	//!               wrong. An operator has to change something before this slot is playable.
-	//!   NON-BLOCKING — the item exists and spawned, and the CHARACTER simply had no room for it
+	//!   NON-BLOCKING -- the item exists and spawned, and the CHARACTER simply had no room for it
 	//!               (or no rail to seat it on). The body is dressed and armed; it carries less than
 	//!               the JSON asked for. Refusing a session over this is the T-605 defect: measured
 	//!               on `slot-loadout-coverage.json`, `opfor:Ural:SL:0` lost the 5th of 5 magazines
 	//!               to a full character and that alone kept everybody in LOADING.
 	//!
-	//! DEFAULTS TO BLOCKING — fail-closed, deliberately. A Fail() added later without thinking about
+	//! DEFAULTS TO BLOCKING -- fail-closed, deliberately. A Fail() added later without thinking about
 	//! this parameter refuses the world, which is the safe direction to be wrong in: someone notices
 	//! immediately. The opposite default would let a genuinely broken slot ship quietly.
 	//!
@@ -388,37 +373,35 @@ class TBD_LoadoutApplication : Managed
 		if (blocking)
 		{
 			m_aBlocking.Insert(entry);
-			Print(string.Format("%1 slot=%2 %3 FAILED item=%4 — %5", m_sTag, m_sLabel, label, resName, reason), LogLevel.ERROR);
+			Print(string.Format("%1 slot=%2 %3 FAILED item=%4 -- %5", m_sTag, m_sLabel, label, resName, reason), LogLevel.ERROR);
 			return;
 		}
 
 		m_aShortfallLabels.Insert(label);
-		Print(string.Format("%1 slot=%2 %3 NOT DELIVERED item=%4 — %5 — the slot is still playable, so this does NOT refuse the session",
+		Print(string.Format("%1 slot=%2 %3 NOT DELIVERED item=%4 -- %5 -- the slot is still playable, so this does NOT refuse the session",
 			m_sTag, m_sLabel, label, resName, reason), LogLevel.WARNING);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The item IS on the character but not where the JSON put it (e.g. an optic that
 	//! would not mount and had to be stowed loose). Loud, counted, but not fatal.
 	//!
-	//! T-605 — "not fatal" is now TRUE. It was prose: T-415 made IsComplete() the spawn-boundary
+	//! T-605 -- "not fatal" is now TRUE. It was prose: T-415 made IsComplete() the spawn-boundary
 	//! gate and IsComplete() reads this array, so a single Degrade() anywhere in a mission kept
 	//! every client in LOADING. Nothing here changed; the boundary stopped reading it.
 	//!
-	//! A degraded item is always ON the character — every one of the four Degrade() sites either
-	//! stows the item elsewhere on the same body or resolves it to a different container — so a
+	//! A degraded item is always ON the character -- every one of the four Degrade() sites either
+	//! stows the item elsewhere on the same body or resolves it to a different container -- so a
 	//! degraded player is dressed and armed by construction, and the nakedness audit at the tail of
 	//! this pass is the independent check on the dressed half.
 	protected void Degrade(string label, string resName, string reason)
 	{
 		if (label == "attach")
 			LogAttachResult(resName, false);
-		Print(string.Format("%1 slot=%2 %3 DEGRADED item=%4 — %5", m_sTag, m_sLabel, label, resName, reason), LogLevel.WARNING);
+		Print(string.Format("%1 slot=%2 %3 DEGRADED item=%4 -- %5", m_sTag, m_sLabel, label, resName, reason), LogLevel.WARNING);
 		m_aDegraded.Insert(string.Format("%1=%2 (%3)", label, resName, reason));
 		m_aShortfallLabels.Insert(label);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string JoinIssues(notnull array<string> issues)
 	{
 		string joined;
@@ -431,9 +414,8 @@ class TBD_LoadoutApplication : Managed
 		return joined;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! How many gear ResourceNames this loadout actually asks for (the denominator of the
-	//! verdict line). Absent fields are empty strings — the compiler omits them.
+	//! verdict line). Absent fields are empty strings -- the compiler omits them.
 	protected static int CountGear(TBD_SlotGearStruct gear)
 	{
 		if (!gear)
@@ -445,7 +427,7 @@ class TBD_LoadoutApplication : Managed
 		if (!gear.magazine.IsEmpty())  n++;
 		if (gear.attachments)
 			n += gear.attachments.Count();
-		// T-182 — the three weapon slots the compiler used to discard. Counted here because this
+		// T-182 -- the three weapon slots the compiler used to discard. Counted here because this
 		// is the verdict's DENOMINATOR: omit them and a pass that failed to deliver a launcher
 		// would still report gear=N/N and call itself complete.
 		if (!gear.launcher.IsEmpty())  n++;
@@ -461,9 +443,8 @@ class TBD_LoadoutApplication : Managed
 		return n;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Issue every gear equip, then start the poll-verify (EquipCloth/EquipWeapon
-	//! settle asynchronously — the T-068.5.1 finding; A2 polls instead of guessing).
+	//! settle asynchronously -- the T-068.5.1 finding; A2 polls instead of guessing).
 	void Run()
 	{
 		if (!m_Character || !m_Loadout)
@@ -478,7 +459,7 @@ class TBD_LoadoutApplication : Managed
 		{
 			foreach (TBD_SlotCargoStruct row : m_Loadout.cargo)
 			{
-				// A malformed qty must not corrupt the verdict's denominator — the row is
+				// A malformed qty must not corrupt the verdict's denominator -- the row is
 				// rejected with its own named ERROR in InsertCargo.
 				if (row && row.qty > 0)
 					m_iCargoRequested += row.qty;
@@ -487,13 +468,13 @@ class TBD_LoadoutApplication : Managed
 
 		if (gear)
 		{
-			// T-182 — WEAPONS ARE SLOT-INDEXED, NOT BLIND.
+			// T-182 -- WEAPONS ARE SLOT-INDEXED, NOT BLIND.
 			// The indices are the engine's own weapon slot ids and must stay byte-identical to the
 			// editor's arsenal_rules.rs WEAPON_SLOTS and loadout-export.schema.json #/weapons:
 			//   0 primary   (untyped long slot)   1 launcher (the SECOND untyped long slot)
 			//   2 handgun   (secondary/pistol)    3 throwable (grenade)
 			// Slots 0 and 1 accept the same items, so issuing these blind through EquipWeapon would
-			// let the rifle and the launcher contend for whichever slot happened to be in hand —
+			// let the rifle and the launcher contend for whichever slot happened to be in hand --
 			// vanilla's SCR_InventoryStorageManagerComponent.EquipWeapon picks its target from
 			// `GetCurrentSlot().GetWeaponSlotIndex()`, i.e. from the character's state rather than
 			// from the loadout. IssueEquip therefore names the slot outright (see its comment).
@@ -505,22 +486,21 @@ class TBD_LoadoutApplication : Managed
 			IssueEquip("uniform",  gear.uniform,  false, LoadoutJacketArea);
 			IssueEquip("vest",     gear.vest,     false, LoadoutVestArea);
 			IssueEquip("helmet",   gear.helmet,   false, LoadoutHeadCoverArea);
-			// A3 — the wear map arrives complete now.
+			// A3 -- the wear map arrives complete now.
 			IssueEquip("pants",    gear.pants,    false, LoadoutPantsArea);
 			IssueEquip("boots",    gear.boots,    false, LoadoutBootsArea);
 			IssueEquip("handwear", gear.handwear, false, LoadoutHandwearSlotArea);
 			IssueEquip("backpack", gear.backpack, false, LoadoutBackpackArea);
-			// optic + magazine are NOT worn — they mount onto the primary once it is in
+			// optic + magazine are NOT worn -- they mount onto the primary once it is in
 			// hand, which is the BeginWeaponPhase step after this verify loop drains.
 		}
 
 		GetGame().GetCallqueue().CallLater(VerifyTick, VERIFY_TICK_MS, false, 1);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Candidate landing areas per clothing label. EquipCloth routes by the ITEM's own
 	//! AreaType (locked landmine, t068_10_4), so a "vest" pick may land in the armored
-	//! area (plate carrier) — capture + verify must cover every candidate.
+	//! area (plate carrier) -- capture + verify must cover every candidate.
 	protected static void AreasForLabel(string label, typename primaryArea, notnull array<typename> outAreas)
 	{
 		outAreas.Insert(primaryArea);
@@ -528,7 +508,6 @@ class TBD_LoadoutApplication : Managed
 			outAreas.Insert(LoadoutArmoredVestSlotArea);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Resolved prefab ResourceName of a spawned entity ("" when unresolvable).
 	protected static string PrefabOf(IEntity ent)
 	{
@@ -540,11 +519,10 @@ class TBD_LoadoutApplication : Managed
 		return pd.GetPrefabName();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Spawn the gear item and hand it to the real equip API; capture displaced
 	//! incumbents first (deterministic swap) and skip same-prefab re-equips.
 	//!
-	//! T-182 — WEAPON ROWS TAKE AN EXPLICIT ENGINE SLOT INDEX and are equipped through the
+	//! T-182 -- WEAPON ROWS TAKE AN EXPLICIT ENGINE SLOT INDEX and are equipped through the
 	//! slot-indexed inventory calls, NOT through SCR_InventoryStorageManagerComponent.EquipWeapon.
 	//!
 	//! WHY, precisely. `EquipWeapon` resolves its target as
@@ -552,26 +530,26 @@ class TBD_LoadoutApplication : Managed
 	//! the destination comes from whatever the character is holding at that instant. Engine weapon
 	//! slots 0 and 1 are BOTH untyped long slots (loadout-export.schema.json #/weapons: "two
 	//! untyped primary slots ... two rifles legal"), so a rifle and a launcher issued blind in the
-	//! same frame both resolve to the same in-hand index and contend for one slot — the second one
+	//! same frame both resolve to the same in-hand index and contend for one slot -- the second one
 	//! replaces the first and the loadout silently loses a weapon. That is the failure this ticket
 	//! exists to stop, so the fix must not reintroduce it one layer down.
 	//!
 	//! Note `EquipAny` cannot express slot 0 even if we passed the index: its guard is
 	//! `preferred > 0`, so index 0 falls through to FindSuitableSlotForItem. The pair used here is
 	//! the one vanilla's own SCR_InventoryStorageManagerComponent.EquipItem uses for exactly this
-	//! job — CanInsertItemInStorage/TryInsertItemInStorage into a named slot, falling back to
+	//! job -- CanInsertItemInStorage/TryInsertItemInStorage into a named slot, falling back to
 	//! CanReplaceItem/TryReplaceItem when that slot is already occupied (by a kit weapon). Both
 	//! take an explicit slotID including 0, and vanilla itself treats a WeaponSlotComponent's
 	//! GetWeaponSlotIndex() as an index into the weapon storage's slots, which is what makes the
 	//! editor's authored slotIndex directly usable here.
 	//!
 	//! A slot that does not exist on this character, or that will accept the item neither by
-	//! insert nor by replace, is a NAMED failure — never a silent drop and never a blind retry
+	//! insert nor by replace, is a NAMED failure -- never a silent drop and never a blind retry
 	//! somewhere else, because landing an RPG in the rifle slot is the bug, not the fix.
 	protected void IssueEquip(string label, string resName, bool isWeapon, typename areaType, int weaponSlotIndex = -1)
 	{
 		if (resName.IsEmpty())
-			return; // absent gear slot — kit garment (if any) is deliberately retained
+			return; // absent gear slot -- kit garment (if any) is deliberately retained
 
 		SCR_InventoryStorageManagerComponent mgr = SCR_InventoryStorageManagerComponent.Cast(
 			m_Character.FindComponent(SCR_InventoryStorageManagerComponent));
@@ -591,7 +569,6 @@ class TBD_LoadoutApplication : Managed
 		pending.weaponSlotIndex = weaponSlotIndex;
 		pending.incumbents = new map<typename, IEntity>();
 
-		// --- capture incumbents / same-prefab short-circuit -------------------------------
 		if (isWeapon)
 		{
 			SCR_CharacterInventoryStorageComponent weaponOwnerStorage = SCR_CharacterInventoryStorageComponent.Cast(
@@ -673,7 +650,7 @@ class TBD_LoadoutApplication : Managed
 		if (isWeapon)
 		{
 			// Named slot first; replace only when that exact slot is already occupied. Never a
-			// blind fallback to "any suitable slot" — that is the contention this guards against.
+			// blind fallback to "any suitable slot" -- that is the contention this guards against.
 			if (mgr.CanInsertItemInStorage(item, pending.weaponStorage, weaponSlotIndex))
 			{
 				mgr.TryInsertItemInStorage(item, pending.weaponStorage, weaponSlotIndex);
@@ -701,7 +678,6 @@ class TBD_LoadoutApplication : Managed
 		m_aPending.Insert(pending);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected IEntity SpawnAtCharacter(string resName)
 	{
 		Resource resource = Resource.Load(resName);
@@ -715,7 +691,6 @@ class TBD_LoadoutApplication : Managed
 		return GetGame().SpawnEntityPrefab(resource, GetGame().GetWorld(), params);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True if entity's parent chain roots at the given character (attached/worn, not loose).
 	protected static bool IsRootedOn(IEntity entity, IEntity root)
 	{
@@ -729,9 +704,8 @@ class TBD_LoadoutApplication : Managed
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True when `ent` is one of the items THIS application spawned (pending or
-	//! verified) — guards the swap-delete against mis-authored same-area collisions.
+	//! verified) -- guards the swap-delete against mis-authored same-area collisions.
 	protected bool IsOwnIssuedItem(IEntity ent)
 	{
 		foreach (TBD_PendingEquip p : m_aPending)
@@ -747,16 +721,15 @@ class TBD_LoadoutApplication : Managed
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Poll pass: verify pending equips; verified items trigger their swap-delete and
-	//! move out. All settled (or attempts exhausted) → the weapon phase.
+	//! move out. All settled (or attempts exhausted) -> the weapon phase.
 	protected void VerifyTick(int attempt)
 	{
 		if (m_bDone)
 			return;
 		if (!m_Character)
 		{
-			// The body was reaped between ticks (vanilla double-spawn) — a clean
+			// The body was reaped between ticks (vanilla double-spawn) -- a clean
 			// cancel, not an equip failure.
 			Cancel("body superseded");
 			return;
@@ -800,7 +773,7 @@ class TBD_LoadoutApplication : Managed
 		// Attempts exhausted: stragglers are honestly failed + removed (never worn).
 		foreach (TBD_PendingEquip straggler : m_aPending)
 		{
-			Fail(straggler.label, straggler.resName, string.Format("not worn after %1 verify ticks — deleted", VERIFY_MAX_ATTEMPTS));
+			Fail(straggler.label, straggler.resName, string.Format("not worn after %1 verify ticks -- deleted", VERIFY_MAX_ATTEMPTS));
 			if (straggler.item)
 				SCR_EntityHelper.DeleteEntityAndChildren(straggler.item);
 		}
@@ -809,16 +782,15 @@ class TBD_LoadoutApplication : Managed
 		BeginWeaponPhase();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Worn check for one pending equip (same signals as T-068.5.1: current weapon /
 	//! GetClothFromArea across candidates / IsRootedOn fallback).
 	protected bool VerifyOne(SCR_CharacterInventoryStorageComponent charStorage, TBD_PendingEquip p, int attempt, out string detail, out typename foundArea)
 	{
 		if (p.isWeapon)
 		{
-			// T-182 — the ONLY clean weapon verify is "attached to the slot the JSON named".
+			// T-182 -- the ONLY clean weapon verify is "attached to the slot the JSON named".
 			// The old check asked GetCurrentWeapon(), which can only ever be true for ONE of four
-			// weapons, and then fell through to IsRootedOn — which is true for every weapon the
+			// weapons, and then fell through to IsRootedOn -- which is true for every weapon the
 			// character carries and therefore could not tell a correctly-slotted launcher from one
 			// that had displaced the rifle. Reading the slot answers the actual question.
 			if (p.weaponStorage && p.weaponSlotIndex >= 0)
@@ -866,7 +838,6 @@ class TBD_LoadoutApplication : Managed
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Delete the displaced incumbent of a freshly verified equip (deterministic swap).
 	protected void SwapDelete(SCR_CharacterInventoryStorageComponent charStorage, TBD_PendingEquip p, typename foundArea)
 	{
@@ -876,7 +847,7 @@ class TBD_LoadoutApplication : Managed
 			if (!old || old == p.item || IsOwnIssuedItem(old))
 				return;
 
-			// T-182 — belt-and-braces, mirroring the clothing branch below: only delete once the
+			// T-182 -- belt-and-braces, mirroring the clothing branch below: only delete once the
 			// engine really unseated this slot's occupant. `oldWeapon` is now scoped to ONE slot,
 			// so if it is still sitting there the equip landed elsewhere and deleting it would
 			// destroy a weapon the character is legitimately still carrying.
@@ -899,14 +870,14 @@ class TBD_LoadoutApplication : Managed
 
 		if (!foundArea)
 		{
-			// IsRootedOn-only verify — landing area unknown; never guess-delete.
+			// IsRootedOn-only verify -- landing area unknown; never guess-delete.
 			Print(string.Format("%1 slot=%2 swap-deferred (no area resolution) %3", m_sTag, m_sLabel, p.resName));
 			return;
 		}
 
 		IEntity incumbent;
 		if (!p.incumbents.Find(foundArea, incumbent) || !incumbent)
-			return; // area was empty pre-equip — nothing displaced
+			return; // area was empty pre-equip -- nothing displaced
 		if (incumbent == p.item || IsOwnIssuedItem(incumbent))
 			return;
 		// Belt-and-braces: only delete once the engine really unseated it.
@@ -917,11 +888,8 @@ class TBD_LoadoutApplication : Managed
 		SCR_EntityHelper.DeleteEntityAndChildren(incumbent);
 	}
 
-	//====================================================================================
-	// T-181.10 — WEAPON PHASE: optic + magazine onto the primary
-	//====================================================================================
+	// T-181.10 -- WEAPON PHASE: optic + magazine onto the primary
 
-	//------------------------------------------------------------------------------------------------
 	//! Which weapon entity the JSON's optic/magazine belong to. Prefer an exact prefab
 	//! match against `gear.primary` (the CRF FindWeaponByResource pattern) so a character
 	//! holding a pistol at settle time still gets its rifle kitted; fall back to whatever
@@ -951,7 +919,6 @@ class TBD_LoadoutApplication : Managed
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A Reforger weapon carries its attachments AND its magazine well in one storage
 	//! component (SCR_WeaponAttachmentsStorageComponent : BaseInventoryStorageComponent).
 	protected static BaseInventoryStorageComponent WeaponStorageOf(IEntity weapon)
@@ -961,7 +928,6 @@ class TBD_LoadoutApplication : Managed
 		return BaseInventoryStorageComponent.Cast(weapon.FindComponent(BaseInventoryStorageComponent));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True when the weapon storage already holds an item of that prefab (mounted optic /
 	//! loaded magazine). Includes child components so a mag inside a well still counts.
 	protected static bool WeaponStorageHas(BaseInventoryStorageComponent storage, string resName)
@@ -979,8 +945,7 @@ class TBD_LoadoutApplication : Managed
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Gear settled → mount the weapon-borne JSON items. Nothing to do (or nothing to
+	//! Gear settled -> mount the weapon-borne JSON items. Nothing to do (or nothing to
 	//! mount onto) short-circuits straight to the tail.
 	protected void BeginWeaponPhase()
 	{
@@ -1035,7 +1000,6 @@ class TBD_LoadoutApplication : Managed
 		GetGame().GetCallqueue().CallLater(WeaponVerifyTick, WEAPON_TICK_MS, false, 1);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! T-310 per-attachment mount log: [TBD][Equip] attach=<res> result=<ok|failed>
 	protected void LogAttachResult(string resName, bool ok)
 	{
@@ -1045,7 +1009,6 @@ class TBD_LoadoutApplication : Managed
 		Print(string.Format("[TBD][Equip] attach=%1 result=%2", resName, result));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! T-302 per-weapon-slot equip log. Format is locked: xtask greps it.
 	//! `[TBD][Equip] slot=<n> weapon=<res> result=<ok|replaced|failed>`
 	protected void LogWeaponEquipResult(int slotIndex, string resName, string result)
@@ -1053,10 +1016,9 @@ class TBD_LoadoutApplication : Managed
 		Print(string.Format("[TBD][Equip] slot=%1 weapon=%2 result=%3", slotIndex, resName, result));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Spawn one weapon-borne item straight into the primary's storage. This is CRF's
 	//! gearscript attachment mechanic (TrySpawnPrefabToStorage into the weapon storage,
-	//! slot auto-select) — the storage picks the matching attachment slot / magazine well
+	//! slot auto-select) -- the storage picks the matching attachment slot / magazine well
 	//! itself, which is why we do not hand-pick an AttachmentSlotComponent.
 	protected void IssueWeaponItem(string label, string resName)
 	{
@@ -1101,22 +1063,21 @@ class TBD_LoadoutApplication : Managed
 		pending.label = label;
 		pending.resName = resName;
 		pending.mountIssued = mgr.TrySpawnPrefabToStorage(resName, storage, -1, EStoragePurpose.PURPOSE_ANY);
-		// T-181.52: NOT A FAULT — do not put this back to WARNING. A weapon prefab normally spawns
+		// T-181.52: NOT A FAULT -- do not put this back to WARNING. A weapon prefab normally spawns
 		// with its OWN magazine already in the well, so the first mount attempt for the JSON's
 		// magazine is EXPECTED to be declined. ClearBlockingMagazine() then evicts the incumbent and
-		// WeaponVerifyTick re-issues, which succeeds — that is the T-181.10 deterministic swap
+		// WeaponVerifyTick re-issues, which succeeds -- that is the T-181.10 deterministic swap
 		// working as designed, not a degradation. Logging the expected refusal at WARNING put a
 		// `SCRIPT (W):` line in the middle of a fully successful sequence and cost the operator a
-		// fault hunt through a log they scan for real faults. The genuine failure — retried, still
-		// would not mount, stowed loose or dropped — is reported by Degrade()/Fail() at the bottom
+		// fault hunt through a log they scan for real faults. The genuine failure -- retried, still
+		// would not mount, stowed loose or dropped -- is reported by Degrade()/Fail() at the bottom
 		// of WeaponVerifyTick and STAYS at WARNING/ERROR.
 		if (!pending.mountIssued)
-			Print(string.Format("%1 slot=%2 %3 first mount attempt declined by the weapon storage %4 — EXPECTED, not an error: the verify pass clears the weapon's own incumbent and re-issues",
+			Print(string.Format("%1 slot=%2 %3 first mount attempt declined by the weapon storage %4 -- EXPECTED, not an error: the verify pass clears the weapon's own incumbent and re-issues",
 				m_sTag, m_sLabel, label, resName));
 		m_aWeaponPending.Insert(pending);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Evict whatever magazine the weapon came with so the JSON's magazine can take the
 	//! well, then re-issue it. Returns true when something was actually cleared (the caller
 	//! only spends another verify round in that case). Optic incumbents are deliberately
@@ -1144,9 +1105,9 @@ class TBD_LoadoutApplication : Managed
 				if (!item.FindComponent(BaseMagazineComponent))
 					continue;
 				if (PrefabOf(item) == p.resName)
-					continue; // already the requested magazine — nothing is in the way
+					continue; // already the requested magazine -- nothing is in the way
 
-				// T-181.52: NOT A FAULT — do not put this back to WARNING either. Reaching here means
+				// T-181.52: NOT A FAULT -- do not put this back to WARNING either. Reaching here means
 				// the deterministic swap is doing exactly the job it exists for: the weapon shipped
 				// with its own magazine, the JSON asked for a different one, so the incumbent is
 				// evicted and the requested magazine is re-issued below. Together with the
@@ -1154,9 +1115,9 @@ class TBD_LoadoutApplication : Managed
 				// ENDS IN SUCCESS, and the whole sequence is now logged at normal level. That is the
 				// point: a fully successful magazine issue must produce NO `SCRIPT (W):` at all, so
 				// any (W) the operator still sees in this sequence is a REAL fault worth chasing.
-				// The genuine failures stay loud — Degrade()/Fail() at the bottom of
+				// The genuine failures stay loud -- Degrade()/Fail() at the bottom of
 				// WeaponVerifyTick when the retry is exhausted.
-				Print(string.Format("%1 slot=%2 magazine deterministic swap: evicting the weapon's own %3 so the mission's %4 can take the well — intended, not a problem",
+				Print(string.Format("%1 slot=%2 magazine deterministic swap: evicting the weapon's own %3 so the mission's %4 can take the well -- intended, not a problem",
 					m_sTag, m_sLabel, PrefabOf(item), p.resName));
 				SCR_EntityHelper.DeleteEntityAndChildren(item);
 				cleared = true;
@@ -1169,10 +1130,9 @@ class TBD_LoadoutApplication : Managed
 		return cleared;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Poll the weapon storage until each issued item shows up. Stragglers get one
 	//! honest fallback (loose into the character's own inventory) so a player is never
-	//! left with an unloaded weapon and no ammo at all — that fallback is DEGRADED, not
+	//! left with an unloaded weapon and no ammo at all -- that fallback is DEGRADED, not
 	//! success, and says so.
 	protected void WeaponVerifyTick(int attempt)
 	{
@@ -1207,7 +1167,7 @@ class TBD_LoadoutApplication : Managed
 
 		// Deterministic magazine swap, one shot only. The usual reason a magazine will not
 		// mount is that the weapon prefab already shipped with its own in the well, so the
-		// JSON's choice has nowhere to go. Clear the incumbent and re-issue ONCE — deferred
+		// JSON's choice has nowhere to go. Clear the incumbent and re-issue ONCE -- deferred
 		// this late on purpose, so we never take a working magazine away on speculation.
 		if (!m_aWeaponPending.IsEmpty() && !m_bWeaponSwapRetried)
 		{
@@ -1229,10 +1189,10 @@ class TBD_LoadoutApplication : Managed
 				stowed = mgr.TrySpawnPrefabToStorage(straggler.resName, null, -1, EStoragePurpose.PURPOSE_ANY);
 
 			if (stowed)
-				Degrade(straggler.label, straggler.resName, "would not mount on the primary — stowed loose in the character's inventory");
+				Degrade(straggler.label, straggler.resName, "would not mount on the primary -- stowed loose in the character's inventory");
 			else
 				// T-605 NON-BLOCKING: this is the CAPACITY end of the same story as the Degrade()
-				// above it — the item exists, it just would not seat and the character was too full
+				// above it -- the item exists, it just would not seat and the character was too full
 				// to carry it loose either. The player still has the weapon and the clothes.
 				Fail(straggler.label, straggler.resName, "would not mount on the primary and would not fit in the inventory", false);
 		}
@@ -1241,11 +1201,8 @@ class TBD_LoadoutApplication : Managed
 		FinishRest();
 	}
 
-	//====================================================================================
 	// Tail: cargo, worn audit, verdict
-	//====================================================================================
 
-	//------------------------------------------------------------------------------------------------
 	//! Post-verify tail: cargo insert (against the NEW garments), the nakedness audit,
 	//! and the one verdict line that says whether the JSON was honoured.
 	protected void FinishRest()
@@ -1259,7 +1216,6 @@ class TBD_LoadoutApplication : Managed
 		m_bDone = true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Container key -> the WORN garment entity (vest also accepts the armored-vest area).
 	protected IEntity GarmentForContainer(SCR_CharacterInventoryStorageComponent charStorage, string container)
 	{
@@ -1279,13 +1235,12 @@ class TBD_LoadoutApplication : Managed
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Insert every cargo row into its resolved container storage.
 	//!
-	//! T-415 — Can* PRECHECK LADDER (mirrors IssueEquip weapon slots at CanInsertItemInStorage):
-	//!   1. authored container: CanInsertItemInStorage → only then TryInsertItemInStorage
-	//!   2. any-storage fallback: CanInsertItem → only then TryInsertItem (DEGRADED)
-	//!   3. neither accepts → delete + FAILED (remaining qty of the row abandoned, as before)
+	//! T-415 -- Can* PRECHECK LADDER (mirrors IssueEquip weapon slots at CanInsertItemInStorage):
+	//!   1. authored container: CanInsertItemInStorage -> only then TryInsertItemInStorage
+	//!   2. any-storage fallback: CanInsertItem -> only then TryInsertItem (DEGRADED)
+	//!   3. neither accepts -> delete + FAILED (remaining qty of the row abandoned, as before)
 	//! A container that will not fit the item is never blindly Try*-pushed. No silent success:
 	//! Fail/Degrade populate the arrays IsComplete() reads, and ReportVerdict refuses loudly.
 	protected void InsertCargo()
@@ -1327,21 +1282,21 @@ class TBD_LoadoutApplication : Managed
 			if (garment)
 				storage = BaseInventoryStorageComponent.Cast(garment.FindComponent(BaseInventoryStorageComponent));
 			// T-181.52: NOT A MOD BUG, and the message must say so. This fires when the mission asks
-			// for cargo in a container the slot's kit does not wear — e.g. cargo[].container ==
+			// for cargo in a container the slot's kit does not wear -- e.g. cargo[].container ==
 			// "backpack" against kit:us_rifleman, which has no backpack. That is an AUTHORING
 			// mismatch between the mission document and the kit prefab; the fix belongs in one of
 			// those two, never in this file. The item is NOT lost: the any-storage fallback below
-			// still inserts it. Severity is deliberately left at DEGRADED (behaviour unchanged) —
+			// still inserts it. Severity is deliberately left at DEGRADED (behaviour unchanged) --
 			// the JSON did not get the placement it asked for, so it must stay counted in the
-			// end-of-pass verdict — but an operator reading the line should stop here, not go
+			// end-of-pass verdict -- but an operator reading the line should stop here, not go
 			// hunting through mod code.
 			if (!storage)
 				Degrade("cargo:" + row.container, row.item,
-					string.Format("this slot's kit wears no %1 — mission/kit authoring mismatch, NOT a mod fault; the item is still inserted via the any-storage fallback", row.container));
+					string.Format("this slot's kit wears no %1 -- mission/kit authoring mismatch, NOT a mod fault; the item is still inserted via the any-storage fallback", row.container));
 
 			int inserted = 0;
 			string stopReason;
-			// T-605 — the two ways this row can stop are NOT the same severity, and one `stopReason`
+			// T-605 -- the two ways this row can stop are NOT the same severity, and one `stopReason`
 			// string used to flatten them into one ERROR. A prefab that will not load is a document
 			// naming an asset that does not exist (blocking); a character with no room left is a
 			// full soldier (not blocking). This flag is what keeps them apart at the Fail() below.
@@ -1356,20 +1311,20 @@ class TBD_LoadoutApplication : Managed
 				}
 
 				bool ok = false;
-				// T-415 — authored path: Can* first, same shape as weapon IssueEquip (~491).
+				// T-415 -- authored path: Can* first, same shape as weapon IssueEquip (~491).
 				// Never call TryInsertItemInStorage when CanInsertItemInStorage already refused.
 				if (storage && mgr.CanInsertItemInStorage(item, storage))
 					ok = mgr.TryInsertItemInStorage(item, storage);
 
 				if (!ok)
 				{
-					// Any-storage fallback also gated by Can* — no blind push into a full character.
+					// Any-storage fallback also gated by Can* -- no blind push into a full character.
 					if (mgr.CanInsertItem(item))
 					{
 						ok = mgr.TryInsertItem(item);
 						if (ok && storage)
 							Degrade("cargo:" + row.container, row.item, string.Format(
-								"unit %1/%2 did not fit the authored container (CanInsertItemInStorage=0) — inserted elsewhere",
+								"unit %1/%2 did not fit the authored container (CanInsertItemInStorage=0) -- inserted elsewhere",
 								u + 1, row.qty));
 					}
 				}
@@ -1381,18 +1336,18 @@ class TBD_LoadoutApplication : Managed
 				else
 				{
 					SCR_EntityHelper.DeleteEntityAndChildren(item);
-					// T-605 — CAPACITY, not a broken document: the prefab loaded and the entity
+					// T-605 -- CAPACITY, not a broken document: the prefab loaded and the entity
 					// spawned; the character has nowhere left to put it. The units already inserted
 					// stay on the body, so the player is carrying less than authored and nothing
 					// else. Not blocking.
 					stopBlocking = false;
 					if (storage)
 						stopReason = string.Format(
-							"authored container refused unit %1/%2 (CanInsertItemInStorage=0) and no other storage would accept it — deleted; remaining qty of this row abandoned",
+							"authored container refused unit %1/%2 (CanInsertItemInStorage=0) and no other storage would accept it -- deleted; remaining qty of this row abandoned",
 							u + 1, row.qty);
 					else
 						stopReason = string.Format(
-							"no storage would accept unit %1/%2 (CanInsertItem=0, character full) — deleted; remaining qty of this row abandoned",
+							"no storage would accept unit %1/%2 (CanInsertItem=0, character full) -- deleted; remaining qty of this row abandoned",
 							u + 1, row.qty);
 					break; // a full character won't accept later units either
 				}
@@ -1405,16 +1360,15 @@ class TBD_LoadoutApplication : Managed
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! NAKEDNESS GUARD (T-181.10). Whatever the kit prefab and the JSON between them did,
+	//! NAKEDNESS GUARD. Whatever the kit prefab and the JSON between them did,
 	//! the pass ends by looking at what the character is actually wearing. A body with no
-	//! jacket and/or no pants is an ERROR naming the slot — a naked or half-dressed player
+	//! jacket and/or no pants is an ERROR naming the slot -- a naked or half-dressed player
 	//! must never leave this code silently.
 	//!
 	//! Called from FinishRest, i.e. AFTER the equip verify loop has drained (up to 6 x 500 ms)
 	//! and the weapon phase has settled. That is why this one reads the areas ONCE and needs no
 	//! poll of its own: by the time it runs, anything still moving has already been failed and
-	//! deleted by name. The kit-only path has no such wait in front of it and therefore polls —
+	//! deleted by name. The kit-only path has no such wait in front of it and therefore polls --
 	//! see AuditTick.
 	protected void AuditWorn()
 	{
@@ -1422,15 +1376,14 @@ class TBD_LoadoutApplication : Managed
 			m_Character.FindComponent(SCR_CharacterInventoryStorageComponent));
 		if (!charStorage)
 		{
-			Print(string.Format("%1 slot=%2 worn-audit SKIPPED — character has no SCR_CharacterInventoryStorageComponent", m_sTag, m_sLabel), LogLevel.ERROR);
+			Print(string.Format("%1 slot=%2 worn-audit SKIPPED -- character has no SCR_CharacterInventoryStorageComponent", m_sTag, m_sLabel), LogLevel.ERROR);
 			return;
 		}
 
 		ReportWornAudit(charStorage, "after loadout pass", "kit prefab and JSON loadout both left the body bare");
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-181.41 — THE decision, in one place, so "naked" means the same thing on both paths and
+	//! T-181.41 -- THE decision, in one place, so "naked" means the same thing on both paths and
 	//! there is exactly one set of words for it. `context` says WHEN the reading was taken and
 	//! `cause` says who is on the hook for it; everything else is identical.
 	protected void ReportWornAudit(notnull SCR_CharacterInventoryStorageComponent charStorage, string context, string cause)
@@ -1447,25 +1400,22 @@ class TBD_LoadoutApplication : Managed
 
 		if (!jacket && !pants)
 		{
-			Print(string.Format("%1 slot=%2 NAKED %3 — no jacket and no pants worn (%4)",
+			Print(string.Format("%1 slot=%2 NAKED %3 -- no jacket and no pants worn (%4)",
 				m_sTag, m_sLabel, context, cause), LogLevel.ERROR);
 			return;
 		}
 
-		Print(string.Format("%1 slot=%2 HALF-DRESSED %3 — jacket=%4 pants=%5 boots=%6 (%7)",
+		Print(string.Format("%1 slot=%2 HALF-DRESSED %3 -- jacket=%4 pants=%5 boots=%6 (%7)",
 			m_sTag, m_sLabel, context, jacket, pants, boots, cause), LogLevel.ERROR);
 	}
 
-	//====================================================================================
-	// T-181.41 — KIT-ONLY WORN AUDIT
-	//====================================================================================
+	// T-181.41 -- KIT-ONLY WORN AUDIT
 
-	//------------------------------------------------------------------------------------------------
 	//! PUBLIC ENTRY POINT for a slot whose JSON authors no loadout at all.
 	//!
-	//! WHY THIS EXISTS. AuditWorn was written (T-181.10) to catch exactly one thing: a bad KIT
+	//! WHY THIS EXISTS. AuditWorn was written to catch exactly one thing: a bad KIT
 	//! PREFAB that spawns a player naked. It only ever ran as the tail of a JSON loadout pass,
-	//! and it only ever reached kit-only bodies because of a BUG — `if (slot.loadout)` is always
+	//! and it only ever reached kit-only bodies because of a BUG -- `if (slot.loadout)` is always
 	//! true under JsonLoadContext's over-allocation, so every slot looked like it carried a JSON
 	//! loadout and every slot got a (mostly empty) application whose tail ran the audit.
 	//! T-181.32 fixed that test correctly, and the side effect was that the guard stopped
@@ -1475,22 +1425,22 @@ class TBD_LoadoutApplication : Managed
 	//! This is the audit's real anchor rather than a bug: the body is dressed by its kit and
 	//! nothing else, so the kit is solely responsible and is named in the failure.
 	//!
-	//! GATED FOR REAL, AND WITHOUT A CLIENT. Do not assume — as this program did — that dressing a
+	//! GATED FOR REAL, AND WITHOUT A CLIENT. Do not assume -- as this program did -- that dressing a
 	//! body needs a player. TBD_SpawnManager materialises the whole slot lineup at MISSION START,
 	//! not on join, and SpawnSlotBody is its ONLY body-creation call site, so
 	//! `world-boot.sh --mission=<golden>` builds and audits every body with zero players
 	//! connected. Measured on bridgehead-at-levie: 18/18 bodies, each
-	//! `worn-audit jacket=1 pants=1 boots=1 kit=… (settled on attempt 1 of 4, 250 ms)`. That makes
+	//! `worn-audit jacket=1 pants=1 boots=1 kit=... (settled on attempt 1 of 4, 250 ms)`. That makes
 	//! this one of the few things in this file proven END-TO-END by the boot gate instead of
-	//! compile-only — and it is exactly why a false NAKED here would break that gate for every
+	//! compile-only -- and it is exactly why a false NAKED here would break that gate for every
 	//! other slice, not just this one.
 	//!
 	//! CANCELLATION / THE `ScriptCallQueue.Remove` HAZARD. Deliberately none of this slice's
 	//! business, because the object is a TBD_LoadoutApplication registered in the SpawnManager's
 	//! m_aLoadoutApps like any other: CancelLoadoutAppsFor(body) already cancels it when the body
 	//! is superseded or released to vanilla teardown, PruneDoneLoadoutApps already reaps it, and
-	//! every tick re-checks m_bDone and m_Character first. The T-181.15 hazard — one
-	//! ScriptCallQueue.Remove cancelling every player's pending callback — is sidestepped
+	//! every tick re-checks m_bDone and m_Character first. The T-181.15 hazard -- one
+	//! ScriptCallQueue.Remove cancelling every player's pending callback -- is sidestepped
 	//! entirely rather than re-solved: NOTHING here is ever removed from the call queue, and the
 	//! deferred callback carries no raw playerId to go stale. It carries the body itself, and a
 	//! body is not recycled the way a numeric id is.
@@ -1499,7 +1449,7 @@ class TBD_LoadoutApplication : Managed
 	//! this object (T-068.12, and it is why m_aLoadoutApps exists), so Cancel() -> m_bDone ->
 	//! PruneDoneLoadoutApps() can in principle drop the last strong ref while a tick is still
 	//! queued. That shape PREDATES this slice and is shared with VerifyTick; what the audit path
-	//! changes is the exposure, and it changes it DOWNWARD — an audit-only pass is pending for
+	//! changes is the exposure, and it changes it DOWNWARD -- an audit-only pass is pending for
 	//! 250 ms (measured: it settles on attempt 1, always) where an equip pass is pending for up to
 	//! 3 s. Reaching it needs a body cancelled inside one tick of being spawned, which needs a
 	//! live client and therefore CANNOT be exercised from world-boot: it is unproven either way
@@ -1523,7 +1473,6 @@ class TBD_LoadoutApplication : Managed
 		GetGame().GetCallqueue().CallLater(AuditTick, AUDIT_TICK_MS, false, 1);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Poll the decency areas until the body is dressed or the deadline expires.
 	//!
 	//! THE POINT OF POLLING RATHER THAN WAITING. A false NAKED is worse than no audit: it is a
@@ -1533,7 +1482,7 @@ class TBD_LoadoutApplication : Managed
 	//! never accuse a body that was merely still dressing. The only thing the deadline buys is how
 	//! long a genuinely-naked body stays unreported, and 1 s of that costs nothing.
 	//!
-	//! In practice — measured — this returns on attempt 1 every time, because kit clothing is
+	//! In practice -- measured -- this returns on attempt 1 every time, because kit clothing is
 	//! already there synchronously (see AUDIT_TICK_MS). The loop is insurance, not a wait.
 	//!
 	//! The OK line carries the attempt it settled on precisely so this stops being an argument:
@@ -1545,7 +1494,7 @@ class TBD_LoadoutApplication : Managed
 			return;
 		if (!m_Character)
 		{
-			// Body reaped between ticks — a clean stand-down, not a nakedness finding.
+			// Body reaped between ticks -- a clean stand-down, not a nakedness finding.
 			Cancel("body superseded");
 			return;
 		}
@@ -1578,10 +1527,10 @@ class TBD_LoadoutApplication : Managed
 			return;
 		}
 
-		// Deadline reached and still not decent — this is the finding the guard exists for.
+		// Deadline reached and still not decent -- this is the finding the guard exists for.
 		if (!charStorage)
 		{
-			Print(string.Format("%1 slot=%2 worn-audit SKIPPED — character has no SCR_CharacterInventoryStorageComponent after %3 ms (kit %4)",
+			Print(string.Format("%1 slot=%2 worn-audit SKIPPED -- character has no SCR_CharacterInventoryStorageComponent after %3 ms (kit %4)",
 				m_sTag, m_sLabel, AUDIT_MAX_ATTEMPTS * AUDIT_TICK_MS, m_sKit), LogLevel.ERROR);
 			m_bDone = true;
 			return;
@@ -1589,30 +1538,29 @@ class TBD_LoadoutApplication : Managed
 
 		ReportWornAudit(charStorage,
 			string.Format("after kit spawn (%1 ms, no JSON loadout authored)", AUDIT_MAX_ATTEMPTS * AUDIT_TICK_MS),
-			string.Format("kit %1 dressed the body itself and this is what it produced — fix the kit prefab or author a loadout", m_sKit));
+			string.Format("kit %1 dressed the body itself and this is what it produced -- fix the kit prefab or author a loadout", m_sKit));
 		m_bDone = true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The one line an operator greps for: did this slot get the loadout its JSON asked
 	//! for? Complete passes log a single OK line; anything less repeats every offending
 	//! item so the verdict is self-contained.
 	//!
-	//! T-415 — IsComplete() is the BRANCH, not dead code. Before that ticket the answer was
+	//! T-415 -- IsComplete() is the BRANCH, not dead code. Before that ticket the answer was
 	//! computed and discarded (zero callers repo-wide); ReportVerdict re-checked the arrays by
-	//! hand and a DEGRADED-only pass stayed at WARNING — soft enough that world-boot's
+	//! hand and a DEGRADED-only pass stayed at WARNING -- soft enough that world-boot's
 	//! TBD-ERROR gate never saw it.
 	//!
-	//! T-605 — THREE VERDICTS, NOT TWO, because there are three outcomes and the middle one was
-	//! being reported as the worst one. `REFUSED` now means REFUSED — the spawn boundary really
-	//! will keep the session in LOADING for it — and it is reserved for a blocking failure. A pass
+	//! T-605 -- THREE VERDICTS, NOT TWO, because there are three outcomes and the middle one was
+	//! being reported as the worst one. `REFUSED` now means REFUSED -- the spawn boundary really
+	//! will keep the session in LOADING for it -- and it is reserved for a blocking failure. A pass
 	//! that delivered a playable body carrying less than the JSON asked for gets its own verdict at
 	//! WARNING, which says outright that the session is NOT refused for it, so an operator reading
 	//! the log is never left guessing whether the round is about to start.
 	//!
 	//! The severity split is load-bearing for the boot gate, not decoration: `world-boot.sh` fails
 	//! on any TBD-owned `SCRIPT (E)`, so if a full vest still emitted ERROR here, no mission with
-	//! realistic cargo could ever produce a green boot — which is precisely why this file's one
+	//! realistic cargo could ever produce a green boot -- which is precisely why this file's one
 	//! gated mission had 0 gear and 0 cargo.
 	protected void ReportVerdict()
 	{
@@ -1627,14 +1575,14 @@ class TBD_LoadoutApplication : Managed
 
 		if (HasBlockingFailure())
 		{
-			Print(string.Format("%1 slot=%2 loadout delivery REFUSED %3 — this slot is UNPLAYABLE and the session will stay in LOADING: %4",
+			Print(string.Format("%1 slot=%2 loadout delivery REFUSED %3 -- this slot is UNPLAYABLE and the session will stay in LOADING: %4",
 				m_sTag, m_sLabel, counts, JoinIssues(m_aBlocking)), LogLevel.ERROR);
 		}
 		else
 		{
 			// The T-605 case: everything that matters arrived, some of it in the wrong place or in
 			// smaller quantity. Loud, itemised, and explicitly NOT a refusal.
-			Print(string.Format("%1 slot=%2 loadout SHORTFALL %3 — the slot is playable and the session is NOT refused; it carries less/elsewhere than authored — fix the mission or the kit",
+			Print(string.Format("%1 slot=%2 loadout SHORTFALL %3 -- the slot is playable and the session is NOT refused; it carries less/elsewhere than authored -- fix the mission or the kit",
 				m_sTag, m_sLabel, counts), LogLevel.WARNING);
 		}
 
@@ -1645,15 +1593,15 @@ class TBD_LoadoutApplication : Managed
 		if (!m_aFailures.IsEmpty())
 		{
 			if (HasBlockingFailure())
-				Print(string.Format("%1 slot=%2 loadout INCOMPLETE %3 — failed: %4",
+				Print(string.Format("%1 slot=%2 loadout INCOMPLETE %3 -- failed: %4",
 					m_sTag, m_sLabel, counts, JoinIssues(m_aFailures)), LogLevel.ERROR);
 			else
-				Print(string.Format("%1 slot=%2 loadout INCOMPLETE %3 — not delivered: %4",
+				Print(string.Format("%1 slot=%2 loadout INCOMPLETE %3 -- not delivered: %4",
 					m_sTag, m_sLabel, counts, JoinIssues(m_aFailures)), LogLevel.WARNING);
 		}
 
 		if (!m_aDegraded.IsEmpty())
-			Print(string.Format("%1 slot=%2 loadout DEGRADED %3 — %4",
+			Print(string.Format("%1 slot=%2 loadout DEGRADED %3 -- %4",
 				m_sTag, m_sLabel, counts, JoinIssues(m_aDegraded)), LogLevel.WARNING);
 	}
 }

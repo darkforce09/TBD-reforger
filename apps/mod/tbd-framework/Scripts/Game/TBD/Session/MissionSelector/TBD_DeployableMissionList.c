@@ -25,7 +25,6 @@ class TBD_DeployableMissionListStruct
 //! The list fetch on its way to the platform.
 class TBD_DeployableMissionListCall : TBD_GameRuntimeCall
 {
-	//------------------------------------------------------------------------------------------------
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_DeployableMissionList.OnAnswered(answer);
@@ -34,16 +33,13 @@ class TBD_DeployableMissionListCall : TBD_GameRuntimeCall
 
 class TBD_DeployableMissionList
 {
-	//! Greppable channel: `grep '\[TBD\]\[Missions\]' console.log`.
-	static const string CH_MISSIONS = "Missions";
+	static const string CH_MISSIONS = "Missions"; //!< Greppable channel: `grep '\[TBD\]\[Missions\]' console.log`.
 
 	protected static ref array<ref TBD_DeployableMissionStruct> s_aEntries;
 	protected static bool s_bLoaded;
 	protected static bool s_bInFlight;
-	//! Why the last refresh did not load the list, or empty.
-	protected static string s_sLastFailure;
+	protected static string s_sLastFailure; //!< Why the last refresh did not load the list, or empty.
 
-	//------------------------------------------------------------------------------------------------
 	//! Fetch the list again. False when a fetch is in flight already or none can be sent.
 	static bool Refresh()
 	{
@@ -65,7 +61,6 @@ class TBD_DeployableMissionList
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Called by TBD_DeployableMissionListCall with the platform's answer.
 	static void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
@@ -89,7 +84,6 @@ class TBD_DeployableMissionList
 		TBD_Log.Kv(CH_MISSIONS, "list-loaded", string.Format("missions=%1", s_aEntries.Count()));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static int Count()
 	{
 		if (!s_aEntries)
@@ -98,7 +92,6 @@ class TBD_DeployableMissionList
 		return s_aEntries.Count();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The entry numbered `number` (from 1) in the list shown to admins, or null.
 	static TBD_DeployableMissionStruct GetEntryByNumber(int number)
 	{
@@ -109,7 +102,6 @@ class TBD_DeployableMissionList
 		return s_aEntries[index];
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `#tbd missions`: a header and one numbered line per mission, or one line saying why none.
 	static array<string> BuildListLines()
 	{
@@ -131,7 +123,6 @@ class TBD_DeployableMissionList
 		return lines;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `n) Title [terrain]`, marked when this world runs the mission.
 	static string DescribeEntry(int number)
 	{
@@ -151,7 +142,6 @@ class TBD_DeployableMissionList
 		return line;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Why there is no list to show.
 	static string DescribeEmpty()
 	{

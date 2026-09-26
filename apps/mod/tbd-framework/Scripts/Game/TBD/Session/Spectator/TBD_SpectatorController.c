@@ -1,7 +1,6 @@
-//! T-181.12 — the spectator lifecycle. Owns the camera entity, decides when a player is in
+//! T-181.12 -- the spectator lifecycle. Owns the camera entity, decides when a player is in
 //! spectator, and is the single public entry point another slice binds to.
 //!
-//! ── HOW A DEAD PLAYER ENTERS, EXACTLY ───────────────────────────────────────────────────────
 //! ```
 //!  server: character dies
 //!    -> SCR_BaseGameMode.OnPlayerKilled
@@ -17,7 +16,6 @@
 //!         TBD_MenuStack.Open(ChimeraMenuPreset.TBD_Spectator)
 //! ```
 //!
-//! ── AND HOW THEY LEAVE ──────────────────────────────────────────────────────────────────────
 //! ```
 //!  admin: "#tbd respawn <id>"
 //!    -> TBD_AdminCommands  ->  TBD_SpawnManager.AdminRespawn(playerId)
@@ -31,7 +29,6 @@
 //!         delete the spectator camera entity
 //! ```
 //!
-//! ── Why a poll and not a hook into TBD_SpawnManager ─────────────────────────────────────────
 //! Two reasons, and only one of them is that T-181.22 owns that file this wave.
 //!
 //! The real reason is that "am I in spectator?" is a **client** question with a **client** answer:
@@ -39,16 +36,15 @@
 //! to be usable here, and it would still be a second source of truth that could disagree with what
 //! the client can actually see. Polling the one thing that is locally authoritative cannot drift,
 //! cannot miss an edge, and cannot be raced by replication order. At 250 ms the worst case from
-//! death to camera is a quarter of a second — invisible next to the death animation — and the cost
+//! death to camera is a quarter of a second -- invisible next to the death animation -- and the cost
 //! is one entity lookup and one component lookup per tick.
 //!
 //! It is also the reason this survives cases a death hook would miss: a player who reconnects
 //! after their life was already spent never receives a death event at all, but they still have no
 //! living body, so the grace path below still puts them in spectator.
 //!
-//! ── LANDMINE: entity streaming follows the CONTROLLED ENTITY, not the camera ────────────────
 //! Under ONE LIFE the dead player still controls their corpse, so their replication origin stays
-//! where they fell. Fly the camera far enough and the world will be empty — not because the
+//! where they fell. Fly the camera far enough and the world will be empty -- not because the
 //! camera is broken, but because those entities were never sent to this machine. That is why
 //! `TBD_SpectatorTargets` reports a "not in view" count instead of pretending the roster is short.
 //!
@@ -56,7 +52,7 @@
 //! damage-free `TBD_SpectatorHostEntity` to possess and this class reports the camera position to
 //! it (`ReportCameraToHost` below, ~2/s, unreliable, 12 bytes), so the streaming origin travels
 //! with the view. CRF reaches the same place with a physics-disabled CHARACTER; TBD deliberately
-//! does not, because a character can be killed and a killed character spends a life — the full
+//! does not, because a character can be killed and a killed character spends a life -- the full
 //! argument is in the `TBD_SpectatorHostEntity` header.
 //!
 //! Two consequences for the code below, both load-bearing:
@@ -68,12 +64,11 @@
 //!     around the CAMERA, it does not make everything on the server visible.
 class TBD_SpectatorController
 {
-	//! Fast enough that death -> camera is imperceptible, slow enough to be free.
-	static const int POLL_MS = 250;
+	static const int POLL_MS = 250; //!< Fast enough that death -> camera is imperceptible, slow enough to be free.
 
 	//! A player with no body at all (reconnected after a spent life, or refused a deploy) has no
 	//! death event to react to. After this long in a live round with nothing to control, spectator
-	//! is the only honest answer — a black screen is not.
+	//! is the only honest answer -- a black screen is not.
 	static const int NO_BODY_GRACE_MS = 20000;
 
 	//! Where the camera starts relative to the corpse: up and back, so the first thing a player
@@ -82,7 +77,7 @@ class TBD_SpectatorController
 	static const float ENTRY_BACK_M   = 4.0;
 	static const float ENTRY_PITCH_DEG = -18.0;
 
-	//! T-181.24 — one camera report every N ticks. 2 x 250 ms = twice a second, which is fast enough
+	//! T-181.24 -- one camera report every N ticks. 2 x 250 ms = twice a second, which is fast enough
 	//! that the streaming origin never falls far behind a camera doing 18 m/s and slow enough to be
 	//! free. Sent unreliable: a dropped sample is corrected by the next one, whereas a reliable
 	//! channel would queue and replay stale positions after a stall.
@@ -92,7 +87,7 @@ class TBD_SpectatorController
 	//! (`TBD_SpectatorHost.MIN_MOVE_M`), so the message is not sent in the first place.
 	static const float HOST_REPORT_MIN_MOVE_M = 2.0;
 
-	//! T-291 — `own_side_delayed_60s` waits this long after death before the camera appears.
+	//! T-291 -- `own_side_delayed_60s` waits this long after death before the camera appears.
 	static const int OWN_SIDE_DELAY_MS = 60000;
 
 	static const string POLICY_NONE = "none";
@@ -107,11 +102,11 @@ class TBD_SpectatorController
 	protected static bool s_bListenersRegistered;
 	protected static int s_iNoBodyMs;
 
-	//! T-291 — elapsed while dead and not yet in spectator, used for the 60 s own-side delay.
+	//! T-291 -- elapsed while dead and not yet in spectator, used for the 60 s own-side delay.
 	protected static int s_iPolicyWaitMs;
 	protected static bool s_bLoggedNone;
 
-	//! T-181.24 — camera-report bookkeeping. `s_bHostReported` exists so the FIRST report is always
+	//! T-181.24 -- camera-report bookkeeping. `s_bHostReported` exists so the FIRST report is always
 	//! sent: comparing against a zeroed `s_vHostReported` would silently swallow it for anyone who
 	//! died near the map origin.
 	protected static int s_iHostReportTicks;
@@ -123,26 +118,22 @@ class TBD_SpectatorController
 	protected static int s_iFollowPlayerId = -1;
 	protected static bool s_bFirstPerson;
 
-	//! Rebuilt on demand for cycling. Not the roster screen's copy — the screen owns its own.
+	//! Rebuilt on demand for cycling. Not the roster screen's copy -- the screen owns its own.
 	protected static ref array<ref TBD_SpectatorTarget> s_aCycleTargets;
 
-	// ── Public surface. This is what another slice binds to. ────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! Is the local player in spectator right now?
 	static bool IsActive()
 	{
 		return s_bActive;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The live camera, or null when not spectating.
 	static TBD_SpectatorCamera GetCamera()
 	{
 		return s_Camera;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Player id currently being followed, or -1 in free flight.
 	static int GetFollowedPlayerId()
 	{
@@ -152,15 +143,13 @@ class TBD_SpectatorController
 		return s_iFollowPlayerId;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static bool IsFirstPerson()
 	{
 		return s_bActive && s_Camera && s_Camera.GetMode() == TBD_ESpectatorCameraMode.FIRST_PERSON;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One line describing what the camera is doing, for the roster's status area. Non-blocking
-	//! feedback is design law — the spectator should never have to guess which mode they are in.
+	//! feedback is design law -- the spectator should never have to guess which mode they are in.
 	static string GetStatusLine()
 	{
 		if (!s_bActive || !s_Camera)
@@ -168,22 +157,20 @@ class TBD_SpectatorController
 
 		if (s_Camera.GetMode() == TBD_ESpectatorCameraMode.FREE)
 		{
-			// `/ 10.0`, not `/ 10` — an integer divisor here would round x1.5 down to x1 and the
+			// `/ 10.0`, not `/ 10` -- an integer divisor here would round x1.5 down to x1 and the
 			// readout would silently stop tracking the scroll wheel.
 			float speed = Math.Round(s_Camera.GetSpeedScale() * 10) / 10.0;
-			return string.Format("Free camera — speed x%1", speed);
+			return string.Format("Free camera -- speed x%1", speed);
 		}
 
 		string name = PlayerName(s_iFollowPlayerId);
 		if (s_Camera.GetMode() == TBD_ESpectatorCameraMode.FIRST_PERSON)
-			return string.Format("First person — %1", name);
+			return string.Format("First person -- %1", name);
 
-		return string.Format("Following %1 — click again for first person", name);
+		return string.Format("Following %1 -- click again for first person", name);
 	}
 
-	// ── Lifecycle ───────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! Start watching the local player. Called once by TBD_SpectatorComponent on a client.
 	static void Start()
 	{
@@ -192,8 +179,7 @@ class TBD_SpectatorController
 		GetGame().GetCallqueue().CallLater(Tick, POLL_MS, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Mission teardown. Everything static must be put back or the next round inherits it — statics
+	//! Mission teardown. Everything static must be put back or the next round inherits it -- statics
 	//! outlive a world inside one process, which is a measured landmine in this codebase.
 	static void Shutdown()
 	{
@@ -216,11 +202,10 @@ class TBD_SpectatorController
 		TBD_SpectatorTargets.Reset();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The poll. Cheap by construction: one entity lookup, one component lookup.
 	static void Tick()
 	{
-		// Inert on any world that is not running the framework — same guard the rest of the mod
+		// Inert on any world that is not running the framework -- same guard the rest of the mod
 		// uses, so a plain vanilla scenario never grows a spectator camera.
 		if (!TBD_FrameworkManager.IsFrameworkWorld())
 		{
@@ -265,7 +250,7 @@ class TBD_SpectatorController
 
 			if (!s_bLoggedNone)
 			{
-				Print("[TBD][spectator] spectatorPolicy=none — staying on the death view (no spectator camera).", LogLevel.NORMAL);
+				Print("[TBD][spectator] spectatorPolicy=none -- staying on the death view (no spectator camera).", LogLevel.NORMAL);
 				s_bLoggedNone = true;
 			}
 
@@ -305,8 +290,7 @@ class TBD_SpectatorController
 		Enter(local);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-291 — authored spectatorPolicy, replicated onto TBD_FrameworkManager. Empty when the
+	//! T-291 -- authored spectatorPolicy, replicated onto TBD_FrameworkManager. Empty when the
 	//! mission omitted the key (or the latch has not arrived yet).
 	protected static string AuthoredPolicy()
 	{
@@ -317,8 +301,7 @@ class TBD_SpectatorController
 		return fm.GetSpectatorPolicy();
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-291 — apply faction restriction on the CLIENT. MissionLoader's ApplyMissionSettings
+	//! T-291 -- apply faction restriction on the CLIENT. MissionLoader's ApplyMissionSettings
 	//! runs on the server only; SpectatorTargets is a process-local static and does not replicate.
 	protected static void SyncSpectatorPolicy()
 	{
@@ -329,7 +312,6 @@ class TBD_SpectatorController
 			TBD_SpectatorTargets.SetFactionRestricted(true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Take over the view. `body` is the corpse (may be null) and only supplies a starting point.
 	static void Enter(IEntity body)
 	{
@@ -343,7 +325,7 @@ class TBD_SpectatorController
 		CameraManager cameras = GetGame().GetCameraManager();
 		if (!cameras)
 		{
-			Print("[TBD][spectator] no CameraManager — cannot enter spectator.", LogLevel.ERROR);
+			Print("[TBD][spectator] no CameraManager -- cannot enter spectator.", LogLevel.ERROR);
 			return;
 		}
 
@@ -356,7 +338,7 @@ class TBD_SpectatorController
 		Math3D.MatrixIdentity4(params.Transform);
 		params.Transform[3] = position;
 
-		// Spawned BY TYPENAME — no prefab, therefore no resourceDatabase.rdb dependency, therefore
+		// Spawned BY TYPENAME -- no prefab, therefore no resourceDatabase.rdb dependency, therefore
 		// the camera works before the Workbench pass the menu preset is waiting on. (Probed.)
 		IEntity spawned = GetGame().SpawnEntity(TBD_SpectatorCamera, world, params);
 		s_Camera = TBD_SpectatorCamera.Cast(spawned);
@@ -380,12 +362,11 @@ class TBD_SpectatorController
 		s_bFirstPerson = false;
 		ResetHostReporting();
 
-		Print("[TBD][spectator] entered — one life spent, free camera live.");
+		Print("[TBD][spectator] entered -- one life spent, free camera live.");
 
 		OpenRoster();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Hand the view back. Safe to call when not spectating.
 	static void Leave()
 	{
@@ -408,7 +389,7 @@ class TBD_SpectatorController
 				cameras.SetCamera(restore);
 		}
 
-		// Switch away BEFORE deleting, never after — deleting the active camera leaves the engine
+		// Switch away BEFORE deleting, never after -- deleting the active camera leaves the engine
 		// rendering from a dead entity.
 		if (s_Camera)
 		{
@@ -422,12 +403,10 @@ class TBD_SpectatorController
 		s_bFirstPerson = false;
 		ResetHostReporting();
 
-		Print("[TBD][spectator] left — back in the world.");
+		Print("[TBD][spectator] left -- back in the world.");
 	}
 
-	// ── View control. Every one of these is reachable from the roster AND from a key. ───────
 
-	//------------------------------------------------------------------------------------------------
 	//! Fly the AO. The one obvious way out of any follow.
 	static void SetFree()
 	{
@@ -439,9 +418,8 @@ class TBD_SpectatorController
 		s_bFirstPerson = false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Follow a player. Re-resolves the entity first, so a row that went stale between the refresh
-	//! and the click cannot point the camera at a corpse — it falls back to free flight and says so.
+	//! and the click cannot point the camera at a corpse -- it falls back to free flight and says so.
 	//! Returns false when the target is gone.
 	static bool FollowPlayer(int playerId, bool firstPerson)
 	{
@@ -461,7 +439,6 @@ class TBD_SpectatorController
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Third person <-> first person on the current target. No-op in free flight.
 	static void ToggleFirstPerson()
 	{
@@ -471,7 +448,6 @@ class TBD_SpectatorController
 		FollowPlayer(s_iFollowPlayerId, !s_bFirstPerson);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Step through the valid targets. `delta` is +1 or -1. From free flight this picks the first
 	//! target, so one key is enough to start watching somebody.
 	static void CycleTarget(int delta)
@@ -520,24 +496,20 @@ class TBD_SpectatorController
 		FollowPlayer(s_aCycleTargets[next].m_iPlayerId, s_bFirstPerson);
 	}
 
-	// ── Roster screen ───────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! Open the unit list. Fails soft and loudly: until Workbench regenerates the addon's
 	//! resourceDatabase.rdb the preset cannot resolve, and TBD_MenuStack already logs exactly why.
-	//! The camera keeps working regardless — that is the whole point of keeping it prefab-free.
+	//! The camera keeps working regardless -- that is the whole point of keeping it prefab-free.
 	static void OpenRoster()
 	{
 		TBD_MenuStack.Open(ChimeraMenuPreset.TBD_Spectator);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void CloseRoster()
 	{
 		TBD_MenuStack.Close(ChimeraMenuPreset.TBD_Spectator);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void ToggleRoster()
 	{
 		if (!s_bActive)
@@ -549,10 +521,8 @@ class TBD_SpectatorController
 			OpenRoster();
 	}
 
-	// ── Internals ───────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
-	//! A followed player can die without their entity going away — a ragdoll is still an entity, so
+	//! A followed player can die without their entity going away -- a ragdoll is still an entity, so
 	//! the camera's own "target vanished" guard never fires and you end up orbiting a corpse. This
 	//! is the check that notices, and it is here rather than in the camera because "is that player
 	//! still alive" is a roster question, not a transform question.
@@ -567,8 +537,7 @@ class TBD_SpectatorController
 		SetFree();
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! The camera keeps flying while the roster is open — that is deliberate (nothing blocking).
+	//! The camera keeps flying while the roster is open -- that is deliberate (nothing blocking).
 	//! But if some OTHER TBD screen stacks on top of spectator, that screen owns the keyboard and
 	//! the camera must stop moving under it, or a player will drive off into the AO while trying to
 	//! use a menu.
@@ -581,11 +550,10 @@ class TBD_SpectatorController
 		s_Camera.SetInputEnabled(top == -1 || top == ChimeraMenuPreset.TBD_Spectator);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-181.24 — tell the server where to keep our streaming origin.
+	//! T-181.24 -- tell the server where to keep our streaming origin.
 	//!
 	//! CLIENT ONLY, and deliberately fire-and-forget: this class never learns whether a host exists.
-	//! That is not laziness, it is the same reasoning that made this a poll rather than a hook — the
+	//! That is not laziness, it is the same reasoning that made this a poll rather than a hook -- the
 	//! authority owns whether a dead player gets a host (`TBD_SpectatorHost.Tick`), it can withdraw
 	//! one at any moment, and a client-side mirror of that decision would be a second source of
 	//! truth that could disagree with it. A report that lands with no host is dropped by the
@@ -617,8 +585,7 @@ class TBD_SpectatorController
 		controller.TBD_ReportSpectatorCamera(position);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-181.24 — forget where we last told the server we were, so the next entry always sends a
+	//! T-181.24 -- forget where we last told the server we were, so the next entry always sends a
 	//! first report instead of suppressing it as "no movement since last round".
 	protected static void ResetHostReporting()
 	{
@@ -627,8 +594,7 @@ class TBD_SpectatorController
 		s_vHostReported = vector.Zero;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Spectator engages from SAFE_START onward — a friendly-fire death during safe start spends a
+	//! Spectator engages from SAFE_START onward -- a friendly-fire death during safe start spends a
 	//! life exactly like any other, and the player must not be left staring at their own corpse.
 	protected static bool IsStageSpectatable()
 	{
@@ -639,7 +605,6 @@ class TBD_SpectatorController
 		return framework.GetStage() >= TBD_EGameStage.SAFE_START;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Where the camera starts. Behind and above the corpse looking down at it if we have one;
 	//! otherwise wherever the view already is, so entering can never black-screen a player.
 	protected static void ResolveEntryView(IEntity body, CameraManager cameras, out vector position, out vector angles)
@@ -673,7 +638,6 @@ class TBD_SpectatorController
 		angles = vector.Zero;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static CameraBase LocalPlayerCamera()
 	{
 		SCR_PlayerController controller = SCR_PlayerController.Cast(GetGame().GetPlayerController());
@@ -683,7 +647,6 @@ class TBD_SpectatorController
 		return controller.GetPlayerCamera();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string PlayerName(int playerId)
 	{
 		if (playerId <= 0)
@@ -700,9 +663,7 @@ class TBD_SpectatorController
 		return name;
 	}
 
-	// ── Keybinds ────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! Accelerators, not the only route: every one of these actions is also a click in the roster,
 	//! so the feature is complete with a mouse alone. That matters because the action `.conf`s are
 	//! non-script resources and share the menu preset's Workbench dependency, while free flight
@@ -725,7 +686,6 @@ class TBD_SpectatorController
 		s_bListenersRegistered = true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void UnregisterListeners()
 	{
 		if (!s_bListenersRegistered)
@@ -744,12 +704,10 @@ class TBD_SpectatorController
 		s_bListenersRegistered = false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	// The contexts these listeners live in are armed per-frame by TBD_SpectatorCamera.EOnPostFrame
-	// — so they are live exactly while a spectator camera exists, and release themselves the
+	// -- so they are live exactly while a spectator camera exists, and release themselves the
 	// instant it is deleted. There is deliberately no explicit "disarm": an input context that
 	// nobody re-arms is already gone.
-	//------------------------------------------------------------------------------------------------
 	protected static void OnActionRoster(float value, EActionTrigger trigger) { ToggleRoster(); }
 	protected static void OnActionNext(float value, EActionTrigger trigger)   { if (s_bActive) CycleTarget(1); }
 	protected static void OnActionPrev(float value, EActionTrigger trigger)   { if (s_bActive) CycleTarget(-1); }

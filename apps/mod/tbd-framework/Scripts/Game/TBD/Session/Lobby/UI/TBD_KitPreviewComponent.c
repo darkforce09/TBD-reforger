@@ -1,13 +1,13 @@
-//! Kit-preview pass (2026-09-13) — the 3D doll in the KIT INSPECTOR's preview card.
+//! Kit-preview pass (2026-09-13) -- the 3D doll in the KIT INSPECTOR's preview card.
 //!
 //! Owns the `Preview` render target of `TBD_KitPreview.layout`: asks `TBD_LoadoutPreviewDresser`
 //! for the preview entity wearing the seat's exact kit, hands it to the `ItemPreviewManagerEntity`
 //! with the character's own `SCR_CharacterInventoryPreviewAttributes` (full-body framing), and
 //! turns / zooms that camera on input the way vanilla's inventory does
 //! (`SCR_InventoryCharacterWidgetHelper`: `RotateItemCamera` limits "-30 -180 0" / "0 180 0",
-//! `ZoomCamera`, then `SetPreviewItem` again). Input is read the TBD way — a workspace handler for
+//! `ZoomCamera`, then `SetPreviewItem` again). Input is read the TBD way -- a workspace handler for
 //! the button / wheel edges plus a 30 Hz `CallLater` poll of `WidgetManager.GetMousePos` while a
-//! drag is held (the `TBD_UIScrollBar` recipe) — because the vanilla `Inventory_Inspect*` actions
+//! drag is held (the `TBD_UIScrollBar` recipe) -- because the vanilla `Inventory_Inspect*` actions
 //! are only live inside the inventory context.
 //!
 //! Lifecycle: `Attach()` once per mounted preview card, `Show(kit)` per seat, `Destroy()` before
@@ -46,7 +46,6 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 	protected int m_iLastX;
 	protected int m_iLastY;
 
-	//------------------------------------------------------------------------------------------------
 	//! `previewWidget` is the layout's `Preview` (ItemPreviewWidget); `caption` its `Label`.
 	static TBD_KitPreviewComponent Attach(Widget previewWidget, Widget caption)
 	{
@@ -60,7 +59,6 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		return component;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Dress and show `kit`; null kit shows the plain PREVIEW caption.
 	void Show(TBD_KitInfo kit)
 	{
@@ -76,7 +74,6 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		ShowPrefab(kit.BasePrefab(), kit.m_Loadout, kit.m_sKey);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A character prefab wearing `loadout` (null = as shipped): the uniform cards use this with
 	//! a faction rifleman and no loadout. `label` names the doll in the one WARNING on failure.
 	void ShowPrefab(ResourceName prefab, TBD_SlotLoadoutStruct loadout, string label)
@@ -87,7 +84,7 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 
 		if (prefab.IsEmpty())
 		{
-			Print(string.Format("[TBD][lobby] kit preview: %1 unavailable — prefab unresolved", label), LogLevel.WARNING);
+			Print(string.Format("[TBD][lobby] kit preview: %1 unavailable -- prefab unresolved", label), LogLevel.WARNING);
 			Fallback("PREVIEW UNAVAILABLE");
 			return;
 		}
@@ -98,7 +95,7 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		m_Entity = TBD_LoadoutPreviewDresser.Dress(m_Manager, prefab, loadout, why);
 		if (!m_Entity)
 		{
-			Print(string.Format("[TBD][lobby] kit preview: %1 unavailable — %2", label, why), LogLevel.WARNING);
+			Print(string.Format("[TBD][lobby] kit preview: %1 unavailable -- %2", label, why), LogLevel.WARNING);
 			Fallback("PREVIEW UNAVAILABLE");
 			return;
 		}
@@ -124,8 +121,7 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		Hook();
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! A vehicle (or any item) prefab rendered as shipped — the assets page's Vehicle Info box.
+	//! A vehicle (or any item) prefab rendered as shipped -- the assets page's Vehicle Info box.
 	//! No dresser, no camera input: the manager frames it with the prefab's own attributes.
 	void ShowVehicle(ResourceName prefab)
 	{
@@ -174,7 +170,6 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		TBD_UITheme.Show(m_wCaption, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Destroy()
 	{
 		Unhook();
@@ -185,9 +180,7 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		m_Attributes = null;
 	}
 
-	// ── input ───────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	override bool OnMouseButtonDown(Widget w, int x, int y, int button)
 	{
 		if (button != 0 || !m_Attributes || !Inside(x, y))
@@ -198,7 +191,6 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override bool OnMouseButtonUp(Widget w, int x, int y, int button)
 	{
 		if (button != 0 || !m_bDragging)
@@ -208,7 +200,6 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override bool OnMouseWheel(Widget w, int x, int y, int wheel)
 	{
 		if (!m_Attributes || !Inside(x, y))
@@ -219,7 +210,6 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Drag poll: pointer delta since the last tick turns the camera.
 	protected void Tick()
 	{
@@ -239,9 +229,7 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		Refresh();
 	}
 
-	// ── helpers ─────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! Additive FOV change, mirrored into the per-prefab tracker so the next Show can rebase.
 	protected void ApplyZoom(float delta)
 	{
@@ -260,7 +248,6 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		s_mZoomApplied.Set(m_sPrefabKey, applied);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected float ZoomApplied()
 	{
 		float applied;
@@ -270,14 +257,12 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		return 0;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void Refresh()
 	{
 		if (m_Manager && m_wPreview && m_Entity)
 			m_Manager.SetPreviewItem(m_wPreview, m_Entity, m_Attributes);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected bool Inside(int x, int y)
 	{
 		if (!m_wPreview)
@@ -289,7 +274,6 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		return x >= posX && x <= posX + sizeX && y >= posY && y <= posY + sizeY;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void Fallback(string caption)
 	{
 		if (m_wPreview)
@@ -299,7 +283,6 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		TBD_UITheme.Show(m_wCaption, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void Hook()
 	{
 		if (m_bHooked)
@@ -314,7 +297,6 @@ class TBD_KitPreviewComponent : ScriptedWidgetComponent
 		m_bHooked = true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void Unhook()
 	{
 		m_bDragging = false;

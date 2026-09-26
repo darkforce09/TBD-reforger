@@ -1,14 +1,14 @@
-//! Pre-game rebuild (2026-09-12) — the bar every pre-game screen wears.
+//! Pre-game rebuild (2026-09-12) -- the bar every pre-game screen wears.
 //!
 //! ```
 //!   ┌───────────────────────────────────────────────────────────────────────────────┐
-//!   │ wog_187_chollima…   [ Scenario Browser | Lobby | Briefing ]   Mission Maker ADMIN  👥 1 │
+//!   │ wog_187_chollima...   [ Scenario Browser | Lobby | Briefing ]   Mission Maker ADMIN  👥 1 │
 //!   └───────────────────────────────────────────────────────────────────────────────┘
 //! ```
 //!
 //! One layout (`Session/Shared/TBD_SessionTopBar.layout`), one handler, mounted by
-//! `TBD_DockScreen` into `TopDock`. The screen tells it three things — title, active tab,
-//! identity — and listens to one — `GetOnTabSelected()`. Which screen a tab opens is the
+//! `TBD_DockScreen` into `TopDock`. The screen tells it three things -- title, active tab,
+//! identity -- and listens to one -- `GetOnTabSelected()`. Which screen a tab opens is the
 //! screen's (really `TBD_DockScreen`'s) business.
 //!
 //! Widget contract: `BarBorder`, `BarBG`, `Title`, `TabStripDock`, `IdentityBox`,
@@ -23,7 +23,7 @@ enum TBD_ESessionTab
 	BRIEFING
 }
 
-//! Who is looking at the screen and how many are here — the top bar's right cluster. Filled by
+//! Who is looking at the screen and how many are here -- the top bar's right cluster. Filled by
 //! the mock catalog today; a player/session client later.
 class TBD_SessionIdentity
 {
@@ -63,10 +63,8 @@ class TBD_SessionTopBar : ScriptedWidgetComponent
 	protected TBD_TabStripComponent m_Strip;
 	protected TBD_ChipComponent m_RoleChip;
 
-	//! (TBD_SessionTopBar bar, TBD_ESessionTab tab)
-	protected ref ScriptInvoker m_OnTabSelected;
+	protected ref ScriptInvoker m_OnTabSelected; //!< (TBD_SessionTopBar bar, TBD_ESessionTab tab)
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerAttached(Widget w)
 	{
 		super.HandlerAttached(w);
@@ -117,7 +115,6 @@ class TBD_SessionTopBar : ScriptedWidgetComponent
 		MountStrip();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerDeattached(Widget w)
 	{
 		if (m_Strip)
@@ -128,11 +125,9 @@ class TBD_SessionTopBar : ScriptedWidgetComponent
 		super.HandlerDeattached(w);
 	}
 
-	// ── Public surface ──────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! `mono = true` shows a scenario id as-is (`wog_187_chollima_on_the_wing_10`); `false` shows a
-	//! screen name shouted (`SCENARIO BROWSER`). Same widget, two voices — exactly the mockup.
+	//! screen name shouted (`SCENARIO BROWSER`). Same widget, two voices -- exactly the mockup.
 	void SetTitle(string title, bool mono)
 	{
 		string shown = title;
@@ -142,7 +137,6 @@ class TBD_SessionTopBar : ScriptedWidgetComponent
 		TBD_UITheme.Write(m_wTitle, shown);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Visual echo of the screen that is open. Does not fire OnTabSelected.
 	void SetActiveTab(TBD_ESessionTab tab)
 	{
@@ -150,7 +144,6 @@ class TBD_SessionTopBar : ScriptedWidgetComponent
 			m_Strip.SetActive(tab);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetIdentity(TBD_SessionIdentity identity)
 	{
 		if (!identity)
@@ -181,7 +174,6 @@ class TBD_SessionTopBar : ScriptedWidgetComponent
 		SetPlayerCount(identity.m_iConnected, identity.m_iCapacity);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `1` or `1 / 48`.
 	void SetPlayerCount(int connected, int capacity = -1)
 	{
@@ -191,7 +183,6 @@ class TBD_SessionTopBar : ScriptedWidgetComponent
 			TBD_UITheme.Write(m_wCountText, string.Format("%1 / %2", connected, capacity));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! (TBD_SessionTopBar bar, TBD_ESessionTab tab)
 	ScriptInvoker GetOnTabSelected()
 	{
@@ -201,21 +192,17 @@ class TBD_SessionTopBar : ScriptedWidgetComponent
 		return m_OnTabSelected;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	TBD_TabStripComponent GetStrip()
 	{
 		return m_Strip;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	Widget GetRootWidget()
 	{
 		return m_wRoot;
 	}
 
-	// ── Internals ───────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	protected void MountStrip()
 	{
 		if (!m_wTabStripDock)
@@ -237,7 +224,6 @@ class TBD_SessionTopBar : ScriptedWidgetComponent
 		m_Strip.GetOnSelected().Insert(OnStripSelected);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnStripSelected(TBD_TabStripComponent strip, int index)
 	{
 		if (m_OnTabSelected)

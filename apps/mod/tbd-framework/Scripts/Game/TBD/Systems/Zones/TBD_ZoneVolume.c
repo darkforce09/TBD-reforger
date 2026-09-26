@@ -1,20 +1,17 @@
 //! T-685 - zone volumes: height bounds, capture counts, starting owner.
 //!
-//! == What was missing ========================================================================
 //! T-706 put `attackerCount` / `defenderCount` / `advantagePercent` / `minHeight` / `maxHeight` /
 //! `startingOwner` on `$defs/zoneRules`. `TBD_MissionZoneRulesStruct` declared only the play-area
 //! three (`graceSeconds`, `warnEverySeconds`, `penalty`), so JsonLoadContext could not see the
 //! six. Zones stayed XZ footprints; capture stayed 1-vs-1 presence; ownership started neutral.
 //! This file consumes the six keys the loader now binds.
 //!
-//! == WOG caveat (INFERRED, not copied into behaviour) ========================================
 //! Parameter NAMES and observed VALUES on WMT_Task_Point are evidence. The sentence that reads
 //! those as "captured when CaptureCount attackers are inside between MinHeight and MaxHeight
 //! while fewer than DefCount defenders contest" is marked INFERRED in wog.md: the addon that
 //! implements WMT_* is absent from the corpus. TBD chooses the rules below; do not treat the
 //! inferred sentence as an acceptance criterion.
 //!
-//! == TBD rules (chosen here) =================================================================
 //!   Volume: an entity is inside the zone VOLUME when the existing XZ footprint contains it AND
 //!           its AGL at its OWN ground position is inside each authored bound. AGL =
 //!           origin.y - World.GetSurfaceY(x, z). Not ASL, not anchored at the zone centre: a
@@ -37,19 +34,16 @@
 //! resetOnEnemy, requireHolderPresent) keep their meaning. This file adds gates, it does not
 //! replace those branches.
 //!
-//! == Presence, and the nested-ref landmine ===================================================
 //! `JsonLoadContext.ReadValue` ALLOCATES a nested `ref <class>` even when the JSON key is
 //! ABSENT, so `if (zone.rules)` is always true. Presence is the scalar sentinel on the loader
 //! struct (`ABSENT` / `ABSENT_INT`). Counts and heights can be authored 0 / -5, so the
 //! sentinel must not be 0. startingOwner uses the empty string.
 //!
-//! == What this file CANNOT prove =============================================================
-//! The gate is `cargo xtask mod compile`. Flatten does not emit these keys (T-946.36). A
+//! The gate is `cargo xtask mod compile`. Flatten does not emit these keys. A
 //! hand-staged schemaVersion 1.3 document reaches the reader; compiled-artifact volume checks
 //! belong on the human checklist (a zone with maxHeight 30 ignores aircraft above it).
 //! @contract mission.schema.json#/$defs/zoneRules
 
-//------------------------------------------------------------------------------------------------
 //! One zone's T-685 bound set, copied off the loader struct after sentinels are resolved.
 class TBD_ZoneVolumeBound
 {
@@ -62,20 +56,17 @@ class TBD_ZoneVolumeBound
 	string startingOwner;
 }
 
-//------------------------------------------------------------------------------------------------
 //! Server-side volume + count + owner consumer. Binds from TBD_MissionLoader.GetZones().
 class TBD_ZoneVolume
 {
 	static const string CH = "ZoneVol";
 	protected static ref array<ref TBD_ZoneVolumeBound> s_aBounds;
 
-	//------------------------------------------------------------------------------------------------
 	static void Clear()
 	{
 		s_aBounds = null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Copy the six keys off every loaded zone. Idempotent for a world: Registry.Build calls
 	//! this once after the loader has parsed. Statics outlive a world -- Registry.Clear calls
 	//! Clear() so mission B cannot inherit mission A's bounds.
@@ -102,7 +93,6 @@ class TBD_ZoneVolume
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Capture objectives whose startingOwner is a known, allowed faction start HELD.
 	static void ApplyStartingOwner(notnull TBD_Objective objective)
 	{
@@ -148,7 +138,6 @@ class TBD_ZoneVolume
 			objective.m_sId, bound.startingOwner));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Height gate after the XZ footprint has already accepted the body. Absent bounds pass.
 	static bool ContainsAgl(string zoneId, vector origin)
 	{
@@ -183,7 +172,6 @@ class TBD_ZoneVolume
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! XZ + AGL together. Used by the destroy-target query, which only had XZ before T-685.
 	static bool ContainsOrigin(TBD_Zone zone, vector origin)
 	{
@@ -196,7 +184,6 @@ class TBD_ZoneVolume
 		return ContainsAgl(zone.m_sId, origin);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Capture acting-side resolution. Preserves contestable / weight-of-numbers, then applies
 	//! attackerCount / defenderCount / advantagePercent. No volume authored => identical to
 	//! TBD_Objective.ResolveActingFaction.
@@ -217,7 +204,6 @@ class TBD_ZoneVolume
 		return ResolveByWeight(objective, needAtk, needDef);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Hold: an enemy contests only when they meet defenderCount (absent => 1, matching today).
 	static bool EnemyContestsHold(notnull TBD_Objective objective)
 	{
@@ -240,7 +226,6 @@ class TBD_ZoneVolume
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Hold: the holding side counts as present when they meet defenderCount (defenders needed
 	//! to hold). Authored 0 => always true. Absent => PresenceOf > 0.
 	static bool HolderPresent(notnull TBD_Objective objective)
@@ -252,7 +237,6 @@ class TBD_ZoneVolume
 		return objective.PresenceOf(objective.m_sFaction) >= needDef;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void LogBound(notnull TBD_Objective objective)
 	{
 		TBD_ZoneVolumeBound bound = Find(objective.m_sId);
@@ -272,7 +256,6 @@ class TBD_ZoneVolume
 			bound.startingOwner));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_ZoneVolumeBound FromRules(string zoneId, TBD_MissionZoneRulesStruct rules)
 	{
 		TBD_ZoneVolumeBound bound = new TBD_ZoneVolumeBound();
@@ -295,7 +278,6 @@ class TBD_ZoneVolume
 		return bound;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void WarnInverted(TBD_ZoneVolumeBound bound)
 	{
 		if (!bound)
@@ -314,7 +296,6 @@ class TBD_ZoneVolume
 			bound.zoneId, bound.minHeight, bound.maxHeight));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool HasAny(TBD_ZoneVolumeBound bound)
 	{
 		if (bound.attackerCount != TBD_MissionZoneRulesStruct.ABSENT_INT)
@@ -332,7 +313,6 @@ class TBD_ZoneVolume
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_ZoneVolumeBound Find(string zoneId)
 	{
 		if (!s_aBounds)
@@ -350,7 +330,6 @@ class TBD_ZoneVolume
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Absent => 1 (today's anyone-present). Authored 0 stays 0 (count gate off).
 	protected static int AttackerNeed(string zoneId)
 	{
@@ -364,7 +343,6 @@ class TBD_ZoneVolume
 		return bound.attackerCount;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Absent => 1. Authored 0 stays 0 (undefended / nobody contests).
 	protected static int DefenderNeed(string zoneId)
 	{
@@ -378,7 +356,6 @@ class TBD_ZoneVolume
 		return bound.defenderCount;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string ResolveContestable(notnull TBD_Objective objective, int needAtk, int needDef)
 	{
 		int actingSides = 0;
@@ -428,7 +405,6 @@ class TBD_ZoneVolume
 		return acting;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string ResolveByWeight(notnull TBD_Objective objective, int needAtk, int needDef)
 	{
 		int best = -1;
@@ -488,7 +464,6 @@ class TBD_ZoneVolume
 		return objective.m_aPresentFactions[best];
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! contestable:false extra gate. Absent percent always passes. others==0 always passes.
 	protected static bool AdvantageOk(string zoneId, int actingCount, int othersCount)
 	{
@@ -513,7 +488,6 @@ class TBD_ZoneVolume
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool FactionExists(string key)
 	{
 		if (key.IsEmpty())

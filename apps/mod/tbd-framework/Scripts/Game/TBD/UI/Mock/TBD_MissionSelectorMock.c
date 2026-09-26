@@ -1,17 +1,16 @@
-//! Pre-game rebuild (2026-09-12) — the mock catalog behind the Mission Selector.
+//! Pre-game rebuild (2026-09-12) -- the mock catalog behind the Mission Selector.
 //!
 //! Dataset is the Stitch pre-game mockup (terrain_selector / scenario_browser /
-//! mission_inspector): Everon · Arland · Kolguyev, three missions each so every filter has
+//! mission_inspector): Everon - Arland - Kolguyev, three missions each so every filter has
 //! something to do, the PVP Test 1 inspector (v2.14.99 LATEST, TBD CORE COMPETITIVE V1.8 with six
 //! mods, BLUFOR Defending 24 vs OPFOR Attacking 24, two objectives a side), identity
 //! `Mission Maker` / `ADMIN`, one player connected.
 //!
 //! Counts in the UI (`N AVAILABLE`, the Modes badge, per-mode checkbox counts) are COMPUTED from
-//! this data by the screen, never typed in — the mockup's `30 Available` is a picture, the screen
+//! this data by the screen, never typed in -- the mockup's `30 Available` is a picture, the screen
 //! is data-driven. Consumed only through `TBD_MissionCatalog.Get()`.
 class TBD_MissionSelectorMock
 {
-	//------------------------------------------------------------------------------------------------
 	static TBD_MissionCatalog Build()
 	{
 		TBD_MissionCatalog catalog = new TBD_MissionCatalog();
@@ -28,7 +27,6 @@ class TBD_MissionSelectorMock
 		catalog.m_aModes.Insert(new TBD_MissionMode("RHS",      "RHS Mod",  TBD_EUITint.NEUTRAL));
 		catalog.m_aModes.Insert(new TBD_MissionMode("ZEUS",     "Zeus",     TBD_EUITint.WARNING));
 
-		// ── Everon ──────────────────────────────────────────────────────────────────────────
 		TBD_MissionSummary pvp1 = AddMission("everon/pvp_test_1", "PVP Test 1", "PVP", "everon", 48, catalog);
 		pvp1.m_sSummary = "BLUFOR mechanized infantry forces establish fortified defensive perimeters across Sector 1 and 2 to repel a coordinated dawn assault by OPFOR armored spearheads. Victory requires either holding all active control zones until extraction or completely eliminating opposing combatants.";
 		TBD_MissionFactionSummary blu = AddFaction(pvp1, "BLUFOR", "Defending", 24, TBD_EUITint.BLUFOR);
@@ -60,7 +58,6 @@ class TBD_MissionSelectorMock
 		opf4.AddVehicle("BRDM-2", 1);
 		opf4.AddObjective("Hold Levie airfield", "shield");
 
-		// ── Arland ──────────────────────────────────────────────────────────────────────────
 		TBD_MissionSummary war = AddMission("arland/warlords_32", "Warlords 32 Arland", "WARLORDS", "arland", 32, catalog);
 		war.m_sSummary = "Sector-control warfare across the whole island. Capture, spend, advance; the base that falls first loses.";
 		TBD_MissionFactionSummary blu5 = AddFaction(war, "BLUFOR", "Attacking", 16, TBD_EUITint.BLUFOR);
@@ -94,7 +91,6 @@ class TBD_MissionSelectorMock
 		opf10.AddVehicle("BMP-1", 1);
 		opf10.AddObjective("As tasked by Zeus", "shield");
 
-		// ── Kolguyev ────────────────────────────────────────────────────────────────────────
 		TBD_MissionSummary frontier = AddMission("kolguyev/pvp_frontier_40", "PVP Kolguyev Frontier", "PVP", "kolguyev", 40, catalog);
 		frontier.m_sSummary = "Meeting engagement along the frozen river line. Three contested crossings, one hour, no respawns.";
 		TBD_MissionFactionSummary blu11 = AddFaction(frontier, "BLUFOR", "Attacking", 20, TBD_EUITint.BLUFOR);
@@ -128,9 +124,7 @@ class TBD_MissionSelectorMock
 		return catalog;
 	}
 
-	// ── Builders ────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! Every mock mission shares the inspector's version ladder and modset; the screen shows the
 	//! same picture the mockup does whichever card is picked.
 	protected static TBD_MissionSummary AddMission(string id, string title, string tag, string terrain, int slots, TBD_MissionCatalog catalog)
@@ -154,7 +148,6 @@ class TBD_MissionSelectorMock
 		return mission;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_MissionFactionSummary AddFaction(TBD_MissionSummary mission, string key, string role, int slots, TBD_EUITint tint)
 	{
 		TBD_MissionFactionSummary faction = new TBD_MissionFactionSummary(key, role, slots, tint);

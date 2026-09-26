@@ -1,24 +1,20 @@
 //! T-678 - group AI state: combatMode, behaviour, formation, speedMode as GROUP defaults.
 //!
-//! == What was missing ========================================================================
 //! T-706 put the four GRP attrs on `$defs/group`. Nothing read them. T-677 opened the AI spawn
 //! gate for waypointed groups and applies waypoint-scoped `speedMode` / `behaviour` on each
 //! waypoint. Group-level values are DEFAULTS: they apply to the live SCR_AIGroup when a waypoint
 //! does not author an override. Combat-mode and formation are group-only on the wire.
 //!
-//! == Why a second JsonLoadContext pass =======================================================
 //! `TBD_MissionOrbatGroupStruct` in Backend/TBD_MissionLoader.c declares no combatMode /
 //! behaviour / formation / speedMode fields. Enfusion maps JSON keys onto NAMED class fields
 //! only. This file runs its own pass over `TBD_MissionLoader.GetRawJson()` with a root that
 //! declares `orbat.*.groups[]` combatMode/behaviour/formation/speedMode and nothing else.
 //! Same pattern as AI/TBD_WaypointRuntime.c. MissionLoader stays out of this slice's owns list.
 //!
-//! == Presence, and the nested-ref landmine ===================================================
 //! `JsonLoadContext.ReadValue` ALLOCATES a nested `ref <class>` field even when the JSON key is
 //! ABSENT. These four attrs are STRINGS, so presence is an emptiness test (`IsEmpty()`), never
 //! `if (group.combatMode)` on a nested class. Do not add a nested struct for the four keys.
 //!
-//! == Engine mapping (TBD vocabulary -> Reforger types, verified against 1.7 scripts) =========
 //! ATTR-FIELD-GRP-COMBAT-MODE  blue|green|white|yellow|red
 //!   -> EAIGroupCombatMode via SCR_AIGroupUtilityComponent.SetCombatMode
 //!      blue/green = HOLD_FIRE, white = RETURN_FIRE, yellow/red = FIRE_AT_WILL
@@ -35,12 +31,10 @@
 //! Groups with none of the four attrs are never collected. Absent attrs leave engine defaults.
 //! This file does not spawn groups, does not ActivateAI, and does not rewrite waypoints.
 //!
-//! == What this file CANNOT prove =============================================================
 //! The gate is `cargo xtask mod compile`. It cannot run a round. Whether a group actually holds
 //! fire / walks in wedge on a dedicated server is a human checklist item.
 //! @contract mission.schema.json#/$defs/group
 
-//------------------------------------------------------------------------------------------------
 //! One `$defs/group` object, only the T-678 keys. Field names are the JSON keys.
 class TBD_GroupStateWireStruct
 {
@@ -50,7 +44,6 @@ class TBD_GroupStateWireStruct
 	string formation;  //!< Optional. schema formation tokens.
 	string speedMode;  //!< Optional. limited|normal|full.
 
-	//------------------------------------------------------------------------------------------------
 	//! Presence is emptiness, one test per line (Formula too complex).
 	bool HasAnyAttr()
 	{
@@ -66,19 +59,16 @@ class TBD_GroupStateWireStruct
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 class TBD_GroupStateFactionWireStruct
 {
 	ref array<ref TBD_GroupStateWireStruct> groups;
 }
 
-//------------------------------------------------------------------------------------------------
 class TBD_GroupStateDocStruct
 {
 	ref map<string, ref TBD_GroupStateFactionWireStruct> orbat;
 }
 
-//------------------------------------------------------------------------------------------------
 class TBD_GroupStateSquad
 {
 	string faction;
@@ -90,7 +80,6 @@ class TBD_GroupStateSquad
 	bool applied;
 }
 
-//------------------------------------------------------------------------------------------------
 class TBD_GroupState
 {
 	static const string CH = "GroupState";
@@ -127,7 +116,6 @@ class TBD_GroupState
 	protected static string s_sParsedForMission;
 	protected static bool s_bAnnounced;
 
-	//------------------------------------------------------------------------------------------------
 	static void Clear()
 	{
 		s_aSquads = null;
@@ -136,7 +124,6 @@ class TBD_GroupState
 		s_bAnnounced = false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string CurrentMissionId()
 	{
 		TBD_MissionDocumentStruct doc = TBD_MissionLoader.GetMission();
@@ -146,7 +133,6 @@ class TBD_GroupState
 		return doc.meta.id;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool EnsureParsed()
 	{
 		string missionId = CurrentMissionId();
@@ -191,7 +177,6 @@ class TBD_GroupState
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void CollectFaction(string factionKey, TBD_GroupStateFactionWireStruct faction)
 	{
 		if (!faction || !faction.groups)
@@ -218,7 +203,6 @@ class TBD_GroupState
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void Tick()
 	{
 		if (!EnsureParsed())
@@ -264,7 +248,6 @@ class TBD_GroupState
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplySquad(TBD_GroupStateSquad squad, TBD_SpawnManager spawn)
 	{
 		SCR_AIGroup group = FindLiveGroup(squad, spawn);
@@ -280,7 +263,6 @@ class TBD_GroupState
 			squad.faction, squad.callsign, squad.combatMode, squad.behaviour, squad.formation, squad.speedMode));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Walk this squad's slot bodies until one already belongs to an SCR_AIGroup (T-677 arms
 	//! waypointed groups). No group means the subjects are not AI-enabled yet -- retry next tick.
 	protected static SCR_AIGroup FindLiveGroup(TBD_GroupStateSquad squad, TBD_SpawnManager spawn)
@@ -318,7 +300,6 @@ class TBD_GroupState
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplyCombatMode(SCR_AIGroup group, TBD_GroupStateSquad squad)
 	{
 		if (squad.combatMode.IsEmpty())
@@ -343,7 +324,6 @@ class TBD_GroupState
 		utility.SetCombatMode(mode);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool CombatModeFromWire(string token, out EAIGroupCombatMode mode)
 	{
 		if (token == CM_BLUE || token == CM_GREEN)
@@ -365,7 +345,6 @@ class TBD_GroupState
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplyFormation(SCR_AIGroup group, TBD_GroupStateSquad squad)
 	{
 		if (squad.formation.IsEmpty())
@@ -390,7 +369,6 @@ class TBD_GroupState
 		formComp.SetFormation(SCR_Enum.GetEnumName(SCR_EAIGroupFormation, formation));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Engine enum is four names. Schema extras map onto the nearest of those four.
 	protected static bool FormationFromWire(string token, out SCR_EAIGroupFormation formation)
 	{
@@ -418,7 +396,6 @@ class TBD_GroupState
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Group-level speed default. Origin DEFAULT so T-677's WAYPOINT setting wins per-waypoint.
 	protected static void ApplySpeedDefault(SCR_AIGroup group, TBD_GroupStateSquad squad)
 	{
@@ -442,7 +419,6 @@ class TBD_GroupState
 		settingsComp.AddSetting(setting, false, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! speedMode wins. When it is absent, behaviour selects a speed ceiling so GRP-BEHAVIOUR is
 	//! not a dead parsed field: careless/safe/stealth walk, aware runs, combat sprints.
 	protected static bool SpeedFromWire(TBD_GroupStateSquad squad, out EMovementType speed)
@@ -483,7 +459,6 @@ class TBD_GroupState
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 //! Heartbeat. Same idiom as TBD_WaypointRuntime: a modded game mode self-wires because this
 //! slice cannot add a component to TBD_GameMode.et. Fenced by IsFrameworkWorld so a vanilla
 //! scenario with the mod loaded schedules nothing.
@@ -491,7 +466,6 @@ modded class SCR_BaseGameMode
 {
 	protected bool m_bTBD_GroupStateTickArmed;
 
-	//------------------------------------------------------------------------------------------------
 	protected override void OnGameStart()
 	{
 		super.OnGameStart();
@@ -511,7 +485,6 @@ modded class SCR_BaseGameMode
 		GetGame().GetCallqueue().CallLater(TBD_GroupStateTick, TBD_GroupState.TICK_MS, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void TBD_GroupStateTick()
 	{
 		if (GetGame().GetGameMode() != this)

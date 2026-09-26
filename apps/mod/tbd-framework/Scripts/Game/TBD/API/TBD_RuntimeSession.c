@@ -39,8 +39,7 @@ class TBD_RuntimeSession
 	//! Greppable channel: `grep '\[TBD\]\[Runtime\]' console.log`.
 	protected static const string CH_RUNTIME = "Runtime";
 
-	//! Used until the platform states its own interval.
-	protected static const int DEFAULT_HEARTBEAT_INTERVAL_S = 15;
+	protected static const int DEFAULT_HEARTBEAT_INTERVAL_S = 15; //!< Used until the platform states its own interval.
 	protected static const int RETRY_BASE_MS = 2000;
 	protected static const int RETRY_CAP_MS = 60000;
 	//! How often a start waiting on the previous world's closing, or on this world's loaded
@@ -53,19 +52,16 @@ class TBD_RuntimeSession
 	//! Bumped by Start and by Stop. A call remembers the world it was sent for; an answer for any
 	//! other world is stale.
 	protected static int s_iWorld;
-	//! Between Start and Stop.
-	protected static bool s_bRunning;
+	protected static bool s_bRunning; //!< Between Start and Stop.
 	//! This world holds no session any more: the platform refused the credential, or another
 	//! runtime owns the server's session.
 	protected static bool s_bTerminated;
 
 	protected static string s_sSessionId;
 	protected static int s_iGeneration;
-	//! The last heartbeat sequence sent in s_sSessionId.
-	protected static int s_iSequence;
+	protected static int s_iSequence; //!< The last heartbeat sequence sent in s_sSessionId.
 	protected static int s_iHeartbeatIntervalMs;
-	//! Consecutive start or heartbeat attempts without an admitted answer.
-	protected static int s_iFailures;
+	protected static int s_iFailures; //!< Consecutive start or heartbeat attempts without an admitted answer.
 	protected static bool s_bHeartbeatAdmitted;
 	//! The platform rejected this world's artifact report; its session starts without one.
 	protected static bool s_bArtifactReportRejected;
@@ -73,11 +69,8 @@ class TBD_RuntimeSession
 
 	protected static ref TBD_RuntimeSessionCall s_InFlight;
 
-	//------------------------------------------------------------------------------------------------
 	// STATE FOR OTHER SYSTEMS
-	//------------------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! The session this runtime holds, or empty while it holds none.
 	static string GetSessionId()
 	{
@@ -87,7 +80,6 @@ class TBD_RuntimeSession
 		return s_sSessionId;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The generation of the session held, or 0.
 	static int GetGeneration()
 	{
@@ -97,7 +89,6 @@ class TBD_RuntimeSession
 		return s_iGeneration;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True while this world holds a session or is still getting one. False before the game starts,
 	//! after it ends, without a usable machine credential, and once the loop has stopped.
 	static bool CanHoldSession()
@@ -105,7 +96,6 @@ class TBD_RuntimeSession
 		return s_bRunning && !s_bTerminated && TBD_GameRuntimeHttp.IsConfigured();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A request against `sessionId` was refused because that session has ended. Acted on only while
 	//! it is still the session this runtime holds.
 	static void ReportSessionEnded(string sessionId, string endReason)
@@ -117,11 +107,8 @@ class TBD_RuntimeSession
 		OnSessionEnded(endReason);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	// LIFECYCLE
-	//------------------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! Begin this world's session. Called once the game starts, on the authority of a framework
 	//! world. A session still recorded from an earlier world is superseded by the new start.
 	static void Start()
@@ -149,7 +136,6 @@ class TBD_RuntimeSession
 		ScheduleStep(0);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The world is ending: its session is reported offline and ended, which ends every player life
 	//! still open in it.
 	static void Stop()
@@ -169,7 +155,6 @@ class TBD_RuntimeSession
 		TBD_LoadedArtifactReport.Reset();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! This world has decided what it runs (TBD_LoadedArtifactReport): a start waiting on it goes now.
 	static void OnLoadedArtifactDecided()
 	{
@@ -177,7 +162,6 @@ class TBD_RuntimeSession
 			ScheduleStep(0);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ForgetSession()
 	{
 		s_sSessionId = string.Empty;
@@ -188,11 +172,8 @@ class TBD_RuntimeSession
 		s_bHeartbeatAdmitted = false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	// REQUESTS
-	//------------------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! One step pending per process; scheduling again replaces it.
 	protected static void ScheduleStep(int delayMs)
 	{
@@ -204,7 +185,6 @@ class TBD_RuntimeSession
 		queue.CallLater(Step, delayMs, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Start the session, or send its next heartbeat.
 	protected static void Step()
 	{
@@ -251,7 +231,6 @@ class TBD_RuntimeSession
 		Send(TBD_ERuntimeSessionRequest.START, TBD_GameRuntimeHttp.ROUTE_PREFIX + "/sessions", body, reportArtifact);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void SendHeartbeat()
 	{
 		s_iSequence++;
@@ -263,7 +242,6 @@ class TBD_RuntimeSession
 		Send(TBD_ERuntimeSessionRequest.HEARTBEAT, path, body, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void Send(TBD_ERuntimeSessionRequest request, string path, string body, bool reportedArtifact)
 	{
 		TBD_RuntimeSessionCall call = new TBD_RuntimeSessionCall();
@@ -282,7 +260,6 @@ class TBD_RuntimeSession
 		RetryLater(typename.EnumToString(TBD_ERuntimeSessionRequest, request), failure);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Called by TBD_RuntimeSessionCall with the answer to the start or heartbeat in flight.
 	static void OnCallAnswered(notnull TBD_RuntimeSessionCall call, notnull TBD_GameRuntimeAnswer answer)
 	{
@@ -296,11 +273,8 @@ class TBD_RuntimeSession
 			SettleHeartbeat(call, answer);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	// ANSWERS
-	//------------------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	protected static void SettleStart(notnull TBD_RuntimeSessionCall call, notnull TBD_GameRuntimeAnswer answer)
 	{
 		bool current = call.m_iWorld == s_iWorld && CanHoldSession();
@@ -371,7 +345,6 @@ class TBD_RuntimeSession
 		Terminate("the platform refused to start a runtime session for this server's machine credential (" + answer.m_sDetail + ")");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void SettleHeartbeat(notnull TBD_RuntimeSessionCall call, notnull TBD_GameRuntimeAnswer answer)
 	{
 		// The session this answer is about is no longer the one held.
@@ -423,7 +396,6 @@ class TBD_RuntimeSession
 		RetryLater("heartbeat", "rejected as malformed");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void SettleHeartbeatRefusal(notnull TBD_GameRuntimeRefusalDetails refusal, string detail)
 	{
 		if (refusal.code == "STALE_SEQUENCE" && refusal.last_sequence >= s_iSequence)
@@ -452,7 +424,6 @@ class TBD_RuntimeSession
 		RetryLater("heartbeat", "unhandled refusal " + detail);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The session held has ended on the platform, and with it every player life open in it.
 	protected static void OnSessionEnded(string endReason)
 	{
@@ -477,7 +448,6 @@ class TBD_RuntimeSession
 		Terminate(string.Format("%1; session=%2", why, ended));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Stop holding a session for the rest of this world.
 	protected static void Terminate(string why)
 	{
@@ -486,7 +456,6 @@ class TBD_RuntimeSession
 		TBD_Log.Error(CH_RUNTIME, "runtime session loop STOPPED - " + why + ". No more heartbeats and no competing session from this runtime; deployments into event seats cannot be authorized until the server restarts.");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Back off exponentially and try again; the loop never stops on a failure without an answer.
 	protected static void RetryLater(string what, string detail)
 	{

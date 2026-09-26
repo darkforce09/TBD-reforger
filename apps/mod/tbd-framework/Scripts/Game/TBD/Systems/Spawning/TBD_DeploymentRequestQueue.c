@@ -22,7 +22,6 @@ class TBD_DeploymentRequestCall : TBD_GameRuntimeCall
 {
 	ref TBD_DeploymentRequest m_Request;
 
-	//------------------------------------------------------------------------------------------------
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_DeploymentRequestQueue.OnCallAnswered(this, answer);
@@ -34,8 +33,7 @@ class TBD_DeploymentRequestQueue
 	//! Greppable channel shared with the rest of the deployment flow.
 	protected static const string CH_DEPLOYMENT = "Deployment";
 
-	//! Far beyond one request per player on the largest server.
-	static const int CAPACITY = 256;
+	static const int CAPACITY = 256; //!< Far beyond one request per player on the largest server.
 
 	protected static const int RETRY_BASE_MS = 2000;
 	protected static const int RETRY_CAP_MS = 30000;
@@ -45,11 +43,8 @@ class TBD_DeploymentRequestQueue
 	protected static ref TBD_DeploymentRequestCall s_InFlight;
 	protected static bool s_bTicking;
 
-	//------------------------------------------------------------------------------------------------
 	// QUEUE
-	//------------------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	static void Enqueue(notnull TBD_DeploymentRequest request)
 	{
 		if (!s_aQueue)
@@ -64,7 +59,6 @@ class TBD_DeploymentRequestQueue
 		Pump();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The request this player still waits on, queued or in flight, or null.
 	static TBD_DeploymentRequest FindWaitingFor(int playerId)
 	{
@@ -84,7 +78,6 @@ class TBD_DeploymentRequestQueue
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Nobody waits for this request any more. One that never left this server is dropped; one that
 	//! may have reached the platform stays until it is resolved.
 	static void Abandon(notnull TBD_DeploymentRequest request)
@@ -99,7 +92,6 @@ class TBD_DeploymentRequestQueue
 			s_aQueue.RemoveOrdered(index);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void AbandonFor(int playerId)
 	{
 		TBD_DeploymentRequest waiting = FindWaitingFor(playerId);
@@ -110,7 +102,6 @@ class TBD_DeploymentRequestQueue
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void AbandonAll()
 	{
 		TBD_DeploymentRequest sent = InFlightRequest();
@@ -132,7 +123,6 @@ class TBD_DeploymentRequestQueue
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_DeploymentRequest InFlightRequest()
 	{
 		if (!s_InFlight)
@@ -141,7 +131,6 @@ class TBD_DeploymentRequestQueue
 		return s_InFlight.m_Request;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Requests waiting or in flight.
 	protected static int Pending()
 	{
@@ -155,7 +144,6 @@ class TBD_DeploymentRequestQueue
 		return count;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Make room: the oldest abandoned request goes first, else the oldest request, whose player is
 	//! told to deploy again.
 	protected static void DropOldest()
@@ -185,7 +173,6 @@ class TBD_DeploymentRequestQueue
 			TBD_DeploymentAuthorization.OnUndecided(dropped, "too many deployment requests are waiting for the platform - deploy again in a moment.");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One repeating tick while requests wait, for the backoff schedule and for the runtime session
 	//! to become available.
 	protected static void StartTicking()
@@ -201,7 +188,6 @@ class TBD_DeploymentRequestQueue
 		queue.CallLater(Pump, PUMP_MS, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void StopTicking()
 	{
 		if (!s_bTicking)
@@ -213,11 +199,8 @@ class TBD_DeploymentRequestQueue
 			queue.Remove(Pump);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	// SENDING
-	//------------------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! Send the first request that may go now, when nothing is in flight.
 	protected static void Pump()
 	{
@@ -280,14 +263,12 @@ class TBD_DeploymentRequestQueue
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Sent to a runtime session other than the current `session`.
 	protected static bool IsPinnedElsewhere(notnull TBD_DeploymentRequest request, string session)
 	{
 		return !request.m_sRuntimeSessionId.IsEmpty() && request.m_sRuntimeSessionId != session;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool HasEarlierRequestOf(int index, string armaId)
 	{
 		for (int i = 0; i < index; i++)
@@ -299,7 +280,6 @@ class TBD_DeploymentRequestQueue
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! No request can be decided: the waiting players are refused, the abandoned requests dropped.
 	protected static void FailAll(string sentence)
 	{
@@ -313,7 +293,6 @@ class TBD_DeploymentRequestQueue
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void Send(notnull TBD_DeploymentRequest request, string session)
 	{
 		string body = "{";
@@ -348,7 +327,6 @@ class TBD_DeploymentRequestQueue
 		RetryLater(request, failure);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Called by TBD_DeploymentRequestCall with the answer to the request in flight. A request its
 	//! watchdog answered may have been decided, and the same life id returns that decision, so a
 	//! TRANSIENT answer sends it again.
@@ -372,11 +350,8 @@ class TBD_DeploymentRequestQueue
 		Pump();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	// ANSWERS
-	//------------------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	protected static void SettleDecision(notnull TBD_DeploymentRequest request, notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_DeploymentDecisionStruct decision = ParseDecision(answer.m_sBody);
@@ -415,7 +390,6 @@ class TBD_DeploymentRequestQueue
 		TBD_DeploymentAuthorization.OnUndecided(request, "the TBD platform answered this server with something it cannot read - tell an admin.");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_DeploymentDecisionStruct ParseDecision(string body)
 	{
 		if (body.IsEmpty())
@@ -432,7 +406,6 @@ class TBD_DeploymentRequestQueue
 		return decision;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A 409 fence refusal. A deployment is refused only once its runtime session has ended; the
 	//! platform ended every life of that session with it.
 	protected static void SettleRefusal(notnull TBD_DeploymentRequest request, notnull TBD_GameRuntimeAnswer answer)
@@ -457,7 +430,6 @@ class TBD_DeploymentRequestQueue
 		RetryLater(request, "runtime session ended (" + refusal.end_reason + ") - asking again in the next session");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A client-error answer: the platform will not decide this request, however often it is sent.
 	protected static void SettleRejection(notnull TBD_DeploymentRequest request, string detail)
 	{
@@ -466,7 +438,6 @@ class TBD_DeploymentRequestQueue
 		TBD_DeploymentAuthorization.OnUndecided(request, "the TBD platform rejected this server's deployment request - tell an admin.");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Back to the head of the queue with exponential backoff and the same life id.
 	protected static void RetryLater(notnull TBD_DeploymentRequest request, string detail)
 	{

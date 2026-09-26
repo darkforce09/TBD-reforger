@@ -8,7 +8,6 @@
 //! maxAlive (omitted maxAlive => count; hard cap 32). Garrison: spawn once, do not restock.
 //! Cleanup deletes every spawned group when the round reaches END.
 
-//------------------------------------------------------------------------------------------------
 class TBD_SpawnModuleStruct
 {
 	string id;
@@ -33,14 +32,12 @@ class TBD_SpawnModuleStruct
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 //! The document root for the spawn-modules pass: declares `spawnModules` and nothing else.
 class TBD_SpawnModulesDocStruct
 {
 	ref array<ref TBD_SpawnModuleStruct> spawnModules;
 }
 
-//------------------------------------------------------------------------------------------------
 //! One prepared module plus the groups it currently owns.
 class TBD_SpawnModuleRuntime
 {
@@ -64,7 +61,6 @@ class TBD_SpawnModuleRuntime
 	ref array<SCR_AIGroup> m_aGroups;
 }
 
-//------------------------------------------------------------------------------------------------
 //! Reads `spawnModules` and spawns AI groups on the authority.
 class TBD_DynamicSpawner
 {
@@ -82,7 +78,6 @@ class TBD_DynamicSpawner
 	protected static float s_fLiveStartMs;
 	protected static bool s_bCleaned;
 
-	//------------------------------------------------------------------------------------------------
 	static void Clear()
 	{
 		DeleteSpawned();
@@ -95,13 +90,11 @@ class TBD_DynamicSpawner
 		s_bCleaned = false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static bool IsBuilt()
 	{
 		return s_bBuilt;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static bool Build()
 	{
 		if (s_bBuilt)
@@ -137,7 +130,6 @@ class TBD_DynamicSpawner
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void Tick()
 	{
 		TBD_FrameworkManager fm = TBD_FrameworkManager.GetInstance();
@@ -191,7 +183,6 @@ class TBD_DynamicSpawner
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_SpawnModuleRuntime Prepare(notnull TBD_SpawnModuleStruct raw, int index)
 	{
 		if (raw.id.IsEmpty())
@@ -255,7 +246,6 @@ class TBD_DynamicSpawner
 		return module;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void TickModule(notnull TBD_SpawnModuleRuntime module, int index, float nowMs)
 	{
 		PruneDead(module);
@@ -292,7 +282,6 @@ class TBD_DynamicSpawner
 		module.m_fLastSpawnMs = nowMs;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void SpawnVolley(notnull TBD_SpawnModuleRuntime module, int index)
 	{
 		vector origin;
@@ -319,7 +308,6 @@ class TBD_DynamicSpawner
 			module.m_sId, module.m_sKind, want, LivingCount(module), module.m_iMaxAlive));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool ResolveOrigin(notnull TBD_SpawnModuleRuntime module, out vector origin)
 	{
 		float x;
@@ -355,7 +343,6 @@ class TBD_DynamicSpawner
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_Zone FindZone(string zoneId)
 	{
 		if (zoneId.IsEmpty())
@@ -375,7 +362,6 @@ class TBD_DynamicSpawner
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static SCR_AIGroup SpawnGroup(notnull TBD_SpawnModuleRuntime module, vector origin)
 	{
 		ResourceName prefab = module.m_sGroupTemplate;
@@ -405,7 +391,6 @@ class TBD_DynamicSpawner
 		return group;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplyFaction(notnull SCR_AIGroup group, string factionKey)
 	{
 		string engineKey;
@@ -427,7 +412,6 @@ class TBD_DynamicSpawner
 			group.SetFaction(faction);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static int LivingCount(notnull TBD_SpawnModuleRuntime module)
 	{
 		if (!module.m_aGroups)
@@ -441,7 +425,6 @@ class TBD_DynamicSpawner
 		return n;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool GroupIsLiving(SCR_AIGroup group)
 	{
 		if (!group)
@@ -461,7 +444,6 @@ class TBD_DynamicSpawner
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void PruneDead(notnull TBD_SpawnModuleRuntime module)
 	{
 		if (!module.m_aGroups)
@@ -473,7 +455,6 @@ class TBD_DynamicSpawner
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool TriggerHasFired(notnull TBD_SpawnModuleRuntime module)
 	{
 		array<ref TBD_Trigger> all = TBD_TriggerRuntime.GetAll();
@@ -498,7 +479,6 @@ class TBD_DynamicSpawner
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void DeleteSpawned()
 	{
 		if (!s_aModules)
@@ -518,7 +498,6 @@ class TBD_DynamicSpawner
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string CurrentMissionId()
 	{
 		TBD_MissionDocumentStruct doc = TBD_MissionLoader.GetMission();
@@ -527,7 +506,6 @@ class TBD_DynamicSpawner
 		return doc.meta.id;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static array<ref TBD_SpawnModuleStruct> ReadWire()
 	{
 		string raw = TBD_MissionLoader.GetRawJson();
@@ -552,7 +530,6 @@ class TBD_DynamicSpawner
 		return doc.spawnModules;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void AnnounceEmptyOnce()
 	{
 		if (s_bAnnounced)
@@ -562,12 +539,10 @@ class TBD_DynamicSpawner
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 modded class SCR_BaseGameMode
 {
 	protected bool m_bTBD_SpawnTickArmed;
 
-	//------------------------------------------------------------------------------------------------
 	//! @authority server - AI groups spawn here. Clients follow replication.
 	protected override void OnGameStart()
 	{
@@ -588,7 +563,6 @@ modded class SCR_BaseGameMode
 		GetGame().GetCallqueue().CallLater(TBD_SpawnTick, TBD_DynamicSpawner.TICK_MS, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void TBD_SpawnTick()
 	{
 		if (GetGame().GetGameMode() != this)

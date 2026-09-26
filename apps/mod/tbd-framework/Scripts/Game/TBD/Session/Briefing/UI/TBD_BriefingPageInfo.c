@@ -1,4 +1,4 @@
-//! Briefing rebuild (2026-09-14) — the information pages: Objectives, Rules, Background, Parameters.
+//! Briefing rebuild (2026-09-14) -- the information pages: Objectives, Rules, Background, Parameters.
 //! Each is a `TBD_BriefingPage` built from Common primitives; see the base class.
 
 //! `objectives_panel`: time-limit bar, numbered objective cards with a stat grid and Locate.
@@ -96,7 +96,7 @@ class TBD_BriefingBackgroundPage : TBD_BriefingPage
 	}
 }
 
-//! `parameters_panel`: icon · label · mono value rows.
+//! `parameters_panel`: icon - label - mono value rows.
 class TBD_BriefingParametersPage : TBD_BriefingPage
 {
 	override string Title() { return "Parameters"; }

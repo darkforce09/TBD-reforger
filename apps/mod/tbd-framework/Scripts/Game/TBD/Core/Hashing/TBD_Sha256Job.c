@@ -14,13 +14,10 @@ class TBD_Sha256Job
 	protected ref array<int> m_aBytes;
 	protected int m_iPosition;
 	protected int m_iStartedMs;
-	//! Milliseconds spent inside steps, excluding the frames between them.
-	protected int m_iWorkMs;
-	//! Bumped by Start and Cancel; a step scheduled for an earlier run returns without work.
-	protected int m_iRun;
+	protected int m_iWorkMs; //!< Milliseconds spent inside steps, excluding the frames between them.
+	protected int m_iRun; //!< Bumped by Start and Cancel; a step scheduled for an earlier run returns without work.
 	protected bool m_bRunning;
 
-	//------------------------------------------------------------------------------------------------
 	//! Hash `bytes`; `OnHashed` receives the digest, within this call when `bytes` fits one step.
 	void Start(notnull array<int> bytes)
 	{
@@ -34,7 +31,6 @@ class TBD_Sha256Job
 		Step(m_iRun);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Stop hashing; `OnHashed` is not called for the run in progress.
 	void Cancel()
 	{
@@ -43,26 +39,22 @@ class TBD_Sha256Job
 		m_aBytes = null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	bool IsRunning()
 	{
 		return m_bRunning;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Milliseconds spent hashing in the current or last run.
 	int GetWorkMs()
 	{
 		return m_iWorkMs;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The digest of the hashed bytes and the wall-clock milliseconds the hash took.
 	void OnHashed(string digest, int elapsedMs)
 	{
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void Step(int run)
 	{
 		if (!m_bRunning || run != m_iRun)

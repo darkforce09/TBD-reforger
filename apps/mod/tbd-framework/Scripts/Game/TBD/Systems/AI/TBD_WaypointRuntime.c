@@ -1,12 +1,10 @@
 //! T-677 - waypoint runtime: ordered movement orders for waypointed groups.
 //!
-//! == What was missing ========================================================================
 //! T-706 put `group.waypoints[]` on the wire. Nothing read it. `TBD_SpawnManager` deactivates
 //! every slot body's AI agent at spawn, so a waypoint had no subject to command. This file is
 //! the reader AND the runtime. T-678 (group combat / behaviour / formation / speed defaults)
 //! ships AFTER this slice and is not implemented here.
 //!
-//! == Why a second JsonLoadContext pass =======================================================
 //! `TBD_MissionOrbatGroupStruct` in Backend/TBD_MissionLoader.c declares no `waypoints` field.
 //! Enfusion maps JSON keys onto NAMED class fields only - a key no class declares is invisible
 //! at runtime, not rejected, not logged, simply absent. This file runs its own pass over
@@ -15,14 +13,12 @@
 //! `Zones/TBD_TriggerRuntime.c`: the vocabulary stays next to the code that interprets it, and
 //! Backend/TBD_MissionLoader.c stays out of this slice's owns list (T-682 is editing it).
 //!
-//! == Presence, and the nested-ref landmine ===================================================
 //! `JsonLoadContext.ReadValue` ALLOCATES a nested `ref <class>` field even when the JSON key is
 //! ABSENT. `if (group.waypoints)` is therefore NOT a presence test if that field were a nested
 //! class; it is an ARRAY, so presence is a null-or-Count() test. Numeric fields that can be
 //! authored as 0 (`radiusM`) carry an ABSENT sentinel. `y` uses the same Y_ABSENT as
 //! `TBD_MissionSlotStruct`.
 //!
-//! == The nine ATTR-FIELD-WP semantics, as the T-706 wire actually carries them ===============
 //! Eden listed nine attribute ids. T-706's `$defs/waypoint` is the contract this reader may
 //! consume (this slice must not touch contracts_v2):
 //!   ATTR-FIELD-WP-TYPE       -> `type` (required). Mapped onto a ScenarioFramework waypoint prefab.
@@ -40,10 +36,9 @@
 //!                               EAIWaypointCompletionType (boarding = All, move-like = Any).
 //!   ATTR-FIELD-WP-DESCRIPTION, ATTR-FIELD-WP-COMBAT-MODE, ATTR-FIELD-WP-FORMATION
 //!                             are NOT on `$defs/waypoint`. Combat-mode and formation live on
-//!                             the GROUP (T-678). Description has no wire key. They cannot be
+//!                             the GROUP. Description has no wire key. They cannot be
 //!                             invented here.
 //!
-//! == Interaction ids, runtime not editor =====================================================
 //! RIGHT-MODE-004 / KEY-WP-001 / ACTION-WP-QUICK-001 are editor placement verbs. At runtime they
 //! are the same object: the ordered `waypoints[]` array, issued in order.
 //! CONN-WP-ATTACH-001: `vehicleUid` on get_in / get_out binds SCR_EntityWaypoint.SetEntity to
@@ -55,23 +50,19 @@
 //! CONN-RAND-START-001: type `cycle` wraps the non-cycle waypoints via AIWaypointCycle
 //! (infinite rerun). The T-706 wire has no random-start flag, so authored order is kept.
 //!
-//! == AI spawn gate ===========================================================================
 //! `TBD_SpawnManager.SpawnSlotBody` still parks every body (CRF DisableBodyAI) unless the seat
 //! belongs to a waypointed group AND the round is already LIVE (a respawn of an AI seat). This
 //! runtime then ActivateAI's unclaimed seats of waypointed groups at LIVE via
 //! `SCR_AIGroup.AddAIEntityToGroup`. Claimed / possessed seats stay player-controlled.
 //! Unwaypointed groups are never enabled here.
 //!
-//! == Prefabs =================================================================================
 //! Resource names are ScenarioFramework defaults (SCR_ScenarioFrameworkWaypoint*.c and
 //! SCR_ScenarioFrameworkSlotAI.c Group_Base), not guessed GUIDs.
 //!
-//! == What this file CANNOT prove =============================================================
 //! The gate is `cargo xtask mod compile`. It cannot run a round. Whether a waypointed group
 //! actually walks its path on a dedicated server is a human checklist item.
 //! @contract mission.schema.json#/$defs/waypoint
 
-//------------------------------------------------------------------------------------------------
 //! One `$defs/waypoint` object. Field names are the JSON keys.
 class TBD_WaypointWireStruct
 {
@@ -87,20 +78,17 @@ class TBD_WaypointWireStruct
 	string behaviour;   //!< Optional. careless|safe|aware|combat|stealth.
 	string speedMode;   //!< Optional. limited|normal|full.
 
-	//------------------------------------------------------------------------------------------------
 	bool HasJsonY()
 	{
 		return y != Y_ABSENT;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	bool HasRadius()
 	{
 		return radiusM != RADIUS_ABSENT;
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 //! The group fields this pass needs. `callsign` is the join key onto flattened slots.
 class TBD_WaypointGroupWireStruct
 {
@@ -108,21 +96,18 @@ class TBD_WaypointGroupWireStruct
 	ref array<ref TBD_WaypointWireStruct> waypoints;
 }
 
-//------------------------------------------------------------------------------------------------
 //! One orbat faction's groups.
 class TBD_WaypointFactionWireStruct
 {
 	ref array<ref TBD_WaypointGroupWireStruct> groups;
 }
 
-//------------------------------------------------------------------------------------------------
 //! Root of the second parse. Declares `orbat` and nothing else.
 class TBD_WaypointDocStruct
 {
 	ref map<string, ref TBD_WaypointFactionWireStruct> orbat;
 }
 
-//------------------------------------------------------------------------------------------------
 //! One waypointed squad at runtime: the wire plus the engine group we form for it.
 class TBD_WaypointSquad
 {
@@ -133,7 +118,6 @@ class TBD_WaypointSquad
 	bool armed;
 }
 
-//------------------------------------------------------------------------------------------------
 //! Server-side waypoint reader + commander.
 class TBD_WaypointRuntime
 {
@@ -184,7 +168,6 @@ class TBD_WaypointRuntime
 	protected static IEntity s_VehicleHit;
 	protected static string s_VehicleUidWanted;
 
-	//------------------------------------------------------------------------------------------------
 	static void Clear()
 	{
 		s_aSquads = null;
@@ -195,7 +178,6 @@ class TBD_WaypointRuntime
 		s_VehicleUidWanted = string.Empty;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string CurrentMissionId()
 	{
 		TBD_MissionDocumentStruct doc = TBD_MissionLoader.GetMission();
@@ -205,13 +187,11 @@ class TBD_WaypointRuntime
 		return doc.meta.id;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string SquadKey(string faction, string callsign)
 	{
 		return faction + ":" + callsign;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True when this ORBAT group authored at least one waypoint. Used by SpawnManager to open
 	//! the AI gate for waypointed groups only.
 	static bool GroupHasWaypoints(string faction, string callsign)
@@ -237,7 +217,6 @@ class TBD_WaypointRuntime
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Spawn-time gate. LIVE + waypointed -> leave AI able (respawn of an AI seat). Every other
 	//! spawn still runs DisableBodyAI, including waypointed seats during lobby / safestart.
 	static bool ShouldEnableAIAtSpawn(TBD_MissionSlotStruct slot)
@@ -255,7 +234,6 @@ class TBD_WaypointRuntime
 		return fm.GetStage() == TBD_EGameStage.LIVE;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool EnsureParsed()
 	{
 		string missionId = CurrentMissionId();
@@ -300,7 +278,6 @@ class TBD_WaypointRuntime
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void CollectFaction(string factionKey, TBD_WaypointFactionWireStruct faction)
 	{
 		if (!faction || !faction.groups)
@@ -329,7 +306,6 @@ class TBD_WaypointRuntime
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void Tick()
 	{
 		if (!EnsureParsed())
@@ -378,7 +354,6 @@ class TBD_WaypointRuntime
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ArmSquad(TBD_WaypointSquad squad, TBD_SpawnManager spawn)
 	{
 		array<IEntity> members = CollectUnclaimedBodies(squad, spawn);
@@ -414,7 +389,6 @@ class TBD_WaypointRuntime
 			squad.faction, squad.callsign, members.Count(), squad.waypoints.Count()));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void AbsorbNewMembers(TBD_WaypointSquad squad, TBD_SpawnManager spawn)
 	{
 		if (!squad.group)
@@ -441,7 +415,6 @@ class TBD_WaypointRuntime
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static array<IEntity> CollectUnclaimedBodies(TBD_WaypointSquad squad, TBD_SpawnManager spawn)
 	{
 		array<ref TBD_MissionSlotStruct> slots = TBD_MissionLoader.GetSlots();
@@ -470,7 +443,6 @@ class TBD_WaypointRuntime
 		return members;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool SlotIsPlayerClaimed(TBD_SpawnManager spawn, TBD_MissionSlotStruct slot)
 	{
 		if (!spawn || !slot)
@@ -490,7 +462,6 @@ class TBD_WaypointRuntime
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static SCR_AIGroup SpawnGroup(vector origin, IEntity member)
 	{
 		Resource resource = Resource.Load(PREFAB_GROUP);
@@ -526,7 +497,6 @@ class TBD_WaypointRuntime
 		return group;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool IssueWaypoints(SCR_AIGroup group, TBD_WaypointSquad squad)
 	{
 		array<AIWaypoint> issued = new array<AIWaypoint>();
@@ -582,14 +552,12 @@ class TBD_WaypointRuntime
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static AIWaypointCycle SpawnCycleWaypoint(TBD_WaypointWireStruct wire)
 	{
 		AIWaypoint wp = SpawnPrefabAt(PREFAB_CYCLE, wire);
 		return AIWaypointCycle.Cast(wp);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static AIWaypoint SpawnOneWaypoint(TBD_WaypointWireStruct wire, int index)
 	{
 		ResourceName prefab = PrefabForType(wire.type);
@@ -644,7 +612,6 @@ class TBD_WaypointRuntime
 		return wp;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool IsBoardingType(string type)
 	{
 		if (type == TYPE_GET_IN)
@@ -654,7 +621,6 @@ class TBD_WaypointRuntime
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static ResourceName PrefabForType(string type)
 	{
 		if (type == TYPE_MOVE)
@@ -680,7 +646,6 @@ class TBD_WaypointRuntime
 		return ResourceName.Empty;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static AIWaypoint SpawnPrefabAt(ResourceName prefab, TBD_WaypointWireStruct wire)
 	{
 		Resource resource = Resource.Load(prefab);
@@ -705,7 +670,6 @@ class TBD_WaypointRuntime
 		return AIWaypoint.Cast(ent);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplyCompletion(AIWaypoint wp, TBD_WaypointWireStruct wire)
 	{
 		if (wire.HasRadius())
@@ -725,7 +689,6 @@ class TBD_WaypointRuntime
 		wp.SetCompletionType(completion);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplySpeedAndBehaviour(AIWaypoint wp, TBD_WaypointWireStruct wire)
 	{
 		SCR_AIWaypoint scripted = SCR_AIWaypoint.Cast(wp);
@@ -743,7 +706,6 @@ class TBD_WaypointRuntime
 			scripted.AddSetting(setting);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! speedMode wins. When it is absent, behaviour selects a speed ceiling so ATTR-FIELD-WP-BEHAVIOUR
 	//! is not a dead parsed field: careless/safe/stealth walk, aware runs, combat sprints.
 	protected static bool SpeedFromWire(TBD_WaypointWireStruct wire, out EMovementType speed)
@@ -783,7 +745,6 @@ class TBD_WaypointRuntime
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static IEntity FindVehicleByUid(string uid)
 	{
 		if (uid.IsEmpty())
@@ -825,7 +786,6 @@ class TBD_WaypointRuntime
 		return hit;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool OnVehicleQuery(IEntity entity)
 	{
 		if (!entity)
@@ -840,7 +800,6 @@ class TBD_WaypointRuntime
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 //! Heartbeat. Same idiom as TBD_TriggerRuntime / TBD_WinConditionEvaluator: a modded game mode
 //! self-wires because this slice cannot add a component to TBD_GameMode.et. Fenced by
 //! IsFrameworkWorld so a vanilla scenario with the mod loaded schedules nothing.
@@ -848,7 +807,6 @@ modded class SCR_BaseGameMode
 {
 	protected bool m_bTBD_WaypointTickArmed;
 
-	//------------------------------------------------------------------------------------------------
 	protected override void OnGameStart()
 	{
 		super.OnGameStart();
@@ -868,7 +826,6 @@ modded class SCR_BaseGameMode
 		GetGame().GetCallqueue().CallLater(TBD_WaypointTick, TBD_WaypointRuntime.TICK_MS, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void TBD_WaypointTick()
 	{
 		if (GetGame().GetGameMode() != this)

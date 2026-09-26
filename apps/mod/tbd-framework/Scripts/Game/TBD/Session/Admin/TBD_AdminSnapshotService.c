@@ -11,7 +11,7 @@ class TBD_AdminSnapshotService
 	//! with a long audit trail must not become an unbounded reliable-channel string.
 	//!
 	//! Headroom check: 5 header records + ~20 validator findings + one line per connected player +
-	//! 20 audit lines. A 128-slot event lands around 173, so the cap is slack, not a squeeze — and
+	//! 20 audit lines. A 128-slot event lands around 173, so the cap is slack, not a squeeze -- and
 	//! `Join` logs loudly if it is ever hit rather than truncating in silence.
 	protected static const int MAX_PAYLOAD_LINES = 400;
 
@@ -23,33 +23,29 @@ class TBD_AdminSnapshotService
 
 	//! Every field is written with this leading marker, so **no field is ever the empty string**.
 	//!
-	//! ── Why, and why it is not paranoia ────────────────────────────────────────────────────
 	//! `string.Split(sep, out, trim)` is a NATIVE engine call. Whether it emits a token for an
 	//! empty field between two separators is a RUNTIME property, and nothing in this lane can
-	//! prove a runtime property — a compile probe answers "does this symbol exist", not "what does
+	//! prove a runtime property -- a compile probe answers "does this symbol exist", not "what does
 	//! it do" (documentation_v2/runbooks/mod_slice_workflow.md section "What agents cannot do").
 	//! If it drops empties, then a record like
-	//! `P <id> <name> <faction> <group> <role> …` silently shifts every field left the moment a
+	//! `P <id> <name> <faction> <group> <role> ...` silently shifts every field left the moment a
 	//! player has no slot, and an unslotted player would render with somebody else's data in the
 	//! faction column. That is the exact class of bug an admin panel must not have.
 	//!
 	//! Marking every field removes the question instead of answering it: a marked empty value is
 	//! the one-character string `.`, which no tokeniser can drop and no trim can erase. The cost is
-	//! one byte per field and a wire that reads `P<TAB>.7<TAB>.Vasquez<TAB>.us_army…`.
+	//! one byte per field and a wire that reads `P<TAB>.7<TAB>.Vasquez<TAB>.us_army...`.
 	protected static const string FIELD_MARK = ".";
 
-	// ── SERVER ──────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! Build the snapshot this player is entitled to.
 	//!
-	//! @authority server — reads `TBD_SpawnManager`, `TBD_MissionLoader` and `TBD_MissionValidator`,
+	//! @authority server -- reads `TBD_SpawnManager`, `TBD_MissionLoader` and `TBD_MissionValidator`,
 	//! none of which hold anything on a client.
 	static TBD_AdminPayload BuildForAdmin(int playerId)
 	{
 		TBD_AdminPayload payload = new TBD_AdminPayload();
 
-		// ── THE READ GATE. Fail closed: a refusal carries no data at all. ──
 		if (!TBD_AdminService.IsAdmin(playerId))
 		{
 			payload.m_bAuthorised = false;
@@ -69,7 +65,6 @@ class TBD_AdminSnapshotService
 		return payload;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void BuildMission(TBD_AdminPayload payload)
 	{
 		TBD_MissionDocumentStruct doc = TBD_MissionLoader.GetMission();
@@ -85,9 +80,8 @@ class TBD_AdminSnapshotService
 		payload.m_sTerrain = Sanitise(doc.meta.terrain);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Current stage, and the one a force-advance would land on. `m_sNextStage` empty is what tells
-	//! the screen there is nothing to offer — the screen never computes the transition itself.
+	//! the screen there is nothing to offer -- the screen never computes the transition itself.
 	protected static void BuildStage(TBD_AdminPayload payload)
 	{
 		TBD_FrameworkManager framework = TBD_FrameworkManager.GetInstance();
@@ -112,8 +106,7 @@ class TBD_AdminSnapshotService
 		payload.m_sNextStage = typename.EnumToString(TBD_EGameStage, next);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-181.14 — a mission the validator rejected is otherwise INVISIBLE from in-game: the stage
+	//! T-181.14 -- a mission the validator rejected is otherwise INVISIBLE from in-game: the stage
 	//! machine simply never leaves LOADING and nothing on screen says why. An admin panel is
 	//! exactly where that has to surface.
 	protected static void BuildValidation(TBD_AdminPayload payload)
@@ -136,7 +129,6 @@ class TBD_AdminSnapshotService
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Who is connected, whose seat is whose, and who has spent their life.
 	//!
 	//! `m_bInWorld` is asked of the player controller rather than inferred from `m_bDead`, because
@@ -187,8 +179,7 @@ class TBD_AdminSnapshotService
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Newest first — an admin opening the screen after something went wrong wants the last action,
+	//! Newest first -- an admin opening the screen after something went wrong wants the last action,
 	//! not the first one of the session.
 	protected static void BuildAudit(TBD_AdminPayload payload)
 	{
@@ -207,12 +198,10 @@ class TBD_AdminSnapshotService
 		}
 	}
 
-	// ── WIRE ────────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! Flatten a payload to one string. Field 0 is the record kind; every field after it carries
 	//! `FIELD_MARK` (see the note on that constant). Record types:
-	//!   `A` authorised (0/1) / denial reason  — when 0 this is the ONLY record present
+	//!   `A` authorised (0/1) / denial reason  -- when 0 this is the ONLY record present
 	//!   `M` mission   loaded / name / terrain
 	//!   `S` stage     current / next ("" = last stage) / stage machine ready
 	//!   `V` validate  hasRun / passed / errors / warnings
@@ -257,8 +246,7 @@ class TBD_AdminSnapshotService
 		return Join(lines);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Rebuild a payload on the client. A malformed line is skipped rather than fatal — a panel
+	//! Rebuild a payload on the client. A malformed line is skipped rather than fatal -- a panel
 	//! that renders most of itself beats a blank screen (design law: nothing blocking).
 	//!
 	//! Note the default: a payload that arrives empty or unparseable is **not authorised**. The
@@ -342,11 +330,9 @@ class TBD_AdminSnapshotService
 		return payload;
 	}
 
-	// ── Helpers ─────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
-	//! MEASURED (T-181.11.2): a nine-field record written as one `+` chain fails to compile with
-	//! `Formula too complex` — and the *second* diagnostic on the same line is a misleading
+	//! MEASURED: a nine-field record written as one `+` chain fails to compile with
+	//! `Formula too complex` -- and the *second* diagnostic on the same line is a misleading
 	//! `Incompatible parameter 'FIELD_SEP'`, which sends you hunting a type problem that is not
 	//! there. Enfusion has an expression-complexity ceiling; the fix is to append in steps.
 	protected static string RecordPlayer(TBD_AdminPlayerRow row)
@@ -364,7 +350,6 @@ class TBD_AdminSnapshotService
 		return line;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string Join(array<string> lines)
 	{
 		int shown = lines.Count();
@@ -387,47 +372,41 @@ class TBD_AdminSnapshotService
 		if (clipped)
 		{
 			TBD_Log.Warn(TBD_AdminAudit.CH_ADMIN,
-				string.Format("snapshot clipped at %1 lines — raise MAX_PAYLOAD_LINES", MAX_PAYLOAD_LINES));
+				string.Format("snapshot clipped at %1 lines -- raise MAX_PAYLOAD_LINES", MAX_PAYLOAD_LINES));
 		}
 
 		return result;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string Record1(string kind, string a)
 	{
 		return kind + Field(a);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string Record2(string kind, string a, string b)
 	{
 		return kind + Field(a) + Field(b);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string Record3(string kind, string a, string b, string c)
 	{
 		return kind + Field(a) + Field(b) + Field(c);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string Record4(string kind, string a, string b, string c, string d)
 	{
 		return kind + Field(a) + Field(b) + Field(c) + Field(d);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! `<TAB>.<value>` — separator, marker, value. The marker is what guarantees a non-empty token
+	//! `<TAB>.<value>` -- separator, marker, value. The marker is what guarantees a non-empty token
 	//! for an empty value; see FIELD_MARK.
 	protected static string Field(string value)
 	{
 		return FIELD_SEP + FIELD_MARK + value;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Strip the marker back off a parsed field. A field shorter than the marker is treated as
-	//! empty rather than as an error — the parser's job is to render what arrived, not to refuse.
+	//! empty rather than as an error -- the parser's job is to render what arrived, not to refuse.
 	protected static string Unmark(string field)
 	{
 		int length = field.Length();
@@ -437,13 +416,11 @@ class TBD_AdminSnapshotService
 		return field.Substring(1, length - 1);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool IsSet(string field)
 	{
 		return Unmark(field) == "1";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string Flag(bool value)
 	{
 		if (value)
@@ -452,12 +429,11 @@ class TBD_AdminSnapshotService
 		return "0";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Strip the field and line separators out of any text that came from authored data or a player
 	//! name, so a name containing a tab cannot shift every field of its record.
 	//!
 	//! MEASURED: `string.Replace` mutates the receiver IN PLACE and returns the replacement COUNT,
-	//! not the new string — `s = s.Replace(a, b)` does not compile.
+	//! not the new string -- `s = s.Replace(a, b)` does not compile.
 	protected static string Sanitise(string value)
 	{
 		if (value.IsEmpty())

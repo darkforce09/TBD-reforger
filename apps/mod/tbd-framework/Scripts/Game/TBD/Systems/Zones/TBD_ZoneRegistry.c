@@ -1,28 +1,25 @@
-//! T-181.18 — turns the mission document's `zones[]` into prepared `TBD_Zone`s, once, and answers
+//! T-181.18 -- turns the mission document's `zones[]` into prepared `TBD_Zone`s, once, and answers
 //! "is this player where they are allowed to be".
 //!
-//! ── Server-side only ────────────────────────────────────────────────────────────────────────
 //! Clients hold NO mission document (`TBD_FrameworkManager.OnPostInit` returns early for
 //! `RplMode.Client` before `BeginLoad()`), so a client calling `Build()` would build an empty
 //! registry and conclude the whole world is out of bounds. Nothing here is client-safe and nothing
 //! here is called from a client path; `TBD_PlayAreaComponent` is the only caller and it is
 //! authority-gated.
 //!
-//! ── Static, and therefore explicitly cleared ────────────────────────────────────────────────
 //! A recorded landmine in this program is that statics OUTLIVE A WORLD inside one process
 //! (`TBD_FleetLoadMissionAction` restarts the scenario in-process). A registry built for mission A and
 //! left standing would confine mission B's players to mission A's AO. `Clear()` exists for that
 //! and `TBD_PlayAreaComponent.OnDelete` is required to call it.
 //!
-//! ── What "in bounds" means (the semantics, stated once) ─────────────────────────────────────
-//! * `boundary` with no `faction`  — the AO. Applies to everyone.
-//! * `boundary` with `faction: x`  — applies to side x only; other sides are unconstrained by it.
+//! * `boundary` with no `faction`  -- the AO. Applies to everyone.
+//! * `boundary` with `faction: x`  -- applies to side x only; other sides are unconstrained by it.
 //! * A player is IN BOUNDS when inside **at least one** boundary zone that applies to them
 //!   (UNION, not intersection). An AO drawn as three overlapping polygons is one AO, which is how
 //!   an author would expect it to read.
 //! * A player to whom **no** boundary zone applies has **no play-area restriction**. A mission
-//!   with no boundary zone at all restricts nobody — see `TBD_PlayAreaComponent`.
-//! * `base_protection` with `faction: x` — x's protected ground. A player who is NOT of x and IS
+//!   with no boundary zone at all restricts nobody -- see `TBD_PlayAreaComponent`.
+//! * `base_protection` with `faction: x` -- x's protected ground. A player who is NOT of x and IS
 //!   inside it is in violation. (This is the inverse containment test, same warn/grace/penalty
 //!   machinery.) With no `faction` it protects nobody and is reported and skipped.
 class TBD_ZoneRegistry
@@ -37,7 +34,7 @@ class TBD_ZoneRegistry
 	static const string TYPE_BASE_PROTECTION  = "base_protection";
 
 	//! `rules.penalty` CLOSED vocabulary (`none`|`warn`|`kill`) under `#/$defs/zoneRules`
-	//! (`additionalProperties: false`, T-241). Undeclared keys fail schema validation — not an
+	//! (`additionalProperties: false`, T-241). Undeclared keys fail schema validation -- not an
 	//! open-object free-for-all. Adding a penalty value is an enum entry there PLUS a constant here.
 	static const string PENALTY_NONE = "none";
 	static const string PENALTY_WARN = "warn";
@@ -51,7 +48,7 @@ class TBD_ZoneRegistry
 
 	//! Sanity ceiling on an authored grace. Pinned in schema as `zoneRules.graceSeconds.maximum`
 	//! = 3600 (T-275 / mission.schema.json). Guard against a typo (`graceSeconds: 30000`)
-	//! silently disabling enforcement for the whole round — schema rejects it upstream; this
+	//! silently disabling enforcement for the whole round -- schema rejects it upstream; this
 	//! remains the runtime fallback if a document somehow reaches us out of band.
 	static const float MAX_GRACE_SECONDS = 3600.0;
 
@@ -60,25 +57,21 @@ class TBD_ZoneRegistry
 	protected static int s_iBoundaryCount;
 	protected static int s_iBaseProtectionCount;
 
-	//------------------------------------------------------------------------------------------------
 	static bool IsBuilt()
 	{
 		return s_bBuilt;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static int GetBoundaryCount()
 	{
 		return s_iBoundaryCount;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static int GetBaseProtectionCount()
 	{
 		return s_iBaseProtectionCount;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Every prepared zone, including unusable ones (they are kept so the count in the summary
 	//! matches the document). Null until `Build()` has run.
 	static array<ref TBD_Zone> GetAll()
@@ -86,8 +79,7 @@ class TBD_ZoneRegistry
 		return s_aZones;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Drop everything. MUST be called on world teardown — see the class header.
+	//! Drop everything. MUST be called on world teardown -- see the class header.
 	static void Clear()
 	{
 		s_aZones = null;
@@ -97,11 +89,10 @@ class TBD_ZoneRegistry
 		TBD_PlayAreaVehicleAxis.Clear();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Prepare every zone in the loaded mission. Safe to call repeatedly; only the first call after
 	//! a `Clear()` does work.
 	//!
-	//! Returns false when there is no valid mission to build from — the caller keeps waiting rather
+	//! Returns false when there is no valid mission to build from -- the caller keeps waiting rather
 	//! than caching an empty registry as if it were the answer.
 	static bool Build()
 	{
@@ -126,7 +117,7 @@ class TBD_ZoneRegistry
 		{
 			if (!rawZone)
 			{
-				TBD_Log.Warn(CH, string.Format("zones[%1] is null — skipped", index));
+				TBD_Log.Warn(CH, string.Format("zones[%1] is null -- skipped", index));
 				continue;
 			}
 
@@ -153,7 +144,7 @@ class TBD_ZoneRegistry
 					// Said out loud rather than left to be inferred from a count of 0. A protection
 					// zone works by asking "is this player NOT of the owning faction", so one that
 					// names no faction has no question to ask and can never be violated by anyone.
-					TBD_Log.Warn(CH, string.Format("zone '%1' is base_protection but names no faction — it protects nobody and is not enforced. Set `faction` to the side whose ground this is.",
+					TBD_Log.Warn(CH, string.Format("zone '%1' is base_protection but names no faction -- it protects nobody and is not enforced. Set `faction` to the side whose ground this is.",
 						zone.m_sId));
 				}
 				else
@@ -178,12 +169,11 @@ class TBD_ZoneRegistry
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One line per enforced zone, at load. Two jobs:
-	//!   * OPERATIONAL — an operator can read the AO's extents straight out of the log and check
+	//!   * OPERATIONAL -- an operator can read the AO's extents straight out of the log and check
 	//!     them against the map before an event, instead of discovering at H-hour that the AO is
 	//!     1 km east of where it was drawn.
-	//!   * PROOF — the bounds are computed from the parsed floats, so a run that prints plausible
+	//!   * PROOF -- the bounds are computed from the parsed floats, so a run that prints plausible
 	//!     coordinates has demonstrated that `ref array<ref array<float>>` really did populate from
 	//!     JSON, not merely that a non-null array arrived. Compile probes cannot show that; this
 	//!     shows it in every single run.
@@ -211,7 +201,6 @@ class TBD_ZoneRegistry
 			typename.EnumToString(TBD_EZonePenalty, zone.m_ePenalty)));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Flatten one document zone into its runtime form, reporting every defect by zone id.
 	protected static TBD_Zone Prepare(notnull TBD_MissionZoneStruct rawZone, int index)
 	{
@@ -228,7 +217,7 @@ class TBD_ZoneRegistry
 
 		// Diagnostics are reported only for the zone types THIS module enforces. Every zone gets
 		// its rules resolved (so no field is ever left at a sentinel), but the golden mission's
-		// `objective_capture` zone legitimately carries `captureSeconds`/`contestable`/`points` —
+		// `objective_capture` zone legitimately carries `captureSeconds`/`contestable`/`points` --
 		// rules for a subsystem that is not this one. Warning that "this build could not read a
 		// single key it understands" about those would be false and would train an operator to
 		// ignore the message that matters.
@@ -240,14 +229,13 @@ class TBD_ZoneRegistry
 			// zone with no shape is somebody else's problem and TBD_MissionValidator already
 			// reports it.
 			if (EnforcesType(rawZone.type))
-				TBD_Log.Warn(CH, string.Format("zone '%1' (%2) has no shape — inert, it will never contain anyone",
+				TBD_Log.Warn(CH, string.Format("zone '%1' (%2) has no shape -- inert, it will never contain anyone",
 					subject, rawZone.type));
 			return zone;
 		}
 
-		// ── Which shape did the author actually draw? ────────────────────────────────────────
 		// NOT `if (shape.circle)`. `JsonLoadContext` allocates a nested `ref` field whether or not
-		// the JSON key was there (measured — see the landmine on TBD_MissionShapeStruct), so both
+		// the JSON key was there (measured -- see the landmine on TBD_MissionShapeStruct), so both
 		// members are always non-null and only their CONTENT distinguishes them. Getting this
 		// wrong is not theoretical: the first cut of this function took the circle branch for the
 		// golden mission's polygon-only boundary zone and declared it inert with "radius 0".
@@ -259,7 +247,7 @@ class TBD_ZoneRegistry
 			// The schema's `oneOf` forbids this, so the document is not schema-valid. Say so and
 			// take the polygon: it is the more specific of the two and the one an author who drew
 			// both almost certainly meant.
-			TBD_Log.Warn(CH, string.Format("zone '%1' carries BOTH a circle and a polygon (the schema's shape is oneOf) — using the polygon",
+			TBD_Log.Warn(CH, string.Format("zone '%1' carries BOTH a circle and a polygon (the schema's shape is oneOf) -- using the polygon",
 				subject));
 			hasCircle = false;
 		}
@@ -294,15 +282,14 @@ class TBD_ZoneRegistry
 			if (rawZone.shape.circle)
 				radius = rawZone.shape.circle.r;
 
-			TBD_Log.Warn(CH, string.Format("zone '%1' (%2) has no usable shape — no polygon vertices, and circle radius is %3 (schema requires > 0). Inert; it will never contain anyone.",
+			TBD_Log.Warn(CH, string.Format("zone '%1' (%2) has no usable shape -- no polygon vertices, and circle radius is %3 (schema requires > 0). Inert; it will never contain anyone.",
 				subject, rawZone.type, radius));
 		}
 
 		return zone;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! `[[x,z],[x,z],…]` -> flat `[x,z,x,z,…]` plus bounds. Rejects rather than guesses.
+	//! `[[x,z],[x,z],...]` -> flat `[x,z,x,z,...]` plus bounds. Rejects rather than guesses.
 	protected static void BuildPolygon(notnull TBD_Zone zone, notnull array<ref array<float>> rings, string subject)
 	{
 		array<float> flat = new array<float>();
@@ -311,7 +298,7 @@ class TBD_ZoneRegistry
 		foreach (array<float> pair : rings)
 		{
 			// Schema: inner arrays are exactly 2 numbers. A pair that is not is dropped rather than
-			// padded — inventing a coordinate would move the AO's outline somewhere nobody drew.
+			// padded -- inventing a coordinate would move the AO's outline somewhere nobody drew.
 			if (!pair || pair.Count() != 2)
 			{
 				malformed++;
@@ -329,7 +316,7 @@ class TBD_ZoneRegistry
 		int vertices = flat.Count() / 2;
 		if (vertices < 3)
 		{
-			TBD_Log.Warn(CH, string.Format("zone '%1' polygon has %2 usable vertices (schema minimum 3) — inert, it will never contain anyone",
+			TBD_Log.Warn(CH, string.Format("zone '%1' polygon has %2 usable vertices (schema minimum 3) -- inert, it will never contain anyone",
 				subject, vertices));
 			return;
 		}
@@ -356,7 +343,6 @@ class TBD_ZoneRegistry
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Resolve `rules` into plain fields, and make every fallback LOUD.
 	//!
 	//! See `TBD_MissionZoneRulesStruct` for why a typed parser cannot see an unknown key. What this
@@ -368,7 +354,7 @@ class TBD_ZoneRegistry
 	//!                                           player's one life on a typo
 	//!
 	//! Note the deliberate absence of a "`rules` was absent" case. `JsonLoadContext` allocates the
-	//! nested `rules` object whether or not the key was authored (measured — see the landmine on
+	//! nested `rules` object whether or not the key was authored (measured -- see the landmine on
 	//! `TBD_MissionShapeStruct`), so `!rules` never fires on a parsed document and the two cases
 	//! "authored nothing" and "authored only keys this build cannot see" are INDISTINGUISHABLE from
 	//! here. The diagnostic below is worded to be true of both rather than asserting the one it
@@ -396,7 +382,7 @@ class TBD_ZoneRegistry
 			if (rules.graceSeconds < 0 || rules.graceSeconds > MAX_GRACE_SECONDS)
 			{
 				if (report)
-					TBD_Log.Warn(CH, string.Format("zone '%1' rules.graceSeconds=%2 is outside 0..%3 — using the default %4 s",
+					TBD_Log.Warn(CH, string.Format("zone '%1' rules.graceSeconds=%2 is outside 0..%3 -- using the default %4 s",
 						subject, rules.graceSeconds, MAX_GRACE_SECONDS, DEFAULT_GRACE_SECONDS));
 			}
 			else
@@ -411,7 +397,7 @@ class TBD_ZoneRegistry
 			if (rules.warnEverySeconds <= 0)
 			{
 				if (report)
-					TBD_Log.Warn(CH, string.Format("zone '%1' rules.warnEverySeconds=%2 must be > 0 — using the default %3 s",
+					TBD_Log.Warn(CH, string.Format("zone '%1' rules.warnEverySeconds=%2 must be > 0 -- using the default %3 s",
 						subject, rules.warnEverySeconds, DEFAULT_WARN_EVERY_SECONDS));
 			}
 			else
@@ -437,14 +423,14 @@ class TBD_ZoneRegistry
 				// Loud on purpose. This is the line an operator should find in the log when they
 				// ask why somebody's one life ended at the edge of the map.
 				if (report)
-					TBD_Log.Warn(CH, string.Format("zone '%1' rules.penalty=kill — ONE LIFE: a player who stays in violation past %2 s is KILLED and can only return via '#tbd respawn'",
+					TBD_Log.Warn(CH, string.Format("zone '%1' rules.penalty=kill -- ONE LIFE: a player who stays in violation past %2 s is KILLED and can only return via '#tbd respawn'",
 						subject, zone.m_fGraceSeconds));
 			}
 			else
 			{
 				zone.m_ePenalty = TBD_EZonePenalty.WARN;
 				if (report)
-					TBD_Log.Warn(CH, string.Format("zone '%1' rules.penalty='%2' is not one of none|warn|kill — using 'warn' (never guessing toward kill under one life)",
+					TBD_Log.Warn(CH, string.Format("zone '%1' rules.penalty='%2' is not one of none|warn|kill -- using 'warn' (never guessing toward kill under one life)",
 						subject, rules.penalty));
 			}
 		}
@@ -455,20 +441,18 @@ class TBD_ZoneRegistry
 
 		if (legible == 0 && report)
 		{
-			TBD_Log.Warn(CH, string.Format("zone '%1': no rule this build understands (graceSeconds, warnEverySeconds, penalty) was readable — running on defaults grace=%2s warnEvery=%3s penalty=warn. Either none was authored, or one was authored under a key this build does not declare and therefore cannot see; a typed JSON parser cannot tell those apart.",
+			TBD_Log.Warn(CH, string.Format("zone '%1': no rule this build understands (graceSeconds, warnEverySeconds, penalty) was readable -- running on defaults grace=%2s warnEvery=%3s penalty=warn. Either none was authored, or one was authored under a key this build does not declare and therefore cannot see; a typed JSON parser cannot tell those apart.",
 				subject, DEFAULT_GRACE_SECONDS, DEFAULT_WARN_EVERY_SECONDS));
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Zone types this module enforces. Used only to decide whether a defect is worth a log line
-	//! here — a malformed objective zone is not this slice's business.
+	//! here -- a malformed objective zone is not this slice's business.
 	protected static bool EnforcesType(string type)
 	{
 		return type == TYPE_BOUNDARY || type == TYPE_BASE_PROTECTION;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Does any usable `boundary` zone apply to this faction? Empty `factionKey` (a player with no
 	//! resolved slot) matches only the unfactioned, everyone-applies zones.
 	//!
@@ -489,7 +473,6 @@ class TBD_ZoneRegistry
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Is this position inside at least one boundary zone that applies to `factionKey`?
 	//! Undefined (and never asked) when `HasBoundaryFor` is false.
 	static bool IsInsideBoundary(string factionKey, float px, float pz)
@@ -517,7 +500,6 @@ class TBD_ZoneRegistry
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The first `base_protection` zone this player is illegally standing in, or null.
 	//!
 	//! "Illegally" = the zone names a faction, the player is not of it, and the player is inside.
@@ -534,7 +516,7 @@ class TBD_ZoneRegistry
 				continue;
 			if (zone.m_sFaction.IsEmpty())
 				continue;
-			// Own side is welcome. A player with no resolved faction is treated as an outsider —
+			// Own side is welcome. A player with no resolved faction is treated as an outsider --
 			// the conservative reading, and it only ever produces a warning by default.
 			if (zone.m_sFaction == factionKey)
 				continue;
@@ -545,9 +527,8 @@ class TBD_ZoneRegistry
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The boundary zone whose rules govern this faction's violation. With several applicable
-	//! boundary zones the STRICTEST wins — shortest grace, and KILL beats WARN beats NONE — so an
+	//! boundary zones the STRICTEST wins -- shortest grace, and KILL beats WARN beats NONE -- so an
 	//! author who overlaps a hard inner AO with a soft outer one gets the hard answer rather than
 	//! whichever happened to be listed first.
 	static TBD_Zone GoverningBoundary(string factionKey)
@@ -582,7 +563,6 @@ class TBD_ZoneRegistry
 		return strictest;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A boundary zone applies to a player when it names no faction (everyone) or names theirs.
 	protected static bool AppliesToFaction(notnull TBD_Zone zone, string factionKey)
 	{

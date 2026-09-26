@@ -1,22 +1,20 @@
-[ComponentEditorProps(category: "TBD/Framework", description: "TBD objectives — capture progress, hold timers and destroy targets from mission JSON; drives the objective win conditions.")]
+[ComponentEditorProps(category: "TBD/Framework", description: "TBD objectives -- capture progress, hold timers and destroy targets from mission JSON; drives the objective win conditions.")]
 class TBD_ObjectivesComponentClass : SCR_BaseGameModeComponentClass {}
 
-//! T-181.39 — the server-authoritative objective runner.
+//! T-181.39 -- the server-authoritative objective runner.
 //!
-//! ══ How it runs ═════════════════════════════════════════════════════════════════════════════
 //! ONE repeating server-side tick at `TICK_MS` walks the connected players once, samples who is
 //! standing on which objective, advances every objective, and delivers whatever needs saying. It is
 //! deliberately not a per-objective timer and emphatically not a per-frame check, for the same two
 //! reasons `TBD_PlayAreaComponent` gives:
 //!   * `ScriptCallQueue.Remove` cancels BY FUNCTION, not by arguments (recorded landmine), so a
-//!     per-objective `CallLater` could not be cancelled individually — and a per-player deferred
+//!     per-objective `CallLater` could not be cancelled individually -- and a per-player deferred
 //!     callback carrying a raw `playerId` survives that player's disconnect onto a RECYCLED id. A
 //!     single tick that re-reads the live player list every time has neither problem.
 //!   * Objective timings are authored in whole seconds and measured in minutes. 1 Hz is exact
 //!     enough that the accumulators read in the same units the rules do.
 //!
-//! ══ Only while LIVE ═════════════════════════════════════════════════════════════════════════
-//! Nothing advances outside `TBD_EGameStage.LIVE`. Not during SAFE_START — that is the phase where
+//! Nothing advances outside `TBD_EGameStage.LIVE`. Not during SAFE_START -- that is the phase where
 //! damage is off and players are still walking to their start lines, and letting a side bank a
 //! capture while the other side cannot shoot back would make safestart a land grab. Not during
 //! LOBBY/BRIEFING/END either.
@@ -26,12 +24,11 @@ class TBD_ObjectivesComponentClass : SCR_BaseGameModeComponentClass {}
 //! RECORD, and an admin bouncing LIVE -> SAFE_START -> LIVE to deal with an incident must not wipe
 //! what both sides spent lives achieving.
 //!
-//! ══ What a player is told, and over what ════════════════════════════════════════════════════
 //! Clients hold NO mission document (recorded landmine), so every word below is composed on the
 //! server from server-owned state and pushed out; a client computes nothing and is never asked to.
 //! T-941.4: the board and capture bar go over Owner RPC to `TBD_ObjectiveHud`. Chat keeps ONLY the
 //! objective-complete line (`CAPTURED` / `DESTROYED` / `HELD`). The old per-tick
-//! `SCR_ChatComponent.SendPrivateMessage` pump is gone — it buried the log in progress spam.
+//! `SCR_ChatComponent.SendPrivateMessage` pump is gone -- it buried the log in progress spam.
 //!
 //! T-946.55: that HUD push is EVALUATED at 1 Hz but SENT only on a difference. `ReplicateHud` hashes
 //! each owner's rendered snapshot and skips the RPC when it matches the last one that owner was
@@ -42,17 +39,15 @@ class TBD_ObjectivesComponentClass : SCR_BaseGameModeComponentClass {}
 //! Everything is also logged server-side, so an operator can reconstruct the objective history of a
 //! round even if delivery to a particular client failed.
 //!
-//! ══ What is NOT proven here ═════════════════════════════════════════════════════════════════
 //! Every API used is compile-proven against this engine build with a failing negative control.
 //! NOTHING below has been observed running: `world-boot.sh` boots with zero players and never
 //! leaves LOBBY, so no presence is ever sampled, no progress ever advances and no message is ever
 //! delivered on this lane. What a green boot proves is that the component instantiates, that the
 //! registry builds from a real mission document, and that the rules parsed to the values the JSON
-//! authored. Behaviour needs a dedicated server with real clients (T-181.25).
+//! authored. Behaviour needs a dedicated server with real clients.
 class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 {
-	//! Evaluation cadence. 1 Hz — see the class header.
-	static const int TICK_MS = 1000;
+	static const int TICK_MS = 1000; //!< Evaluation cadence. 1 Hz -- see the class header.
 
 	//! `TICK_MS` as seconds, so the accumulators read in the units the rules are authored in.
 	static const float TICK_SECONDS = 1.0;
@@ -76,7 +71,7 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 	//! What each owner's HUD was LAST ACTUALLY SENT, keyed by playerId: the signature of the RENDERED
 	//! per-player snapshot, NOT of the shared board. `FillHudSnapshot` resolves the viewer's side and
 	//! carries that viewer's own capture bar, so two players reading the same board legitimately hold
-	//! different frames. A single global dirty flag would be wrong twice over — it would miss a
+	//! different frames. A single global dirty flag would be wrong twice over -- it would miss a
 	//! per-side text change, and it would suppress a bar that moves every tick for the one player
 	//! standing in the zone.
 	//!
@@ -85,14 +80,12 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 	//! connected list, and dropped again by `OnPlayerDisconnected`.
 	protected ref map<int, string> m_mHudSignatures;
 
-	//------------------------------------------------------------------------------------------------
 	static TBD_ObjectivesComponent GetInstance()
 	{
 		return s_Instance;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! @authority server — objectives are enforced where the mission document lives. Clients hold no
+	//! @authority server -- objectives are enforced where the mission document lives. Clients hold no
 	//! mission document at all (recorded landmine), so a client-side runner would have no zones, no
 	//! rules and nothing to advance.
 	override void OnPostInit(IEntity owner)
@@ -113,7 +106,6 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		GetGame().GetCallqueue().CallLater(Tick, TICK_MS, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Statics OUTLIVE A WORLD inside one process (recorded landmine - `TBD_FleetLoadMissionAction`
 	//! restarts the scenario in-process). Without this, mission B would inherit mission A's captured
 	//! objectives and could satisfy `all_objectives_captured` at kickoff, and the tick would keep
@@ -125,7 +117,7 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		if (queue)
 			queue.Remove(Tick);
 
-		// Clears the rules reader too. Deliberately does NOT clear `TBD_ZoneRegistry` — that belongs
+		// Clears the rules reader too. Deliberately does NOT clear `TBD_ZoneRegistry` -- that belongs
 		// to `TBD_PlayAreaComponent`, and two components racing to tear down one static buys nothing.
 		// `TBD_Objective.m_Zone` is a strong reference so the teardown order cannot matter.
 		TBD_ObjectiveRegistry.Clear();
@@ -145,11 +137,10 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		super.OnDelete(owner);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `SCR_BaseGameMode.OnPlayerDisconnected` dispatches to every `SCR_BaseGameModeComponent`, so a
 	//! leaver's last-sent HUD signature goes the instant they do rather than on the next tick.
 	//! `PruneHudSignatures` would catch it a second later anyway; this is the belt to that pair of
-	//! braces, and it earns its place on RECYCLED playerIds — the next holder of that number must
+	//! braces, and it earns its place on RECYCLED playerIds -- the next holder of that number must
 	//! never inherit the previous one's frame and be told their HUD is already up to date.
 	//! @authority server
 	override void OnPlayerDisconnected(int playerId, KickCauseCode cause, int timeout)
@@ -160,7 +151,6 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 			m_mHudSignatures.Remove(playerId);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! @authority server
 	protected void Tick()
 	{
@@ -225,7 +215,6 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		CheckEndTriggers();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! How many objectives can actually run. Re-read every tick rather than cached, because a
 	//! destroy objective can go inert at arming time when it discovers there is nothing to destroy.
 	protected int UsableCount()
@@ -236,7 +225,6 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		return total;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One informational line per world, at the moment the registry becomes known-good.
 	protected void AnnounceOnce()
 	{
@@ -246,7 +234,7 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 			{
 				m_bAnnouncedNoObjectives = true;
 				TBD_Log.Event(TBD_ObjectiveRegistry.CH,
-					"no usable objective zone in this mission — objective win conditions cannot fire, and nothing here will run");
+					"no usable objective zone in this mission -- objective win conditions cannot fire, and nothing here will run");
 			}
 			return;
 		}
@@ -262,7 +250,6 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 			TICK_MS));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The round just went LIVE.
 	//!
 	//! Destroy targets are found HERE rather than at load because a target placed by any other
@@ -300,14 +287,13 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One walk of the player list: who is standing on what, right now.
 	//!
 	//! Exclusions, each for a stated reason:
-	//!   * no controlled entity — in the lobby, spectating, or mid-deploy; not on the ground;
-	//!   * a spent life (`TBD_SpawnManager.IsPlayerDead`) — already out of the event under ONE LIFE;
-	//!   * a dead body — a corpse lying on an objective must not hold it;
-	//!   * no resolved faction — not on a side, so they can neither capture nor contest. Standing on
+	//!   * no controlled entity -- in the lobby, spectating, or mid-deploy; not on the ground;
+	//!   * a spent life (`TBD_SpawnManager.IsPlayerDead`) -- already out of the event under ONE LIFE;
+	//!   * a dead body -- a corpse lying on an objective must not hold it;
+	//!   * no resolved faction -- not on a side, so they can neither capture nor contest. Standing on
 	//!     an objective unassigned must not be a way to freeze it.
 	protected void SamplePresence(notnull PlayerManager players, notnull array<int> connected, notnull array<ref TBD_Objective> objectives)
 	{
@@ -344,7 +330,7 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 				if (!objective || !objective.m_bUsable)
 					continue;
 
-				// The ONE containment test in this mod — T-181.18's, verified against an independent
+				// The ONE containment test in this mod -- T-181.18's, verified against an independent
 				// oracle, inclusive of the boundary within EDGE_MARGIN_M for circles and polygons
 				// alike. There is deliberately no geometry in this slice.
 				if (!objective.m_Zone.Contains(px, pz))
@@ -359,25 +345,21 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		}
 	}
 
-	// ════════════════════════════════════════════════════════════════════════════════════════════
 	//  CAPTURE
-	// ════════════════════════════════════════════════════════════════════════════════════════════
 
-	//------------------------------------------------------------------------------------------------
 	//! Advance one capture objective by one tick.
 	//!
-	//! ══ THE STATE MACHINE, IN ONE SENTENCE ═══════════════════════════════════════════════════
 	//! `m_fProgress` is the uninterrupted presence `m_sProgressFaction` has banked toward owning
 	//! this objective; when it fills they own it, and an owned objective's progress belongs to its
 	//! owner and must be torn back down to zero before anyone else can bank their own.
 	//!
-	//! So taking an enemy-held objective is a TWO-STAGE job — neutralise, then capture — which is
+	//! So taking an enemy-held objective is a TWO-STAGE job -- neutralise, then capture -- which is
 	//! what the whole genre does and what makes holding ground worth something. The cost of the
 	//! first stage is `rules.neutralizeSeconds`, which defaults to `captureSeconds` (a symmetric
 	//! 1:1 rate) and can be set to `0` for an operator who wants a single-stage capture instead.
 	//! That is the knob; the default is the conventional reading.
 	//!
-	//! An owned objective is NEVER lost to a timer — only to somebody walking onto it. See
+	//! An owned objective is NEVER lost to a timer -- only to somebody walking onto it. See
 	//! `TBD_EObjectiveOnEmpty` for why decay is off by default and why it applies only while
 	//! neutral.
 	protected void AdvanceCapture(notnull TBD_Objective objective)
@@ -417,7 +399,6 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		BuildCapture(objective, acting);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Nobody is standing on it.
 	protected void AdvanceCaptureEmpty(notnull TBD_Objective objective)
 	{
@@ -440,7 +421,6 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		objective.m_sProgressFaction = string.Empty;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Is `acting` tearing something down rather than building?
 	//! Two cases: an objective OWNED by somebody else, or partial progress banked by somebody else.
 	//! Both use the same rate, so there is one teardown concept rather than two.
@@ -455,7 +435,6 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void TearDownCapture(notnull TBD_Objective objective, string acting)
 	{
 		// `neutralizeSeconds: 0` means instant. Handled here rather than through `TeardownRate()` so
@@ -492,7 +471,6 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 			objective.m_sId, acting, previousOwner));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void BuildCapture(notnull TBD_Objective objective, string acting)
 	{
 		// A side the zone's `faction` excludes can tear down but never bank. It has already done
@@ -537,8 +515,7 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 			objective.m_sId, acting, objective.m_fPoints));
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Server log of capture progress. The HUD bar is the player-facing channel (T-941.4).
+	//! Server log of capture progress. The HUD bar is the player-facing channel.
 	protected void AnnounceCaptureProgress(notnull TBD_Objective objective, string acting, string verb)
 	{
 		if (objective.m_fSinceAnnounce < objective.m_fAnnounceEverySeconds)
@@ -550,19 +527,15 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 			objective.m_sId, verb, objective.ProgressPercent(), acting));
 	}
 
-	// ════════════════════════════════════════════════════════════════════════════════════════════
 	//  HOLD UNTIL
-	// ════════════════════════════════════════════════════════════════════════════════════════════
 
-	//------------------------------------------------------------------------------------------------
 	//! Advance one hold objective by one tick.
 	//!
-	//! ══ WHY AN ENEMY INSIDE PAUSES THE CLOCK BY DEFAULT ══════════════════════════════════════
 	//! `hold_expired` reads as "the hold timer ran out", and `last-stand-at-montfort.json` confirms
 	//! it: mode `defender_holds_or_attacker_destroys`, `holdSeconds: 2700` inside a 3000 s limit.
 	//! The defenders win by surviving the clock.
 	//!
-	//! The naive implementation is a pure timer — but then the authored ZONE does nothing at all,
+	//! The naive implementation is a pure timer -- but then the authored ZONE does nothing at all,
 	//! and a mission author who drew a 70 m circle around Montfort Manor plainly meant the ground to
 	//! matter. "Hold" means holding ground. So by default an enemy standing inside PAUSES the clock:
 	//! attackers deny the hold by occupying the objective, which is the tactical shape the mission's
@@ -573,7 +546,7 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 	//!
 	//! `requireHolderPresent` defaults to FALSE on purpose. Under ONE LIFE a 45-minute hold that
 	//! demands a continuously-manned zone becomes unwinnable the moment the defenders take
-	//! casualties they cannot replace — the clock would stop for a reason they can no longer fix.
+	//! casualties they cannot replace -- the clock would stop for a reason they can no longer fix.
 	//! It is one key away for an author who wants that pressure.
 	protected void AdvanceHold(notnull TBD_Objective objective)
 	{
@@ -639,11 +612,10 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 			objective.m_sId, objective.m_sFaction, objective.m_fHoldSeconds, objective.m_fPoints));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Announce the hold clock at a fixed ladder of remaining times rather than on a fixed interval.
 	//!
 	//! A 2700 s hold on a 60 s interval is forty-five identical messages; a ladder is six, each at a
-	//! moment that actually changes what a player should do. Both sides hear it — a hold is a race
+	//! moment that actually changes what a player should do. Both sides hear it -- a hold is a race
 	//! and the attackers need the clock as much as the defenders.
 	protected void AnnounceHoldMark(notnull TBD_Objective objective)
 	{
@@ -657,14 +629,13 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 
 		objective.m_iHoldMarkIndex = objective.m_iHoldMarkIndex + 1;
 
-		// Rounded into an int FIRST — see TBD_Objective.HoldStatusText for why.
+		// Rounded into an int FIRST -- see TBD_Objective.HoldStatusText for why.
 		int whole = Math.Round(remaining);
 
 		TBD_Log.Kv(TBD_ObjectiveRegistry.CH, "holdMark", string.Format("id=%1 remain=%2s holder=%3",
 			objective.m_sId, whole, objective.m_sFaction));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The remaining-time ladder, in seconds. Written as a function rather than a static array
 	//! because a `static const ref array<>` initialiser is not something this lane has proven, and a
 	//! six-branch lookup is not worth a runtime experiment. Returns -1 past the end.
@@ -686,18 +657,15 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		return -1;
 	}
 
-	// ════════════════════════════════════════════════════════════════════════════════════════════
 	//  DESTROY
-	// ════════════════════════════════════════════════════════════════════════════════════════════
 
-	//------------------------------------------------------------------------------------------------
 	//! Advance one destroy objective. The counting lives in the registry next to the world query it
 	//! needs; this is only the announcement.
 	//!
 	//! Read `TBD_ObjectiveRegistry.ArmDestroyTargets` before trusting this: the destruction SIGNAL
 	//! is proven, and T-254 spawns authored `entities[]` via `SpawnMissionEntities`. A destroy
 	//! objective still goes inert when the alias is unresolved, nothing matching sits in the zone,
-	//! or spawn/query missed — `m_sInertReason` names which (T-437).
+	//! or spawn/query missed -- `m_sInertReason` names which.
 	protected void AdvanceDestroy(notnull TBD_Objective objective)
 	{
 		if (!TBD_ObjectiveRegistry.EvaluateDestroy(objective))
@@ -717,11 +685,8 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 			objective.m_fPoints));
 	}
 
-	// ════════════════════════════════════════════════════════════════════════════════════════════
 	//  DELIVERY AND END TRIGGERS
-	// ════════════════════════════════════════════════════════════════════════════════════════════
 
-	//------------------------------------------------------------------------------------------------
 	//! One walk of the player list: complete-lines over chat, board + bar over HUD RPC.
 	protected void Deliver(notnull PlayerManager players, notnull array<int> connected, notnull array<ref TBD_Objective> objectives)
 	{
@@ -736,16 +701,14 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		ReplicateHud(players, connected, objectives);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Has an objective-driven end condition been met?
 	//!
-	//! ══ WHY THIS ONLY LOGS ═══════════════════════════════════════════════════════════════════
 	//! Ending the round means `TBD_FrameworkManager.SetStage(END)`, and the stage machine has ONE
 	//! owner. A second component that could end the round would split that authority across two
 	//! files and make "why did the round end" a question with two places to look. So this slice
 	//! exposes `TBD_ObjectiveRegistry.EvaluateEndTriggers()` as the authority and stops there.
 	//!
-	//! Until `TickWinConditions` calls it, a met condition would otherwise be COMPLETELY SILENT —
+	//! Until `TickWinConditions` calls it, a met condition would otherwise be COMPLETELY SILENT --
 	//! the objectives would be captured and the round would simply carry on. That is the worst
 	//! possible failure mode for a wiring gap, so it is announced once, loudly, naming the exact
 	//! call that is missing. If you are reading this line in a log, the seam is not wired yet.
@@ -763,22 +726,19 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 
 		TBD_Log.Kv(TBD_ObjectiveRegistry.CH, "endTriggerMet", string.Format("trigger=%1 winner='%2'", trigger, winner));
 		TBD_Log.Banner(TBD_ObjectiveRegistry.CH,
-			"OBJECTIVE END CONDITION MET but nothing acted on it — TBD_FrameworkManager.TickWinConditions must call TBD_ObjectiveRegistry.EvaluateEndTriggers(). The round will NOT end on its own.",
+			"OBJECTIVE END CONDITION MET but nothing acted on it -- TBD_FrameworkManager.TickWinConditions must call TBD_ObjectiveRegistry.EvaluateEndTriggers(). The round will NOT end on its own.",
 			false);
 	}
 
-	// ════════════════════════════════════════════════════════════════════════════════════════════
 	//  SERVER-SIDE QUERY SURFACE
-	// ════════════════════════════════════════════════════════════════════════════════════════════
 
-	//------------------------------------------------------------------------------------------------
 	//! The objective board as THIS player is allowed to see it.
 	//!
 	//! The viewer's side is resolved here, from the player's assigned slot, which is server-owned
 	//! state. There is no faction parameter on this path, so there is nothing for a client to forge
-	//! — the same discipline that makes `TBD_MarkerController`'s request RPC take no arguments.
+	//! -- the same discipline that makes `TBD_MarkerController`'s request RPC take no arguments.
 	//!
-	//! Server-owned board for one player. The HUD is the consumer (T-941.4); chat is complete-only.
+	//! Server-owned board for one player. The HUD is the consumer; chat is complete-only.
 	array<string> BuildBoardForPlayer(int playerId)
 	{
 		TBD_SpawnManager spawn = TBD_SpawnManager.GetInstance();
@@ -786,20 +746,18 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		return TBD_ObjectiveRegistry.BuildBoardForFaction(factionKey);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Push the HUD snapshot to every connected player whose frame ACTUALLY MOVED. Still evaluated at
 	//! the 1 Hz tick, but the wire cost is now proportional to CHANGE rather than to elapsed time.
 	//!
-	//! ══ WHY THIS IS GATED AT ALL ═════════════════════════════════════════════════════════════
 	//! T-941.4 replaced a per-tick private-chat pump with this HUD, which is the right answer; sending
 	//! it unconditionally was not. Ungated, this loop cost one Reliable Owner RPC of three string
-	//! arrays PER PLAYER PER SECOND — 60 per player per minute on a round where nothing whatsoever
+	//! arrays PER PLAYER PER SECOND -- 60 per player per minute on a round where nothing whatsoever
 	//! happened, scaling with players x rows and never falling to zero. That is the very metric the
-	//! chat pump was removed for, so T-941.4 could regress it (T-946.55).
+	//! chat pump was removed for, so T-941.4 could regress it.
 	//!
 	//! The comparison is per OWNER and against the RENDERED snapshot, because the rendered snapshot is
-	//! what the RPC carries. An owner with no record is UNKNOWN, not clean, so a mid-round joiner —
-	//! or anyone who has only just gained a player controller — is sent a full board on the very next
+	//! what the RPC carries. An owner with no record is UNKNOWN, not clean, so a mid-round joiner --
+	//! or anyone who has only just gained a player controller -- is sent a full board on the very next
 	//! tick rather than waiting for somebody else to move.
 	protected void ReplicateHud(notnull PlayerManager players, notnull array<int> connected, notnull array<ref TBD_Objective> board)
 	{
@@ -828,12 +786,11 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Does this owner's rendered snapshot differ from the last one they were actually sent?
 	//!
 	//! A MISS IS A SEND, never a skip, and that single line is the whole anti-starvation argument: the
-	//! map holds only owners the server has provably pushed to, so everybody else — a new connection,
-	//! a recycled id, a player whose HUD was hidden when the round left LIVE — reads as unknown and
+	//! map holds only owners the server has provably pushed to, so everybody else -- a new connection,
+	//! a recycled id, a player whose HUD was hidden when the round left LIVE -- reads as unknown and
 	//! gets the entire board.
 	protected bool HudChanged(int playerId, string signature)
 	{
@@ -844,12 +801,11 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		return previous != signature;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One string standing for exactly what the RPC would carry: every rendered row, plus the capture
 	//! bar triple.
 	//!
 	//! LENGTH-PREFIXED, and that is not decoration. With plain separators two different snapshots can
-	//! collide — ("A|B", "C") and ("A", "B|C") concatenate to the same bytes — and a HUD that MISSES a
+	//! collide -- ("A|B", "C") and ("A", "B|C") concatenate to the same bytes -- and a HUD that MISSES a
 	//! real change is a far worse failure than one that sends a redundant frame. Prefixing each field
 	//! with its own length makes a collision impossible without needing a hash the engine does not
 	//! expose to script. Row count is clamped to the shortest array so a future edit to
@@ -877,10 +833,9 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		return signature;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Drop the last-sent record for owners who are no longer connected. Collected first and removed
 	//! after: mutating a map while iterating it is not safe, and Enforce Script's `array.Remove` is by
-	//! INDEX (recorded landmine), so the removal below is by KEY on the map — the same shape
+	//! INDEX (recorded landmine), so the removal below is by KEY on the map -- the same shape
 	//! `TBD_PlayAreaComponent.PruneDeparted` uses for its violation rows.
 	//!
 	//! `Tick` re-reads the player list every second, so this ALONE bounds the map by concurrent
@@ -904,7 +859,6 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Close the HUD on every connected client (left LIVE, or the component is tearing down).
 	protected void HideAllHuds()
 	{
@@ -921,7 +875,6 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Public so a late-joining controller can ask without inventing a second snapshot builder.
 	void PushHudTo(int playerId)
 	{
@@ -936,15 +889,14 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		PushHudToPlayer(players, playerId, board, 1);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The UNGATED push, and it stays ungated on purpose. Its two callers are the paths that must never
 	//! be suppressed: `HideAllHuds` when the round leaves LIVE, and `PushHudTo`, the pull a client asks
-	//! for. Both therefore RESET what this owner is known to hold — a hidden HUD is not a clean one,
+	//! for. Both therefore RESET what this owner is known to hold -- a hidden HUD is not a clean one,
 	//! and re-entering LIVE on an unchanged board must still re-open the panel.
 	//!
 	//! MEASURED 2026-09-08, so the 1 Hz gate above cannot lean on it: the pull path is currently DEAD.
 	//! `TBD_ObjectiveHud.TBD_RequestObjectiveHud` reaches `PushHudTo`, but nothing in `apps/mod` calls
-	//! `TBD_RequestObjectiveHud` — its declaration is the only occurrence in either tree. So the sole
+	//! `TBD_RequestObjectiveHud` -- its declaration is the only occurrence in either tree. So the sole
 	//! thing standing between a joiner and an empty HUD is `HudChanged` treating an unknown owner as a
 	//! send, which is why that rule is stated there rather than assumed here.
 	protected void PushHudToPlayer(notnull PlayerManager players, int playerId, notnull array<ref TBD_Objective> board, int show)
@@ -967,12 +919,11 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 			m_mHudSignatures.Set(playerId, HudSignature(icons, titles, details, barLabel, barPercent, barVisible));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The wire itself: one Reliable Owner RPC, via `SCR_PlayerController.TBD_PushObjectiveHud` ->
 	//! `TBD_RpcDo_ObjectiveHud`.
 	//!
 	//! Returns whether it actually went out. A connected player with no player controller is not an
-	//! error — they are in the lobby, spectating or mid-deploy — but the caller must not record a
+	//! error -- they are in the lobby, spectating or mid-deploy -- but the caller must not record a
 	//! frame that never left the server, or that player would be treated as up to date and the gate in
 	//! `ReplicateHud` would starve them for the rest of the round.
 	protected bool PushHudSnapshot(notnull PlayerManager players, int playerId, notnull array<string> icons,
@@ -987,7 +938,6 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void FillHudSnapshot(int playerId, notnull array<ref TBD_Objective> board,
 		notnull array<string> icons, notnull array<string> titles, notnull array<string> details,
 		out string barLabel, out int barPercent, out int barVisible)
@@ -1035,7 +985,6 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One ASCII glyph per row: o neutral, + ours, - theirs, ! contested, v complete, # destroy, H hold.
 	protected string HudIcon(notnull TBD_Objective objective, string factionKey)
 	{
@@ -1056,9 +1005,8 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		return "-";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Server -> one client, over the channel this codebase already uses for per-player replies
-	//! (`TBD_AdminCommands.Reply`, `TBD_PlayAreaComponent.Tell`). Complete-lines only (T-941.4).
+	//! (`TBD_AdminCommands.Reply`, `TBD_PlayAreaComponent.Tell`). Complete-lines only.
 	protected void Tell(notnull PlayerManager players, int playerId, string text)
 	{
 		PlayerController pc = players.GetPlayerController(playerId);
@@ -1072,9 +1020,8 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		chat.SendPrivateMessage(text, playerId);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The faction whose side this player is on, or empty when they have no assigned slot. Empty is
-	//! a legitimate answer, not an error — but a player with no side is excluded from objective
+	//! a legitimate answer, not an error -- but a player with no side is excluded from objective
 	//! presence entirely, because they can neither capture nor contest.
 	protected string ResolveFaction(TBD_SpawnManager spawn, int playerId)
 	{
@@ -1088,10 +1035,9 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		return slot.faction;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Is this body a corpse? Asked separately from `TBD_SpawnManager.IsPlayerDead` because the two
-	//! answer different questions — one is "has this identity spent its life", the other is "is the
-	//! thing standing here alive right now" — and either being true means it does not hold ground.
+	//! answer different questions -- one is "has this identity spent its life", the other is "is the
+	//! thing standing here alive right now" -- and either being true means it does not hold ground.
 	protected bool IsBodyDead(notnull IEntity body)
 	{
 		SCR_ChimeraCharacter character = SCR_ChimeraCharacter.Cast(body);

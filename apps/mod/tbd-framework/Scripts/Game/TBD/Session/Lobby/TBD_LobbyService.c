@@ -7,8 +7,7 @@
 //! (`TBD_MissionBrowserService`, `TBD_BriefingService`): it keeps the RPC signature to a single
 //! string, needs no schema registration, and is greppable in a log when something goes wrong.
 //!
-//! -- T-181.42: this was the last payload on a lossy sentinel ---------------------------------
-//! `TBD_AdminData` and `TBD_BriefingData` (T-181.26) both mark every field `<TAB>.<value>`, which
+//! `TBD_AdminData` and `TBD_BriefingData` both mark every field `<TAB>.<value>`, which
 //! is BIJECTIVE. This file wrote `EMPTY = "~"`, which is a plausibility argument, and was the odd
 //! one out. It now uses the same marker under the same names (`FIELD_MARK` / `Field` / `Unmark` /
 //! `IsSet`), so all three delimited payloads answer the question once. See `FIELD_MARK`.
@@ -61,7 +60,6 @@ class TBD_LobbyService
 	//! same semantics as `TBD_AdminData.FIELD_MARK` and `TBD_BriefingService.FIELD_MARK`,
 	//! deliberately: one convention across all three delimited payloads, not three answers.
 	//!
-	//! -- What this replaced, and why it was not merely a rename ------------------------------
 	//! This file used to write `EMPTY = "~"`: empty->`~` on the way out, `~`->empty on the way
 	//! back, defended as "`~` is not a plausible whole-field value". That is a plausibility
 	//! argument about what a human would type, and it is LOSSY exactly where it is wrong - a squad
@@ -74,13 +72,11 @@ class TBD_LobbyService
 	//! sentinel was not losing a field on any data this program actually ships. The defect it fixes
 	//! is latent, and it is an AUTHORING hazard rather than a live one.
 	//!
-	//! -- The marker must stay a single ASCII byte --------------------------------------------
 	//! `Unmark` is `Substring(1, length - 1)`, and MEASURED: `string.Length()` counts BYTES and
 	//! `Substring` is BYTE-indexed (`".".Length()` is 2; `"cafe latte".Substring(0, 4)` returns a
 	//! broken UTF-8 sequence). A one-byte ASCII marker is skipped safely whatever the value's own
 	//! encoding is; a prettier multi-byte one would corrupt every accented callsign.
 	//!
-	//! -- What this does NOT rest on ----------------------------------------------------------
 	//! The old comment here said `string.Split`'s empty-token behaviour "is not something this lane
 	//! can prove". T-181.26 proved it - engine 1.7.0.54 KEEPS empty tokens - which means the old
 	//! `~` scheme's field counts were never actually at risk on this build either. The marker is
@@ -100,9 +96,7 @@ class TBD_LobbyService
 	protected static bool s_bWireChecked;
 	protected static bool s_bWireOk;
 
-	// -- SERVER ------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! Build the roster as it stands right now.
 	//! @authority server - reads `TBD_SpawnManager` and `TBD_MissionLoader`, neither of which
 	//! exists on a client.
@@ -126,7 +120,7 @@ class TBD_LobbyService
 		// `TBD_AdminData` (:270) derives its `in world` column from it, `TBD_SpectatorHost`,
 		// `TBD_SafestartManager`, `TBD_PlayAreaComponent`, `TBD_ObjectivesComponent` and
 		// `TBD_SpawnManager` itself all ask it the same question. It is also the SERVER-side twin of
-		// `SCR_PlayerController.GetLocalControlledEntity()`, which `TBD_LobbyStage.Tick` (T-181.28)
+		// `SCR_PlayerController.GetLocalControlledEntity()`, which `TBD_LobbyStage.Tick`
 		// already calls the reliable half of its re-raise guard.
 		// Written as a guarded assignment rather than `players && ... != null` deliberately: the
 		// field already defaults to false, so the guard is complete, and this is character-for-
@@ -179,7 +173,6 @@ class TBD_LobbyService
 			// A malformed row is skipped, never guessed at: mis-decoding one would attribute a
 			// seat to the wrong player, which is the one error class this screen must not make.
 			//
-			// -- T-181.42: EXACTLY, not at-least ----------------------------------------------
 			// This guard used to read `< 6`, and a too-LONG row is the dangerous one. MEASURED:
 			// `TBD_SpawnManager.BuildSlotRoster` (:765) formats `slot.Key()`, `slot.faction`,
 			// `slot.groupCallsign` and `slot.role` into a tab-separated row with NO sanitisation,
@@ -244,7 +237,6 @@ class TBD_LobbyService
 		return roster;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! @authority server - take a seat. The rule is `TBD_SpawnManager.ClaimSlot`'s and stays
 	//! there: first-come, refuses a dead player, refuses a seat somebody else holds. This function
 	//! adds no policy, only a sentence a human can read.
@@ -280,7 +272,6 @@ class TBD_LobbyService
 		return DescribeRefusal(spawn, slotKey);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Turn "ClaimSlot said no" into the specific reason, read back off the authority.
 	//! @authority server
 	protected static string DescribeRefusal(TBD_SpawnManager spawn, string slotKey)
@@ -316,7 +307,6 @@ class TBD_LobbyService
 		return "The server refused that seat.";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! @authority server - give a seat back. `ReleaseSlot` refuses once the life is spent or once
 	//! the player has deployed; both are correct and both need saying out loud.
 	static string ApplyRelease(int playerId, out bool accepted)
@@ -340,7 +330,6 @@ class TBD_LobbyService
 		return "You are already in the world; the seat is yours.";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! @authority server - the one consequential click. `DeployPlayerEx` is the ONE-LIFE
 	//! enforcement boundary (see its header in `TBD_SpawnManager`); this maps its verdict onto a
 	//! sentence, and adds nothing.
@@ -379,7 +368,6 @@ class TBD_LobbyService
 		return "Deploy failed - the slot body could not be prepared. Tell an admin.";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_LobbySide AcquireSide(TBD_LobbyRoster roster, TBD_MissionDocumentStruct doc, string factionKey)
 	{
 		foreach (TBD_LobbySide existing : roster.m_aSides)
@@ -392,7 +380,6 @@ class TBD_LobbyService
 		return roster.m_aSides[roster.m_aSides.Count() - 1];
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_LobbyGroup AcquireGroup(TBD_LobbySide side, string callsign)
 	{
 		foreach (TBD_LobbyGroup existing : side.m_aGroups)
@@ -405,7 +392,6 @@ class TBD_LobbyService
 		return side.m_aGroups[side.m_aGroups.Count() - 1];
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string ResolveFactionName(TBD_MissionDocumentStruct doc, string factionKey)
 	{
 		if (doc && doc.factions)
@@ -420,14 +406,12 @@ class TBD_LobbyService
 		return Sanitise(factionKey);
 	}
 
-	// -- WIRE --------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! Flatten a roster to one string. Record types:
 	//!   `M` mission   name / terrain / stage
 	//!   `X` unavailable reason (terminal - nothing else follows)
 	//!   `L` life      "1" when this reader has spent theirs
-	//!   `D` deployed  "1" when this reader already has a body (T-181.29)
+	//!   `D` deployed  "1" when this reader already has a body
 	//!   `V` verdict   action / ok / reason / slotKey - what the server just did on their behalf
 	//!   `F` side      key / name                    (subsequent `G` lines attach to it)
 	//!   `G` group     callsign                      (subsequent `S` lines attach to it)
@@ -482,11 +466,9 @@ class TBD_LobbyService
 		return Join(lines);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Rebuild a roster on the client. A malformed line is skipped rather than fatal - a picker
 	//! that renders most of itself beats a blank screen (design law: nothing blocking).
 	//!
-	//! -- T-181.42: a skipped record must also invalidate the CURSOR --------------------------
 	//! `F` and `G` are stateful: they set the side/group that the following lines attach to. The
 	//! original code only advanced that cursor on a record it ACCEPTED, and left it pointing at the
 	//! previous side/group on one it rejected - so the slots belonging to a dropped squad were
@@ -591,13 +573,10 @@ class TBD_LobbyService
 		return roster;
 	}
 
-	// -- SELF-CHECK --------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! Prove this wire format on the machine that runs it, at BOOT, with nobody connected.
 	//!
-	//! -- Why this exists at all, and why it is armed at boot rather than on first use --------
-	//! MEASURED 2026-07-25 (T-181.26): `world-boot.sh --mission=` runs with **ZERO players**. So
+	//! MEASURED 2026-07-25: `world-boot.sh --mission=` runs with **ZERO players**. So
 	//! `BuildForPlayer`, `Serialise`, `Parse`, every RPC and every payload in this file never
 	//! execute under the gate - a `grep -i briefing` over a full `--mission` console log returned
 	//! only `flow.briefingSeconds`. The harness runs the boot-time spine and nothing else.
@@ -609,7 +588,6 @@ class TBD_LobbyService
 	//! broken `Unmark` produces `SCRIPT (E): [TBD][Lobby] wire self-check FAIL ...` and
 	//! `world-boot.sh`'s fail-closed triage turns that into `WORLD BOOT: FAIL`.
 	//!
-	//! -- What it actually proves -------------------------------------------------------------
 	//! Phase 1 round-trips a roster that is empty in every position an empty can legally reach, AND
 	//! carries the two values a plausibility-based sentinel gets wrong: a field of literally `~`
 	//! (this format's OLD sentinel) and a field of literally `.` (its current marker). Under the
@@ -639,7 +617,6 @@ class TBD_LobbyService
 
 		s_bWireChecked = true;
 
-		// -- Direct observation of the behaviour this scheme deliberately does not depend on --
 		array<string> probe = {};
 		string sample = "a" + FIELD_SEP + FIELD_SEP + "b";
 		sample.Split(FIELD_SEP, probe, false);
@@ -682,7 +659,6 @@ class TBD_LobbyService
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Phase 1 - a roster empty in every legal position, plus the two literal values a
 	//! plausibility sentinel gets wrong. Faults are appended, never logged here, so one FAIL line
 	//! names everything that broke instead of one line per field.
@@ -793,7 +769,6 @@ class TBD_LobbyService
 			faults.Insert("ownKey");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Phase 2 - a malformed wire must lose rows, never MISFILE them. Built through `Record` so it
 	//! stays correct if the marker or the separator ever changes.
 	protected static void SelfCheckOrphans(notnull array<string> faults)
@@ -825,9 +800,7 @@ class TBD_LobbyService
 			faults.Insert("orphanRows");
 	}
 
-	// -- Helpers -----------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! One record builder rather than five overloads. `fields` says how many of a..e are real; the
 	//! rest are not emitted, so a record is never padded with markers it does not need.
 	//!
@@ -857,7 +830,6 @@ class TBD_LobbyService
 		return line;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string Join(array<string> lines)
 	{
 		int shown = lines.Count();
@@ -885,7 +857,6 @@ class TBD_LobbyService
 		return result;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `<TAB>.<value>` - separator, marker, value. The marker is what guarantees a NON-EMPTY token
 	//! for an empty value; see FIELD_MARK.
 	//!
@@ -899,7 +870,6 @@ class TBD_LobbyService
 		return FIELD_SEP + FIELD_MARK + Sanitise(value);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Strip the marker back off a parsed field.
 	//!
 	//! A token of length <= 1 is the marker alone (an authored empty), or - if a truncated wire ever
@@ -915,7 +885,6 @@ class TBD_LobbyService
 		return field.Substring(1, length - 1);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A marked boolean. Anything that is not a marked `1` reads as false, so a corrupt token fails
 	//! to the safe answer - an unclaimed seat, never "this seat is yours".
 	protected static bool IsSet(string field)
@@ -923,7 +892,6 @@ class TBD_LobbyService
 		return Unmark(field) == "1";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string Flag(bool value)
 	{
 		if (value)
@@ -932,7 +900,6 @@ class TBD_LobbyService
 		return "0";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Strip the separators out of authored text and out of player DISPLAY NAMES, so a name
 	//! containing a tab cannot shift every field of its record.
 	//!

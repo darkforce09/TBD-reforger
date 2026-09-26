@@ -1,11 +1,10 @@
-//! T-181.40 — the ENGINE half: actually putting a player's radio on the mission's frequency.
+//! T-181.40 -- the ENGINE half: actually putting a player's radio on the mission's frequency.
 //!
-//! ══ WHAT IS AND IS NOT REACHABLE FROM SCRIPT — MEASURED, NOT REMEMBERED ═════════════════════
 //! `documentation_v2/mod/tbd-framework/mod_design.md` section 6 says radio is wanted but NOT via
 //! CRF's route, because CRF depends on the
 //! external CVON workshop mod and TBD must not. The open question that made that a risk was
 //! whether Reforger's radio is drivable from script at all without a partner mod. It is. The whole
-//! chain is `proto external` — native, script-callable, and compile-proved on this lane with a
+//! chain is `proto external` -- native, script-callable, and compile-proved on this lane with a
 //! failing negative control (a fabricated `SetFrequencyTbdDoesNotExist` and a fabricated
 //! `EGadgetType.RADIO_TBD_DOES_NOT_EXIST` both error, so the real ones passing means something):
 //!
@@ -20,13 +19,12 @@
 //! `BaseRadioComponent.SetTransceiverFrequency` is the client-origin variant ("and sync with
 //! server"). The server-authoritative path used here is the former.
 //!
-//! ══ T-941.7 — SCRIPT FALLBACK WHEN THE BACKBONE IS ABSENT ══════════════════════════════════
 //! The engine still emits this on every boot of `Missions/TBD_Dev_POC.conf` the first time a
 //! `BaseRadioComponent` is created (a transmitter tower in Eden):
 //!
 //!     DEFAULT (W): World doesn't contain RadioManagerEntity to support any BaseRadioComponent.
 //!
-//! `worlds/TBD_Dev_POC.ent` still does not place a `RadioManagerEntity` — operator deferred that
+//! `worlds/TBD_Dev_POC.ent` still does not place a `RadioManagerEntity` -- operator deferred that
 //! world edit 2026-09-04. `ChimeraWorld.GetRadioManager()` remains the runtime question, but a
 //! null answer is no longer a refuse-to-tune. `FallbackChannelTable` supplies the mission
 //! `radioPlan` frequencies when the caller already resolved them, else a script-side default
@@ -34,10 +32,9 @@
 //! world, the entity to add, and which table is in use. Placing `RadioManagerEntity` stays on
 //! the operator checklist; it is not this slice.
 //!
-//! ══ THE RULE THIS FILE EXISTS TO ENFORCE ═══════════════════════════════════════════════════
 //! **Never report a tune that did not happen.** Every tune is verified by reading the frequency
 //! back off the same transceiver and comparing. A log line saying a player is on ALPHA while no
-//! radio changed is worse than no radio feature at all, because it would be believed — and this
+//! radio changed is worse than no radio feature at all, because it would be believed -- and this
 //! program has repeatedly been bitten by things that looked like they worked. If the player
 //! carries no radio, or if the read-back disagrees, the outcome says so and the net list is
 //! still DELIVERED and DISPLAYED. Assignment and display do not depend on any of this; only
@@ -47,12 +44,12 @@
 //! a reader can tell a blocker from a nuance at a glance.
 enum TBD_ERadioTuneResult
 {
-	//! World has no `RadioManagerEntity`. T-941.7 no longer refuses to tune on this path —
+	//! World has no `RadioManagerEntity`. T-941.7 no longer refuses to tune on this path --
 	//! `FallbackChannelTable` is used instead. Kept so the wire/client contract stays stable.
 	NO_BACKBONE,
 	//! The player has no controlled entity yet (lobby, dead, mid-possess). Ordinary, not an error.
 	NO_BODY,
-	//! The body has no gadget manager — it is not a character, or not a fully built one.
+	//! The body has no gadget manager -- it is not a character, or not a fully built one.
 	NO_GADGET_MANAGER,
 	//! The player carries no radio. Their kit simply has none; they still SEE their nets.
 	NO_RADIO,
@@ -75,7 +72,6 @@ class TBD_RadioTuneReport
 	int m_iRadios;      //!< Radios found on the player.
 	string m_sDetail;   //!< Human-readable nuance; may be empty.
 
-	//------------------------------------------------------------------------------------------------
 	string ResultName()
 	{
 		return typename.EnumToString(TBD_ERadioTuneResult, m_eResult);
@@ -91,7 +87,7 @@ class TBD_RadioSet
 	int m_iCount;        //!< `TransceiversCount()`, cached.
 }
 
-//! T-941.7 — frequencies `TunePlayer` will actually set when the world has no RadioManagerEntity
+//! T-941.7 -- frequencies `TunePlayer` will actually set when the world has no RadioManagerEntity
 //! (and the copy-through of the caller's arrays when it does). `m_sSource` is `radioPlan` or
 //! `defaults` so the boot warning can name the table in use.
 class TBD_RadioFallbackTable
@@ -105,15 +101,14 @@ class TBD_RadioTuner
 {
 	//! Handheld default when the mission authored no radioPlan. 42.000 MHz, schema band 30..512.
 	static const int FALLBACK_DEFAULT_SHORT_KHZ = 42000;
-	//! Long-range default pair. 41.000 MHz — same band as golden `net:cmd`.
+	//! Long-range default pair. 41.000 MHz -- same band as golden `net:cmd`.
 	static const int FALLBACK_DEFAULT_LONG_KHZ = 41000;
 
-	//------------------------------------------------------------------------------------------------
 	//! The world's radio backbone, or null when this world has none.
 	//!
 	//! `ChimeraWorld.GetRadioManager()` is `proto external` on the world the game is actually
 	//! running (compile-proved here; the fabricated `GetRadioManagerTbdNotReal` fails). A null
-	//! answer is not an API problem — it is the world file not placing the entity.
+	//! answer is not an API problem -- it is the world file not placing the entity.
 	static RadioManagerEntity GetBackbone()
 	{
 		ChimeraWorld world = ChimeraWorld.CastFrom(GetGame().GetWorld());
@@ -123,14 +118,12 @@ class TBD_RadioTuner
 		return world.GetRadioManager();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True when the engine can support `BaseRadioComponent` on this world at all.
 	static bool IsBackboneAvailable()
 	{
 		return GetBackbone() != null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! World file the running mission header names, or `worlds/TBD_Dev_POC.ent` when the header
 	//! has not answered. Named in the once-per-boot warning so the operator knows WHICH world to
 	//! edit.
@@ -147,7 +140,6 @@ class TBD_RadioTuner
 		return path;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Which script-side table the missing-backbone path will use on this boot: `radioPlan` when
 	//! the loaded mission has accepted nets, else `defaults`.
 	static string FallbackSourceName()
@@ -158,7 +150,6 @@ class TBD_RadioTuner
 		return "defaults";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Script-side channel table. Caller-resolved `radioPlan` frequencies win when present;
 	//! otherwise, and only when the backbone is missing, the default pair. Never returns null.
 	//!
@@ -190,7 +181,7 @@ class TBD_RadioTuner
 		if (backboneMissing && TBD_MissionLoader.IsValid() && TBD_RadioPlan.GetTotalNetCount() > 0)
 		{
 			// Plan exists but this player was given no nets. Do not invent defaults and do not
-			// leak another side's frequencies — `TunePlayer` returns NO_NETS on the empty table.
+			// leak another side's frequencies -- `TunePlayer` returns NO_NETS on the empty table.
 			table.m_sSource = "radioPlan";
 			return table;
 		}
@@ -208,8 +199,7 @@ class TBD_RadioTuner
 		return table;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! @authority server — put one player on their nets, and PROVE it or say it did not happen.
+	//! @authority server -- put one player on their nets, and PROVE it or say it did not happen.
 	//!
 	//! `freqKHz` and `longRange` are parallel: element i of each describes net i, in the order
 	//! `TBD_RadioService` resolved them for this player's side. Never returns null.
@@ -341,10 +331,9 @@ class TBD_RadioTuner
 		return report;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Every radio the player is carrying, handhelds first so a `range: short` net (and the
 	//! flag-0 path in general) lands on the radio everybody has rather than on a backpack only
-	//! the RTO carries. T-292 retired schema `any` — it was never a third hardware class.
+	//! the RTO carries. T-292 retired schema `any` -- it was never a third hardware class.
 	protected static array<ref TBD_RadioSet> CollectRadios(notnull SCR_GadgetManagerComponent gadgets)
 	{
 		array<ref TBD_RadioSet> sets = {};
@@ -355,7 +344,6 @@ class TBD_RadioTuner
 		return sets;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void AppendRadios(notnull array<ref TBD_RadioSet> sets, array<SCR_GadgetComponent> found, bool longRange)
 	{
 		if (!found)
@@ -384,14 +372,13 @@ class TBD_RadioTuner
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The radio a net of this range class should go into, or null when every transceiver is spoken
 	//! for.
 	//!
 	//! This is where `net.range` stops being a label and becomes hardware: a `long` net (flag 1)
 	//! wants the backpack set; a `short` net (flag 0) wants a handheld. Enfusion has only those
-	//! two gadget classes — there is no third `any` hardware path (T-292 narrowed the schema).
-	//! The preference is a PREFERENCE — a long-range net on a player who carries only a handheld
+	//! two gadget classes -- there is no third `any` hardware path (T-292 narrowed the schema).
+	//! The preference is a PREFERENCE -- a long-range net on a player who carries only a handheld
 	//! goes into the handheld rather than being dropped, because a squad that can hear command
 	//! badly is better off than one that cannot hear it at all. Enfusion has no ternary operator,
 	//! so the two passes are written out.
@@ -415,7 +402,6 @@ class TBD_RadioTuner
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The nearest frequency this transceiver can actually hold.
 	//!
 	//! Two corrections, both from the transceiver itself rather than from an assumption about what
@@ -425,7 +411,7 @@ class TBD_RadioTuner
 	//!     otherwise fail for a reason that is not a bug.
 	//!   * CLAMP to the tunable band. BI's own doc comments for `GetMinFrequency` / `GetMaxFrequency`
 	//!     are transposed (each describes the other), so the two are ordered here by VALUE instead
-	//!     of by name — the numbers are trusted, the doc strings are not.
+	//!     of by name -- the numbers are trusted, the doc strings are not.
 	protected static int Constrain(notnull BaseTransceiver transceiver, int freqKHz)
 	{
 		int step = transceiver.GetFrequencyResolution();

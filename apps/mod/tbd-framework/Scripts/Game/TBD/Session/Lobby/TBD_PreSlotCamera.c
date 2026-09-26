@@ -1,7 +1,6 @@
-//! T-181.50 — THE PRE-SLOT CAMERA: what a player actually looks at while they wait for a slot.
-//! T-181.53 — and, since the pre-slot ghost was deleted, the WHOLE of the pre-slot answer.
+//! T-181.50 -- THE PRE-SLOT CAMERA: what a player actually looks at while they wait for a slot.
+//! T-181.53 -- and, since the pre-slot ghost was deleted, the WHOLE of the pre-slot answer.
 //!
-//! ── THIS IS THE HALF THAT FIXES THE BLACK SCREEN ────────────────────────────────────────────
 //! T-181.50 shipped two halves: a server-side ghost body (`TBD_PreSlotBody.c`) that gave a
 //! connected-but-unslotted player something to control, and this camera. Only this one ever worked.
 //! The reason it was always the load-bearing half is worth spelling out, because the two oracles
@@ -12,39 +11,38 @@
 //!     vanilla's character camera handler attached and the player sees THROUGH IT for free. Their
 //!     picker then draws an opaque background over the view
 //!     (`UI/Lobby/CoopLobby.layout:5`), and `PS_PlayableControllerComponent.c:621-632` pins the
-//!     current camera to the ghost's cell each frame — so what is behind their menu is empty sky
+//!     current camera to the ghost's cell each frame -- so what is behind their menu is empty sky
 //!     100 km up, which is fine because nothing shows through. **PS GETS A CAMERA FOR FREE BECAUSE
 //!     THEIR GHOST IS A CHARACTER.**
 //!   * OURS was a bare `GenericEntity` (`TBD_SpectatorHostEntity`), chosen for ONE LIFE reasons
-//!     argued at length in T-181.24's own header — a character can be shot, counted alive and
+//!     argued at length in T-181.24's own header -- a character can be shot, counted alive and
 //!     killed, and none of those are things a lobby placeholder may be. It had NO camera handler.
 //!     A player controlling it and nothing else has no view at all.
 //!
 //! So we owed the player a camera outright whether or not the ghost existed, and the ghost bought
 //! only the server-side half of the problem. Having to supply a camera anyway, we point it somewhere
-//! useful — an overlook of the terrain rather than empty sky — which is CRF's idea rather than
+//! useful -- an overlook of the terrain rather than empty sky -- which is CRF's idea rather than
 //! PlayableSelector's: `CRF_PlayerMenuManager.c:29-40` puts the briefing and slotting menus over a
 //! slow automatic orbit of the AO centre (read as an oracle; the geometry constants below are ours).
 //!
-//! ── THERE IS NO PRE-SLOT BODY. IT WAS TRIED. READ THIS BEFORE BUILDING ANOTHER ONE ──────────
-//! A pre-slot body was written (T-181.50) and deleted (T-181.53) on the same day, on operator
+//! A pre-slot body was written and deleted on the same day, on operator
 //! instruction, after a live Workbench session settled it. Two facts from that run:
 //!
-//!   1. **THE GHOST NEVER WORKED.** It spawned its anchor 100 km up — an altitude lifted verbatim
-//!      from PlayableSelector's lattice — which is OUTSIDE Everon's world bounds. The engine raised
+//!   1. **THE GHOST NEVER WORKED.** It spawned its anchor 100 km up -- an altitude lifted verbatim
+//!      from PlayableSelector's lattice -- which is OUTSIDE Everon's world bounds. The engine raised
 //!      a MODAL ASSERTION DIALOG (`enf_entity.cpp:280`, "Entity out of world bounds. Type
 //!      'GenericEntity'") from the ghost's spawn helper, and then refused the control transfer
-//!      outright: `player=1 has NO pre-slot ghost — the engine did not transfer control to the ghost
-//!      — rolled back, the player stays bodyless`. The verbatim assertion and stack are in the
+//!      outright: `player=1 has NO pre-slot ghost -- the engine did not transfer control to the ghost
+//!      -- rolled back, the player stays bodyless`. The verbatim assertion and stack are in the
 //!      T-181.53 commit message; they are deliberately NOT reproduced here, so that a grep for the
 //!      deleted spawn helper or its altitude constant stays a meaningful "is it really gone" check.
-//!   2. **AND THE SESSION RAN END TO END ANYWAY, BODYLESS.** In the same log: `pre-slot camera UP —
-//!      no body yet, overlooking <6120.51, 157.306, 6277.02>` → picker OPEN → `claim ok player=1
-//!      slot=s1` → `deploy player=1 result=DEPLOYED` → `pre-slot camera DOWN — the player controls a
-//!      body now` → `[TBD][Spawn] deployed … groundDelta=0.0114822`.
+//!   2. **AND THE SESSION RAN END TO END ANYWAY, BODYLESS.** In the same log: `pre-slot camera UP --
+//!      no body yet, overlooking <6120.51, 157.306, 6277.02>` -> picker OPEN -> `claim ok player=1
+//!      slot=s1` -> `deploy player=1 result=DEPLOYED` -> `pre-slot camera DOWN -- the player controls a
+//!      body now` -> `[TBD][Spawn] deployed ... groundDelta=0.0114822`.
 //!
-//! So the ghost's value was defensive and unproven — nothing in this mod was ever observed to need
-//! `GetPlayerControlledEntity` to be non-null — while its cost was a modal dialog in the middle of a
+//! So the ghost's value was defensive and unproven -- nothing in this mod was ever observed to need
+//! `GetPlayerControlledEntity` to be non-null -- while its cost was a modal dialog in the middle of a
 //! mission, which is fatal in a one-life event. The operator chose deletion over clamping the
 //! altitude. **BODYLESS + THIS CAMERA IS THE CONFIGURATION THAT IS PROVEN TO WORK.**
 //!
@@ -52,10 +50,9 @@
 //! INSIDE the world bounds, show the assertion is gone in a live run rather than in a headless boot
 //! (the zero-player harness never saw it), and say what it buys that this camera does not.
 //!
-//! ── WHY IT DEPENDS ON NOTHING ───────────────────────────────────────────────────────────────
 //! Deliberately: no mission data, no roster, no stage, no controlled entity, no new input resource
 //! and no widget. Three reasons, all of them about not being fragile in the exact way the defect
-//! was — and reason 2 is the one that made this file survive T-181.53 unchanged while the other
+//! was -- and reason 2 is the one that made this file survive T-181.53 unchanged while the other
 //! half was deleted out from under it:
 //!   1. `Scripts/Game/TBD/UI/**` belongs to T-181.49 in parallel. A camera that needed the lobby to
 //!      tell it anything would be a second thing that can silently fail to arm.
@@ -73,23 +70,21 @@
 //! operator reported, is now the NORMAL pre-slot state rather than a defect, and needs neither
 //! authority nor mission state to evaluate.
 //!
-//! ── WHAT A LATER SLICE WOULD CHANGE ─────────────────────────────────────────────────────────
 //! `ResolveFocus` uses the centre of the world bound box because that is the only focus point a
 //! client can derive with zero new replication. Pointing it at the mission AO needs the slot
-//! centroid on the client, which is roster data T-181.49's lobby already carries — when that lands,
+//! centroid on the client, which is roster data T-181.49's lobby already carries -- when that lands,
 //! `Configure` takes a focus point and nothing else has to move.
 //!
-//! ── MEASURED ────────────────────────────────────────────────────────────────────────────────
 //! Every API below is proved by `cargo xtask mod compile --probe` against a negative control that
 //! FAILED on invented names (`BaseWorld.GetLobbyOverlookBox`, `Game.SpawnLobbyGhost`,
-//! `SCR_PlayerController.ClearInitialMainEntity` — all three reported "Undefined function").
+//! `SCR_PlayerController.ClearInitialMainEntity` -- all three reported "Undefined function").
 //! `BaseWorld.GetBoundBox(out vector, out vector)` is additionally already in production use in
 //! `TBD_SpectatorHost.ClampToWorld`.
 //!
-//! MEASURED: this descriptor needs the trailing `;` — the same parser quirk `TBD_SpectatorCameraClass`
+//! MEASURED: this descriptor needs the trailing `;` -- the same parser quirk `TBD_SpectatorCameraClass`
 //! and `TBD_SpectatorHostEntityClass` both document. Omit it and the NEXT class fails with a
 //! misleading "Syntax error / Unexpected scope".
-[EntityEditorProps(category: "TBD/Framework", description: "TBD pre-slot camera — a slow overlook orbit shown to a player who is connected but has not picked a slot yet.")]
+[EntityEditorProps(category: "TBD/Framework", description: "TBD pre-slot camera -- a slow overlook orbit shown to a player who is connected but has not picked a slot yet.")]
 class TBD_PreSlotCameraClass : SCR_CameraBaseClass {};
 
 //! A camera on rails. It takes NO input on purpose: the slot picker owns the keyboard and the mouse
@@ -107,7 +102,7 @@ class TBD_PreSlotCamera : SCR_CameraBase
 	static const float ORBIT_HEIGHT_M = 300.0;
 
 	//! Degrees per second. Slow enough not to be a distraction behind a menu the player is reading,
-	//! fast enough to prove the frame is live rather than frozen — which matters, because "frozen"
+	//! fast enough to prove the frame is live rather than frozen -- which matters, because "frozen"
 	//! and "broken" look identical and this screen exists to replace a black one.
 	static const float ORBIT_DEG_PER_S = 1.5;
 
@@ -118,7 +113,6 @@ class TBD_PreSlotCamera : SCR_CameraBase
 	protected vector m_vFocus;
 	protected float m_fYaw;
 
-	//------------------------------------------------------------------------------------------------
 	void TBD_PreSlotCamera(IEntitySource src, IEntity parent)
 	{
 		// FRAME, not POSTFRAME. `TBD_SpectatorCamera` needs POSTFRAME because it can follow a
@@ -128,7 +122,6 @@ class TBD_PreSlotCamera : SCR_CameraBase
 		SetFlags(EntityFlags.ACTIVE, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Place the camera and start the orbit. Called once straight after spawn; the entity is spawned
 	//! by typename so there is no prefab to carry defaults.
 	void Configure(vector focus, float startYawDeg)
@@ -139,13 +132,11 @@ class TBD_PreSlotCamera : SCR_CameraBase
 		ApplyTransform();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	vector GetFocus()
 	{
 		return m_vFocus;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected void EOnFrame(IEntity owner, float timeSlice)
 	{
 		if (timeSlice <= 0)
@@ -161,7 +152,6 @@ class TBD_PreSlotCamera : SCR_CameraBase
 		ApplyTransform();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Sit on the orbit and look at the focus. The look angles are DERIVED from the position rather
 	//! than tracked separately, so the focus can never drift out of frame no matter what the
 	//! geometry constants above are set to.
@@ -175,7 +165,7 @@ class TBD_PreSlotCamera : SCR_CameraBase
 		position[2] = m_vFocus[2] + Math.Sin(radians) * ORBIT_RADIUS_M;
 
 		// `VectorToAngles` yields (yaw, pitch, 0) and `Math3D.AnglesToMatrix` consumes
-		// (yaw, pitch, roll) — the exact pairing `TBD_SpectatorController.ResolveEntryView` and
+		// (yaw, pitch, roll) -- the exact pairing `TBD_SpectatorController.ResolveEntryView` and
 		// `TBD_SpectatorCamera.ApplyTransform` already rely on, so this is the house idiom rather
 		// than a fresh guess at the convention.
 		vector angles = vector.Direction(position, m_vFocus).VectorToAngles();
@@ -187,7 +177,7 @@ class TBD_PreSlotCamera : SCR_CameraBase
 	}
 }
 
-//! CLIENT — the lifecycle. Static for the same reason `TBD_SpectatorController` is: the thing that
+//! CLIENT -- the lifecycle. Static for the same reason `TBD_SpectatorController` is: the thing that
 //! owns it (`TBD_PreSlotComponent`) is created and destroyed with the world, and `Start`/`Shutdown`
 //! are the two lines that tie this to that lifetime.
 //!
@@ -195,19 +185,18 @@ class TBD_PreSlotCamera : SCR_CameraBase
 //! `Shutdown` is not optional and why it hands the view back rather than just dropping the handle.
 class TBD_PreSlotCameraArm
 {
-	//! Same cadence as `TBD_SpectatorController.POLL_MS`. One entity lookup per poll.
-	static const int POLL_MS = 250;
+	static const int POLL_MS = 250; //!< Same cadence as `TBD_SpectatorController.POLL_MS`. One entity lookup per poll.
 
 	//! How long the local player must control NOTHING before we put a camera up.
 	//!
 	//! Not zero, and the reason is the ordinary case rather than the broken one: a deploy hands the
-	//! body over asynchronously (vanilla's possess request → preload → finalize), and a world load
+	//! body over asynchronously (vanilla's possess request -> preload -> finalize), and a world load
 	//! has its own gap before the first camera exists. Entering instantly would flash an overlook
 	//! into the middle of both. Three seconds is long enough to sit out a normal hand-off and short
 	//! enough that a player who is genuinely waiting for the picker never reads it as a hang.
 	//!
 	//! Deliberately far shorter than `TBD_SpectatorController.NO_BODY_GRACE_MS` (20 s), which is
-	//! answering a different question — "has this player's life quietly been spent" — and must be
+	//! answering a different question -- "has this player's life quietly been spent" -- and must be
 	//! slow. See `Tick` for how the two are kept from fighting.
 	static const int GRACE_MS = 3000;
 
@@ -219,9 +208,7 @@ class TBD_PreSlotCameraArm
 	//! One-shot latch so a world with a degenerate bound box reports once instead of once per poll.
 	protected static bool s_bFocusFailureLogged;
 
-	// ── Lifecycle ───────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! @authority client (and the listen host's own screen). Called by `TBD_PreSlotComponent`.
 	static void Start()
 	{
@@ -231,10 +218,9 @@ class TBD_PreSlotCameraArm
 		s_iNoBodyMs = 0;
 		s_bFocusFailureLogged = false;
 		GetGame().GetCallqueue().CallLater(Tick, POLL_MS, true);
-		Print("[TBD][PreSlot] pre-slot camera ARMED — a local player with no body gets an overlook instead of a black screen");
+		Print("[TBD][PreSlot] pre-slot camera ARMED -- a local player with no body gets an overlook instead of a black screen");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void Shutdown()
 	{
 		GetGame().GetCallqueue().Remove(Tick);
@@ -244,21 +230,18 @@ class TBD_PreSlotCameraArm
 		s_bFocusFailureLogged = false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static bool IsActive()
 	{
 		return s_bActive;
 	}
 
-	// ── The poll ────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! A poll rather than a hook, for the reason `TBD_SpectatorController.Tick` gives: "do I have a
 	//! body" has one true answer and deriving it every quarter second cannot drift, cannot miss an
 	//! edge and cannot be raced by ordering.
 	static void Tick()
 	{
-		// Inert on any world that is not running the framework — the same guard the rest of the mod
+		// Inert on any world that is not running the framework -- the same guard the rest of the mod
 		// uses, so a plain vanilla scenario never grows a lobby camera.
 		if (!TBD_FrameworkManager.IsFrameworkWorld())
 		{
@@ -267,18 +250,17 @@ class TBD_PreSlotCameraArm
 			return;
 		}
 
-		// ── DO NOT FIGHT THE SPECTATOR ──────────────────────────────────────────────────────────
 		// `TBD_SpectatorController` owns the view of a player whose life is spent, and it reaches for
 		// it via the same `CameraManager.SetCamera` seat. Two cameras taking turns once a second
 		// would be worse than either alone. It wins outright: a spent life is a permanent state and
 		// this one is a waiting room.
 		//
-		// Note the overlap is real, not theoretical — its `NO_BODY_GRACE_MS` path deliberately
+		// Note the overlap is real, not theoretical -- its `NO_BODY_GRACE_MS` path deliberately
 		// enters spectator for a player who has had NO body in a live round, which describes a
 		// slot-less player at LIVE as well as a reconnect onto a spent life. That path is gated to
 		// SAFE_START and later (`IsStageSpectatable`), so in LOBBY and BRIEFING it cannot fire at
 		// all; from SAFE_START on, a player who still has not picked after 20 s is handed to the
-		// spectator and this camera steps aside. Not this slice's call to change — but it is why
+		// spectator and this camera steps aside. Not this slice's call to change -- but it is why
 		// this test exists rather than being assumed unnecessary.
 		if (TBD_SpectatorController.IsActive())
 		{
@@ -290,7 +272,7 @@ class TBD_PreSlotCameraArm
 		IEntity local = SCR_PlayerController.GetLocalControlledEntity();
 		if (local)
 		{
-			// THE EXIT. A body arrived — from the picker, from an admin deploy, or from vanilla —
+			// THE EXIT. A body arrived -- from the picker, from an admin deploy, or from vanilla --
 			// so the engine has a camera of its own again and this one must get out of the way.
 			Leave("the player controls a body now");
 			s_iNoBodyMs = 0;
@@ -305,9 +287,7 @@ class TBD_PreSlotCameraArm
 			Enter();
 	}
 
-	// ── Enter / Leave ───────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! Take over the view.
 	protected static void Enter()
 	{
@@ -321,7 +301,7 @@ class TBD_PreSlotCameraArm
 		CameraManager cameras = GetGame().GetCameraManager();
 		if (!cameras)
 		{
-			Print("[TBD][PreSlot] no CameraManager — cannot put up the pre-slot camera.", LogLevel.ERROR);
+			Print("[TBD][PreSlot] no CameraManager -- cannot put up the pre-slot camera.", LogLevel.ERROR);
 			return;
 		}
 
@@ -334,7 +314,7 @@ class TBD_PreSlotCameraArm
 		Math3D.MatrixIdentity4(params.Transform);
 		params.Transform[3] = focus;
 
-		// Spawned BY TYPENAME — no prefab, therefore no `resourceDatabase.rdb` dependency, therefore
+		// Spawned BY TYPENAME -- no prefab, therefore no `resourceDatabase.rdb` dependency, therefore
 		// this works before the Workbench pass that this mod's stale rdb snapshot is waiting on.
 		// Same route `TBD_SpectatorController.Enter` uses for `TBD_SpectatorCamera`.
 		IEntity spawned = GetGame().SpawnEntity(TBD_PreSlotCamera, world, params);
@@ -351,16 +331,15 @@ class TBD_PreSlotCameraArm
 		s_PreviousCamera = cameras.CurrentCamera();
 
 		// A per-player starting angle, so two people sitting in the same lobby are not looking at
-		// an identical frame — cheap, and it makes a screenshot from a live test attributable.
+		// an identical frame -- cheap, and it makes a screenshot from a live test attributable.
 		s_Camera.Configure(focus, LocalStartYaw());
 		cameras.SetCamera(s_Camera);
 
 		s_bActive = true;
 
-		Print(string.Format("[TBD][PreSlot] pre-slot camera UP — no body yet, overlooking %1", focus.ToString()));
+		Print(string.Format("[TBD][PreSlot] pre-slot camera UP -- no body yet, overlooking %1", focus.ToString()));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Hand the view back. Safe to call when not active.
 	protected static void Leave(string reason)
 	{
@@ -382,7 +361,7 @@ class TBD_PreSlotCameraArm
 				cameras.SetCamera(restore);
 		}
 
-		// Switch away BEFORE deleting, never after — deleting the active camera leaves the engine
+		// Switch away BEFORE deleting, never after -- deleting the active camera leaves the engine
 		// rendering from a dead entity.
 		if (s_Camera)
 		{
@@ -393,12 +372,11 @@ class TBD_PreSlotCameraArm
 		s_PreviousCamera = null;
 
 		if (s_bActive)
-			Print(string.Format("[TBD][PreSlot] pre-slot camera DOWN — %1", reason));
+			Print(string.Format("[TBD][PreSlot] pre-slot camera DOWN -- %1", reason));
 
 		s_bActive = false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The point the overlook orbits.
 	//!
 	//! The centre of the world bound box, at ground level. Not the mission AO, and not a guess at
@@ -419,7 +397,7 @@ class TBD_PreSlotCameraArm
 			if (!s_bFocusFailureLogged)
 			{
 				s_bFocusFailureLogged = true;
-				Print("[TBD][PreSlot] the world reported no bound box — cannot place the pre-slot camera, the player keeps whatever view they had.", LogLevel.WARNING);
+				Print("[TBD][PreSlot] the world reported no bound box -- cannot place the pre-slot camera, the player keeps whatever view they had.", LogLevel.WARNING);
 			}
 
 			return false;
@@ -434,7 +412,6 @@ class TBD_PreSlotCameraArm
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A stable per-player starting bearing. Falls back to 0 when there is no controller yet, which
 	//! cannot happen on the path that calls this but costs nothing to be right about.
 	protected static float LocalStartYaw()
@@ -450,7 +427,6 @@ class TBD_PreSlotCameraArm
 		return yaw;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static CameraBase LocalPlayerCamera()
 	{
 		SCR_PlayerController controller = SCR_PlayerController.Cast(GetGame().GetPlayerController());

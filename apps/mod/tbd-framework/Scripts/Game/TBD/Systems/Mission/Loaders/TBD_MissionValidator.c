@@ -1,29 +1,28 @@
-//! One-pass, fail-fast validation of a compiled mission document (T-181.14).
+//! One-pass, fail-fast validation of a compiled mission document.
 //!
 //! Runs immediately after TBD_MissionLoader deserialises the document and reports **every**
-//! problem it finds — never stopping at the first — so an author fixes a broken mission in one
+//! problem it finds -- never stopping at the first -- so an author fixes a broken mission in one
 //! edit instead of five reload cycles. Each finding is its own `[TBD][Validate]` line naming the
 //! offending slot / faction / field, followed by one overall verdict line.
 //!
 //! Two severities, and the difference is the whole point of the slice:
 //!   * **ERROR** blocks. TBD_MissionLoader discards the document, `IsValid()` stays false, and
-//!     TBD_FrameworkManager never leaves LOADING — so a malformed mission can never half-load
+//!     TBD_FrameworkManager never leaves LOADING -- so a malformed mission can never half-load
 //!     and strand players in a lobby with unfillable slots.
 //!   * **WARNING** proceeds loudly. The round runs; the finding still lands in the console and
 //!     in `#tbd validate`.
 //!
-//! ══ T-181.37 — THE RULE THAT DECIDES WHICH ═══════════════════════════════════════════════════
 //! **ERROR when the mission cannot be PLAYED. WARNING when it can be played but not ENDED.**
 //!
 //! An ERROR is not "more serious", it is a DIFFERENT OUTAGE: the document is discarded, the stage
 //! machine never leaves LOADING, and nobody can even join. For an unfillable slot or an
-//! unresolvable kit that is the right trade — the alternative is a player with no character. For a
+//! unresolvable kit that is the right trade -- the alternative is a player with no character. For a
 //! mission whose declared end trigger can never fire, it is strictly worse than the bug: the round
 //! would merely have run long and been ended by an admin, and instead the event does not happen at
 //! all. So every end-trigger REACHABILITY finding below is a WARNING.
 //!
 //! The one apparent exception proves the rule. `faction_eliminated` with fewer than two sides
-//! holding slots stays an ERROR, because that document has no opposition — it is not a round that
+//! holding slots stays an ERROR, because that document has no opposition -- it is not a round that
 //! ends late, it is not a PvP event at all, and its win condition is the place that fact is
 //! provable.
 //!
@@ -33,7 +32,7 @@
 //! runtime from the website compiler.
 //!
 //! Admin surface: `#tbd validate` (TBD_AdminCommands) replays the findings in game, because a
-//! rejected mission is otherwise invisible from inside the server — the stage machine simply
+//! rejected mission is otherwise invisible from inside the server -- the stage machine simply
 //! never leaves LOADING and nothing on screen says why.
 //!
 //! @contract mission.schema.json#/
@@ -43,26 +42,26 @@ class TBD_MissionValidator
 	protected static const string SCHEMA_1_0 = "1.0";
 	protected static const string SCHEMA_1_1 = "1.1";
 	protected static const string SCHEMA_1_2 = "1.2";
-	//! T-946: 1.3 (T-674.1) added OPTIONAL per-slot identity (callsign, rank, stance, unitName,
+	//! T-946: 1.3 added OPTIONAL per-slot identity (callsign, rank, stance, unitName,
 	//! tag) and an optional group leaderSlotId. Nothing this build must read, and every 1.3
-	//! document is a valid 1.2 one with extra keys — but this validator rejects any version it
+	//! document is a valid 1.2 one with extra keys -- but this validator rejects any version it
 	//! does not name, so without this line a mission carrying a single authored callsign is
 	//! refused outright and the server parks in LOADING. The reader for those fields is T-674.2.
 	protected static const string SCHEMA_1_3 = "1.3";
 
-	//! mission.schema.json#/$defs/winConditions/properties/endOn enum — the two triggers with no
+	//! mission.schema.json#/$defs/winConditions/properties/endOn enum -- the two triggers with no
 	//! owning constant anywhere else in the mod.
 	//!
-	//! T-181.37 — the other three (`all_objectives_captured`, `objective_destroyed`,
+	//! T-181.37 -- the other three (`all_objectives_captured`, `objective_destroyed`,
 	//! `hold_expired`) USED to be spelled out here too and are not any more: they are read from
 	//! `TBD_ObjectiveRegistry.TRIGGER_*`, which is the code that EVALUATES them. A validator
 	//! keeping its own copy of the vocabulary would go on validating against a list the evaluator
-	//! had moved off — which is precisely the class of bug this check exists to catch, so it must
+	//! had moved off -- which is precisely the class of bug this check exists to catch, so it must
 	//! not be the shape of the check itself.
 	//!
 	//! These two stay because there is nothing to ask. `TBD_FrameworkManager` spells both as bare
-	//! literals at the point of use — `"time_limit"` in `ArmRoundClock`, `"faction_eliminated"` in
-	//! `ArmFactionEliminated` — so there is no constant to reference. Closing that seam means
+	//! literals at the point of use -- `"time_limit"` in `ArmRoundClock`, `"faction_eliminated"` in
+	//! `ArmFactionEliminated` -- so there is no constant to reference. Closing that seam means
 	//! adding `TRIGGER_TIME_LIMIT` / `TRIGGER_FACTION_ELIMINATED` next to `TBD_MissionFlow.CH_FLOW`
 	//! and using them in both places; `Gamemode/**` belongs to another slice's lane, so it is
 	//! reported rather than edited.
@@ -85,7 +84,7 @@ class TBD_MissionValidator
 	protected static const float BOUNDS_MIN_EXTENT_M = 100.0;
 	protected static const float BOUNDS_MAX_EXTENT_M = 200000.0;
 
-	//! Chat is not a log window — cap what `#tbd validate` dumps and count the remainder.
+	//! Chat is not a log window -- cap what `#tbd validate` dumps and count the remainder.
 	protected static const int CHAT_ERROR_LINES   = 15;
 	protected static const int CHAT_WARNING_LINES = 10;
 
@@ -100,10 +99,9 @@ class TBD_MissionValidator
 	//! PREVIOUS world's verdict on screen with nothing to say so.
 	protected static string s_sSubjectMissionId;
 
-	//------------------------------------------------------------------------------------------------
 	//! Validate a parsed mission document. Returns TRUE when it carries no ERRORS (warnings do
-	//! not block). Every check runs regardless of earlier failures — that is the contract.
-	//! @authority server — only the server parses mission documents.
+	//! not block). Every check runs regardless of earlier failures -- that is the contract.
+	//! @authority server -- only the server parses mission documents.
 	static bool Run(TBD_MissionDocumentStruct mission)
 	{
 		Reset();
@@ -138,21 +136,18 @@ class TBD_MissionValidator
 		return s_aErrors.IsEmpty();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True once Run() has been called at least once this session.
 	static bool HasRun()
 	{
 		return s_bHasRun;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True when the last run found no blocking errors.
 	static bool Passed()
 	{
 		return s_bHasRun && s_aErrors && s_aErrors.IsEmpty();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static int GetErrorCount()
 	{
 		if (!s_aErrors)
@@ -160,7 +155,6 @@ class TBD_MissionValidator
 		return s_aErrors.Count();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static int GetWarningCount()
 	{
 		if (!s_aWarnings)
@@ -168,21 +162,18 @@ class TBD_MissionValidator
 		return s_aWarnings.Count();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Blocking findings from the last run (null before the first run).
 	static array<string> GetErrors()
 	{
 		return s_aErrors;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Non-blocking findings from the last run (null before the first run).
 	static array<string> GetWarnings()
 	{
 		return s_aWarnings;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Findings rendered for the in-game admin (`#tbd validate`). Truncated: chat is not a log.
 	static array<string> BuildReportLines()
 	{
@@ -202,20 +193,19 @@ class TBD_MissionValidator
 		if (subject.IsEmpty())
 			subject = "(no meta.id)";
 
-		lines.Insert(string.Format("TBD validate [%1]: %2 — %3 error(s), %4 warning(s).",
+		lines.Insert(string.Format("TBD validate [%1]: %2 -- %3 error(s), %4 warning(s).",
 			subject, verdict, GetErrorCount(), GetWarningCount()));
 
 		AppendCapped(lines, s_aErrors, "ERROR", CHAT_ERROR_LINES);
 		AppendCapped(lines, s_aWarnings, "WARN", CHAT_WARNING_LINES);
 
 		if (!Passed())
-			lines.Insert("TBD validate: mission is REJECTED — the server stays in LOADING until it is fixed.");
+			lines.Insert("TBD validate: mission is REJECTED -- the server stays in LOADING until it is fixed.");
 
 		return lines;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Copy at most `cap` findings into `lines`, then a "… and N more" tail.
+	//! Copy at most `cap` findings into `lines`, then a "... and N more" tail.
 	protected static void AppendCapped(array<string> lines, array<string> findings, string label, int cap)
 	{
 		if (!findings || findings.IsEmpty())
@@ -225,7 +215,7 @@ class TBD_MissionValidator
 		{
 			if (i >= cap)
 			{
-				lines.Insert(string.Format("  … and %1 more %2 finding(s) — see the server console.",
+				lines.Insert(string.Format("  ... and %1 more %2 finding(s) -- see the server console.",
 					findings.Count() - cap, label));
 				return;
 			}
@@ -234,11 +224,8 @@ class TBD_MissionValidator
 		}
 	}
 
-	//------------------------------------------------------------------------------------
 	// CHECKS
-	//------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! schemaVersion must be one this build understands. Returns TRUE when the version makes
 	//! `slots[]` mandatory (1.1 added it; 1.2 only added the optional per-slot y).
 	protected static bool CheckSchemaVersion(TBD_MissionDocumentStruct mission)
@@ -247,7 +234,7 @@ class TBD_MissionValidator
 
 		if (version.IsEmpty())
 		{
-			AddError("schemaVersion", "missing — this build understands 1.0, 1.1, 1.2 and 1.3");
+			AddError("schemaVersion", "missing -- this build understands 1.0, 1.1, 1.2 and 1.3");
 			return false;
 		}
 
@@ -258,19 +245,18 @@ class TBD_MissionValidator
 			return false;
 
 		AddError("schemaVersion", string.Format(
-			"'%1' is not recognised — this build understands 1.0, 1.1, 1.2 and 1.3. A newer document may carry fields this server silently drops.",
+			"'%1' is not recognised -- this build understands 1.0, 1.1, 1.2 and 1.3. A newer document may carry fields this server silently drops.",
 			version));
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Mission header. meta.id is optional in the schema only for pre-publish hand-written
-	//! drafts, which never reach this loader — the mod loads PUBLISHED missions, which always
+	//! drafts, which never reach this loader -- the mod loads PUBLISHED missions, which always
 	//! carry the content-hash id assigned at publish time (T-122 M11).
 	//!
-	//! T-181.13.1 — truth in comments: the `!mission.meta` guard below CANNOT fire for a document
+	//! T-181.13.1 -- truth in comments: the `!mission.meta` guard below CANNOT fire for a document
 	//! that simply omits `meta`, because `meta` is a `ref <class>` and `JsonLoadContext` allocates
-	//! it regardless (see CheckSlotLoadout for the measurement). It is deliberately left in place —
+	//! it regardless (see CheckSlotLoadout for the measurement). It is deliberately left in place --
 	//! unlike the loadout case it costs nothing and is not misleading, and the per-field emptiness
 	//! checks below are the CONTENT tests that actually catch an absent meta block: `meta.id` empty
 	//! is already a blocking ERROR, so a mission with no header is still rejected, with three
@@ -284,16 +270,15 @@ class TBD_MissionValidator
 		}
 
 		if (mission.meta.id.IsEmpty())
-			AddError("meta.id", "missing — the mod only loads published missions, which always carry a content-hash id");
+			AddError("meta.id", "missing -- the mod only loads published missions, which always carry a content-hash id");
 
 		if (mission.meta.name.IsEmpty())
-			AddWarning("meta.name", "empty — the mission browser will show a blank row");
+			AddWarning("meta.name", "empty -- the mission browser will show a blank row");
 
 		if (mission.meta.terrain.IsEmpty())
-			AddWarning("meta.terrain", "empty — admin mission switching cannot route this mission to a scenario");
+			AddWarning("meta.terrain", "empty -- admin mission switching cannot route this mission to a scenario");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! At least one playable faction, unique keys. Fills `declared` with every key that parsed,
 	//! which every later check uses to decide whether a referenced faction actually exists.
 	protected static void CheckFactions(TBD_MissionDocumentStruct mission, map<string, bool> declared)
@@ -301,7 +286,7 @@ class TBD_MissionValidator
 		array<ref TBD_MissionFactionStruct> factions = mission.factions;
 		if (!factions || factions.IsEmpty())
 		{
-			AddError("factions", "no playable faction declared — nobody can pick a side");
+			AddError("factions", "no playable faction declared -- nobody can pick a side");
 			return;
 		}
 
@@ -317,7 +302,7 @@ class TBD_MissionValidator
 
 			if (faction.key.IsEmpty())
 			{
-				AddError(subject, "faction has no key — slots cannot reference it");
+				AddError(subject, "faction has no key -- slots cannot reference it");
 				continue;
 			}
 
@@ -325,21 +310,20 @@ class TBD_MissionValidator
 
 			if (declared.Contains(faction.key))
 			{
-				AddError(subject, "declared more than once — faction lookups would be ambiguous");
+				AddError(subject, "declared more than once -- faction lookups would be ambiguous");
 				continue;
 			}
 
 			declared.Insert(faction.key, true);
 
 			if (faction.displayName.IsEmpty())
-				AddWarning(subject, "no displayName — the lobby will show the raw key");
+				AddWarning(subject, "no displayName -- the lobby will show the raw key");
 
 			if (faction.presetId.IsEmpty())
-				AddWarning(subject, "no presetId — the faction has no registry preset to build from");
+				AddWarning(subject, "no presetId -- the faction has no registry preset to build from");
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Every slot: present, uniquely keyed, on a declared faction, with a resolvable kit, inside
 	//! the terrain, and carrying a sane loadout. `slotsPerFaction` accumulates the per-side slot
 	//! census the win-condition check needs.
@@ -352,11 +336,11 @@ class TBD_MissionValidator
 			if (slotsRequired)
 			{
 				AddError("slots", string.Format(
-					"schemaVersion %1 requires a non-empty slots[] — no player can spawn", mission.schemaVersion));
+					"schemaVersion %1 requires a non-empty slots[] -- no player can spawn", mission.schemaVersion));
 			}
 			else
 			{
-				AddWarning("slots", "no slots[] — a pre-1.1 document carries no spawn positions, so no player can spawn from it. Recompile the mission at schemaVersion 1.1 or later.");
+				AddWarning("slots", "no slots[] -- a pre-1.1 document carries no spawn positions, so no player can spawn from it. Recompile the mission at schemaVersion 1.1 or later.");
 			}
 
 			return;
@@ -369,11 +353,11 @@ class TBD_MissionValidator
 		vector maxs;
 		bool boundsKnown = TryGetTerrainBounds(mins, maxs);
 		if (!boundsKnown)
-			AddWarning("slots", "terrain bounds unavailable at validation time — slot positions were NOT range-checked");
+			AddWarning("slots", "terrain bounds unavailable at validation time -- slot positions were NOT range-checked");
 
 		// uid-else-id is the durable identity (TBD_MissionSlotStruct.Key), so that is the key that
 		// must be unique. The display id is tracked separately because
-		// TBD_MissionLoader.GetSlotById also matches on id — two slots sharing an id make that
+		// TBD_MissionLoader.GetSlotById also matches on id -- two slots sharing an id make that
 		// lookup ambiguous even when their keys differ. A duplicate uid is always a duplicate key
 		// (Key() returns uid when set), so it needs no third set.
 		ref set<string> seenKey = new set<string>();
@@ -401,7 +385,7 @@ class TBD_MissionValidator
 			CheckSlotLoadout(subject, slot);
 
 			if (slot.groupCallsign.IsEmpty())
-				AddWarning(subject, "no groupCallsign — the slot has no squad to file under");
+				AddWarning(subject, "no groupCallsign -- the slot has no squad to file under");
 
 			if (slot.role.IsEmpty())
 				AddWarning(subject, "no role label");
@@ -411,7 +395,6 @@ class TBD_MissionValidator
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Duplicate slot keys. Reported once per slot, most-precise finding first.
 	protected static void CheckSlotIdentity(string subject, TBD_MissionSlotStruct slot,
 		set<string> seenKey, set<string> seenId)
@@ -439,7 +422,7 @@ class TBD_MissionValidator
 		if (keyDuplicate)
 		{
 			AddError(subject, string.Format(
-				"duplicate slot key '%1' (uid-else-id) — two slots claim one identity, so claims, rosters and spawn points would collide",
+				"duplicate slot key '%1' (uid-else-id) -- two slots claim one identity, so claims, rosters and spawn points would collide",
 				key));
 			return;
 		}
@@ -447,19 +430,18 @@ class TBD_MissionValidator
 		if (idDuplicate)
 		{
 			AddError(subject, string.Format(
-				"duplicate slot id '%1' — TBD_MissionLoader.GetSlotById matches id as well as uid, so lookups by this id are ambiguous",
+				"duplicate slot id '%1' -- TBD_MissionLoader.GetSlotById matches id as well as uid, so lookups by this id are ambiguous",
 				slot.id));
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Slot faction must exist and must be one of the declared factions.
 	protected static void CheckSlotFaction(string subject, TBD_MissionSlotStruct slot,
 		map<string, bool> declaredFactions, map<string, int> slotsPerFaction)
 	{
 		if (slot.faction.IsEmpty())
 		{
-			AddError(subject, "no faction — the slot cannot be assigned to a side");
+			AddError(subject, "no faction -- the slot cannot be assigned to a side");
 			return;
 		}
 
@@ -470,7 +452,7 @@ class TBD_MissionValidator
 		slotsPerFaction.Find(slot.faction, count);
 		slotsPerFaction.Set(slot.faction, count + 1);
 
-		// Skip when factions[] failed outright — one error there beats one per slot here.
+		// Skip when factions[] failed outright -- one error there beats one per slot here.
 		if (declaredFactions.Count() == 0)
 			return;
 
@@ -478,7 +460,6 @@ class TBD_MissionValidator
 			AddError(subject, string.Format("faction '%1' is not declared in factions[]", slot.faction));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Slot kit must be a `kit:` alias the spawn registry can resolve. TBD_SpawnManager treats an
 	//! unresolvable kit as a permanent per-slot failure (no body at all), so catching it here is
 	//! the difference between an authoring error and a player with no character.
@@ -486,7 +467,7 @@ class TBD_MissionValidator
 	{
 		if (slot.kit.IsEmpty())
 		{
-			AddError(subject, "no kit alias — TBD_SpawnManager has no prefab to spawn");
+			AddError(subject, "no kit alias -- TBD_SpawnManager has no prefab to spawn");
 			return;
 		}
 
@@ -497,7 +478,7 @@ class TBD_MissionValidator
 			return;
 		}
 
-		// Registry unavailable — LoadRegistryAliases already warned once for the document.
+		// Registry unavailable -- LoadRegistryAliases already warned once for the document.
 		// Staying quiet here beats emitting one unprovable error per slot.
 		if (registryAliases.Count() == 0)
 			return;
@@ -505,14 +486,13 @@ class TBD_MissionValidator
 		if (!registryAliases.Contains(slot.kit))
 		{
 			AddError(subject, string.Format(
-				"kit alias '%1' does not resolve in the spawn registry — TBD_SpawnManager would fail this slot permanently",
+				"kit alias '%1' does not resolve in the spawn registry -- TBD_SpawnManager would fail this slot permanently",
 				slot.kit));
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Spawn position must land on the loaded terrain. Skipped entirely when the world box is
-	//! not trustworthy (see TryGetTerrainBounds) — a wrong box must not reject a good mission.
+	//! not trustworthy (see TryGetTerrainBounds) -- a wrong box must not reject a good mission.
 	protected static void CheckSlotPosition(string subject, TBD_MissionSlotStruct slot,
 		bool boundsKnown, vector mins, vector maxs)
 	{
@@ -528,35 +508,32 @@ class TBD_MissionValidator
 			return;
 
 		AddError(subject, string.Format(
-			"spawn (%1, %2) is outside the loaded terrain (x %3..%4, z %5..%6) — the player would drop into the void. Check that the mission terrain matches the loaded world.",
+			"spawn (%1, %2) is outside the loaded terrain (x %3..%4, z %5..%6) -- the player would drop into the void. Check that the mission terrain matches the loaded world.",
 			slot.x, slot.z, mins[0], maxs[0], mins[2], maxs[2]));
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Optional per-slot Arsenal loadout (T-068.11). The kit prefab stays authoritative for the
+	//! Optional per-slot Arsenal loadout. The kit prefab stays authoritative for the
 	//! base character, so a loadout that carries nothing is not fatal; a malformed cargo row is a
 	//! schema violation and blocks.
 	//!
-	//! ══ T-181.13.1 — MAJOR BUG FIX: this function used to test non-null ════════════════════════
 	//! `slot.loadout` (TBD_MissionSlotStruct) and `loadout.gear` (TBD_SlotLoadoutStruct) are
 	//! `ref <class>` fields, and `JsonLoadContext` ALLOCATES a nested `ref <class>` even when the
-	//! JSON key is ABSENT — see the landmine block on `TBD_MissionShapeStruct` in
+	//! JSON key is ABSENT -- see the landmine block on `TBD_MissionShapeStruct` in
 	//! TBD_MissionLoader.c, and `TBD_SpawnManager.HasAuthoredLoadout`, which fixed the identical
 	//! bug in the slot-body census at T-181.32. So `if (!loadout) return;` never returned and
 	//! `if (loadout.gear)` was always true. Consequences, all measured on live world boots:
 	//!   * every slot that authored NO loadout at all was reported as "loadout.gear is present but
 	//!     every gear ref is empty". `golden-missions/bridgehead-at-levie.json`, whose 18 slots
-	//!     carry no `loadout` key, booted to `mission result=PASS errors=0 warnings=18` — all 18
+	//!     carry no `loadout` key, booted to `mission result=PASS errors=0 warnings=18` -- all 18
 	//!     of them this one warning;
 	//!   * the `else if (!hasCargo)` branch under it was UNREACHABLE dead code;
 	//!   * across the four goldens 27 warnings were emitted and 2 were correct.
 	//!
-	//! ── What is actually observable (measured 2026-07-25, instrumented boot) ────────────────────
 	//! A temporary `[TBDPROBE]` dump over `s_Mission.slots` immediately after `ctx.ReadValue`:
 	//!
-	//!   bridgehead-at-levie   — 0 of 18 slots author `loadout`
+	//!   bridgehead-at-levie   -- 0 of 18 slots author `loadout`
 	//!       every slot:  loadoutNull=0  gearNull=0  gearRefs=0  cargoNull=1
-	//!   empty-warning-fields  — 4 of 7 author `loadout`; two of those author `"cargo": []`
+	//!   empty-warning-fields  -- 4 of 7 author `loadout`; two of those author `"cargo": []`
 	//!       the two authoring `cargo`:   cargoNull=0  cargoCount=0
 	//!       the other five:              cargoNull=1
 	//!
@@ -564,26 +541,25 @@ class TBD_MissionValidator
 	//!   1. a `ref <class>` field is allocated whether or not the key was authored (third
 	//!      independent confirmation);
 	//!   2. **a `ref array<>` field is NOT.** `loadout.cargo` came back non-null on exactly the
-	//!      slots whose JSON authored a `cargo` key and null on every slot that did not — both
+	//!      slots whose JSON authored a `cargo` key and null on every slot that did not -- both
 	//!      polarities in one run, which is its own negative control. A container's NON-NULLNESS is
 	//!      therefore a genuine presence test, even though its emptiness is not.
 	//!
-	//! ── The rule this function now follows ──────────────────────────────────────────────────────
 	//! GEAR PRESENCE IS UNOBSERVABLE. An absent `gear` key and an authored `gear: {}` both parse to
 	//! a non-null struct holding thirteen empty strings, and there is no scalar sentinel to hang a
-	//! presence test on. So this never claims gear is "present" again — it COUNTS REFS, which is
+	//! presence test on. So this never claims gear is "present" again -- it COUNTS REFS, which is
 	//! the same content test `TBD_SpawnManager.HasAuthoredLoadout` settled on.
 	//!
 	//! A loadout with zero gear refs and no `cargo` key is therefore indistinguishable from having
 	//! no loadout at all, AND behaves identically (the slot falls back to the bare kit prefab). It
-	//! gets no warning — that is the normal, legal shape of every loadout-less slot in every
+	//! gets no warning -- that is the normal, legal shape of every loadout-less slot in every
 	//! mission. The website compiler cannot even emit an empty block: `mod_slot_loadout` in
 	//! `crates/map-engine-core/src/mission/flatten.rs` returns `None` when gear and cargo are both
 	//! empty, skips `gear` when all thirteen fields are empty, and skips `cargo` when the vec is empty.
 	//!
 	//! The one authored-but-empty case that IS provable is a `cargo` key that parsed to zero rows
 	//! while gear carries nothing: non-null `cargo` proves the block was authored, and nothing is in
-	//! it. That is precisely what the old dead branch was written to say, so the message survives —
+	//! it. That is precisely what the old dead branch was written to say, so the message survives --
 	//! and it is now reachable. It cannot fire on a compiled mission, so on a real mission it means
 	//! the JSON was hand-edited.
 	//!
@@ -597,7 +573,7 @@ class TBD_MissionValidator
 
 		int gearRefs = CountGearRefs(loadout.gear);
 
-		// CONTENT, not non-null — but note the asymmetry proved above: for a CONTAINER, non-null
+		// CONTENT, not non-null -- but note the asymmetry proved above: for a CONTAINER, non-null
 		// does mean "the key was authored". Count() is what says whether anything is in it.
 		bool cargoAuthored = false;
 		int cargoRows = 0;
@@ -612,7 +588,7 @@ class TBD_MissionValidator
 			// Only provable when `cargo` was authored. Without it there is nothing to distinguish
 			// this slot from one that never had a loadout, so saying anything would be noise.
 			if (cargoAuthored)
-				AddWarning(subject, "loadout is present but carries neither gear nor cargo — the slot falls back to the bare kit prefab");
+				AddWarning(subject, "loadout is present but carries neither gear nor cargo -- the slot falls back to the bare kit prefab");
 
 			return;
 		}
@@ -637,11 +613,10 @@ class TBD_MissionValidator
 				AddError(where, "no item ResourceName");
 
 			if (row.qty < 1)
-				AddError(where, string.Format("qty=%1 — mission.schema.json requires qty >= 1", row.qty));
+				AddError(where, string.Format("qty=%1 -- mission.schema.json requires qty >= 1", row.qty));
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! How many of the thirteen fixed gear slots actually carry a ResourceName.
 	//!
 	//! Null-safe and CONTENT-based on purpose: `gear` is a `ref <class>`, so it is non-null even on a
@@ -649,10 +624,10 @@ class TBD_MissionValidator
 	//! separates an authored gear block from an allocated-empty one, so it is the only test callers
 	//! are allowed to use. The null guard is defence against a future caller, not a live case.
 	//!
-	//! T-182 — launcher/handgun/throwable joined the struct and MUST be counted here. A slot that
+	//! T-182 -- launcher/handgun/throwable joined the struct and MUST be counted here. A slot that
 	//! authors nothing but a throwable is a completely legal thing for a mission maker to do
 	//! ("kit handles the rest, give this one a smoke"), and if this walk does not know about the
-	//! three new fields such a block counts zero refs and reads as never-authored — the exact
+	//! three new fields such a block counts zero refs and reads as never-authored -- the exact
 	//! silent discard T-182 exists to end, reappearing one layer up in the validator.
 	protected static int CountGearRefs(TBD_SlotGearStruct gear)
 	{
@@ -691,9 +666,8 @@ class TBD_MissionValidator
 		return refs;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! slots[] must materialise exactly the instance count the ORBAT declares. A mismatch means
-	//! the compiled document is out of step with its own ORBAT — slots would be missing or
+	//! the compiled document is out of step with its own ORBAT -- slots would be missing or
 	//! orphaned. (Preserved from the loader's original ValidateMissionSlots.)
 	protected static void CheckOrbatSlotParity(TBD_MissionDocumentStruct mission)
 	{
@@ -705,19 +679,18 @@ class TBD_MissionValidator
 		if (mission.slots)
 			actual = mission.slots.Count();
 
-		// An empty slots[] is already reported by CheckSlots — do not say it twice.
+		// An empty slots[] is already reported by CheckSlots -- do not say it twice.
 		if (actual == 0)
 			return;
 
 		if (actual != expected)
 		{
 			AddError("orbat", string.Format(
-				"orbat declares %1 slot instance(s) but slots[] carries %2 — the compiled document is out of step with its ORBAT",
+				"orbat declares %1 slot instance(s) but slots[] carries %2 -- the compiled document is out of step with its ORBAT",
 				expected, actual));
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Total role.count across every faction/group in the ORBAT.
 	protected static int CountOrbatInstances(TBD_MissionDocumentStruct mission)
 	{
@@ -746,15 +719,14 @@ class TBD_MissionValidator
 		return total;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! A declared faction with no slots is a side nobody can play. Loud, not fatal — an author
+	//! A declared faction with no slots is a side nobody can play. Loud, not fatal -- an author
 	//! may legitimately be staging a third side for a later mission.
 	protected static void CheckFactionCoverage(TBD_MissionDocumentStruct mission, map<string, int> slotsPerFaction)
 	{
 		if (!mission.factions)
 			return;
 
-		// Nothing to say when the document carries no slots at all — already reported once.
+		// Nothing to say when the document carries no slots at all -- already reported once.
 		if (!mission.slots || mission.slots.IsEmpty())
 			return;
 
@@ -766,21 +738,19 @@ class TBD_MissionValidator
 			int count = 0;
 			slotsPerFaction.Find(faction.key, count);
 			if (count == 0)
-				AddWarning("faction:" + faction.key, "declared but has no slots — nobody can play this side");
+				AddWarning("faction:" + faction.key, "declared but has no slots -- nobody can play this side");
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! End triggers must be schema values — and each one must have, IN THIS DOCUMENT, the thing it
+	//! End triggers must be schema values -- and each one must have, IN THIS DOCUMENT, the thing it
 	//! needs in order to ever fire.
 	//!
-	//! ══ T-181.37 — WHY SCHEMA MEMBERSHIP WAS NEVER ENOUGH ═══════════════════════════════════════
 	//! `IsKnownEndTrigger` asks whether a trigger is a legal enum value. Every golden mission passes
 	//! that and always did. It says nothing about whether the mission CONTAINS what the trigger
 	//! watches, and all five triggers have their own way of being inert:
 	//!
 	//!   faction_eliminated       needs two sides that actually hold slots
-	//!   time_limit               needs `flow.timeLimitSeconds` — the trigger is the "whether",
+	//!   time_limit               needs `flow.timeLimitSeconds` -- the trigger is the "whether",
 	//!                            the duration is the "how long", and either alone does nothing
 	//!   all_objectives_captured  needs at least one `objective_capture` zone
 	//!   objective_destroyed      needs at least one `objective_destroy` zone
@@ -790,10 +760,9 @@ class TBD_MissionValidator
 	//! one declaring an unimplemented trigger: it validates clean, boots clean, and runs forever.
 	//! That is what these checks close, at LOAD, by name, with the missing piece named.
 	//!
-	//! ══ WHY THE RUNTIME WARNINGS ARE NOT A SUBSTITUTE ═══════════════════════════════════════════
 	//! Two other places already say some of this, and both say it too late to be a gate:
 	//!   * `TBD_ObjectiveRegistry.ReportTriggerCoverage` runs when the objective registry BUILDS,
-	//!     which needs `TBD_ObjectivesComponent` to be on the game-mode prefab — and a component on
+	//!     which needs `TBD_ObjectivesComponent` to be on the game-mode prefab -- and a component on
 	//!     a prefab is exactly the thing that gets dropped silently (recorded landmine). It also
 	//!     never runs at all for a document this validator has already rejected.
 	//!   * `TBD_FrameworkManager.ArmRoundClock` reports both halves of the `time_limit` pair, but it
@@ -802,18 +771,17 @@ class TBD_MissionValidator
 	//! Validation runs on every load on every host, and its findings are the ones `#tbd validate`
 	//! replays to an admin in game. These belong here as well, not instead.
 	//!
-	//! ══ WHAT THIS DELIBERATELY DOES NOT CLAIM ═══════════════════════════════════════════════════
 	//! This is a DOCUMENT check. It proves the mission carries the piece each trigger watches; it
 	//! cannot prove that piece will resolve at runtime. `objective_destroyed` is the live example:
 	//! `last-stand-at-montfort.json` can author a perfectly good `objective_destroy` zone and still
 	//! go INERT at LIVE when `rules.targetAlias` is unresolved in `Data/registry.json`, no matching
-	//! `entities[]` row sits in the zone, or spawn/query misses — `ArmDestroyTargets` (T-437) names
+	//! `entities[]` row sits in the zone, or spawn/query misses -- `ArmDestroyTargets` names
 	//! which. Restating a build limitation here would hardcode, in the validator, a fact that
-	//! becomes false the day the underlying cause changes — the same drift this check exists to
+	//! becomes false the day the underlying cause changes -- the same drift this check exists to
 	//! prevent. T-254 already models and spawns `entities[]`; do not revive the old "never spawn"
 	//! claim.
 	//!
-	//! T-181.13.1 — CONTENT, not non-null, here too. `mission.winConditions` is a `ref <class>`, so
+	//! T-181.13.1 -- CONTENT, not non-null, here too. `mission.winConditions` is a `ref <class>`, so
 	//! `JsonLoadContext` allocates it whether or not the document authored the key (same landmine as
 	//! `slot.loadout` above): the old `if (!conditions)` guard could NEVER fire, so a mission that
 	//! declared no win conditions at all got two vaguer findings (empty mode + empty endOn) instead
@@ -834,16 +802,16 @@ class TBD_MissionValidator
 
 		if (!hasMode && !hasEndOn)
 		{
-			AddWarning("winConditions", "absent or empty — the round has no end trigger and runs until an admin ends it");
+			AddWarning("winConditions", "absent or empty -- the round has no end trigger and runs until an admin ends it");
 			return;
 		}
 
 		if (!hasMode)
-			AddWarning("winConditions.mode", "empty — the round has no declared mode label");
+			AddWarning("winConditions.mode", "empty -- the round has no declared mode label");
 
 		if (!hasEndOn)
 		{
-			AddWarning("winConditions.endOn", "empty — the round has no end trigger and runs until an admin ends it");
+			AddWarning("winConditions.endOn", "empty -- the round has no end trigger and runs until an admin ends it");
 			return;
 		}
 
@@ -883,18 +851,17 @@ class TBD_MissionValidator
 		}
 
 		// The roll-up, and the only finding that reads the mission as a whole. Each unreachable
-		// trigger above is survivable on its own — the round still ends on one of the others. All of
+		// trigger above is survivable on its own -- the round still ends on one of the others. All of
 		// them unreachable means the round has NO way to end, which is the same state as an empty
 		// `endOn` and is warned about in the same words, so an operator recognises it.
 		if (declared > 0 && reachable == 0)
 		{
 			AddWarning("winConditions.endOn", string.Format(
-				"NONE of the %1 declared end trigger(s) can fire in this mission — the round has no end trigger and runs until an admin ends it. Each one is reported above with the piece it is missing.",
+				"NONE of the %1 declared end trigger(s) can fire in this mission -- the round has no end trigger and runs until an admin ends it. Each one is reported above with the piece it is missing.",
 				declared));
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Can THIS trigger fire in THIS document? Reports the specific missing piece when it cannot.
 	//! Returns TRUE when the document carries everything the trigger needs.
 	protected static bool CheckTriggerReachable(string subject, string trigger,
@@ -910,8 +877,8 @@ class TBD_MissionValidator
 		TBD_EObjectiveKind kind = ObjectiveKindFor(trigger, zoneType);
 
 		// Cannot fire today: IsKnownEndTrigger admits exactly five values, two are handled above and
-		// the other three all map to a kind. It is kept because the alternative — treating "not an
-		// objective trigger" as impossible — is exactly how a SIXTH trigger, added to the schema and
+		// the other three all map to a kind. It is kept because the alternative -- treating "not an
+		// objective trigger" as impossible -- is exactly how a SIXTH trigger, added to the schema and
 		// to IsKnownEndTrigger but not here, would be silently reported as reachable. Returning TRUE
 		// is the deliberate choice: an unknown trigger is not evidence that the round cannot end, so
 		// it must not drag the roll-up below into claiming that.
@@ -921,11 +888,10 @@ class TBD_MissionValidator
 		return CheckObjectiveTriggerReachable(subject, trigger, zoneType, kind, mission);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! `faction_eliminated` — two sides must actually hold slots.
+	//! `faction_eliminated` -- two sides must actually hold slots.
 	//!
 	//! TBD_FrameworkManager.TickWinConditions already refuses to end a round with fewer than two
-	//! CONTESTING factions, so a one-sided mission does not actually end at kickoff — it just
+	//! CONTESTING factions, so a one-sided mission does not actually end at kickoff -- it just
 	//! never ends, which looks identical to a broken win condition from the server console.
 	//! Catching it here turns that mystery into an authoring error before anyone joins.
 	//!
@@ -943,7 +909,7 @@ class TBD_MissionValidator
 		if (sidesWithSlots < 2)
 		{
 			AddError(subject, string.Format(
-				"declares faction_eliminated but only %1 faction(s) actually have slots — no second side can ever be eliminated, so the round can never resolve",
+				"declares faction_eliminated but only %1 faction(s) actually have slots -- no second side can ever be eliminated, so the round can never resolve",
 				sidesWithSlots));
 			return false;
 		}
@@ -951,8 +917,7 @@ class TBD_MissionValidator
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! `time_limit` — the trigger says the round MAY end on the clock; `flow.timeLimitSeconds` says
+	//! `time_limit` -- the trigger says the round MAY end on the clock; `flow.timeLimitSeconds` says
 	//! how long. Either half alone does nothing, and TBD_FrameworkManager.ArmRoundClock refuses to
 	//! guess the other.
 	//!
@@ -962,7 +927,7 @@ class TBD_MissionValidator
 	//! second copy of "0 means an explicit no-limit" is exactly the drift this slice is about.
 	//!
 	//! Only the half this slice owns is reported: a DECLARED trigger that cannot fire. The mirror
-	//! image — a duration authored with no `time_limit` trigger — is T-181.38's finding and is
+	//! image -- a duration authored with no `time_limit` trigger -- is T-181.38's finding and is
 	//! reported by `ArmRoundClock`; it is not a trigger this mission cannot end on.
 	protected static bool CheckTimeLimitReachable(string subject, TBD_MissionDocumentStruct mission)
 	{
@@ -978,29 +943,28 @@ class TBD_MissionValidator
 
 		if (source == TBD_MissionFlow.SRC_DEFAULT)
 		{
-			AddWarning(subject, "declares 'time_limit' but flow.timeLimitSeconds is not authored — TBD_FrameworkManager.ArmRoundClock has no duration to arm, so this round CANNOT end on time. Author flow.timeLimitSeconds, or drop the trigger.");
+			AddWarning(subject, "declares 'time_limit' but flow.timeLimitSeconds is not authored -- TBD_FrameworkManager.ArmRoundClock has no duration to arm, so this round CANNOT end on time. Author flow.timeLimitSeconds, or drop the trigger.");
 			return false;
 		}
 
 		if (source == TBD_MissionFlow.SRC_INVALID)
 		{
 			AddWarning(subject, string.Format(
-				"declares 'time_limit' but flow.timeLimitSeconds=%1 is negative (mission.schema.json requires >= 0) — the clock is not armed, so this round CANNOT end on time.",
+				"declares 'time_limit' but flow.timeLimitSeconds=%1 is negative (mission.schema.json requires >= 0) -- the clock is not armed, so this round CANNOT end on time.",
 				raw));
 			return false;
 		}
 
 		if (seconds == 0)
 		{
-			AddWarning(subject, "declares 'time_limit' but flow.timeLimitSeconds=0, which is an explicit NO LIMIT — the clock is deliberately not armed, so this trigger will never end the round. Author a real duration, or drop the trigger.");
+			AddWarning(subject, "declares 'time_limit' but flow.timeLimitSeconds=0, which is an explicit NO LIMIT -- the clock is deliberately not armed, so this trigger will never end the round. Author a real duration, or drop the trigger.");
 			return false;
 		}
 
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! `all_objectives_captured` / `objective_destroyed` / `hold_expired` — each needs at least one
+	//! `all_objectives_captured` / `objective_destroyed` / `hold_expired` -- each needs at least one
 	//! zone of its own kind, carrying geometry something can actually be inside.
 	protected static bool CheckObjectiveTriggerReachable(string subject, string trigger, string zoneType,
 		TBD_EObjectiveKind kind, TBD_MissionDocumentStruct mission)
@@ -1011,19 +975,19 @@ class TBD_MissionValidator
 		if (total == 0)
 		{
 			AddWarning(subject, string.Format(
-				"declares '%1' but this mission has no '%2' zone for it to watch — that trigger can NEVER fire. Add one to zones[], or drop the trigger.",
+				"declares '%1' but this mission has no '%2' zone for it to watch -- that trigger can NEVER fire. Add one to zones[], or drop the trigger.",
 				trigger, zoneType));
 			return false;
 		}
 
 		if (placeable == 0)
 		{
-			// Not reachable from a schema-valid document — `$defs/circle` puts `exclusiveMinimum: 0`
-			// on `r` and `$defs/polygon` requires three vertices — so this fires only on a
+			// Not reachable from a schema-valid document -- `$defs/circle` puts `exclusiveMinimum: 0`
+			// on `r` and `$defs/polygon` requires three vertices -- so this fires only on a
 			// hand-edited or hand-generated file. Same status, and same value, as the spawn-zone
 			// shape warning in CheckZones: the compiler is not the only thing that writes these.
 			AddWarning(subject, string.Format(
-				"declares '%1' and this mission has %2 '%3' zone(s), but none of them carries a usable shape (no circle with r > 0 and no polygon) — nothing can ever be inside them, so that trigger can NEVER fire.",
+				"declares '%1' and this mission has %2 '%3' zone(s), but none of them carries a usable shape (no circle with r > 0 and no polygon) -- nothing can ever be inside them, so that trigger can NEVER fire.",
 				trigger, total, zoneType));
 			return false;
 		}
@@ -1031,8 +995,7 @@ class TBD_MissionValidator
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! How many `kind` objective zones the document declares, and — through `outPlaceable` — how
+	//! How many `kind` objective zones the document declares, and -- through `outPlaceable` -- how
 	//! many of those carry geometry.
 	//!
 	//! A zone's kind is decided by `TBD_ObjectiveRegistry.KindOf`, the same call the objective
@@ -1040,7 +1003,7 @@ class TBD_MissionValidator
 	//! or retired type cannot leave it counting something nothing produces.
 	//!
 	//! CONTENT, not non-null: `shape` and `shape.circle` are `ref <class>` fields that
-	//! JsonLoadContext allocates whether or not the key was authored (recorded landmine — a polygon-
+	//! JsonLoadContext allocates whether or not the key was authored (recorded landmine -- a polygon-
 	//! only zone comes back with a non-null circle at x=0 z=0 r=0). `circle.r > 0` is the scalar
 	//! sentinel and `polygon.Count() > 0` is the container count; `if (shape.circle)` is always true
 	//! and would count a shapeless zone as placeable.
@@ -1076,12 +1039,10 @@ class TBD_MissionValidator
 		return total;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Which objective kind a `winConditions.endOn` trigger needs at least one of, and the schema
 	//! zone type to name in the finding. `TBD_EObjectiveKind.NONE` means this module does not drive
 	//! that trigger.
 	//!
-	//! ══ THE ONE PAIRING THIS FILE OWNS — AND WHERE IT BELONGS ═══════════════════════════════════
 	//! Everything else is asked of the authority: the trigger names are
 	//! `TBD_ObjectiveRegistry.TRIGGER_*`, the zone-type names are `TBD_ObjectiveRegistry.TYPE_*`,
 	//! and a zone's kind comes from `TBD_ObjectiveRegistry.KindOf`. So neither a renamed trigger nor
@@ -1093,7 +1054,7 @@ class TBD_MissionValidator
 	//!     static TBD_EObjectiveKind KindForTrigger(string trigger, out string zoneType)
 	//! with `ReportTriggerCoverage` driven from it too, at which point neither file holds a copy.
 	//! `Objectives/**` belongs to another slice's lane (wave_plan.tsv: T-181.39), so it is reported
-	//! rather than edited — and it lives in ONE function here, not sprinkled through the checks, so
+	//! rather than edited -- and it lives in ONE function here, not sprinkled through the checks, so
 	//! moving it is a delete and a call.
 	protected static TBD_EObjectiveKind ObjectiveKindFor(string trigger, out string zoneType)
 	{
@@ -1119,10 +1080,9 @@ class TBD_MissionValidator
 		return TBD_EObjectiveKind.NONE;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! mission.schema.json#/$defs/winConditions endOn enum membership.
 	//!
-	//! Schema legality ONLY — see CheckWinConditions for why that was never sufficient on its own.
+	//! Schema legality ONLY -- see CheckWinConditions for why that was never sufficient on its own.
 	//! The three objective triggers are read from the module that evaluates them rather than
 	//! re-spelled here; see the constants block at the top of the class.
 	protected static bool IsKnownEndTrigger(string trigger)
@@ -1134,40 +1094,39 @@ class TBD_MissionValidator
 			|| trigger == TBD_ObjectiveRegistry.TRIGGER_HOLD_EXPIRED;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-250 / T-609 — keys the typed parser drops, or models but the runtime does not honour.
+	//! T-250 / T-609 -- keys the typed parser drops, or models but the runtime does not honour.
 	//!
 	//! `JsonLoadContext` maps JSON keys onto named class fields and silently ignores everything
 	//! else. An author can therefore ship a schema-valid mission whose blocks parse clean and
-	//! vanish before any consumer runs — the failure mode T-250 closed, with blanket "was the key
+	//! vanish before any consumer runs -- the failure mode T-250 closed, with blanket "was the key
 	//! authored at all?" probes.
 	//!
 	//! T-609 replaced blanket presence with the question that matters: **was something authored
 	//! that this build will NOT honour?** A presence probe also fires on authored values the
 	//! framework already honours (`tickets: 0`, `respawn: "none"`, an empty `layers: []`), and a
-	//! warning that fires on every well-formed document is wallpaper, not a signal — the
+	//! warning that fires on every well-formed document is wallpaper, not a signal -- the
 	//! world-boot warning ratchet sat red for five waves on exactly that. Per key, the measured
 	//! state of this build (2026-07-31):
 	//!
-	//!   * `environment`       NOT modelled, NO consumer anywhere in `Scripts/Game/TBD/**` —
+	//!   * `environment`       NOT modelled, NO consumer anywhere in `Scripts/Game/TBD/**` --
 	//!                         weather, date/time and wind are discarded for every mission, and
 	//!                         the website compiler emits the block on every compiled document
 	//!                         (flatten.rs; see golden `compiler-shaped-two-faction.json`).
 	//!                         Warns on PRESENCE until a slice models it and applies it through
 	//!                         the world's TimeAndWeatherManager. Flatten-side inventory: T-290.
-	//!   * `settings`          Modelled (T-259) AND consumed: `TBD_MissionLoader.
+	//!   * `settings`          Modelled AND consumed: `TBD_MissionLoader.
 	//!                         ApplyMissionSettings` hands `spectatorPolicy` to
 	//!                         `TBD_SpectatorTargets` at load, so the old "no code reads it" text
 	//!                         was false. What is still unhonoured is a VALUE naming a system
 	//!                         that does not exist: `respawn` other than "none" (the framework
-	//!                         stands vanilla respawn down — `TBD_SCR_RespawnSystemComponent` —
+	//!                         stands vanilla respawn down -- `TBD_SCR_RespawnSystemComponent` --
 	//!                         and implements no pool), and `nightVision: true` (no NVG seam).
 	//!                         Only those warn now, read off the PRIMARY parse.
 	//!   * `layers`            NOT modelled, NO consumer, and `Data/registry.json` carries zero
 	//!                         `layer:` aliases. Warns on CONTENT (>= 1 alias): an authored `[]`
 	//!                         names nothing that could be dropped
 	//!                         (`empty-warning-fields.json` authors exactly that shape).
-	//!   * `factions.tickets`  NOT modelled — but mission.schema.json#/$defs/faction defines
+	//!   * `factions.tickets`  NOT modelled -- but mission.schema.json#/$defs/faction defines
 	//!                         `0 = one-life, no respawn pool`, and one-life IS this framework's
 	//!                         only mode, so an authored 0 is honoured, not discarded. Warns per
 	//!                         faction on `tickets > 0`: a pool no code implements.
@@ -1175,7 +1134,7 @@ class TBD_MissionValidator
 	//!                         delivery is FACTION-scoped: `TBD_RadioService.BuildForPlayer`
 	//!                         derives a player's nets from the slot's faction alone
 	//!                         (`TBD_RadioPlan.GetNetsForFaction`), so the schema's contract for
-	//!                         this key — "Net ids this role spawns tuned to" — is not honoured
+	//!                         this key -- "Net ids this role spawns tuned to" -- is not honoured
 	//!                         for any role authoring a narrower set. The old text claimed "spawn
 	//!                         net tuning is not applied", which T-181.40/T-293 made false:
 	//!                         tuning is applied, per faction. Warns on CONTENT (>= 1 role with a
@@ -1184,21 +1143,19 @@ class TBD_MissionValidator
 	//! T-254 RETIRED the `entities` unconsumed warning: `TBD_MissionDocumentStruct.entities` is
 	//! modeled and `SpawnMissionEntities` places resolvable rows.
 	//!
-	//! ── How presence/content is read ────────────────────────────────────────────────────────
-	//! `environment` keeps the raw-string probe (`JsonAuthoredKey` — a quoted key followed by
+	//! `environment` keeps the raw-string probe (`JsonAuthoredKey` -- a quoted key followed by
 	//! `:`, exact for this contract since `"radio":` cannot match `"radioPlan":`): any content in
 	//! that block is unconsumed, so presence IS the honest test. `layers` / `tickets` / `radio`
 	//! need VALUES the primary struct never declares, so they are read by a SECOND
-	//! `JsonLoadContext` pass over the same raw JSON with a validator-local struct — the exact
+	//! `JsonLoadContext` pass over the same raw JSON with a validator-local struct -- the exact
 	//! pattern, and the exact rationale, of `TBD_ObjectiveRulesReader`: `Backend/`'s primary
 	//! parser stays the single source of truth for consumed fields, and this vocabulary lives
 	//! next to its one consumer. A `ref array<>` field is NULL when its key was absent (measured
 	//! 2026-07-25; .world-boot-warning-baseline), so array content tests can tell absent from
 	//! authored-empty from authored.
 	//!
-	//! ── Fail-closed ─────────────────────────────────────────────────────────────────────────
-	//! If the second pass cannot parse — it cannot, for a document the primary parser just
-	//! accepted, but that is asserted rather than assumed — the three second-pass keys fall back
+	//! If the second pass cannot parse -- it cannot, for a document the primary parser just
+	//! accepted, but that is asserted rather than assumed -- the three second-pass keys fall back
 	//! to the T-250 blanket presence probes: toward warning, never toward silence. A checker that
 	//! answers "fine" about an input it never examined is the defect this file exists to prevent.
 	//!
@@ -1213,35 +1170,35 @@ class TBD_MissionValidator
 		if (json.IsEmpty())
 			return;
 
-		// T-250-UNCONSUMED-WARN: environment — presence: the whole block is unconsumed.
+		// T-250-UNCONSUMED-WARN: environment -- presence: the whole block is unconsumed.
 		if (JsonAuthoredKey(json, "environment"))
 		{
 			AddWarning("environment",
-				"authored but TBD_MissionDocumentStruct does not model it — weather and time of day are not applied at load");
+				"authored but TBD_MissionDocumentStruct does not model it -- weather and time of day are not applied at load");
 		}
 
-		// T-250-UNCONSUMED-WARN: settings — T-609: modelled (T-259) and consumed
+		// T-250-UNCONSUMED-WARN: settings -- T-609: modelled and consumed
 		// (ApplyMissionSettings applies spectatorPolicy at load), so presence proves nothing.
-		// The reference is ALWAYS allocated after a parse (JsonLoadContext) — test field content.
+		// The reference is ALWAYS allocated after a parse (JsonLoadContext) -- test field content.
 		TBD_MissionSettingsStruct settings = mission.settings;
 		if (settings)
 		{
 			if (!settings.respawn.IsEmpty() && settings.respawn != "none")
 			{
 				AddWarning("settings", string.Format(
-					"respawn='%1' authored but the framework implements no respawn pool — vanilla respawn is stood down (TBD_SCR_RespawnSystemComponent), one-life is the only mode, and the value is not honoured",
+					"respawn='%1' authored but the framework implements no respawn pool -- vanilla respawn is stood down (TBD_SCR_RespawnSystemComponent), one-life is the only mode, and the value is not honoured",
 					settings.respawn));
 			}
 
 			if (settings.nightVision)
 			{
 				AddWarning("settings",
-					"nightVision=true authored but no NVG policy seam exists — the value is not honoured");
+					"nightVision=true authored but no NVG policy seam exists -- the value is not honoured");
 			}
 		}
 
-		// T-254: entities[] is modeled + SpawnMissionEntities places resolvable rows — not unconsumed.
-		// (Former T-250-UNCONSUMED-WARN: entities retired — do not restore the "does not spawn" lie.)
+		// T-254: entities[] is modeled + SpawnMissionEntities places resolvable rows -- not unconsumed.
+		// (Former T-250-UNCONSUMED-WARN: entities retired -- do not restore the "does not spawn" lie.)
 
 		TBD_ValidatorSecondPassStruct raw = ParseSecondPass(json);
 		if (!raw)
@@ -1251,38 +1208,38 @@ class TBD_MissionValidator
 			if (JsonAuthoredKey(json, "layers"))
 			{
 				AddWarning("layers",
-					"authored but decoration layers are not loaded — the block is discarded on load (second-pass parse failed; presence probe)");
+					"authored but decoration layers are not loaded -- the block is discarded on load (second-pass parse failed; presence probe)");
 			}
 
 			if (JsonAuthoredKey(json, "tickets"))
 			{
 				AddWarning("factions.tickets",
-					"authored but TBD_MissionFactionStruct does not model tickets — respawn pools are not applied (second-pass parse failed; presence probe)");
+					"authored but TBD_MissionFactionStruct does not model tickets -- respawn pools are not applied (second-pass parse failed; presence probe)");
 			}
 
 			if (JsonAuthoredKey(json, "radio"))
 			{
 				AddWarning("orbat.roles.radio",
-					"authored but TBD_MissionOrbatRoleStruct does not model radio — role-scoped net assignment is not applied (second-pass parse failed; presence probe)");
+					"authored but TBD_MissionOrbatRoleStruct does not model radio -- role-scoped net assignment is not applied (second-pass parse failed; presence probe)");
 			}
 
 			return;
 		}
 
-		// T-250-UNCONSUMED-WARN: layers — T-609: content, not presence. Absent -> null array
+		// T-250-UNCONSUMED-WARN: layers -- T-609: content, not presence. Absent -> null array
 		// (measured), authored [] -> zero aliases discarded; neither warns.
 		if (raw.layers && raw.layers.Count() > 0)
 		{
 			AddWarning("layers", string.Format(
-				"%1 decoration layer alias(es) authored but decoration layers are not loaded — the block is discarded on load",
+				"%1 decoration layer alias(es) authored but decoration layers are not loaded -- the block is discarded on load",
 				raw.layers.Count()));
 		}
 
-		// T-250-UNCONSUMED-WARN: tickets — T-609: an authored 0 is the schema's own spelling of
-		// one-life ("0 = one-life, no respawn pool"), which is what this framework does — it is
+		// T-250-UNCONSUMED-WARN: tickets -- T-609: an authored 0 is the schema's own spelling of
+		// one-life ("0 = one-life, no respawn pool"), which is what this framework does -- it is
 		// honoured, not discarded. Only a positive pool names a system no code implements.
 		// JsonLoadContext leaves an absent int at its initializer (0), so absent and authored-0
-		// coincide here — deliberately: both mean one-life and neither warrants a warning.
+		// coincide here -- deliberately: both mean one-life and neither warrants a warning.
 		if (raw.factions)
 		{
 			foreach (TBD_ValidatorRawFactionStruct rawFaction : raw.factions)
@@ -1295,12 +1252,12 @@ class TBD_MissionValidator
 					factionName = "(no key)";
 
 				AddWarning("factions.tickets", string.Format(
-					"faction '%1' authors tickets=%2 but TBD_MissionFactionStruct does not model tickets — no respawn pool will exist (an authored 0 would be one-life, which IS the implemented behaviour)",
+					"faction '%1' authors tickets=%2 but TBD_MissionFactionStruct does not model tickets -- no respawn pool will exist (an authored 0 would be one-life, which IS the implemented behaviour)",
 					factionName, rawFaction.tickets));
 			}
 		}
 
-		// T-250-UNCONSUMED-WARN: radio — T-609: content, not presence. Only a role naming >= 1
+		// T-250-UNCONSUMED-WARN: radio -- T-609: content, not presence. Only a role naming >= 1
 		// net has authored something the faction-wide delivery can fail to honour; `"radio": []`
 		// names no net that could be dropped.
 		if (raw.orbat)
@@ -1327,14 +1284,13 @@ class TBD_MissionValidator
 			if (rolesWithNets > 0)
 			{
 				AddWarning("orbat.roles.radio", string.Format(
-					"%1 ORBAT role(s) author radio[] net ids but TBD_MissionOrbatRoleStruct does not model radio — net delivery is faction-wide (TBD_RadioService.BuildForPlayer), so role-scoped assignments are not honoured",
+					"%1 ORBAT role(s) author radio[] net ids but TBD_MissionOrbatRoleStruct does not model radio -- net delivery is faction-wide (TBD_RadioService.BuildForPlayer), so role-scoped assignments are not honoured",
 					rolesWithNets));
 			}
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-609 — the validator's second typed pass over the raw mission JSON, for values the
+	//! T-609 -- the validator's second typed pass over the raw mission JSON, for values the
 	//! primary `TBD_MissionDocumentStruct` deliberately does not declare. Null when the string
 	//! does not parse, which CheckUnconsumedKeys treats as "fall back to presence probes".
 	protected static TBD_ValidatorSecondPassStruct ParseSecondPass(string json)
@@ -1350,7 +1306,6 @@ class TBD_MissionValidator
 		return doc;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True when `json` contains a `"key":` property assignment. See CheckUnconsumedKeys.
 	protected static bool JsonAuthoredKey(string json, string key)
 	{
@@ -1361,19 +1316,18 @@ class TBD_MissionValidator
 		return json.IndexOf(needle) >= 0;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Zones are light-touch: only a faction reference that does not exist is fatal. A spawn zone
 	//! the loader cannot place from is a warning.
 	//!
-	//! T-181.18 — this comment used to claim polygon shapes were "deliberately not modelled yet".
+	//! T-181.18 -- this comment used to claim polygon shapes were "deliberately not modelled yet".
 	//! They are modelled now. `GetSpawnZoneForFaction` still places from a CIRCLE, so the warning
 	//! below is specifically "no circle with a real radius", which a polygon-only spawn zone also
-	//! trips — correctly, since the loader cannot place from it.
+	//! trips -- correctly, since the loader cannot place from it.
 	protected static void CheckZones(TBD_MissionDocumentStruct mission, map<string, bool> declaredFactions)
 	{
 		if (!mission.zones || mission.zones.IsEmpty())
 		{
-			AddWarning("zones", "no zones declared — factions have no spawn-zone fallback position");
+			AddWarning("zones", "no zones declared -- factions have no spawn-zone fallback position");
 			return;
 		}
 
@@ -1400,20 +1354,17 @@ class TBD_MissionValidator
 
 			// CONTENT, not non-null. `JsonLoadContext` allocates a nested `ref` field whether or
 			// not the JSON key was present, so `zone.shape.circle` is ALWAYS non-null and the old
-			// `!zone.shape.circle` test could NEVER fire — this warning was unreachable, and a
+			// `!zone.shape.circle` test could NEVER fire -- this warning was unreachable, and a
 			// polygon-only spawn zone sailed through it into GetSpawnZoneForFaction, which would
 			// have placed the faction at the map corner (0,0). See the landmine on
 			// TBD_MissionShapeStruct in TBD_MissionLoader.c.
 			if (zone.type == ZONE_SPAWN && (!zone.shape || !zone.shape.circle || zone.shape.circle.r <= 0))
-				AddWarning(subject, "spawn zone has no circle with a usable radius — TBD_MissionLoader.GetSpawnZoneForFaction cannot place from it");
+				AddWarning(subject, "spawn zone has no circle with a usable radius -- TBD_MissionLoader.GetSpawnZoneForFaction cannot place from it");
 		}
 	}
 
-	//------------------------------------------------------------------------------------
 	// HELPERS
-	//------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! Fill `outAliases` with every registry alias. TBD_Registry.GetAllAliases loads the registry
 	//! on demand, so this runs before TBD_FrameworkManager's own Load() and is idempotent.
 	//!
@@ -1434,10 +1385,9 @@ class TBD_MissionValidator
 		}
 
 		if (outAliases.Count() == 0)
-			AddWarning("registry", "no spawn-registry aliases available at validation time — slot kit resolution was NOT verified");
+			AddWarning("registry", "no spawn-registry aliases available at validation time -- slot kit resolution was NOT verified");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! World box of the loaded terrain. Returns FALSE (and the caller skips the position check)
 	//! when there is no world yet or the box is not a plausible terrain extent.
 	protected static bool TryGetTerrainBounds(out vector mins, out vector maxs)
@@ -1460,7 +1410,6 @@ class TBD_MissionValidator
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void Reset()
 	{
 		s_aErrors = new array<string>();
@@ -1468,21 +1417,18 @@ class TBD_MissionValidator
 		s_sSubjectMissionId = string.Empty;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A blocking finding. `subject` names the offending slot / faction / field.
 	protected static void AddError(string subject, string message)
 	{
-		s_aErrors.Insert(subject + " — " + message);
+		s_aErrors.Insert(subject + " -- " + message);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A non-blocking finding. Still printed, still shown to admins.
 	protected static void AddWarning(string subject, string message)
 	{
-		s_aWarnings.Insert(subject + " — " + message);
+		s_aWarnings.Insert(subject + " -- " + message);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One `[TBD][Validate]` line per finding, then the overall verdict. A failure ends with a
 	//! banner because a rejected mission must not scroll past the operator.
 	protected static void Report()
@@ -1500,27 +1446,26 @@ class TBD_MissionValidator
 			return;
 
 		TBD_Log.Banner(TBD_Log.CH_VALIDATE, string.Format(
-			"MISSION REJECTED — %1 error(s). The server stays in LOADING until the mission is fixed. Admins: '#tbd validate'.",
+			"MISSION REJECTED -- %1 error(s). The server stays in LOADING until the mission is fixed. Admins: '#tbd validate'.",
 			s_aErrors.Count()), true);
 	}
 }
 
-//! ══ T-609 — second-pass structs for CheckUnconsumedKeys ═══════════════════════════════════════
-//! Declares ONLY the unmodelled values the unconsumed-key checks need — `layers`,
-//! `factions[].tickets`, `orbat.*.groups[].roles[].radio` — and nothing the primary parser
+//! Declares ONLY the unmodelled values the unconsumed-key checks need -- `layers`,
+//! `factions[].tickets`, `orbat.*.groups[].roles[].radio` -- and nothing the primary parser
 //! already owns. Same pattern and same rationale as `TBD_ObjectiveRulesReader`
 //! (Objectives/TBD_ObjectiveRules.c): `JsonLoadContext` ignores JSON keys no field declares, so
 //! this pass is structurally blind to everything else in the document, and `Backend/`'s
 //! `TBD_MissionDocumentStruct` stays the single source of truth for every CONSUMED field. When a
 //! slice models one of these keys for real, delete its field here and move the check onto the
-//! primary struct — this pass exists precisely because these keys have no consumer yet.
+//! primary struct -- this pass exists precisely because these keys have no consumer yet.
 //!
 //! Field names must equal the JSON keys. `ref array<>` fields come back NULL when the key was
-//! absent (measured 2026-07-25 — the CheckSlotLoadout finding recorded in
+//! absent (measured 2026-07-25 -- the CheckSlotLoadout finding recorded in
 //! .world-boot-warning-baseline), which is what lets the checks tell absent from authored-empty.
 //! `tickets` carries no ABSENT sentinel on purpose: absent and authored-0 both mean one-life
 //! (mission.schema.json#/$defs/faction: "0 = one-life, no respawn pool") and neither warns, so
-//! the initializer 0 is not a presence flag here — it is the honoured default.
+//! the initializer 0 is not a presence flag here -- it is the honoured default.
 
 //! One `orbat.*.groups[].roles[]` entry, radio only.
 //! @contract mission.schema.json#/$defs/role (subset: radio)
@@ -1548,7 +1493,7 @@ class TBD_ValidatorRawOrbatFactionStruct
 class TBD_ValidatorRawFactionStruct
 {
 	string key;
-	int tickets = 0; //!< Absent reads 0 — deliberately identical to authored one-life. See header.
+	int tickets = 0; //!< Absent reads 0 -- deliberately identical to authored one-life. See header.
 }
 
 //! Document root for the second pass: the three unmodelled vocabularies, nothing else.

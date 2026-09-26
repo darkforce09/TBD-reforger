@@ -23,7 +23,6 @@ class TBD_BackendConfig
 	protected static ref TBD_BackendConfigStruct s_Config;
 	protected static string s_ConfigPath = "$profile:TBD_BackendConfig.json";
 
-	//------------------------------------------------------------------------------------------------
 	static bool Load()
 	{
 		s_Config = new TBD_BackendConfigStruct();
@@ -50,7 +49,6 @@ class TBD_BackendConfig
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Re-read the profile file while the server runs. The settings in force are replaced only by a
 	//! file that reads and parses, so a file caught half-written changes nothing.
 	static bool Reload()
@@ -70,13 +68,11 @@ class TBD_BackendConfig
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static TBD_BackendConfigStruct Get()
 	{
 		return s_Config;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static string GetBackendUrl()
 	{
 		if (!s_Config)
@@ -84,7 +80,6 @@ class TBD_BackendConfig
 		return s_Config.backendUrl;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static string GetServerToken()
 	{
 		if (!s_Config)
@@ -92,7 +87,6 @@ class TBD_BackendConfig
 		return s_Config.serverToken;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! This server's `mod_runtime` machine credential without surrounding whitespace, or empty.
 	static string GetMachineCredential()
 	{
@@ -101,7 +95,6 @@ class TBD_BackendConfig
 		return s_Config.machineCredential.Trim();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Ensures s_Config exists (loads from disk on first use, else empty struct).
 	protected static void EnsureConfig()
 	{
@@ -111,7 +104,6 @@ class TBD_BackendConfig
 			s_Config = new TBD_BackendConfigStruct();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Persists the current config back to $profile so it survives a scenario reload.
 	protected static bool Save()
 	{
@@ -128,7 +120,6 @@ class TBD_BackendConfig
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Repoints the backend URL (and optionally the server token), then persists.
 	static bool SetBackend(string backendUrl, string serverToken = string.Empty)
 	{

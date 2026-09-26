@@ -1,8 +1,8 @@
-//! Briefing rebuild (2026-09-14) — the primary navigation panel (`primary_navigation_panel`).
+//! Briefing rebuild (2026-09-14) -- the primary navigation panel (`primary_navigation_panel`).
 //!
 //! A glass panel (`TBD_PrimaryNav.layout`: `PanelBorder`, `PanelBG`, `Items`) of four full-width
 //! items (`TBD_PrimaryNavItem.layout`: `Border`, `Background`, `Accent`, `IconBoxBorder`,
-//! `IconBoxBG`, `Icon`, `Label`, `BadgeDock`): Map · Briefing · Players [36] [48] · Markers.
+//! `IconBoxBG`, `Icon`, `Label`, `BadgeDock`): Map - Briefing - Players [36] [48] - Markers.
 //! Active = the blue fill with the white right bar and a lit icon box; hover = white/5; Players
 //! carries the BLUFOR / OPFOR slotted counts as tinted chips. Not a `TBD_TabStrip`: the strip is
 //! the top bar's horizontal segmented control and shrink-wraps, this is a stacked panel.
@@ -18,13 +18,12 @@ class TBD_PrimaryNavItemComponent : TBD_UIInteractive
 	protected TextWidget m_wLabel;
 	protected Widget m_wBadgeDock;
 
-	protected TBD_BriefingPrimaryNav m_Owner; //!< weak — the nav owns its items
+	protected TBD_BriefingPrimaryNav m_Owner; //!< weak -- the nav owns its items
 	protected int m_iIndex = -1;
 	protected bool m_bActive;
 	protected bool m_bHasIcon;
 	protected int m_iGround;
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnBind(Widget w)
 	{
 		m_wBorder = w.FindAnyWidget("Border");
@@ -44,7 +43,6 @@ class TBD_PrimaryNavItemComponent : TBD_UIInteractive
 		TBD_UITheme.Show(m_wAccentSize, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Bind(TBD_BriefingPrimaryNav owner, int index, string label, string icon, int ground)
 	{
 		m_Owner = owner;
@@ -55,7 +53,6 @@ class TBD_PrimaryNavItemComponent : TBD_UIInteractive
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A mono count chip after the label (the Players item's 36 / 48).
 	void AddBadge(string text, TBD_EUITint tint)
 	{
@@ -67,7 +64,6 @@ class TBD_PrimaryNavItemComponent : TBD_UIInteractive
 		AlignableSlot.SetPadding(chip.GetRootWidget(), 4, 0, 0, 0);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetActive(bool active)
 	{
 		if (m_bActive == active)
@@ -77,7 +73,6 @@ class TBD_PrimaryNavItemComponent : TBD_UIInteractive
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void Repaint()
 	{
 		if (!m_wRoot)
@@ -135,14 +130,12 @@ class TBD_PrimaryNavItemComponent : TBD_UIInteractive
 			TBD_UITheme.PaintOver(m_wAccent, TBD_UITheme.NAV_ACCENT, itemGround);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnActivated()
 	{
 		if (m_Owner)
 			m_Owner.OnItemActivated(m_iIndex);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	int GetIndex()
 	{
 		return m_iIndex;
@@ -158,10 +151,9 @@ class TBD_BriefingPrimaryNav : Managed
 	protected int m_iActive = -1;
 	protected int m_iGround;
 
-	//! (TBD_BriefingPrimaryNav nav, int index) — index is a TBD_EBriefingMode
+	//! (TBD_BriefingPrimaryNav nav, int index) -- index is a TBD_EBriefingMode
 	protected ref ScriptInvoker m_OnSelected;
 
-	//------------------------------------------------------------------------------------------------
 	bool Build(Widget dock, TBD_PlayersCatalog players)
 	{
 		m_aItems = {};
@@ -193,7 +185,6 @@ class TBD_BriefingPrimaryNav : Managed
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Destroy()
 	{
 		if (m_aItems)
@@ -203,7 +194,6 @@ class TBD_BriefingPrimaryNav : Managed
 		m_wItems = null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected TBD_PrimaryNavItemComponent AddItem(string label, string icon)
 	{
 		if (!m_wItems)
@@ -218,7 +208,6 @@ class TBD_BriefingPrimaryNav : Managed
 		return item;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetActive(int index)
 	{
 		m_iActive = index;
@@ -234,7 +223,6 @@ class TBD_BriefingPrimaryNav : Managed
 		return m_iActive;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	bool FocusActive()
 	{
 		WorkspaceWidget workspace = GetGame().GetWorkspace();
@@ -253,7 +241,6 @@ class TBD_BriefingPrimaryNav : Managed
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	ScriptInvoker GetOnSelected()
 	{
 		if (!m_OnSelected)
@@ -262,7 +249,6 @@ class TBD_BriefingPrimaryNav : Managed
 		return m_OnSelected;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void OnItemActivated(int index)
 	{
 		if (m_OnSelected)

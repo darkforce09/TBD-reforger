@@ -36,7 +36,6 @@ class EMCP_WB_DeleteEntityResponse : JsonApiStruct
 
 class EMCP_WB_DeleteEntity : NetApiHandler
 {
-	//------------------------------------------------------------------------------------------------
 	static IEntitySource FindEntityByName(WorldEditorAPI api, string name)
 	{
 		int count = api.GetEditorEntityCount();
@@ -49,13 +48,11 @@ class EMCP_WB_DeleteEntity : NetApiHandler
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override JsonApiStruct GetRequest()
 	{
 		return new EMCP_WB_DeleteEntityRequest();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override JsonApiStruct GetResponse(JsonApiStruct request)
 	{
 		EMCP_WB_DeleteEntityRequest req = EMCP_WB_DeleteEntityRequest.Cast(request);

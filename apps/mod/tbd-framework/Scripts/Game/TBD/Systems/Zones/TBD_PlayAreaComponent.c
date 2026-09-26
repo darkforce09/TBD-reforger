@@ -1,4 +1,4 @@
-//! T-181.18 — per-player state for the play-area enforcer. One of these exists only while a
+//! T-181.18 -- per-player state for the play-area enforcer. One of these exists only while a
 //! player is actually in violation; going back inside deletes it, which is what makes "am I being
 //! warned right now" a null check rather than a flag that can get out of step.
 class TBD_PlayAreaViolation
@@ -19,17 +19,16 @@ class TBD_PlayAreaViolation
 	EntityID m_LastBody;
 }
 
-[ComponentEditorProps(category: "TBD/Framework", description: "TBD play area — boundary / base-protection zones, out-of-bounds warning, grace and penalty.")]
+[ComponentEditorProps(category: "TBD/Framework", description: "TBD play area -- boundary / base-protection zones, out-of-bounds warning, grace and penalty.")]
 class TBD_PlayAreaComponentClass : SCR_BaseGameModeComponentClass {}
 
-//! T-181.18 — the AO. Server-authoritative out-of-bounds detection for `boundary` and
+//! T-181.18 -- the AO. Server-authoritative out-of-bounds detection for `boundary` and
 //! `base_protection` zones, with a warning, a grace countdown and a JSON-driven penalty.
 //!
-//! ══ THE ONE-LIFE DECISION — READ THIS BEFORE CHANGING THE DEFAULT ═══════════════════════════
 //! TBD events are ONE LIFE. Death is terminal by design
 //! (documentation_v2/mod/tbd-framework/mod_design.md section 2), recoverable only
 //! by an admin `#tbd respawn`. "Kill the player for leaving the AO" is therefore not a slap on the
-//! wrist — it is **permanent removal from the event**, for what is very often a navigation
+//! wrist -- it is **permanent removal from the event**, for what is very often a navigation
 //! mistake at a map edge nobody can see.
 //!
 //! This slice implements the terminal penalty in full and makes it **JSON-driven and off by
@@ -39,30 +38,27 @@ class TBD_PlayAreaComponentClass : SCR_BaseGameModeComponentClass {}
 //! zone and gets it, with the choice recorded in the log at load time. Changing the DEFAULT is an
 //! operator decision, not an engineering one.
 //!
-//! ══ How it runs ═════════════════════════════════════════════════════════════════════════════
-//! ONE repeating server-side tick at `TICK_MS` walks the connected players — deliberately not a
+//! ONE repeating server-side tick at `TICK_MS` walks the connected players -- deliberately not a
 //! per-player timer and emphatically not a per-frame check. Two reasons beyond cost:
 //!   * `ScriptCallQueue.Remove` cancels BY FUNCTION, not by arguments (recorded landmine), so a
 //!     per-player `CallLater` could not be cancelled for one player without cancelling all of
-//!     them — and a per-player deferred callback carrying a raw `playerId` survives that player's
+//!     them -- and a per-player deferred callback carrying a raw `playerId` survives that player's
 //!     disconnect onto a RECYCLED id. A single tick that re-reads the live player list every time
 //!     has neither problem and needs no connection epoch.
 //!   * Enforcement only has to be as responsive as the grace period, which is measured in tens of
 //!     seconds.
 //!
-//! ══ Honest failure ══════════════════════════════════════════════════════════════════════════
 //! A mission with no `boundary` zone imposes NO play-area restriction. That is the deliberate
 //! reading of an absent AO, it is stated once in the log, and the two verdicts "no boundary
 //! applies to me" and "a boundary applies and I am outside it" are kept strictly apart in
 //! `TBD_ZoneRegistry` so they can never collapse into confining everybody.
 //!
-//! ══ What is NOT proven here ═════════════════════════════════════════════════════════════════
 //! Every API this uses is compile-proven against this engine build with a failing negative
 //! control. Nothing on this lane can prove that `SCR_ChatComponent.SendPrivateMessage` reaches a
 //! real client, or that `SCR_CharacterDamageManagerComponent.Kill` lands in
 //! `SCR_BaseGameMode.OnPlayerKilled`. The reasoning for the latter is that `Kill(GetInstigator())`
 //! is what vanilla's own `SCR_CharacterDamageManagerComponent.UpdateConsciousness` calls to end a
-//! character, so it is the engine's terminal call and not a second death path invented here — but
+//! character, so it is the engine's terminal call and not a second death path invented here -- but
 //! that is an argument, not a measurement, and it wants a live server to settle.
 class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 {
@@ -79,13 +75,12 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 	protected bool m_bAnnouncedNoBoundary;
 	protected bool m_bAnnouncedArmed;
 
-	//! T-181.30 — same latch shape for the stood-down line, which is per-PLAYER per-tick and would
+	//! T-181.30 -- same latch shape for the stood-down line, which is per-PLAYER per-tick and would
 	//! otherwise write one ERROR per connected player per second. Cleared the moment a manager is
 	//! seen again, so a genuine second occurrence still gets said.
 	protected bool m_bAnnouncedNoSpawnManager;
 
-	//------------------------------------------------------------------------------------------------
-	//! @authority server — the play area is enforced where the mission document lives. Clients hold
+	//! @authority server -- the play area is enforced where the mission document lives. Clients hold
 	//! no mission document at all (recorded landmine), so a client-side check would have no zones
 	//! to check against and would either do nothing or confine everyone.
 	override void OnPostInit(IEntity owner)
@@ -100,7 +95,6 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 		GetGame().GetCallqueue().CallLater(Tick, TICK_MS, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Statics OUTLIVE A WORLD inside one process (recorded landmine - `TBD_FleetLoadMissionAction`
 	//! restarts the scenario in-process). Without this, mission B's players would be confined to
 	//! mission A's AO by a registry nobody rebuilt, and the tick would keep firing against a dead
@@ -119,7 +113,6 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 		super.OnDelete(owner);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! @authority server
 	protected void Tick()
 	{
@@ -137,7 +130,7 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 		// Enforce only while the round is LIVE. Not during SAFE_START: safestart is the phase
 		// where damage is off and nothing a player does can hurt anybody, and starting an
 		// out-of-bounds countdown against somebody still walking to their start line would be a
-		// trap. Not during LOBBY/BRIEFING/END either — nobody is meant to be manoeuvring.
+		// trap. Not during LOBBY/BRIEFING/END either -- nobody is meant to be manoeuvring.
 		TBD_FrameworkManager fm = TBD_FrameworkManager.GetInstance();
 		if (!fm || fm.GetStage() != TBD_EGameStage.LIVE)
 		{
@@ -169,7 +162,6 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One informational line per world, at the moment the registry becomes known-good.
 	protected void AnnounceOnce()
 	{
@@ -179,7 +171,7 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 			{
 				m_bAnnouncedNoBoundary = true;
 				TBD_Log.Event(TBD_ZoneRegistry.CH,
-					"no usable boundary zone in this mission — NO play-area restriction is in force");
+					"no usable boundary zone in this mission -- NO play-area restriction is in force");
 			}
 			return;
 		}
@@ -192,7 +184,6 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 			TBD_ZoneRegistry.GetBoundaryCount(), TBD_ZoneRegistry.GetBaseProtectionCount(), TICK_MS));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Drop violation rows for players who are no longer connected. Collected first and removed
 	//! after: mutating a map while iterating it is not safe, and Enforce Script's `array.Remove`
 	//! is by INDEX (recorded landmine), so the removal below is by key on the map, not by index.
@@ -214,14 +205,13 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! @authority server
 	protected void EvaluatePlayer(notnull PlayerManager players, int playerId)
 	{
 		IEntity body = players.GetPlayerControlledEntity(playerId);
 
 		// No body: in the lobby, spectating, or mid-deploy. Clearing rather than pausing is
-		// deliberate — a freshly deployed player must always start clean, and it is the second
+		// deliberate -- a freshly deployed player must always start clean, and it is the second
 		// half of the recycled-id defence (see TBD_PlayAreaViolation.m_LastBody).
 		if (!body)
 		{
@@ -229,17 +219,17 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 			return;
 		}
 
-		// T-181.30 — FAIL CLOSED with no spawn manager, matching `TBD_SpectatorHost.Tick` on the
+		// T-181.30 -- FAIL CLOSED with no spawn manager, matching `TBD_SpectatorHost.Tick` on the
 		// IDENTICAL condition. This used to read `if (spawn && spawn.IsPlayerDead(playerId))`, so a
 		// null manager short-circuited the guard and fell through to full enforcement against
-		// whatever the player controls — which for a dead spectator is their STREAMING HOST. The
+		// whatever the player controls -- which for a dead spectator is their STREAMING HOST. The
 		// result was a dead player being told "ONE LIFE: you will be killed" for flying the free cam
 		// out of the AO. (No second death followed: `KillForViolation` refuses a body with no damage
 		// manager, and `IsAcceptableHost` guarantees the host has none. The message was the bug.)
 		//
 		// Without the manager we cannot tell a spent life from a living player, and therefore cannot
 		// tell a real body from a spectator host. "Cannot tell" must not resolve to "warn them, then
-		// kill them" — the same reasoning, and the same direction, that `TBD_SpectatorHost` already
+		// kill them" -- the same reasoning, and the same direction, that `TBD_SpectatorHost` already
 		// applies. The sibling failing closed while this one failed open was the asymmetry.
 		TBD_SpawnManager spawn = TBD_SpawnManager.GetInstance();
 		if (!spawn)
@@ -247,7 +237,7 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 			if (!m_bAnnouncedNoSpawnManager)
 			{
 				m_bAnnouncedNoSpawnManager = true;
-				Print("[TBD][playarea] enforcement STOOD DOWN — framework world with no TBD_SpawnManager (cannot tell a dead player from a live one, so a spectator's streaming host would be policed as a body)", LogLevel.ERROR);
+				Print("[TBD][playarea] enforcement STOOD DOWN -- framework world with no TBD_SpawnManager (cannot tell a dead player from a live one, so a spectator's streaming host would be policed as a body)", LogLevel.ERROR);
 			}
 
 			m_mViolations.Remove(playerId);
@@ -285,7 +275,6 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 		AccumulateViolation(players, playerId, body, violated);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The zone this player is currently in violation of, or null when they are where they belong.
 	//!
 	//! Boundary first: being outside the AO is the more serious of the two and its message should
@@ -298,9 +287,8 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 		return TBD_ZoneRegistry.FindViolatedProtection(factionKey, px, pz);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Back inside. Say so once — a player who has been counting down deserves to know the clock
-	//! stopped — then forget them.
+	//! Back inside. Say so once -- a player who has been counting down deserves to know the clock
+	//! stopped -- then forget them.
 	protected void ClearViolation(notnull PlayerManager players, int playerId)
 	{
 		TBD_PlayAreaViolation state = m_mViolations.Get(playerId);
@@ -318,7 +306,6 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 			playerId, state.m_sZoneKey, state.m_fSecondsOutside));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! In violation: count, warn on cadence, and fire the penalty once at expiry.
 	protected void AccumulateViolation(notnull PlayerManager players, int playerId, notnull IEntity body, notnull TBD_Zone zone)
 	{
@@ -345,7 +332,7 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 		}
 
 		// The countdown starts on the tick AFTER first detection, so a player gets the full authored
-		// grace plus up to one tick. Biased generous on purpose — see TBD_Zone.EDGE_MARGIN_M for
+		// grace plus up to one tick. Biased generous on purpose -- see TBD_Zone.EDGE_MARGIN_M for
 		// the same reasoning.
 		state.m_fSecondsOutside += TICK_SECONDS;
 
@@ -371,10 +358,9 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Tell the player what is happening and how long they have. Built in steps rather than one
-	//! long `+` chain — a 9-term concatenation is a measured `Formula too complex` in this
-	//! compiler. `->` rather than `→`: the arrow glyph is not in the proven set for shipped
+	//! long `+` chain -- a 9-term concatenation is a measured `Formula too complex` in this
+	//! compiler. `->` rather than `->`: the arrow glyph is not in the proven set for shipped
 	//! screens and a tofu box in a countdown a player has seconds to read is not acceptable.
 	protected void WarnPlayer(notnull PlayerManager players, int playerId, notnull TBD_PlayAreaViolation state, notnull TBD_Zone zone, float secondsRemaining)
 	{
@@ -405,20 +391,19 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 		Tell(players, playerId, msg);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Grace expired.
 	protected void ApplyPenalty(notnull PlayerManager players, int playerId, notnull IEntity body, notnull TBD_Zone zone)
 	{
 		if (zone.m_ePenalty == TBD_EZonePenalty.NONE)
 		{
-			TBD_Log.Kv(TBD_ZoneRegistry.CH, "expired", string.Format("player=%1 zone=%2 penalty=none — logged only",
+			TBD_Log.Kv(TBD_ZoneRegistry.CH, "expired", string.Format("player=%1 zone=%2 penalty=none -- logged only",
 				playerId, zone.LogKey()));
 			return;
 		}
 
 		if (zone.m_ePenalty == TBD_EZonePenalty.WARN)
 		{
-			TBD_Log.Warn(TBD_ZoneRegistry.CH, string.Format("player=%1 zone=%2 grace expired — penalty=warn, no action taken",
+			TBD_Log.Warn(TBD_ZoneRegistry.CH, string.Format("player=%1 zone=%2 grace expired -- penalty=warn, no action taken",
 				playerId, zone.LogKey()));
 			Tell(players, playerId, "TBD: you are still out of the play area. Return to the AO.");
 			return;
@@ -427,15 +412,14 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 		KillForViolation(players, playerId, body, zone);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Terminal, under ONE LIFE.
 	//!
 	//! Deliberately NOT named `Kill`: this is a `SCR_BaseGameModeComponent` subclass and a bare
 	//! `Kill` risks silently shadowing something in that hierarchy, which Enfusion would not
 	//! necessarily complain about.
 	//!
-	//! Routed through the ENGINE's own kill — `SCR_CharacterDamageManagerComponent.Kill(Instigator)`
-	//! is what vanilla's `UpdateConsciousness` calls to end a character — so this lands in
+	//! Routed through the ENGINE's own kill -- `SCR_CharacterDamageManagerComponent.Kill(Instigator)`
+	//! is what vanilla's `UpdateConsciousness` calls to end a character -- so this lands in
 	//! `SCR_BaseGameMode.OnPlayerKilled` -> `TBD_SpawnManager.OnPlayerKilled` -> `MarkLifeSpent`
 	//! exactly like a bullet would. No second way to end a life is invented here, nothing in
 	//! `TBD_SpawnManager` is touched, and the admin `#tbd respawn` escape hatch keeps working
@@ -452,13 +436,13 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 		{
 			// Refuse loudly rather than reach for another way to kill them. A body with no damage
 			// manager is not something this slice should be improvising against.
-			TBD_Log.Error(TBD_ZoneRegistry.CH, string.Format("player=%1 zone=%2 penalty=kill but the body has no SCR_CharacterDamageManagerComponent — NOT killed",
+			TBD_Log.Error(TBD_ZoneRegistry.CH, string.Format("player=%1 zone=%2 penalty=kill but the body has no SCR_CharacterDamageManagerComponent -- NOT killed",
 				playerId, zone.LogKey()));
 			return;
 		}
 
 		TBD_Log.Banner(TBD_ZoneRegistry.CH, string.Format(
-			"ONE LIFE SPENT: player=%1 killed for leaving %2 (grace %3s expired) — admin '#tbd respawn %1' is the only way back",
+			"ONE LIFE SPENT: player=%1 killed for leaving %2 (grace %3s expired) -- admin '#tbd respawn %1' is the only way back",
 			playerId, zone.LogKey(), zone.m_fGraceSeconds), true);
 
 		Tell(players, playerId, "TBD: you left the play area. Your one life is spent -- contact an admin.");
@@ -466,10 +450,9 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 		damage.Kill(Instigator.CreateInstigator(body));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Server -> one client, over the channel this codebase already uses for per-player replies
 	//! (`TBD_AdminCommands.Reply`). Chat rather than a HUD because a new `.layout` is INVISIBLE to
-	//! the engine until Workbench rewrites `resourceDatabase.rdb` (recorded landmine) — a widget
+	//! the engine until Workbench rewrites `resourceDatabase.rdb` (recorded landmine) -- a widget
 	//! written on this lane could not open. Every message is also logged server-side, so an
 	//! operator can reconstruct what a player was told even if delivery failed.
 	protected void Tell(notnull PlayerManager players, int playerId, string text)
@@ -485,7 +468,6 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 		chat.SendPrivateMessage(text, playerId);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The faction whose zones apply to this player, or empty when they have no assigned slot.
 	//! Empty is a legitimate answer, not an error: it means the player is subject only to
 	//! everyone-applies boundary zones, which is the conservative reading.
@@ -501,10 +483,9 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 		return slot.faction;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Is this body a corpse? Asked separately from `TBD_SpawnManager.IsPlayerDead` because the two
-	//! answer different questions — one is "has this identity spent its life", the other is "is
-	//! the thing standing here alive right now" — and either being true means leave them alone.
+	//! answer different questions -- one is "has this identity spent its life", the other is "is
+	//! the thing standing here alive right now" -- and either being true means leave them alone.
 	protected bool IsBodyDead(notnull IEntity body)
 	{
 		SCR_ChimeraCharacter character = SCR_ChimeraCharacter.Cast(body);

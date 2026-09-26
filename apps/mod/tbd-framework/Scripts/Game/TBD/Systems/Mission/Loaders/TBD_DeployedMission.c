@@ -31,7 +31,6 @@ class TBD_DeploymentReadCall : TBD_GameRuntimeCall
 {
 	int m_iGeneration;
 
-	//------------------------------------------------------------------------------------------------
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_DeployedMission.OnDeploymentAnswered(this, answer);
@@ -50,7 +49,6 @@ class TBD_BootArtifactVerification : TBD_MissionArtifactVerification
 	string m_sUnreadableWhy;
 	bool m_bUnreadableTransient;
 
-	//------------------------------------------------------------------------------------------------
 	override void OnFinished()
 	{
 		TBD_DeployedMission.OnVerificationFinished(m_iGeneration);
@@ -65,35 +63,26 @@ class TBD_DeployedMission
 
 	//! Bumped per world; answers, verifications and retries of an earlier world are dropped.
 	protected static int s_iGeneration;
-	//! This world's outcome is settled: a mission loaded, or none runs.
-	protected static bool s_bDecided;
-	//! "platform", "cache", "last-verified-cache" or "none".
-	protected static string s_sSource = "none";
-	//! The deployment this world runs, or null.
-	protected static ref TBD_RuntimeDeploymentStruct s_Deployment;
+	protected static bool s_bDecided; //!< This world's outcome is settled: a mission loaded, or none runs.
+	protected static string s_sSource = "none"; //!< "platform", "cache", "last-verified-cache" or "none".
+	protected static ref TBD_RuntimeDeploymentStruct s_Deployment; //!< The deployment this world runs, or null.
 	protected static ref TBD_BootArtifactVerification s_Verification;
 	protected static int s_iUnanswered;
-	//! Problems already reported at ERROR this world.
-	protected static ref map<string, bool> s_mReported;
+	protected static ref map<string, bool> s_mReported; //!< Problems already reported at ERROR this world.
 
-	//------------------------------------------------------------------------------------------------
 	// STATE FOR OTHER SYSTEMS
-	//------------------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	static bool IsDecided()
 	{
 		return s_bDecided;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Where the running artifact came from: "platform", "cache", "last-verified-cache" or "none".
 	static string GetSource()
 	{
 		return s_sSource;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The platform event the running mission is deployed for, or empty.
 	static string GetEventId()
 	{
@@ -103,7 +92,6 @@ class TBD_DeployedMission
 		return s_Deployment.event_id;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The event mission the running mission is deployed as, or empty.
 	static string GetEventMissionId()
 	{
@@ -113,7 +101,6 @@ class TBD_DeployedMission
 		return s_Deployment.event_mission_id;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The catalog mission running, or empty.
 	static string GetMissionId()
 	{
@@ -123,7 +110,6 @@ class TBD_DeployedMission
 		return s_Deployment.mission_id;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static string GetArtifactId()
 	{
 		if (!s_Deployment)
@@ -132,7 +118,6 @@ class TBD_DeployedMission
 		return s_Deployment.artifact_id;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static string GetTerrainKey()
 	{
 		if (!s_Deployment)
@@ -141,11 +126,8 @@ class TBD_DeployedMission
 		return s_Deployment.terrain_key;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	// BOOT
-	//------------------------------------------------------------------------------------------------
 
-	//------------------------------------------------------------------------------------------------
 	//! Start this world's boot sequence. Everything an earlier world decided is dropped.
 	static void Begin()
 	{
@@ -167,7 +149,6 @@ class TBD_DeployedMission
 		ReadDeployment();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ReadDeployment()
 	{
 		if (!TBD_GameRuntimeHttp.IsConfigured())
@@ -187,7 +168,6 @@ class TBD_DeployedMission
 		DeploymentUnreadable("unsent", "the deployment read could not be sent (" + failure + ")", true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Called by TBD_DeploymentReadCall with the platform's answer.
 	static void OnDeploymentAnswered(notnull TBD_DeploymentReadCall call, notnull TBD_GameRuntimeAnswer answer)
 	{
@@ -221,7 +201,6 @@ class TBD_DeployedMission
 		DeploymentUnreadable(typename.EnumToString(HttpCode, answer.m_eCode), "the platform refused the deployment read (" + answer.m_sDetail + ")", false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The deployment is known: load its artifact from the cache when the cached copy is this very
 	//! artifact, else from the platform.
 	protected static void UseDeployment(notnull TBD_RuntimeDeploymentStruct deployment)
@@ -248,7 +227,6 @@ class TBD_DeployedMission
 		NewVerification(deployment).FetchFromPlatform(deployment.artifact_id, deployment.artifact_sha256, deployment.artifact_bytes);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The deployment cannot be read: the last verified artifact runs when the cache holds one.
 	protected static void DeploymentUnreadable(string key, string why, bool transient)
 	{
@@ -275,7 +253,6 @@ class TBD_DeployedMission
 		WaitForDeployment(key, why, transient);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! No mission yet: an ERROR once per distinct problem, and the deployment is read again.
 	protected static void WaitForDeployment(string key, string why, bool transient)
 	{
@@ -294,7 +271,6 @@ class TBD_DeployedMission
 		ScheduleRetry(delay);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The platform deploys nothing here: no mission runs, and the session reports none.
 	protected static void RunNoMission(string why)
 	{
@@ -305,7 +281,6 @@ class TBD_DeployedMission
 		TBD_LoadedArtifactReport.DeclareNone();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Called by TBD_BootArtifactVerification when a verification ends. Acted on in the next frame,
 	//! once the verification's own call stack has unwound, since acting may replace it.
 	static void OnVerificationFinished(int generation)
@@ -315,7 +290,6 @@ class TBD_DeployedMission
 			queue.CallLater(SettleVerification, 0, false, generation);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void SettleVerification(int generation)
 	{
 		TBD_BootArtifactVerification verification = s_Verification;
@@ -333,7 +307,6 @@ class TBD_DeployedMission
 			SettleFetch(verification);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void SettleFallback(notnull TBD_BootArtifactVerification verification)
 	{
 		if (verification.m_eResult != TBD_EArtifactVerificationResult.VERIFIED)
@@ -349,7 +322,6 @@ class TBD_DeployedMission
 		Load(verification, "last-verified-cache");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void SettleCachedCopy(notnull TBD_BootArtifactVerification verification)
 	{
 		TBD_RuntimeDeploymentStruct deployment = verification.m_Identity;
@@ -365,7 +337,6 @@ class TBD_DeployedMission
 		Load(verification, "cache");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void SettleFetch(notnull TBD_BootArtifactVerification verification)
 	{
 		TBD_RuntimeDeploymentStruct deployment = verification.m_Identity;
@@ -394,7 +365,6 @@ class TBD_DeployedMission
 		ScheduleRetry(RETRY_CAP_MS);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Parse and validate the verified bytes; declare what the session reports.
 	protected static void Load(notnull TBD_BootArtifactVerification verification, string source)
 	{
@@ -421,7 +391,6 @@ class TBD_DeployedMission
 		TBD_LoadedArtifactReport.DeclareLoaded(identity.artifact_id, identity.artifact_sha256);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_BootArtifactVerification NewVerification(notnull TBD_RuntimeDeploymentStruct identity)
 	{
 		s_Verification = new TBD_BootArtifactVerification();
@@ -430,7 +399,6 @@ class TBD_DeployedMission
 		return s_Verification;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ScheduleRetry(int delayMs)
 	{
 		ScriptCallQueue queue = GetGame().GetCallqueue();
@@ -438,7 +406,6 @@ class TBD_DeployedMission
 			queue.CallLater(Retry, delayMs, false, s_iGeneration);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void Retry(int generation)
 	{
 		if (generation != s_iGeneration || s_bDecided)
@@ -448,7 +415,6 @@ class TBD_DeployedMission
 		ReadDeployment();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! An ERROR the first time `key` is reported this world. False for a repeat, which logs nothing.
 	protected static bool ReportOnce(string key, string text)
 	{

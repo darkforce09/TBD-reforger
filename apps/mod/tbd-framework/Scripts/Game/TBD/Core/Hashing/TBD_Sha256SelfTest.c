@@ -19,8 +19,7 @@ class TBD_Sha256SelfTestText
 
 class TBD_Sha256SelfTest
 {
-	//! Greppable channel: `grep '\[TBD\]\[Sha256\]' console.log`.
-	protected static const string CH_SHA256 = "Sha256";
+	protected static const string CH_SHA256 = "Sha256"; //!< Greppable channel: `grep '\[TBD\]\[Sha256\]' console.log`.
 
 	protected static const string DIGEST_896_BIT = "cf5b16a778af8380036ce59e7b0492370b249b11e8f07a51afac45037afee9d1";
 	protected static const string ROUND_TRIP_PATH = "$profile:TBD_Sha256SelfTest.bin";
@@ -29,7 +28,6 @@ class TBD_Sha256SelfTest
 	protected static bool s_bPassed;
 	protected static int s_iChecked;
 
-	//------------------------------------------------------------------------------------------------
 	//! Runs the vectors on the first call. True when every vector held.
 	static bool Passed()
 	{
@@ -39,7 +37,6 @@ class TBD_Sha256SelfTest
 		return s_bPassed;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void Run()
 	{
 		s_bRan = true;
@@ -81,7 +78,6 @@ class TBD_Sha256SelfTest
 			failed.Count(), s_iChecked, names));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void Check(string name, string message, string expected, notnull array<string> failed)
 	{
 		s_iChecked++;
@@ -93,7 +89,6 @@ class TBD_Sha256SelfTest
 		TBD_Log.Error(CH_SHA256, string.Format("vector '%1' (%2 bytes): computed %3, expected %4", name, message.Length(), computed, expected));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The 896-bit message absorbed as 1, 7 and 63 bytes and the rest, across block boundaries.
 	protected static void CheckInPieces(string message, notnull array<string> failed)
 	{
@@ -114,7 +109,6 @@ class TBD_Sha256SelfTest
 			computed, position, message.Length(), DIGEST_896_BIT));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! "caf" and U+00E9, decoded by the engine: 5 bytes as UTF-8 or 4 as Latin-1. Returns which one
 	//! was checked, or "untested" when the decoder produced neither.
 	protected static string CheckBytesAbove127(notnull array<string> failed)
@@ -141,7 +135,6 @@ class TBD_Sha256SelfTest
 		return "untested";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `message` written to a file and read back as bytes hashes to `expected`.
 	protected static void CheckFileRoundTrip(string message, string expected, notnull array<string> failed)
 	{
@@ -174,7 +167,6 @@ class TBD_Sha256SelfTest
 		TBD_Log.Error(CH_SHA256, string.Format("vector 'file round trip' (%1 bytes written, read back with ReadArray): computed %2, expected %3", message.Length(), computed, expected));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string Repeat(string unit, int count)
 	{
 		string repeated;

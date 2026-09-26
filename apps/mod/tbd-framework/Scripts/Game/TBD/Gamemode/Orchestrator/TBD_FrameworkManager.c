@@ -1,4 +1,4 @@
-//! T-181.38 — JOIN-IN-PROGRESS POLICY, straight from `flow.jip`.
+//! T-181.38 -- JOIN-IN-PROGRESS POLICY, straight from `flow.jip`.
 //!
 //! The three schema values, in order of how much of the round they let a latecomer into. Read it as
 //! a ladder: each one closes the door one stage earlier than the last.
@@ -9,35 +9,32 @@
 //! immune to someone reordering `TBD_EGameStage`.
 enum TBD_EJipPolicy
 {
-	//! `"always"` — a join is permitted at every deployable stage. This is TBD's behaviour BEFORE
+	//! `"always"` -- a join is permitted at every deployable stage. This is TBD's behaviour BEFORE
 	//! this slice (T-181.15 deliberately allowed a deploy at any stage LOBBY..LIVE), and therefore
 	//! the default when the mission authors nothing: an absent field must not change behaviour.
 	ALWAYS,
-	//! `"until_safestart_end"` — the roster stays open through planning and warmup, and closes the
+	//! `"until_safestart_end"` -- the roster stays open through planning and warmup, and closes the
 	//! moment the round goes LIVE.
 	UNTIL_SAFESTART_END,
-	//! `"disabled"` — the roster closes when the event starts. LOBBY only.
+	//! `"disabled"` -- the roster closes when the event starts. LOBBY only.
 	DISABLED
 }
 
-//! T-181.38 — the ONE place the mission's `flow` block is turned into answers.
+//! T-181.38 -- the ONE place the mission's `flow` block is turned into answers.
 //!
-//! ── Why a separate class and not four scattered reads ───────────────────────────────────────
 //! Three different subsystems consume `flow`, and one of them (`TBD_SpawnManager`'s JIP door) is
 //! owned by a different slice. Concentrating the presence rules, the defaults and the vocabulary
-//! here means a consumer asks ONE question and cannot get the sentinel handling subtly wrong —
+//! here means a consumer asks ONE question and cannot get the sentinel handling subtly wrong --
 //! which is precisely the class of bug the `JsonLoadContext` landmine keeps producing.
 //!
-//! ── The rule that governs every accessor here ───────────────────────────────────────────────
 //! `JsonLoadContext` allocates `doc.flow` even when the mission has no `flow` key, so a null test
 //! on it is ALWAYS TRUE and proves nothing. Every read below therefore tests CONTENT against
 //! `TBD_MissionFlowStruct.ABSENT`. The null tests that DO appear guard `doc` itself, which really
 //! can be null: clients never have a mission document (`TBD_FrameworkManager.OnPostInit` returns
 //! before `BeginLoad()` on `RplMode.Client`), and neither does the server before the load lands.
 //!
-//! ── Stateless on purpose ────────────────────────────────────────────────────────────────────
 //! Nothing is cached. An admin switching missions restarts the scenario in-process, and a cached
-//! flow would outlive the world it came from — the same statics-outlive-a-world landmine
+//! flow would outlive the world it came from -- the same statics-outlive-a-world landmine
 //! `IsFrameworkWorld()` exists to dodge. Every call is a fresh read of the live document, and
 //! nothing here sits on a per-frame path (ENF-1).
 class TBD_MissionFlow
@@ -47,7 +44,7 @@ class TBD_MissionFlow
 	//! the tag belongs next to the code that emits it.
 	static const string CH_FLOW = "Flow";
 
-	//! T-181.37 — the two endOn triggers evaluated HERE rather than by TBD_ObjectiveRegistry.
+	//! T-181.37 -- the two endOn triggers evaluated HERE rather than by TBD_ObjectiveRegistry.
 	//! Named so TBD_MissionValidator can ask this class for them instead of spelling the strings a
 	//! second time; a duplicated trigger name is exactly the drift that slice exists to catch.
 	//! @contract mission.schema.json#/$defs/winConditions/properties/endOn
@@ -56,7 +53,7 @@ class TBD_MissionFlow
 
 	//! Returned by the seconds accessors when the mission authored nothing usable. Deliberately
 	//! NEGATIVE, because an authored `0` is a real value with real meaning (`timeLimitSeconds: 0`
-	//! is "no limit" — a statement the author made) and must never collide with "said nothing".
+	//! is "no limit" -- a statement the author made) and must never collide with "said nothing".
 	static const int UNSET = -1;
 
 	//! `source` labels from ResolveSeconds. Constants rather than literals so a caller comparing
@@ -65,12 +62,11 @@ class TBD_MissionFlow
 	static const string SRC_DEFAULT  = "default";
 	static const string SRC_INVALID  = "INVALID";
 
-	//------------------------------------------------------------------------------------------------
 	//! The raw block, or null when no mission document exists at all.
 	//!
 	//! NOTE what this does NOT mean: a non-null return says nothing about whether the mission
 	//! authored a `flow` key. It is allocated either way. Callers get raw fields and must test them
-	//! against ABSENT — which is exactly why this is protected and the typed accessors are not.
+	//! against ABSENT -- which is exactly why this is protected and the typed accessors are not.
 	protected static TBD_MissionFlowStruct Block()
 	{
 		TBD_MissionDocumentStruct doc = TBD_MissionLoader.GetMission();
@@ -80,7 +76,6 @@ class TBD_MissionFlow
 		return doc.flow;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static int RawBriefingSeconds()
 	{
 		TBD_MissionFlowStruct flow = Block();
@@ -90,7 +85,6 @@ class TBD_MissionFlow
 		return flow.briefingSeconds;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static int RawSafeStartSeconds()
 	{
 		TBD_MissionFlowStruct flow = Block();
@@ -100,7 +94,6 @@ class TBD_MissionFlow
 		return flow.safeStartSeconds;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static int RawTimeLimitSeconds()
 	{
 		TBD_MissionFlowStruct flow = Block();
@@ -110,7 +103,6 @@ class TBD_MissionFlow
 		return flow.timeLimitSeconds;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static string RawJip()
 	{
 		TBD_MissionFlowStruct flow = Block();
@@ -120,7 +112,6 @@ class TBD_MissionFlow
 		return flow.jip;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! ONE resolution rule for all three durations, so absent / 0 / negative are treated the same
 	//! way everywhere and the log can say which of the three it was.
 	//!
@@ -145,8 +136,7 @@ class TBD_MissionFlow
 		return raw;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Authored BRIEFING length in seconds, or UNSET. Advisory only — see
+	//! Authored BRIEFING length in seconds, or UNSET. Advisory only -- see
 	//! `TBD_FrameworkManager.OnEnterBriefing` for why nothing auto-advances on it.
 	static int BriefingSeconds()
 	{
@@ -154,7 +144,6 @@ class TBD_MissionFlow
 		return ResolveSeconds(RawBriefingSeconds(), source);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Authored safestart countdown length in seconds, or UNSET.
 	static int SafeStartSeconds()
 	{
@@ -162,7 +151,6 @@ class TBD_MissionFlow
 		return ResolveSeconds(RawSafeStartSeconds(), source);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Authored round length in seconds, or UNSET. `0` is a legal and meaningful answer: the author
 	//! explicitly declared NO limit. Callers must distinguish `0` from UNSET.
 	static int TimeLimitSeconds()
@@ -171,9 +159,8 @@ class TBD_MissionFlow
 		return ResolveSeconds(RawTimeLimitSeconds(), source);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! The resolved policy. Anything unrecognised — including the empty string an absent key leaves
-	//! behind — resolves to ALWAYS, which is byte-for-byte today's behaviour. An unrecognised string
+	//! The resolved policy. Anything unrecognised -- including the empty string an absent key leaves
+	//! behind -- resolves to ALWAYS, which is byte-for-byte today's behaviour. An unrecognised string
 	//! is NAMED once at load (`TBD_FrameworkManager.ReportJip`) rather than swallowed here; this
 	//! function is on the join path and must stay silent (ENF-1).
 	static TBD_EJipPolicy JipPolicy()
@@ -181,7 +168,6 @@ class TBD_MissionFlow
 		return PolicyFromString(RawJip());
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static TBD_EJipPolicy PolicyFromString(string raw)
 	{
 		if (raw == "disabled")
@@ -193,7 +179,6 @@ class TBD_MissionFlow
 		return TBD_EJipPolicy.ALWAYS;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True when `raw` is a value THIS BUILD understands. Used only by the load-time report, so a
 	//! string the schema allows but this build does not implement gets named instead of silently
 	//! collapsing into the default.
@@ -202,8 +187,7 @@ class TBD_MissionFlow
 		return raw == "disabled" || raw == "until_safestart_end" || raw == "always";
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! The resolved policy as the schema spells it — for logs, and for the JIP door's refusal label.
+	//! The resolved policy as the schema spells it -- for logs, and for the JIP door's refusal label.
 	static string JipPolicyName()
 	{
 		TBD_EJipPolicy policy = JipPolicy();
@@ -217,12 +201,10 @@ class TBD_MissionFlow
 		return "always";
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! ══ THE JIP DOOR'S QUESTION ══════════════════════════════════════════════════════════════
 	//! May a player arriving NOW, with the round at `stage`, be put into the world?
 	//!
 	//! This answers the AUTHOR'S question only. It deliberately knows nothing about one life, spent
-	//! lives, auto-deploy or whether slot bodies exist — those are `TBD_SpawnManager`'s guards and
+	//! lives, auto-deploy or whether slot bodies exist -- those are `TBD_SpawnManager`'s guards and
 	//! they all still run. A `true` here is PERMISSION, not an instruction.
 	//!
 	//! LOADING is permitted because this policy has no opinion about it: nothing is materialised
@@ -245,12 +227,11 @@ class TBD_MissionFlow
 		if (policy == TBD_EJipPolicy.DISABLED)
 			return false;
 
-		// UNTIL_SAFESTART_END — open through planning and warmup, shut at LIVE. END and DEBRIEF fall
+		// UNTIL_SAFESTART_END -- open through planning and warmup, shut at LIVE. END and DEBRIEF fall
 		// through to false, which is also what IsStageDeployable() says about them.
 		return stage == TBD_EGameStage.BRIEFING || stage == TBD_EGameStage.SAFE_START;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Comma-separated list of the stages a join is permitted in, for the load-time report.
 	//!
 	//! Built by ASKING `AllowsJoinAtStage`, never from a second hand-written table: a label that can
@@ -277,30 +258,30 @@ class TBD_MissionFlow
 	}
 }
 
-[ComponentEditorProps(category: "TBD/Framework", description: "TBD platform game mode manager — mission load and stage machine.")]
+[ComponentEditorProps(category: "TBD/Framework", description: "TBD platform game mode manager -- mission load and stage machine.")]
 class TBD_FrameworkManagerClass : SCR_BaseGameModeComponentClass {}
 
 class TBD_FrameworkManager : SCR_BaseGameModeComponent
 {
-	//! @replicated m_Stage — server-owned; clients react in OnStageReplicated (onRplName hook).
+	//! @replicated m_Stage -- server-owned; clients react in OnStageReplicated (onRplName hook).
 	[RplProp(onRplName: "OnStageReplicated")]
 	protected TBD_EGameStage m_Stage = TBD_EGameStage.LOADING;
 
-	//! A5 — roster settle ticks elapsed (500 ms cadence; 4 = the 2 s force-settle deadline).
+	//! A5 -- roster settle ticks elapsed (500 ms cadence; 4 = the 2 s force-settle deadline).
 	protected int m_iRosterSettleTicks;
 
-	//! T-181.17 — why the last SetStage() refused, or empty. `TBD_AdminService.AdvanceStage`
+	//! T-181.17 -- why the last SetStage() refused, or empty. `TBD_AdminService.AdvanceStage`
 	//! detects a refusal by comparing the stage either side of the call, which tells an admin THAT
 	//! it was refused but not why; this carries the why to them instead of only to the console.
 	protected string m_sLastStageRefusal;
 
-	//! T-291 — authored `settings.spectatorPolicy`. Replicated so the CLIENT spectator controller
+	//! T-291 -- authored `settings.spectatorPolicy`. Replicated so the CLIENT spectator controller
 	//! can enforce none / own-side delay / free. MissionLoader applies the same enum on the server,
 	//! but SpectatorTargets is a process-local static and does not cross the wire.
 	[RplProp()]
 	protected string m_sSpectatorPolicy;
 
-	//! T-291 — authored `settings.nightVision`. Server applies it by stripping NVG gadgets when
+	//! T-291 -- authored `settings.nightVision`. Server applies it by stripping NVG gadgets when
 	//! false. Replicated so a client can read the latch; the strip itself is authority-only.
 	[RplProp()]
 	protected bool m_bNightVision;
@@ -325,25 +306,23 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	protected string m_sPendingEndWinner;
 	protected string m_sPendingEndReason;
 
-	//! T-941.3 - live kill counts this round, playerId -> kills. Authority only.
-	protected ref map<int, int> m_mKills;
+	protected ref map<int, int> m_mKills; //!< T-941.3 - live kill counts this round, playerId -> kills. Authority only.
 
 
-	//! T-181.38 — the round clock is not running. Negative rather than 0 for the same reason
+	//! T-181.38 -- the round clock is not running. Negative rather than 0 for the same reason
 	//! `TBD_SafestartManager.NOT_RUNNING` is: a 0 would read as "about to expire".
 	protected static const int ROUND_CLOCK_OFF = -1;
 
-	//! T-181.38 — seconds left on the authored round clock (`flow.timeLimitSeconds`), or
+	//! T-181.38 -- seconds left on the authored round clock (`flow.timeLimitSeconds`), or
 	//! ROUND_CLOCK_OFF. SERVER-SIDE ONLY, and deliberately not an `RplProp`: a replicated clock
 	//! needs a client read-out, and every TBD screen is blocked behind the `resourceDatabase.rdb`
 	//! regeneration. Players are told by chat broadcast instead, which needs no menu preset and
 	//! works on a dedicated server today. See the slice report for the upgrade path.
 	protected int m_iRoundSecondsRemaining = ROUND_CLOCK_OFF;
 
-	//------------------------------------------------------------------------------------------------
 	//! The framework manager on the CURRENTLY loaded world, or null if this world has none.
 	//!
-	//! T-181.30 — this used to be `return s_Instance;` off a constructor-set static, which is the
+	//! T-181.30 -- this used to be `return s_Instance;` off a constructor-set static, which is the
 	//! exact shape `IsFrameworkWorld()` below carries a paragraph explaining why it must never use.
 	//! Statics outlive a world inside one process (measured landmine, and a `load_mission` fleet
 	//! command restarts the scenario in-process, so it is reachable here), which left a stale manager from a
@@ -352,8 +331,8 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	//!
 	//! Safe at every call site because none of them can run before the game-mode entity is complete:
 	//! all 11 are ticks, RPC/chat handlers, stage transitions or per-player builds. The earliest is
-	//! `TickLoading`, itself a `CallLater` registered in `OnPostInit`. `PrintComponentRollCall` —
-	//! `CallLater(…, 0)` from that same `OnPostInit`, so strictly earlier than any of them — already
+	//! `TickLoading`, itself a `CallLater` registered in `OnPostInit`. `PrintComponentRollCall` --
+	//! `CallLater(..., 0)` from that same `OnPostInit`, so strictly earlier than any of them -- already
 	//! resolves its siblings by `FindComponent` on this entity and `world-boot.sh` asserts the
 	//! resulting `=ok` line, which is the runtime proof that the lookup resolves this early.
 	static TBD_FrameworkManager GetInstance()
@@ -365,8 +344,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		return TBD_FrameworkManager.Cast(gameMode.FindComponent(TBD_FrameworkManager));
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! True when the CURRENTLY loaded world runs the TBD framework — the guard every
+	//! True when the CURRENTLY loaded world runs the TBD framework -- the guard every
 	//! vanilla-suppressing modded class asks before standing vanilla down. Resolved off
 	//! the live game mode for the reason spelled out on GetInstance() above; it predates
 	//! that fix and is why the house idiom was already available to copy.
@@ -379,14 +357,12 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		return gm.FindComponent(TBD_FrameworkManager) != null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	TBD_EGameStage GetStage()
 	{
 		return m_Stage;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-181.17 — the reason the last stage transition was refused, or empty if it was not.
+	//! T-181.17 -- the reason the last stage transition was refused, or empty if it was not.
 	//! Read by the admin surfaces so "stage unchanged" comes with the why attached.
 	string GetLastStageRefusal()
 	{
@@ -394,28 +370,24 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	}
 
 
-	//------------------------------------------------------------------------------------------------
 	//! T-941.3 - winning faction key for the END banner, or empty.
 	string GetEndWinner()
 	{
 		return m_sEndWinner;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! T-941.3 - why the round ended, or empty before the first END.
 	string GetEndReason()
 	{
 		return m_sEndReason;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! T-941.3 - packed DEBRIEF scoreboard. Empty before END.
 	string GetDebriefBoard()
 	{
 		return m_sDebriefBoard;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! T-941.3 - kills credited to playerId this round (authority live map). 0 if unknown.
 	int GetKills(int playerId)
 	{
@@ -426,23 +398,20 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	}
 
 
-	//------------------------------------------------------------------------------------------------
-	//! T-291 — authored `settings.spectatorPolicy`, or empty when the mission omitted the key.
+	//! T-291 -- authored `settings.spectatorPolicy`, or empty when the mission omitted the key.
 	//! SpectatorController on the client is the consumer.
 	string GetSpectatorPolicy()
 	{
 		return m_sSpectatorPolicy;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-291 — authored `settings.nightVision`. False when unauthored (JsonLoadContext default).
+	//! T-291 -- authored `settings.nightVision`. False when unauthored (JsonLoadContext default).
 	bool IsNightVisionAllowed()
 	{
 		return m_bNightVision;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! @authority server — mission load and the stage machine run on the server only.
+	//! @authority server -- mission load and the stage machine run on the server only.
 	override void OnPostInit(IEntity owner)
 	{
 		super.OnPostInit(owner);
@@ -450,17 +419,17 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		if (!m_mKills)
 			m_mKills = new map<int, int>();
 
-		// T-291 — NVG strip on spawn. Same invoker SpawnManager uses: SCR_BaseGameModeComponent
+		// T-291 -- NVG strip on spawn. Same invoker SpawnManager uses: SCR_BaseGameModeComponent
 		// has no OnPlayerSpawned virtual in 1.7.
 		SCR_BaseGameMode gm = SCR_BaseGameMode.Cast(owner);
 		if (gm)
 			gm.GetOnPlayerSpawned().Insert(OnPlayerSpawnedApplyNvg);
 
-		// Deferred one frame so sibling components are certainly constructed — the roll-call
+		// Deferred one frame so sibling components are certainly constructed -- the roll-call
 		// must not report MISSING merely because it asked too early.
 		GetGame().GetCallqueue().CallLater(PrintComponentRollCall, 0);
 
-		// Authority only — clients never drive mission load or the stage machine.
+		// Authority only -- clients never drive mission load or the stage machine.
 		if (RplSession.Mode() == RplMode.Client)
 			return;
 
@@ -469,13 +438,12 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		GetGame().GetCallqueue().CallLater(TickLoading, 1000, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Cancel every callqueue entry this component owns.
 	//!
 	//! Why this is not optional: a `load_mission` fleet command restarts the scenario IN-PROCESS via
 	//! `GameStateTransitions.RequestScenarioRestart()`, and a recorded landmine in this program is
 	//! that statics outlive a world inside one process. Without this, all four timers survive the
-	//! teardown and fire against a dead component on the next world — `GetOwner()` returns null and
+	//! teardown and fire against a dead component on the next world -- `GetOwner()` returns null and
 	//! the roll-call would report a phantom failure, while the tick functions would run their logic
 	//! against a stale instance. `ScriptCallQueue.Remove` cancels BY FUNCTION, which is exactly
 	//! right here: there is one instance of each of these per world.
@@ -488,8 +456,8 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 			queue.Remove(TickLoading);
 			queue.Remove(TickRosterSettle);
 			queue.Remove(TickWinConditions);
-			// T-181.38 — the round clock is the longest-lived timer here (up to
-			// flow.timeLimitSeconds — 90 minutes on bridgehead), so it is by far the most likely to
+			// T-181.38 -- the round clock is the longest-lived timer here (up to
+			// flow.timeLimitSeconds -- 90 minutes on bridgehead), so it is by far the most likely to
 			// still be pending across an in-process scenario restart.
 			queue.Remove(TickRoundClock);
 			queue.Remove(StripNightVisionForPlayer);
@@ -502,14 +470,13 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		super.OnDelete(owner);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One-shot component roll-call for the entity that owns the framework.
 	//!
 	//! Why this exists: a component whose class fails to resolve is dropped from the prefab
 	//! SILENTLY. `TBD_GameMode.et` still lists it, every script still compiles clean, and the
 	//! only symptom is a feature that never runs. Three components (lobby, spectator,
 	//! safestart) were added to that prefab across three separate slices with nothing anywhere
-	//! proving they instantiate — the compile gate cannot see prefab wiring at all.
+	//! proving they instantiate -- the compile gate cannot see prefab wiring at all.
 	//!
 	//! `cargo xtask mod world-boot` boots the real scenario headlessly and asserts this line, so
 	//! a dropped component fails the wave gate instead of surfacing mid-event. The framework
@@ -519,7 +486,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		IEntity owner = GetOwner();
 		if (!owner)
 		{
-			Print("[TBD] roll-call: no owner entity — cannot enumerate components.", LogLevel.ERROR);
+			Print("[TBD] roll-call: no owner entity -- cannot enumerate components.", LogLevel.ERROR);
 			return;
 		}
 
@@ -535,14 +502,14 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		line += RollCallEntry(owner, TBD_RadioComponent, "Radio", missing);
 		line += RollCallEntry(owner, TBD_ObjectivesComponent, "Objectives", missing);
 
-		// T-181.26/.30 — arm the briefing wire self-check HERE rather than lazily on first
+		// T-181.26/.30 -- arm the briefing wire self-check HERE rather than lazily on first
 		// Serialise. A world-boot has zero players, so Serialise never runs and a lazily-armed
 		// check is invisible to the gate; the roll-call always executes, which is what makes it
 		// gated. Once-only guarded internally, and does not recurse into Serialise.
 		TBD_BriefingService.SelfCheckWire();
 
 		// PrintFormat, not Print: `Print(someLocalVariable)` emits the DECLARATION
-		// (`string line = '…'`) rather than the value, which made the log line awkward to match
+		// (`string line = '...'`) rather than the value, which made the log line awkward to match
 		// and the world-boot selftest fixtures diverge from reality. Measured, not assumed.
 		if (missing.IsEmpty())
 		{
@@ -555,7 +522,6 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 			missing.Count()), LogLevel.ERROR);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One roll-call cell. Returns the " Label=ok" / " Label=MISSING" fragment and records the
 	//! misses, so the caller builds the whole verdict in one line without a ternary (Enfusion
 	//! Script has none).
@@ -568,7 +534,6 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		return " " + label + "=MISSING";
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void TickLoading()
 	{
 		if (m_Stage != TBD_EGameStage.LOADING)
@@ -582,13 +547,13 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 
 		if (!TBD_MissionLoader.IsValid())
 		{
-			Print("[TBD] Mission loaded but invalid — staying in LOADING.", LogLevel.ERROR);
+			Print("[TBD] Mission loaded but invalid -- staying in LOADING.", LogLevel.ERROR);
 			return;
 		}
 
 		GetGame().GetCallqueue().Remove(TickLoading);
 
-		// T-181.38 — BEFORE anything else consumes the document, and before the stage machine
+		// T-181.38 -- BEFORE anything else consumes the document, and before the stage machine
 		// leaves LOADING. `flow.safeStartSeconds` in particular has to reach TBD_SafestartManager
 		// while it is still impossible for SAFE_START to have been entered.
 		ApplyMissionFlow();
@@ -602,7 +567,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 			sm.MaterializeSlotBodies();
 
 		// A5 (determinism): the roster fetch must SETTLE before LOBBY so slot
-		// assignment is a pure function of settled state — the old same-tick
+		// assignment is a pure function of settled state -- the old same-tick
 		// BeginLoad()+SetStage(LOBBY) let the 250 ms deploy wave race the REST
 		// round-trip (roster vs round-robin flipped run-to-run).
 		TBD_RosterLoader.BeginLoad();
@@ -610,17 +575,16 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		GetGame().GetCallqueue().CallLater(TickRosterSettle, 500, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! A5 — wait for the roster to settle (loaded or failed), force-settle at the 2 s
+	//! A5 -- wait for the roster to settle (loaded or failed), force-settle at the 2 s
 	//! deadline, then enter LOBBY exactly once.
 	//!
-	//! T-541 — also wait for SpawnManager's loadout IsComplete settle. MaterializeSlotBodies
+	//! T-541 -- also wait for SpawnManager's loadout IsComplete settle. MaterializeSlotBodies
 	//! starts async dress passes; entering LOBBY before IsComplete answers was the residual
 	//! that let incomplete delivery proceed to the lobby/deploy wave after T-415 only
-	//! ERROR-logged inside ReportVerdict. Incomplete refuse → stay in LOADING.
+	//! ERROR-logged inside ReportVerdict. Incomplete refuse -> stay in LOADING.
 	//!
-	//! T-563 — LOBBY refuse for loadout delivery / settle pending lives in
-	//! `TBD_SpawnManager.StageRefusalFor` → `SetStage`. Auto settle and admin `#stage LOBBY`
+	//! T-563 -- LOBBY refuse for loadout delivery / settle pending lives in
+	//! `TBD_SpawnManager.StageRefusalFor` -> `SetStage`. Auto settle and admin `#stage LOBBY`
 	//! share that one gate (admin used to bypass the TickRosterSettle-only checks).
 	protected void TickRosterSettle()
 	{
@@ -644,12 +608,11 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		Print(string.Format("[TBD][Spawn] roster settled=%1 assignments=%2",
 			TBD_RosterLoader.GetSettleReason(), TBD_RosterLoader.GetAssignmentCount()));
 
-		// T-563 — refuse/pending handled inside SetStage via StageRefusalFor (same as admin).
+		// T-563 -- refuse/pending handled inside SetStage via StageRefusalFor (same as admin).
 		SetStage(TBD_EGameStage.LOBBY);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-291 — apply `environment.windDirDeg` through the world's weather manager.
+	//! T-291 -- apply `environment.windDirDeg` through the world's weather manager.
 	//!
 	//! T-682's TBD_EnvironmentReader already applies fog/wind/windDirDeg/viewDistance at parse.
 	//! This is the FrameworkManager weather-setup half the ticket names: the direction override
@@ -672,7 +635,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 
 		if (env.windDirDeg < 0 || env.windDirDeg > 360)
 		{
-			Print(string.Format("[TBD][Weather] windDirDeg=%1 outside 0..360 — not applied", env.windDirDeg), LogLevel.WARNING);
+			Print(string.Format("[TBD][Weather] windDirDeg=%1 outside 0..360 -- not applied", env.windDirDeg), LogLevel.WARNING);
 			return;
 		}
 
@@ -680,7 +643,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		ChimeraWorld world = ChimeraWorld.CastFrom(baseWorld);
 		if (!world)
 		{
-			Print("[TBD][Weather] no ChimeraWorld — windDirDeg not applied", LogLevel.ERROR);
+			Print("[TBD][Weather] no ChimeraWorld -- windDirDeg not applied", LogLevel.ERROR);
 			return;
 		}
 
@@ -688,7 +651,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		BaseWeatherManagerEntity weather = BaseWeatherManagerEntity.Cast(tw);
 		if (!weather)
 		{
-			Print("[TBD][Weather] no BaseWeatherManagerEntity — windDirDeg not applied", LogLevel.ERROR);
+			Print("[TBD][Weather] no BaseWeatherManagerEntity -- windDirDeg not applied", LogLevel.ERROR);
 			return;
 		}
 
@@ -701,8 +664,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		Print(string.Format("[TBD][Weather] windDirDeg=%1 applied", env.windDirDeg), LogLevel.NORMAL);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-291 — latch authored settings onto replicated fields. SpectatorController on the client
+	//! T-291 -- latch authored settings onto replicated fields. SpectatorController on the client
 	//! reads GetSpectatorPolicy(); this file applies nightVision by stripping NVG gadgets when off.
 	//! @authority server
 	protected void ApplyAuthoredSettings()
@@ -726,13 +688,12 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 			Print(string.Format("[TBD][Settings] spectatorPolicy=%1 latched for clients", m_sSpectatorPolicy), LogLevel.NORMAL);
 
 		if (m_bNightVision)
-			Print("[TBD][Settings] nightVision=true — NVG gadgets are allowed", LogLevel.NORMAL);
+			Print("[TBD][Settings] nightVision=true -- NVG gadgets are allowed", LogLevel.NORMAL);
 		else
-			Print("[TBD][Settings] nightVision=false — NVG gadgets stripped on spawn", LogLevel.NORMAL);
+			Print("[TBD][Settings] nightVision=false -- NVG gadgets stripped on spawn", LogLevel.NORMAL);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-291 — after a body exists, strip night-vision gadgets when the mission forbids them.
+	//! T-291 -- after a body exists, strip night-vision gadgets when the mission forbids them.
 	//! Delayed so TBD_LoadoutEquipHelper's async dress can finish (T-541 settle).
 	//! @authority server
 	protected void OnPlayerSpawnedApplyNvg(int playerId, IEntity controlledEntity)
@@ -746,7 +707,6 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	}
 
 
-	//------------------------------------------------------------------------------------------------
 	//! T-941.3 - END/DEBRIEF overlays. Never refuses a stage change: Close/Open are local
 	//! widget ops and cannot feed back into SetStage.
 	protected void ApplyEndScreens()
@@ -765,7 +725,6 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 			TBD_DebriefScreen.Close();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! T-941.3 - named END stage hook. Overlay already opened from NotifyLocalStageUI;
 	//! this only announces the banner so a dedicated server log still names winner + reason.
 	protected void OnEnterEnd()
@@ -784,7 +743,6 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		Broadcast(msg);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! T-941.3 - named DEBRIEF stage hook. Overlay already opened from NotifyLocalStageUI.
 	protected void OnEnterDebrief()
 	{
@@ -792,7 +750,6 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		// before Replication.BumpMe() so clients already have it.
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void SnapshotEndBanner()
 	{
 		if (!m_sPendingEndReason.IsEmpty())
@@ -810,7 +767,6 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		SnapshotDebriefBoard();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void InferEndBanner()
 	{
 		string objectiveWinner;
@@ -837,7 +793,6 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		m_sEndWinner = winner;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Same survivor arithmetic TBD_ResultsReporter.ResolveWinner uses.
 	protected void ResolveEndWinner(out string winner, out int contesting, out int stillAlive)
 	{
@@ -870,7 +825,6 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 			winner = string.Empty;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void ClearEndBanner()
 	{
 		m_sEndWinner = string.Empty;
@@ -882,7 +836,6 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 			m_mKills.Clear();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void SnapshotDebriefBoard()
 	{
 		if (RplSession.Mode() == RplMode.Client)
@@ -893,7 +846,6 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		m_sDebriefBoard = TBD_DebriefScreen.PackRows(rows);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! T-941.3 - credit a player kill while LIVE. Team-kills and world/AI kills are ignored.
 	override void OnPlayerKilled(notnull SCR_InstigatorContextData instigatorContextData)
 	{
@@ -920,7 +872,6 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	}
 
 
-	//------------------------------------------------------------------------------------------------
 	//! @authority server
 	protected void StripNightVisionForPlayer(int playerId)
 	{
@@ -958,22 +909,21 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		}
 
 		if (removed > 0)
-			Print(string.Format("[TBD][Settings] nightVision=false — removed %1 NVG gadget(s)", removed), LogLevel.NORMAL);
+			Print(string.Format("[TBD][Settings] nightVision=false -- removed %1 NVG gadget(s)", removed), LogLevel.NORMAL);
 	}
 
-	// ══ T-181.38 — THE `flow` BLOCK ═══════════════════════════════════════════════════════════
 	//
 	// `flow` is the mission's own statement of how the event is PACED: how long the brief runs, how
 	// long the warmup runs, how long the round runs, and who may still join. Every golden mission
 	// authors all four fields and, until this slice, the block was not in
-	// `TBD_MissionDocumentStruct` at all — so all four were silently discarded. "JSON is the
+	// `TBD_MissionDocumentStruct` at all -- so all four were silently discarded. "JSON is the
 	// contract" (documentation_v2/mod/tbd-framework/mod_design.md section 2) is exactly what
 	// that failed.
 	//
 	// Each field is put where it actually acts, and nowhere else:
 	//   * safeStartSeconds -> handed to TBD_SafestartManager through its EXISTING configured-seconds
 	//                         seam, the same one `#tbd safestart <seconds>` drives.
-	//   * timeLimitSeconds -> a round clock armed at LIVE, ending the round through SetStage(END) —
+	//   * timeLimitSeconds -> a round clock armed at LIVE, ending the round through SetStage(END) --
 	//                         the SAME path faction_eliminated uses. There is exactly one way to end
 	//                         a round and this slice does not add a second.
 	//   * jip              -> resolved here, ENFORCED at the JIP door in TBD_SpawnManager (owned by
@@ -981,16 +931,14 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	//   * briefingSeconds  -> announced on entering BRIEFING. Advisory: nothing auto-advances that
 	//                         stage today and this slice does not invent it. See OnEnterBriefing.
 
-	//------------------------------------------------------------------------------------------------
 	//! Read the mission's `flow` block and put each field into force. Runs ONCE per mission load.
 	//!
-	//! ══ EVERY TEST HERE IS ON CONTENT, NEVER ON NULL ═══════════════════════════════════════════
 	//! `JsonLoadContext` ALLOCATES `doc.flow` even when the JSON has no `flow` key at all (measured
 	//! 2026-07-25; see the landmine header on `TBD_MissionShapeStruct`), so `if (doc.flow)` is
 	//! ALWAYS TRUE. `golden-missions/empty-warning-fields.json` authors a literal `"flow": {}` and
-	//! must behave IDENTICALLY to a mission with no flow key at all — and both must leave today's
+	//! must behave IDENTICALLY to a mission with no flow key at all -- and both must leave today's
 	//! behaviour exactly as it was. `TBD_MissionFlowStruct.ABSENT` is what makes that possible, and
-	//! it is also what keeps an authored `0` (which for `timeLimitSeconds` means "no limit" — a
+	//! it is also what keeps an authored `0` (which for `timeLimitSeconds` means "no limit" -- a
 	//! statement, not silence) distinguishable from "the author said nothing".
 	//!
 	//! Every field is reported on its own line whether it was authored or not, because the failure
@@ -1013,11 +961,10 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		ReportJip();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One `[TBD][Flow]` line per duration field, naming the SOURCE of the value in force.
 	//!
 	//! The source label is the entire point of this function. A number on its own cannot tell an
-	//! operator whether the mission was honoured or ignored — and for safestart the two produced the
+	//! operator whether the mission was honoured or ignored -- and for safestart the two produced the
 	//! identical number on the one mission anybody had tested with.
 	//! @authority server
 	protected void ReportSeconds(string field, int value, string source, string defaultLabel)
@@ -1025,7 +972,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		if (source == TBD_MissionFlow.SRC_INVALID)
 		{
 			TBD_Log.Error(TBD_MissionFlow.CH_FLOW, string.Format(
-				"flow.%1 is NEGATIVE in the mission document (schema declares minimum 0) — ignored, default in force: %2",
+				"flow.%1 is NEGATIVE in the mission document (schema declares minimum 0) -- ignored, default in force: %2",
 				field, defaultLabel));
 			return;
 		}
@@ -1040,23 +987,19 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		TBD_Log.Event(TBD_MissionFlow.CH_FLOW, string.Format("flow.%1=%2 (authored)", field, value));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Hand `flow.safeStartSeconds` to TBD_SafestartManager.
 	//!
-	//! ── Through the existing seam, not by reaching into that file ───────────────────────────────
 	//! `AdminSetSeconds` is the same entry point `#tbd safestart <seconds>` already drives, so an
 	//! authored length and an admin-typed length now travel an identical path and get an identical
 	//! bounds check (MIN_COUNTDOWN_SECONDS..MAX_COUNTDOWN_SECONDS). That file belongs to another
 	//! slice; using its published seam is what makes this a change of ZERO lines there.
 	//!
-	//! ── Why the manager's own words are logged rather than ours ─────────────────────────────────
-	//! "We called the setter" is not evidence that the setter took — the same reasoning
+	//! "We called the setter" is not evidence that the setter took -- the same reasoning
 	//! `TBD_SafestartManager.RestoreOne` applies when it READS BACK `IsDamageHandlingEnabled()`. So
 	//! the reply string is logged verbatim and `StatusLine()` is then read back, which quotes
 	//! `m_iConfiguredSeconds` through `FormatClock`. The `next arm = M:SS` in that line is the
 	//! manager reporting what it is actually holding.
 	//!
-	//! ── An authored value the manager REFUSES ───────────────────────────────────────────────────
 	//! `AdminSetSeconds` rejects anything outside 5..3600, which includes an authored `0`. That is
 	//! reported at ERROR with the manager's own reason attached, and the previous value stays in
 	//! force. It is NOT clamped: silently running a 300 s safestart when the author asked for 0 is
@@ -1074,7 +1017,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 			// Not an error: SetStage already REFUSES SAFE_START outright on a world with no
 			// safestart component, so there is no countdown for this value to be the length of.
 			TBD_Log.Warn(TBD_MissionFlow.CH_FLOW,
-				"flow.safeStartSeconds not applied — TBD_SafestartManager is not on this game mode (SAFE_START is refused on this world anyway).");
+				"flow.safeStartSeconds not applied -- TBD_SafestartManager is not on this game mode (SAFE_START is refused on this world anyway).");
 			return;
 		}
 
@@ -1096,7 +1039,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 			// Built in appended steps, not one long format chain: that is the measured
 			// "Formula too complex" landmine, and its misleading second diagnostic.
 			string refused = string.Format("flow.safeStartSeconds=%1 (authored) REFUSED by TBD_SafestartManager", seconds);
-			refused += " — " + reply;
+			refused += " -- " + reply;
 			refused += " The authored length is NOT in force.";
 			TBD_Log.Error(TBD_MissionFlow.CH_FLOW, refused);
 			TBD_Log.Kv(TBD_MissionFlow.CH_FLOW, "safestart", safestart.StatusLine());
@@ -1109,7 +1052,6 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		TBD_Log.Kv(TBD_MissionFlow.CH_FLOW, "safestart", safestart.StatusLine());
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Report the resolved JIP policy and the stages it permits a join in.
 	//!
 	//! The permitted-stage list is derived from `AllowsJoinAtStage` rather than written out a second
@@ -1131,7 +1073,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		if (!TBD_MissionFlow.IsKnownPolicyString(raw))
 		{
 			TBD_Log.Error(TBD_MissionFlow.CH_FLOW, string.Format(
-				"flow.jip='%1' is not a value this build understands — falling back to '%2'. joins-permitted=%3",
+				"flow.jip='%1' is not a value this build understands -- falling back to '%2'. joins-permitted=%3",
 				raw, TBD_MissionFlow.JipPolicyName(), permitted));
 			return;
 		}
@@ -1140,17 +1082,16 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 			"flow.jip=%1 (authored) joins-permitted=%2", raw, permitted));
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! @authority server — mutates the replicated m_Stage and calls Replication.BumpMe() to push it.
+	//! @authority server -- mutates the replicated m_Stage and calls Replication.BumpMe() to push it.
 	void SetStage(TBD_EGameStage stage)
 	{
-		// T-181.30 — clear the refusal reason FIRST, before the same-stage early-out.
+		// T-181.30 -- clear the refusal reason FIRST, before the same-stage early-out.
 		//
 		// It used to be cleared further down, past that early-out, which made it stale-readable:
 		// `TBD_AdminService.AdvanceStage` detects a refusal by comparing the stage either side of
 		// this call and then reads `GetLastStageRefusal()` for the why. A no-op command (`#tbd stage
 		// LOBBY` while already in LOBBY) leaves the stage unchanged, so it takes that same
-		// "REFUSED" branch — and with the old ordering it replayed whatever reason a genuinely
+		// "REFUSED" branch -- and with the old ordering it replayed whatever reason a genuinely
 		// refused transition had left behind minutes earlier, as if it were the reason for THIS
 		// command. Empty is the truthful answer there: nothing refused it, it was already the stage.
 		//
@@ -1161,21 +1102,21 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		if (m_Stage == stage)
 			return;
 
-		// T-181.17 — SAFE_START is a PROMISE that nobody can be hurt. If the component that keeps
+		// T-181.17 -- SAFE_START is a PROMISE that nobody can be hurt. If the component that keeps
 		// that promise is not on this world's game mode, entering the stage would announce a
-		// safestart that does not exist — and under ONE LIFE the first negligent discharge ends
+		// safestart that does not exist -- and under ONE LIFE the first negligent discharge ends
 		// somebody's event. Refuse the transition and say why, loudly. The admin can still take
 		// the round straight to LIVE (`#tbd stage LIVE`), which is honest about being unprotected.
 		if (stage == TBD_EGameStage.SAFE_START && !TBD_SafestartManager.GetInstance())
 		{
-			m_sLastStageRefusal = "SAFE_START has no enforcement on this world (TBD_SafestartManager is missing from the game mode prefab) — go straight to LIVE with '#tbd stage LIVE', and warn players that weapons are hot.";
+			m_sLastStageRefusal = "SAFE_START has no enforcement on this world (TBD_SafestartManager is missing from the game mode prefab) -- go straight to LIVE with '#tbd stage LIVE', and warn players that weapons are hot.";
 			TBD_Log.Banner(TBD_Log.CH_SAFESTART,
-				"SAFE_START REFUSED — TBD_SafestartManager is not on the game mode; nothing would enforce damage-off",
+				"SAFE_START REFUSED -- TBD_SafestartManager is not on the game mode; nothing would enforce damage-off",
 				true);
 			return;
 		}
 
-		// T-181.32 — ONE LIFE cannot be enforced while this host hands out non-durable player
+		// T-181.32 -- ONE LIFE cannot be enforced while this host hands out non-durable player
 		// keys, so SAFE_START/LIVE are refused until it can (or an admin signs the waiver).
 		m_sLastStageRefusal = TBD_SpawnManager.StageRefusalFor(stage);
 		if (!m_sLastStageRefusal.IsEmpty())
@@ -1193,7 +1134,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 
 		// T-181.14 left this hook for whoever owned this file; T-181.17 owns it now. Logged
 		// BEFORE the subsystem fan-out so the transition line precedes whatever the subsystems
-		// say about it. The legacy `[TBD] Stage` line below is kept verbatim — README.md and
+		// say about it. The legacy `[TBD] Stage` line below is kept verbatim -- README.md and
 		// documentation_v2/runbooks/game_server_staging/README.md quote it.
 		TBD_Log.Stage(previous, stage);
 
@@ -1203,14 +1144,14 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		if (sm)
 			sm.OnStageChanged(stage);
 
-		// T-181.17 — EVERY transition, not just the interesting ones: SAFE_START arms the
+		// T-181.17 -- EVERY transition, not just the interesting ones: SAFE_START arms the
 		// safestart and anything else lifts it, so an admin jumping SAFE_START -> END cannot
 		// strand the server with damage off. See TBD_SafestartManager.OnStageChanged.
 		TBD_SafestartManager safestart = TBD_SafestartManager.GetInstance();
 		if (safestart)
 			safestart.OnStageChanged(stage);
 
-		Print("[TBD] Stage → " + typename.EnumToString(TBD_EGameStage, stage));
+		Print("[TBD] Stage -> " + typename.EnumToString(TBD_EGameStage, stage));
 
 		// Authority path for the local UI. onRplName does NOT fire on authority, so a listen host
 		// needs this explicit call; a dedicated server no-ops inside it. See NotifyLocalStageUI().
@@ -1228,29 +1169,26 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 			OnEnterDebrief();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnEnterLobby()
 	{
 		// Preload the deployable mission list so admins can browse and deploy immediately.
 		TBD_DeployableMissionList.Refresh();
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-181.38 — `flow.briefingSeconds`, made VISIBLE to the people who act on it.
+	//! T-181.38 -- `flow.briefingSeconds`, made VISIBLE to the people who act on it.
 	//!
-	//! ══ WHY THIS DOES NOT AUTO-ADVANCE THE STAGE ═══════════════════════════════════════════════
 	//! Honestly: BRIEFING HAS NO TIMER IN THIS BUILD, and this slice does not invent one. Nothing
-	//! anywhere advances BRIEFING today — an admin does, with `#tbd stage next`. Turning an authored
+	//! anywhere advances BRIEFING today -- an admin does, with `#tbd stage next`. Turning an authored
 	//! duration into an automatic transition would be three separate behaviour changes nobody asked
 	//! for:
 	//!   1. it takes round pacing away from the admin running the event;
 	//!   2. the stage it would advance INTO is SAFE_START, which `SetStage` can legitimately REFUSE
 	//!      (T-181.17: no safestart component on the world; T-181.32: the host cannot carry ONE
-	//!      LIFE) — an automatic advance would then either strand the round or, worse, look like it
+	//!      LIFE) -- an automatic advance would then either strand the round or, worse, look like it
 	//!      worked;
 	//!   3. a briefing is over when the side has finished planning, which is not a number.
-	//! So the authored length is ANNOUNCED — it now reaches the admin and the players instead of
-	//! being discarded — and the stage machine is left exactly as it was.
+	//! So the authored length is ANNOUNCED -- it now reaches the admin and the players instead of
+	//! being discarded -- and the stage machine is left exactly as it was.
 	//!
 	//! The seam to change that decision is one `CallLater` in this method; it is written up in the
 	//! slice report rather than left half-built here.
@@ -1267,25 +1205,24 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		if (seconds == 0)
 		{
 			TBD_Log.Kv(TBD_MissionFlow.CH_FLOW, "briefing",
-				"authoredSeconds=0 — the mission asks for no briefing pause; advance when ready");
+				"authoredSeconds=0 -- the mission asks for no briefing pause; advance when ready");
 			return;
 		}
 
 		string clock = TBD_SafestartManager.FormatClock(seconds);
 		TBD_Log.Kv(TBD_MissionFlow.CH_FLOW, "briefing", string.Format(
-			"authoredSeconds=%1 (%2) — ADVISORY, no auto-advance; an admin advances with '#tbd stage next'",
+			"authoredSeconds=%1 (%2) -- ADVISORY, no auto-advance; an admin advances with '#tbd stage next'",
 			seconds, clock));
 
-		string msg = "[TBD] BRIEFING — the mission allows ";
+		string msg = "[TBD] BRIEFING -- the mission allows ";
 		msg += clock;
 		msg += " for orders. Read your side's brief now.";
 		Broadcast(msg);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Everything that starts when the round starts.
 	//!
-	//! T-181.38 — the end conditions are armed INDEPENDENTLY. Before this slice `OnEnterLive`
+	//! T-181.38 -- the end conditions are armed INDEPENDENTLY. Before this slice `OnEnterLive`
 	//! returned early when the mission did not declare `faction_eliminated`, so a mission declaring
 	//! only `time_limit` (`golden-missions/empty-warning-fields.json` declares exactly `time_limit`
 	//! + `all_objectives_captured`) entered LIVE with nothing at all watching it, and could never
@@ -1300,14 +1237,13 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		ArmRoundClock();
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-181.13 — start watching for a side to be wiped out. Only armed if the mission actually
+	//! T-181.13 -- start watching for a side to be wiped out. Only armed if the mission actually
 	//! declared `faction_eliminated`; a mission that declared nothing runs until an admin ends
 	//! it rather than ending on its own.
 	//! @authority server
 	protected void ArmFactionEliminated()
 	{
-		// T-181.39 — arm on ANY supported trigger. The old guard checked only
+		// T-181.39 -- arm on ANY supported trigger. The old guard checked only
 		// faction_eliminated, so a mission declaring just `all_objectives_captured` never armed
 		// the win tick at all and ran silently to the time limit.
 		bool anyTrigger = TBD_MissionLoader.HasEndTrigger(TBD_MissionFlow.TRIGGER_FACTION_ELIMINATED);
@@ -1320,7 +1256,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 
 		if (!anyTrigger)
 		{
-			Print("[TBD][Win] no faction_eliminated trigger in mission — round runs until admin ends it");
+			Print("[TBD][Win] no faction_eliminated trigger in mission -- round runs until admin ends it");
 			return;
 		}
 
@@ -1329,17 +1265,15 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		GetGame().GetCallqueue().CallLater(TickWinConditions, 2000, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-181.38 — start the authored round clock. Armed at LIVE, NOT at LOADING: the clock measures
+	//! T-181.38 -- start the authored round clock. Armed at LIVE, NOT at LOADING: the clock measures
 	//! the ROUND, and the lobby, brief and warmup that precede it are not the round.
 	//!
 	//! Because it hangs off the LIVE transition it is also automatically subject to every guard
-	//! `SetStage` applies — including T-181.32's one-life identity gate. A round refused entry to
+	//! `SetStage` applies -- including T-181.32's one-life identity gate. A round refused entry to
 	//! LIVE never starts its clock, which is correct.
 	//!
-	//! ══ BOTH HALVES ARE REQUIRED, AND EITHER ONE ALONE IS REPORTED ═════════════════════════════
-	//! `winConditions.endOn` is the mission's own statement of HOW the round may end — the exact
-	//! list `faction_eliminated` is already gated on — and `flow.timeLimitSeconds` is HOW LONG. The
+	//! `winConditions.endOn` is the mission's own statement of HOW the round may end -- the exact
+	//! list `faction_eliminated` is already gated on -- and `flow.timeLimitSeconds` is HOW LONG. The
 	//! clock arms only when the mission said both, because:
 	//!   * a duration with no `time_limit` trigger would end a round on a condition the author never
 	//!     declared;
@@ -1349,7 +1283,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	//! the mission's own fields. All four goldens author both halves consistently, so this is a
 	//! guard against a future producer bug rather than a live workaround.
 	//!
-	//! An authored `0` is NOT "absent" — the schema's `minimum: 0` makes it a legal, deliberate
+	//! An authored `0` is NOT "absent" -- the schema's `minimum: 0` makes it a legal, deliberate
 	//! statement that this mission has no time limit, and it is logged as exactly that.
 	//! @authority server
 	protected void ArmRoundClock()
@@ -1365,7 +1299,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 			if (limit > 0)
 			{
 				TBD_Log.Warn(TBD_MissionFlow.CH_FLOW, string.Format(
-					"flow.timeLimitSeconds=%1 is authored but winConditions.endOn does not declare 'time_limit' — clock NOT armed, this round will not end on time.",
+					"flow.timeLimitSeconds=%1 is authored but winConditions.endOn does not declare 'time_limit' -- clock NOT armed, this round will not end on time.",
 					limit));
 			}
 			return;
@@ -1374,14 +1308,14 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		if (limit == TBD_MissionFlow.UNSET)
 		{
 			TBD_Log.Warn(TBD_MissionFlow.CH_FLOW,
-				"winConditions.endOn declares 'time_limit' but flow.timeLimitSeconds is not authored — this round CANNOT end on time.");
+				"winConditions.endOn declares 'time_limit' but flow.timeLimitSeconds is not authored -- this round CANNOT end on time.");
 			return;
 		}
 
 		if (limit == 0)
 		{
 			TBD_Log.Event(TBD_MissionFlow.CH_FLOW,
-				"flow.timeLimitSeconds=0 (authored) — an explicit NO LIMIT; the round will not end on time.");
+				"flow.timeLimitSeconds=0 (authored) -- an explicit NO LIMIT; the round will not end on time.");
 			return;
 		}
 
@@ -1398,10 +1332,9 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		Broadcast(msg);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-181.38 — the round clock. 1 Hz, mirroring `TBD_SafestartManager.TickCountdown`, which is
+	//! T-181.38 -- the round clock. 1 Hz, mirroring `TBD_SafestartManager.TickCountdown`, which is
 	//! this framework's established cadence for a player-visible countdown (ENF-1: not a per-frame
-	//! path — 5400 ticks across the whole of bridgehead's 90-minute round).
+	//! path -- 5400 ticks across the whole of bridgehead's 90-minute round).
 	//!
 	//! It disarms itself the instant the round is no longer LIVE, so an admin ending the round early
 	//! or restarting it to LOBBY cannot leave a clock running that later ends a round which already
@@ -1436,7 +1369,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 
 		// The same `[TBD][Win]` prefix the elimination path uses, so one grep finds every way a
 		// round has ever ended.
-		Print("[TBD][Win] time_limit — authored round clock expired");
+		Print("[TBD][Win] time_limit -- authored round clock expired");
 		Broadcast("[TBD] TIME. The round is over.");
 
 		// THE SAME END PATH `faction_eliminated` uses. This slice adds a new REASON for a round to
@@ -1456,12 +1389,11 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		if (m_Stage != TBD_EGameStage.END)
 		{
 			TBD_Log.Error(TBD_MissionFlow.CH_FLOW,
-				"time limit expired but the END transition was REFUSED — the round is still running: " + m_sLastStageRefusal);
+				"time limit expired but the END transition was REFUSED -- the round is still running: " + m_sLastStageRefusal);
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-181.38 — when players are told how long is left. Sparse: chat is the durable channel and so
+	//! T-181.38 -- when players are told how long is left. Sparse: chat is the durable channel and so
 	//! also the one that becomes noise fastest (same reasoning, and the same ladder from ten minutes
 	//! down, as `TBD_SafestartManager.IsChatMilestone`).
 	static bool IsRoundClockMilestone(int seconds)
@@ -1485,14 +1417,13 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Server -> every connected player's chat feed (TBD_PlayerChat). Under ONE LIFE a round clock
 	//! that ends somebody's event without ever having warned them is not acceptable, and chat is the
 	//! player-facing channel that works on a dedicated server without a menu preset.
 	//! @authority server
 	protected void Broadcast(string text)
 	{
-		// Authority only — the server is the only machine that should be telling everyone anything.
+		// Authority only -- the server is the only machine that should be telling everyone anything.
 		if (RplSession.Mode() == RplMode.Client)
 			return;
 
@@ -1500,7 +1431,6 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		TBD_PlayerChat.TellEveryone(text);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Ends the round when a playable faction has no living claimed slots left.
 	//!
 	//! Guards that matter under ONE LIFE: it only fires while LIVE, it ignores factions that
@@ -1516,7 +1446,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 			return;
 		}
 
-		// T-181.39 — objective-driven end triggers, evaluated BEFORE the attrition check so a
+		// T-181.39 -- objective-driven end triggers, evaluated BEFORE the attrition check so a
 		// mission that wins on objectives does not have to also eliminate a faction. The registry
 		// gates each branch on HasEndTrigger itself, and returns empty when it never built (its
 		// component absent from the prefab), so this degrades to a no-op rather than a crash.
@@ -1525,7 +1455,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		if (!objectiveTrigger.IsEmpty())
 		{
 			GetGame().GetCallqueue().Remove(TickWinConditions);
-			PrintFormat("[TBD][Win] %1 — winner=%2", objectiveTrigger, objectiveWinner);
+			PrintFormat("[TBD][Win] %1 -- winner=%2", objectiveTrigger, objectiveWinner);
 			m_sPendingEndReason = objectiveTrigger;
 			m_sPendingEndWinner = objectiveWinner;
 			SetStage(TBD_EGameStage.END);
@@ -1548,7 +1478,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 
 			int claimed = sm.CountClaimedForFaction(f.key);
 			if (claimed == 0)
-				continue;      // never fielded — cannot be "eliminated"
+				continue;      // never fielded -- cannot be "eliminated"
 
 			contesting++;
 			if (sm.CountAliveForFaction(f.key) > 0)
@@ -1565,34 +1495,32 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 			return;
 
 		GetGame().GetCallqueue().Remove(TickWinConditions);
-		Print(string.Format("[TBD][Win] faction_eliminated — winner=%1 (%2 factions contested)",
+		Print(string.Format("[TBD][Win] faction_eliminated -- winner=%1 (%2 factions contested)",
 			lastAlive, contesting));
 		m_sPendingEndReason = "faction_eliminated";
 		m_sPendingEndWinner = lastAlive;
 		SetStage(TBD_EGameStage.END);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! @authority client — onRpl hook for m_Stage (RplProp onRplName); runs on clients on replication.
+	//! @authority client -- onRpl hook for m_Stage (RplProp onRplName); runs on clients on replication.
 	void OnStageReplicated()
 	{
 		NotifyLocalStageUI();
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-181.23 — hand the current stage to THIS machine's local player UI, if it has one.
+	//! T-181.23 -- hand the current stage to THIS machine's local player UI, if it has one.
 	//!
 	//! Called from two places on purpose, because either one alone is wrong:
-	//!   • `OnStageReplicated()` — the PROXY path. `[RplProp(onRplName:)]` fires only on the proxy
+	//!   • `OnStageReplicated()` -- the PROXY path. `[RplProp(onRplName:)]` fires only on the proxy
 	//!     (documentation_v2/mod/tbd-framework/mod_design.md section 5), so this is how a
 	//!     dedicated-server client hears about a stage change at all.
-	//!   • `SetStage()` — the AUTHORITY path. On a listen host the authority IS the player, and
+	//!   • `SetStage()` -- the AUTHORITY path. On a listen host the authority IS the player, and
 	//!     authority never receives its own onRplName callback. Without this call the host's
-	//!     briefing screen would never open — which is exactly the regression the 500 ms poll this
+	//!     briefing screen would never open -- which is exactly the regression the 500 ms poll this
 	//!     replaces was papering over, since a poll reads `GetStage()` on both topologies.
 	//!
 	//! A DEDICATED server no-ops here: it has no workspace and no local player controller, so both
-	//! guards below fail and nothing happens. The server-side stage machine is untouched — this
+	//! guards below fail and nothing happens. The server-side stage machine is untouched -- this
 	//! method only ever drives local UI, and never feeds back into replication.
 	protected void NotifyLocalStageUI()
 	{
@@ -1611,8 +1539,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		pc.TBD_OnStageChanged(m_Stage);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Admin chat command entry — `#stage next` / `#stage LOBBY` etc.
+	//! Admin chat command entry -- `#stage next` / `#stage LOBBY` etc.
 	void HandleAdminStageCommand(string args)
 	{
 		if (args.IsEmpty())
@@ -1627,7 +1554,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 			return;
 		}
 
-		// Named stage: LOBBY, LIVE, …
+		// Named stage: LOBBY, LIVE, ...
 		for (int i = TBD_EGameStage.LOADING; i <= TBD_EGameStage.DEBRIEF; i++)
 		{
 			string name = typename.EnumToString(TBD_EGameStage, i);

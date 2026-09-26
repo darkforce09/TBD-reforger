@@ -50,7 +50,6 @@ class EMCP_WB_CreateEntityResponse : JsonApiStruct
 
 class EMCP_WB_CreateEntity : NetApiHandler
 {
-	//------------------------------------------------------------------------------------------------
 	static vector ParseVectorString(string str)
 	{
 		vector result = "0 0 0";
@@ -68,13 +67,11 @@ class EMCP_WB_CreateEntity : NetApiHandler
 		return result;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override JsonApiStruct GetRequest()
 	{
 		return new EMCP_WB_CreateEntityRequest();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override JsonApiStruct GetResponse(JsonApiStruct request)
 	{
 		EMCP_WB_CreateEntityRequest req = EMCP_WB_CreateEntityRequest.Cast(request);

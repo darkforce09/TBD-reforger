@@ -1,4 +1,4 @@
-//! Pre-game rebuild (2026-09-13) — the ROLES column of the Lobby (orbat_panel mockup).
+//! Pre-game rebuild (2026-09-13) -- the ROLES column of the Lobby (orbat_panel mockup).
 //!
 //! ```
 //!   ┌ 👤 ROLES ───────────────────────────────────┐
@@ -12,12 +12,12 @@
 //! ```
 //!
 //! Three classes, one file:
-//!   * `TBD_LobbySlotRowComponent` — one seat (`TBD_LobbySlotRow.layout`). Contract: `Background`,
+//!   * `TBD_LobbySlotRowComponent` -- one seat (`TBD_LobbySlotRow.layout`). Contract: `Background`,
 //!     `RoleText`, `ChipsDock`, `HolderText`, `StatusChipDock`, `RowRule`.
-//!   * `TBD_LobbySquadCardComponent` — one squad (`TBD_LobbySquadCard.layout`). Contract: `Border`,
+//!   * `TBD_LobbySquadCardComponent` -- one squad (`TBD_LobbySquadCard.layout`). Contract: `Border`,
 //!     `Background`, `HeaderButton`, `HeaderBG`, `CallsignChipDock`, `VehicleChipDock`,
 //!     `CountChipDock`, `Chevron`, `HeaderRule`, `SlotsContent`.
-//!   * `TBD_LobbyRosterPanel` — the controller: `SetFaction(key)` rebuilds the cards (a faction
+//!   * `TBD_LobbyRosterPanel` -- the controller: `SetFaction(key)` rebuilds the cards (a faction
 //!     switch is user-paced; rebuild-not-pool). Click a seat = select it (the kit inspector shows
 //!     it); click the selected OPEN seat again = claim; click your own (selected) seat again = release.
 //!     Output: `GetOnSelected()(panel, slotKey)`.
@@ -41,7 +41,6 @@ class TBD_LobbySlotRowComponent : TBD_UIInteractive
 	protected bool m_bDead;
 	protected int m_iGround;
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnBind(Widget w)
 	{
 		m_wBackground = w.FindAnyWidget("Background");
@@ -53,7 +52,6 @@ class TBD_LobbySlotRowComponent : TBD_UIInteractive
 		m_aChips = {};
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Bind(TBD_LobbyRosterPanel owner, TBD_LobbySlotInfo slot, int ground, bool last)
 	{
 		m_Owner = owner;
@@ -125,7 +123,6 @@ class TBD_LobbySlotRowComponent : TBD_UIInteractive
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void AddChip(string text, TBD_EUITint tint)
 	{
 		TBD_ChipComponent chip = TBD_ChipComponent.Mount(m_wChipsDock, text, tint);
@@ -136,7 +133,6 @@ class TBD_LobbySlotRowComponent : TBD_UIInteractive
 		m_aChips.Insert(chip);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetSelected(bool selected)
 	{
 		if (m_bSelected == selected)
@@ -146,7 +142,6 @@ class TBD_LobbySlotRowComponent : TBD_UIInteractive
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void Repaint()
 	{
 		if (!m_wRoot)
@@ -201,14 +196,12 @@ class TBD_LobbySlotRowComponent : TBD_UIInteractive
 			m_StatusChip.SetGround(rowGround);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnActivated()
 	{
 		if (m_Owner)
 			m_Owner.OnSlotActivated(m_sKey);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	string GetKey()
 	{
 		return m_sKey;
@@ -237,9 +230,8 @@ class TBD_LobbySquadCardComponent : ScriptedWidgetComponent
 	protected bool m_bExpanded = true;
 	protected int m_iGround;
 	protected string m_sCallsign;
-	protected TBD_LobbyRosterPanel m_Owner; //!< weak — told when the player folds / unfolds the card
+	protected TBD_LobbyRosterPanel m_Owner; //!< weak -- told when the player folds / unfolds the card
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerAttached(Widget w)
 	{
 		super.HandlerAttached(w);
@@ -262,14 +254,12 @@ class TBD_LobbySquadCardComponent : ScriptedWidgetComponent
 		TBD_UILayouts.MountRounded(m_wHeaderBG, TBD_UITheme.RADIUS_ROW - 1);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerDeattached(Widget w)
 	{
 		m_wRoot = null;
 		super.HandlerDeattached(w);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Bind(TBD_LobbyRosterPanel owner, TBD_LobbySquadInfo squad, int ground, TBD_EUITint tint)
 	{
 		m_Owner = owner;
@@ -311,7 +301,6 @@ class TBD_LobbySquadCardComponent : ScriptedWidgetComponent
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetExpanded(bool expanded)
 	{
 		m_bExpanded = expanded;
@@ -323,7 +312,6 @@ class TBD_LobbySquadCardComponent : ScriptedWidgetComponent
 			TBD_UITheme.Write(m_wChevron, ">");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	bool IsExpanded()
 	{
 		return m_bExpanded;
@@ -340,26 +328,22 @@ class TBD_LobbySquadCardComponent : ScriptedWidgetComponent
 		return m_sCallsign;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	Widget GetSlotsContent()
 	{
 		return m_wSlotsContent;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Opaque colour under the slot rows.
 	int GetBodyGround()
 	{
 		return TBD_UITheme.Over(TBD_UITheme.SQUAD_BODY_FILL, TBD_UITheme.Over(TBD_UITheme.SQUAD_CARD_FILL, m_iGround));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	Widget GetRootWidget()
 	{
 		return m_wRoot;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Clicks bubble up from the header button; a slot row consumes its own.
 	override bool OnClick(Widget w, int x, int y, int button)
 	{
@@ -373,7 +357,6 @@ class TBD_LobbySquadCardComponent : ScriptedWidgetComponent
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void Repaint()
 	{
 		int cardGround = TBD_UITheme.Over(TBD_UITheme.SQUAD_CARD_FILL, m_iGround);
@@ -403,13 +386,10 @@ class TBD_LobbyRosterPanel
 	protected bool m_bShowLocate; //!< briefing ORBAT: a Locate button on every squad header
 	protected ref array<TBD_UIButton> m_aLocateButtons;
 	protected ref array<string> m_aLocateCallsigns;
-	//! (TBD_LobbyRosterPanel panel, string callsign)
-	protected ref ScriptInvoker m_OnLocate;
+	protected ref ScriptInvoker m_OnLocate; //!< (TBD_LobbyRosterPanel panel, string callsign)
 
-	//! (TBD_LobbyRosterPanel panel, string slotKey)
-	protected ref ScriptInvoker m_OnSelected;
+	protected ref ScriptInvoker m_OnSelected; //!< (TBD_LobbyRosterPanel panel, string slotKey)
 
-	//------------------------------------------------------------------------------------------------
 	//! `panelRoot` is a mounted `TBD_PanelFill.layout`.
 	bool Build(Widget panelRoot, TBD_LobbyCatalog catalog)
 	{
@@ -443,7 +423,6 @@ class TBD_LobbyRosterPanel
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Destroy()
 	{
 		if (m_Catalog)
@@ -465,7 +444,6 @@ class TBD_LobbyRosterPanel
 			m_aRows.Clear();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Point the roster at a faction and rebuild its squad cards.
 	//! Briefing ORBAT: clicks select (the kit inspector follows) and never touch the seat.
 	void SetReadOnly(bool readOnly)
@@ -473,7 +451,6 @@ class TBD_LobbyRosterPanel
 		m_bReadOnly = readOnly;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Briefing ORBAT: every squad header carries a quiet Locate button; clicks raise GetOnLocate.
 	void SetShowLocate(bool show)
 	{
@@ -488,7 +465,6 @@ class TBD_LobbyRosterPanel
 		return m_OnLocate;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnLocate(TBD_UIButton button)
 	{
 		if (!m_aLocateButtons || !m_OnLocate)
@@ -501,7 +477,6 @@ class TBD_LobbyRosterPanel
 		m_OnLocate.Invoke(this, m_aLocateCallsigns[index]);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void ClearLocateButtons()
 	{
 		if (m_aLocateButtons)
@@ -517,14 +492,12 @@ class TBD_LobbyRosterPanel
 		m_aLocateCallsigns = {};
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetFaction(string factionKey)
 	{
 		m_sFactionKey = factionKey;
 		Rebuild();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Highlight a seat. `notify` false = visual only.
 	void Select(string slotKey, bool notify)
 	{
@@ -538,13 +511,11 @@ class TBD_LobbyRosterPanel
 			m_OnSelected.Invoke(this, slotKey);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	string GetSelectedKey()
 	{
 		return m_sSelectedKey;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Focus the selected seat, else your own, else the first visible one.
 	bool FocusSelected()
 	{
@@ -572,7 +543,6 @@ class TBD_LobbyRosterPanel
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! (TBD_LobbyRosterPanel panel, string slotKey)
 	ScriptInvoker GetOnSelected()
 	{
@@ -582,9 +552,7 @@ class TBD_LobbyRosterPanel
 		return m_OnSelected;
 	}
 
-	// ── Called by TBD_LobbySlotRowComponent ────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! First click selects; the second click on an OPEN seat claims it; the second click on your
 	//! own seat releases it. The catalog answers through GetOnChanged(), which rebuilds the cards.
 	void OnSlotActivated(string slotKey)
@@ -621,22 +589,18 @@ class TBD_LobbyRosterPanel
 		Select(slotKey, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A folded card stays folded across rebuilds (claims rebuild the whole list).
 	void OnCardToggled(string callsign, bool expanded)
 	{
 		m_mCollapsed.Set(callsign, !expanded);
 	}
 
-	// ── Internals ───────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnCatalogChanged(TBD_LobbyCatalog catalog)
 	{
 		Rebuild();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void Rebuild()
 	{
 		if (!m_wContent || !m_Catalog)

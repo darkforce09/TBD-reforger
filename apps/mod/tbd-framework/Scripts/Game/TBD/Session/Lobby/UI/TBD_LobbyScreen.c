@@ -1,7 +1,7 @@
-//! Pre-game rebuild (2026-09-13) — the Lobby, second Dock & Sub-Layout screen.
+//! Pre-game rebuild (2026-09-13) -- the Lobby, second Dock & Sub-Layout screen.
 //!
 //! ```
-//!   TopDock     TBD_SessionTopBar        wog_187_chollima… · tabs (Lobby) · Mission Maker ADMIN · 👥 1
+//!   TopDock     TBD_SessionTopBar        wog_187_chollima... - tabs (Lobby) - Mission Maker ADMIN - 👥 1
 //!   LeftDock    TBD_PanelFill + TBD_LobbyFactionPanel   FACTIONS (+ VoiceDock, later pass)
 //!   CenterDock  TBD_PanelFill + TBD_LobbyRosterPanel    ROLES
 //!   RightDock   TBD_KitInspector + TBD_KitInspectorPanel
@@ -14,7 +14,7 @@
 //! `TBD_LobbyClient` adapter later); this file never touches a widget by name outside the docks.
 //!
 //! Opened through `TBD_MenuStack` (preset `TBD_UILobby`, bound in `Configs/System/chimeraMenus.conf`
-//! to `TBD_LobbyScreen.layout` — the shell that replaced the monolith at the same GUID). Reached
+//! to `TBD_LobbyScreen.layout` -- the shell that replaced the monolith at the same GUID). Reached
 //! from the selector's top-bar tab, from the pause menu ("Change slot"), or by `TBD_LobbyStage`.
 class TBD_LobbyScreen : TBD_DockScreen
 {
@@ -29,7 +29,6 @@ class TBD_LobbyScreen : TBD_DockScreen
 	static const string ACTION_LOCK = "lock_lobby";
 	static const string ACTION_READY = "ready";
 
-	//------------------------------------------------------------------------------------------------
 	static void OpenFromPause()
 	{
 		if (TBD_MenuStack.IsOpen(ChimeraMenuPreset.TBD_UILobby))
@@ -38,7 +37,6 @@ class TBD_LobbyScreen : TBD_DockScreen
 		TBD_MenuStack.Open(ChimeraMenuPreset.TBD_UILobby);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnScreenOpen()
 	{
 		m_Catalog = TBD_LobbyCatalog.Get();
@@ -74,7 +72,6 @@ class TBD_LobbyScreen : TBD_DockScreen
 		Print("[TBD][lobby] Lobby opened (dock shell).");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnScreenClose()
 	{
 		if (m_Factions)
@@ -100,7 +97,6 @@ class TBD_LobbyScreen : TBD_DockScreen
 		super.OnScreenClose();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Focus lands on your seat, else the first seat: the next click is "pick a slot".
 	override void FocusDefault()
 	{
@@ -113,7 +109,6 @@ class TBD_LobbyScreen : TBD_DockScreen
 		super.FocusDefault();
 	}
 
-	// ── TBD_DockScreen hooks ────────────────────────────────────────────────────────────────
 
 	override protected string GetScreenTitle()
 	{
@@ -141,7 +136,6 @@ class TBD_LobbyScreen : TBD_DockScreen
 		return m_Catalog.GetIdentity();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Mock pass: the two toggles are the mockup's script (label + tint flip, one log line each).
 	//! The wire step routes them to the lobby service; the labels and tints stay.
 	override protected void OnBottomAction(TBD_SessionBottomBar bar, string id)
@@ -188,9 +182,7 @@ class TBD_LobbyScreen : TBD_DockScreen
 		}
 	}
 
-	// ── Wiring ──────────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnFactionSelected(TBD_LobbyFactionPanel panel, string factionKey)
 	{
 		if (m_Roster)
@@ -200,7 +192,6 @@ class TBD_LobbyScreen : TBD_DockScreen
 			m_Kit.Show(null, null);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnSlotSelected(TBD_LobbyRosterPanel panel, string slotKey)
 	{
 		if (!m_Kit || !m_Catalog)
@@ -209,7 +200,6 @@ class TBD_LobbyScreen : TBD_DockScreen
 		m_Kit.Show(m_Catalog.GetSlot(slotKey), m_Catalog.GetSquadOf(slotKey));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Faction key of the seat you hold, empty when unslotted.
 	protected string OwnFactionKey()
 	{
@@ -238,7 +228,6 @@ modded enum ChimeraMenuPreset
 	TBD_UILobby
 }
 
-// -- Pause Menu Integration for Slot Change --------------------------------------------------
 modded class PauseMenuUI
 {
 	protected SCR_ButtonTextComponent m_TbdChangeSlotButton;

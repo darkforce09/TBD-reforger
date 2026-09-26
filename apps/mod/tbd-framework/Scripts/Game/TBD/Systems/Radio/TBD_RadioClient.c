@@ -1,10 +1,9 @@
-//! T-181.40 — the CLIENT half of the radio plan: asking for your nets, and reading them.
+//! T-181.40 -- the CLIENT half of the radio plan: asking for your nets, and reading them.
 //!
-//! ── Where a player actually reads this ──────────────────────────────────────────────────────
 //! A vanilla HINT (`SCR_HintManagerComponent.ShowCustomHint`), with a popup
 //! (`SCR_PopUpNotification`) as the fallback when the player has hints switched off. Both are
 //! vanilla HUD elements and neither needs a `.layout` or a `.conf`, which is not a stylistic
-//! preference — **all five TBD menu presets currently fail to resolve** (`GUI (E): Menu preset
+//! preference -- **all five TBD menu presets currently fail to resolve** (`GUI (E): Menu preset
 //! 'TBD_UIBriefing' not found!` on every boot) because `resourceDatabase.rdb` is stale, so a
 //! TBD screen is a screen nobody can open. The same reasoning is already recorded on
 //! `TBD_SafestartManager.NotifyLocalSafestartUI`, which shows its countdown the same way.
@@ -15,25 +14,23 @@
 //! when `CanShowHints()` says the player turned hints off.
 //!
 //! When the briefing screen can open again, `GetNets()` / `GetNetLine()` below are the accessors it
-//! needs — no new wire, no second request. The exact additive lines for `UI/TBD_BriefingData.c`
+//! needs -- no new wire, no second request. The exact additive lines for `UI/TBD_BriefingData.c`
 //! are reported to the command center rather than written here; that file belongs to another slice.
 //!
-//! ── Late joiners (the defect this slice refuses to repeat) ──────────────────────────────────
 //! T-181.28 records the briefing shipping push-only and therefore silently missing anyone who
 //! joins while the round is already running. Nets are PULL-driven, with two independent triggers,
 //! either of which alone is enough:
 //!   1. a poll that runs until the server gives an authoritative answer, and then stops. A player
 //!      who joins unslotted keeps asking; the moment they take a seat, the next tick serves them.
-//!   2. every time the player OPENS THE MAP — which is also exactly when somebody wants to know
+//!   2. every time the player OPENS THE MAP -- which is also exactly when somebody wants to know
 //!      what they are on, and what picks up an admin mission switch or a re-slot to the other side.
 //! The server's own stage sweep (`TBD_RadioService.OnStageChanged`) is a THIRD trigger and pushes
 //! independently, so no single mechanism is load-bearing.
 //!
 //! The poll is deliberate, not laziness: the client has no locally readable signal for "my slot was
-//! assigned" — `m_mPlayerSlot` is a plain map on the server, not an `RplProp` — so there is nothing
+//! assigned" -- `m_mPlayerSlot` is a plain map on the server, not an `RplProp` -- so there is nothing
 //! to catch up ON.
 //!
-//! ── This never claims a radio was tuned ─────────────────────────────────────────────────────
 //! The text a player sees is built from `m_iTuned`, which the server only increments after reading
 //! the frequency back off the transceiver. With no `RadioManagerEntity` in the world the count is
 //! zero and the hint says the frequencies must be dialled in by hand, because that is the truth.
@@ -46,7 +43,7 @@ class TBD_RadioClient
 	//! Floor between two map-open requests, so hammering the map key cannot spam the server.
 	static const float MAP_REQUEST_MIN_GAP_MS = 3000;
 
-	//! Title on the hint. `·` and `—` are in the proven glyph set for shipped TBD screens; `->` is
+	//! Title on the hint. `-` and `--` are in the proven glyph set for shipped TBD screens; `->` is
 	//! used instead of `->`-shaped arrows anywhere load-bearing, per the recorded glyph landmine.
 	static const string HINT_TITLE = "RADIO NETS";
 
@@ -54,7 +51,7 @@ class TBD_RadioClient
 	protected static bool s_bRunning;
 
 	//! The server has given an authoritative answer at least once for the CURRENT mission+side.
-	//! True even when the answer was "your side authored no nets" — that is an answer.
+	//! True even when the answer was "your side authored no nets" -- that is an answer.
 	protected static bool s_bServed;
 
 	protected static ref array<string> s_aId;
@@ -73,8 +70,7 @@ class TBD_RadioClient
 	//! the player already dismissed. Only a genuinely different answer re-displays.
 	protected static string s_sShownFingerprint;
 
-	//------------------------------------------------------------------------------------------------
-	//! @authority client — arm the pull. Called by `TBD_RadioComponent` on any machine with a
+	//! @authority client -- arm the pull. Called by `TBD_RadioComponent` on any machine with a
 	//! workspace (a dedicated server has none and has nobody to show anything to).
 	static void Start()
 	{
@@ -91,7 +87,6 @@ class TBD_RadioClient
 		Request();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Statics outlive a world inside one process (a recorded landmine in this program), so every
 	//! timer and invoker has to be released here. Without this an in-process scenario restart
 	//! leaves a poll firing against a dead world.
@@ -119,8 +114,7 @@ class TBD_RadioClient
 		s_sShownFingerprint = string.Empty;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! @authority owner — the server's answer, whichever path it arrived by (RPC on a dedicated
+	//! @authority owner -- the server's answer, whichever path it arrived by (RPC on a dedicated
 	//! client, direct call on a listen host).
 	//!
 	//! `served == false` is not an error: it means the server has nothing authoritative for this
@@ -150,7 +144,6 @@ class TBD_RadioClient
 		ShowIfChanged();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The nets this player is on, as display lines. Public so the briefing screen can render them
 	//! when menu presets resolve again, without a second request or a second wire.
 	//! Never returns null.
@@ -168,8 +161,7 @@ class TBD_RadioClient
 		return lines;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! `"Alpha Squad · 42.500 MHz · SR"` — one net, formatted for a human.
+	//! `"Alpha Squad - 42.500 MHz - SR"` -- one net, formatted for a human.
 	//!
 	//! The frequency text is derived from the INTEGER kHz that was sent to the transceiver, so what
 	//! the player reads and what the radio was set to cannot drift apart.
@@ -182,17 +174,16 @@ class TBD_RadioClient
 		if (s_aLongRange && index < s_aLongRange.Count() && s_aLongRange[index] == 1)
 			band = "LR";
 
-		// Appended in steps — a long `+` chain trips `Formula too complex`, whose second
+		// Appended in steps -- a long `+` chain trips `Formula too complex`, whose second
 		// diagnostic is a misleading `Incompatible parameter`.
 		string line = s_aLabel[index];
-		line = line + " · ";
+		line = line + " - ";
 		line = line + TBD_RadioPlan.FormatMHz(s_aFreqKHz[index]);
-		line = line + " · ";
+		line = line + " - ";
 		line = line + band;
 		return line;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! How many nets this player is on. `0` after being served is a real answer, not "not yet".
 	static int GetNetCount()
 	{
@@ -202,14 +193,12 @@ class TBD_RadioClient
 		return s_aId.Count();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True once the server has answered authoritatively at least once.
 	static bool IsServed()
 	{
 		return s_bServed;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Show the current net list on demand, whether or not it changed. The entry point a future
 	//! briefing panel or an admin command can call.
 	static void ShowNow()
@@ -221,8 +210,7 @@ class TBD_RadioClient
 		Display();
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! (Re)start the unserved poll. `Remove` first so arming twice cannot stack two timers —
+	//! (Re)start the unserved poll. `Remove` first so arming twice cannot stack two timers --
 	//! `ScriptCallQueue.Remove` cancels by FUNCTION, which is precisely the semantics wanted here.
 	protected static void ArmPoll()
 	{
@@ -234,7 +222,6 @@ class TBD_RadioClient
 		queue.CallLater(Tick, POLL_MS, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void Tick()
 	{
 		if (s_bServed)
@@ -249,7 +236,6 @@ class TBD_RadioClient
 		Request();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Re-ask whenever the map opens. Cheap when idle, and it is the moment a player wants to know
 	//! their frequencies anyway. Rate-limited so holding the map key cannot spam the server.
 	protected static void OnMapOpen(MapConfiguration config)
@@ -262,7 +248,6 @@ class TBD_RadioClient
 		Request();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void Request()
 	{
 		PlayerController pc = GetGame().GetPlayerController();
@@ -276,7 +261,6 @@ class TBD_RadioClient
 		spc.TBD_RequestRadioNets();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Display only when the answer is genuinely different from the last one shown, so a poll, a
 	//! map open and a server stage sweep cannot between them re-open a hint the player dismissed.
 	protected static void ShowIfChanged()
@@ -289,7 +273,6 @@ class TBD_RadioClient
 		Display();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Everything that would make the on-screen text different. Built in steps rather than one long
 	//! `+` chain (`Formula too complex`).
 	protected static string Fingerprint()
@@ -310,7 +293,6 @@ class TBD_RadioClient
 		return fp;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Put the net list on screen.
 	protected static void Display()
 	{
@@ -329,7 +311,7 @@ class TBD_RadioClient
 		}
 
 		// The player turned hints off. Fall back to the transient surface rather than showing them
-		// nothing — the safestart countdown already uses this one.
+		// nothing -- the safestart countdown already uses this one.
 		SCR_PopUpNotification popup = SCR_PopUpNotification.GetInstance();
 		if (!popup)
 			return;
@@ -337,7 +319,6 @@ class TBD_RadioClient
 		popup.PopupMsg(HINT_TITLE, 12, body);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The text itself: one line per net, then one line saying whether anything was actually tuned.
 	protected static string BuildBody()
 	{
@@ -358,14 +339,13 @@ class TBD_RadioClient
 		return body;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The honesty line. This is the sentence that must never lie: it is driven by `m_iTuned`,
 	//! which the server increments only after reading the frequency back off the transceiver.
 	protected static string TuneLine()
 	{
 		if (s_iTuned > 0)
 		{
-			string ok = "Your radio is tuned — ";
+			string ok = "Your radio is tuned -- ";
 			ok = ok + s_iTuned.ToString();
 			ok = ok + " of ";
 			ok = ok + GetNetCount().ToString();
@@ -374,14 +354,14 @@ class TBD_RadioClient
 		}
 
 		if (s_sTuneResult == "NO_BACKBONE")
-			return "Radio tuning is unavailable on this world — dial these in by hand.";
+			return "Radio tuning is unavailable on this world -- dial these in by hand.";
 
 		if (s_sTuneResult == "NO_RADIO")
-			return "You are not carrying a radio — dial these in on one you find.";
+			return "You are not carrying a radio -- dial these in on one you find.";
 
 		if (s_sTuneResult == "NO_BODY")
 			return "Frequencies only; your radio will be set once you are in a body.";
 
-		return "Not tuned automatically — dial these in by hand.";
+		return "Not tuned automatically -- dial these in by hand.";
 	}
 }

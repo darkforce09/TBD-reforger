@@ -14,7 +14,6 @@ class TBD_FleetCommandArguments
 {
 	protected static const string HEX_DIGITS = "0123456789abcdefABCDEF";
 
-	//------------------------------------------------------------------------------------------------
 	//! Why `command` must not run, or empty when it may.
 	static string Check(notnull TBD_FleetCommand command)
 	{
@@ -33,7 +32,6 @@ class TBD_FleetCommandArguments
 		return string.Format("'%1' is not a game-runtime action", command.m_sAction);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The connected player whose game identity is `armaId`, or -1.
 	static int FindConnectedPlayer(string armaId)
 	{
@@ -52,7 +50,6 @@ class TBD_FleetCommandArguments
 		return -1;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string CheckBroadcast(notnull map<string, string> arguments)
 	{
 		array<string> accepted = {"message"};
@@ -66,7 +63,6 @@ class TBD_FleetCommandArguments
 		return string.Empty;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string CheckKick(notnull TBD_FleetCommand command)
 	{
 		map<string, string> arguments = command.m_mArguments;
@@ -93,7 +89,6 @@ class TBD_FleetCommandArguments
 		return string.Empty;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string CheckLoadMission(notnull map<string, string> arguments)
 	{
 		array<string> accepted = {"deployment_id", "artifact_id", "artifact_sha256", "runtime_session_id"};
@@ -114,7 +109,6 @@ class TBD_FleetCommandArguments
 		return CheckOwnSession(arguments);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The command must be issued against the runtime session this runtime holds.
 	protected static string CheckOwnSession(notnull map<string, string> arguments)
 	{
@@ -134,7 +128,6 @@ class TBD_FleetCommandArguments
 		return string.Empty;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Empty when every key of `arguments` is in `accepted`, else the refusal naming the first other.
 	protected static string OnlyKeys(notnull map<string, string> arguments, notnull array<string> accepted, string action)
 	{
@@ -148,7 +141,6 @@ class TBD_FleetCommandArguments
 		return string.Empty;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The argument `key` is present and, trimmed, 1 to `maxBytes` bytes with no control character:
 	//! no byte below 32, no 127, and no UTF-8 encoded C1 control (0xC2 0x80..0x9F).
 	protected static bool IsBoundedText(notnull map<string, string> arguments, string key, int maxBytes)
@@ -179,7 +171,6 @@ class TBD_FleetCommandArguments
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! 8-4-4-4-12 hex digits.
 	static bool IsUuid(string text)
 	{

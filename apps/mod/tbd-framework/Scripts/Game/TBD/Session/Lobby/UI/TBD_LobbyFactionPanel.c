@@ -1,4 +1,4 @@
-//! Pre-game rebuild (2026-09-13) — the FACTIONS column of the Lobby (lobby_sidebar mockup).
+//! Pre-game rebuild (2026-09-13) -- the FACTIONS column of the Lobby (lobby_sidebar mockup).
 //!
 //! ```
 //!   ┌ FACTIONS ─────────────────────────┐
@@ -6,14 +6,14 @@
 //!   │ OPFOR   [ATTACKING]      [0 / 95] │
 //!   │                                   │
 //!   │ Spectators               [0 / 10] │
-//!   │ (VoiceDock — voice panel, later)  │
+//!   │ (VoiceDock -- voice panel, later)  │
 //!   └───────────────────────────────────┘
 //! ```
 //!
 //! Two classes, one file:
-//!   * `TBD_LobbyFactionRowComponent` — one pooled row (`TBD_LobbyFactionRow.layout`). Contract:
+//!   * `TBD_LobbyFactionRowComponent` -- one pooled row (`TBD_LobbyFactionRow.layout`). Contract:
 //!     `Border`, `Background`, `Name`, `RoleChipDock`, `CountChipDock`.
-//!   * `TBD_LobbyFactionPanel` — the controller: fills a mounted `TBD_PanelFill` (title FACTIONS),
+//!   * `TBD_LobbyFactionPanel` -- the controller: fills a mounted `TBD_PanelFill` (title FACTIONS),
 //!     owns the selection. `GetOnSelected()(panel, factionKey)` is its only output; the seat
 //!     counts are recomputed from the catalog on every `Refresh()`.
 
@@ -33,7 +33,6 @@ class TBD_LobbyFactionRowComponent : TBD_UIInteractive
 	protected bool m_bSelected;
 	protected int m_iGround;
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnBind(Widget w)
 	{
 		m_wBorder = w.FindAnyWidget("Border");
@@ -46,7 +45,6 @@ class TBD_LobbyFactionRowComponent : TBD_UIInteractive
 		TBD_UILayouts.MountRounded(m_wBackground, TBD_UITheme.RADIUS_ROW - 1);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Bind(TBD_LobbyFactionPanel owner, int index, TBD_LobbyFactionInfo faction, int claimed, int ground)
 	{
 		m_Owner = owner;
@@ -81,7 +79,6 @@ class TBD_LobbyFactionRowComponent : TBD_UIInteractive
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetSelected(bool selected)
 	{
 		if (m_bSelected == selected)
@@ -91,7 +88,6 @@ class TBD_LobbyFactionRowComponent : TBD_UIInteractive
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void Repaint()
 	{
 		if (!m_wRoot)
@@ -120,14 +116,12 @@ class TBD_LobbyFactionRowComponent : TBD_UIInteractive
 			m_CountChip.SetGround(rowGround);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnActivated()
 	{
 		if (m_Owner)
 			m_Owner.OnRowActivated(m_iIndex);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetRowVisible(bool visible)
 	{
 		TBD_UITheme.Show(m_wRoot, visible);
@@ -146,10 +140,8 @@ class TBD_LobbyFactionPanel
 	protected ref array<string> m_aRowKeys;
 	protected string m_sSelectedKey;
 
-	//! (TBD_LobbyFactionPanel panel, string factionKey)
-	protected ref ScriptInvoker m_OnSelected;
+	protected ref ScriptInvoker m_OnSelected; //!< (TBD_LobbyFactionPanel panel, string factionKey)
 
-	//------------------------------------------------------------------------------------------------
 	//! `panelRoot` is a mounted `TBD_PanelFill.layout`.
 	bool Build(Widget panelRoot, TBD_LobbyCatalog catalog)
 	{
@@ -180,7 +172,6 @@ class TBD_LobbyFactionPanel
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Destroy()
 	{
 		if (m_Catalog)
@@ -195,7 +186,6 @@ class TBD_LobbyFactionPanel
 			m_aRows.Clear();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Rebind every row from the catalog (seat counts included).
 	void Refresh()
 	{
@@ -229,7 +219,6 @@ class TBD_LobbyFactionPanel
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Pick a faction. `notify` false = visual only.
 	void Select(string factionKey, bool notify)
 	{
@@ -244,13 +233,11 @@ class TBD_LobbyFactionPanel
 			m_OnSelected.Invoke(this, factionKey);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	string GetSelectedKey()
 	{
 		return m_sSelectedKey;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Key of the first faction in catalog order, or empty.
 	string GetFirstKey()
 	{
@@ -261,7 +248,6 @@ class TBD_LobbyFactionPanel
 		return factions[0].m_sKey;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Put focus on the selected row (else the first). False when there is no row to focus.
 	bool FocusSelected()
 	{
@@ -281,7 +267,6 @@ class TBD_LobbyFactionPanel
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! (TBD_LobbyFactionPanel panel, string factionKey)
 	ScriptInvoker GetOnSelected()
 	{
@@ -291,9 +276,7 @@ class TBD_LobbyFactionPanel
 		return m_OnSelected;
 	}
 
-	// ── Called by TBD_LobbyFactionRowComponent ──────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	void OnRowActivated(int index)
 	{
 		if (index < 0 || index >= m_aRowKeys.Count())
@@ -302,15 +285,12 @@ class TBD_LobbyFactionPanel
 		Select(m_aRowKeys[index], true);
 	}
 
-	// ── Internals ───────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnCatalogChanged(TBD_LobbyCatalog catalog)
 	{
 		Refresh();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected TBD_LobbyFactionRowComponent AcquireRow(int index, Widget container)
 	{
 		if (index < m_aRows.Count())

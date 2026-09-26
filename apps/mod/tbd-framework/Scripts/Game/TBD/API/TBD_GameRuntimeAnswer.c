@@ -44,16 +44,11 @@ class TBD_GameRuntimeAnswer
 
 	TBD_EGameRuntimeOutcome m_eOutcome;
 	HttpCode m_eCode;
-	//! The response body; empty when no status arrived.
-	string m_sBody;
-	//! The 409 fence details, or null.
-	ref TBD_GameRuntimeRefusalDetails m_Refusal;
-	//! `details.code` of an error answer of any status, or empty.
-	string m_sErrorCode;
-	//! One log line: the status and response body, or the transport result.
-	string m_sDetail;
+	string m_sBody; //!< The response body; empty when no status arrived.
+	ref TBD_GameRuntimeRefusalDetails m_Refusal; //!< The 409 fence details, or null.
+	string m_sErrorCode; //!< `details.code` of an error answer of any status, or empty.
+	string m_sDetail; //!< One log line: the status and response body, or the transport result.
 
-	//------------------------------------------------------------------------------------------------
 	//! The answer the engine reported through `callback`. `arrivedOnSuccess` says which RestCallback
 	//! handler fired: a success handler that reports no status still delivered its body.
 	static TBD_GameRuntimeAnswer Read(notnull RestCallback callback, bool arrivedOnSuccess)
@@ -75,7 +70,6 @@ class TBD_GameRuntimeAnswer
 		return answer;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The answer to a request the engine never reported: `detail` says why.
 	static TBD_GameRuntimeAnswer Unanswered(string detail)
 	{
@@ -86,7 +80,6 @@ class TBD_GameRuntimeAnswer
 		return answer;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A response body made safe for one log line: capped, and named when empty.
 	static string LoggableBody(string body)
 	{
@@ -99,7 +92,6 @@ class TBD_GameRuntimeAnswer
 		return body;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Sets m_sErrorCode for an error answer that carries `details.code`, and m_Refusal for such a 409.
 	protected TBD_EGameRuntimeOutcome Classify(bool arrivedOnSuccess)
 	{
@@ -133,7 +125,6 @@ class TBD_GameRuntimeAnswer
 		return TBD_EGameRuntimeOutcome.TRANSIENT;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Redirects and client errors other than 409 (classified on its own): the request itself is
 	//! wrong for this backend, so sending it again unchanged cannot succeed. 408 (request timeout) is
 	//! not among them. Every other status - server errors, gateway failures, anything unrecognised -
@@ -158,7 +149,6 @@ class TBD_GameRuntimeAnswer
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The `details` of an error envelope, or null when the body carries no `details.code`.
 	protected static TBD_GameRuntimeRefusalDetails ParseErrorDetails(string body)
 	{

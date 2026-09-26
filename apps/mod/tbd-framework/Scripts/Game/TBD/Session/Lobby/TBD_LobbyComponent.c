@@ -26,15 +26,13 @@ class TBD_LobbyComponent : SCR_BaseGameModeComponent
 	//! through.
 	static const int START_DELAY_MS = 2000;
 
-	//------------------------------------------------------------------------------------------------
 	//! @authority any - the self-check below is deliberately unconditional; the picker start is not.
 	override void OnPostInit(IEntity owner)
 	{
 		super.OnPostInit(owner);
 
-		// -- T-181.42: arm the lobby wire self-check at BOOT ----------------------------------
 		// FIRST, and before every early return in this method, because being armed at boot is the
-		// entire point. MEASURED (T-181.26): `world-boot.sh --mission=` runs with ZERO players, so
+		// entire point. MEASURED: `world-boot.sh --mission=` runs with ZERO players, so
 		// `TBD_LobbyService.BuildForPlayer` / `Serialise` / `Parse` and every lobby RPC never
 		// execute under the gate. A self-check armed lazily on first use is therefore INVISIBLE to
 		// the gate; one armed here is gated, because this component sits on `TBD_GameMode.et` and
@@ -44,7 +42,6 @@ class TBD_LobbyComponent : SCR_BaseGameModeComponent
 		// guard lives at `SelfCheckWire`'s own entry, not here, so a second caller cannot double it.
 		TBD_LobbyService.SelfCheckWire();
 
-		// -- T-181.49: the workspace pre-filter that used to sit here is GONE -----------------
 		// It never excluded anything - `GetGame().GetWorkspace()` is MEASURED NON-NULL on the
 		// headless dedicated server `world-boot.sh` runs - and it made the one machine that
 		// legitimately has nothing to do here refuse SILENTLY, before any line could say so.
@@ -54,7 +51,6 @@ class TBD_LobbyComponent : SCR_BaseGameModeComponent
 		GetGame().GetCallqueue().CallLater(TBD_LobbyStage.Start, START_DELAY_MS, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Statics outlive a world inside one process (measured landmine in this codebase), so the
 	//! watcher MUST be torn down here or the next round starts polling a framework manager that
 	//! belongs to a world that no longer exists.

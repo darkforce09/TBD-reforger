@@ -35,21 +35,16 @@ class TBD_FleetCommand
 	int m_iFencingToken;
 	//! Every argument as text; null when the claim's arguments could not be read as text values.
 	ref map<string, string> m_mArguments;
-	//! The poller world that claimed the command (TBD_FleetCommandPoller).
-	int m_iWorld;
+	int m_iWorld; //!< The poller world that claimed the command (TBD_FleetCommandPoller).
 	TBD_EFleetCommandStage m_eStage = TBD_EFleetCommandStage.CHECKING;
-	//! The connected player a kick targets, resolved by the argument check.
-	int m_iTargetPlayerId;
+	int m_iTargetPlayerId; //!< The connected player a kick targets, resolved by the argument check.
 
 	bool m_bSucceeded;
-	//! The `outcome` JSON object of a success.
-	string m_sOutcome;
+	string m_sOutcome; //!< The `outcome` JSON object of a success.
 	string m_sFailureReason;
-	//! A recorded success is followed by an in-process scenario restart (`load_mission`).
-	bool m_bRestartAfterResult;
+	bool m_bRestartAfterResult; //!< A recorded success is followed by an in-process scenario restart (`load_mission`).
 	int m_iReportFailures;
 
-	//------------------------------------------------------------------------------------------------
 	//! The argument `key` as sent, or empty.
 	string Argument(string key)
 	{
@@ -60,7 +55,6 @@ class TBD_FleetCommand
 		return value;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `key=value` pairs of every argument, for one log line.
 	string DescribeArguments()
 	{
@@ -79,7 +73,6 @@ class TBD_FleetCommand
 		return described;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	string BuildResultBody()
 	{
 		if (m_bSucceeded)
@@ -102,7 +95,6 @@ class TBD_FleetReportCall : TBD_GameRuntimeCall
 	ref TBD_FleetCommand m_Command;
 	bool m_bResult;
 
-	//------------------------------------------------------------------------------------------------
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_FleetCommandExecution.OnReportAnswered(this, answer);
@@ -116,22 +108,18 @@ class TBD_FleetCommandExecution
 	//! A failure reason is at most 512 bytes on the platform; kept below with room to spare.
 	protected static const int FAILURE_REASON_MAX_BYTES = 500;
 
-	//! The one command being executed or reported, or null.
-	protected static ref TBD_FleetCommand s_Current;
+	protected static ref TBD_FleetCommand s_Current; //!< The one command being executed or reported, or null.
 
-	//------------------------------------------------------------------------------------------------
 	static bool IsIdle()
 	{
 		return !s_Current;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static TBD_FleetCommand GetCurrent()
 	{
 		return s_Current;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A command was claimed: check it, then report `executing` or its failure.
 	static void Begin(notnull TBD_FleetCommand command)
 	{
@@ -150,7 +138,6 @@ class TBD_FleetCommandExecution
 		SendReport(command, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The effect succeeded: report it with `outcome` (a JSON object).
 	static void Succeed(notnull TBD_FleetCommand command, string outcome, bool restartAfterResult)
 	{
@@ -165,7 +152,6 @@ class TBD_FleetCommandExecution
 		SendReport(command, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The command failed, before or during its effect: report it with `reason`.
 	static void Fail(notnull TBD_FleetCommand command, string reason)
 	{
@@ -179,7 +165,6 @@ class TBD_FleetCommandExecution
 		SendReport(command, true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void SendReport(notnull TBD_FleetCommand command, bool result)
 	{
 		string path = TBD_FleetCommandPoller.ROUTE_PREFIX + "/" + command.m_sCommandId;
@@ -205,7 +190,6 @@ class TBD_FleetCommandExecution
 		RetryReport(command, result, "not sent: " + failure);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Called by TBD_FleetReportCall with the platform's answer to a report.
 	static void OnReportAnswered(notnull TBD_FleetReportCall call, notnull TBD_GameRuntimeAnswer answer)
 	{
@@ -255,7 +239,6 @@ class TBD_FleetCommandExecution
 		Abandon(command, string.Format("the platform refused the %1 report (%2)", which, answer.m_sDetail));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Retry a report that got no answer. The effect it reports is not repeated.
 	protected static void RetryReport(notnull TBD_FleetCommand command, bool result, string detail)
 	{
@@ -274,7 +257,6 @@ class TBD_FleetCommandExecution
 			queue.CallLater(ResendReport, delay, false, command.m_sCommandId, result);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ResendReport(string commandId, bool result)
 	{
 		if (!s_Current || s_Current.m_sCommandId != commandId)
@@ -283,7 +265,6 @@ class TBD_FleetCommandExecution
 		SendReport(s_Current, result);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void StartEffect(notnull TBD_FleetCommand command)
 	{
 		TBD_Log.Kv(TBD_FleetCommandPoller.CH_FLEET, "executing", string.Format("command=%1 action=%2 - the platform admitted the effect", command.m_sCommandId, command.m_sAction));
@@ -298,7 +279,6 @@ class TBD_FleetCommandExecution
 			Fail(command, string.Format("'%1' is not a game-runtime action", command.m_sAction));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The outcome is recorded: the command is done, and what follows a success runs.
 	protected static void Finish(notnull TBD_FleetCommand command)
 	{
@@ -310,7 +290,6 @@ class TBD_FleetCommandExecution
 			TBD_FleetLoadMissionAction.RestartScenario(command);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The claim is no longer this runtime's: nothing more is done or reported for the command.
 	protected static void Abandon(notnull TBD_FleetCommand command, string why)
 	{
@@ -320,7 +299,6 @@ class TBD_FleetCommandExecution
 			command.m_sCommandId, command.m_sAction, why));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `text` as a failure reason the platform accepts: printable ASCII, trimmed, 1 to
 	//! FAILURE_REASON_MAX_BYTES bytes. Other bytes become '?', so a cut can never split a character.
 	static string SafeReason(string text)

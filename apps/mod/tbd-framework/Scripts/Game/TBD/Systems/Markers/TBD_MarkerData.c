@@ -1,19 +1,17 @@
-//! T-181.19 — the SERVER half of map markers: who is allowed to see which markers, and in what
+//! T-181.19 -- the SERVER half of map markers: who is allowed to see which markers, and in what
 //! shape they cross the wire.
 //!
-//! ── Why the server has to do this at all ────────────────────────────────────────────────────
 //! Clients hold NO mission document. `TBD_FrameworkManager.OnPostInit` returns early for
 //! `RplMode.Client` before `BeginLoad()`, so a client physically cannot read `briefing.markers`
 //! for itself. Markers are server-fed or they do not exist.
 //!
-//! ── Side discipline, enforced at the WIRE ───────────────────────────────────────────────────
 //! `briefings` is `map<string, TBD_MissionBriefingStruct>` keyed by faction, exactly like `orbat`,
 //! so markers are SIDE-SCOPED INTELLIGENCE. BLUFOR must never receive OPFOR's markers.
 //!
 //! Three properties make that structural rather than a promise:
 //!   1. `BuildForPlayer` takes a **playerId and nothing else**. There is no faction parameter, so
 //!      a client has nowhere to put a lie.
-//!   2. The side is read from `TBD_SpawnManager.GetAssignedSlot(playerId)` — server-owned state a
+//!   2. The side is read from `TBD_SpawnManager.GetAssignedSlot(playerId)` -- server-owned state a
 //!      client cannot influence.
 //!   3. Only the resolved side's rows are ever placed in the arrays that get sent. The other
 //!      side's markers never leave the server process, so there is nothing on the client to filter
@@ -21,12 +19,11 @@
 //!
 //! **If a client asked for another faction's markers it could not phrase the question.** The only
 //! request RPC takes no arguments; the answer is whatever `GetAssignedSlot` says the caller is. A
-//! player with no slot gets `served = false` and zero rows — fail closed, not fail open.
+//! player with no slot gets `served = false` and zero rows -- fail closed, not fail open.
 //!
-//! ── Why parallel arrays and not a delimited string ──────────────────────────────────────────
 //! `string.Split`'s empty-token behaviour is a RUNTIME property: unprovable by compile probe and
 //! absent from every oracle. `label` and `icon` are `{"type":"string"}` with NO `minLength`, so an
-//! EMPTY label is perfectly schema-legal — the exact input that would make a delimited format
+//! EMPTY label is perfectly schema-legal -- the exact input that would make a delimited format
 //! ambiguous. (The brief's "all four keys required, therefore complete" is true about PRESENCE and
 //! not about CONTENT; this is the one place that distinction bites.) A label could also legally
 //! contain any delimiter we picked.
@@ -39,10 +36,9 @@
 //! negative control on a bogus element type.
 //!
 //! This is not a hypothetical worry. `contracts_v2/fixtures/missions/valid/empty-warning-fields.json`
-//! — a COMMITTED, schema-valid fixture — carries a marker whose `icon` AND `label` are both the
+//! -- a COMMITTED, schema-valid fixture -- carries a marker whose `icon` AND `label` are both the
 //! empty string. A delimited wire format would have shipped with that fixture already breaking it.
 //!
-//! ── The side-discipline case is also already in the fixtures ────────────────────────────────
 //! `golden-missions/bridgehead-at-levie.json` gives blufor `objective / "OBJ BRIDGE"` and opfor
 //! `defend / "HOLD BRIDGE"` at the SAME coordinates. Sending both to everyone and filtering in a
 //! widget would tell each side exactly what the other has been ordered to do at the one place that
@@ -71,13 +67,12 @@ class TBD_MarkerService
 	//! it is one repeated log line per player.
 	protected static const int MAX_LOG_STATES = 256;
 
-	//------------------------------------------------------------------------------------------------
-	//! @authority server — build ONE player's marker set.
+	//! @authority server -- build ONE player's marker set.
 	//!
 	//! Never returns null: an unslotted player, an unloaded mission and a mission with no briefing
 	//! for their side are three different legal states, and each yields an empty served=false
 	//! answer carrying the reason. Absent `briefings`, absent `markers` and an empty `markers`
-	//! array are also three different legal states — none of them is an error, and none of them
+	//! array are also three different legal states -- none of them is an error, and none of them
 	//! logs like one.
 	static TBD_MarkerWire BuildForPlayer(int playerId)
 	{
@@ -92,8 +87,7 @@ class TBD_MarkerService
 		return wire;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! @authority server — the decision itself, with no logging in it.
+	//! @authority server -- the decision itself, with no logging in it.
 	protected static TBD_MarkerWire Build(int playerId)
 	{
 		TBD_MarkerWire wire = new TBD_MarkerWire();
@@ -184,11 +178,10 @@ class TBD_MarkerService
 		return wire;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One line per player, only when the answer CHANGES.
 	//!
-	//! Both outcomes are NORMAL level. A refusal is not an error — an unslotted player asking
-	//! during LOBBY is the ordinary case and is how the client knows to keep asking — and
+	//! Both outcomes are NORMAL level. A refusal is not an error -- an unslotted player asking
+	//! during LOBBY is the ordinary case and is how the client knows to keep asking -- and
 	//! `world-boot.sh` triages any TBD-owned `SCRIPT (E)` line as a gate failure.
 	protected static void LogOutcome(int playerId, TBD_MarkerWire wire)
 	{
@@ -214,12 +207,11 @@ class TBD_MarkerService
 			playerId, wire.m_sFactionKey, wire.m_sMissionId, wire.Count()));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True the FIRST time this player's outcome differs from the last one logged for them.
 	//!
 	//! Why this exists: an unslotted client re-asks every 5 s, and a full server sitting in LOBBY
-	//! would otherwise emit a dozen identical "refused" lines a second. That exact defect —
-	//! "unbounded console warn per refused RPC" — is already on the books against the admin service
+	//! would otherwise emit a dozen identical "refused" lines a second. That exact defect --
+	//! "unbounded console warn per refused RPC" -- is already on the books against the admin service
 	//! (T-181.30 item 4); re-committing it in a new slice would be a choice, not an oversight.
 	protected static bool ShouldLog(int playerId, string outcome)
 	{
@@ -237,7 +229,6 @@ class TBD_MarkerService
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Nearest-integer, both signs. Enfusion has no ternary operator (`cond ? a : b` fails with
 	//! `Broken expression (missing ';'?)` and never mentions `?`), so this is written out.
 	protected static int RoundToInt(float value)
@@ -248,7 +239,6 @@ class TBD_MarkerService
 		return value - 0.5;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Bound the label without ever dropping the marker. An over-long caption is truncated; it is
 	//! never a reason to withhold a piece of the briefing.
 	protected static string CapLabel(string label)
@@ -268,7 +258,7 @@ class TBD_MarkerService
 class TBD_MarkerWire
 {
 	//! False = the server had no authoritative answer for this player yet (no slot, no mission).
-	//! The client keeps asking while this is false, and stops the moment it is true — including
+	//! The client keeps asking while this is false, and stops the moment it is true -- including
 	//! when it is true with zero rows, which is a real answer.
 	bool m_bServed;
 
@@ -276,8 +266,7 @@ class TBD_MarkerWire
 	//! makes a trust decision with it.
 	string m_sFactionKey;
 
-	//! Lets the client tell "same orders again" from "the admin switched missions".
-	string m_sMissionId;
+	string m_sMissionId; //!< Lets the client tell "same orders again" from "the admin switched missions".
 
 	ref array<int> m_aX = {};
 	ref array<int> m_aZ = {};
@@ -292,10 +281,8 @@ class TBD_MarkerWire
 	ref array<string> m_aColorHex = {};
 	ref array<int> m_aAlpha255 = {};
 
-	//! Why the server declined, when it did. Logged, not shown to the player.
-	string m_sRefusal;
+	string m_sRefusal; //!< Why the server declined, when it did. Logged, not shown to the player.
 
-	//------------------------------------------------------------------------------------------------
 	int Count()
 	{
 		return m_aX.Count();
@@ -317,7 +304,6 @@ class TBD_MarkerStyleCodec
 	static const int COLS = 6;
 	static const string HEX_DIGITS = "0123456789abcdef";
 
-	//------------------------------------------------------------------------------------------------
 	static int IntAt(array<int> values, int index)
 	{
 		if (!values || !values.IsIndexValid(index))
@@ -326,7 +312,6 @@ class TBD_MarkerStyleCodec
 		return values[index];
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static string StrAt(array<string> values, int index)
 	{
 		if (!values || !values.IsIndexValid(index))
@@ -335,7 +320,6 @@ class TBD_MarkerStyleCodec
 		return values[index];
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static int ShapeIndex(string authored)
 	{
 		if (authored.IsEmpty())
@@ -356,7 +340,6 @@ class TBD_MarkerStyleCodec
 		return 0;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static int BrushIndex(string authored)
 	{
 		if (authored.IsEmpty())
@@ -389,7 +372,6 @@ class TBD_MarkerStyleCodec
 		return -1;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Parse `#rrggbb` to 0xRRGGBB. Empty -> -1 (absent). Malformed -> -2.
 	static int ParseHexRgb(string authored)
 	{
@@ -419,7 +401,6 @@ class TBD_MarkerStyleCodec
 		return value;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Append 6-int records to `wire.m_aX` when any marker carries style. No-op for icon-only.
 	static void PackIntoX(TBD_MarkerWire wire)
 	{
@@ -473,7 +454,6 @@ class TBD_MarkerStyleCodec
 			wire.m_aX.Insert(value);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Fill the six style columns from an `xs` trailer. Unstyled (xs.Count == zs.Count) leaves
 	//! the output arrays empty so ApplyRows uses the pre-T-673 defaults. Malformed length
 	//! degrades the same way and returns false.

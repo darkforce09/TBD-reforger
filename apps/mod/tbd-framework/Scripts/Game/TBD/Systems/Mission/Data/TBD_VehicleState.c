@@ -1,25 +1,21 @@
 //! T-680 - vehicle states: lock, fuel, ammo.
 //!
-//! == What was missing ========================================================================
 //! T-706 put `lock` / `fuel` / `ammo` on `$defs/vehicle` (and the vehicle-shaped `$defs/entity`).
 //! `TBD_MissionVehicleStruct` does not declare those members, so the primary parse cannot see
 //! them. Spawned vehicles kept engine defaults regardless of the authored values. This file is
 //! the reader. Editor UI for the three attrs is NOT this slice.
 //!
-//! == Why a second JsonLoadContext pass =======================================================
-//! Same pattern as `TBD_WaypointRuntime.c` (T-677): a second pass over
+//! Same pattern as `TBD_WaypointRuntime.c`: a second pass over
 //! `TBD_MissionLoader.GetRawJson()` with a root that declares `vehicles[]` lock/fuel/ammo and
 //! nothing else. Backend/TBD_MissionLoader.c and TBD_MissionVehicleStruct.c stay out of this
 //! slice's owns list.
 //!
-//! == Presence, and the nested-ref landmine ===================================================
 //! `JsonLoadContext.ReadValue` ALLOCATES a nested `ref <class>` field even when the JSON key is
 //! ABSENT. `vehicles` is an ARRAY, so presence is a null-or-Count() test. Numeric fields that
 //! can be authored as 0 (`fuel`, `ammo`) carry an ABSENT sentinel. Bools cannot: `lock` false
 //! and an omitted `lock` are the same bound value (T-676 `repeat`). Apply lock only when the
 //! bound value is true; authored false and absent both leave the engine default (unlocked).
 //!
-//! == ATTR-FIELD-OBJ-LOCK / -FUEL / -AMMO =====================================================
 //!   lock  -> VehicleControllerComponent.LockPilotControls (pilot controls, not door locks).
 //!   fuel  -> FuelManagerComponent nodes via BaseFuelNode.SetFuel (fraction 0..1 of max).
 //!            Slotted tanks (trailers / extra nodes) are included via SlotManagerComponent.
@@ -29,12 +25,10 @@
 //!            Spare magazines in cargo AND the currently loaded turret magazine are in
 //!            scope. Loose world magazines that are not in this vehicle's inventory are not.
 //!
-//! == What this file CANNOT prove =============================================================
 //! The gate is `cargo xtask mod compile`. It cannot run a round. Whether a locked half-fuel
 //! vehicle actually spawns locked with half fuel is a human checklist item.
 //! @contract mission.schema.json#/$defs/vehicle
 
-//------------------------------------------------------------------------------------------------
 //! One `vehicles[]` row's state fields. Field names are the JSON keys.
 class TBD_VehicleStateWireStruct
 {
@@ -50,19 +44,16 @@ class TBD_VehicleStateWireStruct
 	float fuel = ABSENT;       //!< Fraction 0..1. ABSENT when the key was omitted. 0 is authored.
 	float ammo = ABSENT;       //!< Fraction 0..1. ABSENT when the key was omitted. 0 is authored.
 
-	//------------------------------------------------------------------------------------------------
 	bool HasFuel()
 	{
 		return fuel != ABSENT;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	bool HasAmmo()
 	{
 		return ammo != ABSENT;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	bool HasAny()
 	{
 		if (lock)
@@ -75,14 +66,12 @@ class TBD_VehicleStateWireStruct
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 //! Root of the second parse. Declares `vehicles` and nothing else.
 class TBD_VehicleStateDocStruct
 {
 	ref array<ref TBD_VehicleStateWireStruct> vehicles;
 }
 
-//------------------------------------------------------------------------------------------------
 //! Server-side reader: bind vehicles[] lock/fuel/ammo and apply them to the spawned body.
 class TBD_VehicleState
 {
@@ -90,7 +79,6 @@ class TBD_VehicleState
 	protected static IEntity s_QueryHit;
 	protected static ref array<ref TBD_VehicleStateWireStruct> s_aRows;
 
-	//------------------------------------------------------------------------------------------------
 	//! Called from `TBD_SpawnManager.MaterializeSlotBodies` AFTER `SeatAuthoredCrews`, so every
 	//! roster vehicle has either joined its entities[] twin or been spawned. No-ops when the
 	//! document has no vehicles[] or no authored lock/fuel/ammo, so a rosterless mission boots
@@ -143,7 +131,6 @@ class TBD_VehicleState
 			applied, locked, fueled, ammoed, missed));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Apply authored lock / fuel / ammo to one spawned vehicle. Unset numerics are ABSENT and
 	//! leave engine defaults. Lock applies only when the bound bool is true (see header).
 	static void Apply(IEntity vehicle, bool lock, float fuel, float ammo)
@@ -161,7 +148,6 @@ class TBD_VehicleState
 			ApplyAmmo(vehicle, ammo);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool Parse()
 	{
 		s_aRows = new array<ref TBD_VehicleStateWireStruct>();
@@ -190,7 +176,6 @@ class TBD_VehicleState
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static IEntity FindBody(TBD_VehicleStateWireStruct wire)
 	{
 		BaseWorld world = GetGame().GetWorld();
@@ -210,7 +195,6 @@ class TBD_VehicleState
 		return hit;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool OnQuery(IEntity entity)
 	{
 		if (!entity)
@@ -224,7 +208,6 @@ class TBD_VehicleState
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplyLock(IEntity vehicle)
 	{
 		VehicleControllerComponent controller = VehicleControllerComponent.Cast(vehicle.FindComponent(VehicleControllerComponent));
@@ -237,7 +220,6 @@ class TBD_VehicleState
 		controller.LockPilotControls(true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplyFuel(IEntity vehicle, float fuel)
 	{
 		if (fuel < 0 || fuel > 1)
@@ -265,7 +247,6 @@ class TBD_VehicleState
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplyFuelOnEntity(IEntity entity, float fuel)
 	{
 		FuelManagerComponent fm = FuelManagerComponent.Cast(entity.FindComponent(FuelManagerComponent));
@@ -283,7 +264,6 @@ class TBD_VehicleState
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplyAmmo(IEntity vehicle, float ammo)
 	{
 		if (ammo < 0 || ammo > 1)
@@ -311,7 +291,6 @@ class TBD_VehicleState
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Turret / hull weapons: currently loaded magazine. Cargo: every inventory item that is a
 	//! magazine (includeChildComponents so a mag sitting in a weapon well still counts).
 	protected static void ApplyAmmoOnEntity(IEntity entity, float ammo)
@@ -344,7 +323,6 @@ class TBD_VehicleState
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ScaleMagazine(BaseMagazineComponent mag, float ammo)
 	{
 		if (!mag)

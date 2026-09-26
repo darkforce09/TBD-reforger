@@ -1,4 +1,4 @@
-//! Pre-game rebuild (2026-09-13) — the mock catalog behind the Lobby.
+//! Pre-game rebuild (2026-09-13) -- the mock catalog behind the Lobby.
 //!
 //! Dataset is the Stitch pre-game mockup (lobby_sidebar / orbat_panel_blufor /
 //! slot_kit_inspector): BLUFOR Defending (92 seats) vs OPFOR Attacking (95), Spectators (10);
@@ -6,9 +6,9 @@
 //! drawn roles, weapons, tags and holders; OPFOR mirrors them under Soviet callsigns. Three kits
 //! (`rifleman_at` = the mockup's `8: RIFLEMAN (AT)` in full, `medic`, `crew`) keyed by role.
 //!
-//! Kit-preview pass (2026-09-13): every kit also carries its WIRE half — kit alias + a real
+//! Kit-preview pass (2026-09-13): every kit also carries its WIRE half -- kit alias + a real
 //! `TBD_SlotLoadoutStruct` of GUID-pinned vanilla prefabs (read off golden-missions/
-//! slot-loadout-coverage.json, Character_USSR_AT.et, Character_USSR_SL.et) — so the 3D doll wears
+//! slot-loadout-coverage.json, Character_USSR_AT.et, Character_USSR_SL.et) -- so the 3D doll wears
 //! exactly what the server pass would spawn. `crew` is deliberately kit-only (no loadout).
 //!
 //! Counts the UI shows (`0 / 92`, `2/3`) are COMPUTED by the screen from these rows. Consumed only
@@ -16,7 +16,6 @@
 //! return with the voice-panel pass, from its own mockup).
 class TBD_LobbyMock
 {
-	//------------------------------------------------------------------------------------------------
 	static TBD_LobbyCatalog Build()
 	{
 		TBD_LobbyCatalog catalog = new TBD_LobbyCatalog();
@@ -38,7 +37,6 @@ class TBD_LobbyMock
 		return catalog;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static array<ref TBD_LobbySquadInfo> BuildBlufor()
 	{
 		array<ref TBD_LobbySquadInfo> squads = {};
@@ -80,7 +78,6 @@ class TBD_LobbyMock
 		return squads;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static array<ref TBD_LobbySquadInfo> BuildOpfor()
 	{
 		array<ref TBD_LobbySquadInfo> squads = {};
@@ -111,7 +108,6 @@ class TBD_LobbyMock
 		return squads;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The slot_kit_inspector mockup, verbatim.
 	protected static TBD_KitInfo BuildRiflemanAtKit()
 	{
@@ -154,7 +150,6 @@ class TBD_LobbyMock
 		return kit;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_KitInfo BuildRiflemanKit()
 	{
 		TBD_KitInfo kit = new TBD_KitInfo("rifleman");
@@ -171,7 +166,6 @@ class TBD_LobbyMock
 		return kit;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_KitInfo BuildMedicKit()
 	{
 		TBD_KitInfo kit = new TBD_KitInfo("medic");
@@ -190,7 +184,6 @@ class TBD_LobbyMock
 		return kit;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_KitInfo BuildCrewKit()
 	{
 		TBD_KitInfo kit = new TBD_KitInfo("crew");
@@ -223,7 +216,6 @@ class TBD_LobbyMock
 		return kit;
 	}
 
-	// ── Shared pieces ───────────────────────────────────────────────────────────────────────
 
 	protected static void AddGear(TBD_KitInfo kit)
 	{
@@ -300,7 +292,6 @@ class TBD_LobbyMock
 		kit.m_aMisc.Insert(new TBD_KitEntry("Field Utility", "Earplugs", 1));
 	}
 
-	// ── The wire half of each kit ────────────────────────────────────────────────────────────
 	// GUID-pinned vanilla prefabs, all read off files on record (see the header). The Makarov the
 	// text card lists has no GUID on record, so `handgun` stays empty until one is pinned.
 	static const string KIT_SOV_RIFLEMAN = "kit:sov_rifleman";
@@ -325,14 +316,12 @@ class TBD_LobbyMock
 	static const string BACKPACK_RPG    = "{0D39750E5695B9D8}Prefabs/Items/Equipment/Backpacks/Backpack_RPG_Gunner.et";
 	static const string TOURNIQUET_USSR = "{80E75A71C29190DB}Prefabs/Items/Medicine/Tourniquet_01/Tourniquet_USSR_01.et";
 
-	//------------------------------------------------------------------------------------------------
 	protected static void SetBase(TBD_KitInfo kit)
 	{
 		kit.m_sKitAlias = KIT_SOV_RIFLEMAN;
 		kit.m_sBasePrefab = PREFAB_SOV_RIFLEMAN;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_SlotGearStruct NewLoadout(TBD_KitInfo kit)
 	{
 		kit.m_Loadout = new TBD_SlotLoadoutStruct();
@@ -341,7 +330,6 @@ class TBD_LobbyMock
 		return kit.m_Loadout.gear;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void AddCargo(TBD_KitInfo kit, string container, string item, int qty)
 	{
 		TBD_SlotCargoStruct row = new TBD_SlotCargoStruct();
@@ -351,7 +339,6 @@ class TBD_LobbyMock
 		kit.m_Loadout.cargo.Insert(row);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The full mockup kit: AK-74 + 1P29 in hand, RPG-7 slung, rocket pack, SSh-68, harness.
 	protected static void DressRiflemanAt(TBD_KitInfo kit)
 	{
@@ -372,7 +359,6 @@ class TBD_LobbyMock
 		AddCargo(kit, "jacket", TOURNIQUET_USSR, 1);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Partial loadout: weapon + head + vest authored, everything else is the kit prefab's own.
 	protected static void DressRifleman(TBD_KitInfo kit)
 	{
@@ -385,7 +371,6 @@ class TBD_LobbyMock
 		gear.vest = VEST_LIFCHIK_GL;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void DressMedic(TBD_KitInfo kit)
 	{
 		SetBase(kit);
@@ -397,8 +382,7 @@ class TBD_LobbyMock
 		gear.boots = BOOTS_SOVIET;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Kit-only: no JSON loadout, the doll is the prefab as shipped. This is the cache-reset proof —
+	//! Kit-only: no JSON loadout, the doll is the prefab as shipped. This is the cache-reset proof --
 	//! picked after `rifleman_at`, every garment must fall back to the prefab's own.
 	protected static void DressCrew(TBD_KitInfo kit)
 	{

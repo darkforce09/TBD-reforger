@@ -6,19 +6,17 @@
 //! Added as methods on the player controller (which is replicated and owned by
 //! one client), so server->owner replies route to the requesting admin only.
 //!
-//! ── T-181.11.2 — why the admin MENU transport also lives in this block ──────────────────────
 //! It is a third client<->server admin channel, and it belongs on the player controller for the
 //! same reason the two above it do: `RplRcver.Owner` delivers to exactly one client, which is
 //! what makes a targeted, non-broadcast reply possible.
 //!
 //! It does not add a `modded class SCR_PlayerController` block; it extends the one below.
 //!
-//! ── T-181.30 — THE COUNT IN THIS COMMENT WAS WRONG AND IS WORTH CORRECTING CAREFULLY ─────────
 //! This used to read "Two already exist in this addon (here, and `TBD_BriefingController.c`)" and
 //! "**Two blocks are measured to compile and interoperate; three are not.**" Both statements are
-//! now false. There are **SIX** such blocks in the addon as of today — this file,
+//! now false. There are **SIX** such blocks in the addon as of today -- this file,
 //! `TBD_BriefingController.c`, `TBD_LobbyController.c`, `TBD_SpectatorHost.c`,
-//! `TBD_MarkerController.c`, `TBD_RadioController.c` — and the program has re-measured static
+//! `TBD_MarkerController.c`, `TBD_RadioController.c` -- and the program has re-measured static
 //! coexistence at N=2, 3, 5 and 6.
 //!
 //! **What is actually known is narrower than either the old claim or the new count suggests**, and
@@ -34,8 +32,8 @@
 //! vanilla method, so folding the admin transport in here adds no new override and no new
 //! `modded enum ChimeraMenuPreset` entry.
 //!
-//! The spectator slice (T-181.12) hit the same question and answered it by hosting on a game-mode
-//! component instead — that route is unavailable here, because a game-mode component has no
+//! The spectator slice hit the same question and answered it by hosting on a game-mode
+//! component instead -- that route is unavailable here, because a game-mode component has no
 //! per-client owner and so no way to answer one admin privately. So this file gains the methods and
 //! the logic stays in `TBD_AdminService` / `TBD_AdminSnapshotService`; that is why they live here
 //! rather than in the UI folder with the rest of the admin screen.
@@ -46,7 +44,6 @@ modded class SCR_PlayerController
 	protected int m_TBD_CycleIndex = 0;
 	protected bool m_TBD_ListenersRegistered = false;
 
-	//------------------------------------------------------------------------------------------------
 	//! Register the admin keybinds on the local client once it owns this controller.
 	//! Input actions "TBD_MissionCycle" / "TBD_MissionLoad" are defined in the mod's
 	//! input config (bind keys in Workbench); listeners are a no-op until they exist.
@@ -56,7 +53,6 @@ modded class SCR_PlayerController
 		TBD_TryRegisterListeners();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void TBD_TryRegisterListeners()
 	{
 		if (m_TBD_ListenersRegistered)
@@ -76,40 +72,37 @@ modded class SCR_PlayerController
 		im.AddActionListener("TBD_MissionCycle", EActionTrigger.DOWN, TBD_OnCycleAction);
 		im.AddActionListener("TBD_MissionLoad", EActionTrigger.DOWN, TBD_OnLoadAction);
 
-		// T-181.11.2 — the admin menu. Registered for every client, not just admins, because the
+		// T-181.11.2 -- the admin menu. Registered for every client, not just admins, because the
 		// client genuinely does not know whether it is one: nothing on a client is authoritative
 		// about the admin list. A non-admin who presses it gets a screen containing the server's
-		// refusal and nothing else — no roster, no mission, no audit trail (see TBD_AdminData.c).
+		// refusal and nothing else -- no roster, no mission, no audit trail (see TBD_AdminData.c).
 		im.AddActionListener("TBD_AdminMenu", EActionTrigger.DOWN, TBD_OnAdminMenuAction);
 
-		// Mission Selector (F9 or F6) — opens through TBD_MenuStack like every TBD screen.
+		// Mission Selector (F9 or F6) -- opens through TBD_MenuStack like every TBD screen.
 		im.AddActionListener("TBD_MissionSelector", EActionTrigger.DOWN, TBD_OnMissionSelectorAction);
 
 		m_TBD_ListenersRegistered = true;
 		Print("[TBD][browser] admin keybinds registered (TBD_MissionCycle / TBD_MissionLoad / TBD_AdminMenu / TBD_MissionSelector). Press F6 or F9 for Mission Selector!");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Mission Selector toggle (Dock & Sub-Layout screen, 2026-09-12).
 	protected void TBD_OnMissionSelectorAction(float value, EActionTrigger trigger)
 	{
 		TBD_MissionSelectorScreen.Toggle();
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! T-181.11.2 — raise or drop the admin screen on this client.
+	//! T-181.11.2 -- raise or drop the admin screen on this client.
 	protected void TBD_OnAdminMenuAction(float value, EActionTrigger trigger)
 	{
 		TBD_AdminClient.Toggle();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Cycle key: first press fetches the list; subsequent presses step through it.
 	protected void TBD_OnCycleAction(float value, EActionTrigger trigger)
 	{
 		if (!m_TBD_MissionLines || m_TBD_MissionLines.IsEmpty())
 		{
-			Print("[TBD][browser] fetching mission list…");
+			Print("[TBD][browser] fetching mission list...");
 			TBD_RequestMissionList();
 			return;
 		}
@@ -121,28 +114,26 @@ modded class SCR_PlayerController
 		Print(string.Format("[TBD][browser] > %1   (press Load to apply)", m_TBD_MissionLines[m_TBD_CycleIndex]));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Load key: ask the server to request a deployment of the highlighted mission.
 	protected void TBD_OnLoadAction(float value, EActionTrigger trigger)
 	{
 		if (!m_TBD_MissionLines || m_TBD_MissionLines.IsEmpty())
 		{
-			Print("[TBD][browser] no mission selected — press Cycle first.");
+			Print("[TBD][browser] no mission selected -- press Cycle first.");
 			return;
 		}
 		Print(string.Format("[TBD][browser] requesting a deployment of mission #%1", m_TBD_CycleIndex + 1));
 		TBD_RequestSelectMission(m_TBD_CycleIndex + 1);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	// CLIENT (owner) -> SERVER: ask for the current mission list.
 	void TBD_RequestMissionList()
 	{
 		Rpc(TBD_RpcAsk_MissionList);
 	}
 
-	//! @authority server — executes on the server (RplRcver.Server): builds and returns the list.
-	//! Admin-gated like TBD_RpcAsk_SelectMission — this is an admin browser tool, and the
+	//! @authority server -- executes on the server (RplRcver.Server): builds and returns the list.
+	//! Admin-gated like TBD_RpcAsk_SelectMission -- this is an admin browser tool, and the
 	//! payload is server-built content that shouldn't stream to arbitrary clients (T-130.4 F1-17).
 	//! @rpc Reliable Server
 	[RplRpc(RplChannel.Reliable, RplRcver.Server)]
@@ -153,7 +144,7 @@ modded class SCR_PlayerController
 		SCR_PlayerListedAdminManagerComponent admins = SCR_PlayerListedAdminManagerComponent.GetInstance();
 		if (!admins || !admins.IsPlayerOnAdminList(playerId))
 		{
-			Print(string.Format("[TBD][browser] non-admin player %1 requested the mission list — denied.", playerId), LogLevel.WARNING);
+			Print(string.Format("[TBD][browser] non-admin player %1 requested the mission list -- denied.", playerId), LogLevel.WARNING);
 			return;
 		}
 
@@ -161,7 +152,7 @@ modded class SCR_PlayerController
 		Rpc(TBD_RpcDo_ReceiveMissionList, payload);
 	}
 
-	//! @authority owner — executes on the requesting admin's client only (RplRcver.Owner).
+	//! @authority owner -- executes on the requesting admin's client only (RplRcver.Owner).
 	//! @rpc Reliable Owner
 	// SERVER -> CLIENT (owner): deliver the mission list to the requester only.
 	[RplRpc(RplChannel.Reliable, RplRcver.Owner)]
@@ -172,7 +163,6 @@ modded class SCR_PlayerController
 			Print("[TBD][browser] " + line);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	// CLIENT (owner) -> SERVER: select mission by 1-based number.
 	void TBD_RequestSelectMission(int number)
 	{
@@ -190,7 +180,7 @@ modded class SCR_PlayerController
 		SCR_PlayerListedAdminManagerComponent admins = SCR_PlayerListedAdminManagerComponent.GetInstance();
 		if (!admins || !admins.IsPlayerOnAdminList(playerId))
 		{
-			Print(string.Format("[TBD][browser] non-admin player %1 tried to select mission %2 — denied.", playerId, number), LogLevel.WARNING);
+			Print(string.Format("[TBD][browser] non-admin player %1 tried to select mission %2 -- denied.", playerId, number), LogLevel.WARNING);
 			return;
 		}
 
@@ -199,27 +189,24 @@ modded class SCR_PlayerController
 		TBD_PlayerChat.Tell(playerId, reply);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Client-side accessor for the cached list (for a future menu/HUD).
 	array<string> TBD_GetMissionLines()
 	{
 		return m_TBD_MissionLines;
 	}
 
-	// ══ T-181.11.2 — admin menu transport ═══════════════════════════════════════════════════
 	//
 	// Two request/reply pairs and one push, all owner-targeted. Every one of them re-derives the
-	// caller from `GetPlayerId()` on THIS replicated controller — the client cannot name a player
+	// caller from `GetPlayerId()` on THIS replicated controller -- the client cannot name a player
 	// id, so it cannot claim to be somebody else. Neither RPC below decides anything: the read
 	// gate lives in `TBD_AdminSnapshotService.BuildForAdmin` and the write gate in
 	// `TBD_AdminService.Execute`, so a future transport cannot forget to check.
 
-	//------------------------------------------------------------------------------------------------
 	//! CLIENT (owner) -> SERVER: ask for the admin snapshot. On a listen host the caller IS the
 	//! authority, so build in place instead of RPCing ourselves.
 	void TBD_RequestAdminSnapshot()
 	{
-		// Authority only — the snapshot reads server-owned state (slot map, life ledger, mission
+		// Authority only -- the snapshot reads server-owned state (slot map, life ledger, mission
 		// document), none of which exists in a client's process. Off the authority, ask for it.
 		if (RplSession.Mode() == RplMode.Client)
 		{
@@ -230,7 +217,7 @@ modded class SCR_PlayerController
 		TBD_AdminClient.Accept(TBD_AdminSnapshotService.BuildForAdmin(GetPlayerId()));
 	}
 
-	//! @authority server — builds the snapshot the caller is entitled to. A non-admin gets a
+	//! @authority server -- builds the snapshot the caller is entitled to. A non-admin gets a
 	//! payload carrying a refusal and no data at all, which is also what makes the reply safe to
 	//! send unconditionally: there is nothing in it to leak.
 	//! @rpc Reliable Server
@@ -241,7 +228,7 @@ modded class SCR_PlayerController
 			TBD_AdminSnapshotService.BuildForAdmin(GetPlayerId())));
 	}
 
-	//! @authority owner — executes on the requesting client only (RplRcver.Owner).
+	//! @authority owner -- executes on the requesting client only (RplRcver.Owner).
 	//! @rpc Reliable Owner
 	[RplRpc(RplChannel.Reliable, RplRcver.Owner)]
 	protected void TBD_RpcDo_AdminSnapshot(string wire)
@@ -249,14 +236,13 @@ modded class SCR_PlayerController
 		TBD_AdminClient.Accept(TBD_AdminSnapshotService.Parse(wire));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! CLIENT (owner) -> SERVER: run one admin power. The enum crosses the wire as a plain int;
 	//! an unknown value falls through `TBD_AdminService.Execute` to "unknown admin action".
 	void TBD_RequestAdminAction(TBD_EAdminAction action, int targetId)
 	{
 		int actionId = action;
 
-		// Authority only — the power itself runs server-side. Off the authority, ask for it.
+		// Authority only -- the power itself runs server-side. Off the authority, ask for it.
 		if (RplSession.Mode() == RplMode.Client)
 		{
 			Rpc(TBD_RpcAsk_AdminAction, actionId, targetId);
@@ -269,7 +255,7 @@ modded class SCR_PlayerController
 		TBD_AdminClient.Accept(TBD_AdminSnapshotService.BuildForAdmin(GetPlayerId()));
 	}
 
-	//! @authority server — the caller is `GetPlayerId()` of this controller, never an argument.
+	//! @authority server -- the caller is `GetPlayerId()` of this controller, never an argument.
 	//! `TBD_AdminService.Execute` re-checks the admin list before touching anything and audits the
 	//! attempt either way.
 	//! @rpc Reliable Server
@@ -299,15 +285,14 @@ modded class SCR_PlayerController
 		TBD_AdminClient.AcceptActionResult(message, ok);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! SERVER -> owner: raise the admin screen on this player's client. Driven by `#tbd menu`, so
-	//! an admin can reach the panel with no keybind bound and no ActionContext registered — the
+	//! an admin can reach the panel with no keybind bound and no ActionContext registered -- the
 	//! chat path is the one surface that works on a stock client today.
 	//! @authority server
 	void TBD_OpenAdminMenuOnOwner()
 	{
 		// Listen host: the requesting admin IS this machine. An owner-targeted RPC from the
-		// authority to itself is not a delivery worth relying on, so open in place — same
+		// authority to itself is not a delivery worth relying on, so open in place -- same
 		// short-circuit the snapshot request uses, expressed as "is this the local controller"
 		// because that is the question that is true on a host and false on a dedicated server.
 		if (GetGame().GetWorkspace() && GetGame().GetPlayerController() == this)
@@ -332,12 +317,11 @@ modded class SCR_PlayerController
 //! it back on the client. Keeps the RPC signature to a single string.
 class TBD_MissionBrowserService
 {
-	//! Cap on list lines in one RPC payload — a runaway mission list must not become an
+	//! Cap on list lines in one RPC payload -- a runaway mission list must not become an
 	//! unbounded reliable-channel string (T-130.4 F1-17). Selection stays 1-based over the
 	//! full list; only the display payload is clipped.
 	protected static const int MAX_LIST_LINES = 100;
 
-	//------------------------------------------------------------------------------------------------
 	//! Server: "n) Title [terrain]" lines of the deployable mission list (TBD_DeployableMissionList).
 	static string BuildListPayload()
 	{
@@ -361,7 +345,6 @@ class TBD_MissionBrowserService
 		return result;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Client: split the payload back into display lines.
 	static array<string> ParseListPayload(string payload)
 	{

@@ -1,16 +1,13 @@
 //! T-681 - entity states: health, allowDamage, showModel, size, stamina.
 //!
-//! == What was missing ========================================================================
 //! T-706 put those five keys on `$defs/entity`. `TBD_MissionEntityStruct` is still
 //! alias/uid/x/z/headingDeg/faction only, so the primary parse cannot see them. Spawned
 //! entities kept engine defaults. This file is the reader. Editor UI is NOT this slice.
 //!
-//! == Why a second JsonLoadContext pass =======================================================
-//! Same pattern as `TBD_VehicleState.c` (T-680) / `TBD_WaypointRuntime.c` (T-677): a second
+//! Same pattern as `TBD_VehicleState.c` / `TBD_WaypointRuntime.c`: a second
 //! pass over `TBD_MissionLoader.GetRawJson()` with a root that declares `entities[]` those
 //! five fields and nothing else. Do not grow `TBD_MissionEntityStruct`.
 //!
-//! == Presence, and the nested-ref landmine ===================================================
 //! `JsonLoadContext.ReadValue` ALLOCATES a nested `ref <class>` field even when the JSON key
 //! is ABSENT. `entities` is an ARRAY, so presence is a null-or-Count() test. Numeric fields
 //! that can be authored as 0 (`health`) carry an ABSENT sentinel. `size` is exclusiveMinimum 0
@@ -19,7 +16,6 @@
 //! allowDamage / showModel only when the bound value is true. Authored false leaves the engine
 //! default. `stamina` is a SCHEMA BOOLEAN (whether stamina is enabled), not a 0..1 fraction.
 //!
-//! == ATTR-FIELD-OBJ-HEALTH / -ALLOW-DAMAGE / -SHOW-MODEL / -SIZE / -STAMINA ==================
 //!   health      -> DamageManagerComponent.SetHealthScaled (fraction 0..1). 0 is destroyed.
 //!   allowDamage -> DamageManagerComponent.EnableDamageHandling(true) when bound true.
 //!   showModel   -> IEntity.SetFlags(EntityFlags.VISIBLE) when bound true.
@@ -28,12 +24,10 @@
 //!                  CharacterStaminaComponent / SCR_CharacterStaminaComponent add no enable
 //!                  toggle (CRF calls AddStamina to restore drain; that is not a toggle).
 //!
-//! == What this file CANNOT prove =============================================================
 //! The gate is `cargo xtask mod compile`. Whether a half-health hidden-scale entity actually
 //! spawns that way is a human checklist item.
 //! @contract mission.schema.json#/$defs/entity
 
-//------------------------------------------------------------------------------------------------
 //! One `entities[]` row's state fields. Field names are the JSON keys.
 class TBD_EntityStateWireStruct
 {
@@ -49,19 +43,16 @@ class TBD_EntityStateWireStruct
 	float size = ABSENT;       //!< Uniform scale. ABSENT when omitted. 1 = native.
 	bool stamina;              //!< Schema boolean: stamina enabled. See header: no toggle API.
 
-	//------------------------------------------------------------------------------------------------
 	bool HasHealth()
 	{
 		return health != ABSENT;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	bool HasSize()
 	{
 		return size != ABSENT;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True when a field this file can actually apply is present (stamina is logged, not applied).
 	bool HasApplyable()
 	{
@@ -76,7 +67,6 @@ class TBD_EntityStateWireStruct
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	bool HasAny()
 	{
 		if (HasApplyable())
@@ -87,14 +77,12 @@ class TBD_EntityStateWireStruct
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 //! Root of the second parse. Declares `entities` and nothing else.
 class TBD_EntityStateDocStruct
 {
 	ref array<ref TBD_EntityStateWireStruct> entities;
 }
 
-//------------------------------------------------------------------------------------------------
 //! One spawned `entities[]` body, recorded from `SpawnMissionEntities` so Apply can find it
 //! without an AABB guess (two props can share a metre).
 class TBD_EntityStateTwin
@@ -104,7 +92,6 @@ class TBD_EntityStateTwin
 	IEntity body;
 }
 
-//------------------------------------------------------------------------------------------------
 //! Server-side reader: bind entities[] health/allowDamage/showModel/size/stamina and apply.
 class TBD_EntityState
 {
@@ -112,7 +99,6 @@ class TBD_EntityState
 	protected static ref array<ref TBD_EntityStateTwin> s_aTwins;
 	protected static bool s_bStaminaSkipLogged;
 
-	//------------------------------------------------------------------------------------------------
 	//! Drop the entities[] -> world index. Called at the TOP of `SpawnMissionEntities`, before
 	//! its early return, so a reload whose new mission authors no entities[] cannot inherit the
 	//! previous mission's pointers.
@@ -121,7 +107,6 @@ class TBD_EntityState
 		s_aTwins = new array<ref TBD_EntityStateTwin>();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Record one `entities[]` row that reached the world. Skipped spawn rows are not recorded.
 	static void RecordSpawn(string uid, string alias, float x, float z, IEntity body)
 	{
@@ -137,7 +122,6 @@ class TBD_EntityState
 		s_aTwins.Insert(twin);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Called from `TBD_SpawnManager.MaterializeSlotBodies` AFTER `TBD_VehicleState.ApplySpawned`,
 	//! so every `entities[]` body already exists (SpawnMissionEntities ran at parse) and roster
 	//! vehicles have joined or spawned. No-ops when the document has no entities[] state keys.
@@ -200,7 +184,6 @@ class TBD_EntityState
 			applied, healthy, damaged, shown, sized, missed));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Apply authored state to one spawned body. Unset numerics are ABSENT and leave engine
 	//! defaults. Bools apply only when the bound value is true (see header). Health is last so a
 	//! 0-health destroy still receives scale / visibility first.
@@ -222,7 +205,6 @@ class TBD_EntityState
 			ApplyHealth(body, wire.health);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool Parse()
 	{
 		s_aRows = new array<ref TBD_EntityStateWireStruct>();
@@ -251,7 +233,6 @@ class TBD_EntityState
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static IEntity FindBody(TBD_EntityStateWireStruct wire)
 	{
 		if (!s_aTwins || !wire)
@@ -284,7 +265,6 @@ class TBD_EntityState
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplyHealth(IEntity body, float health)
 	{
 		if (health < 0 || health > 1)
@@ -303,7 +283,6 @@ class TBD_EntityState
 		dmg.SetHealthScaled(health);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplyAllowDamage(IEntity body)
 	{
 		DamageManagerComponent dmg = DamageManagerComponent.Cast(body.FindComponent(DamageManagerComponent));
@@ -316,13 +295,11 @@ class TBD_EntityState
 		dmg.EnableDamageHandling(true);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplyShowModel(IEntity body)
 	{
 		body.SetFlags(EntityFlags.VISIBLE, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplySize(IEntity body, float size)
 	{
 		if (size <= 0)
@@ -339,7 +316,6 @@ class TBD_EntityState
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void LogStaminaSkip()
 	{
 		if (s_bStaminaSkipLogged)

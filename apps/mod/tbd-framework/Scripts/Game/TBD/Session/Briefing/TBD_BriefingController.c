@@ -11,24 +11,21 @@
 //! `TBD_BriefingClient.c`; models are in `TBD_BriefingData.c`, server builder + wire in
 //! `TBD_BriefingService.c`.
 //!
-//! ── How a client learns the round is in BRIEFING (all three paths, one handler) ─────────────
 //! Every one of these ends at `TBD_OnStageChanged`, which is the only thing that opens or closes
 //! the screen. None of them is redundant:
 //!   * stage changes while we are here, dedicated  -> `OnStageReplicated` (the proxy callback);
 //!   * stage changes while we are here, listen host -> `SetStage` (authority never gets onRplName);
-//!   * stage changed BEFORE we arrived              -> `UpdateLocalPlayerController` (T-181.28).
+//!   * stage changed BEFORE we arrived              -> `UpdateLocalPlayerController`.
 //! The first two are pushes and are dropped when this client has no controller yet; the third is
 //! the only one that can run after the fact, and it is what makes a late joiner or a reconnect
 //! see the briefing at all.
 //!
-//! ── Why the transport hangs off SCR_PlayerController ────────────────────────────────────────
 //! The player controller is replicated and owned by exactly one client, so `RplRcver.Owner`
 //! delivers a reply to the requester and to nobody else. This is the precedent already in the
-//! tree — `TBD_MissionBrowser.c` moves the admin mission list the same way, and says so in its
+//! tree -- `TBD_MissionBrowser.c` moves the admin mission list the same way, and says so in its
 //! header. A second `modded class SCR_PlayerController` block alongside that one compiles clean
 //! (probed: two modded blocks in one addon, methods visible across both).
 //!
-//! ── Host vs dedicated ──────────────────────────────────────────────────────────────────────
 //! On a listen host the requester IS the authority, so the request short-circuits and builds the
 //! payload in place rather than round-tripping an RPC to itself. Same code path, both topologies.
 
@@ -39,7 +36,6 @@ class TBD_BriefingReadyEntry
 	string m_sFaction;
 	string m_sMissionId;
 
-	//------------------------------------------------------------------------------------------------
 	void TBD_BriefingReadyEntry(string faction, string missionId)
 	{
 		m_sFaction = faction;
@@ -47,7 +43,7 @@ class TBD_BriefingReadyEntry
 	}
 }
 
-//! SERVER — readiness bookkeeping for the briefing stage.
+//! SERVER -- readiness bookkeeping for the briefing stage.
 //!
 //! Deliberately static and local to this slice: readiness is a briefing-screen concept, and
 //! parking it here keeps the slice from reaching into `TBD_SpawnManager` or
@@ -58,14 +54,12 @@ class TBD_BriefingReadyRegistry
 	//! why this is a record and not just a faction string.
 	protected static ref map<int, ref TBD_BriefingReadyEntry> m_mReady;
 
-	//------------------------------------------------------------------------------------------------
 	protected static void Ensure()
 	{
 		if (!m_mReady)
 			m_mReady = new map<int, ref TBD_BriefingReadyEntry>();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! @authority server
 	static void SetReady(int playerId, string factionKey)
 	{
@@ -73,10 +67,9 @@ class TBD_BriefingReadyRegistry
 		m_mReady.Set(playerId, new TBD_BriefingReadyEntry(factionKey, CurrentMissionId()));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Ready players on one side of the CURRENT mission, counting only those still connected.
 	//!
-	//! Two staleness rules, both applied at count time rather than through a hook — every
+	//! Two staleness rules, both applied at count time rather than through a hook -- every
 	//! callback that would carry the news (`OnPlayerDisconnected`, the stage machine) lives in
 	//! `SCR_BaseGameMode` / `TBD_FrameworkManager` / `TBD_SpawnManager`, which other slices own
 	//! this wave. Validating on read keeps the whole fix inside this slice and cannot go stale:
@@ -125,8 +118,7 @@ class TBD_BriefingReadyRegistry
 		return n;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Empty when no mission is loaded — which makes every stored entry stale, correctly.
+	//! Empty when no mission is loaded -- which makes every stored entry stale, correctly.
 	protected static string CurrentMissionId()
 	{
 		TBD_MissionDocumentStruct doc = TBD_MissionLoader.GetMission();
@@ -136,11 +128,10 @@ class TBD_BriefingReadyRegistry
 		return doc.meta.id;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! "Ready — 3 of 8 on US Army". Built on the server because only the server can count the
+	//! "Ready -- 3 of 8 on US Army". Built on the server because only the server can count the
 	//! side; shipped as finished text so the client needs no roster of its own.
 	//!
-	//! Note the tally covers ONE faction — the reader's. A player is never told how ready the
+	//! Note the tally covers ONE faction -- the reader's. A player is never told how ready the
 	//! other side is.
 	static string BuildTally(string factionKey, string factionName)
 	{
@@ -154,7 +145,7 @@ class TBD_BriefingReadyRegistry
 		if (total < ready)
 			total = ready;
 
-		return string.Format("Ready — %1 of %2 on %3", ready, total, factionName);
+		return string.Format("Ready -- %1 of %2 on %3", ready, total, factionName);
 	}
 }
 
@@ -164,28 +155,25 @@ modded class SCR_PlayerController
 	//! Client: last stage we acted on, so open/close fire on TRANSITIONS only.
 	protected TBD_EGameStage m_TBD_LastStage = TBD_EGameStage.LOADING;
 
-	//! T-181.28 — the JIP catch-up has already run on this controller.
+	//! T-181.28 -- the JIP catch-up has already run on this controller.
 	//!
 	//! Instance state and deliberately NOT static: a reconnecting player is handed a FRESH
 	//! controller, and that player is exactly the one the push-only delivery misses. A static latch
 	//! would remember the previous connection and skip them.
 	protected bool m_TBD_StageCaughtUp;
 
-	//------------------------------------------------------------------------------------------------
-	//! T-181.28 — JIP CATCH-UP. Read the stage ONCE, when this machine's local player controller
+	//! T-181.28 -- JIP CATCH-UP. Read the stage ONCE, when this machine's local player controller
 	//! first appears.
 	//!
-	//! ── The hole this closes ────────────────────────────────────────────────────────────────
 	//! Delivery has been push-only since T-181.23. `TBD_FrameworkManager.NotifyLocalStageUI()` runs
 	//! on a stage CHANGE, and it RETURNS SILENTLY when `GetGame().GetPlayerController()` is null.
-	//! A client that joins — or reconnects — while the round already sits in BRIEFING therefore
+	//! A client that joins -- or reconnects -- while the round already sits in BRIEFING therefore
 	//! receives nothing at all: there is no change left to push, and `m_TBD_LastStage` starts at
 	//! LOADING on the fresh controller so nothing infers one either.
 	//!
 	//! BRIEFING is admin-driven, so rounds genuinely sit in it, and T-181.32's stage gate can
 	//! legitimately hold a round there longer than before. This is the normal case, not an edge.
 	//!
-	//! ── Why THIS hook, and why it is not the poll T-181.23 deleted ──────────────────────────
 	//! `UpdateLocalPlayerController()` is VANILLA's own one-shot latch for "this controller belongs
 	//! to the local player". `SCR_PlayerController.OnUpdate` calls it every frame while the static
 	//! `s_pLocalPlayerController` is null; the method tests `this == GetGame().GetPlayerController()`,
@@ -199,30 +187,26 @@ modded class SCR_PlayerController
 	//! binding: if this latch ever failed to fire, the local player would lose Walk, Focus,
 	//! Inventory and Tactical Ping.
 	//!
-	//! ── Chosen over OnOwnershipChanged deliberately ─────────────────────────────────────────
 	//! Vanilla states in its own comment that "listen server or SP client will not call
 	//! OnOwnershipChanged as there is no transfer of ownership". Hooking that would have fixed
-	//! dedicated clients and silently skipped a listen host — this program's recorded both-paths
+	//! dedicated clients and silently skipped a listen host -- this program's recorded both-paths
 	//! landmine in its exact original shape. `OnControlledEntityChanged` is worse still: it is
 	//! already the addon's ONE vanilla override (`TBD_MissionBrowser.c`), so a second would be a
 	//! duplicate method name across modded blocks, and a player refused a body by `flow.jip` never
 	//! fires it at all.
 	//!
-	//! ── Cost where it does nothing ──────────────────────────────────────────────────────────
 	//! On a DEDICATED SERVER `s_pLocalPlayerController` never latches, so vanilla keeps calling this
 	//! every frame for every controller. The first guard below is therefore a pointer compare that
-	//! is always false there — the same compare `super` itself makes two lines later.
+	//! is always false there -- the same compare `super` itself makes two lines later.
 	override protected void UpdateLocalPlayerController()
 	{
 		super.UpdateLocalPlayerController();
 		TBD_CatchUpStage();
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! @authority client — one read of the server-owned stage, routed through the SAME handler the
+	//! @authority client -- one read of the server-owned stage, routed through the SAME handler the
 	//! push path uses.
 	//!
-	//! ── Why this delivers T-181.27's ORDERS without mentioning them ─────────────────────────
 	//! It calls `TBD_OnStageChanged`, which is the ONE door to the screen, and the screen's own
 	//! `OnScreenOpen` re-request is what fetches the payload. A late joiner therefore opens the
 	//! briefing by the identical route a punctual one does, and the three `array<string>` orders
@@ -230,7 +214,6 @@ modded class SCR_PlayerController
 	//! them because it never touches the payload: there is one delivery path, not two that have to
 	//! be kept in step.
 	//!
-	//! ── The flow.jip interaction (T-181.38), decided rather than assumed ────────────────────
 	//! A player joining under `flow.jip: "disabled"` is refused a BODY at the deploy door
 	//! (`TBD_SpawnManager.OnPlayerAuditSuccess` -> `DENIED-jip-disabled`; `last-stand-at-montfort`
 	//! authors it). They still get the briefing, and the catch-up is deliberately NOT conditioned
@@ -242,7 +225,7 @@ modded class SCR_PlayerController
 	//!     the briefing on the deploy verdict would blind precisely the player who most needs it.
 	//!   * A walk-up latecomer with no seat is shown nothing either way. `BuildForPlayer` fails
 	//!     closed on `GetAssignedSlot` and returns "No slot assigned yet", which the screen renders
-	//!     as an empty state that says why — strictly better than a silent void. Side discipline
+	//!     as an empty state that says why -- strictly better than a silent void. Side discipline
 	//!     therefore does not depend on this gate, so adding one would buy no security.
 	//!   * The client holds no mission document and cannot read `flow.jip` at all, so a gate here
 	//!     would mean shipping the policy to the client for no benefit.
@@ -253,11 +236,10 @@ modded class SCR_PlayerController
 		if (m_TBD_StageCaughtUp)
 			return;
 
-		// ── THE load-bearing guard, and it must stay FIRST ──────────────────────────────────
 		// Not this machine's player. On a dedicated server `GetPlayerController()` is null, so this
 		// is false for every controller and nothing below ever runs. It is the same test vanilla
 		// itself makes inside `super` to decide `m_bIsLocalPlayerController`, and the same one
-		// `TBD_MissionBrowser` and `TBD_RadioController` already rely on — if it could ever be true
+		// `TBD_MissionBrowser` and `TBD_RadioController` already rely on -- if it could ever be true
 		// on a server, vanilla would be binding local input there.
 		if (GetGame().GetPlayerController() != this)
 			return;
@@ -268,10 +250,10 @@ modded class SCR_PlayerController
 		// The `GetPlayerController() != this` guard above is what actually protects this path.
 		// Kept only because a null workspace is still a reason not to drive a menu.
 		//
-		// T-181.49 — the worked example this comment used to cite (`TBD_LobbyStage.Start()`
+		// T-181.49 -- the worked example this comment used to cite (`TBD_LobbyStage.Start()`
 		// passing this same check on a zero-player boot, then logging `preset 60 did not open`)
 		// is GONE: that class now tests `RplSession.Mode() == RplMode.Dedicated`, which is what
-		// both oracles use. The measurement above still stands — only the example was stale.
+		// both oracles use. The measurement above still stands -- only the example was stale.
 		if (!GetGame().GetWorkspace())
 			return;
 
@@ -283,10 +265,10 @@ modded class SCR_PlayerController
 
 		TBD_EGameStage stage = framework.GetStage();
 
-		// One line per join, not per frame — the latch above is what makes that true. This is the
+		// One line per join, not per frame -- the latch above is what makes that true. This is the
 		// only operator-visible evidence the catch-up ran, so it names the stage it read.
 		TBD_Log.Event(TBD_BriefingService.CH_BRIEFING,
-			string.Format("jip catch-up — local controller up, stage=%1",
+			string.Format("jip catch-up -- local controller up, stage=%1",
 				typename.EnumToString(TBD_EGameStage, stage)));
 
 		// Idempotent by construction: TBD_OnStageChanged acts on TRANSITIONS only, so reading a
@@ -296,7 +278,7 @@ modded class SCR_PlayerController
 		if (stage != TBD_EGameStage.BRIEFING)
 			return;
 
-		// The screen asks for its own payload on open, so this only runs when it could NOT open —
+		// The screen asks for its own payload on open, so this only runs when it could NOT open --
 		// today that is always, because `TBD_UIBriefing` is not in `resourceDatabase.rdb` yet. It
 		// warms the client cache so the orders are already there the moment the screen can appear,
 		// and it is the only half of this fix that can produce evidence before that Workbench pass.
@@ -304,24 +286,21 @@ modded class SCR_PlayerController
 			TBD_BriefingClient.Request();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The single entry point for "the round changed phase" on this client.
 	//!
-	//! ── T-181.23: the 500 ms poll is gone ───────────────────────────────────────────────────
 	//! T-181.9.2 had to poll `TBD_FrameworkManager.GetStage()` every 500 ms because
 	//! `OnStageReplicated()` was an empty stub and `TBD_FrameworkManager.c` belonged to another
 	//! slice that wave. That hook is now wired, so the manager PUSHES the stage here instead:
-	//!   • proxy path     — `OnStageReplicated()`, the `[RplProp(onRplName:)]` callback;
-	//!   • authority path — `SetStage()`, because onRplName never fires on authority, which is
+	//!   • proxy path     -- `OnStageReplicated()`, the `[RplProp(onRplName:)]` callback;
+	//!   • authority path -- `SetStage()`, because onRplName never fires on authority, which is
 	//!                      what keeps a listen host working now that nothing polls.
 	//! Both funnel through `TBD_FrameworkManager.NotifyLocalStageUI()`, which is also where the
 	//! "dedicated server has no workspace" guard now lives. **That guard does not do what its name
-	//! says** — measured on this slice's gate, `GetGame().GetWorkspace()` is NON-NULL on the
+	//! says** -- measured on this slice's gate, `GetGame().GetWorkspace()` is NON-NULL on the
 	//! headless dedicated server `world-boot.sh` runs (see `TBD_CatchUpStage`). What actually keeps
 	//! a server out of both paths is the null local player controller, which is checked separately
 	//! two lines below it there and first in the catch-up here.
 	//!
-	//! ── T-181.23's blind spot, closed by T-181.28 ────────────────────────────────────────────
 	//! BOTH of those are PUSHES, and `NotifyLocalStageUI` drops one silently when this client has
 	//! no player controller yet. A joiner or reconnecter arriving into a round that is ALREADY in
 	//! BRIEFING is pushed nothing, because nothing changes. `TBD_CatchUpStage` above is the third
@@ -351,13 +330,11 @@ modded class SCR_PlayerController
 			TBD_MenuStack.Close(ChimeraMenuPreset.TBD_UIBriefing);
 	}
 
-	// ── Briefing payload: client asks, server answers, requester alone receives ──────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! CLIENT (owner) -> SERVER. On a listen host the caller is already the authority, so build in
 	//! place instead of RPCing ourselves.
 	//!
-	//! The payload built here is handed over WHOLE — it never goes through `Serialise` / `Parse` /
+	//! The payload built here is handed over WHOLE -- it never goes through `Serialise` / `Parse` /
 	//! `AdoptOrders`, so the orders arrays `BuildForPlayer` filled are already on it. That is the
 	//! same short-circuit the rest of this payload takes, so the two topologies cannot diverge on
 	//! orders without diverging on everything else too.
@@ -373,7 +350,7 @@ modded class SCR_PlayerController
 		TBD_BriefingClient.Accept(payload);
 	}
 
-	//! @authority server — resolves the caller's side from server-owned state and answers with
+	//! @authority server -- resolves the caller's side from server-owned state and answers with
 	//! that side's briefing ONLY.
 	//!
 	//! Note the empty parameter list. A client cannot name a faction because there is nowhere to
@@ -393,14 +370,13 @@ modded class SCR_PlayerController
 			payload.m_aSituation, payload.m_aMission, payload.m_aExecution);
 	}
 
-	//! @authority owner — executes on the requesting client only (RplRcver.Owner).
+	//! @authority owner -- executes on the requesting client only (RplRcver.Owner).
 	//!
-	//! ── T-181.27: why the orders are three ARRAYS and not three more wire records ────────
 	//! Everything in `wire` is a short structured field that survives being flattened. The written
 	//! orders are free prose: newlines are part of the author's meaning, and any delimiter we chose
 	//! could legitimately occur in the text. Carrying them as `array<string>` parameters means
 	//! there is no delimiter to collide with and no dependence on `string.Split`'s empty-token
-	//! behaviour — a RUNTIME property nothing on this lane can settle, and the fragility T-181.26
+	//! behaviour -- a RUNTIME property nothing on this lane can settle, and the fragility T-181.26
 	//! exists to put a sentinel under. Element i is paragraph i; an empty array is "this side
 	//! authored none", which is also what an absent key and a blank string produce.
 	//!
@@ -414,9 +390,7 @@ modded class SCR_PlayerController
 		TBD_BriefingClient.Accept(payload);
 	}
 
-	// ── Readiness ───────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! CLIENT (owner) -> SERVER: "I have read my orders."
 	void TBD_ReportReady()
 	{
@@ -449,12 +423,11 @@ modded class SCR_PlayerController
 		TBD_BriefingClient.AcceptTally(tally, accepted);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! @authority server — record readiness and return the caller's OWN side's tally.
+	//! @authority server -- record readiness and return the caller's OWN side's tally.
 	//! Never reports the other side's readiness.
 	//!
 	//! `accepted` is what actually latches the client's button. Without it a refusal (no slot)
-	//! would still leave the client showing a spent, disabled READY button with no way to retry —
+	//! would still leave the client showing a spent, disabled READY button with no way to retry --
 	//! the authority, not the optimistic click, decides whether readiness stuck.
 	protected string TBD_MarkReady(int playerId, out bool accepted)
 	{
@@ -468,7 +441,7 @@ modded class SCR_PlayerController
 		if (!slot)
 		{
 			// Fail closed: no seat, no side, nothing to be ready for.
-			return "No slot assigned — claim one in the lobby first.";
+			return "No slot assigned -- claim one in the lobby first.";
 		}
 
 		accepted = true;
@@ -492,7 +465,7 @@ modded class SCR_PlayerController
 		string tally = TBD_BriefingReadyRegistry.BuildTally(slot.faction, factionName);
 
 		TBD_Log.Event(TBD_BriefingService.CH_BRIEFING,
-			string.Format("ready player=%1 faction=%2 name='%3' — %4",
+			string.Format("ready player=%1 faction=%2 name='%3' -- %4",
 				playerId, slot.faction, GetGame().GetPlayerManager().GetPlayerName(playerId), tally));
 
 		return tally;

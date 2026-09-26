@@ -1,4 +1,4 @@
-//! T-941.4 — objective list + capture bar. Replaces the per-tick chat pump.
+//! T-941.4 -- objective list + capture bar. Replaces the per-tick chat pump.
 //!
 //! Layout is `TBD_UILayouts.OBJECTIVE_HUD` (UI reorg 2026-09-12; used to be pinned here). Transport hangs off SCR_PlayerController so Owner RPC delivers
 //! one snapshot per client, the same pattern TBD_TaskHud uses.
@@ -7,8 +7,7 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 {
 	static const ResourceName LAYOUT = TBD_UILayouts.OBJECTIVE_HUD;
 
-	//! Matches CaptureFill SizeX in TBD_ObjectiveHud.layout (C3: 328).
-	static const float BAR_WIDTH = 328.0;
+	static const float BAR_WIDTH = 328.0; //!< Matches CaptureFill SizeX in TBD_ObjectiveHud.layout (C3: 328).
 	static const float BAR_HEIGHT = 10.0;
 
 	protected static Widget s_wRoot;
@@ -30,7 +29,6 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 	protected TextWidget m_wCaptureLabel;
 	protected TBD_ListBox m_List;
 
-	//------------------------------------------------------------------------------------------------
 	static void Open()
 	{
 		if (s_wRoot)
@@ -50,7 +48,6 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 		s_wRoot = root;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void Close()
 	{
 		if (!s_wRoot)
@@ -62,13 +59,11 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 		s_sLastSignature = string.Empty;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static bool IsOpen()
 	{
 		return s_wRoot != null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Apply one replicated snapshot. `show == 0` closes the HUD (stage left LIVE).
 	static void Accept(array<string> icons, array<string> titles, array<string> details,
 		string barLabel, int barPercent, int barVisible, int show)
@@ -93,7 +88,6 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 			s_Instance.PaintPending();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerAttached(Widget w)
 	{
 		super.HandlerAttached(w);
@@ -119,7 +113,6 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 		PaintPending();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerDeattached(Widget w)
 	{
 		if (s_Instance == this)
@@ -130,7 +123,6 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 		super.HandlerDeattached(w);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void PaintPending()
 	{
 		string signature = SnapshotSignature();
@@ -143,7 +135,6 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 		PaintBar();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void PaintList()
 	{
 		if (!m_List)
@@ -177,7 +168,6 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 		m_List.EndUpdate();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void PaintBar()
 	{
 		bool show = s_iBarVisible != 0;
@@ -212,7 +202,6 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 		FrameSlot.SetSize(m_wCaptureFill, width, BAR_HEIGHT);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected TBD_EUIState StateForIcon(string icon)
 	{
 		if (icon == "!")
@@ -225,7 +214,6 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 		return TBD_EUIState.NORMAL;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected string SnapshotSignature()
 	{
 		string sig = s_sBarLabel;
@@ -251,7 +239,6 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 		return sig;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected Widget Find(string name)
 	{
 		if (!m_wRoot)
@@ -260,13 +247,11 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 		return m_wRoot.FindAnyWidget(name);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected TextWidget FindText(string name)
 	{
 		return TextWidget.Cast(Find(name));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected ScriptedWidgetComponent FindHandlerOn(string name, typename handler)
 	{
 		Widget w = Find(name);
@@ -277,10 +262,8 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 modded class SCR_PlayerController
 {
-	//------------------------------------------------------------------------------------------------
 	void TBD_RequestObjectiveHud()
 	{
 		if (RplSession.Mode() == RplMode.Client)
@@ -294,7 +277,6 @@ modded class SCR_PlayerController
 			runner.PushHudTo(GetPlayerId());
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void TBD_PushObjectiveHud(array<string> icons, array<string> titles, array<string> details,
 		string barLabel, int barPercent, int barVisible, int show)
 	{
@@ -310,7 +292,6 @@ modded class SCR_PlayerController
 		Rpc(TBD_RpcDo_ObjectiveHud, icons, titles, details, barLabel, barPercent, barVisible, show);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! @rpc Reliable Server
 	[RplRpc(RplChannel.Reliable, RplRcver.Server)]
 	protected void TBD_RpcAsk_ObjectiveHud()
@@ -320,7 +301,6 @@ modded class SCR_PlayerController
 			runner.PushHudTo(GetPlayerId());
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! @rpc Reliable Owner
 	[RplRpc(RplChannel.Reliable, RplRcver.Owner)]
 	protected void TBD_RpcDo_ObjectiveHud(array<string> icons, array<string> titles,

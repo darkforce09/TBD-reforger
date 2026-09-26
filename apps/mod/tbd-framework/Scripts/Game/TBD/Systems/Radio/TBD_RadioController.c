@@ -1,17 +1,15 @@
-//! T-181.40 — the wire that carries one player's radio nets, and nobody else's.
+//! T-181.40 -- the wire that carries one player's radio nets, and nobody else's.
 //!
-//! ── Why the transport hangs off SCR_PlayerController ────────────────────────────────────────
 //! The player controller is replicated and owned by exactly one client, so `RplRcver.Owner`
 //! delivers a reply to the requester and to NOBODY ELSE. That is not a convenience here, it is the
 //! side-discipline mechanism: frequencies are intelligence, and a broadcast channel would put both
 //! sides' command nets on the wire and leave "don't tune to that" as a promise a modified client
-//! could break. This is also the precedent already in the tree — `TBD_MarkerController.c`,
+//! could break. This is also the precedent already in the tree -- `TBD_MarkerController.c`,
 //! `TBD_MissionBrowser.c` and `TBD_BriefingController.c` move per-player payloads exactly this way.
 //!
-//! ── The modded-block question, stated rather than hidden ────────────────────────────────────
 //! This is the SIXTH `modded class SCR_PlayerController` block in the addon (mission browser,
 //! briefing, lobby, spectator host, markers, radio). The measured facts, and only these:
-//!   * N blocks COMPILE fine and methods declared in one are callable from the others — verified
+//!   * N blocks COMPILE fine and methods declared in one are callable from the others -- verified
 //!     at N=2, 3, 5, and now 6 on this slice's own gate.
 //!   * Runtime coexistence has NEVER been observed. `world-boot.sh` boots with zero players and
 //!     every one of these blocks only does anything when a client is connected. "Compiles" is not
@@ -21,21 +19,19 @@
 //! menu-preset collision that is the substance of T-181.25), and every symbol it introduces is
 //! `TBD_`-prefixed.
 //!
-//! ── Host vs dedicated ───────────────────────────────────────────────────────────────────────
 //! On a listen host the requester IS the authority, so the request short-circuits and builds the
-//! payload in place instead of RPCing the machine to itself. Same code path, both topologies — and
+//! payload in place instead of RPCing the machine to itself. Same code path, both topologies -- and
 //! the reason this does not have the recorded `onRplName`-only bug is that there is no replication
 //! callback in this design at all.
 modded class SCR_PlayerController
 {
-	//------------------------------------------------------------------------------------------------
 	//! CLIENT (owner) -> SERVER: "which radio nets am I on?"
 	//!
 	//! Takes no arguments, and that is the point: there is no faction parameter for a client to
 	//! forge. See `TBD_RadioService.c` for the full three-property argument.
 	void TBD_RequestRadioNets()
 	{
-		// Authority only — a dedicated client has no mission document and must ask; on a listen
+		// Authority only -- a dedicated client has no mission document and must ask; on a listen
 		// host this controller already IS the authority, so RPCing ourselves would be a round trip
 		// to nowhere.
 		if (RplSession.Mode() == RplMode.Client)
@@ -49,18 +45,17 @@ modded class SCR_PlayerController
 			wire.m_sMissionId, wire.m_sTuneResult, wire.m_iTuned, wire.m_bServed);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! @authority server — SERVER -> one client, unprompted.
+	//! @authority server -- SERVER -> one client, unprompted.
 	//!
 	//! Why this exists: `TBD_RadioService.OnStageChanged` re-tunes every player's radio at
 	//! SAFE_START and LIVE. Without a push, that tune would land on the radio while the player's
-	//! on-screen net list still said "not tuned automatically" — the client's poll stops once it
+	//! on-screen net list still said "not tuned automatically" -- the client's poll stops once it
 	//! has been served, so it would not find out until it next opened the map. A feature telling
 	//! the player something that stopped being true is the exact failure mode this slice is built
 	//! to avoid, so the sweep pushes the same wire it just measured.
 	//!
 	//! THE LISTEN-HOST BRANCH IS NOT OPTIONAL. On a listen host the authority IS the local player,
-	//! and an `RplRcver.Owner` RPC is not delivered to the machine that sent it — so wiring only
+	//! and an `RplRcver.Owner` RPC is not delivered to the machine that sent it -- so wiring only
 	//! the Rpc would silently leave the host player's own display stale, which is a recorded
 	//! landmine in this program ("client-side UI must be driven from BOTH paths through one guarded
 	//! helper"). `GetGame().GetPlayerController() == this` is the same test `TBD_MissionBrowser`
@@ -81,8 +76,7 @@ modded class SCR_PlayerController
 			wire.m_sMissionId, wire.m_sTuneResult, wire.m_iTuned, wire.m_bServed);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! @authority server — resolve the caller's side from server-owned state and answer with THAT
+	//! @authority server -- resolve the caller's side from server-owned state and answer with THAT
 	//! side's nets only.
 	//! @rpc Reliable Server
 	[RplRpc(RplChannel.Reliable, RplRcver.Server)]
@@ -97,16 +91,15 @@ modded class SCR_PlayerController
 			wire.m_sMissionId, wire.m_sTuneResult, wire.m_iTuned, wire.m_bServed);
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! @authority owner — executes on the requesting client and no other (RplRcver.Owner).
+	//! @authority owner -- executes on the requesting client and no other (RplRcver.Owner).
 	//!
 	//! FOUR PARALLEL ARRAYS, not a delimited string. A net `label` is authored free text that may
 	//! legally contain any delimiter, and `string.Split`'s empty-token behaviour is a RUNTIME
-	//! property no probe on this lane can settle — so a delimited format would have shipped a
+	//! property no probe on this lane can settle -- so a delimited format would have shipped a
 	//! landmine. Positional arrays have no such state: element i of each array is field i of net i.
 	//!
 	//! EIGHT parameters, which is the measured ceiling: nine fails with `Too many parameters for
-	//! 'Rpc' method`. `m_sFactionKey` is what got cut, and it is the right thing to cut — the client
+	//! 'Rpc' method`. `m_sFactionKey` is what got cut, and it is the right thing to cut -- the client
 	//! only ever used it as a diagnostic label and as part of a change-detection fingerprint, and
 	//! the net rows themselves already change when the side does, because nets are side-scoped. The
 	//! server still logs the faction on its own side of the wire.

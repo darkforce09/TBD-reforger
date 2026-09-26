@@ -1,13 +1,11 @@
-//! T-181.40 / T-293 — the mission document's `radioPlan.nets[]`, validated from the loader parse.
+//! T-181.40 / T-293 -- the mission document's `radioPlan.nets[]`, validated from the loader parse.
 //!
-//! ── Canonical field path (T-293) ────────────────────────────────────────────────────────────
 //! `TBD_MissionDocumentStruct.radioPlan` (Backend/TBD_MissionLoader.c) is filled by the ONE
-//! `JsonLoadContext` pass in `TBD_MissionLoader`. `EnsureParsed` reads that field — it does NOT
+//! `JsonLoadContext` pass in `TBD_MissionLoader`. `EnsureParsed` reads that field -- it does NOT
 //! re-bind the raw document text through a projection. A second pass would only re-bind the same
 //! bytes the loader already consumed, with two ways to drift and a lying comment claiming the
 //! field was missing.
 //!
-//! ── PRESENCE IS NOT CONTENT (the landmine this file is built around) ────────────────────────
 //! `JsonLoadContext` ALLOCATES a nested `ref <class>` field even when the JSON key is ABSENT.
 //! Measured on a live boot against `golden-missions/bridgehead-at-levie.json`: an unauthored
 //! `shape.circle` came back non-null with `x=0 z=0 r=0`. So `if (doc.radioPlan)` is ALWAYS
@@ -22,8 +20,7 @@
 //! `freqMHz == 0`, which is outside the band and can never be authored, so a phantom net is
 //! rejected by the same rule that rejects a malformed one.
 //!
-//! ── `required` in the schema does NOT mean non-empty ────────────────────────────────────────
-//! `$defs/net` requires `id`, `label` and `freqMHz`, and `label` DOES carry `minLength: 1` — but
+//! `$defs/net` requires `id`, `label` and `freqMHz`, and `label` DOES carry `minLength: 1` -- but
 //! `golden-missions/empty-warning-fields.json` already ships a committed, schema-valid marker
 //! whose required strings are both `""`, so "required, therefore complete" is a claim about
 //! presence and not about content. Nothing downstream of this file may assume a net's strings are
@@ -31,12 +28,12 @@
 //! @contract mission.schema.json#/$defs/radioPlan
 //! @contract mission.schema.json#/$defs/net
 
-//! One `radioPlan.nets[]` entry. Field names must equal the JSON keys — `JsonLoadContext` maps
+//! One `radioPlan.nets[]` entry. Field names must equal the JSON keys -- `JsonLoadContext` maps
 //! by name.
 //! @contract mission.schema.json#/$defs/net
 class TBD_MissionNetStruct
 {
-	string id;        //!< `net:<id>` — stable channel key. Schema-required.
+	string id;        //!< `net:<id>` -- stable channel key. Schema-required.
 	string label;     //!< Display name ("Alpha Squad"). Schema-required, `minLength: 1`.
 	//! Megahertz, 30..512 per the schema. `0` is the ABSENT sentinel: it is outside the band, so
 	//! it cannot be confused with authored data. This is the presence test for the whole struct.
@@ -45,8 +42,8 @@ class TBD_MissionNetStruct
 	//! Non-empty = side-scoped intelligence, and `TBD_RadioService` will not serve it to anyone
 	//! else. `JsonLoadContext` leaves a missing string at its initializer, so empty means absent.
 	string faction;
-	//! `short` | `long` (T-292; schema default `short`). Empty = absent → same handheld path as
-	//! `short` (`LongRangeFlag` → 0). Decides WHICH radio a net prefers — see `TBD_RadioTuner`.
+	//! `short` | `long` (T-292; schema default `short`). Empty = absent -> same handheld path as
+	//! `short` (`LongRangeFlag` -> 0). Decides WHICH radio a net prefers -- see `TBD_RadioTuner`.
 	//! Retired value `any` is schema-rejected; still treated as handheld if it somehow arrives.
 	string range;
 }
@@ -59,7 +56,7 @@ class TBD_MissionRadioPlanStruct
 }
 
 //! Validated, cached radio plan for the currently loaded mission.
-//! Source of nets: `TBD_MissionLoader.GetMission().radioPlan` (already parsed) — T-293.
+//! Source of nets: `TBD_MissionLoader.GetMission().radioPlan` (already parsed) -- T-293.
 class TBD_RadioPlan
 {
 	//! Greppable channel for everything this slice logs: `grep '\[TBD\]\[Radio\]' console.log`.
@@ -76,7 +73,7 @@ class TBD_RadioPlan
 	//! schema, so the ceiling is re-asserted here; truncation is LOGGED, never silent.
 	static const int MAX_NETS = 32;
 
-	//! Longest label carried anywhere. Pinned in schema as `net.label.maxLength` = 48 (T-275).
+	//! Longest label carried anywhere. Pinned in schema as `net.label.maxLength` = 48.
 	static const int MAX_LABEL_CHARS = 48;
 
 	//! Validated nets, in document order. Empty (never null) once parsed.
@@ -86,22 +83,21 @@ class TBD_RadioPlan
 	//! serving the previous round's frequencies.
 	protected static string s_sParsedMissionId;
 
-	//! True once a parse attempt has completed for `s_sParsedMissionId` — including the perfectly
+	//! True once a parse attempt has completed for `s_sParsedMissionId` -- including the perfectly
 	//! legal outcome "this mission authored no radio plan", which must not re-parse every request.
 	protected static bool s_bParsed;
 
-	//------------------------------------------------------------------------------------------------
-	//! @authority server — nets this faction may use, in document order.
+	//! @authority server -- nets this faction may use, in document order.
 	//!
 	//! A net with an EMPTY `faction` is shared and is returned to every side; a net with a faction
 	//! is returned only to that side. Never returns null.
 	//!
 	//! This is the only place the faction scope is applied, and it is applied by BUILDING the
-	//! answer rather than by filtering a full list later — the other side's nets never enter the
+	//! answer rather than by filtering a full list later -- the other side's nets never enter the
 	//! array, so there is nothing downstream to leak.
 	static array<TBD_MissionNetStruct> GetNetsForFaction(string factionKey)
 	{
-		// NOT named `out` — that is a reserved keyword in Enfusion and fails with
+		// NOT named `out` -- that is a reserved keyword in Enfusion and fails with
 		// `Expected name, not a keyword 'out'`.
 		array<TBD_MissionNetStruct> scoped = {};
 
@@ -123,8 +119,7 @@ class TBD_RadioPlan
 		return scoped;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Total validated nets in the loaded mission, across all sides. Diagnostics only — never used
+	//! Total validated nets in the loaded mission, across all sides. Diagnostics only -- never used
 	//! to answer a player.
 	static int GetTotalNetCount()
 	{
@@ -135,9 +130,8 @@ class TBD_RadioPlan
 		return s_aNets.Count();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Kilohertz for a schema `freqMHz`. The engine's radio API is kHz throughout
-	//! (`BaseTransceiver.SetFrequency` — "Frequency in KHz"), the schema is MHz, and this is the
+	//! (`BaseTransceiver.SetFrequency` -- "Frequency in KHz"), the schema is MHz, and this is the
 	//! ONE place the two meet.
 	//!
 	//! Rounded, not truncated: `42.5` MHz must land on `42500` kHz and float multiplication does
@@ -151,7 +145,6 @@ class TBD_RadioPlan
 		return khz - 0.5;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! `42500` -> `"42.500 MHz"`. Formatted from the INTEGER kHz, never from the float, so the
 	//! text a player reads cannot pick up a float-printing artefact.
 	static string FormatMHz(int freqKHz)
@@ -177,8 +170,7 @@ class TBD_RadioPlan
 		return text;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Drop the cache. Called when the world goes away — statics outlive a world inside one
+	//! Drop the cache. Called when the world goes away -- statics outlive a world inside one
 	//! process, which is a recorded landmine in this program.
 	static void Reset()
 	{
@@ -187,7 +179,6 @@ class TBD_RadioPlan
 		s_bParsed = false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Validate once per loaded mission, from the already-parsed document field.
 	//!
 	//! Gated on `TBD_MissionLoader.IsValid()`: serving frequencies out of a mission the validator
@@ -196,7 +187,7 @@ class TBD_RadioPlan
 	{
 		if (!TBD_MissionLoader.IsValid())
 		{
-			// A mission was unloaded or replaced by a bad one — do not keep serving the old plan.
+			// A mission was unloaded or replaced by a bad one -- do not keep serving the old plan.
 			if (s_bParsed)
 				Reset();
 
@@ -214,17 +205,16 @@ class TBD_RadioPlan
 		s_sParsedMissionId = doc.meta.id;
 		s_bParsed = true;
 
-		// T-293 Class-R pin: canonical path is doc.radioPlan — never a raw-JSON second pass.
+		// T-293 Class-R pin: canonical path is doc.radioPlan -- never a raw-JSON second pass.
 		AcceptFromDoc(doc.radioPlan, doc.meta.id);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Content-validate nets from the loader's `radioPlan` field. Fills `s_aNets`; every rejection
-	//! is reported once, at load, with the reason — a mission whose radio plan is silently
+	//! is reported once, at load, with the reason -- a mission whose radio plan is silently
 	//! half-ignored is worse than one that says so.
 	protected static void AcceptFromDoc(TBD_MissionRadioPlanStruct plan, string missionId)
 	{
-		// NOT `if (plan)`. That is ALWAYS true after a successful loader parse — JsonLoadContext
+		// NOT `if (plan)`. That is ALWAYS true after a successful loader parse -- JsonLoadContext
 		// allocates a nested `ref` field whether or not the JSON key was present. The container
 		// COUNT is the only reliable presence test, and an absent `radioPlan` is LEGAL: `radioPlan`
 		// is not in the schema's top-level `required` list, and `golden-missions/empty-warning-fields.json`
@@ -232,7 +222,7 @@ class TBD_RadioPlan
 		if (!plan || !plan.nets || plan.nets.IsEmpty())
 		{
 			TBD_Log.Kv(CH_RADIO, "plan",
-				string.Format("mission=%1 nets=0 (mission authored no radioPlan — legal)", missionId));
+				string.Format("mission=%1 nets=0 (mission authored no radioPlan -- legal)", missionId));
 			return;
 		}
 
@@ -252,7 +242,7 @@ class TBD_RadioPlan
 			{
 				rejected++;
 				TBD_Log.Warn(CH_RADIO, string.Format(
-					"mission '%1' net rejected (%2) — it will not be served to anyone.", missionId, fault));
+					"mission '%1' net rejected (%2) -- it will not be served to anyone.", missionId, fault));
 				continue;
 			}
 
@@ -272,7 +262,6 @@ class TBD_RadioPlan
 			missionId, total, s_aNets.Count(), rejected));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Every faction key the mission actually declares. `map<string, bool>` and not `set<string>`
 	//! because Enforce's `set` removal is by INDEX, which is a recorded landmine in this program.
 	protected static map<string, bool> CollectFactionKeys()
@@ -298,7 +287,6 @@ class TBD_RadioPlan
 	//! `freqMHz` is checked FIRST and against the band, because that is the check that also
 	//! distinguishes an authored net from a struct `JsonLoadContext` allocated out of nothing.
 	//!
-	//! ── The cross-reference the JSON schema structurally cannot make ────────────────────────
 	//! `net.faction` is a `factionKey` by PATTERN (`^[a-z][a-z0-9_]*$`) and nothing more: no schema
 	//! keyword can require it to name a faction this document actually declares. A typo therefore
 	//! validates perfectly and then matches no player on either side, so the net is served to
@@ -321,21 +309,20 @@ class TBD_RadioPlan
 			return "a net has an empty id";
 
 		if (net.label.IsEmpty())
-			return string.Format("id='%1' has an empty label — a player would see a blank net", net.id);
+			return string.Format("id='%1' has an empty label -- a player would see a blank net", net.id);
 
 		// An empty faction is LEGAL and means "shared net", so only a NAMED faction is checked.
 		// `knownFactions` empty means the document declared no factions at all, which the mission
-		// validator already refuses on its own account — do not pile a second complaint on top.
+		// validator already refuses on its own account -- do not pile a second complaint on top.
 		if (!net.faction.IsEmpty() && !knownFactions.IsEmpty() && !knownFactions.Contains(net.faction))
 		{
-			return string.Format("id='%1' is scoped to faction '%2', which this mission does not declare — it would be served to nobody",
+			return string.Format("id='%1' is scoped to faction '%2', which this mission does not declare -- it would be served to nobody",
 				net.id, net.faction);
 		}
 
 		return string.Empty;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Bound the label without ever dropping the net. An over-long name is truncated; it is never
 	//! a reason to withhold a channel a player needs.
 	protected static string CapLabel(string label)

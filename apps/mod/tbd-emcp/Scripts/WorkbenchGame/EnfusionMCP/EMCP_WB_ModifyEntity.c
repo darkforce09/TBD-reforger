@@ -44,7 +44,6 @@ class EMCP_WB_ModifyEntityResponse : JsonApiStruct
 
 class EMCP_WB_ModifyEntity : NetApiHandler
 {
-	//------------------------------------------------------------------------------------------------
 	static vector ParseVectorString(string str)
 	{
 		vector result = "0 0 0";
@@ -62,7 +61,6 @@ class EMCP_WB_ModifyEntity : NetApiHandler
 		return result;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static IEntitySource FindEntityByName(WorldEditorAPI api, string name)
 	{
 		int count = api.GetEditorEntityCount();
@@ -75,7 +73,6 @@ class EMCP_WB_ModifyEntity : NetApiHandler
 		return null;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	// Build a ContainerIdPathEntry array from a dot-separated path string.
 	// Returns null if the path is empty (meaning target the entity root).
 	static array<ref ContainerIdPathEntry> BuildPathEntries(string propertyPath)
@@ -93,13 +90,11 @@ class EMCP_WB_ModifyEntity : NetApiHandler
 		return pathEntries;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override JsonApiStruct GetRequest()
 	{
 		return new EMCP_WB_ModifyEntityRequest();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override JsonApiStruct GetResponse(JsonApiStruct request)
 	{
 		EMCP_WB_ModifyEntityRequest req = EMCP_WB_ModifyEntityRequest.Cast(request);
@@ -293,7 +288,7 @@ class EMCP_WB_ModifyEntity : NetApiHandler
 				return resp;
 			}
 
-			// WorldEditorAPI has no GetVariableValue — use IEntityComponentSource.Get() instead.
+			// WorldEditorAPI has no GetVariableValue -- use IEntityComponentSource.Get() instead.
 			IEntityComponentSource compSrc = null;
 			if (req.propertyPath != "")
 			{
@@ -445,7 +440,7 @@ class EMCP_WB_ModifyEntity : NetApiHandler
 			}
 
 			// Use component as topLevel if propertyPath is a component class name.
-			// NOTE: CreateObjectArrayVariableMember requires the component as topLevel with null path —
+			// NOTE: CreateObjectArrayVariableMember requires the component as topLevel with null path --
 			// passing the entity with a path entry returns false for component arrays.
 			BaseContainer addTopLevel = entSrc;
 			array<ref ContainerIdPathEntry> pathEntries = null;
@@ -482,7 +477,7 @@ class EMCP_WB_ModifyEntity : NetApiHandler
 			else
 			{
 				resp.status = "error";
-				resp.message = "CreateObjectArrayVariableMember returned false — check class name and property key";
+				resp.message = "CreateObjectArrayVariableMember returned false -- check class name and property key";
 			}
 		}
 		else if (req.action == "removeArrayItem")
@@ -499,7 +494,7 @@ class EMCP_WB_ModifyEntity : NetApiHandler
 			}
 
 			// Use component as topLevel if propertyPath is a component class name.
-			// NOTE: RemoveObjectArrayVariableMember requires the component as topLevel with null path —
+			// NOTE: RemoveObjectArrayVariableMember requires the component as topLevel with null path --
 			// passing the entity with a path entry returns false for component arrays.
 			BaseContainer removeTopLevel = entSrc;
 			array<ref ContainerIdPathEntry> removePathEntries = null;
@@ -531,7 +526,7 @@ class EMCP_WB_ModifyEntity : NetApiHandler
 			else
 			{
 				resp.status = "error";
-				resp.message = "RemoveObjectArrayVariableMember returned false — check index and property key";
+				resp.message = "RemoveObjectArrayVariableMember returned false -- check index and property key";
 			}
 		}
 		else if (req.action == "setObjectClass")
@@ -568,7 +563,7 @@ class EMCP_WB_ModifyEntity : NetApiHandler
 			else
 			{
 				resp.status = "error";
-				resp.message = "ChangeObjectClass returned false — check class name";
+				resp.message = "ChangeObjectClass returned false -- check class name";
 			}
 		}
 		else

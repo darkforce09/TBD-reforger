@@ -1,9 +1,9 @@
-//! Pre-game rebuild (2026-09-12) — the search field: leading glyph, EditBox, clear button.
+//! Pre-game rebuild (2026-09-12) -- the search field: leading glyph, EditBox, clear button.
 //!
 //! Widget contract on `TBD_SearchBox.layout`: `SearchBorder`, `SearchBG`, `SearchIcon`,
 //! `SearchInput` (EditBoxWidget), `SearchClear` (ButtonWidget, shown while there is text).
 //!
-//! The handler sits on the layout ROOT, not on the EditBox — the same shape vanilla uses — so
+//! The handler sits on the layout ROOT, not on the EditBox -- the same shape vanilla uses -- so
 //! `OnChange` arrives with `w == m_wInput` and the clear button's `OnClick` arrives with
 //! `w == m_wClear`. Owners subscribe to `GetOnChanged()` and read `GetQuery()`; filtering is
 //! theirs, not ours.
@@ -21,13 +21,11 @@ class TBD_SearchBoxComponent : ScriptedWidgetComponent
 	protected TextWidget m_wClearGlyph;
 
 	protected bool m_bFocused;
-	//! Opaque colour under the box; 0 = glass panel.
-	protected int m_iGround;
+	protected int m_iGround; //!< Opaque colour under the box; 0 = glass panel.
 
-	//! (TBD_SearchBoxComponent box, string query) — fires on every keystroke and on clear.
+	//! (TBD_SearchBoxComponent box, string query) -- fires on every keystroke and on clear.
 	protected ref ScriptInvoker m_OnChanged;
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerAttached(Widget w)
 	{
 		super.HandlerAttached(w);
@@ -54,7 +52,6 @@ class TBD_SearchBoxComponent : ScriptedWidgetComponent
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerDeattached(Widget w)
 	{
 		m_wRoot = null;
@@ -62,7 +59,6 @@ class TBD_SearchBoxComponent : ScriptedWidgetComponent
 		super.HandlerDeattached(w);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override bool OnChange(Widget w, bool finished)
 	{
 		if (w != m_wInput)
@@ -73,7 +69,6 @@ class TBD_SearchBoxComponent : ScriptedWidgetComponent
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override bool OnClick(Widget w, int x, int y, int button)
 	{
 		if (m_wClear && (w == m_wClear || w.GetName() == "SearchClearGlyph"))
@@ -85,7 +80,6 @@ class TBD_SearchBoxComponent : ScriptedWidgetComponent
 		return super.OnClick(w, x, y, button);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override bool OnFocus(Widget w, int x, int y)
 	{
 		if (w == m_wInput)
@@ -97,7 +91,6 @@ class TBD_SearchBoxComponent : ScriptedWidgetComponent
 		return super.OnFocus(w, x, y);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override bool OnFocusLost(Widget w, int x, int y)
 	{
 		if (w == m_wInput)
@@ -109,9 +102,7 @@ class TBD_SearchBoxComponent : ScriptedWidgetComponent
 		return super.OnFocusLost(w, x, y);
 	}
 
-	// ── Public surface ──────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	//! Current text, trimmed. Empty means "no filter".
 	string GetQuery()
 	{
@@ -122,7 +113,6 @@ class TBD_SearchBoxComponent : ScriptedWidgetComponent
 		return text.Trim();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void Clear()
 	{
 		if (m_wInput)
@@ -132,7 +122,6 @@ class TBD_SearchBoxComponent : ScriptedWidgetComponent
 		Notify();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetPlaceholder(string placeholder)
 	{
 		m_sPlaceholder = placeholder;
@@ -140,7 +129,6 @@ class TBD_SearchBoxComponent : ScriptedWidgetComponent
 			m_wInput.SetPlaceholderText(placeholder);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! (TBD_SearchBoxComponent box, string query)
 	ScriptInvoker GetOnChanged()
 	{
@@ -150,7 +138,6 @@ class TBD_SearchBoxComponent : ScriptedWidgetComponent
 		return m_OnChanged;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Case-insensitive "does `haystack` contain the query". Shared so every list filters alike.
 	static bool Matches(string query, string haystack)
 	{
@@ -164,28 +151,23 @@ class TBD_SearchBoxComponent : ScriptedWidgetComponent
 		return h.Contains(q);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	Widget GetRootWidget()
 	{
 		return m_wRoot;
 	}
 
-	// ── Internals ───────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	protected void Notify()
 	{
 		if (m_OnChanged)
 			m_OnChanged.Invoke(this, GetQuery());
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void UpdateClear()
 	{
 		TBD_UITheme.Show(m_wClear, !GetQuery().IsEmpty());
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Opaque colour under the box (the owning panel's GetGround()).
 	void SetGround(int opaqueArgb)
 	{
@@ -193,7 +175,6 @@ class TBD_SearchBoxComponent : ScriptedWidgetComponent
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void Repaint()
 	{
 		int ground = m_iGround;

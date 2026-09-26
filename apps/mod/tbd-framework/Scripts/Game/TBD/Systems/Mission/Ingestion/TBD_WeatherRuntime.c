@@ -10,7 +10,6 @@
 //! JsonLoadContext ALLOCATES nested refs when the key is absent. Presence is `keyframes.Count()`,
 //! not `if (doc.weatherTimeline)`.
 
-//------------------------------------------------------------------------------------------------
 class TBD_WeatherKeyframeStruct
 {
 	int atMinutes;
@@ -25,20 +24,17 @@ class TBD_WeatherKeyframeStruct
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 class TBD_WeatherTimelineStruct
 {
 	ref array<ref TBD_WeatherKeyframeStruct> keyframes;
 }
 
-//------------------------------------------------------------------------------------------------
 //! The document root for the weather pass: declares `weatherTimeline` and nothing else.
 class TBD_WeatherDocStruct
 {
 	ref TBD_WeatherTimelineStruct weatherTimeline;
 }
 
-//------------------------------------------------------------------------------------------------
 //! One prepared keyframe. Server-owned; clients see the weather manager's replicated state.
 class TBD_WeatherKeyframe
 {
@@ -52,7 +48,6 @@ class TBD_WeatherKeyframe
 	bool m_bApplied;
 }
 
-//------------------------------------------------------------------------------------------------
 //! Reads `weatherTimeline`, and at each authored offset forces the world's weather to that preset.
 class TBD_WeatherRuntime
 {
@@ -71,7 +66,6 @@ class TBD_WeatherRuntime
 	protected static bool s_bLiveClockLatched;
 	protected static float s_fLiveStartMs;
 
-	//------------------------------------------------------------------------------------------------
 	static void Clear()
 	{
 		s_aKeyframes = null;
@@ -82,13 +76,11 @@ class TBD_WeatherRuntime
 		s_fLiveStartMs = 0;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static bool IsBuilt()
 	{
 		return s_bBuilt;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static bool Build()
 	{
 		if (s_bBuilt)
@@ -123,7 +115,6 @@ class TBD_WeatherRuntime
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void Tick()
 	{
 		TBD_FrameworkManager fm = TBD_FrameworkManager.GetInstance();
@@ -165,7 +156,6 @@ class TBD_WeatherRuntime
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_WeatherKeyframe Prepare(notnull TBD_WeatherKeyframeStruct raw, int index)
 	{
 		if (raw.weatherPreset.IsEmpty())
@@ -186,7 +176,6 @@ class TBD_WeatherRuntime
 		return kf;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void Apply(notnull TBD_WeatherKeyframe kf, int index, int elapsedMin)
 	{
 		kf.m_bApplied = true;
@@ -233,7 +222,6 @@ class TBD_WeatherRuntime
 			WindLog(kf)));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! TBD snake_case -> Everon `WeatherState.GetStateName()` ids ForceWeatherTo accepts.
 	protected static string CanonicalWeatherId(string preset)
 	{
@@ -248,7 +236,6 @@ class TBD_WeatherRuntime
 		return preset;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Prefer a live world's own state list so a world that names rain "HeavyRain" still matches.
 	protected static string ResolveWeatherId(TimeAndWeatherManagerEntity tw, notnull TBD_WeatherKeyframe kf)
 	{
@@ -296,7 +283,6 @@ class TBD_WeatherRuntime
 		return want;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TimeAndWeatherManagerEntity GetTimeAndWeather()
 	{
 		BaseWorld baseWorld = GetGame().GetWorld();
@@ -306,7 +292,6 @@ class TBD_WeatherRuntime
 		return world.GetTimeAndWeatherManager();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static int MissionElapsedS()
 	{
 		TBD_FrameworkManager fm = TBD_FrameworkManager.GetInstance();
@@ -330,7 +315,6 @@ class TBD_WeatherRuntime
 		return elapsed;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string CurrentMissionId()
 	{
 		TBD_MissionDocumentStruct doc = TBD_MissionLoader.GetMission();
@@ -339,7 +323,6 @@ class TBD_WeatherRuntime
 		return doc.meta.id;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static array<ref TBD_WeatherKeyframeStruct> ReadWire()
 	{
 		string raw = TBD_MissionLoader.GetRawJson();
@@ -366,7 +349,6 @@ class TBD_WeatherRuntime
 		return doc.weatherTimeline.keyframes;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void AnnounceEmptyOnce()
 	{
 		if (s_bAnnounced)
@@ -375,7 +357,6 @@ class TBD_WeatherRuntime
 		TBD_Log.Kv(CH, "idle", "this mission authors no weatherTimeline");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string FogLog(notnull TBD_WeatherKeyframe kf)
 	{
 		if (!kf.m_bHasFog)
@@ -383,7 +364,6 @@ class TBD_WeatherRuntime
 		return kf.m_fFog.ToString();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string WindLog(notnull TBD_WeatherKeyframe kf)
 	{
 		if (!kf.m_bHasWindDir)
@@ -392,12 +372,10 @@ class TBD_WeatherRuntime
 	}
 }
 
-//------------------------------------------------------------------------------------------------
 modded class SCR_BaseGameMode
 {
 	protected bool m_bTBD_WeatherTickArmed;
 
-	//------------------------------------------------------------------------------------------------
 	//! @authority server - ForceWeatherTo is server-only; clients follow replication.
 	protected override void OnGameStart()
 	{
@@ -418,7 +396,6 @@ modded class SCR_BaseGameMode
 		GetGame().GetCallqueue().CallLater(TBD_WeatherTick, TBD_WeatherRuntime.TICK_MS, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One-shot and self-re-arming rather than a repeating CallLater, for the same reason
 	//! TBD_WinConditionEvaluator's twin records: ScriptCallQueue.Remove cancels BY FUNCTION.
 	void TBD_WeatherTick()

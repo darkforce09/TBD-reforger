@@ -1,4 +1,4 @@
-//! Briefing pass (2026-09-14) — a numbered card: `(1) Title [chip]`, optional paragraph, a dock for
+//! Briefing pass (2026-09-14) -- a numbered card: `(1) Title [chip]`, optional paragraph, a dock for
 //! anything else (a stat grid), and a footer dock right-aligned (a Locate button).
 //!
 //! Widget contract of `TBD_NumberedCard.layout`: `Border`, `Background`, `NumberPill`, `Number`,
@@ -23,7 +23,6 @@ class TBD_NumberedCardComponent : ScriptedWidgetComponent
 	protected TBD_ChipComponent m_Chip;
 	protected int m_iGround;
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerAttached(Widget w)
 	{
 		super.HandlerAttached(w);
@@ -50,14 +49,12 @@ class TBD_NumberedCardComponent : ScriptedWidgetComponent
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerDeattached(Widget w)
 	{
 		m_wRoot = null;
 		super.HandlerDeattached(w);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static TBD_NumberedCardComponent Mount(Widget parent, int number, string title, int ground)
 	{
 		Widget w = TBD_UILayouts.CreateStretched(TBD_UILayouts.NUMBERED_CARD, parent);
@@ -73,7 +70,6 @@ class TBD_NumberedCardComponent : ScriptedWidgetComponent
 		return card;
 	}
 
-	// ── API ─────────────────────────────────────────────────────────────────────────────────
 
 	void Set(int number, string title)
 	{
@@ -148,7 +144,6 @@ class TBD_NumberedCardComponent : ScriptedWidgetComponent
 		return m_wRoot;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void Repaint()
 	{
 		if (!m_wRoot)

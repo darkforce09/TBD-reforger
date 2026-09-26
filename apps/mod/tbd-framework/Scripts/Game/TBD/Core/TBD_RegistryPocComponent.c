@@ -3,7 +3,7 @@ class TBD_RegistryPocComponentClass : SCR_BaseGameModeComponentClass {}
 
 class TBD_RegistryPocComponent : SCR_BaseGameModeComponent
 {
-	[Attribute("0", desc: "Run the registry POC spawn dump on play (dev only — default OFF; do not ship enabled).")]
+	[Attribute("0", desc: "Run the registry POC spawn dump on play (dev only -- default OFF; do not ship enabled).")]
 	bool m_bRunPoc;
 
 	[Attribute("0 1 0", desc: "World-space origin for POC spawns")]
@@ -12,7 +12,6 @@ class TBD_RegistryPocComponent : SCR_BaseGameModeComponent
 	[Attribute("8", desc: "Metres between each spawned alias")]
 	float m_fSpacing;
 
-	//------------------------------------------------------------------------------------------------
 	override void OnPostInit(IEntity owner)
 	{
 		super.OnPostInit(owner);
@@ -26,7 +25,6 @@ class TBD_RegistryPocComponent : SCR_BaseGameModeComponent
 		GetGame().GetCallqueue().CallLater(RunPoc, 2000, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void RunPoc()
 	{
 		if (!TBD_Registry.Load())
@@ -53,7 +51,6 @@ class TBD_RegistryPocComponent : SCR_BaseGameModeComponent
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected IEntity SpawnPrefab(ResourceName prefab, vector position)
 	{
 		Resource resource = Resource.Load(prefab);

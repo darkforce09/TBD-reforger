@@ -14,15 +14,13 @@ class TBD_ClosingRuntimeSession
 {
 	string m_sSessionId;
 	int m_iGeneration;
-	//! The last heartbeat sequence sent in the session.
-	int m_iSequence;
+	int m_iSequence; //!< The last heartbeat sequence sent in the session.
 	bool m_bReportedOffline;
 }
 
 //! The offline heartbeat or the end request of the session being closed.
 class TBD_RuntimeSessionClosingCall : TBD_GameRuntimeCall
 {
-	//------------------------------------------------------------------------------------------------
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_RuntimeSessionClosing.OnCallAnswered(this, answer);
@@ -31,13 +29,11 @@ class TBD_RuntimeSessionClosingCall : TBD_GameRuntimeCall
 
 class TBD_RuntimeSessionClosing
 {
-	//! The runtime session's greppable channel.
-	protected static const string CH_RUNTIME = "Runtime";
+	protected static const string CH_RUNTIME = "Runtime"; //!< The runtime session's greppable channel.
 
 	protected static ref array<ref TBD_ClosingRuntimeSession> s_aSessions;
 	protected static ref TBD_RuntimeSessionClosingCall s_InFlight;
 
-	//------------------------------------------------------------------------------------------------
 	//! Close `sessionId`, whose last heartbeat carried `lastSequence`.
 	static void Close(string sessionId, int generation, int lastSequence)
 	{
@@ -57,7 +53,6 @@ class TBD_RuntimeSessionClosing
 		Next();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True while a session is still being closed.
 	static bool IsClosing()
 	{
@@ -70,7 +65,6 @@ class TBD_RuntimeSessionClosing
 		return s_aSessions.Count() > 0;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The next step of the first session: its offline heartbeat, then its end.
 	protected static void Next()
 	{
@@ -104,7 +98,6 @@ class TBD_RuntimeSessionClosing
 		Settle(closing, TBD_EGameRuntimeOutcome.TRANSIENT, failure);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Called by TBD_RuntimeSessionClosingCall with the answer to the step in flight.
 	static void OnCallAnswered(notnull TBD_RuntimeSessionClosingCall call, notnull TBD_GameRuntimeAnswer answer)
 	{
@@ -119,7 +112,6 @@ class TBD_RuntimeSessionClosing
 		Settle(closing, answer.m_eOutcome, answer.m_sDetail);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void Settle(notnull TBD_ClosingRuntimeSession closing, TBD_EGameRuntimeOutcome outcome, string detail)
 	{
 		if (!closing.m_bReportedOffline)

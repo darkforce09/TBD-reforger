@@ -1,19 +1,16 @@
 //! T-705 - player gadget flags: map, compass, watch, GPS, radio.
 //!
-//! == What was missing ========================================================================
 //! T-706 put `$defs/gadgetFlags` on `$defs/slot.gadgets`. `TBD_MissionSlotStruct` does not
 //! declare that member, so the primary parse cannot see it. Every spawned player kept the
 //! kit's gadgets regardless of the scenario. This file is the reader. Flatten does not emit
-//! the keys (T-946.36); hand-staged 1.3 JSON and golden `schema-1_3-wire-fields.json` reach
+//! the keys; hand-staged 1.3 JSON and golden `schema-1_3-wire-fields.json` reach
 //! this pass. Editor UI is NOT this slice (owns list has no panel).
 //!
-//! == Why a second JsonLoadContext pass =======================================================
-//! Same pattern as `TBD_PlacementScatter.c` (T-679) / `TBD_EntityState.c` (T-681): a second
+//! Same pattern as `TBD_PlacementScatter.c` / `TBD_EntityState.c`: a second
 //! pass over `TBD_MissionLoader.GetRawJson()` with a root that declares `slots[]` gadgets
 //! and nothing else. MissionSlotStruct stays out of this slice's owns list. MissionLoader
 //! calls `Bind()` after a valid parse (the T-682 EnvironmentReader seam).
 //!
-//! == Presence: nested-ref landmine AND the bool hole ========================================
 //! `JsonLoadContext.ReadValue` ALLOCATES a nested `ref` even when the JSON key is ABSENT.
 //! `if (slot.gadgets)` is ALWAYS TRUE. Bools cannot carry a sentinel (T-676 / T-946.37),
 //! so a struct of five bools cannot tell "gadgets omitted" from "all five authored false"
@@ -23,7 +20,6 @@
 //! @contract mission.schema.json#/$defs/gadgetFlags
 //! @contract mission.schema.json#/$defs/slot
 
-//------------------------------------------------------------------------------------------------
 //! One `slots[]` row's gadget flags. Field names are the JSON keys.
 class TBD_GadgetFlagsSlotWireStruct
 {
@@ -33,14 +29,12 @@ class TBD_GadgetFlagsSlotWireStruct
 	ref map<string, bool> gadgets;
 }
 
-//------------------------------------------------------------------------------------------------
 //! Root of the second parse. Declares `slots` and nothing else.
 class TBD_GadgetFlagsDocStruct
 {
 	ref array<ref TBD_GadgetFlagsSlotWireStruct> slots;
 }
 
-//------------------------------------------------------------------------------------------------
 //! Server-side reader: bind slot.gadgets and apply after loadout on player spawn.
 class TBD_GadgetFlags
 {
@@ -66,7 +60,6 @@ class TBD_GadgetFlags
 	protected static bool s_bArmed;
 	protected static string s_sParsedForMission;
 
-	//------------------------------------------------------------------------------------------------
 	//! Called from `TBD_MissionLoader.ParseMissionJson` after a valid parse, on the server-only
 	//! load path. Parses the gadgets block and arms the spawn hook. No-ops when no slot authors
 	//! the block, so missions without flags boot unchanged.
@@ -78,7 +71,6 @@ class TBD_GadgetFlags
 		ArmSpawnHook();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ArmSpawnHook()
 	{
 		if (s_bArmed)
@@ -92,7 +84,6 @@ class TBD_GadgetFlags
 		s_bArmed = true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Spawn-notify sink. Dressing already ran in SpawnSlotBody; cargo verify is still in
 	//! flight, so apply is deferred POST_LOADOUT_MS.
 	protected static void OnPlayerSpawned(int playerId, IEntity controlledEntity)
@@ -105,7 +96,6 @@ class TBD_GadgetFlags
 		GetGame().GetCallqueue().CallLater(ApplyForPlayer, POST_LOADOUT_MS, false, playerId);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplyForPlayer(int playerId)
 	{
 		if (RplSession.Mode() == RplMode.Client)
@@ -130,7 +120,6 @@ class TBD_GadgetFlags
 		ApplyToBody(body, slot.Key(), slot.id);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	static void ApplyToBody(IEntity body, string slotKey, string slotId)
 	{
 		if (!body)
@@ -171,7 +160,6 @@ class TBD_GadgetFlags
 			ApplyRadio(body, gadgets, radio);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplyOne(IEntity body, notnull SCR_GadgetManagerComponent gadgets, string key, bool want, EGadgetType type, string prefab)
 	{
 		if (want)
@@ -183,7 +171,6 @@ class TBD_GadgetFlags
 		RemoveType(gadgets, key, type);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Watch and GPS have no EGadgetType member on this engine (compile-proved: WATCH
 	//! is undefined). Match inventory prefab paths. GPS has no item in the TBD registry,
 	//! so authored true cannot add one; authored false still withholds a GPS-named item.
@@ -205,7 +192,6 @@ class TBD_GadgetFlags
 		RemoveByNeedle(body, key, needle);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void ApplyRadio(IEntity body, notnull SCR_GadgetManagerComponent gadgets, bool want)
 	{
 		if (want)
@@ -224,7 +210,6 @@ class TBD_GadgetFlags
 		RemoveType(gadgets, KEY_RADIO, EGadgetType.RADIO_BACKPACK);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void EnsureType(IEntity body, notnull SCR_GadgetManagerComponent gadgets, string key, EGadgetType type, string prefab)
 	{
 		IEntity existing = gadgets.GetGadgetByType(type);
@@ -233,7 +218,6 @@ class TBD_GadgetFlags
 		EnsurePrefab(body, key, prefab);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void EnsurePrefab(IEntity body, string key, string prefab)
 	{
 		if (prefab.IsEmpty())
@@ -271,7 +255,6 @@ class TBD_GadgetFlags
 		SCR_EntityHelper.DeleteEntityAndChildren(item);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void RemoveType(notnull SCR_GadgetManagerComponent gadgets, string key, EGadgetType type)
 	{
 		array<SCR_GadgetComponent> found = gadgets.GetGadgetsByType(type);
@@ -296,7 +279,6 @@ class TBD_GadgetFlags
 			Print(string.Format("[TBD][%1] withheld %2 count=%3", CH, key, removed));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool HasPrefabNeedle(IEntity body, string needle)
 	{
 		array<IEntity> items = CollectItems(body);
@@ -311,7 +293,6 @@ class TBD_GadgetFlags
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static void RemoveByNeedle(IEntity body, string key, string needle)
 	{
 		array<IEntity> items = CollectItems(body);
@@ -331,7 +312,6 @@ class TBD_GadgetFlags
 			Print(string.Format("[TBD][%1] withheld %2 count=%3", CH, key, removed));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool PrefabMatchesNeedle(IEntity item, string needle)
 	{
 		if (!item)
@@ -347,7 +327,6 @@ class TBD_GadgetFlags
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static array<IEntity> CollectItems(IEntity body)
 	{
 		if (!body)
@@ -363,7 +342,6 @@ class TBD_GadgetFlags
 		return items;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string PrefabOf(IEntity ent)
 	{
 		if (!ent)
@@ -374,7 +352,6 @@ class TBD_GadgetFlags
 		return pd.GetPrefabName();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static IEntity SpawnItem(IEntity body, string prefab)
 	{
 		Resource resource = Resource.Load(prefab);
@@ -389,7 +366,6 @@ class TBD_GadgetFlags
 		return GetGame().SpawnEntityPrefab(resource, GetGame().GetWorld(), params);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static string CurrentMissionId()
 	{
 		TBD_MissionDocumentStruct doc = TBD_MissionLoader.GetMission();
@@ -400,7 +376,6 @@ class TBD_GadgetFlags
 		return doc.meta.id;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static bool Parse()
 	{
 		string missionId = CurrentMissionId();
@@ -441,7 +416,6 @@ class TBD_GadgetFlags
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static int CountAuthored()
 	{
 		if (!s_aSlots)
@@ -461,7 +435,6 @@ class TBD_GadgetFlags
 		return n;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected static TBD_GadgetFlagsSlotWireStruct FindSlot(string slotKey, string slotId)
 	{
 		if (!s_aSlots)

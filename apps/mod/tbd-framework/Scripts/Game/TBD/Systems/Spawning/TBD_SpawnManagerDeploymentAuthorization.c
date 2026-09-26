@@ -25,7 +25,6 @@ class TBD_SpawnDeploymentGate
 	//! What the last `Admits` that did not admit answers.
 	protected static TBD_EDeployResult s_eRefusal = TBD_EDeployResult.RETRY;
 
-	//------------------------------------------------------------------------------------------------
 	//! May `playerId` deploy into `slot` now? False leaves the deploy's answer for `Refusal`: RETRY
 	//! while the player has no connection to stamp a request with, AUTHORIZING while the platform
 	//! decides, UNAUTHORIZED when it cannot be authorized now (the seat is kept).
@@ -55,7 +54,6 @@ class TBD_SpawnDeploymentGate
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The deploy's answer when there is no slot yet (RETRY) or the last `Admits` did not admit.
 	static TBD_EDeployResult Refusal(TBD_MissionSlotStruct slot)
 	{
@@ -72,14 +70,12 @@ modded class TBD_SpawnManager
 	//! progress, or impossible now, shapes what DeployOnReady and the admin powers answer.
 	protected ref map<int, TBD_EDeployResult> m_mLastDeployResult;
 
-	//------------------------------------------------------------------------------------------------
 	//! The player's connection stamp, created on first use; 0 while the player has no connection.
 	int ConnectEpochFor(int playerId)
 	{
 		return EnsureConnectEpoch(playerId);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! True when the player's last deploy waits on the platform, or could not be authorized now.
 	bool AwaitsPlatform(int playerId)
 	{
@@ -90,7 +86,6 @@ modded class TBD_SpawnManager
 		return last == TBD_EDeployResult.AUTHORIZING || last == TBD_EDeployResult.UNAUTHORIZED;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The player's last deploy result, or NOT_MINE when none is recorded.
 	TBD_EDeployResult LastDeployResult(int playerId)
 	{
@@ -101,7 +96,6 @@ modded class TBD_SpawnManager
 		return last;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Drop the player's recorded result, so the next one read is from a deploy that follows.
 	void ForgetDeployResult(int playerId)
 	{
@@ -109,7 +103,6 @@ modded class TBD_SpawnManager
 			m_mLastDeployResult.Remove(playerId);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void RecordDeployResult(int playerId, TBD_EDeployResult result)
 	{
 		if (!m_mLastDeployResult)
@@ -118,7 +111,6 @@ modded class TBD_SpawnManager
 		m_mLastDeployResult.Set(playerId, result);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override TBD_EDeployResult DeployPlayerEx(int playerId)
 	{
 		TBD_EDeployResult result = super.DeployPlayerEx(playerId);
@@ -126,7 +118,6 @@ modded class TBD_SpawnManager
 		return result;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override TBD_EDeployResult AdminRespawn(int playerId, string byAdmin = "unknown")
 	{
 		TBD_EDeployResult result = super.AdminRespawn(playerId, byAdmin);
@@ -134,7 +125,6 @@ modded class TBD_SpawnManager
 		return result;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The platform decides an event seat in every mode: while it decides, or cannot, the player is
 	//! told so, and no walk-on stands in for its decision.
 	override bool DeployOnReady(int playerId, out string why)
@@ -153,7 +143,6 @@ modded class TBD_SpawnManager
 		return false;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected IEntity SpawnWalkOnBody(int playerId, out string why)
 	{
 		if (AwaitsPlatform(playerId))
@@ -165,7 +154,6 @@ modded class TBD_SpawnManager
 		return super.SpawnWalkOnBody(playerId, why);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! TBD_DeploymentAuthorization: the platform allowed the deployment a deploy of this player
 	//! waited on. The deploy continues through the retry step, which carries an admin respawn's
 	//! override, marks the holder deployed and settles the admin respawn.
@@ -178,7 +166,6 @@ modded class TBD_SpawnManager
 		RetryDeploy(playerId, epoch);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! TBD_DeploymentAuthorization: the deployment a deploy of this player waited on was refused, and
 	//! the player has been told why. A dead player waiting on an admin respawn stays dead in their
 	//! seat; anyone else goes back to slot selection when the platform denied them the seat
@@ -204,7 +191,6 @@ modded class TBD_SpawnManager
 			Print(string.Format("[TBD][Spawn] player=%1 seat %2 given back after the platform denied the deployment - back to slot selection", playerId, slot.Key()));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The platform's decision continues an AUTHORIZING respawn, so it keeps the admin override
 	//! meanwhile; every other outcome settles as before.
 	override protected void FinishAdminRespawn(int playerId, TBD_EDeployResult r, string byAdmin)
@@ -219,7 +205,6 @@ modded class TBD_SpawnManager
 		Print(string.Format("[TBD][Admin] respawn player=%1 by=%2 - awaiting the platform's deployment decision, player stays DEAD until it allows the new life", playerId, byAdmin));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A different seat ends the life, or the request, of the old one. A request for the new seat,
 	//! asked while the claim deployed the player, stays.
 	override bool ClaimSlot(int playerId, string slotKey)
@@ -234,7 +219,6 @@ modded class TBD_SpawnManager
 		return claimed;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! A seat given back takes an allowed life that never reached the world with it.
 	override bool ReleaseSlot(int playerId)
 	{
@@ -245,7 +229,6 @@ modded class TBD_SpawnManager
 		return released;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The round is over: every life it opened ends on the platform too.
 	override void OnStageChanged(TBD_EGameStage stage)
 	{
@@ -255,7 +238,6 @@ modded class TBD_SpawnManager
 			TBD_DeploymentAuthorization.EndAllLives("round over at " + typename.EnumToString(TBD_EGameStage, stage));
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The platform learns that this life is over before anything else runs for the death, so a
 	//! later life in the seat is always asked for anew.
 	override void OnPlayerKilled(notnull SCR_InstigatorContextData instigatorContextData)
@@ -270,7 +252,6 @@ modded class TBD_SpawnManager
 		super.OnPlayerKilled(instigatorContextData);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void OnPlayerDisconnected(int playerId, KickCauseCode cause, int timeout)
 	{
 		super.OnPlayerDisconnected(playerId, cause, timeout);
@@ -282,7 +263,6 @@ modded class TBD_SpawnManager
 		TBD_DeploymentAuthorization.EndLife(playerId, "disconnected");
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The world is ending: every life it opened ends on the platform. The runtime session ends after
 	//! the game mode components (TBD_RuntimeSessionLifecycle).
 	override void OnGameEnd()

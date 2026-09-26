@@ -1,4 +1,4 @@
-//! T-181.7 — shared behaviour for every clickable TBD surface (buttons, list rows).
+//! T-181.7 -- shared behaviour for every clickable TBD surface (buttons, list rows).
 //!
 //! Enfusion gives a widget handler seven separate hooks and no notion of "interaction state".
 //! This collapses them into one: pointer hover and input focus both mean *highlighted*, so a
@@ -7,7 +7,7 @@
 //!
 //! Design law it enforces (the macOS methodology of
 //! documentation_v2/mod/tbd-framework/mod_design.md section 2):
-//!   * **Direct manipulation.** A click is the action. There is no "select, then confirm" —
+//!   * **Direct manipulation.** A click is the action. There is no "select, then confirm" --
 //!     `OnActivated()` fires on the click itself.
 //!   * **Immediate feedback.** Every state change repaints in the same frame.
 //!   * **Progressive disclosure.** `OnHighlighted()` is the hook a screen uses to reveal the next
@@ -21,7 +21,6 @@ class TBD_UIInteractive : ScriptedWidgetComponent
 	protected bool m_bFocused;
 	protected bool m_bInteractive = true;
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerAttached(Widget w)
 	{
 		super.HandlerAttached(w);
@@ -30,7 +29,6 @@ class TBD_UIInteractive : ScriptedWidgetComponent
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override void HandlerDeattached(Widget w)
 	{
 		m_wRoot = null;
@@ -39,7 +37,6 @@ class TBD_UIInteractive : ScriptedWidgetComponent
 		super.HandlerDeattached(w);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override bool OnMouseEnter(Widget w, int x, int y)
 	{
 		m_bHovered = true;
@@ -48,7 +45,6 @@ class TBD_UIInteractive : ScriptedWidgetComponent
 		return super.OnMouseEnter(w, x, y);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override bool OnMouseLeave(Widget w, Widget enterW, int x, int y)
 	{
 		m_bHovered = false;
@@ -56,7 +52,6 @@ class TBD_UIInteractive : ScriptedWidgetComponent
 		return super.OnMouseLeave(w, enterW, x, y);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override bool OnFocus(Widget w, int x, int y)
 	{
 		m_bFocused = true;
@@ -65,7 +60,6 @@ class TBD_UIInteractive : ScriptedWidgetComponent
 		return super.OnFocus(w, x, y);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override bool OnFocusLost(Widget w, int x, int y)
 	{
 		m_bFocused = false;
@@ -73,7 +67,6 @@ class TBD_UIInteractive : ScriptedWidgetComponent
 		return super.OnFocusLost(w, x, y);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! One click = the action. Returns true (consumed) only when we actually acted, so a disabled
 	//! surface still lets the event reach whatever is behind it.
 	override bool OnClick(Widget w, int x, int y, int button)
@@ -85,31 +78,25 @@ class TBD_UIInteractive : ScriptedWidgetComponent
 		return true;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Subclass hook: cache child widgets. Called once, on attach.
 	protected void OnBind(Widget w) {}
 
-	//------------------------------------------------------------------------------------------------
-	//! Subclass hook: the user committed. Fires on the click — never on hover, never on focus.
+	//! Subclass hook: the user committed. Fires on the click -- never on hover, never on focus.
 	protected void OnActivated() {}
 
-	//------------------------------------------------------------------------------------------------
 	//! Subclass hook: the user is looking at this without committing. Safe to preview.
 	protected void OnHighlighted() {}
 
-	//------------------------------------------------------------------------------------------------
-	//! Subclass hook: repaint from TBD_UITheme using the current state. Must be idempotent —
+	//! Subclass hook: repaint from TBD_UITheme using the current state. Must be idempotent --
 	//! it is called on every state change and on rebind.
 	void Repaint() {}
 
-	//------------------------------------------------------------------------------------------------
 	//! Hovered OR focused. One concept, so mouse and gamepad render identically.
 	bool IsHighlighted()
 	{
 		return m_bHovered || m_bFocused;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Disabled surfaces stay visible and readable (progressive disclosure beats hiding things),
 	//! they just stop responding.
 	void SetInteractive(bool interactive)
@@ -125,13 +112,11 @@ class TBD_UIInteractive : ScriptedWidgetComponent
 		Repaint();
 	}
 
-	//------------------------------------------------------------------------------------------------
 	bool IsInteractive()
 	{
 		return m_bInteractive;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	Widget GetRootWidget()
 	{
 		return m_wRoot;

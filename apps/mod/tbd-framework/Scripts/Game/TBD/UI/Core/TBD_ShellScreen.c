@@ -1,4 +1,4 @@
-//! T-181.7 — the screen shell: the chrome every TBD screen sits in, and the end-to-end proof
+//! T-181.7 -- the screen shell: the chrome every TBD screen sits in, and the end-to-end proof
 //! that the stack, the theme and the list work together.
 //!
 //! `TBD_ScreenShell.layout` is deliberately one shape, reused by every screen in the program:
@@ -22,7 +22,7 @@
 //!
 //! **Subclass it** (`class TBD_LobbyScreen : TBD_ShellScreen`), register the subclass in
 //! `Configs/Systems/Menus/chimeraMenus.conf` against your own preset, and override
-//! `OnScreenOpen()` — call `super.OnScreenOpen()` first, then populate `GetList()`.
+//! `OnScreenOpen()` -- call `super.OnScreenOpen()` first, then populate `GetList()`.
 //!
 //! It is also directly usable as-is: preset `TBD_UIShell` opens this class and renders an empty
 //! shell, which is what proves the menu stack end to end without a game mode attached.
@@ -36,10 +36,9 @@ class TBD_ShellScreen : TBD_MenuBase
 	protected TBD_UIButton m_PrimaryAction;
 	protected TBD_UIButton m_BackAction;
 
-	//! (TBD_ShellScreen screen) — the one primary action was triggered.
+	//! (TBD_ShellScreen screen) -- the one primary action was triggered.
 	protected ref ScriptInvoker m_OnPrimaryAction;
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnScreenOpen()
 	{
 		m_wTitle = FindText("Title");
@@ -70,11 +69,10 @@ class TBD_ShellScreen : TBD_MenuBase
 		SetSubtitle(GetScreenSubtitle());
 		SetStatus(string.Empty);
 
-		// No primary action until a screen declares one — an empty shell shows no loud button.
+		// No primary action until a screen declares one -- an empty shell shows no loud button.
 		SetPrimaryAction(string.Empty, false);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	override protected void OnScreenClose()
 	{
 		if (m_PrimaryAction)
@@ -84,7 +82,6 @@ class TBD_ShellScreen : TBD_MenuBase
 			m_BackAction.GetOnActivate().Remove(OnBackActionClicked);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! Land focus where the user's next move is: the first pickable row, else the primary action.
 	override void FocusDefault()
 	{
@@ -100,7 +97,6 @@ class TBD_ShellScreen : TBD_MenuBase
 		super.FocusDefault();
 	}
 
-	// ── Subclass hooks ──────────────────────────────────────────────────────────────────────
 
 	//! Header title. Override in a screen; do not write to the widget directly.
 	protected string GetScreenTitle()
@@ -114,23 +110,19 @@ class TBD_ShellScreen : TBD_MenuBase
 		return "UI framework online";
 	}
 
-	// ── Public surface ──────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	void SetTitle(string title)
 	{
 		TBD_UITheme.Write(m_wTitle, title);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	void SetSubtitle(string subtitle)
 	{
 		TBD_UITheme.Write(m_wSubtitle, subtitle);
 		TBD_UITheme.Show(m_wSubtitle, !subtitle.IsEmpty());
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Non-blocking feedback line in the footer. Use it instead of a modal — design law: nothing
+	//! Non-blocking feedback line in the footer. Use it instead of a modal -- design law: nothing
 	//! blocking.
 	void SetStatus(string status)
 	{
@@ -138,8 +130,7 @@ class TBD_ShellScreen : TBD_MenuBase
 		TBD_UITheme.Show(m_wStatus, !status.IsEmpty());
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! The ONE primary action. An empty label hides it — a screen with nothing to commit shows no
+	//! The ONE primary action. An empty label hides it -- a screen with nothing to commit shows no
 	//! loud button at all.
 	void SetPrimaryAction(string label, bool enabled)
 	{
@@ -158,14 +149,12 @@ class TBD_ShellScreen : TBD_MenuBase
 		m_PrimaryAction.SetInteractive(enabled);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! The shell's list. Null only if the layout has no `List` widget.
 	TBD_ListBox GetList()
 	{
 		return m_List;
 	}
 
-	//------------------------------------------------------------------------------------------------
 	//! (TBD_ShellScreen)
 	ScriptInvoker GetOnPrimaryAction()
 	{
@@ -175,16 +164,13 @@ class TBD_ShellScreen : TBD_MenuBase
 		return m_OnPrimaryAction;
 	}
 
-	// ── Internals ───────────────────────────────────────────────────────────────────────────
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnPrimaryActionClicked(TBD_UIButton button)
 	{
 		if (m_OnPrimaryAction)
 			m_OnPrimaryAction.Invoke(this);
 	}
 
-	//------------------------------------------------------------------------------------------------
 	protected void OnBackActionClicked(TBD_UIButton button)
 	{
 		CloseScreen();
@@ -193,9 +179,8 @@ class TBD_ShellScreen : TBD_MenuBase
 
 //! Presets TBD owns. Each entry needs a matching `MenuPreset` block in
 //! `Configs/System/chimeraMenus.conf` binding it to a layout and a class. Screens in later slices
-//! add their own `modded enum` block — several across files are fine.
+//! add their own `modded enum` block -- several across files are fine.
 //!
-//! ── MEASURED: registration needs one Workbench pass ─────────────────────────────────────────
 //! Adding the enum value and the `.conf` is necessary but NOT sufficient. Until the addon's
 //! `resourceDatabase.rdb` lists `Configs/System/chimeraMenus.conf`, the engine cannot see it and
 //! logs, at every startup:
@@ -205,15 +190,15 @@ class TBD_ShellScreen : TBD_MenuBase
 //! Only Workbench regenerates that index; the headless compile lane cannot. Proven by
 //! elimination, not assumed: the file was tried at both the vanilla path
 //! (`Configs/System/`) and at a custom path, with and without a `.meta`, and its content was even
-//! moved onto an already-indexed `.conf` path — the error persisted in every case. There is also
+//! moved onto an already-indexed `.conf` path -- the error persisted in every case. There is also
 //! no script-side escape hatch: `MenuManager.RegisterPreset`, `OpenMenuByLayout`, `GetMenuPresets`
 //! and `FindPreset` all fail to compile, i.e. they do not exist.
 //!
 //! That startup line is therefore the exact green light: it disappears the moment the resource is
-//! registered, and it is cheap to check from the headless lane —
+//! registered, and it is cheap to check from the headless lane --
 //! `grep "Menu preset" <profile>/logs/logs_*/error.log`.
 modded enum ChimeraMenuPreset
 {
-	//! The bare shell. Opens TBD_ShellScreen with no content — the end-to-end proof of the stack.
+	//! The bare shell. Opens TBD_ShellScreen with no content -- the end-to-end proof of the stack.
 	TBD_UIShell
 }
