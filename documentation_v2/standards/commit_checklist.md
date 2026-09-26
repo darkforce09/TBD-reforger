@@ -42,9 +42,12 @@ working context.
 
 ## Never edit by hand
 
-- What `cargo xtask ticket sync` writes: `.ai/tickets/queue.json`, the next-work block of the
-  Mission Creator roadmap and the ticket column of the Eden gap analysis. Change the ticket, then
-  sync.
+- What `cargo xtask ticket sync` writes: `.ai/tickets/queue.json` and the next-work block of the
+  Mission Creator roadmap, between its `<!-- ticket-sync:next:start -->` and
+  `<!-- ticket-sync:next:end -->` markers. Change the ticket, then sync. The ticket column of the
+  Eden gap analysis is not among them: sync rewrites only gap tables whose header still has a
+  `priority` column, and the analysis's tables have a `ticket` column, so that column is edited by
+  hand.
 - The generated contract types in the `generated/` folders under `apps/website/api_v2/src/`;
   regenerate them.
 - The frozen records: `documentation_v2/tickets/` once a ticket ships or is cancelled, and

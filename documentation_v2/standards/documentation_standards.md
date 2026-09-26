@@ -346,9 +346,13 @@ of its own.
   (audience, authority, updated date) follows it. Code READMEs carry no status line.
 - **Size.** A live document stays at or under 500 lines; a longer one splits by topic into a folder
   with a README.md index. Frozen and archived documents are exempt, and so are the two documents
-  whose tables `cargo xtask ticket sync` rewrites between markers,
-  `documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md` and
-  `documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md`.
+  `cargo xtask ticket sync` targets (`SYNC_MANAGED_DOCUMENTS` in
+  `tools_v2/xtask/src/verifications/documentation/path_regions.rs`):
+  `documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md`, whose next-work
+  block it rewrites between markers, and
+  `documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md`,
+  whose tables its ticket-column writer parses but leaves unchanged, since their header has no
+  `priority` column; that ticket column is kept by hand.
 - **Links.** Links are repository-root (`[README standard](/documentation_v2/standards/readme_standard.md)`,
   `[API](/apps/website/api_v2/README.md)`), never `../` climbs. A frozen or archived document's
   link to code that no longer exists becomes a GitHub permalink with the full commit id,

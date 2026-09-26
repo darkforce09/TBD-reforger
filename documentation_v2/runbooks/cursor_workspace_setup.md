@@ -39,10 +39,10 @@ Cursor applies each rule in `.cursor/rules/` to every chat (`alwaysApply: true`)
 
 | Rule | Applies | What it binds |
 |---|---|---|
-| `tbd-platform.mdc` | always | read `CLAUDE.md` first; the ticket files; `main` only; the executor gate; factory mode overrides the single-ticket lines |
-| `cursor-agent-workflow.mdc` | always | the modes Cursor infers from a message: plan review (read-only), ticket and docs, code (not Cursor), platform factory |
-| `application-code-forbidden.mdc` | [API](/documentation_v2/glossary/a_to_f.md#api), app and mod sources | no Cursor edit of application code without the operator's word, except in factory mode |
-| `platform-factory-mode.mdc` | always | when the operator starts the factory, Cursor orchestrates slice agents that edit code in `slice/<id>` worktrees |
+| `tbd-platform.mdc` | always | read `CLAUDE.md` first; the code layout; documentation ships with its code; the ticket files; the executor gate; `main` only; factory mode hands over to `platform-factory-mode.mdc` |
+| `cursor-agent-workflow.mdc` | always | who writes what, and the modes a chat infers from a message: plan review (read-only), ticket, spec and documentation pass, code (through the ticket tooling unless the operator says the chat writes it), platform factory |
+| `application-code-forbidden.mdc` | [API](/documentation_v2/glossary/a_to_f.md#api), app and mod sources | no Cursor edit of application code without the operator's word, except by slice agents in factory mode; documentation is not application code |
+| `platform-factory-mode.mdc` | always | when the operator starts the factory, the chat orchestrates slice agents that edit code in `slice/<id>` worktrees and never implements itself |
 | `no-silent-deferrals.mdc` | always | the whole ask is done; only the operator defers a piece (`CLAUDE.md` law 1) |
 | `no-duplicate-slice-agents.mdc` | always | one agent per ticket worktree until it finishes or the operator replaces it |
 | `acceptance-gates-reproducible.mdc` | always | gates are pinned and fail fast; a gate that cannot run is fixed, never skipped |
@@ -50,12 +50,14 @@ Cursor applies each rule in `.cursor/rules/` to every chat (`alwaysApply: true`)
 | `claude-prompt-delivery.mdc` | always | a prompt for another agent is delivered as one complete fenced block per stream |
 | `subagent-model-routing.mdc` | always | cheap models for locating code, expensive ones for hard analysis and coding |
 
-**Documentation ships with its code.** Several rules still give Cursor all documentation and
-forbid the coding agent to touch it: the description and the Cursor and Claude Code lines of
-`tbd-platform.mdc`, and the agent-split table of `cursor-agent-workflow.mdc`. That split is
-retired: documentation ships in the same commit as the code it describes, whichever agent writes
-that code, as the [commit checklist](/documentation_v2/standards/commit_checklist.md) states. Where
-a rule and this decision disagree, the decision wins.
+**Documentation ships with its code.** Documentation lands in the same commit as the code it
+describes, whichever agent or person writes that code (`CLAUDE.md` law 10): the comments of the
+changed code, the README.md of every folder whose contents, surface, commands or boundaries change,
+and the feature docs whose behaviour changes. `tbd-platform.mdc` states it, the "Who writes what"
+table of `cursor-agent-workflow.mdc` gives documentation of changed code to whoever changes the
+code, and the [commit checklist](/documentation_v2/standards/commit_checklist.md) lists what the
+commit carries. A Cursor chat also writes documentation on its own in a ticket, spec and
+documentation pass (mode B), which needs no permission to write code.
 
 **The executor gate.** A ticket's `executor` says who may take it. `claude-code` means any AI
 coding agent run through the ticket tooling; `cursor-docs` a ticket, spec or documentation pass;
@@ -208,7 +210,7 @@ workspace is ready.
 | the `enfusion-mcp` server fails to start: `Cannot find module …/dist/index.js` | the pinned package is not installed, or the path in `.cursor/mcp.json` names another checkout | step 5, then fix the `node` argument (step 4) |
 | MCP calls time out | Workbench is not running, or its Net API is off | the `ACTION REQUIRED` line of `mod dev-bootstrap` names the fix; see [Enfusion MCP tooling](/documentation_v2/runbooks/enfusion_mcp_tooling.md#troubleshooting) |
 | an agent inside `apps/mod/` runs another `enfusion-mcp` release | `apps/mod/.mcp.json` launches `npx -y enfusion-mcp`, unpinned | point it at the pinned `dist/index.js`, as step 4 does for Cursor |
-| an agent refuses to update documentation beside its code | a rule still carries the retired documentation split | documentation ships with its code (see [The project rules](#the-project-rules)) |
+| an agent refuses to update documentation beside its code | it follows an instruction outside the project rules, such as an old prompt or a Cursor rule saved outside `.cursor/rules/` | documentation ships with its code (`CLAUDE.md` law 10, [The project rules](#the-project-rules)); check Cursor's own project rules for a stale copy (step 2) |
 | `curl` exits 22 on `/healthz` | the probe returned 503: the database is down or the migrations failed | [Local development](/documentation_v2/runbooks/local_development.md#troubleshooting) |
 
 ## Related

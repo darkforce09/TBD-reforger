@@ -48,8 +48,8 @@ THE TICKET
 
 YOUR FILES (touch only these)
 <owns paths>
-If the work needs a file outside this list, stop and report which file and why; do not widen
-silently. Siblings running now own:
+If the work needs a code file outside this list, stop and report which file and why; do not
+widen silently. Documentation outside the list follows rule 11. Siblings running now own:
   <sibling ticket id>: <its owns paths>
 
 RULES
@@ -82,15 +82,23 @@ RULES
 9. Never `git stash`. Never run `cargo xtask ci ci-local` (15 to 40 minutes, not a wave step).
    A test that prints `skip:` is a failure, not a pass.
 10. Start no sub-agents. Leave the development API on :8080 and the app on :3000 running.
-11. You do not ship: no push, no merge, no ticket, plan or documentation edits, no status
-    changes. You do not file tickets: report findings with file:line and a repro.
-12. Throwaway probes go in /tmp, never in the source tree. Commit no .py file.
-13. Read with offset and limit: whole-file reads over 400 lines and re-reads of a file you have
+11. Documentation ships with the code (CLAUDE.md law 10), in the same commits: the comments of
+    the code you change, the README.md of every folder whose contents, surface, commands or
+    boundaries you change, and the feature docs under documentation_v2/ whose behaviour you
+    change. Then run `cargo xtask verify readme-coverage`, `cargo xtask verify link-check` and
+    `cargo xtask verify markdown-placement`, each with `--with-untracked --path <folder>` for
+    every folder whose documents you touched. A document outside YOUR FILES is edited all the
+    same and listed in files_outside_owns.
+12. You do not ship: no push, no merge, no status changes, and no edits to the ticket files
+    (.ai/tickets/) or the ticket specs and plans (documentation_v2/tickets/). You do not file
+    tickets: report findings with file:line and a repro.
+13. Throwaway probes go in /tmp, never in the source tree. Commit no .py file.
+14. Read with offset and limit: whole-file reads over 400 lines and re-reads of a file you have
     read are refused by the `cargo xtask ai guard` hook. Run noisy builds through
     `cargo xtask ai run -- '<command>'`; it never hides a failure or a verdict.
-14. Measure, do not read: a claim about pixels needs a guard that measures pixels, and a "does
+15. Measure, do not read: a claim about pixels needs a guard that measures pixels, and a "does
     not reproduce" verdict is only as good as its measurement.
-15. If you contradict this brief, say so plainly: you looked, the brief remembered.
+16. If you contradict this brief, say so plainly: you looked, the brief remembered.
 
 REPORT with exactly the fields of the report schema, and nothing around them.
 ```
@@ -104,6 +112,8 @@ presence check against these fields.
 pwd_branch:              <output of `pwd && git branch --show-current`>
 defect_verified_on_main: [ {claim, path:line} ]   confirmed still broken before any code
 changes:                 [ {path, line, why} ]
+documentation:           [ {path, why} ]          READMEs, feature docs and comments updated;
+                                                  empty only when no documented surface changed
 perturbation:            { red_output: <verbatim red>, restored_green: true|false }
 gate_verdict_tail:       <pasted verbatim, ending SLICE GATE: PASS>
 files_outside_owns:      [ {path, why} ]          an empty list when none; never omitted
@@ -126,6 +136,7 @@ never fixes a slice itself.
 | 5 | it touched files outside its `owns` without listing them |
 | 6 | it ran `cargo xtask ci ci-local` or `git stash` |
 | 7 | it says "already fixed", "a sibling did it" or "this already works" without a command that proves it |
+| 8 | it changes a folder's contents, surface, commands or boundaries, or a feature's behaviour, and the commits leave the README, feature doc or comments that describe it stale |
 
 Then check the claims against the branch
 ([Running a wave](/documentation_v2/runbooks/factory_waves/running_a_wave.md) step 6). Agents are

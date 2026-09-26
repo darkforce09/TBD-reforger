@@ -33,9 +33,11 @@ One TOML file per ticket, parent and child alike: `.ai/tickets/T-<id>.toml`, bes
 - `scope.domain`: `website`, `mod`, `schema`, `engine` or `repo`.
 
 `.ai/tickets/schema.json` defines every field, and `cargo xtask ticket check` validates each file
-against it. After a change, `cargo xtask ticket sync` writes `.ai/tickets/queue.json`, the
-next-work block of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) roadmap and the ticket column of the Eden gap analysis;
-those are never edited by hand.
+against it. After a change, `cargo xtask ticket sync` writes `.ai/tickets/queue.json` and the
+next-work block between the `<!-- ticket-sync:next:start -->` and `<!-- ticket-sync:next:end -->`
+markers of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) roadmap;
+those two are never edited by hand. The ticket column of the Eden gap analysis is kept by hand, as
+[In documents](#in-documents) explains.
 
 ## Spec and plan files
 

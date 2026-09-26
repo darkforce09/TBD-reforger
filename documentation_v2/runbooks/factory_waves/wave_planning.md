@@ -88,6 +88,10 @@ only disjoint `owns` lists keep the merges free of conflicts.
 
 - **`owns` is load-bearing.** It is the only thing that keeps two concurrent agents off one file.
   Narrow it to the files the ticket must edit; never widen a row to a bare folder to make it fit.
+- **The documents a change updates are files it edits.** Documentation ships in the same commit as
+  the code it describes (`CLAUDE.md` law 10), so a slice agent updates the README.md of each folder
+  its change reshapes and the feature docs whose behaviour it changes. List those documents in
+  `owns` too, so that the collision rule keeps two slices off one README or feature doc.
 - **A missing file is fixed on the ticket, not in the brief.** When a ticket plainly must edit a
   file its `owns` omits, the orchestrator adds the file to the ticket, runs step 3 to confirm the
   wider list still collides with nothing in flight, then steps 4 and 5.

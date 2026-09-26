@@ -222,9 +222,10 @@ rewrites it and the diff grows:
   `.ai/tickets/schema.json` in one commit;
 - never `status`, `order`, `shipped_at` or `completed_at` by hand: those belong to `reorder`,
   `set-status`, `mark-ready`, `ship` and `stamp-sha`, which check what they write;
-- never the files `ticket sync` writes: `.ai/tickets/queue.json`, the next-work block of the
-  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) roadmap and the ticket column
-  of the Eden gap analysis.
+- never what `ticket sync` writes: `.ai/tickets/queue.json` and the next-work block of the
+  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) roadmap. The ticket
+  column of the Eden gap analysis is kept by hand
+  ([Ticket identifiers](/documentation_v2/standards/ticket_identifiers.md#in-documents)).
 
 `ticket check` validates the schema and the rules but not the key order; the test
 `corpus_roundtrip_real_tree_byte_identical` does, and neither CI nor the wave gate runs it:
