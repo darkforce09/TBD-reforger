@@ -20,7 +20,7 @@ tools_v2/ticket-engine/src/
 ├── registry/       the registry as a parents-only JSON value, its field helpers and the platform readers
 ├── repository.rs   every repository path the ticket domain reads or writes, and checkout-root discovery
 ├── store.rs        `Corpus`: every ticket file loaded, and surgical per-file writes and deletes
-├── sync/           `ticket sync`: `queue.json`, the roadmap next-work block and the gap-analysis column
+├── sync/           `ticket sync`: `queue.json`, the roadmap next-work block, the gap-analysis column writer
 ├── tests/          unit tests for encoding, the store, timestamps, the vocabulary and the layout
 ├── timestamp.rs    `validate_rfc3339_utc` and `now_utc_rfc3339`: the one timestamp rule
 ├── validation/     `ticket check` and the preflight every mutation runs

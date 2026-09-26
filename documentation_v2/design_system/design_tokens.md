@@ -23,7 +23,7 @@ Developers and agents read it before writing a class string, a layout colour or 
   [`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/`](/apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/README.md)
   (`TBD_UITheme.c`), with `TBD_UILayouts.MountRounded` for rounded surfaces and the layouts in
   [`apps/mod/tbd-framework/UI/`](/apps/mod/tbd-framework/UI/README.md).
-- Map side tints and glyphs: the [map symbology](/documentation_v2/design_system/military_symbology.md).
+- Map side tints and glyphs: the [map symbology](/documentation_v2/design_system/map_symbology.md).
 
 ## Behaviour
 
@@ -184,7 +184,7 @@ value takes 8): `RADIUS_PANEL` 12, `RADIUS_PILL` 10, `RADIUS_ROW` 8 and `RADIUS_
   `RADIUS_ROW` 8 is commented "rounded-lg", which the website renders at 6px.
 - The side colours differ between the surfaces: the mod paints BLUFOR and OPFOR from Tailwind's
   blue and red families (`ChipFill`, `FactionRowFill`) and has no INDFOR tint, while the map uses `#adc6ff`, `#f87171` and
-  `#22c55e` ([map symbology](/documentation_v2/design_system/military_symbology.md)).
+  `#22c55e` ([map symbology](/documentation_v2/design_system/map_symbology.md)).
 
 ## Data
 

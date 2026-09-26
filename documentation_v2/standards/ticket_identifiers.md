@@ -68,11 +68,14 @@ A commit that lands a ticket names its full id in the subject, for example
 
 ## In documents
 
-- **The Eden gap analysis.** `cargo xtask ticket sync` fills each row's ticket column from, in
-  order: a checkmark followed by a parent id in the row's notes (`✅` then `T-` and three or more
-  digits; a dotted suffix is not captured); then the gap implementations in
-  `.ai/tickets/corpus-pins.toml`; else `—`. The pattern is
-  `CHECKMARK_TICKET` in `tools_v2/ticket-engine/src/sync/gap_analysis.rs`.
+- **The Eden gap analysis.** Each row's ticket column is written by hand: a parent id, with `✅`
+  when the ticket shipped, or `—`. `cargo xtask ticket sync` has a column writer that fills the
+  cell from, in order, a checkmark followed by a parent id in the row's notes (`✅` then `T-` and
+  three or more digits; a dotted suffix is not captured), a ticket whose `implements` lists the
+  row's id, the gap implementations in `.ai/tickets/corpus-pins.toml`, else `—` (`CHECKMARK_TICKET`
+  and `lookup_ticket_for_gap` in `tools_v2/ticket-engine/src/sync/gap_analysis.rs`); it rewrites
+  only a table whose header holds `priority |`, and the gap analysis heads that column `ticket`,
+  so the writer changes nothing there.
 - **Retired planning codes.** Planning codes from before the `T-` registry (priority tiers,
   separate frontend and backend backlog numbers, lettered tracks and lettered requirement codes)
   are retired. `cargo xtask ticket check --strict` fails on any of them in `documentation_v2/`,

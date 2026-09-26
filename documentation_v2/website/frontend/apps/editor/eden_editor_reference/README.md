@@ -38,8 +38,10 @@ The ID patterns and the entry format are the
 shared with the Mission Creator's [feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md).
 The catalogs state Eden's behaviour only; where one says how the Mission Creator does something,
 it is in a section headed Mission Creator counterpart, read from the code and linked to the
-inventory area. Parity itself lives in the gap analysis, one row per ID, whose ticket column
-`cargo xtask ticket sync` keeps in step with the ticket registry.
+inventory area. Parity itself lives in the gap analysis, one row per ID, whose ticket column is
+kept by hand: `cargo xtask ticket sync` rewrites only a table whose header holds `priority |`
+(`parse_gap_analysis` in `tools_v2/ticket-engine/src/sync/gap_analysis.rs`), and these tables
+head that column `ticket`, so the sync writes the file back unchanged.
 
 Eden calls the document it edits a scenario and works in a 3D scene as well as on a 2D map. The
 Mission Creator's document is the [mission](/documentation_v2/glossary.md#mission), and its map
@@ -54,24 +56,23 @@ domain's pattern, and the gap analysis gets its row; a new wiki page gets a mani
 - [Mission Creator](/apps/website/frontend/src/v2/apps/editor/) — the workspace the catalogs'
   Mission Creator counterpart sections and the gap analysis describe.
 - [Ticket engine](/tools_v2/ticket-engine/src/) — `GAP_ANALYSIS` in `repository.rs` names the gap
-  analysis whose ticket column `ticket sync` rewrites.
+  analysis that `ticket sync` and `ticket check` read.
 
 ## Boundaries
 
 - Depends on: the Eden pages of the Bohemia wiki and their scrape in `.ai/artifacts/eden-wiki/`;
   the [feature entry schema](/documentation_v2/website/frontend/apps/editor/feature_inventory/feds_schema.md)
   for IDs and entry format; the Mission Creator code for the counterpart sections; the ticket
-  registry in `.ai/tickets/` for the gap analysis's ticket column.
+  registry in `.ai/tickets/`, which the gap analysis's hand-kept ticket column cites.
 - Used by: the in-code READMEs under `apps/website/frontend/src/v2/apps/editor/ui/` (the ui, docks,
   right dock, context menu, inspector, Attributes dialog and outliner READMEs), which link the
   catalog their folder follows; the feature inventory's README and entry schema; the
   [roadmap](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md); the ticket
-  engine's `tools_v2/ticket-engine/src/repository.rs` and `ticket sync`, which rewrite the gap
-  analysis; the source test in `apps/website/frontend/src/v2/apps/editor/arsenal/tests/shell_wiring.rs`,
+  engine's `tools_v2/ticket-engine/src/repository.rs`, `ticket sync`, which reads the gap
+  analysis and writes it back unchanged, and `ticket check`, which reads it; the source test in `apps/website/frontend/src/v2/apps/editor/arsenal/tests/shell_wiring.rs`,
   which reads the gap analysis; and the ticket registry, whose tickets cite the IDs.
 - Rules: an ID is never renumbered or reused, because the gap analysis, the roadmap and the
-  tickets cite it verbatim; each `| eden_id | … |` table stays whole in one file, where
-  `ticket sync` finds it; the gap analysis has exactly one row per catalog ID; every Eden fact
+  tickets cite it verbatim; each `| eden_id | … |` table stays whole in one file; the gap analysis has exactly one row per catalog ID; every Eden fact
   cites its wiki URL; each document stays within 500 lines
   (`cargo xtask verify markdown-placement`); every child has a Contents line
   (`cargo xtask verify readme-coverage`).

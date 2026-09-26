@@ -1,4 +1,4 @@
-**Status:** archived — see [documentation_v2/design_system/](/documentation_v2/design_system/)
+**Status:** archived — see [documentation_v2/design_system/interaction_patterns.md](/documentation_v2/design_system/interaction_patterns.md)
 
 # macOS UX Methodology & Interaction Plan
 

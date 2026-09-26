@@ -1,10 +1,11 @@
 # Ticket sync
 
-`cargo xtask ticket sync`: regenerates the three outputs derived from the
+`cargo xtask ticket sync`: regenerates the outputs derived from the
 [ticket](/documentation_v2/glossary.md#ticket) files, the dispatch queue
-`.ai/tickets/queue.json`, the recommended-next-work block of the
-[Mission Creator](/documentation_v2/glossary.md#mission-creator) roadmap, and the ticket column of
-the Eden gap-analysis tables, and writes no other file.
+`.ai/tickets/queue.json` and the recommended-next-work block of the
+[Mission Creator](/documentation_v2/glossary.md#mission-creator) roadmap, and runs the ticket
+column writer over the Eden gap analysis, which finds no table to rewrite there; it writes no
+other file.
 
 ## Contents
 
@@ -32,9 +33,13 @@ order:
    `<!-- ticket-sync:next:end -->`: a `### Recommended next work (auto-generated)` heading and
    the first ten `ready`, `queued`, `running` or `review` tickets that carry an order, by order
    then id.
-3. The gap-analysis ticket column, the fourth cell of every row with at least five: the parent id
-   after a `✅` in the row's notes cell, else a ticket whose `implements` lists the row's Eden or
-   platform id, else the ticket `.ai/tickets/corpus-pins.toml` pins to that row, else `—`.
+3. The gap-analysis ticket column. The parser takes only a table whose header row contains both
+   `| eden_id |` and `priority |` (`parse_gap_analysis` in `gap_analysis.rs`); it renames that
+   header cell to `ticket` and fills the fourth cell of every row with at least five: the parent
+   id after a `✅` in the row's notes cell, else a ticket whose `implements` lists the row's Eden
+   or platform id, else the ticket `.ai/tickets/corpus-pins.toml` pins to that row, else `—`. The
+   gap analysis's tables already head that column `ticket`, so no table matches, the file is
+   written back unchanged, and its ticket column is kept by hand.
 
 An absent roadmap or gap-analysis file, or a roadmap without its start marker, is skipped and
 never created. `refuse_empty_write` stops any write that would leave the marker block empty or a
@@ -67,4 +72,4 @@ back byte for byte. `ticket check` runs the same round trip and requires both ro
 - [Mission Creator roadmap](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md)
   — the document that carries the next-work block.
 - [Eden gap analysis](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)
-  — the tables whose ticket column sync writes.
+  — the tables the ticket column writer reads; their ticket column is kept by hand.

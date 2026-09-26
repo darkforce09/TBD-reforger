@@ -72,8 +72,10 @@ other error (`xtask: <cause>`); 2 a clap usage error.
 - Does: `check` validates every ticket against `.ai/tickets/schema.json` and the structural rules,
   checks `.ai/tickets/wave.lock` against the tickets, prints the debt counters (with `--strict`
   also the measured and estimated token counters), and prints `check OK`. `sync` writes
-  `.ai/tickets/queue.json` and, when the files exist, the next-work block of the product roadmap
-  and the ticket column of the gap analysis. `gap-round-trip` proves that the gap-analysis table
+  `.ai/tickets/queue.json` and, when the files exist, the next-work block of the Mission Creator
+  roadmap; its gap-analysis ticket column writer rewrites only a table headed with a `priority`
+  column, which the gap analysis does not have, so that file is written back unchanged.
+  `gap-round-trip` proves that the gap-analysis table
   reads and writes back byte for byte.
 - Example: `cargo xtask ticket check --strict`
 

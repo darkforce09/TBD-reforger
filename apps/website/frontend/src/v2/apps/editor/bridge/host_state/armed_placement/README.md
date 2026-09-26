@@ -28,9 +28,10 @@ Every arm change bumps the document tick, so the docks re-read their "click the 
 palette pointerdown ──> begin_place_* ──> arm: Pending on the editor context
 canvas pointerup ──> has_pending?
    ├── zone draw armed ──> advance_zone_draw: take a vertex, or close the circle
-   ├── left button ──> place_at_alt, or place_at_keep with Ctrl or Cmd (re-arms after a place)
+   ├── left button over the map ──> place_at_alt, or place_at_keep with Ctrl or Cmd (re-arms)
    │      take the arm ──> commit_armed_placement ──> select it ──> after_local_edit
-   └── right button, release over chrome, pointercancel ──> cancel_pending
+   ├── left button over the chrome ──> nothing: the arm stays for the next map release
+   └── right button, pointercancel ──> cancel_pending
 ```
 
 The release takes the armed value before it opens the document, so a release commits at most once,

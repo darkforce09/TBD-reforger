@@ -3,7 +3,8 @@
 The `cargo xtask platform` group: the tools that run the platform factory. They manage slice
 worktrees, check a machine before an unattended run, run one slice through the agent CLI with a
 token receipt, and drive the platform [wave](/documentation_v2/glossary.md#wave) lifecycle from
-worktree creation to landing on `main`. The command center, factory dispatchers and slice agents
+the next dispatch set to landing on `main`. The
+[orchestrator](/documentation_v2/glossary.md#orchestrator), factory dispatchers and slice agents
 run them.
 
 ## Contents
@@ -34,9 +35,11 @@ one branch shape the tooling creates and deletes itself. The `mod wave` driver
 (`tools_v2/xtask/src/commands/mod_ops/`) calls `slice-worktree` in-process for the mod program.
 
 ```text
-platform preflight ─▶ platform wave prep ─▶ platform slice-run <id>   (agent in the worktree)
-                                             platform wave gate --slice <id>
-                      platform wave land ◀───┘   (merge, wave gate, drop, repack, push)
+platform preflight ─▶ platform wave prep   (prints the next disjoint set)
+                      platform slice-worktree -- new <id>
+                      platform slice-run <id>   (agent in the worktree)
+                      platform wave gate --slice <id>
+                      platform wave land   (merge, wave gate, drop, repack, push)
 ```
 
 ## Commands
@@ -66,9 +69,10 @@ an entry function prints `xtask: <cause>` and exits 1; a clap usage error exits 
 ### wave
 
 - Synopsis: `platform wave <subcommand>`, default `status`:
-  - `status`, `prep`, `wave`: where the current wave stands and what blocks it; worktrees for the
-    next disjoint set (from `cargo xtask slice-collisions`); the wave's shipped count, open
-    tickets and verify debt.
+  - `status`, `prep`, `wave`: where the current wave stands and what blocks it; the next
+    disjoint dispatch set (from `cargo xtask slice-collisions`), printed with the
+    `slice-worktree -- new <TICKET>` line that creates each worktree, since `prep` creates none;
+    the wave's shipped count, open tickets and verify debt.
   - `gate [<base>]`, `gate --slice <id>`, `gate --migrate-persist [audit|advance]`: the wave gate,
     the slice gate, and the persistent migration database step alone.
   - `test --slice <id> <cargo test arguments>`: cargo test into a per-slice private target folder.
@@ -107,7 +111,7 @@ an entry function prints `xtask: <cause>` and exits 1; a clap usage error exits 
   - `cargo xtask ticket run`, which calls `slice_execution::run_slice` for each ready slice
     (`tools_v2/xtask/src/commands/ticket/execution.rs`);
   - `cargo xtask mod wave`, which calls `slice_worktree::run_at`;
-  - the command center, factory dispatchers and slice agents.
+  - the orchestrator, factory dispatchers and slice agents.
 - Rules:
   - A slice-run that exits 0 without a usage object fails and writes no receipt
     (`exit_zero_without_usage_fails_and_writes_no_file` in `tests/slice_execution/tests.rs`).

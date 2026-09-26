@@ -40,10 +40,12 @@ tools_v2/xtask/src/commands/platform/wave_execution/
 
 ## How it works
 
-`flush::run` builds a `Ctx` once, and `Ctx::enter` does four things. It moves to the repository
-root. It finds the main checkout through `git rev-parse --git-common-dir`. It exports
-`CARGO_TARGET_DIR` (inherited, else `<main checkout>/target`) and `TBD_RUN_TARGET_DIR`
-(`<shared target>/run-main`). It detects the host bridge. It then dispatches on the first
+`flush::run` first drops an inherited `CARGO_TARGET_DIR`, saying so on stderr
+(`disown_ambient_target_dir`), because a value set in the container and read by host cargo
+poisons the cache it names. It then builds a `Ctx` once, and `Ctx::enter` does four things. It
+moves to the repository root. It finds the main checkout through `git rev-parse --git-common-dir`.
+It exports `CARGO_TARGET_DIR` as `<main checkout>/target` and `TBD_RUN_TARGET_DIR` (an inherited
+value, else `<main checkout>/target/run-main`). It detects the host bridge. It then dispatches on the first
 argument; the default is `status`.
 
 ```text

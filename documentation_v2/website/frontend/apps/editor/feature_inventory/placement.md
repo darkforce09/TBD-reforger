@@ -147,9 +147,6 @@ editor notes: they are saved with the mission and never compiled for the game.
 
 ### Known discrepancies
 
-- The armed placement README draws "release over chrome" as a cancel
-  (`apps/website/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/README.md:33`) —
-  a left release over the chrome keeps the arm (`ArmedUp::KeepArmed`, `armed_place.rs:16`).
 - The Factions tab reads "Drag a role onto the map to place its slot." and the leaves "Drag onto
   the map to place" (`ui/docks/dock_right/shell/factions_panel.rs:43`,
   `ui/docks/dock_right/palette/mod.rs:34-42`) — a click on the leaf followed by a click on the

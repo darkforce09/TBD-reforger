@@ -106,12 +106,6 @@ above the toolbelt reads "Map unavailable" with the reason, and editing goes on 
    version …, saves nothing — open the mission in the Mission Creator to change it."
    (`shell/review_mode.rs:109-117`).
 
-### Known discrepancies
-
-- The app README calls the editor a "2D/3D CAD workspace"
-  (`apps/website/frontend/src/v2/apps/editor/README.md:3`) — the map is a flat, north-up
-  orthographic view (MAP-VIEW-001) and there is no 3D view.
-
 ## Data
 
 - No call of its own. The route's server and draft restore is in

@@ -68,16 +68,18 @@ multipart archive
 
 ### Known discrepancies
 
-- The design has the API resolve one folder per tier and serve both under `/map-assets`
-  (`assets_v2/storage_spec/README.md`, Format) — the API serves `/map-assets` from
+- The design has the API resolve one folder per tier and serve both under `/map-assets` (Data,
+  below) — the API serves `/map-assets` from
   `MAP_ASSETS_DIR` alone (`apps/website/api_v2/src/core/http_router.rs`), and no code reads
   `TBD_TERRAIN_STORAGE_DIR`.
 
 ## Data
 
 - The designed volume: a Docker named volume `tbd-terrain-storage`, mounted read-only into the API
-  container at `/var/data/tbd/terrains`, with `TBD_TERRAIN_STORAGE_DIR` naming the mount. An
-  uploaded terrain folder has the same shape as a built-in one:
+  container at `/var/data/tbd/terrains`, with `TBD_TERRAIN_STORAGE_DIR` naming the mount. The API
+  resolves one folder per tier and serves both under `/map-assets`. An uploaded terrain folder has
+  the same shape as a built-in one, because both are addressed through the same manifest
+  contract:
 
   ```text
   /var/data/tbd/terrains/

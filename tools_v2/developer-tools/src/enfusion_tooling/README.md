@@ -90,3 +90,5 @@ index TSVs ─▶ enf lookup | enf dirs | enf citations | enf capability ─▶ 
   the oracle gates in mod work.
 - [MCP command group](/tools_v2/xtask/src/commands/mcp/README.md) — the broker's launcher and its
   selftest.
+- [Enfusion script oracle](/documentation_v2/tools_v2/developer-tools/enfusion_script_oracle.md) —
+  the oracle tables, their lookups and the citation gate in depth.

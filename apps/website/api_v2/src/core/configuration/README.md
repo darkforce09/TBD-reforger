@@ -56,3 +56,8 @@ resolution in `crate::core::middleware` is the only reader.
   that nothing uses; a value that is set but unusable fails boot instead of falling back to a
   default, except the two numeric settings named above; no test configuration writes into the
   checkout (`test_configs_keep_runtime_storage_out_of_the_checkout` in `tests/configuration.rs`).
+
+## Related documentation
+
+- [API environment variables](/documentation_v2/website/api_v2/environment_variables.md) — every
+  variable the API reads, with its default, when it is required and what an unusable value does.

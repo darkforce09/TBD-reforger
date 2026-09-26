@@ -22,7 +22,7 @@ the Eden reference format of the [feature entry schema](/documentation_v2/websit
 |-------|-------|
 | **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Entity_Transforming#Altitude |
 | **Shortcut** | Alt + drag |
-| **Eden parity** | N/A (3D) for the [Mission Creator](/documentation_v2/glossary.md#mission-creator), whose map view is top-down |
+| **Eden parity** | partial for the [Mission Creator](/documentation_v2/glossary.md#mission-creator): its map view is top-down and has no Alt-drag, but a vertical drag on the translate widget's elevation arm raises or lowers the selection ([XFORM-ELEV-001](/documentation_v2/website/frontend/apps/editor/feature_inventory/transform_and_delete.md); `bridge/gizmo_z.rs`, `bridge/overlays/z_drag.rs`) |
 
 #### XFORM-SHIFT-001 — Shift drag rotate
 

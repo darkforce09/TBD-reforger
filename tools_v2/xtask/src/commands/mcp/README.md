@@ -37,7 +37,7 @@ mcp call <tool> [args]
   │    then xtask mcp socket-send <socket> <tool> <args> | xtask mcp consume
   │    0 or 3 ─▶ done;  anything else ─▶ one-shot
   └─ one-shot: requests | timeout MCP_CALL_TIMEOUT <enfusion-mcp> | xtask mcp consume
-       124 ─▶ 4; 0 and 3 end at once; 1 and 2 retry MCP_CALL_RETRIES times (default 1)
+       124 ─▶ 4; 0 and 3 end at once; 1, 2 and 4 retry MCP_CALL_RETRIES times (default 1)
 ```
 
 `call` fills `ENFUSION_GAME_PATH`, `ENFUSION_WORKBENCH_PATH` and `ENFUSION_PROJECT_PATH` with the
@@ -65,7 +65,8 @@ Each runs as `cargo xtask mcp <command>`; a clap usage error exits 2.
   the result, or the whole result as JSON when it has none. `MCP_CALL_TIMEOUT` (default 180 s),
   `MCP_CALL_RETRIES`, `MCP_NO_DAEMON` and `MCP_DEBUG=1` tune it.
 - Exit codes: 0 success; 1 no tool name, or an empty answer after every retry; 2 the server's
-  initialize failed; 3 a JSON-RPC or tool-reported error, its text on stderr; 4 timeout.
+  initialize failed; 3 a JSON-RPC or tool-reported error, its text on stderr; 4 timeout on the
+  last attempt. Only 0 and 3 end a one-shot call at once; 1, 2 and 4 are retried.
 - Example: `cargo xtask mcp call wb_state`
 
 ### daemon

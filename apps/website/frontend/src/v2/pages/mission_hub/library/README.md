@@ -43,8 +43,11 @@ A card or the hero opens `MissionDossierSheet` in a `Sheet` without leaving the 
 the mission and withholds the heavy dossier until the slide finishes. `can_edit` (a mission maker
 who is the author, or an administrator) gates the Mission Creator link, the collaboration controls
 and the upload panel; `can_manage` (the author or an administrator, any role) gates the Manage row,
-the review feedback and the review record, as the [API](/documentation_v2/glossary.md#api)'s own
-predicate does. The dossier renders the overview page's read-only `dossier_body`, the review record
+the review feedback and the review record. The [API](/documentation_v2/glossary.md#api) is
+stricter: every write to an existing mission (update, delete, submit, review comment) takes
+`lock_editable_mission` in `apps/website/api_v2/src/missions/services/mission_write_lock.rs`, which
+requires the `mission_maker` role as well as authorship or administrator rights, so an author
+below `mission_maker` sees the Manage row but the API answers 403. The dossier renders the overview page's read-only `dossier_body`, the review record
 and submit control from `apps/website/frontend/src/v2/pages/mission_hub/mission_review/`, the
 version rail, the upload panel, the collaboration section and the Manage row, in that order.
 

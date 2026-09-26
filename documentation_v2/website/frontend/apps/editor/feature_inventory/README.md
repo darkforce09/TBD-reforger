@@ -13,6 +13,7 @@ analysis reads it to pair each feature with its Eden counterpart.
 documentation_v2/website/frontend/apps/editor/feature_inventory/
 ├── attributes_and_settings.md          the Attributes dialog: transform, identity, states, arsenal, vehicles
 ├── bottom_toolbelt.md                  the mode toolbar, the status bar read-outs, the edge grid references
+├── connections.md                      the Connect flow, Sync to, Group to, Trigger Owner, lines and panel
 ├── data_persistence_and_compile.md     the local draft, boot hydrate, conflict dialog, compile, tab lock
 ├── editor_route_loading.md             the editor route, its access tier and the boot overlay
 ├── feds_schema.md                      the entry schema: feature IDs, entry format, terms, gap rows
@@ -56,6 +57,7 @@ reused; a feature the code has and the inventory lacks gets a new ID in its area
 | SHELL — route and layout | [shell_route_and_layout.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/shell_route_and_layout.md) | 7: 6 shipped, 1 not built | yes |
 | SEL — selection | [selection.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/selection.md) | 11: 10 shipped, 1 partial | yes |
 | XFORM — transform and delete | [transform_and_delete.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/transform_and_delete.md) | 11: 8 shipped, 2 partial, 1 not built | yes |
+| CONN — connections | [connections.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/connections.md) | 8: 5 shipped, 3 partial | yes |
 | PLACE — placement | [placement.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) | 13: 11 shipped, 2 partial | yes |
 | RIGHT — asset palette | [right_asset_palette.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) | 14: 13 shipped, 1 not built | yes |
 | TOP — command strip | [top_command_strip.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/top_command_strip.md) | 19: 14 shipped, 1 partial, 4 not built | yes |

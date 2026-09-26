@@ -245,7 +245,8 @@ contradicted one. Record any further contradiction as file:line on both sides (b
 Every document uses these terms. Code identifiers are quoted exactly as spelled, even where they use
 another word.
 
-- **Mission Creator** — the 2D/3D CAD editor in which mission makers build missions. Code:
+- **Mission Creator** — the top-down 2D map editor in which mission makers build missions; its
+  only 3D view is the Arsenal's paper doll. Code:
   `apps/website/frontend/src/v2/apps/editor/`; route `/missions/:id/edit`
   (`apps/website/frontend/src/app_routes.rs:53`). Its documentation lives under
   `documentation_v2/website/frontend/apps/editor/`. Prose never calls it the Scenario Creator.

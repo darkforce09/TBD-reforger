@@ -66,3 +66,5 @@ pending edit.
 ## Related documentation
 
 - [Mission Creator feature inventory: attributes dialog](/documentation_v2/website/frontend/apps/editor/feature_inventory/attributes_and_settings.md) — the Arsenal tab the panels draw.
+- [Arsenal loadout editor](/documentation_v2/website/frontend/apps/editor/arsenal/arsenal_loadout_editor.md)
+  — the loadout editor these panels belong to: its behaviour, data and design.

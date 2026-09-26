@@ -15,7 +15,7 @@ documentation_v2/mod/tbd-framework/UI/
 ├── briefing/                     the Briefing screen over the map: navigation, ten pages, deploy
 ├── debrief_after_action_review/  the DEBRIEF scoreboard after the END banner
 ├── discord_identity_link/        linking a game identity to a platform account
-├── end_screen/                   the END banner: winner, reason and round length
+├── end_screen/                   the END banner: winner and reason
 ├── in_game_menu/                 the pause menu's added actions and the admin menu
 ├── lobby/                        the Lobby screen: factions, squads and seats, kit inspector
 ├── mission_selection/            the Mission Selector: terrains, missions, mission inspector
@@ -28,12 +28,13 @@ documentation_v2/mod/tbd-framework/UI/
 
 ## How it works
 
-Each screen folder holds `<screen>_specification.md`, a
+Each screen folder holds a README index and `<screen>_specification.md`, a
 [feature doc](/documentation_v2/standards/templates/feature_doc.md) of the screen as built and of
-its design target, and `visual_references/`: the Stitch mockup sets (`<panel>_mockup/`, an HTML
-export and its PNG) and `reference_screenshots/`, the Arma 3 captures the design started from.
-The lobby, mission selection and briefing folders also carry a README index, and their
-`reference_screenshots/` README breaks down each Arma 3 capture.
+its design target. Nine of them also hold `visual_references/`, with its own README: the Stitch
+mockup sets (`<panel>_mockup/`, an HTML export and its PNG) and, for the briefing, in-game menu,
+lobby, mission selection and spectator screens, `reference_screenshots/`, the Arma 3 captures the
+design started from, whose README breaks down each capture. The objective HUD, play area warning,
+safe start HUD and tactical marker palette folders have no design references.
 
 ### Where a screen's code lives
 

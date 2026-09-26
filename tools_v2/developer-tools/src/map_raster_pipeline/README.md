@@ -88,3 +88,5 @@ read back through the map engine's validating reader before they are written.
 - [Glyph assets](/assets_v2/glyphs/README.md) — the glyph sources and the atlas.
 - [CI command group](/tools_v2/xtask/src/commands/ci/README.md) — the map tasks that run this
   pipeline.
+- [Map raster pipeline](/documentation_v2/tools_v2/developer-tools/map_raster_pipeline.md) — the
+  satellite, Map view, label, water and glyph lanes in depth, with their rules and open work.

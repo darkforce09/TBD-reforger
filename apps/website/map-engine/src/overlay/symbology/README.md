@@ -81,7 +81,7 @@ UI framework or editor state; browser I/O (the atlas upload, the lane binds) com
 
 ## Related documentation
 
-- [Map symbology](/documentation_v2/design_system/military_symbology.md) — the unit, vehicle and
+- [Map symbology](/documentation_v2/design_system/map_symbology.md) — the unit, vehicle and
   marker symbols and side tints, and how the game draws the same markers.
 - [Design tokens](/documentation_v2/design_system/design_tokens.md) — the palette the side tints
   come from.

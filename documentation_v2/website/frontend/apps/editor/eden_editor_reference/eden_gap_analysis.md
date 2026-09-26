@@ -140,14 +140,14 @@ so they have no rows; four of them carry local IDs in Part 3.
 
 | eden_id | tbd_id | parity | ticket | gap_notes |
 |---------|--------|--------|----------|-----------|
-| CONN-START-001 | — | match | T-672 ✅ · T-768 ✅ | Right-click an entity › "Connect" › "Sync to", "Group to" or "Set Trigger Owner", then click the target; Esc cancels (`ui/docks/context_menu/`) |
-| CONN-GROUP-001 | ORBAT-* | match | T-672 ✅ | "Group to", or Ctrl/Cmd+drag of one slot onto another, moves it into the target's squad (`regroup_slot_onto`, `input/pointer_gestures/pointer_up.rs`); the ORBAT Manager edits squads as well |
-| CONN-SYNC-001 | — | partial | T-672 ✅ | "Sync to" draws and stores a sync connection, saved with the mission; the compile carries no connection, so a sync does nothing in the game |
-| CONN-TRG-OWNER-001 | — | partial | T-079 ✅ | "Set Trigger Owner" and the trigger's "Owner" field set it, with a dashed owner line; triggers do not reach the game (RIGHT-MODE-003) |
+| CONN-START-001 | CONN-START-001 | match | T-672 ✅ · T-768 ✅ | Right-click an entity › "Connect" › "Sync to", "Group to" or "Set Trigger Owner", then click the target; Esc cancels (`ui/docks/context_menu/`) |
+| CONN-GROUP-001 | CONN-GROUP-001 | match | T-672 ✅ | Ctrl/Cmd+drag of one slot onto another moves it into the target's squad (XFORM-REGROUP-001, `regroup_slot_onto`, `input/pointer_gestures/pointer_up.rs`); the ORBAT Manager edits squads as well. "Group to" only stores a `group` connection and changes no squad |
+| CONN-SYNC-001 | CONN-SYNC-001 | partial | T-672 ✅ | "Sync to" draws and stores a sync connection, saved with the mission; the compile carries no connection, so a sync does nothing in the game |
+| CONN-TRG-OWNER-001 | CONN-TRG-OWNER-001 | partial | T-079 ✅ | The trigger's "Owner" field sets it, with a dashed owner line; "Set Trigger Owner" only stores a `triggerOwner` connection between two slots or vehicles; triggers do not reach the game (RIGHT-MODE-003) |
 | CONN-RAND-START-001 | — | missing | — · wb | Needs waypoints (RIGHT-MODE-004) |
 | CONN-WP-ACT-001 | — | missing | — · wb | Needs waypoints |
 | CONN-WP-ATTACH-001 | — | missing | — · wb | Needs waypoints |
-| CONN-DEL-001 | — | match | T-672 ✅ · T-780 ✅ | Delete removes a selected connection line, and deleting an entity removes its connections (`input/window_keydown.rs`) |
+| CONN-DEL-001 | CONN-DEL-001 | match | T-672 ✅ · T-780 ✅ | Delete removes a selected connection line, and deleting an entity removes its connections (`input/window_keydown.rs`) |
 
 ### Vehicle crew — CREW (4)
 

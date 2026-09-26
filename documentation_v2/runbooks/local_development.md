@@ -326,7 +326,9 @@ Expected: `{"status":"ok"}` with status 200; `curl` exits 22 when the probe answ
 does while the database is down or `_sqlx_migrations` records a failed migration. `/healthz` and
 `/metrics` sit at the root, outside `/api/v1`. Then `http://localhost:3000` shows the app, signed
 in after step 6. Before pushing, `cargo xtask ci ci-local` replays the CI suite; it needs step 2
-first (the [CI task commands](/tools_v2/xtask/src/commands/ci/README.md) list its steps).
+first (the [CI task commands](/tools_v2/xtask/src/commands/ci/README.md) list its steps). The
+[testing and CI runbook](/documentation_v2/runbooks/testing_and_ci.md) runs the gates one by one
+and says where each one also runs.
 
 ## Troubleshooting
 

@@ -56,7 +56,9 @@ which walks every production file of the tree.
   - every production file opens with a `//!` header, stays within 500 lines, documents every
     visible item, holds no inline test module and names no ticket or wave in a comment
     (`v2_production_files_meet_the_documentation_standard` in `tests/doc_audit/mod.rs`);
-  - nothing imports `website_graphics_engine` (`cargo xtask verify engine-layers`);
+  - nothing imports `website_graphics_engine` (`cargo xtask verify engine-layers`, rule 6 of the
+    [engine boundary rules](/documentation_v2/standards/engine_boundary_rules.md); the map engine's
+    packet boundary, section 2C there, is the only path to the renderer);
   - a workspace imports from `core/` and `website-map-engine`, never from `pages/` or a sibling
     workspace, and nothing in `core/` imports from `pages/`; `core/` does import the Mission
     Creator's `shell` module, at the four places its README lists, so shared code is not

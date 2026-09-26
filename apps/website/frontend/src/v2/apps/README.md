@@ -12,7 +12,7 @@ canvas mount.
 apps/website/frontend/src/v2/apps/
 ├── aar/      reserved for the after-action review workspace; holds no code
 ├── debug/    the URL-only benches: the building viewer and the world line-of-sight bench
-├── editor/   the Mission Creator, the 2D/3D CAD workspace in which missions are built
+├── editor/   the Mission Creator, the top-down 2D CAD workspace in which missions are built
 ├── mod.rs    the module tree
 └── planner/  reserved for the mission planner workspace; holds no code
 ```

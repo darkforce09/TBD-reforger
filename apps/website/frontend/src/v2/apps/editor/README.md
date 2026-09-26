@@ -1,8 +1,8 @@
 # Mission Creator
 
-The [Mission Creator](/documentation_v2/glossary.md#mission-creator): the 2D/3D CAD workspace in
-which mission makers build a [mission](/documentation_v2/glossary.md#mission) on the map. This
-folder holds the editor page, the chrome docked around the map, the canvas mount and its overlays,
+The [Mission Creator](/documentation_v2/glossary.md#mission-creator): the top-down 2D CAD
+workspace in which mission makers build a [mission](/documentation_v2/glossary.md#mission) on the
+map. This folder holds the editor page, the chrome docked around the map, the canvas mount and its overlays,
 the interactive map tools, the [arsenal](/documentation_v2/glossary.md#arsenal) loadout editor and
 the browser session they all run in.
 

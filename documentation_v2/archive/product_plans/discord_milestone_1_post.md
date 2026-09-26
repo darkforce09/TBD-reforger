@@ -1,4 +1,4 @@
-**Status:** archived
+**Status:** archived — see [documentation_v2/product_roadmap.md](/documentation_v2/product_roadmap.md)
 
 # Milestone #1 — Discord announcement (copy/paste)
 

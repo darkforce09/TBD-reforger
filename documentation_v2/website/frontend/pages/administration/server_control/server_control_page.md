@@ -238,6 +238,8 @@ FLEET SCENARIOS SHEET (side sheet)            CREDENTIALS SHEET (side sheet)
 - [T-1022 — Add website admin UI to manage game servers](/.ai/tickets/T-1022.toml) (idea, no
   plan): the page creates, edits and deactivates servers, which the API already allows, and the
   event manager sets an operation's server, so the deployment form can offer its event missions.
+- [T-086 — Server Control + RCON API](/.ai/tickets/T-086.toml) (deferred, no plan): a live server
+  control panel wired to an RCON backend; the page has no RCON console and calls no RCON route.
 
 ## Decisions
 

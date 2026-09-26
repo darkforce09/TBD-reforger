@@ -1,3 +1,5 @@
+**Status:** archived — see [documentation_v2/website/frontend/apps/editor/decisions.md](/documentation_v2/website/frontend/apps/editor/decisions.md)
+
 ---
 name: Mission Creator — Agent Execution Plan
 overview: "Self-contained agent handoff for Mission Creator. T-057–T-067 shipped. T-068 Phase 1 shipped @ 2026-06-27; active slice T-068.7 (compat matrix spec). T-090.1.1 Map basemap shipped @ 6e06e679."

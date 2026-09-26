@@ -122,3 +122,5 @@ other map-object schemas, the prefab classification rules and the glyph keys all
 
 - [TBD Voice game bridge contract](/documentation_v2/contracts_v2/definitions/bridge_messages.md)
   — the transport, envelope and lifecycle of `bridge-messages.schema.json`.
+- [Schema evolution policy](/documentation_v2/contracts_v2/schema_evolution_policy.md) — how a
+  schema here may change and what a change must carry with it.

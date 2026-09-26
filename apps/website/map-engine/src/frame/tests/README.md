@@ -5,7 +5,8 @@ vocabulary and hands it one packet per frame.
 
 ## Contents
 
-- `damage_discipline.rs` — the `ENGINE_SPLIT_PROGRAM.md` §2C rule-3 pin: `render()` refuses an
+- `damage_discipline.rs` — the pin for rule 3 of section 2C in the
+  [engine boundary rules](/documentation_v2/standards/engine_boundary_rules.md): `render()` refuses an
   undamaged frame, every lane mutation marks damage, and the packet borrows `RenderEngine`'s
   persistent batch list rather than rebuilding one per frame.
 

@@ -75,7 +75,7 @@ error exits 2.
     runs `slice-collisions` (`COLLIDE` in
     `tools_v2/xtask/src/commands/platform/wave_execution/mod.rs`); wave landing and closing,
     which repack;
-  - the command center and people planning a wave.
+  - the [orchestrator](/documentation_v2/glossary.md#orchestrator) and people planning a wave.
 - Rules: the lock has one writer, `wave repack`, and `slice-collisions --repack` calls that same
   writer; the compilation and packing stay in `ticket-engine`, and `mod.rs` must delegate to it
   (`ticket_implementations_have_one_owner` in

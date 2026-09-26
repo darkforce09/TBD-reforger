@@ -2,7 +2,7 @@
 
 The `/leaderboards` page, titled Global Leaderboards: five orderings of the same operator table,
 ranked and searched by the [API](/documentation_v2/glossary.md#api), with a slide-over dossier of
-one operator's statistics behind every row.
+one operator's statistics behind the first podium place and every roster row.
 
 ## Contents
 
@@ -28,8 +28,10 @@ when the rank is missing or zero) and holds the win-rate scaling the other files
 command win rate arrives as a fraction and shows as a percentage, while the attendance rate
 arrives multiplied out. `board_table.rs` puts the top three on a podium and the rest in roster
 rows, each with the statistic pair of the active category; an avatar emits an `<img src>` only for
-an `http(s)` URL and falls back to initials otherwise. A row click opens the "Operator Dossier"
-sheet, whose `OperatorDossier` fetches that operator's card.
+an `http(s)` URL and falls back to initials otherwise. The first podium place carries a
+"[ VIEW DOSSIER ]" button and every roster row is clickable; either opens the "Operator Dossier"
+sheet, whose `OperatorDossier` fetches that operator's card. The second and third podium places
+open nothing.
 
 | Tab | `category` | Statistic pair on a row |
 |---|---|---|
@@ -67,7 +69,7 @@ sheet, whose `OperatorDossier` fetches that operator's card.
 | board failed | "Failed to load the leaderboard." |
 | empty ladder | "No ranked operators yet — telemetry has not reported any tracked matches." |
 | no search match | "No operators match your search." |
-| loaded | the podium, each place with "[ VIEW DOSSIER ]", and the roster rows |
+| loaded | the podium, the first place with "[ VIEW DOSSIER ]", and the clickable roster rows |
 | dossier loading | "Loading…" in the sheet |
 | dossier failed | "Failed to load this operator's record." |
 | dossier loaded | the avatar, name and "RANK #N", and the tiles "Kills", "Deaths", "K/D Ratio", "Team Kills", "Longest Kill", "Vehicles Destroyed", "Missions Played", "Command Wins", "Command Win Rate", "Total Operations" and "Attendance" |
