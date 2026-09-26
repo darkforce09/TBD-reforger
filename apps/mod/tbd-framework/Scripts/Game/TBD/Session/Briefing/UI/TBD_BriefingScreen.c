@@ -480,8 +480,3 @@ class TBD_BriefingScreen : TBD_DockScreen
 		return vector.Zero;
 	}
 }
-
-modded enum ChimeraMenuPreset
-{
-	TBD_UIBriefing
-}

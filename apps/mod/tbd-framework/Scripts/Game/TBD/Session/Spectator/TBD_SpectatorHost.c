@@ -106,7 +106,7 @@ modded class SCR_PlayerController
 	//! by the next. A reliable channel would queue and replay stale camera positions after a stall.
 	void TBD_ReportSpectatorCamera(vector position)
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 		{
 			Rpc(TBD_RpcAsk_SpectatorHostAt, position);
 			return;
@@ -193,7 +193,7 @@ class TBD_SpectatorHost
 	//! Called by `TBD_SpectatorComponent.OnPostInit` on authority (dedicated AND listen host).
 	static void Start(ResourceName hostPrefab, float maxRangeM)
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		if (s_bRunning)
@@ -281,7 +281,7 @@ class TBD_SpectatorHost
 	//! @authority server
 	protected static void Tick()
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		if (!s_mHosts)
@@ -725,7 +725,7 @@ class TBD_SpectatorHost
 	//! @authority server
 	static void MoveTo(int playerId, vector position)
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		if (!s_mHosts)

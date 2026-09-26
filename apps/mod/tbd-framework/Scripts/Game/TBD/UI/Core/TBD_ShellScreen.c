@@ -176,29 +176,3 @@ class TBD_ShellScreen : TBD_MenuBase
 		CloseScreen();
 	}
 }
-
-//! Presets TBD owns. Each entry needs a matching `MenuPreset` block in
-//! `Configs/System/chimeraMenus.conf` binding it to a layout and a class. Screens in later slices
-//! add their own `modded enum` block -- several across files are fine.
-//!
-//! Adding the enum value and the `.conf` is necessary but NOT sufficient. Until the addon's
-//! `resourceDatabase.rdb` lists `Configs/System/chimeraMenus.conf`, the engine cannot see it and
-//! logs, at every startup:
-//!
-//!     GUI       (E): Menu preset 'TBD_UIShell' not found!
-//!
-//! Only Workbench regenerates that index; the headless compile lane cannot. Proven by
-//! elimination, not assumed: the file was tried at both the vanilla path
-//! (`Configs/System/`) and at a custom path, with and without a `.meta`, and its content was even
-//! moved onto an already-indexed `.conf` path -- the error persisted in every case. There is also
-//! no script-side escape hatch: `MenuManager.RegisterPreset`, `OpenMenuByLayout`, `GetMenuPresets`
-//! and `FindPreset` all fail to compile, i.e. they do not exist.
-//!
-//! That startup line is therefore the exact green light: it disappears the moment the resource is
-//! registered, and it is cheap to check from the headless lane --
-//! `grep "Menu preset" <profile>/logs/logs_*/error.log`.
-modded enum ChimeraMenuPreset
-{
-	//! The bare shell. Opens TBD_ShellScreen with no content -- the end-to-end proof of the stack.
-	TBD_UIShell
-}

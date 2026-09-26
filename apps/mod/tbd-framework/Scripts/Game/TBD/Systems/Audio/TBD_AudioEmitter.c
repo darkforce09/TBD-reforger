@@ -628,7 +628,7 @@ modded class SCR_BaseGameMode
 
 		TBD_AudioEmitter.Clear();
 
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		if (!TBD_FrameworkManager.IsFrameworkWorld())

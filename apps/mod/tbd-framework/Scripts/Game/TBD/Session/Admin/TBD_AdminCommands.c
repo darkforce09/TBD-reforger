@@ -33,13 +33,13 @@ modded class SCR_ChatComponent
 		// this guard means: do not call super; the code must never reach public chat. Authority
 		// POSTs the code; every peer suppresses the echo. A bare token without this prefix is
 		// ordinary chat -- we do not filter beyond the command.
-		if (TBD_IdentityLink.TryConsumeBeforeBroadcast(this, msg, senderId, RplSession.Mode() != RplMode.Client))
+		if (TBD_IdentityLink.TryConsumeBeforeBroadcast(this, msg, senderId, TBD_Authority.IsServer()))
 			return;
 
 		super.OnNewMessage(msg, channelId, senderId);
 
 		// Authority only -- commands execute on the server.
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		if (!msg.StartsWith("#tbd"))

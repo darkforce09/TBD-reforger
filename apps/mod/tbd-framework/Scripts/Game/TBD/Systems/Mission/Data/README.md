@@ -11,8 +11,10 @@ loads and while its slot bodies materialize.
 apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/
 ├── TBD_EntityState.c           entities[] health, allowDamage, showModel and size, applied to placed bodies
 ├── TBD_GadgetFlags.c           slots[].gadgets: map, compass, watch, GPS and radio added or removed at spawn
+├── TBD_MissionFactionNames.c   a faction key's authored display name, falling back to the key
 ├── TBD_MissionParams.c         missionParams[] rows and the launch value chosen for each symbol
 ├── TBD_MissionSlotStruct.c     one compiled slot: position, kit, loadout gear and cargo, seat identity
+├── TBD_MissionVariants.c       whether a variantId-gated row is in the active variant selection
 ├── TBD_MissionVehicleStruct.c  vehicles[] rows, their crew seats, and the roster that seats crews
 └── TBD_VehicleState.c          vehicles[] lock, fuel and ammo, applied to the placed vehicles
 ```
@@ -54,6 +56,13 @@ field even when its key is absent and leaves an absent scalar at its initializer
 - a string is present when it is not empty, a container when its `Count()` is not 0;
 - a bool cannot tell absent from `false`, so `lock`, `allowDamage` and `showModel` apply only when
   true, and gadget flags use a map whose `Find` is per-flag presence.
+
+`TBD_MissionFactionNames.DisplayName(doc, factionKey)` returns a faction's authored display name,
+or the key when the faction has none or is not declared; wire builders sanitise it.
+`TBD_MissionVariants.IsActive` gates a second-pass row on a `variantId`: an empty id always runs,
+and the caller says whether selection is in force and what a missing active set means.
+`IsRowIncluded` is the loader's filter over its declared and active sets, which drops a dangling
+id with one WARNING.
 
 ## Authority
 

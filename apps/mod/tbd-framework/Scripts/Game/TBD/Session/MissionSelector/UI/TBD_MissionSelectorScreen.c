@@ -170,8 +170,3 @@ class TBD_MissionSelectorScreen : TBD_DockScreen
 		return m_Catalog.FindMission(m_Browser.GetSelectedId());
 	}
 }
-
-modded enum ChimeraMenuPreset
-{
-	TBD_UIMissionSelector
-}

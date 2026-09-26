@@ -34,7 +34,7 @@ modded class SCR_PlayerController
 		// Authority only -- a dedicated client has no mission document and must ask; on a listen
 		// host this controller already IS the authority, so RPCing ourselves would be a round trip
 		// to nowhere.
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 		{
 			Rpc(TBD_RpcAsk_Markers);
 			return;

@@ -14,7 +14,8 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/UI/
 ## How it works
 
 `TBD_AdminScreen` extends `TBD_ShellScreen` and uses the shared shell layout through the
-`TBD_UIAdmin` preset that the file's `modded enum ChimeraMenuPreset` adds and
+`TBD_UIAdmin` preset that
+`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/ChimeraMenuPreset.c` adds and
 `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf` binds. `TBD_AdminClient` opens it through
 `TBD_MenuStack`, from the `TBD_AdminMenu` key (F8) or the `#tbd menu` chat command. On open it
 draws the cached `TBD_AdminPayload`, asks for a fresh snapshot, and asks again every `REFRESH_MS`

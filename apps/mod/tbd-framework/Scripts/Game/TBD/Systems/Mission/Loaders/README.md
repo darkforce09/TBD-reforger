@@ -80,7 +80,7 @@ again before anything loads them.
    and calls `TBD_EnvironmentReader.Apply`, `TBD_GadgetFlags.Bind`, `TBD_MissionParams.Resolve`,
    `TBD_ResultsReporter.Arm` and `TBD_IdentityLink.Arm`.
 
-`TBD_MissionLoader` answers every later query: `GetMission`, `GetSlots`, `GetSlotById`,
+`TBD_MissionLoader` answers every later query: `GetMission`, `GetMissionId`, `GetSlots`, `GetSlotById`,
 `GetFactions`, `GetZones`, `GetEntities`, `GetVehicles`, `GetSettings`, `GetRawJson` (for second-pass
 readers), `GetActiveVariantIds`, `HasEndTrigger` and the squad-leader lookups.
 

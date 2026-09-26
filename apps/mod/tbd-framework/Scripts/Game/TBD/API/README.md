@@ -10,6 +10,7 @@ linking, and the end-of-round match results.
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/API/
 ├── FleetCommands/                 the fleet command executor: claim, check, report, run
+├── Http/                          backend text: JSON escaping, UTC timestamps, backend description
 ├── TBD_BackendConfig.c            reads the backend URL and both secrets from the profile
 ├── TBD_GameRuntimeAnswer.c        classifies an answer: success, 409 refusal, transient, permanent
 ├── TBD_GameRuntimeHttp.c          the machine-credential transport: one answer per call, backoff

@@ -122,7 +122,7 @@ class TBD_LoadoutEquipComponent : SCR_BaseGameModeComponent
 		super.OnPostInit(owner);
 
 		// Authority only -- entity spawn + equip must run on the server.
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		if (!m_bRunLoadoutTest)

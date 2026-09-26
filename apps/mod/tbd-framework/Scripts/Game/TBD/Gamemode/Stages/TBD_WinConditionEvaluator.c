@@ -533,7 +533,7 @@ modded class SCR_BaseGameMode
 
 		TBD_WinConditionEvaluator.Clear();
 
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		// The fence that keeps this out of vanilla scenarios that merely have the mod loaded. It is

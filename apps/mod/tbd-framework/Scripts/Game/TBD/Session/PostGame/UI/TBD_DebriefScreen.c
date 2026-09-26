@@ -332,7 +332,7 @@ modded class TBD_ResultsReporter
 	{
 		outRows.Clear();
 
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		PlayerManager players = GetGame().GetPlayerManager();

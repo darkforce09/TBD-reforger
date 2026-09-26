@@ -383,7 +383,7 @@ modded class SCR_BaseGameMode
 
 		TBD_WeatherRuntime.Clear();
 
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		if (!TBD_FrameworkManager.IsFrameworkWorld())

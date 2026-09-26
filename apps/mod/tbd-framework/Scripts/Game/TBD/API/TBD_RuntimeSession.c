@@ -113,7 +113,7 @@ class TBD_RuntimeSession
 	//! world. A session still recorded from an earlier world is superseded by the new start.
 	static void Start()
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		if (!TBD_BackendConfig.Get())

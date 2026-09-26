@@ -617,6 +617,17 @@ class TBD_MissionLoader
 		return s_Mission;
 	}
 
+	//! The loaded mission document's `meta.id`.
+	//! @return the id, or empty when no document or no `meta` is held
+	static string GetMissionId()
+	{
+		TBD_MissionDocumentStruct doc = GetMission();
+		if (!doc || !doc.meta)
+			return string.Empty;
+
+		return doc.meta.id;
+	}
+
 	//! T-654 -- the active variant ids the loaded document was filtered with, or null when no
 	//! VALID mission is loaded / the document declares no variants[] key. Readers that still
 	//! parse GetRawJson() (objectives, editorTriggers) must gate their rows on THIS set.

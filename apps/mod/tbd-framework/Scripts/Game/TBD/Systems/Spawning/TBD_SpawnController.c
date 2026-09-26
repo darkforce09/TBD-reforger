@@ -16,7 +16,7 @@ modded class SCR_PlayerController
 	//! CLIENT (owner) -> SERVER: "put me in a body now" (Ready & Continue).
 	void TBD_RequestReadyDeploy()
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 		{
 			Rpc(TBD_RpcAsk_ReadyDeploy);
 			return;

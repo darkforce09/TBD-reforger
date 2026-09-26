@@ -9,6 +9,7 @@ typography tokens, and the icon lookup.
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/
+├── ChimeraMenuPreset.c  ChimeraMenuPreset: every TBD menu preset, one modded enum for the framework
 ├── TBD_DockScreen.c     TBD_DockScreen: base of the dock screens; mounts the shared bars, routes tabs
 ├── TBD_ListBox.c        TBD_ListBox: the pooled list, rows re-bound not rebuilt; TBD_ListRowData
 ├── TBD_ListBoxRow.c     TBD_ListBoxRow: one pooled row, an item or a section heading
@@ -27,8 +28,8 @@ apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/
 
 ### Screens and the stack
 
-A TBD screen is a `ChimeraMenuPreset` added by a `modded enum ChimeraMenuPreset` beside its
-screen class and declared in `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf` with its
+A TBD screen is a `ChimeraMenuPreset` member added in `ChimeraMenuPreset.c`, the one
+`modded enum ChimeraMenuPreset` of the framework, and declared in `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf` with its
 layout and class. Screens are opened through `TBD_MenuStack` (`Open`, `Replace`, `Close`,
 `CloseAll`), which keeps these invariants:
 

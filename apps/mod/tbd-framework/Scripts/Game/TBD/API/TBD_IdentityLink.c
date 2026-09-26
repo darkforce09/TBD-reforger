@@ -113,7 +113,7 @@ class TBD_IdentityLink
 	//! calling this twice must be harmless.
 	static void Arm()
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		if (!s_aQueue)

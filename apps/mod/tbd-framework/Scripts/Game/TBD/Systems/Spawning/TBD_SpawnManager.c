@@ -830,7 +830,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! @authority server
 	bool ReleaseSlot(int playerId)
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return false;
 
 		if (!m_mPlayerSlot.Contains(playerId))
@@ -1914,7 +1914,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		// UUID.NULL_UUID outright when `!Replication.IsServer()` (SCR_PlayerIdentityUtils.c:9-15),
 		// so off the authority EVERY player resolves to a `player:<id>` key and the gate would
 		// refuse a stage it has no business judging.
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return string.Empty;
 
 		// ONE LIFE off means there is no invariant to protect and nothing to refuse. An operator
@@ -2110,7 +2110,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	{
 		super.OnPlayerAuditSuccess(playerId);
 
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		// A second audit for a connection we already processed. The test is NOT the epoch:
@@ -2357,7 +2357,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! @authority server
 	protected void ScheduleDeployClaimedHolders()
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		if (!m_bSlotBodiesMaterialized)
@@ -2369,7 +2369,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! @authority server
 	protected void DeployClaimedHolders()
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		foreach (int playerId, TBD_MissionSlotStruct slot : m_mPlayerSlot)
@@ -2425,7 +2425,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 	protected void ScheduleDeployAllConnectedPlayers()
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		if (!m_bSlotBodiesMaterialized)
@@ -2438,7 +2438,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	protected void DeployAllConnectedPlayers()
 	{
 		// Authority only -- spawning happens on the server.
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		array<int> players = {};
@@ -2531,7 +2531,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	bool DeployOnReady(int playerId, out string why)
 	{
 		why = string.Empty;
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 		{
 			why = "not the authority";
 			return false;
@@ -2715,7 +2715,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	protected TBD_EDeployResult DeployPlayerInternal(int playerId, bool forceFreshBody, bool adminOverride)
 	{
 		// Authority only -- slot assignment + binding run on the server.
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return TBD_EDeployResult.NOT_MINE;
 
 		// No valid framework mission -> vanilla owns spawning entirely.
@@ -3185,7 +3185,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! @authority server
 	protected void OnPlayerSpawnedHook(int playerId, IEntity controlledEntity)
 	{
-		if (RplSession.Mode() == RplMode.Client || !controlledEntity)
+		if (TBD_Authority.IsClient() || !controlledEntity)
 			return;
 
 		m_mSpawnSeen.Set(playerId, true);
@@ -3206,7 +3206,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	{
 		super.OnPlayerKilled(instigatorContextData);
 
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		int playerId = instigatorContextData.GetVictimPlayerID();
@@ -3357,7 +3357,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! @authority server
 	TBD_EDeployResult AdminRespawn(int playerId, string byAdmin = "unknown")
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return TBD_EDeployResult.NOT_MINE;
 
 		if (!IsPlayerDead(playerId))
@@ -3465,7 +3465,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	{
 		super.OnPlayerDisconnected(playerId, cause, timeout);
 
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		// ── T-181.24: DROP THE SPECTATOR STREAMING HOST BEFORE ANYTHING ELSE LOOKS AT THIS PLAYER ─

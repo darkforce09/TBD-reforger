@@ -59,7 +59,7 @@ class TBD_FleetCommandPoller
 	//! Claim from now on, while the world holds a runtime session.
 	static void Start()
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		s_iWorld++;

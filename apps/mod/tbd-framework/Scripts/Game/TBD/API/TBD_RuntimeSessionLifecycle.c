@@ -14,7 +14,7 @@ modded class SCR_BaseGameMode
 	{
 		super.OnGameStart();
 
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		if (!TBD_FrameworkManager.IsFrameworkWorld())

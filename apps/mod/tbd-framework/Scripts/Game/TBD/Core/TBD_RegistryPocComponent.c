@@ -16,7 +16,7 @@ class TBD_RegistryPocComponent : SCR_BaseGameModeComponent
 	{
 		super.OnPostInit(owner);
 
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		if (!m_bRunPoc)

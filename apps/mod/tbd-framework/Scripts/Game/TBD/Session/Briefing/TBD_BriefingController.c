@@ -340,7 +340,7 @@ modded class SCR_PlayerController
 	//! orders without diverging on everything else too.
 	void TBD_RequestBriefing()
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 		{
 			Rpc(TBD_RpcAsk_Briefing);
 			return;
@@ -394,7 +394,7 @@ modded class SCR_PlayerController
 	//! CLIENT (owner) -> SERVER: "I have read my orders."
 	void TBD_ReportReady()
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 		{
 			Rpc(TBD_RpcAsk_Ready);
 			return;

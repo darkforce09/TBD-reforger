@@ -11,6 +11,7 @@ development harness that equips an [arsenal](/documentation_v2/glossary/a_to_f.m
 apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Loadouts/
 ├── TBD_LoadoutEquipComponent.c  dev harness equipping $profile:TBD_LoadoutTest.json, and the loadout-export structs
 ├── TBD_LoadoutEquipHelper.c     TBD_LoadoutApplication: the server equip pass, its verify and its verdict
+├── TBD_LoadoutInventoryUtil.c   prefab names, gear counts, landing areas, parent chains, weapon storage
 └── TBD_LoadoutPreviewDresser.c  dresses the lobby's local preview character with a slot's kit and loadout
 ```
 
@@ -64,6 +65,11 @@ on (off by default), it reads `$profile:TBD_LoadoutTest.json`, the web arsenal's
 | `m_bRunLoadoutTest` | `0` | run the equip test on play; development only |
 | `m_sTestCharacter` | `Character_US_Base.et` | the minimal body to equip |
 | `m_vSpawnOrigin` | `6400 0 6400` | where the test body spawns |
+
+`TBD_LoadoutInventoryUtil` holds the stateless inventory queries the equip pass, the preview dresser
+and the gadget flags share: `PrefabOf`, `CountGear` (the equip verdict's denominator),
+`AreasForLabel` (a vest may land in the armored vest area), `IsRootedOn`, `WeaponStorageOf` and
+`WeaponStorageHas`.
 
 ## Authority
 

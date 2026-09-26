@@ -208,7 +208,7 @@ modded class SCR_PlayerController
 	{
 		// Authority only -- the snapshot reads server-owned state (slot map, life ledger, mission
 		// document), none of which exists in a client's process. Off the authority, ask for it.
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 		{
 			Rpc(TBD_RpcAsk_AdminSnapshot);
 			return;
@@ -243,7 +243,7 @@ modded class SCR_PlayerController
 		int actionId = action;
 
 		// Authority only -- the power itself runs server-side. Off the authority, ask for it.
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 		{
 			Rpc(TBD_RpcAsk_AdminAction, actionId, targetId);
 			return;

@@ -430,7 +430,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		GetGame().GetCallqueue().CallLater(PrintComponentRollCall, 0);
 
 		// Authority only -- clients never drive mission load or the stage machine.
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		SetStage(TBD_EGameStage.LOADING);
@@ -698,7 +698,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	//! @authority server
 	protected void OnPlayerSpawnedApplyNvg(int playerId, IEntity controlledEntity)
 	{
-		if (RplSession.Mode() == RplMode.Client || !controlledEntity)
+		if (TBD_Authority.IsClient() || !controlledEntity)
 			return;
 		if (m_bNightVision)
 			return;
@@ -729,7 +729,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	//! this only announces the banner so a dedicated server log still names winner + reason.
 	protected void OnEnterEnd()
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		string winner = m_sEndWinner;
@@ -838,7 +838,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 
 	protected void SnapshotDebriefBoard()
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		array<ref TBD_DebriefRow> rows = {};
@@ -851,7 +851,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	{
 		super.OnPlayerKilled(instigatorContextData);
 
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		if (m_Stage != TBD_EGameStage.LIVE)
@@ -1195,7 +1195,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	//! @authority server
 	protected void OnEnterBriefing()
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		int seconds = TBD_MissionFlow.BriefingSeconds();
@@ -1230,7 +1230,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	//! @authority server
 	protected void OnEnterLive()
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		ArmFactionEliminated();
@@ -1424,7 +1424,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	protected void Broadcast(string text)
 	{
 		// Authority only -- the server is the only machine that should be telling everyone anything.
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		Print("[TBD][Flow] broadcast: " + text, LogLevel.NORMAL);

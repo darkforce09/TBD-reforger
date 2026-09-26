@@ -8,6 +8,8 @@ under AI control when the round goes live, and issues their waypoints in order.
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Systems/AI/
+├── TBD_AIGroupFactory.c   spawns an empty SCR_AIGroup from a prefab and adopts a member's faction
+├── TBD_AIWireEnums.c      the speedMode and behaviour tokens and the movement speed they select
 ├── TBD_GroupState.c       group AI defaults: combat mode, formation, speed and behaviour
 └── TBD_WaypointRuntime.c  waypoint chains: the AI spawn gate, arming groups, issuing waypoints
 ```
@@ -46,6 +48,14 @@ applies its defaults once: combat mode through `SCR_AIGroupUtilityComponent`, fo
 `AIFormationComponent`, and a movement-speed setting with the `DEFAULT` origin, so a waypoint's own
 speed setting wins. Only groups that `TBD_WaypointRuntime` armed have a live group, so the defaults
 of a group without waypoints take no effect.
+
+`TBD_AIGroupFactory.SpawnGroup(prefab, origin, failure)` spawns an empty `SCR_AIGroup`, deletes a
+spawned entity that is not a group, and reports `PREFAB_UNLOADABLE` or `NOT_A_GROUP`;
+`AdoptMemberFaction` gives the group a member's affiliated or default faction.
+`TBD_AIWireEnums` holds the `speedMode` and `behaviour` tokens: `SpeedFromSpeedMode` maps
+limited, normal and full to walk, run and sprint, `SpeedCeilingFromBehaviour` maps careless, safe
+and stealth to walk, aware to run and combat to sprint, and `SpeedFromWire` lets an explicit
+`speedMode` win.
 
 ## Authority
 

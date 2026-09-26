@@ -2040,7 +2040,7 @@ modded class SCR_BaseGameMode
 
 		// Clients hold no mission document, so a client-side evaluation would have no trigger to
 		// evaluate and no authority to act on one.
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		// The fence that keeps this out of vanilla scenarios that merely have the mod loaded. It is

@@ -9,6 +9,7 @@ placement scatter that jitters slot spawn positions.
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Ingestion/
 ├── TBD_EnvironmentReader.c  environment fog, wind, wind direction and view distance, applied once at load
+├── TBD_MissionJsonPass.c    opens the held mission JSON for a system's own typed second read
 ├── TBD_PlacementScatter.c   deterministic slot and group spawn offsets from placementRadius and placementShape
 └── TBD_WeatherRuntime.c     weatherTimeline keyframes, each forced at its minute of the live round
 ```
@@ -34,6 +35,11 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Ingestion/
   since the round went live, once: `TimeAndWeatherManagerEntity.ForceWeatherTo` with the preset,
   looping so it holds until the next keyframe, plus an optional `fog` and `windDirDeg` through the
   same overrides `TBD_EnvironmentReader` uses. Every transition logs a `[TBD][Weather]` line.
+
+`TBD_MissionJsonPass.LoadRoot(outcome, renameKeyFrom, renameKeyTo)` is the first half of every
+second-pass read: it fetches `TBD_MissionLoader.GetRawJson()`, optionally renames one JSON key on a
+copy (a key that is an Enforce keyword, such as `event`), and returns a loaded `JsonLoadContext`
+whose root the caller reads into its own struct, or null with `NO_DOCUMENT` or `NOT_JSON`.
 
 ## Authority
 

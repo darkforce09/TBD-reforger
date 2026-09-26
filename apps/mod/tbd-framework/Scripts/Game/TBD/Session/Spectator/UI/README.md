@@ -14,7 +14,8 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Session/Spectator/UI/
 
 `TBD_SpectatorScreen` extends `TBD_ShellScreen` and reuses the shared shell layout
 (`apps/mod/tbd-framework/UI/layouts/Common/TBD_ScreenShell.layout`) through the `TBD_Spectator`
-preset that the file's `modded enum ChimeraMenuPreset` adds and
+preset that
+`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/ChimeraMenuPreset.c` adds and
 `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf` binds. On open it repaints the backdrop
 transparent and the panel to `SURFACE_GLASS`, so the world stays visible behind the list. Every
 `REFRESH_MS` (1 s) it asks `TBD_SpectatorTargets.Collect` for the watchable players and marks the

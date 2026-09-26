@@ -586,7 +586,7 @@ modded class SCR_BaseGameMode
 
 		m_bTBD_TaskTickArmed = true;
 
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 		{
 			GetGame().GetCallqueue().CallLater(TBD_TaskHudTick, TBD_TaskStateMachine.TICK_MS, false);
 			return;

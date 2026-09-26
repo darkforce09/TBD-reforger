@@ -27,7 +27,8 @@ OverlayDock the Modes and version popovers
 ```
 
 `TBD_MissionSelectorScreen` extends `TBD_DockScreen` and opens through `TBD_MenuStack` on the
-`TBD_UIMissionSelector` preset, which the file's `modded enum ChimeraMenuPreset` adds and
+`TBD_UIMissionSelector` preset, which
+`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/ChimeraMenuPreset.c` adds and
 `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf` binds to
 `apps/mod/tbd-framework/UI/layouts/Session/MissionSelector/TBD_MissionSelector.layout`. `Toggle()`
 raises or drops it. On open it reads `TBD_MissionCatalog.Get()`, mounts the three panels and wires

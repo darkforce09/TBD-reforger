@@ -89,7 +89,7 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 
 		m_mViolations = new map<int, ref TBD_PlayAreaViolation>();
 
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		GetGame().GetCallqueue().CallLater(Tick, TICK_MS, true);

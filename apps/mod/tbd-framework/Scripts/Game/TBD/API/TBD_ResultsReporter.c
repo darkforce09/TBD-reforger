@@ -102,7 +102,7 @@ class TBD_ResultsReporter
 	//! here because there is one instance of this tick per process.
 	static void Arm()
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		ResetRound();
@@ -174,7 +174,7 @@ class TBD_ResultsReporter
 	//! @authority server
 	static void OnStageChanged(TBD_EGameStage stage)
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		// A restart back through LOADING is a new round, not a continuation of the old one.

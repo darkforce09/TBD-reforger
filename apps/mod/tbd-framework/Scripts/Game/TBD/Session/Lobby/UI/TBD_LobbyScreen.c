@@ -223,11 +223,6 @@ class TBD_LobbyScreen : TBD_DockScreen
 	}
 }
 
-modded enum ChimeraMenuPreset
-{
-	TBD_UILobby
-}
-
 modded class PauseMenuUI
 {
 	protected SCR_ButtonTextComponent m_TbdChangeSlotButton;

@@ -100,7 +100,7 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		// null check on every teardown.
 		m_mHudSignatures = new map<int, string>();
 
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		GetGame().GetCallqueue().CallLater(Tick, TICK_MS, true);

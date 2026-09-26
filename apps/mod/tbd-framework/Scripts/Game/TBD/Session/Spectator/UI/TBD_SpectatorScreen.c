@@ -193,11 +193,3 @@ class TBD_SpectatorScreen : TBD_ShellScreen
 		Refresh();
 	}
 }
-
-//! The spectator roster. Bound to the shared shell layout in
-//! `Configs/System/chimeraMenus.conf`; see the registration note in TBD_ShellScreen for why that
-//! file needs one Workbench pass before the engine can see it.
-modded enum ChimeraMenuPreset
-{
-	TBD_Spectator
-}

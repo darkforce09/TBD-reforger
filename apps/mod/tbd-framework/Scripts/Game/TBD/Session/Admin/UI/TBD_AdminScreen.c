@@ -604,23 +604,3 @@ class TBD_AdminScreen : TBD_ShellScreen
 		return "+";
 	}
 }
-
-//! The admin preset. Bound to a layout and this class in `Configs/System/chimeraMenus.conf`.
-//!
-//! Adding this enum value and the `.conf` block is necessary but NOT sufficient. Until the addon's
-//! `resourceDatabase.rdb` lists `Configs/System/chimeraMenus.conf`, the engine cannot see the
-//! preset and logs, at every startup:
-//!
-//!     GUI       (E): Menu preset 'TBD_UIAdmin' not found!
-//!
-//! Only a Workbench pass regenerates that index; the headless compile lane cannot. Everything in
-//! this slice compiles and is structurally complete; the screen cannot OPEN until that one pass.
-//! Same wall the shell hit at T-181.7 and the briefing at T-181.9.2 -- see the measured note in
-//! `TBD_UILayouts`.
-//!
-//! **The `#tbd` chat commands are unaffected and remain the operable admin surface meanwhile**,
-//! and they now write to the same audit trail this screen reads.
-modded enum ChimeraMenuPreset
-{
-	TBD_UIAdmin
-}

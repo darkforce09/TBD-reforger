@@ -34,7 +34,7 @@ modded class SCR_PlayerController
 		// Authority only -- a dedicated client has no mission document and must ask; on a listen
 		// host this controller already IS the authority, so RPCing ourselves would be a round trip
 		// to nowhere.
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 		{
 			Rpc(TBD_RpcAsk_RadioNets);
 			return;
@@ -62,7 +62,7 @@ modded class SCR_PlayerController
 	//! already uses for it.
 	void TBD_PushRadioNets(notnull TBD_RadioWire wire)
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		if (GetGame().GetPlayerController() == this)

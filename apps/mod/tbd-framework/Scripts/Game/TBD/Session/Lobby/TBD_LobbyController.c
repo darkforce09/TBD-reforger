@@ -28,7 +28,7 @@ modded class SCR_PlayerController
 	//! CLIENT (owner) -> SERVER: "what does the board look like right now".
 	void TBD_RequestLobbyRoster()
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 		{
 			Rpc(TBD_RpcAsk_LobbyRoster);
 			return;
@@ -62,7 +62,7 @@ modded class SCR_PlayerController
 	//! string it likes and gets a refusal.
 	void TBD_RequestClaimSlot(string slotKey)
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 		{
 			Rpc(TBD_RpcAsk_ClaimSlot, slotKey);
 			return;
@@ -101,7 +101,7 @@ modded class SCR_PlayerController
 	//! seat you hold, and the server already knows which one that is.
 	void TBD_RequestReleaseSlot()
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 		{
 			Rpc(TBD_RpcAsk_ReleaseSlot);
 			return;
@@ -137,7 +137,7 @@ modded class SCR_PlayerController
 	//! reason release does not - the seat is server state, and a client cannot name one.
 	void TBD_RequestDeploy()
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 		{
 			Rpc(TBD_RpcAsk_Deploy);
 			return;

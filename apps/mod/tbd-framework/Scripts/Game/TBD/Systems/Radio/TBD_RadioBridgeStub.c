@@ -50,7 +50,7 @@ class TBD_RadioBridgeStub
 	//! the mapping in a file this slice does not own.
 	static void OnPlayerSpawnedById(int playerId)
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		TBD_RadioService.BuildForPlayer(playerId);

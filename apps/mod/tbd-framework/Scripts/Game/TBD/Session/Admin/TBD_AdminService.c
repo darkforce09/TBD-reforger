@@ -131,7 +131,7 @@ class TBD_AdminService
 
 		// Authority only -- every power below mutates server-owned state (lives, bodies, the stage
 		// machine). A client build reaching here would half-run them locally and desync.
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return "TBD: admin actions execute on the server only.";
 
 		if (!IsAdmin(callerId))
@@ -164,7 +164,7 @@ class TBD_AdminService
 
 		// Authority only -- the stage machine is server-owned; `m_Stage` replicates outward and a
 		// client writing it would be overwritten on the next BumpMe anyway.
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return "TBD: admin actions execute on the server only.";
 
 		if (!IsAdmin(callerId))
@@ -193,7 +193,7 @@ class TBD_AdminService
 
 		// Authority only -- the countdown and every damage mutation are server-owned; a client
 		// build reaching here would half-run them locally and protect nobody.
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return "TBD: admin actions execute on the server only.";
 
 		if (!IsAdmin(callerId))
@@ -270,7 +270,7 @@ class TBD_AdminService
 		// Authority only -- the waiver and the census are server-owned, and off the authority
 		// vanilla's GetPlayerIdentityId returns NULL_UUID for everybody, so a client build would
 		// read a census that is pure noise.
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return "TBD: admin actions execute on the server only.";
 
 		if (!IsAdmin(callerId))

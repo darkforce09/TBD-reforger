@@ -205,7 +205,7 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 
 		// Authority only -- the countdown, the sweeps and every damage mutation are server-owned;
 		// a client running them would desync and would still not protect anybody.
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		m_iConfiguredSeconds = DEFAULT_COUNTDOWN_SECONDS;
@@ -239,7 +239,7 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 	void OnStageChanged(TBD_EGameStage stage)
 	{
 		// Authority only -- the phase machine is server-owned (TBD_FrameworkManager.SetStage).
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		if (stage == TBD_EGameStage.LOBBY || stage == TBD_EGameStage.BRIEFING || stage == TBD_EGameStage.SAFE_START)
@@ -329,7 +329,7 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 	void Lift(string reason)
 	{
 		// Authority only -- restoring damage is a server-side mutation of server-owned bodies.
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		if (!m_bArmed && m_mHeld.Count() == 0)
@@ -367,7 +367,7 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 	void GoLive(string reason)
 	{
 		// Authority only -- advancing the round is server-owned.
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		TBD_FrameworkManager framework = TBD_FrameworkManager.GetInstance();
@@ -953,7 +953,7 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 		ok = false;
 
 		// Authority only -- the countdown replicates outward from here.
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return "TBD: safestart is server-side only.";
 
 		if (seconds < MIN_COUNTDOWN_SECONDS || seconds > MAX_COUNTDOWN_SECONDS)
@@ -1042,7 +1042,7 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 	protected void Broadcast(string text)
 	{
 		// Authority only -- the server is the only machine that should be telling everyone anything.
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		Print("[TBD][Safestart] broadcast: " + text, LogLevel.NORMAL);

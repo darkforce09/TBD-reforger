@@ -25,7 +25,7 @@ class TBD_TaskHud
 	//! Server: push the current assigned snapshot to every connected player.
 	static void PushToPlayers()
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		PlayerManager players = GetGame().GetPlayerManager();
@@ -204,7 +204,7 @@ modded class SCR_PlayerController
 {
 	void TBD_RequestTaskHud()
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 		{
 			Rpc(TBD_RpcAsk_TaskHud);
 			return;
@@ -223,7 +223,7 @@ modded class SCR_PlayerController
 	void TBD_PushTaskHud(array<int> xs, array<int> zs, array<string> icons, array<string> labels,
 		array<string> ids, array<string> states)
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		if (GetGame().GetPlayerController() == this)

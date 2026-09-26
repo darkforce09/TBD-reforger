@@ -26,7 +26,8 @@ BottomDock  TBD_SessionBottomBar                         [ Lock Lobby ] [ Ready 
 ```
 
 `TBD_LobbyScreen` extends `TBD_DockScreen` and opens through `TBD_MenuStack` on the `TBD_UILobby`
-preset, which the file's `modded enum ChimeraMenuPreset` adds and
+preset, which
+`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/ChimeraMenuPreset.c` adds and
 `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf` binds to
 `apps/mod/tbd-framework/UI/layouts/Session/Lobby/TBD_LobbyScreen.layout`. It is reached from the
 selector's top-bar tab, and from the pause menu: the file's `modded class PauseMenuUI` turns the

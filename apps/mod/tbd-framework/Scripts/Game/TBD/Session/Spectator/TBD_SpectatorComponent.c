@@ -76,7 +76,7 @@ class TBD_SpectatorComponent : SCR_BaseGameModeComponent
 
 		// SERVER half. Authority is the only place that may spawn or possess anything, and a
 		// dedicated server reaches this line while a client never does.
-		if (m_bStreamingHost && RplSession.Mode() != RplMode.Client)
+		if (m_bStreamingHost && TBD_Authority.IsServer())
 			TBD_SpectatorHost.Start(m_sHostPrefab, ClampHostMaxRangeM(m_fHostMaxRangeM));
 
 		// CLIENT half. A dedicated server has no workspace at all (measured -- see TBD_UILayouts).

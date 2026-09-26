@@ -266,7 +266,7 @@ modded class SCR_PlayerController
 {
 	void TBD_RequestObjectiveHud()
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 		{
 			Rpc(TBD_RpcAsk_ObjectiveHud);
 			return;
@@ -280,7 +280,7 @@ modded class SCR_PlayerController
 	void TBD_PushObjectiveHud(array<string> icons, array<string> titles, array<string> details,
 		string barLabel, int barPercent, int barVisible, int show)
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		if (GetGame().GetPlayerController() == this)

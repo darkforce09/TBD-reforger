@@ -88,7 +88,7 @@ class TBD_GadgetFlags
 	//! flight, so apply is deferred POST_LOADOUT_MS.
 	protected static void OnPlayerSpawned(int playerId, IEntity controlledEntity)
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 		if (playerId <= 0)
 			return;
@@ -98,7 +98,7 @@ class TBD_GadgetFlags
 
 	protected static void ApplyForPlayer(int playerId)
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		PlayerManager pm = GetGame().GetPlayerManager();

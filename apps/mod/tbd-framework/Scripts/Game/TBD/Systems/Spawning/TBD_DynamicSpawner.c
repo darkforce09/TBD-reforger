@@ -550,7 +550,7 @@ modded class SCR_BaseGameMode
 
 		TBD_DynamicSpawner.Clear();
 
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		if (!TBD_FrameworkManager.IsFrameworkWorld())

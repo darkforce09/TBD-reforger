@@ -104,7 +104,7 @@ class TBD_RadioComponent : SCR_BaseGameModeComponent
 	//! Clients hold no mission document, so they have nothing to report and say nothing.
 	protected void ReportPlan()
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		if (!TBD_MissionLoader.IsValid())

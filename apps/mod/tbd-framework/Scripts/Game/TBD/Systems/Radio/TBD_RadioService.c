@@ -147,7 +147,7 @@ class TBD_RadioService
 	//! this slice does not repeat that.
 	static void OnStageChanged(TBD_EGameStage stage)
 	{
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		if (stage != TBD_EGameStage.SAFE_START && stage != TBD_EGameStage.LIVE)

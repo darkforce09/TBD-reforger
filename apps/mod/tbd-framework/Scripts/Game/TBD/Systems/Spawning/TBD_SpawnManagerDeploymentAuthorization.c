@@ -242,7 +242,7 @@ modded class TBD_SpawnManager
 	//! later life in the seat is always asked for anew.
 	override void OnPlayerKilled(notnull SCR_InstigatorContextData instigatorContextData)
 	{
-		if (RplSession.Mode() != RplMode.Client)
+		if (TBD_Authority.IsServer())
 		{
 			int playerId = instigatorContextData.GetVictimPlayerID();
 			if (playerId > 0)
@@ -256,7 +256,7 @@ modded class TBD_SpawnManager
 	{
 		super.OnPlayerDisconnected(playerId, cause, timeout);
 
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		ForgetDeployResult(playerId);
@@ -269,7 +269,7 @@ modded class TBD_SpawnManager
 	{
 		super.OnGameEnd();
 
-		if (RplSession.Mode() == RplMode.Client)
+		if (TBD_Authority.IsClient())
 			return;
 
 		TBD_DeploymentAuthorization.EndAllLives("world ended");
