@@ -1,13 +1,14 @@
 # Players panel
 
-The PLAYERS panel of the briefing: who is connected, in four lanes (BLUFOR, OPFOR, Spectators and
+The PLAYERS panel of the briefing: who is connected, in four sections (BLUFOR, OPFOR, Spectators and
 Unslotted), popped out beside the briefing's primary navigation while the map stays live behind it.
 
 ## Contents
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Session/Players/UI/
-└── TBD_PlayersPanel.c  `TBD_PlayersPanel` and its `TBD_PlayerLane` rows, built into a host dock
+├── TBD_PlayerLane.c    `TBD_PlayerLane`: one section with its tinted header and scrolling player rows
+└── TBD_PlayersPanel.c  `TBD_PlayersPanel`: the header and the four sections, built into a host dock
 ```
 
 ## How it works
@@ -17,8 +18,9 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Session/Players/UI/
 into the host's dock and `Destroy()` removes it. It needs no scrim or window of its own, because a
 menu pushed on top of the briefing would hide it and close its `SCR_MapEntity`. The header shows the
 title and the total; each `TBD_PlayerLane` has a tinted header with a count, a column header and
-scrolling rows of name, tag and ping, read from `TBD_PlayersCatalog.Get()`. Faction lanes take the
-side tint; Spectators and Unslotted stay neutral.
+scrolling rows of name, tag and ping, read from `TBD_PlayersCatalog.Get()`. Faction sections take the
+side tint; Spectators and Unslotted stay neutral. Ping reads green under 40 ms, amber under 80 ms
+and red from 80 ms.
 
 ## Authority
 

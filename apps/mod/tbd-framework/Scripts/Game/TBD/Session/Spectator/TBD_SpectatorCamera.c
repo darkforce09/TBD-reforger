@@ -1,127 +1,90 @@
-//! T-181.12 -- the spectator camera. Under ONE LIFE this is where a dead player spends the rest
-//! of the event, so it is a first-class view, not a fallback.
-//!
-//! Read before assuming this is NIH. `SCR_ManualCamera` was read from real vanilla source
-//! (`apps/mod/vanilla_reference/Source/SCR_ManualCamera.c`), and the answer is in its own
-//! declaration:
-//!
-//!   1. **All of its behaviour lives in a prefab.** Movement, acceleration, terrain collision and
-//!      UI are `[Attribute] array<ref SCR_BaseManualCameraComponent> m_aComponents` -- authored in
-//!      an `.et`, dispatched by `ProcessComponents()`. Spawn the class bare and you get an inert
-//!      camera that never moves. Deriving therefore forces a NEW `.et`, and an `.et` is a
-//!      non-script resource, which means the SAME `resourceDatabase.rdb` blocker that already
-//!      holds the menu preset. That would be a second blocked resource bought for nothing.
-//!   2. **It is the editor camera.** `ManualCameraContext` + `EManualCameraFlag`, save slots,
-//!      entity attach, ATL/AGL toggles, and a destructor that calls `SwitchToPreviousCamera()`.
-//!      None of that is spectator behaviour and all of it is surface we would have to fight.
-//!   3. **It cannot follow anything.** Half this slice is follow / first-person on a living
-//!      player, which `SCR_ManualCamera` has no concept of. CRF derived from it and *still* drove
-//!      `SetTransform` itself every frame for both follow modes -- i.e. the base class bought them
-//!      nothing for the part that matters.
-//!
-//! What we DO reuse is the part that is load-bearing: `SCR_CameraBase : CameraBase` for the
-//! camera itself, `CameraManager.SetCamera()` for activation, `Math3D` for the transform, and --
-//! crucially -- vanilla's own `ManualCameraContext` input actions, so free-flight uses the keys the
-//! player has already bound and needs no new input resource at all.
-//!
-//!   * `GetGame().SpawnEntity(TBD_SpectatorCamera, world, EntitySpawnParams)` compiles -- a
-//!     scripted camera can be spawned BY TYPENAME with **no prefab**. That is what makes the
-//!     rdb-free path possible.
-//!   * `SetEventMask(EntityEvent.POSTFRAME)` + `override protected void EOnPostFrame(IEntity,
-//!     float)` is the correct per-frame hook (same one `SCR_ManualCamera` uses) -- POSTFRAME so a
-//!     followed character has already moved this frame and the camera is not one frame behind.
-//!   * `CameraManager.SetCamera(CameraBase)` / `CurrentCamera()` exist; `ChimeraWorld` has NO
-//!     `GetCameraManager` -- it is on `Game`.
-//!   * `CharacterHeadAimingComponent.GetAimingDirectionWorld()` exists -- real first person, not a
-//!     body-yaw approximation.
-//!
-//! Nothing here returns a framebuffer. Feel -- speed, acceleration ramp, orbit distance, mouse
-//! sensitivity -- is tuned from constants at the top of this file and can only be judged live.
-//! MEASURED: this descriptor needs the trailing `;` that `SCR_BaseGameModeComponentClass`
-//! descriptors elsewhere in the mod do without -- omit it and the parser mis-associates the next
-//! class ("Syntax error / Unexpected scope"). Vanilla's own SCR_ManualCameraClass writes it too.
+/**
+ * @file TBD_SpectatorCamera.c
+ * @brief The spectator camera: free flight, third-person follow orbit and first person through a living player's eyes.
+ *
+ * Role: moves and orients itself each post-frame from vanilla ManualCameraContext input (free
+ * flight and orbit) or from the followed entity (first person), keeping above a terrain floor and
+ * under a ceiling.
+ * Position: TBD_SpectatorController spawns it by type name, configures it and makes it current;
+ * TBD_SpectatorTargeting switches its mode; TBD_SpectatorHostReporter reads its position.
+ * State: mode, weak target, position, yaw, pitch, velocity, speed scale, orbit distance and the
+ * input-enabled flag, per instance on the client.
+ * Invariants: spawned with no prefab, because SCR_ManualCamera's behaviour lives in prefab
+ * components (and it cannot follow); free flight uses the retail ManualCameraContext actions, so it
+ * needs no new input resource; the input contexts are re-armed every frame, so deleting the camera
+ * releases them; pitch stays within +-PITCH_LIMIT_DEG, so the view never inverts; a vanished target
+ * falls back to free flight in place; free flight has a floor and a ceiling but no collision.
+ */
+
+//! Editor descriptor of TBD_SpectatorCamera. The trailing semicolon is required: without it the
+//! parser fails on the next class with "Syntax error / Unexpected scope".
 [EntityEditorProps(category: "TBD/Spectator", description: "TBD spectator camera")]
 class TBD_SpectatorCameraClass : SCR_CameraBaseClass {};
 
 //! Free flight, third-person follow, or first person through a living player's eyes.
 class TBD_SpectatorCamera : SCR_CameraBase
 {
-	// ── Vanilla input. These action names are NOT guesses: they are the retail
-	// `ManualCameraContext` vocabulary, and every one of them is already bound in the player's
-	// control settings because Game Master uses this camera. Using them means free flight needs
-	// ZERO new input resources and therefore works before any Workbench pass.
-	static const string CTX_CAMERA      = "ManualCameraContext";
+	static const string CTX_CAMERA      = "ManualCameraContext"; //!< vanilla free-flight context; its actions are already bound because Game Master uses them
+	static const string CTX_SPECTATOR   = "TBD_SpectatorContext"; //!< TBD accelerator context (roster, cycle, view, free); each is also a roster click
 
-	//! TBD's own accelerators (roster / cycle / view / free). Unlike the camera actions above these
-	//! ARE new resources and share the menu preset's Workbench dependency -- which is exactly why
-	//! every one of them is also a click in the roster screen.
-	static const string CTX_SPECTATOR   = "TBD_SpectatorContext";
-
-	static const string ACT_LATERAL     = "ManualCameraMoveLateral";
-	static const string ACT_LONGITUDINAL= "ManualCameraMoveLongitudinal";
-	static const string ACT_VERTICAL    = "ManualCameraMoveVertical";
-	static const string ACT_YAW         = "ManualCameraRotateYaw";
-	static const string ACT_PITCH       = "ManualCameraRotatePitch";
-	static const string ACT_SPEED       = "ManualCameraSpeedAdjust";
+	static const string ACT_LATERAL     = "ManualCameraMoveLateral"; //!< vanilla action: strafe
+	static const string ACT_LONGITUDINAL= "ManualCameraMoveLongitudinal"; //!< vanilla action: forward and back
+	static const string ACT_VERTICAL    = "ManualCameraMoveVertical"; //!< vanilla action: up and down
+	static const string ACT_YAW         = "ManualCameraRotateYaw"; //!< vanilla action: mouse yaw
+	static const string ACT_PITCH       = "ManualCameraRotatePitch"; //!< vanilla action: mouse pitch
+	static const string ACT_SPEED       = "ManualCameraSpeedAdjust"; //!< vanilla action: scroll; speed in free flight, distance in orbit
 
 	static const float  BASE_SPEED_MS       = 18.0;  //!< m/s at speed scale 1.0
-	static const float  SPEED_SCALE_MIN     = 0.15;
-	static const float  SPEED_SCALE_MAX     = 12.0;
+	static const float  SPEED_SCALE_MIN     = 0.15; //!< lowest speed multiplier
+	static const float  SPEED_SCALE_MAX     = 12.0; //!< highest speed multiplier
 	static const float  SPEED_SCALE_STEP    = 0.15;  //!< per unit of scroll
 	static const float  ACCEL_SECONDS       = 0.12;  //!< matches vanilla's acceleration component
-	//! Degrees per unit of mouse delta. **SIGNED ON PURPOSE.** Whether
-	//! `ManualCameraRotateYaw`/`Pitch` report positive for right/up is a runtime fact no compile
-	//! can settle, and an inverted spectator camera is the first thing an operator will notice. So
-	//! the correction is a single minus sign here rather than a hunt through the math -- flip the
-	//! sign, do not touch ReadLook().
-	static const float  LOOK_SENSITIVITY_YAW   = -12.0;
-	static const float  LOOK_SENSITIVITY_PITCH = -12.0;
-	static const float  PITCH_LIMIT_DEG     = 88.0;
+	static const float  LOOK_SENSITIVITY_YAW   = -12.0; //!< degrees per unit of mouse delta; the sign is the one place to correct an inverted axis
+	static const float  LOOK_SENSITIVITY_PITCH = -12.0; //!< degrees per unit of mouse delta; the sign is the one place to correct an inverted axis
+	static const float  PITCH_LIMIT_DEG     = 88.0; //!< degrees; pitch stays short of vertical so the view never inverts
 
-	//! Below this the camera is treated as stopped. Without it an exponential decay leaves a
-	//! vanishing but non-zero velocity forever, and the view creeps for the rest of the event.
-	static const float  STOP_EPSILON_MS     = 0.05;
-	static const float  FLOOR_CLEARANCE_M   = 0.6;   //!< a FLOOR, not a collision jail (see Step)
-	static const float  CEILING_AGL_M       = 2500.0;
+	static const float  STOP_EPSILON_MS     = 0.05; //!< m/s; below this velocity snaps to zero, so the view never creeps
+	static const float  FLOOR_CLEARANCE_M   = 0.6;   //!< a FLOOR, not a collision jail (see StepFree)
+	static const float  CEILING_AGL_M       = 2500.0; //!< metres above ground the camera may climb
 
-	static const float  ORBIT_MIN_M         = 1.5;
-	static const float  ORBIT_MAX_M         = 60.0;
-	static const float  ORBIT_START_M       = 6.0;
-	static const float  ORBIT_STEP_M        = 0.8;
+	static const float  ORBIT_MIN_M         = 1.5; //!< closest orbit distance, metres
+	static const float  ORBIT_MAX_M         = 60.0; //!< farthest orbit distance, metres
+	static const float  ORBIT_START_M       = 6.0; //!< first orbit distance, metres
+	static const float  ORBIT_STEP_M        = 0.8; //!< metres per unit of scroll in orbit
 	static const float  EYE_HEIGHT_M        = 1.62;  //!< standing eye height, first person
 	static const float  FOLLOW_SMOOTH       = 14.0;  //!< higher = snappier follow
 
-	protected TBD_ESpectatorCameraMode m_eMode = TBD_ESpectatorCameraMode.FREE;
+	protected TBD_ESpectatorCameraMode m_eMode = TBD_ESpectatorCameraMode.FREE; //!< current view; default FREE
+	protected IEntity m_Target; //!< followed entity, weak (the world owns it); null in free flight
 
-	//! Weak -- the world owns the followed entity, we only look at it. Cleared the moment it dies
-	//! or leaves our streaming range, which is why every read is re-validated.
-	protected IEntity m_Target;
+	protected vector m_vPosition; //!< world metres
+	protected float m_fYaw; //!< degrees
+	protected float m_fPitch; //!< degrees, within +-PITCH_LIMIT_DEG
 
-	protected vector m_vPosition;
-	protected float m_fYaw;
-	protected float m_fPitch;
+	protected vector m_vVelocity; //!< m/s, free flight
+	protected float m_fSpeedScale = 1.0; //!< free-flight speed multiplier; default 1.0
+	protected float m_fOrbitDistance = ORBIT_START_M; //!< metres from the followed target
 
-	protected vector m_vVelocity;
-	protected float m_fSpeedScale = 1.0;
-	protected float m_fOrbitDistance = ORBIT_START_M;
+	protected bool m_bInputEnabled = true; //!< false while another screen owns the keyboard; look and move are suppressed, rendering and following continue
 
-	//! Set false by the controller while a screen wants the keyboard for itself. Look/move are
-	//! suppressed; the camera keeps rendering and keeps following, so nothing ever freezes.
-	protected bool m_bInputEnabled = true;
+	protected BaseWorld m_World; //!< world for the terrain floor; set by Configure
+	protected InputManager m_Input; //!< input source; set by Configure
 
-	protected BaseWorld m_World;
-	protected InputManager m_Input;
-
+	//! Subscribe to POSTFRAME and mark the entity ACTIVE.
+	//! @param src the entity source, null when spawned by type name
+	//! @param parent the parent entity, normally null
 	void TBD_SpectatorCamera(IEntitySource src, IEntity parent)
 	{
-		// POSTFRAME, not FRAME: a followed character has already been moved by the time this runs,
-		// so follow mode does not trail a frame behind. Same event SCR_ManualCamera uses.
+		// POSTFRAME, not FRAME: a followed character has already moved this frame, so follow mode
+		// does not trail a frame behind.
 		SetEventMask(EntityEvent.POSTFRAME);
 		SetFlags(EntityFlags.ACTIVE, true);
 	}
 
-	//! Place the camera and take over. Called once by TBD_SpectatorController straight after spawn;
-	//! the entity is spawned by typename so there is no prefab to carry defaults.
+	//! Place the camera. TBD_SpectatorController calls it once straight after the spawn by type
+	//! name, which carries no prefab defaults.
+	//! @param position the start position, world metres
+	//! @param angles the start angles (yaw, pitch, roll), degrees; pitch is clamped
 	void Configure(vector position, vector angles)
 	{
 		m_World = GetGame().GetWorld();
@@ -136,8 +99,8 @@ class TBD_SpectatorCamera : SCR_CameraBase
 	}
 
 
-	//! Fly the AO. Keeps the current position and heading, so leaving a follow does not teleport
-	//! you -- the camera simply stops being tethered (immediate feedback, no disorientation).
+	//! Switch to free flight, keeping the current position and heading, so leaving a follow does not
+	//! teleport the view.
 	void SetModeFree()
 	{
 		m_eMode = TBD_ESpectatorCameraMode.FREE;
@@ -145,9 +108,10 @@ class TBD_SpectatorCamera : SCR_CameraBase
 		m_vVelocity = vector.Zero;
 	}
 
-	//! Follow an entity. `firstPerson` puts the camera at the target's eyes and aligns it with what
-	//! they are actually aiming at; otherwise it orbits them at the current distance.
-	//! Passing null is the same as SetModeFree() -- a target that just died can never strand us.
+	//! Follow an entity: at its eyes along its aim in first person, otherwise orbiting at the
+	//! current distance. A null target is SetModeFree, so a target that just died cannot strand the view.
+	//! @param target the entity to follow, or null
+	//! @param firstPerson first person when true
 	void SetModeFollow(IEntity target, bool firstPerson)
 	{
 		if (!target)
@@ -169,6 +133,7 @@ class TBD_SpectatorCamera : SCR_CameraBase
 			m_fOrbitDistance = ORBIT_START_M;
 	}
 
+	//! @return the current view mode
 	TBD_ESpectatorCameraMode GetMode()
 	{
 		return m_eMode;
@@ -180,7 +145,9 @@ class TBD_SpectatorCamera : SCR_CameraBase
 		return m_Target;
 	}
 
-	//! Suppress look/move without stopping the camera. Used while a text field owns the keyboard.
+	//! Suppress or restore look and move without stopping the camera; suppressing also stops the
+	//! current motion. TBD_SpectatorController uses it while another screen owns the keyboard.
+	//! @param enabled true to take input
 	void SetInputEnabled(bool enabled)
 	{
 		m_bInputEnabled = enabled;
@@ -194,24 +161,26 @@ class TBD_SpectatorCamera : SCR_CameraBase
 		return m_fSpeedScale;
 	}
 
+	//! @return the camera position, world metres
 	vector GetPosition()
 	{
 		return m_vPosition;
 	}
 
 
+	//! Per frame: re-arm the input contexts, fall back to free flight when the target vanished,
+	//! step the current mode and apply the transform.
+	//! @param owner this entity
+	//! @param timeSlice seconds since the last frame; 0 or less does nothing
+	//! @authority client
 	override protected void EOnPostFrame(IEntity owner, float timeSlice)
 	{
 		if (timeSlice <= 0)
 			return;
 
-		// Input contexts DECAY: they must be re-armed every frame while they should be live
-		// (the same measured fact TBD_MenuBase encodes). This is the only place that arms either
-		// context, so the moment the camera is deleted the player gets their bindings back with
-		// no explicit release to forget.
-		//
-		// The spectator accelerators are armed even when look/move are suppressed: a player who is
-		// typing must still be able to press Escape-equivalents like "back to free camera".
+		// Input contexts decay and must be re-armed every frame (as TBD_MenuBase does). This is the
+		// only place that arms either one, so deleting the camera gives the bindings back. The
+		// accelerators stay armed while look and move are suppressed.
 		if (m_Input)
 		{
 			m_Input.ActivateContext(CTX_SPECTATOR);
@@ -236,10 +205,10 @@ class TBD_SpectatorCamera : SCR_CameraBase
 	}
 
 
-	//! Fly the AO. Deliberately NO collision: a spectator that gets stuck inside a wall is worse
-	//! than one that can pass through it. The one constraint is a FLOOR -- the camera will not go
-	//! below terrain, because under the map you cannot see anything and cannot tell which way is
-	//! out. A floor you can slide along is not a jail.
+	//! Free-flight step: look, speed from the scroll, a wish velocity ramped over ACCEL_SECONDS,
+	//! then the floor and ceiling. No collision, since a camera stuck in a wall is worse than one
+	//! that passes through it; the floor keeps it above terrain and can be slid along.
+	//! @param timeSlice seconds since the last frame
 	protected void StepFree(float timeSlice)
 	{
 		ReadLook(timeSlice);
@@ -263,9 +232,8 @@ class TBD_SpectatorCamera : SCR_CameraBase
 				wish = wish.Normalized();
 		}
 
-		// Ramp toward the wish velocity instead of snapping to it. Same 0.12 s constant vanilla's
-		// SCR_AccelerationManualCameraComponent uses, so the camera feels like the one operators
-		// already know from Game Master.
+		// Ramp toward the wish velocity with vanilla's SCR_AccelerationManualCameraComponent
+		// constant, so the camera feels like the Game Master one.
 		vector wishVelocity = wish * BASE_SPEED_MS * m_fSpeedScale;
 		float blend = Math.Clamp(timeSlice / ACCEL_SECONDS, 0, 1);
 		m_vVelocity = vector.Lerp(m_vVelocity, wishVelocity, blend);
@@ -280,8 +248,9 @@ class TBD_SpectatorCamera : SCR_CameraBase
 	}
 
 
-	//! Orbit the target. Mouse drives yaw/pitch around them, scroll drives distance -- the same two
-	//! inputs free flight uses, so there is one thing to learn, not two.
+	//! Orbit step: the mouse drives yaw and pitch around the target, the scroll drives distance,
+	//! and the position eases toward the point behind the look direction.
+	//! @param timeSlice seconds since the last frame
 	protected void StepFollow(float timeSlice)
 	{
 		ReadLook(timeSlice);
@@ -307,10 +276,10 @@ class TBD_SpectatorCamera : SCR_CameraBase
 		ClampToWorld();
 	}
 
-	//! Through their eyes. `CharacterHeadAimingComponent.GetAimingDirectionWorld()` (probed) is the
-	//! real look vector, so this is genuine first person and not a body-yaw approximation. If the
-	//! target has no head-aiming component we fall back to its own facing, which is still correct
-	//! for anything that is not a character.
+	//! First-person step: at the target's eye height, looking along
+	//! CharacterHeadAimingComponent.GetAimingDirectionWorld, or along the target's facing when it has
+	//! no head-aiming component.
+	//! @param timeSlice seconds since the last frame (unused; the view is copied from the target)
 	protected void StepFirstPerson(float timeSlice)
 	{
 		vector eye = m_Target.GetOrigin() + vector.Up * EYE_HEIGHT_M;
@@ -334,8 +303,9 @@ class TBD_SpectatorCamera : SCR_CameraBase
 	}
 
 
-	//! Mouse look. Pitch is clamped short of vertical so the view can never invert -- an inverted
-	//! spectator camera is the single fastest way to lose a player's bearings.
+	//! Mouse look, when input is enabled. Pitch is clamped short of vertical so the view never
+	//! inverts; yaw is kept within +-360 degrees.
+	//! @param timeSlice seconds since the last frame (unused; mouse deltas are per frame)
 	protected void ReadLook(float timeSlice)
 	{
 		if (!m_bInputEnabled || !m_Input)
@@ -353,7 +323,8 @@ class TBD_SpectatorCamera : SCR_CameraBase
 			m_fYaw += 360;
 	}
 
-	//! The floor and the ceiling. Not collision -- see StepFree.
+	//! Hold the position between FLOOR_CLEARANCE_M and CEILING_AGL_M above the terrain, cancelling
+	//! only the vertical velocity that pushes past the bound. Not collision; see StepFree.
 	protected void ClampToWorld()
 	{
 		if (!m_World)
@@ -378,6 +349,7 @@ class TBD_SpectatorCamera : SCR_CameraBase
 		}
 	}
 
+	//! Write the position, yaw and pitch into the entity transform.
 	protected void ApplyTransform()
 	{
 		vector transform[4];
@@ -385,13 +357,4 @@ class TBD_SpectatorCamera : SCR_CameraBase
 		transform[3] = m_vPosition;
 		SetWorldTransform(transform);
 	}
-}
-
-//! Which of the three views the spectator camera is running. Public because the roster screen
-//! reports it and the input handler toggles it.
-enum TBD_ESpectatorCameraMode
-{
-	FREE,          //!< fly the AO
-	FOLLOW,        //!< orbit a living player
-	FIRST_PERSON   //!< through their eyes
 }

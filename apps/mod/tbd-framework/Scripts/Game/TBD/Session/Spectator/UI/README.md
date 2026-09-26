@@ -15,11 +15,11 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Session/Spectator/UI/
 `TBD_SpectatorScreen` extends `TBD_ShellScreen` and reuses the shared shell layout
 (`apps/mod/tbd-framework/UI/layouts/Common/TBD_ScreenShell.layout`) through the `TBD_Spectator`
 preset that
-`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/ChimeraMenuPreset.c` adds and
+`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Screens/ChimeraMenuPreset.c` adds and
 `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf` binds. On open it repaints the backdrop
 transparent and the panel to `SURFACE_GLASS`, so the world stays visible behind the list. Every
 `REFRESH_MS` (1 s) it asks `TBD_SpectatorTargets.Collect` for the watchable players and marks the
-one `TBD_SpectatorController` follows. Clicking a player follows them; clicking the followed player
+one `TBD_SpectatorTargeting` follows. Clicking a player follows them; clicking the followed player
 again toggles first person; the one button, FREE CAMERA, returns to free flight. The subtitle says
 whether the view is limited to the viewer's own side, and the status line explains an empty list
 (no faction resolved, nobody in view, nobody alive).
@@ -35,8 +35,9 @@ whether the view is limited to the viewer's own side, and the status line explai
 
 ## Boundaries
 
-- Depends on: `TBD_SpectatorTargets` and `TBD_SpectatorController` in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Spectator/`; `TBD_ShellScreen`, `TBD_UITheme` and
+- Depends on: `TBD_SpectatorTargets` in `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Spectator/`;
+  `TBD_SpectatorTargeting` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Spectator/Controller/`; `TBD_ShellScreen`, `TBD_UITheme` and
   `TBD_ListBox` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/`.
 - Used by: `TBD_SpectatorController`, which opens the `TBD_Spectator` preset; the preset entry in
   `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf`.

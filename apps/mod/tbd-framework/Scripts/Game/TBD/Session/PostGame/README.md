@@ -13,10 +13,10 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/
 
 ## How it works
 
-`TBD_FrameworkManager` owns the round's stages. On every stage change it opens the END banner on
-`END` and the DEBRIEF scoreboard on `DEBRIEF` and closes each on any other stage. Both screens read
-what the authority decided from replicated `TBD_FrameworkManager` properties: the winner and the
-reason, and a packed board of kills and deaths per player.
+`TBD_FrameworkManager` owns the round's stages. On every stage change `TBD_EndBanner` opens the END
+banner on `END` and the DEBRIEF scoreboard on `DEBRIEF` and closes each on any other stage. Both
+screens read what the authority decided from replicated `TBD_FrameworkManager` properties: the
+winner and the reason, and a packed board of kills and deaths per player.
 
 ## Authority
 
@@ -33,7 +33,8 @@ reason, and a packed board of kills and deaths per player.
 - Depends on: `TBD_FrameworkManager` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/` (the stage, the end result and
   the board); the shared UI library in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/`.
-- Used by: `TBD_FrameworkManager`, which opens and closes the overlays on `END` and `DEBRIEF`.
+- Used by: `TBD_FrameworkManager` and its `TBD_EndBanner`, which open and close the overlays on `END`
+  and `DEBRIEF`.
 - Rules: the overlays are workspace widgets, never menus, so no screen can refuse a stage change;
   `cargo xtask mod compile` checks that the scripts compile.
 

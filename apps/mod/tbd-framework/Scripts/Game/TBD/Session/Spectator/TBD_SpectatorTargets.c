@@ -1,51 +1,36 @@
-//! T-181.12 -- who a spectator is allowed to watch, and how that list is grouped.
-//!
-//! Deliberately pure: no widgets, no camera, no lifecycle. The roster screen renders what this
-//! returns and the controller cycles through it, so the policy question ("may I see the enemy?")
-//! is answered in exactly one place and can be read without opening a UI file.
-//!
-//! **Default: own side only.** `s_bFactionRestricted` starts true.
-//!
-//! TBD events are ONE LIFE, which is precisely what makes this non-negotiable rather than
-//! stylistic. In a wave/ticket mode a dead player is out for thirty seconds; here they are out for
-//! the rest of the event, so by the back half of an op a large fraction of the server is
-//! spectating -- and every one of them is still sitting in their squad's voice channel. An
-//! unrestricted spectator is therefore not a viewer, it is a live intel feed: one dead man
-//! watching the enemy assault form up can hand his side the whole enemy plan for free. That is
-//! why milsim groups restrict spectator, and it is why TBD does.
-//!
-//! **It is configurable and cheap to flip** -- `SetFactionRestricted(false)` -- because the same
-//! framework runs training nights and AARs where watching the other side is the entire point.
-//!
-//! **Honest about what it is.** This is a *discipline* measure, not a security boundary. It runs
-//! on the client, and a client that has been modified can ignore it. The real limit is the
-//! engine's own replication range: an entity that was never streamed to you does not exist on your
-//! machine and cannot be rendered by any camera, honest or otherwise. This filter is the policy
-//! layer on top of that, and it is the layer that stops an *unmodified* client from becoming an
-//! intel leak -- which is every client in an organised event.
-//!
-//! **It fails CLOSED.** If the viewer's own faction cannot be resolved while the restriction is
-//! on, the list comes back empty with a status line saying so, rather than quietly showing
-//! everyone. The cached-faction path below makes that safe in practice: the key is latched the
-//! first time it resolves, so a deleted corpse or a mid-round reconnect cannot lose it.
+/**
+ * @file TBD_SpectatorTargets.c
+ * @brief Who a spectator may watch, grouped by faction and group, and what counts as alive.
+ *
+ * Role: builds the list of living, followable players this client can see, filtered by the
+ * faction restriction and sorted by faction, group and name; counts connected players whose
+ * character is not on this machine; answers "is this entity alive" for the spectator.
+ * Position: pure data, no widgets, camera or lifecycle; TBD_SpectatorScreen renders the list,
+ * TBD_SpectatorTargeting cycles through it, TBD_SpectatorController asks IsAlive of the local
+ * entity, TBD_MissionWorldApplier and TBD_SpectatorController.SyncSpectatorPolicy set the
+ * restriction.
+ * State: the restriction flag (default true, own side only) and the latched viewer faction key
+ * (static, client).
+ * Invariants: under one life a dead player spectates for the rest of the event while still in
+ * their squad's voice channel, so the default shows the own side only; it is a discipline measure,
+ * not a security boundary (a modified client can ignore it; the engine's replication range is the
+ * hard limit); it fails closed to an empty list when the viewer's faction cannot be resolved; the
+ * viewer faction is latched the first time it resolves; a streaming host is never alive.
+ */
+
+//! The spectator's target policy and roster builder. Static; client only.
 class TBD_SpectatorTargets
 {
-	//! Own side only. See the class header for the reasoning; flip it for a training night.
-	protected static bool s_bFactionRestricted = true;
+	protected static bool s_bFactionRestricted = true; //!< own side only; default true
+	protected static string s_sViewerFactionKey; //!< the local player's faction, latched once resolved, so a deleted corpse cannot widen the view
 
-	//! Latched the first time the local player's faction resolves. A spectator's corpse can be
-	//! deleted and their faction lookup can then fail -- that must not silently widen what they are
-	//! allowed to see, so the answer is remembered rather than re-derived.
-	protected static string s_sViewerFactionKey;
-
-	//! Restrict spectators to their own faction? Default true.
+	//! Restrict spectators to their own faction or show every side, and log the mode.
+	//! @param restricted true for own side only
 	static void SetFactionRestricted(bool restricted)
 	{
 		s_bFactionRestricted = restricted;
 
-		// MEASURED: Enfusion has NO ternary operator. `cond ? a : b` fails with
-		// "Broken expression (missing ';'?)" -- which points at the whole statement and says
-		// nothing about `?`, so it is worth knowing rather than rediscovering.
+		// Enfusion has no ternary operator.
 		string mode = "OFF (all sides)";
 		if (restricted)
 			mode = "ON (own side only)";
@@ -53,6 +38,7 @@ class TBD_SpectatorTargets
 		Print(string.Format("[TBD][spectator] faction restriction %1", mode));
 	}
 
+	//! @return true when spectators see their own side only
 	static bool IsFactionRestricted()
 	{
 		return s_bFactionRestricted;
@@ -131,24 +117,17 @@ class TBD_SpectatorTargets
 			IEntity entity = players.GetPlayerControlledEntity(playerId);
 			if (!entity)
 			{
-				// Connected, but their character is not on this machine. We cannot know whether
-				// they are alive, whose side they are on, or where they are -- so we cannot offer
-				// them as a target, only count them.
-				//
-				// T-181.24 makes this count slightly noisier and that is accepted, not overlooked.
-				// A dead player possessing the built-in (server-only, unreplicated) streaming host
-				// resolves to null here where their corpse might previously have resolved to a
-				// visibly-dead body, so they now land in `notInView` instead of being skipped
-				// silently. Fixing it would mean shipping the server's dead-list to every client --
-				// a second source of truth for a question this class deliberately answers from what
-				// the client can see. A slightly high "not in view" is the honest error direction:
-				// it over-reports "there may be more out there", never under-reports it.
+				// Connected, but their character is not on this machine: unknown life, side and
+				// position, so counted rather than offered. A dead player possessing the
+				// server-only streaming host also resolves to null and is counted here; the count
+				// errs high ("there may be more out there"), never low, and correcting it would
+				// need the server's dead list on every client.
 				notInView++;
 				continue;
 			}
 
-			// A streaming host is not a person. `IsAlive` refuses it (see the T-181.24 block there),
-			// which is what keeps a dead player's anchor out of everybody else's roster.
+			// A streaming host is not a person; IsAlive refuses it, which keeps a dead player's
+			// host out of every roster.
 			if (!IsAlive(entity))
 				continue;
 
@@ -192,25 +171,14 @@ class TBD_SpectatorTargets
 		return entity;
 	}
 
-	//! Alive, from the character controller. A destroyed damage state is the fallback for anything
-	//! that is not a character (a spectator could be watching a manned turret).
-	//!
-	//! A dead player possesses a `TBD_SpectatorHostEntity` so the server keeps streaming the world
-	//! around their camera. That dummy has no character controller and no damage manager, so the
-	//! `return true` at the bottom of this function -- the "anything we cannot classify is alive"
-	//! fallback, which is right for a turret -- would call it ALIVE. Two things would break, both
-	//! badly:
-	//!
-	//!   1. `TBD_SpectatorController.Tick` asks this about the LOCAL controlled entity. A spectator
-	//!      whose own host answered "alive" would be read as back in the world: `Leave()` would tear
-	//!      down the camera and hand the view to a body that does not exist, leaving the player
-	//!      driving an invisible dummy with no camera and no way out. Then the next tick would see
-	//!      "alive" again, so it would never recover.
-	//!   2. Every OTHER spectator would see the dead player as a living, followable target -- and
-	//!      following one would point their camera at an invisible nothing.
-	//!
-	//! Checked FIRST, ahead of every other test, because it must hold no matter what components a
-	//! future host prefab happens to carry.
+	//! Is this entity alive? A streaming host is never alive, tested first so it holds whatever
+	//! components a host prefab carries: otherwise TBD_SpectatorController.Tick would read a
+	//! spectator's own host as a living body and leave spectator for good, and other spectators
+	//! could follow an invisible host. Then the character controller decides; a damage state not
+	//! DESTROYED is the fallback for anything that is not a character (a manned turret); anything
+	//! else is alive.
+	//! @param entity the entity to test; null is not alive
+	//! @return true when alive
 	static bool IsAlive(IEntity entity)
 	{
 		if (!entity)
@@ -231,6 +199,8 @@ class TBD_SpectatorTargets
 	}
 
 
+	//! @param entity a character, or any entity
+	//! @return the entity's faction key, or empty when it has none
 	protected static string FactionKeyOf(IEntity entity)
 	{
 		if (!entity)
@@ -364,13 +334,10 @@ class TBD_SpectatorTargets
 //! must never be cached across a refresh, because `m_Entity` can be destroyed under it.
 class TBD_SpectatorTarget
 {
-	int m_iPlayerId;
-	string m_sName;
-	string m_sFactionKey;
-	string m_sFactionName;
-	string m_sGroupName;
-
-	//! Weak. Re-resolve through TBD_SpectatorTargets.ResolveLivingEntity before pointing a camera
-	//! at it -- the row can outlive the character by a frame.
-	IEntity m_Entity;
+	int m_iPlayerId; //!< the player id
+	string m_sName; //!< the player name
+	string m_sFactionKey; //!< faction key, empty when unknown
+	string m_sFactionName; //!< faction display name
+	string m_sGroupName; //!< group display name
+	IEntity m_Entity; //!< weak; re-resolve through TBD_SpectatorTargets.ResolveLivingEntity before a camera points at it
 }

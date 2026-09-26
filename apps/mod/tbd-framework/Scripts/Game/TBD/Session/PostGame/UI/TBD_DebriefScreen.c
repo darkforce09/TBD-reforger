@@ -1,35 +1,49 @@
-//! T-941.3 - one scoreboard row. Packed across replication as kills/deaths/faction/role/name.
+/**
+ * @file TBD_DebriefScreen.c
+ * @brief The DEBRIEF scoreboard overlay and the packed row format it reads.
+ *
+ * Role: packs scoreboard rows into one string for replication and unpacks them; shows the winner
+ * and one row per player (name, faction, role, kills / deaths) sorted by kills (toggled high or
+ * low first), then fewer deaths, then name.
+ * Position: TBD_EndBanner.ApplyEndScreens opens it in the DEBRIEF stage and closes it on any other;
+ * TBD_EndBanner.PackDebriefBoard packs rows from TBD_DebriefScoreboard.Fill on the server; the
+ * packed string arrives through TBD_FrameworkManager.GetDebriefBoard, with the winner and reason.
+ * State: the open root and live instance (static), and per instance the widgets and the sort
+ * direction; client.
+ * Invariants: an overlay widget, never a Chimera menu, so Esc cannot refuse a stage change; the
+ * packed format is one row per TBD_WireCodec.LINE_SEP with kills, deaths, faction, role and name
+ * separated by TBD_WireCodec.FIELD_SEP; field text never carries a separator; a line with fewer than
+ * five fields is skipped.
+ */
+
+//! One scoreboard row, packed across replication as kills, deaths, faction, role, name.
 class TBD_DebriefRow
 {
-	string m_sName;
-	string m_sFaction;
-	string m_sRole;
-	int m_iKills;
-	int m_iDeaths;
+	string m_sName; //!< player name
+	string m_sFaction; //!< slot faction key; empty when unslotted
+	string m_sRole; //!< slot role; empty when unslotted
+	int m_iKills; //!< kills this round
+	int m_iDeaths; //!< deaths this round; 0 or 1 under one life
 }
 
-//! T-941.3 - DEBRIEF scoreboard overlay. Rows come from TBD_DebriefScoreboard.Fill
-//! (deaths = the reporter's ONE LIFE counter; kills counted on TBD_FrameworkManager because
-//! the reporter still omits kill tracking - T-181.13.1). Sorted by kills, then deaths, then name.
-//!
-//! Same overlay rules as TBD_EndScreen: never a Chimera menu, never able to refuse SetStage.
+//! The DEBRIEF scoreboard overlay, handler of the root widget of TBD_UILayouts.DEBRIEF_SCREEN.
 class TBD_DebriefScreen : ScriptedWidgetComponent
 {
-	protected static const string LINE_SEP = "\n";
-	protected static const string FIELD_SEP = "\t";
+	protected static Widget s_wRoot; //!< the open overlay root; null when closed
+	protected static TBD_DebriefScreen s_Instance; //!< the attached handler; null when closed
 
-	protected static Widget s_wRoot;
-	protected static TBD_DebriefScreen s_Instance;
+	protected Widget m_wRoot; //!< this handler's root widget
+	protected TextWidget m_wTitle; //!< "DEBRIEF"
+	protected TextWidget m_wSubtitle; //!< winner line, or "Scoreboard"
+	protected TextWidget m_wStatus; //!< sort direction line
+	protected TBD_ListBox m_List; //!< the scoreboard rows
+	protected TBD_UIButton m_BackAction; //!< closes the overlay
+	protected TBD_UIButton m_PrimaryAction; //!< toggles the sort direction
+	protected bool m_bKillsDescending = true; //!< most kills first; default true
 
-	protected Widget m_wRoot;
-	protected TextWidget m_wTitle;
-	protected TextWidget m_wSubtitle;
-	protected TextWidget m_wStatus;
-	protected TBD_ListBox m_List;
-	protected TBD_UIButton m_BackAction;
-	protected TBD_UIButton m_PrimaryAction;
-	protected bool m_bKillsDescending = true;
-
+	//! Open the overlay on this machine; no-op when open or without a workspace. Logs an ERROR when
+	//! the layout will not load.
+	//! @authority client
 	static void Open()
 	{
 		if (s_wRoot)
@@ -49,6 +63,7 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		s_wRoot = root;
 	}
 
+	//! Remove the overlay; no-op when closed.
 	static void Close()
 	{
 		if (!s_wRoot)
@@ -59,11 +74,15 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		s_Instance = null;
 	}
 
+	//! @return true while the overlay is open
 	static bool IsOpen()
 	{
 		return s_wRoot != null;
 	}
 
+	//! Pack rows into the replicated string; null rows are skipped.
+	//! @param rows the scoreboard rows
+	//! @return one line per row: kills, deaths, faction, role, name, separated by TBD_WireCodec.FIELD_SEP
 	static string PackRows(notnull array<ref TBD_DebriefRow> rows)
 	{
 		string packed;
@@ -73,16 +92,20 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 				continue;
 
 			if (!packed.IsEmpty())
-				packed += LINE_SEP;
+				packed += TBD_WireCodec.LINE_SEP;
 
 			packed += string.Format("%1%2%3%2%4%2%5%2%6",
-				row.m_iKills, FIELD_SEP, row.m_iDeaths, SanitizeField(row.m_sFaction),
+				row.m_iKills, TBD_WireCodec.FIELD_SEP, row.m_iDeaths, SanitizeField(row.m_sFaction),
 				SanitizeField(row.m_sRole), SanitizeField(row.m_sName));
 		}
 
 		return packed;
 	}
 
+	//! Unpack a string written by PackRows. Lines with fewer than five fields are skipped; fields
+	//! past the fifth are joined back into the name with spaces.
+	//! @param packed the packed string; empty yields no rows
+	//! @param outRows cleared, then filled
 	static void UnpackRows(string packed, notnull array<ref TBD_DebriefRow> outRows)
 	{
 		outRows.Clear();
@@ -90,14 +113,14 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 			return;
 
 		array<string> lines = {};
-		packed.Split(LINE_SEP, lines, false);
+		packed.Split(TBD_WireCodec.LINE_SEP, lines, false);
 		foreach (string line : lines)
 		{
 			if (line.IsEmpty())
 				continue;
 
 			array<string> cols = {};
-			line.Split(FIELD_SEP, cols, false);
+			line.Split(TBD_WireCodec.FIELD_SEP, cols, false);
 			if (cols.Count() < 5)
 				continue;
 
@@ -117,6 +140,9 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		}
 	}
 
+	//! Replace tabs and newlines with spaces, so a field never splits a record.
+	//! @param value the field text
+	//! @return the cleaned text
 	protected static string SanitizeField(string value)
 	{
 		string cleaned = string.Format("%1", value);
@@ -125,6 +151,8 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		return cleaned;
 	}
 
+	//! Bind the widgets and actions, paint the overlay and populate it.
+	//! @param w the overlay root widget
 	override void HandlerAttached(Widget w)
 	{
 		super.HandlerAttached(w);
@@ -161,6 +189,8 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		Populate();
 	}
 
+	//! Unbind the actions and clear the statics when they point here.
+	//! @param w the overlay root widget
 	override void HandlerDeattached(Widget w)
 	{
 		if (m_BackAction)
@@ -180,6 +210,8 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		super.HandlerDeattached(w);
 	}
 
+	//! Fill the title, the winner subtitle, the sorted rows, the sort action and the status line
+	//! from TBD_FrameworkManager's end winner and packed board.
 	protected void Populate()
 	{
 		TBD_UITheme.Write(m_wTitle, "DEBRIEF");
@@ -243,6 +275,8 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		TBD_UITheme.Show(m_wStatus, true);
 	}
 
+	//! Sort rows in place with KillsSortBefore, in the current direction.
+	//! @param rows the rows to sort
 	protected void SortByKills(notnull array<ref TBD_DebriefRow> rows)
 	{
 		int n = rows.Count();
@@ -260,6 +294,11 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		}
 	}
 
+	//! Order two rows: kills in the given direction, then fewer deaths, then name. A null row sorts last.
+	//! @param a the first row
+	//! @param b the second row
+	//! @param descending most kills first when true
+	//! @return true when a sorts before b
 	protected bool KillsSortBefore(TBD_DebriefRow a, TBD_DebriefRow b, bool descending)
 	{
 		if (!a)
@@ -280,6 +319,8 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		return a.m_sName < b.m_sName;
 	}
 
+	//! @param name a widget name under the root
+	//! @return the widget, or null
 	protected Widget Find(string name)
 	{
 		if (!m_wRoot)
@@ -288,11 +329,16 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		return m_wRoot.FindAnyWidget(name);
 	}
 
+	//! @param name a text widget name under the root
+	//! @return the text widget, or null
 	protected TextWidget FindText(string name)
 	{
 		return TextWidget.Cast(Find(name));
 	}
 
+	//! @param name a widget name under the root
+	//! @param handler the handler type to find on it
+	//! @return the handler, or null
 	protected ScriptedWidgetComponent FindHandlerOn(string name, typename handler)
 	{
 		Widget w = Find(name);
@@ -302,17 +348,24 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		return ScriptedWidgetComponent.Cast(w.FindHandler(handler));
 	}
 
+	//! Back: close the overlay.
+	//! @param button the back button
 	protected void OnBackClicked(TBD_UIButton button)
 	{
 		Close();
 	}
 
+	//! Primary action: flip the sort direction and repopulate.
+	//! @param button the primary button
 	protected void OnSortClicked(TBD_UIButton button)
 	{
 		m_bKillsDescending = !m_bKillsDescending;
 		Populate();
 	}
 
+	//! A click on the header row (tag -2) flips the sort direction; player rows do nothing.
+	//! @param list the scoreboard list
+	//! @param tag the clicked row's tag
 	protected void OnRowClicked(TBD_ListBox list, int tag)
 	{
 		if (tag == -2)

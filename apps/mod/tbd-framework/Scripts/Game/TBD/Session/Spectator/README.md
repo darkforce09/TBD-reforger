@@ -8,13 +8,13 @@ streaming host that keeps the world around the camera loaded.
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Session/Spectator/
-├── TBD_SpectatorCamera.c      `TBD_SpectatorCamera`: free flight, follow orbit and first person
-├── TBD_SpectatorComponent.c   game mode component that starts and stops the controller and host
-├── TBD_SpectatorController.c  client lifecycle: enters on death, leaves on a living body, follows
-├── TBD_SpectatorHost.c        server streaming hosts, and the camera-position RPC that moves them
-├── TBD_SpectatorHostEntity.c  the inert, damage-free entity a dead player possesses
-├── TBD_SpectatorTargets.c     who a spectator may watch, grouped by faction and group
-└── UI/                        the roster screen over the live camera
+├── Controller/                 client lifecycle, targeting, input accelerators and host reports
+├── Host/                       server streaming hosts, their entity and the camera-position RPC
+├── TBD_ESpectatorCameraMode.c  `TBD_ESpectatorCameraMode`: free, follow or first person
+├── TBD_SpectatorCamera.c       `TBD_SpectatorCamera`: free flight, follow orbit and first person
+├── TBD_SpectatorComponent.c    game mode component that starts and stops the controller and host
+├── TBD_SpectatorTargets.c      who a spectator may watch, grouped by faction and group
+└── UI/                         the roster screen over the live camera
 ```
 
 ## How it works
@@ -23,9 +23,11 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Session/Spectator/
 server: character dies -> TBD_SpawnManager marks the life spent
 client: TBD_SpectatorController.Tick (every 250 ms) sees no living controlled entity
           -> Enter: spawns TBD_SpectatorCamera at the corpse, opens the TBD_Spectator screen
-          -> every second tick: TBD_ReportSpectatorCamera(position)  --RPC-->  server
-server: TBD_SpectatorHost gives the dead player a TBD_SpectatorHostEntity to possess
-          and moves it to the reported position, clamped to the range from the death spot
+          -> every second tick: TBD_SpectatorHostReporter.Report
+             -> TBD_ReportSpectatorCamera(position)  --RPC-->  server
+server: TBD_SpectatorHostLifecycle gives the dead player a TBD_SpectatorHostEntity to possess;
+          TBD_SpectatorHost.MoveTo moves it to the reported position, clamped to the range from
+          the death spot
 client: a later tick sees a living body again (an admin respawn) -> Leave
 ```
 
@@ -49,22 +51,22 @@ empty list when the viewer's faction cannot be resolved, and latching the factio
 resolves. The restriction runs on the client, so it is a discipline measure, not a security
 boundary; the engine's replication range is the hard limit.
 
-Streaming follows the controlled entity, not the camera, which is why the host exists.
-`TBD_SpectatorHost` refuses to possess anything that is a `ChimeraCharacter` or carries a damage or
-character controller component, so a host can never be killed or become a playable body. A
-one-second reconcile tick gives each dead connected player a host and retires every record whose
-connection epoch has moved on, since player ids are recycled. `TBD_SpawnManager` releases the host
-before a deployment and on disconnect.
+Streaming follows the controlled entity, not the camera, which is why the host exists (see
+`Host/`). `TBD_SpectatorHostFactory` refuses to possess anything that is a `ChimeraCharacter` or
+carries a damage or character controller component, so a host can never be killed or become a
+playable body. A one-second reconcile tick gives each dead connected player a host and retires
+every record whose connection epoch has moved on, since player ids are recycled. `TBD_SpawnManager`
+releases the host before a deployment and on disconnect. Following, cycling and the status line
+live in `Controller/`'s `TBD_SpectatorTargeting`.
 
 ## Authority
 
-- Server: `TBD_SpectatorHost` (`@authority server` on every method): creating, possessing, moving,
-  validating and releasing hosts; `TBD_SpectatorComponent` starts it only when `RplSession.Mode()`
-  is not `RplMode.Client`.
-- Client: `TBD_SpectatorController`, `TBD_SpectatorCamera`, `TBD_SpectatorTargets` and the roster
-  screen, started only where `GetGame().GetWorkspace()` exists. These files carry no authority tag.
-- Owner: `TBD_ReportSpectatorCamera` on the owning client's `SCR_PlayerController` sends the camera
-  position; on a listen host it calls `TBD_SpectatorHost.MoveTo` directly.
+- Server: everything in `Host/` but the RPC sender: creating, possessing, moving, validating and
+  releasing hosts; `TBD_SpectatorComponent` starts it only where `TBD_Authority.IsServer()`.
+- Client: everything in `Controller/`, `TBD_SpectatorCamera`, `TBD_SpectatorTargets` and the roster
+  screen, started only where `GetGame().GetWorkspace()` exists.
+- Owner: `TBD_ReportSpectatorCamera` on the owning client's `SCR_PlayerController` (in `Host/`)
+  sends the camera position; on a listen host it calls `TBD_SpectatorHost.MoveTo` directly.
 - RPCs: `TBD_RpcAsk_SpectatorHostAt(vector)` on the modded `SCR_PlayerController`, Unreliable to
   the Server; the server moves the host of `GetPlayerId()`, never a player the client names.
 - Replicated properties: none here; the spectator policy arrives through `TBD_FrameworkManager`.
@@ -79,8 +81,9 @@ before a deployment and on disconnect.
   `ManualCameraContext`; the engine's `SCR_CameraBase`, `CameraManager` and
   `SCR_PlayerController.SetPossessedEntity`.
 - Used by: `apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et`, which attaches
-  `TBD_SpectatorComponent`; `TBD_SpawnManager` (`TBD_SpectatorHost.ReleaseFor`);
-  `TBD_MissionLoader` (`TBD_SpectatorTargets.SetFactionRestricted`); `TBD_PreSlotCamera` in
+  `TBD_SpectatorComponent`; `TBD_DeployExecutor` and `TBD_SpawnDeparture`
+  (`TBD_SpectatorHost.ReleaseFor`); `TBD_MissionWorldApplier`
+  (`TBD_SpectatorTargets.SetFactionRestricted`); `TBD_PreSlotCamera` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/` (`TBD_SpectatorController.IsActive`);
   `TBD_FrameworkManager`, whose roll call checks the component.
 - Rules: a host is never a character, never damageable and never a path back into the world

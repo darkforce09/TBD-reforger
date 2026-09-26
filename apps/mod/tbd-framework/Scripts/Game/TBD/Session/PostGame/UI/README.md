@@ -14,21 +14,24 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/UI/
 
 ## How it works
 
-`TBD_FrameworkManager.ApplyEndScreens` runs on every stage change on a machine with a workspace:
-it opens `TBD_EndScreen` on `END` and `TBD_DebriefScreen` on `DEBRIEF`, and closes each on every
-other stage. `Open` and `Close` are local widget operations
+`TBD_EndBanner.ApplyEndScreens` in
+`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/Stage/` runs on every stage change
+on a machine with a workspace: it opens `TBD_EndScreen` on `END` and `TBD_DebriefScreen` on
+`DEBRIEF`, and closes each on every other stage. `Open` and `Close` are local widget operations
 (`TBD_UILayouts.END_SCREEN` and `DEBRIEF_SCREEN`, the layouts in
 `apps/mod/tbd-framework/UI/layouts/Session/PostGame/`), so they cannot feed back into the stage.
 The banner reads `GetEndWinner` and `GetEndReason` from `TBD_FrameworkManager` under the title
 "MISSION ENDED".
 
-The scoreboard reads the board as one packed string. On the authority, `TBD_FrameworkManager`
-calls `TBD_DebriefScoreboard.Fill` in `apps/mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/`:
-one `TBD_DebriefRow` per connected player with name, faction and role from
-the assigned slot, deaths 0 or 1 from the one-life record, and kills from
-`TBD_FrameworkManager.GetKills`. `PackRows` joins the rows into the replicated board and
-`UnpackRows` splits it on each client. The list sorts by kills, then deaths, then name, and its one
-button, "SORT BY KILLS", and a click on the header row flip the order.
+The scoreboard reads the board as one packed string. On the authority,
+`TBD_EndBanner.PackDebriefBoard` calls `TBD_DebriefScoreboard.Fill` in
+`apps/mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/`: one `TBD_DebriefRow` per connected
+player with name, faction and role from the assigned slot, deaths 0 or 1 from the one-life record,
+and kills from `TBD_FrameworkManager.GetKills`. `PackRows` joins the rows into the replicated
+board, one row per `TBD_WireCodec.LINE_SEP` with kills, deaths, faction, role and name separated by
+`TBD_WireCodec.FIELD_SEP`, and `UnpackRows` splits it on each client. The list sorts by kills, then
+deaths, then name, and its one button, "SORT BY KILLS", and a click on the header row flip the
+order.
 
 ## Authority
 
@@ -45,9 +48,11 @@ button, "SORT BY KILLS", and a click on the header row flip the order.
 - Depends on: `TBD_FrameworkManager` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/`; `TBD_SpawnManager` (slots and
   the one-life record); `TBD_UILayouts`, `TBD_UITheme` and `TBD_ListBox` in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/`; the two layouts in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/`; `TBD_WireCodec` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Core/Wire/`; the two layouts in
   `apps/mod/tbd-framework/UI/layouts/Session/PostGame/`.
-- Used by: `TBD_FrameworkManager`, which opens and closes both screens and packs the board.
+- Used by: `TBD_EndBanner`, which opens and closes both screens and packs the board for
+  `TBD_FrameworkManager`.
 - Rules: the overlays never block or refuse a stage change; a packed field never holds the row or
   field separator (`SanitizeField`); lines added stay ASCII and `cargo xtask mod compile` checks
   that the scripts compile.

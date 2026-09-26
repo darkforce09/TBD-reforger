@@ -1,36 +1,29 @@
-//! T-181.12 -- the unit list. Who is still alive, by faction and by group, and one click to watch
-//! any of them.
-//!
-//! Built on the T-181.7 framework rather than a bespoke widget, and reusing
-//! `TBD_ScreenShell.layout` unchanged -- the shell was designed to be subclassed exactly like this
-//! ("register the subclass in chimeraMenus.conf against your own preset"). Reusing it means this
-//! slice ships **no new `.layout`**, so the only non-script resource it adds is the preset line
-//! itself. `TBD_ListBox` pools its rows, so the refresh timer below costs property writes, not
-//! widget churn, for the whole rest of the event.
-//!
-//! One obvious primary action: **FREE CAMERA**. It is the way out of anything, it is always
-//! available, and it is the only loud button on the screen.
-//!
-//! Everything else is direct manipulation on the rows:
-//!   * click a player          -> follow them (third person). No select-then-confirm step.
-//!   * click them AGAIN        -> first person, through their eyes. Click again to come back.
-//! The status line says which of the three you are in, and what clicking again will do, so the
-//! second click is discoverable without a legend. That is also why first person is not a second
-//! button: design law allows exactly one.
-//!
-//! The backdrop is repainted transparent and the panel to `SURFACE_GLASS`, so the world you are
-//! flying stays visible behind the list. Nothing blocking -- the camera keeps moving while this is
-//! open, because a spectator who has to close a menu to look at something has been given a modal
-//! dialog with extra steps.
+/**
+ * @file TBD_SpectatorScreen.c
+ * @brief The spectator roster: who is still alive, by faction and group, with one click to watch any of them.
+ *
+ * Role: lists the followable players from TBD_SpectatorTargets once a second, marks the followed
+ * one, and routes clicks: a player row follows in third person, a second click on the followed row
+ * toggles first person, the FREE CAMERA primary action returns to free flight.
+ * Position: a TBD_ShellScreen subclass on the TBD_Spectator preset over TBD_ScreenShell.layout,
+ * opened and closed by TBD_SpectatorController; reads TBD_SpectatorTargets and drives
+ * TBD_SpectatorTargeting.
+ * State: the target rows and the not-in-view count of the last refresh, per screen instance, client.
+ * Invariants: nothing blocks, so the camera keeps flying while the list is open (transparent
+ * backdrop, glass panel); FREE CAMERA is the one primary action; the status line names the mode
+ * and what a second click does; players outside replication range are counted, never offered.
+ */
+
+//! The spectator roster screen over the live camera.
 class TBD_SpectatorScreen : TBD_ShellScreen
 {
-	//! Slow enough to be free, fast enough that a kill disappears from the list while you are
-	//! still looking at it. The list is pooled, so this is a property-write pass, not a rebuild.
-	static const int REFRESH_MS = 1000;
+	static const int REFRESH_MS = 1000; //!< refresh period in ms; the list is pooled, so a refresh is property writes
 
-	protected ref array<ref TBD_SpectatorTarget> m_aTargets;
-	protected int m_iNotInView;
+	protected ref array<ref TBD_SpectatorTarget> m_aTargets; //!< rows of the last refresh
+	protected int m_iNotInView; //!< connected players not on this machine at the last refresh
 
+	//! Repaint the backdrop transparent and the panel glass, wire the row and primary actions,
+	//! refresh, and arm the repeating refresh.
 	override protected void OnScreenOpen()
 	{
 		super.OnScreenOpen();
@@ -53,6 +46,7 @@ class TBD_SpectatorScreen : TBD_ShellScreen
 		GetGame().GetCallqueue().CallLater(Refresh, REFRESH_MS, true);
 	}
 
+	//! Cancel the refresh and unwire the row and primary actions.
 	override protected void OnScreenClose()
 	{
 		GetGame().GetCallqueue().Remove(Refresh);
@@ -66,11 +60,13 @@ class TBD_SpectatorScreen : TBD_ShellScreen
 		super.OnScreenClose();
 	}
 
+	//! @return the screen title
 	override protected string GetScreenTitle()
 	{
 		return "SPECTATOR";
 	}
 
+	//! @return the subtitle naming the faction restriction
 	override protected string GetScreenSubtitle()
 	{
 		if (TBD_SpectatorTargets.IsFactionRestricted())
@@ -91,7 +87,7 @@ class TBD_SpectatorScreen : TBD_ShellScreen
 
 		TBD_SpectatorTargets.Collect(m_aTargets, m_iNotInView);
 
-		int followed = TBD_SpectatorController.GetFollowedPlayerId();
+		int followed = TBD_SpectatorTargeting.GetFollowedPlayerId();
 
 		list.BeginUpdate();
 
@@ -118,7 +114,7 @@ class TBD_SpectatorScreen : TBD_ShellScreen
 			string detail;
 			if (isFollowed)
 			{
-				if (TBD_SpectatorController.IsFirstPerson())
+				if (TBD_SpectatorTargeting.IsFirstPerson())
 					detail = "FIRST PERSON";
 				else
 					detail = "FOLLOWING";
@@ -131,11 +127,9 @@ class TBD_SpectatorScreen : TBD_ShellScreen
 			list.AddItem(target.m_sName, detail, target.m_iPlayerId, state, true);
 		}
 
-		// Honest about what the list is NOT showing. See the streaming landmine on
-		// TBD_SpectatorController: a player outside this client's replication range has never been
-		// sent to this machine and cannot be rendered by any camera, so offering them as a target
-		// would be a promise we cannot keep. Counting them is the truth; hiding them silently is
-		// not, because "the list is empty" and "everyone is far away" are very different facts.
+		// A player outside this client's replication range was never sent to this machine and
+		// cannot be rendered, so they are counted, not offered: "the list is empty" and "everyone
+		// is far away" are different facts.
 		if (m_iNotInView > 0)
 			list.AddSection(string.Format("%1 more not in view -- fly closer", m_iNotInView));
 
@@ -160,7 +154,7 @@ class TBD_SpectatorScreen : TBD_ShellScreen
 			return "Nobody left alive to watch.";
 		}
 
-		return TBD_SpectatorController.GetStatusLine();
+		return TBD_SpectatorTargeting.GetStatusLine();
 	}
 
 
@@ -171,11 +165,11 @@ class TBD_SpectatorScreen : TBD_ShellScreen
 		if (tag <= 0)
 			return;
 
-		if (TBD_SpectatorController.GetFollowedPlayerId() == tag)
+		if (TBD_SpectatorTargeting.GetFollowedPlayerId() == tag)
 		{
-			TBD_SpectatorController.ToggleFirstPerson();
+			TBD_SpectatorTargeting.ToggleFirstPerson();
 		}
-		else if (!TBD_SpectatorController.FollowPlayer(tag, false))
+		else if (!TBD_SpectatorTargeting.FollowPlayer(tag, false))
 		{
 			// The player died between the last refresh and this click. Say so instead of leaving
 			// the camera pointed at a corpse and the row looking selected.
@@ -187,9 +181,11 @@ class TBD_SpectatorScreen : TBD_ShellScreen
 		Refresh();
 	}
 
+	//! FREE CAMERA: back to free flight, then refresh.
+	//! @param screen this screen
 	protected void OnFreeCameraPicked(TBD_ShellScreen screen)
 	{
-		TBD_SpectatorController.SetFree();
+		TBD_SpectatorTargeting.SetFree();
 		Refresh();
 	}
 }

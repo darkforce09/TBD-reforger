@@ -1,21 +1,32 @@
-//! T-941.3 - END stage banner. Winning faction + reason, as a workspace overlay.
-//!
-//! Not a Chimera menu: this slice does not own `chimeraMenus.conf`, and a menu that can swallow
-//! Esc must never be able to refuse a stage change. `TBD_FrameworkManager.ApplyEndScreens` opens
-//! this on END and closes it on every other stage; `Open`/`Close` cannot feed back into SetStage.
+/**
+ * @file TBD_EndScreen.c
+ * @brief The END stage banner: the winning faction and the reason, as a workspace overlay.
+ *
+ * Role: shows "MISSION ENDED", the winner (or "No winner") and a readable end reason.
+ * Position: TBD_EndBanner.ApplyEndScreens opens it in the END stage and closes it on any other;
+ * the winner and reason come from TBD_FrameworkManager.GetEndWinner and GetEndReason.
+ * State: the open root and live instance (static), and per instance the widgets; client.
+ * Invariants: an overlay widget, never a Chimera menu, so Esc cannot refuse a stage change; Open
+ * and Close never feed back into the stage machine.
+ */
+
+//! The END stage banner, handler of the root widget of TBD_UILayouts.END_SCREEN.
 class TBD_EndScreen : ScriptedWidgetComponent
 {
-	protected static Widget s_wRoot;
-	protected static TBD_EndScreen s_Instance;
+	protected static Widget s_wRoot; //!< the open overlay root; null when closed
+	protected static TBD_EndScreen s_Instance; //!< the attached handler; null when closed
 
-	protected Widget m_wRoot;
-	protected TextWidget m_wTitle;
-	protected TextWidget m_wSubtitle;
-	protected TextWidget m_wWinner;
-	protected TextWidget m_wReason;
-	protected TextWidget m_wStatus;
-	protected TBD_UIButton m_BackAction;
+	protected Widget m_wRoot; //!< this handler's root widget
+	protected TextWidget m_wTitle; //!< "MISSION ENDED"
+	protected TextWidget m_wSubtitle; //!< "The round is over."
+	protected TextWidget m_wWinner; //!< winning faction, or "No winner"
+	protected TextWidget m_wReason; //!< readable end reason
+	protected TextWidget m_wStatus; //!< "The next stage closes this screen."
+	protected TBD_UIButton m_BackAction; //!< closes the overlay
 
+	//! Open the overlay on this machine; no-op when open or without a workspace. Logs an ERROR when
+	//! the layout will not load.
+	//! @authority client
 	static void Open()
 	{
 		if (s_wRoot)
@@ -35,6 +46,7 @@ class TBD_EndScreen : ScriptedWidgetComponent
 		s_wRoot = root;
 	}
 
+	//! Remove the overlay; no-op when closed.
 	static void Close()
 	{
 		if (!s_wRoot)
@@ -45,11 +57,14 @@ class TBD_EndScreen : ScriptedWidgetComponent
 		s_Instance = null;
 	}
 
+	//! @return true while the overlay is open
 	static bool IsOpen()
 	{
 		return s_wRoot != null;
 	}
 
+	//! Bind the widgets and the back action, paint the overlay and populate it.
+	//! @param w the overlay root widget
 	override void HandlerAttached(Widget w)
 	{
 		super.HandlerAttached(w);
@@ -84,6 +99,8 @@ class TBD_EndScreen : ScriptedWidgetComponent
 		Populate();
 	}
 
+	//! Unbind the back action and clear the statics when they point here.
+	//! @param w the overlay root widget
 	override void HandlerDeattached(Widget w)
 	{
 		if (m_BackAction)
@@ -97,6 +114,7 @@ class TBD_EndScreen : ScriptedWidgetComponent
 		super.HandlerDeattached(w);
 	}
 
+	//! Fill the title, winner, reason, subtitle and status from TBD_FrameworkManager.
 	protected void Populate()
 	{
 		TBD_UITheme.Write(m_wTitle, "MISSION ENDED");
@@ -121,6 +139,8 @@ class TBD_EndScreen : ScriptedWidgetComponent
 		TBD_UITheme.Show(m_wStatus, true);
 	}
 
+	//! @param reason the end reason key: faction_eliminated, time_limit, admin, or any other text
+	//! @return a readable sentence; an unknown key is returned as is, an empty one as "The round ended."
 	protected string DescribeReason(string reason)
 	{
 		if (reason.IsEmpty())
@@ -134,6 +154,8 @@ class TBD_EndScreen : ScriptedWidgetComponent
 		return reason;
 	}
 
+	//! @param name a widget name under the root
+	//! @return the widget, or null
 	protected Widget Find(string name)
 	{
 		if (!m_wRoot)
@@ -142,11 +164,16 @@ class TBD_EndScreen : ScriptedWidgetComponent
 		return m_wRoot.FindAnyWidget(name);
 	}
 
+	//! @param name a text widget name under the root
+	//! @return the text widget, or null
 	protected TextWidget FindText(string name)
 	{
 		return TextWidget.Cast(Find(name));
 	}
 
+	//! @param name a widget name under the root
+	//! @param handler the handler type to find on it
+	//! @return the handler, or null
 	protected ScriptedWidgetComponent FindHandlerOn(string name, typename handler)
 	{
 		Widget w = Find(name);
@@ -156,6 +183,8 @@ class TBD_EndScreen : ScriptedWidgetComponent
 		return ScriptedWidgetComponent.Cast(w.FindHandler(handler));
 	}
 
+	//! Back: close the overlay.
+	//! @param button the back button
 	protected void OnBackClicked(TBD_UIButton button)
 	{
 		Close();

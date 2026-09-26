@@ -7,7 +7,9 @@ slotted-count badges on its navigation.
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Session/Players/
-├── TBD_PlayersCatalog.c  `TBD_PlayerInfo` and `TBD_PlayersCatalog`: players by state and faction
+├── TBD_EPlayerState.c    `TBD_EPlayerState`: slotted, spectator or unslotted
+├── TBD_PlayerInfo.c      `TBD_PlayerInfo`: one player's name, faction, ping, tag and state
+├── TBD_PlayersCatalog.c  `TBD_PlayersCatalog`: players by state and faction, seats per faction
 └── UI/                   the PLAYERS panel of the briefing
 ```
 
