@@ -1,54 +1,32 @@
 /**
- * TBD_LoadoutPreviewDresser.c - dress a PREVIEW character with a slot's exact kit (kit-preview pass,
- * 2026-09-13).
+ * @file TBD_LoadoutPreviewDresser.c
+ * @brief Dresses the lobby kit-preview doll with a slot's exact kit and loadout.
  *
- * The client twin of `TBD_LoadoutApplication` (TBD_LoadoutEquipHelper.c). Same inputs -- a kit
- * prefab resolved through `TBD_Registry` plus the JSON `TBD_SlotLoadoutStruct` -- same composition
- * rule (an authored gear slot REPLACES the kit's garment, an absent one KEEPS it, optic + magazine
- * mount into the primary), but on the `ItemPreviewManagerEntity`'s preview entity instead of the
- * spawned slot body. It is NOT a subclass of the application, on purpose:
- *  - the application spawns REPLICATED entities (`SpawnEntityPrefab`) into the game world; this
- *    spawns LOCAL ones (`SpawnEntityPrefabLocal`) into the preview entity's own world;
- *  - the application polls a worn-verify for 3 s, audits nakedness and hard-ERRORs -- every one of
- *    those is right for a body a player will inhabit and wrong for a menu thumbnail. Here a miss
- *    is one WARNING line, once per reason, and the doll simply wears less;
- *  - `AttachEntity` on the storage slots is synchronous, so the doll is complete on return.
- *
- * The recipe is vanilla's `SCR_LoadoutPreviewComponent.SetPreviewedLoadout` (read from the pak
- * this pass): resolve the preview entity for the prefab, attach garments to
- * `EquipedLoadoutStorageComponent` slots and weapons to `EquipedWeaponStorageComponent` slots,
- * mount attachments through the weapon's `WeaponAttachmentsStorageComponent`, `SelectWeapon` the
- * one to hold, then `SetPreviewItem(widget, entity, attributes, true)` (the caller's job).
- *
- * THE CACHE RULE (MEASURED run 1: after the AT seat every seat carried the RPG).
- * `ResolvePreviewEntityForPrefab` hands back ONE entity per prefab for the life of the manager, so
- * every seat with the same kit prefab shares a doll, and `InventoryStorageSlot.GetSlotTemplate()`
- * is EMPTY for the baked weapons -- there is nothing on the slot to fall back to. So the first time a
- * prefab is resolved, BEFORE anything is dressed, its BASELINE is recorded: the prefab of what every
- * garment slot and weapon slot holds ("" = the kit leaves it empty). Every pass then computes, per
- * slot, DESIRED = authored prefab, else the baseline, and: equal -> keep; different -> swap; desired
- * empty with a baseline on record -> CLEAR the slot. A kit-only seat after a fully authored one
- * therefore puts every kit garment back and takes the launcher off. Weapon slots also remember
- * whether the last pass AUTHORED them: an authored primary is always respawned (it may carry the
- * previous seat's optic), and a baseline restore over an authored weapon respawns too.
- *
- * ATTACHMENTS (MEASURED run 1: optic and magazine ended up on the muzzle). `CanStoreItem` on the
- * attachment storage accepts anything in a free slot; the typed check is the slot's own
- * `AttachmentSlotComponent.CanSetAttachment` (the storage slot's `GetParentContainer()`). The
- * magazine well is not always an attachment slot, so the magazine falls back to the route the
- * server pass uses -- `SCR_InventoryStorageManagerComponent.TrySpawnPrefabToStorage` into the
- * weapon storage -- and is verified by scanning the storage.
- *
- * Client-side, menu-time code: no authority, no replication, no wire.
+ * Role: the client counterpart of `TBD_LoadoutApplication`: the same inputs (a kit prefab
+ * resolved through `TBD_Registry` and the slot's `TBD_SlotLoadoutStruct`) and the same
+ * composition rule (an authored gear field replaces the kit's garment, an absent one keeps it,
+ * optic and magazine mount on the primary), applied to the `ItemPreviewManagerEntity` preview
+ * entity with local spawns and synchronous `AttachEntity`. It follows vanilla
+ * `SCR_LoadoutPreviewComponent.SetPreviewedLoadout`: resolve the preview entity, attach garments
+ * to `EquipedLoadoutStorageComponent` slots and weapons to `EquipedWeaponStorageComponent` slots,
+ * mount through `TBD_LoadoutPreviewMount`, select the weapon to hold.  Position: called by
+ * `TBD_KitPreviewComponent`, which hands the entity to `SetPreviewItem`.
+ * State: one `TBD_PreviewBaseline` per kit prefab for the session, on the client.
+ * Invariants: `ResolvePreviewEntityForPrefab` returns one shared entity per prefab and baked weapons have no
+ * slot template, so the prefab's untouched state is recorded before its first dressing and every
+ * pass computes each slot as authored, else baseline: equal keeps, different swaps, empty
+ * baseline clears. An authored weapon is always respawned so a previous seat's attachments never
+ * linger. A miss is one WARNING per reason, never an ERROR; no authority, replication or wire.
  */
 
-//! What a kit prefab's preview entity held before any loadout touched it (see the header).
+//! What a kit prefab's preview entity holds before any loadout touches it.
 class TBD_PreviewBaseline
 {
 	ref map<int, string> m_mGarments;       //!< loadout slot id -> prefab ("" = empty)
 	ref map<int, string> m_mWeapons;        //!< engine weapon slot index -> prefab ("" = empty)
 	ref map<int, bool> m_mWeaponAuthored;   //!< weapon slot index -> last pass put an AUTHORED weapon there
 
+	//! Create the empty maps.
 	void TBD_PreviewBaseline()
 	{
 		m_mGarments = new map<int, string>();
@@ -57,20 +35,21 @@ class TBD_PreviewBaseline
 	}
 }
 
+//! Stateless dresser for the kit-preview doll; the baselines are session-static.
 class TBD_LoadoutPreviewDresser
 {
-	//! Vanilla's manager prefab (`SCR_LoadoutPreviewComponent.m_sPreviewManager`); TBD worlds place
-	//! none, so the local spawn below runs on the first preview of a session.
-	static const ResourceName PREVIEW_MANAGER_PREFAB = "{9F18C476AB860F3B}Prefabs/World/Game/ItemPreviewManager.et";
+	//! Vanilla's manager prefab (`SCR_LoadoutPreviewComponent.m_sPreviewManager`); TBD worlds place none.
+	static const ResourceName PREVIEW_MANAGER_PREFAB = "{9F18C476AB860F3B}Prefabs/World/Game/ItemPreviewManager.et"; //!< spawned locally on the first preview when absent
 
-	//! Engine weapon slot indices -- byte-identical to TBD_LoadoutApplication.Run / arsenal_rules.rs.
-	static const int WEAPON_SLOT_PRIMARY = 0;
-	static const int WEAPON_SLOT_LAUNCHER = 1;
-	static const int WEAPON_SLOT_HANDGUN = 2;
-	static const int WEAPON_SLOT_THROWABLE = 3;
+	static const int WEAPON_SLOT_PRIMARY = 0; //!< engine weapon slot, same ids as `TBD_LoadoutGearPhase.Begin`
+	static const int WEAPON_SLOT_LAUNCHER = 1; //!< engine weapon slot: the second untyped long slot
+	static const int WEAPON_SLOT_HANDGUN = 2; //!< engine weapon slot: sidearm
+	static const int WEAPON_SLOT_THROWABLE = 3; //!< engine weapon slot: grenade
 
-	protected static ref array<string> s_aWarned;
-	protected static ref map<string, ref TBD_PreviewBaseline> s_mBaselines;
+	static const string LOG_CHANNEL = "lobby"; //!< `TBD_Log` channel of every preview warning
+	static const string WARN_PREFIX = "kit preview: "; //!< text every preview warning starts with
+
+	protected static ref map<string, ref TBD_PreviewBaseline> s_mBaselines; //!< kit prefab -> its recorded baseline; null until first use
 
 	//! The world's ItemPreviewManager, spawned locally when the world has none (vanilla fallback).
 	static ItemPreviewManagerEntity GetOrSpawnManager()
@@ -91,7 +70,7 @@ class TBD_LoadoutPreviewDresser
 		if (manager)
 			Print("[TBD][lobby] kit preview: spawned ItemPreviewManager locally (the world places none)");
 		else
-			WarnOnce("manager", "the world has no ItemPreviewManager and the local spawn failed");
+			TBD_WarnOnce.Warn(LOG_CHANNEL, "manager", WARN_PREFIX + "the world has no ItemPreviewManager and the local spawn failed");
 
 		return manager;
 	}
@@ -117,7 +96,7 @@ class TBD_LoadoutPreviewDresser
 		if (!ent)
 		{
 			failReason = "no preview entity for " + basePrefab;
-			WarnOnce(basePrefab, failReason);
+			TBD_WarnOnce.Warn(LOG_CHANNEL, basePrefab, WARN_PREFIX + failReason);
 			return null;
 		}
 
@@ -165,7 +144,7 @@ class TBD_LoadoutPreviewDresser
 		}
 		else
 		{
-			WarnOnce("loadoutStorage:" + basePrefab, "preview entity has no EquipedLoadoutStorageComponent -- garments not dressed");
+			TBD_WarnOnce.Warn(LOG_CHANNEL, "loadoutStorage:" + basePrefab, WARN_PREFIX + "preview entity has no EquipedLoadoutStorageComponent -- garments not dressed");
 		}
 
 		IEntity primaryWeapon;
@@ -178,19 +157,18 @@ class TBD_LoadoutPreviewDresser
 		}
 		else
 		{
-			WarnOnce("weaponStorage:" + basePrefab, "preview entity has no EquipedWeaponStorageComponent -- weapons not dressed");
+			TBD_WarnOnce.Warn(LOG_CHANNEL, "weaponStorage:" + basePrefab, WARN_PREFIX + "preview entity has no EquipedWeaponStorageComponent -- weapons not dressed");
 		}
 
 		if (primaryWeapon && !primary.IsEmpty())
 		{
-			Mount(ent, primaryWeapon, "optic", optic);
-			Mount(ent, primaryWeapon, "magazine", magazine);
+			TBD_LoadoutPreviewMount.Mount(ent, primaryWeapon, "optic", optic);
+			TBD_LoadoutPreviewMount.Mount(ent, primaryWeapon, "magazine", magazine);
 		}
 
-		HoldWeapon(ent, primaryWeapon);
+		TBD_LoadoutPreviewMount.HoldWeapon(ent, primaryWeapon);
 		return ent;
 	}
-
 
 	//! The prefab's untouched state, recorded once per prefab. Null when nothing could be read (the
 	//! entity had not populated its slots yet) -- callers then fall back to the slot template.
@@ -214,7 +192,7 @@ class TBD_LoadoutPreviewDresser
 				if (!slot)
 					continue;
 
-				string prefab = PrefabOf(slot.GetAttachedEntity());
+				string prefab = TBD_LoadoutInventoryUtil.PrefabOf(slot.GetAttachedEntity());
 				baseline.m_mGarments.Insert(slot.GetID(), prefab);
 				if (!prefab.IsEmpty())
 					populated++;
@@ -229,7 +207,7 @@ class TBD_LoadoutPreviewDresser
 				if (!slot)
 					continue;
 
-				string prefab = PrefabOf(slot.GetAttachedEntity());
+				string prefab = TBD_LoadoutInventoryUtil.PrefabOf(slot.GetAttachedEntity());
 				baseline.m_mWeapons.Insert(i, prefab);
 				if (!prefab.IsEmpty())
 					populated++;
@@ -238,14 +216,13 @@ class TBD_LoadoutPreviewDresser
 
 		if (populated == 0)
 		{
-			WarnOnce("baseline:" + basePrefab, "preview entity held nothing when first resolved -- kit-only restore falls back to slot templates for " + basePrefab);
+			TBD_WarnOnce.Warn(LOG_CHANNEL, "baseline:" + basePrefab, WARN_PREFIX + "preview entity held nothing when first resolved -- kit-only restore falls back to slot templates for " + basePrefab);
 			return null;
 		}
 
 		s_mBaselines.Insert(basePrefab, baseline);
 		return baseline;
 	}
-
 
 	//! One garment area. `altArea` is the second candidate the server pass also accepts (a plate
 	//! carrier authored as "vest" lands in the armored area). Returns the slot id the item sits in
@@ -266,7 +243,7 @@ class TBD_LoadoutPreviewDresser
 		if (!slot)
 		{
 			if (!authored.IsEmpty())
-				WarnOnce(label + ":" + authored, string.Format("preview character has no %1 slot for %2", label, authored));
+				TBD_WarnOnce.Warn(LOG_CHANNEL, label + ":" + authored, WARN_PREFIX + string.Format("preview character has no %1 slot for %2", label, authored));
 			return -1;
 		}
 
@@ -286,13 +263,13 @@ class TBD_LoadoutPreviewDresser
 			return slot.GetID();
 		}
 
-		if (PrefabOf(current) == desired)
+		if (TBD_LoadoutInventoryUtil.PrefabOf(current) == desired)
 			return slot.GetID();
 
 		IEntity item = SpawnLocal(desired, ent);
 		if (!item)
 		{
-			WarnOnce(label + ":" + desired, string.Format("%1 prefab failed to load: %2", label, desired));
+			TBD_WarnOnce.Warn(LOG_CHANNEL, label + ":" + desired, WARN_PREFIX + string.Format("%1 prefab failed to load: %2", label, desired));
 			return slot.GetID();
 		}
 
@@ -301,7 +278,7 @@ class TBD_LoadoutPreviewDresser
 		{
 			slot = altSlot;
 			current = slot.GetAttachedEntity();
-			if (PrefabOf(current) == desired)
+			if (TBD_LoadoutInventoryUtil.PrefabOf(current) == desired)
 			{
 				SCR_EntityHelper.DeleteEntityAndChildren(item);
 				return slot.GetID();
@@ -335,14 +312,13 @@ class TBD_LoadoutPreviewDresser
 		return slot.GetSlotTemplate();
 	}
 
-
 	//! One engine weapon slot. Returns the weapon now in the slot (authored, baseline or untouched).
 	protected static IEntity DressWeapon(IEntity ent, EquipedWeaponStorageComponent storage, TBD_PreviewBaseline baseline, string label, string authored, int slotIndex)
 	{
 		if (slotIndex < 0 || slotIndex >= storage.GetSlotsCount())
 		{
 			if (!authored.IsEmpty())
-				WarnOnce(label + ":slot", string.Format("preview character has no engine weapon slot %1 for %2", slotIndex, label));
+				TBD_WarnOnce.Warn(LOG_CHANNEL, label + ":slot", WARN_PREFIX + string.Format("preview character has no engine weapon slot %1 for %2", slotIndex, label));
 			return null;
 		}
 
@@ -385,13 +361,13 @@ class TBD_LoadoutPreviewDresser
 
 		// A baseline weapon that is already the right prefab and was never authored over stays;
 		// anything authored is respawned so the previous seat's attachments cannot linger.
-		if (authored.IsEmpty() && !wasAuthored && PrefabOf(current) == desired)
+		if (authored.IsEmpty() && !wasAuthored && TBD_LoadoutInventoryUtil.PrefabOf(current) == desired)
 			return current;
 
 		IEntity item = SpawnLocal(desired, ent);
 		if (!item)
 		{
-			WarnOnce(label + ":" + desired, string.Format("%1 prefab failed to load: %2", label, desired));
+			TBD_WarnOnce.Warn(LOG_CHANNEL, label + ":" + desired, WARN_PREFIX + string.Format("%1 prefab failed to load: %2", label, desired));
 			return current;
 		}
 
@@ -406,108 +382,15 @@ class TBD_LoadoutPreviewDresser
 		return item;
 	}
 
+	//! Record whether the last pass put an authored weapon in `slotIndex`; no-op without a baseline.
 	protected static void MarkAuthored(TBD_PreviewBaseline baseline, int slotIndex, bool authored)
 	{
 		if (baseline)
 			baseline.m_mWeaponAuthored.Set(slotIndex, authored);
 	}
 
-
-	//! Mount an optic / magazine onto the primary: the attachment slot whose own type accepts it;
-	//! the magazine additionally falls back to the inventory manager (the server pass's route).
-	protected static void Mount(IEntity ent, IEntity weapon, string label, string prefab)
-	{
-		if (prefab.IsEmpty())
-			return;
-
-		WeaponAttachmentsStorageComponent storage = WeaponAttachmentsStorageComponent.Cast(weapon.FindComponent(WeaponAttachmentsStorageComponent));
-		if (!storage)
-		{
-			WarnOnce(label + ":storage", string.Format("primary has no WeaponAttachmentsStorageComponent -- %1 not mounted", label));
-			return;
-		}
-
-		if (StorageHas(storage, prefab))
-			return;
-
-		IEntity item = SpawnLocal(prefab, ent);
-		if (!item)
-		{
-			WarnOnce(label + ":" + prefab, string.Format("%1 prefab failed to load: %2", label, prefab));
-			return;
-		}
-
-		int count = storage.GetSlotsCount();
-		int i;
-		for (i = 0; i < count; i++)
-		{
-			InventoryStorageSlot slot = storage.GetSlot(i);
-			if (!slot)
-				continue;
-
-			AttachmentSlotComponent attachmentSlot = AttachmentSlotComponent.Cast(slot.GetParentContainer());
-			if (!attachmentSlot || !attachmentSlot.CanSetAttachment(item))
-				continue;
-
-			IEntity occupant = slot.GetAttachedEntity();
-			if (occupant)
-			{
-				slot.DetachEntity();
-				SCR_EntityHelper.DeleteEntityAndChildren(occupant);
-			}
-
-			slot.AttachEntity(item);
-			return;
-		}
-
-		SCR_EntityHelper.DeleteEntityAndChildren(item);
-
-		// No typed attachment slot took it. The magazine well is reached the way the server pass
-		// reaches it: through the character's inventory manager into the weapon storage.
-		SCR_InventoryStorageManagerComponent manager = SCR_InventoryStorageManagerComponent.Cast(ent.FindComponent(SCR_InventoryStorageManagerComponent));
-		if (manager && manager.TrySpawnPrefabToStorage(prefab, storage, -1, EStoragePurpose.PURPOSE_ANY) && StorageHas(storage, prefab))
-			return;
-
-		WarnOnce(label + ":fit:" + prefab, string.Format("no slot on the primary accepts %1 %2 -- the weapon shows its own", label, prefab));
-	}
-
-	protected static bool StorageHas(BaseInventoryStorageComponent storage, string prefab)
-	{
-		int count = storage.GetSlotsCount();
-		int i;
-		for (i = 0; i < count; i++)
-		{
-			InventoryStorageSlot slot = storage.GetSlot(i);
-			if (slot && PrefabOf(slot.GetAttachedEntity()) == prefab)
-				return true;
-		}
-
-		return false;
-	}
-
-	//! Put `weapon` in the doll's hands (vanilla: SelectWeapon on the slot that holds it).
-	protected static void HoldWeapon(IEntity ent, IEntity weapon)
-	{
-		if (!weapon)
-			return;
-
-		BaseWeaponManagerComponent weaponManager = BaseWeaponManagerComponent.Cast(ent.FindComponent(BaseWeaponManagerComponent));
-		if (!weaponManager)
-			return;
-
-		array<WeaponSlotComponent> slots = {};
-		weaponManager.GetWeaponsSlots(slots);
-		foreach (WeaponSlotComponent weaponSlot : slots)
-		{
-			if (weaponSlot.GetWeaponEntity() == weapon)
-			{
-				weaponManager.SelectWeapon(weaponSlot);
-				return;
-			}
-		}
-	}
-
-
+	//! The loadout storage slot for `area`.
+	//! @return the slot, or null when the body has no slot for that area
 	protected static InventoryStorageSlot SlotForArea(EquipedLoadoutStorageComponent storage, typename area)
 	{
 		LoadoutSlotInfo info = storage.GetSlotFromArea(area);
@@ -518,7 +401,7 @@ class TBD_LoadoutPreviewDresser
 	}
 
 	//! Spawn a prefab locally in the preview entity's own world (never the game world).
-	protected static IEntity SpawnLocal(string resName, IEntity previewEntity)
+	static IEntity SpawnLocal(string resName, IEntity previewEntity)
 	{
 		Resource resource = Resource.Load(resName);
 		if (!resource || !resource.IsValid())
@@ -527,29 +410,4 @@ class TBD_LoadoutPreviewDresser
 		return GetGame().SpawnEntityPrefabLocal(resource, previewEntity.GetWorld());
 	}
 
-	//! Prefab ResourceName of an entity ("" for null / unresolvable).
-	protected static string PrefabOf(IEntity ent)
-	{
-		if (!ent)
-			return string.Empty;
-
-		EntityPrefabData data = ent.GetPrefabData();
-		if (!data)
-			return string.Empty;
-
-		return data.GetPrefabName();
-	}
-
-	//! One WARNING per reason per session -- a menu must never spam or ERROR.
-	protected static void WarnOnce(string key, string message)
-	{
-		if (!s_aWarned)
-			s_aWarned = {};
-
-		if (s_aWarned.Contains(key))
-			return;
-
-		s_aWarned.Insert(key);
-		Print("[TBD][lobby] kit preview: " + message, LogLevel.WARNING);
-	}
 }

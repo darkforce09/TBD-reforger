@@ -3,9 +3,10 @@
  * @brief Inventory and prefab queries shared by the loadout equip, preview and gadget code.
  *
  * Role: prefab names of spawned items, the gear count of a slot loadout, clothing landing areas,
- * parent-chain tests and weapon storage lookups.  Position: called by
- * `TBD_LoadoutEquipHelper`, `TBD_LoadoutPreviewDresser` and `TBD_GadgetFlags`; reads engine
- * entities and `TBD_SlotGearStruct`.
+ * parent-chain tests and weapon storage lookups.  Position: called by the loadout application
+ * phases (`Application/`), the kit-preview dresser (`Preview/`), `TBD_GadgetFlags`,
+ * `TBD_MissionSlotChecks` and `TBD_SlotBodyMaterializer`; reads engine entities and
+ * `TBD_SlotGearStruct`.
  * State: none.  Invariants: every query accepts null and answers the empty or false value; none
  * spawns, moves or deletes an entity.
  */

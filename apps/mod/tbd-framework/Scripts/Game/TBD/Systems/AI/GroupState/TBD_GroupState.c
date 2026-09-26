@@ -1,150 +1,84 @@
-//! T-678 - group AI state: combatMode, behaviour, formation, speedMode as GROUP defaults.
-//!
-//! T-706 put the four GRP attrs on `$defs/group`. Nothing read them. T-677 opened the AI spawn
-//! gate for waypointed groups and applies waypoint-scoped `speedMode` / `behaviour` on each
-//! waypoint. Group-level values are DEFAULTS: they apply to the live SCR_AIGroup when a waypoint
-//! does not author an override. Combat-mode and formation are group-only on the wire.
-//!
-//! `TBD_MissionOrbatGroupStruct` in Backend/TBD_MissionLoader.c declares no combatMode /
-//! behaviour / formation / speedMode fields. Enfusion maps JSON keys onto NAMED class fields
-//! only. This file runs its own pass over `TBD_MissionLoader.GetRawJson()` with a root that
-//! declares `orbat.*.groups[]` combatMode/behaviour/formation/speedMode and nothing else.
-//! Same pattern as AI/TBD_WaypointRuntime.c. MissionLoader stays out of this slice's owns list.
-//!
-//! `JsonLoadContext.ReadValue` ALLOCATES a nested `ref <class>` field even when the JSON key is
-//! ABSENT. These four attrs are STRINGS, so presence is an emptiness test (`IsEmpty()`), never
-//! `if (group.combatMode)` on a nested class. Do not add a nested struct for the four keys.
-//!
-//! ATTR-FIELD-GRP-COMBAT-MODE  blue|green|white|yellow|red
-//!   -> EAIGroupCombatMode via SCR_AIGroupUtilityComponent.SetCombatMode
-//!      blue/green = HOLD_FIRE, white = RETURN_FIRE, yellow/red = FIRE_AT_WILL
-//! ATTR-FIELD-GRP-FORMATION    column|stagger_column|wedge|echelon_left|echelon_right|vee|line|file|diamond
-//!   -> AIFormationComponent.SetFormation with SCR_EAIGroupFormation names
-//!      (engine enum is Wedge/Line/Column/StaggeredColumn; extras map onto the nearest of those)
-//! ATTR-FIELD-GRP-SPEED-MODE   limited|normal|full
-//!   -> SCR_AIGroupCharactersMovementSpeedSetting at SCR_EAISettingOrigin.DEFAULT
-//!      (DEFAULT=1000, WAYPOINT=4000 -- T-677's waypoint setting wins when authored)
-//! ATTR-FIELD-GRP-BEHAVIOUR    careless|safe|aware|combat|stealth
-//!   -> no engine behaviour-setting class (T-677 measured this). Used as the speed ceiling
-//!      when `speedMode` is absent, same ladder as TBD_WaypointRuntime.SpeedFromWire.
-//!
-//! Groups with none of the four attrs are never collected. Absent attrs leave engine defaults.
-//! This file does not spawn groups, does not ActivateAI, and does not rewrite waypoints.
-//!
-//! The gate is `cargo xtask mod compile`. It cannot run a round. Whether a group actually holds
-//! fire / walks in wedge on a dedicated server is a human checklist item.
-//! @contract mission.schema.json#/$defs/group
+/**
+ * @file TBD_GroupState.c
+ * @brief Applies the authored group AI defaults (combat mode, formation, speed) to live AI groups.
+ *
+ * Role: reads the group AI attributes through a second JSON pass and, once the round is LIVE,
+ * applies them to each squad's `SCR_AIGroup` as defaults: `combatMode` blue/green hold fire,
+ * white returns fire, yellow/red fire at will (`SCR_AIGroupUtilityComponent.SetCombatMode`);
+ * `formation` sets `AIFormationComponent` to the nearest of the engine's Wedge, Line, Column and
+ * StaggeredColumn; `speedMode`, else the `behaviour` speed ceiling (the engine has no behaviour
+ * setting), adds a movement speed setting at origin DEFAULT, below the WAYPOINT origin a
+ * waypoint's own setting uses.  Position: `TBD_RuntimeHeartbeat` calls `Tick` every `TICK_MS`
+ * and `Clear` at world start; the groups exist once `TBD_WaypointRuntime` arms its squads.
+ * State: the parsed squads and the mission id they were built for (static, server).
+ * Invariants: groups with none of the four attributes are never collected; an absent attribute
+ * leaves the engine default; nothing here spawns groups, enables AI or rewrites waypoints; a
+ * squad is applied once.
+ */
 
-//! One `$defs/group` object, only the T-678 keys. Field names are the JSON keys.
-class TBD_GroupStateWireStruct
-{
-	string callsign;
-	string combatMode; //!< Optional. blue|green|white|yellow|red.
-	string behaviour;  //!< Optional. careless|safe|aware|combat|stealth.
-	string formation;  //!< Optional. schema formation tokens.
-	string speedMode;  //!< Optional. limited|normal|full.
-
-	//! Presence is emptiness, one test per line (Formula too complex).
-	bool HasAnyAttr()
-	{
-		if (!combatMode.IsEmpty())
-			return true;
-		if (!behaviour.IsEmpty())
-			return true;
-		if (!formation.IsEmpty())
-			return true;
-		if (!speedMode.IsEmpty())
-			return true;
-		return false;
-	}
-}
-
-class TBD_GroupStateFactionWireStruct
-{
-	ref array<ref TBD_GroupStateWireStruct> groups;
-}
-
-class TBD_GroupStateDocStruct
-{
-	ref map<string, ref TBD_GroupStateFactionWireStruct> orbat;
-}
-
+//! One squad with authored AI attributes and whether they are applied.
 class TBD_GroupStateSquad
 {
-	string faction;
-	string callsign;
-	string combatMode;
-	string behaviour;
-	string formation;
-	string speedMode;
-	bool applied;
+	string faction; //!< orbat faction key
+	string callsign; //!< group callsign; the join key onto flattened slots
+	string combatMode; //!< authored combat mode token; empty when absent
+	string behaviour; //!< authored behaviour token; empty when absent
+	string formation; //!< authored formation token; empty when absent
+	string speedMode; //!< authored speed token; empty when absent
+	bool applied; //!< true once the attributes are on the live group
 }
 
+//! Server-side group AI state reader and applier.
 class TBD_GroupState
 {
-	static const string CH = "GroupState";
-	static const int TICK_MS = 1000;
+	static const string CH = "GroupState"; //!< `TBD_Log` channel
+	static const int TICK_MS = 1000; //!< heartbeat period of `Tick`
+	static const string ANNOUNCE_PARSED_KEY = "GroupState.parsed"; //!< `TBD_AnnounceOnce` key of the once-per-mission parsed line
 
-	static const string SPEED_LIMITED = "limited";
-	static const string SPEED_NORMAL = "normal";
-	static const string SPEED_FULL = "full";
+	static const string CM_BLUE = "blue"; //!< combatMode: hold fire
+	static const string CM_GREEN = "green"; //!< combatMode: hold fire
+	static const string CM_WHITE = "white"; //!< combatMode: return fire
+	static const string CM_YELLOW = "yellow"; //!< combatMode: fire at will
+	static const string CM_RED = "red"; //!< combatMode: fire at will
 
-	static const string BH_CARELESS = "careless";
-	static const string BH_SAFE = "safe";
-	static const string BH_AWARE = "aware";
-	static const string BH_COMBAT = "combat";
-	static const string BH_STEALTH = "stealth";
+	static const string FORM_COLUMN = "column"; //!< formation: Column
+	static const string FORM_STAGGER = "stagger_column"; //!< formation: StaggeredColumn
+	static const string FORM_WEDGE = "wedge"; //!< formation: Wedge
+	static const string FORM_ECH_L = "echelon_left"; //!< formation: Line
+	static const string FORM_ECH_R = "echelon_right"; //!< formation: Line
+	static const string FORM_VEE = "vee"; //!< formation: Wedge
+	static const string FORM_LINE = "line"; //!< formation: Line
+	static const string FORM_FILE = "file"; //!< formation: Column
+	static const string FORM_DIAMOND = "diamond"; //!< formation: Wedge
 
-	static const string CM_BLUE = "blue";
-	static const string CM_GREEN = "green";
-	static const string CM_WHITE = "white";
-	static const string CM_YELLOW = "yellow";
-	static const string CM_RED = "red";
+	protected static ref array<ref TBD_GroupStateSquad> s_aSquads; //!< squads with authored attributes; null until parsed
+	protected static bool s_bParsed; //!< true once the pass has run for `s_sParsedForMission`
+	protected static string s_sParsedForMission; //!< mission id the squads were parsed for
 
-	static const string FORM_COLUMN = "column";
-	static const string FORM_STAGGER = "stagger_column";
-	static const string FORM_WEDGE = "wedge";
-	static const string FORM_ECH_L = "echelon_left";
-	static const string FORM_ECH_R = "echelon_right";
-	static const string FORM_VEE = "vee";
-	static const string FORM_LINE = "line";
-	static const string FORM_FILE = "file";
-	static const string FORM_DIAMOND = "diamond";
-
-	protected static ref array<ref TBD_GroupStateSquad> s_aSquads;
-	protected static bool s_bParsed;
-	protected static string s_sParsedForMission;
-	protected static bool s_bAnnounced;
-
+	//! Drop the parsed squads and re-arm the parsed line, so the next call parses again.
 	static void Clear()
 	{
 		s_aSquads = null;
 		s_bParsed = false;
 		s_sParsedForMission = string.Empty;
-		s_bAnnounced = false;
+		TBD_AnnounceOnce.Rearm(ANNOUNCE_PARSED_KEY);
 	}
 
-	protected static string CurrentMissionId()
-	{
-		TBD_MissionDocumentStruct doc = TBD_MissionLoader.GetMission();
-		if (!doc || !doc.meta)
-			return string.Empty;
-
-		return doc.meta.id;
-	}
-
+	//! Parse the group attributes of the current mission once per mission id. A document that is
+	//! not JSON or whose root does not read applies nothing this round (one ERROR).
+	//! @return false only when there is no mission document yet
 	protected static bool EnsureParsed()
 	{
-		string missionId = CurrentMissionId();
+		string missionId = TBD_MissionLoader.GetMissionId();
 		if (s_bParsed && missionId == s_sParsedForMission)
 			return true;
 
-		string raw = TBD_MissionLoader.GetRawJson();
-		if (raw.IsEmpty())
+		TBD_EMissionJsonPassOutcome outcome;
+		JsonLoadContext ctx = TBD_MissionJsonPass.LoadRoot(outcome);
+		if (outcome == TBD_EMissionJsonPassOutcome.NO_DOCUMENT)
 			return false;
 
-		JsonLoadContext ctx = new JsonLoadContext();
-		if (!ctx.LoadFromString(raw))
+		if (!ctx)
 		{
 			TBD_Log.Error(CH, "the mission document did not parse as JSON on the group-state pass - no group AI state is applied this round");
 			s_aSquads = new array<ref TBD_GroupStateSquad>();
@@ -177,6 +111,7 @@ class TBD_GroupState
 		return true;
 	}
 
+	//! Collect every group of `faction` with a callsign and at least one attribute.
 	protected static void CollectFaction(string factionKey, TBD_GroupStateFactionWireStruct faction)
 	{
 		if (!faction || !faction.groups)
@@ -203,12 +138,15 @@ class TBD_GroupState
 		}
 	}
 
+	//! One heartbeat: parse if needed, rebuild on a mission change, announce the squad count once,
+	//! then at LIVE with the slot bodies present apply each squad whose group exists.
+	//! @authority server
 	static void Tick()
 	{
 		if (!EnsureParsed())
 			return;
 
-		string missionId = CurrentMissionId();
+		string missionId = TBD_MissionLoader.GetMissionId();
 		if (missionId != s_sParsedForMission)
 		{
 			TBD_Log.Warn(CH, string.Format("the loaded mission is '%1' but the group-state registry was built for '%2' - rebuilding",
@@ -217,13 +155,12 @@ class TBD_GroupState
 			return;
 		}
 
-		if (!s_bAnnounced)
+		if (TBD_AnnounceOnce.Claim(ANNOUNCE_PARSED_KEY))
 		{
 			int n = 0;
 			if (s_aSquads)
 				n = s_aSquads.Count();
 			TBD_Log.Event(CH, string.Format("parsed groups with AI state=%1 mission='%2'", n, missionId));
-			s_bAnnounced = true;
 		}
 
 		if (!s_aSquads || s_aSquads.Count() < 1)
@@ -248,6 +185,9 @@ class TBD_GroupState
 		}
 	}
 
+	//! Apply combat mode, formation and speed to the squad's live group and mark it applied; no
+	//! group yet leaves it for the next tick.
+	//! @authority server
 	protected static void ApplySquad(TBD_GroupStateSquad squad, TBD_SpawnManager spawn)
 	{
 		SCR_AIGroup group = FindLiveGroup(squad, spawn);
@@ -263,8 +203,8 @@ class TBD_GroupState
 			squad.faction, squad.callsign, squad.combatMode, squad.behaviour, squad.formation, squad.speedMode));
 	}
 
-	//! Walk this squad's slot bodies until one already belongs to an SCR_AIGroup (T-677 arms
-	//! waypointed groups). No group means the subjects are not AI-enabled yet -- retry next tick.
+	//! The `SCR_AIGroup` the first of the squad's slot bodies with an AI agent belongs to.
+	//! @return the group, or null while no body is in a group yet
 	protected static SCR_AIGroup FindLiveGroup(TBD_GroupStateSquad squad, TBD_SpawnManager spawn)
 	{
 		array<ref TBD_MissionSlotStruct> slots = TBD_MissionLoader.GetSlots();
@@ -300,6 +240,8 @@ class TBD_GroupState
 		return null;
 	}
 
+	//! Set the group's combat mode from the authored token; an unknown token or a group without a
+	//! utility component is one WARNING and keeps the engine default.
 	protected static void ApplyCombatMode(SCR_AIGroup group, TBD_GroupStateSquad squad)
 	{
 		if (squad.combatMode.IsEmpty())
@@ -324,6 +266,7 @@ class TBD_GroupState
 		utility.SetCombatMode(mode);
 	}
 
+	//! @return false for an unknown token, leaving `mode` untouched
 	protected static bool CombatModeFromWire(string token, out EAIGroupCombatMode mode)
 	{
 		if (token == CM_BLUE || token == CM_GREEN)
@@ -345,6 +288,8 @@ class TBD_GroupState
 		return false;
 	}
 
+	//! Set the group's formation from the authored token; an unknown token or a group without a
+	//! formation component is one WARNING and keeps the engine default.
 	protected static void ApplyFormation(SCR_AIGroup group, TBD_GroupStateSquad squad)
 	{
 		if (squad.formation.IsEmpty())
@@ -369,7 +314,8 @@ class TBD_GroupState
 		formComp.SetFormation(SCR_Enum.GetEnumName(SCR_EAIGroupFormation, formation));
 	}
 
-	//! Engine enum is four names. Schema extras map onto the nearest of those four.
+	//! Map a schema formation token onto the nearest of the engine's four formations.
+	//! @return false for an unknown token, leaving `formation` untouched
 	protected static bool FormationFromWire(string token, out SCR_EAIGroupFormation formation)
 	{
 		if (token == FORM_WEDGE || token == FORM_VEE || token == FORM_DIAMOND)
@@ -396,11 +342,12 @@ class TBD_GroupState
 		return false;
 	}
 
-	//! Group-level speed default. Origin DEFAULT so T-677's WAYPOINT setting wins per-waypoint.
+	//! Add the group-level speed default at origin DEFAULT, so a waypoint's WAYPOINT-origin setting
+	//! wins while that waypoint runs.
 	protected static void ApplySpeedDefault(SCR_AIGroup group, TBD_GroupStateSquad squad)
 	{
 		EMovementType speed;
-		if (!SpeedFromWire(squad, speed))
+		if (!TBD_AIWireEnums.SpeedFromWire(squad.speedMode, squad.behaviour, speed))
 			return;
 
 		SCR_AIGroupSettingsComponent settingsComp = SCR_AIGroupSettingsComponent.Cast(group.FindComponent(SCR_AIGroupSettingsComponent));
@@ -417,44 +364,5 @@ class TBD_GroupState
 			return;
 
 		settingsComp.AddSetting(setting, false, true);
-	}
-
-	//! speedMode wins. When it is absent, behaviour selects a speed ceiling so GRP-BEHAVIOUR is
-	//! not a dead parsed field: careless/safe/stealth walk, aware runs, combat sprints.
-	protected static bool SpeedFromWire(TBD_GroupStateSquad squad, out EMovementType speed)
-	{
-		if (squad.speedMode == SPEED_LIMITED)
-		{
-			speed = EMovementType.WALK;
-			return true;
-		}
-		if (squad.speedMode == SPEED_NORMAL)
-		{
-			speed = EMovementType.RUN;
-			return true;
-		}
-		if (squad.speedMode == SPEED_FULL)
-		{
-			speed = EMovementType.SPRINT;
-			return true;
-		}
-
-		if (squad.behaviour == BH_CARELESS || squad.behaviour == BH_SAFE || squad.behaviour == BH_STEALTH)
-		{
-			speed = EMovementType.WALK;
-			return true;
-		}
-		if (squad.behaviour == BH_AWARE)
-		{
-			speed = EMovementType.RUN;
-			return true;
-		}
-		if (squad.behaviour == BH_COMBAT)
-		{
-			speed = EMovementType.SPRINT;
-			return true;
-		}
-
-		return false;
 	}
 }

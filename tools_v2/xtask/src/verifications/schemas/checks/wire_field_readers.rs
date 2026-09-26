@@ -208,14 +208,14 @@ pub(super) const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
         why: "existing zone-shape reader (TBD_MissionShapeStruct circle/polygon geometry), a different field from marker.shape; the Scatter local parameter added 2; re-pinned 34 -> 36",
     },
     // `area` collides with the loadout-area (`LoadoutArea`) identifier family — NOT a marker reader.
-    // Measured 13 (gate semantics, comments+strings stripped): TBD_LoadoutEquipHelper 7 +
+    // Measured 13 (gate semantics, comments+strings stripped): TBD_LoadoutGearPhase 7 +
     // TBD_RegistryScan 6, both LoadoutAreaType (worn-garment area). The play-area vocabulary
     // (TBD_PlayAreaComponent, ~10 RAW `area` hits) is adjacent to the lane but strips to 0
     // here — so it is NOT in this baseline; a legit re-pin may arrive with a play-area reader.
     UnreadField {
         name: "area",
         expected: 11,
-        why: "11 pre-existing worn-garment identifiers in TBD_LoadoutEquipHelper (7) and TBD_LoadoutPreviewDresser (4), unrelated to marker.area geometry",
+        why: "11 pre-existing worn-garment identifiers in TBD_LoadoutGearPhase (7) and TBD_LoadoutPreviewDresser (4), unrelated to marker.area geometry",
     },
     // Per-player gadget flags: RETIRED 2026-09-07. `compass` / `watch` / `gps`
     // gained identifiers when TBD_GadgetFlags.c landed (second GetRawJson pass, apply after

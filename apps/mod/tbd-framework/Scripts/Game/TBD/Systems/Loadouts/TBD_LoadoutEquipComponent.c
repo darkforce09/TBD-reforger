@@ -1,122 +1,44 @@
 /**
- * TBD_LoadoutEquipComponent.c - T-068.5 / T-068.5.1 Virtual Arsenal loadout equip test.
+ * @file TBD_LoadoutEquipComponent.c
+ * @brief Dev harness: dress a spawned test character with the Arsenal loadout export.
  *
- * Reads $profile:TBD_LoadoutTest.json (the web Arsenal "loadout-export.json" download,
- * contracts_v2/definitions/loadout-export.schema.json) and equips its four gear slots
- * (primary / uniform / vest / helmet) onto a freshly spawned, otherwise-empty US character.
- *
- * T-068.5.1 -- VISUAL FIX: the previous pass used SCR_InventoryStorageManagerComponent.TryInsertItem,
- * which returns true while the item sits in storage (not worn) -> character spawned naked despite
- * "equip OK" logs. The wear path uses the real equip APIs and a deferred worn-verify gate.
- *
- * T-068.12 -- the equip/verify/cargo machinery moved to the shared
- * TBD_LoadoutApplication (TBD_LoadoutEquipHelper.c) so this dev harness and the
- * SpawnManager PLAYER path run identical code; this component keeps only the
- * $profile file read, the contract guards, and the test-NPC spawn. Its log
- * lines are tagged [TBD][Loadout][TestNPC] (the production slot-body path players receive
- * logs [TBD][Loadout][Slot] -- the tag TBD_SpawnManager.SpawnSlotBody hands to
- * TBD_LoadoutApplication) so E2E evidence is unambiguous. T-612: this comment used to name
- * [TBD][Loadout][Player], which no Print has ever emitted -- greps built from it match
- * nothing on a working pass.
- *
- * T-199 -- THIS READER NOW ACCEPTS THE FILE THE WEB ARSENAL ACTUALLY WRITES.
- * loadout-export.schema.json is a oneOf over loadoutVersion "1" and "2", and the Arsenal
- * download is a v2 document (the editor holds a wear map, four slot-indexed weapons and
- * cargo -- none of which the v1 branch can express). This component accepted "1" alone and
- * hard-failed everything else, so the ONLY consumer of the download refused the download.
- * Both branches are read now, and v2 is read from its OWN fields rather than from the
- * derived legacy gear block, so the launcher / sidearm / throwable / pants / boots / gloves
- * / backpack / cargo that T-182 taught the equip path to carry actually reach it.
- *
- * Server-only, dev-gated. Wired onto Prefabs/Systems/TBD_GameMode.et so a Workbench wb_play of
- * Missions/TBD_Dev_POC.conf runs it. Spawn @ 6400/6400 = the TBD_Dev_POC game-mode coords (the
- * player lands there), so the dressed pawn is visible without flying the camera.
+ * Role: reads `$profile:TBD_LoadoutTest.json` (the Arsenal `loadout-export.json` download,
+ * `loadout-export.schema.json`, both `loadoutVersion` branches), maps it onto a
+ * `TBD_SlotLoadoutStruct` and runs `TBD_LoadoutApplication` over an empty test character, so the
+ * harness exercises the same equip path as slot bodies. Its lines carry the tag
+ * `[TBD][Loadout][TestNPC]`; slot bodies log `[TBD][Loadout][Slot]`.  Position: a game-mode
+ * component on `Prefabs/Systems/TBD_GameMode.et`, run by a Workbench play of
+ * `Missions/TBD_Dev_POC.conf`; spawns at 6400/6400, where the player lands.
+ * State: the test character and its application, on the server.  Invariants: off unless
+ * `m_bRunLoadoutTest` is set; never runs on a client; a v2 document is read from its own `wear`,
+ * `weapons` and `cargo` fields, never from its derived `gear` block.
  */
 
+//! Editor class of `TBD_LoadoutEquipComponent`.
 [ComponentEditorProps(category: "TBD/Framework", description: "Dev test: equip $profile:TBD_LoadoutTest.json gear onto a spawned empty US character.")]
 class TBD_LoadoutEquipComponentClass : SCR_BaseGameModeComponentClass {}
 
-//! DTO mirrors loadout-export.schema.json "gear" object (each value a ResourceName or null/"").
-//! @contract loadout-export.schema.json#/$defs/gear
-class TBD_LoadoutGearStruct
-{
-	string primary; //!< Primary weapon ResourceName (empty = none).
-	string uniform; //!< Uniform ResourceName (empty = none).
-	string vest;    //!< Vest ResourceName (empty = none).
-	string helmet;  //!< Helmet ResourceName (empty = none).
-	// T-199 -- the schema has always allowed these two optional gear keys and this reader has
-	// always ignored them, so a v1 file that asked for a scope got a bare rifle. The equip path
-	// mounts both (TBD_LoadoutApplication.BeginWeaponPhase), so there is nothing to defer.
-	string optic;    //!< Optic ResourceName, mounted into the primary (empty = none).
-	string magazine; //!< Magazine ResourceName, loaded into the primary (empty = none).
-}
-
-//! DTO mirrors the loadout-export v2 "wear" map -- the canonical engine LoadoutSlotInfo keys
-//! the schema documents. That map is pattern-open so mod-added LoadoutAreaType subclasses stay
-//! representable; this reader declares only the areas TBD_LoadoutApplication can equip, and
-//! JsonLoadContext ignores the rest rather than failing the read.
-//! @contract loadout-export.schema.json#/oneOf/1/properties/wear
-class TBD_LoadoutWearStruct
-{
-	string headCover;   //!< -> gear.helmet
-	string jacket;      //!< -> gear.uniform
-	string pants;
-	string boots;
-	string vest;        //!< -> gear.vest, unless armoredVest is worn
-	string armoredVest; //!< -> gear.vest (wins; the locked single-vest rule)
-	string backpack;
-	string handwear;
-}
-
-//! DTO mirrors loadout-export.schema.json #/$defs/weapon -- one slot-indexed weapon.
-//! @contract loadout-export.schema.json#/$defs/weapon
-class TBD_LoadoutWeaponStruct
-{
-	int slotIndex = -1;            //!< Engine weapon slot. -1 = key absent (schema minimum is 0).
-	string slotType;               //!< "primary" / "secondary" / "grenade".
-	string weapon;                 //!< Weapon ResourceName.
-	string optic;                  //!< Primary (slot 0) only -- no other slot has sub-slots.
-	string magazine;               //!< Primary (slot 0) only.
-	ref array<string> attachments; //!< T-197 attachment set -- see the WARNING in BuildSlotLoadout.
-}
-
-//! DTO mirrors loadout-export.schema.json root -- BOTH oneOf branches in one struct.
-//!
-//! T-199 -- `loadoutVersion` is the discriminator, so a reader that must accept both branches
-//! declares every branch's keys and lets the guard decide which set is authoritative.
-//! JsonLoadContext maps by name and leaves absent keys at their initializer, so the v2 fields
-//! stay empty on a v1 document and vice versa. Presence of a ref field is NEVER the test --
-//! JsonLoadContext over-allocates them (the T-181.41 finding).
-//! @contract loadout-export.schema.json#/
-class TBD_LoadoutExportStruct
-{
-	string loadoutVersion;          //!< Export format version ("1" or "2").
-	string modpackId;               //!< Source modpack id.
-	ref TBD_LoadoutGearStruct gear; //!< v1: the authored gear slots. v2: DERIVED, unread here.
-	ref TBD_LoadoutWearStruct wear;                 //!< Worn areas by engine slot name.
-	ref array<ref TBD_LoadoutWeaponStruct> weapons; //!< Slot-indexed weapons.
-	ref array<ref TBD_SlotCargoStruct> cargo;       //!< Container cargo rows {container,item,qty}.
-}
-
+//! Dev harness that dresses a test character from the Arsenal loadout export.
 class TBD_LoadoutEquipComponent : SCR_BaseGameModeComponent
 {
-	protected static const string LOADOUT_PATH = "$profile:TBD_LoadoutTest.json";
-	//! Canonical modpack id the web exporter / registry emit (T-122 T14/M10).
-	protected static const string EXPECTED_MODPACK_ID = "00000000-0000-4000-a000-000000000001";
+	protected static const string LOADOUT_PATH = "$profile:TBD_LoadoutTest.json"; //!< the Arsenal export the harness reads
+	protected static const string EXPECTED_MODPACK_ID = "00000000-0000-4000-a000-000000000001"; //!< modpack id the web exporter and registry emit
 
 	[Attribute("0", desc: "Run the loadout equip test on play (dev only -- default OFF; do not ship enabled on TBD_GameMode).")]
-	bool m_bRunLoadoutTest;
+	bool m_bRunLoadoutTest; //!< default false; true runs the harness on play
 
 	[Attribute("{520EC961A090BBD5}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Base.et", desc: "Empty/minimal US body to equip onto (no baked kit).")]
-	ResourceName m_sTestCharacter;
+	ResourceName m_sTestCharacter; //!< default the bare US character prefab
 
 	[Attribute("6400 0 6400", desc: "World origin for the test spawn (TBD_Dev_POC game mode coords).")]
-	vector m_vSpawnOrigin;
+	vector m_vSpawnOrigin; //!< world metres; the Y component is replaced by the surface height
 
-	protected IEntity m_Character;
-	protected ref TBD_LoadoutApplication m_App; // strong ref until its settle tick completes
+	protected IEntity m_Character; //!< the spawned test character
+	protected ref TBD_LoadoutApplication m_App; //!< held until the application is done
 
-	//! @authority server -- the dev equip test spawns and dresses the test NPC server-side only.
+	//! Schedule the harness 3 s after init when it is enabled, so the world surface and replication
+	//! are ready.
+	//! @authority server
 	override void OnPostInit(IEntity owner)
 	{
 		super.OnPostInit(owner);
@@ -132,6 +54,9 @@ class TBD_LoadoutEquipComponent : SCR_BaseGameModeComponent
 		GetGame().GetCallqueue().CallLater(RunLoadoutTest, 3000, false);
 	}
 
+	//! Read and check the export file, build the slot loadout, spawn the test character and run the
+	//! application. Every failure is one `[TBD][Loadout]` ERROR line and ends the run.
+	//! @authority server
 	protected void RunLoadoutTest()
 	{
 		if (!FileIO.FileExists(LOADOUT_PATH))
@@ -184,22 +109,13 @@ class TBD_LoadoutEquipComponent : SCR_BaseGameModeComponent
 		m_App.Run();
 	}
 
-	//! Map the export document onto the compiled slot-loadout shape TBD_LoadoutApplication runs.
-	//! Returns null only when the document cannot describe a loadout at all (already logged).
-	//!
-	//! T-199 -- WHY v2 IS NOT READ THROUGH ITS `gear` BLOCK.
-	//! A v2 document carries a DERIVED legacy `gear` block precisely so a v1-shaped reader keeps
-	//! working, and reading that would have been four lines. It would also have thrown away exactly
-	//! what T-182 widened this equip path to carry: the launcher, the sidearm, the throwable, pants,
-	//! boots, gloves, the backpack and every cargo row -- none of which fit `gear`'s six
-	//! schema-pinned keys. So v2 is read from its own fields and the derived block is left to
-	//! readers that only know v1.
-	//!
-	//! The (slotIndex, slotType) PAIRS are the editor's own table (arsenal_rules.rs WEAPON_SLOTS)
-	//! and the same pairs the compiler selects on (mission/flatten.rs mod_slot_loadout) -- keep all
-	//! three byte-identical. Matching the pair rather than the index alone matters because slots 0
-	//! and 1 are both slotType "primary" (two untyped long slots), so the index is what separates
-	//! rifle from launcher while slotType is what stops a mis-authored row landing in the wrong key.
+	//! Map the export document onto the slot-loadout shape `TBD_LoadoutApplication` runs. v1 copies
+	//! its `gear` block. v2 reads its own `wear`, `weapons` and `cargo`, which carry the launcher,
+	//! sidearm, throwable, pants, boots, gloves, backpack and cargo that the derived `gear` block
+	//! cannot. Weapons match on the (slotIndex, slotType) pair of the Mission Creator's Arsenal
+	//! weapon slots and the mission compiler: slots 0 and 1 are both `primary`, so the index
+	//! separates rifle from launcher and the type rejects a mis-authored row.
+	//! @return the loadout, or null when the document describes none (already logged)
 	protected TBD_SlotLoadoutStruct BuildSlotLoadout(TBD_LoadoutExportStruct doc)
 	{
 		TBD_SlotGearStruct gear = new TBD_SlotGearStruct();
@@ -208,8 +124,7 @@ class TBD_LoadoutEquipComponent : SCR_BaseGameModeComponent
 
 		if (doc.loadoutVersion == "1")
 		{
-			// v1 gear maps 1:1 onto the T-068.11 gear block; the v1 branch has no wear map, no
-			// second weapon slot and no cargo, so there is nothing else in the file to carry.
+			// v1 has no wear map, second weapon slot or cargo, so the gear block is everything.
 			if (!doc.gear)
 			{
 				Print("[TBD][Loadout] FAILED: v1 document carries no gear block", LogLevel.ERROR);
@@ -270,19 +185,20 @@ class TBD_LoadoutEquipComponent : SCR_BaseGameModeComponent
 					continue;
 				}
 
-				// T-310 -- primary attachments copy onto gear.attachments and the helper mounts them.
-				// Other weapons' attachment edges still have no compiled slot; name the loss.
+				// Only the primary's attachments reach `gear.attachments`; others are named and dropped.
 				if (!(w.slotIndex == 0 && w.slotType == "primary") && w.attachments && !w.attachments.IsEmpty())
 					Print(string.Format("[TBD][Loadout] WARNING: %1 attachment(s) authored on %2 are NOT mounted -- this path mounts only the primary's optic and magazine", w.attachments.Count(), w.weapon), LogLevel.WARNING);
 			}
 		}
 
-		// {container,item,qty} is byte-identical to the compiled cargo row, and the container
-		// vocabulary is the same closed four (TBD_LoadoutApplication.GarmentForContainer).
+		// Cargo rows share the compiled `{container, item, qty}` shape and the same four containers.
 		loadout.cargo = doc.cargo;
 		return loadout;
 	}
 
+	//! Spawn the test character prefab on the ground at `m_vSpawnOrigin`.
+	//! @return the character, or null when the prefab does not load
+	//! @authority server
 	protected IEntity SpawnTestCharacter()
 	{
 		Resource resource = Resource.Load(m_sTestCharacter);
@@ -308,5 +224,4 @@ class TBD_LoadoutEquipComponent : SCR_BaseGameModeComponent
 
 		return ent;
 	}
-
 }

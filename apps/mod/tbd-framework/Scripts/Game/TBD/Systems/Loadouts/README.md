@@ -9,56 +9,40 @@ development harness that equips an [arsenal](/documentation_v2/glossary/a_to_f.m
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Loadouts/
-├── TBD_LoadoutEquipComponent.c  dev harness equipping $profile:TBD_LoadoutTest.json, and the loadout-export structs
-├── TBD_LoadoutEquipHelper.c     TBD_LoadoutApplication: the server equip pass, its verify and its verdict
-├── TBD_LoadoutInventoryUtil.c   prefab names, gear counts, landing areas, parent chains, weapon storage
-└── TBD_LoadoutPreviewDresser.c  dresses the lobby's local preview character with a slot's kit and loadout
+├── Application/                 the server equip pass: TBD_LoadoutApplication and its phases
+├── Preview/                     the lobby kit-preview doll: dresser and weapon mounting
+├── TBD_LoadoutEquipComponent.c  dev harness equipping $profile:TBD_LoadoutTest.json
+├── TBD_LoadoutExportStruct.c    the loadout-export document structs the harness reads
+└── TBD_LoadoutInventoryUtil.c   prefab names, gear counts, landing areas, parent chains, weapon storage
 ```
 
 ## How it works
 
 ### Server equip pass
 
-`TBD_SpawnManager.SpawnSlotBody` builds one `TBD_LoadoutApplication` per slot body, from the body
-and the slot's `TBD_SlotLoadoutStruct`, and keeps it until it settles. A slot that authors a
-loadout gets `Run()`; a kit-only slot gets `RunKitWornAudit(kit)`, the nakedness check alone.
-`Run()` works in phases:
-
-1. wear: each authored garment replaces the kit's (an absent one keeps it); incumbents are
-   captured first, and a same-prefab item is skipped;
-2. verify: a 500 ms poll, up to six ticks, until each equipped item is worn; a verified swap
-   deletes the displaced incumbent with its contents;
-3. weapons: the primary, launcher, sidearm and throwable go to their weapon slots, and `optic`,
-   `attachments` and `magazine` mount into the primary's own storage, re-verified by a scan;
-4. cargo: each `cargo[]` row is inserted into its container after `CanInsert*` checks, falling
-   back to any storage;
-5. verdict: every failure names its slot and item on one `[TBD]` line. A blocking failure (the
-   slot is unplayable, such as a prefab that does not exist) logs an ERROR and is what
-   `HasBlockingFailure()` reports to the spawn boundary; a shortfall (the item reached the body in
-   the wrong place, or did not fit) logs a WARNING. A pass that ends with no jacket or no pants on
-   the body is an ERROR naming the slot.
+`TBD_SlotBodyMaterializer` builds one `TBD_LoadoutApplication` per slot body, from the body and
+the slot's `TBD_SlotLoadoutStruct`, and `TBD_SlotLoadoutSettle` keeps it until it settles. A slot
+that authors a loadout gets `Run()`; a kit-only slot gets `RunKitWornAudit(kit)`, the nakedness
+check alone. The phases, the verify polls and the verdict are described in
+[Application](Application/README.md). Every failure names its slot and item on one `[TBD]` line;
+a blocking failure (the slot is unplayable, such as a prefab that does not exist) logs an ERROR
+and is what `HasBlockingFailure()` reports to the spawn boundary; a shortfall logs a WARNING.
 
 ### Kit preview
 
-`TBD_LoadoutPreviewDresser.Dress` follows the same composition rule on the preview entity of an
-`ItemPreviewManagerEntity` (it spawns vanilla's `ItemPreviewManager.et` locally when the world has
-none, `GetOrSpawnManager`). It is a separate class, not a subclass, because it spawns local
-entities (`SpawnEntityPrefabLocal`) and attaches synchronously, and a miss is one WARNING per
-reason rather than an ERROR. The manager returns one preview entity per prefab, and baked weapon
-slots have no template, so the first time a prefab resolves its baseline (what every garment and
-weapon slot holds) is recorded; each pass then sets every slot to the authored prefab, else the
-baseline, and clears a slot whose baseline is empty. Attachments mount through
-`AttachmentSlotComponent.CanSetAttachment`, the magazine falls back to the inventory manager, and
-the primary goes in the doll's hands.
+`TBD_LoadoutPreviewDresser.Dress` applies the same composition rule to the lobby's preview doll
+with local entities; see [Preview](Preview/README.md).
 
 ### Development harness
 
 `TBD_LoadoutEquipComponent` is a `SCR_BaseGameModeComponent` on
 `apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et`. With its `m_bRunLoadoutTest` attribute
-on (off by default), it reads `$profile:TBD_LoadoutTest.json`, the web arsenal's loadout export
-(`loadoutVersion` `1` or `2`; another `modpackId` than the expected one is a WARNING), spawns
-`m_sTestCharacter` at `m_vSpawnOrigin` three seconds after start, and dresses it with a
-`TBD_LoadoutApplication` whose lines carry the `[TBD][Loadout][TestNPC]` tag.
+on (off by default), it reads `$profile:TBD_LoadoutTest.json`, the web arsenal's loadout export,
+into `TBD_LoadoutExportStruct` (`loadoutVersion` `1` or `2`; another `modpackId` than the expected
+one is a WARNING), spawns `m_sTestCharacter` at `m_vSpawnOrigin` three seconds after start, and
+dresses it with a `TBD_LoadoutApplication` whose lines carry the `[TBD][Loadout][TestNPC]` tag.
+A v2 document is read from its own `wear`, `weapons` and `cargo` fields, not its derived `gear`
+block.
 
 | Attribute | Default | Meaning |
 |---|---|---|
@@ -66,17 +50,17 @@ on (off by default), it reads `$profile:TBD_LoadoutTest.json`, the web arsenal's
 | `m_sTestCharacter` | `Character_US_Base.et` | the minimal body to equip |
 | `m_vSpawnOrigin` | `6400 0 6400` | where the test body spawns |
 
-`TBD_LoadoutInventoryUtil` holds the stateless inventory queries the equip pass, the preview dresser
-and the gadget flags share: `PrefabOf`, `CountGear` (the equip verdict's denominator),
-`AreasForLabel` (a vest may land in the armored vest area), `IsRootedOn`, `WeaponStorageOf` and
-`WeaponStorageHas`.
+`TBD_LoadoutInventoryUtil` holds the stateless inventory queries the equip pass, the preview, the
+gadget flags and the mission slot checks share: `PrefabOf`, `CountGear` (the equip verdict's
+denominator), `AreasForLabel` (a vest may land in the armored vest area), `IsRootedOn`,
+`WeaponStorageOf` and `WeaponStorageHas`.
 
 ## Authority
 
-- Server: the equip pass and the harness. `TBD_LoadoutEquipHelper.c` carries `@authority server`
-  on its header and on `RunKitWornAudit`; the harness's `OnPostInit` carries it and returns on
-  `RplMode.Client`. The engine replicates the entities the pass spawns and moves.
-- Client: `TBD_LoadoutPreviewDresser`, menu-time code with local entities only.
+- Server: the equip pass and the harness. The `Application/` methods that spawn or move entities
+  carry `@authority server`; the harness's `OnPostInit` carries it and returns on
+  `TBD_Authority.IsClient()`. The engine replicates the entities the pass spawns and moves.
+- Client: the `Preview/` scripts, menu-time code with local entities only.
 - Owner: nothing.
 - RPCs: none.
 - Replicated properties: none.
@@ -85,15 +69,17 @@ and the gadget flags share: `PrefabOf`, `CountGear` (the equip verdict's denomin
 
 - Depends on: `TBD_SlotLoadoutStruct` and its gear and cargo structs in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/`; `TBD_Registry` (kit aliases to
-  prefabs); `TBD_Log`; the engine's `SCR_InventoryStorageManagerComponent`,
+  prefabs); `TBD_Log` and `TBD_WarnOnce`; the engine's `SCR_InventoryStorageManagerComponent`,
   `EquipedLoadoutStorageComponent`, `EquipedWeaponStorageComponent`, `AttachmentSlotComponent` and
   `ItemPreviewManagerEntity`; the harness's file shape in
   `contracts_v2/definitions/loadout-export.schema.json`.
-- Used by: `TBD_SpawnManager` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/`
-  (`TBD_LoadoutApplication`, `HasBlockingFailure`); `TBD_KitPreviewComponent` in
+- Used by: `TBD_SlotBodyMaterializer`, `TBD_SlotLoadoutSettle` and `TBD_DeployExecutor` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/` (`TBD_LoadoutApplication`,
+  `HasBlockingFailure`, `ShortfallBrief`); `TBD_KitPreviewComponent` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/UI/` (`GetOrSpawnManager`, `Dress`);
-  `TBD_FrameworkManager`'s component roll call; `apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et`,
-  which attaches `TBD_LoadoutEquipComponent`.
+  `TBD_GadgetFlags` and `TBD_MissionSlotChecks` (`TBD_LoadoutInventoryUtil`);
+  `apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et`, which attaches
+  `TBD_LoadoutEquipComponent`.
 - Rules: the preview and the server pass apply the same composition rule, so the doll wears what
   the slot spawns; only a blocking failure stops a session, and a shortfall stays a WARNING; the
   harness stays off on the shipped game mode; lines added stay ASCII, and `cargo xtask mod compile`
