@@ -58,8 +58,8 @@ Commits of this program stage by pathspec only.
 | P3-12 | done | 58163e9ec | Spectator Host/ (6) and Controller/ (4); Players and PostGame one type per file; DebriefScreen uses `TBD_WireCodec` separators. |
 | P3-13 | done | 8210e3784 | Admin (subcommands, audit, snapshot via codec), Admin/UI sections; MissionSelector Catalog/ and inspector cards; browser RPCs on the Admin player controller. |
 | P3-14 | done | 8e6fd61eb | UI Common Dropdown/Inputs/Layout/SessionChrome, Core Theme/Screens/Controls; HUD RPCs to `UI/Hud/SCR_PlayerController.c`. Framework: 0 findings in 370 scripts, max 477 lines, compile 0, world-boot PASS. |
-| P3-C | running | | |
-| P4-1 | pending | | |
+| P3-C | done | 4518a8665 | Forwarders removed, stale references fixed across scripts and docs, dead `TBD_Objective` members dropped, T-1219 filed; order line matches baseline. P3-C2 (this commit) filed T-1220..T-1228 for the bugs the checkpoint had missed. |
+| P4-1 | running | | |
 | OP-1 | pending | | operator playtest |
 | P5-1 | pending | | |
 | P6-1 … P6-6 | blocked | | waits for the other session's tbd-export commit |
@@ -234,3 +234,15 @@ Bugs noticed but not fixed, collected by P3-C and P6-C.
 - P3-C: END reason and winner lost for extraction, VIP and trigger endings, and the false "round will NOT end" banner: still reproduce at `Gamemode/Stages/WinConditions/TBD_WinConditionEvaluator.c:139`, `Systems/Zones/Triggers/TBD_TriggerFlowEffects.c:85` (`SetStage(END)` without `EndRound`) and `Gamemode/Objectives/Runtime/TBD_ObjectivesComponent.c:303`: existing T-1082 (its paths predate the splits).
 - P3-C: session top bar count icon loads key `group`: still at `UI/Common/SessionChrome/TBD_SessionTopBar.c:104`: existing T-1098.
 - P3-C: `Systems/Mission/Loaders/Validation/TBD_MissionStructureChecks.c:239` warns that `GetSpawnZoneForFaction` cannot place from a spawn zone, but nothing calls it: T-1219.
+- P3-C2: occupant found by exact float equality on X/Z at `Systems/Zones/PlayArea/TBD_PlayAreaVehicleAxis.c:232`: T-1220.
+- P3-C2: `environment` warned as unconsumed though `TBD_EnvironmentReader` applies fog, wind and view distance at `Systems/Mission/Loaders/Validation/TBD_MissionUnconsumedKeyCheck.c:39`: T-1221.
+- P3-C2: `ResolveWinner` duplicates `TBD_FactionElimination.CountSurvivors` at `API/Results/TBD_ResultsPayload.c:25`: T-1222.
+- P3-C2: `AcquireRow` reuses a pooled row whatever its container at `Session/Lobby/UI/TBD_LobbyFactionPanel.c:189`: T-1223.
+- P3-C2: `GetFirstKey` reads `m_Catalog` without a null check at `Session/Lobby/UI/TBD_LobbyFactionPanel.c:134`: T-1223.
+- P3-C2: a seat switch raises the change event twice at `Session/Lobby/Catalog/TBD_LobbyCatalog.c:181`: T-1224.
+- P3-C2: `Reconcile` keeps issuing hosts after `StandDown` at `Session/Spectator/Host/TBD_SpectatorHostLifecycle.c:58`: T-1225.
+- P3-C2: log line says F6 opens the selector (the key is F9) at `Session/MissionSelector/SCR_PlayerController.c:64`: covered by T-1084.
+- P3-C2: browser RPC refusals check the admin list directly and skip the admin audit trail at `Session/MissionSelector/SCR_PlayerController.c:130`: T-1226.
+- P3-C2: `GetTerrain` and `FindTerrain` are duplicates at `Session/MissionSelector/Catalog/TBD_MissionCatalog.c:56`: T-1227.
+- P3-C2: overlay host shown before the menu is created at `UI/Common/Dropdown/TBD_DropdownComponent.c:220`: T-1228.
+- P3-C2: debrief board format omits the deaths field at `Gamemode/Orchestrator/Stage/TBD_EndBanner.c:116`: resolved: both doc comments (`TBD_EndBanner.c:116`, `TBD_FrameworkManager.c:47`) now read `kills\tdeaths\tfaction\trole\tname`, matching `TBD_DebriefScreen.PackRows`.

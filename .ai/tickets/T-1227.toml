@@ -1,0 +1,12 @@
+id = "T-1227"
+kind = "work"
+title = "Mission catalog carries two identical terrain lookups"
+summary = "Session/MissionSelector/Catalog/TBD_MissionCatalog.c:56 GetTerrain and :137 FindTerrain are the same loop; TBD_MissionInspectorPanel.c:151 uses one, TBD_ScenarioBrowserPanel.c:133,154 the other."
+class = "chore"
+status = "idea"
+notes = "Paths under apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector. TBD_MissionCatalog.GetTerrain (Catalog/TBD_MissionCatalog.c:56-65) and FindTerrain (:137-146) are the same linear search over m_aTerrains; UI/TBD_MissionInspectorPanel.c:151 calls GetTerrain, UI/TBD_ScenarioBrowserPanel.c:133 and :154 call FindTerrain. Keep one name (FindTerrain matches FindMode at :149) and repoint the callers. Reported by an earlier T-1092 slice, confirmed and filed by T-1092 slice P3-C2."
+created_at = "2026-09-26T15:54:52Z"
+
+[scope]
+domain = "mod"
+layer = "scripts"
