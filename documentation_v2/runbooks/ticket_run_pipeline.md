@@ -18,7 +18,10 @@ ticket add ─▶ fill the body ─▶ reorder (idea → queued) ─▶ spec + p
 ## Prerequisites
 
 - A checkout of `main` whose ticket files pass: `cargo xtask ticket check` prints `check OK`.
-  Every command that writes a ticket refuses while the check is red, and writes nothing.
+  While the check is red, `add`, `add-child`, `remove`, `reorder`, `set-status`, `mark-ready`,
+  `advance-slice`, `ship` and `done` refuse and write nothing (`ship --no-repack` waives only the
+  findings whose fix is a repack); `stamp-sha` and `sync` run no check, since `stamp-sha` is what
+  turns the red window between `ship` and the landing commit green again.
 - For the run: the agent command on `PATH`. `platform slice-run` runs `TBD_SLICE_RUN_AGENT_CMD`
   when it is set (split on whitespace, the prompt appended as the last argument), else
   `claude --print --output-format json`; a Cursor agent is `agent --output-format json -p`. The

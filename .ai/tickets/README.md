@@ -19,7 +19,7 @@ through `cargo xtask ticket`; the [ticketboard](/apps/ticketboard/README.md) sho
 ├── implementation_prompt.md  the standard for the copy-paste prompt a spec hands a coding agent
 ├── metrics.schema.json       the schema every run receipt satisfies
 ├── plan_template.md          the four-section plan every ticket needs before it goes ready
-├── queue.json                the dispatch queue `ticket sync` writes: the ready tickets in order
+├── queue.json                the dispatch queue `ticket sync` writes: `ready`, `running` and `review` tickets with a spec, in order
 ├── schema.json               the schema every ticket file satisfies
 ├── scope-vocab.toml          the domain, layer, component and surface words a `[scope]` table uses
 ├── spec_template.md          the skeleton of a ticket spec
@@ -29,7 +29,7 @@ through `cargo xtask ticket`; the [ticketboard](/apps/ticketboard/README.md) sho
 ## How it works
 
 **The ticket files are the source of truth.** `.ai/tickets/T-<id>.toml` holds one ticket: its
-`kind` (`program` with child slices, or `work`), `status`, `order`, `spec`, `plan`, `executor`,
+`kind` (`program` with child [slices](/documentation_v2/glossary/n_to_z.md#slice), or `work`), `status`, `order`, `spec`, `plan`, `executor`,
 body fields and `[scope]` table, validated against `schema.json` and `scope-vocab.toml`. The ticket
 engine renders every file in one canonical form (`TicketFile` in
 `tools_v2/ticket-engine/src/encoding.rs`), and every command that writes a ticket renders the
@@ -42,7 +42,12 @@ whole file again.
 - A hand edit of the body fields keeps the canonical key order and adds no key the schema lacks;
   [Editing a ticket file by hand](/documentation_v2/runbooks/ticket_run_pipeline.md#editing-a-ticket-file-by-hand)
   gives the order.
-- Every write refuses, and writes nothing, while `cargo xtask ticket check` is red.
+- The verbs that write a ticket file (`add`, `add-child`, `remove`, `reorder`, `set-status`,
+  `mark-ready`, `advance-slice`, `ship`, and `done` through `ship`) refuse, and write nothing,
+  while `cargo xtask ticket check` is red; `ship --no-repack` waives only the findings whose fix is
+  a repack. `stamp-sha` runs no check, because it is the step that turns the window between `ship`
+  and the landing commit, red by design, green again; `ticket sync` writes its derived files
+  without a check.
 
 **Derived files are never edited by hand.** `cargo xtask ticket sync` regenerates `queue.json`
 and the next-work block of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)

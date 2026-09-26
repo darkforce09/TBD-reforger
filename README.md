@@ -36,10 +36,11 @@ that controls those servers, the contracts and map data they share, and the deve
 ## How it works
 
 Mission makers build a [mission](/documentation_v2/glossary/g_to_m.md#mission) in the Mission Creator,
-a page of the website's single-page app. The API stores it, compiles it into an immutable artifact
-and deploys it to a game server. The mod on that server fetches the deployed mission and runs the
+a page of the website's single-page app. The [API](/documentation_v2/glossary/a_to_f.md#api) stores
+it, compiles it into an immutable [artifact](/documentation_v2/glossary/a_to_f.md#artifact) and
+deploys it to a game server. The mod on that server fetches the deployed mission and runs the
 session; the fleet host agent beside it carries out the server commands the API queues. The
-[event](/documentation_v2/glossary/a_to_f.md#event) schedule, ORBAT slotting, leaderboards and doctrine
+[event](/documentation_v2/glossary/a_to_f.md#event) schedule, [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) slotting, leaderboards and doctrine
 pages sit on the same API. `contracts_v2/` defines every shape these programs exchange, and
 `tools_v2/` builds, checks and deploys all of it.
 
@@ -71,7 +72,7 @@ section 3 of [CLAUDE.md](/CLAUDE.md). `cargo xtask help` lists the build, CI and
 
 - Depends on: the Rust toolchain in `rust-toolchain.toml` with Trunk for the web app; Postgres in a
   container for local development; Git LFS for terrain data; Discord OAuth for sign-in; Arma
-  Reforger Workbench and the Enfusion MCP server for mod work.
+  Reforger [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) and the Enfusion MCP server for mod work.
 - Used by: community members through the website; the dedicated game servers that load the mod;
   the game hosts that run the fleet host agent; operators who deploy with `cargo xtask deploy`.
 - Rules: the project laws in [CLAUDE.md](/CLAUDE.md), held by review and by the gates

@@ -37,7 +37,7 @@ Soft plan prose ("if feasible", "optional", "P1 later", "fold forward", "record 
 ```
 
 ```text
-✅ Implement every item the operator ask, the approved plan's scope and the acceptance matrix require
+✅ Implement every item the operator's ask, the approved plan's scope and the acceptance matrix require
 ✅ If truly blocked (secrets, Workbench down, missing GPU): STOP and ASK — do not invent a deferral ticket and mark the work done
 ✅ Defer only after the operator says "defer X" / "skip X this pass"
 ```

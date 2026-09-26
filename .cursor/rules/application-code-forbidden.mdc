@@ -25,7 +25,7 @@ agent that writes the code updates the documentation it changes in the same comm
 - Read, search, explain, review.
 - Point to lines in a critique, a spec or a handoff.
 
-## Forbidden unless the operator explicitly says "Cursor, implement this code"
+## Forbidden unless the operator clearly says to write the code (for example "Cursor, you write the code")
 
 - Any patch under `apps/website/api_v2/src/`, `apps/website/frontend/src/` or `apps/mod/`.
 - "Fixing" audit findings yourself.

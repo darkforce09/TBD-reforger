@@ -156,7 +156,7 @@ After drafting, re-enter as an adversary:
 
 1. Diff must-ship against ticket summary **and** each cited spec's goal/draw-order/L-table.
 2. For each CDP assert: simulate "implementer ships stub" — does the smoke still pass? If yes, rewrite assert.
-3. Re-check every zoom-sensitive counter against `lod_gates` + default camera.
+3. Re-check every zoom-sensitive counter against `class_visible` and the constants in [apps/website/map-engine/src/overlay/lod.rs](/apps/website/map-engine/src/overlay/lod.rs), plus the default camera.
 4. Re-check every census number with a command if not run this session.
 5. Search the draft for forbidden language (below) and delete/replace.
 6. Confirm no "skip X" without ticket-ID or operator quote.
