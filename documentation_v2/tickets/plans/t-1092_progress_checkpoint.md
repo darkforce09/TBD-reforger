@@ -44,16 +44,16 @@ Commits of this program stage by pathspec only.
 | P1-3 | done | 57339f19e | 177 files, -3103 separator/banner lines, 67 ticket tags, 117 field docs to trailing; compile 0. |
 | P2-1 | done | (this commit) | 19 helpers, 82 `TBD_Authority` replacements, presets in `UI/Core/ChimeraMenuPreset.c` (file named for its type); compile 0. |
 | P2-2 | done | (this commit) | `Heartbeat/TBD_RuntimeHeartbeat.c` (1000 ms, WinCondition on even beats) replaces 8 drivers; `TBD_DebriefScoreboard.Fill`; world-boot 0, order matches baseline; ECM rule sees `TBD_Authority`. |
-| P3-1 | running | | |
-| P3-2 | running | | |
-| P3-3 | running | | |
-| P3-4 | running | | |
-| P3-5 | running | | |
-| P3-6 | pending | | |
-| P3-7 | pending | | |
-| P3-8 | pending | | |
-| P3-9 | pending | | |
-| P3-10 | pending | | |
+| P3-1 | done | 49f0180ad | Spawning: manager 287 lines over Manager/Slots/Identity/Deploy/Lives/Vehicles/Dynamic/Deployment/VanillaBridge/Client; deployment-authorization modded class folded; 3 dead members removed; world-boot PASS. `TBD_DeployExecutor.DeployPlayerInternal` public (bypasses ONE LIFE; banner restricts callers). |
+| P3-2 | done | b84cf0220 | Loaders/Mission + Loaders/Validation + Data/Document; validator gear count now `CountGear` (counts attachments); `TBD_VariantConfigStruct` -> `TBD_VariantConfigWire`. |
+| P3-3 | done | 5da30bce6 | Zones: Triggers/ (12), Registry/, Volumes/, PlayArea/; adds `TBD_ZoneRegistry.FindById`, `TBD_TriggerRuntime.FindById`/`HasFired(id, out unknownId)`; dead-body cast now `ChimeraCharacter`. |
+| P3-4 | done | 6270ea673 | Objectives: Model/, Registry/, Runtime/, Tasks/ (19 files). |
+| P3-5 | done | 0a4831cb0 | API: Http/, RuntimeSession/, Identity/, Results/, FleetCommands one type per file; `TBD_BackendConfigStruct` -> `TBD_BackendConfigFile`; new `TBD_RuntimeSessionLifecycle`. |
+| P3-6 | running | | |
+| P3-7 | running | | |
+| P3-8 | running | | |
+| P3-9 | running | | |
+| P3-10 | running | | |
 | P3-11 | pending | | |
 | P3-12 | pending | | |
 | P3-13 | pending | | |
@@ -71,6 +71,7 @@ Additions to a launch prompt beyond concrete values, by slice id.
 
 | Slice | Addition |
 |---|---|
+| P3-6…P3-10 | Brief file gains wave A lessons: name split files after their primary type (ECM-9; companion structs live with their owner, enums get their own file); run `readme-coverage`/`link-check` with `--with-untracked`. |
 | P3-1…P3-5 | Delivered as one scratch brief file (B0 + CARD + SPLIT RULES + writer steps, verbatim) plus a "Parallel wave rules" block: judge compile by own-file errors only; git mv is fine, no other git add/reset. Slice notes add: heartbeat owns Tick calls (keep static Tick signatures); P3-3 adds `TBD_ZoneRegistry.FindById` and `TBD_TriggerRuntime.HasFired` for other slices; P3-5 must not touch `TBD_DebriefScoreboard.c`. |
 | P2-2 | Also update `tools_v2/xtask/src/verifications/mod_scripts/enfusion_comments/network_authority_rule.rs:25` so `TBD_Authority.IsClient()`/`IsServer()` calls count as context-dependent (the P2-1 replacement hid 82 sites), with a test. |
 | P1-3 onward | B0 gains: "Never run `hcargo fmt -p <package>` (it reformats the other session's files); check with `hcargo fmt -p xtask -- --check` and format only your own files." |
@@ -167,12 +168,17 @@ The same two patterns repeat at 38.853 (odd) and 39.852 (even). The heartbeat's 
 
 Left by P3 slices for P3-C to remove: forwarder | owner file | external callers.
 
+- `TBD_GameRuntimeHttp.JsonEscape` -> `TBD_BackendText` | API/Http | Spawning/Deployment/TBD_DeploymentRequestQueue, MissionSelector/TBD_MissionDeploymentRelay
+- `TBD_MissionLoader.IsSquadLeader` -> `TBD_MissionOrbatQuery` | Loaders/Mission | Spawning
+- `TBD_ZoneVolume.Clear`/`.Read` -> `TBD_ZoneVolumeBounds` | Zones/Volumes | internal
+
 ## Leftovers
 
 Per slice, for the closing runs.
 
 - All slices: run `hcargo fmt --check -p xtask` or format only owned files (`rustfmt` via `hcargo fmt -- <file>` is unsafe on module files); never plain `fmt -p xtask` while another session has xtask edits.
 - P1-3: box-drawing diagrams in 14 UI panel files; residual non-ASCII (x, <=, e-acute, bullet, section sign, check mark, emoji) e.g. `TBD_MissionSelectorScreen.c:4`, `TBD_LobbyScreen.c:4`; titles `TBD_UITheme.c:113`, `TBD_SpectatorCamera.c:49`. 165 above-line field docs left (over 120 columns). Owners fix via ECM-1/ECM-4/ECM-8.
+- Wave A stale comments/paths (P3-C unless the folder owner fixes them first): `TBD_WinConditionEvaluator.c:44`, `TBD_WaypointRuntime.c:13`, `TBD_FrameworkManager.c:796` (`ResolveWinner` now on `TBD_ResultsPayload`), `TBD_MissionVehicleStruct.c:165`, `TBD_MissionLoader` `SpawnMissionEntities` comments, Admin/Lobby DeploymentAuthorization files, `TBD_SpectatorHost`, `TBD_LobbyStage`, `TBD_MissionSlotStruct`; docs `documentation_v2/refactor_pin_catalogue.md:158,179,187`, `map-engine/.../extensions/modules/README.md`, runbooks `mod_slice_workflow`, `game_server_staging/boot_and_log_verification`, `two_client_playtest/*`, `end_screen_specification.md`, `eden_gap_analysis.md`, `remaining_milestones.md`, `mission.schema.json:88,705`; Core/Characters and Core/Players READMEs "Used by: none"; dead code `TBD_Objective.c:57,145,161,257`; `GetSpawnZoneForFaction` has no callers.
 - P2-2: `TBD_TriggerRuntime.c:14-23` header rationale (P3-3); `documentation_v2/standards/templates/readme_mod_scripts.md:84` (P3-C).
 
 ## Ticket batch
