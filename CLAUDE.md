@@ -24,7 +24,7 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
 7. **File Size Limits & Test Placement (Hard Ceilings — Zero Exemptions)**:
    - Production files must stay **at or under 500 lines**.
    - Test files (inside a `tests/` folder or named `*_tests.rs`) must stay **at or under 1000 lines**.
-   - The ceilings apply in every language; `cargo xtask verify file-length` enforces them on the Rust source trees by raw line count.
+   - The ceilings apply in every language; `cargo xtask verify file-length` enforces them on the Rust source trees and the pinned mod Scripts roots (`apps/mod/tbd-framework/Scripts`) by raw line count.
    - **Zero Exemptions / No Allowlist**: There is NO allowlist file and NO exemption mechanism. Never create an allowlist (`.coding-standards-allowlist.yaml` or any other), use allowlist comments, or bypass these limits. If a file approaches or exceeds 500 lines, you MUST decompose it by responsibility into cohesive submodules.
    - **No inline test modules**: Unit tests live in sibling files declared via `#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`.
 8. **Present-Tense, Context-Free Code Documentation**:
@@ -234,6 +234,7 @@ cargo xtask mk ci-local-leptos # Frontend checks: fmt, clippy wasm32, test, trun
 cargo xtask mk leptos-gates    # Full headless Chrome CDP editor gates (runs gate doctor first)
 cargo xtask db test-it         # Rust backend integration tests (requires db up)
 cargo xtask mod compile        # Compile check Enfusion mod scripts
+cargo xtask verify enfusion-comments  # Enfusion comment card (headers, banners, @authority/@rpc/@replicated, @route/@contract) over the pinned mod Scripts roots
 
 # Documentation Gates (add --path <folder> to narrow)
 cargo xtask ci verify-documentation    # All three over the committed tree (a ci-local step; ci.yml language-gates runs them)
