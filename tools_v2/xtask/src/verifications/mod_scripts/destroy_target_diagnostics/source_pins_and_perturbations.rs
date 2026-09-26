@@ -1,36 +1,5 @@
 use super::*;
 
-/// Python `strip_c_comments`: drop `//` and `/* */`, keep newlines inside block comments.
-pub(super) fn strip_c_comments(src: &str) -> String {
-    let chars: Vec<char> = src.chars().collect();
-    let n = chars.len();
-    let mut out = String::with_capacity(src.len());
-    let mut i = 0;
-    while i < n {
-        if chars[i] == '/' && i + 1 < n && chars[i + 1] == '/' {
-            i += 2;
-            while i < n && chars[i] != '\n' {
-                i += 1;
-            }
-            continue;
-        }
-        if chars[i] == '/' && i + 1 < n && chars[i + 1] == '*' {
-            i += 2;
-            while i + 1 < n && !(chars[i] == '*' && chars[i + 1] == '/') {
-                if chars[i] == '\n' {
-                    out.push('\n');
-                }
-                i += 1;
-            }
-            i = (i + 2).min(n);
-            continue;
-        }
-        out.push(chars[i]);
-        i += 1;
-    }
-    out
-}
-
 pub(super) fn assert_other_pins(
     root: &Path,
     file: &Path,

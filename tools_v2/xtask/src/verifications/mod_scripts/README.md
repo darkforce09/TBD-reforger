@@ -2,7 +2,8 @@
 
 Checks over the [EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript) sources and `.layout` files of
 the `tbd-framework` [mod](/documentation_v2/glossary/g_to_m.md#mod): source pins that stop false comments
-and a size bypass from returning, the structural gate for UI layouts, and the two
+and a size bypass from returning, the in-code documentation card over every script, the structural
+gate for UI layouts, and the two
 [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) spawn checks behind `cargo xtask mod`.
 
 ## Contents
@@ -11,6 +12,8 @@ and a size bypass from returning, the structural gate for UI layouts, and the tw
 tools_v2/xtask/src/verifications/mod_scripts/
 ├── destroy_target_diagnostics/            the destroy-target audit body: live pins, RED proofs, comment stripping
 ├── destroy_target_diagnostics.rs          the destroy-target targets, banned phrasings and pinned signatures
+├── enfusion_comments/                     `verify enfusion-comments`: the in-code documentation card, one module per rule
+├── enfusion_script_lexer.rs               splits a script into code, string literals and comments; `strip_c_comments`
 ├── mission_rest_size_limits.rs            `verify mission-rest-size-limits`: the 8 MiB mission ceiling pins
 ├── mod.rs                                 the module tree
 ├── player_identity_comments.rs            `verify player-identity-comments`: bans and pins on `TBD_PlayerIdentity.c`
@@ -26,10 +29,11 @@ tools_v2/xtask/src/verifications/mod_scripts/
 
 ## How it works
 
-Every check reads committed files under `apps/mod/tbd-framework/` from the checkout root and
-prints its own report. The static checks share one discipline: a live pin, then RED proofs that
-perturb the source text in memory and must fail, so a check that can no longer fail is itself a
-failure. None of them writes a file.
+Every check reads committed files under `apps/mod/tbd-framework/` (`enfusion-comments`: anywhere
+under `apps/mod/`) from the checkout root and prints its own report. The source pins share one
+discipline: a live pin, then RED proofs that perturb the source text in memory and must fail, so a
+check that can no longer fail is itself a failure; `enfusion-comments` proves each rule on a passing
+and a failing fixture instead. None of them writes a file.
 
 | Check | Reads | Holds |
 |---|---|---|
@@ -37,6 +41,7 @@ failure. None of them writes a file.
 | `player-identity-comments` | `apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_PlayerIdentity.c` | no comment claims `#tbd link` is unimplemented; the truth pins stay |
 | `results-reporter-identity-comments` | `apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_ResultsReporter.c` | the same, for the identity the reporter sends |
 | `destroy-target-diagnostics` | the objective sources, the mission validator and `mission.schema.json` | no diagnostic claims `entities[]` go unspawned (see its folder's README) |
+| `enfusion-comments` | every `.c` file under the pinned roots in `enfusion_comments/mod.rs`, or under `--path` (anything in `apps/mod/`) | rules ECM-1 to ECM-9 of the [Enfusion script header](/documentation_v2/standards/templates/enfusion_script_header.md) card; exit 2 when a root is missing or the walk is empty (see its folder's README) |
 | `ui-layouts` | the `.layout` files directly in `apps/mod/tbd-framework/UI/layouts/` (not its subfolders), and every file under `apps/mod/tbd-framework/Scripts/Game/TBD/UI/` | C1 brace balance, C2 attested slot classes, C3 frame slot geometry, C4 container children declare a slot, C5 every widget name a script looks up exists, C6 a container child's slot sets its alignment |
 
 The `ui-layouts` walk does not descend: every committed layout sits in a subfolder of
@@ -59,9 +64,12 @@ folder).
 - `mission_rest_size_limits::verify_mission_rest_size_limits`,
   `player_identity_comments::verify_player_identity_comments`,
   `results_reporter_identity_comments::verify_results_reporter_identity_comments`,
-  `destroy_target_diagnostics::verify_destroy_target_diagnostics` and
-  `ui_layouts::verify_ui_layouts`: the five `cargo xtask verify` entries, each taking the checkout
-  root.
+  `destroy_target_diagnostics::verify_destroy_target_diagnostics`,
+  `enfusion_comments::verify_enfusion_comments` and `ui_layouts::verify_ui_layouts`: the six
+  `cargo xtask verify` entries, each taking the checkout root (`verify_enfusion_comments` also
+  takes the `--path` values).
+- `enfusion_script_lexer::strip_c_comments`: the comment stripping every source pin reads
+  through; a `//` inside a string literal is code.
 - `spawn_determinism::run` and `spawn_verification::run`: the bodies of
   `cargo xtask mod spawn-determinism` and `cargo xtask mod spawn-verify`.
 

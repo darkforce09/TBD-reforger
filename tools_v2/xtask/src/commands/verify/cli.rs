@@ -73,6 +73,15 @@ pub(crate) enum VerifyCmd {
     /// Destroy-inert diagnostics must not claim entities[] never spawn
     #[command(name = "destroy-target-diagnostics")]
     DestroyTargetDiagnostics,
+    /// Every Enfusion script under the pinned mod roots, or under `--path`, meets the in-code
+    /// documentation card: rules ECM-1 to ECM-9 (ASCII, file header, banners, trailing member
+    /// docs, network tags, boundary tags, attribute descriptions, context-free prose, file name)
+    #[command(name = "enfusion-comments")]
+    EnfusionComments {
+        /// Judge only this file or folder under apps/mod instead of the pinned roots (repeatable)
+        #[arg(long = "path", value_name = "PATH")]
+        paths: Vec<String>,
+    },
     /// `deploy staging` must resolve the compose file by an absolute path
     #[command(name = "staging-compose-paths")]
     StagingComposePaths,

@@ -10,8 +10,8 @@ paths, the banned phrasings and the pinned signatures.
 
 ```text
 tools_v2/xtask/src/verifications/mod_scripts/destroy_target_diagnostics/
-├── source_audit.rs      the entry: live scans and pins, then the four RED proofs and the verdict
-└── strip_c_comments.rs  comment stripping, the source pins, and the in-memory perturbations
+├── source_audit.rs                   the entry: live scans and pins, then the four RED proofs and the verdict
+└── source_pins_and_perturbations.rs  the source pins, the RED arms and the in-memory perturbations
 ```
 
 ## How it works

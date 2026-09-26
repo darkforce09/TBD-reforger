@@ -69,6 +69,12 @@ pub(crate) fn run(cmd: VerifyCmd) -> Result<u8> {
                     &find_repo_root()?,
                 )?
             }
+            VerifyCmd::EnfusionComments { paths } => {
+                crate::verifications::mod_scripts::enfusion_comments::verify_enfusion_comments(
+                    &find_repo_root()?,
+                    &paths,
+                )
+            }
             VerifyCmd::StagingComposePaths => {
                 crate::verifications::deployment::staging_compose_paths::verify_staging_compose_paths(
                     &find_repo_root()?,

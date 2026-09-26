@@ -9,7 +9,7 @@ by name.
 
 ```text
 tools_v2/xtask/src/commands/verify/
-├── cli.rs       the `VerifyCmd` clap enum: twenty-five verbs, and the flags the documentation gates share
+├── cli.rs       the `VerifyCmd` clap enum: twenty-six verbs, and the flags the documentation gates share
 ├── dispatch.rs  finds the checkout root and calls the verification behind each verb
 └── mod.rs       the module tree
 ```
@@ -75,10 +75,12 @@ Run each as `cargo xtask verify <verb>` from the repository root.
 
 - Synopsis: `verify mission-rest-size-limits`; `verify player-identity-comments`;
   `verify results-reporter-identity-comments`; `verify destroy-target-diagnostics`;
-  `verify ui-layouts`
+  `verify enfusion-comments [--path <PATH>]...`; `verify ui-layouts`
 - Does: the 8 MiB [mission](/documentation_v2/glossary/g_to_m.md#mission) ceiling is checked before the
   [mod](/documentation_v2/glossary/g_to_m.md#mod) parses a document; three comment contracts in the mod
-  sources; the structure of the mod's `.layout` files. Body:
+  sources; the in-code documentation card (rules ECM-1 to ECM-9) over the scripts under the pinned
+  roots, or under `--path` (a file or folder in `apps/mod`), exiting 2 when a root is missing or
+  the walk is empty; the structure of the mod's `.layout` files. Body:
   `tools_v2/xtask/src/verifications/mod_scripts/`.
 - Example: `cargo xtask verify mission-rest-size-limits`
 

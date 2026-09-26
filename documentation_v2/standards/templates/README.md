@@ -3,8 +3,9 @@
 # Documentation templates
 
 Copyable skeletons for every README kind of the
-[README standard](/documentation_v2/standards/readme_standard.md) and for the documents under
-`documentation_v2/`: feature docs, runbooks, decisions entries, known bugs and glossary entries.
+[README standard](/documentation_v2/standards/readme_standard.md), for the documents under
+`documentation_v2/`: feature docs, runbooks, decisions entries, known bugs and glossary entries,
+and for the header every Enfusion script opens with.
 Each template carries a worked sample written from real code or a real document.
 
 ## Contents
@@ -12,6 +13,7 @@ Each template carries a worked sample written from real code or a real document.
 ```text
 documentation_v2/standards/templates/
 ├── decisions_entry.md              template for a decisions.md entry; sample: the terrain height map
+├── enfusion_script_header.md       template for an Enfusion script header and its card; sample: the task HUD
 ├── feature_doc.md                  template for a feature doc; sample: the event schedule page
 ├── glossary_entry.md               template for a glossary entry; sample: mission header
 ├── known_bug.md                    template for a known bug; sample: the editor gate boot wedge
@@ -64,9 +66,10 @@ the standard names.
   orders and every rule a template spells out.
 - Used by: everyone who writes or reviews a README in the code trees, or a document under
   `documentation_v2/`.
-- Rules: one template per README kind, named as the standard's kind table names it, and one per
-  document type; each holds a When to use line, a skeleton and one worked sample, both fenced; a
-  README sample's Contents block matches its folder's tracked children.
+- Rules: one template per README kind, named as the standard's kind table names it, one per
+  document type, and one for the Enfusion script header; each holds a When to use line, a skeleton
+  and one worked sample, both fenced; a README sample's Contents block matches its folder's tracked
+  children.
 
 ## Related documentation
 
