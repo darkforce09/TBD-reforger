@@ -54,11 +54,11 @@ Commits of this program stage by pathspec only.
 | P3-8 | done | 03d9d83be | Audio (5), Markers (+Client/), Radio comment pass; modded PCs named `SCR_PlayerController.c` per folder. |
 | P3-9 | done | 0bf022275 | FrameworkManager 398 over Flow/ + Stage/; Safestart/, WinConditions/; `TBD_GameStage.c` -> `TBD_EGameStage.c`; Safestart OnDelete now cancels its timers. |
 | P3-10 | done | c7afddd02 | Briefing Service/, Catalog/, UI/Pages, UI/Navigation, map launcher; wire bytes unchanged; self-check armed from Serialise now runs. |
-| P3-11 | running | | |
-| P3-12 | running | | |
-| P3-13 | running | | |
-| P3-14 | running | | |
-| P3-C | pending | | |
+| P3-11 | done | e198b3e64 | Lobby Service/, Catalog/, PreSlot/, UI/Roster, UI/Kit; deployment-authorization folded into `ApplyDeploy`; ticket ids removed from one attribute desc and one log line. |
+| P3-12 | done | 58163e9ec | Spectator Host/ (6) and Controller/ (4); Players and PostGame one type per file; DebriefScreen uses `TBD_WireCodec` separators. |
+| P3-13 | done | 8210e3784 | Admin (subcommands, audit, snapshot via codec), Admin/UI sections; MissionSelector Catalog/ and inspector cards; browser RPCs on the Admin player controller. |
+| P3-14 | done | 8e6fd61eb | UI Common Dropdown/Inputs/Layout/SessionChrome, Core Theme/Screens/Controls; HUD RPCs to `UI/Hud/SCR_PlayerController.c`. Framework: 0 findings in 370 scripts, max 477 lines, compile 0, world-boot PASS. |
+| P3-C | running | | |
 | P4-1 | pending | | |
 | OP-1 | pending | | operator playtest |
 | P5-1 | pending | | |
@@ -104,7 +104,7 @@ Wave launches pass one file built from the plan's B0, CARD, SPLIT RULES and writ
 
 ## Pause point
 
-Session paused 2026-09-26 after wave B (operator: session budget); resumed the same day with wave C. Next: launch wave C (P3-11 Lobby, P3-12 Spectator+Players+PostGame, P3-13 Admin+MissionSelector, P3-14 UI+Core) with the plan's slice parameters, then P3-C. Tree at pause: `mod compile` 0, `mod world-boot` PASS, 2074 comment findings in 78 of 324 framework scripts.
+Session paused 2026-09-26 after wave B (operator: session budget); resumed the same day with wave C. Wave C landed; next is P3-C. Tree at pause: `mod compile` 0, `mod world-boot` PASS, 2074 comment findings in 78 of 324 framework scripts.
 
 ## Comment gate baseline
 
@@ -116,6 +116,7 @@ Filled by P1-2 and P1-3.
 | tbd-framework | after P1-3 | 126 | 187 | 1179 | 2312 | 49 | 80 | 19 | 1425 | 43 | 5420 |
 | tbd-framework | after wave A | 117 | 138 | 935 | 1538 | 36 | 37 | 19 | 773 | 31 | 3624 |
 | tbd-framework (324 files) | after wave B | 100 | 78 | 586 | 929 | 20 | 7 | 19 | 320 | 15 | 2074 |
+| tbd-framework (370 files) | after wave C | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | tbd-emcp (19 files) | after P1-3 | 0 | | | 158 | | | | 0 | | 458 |
 
 ## Shared helper index
@@ -203,6 +204,8 @@ Left by P3 slices for P3-C to remove: forwarder | owner file | external callers.
 - `TBD_MissionLoader.IsSquadLeader` -> `TBD_MissionOrbatQuery` | Loaders/Mission | Spawning
 - `TBD_BriefingService.SelfCheckWire` -> `TBD_BriefingWireSelfCheck.Run` | Briefing/Service | Gamemode/Orchestrator/TBD_FrameworkManager
 - `TBD_MissionFlow.AllowsJoinAtStage`/`.JipPolicyName` -> `TBD_JipPolicy` | Gamemode/Orchestrator/Flow | Spawning/Identity/TBD_SpawnJoinAudit
+- `TBD_UITheme.ChipInk`/`PanelFill`/`PanelBorder`/`FactionRowFill`/`FactionRowBorder`/`FactionRowInk` -> `TBD_UITintColours` | UI/Core/Theme | Session panels
+- (removed by P3-13) `TBD_GameRuntimeHttp.JsonEscape` caller `TBD_MissionDeploymentRelay`; Spawning caller remains
 - `TBD_ZoneVolume.Clear`/`.Read` -> `TBD_ZoneVolumeBounds` | Zones/Volumes | internal
 
 ## Leftovers
@@ -213,6 +216,7 @@ Per slice, for the closing runs.
 - P1-3: box-drawing diagrams in 14 UI panel files; residual non-ASCII (x, <=, e-acute, bullet, section sign, check mark, emoji) e.g. `TBD_MissionSelectorScreen.c:4`, `TBD_LobbyScreen.c:4`; titles `TBD_UITheme.c:113`, `TBD_SpectatorCamera.c:49`. 165 above-line field docs left (over 120 columns). Owners fix via ECM-1/ECM-4/ECM-8.
 - Wave A stale comments/paths (P3-C unless the folder owner fixes them first): `TBD_WinConditionEvaluator.c:44`, `TBD_WaypointRuntime.c:13`, `TBD_FrameworkManager.c:796` (`ResolveWinner` now on `TBD_ResultsPayload`), `TBD_MissionVehicleStruct.c:165`, `TBD_MissionLoader` `SpawnMissionEntities` comments, Admin/Lobby DeploymentAuthorization files, `TBD_SpectatorHost`, `TBD_LobbyStage`, `TBD_MissionSlotStruct`; docs `documentation_v2/refactor_pin_catalogue.md:158,179,187`, `map-engine/.../extensions/modules/README.md`, runbooks `mod_slice_workflow`, `game_server_staging/boot_and_log_verification`, `two_client_playtest/*`, `end_screen_specification.md`, `eden_gap_analysis.md`, `remaining_milestones.md`, `mission.schema.json:88,705`; Core/Characters and Core/Players READMEs "Used by: none"; dead code `TBD_Objective.c:57,145,161,257`; `GetSpawnZoneForFaction` has no callers.
 - Wave B stale paths: `documentation_v2/glossary/n_to_z.md:117`, `apps/website/map-engine/src/data/scenario/extensions/objectives/win_conditions/README.md:40`, `documentation_v2/mod/tbd-framework/mod_design.md:72`, `apps/mod/tbd-framework/UI/layouts/Session/Lobby/README.md:91` (-> `UI/Pages/TBD_BriefingOrbatPage.c`), `UI/Mock/README.md:28` (BriefingCatalog path), `two_client_playtest/README.md:99` (`TBD_LoadoutEquipHelper.c`), `mission.schema.json` (`TBD_MarkerClient.SetRotation`). Stale member names: `TickWinConditions` (ObjectiveRegistry, ObjectivesComponent, MissionWinConditionChecks), `ArmRoundClock`/`ArmFactionEliminated`, `ApplyMissionFlow` (MissionFlowStruct), `ApplyEndScreens` (EndScreen), Safestart members in SpectatorHost/SpectatorHostEntity, `TBD_BriefingService.MAX_PAYLOAD_LINES`/`FIELD_MARK` (Lobby, Admin services), `TBD_BriefingController.c` (MissionBrowser, LobbyController, Spectator), `TBD_MissionBrowser.c:19`, `TBD_AdminService.c:47`, `TBD_SpectatorComponent.c:15-16`. Runtime log string with `T-941.7` in `TBD_RadioComponent.c`.
+- Wave C stale names: `Systems/Spawning/Slots/TBD_SlotRosterWire.c:7` (`TBD_LobbyData`), `TBD_LobbyController` in `MissionSelector/SCR_PlayerController.c` (was TBD_MissionBrowser), `Spectator/TBD_SpectatorComponent.c:15`, `Spectator/Host/TBD_SpectatorHost.c`; `TBD_MissionBrowser.c`/`TBD_AdminData` in Lobby and Spectator comments; `Session/Lobby/PreSlot/TBD_PreSlotCamera*` names `TBD_SpectatorHost.ResolveAnchor` (now `TBD_SpectatorHostLifecycle`); `UI/Mock/README.md` catalog paths; `Session/README.md` describes `TBD_<Feature>Data.c`; `documentation_v2/mod/tbd-framework/UI/lobby/lobby_specification.md:64,78`; `verification_evidence/requirements.json:425-426`; `refactor_pin_catalogue.md:189-192`; `Gamemode/Orchestrator/Stage/TBD_EndBanner.c:116` and `TBD_FrameworkManager.c:47` board format lacks the deaths field (comment).
 - P2-2: `TBD_TriggerRuntime.c:14-23` header rationale (P3-3); `documentation_v2/standards/templates/readme_mod_scripts.md:84` (P3-C).
 
 ## Ticket batch
