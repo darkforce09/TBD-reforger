@@ -1,0 +1,13 @@
+id = "T-1215"
+kind = "work"
+title = "Add link, placement and coverage verifications to the slice gate"
+summary = "VERIFY_STEPS (platform/wave_execution/gate.rs:59-70), shared by gate_slice and cmd_gate, runs none of the three prose verifications, so slice_agent_brief.md rule 11 (run them per touched folder) is self-reported only; add them to the gate."
+class = "chore"
+status = "idea"
+notes = "tools_v2/xtask/src/commands/platform/wave_execution/gate.rs:59-70: VERIFY_STEPS holds ten rows (object-registry-aliases, wiki-seeds, faction-library-seeds, staging-compose-paths, mission-rest-size-limits, ci-schema-parity, destroy-target-diagnostics, route-tags, results-reporter-identity-comments, player-identity-comments), iterated by gate/checkrun.rs:124 and gate/gate_dispatch.rs:360; tests/gate/tests.rs:19 pins the count at 10. No row and no other step under commands/platform/ runs cargo xtask verify readme-coverage, link-check or markdown-placement (git grep finds none), and ci-local leaves them out too (tools_v2/xtask/src/commands/ci/README.md:43-44). documentation_v2/runbooks/factory_waves/slice_agent_brief.md:85-91 (rule 11) tells each slice agent to run the three with --with-untracked --path <folder> for every folder whose documents it touched, so nothing stops a slice landing with a red coverage, link or placement check when its agent skips rule 11. The three take --path <dir>... and --with-untracked (verifications/documentation/link_check.rs:10, markdown_placement.rs:8); the gate would pass the slice's changed folders. Update the count test and gate/README.md:32 with the rows. T-1130 (3) is a separate gap in the same table (engine-layers). Source: Phase 6 finding, ticket batch TF16."
+created_at = "2026-09-26T05:54:31Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "gates"
