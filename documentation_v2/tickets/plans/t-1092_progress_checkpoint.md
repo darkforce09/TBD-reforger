@@ -44,11 +44,11 @@ Commits of this program stage by pathspec only.
 | P1-3 | done | 57339f19e | 177 files, -3103 separator/banner lines, 67 ticket tags, 117 field docs to trailing; compile 0. |
 | P2-1 | done | (this commit) | 19 helpers, 82 `TBD_Authority` replacements, presets in `UI/Core/ChimeraMenuPreset.c` (file named for its type); compile 0. |
 | P2-2 | done | (this commit) | `Heartbeat/TBD_RuntimeHeartbeat.c` (1000 ms, WinCondition on even beats) replaces 8 drivers; `TBD_DebriefScoreboard.Fill`; world-boot 0, order matches baseline; ECM rule sees `TBD_Authority`. |
-| P3-1 | pending | | |
-| P3-2 | pending | | |
-| P3-3 | pending | | |
-| P3-4 | pending | | |
-| P3-5 | pending | | |
+| P3-1 | running | | |
+| P3-2 | running | | |
+| P3-3 | running | | |
+| P3-4 | running | | |
+| P3-5 | running | | |
 | P3-6 | pending | | |
 | P3-7 | pending | | |
 | P3-8 | pending | | |
@@ -71,6 +71,7 @@ Additions to a launch prompt beyond concrete values, by slice id.
 
 | Slice | Addition |
 |---|---|
+| P3-1…P3-5 | Delivered as one scratch brief file (B0 + CARD + SPLIT RULES + writer steps, verbatim) plus a "Parallel wave rules" block: judge compile by own-file errors only; git mv is fine, no other git add/reset. Slice notes add: heartbeat owns Tick calls (keep static Tick signatures); P3-3 adds `TBD_ZoneRegistry.FindById` and `TBD_TriggerRuntime.HasFired` for other slices; P3-5 must not touch `TBD_DebriefScoreboard.c`. |
 | P2-2 | Also update `tools_v2/xtask/src/verifications/mod_scripts/enfusion_comments/network_authority_rule.rs:25` so `TBD_Authority.IsClient()`/`IsServer()` calls count as context-dependent (the P2-1 replacement hid 82 sites), with a test. |
 | P1-3 onward | B0 gains: "Never run `hcargo fmt -p <package>` (it reformats the other session's files); check with `hcargo fmt -p xtask -- --check` and format only your own files." |
 | P1-2 | Concurrency note: P1-1 edits `language_bans/` and `node_free_tests.rs` at the same time; the other session's uncommitted `tools_v2/xtask` edits are reported, not fixed, if they break the build. |
