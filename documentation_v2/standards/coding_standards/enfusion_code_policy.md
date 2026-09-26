@@ -24,7 +24,9 @@ and are not restated here.
 - **ENF-3 (Readability) — Networked-code tags resolve.** Every `@contract` citation in a `.c`
   file names a schema definition that exists. Gate: CI-SCRIPT, `cargo xtask ci verify-citations`
   (`cargo xtask schema citations`), which reads `.c` and `.rs` files under `apps/` and `tools_v2/`.
-  The `@authority`, `@rpc` and `@replicated` tags are unenforced: no gate reads them.
+  `cargo xtask verify enfusion-comments` (ECM-5 and ECM-6) requires the `@authority`, `@rpc`,
+  `@replicated`, `@route` and `@contract` tags where they belong over the pinned mod Scripts
+  roots, today `apps/mod/tbd-framework/Scripts`.
 - **ENF-4 (Usability) — A JSON document the mod parses has a golden sample that validates.** The
   ten samples in `contracts_v2/fixtures/enfusion_samples/` cover the parts of the [mission](/documentation_v2/glossary/g_to_m.md#mission) schema
   the mod's DTO classes read; the schema gate validates each against its definition, and a sample
@@ -38,12 +40,14 @@ rule names an automated gate or is stated as unenforced.
 
 ## Checking mod code
 
-No gate of `cargo xtask ci ci-local` covers EnfScript: the API's tests and the app build never
-compile a `.c` file. A mod change is checked by `cargo xtask mod compile` (the compile gate, which
-also probes whether an engine API exists), the mod wave gate, and a pass in Workbench or on a
-dedicated server for the MANUAL rules. The procedure is in
+No gate of `cargo xtask ci ci-local` compiles EnfScript: the API's tests and the app build never
+compile a `.c` file. Its `verify-coding-standards` step does read the pinned mod Scripts roots,
+today `apps/mod/tbd-framework/Scripts`, through `cargo xtask verify file-length` and
+`cargo xtask verify enfusion-comments`. A mod change is checked by `cargo xtask mod compile` (the
+compile gate, which also probes whether an engine API exists), those two gates, the mod wave gate,
+and a pass in Workbench or on a dedicated server for the MANUAL rules. The procedure is in
 [Mod slice workflow](/documentation_v2/runbooks/mod_slice_workflow.md).
 
-EnfScript files have no line limit gate: `cargo xtask verify file-length` walks Rust sources
-only, so the 500-line ceiling of CLAUDE.md law 7 is unenforced for `.c` files (see
+`cargo xtask verify file-length` holds the `.c` files of the pinned mod Scripts roots to the
+500-line ceiling of CLAUDE.md law 7; the scripts of the addons not yet pinned stay unenforced (see
 [File size and complexity](/documentation_v2/standards/coding_standards/file_size_and_complexity.md)).

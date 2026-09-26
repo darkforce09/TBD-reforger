@@ -5,7 +5,7 @@
 Program ticket. Children: T-1092.1 (gates and mechanical sweep), T-1092.2 (shared foundations),
 T-1092.3 (framework decomposition and documentation), T-1092.4 (framework pin and CI),
 T-1092.5 (tbd-emcp), T-1092.6 (tbd-export). Execution: [plan](/documentation_v2/tickets/plans/t-1092_plan.md);
-progress: [checkpoint](/documentation_v2/tickets/plans/t-1092_progress_checkpoint.md).
+progress: [checkpoint](/documentation_v2/mod/script_modularisation_progress_checkpoint.md).
 
 ## In one sentence
 
@@ -85,4 +85,4 @@ The roster, slices and launch prompts are in the [plan](/documentation_v2/ticket
 ## Claude Code prompt — T-1092 (copy-paste)
 
 The program runs from the prompts in the [plan](/documentation_v2/tickets/plans/t-1092_plan.md);
-resume by reading the [checkpoint](/documentation_v2/tickets/plans/t-1092_progress_checkpoint.md).
+resume by reading the [checkpoint](/documentation_v2/mod/script_modularisation_progress_checkpoint.md).

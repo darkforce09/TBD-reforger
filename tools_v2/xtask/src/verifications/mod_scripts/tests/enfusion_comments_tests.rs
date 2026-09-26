@@ -69,7 +69,7 @@ class TBD_SampleWidget : ScriptComponent
 }
 
 //! Payload of the sample report.
-//! @contract sample.schema.json#/$defs/report
+//! @contract game-runtime-session.schema.json#/definitions/RuntimeHeartbeat
 class TBD_SampleReportStruct : JsonApiStruct
 {
 	int count; //!< JSON key "count"
@@ -214,7 +214,10 @@ fn boundary_tag_rule_passes_and_fails() {
     );
     assert!(route[0].message.contains("Report"));
     let contract = fails(
-        &edited("//! @contract sample.schema.json#/$defs/report\n", ""),
+        &edited(
+            "//! @contract game-runtime-session.schema.json#/definitions/RuntimeHeartbeat",
+            "//! Carries no schema citation.",
+        ),
         RuleId::BoundaryTags,
     );
     assert!(contract[0].message.contains("TBD_SampleReportStruct"));

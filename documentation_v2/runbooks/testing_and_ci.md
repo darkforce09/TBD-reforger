@@ -179,6 +179,7 @@ the wave gate and the slice gate. Rule ids (FMT-2, LANG-1, TEST-1 and the rest) 
 | workflow `run:` lines | `cargo xtask verify ci-shell` | yes | `language-gates` | wave |
 | engine layers | `cargo xtask verify engine-layers` | yes | `language-gates` | no |
 | file length (SIZE-3) | `cargo xtask verify file-length` | in `verify-coding-standards` | `language-gates` | no |
+| Enfusion comment card (ECM-1 to ECM-9) | `cargo xtask verify enfusion-comments` | in `verify-coding-standards` | `language-gates` | no |
 | no `SELECT *` | `cargo xtask verify no-select-star` | in `verify-coding-standards` | no | no |
 | `@route` tags (GO-7) | `cargo xtask verify route-tags` | in `verify-coding-standards` | no | both |
 | Rust formatting | `cargo xtask mk rust-fmt` | in `rust-ci` | `website-api` | changed files |

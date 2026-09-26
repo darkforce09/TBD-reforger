@@ -12,7 +12,7 @@ tools_v2/xtask/src/commands/ci/
 ├── chromium_install.rs  the `ci-chrome` task: installs the pinned Chrome for Testing build
 ├── editor_api.rs        the `editor-api-boot`, `verify-codegen-fresh` and `verify-editorconfig` tasks
 ├── mod.rs               the module tree
-├── task_definitions/    the step macros and the in-process verification adapters
+├── task_definitions/    the step macros, the map-lane step lists and the in-process verification adapters
 ├── task_definitions.rs  `TASKS`: every task with its help line, group, lane and steps
 ├── task_runner/         the runner, the child environment, `help`, the gate list
 ├── task_runner.rs       the `Task`, `Step` and `Lane` types, re-exports
@@ -59,7 +59,7 @@ moved. The browser gates of `cargo xtask mk leptos-gates` are not part of it.
   | `schema-codegen` | schema, ci | `schema codegen`: regenerates the contract types from `contracts_v2/definitions/` |
   | `verify-citations` | schema, ci | `schema citations`: the `@contract` citations in code |
   | `verify-codegen-fresh` | schema, ci | regenerates the contract outputs in memory and compares them with the files |
-  | `verify-coding-standards` | verify, ci | `verify file-length`, `verify no-select-star` and `verify route-tags`, in process |
+  | `verify-coding-standards` | verify, ci | `verify file-length`, `verify enfusion-comments` (the pinned mod Scripts roots), `verify no-select-star` and `verify route-tags`, in process |
   | `verify-documentation` | verify, ci | `verify readme-coverage`, `verify link-check` and `verify markdown-placement` over the committed tree, in process |
   | `verify-editorconfig` | verify, ci | `editorconfig-checker` from the root, installing the pinned v3.4.0 with `go install` when absent |
   | `verify-no-python`, `verify-no-node`, `verify-no-shell`, `verify-ci-shell`, `verify-engine-layers`, `verify-staging-compose-paths`, `verify-mission-rest-size-limits` | verify, alias | the `cargo xtask verify` command of the same name |

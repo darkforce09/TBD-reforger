@@ -82,11 +82,11 @@ example, and section 10 the checks.
 
 | Tag | Written on | Checked by |
 |---|---|---|
-| `@route <METHOD> <path>` | every Axum handler; every EnfScript REST call site | `cargo xtask verify route-tags` (Rust side, both directions); review (EnfScript) |
-| `@contract <schema>#<pointer>` | every type that projects a schema definition: Rust models and DTOs, hand-written EnfScript DTOs | `cargo xtask schema citations`: every citation resolves |
-| `@authority server\|client\|owner` | every EnfScript method whose correctness depends on where it runs | review |
-| `@rpc <Reliable\|Unreliable> <Server\|Owner\|Broadcast>` | directly above every `[RplRpc]` | review |
-| `@replicated <prop>` | directly above every `[RplProp]` | review |
+| `@route <METHOD> <path>` | every Axum handler; every EnfScript REST call site | `cargo xtask verify route-tags` (Rust side, both directions); `cargo xtask verify enfusion-comments` (EnfScript call sites, ECM-6) |
+| `@contract <schema>#<pointer>` | every type that projects a schema definition: Rust models and DTOs, hand-written EnfScript DTOs | `cargo xtask schema citations`: every citation resolves; `cargo xtask verify enfusion-comments`: present on every EnfScript `*Struct` (ECM-6) |
+| `@authority server\|client\|owner` | every EnfScript method whose correctness depends on where it runs | `cargo xtask verify enfusion-comments` (ECM-5) |
+| `@rpc <Reliable\|Unreliable> <Server\|Owner\|Broadcast>` | directly above every `[RplRpc]` | `cargo xtask verify enfusion-comments` (ECM-5) |
+| `@replicated <prop>` | directly above every `[RplProp]` | `cargo xtask verify enfusion-comments` (ECM-5) |
 
 ## 4. Comments in all code
 
@@ -241,6 +241,13 @@ naming the route it calls, so a search for the route string finds both the Rust 
 EnfScript caller. From `apps/mod/tbd-framework/Scripts/Game/TBD/API/Results/TBD_ResultsReporter.c:200`,
 on the method that posts match results: ``//! @route POST /api/v1/ingest/match-results``.
 
+**Gate.** `cargo xtask verify enfusion-comments` checks the rules of this section and section 7
+(rules ECM-1 to ECM-9, specified in the
+[comment gate README](/tools_v2/xtask/src/verifications/mod_scripts/enfusion_comments/README.md))
+over the pinned mod Scripts roots, today `apps/mod/tbd-framework/Scripts`; `--path` narrows it to
+any folder or file under `apps/mod/`. `cargo xtask ci verify-coding-standards` and the CI
+language-gates job run it without `--path`.
+
 ## 7. Network authority
 
 In a replicated game, which machine runs a method is part of its contract.
@@ -251,6 +258,9 @@ In a replicated game, which machine runs a method is part of its contract.
   attribute and repeats its channel and receiver.
 - `//! @replicated <prop>` sits directly above every `[RplProp]` field, naming who owns the value
   and the `onRplName` hook clients react in, when the attribute names one.
+- `cargo xtask verify enfusion-comments` (ECM-5) requires the three tags: `@authority` on every
+  method whose body calls `Rpc(` or asks where it runs, `@rpc` matching the attribute it sits
+  above, and `@replicated` above every `[RplProp]`.
 - A server gate, `if (TBD_Authority.IsClient())`, carries a
   `// Authority only -- <reason>` comment above it, as at
   `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/SCR_PlayerController.c:24`.
@@ -407,8 +417,10 @@ every Rust `@route` tag with the routes the API registers, in both directions, a
 `cargo xtask ci verify-citations` run them, and `cargo xtask ci ci-local` runs both. The citation
 check reads `.c`, `.go`, `.js`, `.mjs`, `.rs`, `.ts` and `.tsx` files under `apps/` and
 `tools_v2/`, never Markdown, and prints that scope on every run; when the printed scope and this
-section disagree, the printed scope is right. Review holds the other tags and the comment rules,
-apart from the prose tests section 4 names.
+section disagree, the printed scope is right. A third check, `cargo xtask verify enfusion-comments`,
+holds the EnfScript tags and the Enfusion comment rules of sections 6 and 7 over the pinned mod
+Scripts roots, and `cargo xtask ci verify-coding-standards` runs it too. Review holds the other
+comment rules, apart from the prose tests section 4 names.
 
 Three gates check the documents, specified in the
 [documentation gates README](/tools_v2/xtask/src/verifications/documentation/README.md):

@@ -220,13 +220,13 @@ jobs:
   #   verify-no-shell   Same table as no-python: any tracked shell/Make/Python/Node-script path
   #                     fails. New tooling goes in xtask (LANG-1).
   #
-  # Every step is `cargo xtask`: `verify` no-python, no-node, file-length, no-shell, ci-shell and
-  # engine-layers, then `ticket check --strict`, then the documentation gates `verify`
-  # readme-coverage, link-check and markdown-placement. It needs cargo but no database, no LFS and
+  # Every step is `cargo xtask`: `verify` no-python, no-node, file-length, enfusion-comments,
+  # no-shell, ci-shell and engine-layers, then `ticket check --strict`, then the documentation
+  # gates `verify` readme-coverage, link-check and markdown-placement. It needs cargo but no database, no LFS and
   # no wasm target, so it is a cheap job that fails fast and early rather than riding on the back
   # of the 25-minute API job.
   language-gates:
-    name: language gates (no-python / no-node / no-shell / ci-shell / engine-layers / file-length / documentation)
+    name: language gates (no-python / no-node / no-shell / ci-shell / engine-layers / file-length / enfusion-comments / documentation)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -246,6 +246,8 @@ jobs:
         run: cargo xtask verify no-node
       - name: verify-file-length (SIZE-3)
         run: cargo xtask verify file-length
+      - name: verify-enfusion-comments (mod comment card over the pinned Scripts roots)
+        run: cargo xtask verify enfusion-comments
       - name: verify-no-shell (language ban)
         run: cargo xtask verify no-shell
       - name: "verify-ci-shell (GitHub Actions run: blocks)"

@@ -92,7 +92,7 @@ predictable contract for the consumer; Debuggability (De), a failure that says w
 | LOG-3 | De | a failed request is logged with path, status and duration | live, held by the access-log middleware; no gate | [api_errors_and_logging.md](/documentation_v2/standards/coding_standards/api_errors_and_logging.md) |
 | SIZE-1 | Sc | a soft warning at 600 lines | retired; SIZE-3 replaces it | [file_size_and_complexity.md](/documentation_v2/standards/coding_standards/file_size_and_complexity.md) |
 | SIZE-2 | Sc | file-level exemptions | retired; none exist | [file_size_and_complexity.md](/documentation_v2/standards/coding_standards/file_size_and_complexity.md) |
-| SIZE-3 | Sc | production Rust ≤ 500 lines, test Rust ≤ 1000, no exemption | CI-SCRIPT, `cargo xtask verify file-length` | [file_size_and_complexity.md](/documentation_v2/standards/coding_standards/file_size_and_complexity.md) |
+| SIZE-3 | Sc | production Rust and pinned mod EnfScript ≤ 500 lines, tests ≤ 1000, no exemption | CI-SCRIPT, `cargo xtask verify file-length` | [file_size_and_complexity.md](/documentation_v2/standards/coding_standards/file_size_and_complexity.md) |
 | TEST-1 | De | a handler change passes the API's tests against Postgres | CI-BLOCK, the `website-api` job | [testing_bar.md](/documentation_v2/standards/coding_standards/testing_bar.md) |
 | TEST-2 | De | non-trivial app logic has a unit test | CI-BLOCK, the `website-frontend` job | [testing_bar.md](/documentation_v2/standards/coding_standards/testing_bar.md) |
 | TEST-3 | Us | a schema change ships a fixture and a green schema gate | CI-BLOCK, the `schema` job | [testing_bar.md](/documentation_v2/standards/coding_standards/testing_bar.md) |

@@ -39,7 +39,7 @@ use findings::{Finding, RuleId};
 
 /// Repository-relative roots judged when no `--path` is given; each entry is a folder or file
 /// under [`MOD_TREE`] whose scripts meet the card.
-pub(crate) const PINNED_ROOTS: &[&str] = &[];
+pub(crate) const PINNED_ROOTS: &[&str] = &["apps/mod/tbd-framework/Scripts"];
 
 /// The only tree `--path` may point into.
 const MOD_TREE: &str = "apps/mod";

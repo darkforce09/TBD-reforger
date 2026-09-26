@@ -31,7 +31,7 @@ name in tbd-emcp (the MCP broker calls them by name).
 
 Another session holds uncommitted work in `apps/mod/tbd-export`, `tools_v2/xtask`
 (`commands/mod_ops`, `commands/deploy`, `commands/generate`, `Cargo.toml`), `tools_v2/developer-tools`,
-`apps/website`, `contracts_v2`, `assets_v2/equipment`, `CLAUDE.md`, `.gitignore` and `Cargo.lock`.
+`apps/website`, `contracts_v2`, the untracked `equipment` folder of `assets_v2`, `CLAUDE.md`, `.gitignore` and `Cargo.lock`.
 Commits of this program stage by pathspec only.
 
 ## Roster
@@ -59,7 +59,7 @@ Commits of this program stage by pathspec only.
 | P3-13 | done | 8210e3784 | Admin (subcommands, audit, snapshot via codec), Admin/UI sections; MissionSelector Catalog/ and inspector cards; browser RPCs on the Admin player controller. |
 | P3-14 | done | 8e6fd61eb | UI Common Dropdown/Inputs/Layout/SessionChrome, Core Theme/Screens/Controls; HUD RPCs to `UI/Hud/SCR_PlayerController.c`. Framework: 0 findings in 370 scripts, max 477 lines, compile 0, world-boot PASS. |
 | P3-C | done | 4518a8665 | Forwarders removed, stale references fixed across scripts and docs, dead `TBD_Objective` members dropped, T-1219 filed; order line matches baseline. P3-C2 (this commit) filed T-1220..T-1228 for the bugs the checkpoint had missed. |
-| P4-1 | running | | |
+| P4-1 | done | (this commit) | tbd-framework pinned in `file-length` and `enfusion-comments`; `verify-coding-standards` and `ci.yml` language-gates run the comment gate; `task_definitions.rs` map steps split to `map_asset_steps.rs`; checkpoint moved here (plans/ takes only `t-<id>_plan.md`); CLAUDE.md laws 7/8 and section 3 (separate commit). ci-local exit 1 only on the other session's work (editorconfig in untracked assets_v2/equipment, api_v2 rustfmt, 12 equipment route tags, tbd-export and website README coverage). |
 | OP-1 | pending | | operator playtest |
 | P5-1 | pending | | |
 | P6-1 … P6-6 | blocked | | waits for the other session's tbd-export commit |
@@ -222,7 +222,7 @@ a deleted file); ticket ids in four runtime log strings and one attribute desc; 
 Remaining, outside P3-C's paths:
 
 - `TBD_MissionLoader.GetSpawnZoneForFaction` has no callers; kept (the loader's static read API keeps its names), ticketed as T-1219.
-- Stale member names in files no slice owns: `.world-boot-warning-baseline:41` (`TBD_FrameworkManager.ArmRoundClock`), `apps/website/map-engine/src/data/scenario/compiler/flatten/tests/cases_4.rs:256,264,268` (assert messages naming `OnEnterBriefing`, `ArmRoundClock`, the JIP door on `TBD_SpawnManager`), `apps/website/frontend/src/v2/apps/editor/ui/inspector/env.rs:154` (`TBD_FrameworkManager.ArmRoundClock`), `apps/website/map-engine/src/data/scenario/extensions/modules/spawns.rs:11` (`SpawnManager's EngineFactionKey`, now `TBD_SlotBodyMaterializer`).
+- Stale member names in files no slice owns: `.world-boot-warning-baseline:41` (`TBD_FrameworkManager.ArmRoundClock`), `apps/website/map-engine/src/data/scenario/compiler/flatten/tests/cases_4.rs` lines 256, 264 and 268 (assert messages naming `OnEnterBriefing`, `ArmRoundClock`, the JIP door on `TBD_SpawnManager`), `apps/website/frontend/src/v2/apps/editor/ui/inspector/env.rs:154` (`TBD_FrameworkManager.ArmRoundClock`), `apps/website/map-engine/src/data/scenario/extensions/modules/spawns.rs:11` (`SpawnManager's EngineFactionKey`, now `TBD_SlotBodyMaterializer`).
 - All slices: run `hcargo fmt --check -p xtask` or format only owned files; never plain `fmt -p xtask` while another session has xtask edits.
 
 ## Ticket batch

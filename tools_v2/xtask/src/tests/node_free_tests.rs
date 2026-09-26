@@ -54,6 +54,7 @@ fn walk_is_nonempty_anti_vacuity() {
         "/apps/ticketboard/src/",
         "/apps/website/api_v2/src/",
         "/apps/website/frontend/src/",
+        "/apps/mod/tbd-framework/Scripts/",
     ] {
         assert!(
             joined.contains(needle),

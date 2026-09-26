@@ -1,6 +1,8 @@
 #[macro_use]
 #[path = "task_definitions/recipe_macros.rs"]
 mod recipe_macros;
+#[path = "task_definitions/map_asset_steps.rs"]
+mod map_asset_steps;
 #[path = "task_definitions/verification_dispatch.rs"]
 mod verification_dispatch;
 
@@ -17,11 +19,12 @@ use crate::verifications::map_assets::map_object_golden;
 use crate::verifications::schemas::checks::{
     citations, map_glyphs, map_object_enums, type_inventory, validate_all,
 };
+use map_asset_steps::{MAP_CARTOGRAPHIC_EVERON_STEPS, MAP_WATER_EVERON_STEPS};
 use verification_dispatch::{
-    run_ci_schema_parity, run_engine_layers, run_height_labels, run_link_check,
-    run_markdown_placement, run_mission_rest_size_limits, run_no_select_star, run_readme_coverage,
-    run_route_tags, run_staging_compose_paths, run_terrain_alignment, run_terrain_alignment_strict,
-    run_terrain_manifest,
+    run_ci_schema_parity, run_enfusion_comments, run_engine_layers, run_height_labels,
+    run_link_check, run_markdown_placement, run_mission_rest_size_limits, run_no_select_star,
+    run_readme_coverage, run_route_tags, run_staging_compose_paths, run_terrain_alignment,
+    run_terrain_alignment_strict, run_terrain_manifest,
 };
 
 pub static TASKS: &[Task] = &[
@@ -106,11 +109,16 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "verify-coding-standards",
-        help: "SIZE file length + no SELECT * + GO-7 @route/router match (documentation_v2/standards/coding_standards/README.md §11)",
+        help: "SIZE file length + Enfusion comment card + no SELECT * + GO-7 @route/router match (documentation_v2/standards/coding_standards/README.md §11)",
         group: "verify",
         lane: Lane::Ci,
         steps: &[
             xt!("cargo xtask verify file-length", true, verify_file_length),
+            xt!(
+                "cargo xtask verify enfusion-comments",
+                true,
+                run_enfusion_comments
+            ),
             xt!(
                 "cargo xtask verify no-select-star",
                 true,
@@ -195,46 +203,14 @@ pub static TASKS: &[Task] = &[
         help: "One-button Everon water composite: restore → mask → composite → bundle + pyramid → verify",
         group: "map",
         lane: Lane::Ci,
-        steps: &[
-            // Coreutils `cp`, not `std::fs::copy`: assets_v2/scratch/ is gitignored, so a missing
-            // source is the common path, and cp's own "cannot stat" diagnostic reports it.
-            sh!(
-                "cp assets_v2/scratch/everon/sap/everon-sap-ortho.pre-water.png assets_v2/scratch/everon/sap/everon-sap-ortho.png"
-            ),
-            sh!("cargo run -q -p developer-tools --bin map -- reset-water-meta --terrain everon"),
-            sh!("cargo run -q -p developer-tools --bin map -- analyze-water"),
-            sh!("cargo run -q -p developer-tools --bin map -- composite-water"),
-            sh!(
-                "cargo run -q -p developer-tools --bin map -- build-unified --input assets_v2/scratch/everon/sap/everon-sap-ortho.png --out assets_v2/terrains/everon/satellite/everon-sat.tbd-sat --terrain everon"
-            ),
-            sh!(
-                "cargo run -q -p developer-tools --bin map -- patch-unified-bytes --terrain everon"
-            ),
-            sh!(
-                "cargo run -q -p developer-tools --bin map -- build-pyramid --input assets_v2/scratch/everon/sap/everon-sap-ortho.png --out assets_v2/terrains/everon/tiles/satellite --minzoom 0 --maxzoom 6 --tilesize 256 --lossless"
-            ),
-            sh!("cargo run -q -p developer-tools --bin map -- verify-sap-ortho --terrain everon"),
-            sh!("cargo run -q -p developer-tools --bin map -- verify-unified --terrain everon"),
-            sh!(
-                "cargo run -q -p developer-tools --bin map -- verify-pyramid --terrain everon --expect-lossless"
-            ),
-        ],
+        steps: MAP_WATER_EVERON_STEPS,
     },
     Task {
         name: "map-cartographic-everon",
         help: "One-button Everon Map view (stylized cartographic): staging ortho → pyramid → manifest patch → verify",
         group: "map",
         lane: Lane::Ci,
-        steps: &[
-            sh!("cargo run -q -p developer-tools --bin map -- build-cartographic --terrain everon"),
-            sh!(
-                "cargo run -q -p developer-tools --bin map -- build-pyramid --input assets_v2/scratch/everon/map/everon-map-ortho.png --out assets_v2/terrains/everon/tiles/map --minzoom 0 --maxzoom 6 --tilesize 256"
-            ),
-            sh!(
-                "cargo run -q -p developer-tools --bin map -- patch-map-tiles-meta --terrain everon"
-            ),
-            Step::Task("map-cartographic-verify"),
-        ],
+        steps: MAP_CARTOGRAPHIC_EVERON_STEPS,
     },
     Task {
         name: "map-cartographic-verify",

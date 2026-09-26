@@ -4,7 +4,7 @@
 
 ## Context
 
-Execution document for [T-1092](/documentation_v2/tickets/specs/t1092_mod_script_modularisation.md): the sub-agent roster and every launch prompt. Progress, amendments and the shared-helper index live in the [progress checkpoint](/documentation_v2/tickets/plans/t-1092_progress_checkpoint.md).
+Execution document for [T-1092](/documentation_v2/tickets/specs/t1092_mod_script_modularisation.md): the sub-agent roster and every launch prompt. Progress, amendments and the shared-helper index live in the [progress checkpoint](/documentation_v2/mod/script_modularisation_progress_checkpoint.md).
 
 
 The mod scripts break two project laws.
@@ -103,7 +103,7 @@ It writes no product code.
 |---|---|
 | [Spec](/documentation_v2/tickets/specs/t1092_mod_script_modularisation.md) | Problem, goal, locked decisions, acceptance |
 | This plan | Efficiency design, mechanics, roster and every launch prompt |
-| [Progress checkpoint](/documentation_v2/tickets/plans/t-1092_progress_checkpoint.md) | Roster status, frozen class names, amendments, shared-helper index, forwarders, tick-order baseline, leftovers, ticket batch |
+| [Progress checkpoint](/documentation_v2/mod/script_modularisation_progress_checkpoint.md) | Roster status, frozen class names, amendments, shared-helper index, forwarders, tick-order baseline, leftovers, ticket batch |
 
 **Tickets.**
 - T-1092 is the program ticket "Modularise, document and gate the mod scripts".
@@ -150,7 +150,7 @@ orchestrator commits; you never commit, push, branch, stash, reset or restore.
 - Touch only your owned paths. Another session has uncommitted work in tbd-export, CLAUDE.md,
   .gitignore and Cargo.lock; leave it alone unless your slice names it.
 - Never edit .rdb, .meta, .et, .layout, .conf or .gproj. Never rename a class on the frozen list
-  in documentation_v2/tickets/plans/t-1092_progress_checkpoint.md.
+  in documentation_v2/mod/script_modularisation_progress_checkpoint.md.
 - Behaviour, JSON keys, RPC names, [Attribute] fields, RplProp fields and component class names do
   not change, unless your slice names a reconciliation.
 - Token discipline: read each owned file once, by line ranges; never re-read a file you just edited;

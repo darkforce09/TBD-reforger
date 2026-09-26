@@ -17,7 +17,8 @@ tools_v2/xtask/src/verifications/language_bans/node_and_file_limits/
 
 `verify file-length` walks every `.rs` and `.c` file (`LENGTH_GATED_EXTENSIONS`) under the roots
 in `FILE_LENGTH_PINS` (the four `tools_v2` crates, `apps/ticketboard/src`,
-`apps/fleet_host_agent/src` and `tests`, `apps/website/api_v2/src`, `apps/website/frontend/src`)
+`apps/fleet_host_agent/src` and `tests`, `apps/website/api_v2/src`, `apps/website/frontend/src`,
+`apps/mod/tbd-framework/Scripts`)
 plus every `src/` and `tests/` folder directly under `apps/website/`. A file is a test file when a
 path component is `tests` or its stem ends in `_tests` (`.rs` or `.c`); a test file may hold 1000
 lines (`SIZE_3_TEST_MAX_LINES`), any other file 500 (`SIZE_3_PRODUCTION_MAX_LINES`). There is no

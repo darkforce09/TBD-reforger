@@ -32,6 +32,16 @@ pub(super) fn run_route_tags() -> anyhow::Result<u8> {
     crate::verifications::architecture::route_tags::verify_route_tags(&find_repo_root()?)
 }
 
+/// Judges the pinned Enfusion script roots against the comment card (no `--path` narrowing).
+pub(super) fn run_enfusion_comments() -> anyhow::Result<u8> {
+    Ok(
+        crate::verifications::mod_scripts::enfusion_comments::verify_enfusion_comments(
+            &find_repo_root()?,
+            &[],
+        ),
+    )
+}
+
 pub(super) fn run_engine_layers() -> anyhow::Result<u8> {
     crate::verifications::architecture::engine_layer_boundaries::verify_engine_layers(
         &find_repo_root()?,

@@ -205,8 +205,12 @@ TBD events are a known community, not a public server.
   instead of the mock catalogs.
 - [T-1086 — Close mission runtime gaps](/.ai/tickets/T-1086.toml) (idea, no plan): mission
   parameters with no reader, group AI defaults, audio for late joiners.
-- [T-1092 — Split EnfScript files over 500 lines and gate their length](/.ai/tickets/T-1092.toml)
-  (idea, no plan): Law 7 for the mod's scripts.
+- [T-1092 — Modularise, document and gate the mod scripts](/.ai/tickets/T-1092.toml)
+  ([spec](/documentation_v2/tickets/specs/t1092_mod_script_modularisation.md),
+  [plan](/documentation_v2/tickets/plans/t-1092_plan.md)): this addon's scripts are split to Law 7
+  and documented to Law 8, and `apps/mod/tbd-framework/Scripts` is pinned in
+  `cargo xtask verify file-length` and `cargo xtask verify enfusion-comments`; the export and
+  Enfusion MCP addons follow.
 
 ## Related documentation
 

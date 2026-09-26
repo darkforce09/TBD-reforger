@@ -11,9 +11,10 @@ Developers and agents changing the mod start here after the code README of the a
 
 ```text
 documentation_v2/mod/
-├── tbd-emcp/       the Enfusion MCP bridge: call paths, bootstrap and loading rules
-├── tbd-export/     the export addon: map export, terrain export runbook, equipment evidence
-└── tbd-framework/  the game framework: design, vanilla source coverage and the UI screen specs
+├── script_modularisation_progress_checkpoint.md  program record: resume state of the mod script modularisation
+├── tbd-emcp/                                     the Enfusion MCP bridge: call paths, bootstrap and loading rules
+├── tbd-export/                                   the export addon: map export, terrain export runbook, equipment evidence
+└── tbd-framework/                                the game framework: design, vanilla source coverage and the UI screen specs
 ```
 
 ## How it works
@@ -50,6 +51,13 @@ The checks that judge mod work from the command line:
 | `cargo xtask mod spawn-verify` | a Workbench play session spawns a player into a slot |
 | `cargo xtask mod remote-logs` | a dedicated server's `console.log` shows a healthy boot |
 | `cargo xtask debug direct-join` | the probes behind a LAN Direct Join |
+| `cargo xtask verify file-length` | the pinned mod Scripts roots hold to 500 lines per script, 1000 per test script |
+| `cargo xtask verify enfusion-comments` | the pinned mod Scripts roots meet the comment card: headers, banners, member docs and tags |
+
+The mod script modularisation program (splitting, documenting and gating the three addons'
+scripts) keeps its resume state in the
+[progress checkpoint](/documentation_v2/mod/script_modularisation_progress_checkpoint.md), beside
+its ticket's spec and plan in `documentation_v2/tickets/`.
 
 The mod's milestone plans and agent handoffs are archived: the
 [milestone plan](/documentation_v2/archive/product_plans/mod_milestones.md), the

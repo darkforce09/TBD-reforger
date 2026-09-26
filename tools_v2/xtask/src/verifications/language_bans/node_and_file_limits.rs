@@ -27,6 +27,7 @@ const FILE_LENGTH_PINS: &[&str] = &[
     "apps/website/frontend/src",
     "apps/fleet_host_agent/src",
     "apps/fleet_host_agent/tests",
+    "apps/mod/tbd-framework/Scripts",
 ];
 
 /// Enfusion script roots of the three shipped addons, the only `apps/mod` trees the length gate
