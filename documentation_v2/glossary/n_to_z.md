@@ -103,7 +103,7 @@ API records it. Starting one takes the server's next generation and supersedes i
 heartbeats every 15 s carry a strictly rising sequence; a session silent for 60 s expires and its
 server goes offline; ending a session ends the player lives still open in it.
 
-In code: `apps/website/api_v2/src/server_infrastructure/services/runtime_sessions.rs` (table `server_runtime_sessions`); `POST /api/v1/game-runtime/sessions` and its `/end` in `game_runtime_sessions.rs` beside it under `handlers/`; the heartbeat route in `apps/website/api_v2/src/match_telemetry/routes.rs`; `apps/website/api_v2/src/background_workers/runtime_session_expiry.rs`; `apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_RuntimeSession.c`.
+In code: `apps/website/api_v2/src/server_infrastructure/services/runtime_sessions.rs` (table `server_runtime_sessions`); `POST /api/v1/game-runtime/sessions` and its `/end` in `game_runtime_sessions.rs` beside it under `handlers/`; the heartbeat route in `apps/website/api_v2/src/match_telemetry/routes.rs`; `apps/website/api_v2/src/background_workers/runtime_session_expiry.rs`; `apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSession.c`.
 
 See: [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential), [server infrastructure](#server-infrastructure).
 

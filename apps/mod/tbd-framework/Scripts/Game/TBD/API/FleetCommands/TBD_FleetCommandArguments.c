@@ -1,20 +1,27 @@
-//! The arguments of a claimed fleet command, checked again exactly as the platform validates them
-//! (each action accepts only its own keys; text is 1 to N bytes after trimming, with no control
-//! character; ids are UUIDs; digests are 64 lowercase hex), and the command's preconditions on this
-//! server. A command failing here is reported failed and its effect never starts:
-//!   * `broadcast` {message}: message of 1 to 256 bytes;
-//!   * `kick` {arma_id, runtime_session_id, reason?}: arma_id and reason of 1 to 128 bytes; the
-//!     session must be the one this runtime holds, and a connected player must have that identity
-//!     (TBD_PlayerIdentity.GetArmaId);
-//!   * `load_mission` {deployment_id, artifact_id, artifact_sha256, runtime_session_id}: the session
-//!     must be the one this runtime holds;
-//!   * any other action is not a game-runtime action.
+/**
+ * @file TBD_FleetCommandArguments.c
+ * @brief Re-checks a claimed fleet command's arguments and its preconditions on this server.
+ *
+ * Role: validates arguments exactly as the platform does (each action accepts only its own keys;
+ * text is 1 to N bytes after trimming with no control character; ids are UUIDs; digests are 64
+ * lowercase hex) and tests preconditions: `broadcast` {message} of 1 to 256 bytes; `kick`
+ * {arma_id, runtime_session_id, reason?} with arma_id and reason of 1 to 128 bytes, the session
+ * this runtime holds, and a connected player with that identity (`TBD_PlayerIdentity.GetArmaId`);
+ * `load_mission` {deployment_id, artifact_id, artifact_sha256, runtime_session_id} in the session
+ * this runtime holds; any other action is refused.  Position: called by
+ * `TBD_FleetCommandExecution.Begin`; `FindConnectedPlayer` also serves `TBD_FleetPlayerActions.Kick`.
+ * State: none; pure functions.  Invariants: a command failing here is reported failed and its
+ * effect never starts.
+ */
+
+//! Argument and precondition checks of the game-runtime fleet actions.
 //! @authority server
 class TBD_FleetCommandArguments
 {
-	protected static const string HEX_DIGITS = "0123456789abcdefABCDEF";
+	protected static const string HEX_DIGITS = "0123456789abcdefABCDEF"; //!< characters of a hex digit, either case
 
-	//! Why `command` must not run, or empty when it may.
+	//! Why `command` must not run. Resolves `m_iTargetPlayerId` for a kick.
+	//! @return the refusal, or empty when it may run
 	static string Check(notnull TBD_FleetCommand command)
 	{
 		if (!command.m_mArguments)
@@ -32,7 +39,8 @@ class TBD_FleetCommandArguments
 		return string.Format("'%1' is not a game-runtime action", command.m_sAction);
 	}
 
-	//! The connected player whose game identity is `armaId`, or -1.
+	//! The connected player whose game identity is `armaId`.
+	//! @return the player id, or -1
 	static int FindConnectedPlayer(string armaId)
 	{
 		PlayerManager players = GetGame().GetPlayerManager();
@@ -50,6 +58,8 @@ class TBD_FleetCommandArguments
 		return -1;
 	}
 
+	//! `broadcast` {message}: a message of 1 to 256 bytes.
+	//! @return the refusal, or empty
 	protected static string CheckBroadcast(notnull map<string, string> arguments)
 	{
 		array<string> accepted = {"message"};
@@ -63,6 +73,9 @@ class TBD_FleetCommandArguments
 		return string.Empty;
 	}
 
+	//! `kick` {arma_id, runtime_session_id, reason?}: bounded text, this runtime's session, and a
+	//! connected target, whose id is stored in `m_iTargetPlayerId`.
+	//! @return the refusal, or empty
 	protected static string CheckKick(notnull TBD_FleetCommand command)
 	{
 		map<string, string> arguments = command.m_mArguments;
@@ -89,6 +102,9 @@ class TBD_FleetCommandArguments
 		return string.Empty;
 	}
 
+	//! `load_mission` {deployment_id, artifact_id, artifact_sha256, runtime_session_id}: UUIDs, a
+	//! digest, and this runtime's session.
+	//! @return the refusal, or empty
 	protected static string CheckLoadMission(notnull map<string, string> arguments)
 	{
 		array<string> accepted = {"deployment_id", "artifact_id", "artifact_sha256", "runtime_session_id"};

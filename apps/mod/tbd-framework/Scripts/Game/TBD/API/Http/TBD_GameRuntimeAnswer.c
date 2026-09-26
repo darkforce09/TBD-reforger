@@ -1,12 +1,16 @@
-//! The answer to one game-runtime request, read from the RestCallback the engine answered through
-//! (TBD_GameRuntimeHttp delivers it to the request's TBD_GameRuntimeCall).
-//!
-//! Answers are classified by HTTP status and by the machine-readable `details.code` of a 409, never
-//! by message text; the `details.code` of any other error status (404 `NO_DEPLOYMENT`, 403 and 422
-//! refusals) is carried in `m_sErrorCode` for the caller to act on. `RestCallback.GetData()` returns
-//! the REQUEST body on a transport failure, so an answer carries a body only when a status arrived
-//! with it.
-//! @authority server
+/**
+ * @file TBD_GameRuntimeAnswer.c
+ * @brief The answer to one game-runtime request, classified for its sender.
+ *
+ * Role: reads status, body and error envelope from the `RestCallback` the engine answered through
+ * and classifies the outcome.  Position: built by `TBD_GameRuntimeHttp` and delivered to the
+ * request's `TBD_GameRuntimeCall.OnAnswered`.
+ * State: none beyond each answer's own fields.  Invariants: answers are classified by HTTP status
+ * and by the machine-readable `details.code` of a 409, never by message text; the `details.code`
+ * of any other error status (404 `NO_DEPLOYMENT`, 403 and 422 refusals) is carried in
+ * `m_sErrorCode`; `RestCallback.GetData()` returns the request body on a transport failure, so an
+ * answer carries a body only when a status arrived with it.
+ */
 
 //! How a finished game-runtime request is handled.
 enum TBD_EGameRuntimeOutcome
@@ -23,34 +27,37 @@ enum TBD_EGameRuntimeOutcome
 //! command's `state`). Field names are the JSON keys.
 class TBD_GameRuntimeRefusalDetails
 {
-	string code;
-	string end_reason;
-	int last_sequence;
-	int generation;
-	string state;
+	string code; //!< JSON key `code`; the machine-readable refusal code
+	string end_reason; //!< JSON key `end_reason`, with `RUNTIME_SESSION_ENDED`
+	int last_sequence; //!< JSON key `last_sequence`, with `STALE_SEQUENCE`
+	int generation; //!< JSON key `generation`, with `STALE_GENERATION`
+	string state; //!< JSON key `state`; the fleet command's state
 }
 
 //! The backend error envelope, `{"error": message, "details": {...}}`.
 class TBD_GameRuntimeErrorBody
 {
-	string error;
-	ref TBD_GameRuntimeRefusalDetails details;
+	string error; //!< JSON key `error`; the human-readable message, never classified on
+	ref TBD_GameRuntimeRefusalDetails details; //!< JSON key `details`, or null
 }
 
+//! One classified game-runtime answer.
+//! @authority server
 class TBD_GameRuntimeAnswer
 {
-	//! `Print` drops a line longer than 1024 bytes entirely, so a logged body is capped well below.
-	protected static const int LOGGED_BODY_MAX_BYTES = 400;
+	protected static const int LOGGED_BODY_MAX_BYTES = 400; //!< cap of a logged body, in bytes; `Print` drops a line over 1024 bytes
 
-	TBD_EGameRuntimeOutcome m_eOutcome;
-	HttpCode m_eCode;
-	string m_sBody; //!< The response body; empty when no status arrived.
-	ref TBD_GameRuntimeRefusalDetails m_Refusal; //!< The 409 fence details, or null.
-	string m_sErrorCode; //!< `details.code` of an error answer of any status, or empty.
-	string m_sDetail; //!< One log line: the status and response body, or the transport result.
+	TBD_EGameRuntimeOutcome m_eOutcome; //!< how the sender handles the answer
+	HttpCode m_eCode; //!< the HTTP status; `HTTP_CODE_NULL` when none arrived
+	string m_sBody; //!< the response body; empty when no status arrived
+	ref TBD_GameRuntimeRefusalDetails m_Refusal; //!< the 409 fence details, or null
+	string m_sErrorCode; //!< `details.code` of an error answer of any status, or empty
+	string m_sDetail; //!< one log line: the status and response body, or the transport result
 
-	//! The answer the engine reported through `callback`. `arrivedOnSuccess` says which RestCallback
-	//! handler fired: a success handler that reports no status still delivered its body.
+	//! The answer the engine reported through `callback`.
+	//! @param arrivedOnSuccess which handler fired; a success handler that reports no status still
+	//! delivered its body
+	//! @return the classified answer
 	static TBD_GameRuntimeAnswer Read(notnull RestCallback callback, bool arrivedOnSuccess)
 	{
 		TBD_GameRuntimeAnswer answer = new TBD_GameRuntimeAnswer();
@@ -70,7 +77,9 @@ class TBD_GameRuntimeAnswer
 		return answer;
 	}
 
-	//! The answer to a request the engine never reported: `detail` says why.
+	//! The TRANSIENT answer to a request the engine never reported.
+	//! @param detail why, for the log line
+	//! @return the answer
 	static TBD_GameRuntimeAnswer Unanswered(string detail)
 	{
 		TBD_GameRuntimeAnswer answer = new TBD_GameRuntimeAnswer();
@@ -81,6 +90,7 @@ class TBD_GameRuntimeAnswer
 	}
 
 	//! A response body made safe for one log line: capped, and named when empty.
+	//! @return `<empty>`, the body, or its first `LOGGED_BODY_MAX_BYTES` bytes marked truncated
 	static string LoggableBody(string body)
 	{
 		if (body.IsEmpty())
@@ -92,7 +102,10 @@ class TBD_GameRuntimeAnswer
 		return body;
 	}
 
-	//! Sets m_sErrorCode for an error answer that carries `details.code`, and m_Refusal for such a 409.
+	//! Classify this answer: 2xx, or a status-less success handler, is SUCCESS; no status otherwise
+	//! is TRANSIENT; a 409 with `details.code` is REFUSED; a client error is PERMANENT; anything
+	//! else is TRANSIENT. Sets `m_sErrorCode` from any `details.code` and `m_Refusal` for a 409.
+	//! @return the outcome
 	protected TBD_EGameRuntimeOutcome Classify(bool arrivedOnSuccess)
 	{
 		if (m_eCode == HttpCode.HTTP_CODE_200 || m_eCode == HttpCode.HTTP_CODE_201 || m_eCode == HttpCode.HTTP_CODE_202)
@@ -129,6 +142,7 @@ class TBD_GameRuntimeAnswer
 	//! wrong for this backend, so sending it again unchanged cannot succeed. 408 (request timeout) is
 	//! not among them. Every other status - server errors, gateway failures, anything unrecognised -
 	//! is worth another attempt.
+	//! @return true for a status that cannot succeed on repeat
 	protected static bool IsClientError(HttpCode code)
 	{
 		if (code == HttpCode.HTTP_CODE_300 || code == HttpCode.HTTP_CODE_301)
@@ -149,7 +163,8 @@ class TBD_GameRuntimeAnswer
 		return false;
 	}
 
-	//! The `details` of an error envelope, or null when the body carries no `details.code`.
+	//! The `details` of an error envelope.
+	//! @return the details, or null when the body carries no `details.code`
 	protected static TBD_GameRuntimeRefusalDetails ParseErrorDetails(string body)
 	{
 		if (body.IsEmpty())

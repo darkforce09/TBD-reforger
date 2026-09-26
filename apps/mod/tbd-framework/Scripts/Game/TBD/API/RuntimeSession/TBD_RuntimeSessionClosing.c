@@ -1,40 +1,50 @@
-//! Closing the runtime session of a world that has ended: an offline heartbeat, then
-//! `POST /api/v1/game-runtime/sessions/{sessionId}/end`, which ends the session and every player
-//! life still open in it. The platform marks a server offline by itself only when a session
-//! expires, so a clean shutdown reports it first.
-//!
-//! Sessions close one at a time, in the order they were handed over. TBD_RuntimeSession starts the
-//! next world's session only while `IsClosing()` is false, so the platform sees the old session end
-//! before the new one starts. A failed step is logged and not repeated: the platform expires a
-//! silent session on its own, and the next start supersedes it.
-//! @authority server
+/**
+ * @file TBD_RuntimeSessionClosing.c
+ * @brief Closes the runtime session of a world that has ended: offline heartbeat, then end.
+ *
+ * Role: reports each handed-over session offline and then ends it, which ends every player life
+ * still open in it.  Position: fed by `TBD_RuntimeSession.Stop` and by a start answered for a
+ * world that has stopped; `TBD_RuntimeSession` starts the next session only while `IsClosing()`
+ * is false; posts through `TBD_GameRuntimeHttp`.
+ * State: the queue of sessions being closed and the one call in flight; server statics.
+ * Invariants: sessions close one at a time in hand-over order, so the platform sees the old
+ * session end before the new one starts; the platform marks a server offline by itself only when
+ * a session expires, so a clean shutdown reports it first; a failed step is logged and not
+ * repeated, because the platform expires a silent session and the next start supersedes it.
+ */
 
 //! A session being closed.
 class TBD_ClosingRuntimeSession
 {
-	string m_sSessionId;
-	int m_iGeneration;
-	int m_iSequence; //!< The last heartbeat sequence sent in the session.
-	bool m_bReportedOffline;
+	string m_sSessionId; //!< the session to close
+	int m_iGeneration; //!< its generation
+	int m_iSequence; //!< the last heartbeat sequence sent in the session
+	bool m_bReportedOffline; //!< the offline heartbeat step is done; the end request is next
 }
 
 //! The offline heartbeat or the end request of the session being closed.
 class TBD_RuntimeSessionClosingCall : TBD_GameRuntimeCall
 {
+	//! Hand the answer to `TBD_RuntimeSessionClosing.OnCallAnswered`.
+	//! @authority server
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_RuntimeSessionClosing.OnCallAnswered(this, answer);
 	}
 }
 
+//! Serial closer of ended runtime sessions.
+//! @authority server
 class TBD_RuntimeSessionClosing
 {
-	protected static const string CH_RUNTIME = "Runtime"; //!< The runtime session's greppable channel.
+	protected static const string CH_RUNTIME = "Runtime"; //!< the runtime session's log channel
 
-	protected static ref array<ref TBD_ClosingRuntimeSession> s_aSessions;
-	protected static ref TBD_RuntimeSessionClosingCall s_InFlight;
+	protected static ref array<ref TBD_ClosingRuntimeSession> s_aSessions; //!< sessions still to close, in hand-over order
+	protected static ref TBD_RuntimeSessionClosingCall s_InFlight; //!< the step awaiting its answer, or null
 
-	//! Close `sessionId`, whose last heartbeat carried `lastSequence`.
+	//! Queue `sessionId`, whose last heartbeat carried `lastSequence`, for closing; an empty id
+	//! does nothing.
+	//! @authority server
 	static void Close(string sessionId, int generation, int lastSequence)
 	{
 		if (sessionId.IsEmpty())
@@ -53,7 +63,8 @@ class TBD_RuntimeSessionClosing
 		Next();
 	}
 
-	//! True while a session is still being closed.
+	//! Whether a session is still being closed.
+	//! @return true while a step is in flight or a session is queued
 	static bool IsClosing()
 	{
 		if (s_InFlight)
@@ -65,7 +76,11 @@ class TBD_RuntimeSessionClosing
 		return s_aSessions.Count() > 0;
 	}
 
-	//! The next step of the first session: its offline heartbeat, then its end.
+	//! The next step of the first session: its offline heartbeat, then its end. A step that cannot
+	//! be sent settles as TRANSIENT at once.
+	//! @route POST /api/v1/game-runtime/sessions/{id}/heartbeats
+	//! @route POST /api/v1/game-runtime/sessions/{id}/end
+	//! @authority server
 	protected static void Next()
 	{
 		if (s_InFlight || !s_aSessions || s_aSessions.IsEmpty())
@@ -98,7 +113,9 @@ class TBD_RuntimeSessionClosing
 		Settle(closing, TBD_EGameRuntimeOutcome.TRANSIENT, failure);
 	}
 
-	//! Called by TBD_RuntimeSessionClosingCall with the answer to the step in flight.
+	//! Called by `TBD_RuntimeSessionClosingCall` with the answer to the step in flight; an answer to
+	//! any other call is ignored.
+	//! @authority server
 	static void OnCallAnswered(notnull TBD_RuntimeSessionClosingCall call, notnull TBD_GameRuntimeAnswer answer)
 	{
 		if (call != s_InFlight)
@@ -112,6 +129,8 @@ class TBD_RuntimeSessionClosing
 		Settle(closing, answer.m_eOutcome, answer.m_sDetail);
 	}
 
+	//! Log a step's outcome and move on: after the offline heartbeat to the end request, after the
+	//! end request to the next session.
 	protected static void Settle(notnull TBD_ClosingRuntimeSession closing, TBD_EGameRuntimeOutcome outcome, string detail)
 	{
 		if (!closing.m_bReportedOffline)

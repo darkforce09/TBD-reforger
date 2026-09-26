@@ -9,6 +9,7 @@ each through the same report-before-effect protocol.
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/
+├── TBD_FleetCommand.c            one claimed command, its stage and its result report body
 ├── TBD_FleetCommandArguments.c   the argument checks per action and the preconditions here
 ├── TBD_FleetCommandExecution.c   one command's protocol: check, executing, effect, result
 ├── TBD_FleetCommandPoller.c      claims the next command every 5 s while a session is held
@@ -62,7 +63,7 @@ player who left in the meantime fails it. `load_mission` reads `GET /api/v1/game
 and requires the command's deployment, artifact and SHA-256; it fetches and verifies the artifact
 (`TBD_MissionArtifactVerification`), writes it to the profile cache (`TBD_MissionArtifactCache`),
 and succeeds with `{artifact_id, restart_requested: true}`. Once that result is recorded it tells
-every player, stops the poller and the runtime session, and calls
+every player, stops the poller and the runtime session (`TBD_RuntimeSessionLifecycle.End`), and calls
 `GameStateTransitions.RequestScenarioRestart`; the next world's boot loads the cached artifact and
 its session start confirms the deployment. A failure before the report is reported `failed`, and
 nothing restarts.
@@ -78,16 +79,18 @@ nothing restarts.
 
 ## Boundaries
 
-- Depends on: `TBD_GameRuntimeHttp`, `TBD_GameRuntimeAnswer`, `TBD_RuntimeSession` and
-  `TBD_PlayerIdentity` in `apps/mod/tbd-framework/Scripts/Game/TBD/API/`; `TBD_PlayerChat` and
+- Depends on: `TBD_GameRuntimeHttp`, `TBD_GameRuntimeAnswer` and `TBD_BackendText` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/API/Http/`; `TBD_RuntimeSession` and
+  `TBD_RuntimeSessionLifecycle` in `apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/`;
+  `TBD_PlayerIdentity` in `apps/mod/tbd-framework/Scripts/Game/TBD/API/Identity/`; `TBD_PlayerChat` and
   `TBD_Sha256` in `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; `TBD_MissionArtifactVerification`,
   `TBD_MissionArtifactCache` and `TBD_RuntimeDeploymentStruct` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`; `TBD_AdminAudit` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/`; the engine's `GameStateTransitions`.
   Over HTTP, the executor routes of `apps/website/api_v2/src/server_infrastructure/` and
   `GET /api/v1/game-runtime/deployment` of `apps/website/api_v2/src/missions/`.
-- Used by: `TBD_RuntimeSessionLifecycle` in `apps/mod/tbd-framework/Scripts/Game/TBD/API/`, which
-  starts and stops the poller.
+- Used by: `TBD_RuntimeSessionLifecycle` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/`, which starts and stops the poller.
 - Rules: `executing` is admitted before any effect starts, and an effect never repeats; one command
   at a time; the argument checks match the platform's validation in
   `contracts_v2/definitions/fleet-command.schema.json` (`ClaimRequest`, `ClaimedFleetCommand`,

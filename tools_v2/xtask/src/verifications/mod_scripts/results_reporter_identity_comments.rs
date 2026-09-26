@@ -106,7 +106,7 @@ const LIES: &[&str] = &[
     "ATTENDANCE IS INERT UNTIL link-confirm lands",
 ];
 
-const TARGET: &str = "apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_ResultsReporter.c";
+const TARGET: &str = "apps/mod/tbd-framework/Scripts/Game/TBD/API/Results/TBD_ResultsReporter.c";
 const LABEL: &str = "results-reporter-identity-comments";
 
 /// Every ban and every pin, against one in-memory source — the live file or a perturbation.

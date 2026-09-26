@@ -1,77 +1,53 @@
-//! The runtime session: this server's game runtime on the platform, one session per world, fenced
-//! by a per-server generation.
-//!
-//! When the game starts on the authority of a framework world (TBD_RuntimeSessionLifecycle),
-//! `Start` asks for a session (`POST /api/v1/game-runtime/sessions`) once the world has decided
-//! what it runs (TBD_LoadedArtifactReport): the start reports the loaded mission artifact by id and
-//! the SHA-256 of its exact bytes, or `{}` for none, and that report confirms a mission deployment.
-//! A report the platform rejects (422 `UNKNOWN_ARTIFACT`, 400) is an ERROR, and the session starts
-//! without one so the server stays reachable. Starting a session ends the server's previous one as
-//! `superseded`, with every player life still open in it. A heartbeat every
-//! `heartbeat_interval_seconds` carries the session's generation, a sequence strictly increasing
-//! within the session, and the readings of TBD_RuntimeStatusReadings. When the world ends, `Stop`
-//! hands the session to TBD_RuntimeSessionClosing, which reports the server offline and ends it. A
-//! session the platform hears nothing from for `expires_after_seconds` ends as `expired`. A world
-//! without a usable machine credential holds no session and looks for one every minute, since the
-//! backend config is re-read by the loops that wait on the platform (TBD_DeployedMission,
-//! TBD_RosterLoader).
-//!
-//! A refused heartbeat (409 `details.code`) steers the loop:
-//!   * STALE_SEQUENCE - the platform admitted a later sequence (an answer was lost after it was
-//!     admitted): the next heartbeat continues past `details.last_sequence`;
-//!   * STALE_GENERATION - the session's own generation replaces the recorded one;
-//!   * RUNTIME_SESSION_ENDED `expired` - a new session is started;
-//!   * RUNTIME_SESSION_ENDED `superseded`, `credential_revoked` or `ended_by_runtime` - another
-//!     runtime owns this server's session, or the credential is gone: the loop stops with an ERROR
-//!     instead of starting a competing session.
-//! A request with no answer, a timeout or a server-side failure backs off exponentially and is
-//! retried; it never stops the loop.
-//!
-//! One start or heartbeat is in flight at a time. A world's session starts only after the previous
-//! world's session has closed, and an answer for a world or session that is no longer current is
-//! recognised and discarded.
-//!
-//! `GetSessionId` is the session other systems address (deployment authorization, ended lives,
-//! fleet command claims). The wire types are in TBD_RuntimeSessionWire.
+/**
+ * @file TBD_RuntimeSession.c
+ * @brief This server's game runtime on the platform: one session per world, fenced by generation.
+ *
+ * Role: starts the session once the world has decided what it runs, reporting the loaded artifact
+ * (`TBD_LoadedArtifactReport`) so the start confirms a mission deployment, then sends a heartbeat
+ * every `heartbeat_interval_seconds` with the generation, a strictly increasing sequence and the
+ * readings of `TBD_RuntimeStatusReadings`.  Position: started and stopped by
+ * `TBD_RuntimeSessionLifecycle`; sends through `TBD_GameRuntimeHttp`; `Stop` hands the session to
+ * `TBD_RuntimeSessionClosing`; `GetSessionId` is what deployment authorisation, ended lives and
+ * fleet command claims address.
+ * State: world counter, running and terminated flags, the session id, generation, sequence,
+ * interval, failure count and the one call in flight; server statics.  Invariants: one start or
+ * heartbeat is in flight at a time; a world's session starts only after the previous world's has
+ * closed; an answer for a world or session other than the current one is discarded. A rejected
+ * artifact report (422 `UNKNOWN_ARTIFACT`, 400) is an error and the session starts without one.
+ * Starting supersedes the server's previous session with every player life open in it. A refused
+ * heartbeat steers the loop: STALE_SEQUENCE continues past `last_sequence`, STALE_GENERATION takes
+ * the session's generation, RUNTIME_SESSION_ENDED `expired` starts a new session, and `superseded`,
+ * `credential_revoked` or `ended_by_runtime` stop the loop instead of competing. No answer, a
+ * timeout or a server failure backs off and retries, never stopping the loop. Without a usable
+ * machine credential the world holds no session and looks again every minute.
+ */
+
+//! The runtime session loop: start, heartbeats, refusals, retry.
 //! @authority server
 class TBD_RuntimeSession
 {
-	//! Greppable channel: `grep '\[TBD\]\[Runtime\]' console.log`.
-	protected static const string CH_RUNTIME = "Runtime";
+	protected static const string CH_RUNTIME = "Runtime"; //!< log channel: `grep '\[TBD\]\[Runtime\]' console.log`
+	protected static const int DEFAULT_HEARTBEAT_INTERVAL_S = 15; //!< heartbeat interval until the platform states its own, in seconds
+	protected static const int RETRY_BASE_MS = 2000; //!< first retry delay, in milliseconds
+	protected static const int RETRY_CAP_MS = 60000; //!< retry delay ceiling, in milliseconds
+	protected static const int WAIT_POLL_MS = 1000; //!< re-check period of a start waiting on the previous closing or the loaded artifact, in milliseconds
+	protected static const int CREDENTIAL_POLL_MS = 60000; //!< re-check period without a usable credential, in milliseconds; the platform loops re-read the config
 
-	protected static const int DEFAULT_HEARTBEAT_INTERVAL_S = 15; //!< Used until the platform states its own interval.
-	protected static const int RETRY_BASE_MS = 2000;
-	protected static const int RETRY_CAP_MS = 60000;
-	//! How often a start waiting on the previous world's closing, or on this world's loaded
-	//! artifact, looks again.
-	protected static const int WAIT_POLL_MS = 1000;
-	//! How often a world without a usable machine credential looks again: the platform loops re-read
-	//! the backend config while they retry, so a credential added to the profile arrives mid-world.
-	protected static const int CREDENTIAL_POLL_MS = 60000;
+	protected static int s_iWorld; //!< bumped by `Start` and `Stop`; an answer for another world is stale
+	protected static bool s_bRunning; //!< between `Start` and `Stop`
+	protected static bool s_bTerminated; //!< this world holds no session any more: credential refused, or another runtime owns the session
+	protected static string s_sSessionId; //!< the session held, or empty
+	protected static int s_iGeneration; //!< the held session's generation, or 0
+	protected static int s_iSequence; //!< the last heartbeat sequence sent in `s_sSessionId`
+	protected static int s_iHeartbeatIntervalMs; //!< heartbeat period, in milliseconds
+	protected static int s_iFailures; //!< consecutive start or heartbeat attempts without an admitted answer
+	protected static bool s_bHeartbeatAdmitted; //!< a heartbeat of this session was admitted
+	protected static bool s_bArtifactReportRejected; //!< the platform rejected this world's artifact report; the session starts without one
+	protected static bool s_bWaitForArtifactLogged; //!< the wait for the loaded artifact is logged once per world
+	protected static ref TBD_RuntimeSessionCall s_InFlight; //!< the one start or heartbeat awaiting its answer, or null
 
-	//! Bumped by Start and by Stop. A call remembers the world it was sent for; an answer for any
-	//! other world is stale.
-	protected static int s_iWorld;
-	protected static bool s_bRunning; //!< Between Start and Stop.
-	//! This world holds no session any more: the platform refused the credential, or another
-	//! runtime owns the server's session.
-	protected static bool s_bTerminated;
-
-	protected static string s_sSessionId;
-	protected static int s_iGeneration;
-	protected static int s_iSequence; //!< The last heartbeat sequence sent in s_sSessionId.
-	protected static int s_iHeartbeatIntervalMs;
-	protected static int s_iFailures; //!< Consecutive start or heartbeat attempts without an admitted answer.
-	protected static bool s_bHeartbeatAdmitted;
-	//! The platform rejected this world's artifact report; its session starts without one.
-	protected static bool s_bArtifactReportRejected;
-	protected static bool s_bWaitForArtifactLogged;
-
-	protected static ref TBD_RuntimeSessionCall s_InFlight;
-
-	// STATE FOR OTHER SYSTEMS
-
-	//! The session this runtime holds, or empty while it holds none.
+	//! The session this runtime holds.
+	//! @return the session id, or empty while it holds none
 	static string GetSessionId()
 	{
 		if (!s_bRunning || s_bTerminated)
@@ -80,7 +56,8 @@ class TBD_RuntimeSession
 		return s_sSessionId;
 	}
 
-	//! The generation of the session held, or 0.
+	//! The generation of the session held.
+	//! @return the generation, or 0 without a session
 	static int GetGeneration()
 	{
 		if (GetSessionId().IsEmpty())
@@ -91,6 +68,7 @@ class TBD_RuntimeSession
 
 	//! True while this world holds a session or is still getting one. False before the game starts,
 	//! after it ends, without a usable machine credential, and once the loop has stopped.
+	//! @return true while a session is held or being started
 	static bool CanHoldSession()
 	{
 		return s_bRunning && !s_bTerminated && TBD_GameRuntimeHttp.IsConfigured();
@@ -98,6 +76,8 @@ class TBD_RuntimeSession
 
 	//! A request against `sessionId` was refused because that session has ended. Acted on only while
 	//! it is still the session this runtime holds.
+	//! @param endReason the platform's `end_reason`
+	//! @authority server
 	static void ReportSessionEnded(string sessionId, string endReason)
 	{
 		if (sessionId.IsEmpty() || sessionId != GetSessionId())
@@ -107,10 +87,10 @@ class TBD_RuntimeSession
 		OnSessionEnded(endReason);
 	}
 
-	// LIFECYCLE
-
 	//! Begin this world's session. Called once the game starts, on the authority of a framework
-	//! world. A session still recorded from an earlier world is superseded by the new start.
+	//! world. A session still recorded from an earlier world is superseded by the new start. Does
+	//! nothing on a client.
+	//! @authority server
 	static void Start()
 	{
 		if (TBD_Authority.IsClient())
@@ -138,6 +118,7 @@ class TBD_RuntimeSession
 
 	//! The world is ending: its session is reported offline and ended, which ends every player life
 	//! still open in it.
+	//! @authority server
 	static void Stop()
 	{
 		if (!s_bRunning)
@@ -155,13 +136,15 @@ class TBD_RuntimeSession
 		TBD_LoadedArtifactReport.Reset();
 	}
 
-	//! This world has decided what it runs (TBD_LoadedArtifactReport): a start waiting on it goes now.
+	//! This world has decided what it runs (`TBD_LoadedArtifactReport`): a start waiting on it goes now.
+	//! @authority server
 	static void OnLoadedArtifactDecided()
 	{
 		if (s_bRunning && !s_bTerminated && s_sSessionId.IsEmpty() && !s_InFlight)
 			ScheduleStep(0);
 	}
 
+	//! Drop the held session's id, generation, sequence, interval and failure count.
 	protected static void ForgetSession()
 	{
 		s_sSessionId = string.Empty;
@@ -172,9 +155,8 @@ class TBD_RuntimeSession
 		s_bHeartbeatAdmitted = false;
 	}
 
-	// REQUESTS
-
-	//! One step pending per process; scheduling again replaces it.
+	//! Schedule `Step` after `delayMs`; one step is pending per process, and scheduling again
+	//! replaces it.
 	protected static void ScheduleStep(int delayMs)
 	{
 		ScriptCallQueue queue = GetGame().GetCallqueue();
@@ -231,6 +213,7 @@ class TBD_RuntimeSession
 		Send(TBD_ERuntimeSessionRequest.START, TBD_GameRuntimeHttp.ROUTE_PREFIX + "/sessions", body, reportArtifact);
 	}
 
+	//! Send the next heartbeat of the held session.
 	protected static void SendHeartbeat()
 	{
 		s_iSequence++;
@@ -242,6 +225,11 @@ class TBD_RuntimeSession
 		Send(TBD_ERuntimeSessionRequest.HEARTBEAT, path, body, false);
 	}
 
+	//! Record the call in flight and POST it; a send that cannot start retries later.
+	//! @param reportedArtifact the start body names a loaded artifact
+	//! @route POST /api/v1/game-runtime/sessions
+	//! @route POST /api/v1/game-runtime/sessions/{id}/heartbeats
+	//! @authority server
 	protected static void Send(TBD_ERuntimeSessionRequest request, string path, string body, bool reportedArtifact)
 	{
 		TBD_RuntimeSessionCall call = new TBD_RuntimeSessionCall();
@@ -260,7 +248,9 @@ class TBD_RuntimeSession
 		RetryLater(typename.EnumToString(TBD_ERuntimeSessionRequest, request), failure);
 	}
 
-	//! Called by TBD_RuntimeSessionCall with the answer to the start or heartbeat in flight.
+	//! Called by `TBD_RuntimeSessionCall` with the answer to the start or heartbeat in flight; an
+	//! answer to any other call is ignored.
+	//! @authority server
 	static void OnCallAnswered(notnull TBD_RuntimeSessionCall call, notnull TBD_GameRuntimeAnswer answer)
 	{
 		if (call != s_InFlight)
@@ -273,8 +263,9 @@ class TBD_RuntimeSession
 			SettleHeartbeat(call, answer);
 	}
 
-	// ANSWERS
-
+	//! Settle a start answer: hold the started session, close one started for a world that has
+	//! stopped, retry a transient failure, restart without the artifact report the platform
+	//! rejected, or stop the loop on any other refusal.
 	protected static void SettleStart(notnull TBD_RuntimeSessionCall call, notnull TBD_GameRuntimeAnswer answer)
 	{
 		bool current = call.m_iWorld == s_iWorld && CanHoldSession();
@@ -345,9 +336,12 @@ class TBD_RuntimeSession
 		Terminate("the platform refused to start a runtime session for this server's machine credential (" + answer.m_sDetail + ")");
 	}
 
+	//! Settle a heartbeat answer: schedule the next on success, steer on a refusal, retry a
+	//! transient failure, start a new session for an unknown one, stop on a rejected credential,
+	//! and back off on a malformed request.
 	protected static void SettleHeartbeat(notnull TBD_RuntimeSessionCall call, notnull TBD_GameRuntimeAnswer answer)
 	{
-		// The session this answer is about is no longer the one held.
+		// The session this answer is about is not the one held now.
 		if (call.m_iWorld != s_iWorld || call.m_sSessionId != GetSessionId())
 		{
 			ScheduleStep(0);
@@ -396,6 +390,7 @@ class TBD_RuntimeSession
 		RetryLater("heartbeat", "rejected as malformed");
 	}
 
+	//! Act on a 409 fence refusal of a heartbeat (see the file header).
 	protected static void SettleHeartbeatRefusal(notnull TBD_GameRuntimeRefusalDetails refusal, string detail)
 	{
 		if (refusal.code == "STALE_SEQUENCE" && refusal.last_sequence >= s_iSequence)

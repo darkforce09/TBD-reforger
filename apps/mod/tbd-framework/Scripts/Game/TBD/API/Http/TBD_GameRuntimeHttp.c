@@ -1,55 +1,49 @@
-//! Shared transport for the routes that authenticate with this server's `mod_runtime` machine
-//! credential (`Authorization: Bearer tbdm_...`): everything under `/api/v1/game-runtime/` and the
-//! fleet command routes under `/api/v1/fleet-executor/`.
-//!
-//! Every consumer of those routes (the deployed mission and its artifact, the runtime session, the
-//! event roster, deployment authorization, fleet commands, the deployable mission list and the
-//! in-game deployment relay) sends through `Post` / `Get` with a TBD_GameRuntimeCall subclass and
-//! receives exactly one TBD_GameRuntimeAnswer, so the header set, the timeout, the watchdog and the
-//! reading of an answer exist once.
-//!
-//! An answer is matched to its call by the RestCallback the engine answers through. A call the
-//! engine never reports is answered TRANSIENT by its watchdog; its callback is kept alive until it
-//! answers late, because the script owns a callback's lifetime while its request is in flight.
-//!
-//! @authority server - the machine credential lives only in the authority's profile.
+/**
+ * @file TBD_GameRuntimeHttp.c
+ * @brief Shared transport for every route that authenticates with this server's machine credential.
+ *
+ * Role: opens a context with `Authorization: Bearer tbdm_...`, sends `Post`/`Get`, and delivers
+ * exactly one `TBD_GameRuntimeAnswer` per call, so the header set, the timeout, the watchdog and
+ * the reading of an answer exist once.  Position: used by every consumer of
+ * `/api/v1/game-runtime/` and `/api/v1/fleet-executor/` (deployed mission and artifact, runtime
+ * session, event roster, deployment authorisation, fleet commands, deployable mission list,
+ * deployment relay); reads `TBD_BackendConfig`.
+ * State: the calls in flight, the ticket counter and the retired callbacks; server statics.
+ * Invariants: an answer is matched to its call by the `RestCallback` the engine answers through;
+ * a call the engine never reports is answered TRANSIENT by its watchdog, and its callback is kept
+ * alive (bounded) until it answers late, because the script owns a callback while its request is
+ * in flight; the credential is never logged.
+ */
 
 //! One game-runtime request in flight. A sender subclasses it with what it needs to settle the
 //! answer; `OnAnswered` receives exactly one answer per sent call.
 class TBD_GameRuntimeCall
 {
-	ref RestCallback m_Callback; //!< The engine's handle of the request, owned by TBD_GameRuntimeHttp.
-	int m_iTicket;
+	ref RestCallback m_Callback; //!< the engine's handle of the request, owned by `TBD_GameRuntimeHttp`
+	int m_iTicket; //!< per-send ticket its watchdog is armed with
 
+	//! Receive the one answer to this call; the base does nothing.
+	//! @param answer the answer, from the engine or the watchdog
 	void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 	}
 }
 
+//! Machine-credential HTTP transport: context, send, answer matching, watchdog, retry clock.
+//! @authority server
 class TBD_GameRuntimeHttp
 {
-	static const string ROUTE_PREFIX = "/api/v1/game-runtime";
+	static const string ROUTE_PREFIX = "/api/v1/game-runtime"; //!< path prefix of the game-runtime routes
+	static const string CREDENTIAL_PREFIX = "tbdm_"; //!< prefix of every issued credential (`tbdm_<credential id>_<64 hex>`)
+	static const int REQUEST_TIMEOUT_S = 15; //!< transport timeout of one request, in seconds
+	static const int WATCHDOG_MS = 25000; //!< delay after which an unreported call is answered TRANSIENT, in milliseconds; past the transport timeout
+	protected static const int RETIRED_CALLBACKS_MAX = 16; //!< retired callbacks kept at most; the oldest is released first
+	protected static ref array<ref RestCallback> s_aRetiredCallbacks; //!< callbacks of calls a watchdog answered, kept until the engine reports them
+	protected static ref array<ref TBD_GameRuntimeCall> s_aCallsInFlight; //!< calls sent and not answered yet
+	protected static int s_iLastTicket; //!< last ticket issued
 
-	//! Every issued credential starts with this (`tbdm_<credential id>_<64 hex>`).
-	static const string CREDENTIAL_PREFIX = "tbdm_";
-
-	static const int REQUEST_TIMEOUT_S = 15; //!< Transport timeout of one request.
-
-	//! A call with no callback by now is answered TRANSIENT. It sits safely beyond the transport
-	//! timeout, so it only fires when the engine never reports the request at all.
-	static const int WATCHDOG_MS = 25000;
-
-	//! Callbacks of calls a watchdog answered, kept until the engine reports them. Bounded; the
-	//! oldest is released first.
-	protected static const int RETIRED_CALLBACKS_MAX = 16;
-	protected static ref array<ref RestCallback> s_aRetiredCallbacks;
-
-	protected static ref array<ref TBD_GameRuntimeCall> s_aCallsInFlight; //!< Calls sent and not answered yet.
-	protected static int s_iLastTicket;
-
-	// CONFIGURATION
-
-	//! True when a backend URL and a usable machine credential are configured.
+	//! Whether a backend URL and a usable machine credential are configured.
+	//! @return true when a call can be sent
 	static bool IsConfigured()
 	{
 		if (TBD_BackendConfig.GetBackendUrl().IsEmpty())
@@ -58,7 +52,8 @@ class TBD_GameRuntimeHttp
 		return IsCredentialUsable(TBD_BackendConfig.GetMachineCredential());
 	}
 
-	//! The backend for a log line. Never prints the credential.
+	//! The backend for a log line, with the machine credential's state; never prints the credential.
+	//! @return `none`, the URL, or the URL with the reason the credential is unusable
 	static string DescribeBackend()
 	{
 		string url = TBD_BackendConfig.GetBackendUrl();
@@ -79,6 +74,7 @@ class TBD_GameRuntimeHttp
 	//! shipped example config carries one) and counts as absent. `RestContext.SetHeaders` takes
 	//! `Key,Value,Key,Value`, so a comma would split the header list; issued credentials contain
 	//! neither a comma nor whitespace.
+	//! @return true when `credential` can be sent
 	protected static bool IsCredentialUsable(string credential)
 	{
 		if (!credential.StartsWith(CREDENTIAL_PREFIX))
@@ -91,7 +87,11 @@ class TBD_GameRuntimeHttp
 	}
 
 	//! A context against the configured backend carrying the bearer credential, the JSON content
-	//! type and the request timeout, or null with `failure` saying why.
+	//! type and the request timeout.
+	//! @param failure why no context opened; empty on success
+	//! @return the context, or null
+	//! @route POST /api/v1/game-runtime/{path}
+	//! @route GET /api/v1/game-runtime/{path}
 	protected static RestContext OpenContext(out string failure)
 	{
 		failure = string.Empty;
@@ -129,10 +129,11 @@ class TBD_GameRuntimeHttp
 		return context;
 	}
 
-	// SENDING
-
-	//! `POST path` with `body`. False, with `failure` saying why and nothing sent, when no context can
-	//! be opened; otherwise `call.OnAnswered` receives the answer later.
+	//! `POST path` with `body`; `call.OnAnswered` receives the answer later.
+	//! @param failure why nothing was sent; empty on success
+	//! @return false, with nothing sent, when no context can be opened
+	//! @route POST /api/v1/game-runtime/{path}
+	//! @authority server
 	static bool Post(notnull TBD_GameRuntimeCall call, string path, string body, out string failure)
 	{
 		RestContext context = OpenContext(failure);
@@ -145,6 +146,10 @@ class TBD_GameRuntimeHttp
 	}
 
 	//! `GET path`, answered like `Post`.
+	//! @param failure why nothing was sent; empty on success
+	//! @return false, with nothing sent, when no context can be opened
+	//! @route GET /api/v1/game-runtime/{path}
+	//! @authority server
 	static bool Get(notnull TBD_GameRuntimeCall call, string path, out string failure)
 	{
 		RestContext context = OpenContext(failure);
@@ -156,6 +161,7 @@ class TBD_GameRuntimeHttp
 		return true;
 	}
 
+	//! Give `call` a ticket and a fresh callback, record it in flight and arm its watchdog.
 	protected static void Track(notnull TBD_GameRuntimeCall call)
 	{
 		if (!s_aCallsInFlight)
@@ -175,16 +181,20 @@ class TBD_GameRuntimeHttp
 			queue.CallLater(OnCallWatchdog, WATCHDOG_MS, false, call.m_iTicket);
 	}
 
+	//! Engine success callback of any call.
 	protected static void OnCallSuccess(RestCallback callback)
 	{
 		Answer(callback, true);
 	}
 
+	//! Engine error callback of any call.
 	protected static void OnCallError(RestCallback callback)
 	{
 		Answer(callback, false);
 	}
 
+	//! Deliver the engine's answer to the call that owns `callback`; a late answer to a call its
+	//! watchdog already answered only releases the retired callback.
 	protected static void Answer(RestCallback callback, bool arrivedOnSuccess)
 	{
 		TBD_GameRuntimeCall call = TakeCallAnsweredBy(callback);
@@ -198,7 +208,8 @@ class TBD_GameRuntimeHttp
 		call.OnAnswered(TBD_GameRuntimeAnswer.Read(callback, arrivedOnSuccess));
 	}
 
-	//! Reached for every call; answers the ones the engine has not reported by now.
+	//! Watchdog, armed for every call: answers TRANSIENT when the engine has not reported it.
+	//! @param ticket the call's ticket; an answered call is not found
 	protected static void OnCallWatchdog(int ticket)
 	{
 		TBD_GameRuntimeCall call = TakeCallWithTicket(ticket);
@@ -210,6 +221,8 @@ class TBD_GameRuntimeHttp
 		call.OnAnswered(TBD_GameRuntimeAnswer.Unanswered(string.Format("no answer within %1 ms", WATCHDOG_MS)));
 	}
 
+	//! Remove and return the in-flight call that owns `callback`.
+	//! @return the call, or null
 	protected static TBD_GameRuntimeCall TakeCallAnsweredBy(RestCallback callback)
 	{
 		if (!s_aCallsInFlight || !callback)
@@ -228,6 +241,8 @@ class TBD_GameRuntimeHttp
 		return null;
 	}
 
+	//! Remove and return the in-flight call with `ticket`.
+	//! @return the call, or null
 	protected static TBD_GameRuntimeCall TakeCallWithTicket(int ticket)
 	{
 		if (!s_aCallsInFlight)
@@ -246,6 +261,7 @@ class TBD_GameRuntimeHttp
 		return null;
 	}
 
+	//! Keep `callback` alive until the engine reports it, releasing the oldest past the bound.
 	protected static void RetireCallback(RestCallback callback)
 	{
 		if (!callback)
@@ -260,6 +276,7 @@ class TBD_GameRuntimeHttp
 		s_aRetiredCallbacks.Insert(callback);
 	}
 
+	//! Release a retired callback the engine has now reported.
 	protected static void ForgetRetiredCallback(RestCallback callback)
 	{
 		if (!s_aRetiredCallbacks || !callback)
@@ -270,10 +287,9 @@ class TBD_GameRuntimeHttp
 			s_aRetiredCallbacks.RemoveOrdered(index);
 	}
 
-	// HELPERS
-
 	//! Exponential backoff: `baseMs` after the first failure, doubling with every further one, never
 	//! more than `capMs`.
+	//! @return the delay, in milliseconds
 	static int BackoffMs(int failures, int baseMs, int capMs)
 	{
 		int delay = baseMs;
@@ -292,6 +308,7 @@ class TBD_GameRuntimeHttp
 	}
 
 	//! Milliseconds since the game started, the clock every retry schedule here is kept on.
+	//! @return the tick count
 	static int NowMs()
 	{
 		return System.GetTickCount();
@@ -299,22 +316,16 @@ class TBD_GameRuntimeHttp
 
 	//! True once `notBeforeMs` has been reached. Compared as a difference so the comparison stays
 	//! correct when the millisecond counter wraps.
+	//! @return true when due
 	static bool IsDue(int notBeforeMs)
 	{
 		return NowMs() - notBeforeMs >= 0;
 	}
 
-	//! Make a string safe inside a JSON double-quoted scalar. `Replace` mutates in place and returns
-	//! a count, so the copy comes from `string.Format` and every call is a statement. Backslash goes
-	//! first so the quotes' escapes are not escaped again; control characters become spaces.
+	//! Forwards to `TBD_BackendText.JsonEscape` for callers outside the platform bridge.
+	//! @return the escaped copy
 	static string JsonEscape(string value)
 	{
-		string escaped = string.Format("%1", value);
-		escaped.Replace("\\", "\\\\");
-		escaped.Replace("\"", "\\\"");
-		escaped.Replace("\n", " ");
-		escaped.Replace("\r", " ");
-		escaped.Replace("\t", " ");
-		return escaped;
+		return TBD_BackendText.JsonEscape(value);
 	}
 }

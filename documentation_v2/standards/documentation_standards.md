@@ -239,9 +239,8 @@ argument) with its unit and default, and every `[ComponentEditorProps]` a `descr
 
 **REST call sites.** The class or method that calls the API carries `//! @route <METHOD> <path>`
 naming the route it calls, so a search for the route string finds both the Rust handler and the
-EnfScript caller. From `apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_ResultsReporter.c:61`, on
-the class that posts match results, with its access tier after the route:
-``//! @route POST /api/v1/ingest/match-results (service-token tier; `X-Service-Token`)``.
+EnfScript caller. From `apps/mod/tbd-framework/Scripts/Game/TBD/API/Results/TBD_ResultsReporter.c:200`,
+on the method that posts match results: ``//! @route POST /api/v1/ingest/match-results``.
 
 ## 7. Network authority
 

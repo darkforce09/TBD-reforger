@@ -1,62 +1,73 @@
-//! The game runtime's side of the fleet command ledger. While this world holds a runtime session,
-//! the next command for it is claimed every 5 s (`POST /api/v1/fleet-executor/commands/claim` with
-//! `{runtime_session_id}`, mod_runtime credential) and handed to TBD_FleetCommandExecution. One
-//! command at a time: nothing is claimed while a command is being executed or reported, so no effect
-//! runs twice and none overlaps another. A claim answered with no body (204) means nothing is
-//! claimable now; a claim refused because the session ended is handed to TBD_RuntimeSession; any
-//! other failure is logged at most once a minute, and the next claim goes out on schedule.
-//!
-//! The poll runs from the game start to the game end of a framework world
-//! (TBD_RuntimeSessionLifecycle); an answer to a claim of an earlier world is dropped, and its
-//! command returns to the queue when its 30 s lease lapses.
-//! @authority server
+/**
+ * @file TBD_FleetCommandPoller.c
+ * @brief The game runtime's side of the fleet command ledger: claims the next command every 5 s.
+ *
+ * Role: while this world holds a runtime session, claims the next command with
+ * `{runtime_session_id}` and hands it to `TBD_FleetCommandExecution`.  Position: started and
+ * stopped by `TBD_RuntimeSessionLifecycle`; reads `TBD_RuntimeSession.GetSessionId`; posts through
+ * `TBD_GameRuntimeHttp` with the `mod_runtime` credential.
+ * State: world counter, running and claim-in-flight flags, failure log throttle; server statics.
+ * Invariants: one command at a time, nothing is claimed while one is executed or reported, so no
+ * effect runs twice or overlaps another; a claim answered with no body (204) means nothing is
+ * claimable; a claim refused because the session ended goes to `TBD_RuntimeSession`; any other
+ * failure is logged at most once a minute and the next claim goes out on schedule; an answer to a
+ * claim of an earlier world is dropped, and its command returns to the queue when its 30 s lease
+ * lapses.
+ */
 
 //! `POST .../claim` answer. Field names are the JSON keys. The arguments are read separately
-//! (TBD_FleetCommandArgumentsStruct), so arguments that cannot be read hide neither the command id
-//! nor the fencing token the command's failure is reported with.
+//! (`TBD_FleetCommandArgumentsStruct`), so arguments that cannot be read hide neither the command
+//! id nor the fencing token the command's failure is reported with.
+//! @contract fleet-command.schema.json#/definitions/ClaimedFleetCommand
 class TBD_ClaimedFleetCommandStruct
 {
-	string command_id;
-	string server_id;
-	string action;
-	int fencing_token;
-	string lease_expires_at;
+	string command_id; //!< JSON key `command_id`
+	string server_id; //!< JSON key `server_id`
+	string action; //!< JSON key `action`
+	int fencing_token; //!< JSON key `fencing_token`, at least 1
+	string lease_expires_at; //!< JSON key `lease_expires_at`, RFC 3339 UTC
 }
 
 //! The claimed command's `arguments`, every value as text. The field name is the JSON key.
+//! @contract fleet-command.schema.json#/definitions/ClaimedFleetCommand
 class TBD_FleetCommandArgumentsStruct
 {
-	ref map<string, string> arguments;
+	ref map<string, string> arguments; //!< JSON key `arguments`; null when not text values
 }
 
 //! A claim on its way to the platform, with the world and session it was sent for.
 class TBD_FleetClaimCall : TBD_GameRuntimeCall
 {
-	int m_iWorld;
-	string m_sSessionId;
+	int m_iWorld; //!< the poller world it was sent in; another world's answer is dropped
+	string m_sSessionId; //!< the session it claimed for
 
+	//! Hand the answer to `TBD_FleetCommandPoller.OnClaimAnswered`.
+	//! @authority server
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_FleetCommandPoller.OnClaimAnswered(this, answer);
 	}
 }
 
+//! Fleet command claim loop of this world.
+//! @authority server
 class TBD_FleetCommandPoller
 {
-	static const string CH_FLEET = "Fleet"; //!< Greppable channel: `grep '\[TBD\]\[Fleet\]' console.log`.
-	static const string ROUTE_PREFIX = "/api/v1/fleet-executor/commands";
+	static const string CH_FLEET = "Fleet"; //!< log channel: `grep '\[TBD\]\[Fleet\]' console.log`
+	static const string ROUTE_PREFIX = "/api/v1/fleet-executor/commands"; //!< path prefix of the fleet command routes
 
-	protected static const int CLAIM_INTERVAL_MS = 5000;
-	protected static const int FAILURE_LOG_INTERVAL_MS = 60000;
+	protected static const int CLAIM_INTERVAL_MS = 5000; //!< claim period, in milliseconds
+	protected static const int FAILURE_LOG_INTERVAL_MS = 60000; //!< minimum gap between failure log lines, in milliseconds
 
-	protected static int s_iWorld; //!< Bumped by Start and Stop; a claim answered for another world is dropped.
-	protected static bool s_bRunning;
-	protected static bool s_bClaimInFlight;
-	protected static bool s_bFailureLogged;
-	protected static int s_iFailuresSinceLog;
-	protected static int s_iLastFailureLogMs;
+	protected static int s_iWorld; //!< bumped by `Start` and `Stop`; a claim answered for another world is dropped
+	protected static bool s_bRunning; //!< between `Start` and `Stop`
+	protected static bool s_bClaimInFlight; //!< a claim awaits its answer
+	protected static bool s_bFailureLogged; //!< a failure was logged since claims were last answered
+	protected static int s_iFailuresSinceLog; //!< failures since the last failure log line
+	protected static int s_iLastFailureLogMs; //!< `TBD_GameRuntimeHttp.NowMs()` of the last failure log line
 
-	//! Claim from now on, while the world holds a runtime session.
+	//! Claim from now on, while the world holds a runtime session. Does nothing on a client.
+	//! @authority server
 	static void Start()
 	{
 		if (TBD_Authority.IsClient())
@@ -72,6 +83,7 @@ class TBD_FleetCommandPoller
 	}
 
 	//! Claim nothing more in this world. A command already claimed finishes its reports.
+	//! @authority server
 	static void Stop()
 	{
 		s_bRunning = false;
@@ -82,17 +94,21 @@ class TBD_FleetCommandPoller
 			queue.Remove(Claim);
 	}
 
+	//! The world counter of the claims now.
+	//! @return the counter
 	static int GetWorld()
 	{
 		return s_iWorld;
 	}
 
-	//! True while `world` is the world claiming now.
+	//! Whether `world` is the world claiming now.
+	//! @return true while running in that world
 	static bool IsCurrentWorld(int world)
 	{
 		return s_bRunning && world == s_iWorld;
 	}
 
+	//! Schedule the next `Claim` one interval from now, replacing any pending one.
 	protected static void ScheduleClaim()
 	{
 		ScriptCallQueue queue = GetGame().GetCallqueue();
@@ -103,6 +119,10 @@ class TBD_FleetCommandPoller
 		queue.CallLater(Claim, CLAIM_INTERVAL_MS, false);
 	}
 
+	//! Claim the next command when running, idle and holding a session; schedules the next claim
+	//! first.
+	//! @route POST /api/v1/fleet-executor/commands/claim
+	//! @authority server
 	protected static void Claim()
 	{
 		if (!s_bRunning)
@@ -120,7 +140,7 @@ class TBD_FleetCommandPoller
 		TBD_FleetClaimCall call = new TBD_FleetClaimCall();
 		call.m_iWorld = s_iWorld;
 		call.m_sSessionId = sessionId;
-		string body = string.Format("{\"runtime_session_id\":\"%1\"}", TBD_GameRuntimeHttp.JsonEscape(sessionId));
+		string body = string.Format("{\"runtime_session_id\":\"%1\"}", TBD_BackendText.JsonEscape(sessionId));
 
 		// Marked before sending, so an answer can never find the claim unmarked.
 		s_bClaimInFlight = true;
@@ -132,7 +152,10 @@ class TBD_FleetCommandPoller
 		NoteFailure("not sent: " + failure);
 	}
 
-	//! Called by TBD_FleetClaimCall with the platform's answer.
+	//! Called by `TBD_FleetClaimCall` with the platform's answer: a command body begins execution,
+	//! an empty body means nothing to claim, an ended session is reported, and any other failure is
+	//! noted. Answers for another world are dropped.
+	//! @authority server
 	static void OnClaimAnswered(notnull TBD_FleetClaimCall call, notnull TBD_GameRuntimeAnswer answer)
 	{
 		if (call.m_iWorld != s_iWorld)
@@ -167,8 +190,10 @@ class TBD_FleetCommandPoller
 		NoteFailure(answer.m_sDetail);
 	}
 
-	//! The command in a claim answer, or null with `problem` saying why it cannot be read. Arguments
-	//! that cannot be read as text leave `m_mArguments` null; the argument check refuses them.
+	//! The command in a claim answer. Arguments that cannot be read as text leave `m_mArguments`
+	//! null; the argument check refuses them.
+	//! @param problem why the command cannot be read; empty on success
+	//! @return the command, or null
 	protected static TBD_FleetCommand ParseClaim(string body, out string problem)
 	{
 		problem = string.Empty;
@@ -200,6 +225,7 @@ class TBD_FleetCommandPoller
 		return command;
 	}
 
+	//! A claim was answered: log the recovery once after logged failures and reset the throttle.
 	protected static void NoteAnswered()
 	{
 		if (s_bFailureLogged)

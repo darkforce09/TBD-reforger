@@ -1,126 +1,62 @@
-//! One claimed fleet command, from its claim to its reported outcome. Every command follows the
-//! same protocol with the platform:
-//!   1. its arguments are checked again exactly as the platform validated them, and its
-//!      preconditions on this server are tested (TBD_FleetCommandArguments); a command that fails
-//!      here is reported failed and its effect never starts;
-//!   2. `executing` is reported (`POST /api/v1/fleet-executor/commands/{command_id}/executing` with
-//!      the fencing token) and must be admitted BEFORE the effect starts;
-//!   3. the effect runs once (TBD_FleetPlayerActions, TBD_FleetLoadMissionAction);
-//!   4. the outcome is reported (`.../{command_id}/result`): `succeeded` with the action's outcome,
-//!      or `failed` with a reason of 1 to 512 bytes.
-//! A report that gets no answer is sent again with backoff from 2 s to 30 s; the effect is never
-//! repeated. A 409 (`STALE_FENCING_TOKEN` or any other) means the claim is no longer this
-//! runtime's: the command is abandoned with no further effect and no further report. One 409 is
-//! read differently: a result report refused because the command already stands `succeeded`. An
-//! earlier attempt of this very report was recorded and its answer lost - once `executing` is
-//! admitted under a claim, no other claim can finish the command - so what follows a recorded
-//! success (the scenario restart of `load_mission`) still happens.
-//! @authority server
-
-//! Where a command stands in the protocol.
-enum TBD_EFleetCommandStage
-{
-	CHECKING,
-	REPORTING_EXECUTING,
-	EFFECT,
-	REPORTING_RESULT,
-	DONE,
-}
-
-//! A claimed command and what its execution has produced so far.
-class TBD_FleetCommand
-{
-	string m_sCommandId;
-	string m_sAction;
-	int m_iFencingToken;
-	//! Every argument as text; null when the claim's arguments could not be read as text values.
-	ref map<string, string> m_mArguments;
-	int m_iWorld; //!< The poller world that claimed the command (TBD_FleetCommandPoller).
-	TBD_EFleetCommandStage m_eStage = TBD_EFleetCommandStage.CHECKING;
-	int m_iTargetPlayerId; //!< The connected player a kick targets, resolved by the argument check.
-
-	bool m_bSucceeded;
-	string m_sOutcome; //!< The `outcome` JSON object of a success.
-	string m_sFailureReason;
-	bool m_bRestartAfterResult; //!< A recorded success is followed by an in-process scenario restart (`load_mission`).
-	int m_iReportFailures;
-
-	//! The argument `key` as sent, or empty.
-	string Argument(string key)
-	{
-		string value;
-		if (m_mArguments)
-			m_mArguments.Find(key, value);
-
-		return value;
-	}
-
-	//! `key=value` pairs of every argument, for one log line.
-	string DescribeArguments()
-	{
-		if (!m_mArguments)
-			return "<unreadable>";
-
-		string described;
-		foreach (string key, string value : m_mArguments)
-		{
-			if (!described.IsEmpty())
-				described += " ";
-
-			described += string.Format("%1='%2'", key, value);
-		}
-
-		return described;
-	}
-
-	string BuildResultBody()
-	{
-		if (m_bSucceeded)
-		{
-			string outcome = m_sOutcome;
-			if (outcome.IsEmpty())
-				outcome = "{}";
-
-			return string.Format("{\"fencing_token\":%1,\"succeeded\":true,\"outcome\":%2}", m_iFencingToken, outcome);
-		}
-
-		return string.Format("{\"fencing_token\":%1,\"succeeded\":false,\"failure_reason\":\"%2\"}",
-			m_iFencingToken, TBD_GameRuntimeHttp.JsonEscape(TBD_FleetCommandExecution.SafeReason(m_sFailureReason)));
-	}
-}
+/**
+ * @file TBD_FleetCommandExecution.c
+ * @brief One claimed fleet command, from its claim to its reported outcome.
+ *
+ * Role: runs the protocol every command follows: check arguments and preconditions
+ * (`TBD_FleetCommandArguments`; a failure is reported and the effect never starts), report
+ * `executing` with the fencing token and wait for admission, run the effect once
+ * (`TBD_FleetPlayerActions`, `TBD_FleetLoadMissionAction`), then report the result: `succeeded`
+ * with the action's outcome, or `failed` with a reason of 1 to 512 bytes.  Position: begun by
+ * `TBD_FleetCommandPoller` for each claim; posts to `/api/v1/fleet-executor/commands/{id}/...`
+ * through `TBD_GameRuntimeHttp`.
+ * State: the one command being executed or reported; a server static.  Invariants: the effect
+ * never starts before `executing` is admitted and never repeats; an unanswered report is re-sent
+ * with backoff from 2 s to 30 s; a 409 means the claim is not this runtime's any more, so the
+ * command is abandoned with no further effect or report, except a result refused because the
+ * command already stands `succeeded`: an earlier attempt was recorded and its answer lost, so
+ * what follows a recorded success (the scenario restart of `load_mission`) still happens.
+ */
 
 //! An `executing` or `result` report on its way to the platform.
 class TBD_FleetReportCall : TBD_GameRuntimeCall
 {
-	ref TBD_FleetCommand m_Command;
-	bool m_bResult;
+	ref TBD_FleetCommand m_Command; //!< the reported command
+	bool m_bResult; //!< a `result` report; false for `executing`
 
+	//! Hand the answer to `TBD_FleetCommandExecution.OnReportAnswered`.
+	//! @authority server
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_FleetCommandExecution.OnReportAnswered(this, answer);
 	}
 }
 
+//! The fleet command protocol driver: check, `executing`, effect, `result`.
+//! @authority server
 class TBD_FleetCommandExecution
 {
-	protected static const int REPORT_RETRY_BASE_MS = 2000;
-	protected static const int REPORT_RETRY_CAP_MS = 30000;
-	//! A failure reason is at most 512 bytes on the platform; kept below with room to spare.
-	protected static const int FAILURE_REASON_MAX_BYTES = 500;
+	protected static const int REPORT_RETRY_BASE_MS = 2000; //!< first report retry delay, in milliseconds
+	protected static const int REPORT_RETRY_CAP_MS = 30000; //!< report retry delay ceiling, in milliseconds
+	protected static const int FAILURE_REASON_MAX_BYTES = 500; //!< failure reason cap, in bytes; the platform takes at most 512
 
-	protected static ref TBD_FleetCommand s_Current; //!< The one command being executed or reported, or null.
+	protected static ref TBD_FleetCommand s_Current; //!< the one command being executed or reported, or null
 
+	//! Whether no command is being executed or reported.
+	//! @return true when a new claim may begin
 	static bool IsIdle()
 	{
 		return !s_Current;
 	}
 
+	//! The command being executed or reported.
+	//! @return the command, or null
 	static TBD_FleetCommand GetCurrent()
 	{
 		return s_Current;
 	}
 
 	//! A command was claimed: check it, then report `executing` or its failure.
+	//! @authority server
 	static void Begin(notnull TBD_FleetCommand command)
 	{
 		s_Current = command;
@@ -138,7 +74,11 @@ class TBD_FleetCommandExecution
 		SendReport(command, false);
 	}
 
-	//! The effect succeeded: report it with `outcome` (a JSON object).
+	//! The effect succeeded: report it with `outcome`. Ignored for another command or one already
+	//! reporting its result.
+	//! @param outcome the `outcome` JSON object
+	//! @param restartAfterResult restart the scenario once the success is recorded
+	//! @authority server
 	static void Succeed(notnull TBD_FleetCommand command, string outcome, bool restartAfterResult)
 	{
 		if (command != s_Current || command.m_eStage == TBD_EFleetCommandStage.REPORTING_RESULT)
@@ -152,7 +92,9 @@ class TBD_FleetCommandExecution
 		SendReport(command, true);
 	}
 
-	//! The command failed, before or during its effect: report it with `reason`.
+	//! The command failed, before or during its effect: report it with `reason`. Ignored for
+	//! another command or one already reporting its result.
+	//! @authority server
 	static void Fail(notnull TBD_FleetCommand command, string reason)
 	{
 		if (command != s_Current || command.m_eStage == TBD_EFleetCommandStage.REPORTING_RESULT)
@@ -165,6 +107,11 @@ class TBD_FleetCommandExecution
 		SendReport(command, true);
 	}
 
+	//! POST the `executing` report, or the `result` report when `result` is true; a report that
+	//! cannot be sent is retried.
+	//! @route POST /api/v1/fleet-executor/commands/{id}/executing
+	//! @route POST /api/v1/fleet-executor/commands/{id}/result
+	//! @authority server
 	protected static void SendReport(notnull TBD_FleetCommand command, bool result)
 	{
 		string path = TBD_FleetCommandPoller.ROUTE_PREFIX + "/" + command.m_sCommandId;
@@ -190,7 +137,11 @@ class TBD_FleetCommandExecution
 		RetryReport(command, result, "not sent: " + failure);
 	}
 
-	//! Called by TBD_FleetReportCall with the platform's answer to a report.
+	//! Called by `TBD_FleetReportCall` with the platform's answer to a report: admission starts the
+	//! effect or finishes the command, a transient failure retries, a result already recorded as
+	//! `succeeded` finishes, and any other refusal abandons. Answers for another command or stage
+	//! are ignored.
+	//! @authority server
 	static void OnReportAnswered(notnull TBD_FleetReportCall call, notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_FleetCommand command = call.m_Command;
@@ -239,7 +190,7 @@ class TBD_FleetCommandExecution
 		Abandon(command, string.Format("the platform refused the %1 report (%2)", which, answer.m_sDetail));
 	}
 
-	//! Retry a report that got no answer. The effect it reports is not repeated.
+	//! Retry a report that got no answer, with backoff. The effect it reports is not repeated.
 	protected static void RetryReport(notnull TBD_FleetCommand command, bool result, string detail)
 	{
 		command.m_iReportFailures++;
@@ -257,6 +208,7 @@ class TBD_FleetCommandExecution
 			queue.CallLater(ResendReport, delay, false, command.m_sCommandId, result);
 	}
 
+	//! Send the report again when `commandId` is still the current command.
 	protected static void ResendReport(string commandId, bool result)
 	{
 		if (!s_Current || s_Current.m_sCommandId != commandId)
@@ -265,6 +217,7 @@ class TBD_FleetCommandExecution
 		SendReport(s_Current, result);
 	}
 
+	//! Run the admitted command's effect by action; an unknown action fails.
 	protected static void StartEffect(notnull TBD_FleetCommand command)
 	{
 		TBD_Log.Kv(TBD_FleetCommandPoller.CH_FLEET, "executing", string.Format("command=%1 action=%2 - the platform admitted the effect", command.m_sCommandId, command.m_sAction));
@@ -290,7 +243,7 @@ class TBD_FleetCommandExecution
 			TBD_FleetLoadMissionAction.RestartScenario(command);
 	}
 
-	//! The claim is no longer this runtime's: nothing more is done or reported for the command.
+	//! The claim is not this runtime's any more: nothing more is done or reported for the command.
 	protected static void Abandon(notnull TBD_FleetCommand command, string why)
 	{
 		command.m_eStage = TBD_EFleetCommandStage.DONE;
@@ -301,6 +254,7 @@ class TBD_FleetCommandExecution
 
 	//! `text` as a failure reason the platform accepts: printable ASCII, trimmed, 1 to
 	//! FAILURE_REASON_MAX_BYTES bytes. Other bytes become '?', so a cut can never split a character.
+	//! @return the reason, or `no reason recorded` when nothing printable remains
 	static string SafeReason(string text)
 	{
 		string safe;

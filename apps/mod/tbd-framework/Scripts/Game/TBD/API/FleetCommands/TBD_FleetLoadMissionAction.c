@@ -1,24 +1,28 @@
-//! The effect of the `load_mission` fleet command: a mission deployment on the terrain this runtime
-//! already runs. Once the platform has admitted `executing` (TBD_FleetCommandExecution):
-//!   1. the deployment in effect is read (`GET /api/v1/game-runtime/deployment`); it must be the
-//!      command's deployment, with the command's artifact and SHA-256;
-//!   2. the artifact is fetched and the SHA-256 of its bytes verified
-//!      (TBD_MissionArtifactVerification);
-//!   3. the verified bytes are written to the profile cache under the deployment's identity
-//!      (TBD_MissionArtifactCache);
-//!   4. `succeeded` is reported with outcome {artifact_id, restart_requested: true};
-//!   5. once that report is recorded, this world's runtime session is closed and the scenario
-//!      restarts in-process (`GameStateTransitions.RequestScenarioRestart`). The next world's boot
-//!      (TBD_DeployedMission) reads the same deployment, takes its artifact from the cache under the
-//!      same id and SHA-256, and starts a session reporting it, which confirms the deployment.
-//! A failure in steps 1 to 3 is reported `failed` with its reason, and nothing restarts.
-//! @authority server
+/**
+ * @file TBD_FleetLoadMissionAction.c
+ * @brief The effect of the `load_mission` fleet command: a new mission on the terrain already run.
+ *
+ * Role: once `executing` is admitted, reads the deployment in effect (it must be the command's
+ * deployment, artifact and SHA-256), fetches and verifies the artifact
+ * (`TBD_MissionArtifactVerification`), writes the verified bytes to the profile cache under the
+ * deployment's identity (`TBD_MissionArtifactCache`), and succeeds with outcome
+ * {artifact_id, restart_requested: true}; once that success is recorded, closes this world's
+ * session and restarts the scenario in-process.  Position: started and finished by
+ * `TBD_FleetCommandExecution`; the next world's boot (`TBD_DeployedMission`) reads the same
+ * deployment, takes the artifact from the cache and starts a session reporting it, which confirms
+ * the deployment.
+ * State: the one verification in progress; a server static.  Invariants: a failure before the
+ * success is reported `failed` with its reason and nothing restarts; a world that already ended
+ * since the claim is not restarted again.
+ */
 
 //! The deployment read of a `load_mission` command.
 class TBD_LoadMissionDeploymentReadCall : TBD_GameRuntimeCall
 {
-	string m_sCommandId;
+	string m_sCommandId; //!< the command the read serves
 
+	//! Hand the answer to `TBD_FleetLoadMissionAction.OnDeploymentAnswered`.
+	//! @authority server
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_FleetLoadMissionAction.OnDeploymentAnswered(this, answer);
@@ -28,19 +32,26 @@ class TBD_LoadMissionDeploymentReadCall : TBD_GameRuntimeCall
 //! The artifact verification of a `load_mission` command.
 class TBD_LoadMissionArtifactVerification : TBD_MissionArtifactVerification
 {
-	string m_sCommandId;
-	ref TBD_RuntimeDeploymentStruct m_Identity;
+	string m_sCommandId; //!< the command the verification serves
+	ref TBD_RuntimeDeploymentStruct m_Identity; //!< the deployment whose artifact is verified; the cache key
 
+	//! Hand the end of the verification to `TBD_FleetLoadMissionAction.OnVerificationFinished`.
+	//! @authority server
 	override void OnFinished()
 	{
 		TBD_FleetLoadMissionAction.OnVerificationFinished(m_sCommandId);
 	}
 }
 
+//! The `load_mission` effect: deployment check, artifact verification, cache, restart.
+//! @authority server
 class TBD_FleetLoadMissionAction
 {
-	protected static ref TBD_LoadMissionArtifactVerification s_Verification;
+	protected static ref TBD_LoadMissionArtifactVerification s_Verification; //!< the verification in progress, or null
 
+	//! Read the deployment in effect; a read that cannot be sent fails the command.
+	//! @route GET /api/v1/game-runtime/deployment
+	//! @authority server
 	static void Start(notnull TBD_FleetCommand command)
 	{
 		TBD_LoadMissionDeploymentReadCall call = new TBD_LoadMissionDeploymentReadCall();
@@ -51,7 +62,9 @@ class TBD_FleetLoadMissionAction
 			TBD_FleetCommandExecution.Fail(command, "the deployment could not be read: " + failure);
 	}
 
-	//! Called by TBD_LoadMissionDeploymentReadCall with the platform's answer.
+	//! Called by `TBD_LoadMissionDeploymentReadCall` with the platform's answer: a matching
+	//! deployment starts the artifact verification; anything else fails the command.
+	//! @authority server
 	static void OnDeploymentAnswered(notnull TBD_LoadMissionDeploymentReadCall call, notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_FleetCommand command = CurrentCommand(call.m_sCommandId);
@@ -88,8 +101,9 @@ class TBD_FleetLoadMissionAction
 		s_Verification.FetchFromPlatform(artifactId, sha256, deployment.artifact_bytes);
 	}
 
-	//! Called by TBD_LoadMissionArtifactVerification when it ends. Acted on in the next frame, once the
-	//! verification's own call stack has unwound.
+	//! Called by `TBD_LoadMissionArtifactVerification` when it ends. Acted on in the next frame, once
+	//! the verification's own call stack has unwound.
+	//! @authority server
 	static void OnVerificationFinished(string commandId)
 	{
 		ScriptCallQueue queue = GetGame().GetCallqueue();
@@ -97,6 +111,7 @@ class TBD_FleetLoadMissionAction
 			queue.CallLater(SettleVerification, 0, false, commandId);
 	}
 
+	//! Cache a verified artifact and succeed with a restart request, or fail the command.
 	protected static void SettleVerification(string commandId)
 	{
 		TBD_LoadMissionArtifactVerification verification = s_Verification;
@@ -122,12 +137,13 @@ class TBD_FleetLoadMissionAction
 		TBD_Log.Kv(TBD_FleetCommandPoller.CH_FLEET, "load-mission-cached", string.Format("command=%1 deployment=%2 %3",
 			commandId, verification.m_Identity.deployment_id, verification.Describe()));
 		TBD_FleetCommandExecution.Succeed(command, string.Format("{\"artifact_id\":\"%1\",\"restart_requested\":true}",
-			TBD_GameRuntimeHttp.JsonEscape(verification.m_sArtifactId)), true);
+			TBD_BackendText.JsonEscape(verification.m_sArtifactId)), true);
 	}
 
 	//! The success is recorded: close this world's session and restart the scenario in-process. A
 	//! world that already ended since the claim is not restarted again; the next boot reads the same
 	//! deployment.
+	//! @authority server
 	static void RestartScenario(notnull TBD_FleetCommand command)
 	{
 		string artifactId = command.Argument("artifact_id");
@@ -142,12 +158,12 @@ class TBD_FleetLoadMissionAction
 			command.m_sCommandId, command.Argument("deployment_id"), artifactId));
 		TBD_PlayerChat.TellEveryone("TBD: the server restarts the scenario now to load the newly deployed mission.");
 
-		TBD_FleetCommandPoller.Stop();
-		TBD_RuntimeSession.Stop();
+		TBD_RuntimeSessionLifecycle.End();
 		GameStateTransitions.RequestScenarioRestart();
 	}
 
-	//! The `load_mission` command being executed under `commandId`, or null.
+	//! The `load_mission` command in its effect stage under `commandId`.
+	//! @return the command, or null
 	protected static TBD_FleetCommand CurrentCommand(string commandId)
 	{
 		TBD_FleetCommand command = TBD_FleetCommandExecution.GetCurrent();
