@@ -2,54 +2,74 @@
 
 The [API](/documentation_v2/glossary/a_to_f.md#api)'s
 [match telemetry](/documentation_v2/glossary/g_to_m.md#match-telemetry) domain: the write half of the
-game-server channel. A running [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) posts its
-live server status as heartbeats within its runtime session, and posts a finished-match report when
-a [mission](/documentation_v2/glossary/g_to_m.md#mission) ends. Presenting these figures back to members
-belongs to `command_center`; the server [registry](/documentation_v2/glossary/n_to_z.md#registry), the
-runtime sessions and the live status topic belong to `server_infrastructure`.
+game-server channel and the read of a match's detailed events. A running
+[game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) posts its live server status as
+heartbeats within its runtime session, registers each match it plays, and reports the match as
+numbered results revisions and batches of detailed combat, medical and vehicle events. Presenting
+these figures back to members belongs to `command_center`; the server
+[registry](/documentation_v2/glossary/n_to_z.md#registry), the runtime sessions and the live status
+topic belong to `server_infrastructure`.
 
 ## Contents
 
 ```text
 apps/website/api_v2/src/match_telemetry/
-├── handlers/  the heartbeat and match-results ingests, their wire contract, parsing and match upsert
+├── handlers/  the heartbeat, the three ingests and the event read, with the heartbeat's wire contract
 ├── mod.rs     the module tree; re-exports `routes`
-├── models/    the stored match, its outcome and the per-player lines
+├── models/    the stored match, the ingest wire shapes and their validation, the refusals
 ├── routes.rs  the domain's `/api/v1` route table
-└── services/  the source-match guard that serialises reports of one match
+└── services/  the registration, results-revision and event-batch transactions, the match row lock
 ```
 
 ## How it works
 
-A heartbeat is authenticated by the server's `mod_runtime`
-[machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential) and fenced by the runtime
-session's generation and a sequence that strictly increases within the session; the fence, the
-partial status update and the history sample commit together, a low-FPS warning follows
-best-effort, and the stored row is then published on the server's
-[SSE](/documentation_v2/glossary/n_to_z.md#sse) topic.
+Every write is authenticated by the server's `mod_runtime`
+[machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential); the server is the
+credential's, and a body that names `server_id` is a 400.
 
-A match report is authenticated by the shared service token and is idempotent: a report that
-repeats a `source_match_id` merges into the stored match, re-derives attendance for the
-registrants of the old and the new [event](/documentation_v2/glossary/a_to_f.md#event) mission, and
-retracts what the previous report attributed. The whole report (roster checks, player lines,
-attendance attribution, statistics and leaderboard recomputation, audit) commits in one transaction,
-behind the source-match guard and the shared identity and account lock order.
+- **Heartbeat.** Fenced by the runtime session's generation and a sequence that strictly increases
+  within the session; the fence, the partial status update (the telemetry queue reading included)
+  and the history sample commit together, a low-FPS warning follows best-effort, and the stored row
+  is then published on the server's [SSE](/documentation_v2/glossary/n_to_z.md#sse) topic.
+- **Registration.** `POST /ingest/matches` creates a `pending` match at revision 0 for a
+  `(server, source_match_id)` pair, or answers the existing one when the same body repeats; a
+  different body is a 409 `REGISTRATION_CONFLICT`.
+- **Results revisions.** `POST /ingest/match-results` carries a whole revision of the report. The
+  body is validated before the transaction; under the match row lock a strictly higher revision is
+  applied, the same revision is inert with the same digest and a conflict with another, and a lower
+  one is stale. An applied revision writes the match and its player lines, reconciles attendance for
+  the registrants of the [event](/documentation_v2/glossary/a_to_f.md#event)
+  [mission](/documentation_v2/glossary/g_to_m.md#mission), audits unlinked identities and recomputes
+  the statistics and the leaderboard in the same transaction.
+- **Detailed events.** `POST /ingest/match-events` stores a batch of 1–500 events idempotently and
+  counts only the rows it inserts into the per-identity totals and the match's event count;
+  `GET /matches/{matchId}/events` pages them in `sequence` order.
+
+A refusal the runtime must act on is a 400 or a 409 carrying `details.code`, never a 404, which the
+mod treats as permanent. Reports about a source the server has not registered are the 409
+`MATCH_NOT_REGISTERED`, which makes the mod's durable queue send the registration first.
 
 ## Public surface
 
-- `routes::routes()`: the table `core::http_router` merges under `/api/v1`, one route each:
+- `routes::routes()`: the table `core::http_router` merges under `/api/v1`:
   - `POST /api/v1/game-runtime/sessions/{sessionId}/heartbeats`: `mod_runtime` machine
     credential; the session-fenced live status.
-  - `POST /api/v1/ingest/match-results`: `ServiceAuth` (`X-Service-Token`); the finished-match
-    report.
+  - `POST /api/v1/ingest/matches`: `mod_runtime` machine credential; the match registration.
+  - `POST /api/v1/ingest/match-results`: `mod_runtime` machine credential; one results revision.
+  - `POST /api/v1/ingest/match-events`: `mod_runtime` machine credential; a detailed event batch.
+  - `GET /api/v1/matches/{matchId}/events`: any signed-in user; a page of the match's events.
 - `models::match_record`: `Match`, `MissionOutcome` and `MatchPlayerStat`, read by the member
   [service record](/documentation_v2/glossary/n_to_z.md#service-record) in `operations`.
+- `models::generated::match_telemetry`: the types generated from
+  `contracts_v2/definitions/match-telemetry.schema.json`, which the integration tests deserialize
+  live answers into.
 
 ## Boundaries
 
 - Depends on:
-  - `core`: the application state, errors, the `ServiceAuth` extractor, the URL guard, the
-    Postgres error codes and the wire formats;
+  - `core`: the application state, errors, the `AuthUser` extractor, the canonical JSON digest in
+    `core::wire_format::content_digest`, the URL guard, the Postgres error codes and the wire
+    formats;
   - `server_infrastructure` for the machine caller, the runtime-session fence, the server status
     row and its publisher; `identity_and_access` for the identity and account locks;
     `operations::services::participation_attribution` for attendance; `command_center::services`
@@ -59,19 +79,21 @@ behind the source-match guard and the shared identity and account lock order.
   - `core::http_router`, which merges the route table, and `operations`, through the match
     models;
   - over HTTP, the game runtime in `apps/mod/tbd-framework/Scripts/Game/TBD/API/`: the runtime
-    session loop posts heartbeats and the results reporter posts match reports.
+    session loop posts heartbeats, and the telemetry delivery in `MatchTelemetry/Delivery/` posts
+    the registrations, results revisions and event batches its durable queue holds.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`apps/website/api_v2/src/tests/architecture_rules.rs` checks both); every handler
-  carries its `/// @route` tag (`cargo xtask verify route-tags`).
+  carries its `/// @route` tag (`cargo xtask verify route-tags`); every wire model carries its
+  `@contract` tag into `match-telemetry.schema.json` (`cargo xtask schema citations`); the files
+  under `models/generated/` are regenerated, never edited (`cargo xtask ci schema-codegen`).
 
 ## Related documentation
 
+- [Match telemetry, fleet status and derived statistics](/documentation_v2/website/api_v2/verification_evidence/telemetry.md)
+  — registration, revisions, detailed events, the lock order and the game runtime's queue.
 - [API overview](/documentation_v2/website/api_v2/api_overview.md) — every domain's routes.
-- [API environment variables](/documentation_v2/website/api_v2/environment_variables.md)
-  — `SERVICE_TOKEN`, the shared
-  token of the match-results ingest.
 - [Machine credentials and runtime sessions](/documentation_v2/website/api_v2/verification_evidence/machine_credentials.md)
-  — the credential and the session fence a heartbeat passes.
+  — the credential every ingest requires and the session fence a heartbeat passes.
 - [Reservation and attendance separation](/documentation_v2/website/api_v2/verification_evidence/reservation_attendance.md)
   — how a match report attributes and corrects attendance.
 - [Identity transactions](/documentation_v2/website/api_v2/verification_evidence/identity_transactions.md)

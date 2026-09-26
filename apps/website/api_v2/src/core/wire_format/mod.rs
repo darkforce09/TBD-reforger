@@ -1,6 +1,7 @@
 //! The JSON wire contract's shared serialization primitives: the timestamp formats every model
-//! renders through, and the `jsonb` passthrough type.
+//! renders through, the `jsonb` passthrough type, and the canonical-JSON content digest.
 
+pub mod content_digest;
 pub mod raw_json;
 pub mod rfc3339_timestamps;
 

@@ -60,7 +60,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-change-me-set-a-real-secret}
       FRONTEND_URL: ${FRONTEND_URL:-https://tbd.icanteam.com}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://tbd.icanteam.com}
-      SERVICE_TOKEN: ${SERVICE_TOKEN:-}
+      OBSERVABILITY_TOKEN: ${OBSERVABILITY_TOKEN:-}
       DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
       DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
       DISCORD_REDIRECT_URL: ${DISCORD_REDIRECT_URL:-}

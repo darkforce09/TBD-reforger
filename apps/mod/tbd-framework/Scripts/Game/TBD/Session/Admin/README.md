@@ -49,7 +49,7 @@ The chat commands, for listed admins only; everyone else gets "TBD: admin only."
 | `#tbd missions` (also `#tbd`, `#tbd list`) | lists the missions the platform lets this server deploy, numbered from 1 |
 | `#tbd mission <n>` | asks the platform to deploy mission n; the server restarts only when the platform runs it |
 | `#tbd refresh` | reloads the mission list |
-| `#tbd backend <url> [token]` | repoints the backend URL and service token, saves them, reloads the list |
+| `#tbd backend <url>` | repoints the backend URL, saves it, reloads the list; the machine credential changes only in the profile file |
 | `#tbd validate` | replays the mission validation findings |
 | `#tbd dead` | lists who has spent their life |
 | `#tbd respawn <playerId>` | the one-life escape hatch: a fresh body for a spent life |

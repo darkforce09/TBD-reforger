@@ -26,9 +26,9 @@ fn limiters_are_keyed_per_ip() {
 fn strict_prefix_is_rooted_not_substring() {
     let strict = |path: &str| STRICT_PREFIXES.iter().any(|p| path.starts_with(p));
     assert!(strict("/api/v1/auth/refresh"));
-    assert!(strict("/api/v1/ingest/match-results"));
-    // Machine-credential game-runtime traffic stays on the global tier.
+    // Machine-credential game-runtime and ingest traffic stays on the global tier.
     assert!(!strict("/api/v1/game-runtime/sessions"));
+    assert!(!strict("/api/v1/ingest/match-results"));
     // Global paths use the global bucket.
     assert!(!strict("/api/v1/announcements"));
     assert!(!strict("/api/v1/missions"));
@@ -54,7 +54,7 @@ fn durable_tier_excludes_the_spa_hot_paths() {
         assert!(!durable(hot), "{hot} must not reach the durable limiter");
     }
     assert!(durable("/api/v1/auth/refresh"));
-    assert!(durable("/api/v1/ingest/match-results"));
+    assert!(!durable("/api/v1/ingest/match-events"));
 }
 
 /// `Retry-After` tracks the policy instead of being a constant, and is never 0.

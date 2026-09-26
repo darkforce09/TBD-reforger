@@ -36,7 +36,11 @@ that strictly increases, every 15 seconds, and a session silent for 60 seconds e
 server offline. Ending a session ends the player lives still open in it. Lock order: server, runtime
 session rows, their live occupancies. `status_broadcast.rs` is the only writer of the `server:{id}`
 topic on `core::realtime_hub`, so the in-request publish, the scheduled republish and the stream's
-first snapshot carry one payload shape. The ledger in `fleet_commands/` has its own README.
+first snapshot carry one payload shape: every read goes through the `ServerStatusRow` projection,
+which folds the five telemetry queue columns into `ServerStatus.telemetry_queue` (absent when the
+server never reported a queue). `publish_all_server_statuses` republishes the configured fleet
+(active servers) only, through `SELECT_FLEET_STATUSES`, which the dashboard's fleet overview reads
+too. The ledger in `fleet_commands/` has its own README.
 
 ## Public surface
 
@@ -45,9 +49,10 @@ first snapshot carry one payload shape. The ledger in `fleet_commands/` has its 
 - `runtime_sessions`: `admit_heartbeat` and `HeartbeatFence` for the heartbeat in `match_telemetry`;
   `share_open_session` for the live [slot](/documentation_v2/glossary/n_to_z.md#slot) occupancy in
   `operations`; `expire_silent_runtime_sessions` for the `runtime_session_expiry` worker.
-- `status_broadcast`: `publish_server_status` for the heartbeat, `publish_server_status_by_id` for
-  the `runtime_session_expiry` worker, `publish_all_server_statuses` for the
-  `server_status_publisher` worker.
+- `status_broadcast`: `publish_server_status_by_id` for the heartbeat in `match_telemetry` and the
+  `runtime_session_expiry` worker, `publish_all_server_statuses` for the `server_status_publisher`
+  worker, `publish_server_status` for a status already read; `SELECT_SERVER_STATUS` for the
+  stream's snapshot and `SELECT_FLEET_STATUSES` for `command_center::services::fleet_overview`.
 - `fleet_commands::command_ledger`: `enqueue_deployment_command` and `cancel_command` for
   [mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment) in `missions`;
   `fleet_commands::command_reconciliation::reconcile_fleet_commands` for the
@@ -58,8 +63,8 @@ first snapshot carry one payload shape. The ledger in `fleet_commands/` has its 
 - Depends on: the domain's models; `core` (authentication primitives, errors, the realtime hub,
   wire formats); `administration::services::required_audit`;
   `identity_and_access::services::account_authority`.
-- Used by: the domain's handlers; `match_telemetry`, `missions` and `operations` through the
-  surface above; the workers in `apps/website/api_v2/src/background_workers/`; the integration
+- Used by: the domain's handlers; `match_telemetry`, `identity_and_access`, `missions`,
+  `operations` and `command_center` through the surface above; the workers in `apps/website/api_v2/src/background_workers/`; the integration
   tests in `apps/website/api_v2/tests/`.
 - Rules: only the SHA-256 of a secret is stored, and the secret is shown once at issue; a machine
   acts only for its own server; `status_broadcast.rs` stays the one publisher of the `server:{id}`

@@ -14,6 +14,8 @@ use website_api::{
 mod common;
 mod telemetry_support;
 
+use telemetry_support::match_reports::ReportingServer;
+
 struct Fixture {
     state: AppState,
     app: Router,
@@ -26,6 +28,8 @@ struct Fixture {
     slot: Uuid,
     registration: Uuid,
     source: String,
+    /// The game server that registers and reports `source`.
+    reporter: ReportingServer,
 }
 async fn fixture() -> Fixture {
     let url = common::require_test_database_url().expect("scratch PostgreSQL required");
@@ -95,6 +99,7 @@ async fn fixture() -> Fixture {
     .unwrap();
     fixture.commit().await.unwrap();
     let app = http_router::router(state.clone());
+    let reporter = ReportingServer::open(&app, &state.pool, "Reservation attendance server").await;
     Fixture {
         state,
         app,
@@ -107,12 +112,18 @@ async fn fixture() -> Fixture {
         slot,
         registration,
         source: Uuid::new_v4().to_string(),
+        reporter,
     }
 }
+/// Report the fixture's line for `source` as the match's next results revision.
 async fn results(f: &Fixture, outcome: &str, event: Uuid) -> (StatusCode, Value) {
-    telemetry_support::call(&f.app, "POST", "/api/v1/ingest/match-results", None, Some(telemetry_support::SVC),
-        Some(&json!({"match": {"source_match_id": f.source, "outcome": outcome, "event_id": event, "mission_id": f.mission},
-            "players": [{"arma_id": f.arma, "source_event_id": "one", "role_played": "rifleman"}]}).to_string())).await
+    f.reporter
+        .report_results(
+            &f.app,
+            &json!({"match": {"source_match_id": f.source, "outcome": outcome, "event_id": event, "mission_id": f.mission},
+                "players": [{"arma_id": f.arma, "source_event_id": "one", "role_played": "rifleman"}]}),
+        )
+        .await
 }
 async fn withdraw(f: &Fixture) -> (StatusCode, Value) {
     telemetry_support::call(
@@ -175,7 +186,7 @@ async fn withdrawal_finalization_correction_and_relink_preserve_reservation_hist
     .unwrap();
     unlink_identity(&f.state, &user).await.unwrap();
     let code = issue_link_code(&f.state, &user).await.unwrap().0;
-    confirm_identity(&f.state, &code, &f.arma, "Player")
+    confirm_identity(&f.state, f.reporter.server_id, &code, &f.arma, "Player")
         .await
         .unwrap();
     assert_eq!(
@@ -371,12 +382,14 @@ async fn late_aggregate_failure_rolls_back_participation_and_retry_recovers_once
     .unwrap();
     assert_eq!(failed.0, StatusCode::INTERNAL_SERVER_ERROR, "{failed:?}");
     assert_eq!(snapshot(&f).await, before);
-    let count: i64 = sqlx::query_scalar("SELECT count(*) FROM matches WHERE source_match_id = $1")
-        .bind(&f.source)
-        .fetch_one(&f.state.pool)
-        .await
-        .unwrap();
-    assert_eq!(count, 0);
+    // The registration committed on its own; the failed revision left the match unreported.
+    let revision: i64 =
+        sqlx::query_scalar("SELECT revision FROM matches WHERE source_match_id = $1")
+            .bind(&f.source)
+            .fetch_one(&f.state.pool)
+            .await
+            .unwrap();
+    assert_eq!(revision, 0);
     for _ in 0..2 {
         assert_eq!(results(&f, "success", f.event).await.0, StatusCode::OK);
     }
@@ -520,7 +533,7 @@ async fn correction_retracts_old_signup_attribution_after_identity_moves() {
     .await
     .unwrap();
     let code = issue_link_code(&f.state, &new_user).await.unwrap().0;
-    confirm_identity(&f.state, &code, &f.arma, "New owner")
+    confirm_identity(&f.state, f.reporter.server_id, &code, &f.arma, "New owner")
         .await
         .unwrap();
     assert_eq!(

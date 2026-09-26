@@ -1,61 +1,25 @@
 /**
  * @file TBD_ResultsPayload.c
- * @brief The end-of-round results: winner, outcome, per-player rows and the match-results JSON.
+ * @brief The facts of a finished round: outcome, per-player lines, identity census, match key.
  *
- * Role: tallies the finished round from the spawn manager and the mission document and builds the
- * exact bytes `TBD_ResultsReporter` posts.  Position: called once per round by
- * `TBD_ResultsReporter.Report` on the server; reads `TBD_SpawnManager`, `TBD_MissionLoader`,
- * `TBD_DeployedMission` and `TBD_PlayerIdentity`.
+ * Role: tallies the finished round from the spawn manager, the framework manager and the mission
+ * document into what `TBD_MatchResultsRevision` reports.  Position: called once per round by
+ * `TBD_ResultsReporter` on the server; reads `TBD_SpawnManager`, `TBD_MatchTelemetryTally`,
+ * `TBD_MissionLoader`, `TBD_DeployedMission` and `TBD_PlayerIdentity`; the winner comes from
+ * `TBD_FactionElimination.CountSurvivors`, the rule the END banner uses.
  * State: none; pure functions over the ended round.  Invariants: `outcome` is always a member of
  * the backend's set; a player without an engine identity is dropped, never sent with an empty
- * `arma_id`; every string field goes through `TBD_BackendText.JsonEscape`.
+ * `arma_id`; every line has a non-empty role and line key, which the API requires.
  */
 
-//! Stateless builders for the match-results payload.
+//! Stateless tallies of a finished round.
 //! @authority server
 class TBD_ResultsPayload
 {
-	//! Who won, with the survivor arithmetic of `TBD_FrameworkManager` over the same two
-	//! `TBD_SpawnManager` primitives: a fielded side (claimed slots above 0) contests, and the one
-	//! contesting side with anyone alive wins. The stage machine exposes no winner, so it is
-	//! recomputed; the counts do not change after END, so the poll's lag cannot change the answer.
-	//! @param winner the winning faction key, or empty unless exactly one side survives
-	//! @param contesting how many sides were fielded
-	//! @param stillAlive how many fielded sides have anyone alive
-	static void ResolveWinner(out string winner, out int contesting, out int stillAlive)
-	{
-		winner = string.Empty;
-		contesting = 0;
-		stillAlive = 0;
-
-		TBD_SpawnManager sm = TBD_SpawnManager.GetInstance();
-		array<ref TBD_MissionFactionStruct> factions = TBD_MissionLoader.GetFactions();
-		if (!sm || !factions)
-			return;
-
-		foreach (TBD_MissionFactionStruct faction : factions)
-		{
-			if (!faction || faction.key.IsEmpty())
-				continue;
-
-			// 0 claimed means the side was never fielded, which is not the same as eliminated.
-			if (sm.CountClaimedForFaction(faction.key) == 0)
-				continue;
-
-			contesting++;
-			if (sm.CountAliveForFaction(faction.key) > 0)
-			{
-				stillAlive++;
-				winner = faction.key;
-			}
-		}
-
-		if (stillAlive != 1)
-			winner = string.Empty;
-	}
+	static const string UNNAMED_ROLE = "unassigned"; //!< `role_played` of a slot authored without a role; the API requires one
 
 	//! The `matches.outcome` value, always a member of the backend's set
-	//! (`"" | success | failure | aborted | pending`; anything else is a 400). `success` only when
+	//! (`success | failure | aborted | pending`; anything else is a 400). `success` only when
 	//! the mission declares `faction_eliminated` and exactly one of at least two fielded sides
 	//! survived; everything else is `aborted`. Events are PvP, so `failure` has no side-independent
 	//! meaning and is never sent; `winning_faction` carries who won.
@@ -74,20 +38,23 @@ class TBD_ResultsPayload
 		return "success";
 	}
 
-	//! One JSON row per connected player holding a claimed slot. A player who disconnected is not
+	//! One line per connected player holding a claimed slot. A player who disconnected is not
 	//! reported (the engine stops resolving their identity), though their seat still counts in
-	//! `ResolveWinner`. A player with no engine identity is dropped, not sent with an empty
-	//! `arma_id`: the backend dedupes on `(match_id, arma_id, source_event_id)` and
-	//! `users.arma_id` is UNIQUE, so empty ids would collapse into one row.
-	//! @param outRows receives the rows
+	//! `TBD_FactionElimination.CountSurvivors`. A player with no engine identity is dropped, not
+	//! sent with an empty `arma_id`: the API keys lines on `(arma_id, source_event_id)` and
+	//! `users.arma_id` is UNIQUE, so empty ids would collapse into one line. Deaths come from
+	//! `TBD_SpawnManager` (one life, so 0 or 1); kills, team kills, the longest kill and vehicles
+	//! destroyed from `TBD_MatchTelemetryTally`.
+	//! @param sourceMatchId the round's source match id, the line key when no event is deployed
+	//! @param outLines receives the lines
 	//! @param durable players sent under a backend identity
 	//! @param synthetic players sent under a name-derived identity
 	//! @param unresolved slotted players dropped for having no identity
 	//! @param unslotted connected players without a slot
 	//! @param deaths players dead this round
 	//! @authority server
-	static void CollectPlayers(notnull array<string> outRows, out int durable, out int synthetic,
-		out int unresolved, out int unslotted, out int deaths)
+	static void CollectPlayers(string sourceMatchId, notnull array<ref TBD_MatchPlayerLine> outLines, out int durable,
+		out int synthetic, out int unresolved, out int unslotted, out int deaths)
 	{
 		durable = 0;
 		synthetic = 0;
@@ -99,7 +66,7 @@ class TBD_ResultsPayload
 		if (!sm)
 			return;
 
-		string sourceEventId = TBD_DeployedMission.GetEventId();
+		string lineKey = LineKey(sourceMatchId);
 
 		array<int> players = {};
 		int count = GetGame().GetPlayerManager().GetPlayers(players);
@@ -126,16 +93,39 @@ class TBD_ResultsPayload
 			else
 				synthetic++;
 
+			TBD_MatchPlayerLine line = new TBD_MatchPlayerLine();
+			line.m_sArmaId = armaId;
+			line.m_sRolePlayed = slot.role;
+			if (line.m_sRolePlayed.IsEmpty())
+				line.m_sRolePlayed = UNNAMED_ROLE;
+
+			line.m_sSourceEventId = lineKey;
+			line.m_iKills = TBD_MatchTelemetryTally.GetKills(playerId);
+			line.m_iTeamKills = TBD_MatchTelemetryTally.GetTeamKills(playerId);
+			line.m_iLongestKillM = TBD_MatchTelemetryTally.GetLongestKillM(playerId);
+			line.m_iVehiclesDestroyed = TBD_MatchTelemetryTally.GetVehiclesDestroyed(playerId);
+
 			// One life makes this exact: a player is dead or not, with no second death to miss.
-			int playerDeaths = 0;
 			if (sm.IsPlayerDead(playerId))
 			{
-				playerDeaths = 1;
+				line.m_iDeaths = 1;
 				deaths++;
 			}
 
-			outRows.Insert(BuildPlayerRow(armaId, slot.role, playerDeaths, sourceEventId));
+			outLines.Insert(line);
 		}
+	}
+
+	//! The `source_event_id` of every line of the round: the deployed event, or the round's source
+	//! match id when no event is deployed, because the API requires a non-empty key.
+	//! @return the line key
+	protected static string LineKey(string sourceMatchId)
+	{
+		string eventId = TBD_DeployedMission.GetEventId();
+		if (!eventId.IsEmpty())
+			return eventId;
+
+		return sourceMatchId;
 	}
 
 	//! Log once per round how many sent identities are durable, synthetic or missing, and warn
@@ -165,78 +155,9 @@ class TBD_ResultsPayload
 			"NOTE: attendance / user-stat recompute / leaderboard refresh only hit players with users.arma_id set. Link via `#tbd link <code>` (TBD_IdentityLink, Arm()'d by MissionLoader -> POST /api/v1/ingest/link-confirm). An engine-resolved identity without that link still matches nobody.");
 	}
 
-	// PAYLOAD
-
-	//! The match-results body, hand-built so the bytes are fixed by code rather than by a
-	//! serializer, and assembled in steps because a long `+` chain fails with
-	//! `Formula too complex`.
-	//! @param sourceMatchId JSON key `source_match_id`, the idempotency key
-	//! @param startedAtUtc JSON key `started_at`
-	//! @param endedAtUtc JSON key `ended_at`
-	//! @param outcome JSON key `outcome`, from `ResolveOutcome`
-	//! @param winner JSON key `winning_faction`
-	//! @param playerRows the `players[]` entries from `CollectPlayers`
-	//! @return the JSON body
-	static string BuildPayload(string sourceMatchId, string startedAtUtc, string endedAtUtc, string outcome, string winner, notnull array<string> playerRows)
-	{
-		string json = "{\"match\":{";
-		json += string.Format("\"source_match_id\":\"%1\"", TBD_BackendText.JsonEscape(sourceMatchId));
-		json += string.Format(",\"event_id\":\"%1\"", TBD_BackendText.JsonEscape(TBD_DeployedMission.GetEventId()));
-
-		// The catalog mission of the running deployment (TBD_DeployedMission), a UUID. A world
-		// running no deployed mission, or a hand-staged cached artifact with an id that is not a
-		// UUID, sends what it has, and `parse_uuid_opt` stores NULL for anything that is not a
-		// UUID: no mission row matches it, so NULL is the truthful answer.
-		json += string.Format(",\"mission_id\":\"%1\"", TBD_BackendText.JsonEscape(TBD_DeployedMission.GetMissionId()));
-		json += string.Format(",\"terrain\":\"%1\"", TBD_BackendText.JsonEscape(GetTerrain()));
-		json += string.Format(",\"started_at\":\"%1\"", startedAtUtc);
-		json += string.Format(",\"ended_at\":\"%1\"", endedAtUtc);
-		json += string.Format(",\"outcome\":\"%1\"", outcome);
-		json += string.Format(",\"winning_faction\":\"%1\"", TBD_BackendText.JsonEscape(winner));
-		json += "},\"players\":[";
-
-		foreach (int i, string row : playerRows)
-		{
-			if (i > 0)
-				json += ",";
-			json += row;
-		}
-
-		json += "]}";
-		return json;
-	}
-
-	//! One `players[]` entry. The nested `counters` block is complete, unmeasured counters as 0,
-	//! false or null, because ingest reads a present `counters` as the full scoreline; the flat
-	//! `deaths` key carries the same count.
-	//! @return the JSON object
-	protected static string BuildPlayerRow(string armaId, string role, int deaths, string sourceEventId)
-	{
-		string row = "{";
-		row += string.Format("\"arma_id\":\"%1\"", TBD_BackendText.JsonEscape(armaId));
-		row += string.Format(",\"role_played\":\"%1\"", TBD_BackendText.JsonEscape(role));
-		row += string.Format(",\"deaths\":%1", deaths);
-		row += string.Format(",\"source_event_id\":\"%1\"", TBD_BackendText.JsonEscape(sourceEventId));
-		row += string.Format(",\"counters\":{\"kills\":0,\"deaths\":%1,\"team_kills\":0,\"longest_kill_m\":0,\"vehicles_destroyed\":0,\"is_command\":false,\"command_win\":null}", deaths);
-		row += "}";
-		return row;
-	}
-
-	//! Terrain key from the mission header, or empty. The backend allowlists `everon|arland|custom`
-	//! and stores NULL for anything else, so an unexpected key degrades rather than 400s.
-	//! @return the terrain key, or empty without a mission
-	protected static string GetTerrain()
-	{
-		TBD_MissionDocumentStruct mission = TBD_MissionLoader.GetMission();
-		if (!mission || !mission.meta)
-			return string.Empty;
-
-		return mission.meta.terrain;
-	}
-
-	//! The per-round idempotency key `<missionId>@<startedAt>#<tick>`, computed once when the round
-	//! goes LIVE and reused by every retry so the backend upserts one match row. The tick count
-	//! separates two rounds of one mission started in the same second.
+	//! The per-round source match id `<missionId>@<startedAt>#<tick>`, computed once when the round
+	//! goes LIVE and named by its registration and every report of it. The tick count separates two
+	//! rounds of one mission started in the same second.
 	//! @return the key
 	static string BuildSourceMatchId(string startedAtUtc)
 	{

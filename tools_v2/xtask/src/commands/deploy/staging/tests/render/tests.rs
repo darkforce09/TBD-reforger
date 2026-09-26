@@ -136,9 +136,9 @@ fn curl_argv_is_stable() {
 
 #[test]
 fn modpack_url_without_a_token_fails_before_any_network_call() {
-    // The credential tier: TBD_GAME_SERVER_TOKEN is a SERVICE_TOKEN and does
-    // not authenticate an AuthUser route, so an empty TBD_MODPACK_TOKEN must fail closed here
-    // rather than produce a 401 nobody reads.
+    // The credential tier: the deploy's machine credentials do not authenticate an AuthUser
+    // route, so an empty TBD_MODPACK_TOKEN must fail closed here rather than produce a 401
+    // nobody reads.
     let mut e = base();
     e.modpack_url = "https://tbd.example/x".into();
     assert!(resolve_modpack_doc(&e).is_err());

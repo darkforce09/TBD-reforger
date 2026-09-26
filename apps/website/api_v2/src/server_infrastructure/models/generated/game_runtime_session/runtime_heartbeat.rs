@@ -22,5 +22,16 @@ pub struct RuntimeHeartbeat {
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub server_fps: ::std::option::Option<f64>,
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub telemetry_queue: ::std::option::Option<RuntimeHeartbeatTelemetryQueue>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub uptime_seconds: ::std::option::Option<u64>,
+}
+///The outbound telemetry queue reading (match-telemetry.schema.json TelemetryQueueReading). Absent keeps the stored reading; present, all four fields are required and backlog must not exceed capacity.
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct RuntimeHeartbeatTelemetryQueue {
+    pub backlog: u64,
+    pub capacity: u64,
+    pub dropped_total: u64,
+    pub oldest_age_seconds: u64,
 }

@@ -36,8 +36,11 @@ runtime starts and ends its runtime session, reporting the
 [artifact](/documentation_v2/glossary/a_to_f.md#artifact) it loaded; each acts only for its own server and
 executor kind.
 
-- `server_intel.rs` composes one card per server (the registration, its live status row, the
-  modpack it requires and the terrain of the match it runs) for the list and the single read alike.
+- `server_intel.rs` composes one card per server (the registration, its live status row with the
+  telemetry queue reading, the modpack it requires and the terrain of the match it runs) for the
+  list and the single read alike. The list holds the configured fleet (`is_active = true`) for
+  members and every server, marked by `is_active`, for administrators (`sees_inactive_servers`);
+  the single read of an inactive server is a 404 for anyone but an administrator.
 - `server_registry.rs` validates at the boundary what the `servers` table does not constrain: a
   trimmed, non-blank name, the address, the port and an existing modpack; an explicit `null` for
   `required_modpack_id` clears the modpack, and an absent key keeps it.
@@ -47,8 +50,10 @@ executor kind.
   answers 204 when nothing is claimable.
 - `fleet_scenarios.rs` keys a scenario by a terrain key (lowercase ASCII, digits and underscores,
   starting with a letter, at most 64 bytes) and a `{16 uppercase hex}` resource ending in `.conf`.
-- `server_status_stream.rs` opens with the current snapshot, then relays every frame the realtime
-  hub fans out on `server:{id}`.
+- `server_status_stream.rs` answers 404 to a non-administrator for an inactive server, otherwise
+  opens with the current snapshot (read through `status_broadcast::SELECT_SERVER_STATUS`, the same
+  projection the publishers use), then relays every frame the realtime hub fans out on
+  `server:{id}`.
 
 ## Boundaries
 

@@ -134,17 +134,19 @@ The template sets `FRONTEND_URL=http://localhost:3000` and both local origins in
 | `DISCORD_BOT_TOKEN` | empty: no bot | no | Config, read only through `Config::require_discord_bot_token` | the bot token; an unset token is reported by name where a path needs it |
 | `DISCORD_WEBHOOK_URL` | empty: pushing off | no | Config; `apps/website/api_v2/src/community_content/services/discord_webhook.rs` | the channel webhook announcements are pushed to; while empty the push route answers 400 "discord webhook not configured" and a publish that asks to push writes a CRIT `webhook.push_failed` audit row |
 
-### Game servers
+### Game servers and monitoring
 
 | Variable | Default | Required | Read by | Meaning |
 |---|---|---|---|---|
-| `SERVICE_TOKEN` | empty: every service route refuses | no | Config; `ServiceAuth` in `apps/website/api_v2/src/core/middleware/authentication.rs` | the shared `X-Service-Token` of `POST /api/v1/ingest/link-confirm`, `POST /api/v1/ingest/match-results`, `GET /metrics` and the detailed `GET /healthz`; the game servers send the same value as `TBD_GAME_SERVER_TOKEN` in `tools_v2/xtask/deploy/deploy.env` |
+| `OBSERVABILITY_TOKEN` | empty: `/metrics` answers 401 and `/healthz` serves only its public `{status}` | no | Config; `ObservabilityAuth` and `observability_bearer_matches` in `apps/website/api_v2/src/core/observability/observability_auth.rs` | the operator's secret for scrapers, sent as `Authorization: Bearer <token>` to `GET /metrics` and the detailed `GET /healthz` and compared in constant time; no other route accepts it, and no user session or machine credential reaches these two |
 
-The [machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential) of the
+Game servers hold no shared token. The
+[machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential) of the
 [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) and the
 [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) are not environment variables:
 administrators issue them per server with `POST /api/v1/servers/{id}/credentials`, and the API
-stores only their digests.
+stores only their digests. The game runtime's `mod_runtime` credential authenticates every route it
+calls, `/api/v1/ingest/*` included.
 
 ### Worker intervals
 
@@ -190,7 +192,7 @@ The configuration fails closed where a wrong value would pass for an outage and 
 missing integration is a choice. A required value left empty, or a set value that can never work
 (a token with a newline, a proxy entry that trusts more than was typed, a pool setting that does
 not parse), stops the boot and names the variable. An optional integration left empty (the bot,
-the webhook, the guild) turns its path off and reports that by name where it is used. A variable
+the webhook, the guild, the observability token) turns its path off and reports that by name where it is used. A variable
 is added to `Config` together with the code that reads it, so no setting looks configured while
 doing nothing; the pool settings stay outside `Config` because the binary hands the pool a URL.
 

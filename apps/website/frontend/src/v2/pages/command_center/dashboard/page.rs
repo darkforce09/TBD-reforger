@@ -75,7 +75,7 @@ fn bento(d: DashboardResponse) -> impl IntoView {
         <div class="custom-scrollbar flex h-full w-full flex-col gap-8 overflow-y-auto p-6 md:p-8">
             {hero_banner(d.next_event)}
             <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                {server_uplink(d.server_status)}
+                {server_uplink(d.fleet)}
                 {deployment(d.my_assignment)}
                 {modpack_card(d.current_modpack)}
             </div>

@@ -32,19 +32,16 @@ async fn report(
         .map(|arma_id| json!({"arma_id": arma_id, "role_played": "Rifleman", "source_event_id": "life-1"}))
         .collect();
     let (status, body) = f
-        .service_call(
-            "/api/v1/ingest/match-results",
-            json!({
-                "match": {
-                    "source_match_id": source,
-                    "outcome": outcome,
-                    "event_id": f.event,
-                    "mission_id": f.catalog_mission(mission).await,
-                    "terrain": "everon"
-                },
-                "players": players
-            }),
-        )
+        .report_match_results(json!({
+            "match": {
+                "source_match_id": source,
+                "outcome": outcome,
+                "event_id": f.event,
+                "mission_id": f.catalog_mission(mission).await,
+                "terrain": "everon"
+            },
+            "players": players
+        }))
         .await;
     assert_eq!(status, StatusCode::OK, "{body}");
     body
@@ -292,9 +289,7 @@ async fn registration_history_unlinked_result_player_reconciles_on_link() {
     let (status, issued) = f.call(&linker, "POST", "/api/v1/me/link", None).await;
     assert_eq!(status, StatusCode::CREATED, "{issued}");
     let (status, confirmed) = f
-        .service_call(
-            "/api/v1/ingest/link-confirm",
-            json!({"code": issued["code"], "arma_id": identity, "arma_character": "[TBD] Late Linker"}),
+        .confirm_link(json!({"code": issued["code"], "arma_id": identity, "arma_character": "[TBD] Late Linker"}),
         )
         .await;
     assert_eq!(status, StatusCode::OK, "{confirmed}");

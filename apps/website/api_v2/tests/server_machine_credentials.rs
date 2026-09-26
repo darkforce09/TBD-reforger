@@ -289,7 +289,20 @@ async fn server_credentials_cannot_operate_on_another_server() {
         StatusCode::FORBIDDEN
     );
 
-    // Malformed, unknown and shared-service secrets authenticate nothing.
+    // Game-server ingest takes the runtime credential only: the host agent is refused.
+    for ingest in [
+        "/api/v1/ingest/matches",
+        "/api/v1/ingest/match-results",
+        "/api/v1/ingest/match-events",
+        "/api/v1/ingest/link-confirm",
+    ] {
+        let (status, body) = f
+            .call(&machine(&agent_secret), "POST", ingest, Some(json!({})))
+            .await;
+        assert_eq!(status, StatusCode::FORBIDDEN, "{ingest}: {body}");
+    }
+
+    // Malformed, unknown and retired shared-service secrets authenticate nothing.
     let unknown = format!("tbdm_{}_{}", uuid::Uuid::new_v4().simple(), "ab".repeat(32));
     let tampered = format!(
         "{}{}",

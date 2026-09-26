@@ -1,24 +1,14 @@
 //! HTTP regressions for metadata-only telemetry corrections and whole-batch identity validation.
 
-use axum::{Router, http::StatusCode};
-use serde_json::{Value, json};
+use axum::http::StatusCode;
+use serde_json::json;
 use sqlx::PgPool;
 use uuid::Uuid;
 
 mod common;
 mod telemetry_support;
 
-async fn post(app: &Router, body: &Value) -> (StatusCode, Value) {
-    telemetry_support::call(
-        app,
-        "POST",
-        "/api/v1/ingest/match-results",
-        None,
-        Some(telemetry_support::SVC),
-        Some(&body.to_string()),
-    )
-    .await
-}
+use telemetry_support::match_reports::ReportingServer;
 
 async fn registration_state(pool: &PgPool, event_mission: Uuid, actor: &str) -> String {
     sqlx::query_scalar(
@@ -126,7 +116,8 @@ async fn telemetry_partial_correction_moves_attendance_using_preserved_player_fa
             }
         }]
     });
-    let (status, first) = post(&app, &initial).await;
+    let reporter = ReportingServer::open(&app, &pool, "Partial correction server").await;
+    let (status, first) = reporter.report_results(&app, &initial).await;
     assert_eq!(status, StatusCode::OK, "initial results: {first}");
     assert_eq!(first["players"], 1);
     let match_id: Uuid = first["match_id"].as_str().unwrap().parse().unwrap();
@@ -157,14 +148,22 @@ async fn telemetry_partial_correction_moves_attendance_using_preserved_player_fa
         },
         "players": []
     });
+    // The correction is revision 2; the second attempt is the same revision and body again, the
+    // retry a game runtime sends when it never saw the first answer.
     for attempt in 0..2 {
-        let (status, corrected) = post(&app, &correction).await;
+        let (status, corrected) = reporter.post_results(&app, 2, &correction).await;
         assert_eq!(
             status,
             StatusCode::OK,
             "correction/retry {attempt}: {corrected}"
         );
         assert_eq!(corrected["match_id"], first["match_id"]);
+        assert_eq!(corrected["revision"], 2);
+        assert_eq!(
+            corrected["applied"],
+            attempt == 0,
+            "the correction applies once and its retry is inert"
+        );
         assert_eq!(
             corrected["players"], 0,
             "response reports submitted roster length"
@@ -223,6 +222,7 @@ async fn telemetry_oversized_normalized_arma_identity_rejects_the_entire_batch()
     let actor = format!("identity-boundary-{}", Uuid::new_v4());
     let valid_arma = format!("valid-arma-{}", Uuid::new_v4());
     common::seed_user(&pool, &actor, "Validation player", &valid_arma, "enlisted").await;
+    let reporter = ReportingServer::open(&app, &pool, "Identity boundary server").await;
     let invalid_identities = [
         "a".repeat(129),
         format!(" \t{}\n ", "b".repeat(129)),
@@ -242,24 +242,35 @@ async fn telemetry_oversized_normalized_arma_identity_rejects_the_entire_batch()
                     "arma_id": valid_arma,
                     "role_played": "rifleman",
                     "source_event_id": valid_event,
-                    "kills": 19,
-                    "deaths": 1
+                    "counters": {
+                        "kills": 19, "deaths": 1, "team_kills": 0, "longest_kill_m": 0,
+                        "vehicles_destroyed": 0, "is_command": false
+                    }
                 },
                 {
                     "arma_id": invalid,
                     "role_played": "rifleman",
                     "source_event_id": format!("invalid-second-{}", Uuid::new_v4()),
-                    "kills": 1
+                    "counters": {
+                        "kills": 1, "deaths": 0, "team_kills": 0, "longest_kill_m": 0,
+                        "vehicles_destroyed": 0, "is_command": false
+                    }
                 }
             ]
         });
-        let (status, response) = post(&app, &body).await;
+        // Posted without a registration so that "nothing written" covers the match row too: the
+        // whole body is validated before the registration is looked up.
+        let (status, response) = reporter.post_results(&app, 1, &body).await;
         assert_eq!(
             status,
             StatusCode::BAD_REQUEST,
             "oversized normalized identity: {response}"
         );
         assert!(response["error"].as_str().unwrap().contains("128"));
+        assert_eq!(
+            response["details"]["index"], 1,
+            "the second line is the invalid one"
+        );
         let writes: (i64, i64, i64) = sqlx::query_as(
             "SELECT
              (SELECT count(*) FROM matches WHERE source_match_id = $1),

@@ -39,7 +39,13 @@ in as, so they show once that account exists.
 `content_golden.sql` pins every id and timestamp, so capturing the fixtures in
 `apps/website/frontend/tests/fixtures/api/` again reproduces them byte for byte; its closing
 comment holds the capture recipe, which applies it by hand after `registry_dev.sql`. Its sections
-follow foreign-key order, because `psql` runs each statement on its own. `mock_data.sql` is applied
+follow foreign-key order, because `psql` runs each statement on its own. Beside the members,
+events, missions and matches the fixtures read, it holds two server status rows: an active server
+that reports a telemetry queue reading (three entries, the oldest 12 s old, none dropped) and an
+inactive one that never reported a queue, so the fleet reads leave it out. It also holds the
+detailed events of one match, one of each of the seven kinds at sequences 1 to 7, with each
+event's canonical-JSON `payload_sha256`, and the `match_event_totals` rows and
+`matches.event_count` the ingest would have written for them. `mock_data.sql` is applied
 by hand with `psql`; nothing runs it.
 
 ## Format

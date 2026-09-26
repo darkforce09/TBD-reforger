@@ -571,21 +571,84 @@ ON CONFLICT (id) DO UPDATE SET
 
 INSERT INTO server_statuses (server_id, is_online, player_count, max_players, server_fps,
                              uptime_seconds, current_match_id, ingame_time, ingame_weather,
-                             updated_at)
+                             updated_at, telemetry_queue_backlog, telemetry_queue_capacity,
+                             telemetry_queue_dropped_total, telemetry_queue_oldest_age_seconds,
+                             telemetry_queue_reported_at)
 VALUES
-  -- Fully reporting, mid-operation. 58.7 fps is a healthy-but-not-round frame.
+  -- Fully reporting, mid-operation. 58.7 fps is a healthy-but-not-round frame. Its
+  -- outbound telemetry queue holds three entries, the oldest 12 s old, none dropped.
   ('00000000-0000-4000-d000-000000000001', true, 47, 64, 58.7, 19_842,
-   '00000000-0000-4000-f000-000000000003', '06:42', 'overcast', '2026-07-26 05:00:00+00'),
+   '00000000-0000-4000-f000-000000000003', '06:42', 'overcast', '2026-07-26 05:00:00+00',
+   3, 512, 0, 12, '2026-07-26 05:00:00+00'),
   -- Online but idle: no match, no simulated clock, no weather. The three nullable
-  -- columns COALESCE to '' in the handler and drop out of the JSON entirely.
+  -- columns COALESCE to '' in the handler and drop out of the JSON entirely. It never
+  -- reported a telemetry queue, so `telemetry_queue` is absent from its status. The
+  -- server is inactive (§3), so the fleet reads leave it out.
   ('00000000-0000-4000-d000-000000000002', true, 3, 48, 29.4, 421_066,
-   NULL, NULL, NULL, '2026-07-26 04:58:12+00')
+   NULL, NULL, NULL, '2026-07-26 04:58:12+00', NULL, NULL, NULL, NULL, NULL)
 ON CONFLICT (server_id) DO UPDATE SET
     is_online = EXCLUDED.is_online, player_count = EXCLUDED.player_count,
     max_players = EXCLUDED.max_players, server_fps = EXCLUDED.server_fps,
     uptime_seconds = EXCLUDED.uptime_seconds, current_match_id = EXCLUDED.current_match_id,
     ingame_time = EXCLUDED.ingame_time, ingame_weather = EXCLUDED.ingame_weather,
-    updated_at = EXCLUDED.updated_at;
+    updated_at = EXCLUDED.updated_at, telemetry_queue_backlog = EXCLUDED.telemetry_queue_backlog,
+    telemetry_queue_capacity = EXCLUDED.telemetry_queue_capacity,
+    telemetry_queue_dropped_total = EXCLUDED.telemetry_queue_dropped_total,
+    telemetry_queue_oldest_age_seconds = EXCLUDED.telemetry_queue_oldest_age_seconds,
+    telemetry_queue_reported_at = EXCLUDED.telemetry_queue_reported_at;
+
+-- Detailed events of match …f000-000000000001, one of each of the seven kinds, in
+-- capture order (sequence 1–7; event_id is the sequence as text, as the game runtime
+-- assigns it). payload_sha256 is the SHA-256 of the canonical JSON of the whole event
+-- as the game runtime sends it (keys sorted, no whitespace), the digest the ingest
+-- route compares on a retry. match_event_totals and matches.event_count carry the
+-- counts the ingest transaction would have written.
+INSERT INTO match_events (match_id, event_id, sequence, kind, mission_time_ms, occurred_at,
+                          actor_arma_id, subject_arma_id, payload, payload_sha256)
+VALUES
+  ('00000000-0000-4000-f000-000000000001', '1', 1, 'combat.kill', 60000, '2026-06-20 19:06:00+00',
+   '76561190000000003', '76561190000000002',
+   '{"killer_arma_id": "76561190000000003", "victim_arma_id": "76561190000000002", "victim_is_player": true, "team_kill": true, "distance_m": 38.5, "weapon": "Prefabs/Weapons/MachineGuns/M249/MG_M249.et"}',
+   'b39003b19dde60e266f4bdc664015f771be26ad4264ec4fb065c655178509965'),
+  ('00000000-0000-4000-f000-000000000001', '2', 2, 'medical.incapacitated', 61500, '2026-06-20 19:06:01+00',
+   NULL, '76561190000000002',
+   '{"subject_arma_id": "76561190000000002"}',
+   'f658317cb0301bdecaad8c8592e439ce0cf2afd3cc504dbd9e3c4c48cf2b4b01'),
+  ('00000000-0000-4000-f000-000000000001', '3', 3, 'medical.revived', 242000, '2026-06-20 19:09:02+00',
+   NULL, '76561190000000002',
+   '{"subject_arma_id": "76561190000000002"}',
+   'c48860750ec191ed512d26fd0cb8f5d869cb681d5d67d071ba77132c2a73c3bb'),
+  ('00000000-0000-4000-f000-000000000001', '4', 4, 'vehicle.entered', 900000, '2026-06-20 19:20:00+00',
+   'dev-arma-76561190000000001', NULL,
+   '{"arma_id": "dev-arma-76561190000000001", "vehicle_prefab": "Prefabs/Vehicles/Wheeled/M151A2/M151A2.et", "compartment": "pilot"}',
+   'f7cf25565e69259b5e30e95d91b2cc092f9d1b795008c931bde19636f036ed7e'),
+  ('00000000-0000-4000-f000-000000000001', '5', 5, 'vehicle.exited', 1260000, '2026-06-20 19:26:00+00',
+   'dev-arma-76561190000000001', NULL,
+   '{"arma_id": "dev-arma-76561190000000001", "vehicle_prefab": "Prefabs/Vehicles/Wheeled/M151A2/M151A2.et", "compartment": "pilot"}',
+   'e56d49d4d7ec060405352b5979a9ecdb140b5665fb3b83558d400d3eadb77fc4'),
+  ('00000000-0000-4000-f000-000000000001', '6', 6, 'vehicle.destroyed', 3600000, '2026-06-20 20:05:00+00',
+   'dev-arma-76561190000000001', NULL,
+   '{"vehicle_prefab": "Prefabs/Vehicles/Wheeled/UAZ469/UAZ469.et", "instigator_arma_id": "dev-arma-76561190000000001"}',
+   'e485a855250f407dd046c558c8d73f0a8353f899ed0ea954b410bbacec269923'),
+  ('00000000-0000-4000-f000-000000000001', '7', 7, 'combat.death', 7200000, '2026-06-20 21:05:00+00',
+   NULL, 'dev-arma-76561190000000001',
+   '{"victim_arma_id": "dev-arma-76561190000000001", "cause": "ai"}',
+   '66d006e4d39cdcf38c3949edef6d9cd274ab08d806db9a63a066b960e0c55a0b')
+ON CONFLICT (match_id, event_id) DO NOTHING;
+
+INSERT INTO match_event_totals (match_id, arma_id, kind, participant_role, event_count) VALUES
+  ('00000000-0000-4000-f000-000000000001', '76561190000000002', 'combat.kill', 'subject', 1),
+  ('00000000-0000-4000-f000-000000000001', '76561190000000002', 'medical.incapacitated', 'subject', 1),
+  ('00000000-0000-4000-f000-000000000001', '76561190000000002', 'medical.revived', 'subject', 1),
+  ('00000000-0000-4000-f000-000000000001', '76561190000000003', 'combat.kill', 'actor', 1),
+  ('00000000-0000-4000-f000-000000000001', 'dev-arma-76561190000000001', 'combat.death', 'subject', 1),
+  ('00000000-0000-4000-f000-000000000001', 'dev-arma-76561190000000001', 'vehicle.destroyed', 'actor', 1),
+  ('00000000-0000-4000-f000-000000000001', 'dev-arma-76561190000000001', 'vehicle.entered', 'actor', 1),
+  ('00000000-0000-4000-f000-000000000001', 'dev-arma-76561190000000001', 'vehicle.exited', 'actor', 1)
+ON CONFLICT (match_id, arma_id, kind, participant_role) DO UPDATE SET
+    event_count = EXCLUDED.event_count;
+
+UPDATE matches SET event_count = 7 WHERE id = '00000000-0000-4000-f000-000000000001';
 
 
 -- ═══════════════════════════════════════════════════════════════════════════

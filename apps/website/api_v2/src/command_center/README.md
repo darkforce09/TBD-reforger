@@ -14,7 +14,7 @@ apps/website/api_v2/src/command_center/
 ├── handlers/  the dashboard, leaderboard and statistics card reads
 ├── mod.rs     the module tree; re-exports `routes`
 ├── routes.rs  the domain's `/api/v1` route table
-└── services/  the member statistics recomputation and the leaderboard view refresh
+└── services/  the statistics recomputation, the leaderboard view refresh and the fleet overview
 ```
 
 ## How it works
@@ -25,13 +25,19 @@ services and models of the domains they read. The leaderboards and the statistic
 through the leaderboard worker, and inside the match-results and identity-link transactions.
 `services/user_stats.rs` recomputes each member's `total_deployments` and `attendance_rate` inside
 those transactions and the event administration ones, so the figures commit with the facts they
-summarise.
+summarise; an inert or stale results revision changes no facts and recomputes nothing.
+
+The dashboard's `fleet` block comes from `services/fleet_overview.rs`: the configured fleet is the
+set of servers with `is_active = true`, listed by name then id with each one's status (a server
+with no status row has none and counts as offline), and totals that count online servers, their
+players and capacity, and sum every reported telemetry queue's backlog and drops.
 
 ## Public surface
 
 - `routes::routes()`: the table `core::http_router` merges under `/api/v1`, one route each, all
   `AuthUser`:
-  - `GET /api/v1/dashboard`: the next event, the caller's assignment, server status, modpack, news.
+  - `GET /api/v1/dashboard`: the next event, the caller's assignment, the configured fleet with
+    its totals, modpack, news.
   - `GET /api/v1/leaderboards`: the ranked board for one category, searchable by name.
   - `GET /api/v1/users/{discordId}/stats`: one player's statistics card.
 - `services::leaderboard_view`: `refresh_leaderboard`, run by the leaderboard worker, and
@@ -39,6 +45,7 @@ summarise.
 - `services::user_stats`: `recompute_user_stats_on_connection`, called by the match-results
   ingest, identity linking and event administration, and `ATTENDANCE_RATE_SQL`, which the account
   lookup in `identity_and_access` reads.
+- `services::fleet_overview`: `load_fleet_overview`, read only by the dashboard handler.
 
 ## Boundaries
 
@@ -62,5 +69,7 @@ summarise.
 - [API environment variables](/documentation_v2/website/api_v2/environment_variables.md)
   — `LEADERBOARD_REFRESH_INTERVAL_SECS`,
   the cadence of the scheduled leaderboard refresh.
+- [Match telemetry, fleet status and derived statistics](/documentation_v2/website/api_v2/verification_evidence/telemetry.md)
+  — the fleet block and when the derived statistics are recomputed.
 - [Reservation and attendance separation](/documentation_v2/website/api_v2/verification_evidence/reservation_attendance.md)
   — what counts as attendance, which the statistics summarise.

@@ -214,6 +214,7 @@ class TBD_RuntimeSession
 	}
 
 	//! Send the next heartbeat of the held session.
+	//! @contract game-runtime-session.schema.json#/definitions/RuntimeHeartbeat
 	protected static void SendHeartbeat()
 	{
 		s_iSequence++;

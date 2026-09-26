@@ -430,7 +430,7 @@ fn api_binary_still_installs_connect_info() {
 /// The durable tier's surface is the strict tier's, stated once.
 #[test]
 fn durable_surface_is_the_strict_prefixes() {
-    assert_eq!(STRICT_PREFIXES, ["/api/v1/auth/", "/api/v1/ingest/"]);
+    assert_eq!(STRICT_PREFIXES, ["/api/v1/auth/"]);
     assert!(STRICT_PREFIXES.iter().any(|p| STRICT_ROUTE.starts_with(p)));
     assert!(!STRICT_PREFIXES.iter().any(|p| GLOBAL_ROUTE.starts_with(p)));
 }

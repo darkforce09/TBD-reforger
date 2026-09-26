@@ -24,7 +24,7 @@ apps/website/api_v2/src/background_workers/
 ├── mod.rs                            `WorkerHandles` and `spawn_all`, which arms every worker once
 ├── ratelimit_cleanup_worker.rs       deletes durable rate-limit buckets idle for an hour
 ├── runtime_session_expiry.rs         ends silent runtime sessions and marks their servers offline
-├── server_status_publisher.rs        republishes every server's status onto its SSE topic
+├── server_status_publisher.rs        republishes each active server's status onto its SSE topic
 ├── tests/                            unit tests for the three tunable intervals and their schedules
 └── token_purge_worker.rs             hard-deletes refresh tokens long past expiry
 ```

@@ -5,18 +5,18 @@ use uuid::Uuid;
 use crate::core::error_handling::api_error::ApiError;
 
 /// Include factual signup authors even after an identity moves to another account.
-/// Call after source/identity serialization and before acquiring the sorted account lock set.
+/// Call after the match row and identity locks and before acquiring the sorted account lock set.
 pub async fn prior_match_accounts(
     connection: &mut PgConnection,
-    source_match_id: Option<&str>,
+    match_id: Uuid,
 ) -> Result<Vec<String>, ApiError> {
     Ok(sqlx::query_scalar(
         "SELECT DISTINCT registration.discord_id
         FROM event_registration_participation participation
         JOIN event_registrations registration ON registration.id = participation.registration_id
-        JOIN matches m ON m.id = participation.match_id WHERE m.source_match_id = $1",
+        WHERE participation.match_id = $1",
     )
-    .bind(source_match_id)
+    .bind(match_id)
     .fetch_all(connection)
     .await?)
 }
@@ -79,26 +79,18 @@ pub async fn refresh_attendance(
 /// Share-lock the exact event attachments a match is, and will be, associated with, in UUID
 /// order, and return every registrant of them: finalization can oblige each one to attend.
 ///
-/// Call after the source-match guard and before identity and account locks. Reservation writers
+/// `stored` is the attachment the locked match row holds now. Call after the match row lock and
+/// before identity and account locks. Reservation writers
 /// take event, then attachment, then account locks, so a telemetry transaction holding only a
 /// share lock on the attachment can never wait for them while they wait for it; the share lock
 /// keeps registrations of the attachment stable while obligations derive.
 pub async fn lock_obligated_registrants(
     connection: &mut PgConnection,
-    source_match_id: Option<&str>,
+    stored: (Option<Uuid>, Option<Uuid>),
     requested_event: Option<Uuid>,
     requested_mission: Option<Uuid>,
 ) -> Result<Vec<String>, ApiError> {
-    let stored: Option<(Option<Uuid>, Option<Uuid>)> = match source_match_id {
-        Some(source) => {
-            sqlx::query_as("SELECT event_id, mission_id FROM matches WHERE source_match_id = $1")
-                .bind(source)
-                .fetch_optional(&mut *connection)
-                .await?
-        }
-        None => None,
-    };
-    let (stored_event, stored_mission) = stored.unwrap_or((None, None));
+    let (stored_event, stored_mission) = stored;
     let mut events = vec![requested_event.or(stored_event)];
     let mut missions = vec![requested_mission.or(stored_mission)];
     events.push(stored_event);

@@ -21,6 +21,7 @@ fn sample_status(id: Uuid) -> ServerStatus {
         ingame_time: "06:42".into(),
         ingame_weather: "overcast".into(),
         updated_at: Utc::now(),
+        telemetry_queue: None,
     }
 }
 

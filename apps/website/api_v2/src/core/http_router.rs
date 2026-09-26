@@ -19,9 +19,12 @@ use tower_http::services::{ServeDir, ServeFile};
 use crate::core::application_state::AppState;
 use crate::core::configuration::Config;
 use crate::core::middleware;
-use crate::core::observability::health_probe::{healthz, service_token_matches};
+use crate::core::observability::health_probe::healthz;
 use crate::core::observability::metrics_exposition::metrics_scrape;
 use crate::core::observability::metrics_registry::Registry;
+use crate::core::observability::observability_auth::{
+    ObservabilityAuth, observability_bearer_matches,
+};
 use crate::core::observability::request_observer::observe;
 
 /// The `/api/v1` route tree, assembled from the eight domain route tables. Each domain owns one
@@ -30,7 +33,7 @@ use crate::core::observability::request_observer::observe;
 /// `/api/v1` nest applied below.
 ///
 /// Auth tiers are enforced per-handler by the extractor each takes (`AuthUser`, the role-gated
-/// newtypes, `ServiceAuth`), not by the merge order.
+/// newtypes, `MachineCaller`), not by the merge order.
 fn api_v1_routes(dev: bool, version_limit: usize) -> Router<AppState> {
     Router::new()
         .merge(crate::identity_and_access::routes(dev))
@@ -69,7 +72,7 @@ pub fn router(state: AppState) -> Router {
     ensure_runtime_dir("UPLOAD_DIR", &uploads_dir);
     let mut r = Router::new()
         // Public callers get `{"status": …}` and the 200/503 split, nothing else. The detail is
-        // behind the same `X-Service-Token` that gates `/metrics`. See [`healthz`].
+        // behind the `OBSERVABILITY_TOKEN` bearer that gates `/metrics`. See [`healthz`].
         .route(
             "/healthz",
             get(
@@ -78,23 +81,21 @@ pub fn router(state: AppState) -> Router {
                       headers: axum::http::HeaderMap| {
                     let reg = reg_health.clone();
                     async move {
-                        let detailed = service_token_matches(&cfg, &headers);
+                        let detailed = observability_bearer_matches(&cfg, &headers);
                         healthz(&reg, &pool, detailed).await
                     }
                 },
             ),
         )
-        // Scraping is gated on the SAME `X-Service-Token` the game-server ingest uses, and
-        // `ServiceAuth` fails closed when `SERVICE_TOKEN` is unset — so an unconfigured
+        // Scraping is gated on the operator's `OBSERVABILITY_TOKEN` bearer, and
+        // `ObservabilityAuth` fails closed when the token is unset — so an unconfigured
         // deployment answers 401, never a public dump of route templates and latencies.
         .route(
             "/metrics",
-            get(
-                move |_: middleware::ServiceAuth, State(pool): State<PgPool>| {
-                    let reg = reg_metrics.clone();
-                    async move { metrics_scrape(&reg, &pool).await }
-                },
-            ),
+            get(move |_: ObservabilityAuth, State(pool): State<PgPool>| {
+                let reg = reg_metrics.clone();
+                async move { metrics_scrape(&reg, &pool).await }
+            }),
         )
         .nest("/api/v1", api_v1_routes(dev, version_limit))
         .nest_service("/uploads", ServeDir::new(uploads_dir));

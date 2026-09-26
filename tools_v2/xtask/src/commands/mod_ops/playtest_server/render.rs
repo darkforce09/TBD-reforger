@@ -5,7 +5,7 @@
 //!
 //! | bash line | what it did | here |
 //! |---|---|---|
-//! | `:600` | patch `TBD_BackendConfig.json` (backendUrl / serverToken / machineCredential) | [`patch_backend_config`] |
+//! | `:600` | patch `TBD_BackendConfig.json` (backendUrl / machineCredential) | [`patch_backend_config`] |
 //! | `:630` | `json.dumps` the `--admin` list for the echoed summary line | [`admins_json`] |
 //! | `:631` | render `server.json` from the dev config | [`render_server_json`] |
 //!
@@ -100,10 +100,9 @@ pub fn setup_server_profile(root: &Path, run_dir: &str) -> Result<(), u8> {
 
 /// former python3 site 1 of 3 — patch the mod's backend config in place.
 ///
-/// `backendUrl` is always written. `serverToken` is written only for an explicit `--token`:
-/// `setup server-profile` has already substituted the value from `apps/website/api_v2/.env`, and
-/// an empty `--token` must leave that work alone. `machineCredential` is written when the run was
-/// issued one; an offline run leaves the example's placeholder, which the mod reports as unset.
+/// `backendUrl` is always written. `machineCredential` is written when the run was issued one; an
+/// offline run leaves the example's placeholder, which the mod reports as unset. Every other key
+/// is kept as `setup server-profile` wrote it.
 pub fn patch_backend_config(path: &str, o: &Opts, credential: Option<&str>) -> Result<(), String> {
     let text = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
     let mut d: Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
@@ -111,9 +110,6 @@ pub fn patch_backend_config(path: &str, o: &Opts, credential: Option<&str>) -> R
         .as_object_mut()
         .ok_or_else(|| "backend config is not a JSON object".to_string())?;
     map.insert("backendUrl".into(), Value::String(o.backend_url.clone()));
-    if !o.token.is_empty() {
-        map.insert("serverToken".into(), Value::String(o.token.clone()));
-    }
     if let Some(credential) = credential {
         map.insert(
             "machineCredential".into(),

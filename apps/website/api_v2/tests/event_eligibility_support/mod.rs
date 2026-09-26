@@ -19,6 +19,10 @@ use website_api::identity_and_access::services::session_issuance::issue_session;
 
 use crate::common;
 
+mod game_server_reports;
+
+pub use game_server_reports::ReportingGameServer;
+
 pub const PARTNER_ROLE: &str = "partner-role-rifleman";
 
 /// Serializes the tests of one suite that request or drain event reservation re-evaluations. The
@@ -44,6 +48,10 @@ pub struct Fixture {
     pub main_guild: String,
     pub partner_guild: String,
     suite: String,
+    /// The game server that reports this fixture's matches, created on first use.
+    game_server: tokio::sync::OnceCell<ReportingGameServer>,
+    /// The last results revision posted per `source_match_id`.
+    result_revisions: std::sync::Mutex<std::collections::HashMap<String, i64>>,
 }
 
 pub struct EventShape<'a> {
@@ -79,6 +87,8 @@ impl Fixture {
             main_guild,
             partner_guild: format!("partner-{}", Uuid::new_v4()),
             suite: suite.to_owned(),
+            game_server: tokio::sync::OnceCell::new(),
+            result_revisions: std::sync::Mutex::new(std::collections::HashMap::new()),
         };
         fixture.admin = fixture.account("admin", "admin").await;
         fixture.leader = fixture.account("leader", "leader").await;
@@ -241,24 +251,6 @@ impl Fixture {
         }
         let request = request
             .body(body.map_or(Body::empty(), |value| Body::from(value.to_string())))
-            .unwrap();
-        let response = self.app.clone().oneshot(request).await.unwrap();
-        let status = response.status();
-        let bytes = to_bytes(response.into_body(), usize::MAX).await.unwrap();
-        (
-            status,
-            serde_json::from_slice(&bytes).unwrap_or(Value::Null),
-        )
-    }
-
-    /// One game-server request authenticated with the ingest service token.
-    pub async fn service_call(&self, uri: &str, body: Value) -> (StatusCode, Value) {
-        let request = Request::builder()
-            .method("POST")
-            .uri(uri)
-            .header("x-service-token", self.state.cfg.service_token.as_str())
-            .header(header::CONTENT_TYPE, "application/json")
-            .body(Body::from(body.to_string()))
             .unwrap();
         let response = self.app.clone().oneshot(request).await.unwrap();
         let status = response.status();

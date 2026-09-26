@@ -31,6 +31,7 @@ pub struct ConfirmedIdentity {
 
 pub async fn confirm_identity(
     state: &AppState,
+    confirming_server: uuid::Uuid,
     code: &str,
     arma_id: &str,
     character: &str,
@@ -125,7 +126,7 @@ pub async fn confirm_identity(
         recompute_user_stats_on_connection(&mut tx, account).await?;
     }
     append_required_audit(&mut tx, &discord_id, "identity.link", &discord_id,
-        &format!("Verified Arma identity; attributed {claimed} historical match rows and {attended} attendance records")).await?;
+        &format!("Verified Arma identity on server {confirming_server}; attributed {claimed} historical match rows and {attended} attendance records")).await?;
     refresh_leaderboard_on_connection(&mut tx).await?;
     tx.commit().await?;
     Ok(ConfirmedIdentity {

@@ -7,13 +7,13 @@
 //! **L2 — [`PgRateLimiter`], in Postgres, strict prefixes only.** Same numbers as the strict
 //! tier, keyed the same way, consulted only after L1 has already said yes. The invariants:
 //!
-//! * **Which routes.** Only `/api/v1/auth/` and `/api/v1/ingest/`. `/auth/*` is the only
-//!   unauthenticated family in the tree, where a restart-reset bucket buys free retries against
-//!   single-use refresh-token rotation and the Discord OAuth round trip; `/ingest/*` writes
-//!   `matches` / `match_player_stats` on a shared service token. `/api/v1/game-runtime/*` is
-//!   authenticated per server by machine credentials and stays on the global tier: a mission
-//!   start spawns every player of a server within seconds, which a 1/s bucket would serialize
-//!   behind one another. L2 costs **one database write
+//! * **Which routes.** Only `/api/v1/auth/`, the only unauthenticated family in the tree, where
+//!   a restart-reset bucket buys free retries against single-use refresh-token rotation and the
+//!   Discord OAuth round trip. `/api/v1/game-runtime/*` and `/api/v1/ingest/*` are authenticated
+//!   per server by machine credentials and stay on the global tier: a mission start spawns every
+//!   player of a server within seconds, event batches arrive in bursts, and several servers can
+//!   share one host address, all of which a 1/s bucket keyed by address would serialize behind
+//!   one another. L2 costs **one database write
 //!   per request**, and the SPA's traffic is overwhelmingly the *other* routes — the dashboard's
 //!   parallel GET fan-out, `/missions`, and the Mission Creator's thousands of map-asset tiles.
 //!   Widening this list puts a write on the editor's hot path to protect nothing.
@@ -68,7 +68,7 @@ use crate::core::middleware::json_error;
 /// Full rooted-path prefixes that get the strict limiter (a prefix match, not a substring one).
 ///
 /// This is also the durable tier's entire surface — see the module header for why.
-pub const STRICT_PREFIXES: [&str; 2] = ["/api/v1/auth/", "/api/v1/ingest/"];
+pub const STRICT_PREFIXES: [&str; 1] = ["/api/v1/auth/"];
 
 /// The router mount point that is served **outside** [`rate_limit`] entirely.
 ///

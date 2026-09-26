@@ -58,7 +58,7 @@ LOBBY ──▶ BRIEFING ──▶ SAFE_START ── countdown ──▶ LIVE �
 ## Authority
 
 - Server: mission load, the stage machine, flow, weather and settings, the round clock, the end
-  checks, kill credit and the night-vision strip. `OnPostInit` returns before any of it on a
+  checks and the night-vision strip. `OnPostInit` returns before any of it on a
   client, and the stage methods and helpers carry `@authority server`.
 - Client: `OnStageReplicated` (`@authority client`) opens and closes the local screens; on a
   listen host `SetStage` calls the same `NotifyLocalStageUI`, since the hook never fires on the
@@ -84,7 +84,7 @@ LOBBY ──▶ BRIEFING ──▶ SAFE_START ── countdown ──▶ LIVE �
   `GetInstance()`, `GetStage()` or `IsFrameworkWorld()`; `TBD_SafestartManager`,
   `TBD_WinConditionEvaluator`, `TBD_TriggerRuntime` and `TBD_SpawnManager`, which call `SetStage`;
   `TBD_AdminService`, through `HandleAdminStageCommand`; `TBD_SpawnManager` and the mission
-  validator, through `TBD_MissionFlow`; `TBD_DebriefScoreboard`, through `GetKills`; `TBD_EndScreen`, `TBD_DebriefScreen` and the
+  validator, through `TBD_MissionFlow`; `TBD_EndScreen`, `TBD_DebriefScreen` and the
   spectator controller, through the replicated fields; and
   `apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et`, which attaches the component.
 - Rules: the stage changes only through `SetStage`, and a round ends only through
@@ -102,6 +102,6 @@ LOBBY ──▶ BRIEFING ──▶ SAFE_START ── countdown ──▶ LIVE �
 - [End screen specification](/documentation_v2/mod/tbd-framework/UI/end_screen/end_screen_specification.md)
   — the END banner the replicated winner and reason feed
 - [Debrief specification](/documentation_v2/mod/tbd-framework/UI/debrief_after_action_review/debrief_after_action_review_specification.md)
-  — the DEBRIEF scoreboard the kill count and packed board feed
+  — the DEBRIEF scoreboard the packed board feeds
 - [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — the stage log
   lines of a healthy boot

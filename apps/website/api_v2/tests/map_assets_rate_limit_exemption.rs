@@ -424,11 +424,11 @@ async fn a_refusal_still_looks_exactly_as_it_did() {
 // ───────────────────────── anti-drift pins ─────────────────────────
 
 /// The exemption governs **which routes** the limiter sees and nothing about the strict
-/// tier's surface. If this ever needs updating, `/auth/` or `/ingest/` protection is being edited,
+/// tier's surface. If this ever needs updating, `/auth/` protection is being edited,
 /// which is a separate change.
 #[test]
 fn the_strict_surface_is_untouched() {
-    assert_eq!(STRICT_PREFIXES, ["/api/v1/auth/", "/api/v1/ingest/"]);
+    assert_eq!(STRICT_PREFIXES, ["/api/v1/auth/"]);
     assert!(STRICT_PREFIXES.iter().any(|p| STRICT_ROUTE.starts_with(p)));
     assert!(!STRICT_PREFIXES.iter().any(|p| GLOBAL_ROUTE.starts_with(p)));
     assert!(

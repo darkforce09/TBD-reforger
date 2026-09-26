@@ -129,3 +129,67 @@ fn pick_default_prefers_active() {
     assert_eq!(pick_default_id(&[inactive]).as_deref(), Some("a"));
     assert_eq!(pick_default_id(&[]), None);
 }
+
+/// The queue reading off the captured row: backlog against capacity, and the oldest entry's age
+/// in the unit that reads naturally for its size.
+#[test]
+fn the_band_formats_the_telemetry_queue_reading() {
+    let servers: crate::v2::core::api::dto::DataEnvelope<ServerRowDto> = serde_json::from_str(
+        crate::v2::core::test_support::fixtures::golden!("GET__servers.json"),
+    )
+    .unwrap();
+    let queue = servers.data[0]
+        .status
+        .as_ref()
+        .and_then(|status| status.telemetry_queue.as_ref())
+        .expect("the primary reported a queue");
+    assert_eq!(queue_fill(queue), "3 / 512");
+    assert_eq!(format_queue_age(queue.oldest_age_seconds), "12s");
+    assert_eq!(format_queue_age(125), "2m 05s");
+    assert_eq!(format_queue_age(3_660), "01h 01m");
+    assert!(
+        servers.data[1]
+            .status
+            .as_ref()
+            .is_some_and(|status| status.telemetry_queue.is_none()),
+        "the secondary never reported a queue"
+    );
+}
+
+/// A server without a queue reading says so instead of showing zeros, and an inactive server is
+/// badged both in the list and in the card header.
+#[test]
+fn the_card_says_no_reading_and_badges_inactive_servers() {
+    let src = live();
+    assert!(
+        src.contains("\"No reading\""),
+        "an absent queue reading renders \"No reading\""
+    );
+    assert!(
+        src.contains("\"Inactive\""),
+        "an inactive server carries the badge"
+    );
+    let code = crate::v2::core::test_support::class_r_scrub::live_code(
+        &crate::v2::core::test_support::pins::server_control_source(),
+    );
+    let list = crate::v2::core::test_support::class_r_scrub::only_body(
+        &code,
+        "pub(super) fn server_list(",
+    );
+    let card = crate::v2::core::test_support::class_r_scrub::only_body(
+        &code,
+        "pub(super) fn server_detail(",
+    );
+    assert!(
+        list.contains("inactive_badge(is_active)"),
+        "the list badges inactive rows"
+    );
+    assert!(
+        card.contains("inactive_badge(s.is_active)"),
+        "the card header badges it too"
+    );
+    assert!(
+        card.contains("telemetry_columns(&s)"),
+        "the card renders the telemetry band"
+    );
+}

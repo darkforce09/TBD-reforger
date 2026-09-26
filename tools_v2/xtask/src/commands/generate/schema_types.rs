@@ -23,7 +23,7 @@ mod module_plan;
 const API_SOURCE_DIR: &str = "apps/website/api_v2/src";
 
 /// Each schema file maps to the generated module directory of its owning domain.
-const TARGETS: [(&str, &str); 18] = [
+const TARGETS: [(&str, &str); 19] = [
     (
         "registry-items.schema.json",
         "missions/contract/generated/registry_items",
@@ -95,6 +95,10 @@ const TARGETS: [(&str, &str); 18] = [
     (
         "fleet-command.schema.json",
         "server_infrastructure/models/generated/fleet_command",
+    ),
+    (
+        "match-telemetry.schema.json",
+        "match_telemetry/models/generated/match_telemetry",
     ),
 ];
 

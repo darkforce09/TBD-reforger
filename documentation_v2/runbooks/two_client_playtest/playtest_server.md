@@ -51,8 +51,10 @@ once without an admin, and again with the id. Each start takes a few minutes.
    ```
 
    followed by `==> waiting for the runtime to confirm deployment <id>` and, within 180 s,
-   `    CONFIRMED: runtime session <id> loaded artifact <id>`. Keep `<server id>` as `SID`: it is
-   the "TBD Playtest" server row, the one an event must be bound to.
+   `    CONFIRMED: runtime session <id> loaded artifact <id>`, then, within 90 s,
+   `    telemetry queue: backlog <n>/<capacity>, dropped <n>, oldest <s> s (reported <time>)`. Keep
+   `<server id>` as `SID`: it is the "TBD Playtest" server row, the one an event must be bound
+   to.
 
 3. Join the server from the first client (session step S2 in
    [Session: join to deploy](/documentation_v2/runbooks/two_client_playtest/session_join_to_deploy.md)),
@@ -68,10 +70,18 @@ once without an admin, and again with the id. Each start takes a few minutes.
    booting, because the engine rejects a bad entry as a fatal config error about 90 s into the
    boot.
 
-4. Stop the server: Ctrl-C in its terminal.
+4. Stop the server: Ctrl-C in its terminal. A run started with `--timeout=<seconds>` stops the
+   same way when the time is up, printing `==> --timeout reached after <seconds> s` first; the
+   telemetry acceptance run is `cargo xtask mod playtest --mission=$MID --timeout=420
+   --require-telemetry`.
 
-   Expected: `==> stopping server`, `==> stopped (process group confirmed gone)` and
-   `==> revoked this run's machine credential`. Wait for the second line before starting
+   Expected: `    telemetry queue before the stop: …` (with `--require-telemetry`, after up to 60 s
+   waiting for the backlog to drain), `==> stopping server`,
+   `==> stopped (process group confirmed gone)`, a
+   `==> telemetry check` block ending in `telemetry PASSED` (or, when no match started,
+   `no match was seen`), and `==> revoked this run's machine credential`. A `telemetry FAILED`
+   line names what did not reach the platform; add `--require-telemetry` to the command to make
+   such a run exit 1. Wait for the second line before starting
    another server. A `STRAY SERVER` block instead means the stop could not be confirmed: run the
    command it prints, and check `pgrep -af '[A]rmaReforgerServer'` comes back empty, because a
    survivor holds 2001 and 17777 and the next boot dies on `Unable to start replication`.
@@ -109,7 +119,7 @@ full order.
 
 - It stages `<run dir>` (default `$HOME/tbd-playtest`): the profile from
   `cargo xtask setup server-profile`, the backend config rewritten from
-  `apps/mod/tbd-framework/Data/backend.example.json` on every start (`backendUrl`, `serverToken`,
+  `apps/mod/tbd-framework/Data/backend.example.json` on every start (`backendUrl` and
   `machineCredential`; hand edits do not survive), `addons/tbd-framework` linking the checkout,
   and `server.json` rendered from `tools_v2/xtask/dedicated_server_profiles/tbd-dev-server.config.json`
   with the ports, `visible`, `maxPlayers`, `admins` and one mod entry keyed by the GUID in

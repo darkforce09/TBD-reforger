@@ -1,16 +1,15 @@
 //! `cargo xtask setup server-profile`: write the dedicated-server profile this checkout boots with.
 //!
 //! Path pins:
-//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `WEB=apps/website/api_v2`.
+//! `MONO_ROOT`, `MOD_ROOT=apps/mod`.
 //!
 //! Builds a dedicated-server profile tree: `profile/TBD_BackendConfig.json` from the committed
-//! example, with the service token and the game runtime's machine credential filled in when they
-//! are known, and the optional registry. The mission a server runs is not part of the profile:
-//! the mod reads the server's deployment with its machine credential (or boots the last verified
-//! artifact it cached), so a profile without a credential boots no mission.
+//! example, with the game runtime's machine credential filled in when it is known, and the
+//! optional registry. The config carries two keys: `backendUrl` and `machineCredential`. The
+//! mission a server runs is not part of the profile: the mod reads the server's deployment with its
+//! machine credential (or boots the last verified artifact it cached), so a profile without a
+//! credential boots no mission.
 //!
-//! - `SERVICE_TOKEN` (environment, else the first `SERVICE_TOKEN=` line of
-//!   `apps/website/api_v2/.env`) replaces the example's `serverToken` placeholder.
 //! - `TBD_MACHINE_CREDENTIAL` (environment) becomes `machineCredential`; without it the example's
 //!   placeholder stays, which the mod reports as unset.
 //! - A missing `backend.example.json` fails with the GNU `cp: cannot stat` shape; the registry
@@ -25,7 +24,6 @@ use anyhow::{Context, Result};
 
 use crate::core::repository_root::find_repo_root;
 
-const PLACEHOLDER: &str = "replace-with-SERVICE_TOKEN-value";
 /// Where the game runtime's machine credential comes from.
 const MACHINE_CREDENTIAL_VARIABLE: &str = "TBD_MACHINE_CREDENTIAL";
 const BACKEND_EXAMPLE_REL: &str = "apps/mod/tbd-framework/Data/backend.example.json";
@@ -34,14 +32,12 @@ const REGISTRY_REL: &str = "apps/mod/tbd-framework/Data/registry.json";
 /// The path pins, for an already-resolved monorepo root.
 struct Paths {
     mod_root: PathBuf,
-    web: PathBuf,
 }
 
 impl Paths {
     fn from_root(root: &Path) -> Self {
         Self {
             mod_root: root.join("apps/mod"),
-            web: root.join("apps/website/api_v2"),
         }
     }
 }
@@ -61,8 +57,7 @@ pub fn run_with_root(root: &Path, profile_arg: Option<&Path>) -> Result<u8> {
     fs::create_dir_all(&profile_root)
         .with_context(|| format!("mkdir -p {}", profile_root.display()))?;
 
-    // 700 before anything is written: the backend config carries the service token and the
-    // machine credential.
+    // 700 before anything is written: the backend config carries the machine credential.
     set_mode(&profile_root, 0o700)?;
 
     let backend_src = root.join(BACKEND_EXAMPLE_REL);
@@ -80,10 +75,6 @@ pub fn run_with_root(root: &Path, profile_arg: Option<&Path>) -> Result<u8> {
             .with_context(|| format!("cp {} -> {}", backend_src.display(), backend_dst.display()));
     }
     set_mode(&backend_dst, 0o600)?;
-
-    if let Some(token) = resolve_service_token(&paths.web) {
-        substitute_token(&backend_dst, &token)?;
-    }
 
     let credential = std::env::var(MACHINE_CREDENTIAL_VARIABLE).unwrap_or_default();
     if !credential.is_empty() {
@@ -134,65 +125,6 @@ fn resolve_profile(arg: Option<&Path>, mod_root: &Path) -> PathBuf {
         return PathBuf::from(p);
     }
     mod_root.join(".local-test-profile")
-}
-
-/// `SERVICE_TOKEN` env wins; else first `SERVICE_TOKEN=` line in `apps/website/api_v2/.env`.
-fn resolve_service_token(web: &Path) -> Option<String> {
-    if let Ok(t) = std::env::var("SERVICE_TOKEN")
-        && !t.is_empty()
-    {
-        return Some(t);
-    }
-    let env_file = web.join(".env");
-    if env_file.is_file() {
-        token_from_env_file(&env_file)
-    } else {
-        None
-    }
-}
-
-/// Character-for-character the reader the world-boot gate uses.
-fn token_from_env_file(path: &Path) -> Option<String> {
-    let text = fs::read_to_string(path).ok()?;
-    for line in text.lines() {
-        let Some(rest) = line.strip_prefix("SERVICE_TOKEN=") else {
-            continue;
-        };
-        let mut v: String = rest.chars().filter(|c| *c != '\r').collect();
-        // sed 's/^["'\'']//;s/["'\'']$//' — one surrounding quote layer.
-        let bytes = v.as_bytes();
-        if bytes.first().is_some_and(|c| *c == b'"' || *c == b'\'') {
-            v.remove(0);
-        }
-        if v.as_bytes()
-            .last()
-            .is_some_and(|c| *c == b'"' || *c == b'\'')
-        {
-            v.pop();
-        }
-        if v.is_empty() {
-            return None;
-        }
-        return Some(v);
-    }
-    None
-}
-
-fn substitute_token(config_path: &Path, token: &str) -> Result<()> {
-    let body = fs::read_to_string(config_path)
-        .with_context(|| format!("read {}", config_path.display()))?;
-    // Literal replace of the placeholder — equivalent to bash sed with escaped `&`/`|`/`\`
-    // because we are not going through sed's replacement grammar.
-    let new_body = body.replace(PLACEHOLDER, token);
-    // Keep mode 600: rewrite in place without changing permissions.
-    let mut f = fs::OpenOptions::new()
-        .write(true)
-        .truncate(true)
-        .open(config_path)
-        .with_context(|| format!("open {}", config_path.display()))?;
-    f.write_all(new_body.as_bytes())
-        .with_context(|| format!("write {}", config_path.display()))?;
-    Ok(())
 }
 
 /// Write `machineCredential` into the backend config, keeping its other keys and their order.

@@ -76,7 +76,9 @@ properties:
 - `m_sEndWinner` (`GetEndWinner`): the winner, written at `END`; the
   [end screen](/documentation_v2/mod/tbd-framework/UI/end_screen/end_screen_specification.md#data)
   gives how it is decided.
-- Kills live in `m_mKills`, a server-only map from player id to kills, cleared with the board.
+- Kills come from `TBD_MatchTelemetryTally`, a server-only per-player tally of the round (enemy
+  kills; team kills, the longest kill and vehicles destroyed are counted apart for the match
+  results), cleared when the next round goes `LIVE`.
 
 The same round's results reach the platform separately: `TBD_ResultsReporter` posts them to
 `POST /api/v1/ingest/match-results`, the [match telemetry](/documentation_v2/glossary/g_to_m.md#match-telemetry)

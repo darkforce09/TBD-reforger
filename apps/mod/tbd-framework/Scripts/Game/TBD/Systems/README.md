@@ -3,21 +3,23 @@
 The in-world machinery of the TBD framework [mod](/documentation_v2/glossary/g_to_m.md#mod): loading the
 [mission](/documentation_v2/glossary/g_to_m.md#mission) deployed to the server, standing slot bodies in the
 world and deploying players onto them, dressing loadouts, and running the mission's zones,
-triggers, AI, audio, map markers and radio nets. The stage machine, objectives and win conditions
+triggers, AI, audio, map markers and radio nets, and recording the live round's detailed match
+events. The stage machine, objectives and win conditions
 in `Gamemode/` and the player-facing screens in `Session/` build on it.
 
 ## Contents
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Systems/
-├── AI/         waypointed AI groups armed at the live round, and group combat, formation and speed
-├── Audio/      mission sound emitters and music cues, played on the clients
-├── Loadouts/   the server equip pass for slot bodies, the lobby kit preview, a dev equip harness
-├── Markers/    each side's briefing markers served to its players and drawn on the in-game map
-├── Mission/    the deployed mission's load, verification, validation, event roster and state readers
-├── Radio/      each side's radio nets served, tuned into carried radios and shown to players
-├── Spawning/   slot bodies, deploys, one life, platform deployment authorization, AI spawn modules
-└── Zones/      prepared zones, play area enforcement, zone volumes and editor triggers
+├── AI/           waypointed AI groups armed at the live round, and group combat, formation and speed
+├── Audio/        mission sound emitters and music cues, played on the clients
+├── Loadouts/     the server equip pass for slot bodies, the lobby kit preview, a dev equip harness
+├── Markers/      each side's briefing markers served to its players and drawn on the in-game map
+├── MatchEvents/  the live round's detailed match events and its per-player combat tally
+├── Mission/      the deployed mission's load, verification, validation, event roster and state readers
+├── Radio/        each side's radio nets served, tuned into carried radios and shown to players
+├── Spawning/     slot bodies, deploys, one life, platform deployment authorization, AI spawn modules
+└── Zones/        prepared zones, play area enforcement, zone volumes and editor triggers
 ```
 
 ## How it works
@@ -36,7 +38,8 @@ Three patterns hold across the folders:
 - Wiring: a folder whose code needs a place on the game mode is a `SCR_BaseGameModeComponent` on
   `apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et` (`TBD_SpawnManager`,
   `TBD_LoadoutEquipComponent`, `TBD_PlayAreaComponent`, `TBD_MarkerComponent`,
-  `TBD_RadioComponent`); the tickers (AI, audio, weather, triggers, spawn modules) expose a static
+  `TBD_RadioComponent`, `TBD_MatchTelemetryComponent`); the tickers (AI, audio, weather,
+  triggers, spawn modules, the match event recorder) expose a static
   `Clear` and `Tick` that
   [`TBD_RuntimeHeartbeat`](../Gamemode/Orchestrator/Heartbeat/README.md) calls in a fixed order,
   fenced by `TBD_FrameworkManager.IsFrameworkWorld()` so a vanilla scenario with the mod loaded
@@ -49,7 +52,7 @@ Three patterns hold across the folders:
 ## Authority
 
 - Server: the mission document, slot bodies, deploys, loadouts, zones, triggers, AI, spawn
-  modules, weather, and the decisions of which markers and nets a player gets. Clients never hold
+  modules, weather, detailed match events and the combat tally, and the decisions of which markers and nets a player gets. Clients never hold
   or parse the mission document.
 - Client: the marker and radio pull loops, the kit preview, the Ready & Continue answer, and the
   sound sources.

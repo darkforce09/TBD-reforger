@@ -16,13 +16,14 @@ apps/website/frontend/src/v2/core/api/dto/
 ├── events.rs                       the event list, ORBAT and hub, the service record, leave requests
 ├── fleet_commands.rs               fleet command receipts, their list and the request constructors
 ├── fleet_scenarios.rs              the terrain-to-mission-header entries and the body that sets one
+├── match_events.rs                 a page of a match's detailed events, each payload typed by its kind
 ├── mission_deployments.rs          a mission deployment, a server's page of them, the request body
 ├── mission_reviews.rs              review history and thread, decisions, artifacts, review workspace
 ├── missions.rs                     mission cards, rows, detail and versions; armory; approval rows
 ├── mod.rs                          the module tree; re-exports every DTO flat
 ├── registry.rs                     registry items, compatibility edges, cargo defaults and factions
-├── servers.rs                      server rows, the live status frame and its decoder, credentials
-├── telemetry.rs                    the dashboard summary, leaderboards and a fire solution
+├── servers.rs                      server rows, the live status frame with its telemetry queue, credentials
+├── telemetry.rs                    the dashboard summary with its fleet, leaderboards and a fire solution
 └── tests/                          unit tests for the golden round trips and the fixture-free shapes
 ```
 
@@ -47,6 +48,10 @@ files hold one domain's goldens each; `tests/shapes.rs` checks the shapes that n
   by `kind` and refuse unknown fields, because the
   [event manager](/documentation_v2/glossary/a_to_f.md#event-manager) sends them back and must not
   rewrite a shape it does not know; `MissionDetail` has no catch-all either.
+- A match event's `kind` and `payload` decode together into one `MatchEventDetail` variant per
+  kind, so a payload cannot be read under the wrong kind; an unknown kind fails the read, and a
+  kill's `distance_m` keeps the number as sent. A status's `telemetry_queue` and a fleet server's
+  `status` are absent keys, never placeholders, when there is no reading.
 - `IssuedMachineCredential`, the one answer that carries a
   [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential)'s secret, derives no
   `Debug`, so the secret cannot reach a log line.

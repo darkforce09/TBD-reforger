@@ -114,6 +114,17 @@ fn one_winner<T: std::fmt::Debug>(
     }
 }
 
+/// A registered game server to confirm link codes from; confirmations name it in their audit.
+async fn confirming_server(pool: &PgPool) -> Uuid {
+    sqlx::query_scalar(
+        "INSERT INTO servers (name, ip, port, is_active)
+         VALUES ('Identity confirmation server', '127.0.0.1'::inet, 2001, true) RETURNING id",
+    )
+    .fetch_one(pool)
+    .await
+    .unwrap()
+}
+
 async fn historical_fact(pool: &PgPool, arma_id: &str) -> Uuid {
     let id: Uuid = sqlx::query_scalar(
         "INSERT INTO matches(source_match_id, started_at, outcome, created_at)
@@ -184,6 +195,7 @@ async fn link_code_atomic_issuance_keeps_one_pending_code_for_competing_requests
 #[tokio::test]
 async fn linking_single_code_cannot_assign_two_different_arma_identities() {
     let state = fixture().await;
+    let server = confirming_server(&state.pool).await;
     let user = actor(&state).await;
     let (code, _) = issue_link_code(&state, &user).await.unwrap();
     let identities = [
@@ -191,8 +203,8 @@ async fn linking_single_code_cannot_assign_two_different_arma_identities() {
         format!("arma-{}", Uuid::new_v4()),
     ];
     let (first, second) = race(
-        confirm_identity(&state, &code, &identities[0], "First player"),
-        confirm_identity(&state, &code, &identities[1], "Second player"),
+        confirm_identity(&state, server, &code, &identities[0], "First player"),
+        confirm_identity(&state, server, &code, &identities[1], "Second player"),
     )
     .await;
     let winner = one_winner(first, second);
@@ -215,6 +227,7 @@ async fn linking_single_code_cannot_assign_two_different_arma_identities() {
 #[tokio::test]
 async fn linking_identity_ownership_has_one_winner_across_two_accounts() {
     let state = fixture().await;
+    let server = confirming_server(&state.pool).await;
     let first = actor(&state).await;
     let second = actor(&state).await;
     let (first_code, _) = issue_link_code(&state, &first).await.unwrap();
@@ -222,8 +235,8 @@ async fn linking_identity_ownership_has_one_winner_across_two_accounts() {
     let identity = format!("arma-{}", Uuid::new_v4());
     let history = historical_fact(&state.pool, &identity).await;
     let (left, right) = race(
-        confirm_identity(&state, &first_code, &identity, "Shared player"),
-        confirm_identity(&state, &second_code, &identity, "Shared player"),
+        confirm_identity(&state, server, &first_code, &identity, "Shared player"),
+        confirm_identity(&state, server, &second_code, &identity, "Shared player"),
     )
     .await;
     let winner = one_winner(left, right);
@@ -271,12 +284,13 @@ async fn linking_identity_ownership_has_one_winner_across_two_accounts() {
 #[tokio::test]
 async fn linking_confirmation_racing_unlink_never_restores_released_ownership() {
     let state = fixture().await;
+    let server = confirming_server(&state.pool).await;
     let user = actor(&state).await;
     let (code, _) = issue_link_code(&state, &user).await.unwrap();
     let identity = format!("arma-{}", Uuid::new_v4());
     let history = historical_fact(&state.pool, &identity).await;
     let (confirmation, unlink) = race(
-        confirm_identity(&state, &code, &identity, "Concurrent player"),
+        confirm_identity(&state, server, &code, &identity, "Concurrent player"),
         unlink_identity(&state, &user),
     )
     .await;
@@ -317,7 +331,7 @@ async fn linking_confirmation_racing_unlink_never_restores_released_ownership() 
         i64::from(confirmation.is_ok())
     );
     assert!(
-        confirm_identity(&state, &code, &identity, "Late retry")
+        confirm_identity(&state, server, &code, &identity, "Late retry")
             .await
             .is_err()
     );
@@ -331,15 +345,16 @@ async fn linking_confirmation_racing_unlink_never_restores_released_ownership() 
 #[tokio::test]
 async fn linking_unlink_cancels_pending_codes_even_when_consumed_confirmation_retries() {
     let state = fixture().await;
+    let server = confirming_server(&state.pool).await;
     let user = actor(&state).await;
     let identity = format!("arma-{}", Uuid::new_v4());
     let (consumed, _) = issue_link_code(&state, &user).await.unwrap();
-    confirm_identity(&state, &consumed, &identity, "Linked player")
+    confirm_identity(&state, server, &consumed, &identity, "Linked player")
         .await
         .unwrap();
     let (pending, _) = issue_link_code(&state, &user).await.unwrap();
     let (retry, unlink) = race(
-        confirm_identity(&state, &consumed, &identity, "Duplicate player"),
+        confirm_identity(&state, server, &consumed, &identity, "Duplicate player"),
         unlink_identity(&state, &user),
     )
     .await;
@@ -410,6 +425,7 @@ async fn audit_snapshot(pool: &PgPool, actor: &str) -> (i64, i64) {
 #[tokio::test]
 async fn linking_statistics_failure_rolls_back_code_ownership_facts_and_required_audit() {
     let state = fixture().await;
+    let server = confirming_server(&state.pool).await;
     let user = actor(&state).await;
     let identity = format!("arma-{}", Uuid::new_v4());
     let history = historical_fact(&state.pool, &identity).await;
@@ -417,7 +433,7 @@ async fn linking_statistics_failure_rolls_back_code_ownership_facts_and_required
     let audits = audit_snapshot(&state.pool, &user.discord_id).await;
     let code_before = code_state(&state.pool, &code).await;
     let trigger = install_stats_failure(&state.pool, &user.discord_id).await;
-    let failed = confirm_identity(&state, &code, &identity, "Recoverable player").await;
+    let failed = confirm_identity(&state, server, &code, &identity, "Recoverable player").await;
     remove_stats_failure(&state.pool, &trigger).await;
     assert_eq!(
         failed
@@ -446,7 +462,7 @@ async fn linking_statistics_failure_rolls_back_code_ownership_facts_and_required
     assert_eq!(deployments, 0);
 
     assert_eq!(
-        confirm_identity(&state, &code, &identity, "Recoverable player")
+        confirm_identity(&state, server, &code, &identity, "Recoverable player")
             .await
             .unwrap()
             .discord_id,
@@ -485,22 +501,29 @@ async fn linking_statistics_failure_rolls_back_code_ownership_facts_and_required
 #[tokio::test]
 async fn linking_duplicate_same_identity_confirmation_is_audited_once() {
     let state = fixture().await;
+    let server = confirming_server(&state.pool).await;
     let user = actor(&state).await;
     let identity = format!("arma-{}", Uuid::new_v4());
     let (code, _) = issue_link_code(&state, &user).await.unwrap();
     let (first, second) = race(
-        confirm_identity(&state, &code, &identity, "Original character"),
-        confirm_identity(&state, &code, &identity, "Original character"),
+        confirm_identity(&state, server, &code, &identity, "Original character"),
+        confirm_identity(&state, server, &code, &identity, "Original character"),
     )
     .await;
     assert_eq!(first.unwrap().discord_id, user.discord_id);
     assert_eq!(second.unwrap().discord_id, user.discord_id);
     let before = code_state(&state.pool, &code).await;
     assert_eq!(
-        confirm_identity(&state, &code, &identity, "Changed duplicate character")
-            .await
-            .unwrap()
-            .discord_id,
+        confirm_identity(
+            &state,
+            server,
+            &code,
+            &identity,
+            "Changed duplicate character"
+        )
+        .await
+        .unwrap()
+        .discord_id,
         user.discord_id
     );
     assert_eq!(code_state(&state.pool, &code).await, before);

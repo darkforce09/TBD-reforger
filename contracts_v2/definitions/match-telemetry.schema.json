@@ -1,0 +1,908 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MatchEventPage",
+  "description": "GET /api/v1/matches/:matchId/events?after_sequence=&limit= (any signed-in user; limit at most 500, default 100). Events in sequence order; next_after_sequence is null on the last page. The definitions carry the machine-authenticated ingest shapes of /api/v1/ingest/matches, /api/v1/ingest/match-results and /api/v1/ingest/match-events.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "items",
+    "next_after_sequence"
+  ],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/MatchEvent"
+      }
+    },
+    "next_after_sequence": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    }
+  },
+  "definitions": {
+    "MatchRegistration": {
+      "description": "POST /api/v1/ingest/matches body (mod_runtime machine credential). Registers a server-scoped source match before any report about it. The same body again is inert; another body for a registered source answers 409 REGISTRATION_CONFLICT. server_id is refused: the credential names the server.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_match_id",
+        "runtime_session_id",
+        "started_at"
+      ],
+      "properties": {
+        "source_match_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "runtime_session_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "event_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "terrain": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "MatchRegistrationAnswer": {
+      "description": "POST /api/v1/ingest/matches response: 201 with registered true for a new registration, 200 with registered false for a repeat of the same body.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "match_id",
+        "registered"
+      ],
+      "properties": {
+        "match_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "registered": {
+          "type": "boolean"
+        }
+      }
+    },
+    "PlayerCounters": {
+      "description": "A complete per-player scoreline. Present on a line it replaces the stored counters (a higher revision may lower them); absent, the line makes no counter claim.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kills",
+        "deaths",
+        "team_kills",
+        "longest_kill_m",
+        "vehicles_destroyed",
+        "is_command"
+      ],
+      "properties": {
+        "kills": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "deaths": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "team_kills": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "longest_kill_m": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "vehicles_destroyed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "is_command": {
+          "type": "boolean"
+        },
+        "command_win": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "PlayerLine": {
+      "description": "One player line of a results revision, keyed by (arma_id, source_event_id) within the match.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "arma_id",
+        "role_played",
+        "source_event_id"
+      ],
+      "properties": {
+        "arma_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "role_played": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_event_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "counters": {
+          "$ref": "#/definitions/PlayerCounters"
+        }
+      }
+    },
+    "RemovedLine": {
+      "description": "A stored player line a results revision deletes.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "arma_id",
+        "source_event_id"
+      ],
+      "properties": {
+        "arma_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "source_event_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "MatchReport": {
+      "description": "Match-level fields of a results revision. A present field replaces the stored value, an absent one keeps it; outcome is always present.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_match_id",
+        "outcome"
+      ],
+      "properties": {
+        "source_match_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "outcome": {
+          "type": "string",
+          "enum": [
+            "success",
+            "failure",
+            "aborted",
+            "pending"
+          ]
+        },
+        "event_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "terrain": {
+          "type": "string",
+          "minLength": 1
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ended_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "winning_faction": {
+          "type": "string"
+        },
+        "aar_replay_url": {
+          "type": "string"
+        }
+      }
+    },
+    "MatchResultsRevision": {
+      "description": "POST /api/v1/ingest/match-results body (mod_runtime machine credential). The report digest is the SHA-256 of the canonical JSON of this body without revision. An older revision answers 409 STALE_REVISION, the same revision with another digest 409 REVISION_CONFLICT, the same revision and digest is inert.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "revision",
+        "match",
+        "players"
+      ],
+      "properties": {
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "match": {
+          "$ref": "#/definitions/MatchReport"
+        },
+        "players": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PlayerLine"
+          }
+        },
+        "removed_lines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RemovedLine"
+          }
+        }
+      }
+    },
+    "MatchResultsAnswer": {
+      "description": "POST /api/v1/ingest/match-results response. linked + unlinked == players counts the submitted lines; applied is false for an inert retry.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "match_id",
+        "revision",
+        "applied",
+        "players",
+        "linked",
+        "unlinked",
+        "unlinked_arma_ids"
+      ],
+      "properties": {
+        "match_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "applied": {
+          "type": "boolean"
+        },
+        "players": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "linked": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unlinked": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unlinked_arma_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "CombatKillPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "killer_arma_id",
+        "victim_is_player",
+        "team_kill",
+        "distance_m"
+      ],
+      "properties": {
+        "killer_arma_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "victim_arma_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "victim_is_player": {
+          "type": "boolean"
+        },
+        "team_kill": {
+          "type": "boolean"
+        },
+        "distance_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "weapon": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    },
+    "CombatDeathPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "victim_arma_id",
+        "cause"
+      ],
+      "properties": {
+        "victim_arma_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "cause": {
+          "type": "string",
+          "enum": [
+            "ai",
+            "environment",
+            "self",
+            "unknown"
+          ]
+        }
+      }
+    },
+    "MedicalIncapacitatedPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subject_arma_id"
+      ],
+      "properties": {
+        "subject_arma_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "MedicalRevivedPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subject_arma_id"
+      ],
+      "properties": {
+        "subject_arma_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "VehicleDestroyedPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vehicle_prefab"
+      ],
+      "properties": {
+        "vehicle_prefab": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "instigator_arma_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "VehicleEnteredPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "arma_id",
+        "vehicle_prefab",
+        "compartment"
+      ],
+      "properties": {
+        "arma_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "vehicle_prefab": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "compartment": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      }
+    },
+    "VehicleExitedPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "arma_id",
+        "vehicle_prefab",
+        "compartment"
+      ],
+      "properties": {
+        "arma_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "vehicle_prefab": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "compartment": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      }
+    },
+    "MatchEvent": {
+      "description": "One detailed event. event_id and sequence are unique within the match; sequence is the capture order and the order of every read.",
+      "oneOf": [
+        {
+          "title": "CombatKillEvent",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "event_id",
+            "sequence",
+            "kind",
+            "mission_time_ms",
+            "occurred_at",
+            "payload"
+          ],
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{1,64}$"
+            },
+            "sequence": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "mission_time_ms": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "kind": {
+              "type": "string",
+              "const": "combat.kill"
+            },
+            "payload": {
+              "$ref": "#/definitions/CombatKillPayload"
+            }
+          }
+        },
+        {
+          "title": "CombatDeathEvent",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "event_id",
+            "sequence",
+            "kind",
+            "mission_time_ms",
+            "occurred_at",
+            "payload"
+          ],
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{1,64}$"
+            },
+            "sequence": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "mission_time_ms": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "kind": {
+              "type": "string",
+              "const": "combat.death"
+            },
+            "payload": {
+              "$ref": "#/definitions/CombatDeathPayload"
+            }
+          }
+        },
+        {
+          "title": "MedicalIncapacitatedEvent",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "event_id",
+            "sequence",
+            "kind",
+            "mission_time_ms",
+            "occurred_at",
+            "payload"
+          ],
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{1,64}$"
+            },
+            "sequence": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "mission_time_ms": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "kind": {
+              "type": "string",
+              "const": "medical.incapacitated"
+            },
+            "payload": {
+              "$ref": "#/definitions/MedicalIncapacitatedPayload"
+            }
+          }
+        },
+        {
+          "title": "MedicalRevivedEvent",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "event_id",
+            "sequence",
+            "kind",
+            "mission_time_ms",
+            "occurred_at",
+            "payload"
+          ],
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{1,64}$"
+            },
+            "sequence": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "mission_time_ms": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "kind": {
+              "type": "string",
+              "const": "medical.revived"
+            },
+            "payload": {
+              "$ref": "#/definitions/MedicalRevivedPayload"
+            }
+          }
+        },
+        {
+          "title": "VehicleDestroyedEvent",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "event_id",
+            "sequence",
+            "kind",
+            "mission_time_ms",
+            "occurred_at",
+            "payload"
+          ],
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{1,64}$"
+            },
+            "sequence": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "mission_time_ms": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "kind": {
+              "type": "string",
+              "const": "vehicle.destroyed"
+            },
+            "payload": {
+              "$ref": "#/definitions/VehicleDestroyedPayload"
+            }
+          }
+        },
+        {
+          "title": "VehicleEnteredEvent",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "event_id",
+            "sequence",
+            "kind",
+            "mission_time_ms",
+            "occurred_at",
+            "payload"
+          ],
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{1,64}$"
+            },
+            "sequence": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "mission_time_ms": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "kind": {
+              "type": "string",
+              "const": "vehicle.entered"
+            },
+            "payload": {
+              "$ref": "#/definitions/VehicleEnteredPayload"
+            }
+          }
+        },
+        {
+          "title": "VehicleExitedEvent",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "event_id",
+            "sequence",
+            "kind",
+            "mission_time_ms",
+            "occurred_at",
+            "payload"
+          ],
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{1,64}$"
+            },
+            "sequence": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "mission_time_ms": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "kind": {
+              "type": "string",
+              "const": "vehicle.exited"
+            },
+            "payload": {
+              "$ref": "#/definitions/VehicleExitedPayload"
+            }
+          }
+        }
+      ]
+    },
+    "MatchEventBatch": {
+      "description": "POST /api/v1/ingest/match-events body (mod_runtime machine credential). The whole batch is validated first; an invalid event answers 400 INVALID_EVENT naming its index and nothing is written. Events already stored with the same digest are duplicates and count once.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_match_id",
+        "events"
+      ],
+      "properties": {
+        "source_match_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "events": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 500,
+          "items": {
+            "$ref": "#/definitions/MatchEvent"
+          }
+        }
+      }
+    },
+    "MatchEventBatchAnswer": {
+      "description": "POST /api/v1/ingest/match-events response.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "match_id",
+        "accepted",
+        "duplicates",
+        "event_count",
+        "last_sequence"
+      ],
+      "properties": {
+        "match_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "accepted": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "duplicates": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "event_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "last_sequence": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        }
+      }
+    },
+    "TelemetryRefusal": {
+      "description": "details of a 400 or 409 telemetry refusal. index names the offending entry of the submitted array where there is one.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "MATCH_NOT_REGISTERED",
+            "REGISTRATION_CONFLICT",
+            "STALE_REVISION",
+            "REVISION_CONFLICT",
+            "MATCH_FINALIZED",
+            "EVENT_CONFLICT",
+            "EVENT_SEQUENCE_CONFLICT",
+            "INVALID_MATCH_RESULTS",
+            "INVALID_EVENT",
+            "EVENT_BATCH_TOO_LARGE"
+          ]
+        },
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "field": {
+          "type": "string"
+        },
+        "match_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "report_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "event_id": {
+          "type": "string"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "TelemetryQueueReading": {
+      "description": "The game runtime's outbound telemetry queue as a heartbeat reports it: entries waiting, capacity, entries dropped since the queue was created, and the age of the oldest waiting entry.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "backlog",
+        "capacity",
+        "dropped_total",
+        "oldest_age_seconds"
+      ],
+      "properties": {
+        "backlog": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "capacity": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "dropped_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "oldest_age_seconds": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "TelemetryQueueStatus": {
+      "description": "ServerStatus.telemetry_queue: the last queue reading a server reported and when. Absent when the server never reported one.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "backlog",
+        "capacity",
+        "dropped_total",
+        "oldest_age_seconds",
+        "reported_at"
+      ],
+      "properties": {
+        "backlog": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "capacity": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "dropped_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "oldest_age_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reported_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

@@ -1,27 +1,39 @@
-//! The server uplink card: how busy the primary game server is right now.
+//! The server uplink card: the configured fleet, one row per active server, and its totals.
 //!
-//! **Role:** renders the online indicator, the player count with its fill bar, and the two
-//! footer readouts for frame rate and uptime.
-//! **Position:** the first cell of the dashboard's three-column card grid.
-//! **Signals & state:** none — the status arrives owned and is read once.
-//! **Invariants:** with no status row the card renders its offline shape: zero players, an
-//! empty bar and an em dash in both footer readouts. The fill bar is a whole percentage of the
-//! player cap, and a cap of zero yields an empty bar rather than a division by zero. Frame rate
-//! prints as the wire sent it, so a whole number shows no decimal part.
+//! **Role:** renders the fleet's online pill, one row per active server (name, online state,
+//! players against the cap, frame rate) and the totals row beneath them.
+//! **Position:** the first cell of the dashboard's three-column card grid; the totals row is
+//! [`super::fleet_totals::fleet_totals`].
+//! **Signals & state:** none — the fleet arrives owned and is read once.
+//! **Invariants:** rows keep the backend's order (name, then id). A server without a status row
+//! renders as offline with an em dash for players and frame rate, the way the backend counts
+//! it. Frame rate prints as the wire sent it, so a whole number shows no decimal part. The pill
+//! reads the backend's totals and never recounts the rows. An empty fleet renders one line
+//! saying so instead of an empty list.
 #![allow(dead_code)]
 
-use crate::v2::core::api::dto::ServerStatusDto;
+use super::fleet_totals::fleet_totals;
+use crate::v2::core::api::dto::{FleetOverviewDto, FleetServerDto};
 use crate::v2::core::ui::{cn, MaterialIcon};
-use crate::v2::core::utils::datefmt::format_uptime;
 use leptos::prelude::*;
 
-/// The uplink card for `server`, the status row the payload carried.
-pub(super) fn server_uplink(server: Option<ServerStatusDto>) -> impl IntoView {
-    let player_pct = match &server {
-        Some(s) if s.max_players > 0 => {
-            ((s.player_count as f64 / s.max_players as f64) * 100.0).round() as i64
+/// The uplink card for the dashboard's `fleet`.
+pub(super) fn server_uplink(fleet: FleetOverviewDto) -> impl IntoView {
+    let totals = fleet.totals.clone();
+    let any_online = totals.online > 0;
+    let pill = format!("{}/{} ONLINE", totals.online, totals.configured);
+    let rows = if fleet.servers.is_empty() {
+        view! {
+            <p class="font-mono text-xs text-on-surface-variant">"No servers configured"</p>
         }
-        _ => 0,
+        .into_any()
+    } else {
+        view! {
+            <ul class="flex flex-col divide-y divide-border-subtle">
+                {fleet.servers.into_iter().map(fleet_server_row).collect_view()}
+            </ul>
+        }
+        .into_any()
     };
 
     view! {
@@ -35,56 +47,60 @@ pub(super) fn server_uplink(server: Option<ServerStatusDto>) -> impl IntoView {
                     <div class=cn(
                         &[
                             "h-2 w-2 rounded-full",
-                            if server.as_ref().is_some_and(|s| s.is_online) {
-                                "bg-success tactical-pulse"
-                            } else {
-                                "bg-outline"
-                            },
+                            if any_online { "bg-success tactical-pulse" } else { "bg-outline" },
                         ],
                     )></div>
                     <span class="font-mono text-[10px] font-bold tracking-widest text-success">
-                        {if server.as_ref().is_some_and(|s| s.is_online) {
-                            "ONLINE"
-                        } else {
-                            "OFFLINE"
-                        }}
+                        {pill}
                     </span>
                 </div>
             </div>
-            <div class="mt-2 flex flex-col">
-                <div class="mb-2 flex items-end justify-between">
-                    <span class="font-mono text-3xl font-light text-on-surface">
-                        {server.as_ref().map(|s| s.player_count).unwrap_or(0)}
-                        <span class="text-lg text-on-surface-variant">
-                            "/"
-                            {server.as_ref().map(|s| s.max_players).unwrap_or(0)}
-                        </span>
-                    </span>
-                    <span class="mb-1 font-mono text-xs text-on-surface-variant">"PLAYERS"</span>
-                </div>
-                <div class="h-1.5 w-full overflow-hidden rounded-full bg-surface-container-highest">
-                    <div
-                        class="h-1.5 rounded-full bg-primary shadow-[0_0_10px_#adc6ff]"
-                        style=format!("width: {player_pct}%;")
-                    ></div>
-                </div>
-            </div>
-            <div class="mt-auto flex items-center justify-between pt-4 font-mono text-xs text-on-surface-variant/60">
-                <span>
-                    "FPS: "
-                    {match &server {
-                        Some(s) => format!("{}", s.server_fps),
-                        None => "—".to_string(),
-                    }}
-                </span>
-                <span>
-                    "UPTIME: "
-                    {match &server {
-                        Some(s) => format_uptime(s.uptime_seconds),
-                        None => "—".to_string(),
-                    }}
-                </span>
-            </div>
+            {rows}
+            {fleet_totals(totals)}
         </div>
+    }
+}
+
+/// One server of the fleet: its online dot and name, then players against the cap and the
+/// frame rate.
+fn fleet_server_row(server: FleetServerDto) -> impl IntoView {
+    let online = server.status.as_ref().is_some_and(|s| s.is_online);
+    let players = match &server.status {
+        Some(s) if s.is_online => format!("{}/{}", s.player_count, s.max_players),
+        _ => "—".to_string(),
+    };
+    let title = server.name.clone();
+    let fps = match &server.status {
+        Some(s) if s.is_online => format!("{}", s.server_fps),
+        _ => "—".to_string(),
+    };
+
+    view! {
+        <li class="flex flex-col gap-1 py-2">
+            <div class="flex min-w-0 items-center gap-2">
+                <div class=cn(
+                    &[
+                        "h-2 w-2 shrink-0 rounded-full",
+                        if online { "bg-success" } else { "bg-outline" },
+                    ],
+                )></div>
+                <span class="min-w-0 flex-1 truncate text-sm text-on-surface" title=title>
+                    {server.name}
+                </span>
+                <span class=cn(
+                    &[
+                        "font-mono text-[10px] tracking-widest",
+                        if online { "text-success" } else { "text-on-surface-variant" },
+                    ],
+                )>{if online { "ONLINE" } else { "OFFLINE" }}</span>
+            </div>
+            <div class="flex items-center gap-3 pl-4 font-mono text-xs text-on-surface-variant">
+                <span>
+                    <span class="text-on-surface">{players}</span>
+                    " PLAYERS"
+                </span>
+                <span>"FPS: " {fps}</span>
+            </div>
+        </li>
     }
 }

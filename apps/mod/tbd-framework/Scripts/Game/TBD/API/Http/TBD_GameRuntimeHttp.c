@@ -5,9 +5,10 @@
  * Role: opens a context with `Authorization: Bearer tbdm_...`, sends `Post`/`Get`, and delivers
  * exactly one `TBD_GameRuntimeAnswer` per call, so the header set, the timeout, the watchdog and
  * the reading of an answer exist once.  Position: used by every consumer of
- * `/api/v1/game-runtime/` and `/api/v1/fleet-executor/` (deployed mission and artifact, runtime
- * session, event roster, deployment authorisation, fleet commands, deployable mission list,
- * deployment relay); reads `TBD_BackendConfig`.
+ * `/api/v1/game-runtime/`, `/api/v1/fleet-executor/` and `/api/v1/ingest/` (deployed mission and
+ * artifact, runtime session, event roster, deployment authorisation, fleet commands, deployable
+ * mission list, deployment relay, match telemetry delivery, identity link confirmation); callers
+ * pass the full path; reads `TBD_BackendConfig`.
  * State: the calls in flight, the ticket counter and the retired callbacks; server statics.
  * Invariants: an answer is matched to its call by the `RestCallback` the engine answers through;
  * a call the engine never reports is answered TRANSIENT by its watchdog, and its callback is kept
@@ -33,7 +34,7 @@ class TBD_GameRuntimeCall
 //! @authority server
 class TBD_GameRuntimeHttp
 {
-	static const string ROUTE_PREFIX = "/api/v1/game-runtime"; //!< path prefix of the game-runtime routes
+	static const string ROUTE_PREFIX = "/api/v1/game-runtime"; //!< path prefix of the game-runtime routes; fleet-executor and ingest callers pass their own full paths
 	static const string CREDENTIAL_PREFIX = "tbdm_"; //!< prefix of every issued credential (`tbdm_<credential id>_<64 hex>`)
 	static const int REQUEST_TIMEOUT_S = 15; //!< transport timeout of one request, in seconds
 	static const int WATCHDOG_MS = 25000; //!< delay after which an unreported call is answered TRANSIENT, in milliseconds; past the transport timeout
@@ -92,6 +93,8 @@ class TBD_GameRuntimeHttp
 	//! @return the context, or null
 	//! @route POST /api/v1/game-runtime/{path}
 	//! @route GET /api/v1/game-runtime/{path}
+	//! @route POST /api/v1/fleet-executor/{path}
+	//! @route POST /api/v1/ingest/{path}
 	protected static RestContext OpenContext(out string failure)
 	{
 		failure = string.Empty;
@@ -130,9 +133,12 @@ class TBD_GameRuntimeHttp
 	}
 
 	//! `POST path` with `body`; `call.OnAnswered` receives the answer later.
+	//! @param path the full path, for example `/api/v1/ingest/matches`
 	//! @param failure why nothing was sent; empty on success
 	//! @return false, with nothing sent, when no context can be opened
 	//! @route POST /api/v1/game-runtime/{path}
+	//! @route POST /api/v1/fleet-executor/{path}
+	//! @route POST /api/v1/ingest/{path}
 	//! @authority server
 	static bool Post(notnull TBD_GameRuntimeCall call, string path, string body, out string failure)
 	{

@@ -14,7 +14,7 @@
  * Commands:
  *   #tbd missions             list the missions the platform lets this server deploy
  *   #tbd mission <n>          ask the platform to deploy mission n
- *   #tbd backend <url> [tok]  repoint the backend and the service token, refresh the list
+ *   #tbd backend <url>        repoint the backend URL, refresh the list
  *   #tbd refresh              refresh the mission list
  *   #tbd validate             replay the mission validation findings
  *   #tbd dead                 who has spent their life
@@ -140,12 +140,9 @@ class TBD_AdminCommands
 		if (sub == "backend")
 		{
 			string url;
-			string token;
 			if (parts.Count() > 2)
 				url = parts[2];
-			if (parts.Count() > 3)
-				token = parts[3];
-			Reply(chat, senderId, SetBackend(url, token));
+			Reply(chat, senderId, SetBackend(url));
 			return;
 		}
 
@@ -255,19 +252,18 @@ class TBD_AdminCommands
 			return;
 		}
 
-		Reply(chat, senderId, "TBD: #tbd missions | mission <n> | backend <url> [token] | refresh | validate | dead | respawn <playerId> | deploy <playerId> | stage [next|<NAME>] | safestart [status|go|<seconds>] | identity [status|override <phrase>|enforce] | audit | menu");
+		Reply(chat, senderId, "TBD: #tbd missions | mission <n> | backend <url> | refresh | validate | dead | respawn <playerId> | deploy <playerId> | stage [next|<NAME>] | safestart [status|go|<seconds>] | identity [status|override <phrase>|enforce] | audit | menu");
 	}
 
-	//! Repoint the backend URL (and the service token when given), then refresh the mission list.
+	//! Repoint the backend URL, keeping the machine credential, then refresh the mission list.
 	//! @param url the backend base URL; empty returns the usage line
-	//! @param token the service token, or empty to keep the stored one
 	//! @return the reply line
-	protected static string SetBackend(string url, string token)
+	protected static string SetBackend(string url)
 	{
 		if (url.IsEmpty())
-			return "Usage: #tbd backend <url> [token]";
+			return "Usage: #tbd backend <url>";
 
-		if (!TBD_BackendConfig.SetBackend(url, token))
+		if (!TBD_BackendConfig.SetBackend(url))
 			return "TBD: failed to set backend.";
 
 		TBD_DeployableMissionList.Refresh();

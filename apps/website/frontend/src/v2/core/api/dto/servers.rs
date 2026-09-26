@@ -13,7 +13,10 @@
 //! rejection, never silence: "the app cannot read this backend's frames" and "no frame has arrived
 //! yet" are different facts, and rendering the second while the first is true is the bug the
 //! distinction exists to prevent. A credential row never carries its secret; the one answer that
-//! does derives no `Debug`, so the secret cannot reach a log line through a formatter.
+//! does derives no `Debug`, so the secret cannot reach a log line through a formatter. A status
+//! without a telemetry queue reading has no `telemetry_queue` key; the reading is never
+//! synthesised.
+//! @contract match-telemetry.schema.json#/definitions/TelemetryQueueStatus
 
 use serde::{Deserialize, Serialize};
 
@@ -39,6 +42,25 @@ pub struct ServerStatusDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ingame_weather: Option<String>,
     pub updated_at: String,
+    /// The last outbound telemetry queue reading; the key is absent when the server never
+    /// reported one, so an option round-trips it exactly.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub telemetry_queue: Option<TelemetryQueueDto>,
+}
+
+/// A game runtime's outbound telemetry queue as its last heartbeat reported it: entries waiting
+/// for the API, the queue's capacity, the entries dropped since the runtime's queue was created,
+/// and the age of the oldest waiting entry.
+/// @contract match-telemetry.schema.json#/definitions/TelemetryQueueStatus
+#[allow(dead_code)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TelemetryQueueDto {
+    pub backlog: i64,
+    pub capacity: i64,
+    pub dropped_total: i64,
+    pub oldest_age_seconds: i64,
+    /// When the API stored the reading, RFC 3339 UTC.
+    pub reported_at: String,
 }
 
 /// What one frame from the telemetry stream turned out to be.

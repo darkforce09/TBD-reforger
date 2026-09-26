@@ -35,7 +35,8 @@ sends `cargo xtask mod bootstrap-staging` to it. It reads `TBD_SSH_HOST`, `TBD_R
 `TBD_PROFILE_DIR`, `TBD_ADDONS_STAGING`, `TBD_SSH_PASS` and `TBD_SSH_IDENTITY_FILE` from the
 environment, with `tools_v2/xtask/deploy/deploy.env` overriding them when it exists, then over SSH
 prints the host's disk, the listeners on 5432, 8080 and 2001 and the container runtime, creates
-the three remote directories, and prints the manual next steps. It exits 1 without a host, with an
+the three remote directories, and prints the manual next steps (among them the API's `.env`,
+which needs `JWT_SECRET` and `OBSERVABILITY_TOKEN`). It exits 1 without a host, with an
 unreadable deploy file, or with a remote directory containing `prairielearn`, and 127 when `ssh`
 or `sshpass` is missing.
 
@@ -50,8 +51,7 @@ command prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
   `apps/mod/.local-test-profile`.
 - Does: creates `<PROFILE>/profile/` (mode 700) and copies
   `apps/mod/tbd-framework/Data/backend.example.json` to `profile/TBD_BackendConfig.json` (mode
-  600). It replaces the example's `serverToken` placeholder with `SERVICE_TOKEN` from the
-  environment, or from the first `SERVICE_TOKEN=` line of `apps/website/api_v2/.env`, and writes
+  600); the config holds two keys, `backendUrl` and `machineCredential`. It writes
   `machineCredential` from `TBD_MACHINE_CREDENTIAL` when that is set. It then copies
   `apps/mod/tbd-framework/Data/registry.json` to `profile/TBD_Registry.json`, best effort: the mod
   reads that copy only when its own `Data/registry.json` is missing. A profile without a
@@ -106,9 +106,10 @@ command prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
     exists (`apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Registry.c`);
   - people setting up a machine, following the runbooks below.
 - Rules:
-  - The backend config is written mode 600 inside a mode 700 folder, and the token substitution is
-    literal (`clean_tree_writes_modes_and_no_mission` and
-    `substitute_preserves_ampersand_and_pipe` in `tests/server_profile/tests.rs`).
+  - The backend config is written mode 600 inside a mode 700 folder, and the credential is written
+    in place, keeping the other keys and their order (`clean_tree_writes_modes_and_no_mission` and
+    `machine_credential_is_written_into_the_backend_config_in_place` in
+    `tests/server_profile/tests.rs`).
   - A missing input exits 1 rather than succeeding (`missing_backend_exits_1`,
     `missing_gproj_exits_1`, `missing_addons_dir_exits_1`, `arm_missing_host_exits_1`).
   - Tests use the `run_with_*` entries on throwaway roots and never touch the real Steam tree or

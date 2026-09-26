@@ -18,10 +18,10 @@
       "slug": "dashboard",
       "path": "/",
       "authed": true,
-      "bytes": 120901,
-      "sha256": "bdd5f21265c4f26d3dd0ff84486cc064d487542628b3f3c5a30140b75d9d2cbe",
+      "bytes": 126800,
+      "sha256": "1a79e6c3e5a7ab2d7216bf28da033b50c3598de43ad54d77dacd3719b229ecfc",
       "goldenSource": "leptos",
-      "acceptedDelta": "The oracle froze the reference dist on 2026-07-17 with no operations data behind it, so the next-op card captured its \"NO UPCOMING OPS\" empty state. GET__dashboard.json and GET__me__deployments.json feed the card, which now names the scheduled operation and counts down to it. Fixture-fed, not a UI change."
+      "acceptedDelta": "T telemetry: the single server uplink card becomes the configured-fleet list (one row per active server: name, state, players, FPS) with its totals row (online/configured, players, queue backlog, drops) from the dashboard fleet block"
     },
     {
       "slug": "approvals",
@@ -70,10 +70,10 @@
       "slug": "servercontrol",
       "path": "/admin/server",
       "authed": true,
-      "bytes": 176500,
-      "sha256": "ac030282562455e1a7777c6e7cc213ffb6049f9d678d556a84ed92194dd368dd",
+      "bytes": 185903,
+      "sha256": "23cc5ce3925846d293653fdd659085a1a4056584f24d6af7bb3661125790bfa1",
       "goldenSource": "leptos",
-      "acceptedDelta": "F: the fleet command console, machine credentials, mission deployments and fleet scenarios replace the RCON console; restart and stop live in the command console"
+      "acceptedDelta": "T telemetry: the server card gains a Telemetry Queue column (backlog/capacity, dropped, oldest age, reported at) and inactive servers carry an Inactive badge"
     },
     {
       "slug": "announcements",

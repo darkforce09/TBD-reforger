@@ -74,7 +74,7 @@ guide to frame rate. The map needs the Everon height map and satellite bundle fr
     password `POSTGRES_PASSWORD`, bound to loopback on `TBD_POSTGRES_HOST_PORT` (5432 by default);
   - `api`, under the `api` profile only: the image built from the `Dockerfile`, container
     `tbd_staging_api`, bound to loopback port 8080, set up from the shell's `APP_ENV`, `JWT_SECRET`,
-    `FRONTEND_URL`, `ALLOWED_ORIGINS`, `SERVICE_TOKEN`, `TRUSTED_PROXIES` and `DISCORD_*` values,
+    `FRONTEND_URL`, `ALLOWED_ORIGINS`, `OBSERVABILITY_TOKEN`, `TRUSTED_PROXIES` and `DISCORD_*` values,
     with `assets_v2/terrains/` and `assets_v2/glyphs/` mounted read-only and the uploads on a named
     volume.
 

@@ -54,9 +54,12 @@ request ─▶ request id ─▶ access log ─▶ metrics ─▶ panic recovery
 
 The body limit is 1 MiB, raised per route for the CMS upload (6 MiB) and the
 [mission](/documentation_v2/glossary/g_to_m.md#mission) version save (`MISSION_VERSION_MAX_BODY_BYTES`,
-256 MiB by default). The rate limit keeps an in-memory bucket per client address and, on
-`/api/v1/auth/` and `/api/v1/ingest/`, a second bucket in Postgres that survives a restart; a
-refusal is `429` with `Retry-After`. The [middleware README](/apps/website/api_v2/src/core/middleware/README.md)
+256 MiB by default). The rate limit keeps an in-memory bucket per client address and, on the
+unauthenticated `/api/v1/auth/` family, a stricter one with a second bucket in Postgres that
+survives a restart; a refusal is `429` with `Retry-After`. `/api/v1/game-runtime/` and
+`/api/v1/ingest/` stay on the global bucket: every caller there is a game server with its own
+machine credential, several servers can share one host address, and event batches arrive in
+bursts. The [middleware README](/apps/website/api_v2/src/core/middleware/README.md)
 gives the numbers and the client-address rule behind `TRUSTED_PROXIES`.
 
 Authentication is not a layer. A route's access tier is the extractor its handler takes:
@@ -66,8 +69,8 @@ Authentication is not a layer. A route's access tier is the extractor its handle
 | public | none | none | — |
 | member | `AuthUser` | `Authorization: Bearer <access token>` of a live session | 401 |
 | role | `LeaderUser`, `MissionMakerUser`, `AdminUser` | the same, and a [role](/documentation_v2/glossary/n_to_z.md#role) rank at least `leader`, `mission_maker` or `admin` | 403 |
-| service | `ServiceAuth` | `X-Service-Token` equal to `SERVICE_TOKEN`; every request fails while it is unset | 401 |
 | machine | `MachineCaller` | `Authorization: Bearer tbdm_…`, a per-server [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential) of the executor kind the route needs | 401, or 403 for another server's resource |
+| observability | `ObservabilityAuth` | `Authorization: Bearer <OBSERVABILITY_TOKEN>`, compared in constant time; every request fails while it is unset | 401 |
 
 Role ranks run `guest`, `enlisted`, `leader`, `mission_maker`, `admin`, lowest first. A member's
 role follows their Discord roles through the `discord_roles` mapping; the API never sets it by
@@ -84,15 +87,17 @@ hand.
   `mod_runtime` credential: runtime sessions and heartbeats, the event roster, player
   [deployments](/documentation_v2/glossary/a_to_f.md#deployment), and the
   [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) it should run with the
-  [artifact](/documentation_v2/glossary/a_to_f.md#artifact) bytes. Two ingest routes take the shared
-  service token instead, as the mod's `serverToken`: `POST /api/v1/ingest/link-confirm` and
-  `POST /api/v1/ingest/match-results`.
+  [artifact](/documentation_v2/glossary/a_to_f.md#artifact) bytes. The same credential authenticates
+  `/api/v1/ingest/*`: the Arma link confirmation (`/ingest/link-confirm`) and the
+  [match telemetry](/documentation_v2/glossary/g_to_m.md#match-telemetry) the mod's durable queue
+  delivers (`/ingest/matches`, `/ingest/match-results`, `/ingest/match-events`).
 - The [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) in
   `apps/fleet_host_agent/` polls `/api/v1/fleet-executor/*` outbound with its `host_agent`
   credential and runs the [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command) it claims.
   No route reaches into a game host; the API only records commands for executors to claim.
-- A monitoring scraper reads `/metrics` with the service token; `/healthz` answers anyone with
-  the status alone and adds the detail for the service token.
+- A monitoring scraper reads `/metrics` with the operator's `OBSERVABILITY_TOKEN` bearer;
+  `/healthz` answers anyone with the status alone and adds the detail for the same bearer. No
+  other route accepts that token, and no user session or machine credential reaches these two.
 
 ### Realtime streams
 
@@ -100,9 +105,10 @@ Two routes answer [SSE](/documentation_v2/glossary/n_to_z.md#sse) streams, and e
 viewer's session at least every five seconds, ending the stream with an `authorization_expired`
 SSE event once it stops qualifying:
 
-- `GET /api/v1/servers/{id}/status/stream` (member): one server's live status, published on the
-  in-process hub's `server:{id}` topic by the heartbeat, the runtime-session expiry and the
-  status publisher worker.
+- `GET /api/v1/servers/{id}/status/stream` (member; an inactive server is a 404 for anyone but an
+  administrator): one server's live status, its telemetry queue reading included, published on
+  the in-process hub's `server:{id}` topic by the heartbeat, the runtime-session expiry and the
+  status publisher worker, which republishes the active servers only.
 - `GET /api/v1/admin/audit-logs/stream` (administrator): committed audit rows in publication
   order, pushed by Postgres `NOTIFY` and replayed from the client's `Last-Event-ID`.
 
@@ -126,11 +132,11 @@ lists every route with its methods and tier.
 
 | Domain | Paths under `/api/v1` | Tiers |
 |---|---|---|
-| [identity and access](/apps/website/api_v2/src/identity_and_access/README.md#public-surface) | `/auth/discord/login`, `/auth/discord/callback`, `/auth/refresh`, `/auth/logout`, `/auth/dev-login` (development only), `/me`, `/me/link`, `/me/link/status`, `/ingest/link-confirm` | public, member, service |
+| [identity and access](/apps/website/api_v2/src/identity_and_access/README.md#public-surface) | `/auth/discord/login`, `/auth/discord/callback`, `/auth/refresh`, `/auth/logout`, `/auth/dev-login` (development only), `/me`, `/me/link`, `/me/link/status`, `/ingest/link-confirm` | public, member, machine |
 | [administration](/apps/website/api_v2/src/administration/README.md#public-surface) | `/admin/users`, `/admin/users/{discordId}` with `/ban`, `/warnings` and `/membership-grace`, `/admin/roles/sync`, `/admin/audit-logs` with `/export.csv` and `/stream` | administrator; the grace route is member with administrator authority checked in its service |
 | [operations](/apps/website/api_v2/src/operations/README.md#public-surface) | `/events` and `/events/{id}/…` (missions, access, access policy, reservation quotas, groups, fire missions), `/event-missions/{emid}/…` (ORBAT, register, slot assignment, squad reserve and release, waitlist promotion, squad and slot access policies), `/members`, `/me/deployments`, `/me/leave-requests`, `/admin/leave-requests`, `/fire-missions`, `/fire-missions/solve`, `/game-runtime/events/{id}/roster`, `/game-runtime/sessions/{sessionId}/deployments/…` | member, leader, administrator, machine |
 | [missions](/apps/website/api_v2/src/missions/README.md#public-surface) | `/missions` and `/missions/{id}/…` (submit, reviews, review comments, artifacts, versions, armory, bookmark, export), `/registry`, `/registry/compat`, `/factions`, `/approvals`, `/admin/mission-default-overrides`, `/servers/{id}/deployments`, `/game-runtime/deployment`, `/game-runtime/deployments`, `/game-runtime/artifacts/{artifactId}`, `/game-runtime/missions` | member, mission maker, author or administrator, administrator, machine |
-| [match telemetry](/apps/website/api_v2/src/match_telemetry/README.md#public-surface) | `/game-runtime/sessions/{sessionId}/heartbeats`, `/ingest/match-results` | machine, service |
+| [match telemetry](/apps/website/api_v2/src/match_telemetry/README.md#public-surface) | `/game-runtime/sessions/{sessionId}/heartbeats`, `/ingest/matches`, `/ingest/match-results`, `/ingest/match-events`, `/matches/{matchId}/events` | machine, member |
 | [command center](/apps/website/api_v2/src/command_center/README.md#public-surface) | `/dashboard`, `/leaderboards`, `/users/{discordId}/stats` | member |
 | [community content](/apps/website/api_v2/src/community_content/README.md#public-surface) | `/announcements`, `/wiki`, `/vehicle-database`, `/modpacks` (with `/current` and `/set-current`), `/cms/announcements` (with `/push-discord`), `/cms/uploads` | member to read, administrator to write |
 | [server infrastructure](/apps/website/api_v2/src/server_infrastructure/README.md#public-surface) | `/servers` and `/servers/{id}/…` (status, status stream, credentials, commands), `/fleet-executor/commands/…`, `/game-runtime/sessions`, `/game-runtime/sessions/{sessionId}/end`, `/fleet/scenarios` | member, administrator, machine |
@@ -139,12 +145,23 @@ A path prefix does not name its owner: `/servers/{id}/deployments` belongs to mi
 `/game-runtime/events/{id}/roster` to operations and the heartbeats route to match telemetry,
 because each domain owns the data its routes write.
 
+The configured fleet is the set of servers with `is_active = true`. `GET /servers` lists it to
+members and every server, with `is_active`, to administrators; the status read and the status
+stream of an inactive server are a 404 for anyone but an administrator; and `GET /dashboard`
+answers `fleet {servers, totals}` over the active servers in place of a single server status. The
+match-telemetry ingests answer a refusal the game runtime must act on as a 400 or 409 carrying
+`details.code`, never a 404; the
+[telemetry design](/documentation_v2/website/api_v2/verification_evidence/telemetry.md) lists the
+codes, the results-revision rules and the event batch rules.
+
 ### Outside `/api/v1`
 
 - `GET /healthz`: `{"status": …}` with 200 or 503 for anyone; the version, uptime, pool and
-  migration detail for a caller with the service token
-  (`apps/website/api_v2/src/core/observability/health_probe.rs`).
-- `GET /metrics`: the Prometheus exposition, service token only.
+  migration detail for a caller with the `OBSERVABILITY_TOKEN` bearer
+  (`apps/website/api_v2/src/core/observability/health_probe.rs`); a missing or wrong bearer gets
+  the public answer, not an error.
+- `GET /metrics`: the Prometheus exposition, `OBSERVABILITY_TOKEN` bearer only, 401 while the token
+  is unset (`apps/website/api_v2/src/core/observability/observability_auth.rs`).
 - `/uploads`: the files the CMS upload wrote into `UPLOAD_DIR`.
 - `/map-assets` and `/map-assets/glyphs`: the terrain tree (`MAP_ASSETS_DIR`) and the glyph atlas
   (`GLYPH_ASSETS_DIR`) that the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)
@@ -228,8 +245,10 @@ DTO in `apps/website/frontend/src/v2/core/api/dto/`. Acceptance of the API as a 
   (ready, [plan](/documentation_v2/tickets/plans/t-940_10_plan.md)): one ballistics model serves
   both the API and the mortar page, so the page solves without the API.
 - [T-940.13 — Combat, medical and vehicle telemetry events](/documentation_v2/tickets/specs/t940_website_platform.md)
-  (ready, [plan](/documentation_v2/tickets/plans/t-940_13_plan.md)): a telemetry-events schema,
-  an ingest that validates and stores them, and the data the after-action replay plays.
+  (ready, [plan](/documentation_v2/tickets/plans/t-940_13_plan.md)): the events schema
+  (`contracts_v2/definitions/match-telemetry.schema.json`), `POST /api/v1/ingest/match-events` and
+  `GET /api/v1/matches/{matchId}/events` exist; the after-action replay that plays them does
+  not.
 - [T-1022 — Add website admin UI to manage game servers](/.ai/tickets/T-1022.toml) (idea, no
   plan): a page calls the server registry writes and sends `server_id` with events.
 - [T-952 — website-api set_var mutates a shared test process](/.ai/tickets/T-952.toml) (idea, no

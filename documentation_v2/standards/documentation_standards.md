@@ -238,8 +238,10 @@ argument) with its unit and default, and every `[ComponentEditorProps]` a `descr
 
 **REST call sites.** The class or method that calls the API carries `//! @route <METHOD> <path>`
 naming the route it calls, so a search for the route string finds both the Rust handler and the
-EnfScript caller. From `apps/mod/tbd-framework/Scripts/Game/TBD/API/Results/TBD_ResultsReporter.c:200`,
-on the method that posts match results: ``//! @route POST /api/v1/ingest/match-results``.
+EnfScript caller. From
+`apps/mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry/Delivery/TBD_TelemetryDelivery.c:63`,
+on the method that posts the telemetry queue's head entry, one tag per route it may call:
+``//! @route POST /api/v1/ingest/match-results``.
 
 **Gate.** `cargo xtask verify enfusion-comments` checks the rules of this section and section 7
 (rules ECM-1 to ECM-9, specified in the

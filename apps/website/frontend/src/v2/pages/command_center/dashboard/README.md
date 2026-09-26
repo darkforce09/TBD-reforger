@@ -2,21 +2,22 @@
 
 The `/` page, the members' landing screen in the
 [command center](/documentation_v2/glossary/a_to_f.md#command-center): the countdown to the next
-[event](/documentation_v2/glossary/a_to_f.md#event), the primary game server's status, the viewer's own
-assignment, the current modpack and the latest announcements, all from one fetch.
+[event](/documentation_v2/glossary/a_to_f.md#event), the configured fleet of game servers with its
+totals, the viewer's own assignment, the current modpack and the latest announcements, all from one fetch.
 
 ## Contents
 
 ```text
 apps/website/frontend/src/v2/pages/command_center/dashboard/
 ├── deployment.rs     the Deployment card: the viewer's faction, squad and role for the next event
+├── fleet_totals.rs   the Server Uplink totals row: online of configured, players, telemetry backlog and drops
 ├── helpers.rs        `vstr` and `vbool`: total field reads over the untyped parts of the payload
 ├── hero_banner.rs    the banner: the countdown to the next event, its name and terrain, a hub link
 ├── mod.rs            the module tree; re-exports `DashboardPage`
 ├── modpack.rs        the Modpack card: the current modpack's name, version, size and sync chip
 ├── page.rs           the route component: the dashboard fetch and the panel layout
 ├── recent_intel.rs   the Recent Intelligence feed: the latest announcements as linked rows
-└── server_uplink.rs  the Server Uplink card: online state, players and fill bar, frame rate, uptime
+└── server_uplink.rs  the Server Uplink card: one row per active server (online state, players, frame rate)
 ```
 
 ## How it works
@@ -27,7 +28,7 @@ and hands each panel its own slice, owned, so no panel reads the resource again:
 ```text
 DashboardResponse
 ├── next_event            ─► hero_banner    (full width)
-├── server_status         ─► server_uplink  ┐
+├── fleet                 ─► server_uplink  ┐ (its totals ─► fleet_totals)
 ├── my_assignment         ─► deployment     ├ the three-column card grid
 ├── current_modpack       ─► modpack_card   ┘
 └── recent_announcements  ─► recent_intel   (grows to fill the remaining height)
@@ -35,9 +36,11 @@ DashboardResponse
 
 Every panel keeps its shape when its slice is empty and shows its empty text instead. The banner
 prefixes the countdown with "T-MINUS " except when it reads `LIVE NOW`, and draws over a fixed
-backdrop image (`HERO_IMAGE`, an `lh3.googleusercontent.com` URL). The uplink card's fill bar is a
-whole percentage of the player cap, empty when the cap is zero, and prints the frame rate as the
-wire sent it. A feed row links to its announcement, or to `/announcements` when the row has no id,
+backdrop image (`HERO_IMAGE`, an `lh3.googleusercontent.com` URL). The uplink card lists the
+active servers in the backend's order (name, then id), each with its online state, players over
+its cap and the frame rate as the wire sent it; a server without a status row reads "OFFLINE" with
+"—" for both. Its pill and its totals row print the backend's fleet totals as sent, never re-added
+from the rows, and dropped telemetry above zero shows in the error tone. A feed row links to its announcement, or to `/announcements` when the row has no id,
 and previews its `snippet` or else the first paragraph of its `body`. The next event, the
 assignment and the announcements are untyped JSON, read through `helpers.rs`, where a missing key,
 a null and a wrong type all read as empty.
@@ -51,8 +54,9 @@ a null and a wrong type all read as empty.
 ## Data
 
 - `GET /api/v1/dashboard`: read as `DashboardResponse`: `next_event` (`start_time`, `name`,
-  `terrain`, `event_id`), `my_assignment` (`faction`, `squad`, `role`), `server_status` as
-  `ServerStatusDto`, `current_modpack` as `ModpackDto`, and `recent_announcements` (`id`, `title`,
+  `terrain`, `event_id`), `my_assignment` (`faction`, `squad`, `role`), `fleet` as
+  `FleetOverviewDto` (`servers` as `FleetServerDto` with an optional `ServerStatusDto`, `totals` as
+  `FleetTotalsDto`), `current_modpack` as `ModpackDto`, and `recent_announcements` (`id`, `title`,
   `is_pinned`, `published_at`, `snippet`, `body`).
 - The page reads the session from the `AuthStore` context and writes nothing. The fetch runs in
   the browser build only; a native build renders the failure branch.
@@ -67,7 +71,8 @@ a null and a wrong type all read as empty.
 | failed | "Failed to load data." |
 | loaded | the banner ("T-MINUS " and the countdown, "OPERATION: <name> — <terrain>", an "Open Operation Hub" link to `/events/{event_id}`), the "Server Uplink", "Deployment" and "Modpack" cards, and "Recent Intelligence" |
 | no next event | "NO UPCOMING OPS" and "Check the event schedule for new operations.", with no link |
-| no server status | "OFFLINE", 0/0 players, an empty bar, and "—" after "FPS: " and "UPTIME: " |
+| no active servers | "0/0 ONLINE" in the pill, "No servers configured", and zeros in the totals row |
+| a server without a status | its row reads "OFFLINE" with "—" players and "FPS: —"; it counts as offline in the totals |
 | no assignment | "No active assignment" under the "Deployment" heading |
 | no modpack | "No modpack", "—" in place of the size, and "STATUS: " with a grey "NONE" in place of the green "SYNCED" |
 | no announcements | "No announcements yet." |
@@ -75,8 +80,9 @@ a null and a wrong type all read as empty.
 ## Boundaries
 
 - Depends on: `crate::v2::core::api` (the `api_get` client, `DashboardResponse`,
-  `ServerStatusDto`, `ModpackDto`), `crate::v2::core::ui` (`AuthGate`, `MaterialIcon`, `cn`),
-  `crate::v2::core::utils` (countdown, short date and uptime formatting), the `AuthStore` context,
+  `FleetOverviewDto`, `FleetServerDto`, `FleetTotalsDto`, `ModpackDto`), `crate::v2::core::ui`
+  (`AuthGate`, `MaterialIcon`, `cn`), `crate::v2::core::utils` (countdown and short date
+  formatting), the `AuthStore` context,
   and the banner image on `lh3.googleusercontent.com`.
 - Used by: the `/` route in `apps/website/frontend/src/app_routes.rs`.
 - Rules: the fetch belongs to `page.rs` and each panel receives its data owned; a panel with nothing

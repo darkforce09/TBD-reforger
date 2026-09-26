@@ -48,7 +48,7 @@ fn servers_intel_batch_uses_any_prefetch() {
         "batch path must prefetch statuses with ANY($1)"
     );
     assert!(
-        production.contains("LEFT JOIN matches m ON m.id = ss.current_match_id"),
+        production.contains("LEFT JOIN matches m ON m.id = s.current_match_id"),
         "the status prefetch must LEFT JOIN matches for terrain"
     );
     assert!(
@@ -70,7 +70,7 @@ fn server_intel_joins_matches_terrain() {
         .next()
         .expect("production source before tests module");
     assert!(
-        production.contains("LEFT JOIN matches m ON m.id = ss.current_match_id"),
+        production.contains("LEFT JOIN matches m ON m.id = s.current_match_id"),
         "the card composition and the batch must LEFT JOIN matches on current_match_id"
     );
     assert!(

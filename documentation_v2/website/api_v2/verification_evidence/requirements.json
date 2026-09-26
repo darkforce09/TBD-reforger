@@ -935,7 +935,21 @@
       "id": "telemetry_match_identity",
       "behavior": "Persist stable server-scoped source-match identity before reporting.",
       "implementation": [
-        "apps/website/api_v2/src/match_telemetry"
+        "apps/website/api_v2/src/match_telemetry/handlers/match_registration.rs",
+        "apps/website/api_v2/src/match_telemetry/handlers/match_results.rs",
+        "apps/website/api_v2/src/match_telemetry/handlers/match_event_batches.rs",
+        "apps/website/api_v2/src/match_telemetry/models/match_registration.rs",
+        "apps/website/api_v2/src/match_telemetry/models/match_results_revision.rs",
+        "apps/website/api_v2/src/match_telemetry/models/telemetry_refusal.rs",
+        "apps/website/api_v2/src/match_telemetry/services/registered_match.rs",
+        "apps/website/api_v2/migrations/0054_server_scoped_match_identity.sql",
+        "contracts_v2/definitions/match-telemetry.schema.json",
+        "apps/website/api_v2/src/match_telemetry/models/generated/match_telemetry",
+        "apps/website/api_v2/src/match_telemetry/services/match_registration.rs",
+        "apps/website/api_v2/src/match_telemetry/handlers/server_heartbeat.rs",
+        "apps/website/api_v2/src/identity_and_access/handlers/arma_link_confirmation.rs",
+        "apps/website/api_v2/tests/match_identity.rs",
+        "apps/mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry/Reports/TBD_MatchRegistration.c"
       ],
       "checks": [
         "telemetry_match_identity",
@@ -949,7 +963,20 @@
       "id": "telemetry_telemetry_revisions",
       "behavior": "Duplicate retries are inert, same-revision conflicts reject, stale revisions cannot overwrite newer facts.",
       "implementation": [
-        "apps/website/api_v2/src/match_telemetry"
+        "apps/website/api_v2/src/match_telemetry/handlers/match_registration.rs",
+        "apps/website/api_v2/src/match_telemetry/handlers/match_results.rs",
+        "apps/website/api_v2/src/match_telemetry/handlers/match_event_batches.rs",
+        "apps/website/api_v2/src/match_telemetry/models/match_registration.rs",
+        "apps/website/api_v2/src/match_telemetry/models/match_results_revision.rs",
+        "apps/website/api_v2/src/match_telemetry/models/telemetry_refusal.rs",
+        "apps/website/api_v2/src/match_telemetry/services/registered_match.rs",
+        "apps/website/api_v2/migrations/0054_server_scoped_match_identity.sql",
+        "contracts_v2/definitions/match-telemetry.schema.json",
+        "apps/website/api_v2/src/match_telemetry/models/generated/match_telemetry",
+        "apps/website/api_v2/src/match_telemetry/services/results_revision.rs",
+        "apps/website/api_v2/src/match_telemetry/services/match_results_ingest.rs",
+        "apps/website/api_v2/src/core/wire_format/content_digest.rs",
+        "apps/website/api_v2/tests/telemetry_revisions.rs"
       ],
       "checks": [
         "telemetry_telemetry_revisions",
@@ -963,7 +990,19 @@
       "id": "telemetry_telemetry_corrections",
       "behavior": "Higher revisions may decrease counters while finalized matches remain finalized.",
       "implementation": [
-        "apps/website/api_v2/src/match_telemetry"
+        "apps/website/api_v2/src/match_telemetry/handlers/match_registration.rs",
+        "apps/website/api_v2/src/match_telemetry/handlers/match_results.rs",
+        "apps/website/api_v2/src/match_telemetry/handlers/match_event_batches.rs",
+        "apps/website/api_v2/src/match_telemetry/models/match_registration.rs",
+        "apps/website/api_v2/src/match_telemetry/models/match_results_revision.rs",
+        "apps/website/api_v2/src/match_telemetry/models/telemetry_refusal.rs",
+        "apps/website/api_v2/src/match_telemetry/services/registered_match.rs",
+        "apps/website/api_v2/migrations/0054_server_scoped_match_identity.sql",
+        "contracts_v2/definitions/match-telemetry.schema.json",
+        "apps/website/api_v2/src/match_telemetry/models/generated/match_telemetry",
+        "apps/website/api_v2/src/match_telemetry/services/match_revision_write.rs",
+        "apps/website/api_v2/src/match_telemetry/services/match_results_ingest.rs",
+        "apps/website/api_v2/tests/telemetry_corrections.rs"
       ],
       "checks": [
         "telemetry_telemetry_corrections",
@@ -977,7 +1016,20 @@
       "id": "telemetry_telemetry_atomicity",
       "behavior": "Validate entire batch before transactional persistence and aggregate updates; retries cannot double count.",
       "implementation": [
-        "apps/website/api_v2/src/match_telemetry"
+        "apps/website/api_v2/src/match_telemetry/handlers/match_registration.rs",
+        "apps/website/api_v2/src/match_telemetry/handlers/match_results.rs",
+        "apps/website/api_v2/src/match_telemetry/handlers/match_event_batches.rs",
+        "apps/website/api_v2/src/match_telemetry/models/match_registration.rs",
+        "apps/website/api_v2/src/match_telemetry/models/match_results_revision.rs",
+        "apps/website/api_v2/src/match_telemetry/models/telemetry_refusal.rs",
+        "apps/website/api_v2/src/match_telemetry/services/registered_match.rs",
+        "apps/website/api_v2/migrations/0054_server_scoped_match_identity.sql",
+        "contracts_v2/definitions/match-telemetry.schema.json",
+        "apps/website/api_v2/src/match_telemetry/models/generated/match_telemetry",
+        "apps/website/api_v2/src/match_telemetry/services/match_results_ingest.rs",
+        "apps/website/api_v2/src/match_telemetry/services/match_event_batches.rs",
+        "apps/website/api_v2/src/match_telemetry/models/match_event.rs",
+        "apps/website/api_v2/tests/telemetry_atomicity.rs"
       ],
       "checks": [
         "telemetry_telemetry_atomicity",
@@ -991,7 +1043,24 @@
       "id": "telemetry_detailed_events",
       "behavior": "Stable combat medical and vehicle event IDs and deterministic ordering; invalid indexed entry rejects whole batch.",
       "implementation": [
-        "apps/website/api_v2/src/match_telemetry"
+        "apps/website/api_v2/src/match_telemetry/handlers/match_registration.rs",
+        "apps/website/api_v2/src/match_telemetry/handlers/match_results.rs",
+        "apps/website/api_v2/src/match_telemetry/handlers/match_event_batches.rs",
+        "apps/website/api_v2/src/match_telemetry/models/match_registration.rs",
+        "apps/website/api_v2/src/match_telemetry/models/match_results_revision.rs",
+        "apps/website/api_v2/src/match_telemetry/models/telemetry_refusal.rs",
+        "apps/website/api_v2/src/match_telemetry/services/registered_match.rs",
+        "apps/website/api_v2/migrations/0054_server_scoped_match_identity.sql",
+        "contracts_v2/definitions/match-telemetry.schema.json",
+        "apps/website/api_v2/src/match_telemetry/models/generated/match_telemetry",
+        "apps/website/api_v2/src/match_telemetry/models/match_event.rs",
+        "apps/website/api_v2/src/match_telemetry/models/match_event_page.rs",
+        "apps/website/api_v2/src/match_telemetry/services/match_event_batches.rs",
+        "apps/website/api_v2/src/match_telemetry/handlers/match_event_reads.rs",
+        "apps/website/api_v2/migrations/0055_match_events.sql",
+        "apps/website/api_v2/tests/detailed_events.rs",
+        "apps/website/frontend/src/v2/core/api/dto/match_events.rs",
+        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/MatchEvents"
       ],
       "checks": [
         "telemetry_detailed_events",
@@ -1006,7 +1075,17 @@
       "id": "telemetry_telemetry_queue",
       "behavior": "Mod persists outbound data until acknowledgement and exposes bounded-queue failures.",
       "implementation": [
-        "apps/website/api_v2/src/match_telemetry"
+        "apps/website/api_v2/src/match_telemetry/handlers/server_heartbeat.rs",
+        "apps/website/api_v2/src/match_telemetry/handlers/server_heartbeat_contract.rs",
+        "apps/website/api_v2/src/server_infrastructure/models/server.rs",
+        "apps/website/api_v2/src/server_infrastructure/services/status_broadcast.rs",
+        "apps/website/api_v2/migrations/0056_server_status_telemetry_queue.sql",
+        "contracts_v2/definitions/game-runtime-session.schema.json",
+        "apps/website/api_v2/tests/telemetry_queue.rs",
+        "apps/mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry",
+        "apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeStatusReadings.c",
+        "apps/website/frontend/src/v2/pages/administration/server_control/server_card_telemetry.rs",
+        "tools_v2/xtask/src/commands/mod_ops/playtest_server/telemetry_check.rs"
       ],
       "checks": [
         "telemetry_telemetry_queue",
@@ -1175,7 +1254,14 @@
       "id": "dashboard_fleet_dashboard",
       "behavior": "Dashboard and live status explicitly select or aggregate the configured fleet.",
       "implementation": [
-        "apps/website/api_v2/src/command_center"
+        "apps/website/api_v2/src/command_center/services/fleet_overview.rs",
+        "apps/website/api_v2/src/command_center/handlers/live_dashboard.rs",
+        "apps/website/api_v2/src/server_infrastructure/handlers/server_intel.rs",
+        "apps/website/api_v2/src/server_infrastructure/handlers/server_status_stream.rs",
+        "apps/website/api_v2/src/server_infrastructure/services/status_broadcast.rs",
+        "apps/website/api_v2/tests/fleet_dashboard.rs",
+        "apps/website/frontend/src/v2/pages/command_center/dashboard/server_uplink.rs",
+        "apps/website/frontend/src/v2/pages/command_center/dashboard/fleet_totals.rs"
       ],
       "checks": [
         "dashboard_fleet_dashboard",
@@ -1189,7 +1275,11 @@
       "id": "dashboard_statistics_recomputation",
       "behavior": "Link changes and telemetry corrections synchronously or durably complete required derived-statistics updates.",
       "implementation": [
-        "apps/website/api_v2/src/command_center"
+        "apps/website/api_v2/src/match_telemetry/services/match_results_ingest.rs",
+        "apps/website/api_v2/src/identity_and_access/services/identity_linking.rs",
+        "apps/website/api_v2/src/command_center/services/leaderboard_view.rs",
+        "apps/website/api_v2/src/command_center/services/user_stats.rs",
+        "apps/website/api_v2/tests/statistics_recomputation.rs"
       ],
       "checks": [
         "dashboard_statistics_recomputation",
@@ -2013,7 +2103,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1,
+      "minimum_cases": 14,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*match_identity[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2027,7 +2117,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1,
+      "minimum_cases": 7,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*telemetry_revisions[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2041,7 +2131,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1,
+      "minimum_cases": 7,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*telemetry_corrections[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2055,7 +2145,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1,
+      "minimum_cases": 6,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*telemetry_atomicity[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2069,7 +2159,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1,
+      "minimum_cases": 9,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*detailed_events[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2083,7 +2173,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1,
+      "minimum_cases": 6,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*telemetry_queue[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2237,7 +2327,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1,
+      "minimum_cases": 6,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*fleet_dashboard[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2251,7 +2341,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1,
+      "minimum_cases": 6,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*statistics_recomputation[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2492,7 +2582,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 784,
+      "minimum_cases": 877,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test [^\\n]+ \\.\\.\\. ok$"
     },
@@ -2506,7 +2596,7 @@
         "ci-local-leptos"
       ],
       "timeout_seconds": 3600,
-      "minimum_cases": 1568,
+      "minimum_cases": 1602,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test [^\\n]+ \\.\\.\\. ok$"
     },

@@ -36,10 +36,15 @@ fn app_with(pool: PgPool) -> Router {
     router(AppState::new(pool, cfg))
 }
 
-async fn call(app: &Router, method: &str, uri: &str, service_token: bool) -> (StatusCode, String) {
+async fn call(
+    app: &Router,
+    method: &str,
+    uri: &str,
+    observability_token: bool,
+) -> (StatusCode, String) {
     let mut b = HttpRequest::builder().method(method).uri(uri);
-    if service_token {
-        b = b.header("x-service-token", "test-service-token");
+    if observability_token {
+        b = b.header("authorization", "Bearer test-observability-token");
     }
     let resp = app
         .clone()
@@ -194,22 +199,22 @@ async fn throttled_requests_are_counted() {
     );
 }
 
-/// Scraping is not public. `ServiceAuth` fails closed, so an API with no
-/// `SERVICE_TOKEN` configured answers 401 rather than publishing its route table.
+/// Scraping is not public. `ObservabilityAuth` fails closed, so an API with no
+/// `OBSERVABILITY_TOKEN` configured answers 401 rather than publishing its route table.
 #[tokio::test]
-async fn metrics_requires_the_service_token() {
+async fn metrics_requires_the_observability_token() {
     let app = app_with(dead_pool());
     let (st, _) = call(&app, "GET", "/metrics", false).await;
     assert_eq!(st, StatusCode::UNAUTHORIZED);
 
     let mut cfg = Config::for_tests("postgres://unused", "s");
-    cfg.service_token = String::new();
+    cfg.observability_token = String::new();
     let unconfigured = router(AppState::new(dead_pool(), cfg));
     let (st, _) = call(&unconfigured, "GET", "/metrics", true).await;
     assert_eq!(
         st,
         StatusCode::UNAUTHORIZED,
-        "empty SERVICE_TOKEN must fail closed"
+        "empty OBSERVABILITY_TOKEN must fail closed"
     );
 }
 
@@ -237,7 +242,7 @@ async fn exposition_declares_each_family_once() {
 /// A health check that cannot fail is worse than none. With the database
 /// unreachable both checks report down and the probe is 503.
 ///
-/// Reads the **detailed** payload (`checks` sits behind `X-Service-Token`), because the claim
+/// Reads the **detailed** payload (`checks` sits behind the observability bearer), because the claim
 /// under test is that each check can go red independently, and that is only visible per-check.
 #[tokio::test]
 async fn healthz_goes_red_when_the_database_is_unreachable() {
@@ -287,11 +292,11 @@ async fn healthz_discloses_nothing_to_an_unauthenticated_caller() {
     }
 }
 
-/// …and the same route with the service token still serves the whole report, so the gating is a
-/// relocation rather than a deletion. Without this, "discloses nothing" is satisfiable by a
+/// …and the same route with the observability token still serves the whole report, so the gating
+/// is a relocation rather than a deletion. Without this, "discloses nothing" is satisfiable by a
 /// handler that lost the detail entirely.
 #[tokio::test]
-async fn healthz_detail_is_served_to_a_service_token() {
+async fn healthz_detail_is_served_to_the_observability_token() {
     let app = app_with(dead_pool());
     let (_, body) = call(&app, "GET", "/healthz", true).await;
     let v: serde_json::Value = serde_json::from_str(&body).expect("healthz json");
@@ -312,7 +317,7 @@ async fn healthz_with_a_wrong_token_downgrades_rather_than_rejecting() {
             HttpRequest::builder()
                 .method("GET")
                 .uri("/healthz")
-                .header("x-service-token", "not-the-token")
+                .header("authorization", "Bearer not-the-token")
                 .body(Body::empty())
                 .expect("request"),
         )
@@ -325,6 +330,36 @@ async fn healthz_with_a_wrong_token_downgrades_rather_than_rejecting() {
     let v: serde_json::Value = serde_json::from_str(&body).expect("healthz json");
     assert_eq!(v.as_object().expect("object").keys().len(), 1, "{body}");
     assert_eq!(v["status"], "unavailable");
+}
+
+/// The retired shared ingest header opens nothing: `/metrics` refuses it and `/healthz` answers
+/// only its public view to it, even when it carries the observability token's value.
+#[tokio::test]
+async fn the_retired_service_token_header_opens_neither_metrics_nor_health_detail() {
+    let app = app_with(dead_pool());
+    for uri in ["/metrics", "/healthz"] {
+        let resp = app
+            .clone()
+            .oneshot(
+                HttpRequest::builder()
+                    .method("GET")
+                    .uri(uri)
+                    .header("x-service-token", "test-observability-token")
+                    .body(Body::empty())
+                    .expect("request"),
+            )
+            .await
+            .expect("router call");
+        let status = resp.status();
+        let body = to_bytes(resp.into_body(), 1 << 20).await.expect("body");
+        let body = String::from_utf8_lossy(&body).into_owned();
+        if uri == "/metrics" {
+            assert_eq!(status, StatusCode::UNAUTHORIZED, "{body}");
+        } else {
+            let v: serde_json::Value = serde_json::from_str(&body).expect("healthz json");
+            assert_eq!(v.as_object().expect("object").keys().len(), 1, "{body}");
+        }
+    }
 }
 
 // ───────────────────── domain route tables: one router, no collisions ─────────────────────

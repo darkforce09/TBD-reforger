@@ -7,6 +7,7 @@ use axum::{
 use serde_json::{Value, json};
 use sqlx::PgPool;
 use std::time::Duration;
+use telemetry_support::match_reports::ReportingServer;
 use tokio::sync::Barrier;
 use tower::ServiceExt;
 use uuid::Uuid;
@@ -26,6 +27,7 @@ use website_api::{
 };
 
 mod common;
+mod telemetry_support;
 
 struct Fixture {
     state: AppState,
@@ -36,6 +38,8 @@ struct Fixture {
     pending_owner_code: String,
     claimant_code: String,
     history: Option<Uuid>,
+    /// The game server whose machine credential confirms link codes.
+    game_server: ReportingServer,
 }
 
 async fn actor(state: &AppState) -> AuthUser {
@@ -58,14 +62,26 @@ async fn fixture(history: bool, deleted: bool) -> Fixture {
     let pool = database::connect(&url).await.unwrap();
     database::migrate(&pool).await.unwrap();
     let state = AppState::new(pool, Config::for_tests(url, "deleted-owner-reclamation"));
+    let game_server = ReportingServer::open(
+        &http_router::router(state.clone()),
+        &state.pool,
+        "Reclamation server",
+    )
+    .await;
     let owner = actor(&state).await;
     issue_session(&state, &owner.discord_id).await.unwrap();
     let claimant = actor(&state).await;
     let arma = common::unique_arma("deleted-owner");
     let consumed_owner_code = issue_link_code(&state, &owner).await.unwrap().0;
-    confirm_identity(&state, &consumed_owner_code, &arma, "Original character")
-        .await
-        .unwrap();
+    confirm_identity(
+        &state,
+        game_server.server_id,
+        &consumed_owner_code,
+        &arma,
+        "Original character",
+    )
+    .await
+    .unwrap();
     let pending_owner_code = issue_link_code(&state, &owner).await.unwrap().0;
     let claimant_code = issue_link_code(&state, &claimant).await.unwrap().0;
     let history = if history {
@@ -125,16 +141,21 @@ async fn fixture(history: bool, deleted: bool) -> Fixture {
         pending_owner_code,
         claimant_code,
         history,
+        game_server,
     }
 }
 
-async fn confirm_http(state: &AppState, code: &str, arma: &str) -> (StatusCode, Value) {
-    let response = http_router::router(state.clone())
+/// Confirm `code` for `arma` over HTTP with the fixture server's machine credential.
+async fn confirm_http(f: &Fixture, code: &str, arma: &str) -> (StatusCode, Value) {
+    let response = http_router::router(f.state.clone())
         .oneshot(
             Request::builder()
                 .method("POST")
                 .uri("/api/v1/ingest/link-confirm")
-                .header("X-Service-Token", "test-service-token")
+                .header(
+                    "Authorization",
+                    format!("Bearer {}", f.game_server.session.secret),
+                )
                 .header("Content-Type", "application/json")
                 .body(Body::from(
                     json!({"code": code, "arma_id": arma, "arma_character": "Verified claimant"})
@@ -371,7 +392,7 @@ async fn deleted_owner_history_transfers_and_signup_attendance_and_authorship_re
     let f = fixture(true, true).await;
     seed_authored_facts(&f).await;
     let authored = authored_snapshot(&f).await;
-    let (status, body) = confirm_http(&f.state, &f.claimant_code, &f.arma).await;
+    let (status, body) = confirm_http(&f, &f.claimant_code, &f.arma).await;
     assert_eq!(status, StatusCode::OK, "{body}");
     assert_eq!(body["discord_id"], f.claimant.discord_id);
     assert_eq!(body["linked"], true);
@@ -393,7 +414,7 @@ async fn deleted_owner_history_transfers_and_signup_attendance_and_authorship_re
     );
     let before_retry = business_snapshot(&f).await;
     assert_eq!(
-        confirm_http(&f.state, &f.claimant_code, &f.arma).await.0,
+        confirm_http(&f, &f.claimant_code, &f.arma).await.0,
         StatusCode::OK
     );
     assert_eq!(
@@ -413,7 +434,7 @@ async fn deleted_owner_without_attributed_history_releases_unique_identity() {
             .await
             .unwrap();
     assert_eq!(rows, 0);
-    let (status, body) = confirm_http(&f.state, &f.claimant_code, &f.arma).await;
+    let (status, body) = confirm_http(&f, &f.claimant_code, &f.arma).await;
     assert_eq!(status, StatusCode::OK, "{body}");
     assert_reclaimed(&f, &f.claimant, &f.claimant_code).await;
 }
@@ -422,7 +443,7 @@ async fn deleted_owner_without_attributed_history_releases_unique_identity() {
 async fn active_owner_conflict_preserves_both_accounts_codes_and_history() {
     let f = fixture(true, false).await;
     let before = business_snapshot(&f).await;
-    let (status, body) = confirm_http(&f.state, &f.claimant_code, &f.arma).await;
+    let (status, body) = confirm_http(&f, &f.claimant_code, &f.arma).await;
     assert_eq!(status, StatusCode::CONFLICT, "{body}");
     assert_eq!(business_snapshot(&f).await, before);
 }
@@ -440,7 +461,7 @@ async fn expired_or_cancelled_unconsumed_claimant_code_cannot_release_deleted_ow
         }
         assert!(!code_state(&f.state.pool, &f.claimant_code).await.0);
         let before = business_snapshot(&f).await;
-        let (status, body) = confirm_http(&f.state, &f.claimant_code, &f.arma).await;
+        let (status, body) = confirm_http(&f, &f.claimant_code, &f.arma).await;
         assert_eq!(
             status,
             StatusCode::NOT_FOUND,
@@ -460,11 +481,11 @@ async fn simultaneous_verified_claimants_have_exactly_one_deleted_owner_reclamat
         tokio::join!(
             async {
                 barrier.wait().await;
-                confirm_http(&f.state, &f.claimant_code, &f.arma).await
+                confirm_http(&f, &f.claimant_code, &f.arma).await
             },
             async {
                 barrier.wait().await;
-                confirm_http(&f.state, &second_code, &f.arma).await
+                confirm_http(&f, &second_code, &f.arma).await
             },
         )
     })
@@ -548,7 +569,7 @@ async fn required_statistics_or_audit_failure_rolls_back_reclamation_and_retry_s
         let f = fixture(true, true).await;
         let before = business_snapshot(&f).await;
         let (trigger, table) = install_failure(&f.state.pool, &f.claimant.discord_id, audit).await;
-        let failed = confirm_http(&f.state, &f.claimant_code, &f.arma).await;
+        let failed = confirm_http(&f, &f.claimant_code, &f.arma).await;
         remove_failure(&f.state.pool, &trigger, table).await;
         assert_eq!(
             failed.0,
@@ -561,7 +582,7 @@ async fn required_statistics_or_audit_failure_rolls_back_reclamation_and_retry_s
             before,
             "failed recomputation or audit restores both owners, codes, credentials, facts, outbox, and aggregates"
         );
-        let retry = confirm_http(&f.state, &f.claimant_code, &f.arma).await;
+        let retry = confirm_http(&f, &f.claimant_code, &f.arma).await;
         assert_eq!(retry.0, StatusCode::OK, "{}", retry.1);
         assert_reclaimed(&f, &f.claimant, &f.claimant_code).await;
     }

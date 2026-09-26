@@ -44,7 +44,6 @@ pub(super) fn parse(args: &[String], home: &str) -> Parsed {
             a if a.starts_with("--server=") => o.server = val(a),
             a if a.starts_with("--artifact-file=") => o.artifact_file = val(a),
             a if a.starts_with("--backend-url=") => o.backend_url = val(a),
-            a if a.starts_with("--token=") => o.token = val(a),
             a if a.starts_with("--admin=") => o.admins.push(val(a)),
             a if a.starts_with("--name=") => o.server_name = val(a),
             a if a.starts_with("--scenario=") => o.scenario = val(a),
@@ -55,6 +54,7 @@ pub(super) fn parse(args: &[String], home: &str) -> Parsed {
             a if a.starts_with("--timeout=") => o.run_timeout = val(a),
             "--dry-run" => o.dry_run = true,
             "--selftest" => o.selftest = true,
+            "--require-telemetry" => o.require_telemetry = true,
             "-h" | "--help" => return Parsed::Help,
             other => return Parsed::Unknown(other.to_string()),
         }
@@ -178,6 +178,11 @@ pub(super) fn main_with(root: &Path, home: &str, host: &Host, o: Opts) -> u8 {
         return usage_fail(
             "give exactly one of --mission=<uuid> (deploy it through the platform) and \
              --artifact-file=<path> (boot a compiled document offline)",
+        );
+    }
+    if o.require_telemetry && o.mission.is_empty() {
+        return usage_fail(
+            "--require-telemetry needs --mission: an offline run reports no telemetry",
         );
     }
     if !o.artifact_file.is_empty() && !Path::new(&o.artifact_file).is_file() {
@@ -368,9 +373,7 @@ pub(super) fn main_with(root: &Path, home: &str, host: &Host, o: Opts) -> u8 {
         }
     }
 
-    // Token: an explicit flag wins; otherwise `setup server-profile` already substituted the one
-    // from `apps/website/api_v2/.env` and that work is left alone. The machine credential is the
-    // one this run was issued.
+    // The backend config's only secret is the machine credential this run was issued.
     let credential = provisioned.as_ref().map(|p| p.credential_secret.as_str());
     if let Err(e) = render::patch_backend_config(&backend_cfg, &o, credential) {
         // The cause keeps its own line so the `ERROR:` line stays byte-identical to the baseline.
@@ -446,9 +449,15 @@ pub(super) fn main_with(root: &Path, home: &str, host: &Host, o: Opts) -> u8 {
         return 0;
     }
 
+    let telemetry = telemetry_check::TelemetryWatch::new(o.require_telemetry);
     let confirm = || {
         if let Some(provisioned) = &provisioned {
-            platform_deployment::confirm(provisioned, &o.run_dir);
+            platform_deployment::confirm(provisioned, &o.run_dir, &telemetry);
+        }
+    };
+    let before_stop = || {
+        if let Some(provisioned) = &provisioned {
+            platform_deployment::drain_telemetry(provisioned, &o.run_dir, &telemetry);
         }
     };
     let code = boot::boot_and_wait(&boot::BootCtx {
@@ -462,11 +471,14 @@ pub(super) fn main_with(root: &Path, home: &str, host: &Host, o: Opts) -> u8 {
         scenario: &scenario,
         running: &running,
         after_ready: &confirm,
+        before_stop: &before_stop,
     });
-    if let Some(provisioned) = &provisioned {
-        platform_deployment::release(provisioned, &o.run_dir);
+    match &provisioned {
+        Some(provisioned) => {
+            platform_deployment::release(provisioned, &o.run_dir, &telemetry, code)
+        }
+        None => code,
     }
-    code
 }
 
 /// bash `[ -x PATH ]`: a regular file with any execute bit.

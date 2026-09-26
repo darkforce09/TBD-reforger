@@ -12,7 +12,6 @@ pub(crate) fn base() -> Env {
         remote_dir: "/home/sam/tbd/repo".into(),
         profile_dir: "/home/sam/tbd/profile".into(),
         addons_staging: "/home/sam/tbd/addons".into(),
-        game_server_token: "tok".into(),
         mod_runtime_credential: RUNTIME_CREDENTIAL.into(),
         backend_url: "http://127.0.0.1:8080".into(),
         addon_guid: "B2C3D4E5F6A78901".into(),
@@ -127,7 +126,7 @@ fn deploy_env_file_beats_the_process_environment() {
     fs::write(
         &f,
         "# comment\nexport TBD_SSH_HOST=\"h\"\nTBD_REMOTE_DIR=/home/sam/tbd/r\n\
-         TBD_PROFILE_DIR=/p/q\nTBD_ADDONS_STAGING=/a\nTBD_GAME_SERVER_TOKEN=t\n\
+         TBD_PROFILE_DIR=/p/q\nTBD_ADDONS_STAGING=/a\n\
          TBD_A2S_PORT=9999\n",
     )
     .unwrap();
@@ -160,7 +159,7 @@ fn host_agent_settings_are_required_once_the_install_is_asked_for() {
     let f = d.join("deploy.env");
     let head = format!(
         "TBD_SSH_HOST=h\nTBD_REMOTE_DIR=/r\nTBD_PROFILE_DIR=/p\nTBD_ADDONS_STAGING=/a\n\
-         TBD_GAME_SERVER_TOKEN=t\nTBD_MOD_RUNTIME_CREDENTIAL={RUNTIME_CREDENTIAL}\n\
+         TBD_MOD_RUNTIME_CREDENTIAL={RUNTIME_CREDENTIAL}\n\
          TBD_INSTALL_HOST_AGENT=1\n"
     );
     fs::write(&f, &head).unwrap();
@@ -196,7 +195,7 @@ fn source_no_longer_executes_the_env_file() {
         &f,
         format!(
             "TBD_SSH_HOST=h\nTBD_REMOTE_DIR=/r\nTBD_PROFILE_DIR=/p\nTBD_ADDONS_STAGING=/a\n\
-             TBD_GAME_SERVER_TOKEN=t\nTBD_MOD_RUNTIME_CREDENTIAL={RUNTIME_CREDENTIAL}\ntouch {}\n",
+             TBD_MOD_RUNTIME_CREDENTIAL={RUNTIME_CREDENTIAL}\ntouch {}\n",
             canary.display()
         ),
     )

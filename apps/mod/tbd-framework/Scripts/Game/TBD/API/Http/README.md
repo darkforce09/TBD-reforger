@@ -8,15 +8,15 @@ helpers every backend payload and backend log line uses.
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/API/Http/
-├── TBD_BackendConfig.c      reads the backend URL and both secrets from the profile
-├── TBD_BackendText.c        JSON string escaping, RFC 3339 UTC time, two-digit padding, backend description
+├── TBD_BackendConfig.c      reads the backend URL and the machine credential from the profile
+├── TBD_BackendText.c        JSON string escaping, UUID check, RFC 3339 UTC time, two-digit padding, backend description
 ├── TBD_GameRuntimeAnswer.c  classifies an answer: success, 409 refusal, transient, permanent
 └── TBD_GameRuntimeHttp.c    the machine-credential transport: one answer per call, backoff
 ```
 
 ## How it works
 
-### Two authentication tiers
+### One authentication tier
 
 `TBD_BackendConfig` reads `$profile:TBD_BackendConfig.json` (copied from
 `apps/mod/tbd-framework/Data/backend.example.json`), whose keys are the fields of
@@ -25,24 +25,26 @@ apps/mod/tbd-framework/Scripts/Game/TBD/API/Http/
 | Key | Default | Sent as | Used for |
 |---|---|---|---|
 | `backendUrl` | none; no platform connection without it | the base of every URL | every call |
-| `serverToken` | none | `X-Service-Token` | `POST /api/v1/ingest/link-confirm` and `POST /api/v1/ingest/match-results` |
-| `machineCredential` | none | `Authorization: Bearer tbdm_...` | every `/api/v1/game-runtime/` and `/api/v1/fleet-executor/` route |
+| `machineCredential` | none | `Authorization: Bearer tbdm_...` | every `/api/v1/game-runtime/`, `/api/v1/fleet-executor/` and `/api/v1/ingest/` route |
 
 The `machineCredential` is this server's `mod_runtime`
 [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential), issued by an administrator.
 A value that does not start with `tbdm_`, such as the example's placeholder, counts as unset: no
-deployment is read, no runtime session starts, no roster loads and no fleet command is claimed.
+deployment is read, no runtime session starts, no roster loads, no fleet command is claimed, no
+link is confirmed and the telemetry queue holds its entries.
 `Reload` re-reads the file while the server runs and keeps the settings in force when the file does
 not read or parse; the loops that wait on the platform (`TBD_DeployedMission` and
 `TBD_RosterLoader` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`) call it,
 so a credential pasted in later is picked up without a restart. `SetBackend`, behind the admin
-chat command `#tbd backend`, repoints the URL and token and saves the file. Neither secret is
-logged. The mission and its [event](/documentation_v2/glossary/a_to_f.md#event) are not configured here:
+chat command `#tbd backend <url>`, repoints the URL, keeps the credential and saves the file. The
+credential is never logged. The mission and its [event](/documentation_v2/glossary/a_to_f.md#event) are not configured here:
 they come with the deployment the platform holds for this server.
 
 ### The machine-credential transport
 
-`TBD_GameRuntimeHttp.Post` and `Get` open a `RestContext` with the bearer credential, the JSON
+`TBD_GameRuntimeHttp.Post` and `Get` take the full path (`ROUTE_PREFIX` names the game-runtime
+prefix; the fleet executor, the link confirmation and the telemetry delivery pass their own
+`/api/v1/fleet-executor/` and `/api/v1/ingest/` paths), open a `RestContext` with the bearer credential, the JSON
 content type and a 15 s timeout (`REQUEST_TIMEOUT_S`), and deliver exactly one
 `TBD_GameRuntimeAnswer` to the sender's `TBD_GameRuntimeCall` subclass; a request the engine never
 reports is answered transient by a 25 s watchdog (`WATCHDOG_MS`). `TBD_GameRuntimeAnswer` classifies
@@ -58,14 +60,14 @@ uses.
 escapes backslashes and then quotes, and folds newline, carriage return and tab to spaces so a
 payload stays one log line. `UtcNowIso8601` reads the engine's UTC date and clock and writes
 `2026-07-25T16:31:28Z`, the shape the backend's `DateTime<Utc>` parses; `Pad2` zero-pads to
-two digits. `DescribeBackend(noneText)` prints the configured backend URL for a log line, never a
-secret: `noneText` when no URL is set, `<url> (NO TOKEN)` when the server token is empty.
-`TBD_GameRuntimeHttp.DescribeBackend` keeps the machine-credential form of the same line.
+two digits. `IsUuid` recognises a canonical UUID, the check optional `format: uuid` wire fields
+pass before they are sent. `DescribeBackend(noneText)` prints the configured backend for a log line,
+never the credential: `noneText` when no URL is set, else `TBD_GameRuntimeHttp.DescribeBackend`,
+the URL with the reason a credential is unusable.
 
 ## Authority
 
-- Server: everything; the machine credential and the service token live only in the authority's
-  profile.
+- Server: everything; the machine credential lives only in the authority's profile.
 - Client: nothing.
 - Owner: nothing.
 - RPCs: none.
@@ -81,8 +83,9 @@ secret: `noneText` when no URL is set, `<url> (NO TOKEN)` when the server token 
   `TBD_DeploymentRequest`, `TBD_DeploymentRequestQueue` and `TBD_DeploymentEndQueue` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/`; `TBD_DeployableMissionList` and
   `TBD_MissionDeploymentRelay` in `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/`;
-  the runtime session and fleet commands in `apps/mod/tbd-framework/Scripts/Game/TBD/API/`.
-  `TBD_BackendText` by the identity link, the results report and the runtime session there.
+  the runtime session, fleet commands, identity link confirmation and match telemetry delivery in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/API/`. `TBD_BackendText` by the identity link, the
+  results report, the match telemetry reports and the runtime session there.
   `TBD_BackendConfig.SetBackend` by `TBD_AdminCommands`.
 - Rules: no secret is ever printed; answers are read by status and `details.code`, never by message
   text; lines added stay ASCII; `cargo xtask mod compile` checks that the scripts compile.

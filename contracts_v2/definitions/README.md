@@ -52,6 +52,7 @@ A schema reaches code in one of three ways:
 | Web API responses | `current-profile`, `reservation-response`, `event-hub`, `event-orbat`, `event-viewer-access`, `event-access-administration`, `waitlist-promotion-response` | generated API models; API contract tests |
 | Fleet and machine credentials | `machine-credential`, `fleet-command` | generated API models; the fleet host agent's ledger client; API contract tests |
 | Game runtime | `game-runtime-session`, `game-runtime-roster`, `game-runtime-deployment` | generated API models; API contract tests; the [mod](/documentation_v2/glossary/g_to_m.md#mod)'s API bridge, which calls these routes |
+| Match telemetry | `match-telemetry` | generated API models in `apps/website/api_v2/src/match_telemetry/models/generated/match_telemetry/`; the API's ingest decoders and the integration suites; the web app's DTOs; the mod's telemetry reports, queue and event wire |
 | Missions | `mission`, `mission-editor-payload`, `mission-review`, `mission-deployment` | API validators and generated models; the mod's mission DTOs; the Mission Creator; the map engine's tests |
 | Arsenal and factions | `registry-items`, `registry-compat`, `registry`, `loadout-export`, `faction-library` | API validators, generated and hand-written models; the registry export plugin; the mod's loadout equip path; the Mission Creator's [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) |
 | Terrain | `terrain-manifest`, `terrain-anchors`, `terrain-registry`, `locations`, `height-labels` | the schema gate; the developer tools' map verifications |
@@ -60,6 +61,13 @@ A schema reaches code in one of three ways:
 | Workbench equipment export | `equipment-vehicle-export` | `cargo xtask mod validate-equipment-vehicle-export` and `publish-equipment-vehicle-export` |
 | Voice bridge | `bridge-messages` | the schema gate, over `contracts_v2/fixtures/bridge_samples/` |
 
+`match-telemetry.schema.json` describes the event read page at its root and carries the
+machine-authenticated ingest shapes of `/api/v1/ingest/matches`, `/api/v1/ingest/match-results` and
+`/api/v1/ingest/match-events` as definitions, with the refusal body and the telemetry queue
+reading. The `RuntimeHeartbeat` definition of `game-runtime-session.schema.json` carries the same
+queue reading as its optional `telemetry_queue` block: absent keeps the stored reading, and present
+requires all four counters with `backlog` at most `capacity`.
+
 `map-object-enums.schema.json` is the single source of every closed `kind` and `class` enum: the
 other map-object schemas, the prefab classification rules and the glyph keys all draw from it, and
 `cargo xtask schema map-object-enums` holds them to it.
@@ -67,8 +75,8 @@ other map-object schemas, the prefab classification rules and the glyph keys all
 ## Format
 
 - Encoding: UTF-8 JSON Schema, one contract per file, named `<subject>.schema.json` in lowercase
-  hyphenated words. The web API, fleet, game-runtime, mission-review and mission-deployment
-  contracts use draft-07 and carry no `$id`; the others use draft 2020-12 with an `$id`, most under
+  hyphenated words. The web API, fleet, game-runtime, match-telemetry, mission-review and
+  mission-deployment contracts use draft-07 and carry no `$id`; the others use draft 2020-12 with an `$id`, most under
   `https://schema.tbdevent.eu/`, which the gates use to resolve cross-file references.
 - Schema: each file is a JSON Schema whose `title` and `description` state the endpoint or file it
   shapes and the rules that hold there. The API's models keep snake_case keys, the game-runtime

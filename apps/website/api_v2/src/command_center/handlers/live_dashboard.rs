@@ -6,6 +6,7 @@ use chrono::{DateTime, Utc};
 use serde::Serialize;
 use serde_json::{Value, json};
 
+use crate::command_center::services::fleet_overview::load_fleet_overview;
 use crate::community_content::models::announcement::Announcement;
 use crate::community_content::services::modpack_lookup::load_current_modpack;
 use crate::core::application_state::AppState;
@@ -14,7 +15,6 @@ use crate::core::middleware::AuthUser;
 use crate::core::wire_format::rfc3339_utc;
 use crate::missions::services::mission_lookup::mission_title_terrain;
 use crate::operations::models::{Event, EventMission, OrbatSlot};
-use crate::server_infrastructure::models::server::ServerStatus;
 
 #[derive(Debug, Serialize)]
 struct EventSummary {
@@ -37,7 +37,7 @@ struct AssignmentSummary {
     role: String,
 }
 
-/// `GET /api/v1/dashboard` — next op, my assignment, server status, modpack, news.
+/// `GET /api/v1/dashboard` — next op, my assignment, the configured fleet, modpack, news.
 ///
 /// @route GET /api/v1/dashboard
 pub async fn get_dashboard(
@@ -183,16 +183,8 @@ pub async fn get_dashboard(
         }
     };
 
-    // Live server status (single primary server assumption).
-    let server_status: Option<ServerStatus> = sqlx::query_as(
-        "SELECT server_id, is_online, player_count, max_players, server_fps::float8 AS server_fps, \
-         uptime_seconds, current_match_id, COALESCE(ingame_time, '') AS ingame_time, \
-         COALESCE(ingame_weather, '') AS ingame_weather, \
-         COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at \
-         FROM server_statuses LIMIT 1",
-    )
-    .fetch_optional(pool)
-    .await?;
+    // The configured fleet: every active server with its status, and the fleet totals.
+    let fleet = load_fleet_overview(pool).await?;
 
     let current_modpack = load_current_modpack(pool).await?;
 
@@ -206,7 +198,7 @@ pub async fn get_dashboard(
     Ok(Json(json!({
         "next_event": next_event,
         "my_assignment": my_assignment,
-        "server_status": server_status,
+        "fleet": fleet,
         "current_modpack": current_modpack,
         "recent_announcements": recent,
     })))

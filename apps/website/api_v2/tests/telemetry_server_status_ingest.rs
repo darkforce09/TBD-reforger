@@ -11,9 +11,11 @@
 //! own actors off them.
 
 use axum::http::StatusCode;
+use serde_json::Value;
 use serde_json::json;
 use sqlx::PgPool;
-use telemetry_support::{SVC, admin_token, boot, call, heartbeat, remove_server, runtime_session};
+use telemetry_support::match_reports::ReportingServer;
+use telemetry_support::{admin_token, boot, call, heartbeat, remove_server, runtime_session};
 use uuid::Uuid;
 
 mod common;
@@ -43,13 +45,10 @@ async fn telemetry_ingest_closes_the_loop() {
     };
     let admin = admin_token(&app).await;
 
-    // A server row (for the status read-back) + an arma-linked player.
-    let server_id: Uuid = sqlx::query_scalar(
-        "INSERT INTO servers (name, ip, port, is_active) VALUES ('Tele Srv', '127.0.0.1'::inet, 2001, true) RETURNING id",
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    // A registered server with its runtime session (for the heartbeats, the status read-back
+    // and the match report) + an arma-linked player.
+    let reporter = ReportingServer::open(&app, &pool, "Tele Srv").await;
+    let server_id = reporter.server_id;
     sqlx::query(
         "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
          VALUES ($1, 'Player', 'player', '', $2, '[TBD] Player', 'enlisted', false, '', now(), now()) \
@@ -62,9 +61,9 @@ async fn telemetry_ingest_closes_the_loop() {
     .unwrap();
 
     // Healthy heartbeat from the server's runtime session.
-    let session = runtime_session(&app, &pool, server_id).await;
+    let session = &reporter.session;
     let ok = json!({"is_online": true, "player_count": 10, "max_players": 64, "server_fps": 60.0});
-    let (st, r) = heartbeat(&app, &session, 1, ok.clone()).await;
+    let (st, r) = heartbeat(&app, session, 1, ok.clone()).await;
     assert_eq!(st, StatusCode::OK, "ingest: {r}");
     assert_eq!(r["ok"], true);
 
@@ -85,7 +84,7 @@ async fn telemetry_ingest_closes_the_loop() {
 
     // Low-FPS heartbeat → crosses the threshold → WARN audit written.
     let low = json!({"is_online": true, "player_count": 12, "server_fps": 15.0});
-    let (st, _) = heartbeat(&app, &session, 2, low).await;
+    let (st, _) = heartbeat(&app, session, 2, low).await;
     assert_eq!(st, StatusCode::OK);
     let warns: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM audit_logs WHERE action = 'server.low_fps' AND target_id = $1",
@@ -123,30 +122,17 @@ async fn telemetry_ingest_closes_the_loop() {
     let match_body = format!(
         r#"{{"match":{{"source_match_id":"m-tele-1","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{PLAYER_ARMA}","role_played":"SL","source_event_id":"e1","counters":{{"kills":5,"deaths":1,"team_kills":0,"longest_kill_m":0,"vehicles_destroyed":0,"is_command":false}}}}]}}"#
     );
-    let (st, mr) = call(
-        &app,
-        "POST",
-        "/api/v1/ingest/match-results",
-        None,
-        Some(SVC),
-        Some(&match_body),
-    )
-    .await;
+    let match_body: Value = serde_json::from_str(&match_body).expect("a results body is JSON");
+    let (st, mr) = reporter.report_results(&app, &match_body).await;
     assert_eq!(st, StatusCode::OK, "match: {mr}");
     assert_eq!(mr["players"], 1);
     let match_id = mr["match_id"].as_str().unwrap().to_string();
 
-    // Idempotent: same source_match_id reuses the match.
-    let (st, mr2) = call(
-        &app,
-        "POST",
-        "/api/v1/ingest/match-results",
-        None,
-        Some(SVC),
-        Some(&match_body),
-    )
-    .await;
+    // Idempotent: the same revision of the same source_match_id, sent again, reuses the match
+    // and changes nothing.
+    let (st, mr2) = reporter.post_results(&app, 1, &match_body).await;
     assert_eq!(st, StatusCode::OK);
+    assert_eq!(mr2["applied"], false, "a retried revision is inert: {mr2}");
     assert_eq!(
         mr2["match_id"],
         match_id.as_str(),

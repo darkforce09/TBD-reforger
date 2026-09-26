@@ -57,7 +57,8 @@
 //!
 //! ```text
 //!   0  server booted, local addon won, backend room registered — join details printed
-//!   1  CODE/CONFIG: the server died, refused the config, or loaded the WRONG addon copy
+//!   1  CODE/CONFIG: the server died, refused the config, or loaded the WRONG addon copy;
+//!      or, with --require-telemetry, the telemetry check failed
 //!   2  usage
 //!   3  ENVIRONMENT: this machine cannot run the gate at all (no host bridge, no game installed)
 //! ```
@@ -74,6 +75,7 @@
 //! | `playtest_server/lifecycle.rs` | the tri-state liveness probe, `kill_run`, the run lock, `assert_no_live_server`, `--selftest` |
 //! | `playtest_server/render.rs` | the three former `python3` sites — backend config patch, admin list, `server.json` |
 //! | `playtest_server/platform_deployment` | the deployment the server runs: provision, confirm, release; or the offline artifact |
+//! | `playtest_server/telemetry_check.rs` | the runtime's telemetry queue reading, the seen matches' events, the release verdict |
 //! | `playtest_server/logread.rs` | every `grep` against `server.out` — boot phase, the addon hard gate, the error dump |
 //! | `playtest_server/boot.rs` | launching the engine, the wait loop, the join banner, Ctrl-C and shutdown |
 //!
@@ -92,6 +94,7 @@ mod lifecycle;
 mod logread;
 mod platform_deployment;
 mod render;
+mod telemetry_check;
 
 use std::path::{Path, PathBuf};
 
@@ -116,7 +119,6 @@ Options:
   --server=<uuid>       platform server to deploy on (default: the TBD Playtest server row)
   --artifact-file=<p>   boot this compiled mission document offline (no API, no credential)
   --backend-url=<url>   default http://127.0.0.1:8080
-  --token=<tok>         SERVICE_TOKEN; default read from apps/website/api_v2/.env
   --admin=<id>          identityId (UUID) or 17-digit SteamID; repeatable
   --name=<s>            server browser name
   --scenario=<id>       scenarioId override (default: from tbd-dev-server.config.json)
@@ -125,6 +127,7 @@ Options:
   --max-players=<n>     default 8
   --run-dir=<dir>       staging root, default $HOME/tbd-playtest
   --timeout=<sec>       stop the server after <sec> (default: run until Ctrl-C)
+  --require-telemetry   exit 1 when the runtime's telemetry does not reach the platform
   --dry-run             render + validate everything, print the command line, boot nothing
   --selftest            prove kill_run + the run lock actually work; boots no game server
 ";
@@ -140,7 +143,6 @@ pub struct Opts {
     pub server: String,
     pub artifact_file: String,
     pub backend_url: String,
-    pub token: String,
     pub server_name: String,
     pub scenario: String,
     pub game_port: String,
@@ -150,6 +152,8 @@ pub struct Opts {
     pub run_timeout: String,
     pub dry_run: bool,
     pub selftest: bool,
+    /// `--require-telemetry`: a failed telemetry check fails the run.
+    pub require_telemetry: bool,
     pub admins: Vec<String>,
 }
 
@@ -161,7 +165,6 @@ impl Opts {
             server: String::new(),
             artifact_file: String::new(),
             backend_url: "http://127.0.0.1:8080".into(),
-            token: String::new(),
             server_name: String::new(),
             scenario: String::new(),
             // PORTS AND COUNTS STAY STRINGS until the moment they are needed as numbers. bash never
@@ -175,6 +178,7 @@ impl Opts {
             run_timeout: String::new(),
             dry_run: false,
             selftest: false,
+            require_telemetry: false,
             admins: Vec::new(),
         }
     }

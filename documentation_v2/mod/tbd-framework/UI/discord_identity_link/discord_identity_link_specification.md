@@ -33,7 +33,8 @@ private chat command; the [mod](/documentation_v2/glossary/g_to_m.md#mod) draws 
    - the server issued the player a durable game identity; a player with none, or with a
      name-derived identity on a listen host, is refused, since a link made there would bind the
      account to a seat or a name;
-   - the server has a backend URL and service token ("cannot link: this server is not connected
+   - the server has a backend URL and a usable
+     [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential) ("cannot link: this server is not connected
      to the TBD website, so it cannot confirm your code. Tell an admin. Your code was not used.");
    - the request queue has room (16 requests; "too many link requests queued right now - try
      again in a minute.").
@@ -43,8 +44,8 @@ private chat command; the [mod](/documentation_v2/glossary/g_to_m.md#mod) draws 
    account — attendance and stats count from your next round.".
 6. On failure the reply names the cause and what to do: an invalid, used or expired code (make a
    new one on the website); an identity already linked to a different account (unlink it there
-   with "Unlink Arma ID", or contact an admin); a rejected service token or a website error (tell
-   an admin). Each failure reply ends "You are NOT linked.".
+   with "Unlink Arma ID", or contact an admin); a rejected machine credential (401 or 403) or a
+   website error (tell an admin). Each failure reply ends "You are NOT linked.".
 
 ### Status and help
 
@@ -67,15 +68,17 @@ None found: each reply matches the status the platform's handler returns.
   `apps/website/api_v2/src/identity_and_access/handlers/arma_link_codes.rs`): signed-in member
   tier; issues the 6-digit code with a 10-minute expiry.
 - `POST /api/v1/ingest/link-confirm` (`ingest_link_confirm` in
-  `apps/website/api_v2/src/identity_and_access/handlers/arma_link_confirmation.rs`): service-token
-  tier, called by the game server with `X-Service-Token`; body `code`, `arma_id` and
-  `arma_character`. It consumes the code, sets the member's game identity, attributes their
-  earlier history and recomputes statistics, and answers `linked`, `discord_id`, `arma_id` and
+  `apps/website/api_v2/src/identity_and_access/handlers/arma_link_confirmation.rs`): machine tier,
+  called by the game server with its `mod_runtime` machine credential as
+  `Authorization: Bearer`; body `code`, `arma_id` and `arma_character`. It consumes the code, sets
+  the member's game identity, attributes their earlier history and recomputes statistics, writes an
+  audit row that names the confirming server, and answers `linked`, `discord_id`, `arma_id` and
   `arma_character`.
 - `GET /api/v1/me/link/status` and `DELETE /api/v1/me/link`: the website's link status and unlink,
   used by the settings page only.
 - The identity sent is `TBD_PlayerIdentity.GetArmaId`, byte for byte the value
-  `TBD_ResultsReporter` posts with each round's results, so the platform's join on it matches.
+  `TBD_ResultsReporter` puts in each round's results revision, which the telemetry queue delivers,
+  so the platform's join on it matches.
 
 ## Design
 
@@ -104,8 +107,8 @@ None found: each reply matches the status the platform's handler returns.
 ## Decisions
 
 - The code is made on the website and confirmed by the game server, never by the client: the
-  server alone holds the service token and the player's identity, so a client cannot claim an
-  account.
+  server alone holds its machine credential and the player's identity, so a client cannot claim
+  an account.
 - A player without a durable identity cannot link: the platform's game identity is unique, so
   binding a seat number or a name to an account would hand it to whoever holds that seat or name
   next, and block every other account from it.

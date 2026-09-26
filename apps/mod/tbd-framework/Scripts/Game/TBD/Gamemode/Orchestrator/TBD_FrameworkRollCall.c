@@ -34,6 +34,7 @@ class TBD_FrameworkRollCall
 		line += Entry(owner, TBD_MarkerComponent, "Markers", missing);
 		line += Entry(owner, TBD_RadioComponent, "Radio", missing);
 		line += Entry(owner, TBD_ObjectivesComponent, "Objectives", missing);
+		line += Entry(owner, TBD_MatchTelemetryComponent, "MatchTelemetry", missing);
 
 		// Armed here because a world boot has no players, so Serialise never runs; once-only inside.
 		TBD_BriefingWireSelfCheck.Run();

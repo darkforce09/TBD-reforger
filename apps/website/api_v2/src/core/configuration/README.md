@@ -29,8 +29,10 @@ when they do not parse. The full list of settings, with defaults, is the crate's
 `DISCORD_BOT_TOKEN` is read only through `Config::require_discord_bot_token`, which turns an unset
 token into a named error at the point of use. The four `TBD_DB_POOL_*` settings are not in
 `Config`: `crate::core::database::connection_pool` reads them when the pool opens.
-`Config::for_tests` builds a development configuration for tests and harnesses, with blank Discord
-credentials and the upload directory under a per-process temporary directory.
+`OBSERVABILITY_TOKEN` is optional: left empty, `/metrics` answers 401 and `/healthz` serves only its
+public view. `Config::for_tests` builds a development configuration for tests and harnesses, with
+blank Discord credentials, a fixed test observability token and the upload directory under a
+per-process temporary directory.
 
 `TRUSTED_PROXIES` is a comma-separated list of addresses and CIDR blocks. `ProxyNet::parse`
 refuses a block with host bits set rather than masking it, and `ProxyNet::contains` compares
@@ -43,8 +45,8 @@ resolution in `crate::core::middleware` is the only reader.
 - Used by:
   - `apps/website/api_v2/src/bin/api.rs`, which calls `Config::load`;
   - the rest of `core`: `AppState::new` builds its services from a `Config`, the router reads the
-    file mounts, the body limit and the development flag, the middleware reads the service token
-    and the proxy list, the health probe reads the service token, and
+    file mounts, the body limit and the development flag, the middleware reads the proxy list,
+    `crate::core::observability::observability_auth` reads the observability token, and
     `crate::core::database::connection_pool` reports through `ConfigError`;
   - the domains, through `AppState::cfg`; `identity_and_access`, `missions` and `operations` also
     name `Config` directly, in the OAuth host guard, session authorization, the

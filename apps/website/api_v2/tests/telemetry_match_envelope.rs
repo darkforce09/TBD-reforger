@@ -6,25 +6,47 @@
 //! rows at both ends, because `matches` does not cascade to `match_player_stats` and
 //! `leaderboard_totals` sums every row for a `discord_id`.
 
+use axum::Router;
 use axum::http::StatusCode;
+use serde_json::{Value, json};
 use sqlx::PgPool;
-use telemetry_support::{SVC, boot, call};
+use telemetry_support::boot;
+use telemetry_support::match_reports::ReportingServer;
 use uuid::Uuid;
 
 mod common;
 mod telemetry_support;
 
+/// Report a results body given as JSON text as the next revision of its match.
+async fn report(reporter: &ReportingServer, app: &Router, body: &str) -> (StatusCode, Value) {
+    let body: Value = serde_json::from_str(body).expect("a results body is JSON");
+    reporter.report_results(app, &body).await
+}
+
+/// Post a results body given as JSON text as `revision` without registering its match: the
+/// shape of a report the whole-body validation refuses before any registration is consulted.
+async fn post_revision(
+    reporter: &ReportingServer,
+    app: &Router,
+    revision: i64,
+    body: &str,
+) -> (StatusCode, Value) {
+    let body: Value = serde_json::from_str(body).expect("a results body is JSON");
+    reporter.post_results(app, revision, &body).await
+}
+
 /// A partial re-ingest must not walk a finished match backwards or zero a
 /// scoreline. Every body below is one a buggy or retried game server could plausibly send;
 /// each is a shape that returns 200 and destroys data when the guard is missing.
 ///
-/// Keep the ingest calls in this test under the strict limiter's burst (1/s, burst 10).
+/// The seed is revision 1; each malformed body below is offered as revision 2.
 #[tokio::test]
 async fn partial_match_reingest_cannot_revert_or_zero() {
     let Some((app, pool)) = boot().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
+    let reporter = &ReportingServer::open(&app, &pool, "Envelope partial server").await;
     const ARMA: &str = "revert-arma-revert";
     const DISCORD: &str = "000000000000316001";
     const SRC: &str = "m-revert-revert";
@@ -61,15 +83,7 @@ async fn partial_match_reingest_cannot_revert_or_zero() {
     let full = format!(
         r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA","aar_replay_url":"https://aar.tbd/{SRC}.json","ended_at":"2026-07-26T20:14:00Z"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"e-revert","counters":{{"kills":17,"deaths":3,"team_kills":1,"longest_kill_m":842,"vehicles_destroyed":4,"is_command":true,"command_win":true}}}}]}}"#
     );
-    let (st, r) = call(
-        &app,
-        "POST",
-        "/api/v1/ingest/match-results",
-        None,
-        Some(SVC),
-        Some(&full),
-    )
-    .await;
+    let (st, r) = report(reporter, &app, &full).await;
     assert_eq!(st, StatusCode::OK, "seed: {r}");
 
     type MatchRow = (String, Option<String>, Option<String>, bool);
@@ -109,15 +123,11 @@ async fn partial_match_reingest_cannot_revert_or_zero() {
 
     // (1) A partial match body — this is the one that reverted `success`/`USA` to
     // `pending`/`''` and dropped both the AAR link and `ended_at`.
-    let (st, r) = call(
+    let (st, r) = post_revision(
+        reporter,
         &app,
-        "POST",
-        "/api/v1/ingest/match-results",
-        None,
-        Some(SVC),
-        Some(&format!(
-            r#"{{"match":{{"source_match_id":"{SRC}"}},"players":[]}}"#
-        )),
+        2,
+        &format!(r#"{{"match":{{"source_match_id":"{SRC}"}},"players":[]}}"#),
     )
     .await;
     assert_eq!(st, StatusCode::BAD_REQUEST, "partial match body: {r}");
@@ -132,15 +142,13 @@ async fn partial_match_reingest_cannot_revert_or_zero() {
     // directly by `absent_counters_are_not_a_write_on_reingest`, which sends a *well-formed*
     // counters-less row and proves the stored 17/3 survives it. The two tests together say:
     // silence never writes, and an incomplete identity is still a 400.
-    let (st, r) = call(
+    let (st, r) = post_revision(
+        reporter,
         &app,
-        "POST",
-        "/api/v1/ingest/match-results",
-        None,
-        Some(SVC),
-        Some(&format!(
+        2,
+        &format!(
             r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{ARMA}","source_event_id":"e-revert"}}]}}"#
-        )),
+        ),
     )
     .await;
     assert_eq!(st, StatusCode::BAD_REQUEST, "partial player body: {r}");
@@ -175,15 +183,9 @@ async fn partial_match_reingest_cannot_revert_or_zero() {
             .fetch_one(&pool)
             .await
             .unwrap();
-    let (st, r) = call(
-        &app,
-        "POST",
-        "/api/v1/ingest/match-results",
-        None,
-        Some(SVC),
-        Some("{}"),
-    )
-    .await;
+    let (st, r) = reporter
+        .post(&app, "/api/v1/ingest/match-results", &json!({}))
+        .await;
     assert_eq!(st, StatusCode::BAD_REQUEST, "empty body: {r}");
     let anon_after: i64 =
         sqlx::query_scalar("SELECT count(*) FROM matches WHERE source_match_id IS NULL")
@@ -219,13 +221,15 @@ async fn partial_match_reingest_cannot_revert_or_zero() {
 /// (`source_match_key`), so the padded form resolving to the same match is the *positive* proof
 /// they agree, and it is asserted below alongside the rejections.
 ///
-/// Keep the ingest calls under the strict limiter's burst (1/s, burst 10) — this test spends 6.
+/// The blank ids are refused by the whole-body validation, so they are posted without a
+/// registration; the real id and its padded form are revisions 1 and 2 of one registered match.
 #[tokio::test]
 async fn a_blank_source_match_id_cannot_become_a_dedupe_key() {
     let Some((app, pool)) = boot().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
+    let reporter = &ReportingServer::open(&app, &pool, "Envelope blank source server").await;
     const ARMA: &str = "blank-arma-blank";
     const DISCORD: &str = "000000000000347001";
     const SRC: &str = "m-blank-blank";
@@ -266,17 +270,11 @@ async fn a_blank_source_match_id_cannot_become_a_dedupe_key() {
     };
     let post = |b: String| {
         let app = app.clone();
-        async move {
-            call(
-                &app,
-                "POST",
-                "/api/v1/ingest/match-results",
-                None,
-                Some(SVC),
-                Some(&b),
-            )
-            .await
-        }
+        async move { report(reporter, &app, &b).await }
+    };
+    let post_unregistered = |b: String| {
+        let app = app.clone();
+        async move { post_revision(reporter, &app, 1, &b).await }
     };
 
     // Counts *blank-or-absent* source ids rather than `count(*) FROM matches`. A bare
@@ -304,17 +302,18 @@ async fn a_blank_source_match_id_cannot_become_a_dedupe_key() {
     let matches_before = blank_id_rows(pool.clone()).await;
 
     // (1) Whitespace — the value that used to become a live dedupe key on a 200.
-    let (st, r) = post(body("   ")).await;
+    let (st, r) = post_unregistered(body("   ")).await;
     assert_eq!(st, StatusCode::BAD_REQUEST, "whitespace id: {r}");
+    assert_eq!(r["error"], "source_match_id must contain 1 to 128 bytes");
     assert_eq!(
-        r["error"],
-        "source_match_id must not be blank (omit it for a match with no source id)"
+        r["details"],
+        json!({"code": "INVALID_MATCH_RESULTS", "field": "source_match_id"})
     );
 
     // (2) `""` — the value that used to be inserted once and then 500 forever. Twice, because
     // pre-fix the *first* call was a 200 that poisoned the table for every call after it.
     for attempt in 1..=2 {
-        let (st, r) = post(body("")).await;
+        let (st, r) = post_unregistered(body("")).await;
         assert_eq!(
             st,
             StatusCode::BAD_REQUEST,
@@ -329,7 +328,7 @@ async fn a_blank_source_match_id_cannot_become_a_dedupe_key() {
     assert_eq!(poisoned, 0, "no '' row can reach the unique index");
 
     // (3) Whitespace is not only spaces.
-    let (st, r) = post(body(r"\t\n ")).await;
+    let (st, r) = post_unregistered(body(r"\t\n ")).await;
     assert_eq!(st, StatusCode::BAD_REQUEST, "tab/newline id: {r}");
 
     // Nothing above wrote anything at all — not a match, not a stat row, not a counter.
@@ -389,6 +388,7 @@ async fn community_terrain_soft_fails_to_null_without_dropping_the_report() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
+    let reporter = &ReportingServer::open(&app, &pool, "Envelope terrain server").await;
     const ARMA: &str = "terrain-arma-terrain";
     const DISCORD: &str = "000000000000501001";
     const SRC_A: &str = "m-terrain-kolguyev";
@@ -421,17 +421,7 @@ async fn community_terrain_soft_fails_to_null_without_dropping_the_report() {
 
     let post = |body: String| {
         let app = app.clone();
-        async move {
-            call(
-                &app,
-                "POST",
-                "/api/v1/ingest/match-results",
-                None,
-                Some(SVC),
-                Some(&body),
-            )
-            .await
-        }
+        async move { report(reporter, &app, &body).await }
     };
     // Honest in every respect except that the terrain is one this platform has never heard of.
     let body = |src: &str, terrain: &str| {
@@ -525,25 +515,24 @@ async fn community_terrain_soft_fails_to_null_without_dropping_the_report() {
 /// A malformed `event_id` / `mission_id` is a 400 **through the route**, and nothing
 /// is written.
 ///
-/// `upsert_match` parses with `parse_uuid_opt_strict`: through the soft parser junk becomes
-/// `None`, the match stores with no event or mission, the attendance UPDATE matches nothing,
-/// and the game server gets a **200** for a report that has silently lost its attribution. The helper's unit
-/// tests and the source pin both hold, but neither can answer the only question a game
-/// server actually asks — what does the endpoint do. This POSTs the junk.
+/// The results decoder parses both pointers strictly: through a soft parser junk would become
+/// `None`, the match would store with no event or mission, the attendance update would match
+/// nothing, and the game server would get a **200** for a report that has silently lost its
+/// attribution. This POSTs the junk.
 ///
 /// The status code is the smaller half. The larger half is that the transaction did not
 /// half-land: a 400 returned over a `matches` row that was already inserted is the same silent
 /// loss in a different costume.
 ///
-/// RED: swap `parse_uuid_opt_strict` back to `parse_uuid_opt` at both `upsert_match` call
-/// sites and every junk POST below returns 200 with a match row written —
-/// this test fails on the first status assertion and again on "nothing written".
+/// RED: make the decoder soft-parse either pointer and no junk POST below answers 400 —
+/// this test fails on the first status assertion.
 #[tokio::test]
 async fn junk_event_or_mission_id_is_a_400_that_writes_nothing() {
     let Some((app, pool)) = boot().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
+    let reporter = &ReportingServer::open(&app, &pool, "Envelope junk pointer server").await;
     const ARMA: &str = "junk-arma-junk-ids";
     const DISCORD: &str = "000000000000533001";
     const SRC: &str = "m-junk-junk";
@@ -575,17 +564,7 @@ async fn junk_event_or_mission_id_is_a_400_that_writes_nothing() {
 
     let post = |body: String| {
         let app = app.clone();
-        async move {
-            call(
-                &app,
-                "POST",
-                "/api/v1/ingest/match-results",
-                None,
-                Some(SVC),
-                Some(&body),
-            )
-            .await
-        }
+        async move { report(reporter, &app, &body).await }
     };
     // `ids` is spliced into the match object, so each case differs only in the two pointers.
     let body = |ids: &str| {
@@ -605,12 +584,19 @@ async fn junk_event_or_mission_id_is_a_400_that_writes_nothing() {
             "event_id",
         ),
     ] {
-        let (st, r) = post(body(ids)).await;
+        // Offered without a registration: the whole body is validated before the registration
+        // is consulted, so "nothing written" covers the match row as well.
+        let (st, r) = post_revision(reporter, &app, 1, &body(ids)).await;
         assert_eq!(st, StatusCode::BAD_REQUEST, "junk {field} ({ids}): {r}");
         assert_eq!(
             r["error"],
-            format!("invalid {field}"),
+            format!("{field} must be a UUID"),
             "the 400 must name the field the sender has to fix: {r}"
+        );
+        assert_eq!(
+            r["details"],
+            json!({"code": "INVALID_MATCH_RESULTS", "field": field}),
+            "the refusal names the field in its details too: {r}"
         );
     }
 
@@ -630,7 +616,7 @@ async fn junk_event_or_mission_id_is_a_400_that_writes_nothing() {
             .unwrap();
     assert_eq!(stats, 0, "no stat row written either");
 
-    // Control — blank is "omit", not junk (`parse_uuid_opt_strict` returns `Ok(None)`), so the
+    // Control — blank is "omit", not junk (the decoder reads a blank pointer as absent), so the
     // very same body shape must still be a 200. Without this the assertions above are equally
     // satisfied by an endpoint that 400s everything.
     let (st, ok) = post(body(r#","event_id":"","mission_id":"   ""#)).await;

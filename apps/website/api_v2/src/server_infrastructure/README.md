@@ -25,8 +25,15 @@ apps/website/api_v2/src/server_infrastructure/
 ## How it works
 
 Server registration, identity and presentation live here. The heartbeat that writes a server's
-live status arrives through `match_telemetry`, which fences it with this domain's runtime sessions
-and publishes the stored row with this domain's status publisher. The realtime hub itself is
+live status, the game runtime's telemetry queue reading included, arrives through
+`match_telemetry`, which fences it with this domain's runtime sessions and publishes the stored row
+with this domain's status publisher. `ServerStatus.telemetry_queue` carries that reading through the
+status read, the stream and every publish, and is absent for a server that never reported one.
+
+The configured fleet is the set of servers with `is_active = true`. Members see only the fleet:
+`GET /servers` lists active servers to everyone and every server, with `is_active`, to
+administrators, and the status read and the status stream of an inactive server are a 404 for
+anyone but an administrator. The scheduled publisher republishes active servers only. The realtime hub itself is
 `core::realtime_hub`; the queries and publishers that feed the `server:{id}` topic are this
 domain's, so `core` names no server concept.
 
@@ -42,10 +49,13 @@ for its terrain. The platform has no RCON console route.
 ## Public surface
 
 - `routes::routes()`: the table `core::http_router` merges under `/api/v1`, one route each:
-  - `GET` and `POST /api/v1/servers`: `AuthUser` to list the intel cards, `AdminUser` to register.
+  - `GET` and `POST /api/v1/servers`: `AuthUser` to list the intel cards (active servers; every
+    server for an administrator), `AdminUser` to register.
   - `PATCH` and `DELETE /api/v1/servers/{id}`: `AdminUser`; partial update, deactivate.
-  - `GET /api/v1/servers/{id}/status`: `AuthUser`; one server's intel card.
-  - `GET /api/v1/servers/{id}/status/stream`: `AuthUser`; the live status feed.
+  - `GET /api/v1/servers/{id}/status`: `AuthUser`; one server's intel card (404 for an inactive
+    server unless the caller is an administrator).
+  - `GET /api/v1/servers/{id}/status/stream`: `AuthUser`; the live status feed, scoped the same
+    way.
   - `GET` and `POST /api/v1/servers/{id}/credentials`: `AdminUser`; list, issue (secret once).
   - `DELETE /api/v1/servers/{id}/credentials/{credentialId}`: `AdminUser`; revoke with a reason.
   - `GET` and `POST /api/v1/servers/{id}/commands`: `AdminUser`; receipts, request (202).
@@ -59,17 +69,19 @@ for its terrain. The platform has no RCON console route.
   - `GET /api/v1/fleet/scenarios`: `AdminUser`; the scenario of every terrain.
   - `PUT` and `DELETE /api/v1/fleet/scenarios/{terrainKey}`: `AdminUser`; register or replace,
     withdraw.
-- `services::machine_credentials::MachineCaller`: the machine caller every `/api/v1/game-runtime/*`
-  and `/api/v1/fleet-executor/*` handler takes, in this domain, `match_telemetry`, `missions` and
-  `operations`.
+- `services::machine_credentials::MachineCaller`: the machine caller every `/api/v1/game-runtime/*`,
+  `/api/v1/fleet-executor/*` and `/api/v1/ingest/*` handler takes, in this domain,
+  `match_telemetry`, `identity_and_access`, `missions` and `operations`.
 - `services::runtime_sessions`: the heartbeat fence for `match_telemetry`, the open-session share
   lock for live [slot](/documentation_v2/glossary/n_to_z.md#slot) occupancy in `operations`, and silence
   expiry for its worker.
 - `services::status_broadcast`: `publish_server_status`, `publish_server_status_by_id` and
-  `publish_all_server_statuses`, for the heartbeat and the status workers.
+  `publish_all_server_statuses`, for the heartbeat and the status workers, and
+  `SELECT_FLEET_STATUSES`, the configured fleet's status rows the dashboard reads.
 - `services::fleet_commands`: the command ledger mission deployments issue through, and
   `reconcile_fleet_commands` for its worker.
-- `models`: `Server` and `ServerStatus`, read by the dashboard and the heartbeat; `ExecutorKind` and
+- `models`: `Server`, `ServerStatus` with its `TelemetryQueueStatus`, and the `ServerStatusRow`
+  projection, read by the dashboard and the heartbeat; `ExecutorKind` and
   `FleetAction`, read by `match_telemetry`, `missions` and `operations`; `generated/`, read by the
   contract test `apps/website/api_v2/tests/game_runtime_contract.rs`.
 
@@ -86,7 +98,8 @@ for its terrain. The platform has no RCON console route.
   - `core::http_router`, which merges the route table, and the `server_status_publisher`,
     `runtime_session_expiry` and `fleet_command_reconciler` workers in
     `apps/website/api_v2/src/background_workers/`;
-  - `match_telemetry`, `missions`, `operations` and `command_center`, through the surface above;
+  - `match_telemetry`, `identity_and_access`, `missions`, `operations` and `command_center`,
+    through the surface above;
   - over HTTP, the [server control](/documentation_v2/glossary/n_to_z.md#server-control) and server intel
     pages in `apps/website/frontend/src/v2/pages/`, the fleet host agent in
     `apps/fleet_host_agent/`, and the game runtime in `apps/mod/tbd-framework/Scripts/Game/TBD/API/`.
@@ -103,6 +116,8 @@ for its terrain. The platform has no RCON console route.
   through commands they claim.
 - [Machine credentials and runtime sessions](/documentation_v2/website/api_v2/verification_evidence/machine_credentials.md)
   — credentials, the session fence and their consumers.
+- [Match telemetry, fleet status and derived statistics](/documentation_v2/website/api_v2/verification_evidence/telemetry.md)
+  — the telemetry queue reading on the status and the configured fleet's scoping.
 - [Fleet command ledger](/documentation_v2/website/api_v2/verification_evidence/fleet_command_ledger.md)
   — the ledger's commands, states, rules and executors.
 - [Live slot occupancy](/documentation_v2/website/api_v2/verification_evidence/live_occupancy.md)

@@ -12,8 +12,9 @@ apps/website/api_v2/src/core/observability/
 ├── metrics_exposition.rs  `metrics_scrape`: the Prometheus 0.0.4 text served at `GET /metrics`
 ├── metrics_registry.rs    `Registry`: the metric families, their labels and the series cap
 ├── mod.rs                 the module tree
+├── observability_auth.rs  `ObservabilityAuth` and the `OBSERVABILITY_TOKEN` bearer check
 ├── request_observer.rs    `observe`: the middleware that counts every request into the registry
-└── tests/                 unit tests for the registry's cap and guard, and the exposition escaping
+└── tests/                 unit tests for the registry, the exposition escaping and the bearer check
 ```
 
 ## How it works
@@ -26,8 +27,10 @@ never one series per id), `<unmatched>` for a request no route matched, and each
 most `Registry::MAX_SERIES` (1024) series; a sample beyond that is dropped and counted in
 `tbd_metrics_series_dropped_total`.
 
-`GET /metrics` needs the `X-Service-Token` that `ServiceAuth` checks and answers 401 without it,
-or while `SERVICE_TOKEN` is unset. It renders the request counters, the latency histogram, the
+`GET /metrics` takes the `ObservabilityAuth` extractor: it needs
+`Authorization: Bearer <OBSERVABILITY_TOKEN>`, compared in constant time, and answers 401 without
+it or while `OBSERVABILITY_TOKEN` is unset. The token is an operator secret for scrapers; no user
+session or machine credential is accepted here, and no other route accepts the token. It renders the request counters, the latency histogram, the
 in-flight gauge, `tbd_http_rate_limited_total`, the build and the uptime, plus what the metrics
 registry cannot accumulate and the scrape samples itself: a bounded database ping and the pool's
 connections.
@@ -36,13 +39,15 @@ connections.
 2 s, and `migrations`, which reads `_sqlx_migrations` and fails when the table is unreadable or
 records a failed migration. The answer is 200 with `{"status": "ok"}` or 503 with
 `{"status": "unavailable"}`. The route needs no credentials, because probes call it bare; only a
-caller presenting a matching `X-Service-Token` gets the full report: the version, the uptime,
+caller for whom `observability_bearer_matches` holds (the same bearer) gets the full report, and a
+missing or wrong bearer yields the public answer rather than an error: the version, the uptime,
 each check's status, latency and error, the migration counts and the pool gauges.
 
 ## Boundaries
 
-- Depends on: `crate::core::configuration` and `crate::core::authentication_primitives` for the
-  service-token check; the `axum` matched-path extension; the Postgres pool and its
+- Depends on: `crate::core::configuration` (`observability_token`),
+  `crate::core::authentication_primitives` (`constant_time_equal`) and `crate::core::middleware`
+  (`json_error`) for the bearer check; the `axum` matched-path extension; the Postgres pool and its
   `_sqlx_migrations` table.
 - Used by:
   - `crate::core::http_router`, which mounts `observe` and serves `/metrics` and `/healthz`;

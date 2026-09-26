@@ -8,12 +8,20 @@
 
 use axum::Router;
 use axum::http::StatusCode;
+use serde_json::Value;
 use sqlx::PgPool;
-use telemetry_support::{SVC, boot, call};
+use telemetry_support::boot;
+use telemetry_support::match_reports::ReportingServer;
 use uuid::Uuid;
 
 mod common;
 mod telemetry_support;
+
+/// Report a results body given as JSON text as the next revision of its match.
+async fn report(reporter: &ReportingServer, app: &Router, body: &str) -> (StatusCode, Value) {
+    let body: Value = serde_json::from_str(body).expect("a results body is JSON");
+    reporter.report_results(app, &body).await
+}
 
 /// A player whose `arma_id` resolves to no account must keep their row, and the 200 must not
 /// imply the whole roster landed.
@@ -40,16 +48,15 @@ mod telemetry_support;
 /// backfill find the row again. Pinning it here means a regression in the link-confirm handler
 /// fails the suite that owns the ingest contract depending on it.
 ///
-/// Two ingest calls only — the strict limiter is keyed on the peer IP, which is `0.0.0.0` for every
-/// test in this binary, so every test compiled into this file shares one 1/s + burst-10 bucket. The roster is built to
-/// prove everything in one POST, including that `unlinked_arma_ids` is *distinct* while `linked` and
-/// `unlinked` count player *lines*.
+/// The roster is built to prove everything in one results revision, including that
+/// `unlinked_arma_ids` is *distinct* while `linked` and `unlinked` count player *lines*.
 #[tokio::test]
 async fn an_unresolvable_arma_id_keeps_its_row_and_the_response_says_so() {
     let Some((app, pool)) = boot().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
+    let reporter = &ReportingServer::open(&app, &pool, "Leaderboard unlinked server").await;
     // Three identities: one linked account, one account that has not linked yet (the unlinked
     // player), and an `arma_id` with no account behind it at all.
     const LINKED_ARMA: &str = "totals-arma-linked";
@@ -135,9 +142,18 @@ async fn an_unresolvable_arma_id_keeps_its_row_and_the_response_says_so() {
     .await
     .unwrap();
 
+    // Results go out as the next revision of their registered match; link confirmations are a
+    // plain machine-authenticated POST from the same server.
     let post = |uri: &'static str, b: String| {
         let app = app.clone();
-        async move { call(&app, "POST", uri, None, Some(SVC), Some(&b)).await }
+        async move {
+            if uri == "/api/v1/ingest/match-results" {
+                report(reporter, &app, &b).await
+            } else {
+                let body: Value = serde_json::from_str(&b).expect("a request body is JSON");
+                reporter.post(&app, uri, &body).await
+            }
+        }
     };
     let line = |arma: &str, ev: &str, kills: i64, deaths: i64, longest: i64, veh: i64| {
         format!(
@@ -318,6 +334,7 @@ async fn leaderboard_mv_does_not_invent_deaths_from_null() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
+    let reporter = &ReportingServer::open(&app, &pool, "Leaderboard null counters server").await;
     const ARMA: &str = "nullcounters-arma-mv-null";
     const DISCORD: &str = "000000000000397102";
     const SRC_A: &str = "m-nullcounters-mv-a";
@@ -349,17 +366,7 @@ async fn leaderboard_mv_does_not_invent_deaths_from_null() {
     };
     clean(pool.clone()).await;
 
-    let post = |app: Router, body: String| async move {
-        call(
-            &app,
-            "POST",
-            "/api/v1/ingest/match-results",
-            None,
-            Some(SVC),
-            Some(&body),
-        )
-        .await
-    };
+    let post = |app: Router, body: String| async move { report(reporter, &app, &body).await };
 
     // Row A — mod path: identity only.
     let (st, r) = post(
@@ -457,6 +464,7 @@ async fn leaderboard_kd_is_null_when_deaths_were_never_measured() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
+    let reporter = &ReportingServer::open(&app, &pool, "Leaderboard measured zero server").await;
     // Player A — every row unmeasured. Player B — one row that really did measure zero deaths.
     const ARMA_A: &str = "zeroes-arma-never-measured";
     const DISCORD_A: &str = "000000000000493101";
@@ -511,17 +519,7 @@ async fn leaderboard_kd_is_null_when_deaths_were_never_measured() {
 
     let post = |body: String| {
         let app = app.clone();
-        async move {
-            call(
-                &app,
-                "POST",
-                "/api/v1/ingest/match-results",
-                None,
-                Some(SVC),
-                Some(&body),
-            )
-            .await
-        }
+        async move { report(reporter, &app, &body).await }
     };
 
     // Player A: two identity-only reports — the mod path, which claims nothing about the

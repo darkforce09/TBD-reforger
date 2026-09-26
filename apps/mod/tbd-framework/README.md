@@ -110,16 +110,16 @@ slot spawn lines.
 
 | File | Read by | Content |
 |---|---|---|
-| `TBD_BackendConfig.json` | `TBD_BackendConfig` | `backendUrl`, `serverToken`, `machineCredential`; copied from `Data/backend.example.json` |
+| `TBD_BackendConfig.json` | `TBD_BackendConfig` | `backendUrl`, `machineCredential`; copied from `Data/backend.example.json` |
 | `TBD_Registry.json` | `TBD_Registry` | a copy of `Data/registry.json`, read only when the addon's copy is missing |
+| `TBD/Telemetry/` | `TBD_TelemetryQueue` | the durable match telemetry queue: `entry_<id>.entry` files and the `state_a.state` and `state_b.state` slots |
 | `TBD_MissionArtifactCache/` | `TBD_MissionArtifactCache` | `document.json` (the last verified artifact), `identity.json` (its deployment), `received.json` (bytes awaiting verification) |
 | `TBD_MissionParams.json` | `TBD_MissionParams` | `selections[]`: the launch values of the mission's parameters |
 | `TBD_VariantConfig.json` | `TBD_MissionLoader` | the server's override of the mission's active variants |
 | `TBD_LoadoutTest.json` | `TBD_LoadoutEquipComponent` | a web arsenal loadout export, equipped on a test character |
 
 `cargo xtask setup server-profile` creates `<profile dir>/profile/` with mode 700, copies the two
-`Data/` files, puts `SERVICE_TOKEN` (from the environment, else from the API's `.env` file) into
-`serverToken` and `TBD_MACHINE_CREDENTIAL` into `machineCredential`. A credential that does not
+`Data/` files and puts `TBD_MACHINE_CREDENTIAL` into `machineCredential`. A credential that does not
 start `tbdm_` counts as unset: no deployment is read, and the server runs the last verified cached
 artifact or none. The platform loops re-read `TBD_BackendConfig.json` on every retry, at most a
 minute apart, so a credential pasted in later takes effect without a restart.
@@ -143,8 +143,8 @@ minute apart, so a credential pasted in later takes effect without a restart.
 
 - Depends on: the vanilla Arma Reforger data addon; over HTTP, the API's
   [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) routes with the server's
-  `mod_runtime` [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential) and its
-  ingest routes with the service token; the wire shapes in `contracts_v2/definitions/`.
+  `mod_runtime` [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential), which
+  also authenticates its ingest routes; the wire shapes in `contracts_v2/definitions/`.
 - Used by: the dedicated servers that `cargo xtask mod playtest`, `cargo xtask deploy staging` and
   the fleet host agent in `apps/fleet_host_agent/` boot; the gates of `cargo xtask mod` in
   `tools_v2/xtask/src/commands/mod_ops/`, which `.github/workflows/mod-gates.yml` runs; and the

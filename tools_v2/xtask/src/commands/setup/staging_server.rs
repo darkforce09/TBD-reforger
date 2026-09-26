@@ -125,7 +125,7 @@ pub fn run_with_root(root: &Path) -> Result<u8> {
         crate::core::repository_layout::documentation::STAGING_SERVER_RUNBOOK
     );
     println!("  1. steamcmd +app_update 1890870 on server");
-    println!("  2. Create apps/website/api_v2/.env on server (JWT_SECRET + SERVICE_TOKEN)");
+    println!("  2. Create apps/website/api_v2/.env on server (JWT_SECRET + OBSERVABILITY_TOKEN)");
     println!("  3. sudo loginctl enable-linger sam");
     println!(
         "  4. Issue this server's mod_runtime (and host_agent) credentials in Server Control and"

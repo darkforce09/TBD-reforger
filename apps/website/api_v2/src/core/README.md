@@ -23,7 +23,7 @@ apps/website/api_v2/src/core/
 ├── realtime_hub/               the in-process publish-subscribe hub behind the SSE streams
 ├── tests/                      unit tests of the assembled router: metrics, health, route merging
 ├── text/                       the URL write guard, HTML sanitation and text previews
-└── wire_format/                the RFC 3339 timestamp serializers and the `jsonb` passthrough type
+└── wire_format/                RFC 3339 timestamps, the `jsonb` passthrough, the canonical JSON digest
 ```
 
 ## How it works
@@ -46,7 +46,9 @@ id, access log, metrics, panic recovery, CORS, body limit, rate limit; the two a
 below the rate limit and never reach it.
 
 A route's access tier is the extractor its handler takes (`AuthUser`, `LeaderUser`,
-`MissionMakerUser`, `AdminUser`, `ServiceAuth`), never its position in the router. Logic that
+`MissionMakerUser`, `AdminUser`, `server_infrastructure`'s `MachineCaller` for game hosts, and
+`observability::observability_auth::ObservabilityAuth` for the operator's scraper), never its
+position in the router. Logic that
 more than one domain needs and that names no domain concept lives here: pagination, SQLSTATE
 predicates, wire formats, the URL guard, the 429 retry, the token primitives.
 
@@ -71,7 +73,8 @@ predicates, wire formats, the URL guard, the 429 retry, the token primitives.
 - `realtime_hub::Hub`, `http::pagination::PageParams`,
   `http_client::retry_on_429::send_with_retry_on_429`, the `text` guard and preview helpers, and
   the `wire_format` serializers.
-- The HTTP routes `core` owns: `GET /healthz`, `GET /metrics` (service token), `/uploads`,
+- The HTTP routes `core` owns: `GET /healthz` (public status; the detailed report with the
+  `OBSERVABILITY_TOKEN` bearer), `GET /metrics` (`OBSERVABILITY_TOKEN` bearer), `/uploads`,
   `/map-assets`, `/map-assets/glyphs` and the single-page app fallback.
 
 ## Boundaries

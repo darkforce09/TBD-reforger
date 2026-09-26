@@ -55,20 +55,22 @@ pub async fn app_and_token(role: &str) -> Option<(Router, String)> {
     Some((app, tok))
 }
 
+/// One request with an optional bearer, one optional extra `(name, value)` header and an
+/// optional JSON body; answers the status and the raw body bytes.
 pub async fn call(
     app: &Router,
     method: &str,
     uri: &str,
     bearer: Option<&str>,
-    svc: Option<&str>,
+    extra_header: Option<(&str, &str)>,
     body: Option<&str>,
 ) -> (StatusCode, Vec<u8>) {
     let mut b = Request::builder().method(method).uri(uri);
     if let Some(t) = bearer {
         b = b.header(header::AUTHORIZATION, format!("Bearer {t}"));
     }
-    if let Some(s) = svc {
-        b = b.header("x-service-token", s);
+    if let Some((name, value)) = extra_header {
+        b = b.header(name, value);
     }
     if body.is_some() {
         b = b.header(header::CONTENT_TYPE, "application/json");

@@ -3,15 +3,15 @@ use crate::commands::deploy::staging::config::tests::{RUNTIME_CREDENTIAL, base};
 use crate::commands::deploy::staging::remote::exec_start;
 
 #[test]
-fn profile_payload_hands_the_token_and_the_credential_to_setup() {
+fn profile_payload_hands_the_credential_to_setup() {
     let p = profile_payload(&base());
     assert!(p.starts_with("set -euo pipefail\n"));
     assert!(p.contains("mkdir -p \"/home/sam/tbd/addons\" \"/home/sam/tbd/profile\""));
-    // `setup server-profile` reads both from its environment.
-    assert!(p.contains("export SERVICE_TOKEN='tok'"));
+    // `setup server-profile` reads the credential from its environment; it is the only export.
     assert!(p.contains(&format!(
         "export TBD_MACHINE_CREDENTIAL='{RUNTIME_CREDENTIAL}'"
     )));
+    assert_eq!(p.matches("export ").count(), 1, "{p}");
     assert!(p.contains(
         "(cd \"/home/sam/tbd/repo\" && cargo run -q -p xtask -- setup server-profile \"/home/sam/tbd/profile\")"
     ));
@@ -68,8 +68,12 @@ fn smoke_payload_reads_the_deployment_with_and_without_the_credential() {
     // that only checked the happy path would pass against a backend with auth switched off.
     assert!(p.contains("code=$(curl -sS -o /dev/null -w '%{http_code}' \"$API/deployment\")"));
     assert!(p.contains("[ \"$code\" = \"401\" ] || exit 1"));
-    assert!(
-        !p.contains("/compiled") && !p.contains("X-Service-Token"),
+    assert!(!p.contains("/compiled"), "{p}");
+    // Every header the smoke sends is the machine credential's bearer.
+    assert_eq!(
+        p.matches("-H ").count(),
+        p.matches("-H \"Authorization: Bearer $CREDENTIAL\"")
+            .count(),
         "{p}"
     );
 }

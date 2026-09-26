@@ -2,8 +2,8 @@
 
 The dedicated server's side of the platform [API](/documentation_v2/glossary/a_to_f.md#api): the
 [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) session with its heartbeats, the shared
-transport of every `/api/v1/game-runtime/` and `/api/v1/fleet-executor/` call, in-game identity
-linking, and the end-of-round match results.
+transport of every `/api/v1/game-runtime/`, `/api/v1/fleet-executor/` and `/api/v1/ingest/` call,
+in-game identity linking, the end-of-round match results and the durable match telemetry queue.
 
 ## Contents
 
@@ -12,18 +12,19 @@ apps/mod/tbd-framework/Scripts/Game/TBD/API/
 ├── FleetCommands/   the fleet command executor: claim, check, report, run
 ├── Http/            backend settings, the machine-credential transport and its answers, backend text
 ├── Identity/        the `arma_id` accessor and the `#tbd link <code>` chat command
-├── Results/         the end-of-round match results report
+├── MatchTelemetry/  the durable telemetry queue, its delivery, and the registration, results and event bodies
+├── Results/         the round's stage watch: registration at LIVE, results revision at END
 └── RuntimeSession/  this world's runtime session: lifecycle, start, heartbeats, closing
 ```
 
 ## How it works
 
-Two authentication tiers reach the platform. `TBD_BackendConfig` (in `Http/`) reads the backend URL,
-the shared `serverToken` and this server's `machineCredential` from the profile. The service token
-(`X-Service-Token`) carries identity link confirmation (`Identity/`) and match results
-(`Results/`); the machine credential (`Authorization: Bearer tbdm_...`) carries every
-`/api/v1/game-runtime/` and `/api/v1/fleet-executor/` route through `TBD_GameRuntimeHttp`, which
-delivers exactly one classified `TBD_GameRuntimeAnswer` per call.
+One authentication tier reaches the platform. `TBD_BackendConfig` (in `Http/`) reads the backend URL
+and this server's `machineCredential` from the profile. The machine credential
+(`Authorization: Bearer tbdm_...`) carries every `/api/v1/game-runtime/`, `/api/v1/fleet-executor/`
+and `/api/v1/ingest/` route through `TBD_GameRuntimeHttp`, which delivers exactly one classified
+`TBD_GameRuntimeAnswer` per call: identity link confirmation (`Identity/`, interactive, in memory)
+and match telemetry (`MatchTelemetry/`, through the durable queue) included.
 
 ```text
 SCR_BaseGameMode.OnGameStart (authority, framework world)
@@ -32,7 +33,10 @@ SCR_BaseGameMode.OnGameStart (authority, framework world)
        -> TBD_FleetCommandPoller: claims every 5 s while a session is held  (FleetCommands/)
 TBD_MissionLoader.ParseMissionJson
   -> TBD_IdentityLink.Arm      `#tbd link <code>` -> POST /api/v1/ingest/link-confirm  (Identity/)
-  -> TBD_ResultsReporter.Arm   round END -> POST /api/v1/ingest/match-results           (Results/)
+  -> TBD_ResultsReporter.Arm   round LIVE -> registration, round END -> results revision
+                               queued in TBD_TelemetryQueue                       (Results/, MatchTelemetry/)
+TBD_RuntimeHeartbeat, every beat on the server
+  -> TBD_TelemetryDelivery.Tick  head entry -> POST /api/v1/ingest/{matches,match-results,match-events}
 SCR_BaseGameMode.OnGameEnd
   -> TBD_RuntimeSessionLifecycle.End: poller stopped, session closed
 ```
@@ -62,7 +66,7 @@ byte for byte the one match results carry. Each subfolder's README describes its
   `TBD_SpawnManager` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/`; the engine's
   `RestContext`, `RestCallback`, `SCR_PlayerIdentityUtils` and `SCR_ChatComponent`. Over HTTP, the
   API domains `apps/website/api_v2/src/server_infrastructure/` (sessions and fleet executor),
-  `apps/website/api_v2/src/match_telemetry/` (heartbeats and match results),
+  `apps/website/api_v2/src/match_telemetry/` (heartbeats, match registration, results and events),
   `apps/website/api_v2/src/identity_and_access/` (link confirmation),
   `apps/website/api_v2/src/missions/` and `apps/website/api_v2/src/operations/`.
 - Used by: `TBD_GameRuntimeHttp` by `TBD_DeployedMission`, `TBD_MissionArtifactVerification` and
@@ -73,12 +77,14 @@ byte for byte the one match results carry. Each subfolder's README describes its
   `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/`; `TBD_PlayerIdentity` by the
   same relay, `TBD_RosterLoader` and `TBD_DeploymentAuthorization`; `TBD_BackendConfig.SetBackend`
   by `TBD_AdminCommands`; `TBD_IdentityLink` by `TBD_AdminCommands` and `TBD_MissionLoader`;
-  `TBD_ResultsReporter` by `TBD_MissionLoader` and `TBD_FrameworkManager`.
+  `TBD_ResultsReporter` by `TBD_MissionLoader`; `TBD_TelemetryQueue` and `TBD_TelemetryDelivery`
+  by `TBD_RuntimeHeartbeat` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/Heartbeat/`.
 - Rules: every `arma_id` on the wire comes from `TBD_PlayerIdentity.GetArmaId`, and a player
   without one is dropped, never sent under a substitute; no secret is logged; answers are read by
   status and `details.code`, never by message text; a world's session starts only after its
   artifact report is decided and the previous session has closed; the wire shapes follow
-  `contracts_v2/definitions/game-runtime-session.schema.json` and
+  `contracts_v2/definitions/game-runtime-session.schema.json`,
+  `contracts_v2/definitions/match-telemetry.schema.json` and
   `contracts_v2/definitions/fleet-command.schema.json`; lines added stay ASCII and
   `cargo xtask mod compile` checks that the scripts compile.
 
@@ -87,7 +93,9 @@ byte for byte the one match results carry. Each subfolder's README describes its
 - [Server infrastructure domain](/apps/website/api_v2/src/server_infrastructure/README.md) — runtime
   sessions, machine credentials and the fleet command ledger on the API side
 - [Match telemetry domain](/apps/website/api_v2/src/match_telemetry/README.md) — how heartbeats
-  and match results are taken in
+  and match telemetry are taken in
+- [Match telemetry design](/documentation_v2/website/api_v2/verification_evidence/telemetry.md) — match
+  identity, results revisions, detailed events and the game-runtime queue
 - [Identity and access domain](/apps/website/api_v2/src/identity_and_access/README.md) — the link
   code handshake the `#tbd link` command completes
 - [Discord identity link specification](/documentation_v2/mod/tbd-framework/UI/discord_identity_link/discord_identity_link_specification.md)

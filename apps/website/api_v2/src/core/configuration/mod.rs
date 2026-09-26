@@ -94,8 +94,9 @@ pub struct Config {
     pub discord_bot_token: String,
     pub discord_webhook_url: String,
 
-    // Game-server ingest authentication
-    pub service_token: String,
+    /// Operator bearer token of `/metrics` and the detailed `/healthz`
+    /// ([`crate::core::observability::observability_auth`]); empty serves neither.
+    pub observability_token: String,
 }
 
 /// Configuration load error — a required variable was empty or unusable.
@@ -155,7 +156,7 @@ impl Config {
             discord_guild_id: env::var("DISCORD_GUILD_ID").unwrap_or_default(),
             discord_bot_token: env::var("DISCORD_BOT_TOKEN").unwrap_or_default(),
             discord_webhook_url: env::var("DISCORD_WEBHOOK_URL").unwrap_or_default(),
-            service_token: env::var("SERVICE_TOKEN").unwrap_or_default(),
+            observability_token: env::var("OBSERVABILITY_TOKEN").unwrap_or_default(),
         };
 
         cfg.validate()
@@ -294,7 +295,7 @@ impl Config {
             discord_guild_id: "test-tbd-guild".to_string(),
             discord_bot_token: String::new(),
             discord_webhook_url: String::new(),
-            service_token: "test-service-token".into(),
+            observability_token: "test-observability-token".into(),
             // Unconfigured by default: a test that wants the RCON transport stands up its
             // own socket and sets this, so no suite can accidentally reach a real agent.
         }

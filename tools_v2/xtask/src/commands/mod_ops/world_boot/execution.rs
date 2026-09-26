@@ -194,7 +194,7 @@ pub(super) fn boot(root: &Path, mut opts: Opts) -> Result<u8> {
         )?;
         fs::write(
             profile.join("TBD_BackendConfig.json"),
-            "{\"backendUrl\":\"\",\"serverToken\":\"\",\"machineCredential\":\"\"}\n",
+            "{\"backendUrl\":\"\",\"machineCredential\":\"\"}\n",
         )?;
         fs::copy(
             mod_src.join("Data/registry.json"),

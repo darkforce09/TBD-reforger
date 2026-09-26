@@ -3,7 +3,8 @@
  * @brief Ends a LIVE round on an objective end trigger or when one fielded side is left alive.
  *
  * Role: the 2 s end check armed at LIVE: first TBD_ObjectiveRegistry.EvaluateEndTriggers, then
- * `faction_eliminated`; also the survivor count the END banner and the round clock use.
+ * `faction_eliminated`; also the survivor count the END banner, the round clock and the match
+ * results report use.
  * Position: owned by TBD_FrameworkManager, which calls Arm on entering LIVE; ends the round
  * through TBD_FrameworkManager.EndRound.  State: one call-queue poll; server only.
  * Invariants: a side that never claimed a slot is never eliminated; elimination needs at least two
@@ -55,8 +56,9 @@ class TBD_FactionElimination : Managed
 		GetGame().GetCallqueue().CallLater(Tick, TICK_MS, true);
 	}
 
-	//! Count the sides that claimed at least one slot and those of them with a living player; the
-	//! same survivor rule TBD_ResultsPayload.ResolveWinner applies.
+	//! Count the sides that claimed at least one slot and those of them with a living player: the
+	//! one survivor rule of the end check, the END banner, the round clock and the match results
+	//! report (TBD_ResultsReporter).
 	//! @param winner set to the one surviving side's key, empty unless exactly one survives
 	//! @param contesting set to the number of sides with a claimed slot
 	//! @param stillAlive set to the number of those sides with a living player

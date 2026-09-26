@@ -31,8 +31,10 @@ which PostgreSQL decides from the verified Discord snapshot rather than from `us
 
 Refresh rotates the token once; replaying a spent token revokes the account's sessions. A member
 links their Arma identity by asking for a code on the website and typing it in the game, whose
-server confirms it with the service token; the confirmation attributes past matches and
-attendance to the account in the same transaction. The account row lives here; what an
+server confirms it with its `mod_runtime`
+[machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential); the confirmation
+attributes past matches and attendance to the account in the same transaction, and its audit row
+names the confirming server. The account row lives here; what an
 administrator does to a member lives in `administration`.
 
 ## Public surface
@@ -47,7 +49,8 @@ administrator does to a member lives in `administration`.
   - `GET` and `PATCH /api/v1/me`: `AuthUser`; the caller's profile.
   - `POST` and `DELETE /api/v1/me/link`: `AuthUser`; issue a link code, unlink.
   - `GET /api/v1/me/link/status`: `AuthUser`; the link and whether a code is pending.
-  - `POST /api/v1/ingest/link-confirm`: `ServiceAuth` (`X-Service-Token`); the game spends a code.
+  - `POST /api/v1/ingest/link-confirm`: `mod_runtime` machine credential (`MachineCaller`); the
+    game spends a code.
 - `services::session_authorization`: `DatabaseSessionAuthority`, which `core::application_state`
   installs behind the `AuthUser` extractor, and `authorize_on_connection`, which `missions`,
   `operations` and `server_infrastructure` call to recheck an administrator inside their
@@ -74,8 +77,9 @@ administrator does to a member lives in `administration`.
 ## Boundaries
 
 - Depends on:
-  - `core`: the application state, configuration, errors, the `AuthUser` and `ServiceAuth`
-    extractors, the authentication primitives, the URL guard and the wire formats;
+  - `core`: the application state, configuration, errors, the `AuthUser` extractor, the
+    authentication primitives, the URL guard and the wire formats;
+  - `server_infrastructure` for the machine caller of the link confirmation;
   - `administration::services::required_audit` for the audit rows of link, grace and session
     changes; `command_center::services` for the statistics and leaderboard a link changes;
     `operations::services` for the reservation re-evaluation queue and attendance attribution;

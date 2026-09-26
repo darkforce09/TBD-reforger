@@ -8,16 +8,15 @@
 //! deleted code path.
 
 use super::*;
-use axum::http::StatusCode;
 
-const HEARTBEAT_SRC: &str = include_str!("../server_heartbeat.rs");
-const UPSERT_SRC: &str = include_str!("../match_upsert.rs");
+const HEARTBEAT_SRC: &str = include_str!("../../handlers/server_heartbeat.rs");
+const REVISION_WRITE_SRC: &str = include_str!("../match_revision_write.rs");
 const PARSING_SRC: &str = include_str!("../ingest_parsing.rs");
 
 /// Drop `//` and `/* */` comments so every source pin asserts on live code only.
 ///
-/// Shared with the sibling test modules for `server_heartbeat`, `match_upsert` and
-/// `match_results`, which window their own files the same way.
+/// Shared with the sibling test modules of `server_heartbeat` and `match_results_ingest`, which
+/// window their own files the same way.
 pub(crate) fn strip_rust_comments(src: &str) -> String {
     let bytes = src.as_bytes();
     let mut out = String::with_capacity(src.len());
@@ -85,80 +84,6 @@ fn terrain_community_degrades_to_none() {
     assert_eq!(parse_terrain_opt(&Some("anizay".into())), None);
     assert_eq!(parse_terrain_opt(&Some("  ".into())), None);
     assert_eq!(parse_terrain_opt(&None), None);
-}
-
-/// present-and-blank `role_played` is a 400 — mirrors `source_match_key` / outcome
-/// blank rejects. `''` and whitespace both reject.
-#[test]
-fn blank_role_played_is_rejected() {
-    for blank in ["", "   ", "\t", "\n", " \t\n "] {
-        let err = require_role_played(blank).expect_err("blank must 400");
-        assert_eq!(err.status, StatusCode::BAD_REQUEST);
-        assert!(
-            err.message.contains("role_played must not be blank"),
-            "unexpected message for {blank:?}: {:?}",
-            err.message
-        );
-    }
-}
-
-/// non-blank role is accepted; trimmed form is what binds.
-#[test]
-fn non_blank_role_played_ok() {
-    assert_eq!(require_role_played("SL").unwrap(), "SL");
-    assert_eq!(
-        require_role_played("  Squad Leader  ").unwrap(),
-        "Squad Leader"
-    );
-    assert_eq!(require_role_played("Rifleman").unwrap(), "Rifleman");
-}
-
-/// malformed non-empty event_id / mission_id → 400 (not silent None).
-#[test]
-fn malformed_event_or_mission_id_is_bad_request() {
-    for field in ["event_id", "mission_id"] {
-        for junk in ["not-a-uuid", "123", "garb age", "0", "{bad}"] {
-            let err = parse_uuid_opt_strict(field, &Some(junk.into()))
-                .expect_err("unparseable non-empty must 400");
-            assert_eq!(err.status, StatusCode::BAD_REQUEST);
-            assert!(
-                err.message.contains(field),
-                "message must name {field}: {:?}",
-                err.message
-            );
-        }
-    }
-}
-
-/// absent / blank / valid still Ok — blank keeps (not three-state clear).
-#[test]
-fn event_mission_id_absent_blank_valid_ok() {
-    let id = Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000").unwrap();
-    assert_eq!(parse_uuid_opt_strict("event_id", &None).unwrap(), None);
-    assert_eq!(
-        parse_uuid_opt_strict("event_id", &Some("".into())).unwrap(),
-        None
-    );
-    assert_eq!(
-        parse_uuid_opt_strict("mission_id", &Some("   ".into())).unwrap(),
-        None
-    );
-    assert_eq!(
-        parse_uuid_opt_strict(
-            "event_id",
-            &Some("550e8400-e29b-41d4-a716-446655440000".into())
-        )
-        .unwrap(),
-        Some(id)
-    );
-    assert_eq!(
-        parse_uuid_opt_strict(
-            "mission_id",
-            &Some("  550e8400-e29b-41d4-a716-446655440000  ".into())
-        )
-        .unwrap(),
-        Some(id)
-    );
 }
 
 /// `current_match_id` keeps soft three-state via `parse_uuid_opt`.
@@ -236,27 +161,25 @@ fn coalesce_str_bound_at_heartbeat_and_match_writes() {
         "ingame_weather must not bind raw as_deref — that reopens the whitespace third state"
     );
 
-    let upsert_production = production_half(UPSERT_SRC);
-    let up_start = upsert_production
-        .find("async fn upsert_match")
-        .expect("upsert_match must exist");
-    let up_after = &upsert_production[up_start..];
-    let up_end = up_after[1..]
-        .find("\nasync fn ")
-        .or_else(|| up_after[1..].find("\npub(super) async fn "))
+    let write_production = production_half(REVISION_WRITE_SRC);
+    let write_start = write_production
+        .find("pub async fn write_match_row")
+        .expect("write_match_row must exist");
+    let write_after = &write_production[write_start..];
+    let write_end = write_after[1..]
+        .find("\npub async fn ")
         .map(|i| i + 1)
-        .unwrap_or(up_after.len());
-    let up = strip_rust_comments(&up_after[..up_end]);
-    let up_collapsed = collapse_ws(&up);
+        .unwrap_or(write_after.len());
+    let write_collapsed = collapse_ws(&strip_rust_comments(&write_after[..write_end]));
     assert_eq!(
-        up_collapsed
-            .matches("coalesce_str(&m.winning_faction)")
+        write_collapsed
+            .matches("coalesce_str(&report.winning_faction)")
             .count(),
-        2,
-        "UPDATE + INSERT must each bind coalesce_str(&m.winning_faction)"
+        1,
+        "the revision's match-row UPDATE must bind coalesce_str(&report.winning_faction)"
     );
     assert!(
-        !up_collapsed.contains("m.winning_faction.as_deref()"),
+        !write_collapsed.contains("report.winning_faction.as_deref()"),
         "winning_faction must not bind raw as_deref — COALESCE third-state regression"
     );
 }

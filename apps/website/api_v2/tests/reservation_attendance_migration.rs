@@ -228,7 +228,9 @@ async fn immutable_facts(pool: &PgPool) -> Result<Value> {
     Ok(sqlx::query_scalar(
         "SELECT jsonb_build_object(
         'results', (SELECT jsonb_agg(to_jsonb(s) ORDER BY id) FROM match_player_stats s),
-        'matches', (SELECT jsonb_agg(to_jsonb(m) - 'finalized_at' ORDER BY id) FROM matches m),
+        'matches', (SELECT jsonb_agg(to_jsonb(m) - 'finalized_at' - 'server_id'
+            - 'registered_runtime_session_id' - 'registration_sha256' - 'revision'
+            - 'report_sha256' - 'event_count' ORDER BY id) FROM matches m),
         'slots', (SELECT jsonb_agg(to_jsonb(s) ORDER BY id) FROM orbat_slots s),
         'users', (SELECT jsonb_agg(to_jsonb(u) - 'total_deployments' - 'attendance_rate' ORDER BY discord_id) FROM users u),
         'events', (SELECT jsonb_agg(to_jsonb(e) - 'access_policy' - 'access_revision' ORDER BY id) FROM events e),
@@ -296,6 +298,20 @@ async fn populated_upgrade(pool: &PgPool) -> Result<()> {
     ensure!(
         immutable_facts(pool).await? == original_facts,
         "gameplay, ownership, or authorship facts changed"
+    );
+    // Matches recorded before registration existed stay unregistered, at revision 0, with no
+    // report digest and no detailed events.
+    let unregistered_legacy: bool = sqlx::query_scalar(
+        "SELECT bool_and(server_id IS NULL AND registered_runtime_session_id IS NULL
+                         AND registration_sha256 IS NULL AND revision = 0
+                         AND report_sha256 IS NULL AND event_count = 0)
+         FROM matches",
+    )
+    .fetch_one(pool)
+    .await?;
+    ensure!(
+        unregistered_legacy,
+        "the match registration migration changed a legacy match"
     );
     // Access configuration is compared separately: enforcement may only add a visible grant for
     // a system-authored roster of the event's existing participants.

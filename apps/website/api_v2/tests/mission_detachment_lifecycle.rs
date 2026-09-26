@@ -12,6 +12,8 @@ use website_api::core::{
 mod common;
 mod telemetry_support;
 
+use telemetry_support::match_reports::ReportingServer;
+
 static CATALOG_RACES: Mutex<()> = Mutex::const_new(());
 const DEADLINE: Duration = Duration::from_secs(10);
 
@@ -24,6 +26,8 @@ struct Fixture {
     event: Uuid,
     mission: Uuid,
     starts_at: String,
+    /// The game server that reports the fixture's played matches.
+    reporter: ReportingServer,
 }
 
 impl Fixture {
@@ -63,6 +67,7 @@ impl Fixture {
             Some(&json!({"name_override":"Detachment fixture","start_time":starts_at,"status":"open"}).to_string())).await;
         assert_eq!(created.0, StatusCode::CREATED, "{created:?}");
         let event = created.1["id"].as_str().unwrap().parse().unwrap();
+        let reporter = ReportingServer::open(&app, &state.pool, "Detachment server").await;
         Self {
             state,
             app,
@@ -72,6 +77,7 @@ impl Fixture {
             event,
             mission,
             starts_at,
+            reporter,
         }
     }
 
@@ -125,9 +131,15 @@ impl Fixture {
             .fetch_one(&self.state.pool)
             .await
             .unwrap();
-        let ingested = telemetry_support::call(&self.app, "POST", "/api/v1/ingest/match-results", None, Some(telemetry_support::SVC),
-            Some(&json!({"match":{"source_match_id":Uuid::new_v4().to_string(),"event_id":self.event,"mission_id":self.mission,"outcome":"success"},
-                "players":[{"arma_id":arma,"source_event_id":"participation","role_played":"Rifleman","kills":4,"deaths":1}]}).to_string())).await;
+        let ingested = self
+            .reporter
+            .report_results(
+                &self.app,
+                &json!({"match":{"source_match_id":Uuid::new_v4().to_string(),"event_id":self.event,"mission_id":self.mission,"outcome":"success"},
+                    "players":[{"arma_id":arma,"source_event_id":"participation","role_played":"Rifleman",
+                        "counters":{"kills":4,"deaths":1,"team_kills":0,"longest_kill_m":0,"vehicles_destroyed":0,"is_command":false}}]}),
+            )
+            .await;
         assert_eq!(ingested.0, StatusCode::OK, "{ingested:?}");
         (attachment, registration)
     }

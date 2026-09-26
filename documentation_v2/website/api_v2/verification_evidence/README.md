@@ -26,7 +26,8 @@ documentation_v2/website/api_v2/verification_evidence/
 ├── requirements.json                   the acceptance register: requirements and the checks that prove them
 ├── reservation_attendance.md           reservation state kept apart from attendance, and corrections
 ├── reservation_mutation_guards.md      reauthorization and capacity inside the six reservation writes
-└── reservation_transaction_design.md   the reservation transaction design and its implementation state
+├── reservation_transaction_design.md   the reservation transaction design and its implementation state
+└── telemetry.md                        match identity, results revisions, detailed events, fleet status
 ```
 
 ## How it works
@@ -39,7 +40,7 @@ register entry.
 |---|---|---|
 | Register | `requirements.json` | version 1; 73 requirements, each with its behaviour, the implementation paths it rests on, its assumptions and the checks that prove it; 91 checks, 82 of class `implementation`, 6 `property` and 3 `operational`, each with its command, timeout, minimum case count, success marker and case pattern |
 | Program records | `completion_plan.md`, `progress_checkpoint.md`, `remaining_milestones.md` | the acceptance contract; the checkpoint after milestones E, F and M; the design and register work of milestones T (telemetry), C (administration and content), B (game ballistics), V (verification completeness) and S (staging) |
-| Design notes | the other eleven | one subject each: the semantics chosen for a group of requirements, the lock order, the refusals with their codes, and the tests that hold them |
+| Design notes | the other twelve | one subject each: the semantics chosen for a group of requirements, the lock order, the refusals with their codes, and the tests that hold them |
 
 The design notes by domain:
 
@@ -49,6 +50,7 @@ The design notes by domain:
 | [operations](/documentation_v2/glossary/n_to_z.md#operations) | `event_administration.md`, `event_eligibility_allocation.md`, `reservation_attendance.md`, `reservation_mutation_guards.md`, `reservation_transaction_design.md`, `live_occupancy.md` |
 | [missions](/documentation_v2/glossary/g_to_m.md#missions) | `mission_artifacts.md` |
 | [server infrastructure](/documentation_v2/glossary/n_to_z.md#server-infrastructure) | `machine_credentials.md`, `fleet_command_ledger.md` |
+| [match telemetry](/documentation_v2/glossary/g_to_m.md#match-telemetry) and [command center](/documentation_v2/glossary/a_to_f.md#command-center) | `telemetry.md` |
 | verification | `property_test_evidence.md` |
 
 Requirement identifiers start with their area: `events` (14), `identity` (13), `verification`

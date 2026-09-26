@@ -16,7 +16,7 @@ use website_api::core::configuration::Config;
 use website_api::core::database;
 use website_api::core::http_router;
 
-use super::{NULL_UID, REACHABILITY_KEEP, SERVICE_TOKEN, STATE_BOUND_KEEP, SweepCaller};
+use super::{NULL_UID, OBSERVABILITY_TOKEN, REACHABILITY_KEEP, STATE_BOUND_KEEP, SweepCaller};
 use crate::common;
 
 /// Boot the router and mint a real admin session for [`super::NULL_UID`].
@@ -163,9 +163,10 @@ pub async fn get(
     caller: SweepCaller,
 ) -> (StatusCode, String) {
     let b = match caller {
-        SweepCaller::Service => Request::builder()
-            .uri(uri)
-            .header("X-Service-Token", SERVICE_TOKEN),
+        SweepCaller::Observability => Request::builder().uri(uri).header(
+            header::AUTHORIZATION,
+            format!("Bearer {OBSERVABILITY_TOKEN}"),
+        ),
         SweepCaller::Member => Request::builder()
             .uri(uri)
             .header(header::AUTHORIZATION, format!("Bearer {tok}")),
@@ -202,6 +203,8 @@ pub struct Seed {
     pub deployment: Uuid,
     pub faction: Uuid,
     pub wiki_slug: String,
+    /// The seeded match, with one player line and no detailed events.
+    pub match_id: Uuid,
     /// `(table, WHERE clause identifying this suite's row(s))` — the blast list.
     pub rows: Vec<(&'static str, String)>,
 }
@@ -589,6 +592,7 @@ pub async fn seed(pool: &PgPool) -> Seed {
         deployment,
         faction,
         wiki_slug,
+        match_id: a_match,
         rows,
     }
 }
@@ -738,14 +742,19 @@ pub fn route_sweep(s: &Seed) -> Vec<(&'static str, String, SweepCaller)> {
         ("/healthz", "/healthz".into(), SweepCaller::Member),
         // Swept rather than listed in ROUTE_SWEEP_SKIP: `/metrics` reads no model,
         // but it does run a live `SELECT 1` and read the pool, so the NULL blast is a free
-        // check that the scrape path cannot 5xx. Service-token gated (`ServiceAuth`).
-        ("/metrics", "/metrics".into(), SweepCaller::Service),
+        // check that the scrape path cannot 5xx. Gated by the observability bearer.
+        ("/metrics", "/metrics".into(), SweepCaller::Observability),
         (
             "/dashboard",
             "/api/v1/dashboard".into(),
             SweepCaller::Member,
         ),
         ("/me", "/api/v1/me".into(), SweepCaller::Member),
+        (
+            "/matches/{matchId}/events",
+            format!("/api/v1/matches/{}/events", s.match_id),
+            SweepCaller::Member,
+        ),
         (
             "/me/deployments",
             "/api/v1/me/deployments".into(),

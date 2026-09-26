@@ -35,7 +35,7 @@ from the briefing. Steps S7 to S10 say which checks this leaves open.
    Expected, in order:
 
    ```text
-   [TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok PlayArea=ok Markers=ok Radio=ok Objectives=ok
+   [TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok PlayArea=ok Markers=ok Radio=ok Objectives=ok MatchTelemetry=ok
    [TBD][Mission] loaded id=<id> name='<name>' slots=<N> source=platform
    [TBD][Validate] mission result=PASS errors=0 warnings=<W>
    [TBD][Slots] Slot-<n> <slot id> (<faction>) kit <kit> at <position>                 (one per slot)

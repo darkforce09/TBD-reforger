@@ -23,7 +23,7 @@ use super::config::Env;
 /// The `ssh_cmd bash -s <<EOF` payload that sets up the remote profile and the addon symlink.
 ///
 /// `setup server-profile` writes `TBD_BackendConfig.json` from the committed example with the
-/// service token and the runtime's machine credential taken from its environment; the payload
+/// runtime's machine credential taken from its environment; the payload
 /// then points `backendUrl` at this deployment's API. Values are expanded here, locally; `$CFG`
 /// is for the remote shell.
 pub fn profile_payload(env: &Env) -> String {
@@ -31,7 +31,6 @@ pub fn profile_payload(env: &Env) -> String {
         "set -euo pipefail\n\
          mkdir -p \"{addons}\" \"{profile}\"\n\
          ln -sfn \"{remote}/apps/mod/tbd-framework\" \"{addons}/tbd-framework\"\n\
-         export SERVICE_TOKEN='{token}'\n\
          export TBD_MACHINE_CREDENTIAL='{credential}'\n\
          (cd \"{remote}\" && cargo run -q -p xtask -- setup server-profile \"{profile}\")\n\
          CFG=\"{profile}/profile/TBD_BackendConfig.json\"\n\
@@ -39,7 +38,6 @@ pub fn profile_payload(env: &Env) -> String {
         addons = env.addons_staging,
         profile = env.profile_dir,
         remote = env.remote_dir,
-        token = env.game_server_token,
         credential = env.mod_runtime_credential,
         backend = env.backend_url,
     )

@@ -90,7 +90,7 @@ fn primed_home(tag: &str) -> (PathBuf, PathBuf, PathBuf) {
     fs::create_dir_all(&prof).unwrap();
     fs::write(
         prof.join("TBD_BackendConfig.json"),
-        "{\n  \"backendUrl\": \"http://127.0.0.1:8080\",\n  \"serverToken\": \"tok\",\n  \"machineCredential\": \"\"\n}\n",
+        "{\n  \"backendUrl\": \"http://127.0.0.1:8080\",\n  \"machineCredential\": \"\"\n}\n",
     )
     .unwrap();
     (home, prof, root)

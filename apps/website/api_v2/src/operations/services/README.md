@@ -45,7 +45,11 @@ session (share), the order the reservation writers in `event_reservations/` also
 
 `participation_attribution.rs` derives attendance from finalized match results: a reservation
 active when its exact event mission's match was finalized is a no-show unless its player took
-part. Match ingest share-locks the attachments before any identity or account lock.
+part. The results ingest calls it by the registered match's id: after it holds the match row, it
+share-locks the attachments the match holds now and will hold (`lock_obligated_registrants`, given
+the stored event and mission), before any identity or account lock, and `prior_match_accounts`
+names the registrants whose participation the match already records, so their accounts are locked
+too.
 
 ## Public surface
 

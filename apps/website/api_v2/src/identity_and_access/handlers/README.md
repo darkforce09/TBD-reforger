@@ -47,19 +47,22 @@ apps/website/api_v2/src/identity_and_access/handlers/
   supersedes the caller's pending one (201); `GET /api/v1/me/link/status` reports the link and
   whether a code is pending; `DELETE /api/v1/me/link` removes the link. The game server spends the
   code with `POST /api/v1/ingest/link-confirm` (`{code, arma_id, arma_character}`, unknown fields
-  refused).
+  refused), authenticated by its `mod_runtime`
+  [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential) (`MachineCaller`);
+  the `identity.link` audit row names the confirming server.
 
 ## Boundaries
 
 - Depends on: the domain's services (`session_issuance`, `session_rotation`,
   `discord_membership_cache`, `link_code_issuance`, `identity_linking`, `user_lookup`) and
-  `models::current_profile`; `core` for the application state, the `AuthUser` and `ServiceAuth`
-  extractors, `authentication_primitives`, `http_url_guard` and the RFC 3339 wire format.
+  `models::current_profile`; `core` for the application state, the `AuthUser` extractor,
+  `authentication_primitives`, `http_url_guard` and the RFC 3339 wire format;
+  `server_infrastructure` (`MachineCaller`, `ExecutorKind`) for the link confirmation's caller.
 - Used by: the domain's `routes.rs`; over HTTP, the account pages (login, auth callback, settings)
   and the navigation frame under `apps/website/frontend/src/v2/pages/`, the
   [API](/documentation_v2/glossary/a_to_f.md#api) client's token refresh in
   `apps/website/frontend/src/v2/core/api/client/refresh.rs`, and the mod's
-  `apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_IdentityLink.c`, which confirms link codes.
+  `apps/mod/tbd-framework/Scripts/Game/TBD/API/Identity/TBD_IdentityLink.c`, which confirms link codes.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
   imports another domain's handlers (`apps/website/api_v2/src/tests/architecture_rules.rs`); tokens
   leave the API only in a URL fragment or a JSON body, never in a query string.

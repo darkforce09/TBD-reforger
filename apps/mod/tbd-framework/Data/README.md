@@ -29,8 +29,7 @@ lacks logs `[TBD] Unknown registry alias:` and resolves to nothing.
 | Key | Example value | Meaning |
 |---|---|---|
 | `backendUrl` | `http://127.0.0.1:8080` | the API the server calls |
-| `serverToken` | `replace-with-SERVICE_TOKEN-value` | the `X-Service-Token` of the link confirmation and match result ingest routes |
-| `machineCredential` | a placeholder | this server's `mod_runtime` [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential); anything not starting `tbdm_` counts as not configured |
+| `machineCredential` | a placeholder | this server's `mod_runtime` [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential), the bearer of every platform call; anything not starting `tbdm_` counts as not configured |
 
 The mission and its [event](/documentation_v2/glossary/a_to_f.md#event) are not configured here: the
 server runs the mission deployed to it on the platform.
@@ -41,7 +40,7 @@ server runs the mission deployed to it on the platform.
   [registry.schema.json](/contracts_v2/definitions/registry.schema.json): `registryVersion`,
   `generatedAt`, `modset` (the vanilla addon `58D0FB3206B6F859`) and `entries`, each with `alias`
   (`<kind>:<name>`), `guid` (a full `{GUID}Prefabs/….et` resource name), `displayName` and, on two
-  entries, a `footprint` the web map draws. `backend.example.json` holds the three string keys of
+  entries, a `footprint` the web map draws. `backend.example.json` holds the two string keys of
   `TBD_BackendConfigFile`.
 - Naming: the mod reads these two file names by path, so they do not change.
 - Adding an alias: add an entry to `registry.json` by hand; a `kit:` or `preset:` entry also goes

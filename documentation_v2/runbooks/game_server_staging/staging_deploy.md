@@ -29,7 +29,6 @@ environment; a key it leaves out may come from the environment.
 | `TBD_SSH_PASS`, `TBD_SSH_IDENTITY_FILE` | none | password through `sshpass`, else a key file, else plain `ssh` |
 | `TBD_REMOTE_DIR`, `TBD_PROFILE_DIR`, `TBD_ADDONS_STAGING` | required | the checkout, the `-profile` folder and the `-addonsDir` folder on the host |
 | `TBD_SERVER_DIR` | `steam/arma-reforger-server` in the deploy account's home | the dedicated server install |
-| `TBD_GAME_SERVER_TOKEN` | required | the API's `SERVICE_TOKEN`; becomes `serverToken` |
 | `TBD_MOD_RUNTIME_CREDENTIAL` | required | the server's `mod_runtime` credential; becomes `machineCredential` |
 | `TBD_BACKEND_URL` | `http://127.0.0.1:8080` | the `backendUrl` the mod calls |
 | `TBD_SERVER_MODE` | `config` | `config` (`-addonsDir` + `-config`, joinable) or `addons` (`-server` + `-addons`, log checks only) |

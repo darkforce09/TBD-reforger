@@ -10,7 +10,7 @@ use axum::response::Response;
 use crate::core::application_state::AppState;
 
 const ALLOW_METHODS: &str = "GET, POST, PUT, PATCH, DELETE, OPTIONS";
-const ALLOW_HEADERS: &str = "Authorization, Content-Type, X-Service-Token, X-Request-ID";
+const ALLOW_HEADERS: &str = "Authorization, Content-Type, X-Request-ID";
 
 pub async fn cors(State(state): State<AppState>, req: Request, next: Next) -> Response {
     let origin = req

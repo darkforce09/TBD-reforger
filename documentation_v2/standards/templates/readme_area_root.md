@@ -121,7 +121,7 @@ and still exits 0. The app's server proxies `/api` and `/map-assets` to the API.
 - `docker-compose.staging.yml` defines `postgres` (Postgres 18, container `tbd_staging_db`, bound to
   loopback on `TBD_POSTGRES_HOST_PORT`, 5432 by default, password `POSTGRES_PASSWORD`) and, under the
   `api` profile, `api`: the image built from the `Dockerfile`, bound to loopback port 8080 and set up
-  from the shell's `APP_ENV`, `JWT_SECRET`, `FRONTEND_URL`, `ALLOWED_ORIGINS`, `SERVICE_TOKEN`,
+  from the shell's `APP_ENV`, `JWT_SECRET`, `FRONTEND_URL`, `ALLOWED_ORIGINS`, `OBSERVABILITY_TOKEN`,
   `TRUSTED_PROXIES` and `DISCORD_*` values, with the terrain and glyph trees mounted read-only and the
   uploads on a named volume.
 

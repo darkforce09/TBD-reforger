@@ -53,16 +53,16 @@ pub mod source_scan;
 /// shared integration database.
 pub const NULL_UID: &str = "000000000000000099";
 
-/// The service token `Config::for_tests` installs, for the `X-Service-Token` routes.
-pub const SERVICE_TOKEN: &str = "test-service-token";
+/// The observability token `Config::for_tests` installs, the bearer `/metrics` requires.
+pub const OBSERVABILITY_TOKEN: &str = "test-observability-token";
 
 /// How a swept route authenticates.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SweepCaller {
     /// The suite's administrator bearer session.
     Member,
-    /// The shared `X-Service-Token`.
-    Service,
+    /// The operator's observability bearer (`/metrics`).
+    Observability,
     /// The seeded server's `mod_runtime` machine credential.
     Machine,
 }
@@ -219,6 +219,9 @@ pub const OPTION_FIELDS: &[(&str, &str)] = &[
     ("registry_items", "variant_of"),
     ("registry_items", "cargo_grid_w"),
     ("registry_items", "cargo_grid_h"),
+    // match_telemetry::services::registered_match::RegisteredMatch: a registered match holds
+    // no report digest until its first results revision applies.
+    ("matches", "report_sha256"),
 ];
 
 /// Instances of this exact defect that are being fixed elsewhere, keyed

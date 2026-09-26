@@ -18,9 +18,10 @@ apps/website/api_v2/src/core/text/
 
 `is_http_url` accepts an absolute URL whose scheme is `http` or `https` and whose host is not
 empty, and refuses anything holding an ASCII control character or surrounding whitespace, so the
-bytes checked are the bytes a browser will follow. A handler that stores a URL (an announcement
+bytes checked are the bytes a browser will follow. Code that stores a URL (an announcement
 thumbnail, an [event](/documentation_v2/glossary/a_to_f.md#event) banner, a
-[mission](/documentation_v2/glossary/g_to_m.md#mission) thumbnail, a Discord avatar, a match replay)
+[mission](/documentation_v2/glossary/g_to_m.md#mission) thumbnail, a Discord avatar, the
+`aar_replay_url` of a match results revision, checked by its decoder before the transaction opens)
 refuses a failing value instead of storing it. The guard is not a server-side request forgery
 check: a loopback or metadata address passes.
 
@@ -36,8 +37,8 @@ as text.
   `apps/website/shared/is_http_url_cases.rs`, which the single-page app's own guard in
   `apps/website/frontend/src/v2/core/auth/url_guard.rs` is tested against too.
 - Used by: `community_content` (the announcement thumbnail check, the previews and the Discord
-  webhook's caps), `identity_and_access` (the Discord avatar), `match_telemetry` (match replay
-  links), `missions` (the thumbnail validation) and `operations` (event banners), and integration
+  webhook's caps), `identity_and_access` (the Discord avatar), `match_telemetry` (the results
+  revision's `aar_replay_url`), `missions` (the thumbnail validation) and `operations` (event banners), and integration
   suites under `apps/website/api_v2/tests/`.
 - Rules: `http` and `https` stay an allowlist, never a denylist of bad schemes; both guards agree on
   every shared case (`matches_the_frontend_guard_on_every_shared_case` in `tests/http_url_guard.rs`);

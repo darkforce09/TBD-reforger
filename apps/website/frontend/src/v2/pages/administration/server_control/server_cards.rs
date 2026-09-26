@@ -2,36 +2,37 @@
 //! console and its mission deployments.
 //!
 //! **Role:** the master list of configured servers, the header with the credential and launch
-//! controls, the three telemetry columns under it with the small readings they format, and the two
-//! sections that act on the server — fleet commands and mission deployments.
+//! controls, the small readings the card formats, and the two sections that act on the server —
+//! fleet commands and mission deployments. The telemetry band under the header is
+//! [`super::server_card_telemetry::telemetry_columns`].
 //! **Position:** the two panes of the server control screen.
 //! **Signals & state:** the list writes `selected_id`. The card creates the state of the server it
 //! shows — its command console, its deployments panel and its credential sheet — so switching
 //! servers never shows one server's commands, deployments, credentials or a secret just issued for
 //! it under another's name.
-//! **Invariants:** the card shows only what `GET /servers` carries: a server with no telemetry reads
-//! as zeros and dashes rather than as an offline server that happens to have numbers, and a server
-//! between matches reads its terrain as a dash. Launching the game cannot be done from a browser, so
+//! **Invariants:** the card shows only what `GET /servers` carries: a server between matches reads
+//! its terrain as a dash, and an inactive server (outside the configured fleet) carries an
+//! "Inactive" badge in the list and in the card header. Launching the game cannot be done from a browser, so
 //! the launch control says that instead of pretending. The kick form is offered the runtime session
 //! that confirmed the server's newest confirmed deployment — the one session id the web reads.
 
 use super::fleet_commands::{command_history, command_requests, CommandConsole};
 use super::machine_credentials::{credential_sheet, CredentialPanel};
 use super::mission_deployments::{deployment_list, deployment_request, DeploymentPanel};
-use crate::v2::core::api::dto::{ModpackDto, ServerRowDto, ServerStatusDto};
-use crate::v2::core::ui::{cn, MaterialIcon};
+use super::server_card_telemetry::telemetry_columns;
+use crate::v2::core::api::dto::{ModpackDto, ServerRowDto};
+use crate::v2::core::ui::{badge_class, cn, MaterialIcon};
 use leptos::prelude::*;
 
-/// Seconds as `Nd HHh MMm`, dropping the day part when there is none.
-pub(super) fn format_uptime(seconds: i64) -> String {
-    let d = seconds / 86_400;
-    let h = (seconds % 86_400) / 3600;
-    let m = (seconds % 3600) / 60;
-    if d > 0 {
-        format!("{d}d {h:02}h {m:02}m")
-    } else {
-        format!("{h:02}h {m:02}m")
-    }
+/// The badge an inactive server carries; an active server carries none.
+fn inactive_badge(is_active: bool) -> Option<impl IntoView> {
+    (!is_active).then(|| {
+        view! {
+            <span class=badge_class("neutral") data-testid="server-control-inactive">
+                "Inactive"
+            </span>
+        }
+    })
 }
 
 /// An address and port as one `ip:port` string.
@@ -102,6 +103,7 @@ pub(super) fn server_list(
             let id = s.id.clone();
             let id_click = id.clone();
             let name = s.name.clone();
+            let is_active = s.is_active;
             let online = s.status.as_ref().is_some_and(|st| st.is_online);
             let status = status_label(online);
             view! {
@@ -142,6 +144,7 @@ pub(super) fn server_list(
                                 <span class=name_class>{name.clone()}</span>
                                 <span class="block font-mono text-code-md text-outline">{label}</span>
                             </span>
+                            {inactive_badge(is_active)}
                         </button>
                     }
                 }}
@@ -156,23 +159,7 @@ pub(super) fn server_detail(s: ServerRowDto) -> impl IntoView {
     let toasts = crate::v2::core::ui::toast::use_toasts();
     let name = s.name.clone();
     let endpoint = format_endpoint(&s.ip, s.port);
-    let status = s.status.clone();
-    let mod_label = modpack_label(s.required_modpack.as_ref());
-    let terrain = terrain_reading(&s);
-
-    let (players, max_players, uptime, fps) = match &status {
-        Some(st) => (
-            st.player_count,
-            st.max_players,
-            format_uptime(st.uptime_seconds),
-            format!("{:.1} Hz", st.server_fps),
-        ),
-        None => (0, 0, "—".to_string(), "—".to_string()),
-    };
-    let mission = status
-        .as_ref()
-        .and_then(|st: &ServerStatusDto| st.current_match_id.clone())
-        .unwrap_or_else(|| "—".to_string());
+    let telemetry = telemetry_columns(&s);
 
     let on_launch = move |_| {
         #[cfg(target_arch = "wasm32")]
@@ -188,7 +175,10 @@ pub(super) fn server_detail(s: ServerRowDto) -> impl IntoView {
         <div class="flex min-h-full min-w-0 flex-1 flex-col">
             <header class="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 p-6 pb-6">
                 <div class="min-w-0">
-                    <h2 class="truncate text-headline-lg text-on-surface">{name.clone()}</h2>
+                    <div class="flex min-w-0 items-center gap-3">
+                        <h2 class="truncate text-headline-lg text-on-surface">{name.clone()}</h2>
+                        {inactive_badge(s.is_active)}
+                    </div>
                     <div class="mt-2 inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1">
                         <MaterialIcon name="lan" class="text-[16px] text-on-surface-variant" />
                         <span class="font-mono text-code-md text-on-surface">{endpoint}</span>
@@ -215,16 +205,7 @@ pub(super) fn server_detail(s: ServerRowDto) -> impl IntoView {
                     </button>
                 </div>
             </header>
-            <div class="grid shrink-0 grid-cols-3 divide-x divide-white/10 border-b border-white/5">
-                {telemetry_col(
-                    "Active Personnel",
-                    &format!("{players} / {max_players}"),
-                    "Uptime",
-                    &uptime,
-                )}
-                {telemetry_col("Terrain", &terrain, "Active Mission", &mission)}
-                {telemetry_col("Server FPS", &fps, "Mod Configuration", &mod_label)}
-            </div>
+            {telemetry}
             <div class="grid gap-6 p-6 2xl:grid-cols-2">
                 <section class="space-y-4" data-testid="server-control-fleet-commands">
                     {section_heading("terminal", "Fleet commands")}
@@ -248,35 +229,6 @@ fn section_heading(icon: &'static str, title: &'static str) -> impl IntoView {
         <div class="flex items-center gap-2">
             <MaterialIcon name=icon class="text-[18px] text-on-surface-variant" />
             <h3 class="text-label-md font-semibold tracking-wide text-on-surface uppercase">{title}</h3>
-        </div>
-    }
-}
-
-/// One telemetry column: a large primary reading, and a smaller secondary one under it.
-pub(super) fn telemetry_col(
-    primary_label: &str,
-    primary_value: &str,
-    secondary_label: &str,
-    secondary_value: &str,
-) -> impl IntoView {
-    let (pl, pv, sl, sv) = (
-        primary_label.to_string(),
-        primary_value.to_string(),
-        secondary_label.to_string(),
-        secondary_value.to_string(),
-    );
-    view! {
-        <div class="px-6 py-6">
-            <p class="font-mono text-code-md tracking-wider text-on-surface-variant/70 uppercase">
-                {pl}
-            </p>
-            <p class="mt-1 truncate font-mono text-3xl font-bold tracking-tight text-on-surface">
-                {pv}
-            </p>
-            <p class="mt-4 font-mono text-code-md tracking-wider text-on-surface-variant/70 uppercase">
-                {sl}
-            </p>
-            <p class="mt-1 truncate text-label-md text-on-surface">{sv}</p>
         </div>
     }
 }

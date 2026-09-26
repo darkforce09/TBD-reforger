@@ -4,7 +4,7 @@
  *
  * Role: one `TBD_DebriefRow` per connected player with name, slot faction and role, deaths and
  * kills.  Position: called by `TBD_FrameworkManager` on the authority when it packs the debrief
- * board; reads `PlayerManager`, `TBD_SpawnManager` and `TBD_FrameworkManager`.
+ * board; reads `PlayerManager`, `TBD_SpawnManager` and `TBD_MatchTelemetryTally`.
  * State: none.  Invariants: runs only on the authority, and a remote client gets no rows; deaths
  * are 0 or 1 from the one-life record; a player with no name is listed as "Player <id>".
  */
@@ -15,8 +15,8 @@ class TBD_DebriefScoreboard
 	//! Clears `outRows`, then appends one row per connected player: name ("Player <id>" when the
 	//! name is empty), faction and role from the assigned slot, deaths 1 when
 	//! `TBD_SpawnManager.IsPlayerDead` and 0 otherwise, and kills from
-	//! `TBD_FrameworkManager.GetKills`. Leaves `outRows` empty on a remote client or with no player
-	//! manager; a missing spawn or framework manager leaves those fields at their defaults.
+	//! `TBD_MatchTelemetryTally.GetKills`. Leaves `outRows` empty on a remote client or with no
+	//! player manager; a missing spawn manager leaves the slot and death fields at their defaults.
 	//! @authority server
 	static void Fill(notnull array<ref TBD_DebriefRow> outRows)
 	{
@@ -27,7 +27,6 @@ class TBD_DebriefScoreboard
 
 		PlayerManager players = GetGame().GetPlayerManager();
 		TBD_SpawnManager sm = TBD_SpawnManager.GetInstance();
-		TBD_FrameworkManager fm = TBD_FrameworkManager.GetInstance();
 		if (!players)
 			return;
 
@@ -54,9 +53,7 @@ class TBD_DebriefScoreboard
 			if (sm && sm.IsPlayerDead(playerId))
 				row.m_iDeaths = 1;
 
-			row.m_iKills = 0;
-			if (fm)
-				row.m_iKills = fm.GetKills(playerId);
+			row.m_iKills = TBD_MatchTelemetryTally.GetKills(playerId);
 
 			outRows.Insert(row);
 		}

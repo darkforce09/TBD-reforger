@@ -39,7 +39,7 @@ class TBD_IdentityLink
 			// A legal state on a local or PIE host, logged at normal level so it neither alarms an
 			// operator nor trips the world-boot error triage.
 			TBD_Log.Event(CH_LINK,
-				"no backend configured (backendUrl/serverToken empty) - '#tbd link' will tell players so instead of failing silently. This is a legal state on a local host.");
+				"no backend configured (backendUrl or machineCredential missing) - '#tbd link' will tell players so instead of failing silently. This is a legal state on a local host.");
 		}
 	}
 
@@ -136,7 +136,7 @@ class TBD_IdentityLink
 	}
 
 	//! What this host can do, without touching the backend: whether an identity resolves, whether
-	//! it is durable, and whether a backend is configured. No service-token route answers "is this
+	//! it is durable, and whether a backend is configured. No machine-credential route answers "is this
 	//! arma id linked"; `GET /me/link/status` answers for a signed-in browser.
 	//! @return the lines to send
 	protected static array<string> StatusLines(int playerId)
@@ -212,7 +212,7 @@ class TBD_IdentityLink
 		{
 			ReplyLine(chat, playerId, TAG + "cannot link: this server is not connected to the TBD website, so it cannot confirm your code. Tell an admin. Your code was not used.");
 			TBD_Log.Event(CH_LINK, string.Format(
-				"refused player=%1 reason=no-backend (backendUrl/serverToken empty). Legal state on a local host.", playerId));
+				"refused player=%1 reason=no-backend (backendUrl or machineCredential missing). Legal state on a local host.", playerId));
 			return;
 		}
 
@@ -261,12 +261,13 @@ class TBD_IdentityLink
 			ReplyLine(chat, playerId, line);
 	}
 
-	//! Whether a backend URL and a server token are both set. A missing `TBD_BackendConfig` is a
-	//! legal state on a local or PIE host; its getters return empty, so this is a value test.
+	//! Whether a backend URL and a usable machine credential are both set, the pair
+	//! `TBD_GameRuntimeHttp` sends a confirm with. A missing `TBD_BackendConfig` is a legal state on
+	//! a local or PIE host; its getters return empty, so this is a value test.
 	//! @return true when a confirm could be sent
 	protected static bool BackendConfigured()
 	{
-		return !TBD_BackendConfig.GetBackendUrl().IsEmpty() && !TBD_BackendConfig.GetServerToken().IsEmpty();
+		return TBD_GameRuntimeHttp.IsConfigured();
 	}
 
 	//! Display name, for `users.arma_character`. Cosmetic on the backend (nothing joins on it),

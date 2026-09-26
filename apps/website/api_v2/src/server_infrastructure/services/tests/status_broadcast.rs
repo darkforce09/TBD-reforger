@@ -15,6 +15,15 @@ fn sample_status(id: Uuid) -> ServerStatus {
         ingame_time: "06:42".into(),
         ingame_weather: "overcast".into(),
         updated_at: Utc::now(),
+        telemetry_queue: Some(
+            crate::server_infrastructure::models::server::TelemetryQueueStatus {
+                backlog: 3,
+                capacity: 512,
+                dropped_total: 1,
+                oldest_age_seconds: 12,
+                reported_at: Utc::now(),
+            },
+        ),
     }
 }
 

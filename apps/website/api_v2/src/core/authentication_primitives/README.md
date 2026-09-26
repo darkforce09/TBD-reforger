@@ -47,8 +47,8 @@ link.
   `ApiError` from `crate::core::error_handling` and `AuthUser` from `crate::core::middleware`, which
   the trait's signature names.
 - Used by:
-  - `crate::core::middleware` (bearer verification in `AuthUser`, the `ServiceAuth` comparison),
-    `crate::core::observability::health_probe` (the service-token check) and
+  - `crate::core::middleware` (bearer verification in `AuthUser`),
+    `crate::core::observability::observability_auth` (the `OBSERVABILITY_TOKEN` bearer check) and
     `crate::core::application_state` (the `Manager` and the session authority it holds);
   - `identity_and_access`: the OAuth state and its host guard, session issue, storage and
     rotation, session authorization and link codes;

@@ -7,7 +7,9 @@
  * `SCR_BaseGameMode.OnGameStart` in this file inside a framework world; calls the static `Clear`
  * and `Tick` of `TBD_TaskStateMachine`, `TBD_TaskHud`, `TBD_WinConditionEvaluator`,
  * `TBD_GroupState`, `TBD_WaypointRuntime`, `TBD_AudioEmitter`, `TBD_WeatherRuntime`,
- * `TBD_DynamicSpawner` and `TBD_TriggerRuntime`.
+ * `TBD_DynamicSpawner`, `TBD_TriggerRuntime` and `TBD_MatchEventRecorder`; on the server it also
+ * loads the durable `TBD_TelemetryQueue` at game start, flushes the recorded match events every
+ * ten seconds and pumps `TBD_TelemetryDelivery` every beat.
  * State: the armed flag and beat counter on the live game mode instance.  Invariants: at most one
  * loop per game mode instance; a loop stops re-arming once another game mode is the live one;
  * the server ticks in `SERVER_ORDER` and a remote client in `CLIENT_ORDER`; every runtime period
@@ -24,7 +26,7 @@ class TBD_RuntimeHeartbeat
 {
 	static const string CH = "Heartbeat"; //!< Log channel; lines read `[TBD][Heartbeat] ...`.
 	static const int BEAT_MS = 1000; //!< Loop period in milliseconds; each runtime period is a multiple.
-	static const string SERVER_ORDER = "WinCondition/2,Task,GroupState,Waypoint,Audio,Weather,DynamicSpawner,Trigger"; //!< TickServer order; /2 = every second beat
+	static const string SERVER_ORDER = "WinCondition/2,Task,GroupState,Waypoint,Audio,Weather,DynamicSpawner,Trigger,MatchEvents/10,TelemetryDelivery"; //!< TickServer order; /N = every Nth beat
 	static const string CLIENT_ORDER = "TaskHud"; //!< Remote-client tick order; matches TickClient.
 
 	//! Clears the per-world statics of every runtime, in the fixed start order. Statics outlive a
@@ -41,6 +43,7 @@ class TBD_RuntimeHeartbeat
 		TBD_WeatherRuntime.Clear();
 		TBD_DynamicSpawner.Clear();
 		TBD_TriggerRuntime.Clear();
+		TBD_MatchEventRecorder.Clear();
 	}
 
 	//! Writes the arm-time line naming this machine's side and its tick order, for example
@@ -107,6 +110,13 @@ class TBD_RuntimeHeartbeat
 
 		if (IsDue(beat, TBD_TriggerRuntime.TICK_MS))
 			TBD_TriggerRuntime.Tick();
+
+		// Before delivery, so a batch flushed on this beat can leave on it.
+		if (IsDue(beat, TBD_MatchEventRecorder.TICK_MS))
+			TBD_MatchEventRecorder.Tick();
+
+		// Every beat: one telemetry request at most is in flight, and its backoff keeps its own clock.
+		TBD_TelemetryDelivery.Tick();
 	}
 
 	//! Ticks the remote-client runtimes due on `beat`, in `CLIENT_ORDER`: the task HUD asks the
@@ -126,8 +136,9 @@ modded class SCR_BaseGameMode
 	protected int m_iTBD_HeartbeatBeat; //!< Beats run since arming; default 0.
 
 	//! Calls super, clears the runtimes, then in a framework world arms one heartbeat loop per game
-	//! mode instance and logs its order. A second call on the same instance arms nothing, so the
-	//! runtimes never tick twice per beat. Never fails.
+	//! mode instance, logs its order and, on the server, loads the telemetry queue. A second call on
+	//! the same instance arms nothing, so the runtimes never tick twice per beat. Never fails.
+	//! @authority server - the telemetry queue loads only on the authority; the rest runs everywhere.
 	protected override void OnGameStart()
 	{
 		super.OnGameStart();
@@ -142,6 +153,11 @@ modded class SCR_BaseGameMode
 
 		m_bTBD_HeartbeatArmed = true;
 		TBD_RuntimeHeartbeat.LogArmed();
+
+		// The telemetry queue outlives worlds on disk; the first game start of the process reads it.
+		if (!TBD_Authority.IsClient())
+			TBD_TelemetryQueue.EnsureLoaded();
+
 		GetGame().GetCallqueue().CallLater(TBD_HeartbeatBeat, TBD_RuntimeHeartbeat.BEAT_MS, false);
 	}
 

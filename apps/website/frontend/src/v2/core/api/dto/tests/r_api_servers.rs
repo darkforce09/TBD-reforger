@@ -13,6 +13,30 @@ fn servers_envelope() {
     assert_golden::<DataEnvelope<ServerRowDto>>(golden!("GET__servers.json"), &[]);
 }
 
+/// The queue reading is present on the server that reported one and absent — no key, no
+/// placeholder — on the server that never did.
+#[test]
+fn server_rows_carry_the_queue_reading_only_where_one_was_reported() {
+    let rows: DataEnvelope<ServerRowDto> =
+        serde_json::from_str(golden!("GET__servers.json")).unwrap();
+    let queue_of = |id: &str| {
+        rows.data
+            .iter()
+            .find(|row| row.id == id)
+            .and_then(|row| row.status.as_ref())
+            .map(|status| status.telemetry_queue.clone())
+    };
+    let reported = queue_of("00000000-0000-4000-d000-000000000001")
+        .flatten()
+        .expect("the primary reported a queue");
+    assert_eq!((reported.backlog, reported.oldest_age_seconds), (3, 12));
+    assert_eq!(
+        queue_of("00000000-0000-4000-d000-000000000002"),
+        Some(None),
+        "a status without a reading has no telemetry_queue"
+    );
+}
+
 /// The credential list as the backend served it: one live credential that has been used, and one
 /// revoked with its reason.
 #[test]
@@ -109,6 +133,17 @@ fn live_sse_frame_deserializes_with_its_fractional_fps() {
     assert_eq!(dto.uptime_seconds, 19842);
     assert_eq!(dto.ingame_time.as_deref(), Some("06:42"));
     assert_eq!(dto.ingame_weather.as_deref(), Some("overcast"));
+    assert_eq!(
+        dto.telemetry_queue,
+        Some(TelemetryQueueDto {
+            backlog: 3,
+            capacity: 512,
+            dropped_total: 0,
+            oldest_age_seconds: 12,
+            reported_at: "2026-07-26T05:00:00Z".into(),
+        }),
+        "the live frame carries the stored queue reading"
+    );
     // The frame is also a golden: it must re-serialize canonically byte-equal.
     assert_eq!(canon(payload), canon(&serde_json::to_string(&dto).unwrap()));
 }

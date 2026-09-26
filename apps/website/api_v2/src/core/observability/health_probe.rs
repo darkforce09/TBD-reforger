@@ -9,7 +9,6 @@ use serde_json::json;
 use sqlx::PgPool;
 
 use super::metrics_registry::Registry;
-use crate::core::configuration::Config;
 
 /// Budget for the health/scrape database probe. Long enough for a loaded server, short
 /// enough that a wedged pool reports `down` instead of holding the probe open (the pool's
@@ -28,23 +27,6 @@ pub(super) async fn probe_db(pool: &PgPool) -> (bool, Duration, Option<String>) 
             Some(format!("timed out after {DB_PROBE_TIMEOUT:?}")),
         ),
     }
-}
-
-/// Constant-time `X-Service-Token` comparison, without the 401.
-///
-/// [`crate::core::middleware::ServiceAuth`] is the extractor for routes that must *refuse* an
-/// unauthenticated caller. `/healthz` must not: a load balancer or container orchestrator probes
-/// it with no credentials and has to get a usable answer, so an absent or wrong token downgrades
-/// the payload rather than rejecting the request. Same fail-closed rule as the extractor
-/// otherwise — an unconfigured `SERVICE_TOKEN` matches nothing, so a deployment that never set one
-/// can never serve the detail.
-pub(crate) fn service_token_matches(cfg: &Config, headers: &axum::http::HeaderMap) -> bool {
-    let got = headers
-        .get("x-service-token")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
-    !cfg.service_token.is_empty()
-        && crate::core::authentication_primitives::constant_time_equal(got, &cfg.service_token)
 }
 
 /// Liveness/readiness probe.
@@ -71,14 +53,14 @@ pub(crate) fn service_token_matches(cfg: &Config, headers: &axum::http::HeaderMa
 /// credentials** by `cargo xtask platform preflight`, `tools_v2/xtask/deploy/Caddyfile.website`,
 /// `.github/workflows/editor-gates.yml:95` and
 /// `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests.rs:2714`, and it stays open
-/// for exactly that reason while `/metrics` sits behind `X-Service-Token`.
+/// for exactly that reason while `/metrics` sits behind the `OBSERVABILITY_TOKEN` bearer.
 ///
 /// So the split is by **payload**, never by status code:
 ///
 /// * **Public** (`detailed == false`) — `{"status": "ok" | "unavailable"}` and the 200/503 split.
 ///   That is everything a prober reads: `curl -fsS` only looks at the code, and
 ///   `cargo xtask platform preflight` compares the code. Nothing about the build, the uptime, the pool or the schema is disclosed.
-/// * **`X-Service-Token`** (`detailed == true`) — the full report: `version`, `uptime_seconds`,
+/// * **`OBSERVABILITY_TOKEN` bearer** (`detailed == true`) — the full report: `version`, `uptime_seconds`,
 ///   per-check `status`/`latency_ms`/`error`, the applied/failed migration counts and the pool
 ///   gauges. An operator's tooling sees the same fields, names and values it always did; it just
 ///   has to present the token `/metrics` already requires.

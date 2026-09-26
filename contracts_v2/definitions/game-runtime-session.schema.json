@@ -83,6 +83,35 @@
         },
         "ingame_weather": {
           "type": "string"
+        },
+        "telemetry_queue": {
+          "description": "The outbound telemetry queue reading (match-telemetry.schema.json TelemetryQueueReading). Absent keeps the stored reading; present, all four fields are required and backlog must not exceed capacity.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "backlog",
+            "capacity",
+            "dropped_total",
+            "oldest_age_seconds"
+          ],
+          "properties": {
+            "backlog": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "capacity": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "dropped_total": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "oldest_age_seconds": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
         }
       }
     },

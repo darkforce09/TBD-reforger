@@ -25,12 +25,11 @@
 //! `handlers/modpacks.rs mod_cols!()`. The next migration would break the renderer silently.
 //! REJECTED — inventing a modpack file format of our own: that IS the defect this render avoids.
 //!
-//! ⚠ THE CREDENTIAL DOES NOT EXIST YET. `/modpacks/current` is gated by `AuthUser`, a **Bearer
-//! JWT** minted from a Discord login (`middleware/auth.rs`). This program's only secret is
-//! `TBD_GAME_SERVER_TOKEN`, which is `SERVICE_TOKEN` and is checked by `ServiceAuth` against the
-//! **X-Service-Token** header — a different auth tier, and no ServiceAuth-guarded modpack read
-//! exists. So `TBD_MODPACK_URL` cannot be satisfied by anything the deploy host holds today; it is
-//! wired and fails closed, ready for the day a service-token modpack read (or a deploy JWT) ships.
+//! ⚠ THE DEPLOY HOST HOLDS NO CREDENTIAL FOR THIS READ. `/modpacks/current` is gated by
+//! `AuthUser`, a **Bearer JWT** minted from a Discord login (`middleware/auth.rs`). The deploy's
+//! secrets are machine credentials (`mod_runtime`, `host_agent`), which that route does not accept.
+//! So `TBD_MODPACK_URL` is satisfied only by a user JWT in `TBD_MODPACK_TOKEN`; without one it fails
+//! closed.
 //!
 //! * `TBD_MODPACK_JSON` — path to a file holding a `GET /modpacks/current` response body. Works
 //!   TODAY, and is the supported path right now.
@@ -62,7 +61,6 @@ pub struct Env {
     pub remote_dir: String,
     pub profile_dir: String,
     pub addons_staging: String,
-    pub game_server_token: String,
     /// `TBD_MOD_RUNTIME_CREDENTIAL`: the game runtime's `mod_runtime` machine credential, written
     /// into the profile's `TBD_BackendConfig.json` as `machineCredential`.
     pub mod_runtime_credential: String,
@@ -203,12 +201,6 @@ impl Env {
         let remote_dir = req("TBD_REMOTE_DIR", 1080, "TBD_REMOTE_DIR required")?;
         let profile_dir = req("TBD_PROFILE_DIR", 1081, "TBD_PROFILE_DIR required")?;
         let addons_staging = req("TBD_ADDONS_STAGING", 1082, "TBD_ADDONS_STAGING required")?;
-        let game_server_token = req(
-            "TBD_GAME_SERVER_TOKEN",
-            1083,
-            "TBD_GAME_SERVER_TOKEN required",
-        )?;
-
         let mod_runtime_credential = req(
             "TBD_MOD_RUNTIME_CREDENTIAL",
             35,
@@ -240,7 +232,6 @@ impl Env {
             remote_dir,
             profile_dir: profile_dir.clone(),
             addons_staging,
-            game_server_token,
             mod_runtime_credential,
             backend_url,
             addon_guid: def("TBD_ADDON_GUID", "B2C3D4E5F6A78901"),

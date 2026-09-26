@@ -129,7 +129,7 @@ required too.
 | Files | `SPA_DIST_DIR` (serve the built app when set), `MAP_ASSETS_DIR`, `GLYPH_ASSETS_DIR`, `UPLOAD_DIR` |
 | Request limits | `MISSION_VERSION_MAX_BODY_BYTES` (256 MiB), the body limit of the mission version save route alone |
 | Sessions and Discord | `JWT_SECRET`, `JWT_ACCESS_TTL_MIN` (15), `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URL`, `DISCORD_GUILD_ID`, `DISCORD_BOT_TOKEN`, `DISCORD_WEBHOOK_URL` |
-| Service token | `SERVICE_TOKEN`, which game-server ingest, `/metrics` and the detailed `/healthz` check |
+| Observability | `OBSERVABILITY_TOKEN`, the operator's bearer that `/metrics` and the detailed `/healthz` check |
 | Workers | `SERVER_STATUS_PUBLISH_INTERVAL_SECS`, `LEADERBOARD_REFRESH_INTERVAL_SECS`, `ROLE_RESYNC_INTERVAL_SECS` |
 | Boot | `SKIP_MIGRATE` (skip the migrations), `RUST_LOG` (the log filter, `info` when unset) |
 
@@ -141,8 +141,8 @@ required too.
 - The `import-registry` binary: ingests registry envelopes (`--items`, `--compat`) into Postgres for
   the envelope's modpack, which `--modpack` overrides; `--prune` deletes that modpack's rows the
   envelope lacks.
-- The HTTP surface: `/api/v1`, `/healthz`, `/metrics` (service token), `/uploads`, `/map-assets` and
-  `/map-assets/glyphs`, and the built app as the fallback when `SPA_DIST_DIR` is set.
+- The HTTP surface: `/api/v1`, `/healthz`, `/metrics` (`OBSERVABILITY_TOKEN` bearer), `/uploads`,
+  `/map-assets` and `/map-assets/glyphs`, and the built app as the fallback when `SPA_DIST_DIR` is set.
 
 ## Boundaries
 

@@ -7,14 +7,23 @@
 use sqlx::PgPool;
 
 use crate::core::realtime_hub::Hub;
-use crate::server_infrastructure::models::server::ServerStatus;
+use crate::server_infrastructure::models::server::{
+    ServerStatus, ServerStatusRow, server_status_columns,
+};
 
 /// SQL that both the SSE snapshot and the scheduled publisher use — one shape, one cast.
-const SELECT_SERVER_STATUSES: &str = "SELECT server_id, is_online, player_count, max_players, \
-     server_fps::float8 AS server_fps, uptime_seconds, current_match_id, \
-     COALESCE(ingame_time, '') AS ingame_time, COALESCE(ingame_weather, '') AS ingame_weather, \
-     COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at \
-     FROM server_statuses";
+/// One server's status by `server_id` (`$1`).
+pub(crate) const SELECT_SERVER_STATUS: &str = concat!(
+    "SELECT ",
+    server_status_columns!(),
+    " FROM server_statuses s WHERE s.server_id = $1"
+);
+/// The configured fleet's statuses (active servers only).
+pub(crate) const SELECT_FLEET_STATUSES: &str = concat!(
+    "SELECT ",
+    server_status_columns!(),
+    " FROM server_statuses s JOIN servers ON servers.id = s.server_id WHERE servers.is_active"
+);
 
 /// Serialize `status` and fan it out on `server:{id}` — the exact bytes ingest and the
 /// scheduled publisher both put on the wire (and that the SSE handler's snapshot matches).
@@ -30,27 +39,30 @@ pub async fn publish_server_status_by_id(
     hub: &Hub,
     server_id: uuid::Uuid,
 ) -> Result<bool, sqlx::Error> {
-    let row: Option<ServerStatus> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "{SELECT_SERVER_STATUSES} WHERE server_id = $1"
-    )))
-    .bind(server_id)
-    .fetch_optional(pool)
-    .await?;
+    let row: Option<ServerStatus> = sqlx::query_as::<_, ServerStatusRow>(SELECT_SERVER_STATUS)
+        .bind(server_id)
+        .fetch_optional(pool)
+        .await?
+        .map(ServerStatus::from);
     if let Some(status) = &row {
         publish_server_status(hub, status);
     }
     Ok(row.is_some())
 }
 
-/// Load every `server_statuses` row and publish each to its SSE topic.
+/// Load the status row of every active server (the configured fleet) and publish each to its
+/// SSE topic; inactive servers are not republished.
 ///
 /// Failures are returned to the caller (the scheduler logs and retries next tick). An empty
 /// table is success with zero publishes — there is nothing to fan out until ingest (or a
 /// seed) writes a row.
 pub async fn publish_all_server_statuses(pool: &PgPool, hub: &Hub) -> Result<usize, sqlx::Error> {
-    let rows: Vec<ServerStatus> = sqlx::query_as(SELECT_SERVER_STATUSES)
+    let rows: Vec<ServerStatus> = sqlx::query_as::<_, ServerStatusRow>(SELECT_FLEET_STATUSES)
         .fetch_all(pool)
-        .await?;
+        .await?
+        .into_iter()
+        .map(ServerStatus::from)
+        .collect();
     let n = rows.len();
     for status in &rows {
         publish_server_status(hub, status);

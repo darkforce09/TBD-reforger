@@ -24,6 +24,8 @@ SCR_BaseGameMode : "{1B76F75A3175E85C}Prefabs/MP/Modes/Plain/GameMode_Plain.et" 
   }
   TBD_PreSlotComponent "{D1F4A9C3705E6B82}" {
   }
+  TBD_MatchTelemetryComponent "{E6C2B85F1A94D372}" {
+  }
   SCR_EditableEntityComponent "{D8BE94B38E91B5D0}" {
   }
   SCR_RespawnSystemComponent "{56B2B4793051E7C9}" {

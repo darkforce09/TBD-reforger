@@ -175,7 +175,7 @@ checkout, with `terrain-registry.json` at its top; see
    | `TRUSTED_PROXIES` | `127.0.0.1/32`: Caddy on the loopback is the only proxy believed |
    | `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URL` | required outside development; the redirect is `https://<site host>/api/v1/auth/discord/callback` |
    | `DISCORD_GUILD_ID`, `DISCORD_BOT_TOKEN`, `DISCORD_WEBHOOK_URL` | optional; empty turns the path that needs them off |
-   | `SERVICE_TOKEN` | the output of `openssl rand -hex 24`; the game server's `TBD_GAME_SERVER_TOKEN` in `deploy.env` carries the same value |
+   | `OBSERVABILITY_TOKEN` | the output of `openssl rand -hex 32`; the bearer a scraper sends to `/metrics` and the detailed `/healthz`, and nothing else accepts it |
 
    The unit sets `MAP_ASSETS_DIR`, `GLYPH_ASSETS_DIR` and `UPLOAD_DIR` itself; leave them out of
    the file.

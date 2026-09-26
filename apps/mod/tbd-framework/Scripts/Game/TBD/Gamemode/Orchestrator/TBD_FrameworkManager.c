@@ -50,7 +50,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 
 	protected ref TBD_LoadingGate m_LoadingGate; //!< LOADING to LOBBY
 	protected ref TBD_StageEnvironment m_Environment; //!< wind direction and night-vision strip
-	protected ref TBD_EndBanner m_EndBanner; //!< END banner decision and kill tally
+	protected ref TBD_EndBanner m_EndBanner; //!< END banner decision
 	protected ref TBD_FactionElimination m_FactionElimination; //!< objective and elimination end check
 	protected ref TBD_RoundClock m_RoundClock; //!< authored round clock
 
@@ -121,14 +121,6 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	string GetDebriefBoard()
 	{
 		return m_sDebriefBoard;
-	}
-
-	//! Kills credited to a player this round; authority only.
-	//! @param playerId the player
-	//! @return the kill count, 0 when unknown
-	int GetKills(int playerId)
-	{
-		return m_EndBanner.GetKills(playerId);
 	}
 
 	//! Authored `settings.spectatorPolicy`, read by the client spectator controller.
@@ -210,19 +202,6 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 
 		if (settings)
 			TBD_StageEnvironment.ReportSettings(m_sSpectatorPolicy, m_bNightVision);
-	}
-
-	//! Credit a player kill while LIVE; team kills, suicides and world or AI kills are ignored.
-	//! @param instigatorContextData the engine's kill context
-	//! @authority server
-	override void OnPlayerKilled(notnull SCR_InstigatorContextData instigatorContextData)
-	{
-		super.OnPlayerKilled(instigatorContextData);
-
-		if (TBD_Authority.IsClient() || m_Stage != TBD_EGameStage.LIVE)
-			return;
-
-		m_EndBanner.CreditKill(instigatorContextData.GetKillerPlayerID(), instigatorContextData.GetVictimPlayerID());
 	}
 
 	//! End the round with a named reason and winner, through SetStage(END).

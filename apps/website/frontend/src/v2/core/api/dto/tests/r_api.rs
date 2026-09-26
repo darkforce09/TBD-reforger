@@ -268,6 +268,9 @@ mod events;
 #[path = "r_api_fleet.rs"]
 mod fleet;
 #[cfg(test)]
+#[path = "r_api_match_events.rs"]
+mod match_events;
+#[cfg(test)]
 #[path = "r_api_mission_reviews.rs"]
 mod mission_reviews;
 #[cfg(test)]

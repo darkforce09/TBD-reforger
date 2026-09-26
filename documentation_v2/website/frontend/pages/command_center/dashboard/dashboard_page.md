@@ -3,8 +3,8 @@
 # Dashboard page
 
 The `/` page, the landing screen of the [command center](/documentation_v2/glossary/a_to_f.md#command-center):
-a signed-in member sees the countdown to the next [event](/documentation_v2/glossary/a_to_f.md#event), one
-game server's status, their own [slot](/documentation_v2/glossary/n_to_z.md#slot) in an upcoming
+a signed-in member sees the countdown to the next [event](/documentation_v2/glossary/a_to_f.md#event), the
+configured fleet of game servers with its totals, their own [slot](/documentation_v2/glossary/n_to_z.md#slot) in an upcoming
 [mission](/documentation_v2/glossary/g_to_m.md#mission), the current modpack and the three newest
 announcements, all read from one request.
 
@@ -12,8 +12,8 @@ announcements, all read from one request.
 
 - Code: [`apps/website/frontend/src/v2/pages/command_center/dashboard/`](/apps/website/frontend/src/v2/pages/command_center/dashboard/):
   `page.rs` holds the route component `DashboardPage`, the fetch and the panel grid;
-  `hero_banner.rs` the banner; `server_uplink.rs`, `deployment.rs` and `modpack.rs` the three
-  cards; `recent_intel.rs` the announcement feed. The folder's
+  `hero_banner.rs` the banner; `server_uplink.rs` (with its totals row in `fleet_totals.rs`),
+  `deployment.rs` and `modpack.rs` the three cards; `recent_intel.rs` the announcement feed. The folder's
   [README](/apps/website/frontend/src/v2/pages/command_center/dashboard/README.md) describes each
   file.
 - Entry: the route, its tier and its layout are in the README's
@@ -51,10 +51,15 @@ announcements, all read from one request.
    "Open Operation Hub" link to `/events/{event_id}`.
 2. With no next event the banner keeps its shape, reads "NO UPCOMING OPS" and "Check the event
    schedule for new operations.", and offers no link.
-3. "Server Uplink" shows "ONLINE" or "OFFLINE", the player count over the player cap, a fill bar
-   at the whole percentage of the cap (empty when the cap is zero), "FPS: " with the frame rate as
-   the wire sent it and "UPTIME: " with the formatted uptime. With no status row, "OFFLINE", 0/0,
-   an empty bar and "—" in both readouts.
+3. "Server Uplink" shows the configured fleet: a pill with "<online>/<configured> ONLINE", then
+   one row per active server in the API's order (name, then id) with a status dot, the name,
+   "ONLINE" or "OFFLINE", "<players>/<cap> PLAYERS" and "FPS: " with the frame rate as the wire
+   sent it. A server without a status row reads "OFFLINE" with "—" for players and frame rate.
+   With no active server the card reads "No servers configured". A totals row closes the card:
+   "ONLINE: <online>/<configured>", "PLAYERS: <players>/<cap of the online servers>",
+   "QUEUE BACKLOG: " with the summed backlog of every reported telemetry queue, and
+   "DROPPED: " with the summed dropped total, in the error tone above zero. Every total is the
+   API's figure as sent; the card never recounts its rows.
 4. "Deployment" shows the viewer's faction, squad and "Role: <role>" for their soonest seat, or
    "No active assignment".
 5. "Modpack" shows "<name> v<version>", "SIZE: " with the size in GB (one decimal) or MB, and a
@@ -76,11 +81,9 @@ three cards.
   only events that start after the moment of the request (`get_dashboard` in
   `apps/website/api_v2/src/command_center/handlers/live_dashboard.rs`), so a started event leaves
   the banner on the next load rather than showing `LIVE NOW`.
-- The "Server Uplink" status pill draws "OFFLINE" in the same green as "ONLINE"; only the dot
-  turns grey (`apps/website/frontend/src/v2/pages/command_center/dashboard/server_uplink.rs`).
-- The "Server Uplink" card names no server: the API reads the first `server_statuses` row it
-  finds, with no order and no server id (`get_dashboard`), so with more than one server the card
-  may report any of them, while the server intel page reports the first active server by name.
+- The "Server Uplink" pill draws "0/<n> ONLINE" in the same green as a fleet with servers
+  online; only the dot turns grey
+  (`apps/website/frontend/src/v2/pages/command_center/dashboard/server_uplink.rs`).
 
 ## Data
 
@@ -98,8 +101,15 @@ lists the call and the DTO the page reads. Server-side:
   - `my_assignment`: the viewer's seat, the `orbat_slots` row assigned to them in the soonest
     event mission that starts after now, as faction, squad and role (and the event's id and name,
     which the page does not show).
-  - `server_status`: one row of `server_statuses`, the latest status a game server's heartbeat
-    stored.
+  - `fleet`: the configured fleet (`load_fleet_overview` in
+    `apps/website/api_v2/src/command_center/services/fleet_overview.rs`): every server with
+    `is_active = true`, ordered by name then id, each with its `server_statuses` row when it has
+    one (including its `telemetry_queue` reading when the server reported one), and `totals`
+    (`configured`, `online`, `players`, `max_players`, `telemetry_backlog`,
+    `telemetry_dropped_total`). `online`, `players` and `max_players` count online servers only;
+    the telemetry figures sum every reported queue reading. The
+    [telemetry specification](/documentation_v2/website/api_v2/verification_evidence/telemetry.md#fleet)
+    defines the shape.
   - `current_modpack`: the modpack flagged current (`load_current_modpack` in
     `apps/website/api_v2/src/community_content/services/modpack_lookup.rs`).
   - `recent_announcements`: the three newest published announcements, newest first, pinned or
@@ -117,8 +127,8 @@ The page writes nothing and stores nothing in the browser.
   - the countdown reads one rounded unit ("T-MINUS 3 HOURS") rather than `04:12:30`, and does
     not tick;
   - the banner link reads "Open Operation Hub" rather than "Enter Intelligence Hub";
-  - "Server Uplink" shows frame rate and uptime where the blueprint shows ping and a server
-    location;
+  - "Server Uplink" lists every active server with players and frame rate, and a totals row with
+    the telemetry backlog and drops, where the blueprint shows one server's ping and location;
   - the "Modpack" card keeps the blueprint's sync chip, which states no real sync check;
   - "Recent Intelligence" lists announcements with a date pill and preview, where the blueprint
     shows timestamped operational messages.
@@ -126,7 +136,7 @@ The page writes nothing and stores nothing in the browser.
   "Personal Deployment" card with the viewer's next sign-up, rank and leave of absence, a modpack
   card with a hash and a sync link, a live area of operations on the server card, and a feed mixing
   announcements with operations. None of these is built: the cards show the assignment, the
-  modpack's size and the server's figures, and the feed holds announcements only.
+  modpack's size and the fleet's figures, and the feed holds announcements only.
 
 ## Open work
 

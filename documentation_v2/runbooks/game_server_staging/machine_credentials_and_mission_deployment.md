@@ -108,8 +108,8 @@ call; these are the ones an operator meets.
 - The profile names no mission and no event: with no deployment the server runs no mission
   (ERROR), and with the platform unreachable at boot it runs the last verified cached artifact
   (WARNING) and reports it once a session starts.
-- The service token (`serverToken`, from `TBD_GAME_SERVER_TOKEN`) serves only
-  `/api/v1/ingest/link-confirm` and `/api/v1/ingest/match-results`.
+- The backend config holds `backendUrl` and `machineCredential` only: the machine credential
+  also authenticates `/api/v1/ingest/*`, including `/api/v1/ingest/link-confirm`.
 - The deploy rewrites `TBD_BackendConfig.json` on every run, so hand edits do not survive it. The
   mod re-reads the file while it waits on the platform, so a running server picks up a changed
   credential without a restart.

@@ -2,7 +2,8 @@
 //!
 //! Chain order, outermost first: correlation id → access logging → panic recovery → CORS →
 //! body limit → rate limiting. Authentication is deliberately **not** a layer: it is expressed
-//! as axum extractors ([`AuthUser`], the role-gated newtypes, [`ServiceAuth`]), so the tier a
+//! as axum extractors ([`AuthUser`], the role-gated newtypes, and the domain extractors such as
+//! `MachineCaller` and `ObservabilityAuth`), so the tier a
 //! route requires travels with the handler rather than with a route group.
 
 pub mod authentication;
@@ -12,7 +13,7 @@ pub mod durable_ratelimit;
 pub mod rate_limiting;
 pub mod tracing_correlation;
 
-pub use authentication::{AdminUser, AuthUser, LeaderUser, MissionMakerUser, ServiceAuth};
+pub use authentication::{AdminUser, AuthUser, LeaderUser, MissionMakerUser};
 pub use cross_origin::cors;
 pub use rate_limiting::{
     DURABLE_STRICT_BURST, DURABLE_STRICT_RPS, DURABLE_STRICT_SCOPE, IpLimiter,

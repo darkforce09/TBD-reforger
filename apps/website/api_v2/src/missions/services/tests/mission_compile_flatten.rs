@@ -583,7 +583,7 @@ fn weather_preset_list_matches_the_row_enum() {
 /// **THE parity assertion. This is what makes the editor's server-truth Export trustworthy, and
 /// it is the only thing that does.**
 ///
-/// The editor cannot call `GET /missions/:id/compiled`: that route takes a `ServiceAuth`
+/// The editor cannot call `GET /missions/:id/compiled`: that route is not an author-session route
 /// (`missions::handlers::mission_export::get_compiled_mission`), so an author's browser session is
 /// refused by design. The preview is therefore a *twin* — `flatten::flatten_mod_document_json` run
 /// in wasm over the same payload — and a twin is worth less than nothing if it can drift, because

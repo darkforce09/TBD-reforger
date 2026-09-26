@@ -6,13 +6,22 @@
 //! `matches` rows — which is what makes the write reversible and what every assertion here
 //! ultimately pins.
 
+use axum::Router;
 use axum::http::StatusCode;
+use serde_json::Value;
 use sqlx::PgPool;
-use telemetry_support::{SVC, boot, call};
+use telemetry_support::boot;
+use telemetry_support::match_reports::ReportingServer;
 use uuid::Uuid;
 
 mod common;
 mod telemetry_support;
+
+/// Report a results body given as JSON text as the next revision of its match.
+async fn report(reporter: &ReportingServer, app: &Router, body: &str) -> (StatusCode, Value) {
+    let body: Value = serde_json::from_str(body).expect("a results body is JSON");
+    reporter.report_results(app, &body).await
+}
 
 /// A *corrected* re-POST must land, and attendance must follow it.
 ///
@@ -22,14 +31,15 @@ mod telemetry_support;
 /// marking nobody's attendance — forever — on two 200s. The sibling fields (`ended_at` /
 /// `winning_faction` / `aar_replay_url`) let a *present* field win, and all seven read alike.
 ///
-/// The three POSTs below are the whole argument: create without the event, correct it, then
-/// retry partially. Keep them under the strict limiter's burst (1/s, burst 10).
+/// The three revisions below are the whole argument: create without the event, correct it,
+/// then report partially.
 #[tokio::test]
 async fn a_corrected_reingest_lands_the_event_and_marks_attendance() {
     let Some((app, pool)) = boot().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
+    let reporter = &ReportingServer::open(&app, &pool, "Attendance correction server").await;
     const ARMA: &str = "attend-arma-correct";
     const DISCORD: &str = "000000000000369001";
     const SRC: &str = "m-attend-correct";
@@ -112,17 +122,7 @@ async fn a_corrected_reingest_lands_the_event_and_marks_attendance() {
 
     let post = |b: String| {
         let app = app.clone();
-        async move {
-            call(
-                &app,
-                "POST",
-                "/api/v1/ingest/match-results",
-                None,
-                Some(SVC),
-                Some(&b),
-            )
-            .await
-        }
+        async move { report(reporter, &app, &b).await }
     };
     let players = format!(
         r#""players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}","counters":{{"kills":17,"deaths":3,"team_kills":1,"longest_kill_m":842,"vehicles_destroyed":4,"is_command":true,"command_win":true}}}}]"#
@@ -249,6 +249,7 @@ async fn attendance_marks_only_the_played_event_mission() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
+    let reporter = &ReportingServer::open(&app, &pool, "Attendance scope server").await;
     const ARMA: &str = "scope-arma-scope";
     const DISCORD: &str = "000000000000230001";
     const SRC: &str = "m-scope-scope";
@@ -346,15 +347,7 @@ async fn attendance_marks_only_the_played_event_mission() {
     let body = format!(
         r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA","event_id":"{event_id}","mission_id":"{mission_played}","terrain":"everon","ended_at":"2026-07-26T20:14:00Z"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}","counters":{{"kills":5,"deaths":1,"team_kills":0,"longest_kill_m":0,"vehicles_destroyed":0,"is_command":false}}}}]}}"#
     );
-    let (st, r) = call(
-        &app,
-        "POST",
-        "/api/v1/ingest/match-results",
-        None,
-        Some(SVC),
-        Some(&body),
-    )
-    .await;
+    let (st, r) = report(reporter, &app, &body).await;
     assert_eq!(st, StatusCode::OK, "ingest: {r}");
 
     let state_played: String = sqlx::query_scalar(
@@ -428,15 +421,7 @@ async fn attendance_marks_only_the_played_event_mission() {
     let body2 = format!(
         r#"{{"match":{{"source_match_id":"{SRC2}","outcome":"success","event_id":"{event_id}"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}","counters":{{"kills":1,"deaths":0,"team_kills":0,"longest_kill_m":0,"vehicles_destroyed":0,"is_command":false}}}}]}}"#
     );
-    let (st, r) = call(
-        &app,
-        "POST",
-        "/api/v1/ingest/match-results",
-        None,
-        Some(SVC),
-        Some(&body2),
-    )
-    .await;
+    let (st, r) = report(reporter, &app, &body2).await;
     assert_eq!(st, StatusCode::OK, "event-only ingest: {r}");
     let both: Vec<(Uuid, String)> = sqlx::query_as(
         "SELECT event_mission_id, state::text FROM event_registrations \
@@ -494,6 +479,7 @@ async fn re_pointing_a_match_retracts_prior_attendance_only_when_unjustified() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
+    let reporter = &ReportingServer::open(&app, &pool, "Attendance re-point server").await;
     const ARMA: &str = "repoint-arma-repoint";
     const DISCORD: &str = "000000000000540001";
     const SRC1: &str = "m-repoint-one";
@@ -601,17 +587,7 @@ async fn re_pointing_a_match_retracts_prior_attendance_only_when_unjustified() {
         let body = format!(
             r#"{{"match":{{"source_match_id":"{src}","outcome":"success","winning_faction":"USA","event_id":"{event}","mission_id":"{mission_id}","terrain":"everon"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}","counters":{{"kills":3,"deaths":1,"team_kills":0,"longest_kill_m":80,"vehicles_destroyed":0,"is_command":false,"command_win":null}}}}]}}"#
         );
-        async move {
-            call(
-                &app,
-                "POST",
-                "/api/v1/ingest/match-results",
-                None,
-                Some(SVC),
-                Some(&body),
-            )
-            .await
-        }
+        async move { report(reporter, &app, &body).await }
     };
 
     // 1. SRC1 lands on EV1 — the ordinary path into `attended`.

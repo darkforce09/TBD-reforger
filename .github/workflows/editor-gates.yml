@@ -57,7 +57,6 @@ jobs:
       APP_ENV: development # exposes GET /auth/dev-login, which the hydrate/mutations smokes use
       PORT: "8080"
       JWT_SECRET: ci-editor-gates-secret
-      SERVICE_TOKEN: ci-service-token
     steps:
       - uses: actions/checkout@v7
       - name: fetch map-assets (Everon — DEM + satellite + world objects for the fullmap/hillshade smokes)

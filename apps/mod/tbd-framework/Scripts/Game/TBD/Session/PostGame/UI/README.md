@@ -27,7 +27,7 @@ The scoreboard reads the board as one packed string. On the authority,
 `TBD_EndBanner.PackDebriefBoard` calls `TBD_DebriefScoreboard.Fill` in
 `apps/mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/`: one `TBD_DebriefRow` per connected
 player with name, faction and role from the assigned slot, deaths 0 or 1 from the one-life record,
-and kills from `TBD_FrameworkManager.GetKills`. `PackRows` joins the rows into the replicated
+and kills from `TBD_MatchTelemetryTally.GetKills` (enemy kills; team kills are counted apart). `PackRows` joins the rows into the replicated
 board, one row per `TBD_WireCodec.LINE_SEP` with kills, deaths, faction, role and name separated by
 `TBD_WireCodec.FIELD_SEP`, and `UnpackRows` splits it on each client. The list sorts by kills, then
 deaths, then name, and its one button, "SORT BY KILLS", and a click on the header row flip the
@@ -47,7 +47,8 @@ order.
 
 - Depends on: `TBD_FrameworkManager` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/`; `TBD_SpawnManager` (slots and
-  the one-life record); `TBD_UILayouts`, `TBD_UITheme` and `TBD_ListBox` in
+  the one-life record); `TBD_MatchTelemetryTally` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/MatchEvents/` (the kills); `TBD_UILayouts`, `TBD_UITheme` and `TBD_ListBox` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/`; `TBD_WireCodec` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Core/Wire/`; the two layouts in
   `apps/mod/tbd-framework/UI/layouts/Session/PostGame/`.

@@ -17,7 +17,8 @@ session reports.
 
 - Code: [`apps/website/frontend/src/v2/pages/administration/server_control/`](/apps/website/frontend/src/v2/pages/administration/server_control/):
   `page.rs` holds the route component `ServerControlPage`, the server list fetch and the picker;
-  `server_cards.rs` the server list rows and the selected server's card; four subfolders hold
+  `server_cards.rs` the server list rows and the selected server's card, whose telemetry band is
+  `server_card_telemetry.rs`; four subfolders hold
   the card's panels: `fleet_commands/` (the command console), `mission_deployments/` (the
   deployments panel), `fleet_scenarios/` (the fleet scenario sheet) and `machine_credentials/`
   (the credential sheet). The folder's
@@ -47,14 +48,21 @@ mention.
 ### Servers and the server card
 
 1. The server list loads on arrival. The picker counts the servers, offers the "Fleet scenarios"
-   button, and marks each server online, with a pulsing dot, or offline.
+   button, and marks each server online, with a pulsing dot, or offline. A server outside the
+   configured fleet (`is_active` false) carries an "Inactive" badge.
 2. The first active server opens, else the first one; the detail says so when there are no
    servers, or none is selected.
-3. The card shows the server's name and address, a "Credentials" button that opens the credential
-   sheet, and a launch control that only toasts that the Reforger client is needed. Three
-   telemetry columns follow: the players over the maximum and the uptime; the terrain and the
-   active mission, which shows the current match id, since the server row names no mission; the
-   server FPS and the required modpack. A server that reports no status shows zeros and dashes.
+3. The card shows the server's name (with the "Inactive" badge when it is inactive) and address,
+   a "Credentials" button that opens the credential sheet, and a launch control that only toasts
+   that the Reforger client is needed. Four telemetry columns follow: the players over the maximum
+   and the uptime; the terrain and the active mission, which shows the current match id, since
+   the server row names no mission; the server FPS and the required modpack; the telemetry queue
+   the game runtime last reported, as backlog over capacity with "Dropped" (in the error tone
+   above zero), "Oldest" (the age of the oldest waiting entry) and "Reported" (when the API stored
+   the reading, in the viewer's zone). A server that reports no status shows zeros and dashes; a
+   server that never reported a queue reading shows "No reading" in the queue column. The
+   [telemetry specification](/documentation_v2/website/api_v2/verification_evidence/telemetry.md#game-runtime-telemetry-queue)
+   defines the reading.
 4. The page offers no way to add, edit or deactivate a server: the registry's write routes are
    API-only.
 
@@ -209,8 +217,8 @@ lists each call with the DTO it reads or sends. Server-side:
 | SERVERS 3       | TBD Primary — Everon          [Credentials] [LAUNCH ...]  |
 | [Fleet scen.]   | <ip>:<port>                                               |
 | ● Primary       |-----------------------------------------------------------|
-| ○ Secondary     | ACTIVE PERSONNEL 47/64 | TERRAIN Everon | SERVER FPS 58.7 |
-| ○ Staging       |-----------------------------------------------------------|
+| ○ Secondary [I] | PERSONNEL 47/64 | TERRAIN Everon | FPS 58.7 | QUEUE 3/512 |
+| ○ Staging   [I] |-----------------------------------------------------------|
 |                 | FLEET COMMANDS              | MISSION DEPLOYMENTS         |
 |                 | [Start][Stop][Restart]      | [Request a deployment]      |
 |                 | [List players]              |  mission v  event mission v |

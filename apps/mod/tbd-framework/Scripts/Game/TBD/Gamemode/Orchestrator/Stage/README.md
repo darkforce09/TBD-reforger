@@ -8,7 +8,7 @@ clock that end a live round, the END banner, and the
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/Stage/
-├── TBD_EndBanner.c           TBD_EndBanner: END winner and reason, kill tally, scoreboard, END and DEBRIEF overlays
+├── TBD_EndBanner.c           TBD_EndBanner: END winner and reason, scoreboard, END and DEBRIEF overlays
 ├── TBD_FactionElimination.c  TBD_FactionElimination: the 2 s objective-trigger and faction_eliminated check
 ├── TBD_LoadingGate.c         TBD_LoadingGate: LOADING to LOBBY once the mission, roster and loadouts settle
 ├── TBD_RoundClock.c          TBD_RoundClock: the authored round clock armed at LIVE
@@ -36,16 +36,17 @@ the manager passed in, and cancelled from its `OnDelete` through `CancelCallback
   `TBD_ClockText` milestones and ends the round with reason `time_limit`.
 - `TBD_EndBanner` holds the reason and winner an end rule named. On the way into `END` it gives
   them to the manager, or infers them: the objective trigger, else `faction_eliminated` when one
-  of two or more sides survives, else `admin`. It credits kills while `LIVE` (suicides and world
-  kills excluded), packs the scoreboard from `TBD_DebriefScoreboard.Fill`, and opens the local END
-  and DEBRIEF overlays.
+  of two or more sides survives, else `admin`. It packs the scoreboard from
+  `TBD_DebriefScoreboard.Fill`, whose kills come from `TBD_MatchTelemetryTally` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/MatchEvents/`, and opens the local END and
+  DEBRIEF overlays.
 - `TBD_StageEnvironment` applies `environment.windDirDeg` through the weather manager and, when
   `settings.nightVision` is false, deletes night-vision gadgets from each spawned body 1.5 s after
   it spawns.
 
 ## Authority
 
-- Server: every poll, the end checks, the clock, kill credit and the night-vision strip
+- Server: every poll, the end checks, the clock and the night-vision strip
   (`@authority server`); the manager arms them only on the server.
 - Client: `TBD_EndBanner.ApplyEndScreens`, called from the manager's local UI hook.
 - Owner: nothing.

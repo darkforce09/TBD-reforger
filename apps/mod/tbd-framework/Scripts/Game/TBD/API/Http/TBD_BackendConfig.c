@@ -2,14 +2,14 @@
  * @file TBD_BackendConfig.c
  * @brief The server's backend connection settings, read from `$profile:TBD_BackendConfig.json`.
  *
- * Role: loads, reloads, repoints and persists the backend URL and the two secrets.
+ * Role: loads, reloads, repoints and persists the backend URL and the machine credential.
  * Position: loaded by `TBD_DeployedMission` at boot and reloaded by it and `TBD_RosterLoader`;
  * repointed by `#tbd backend` in `TBD_AdminCommands`; read by `TBD_GameRuntimeHttp`,
- * `TBD_IdentityLinkConfirm`, `TBD_ResultsReporter` and `TBD_BackendText`.
- * State: the settings in force, a server static.  Invariants: `serverToken` is the shared
- * `X-Service-Token` of link confirmation and match results; `machineCredential` is this server's
+ * and `TBD_BackendText`.
+ * State: the settings in force, a server static.  Invariants: `machineCredential` is this server's
  * `mod_runtime` credential (`tbdm_<32 hex>_<64 hex>`), sent as `Authorization: Bearer` to every
- * `/api/v1/game-runtime/` and `/api/v1/fleet-executor/` route; neither is ever logged; a reload
+ * `/api/v1/game-runtime/`, `/api/v1/fleet-executor/` and `/api/v1/ingest/` route and never logged;
+ * `#tbd backend` repoints only the URL, so the credential changes only in the profile file; a reload
  * replaces the settings only with a file that reads and parses. The mission is not configured
  * here: the server runs the mission deployed to it on the platform (`TBD_DeployedMission`).
  */
@@ -18,7 +18,6 @@
 class TBD_BackendConfigFile
 {
 	string backendUrl; //!< JSON key `backendUrl`; base URL of the platform, empty when unset
-	string serverToken; //!< JSON key `serverToken`; shared `X-Service-Token`, never logged
 	string machineCredential; //!< JSON key `machineCredential`; `mod_runtime` bearer credential, never logged
 }
 
@@ -94,15 +93,6 @@ class TBD_BackendConfig
 		return s_Config.backendUrl;
 	}
 
-	//! The shared service token.
-	//! @return the token, or empty when unset or not loaded
-	static string GetServerToken()
-	{
-		if (!s_Config)
-			return string.Empty;
-		return s_Config.serverToken;
-	}
-
 	//! This server's `mod_runtime` machine credential without surrounding whitespace.
 	//! @return the credential, or empty when unset or not loaded
 	static string GetMachineCredential()
@@ -138,16 +128,13 @@ class TBD_BackendConfig
 		return true;
 	}
 
-	//! Repoint the backend URL, and the server token when one is given, then persist.
+	//! Repoint the backend URL, keeping the machine credential, then persist.
 	//! @param backendUrl the new base URL
-	//! @param serverToken the new service token; empty keeps the current one
 	//! @return true when the settings were written
-	static bool SetBackend(string backendUrl, string serverToken = string.Empty)
+	static bool SetBackend(string backendUrl)
 	{
 		EnsureConfig();
 		s_Config.backendUrl = backendUrl;
-		if (!serverToken.IsEmpty())
-			s_Config.serverToken = serverToken;
 		return Save();
 	}
 }

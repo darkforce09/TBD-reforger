@@ -1,4 +1,5 @@
-//! Arma identity-link flow: create a code, confirm it over the service token, clash, unlink.
+//! Arma identity-link flow: create a code, confirm it with a game server's machine credential,
+//! clash, unlink.
 //! Skips unless `TEST_DATABASE_URL` points at a migrated DB.
 //!
 //! # Fixture ownership + DB target guard
@@ -30,6 +31,7 @@ use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
 use serde_json::Value;
 use sqlx::PgPool;
+use telemetry_support::match_reports::ReportingServer;
 use tower::ServiceExt;
 use website_api::core::application_state::AppState;
 use website_api::core::configuration::Config;
@@ -37,6 +39,7 @@ use website_api::core::database;
 use website_api::core::http_router;
 
 mod common;
+mod telemetry_support;
 
 /// Serialise DB-touching tests in this binary — both async tests share ACTOR /
 /// seed placeholders on one database (see the seed race in the module docs). Pattern:
@@ -60,7 +63,28 @@ const PAD_ARMA_PADDED: &str = "  identity-link-arma-padded-400013  ";
 const SEED_ARMA_ACTOR: &str = "identity-link-seed-400001";
 const SEED_ARMA_USER2: &str = "identity-link-seed-400002";
 const SEED_ARMA_PAD: &str = "identity-link-seed-400013";
-const SVC: &str = "test-service-token";
+
+/// A `host_agent` credential of `server`: a real machine credential of the wrong executor kind.
+async fn host_agent_secret(pool: &PgPool, server: uuid::Uuid) -> String {
+    let credential = uuid::Uuid::new_v4();
+    let secret = format!(
+        "tbdm_{}_{}",
+        credential.simple(),
+        website_api::core::authentication_primitives::random_token(32)
+    );
+    sqlx::query(
+        "INSERT INTO server_machine_credentials (id, server_id, executor_kind, secret_sha256, label, created_by)
+         VALUES ($1, $2, 'host_agent', $3, 'Identity link host agent', $4)",
+    )
+    .bind(credential)
+    .bind(server)
+    .bind(website_api::core::authentication_primitives::hash_token(&secret))
+    .bind(common::DEV_LOGIN_USER)
+    .execute(pool)
+    .await
+    .expect("store host agent credential");
+    secret
+}
 
 async fn setup() -> Option<(Router, AppState, PgPool)> {
     // Unset → skip; set-but-live-DB → panic before connect/UPDATE/DELETE.
@@ -299,9 +323,11 @@ async fn arma_link_flow() {
     let access = common::access_token(&state, "identity_link", ACTOR, "admin", false).await;
     let bearer = format!("Bearer {access}");
     let auth = [(header::AUTHORIZATION.as_str(), bearer.as_str())];
-    let json_svc = [
+    let reporter = ReportingServer::open(&app, &pool, "Identity link server").await;
+    let machine = format!("Bearer {}", reporter.session.secret);
+    let json_machine = [
         (header::CONTENT_TYPE.as_str(), "application/json"),
-        ("x-service-token", SVC),
+        (header::AUTHORIZATION.as_str(), machine.as_str()),
     ];
 
     // Start unlinked.
@@ -320,14 +346,14 @@ async fn arma_link_flow() {
     let (_, body) = call(&app, "GET", "/api/v1/me/link/status", &auth, None).await;
     assert_eq!(body["pending_code"], true);
 
-    // Confirm (service-token) → linked.
+    // Confirm (game server machine credential) → linked.
     let confirm =
         format!(r#"{{"code":"{code}","arma_id":"{ACTOR_ARMA}","arma_character":"Test Char"}}"#);
     let (st, body) = call(
         &app,
         "POST",
         "/api/v1/ingest/link-confirm",
-        &json_svc,
+        &json_machine,
         Some(&confirm),
     )
     .await;
@@ -345,7 +371,7 @@ async fn arma_link_flow() {
         &app,
         "POST",
         "/api/v1/ingest/link-confirm",
-        &json_svc,
+        &json_machine,
         Some(&confirm),
     )
     .await;
@@ -356,7 +382,7 @@ async fn arma_link_flow() {
         &app,
         "POST",
         "/api/v1/ingest/link-confirm",
-        &json_svc,
+        &json_machine,
         Some(&changed_retry),
     )
     .await;
@@ -366,7 +392,7 @@ async fn arma_link_flow() {
         "retry returns the persisted result"
     );
 
-    // No/invalid service token → 401.
+    // No machine credential → 401.
     let (st, _) = call(
         &app,
         "POST",
@@ -376,6 +402,44 @@ async fn arma_link_flow() {
     )
     .await;
     assert_eq!(st, StatusCode::UNAUTHORIZED);
+    // The retired shared service-token header grants nothing.
+    let (st, _) = call(
+        &app,
+        "POST",
+        "/api/v1/ingest/link-confirm",
+        &[
+            (header::CONTENT_TYPE.as_str(), "application/json"),
+            ("x-service-token", "test-service-token"),
+        ],
+        Some(&confirm),
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::UNAUTHORIZED,
+        "the retired header is not a credential"
+    );
+    // A machine credential of the host agent kind is authenticated but not allowed.
+    let host_agent = format!(
+        "Bearer {}",
+        host_agent_secret(&pool, reporter.server_id).await
+    );
+    let (st, _) = call(
+        &app,
+        "POST",
+        "/api/v1/ingest/link-confirm",
+        &[
+            (header::CONTENT_TYPE.as_str(), "application/json"),
+            (header::AUTHORIZATION.as_str(), host_agent.as_str()),
+        ],
+        Some(&confirm),
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::FORBIDDEN,
+        "only a mod_runtime credential confirms links"
+    );
 
     // Clash: a second user's code confirming with actor's arma_id → 409.
     common::seed_user(
@@ -406,7 +470,7 @@ async fn arma_link_flow() {
         &app,
         "POST",
         "/api/v1/ingest/link-confirm",
-        &json_svc,
+        &json_machine,
         Some(&clash),
     )
     .await;
@@ -464,9 +528,11 @@ async fn padded_arma_id_is_stored_trimmed_and_resolvable() {
     .await
     .unwrap_or_else(|e| panic!("seed pad code: {e}"));
 
-    let json_svc = [
+    let reporter = ReportingServer::open(&app, &pool, "Identity link padded server").await;
+    let machine = format!("Bearer {}", reporter.session.secret);
+    let json_machine = [
         (header::CONTENT_TYPE.as_str(), "application/json"),
-        ("x-service-token", SVC),
+        (header::AUTHORIZATION.as_str(), machine.as_str()),
     ];
 
     // Pre-link orphan scoreline under the *trimmed* id (what ingest stores). Without the
@@ -474,14 +540,8 @@ async fn padded_arma_id_is_stored_trimmed_and_resolvable() {
     let pre_ingest = format!(
         r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{PAD_ARMA}","role_played":"SL","source_event_id":"e-link","counters":{{"kills":7,"deaths":2,"team_kills":0,"longest_kill_m":100,"vehicles_destroyed":1,"is_command":false}}}}]}}"#
     );
-    let (st, body) = call(
-        &app,
-        "POST",
-        "/api/v1/ingest/match-results",
-        &json_svc,
-        Some(&pre_ingest),
-    )
-    .await;
+    let pre_ingest: Value = serde_json::from_str(&pre_ingest).expect("a results body is JSON");
+    let (st, body) = reporter.report_results(&app, &pre_ingest).await;
     assert_eq!(st, StatusCode::OK, "pre-link ingest: {body}");
     assert_eq!(body["unlinked"], 1, "orphan until link: {body}");
     let owned_before: Option<String> = sqlx::query_scalar(
@@ -500,7 +560,7 @@ async fn padded_arma_id_is_stored_trimmed_and_resolvable() {
         &app,
         "POST",
         "/api/v1/ingest/link-confirm",
-        &json_svc,
+        &json_machine,
         Some(&confirm),
     )
     .await;
@@ -561,14 +621,8 @@ async fn padded_arma_id_is_stored_trimmed_and_resolvable() {
     let post_ingest = format!(
         r#"{{"match":{{"source_match_id":"{SRC}-2","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{PAD_ARMA}","role_played":"SL","source_event_id":"e-link-b","counters":{{"kills":3,"deaths":0,"team_kills":0,"longest_kill_m":50,"vehicles_destroyed":0,"is_command":false}}}}]}}"#
     );
-    let (st, body) = call(
-        &app,
-        "POST",
-        "/api/v1/ingest/match-results",
-        &json_svc,
-        Some(&post_ingest),
-    )
-    .await;
+    let post_ingest: Value = serde_json::from_str(&post_ingest).expect("a results body is JSON");
+    let (st, body) = reporter.report_results(&app, &post_ingest).await;
     assert_eq!(st, StatusCode::OK, "post-link ingest: {body}");
     assert_eq!(
         body["linked"], 1,

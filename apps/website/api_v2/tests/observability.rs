@@ -60,10 +60,16 @@ fn app_with(pool: PgPool) -> Router {
     ))
 }
 
-async fn call(app: &Router, uri: &str, service_token: bool) -> (StatusCode, String) {
+/// The operator bearer `Config::for_tests` installs as the observability token.
+const OBSERVABILITY_BEARER: (&str, &str) = ("authorization", "Bearer test-observability-token");
+/// The retired shared service-token header, which no route accepts any more.
+const RETIRED_SERVICE_HEADER: (&str, &str) = ("x-service-token", "test-service-token");
+
+/// One GET of `uri` with at most one credential header.
+async fn call(app: &Router, uri: &str, credential: Option<(&str, &str)>) -> (StatusCode, String) {
     let mut b = Request::builder().method("GET").uri(uri);
-    if service_token {
-        b = b.header("x-service-token", "test-service-token");
+    if let Some((name, value)) = credential {
+        b = b.header(name, value);
     }
     let resp = app
         .clone()
@@ -120,7 +126,7 @@ async fn ensure_bucket_table(pool: &PgPool) {
 /// database_is_unreachable`. Neither is worth anything without the other: a probe that is
 /// always green and a probe that is always red are the same defect.
 ///
-/// The detail sits behind `X-Service-Token`, so this reads the probe *with* the
+/// The detail sits behind the observability bearer, so this reads the probe *with* the
 /// token. The public shape (`{"status": …}` and nothing else) is asserted against a dead pool by
 /// `core::tests::http_router::healthz_discloses_nothing_to_an_unauthenticated_caller` and against a live one by
 /// [`healthz_public_shape_is_status_only_against_a_live_database`] below — a probe that discloses
@@ -137,7 +143,7 @@ async fn healthz_is_green_and_metrics_see_a_live_database() {
     database::migrate(&pool).await.expect("migrate");
     let app = app_with(pool);
 
-    let (st, body) = call(&app, "/healthz", true).await;
+    let (st, body) = call(&app, "/healthz", Some(OBSERVABILITY_BEARER)).await;
     assert_eq!(st, StatusCode::OK, "{body}");
     let v: serde_json::Value = serde_json::from_str(&body).expect("healthz json");
     assert_eq!(v["status"], "ok", "legacy status string preserved");
@@ -168,7 +174,7 @@ async fn healthz_is_green_and_metrics_see_a_live_database() {
     assert!(v["uptime_seconds"].is_number());
 
     // The same gauges that read 0 against a dead pool must now read the live world.
-    let (st, m) = call(&app, "/metrics", true).await;
+    let (st, m) = call(&app, "/metrics", Some(OBSERVABILITY_BEARER)).await;
     assert_eq!(st, StatusCode::OK);
     assert_eq!(
         value(&m, "tbd_db_up"),
@@ -208,7 +214,7 @@ async fn healthz_public_shape_is_status_only_against_a_live_database() {
     database::migrate(&pool).await.expect("migrate");
     let app = app_with(pool);
 
-    let (st, body) = call(&app, "/healthz", false).await;
+    let (st, body) = call(&app, "/healthz", None).await;
     // The prober contract: 200 + `status`. `curl -fsS` (preflight.sh, editor-gates.yml,
     // smokes.rs) and Caddy's health handler read exactly this much.
     assert_eq!(st, StatusCode::OK, "{body}");
@@ -233,9 +239,17 @@ async fn healthz_public_shape_is_status_only_against_a_live_database() {
         );
     }
 
+    // The retired service-token header is no credential: it gets the public view too.
+    let (st, retired) = call(&app, "/healthz", Some(RETIRED_SERVICE_HEADER)).await;
+    assert_eq!(st, StatusCode::OK, "{retired}");
+    assert_eq!(
+        retired, body,
+        "the retired header must not unlock the detail"
+    );
+
     // …and the token still gets the real numbers off the same live database, so this is a
     // relocation and not a deletion.
-    let (st, detail) = call(&app, "/healthz", true).await;
+    let (st, detail) = call(&app, "/healthz", Some(OBSERVABILITY_BEARER)).await;
     assert_eq!(st, StatusCode::OK, "{detail}");
     let d: serde_json::Value = serde_json::from_str(&detail).expect("healthz json");
     assert_eq!(d["checks"]["database"]["status"], "up", "{detail}");

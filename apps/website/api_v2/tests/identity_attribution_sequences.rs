@@ -1,12 +1,9 @@
 //! Generated operation traces and concurrent HTTP ingestion verify current identity attribution.
-use axum::{
-    body::Body,
-    http::{Request, StatusCode},
-};
+use axum::http::StatusCode;
 use proptest::collection::vec;
 use std::sync::Arc;
+use telemetry_support::match_reports::ReportingServer;
 use tokio::sync::Barrier;
-use tower::ServiceExt;
 use website_api::{
     core::{
         application_state::AppState, configuration::Config, database, http_router,
@@ -19,8 +16,11 @@ use website_api::{
     },
 };
 mod common;
+mod telemetry_support;
 
-async fn fixture() -> (AppState, AuthUser, String, String) {
+/// State, the acting user, their Arma identity, a source match id, and the game server that
+/// reports that match.
+async fn fixture() -> (AppState, AuthUser, String, String, Arc<ReportingServer>) {
     let url = common::require_test_database_url().unwrap();
     let pool = database::connect(&url).await.unwrap();
     database::migrate(&pool).await.unwrap();
@@ -40,31 +40,30 @@ async fn fixture() -> (AppState, AuthUser, String, String) {
     let user = authorize_session(&state.pool, &state.cfg, &state.jwt.parse(&access).unwrap())
         .await
         .unwrap();
+    let reporter = ReportingServer::open(
+        &http_router::router(state.clone()),
+        &state.pool,
+        "Attribution sequence server",
+    )
+    .await;
     (
         state,
         user,
         common::unique_arma("attribution"),
         uuid::Uuid::new_v4().to_string(),
+        Arc::new(reporter),
     )
 }
 
-async fn ingest(state: AppState, arma: &str, source: &str) {
+/// Report `arma`'s line for `source` as the match's next results revision.
+async fn ingest(state: AppState, reporter: &ReportingServer, arma: &str, source: &str) {
     let body = serde_json::json!({"match":{"source_match_id":source,"outcome":"success","winning_faction":"USA"},
         "players":[{"arma_id":arma,"role_played":"rifleman","source_event_id":"result",
         "counters":{"kills":7,"deaths":1,"team_kills":0,"longest_kill_m":100,"vehicles_destroyed":0,"is_command":false}}]});
-    let response = http_router::router(state)
-        .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/api/v1/ingest/match-results")
-                .header("X-Service-Token", "test-service-token")
-                .header("Content-Type", "application/json")
-                .body(Body::from(body.to_string()))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-    assert_eq!(response.status(), StatusCode::OK);
+    let (status, answer) = reporter
+        .report_results(&http_router::router(state), &body)
+        .await;
+    assert_eq!(status, StatusCode::OK, "{answer}");
 }
 
 async fn assert_consistent(state: &AppState, user: &AuthUser, arma: &str) {
@@ -97,16 +96,22 @@ async fn assert_consistent(state: &AppState, user: &AuthUser, arma: &str) {
 
 #[tokio::test]
 async fn ingestion_racing_unlink_cannot_restore_previous_attribution() {
-    let (state, user, arma, source) = fixture().await;
+    let (state, user, arma, source, reporter) = fixture().await;
     let code = issue_link_code(&state, &user).await.unwrap().0;
-    confirm_identity(&state, &code, &arma, "Player")
+    confirm_identity(&state, reporter.server_id, &code, &arma, "Player")
         .await
         .unwrap();
     let barrier = Arc::new(Barrier::new(3));
-    let (s, a, src, b) = (state.clone(), arma.clone(), source.clone(), barrier.clone());
+    let (s, a, src, b, r) = (
+        state.clone(),
+        arma.clone(),
+        source.clone(),
+        barrier.clone(),
+        reporter.clone(),
+    );
     let upload = tokio::spawn(async move {
         b.wait().await;
-        ingest(s, &a, &src).await;
+        ingest(s, &r, &a, &src).await;
     });
     let (s, u, b) = (state.clone(), user.clone(), barrier.clone());
     let unlink = tokio::spawn(async move {
@@ -128,18 +133,31 @@ async fn ingestion_racing_unlink_cannot_restore_previous_attribution() {
 
 #[tokio::test]
 async fn ingestion_racing_link_cannot_leave_new_history_unattributed() {
-    let (state, user, arma, source) = fixture().await;
+    let (state, user, arma, source, reporter) = fixture().await;
     let code = issue_link_code(&state, &user).await.unwrap().0;
     let barrier = Arc::new(Barrier::new(3));
-    let (s, a, src, b) = (state.clone(), arma.clone(), source.clone(), barrier.clone());
+    let (s, a, src, b, r) = (
+        state.clone(),
+        arma.clone(),
+        source.clone(),
+        barrier.clone(),
+        reporter.clone(),
+    );
     let upload = tokio::spawn(async move {
         b.wait().await;
-        ingest(s, &a, &src).await;
+        ingest(s, &r, &a, &src).await;
     });
-    let (s, a, b) = (state.clone(), arma.clone(), barrier.clone());
+    let (s, a, b, server) = (
+        state.clone(),
+        arma.clone(),
+        barrier.clone(),
+        reporter.server_id,
+    );
     let link = tokio::spawn(async move {
         b.wait().await;
-        confirm_identity(&s, &code, &a, "Player").await.unwrap();
+        confirm_identity(&s, server, &code, &a, "Player")
+            .await
+            .unwrap();
     });
     barrier.wait().await;
     upload.await.unwrap();
@@ -156,7 +174,7 @@ fn generated_identity_operation_sequences_preserve_ownership_codes_and_aggregate
         &vec(0u8..6, 1..25),
         |operations| {
             runtime.block_on(async {
-                let (state, user, arma, source) = fixture().await;
+                let (state, user, arma, source, reporter) = fixture().await;
                 let mut code = None;
                 let mut consumed = std::collections::BTreeMap::<String, String>::new();
                 for operation in operations {
@@ -164,7 +182,14 @@ fn generated_identity_operation_sequences_preserve_ownership_codes_and_aggregate
                         0 => code = Some(issue_link_code(&state, &user).await.unwrap().0),
                         1 | 4 => {
                             if let Some(code) = &code {
-                                let _ = confirm_identity(&state, code, &arma, "Player").await;
+                                let _ = confirm_identity(
+                                    &state,
+                                    reporter.server_id,
+                                    code,
+                                    &arma,
+                                    "Player",
+                                )
+                                .await;
                             }
                         }
                         2 => unlink_identity(&state, &user).await.unwrap(),
@@ -178,7 +203,7 @@ fn generated_identity_operation_sequences_preserve_ownership_codes_and_aggregate
                             .await
                             .unwrap();
                         }
-                        _ => ingest(state.clone(), &arma, &source).await,
+                        _ => ingest(state.clone(), &reporter, &arma, &source).await,
                     }
                     let spent: Vec<(String, String)> = sqlx::query_as(
                         "SELECT code, arma_id FROM identity_link_codes WHERE discord_id=$1 AND consumed_at IS NOT NULL",

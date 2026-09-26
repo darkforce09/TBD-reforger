@@ -42,7 +42,7 @@ before the session; it takes about 30 minutes.
    ```
 
    Expected: the last line is `WORLD BOOT: PASS`, and the log carries
-   `[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok PlayArea=ok Markers=ok Radio=ok Objectives=ok`,
+   `[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok PlayArea=ok Markers=ok Radio=ok Objectives=ok MatchTelemetry=ok`,
    printed by `TBD_FrameworkRollCall`. A `=MISSING` entry is a component of
    `Prefabs/Systems/TBD_GameMode.et` whose class did not resolve; nothing else reports it.
 
@@ -89,14 +89,9 @@ before the session; it takes about 30 minutes.
 
    Expected: one line per seed file and no `ERROR:` line.
 
-8. Check the service token the mod sends with an identity link.
-
-   ```bash
-   grep '^SERVICE_TOKEN=' apps/website/api_v2/.env
-   ```
-
-   Expected: one non-empty value. `cargo xtask mod playtest` reads it from this file (or
-   `--token`) and writes it into the server's backend config as `serverToken`.
+8. Nothing to copy for the game server's authentication: `cargo xtask mod playtest` issues the
+   run its own `mod_runtime` machine credential and writes it into the server's backend config
+   as `machineCredential`, the mod's only secret.
 
 9. Log in to the app without Discord: open `http://127.0.0.1:3000`, then open
    `http://127.0.0.1:8080/api/v1/auth/dev-login?role=admin` in the same browser.

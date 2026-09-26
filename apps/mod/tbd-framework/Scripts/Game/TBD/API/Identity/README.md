@@ -8,7 +8,7 @@ command that links that game identity to a TBD website account.
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/API/Identity/
 ├── TBD_IdentityLink.c         the `#tbd link` chat surface: usage, status, local validation
-├── TBD_IdentityLinkConfirm.c  the serial confirm queue: one POST in flight, watchdog, player replies
+├── TBD_IdentityLinkConfirm.c  the serial confirm queue: one POST in flight, player replies
 ├── TBD_IdentityLinkPending.c  one queued confirm request
 └── TBD_PlayerIdentity.c       the one accessor of the `arma_id` every payload carries
 ```
@@ -17,8 +17,8 @@ apps/mod/tbd-framework/Scripts/Game/TBD/API/Identity/
 
 `TBD_PlayerIdentity.GetArmaId` returns the engine's player identity exactly as it goes on the wire,
 or empty when the host issues none; `IsDurable` is false for the `00bbbddd-` name hash a listen
-host synthesizes. Both service-token callers use it, so the `arma_id` a link writes is byte for byte
-the one match results carry.
+host synthesizes. Link confirmation and match results both use it, so the `arma_id` a link writes
+is byte for byte the one match results carry.
 
 ```text
 website: POST /api/v1/me/link -> 6-digit code, live for 10 minutes
@@ -26,13 +26,15 @@ player types `#tbd link <code>`
   -> TBD_AdminCommands chat hook -> TBD_IdentityLink.TryConsumeBeforeBroadcast (never broadcast)
   -> TBD_IdentityLink.Submit: identity resolves, is durable, backend configured, queue not full
   -> TBD_IdentityLinkConfirm: POST /api/v1/ingest/link-confirm {code, arma_id, arma_character}
+     through TBD_GameRuntimeHttp, with the machine credential as Authorization: Bearer
   -> private chat reply per HTTP status (404, 409, 400, 401/403, no status, other)
 ```
 
 `TBD_IdentityLink` handles `#tbd link <code>` and `#tbd link status`. The line is consumed before
-the chat broadcast, so the code never reaches public chat; the authority queues one confirmation at
-a time (at most 16 waiting, each with a watchdog) because a `RestCallback` carries no user data and
-a response is matched to its player only by being the one outstanding. Replies go to the player
+the chat broadcast, so the code never reaches public chat; the authority sends one confirmation at
+a time (at most 16 waiting), each call carrying its request, so an answer is matched to its player;
+the transport's watchdog answers a call the engine never reports. A confirmation is interactive: it
+is held in memory only and never put on the durable telemetry queue. Replies go to the player
 privately through `TBD_PlayerChat`; an asynchronous reply is sent only while the player id still
 resolves to the identity stamped at enqueue, since a dedicated server recycles player ids. A player
 without a durable identity is refused and told why: `users.arma_id` is UNIQUE, so a seat number or
@@ -51,10 +53,10 @@ a name hash there binds the account to whoever holds that seat or name next.
 
 ## Boundaries
 
-- Depends on: `TBD_BackendConfig` and `TBD_BackendText` in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/API/Http/`; `TBD_PlayerChat`, `TBD_Authority` and
-  `TBD_Log` in `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; the engine's `RestApi`,
-  `RestCallback` and `SCR_PlayerIdentityUtils`. Over HTTP, the link confirmation of
+- Depends on: `TBD_GameRuntimeHttp`, `TBD_GameRuntimeAnswer`, `TBD_BackendConfig` and
+  `TBD_BackendText` in `apps/mod/tbd-framework/Scripts/Game/TBD/API/Http/`; `TBD_PlayerChat`,
+  `TBD_Authority` and `TBD_Log` in `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; the engine's
+  `SCR_PlayerIdentityUtils`. Over HTTP, the link confirmation of
   `apps/website/api_v2/src/identity_and_access/`.
 - Used by: `TBD_AdminCommands` in `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/` (the chat
   hook) and `TBD_MissionLoader` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`
@@ -67,7 +69,7 @@ a name hash there binds the account to whoever holds that seat or name next.
 
 ## Related documentation
 
-- [Platform bridge](/apps/mod/tbd-framework/Scripts/Game/TBD/API/README.md) — the service-token and machine-credential tiers
+- [Platform bridge](/apps/mod/tbd-framework/Scripts/Game/TBD/API/README.md) — the machine-credential tier
 - [Identity and access domain](/apps/website/api_v2/src/identity_and_access/README.md) — the link
   code handshake the `#tbd link` command completes
 - [Discord identity link specification](/documentation_v2/mod/tbd-framework/UI/discord_identity_link/discord_identity_link_specification.md)

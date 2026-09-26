@@ -1,23 +1,22 @@
 /**
  * @file TBD_EndBanner.c
- * @brief Decides the END banner's winner and reason, counts kills, and packs the debrief board.
+ * @brief Decides the END banner's winner and reason and packs the debrief board.
  *
  * Role: holds the winner and reason an end rule named, infers them when an admin ended the round,
- * credits player kills while LIVE, packs the scoreboard, and opens the local END and DEBRIEF
- * overlays.  Position: owned by TBD_FrameworkManager, which copies the results into its replicated
- * end fields on entering END and DEBRIEF; read by TBD_DebriefScoreboard through GetKills.
- * State: the pending winner and reason and the per-player kill map; server only, not replicated.
+ * packs the scoreboard, and opens the local END and DEBRIEF overlays.  Position: owned by
+ * TBD_FrameworkManager, which copies the results into its replicated end fields on entering END
+ * and DEBRIEF; the scoreboard rows come from TBD_DebriefScoreboard.
+ * State: the pending winner and reason; server only, not replicated.
  * Invariants: a pending reason is consumed once, on the way into END; without one the reason is
  * the objective trigger, else `faction_eliminated` when one of two or more sides survives, else
  * `admin`; LOADING and LOBBY clear everything.
  */
 
-//! END banner decision and kill tally of one framework world.
+//! END banner decision of one framework world.
 class TBD_EndBanner : Managed
 {
 	protected string m_sPendingWinner; //!< winner named by the rule that ends the round; empty when none
 	protected string m_sPendingReason; //!< reason named by the rule that ends the round; empty when none
-	protected ref map<int, int> m_mKills = new map<int, int>(); //!< playerId -> kills this round
 
 	//! Open or close this machine's END and DEBRIEF overlays for `stage`. Local widget work only; a
 	//! machine without a workspace does nothing.
@@ -104,12 +103,11 @@ class TBD_EndBanner : Managed
 		reason = "admin";
 	}
 
-	//! Drop the pending pair and every kill count.
+	//! Drop the pending pair.
 	void Clear()
 	{
 		m_sPendingWinner = string.Empty;
 		m_sPendingReason = string.Empty;
-		m_mKills.Clear();
 	}
 
 	//! Pack the debrief scoreboard from TBD_DebriefScoreboard.Fill.
@@ -119,31 +117,5 @@ class TBD_EndBanner : Managed
 		array<ref TBD_DebriefRow> rows = {};
 		TBD_DebriefScoreboard.Fill(rows);
 		return TBD_DebriefScreen.PackRows(rows);
-	}
-
-	//! Kills credited to a player this round.
-	//! @param playerId the player
-	//! @return the kill count, 0 when none
-	int GetKills(int playerId)
-	{
-		int n;
-		if (m_mKills.Find(playerId, n))
-			return n;
-		return 0;
-	}
-
-	//! Credit one kill to `killerId`. World and AI kills (no killer) and suicides are ignored.
-	//! @param killerId the killing player, 0 or less for none
-	//! @param victimId the killed player
-	//! @authority server
-	void CreditKill(int killerId, int victimId)
-	{
-		if (killerId <= 0 || killerId == victimId)
-			return;
-
-		int n;
-		if (!m_mKills.Find(killerId, n))
-			n = 0;
-		m_mKills.Set(killerId, n + 1);
 	}
 }

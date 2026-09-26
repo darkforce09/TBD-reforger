@@ -1,3 +1,4 @@
+use super::run_deadline::{DeadlineCheck, RunDeadline, parse_run_timeout};
 use super::*;
 
 pub(super) extern "C" fn on_stop_signal(_sig: libc::c_int) {
@@ -31,13 +32,10 @@ pub(super) fn nap(total: Duration) -> bool {
     STOP_REQUESTED.load(Ordering::SeqCst)
 }
 
-/// The shell the far side runs. Verbatim from the bash, including the double space left where
-/// `$TIMEOUT_PREFIX` interpolates empty — it is shell whitespace and the engine never sees it, but
-/// keeping the shape means a `set -x` transcript of either implementation reads the same.
-pub(super) fn launcher_script(timeout_prefix: &str) -> String {
-    format!(
-        "\n  echo $$ > \"$1/server.pid\"\n  exec {timeout_prefix} ./ArmaReforgerServer \\\n    -addonsDir \"$1/addons\" -config \"$1/server.json\" -profile \"$1/profile\" \\\n    -maxFPS 60 -logStats 30000 -nothrow\n"
-    )
+/// The shell the far side runs: record the process group, then `exec` the engine.
+pub(super) fn launcher_script() -> String {
+    "\n  echo $$ > \"$1/server.pid\"\n  exec ./ArmaReforgerServer \\\n    -addonsDir \"$1/addons\" -config \"$1/server.json\" -profile \"$1/profile\" \\\n    -maxFPS 60 -logStats 30000 -nothrow\n"
+        .to_string()
 }
 
 /// Everything from `rm -rf $LOGROOT` to the final exit code.
@@ -52,21 +50,15 @@ pub fn boot_and_wait(c: &BootCtx<'_>) -> u8 {
 
     install_stop_handlers();
 
-    // bash `[ -n "$RUN_TIMEOUT" ] && TIMEOUT_PREFIX="timeout -s TERM $RUN_TIMEOUT"`.
-    //
-    // NOTE ON `timeout(1)` AND WHY IT IS STILL USED HERE. `verification_core::proc::Run` kills a process
-    // GROUP on timeout precisely because bash's `timeout` kills only its direct child and the engine
-    // forks — grandchildren kept the port and the log. That correction does NOT apply to this call
-    // site: the `timeout` here runs on the FAR side of the bridge, inside the `setsid` group, and its
-    // TERM goes to the engine it `exec`ed (so `timeout` is not even in the tree any more — `exec`
-    // replaced the shell). The group-level cleanup is `kill_run`'s job either way, and `kill_run`
-    // signals `-$pgid`. So this stays a far-side `timeout` and the local `Run` timeout is deliberately
-    // NOT used for the launcher: a local deadline would kill the bridge proxy and leave the engine up,
-    // which is the orphan this whole program exists to prevent.
-    let timeout_prefix = if o.run_timeout.is_empty() {
-        String::new()
-    } else {
-        format!("timeout -s TERM {}", o.run_timeout)
+    // `--timeout` is an in-process deadline, not a far-side `timeout(1)`: when it expires after the
+    // server was ready, the pre-stop hook must still see a live server (its telemetry drain), and
+    // the stop then goes through `kill_run`, which signals the whole process group on the host.
+    let run_timeout = match parse_run_timeout(&o.run_timeout) {
+        Ok(run_timeout) => run_timeout,
+        Err(message) => {
+            eprintln!("ERROR: {message}");
+            return 2;
+        }
     };
 
     println!(
@@ -81,7 +73,7 @@ pub fn boot_and_wait(c: &BootCtx<'_>) -> u8 {
             return super::super::env_fail(&format!("cannot write {}: {e}", c.paths.srv_out), "");
         }
     };
-    let script = launcher_script(&timeout_prefix);
+    let script = launcher_script();
     let launcher = c.host.spawn_background(
         &[
             "env",
@@ -106,7 +98,8 @@ pub fn boot_and_wait(c: &BootCtx<'_>) -> u8 {
         }
     };
 
-    let verdict = wait_for_verdict(c);
+    let deadline = RunDeadline::starting_now(run_timeout);
+    let verdict = wait_for_verdict(c, &deadline);
 
     // The trap body: `echo ""; echo "==> stopping server"; if kill_run; then …; exit 0; fi; …`
     if matches!(verdict, Verdict::Interrupted) {
@@ -140,12 +133,12 @@ pub fn boot_and_wait(c: &BootCtx<'_>) -> u8 {
 
     print_banner(c);
     (c.after_ready)();
-    let code = tail_until_the_server_stops(c);
+    let code = tail_until_the_server_stops(c, &deadline);
     let _ = launcher.wait();
     code
 }
 
-pub(super) fn wait_for_verdict(c: &BootCtx<'_>) -> Verdict {
+pub(super) fn wait_for_verdict(c: &BootCtx<'_>, deadline: &RunDeadline) -> Verdict {
     let mut i = 0;
     while i < 600 {
         i += 1;
@@ -181,7 +174,11 @@ pub(super) fn wait_for_verdict(c: &BootCtx<'_>) -> Verdict {
             }
             println!("    ... {}s — {}", i / 2, boot_phase(c.paths));
         }
-        if nap(Duration::from_millis(500)) {
+        let pause = match deadline.check(Duration::from_millis(500)) {
+            DeadlineCheck::Expired => return Verdict::DeadlineBeforeRegistration,
+            DeadlineCheck::NapFor(pause) => pause,
+        };
+        if nap(pause) {
             return Verdict::Interrupted;
         }
     }
@@ -199,6 +196,13 @@ pub(super) fn report_failure(c: &BootCtx<'_>, v: &Verdict) -> Option<u8> {
     let stray = lifecycle::kill_run(c.paths, c.host).err();
     eprintln!();
     match v {
+        Verdict::DeadlineBeforeRegistration => {
+            eprintln!(
+                "FAILED: --timeout={} expired before the server registered a room.",
+                o.run_timeout
+            );
+            eprintln!("        phase reached: {}", boot_phase(c.paths));
+        }
         Verdict::Died => {
             eprintln!("FAILED: the server process exited before registering a room.");
             eprintln!("        phase reached: {}", boot_phase(c.paths));
@@ -368,7 +372,7 @@ pub(super) fn print_banner(c: &BootCtx<'_>) {
 ///
 /// The probe is the tri-state one for the same reason `kill_run` uses it: a bridge hiccup here would
 /// otherwise fall straight out of this loop and report a running server as exited.
-pub(super) fn tail_until_the_server_stops(c: &BootCtx<'_>) -> u8 {
+pub(super) fn tail_until_the_server_stops(c: &BootCtx<'_>, deadline: &RunDeadline) -> u8 {
     let console = console_log_path(&c.opts.run_dir);
     let target = if Path::new(&console).is_file() {
         println!("==> tailing {console}");
@@ -386,6 +390,7 @@ pub(super) fn tail_until_the_server_stops(c: &BootCtx<'_>) -> u8 {
         .spawn()
         .ok();
 
+    let mut timed_out = false;
     loop {
         let pgid = lifecycle::read_pgid(&c.paths.pidfile);
         if pgid.is_empty() {
@@ -398,7 +403,14 @@ pub(super) fn tail_until_the_server_stops(c: &BootCtx<'_>) -> u8 {
             ),
             Probe::Alive => {}
         }
-        if nap(Duration::from_secs(5)) {
+        let pause = match deadline.check(Duration::from_secs(5)) {
+            DeadlineCheck::Expired => {
+                timed_out = true;
+                break;
+            }
+            DeadlineCheck::NapFor(pause) => pause,
+        };
+        if nap(pause) {
             // Ctrl-C. bash's trap ran the same three lines from inside the sleep.
             break;
         }
@@ -408,7 +420,16 @@ pub(super) fn tail_until_the_server_stops(c: &BootCtx<'_>) -> u8 {
         let _ = t.kill();
         let _ = t.wait();
     }
-    // The interrupted path prints the trap's own header; the natural-exit path does not.
+    // Both a requested stop and an expired deadline find the server still up, so the pre-stop hook
+    // still sees its heartbeats. A server that exited on its own gets no hook.
+    if timed_out {
+        println!();
+        println!("==> --timeout reached after {} s", deadline.limit_seconds());
+    }
+    if timed_out || STOP_REQUESTED.load(Ordering::SeqCst) {
+        (c.before_stop)();
+    }
+    // The interrupted path prints the trap's own header; the natural-exit and deadline paths do not.
     if STOP_REQUESTED.load(Ordering::SeqCst) {
         println!();
         println!("==> stopping server");

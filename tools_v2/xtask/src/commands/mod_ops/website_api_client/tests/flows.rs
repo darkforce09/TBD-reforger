@@ -313,3 +313,102 @@ fn staged_artifact_cache_holds_the_bytes_and_their_identity() {
     assert!(!cache.exists());
     std::fs::remove_dir_all(&directory).unwrap();
 }
+
+#[test]
+fn server_telemetry_status_reads_the_match_and_the_queue_reading() {
+    let transport = ScriptedTransport::answering(vec![answer(
+        200,
+        json!({
+            "id": "s/1",
+            "name": "TBD Playtest",
+            "status": {
+                "server_id": "s/1",
+                "current_match_id": "m-1",
+                "telemetry_queue": {
+                    "backlog": 3,
+                    "capacity": 512,
+                    "dropped_total": 1,
+                    "oldest_age_seconds": 12,
+                    "reported_at": "2026-09-26T10:00:00Z"
+                }
+            }
+        }),
+    )]);
+    let client = ApiClient::new(&transport, "http://api", "admin-token");
+    let status = server_telemetry_status(&client, "s/1").unwrap();
+    assert_eq!(
+        transport.requests(),
+        vec!["GET /api/v1/servers/s%2F1/status"]
+    );
+    assert_eq!(status.current_match_id.as_deref(), Some("m-1"));
+    assert_eq!(
+        status.telemetry_queue,
+        Some(TelemetryQueueReading {
+            backlog: 3,
+            capacity: 512,
+            dropped_total: 1,
+            oldest_age_seconds: 12,
+            reported_at: "2026-09-26T10:00:00Z".into(),
+        })
+    );
+}
+
+#[test]
+fn a_status_card_without_a_reading_or_a_match_reads_as_neither() {
+    use super::runtime_telemetry_reads::telemetry_status_from_card;
+    for card in [
+        json!({ "id": "s", "status": null }),
+        json!({ "id": "s", "status": { "current_match_id": "" } }),
+        json!({ "id": "s", "status": { "telemetry_queue": null } }),
+    ] {
+        assert_eq!(
+            telemetry_status_from_card(&card).unwrap(),
+            ServerTelemetryStatus::default(),
+            "{card}"
+        );
+    }
+}
+
+#[test]
+fn a_partial_queue_reading_is_an_error_not_a_zero() {
+    use super::runtime_telemetry_reads::telemetry_status_from_card;
+    let card = json!({
+        "status": { "telemetry_queue": { "backlog": 0, "capacity": 512, "dropped_total": 0 } }
+    });
+    let error = telemetry_status_from_card(&card).unwrap_err();
+    assert!(
+        format!("{error:#}").contains("oldest_age_seconds"),
+        "{error:#}"
+    );
+    let negative = json!({
+        "status": { "telemetry_queue": {
+            "backlog": -1, "capacity": 512, "dropped_total": 0, "oldest_age_seconds": 0,
+            "reported_at": "2026-09-26T10:00:00Z"
+        } }
+    });
+    assert!(telemetry_status_from_card(&negative).is_err());
+}
+
+#[test]
+fn match_events_are_read_one_at_most() {
+    let transport = ScriptedTransport::answering(vec![
+        answer(
+            200,
+            json!({ "items": [{ "sequence": 1 }], "next_after_sequence": 1 }),
+        ),
+        answer(200, json!({ "items": [], "next_after_sequence": null })),
+        answer(404, json!({ "error": "match not found" })),
+    ]);
+    let client = ApiClient::new(&transport, "http://api", "admin-token");
+    assert!(match_has_acknowledged_events(&client, "m-1").unwrap());
+    assert!(!match_has_acknowledged_events(&client, "m-2").unwrap());
+    assert!(match_has_acknowledged_events(&client, "m-3").is_err());
+    assert_eq!(
+        transport.requests(),
+        vec![
+            "GET /api/v1/matches/m-1/events?limit=1",
+            "GET /api/v1/matches/m-2/events?limit=1",
+            "GET /api/v1/matches/m-3/events?limit=1",
+        ]
+    );
+}

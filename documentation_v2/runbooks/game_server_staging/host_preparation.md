@@ -74,10 +74,9 @@ before the first [staging deploy](/documentation_v2/runbooks/game_server_staging
    cargo xtask deploy website --dry-run
    ```
 
-   Expected: the deploy plan, with no command sent to the host. In the host's
-   `apps/website/api_v2/.env`, which both deploys' rsync excludes, `SERVICE_TOKEN` must equal the
-   `TBD_GAME_SERVER_TOKEN` of `deploy.env`: the mod sends that token for identity-link
-   confirmation and match results.
+   Expected: the deploy plan, with no command sent to the host. The host's
+   `apps/website/api_v2/.env`, which both deploys' rsync excludes, needs `JWT_SECRET` and
+   `OBSERVABILITY_TOKEN`; the mod authenticates every call with its machine credential.
 
 5. On the host, let the deploy account's user services run while nobody is logged in; the game
    server and the host agent are user units.

@@ -11,7 +11,6 @@ use std::collections::{HashMap, HashSet};
 
 use axum::extract::{Path, State};
 use axum::response::Json;
-use chrono::{DateTime, Utc};
 use serde::Serialize;
 use serde_json::{Value, json};
 use sqlx::PgPool;
@@ -21,9 +20,11 @@ use crate::community_content::models::modpack::{Modpack, ModpackMod};
 use crate::community_content::services::modpack_lookup::{ModpackDto, load_modpack};
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
-use crate::core::middleware::AuthUser;
+use crate::core::middleware::{AuthUser, role_rank};
 use crate::missions::models::mission::TerrainType;
-use crate::server_infrastructure::models::server::{Server, ServerStatus};
+use crate::server_infrastructure::models::server::{
+    Server, ServerStatus, ServerStatusRow, server_status_columns,
+};
 
 // Queries cast `inet`→text (`ip::text`) and `numeric`→f64 (`server_fps::float8`).
 
@@ -64,57 +65,35 @@ pub struct ServerIntelDto {
 /// Status row plus optional match theater — one LEFT JOIN, both list and single-card paths.
 #[derive(Debug, Clone, sqlx::FromRow)]
 struct StatusWithTerrain {
-    server_id: Uuid,
-    is_online: bool,
-    player_count: i64,
-    max_players: i64,
-    server_fps: f64,
-    uptime_seconds: i64,
-    current_match_id: Option<Uuid>,
-    ingame_time: String,
-    ingame_weather: String,
-    updated_at: DateTime<Utc>,
+    #[sqlx(flatten)]
+    status: ServerStatusRow,
     terrain: Option<TerrainType>,
 }
 
 impl StatusWithTerrain {
     fn into_parts(self) -> (ServerStatus, Option<TerrainType>) {
-        (
-            ServerStatus {
-                server_id: self.server_id,
-                is_online: self.is_online,
-                player_count: self.player_count,
-                max_players: self.max_players,
-                server_fps: self.server_fps,
-                uptime_seconds: self.uptime_seconds,
-                current_match_id: self.current_match_id,
-                ingame_time: self.ingame_time,
-                ingame_weather: self.ingame_weather,
-                updated_at: self.updated_at,
-            },
-            self.terrain,
-        )
+        (ServerStatus::from(self.status), self.terrain)
     }
 }
 
 /// Shared SELECT: `server_statuses` LEFT JOIN `matches` for theater.
-/// Must stay `'static` string literals — sqlx 0.9 `SqlSafeStr` rejects `format!`.
-const SERVER_STATUS_SELECT_ONE: &str = "SELECT ss.server_id, ss.is_online, ss.player_count, \
-     ss.max_players, ss.server_fps::float8 AS server_fps, ss.uptime_seconds, ss.current_match_id, \
-     COALESCE(ss.ingame_time, '') AS ingame_time, COALESCE(ss.ingame_weather, '') AS ingame_weather, \
-     COALESCE(ss.updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at, \
-     m.terrain AS terrain \
-     FROM server_statuses ss \
-     LEFT JOIN matches m ON m.id = ss.current_match_id \
-     WHERE ss.server_id = $1";
-const SERVER_STATUS_SELECT_ANY: &str = "SELECT ss.server_id, ss.is_online, ss.player_count, \
-     ss.max_players, ss.server_fps::float8 AS server_fps, ss.uptime_seconds, ss.current_match_id, \
-     COALESCE(ss.ingame_time, '') AS ingame_time, COALESCE(ss.ingame_weather, '') AS ingame_weather, \
-     COALESCE(ss.updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at, \
-     m.terrain AS terrain \
-     FROM server_statuses ss \
-     LEFT JOIN matches m ON m.id = ss.current_match_id \
-     WHERE ss.server_id = ANY($1)";
+const SERVER_STATUS_SELECT_ONE: &str = concat!(
+    "SELECT ",
+    server_status_columns!(),
+    ", m.terrain AS terrain FROM server_statuses s \
+     LEFT JOIN matches m ON m.id = s.current_match_id WHERE s.server_id = $1"
+);
+const SERVER_STATUS_SELECT_ANY: &str = concat!(
+    "SELECT ",
+    server_status_columns!(),
+    ", m.terrain AS terrain FROM server_statuses s \
+     LEFT JOIN matches m ON m.id = s.current_match_id WHERE s.server_id = ANY($1)"
+);
+
+/// Whether `user` may see servers outside the configured fleet (inactive ones).
+pub(crate) fn sees_inactive_servers(user: &AuthUser) -> bool {
+    role_rank(&user.role) >= role_rank("admin")
+}
 
 /// Compose a server with its status + required modpack + match theater (single-card path).
 pub(super) async fn server_intel(pool: &PgPool, server: Server) -> sqlx::Result<ServerIntelDto> {
@@ -163,7 +142,7 @@ async fn servers_intel_batch(
         .await?;
     let mut status_by_id: HashMap<Uuid, (ServerStatus, Option<TerrainType>)> = HashMap::new();
     for row in statuses {
-        let server_id = row.server_id;
+        let server_id = row.status.server_id;
         status_by_id.insert(server_id, row.into_parts());
     }
 
@@ -229,18 +208,20 @@ async fn servers_intel_batch(
         .collect())
 }
 
-/// `GET /api/v1/servers` — all servers with status.
+/// `GET /api/v1/servers` — the configured fleet (active servers) with status; administrators
+/// also see inactive servers, marked by `is_active`.
 ///
 /// @route GET /api/v1/servers
 pub async fn list_servers(
     State(state): State<AppState>,
-    _u: AuthUser,
+    user: AuthUser,
 ) -> Result<Json<Value>, ApiError> {
     let servers: Vec<Server> = sqlx::query_as(concat!(
         "SELECT ",
         server_cols!(),
-        " FROM servers ORDER BY name ASC"
+        " FROM servers WHERE is_active OR $1 ORDER BY name ASC, id ASC"
     ))
+    .bind(sees_inactive_servers(&user))
     .fetch_all(&state.pool)
     .await?;
     // Batched prefetch — composing one card per row here would be an N+1.
@@ -248,12 +229,13 @@ pub async fn list_servers(
     Ok(Json(json!({ "data": out })))
 }
 
-/// `GET /api/v1/servers/:id/status` — Server Intel card for one server.
+/// `GET /api/v1/servers/:id/status` — Server Intel card for one server; an inactive server is
+/// not found for anyone but an administrator.
 ///
 /// @route GET /api/v1/servers/:id/status
 pub async fn get_server_status(
     State(state): State<AppState>,
-    _u: AuthUser,
+    user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<ServerIntelDto>, ApiError> {
     let Ok(id) = Uuid::parse_str(&id) else {
@@ -267,7 +249,8 @@ pub async fn get_server_status(
     .bind(id)
     .fetch_optional(&state.pool)
     .await?;
-    let Some(server) = server else {
+    let Some(server) = server.filter(|server| server.is_active || sees_inactive_servers(&user))
+    else {
         return Err(ApiError::not_found("server not found"));
     };
     Ok(Json(server_intel(&state.pool, server).await?))

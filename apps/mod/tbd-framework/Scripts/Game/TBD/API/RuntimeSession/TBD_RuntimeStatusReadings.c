@@ -3,8 +3,10 @@
  * @brief The live readings a runtime-session heartbeat reports.
  *
  * Role: reads connected players, player capacity, server frame rate, process uptime, in-game time
- * of day and weather from the engine when a heartbeat is built.  Position: called by
- * `TBD_RuntimeSession` for online heartbeats and by `TBD_RuntimeSessionClosing` for the offline one.
+ * of day and weather from the engine, the current match from `TBD_MatchRegistration` and the
+ * telemetry queue reading from `TBD_TelemetryQueue.Stats` when a heartbeat is built.
+ * Position: called by `TBD_RuntimeSession` for online heartbeats and by
+ * `TBD_RuntimeSessionClosing` for the offline one.
  * State: none; pure reads.  Invariants: a reading the engine cannot provide is omitted, never sent
  * as zero, because the platform keeps its stored value for an absent key while a zero is recorded
  * as a real measurement.
@@ -14,8 +16,9 @@
 //! @authority server
 class TBD_RuntimeStatusReadings
 {
-	//! The reading keys of a heartbeat from a running server.
+	//! The reading keys of a heartbeat from a running server; every one carries `telemetry_queue`.
 	//! @return `"is_online":true,...` without braces
+	//! @contract game-runtime-session.schema.json#/definitions/RuntimeHeartbeat
 	static string BuildOnlineFields()
 	{
 		string fields = "\"is_online\":true";
@@ -45,6 +48,8 @@ class TBD_RuntimeStatusReadings
 		if (!weather.IsEmpty())
 			fields += string.Format(",\"ingame_weather\":\"%1\"", TBD_BackendText.JsonEscape(weather));
 
+		fields += TBD_MatchRegistration.BuildHeartbeatField();
+		fields += ",\"telemetry_queue\":" + TBD_TelemetryQueue.Stats().ToJson();
 		return fields;
 	}
 

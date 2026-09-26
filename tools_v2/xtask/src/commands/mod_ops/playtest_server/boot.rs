@@ -65,6 +65,9 @@ pub struct BootCtx<'a> {
     pub running: &'a str,
     /// Runs once the server is up and its banner printed, before the wait for its exit.
     pub after_ready: &'a dyn Fn(),
+    /// Runs on Ctrl-C / SIGTERM or an expired `--timeout` after the server was ready, while it is
+    /// still up, before the stop.
+    pub before_stop: &'a dyn Fn(),
 }
 
 /// Which of the four ways the wait loop can end.
@@ -76,6 +79,8 @@ enum Verdict {
     Died,
     /// 300 s elapsed with none of the above.
     NeverRegistered,
+    /// `--timeout` expired before the room registered.
+    DeadlineBeforeRegistration,
     /// Ctrl-C / SIGTERM.
     Interrupted,
 }
@@ -86,6 +91,8 @@ mod tests;
 
 #[path = "boot/on_stop_signal.rs"]
 mod on_stop_signal;
+#[path = "boot/run_deadline.rs"]
+mod run_deadline;
 pub use on_stop_signal::boot_and_wait;
 
 #[cfg(test)]

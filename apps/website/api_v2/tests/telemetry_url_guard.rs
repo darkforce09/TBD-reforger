@@ -19,7 +19,9 @@
 //!
 //! Skips without `TEST_DATABASE_URL` — and a skip is a **failure to have tested**, not a pass.
 
+use std::collections::HashMap;
 use std::net::{IpAddr, SocketAddr};
+use std::sync::Mutex;
 use std::sync::atomic::{AtomicU32, Ordering};
 
 use axum::Router;
@@ -28,29 +30,26 @@ use axum::extract::ConnectInfo;
 use axum::http::{Request, StatusCode, header};
 use serde_json::{Value, json};
 use sqlx::PgPool;
+use telemetry_support::boot;
+use telemetry_support::match_reports::{REGISTERED_STARTED_AT, ReportingServer};
 use tower::ServiceExt;
-use website_api::core::application_state::AppState;
-use website_api::core::configuration::Config;
-use website_api::core::database;
-use website_api::core::http_router;
 
 mod common;
+mod telemetry_support;
 
-const SVC: &str = "test-service-token";
 const ARMA: &str = "test-arma-url-guard";
 const SRC: &str = "telemetry-url-guard";
 const EV: &str = "e-url-guard";
 
-/// `/api/v1/ingest/` sits behind the **strict** per-IP limiter
-/// (`middleware/ratelimit.rs:21`), whose burst is a good deal smaller than the number of
-/// payloads a scheme-allowlist has to be shown against. A `oneshot` request carries no
-/// `ConnectInfo`, so every one of them keys to `0.0.0.0` and the run dies at 429 partway
-/// through the table — which reads as "the guard let it through" in exactly the place it
-/// matters, so it is worth removing rather than working around with sleeps.
+/// The per-IP limiter's burst is smaller than the number of requests a scheme allowlist has
+/// to be shown against (every case is a registration and a results revision). A `oneshot`
+/// request carries no `ConnectInfo`, so every one of them would key to `0.0.0.0` and the run
+/// would die at 429 partway through the table — which reads as "the guard let it through" in
+/// exactly the place it matters, so it is worth removing rather than working around with
+/// sleeps.
 ///
 /// Each request therefore gets its own synthetic peer. The limiter is keyed per IP and is not
-/// what is under test here; distinct clients is also the honest model, since these payloads
-/// stand in for distinct senders.
+/// what is under test here.
 static PEER: AtomicU32 = AtomicU32::new(1);
 
 fn next_peer() -> SocketAddr {
@@ -59,22 +58,12 @@ fn next_peer() -> SocketAddr {
     SocketAddr::from((IpAddr::from([10, b, c, d]), 40000))
 }
 
-async fn boot() -> Option<(Router, PgPool)> {
-    let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
-    let app = http_router::router(AppState::new(
-        pool.clone(),
-        Config::for_tests(url, "url-guard-secret"),
-    ));
-    Some((app, pool))
-}
-
-async fn post(app: &Router, body: &Value) -> (StatusCode, Value) {
+/// One machine-authenticated POST from a fresh synthetic peer.
+async fn send(app: &Router, secret: &str, uri: &str, body: &Value) -> (StatusCode, Value) {
     let mut req = Request::builder()
         .method("POST")
-        .uri("/api/v1/ingest/match-results")
-        .header("x-service-token", SVC)
+        .uri(uri)
+        .header(header::AUTHORIZATION, format!("Bearer {secret}"))
         .header(header::CONTENT_TYPE, "application/json")
         .body(Body::from(serde_json::to_vec(body).unwrap()))
         .unwrap();
@@ -93,6 +82,57 @@ async fn post(app: &Router, body: &Value) -> (StatusCode, Value) {
         status,
         serde_json::from_slice(&bytes).unwrap_or(Value::Null),
     )
+}
+
+/// A registered game server whose reports each come from their own synthetic peer.
+struct Reporter {
+    server: ReportingServer,
+    revisions: Mutex<HashMap<String, i64>>,
+}
+
+impl Reporter {
+    async fn open(app: &Router, pool: &PgPool, name: &str) -> Self {
+        Self {
+            server: ReportingServer::open(app, pool, name).await,
+            revisions: Mutex::new(HashMap::new()),
+        }
+    }
+
+    /// Register the body's match on first use and post the body as its next revision.
+    async fn post(&self, app: &Router, body: &Value) -> (StatusCode, Value) {
+        let secret = &self.server.session.secret;
+        let source = body["match"]["source_match_id"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let revision = {
+            let mut revisions = self.revisions.lock().unwrap();
+            let next = revisions.get(&source).copied().unwrap_or(0) + 1;
+            revisions.insert(source.clone(), next);
+            next
+        };
+        if revision == 1 {
+            let registration = json!({
+                "source_match_id": source,
+                "runtime_session_id": self.server.session.id,
+                "started_at": REGISTERED_STARTED_AT,
+            });
+            let (status, answer) = send(app, secret, "/api/v1/ingest/matches", &registration).await;
+            assert_eq!(status, StatusCode::CREATED, "register {source}: {answer}");
+        }
+        let mut body = body.clone();
+        body["revision"] = json!(revision);
+        send(app, secret, "/api/v1/ingest/match-results", &body).await
+    }
+}
+
+/// The results revision a rejected report left behind: 0 means none was ever applied.
+async fn stored_revision(pool: &PgPool, src: &str) -> Option<i64> {
+    sqlx::query_scalar("SELECT revision FROM matches WHERE source_match_id = $1")
+        .bind(src)
+        .fetch_optional(pool)
+        .await
+        .unwrap()
 }
 
 /// Per-test row namespace.
@@ -182,6 +222,7 @@ async fn rejects_script_schemes_and_stores_nothing() {
     };
     let ns = Ns("reject");
     ns.clean(&pool).await;
+    let reporter = Reporter::open(&app, &pool, "URL guard reject server").await;
 
     let payloads: [(&str, &str); 24] = [
         // The literal defect: this is what executed from `<a href>` on click.
@@ -224,7 +265,7 @@ async fn rejects_script_schemes_and_stores_nothing() {
 
     for (i, (payload, label)) in payloads.iter().enumerate() {
         let src = ns.src(&format!("bad-{i}"));
-        let (st, r) = post(&app, &ns.body(&src, payload)).await;
+        let (st, r) = reporter.post(&app, &ns.body(&src, payload)).await;
         assert_eq!(
             st,
             StatusCode::BAD_REQUEST,
@@ -237,12 +278,18 @@ async fn rejects_script_schemes_and_stores_nothing() {
             msg.contains("aar_replay_url"),
             "{label} ({payload:?}) 400'd for the wrong reason: {msg}"
         );
-        // And the 400 must be the *whole* answer: no match row, so nothing for any reader — this
-        // page, a CSV export, a webhook — to find later.
+        // And the 400 must be the *whole* answer: the registered match keeps the blank link a
+        // registration stores and no applied revision, so nothing for any reader — this page, a
+        // CSV export, a webhook — to find later.
         assert_eq!(
-            stored_replay(&pool, &src).await,
+            stored_replay(&pool, &src).await.filter(|link| !link.is_empty()),
             None,
-            "{label} ({payload:?}) answered 400 but the row exists anyway"
+            "{label} ({payload:?}) answered 400 but the link was stored anyway"
+        );
+        assert_eq!(
+            stored_revision(&pool, &src).await,
+            Some(0),
+            "{label} ({payload:?}) answered 400 but the revision applied anyway"
         );
     }
 
@@ -261,15 +308,18 @@ async fn rejects_on_the_update_path_without_clobbering_a_good_link() {
     };
     let ns = Ns("update");
     ns.clean(&pool).await;
+    let reporter = Reporter::open(&app, &pool, "URL guard update server").await;
     let src = ns.src("row");
     let good = "https://aar.tbd/replays/url-guard.json?v=2#t=30";
 
-    let (st, r) = post(&app, &ns.body(&src, good)).await;
+    let (st, r) = reporter.post(&app, &ns.body(&src, good)).await;
     assert_eq!(st, StatusCode::OK, "seed create: {r}");
     assert_eq!(stored_replay(&pool, &src).await.as_deref(), Some(good));
 
-    // Re-POST the same source_match_id — same row, UPDATE path.
-    let (st, r) = post(&app, &ns.body(&src, "javascript:alert(document.cookie)")).await;
+    // The next revision of the same source_match_id — same row, UPDATE path.
+    let (st, r) = reporter
+        .post(&app, &ns.body(&src, "javascript:alert(document.cookie)"))
+        .await;
     assert_eq!(
         st,
         StatusCode::BAD_REQUEST,
@@ -304,6 +354,7 @@ async fn accepts_real_links_and_preserves_absent_and_blank() {
 
     let ns = Ns("accept");
     ns.clean(&pool).await;
+    let reporter = Reporter::open(&app, &pool, "URL guard accept server").await;
 
     // Ordinary links, including the query / port / fragment shapes a real AAR URL carries.
     for (i, good) in [
@@ -318,7 +369,7 @@ async fn accepts_real_links_and_preserves_absent_and_blank() {
     .enumerate()
     {
         let src = ns.src(&format!("ok-{i}"));
-        let (st, r) = post(&app, &ns.body(&src, good)).await;
+        let (st, r) = reporter.post(&app, &ns.body(&src, good)).await;
         assert_eq!(st, StatusCode::OK, "guard rejected a real link {good}: {r}");
         assert_eq!(
             stored_replay(&pool, &src).await.as_deref(),
@@ -330,9 +381,9 @@ async fn accepts_real_links_and_preserves_absent_and_blank() {
     // Absent keeps: the second POST names no link, and the first one survives.
     let src = ns.src("absent");
     let good = "https://aar.tbd/replays/keepme.json";
-    let (st, r) = post(&app, &ns.body(&src, good)).await;
+    let (st, r) = reporter.post(&app, &ns.body(&src, good)).await;
     assert_eq!(st, StatusCode::OK, "seed: {r}");
-    let (st, r) = post(&app, &ns.body_without_replay(&src)).await;
+    let (st, r) = reporter.post(&app, &ns.body_without_replay(&src)).await;
     assert_eq!(st, StatusCode::OK, "absent replay should not 400: {r}");
     assert_eq!(
         stored_replay(&pool, &src).await.as_deref(),
@@ -342,7 +393,7 @@ async fn accepts_real_links_and_preserves_absent_and_blank() {
 
     // Blank clears, as it did before the guard existed. `""` carries no scheme, so 400-ing it
     // would break a working shape to buy nothing.
-    let (st, r) = post(&app, &ns.body(&src, "")).await;
+    let (st, r) = reporter.post(&app, &ns.body(&src, "")).await;
     assert_eq!(st, StatusCode::OK, "blank replay should not 400: {r}");
     assert_eq!(
         stored_replay(&pool, &src).await.as_deref(),
@@ -352,13 +403,15 @@ async fn accepts_real_links_and_preserves_absent_and_blank() {
 
     // Whitespace-only says the same thing as blank, and is stored trimmed rather than as an
     // href pointing at three spaces.
-    let (st, r) = post(&app, &ns.body(&src, "   ")).await;
+    let (st, r) = reporter.post(&app, &ns.body(&src, "   ")).await;
     assert_eq!(st, StatusCode::OK, "whitespace replay should not 400: {r}");
     assert_eq!(stored_replay(&pool, &src).await.as_deref(), Some(""));
 
     // A padded real link is accepted and stored **trimmed** — the bytes validated are the bytes
     // stored, so no reader has to re-derive what a browser would have done with the padding.
-    let (st, r) = post(&app, &ns.body(&src, "  https://aar.tbd/padded.json  ")).await;
+    let (st, r) = reporter
+        .post(&app, &ns.body(&src, "  https://aar.tbd/padded.json  "))
+        .await;
     assert_eq!(st, StatusCode::OK, "padded real link was rejected: {r}");
     assert_eq!(
         stored_replay(&pool, &src).await.as_deref(),

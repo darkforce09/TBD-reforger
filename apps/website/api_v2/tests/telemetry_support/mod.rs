@@ -9,18 +9,16 @@
 //!
 //! # What lives here
 //!
-//! * [`SVC`] — the service token the ingest routes authenticate with. Ingest is machine
-//!   traffic, so it carries no bearer; the read-back routes the suites assert against do.
+//! * [`match_reports::ReportingServer`] — a registered server with a runtime session that
+//!   registers matches and posts results revisions and event batches with its machine credential.
 //! * [`boot`] — a router over this binary's own database (see [`common::require_test_database_url`]),
 //!   or `None` when `TEST_DATABASE_URL` is unset, which is the suite-skip path.
 //! * [`admin_token`] — a bearer for the read-back routes, via the dev-login handler.
-//! * [`call`] — one request, both credential kinds optional. A call with neither is how a
-//!   suite asserts the 401, so they are separate arguments rather than one enum.
+//! * [`call`] — one request with an optional bearer (a user token or a machine credential). A
+//!   call without one is how a suite asserts the 401.
 //!
 //! Every suite that includes this module gets its own database and its own in-process rate
-//! limiter, because both are keyed per test binary: the limiter buckets on the peer IP, which
-//! is `0.0.0.0` for every request a binary makes, so the ingest calls of all its tests share
-//! one 1/s + burst-10 bucket.
+//! limiter, because both are keyed per test binary. Ingest routes are on the global tier.
 
 // Each telemetry binary compiles its own copy of this module and names a different subset of
 // it, so an item one suite never calls is not dead code — but rustc judges each binary on its
@@ -29,7 +27,7 @@
 
 use axum::Router;
 use axum::body::{Body, to_bytes};
-use axum::http::{Request, StatusCode, header};
+use axum::http::{Request, StatusCode};
 use serde_json::Value;
 use sqlx::PgPool;
 use tower::ServiceExt;
@@ -40,8 +38,8 @@ use website_api::core::http_router;
 
 use crate::common;
 
-/// The service token `Config::for_tests` accepts on the ingest routes.
-pub const SVC: &str = "test-service-token";
+pub mod match_reports;
+pub mod report_fixtures;
 
 /// Router + pool over this binary's private database, or `None` when the suite must skip.
 pub async fn boot() -> Option<(Router, PgPool)> {
@@ -60,28 +58,26 @@ pub async fn admin_token(app: &Router) -> String {
     common::dev_login_token(app, "telemetry", "admin").await
 }
 
-/// One request against the router, with an optional bearer and an optional service token.
-///
-/// Both are optional because the ingest contract is asserted from both sides: a service-token
-/// call is the game server, a bearer call is an operator reading the result back, and a call
-/// with neither must be a 401.
+/// One request against the router with an optional bearer: a user token for read-backs, a
+/// machine credential for game-server traffic, or none to assert the 401. `header` adds one
+/// extra request header (a retired header a suite asserts grants nothing, for example).
 pub async fn call(
     app: &Router,
     method: &str,
     uri: &str,
     bearer: Option<&str>,
-    svc: Option<&str>,
+    header: Option<(&str, &str)>,
     body: Option<&str>,
 ) -> (StatusCode, Value) {
     let mut b = Request::builder().method(method).uri(uri);
     if let Some(t) = bearer {
-        b = b.header(header::AUTHORIZATION, format!("Bearer {t}"));
+        b = b.header(axum::http::header::AUTHORIZATION, format!("Bearer {t}"));
     }
-    if let Some(s) = svc {
-        b = b.header("x-service-token", s);
+    if let Some((name, value)) = header {
+        b = b.header(name, value);
     }
     if body.is_some() {
-        b = b.header(header::CONTENT_TYPE, "application/json");
+        b = b.header(axum::http::header::CONTENT_TYPE, "application/json");
     }
     let req = b
         .body(body.map_or(Body::empty(), |s| Body::from(s.to_string())))

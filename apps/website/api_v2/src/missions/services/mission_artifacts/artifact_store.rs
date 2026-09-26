@@ -9,10 +9,9 @@ use uuid::Uuid;
 use website_map_engine::data::scenario::COMPILER_PACKAGE_VERSION;
 use website_map_engine::data::scenario::flatten::unsupported_authored_data;
 
-use super::artifact_inputs::{
-    canonical_json, compiled_metadata, load_catalog_snapshot, sha256_hex,
-};
+use super::artifact_inputs::{compiled_metadata, load_catalog_snapshot};
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::wire_format::content_digest::{canonical_json, sha256_hex};
 use crate::core::wire_format::rfc3339_utc;
 use crate::missions::contract::schema_validators::validate_mission_document;
 use crate::missions::models::mission::Mission;

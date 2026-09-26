@@ -58,8 +58,10 @@ See: [Machine credentials evidence](/documentation_v2/website/api_v2/verificatio
 
 ### match telemetry
 
-The API domain that takes in what game servers report: runtime-session heartbeats with the live
-server status, and finished match results behind the service token.
+The API domain that takes in what game servers report, each call authenticated by the server's
+`mod_runtime` [machine credential](#machine-credential): runtime-session heartbeats with the live
+server status, match registrations, numbered results revisions and batches of detailed combat,
+medical and vehicle events. It also serves the read of a match's detailed events.
 
 In code: `apps/website/api_v2/src/match_telemetry/`.
 

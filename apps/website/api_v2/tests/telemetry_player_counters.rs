@@ -6,12 +6,20 @@
 
 use axum::Router;
 use axum::http::StatusCode;
+use serde_json::Value;
 use sqlx::PgPool;
-use telemetry_support::{SVC, boot, call};
+use telemetry_support::boot;
+use telemetry_support::match_reports::ReportingServer;
 use uuid::Uuid;
 
 mod common;
 mod telemetry_support;
+
+/// Report a results body given as JSON text as the next revision of its match.
+async fn report(reporter: &ReportingServer, app: &Router, body: &str) -> (StatusCode, Value) {
+    let body: Value = serde_json::from_str(body).expect("a results body is JSON");
+    reporter.report_results(app, &body).await
+}
 
 /// **The payload the shipping mod actually sends, reproduced byte-for-byte, asserted to be
 /// accepted.**
@@ -25,8 +33,8 @@ mod telemetry_support;
 ///
 /// # Source of truth for these bytes
 ///
-/// `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c` — the envelope from
-/// `BuildPayload` (key order and all), each row from `BuildPlayerRow`. Both hand-build JSON by
+/// `apps/mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry/Reports/TBD_MatchResultsRevision.c`
+/// — the envelope from `BuildBody` (key order and all), each row from `BuildLine`. Both hand-build JSON by
 /// string concatenation, so there is no serializer that could quietly fill a field in: what
 /// those two functions write is exactly what the backend receives. Reproduced here in that
 /// same order so a reader can diff the two by eye.
@@ -47,6 +55,7 @@ async fn the_shipping_mod_payload_is_accepted_verbatim() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
+    let reporter = &ReportingServer::open(&app, &pool, "Counters shipping mod server").await;
     // Both arma_ids stay unlinked on purpose: `TBD_ResultsReporter.c:23-35` says no player
     // carries an `arma_id` in production until the link flow ships, so this is the real
     // population, and the unlinked-reporting path is the same code path as a linked report.
@@ -116,21 +125,20 @@ async fn the_shipping_mod_payload_is_accepted_verbatim() {
     .await
     .expect("seed the event the shipping payload names");
 
-    // ---- BEGIN golden payload — TBD_ResultsReporter.c BuildPayload + BuildPlayerRow ----
+    // ---- BEGIN golden payload — TBD_MatchResultsRevision.c BuildBody + BuildLine ----
     let golden = format!(
-        r#"{{"match":{{"source_match_id":"{SRC}","event_id":"{EV}","mission_id":"{MISSION}","terrain":"everon","started_at":"2026-07-26T20:03:11Z","ended_at":"2026-07-26T21:14:02Z","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{A1}","role_played":"Squad Leader","deaths":1,"source_event_id":"{EV}"}},{{"arma_id":"{A2}","role_played":"Rifleman","deaths":0,"source_event_id":"{EV}"}}]}}"#
+        r#"{{"revision":1,"match":{{"source_match_id":"{SRC}","outcome":"success","event_id":"{EV}","mission_id":"{MISSION}","terrain":"everon","started_at":"2026-07-26T20:03:11Z","ended_at":"2026-07-26T21:14:02Z","winning_faction":"USA"}},"players":[{{"arma_id":"{A1}","role_played":"Squad Leader","source_event_id":"{EV}","counters":{{"kills":0,"deaths":1,"team_kills":0,"longest_kill_m":0,"vehicles_destroyed":0,"is_command":false,"command_win":null}}}},{{"arma_id":"{A2}","role_played":"Rifleman","source_event_id":"{EV}","counters":{{"kills":0,"deaths":0,"team_kills":0,"longest_kill_m":0,"vehicles_destroyed":0,"is_command":false,"command_win":null}}}}]}}"#
     );
     // ---- END golden payload ----
 
-    let (st, r) = call(
-        &app,
-        "POST",
-        "/api/v1/ingest/match-results",
-        None,
-        Some(SVC),
-        Some(&golden),
-    )
-    .await;
+    // The mod registers the match before it reports it; the registration is not the contract
+    // this test guards, so the helper's fixed registration stands in for it.
+    reporter.register_match(&app, SRC).await;
+
+    let golden: Value = serde_json::from_str(&golden).expect("the golden payload is JSON");
+    let (st, r) = reporter
+        .post(&app, "/api/v1/ingest/match-results", &golden)
+        .await;
     assert_eq!(
         st,
         StatusCode::OK,
@@ -159,10 +167,10 @@ async fn the_shipping_mod_payload_is_accepted_verbatim() {
         )
     );
 
-    // Both player rows exist with their identity core intact. The flat fold turns the shipping
-    // top-level `deaths` into a complete scoreline (zeros for fields the mod does not measure).
-    // Identity-only re-ingest (no nested block and no flat keys) still writes no counters —
-    // that is `absent_counters_are_not_a_write_on_reingest`.
+    // Both player rows exist with their identity core intact. The mod sends a complete counters
+    // block on every line, zeros for the fields a round does not measure. An identity-only
+    // revision (no counters block) still writes no counters — that is
+    // `absent_counters_are_not_a_write_on_reingest`.
     type Row = (
         String,
         String,
@@ -209,17 +217,12 @@ async fn the_shipping_mod_payload_is_accepted_verbatim() {
                 None
             ),
         ],
-        "shipping flat deaths fold into a complete scoreline"
+        "the shipping counters block lands as a complete scoreline"
     );
 
-    // The flat fold recovers the shipping `deaths`. Nested `counters` is all-or-nothing when
-    // present; identity-only bodies write no counters.
-
-    assert_eq!(
-        rows[0].3,
-        Some(1),
-        "top-level deaths is stored via the flat fold"
-    );
+    // The shipping `deaths` is the one measured counter; `counters` is all-or-nothing when
+    // present, and identity-only lines write no counters.
+    assert_eq!(rows[0].3, Some(1), "counters.deaths is stored as sent");
 
     sqlx::query("DELETE FROM audit_logs WHERE target_id = $1")
         .bind(match_id.to_string())
@@ -243,6 +246,7 @@ async fn a_partial_counters_object_is_still_a_400() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
+    let reporter = &ReportingServer::open(&app, &pool, "Counters partial block server").await;
     const ARMA: &str = "counters-arma-partial";
     const SRC: &str = "m-counters-partial";
     const EV: &str = "e-counters-partial";
@@ -266,17 +270,7 @@ async fn a_partial_counters_object_is_still_a_400() {
             r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA"}},"players":[{players}]}}"#
         )
     };
-    let post = |app: Router, b: String| async move {
-        call(
-            &app,
-            "POST",
-            "/api/v1/ingest/match-results",
-            None,
-            Some(SVC),
-            Some(&b),
-        )
-        .await
-    };
+    let post = |app: Router, b: String| async move { report(reporter, &app, &b).await };
 
     // Seed a real scoreline so every rejection below has something it could have destroyed.
     let (st, r) = post(
@@ -330,9 +324,9 @@ async fn a_partial_counters_object_is_still_a_400() {
     );
     assert_eq!(read(pool.clone()).await, SEEDED, "nothing written");
 
-    // (3) The flat body. The handler folds it into nested counters when the nested block is
-    // absent, so this is a 200 that stores the stated scoreline (not a 400, and not a silent
-    // drop). Partial *nested* blocks above still 400.
+    // (3) The flat body: counter keys at the top level of the line are unknown keys, so the
+    // whole report is a 400 that names the offending line, and nothing is written. Counters
+    // travel only in the nested block.
     let (st, r) = post(
         app.clone(),
         body(format!(
@@ -340,12 +334,14 @@ async fn a_partial_counters_object_is_still_a_400() {
         )),
     )
     .await;
-    assert_eq!(st, StatusCode::OK, "flat body folds: {r}");
+    assert_eq!(st, StatusCode::BAD_REQUEST, "flat body is refused: {r}");
+    assert_eq!(r["details"]["code"], "INVALID_MATCH_RESULTS", "{r}");
+    assert_eq!(r["details"]["index"], 0, "the refusal names the line: {r}");
     assert_eq!(
-        read(pool.clone()).await,
-        (9, 2, 0, 100, 1, false),
-        "flat payload stores the stated scoreline"
+        r["details"]["field"], "kills",
+        "the refusal names the flat key: {r}"
     );
+    assert_eq!(read(pool.clone()).await, SEEDED, "nothing written");
 
     clean(pool.clone()).await;
 }
@@ -370,6 +366,7 @@ async fn absent_counters_are_not_a_write_on_reingest() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
+    let reporter = &ReportingServer::open(&app, &pool, "Counters absent block server").await;
     const ARMA: &str = "counters-arma-noclaim";
     const DISCORD: &str = "000000000000393001";
     const SRC: &str = "m-counters-noclaim";
@@ -414,15 +411,8 @@ async fn absent_counters_are_not_a_write_on_reingest() {
     };
 
     // (1) A full report: the scoreline is stated, so it is authoritative and lands whole.
-    let (st, r) = call(
-        &app,
-        "POST",
-        "/api/v1/ingest/match-results",
-        None,
-        Some(SVC),
-        Some(&format!(
-            r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}","counters":{{"kills":17,"deaths":3,"team_kills":1,"longest_kill_m":842,"vehicles_destroyed":4,"is_command":true,"command_win":true}}}}]}}"#
-        )),
+    let (st, r) = report(reporter, &app, &format!(
+            r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}","counters":{{"kills":17,"deaths":3,"team_kills":1,"longest_kill_m":842,"vehicles_destroyed":4,"is_command":true,"command_win":true}}}}]}}"#),
     )
     .await;
     assert_eq!(st, StatusCode::OK, "full report: {r}");
@@ -434,15 +424,8 @@ async fn absent_counters_are_not_a_write_on_reingest() {
     // (2) The same row re-ingested with NO counters — the shipping mod's shape — and with a
     // corrected role, so the write is provable. This body is neither a 400 nor a silent
     // zeroing: it states a role and says nothing about the scoreline.
-    let (st, r) = call(
-        &app,
-        "POST",
-        "/api/v1/ingest/match-results",
-        None,
-        Some(SVC),
-        Some(&format!(
-            r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{ARMA}","role_played":"PL","source_event_id":"{EV}"}}]}}"#
-        )),
+    let (st, r) = report(reporter, &app, &format!(
+            r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{ARMA}","role_played":"PL","source_event_id":"{EV}"}}]}}"#),
     )
     .await;
     assert_eq!(st, StatusCode::OK, "counters-less re-ingest: {r}");
@@ -487,6 +470,7 @@ async fn insert_without_counters_stores_null_not_zero() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
+    let reporter = &ReportingServer::open(&app, &pool, "Counters null insert server").await;
     const ARMA: &str = "absent-arma-null-insert";
     const DISCORD: &str = "000000000000397101";
     const SRC: &str = "m-absent-null-insert";
@@ -516,15 +500,8 @@ async fn insert_without_counters_stores_null_not_zero() {
     };
     clean(pool.clone()).await;
 
-    let (st, r) = call(
-        &app,
-        "POST",
-        "/api/v1/ingest/match-results",
-        None,
-        Some(SVC),
-        Some(&format!(
-            r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}"}}]}}"#
-        )),
+    let (st, r) = report(reporter, &app, &format!(
+            r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}"}}]}}"#),
     )
     .await;
     assert_eq!(st, StatusCode::OK, "identity-only insert: {r}");

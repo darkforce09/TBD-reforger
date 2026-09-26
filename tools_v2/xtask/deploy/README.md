@@ -48,8 +48,8 @@ systemd/           ──see that folder's README for what installs each unit
   this one, at another file.
 - Game server, read by `tools_v2/xtask/src/commands/deploy/staging/config.rs`, where a value in
   the file wins over the process environment: `TBD_REMOTE_DIR`, `TBD_PROFILE_DIR`,
-  `TBD_ADDONS_STAGING`, `TBD_GAME_SERVER_TOKEN` (the API's `SERVICE_TOKEN`) and
-  `TBD_MOD_RUNTIME_CREDENTIAL` (a `mod_runtime` machine credential) are required.
+  `TBD_ADDONS_STAGING` and `TBD_MOD_RUNTIME_CREDENTIAL` (a `mod_runtime` machine credential, the
+  mod's only secret) are required.
   `TBD_SERVER_MODE` defaults to `config`, which also needs a mod source: `TBD_WORKSHOP_MOD_ID`, or
   a modpack through `TBD_MODPACK_JSON` or `TBD_MODPACK_URL`; the `addons` mode needs none and
   registers no joinable room. Settings with defaults: `TBD_BACKEND_URL` (`http://127.0.0.1:8080`),

@@ -1,6 +1,6 @@
 //! Source pin for the heartbeat's foreign-key wiring.
 
-use crate::match_telemetry::handlers::ingest_parsing::tests::{
+use crate::match_telemetry::services::ingest_parsing::tests::{
     collapse_ws, production_half, strip_rust_comments,
 };
 

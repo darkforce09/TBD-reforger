@@ -229,6 +229,7 @@ fn every_get_route_is_swept_or_skipped_with_a_reason() {
         deployment: Uuid::nil(),
         faction: Uuid::nil(),
         wiki_slug: String::new(),
+        match_id: Uuid::nil(),
         rows: Vec::new(),
     };
     let swept: BTreeSet<&str> = route_sweep(&dummy).into_iter().map(|(t, _, _)| t).collect();

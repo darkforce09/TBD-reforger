@@ -13,7 +13,9 @@
 //!
 //! Once the server is up the playtest waits for the runtime session to confirm the deployment
 //! with the exact artifact and cancels the transition command no executor claimed, so no host
-//! agent later acts on it; when the server stops, the run's credential is revoked.
+//! agent later acts on it, then watches for the runtime's telemetry ([`super::telemetry_check`]).
+//! A requested stop first lets the telemetry queue drain while the server is still up; once the
+//! server has stopped, the telemetry check runs and the run's credential is revoked.
 //!
 //! With `--artifact-file=<path>` nothing touches the platform: the document is staged as the
 //! mod's last verified artifact and boots offline.
@@ -24,6 +26,7 @@ use std::time::Duration;
 use anyhow::{Context, Result, bail};
 
 use super::Opts;
+use super::telemetry_check::TelemetryWatch;
 use crate::commands::mod_ops::website_api_client::{
     ApiClient, CurlTransport, DeploymentSettlement, StagedArtifact, approved_artifact,
     cancel_unclaimed_command, development_login, ensure_fleet_scenario, ensure_server,
@@ -120,9 +123,9 @@ pub fn provision(o: &Opts, dev_scenario: &str) -> Result<ProvisionedDeployment> 
     })
 }
 
-/// After the boot: wait for the runtime to confirm the deployment, then cancel the transition
-/// command no executor claimed.
-pub fn confirm(provisioned: &ProvisionedDeployment, run_dir: &str) {
+/// After the boot: wait for the runtime to confirm the deployment, cancel the transition command
+/// no executor claimed, then wait for the runtime's first telemetry queue reading.
+pub fn confirm(provisioned: &ProvisionedDeployment, run_dir: &str, telemetry: &TelemetryWatch) {
     let transport = CurlTransport::new(Path::new(run_dir).join("api"), 30);
     let client = ApiClient::new(&transport, &provisioned.api_base, &provisioned.admin_token);
     println!(
@@ -160,12 +163,31 @@ pub fn confirm(provisioned: &ProvisionedDeployment, run_dir: &str) {
         Ok(false) => {}
         Err(error) => println!("    could not cancel the transition command: {error:#}"),
     }
+    telemetry.observe_after_confirmation(&client, &provisioned.server_id);
 }
 
-/// Revoke the run's credential once the server has stopped.
-pub fn release(provisioned: &ProvisionedDeployment, run_dir: &str) {
+/// On a requested stop, while the server is still up: let the telemetry queue drain.
+pub fn drain_telemetry(
+    provisioned: &ProvisionedDeployment,
+    run_dir: &str,
+    telemetry: &TelemetryWatch,
+) {
     let transport = CurlTransport::new(Path::new(run_dir).join("api"), 30);
     let client = ApiClient::new(&transport, &provisioned.api_base, &provisioned.admin_token);
+    telemetry.drain_before_stop(&client, &provisioned.server_id);
+}
+
+/// Once the server has stopped: run the telemetry check and revoke the run's credential. Answers
+/// `run_code` with the telemetry verdict folded in.
+pub fn release(
+    provisioned: &ProvisionedDeployment,
+    run_dir: &str,
+    telemetry: &TelemetryWatch,
+    run_code: u8,
+) -> u8 {
+    let transport = CurlTransport::new(Path::new(run_dir).join("api"), 30);
+    let client = ApiClient::new(&transport, &provisioned.api_base, &provisioned.admin_token);
+    let code = telemetry.check_on_release(&client, &provisioned.server_id, run_code);
     match revoke_credential(
         &client,
         &provisioned.server_id,
@@ -178,6 +200,7 @@ pub fn release(provisioned: &ProvisionedDeployment, run_dir: &str) {
             provisioned.credential_id
         ),
     }
+    code
 }
 
 /// `--artifact-file`: stage the document as the mod's last verified artifact; its artifact id.

@@ -146,3 +146,13 @@ fn help_opens_with_the_runnable_command_and_lists_every_option() {
     assert!(HELP.starts_with("Usage:\n  cargo xtask mod playtest"));
     assert!(HELP.ends_with("boots no game server\n"));
 }
+
+#[test]
+fn require_telemetry_is_opt_in_and_the_token_flag_is_gone() {
+    assert!(!opts(&[]).require_telemetry);
+    assert!(opts(&["--mission=m", "--require-telemetry"]).require_telemetry);
+    assert!(matches!(
+        parse(&["--token=t".into()], "/h"),
+        Parsed::Unknown(flag) if flag == "--token=t"
+    ));
+}

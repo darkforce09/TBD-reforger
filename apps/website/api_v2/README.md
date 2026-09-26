@@ -34,9 +34,11 @@ The terrain and glyph mounts under `/map-assets` sit below the rate limit. Each 
 where the router and the application state compose them.
 
 A route's access tier is the extractor its handler takes: a signed-in member, a member of at
-least a given [role](/documentation_v2/glossary/n_to_z.md#role), or the `X-Service-Token` of game-server
-ingest; the [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) and the fleet host agent
-authenticate with per-server [machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential).
+least a given [role](/documentation_v2/glossary/n_to_z.md#role), or a per-server
+[machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential), with which the
+[game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) (heartbeats, match telemetry, link
+confirmation, fleet commands) and the fleet host agent authenticate. `/metrics` and the detailed
+`/healthz` take the operator's `OBSERVABILITY_TOKEN` bearer, which no other route accepts.
 The [mission](/documentation_v2/glossary/g_to_m.md#mission) compiler and the mortar ballistics come from
 `website-map-engine`, which the crate takes with its default `scenario` tier alone. Game servers
 fetch compiled mission [artifacts](/documentation_v2/glossary/a_to_f.md#artifact) over HTTPS from
@@ -109,7 +111,7 @@ values; `TRUSTED_PROXIES`, `MISSION_VERSION_MAX_BODY_BYTES`, `SKIP_MIGRATE`, `RU
 | `DISCORD_GUILD_ID` | empty; the guild whose roles decide members' roles | no | `Config::load` |
 | `DISCORD_BOT_TOKEN` | empty, meaning no bot; a value holding whitespace stops the boot | no | `Config::load` |
 | `DISCORD_WEBHOOK_URL` | empty, which disables announcement pushes | no | `Config::load` |
-| `SERVICE_TOKEN` | empty, which refuses every `X-Service-Token` route | no | `Config::load` |
+| `OBSERVABILITY_TOKEN` | empty, which answers 401 on `/metrics` and serves only the public `/healthz`; sent as `Authorization: Bearer` | no | `Config::load` |
 | `SERVER_STATUS_PUBLISH_INTERVAL_SECS` | `10` | no | `src/background_workers/server_status_publisher.rs` |
 | `LEADERBOARD_REFRESH_INTERVAL_SECS` | `900` | no | `src/background_workers/leaderboard_refresher.rs` |
 | `ROLE_RESYNC_INTERVAL_SECS` | `86400` | no | `src/background_workers/discord_role_synchronizer.rs` |
@@ -125,8 +127,9 @@ values; `TRUSTED_PROXIES`, `MISSION_VERSION_MAX_BODY_BYTES`, `SKIP_MIGRATE`, `RU
 - The `import-registry` binary: imports Workbench registry envelopes (`--items`, `--compat`) into
   Postgres for the envelope's modpack, which `--modpack` overrides; `--prune` deletes that
   modpack's rows the envelope lacks.
-- The HTTP surface: `/api/v1`, `/healthz`, `/metrics` (service token), `/uploads`, `/map-assets`
-  and `/map-assets/glyphs`, and the built app as the fallback when `SPA_DIST_DIR` is set.
+- The HTTP surface: `/api/v1`, `/healthz` (the detailed report with the `OBSERVABILITY_TOKEN`
+  bearer), `/metrics` (`OBSERVABILITY_TOKEN` bearer), `/uploads`, `/map-assets` and
+  `/map-assets/glyphs`, and the built app as the fallback when `SPA_DIST_DIR` is set.
 
 ## Boundaries
 

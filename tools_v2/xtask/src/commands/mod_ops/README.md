@@ -175,9 +175,12 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
 - Does: stages `$HOME/tbd-playtest`, deploys the mission through the platform (or stages the
   offline document), renders `server.json`, boots a joinable dedicated server with the local
   addon and prints its Direct Join details; it stays in the foreground until Ctrl-C.
-  `--dry-run` boots nothing.
-- Exit codes: 0 booted and stopped cleanly; 1 died, refused, wrong addon copy or not confirmed
-  stopped; 2 usage; 3 environment.
+  `--dry-run` boots nothing. With `--mission` it prints the game runtime's telemetry queue
+  reading once the deployment is confirmed and, when the server stops, checks that every match
+  it saw holds acknowledged events and that the queue drained; `--require-telemetry` makes a
+  failed check fail the run.
+- Exit codes: 0 booted and stopped cleanly; 1 died, refused, wrong addon copy, not confirmed
+  stopped, or a failed telemetry check under `--require-telemetry`; 2 usage; 3 environment.
 - Example: `cargo xtask mod playtest --artifact-file=contracts_v2/fixtures/missions/valid/bridgehead-at-levie.json --dry-run`
 
 ### compile

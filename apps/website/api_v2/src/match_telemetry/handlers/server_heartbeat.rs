@@ -11,7 +11,6 @@ use axum::extract::rejection::JsonRejection;
 use axum::extract::{Path, State};
 use axum::response::Json;
 use chrono::Utc;
-use serde::Deserialize;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
@@ -20,84 +19,16 @@ use crate::administration::services::audit_writer::write_audit;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::server_infrastructure::models::machine_credential::ExecutorKind;
-use crate::server_infrastructure::models::server::ServerStatus;
 use crate::server_infrastructure::services::machine_credentials::MachineCaller;
-use crate::server_infrastructure::services::runtime_sessions::{HeartbeatFence, admit_heartbeat};
-use crate::server_infrastructure::services::status_broadcast::publish_server_status;
+use crate::server_infrastructure::services::runtime_sessions::admit_heartbeat;
+use crate::server_infrastructure::services::status_broadcast::publish_server_status_by_id;
 
-use super::ingest_parsing::{coalesce_str, foreign_key_error, parse_uuid_opt};
+use super::server_heartbeat_contract::ServerStatusInput;
+use crate::match_telemetry::services::ingest_parsing::{
+    coalesce_str, foreign_key_error, parse_uuid_opt,
+};
 
 const LOW_FPS_THRESHOLD: f64 = 20.0;
-
-/// A live-status heartbeat.
-///
-/// **Every measurement here is `Option` on purpose, and absent means "no new reading" —
-/// do not add `#[serde(default)]` back.** This is the one input struct where requiring the
-/// fields would be the *wrong* fix. A heartbeat is a periodic push from a game server, and the
-/// wire contract has always allowed a sender to report only what it currently knows — the
-/// committed integration test posts a heartbeat with no `uptime_seconds`, `ingame_time` or
-/// `ingame_weather`, and the low-FPS case omits `max_players` as well. Making those mandatory
-/// would break real senders to fix a bug they don't have.
-///
-/// The bug the optionality closes is that "absent" decoding as an affirmative **zero** is bound
-/// straight into the upsert: a heartbeat carrying only `server_id` + `is_online` overwrites a live
-/// `player_count=48, server_fps=58.5, max_players=64, uptime_seconds=7200` row with all
-/// zeros, appends a permanent `0 / 0.0` row to `server_status_histories` (a time series —
-/// that sample can never be corrected), and trips the `server.low_fps` edge trigger into
-/// a WARN about an FPS collapse that never happened.
-///
-/// So the rule is per-field, not blanket: `None` keeps the stored value (`COALESCE` against
-/// the existing row), `Some` sets it. `current_match_id` needs three states rather than two
-/// — absent keeps, and an explicit `""` clears — because a match really does end and the
-/// live row has to stop pointing at it; the empty-string-means-none convention is what
-/// [`parse_uuid_opt`] implements. A heartbeat with nothing but its session fence carries no
-/// reading at all, so it is a 400 rather than a write of nothing.
-#[derive(Debug, Deserialize)]
-pub struct ServerStatusInput {
-    /// Refused when present: the server is the credential's, never the sender's claim.
-    server_id: Option<serde::de::IgnoredAny>,
-    generation: Option<i64>,
-    sequence: Option<i64>,
-    is_online: Option<bool>,
-    player_count: Option<i64>,
-    max_players: Option<i64>,
-    server_fps: Option<f64>,
-    uptime_seconds: Option<i64>,
-    /// Absent = leave the current match alone; `""` = clear it; a uuid = set it.
-    current_match_id: Option<String>,
-    /// Absent = keep; `""` / whitespace = clear; otherwise set (trimmed). See [`coalesce_str`].
-    ingame_time: Option<String>,
-    /// Absent = keep; `""` / whitespace = clear; otherwise set (trimmed). See [`coalesce_str`].
-    ingame_weather: Option<String>,
-}
-
-impl ServerStatusInput {
-    /// The session fence every heartbeat must carry.
-    fn fence(&self, runtime_session_id: Uuid) -> Result<HeartbeatFence, ApiError> {
-        let (Some(generation), Some(sequence)) = (self.generation, self.sequence) else {
-            return Err(ApiError::bad_request(
-                "generation and sequence are required",
-            ));
-        };
-        Ok(HeartbeatFence {
-            runtime_session_id,
-            generation,
-            sequence,
-        })
-    }
-
-    /// True when the body says nothing beyond its session fence.
-    fn is_empty_reading(&self) -> bool {
-        self.is_online.is_none()
-            && self.player_count.is_none()
-            && self.max_players.is_none()
-            && self.server_fps.is_none()
-            && self.uptime_seconds.is_none()
-            && self.current_match_id.is_none()
-            && self.ingame_time.is_none()
-            && self.ingame_weather.is_none()
-    }
-}
 
 /// The server's live status after a heartbeat is folded in — what actually landed in the
 /// row, which is what the SSE subscribers and the history sample have to reflect (a partial
@@ -106,12 +37,7 @@ impl ServerStatusInput {
 struct EffectiveStatus {
     is_online: bool,
     player_count: i64,
-    max_players: i64,
     server_fps: f64,
-    uptime_seconds: i64,
-    current_match_id: Option<Uuid>,
-    ingame_time: String,
-    ingame_weather: String,
 }
 
 /// Fence the runtime session, upsert live status, append history, WARN on low-FPS edge, fan out
@@ -135,6 +61,7 @@ pub async fn ingest_server_status(
         ));
     }
     let fence = input.fence(session)?;
+    let telemetry_queue = input.telemetry_queue()?;
     // A heartbeat that reports nothing is not a "server is at zero" reading, it is a
     // malformed request — writing eight defaults for it turns it into one.
     if input.is_empty_reading() {
@@ -158,6 +85,22 @@ pub async fn ingest_server_status(
     // Three-state (see [`ServerStatusInput`]): absent keeps, present sets, `""` clears.
     let set_match_id = input.current_match_id.is_some();
     let match_id = parse_uuid_opt(&input.current_match_id);
+    // A server reports only its own registered matches (or ones recorded before registration
+    // existed); a match another server registered is refused rather than displayed as this one's.
+    if let Some(match_id) = match_id {
+        let match_server: Option<Option<Uuid>> =
+            sqlx::query_scalar("SELECT server_id FROM matches WHERE id = $1")
+                .bind(match_id)
+                .fetch_optional(&mut *transaction)
+                .await?;
+        if let Some(Some(match_server)) = match_server
+            && match_server != server_id
+        {
+            return Err(ApiError::bad_request(
+                "current_match_id names a match another server registered",
+            ));
+        }
+    }
     let now = Utc::now();
 
     // `COALESCE($n, <stored>)` in the DO UPDATE — deliberately reading the bind parameters
@@ -168,10 +111,13 @@ pub async fn ingest_server_status(
     let eff: EffectiveStatus = sqlx::query_as(
         "INSERT INTO server_statuses \
          (server_id, is_online, player_count, max_players, server_fps, uptime_seconds, \
-          current_match_id, ingame_time, ingame_weather, updated_at) \
+          current_match_id, ingame_time, ingame_weather, updated_at, \
+          telemetry_queue_backlog, telemetry_queue_capacity, telemetry_queue_dropped_total, \
+          telemetry_queue_oldest_age_seconds, telemetry_queue_reported_at) \
          VALUES ($1, COALESCE($2, false), COALESCE($3, 0), COALESCE($4, 64), \
                  COALESCE($5::float8, 0)::numeric, COALESCE($6, 0), \
-                 $7, COALESCE($8, ''), COALESCE($9, ''), $11) \
+                 $7, COALESCE($8, ''), COALESCE($9, ''), $11, \
+                 $12, $13, $14, $15, CASE WHEN $12::bigint IS NULL THEN NULL ELSE $11 END) \
          ON CONFLICT (server_id) DO UPDATE SET \
           is_online = COALESCE($2, server_statuses.is_online), \
           player_count = COALESCE($3, server_statuses.player_count), \
@@ -181,10 +127,16 @@ pub async fn ingest_server_status(
           current_match_id = CASE WHEN $10 THEN $7 ELSE server_statuses.current_match_id END, \
           ingame_time = COALESCE($8, server_statuses.ingame_time), \
           ingame_weather = COALESCE($9, server_statuses.ingame_weather), \
-          updated_at = $11 \
-         RETURNING is_online, player_count, max_players, server_fps::float8 AS server_fps, \
-          uptime_seconds, current_match_id, COALESCE(ingame_time, '') AS ingame_time, \
-          COALESCE(ingame_weather, '') AS ingame_weather",
+          updated_at = $11, \
+          telemetry_queue_backlog = COALESCE($12, server_statuses.telemetry_queue_backlog), \
+          telemetry_queue_capacity = COALESCE($13, server_statuses.telemetry_queue_capacity), \
+          telemetry_queue_dropped_total = \
+            COALESCE($14, server_statuses.telemetry_queue_dropped_total), \
+          telemetry_queue_oldest_age_seconds = \
+            COALESCE($15, server_statuses.telemetry_queue_oldest_age_seconds), \
+          telemetry_queue_reported_at = CASE WHEN $12::bigint IS NULL \
+            THEN server_statuses.telemetry_queue_reported_at ELSE $11 END \
+         RETURNING is_online, player_count, server_fps::float8 AS server_fps",
     )
     .bind(server_id)
     .bind(input.is_online)
@@ -197,6 +149,10 @@ pub async fn ingest_server_status(
     .bind(coalesce_str(&input.ingame_weather))
     .bind(set_match_id)
     .bind(now)
+    .bind(telemetry_queue.map(|queue| queue.backlog))
+    .bind(telemetry_queue.map(|queue| queue.capacity))
+    .bind(telemetry_queue.map(|queue| queue.dropped_total))
+    .bind(telemetry_queue.map(|queue| queue.oldest_age_seconds))
     .fetch_one(&mut *transaction)
     // `server_id` is the credential's registered server; a `current_match_id` naming no match
     // is the sender's error and answers 400.
@@ -242,19 +198,8 @@ pub async fn ingest_server_status(
 
     // Fan out to SSE subscribers (the same helper the scheduled republisher uses — one payload
     // shape for ingest and poller).
-    let status = ServerStatus {
-        server_id,
-        is_online: eff.is_online,
-        player_count: eff.player_count,
-        max_players: eff.max_players,
-        server_fps: eff.server_fps,
-        uptime_seconds: eff.uptime_seconds,
-        current_match_id: eff.current_match_id,
-        ingame_time: eff.ingame_time,
-        ingame_weather: eff.ingame_weather,
-        updated_at: now,
-    };
-    publish_server_status(&state.hub, &status);
+    // Publish the committed row, queue reading included, through the one topic serializer.
+    publish_server_status_by_id(&state.pool, &state.hub, server_id).await?;
 
     Ok(Json(json!({ "ok": true })))
 }

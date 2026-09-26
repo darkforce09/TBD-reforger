@@ -45,7 +45,10 @@ credential the world holds no session and checks again every minute. `GetSession
 that deployment authorization, ended lives and fleet command claims address.
 `TBD_RuntimeStatusReadings` fills each heartbeat with `player_count`, `max_players`, `server_fps`,
 `uptime_seconds`, `ingame_time` and `ingame_weather`, omitting a reading the engine cannot give
-rather than sending zero.
+rather than sending zero. Every online heartbeat also carries `telemetry_queue {backlog, capacity,
+dropped_total, oldest_age_seconds}` from `TBD_TelemetryQueue.Stats` and, once a round has gone LIVE
+in this process, `current_match_id` from `TBD_MatchRegistration` (empty while the round's
+registration is unanswered).
 
 ## Authority
 
@@ -60,7 +63,9 @@ rather than sending zero.
 
 - Depends on: `TBD_GameRuntimeHttp`, `TBD_GameRuntimeAnswer`, `TBD_BackendConfig` and
   `TBD_BackendText` in `apps/mod/tbd-framework/Scripts/Game/TBD/API/Http/`; `TBD_FleetCommandPoller`
-  in `apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/`; `TBD_FrameworkManager` in
+  in `apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/`; `TBD_TelemetryQueue` and
+  `TBD_MatchRegistration` in `apps/mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry/`;
+  `TBD_FrameworkManager` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/`; `TBD_Authority` and `TBD_Log` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; the engine's `SCR_BaseGameMode`,
   `TimeAndWeatherManagerEntity` and `ServerInfo`. Over HTTP, the session routes of

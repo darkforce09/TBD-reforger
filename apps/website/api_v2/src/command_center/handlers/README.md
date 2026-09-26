@@ -22,15 +22,16 @@ ranking (`kd`, the default, `command_win`, `missions`, `longest_kill` or `team_k
 list, any other value is a 400, and every ordering ends on `discord_id` so tied scores page
 deterministically. `GET /api/v1/users/{discordId}/stats` reads the same projection for one account.
 `GET /api/v1/dashboard` composes the next [event](/documentation_v2/glossary/a_to_f.md#event), the caller's
-assignment in it, the live server status, the current modpack and the latest announcements; each
-lookup is best-effort, so a missing piece is `null` rather than a failed dashboard.
+assignment in it, the configured fleet (`fleet`: every active server with its status, and the
+fleet totals, from `services::fleet_overview`), the current modpack and the latest announcements;
+each lookup is best-effort, so a missing piece is `null` rather than a failed dashboard.
 
 ## Boundaries
 
 - Depends on: `identity_and_access::services::user_lookup`,
   `missions::services::mission_lookup`, `community_content` (`load_current_modpack`,
-  `Announcement`), `operations::models` (`Event`, `EventMission`, `OrbatSlot`) and
-  `server_infrastructure::models::server::ServerStatus`; `core` for the extractor and errors.
+  `Announcement`), `operations::models` (`Event`, `EventMission`, `OrbatSlot`) and the domain's
+  `services::fleet_overview`; `core` for the extractor and errors.
 - Used by: the domain's `routes.rs`; over HTTP, the dashboard in
   `apps/website/frontend/src/v2/pages/command_center/dashboard/` and the leaderboards and operator
   dossier in `apps/website/frontend/src/v2/pages/operations/leaderboards/`.

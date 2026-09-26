@@ -1,5 +1,4 @@
 {
   "backendUrl": "http://127.0.0.1:8080",
-  "serverToken": "replace-with-SERVICE_TOKEN-value",
   "machineCredential": "replace-with-the-mod_runtime-machine-credential-of-this-server"
 }

@@ -3,17 +3,13 @@
 //! version payload, the current modpack's cargo catalog, and the compiler's own identity.
 
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
 use sqlx::PgConnection;
 use uuid::Uuid;
 use website_map_engine::data::scenario::wire_safety::{CargoPhys, CargoPhysCatalog};
 
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::wire_format::content_digest::sha256_hex;
 use crate::missions::models::mission::Mission;
-
-pub fn sha256_hex(bytes: &[u8]) -> String {
-    hex::encode(Sha256::digest(bytes))
-}
 
 /// The cargo catalog of the current modpack, with the digest of its canonical form.
 pub struct CatalogSnapshot {
@@ -100,24 +96,4 @@ pub fn compiled_metadata(mission: &Mission) -> Value {
         "time_of_day": mission.time_of_day,
         "weather": mission.weather.as_str(),
     })
-}
-
-/// Canonical JSON (object keys sorted) for digests of structured inputs.
-pub fn canonical_json(value: &Value) -> String {
-    fn sorted(value: &Value) -> Value {
-        match value {
-            Value::Object(map) => {
-                let mut keys: Vec<&String> = map.keys().collect();
-                keys.sort();
-                Value::Object(
-                    keys.into_iter()
-                        .map(|key| (key.clone(), sorted(&map[key])))
-                        .collect(),
-                )
-            }
-            Value::Array(items) => Value::Array(items.iter().map(sorted).collect()),
-            other => other.clone(),
-        }
-    }
-    serde_json::to_string(&sorted(value)).unwrap_or_default()
 }

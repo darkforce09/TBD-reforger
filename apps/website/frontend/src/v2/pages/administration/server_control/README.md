@@ -12,14 +12,15 @@ administrators pick one of the configured game servers, read its live state, iss
 
 ```text
 apps/website/frontend/src/v2/pages/administration/server_control/
-├── fleet_commands/       the card's fleet command console: request, follow, history and cancel
-├── fleet_scenarios/      the fleet scenario sheet: each terrain's registered mission header
-├── machine_credentials/  the card's credential sheet: issue with a one-time secret, list and revoke
-├── mission_deployments/  the card's deployments panel: request, follow, list, detail and cancel
-├── mod.rs                the module tree; re-exports `ServerControlPage`
-├── page.rs               `ServerControlPage`: the gate, the server list, the picker and the sheet
-├── server_cards.rs       the picker's rows and the selected server's card with its readings
-└── tests/                unit tests for the typed server read, the card's readings and its state
+├── fleet_commands/           the card's fleet command console: request, follow, history and cancel
+├── fleet_scenarios/          the fleet scenario sheet: each terrain's registered mission header
+├── machine_credentials/      the card's credential sheet: issue with a one-time secret, list and revoke
+├── mission_deployments/      the card's deployments panel: request, follow, list, detail and cancel
+├── mod.rs                    the module tree; re-exports `ServerControlPage`
+├── page.rs                   `ServerControlPage`: the gate, the server list, the picker and the sheet
+├── server_card_telemetry.rs  the card's telemetry band: personnel, terrain, frame rate, telemetry queue
+├── server_cards.rs           the picker's rows and the selected server's card with its readings
+└── tests/                    unit tests for the typed server read, the card's readings and its state
 ```
 
 ## How it works
@@ -35,7 +36,8 @@ Nothing here reaches a host directly. A command or a deployment is a request the
 [API](/documentation_v2/glossary/a_to_f.md#api) records and answers with 202; the page then reads its
 receipt every two seconds and announces the outcome only once an executor or a runtime session
 reports it. The card shows only what the server row carries: a server with no status reads as
-zeros and dashes, the terrain is capitalised or a dash between matches, and "Active Mission" shows
+zeros and dashes, a server that never reported a telemetry queue reading reads "No reading" in
+the queue column, an inactive server carries an "Inactive" badge in the picker and the card, the terrain is capitalised or a dash between matches, and "Active Mission" shows
 the current match id, since the row names no mission. The launch control only says the game client
 is needed. The page has no [RCON](/documentation_v2/glossary/n_to_z.md#rcon) console, and no control adds,
 edits or deactivates a server. Every request runs in the browser build only; a native build
@@ -50,9 +52,11 @@ renders the failure branch.
 ## Data
 
 - `GET /api/v1/servers`: read as `DataEnvelope<ServerRowDto>`; the picker reads `id`, `name`,
-  `is_active` and `status.is_online`, and the card `ip`, `port`, `terrain`, `required_modpack`
-  (name and version) and `status` (`player_count`, `max_players`, `uptime_seconds`, `server_fps`,
-  `current_match_id`).
+  `is_active` and `status.is_online`, and the card `is_active`, `ip`, `port`, `terrain`,
+  `required_modpack` (name and version) and `status` (`player_count`, `max_players`,
+  `uptime_seconds`, `server_fps`, `current_match_id`, and `telemetry_queue` as
+  `TelemetryQueueDto`: `backlog`, `capacity`, `dropped_total`, `oldest_age_seconds`,
+  `reported_at`).
 - Fleet commands (`fleet_commands/`):
   - `GET /api/v1/servers/{id}/commands`: read as `FleetCommandList` of `FleetCommandReceipt`.
   - `POST /api/v1/servers/{id}/commands`: sends a `FleetCommandRequest` (`action`, `arguments`),
@@ -92,10 +96,10 @@ renders the failure branch.
 | below `admin` | "Admin access required." |
 | loading | "Loading servers…" |
 | failed | "Failed to load servers." |
-| picker | "Servers" with their count, "Fleet scenarios" (titled "Which scenario the fleet runs for each terrain"), and per server its name and "Online" with a pulsing dot, or "Offline" |
+| picker | "Servers" with their count, "Fleet scenarios" (titled "Which scenario the fleet runs for each terrain"), and per server its name and "Online" with a pulsing dot, or "Offline", and an "Inactive" badge on an inactive server |
 | no servers | "No servers configured." |
 | none selected | "No server selected." |
-| card | the name and `ip:port`, "Credentials" and "LAUNCH & CONNECT" (which toasts "Launch requires the Reforger client"); "Active Personnel" (players / max), "Uptime" ("Nd HHh MMm", the day part dropped under a day), "Terrain", "Active Mission" (the match id), "Server FPS" ("x.y Hz") and "Mod Configuration" ("name vX"); "—" and zeros without a status |
+| card | the name (with "Inactive" on an inactive server) and `ip:port`, "Credentials" and "LAUNCH & CONNECT" (which toasts "Launch requires the Reforger client"); "Active Personnel" (players / max), "Uptime" ("Nd HHh MMm", the day part dropped under a day), "Terrain", "Active Mission" (the match id), "Server FPS" ("x.y Hz"), "Mod Configuration" ("name vX") and "Telemetry Queue" (backlog / capacity, "Dropped" in the error tone above zero, "Oldest" as "Ns", "Nm SSs" or the uptime form, "Reported" in the viewer's zone); "—" and zeros without a status; "No reading" in the queue column when the server never reported one |
 
 ### Fleet commands
 

@@ -18,20 +18,21 @@ phase delivers it.
 
 ## Status of the remaining checks
 
-The status comes from the last full `cargo xtask db test-it` (784 cases, 2026-09-23).
+The status comes from the last full `cargo xtask db test-it` (877 cases, 2026-09-26; T rows) and the
+2026-09-23 run (784 cases; the other rows).
 "Missing" means the register's case pattern matched no passing test. The pattern shorthand
 `name*` means a test whose name starts with `name`.
 
 | Milestone | Requirement | Check | Command | Minimum | Case pattern | Status |
 |---|---|---|---|---|---|---|
-| T | telemetry_match_identity | telemetry_match_identity | db test-it | 1 | `match_identity*` | missing |
-| T | telemetry_telemetry_revisions | telemetry_telemetry_revisions | db test-it | 1 | `telemetry_revisions*` | missing |
-| T | telemetry_telemetry_corrections | telemetry_telemetry_corrections | db test-it | 1 | `telemetry_corrections*` | missing |
-| T | telemetry_telemetry_atomicity | telemetry_telemetry_atomicity | db test-it | 1 | `telemetry_atomicity*` | missing |
-| T | telemetry_detailed_events | telemetry_detailed_events (+ schema_quality) | db test-it | 1 | `detailed_events*` | missing |
-| T | telemetry_telemetry_queue | telemetry_telemetry_queue (+ mod_compilation) | db test-it | 1 | `telemetry_queue*` | missing |
-| T | dashboard_fleet_dashboard | dashboard_fleet_dashboard | db test-it | 1 | `fleet_dashboard*` | missing |
-| T | dashboard_statistics_recomputation | dashboard_statistics_recomputation | db test-it | 1 | `statistics_recomputation*` | missing |
+| T | telemetry_match_identity | telemetry_match_identity | db test-it | 14 | `match_identity*` | passing (14 cases, 2026-09-26) |
+| T | telemetry_telemetry_revisions | telemetry_telemetry_revisions | db test-it | 7 | `telemetry_revisions*` | passing (7 cases, 2026-09-26) |
+| T | telemetry_telemetry_corrections | telemetry_telemetry_corrections | db test-it | 7 | `telemetry_corrections*` | passing (7 cases, 2026-09-26) |
+| T | telemetry_telemetry_atomicity | telemetry_telemetry_atomicity | db test-it | 6 | `telemetry_atomicity*` | passing (6 cases, 2026-09-26) |
+| T | telemetry_detailed_events | telemetry_detailed_events (+ schema_quality) | db test-it | 9 | `detailed_events*` | passing (9 cases, 2026-09-26) |
+| T | telemetry_telemetry_queue | telemetry_telemetry_queue (+ mod_compilation) | db test-it | 6 | `telemetry_queue*` | passing (6 cases, 2026-09-26) |
+| T | dashboard_fleet_dashboard | dashboard_fleet_dashboard | db test-it | 6 | `fleet_dashboard*` | passing (6 cases, 2026-09-26) |
+| T | dashboard_statistics_recomputation | dashboard_statistics_recomputation | db test-it | 6 | `statistics_recomputation*` | passing (6 cases, 2026-09-26) |
 | C | administration_audit_replay | administration_audit_replay | db test-it | 1 | `audit_replay*` | missing |
 | C | administration_audit_query_recovery | administration_audit_query_recovery | db test-it | 1 | `audit_query_recovery*` | missing |
 | C | administration_personnel_pagination | administration_personnel_pagination | db test-it | 1 | `personnel_pagination*` | missing |
@@ -55,6 +56,9 @@ Take the exact case names from `requirements.json` when implementing: several ch
 their cases in full, and the register is the source of truth.
 
 ## T — Telemetry
+
+**State:** implemented and verified 2026-09-26; design in `telemetry.md`, evidence in
+`progress_checkpoint.md`.
 
 **Covers:**
 - telemetry_match_identity, telemetry_telemetry_revisions, telemetry_telemetry_corrections,
@@ -81,8 +85,8 @@ their cases in full, and the register is the source of truth.
   status.
 - **Machine credentials.** `POST /api/v1/ingest/link-confirm` and
   `POST /api/v1/ingest/match-results` move from the shared service token to machine
-  credentials, and `ServiceAuth` is deleted. `/metrics` and the detailed `/healthz` also use
-  `SERVICE_TOKEN` today and need their own authentication decision.
+  credentials, and `ServiceAuth` is deleted. `/metrics` and the detailed `/healthz` take the
+  operator's `OBSERVABILITY_TOKEN` (decision 2026-09-26).
 - **Dashboard.** The dashboard and live status select or aggregate the configured fleet
   explicitly.
 - **Statistics.** Link changes and telemetry corrections complete the derived-statistics

@@ -278,6 +278,7 @@ pub(crate) fn server_control_source() -> String {
         include_str!("../../pages/administration/server_control/mod.rs"),
         include_str!("../../pages/administration/server_control/page.rs"),
         include_str!("../../pages/administration/server_control/server_cards.rs"),
+        include_str!("../../pages/administration/server_control/server_card_telemetry.rs"),
         include_str!("../../pages/administration/server_control/fleet_commands/mod.rs"),
         include_str!("../../pages/administration/server_control/fleet_commands/command_history.rs"),
         include_str!(

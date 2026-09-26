@@ -100,8 +100,8 @@ copy. The commands parse it as `KEY=VALUE` lines and never execute it. The deplo
   `TBD_SKIP_SPA_BUILD` and `TBD_SKIP_API_BUILD`, which skip a step when set to 1. A `DEPLOY_ENV`
   environment variable points the command at another settings file.
 - Game server, read by `tools_v2/xtask/src/commands/deploy/staging/config.rs`: `TBD_REMOTE_DIR`,
-  `TBD_PROFILE_DIR`, `TBD_ADDONS_STAGING`, `TBD_GAME_SERVER_TOKEN` and
-  `TBD_MOD_RUNTIME_CREDENTIAL` are required. `TBD_SERVER_MODE` defaults to `config`, which also
+  `TBD_PROFILE_DIR`, `TBD_ADDONS_STAGING` and `TBD_MOD_RUNTIME_CREDENTIAL` (a `mod_runtime`
+  machine credential, the mod's only secret) are required. `TBD_SERVER_MODE` defaults to `config`, which also
   needs a mod source: `TBD_WORKSHOP_MOD_ID`, or a modpack through `TBD_MODPACK_JSON` or
   `TBD_MODPACK_URL`; the `addons` mode needs none. Among the settings that default are
   `TBD_BACKEND_URL` (`http://127.0.0.1:8080`) and `TBD_SCENARIO` (the mission header the server
