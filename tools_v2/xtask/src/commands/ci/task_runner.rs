@@ -2,7 +2,7 @@
 //!
 //! The task index. There is no root `Makefile`; this
 //! module owns the CI lane: `ci-local`, `ci-local-schema`, `schema-validate`, `schema-codegen`,
-//! `verify-citations`, `verify-coding-standards`, `verify-doc-layout`, `verify-editorconfig`, the
+//! `verify-citations`, `verify-coding-standards`, `verify-documentation`, `verify-editorconfig`, the
 //! three `map-*` composites, `lfs-dem`, `lfs-sat`, `help`, `test`, `build`.
 //!
 //! ── 1. WHY A TABLE AND NOT SIXTEEN FUNCTIONS ────────────────────────────────────────────────
@@ -13,8 +13,9 @@
 //! recipe had been hollowed to `@true`. Here [`Step::Task`] names another row of [`TASKS`] and
 //! the runner recurses into **the same** `run_task` the standalone command calls. A composite
 //! therefore cannot drift from its parts or be hollowed independently of them: there is one
-//! implementation of "what `verify-doc-layout` does", and both `cargo xtask ci verify-doc-layout`
-//! and `cargo xtask ci ci-local` reach it through the identical call.
+//! implementation of "what `verify-documentation` does", and both
+//! `cargo xtask ci verify-documentation` and `cargo xtask ci ci-local` reach it through the
+//! identical call.
 //!
 //! The same table is the source for [`help`] (so a task cannot exist and be undiscoverable) and
 //! for [`schema_list_gates`] (so the wave driver's drift tripwire keeps an input with no Makefile
@@ -52,13 +53,6 @@
 //!   when the lanes merge.
 //! * **`-podman …`** in `rust-test-it` (`Makefile:205`) ignores failure; [`Step::Shell`] keeps the
 //!   `ignore_err` flag rather than "fixing" a deliberate tolerance.
-//!
-//! **Fail-opens closed, and named:** `verify-doc-layout`'s recipe is
-//! `! find … 2>/dev/null | grep -q .`. That has two holes — `2>/dev/null` hides an unreadable
-//! directory, and a missing `grep` (exit 127) reads as "no match", i.e. as a pass. The Rust port
-//! walks the tree with [`verification_core::scan::walk_files`], which returns `NotRun` for an unreadable
-//! directory, and matches in-process so there is no `grep` to be absent. A tree it could not read
-//! is reported, not swallowed.
 //!
 //! **make's own framing is NOT reproduced**, deliberately, and it is the one place where output
 //! differs. GNU make prints `make[1]: Entering directory …` around every sub-make and collapses
@@ -118,8 +112,9 @@ pub enum Step {
         silent: bool,
         run: fn() -> anyhow::Result<u8>,
     },
-    /// A Rust port of a shell recipe (`verify-doc-layout`). Always silent: the only recipe with
-    /// this shape is `@`-prefixed, and the parity test pins that.
+    /// An in-process step that prints its own progress and returns its own exit status
+    /// (`verify-editorconfig`, `verify-codegen-fresh`, `ci-chrome`, `editor-api-boot`). Never
+    /// echoed: it has no command line of its own.
     Native { run: fn() -> i32 },
     /// A recipe line handed to `/bin/sh -c` verbatim — **only** for [`Lane::Borrowed`] rows.
     /// Not a port and not claimed as one: it is the same shell make ran, kept byte-faithful
@@ -138,19 +133,6 @@ pub struct Task {
     pub group: &'static str,
     pub lane: Lane,
     pub steps: &'static [Step],
-}
-
-/// `verify-doc-layout`'s failure text. Names the trees the walk actually covers (`apps`,
-/// `contracts_v2`, `assets_v2` — see `split_cmd::verify_doc_layout`), so the message and the
-/// behaviour cannot disagree about where a `docs/` subtree is forbidden.
-/// What the document-layout refusal prints: the trees markdown may not be committed under, and
-/// where it belongs instead.
-pub fn doc_layout_refusal() -> String {
-    format!(
-        "FORBIDDEN: markdown under apps/**/docs/, contracts_v2/**/docs/ or assets_v2/**/docs/ — \
-         use {} instead",
-        crate::core::repository_layout::documentation::LAYOUT_TARGET_DIR
-    )
 }
 
 // The table lives next door, split at the data/behaviour seam to keep both files inside SIZE-1.
@@ -195,8 +177,6 @@ const CARGO_RUN_INJECTED: &[&str] = &[
     "SSL_CERT_FILE",
 ];
 
-/* ───────────────────────────── verify-doc-layout (native) ───────────────────────────── */
-
 /* ──────────────────────────────── help / list-gates ──────────────────────────────── */
 
 #[cfg(test)]
@@ -211,7 +191,6 @@ pub use split_cmd::run;
 pub use split_cmd::schema_list_gates;
 pub use split_cmd::step_echo;
 pub use split_cmd::validate_gate_names;
-use split_cmd::verify_doc_layout;
 
 #[cfg(test)]
-use split_cmd::{is_forbidden_doc, run_task_in, split_cmd};
+use split_cmd::{run_task_in, split_cmd};

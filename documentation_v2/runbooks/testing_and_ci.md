@@ -53,7 +53,7 @@ Run every command from the repository root.
    Expected: each step's command line, then its output, in the frozen order
    `verify-editorconfig`, `verify-no-python`, `verify-no-node`, `verify-no-shell`,
    `verify-ci-shell`, `verify-engine-layers`, `rust-ci`, `verify-coding-standards`,
-   `ci-local-leptos`, `ci-local-schema`, `verify-staging-compose-paths`,
+   `verify-documentation`, `ci-local-leptos`, `ci-local-schema`, `verify-staging-compose-paths`,
    `verify-mission-rest-size-limits` and `cargo xtask verify ci-schema-parity`; exit 0 when all
    pass. The run stops at the first failing step and exits with its code. The order is pinned by
    `ci_local_step_set_is_frozen` in `tools_v2/xtask/src/commands/ci/tests/task_runner.rs`.
@@ -144,8 +144,10 @@ Run every command from the repository root.
     ```
 
     Expected: exit 0; 1 lists each failing document with its break count and the first 20 breaks
-    as `path:line: rule: message`, and `--report` prints all of them. No `ci-local` step and no
-    workflow runs the three documentation gates, so run them before committing documentation.
+    as `path:line: rule: message`, and `--report` prints all of them. The `language-gates` job of
+    `ci.yml` and `cargo xtask ci verify-documentation`, a `ci-local` step, run all three gates over
+    the committed files; run them with `--with-untracked` before committing documentation so the
+    new files are judged too.
 
 ### Gate a wave
 
@@ -177,7 +179,6 @@ the wave gate and the slice gate. Rule ids (FMT-2, LANG-1, TEST-1 and the rest) 
 | workflow `run:` lines | `cargo xtask verify ci-shell` | yes | `language-gates` | wave |
 | engine layers | `cargo xtask verify engine-layers` | yes | `language-gates` | no |
 | file length (SIZE-3) | `cargo xtask verify file-length` | in `verify-coding-standards` | `language-gates` | no |
-| no Markdown under `docs` folders | `cargo xtask ci verify-doc-layout` | in `verify-coding-standards` | no | no |
 | no `SELECT *` | `cargo xtask verify no-select-star` | in `verify-coding-standards` | no | no |
 | `@route` tags (GO-7) | `cargo xtask verify route-tags` | in `verify-coding-standards` | no | both |
 | Rust formatting | `cargo xtask mk rust-fmt` | in `rust-ci` | `website-api` | changed files |
@@ -198,7 +199,7 @@ the wave gate and the slice gate. Rule ids (FMT-2, LANG-1, TEST-1 and the rest) 
 | mod boot verdict self-test | `cargo xtask mod world-boot --selftest` | no | `mod-gates-hosted` | no |
 | mod compile and world boot | `cargo xtask mod compile`, `cargo xtask mod world-boot` | no | `mod-gates.yml`, nightly on a self-hosted runner with the dedicated server | no |
 | editor smokes and DOM comparison | `cargo xtask mk leptos-gates` | no | `editor-gates.yml`, nightly, on demand and on pull requests touching the app, the map engine or developer-tools | no |
-| documentation gates | `cargo xtask verify readme-coverage`, `markdown-placement`, `link-check` | no | no | no |
+| documentation gates: README coverage, Markdown placement (no Markdown but README.md in a code tree), links | `cargo xtask ci verify-documentation`: `cargo xtask verify readme-coverage`, `link-check`, `markdown-placement` | yes | `language-gates` | no |
 
 `ci.yml` runs on every push and pull request to `main` with no path filter; `contracts.yml` and
 `schema.yml` run only when their paths change. The `schema` job must run

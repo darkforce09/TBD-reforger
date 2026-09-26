@@ -1,15 +1,15 @@
 # CI task runner
 
 The behaviour behind the `cargo xtask ci` task table: finding a task, running its steps, the
-`help` listing, the native document-layout check, and the gate list that `schema list-gates`
-prints. `tools_v2/xtask/src/commands/ci/task_runner.rs` declares the types and re-exports what this
-folder defines.
+`help` listing, and the gate list that `schema list-gates` prints.
+`tools_v2/xtask/src/commands/ci/task_runner.rs` declares the types and re-exports what this folder
+defines.
 
 ## Contents
 
 ```text
 tools_v2/xtask/src/commands/ci/task_runner/
-└── split_cmd.rs  the step runner and child environment, `help`, the doc-layout check, the gate list
+└── split_cmd.rs  the step runner and child environment, `help`, the gate list
 ```
 
 ## How it works
@@ -32,19 +32,16 @@ returns 2. Each step kind runs as follows:
 the primary checkout's `target/` as `CARGO_TARGET_DIR` unless one is already set. A child that
 cannot start returns 127; one killed by a signal returns 128 plus the signal number.
 
-`verify_doc_layout` walks `apps/`, `contracts_v2/` and `assets_v2/` for a Markdown file below any
-folder named `docs`, outside `node_modules`: none exits 0, one or more prints the refusal and exits
-1, an unreadable tree exits 2. `help` prints the rows grouped as CI, schema, verify, map, build
-and db, tags alias and borrowed rows, and lists the `mk` targets and the `db` commands.
+`help` prints the rows grouped as CI, schema, verify, map, build and db, tags alias and borrowed
+rows, and lists the `mk` targets and the `db` commands.
 `schema_list_gates` prints the last word of each `cargo xtask schema …` step of the
 `schema-validate` row.
 
 ## Boundaries
 
 - Depends on: `Task`, `Step`, `Lane`, `TASKS` and `CARGO_RUN_INJECTED` in `task_runner.rs`;
-  `verification_core` (`scan::walk_files`, `NotRun`); `TARGETS` in
-  `tools_v2/xtask/src/commands/build/recipes.rs` and `LANE_COMMANDS` in
-  `tools_v2/xtask/src/commands/db/operations.rs` for `help`.
+  `verification_core` (`NotRun`); `TARGETS` in `tools_v2/xtask/src/commands/build/recipes.rs`
+  and `LANE_COMMANDS` in `tools_v2/xtask/src/commands/db/operations.rs` for `help`.
 - Used by: `task_runner.rs`, whose re-exports serve `tools_v2/xtask/src/cli/dispatch.rs`
   (`ci`, `help`), `tools_v2/xtask/src/commands/schema/dispatch.rs` (`schema list-gates`),
   `tools_v2/xtask/src/commands/platform/wave_execution/schema.rs` and

@@ -59,10 +59,6 @@ pub mod documentation {
     /// can report which wave is being packed without being told.
     pub const FACTORY_PACK_WAVE: &str = ".ai/factory_pack_wave";
 
-    /// Where documentation belongs, named by the refusal that fires when markdown is committed
-    /// inside an application or asset tree instead.
-    pub const LAYOUT_TARGET_DIR: &str = "documentation_v2/";
-
     /// Installing and operating the website host: units, Caddy, backups.
     pub const HOME_SERVER_RUNBOOK: &str = "documentation_v2/runbooks/website_deployment.md";
 

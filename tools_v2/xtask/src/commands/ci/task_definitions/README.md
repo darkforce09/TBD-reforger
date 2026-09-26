@@ -20,14 +20,17 @@ argv that runs; `xt!(echo, silent, run)` expands to `Step::Xtask`, which prints 
 `cargo xtask …` line and calls `run` in process instead of spawning a second xtask. A
 `Step::Xtask` holds a plain `fn() -> Result<u8>`, which cannot capture an argument, so
 `verification_dispatch.rs` wraps each verification that needs one: the checkout root from
-`find_repo_root`, or the terrain `everon`, which the CI lane always checks, and the `--strict`
-flag for the strict terrain alignment row.
+`find_repo_root`; the terrain `everon`, which the CI lane always checks, and the `--strict` flag
+for the strict terrain alignment row; and, for the three documentation gates of the
+`verify-documentation` row, a default `GateRequest`: the whole repository, committed files only,
+and for `link-check` the first breaks in full, as the bare `cargo xtask verify` verbs run.
 
 ## Boundaries
 
 - Depends on: `Step` from `tools_v2/xtask/src/commands/ci/task_runner.rs`; the verifications under
   `tools_v2/xtask/src/verifications/` (`map_assets`, `database`, `architecture`, `deployment`,
-  `mod_scripts`, `ci`); `find_repo_root` in `tools_v2/xtask/src/core/repository_root.rs`.
+  `mod_scripts`, `ci`, `documentation`); `find_repo_root` in
+  `tools_v2/xtask/src/core/repository_root.rs`.
 - Used by: `tools_v2/xtask/src/commands/ci/task_definitions.rs` alone.
 - Rules: an adapter calls the same function its `cargo xtask verify` or `cargo xtask schema`
   command calls, so a composite cannot drift from the command it echoes; a subprocess step stays

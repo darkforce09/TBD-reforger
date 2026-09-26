@@ -4,7 +4,7 @@ mod recipe_macros;
 #[path = "task_definitions/verification_dispatch.rs"]
 mod verification_dispatch;
 
-use super::{Lane, Step, Task, verify_doc_layout};
+use super::{Lane, Step, Task};
 use crate::commands::generate::schema_types::codegen;
 use crate::core::repository_root::find_repo_root;
 use crate::verifications::ci::workflow_shell::verify_ci_shell;
@@ -18,9 +18,10 @@ use crate::verifications::schemas::checks::{
     citations, map_glyphs, map_object_enums, type_inventory, validate_all,
 };
 use verification_dispatch::{
-    run_ci_schema_parity, run_engine_layers, run_height_labels, run_mission_rest_size_limits,
-    run_no_select_star, run_route_tags, run_staging_compose_paths, run_terrain_alignment,
-    run_terrain_alignment_strict, run_terrain_manifest,
+    run_ci_schema_parity, run_engine_layers, run_height_labels, run_link_check,
+    run_markdown_placement, run_mission_rest_size_limits, run_no_select_star, run_readme_coverage,
+    run_route_tags, run_staging_compose_paths, run_terrain_alignment, run_terrain_alignment_strict,
+    run_terrain_manifest,
 };
 
 pub static TASKS: &[Task] = &[
@@ -38,14 +39,13 @@ pub static TASKS: &[Task] = &[
             Step::Task("verify-no-node"),
             Step::Task("verify-no-shell"),
             Step::Task("verify-ci-shell"),
-            // Grouped with the language gates rather than the build lanes: like them it is a
-            // seconds-long source scan, and it guards a one-way wall (map-engine ->
-            // graphics-engine) that nothing in the compiler enforces.
-            // documentation_v2/standards/engine_boundary_rules.md §5 requires it here and in
-            // ci.yml — a rule nobody is stopped by is not a rule.
+            // A seconds-long source scan, like the language gates, guarding the one-way
+            // map-engine -> graphics-engine wall the compiler does not see; required here and in
+            // ci.yml by documentation_v2/standards/engine_boundary_rules.md §5.
             Step::Task("verify-engine-layers"),
             Step::Task("rust-ci"),
             Step::Task("verify-coding-standards"),
+            Step::Task("verify-documentation"),
             Step::Task("ci-local-leptos"),
             Step::Task("ci-local-schema"),
             Step::Task("verify-staging-compose-paths"),
@@ -106,11 +106,10 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "verify-coding-standards",
-        help: "SIZE file length + doc layout + GO-7 @route/router match (documentation_v2/standards/coding_standards/README.md §11)",
+        help: "SIZE file length + no SELECT * + GO-7 @route/router match (documentation_v2/standards/coding_standards/README.md §11)",
         group: "verify",
         lane: Lane::Ci,
         steps: &[
-            Step::Task("verify-doc-layout"),
             xt!("cargo xtask verify file-length", true, verify_file_length),
             xt!(
                 "cargo xtask verify no-select-star",
@@ -121,13 +120,23 @@ pub static TASKS: &[Task] = &[
         ],
     },
     Task {
-        name: "verify-doc-layout",
-        help: "DOCUMENTATION_STANDARDS §8.2: no markdown spec trees under apps/**/docs, contracts_v2/**/docs or assets_v2/**/docs",
+        name: "verify-documentation",
+        help: "README coverage + Contents, links + cited paths and commands, Markdown placement + size — over the committed tree",
         group: "verify",
         lane: Lane::Ci,
-        steps: &[Step::Native {
-            run: verify_doc_layout,
-        }],
+        steps: &[
+            xt!(
+                "cargo xtask verify readme-coverage",
+                false,
+                run_readme_coverage
+            ),
+            xt!("cargo xtask verify link-check", false, run_link_check),
+            xt!(
+                "cargo xtask verify markdown-placement",
+                false,
+                run_markdown_placement
+            ),
+        ],
     },
     Task {
         name: "verify-editorconfig",
@@ -187,9 +196,8 @@ pub static TASKS: &[Task] = &[
         group: "map",
         lane: Lane::Ci,
         steps: &[
-            // Coreutils `cp`, not `std::fs::copy`: the step's observable behaviour on a missing
-            // source is cp's own "cannot stat" diagnostic, and assets_v2/scratch/ is gitignored,
-            // so a miss is the COMMON path here.
+            // Coreutils `cp`, not `std::fs::copy`: assets_v2/scratch/ is gitignored, so a missing
+            // source is the common path, and cp's own "cannot stat" diagnostic reports it.
             sh!(
                 "cp assets_v2/scratch/everon/sap/everon-sap-ortho.pre-water.png assets_v2/scratch/everon/sap/everon-sap-ortho.png"
             ),
@@ -423,10 +431,9 @@ pub static TASKS: &[Task] = &[
         help: "Fmt + clippy + test the map-engine and graphics-engine crates",
         group: "build",
         lane: Lane::Borrowed,
-        // A crate the pipeline does not name is a crate the pipeline does not gate: compiled in
-        // CI only as a transitive dependency, never fmt-checked, never clippied, its tests never
-        // run. Both engine crates are named in all four steps, wasm32 included, because the
-        // browser half is where they ship.
+        // A crate these steps do not name goes ungated: built only as a dependency, never
+        // formatted, linted or tested. Both engine crates are named in every step, wasm32
+        // included, because the browser half is where they ship.
         steps: &[
             sh!("cargo fmt --check -p website-map-engine -p website-graphics-engine"),
             sh!(

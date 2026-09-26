@@ -330,10 +330,9 @@ documentation_v2/
 Documents live under `documentation_v2/`, the single documentation root. The code trees (`apps/`,
 `tools_v2/`, `contracts_v2/`, `assets_v2/`) hold no Markdown besides README.md files, except below
 a `tests`, `generated` or dot-folder, which `cargo xtask verify markdown-placement` enforces; the
-repository root keeps its own README.md and `CLAUDE.md`. `cargo xtask ci verify-doc-layout`, a step
-of `cargo xtask ci verify-coding-standards`, also refuses any `.md` file below a folder named docs
-anywhere in `apps/`, `contracts_v2/` or `assets_v2/`, so no application grows a documentation tree
-of its own.
+repository root keeps its own README.md and `CLAUDE.md`. `cargo xtask ci verify-documentation`, a
+`ci-local` step, and the `language-gates` job of `ci.yml` run it with readme-coverage and
+link-check, so no application grows a documentation tree of its own.
 
 ### 8.3 Names, status lines, size and links
 

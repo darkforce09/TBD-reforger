@@ -114,9 +114,13 @@ check is the only structural rule: section order, headings and wording are not c
 3. Every tracked `.md` file, in any letter case, under the documentation root is at most 500 lines,
    except under the [ticket](/documentation_v2/glossary/n_to_z.md#ticket) records
    (`TICKET_DOCUMENTS_DIR`), the archive (`ARCHIVE_DIR`) and the pending-merge area, the program
-   records whose path begins with `PROGRAM_RECORDS_PREFIX`, and the two documents that
-   `cargo xtask ticket sync` rewrites between markers (`ROADMAP`, `GAP_ANALYSIS`), whose
-   sync-managed tables stay in one file.
+   records whose path begins with `PROGRAM_RECORDS_PREFIX`, and two documents whose tables stay
+   in one file: the roadmap (`ROADMAP`), whose next-work block `cargo xtask ticket sync` rewrites
+   between its markers, and the Eden gap analysis (`GAP_ANALYSIS`). Sync's column writer rewrites
+   the ticket column only of a gap table whose header holds both `| eden_id |` and `priority |`;
+   every table of the gap analysis is headed `| eden_id | tbd_id | parity | ticket | gap_notes |`,
+   so the writer matches none and the ticket column is kept by hand
+   ([Ticket identifiers](/documentation_v2/standards/ticket_identifiers.md#in-documents)).
 
 ### link-check
 
@@ -248,8 +252,10 @@ turns into the `GateRequest` every gate takes. `--report` belongs to link-check 
   clap command tree (`crate::cli::Cli`, read through `clap::CommandFactory`) with the build
   recipes and the CI task table it declares as the values of `mk` and `ci`; and the layout
   constants in `tools_v2/xtask/src/core/repository_layout.rs`.
-- Used by: `tools_v2/xtask/src/commands/verify/dispatch.rs`, for the three verbs. No `ci-local`
-  step and no GitHub workflow runs them.
+- Used by: `tools_v2/xtask/src/commands/verify/dispatch.rs`, for the three verbs;
+  `tools_v2/xtask/src/commands/ci/task_definitions/verification_dispatch.rs`, for the
+  `verify-documentation` row of `cargo xtask ci`, a `ci-local` step; and the `language-gates` job
+  of `.github/workflows/ci.yml`, which runs the three verbs over the committed tree.
 - Rules:
   - every path and region comes from the layout module;
   - a check that could not examine its input reports "did not run", never a pass

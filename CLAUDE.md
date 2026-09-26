@@ -236,6 +236,7 @@ cargo xtask db test-it         # Rust backend integration tests (requires db up)
 cargo xtask mod compile        # Compile check Enfusion mod scripts
 
 # Documentation Gates (add --path <folder> to narrow)
+cargo xtask ci verify-documentation    # All three over the committed tree (a ci-local step; ci.yml language-gates runs them)
 cargo xtask verify readme-coverage     # Every README.md Contents block matches its folder's tracked children
 cargo xtask verify link-check          # Links, anchors, backticked paths and cited commands resolve
 cargo xtask verify markdown-placement  # No Markdown but README.md in code trees; live docs at or under 500 lines

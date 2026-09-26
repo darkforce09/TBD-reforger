@@ -1,4 +1,4 @@
-//! Unit tests for [`crate::commands::ci::task_runner`] (SIZE split — keep `mk_ci.rs` under 600, as `mod_wave` does).
+//! Unit tests for [`crate::commands::ci::task_runner`] and the task table it interprets.
 //!
 //! ── EVERY PIN HERE READS A SUBJECT THAT ALWAYS EXISTS ────────────────────────────────────────
 //!
@@ -6,8 +6,8 @@
 //! step is dropped, the composite still exits 0, and the gate it used to run stops running with
 //! nothing going red. [`ci_local_step_set_is_frozen`] freezes the composite's step list by name,
 //! [`list_gates_equals_the_wave_gate_constant`] holds the gate list against the wave gate's own
-//! constant, and [`doc_layout_predicate_reproduces_finds_globs`] pins the doc-layout rule by
-//! BEHAVIOUR rather than by message text.
+//! constant, and [`verify_documentation_runs_the_three_documentation_gates`] freezes the
+//! documentation composite's gates by the commands they echo.
 //!
 //! None of them skips itself when a path it wants is absent, because a pin that returns early
 //! goes QUIET instead of red — the exact defect class this program exists to kill. `help`
@@ -58,6 +58,7 @@ fn ci_local_step_set_is_frozen() {
             "verify-engine-layers",
             "rust-ci",
             "verify-coding-standards",
+            "verify-documentation",
             "ci-local-leptos",
             "ci-local-schema",
             "verify-staging-compose-paths",
@@ -179,6 +180,7 @@ fn ci_local_runs_the_leaves_not_a_copy_of_them() {
             "verify-engine-layers",
             "rust-ci",
             "verify-coding-standards",
+            "verify-documentation",
             "ci-local-leptos",
             "ci-local-schema",
             "verify-staging-compose-paths",
@@ -261,21 +263,26 @@ fn a_failing_leaf_fails_the_composite() {
     let _ = std::fs::remove_file(&marker);
 }
 
-/* ───────────────────────── verify-doc-layout glob semantics ───────────────────────── */
-
+/// `verify-documentation` runs the three documentation gates in process, in this order, over the
+/// committed tree; dropping one silently stops CI's local replay from judging that rule.
 #[test]
-fn doc_layout_predicate_reproduces_finds_globs() {
-    // `-path '*/docs/*.md'` — `*` crosses `/`, so depth is irrelevant on either side.
-    assert!(is_forbidden_doc("apps/website/docs/spec.md"));
-    assert!(is_forbidden_doc("contracts_v2/docs/a/b/c.md"));
-    assert!(is_forbidden_doc("apps/mod/x/docs/y.md"));
-    // `! -path '*/node_modules/*'`
-    assert!(!is_forbidden_doc("apps/x/node_modules/p/docs/readme.md"));
-    // not markdown, and not under a docs/ directory
-    assert!(!is_forbidden_doc("apps/website/docs/spec.txt"));
-    assert!(!is_forbidden_doc("apps/website/api_v2/README.md"));
-    // `docs` as a filename fragment is not a `docs/` directory
-    assert!(!is_forbidden_doc("apps/website/docsite/a.md"));
+fn verify_documentation_runs_the_three_documentation_gates() {
+    let t = find("verify-documentation").expect("verify-documentation row");
+    assert_eq!(t.group, "verify");
+    assert_eq!(t.lane, Lane::Ci);
+    assert_eq!(
+        step_names(t),
+        vec![
+            "cargo xtask verify readme-coverage",
+            "cargo xtask verify link-check",
+            "cargo xtask verify markdown-placement",
+        ],
+        "verify-documentation lost, gained or reordered a documentation gate"
+    );
+    assert!(
+        t.steps.iter().all(|s| matches!(s, Step::Xtask { .. })),
+        "each documentation gate runs in process as the CLI's own function"
+    );
 }
 
 #[test]

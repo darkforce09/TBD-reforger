@@ -221,11 +221,12 @@ jobs:
   #                     fails. New tooling goes in xtask (LANG-1).
   #
   # Every step is `cargo xtask`: `verify` no-python, no-node, file-length, no-shell, ci-shell and
-  # engine-layers, then `ticket check --strict`. It needs cargo but no database, no LFS and no
-  # wasm target, so it is a cheap job that fails fast and early rather than riding on the back of
-  # the 25-minute API job.
+  # engine-layers, then `ticket check --strict`, then the documentation gates `verify`
+  # readme-coverage, link-check and markdown-placement. It needs cargo but no database, no LFS and
+  # no wasm target, so it is a cheap job that fails fast and early rather than riding on the back
+  # of the 25-minute API job.
   language-gates:
-    name: language gates (no-python / no-node / no-shell / ci-shell / engine-layers / file-length)
+    name: language gates (no-python / no-node / no-shell / ci-shell / engine-layers / file-length / documentation)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -266,6 +267,15 @@ jobs:
       # reads the working tree, fails fast instead of riding a 25-minute job.
       - name: ticket registry check (schema + duplicate ids)
         run: cargo xtask ticket check --strict
+      # The documentation gates judge the committed tree, the view this checkout holds; the same
+      # three run in process as `cargo xtask ci verify-documentation`, a ci-local step. link-check
+      # resolves sha permalinks against local history, which the full-depth checkout above gives.
+      - name: verify-readme-coverage (every folder's README.md and its Contents block)
+        run: cargo xtask verify readme-coverage
+      - name: verify-link-check (links, backticked paths and cited xtask commands)
+        run: cargo xtask verify link-check
+      - name: verify-markdown-placement (Markdown placement and the live-document size limit)
+        run: cargo xtask verify markdown-placement
 
   # --- mod gates, HOSTED PORTION ---
   # `cargo xtask mod compile` and `cargo xtask mod world-boot` are the mod's only regression

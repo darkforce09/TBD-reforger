@@ -25,8 +25,8 @@ alwaysApply: true
   [documentation standards](/documentation_v2/standards/documentation_standards.md), the
   [README standard](/documentation_v2/standards/readme_standard.md) and the
   [commit checklist](/documentation_v2/standards/commit_checklist.md). The code trees hold no
-  Markdown but README.md files (`cargo xtask verify markdown-placement`), and no application grows a
-  `docs` folder (`cargo xtask ci verify-doc-layout`). Mission Creator documentation lives under
+  Markdown but README.md files (`cargo xtask verify markdown-placement`, run by
+  `cargo xtask ci verify-documentation`), so no application grows a documentation tree. Mission Creator documentation lives under
   [documentation_v2/website/frontend/apps/editor/](/documentation_v2/website/frontend/apps/editor/README.md).
 - **Tickets.** One `.ai/tickets/T-<id>.toml` file per ticket, parent and child alike, beside the
   `.ai/tickets/ROOT` marker; the [ticket registry README](/.ai/tickets/README.md) lists the folder

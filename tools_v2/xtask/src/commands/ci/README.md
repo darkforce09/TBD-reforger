@@ -1,9 +1,9 @@
 # CI task commands
 
 The `cargo xtask ci` lane and `cargo xtask help`: one table of named tasks (the local CI replay
-`ci-local`, the schema gates, the language and layout verifications, the CI workflow helpers and
-the map asset composites) and the runner that executes a task's steps. Developers run `ci-local`
-before pushing, and the GitHub workflows run single tasks by name.
+`ci-local`, the schema gates, the language, coding-standard and documentation verifications, the
+CI workflow helpers and the map asset composites) and the runner that executes a task's steps.
+Developers run `ci-local` before pushing, and the GitHub workflows run single tasks by name.
 
 ## Contents
 
@@ -14,8 +14,8 @@ tools_v2/xtask/src/commands/ci/
 ├── mod.rs               the module tree
 ├── task_definitions/    the step macros and the in-process verification adapters
 ├── task_definitions.rs  `TASKS`: every task with its help line, group, lane and steps
-├── task_runner/         the runner, the child environment, `help`, the doc-layout check, the gate list
-├── task_runner.rs       the `Task`, `Step` and `Lane` types, the document-layout refusal, re-exports
+├── task_runner/         the runner, the child environment, `help`, the gate list
+├── task_runner.rs       the `Task`, `Step` and `Lane` types, re-exports
 └── tests/               unit tests for the frozen `ci-local` set, composite failure, `help` and parity
 ```
 
@@ -23,9 +23,9 @@ tools_v2/xtask/src/commands/ci/
 
 `TASKS` in `task_definitions.rs` is pure data and `run_task_in` in `task_runner/split_cmd.rs` is its
 only interpreter. A step is another task by name (`Step::Task`, so a composite runs the very row
-its standalone command runs), a subprocess line, an in-process xtask call, a native Rust check, or
+its standalone command runs), a subprocess line, an in-process xtask call, a native Rust step, or
 a `/bin/sh -c` script, which only borrowed rows use. The runner prints each step's line before it
-runs, stops at the first non-zero code and returns that code.
+runs (a native step prints its own), stops at the first non-zero code and returns that code.
 
 Each row carries a lane, which `help` prints as a tag:
 
@@ -37,11 +37,10 @@ Each row carries a lane, which `help` prints as a tag:
 
 `ci-local` runs, in this order: `verify-editorconfig`, `verify-no-python`, `verify-no-node`,
 `verify-no-shell`, `verify-ci-shell`, `verify-engine-layers`, `rust-ci`, `verify-coding-standards`,
-`ci-local-leptos`, `ci-local-schema`, `verify-staging-compose-paths`,
+`verify-documentation`, `ci-local-leptos`, `ci-local-schema`, `verify-staging-compose-paths`,
 `verify-mission-rest-size-limits`, and `cargo xtask verify ci-schema-parity` in process.
 `ci_local_step_set_is_frozen` in `tests/task_runner.rs` fails when a step is added, dropped or
-moved. The documentation gates (`readme-coverage`, `markdown-placement`, `link-check`) and the
-browser gates of `cargo xtask mk leptos-gates` are not part of it.
+moved. The browser gates of `cargo xtask mk leptos-gates` are not part of it.
 
 ## Commands
 
@@ -60,8 +59,8 @@ browser gates of `cargo xtask mk leptos-gates` are not part of it.
   | `schema-codegen` | schema, ci | `schema codegen`: regenerates the contract types from `contracts_v2/definitions/` |
   | `verify-citations` | schema, ci | `schema citations`: the `@contract` citations in code |
   | `verify-codegen-fresh` | schema, ci | regenerates the contract outputs in memory and compares them with the files |
-  | `verify-coding-standards` | verify, ci | `verify-doc-layout`, then `verify file-length`, `verify no-select-star` and `verify route-tags` |
-  | `verify-doc-layout` | verify, ci | refuses Markdown below a `docs` folder in `apps/`, `contracts_v2/` or `assets_v2/` |
+  | `verify-coding-standards` | verify, ci | `verify file-length`, `verify no-select-star` and `verify route-tags`, in process |
+  | `verify-documentation` | verify, ci | `verify readme-coverage`, `verify link-check` and `verify markdown-placement` over the committed tree, in process |
   | `verify-editorconfig` | verify, ci | `editorconfig-checker` from the root, installing the pinned v3.4.0 with `go install` when absent |
   | `verify-no-python`, `verify-no-node`, `verify-no-shell`, `verify-ci-shell`, `verify-engine-layers`, `verify-staging-compose-paths`, `verify-mission-rest-size-limits` | verify, alias | the `cargo xtask verify` command of the same name |
   | `verify-terrain` | verify, ci | `schema terrain-manifest` and `schema terrain-alignment` for Everon |
@@ -79,8 +78,8 @@ browser gates of `cargo xtask mk leptos-gates` are not part of it.
 
 - Exit codes: 0 the task passed, or the listing printed; the first failing step's code otherwise
   (1 for an in-process step that returned an error; 127 a tool that could not start; 128 plus
-  the signal number for a child killed by a signal); 2 an unknown task, or `verify-doc-layout` on
-  a tree it could not read.
+  the signal number for a child killed by a signal); 2 an unknown task, or a documentation gate
+  that did not run.
 - Example: `cargo xtask ci ci-local-schema`
 
 ### help
@@ -107,7 +106,8 @@ browser gates of `cargo xtask mk leptos-gates` are not part of it.
   - `tools_v2/xtask/src/verifications/ci/schema_parity/source_audit.rs`, which reads the
     `ci-local`, `ci-local-schema` and `verify-mission-rest-size-limits` rows;
   - `.github/workflows/ci.yml` (`developer-tools-test`, `website-api-test`, `ci-local-schema`,
-    `verify-editorconfig`), `.github/workflows/contracts.yml` (`verify-codegen-fresh`) and
+    `verify-editorconfig`; its `language-gates` job runs the `verify` commands of the
+    `verify-documentation` row one step each), `.github/workflows/contracts.yml` (`verify-codegen-fresh`) and
     `.github/workflows/editor-gates.yml` (`ci-chrome`, `editor-api-boot`).
 - Rules: the `ci-local` step set changes only together with `ci_local_step_set_is_frozen`;
   `cargo xtask verify ci-schema-parity` requires that `ci-local` call it directly, that

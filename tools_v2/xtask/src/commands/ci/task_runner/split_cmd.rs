@@ -19,8 +19,8 @@ pub fn find(name: &str) -> Option<&'static Task> {
 ///
 /// `verify ci-schema-parity` pins the `verify-mission-rest-size-limits` and `ci-local` rows
 /// against being hollowed, and this accessor is how it reads them. [`Step::Native`] is
-/// deliberately `None` — it carries no command line to pin, which is exactly why no `verify-*`
-/// row uses that shape.
+/// deliberately `None` — it carries no command line to pin, which is why every row that gate
+/// pins runs its checks as [`Step::Xtask`] steps.
 pub fn step_echo(s: &Step) -> Option<&'static str> {
     match s {
         Step::Cmd { line, .. } => Some(line),
@@ -233,53 +233,6 @@ pub(super) fn shared_target_dir(root: &Path) -> PathBuf {
             }
         }
         _ => root.join("target"),
-    }
-}
-
-/// DOCUMENTATION_STANDARDS §8.2 — `Makefile:331`:
-/// `@! find apps packages -type f -path '*/docs/*.md' ! -path '*/node_modules/*' 2>/dev/null | grep -q . || (echo … && exit 1)`
-///
-/// Two fail-opens in that line, both closed here (see §3): `2>/dev/null` hid an unreadable
-/// directory, and an absent `grep` exits 127, which `! …` turns into a PASS. The message text and
-/// the stdout stream are preserved byte-for-byte — the `echo` runs inside `( … )`, so it is
-/// stdout, not stderr.
-/// `find … -type f -path '*/docs/*.md' ! -path '*/node_modules/*'`.
-///
-/// find's `*` crosses `/`, so `*/docs/*.md` is "any `.md` at any depth below any directory named
-/// `docs`" — NOT just `apps/<x>/docs/<y>.md`. Kept as a predicate over the path string so the
-/// glob semantics are testable without planting files in the real tree.
-pub fn is_forbidden_doc(path: &str) -> bool {
-    path.ends_with(".md") && path.contains("/docs/") && !path.contains("/node_modules/")
-}
-
-pub(super) fn verify_doc_layout() -> i32 {
-    let root = match find_repo_root() {
-        Ok(r) => r,
-        Err(e) => {
-            eprintln!("xtask: {e:#}");
-            return 1;
-        }
-    };
-    let roots = [
-        root.join("apps"),
-        root.join("contracts_v2"),
-        root.join("assets_v2"),
-    ];
-    let refs: Vec<&Path> = roots.iter().map(|p| p.as_path()).collect();
-    let hits =
-        verification_core::scan::walk_files(&refs, |p| is_forbidden_doc(&p.to_string_lossy()));
-    match hits {
-        Ok(found) if found.is_empty() => 0,
-        Ok(_) => {
-            println!("{}", doc_layout_refusal());
-            1
-        }
-        Err(nr) => {
-            eprintln!("verify-doc-layout: DID NOT RUN — {nr:?}");
-            eprintln!("  A tree that could not be read is not a clean tree. (`2>/dev/null` in the");
-            eprintln!("  A recipe that swallows this hides a red run.)");
-            2
-        }
     }
 }
 
