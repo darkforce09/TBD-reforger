@@ -11,7 +11,7 @@ fn index() -> FilterIndex {
         work(
             "T-2",
             "status = \"queued\"\norder = 20",
-            "executor = \"cursor-docs\"\n",
+            "executor = \"documentation\"\n",
         ),
         work("T-3", "status = \"shipped\"", ""),
         program("T-9", "status = \"queued\"\norder = 30", &["T-9.1"]),
@@ -39,8 +39,8 @@ fn index_precomputes_lowercase_haystacks_and_executors() {
     let idx = index();
     assert!(idx.rows[0].haystack.contains("t-1"));
     assert!(idx.rows[0].haystack.contains("red dawn"));
-    assert_eq!(idx.executors, vec!["claude-code", "cursor-docs"]);
-    assert_eq!(idx.rows[1].executor, "cursor-docs");
+    assert_eq!(idx.executors, vec!["claude-code", "documentation"]);
+    assert_eq!(idx.rows[1].executor, "documentation");
     assert_eq!(idx.rows[0].executor, "claude-code");
     assert!(!idx.rows[3].is_work);
     assert_eq!(idx.rows[4].parent_lower.as_deref(), Some("t-9"));
@@ -54,7 +54,7 @@ fn filters_compose_as_intersection() {
         ..Filters::default()
     };
     filters.statuses[board::column_of(StatusName::Queued)] = true;
-    // executor + status: and (is cursor-docs, shipped).
+    // executor + status: and (the documentation row and the shipped row drop out).
     assert_eq!(matched_ids(&idx, &filters), vec!["T-1", "T-9"]);
     // + kind work: drops the program.
     filters.kind = KindFilter::Work;
@@ -138,7 +138,7 @@ fn scoped_index() -> FilterIndex {
         work_scoped(
             "T-2",
             "domain = \"website\"\nlayer = \"frontend\"\ncomponent = \"mission_creator\"\nsurface = [\"attr_panel\"]",
-            "class = \"feature\"\nexecutor = \"cursor-docs\"\n",
+            "class = \"feature\"\nexecutor = \"documentation\"\n",
         ),
         work_scoped(
             "T-3",
@@ -186,7 +186,7 @@ fn scope_facets_compose_with_existing_filters() {
     filters.scope.surface = Some("toolbelt".to_owned());
     assert_eq!(matched_ids(&idx, &filters), vec!["T-1"]);
     // Compose with an existing filter: executor now excludes 's default.
-    filters.executor = Some("cursor-docs".to_owned());
+    filters.executor = Some("documentation".to_owned());
     assert_eq!(matched_ids(&idx, &filters), Vec::<String>::new());
     // Text + facet: haystack hit AND facet hit.
     let mut filters = Filters {

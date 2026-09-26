@@ -42,7 +42,7 @@ fn dispatchable_mirrors_the_xtask_rule() {
     assert!(!dispatchable(&work(
         "T-6",
         "status = \"queued\"\norder = 5",
-        "executor = \"cursor-docs\"\n",
+        "executor = \"documentation\"\n",
     )));
     // Programs are never dispatchable.
     assert!(!dispatchable(&program(
@@ -65,7 +65,7 @@ fn unplanned_is_pure_set_arithmetic() {
         work(
             "T-4",
             "status = \"queued\"\norder = 30",
-            "executor = \"cursor-docs\"\n",
+            "executor = \"documentation\"\n",
         ),
         // Program and absent — not unplanned.
         program("T-5", "status = \"queued\"\norder = 40", &["T-5.1"]),

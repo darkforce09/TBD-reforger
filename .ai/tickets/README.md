@@ -74,7 +74,7 @@ the first receipt does. No other file is generated from the tickets.
 
 **Executors.** A ticket's `executor` says who may take it: `claude-code` means any AI coding agent
 run through the ticket tooling, whoever makes it (a ticket without one counts as `claude-code`);
-`cursor-docs` a ticket, spec or documentation pass; `workbench`, `human` and `ci` mean an agent
+`documentation` a ticket, spec or documentation pass; `workbench`, `human` and `ci` mean an agent
 stops and waits for that party. `ticket run` runs `claude-code` tickets only.
 
 **Specs, plans and templates.** A ticket's spec is

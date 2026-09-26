@@ -21,16 +21,14 @@ path; it changes no code and takes about ten minutes plus the first builds.
 | Path | Tracked | Role |
 |---|---|---|
 | `.cursor/rules/*.mdc` | yes | the project rules Cursor loads for the whole workspace |
-| `.cursor/mcp.json` | no, gitignored (`.gitignore:25`) | this machine's MCP servers for the workspace |
-| `apps/mod/.cursor/rules/single-branch-main.mdc` | yes | a nested rule for the mod folder: work on `main` only, never a feature branch |
-| `apps/mod/.cursor/mcp.json` | yes | the Enfusion MCP server entry to copy from: `node` on the pinned package, and the three `ENFUSION_*` paths |
+| `.cursor/mcp.json` | yes | the workspace's Enfusion MCP server entry: `node` on the pinned package, and the three `ENFUSION_*` paths |
 | `apps/mod/.mcp.json` | yes | the same server for an agent started inside `apps/mod/`, launched as `npx -y enfusion-mcp` |
 | `.ai/tickets/`, `.ai/artifacts/` | tickets yes, artifacts partly | the [ticket](/documentation_v2/glossary/n_to_z.md#ticket) files and the agents' working files; Cursor loads no rule from `.ai/` |
 
-Both tracked MCP files hard-code one workstation's absolute paths, and `apps/mod/.mcp.json` starts
-whatever `enfusion-mcp` release npm serves rather than the pinned 0.6.1 in
-`tools_v2/enfusion_mcp_node_package/`. Treat them as the shape of the entry, not as values: step 4
-writes the machine's own copy.
+The repository holds one `.cursor/` folder, at its root. Both tracked MCP files hard-code one
+workstation's absolute paths, and `apps/mod/.mcp.json` starts whatever `enfusion-mcp` release npm
+serves rather than the pinned 0.6.1 in `tools_v2/enfusion_mcp_node_package/`. Treat them as the
+shape of the entry, not as values: step 4 points `.cursor/mcp.json` at this machine.
 
 ## The project rules
 
@@ -49,6 +47,7 @@ Cursor applies each rule in `.cursor/rules/` to every chat (`alwaysApply: true`)
 | `class-r-plans.mdc` | always | plan rigor: every pin measured before a plan is written |
 | `claude-prompt-delivery.mdc` | always | a prompt for another agent is delivered as one complete fenced block per stream |
 | `subagent-model-routing.mdc` | always | cheap models for locating code, expensive ones for hard analysis and coding |
+| `single-branch-main.mdc` | always | every change lands on `main`; no branch by hand, except the tooling's `slice/<id>` branches (`CLAUDE.md` law 2) |
 
 **Documentation ships with its code.** Documentation lands in the same commit as the code it
 describes, whichever agent or person writes that code (`CLAUDE.md` law 10): the comments of the
@@ -60,13 +59,13 @@ commit carries. A Cursor chat also writes documentation on its own in a ticket, 
 documentation pass (mode B), which needs no permission to write code.
 
 **The executor gate.** A ticket's `executor` says who may take it. `claude-code` means any AI
-coding agent run through the ticket tooling; `cursor-docs` a ticket, spec or documentation pass;
+coding agent run through the ticket tooling; `documentation` a ticket, spec or documentation pass;
 `workbench`, `human` and `ci` mean an agent stops and waits for that party.
 
 **Branches.** Work lands on `main` (`CLAUDE.md` law 2). The one exception is the `slice/<id>`
 branches that `cargo xtask platform slice-worktree` and the [wave](/documentation_v2/glossary/n_to_z.md#wave)
-tooling create, merge and delete themselves, which is what factory mode uses; the nested mod rule
-agrees with law 2 and needs no copy at the root.
+tooling create, merge and delete themselves, which is what factory mode uses;
+`single-branch-main.mdc` states the rule for every chat.
 
 ## Steps
 
@@ -87,7 +86,7 @@ Run every command from the repository root.
    git ls-files .cursor/rules
    ```
 
-   Expected: the ten `.mdc` files of the table above. Cursor's project rules settings list them;
+   Expected: the eleven `.mdc` files of the table above. Cursor's project rules settings list them;
    a chat started now answers under them. For a machine where nothing may be committed, the same
    text can go into Cursor's own project rules instead, unversioned and unshared.
 
@@ -104,17 +103,19 @@ Run every command from the repository root.
    [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) opens at
    `/missions/<id>/edit` once a [mission](/documentation_v2/glossary/g_to_m.md#mission) exists.
 
-4. For mod work only, give Cursor the Enfusion MCP server: copy the tracked entry into the
-   workspace's own, gitignored file.
+4. For mod work only, give Cursor the Enfusion MCP server: the tracked `.cursor/mcp.json` at the
+   checkout root already registers it.
 
    ```bash
-   cp apps/mod/.cursor/mcp.json .cursor/mcp.json
+   git ls-files .cursor/mcp.json
    ```
 
-   Expected: no output. Then edit all four paths in the copy for this machine: the `node` argument
-   to `<checkout>/tools_v2/enfusion_mcp_node_package/node_modules/enfusion-mcp/dist/index.js`, and
-   `ENFUSION_GAME_PATH`, `ENFUSION_WORKBENCH_PATH` and `ENFUSION_PROJECT_PATH` to the pak farm, the
-   Workbench install and the addons folder, whose defaults the
+   Expected: `.cursor/mcp.json`. The file holds one workstation's absolute paths: the `node`
+   argument names that workstation's checkout, and `ENFUSION_GAME_PATH`, `ENFUSION_WORKBENCH_PATH`
+   and `ENFUSION_PROJECT_PATH` name its home folder. On any other machine, or when the checkout
+   lives elsewhere, edit all four locally and keep the edit out of commits: the `node` argument to
+   `<checkout>/tools_v2/enfusion_mcp_node_package/node_modules/enfusion-mcp/dist/index.js`, and the
+   three variables to the pak farm, the Workbench install and the addons folder, whose defaults the
    [Enfusion MCP tooling](/documentation_v2/runbooks/enfusion_mcp_tooling.md#prerequisites)
    runbook gives.
 

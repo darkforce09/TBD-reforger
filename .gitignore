@@ -22,9 +22,7 @@ assets_v2/scratch/
 assets_v2/terrains/**/tiles/
 
 # Local enfusion-mcp IDE config (machine paths — see documentation_v2/runbooks/mod_slice_workflow.md)
-.cursor/mcp.json
 .mcp.json
-apps/mod/.cursor/mcp.json
 
 # Cargo workspace build dir: the workspace root owns /target for every member crate, and
 # `cargo xtask mk` derives CARGO_TARGET_DIR as the primary repository's /target (shared across

@@ -34,7 +34,7 @@
     },
     "executor": {
       "type": "string",
-      "enum": ["claude-code", "cursor-docs", "workbench", "human", "ci"]
+      "enum": ["claude-code", "documentation", "workbench", "human", "ci"]
     },
     "status": {
       "type": "string",

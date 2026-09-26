@@ -6,7 +6,7 @@ class = "feature"
 status = "deferred"
 order = 1100
 spec = "documentation_v2/tickets/specs/t110_terrain_base_mission_layers.md"
-executor = "cursor-docs"
+executor = "documentation"
 notes = "needs-operator: frozen unmappable Scope. "
 
 [scope]

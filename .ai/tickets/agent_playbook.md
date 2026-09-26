@@ -117,7 +117,7 @@ cargo xtask ticket next
 | Executor | Taken by | Work |
 |---|---|---|
 | `claude-code` | any AI coding agent, through the ticket tooling or a chat prompt | code, with its tests and documentation |
-| `cursor-docs` | an agent in a chat | a ticket, spec or documentation pass |
+| `documentation` | an agent in a chat | a ticket, spec or documentation pass |
 | `workbench` / `human` | a person | Workbench and hands-on work in `apps/mod/`; filter the [ticketboard](/apps/ticketboard/README.md) by executor |
 | `ci` | CI | a CI lane |
 

@@ -7,7 +7,7 @@ status = "ready"
 order = 8260
 spec = "documentation_v2/tickets/specs/t653_headless_screenshot.md"
 plan = "documentation_v2/tickets/plans/t-653_plan.md"
-executor = "cursor-docs"
+executor = "documentation"
 notes = """
 not factory-dispatchable; no owns, no wave row
 

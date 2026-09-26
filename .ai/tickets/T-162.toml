@@ -5,7 +5,7 @@ summary = "SHIPPED: eradicate remaining Python → Rust xtask (MCP/debug/repro).
 status = "shipped"
 order = 1590
 spec = "documentation_v2/tickets/specs/t162_python_eradication.md"
-executor = "cursor-docs"
+executor = "documentation"
 notes = "needs-operator: frozen unmappable Scope. "
 children = [
     "T-162.0",

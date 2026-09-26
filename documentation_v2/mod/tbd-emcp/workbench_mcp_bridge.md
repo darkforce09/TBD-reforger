@@ -96,9 +96,9 @@ brokers and servers.
 
 ### Native MCP tools in an editor session
 
-`apps/mod/.mcp.json` and `apps/mod/.cursor/mcp.json` register the `enfusion-mcp` server for an
-agent or Cursor session opened at `apps/mod/`, and a copy at the repository root's
-`.cursor/mcp.json` stays local (gitignored). Each passes `ENFUSION_GAME_PATH`,
+`apps/mod/.mcp.json` registers the `enfusion-mcp` server for an agent session opened at
+`apps/mod/`, and the repository root's `.cursor/mcp.json` registers it for a Cursor workspace
+opened at the checkout root. Each passes `ENFUSION_GAME_PATH`,
 `ENFUSION_WORKBENCH_PATH` and `ENFUSION_PROJECT_PATH`, which must name this machine's pak farm,
 Arma Reforger Tools install and Workbench addons folder; `mcp call` fills the same three with the
 usual Steam and Workbench folders when they are unset.
@@ -120,7 +120,7 @@ plugin's menu entry is commented out today, so the registry step has no entry po
 
 - `apps/mod/.mcp.json:4-5` starts `npx -y enfusion-mcp`, unpinned, and both committed MCP configs
   carry one developer's absolute home and checkout paths (`apps/mod/.mcp.json:7-9`,
-  `apps/mod/.cursor/mcp.json`) — every xtask caller starts the pinned `enfusion-mcp` 0.6.1 from
+  `.cursor/mcp.json`) — every xtask caller starts the pinned `enfusion-mcp` 0.6.1 from
   `tools_v2/enfusion_mcp_node_package/` and derives the paths from the environment.
 - `development_bootstrap.rs:4-5,72` says the export addon loads the framework through a dependency
   — `apps/mod/tbd-export/addon.gproj:5-8` depends on vanilla and `TBD_EMCP` only.

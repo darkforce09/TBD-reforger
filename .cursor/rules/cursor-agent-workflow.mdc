@@ -29,8 +29,8 @@ expensive tier. The expensive tier is for hard analysis and for coding when dele
 | Documentation of changed code | the agent or person who changes the code, in the same commit ([commit checklist](/documentation_v2/standards/commit_checklist.md)) |
 
 **Executor gate:** act on a ticket only when its `executor` is `claude-code` (any AI coding agent)
-or `cursor-docs` (a ticket, spec or documentation pass). `workbench`, `human` or `ci` — **stop and
-wait** for that party.
+or `documentation` (a ticket, spec or documentation pass). `workbench`, `human` or `ci` — **stop
+and wait** for that party.
 
 ## Four modes — infer them from intent, not from magic phrases
 

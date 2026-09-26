@@ -5,7 +5,7 @@ summary = "ORBAT Manager. T-071.0 SHIPPED via T-177 @ e97a01c6. Remaining author
 status = "shipped"
 order = 710
 spec = "documentation_v2/tickets/specs/t071_orbat_manager_program.md"
-executor = "cursor-docs"
+executor = "documentation"
 notes = "needs-operator: frozen unmappable Scope. "
 depends_on = [
     "T-092",

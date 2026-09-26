@@ -15,7 +15,7 @@ that controls those servers, the contracts and map data they share, and the deve
 ├── .ai/                         the ticket registry (`tickets/`), agent run artifacts and the factory wave marker
 ├── .cargo/                      the `cargo xtask` alias
 ├── .claude/                     Claude Code project settings: the `xtask ai guard` hook
-├── .cursor/                     the Cursor agent rules (`rules/*.mdc`)
+├── .cursor/                     the Cursor agent rules (`rules/*.mdc`) and MCP server entry (`mcp.json`)
 ├── .editorconfig                the editor formatting rules `cargo xtask ci verify-editorconfig` checks
 ├── .editorconfig-checker.json   the settings of that check
 ├── .gitattributes               the Git LFS patterns for the terrain datasets

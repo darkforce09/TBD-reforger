@@ -5,7 +5,7 @@ summary = "SHIPPED @ merge df181120 (branch tip 50bba633, tags T-159.15.1–.29.
 status = "shipped"
 order = 1570
 spec = "documentation_v2/tickets/specs/t159_leptos_ui_program.md"
-executor = "cursor-docs"
+executor = "documentation"
 children = [
     "T-159.0",
     "T-159.1",

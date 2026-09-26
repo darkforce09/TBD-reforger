@@ -5,7 +5,7 @@ summary = "Select among multiple game servers in intel views."
 class = "feature"
 status = "deferred"
 order = 880
-executor = "cursor-docs"
+executor = "documentation"
 estimated = ["scope"]
 
 [scope]

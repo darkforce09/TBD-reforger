@@ -48,7 +48,7 @@ fn test_generated_and_hidden_folders_are_exempt_with_their_subtrees() {
     assert!(below_exempt_folder("apps/x/tests"));
     assert!(below_exempt_folder("apps/x/tests/fixtures"));
     assert!(below_exempt_folder("apps/x/generated/models"));
-    assert!(below_exempt_folder("apps/mod/.cursor/rules"));
+    assert!(below_exempt_folder("apps/x/.hidden/rules"));
     assert!(!below_exempt_folder("apps/x/test_fixtures"));
     assert!(!below_exempt_folder("apps/x/latests"));
     assert!(!below_exempt_folder("apps/x/src"));

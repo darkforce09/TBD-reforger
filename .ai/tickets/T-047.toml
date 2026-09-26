@@ -5,7 +5,7 @@ summary = "agent_execution and wiki manifest deduped."
 class = "docs"
 status = "shipped"
 order = 470
-executor = "cursor-docs"
+executor = "documentation"
 main_goal = "documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md is open-work authority; shell phases T-033–T-040 marked complete; wiki manifest deduped."
 context = [
     "Follows T-046 link-integrity pass on stale numbered cross-refs.",

@@ -133,12 +133,12 @@ fn unparsable_ids_sort_last() {
 fn executor_chip_defaults_to_claude_code() {
     let corpus = corpus_of(vec![
         work("T-1", "status = \"idea\"", ""),
-        work("T-2", "status = \"idea\"", "executor = \"cursor-docs\"\n"),
+        work("T-2", "status = \"idea\"", "executor = \"documentation\"\n"),
     ]);
     let board = BoardModel::build(&corpus);
     let idea = &board.columns[column_of(StatusName::Idea)];
     assert_eq!(idea.cards[0].executor, "claude-code");
-    assert_eq!(idea.cards[1].executor, "cursor-docs");
+    assert_eq!(idea.cards[1].executor, "documentation");
 }
 
 #[test]

@@ -67,9 +67,9 @@ carries on, so the resolver falls to the npm cache or a download. To install by 
     which starts it for `mcpd`;
   - `cargo xtask mcp call` and `cargo xtask mcp daemon` (`tools_v2/xtask/src/commands/mcp/`),
     through that resolver, and `cargo xtask mod dev-bootstrap`, which runs `npm ci` here;
-  - `apps/mod/.cursor/mcp.json`, which starts the installed module with `node` by an absolute
-    path. `apps/mod/.mcp.json` starts `npx -y enfusion-mcp` instead, which this package does not
-    pin.
+  - the repository root's `.cursor/mcp.json`, which starts the installed module with `node` by an
+    absolute path. `apps/mod/.mcp.json` starts `npx -y enfusion-mcp` instead, which this package
+    does not pin.
 - Rules: `tools_v2/xtask/src/tests/tooling_dependency_boundaries.rs` requires `package.json` to
   exist here; the entry module must stay under this folder's `node_modules/`
   (`tools_v2/developer-tools/src/tests/repository_layout.rs`); only the manifest, the lockfile and

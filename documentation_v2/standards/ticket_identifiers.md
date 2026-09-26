@@ -29,7 +29,7 @@ One TOML file per ticket, parent and child alike: `.ai/tickets/T-<id>.toml`, bes
 - `status`: `idea`, `queued`, `ready`, `running`, `review`, `shipped`, `deferred` or `cancelled`;
 - `kind`: `program` (a ticket with child slices) or `work`;
 - `class`: `bug`, `feature`, `chore`, `audit` or `docs`;
-- `executor`: `claude-code`, `cursor-docs`, `workbench`, `human` or `ci`;
+- `executor`: `claude-code`, `documentation`, `workbench`, `human` or `ci`;
 - `scope.domain`: `website`, `mod`, `schema`, `engine` or `repo`.
 
 `.ai/tickets/schema.json` defines every field, and `cargo xtask ticket check` validates each file

@@ -5,7 +5,7 @@ summary = "Rich text editor for announcements and CMS content."
 class = "feature"
 status = "deferred"
 order = 870
-executor = "cursor-docs"
+executor = "documentation"
 estimated = ["scope"]
 
 [scope]

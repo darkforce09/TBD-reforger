@@ -1,0 +1,12 @@
+id = "T-1218"
+kind = "work"
+title = "Rename equipment export legacy_archive module to superseded-generation archive"
+summary = "The equipment vehicle export's legacy_archive.rs, its legacy/ folder, .legacy-archive.json journal, messages and tests spell the history word legacy, failing the tooling prose rule nothing_narrates_its_own_history; rename them to a superseded-generation archive."
+class = "chore"
+status = "idea"
+notes = "tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/legacy_archive.rs (committed) spells 'legacy' at lines 10 (JOURNAL = '.legacy-archive.json'), 23, 25 (destination legacy/{id}/{name}), 28, 46, 86, 90 and 91; its test file equipment_vehicle_export/tests/validation.rs does at lines 235, 246, 247, 377, 381, 382, 385 and 395 (plus the test name archive_failure_restores_every_legacy_directory at :343); mod.rs:5 declares the module and the folder README.md:15 lists it. tools_v2/xtask/src/tests/tooling_prose_rules.rs nothing_narrates_its_own_history (:317, reporting through assert_clean at :207) matches the history word case-insensitively on every line of every tracked tooling file, so cargo xtask's test suite fails on these lines. The change renames the module, the legacy/ archive folder, the .legacy-archive.json journal, the error messages, the test names and fixtures and the README line to a present-tense name such as superseded-generation archive; the on-disk folder and journal names change with them, so an existing archive under the old names may need a one-time move or a read of both. Source: Documentation V2 agent X1 (operator decision 2026-09-26)."
+created_at = "2026-09-26T07:49:39Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

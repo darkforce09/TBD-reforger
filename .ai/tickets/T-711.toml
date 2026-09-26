@@ -5,7 +5,7 @@ summary = "Doc sync: t090_render_lod_contract §N3 superseded by T-639; t152_7 s
 class = "bug"
 status = "deferred"
 order = 4304
-executor = "cursor-docs"
+executor = "documentation"
 notes = """
 filed by wave-101 adversarial verifier (editor factory); MAJOR doc/claim divergence, no behavioral defect
 

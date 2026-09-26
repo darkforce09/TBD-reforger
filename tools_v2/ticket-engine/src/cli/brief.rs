@@ -48,8 +48,8 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
     println!("BRANCH: {branch}");
     println!(
         "EXECUTION: Default ship on main. Parallel tickets use worktree {WORKTREES_DIR}/TBD-{tid} \
-         @ {branch} (merge to main when done). Docs-only slices (cursor-docs) may commit on main. \
-         See {TICKETS_DIR}/README.md."
+         @ {branch} (merge to main when done). Docs-only slices (executor documentation) may \
+         commit on main. See {TICKETS_DIR}/README.md."
     );
     println!("TARGETS: {}", slice_targets(t).join(", "));
     println!("DO NOT: edit documentation");

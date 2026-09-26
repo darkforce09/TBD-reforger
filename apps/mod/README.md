@@ -10,7 +10,6 @@ the platform ingests and one that lets the Enfusion MCP tools drive Workbench.
 
 ```text
 apps/mod/
-├── .cursor/        Cursor's MCP server entry and rule for work opened at this folder
 ├── .gitignore      keeps reference copies, the local server profile and Workbench build output out
 ├── .mcp.json       the MCP server entry that starts `enfusion-mcp` for sessions opened here
 ├── tbd-emcp/       addon `TBD_EMCP`: the Workbench Net API handlers the MCP `wb_*` tools call

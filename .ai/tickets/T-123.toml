@@ -5,7 +5,7 @@ summary = "Shipped @ 169e47d — full documentation_v2/standards/documentation_s
 status = "shipped"
 order = 1230
 spec = "documentation_v2/tickets/specs/t123_documentation_standards_rollout.md"
-executor = "cursor-docs"
+executor = "documentation"
 children = [
     "T-123.0",
     "T-123.1",

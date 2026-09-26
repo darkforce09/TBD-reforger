@@ -39,7 +39,7 @@ and that name a spec, sorted by `order` and then by id; `run` takes from it, in 
 - only tickets whose status is `ready` and whose spec field is not empty;
 - only tickets whose executor is `claude-code`. For a program the executor and the spec are those
   of its active slice. A ticket with no executor counts as `claude-code`, and the value means any AI
-  coding agent run through the agent command, whoever makes it. `cursor-docs`, `workbench`,
+  coding agent run through the agent command, whoever makes it. `documentation`, `workbench`,
   `human` and `ci` tickets are never run;
 - with `--stream <S>`, only tickets of that stream;
 - at most `batch_size` tickets, 10 by default.

@@ -1,11 +1,13 @@
 ---
-description: Work on main only — never create a branch by hand; the xtask slice tooling's slice/<id> branches are the one exception
+description: Every change in the repository lands on main — never create a branch by hand; the xtask slice tooling's slice/<id> branches are the one exception
 alwaysApply: true
 ---
 
 # Single branch: main only
 
-- Work on **`main`** and commit directly to it, with focused commit messages (`CLAUDE.md` law 2).
+- Every change anywhere in the repository — website, mod, tools, contracts, assets, docs — is
+  committed directly to **`main`**, with a focused commit message
+  ([`CLAUDE.md`](/CLAUDE.md) law 2).
 - Never create, check out or push a branch by hand: no `git checkout -b`, no `git switch -c`, and
   no workflow that needs a pull request.
 - The one exception is the `slice/<id>` branches that the xtask tooling creates, merges and

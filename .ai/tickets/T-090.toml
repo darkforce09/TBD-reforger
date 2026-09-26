@@ -5,7 +5,7 @@ summary = "Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** *
 status = "ready"
 order = 7079
 spec = "documentation_v2/tickets/specs/t090_091_map_terrain_program.md"
-executor = "cursor-docs"
+executor = "documentation"
 unblocks = ["T-091"]
 children = [
     "T-090.0",

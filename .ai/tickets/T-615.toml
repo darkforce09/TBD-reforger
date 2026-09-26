@@ -5,7 +5,7 @@ summary = "documentation_v2/standards/documentation_standards.md is the most rot
 class = "bug"
 status = "shipped"
 order = 3622
-executor = "cursor-docs"
+executor = "documentation"
 notes = """
 --- HEAD migration_legacy (verbatim) ---
 

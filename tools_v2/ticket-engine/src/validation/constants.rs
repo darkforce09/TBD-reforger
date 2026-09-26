@@ -17,7 +17,7 @@ pub const NEXT_MARKER_START: &str = "<!-- ticket-sync:next:start -->";
 pub const NEXT_MARKER_END: &str = "<!-- ticket-sync:next:end -->";
 
 pub const VALID_TARGETS: &[&str] = &["website", "mod", "shared", "root"];
-pub const VALID_EXECUTORS: &[&str] = &["claude-code", "cursor-docs", "workbench", "human", "ci"];
+pub const VALID_EXECUTORS: &[&str] = &["claude-code", "documentation", "workbench", "human", "ci"];
 pub const VALID_STREAMS: &[&str] = &[
     "mission-creator",
     "web-platform",

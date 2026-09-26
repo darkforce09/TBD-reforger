@@ -121,9 +121,10 @@ pub mod documentation {
     /// rather than live documents, so the size limit skips them while they sit at the root.
     pub const PROGRAM_RECORDS_PREFIX: &str = "documentation_v2/refactor_";
 
-    /// The Cursor rule folders: agent instructions that name documents and commands.
+    /// The Cursor rule folders: agent instructions that name documents and commands. The
+    /// repository holds one `.cursor` folder, at its root, so the list has one entry.
     /// `cargo xtask verify link-check` judges the links of their Markdown and `.mdc` files.
-    pub const CURSOR_RULE_DIRS: &[&str] = &[".cursor/rules", "apps/mod/.cursor/rules"];
+    pub const CURSOR_RULE_DIRS: &[&str] = &[".cursor/rules"];
 
     /// The project instructions at the repository root: the laws, the directory atlas and the
     /// canonical commands every agent reads first. `cargo xtask verify link-check` judges its

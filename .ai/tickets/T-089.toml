@@ -5,7 +5,7 @@ summary = "Mission title PATCH sync"
 class = "docs"
 status = "cancelled"
 order = 890
-executor = "cursor-docs"
+executor = "documentation"
 context = [
     "CANCELLED — merged into T-192.",
     "T-192 states 'no editor path PATCHes the row'; this ticket IS that PATCH.",

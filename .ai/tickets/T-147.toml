@@ -5,7 +5,7 @@ summary = "CANCELLED (2026-07-26 audit). Already ABSORBED by T-180.4 per its own
 class = "audit"
 status = "cancelled"
 order = 1480
-executor = "cursor-docs"
+executor = "documentation"
 notes = "needs-operator: frozen unmappable Scope. "
 depends_on = ["T-180"]
 

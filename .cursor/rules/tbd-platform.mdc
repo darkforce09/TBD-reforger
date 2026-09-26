@@ -35,7 +35,7 @@ alwaysApply: true
   The whole lifecycle is
   [Taking a ticket from idea to shipped](/documentation_v2/runbooks/ticket_run_pipeline.md).
 - **Executor gate.** A ticket's `executor` says who may take it: `claude-code` means any AI coding
-  agent run through the ticket tooling, whoever makes it; `cursor-docs` a ticket, spec or
+  agent run through the ticket tooling, whoever makes it; `documentation` a ticket, spec or
   documentation pass; `workbench`, `human` and `ci` mean stop and wait for that party.
 - **Git.** Commit directly to `main` and create no branch (`CLAUDE.md` law 2). The one exception
   is the `slice/<id>` branches that the xtask slice and wave tooling creates, merges and deletes
