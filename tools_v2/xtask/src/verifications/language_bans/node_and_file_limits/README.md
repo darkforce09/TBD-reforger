@@ -15,14 +15,22 @@ tools_v2/xtask/src/verifications/language_bans/node_and_file_limits/
 
 ## How it works
 
-`verify file-length` walks every `.rs` file under the roots in `FILE_LENGTH_PINS` (the four
-`tools_v2` crates, `apps/ticketboard/src`, `apps/fleet_host_agent/src` and `tests`,
-`apps/website/api_v2/src`, `apps/website/frontend/src`) plus every `src/` and `tests/` folder
-directly under `apps/website/`. A file is a test file when a path component is `tests` or its stem
-ends in `_tests`; a test file may hold 1000 lines (`SIZE_3_TEST_MAX_LINES`), any other file 500
-(`SIZE_3_PRODUCTION_MAX_LINES`). There is no exemption list. Each file over its limit prints one
-`SIZE-3:` line. A missing root or an unreadable file is a check that did not run, never a pass, and
-so is a walk that found no `.rs` file at all.
+`verify file-length` walks every `.rs` and `.c` file (`LENGTH_GATED_EXTENSIONS`) under the roots
+in `FILE_LENGTH_PINS` (the four `tools_v2` crates, `apps/ticketboard/src`,
+`apps/fleet_host_agent/src` and `tests`, `apps/website/api_v2/src`, `apps/website/frontend/src`)
+plus every `src/` and `tests/` folder directly under `apps/website/`. A file is a test file when a
+path component is `tests` or its stem ends in `_tests` (`.rs` or `.c`); a test file may hold 1000
+lines (`SIZE_3_TEST_MAX_LINES`), any other file 500 (`SIZE_3_PRODUCTION_MAX_LINES`). There is no
+exemption list. Each file over its limit prints one `SIZE-3:` line, and the summary line reads
+`scanned N source file(s) (R .rs, C .c)`. A missing root or an unreadable file is a check that did
+not run, never a pass, and so is a walk that found no source file at all.
+
+`MOD_SCRIPT_ROOTS` names the three addon script roots (`apps/mod/tbd-framework/Scripts`,
+`apps/mod/tbd-emcp/Scripts`, `apps/mod/tbd-export/Scripts`), the only `apps/mod` trees the gate may
+pin; a compile-time assertion (`mod_pins_are_script_roots`) rejects any other `apps/mod` pin, so the
+gitignored `crf_framework` and `vanilla_reference` references never enter the walk. None is pinned
+yet: T-1092 adds the framework root at P4-1, the tbd-emcp root at P5-1 and the tbd-export root at
+P6-C, each once that addon's scripts sit under the ceilings.
 
 `verify no-node` runs three checks and counts each failure:
 
@@ -49,7 +57,8 @@ run; `no-node` 0 clean, 1 any check failed.
   `tools_v2/xtask/src/commands/ci/task_definitions.rs`; the `language-gates` job of
   `.github/workflows/ci.yml`; the platform [wave](/documentation_v2/glossary/n_to_z.md#wave) gate, which runs
   `verify no-node`.
-- Rules: a walk that reads nothing is never a pass (`walk_is_nonempty_anti_vacuity`,
+- Rules: `.c` files meet the same ceilings (`enfusion_script_production_boundary_is_500_lines`,
+  `enfusion_script_tests_basename_holds_to_1000_lines`); a walk that reads nothing is never a pass (`walk_is_nonempty_anti_vacuity`,
   `missing_walk_root_is_did_not_run` and `empty_walk_is_not_ok` in
   `tools_v2/xtask/src/tests/node_free_tests.rs`); the limits are exactly 500 and 1000 lines with no
   exemption (`production_boundary_is_500_lines`,

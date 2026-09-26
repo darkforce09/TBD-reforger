@@ -19,16 +19,20 @@ pub(super) fn verify_file_length_in(root: &Path) -> u8 {
 }
 
 pub(super) fn refuse_file_length(cause: NotRun) -> u8 {
-    let v = Verdict::did_not_run("file-length could not scan the Rust tree", Kind::Ban, cause);
+    let v = Verdict::did_not_run(
+        "file-length could not scan the source trees",
+        Kind::Ban,
+        cause,
+    );
     println!("{v}");
     println!("file-length: FAIL (did not run)");
     2
 }
 
 pub(super) fn verify_file_length_inner(root: &Path) -> std::result::Result<u8, NotRun> {
-    let files = walk_rust_sources(root)?;
+    let files = walk_length_gated_sources(root)?;
     if files.is_empty() {
-        println!("FAIL: file-length walked 0 .rs files — refusing a vacuous pass.");
+        println!("FAIL: file-length walked 0 source files — refusing a vacuous pass.");
         return Ok(1);
     }
 
@@ -56,19 +60,77 @@ pub(super) fn verify_file_length_inner(root: &Path) -> std::result::Result<u8, N
             fails += 1;
         }
     }
-    println!(
-        "file-length: scanned {} .rs file(s), {fails} violation(s).",
-        files.len()
-    );
+    println!("{}", length_scan_summary(&files, fails));
     Ok(u8::from(fails > 0))
 }
 
-pub(super) fn walk_rust_sources(root: &Path) -> std::result::Result<Vec<PathBuf>, NotRun> {
+/// The gate's summary line: total files, the per-extension split, and the violation count.
+pub(super) fn length_scan_summary(files: &[PathBuf], violations: u64) -> String {
+    let with_extension = |wanted: &str| {
+        files
+            .iter()
+            .filter(|path| path.extension().is_some_and(|ext| ext == wanted))
+            .count()
+    };
+    format!(
+        "file-length: scanned {} source file(s) ({} .rs, {} .c), {violations} violation(s).",
+        files.len(),
+        with_extension("rs"),
+        with_extension("c")
+    )
+}
+
+/// Every file under the length-gate roots whose extension is in [`LENGTH_GATED_EXTENSIONS`].
+pub(super) fn walk_length_gated_sources(root: &Path) -> std::result::Result<Vec<PathBuf>, NotRun> {
     let roots = file_length_roots(root)?;
     let refs: Vec<&Path> = roots.iter().map(PathBuf::as_path).collect();
     scan::walk_files(&refs, |path| {
-        path.extension().and_then(|ext| ext.to_str()) == Some("rs")
+        path.extension()
+            .and_then(|ext| ext.to_str())
+            .is_some_and(|ext| LENGTH_GATED_EXTENSIONS.contains(&ext))
     })
+}
+
+/// Compile-time guard: every `apps/mod/` entry of `pins` is exactly one of `script_roots`, so a
+/// gitignored reference tree or a whole addon folder can never be pinned.
+pub(super) const fn mod_pins_are_script_roots(pins: &[&str], script_roots: &[&str]) -> bool {
+    let mut pin_index = 0;
+    while pin_index < pins.len() {
+        let pin = pins[pin_index].as_bytes();
+        if bytes_start_with(pin, b"apps/mod/") || bytes_equal(pin, b"apps/mod") {
+            let mut root_index = 0;
+            let mut matched = false;
+            while root_index < script_roots.len() {
+                if bytes_equal(pin, script_roots[root_index].as_bytes()) {
+                    matched = true;
+                }
+                root_index += 1;
+            }
+            if !matched {
+                return false;
+            }
+        }
+        pin_index += 1;
+    }
+    true
+}
+
+const fn bytes_start_with(bytes: &[u8], prefix: &[u8]) -> bool {
+    if bytes.len() < prefix.len() {
+        return false;
+    }
+    let mut index = 0;
+    while index < prefix.len() {
+        if bytes[index] != prefix[index] {
+            return false;
+        }
+        index += 1;
+    }
+    true
+}
+
+const fn bytes_equal(left: &[u8], right: &[u8]) -> bool {
+    left.len() == right.len() && bytes_start_with(left, right)
 }
 
 pub(super) fn file_length_roots(root: &Path) -> std::result::Result<Vec<PathBuf>, NotRun> {
@@ -107,7 +169,10 @@ pub(super) fn rel_posix(root: &Path, file: &Path) -> String {
 pub(super) fn is_test_file(rel: &str) -> bool {
     let path = Path::new(rel);
     path.components().any(|part| part.as_os_str() == "tests")
-        || (path.extension().is_some_and(|extension| extension == "rs")
+        || (path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .is_some_and(|extension| LENGTH_GATED_EXTENSIONS.contains(&extension))
             && path
                 .file_stem()
                 .is_some_and(|stem| stem.to_string_lossy().ends_with("_tests")))

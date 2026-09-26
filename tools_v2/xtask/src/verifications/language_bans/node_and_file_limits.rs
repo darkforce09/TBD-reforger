@@ -1,6 +1,7 @@
-//! Rust source length, font-table generation, and Node tooling gates.
+//! Source length, font-table generation, and Node tooling gates.
 //!
-//! The length gate uses raw lines and fails on source files above their kind-specific ceiling.
+//! The length gate walks `.rs` and Enfusion `.c` sources, counts raw lines, and fails on any
+//! file above its kind-specific ceiling (production 500, test 1000).
 //! The Node gate refuses tracked scripts and invocations outside the Enfusion tooling floor.
 
 use std::path::{Path, PathBuf};
@@ -27,6 +28,24 @@ const FILE_LENGTH_PINS: &[&str] = &[
     "apps/fleet_host_agent/src",
     "apps/fleet_host_agent/tests",
 ];
+
+/// Enfusion script roots of the three shipped addons, the only `apps/mod` trees the length gate
+/// may pin. `apps/mod/crf_framework` and `apps/mod/vanilla_reference` are gitignored upstream
+/// references and never enter [`FILE_LENGTH_PINS`]. Each root joins the pins once its addon's
+/// scripts sit at or under the ceilings.
+const MOD_SCRIPT_ROOTS: &[&str] = &[
+    "apps/mod/tbd-framework/Scripts",
+    "apps/mod/tbd-export/Scripts",
+    "apps/mod/tbd-emcp/Scripts",
+];
+
+/// File extensions the length gate counts: Rust sources and Enfusion scripts.
+const LENGTH_GATED_EXTENSIONS: &[&str] = &["rs", "c"];
+
+const _: () = assert!(
+    repository_access::mod_pins_are_script_roots(FILE_LENGTH_PINS, MOD_SCRIPT_ROOTS),
+    "an apps/mod pin in FILE_LENGTH_PINS must be one of MOD_SCRIPT_ROOTS"
+);
 
 /* ─────────────────────────── gen font-table ─────────────────────────── */
 
@@ -56,4 +75,7 @@ mod verify_no_node;
 pub use verify_no_node::verify_no_node;
 
 #[cfg(test)]
-use repository_access::{is_test_file, verify_file_length_in, walk_rust_sources};
+use repository_access::{
+    is_test_file, length_scan_summary, mod_pins_are_script_roots, verify_file_length_in,
+    walk_length_gated_sources,
+};

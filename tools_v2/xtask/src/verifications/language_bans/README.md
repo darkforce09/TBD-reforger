@@ -2,8 +2,8 @@
 
 The repository checks that keep the codebase in Rust and its files small: `no-shell` and
 `no-python` (one hard-zero ban on tracked shell, Make, Python and Node scripts), `no-node` (Node
-only as the enfusion-mcp runtime) and `file-length` (500 lines for production Rust, 1000 for
-tests).
+only as the enfusion-mcp runtime) and `file-length` (500 lines for a production Rust or Enfusion
+script file, 1000 for tests).
 
 ## Contents
 
@@ -11,7 +11,7 @@ tests).
 tools_v2/xtask/src/verifications/language_bans/
 ├── mod.rs                   the module tree
 ├── node_and_file_limits/    the file-length walk, the no-node checks and the font table generator
-├── node_and_file_limits.rs  the file-length limits and roots, the no-node scan subjects; re-exports the entries
+├── node_and_file_limits.rs  the file-length limits, roots and addon script roots, the no-node scan subjects; re-exports the entries
 ├── python_scripts.rs        `verify no-python`: the same ban walk as `no-shell`, under its own name
 ├── shell_scripts.rs         `verify no-shell`: the tracked-language ban table, shebangs, `python3` calls
 └── tests/                   unit tests for the ban walk, shebang parsing and fixture checkouts

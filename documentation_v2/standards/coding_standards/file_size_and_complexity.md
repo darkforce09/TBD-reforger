@@ -8,11 +8,11 @@ are in the [file length and Node ban README](/tools_v2/xtask/src/verifications/l
 
 ## Rules
 
-- **SIZE-3 (Scalability) — A production Rust file holds at most 500 lines and a test Rust file at
+- **SIZE-3 (Scalability) — A production source file holds at most 500 lines and a test file at
   most 1000, with no exemption.** Lines are raw lines, comments and blank lines included. A file
-  is a test file when a component of its path is `tests` or its name ends in `_tests.rs`. A file
-  over its limit prints one `SIZE-3:` line and fails the gate; the fix is to decompose it by
-  responsibility. Gate: CI-SCRIPT, `cargo xtask verify file-length`, run by
+  is a test file when a component of its path is `tests` or its name ends in `_tests.rs` or
+  `_tests.c`. A file over its limit prints one `SIZE-3:` line and fails the gate; the fix is to
+  decompose it by responsibility. Gate: CI-SCRIPT, `cargo xtask verify file-length`, run by
   `cargo xtask ci verify-coding-standards` in `ci-local` and by the `language-gates` job of
   `.github/workflows/ci.yml`. The limits are `SIZE_3_PRODUCTION_MAX_LINES` and
   `SIZE_3_TEST_MAX_LINES` in
@@ -32,8 +32,10 @@ are in the [file length and Node ban README](/tools_v2/xtask/src/verifications/l
 
 ## What the walk covers
 
-`cargo xtask verify file-length` walks every `.rs` file under these roots, untracked files
-included, since it reads the working tree:
+`cargo xtask verify file-length` walks every `.rs` and
+[EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript) `.c` file under these roots, untracked
+files included, since it reads the working tree, and prints
+`scanned N source file(s) (R .rs, C .c)`:
 
 | Root | Holds |
 |---|---|
@@ -43,15 +45,19 @@ included, since it reads the working tree:
 | `apps/website/api_v2/src`, `apps/website/frontend/src` | the API and the app |
 | every `src/` and `tests/` folder directly under `apps/website/` | the engines, and any crate added there |
 
-A pinned root that is missing, an unreadable file or a walk that finds no `.rs` file is a check
+A pinned root that is missing, an unreadable file or a walk that finds no source file is a check
 that did not run (exit 2 or 1), never a pass. Generated Rust is not excluded: the contract types
 under `apps/website/api_v2/src/missions/contract/generated/` are held to the same limit.
 
 Outside the walk, and so unenforced by this gate:
 
-- [EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript) `.c` files under `apps/mod/`. CLAUDE.md
-  law 7 applies to them, but no gate measures them, and 52 tracked scripts of the three TBD
-  addons run past 500 lines.
+- The addon scripts under `apps/mod/`, until each is pinned. `MOD_SCRIPT_ROOTS` in
+  [node_and_file_limits.rs](/tools_v2/xtask/src/verifications/language_bans/node_and_file_limits.rs)
+  names the three roots the gate may pin, and T-1092 pins them one addon at a time once its
+  scripts meet the ceilings: `apps/mod/tbd-framework/Scripts` at P4-1,
+  `apps/mod/tbd-emcp/Scripts` at P5-1, `apps/mod/tbd-export/Scripts` at P6-C. The gitignored
+  references `apps/mod/crf_framework` and `apps/mod/vanilla_reference` are never pinned; a
+  compile-time assertion rejects any `apps/mod` pin outside the three roots.
 - Markdown. Live documents under `documentation_v2/` have their own 500-line limit, checked by
   `cargo xtask verify markdown-placement`.
 

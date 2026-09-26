@@ -31,7 +31,7 @@ impl Drop for TmpRepo {
 
 #[test]
 fn walk_is_nonempty_anti_vacuity() {
-    let files = walk_rust_sources(&this_repo()).expect("walk must run");
+    let files = walk_length_gated_sources(&this_repo()).expect("walk must run");
     assert!(
         !files.is_empty(),
         "a zero-file walk must never read as a pass"
@@ -39,7 +39,7 @@ fn walk_is_nonempty_anti_vacuity() {
     assert!(
         files
             .iter()
-            .all(|p| p.extension().and_then(|e| e.to_str()) == Some("rs"))
+            .all(|p| matches!(p.extension().and_then(|e| e.to_str()), Some("rs" | "c")))
     );
     let joined = files
         .iter()
@@ -130,6 +130,83 @@ fn test_boundary_is_1000_lines_for_directory_and_basename() {
 }
 
 #[test]
+fn enfusion_script_production_boundary_is_500_lines() {
+    let d = TmpRepo::new("script-production-boundary");
+    let path = d.0.join("tools_v2/xtask/fixtures/TBD_ScriptPlant.c");
+    write_lines(&path, SIZE_3_PRODUCTION_MAX_LINES);
+    assert_eq!(verify_file_length_in(&d.0), 0, "a 500-line .c passes");
+    write_lines(&path, SIZE_3_PRODUCTION_MAX_LINES + 1);
+    assert_eq!(verify_file_length_in(&d.0), 1, "a 501-line .c fails");
+}
+
+#[test]
+fn enfusion_script_tests_basename_holds_to_1000_lines() {
+    let d = TmpRepo::new("script-test-boundary");
+    let path = d.0.join("tools_v2/xtask/fixtures/TBD_ScriptPlant_tests.c");
+    write_lines(&path, SIZE_3_TEST_MAX_LINES);
+    assert_eq!(
+        verify_file_length_in(&d.0),
+        0,
+        "a 1000-line *_tests.c passes"
+    );
+    write_lines(&path, SIZE_3_TEST_MAX_LINES + 1);
+    assert_eq!(
+        verify_file_length_in(&d.0),
+        1,
+        "a 1001-line *_tests.c fails"
+    );
+    assert!(is_test_file(
+        "apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Hash_tests.c"
+    ));
+    assert!(!is_test_file(
+        "apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Hash.c"
+    ));
+    assert!(!is_test_file(
+        "apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Hash_tests.h"
+    ));
+}
+
+#[test]
+fn summary_reports_the_mixed_extension_count() {
+    let d = TmpRepo::new("mixed-count");
+    write_lines(&d.0.join("tools_v2/xtask/fixtures/TBD_ScriptPlant.c"), 3);
+    write_lines(&d.0.join("tools_v2/xtask/fixtures/notes.txt"), 3);
+    let files = walk_length_gated_sources(&d.0).unwrap();
+    let rust_count = FILE_LENGTH_PINS.len();
+    assert_eq!(files.len(), rust_count + 1, "the .txt is not walked");
+    assert_eq!(
+        length_scan_summary(&files, 0),
+        format!(
+            "file-length: scanned {} source file(s) ({rust_count} .rs, 1 .c), 0 violation(s).",
+            rust_count + 1
+        )
+    );
+}
+
+#[test]
+fn mod_script_roots_are_the_three_shipped_addons() {
+    let root = this_repo();
+    for script_root in MOD_SCRIPT_ROOTS {
+        assert!(root.join(script_root).is_dir(), "{script_root} must exist");
+    }
+    for reference in ["crf_framework", "vanilla_reference"] {
+        assert!(
+            MOD_SCRIPT_ROOTS.iter().all(|r| !r.contains(reference)),
+            "{reference} is a gitignored reference and is never gated"
+        );
+    }
+    assert!(mod_pins_are_script_roots(
+        &["tools_v2/xtask", "apps/mod/tbd-emcp/Scripts"],
+        MOD_SCRIPT_ROOTS
+    ));
+    assert!(!mod_pins_are_script_roots(&["apps/mod"], MOD_SCRIPT_ROOTS));
+    assert!(!mod_pins_are_script_roots(
+        &["apps/mod/vanilla_reference/Scripts"],
+        MOD_SCRIPT_ROOTS
+    ));
+}
+
+#[test]
 fn website_test_roots_and_generated_contracts_are_walked_without_exemption() {
     let d = TmpRepo::new("walk-coverage");
     let test = d.0.join("apps/website/api_v2/tests/integration.rs");
@@ -144,7 +221,7 @@ fn website_test_roots_and_generated_contracts_are_walked_without_exemption() {
     for path in &generated {
         write_lines(path, SIZE_3_PRODUCTION_MAX_LINES + 1);
     }
-    let files = walk_rust_sources(&d.0).unwrap();
+    let files = walk_length_gated_sources(&d.0).unwrap();
     assert!(files.contains(&test));
     for path in &generated {
         assert!(files.contains(path), "{}", path.display());
