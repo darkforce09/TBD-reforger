@@ -5,12 +5,12 @@
 Milestones E, F, M, T and C are implemented and verified; overall readiness is **not passing**,
 because milestones V and S have not started and game ballistics (B) is a later phase (see
 `remaining_milestones.md`), and `cargo xtask verify api-readiness --execute` was not run (it needs
-a quiet working tree). T is committed on main as 0ef292758. C is not committed: the operator
-commits it (see the commit-time notes under open items). Do not reset, clean, stash or revert
-anything in the working tree: it holds C's uncommitted work and another agent's uncommitted work
+a quiet working tree). T is committed on main as 0ef292758 and C as b49fb86c1 (pushed
+2026-09-27; T-940.7, T-940.8 and T-940.9 stamped). Do not reset, clean, stash or revert
+anything in the working tree: it holds another agent's uncommitted work
 (equipment/vehicle export and the equipment data viewer in `tools_v2/xtask`,
 `apps/website/api_v2/src/community_content`, the frontend `data_viewer`,
-`contracts_v2/definitions/equipment-*` and `assets_v2/equipment`).
+`contracts_v2/definitions/equipment-*` and the untracked assets_v2/equipment folder).
 
 ## Milestone status
 
@@ -20,7 +20,7 @@ anything in the working tree: it holds C's uncommitted work and another agent's 
 | F — fleet command ledger, host agent, executors, recovery | Complete. |
 | M — artifacts, reviews, approval binding, deployments, authored preservation, workspace | Complete. |
 | T — match identity, revisions, corrections, atomicity, detailed events, telemetry queue, fleet dashboard, statistics | Complete (design: `telemetry.md`). |
-| C — personnel pagination, audit replay and query recovery, audit frontend, vehicle mutations, wiki features, content storage | Complete, not committed (design: `administration_and_content.md`). |
+| C — personnel pagination, audit replay and query recovery, audit frontend, vehicle mutations, wiki features, content storage | Complete, committed as b49fb86c1 (design: `administration_and_content.md`). |
 | V, S | Not started (`remaining_milestones.md`). |
 | B | Later separate phase by operator decision (2026-09-23). |
 
@@ -69,13 +69,13 @@ Migrations 0057–0059 are pinned; the next migration is 0060. Versions 0022–0
 | `cargo test -p website-api --lib` | 515 passed, 395 before C; 55 are `wiki_markup_*` goldens (`p7-api-lib-final.log`) |
 | Clippy `-D warnings` | website-api all targets clean (`p7-api-clippy.log`, re-run after G4); xtask clean (`p7-xtask-clippy.log`); ci `rust-clippy` exit 0 (`p7-ci-rust-clippy.log`) |
 | rustfmt | ci `rust-fmt` diffs only in the other agent's `core/application_state.rs` and `community_content/models/generated/equipment_data_viewer/mod.rs` (`p7-ci-rust-fmt.log`); T's unformatted `tests/telemetry_url_guard.rs` formatted in C |
-| Frontend lane (steps run one by one) | fmt diffs only in the other agent's `data_viewer` and equipment DTO parity files (`p7-frontend-fmt-2.log`); clippy wasm32 exit 0, no warning in a C file (`p7-frontend-clippy.log`); `cargo test -p website-frontend` 1,802 passed, 1 failed: `doc_audit`, all 100 findings in the other agent's `apps/website/frontend/src/v2/apps/debug/data_viewer` (93) and `apps/website/frontend/src/v2/core/api/dto/equipment_data_viewer` (7) (`p7-frontend-test-2.log`); trunk release success (`p7-trunk-release.log`) |
+| Frontend lane (steps run one by one) | fmt diffs only in the other agent's `data_viewer` and equipment DTO parity files (`p7-frontend-fmt-2.log`); clippy wasm32 exit 0, no warning in a C file (`p7-frontend-clippy.log`); `cargo test -p website-frontend` 1,802 passed, 1 failed: `doc_audit`, all 100 findings in the other agent's untracked frontend apps/debug/data_viewer folder (93) and untracked dto/equipment_data_viewer folder (7) (`p7-frontend-test-2.log`); trunk release success (`p7-trunk-release.log`) |
 | `mk leptos-gates` | exit 0, gate doctor OK, editor suite 21/21, DOM oracle 25/25 (`p7-leptos-gates-2.log`). The first run was 20/25 (`p7-leptos-gates.log`), diverging on exactly the five C routes; each was screenshot-audited and accepted with notes: personnel (pager), audit (live status badge; the fixture stream ends after `ready`, so it settles on Reconnecting), vehicles (administrator controls, compact header), wiki and wikislug (block renderer, revisions panel). The first wikislug accept was reverted because its screenshot showed leaked `view!` source in the revisions pager (an unbraced `disabled=page >= page_count`); G3 braced it and added the `view_attributes_*` guard. The 25/25 run predates G4's backend shutdown change; the oracle is fixture-driven and the frontend is unchanged since |
 | `ci ci-local-schema` / codegen freshness | PASS: verify-codegen-fresh PASS, 230 `@contract` citations resolve (`p7-ci-local-schema.log`); a codegen re-run changes nothing |
 | `verify route-tags` | 153 registered routes all documented; FAIL only on the other agent's 12 unwired `/api/v1/debug/equipment-data/*` tags (`p7-route-tags.log`) |
 | `verify file-length` / `enfusion-comments` / no-select-star | 0 violations over 3,987 files / 0 findings / clean (`p7-ci-verify-coding-standards.log`) |
 | Documentation gates | On the committed tree `ci verify-documentation` fails only on C's untracked new files (`p7-ci-verify-documentation.log`). With `--with-untracked`: readme-coverage finds only C's tracked-but-deleted files (cleared by `git rm` at commit) and the other agent's untracked equipment, `improved_layout` and `data_viewer` folders; link-check finds one line, the pre-existing T-1092 checkpoint link in `documentation_v2/mod/script_modularisation_progress_checkpoint.md`; markdown-placement OK (`p7-*-untracked.log`) |
-| `ci ci-local` (steps run one by one) | verify-editorconfig FAIL, 3,205 findings, all in the other agent's `assets_v2/equipment/`; verify-no-python and verify-no-shell FAIL only on 9 tracked-but-deleted paths (C's 8 deletions and the other agent's `apps/mod/.mcp.json`), no banned path; verify-no-node, verify-ci-shell, verify-engine-layers, verify-staging-compose-paths, verify-mission-rest-size-limits, rust-build and wasm-ci PASS; rust-test-it is the final `db test-it` above; ci-local-leptos and ci-local-schema as above |
+| `ci ci-local` (steps run one by one) | verify-editorconfig FAIL, 3,205 findings, all in the other agent's untracked assets_v2/equipment folder; verify-no-python and verify-no-shell FAIL only on 9 tracked-but-deleted paths (C's 8 deletions and the other agent's `apps/mod/.mcp.json`), no banned path; verify-no-node, verify-ci-shell, verify-engine-layers, verify-staging-compose-paths, verify-mission-rest-size-limits, rust-build and wasm-ci PASS; rust-test-it is the final `db test-it` above; ci-local-leptos and ci-local-schema as above |
 | Live walkthrough (browser pane, `rust-api-container` + `spa-gate-serve`, dev-login admin) | Personnel at `per_page=10` over 22 members (17 temporary users, removed afterwards): pages 1–3, Next disabled at the end, URL state survives a reload. Audit stream LIVE; vehicle create, PUT and soft DELETE rows arrived live; rows written while the API was down replayed exactly once after the restart. The vehicle form refused a `javascript:` image URL. `wiki-formatting-guide` renders H1–H6 with anchors, external links with `rel="noopener noreferrer nofollow"`, a lazy `no-referrer` image, an aligned table, disabled checklists, all seven callouts, code, quote and rule, and no script; two saves made revisions 2 and 3, a stale editor save got the 409 with a reload, and restoring revision 1 made revision 4. The walkthrough found that graceful shutdown never ended open event streams; G4 fixed it (streams close on SIGTERM and the process exits in about 3 ms; `audit_replay_shutdown` binary) |
 | Perturbations (each red, then restored byte-identical) | personnel `total` capped to the item count (6 cases red); PATCH without `deny_unknown_fields` (parity case red); no table parsing (golden red); a publish failure skipping the read (recovery case red); the floor check skipped (4 reset cases red); the revision insert skipped (revision case red); `begin()` removed from the API shutdown (shutdown case red); the leaked-attribute defect restored (`view_attributes` guard red) |
 | `verify api-readiness` (judge only, no `--execute`; `logs/H1-api-readiness.log` in the session scratchpad) | The register parses and validates (every implementation path exists), then the run stops at fingerprinting: `symlink fingerprint input: AGENTS.md`. `AGENTS.md` is a root fingerprint input and has been a tracked symlink to `CLAUDE.md` since 8db4105af (2026-09-26), so the command refuses any tree until that is resolved (open item). Readiness is not passing either way: V, S and B are open and no receipt is current |
@@ -120,26 +120,18 @@ Foreign files C touched, each only in its own separate hunk: `Cargo.lock` and
 | `mod playtest --mission=6d0af8b0-… --timeout=420 --require-telemetry` | deployment CONFIRMED; heartbeat telemetry queue 0/512, dropped 0; pre-stop drain ran on timeout; credential revoked. No round went LIVE (0 players), so registration, events and results were not exercised in-engine |
 | `cargo test -p xtask` | 1,043 passed, 4 failed: 3 in the other agent's files, 1 (`every_rust_file_named_in_prose_exists`) because this milestone's new tooling files are untracked until staged |
 | `cargo test -p developer-tools` / `-p fleet-host-agent` | 265 passed, 4 ignored / 127 passed |
-| `ci ci-local` | stops at step 1 (`verify-editorconfig`): 3,205 findings, all in the other agent's untracked `assets_v2/equipment/`; the later steps were run individually above |
+| `ci ci-local` | stops at step 1 (`verify-editorconfig`): 3,205 findings, all in the other agent's untracked assets_v2/equipment folder; the later steps were run individually above |
 
 ## Open items
 
-- **Committing C** (the operator commits):
-  - `git rm` the 8 files C deleted: `community_content/handlers/media_upload.rs`,
-    `vehicle_database.rs` and `wiki_knowledgebase.rs` in `apps/website/api_v2/src/`, and in
-    `apps/website/frontend/src/v2/pages/doctrine_and_info/` `vehicles/helpers.rs`,
-    `vehicles/tests/vehicles.rs`, `wiki/helpers.rs`, `wiki/markdown.rs` and
-    `wiki/markdown_article.rs`. This also clears the readme-coverage, verify-no-python and
-    verify-no-shell findings on them.
-  - `apps/website/api_v2/src/community_content/models/generated/mod.rs` is the other agent's
-    untracked file with C's three `pub mod` lines added: commit a version holding only C's lines
-    through a temporary index, and leave the working file as it is.
-  - `tools_v2/xtask/src/commands/generate/schema_types.rs` and
-    `community_content/models/mod.rs` carry C's hunks next to the other agent's: stage C's hunks
-    only. The same holds for the other foreign files listed under the C verification table.
-  - `.ai/tickets/wave.lock` holds the repack that `ticket ship` wrote for T-940.7, T-940.8 and
-    T-940.9; it goes with the C commit. After the commit, `cargo xtask ticket stamp-sha` each of the
-    three with the landing SHA.
+- **C commit (b49fb86c1).** Built through a temporary index holding only C's paths and C-only
+  versions of the eight shared files; the other agent's hunks stay uncommitted in the working
+  tree. The commit tree was verified on its own before `main` moved: website-api clippy
+  `-D warnings` and frontend wasm32 clippy with `--locked`, `cargo test -p website-frontend`
+  1,788 passed / 0 failed (`doc_audit` passes without the other agent's files), full
+  `db test-it` 1,064 passed / 0 failed, verify-codegen-fresh PASS (logs `commit-verify-*.log`).
+  That check caught one C test that relied on the other agent's `pub(crate) assert_golden`; the
+  test moved into `r_api_content.rs` before the commit.
 - **Tickets.** T-940.13 (detailed events) is still `ready` from T, and T-1222 still has no
   `shipped_at` stamp (`ticket stamp-sha T-1222 0ef292758`). T-950 ("Audit SSE stream has no
   client", `idea`) has its scope delivered by the audit page; whether to ship or close it is the
@@ -189,7 +181,7 @@ roster P1–P8 with pre-written prompts; shared brief in the session scratchpad 
 | 2026-09-27 | F2 done (SSE frame parser, audit stream client, live merge, oracle `.sse.txt`). P5 complete. E1 ∥ G2 launched; P7 frontend lane started (fmt: only foreign diffs). |
 | 2026-09-27 | P7 frontend lane: fmt diffs only in foreign data_viewer/equipment files; clippy wasm32 exit 0 with 0 warnings in C files; `cargo test -p website-frontend` 1,795 passed, 1 failed (`doc_audit`, 100 findings all foreign); trunk release success. |
 | 2026-09-27 | G2 done (T's `telemetry_url_guard.rs` formatted; wiki revisions on the shared helper). E1 done (api_overview, stale docs, T-940.7/.8/.9 shipped + wave repack). P7 backend: db test-it 1,062/0; lib 503; clippy website-api and xtask clean; ci-local-schema PASS (codegen fresh, 230 citations); route-tags FAIL only on the other agent's 12 equipment-viewer tags (153 routes documented); file-length 0 violations. leptos-gates: editor 21/21, oracle 20/25 (only the five C routes); personnel, audit, vehicles accepted after screenshot audit; wikislug accept reverted (leaked view! text in the revisions pager) → G3. |
-| 2026-09-27 | ci-local steps so far: verify-editorconfig FAIL (3,205 findings, all foreign `assets_v2/equipment`); verify-no-python / verify-no-shell FAIL only on 9 tracked-but-deleted paths (8 C deletions awaiting `git rm` at commit + the other agent's `apps/mod/.mcp.json`), banned paths none; verify-no-node, verify-ci-shell, verify-engine-layers, verify-staging-compose-paths, verify-mission-rest-size-limits PASS. |
+| 2026-09-27 | ci-local steps so far: verify-editorconfig FAIL (3,205 findings, all in the other agent's untracked assets_v2/equipment folder); verify-no-python / verify-no-shell FAIL only on 9 tracked-but-deleted paths (8 C deletions awaiting `git rm` at commit + the other agent's `apps/mod/.mcp.json`), banned paths none; verify-no-node, verify-ci-shell, verify-engine-layers, verify-staging-compose-paths, verify-mission-rest-size-limits PASS. |
 | 2026-09-27 | G3 done (braced view! attributes in every C page, compact vehicles header, revisions pager fits; `view_attributes_*` guard with mutation proof; dist rebuilt). wikislug, wiki, vehicles accepted after screenshot audit; leptos-gates re-run for the official result. Dev DB: wiki/vehicle seeds applied; 17 temporary `walkthrough-*` users for the paging walkthrough (removed afterwards). |
 | 2026-09-27 | leptos-gates re-run: exit 0, editor 21/21, DOM oracle 25/25. Live walkthrough (rust-api-container + spa-gate-serve, dev-login admin): personnel per_page=10 over 22 members (pages 1–3, Next disabled at the end, URL state survives reload); audit stream LIVE, vehicle create/PUT/soft DELETE rows arrived live, rows written while the API was down replayed once after restart; vehicle form refused `javascript:` image URL client-side; wiki-formatting-guide renders H1–H6 with anchors, safe external links (rel noopener noreferrer nofollow), lazy no-referrer image, aligned table, disabled checklist, all callouts, code, quote, rule; two saves → revisions 2, 3; stale editor save → 409 with reload; revision 1 restored → revision 4. Walkthrough users and vehicle removed. Found: graceful shutdown never ends open SSE streams (the stopped API lingered until SIGKILL) → G4. |
 | 2026-09-27 | G4 done: `core/process_lifecycle` holds the process-wide shutdown signal, every open event stream closes on SIGINT or SIGTERM and the stopped API exits in about 3 ms; `audit_replay_shutdown` binary. Final backend gates: `db test-it` 1,075 passed, 0 failed; lib 515; clippy website-api re-run clean. |
