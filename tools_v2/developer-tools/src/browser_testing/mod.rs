@@ -19,3 +19,5 @@ pub mod dom_oracle;
 pub mod cli;
 
 pub mod capture_cli;
+
+pub mod equipment_data_viewer;

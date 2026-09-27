@@ -4,6 +4,12 @@ use anyhow::Result;
 
 pub(crate) fn run(cmd: ModCmd) -> Result<u8> {
     match cmd {
+        ModCmd::ProjectEquipmentGameplay { input, output } => {
+            super::equipment_gameplay::project_command(&input, &output)
+        }
+        ModCmd::GenerateEquipmentGameplayPolicy { check } => {
+            super::equipment_gameplay::generate_command(check)
+        }
         ModCmd::ValidateEquipmentVehicleExport { input } => {
             super::equipment_vehicle_export::validate_command(&input)
         }

@@ -33,6 +33,7 @@ fn generated_scratch() -> Scratch {
     let schema_dir = contract_definitions_dir(&scratch.0);
     fs::create_dir_all(&schema_dir).unwrap();
     for (schema, _) in TARGETS {
+        fs::create_dir_all(schema_dir.join(schema).parent().unwrap()).unwrap();
         fs::copy(
             contract_definitions_dir(&source).join(schema),
             schema_dir.join(schema),

@@ -1,0 +1,113 @@
+{
+  "generation_id": "6A6E9885CF2F83F9",
+  "items": [
+    {
+      "capabilities": [],
+      "class_name": "GenericEntity",
+      "facts": [
+        {
+          "class_name": "GenericEntity",
+          "entry_kind": "property",
+          "expanded": true,
+          "key": "EOnActivate",
+          "label": "EOnActivate",
+          "links": [],
+          "metadata_json": "{\"enum_values\":[],\"native_type\":\"STRING\",\"native_unit\":null,\"object_base_class\":null,\"origin\":\"engine_default\",\"reason\":null,\"source\":{\"resource_name\":\"{44AAA61117B6CA8E}Prefabs/Weapons/Attachments/Optics/Optic_4x20/Optic_4x20_OliveGreen_Sand_Stripes.et\",\"node_id\":\"root\",\"property\":\"EOnActivate\",\"method\":\"BaseContainer.Get\"},\"status\":\"present\",\"unit_evidence\":null}",
+          "native_type": "STRING",
+          "native_unit": null,
+          "node_id": "root",
+          "origin": "engine_default",
+          "status": "present",
+          "unit_evidence": null,
+          "value_count": 0,
+          "value_json": "\"\"",
+          "value_kind": "string",
+          "view": "effective"
+        },
+        {
+          "class_name": "GenericEntity",
+          "entry_kind": "property",
+          "expanded": true,
+          "key": "EOnAnimEvent",
+          "label": "EOnAnimEvent",
+          "links": [],
+          "metadata_json": "{\"enum_values\":[],\"native_type\":\"STRING\",\"native_unit\":null,\"object_base_class\":null,\"origin\":\"engine_default\",\"reason\":null,\"source\":{\"resource_name\":\"{44AAA61117B6CA8E}Prefabs/Weapons/Attachments/Optics/Optic_4x20/Optic_4x20_OliveGreen_Sand_Stripes.et\",\"node_id\":\"root\",\"property\":\"EOnAnimEvent\",\"method\":\"BaseContainer.Get\"},\"status\":\"present\",\"unit_evidence\":null}",
+          "native_type": "STRING",
+          "native_unit": null,
+          "node_id": "root",
+          "origin": "engine_default",
+          "status": "present",
+          "unit_evidence": null,
+          "value_count": 0,
+          "value_json": "\"\"",
+          "value_kind": "string",
+          "view": "effective"
+        }
+      ],
+      "index": 0,
+      "instance_name": "Prefabs/Weapons/Attachments/Optics/Optic_4x20/Optic_4x20_OliveGreen_Sand_Stripes.et",
+      "metadata_json": "{\"node_id\":\"root\",\"view\":\"effective\",\"class_name\":\"GenericEntity\",\"instance_name\":\"Prefabs/Weapons/Attachments/Optics/Optic_4x20/Optic_4x20_OliveGreen_Sand_Stripes.et\",\"native_instance_id\":null,\"instance_identity_kind\":\"exporter_structural_path\",\"resource_name\":\"{44AAA61117B6CA8E}Prefabs/Weapons/Attachments/Optics/Optic_4x20/Optic_4x20_OliveGreen_Sand_Stripes.et\",\"source_addons\":[\"ArmaReforger\"],\"ancestor_id\":\"root/ancestor\",\"children\":[],\"declared_properties\":[\"components\"]}",
+      "node_id": "root",
+      "property_count": 61,
+      "property_next_cursor": "12",
+      "view": "effective"
+    },
+    {
+      "capabilities": [],
+      "class_name": "Persistence",
+      "facts": [
+        {
+          "class_name": "Persistence",
+          "entry_kind": "property",
+          "expanded": true,
+          "key": "Enabled",
+          "label": "Enabled",
+          "links": [],
+          "metadata_json": "{\"enum_values\":[],\"native_type\":\"BOOLEAN\",\"native_unit\":null,\"object_base_class\":null,\"origin\":\"engine_default\",\"reason\":null,\"source\":{\"resource_name\":\"{44AAA61117B6CA8E}Prefabs/Weapons/Attachments/Optics/Optic_4x20/Optic_4x20_OliveGreen_Sand_Stripes.et\",\"node_id\":\"root/properties/components/0\",\"property\":\"Enabled\",\"method\":\"BaseContainer.Get\"},\"status\":\"present\",\"unit_evidence\":null}",
+          "native_type": "BOOLEAN",
+          "native_unit": null,
+          "node_id": "root/properties/components/0",
+          "origin": "engine_default",
+          "status": "present",
+          "unit_evidence": null,
+          "value_count": 1,
+          "value_json": "true",
+          "value_kind": "boolean",
+          "view": "effective"
+        },
+        {
+          "class_name": "Persistence",
+          "entry_kind": "property",
+          "expanded": true,
+          "key": "Flags",
+          "label": "Flags",
+          "links": [],
+          "metadata_json": "{\"enum_values\":[],\"native_type\":\"FLAGS\",\"native_unit\":null,\"object_base_class\":null,\"origin\":\"engine_default\",\"reason\":null,\"source\":{\"resource_name\":\"{44AAA61117B6CA8E}Prefabs/Weapons/Attachments/Optics/Optic_4x20/Optic_4x20_OliveGreen_Sand_Stripes.et\",\"node_id\":\"root/properties/components/0\",\"property\":\"Flags\",\"method\":\"BaseContainer.Get\"},\"status\":\"present\",\"unit_evidence\":null}",
+          "native_type": "FLAGS",
+          "native_unit": null,
+          "node_id": "root/properties/components/0",
+          "origin": "engine_default",
+          "status": "present",
+          "unit_evidence": null,
+          "value_count": 1,
+          "value_json": "3",
+          "value_kind": "number",
+          "view": "effective"
+        }
+      ],
+      "index": 1,
+      "instance_name": "",
+      "metadata_json": "{\"node_id\":\"root/properties/components/0\",\"view\":\"effective\",\"class_name\":\"Persistence\",\"instance_name\":\"\",\"native_instance_id\":\"{64D2ADC0842941B5}\",\"instance_identity_kind\":\"native_container_id\",\"resource_name\":\"{64D2ADC0842941B5}\",\"source_addons\":[],\"ancestor_id\":null,\"children\":[],\"declared_properties\":[]}",
+      "node_id": "root/properties/components/0",
+      "property_count": 2,
+      "property_next_cursor": null,
+      "view": "effective"
+    }
+  ],
+  "next_cursor": "12",
+  "resource_id": "guid:44AAA61117B6CA8E",
+  "start_index": 0,
+  "total": 43,
+  "unexpected": true,
+  "dataset_kind": "diagnostic"
+}

@@ -15,6 +15,7 @@ use super::handlers;
 
 pub fn routes() -> Router<AppState> {
     Router::new()
+        .merge(handlers::equipment_data_viewer::routes())
         // Content reads (member tier via each handler's AuthUser extractor).
         .route(
             "/announcements",

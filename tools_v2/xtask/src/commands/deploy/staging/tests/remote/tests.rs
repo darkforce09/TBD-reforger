@@ -87,6 +87,7 @@ fn rsync_argv_keeps_every_exclude_in_order() {
         "--exclude=target/",
         "--exclude=assets_v2/terrains/",
         "--exclude=assets_v2/scratch/",
+        "--exclude=assets_v2/equipment/",
     ] {
         assert!(argv.iter().any(|a| a == needed), "missing {needed}");
     }

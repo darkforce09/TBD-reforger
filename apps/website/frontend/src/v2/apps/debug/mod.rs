@@ -21,3 +21,6 @@ pub mod building_viewer;
 pub mod world_los;
 /// Plan geometry for the world-occluder bench: footprints, section cuts and the probe ray.
 pub mod world_los_scene;
+
+/// Published equipment and vehicle source inspector.
+pub mod data_viewer;

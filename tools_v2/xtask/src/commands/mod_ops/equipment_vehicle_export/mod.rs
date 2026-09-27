@@ -1,9 +1,11 @@
 //! Validation and publication of immutable, source-only Workbench generations.
-mod files;
+pub(super) mod files;
+pub(super) mod gameplay_receipt;
 mod graph;
 mod legacy_archive;
 mod publication;
 mod relationships;
+mod upload_bundle;
 mod validation;
 
 use std::collections::BTreeMap;
@@ -31,7 +33,7 @@ pub(crate) struct FileDigest {
 }
 
 pub(crate) fn validate_command(input: &Path) -> Result<u8> {
-    let report = validation::validate(input)?;
+    let report = validate(input)?;
     eprintln!(
         "{}: {} resources, {} source nodes, {} facts, {} errors",
         if report.valid { "PASS" } else { "FAIL" },
@@ -42,6 +44,15 @@ pub(crate) fn validate_command(input: &Path) -> Result<u8> {
     );
     println!("{}", serde_json::to_string_pretty(&report)?);
     Ok(u8::from(!report.valid))
+}
+
+pub(super) fn validate(input: &Path) -> Result<ValidationReport> {
+    let (generation, _) = files::read(input, "generation.json")?;
+    if generation["document_type"] == "gameplay_generation" {
+        super::equipment_gameplay::validate(input)
+    } else {
+        validation::validate(input)
+    }
 }
 
 pub(crate) fn publish_command(input: &Path) -> Result<u8> {

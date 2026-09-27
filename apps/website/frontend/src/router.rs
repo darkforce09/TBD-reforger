@@ -27,6 +27,13 @@ pub struct RouteDef {
 #[allow(dead_code)]
 pub static ROUTES: &[RouteDef] = &[
     RouteDef {
+        path: "/debug/data-viewer",
+        component: "DataViewerPage",
+        full_bleed: true,
+        chromeless: true,
+        auth: "none",
+    },
+    RouteDef {
         path: "/login",
         component: "LoginPage",
         full_bleed: false,

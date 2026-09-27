@@ -197,7 +197,7 @@ fn assert_every_wire_key_is_claimed<T: DeserializeOwned>(golden: &str, expected:
 
 /// The gate: both halves. `unclaimed` is this golden's inventory of keys the DTO does not
 /// read — `&[]` means the DTO claims every byte on the wire.
-fn assert_golden<T: Serialize + DeserializeOwned>(golden: &str, unclaimed: &[&str]) {
+pub(crate) fn assert_golden<T: Serialize + DeserializeOwned>(golden: &str, unclaimed: &[&str]) {
     assert_canonical_round_trip::<T>(golden);
     assert_every_wire_key_is_claimed::<T>(golden, unclaimed);
 }

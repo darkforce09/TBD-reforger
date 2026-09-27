@@ -347,3 +347,15 @@ fn test_configs_keep_runtime_storage_out_of_the_checkout() {
         cfg.upload_dir
     );
 }
+
+#[test]
+fn equipment_dataset_configuration_is_optional_and_paths_are_validated() {
+    let mut cfg = Config::for_tests("postgres://test", "test");
+    assert!(cfg.equipment_export_source_dir.is_none());
+    assert!(cfg.equipment_data_dir.ends_with("equipment"));
+    cfg.equipment_data_dir = " trailing ".into();
+    assert!(matches!(
+        cfg.validate(),
+        Err(ConfigError::Malformed("EQUIPMENT_DATA_DIR", _))
+    ));
+}

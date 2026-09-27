@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://tbd.local/contracts/equipment-data-viewer/relationships.schema.json",
+  "title": "EquipmentRelationshipPage",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "generation_id": {
+      "type": "string"
+    },
+    "total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "next_cursor": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "resource_id": {
+            "type": "string"
+          },
+          "resource_name": {
+            "type": "string"
+          },
+          "node_id": {
+            "type": "string"
+          },
+          "property": {
+            "type": "string"
+          },
+          "target_resource_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "target_resource_name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "method": {
+            "type": "string"
+          },
+          "view": {
+            "type": "string"
+          },
+          "evidence_json": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "resource_id",
+          "resource_name",
+          "node_id",
+          "property",
+          "target_resource_id",
+          "target_resource_name",
+          "kind",
+          "method",
+          "view"
+        ]
+      }
+    },
+    "dataset_kind": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "generation_id",
+    "total",
+    "next_cursor",
+    "items",
+    "dataset_kind"
+  ]
+}

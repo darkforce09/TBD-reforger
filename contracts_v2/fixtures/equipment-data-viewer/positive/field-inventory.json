@@ -1,0 +1,57 @@
+{
+  "generation_id": "6A6E9885CF2F83F9",
+  "items": [
+    {
+      "aliases": [
+        "storage.max_cumulative_volume"
+      ],
+      "ancestor_count": 32,
+      "capabilities": [
+        "storage"
+      ],
+      "class_name": "ClothNodeStorageComponent",
+      "effective_count": 28,
+      "field_id": 4958,
+      "native_type": "SCALAR",
+      "property": "MaxCumulativeVolume",
+      "resource_count": 28,
+      "units": []
+    },
+    {
+      "aliases": [
+        "storage.max_cumulative_volume"
+      ],
+      "ancestor_count": 76,
+      "capabilities": [
+        "storage"
+      ],
+      "class_name": "EquipedWeaponStorageComponent",
+      "effective_count": 80,
+      "field_id": 3569,
+      "native_type": "SCALAR",
+      "property": "MaxCumulativeVolume",
+      "resource_count": 80,
+      "units": []
+    },
+    {
+      "aliases": [
+        "storage.max_cumulative_volume"
+      ],
+      "ancestor_count": 140,
+      "capabilities": [
+        "storage"
+      ],
+      "class_name": "SCR_CharacterInventoryStorageComponent",
+      "effective_count": 74,
+      "field_id": 8526,
+      "native_type": "SCALAR",
+      "property": "MaxCumulativeVolume",
+      "resource_count": 74,
+      "units": []
+    }
+  ],
+  "next_cursor": null,
+  "occurrences": [],
+  "total": 13,
+  "dataset_kind": "diagnostic"
+}

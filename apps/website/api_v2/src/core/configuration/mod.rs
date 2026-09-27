@@ -76,6 +76,11 @@ pub struct Config {
     /// rsyncs with `--delete` — see `tools_v2/xtask/deploy/systemd/tbd-website-api.service`.
     pub upload_dir: String,
 
+    /// Original published exports and rebuildable viewer indexes.
+    pub equipment_data_dir: String,
+    /// Optional Workbench publication root checked by the import worker.
+    pub equipment_export_source_dir: Option<String>,
+
     // Database
     pub database_url: String,
 
@@ -142,6 +147,14 @@ impl Config {
                 DEVELOPMENT_UPLOAD_DIR,
                 &app_env,
             ),
+            equipment_data_dir: runtime_storage_dir(
+                &env::var("EQUIPMENT_DATA_DIR").unwrap_or_default(),
+                "../../../assets_v2/equipment",
+                &app_env,
+            ),
+            equipment_export_source_dir: env::var("EQUIPMENT_EXPORT_SOURCE_DIR")
+                .ok()
+                .filter(|s| !s.is_empty()),
             env: app_env,
             database_url: env::var("DATABASE_URL").unwrap_or_default(),
             mission_version_max_body_bytes: get_env_int(
@@ -221,6 +234,28 @@ impl Config {
                 "must be an absolute path outside development",
             ));
         }
+        for (name, value) in [
+            ("EQUIPMENT_DATA_DIR", Some(self.equipment_data_dir.as_str())),
+            (
+                "EQUIPMENT_EXPORT_SOURCE_DIR",
+                self.equipment_export_source_dir.as_deref(),
+            ),
+        ] {
+            if let Some(value) = value.filter(|v| !v.is_empty()) {
+                if value.trim() != value {
+                    return Err(ConfigError::Malformed(
+                        name,
+                        "has leading or trailing whitespace",
+                    ));
+                }
+                if !self.is_development() && !Path::new(value).is_absolute() {
+                    return Err(ConfigError::Malformed(
+                        name,
+                        "must be an absolute path outside development",
+                    ));
+                }
+            }
+        }
         // `TRUSTED_PROXIES` decides whether a client-supplied header is believed, so a typo in it
         // must not be survivable. Unset stays legal and means "trust none"; a *set* entry that
         // does not parse dies here rather than being skipped at request time, where the operator
@@ -276,6 +311,8 @@ impl Config {
         let scratch =
             std::env::temp_dir().join(format!("website-api-tests-{}", std::process::id()));
         Self {
+            equipment_data_dir: scratch.join("equipment").display().to_string(),
+            equipment_export_source_dir: None,
             port: "0".into(),
             env: "development".into(),
             trusted_proxies: Vec::new(),

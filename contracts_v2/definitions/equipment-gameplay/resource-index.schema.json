@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "resources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "resource_id": {
+            "type": "string"
+          },
+          "resource_name": {
+            "type": "string"
+          },
+          "resource_file": {
+            "type": "string"
+          },
+          "domains": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "equipment",
+                "vehicle",
+                "dependency"
+              ]
+            }
+          }
+        },
+        "required": [
+          "resource_id",
+          "resource_name",
+          "resource_file",
+          "domains"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "resources"
+  ],
+  "additionalProperties": false
+}

@@ -42,7 +42,7 @@ pub(super) fn digest(bytes: &[u8]) -> FileDigest {
     }
 }
 
-pub(super) fn read(root: &Path, relative: &str) -> Result<(Value, FileDigest)> {
+pub(crate) fn read(root: &Path, relative: &str) -> Result<(Value, FileDigest)> {
     let path = child(root, relative)?;
     let metadata = fs::metadata(&path).with_context(|| format!("reading {relative}"))?;
     ensure!(metadata.is_file(), "not a file: {relative}");

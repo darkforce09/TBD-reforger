@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "fields": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "class_name": {
+            "type": "string"
+          },
+          "property": {
+            "type": "string"
+          },
+          "field_name": {
+            "type": "string"
+          },
+          "section": {
+            "type": "string"
+          },
+          "disposition": {
+            "enum": [
+              "retain_value",
+              "retain_relationship"
+            ]
+          },
+          "follow_reference": {
+            "type": "boolean"
+          },
+          "method": {
+            "type": "string"
+          },
+          "native_type": {
+            "type": "string"
+          },
+          "native_unit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unit_evidence": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "object_base_class": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "enum_values": {
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "class_name",
+          "property",
+          "field_name",
+          "section",
+          "disposition",
+          "follow_reference",
+          "method",
+          "native_type",
+          "native_unit",
+          "unit_evidence",
+          "object_base_class",
+          "enum_values"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "fields"
+  ],
+  "additionalProperties": false
+}

@@ -1,5 +1,6 @@
 pub(crate) mod cli;
 pub(crate) mod dispatch;
+pub(crate) mod equipment_gameplay;
 pub(crate) mod equipment_vehicle_export;
 
 pub(crate) mod compile;

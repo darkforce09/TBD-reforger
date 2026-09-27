@@ -39,6 +39,7 @@ fn rsync_excludes_the_secrets_asset_and_scratch_trees() {
         // The served terrain tree, and the 1.5 GB of gitignored export intermediates beside it.
         "assets_v2/terrains/",
         "assets_v2/scratch/",
+        "assets_v2/equipment/",
         // Keeps `--delete` off a server still holding its assets at the old path.
         "packages/",
     ] {

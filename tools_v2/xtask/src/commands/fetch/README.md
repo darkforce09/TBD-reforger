@@ -18,7 +18,7 @@ tools_v2/xtask/src/commands/fetch/
 
 ## How it works
 
-Both commands cache under `apps/mod/vanilla_reference/`, which `apps/mod/.gitignore` keeps out of
+Both commands cache under `apps/mod/vanilla_reference/`, which `.gitignore` keeps out of
 git, and never fetch a page whose cached copy is non-empty. Each fetch is a `curl` run through
 `verification_core::proc::Run` with a browser user agent, because the upstream hosts refuse curl's
 default, and a pause of `TBD_FETCH_DELAY` seconds after each page fetched from the network. Both

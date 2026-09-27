@@ -3,6 +3,18 @@ use std::path::PathBuf;
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum ModCmd {
+    /// Evaluate the gameplay selection policy against a full diagnostic generation.
+    ProjectEquipmentGameplay {
+        #[arg(long)]
+        input: PathBuf,
+        #[arg(long)]
+        output: PathBuf,
+    },
+    /// Generate the Workbench selection tables from the authoritative gameplay policy.
+    GenerateEquipmentGameplayPolicy {
+        #[arg(long)]
+        check: bool,
+    },
     /// Validate a complete, source-only Workbench equipment and vehicle generation.
     ValidateEquipmentVehicleExport {
         #[arg(long)]

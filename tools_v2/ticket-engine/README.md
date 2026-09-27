@@ -11,7 +11,6 @@ as the `ticket` and `wave` command groups and the platform wave driver, and the
 
 ```text
 tools_v2/ticket-engine/
-├── .gitignore  keeps a local `wip/` folder out of git
 ├── Cargo.toml  the `ticket-engine` library package, with no workspace dependency
 ├── src/        the library: model, store, operations, commands, checks, sync, wave lock, metrics
 └── tests/      the closed-`Domain` compile-fail test and run receipt fixtures shared with xtask

@@ -50,3 +50,6 @@ pub(crate) const API_BASE: &str = "/api/v1";
 #[cfg(test)]
 #[path = "tests/client.rs"]
 mod tests;
+
+#[cfg(target_arch = "wasm32")]
+pub mod public_reads;

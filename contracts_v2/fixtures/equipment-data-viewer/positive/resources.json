@@ -1,0 +1,28 @@
+{
+  "generation_id": "6A6E9885CF2F83F9",
+  "items": [
+    {
+      "capabilities": [
+        "attachment",
+        "inventory",
+        "physics",
+        "storage",
+        "visuals"
+      ],
+      "domains": [
+        "equipment"
+      ],
+      "fact_count": 642,
+      "label": "IIFS Large Combat Field Pack",
+      "node_count": 62,
+      "resource_id": "guid:95D4766BBE46F23D",
+      "resource_name": "{95D4766BBE46F23D}Prefabs/Items/Equipment/Backpacks/Backpack_IIFS_FieldPack.et",
+      "source_addons": [
+        "ArmaReforger"
+      ]
+    }
+  ],
+  "next_cursor": null,
+  "total": 1,
+  "dataset_kind": "diagnostic"
+}

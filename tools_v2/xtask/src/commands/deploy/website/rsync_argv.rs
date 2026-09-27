@@ -30,6 +30,7 @@ pub fn rsync_argv(rsync_e: &str, mono: &str, dest: &str) -> Vec<String> {
         // Local export intermediates, 1.5 GB and gitignored (`.gitignore`, `assets_v2/scratch/`).
         // They are the terrain tree's sibling, so the terrain exclusion above does not reach them.
         "--exclude=assets_v2/scratch/".into(),
+        "--exclude=assets_v2/equipment/".into(),
         // `assets_v2/glyphs/` is deliberately NOT excluded. It is 188 KB, it is tracked, and the
         // API serves it at `/map-assets/glyphs`, so the server takes its copy from this rsync.
         //

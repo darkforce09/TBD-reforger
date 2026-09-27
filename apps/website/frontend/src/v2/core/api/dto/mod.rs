@@ -52,3 +52,9 @@ mod shapes;
 #[cfg(test)]
 #[path = "tests/r_api.rs"]
 pub(crate) mod r_api;
+
+pub mod equipment_data_viewer;
+
+#[cfg(test)]
+#[path = "tests/equipment_data_viewer_parity.rs"]
+mod equipment_data_viewer_parity;

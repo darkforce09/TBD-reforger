@@ -37,6 +37,7 @@ pub fn rsync_argv(base: &SshBase, mono_root: &Path, host: &str, remote_dir: &str
         "--exclude=target/".into(),
         "--exclude=assets_v2/terrains/".into(),
         "--exclude=assets_v2/scratch/".into(),
+        "--exclude=assets_v2/equipment/".into(),
         format!("{}/", mono_root.display()),
         format!("{host}:{remote_dir}/"),
     ]

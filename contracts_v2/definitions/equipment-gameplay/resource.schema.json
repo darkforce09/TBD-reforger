@@ -1,0 +1,280 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "document_type": {
+      "const": "gameplay_resource"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "resource_id": {
+      "type": "string"
+    },
+    "resource_name": {
+      "type": "string"
+    },
+    "resource_guid": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "identity_kind": {
+      "enum": [
+        "resource_guid",
+        "resource_name"
+      ]
+    },
+    "source_addons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "root_node": {
+      "type": "string"
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "node_id": {
+            "type": "string"
+          },
+          "class_name": {
+            "type": "string"
+          },
+          "instance_name": {
+            "type": "string"
+          },
+          "native_instance_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "instance_identity_kind": {
+            "enum": [
+              "native_container_id",
+              "exporter_structural_path"
+            ]
+          },
+          "resource_name": {
+            "type": "string"
+          },
+          "source_addons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "view": {
+            "const": "effective"
+          },
+          "ancestor_id": {
+            "type": "null"
+          },
+          "ancestor_resource_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "selection": {
+            "enum": [
+              "retained",
+              "identity_only"
+            ]
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "declared_properties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "definition_id": {
+                  "type": "string"
+                },
+                "status": {
+                  "enum": [
+                    "present",
+                    "not_present",
+                    "not_applicable",
+                    "unavailable",
+                    "error"
+                  ]
+                },
+                "value": {},
+                "origin": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "definition_id",
+                "status",
+                "value",
+                "origin",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "node_id",
+          "class_name",
+          "instance_name",
+          "native_instance_id",
+          "instance_identity_kind",
+          "resource_name",
+          "source_addons",
+          "view",
+          "ancestor_id",
+          "ancestor_resource_name",
+          "selection",
+          "children",
+          "declared_properties",
+          "properties"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "names": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "node_id": {
+            "type": "string"
+          },
+          "source_property": {
+            "type": "string"
+          },
+          "display_name_en": {
+            "type": "object",
+            "properties": {
+              "value": {},
+              "status": {
+                "type": "string"
+              },
+              "reason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "method": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "value",
+              "status",
+              "reason",
+              "method"
+            ],
+            "additionalProperties": false
+          },
+          "locale": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "node_id",
+          "source_property",
+          "display_name_en",
+          "locale"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "node_id": {
+            "type": "string"
+          },
+          "property": {
+            "type": "string"
+          },
+          "resource_name": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "gameplay",
+              "binary"
+            ]
+          },
+          "method": {
+            "type": "string"
+          },
+          "ordinal": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "node_id",
+          "property",
+          "resource_name",
+          "kind",
+          "method"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "parent_prefab": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "document_type",
+    "schema_version",
+    "resource_id",
+    "resource_name",
+    "resource_guid",
+    "identity_kind",
+    "source_addons",
+    "root_node",
+    "nodes",
+    "capabilities",
+    "names",
+    "references",
+    "parent_prefab"
+  ],
+  "additionalProperties": false
+}

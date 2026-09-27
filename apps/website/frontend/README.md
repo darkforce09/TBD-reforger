@@ -10,7 +10,6 @@ the API or the deployed host serves.
 
 ```text
 apps/website/frontend/
-├── .gitignore   keeps the build output folders `dist/` and `dist-debug/` out of git
 ├── Cargo.toml   the `website-frontend` package: one binary, and the map engine's features per target
 ├── index.html   the Trunk entry: the wasm build, the stylesheet link, the icon font, the dark theme
 ├── src/         the entry point, the route table and the `v2/` tree of pages, workspaces and core

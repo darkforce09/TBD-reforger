@@ -8,6 +8,7 @@ use crate::core::application_state::AppState;
 pub mod audit_publication_worker;
 pub mod discord_membership_reconciler;
 pub mod discord_role_synchronizer;
+pub mod equipment_export_watcher;
 pub mod event_lifecycle_sweeper;
 pub mod event_reservation_reevaluator;
 pub mod fleet_command_reconciler;
@@ -22,6 +23,7 @@ pub mod token_purge_worker;
 /// (a handle can be aborted to stop that worker alone); dropping them detaches the tasks,
 /// which keep running until the runtime stops.
 pub struct WorkerHandles {
+    pub equipment_exports: JoinHandle<()>,
     pub token_purge: token_purge_worker::PurgeHandle,
     pub event_lifecycle: event_lifecycle_sweeper::LifecycleHandle,
     pub leaderboard_refresh: JoinHandle<()>,
@@ -65,6 +67,7 @@ pub fn spawn_all(state: &AppState) -> WorkerHandles {
     );
 
     WorkerHandles {
+        equipment_exports: equipment_export_watcher::start(state.equipment_data.clone()),
         discord_membership_reconcile:
             discord_membership_reconciler::start_membership_reconciliation(state.clone()),
         audit_publication: audit_publication_worker::start_audit_publication(state.pool.clone()),

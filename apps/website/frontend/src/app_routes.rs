@@ -38,6 +38,7 @@ use leptos_router::path;
 pub fn AppRoutes() -> impl IntoView {
     view! {
         <Routes fallback=|| view! { <NotFoundPage /> }>
+            <Route path=path!("/debug/data-viewer") view=crate::v2::apps::debug::data_viewer::DataViewerPage />
             <Route path=path!("/login") view=LoginPage />
             <Route path=path!("/auth/callback") view=crate::v2::pages::account::auth_callback::AuthCallbackPage />
             <Route path=path!("/") view=DashboardPage />

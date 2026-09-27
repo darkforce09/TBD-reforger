@@ -23,7 +23,7 @@ mod module_plan;
 const API_SOURCE_DIR: &str = "apps/website/api_v2/src";
 
 /// Each schema file maps to the generated module directory of its owning domain.
-const TARGETS: [(&str, &str); 24] = [
+const TARGETS: [(&str, &str); 30] = [
     (
         "registry-items.schema.json",
         "missions/contract/generated/registry_items",
@@ -119,6 +119,30 @@ const TARGETS: [(&str, &str); 24] = [
     (
         "content-upload.schema.json",
         "community_content/models/generated/content_upload",
+    ),
+    (
+        "equipment-data-viewer/resource-cards.schema.json",
+        "community_content/models/generated/equipment_data_viewer/resource_cards",
+    ),
+    (
+        "equipment-data-viewer/dataset.schema.json",
+        "community_content/models/generated/equipment_data_viewer/dataset",
+    ),
+    (
+        "equipment-data-viewer/resources.schema.json",
+        "community_content/models/generated/equipment_data_viewer/resources",
+    ),
+    (
+        "equipment-data-viewer/source-inspection.schema.json",
+        "community_content/models/generated/equipment_data_viewer/source_inspection",
+    ),
+    (
+        "equipment-data-viewer/relationships.schema.json",
+        "community_content/models/generated/equipment_data_viewer/relationships",
+    ),
+    (
+        "equipment-data-viewer/field-inventory.schema.json",
+        "community_content/models/generated/equipment_data_viewer/field_inventory",
     ),
 ];
 

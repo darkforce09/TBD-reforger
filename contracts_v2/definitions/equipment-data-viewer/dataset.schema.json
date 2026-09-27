@@ -1,0 +1,133 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://tbd.local/contracts/equipment-data-viewer/dataset.schema.json",
+  "title": "EquipmentDatasetStatus",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "generation_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "stage": {
+      "type": "string"
+    },
+    "completed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "message": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "overview": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "resources": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "nodes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "facts": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "fields": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "equipment": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "vehicles": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "dependencies": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "bytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "capabilities": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "required": [
+            "resources",
+            "nodes",
+            "facts",
+            "fields",
+            "equipment",
+            "vehicles",
+            "dependencies",
+            "bytes",
+            "capabilities"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "generations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "next_cursor": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "dataset_kind": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "generation_id",
+    "stage",
+    "completed",
+    "total",
+    "message",
+    "overview",
+    "generations",
+    "next_cursor",
+    "dataset_kind"
+  ]
+}

@@ -6,7 +6,7 @@ use std::path::Path;
 use anyhow::{Context, Result, ensure};
 use serde_json::json;
 
-use super::{FileDigest, ValidationReport, files, legacy_archive, validation};
+use super::{FileDigest, ValidationReport, files, legacy_archive, upload_bundle, validate};
 
 pub(super) fn publish(input: &Path) -> Result<()> {
     let input = input.canonicalize()?;
@@ -16,14 +16,27 @@ pub(super) fn publish(input: &Path) -> Result<()> {
         "publish input must be inside equipment_vehicle_exports/generations"
     );
     let root = generations.parent().context("missing export root")?;
+    let gameplay = root.file_name().is_some_and(|n| n == "gameplay")
+        && root
+            .parent()
+            .and_then(Path::file_name)
+            .is_some_and(|n| n == "equipment_vehicle_exports");
     ensure!(
         root.file_name()
-            .is_some_and(|n| n == "equipment_vehicle_exports"),
+            .is_some_and(|n| n == "equipment_vehicle_exports")
+            || gameplay,
         "unexpected export root"
     );
     let _lock = PublicationLock::acquire(root)?;
-    legacy_archive::recover(root)?;
-    let initial = validation::validate(&input)?;
+    if !gameplay {
+        legacy_archive::recover(root)?;
+    }
+    let (generation, _) = files::read(&input, "generation.json")?;
+    ensure!(
+        (generation["dataset_kind"] == "gameplay") == gameplay,
+        "dataset kind does not match publication location"
+    );
+    let initial = validate(&input)?;
     ensure!(
         initial.valid,
         "export is not publishable:\n{}",
@@ -57,8 +70,8 @@ fn prepare_and_publish(
     validated: &ValidationReport,
 ) -> Result<()> {
     let id = &validated.generation_id;
-    let expected = &validated.files;
-    for (relative, expected_digest) in expected {
+    let mut expected = validated.files.clone();
+    for (relative, expected_digest) in &expected {
         let source = files::child(input, relative)?;
         let target = files::child(staging, relative)?;
         let bytes = fs::read(&source)?;
@@ -73,8 +86,35 @@ fn prepare_and_publish(
     }
     // Exact hashes transfer every schema/graph check to the copied bytes without
     // parsing millions of unchanged facts a second time.
-    verify_contents(staging, expected, false)?;
-    let manifest = json!({"schema_version": 2, "generation_id": id, "resource_count": validated.resource_count, "files": validated.files});
+    verify_contents(staging, &expected, false)?;
+    let gameplay = root.file_name().is_some_and(|n| n == "gameplay");
+    if gameplay
+        && !expected.contains_key("publication_receipt.json")
+        && (!destination.exists() || destination.join("publication_receipt.json").exists())
+    {
+        let bytes = if destination.exists() {
+            let (existing, _) = files::read(destination, "manifest.json")?;
+            let bytes = fs::read(files::child(destination, "publication_receipt.json")?)?;
+            let digest: FileDigest =
+                serde_json::from_value(existing["files"]["publication_receipt.json"].clone())?;
+            ensure!(files::digest(&bytes) == digest, "published receipt changed");
+            super::gameplay_receipt::validate(
+                staging,
+                &serde_json::from_slice(&bytes)?,
+                validated,
+            )?;
+            bytes
+        } else {
+            serde_json::to_vec(&super::gameplay_receipt::build(root, staging, validated)?)?
+        };
+        durable_write(&staging.join("publication_receipt.json"), &bytes)?;
+        expected.insert("publication_receipt.json".into(), files::digest(&bytes));
+    }
+    let version = if gameplay { 1 } else { 2 };
+    let mut manifest = json!({"schema_version": version, "generation_id": id, "resource_count": validated.resource_count, "files": expected});
+    if gameplay {
+        manifest["dataset_kind"] = json!("gameplay");
+    }
     let manifest_bytes = serde_json::to_vec_pretty(&manifest)?;
     durable_write(&staging.join("manifest.json"), &manifest_bytes)?;
     sync_directories(staging)?;
@@ -84,12 +124,18 @@ fn prepare_and_publish(
             existing == manifest,
             "generation ID already published with different content"
         );
-        verify_contents(destination, expected, true)?;
+        verify_contents(destination, &expected, true)?;
     } else {
         fs::rename(staging, destination)?;
         File::open(destination.parent().context("missing publication parent")?)?.sync_all()?;
     }
-    let pointer = json!({"schema_version": 2, "generation_id": id, "directory": format!("published/{id}"), "manifest_sha256": files::digest(&manifest_bytes).sha256});
+    if gameplay {
+        upload_bundle::write(root, destination, id, &expected)?;
+    }
+    let mut pointer = json!({"schema_version": version, "generation_id": id, "directory": format!("published/{id}"), "manifest_sha256": files::digest(&manifest_bytes).sha256});
+    if gameplay {
+        pointer["dataset_kind"] = json!("gameplay");
+    }
     let current = files::child(root, "current.json")?;
     let temp = files::child(root, ".current.json.tmp")?;
     if temp.exists() {
@@ -103,11 +149,13 @@ fn prepare_and_publish(
     if current.exists() {
         durable_write(&backup, &fs::read(&current)?)?;
     }
-    if !current.exists() {
+    if !current.exists() && !gameplay {
         legacy_archive::archive(root, id)?;
     }
     if let Err(error) = fs::rename(&temp, &current) {
-        legacy_archive::recover(root)?;
+        if !gameplay {
+            legacy_archive::recover(root)?;
+        }
         return Err(error.into());
     }
     if let Err(error) = File::open(root).and_then(|directory| directory.sync_all()) {
@@ -116,10 +164,16 @@ fn prepare_and_publish(
         } else {
             fs::remove_file(&current)?;
         }
-        legacy_archive::recover(root)?;
+        if !gameplay {
+            legacy_archive::recover(root)?;
+        }
         return Err(error.into());
     }
-    if let Err(error) = legacy_archive::recover(root) {
+    if let Err(error) = if gameplay {
+        Ok(())
+    } else {
+        legacy_archive::recover(root)
+    } {
         eprintln!("Publication succeeded; archive journal cleanup will retry: {error:#}");
     }
     if backup.exists() {

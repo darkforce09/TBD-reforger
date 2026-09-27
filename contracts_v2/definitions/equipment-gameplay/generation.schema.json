@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "document_type": {
+      "const": "gameplay_generation"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "dataset_kind": {
+      "const": "gameplay"
+    },
+    "generation_id": {
+      "type": "string"
+    },
+    "scope": {
+      "const": "complete"
+    },
+    "status": {
+      "enum": [
+        "completed",
+        "failed"
+      ]
+    },
+    "started_at": {
+      "type": "string"
+    },
+    "finished_at": {
+      "type": "string"
+    },
+    "environment": {
+      "type": "object"
+    },
+    "equipment_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "vehicle_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "reader_verification": {
+      "type": "object"
+    },
+    "policy_version": {
+      "const": 1
+    },
+    "policy_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "extraction_method": {
+      "enum": [
+        "workbench_native",
+        "diagnostic_projection"
+      ]
+    },
+    "source_generation_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "document_type",
+    "schema_version",
+    "dataset_kind",
+    "generation_id",
+    "scope",
+    "status",
+    "started_at",
+    "finished_at",
+    "environment",
+    "equipment_ids",
+    "vehicle_ids",
+    "errors",
+    "reader_verification",
+    "policy_version",
+    "policy_sha256",
+    "extraction_method"
+  ],
+  "additionalProperties": false
+}

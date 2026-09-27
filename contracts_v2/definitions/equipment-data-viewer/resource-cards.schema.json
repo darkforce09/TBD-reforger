@@ -1,0 +1,282 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "generation_id": {
+      "type": "string"
+    },
+    "resource_id": {
+      "type": "string"
+    },
+    "total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "start_index": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "next_cursor": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/EquipmentResourceCard"
+      }
+    },
+    "dataset_kind": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "generation_id",
+    "resource_id",
+    "total",
+    "start_index",
+    "next_cursor",
+    "items",
+    "dataset_kind"
+  ],
+  "title": "EquipmentResourceCardPage",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://tbd.local/contracts/equipment-data-viewer/resource-cards.schema.json",
+  "definitions": {
+    "EquipmentSourceFact": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "entry_kind": {
+          "type": "string"
+        },
+        "node_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "class_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "view": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "native_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "native_unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unit_evidence": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "value_json": {
+          "type": "string"
+        },
+        "value_kind": {
+          "type": "string"
+        },
+        "value_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "expanded": {
+          "type": "boolean"
+        },
+        "metadata_json": {
+          "type": "string"
+        },
+        "links": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "node_id": {
+                "type": "string"
+              },
+              "relationship": {
+                "type": "string"
+              },
+              "ordinal": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "label",
+              "node_id",
+              "relationship",
+              "ordinal"
+            ]
+          }
+        }
+      },
+      "required": [
+        "key",
+        "label",
+        "entry_kind",
+        "node_id",
+        "class_name",
+        "view",
+        "native_type",
+        "status",
+        "origin",
+        "native_unit",
+        "unit_evidence",
+        "value_json",
+        "value_kind",
+        "value_count",
+        "expanded",
+        "metadata_json",
+        "links"
+      ]
+    },
+    "EquipmentResourceCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "node_id": {
+          "type": "string"
+        },
+        "class_name": {
+          "type": "string"
+        },
+        "instance_name": {
+          "type": "string"
+        },
+        "view": {
+          "type": "string"
+        },
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "property_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "property_next_cursor": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "metadata_json": {
+          "type": "string"
+        },
+        "facts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EquipmentSourceFact"
+          }
+        }
+      },
+      "required": [
+        "node_id",
+        "class_name",
+        "instance_name",
+        "view",
+        "index",
+        "capabilities",
+        "property_count",
+        "property_next_cursor",
+        "metadata_json",
+        "facts"
+      ],
+      "title": "EquipmentResourceCard"
+    }
+  }
+}

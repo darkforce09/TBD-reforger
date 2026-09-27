@@ -26,6 +26,16 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Cmd {
+    /// Inspect the real equipment viewer through the normally running website.
+    EquipmentDataViewer {
+        #[arg(long, default_value = "http://localhost:3000")]
+        website: String,
+        #[arg(
+            long,
+            default_value = "assets_v2/scratch/equipment-data-viewer-verification"
+        )]
+        output: PathBuf,
+    },
     /// V-suite frozen-oracle DOM gate
     #[command(name = "v-suite")]
     VSuite {
@@ -136,6 +146,9 @@ pub fn run() -> ExitCode {
     let rt = tokio::runtime::Runtime::new().expect("tokio runtime");
     let result: anyhow::Result<u8> = rt.block_on(async {
         match cli.cmd {
+            Cmd::EquipmentDataViewer { website, output } => {
+                crate::browser_testing::equipment_data_viewer::run(&website, &output).await
+            }
             Cmd::VSuite {
                 mode,
                 leptos_dir,

@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://tbd.local/contracts/equipment-data-viewer/resources.schema.json",
+  "title": "EquipmentResourcePage",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "generation_id": {
+      "type": "string"
+    },
+    "total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "next_cursor": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "resource_id": {
+            "type": "string"
+          },
+          "resource_name": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "domains": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "source_addons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "node_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "fact_count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "resource_id",
+          "resource_name",
+          "label",
+          "domains",
+          "capabilities",
+          "source_addons",
+          "node_count",
+          "fact_count"
+        ]
+      }
+    },
+    "dataset_kind": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "generation_id",
+    "total",
+    "next_cursor",
+    "items",
+    "dataset_kind"
+  ]
+}

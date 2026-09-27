@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GameplayPublicationReceipt",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "document_type": {
+      "const": "gameplay_publication_receipt"
+    },
+    "generation_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "catalog_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "retained_fact_json_bytes_by_section": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "structure_metadata_and_indexes_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "diagnostic_inventory_basis": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "present",
+            "unavailable"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "generation_id": {
+          "type": "string"
+        },
+        "manifest_sha256": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "additionalProperties": false
+    },
+    "excluded_diagnostic_dependencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "resource_id",
+          "resource_name",
+          "domains",
+          "disposition",
+          "reason"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "resource_id": {
+            "type": "string"
+          },
+          "resource_name": {
+            "type": "string"
+          },
+          "domains": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "disposition": {
+            "const": "excluded_dependency"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "document_type",
+    "generation_id",
+    "catalog_bytes",
+    "retained_fact_json_bytes_by_section",
+    "structure_metadata_and_indexes_bytes",
+    "diagnostic_inventory_basis",
+    "excluded_diagnostic_dependencies"
+  ]
+}

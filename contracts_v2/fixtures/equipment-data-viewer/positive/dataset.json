@@ -1,0 +1,38 @@
+{
+  "completed": 0,
+  "generation_id": "6A6E9885CF2F83F9",
+  "generations": [
+    "6A6E9885CF2F83F9"
+  ],
+  "message": null,
+  "next_cursor": null,
+  "overview": {
+    "bytes": 4002903858,
+    "capabilities": {
+      "projectile": 323,
+      "utility": 929,
+      "magazine": 260,
+      "visuals": 2472,
+      "communications": 129,
+      "sights": 248,
+      "weapon": 336,
+      "attachment": 1029,
+      "storage": 993,
+      "vehicle_systems": 430,
+      "medical_effects": 22,
+      "inventory": 1422,
+      "physics": 2174,
+      "protection": 1455
+    },
+    "dependencies": 1719,
+    "equipment": 1327,
+    "facts": 6282833,
+    "fields": 11314,
+    "nodes": 580993,
+    "resources": 3265,
+    "vehicles": 219
+  },
+  "stage": "ready",
+  "total": 0,
+  "dataset_kind": "diagnostic"
+}

@@ -1,0 +1,144 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://tbd.local/contracts/equipment-data-viewer/field-inventory.schema.json",
+  "title": "EquipmentFieldPage",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "generation_id": {
+      "type": "string"
+    },
+    "total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "next_cursor": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "field_id": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "class_name": {
+            "type": "string"
+          },
+          "property": {
+            "type": "string"
+          },
+          "native_type": {
+            "type": "string"
+          },
+          "effective_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "ancestor_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "resource_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "units": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "field_id",
+          "class_name",
+          "property",
+          "native_type",
+          "effective_count",
+          "ancestor_count",
+          "resource_count",
+          "aliases",
+          "capabilities",
+          "units"
+        ]
+      }
+    },
+    "occurrences": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "resource_id": {
+            "type": "string"
+          },
+          "resource_name": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "node_id": {
+            "type": "string"
+          },
+          "property": {
+            "type": "string"
+          },
+          "view": {
+            "type": "string"
+          },
+          "origin": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource_id",
+          "resource_name",
+          "label",
+          "node_id",
+          "property",
+          "view",
+          "origin",
+          "status"
+        ]
+      }
+    },
+    "dataset_kind": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "generation_id",
+    "total",
+    "next_cursor",
+    "items",
+    "occurrences",
+    "dataset_kind"
+  ]
+}

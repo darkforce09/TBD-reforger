@@ -11,7 +11,6 @@ through its migrations, and serves uploads and terrain assets.
 ```text
 apps/website/api_v2/
 ├── .env.example         the template the gitignored `.env` is copied from, with development values
-├── .gitignore           keeps `.env` and editor folders out of git
 ├── Cargo.toml           the `website-api` package: the library and its two binaries
 ├── docker-compose.yml   the local Postgres 18 service `db`, container `tbd_reforger_db`, port 5434
 ├── migrations/          the SQL schema migrations, embedded at compile time and applied at boot

@@ -8,3 +8,5 @@ pub mod modpack_admin;
 pub mod modpack_catalog;
 pub mod vehicle_database;
 pub mod wiki_knowledgebase;
+
+pub mod equipment_data_viewer;

@@ -22,6 +22,8 @@ use crate::identity_and_access::services::session_authorization::DatabaseSession
 /// Everything shared across the HTTP layer. Cheap to clone (all `Arc`/pool handles).
 #[derive(Clone)]
 pub struct AppState {
+    pub equipment_data:
+        Arc<crate::community_content::services::equipment_data_viewer::EquipmentDatasets>,
     pub pool: PgPool,
     pub cfg: Arc<Config>,
     pub jwt: Arc<Manager>,
@@ -57,6 +59,7 @@ impl AppState {
             .collect();
         let cfg = Arc::new(cfg);
         Self {
+            equipment_data: Arc::new(crate::community_content::services::equipment_data_viewer::EquipmentDatasets::new(&cfg.equipment_data_dir, cfg.equipment_export_source_dir.as_ref().map(std::path::PathBuf::from))),
             session_authority: Arc::new(DatabaseSessionAuthority {
                 pool: pool.clone(),
                 config: cfg.clone(),
