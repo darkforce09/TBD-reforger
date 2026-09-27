@@ -27,8 +27,30 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
    - The ceilings apply in every language; `cargo xtask verify file-length` enforces them on the Rust source trees and the pinned mod Scripts roots (`apps/mod/tbd-framework/Scripts`, `apps/mod/tbd-emcp/Scripts`) by raw line count.
    - **Zero Exemptions / No Allowlist**: There is NO allowlist file and NO exemption mechanism. Never create an allowlist (`.coding-standards-allowlist.yaml` or any other), use allowlist comments, or bypass these limits. If a file approaches or exceeds 500 lines, you MUST decompose it by responsibility into cohesive submodules.
    - **No inline test modules**: Unit tests live in sibling files declared via `#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`.
-8. **Present-Tense, Context-Free Code Documentation**:
-   Comments and docstrings must describe strictly what the code does *now* and *why* (invariants, mathematical models, hardware/engine constraints). Never document historical transitions (no "rewritten from X", "fixed in Y"). Commit history owns history.
+8. **In-Code Documentation Standards (Rust & Enfusion)**:
+   - **Present-Tense, Context-Free Invariants (Universal)**:
+     Comments and docstrings must describe strictly what the code does *now* and *why* (invariants, mathematical models, engine/hardware constraints, failure modes). Never document historical transitions (no "rewritten from X", "fixed in Y"), ticket references in source comments, or references to retired codebases (no "mirrors old TS file"). Commit history owns history.
+   - **Rust Code Standards (`rustdoc` — `apps/website/`, `tools_v2/`)**:
+     - **Module Headers (`//!`)**: Non-trivial modules must carry a 4-point architectural contract header:
+       - `**Role:**` Primary responsibility of this module in the subsystem.
+       - `**Position:**` Boundary layer and data flow context (what feeds it, who consumes it).
+       - `**Signals & state:**` Mutable state, reactive signals, or thread ownership (or "none; pure functions").
+       - `**Invariants:**` Non-negotiable structural guarantees and mathematical boundaries.
+     - **Symbol Docs (`///`)**: Public types, functions, methods, and enums must use standard markdown docstrings with validated intra-doc links (e.g. `[`crate::path::Type`]`).
+     - **Cross-Boundary Tags**:
+       - Axum HTTP handlers MUST declare `/// @route <METHOD> <path>` (machine-checked by `cargo xtask verify route-tags`).
+       - Schema-projecting DTOs and models MUST declare `//! @contract <schema>#<pointer>` (machine-checked by `cargo xtask schema citations`).
+   - **Enfusion Mod Standards (`Doxygen` — `apps/mod/`)** (banners, headers, member docs and tags machine-checked by `cargo xtask verify enfusion-comments` over the pinned mod Scripts roots):
+     - **Class & Method Banners**: `//!` single-line banners describing class purpose and method contracts.
+     - **Field & Enum Members**: `//!<` trailing doc comments documenting units, default values, and JSON key bindings.
+     - **File/Plugin Headers**: `/** ... */` multi-line block headers for top-level scripts and Workbench plugins.
+     - **Network Authority (Mandatory)**:
+       - `//! @authority server|client|owner` on every method whose correctness depends on execution context.
+       - `//! @rpc <Reliable|Unreliable> <Server|Owner|Broadcast>` directly above every `[RplRpc]` attribute.
+       - `//! @replicated <prop>` directly above every `[RplProp]` field specifying its replication hook.
+     - **Cross-Boundary Tags**:
+       - Hand-written JSON DTO structs MUST declare `//! @contract <schema>#<pointer>`.
+       - REST API call sites MUST declare `//! @route <METHOD> <path>`.
 9. **API & Contract Parity**:
    - Backend Rust models (`apps/website/api_v2/src/<domain>/models/`) are the snake_case API source of truth.
    - Contract types are generated from `contracts_v2/definitions/*.json` via `cargo xtask ci schema-codegen`.

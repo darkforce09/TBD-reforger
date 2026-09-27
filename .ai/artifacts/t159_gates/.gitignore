@@ -1,6 +1,0 @@
-# Gate RUN artifacts only (regenerable) — nothing under this directory is committed since
-# T-171. The goldens moved: R-api fixtures -> apps/website/frontend/tests/fixtures/api/;
-# S-manifests + the frozen React V-oracle -> tools/tbd-tools/fixtures/t159/. See README.md.
-v/
-logs/
-.devtoken
