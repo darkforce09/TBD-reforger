@@ -1,8 +1,16 @@
 //! API server entrypoint.
 //!
-//! Boot order: load config → open pool (with backoff) → run migrations → spawn the background
-//! workers → build the router + middleware ([`website_api::core::http_router::router`]) → serve
-//! on `:PORT` with graceful shutdown (SIGINT/SIGTERM).
+//! **Role:** the `api` binary: loads the configuration, opens the pool (with backoff), applies
+//! the migrations, spawns the background workers, builds the router and middleware
+//! ([`website_api::core::http_router::router`]) and serves on `:PORT` until SIGINT or SIGTERM.
+//! **Position:** the composition root of the `website-api` crate; the systemd unit, the release
+//! image and `cargo xtask mk rust-api` start it.
+//! **Signals & state:** the process's Tokio runtime; the worker handles live until `main`
+//! returns; SIGINT or SIGTERM begins
+//! [`website_api::core::process_lifecycle::process_shutdown`].
+//! **Invariants:** shutdown begins the process-wide shutdown signal at the moment `axum::serve`
+//! stops accepting, so every open SSE stream ends with it and the graceful drain waits only for
+//! ordinary requests in flight; the process then exits 0.
 
 use std::net::SocketAddr;
 
@@ -10,6 +18,7 @@ use tracing_subscriber::EnvFilter;
 use website_api::background_workers;
 use website_api::core::application_state::AppState;
 use website_api::core::configuration::Config;
+use website_api::core::process_lifecycle::process_shutdown;
 use website_api::core::{database, http_router};
 
 #[tokio::main]
@@ -42,13 +51,16 @@ async fn main() -> anyhow::Result<()> {
         listener,
         app.into_make_service_with_connect_info::<SocketAddr>(),
     )
-    .with_graceful_shutdown(shutdown_signal())
+    .with_graceful_shutdown(termination_requested())
     .await?;
+    tracing::info!("drained; exiting");
     Ok(())
 }
 
-/// Resolve on SIGINT or SIGTERM so `axum::serve` drains in-flight requests.
-async fn shutdown_signal() {
+/// Resolves on SIGINT or SIGTERM, after beginning the process-wide shutdown: `axum::serve` then
+/// stops accepting and drains the requests in flight, and every open SSE stream ends instead of
+/// holding the drain open.
+async fn termination_requested() {
     use tokio::signal;
 
     let ctrl_c = async {
@@ -69,5 +81,6 @@ async fn shutdown_signal() {
         () = ctrl_c => {},
         () = terminate => {},
     }
-    tracing::info!("shutting down");
+    process_shutdown().begin();
+    tracing::info!("shutting down; open event streams are closing");
 }

@@ -28,12 +28,28 @@ pub fn routes() -> Router<AppState> {
         .route(
             "/wiki/{slug}",
             get(handlers::wiki_knowledgebase::get_wiki_page)
-                .put(handlers::wiki_knowledgebase::upsert_wiki_page),
+                .put(handlers::wiki_knowledgebase::save_wiki_page),
         )
+        .route(
+            "/wiki/{slug}/revisions",
+            get(handlers::wiki_knowledgebase::list_wiki_revisions),
+        )
+        .route(
+            "/wiki/{slug}/revisions/{revision}",
+            get(handlers::wiki_knowledgebase::get_wiki_revision),
+        )
+        // Vehicle database: members read, administrators write (per-handler extractors).
         .route(
             "/vehicle-database",
             get(handlers::vehicle_database::list_vehicles)
                 .post(handlers::vehicle_database::create_vehicle),
+        )
+        .route(
+            "/vehicle-database/{id}",
+            get(handlers::vehicle_database::get_vehicle)
+                .put(handlers::vehicle_database::replace_vehicle)
+                .patch(handlers::vehicle_database::patch_vehicle)
+                .delete(handlers::vehicle_database::delete_vehicle),
         )
         // Admin writes (create / replace / delete / set-current). Auth tier is per-handler via
         // AdminUser — same pattern as /wiki/{slug} PUT and /vehicle-database POST.

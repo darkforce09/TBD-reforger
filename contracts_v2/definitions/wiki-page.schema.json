@@ -1,0 +1,764 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "WikiPageContract",
+  "description": "The doctrine wiki: page summaries, the article with the typed blocks the server parses from its markdown, the administrator's save, and the revision history. The root is one article.",
+  "$ref": "#/definitions/WikiArticle",
+  "definitions": {
+    "WikiPageSummary": {
+      "description": "One page in the doctrine navigation. revision is the page's current revision; icon is absent when the page has none.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "slug",
+        "category",
+        "title",
+        "nav_order",
+        "revision",
+        "updated_at"
+      ],
+      "properties": {
+        "slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "category": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "icon": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nav_order": {
+          "type": "integer"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "WikiPageList": {
+      "description": "GET /api/v1/wiki (any signed-in member): every page's summary, ordered by nav_order, then title, then slug.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WikiPageSummary"
+          }
+        }
+      }
+    },
+    "WikiArticle": {
+      "description": "GET /api/v1/wiki/{slug} (any signed-in member; 404 when no page has the slug), and the answer of an accepted save: the page's summary fields, its markdown source and the blocks parsed from it. updated_by is the Discord id of the last editor, absent when unknown. The blocks are safe to render as they stand: an unsafe link keeps only its children, an unsafe image becomes its alt text, raw HTML becomes literal text, and nesting deeper than 16 is flattened.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "slug",
+        "category",
+        "title",
+        "nav_order",
+        "revision",
+        "updated_at",
+        "body_md",
+        "blocks"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "category": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "icon": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nav_order": {
+          "type": "integer"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "body_md": {
+          "type": "string"
+        },
+        "blocks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WikiBlock"
+          }
+        }
+      }
+    },
+    "WikiBlock": {
+      "description": "One block of a page, tagged by type. A table cell is a list of inlines, and a list item, a callout and a quote hold blocks.",
+      "oneOf": [
+        {
+          "description": "A heading of level 1 to 6. anchor is the slugified heading text, made unique within the page with a -2, -3, ... suffix.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "level",
+            "anchor",
+            "inlines"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "heading"
+            },
+            "level": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 6
+            },
+            "anchor": {
+              "type": "string"
+            },
+            "inlines": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/WikiInline"
+              }
+            }
+          }
+        },
+        {
+          "description": "A paragraph.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "inlines"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "paragraph"
+            },
+            "inlines": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/WikiInline"
+              }
+            }
+          }
+        },
+        {
+          "description": "A bulleted or numbered list; a numbered list carries the number of its first item as start.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "ordered",
+            "items"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "list"
+            },
+            "ordered": {
+              "type": "boolean"
+            },
+            "start": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/WikiListItem"
+              }
+            }
+          }
+        },
+        {
+          "description": "A table: one alignment per column, the header cells, and the body rows of cells.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "alignments",
+            "header",
+            "rows"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "table"
+            },
+            "alignments": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/WikiTableAlignment"
+              }
+            },
+            "header": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/WikiInline"
+                }
+              }
+            },
+            "rows": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/WikiInline"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "description": "A callout: a GitHub blockquote alert (> [!NOTE], [!TIP], [!IMPORTANT], [!WARNING] or [!CAUTION]) or a legacy > [!CRITICAL], [!CAUTION], [!WARNING], [!TIP], [!NOTE] or [!INFO] marker.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "kind",
+            "blocks"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "callout"
+            },
+            "kind": {
+              "$ref": "#/definitions/WikiCalloutKind"
+            },
+            "blocks": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/WikiBlock"
+              }
+            }
+          }
+        },
+        {
+          "description": "A block quote.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "blocks"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "quote"
+            },
+            "blocks": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/WikiBlock"
+              }
+            }
+          }
+        },
+        {
+          "description": "A code block; language is the fence's info string, absent when it has none.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "text"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "code"
+            },
+            "language": {
+              "type": "string",
+              "minLength": 1
+            },
+            "text": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "description": "A thematic break.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "rule"
+            }
+          }
+        }
+      ]
+    },
+    "WikiInline": {
+      "description": "One inline run, tagged by type.",
+      "oneOf": [
+        {
+          "description": "Plain text.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "text"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "text"
+            },
+            "text": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "description": "Strong emphasis.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "children"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "strong"
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/WikiInline"
+              }
+            }
+          }
+        },
+        {
+          "description": "Emphasis.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "children"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "emphasis"
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/WikiInline"
+              }
+            }
+          }
+        },
+        {
+          "description": "Struck-through text.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "children"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "strikethrough"
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/WikiInline"
+              }
+            }
+          }
+        },
+        {
+          "description": "Inline code.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "text"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "code"
+            },
+            "text": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "description": "A link to a safe target: https, http, mailto, a site-relative /path or a #fragment. external is true for absolute http, https and mailto targets.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "href",
+            "external",
+            "children"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "link"
+            },
+            "href": {
+              "type": "string",
+              "pattern": "^(https?://[^\\s\\\\/\\x00-\\x1F\\x7F-\\x9F][^\\s\\\\\\x00-\\x1F\\x7F-\\x9F]*|mailto:[^\\s\\\\\\x00-\\x1F\\x7F-\\x9F]+|#[^\\s\\\\\\x00-\\x1F\\x7F-\\x9F]*|/([^\\s\\\\/\\x00-\\x1F\\x7F-\\x9F][^\\s\\\\\\x00-\\x1F\\x7F-\\x9F]*)?)$"
+            },
+            "external": {
+              "type": "boolean"
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/WikiInline"
+              }
+            }
+          }
+        },
+        {
+          "description": "An image from an https URL or a site-relative /path; title is absent when the markup gives none.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "src",
+            "alt"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "image"
+            },
+            "src": {
+              "type": "string",
+              "pattern": "^(https://[^\\s\\\\/\\x00-\\x1F\\x7F-\\x9F][^\\s\\\\\\x00-\\x1F\\x7F-\\x9F]*|/[^\\s\\\\/\\x00-\\x1F\\x7F-\\x9F][^\\s\\\\\\x00-\\x1F\\x7F-\\x9F]*)$"
+            },
+            "alt": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "description": "A hard line break.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "line_break"
+            }
+          }
+        }
+      ]
+    },
+    "WikiListItem": {
+      "description": "One list item. checked is present on task-list items only, true when the box is ticked.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "blocks"
+      ],
+      "properties": {
+        "checked": {
+          "type": "boolean"
+        },
+        "blocks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WikiBlock"
+          }
+        }
+      }
+    },
+    "WikiTableAlignment": {
+      "description": "The alignment of one table column.",
+      "type": "string",
+      "enum": [
+        "none",
+        "left",
+        "center",
+        "right"
+      ]
+    },
+    "WikiCalloutKind": {
+      "description": "The kind of a callout. The GitHub alerts give note, tip, important, warning and caution; the legacy markers add info and critical.",
+      "type": "string",
+      "enum": [
+        "note",
+        "tip",
+        "important",
+        "info",
+        "warning",
+        "caution",
+        "critical"
+      ]
+    },
+    "WikiSaveRequest": {
+      "description": "PUT /api/v1/wiki/{slug} body (administrator); the slug matches ^[a-z0-9-]{1,64}$, else 400. base_revision null creates the page and answers 409 when it already exists; a number must equal the page's current revision, else 409 wiki_revision_conflict with current_revision. A body_md over 262 144 bytes answers 400 wiki_body_too_large; an unsafe link or image URL, raw HTML or nesting deeper than 16 answers 422 wiki_markup_refused with every finding; unknown keys answer 400. icon is empty for a page without one. An accepted save updates the page, appends its revision and an audit line in one transaction, records the caller as the editor, and answers the WikiArticle: 200 for an update, 201 for a create.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "category",
+        "title",
+        "icon",
+        "nav_order",
+        "body_md",
+        "base_revision"
+      ],
+      "properties": {
+        "category": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "icon": {
+          "type": "string"
+        },
+        "nav_order": {
+          "type": "integer"
+        },
+        "body_md": {
+          "type": "string",
+          "minLength": 1
+        },
+        "base_revision": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        }
+      }
+    },
+    "WikiSaveRefusal": {
+      "description": "The details of a refused wiki save, under the error envelope's details: wiki_revision_conflict (409) carries the page's current_revision, wiki_body_too_large (400) refuses a body over 262 144 bytes, and wiki_markup_refused (422) lists every finding.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "wiki_revision_conflict",
+            "wiki_body_too_large",
+            "wiki_markup_refused"
+          ]
+        },
+        "current_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "findings": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/WikiMarkupFinding"
+          }
+        }
+      }
+    },
+    "WikiMarkupFinding": {
+      "description": "One construct a save refuses. line is the 1-based line of body_md where it starts; code names the rule (an unsafe link URL, an unsafe image URL, raw HTML, or nesting deeper than 16); detail explains it to the author.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "line",
+        "code",
+        "detail"
+      ],
+      "properties": {
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "unsafe_link_url",
+            "unsafe_image_url",
+            "raw_html",
+            "nesting_too_deep"
+          ]
+        },
+        "detail": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "WikiRevisionSummary": {
+      "description": "One entry of a page's revision history. author_id is the Discord id of the editor, absent when unknown; a page's first revision predating the history takes the page's last editor and update time.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "revision",
+        "title",
+        "created_at"
+      ],
+      "properties": {
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "title": {
+          "type": "string"
+        },
+        "author_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "WikiRevisionPage": {
+      "description": "GET /api/v1/wiki/{slug}/revisions?page=&per_page= (any signed-in member; 404 when no page has the slug): one page of the page's revisions, newest first.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "page",
+        "per_page",
+        "total"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WikiRevisionSummary"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "per_page": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "WikiRevision": {
+      "description": "GET /api/v1/wiki/{slug}/revisions/{revision} (any signed-in member; 404 when the page or the revision does not exist): the page as that revision saved it, with its blocks parsed and made safe as the article's are. Restoring it is a save of its fields with the page's current revision as base_revision.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "slug",
+        "revision",
+        "category",
+        "title",
+        "nav_order",
+        "body_md",
+        "created_at",
+        "blocks"
+      ],
+      "properties": {
+        "slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "category": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "icon": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nav_order": {
+          "type": "integer"
+        },
+        "body_md": {
+          "type": "string"
+        },
+        "author_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "blocks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WikiBlock"
+          }
+        }
+      }
+    }
+  }
+}

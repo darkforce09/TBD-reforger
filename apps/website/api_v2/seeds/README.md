@@ -15,7 +15,7 @@ apps/website/api_v2/seeds/
 ├── mock_data.sql                sample users, modpacks and missions, applied by hand
 ├── registry_dev.sql             a small item registry for the current modpack, vehicles included
 ├── vehicle_database.sql         the vehicle database rows the golden content also holds
-└── wiki_pages.sql               the doctrine wiki pages the golden content also holds
+└── wiki_pages.sql               the golden wiki pages and the wiki formatting guide, at revision 1
 ```
 
 ## How it works
@@ -34,12 +34,22 @@ is the mapped role of their highest-priority matching Discord role, and `enliste
 matches. Its role ids are the TBD guild's, so another guild replaces them. `registry_dev.sql`
 upserts the current modpack itself, so it needs no other seed. `faction_library.sql` owns its
 factions by the Discord id the admin [dev login](/documentation_v2/glossary/a_to_f.md#dev-login) signs
-in as, so they show once that account exists.
+in as, so they show once that account exists. `wiki_pages.sql` also writes revision 1 of each of
+its pages into `wiki_page_revisions`; running it again refreshes a page and its revision 1 only
+while the page is still at revision 1, so a page saved through the wiki keeps its content and its
+history. Its `wiki-formatting-guide` page is the authors' reference: it shows every heading level,
+link form, image, aligned table, checklist, callout kind, quote, code block and rule the wiki
+renders.
 
 `content_golden.sql` pins every id and timestamp, so capturing the fixtures in
-`apps/website/frontend/tests/fixtures/api/` again reproduces them byte for byte; its closing
-comment holds the capture recipe, which applies it by hand after `registry_dev.sql`. Its sections
-follow foreign-key order, because `psql` runs each statement on its own. Beside the members,
+`apps/website/frontend/tests/fixtures/api/` again reproduces them; its closing comment holds the
+capture recipe, which boots an API of its own on a fresh database, takes a dev-login token, applies
+`registry_dev.sql` and then this file by hand, and writes each body key-sorted and two-space
+indented. `GET__admin__audit-logs.json` is the one read the recipe does not reproduce: the event
+audit trigger and the event lifecycle worker add lines stamped with the capture's wall clock, so
+that fixture stays as committed. Its sections follow foreign-key order, because `psql` runs each
+statement on its own. Its wiki pages are the five of `wiki_pages.sql`, each with its revision 1 in
+`wiki_page_revisions`, so every page has a revision row for its current revision. Beside the members,
 events, missions and matches the fixtures read, it holds two server status rows: an active server
 that reports a telemetry queue reading (three entries, the oldest 12 s old, none dropped) and an
 inactive one that never reported a queue, so the fleet reads leave it out. It also holds the
@@ -64,8 +74,9 @@ by hand with `psql`; nothing runs it.
 
 ## Producers and consumers
 
-- Producers: developers, by hand. `vehicle_database.sql` and `wiki_pages.sql` repeat the matching
-  rows of `content_golden.sql`, so a change to one changes the other.
+- Producers: developers, by hand. `vehicle_database.sql` and `wiki_pages.sql`, the
+  `wiki-formatting-guide` page and the revision rows included, repeat the matching rows of
+  `content_golden.sql`, so a change to one changes the other.
 - Consumers:
   - `cargo xtask db seed`, through `SEEDS` in `tools_v2/xtask/src/commands/db/operations.rs`;
   - `cargo xtask verify wiki-seeds` and `cargo xtask verify faction-library-seeds`
@@ -73,6 +84,9 @@ by hand with `psql`; nothing runs it.
     faction seeds and that the files hold the `field-manual` page and the `US Army 1980s` faction;
   - `apps/website/api_v2/tests/leaderboards_paging.rs`, which embeds `content_golden.sql` and
     applies it to its own scratch database;
+  - `apps/website/api_v2/src/community_content/services/wiki_markup/tests/wiki_markup.rs`, which
+    reads the `wiki-formatting-guide` body out of `wiki_pages.sql` and checks it saves with no
+    finding and shows every construct;
   - the migration step of `cargo xtask platform wave gate`
     (`tools_v2/xtask/src/commands/platform/wave_execution/migrate.rs`), which applies
     `content_golden.sql` after each run so its database stays populated;

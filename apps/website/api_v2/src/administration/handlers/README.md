@@ -14,7 +14,7 @@ apps/website/api_v2/src/administration/handlers/
 ├── mod.rs                         the module tree
 ├── personnel_roster.rs            the paginated, searchable roster with warning and deployment counts
 ├── role_management.rs             refuses website role edits, and re-applies the Discord role mapping
-└── tests/                         unit tests for the audit log and the roster
+└── tests/                         unit tests for the CSV export, the stream events, and the roster paging
 ```
 
 ## How it works
@@ -24,8 +24,13 @@ to `identity_and_access::services::membership_grace_overrides`: a previously ver
 administrator may extend a member's cached permissions by 1 to 48 hours, with a reason, even while
 Discord is unreachable and their own snapshot is stale.
 
-- **Roster.** `GET /api/v1/admin/users` pages `users` (`limit`, `offset`, `?q=` search) with each
-  member's warning count and `total_deployments`.
+- **Roster.** `GET /api/v1/admin/users?q&page&per_page` answers `{items, page, per_page, total}`:
+  one page of `users` with each member's warning count and `total_deployments`, ordered by
+  `lower(username)` then `discord_id`. `page` defaults to 1 and `per_page` to 20, and a `per_page`
+  above 100 is served as 100; a value below 1 or not a number answers 400 in the
+  `{error, details?}` envelope, and a page past the end answers no items with the real total.
+  A non-blank `q` matches username, Discord handle, Arma character or Arma id literally, ignoring
+  case.
 - **Discipline.** A ban requires a non-blank reason; it locks both accounts, sets the ban, revokes
   the member's refresh tokens, queues a re-evaluation of their
   [event](/documentation_v2/glossary/a_to_f.md#event) reservations and appends the `user.ban` audit in one
@@ -37,9 +42,14 @@ Discord is unreachable and their own snapshot is stale.
 - **[Audit logs](/documentation_v2/glossary/a_to_f.md#audit-logs).** The list reads newest first with
   `?severity=` (`info`, `warn`, `crit`), `?q=` over the message and `?before=` keyset paging. The
   CSV export prefixes cells that would open as spreadsheet formulas. The stream is
-  [SSE](/documentation_v2/glossary/n_to_z.md#sse): each message's id is the row's publication sequence,
-  `Last-Event-ID` replays what came later, and a cursor older than the retained history answers
-  409.
+  [SSE](/documentation_v2/glossary/n_to_z.md#sse) and opens with `event: ready`, whose id is the start
+  cursor (the `Last-Event-ID`, or the tail without one) and whose data is
+  `{resume_after, retained_after}`. Each audit row follows as an unnamed event whose id is its
+  publication sequence and whose data is the list route's row JSON. A cursor beyond the tail
+  (`cursor_ahead`) or below the retained floor (`history_unavailable`), at open or when the floor
+  later passes it, becomes `event: reset` with the tail as its id and
+  `{reason, resume_after, retained_after}` as its data, and the stream continues from the tail. A
+  `Last-Event-ID` that is not a non-negative integer answers 400.
 
 ## Boundaries
 

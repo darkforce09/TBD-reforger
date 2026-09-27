@@ -52,6 +52,8 @@ A schema reaches code in one of three ways:
 | Web API responses | `current-profile`, `reservation-response`, `event-hub`, `event-orbat`, `event-viewer-access`, `event-access-administration`, `waitlist-promotion-response` | generated API models; API contract tests |
 | Fleet and machine credentials | `machine-credential`, `fleet-command` | generated API models; the fleet host agent's ledger client; API contract tests |
 | Game runtime | `game-runtime-session`, `game-runtime-roster`, `game-runtime-deployment` | generated API models; API contract tests; the [mod](/documentation_v2/glossary/g_to_m.md#mod)'s API bridge, which calls these routes |
+| Administration | `personnel-roster`, `audit-log` | generated API models in `apps/website/api_v2/src/administration/models/generated/`; API contract tests; the web app's DTOs |
+| Community content | `vehicle-database`, `wiki-page`, `content-upload` | generated API models in `apps/website/api_v2/src/community_content/models/generated/`; API contract tests; the web app's DTOs |
 | Match telemetry | `match-telemetry` | generated API models in `apps/website/api_v2/src/match_telemetry/models/generated/match_telemetry/`; the API's ingest decoders and the integration suites; the web app's DTOs; the mod's telemetry reports, queue and event wire |
 | Missions | `mission`, `mission-editor-payload`, `mission-review`, `mission-deployment` | API validators and generated models; the mod's mission DTOs; the Mission Creator; the map engine's tests |
 | Arsenal and factions | `registry-items`, `registry-compat`, `registry`, `loadout-export`, `faction-library` | API validators, generated and hand-written models; the registry export plugin; the mod's loadout equip path; the Mission Creator's [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) |
@@ -67,6 +69,13 @@ machine-authenticated ingest shapes of `/api/v1/ingest/matches`, `/api/v1/ingest
 reading. The `RuntimeHeartbeat` definition of `game-runtime-session.schema.json` carries the same
 queue reading as its optional `telemetry_queue` block: absent keeps the stored reading, and present
 requires all four counters with `backlog` at most `capacity`.
+
+`audit-log.schema.json` carries the audit stream's `ready` and `reset` event payloads beside the
+history page, and each stream row is an `AuditLogEntry`. In `wiki-page.schema.json`, `WikiBlock`
+and `WikiInline` are `type`-tagged unions that nest (a callout, quote or list item holds blocks; a
+link or emphasis holds inlines), which typify renders as internally tagged enums. The generated
+`VehiclePatch` of `vehicle-database.schema.json` reads an absent key and `null` alike as `None`,
+so a consumer that must tell "unchanged" from "clear" decodes the body itself.
 
 `map-object-enums.schema.json` is the single source of every closed `kind` and `class` enum: the
 other map-object schemas, the prefab classification rules and the glyph keys all draw from it, and

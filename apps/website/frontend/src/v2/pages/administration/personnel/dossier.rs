@@ -17,7 +17,7 @@ use super::member_roster::{avatar, display_name};
 #[cfg(target_arch = "wasm32")]
 use super::role_dialog::admin_user_ban_path;
 use super::role_dialog::{ban_dialog, role_editor, warning_dialog};
-use crate::v2::core::api::dto::AdminUserRow;
+use crate::v2::core::api::dto::administration::AdminUserRow;
 use crate::v2::core::ui::MaterialIcon;
 use leptos::prelude::*;
 

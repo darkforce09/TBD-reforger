@@ -9,7 +9,7 @@ administrative actions and inspect its entries, with the page's design-phase ref
 
 ```text
 documentation_v2/website/frontend/pages/administration/audit_logs/
-├── audit_logs_page.md  the feature doc: the paged trail, the filter, the inspector and the API
+├── audit_logs_page.md  the feature doc: the live and paged trail, the filter, the inspector and the API
 └── visual_references/  the design-phase blueprint of a terminal-style audit console
 ```
 
@@ -17,10 +17,11 @@ documentation_v2/website/frontend/pages/administration/audit_logs/
 
 Read [audit_logs_page.md](/documentation_v2/website/frontend/pages/administration/audit_logs/audit_logs_page.md)
 first. It follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md):
-it quotes the page's interface text, gives what the list call means in the
-[API](/documentation_v2/glossary/a_to_f.md#api) and which audit routes the page leaves unused, and compares
-the built page with the blueprint in `visual_references/`. The blueprint is a design-phase
-reference: it shows a live feed and a CSV export, which the built page does not offer. The code
+it quotes the page's interface text, gives what the stream and the list calls mean in the
+[API](/documentation_v2/glossary/a_to_f.md#api) and which audit route the page leaves unused, and
+compares the built page with the blueprint in `visual_references/`. The blueprint is a design-phase
+reference: it shows a "Live Feed" badge and a CSV export; the built page streams new entries under
+its own status badge and offers no export. The code
 folder's README lists the page's files.
 
 ## Code

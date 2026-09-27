@@ -98,16 +98,37 @@ pub(crate) fn server_intel_source() -> String {
     .concat()
 }
 
-/// The doctrine wiki, as one text: the route component, the index, the article surface and the
-/// Markdown renderer.
+/// The doctrine wiki, as one text: the route component, the shared state, the index, the article
+/// pane, the block renderer, the revision history and the save path.
 pub(crate) fn wiki_source() -> String {
     [
         include_str!("../../pages/doctrine_and_info/wiki/mod.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/api_paths.rs"),
         include_str!("../../pages/doctrine_and_info/wiki/category_nav.rs"),
-        include_str!("../../pages/doctrine_and_info/wiki/helpers.rs"),
-        include_str!("../../pages/doctrine_and_info/wiki/markdown.rs"),
-        include_str!("../../pages/doctrine_and_info/wiki/markdown_article.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/display_text.rs"),
         include_str!("../../pages/doctrine_and_info/wiki/page.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/page_state.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/article/mod.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/article/article_body.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/article/article_header.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/article/article_pane.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/article/article_state.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/blocks/mod.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/blocks/block_mapping.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/blocks/callout_style.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/blocks/element_views.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/blocks/inline_mapping.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/blocks/render_tree.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/blocks/table_mapping.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/revisions/mod.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/revisions/revision_fetches.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/revisions/revision_list.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/revisions/revision_view.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/saving/mod.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/saving/save_problem_view.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/saving/save_refusal.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/saving/save_requests.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/saving/save_submission.rs"),
     ]
     .map(production)
     .concat()

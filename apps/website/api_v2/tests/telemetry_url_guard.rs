@@ -282,7 +282,9 @@ async fn rejects_script_schemes_and_stores_nothing() {
         // registration stores and no applied revision, so nothing for any reader — this page, a
         // CSV export, a webhook — to find later.
         assert_eq!(
-            stored_replay(&pool, &src).await.filter(|link| !link.is_empty()),
+            stored_replay(&pool, &src)
+                .await
+                .filter(|link| !link.is_empty()),
             None,
             "{label} ({payload:?}) answered 400 but the link was stored anyway"
         );

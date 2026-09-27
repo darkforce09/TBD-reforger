@@ -56,6 +56,9 @@ pub async fn append_actor_audit_with_severity(
 }
 
 /// Machine-originated business events use the same transaction without inventing an account actor.
+///
+/// `audit_logs.created_at` has no column default, so the row stamps `now()`, the time of the
+/// transaction that appends it, exactly as the actor appends do.
 pub async fn append_system_audit(
     connection: &mut PgConnection,
     action: &str,
@@ -64,8 +67,8 @@ pub async fn append_system_audit(
     message: &str,
 ) -> sqlx::Result<()> {
     sqlx::query(
-        "INSERT INTO audit_logs(severity, actor_name, action, message, target_type, target_id)
-        VALUES ($1, 'system', $2, $3, $4, $5)",
+        "INSERT INTO audit_logs(severity, actor_name, action, message, target_type, target_id, created_at)
+        VALUES ($1, 'system', $2, $3, $4, $5, now())",
     )
     .bind(AuditSeverity::Info)
     .bind(action)

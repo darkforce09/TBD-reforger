@@ -1,7 +1,15 @@
 //! The audit console: the filtered list, the CSV export, and the live SSE feed.
 //!
-//! The stream is pushed by Postgres NOTIFY ([`crate::administration::services::audit_notifier`]);
-//! a periodic retry recovers failed reads independently of notification health.
+//! **Role:** the administrator's three audit routes: the keyset-paged history, the CSV export and
+//! the replayable live stream.
+//! **Position:** reads `audit_logs` directly for the list and the export; the stream consumes
+//! [`crate::administration::services::audit_delivery::audit_delivery_stream`], which is woken by
+//! [`crate::administration::services::audit_notifier`] and polls on [`AUDIT_POLL_FALLBACK`].
+//! **Signals & state:** none held here; each stream owns its delivery cursor.
+//! **Invariants:** a list row and a stream row serialize the same [`AuditLog`] shape; every stream
+//! event's SSE id is a publication sequence, never an audit id; the stream's first event is
+//! `ready`, and a cursor it cannot replay becomes `reset` to the tail, never an error status; a
+//! `Last-Event-ID` that is not a non-negative integer answers 400.
 
 use std::borrow::Cow;
 use std::convert::Infallible;
@@ -9,7 +17,7 @@ use std::time::Duration;
 
 use async_stream::stream;
 use axum::extract::{Query, State};
-use axum::http::{HeaderName, header};
+use axum::http::{HeaderMap, HeaderName, header};
 use axum::response::sse::{Event, KeepAlive, Sse};
 use axum::response::{IntoResponse, Json, Response};
 use futures::Stream;
@@ -18,6 +26,7 @@ use serde_json::{Value, json};
 use sqlx::{PgPool, QueryBuilder};
 
 use crate::administration::models::audit_log::AuditLog;
+use crate::administration::services::audit_delivery::{AuditStreamItem, audit_delivery_stream};
 use crate::administration::services::audit_notifier::AuditNotify;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
@@ -157,28 +166,34 @@ pub async fn export_audit_logs_csv(
 /// Retry cadence for durable audit publication and replay reads.
 pub const AUDIT_POLL_FALLBACK: Duration = Duration::from_secs(2);
 
-/// Compatibility stream of audit rows; HTTP clients use publication IDs for replay.
+/// The audit rows of a delivery stream opened at the tail, without its control items.
+///
+/// The listener suite reads rows through this; HTTP clients use [`stream_audit_logs`], whose
+/// `ready` and `reset` events this stream leaves out.
+///
+/// # Panics
+/// When the opening publication bounds cannot be read.
 pub async fn audit_row_stream(
     pool: PgPool,
     notify: AuditNotify,
     poll_every: Duration,
 ) -> impl Stream<Item = AuditLog> + Send {
-    let rows = crate::administration::services::audit_delivery::audit_delivery_stream(
-        pool, notify, poll_every, None,
-    )
-    .await
-    .expect("initialize durable audit stream");
-    stream! { for await delivery in rows { yield delivery.row; } }
+    let items = audit_delivery_stream(pool, notify, poll_every, None)
+        .await
+        .expect("open the audit delivery stream");
+    stream! {
+        for await item in items {
+            if let AuditStreamItem::Delivery(delivery) = item {
+                yield delivery.row;
+            }
+        }
+    }
 }
 
-/// GET /api/v1/admin/audit-logs/stream — durable publication IDs support reconnect replay.
-/// @route GET /api/v1/admin/audit-logs/stream
-pub async fn stream_audit_logs(
-    State(state): State<AppState>,
-    _admin: AdminUser,
-    headers: axum::http::HeaderMap,
-) -> Result<Response, ApiError> {
-    let cursor = headers
+/// The `Last-Event-ID` cursor: absent, or a non-negative publication sequence. Anything else is a
+/// malformed header and answers 400.
+fn requested_cursor(headers: &HeaderMap) -> Result<Option<i64>, ApiError> {
+    headers
         .get("last-event-id")
         .map(|value| {
             value
@@ -188,28 +203,52 @@ pub async fn stream_audit_logs(
                 .filter(|value| *value >= 0)
                 .ok_or_else(|| ApiError::bad_request("invalid Last-Event-ID"))
         })
-        .transpose()?;
+        .transpose()
+}
+
+/// One delivery stream item as its SSE event: `event: ready` and `event: reset` carry their
+/// control data, and an audit row is an unnamed event with the list route's row JSON. Every
+/// event's id is the publication sequence a reconnect resumes after.
+fn stream_event(item: &AuditStreamItem) -> Result<Event, serde_json::Error> {
+    Ok(match item {
+        AuditStreamItem::Ready(ready) => Event::default()
+            .event("ready")
+            .id(ready.resume_after.to_string())
+            .data(serde_json::to_string(ready)?),
+        AuditStreamItem::Delivery(delivery) => Event::default()
+            .id(delivery.sequence.to_string())
+            .data(serde_json::to_string(&delivery.row)?),
+        AuditStreamItem::Reset(reset) => Event::default()
+            .event("reset")
+            .id(reset.resume_after.to_string())
+            .data(serde_json::to_string(reset)?),
+    })
+}
+
+/// `GET /api/v1/admin/audit-logs/stream` — the live audit feed, replayable by publication
+/// sequence.
+///
+/// The stream opens with `event: ready`, sends each published row as an unnamed event, and sends
+/// `event: reset` when the cursor cannot be replayed, continuing from the tail. A malformed
+/// `Last-Event-ID` answers 400 before the stream starts.
+///
+/// @route GET /api/v1/admin/audit-logs/stream
+pub async fn stream_audit_logs(
+    State(state): State<AppState>,
+    admin: AdminUser,
+    headers: HeaderMap,
+) -> Result<Response, ApiError> {
+    let cursor = requested_cursor(&headers)?;
     let notify = AuditNotify::for_pool(&state.pool);
-    let deliveries = crate::administration::services::audit_delivery::audit_delivery_stream(
-        state.pool.clone(),
-        notify,
-        AUDIT_POLL_FALLBACK,
-        cursor,
-    )
-    .await
-    .map_err(|error| match error {
-        sqlx::Error::Protocol(_) => {
-            ApiError::conflict("audit history reset required; reload the audit list")
-        }
-        error => ApiError::from(error),
-    })?;
+    let items =
+        audit_delivery_stream(state.pool.clone(), notify, AUDIT_POLL_FALLBACK, cursor).await?;
     let body = stream! {
-        for await delivery in deliveries {
-            match serde_json::to_string(&delivery.row) {
-                Ok(json) => yield Ok::<Event, Infallible>(Event::default().id(delivery.sequence.to_string()).data(json)),
+        for await item in items {
+            match stream_event(&item) {
+                Ok(event) => yield Ok::<Event, Infallible>(event),
                 Err(error) => {
-                    tracing::error!(%error, "audit delivery serialization failed");
-                    yield Ok(Event::default().event("reset").data("reload audit history"));
+                    // The client reconnects from the last id it received; nothing is skipped.
+                    tracing::error!(%error, "audit stream event serialization failed; closing the stream");
                     break;
                 }
             }
@@ -219,7 +258,7 @@ pub async fn stream_audit_logs(
         [(HeaderName::from_static("x-accel-buffering"), "no")],
         Sse::new(
             crate::core::middleware::authorized_event_stream::authorize_event_stream(
-                body, state, _admin.0, "admin",
+                body, state, admin.0, "admin",
             ),
         )
         .keep_alive(KeepAlive::default()),

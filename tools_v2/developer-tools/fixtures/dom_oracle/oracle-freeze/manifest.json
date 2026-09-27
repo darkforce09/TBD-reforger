@@ -36,10 +36,10 @@
       "slug": "audit",
       "path": "/admin/audit",
       "authed": true,
-      "bytes": 104025,
-      "sha256": "5ae14c54330d94945300d00c500f2081a726f7ba64bbe53dad3b3ddbb57eca78",
+      "bytes": 108164,
+      "sha256": "beb37054d2b1e93d629ce58388456be26b99342db9f0fecb66111c23b7da8aa7",
       "goldenSource": "leptos",
-      "acceptedDelta": "The React capture recorded the empty audit list as a paragraph. GET__admin__audit-logs.json feeds ten entries, each an expandable row button."
+      "acceptedDelta": "Milestone C audit live stream: status badge (stream fixture ends after ready, so Reconnecting) and live-row count in the filter aside; rows typed as AuditLogEntry and merged by audit id"
     },
     {
       "slug": "content",
@@ -61,10 +61,10 @@
       "slug": "personnel",
       "path": "/admin/personnel",
       "authed": true,
-      "bytes": 127153,
-      "sha256": "8a124233eca2e4d7fc9fb1254590b50a3ee2012a5b3842487c04aa3e35779011",
+      "bytes": 140161,
+      "sha256": "fe55b1747a52f9c88cbb0e2b01d7b9d552cadbe11a68ebb394625c5445e47508",
       "goldenSource": "leptos",
-      "acceptedDelta": "The roster toolbar gained a Sync Roles action after the freeze and the sort control now names its key (\"Sort: Name\"), so the first two controls shift along and a third appears. The six roster rows come from GET__admin__users.json, where the React capture recorded a single placeholder row."
+      "acceptedDelta": "Milestone C personnel pager: page shape {items,page,per_page,total}; pager bar (previous/next, page n of m, per-page select, member count); sort/filter titles say they act on this page"
     },
     {
       "slug": "servercontrol",
@@ -201,28 +201,28 @@
       "slug": "vehicles",
       "path": "/vehicles",
       "authed": true,
-      "bytes": 116818,
-      "sha256": "610aad67b6de58f1f4016318bdfb1572c1aecf2b77facb231d4c4f5a25ec3a5c",
+      "bytes": 122625,
+      "sha256": "18f5d96fa7a5bf07d7d6e2c509ff680c54ea2112a96fb769a0cd8c825099e87b",
       "goldenSource": "leptos",
-      "acceptedDelta": "Catalogue rows and faction labels come from GET__vehicle-database.json, which spells the faction \"USSR\". The React capture rendered its own \"USSR Forces\" mock."
+      "acceptedDelta": "Milestone C vehicle admin UI: typed Vehicle rows; admin Add vehicle action (compact, beside the title) and Edit/Delete in the spec drawer (oracle signs in as admin); image through safe_image_src"
     },
     {
       "slug": "wiki",
       "path": "/wiki",
       "authed": true,
-      "bytes": 104471,
-      "sha256": "df3c27a34c7e1ec45901d7f445ce60e26933562d394d2af3ed6a63d9add90cf0",
+      "bytes": 121279,
+      "sha256": "4dc7716c13a9c373e10d30109e88f2b9f68ce467ce24a0c00da52880a4943ed0",
       "goldenSource": "leptos",
-      "acceptedDelta": "GET__wiki.json carries four pages across two categories. The React capture rendered a four-category mock (\"Leadership Fundamentals\" and others) that no fixture has ever contained, which is why the Leptos capture is the smaller of the two."
+      "acceptedDelta": "Milestone C wiki: same page as wikislug (first summary selected): typed summaries navigation, article rendered from the server block AST, revision history panel with pager"
     },
     {
       "slug": "wikislug",
       "path": "/wiki/field-manual",
       "authed": true,
-      "bytes": 104471,
-      "sha256": "df3c27a34c7e1ec45901d7f445ce60e26933562d394d2af3ed6a63d9add90cf0",
+      "bytes": 121279,
+      "sha256": "4dc7716c13a9c373e10d30109e88f2b9f68ce467ce24a0c00da52880a4943ed0",
       "goldenSource": "leptos",
-      "acceptedDelta": "Same page and same cause as the wiki route: the article view renders the corpus's two categories where the React capture rendered its own four-category mock."
+      "acceptedDelta": "Milestone C wiki: navigation from typed summaries, article from /wiki/{slug} rendered from the server block AST (text nodes only, heading anchors, safe links/images), revision history panel with pager, editor sends base_revision"
     }
   ]
 }

@@ -1,6 +1,7 @@
 //! Captured-response round trips for the session, identity and personnel payloads.
 
 use super::*;
+use crate::v2::core::api::dto::administration::PersonnelPage;
 
 // ── strong-typed bodies (every field asserted) ──
 #[test]
@@ -13,9 +14,20 @@ fn link_status() {
     assert_golden::<LinkStatus>(golden!("GET__me__link__status.json"), &[]);
 }
 
+/// The roster page: every row key is a named field, and `arma_id` stays an explicit `null` for a
+/// member who has not linked an Arma identity. The capture covers both arms of that field.
 #[test]
-fn admin_users_envelope() {
-    assert_golden::<Paginated<AdminUserRow>>(golden!("GET__admin__users.json"), &[]);
+fn admin_users_page() {
+    const G: &str = golden!("GET__admin__users.json");
+    assert_golden::<PersonnelPage>(G, &[]);
+    let page: PersonnelPage = serde_json::from_str(G).unwrap();
+    assert_eq!((page.page, page.per_page), (1, 20));
+    assert_eq!(page.total, page.items.len() as i64);
+    assert!(
+        page.items.iter().any(|row| row.arma_id.is_none())
+            && page.items.iter().any(|row| row.arma_id.is_some()),
+        "the roster golden must hold a linked and an unlinked member"
+    );
 }
 
 /// The member list the assignee picker reads. The capture deliberately includes both shapes of the

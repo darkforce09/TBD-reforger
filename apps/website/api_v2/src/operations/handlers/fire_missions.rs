@@ -38,7 +38,7 @@ use website_map_engine::data::scenario::ballistics::{
 /// is a perfectly legitimate coordinate — grid origin — so unlike a string there is no "empty"
 /// sentinel a guard could look for, and presence is the only question that can be asked. This is
 /// the same `nav_order = 0` argument that governs
-/// [`crate::community_content::handlers::wiki_knowledgebase::WikiInput`]: the fix is *presence*,
+/// [`crate::community_content::models::wiki::WikiSaveRequest`]: the fix is *presence*,
 /// not non-emptiness, and `0.0` must stay writable. Without it,
 /// `{"weapon_system":"M252 81mm","fp_x":1000,"fp_y":2000}` — no target at all — answers **200**
 /// with distance 2236 m, azimuth 206.6° and elevation 915 mils: a firing solution onto grid (0,0),

@@ -7,8 +7,12 @@
 
 pub mod announcement;
 pub mod modpack;
+pub mod vehicle_database;
 pub mod wiki;
 
 pub use announcement::{Announcement, AnnouncementStatus, AnnouncementTag};
 pub use modpack::{Modpack, ModpackMod};
-pub use wiki::{VehicleDatabase, WikiPage};
+pub use vehicle_database::VehicleDatabase;
+pub use wiki::WikiPage;
+
+pub mod generated;

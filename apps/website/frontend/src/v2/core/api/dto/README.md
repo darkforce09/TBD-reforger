@@ -1,14 +1,16 @@
 # Wire types
 
 The data transfer objects: one Rust shape per JSON body the [API](/documentation_v2/glossary/a_to_f.md#api)
-sends or accepts, grouped by domain and re-exported flat from `mod.rs`, so a caller names the type
-(`MissionDetail`) rather than the file it lives in.
+sends or accepts, grouped by domain. Most files are re-exported flat from `mod.rs`, so a caller names
+the type (`MissionDetail`) rather than the file it lives in; the administration, vehicle and wiki
+types are named by their module (`dto::wiki::WikiArticle`).
 
 ## Contents
 
 ```text
 apps/website/frontend/src/v2/core/api/dto/
-├── auth.rs                         the viewer's profile, the Arma link, member and roster rows
+├── administration.rs               the personnel roster page, audit lines, the audit stream's ready and reset
+├── auth.rs                         the viewer's profile, the Arma link and member rows
 ├── common.rs                       the list envelopes: `Paginated`, `DataEnvelope`, `CursorList`
 ├── content.rs                      modpack rows and the current modpack
 ├── event_access_administration.rs  an event's access policies, groups, pools and every change body
@@ -20,11 +22,13 @@ apps/website/frontend/src/v2/core/api/dto/
 ├── mission_deployments.rs          a mission deployment, a server's page of them, the request body
 ├── mission_reviews.rs              review history and thread, decisions, artifacts, review workspace
 ├── missions.rs                     mission cards, rows, detail and versions; armory; approval rows
-├── mod.rs                          the module tree; re-exports every DTO flat
+├── mod.rs                          the module tree; re-exports the DTOs flat, but for three modules
 ├── registry.rs                     registry items, compatibility edges, cargo defaults and factions
 ├── servers.rs                      server rows, the live status frame with its telemetry queue, credentials
 ├── telemetry.rs                    the dashboard summary with its fleet, leaderboards and a fire solution
-└── tests/                          unit tests for the golden round trips and the fixture-free shapes
+├── tests/                          unit tests for the golden round trips and the fixture-free shapes
+├── vehicles.rs                     vehicle database rows, the create and replace body, the three-state patch
+└── wiki.rs                         wiki summaries, the article and its typed blocks, saves, refusals, revisions
 ```
 
 ## How it works
@@ -35,7 +39,9 @@ native test build. `tests/r_api.rs` holds each DTO to a captured answer from
 `apps/website/frontend/tests/fixtures/api/`: re-serialising reproduces the capture canonically,
 byte for byte, and the keys no named field reads (the ones a `#[serde(flatten)]` catch-all sweeps
 up, found by poisoning each value) are exactly the ones the test lists. The `tests/r_api_*.rs`
-files hold one domain's goldens each; `tests/shapes.rs` checks the shapes that need no capture.
+files hold one domain's goldens each; `tests/shapes.rs` checks the shapes that need no capture, and
+`tests/administration.rs`, `tests/vehicles.rs` and `tests/wiki.rs`, the sibling tests of their
+modules, check the stream events, write bodies and refusals no capture carries.
 
 - A value set the API may extend (review states,
   [fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) actions and states,
@@ -52,6 +58,19 @@ files hold one domain's goldens each; `tests/shapes.rs` checks the shapes that n
   kind, so a payload cannot be read under the wrong kind; an unknown kind fails the read, and a
   kill's `distance_m` keeps the number as sent. A status's `telemetry_queue` and a fleet server's
   `status` are absent keys, never placeholders, when there is no reading.
+- The closed sets the contract enumerates and a page branches on are enums: the audit severity, the
+  audit stream's reset reason, a wiki table column's alignment, a callout's kind, and a wiki save
+  refusal's code and its findings' codes. A value outside the set fails the read.
+- A wiki article carries its markdown and the typed tree the API parsed from it: `WikiBlock` and
+  `WikiInline` are tagged by `type`, their optional fields are absent rather than `null`, and the
+  formatting-guide capture shows every variant (`tests/wiki.rs` checks that it still does).
+  `WikiSaveRequest` always sends `base_revision`, `null` when the save creates the page.
+- `VehiclePatch` tells an absent key, `null` and a value apart for each optional field
+  (`Option<Option<String>>` through `absent_null_or_value`): absent leaves the field, `null`
+  clears it, a value sets it. A required field is absent or a value, because the API refuses a
+  cleared one.
+- The audit stream's `ready` and `reset` events carry publication sequences, never audit line ids;
+  an audit line's `metadata` is carried as the writer recorded it.
 - `IssuedMachineCredential`, the one answer that carries a
   [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential)'s secret, derives no
   `Debug`, so the secret cannot reach a log line.

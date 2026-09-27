@@ -49,9 +49,9 @@ See: [Factory waves](/documentation_v2/runbooks/factory_waves/README.md), [comma
 
 ### personnel
 
-The `/admin/personnel` page, titled Personnel Roster: the member roster beside one member's dossier,
-where administrators ban and warn members with a reason and run the Discord role resync. A member's
-[role](#role) follows their Discord roles, so the dossier explains it and never sets it.
+The `/admin/personnel` page, titled Personnel Roster: the paged member roster beside one member's
+dossier, where administrators ban and warn members with a reason and run the Discord role resync. A
+member's [role](#role) follows their Discord roles, so the dossier explains it and never sets it.
 
 In code: `PersonnelRosterPage` in `apps/website/frontend/src/v2/pages/administration/personnel/`.
 
@@ -184,7 +184,7 @@ See: [event](/documentation_v2/glossary/a_to_f.md#event), [arsenal](/documentati
 Server-Sent Events: the one-way HTTP streams on which the API pushes live updates, such as a
 server's status feed and the audit log feed. An SSE event is one message, never an [event](/documentation_v2/glossary/a_to_f.md#event).
 
-In code: `Hub` in `apps/website/api_v2/src/core/realtime_hub/mod.rs` (the status feed); the audit feed's `LISTEN audit_log` in `apps/website/api_v2/src/administration/services/audit_notifier.rs`; the client in `apps/website/frontend/src/v2/core/api/sse.rs`.
+In code: `Hub` in `apps/website/api_v2/src/core/realtime_hub/mod.rs` (the status feed); the audit feed's `LISTEN audit_log` in `apps/website/api_v2/src/administration/services/audit_notifier.rs`; the clients in `apps/website/frontend/src/v2/core/api/sse.rs` (the status feed) and `apps/website/frontend/src/v2/core/api/audit_stream.rs` (the audit feed, resumed from the last event id it received).
 
 See: [audit logs](/documentation_v2/glossary/a_to_f.md#audit-logs), [server infrastructure](#server-infrastructure).
 

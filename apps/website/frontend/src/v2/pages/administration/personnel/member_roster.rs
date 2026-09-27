@@ -12,7 +12,7 @@
 //! initials built from the name it does carry.
 #![allow(dead_code)]
 
-use crate::v2::core::api::dto::AdminUserRow;
+use crate::v2::core::api::dto::administration::AdminUserRow;
 use crate::v2::core::ui::cn;
 use leptos::prelude::*;
 
@@ -148,7 +148,7 @@ pub(super) fn apply_roster_sort(mut users: Vec<AdminUserRow>, mode: SortMode) ->
 /// Up to two initials from a name, or a pair of question marks when there are none.
 pub(super) fn initials(name: &str) -> String {
     let s: String = name
-        .split(|c| c == ' ' || c == '_' || c == '.' || c == '-')
+        .split([' ', '_', '.', '-'])
         .filter(|w| !w.is_empty())
         .take(2)
         .filter_map(|w| w.chars().next())

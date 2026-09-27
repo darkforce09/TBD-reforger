@@ -12,6 +12,7 @@ agents running the readiness check read it.
 
 ```text
 documentation_v2/website/api_v2/verification_evidence/
+├── administration_and_content.md       personnel pages, the audit stream, vehicles, wiki revisions, uploads
 ├── completion_plan.md                  the acceptance contract: what "the API is complete" means
 ├── event_administration.md             the locks every event change takes, and in what order
 ├── event_eligibility_allocation.md     event access, visibility, pools, promotion and derived attendance
@@ -40,7 +41,7 @@ register entry.
 |---|---|---|
 | Register | `requirements.json` | version 1; 73 requirements, each with its behaviour, the implementation paths it rests on, its assumptions and the checks that prove it; 91 checks, 82 of class `implementation`, 6 `property` and 3 `operational`, each with its command, timeout, minimum case count, success marker and case pattern |
 | Program records | `completion_plan.md`, `progress_checkpoint.md`, `remaining_milestones.md` | the acceptance contract; the checkpoint after milestones E, F and M; the design and register work of milestones T (telemetry), C (administration and content), B (game ballistics), V (verification completeness) and S (staging) |
-| Design notes | the other twelve | one subject each: the semantics chosen for a group of requirements, the lock order, the refusals with their codes, and the tests that hold them |
+| Design notes | the other thirteen | one subject each: the semantics chosen for a group of requirements, the lock order, the refusals with their codes, and the tests that hold them |
 
 The design notes by domain:
 
@@ -51,6 +52,7 @@ The design notes by domain:
 | [missions](/documentation_v2/glossary/g_to_m.md#missions) | `mission_artifacts.md` |
 | [server infrastructure](/documentation_v2/glossary/n_to_z.md#server-infrastructure) | `machine_credentials.md`, `fleet_command_ledger.md` |
 | [match telemetry](/documentation_v2/glossary/g_to_m.md#match-telemetry) and [command center](/documentation_v2/glossary/a_to_f.md#command-center) | `telemetry.md` |
+| [administration](/documentation_v2/glossary/a_to_f.md#administration) and [community content](/documentation_v2/glossary/a_to_f.md#community-content) | `administration_and_content.md` |
 | verification | `property_test_evidence.md` |
 
 Requirement identifiers start with their area: `events` (14), `identity` (13), `verification`

@@ -13,7 +13,7 @@ tokens, the account row) belongs to `identity_and_access`.
 apps/website/api_v2/src/administration/
 ├── handlers/  the roster, discipline, role, grace and audit log handlers
 ├── mod.rs     the module tree; re-exports `routes`
-├── models/    the audit log line with its severity, and the warning
+├── models/    the audit log line with its severity, the audit stream events, the roster page, and the warning
 ├── routes.rs  the domain's `/api/v1` route table
 └── services/  the audit writers, the publication sequence and the live delivery stream
 ```
@@ -26,16 +26,24 @@ takes `AuthUser` and lets the identity service require verified administrator au
 still works while Discord is unreachable. A member's role follows their Discord roles: the role edit
 route refuses every change with 409, and the resync route re-applies the `discord_roles` mapping.
 
+The roster answers one page at a time, `{items, page, per_page, total}`, in `lower(username)`
+then `discord_id` order, so every member appears on exactly one page.
+
 Privileged writes across the crate leave a row in `audit_logs`, either inside their own
 transaction (`services/required_audit.rs`) or best-effort (`services/audit_writer.rs`). Committed
 rows get a durable publication number, and the audit stream delivers them in that order,
-replaying from a client's `Last-Event-ID`.
+replaying from a client's `Last-Event-ID`. The stream opens with `event: ready`; a cursor it cannot
+replay, beyond the tail or below the retained floor that migration 0057 keeps in
+`audit_publication_state`, becomes `event: reset` and the stream continues from the tail. The audit
+logs page connects, waits for `ready`, loads the history through the list route, merges the two by
+audit id, and reloads the history on `reset`.
 
 ## Public surface
 
 - `routes::routes()`: the table `core::http_router` merges under `/api/v1`, every route `AdminUser`
   unless marked:
-  - `GET /api/v1/admin/users`: the paginated, searchable roster.
+  - `GET /api/v1/admin/users?q&page&per_page`: one page of the searchable roster,
+    `{items, page, per_page, total}`.
   - `PATCH /api/v1/admin/users/{discordId}`: refuses a website role change (409).
   - `POST` and `DELETE /api/v1/admin/users/{discordId}/ban`: ban with a reason, lift the ban.
   - `POST /api/v1/admin/users/{discordId}/warnings`: issue a warning.
@@ -44,12 +52,15 @@ replaying from a client's `Last-Event-ID`.
   - `POST /api/v1/admin/roles/sync`: re-apply the Discord role mapping.
   - `GET /api/v1/admin/audit-logs`: the filtered, keyset-paged audit list.
   - `GET /api/v1/admin/audit-logs/export.csv`: the CSV export.
-  - `GET /api/v1/admin/audit-logs/stream`: the live [SSE](/documentation_v2/glossary/n_to_z.md#sse) feed.
+  - `GET /api/v1/admin/audit-logs/stream`: the live [SSE](/documentation_v2/glossary/n_to_z.md#sse)
+    feed: `ready`, unnamed row events, and `reset`.
 - `services::required_audit`: `append_required_audit`, `append_actor_audit`,
   `append_actor_audit_with_severity` and `append_system_audit`, the transactional audit append
   every other domain writes through.
 - `services::audit_writer`: `write_audit`, the best-effort append, and `actor_display_name`.
 - `services::audit_publication::publish_audit_batch`, run by the audit publication worker.
+- `services::audit_delivery::audit_delivery_stream`, the stream of `AuditStreamItem`s behind the
+  live feed, and `handlers::audit_logs::audit_row_stream`, its rows alone.
 - `models::audit_log::AuditSeverity`: the severity every audit call passes.
 
 ## Boundaries
@@ -67,11 +78,15 @@ replaying from a client's `Last-Event-ID`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`apps/website/api_v2/src/tests/architecture_rules.rs` checks both); every handler
   carries its `/// @route` tag (`cargo xtask verify route-tags`); no Rust code outside `services/`
-  inserts into `audit_logs`, which keeps one audit path for the crate's code.
+  inserts into `audit_logs`, which keeps one audit path for the crate's code; the wire shapes follow
+  `contracts_v2/definitions/personnel-roster.schema.json` and
+  `contracts_v2/definitions/audit-log.schema.json`.
 
 ## Related documentation
 
 - [API overview](/documentation_v2/website/api_v2/api_overview.md) — every domain's routes.
+- [Administration and community content](/documentation_v2/website/api_v2/verification_evidence/administration_and_content.md)
+  — the roster paging, the audit stream's replay, reset and recovery semantics.
 - [Personnel roster page](/documentation_v2/website/frontend/pages/administration/personnel/personnel_roster_page.md)
   — the roster, discipline and resync as administrators use them.
 - [Audit logs page](/documentation_v2/website/frontend/pages/administration/audit_logs/audit_logs_page.md)

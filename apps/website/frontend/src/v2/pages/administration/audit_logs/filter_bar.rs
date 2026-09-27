@@ -1,31 +1,30 @@
 //! The filter box above the trail, and what it matches on.
 //!
 //! **Role:** the search field over the master pane, and the text one entry is matched against.
-//! **Position:** the master header of the audit route.
+//! **Position:** the master header of the audit route, beside the live status badge.
 //! **Signals & state:** writes `query`, which the trail reads to filter what it shows.
 //! **Invariants:** filtering happens **on what is already loaded**, not on the server. Re-keying
 //! the fetch on every keystroke would send a request per character and risk showing a stale answer,
 //! and the endpoint serves a whole page at a time in any case. The haystack is the stamp, the
-//! level, the action, the actor and the message — what an operator would read down the column.
+//! level, the action, the actor, the message and the target type — what an operator would read
+//! down the column.
 #![allow(dead_code)]
 
 use super::log_table::level_label;
-use super::page::vstr;
+use crate::v2::core::api::dto::administration::AuditLogEntry;
 use crate::v2::core::utils::datefmt::log_stamp;
 use leptos::prelude::*;
-use serde_json::Value;
 
 /// Everything the filter box matches one entry against, as one string.
-pub(super) fn haystack(l: &Value) -> String {
-    let sev = vstr(l, "severity");
+pub(super) fn haystack(entry: &AuditLogEntry) -> String {
     format!(
         "{} {} {} {} {} {}",
-        log_stamp(&vstr(l, "created_at")),
-        level_label(&sev),
-        vstr(l, "action"),
-        vstr(l, "actor_name"),
-        vstr(l, "message"),
-        vstr(l, "target_type"),
+        log_stamp(&entry.created_at),
+        level_label(entry.severity),
+        entry.action,
+        entry.actor_name,
+        entry.message,
+        entry.target_type,
     )
 }
 

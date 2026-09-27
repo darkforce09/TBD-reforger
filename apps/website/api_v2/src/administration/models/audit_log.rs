@@ -1,4 +1,15 @@
-//! The admin papertrail row and its severity ENUM.
+//! The audit log line and its severity.
+//!
+//! **Role:** the one shape of an audit line, read by the audit list, the CSV export and the live
+//! stream alike.
+//! **Position:** read from `audit_logs` by the audit log handlers and
+//! [`crate::administration::services::audit_delivery`]; [`AuditSeverity`] is passed by every
+//! domain that writes an audit line.
+//! **Signals & state:** none; plain data.
+//! **Invariants:** `id` is the allocation order, never the delivery order; empty `actor_name`,
+//! `target_type` and `target_id` and a missing `actor_id` or `metadata` are omitted on the wire;
+//! [`AuditSeverity`] and the Postgres enum `audit_severity` hold the same three values.
+//! @contract audit-log.schema.json#/definitions/AuditLogEntry
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -27,7 +38,8 @@ impl AuditSeverity {
     }
 }
 
-/// Admin papertrail line. `id` is a bigint sequence.
+/// One audit line, the same shape in the history list and on the live stream.
+/// @contract audit-log.schema.json#/definitions/AuditLogEntry
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct AuditLog {
     pub id: i64,

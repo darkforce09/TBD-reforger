@@ -522,10 +522,12 @@ pub async fn seed(pool: &PgPool) -> Seed {
         NULL_UID
     );
     rows.push(("wiki_pages", format!("slug = '{wiki_slug}'")));
+    rows.push(super::seed_wiki_revision(pool, &wiki_slug).await);
 
     exec!(
-        "INSERT INTO vehicle_databases (name, faction, armor_type, amphibious, primary_threat, profile_image_url) \
-         VALUES ('Null Tank', 'USA', 'heavy', 'no', 'AT', 'img')"
+        "INSERT INTO vehicle_databases (id, name, faction, armor_type, amphibious, primary_threat, profile_image_url) \
+         VALUES ($1::uuid, 'Null Tank', 'USA', 'heavy', 'no', 'AT', 'img')",
+        super::NULL_VEHICLE_ID
     );
     rows.push(("vehicle_databases", "name = 'Null Tank'".into()));
 
@@ -929,16 +931,15 @@ pub fn route_sweep(s: &Seed) -> Vec<(&'static str, String, SweepCaller)> {
             SweepCaller::Member,
         ),
         ("/wiki", "/api/v1/wiki".into(), SweepCaller::Member),
-        (
-            "/wiki/{slug}",
-            format!("/api/v1/wiki/{slug}"),
-            SweepCaller::Member,
-        ),
+        super::wiki_page_sweep(slug),
+        super::wiki_revisions_sweep(slug),
+        super::wiki_revision_sweep(slug),
         (
             "/vehicle-database",
             "/api/v1/vehicle-database".into(),
             SweepCaller::Member,
         ),
+        super::vehicle_row_sweep(),
         ("/factions", "/api/v1/factions".into(), SweepCaller::Member),
         (
             "/factions/{id}",

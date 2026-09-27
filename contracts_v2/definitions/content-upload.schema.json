@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ContentUploadContract",
+  "description": "Content media uploads and the error envelope of the content routes. The root is an accepted upload.",
+  "$ref": "#/definitions/UploadResponse",
+  "definitions": {
+    "UploadResponse": {
+      "description": "POST /api/v1/cms/uploads (administrator; multipart/form-data with one file field), answered 201. The file is a JPEG, PNG or WebP image: its extension is jpg, jpeg, png or webp and its leading bytes match that format, else 415. A missing file field answers 400 and a body over the upload limit 413. The file is written under a temporary name and renamed into place, so no partial file is ever served; a storage failure answers 503 storage_unavailable. url is the site-relative path the image is served at.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "url"
+      ],
+      "properties": {
+        "url": {
+          "type": "string",
+          "pattern": "^/uploads/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(jpg|jpeg|png|webp)$"
+        }
+      }
+    },
+    "ContentError": {
+      "description": "The error envelope of the content routes (vehicle database, wiki, announcements and uploads), as of every API route: error is a message for people, and details, when present, is an object whose code names the refusal for machines. ContentRefusal and the WikiSaveRefusal of wiki-page.schema.json describe the content codes. Anonymous callers get 401 and signed-in members 403 on the administrator's writes.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "error"
+      ],
+      "properties": {
+        "error": {
+          "type": "string",
+          "minLength": 1
+        },
+        "details": {
+          "type": "object"
+        }
+      }
+    },
+    "ContentRefusal": {
+      "description": "The details of a content request refused before its handler reads it, or by the upload store: request_too_large (413) for a JSON body over the request limit, storage_unavailable (503) when the upload store fails. A missing or wrong JSON content type answers 415, and any other unreadable JSON body 400 with the reason as its error.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "request_too_large",
+            "storage_unavailable"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -2,27 +2,26 @@
 //!
 //! **Role:** renders the doctrine index — one labelled group per category, each holding the
 //! manuals that survived the search box, as links that navigate to `/wiki/<slug>`.
-//! **Position:** the master pane of the wiki's split view, above which its own header sits.
+//! **Position:** the master pane of the wiki's split view, above which its own header sits; fed
+//! the page summaries of `GET /wiki`.
 //! **Signals & state:** reads the search `RwSignal<String>` the page owns and writes it through
 //! `SidebarSearch`; navigation is the router's, so no selection state lives here.
 //! **Invariants:** groups appear in the order the API returned their first member, which is the
 //! nav order the wiki is authored in; a group whose manuals all filtered out is not rendered.
 
-use super::helpers::vstr;
-use crate::v2::core::ui::split_pane::{ListDetailItem, SidebarSearch};
+use crate::v2::core::api::dto::wiki::WikiPageSummary;
+use crate::v2::core::ui::split_pane::{search_matches, ListDetailItem, SidebarSearch};
 use leptos::prelude::*;
-use serde_json::Value;
 
 /// The distinct categories of `pages`, in the order each was first seen.
 ///
 /// The API orders the list by nav order and then title, so first-seen order is authoring order.
 /// Rows with no category are skipped.
-pub(super) fn category_order(pages: &[Value]) -> Vec<String> {
-    let mut out = Vec::new();
-    for p in pages {
-        let c = vstr(p, "category");
-        if !c.is_empty() && !out.iter().any(|x| x == &c) {
-            out.push(c);
+pub(super) fn category_order(pages: &[WikiPageSummary]) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for page in pages {
+        if !page.category.is_empty() && !out.contains(&page.category) {
+            out.push(page.category.clone());
         }
     }
     out
@@ -48,48 +47,43 @@ pub(super) fn master_header(search: RwSignal<String>) -> impl IntoView {
 pub(super) fn manual_index(
     active_slug: Option<String>,
     query: &str,
-    pages: &[Value],
+    pages: &[WikiPageSummary],
 ) -> impl IntoView {
     let query = query.to_string();
     let active = active_slug.unwrap_or_default();
     category_order(pages)
         .into_iter()
         .filter_map(move |category| {
-            let rows: Vec<Value> = pages
+            let rows: Vec<WikiPageSummary> = pages
                 .iter()
-                .filter(|p| vstr(p, "category") == category)
-                .filter(|p| {
-                    crate::v2::core::ui::split_pane::search_matches(
-                        &query,
-                        &format!("{} {}", vstr(p, "title"), vstr(p, "category")),
-                    )
+                .filter(|page| page.category == category)
+                .filter(|page| {
+                    search_matches(&query, &format!("{} {}", page.title, page.category))
                 })
                 .cloned()
                 .collect();
             if rows.is_empty() {
                 return None;
             }
-            let cat_label = category.clone();
             Some(view! {
                 <div class="mb-3">
                     <p class="px-1 py-1 font-mono text-[11px] tracking-widest text-outline uppercase">
-                        {cat_label}
+                        {category}
                     </p>
                     <div class="mt-1 flex flex-col gap-1">
                         {rows
                             .into_iter()
-                            .map(|m| {
-                                let id = vstr(&m, "slug");
-                                let title = vstr(&m, "title");
+                            .map(|row| {
                                 let navigate = leptos_router::hooks::use_navigate();
-                                let active_row = id == active;
+                                let active_row = row.slug == active;
+                                let slug = row.slug;
                                 view! {
                                     <ListDetailItem
                                         active=active_row
-                                        title=view! { {title} }.into_any()
-                                        on_click=Callback::new(move |()| {
-                                            navigate(&format!("/wiki/{id}"), Default::default());
-                                        })
+                                        title={view! { {row.title} }.into_any()}
+                                        on_click={Callback::new(move |()| {
+                                            navigate(&format!("/wiki/{slug}"), Default::default());
+                                        })}
                                     />
                                 }
                             })

@@ -393,7 +393,7 @@ async fn admin_approvals_cms_field() {
     assert_eq!(st, StatusCode::CREATED, "warn: {w}");
     let (st, roster) = call(&app, "GET", "/api/v1/admin/users?q=Target%20Z", &t, None).await;
     assert_eq!(st, StatusCode::OK);
-    let row = roster["data"]
+    let row = roster["items"]
         .as_array()
         .unwrap()
         .iter()

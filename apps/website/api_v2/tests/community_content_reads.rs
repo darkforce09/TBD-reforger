@@ -1,17 +1,19 @@
-//! Community-content reads — list envelopes, tier enforcement, wiki upsert round-trip.
-//! Skips unless `TEST_DATABASE_URL` points at a migrated DB.
+//! Community-content reads — list envelopes, tier enforcement, the wiki save round trip and the
+//! vehicle create round trip. Needs `TEST_DATABASE_URL` (see `common::require_test_database_url`).
 
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
 use serde_json::Value;
 use tower::ServiceExt;
+use website_api::community_content::models::generated::wiki_page as wiki_contract;
 use website_api::core::application_state::AppState;
 use website_api::core::configuration::Config;
 use website_api::core::database;
 use website_api::core::http_router;
 
 mod common;
+mod contract_support;
 
 async fn setup() -> Option<(Router, String)> {
     let url = common::require_test_database_url()?;
@@ -95,6 +97,7 @@ async fn content_reads_and_wiki_upsert() {
     let (st, body) = call(&app, "GET", "/api/v1/wiki", t, None).await;
     assert_eq!(st, StatusCode::OK);
     assert!(body["data"].is_array());
+    contract_support::assert_valid("wiki-page.schema.json", Some("WikiPageList"), &body);
 
     // Simple {data} lists.
     for uri in [
@@ -107,21 +110,144 @@ async fn content_reads_and_wiki_upsert() {
         assert!(body["data"].is_array(), "{uri}");
     }
 
-    // Wiki upsert (admin) → get round-trip.
-    let wiki = r##"{"category":"SOP","title":"Content Test","icon":"book","body_md":"# hi","nav_order":3}"##;
+    // Wiki create (admin, base_revision null) → 201, then a save of revision 1 → 200.
+    let wiki = r##"{"category":"SOP","title":"Content Test","icon":"book","body_md":"# hi","nav_order":3,"base_revision":null}"##;
     let (st, body) = call(&app, "PUT", "/api/v1/wiki/content-test", t, Some(wiki)).await;
-    assert_eq!(st, StatusCode::OK, "upsert: {body}");
+    assert_eq!(st, StatusCode::CREATED, "create: {body}");
     assert_eq!(body["slug"], "content-test");
     assert_eq!(body["title"], "Content Test");
     assert_eq!(body["nav_order"], 3);
+    assert_eq!(body["revision"], 1);
+    contract_support::assert_valid("wiki-page.schema.json", Some("WikiArticle"), &body);
 
     let (st, body) = call(&app, "GET", "/api/v1/wiki/content-test", t, None).await;
     assert_eq!(st, StatusCode::OK);
     assert_eq!(body["body_md"], "# hi");
+    assert_eq!(
+        body["blocks"],
+        serde_json::json!([{
+            "type": "heading",
+            "level": 1,
+            "anchor": "hi",
+            "inlines": [{ "type": "text", "text": "hi" }],
+        }])
+    );
+    contract_support::assert_valid("wiki-page.schema.json", Some("WikiArticle"), &body);
+    contract_support::assert_decodes::<wiki_contract::WikiArticle>("GET /wiki/{slug}", &body);
 
-    // Missing required field → 400.
+    let save = r##"{"category":"SOP","title":"Content Test","icon":"","body_md":"# hi\n\nsaved","nav_order":3,"base_revision":1}"##;
+    let (st, body) = call(&app, "PUT", "/api/v1/wiki/content-test", t, Some(save)).await;
+    assert_eq!(st, StatusCode::OK, "save: {body}");
+    assert_eq!(body["revision"], 2);
+    assert!(
+        body.get("icon").is_none(),
+        "an empty icon stays off the wire: {body}"
+    );
+    contract_support::assert_valid("wiki-page.schema.json", Some("WikiArticle"), &body);
+
+    // The list is summaries: no body, no blocks, the current revision.
+    let (st, body) = call(&app, "GET", "/api/v1/wiki", t, None).await;
+    assert_eq!(st, StatusCode::OK);
+    let summary = body["data"]
+        .as_array()
+        .expect("data array")
+        .iter()
+        .find(|row| row["slug"] == "content-test")
+        .unwrap_or_else(|| panic!("GET /wiki must list the saved page: {body}"))
+        .clone();
+    assert_eq!(summary["revision"], 2);
+    assert!(summary.get("body_md").is_none() && summary.get("blocks").is_none());
+    contract_support::assert_valid("wiki-page.schema.json", Some("WikiPageList"), &body);
+
+    // The history holds both revisions, newest first; each revision reads back.
+    let (st, body) = call(&app, "GET", "/api/v1/wiki/content-test/revisions", t, None).await;
+    assert_eq!(st, StatusCode::OK, "revisions: {body}");
+    assert_eq!(body["total"], 2);
+    assert_eq!(body["page"], 1);
+    assert_eq!(body["per_page"], 20);
+    assert_eq!(body["items"][0]["revision"], 2);
+    assert_eq!(body["items"][1]["revision"], 1);
+    contract_support::assert_valid("wiki-page.schema.json", Some("WikiRevisionPage"), &body);
+    let (st, body) = call(
+        &app,
+        "GET",
+        "/api/v1/wiki/content-test/revisions/1",
+        t,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "revision 1: {body}");
+    assert_eq!(body["body_md"], "# hi");
+    assert_eq!(body["icon"], "book");
+    contract_support::assert_valid("wiki-page.schema.json", Some("WikiRevision"), &body);
+
+    // A stale base revision → 409 with the current revision.
+    let (st, body) = call(
+        &app,
+        "PUT",
+        "/api/v1/wiki/content-test",
+        t,
+        Some(wiki.replace("null", "1").as_str()),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CONFLICT, "stale save: {body}");
+    assert_eq!(body["details"]["code"], "wiki_revision_conflict");
+    assert_eq!(body["details"]["current_revision"], 2);
+    contract_support::assert_valid(
+        "wiki-page.schema.json",
+        Some("WikiSaveRefusal"),
+        &body["details"],
+    );
+
+    // Missing required field → 400; so is a body without base_revision.
     let (st, _) = call(&app, "PUT", "/api/v1/wiki/bad", t, Some(r#"{"title":"x"}"#)).await;
     assert_eq!(st, StatusCode::BAD_REQUEST);
+    let no_base = r##"{"category":"SOP","title":"x","icon":"","body_md":"x","nav_order":0}"##;
+    let (st, _) = call(&app, "PUT", "/api/v1/wiki/bad", t, Some(no_base)).await;
+    assert_eq!(st, StatusCode::BAD_REQUEST);
+
+    // Refused markup → 422 with its findings; an oversized body → 400; nothing is stored.
+    let unsafe_link = r##"{"category":"SOP","title":"x","icon":"","body_md":"ok\n\n[x](javascript:alert(1))","nav_order":0,"base_revision":null}"##;
+    let (st, body) = call(&app, "PUT", "/api/v1/wiki/bad", t, Some(unsafe_link)).await;
+    assert_eq!(
+        st,
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "unsafe markup: {body}"
+    );
+    assert_eq!(body["details"]["code"], "wiki_markup_refused");
+    assert_eq!(body["details"]["findings"][0]["line"], 3);
+    assert_eq!(body["details"]["findings"][0]["code"], "unsafe_link_url");
+    contract_support::assert_valid(
+        "wiki-page.schema.json",
+        Some("WikiSaveRefusal"),
+        &body["details"],
+    );
+    let oversized = serde_json::json!({
+        "category": "SOP",
+        "title": "x",
+        "icon": "",
+        "body_md": "a".repeat(262_145),
+        "nav_order": 0,
+        "base_revision": null,
+    })
+    .to_string();
+    let (st, body) = call(&app, "PUT", "/api/v1/wiki/bad", t, Some(&oversized)).await;
+    assert_eq!(st, StatusCode::BAD_REQUEST, "oversized body");
+    assert_eq!(body["details"]["code"], "wiki_body_too_large");
+    let (st, _) = call(&app, "GET", "/api/v1/wiki/bad", t, None).await;
+    assert_eq!(st, StatusCode::NOT_FOUND);
+
+    // Members read the wiki and its history but cannot save; anonymous callers get 401.
+    let member = common::dev_login_token(&app, "community_content_reads", "enlisted").await;
+    let m = Some(member.as_str());
+    let (st, _) = call(&app, "GET", "/api/v1/wiki/content-test/revisions", m, None).await;
+    assert_eq!(st, StatusCode::OK);
+    let (st, _) = call(&app, "PUT", "/api/v1/wiki/member-test", m, Some(wiki)).await;
+    assert_eq!(st, StatusCode::FORBIDDEN);
+    let (st, _) = call(&app, "PUT", "/api/v1/wiki/member-test", None, Some(wiki)).await;
+    assert_eq!(st, StatusCode::UNAUTHORIZED);
+    let (st, _) = call(&app, "GET", "/api/v1/wiki", None, None).await;
+    assert_eq!(st, StatusCode::UNAUTHORIZED);
 
     // Registry with no current modpack → 404.
     let (st, _) = call(&app, "GET", "/api/v1/registry", t, None).await;

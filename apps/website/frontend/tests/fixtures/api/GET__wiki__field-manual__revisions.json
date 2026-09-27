@@ -1,0 +1,13 @@
+{
+  "items": [
+    {
+      "author_id": "000000000000000001",
+      "created_at": "2026-07-14T10:12:00Z",
+      "revision": 1,
+      "title": "Field Manual"
+    }
+  ],
+  "page": 1,
+  "per_page": 20,
+  "total": 1
+}

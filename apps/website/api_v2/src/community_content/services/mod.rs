@@ -3,3 +3,4 @@
 
 pub mod discord_webhook;
 pub mod modpack_lookup;
+pub mod wiki_markup;

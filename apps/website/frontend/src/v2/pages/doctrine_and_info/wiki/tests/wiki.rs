@@ -1,15 +1,29 @@
-//! The wiki's pure helpers and the guard on its administrator affordances.
+//! The wiki's route helpers and the guards on its administrator affordances and its rendering.
 
 use super::super::category_nav::category_order;
-use super::super::markdown_article::updated_day;
 use super::resolve_slug;
-use serde_json::json;
+use crate::v2::core::api::dto::wiki::WikiPageSummary;
+use crate::v2::core::api::dto::DataEnvelope;
+use crate::v2::core::test_support::fixtures::golden;
+
+/// A summary with only the fields these tests read.
+fn summary(slug: &str, category: &str, title: &str) -> WikiPageSummary {
+    WikiPageSummary {
+        slug: slug.into(),
+        category: category.into(),
+        title: title.into(),
+        icon: String::new(),
+        nav_order: 0,
+        revision: 1,
+        updated_at: "2026-07-14T10:12:00Z".into(),
+    }
+}
 
 #[test]
 fn slug_resolution_falls_back_to_first() {
     let pages = vec![
-        json!({"slug": "field-manual", "category": "Doctrine", "title": "Field Manual"}),
-        json!({"slug": "radio-procedure", "category": "Doctrine", "title": "Radio"}),
+        summary("field-manual", "Doctrine", "Field Manual"),
+        summary("radio-procedure", "Doctrine", "Radio"),
     ];
     assert_eq!(resolve_slug(&pages, None).as_deref(), Some("field-manual"));
     assert_eq!(
@@ -20,14 +34,16 @@ fn slug_resolution_falls_back_to_first() {
         resolve_slug(&pages, Some("nope")).as_deref(),
         Some("field-manual")
     );
+    assert_eq!(resolve_slug(&[], Some("field-manual")), None);
 }
 
 #[test]
 fn categories_preserve_first_seen_order() {
     let pages = vec![
-        json!({"slug": "a", "category": "Doctrine"}),
-        json!({"slug": "b", "category": "Administration"}),
-        json!({"slug": "c", "category": "Doctrine"}),
+        summary("a", "Doctrine", "A"),
+        summary("b", "Administration", "B"),
+        summary("c", "Doctrine", "C"),
+        summary("d", "", "D"),
     ];
     assert_eq!(
         category_order(&pages),
@@ -36,9 +52,18 @@ fn categories_preserve_first_seen_order() {
 }
 
 #[test]
-fn updated_day_takes_iso_prefix() {
-    assert_eq!(updated_day("2026-07-14T10:12:00Z"), "2026-07-14");
-    assert_eq!(updated_day(""), "—");
+fn wiki_index_reads_the_captured_summaries_in_their_order() {
+    let list: DataEnvelope<WikiPageSummary> =
+        serde_json::from_str(golden!("GET__wiki.json")).unwrap();
+    assert_eq!(
+        resolve_slug(&list.data, None).as_deref(),
+        Some("field-manual"),
+        "the oracle's /wiki route opens the first manual"
+    );
+    assert_eq!(
+        category_order(&list.data),
+        vec!["Doctrine".to_string(), "Administration".to_string()]
+    );
 }
 
 /// Strips `//` and `/* */` so a ban cannot trip on the text of a doc comment.
@@ -50,7 +75,7 @@ fn strip_rust_comments(src: &str) -> String {
             match chars.peek() {
                 Some('/') => {
                     chars.next();
-                    while let Some(n) = chars.next() {
+                    for n in chars.by_ref() {
                         if n == '\n' {
                             out.push('\n');
                             break;
@@ -103,5 +128,21 @@ fn admin_affordance_uses_authed_reactive_role() {
     assert!(
         !code.contains(&one_shot),
         "one-shot store.has_min_role(Admin) freezes pre-bootstrap None as admin"
+    );
+}
+
+/// The wiki renders authored content as text nodes and attributes only: no production file of
+/// the page writes inner HTML.
+#[test]
+fn wiki_source_never_writes_inner_html() {
+    let production = crate::v2::core::test_support::pins::wiki_source();
+    let code = strip_rust_comments(&production);
+    assert!(
+        !code.contains("inner_html"),
+        "the wiki must never set inner_html; content renders as text nodes"
+    );
+    assert!(
+        !code.contains("set_inner_html") && !code.contains("InnerHtml"),
+        "the wiki must never reach for the inner-HTML attribute"
     );
 }

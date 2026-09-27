@@ -5,7 +5,7 @@ use super::{
     classify_ban_reason, reason_confirm_enabled, roles_sync_success_message,
     roles_sync_updated_count, BanReason, FilterMode, SortMode, ADMIN_ROLES_SYNC_PATH,
 };
-use crate::v2::core::api::dto::AdminUserRow;
+use crate::v2::core::api::dto::administration::AdminUserRow;
 use crate::v2::core::auth::Role;
 
 fn production_src() -> String {

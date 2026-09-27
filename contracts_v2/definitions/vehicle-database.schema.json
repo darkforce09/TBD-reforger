@@ -1,0 +1,151 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VehicleDatabaseContract",
+  "description": "The vehicle database, the identification table of the doctrine pages: its rows, the list, and the administrator's writes. The root is one row.",
+  "$ref": "#/definitions/Vehicle",
+  "definitions": {
+    "Vehicle": {
+      "description": "One vehicle row. GET /api/v1/vehicle-database/{id} (any signed-in member) reads it; POST answers 201 with the new row, and PUT, PATCH and DELETE answer 200 with the stored row. amphibious, primary_threat and profile_image_url are absent when empty. A deleted row answers 404 on every route that names it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "faction",
+        "armor_type"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "faction": {
+          "type": "string"
+        },
+        "armor_type": {
+          "type": "string"
+        },
+        "amphibious": {
+          "type": "string",
+          "minLength": 1
+        },
+        "primary_threat": {
+          "type": "string",
+          "minLength": 1
+        },
+        "profile_image_url": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "VehicleList": {
+      "description": "GET /api/v1/vehicle-database (any signed-in member): every row that is not deleted, ordered by name, then id.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Vehicle"
+          }
+        }
+      }
+    },
+    "VehicleWrite": {
+      "description": "POST /api/v1/vehicle-database (administrator, answered 201) and PUT /api/v1/vehicle-database/{id} (administrator, answered 200) body; PUT replaces every field. Each value is trimmed before its limit applies: name, faction and armor_type are required and not blank; an absent or empty optional field is stored as none. profile_image_url is an https URL or a site-relative /path. Unknown keys answer 400. Every accepted write appends an audit line in the same transaction.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "faction",
+        "armor_type"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "pattern": "\\S"
+        },
+        "faction": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60,
+          "pattern": "\\S"
+        },
+        "armor_type": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60,
+          "pattern": "\\S"
+        },
+        "amphibious": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "primary_threat": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "profile_image_url": {
+          "type": "string",
+          "pattern": "^(|https://[^\\s\\\\/\\x00-\\x1F\\x7F-\\x9F][^\\s\\\\\\x00-\\x1F\\x7F-\\x9F]*|/[^\\s\\\\/\\x00-\\x1F\\x7F-\\x9F][^\\s\\\\\\x00-\\x1F\\x7F-\\x9F]*)$"
+        }
+      }
+    },
+    "VehiclePatch": {
+      "description": "PATCH /api/v1/vehicle-database/{id} body (administrator, answered 200): an absent key leaves its field unchanged, and null or an empty value clears an optional field; null or a blank value for name, faction or armor_type answers 400. The limits and trimming of VehicleWrite apply, unknown keys answer 400, and the write appends an audit line in its transaction. DELETE /api/v1/vehicle-database/{id} (administrator) soft-deletes the row and answers 200 with it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "pattern": "\\S"
+        },
+        "faction": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60,
+          "pattern": "\\S"
+        },
+        "armor_type": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60,
+          "pattern": "\\S"
+        },
+        "amphibious": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 60
+        },
+        "primary_threat": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 120
+        },
+        "profile_image_url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^(|https://[^\\s\\\\/\\x00-\\x1F\\x7F-\\x9F][^\\s\\\\\\x00-\\x1F\\x7F-\\x9F]*|/[^\\s\\\\/\\x00-\\x1F\\x7F-\\x9F][^\\s\\\\\\x00-\\x1F\\x7F-\\x9F]*)$"
+        }
+      }
+    }
+  }
+}

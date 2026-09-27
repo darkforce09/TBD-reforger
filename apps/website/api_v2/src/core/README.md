@@ -20,6 +20,7 @@ apps/website/api_v2/src/core/
 ├── middleware/                 the request middleware chain and the authentication extractors
 ├── mod.rs                      the module tree
 ├── observability/              Prometheus metrics, `GET /metrics` and `GET /healthz`
+├── process_lifecycle/          the process-wide shutdown signal that closes open SSE streams
 ├── realtime_hub/               the in-process publish-subscribe hub behind the SSE streams
 ├── tests/                      unit tests of the assembled router: metrics, health, route merging
 ├── text/                       the URL write guard, HTML sanitation and text previews
@@ -31,9 +32,12 @@ apps/website/api_v2/src/core/
 The `api` binary loads `Config`, opens the pool with `database::connect`, applies the migrations
 with `database::migrate`, builds `AppState::new(pool, config)`, arms the
 [background workers](/documentation_v2/glossary/a_to_f.md#background-workers), and
-serves `http_router::router(state)`. `AppState` is the one dependency container: handlers and
-middleware extract it whole or take one part (the pool, the config, the token manager, the hub,
-the Discord and webhook clients, the session authority) through its `FromRef` implementations.
+serves `http_router::router(state)`. On SIGINT or SIGTERM it begins
+`process_lifecycle::process_shutdown`, which closes every open
+[SSE](/documentation_v2/glossary/n_to_z.md#sse) stream so the graceful drain completes.
+`AppState` is the one dependency container: handlers and middleware extract it whole or take one
+part (the pool, the config, the token manager, the hub, the Discord and webhook clients, the
+session authority) through its `FromRef` implementations.
 
 `router` nests the `/api/v1` tree, which merges the eight domains' route tables and adds no
 prefix of its own, so a public URL is the path written in a domain's `routes.rs` with `/api/v1`
@@ -70,6 +74,8 @@ predicates, wire formats, the URL guard, the 429 retry, the token primitives.
 - `authentication_primitives`: `Manager` and `Claims`, `hash_token`, `random_token`,
   `constant_time_equal`, `numeric_code`, and the `SessionAuthority` trait that
   `identity_and_access` implements.
+- `process_lifecycle::process_shutdown` and `ShutdownSignal`: the process-wide shutdown signal
+  the `api` binary begins and every event stream ends on.
 - `realtime_hub::Hub`, `http::pagination::PageParams`,
   `http_client::retry_on_429::send_with_retry_on_429`, the `text` guard and preview helpers, and
   the `wire_format` serializers.

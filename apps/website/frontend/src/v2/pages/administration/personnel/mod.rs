@@ -1,17 +1,19 @@
 //! The personnel roster: who is in the unit, and the standing each member holds.
 //!
-//! **Role:** declares the route component, the roster table, the dossier pane, and the role and
-//! sanction controls the dossier opens.
+//! **Role:** declares the route component, the roster address kept in the URL, the roster table and
+//! its pager, the dossier pane, and the role and sanction controls the dossier opens.
 //! **Position:** the `/admin/personnel` route, in the administration hub.
 //! **Signals & state:** none at this level; the page owns the fetch and every shared signal.
-//! **Invariants:** both panes read the same fetched page, so the table and the dossier can never
-//! disagree about who is on the roster.
+//! **Invariants:** both panes and the pager read the same fetched page, so the table, the dossier
+//! and the page position can never disagree about who is on the roster.
 #![allow(dead_code)]
 
 mod dossier;
 mod member_roster;
 mod page;
 mod role_dialog;
+mod roster_pager;
+mod roster_query;
 
 pub use page::PersonnelRosterPage;
 

@@ -33,7 +33,12 @@ No file holds versions 0022, 0023 and 0024, and none may.
   delivery-process vocabulary, no paths to files the crate does not have.
 - Schema: plain DDL and DML that sqlx runs in one transaction per file; no file opts out with
   sqlx's `-- no-transaction` marker. A migration must apply over a populated database, not only an
-  empty one.
+  empty one: it backfills in the same file whatever the existing rows imply
+  (`0057_audit_publication_retained_floor.sql` derives the retained floor of the audit publication
+  sequence from the published history, `0059_wiki_page_revisions.sql` records every page's current
+  content as its revision 1), and it never stamps a row with a value the row did not record
+  (`0058_vehicle_database_lifecycle.sql` adds its lifecycle columns without defaults, so older
+  entries keep them null, and only then sets the defaults new rows take).
 - Adding a file: give it the next version above the highest on disk, add its
   `(version, sha384)` row to `PINNED` in `apps/website/api_v2/tests/migrations_are_immutable.rs`
   (`sha384sum` prints the digest), and run `cargo xtask db test-it`. A comments-only edit to an

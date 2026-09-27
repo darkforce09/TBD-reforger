@@ -14,7 +14,7 @@ apps/website/api_v2/src/community_content/
 ├── mod.rs     the module tree; re-exports `routes`
 ├── models/    the announcement, modpack, wiki page and vehicle rows
 ├── routes.rs  the domain's `/api/v1` route table
-└── services/  the Discord announcement webhook and the modpack read path
+└── services/  the Discord announcement webhook, the modpack read path and the wiki markup reader
 ```
 
 ## How it works
@@ -25,20 +25,35 @@ the [content manager](/documentation_v2/glossary/a_to_f.md#content-manager) page
 to Discord through `services::discord_webhook::WebhookService` when it is published, and archiving
 it keeps the row. An uploaded image lands in the directory `UPLOAD_DIR` names
 (`Config::upload_dir`), which `core::http_router` serves at `/uploads`. A modpack is always written
-with its whole mod list, and at most one pack at a time is marked current. Administrator writes
-leave best-effort audit lines through `administration::services::audit_writer`.
+with its whole mod list, and at most one pack at a time is marked current. The vehicle database
+writes and the wiki save append their audit line in the write's own transaction through
+`administration::services::required_audit`; the other administrator writes leave best-effort
+audit lines through `administration::services::audit_writer`. A wiki page's markdown is read by
+`services::wiki_markup` into typed blocks that render safely; a save names the revision it
+edits, is refused with every finding when its markup holds an unsafe link or image, raw HTML or
+nesting deeper than 16, and records each accepted save as a numbered revision.
 
 ## Public surface
 
-- `routes::routes()`: the table `core::http_router` merges under `/api/v1`, one route each:
+- `routes::routes()`: the table `core::http_router` merges under `/api/v1`. It registers the flat
+  handlers and the `handlers::vehicle_database` and `handlers::wiki_knowledgebase` handlers
+  itself; one route each:
   - `GET /api/v1/announcements` and `GET /api/v1/announcements/{id}`: `AuthUser`; published rows.
   - `GET` and `POST /api/v1/cms/announcements`: `AdminUser`; every row, and create.
   - `PATCH` and `DELETE /api/v1/cms/announcements/{id}`: `AdminUser`; partial edit, archive.
   - `POST /api/v1/cms/announcements/{id}/push-discord`: `AdminUser`; push a published row again.
-  - `POST /api/v1/cms/uploads`: `AdminUser`; one multipart image of at most 5 MB.
-  - `GET /api/v1/wiki`: `AuthUser`; the navigation list.
-  - `GET` and `PUT /api/v1/wiki/{slug}`: `AuthUser` to read, `AdminUser` to create or replace.
-  - `GET` and `POST /api/v1/vehicle-database`: `AuthUser` to read, `AdminUser` to add a row.
+  - `POST /api/v1/cms/uploads`: `AdminUser`; one multipart JPEG, PNG or WebP image of at most
+    5 MiB, answered 201 with its URL.
+  - `GET /api/v1/wiki`: `AuthUser`; the page summaries in navigation order.
+  - `GET` and `PUT /api/v1/wiki/{slug}`: `AuthUser` to read the article with its parsed blocks,
+    `AdminUser` to create the page (`base_revision: null`, 201) or save its next revision (200).
+  - `GET /api/v1/wiki/{slug}/revisions`: `AuthUser`; one page of the revision history, newest
+    first.
+  - `GET /api/v1/wiki/{slug}/revisions/{revision}`: `AuthUser`; the page as one revision saved it.
+  - `GET` and `POST /api/v1/vehicle-database`: `AuthUser` to read the live rows, `AdminUser` to
+    add a row (201).
+  - `GET`, `PUT`, `PATCH` and `DELETE /api/v1/vehicle-database/{id}`: `AuthUser` to read one row,
+    `AdminUser` to replace it, change some of its fields or soft-delete it.
   - `GET` and `POST /api/v1/modpacks`: `AuthUser` to list, `AdminUser` to create.
   - `GET /api/v1/modpacks/current`: `AuthUser`; the current pack.
   - `PUT` and `DELETE /api/v1/modpacks/{id}`: `AdminUser`; full replace, delete.
@@ -47,6 +62,8 @@ leave best-effort audit lines through `administration::services::audit_writer`.
   pack-plus-mods read, used by the dashboard in `command_center` and the server intel in
   `server_infrastructure`.
 - `services::discord_webhook::WebhookService`: the webhook sink `core::application_state` holds.
+- `services::wiki_markup::read_markup`: a wiki page's markdown as safe blocks and refusal
+  findings, used by the wiki handlers.
 - `models`: `Announcement`, read by the dashboard, and `Modpack` with `ModpackMod`, read by
   `server_infrastructure` and by the [registry](/documentation_v2/glossary/n_to_z.md#registry) items in
   `missions`.
@@ -54,7 +71,7 @@ leave best-effort audit lines through `administration::services::audit_writer`.
 ## Boundaries
 
 - Depends on: `core` (the application state, configuration, errors, extractors, pagination, the
-  HTML sanitizer, the URL guard, the HTTP retry helper, wire formats) and
+  HTML sanitizer, the URL guard, the content URL policy, the HTTP retry helper, wire formats) and
   `administration::{models, services}` for the audit lines its writes leave.
 - Used by:
   - `core::http_router`, which merges the route table, and `core::application_state`;
@@ -63,10 +80,11 @@ leave best-effort audit lines through `administration::services::audit_writer`.
   - over HTTP, the command center, doctrine and content manager pages in
     `apps/website/frontend/src/v2/pages/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
-  router merges (`apps/website/api_v2/src/tests/architecture_rules.rs` checks both); every handler
-  carries its `/// @route` tag (`cargo xtask verify route-tags`); the pack-plus-mods query lives
-  only in `services/modpack_lookup.rs`, and `handlers/media_upload.rs` is the only writer of the
-  upload directory.
+  router merges (`apps/website/api_v2/src/tests/architecture_rules.rs` checks both); a handler
+  folder with its own `routes()` holds every registration of its routes, and `routes.rs` only
+  merges it; every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); the
+  pack-plus-mods query lives only in `services/modpack_lookup.rs`, and `handlers/media_upload/`
+  is the only writer of the upload directory.
 
 ## Related documentation
 

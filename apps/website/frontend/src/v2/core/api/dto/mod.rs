@@ -10,6 +10,7 @@
 //! against a captured response, so an added field that the fixtures do not carry fails the tests
 //! rather than passing silently.
 
+pub mod administration;
 pub mod auth;
 pub mod common;
 pub mod content;
@@ -25,6 +26,8 @@ pub mod missions;
 pub mod registry;
 pub mod servers;
 pub mod telemetry;
+pub mod vehicles;
+pub mod wiki;
 
 pub use auth::*;
 pub use common::*;

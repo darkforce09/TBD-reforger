@@ -3,21 +3,22 @@
 # Doctrine wiki page documentation
 
 The feature documentation of the `/wiki` and `/wiki/:slug` page, where members read the
-community's standard operating procedures and manuals and administrators edit them.
+community's standard operating procedures and manuals and administrators edit and restore them.
 
 ## Contents
 
 ```text
 documentation_v2/website/frontend/pages/doctrine_and_info/wiki/
-└── wiki_page.md  the feature doc: the index, the Markdown subset, editing and the API
+└── wiki_page.md  the feature doc: the index, rendering, the history, editing, restoring and the API
 ```
 
 ## Code
 
 - [Doctrine wiki page](/apps/website/frontend/src/v2/pages/doctrine_and_info/wiki/) — the route
-  component `WikiPage`, the index, the reading pane and the renderer.
-- [Community content domain](/apps/website/api_v2/src/community_content/) — the wiki list and
-  write routes the page calls.
+  component `WikiPage`, the index, the article pane, the block renderer, the revision history and
+  the save path.
+- [Community content domain](/apps/website/api_v2/src/community_content/) — the wiki list, article,
+  revision and write routes the page calls, and the markup service.
 
 ## Boundaries
 

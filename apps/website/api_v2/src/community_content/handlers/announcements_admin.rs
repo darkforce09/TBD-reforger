@@ -1,6 +1,20 @@
 //! The CMS announcement surface: the admin master list plus create, partial edit, and archive.
+//!
+//! **Role:** answers `GET` and `POST /api/v1/cms/announcements` and `PATCH` and
+//! `DELETE /api/v1/cms/announcements/{id}` for the content manager.
+//! **Position:** registered by [`crate::community_content::routes::routes`]; writes
+//! `announcements`, pushes a published row through
+//! `announcement_discord_push::push_to_discord` and leaves best-effort audit lines
+//! through `administration::services::audit_writer`.
+//! **Signals & state:** none; each handler takes the pool from the application state.
+//! **Invariants:** every handler takes `AdminUser`; the author id is the authenticated caller's,
+//! never a body value; an unreadable JSON body answers through [`ApiError::from_json_rejection`]
+//! (413 over the request limit, 415 without a JSON content type, else 400), and a list query
+//! string that does not decode through [`ApiError::from_query_rejection`] (400); a refused field
+//! leaves the row untouched; the list orders pinned rows first, then by `updated_at DESC, id DESC`,
+//! a total order.
 
-use axum::extract::rejection::JsonRejection;
+use axum::extract::rejection::{JsonRejection, QueryRejection};
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::Json;
@@ -109,14 +123,19 @@ pub struct AnnouncementInput {
 ///
 /// Public `GET /announcements` is published-only; the Content Manager needs drafts too.
 /// Archived rows (soft-delete via DELETE) are omitted so the editor matches post-archive UI.
-/// Envelope matches the platform list shape `{data,total,limit,offset}`.
+/// Envelope matches the platform list shape `{data,total,limit,offset}`. Rows edited at the same
+/// instant order by `id DESC`, so every page boundary is stable. A `limit` or `offset` that is not
+/// an integer answers 400 in the error envelope.
 ///
 /// @route GET /api/v1/cms/announcements
 pub async fn list_cms_announcements(
     State(state): State<AppState>,
     _a: AdminUser,
-    Query(page): Query<PageParams>,
+    page: Result<Query<PageParams>, QueryRejection>,
 ) -> Result<Json<Value>, ApiError> {
+    let Query(page) = page.map_err(|rejection| {
+        ApiError::from_query_rejection(rejection, "announcement page query")
+    })?;
     let (limit, offset) = page.bounds();
     let total: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM announcements \
@@ -127,7 +146,7 @@ pub async fn list_cms_announcements(
     let items: Vec<Announcement> = sqlx::query_as(concat!(
         "SELECT id, title, body, COALESCE(snippet, '') AS snippet, tag, COALESCE(thumbnail_url, '') AS thumbnail_url, author_id, status, is_pinned, pushed_to_discord, COALESCE(discord_message_id, '') AS discord_message_id, published_at, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM announcements ",
         "WHERE deleted_at IS NULL AND status IN ('draft', 'published') ",
-        "ORDER BY is_pinned DESC, updated_at DESC LIMIT $1 OFFSET $2"
+        "ORDER BY is_pinned DESC, updated_at DESC, id DESC LIMIT $1 OFFSET $2"
     ))
     .bind(limit)
     .bind(offset)
@@ -146,7 +165,7 @@ pub async fn create_announcement(
     admin: AdminUser,
     body: Result<Json<AnnouncementInput>, JsonRejection>,
 ) -> Result<(StatusCode, Json<Announcement>), ApiError> {
-    let Json(input) = body.map_err(|_| ApiError::bad_request("title and body are required"))?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
     // `trim()`, not bare `is_empty()`: a whitespace-only title or body is not content, and this
     // guard is the only thing standing between it and a **published** announcement pushed to
     // Discord at the bottom of this function. The stored bytes stay verbatim below, though — a
@@ -247,7 +266,7 @@ pub async fn update_announcement(
     let Some(existing) = reload(&state, id).await? else {
         return Err(ApiError::not_found("announcement not found"));
     };
-    let Json(input) = body.map_err(|_| ApiError::bad_request("invalid body"))?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
 
     // Validated before the builder runs, so a rejected blank leaves the row entirely untouched
     // rather than applying the caller's other field edits.

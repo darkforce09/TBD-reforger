@@ -1,0 +1,132 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AuditLogContract",
+  "description": "The administrator's audit console: the history list and the live stream that replays from a cursor. The root is one history page.",
+  "$ref": "#/definitions/AuditLogPage",
+  "definitions": {
+    "AuditLogEntry": {
+      "description": "One audit line, the same shape in the history list and on the live stream. id is the line's allocation order, which is not the stream's delivery order. actor_id is absent on system lines; actor_name, target_type and target_id are absent when empty; metadata, when present, is the structured context the writer recorded.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "severity",
+        "action",
+        "message",
+        "created_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "info",
+            "warn",
+            "crit"
+          ]
+        },
+        "actor_id": {
+          "type": "string"
+        },
+        "actor_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "target_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "AuditLogPage": {
+      "description": "GET /api/v1/admin/audit-logs?severity=&q=&before=&limit= (administrator): audit lines, newest id first. severity (info, warn or crit) keeps one severity and a non-blank q the lines whose message contains it, ignoring case; before=<id> continues below that id; limit is served when it is 1 to 100 and is 20 otherwise. next_cursor is the last line's id when the page is full, the before of the next page, and null otherwise.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data",
+        "next_cursor"
+      ],
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AuditLogEntry"
+          }
+        },
+        "next_cursor": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        }
+      }
+    },
+    "AuditStreamReady": {
+      "description": "GET /api/v1/admin/audit-logs/stream (administrator, text/event-stream): the event that opens every stream, `event: ready`, whose id is the start cursor, resume_after. Without Last-Event-ID the stream starts at the tail, the newest publication sequence; with one it resumes after that sequence, and a malformed one answers 400. retained_after is the retained floor: any publication sequence at or below it may be missing. After ready, each published audit line is an unnamed event whose id is its publication sequence and whose data is an AuditLogEntry. A client connects, waits for ready, loads history from the list route and drops stream lines whose id it already holds.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resume_after",
+        "retained_after"
+      ],
+      "properties": {
+        "resume_after": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "retained_after": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "AuditStreamReset": {
+      "description": "`event: reset` on the audit stream, whose id is the tail: the requested history cannot be replayed. cursor_ahead: the cursor is beyond the newest publication. history_unavailable: the cursor is below the retained floor, at open or when a later wake finds the floor above the stream's cursor. The stream continues after resume_after, the tail, and the client reloads history from the list route.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reason",
+        "resume_after",
+        "retained_after"
+      ],
+      "properties": {
+        "reason": {
+          "type": "string",
+          "enum": [
+            "cursor_ahead",
+            "history_unavailable"
+          ]
+        },
+        "resume_after": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "retained_after": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

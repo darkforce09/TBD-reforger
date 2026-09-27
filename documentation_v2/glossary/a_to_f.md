@@ -76,11 +76,13 @@ See: [Mission artifacts evidence](/documentation_v2/website/api_v2/verification_
 
 ### audit logs
 
-The trail of administrative actions at `/admin/audit`, newest first: the page loads it a page at a
-time, filters the loaded entries by text in the browser and inspects one entry. The API also serves
-a CSV export and a live [SSE](/documentation_v2/glossary/n_to_z.md#sse) feed, which the page does not use.
+The trail of administrative actions at `/admin/audit`, newest first: the page follows the live
+[SSE](/documentation_v2/glossary/n_to_z.md#sse) feed, resuming after a drop from the last event id,
+loads older entries a page at a time, shows each entry once whichever way it arrived, filters the
+loaded entries by text in the browser and inspects one entry. The API also serves a CSV export,
+which the page does not use.
 
-In code: `AuditLogsPage` in `apps/website/frontend/src/v2/pages/administration/audit_logs/`; `apps/website/api_v2/src/administration/handlers/audit_logs.rs`.
+In code: `AuditLogsPage` in `apps/website/frontend/src/v2/pages/administration/audit_logs/`; `apps/website/frontend/src/v2/core/api/audit_stream.rs`; `apps/website/api_v2/src/administration/handlers/audit_logs.rs`.
 
 See: [Audit logs page](/documentation_v2/website/frontend/pages/administration/audit_logs/audit_logs_page.md).
 

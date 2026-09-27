@@ -1,0 +1,1312 @@
+{
+  "blocks": [
+    {
+      "anchor": "wiki-formatting-guide",
+      "inlines": [
+        {
+          "text": "Wiki Formatting Guide",
+          "type": "text"
+        }
+      ],
+      "level": 1,
+      "type": "heading"
+    },
+    {
+      "inlines": [
+        {
+          "text": "This page shows every kind of formatting a doctrine page can carry. Each section shows the result, then the markdown that makes it, so you can copy it into your own page. Pages are plain markdown: when you save, the wiki refuses raw HTML, links and images whose address it does not trust, and anything nested more than 16 levels deep, and it tells you the line of each problem.",
+          "type": "text"
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "anchor": "contents",
+      "inlines": [
+        {
+          "text": "Contents",
+          "type": "text"
+        }
+      ],
+      "level": 2,
+      "type": "heading"
+    },
+    {
+      "items": [
+        {
+          "blocks": [
+            {
+              "inlines": [
+                {
+                  "children": [
+                    {
+                      "text": "Headings",
+                      "type": "text"
+                    }
+                  ],
+                  "external": false,
+                  "href": "#headings",
+                  "type": "link"
+                }
+              ],
+              "type": "paragraph"
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "inlines": [
+                {
+                  "children": [
+                    {
+                      "text": "Text",
+                      "type": "text"
+                    }
+                  ],
+                  "external": false,
+                  "href": "#text",
+                  "type": "link"
+                }
+              ],
+              "type": "paragraph"
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "inlines": [
+                {
+                  "children": [
+                    {
+                      "text": "Links",
+                      "type": "text"
+                    }
+                  ],
+                  "external": false,
+                  "href": "#links",
+                  "type": "link"
+                }
+              ],
+              "type": "paragraph"
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "inlines": [
+                {
+                  "children": [
+                    {
+                      "text": "Images",
+                      "type": "text"
+                    }
+                  ],
+                  "external": false,
+                  "href": "#images",
+                  "type": "link"
+                }
+              ],
+              "type": "paragraph"
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "inlines": [
+                {
+                  "children": [
+                    {
+                      "text": "Tables",
+                      "type": "text"
+                    }
+                  ],
+                  "external": false,
+                  "href": "#tables",
+                  "type": "link"
+                }
+              ],
+              "type": "paragraph"
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "inlines": [
+                {
+                  "children": [
+                    {
+                      "text": "Checklists",
+                      "type": "text"
+                    }
+                  ],
+                  "external": false,
+                  "href": "#checklists",
+                  "type": "link"
+                }
+              ],
+              "type": "paragraph"
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "inlines": [
+                {
+                  "children": [
+                    {
+                      "text": "Callouts",
+                      "type": "text"
+                    }
+                  ],
+                  "external": false,
+                  "href": "#callouts",
+                  "type": "link"
+                }
+              ],
+              "type": "paragraph"
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "inlines": [
+                {
+                  "children": [
+                    {
+                      "text": "Quotes",
+                      "type": "text"
+                    }
+                  ],
+                  "external": false,
+                  "href": "#quotes",
+                  "type": "link"
+                }
+              ],
+              "type": "paragraph"
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "inlines": [
+                {
+                  "children": [
+                    {
+                      "text": "Code",
+                      "type": "text"
+                    }
+                  ],
+                  "external": false,
+                  "href": "#code",
+                  "type": "link"
+                }
+              ],
+              "type": "paragraph"
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "inlines": [
+                {
+                  "children": [
+                    {
+                      "text": "Rules",
+                      "type": "text"
+                    }
+                  ],
+                  "external": false,
+                  "href": "#rules",
+                  "type": "link"
+                }
+              ],
+              "type": "paragraph"
+            }
+          ]
+        }
+      ],
+      "ordered": false,
+      "type": "list"
+    },
+    {
+      "anchor": "headings",
+      "inlines": [
+        {
+          "text": "Headings",
+          "type": "text"
+        }
+      ],
+      "level": 2,
+      "type": "heading"
+    },
+    {
+      "inlines": [
+        {
+          "text": "Start a line with one to six ",
+          "type": "text"
+        },
+        {
+          "text": "#",
+          "type": "code"
+        },
+        {
+          "text": " characters and a space. Every heading gets an anchor made from its text: ",
+          "type": "text"
+        },
+        {
+          "text": "## Radio nets",
+          "type": "code"
+        },
+        {
+          "text": " is linked as ",
+          "type": "text"
+        },
+        {
+          "text": "#radio-nets",
+          "type": "code"
+        },
+        {
+          "text": ", and a repeated heading gets ",
+          "type": "text"
+        },
+        {
+          "text": "-2",
+          "type": "code"
+        },
+        {
+          "text": ", ",
+          "type": "text"
+        },
+        {
+          "text": "-3",
+          "type": "code"
+        },
+        {
+          "text": " and so on.",
+          "type": "text"
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "anchor": "heading-level-1",
+      "inlines": [
+        {
+          "text": "Heading level 1",
+          "type": "text"
+        }
+      ],
+      "level": 1,
+      "type": "heading"
+    },
+    {
+      "anchor": "heading-level-2",
+      "inlines": [
+        {
+          "text": "Heading level 2",
+          "type": "text"
+        }
+      ],
+      "level": 2,
+      "type": "heading"
+    },
+    {
+      "anchor": "heading-level-3",
+      "inlines": [
+        {
+          "text": "Heading level 3",
+          "type": "text"
+        }
+      ],
+      "level": 3,
+      "type": "heading"
+    },
+    {
+      "anchor": "heading-level-4",
+      "inlines": [
+        {
+          "text": "Heading level 4",
+          "type": "text"
+        }
+      ],
+      "level": 4,
+      "type": "heading"
+    },
+    {
+      "anchor": "heading-level-5",
+      "inlines": [
+        {
+          "text": "Heading level 5",
+          "type": "text"
+        }
+      ],
+      "level": 5,
+      "type": "heading"
+    },
+    {
+      "anchor": "heading-level-6",
+      "inlines": [
+        {
+          "text": "Heading level 6",
+          "type": "text"
+        }
+      ],
+      "level": 6,
+      "type": "heading"
+    },
+    {
+      "anchor": "text",
+      "inlines": [
+        {
+          "text": "Text",
+          "type": "text"
+        }
+      ],
+      "level": 2,
+      "type": "heading"
+    },
+    {
+      "inlines": [
+        {
+          "text": "Write ",
+          "type": "text"
+        },
+        {
+          "children": [
+            {
+              "text": "bold",
+              "type": "text"
+            }
+          ],
+          "type": "strong"
+        },
+        {
+          "text": " as ",
+          "type": "text"
+        },
+        {
+          "text": "**bold**",
+          "type": "code"
+        },
+        {
+          "text": ", ",
+          "type": "text"
+        },
+        {
+          "children": [
+            {
+              "text": "italic",
+              "type": "text"
+            }
+          ],
+          "type": "emphasis"
+        },
+        {
+          "text": " as ",
+          "type": "text"
+        },
+        {
+          "text": "*italic*",
+          "type": "code"
+        },
+        {
+          "text": ", ",
+          "type": "text"
+        },
+        {
+          "children": [
+            {
+              "text": "struck-through",
+              "type": "text"
+            }
+          ],
+          "type": "strikethrough"
+        },
+        {
+          "text": " text as ",
+          "type": "text"
+        },
+        {
+          "text": "~~struck-through~~",
+          "type": "code"
+        },
+        {
+          "text": " and ",
+          "type": "text"
+        },
+        {
+          "text": "inline code",
+          "type": "code"
+        },
+        {
+          "text": " between backticks. End a line with a backslash to break it",
+          "type": "text"
+        },
+        {
+          "type": "line_break"
+        },
+        {
+          "text": "without starting a new paragraph. Leave a blank line between paragraphs.",
+          "type": "text"
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "anchor": "links",
+      "inlines": [
+        {
+          "text": "Links",
+          "type": "text"
+        }
+      ],
+      "level": 2,
+      "type": "heading"
+    },
+    {
+      "items": [
+        {
+          "blocks": [
+            {
+              "inlines": [
+                {
+                  "text": "Another wiki page: ",
+                  "type": "text"
+                },
+                {
+                  "children": [
+                    {
+                      "text": "Field Manual",
+                      "type": "text"
+                    }
+                  ],
+                  "external": false,
+                  "href": "/wiki/field-manual",
+                  "type": "link"
+                },
+                {
+                  "text": ", written ",
+                  "type": "text"
+                },
+                {
+                  "text": "[Field Manual](/wiki/field-manual)",
+                  "type": "code"
+                },
+                {
+                  "text": ".",
+                  "type": "text"
+                }
+              ],
+              "type": "paragraph"
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "inlines": [
+                {
+                  "text": "Another site: ",
+                  "type": "text"
+                },
+                {
+                  "children": [
+                    {
+                      "text": "Arma Reforger",
+                      "type": "text"
+                    }
+                  ],
+                  "external": true,
+                  "href": "https://reforger.armaplatform.com",
+                  "type": "link"
+                },
+                {
+                  "text": ", written with the full ",
+                  "type": "text"
+                },
+                {
+                  "text": "https://",
+                  "type": "code"
+                },
+                {
+                  "text": " address.",
+                  "type": "text"
+                }
+              ],
+              "type": "paragraph"
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "inlines": [
+                {
+                  "text": "A heading on this page: ",
+                  "type": "text"
+                },
+                {
+                  "children": [
+                    {
+                      "text": "back to Contents",
+                      "type": "text"
+                    }
+                  ],
+                  "external": false,
+                  "href": "#contents",
+                  "type": "link"
+                },
+                {
+                  "text": ", written ",
+                  "type": "text"
+                },
+                {
+                  "text": "[back to Contents](#contents)",
+                  "type": "code"
+                },
+                {
+                  "text": ".",
+                  "type": "text"
+                }
+              ],
+              "type": "paragraph"
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "inlines": [
+                {
+                  "text": "An email address: ",
+                  "type": "text"
+                },
+                {
+                  "children": [
+                    {
+                      "text": "the staff inbox",
+                      "type": "text"
+                    }
+                  ],
+                  "external": true,
+                  "href": "mailto:staff@example.com",
+                  "type": "link"
+                },
+                {
+                  "text": ", written ",
+                  "type": "text"
+                },
+                {
+                  "text": "[the staff inbox](mailto:staff@example.com)",
+                  "type": "code"
+                },
+                {
+                  "text": ".",
+                  "type": "text"
+                }
+              ],
+              "type": "paragraph"
+            }
+          ]
+        }
+      ],
+      "ordered": false,
+      "type": "list"
+    },
+    {
+      "inlines": [
+        {
+          "text": "A link address starts with ",
+          "type": "text"
+        },
+        {
+          "text": "https://",
+          "type": "code"
+        },
+        {
+          "text": ", ",
+          "type": "text"
+        },
+        {
+          "text": "http://",
+          "type": "code"
+        },
+        {
+          "text": ", ",
+          "type": "text"
+        },
+        {
+          "text": "mailto:",
+          "type": "code"
+        },
+        {
+          "text": ", ",
+          "type": "text"
+        },
+        {
+          "text": "/",
+          "type": "code"
+        },
+        {
+          "text": " or ",
+          "type": "text"
+        },
+        {
+          "text": "#",
+          "type": "code"
+        },
+        {
+          "text": ". Any other address, such as a bare ",
+          "type": "text"
+        },
+        {
+          "text": "field-manual",
+          "type": "code"
+        },
+        {
+          "text": " or a ",
+          "type": "text"
+        },
+        {
+          "text": "javascript:",
+          "type": "code"
+        },
+        {
+          "text": " address, is refused when you save.",
+          "type": "text"
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "anchor": "images",
+      "inlines": [
+        {
+          "text": "Images",
+          "type": "text"
+        }
+      ],
+      "level": 2,
+      "type": "heading"
+    },
+    {
+      "inlines": [
+        {
+          "alt": "Everon grid map",
+          "src": "/uploads/wiki-formatting-guide-map.png",
+          "title": "Everon grid map",
+          "type": "image"
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "inlines": [
+        {
+          "text": "Written ",
+          "type": "text"
+        },
+        {
+          "text": "![Everon grid map](/uploads/wiki-formatting-guide-map.png \"Everon grid map\")",
+          "type": "code"
+        },
+        {
+          "text": ". Upload the picture through the content manager and paste the ",
+          "type": "text"
+        },
+        {
+          "text": "/uploads/...",
+          "type": "code"
+        },
+        {
+          "text": " address it gives you, or use an ",
+          "type": "text"
+        },
+        {
+          "text": "https://",
+          "type": "code"
+        },
+        {
+          "text": " address. The text in the square brackets is shown when the picture cannot be, and the quoted title is optional.",
+          "type": "text"
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "anchor": "tables",
+      "inlines": [
+        {
+          "text": "Tables",
+          "type": "text"
+        }
+      ],
+      "level": 2,
+      "type": "heading"
+    },
+    {
+      "alignments": [
+        "left",
+        "center",
+        "right",
+        "none"
+      ],
+      "header": [
+        [
+          {
+            "text": "Net",
+            "type": "text"
+          }
+        ],
+        [
+          {
+            "text": "Users",
+            "type": "text"
+          }
+        ],
+        [
+          {
+            "text": "Channel",
+            "type": "text"
+          }
+        ],
+        [
+          {
+            "text": "Notes",
+            "type": "text"
+          }
+        ]
+      ],
+      "rows": [
+        [
+          [
+            {
+              "text": "Command",
+              "type": "text"
+            }
+          ],
+          [
+            {
+              "text": "Platoon staff and squad leads",
+              "type": "text"
+            }
+          ],
+          [
+            {
+              "text": "1",
+              "type": "text"
+            }
+          ],
+          [
+            {
+              "text": "Always monitored",
+              "type": "text"
+            }
+          ]
+        ],
+        [
+          [
+            {
+              "text": "Squad",
+              "type": "text"
+            }
+          ],
+          [
+            {
+              "text": "Inside a squad",
+              "type": "text"
+            }
+          ],
+          [
+            {
+              "text": "2",
+              "type": "text"
+            }
+          ],
+          [
+            {
+              "text": "One per squad",
+              "type": "text"
+            }
+          ]
+        ],
+        [
+          [
+            {
+              "text": "Air",
+              "type": "text"
+            }
+          ],
+          [
+            {
+              "text": "Rotary wing and JTAC",
+              "type": "text"
+            }
+          ],
+          [
+            {
+              "text": "8",
+              "type": "text"
+            }
+          ],
+          [
+            {
+              "children": [
+                {
+                  "text": "Brevity",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " first",
+              "type": "text"
+            }
+          ]
+        ]
+      ],
+      "type": "table"
+    },
+    {
+      "inlines": [
+        {
+          "text": "Separate the cells with ",
+          "type": "text"
+        },
+        {
+          "text": "|",
+          "type": "code"
+        },
+        {
+          "text": ". The second line sets each column's alignment: ",
+          "type": "text"
+        },
+        {
+          "text": ":---",
+          "type": "code"
+        },
+        {
+          "text": " left, ",
+          "type": "text"
+        },
+        {
+          "text": ":---:",
+          "type": "code"
+        },
+        {
+          "text": " centred, ",
+          "type": "text"
+        },
+        {
+          "text": "---:",
+          "type": "code"
+        },
+        {
+          "text": " right and ",
+          "type": "text"
+        },
+        {
+          "text": "---",
+          "type": "code"
+        },
+        {
+          "text": " none.",
+          "type": "text"
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "anchor": "checklists",
+      "inlines": [
+        {
+          "text": "Checklists",
+          "type": "text"
+        }
+      ],
+      "level": 2,
+      "type": "heading"
+    },
+    {
+      "items": [
+        {
+          "blocks": [
+            {
+              "inlines": [
+                {
+                  "text": "Radio checked",
+                  "type": "text"
+                }
+              ],
+              "type": "paragraph"
+            }
+          ],
+          "checked": true
+        },
+        {
+          "blocks": [
+            {
+              "inlines": [
+                {
+                  "text": "Batteries packed",
+                  "type": "text"
+                }
+              ],
+              "type": "paragraph"
+            }
+          ],
+          "checked": true
+        },
+        {
+          "blocks": [
+            {
+              "inlines": [
+                {
+                  "text": "Map marked",
+                  "type": "text"
+                }
+              ],
+              "type": "paragraph"
+            }
+          ],
+          "checked": false
+        }
+      ],
+      "ordered": false,
+      "type": "list"
+    },
+    {
+      "inlines": [
+        {
+          "text": "Write ",
+          "type": "text"
+        },
+        {
+          "text": "- [x]",
+          "type": "code"
+        },
+        {
+          "text": " for a ticked box and ",
+          "type": "text"
+        },
+        {
+          "text": "- [ ]",
+          "type": "code"
+        },
+        {
+          "text": " for an empty one.",
+          "type": "text"
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "anchor": "callouts",
+      "inlines": [
+        {
+          "text": "Callouts",
+          "type": "text"
+        }
+      ],
+      "level": 2,
+      "type": "heading"
+    },
+    {
+      "blocks": [
+        {
+          "inlines": [
+            {
+              "text": "A note adds background the reader may skip.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "kind": "note",
+      "type": "callout"
+    },
+    {
+      "blocks": [
+        {
+          "inlines": [
+            {
+              "text": "A tip shows a better way to do something.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "kind": "tip",
+      "type": "callout"
+    },
+    {
+      "blocks": [
+        {
+          "inlines": [
+            {
+              "text": "Important marks something the reader must not miss.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "kind": "important",
+      "type": "callout"
+    },
+    {
+      "blocks": [
+        {
+          "inlines": [
+            {
+              "text": "Info gives neutral reference detail.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "kind": "info",
+      "type": "callout"
+    },
+    {
+      "blocks": [
+        {
+          "inlines": [
+            {
+              "text": "A warning flags a risk to the mission.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "kind": "warning",
+      "type": "callout"
+    },
+    {
+      "blocks": [
+        {
+          "inlines": [
+            {
+              "text": "Caution flags a risk to people or equipment.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "kind": "caution",
+      "type": "callout"
+    },
+    {
+      "blocks": [
+        {
+          "inlines": [
+            {
+              "text": "Critical marks a rule that must never be broken.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "kind": "critical",
+      "type": "callout"
+    },
+    {
+      "inlines": [
+        {
+          "text": "Start a quote with ",
+          "type": "text"
+        },
+        {
+          "text": "> [!NOTE]",
+          "type": "code"
+        },
+        {
+          "text": ", ",
+          "type": "text"
+        },
+        {
+          "text": "> [!TIP]",
+          "type": "code"
+        },
+        {
+          "text": ", ",
+          "type": "text"
+        },
+        {
+          "text": "> [!IMPORTANT]",
+          "type": "code"
+        },
+        {
+          "text": ", ",
+          "type": "text"
+        },
+        {
+          "text": "> [!INFO]",
+          "type": "code"
+        },
+        {
+          "text": ", ",
+          "type": "text"
+        },
+        {
+          "text": "> [!WARNING]",
+          "type": "code"
+        },
+        {
+          "text": ", ",
+          "type": "text"
+        },
+        {
+          "text": "> [!CAUTION]",
+          "type": "code"
+        },
+        {
+          "text": " or ",
+          "type": "text"
+        },
+        {
+          "text": "> [!CRITICAL]",
+          "type": "code"
+        },
+        {
+          "text": " on its own line, then write the callout on the lines below, each starting with ",
+          "type": "text"
+        },
+        {
+          "text": ">",
+          "type": "code"
+        },
+        {
+          "text": ".",
+          "type": "text"
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "anchor": "quotes",
+      "inlines": [
+        {
+          "text": "Quotes",
+          "type": "text"
+        }
+      ],
+      "level": 2,
+      "type": "heading"
+    },
+    {
+      "blocks": [
+        {
+          "inlines": [
+            {
+              "text": "Brevity beats politeness. If the net is busy, wait.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "type": "quote"
+    },
+    {
+      "inlines": [
+        {
+          "text": "A quote is a run of lines starting with ",
+          "type": "text"
+        },
+        {
+          "text": ">",
+          "type": "code"
+        },
+        {
+          "text": " and no callout marker.",
+          "type": "text"
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "anchor": "code",
+      "inlines": [
+        {
+          "text": "Code",
+          "type": "text"
+        }
+      ],
+      "level": 2,
+      "type": "heading"
+    },
+    {
+      "language": "text",
+      "text": "CONTACT - direction - distance - description\n",
+      "type": "code"
+    },
+    {
+      "inlines": [
+        {
+          "text": "Fence a block with three backticks on the lines above and below it, and name its language after the opening fence.",
+          "type": "text"
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "anchor": "rules",
+      "inlines": [
+        {
+          "text": "Rules",
+          "type": "text"
+        }
+      ],
+      "level": 2,
+      "type": "heading"
+    },
+    {
+      "inlines": [
+        {
+          "text": "Three dashes on a line of their own draw a rule:",
+          "type": "text"
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "rule"
+    },
+    {
+      "inlines": [
+        {
+          "text": "Leave a blank line above the dashes, or the line above them becomes a heading.",
+          "type": "text"
+        }
+      ],
+      "type": "paragraph"
+    }
+  ],
+  "body_md": "# Wiki Formatting Guide\n\nThis page shows every kind of formatting a doctrine page can carry. Each section shows the result, then the markdown that makes it, so you can copy it into your own page. Pages are plain markdown: when you save, the wiki refuses raw HTML, links and images whose address it does not trust, and anything nested more than 16 levels deep, and it tells you the line of each problem.\n\n## Contents\n\n- [Headings](#headings)\n- [Text](#text)\n- [Links](#links)\n- [Images](#images)\n- [Tables](#tables)\n- [Checklists](#checklists)\n- [Callouts](#callouts)\n- [Quotes](#quotes)\n- [Code](#code)\n- [Rules](#rules)\n\n## Headings\n\nStart a line with one to six `#` characters and a space. Every heading gets an anchor made from its text: `## Radio nets` is linked as `#radio-nets`, and a repeated heading gets `-2`, `-3` and so on.\n\n# Heading level 1\n## Heading level 2\n### Heading level 3\n#### Heading level 4\n##### Heading level 5\n###### Heading level 6\n\n## Text\n\nWrite **bold** as `**bold**`, *italic* as `*italic*`, ~~struck-through~~ text as `~~struck-through~~` and `inline code` between backticks. End a line with a backslash to break it\\\nwithout starting a new paragraph. Leave a blank line between paragraphs.\n\n## Links\n\n- Another wiki page: [Field Manual](/wiki/field-manual), written `[Field Manual](/wiki/field-manual)`.\n- Another site: [Arma Reforger](https://reforger.armaplatform.com), written with the full `https://` address.\n- A heading on this page: [back to Contents](#contents), written `[back to Contents](#contents)`.\n- An email address: [the staff inbox](mailto:staff@example.com), written `[the staff inbox](mailto:staff@example.com)`.\n\nA link address starts with `https://`, `http://`, `mailto:`, `/` or `#`. Any other address, such as a bare `field-manual` or a `javascript:` address, is refused when you save.\n\n## Images\n\n![Everon grid map](/uploads/wiki-formatting-guide-map.png \"Everon grid map\")\n\nWritten `![Everon grid map](/uploads/wiki-formatting-guide-map.png \"Everon grid map\")`. Upload the picture through the content manager and paste the `/uploads/...` address it gives you, or use an `https://` address. The text in the square brackets is shown when the picture cannot be, and the quoted title is optional.\n\n## Tables\n\n| Net | Users | Channel | Notes |\n| :--- | :---: | ---: | --- |\n| Command | Platoon staff and squad leads | 1 | Always monitored |\n| Squad | Inside a squad | 2 | One per squad |\n| Air | Rotary wing and JTAC | 8 | **Brevity** first |\n\nSeparate the cells with `|`. The second line sets each column's alignment: `:---` left, `:---:` centred, `---:` right and `---` none.\n\n## Checklists\n\n- [x] Radio checked\n- [x] Batteries packed\n- [ ] Map marked\n\nWrite `- [x]` for a ticked box and `- [ ]` for an empty one.\n\n## Callouts\n\n> [!NOTE]\n> A note adds background the reader may skip.\n\n> [!TIP]\n> A tip shows a better way to do something.\n\n> [!IMPORTANT]\n> Important marks something the reader must not miss.\n\n> [!INFO]\n> Info gives neutral reference detail.\n\n> [!WARNING]\n> A warning flags a risk to the mission.\n\n> [!CAUTION]\n> Caution flags a risk to people or equipment.\n\n> [!CRITICAL]\n> Critical marks a rule that must never be broken.\n\nStart a quote with `> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!INFO]`, `> [!WARNING]`, `> [!CAUTION]` or `> [!CRITICAL]` on its own line, then write the callout on the lines below, each starting with `>`.\n\n## Quotes\n\n> Brevity beats politeness. If the net is busy, wait.\n\nA quote is a run of lines starting with `>` and no callout marker.\n\n## Code\n\n```text\nCONTACT - direction - distance - description\n```\n\nFence a block with three backticks on the lines above and below it, and name its language after the opening fence.\n\n## Rules\n\nThree dashes on a line of their own draw a rule:\n\n---\n\nLeave a blank line above the dashes, or the line above them becomes a heading.",
+  "category": "Administration",
+  "icon": "edit_note",
+  "id": "00000000-0000-4000-2000-000000000005",
+  "nav_order": 20,
+  "revision": 1,
+  "slug": "wiki-formatting-guide",
+  "title": "Wiki Formatting Guide",
+  "updated_at": "2026-09-26T12:00:00Z",
+  "updated_by": "000000000000000001"
+}

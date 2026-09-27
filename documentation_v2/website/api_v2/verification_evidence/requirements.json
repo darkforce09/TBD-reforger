@@ -1152,7 +1152,22 @@
       "id": "administration_audit_replay",
       "behavior": "SSE IDs replay reconnects and slow consumers; unavailable retained history produces explicit reset.",
       "implementation": [
-        "apps/website/api_v2/src/administration"
+        "apps/website/api_v2/src/administration",
+        "apps/website/api_v2/src/administration/handlers/audit_logs.rs",
+        "apps/website/api_v2/src/administration/services/audit_delivery.rs",
+        "apps/website/api_v2/src/administration/services/audit_notifier.rs",
+        "apps/website/api_v2/src/administration/models/audit_stream.rs",
+        "apps/website/api_v2/src/administration/models/audit_log.rs",
+        "apps/website/api_v2/src/administration/models/generated/audit_log",
+        "apps/website/api_v2/migrations/0057_audit_publication_retained_floor.sql",
+        "contracts_v2/definitions/audit-log.schema.json",
+        "apps/website/api_v2/src/core/middleware/authorized_event_stream.rs",
+        "apps/website/api_v2/src/core/process_lifecycle",
+        "apps/website/api_v2/src/bin/api.rs",
+        "apps/website/api_v2/tests/audit_replay.rs",
+        "apps/website/api_v2/tests/audit_stream_support",
+        "apps/website/api_v2/tests/audit_replay_shutdown.rs",
+        "apps/website/api_v2/tests/audit_shutdown_support"
       ],
       "checks": [
         "administration_audit_replay",
@@ -1166,7 +1181,14 @@
       "id": "administration_audit_query_recovery",
       "behavior": "Failed reads retry even while notification listener remains healthy.",
       "implementation": [
-        "apps/website/api_v2/src/administration"
+        "apps/website/api_v2/src/administration",
+        "apps/website/api_v2/src/administration/services/audit_delivery.rs",
+        "apps/website/api_v2/src/administration/services/audit_notifier.rs",
+        "apps/website/api_v2/src/administration/handlers/audit_logs.rs",
+        "apps/website/api_v2/migrations/0057_audit_publication_retained_floor.sql",
+        "contracts_v2/definitions/audit-log.schema.json",
+        "apps/website/api_v2/tests/audit_query_recovery.rs",
+        "apps/website/api_v2/tests/audit_stream_support"
       ],
       "checks": [
         "administration_audit_query_recovery",
@@ -1180,7 +1202,15 @@
       "id": "administration_personnel_pagination",
       "behavior": "Personnel pages use stable ordering and complete pagination metadata.",
       "implementation": [
-        "apps/website/api_v2/src/administration"
+        "apps/website/api_v2/src/administration",
+        "apps/website/api_v2/src/administration/handlers/personnel_roster.rs",
+        "apps/website/api_v2/src/administration/models/personnel_page.rs",
+        "apps/website/api_v2/src/administration/models/generated/personnel_roster",
+        "contracts_v2/definitions/personnel-roster.schema.json",
+        "apps/website/api_v2/tests/personnel_pagination.rs",
+        "apps/website/frontend/src/v2/pages/administration/personnel",
+        "apps/website/frontend/src/v2/core/api/dto/administration.rs",
+        "apps/website/frontend/tests/fixtures/api/GET__admin__users.json"
       ],
       "checks": [
         "administration_personnel_pagination",
@@ -1194,7 +1224,22 @@
       "id": "administration_audit_frontend",
       "behavior": "Audit UI consumes live stream and deduplicates overlap with paged history.",
       "implementation": [
-        "apps/website/api_v2/src/administration"
+        "apps/website/api_v2/src/administration",
+        "apps/website/api_v2/src/administration/handlers/audit_logs.rs",
+        "apps/website/api_v2/src/administration/models/audit_log.rs",
+        "apps/website/api_v2/src/administration/models/audit_stream.rs",
+        "apps/website/api_v2/src/administration/services/required_audit.rs",
+        "contracts_v2/definitions/audit-log.schema.json",
+        "apps/website/api_v2/tests/audit_frontend.rs",
+        "apps/website/api_v2/tests/audit_frontend_support",
+        "apps/website/frontend/src/v2/pages/administration/audit_logs",
+        "apps/website/frontend/src/v2/core/api/sse_frames.rs",
+        "apps/website/frontend/src/v2/core/api/audit_stream.rs",
+        "apps/website/frontend/src/v2/core/api/audit_stream",
+        "apps/website/frontend/src/v2/core/api/dto/administration.rs",
+        "apps/website/frontend/tests/fixtures/api/GET__admin__audit-logs.json",
+        "apps/website/frontend/tests/fixtures/api/GET__admin__audit-logs__stream.sse.txt",
+        "tools_v2/developer-tools/fixtures/dom_oracle/oracle-freeze/audit.dom.json"
       ],
       "checks": [
         "administration_audit_frontend",
@@ -1210,7 +1255,22 @@
       "id": "content_vehicle_mutations",
       "behavior": "Vehicle creation update and deletion work with permission and validation parity.",
       "implementation": [
-        "apps/website/api_v2/src/community_content"
+        "apps/website/api_v2/src/community_content",
+        "apps/website/api_v2/src/community_content/handlers/vehicle_database",
+        "apps/website/api_v2/src/community_content/models/vehicle_database.rs",
+        "apps/website/api_v2/src/community_content/models/generated/vehicle_database",
+        "apps/website/api_v2/src/community_content/routes.rs",
+        "apps/website/api_v2/migrations/0058_vehicle_database_lifecycle.sql",
+        "contracts_v2/definitions/vehicle-database.schema.json",
+        "apps/website/api_v2/src/core/text/content_url_policy.rs",
+        "apps/website/api_v2/src/core/error_handling",
+        "apps/website/api_v2/tests/vehicle_mutations.rs",
+        "apps/website/api_v2/tests/content_support",
+        "apps/website/frontend/src/v2/pages/doctrine_and_info/vehicles",
+        "apps/website/frontend/src/v2/core/api/dto/vehicles.rs",
+        "apps/website/frontend/src/v2/core/utils/safe_url.rs",
+        "apps/website/frontend/tests/fixtures/api/GET__vehicle-database.json",
+        "tools_v2/developer-tools/fixtures/dom_oracle/oracle-freeze/vehicles.dom.json"
       ],
       "checks": [
         "content_vehicle_mutations",
@@ -1224,7 +1284,29 @@
       "id": "content_wiki_features",
       "behavior": "Wiki headings links images tables checklists revisions and safe rendering meet T-940 requirements.",
       "implementation": [
-        "apps/website/api_v2/src/community_content"
+        "apps/website/api_v2/src/community_content",
+        "apps/website/api_v2/src/community_content/handlers/wiki_knowledgebase",
+        "apps/website/api_v2/src/community_content/services/wiki_markup",
+        "apps/website/api_v2/src/community_content/models/wiki.rs",
+        "apps/website/api_v2/src/community_content/models/generated/wiki_page",
+        "apps/website/api_v2/src/community_content/routes.rs",
+        "apps/website/api_v2/migrations/0059_wiki_page_revisions.sql",
+        "contracts_v2/definitions/wiki-page.schema.json",
+        "apps/website/api_v2/src/core/text/content_url_policy.rs",
+        "apps/website/api_v2/src/core/error_handling",
+        "apps/website/api_v2/seeds/wiki_pages.sql",
+        "apps/website/api_v2/seeds/content_golden.sql",
+        "apps/website/api_v2/tests/wiki_features.rs",
+        "apps/website/api_v2/tests/wiki_support",
+        "apps/website/frontend/src/v2/pages/doctrine_and_info/wiki",
+        "apps/website/frontend/src/v2/core/api/dto/wiki.rs",
+        "apps/website/frontend/src/v2/core/utils/safe_url.rs",
+        "apps/website/frontend/tests/fixtures/api/GET__wiki.json",
+        "apps/website/frontend/tests/fixtures/api/GET__wiki__field-manual.json",
+        "apps/website/frontend/tests/fixtures/api/GET__wiki__field-manual__revisions.json",
+        "apps/website/frontend/tests/fixtures/api/GET__wiki__wiki-formatting-guide.json",
+        "tools_v2/developer-tools/fixtures/dom_oracle/oracle-freeze/wiki.dom.json",
+        "tools_v2/developer-tools/fixtures/dom_oracle/oracle-freeze/wikislug.dom.json"
       ],
       "checks": [
         "content_wiki_features",
@@ -1240,7 +1322,15 @@
       "id": "content_content_storage",
       "behavior": "Request limits ownership storage failures and error contracts work at actual consumer boundaries.",
       "implementation": [
-        "apps/website/api_v2/src/community_content"
+        "apps/website/api_v2/src/community_content",
+        "apps/website/api_v2/src/community_content/handlers/media_upload",
+        "apps/website/api_v2/src/community_content/handlers/announcements_admin.rs",
+        "apps/website/api_v2/src/community_content/handlers/announcements_public.rs",
+        "apps/website/api_v2/src/community_content/models/generated/content_upload",
+        "contracts_v2/definitions/content-upload.schema.json",
+        "apps/website/api_v2/src/core/error_handling",
+        "apps/website/api_v2/tests/content_storage.rs",
+        "apps/website/api_v2/tests/content_support"
       ],
       "checks": [
         "content_content_storage",
@@ -2215,7 +2305,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1,
+      "minimum_cases": 2,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*audit_publication[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2229,7 +2319,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1,
+      "minimum_cases": 11,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*audit_replay[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2243,7 +2333,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1,
+      "minimum_cases": 4,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*audit_query_recovery[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2257,7 +2347,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1,
+      "minimum_cases": 9,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*personnel_pagination[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2271,7 +2361,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1,
+      "minimum_cases": 6,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*audit_frontend[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2285,7 +2375,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1,
+      "minimum_cases": 18,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*vehicle_mutations[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2299,7 +2389,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1,
+      "minimum_cases": 15,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*wiki_features[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2313,7 +2403,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1,
+      "minimum_cases": 15,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*content_storage[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2582,7 +2672,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 877,
+      "minimum_cases": 1075,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test [^\\n]+ \\.\\.\\. ok$"
     },
@@ -2596,7 +2686,7 @@
         "ci-local-leptos"
       ],
       "timeout_seconds": 3600,
-      "minimum_cases": 1602,
+      "minimum_cases": 1802,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test [^\\n]+ \\.\\.\\. ok$"
     },

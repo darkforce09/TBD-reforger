@@ -3,13 +3,14 @@
 # Vehicle database page documentation
 
 The feature documentation of the `/vehicles` page, where members look up vehicles by faction and
-read one vehicle's identification dossier, with the page's two design-phase references.
+read one vehicle's identification dossier and administrators add, edit and delete vehicles, with
+the page's two design-phase references.
 
 ## Contents
 
 ```text
 documentation_v2/website/frontend/pages/doctrine_and_info/vehicles/
-├── vehicle_database_page.md  the feature doc: the faction list, the dossier and the API
+├── vehicle_database_page.md  the feature doc: the faction list, the dossier, the writes and the API
 └── visual_references/        the design-phase dossier blueprint and a top-down BTR-70 render
 ```
 
@@ -27,7 +28,7 @@ the page's files.
 ## Code
 
 - [Vehicle database page](/apps/website/frontend/src/v2/pages/doctrine_and_info/vehicles/) — the
-  route component `VehicleDatabasePage`, the list and the dossier.
+  route component `VehicleDatabasePage`, the list, the dossier and the vehicle form.
 - [Community content domain](/apps/website/api_v2/src/community_content/) — the vehicle database
   routes.
 

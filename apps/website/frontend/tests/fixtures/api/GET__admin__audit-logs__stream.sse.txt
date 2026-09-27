@@ -1,0 +1,4 @@
+event: ready
+id: 10
+data: {"resume_after":10,"retained_after":0}
+

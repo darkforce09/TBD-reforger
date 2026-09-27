@@ -37,6 +37,7 @@ hex = "0.4.3"
 jsonschema = { version = "0.46.10", default-features = false }
 # rust_crypto = pure-Rust HMAC/SHA backend for HS256 (no aws-lc-rs C dependency).
 jsonwebtoken = { version = "10.4.0", default-features = false, features = ["rust_crypto"] }
+pulldown-cmark = { version = "0.13.4", default-features = false }
 rand = "0.10.2"
 # typify-generated contract types validate string patterns via regress.
 regress = "0.10"

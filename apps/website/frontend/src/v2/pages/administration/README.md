@@ -11,11 +11,11 @@ roster, the announcements and the audit trail.
 ```text
 apps/website/frontend/src/v2/pages/administration/
 ├── approvals/        the mission approval queue: the artifact under review and the decision on it
-├── audit_logs/       the trail of administrative actions, a page at a time, and one entry's record
+├── audit_logs/       the administrative action trail, live and page by page, and one entry's record
 ├── content_manager/  announcements: write, publish, push to Discord and archive them
 ├── event_manager/    the operations calendar: schedule, edit and delete events, and set who may join
 ├── mod.rs            the module tree; re-exports the six route components
-├── personnel/        the member roster and one member's dossier: bans, warnings and the role resync
+├── personnel/        the paged member roster and one member's dossier: bans, warnings, role resync
 └── server_control/   the game servers: fleet commands, deployments, fleet scenarios and credentials
 ```
 
@@ -44,8 +44,8 @@ their missions and their access; `missions` for
 servers, [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command),
 [fleet scenarios](/documentation_v2/glossary/a_to_f.md#fleet-scenario) and
 [machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential); `administration` for the
-roster, bans, warnings, the role resync and the audit trail; `community_content` for announcements
-and uploads.
+paged roster, bans, warnings, the role resync, the audit trail and its live stream;
+`community_content` for announcements and uploads.
 
 ## Public surface
 

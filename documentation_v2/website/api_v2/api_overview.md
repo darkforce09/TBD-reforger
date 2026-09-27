@@ -40,7 +40,8 @@ routes, models and rules exactly; this document is the map that leads to them.
    [background workers](/documentation_v2/glossary/a_to_f.md#background-workers) and logs the interval
    each got.
 6. `http_router::router` builds the application, and the binary serves it on `0.0.0.0:$PORT`
-   until SIGINT or SIGTERM, draining requests in flight.
+   until SIGINT or SIGTERM, draining requests in flight; shutdown also closes every open event
+   stream, so its clients reconnect and the audit log feed replays after their `Last-Event-ID`.
 
 ### Request path
 
@@ -110,7 +111,13 @@ SSE event once it stops qualifying:
   the in-process hub's `server:{id}` topic by the heartbeat, the runtime-session expiry and the
   status publisher worker, which republishes the active servers only.
 - `GET /api/v1/admin/audit-logs/stream` (administrator): committed audit rows in publication
-  order, pushed by Postgres `NOTIFY` and replayed from the client's `Last-Event-ID`.
+  order, woken by Postgres `NOTIFY` and retried on a two-second timer. It opens with
+  `event: ready` (`{resume_after, retained_after}`), then sends each row as an unnamed event whose
+  `id` is its publication sequence and whose data is the list route's row. A reconnect replays
+  after its `Last-Event-ID`; a cursor ahead of the tail or below the retention floor gets
+  `event: reset` (`cursor_ahead` or `history_unavailable`) and the stream continues from the
+  tail, and a malformed `Last-Event-ID` answers 400. The audit logs page reads it live and
+  reloads its history on `reset`.
 
 ### Background workers
 
@@ -133,12 +140,12 @@ lists every route with its methods and tier.
 | Domain | Paths under `/api/v1` | Tiers |
 |---|---|---|
 | [identity and access](/apps/website/api_v2/src/identity_and_access/README.md#public-surface) | `/auth/discord/login`, `/auth/discord/callback`, `/auth/refresh`, `/auth/logout`, `/auth/dev-login` (development only), `/me`, `/me/link`, `/me/link/status`, `/ingest/link-confirm` | public, member, machine |
-| [administration](/apps/website/api_v2/src/administration/README.md#public-surface) | `/admin/users`, `/admin/users/{discordId}` with `/ban`, `/warnings` and `/membership-grace`, `/admin/roles/sync`, `/admin/audit-logs` with `/export.csv` and `/stream` | administrator; the grace route is member with administrator authority checked in its service |
+| [administration](/apps/website/api_v2/src/administration/README.md#public-surface) | `/admin/users` (searched by `q`, paged by `page` and `per_page`), `/admin/users/{discordId}` with `/ban`, `/warnings` and `/membership-grace`, `/admin/roles/sync`, `/admin/audit-logs` with `/export.csv` and `/stream` (ready, rows, reset) | administrator; the grace route is member with administrator authority checked in its service |
 | [operations](/apps/website/api_v2/src/operations/README.md#public-surface) | `/events` and `/events/{id}/…` (missions, access, access policy, reservation quotas, groups, fire missions), `/event-missions/{emid}/…` (ORBAT, register, slot assignment, squad reserve and release, waitlist promotion, squad and slot access policies), `/members`, `/me/deployments`, `/me/leave-requests`, `/admin/leave-requests`, `/fire-missions`, `/fire-missions/solve`, `/game-runtime/events/{id}/roster`, `/game-runtime/sessions/{sessionId}/deployments/…` | member, leader, administrator, machine |
 | [missions](/apps/website/api_v2/src/missions/README.md#public-surface) | `/missions` and `/missions/{id}/…` (submit, reviews, review comments, artifacts, versions, armory, bookmark, export), `/registry`, `/registry/compat`, `/factions`, `/approvals`, `/admin/mission-default-overrides`, `/servers/{id}/deployments`, `/game-runtime/deployment`, `/game-runtime/deployments`, `/game-runtime/artifacts/{artifactId}`, `/game-runtime/missions` | member, mission maker, author or administrator, administrator, machine |
 | [match telemetry](/apps/website/api_v2/src/match_telemetry/README.md#public-surface) | `/game-runtime/sessions/{sessionId}/heartbeats`, `/ingest/matches`, `/ingest/match-results`, `/ingest/match-events`, `/matches/{matchId}/events` | machine, member |
 | [command center](/apps/website/api_v2/src/command_center/README.md#public-surface) | `/dashboard`, `/leaderboards`, `/users/{discordId}/stats` | member |
-| [community content](/apps/website/api_v2/src/community_content/README.md#public-surface) | `/announcements`, `/wiki`, `/vehicle-database`, `/modpacks` (with `/current` and `/set-current`), `/cms/announcements` (with `/push-discord`), `/cms/uploads` | member to read, administrator to write |
+| [community content](/apps/website/api_v2/src/community_content/README.md#public-surface) | `/announcements`, `/wiki`, `/wiki/{slug}` with `/revisions` and `/revisions/{revision}`, `/vehicle-database`, `/vehicle-database/{id}`, `/modpacks` (with `/current` and `/set-current`), `/cms/announcements` (with `/push-discord`), `/cms/uploads` | member to read, administrator to write |
 | [server infrastructure](/apps/website/api_v2/src/server_infrastructure/README.md#public-surface) | `/servers` and `/servers/{id}/…` (status, status stream, credentials, commands), `/fleet-executor/commands/…`, `/game-runtime/sessions`, `/game-runtime/sessions/{sessionId}/end`, `/fleet/scenarios` | member, administrator, machine |
 
 A path prefix does not name its owner: `/servers/{id}/deployments` belongs to missions,
@@ -153,6 +160,28 @@ match-telemetry ingests answer a refusal the game runtime must act on as a 400 o
 `details.code`, never a 404; the
 [telemetry design](/documentation_v2/website/api_v2/verification_evidence/telemetry.md) lists the
 codes, the results-revision rules and the event batch rules.
+
+The administration and content routes answer these shapes; the
+[administration and content design](/documentation_v2/website/api_v2/verification_evidence/administration_and_content.md)
+holds the full rules:
+
+- `GET /admin/users` answers one page of the roster, `{items, page, per_page, total}`, ordered by
+  username. `page` defaults to 1 and `per_page` to 20, a `per_page` above 100 clamps to 100, a value
+  below 1 or not a number is a 400, and a page past the end is empty with the real `total`.
+- `/vehicle-database/{id}` reads one row to members; an administrator replaces it (`PUT`),
+  changes some of its fields (`PATCH`: an absent field stays, `null` clears an optional one) or
+  soft-deletes it (`DELETE`). Each write answers the stored row, all three write bodies refuse
+  unknown fields, and a deleted row is a 404 and leaves the list.
+- `PUT /wiki/{slug}` creates a page (`base_revision: null`, 201) or saves its next revision (the
+  current `base_revision`, 200). A stale revision is a 409 `wiki_revision_conflict`, a body over
+  262,144 bytes a 400 `wiki_body_too_large`, and an unsafe link or image URL, raw HTML or nesting
+  deeper than 16 a 422 `wiki_markup_refused` with its findings. Articles and revisions carry the
+  parsed `blocks`; `/revisions` pages the history newest first.
+- Every vehicle write and wiki save appends its audit row in the same transaction.
+- `POST /cms/uploads` stores one JPEG, PNG or WebP image of at most 5 MiB and answers 201
+  `{url}`. A body or file over the limit is a 413 `request_too_large`, another extension or bytes
+  that do not match it a 415, and a storage failure a 503 `storage_unavailable`; the file is
+  renamed into place whole, so `/uploads` never serves part of one.
 
 ### Outside `/api/v1`
 
@@ -172,8 +201,8 @@ codes, the results-revision rules and the event batch rules.
 ### Storage
 
 - Postgres 18: locally the `db` service of `apps/website/api_v2/docker-compose.yml` on host port
-  5434, which `cargo xtask db up` starts. The API owns the schema through the 50 migrations in
-  `apps/website/api_v2/migrations/`, embedded at compile time; an applied migration never changes
+  5434, which `cargo xtask db up` starts. The API owns the schema through the numbered migrations
+  in `apps/website/api_v2/migrations/`, embedded at compile time; an applied migration never changes
   in its statements, and a comments-only edit needs `cargo xtask db repair-migration-checksum` on
   every database that applied it. The [migrations README](/apps/website/api_v2/migrations/README.md)
   has the rules.
@@ -222,8 +251,6 @@ DTO in `apps/website/frontend/src/v2/core/api/dto/`. Acceptance of the API as a 
   `DELETE /api/v1/servers/{id}` (`apps/website/api_v2/src/server_infrastructure/routes.rs`) and
   accepts `server_id` on event create and update, while the server control page only lists
   `/api/v1/servers`.
-- The vehicle database has no update or delete: `/api/v1/vehicle-database` answers `GET` and
-  `POST` only (`apps/website/api_v2/src/community_content/routes.rs`).
 - The mortar page solves through the API: `POST /api/v1/fire-missions/solve` runs the map engine's
   ballistics on the server, so the page needs the API to answer.
 
@@ -232,15 +259,6 @@ DTO in `apps/website/frontend/src/v2/core/api/dto/`. Acceptance of the API as a 
 - [T-940 — Website platform: events, telemetry, admin, content](/documentation_v2/tickets/specs/t940_website_platform.md)
   (queued, [plan](/documentation_v2/tickets/plans/t-940_plan.md)): the program whose open children
   follow.
-- [T-940.7 — Users list: server page metadata and admin pager](/documentation_v2/tickets/specs/t940_website_platform.md)
-  (ready, [plan](/documentation_v2/tickets/plans/t-940_7_plan.md)): the personnel roster gains a
-  pager; `GET /api/v1/admin/users` already answers `total`, `limit` and `offset`.
-- [T-940.8 — Vehicles: PUT, PATCH, DELETE routes and DTOs](/documentation_v2/tickets/specs/t940_website_platform.md)
-  (ready, [plan](/documentation_v2/tickets/plans/t-940_8_plan.md)): the vehicle database gains
-  update, patch and soft-delete routes with matching DTOs.
-- [T-940.9 — Wiki: headings, links, images, tables, checklists, revisions](/documentation_v2/tickets/specs/t940_website_platform.md)
-  (ready, [plan](/documentation_v2/tickets/plans/t-940_9_plan.md)): wiki pages gain richer markup
-  and a revision history table.
 - [T-940.10 — Mortar ballistics crate for API and offline frontend](/documentation_v2/tickets/specs/t940_website_platform.md)
   (ready, [plan](/documentation_v2/tickets/plans/t-940_10_plan.md)): one ballistics model serves
   both the API and the mortar page, so the page solves without the API.

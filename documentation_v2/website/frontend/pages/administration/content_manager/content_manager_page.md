@@ -98,9 +98,14 @@ lists each call with the DTO or body it reads or sends. Server-side, in
   and answers `{pushed: true}`.
 - `DELETE /api/v1/cms/announcements/{id}` (`delete_announcement`): sets the post's status to
   `archived` and answers 204; the row stays, so an archived post can be restored in the database.
-- `POST /api/v1/cms/uploads` (`upload_image` in `media_upload.rs`): the API accepts at most 5 MB
-  (413 "file exceeds 5MB") of `jpg`, `jpeg`, `png` or `webp` (415 otherwise) and answers 201 with
-  `{url: "/uploads/<uuid>.<ext>"}`.
+- `POST /api/v1/cms/uploads` (`upload_image` in the API's
+  [media upload handler](/apps/website/api_v2/src/community_content/handlers/media_upload/README.md)):
+  the API accepts one `jpg`, `jpeg`, `png` or `webp` image of at most 5 MiB whose leading bytes
+  match its extension, writes it whole under a fresh name and answers 201 with
+  `{url: "/uploads/<uuid>.<ext>"}`. A body or file over the limit answers 413 ("the upload is
+  larger than 5 MiB", `details.code = request_too_large`), another extension or a mismatched file
+  415, a body without a `file` field 400, and a storage failure 503 ("upload storage is
+  unavailable", `details.code = storage_unavailable`); the page's toast shows each sentence.
 
 ## Design
 

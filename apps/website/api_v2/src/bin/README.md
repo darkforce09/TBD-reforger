@@ -25,6 +25,7 @@ api.rs              ──▶ Config::load ─▶ database::connect
                         ─▶ database::migrate, unless SKIP_MIGRATE is set
                         ─▶ AppState::new ─▶ background_workers::spawn_all
                         ─▶ http_router::router ─▶ axum::serve until SIGINT or SIGTERM
+                        ─▶ process_shutdown begins: open SSE streams close, the drain ends
 import_registry.rs  ──▶ database::connect ─▶ database::migrate
                         ─▶ registry_import::import_items and import_compat
 ```
@@ -40,8 +41,12 @@ Run from `apps/website/api_v2/` as `cargo run --bin <name> -- <arguments>`; both
   to Postgres, applies the pending migrations unless `SKIP_MIGRATE` is set and logs
   `migrations applied`, arms the
   [background workers](/documentation_v2/glossary/a_to_f.md#background-workers), and serves every route
-  on `0.0.0.0:$PORT`. It stays in the foreground until SIGINT or SIGTERM, then drains the
-  requests in flight. It needs Postgres running.
+  on `0.0.0.0:$PORT`. It stays in the foreground until SIGINT or SIGTERM. The signal begins
+  `core::process_lifecycle::process_shutdown`: the server stops accepting connections, every open
+  [SSE](/documentation_v2/glossary/n_to_z.md#sse) stream (the audit log feed, the server status
+  streams) ends its body at once with no further event, and the requests in flight drain, so the
+  process exits without waiting for the service manager's kill timeout. A client of the audit
+  log feed reconnects with `Last-Event-ID` and misses no row. It needs Postgres running.
 - Exit codes: 0 after a signal and a clean drain; 1 when the configuration, the database
   connection, a migration or the port bind fails.
 - Example: `cargo xtask mk rust-api`, which runs `cargo run --bin api` in `apps/website/api_v2/`
@@ -67,13 +72,16 @@ Run from `apps/website/api_v2/` as `cargo run --bin <name> -- <arguments>`; both
 ## Boundaries
 
 - Depends on: the `website_api` library: `core::configuration`, `core::database`,
-  `core::application_state` and `core::http_router` for `api`, with `background_workers`;
+  `core::application_state`, `core::http_router` and `core::process_lifecycle` for `api`, with
+  `background_workers`;
   `core::database` and `missions::services::registry_import` for `import-registry`.
 - Used by: `cargo xtask mk rust-api` and `cargo xtask db registry-import`
   (`tools_v2/xtask/src/commands/build/recipes/shell_word.rs` and
   `tools_v2/xtask/src/commands/db/operations.rs`); the `editor-api-boot` task of `cargo xtask ci`;
   the release image built by `apps/website/Dockerfile`, whose entry point is `api`; the systemd
-  unit `tools_v2/xtask/deploy/systemd/tbd-website-api.service`, which runs the release `api`.
+  unit `tools_v2/xtask/deploy/systemd/tbd-website-api.service`, which runs the release `api`;
+  `apps/website/api_v2/tests/audit_replay_shutdown.rs`, which starts the `api` binary and stops
+  it with SIGTERM.
 - Rules: `api.rs` is the one file that arms `background_workers`
   (`background_workers_used_only_by_the_binary` in
   `apps/website/api_v2/src/tests/architecture_rules.rs`); the binary names are stable, because the

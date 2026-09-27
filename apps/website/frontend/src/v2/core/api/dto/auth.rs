@@ -1,7 +1,7 @@
 //! Session, identity and account-linking payloads.
 //!
 //! **Role:** what the backend says about who the viewer is, whether their game account is
-//! linked, and the rows the personnel screens list.
+//! linked, and the member rows the pickers list.
 //! **Position:** deserialised straight from the backend's JSON and handed to the pages that
 //! render it; re-serialised unchanged by the round-trip tests.
 //! **Signals & state:** none — these are plain data.
@@ -55,20 +55,4 @@ pub struct Member {
     pub username: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub avatar_url: Option<String>,
-}
-
-/// One row of the personnel roster, as the administration screens list it.
-#[allow(dead_code)]
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-pub struct AdminUserRow {
-    pub discord_id: String,
-    pub username: String,
-    pub discord_handle: String,
-    #[serde(default)]
-    pub arma_id: Option<String>,
-    pub arma_character: String,
-    pub role: crate::v2::core::auth::Role,
-    pub is_banned: bool,
-    pub warnings: i64,
-    pub total_deployments: i64,
 }

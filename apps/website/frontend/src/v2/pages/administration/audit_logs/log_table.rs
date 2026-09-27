@@ -1,70 +1,78 @@
 //! The trail: one line per audit entry, the page-by-page load, and the entry inspector.
 //!
-//! **Role:** the accumulated list of entries with its filter and load control, and the expanded
+//! **Role:** the merged board with its filter, live status and load control, and the expanded
 //! view of whichever entry is selected.
-//! **Position:** the two panes of the audit route, below the filter box.
-//! **Signals & state:** owns `lines` (the accumulated trail), `next_cursor` (where the next page
-//! starts, or nothing at the end), `loading_more` and `load_more_error` around that request,
-//! `selected` (which entry is expanded) and `query` (the filter text).
-//! **Invariants:** loading more **appends**: replacing the trail with the new page would silently
-//! truncate everything already read. The filter runs over what is loaded, so an empty result means
-//! the filter matched nothing, not that the trail is empty — the two say different things on
-//! screen. An entry carries every field the inspector shows, so opening one never fetches again and
-//! cannot show one entry's identity under another's details. A filter can hide the selected entry
-//! but never remove it.
+//! **Position:** the two panes of the audit route; the route hands in the board and the stream
+//! and history states it drives.
+//! **Signals & state:** reads the route's `board`, stream state, history state and rejected-event
+//! note; owns `loading_more` and `load_more_error` around a further page, `selected` (which entry
+//! is expanded) and `query` (the filter text).
+//! **Invariants:** loading more **merges** a page below the smallest history id into the board:
+//! replacing the board with the new page would silently truncate everything already read, and a
+//! page requested before a reload is dropped rather than mixed into the new history. The filter
+//! runs over what is loaded, so an empty result means the filter matched nothing, not that the
+//! trail is empty — the two say different things on screen. An entry carries every field the
+//! inspector shows, so opening one never fetches again and cannot show one entry's identity under
+//! another's details. A filter can hide the selected entry but never remove it.
 #![allow(dead_code)]
 
 use super::filter_bar::{filter_bar, haystack};
+use super::live_merge::AuditBoard;
+use super::live_status::{live_status, HistoryLoad};
 #[cfg(target_arch = "wasm32")]
-use super::page::{audit_logs_path, merge_audit_page};
-use super::page::{parse_next_cursor, vid, vstr};
-use crate::v2::core::api::dto::CursorList;
+use super::page::audit_logs_path;
+use crate::v2::core::api::audit_stream::AuditStreamState;
+use crate::v2::core::api::dto::administration::{AuditLogEntry, AuditSeverity};
 use crate::v2::core::auth::AuthStore;
 use crate::v2::core::ui::split_pane::{search_matches, SplitPane, SplitPaneEmpty};
 use crate::v2::core::ui::{badge_class, MaterialIcon};
 use crate::v2::core::utils::datefmt::log_stamp;
 use leptos::prelude::*;
-use serde_json::Value;
 
 /// The level token shown against an entry.
-///
-/// An unrecognised severity is shown upper-cased rather than silently relabelled, so a level this
-/// screen has not heard of is visible instead of disguised as routine.
-pub(super) fn level_label(severity: &str) -> String {
+pub(super) fn level_label(severity: AuditSeverity) -> &'static str {
     match severity {
-        "info" => "INFO".into(),
-        "warn" => "WARN".into(),
-        "crit" => "CRIT".into(),
-        "" => "----".into(),
-        other => other.to_uppercase(),
+        AuditSeverity::Info => "INFO",
+        AuditSeverity::Warn => "WARN",
+        AuditSeverity::Crit => "CRIT",
     }
 }
 
 /// The colour the level token is drawn in.
-pub(super) fn level_class(severity: &str) -> &'static str {
+pub(super) fn level_class(severity: AuditSeverity) -> &'static str {
     match severity {
-        "warn" => "shrink-0 text-tactical-yellow",
-        "crit" => "shrink-0 font-bold text-error-alert",
-        _ => "shrink-0 text-primary",
+        AuditSeverity::Warn => "shrink-0 text-tactical-yellow",
+        AuditSeverity::Crit => "shrink-0 font-bold text-error-alert",
+        AuditSeverity::Info => "shrink-0 text-primary",
     }
 }
 
 /// The badge variant an entry's severity is shown with in the inspector.
-pub(super) fn severity_variant(severity: &str) -> &'static str {
+pub(super) fn severity_variant(severity: AuditSeverity) -> &'static str {
     match severity {
-        "warn" => "warning",
-        "crit" => "error",
-        "info" => "primary",
-        _ => "neutral",
+        AuditSeverity::Warn => "warning",
+        AuditSeverity::Crit => "error",
+        AuditSeverity::Info => "primary",
     }
 }
 
-/// The trail beside the entry inspector.
-pub(super) fn board(store: AuthStore, page: CursorList<Value>) -> impl IntoView {
-    // The trail grows page by page; the filter runs on whatever is already loaded rather than
-    // re-querying the server.
-    let lines = RwSignal::new(page.data);
-    let next_cursor = RwSignal::new(parse_next_cursor(&page.next_cursor));
+/// What the trail says when the board holds no line, by where the history stands.
+pub(super) fn empty_board_message(history: HistoryLoad) -> &'static str {
+    match history {
+        HistoryLoad::Waiting | HistoryLoad::Loading | HistoryLoad::Reloading => "Loading…",
+        HistoryLoad::Failed => "Failed to load data.",
+        HistoryLoad::Loaded => "No audit logs.",
+    }
+}
+
+/// The trail beside the entry inspector, fed by the route's board.
+pub(super) fn board_view(
+    store: AuthStore,
+    board: RwSignal<AuditBoard>,
+    stream: RwSignal<AuditStreamState>,
+    history: RwSignal<HistoryLoad>,
+    rejected: RwSignal<Option<String>>,
+) -> impl IntoView {
     let loading_more = RwSignal::new(false);
     let load_more_error = RwSignal::new(false);
     let selected = RwSignal::new(None::<i64>);
@@ -73,7 +81,8 @@ pub(super) fn board(store: AuthStore, page: CursorList<Value>) -> impl IntoView 
     let on_load_more = move |_| {
         #[cfg(target_arch = "wasm32")]
         {
-            let Some(before) = next_cursor.get_untracked() else {
+            let next = board.with_untracked(|b| b.continuation().map(|before| (before, b.epoch())));
+            let Some((before, epoch)) = next else {
                 return;
             };
             if loading_more.get_untracked() {
@@ -83,39 +92,48 @@ pub(super) fn board(store: AuthStore, page: CursorList<Value>) -> impl IntoView 
             load_more_error.set(false);
             let path = audit_logs_path(Some(before));
             leptos::task::spawn_local(async move {
-                match crate::v2::core::api::client::api_get::<CursorList<Value>>(store, &path).await
-                {
+                use crate::v2::core::api::dto::CursorList;
+                let answer = crate::v2::core::api::client::api_get::<CursorList<AuditLogEntry>>(
+                    store, &path,
+                )
+                .await;
+                match answer {
                     Ok(page) => {
-                        let mut rows = lines.get_untracked();
-                        let cursor = merge_audit_page(&mut rows, page);
-                        lines.set(rows);
-                        next_cursor.set(cursor);
+                        let _ = board.try_update(|b| b.merge_history(epoch, page));
                     }
                     Err(_) => {
-                        load_more_error.set(true);
+                        let _ = load_more_error.try_set(true);
                     }
                 }
-                loading_more.set(false);
+                let _ = loading_more.try_set(false);
             });
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let _ = (store, next_cursor, loading_more, load_more_error, lines);
+            let _ = (store, board, loading_more, load_more_error);
         }
     };
 
-    let master_header = filter_bar(query);
+    let master_header = view! {
+        <div class="flex items-start gap-3">
+            <div class="min-w-0 flex-1">{filter_bar(query)}</div>
+            {live_status(stream, history, board, rejected)}
+        </div>
+    }
+    .into_any();
     let list = view! {
         {move || {
             let q = query.get();
-            let rows_owned = lines.get();
+            let rows_owned = board.with(AuditBoard::rows);
             if rows_owned.is_empty() {
                 return view! {
-                    <p class="px-1 py-4 text-on-surface-variant">"No audit logs."</p>
+                    <p class="px-1 py-4 text-on-surface-variant">
+                        {empty_board_message(history.get())}
+                    </p>
                 }
                     .into_any();
             }
-            let rows: Vec<&Value> = rows_owned
+            let rows: Vec<&AuditLogEntry> = rows_owned
                 .iter()
                 .filter(|l| search_matches(&q, &haystack(l)))
                 .collect();
@@ -131,13 +149,12 @@ pub(super) fn board(store: AuthStore, page: CursorList<Value>) -> impl IntoView 
             }
             rows.into_iter()
                 .map(|l| {
-                    let id = vid(l);
-                    let sev = vstr(l, "severity");
-                    let stamp = log_stamp(&vstr(l, "created_at"));
-                    let level = level_label(&sev);
-                    let lvl_class = level_class(&sev);
-                    let action = vstr(l, "action");
-                    let message = vstr(l, "message");
+                    let id = l.id;
+                    let stamp = log_stamp(&l.created_at);
+                    let level = level_label(l.severity);
+                    let lvl_class = level_class(l.severity);
+                    let action = l.action.clone();
+                    let message = l.message.clone();
                     view! {
                         <button
                             type="button"
@@ -169,7 +186,15 @@ pub(super) fn board(store: AuthStore, page: CursorList<Value>) -> impl IntoView 
 
     let load_more = view! {
         {move || {
-            if next_cursor.get().is_none() {
+            if history.get() == HistoryLoad::Failed && !board.with(AuditBoard::is_empty) {
+                return view! {
+                    <p class="mt-3 px-1 font-mono text-xs text-error-alert">
+                        "Failed to load data."
+                    </p>
+                }
+                    .into_any();
+            }
+            if board.with(|b| b.continuation().is_none()) {
                 return ().into_any();
             }
             view! {
@@ -218,22 +243,21 @@ pub(super) fn board(store: AuthStore, page: CursorList<Value>) -> impl IntoView 
             let Some(id) = selected.get() else {
                 return view! {
                     <SplitPaneEmpty
-                        icon=view! { <MaterialIcon name="terminal" class="text-4xl" /> }.into_any()
+                        icon={view! { <MaterialIcon name="terminal" class="text-4xl" /> }.into_any()}
                         message="Select a log entry to inspect."
                     />
                 }
                     .into_any();
             };
-            let rows = lines.get();
-            match rows.iter().find(|l| vid(l) == id) {
-                Some(l) => entry(l).into_any(),
+            match board.with(|b| b.get(id).cloned()) {
+                Some(l) => entry(&l).into_any(),
                 // A filter can hide the selected row but never delete it; this only fires
-                // if the page is ever replaced under a live selection.
+                // when a reload empties the board under a live selection.
                 None => {
                     view! {
                         <SplitPaneEmpty
-                            icon=view! { <MaterialIcon name="terminal" class="text-4xl" /> }
-                                .into_any()
+                            icon={view! { <MaterialIcon name="terminal" class="text-4xl" /> }
+                                .into_any()}
                             message="That entry is no longer in this page of the trail."
                         />
                     }
@@ -259,35 +283,36 @@ pub(super) fn board(store: AuthStore, page: CursorList<Value>) -> impl IntoView 
 /// Everything but the identifier, the action, the stamp, the message and the severity is optional
 /// on the wire — a server event has no actor, a sign-in has no target — so each optional row is
 /// rendered only when it is present rather than shown as an empty field.
-pub(super) fn entry(l: &Value) -> impl IntoView + use<> {
-    let sev = vstr(l, "severity");
-    let action = vstr(l, "action");
-    let message = vstr(l, "message");
-    let stamp = log_stamp(&vstr(l, "created_at"));
-    let actor_name = vstr(l, "actor_name");
-    let actor_id = vstr(l, "actor_id");
-    let target_type = vstr(l, "target_type");
-    let target_id = vstr(l, "target_id");
-    let id = vid(l);
+pub(super) fn entry(l: &AuditLogEntry) -> impl IntoView + use<> {
+    let sev = l.severity;
+    let action = l.action.clone();
+    let message = l.message.clone();
+    let stamp = log_stamp(&l.created_at);
+    let actor_name = l.actor_name.clone();
+    let actor_id = l.actor_id.clone().unwrap_or_default();
+    let target_type = l.target_type.clone();
+    let target_id = l.target_id.clone();
+    let id = l.id;
     // `metadata` is free-form jsonb. Pretty-printed as JSON rather than guessed at per action —
     // the vocabulary differs for every action and the operator reading an audit trail wants the
     // raw record, not a paraphrase.
     let metadata = l
-        .get("metadata")
+        .metadata
+        .as_ref()
         .filter(|m| !m.is_null())
         .and_then(|m| serde_json::to_string_pretty(m).ok());
     view! {
         <div class="flex flex-col gap-6 px-8 py-8">
             <header class="flex flex-col gap-3 border-b border-outline-variant/30 pb-5">
                 <div class="flex flex-wrap items-center gap-2">
-                    <span class=badge_class(severity_variant(&sev))>{level_label(&sev)}</span>
+                    <span class={badge_class(severity_variant(sev))}>{level_label(sev)}</span>
                     <span class="font-mono text-code-md text-tertiary">{action}</span>
                 </div>
                 <p class="text-body-md leading-relaxed text-on-surface">{message}</p>
                 <span class="font-mono text-xs text-outline">{stamp}</span>
             </header>
             <dl class="flex flex-col gap-3 font-mono text-code-md">
-                <EntryField label="Entry" value=id.to_string() />
+                <EntryField label="Entry" value={id.to_string()} />
                 {(!actor_name.is_empty() || !actor_id.is_empty())
                     .then(|| {
                         let who = if actor_name.is_empty() {
@@ -298,9 +323,9 @@ pub(super) fn entry(l: &Value) -> impl IntoView + use<> {
                         view! { <EntryField label="Actor" value=who /> }
                     })}
                 {(!target_type.is_empty())
-                    .then(|| view! { <EntryField label="Target type" value=target_type.clone() /> })}
+                    .then(|| view! { <EntryField label="Target type" value={target_type.clone()} /> })}
                 {(!target_id.is_empty())
-                    .then(|| view! { <EntryField label="Target id" value=target_id.clone() /> })}
+                    .then(|| view! { <EntryField label="Target id" value={target_id.clone()} /> })}
             </dl>
             {metadata
                 .map(|m| {

@@ -5,6 +5,9 @@
 //! [`crate::core::wire_format`]. The enums map to Postgres ENUM types.
 
 pub mod audit_log;
+pub mod audit_stream;
+pub mod generated;
+pub mod personnel_page;
 pub mod warning;
 
 pub use audit_log::{AuditLog, AuditSeverity};

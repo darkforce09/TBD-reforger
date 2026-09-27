@@ -1,6 +1,11 @@
 //! Captured-response round trips for the published-content and log payloads.
 
 use super::*;
+use crate::v2::core::api::dto::administration::AuditLogEntry;
+use crate::v2::core::api::dto::vehicles::Vehicle;
+use crate::v2::core::api::dto::wiki::{
+    WikiArticle, WikiPageSummary, WikiRevision, WikiRevisionPage,
+};
 
 #[test]
 fn modpack_current() {
@@ -19,23 +24,88 @@ fn announcements_envelope() {
     assert_golden::<Paginated<Value>>(golden!("GET__announcements.json"), &["data/*"]);
 }
 
+/// The navigation list: summaries only, no markdown. The capture holds a page without an icon, so
+/// the absent-icon arm is covered.
 #[test]
-fn wiki_envelope() {
-    assert_golden::<DataEnvelope<Value>>(golden!("GET__wiki.json"), &["data/*"]);
+fn wiki_page_list() {
+    const G: &str = golden!("GET__wiki.json");
+    assert_golden::<DataEnvelope<WikiPageSummary>>(G, &[]);
+    let list: DataEnvelope<WikiPageSummary> = serde_json::from_str(G).unwrap();
+    assert!(
+        list.data.iter().any(|page| page.icon.is_empty())
+            && list.data.iter().any(|page| !page.icon.is_empty()),
+        "the wiki list golden must hold a page with and a page without an icon"
+    );
+}
+
+/// The article the V-suite's `/wiki/field-manual` route reads.
+#[test]
+fn wiki_article_field_manual() {
+    assert_golden::<WikiArticle>(golden!("GET__wiki__field-manual.json"), &[]);
+}
+
+/// The formatting guide shows every construct the tree can carry, so this round trip decodes and
+/// re-encodes every block and inline variant (`tests/wiki.rs` checks the coverage).
+#[test]
+fn wiki_article_formatting_guide() {
+    assert_golden::<WikiArticle>(golden!("GET__wiki__wiki-formatting-guide.json"), &[]);
 }
 
 #[test]
-fn vehicle_db_envelope() {
-    assert_golden::<DataEnvelope<Value>>(golden!("GET__vehicle-database.json"), &["data/*"]);
+fn wiki_revision_history() {
+    const G: &str = golden!("GET__wiki__field-manual__revisions.json");
+    assert_golden::<WikiRevisionPage>(G, &[]);
+    let history: WikiRevisionPage = serde_json::from_str(G).unwrap();
+    assert_eq!(history.total, history.items.len() as i64);
+    assert_eq!(
+        history.items[0].revision, 1,
+        "a seeded page starts at revision 1"
+    );
 }
 
-/// Cursor envelope, not offset/total — and `Value` is honest here: the audit page reads
-/// `CursorList<Value>` too.
+/// A revision is the article's content under the revision's own keys: the author and creation
+/// time take the place of the editor and update time, and there is no page `id`. Built from the
+/// captured article, so every block shape the capture holds is decoded as a revision too.
+#[test]
+fn wiki_revision_built_from_the_captured_article() {
+    let article: Value = serde_json::from_str(golden!("GET__wiki__field-manual.json")).unwrap();
+    let revision = json!({
+        "slug": article["slug"],
+        "revision": article["revision"],
+        "category": article["category"],
+        "title": article["title"],
+        "icon": article["icon"],
+        "nav_order": article["nav_order"],
+        "body_md": article["body_md"],
+        "author_id": article["updated_by"],
+        "created_at": article["updated_at"],
+        "blocks": article["blocks"],
+    });
+    assert_golden::<WikiRevision>(&revision.to_string(), &[]);
+}
+
+/// The capture holds a row with every optional field and one with none of them, so both arms of
+/// the absent-when-empty fields are covered.
+#[test]
+fn vehicle_database_list() {
+    const G: &str = golden!("GET__vehicle-database.json");
+    assert_golden::<DataEnvelope<Vehicle>>(G, &[]);
+    let list: DataEnvelope<Vehicle> = serde_json::from_str(G).unwrap();
+    assert!(list.data.iter().any(|v| v.amphibious.is_empty()
+        && v.primary_threat.is_empty()
+        && v.profile_image_url.is_empty()));
+    assert!(list.data.iter().any(|v| !v.amphibious.is_empty()
+        && !v.primary_threat.is_empty()
+        && !v.profile_image_url.is_empty()));
+}
+
+/// Cursor envelope, not offset/total. `metadata` is the writer's own context and is carried as
+/// sent, and `next_cursor` is the shared envelope's opaque cursor, so those two stay unread.
 #[test]
 fn audit_logs_envelope() {
-    assert_golden::<CursorList<Value>>(
+    assert_golden::<CursorList<AuditLogEntry>>(
         golden!("GET__admin__audit-logs.json"),
-        &["data/*", "next_cursor"],
+        &["data/*/metadata", "next_cursor"],
     );
 }
 

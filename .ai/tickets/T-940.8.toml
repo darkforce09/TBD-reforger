@@ -3,7 +3,7 @@ kind = "work"
 title = "Vehicles: PUT, PATCH, DELETE routes and DTOs"
 summary = "Vehicle handlers move from wiki.rs into a new content/vehicles.rs that adds update, patch and soft-delete routes, with matching frontend DTOs."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 8120
 spec = "documentation_v2/tickets/specs/t940_website_platform.md"
 plan = "documentation_v2/tickets/plans/t-940_8_plan.md"
@@ -22,7 +22,12 @@ requirement = [
     "app.rs routes /vehicles/{id} to put, patch and delete; wiki.rs loses the vehicle handlers.",
     "core/dto.rs mirrors VehicleUpdate and VehiclePatch; deleted vehicles vanish from list; an unknown PATCH field is rejected.",
 ]
-current_state = ["Two vehicle handlers inside wiki.rs; no mutation route beyond create."]
+current_state = [
+    "apps/website/api_v2/src/community_content/handlers/vehicle_database/ serves GET /api/v1/vehicle-database and /vehicle-database/{id} to members, and POST, PUT, PATCH and soft DELETE to administrators.",
+    "One validator rejects unknown fields; PATCH leaves absent fields and clears an optional field sent as null; a deleted row is a 404 and leaves the list.",
+    "Each write answers the stored row and appends its audit row in the same transaction; migration 0058 adds the lifecycle columns.",
+    "dto::vehicles::{Vehicle, VehicleWrite, VehiclePatch} mirror vehicle-database.schema.json; the /vehicles page adds, edits and deletes vehicles; covered by apps/website/api_v2/tests/vehicle_mutations.rs.",
+]
 approach = [
     "Verify on main: an integration test sending PUT /vehicles/{id} gets 405; paste the red.",
     "Move the handlers; add the three routes with tests; mirror the DTOs.",
@@ -38,6 +43,7 @@ acceptance = [
     "wiki.rs no longer contains vehicle handlers and the wiki routes still pass their tests.",
 ]
 created_at = "2026-09-05T02:33:18Z"
+completed_at = "2026-09-26T23:06:23Z"
 owns = [
     "apps/website/api/src/app.rs",
     "apps/website/api/src/handlers/content/wiki.rs",

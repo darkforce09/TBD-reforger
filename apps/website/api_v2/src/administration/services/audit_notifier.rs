@@ -23,9 +23,9 @@
 //!   away (a `#[tokio::test]` ending), its guard drops, the registry entry reads as orphaned, and
 //!   the next [`AuditNotify::for_pool`] respawns it on the caller's runtime.
 //!
-//! [`crate::administration::handlers::audit_logs::audit_row_stream`] is the consumer: it fetches
-//! `id > last_id` on `Row` and `Resync`, and lets its 2 s ticker reach the database only while
-//! `is_listening()` is false.
+//! [`super::audit_delivery::audit_delivery_stream`] is the consumer: every signal wakes it to
+//! publish pending rows and read the publications after its cursor, and its own timer does the
+//! same whatever `is_listening()` says, because a live listener does not prove a successful read.
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};

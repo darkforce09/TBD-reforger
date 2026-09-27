@@ -12,8 +12,8 @@ these pages.
 ```text
 documentation_v2/website/frontend/pages/doctrine_and_info/
 ├── modpacks/  the modpacks page: server modpacks, their addons and their administration
-├── vehicles/  the vehicle database page: faction-grouped vehicles and identification dossiers
-└── wiki/      the doctrine wiki page: standard operating procedures, manuals and their editing
+├── vehicles/  the vehicle database page: faction-grouped vehicles, dossiers and their editing
+└── wiki/      the doctrine wiki page: manuals, their editing and revisions
 ```
 
 ## How it works
@@ -28,8 +28,10 @@ server-side), Design, Open work and Decisions.
 
 The three pages share one shape: each renders inside `AuthGate`, fetches its whole list from the
 [community content](/documentation_v2/glossary/a_to_f.md#community-content) domain once, and lays it out
-in a `GlassSplit`, a searchable list beside the selected item. The wiki and the modpacks give an
-administrator an edit mode; the vehicle database only reads.
+in a `GlassSplit`, a searchable list beside the selected item; the wiki and vehicle answers decode
+into typed DTOs. Each page gives an administrator its writes: the wiki edits a manual and keeps its
+revision history, saving against the revision the edit started from and restoring an older
+revision; the vehicle database adds, edits and deletes vehicles; the modpacks page edits the packs.
 
 | Page | Route and component | Label on screen | Feature doc |
 |---|---|---|---|

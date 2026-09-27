@@ -1,16 +1,21 @@
 //! The detail half of the vehicle index: one vehicle's identification dossier.
 //!
 //! **Role:** renders the selected vehicle — its photograph or a placeholder, the armour,
-//! amphibious and faction chips, its primary threat note, and a small telemetry grid.
+//! amphibious and faction chips, its primary threat note, a small telemetry grid, and, for an
+//! administrator, the Edit and Delete actions.
 //! **Position:** the detail pane of the vehicle index's split view.
-//! **Signals & state:** none — it is handed an owned row and renders it.
-//! **Invariants:** every field is optional on the wire; an absent image falls back to an icon,
-//! an absent amphibious value drops the chip, and an absent threat shows a fixed line instead.
+//! **Signals & state:** none — it is handed an owned row and, for an administrator, the two
+//! callbacks the page answers the actions with.
+//! **Invariants:** every optional field may be empty; an empty or unsafe image URL shows the
+//! placeholder icon ([`profile_image_src`] admits only what
+//! [`crate::v2::core::utils::safe_url::safe_image_src`] admits), an empty amphibious value drops
+//! the chip, and an empty threat shows a fixed line instead. The actions render only when the
+//! page hands them over, which it does for a signed-in administrator alone.
 
-use super::helpers::vstr;
+use crate::v2::core::api::dto::vehicles::Vehicle;
 use crate::v2::core::ui::MaterialIcon;
+use crate::v2::core::utils::safe_url::safe_image_src;
 use leptos::prelude::*;
-use serde_json::Value;
 
 /// The neutral chip, used for the armour class.
 const BADGE_NEUTRAL: &str = "inline-flex items-center gap-1 rounded border px-2 py-0.5 uppercase whitespace-nowrap border-outline-variant/40 bg-surface-variant/40 text-on-surface-variant";
@@ -20,6 +25,19 @@ const BADGE_WARNING: &str = "inline-flex items-center gap-1 rounded border px-2 
 const BADGE_SUCCESS: &str = "inline-flex items-center gap-1 rounded border px-2 py-0.5 uppercase whitespace-nowrap border-success/30 bg-success/15 text-success";
 /// The primary chip, used for the faction.
 const BADGE_PRIMARY: &str = "inline-flex items-center gap-1 rounded border px-2 py-0.5 uppercase whitespace-nowrap border-primary/30 bg-primary/10 text-primary";
+/// The frosted button the administrator's actions share over the photograph.
+const ACTION_BUTTON: &str = "flex items-center gap-1.5 rounded-lg border border-white/15 bg-black/40 px-3 py-1.5 text-label-md text-on-surface backdrop-blur-md transition-colors hover:bg-black/60";
+/// The destructive variant of [`ACTION_BUTTON`].
+const DELETE_BUTTON: &str = "flex items-center gap-1.5 rounded-lg border border-error-alert/30 bg-black/40 px-3 py-1.5 text-label-md text-error-alert backdrop-blur-md transition-colors hover:bg-error-alert/20";
+
+/// The administrator's answers to the dossier's actions, each handed the row on screen.
+#[derive(Clone, Copy)]
+pub(super) struct DossierActions {
+    /// Opens the vehicle form on the row.
+    pub on_edit: Callback<Vehicle>,
+    /// Opens the delete confirmation for the row.
+    pub on_delete: Callback<Vehicle>,
+}
 
 /// The chip class for an amphibious value.
 ///
@@ -33,25 +51,35 @@ fn amphib_badge(amphibious: &str) -> &'static str {
     }
 }
 
-/// The identification dossier for one vehicle.
-pub(super) fn dossier(v: Value) -> impl IntoView {
-    let name = vstr(&v, "name");
-    let faction = vstr(&v, "faction");
-    let armor = vstr(&v, "armor_type");
-    let amphib = vstr(&v, "amphibious");
-    let threat = vstr(&v, "primary_threat");
-    let image = vstr(&v, "profile_image_url");
+/// The source the dossier's photograph loads from, or `None` for the placeholder: an empty URL and
+/// every URL the content URL policy refuses both show the placeholder.
+pub(super) fn profile_image_src(vehicle: &Vehicle) -> Option<&str> {
+    safe_image_src(&vehicle.profile_image_url)
+}
 
-    let hero = if image.is_empty() {
-        view! {
+/// The identification dossier for one vehicle; `actions` is `Some` for an administrator only.
+pub(super) fn dossier(v: Vehicle, actions: Option<DossierActions>) -> impl IntoView {
+    let hero = match profile_image_src(&v) {
+        Some(src) => {
+            view! { <img src={src.to_owned()} alt="" class="h-full w-full object-cover" /> }
+                .into_any()
+        }
+        None => view! {
             <div class="flex h-full w-full items-center justify-center bg-surface-container-low">
                 <MaterialIcon name="directions_car" class="text-7xl text-outline" />
             </div>
         }
-        .into_any()
-    } else {
-        view! { <img src=image alt="" class="h-full w-full object-cover" /> }.into_any()
+        .into_any(),
     };
+    let toolbar = actions.map(|actions| admin_toolbar(&v, actions));
+    let Vehicle {
+        name,
+        faction,
+        armor_type: armor,
+        amphibious: amphib,
+        primary_threat: threat,
+        ..
+    } = v;
 
     let amphib_label = if amphib.is_empty() {
         "—".to_string()
@@ -61,7 +89,7 @@ pub(super) fn dossier(v: Value) -> impl IntoView {
     let threat_body = if threat.is_empty() {
         "No primary threat recorded.".to_string()
     } else {
-        threat.clone()
+        threat
     };
 
     view! {
@@ -69,12 +97,13 @@ pub(super) fn dossier(v: Value) -> impl IntoView {
             <div class="relative h-72 w-full overflow-hidden">
                 {hero}
                 <div class="absolute inset-0 bg-gradient-to-t from-surface-dim to-transparent"></div>
+                {toolbar}
                 <div class="absolute right-8 bottom-6 left-8">
                     <div class="mb-3 flex flex-wrap items-center gap-2">
                         <span class=BADGE_NEUTRAL>"ARMOR: "{armor.clone()}</span>
                         {if !amphib.is_empty() {
                             view! {
-                                <span class=amphib_badge(&amphib)>"AMPHIB: "{amphib.clone()}</span>
+                                <span class={amphib_badge(&amphib)}>"AMPHIB: "{amphib.clone()}</span>
                             }
                                 .into_any()
                         } else {
@@ -109,6 +138,32 @@ pub(super) fn dossier(v: Value) -> impl IntoView {
     }
 }
 
+/// The Edit and Delete buttons over the photograph's top corner.
+fn admin_toolbar(vehicle: &Vehicle, actions: DossierActions) -> impl IntoView {
+    let edited = vehicle.clone();
+    let deleted = vehicle.clone();
+    view! {
+        <div class="absolute top-4 right-4 flex gap-2">
+            <button
+                type="button"
+                class=ACTION_BUTTON
+                on:click=move |_| actions.on_edit.run(edited.clone())
+            >
+                <MaterialIcon name="edit" class="text-base" />
+                "Edit"
+            </button>
+            <button
+                type="button"
+                class=DELETE_BUTTON
+                on:click=move |_| actions.on_delete.run(deleted.clone())
+            >
+                <MaterialIcon name="delete" class="text-base" />
+                "Delete"
+            </button>
+        </div>
+    }
+}
+
 /// A small capitalised heading above a group of readouts.
 fn section_title(t: &'static str) -> impl IntoView {
     view! {
@@ -129,3 +184,7 @@ fn vehicle_stat(label: &'static str, value: String) -> impl IntoView {
         </div>
     }
 }
+
+#[cfg(test)]
+#[path = "tests/spec_drawer.rs"]
+mod tests;

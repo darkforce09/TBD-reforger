@@ -9,13 +9,13 @@ states who may call it.
 ```text
 apps/website/api_v2/src/core/middleware/
 ├── authentication.rs           `AuthUser` and the three role-gated extractors
-├── authorized_event_stream.rs  re-authorizes a long-lived SSE stream while it stays open
+├── authorized_event_stream.rs  re-authorizes a long-lived SSE stream; closes it at shutdown
 ├── client_identity.rs          the client address both rate-limit tiers key on
 ├── cross_origin.rs             `cors`: reflects an allow-listed `Origin`, answers preflights with 204
 ├── durable_ratelimit.rs        `PgRateLimiter`: token buckets in Postgres, shared across processes
 ├── mod.rs                      the module tree; re-exports, body caps, `role_rank` and `json_error`
 ├── rate_limiting.rs            `rate_limit`: an in-memory tier and, on strict prefixes, a Postgres one
-├── tests/                      unit tests for client resolution and the rate limiter's placement
+├── tests/                      unit tests: client resolution, limiter placement, event stream shutdown
 └── tracing_correlation.rs      `request_id` and `logging`: the `X-Request-ID` and the access log line
 ```
 
@@ -65,13 +65,18 @@ callers' extractors live with the code that owns them: `MachineCaller` for game 
 `crate::core::observability`. `authorize_event_stream` wraps an [SSE](/documentation_v2/glossary/n_to_z.md#sse)
 stream: before each delivery, and at least every five seconds, it asks the session authority
 again, and it ends the stream with an `authorization_expired` SSE event as soon as the session or
-its role stops qualifying.
+its role stops qualifying. It also races the stream against
+`crate::core::process_lifecycle::process_shutdown`: once the `api` binary begins shutting down,
+the body ends with no further event, ahead of a ready delivery and without waiting for a
+re-authorization in flight, so the graceful drain never waits on an open stream and the client
+reconnects with `Last-Event-ID` as after any end of stream.
 
 ## Boundaries
 
 - Depends on: `crate::core::authentication_primitives` (the token manager, the session authority
-  trait), `crate::core::configuration` (`TRUSTED_PROXIES`), `crate::core::application_state`, `governor` for the in-memory buckets, and the
-  `rate_limit_buckets` table of migration `0021`.
+  trait), `crate::core::configuration` (`TRUSTED_PROXIES`), `crate::core::application_state`,
+  `crate::core::process_lifecycle` (the shutdown the event streams end on), `governor` for the
+  in-memory buckets, and the `rate_limit_buckets` table of migration `0021`.
 - Used by:
   - `crate::core::http_router`, which mounts the chain and the exempt asset mounts;
   - the handlers of all eight domains, through the extractors and `json_error`; `role_rank` in the
@@ -84,7 +89,8 @@ its role stops qualifying.
     stream of `server_infrastructure`;
   - the `ratelimit_cleanup_worker` background worker, through `PgRateLimiter`;
   - integration suites under `apps/website/api_v2/tests/`, among them `http_middleware.rs`,
-    `durable_rate_limit.rs`, `forwarded_for_trust.rs` and `map_assets_rate_limit_exemption.rs`.
+    `durable_rate_limit.rs`, `forwarded_for_trust.rs`, `map_assets_rate_limit_exemption.rs` and
+    `audit_replay_shutdown.rs`.
 - Rules:
   - `STRICT_PREFIXES` is the only path test in the limiter; the asset exemption is where the
     router mounts them, below the layer (`the_exempt_mount_is_registered_below_the_rate_limit_layer`
@@ -94,7 +100,10 @@ its role stops qualifying.
   - `RATE_LIMIT_BUCKETS_DDL` is migration `0021` verbatim
     (`migration_0021_is_the_ddl_constant_verbatim` in
     `apps/website/api_v2/tests/durable_rate_limit.rs`);
-  - `mission_maker` outranks `leader` in `role_rank` on purpose.
+  - `mission_maker` outranks `leader` in `role_rank` on purpose;
+  - every SSE handler passes its stream through `authorize_event_stream`, the one place a stream
+    ends at shutdown (`shutdown_closes_an_idle_stream_without_an_event` and its neighbours in
+    `tests/authorized_event_stream.rs`).
 
 ## Related documentation
 

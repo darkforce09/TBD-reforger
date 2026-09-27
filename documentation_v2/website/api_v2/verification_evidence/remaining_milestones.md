@@ -18,8 +18,8 @@ phase delivers it.
 
 ## Status of the remaining checks
 
-The status comes from the last full `cargo xtask db test-it` (877 cases, 2026-09-26; T rows) and the
-2026-09-23 run (784 cases; the other rows).
+The status comes from the last full `cargo xtask db test-it` (1,075 cases, 2026-09-27; C rows), the
+2026-09-26 run (877 cases; T rows) and the 2026-09-23 run (784 cases; the other rows).
 "Missing" means the register's case pattern matched no passing test. The pattern shorthand
 `name*` means a test whose name starts with `name`.
 
@@ -33,13 +33,13 @@ The status comes from the last full `cargo xtask db test-it` (877 cases, 2026-09
 | T | telemetry_telemetry_queue | telemetry_telemetry_queue (+ mod_compilation) | db test-it | 6 | `telemetry_queue*` | passing (6 cases, 2026-09-26) |
 | T | dashboard_fleet_dashboard | dashboard_fleet_dashboard | db test-it | 6 | `fleet_dashboard*` | passing (6 cases, 2026-09-26) |
 | T | dashboard_statistics_recomputation | dashboard_statistics_recomputation | db test-it | 6 | `statistics_recomputation*` | passing (6 cases, 2026-09-26) |
-| C | administration_audit_replay | administration_audit_replay | db test-it | 1 | `audit_replay*` | missing |
-| C | administration_audit_query_recovery | administration_audit_query_recovery | db test-it | 1 | `audit_query_recovery*` | missing |
-| C | administration_personnel_pagination | administration_personnel_pagination | db test-it | 1 | `personnel_pagination*` | missing |
-| C | administration_audit_frontend | administration_audit_frontend (+ frontend_quality, browser_acceptance) | db test-it | 1 | `audit_frontend*` | missing |
-| C | content_vehicle_mutations | content_vehicle_mutations | db test-it | 1 | `vehicle_mutations*` | missing |
-| C | content_wiki_features | content_wiki_features (+ frontend_quality, browser_acceptance) | db test-it | 1 | `wiki_features*` | missing |
-| C | content_content_storage | content_content_storage | db test-it | 1 | `content_storage*` | missing |
+| C | administration_audit_replay | administration_audit_replay | db test-it | 11 | `audit_replay*` | passing (11 cases, 2026-09-27) |
+| C | administration_audit_query_recovery | administration_audit_query_recovery | db test-it | 4 | `audit_query_recovery*` | passing (4 cases, 2026-09-27) |
+| C | administration_personnel_pagination | administration_personnel_pagination | db test-it | 9 | `personnel_pagination*` | passing (9 cases, 2026-09-27) |
+| C | administration_audit_frontend | administration_audit_frontend (+ frontend_quality, browser_acceptance) | db test-it | 6 | `audit_frontend*` | passing (6 cases, 2026-09-27) |
+| C | content_vehicle_mutations | content_vehicle_mutations | db test-it | 18 | `vehicle_mutations*` | passing (18 cases, 2026-09-27) |
+| C | content_wiki_features | content_wiki_features (+ frontend_quality, browser_acceptance) | db test-it | 15 | `wiki_features*` | passing (15 cases, 2026-09-27) |
+| C | content_content_storage | content_content_storage | db test-it | 15 | `content_storage*` | passing (15 cases, 2026-09-27) |
 | B | verification_game_ballistics | verification_game_ballistics (+ frontend_quality, browser_acceptance) | db test-it | 1 | `game_ballistics*` | missing — separate later phase |
 | V | verification_route_acceptance | verification_route_acceptance | db test-it | 1 | `route_acceptance*` | missing |
 | V | verification_contract_parity | verification_contract_parity (+ schema_quality) | db test-it | 1 | `contract_parity*` | missing |
@@ -93,6 +93,9 @@ their cases in full, and the register is the source of truth.
   updates synchronously or durably.
 
 ## C — Administration and content
+
+**State:** implemented and verified 2026-09-27; design in `administration_and_content.md`, evidence
+in `progress_checkpoint.md`.
 
 **Covers:**
 - administration_audit_replay, administration_audit_query_recovery,

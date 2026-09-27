@@ -11,7 +11,9 @@
 //! the policy, the endpoint paths and the wire types compile natively so all of them can be tested
 //! without a browser.
 
+pub mod audit_stream;
 pub mod client;
 pub mod dto;
 pub mod endpoints;
 pub mod sse;
+pub mod sse_frames;

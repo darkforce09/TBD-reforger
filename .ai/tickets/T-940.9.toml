@@ -3,7 +3,7 @@ kind = "work"
 title = "Wiki: headings, links, images, tables, checklists, revisions"
 summary = "A new wiki_markup service parses H3 and deeper headings, links, images, tables and checklists; pages keep revisions in a new table and the frontend renders the new blocks."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 8130
 spec = "documentation_v2/tickets/specs/t940_website_platform.md"
 plan = "documentation_v2/tickets/plans/t-940_9_plan.md"
@@ -22,7 +22,13 @@ requirement = [
     "New migration 0026_wiki_revisions.sql: wiki_revisions(page_id, revision, body, author_id, created_at); every save inserts one.",
     "wiki.rs renders through the new parser and exposes GET revisions; pages/public/wiki.rs renders every block type and a revision list.",
 ]
-current_state = ["Minimal inline parser in wiki.rs; saves overwrite; no revision route or view."]
+current_state = [
+    "community_content/services/wiki_markup/ parses body_md with pulldown-cmark into a typed AST: headings H1 to H6 with anchors, links, safe images, tables, task lists, callouts, quotes and code.",
+    "A save with an unsafe URL, raw HTML or nesting deeper than 16 is refused with 422 and its findings.",
+    "Migration 0059 adds wiki_pages.revision and wiki_page_revisions; each accepted PUT /api/v1/wiki/{slug} checks base_revision (409 on conflict) and writes page, revision and audit rows together.",
+    "GET /wiki/{slug}/revisions and /wiki/{slug}/revisions/{revision} serve the history; the /wiki page renders every block type, pages and restores revisions and saves against its base revision.",
+    "Covered by apps/website/api_v2/tests/wiki_features.rs and the page's unit tests; contract wiki-page.schema.json.",
+]
 approach = [
     "Verify on main: a test rendering a level-three heading yields a paragraph, not a heading; paste the red.",
     "Write the parser with goldens; write the migration; wire the handler and the page.",
@@ -39,6 +45,7 @@ acceptance = [
     "Saving a page twice yields two revisions and the page lists both.",
 ]
 created_at = "2026-09-05T02:33:18Z"
+completed_at = "2026-09-26T23:06:23Z"
 owns = [
     "apps/website/api/src/handlers/content/wiki.rs",
     "apps/website/api/src/services/wiki_markup.rs",
