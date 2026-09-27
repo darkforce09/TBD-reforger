@@ -1,0 +1,19 @@
+{
+  "policy_version": 1,
+  "rules": [
+    {
+      "id": "attachment_native_type",
+      "accepting_class": "AttachmentSlotComponent",
+      "providing_class": "WeaponAttachmentAttributes",
+      "property": "AttachmentType",
+      "match": "provided_type_is_or_inherits_accepted_type"
+    },
+    {
+      "id": "magazine_well_native_type",
+      "accepting_class": "BaseMuzzleComponent",
+      "providing_class": "BaseMagazineComponent",
+      "property": "MagazineWell",
+      "match": "provided_type_is_or_inherits_accepted_type"
+    }
+  ]
+}

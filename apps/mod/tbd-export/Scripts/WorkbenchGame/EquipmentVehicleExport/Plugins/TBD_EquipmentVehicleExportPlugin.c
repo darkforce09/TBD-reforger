@@ -1,4 +1,4 @@
-[WorkbenchPluginAttribute(name: "Export Equipment and Vehicles", description: "Capture equipment, vehicles and gameplay dependencies in a source-only generation", category: "TBD", wbModules: {"ResourceManager", "WorldEditor"})]
+[WorkbenchPluginAttribute(name: "Export Equipment and Vehicles", description: "Export the compact, source-backed gameplay catalog", category: "TBD", wbModules: {"ResourceManager", "WorldEditor"})]
 class TBD_EquipmentVehicleExportPlugin : WorkbenchPlugin
 {
 	override void Run()
@@ -8,10 +8,24 @@ class TBD_EquipmentVehicleExportPlugin : WorkbenchPlugin
 			Print("[TBD Source Export] An export is already running", LogLevel.ERROR);
 			return;
 		}
-		TBD_SourceExportGeneration.s_Active = new TBD_SourceExportGeneration();
+		TBD_SourceExportGeneration.s_Active = new TBD_GameplayExportGeneration();
 		TBD_SourceExportGeneration generation = TBD_SourceExportGeneration.s_Active;
 		if (generation.Start()) while (generation.Step()) {}
 		Print("[TBD Source Export] Generation: " + generation.m_sDirectory);
+	}
+}
+
+[WorkbenchPluginAttribute(name: "Export Full Equipment and Vehicle Diagnostics", description: "Capture complete source configurations for local extraction diagnostics", category: "TBD", wbModules: {"ResourceManager", "WorldEditor"})]
+class TBD_FullEquipmentVehicleDiagnosticsPlugin : WorkbenchPlugin
+{
+	override void Run()
+	{
+		if (TBD_SourceExportGeneration.s_Active && !TBD_SourceExportGeneration.s_Active.m_bFinished)
+		{ Print("[TBD Source Export] An export is already running", LogLevel.ERROR); return; }
+		TBD_SourceExportGeneration.s_Active = new TBD_SourceExportGeneration();
+		TBD_SourceExportGeneration generation = TBD_SourceExportGeneration.s_Active;
+		if (generation.Start()) while (generation.Step()) {}
+		Print("[TBD Source Export] Full diagnostic generation: " + generation.m_sDirectory);
 	}
 }
 

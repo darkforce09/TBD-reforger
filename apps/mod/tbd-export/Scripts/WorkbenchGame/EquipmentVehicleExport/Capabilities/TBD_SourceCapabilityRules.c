@@ -57,7 +57,8 @@ class TBD_SourceCapabilityRules
 			if (i + 1 < property.Length()) next = property.Substring(i + 1, 1);
 			string nextLower = next;
 			nextLower.ToLower();
-			if (upper && !output.IsEmpty() && !output.EndsWith("_") && (previous == previousLower || next == nextLower && !next.IsEmpty())) output += "_";
+			bool nextLowercaseLetter = !next.IsEmpty() && "abcdefghijklmnopqrstuvwxyz".Contains(next);
+			if (upper && !output.IsEmpty() && !output.EndsWith("_") && (previous == previousLower || nextLowercaseLetter)) output += "_";
 			output += lower;
 			previous = character;
 		}

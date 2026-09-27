@@ -26,7 +26,7 @@ class TBD_SourceExportGeneration
 	{
 		m_sScope = scope;
 		m_sGenerationId = Workbench.GenerateGloballyUniqueID64();
-		m_sDirectory = DESTINATION + m_sGenerationId;
+		m_sDirectory = Destination() + m_sGenerationId;
 		m_sStarted = TBD_SourceExportEnvironment.Timestamp();
 		m_sEnvironment = TBD_SourceExportEnvironment.Capture();
 		if (!FileIO.MakeDirectory(m_sDirectory)) { m_aErrors.Insert("Cannot create generation directory"); m_bFinished = true; return false; }
@@ -54,6 +54,8 @@ class TBD_SourceExportGeneration
 		WriteProgress();
 		return true;
 	}
+
+	protected string Destination() { return DESTINATION; }
 
 	protected void AddDiscovered(string resource)
 	{

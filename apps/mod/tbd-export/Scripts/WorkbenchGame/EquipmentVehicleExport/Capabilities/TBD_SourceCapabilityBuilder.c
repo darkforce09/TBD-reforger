@@ -74,7 +74,15 @@ class TBD_SourceCapabilityBuilder
 		instances.Insert(json + ",\"facts\":{" + TBD_SourceExportJson.Join(facts) + "}}");
 	}
 
-	protected void AddName(TBD_SourceExportNode node, BaseContainer container)
+	string CompactNames(TBD_SourceContainerReader reader)
+	{
+		foreach (TBD_SourceExportNode node : reader.m_aNodes)
+			if (node.m_mProperties.Contains("Name") && TBD_SourceCapabilityRules.IsA(node.m_sClass, "UIInfo"))
+				AddName(node, reader.Container(node.m_sId), true);
+		return "[" + TBD_SourceExportJson.Join(m_aNames) + "]";
+	}
+
+	protected void AddName(TBD_SourceExportNode node, BaseContainer container, bool compact = false)
 	{
 		TBD_SourceExportFact original = node.m_mProperties.Get("Name");
 		if (!original) return;
@@ -104,6 +112,15 @@ class TBD_SourceCapabilityBuilder
 			else english.m_sValue = TBD_SourceExportJson.Quote(translated);
 		}
 		string json = "{\"node_id\":" + TBD_SourceExportJson.Quote(node.m_sId);
+		if (compact)
+		{
+			json += ",\"source_property\":\"Name\",\"display_name_en\":{\"value\":" + english.m_sValue;
+			json += ",\"status\":" + TBD_SourceExportJson.Quote(english.m_sStatus);
+			json += ",\"reason\":" + TBD_SourceExportJson.Nullable(english.m_sReason);
+			json += ",\"method\":\"WidgetManager.Translate\"},\"locale\":\"en_us\"}";
+			m_aNames.Insert(json);
+			return;
+		}
 		json += ",\"source_text\":" + original.Json() + ",\"display_name_en\":" + english.Json();
 		m_aNames.Insert(json + ",\"locale\":\"en_us\"}");
 	}

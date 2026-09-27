@@ -4,6 +4,7 @@ class TBD_SourceContainerReader
 	static const int MAX_NODES = 100000;
 	static const int MAX_DEPTH = 128;
 	string m_sResource;
+	ref TBD_GameplaySelectionPolicy m_GameplayPolicy;
 	ref array<ref TBD_SourceExportNode> m_aNodes = {};
 	ref array<ref TBD_SourceExportReference> m_aReferences = {};
 	ref array<string> m_aErrors = {};
@@ -39,9 +40,16 @@ class TBD_SourceContainerReader
 		return string.Empty;
 	}
 
-	string Capture(BaseContainer container, string id = "root", string view = "effective", int depth = 0)
+	string Capture(BaseContainer container, string id = "root", string view = "effective", int depth = 0, bool required = true)
 	{
 		if (!container) return string.Empty;
+		bool selected = true;
+		if (m_GameplayPolicy)
+		{
+			selected = m_GameplayPolicy.Selected(container.GetClassName());
+			if (!selected) m_GameplayPolicy.ObserveExcluded(container);
+			if (!selected && !required) return string.Empty;
+		}
 		if (m_aActive.Find(container) >= 0)
 		{
 			m_aErrors.Insert(id + ": container cycle");
@@ -69,7 +77,7 @@ class TBD_SourceContainerReader
 		node.m_sResource = container.GetResourceName();
 		if (node.m_sResource.Length() == 18 && node.m_sResource.StartsWith("{") && node.m_sResource.EndsWith("}"))
 			node.m_sNativeInstanceId = node.m_sResource;
-		else if (node.m_sResource != m_sResource && IsGameplayResource(node.m_sResource))
+		else if (!m_GameplayPolicy && node.m_sResource != m_sResource && IsGameplayResource(node.m_sResource))
 		{
 			TBD_SourceExportReference sourceLink = new TBD_SourceExportReference();
 			sourceLink.m_sNode = id;
@@ -81,18 +89,23 @@ class TBD_SourceContainerReader
 		}
 		container.GetSourceAddons(node.m_aAddons);
 		m_aNodes.Insert(node);
+		if (!selected) node.m_sSelection = "identity_only";
 
 		array<string> properties = {};
 		for (int i = 0; i < container.GetNumVars(); i++) properties.Insert(container.GetVarName(i));
 		properties.Sort();
-		foreach (string property : properties) CaptureProperty(container, node, property, depth);
-		for (int child = 0; child < container.GetNumChildren(); child++)
+		if (selected) foreach (string property : properties) CaptureProperty(container, node, property, depth);
+		for (int child = 0; selected && child < container.GetNumChildren(); child++)
 		{
-			string childId = Capture(container.GetChild(child), id + "/children/" + child.ToString(), view, depth + 1);
+			string childId = Capture(container.GetChild(child), id + "/children/" + child.ToString(), view, depth + 1, false);
 			if (!childId.IsEmpty() && node.m_aChildren.Find(childId) < 0) node.m_aChildren.Insert(childId);
 		}
 		BaseContainer ancestor = container.GetAncestor();
-		if (ancestor) node.m_sAncestor = Capture(ancestor, id + "/ancestor", "ancestor", depth + 1);
+		if (ancestor)
+		{
+			if (m_GameplayPolicy) node.m_sAncestorResource = ancestor.GetResourceName();
+			else node.m_sAncestor = Capture(ancestor, id + "/ancestor", "ancestor", depth + 1);
+		}
 		m_aActive.Remove(m_aActive.Count() - 1);
 		return id;
 	}
@@ -101,6 +114,16 @@ class TBD_SourceContainerReader
 	{
 		int index = container.GetVarIndex(property);
 		DataVarType nativeType = container.GetDataVarType(index);
+		if (m_GameplayPolicy)
+		{
+			TBD_GameplaySelectionRule decision = m_GameplayPolicy.Rule(node.m_sClass, property, typename.EnumToString(DataVarType, nativeType), true);
+			if (!decision || decision.m_sDisposition == "exclude") return;
+			if (decision.m_sDisposition == "traverse_required_container")
+			{
+				CaptureSelectedComponents(container, node, property, depth);
+				return;
+			}
+		}
 		TBD_SourceExportFact fact = new TBD_SourceExportFact();
 		fact.m_sNativeType = typename.EnumToString(DataVarType, nativeType);
 		if (nativeType == DataVarType.OBJECT || nativeType == DataVarType.OBJECT_ARRAY)
@@ -204,8 +227,25 @@ class TBD_SourceContainerReader
 			link.m_sProperty = property;
 			link.m_sResource = name;
 			link.m_sKind = "binary";
-			if (IsGameplayResource(name)) link.m_sKind = "gameplay";
+			if (m_GameplayPolicy)
+			{
+				TBD_GameplaySelectionRule rule = m_GameplayPolicy.Rule(container.GetClassName(), property, typename.EnumToString(DataVarType, nativeType));
+				if (rule && rule.m_bFollowReference && TBD_GameplaySelectionPolicy.GameplayReference(name)) link.m_sKind = "gameplay";
+			}
+			else if (IsGameplayResource(name)) link.m_sKind = "gameplay";
 			m_aReferences.Insert(link);
+		}
+	}
+
+	protected void CaptureSelectedComponents(BaseContainer container, TBD_SourceExportNode node, string property, int depth)
+	{
+		BaseContainerList components = container.GetObjectArray(property);
+		if (!components) return;
+		for (int index = 0; index < components.Count(); index++)
+		{
+			string path = node.m_sId + "/properties/" + TBD_SourceExportJson.PointerPart(property) + "/" + index.ToString();
+			string childId = Capture(components.Get(index), path, "effective", depth + 1, false);
+			if (!childId.IsEmpty() && node.m_aChildren.Find(childId) < 0) node.m_aChildren.Insert(childId);
 		}
 	}
 

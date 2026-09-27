@@ -31,13 +31,14 @@ class EMCP_WB_SourceExport : NetApiHandler
 		TBD_SourceExportRequest req = TBD_SourceExportRequest.Cast(request);
 		TBD_SourceExportResponse response = new TBD_SourceExportResponse();
 		response.status = "error";
-		if (req.action == "start" || req.action == "step" || req.action == "status" || req.action == "diagnostic")
+		if (req.action == "start" || req.action == "step" || req.action == "status" || req.action == "diagnostic" || req.action == "full_diagnostic")
 		{
-			if (req.action == "start" || req.action == "diagnostic")
+			if (req.action == "start" || req.action == "diagnostic" || req.action == "full_diagnostic")
 			{
 				if (TBD_SourceExportGeneration.s_Active && !TBD_SourceExportGeneration.s_Active.m_bFinished)
 				{ response.errors.Insert("An export is already running"); return response; }
-				TBD_SourceExportGeneration.s_Active = new TBD_SourceExportGeneration();
+				if (req.action == "start") TBD_SourceExportGeneration.s_Active = new TBD_GameplayExportGeneration();
+				else TBD_SourceExportGeneration.s_Active = new TBD_SourceExportGeneration();
 				string scope = "complete";
 				if (req.action == "diagnostic") scope = "diagnostic";
 				TBD_SourceExportGeneration.s_Active.Start(scope, req.resources);

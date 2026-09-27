@@ -1,0 +1,51 @@
+{
+  "policy_version": 1,
+  "baseline_generation_id": "6A6E9885CF2F83F9",
+  "baseline_field_combinations": 11314,
+  "class_files": [
+    "attachment/classes_01.json",
+    "attachment/classes_02.json",
+    "communications/classes_01.json",
+    "excluded/classes_01.json",
+    "excluded/classes_02.json",
+    "excluded/classes_03.json",
+    "excluded/classes_04.json",
+    "excluded/classes_05.json",
+    "excluded/classes_06.json",
+    "excluded/classes_07.json",
+    "excluded/classes_08.json",
+    "excluded/classes_09.json",
+    "excluded/classes_10.json",
+    "excluded/classes_11.json",
+    "excluded/classes_12.json",
+    "explosive/classes_01.json",
+    "identity/classes_01.json",
+    "inventory/classes_01.json",
+    "magazine/classes_01.json",
+    "medical_effects/classes_01.json",
+    "physics/classes_01.json",
+    "projectile/classes_01.json",
+    "protection/classes_01.json",
+    "protection/classes_02.json",
+    "sights/classes_01.json",
+    "storage/classes_01.json",
+    "structure/classes_01.json",
+    "utility/classes_01.json",
+    "vehicle_systems/classes_01.json",
+    "vehicle_systems/classes_02.json",
+    "visuals/classes_01.json",
+    "weapon/classes_01.json"
+  ],
+  "unknown_fields": "reject_publication",
+  "unknown_classes": "reject_publication",
+  "contexts": {
+    "structural": "Only retained component branches are traversed into the published graph",
+    "required_relationship": "Excluded target containers retain identity and exclusion reason, without configuration values"
+  },
+  "disposition_counts": {
+    "retain_value": 2916,
+    "exclude": 7627,
+    "retain_relationship": 611,
+    "traverse_required_container": 160
+  }
+}

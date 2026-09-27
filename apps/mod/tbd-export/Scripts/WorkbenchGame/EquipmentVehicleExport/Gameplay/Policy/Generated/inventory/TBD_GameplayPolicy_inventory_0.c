@@ -1,0 +1,82 @@
+// Generated from the authoritative gameplay field-selection policy.
+class TBD_GameplayPolicy_inventory_0
+{
+	static void Apply(TBD_GameplaySelectionPolicy policy)
+	{
+		policy.AddClass("BaseLoadoutClothComponent", "inventory");
+		policy.AddRule("BaseLoadoutClothComponent", "Animate\tBOOLEAN|AnimateCollidersOnWear\tBOOLEAN|AreaOcludders\tSTRING_ARRAY|DebugDeflatedModel\tBOOLEAN|DebugWornModel\tBOOLEAN|DepthBack\tSCALAR|DepthFront\tSCALAR|DepthLeft\tSCALAR|DepthRight\tSCALAR|ForceLOD0\tBOOLEAN|HidingArray\tOBJECT_ARRAY|IgnoreCloth\tBOOLEAN|OffsetShoulderLeft\tSCALAR|OffsetShoulderRight\tSCALAR|OverrideMeshesToHide\tSTRING_ARRAY|SoundInt\tINTEGER|VisibleInVehicle\tBOOLEAN", "exclude", "excluded", false, "Non-gameplay setting of a mixed-purpose BaseLoadoutClothComponent container");
+		policy.AddRule("BaseLoadoutClothComponent", "AreaType\tOBJECT|AreaTypeWhenModelChange\tOBJECT_ARRAY|BlockedSlots\tOBJECT_ARRAY|DeflatedModel\tRESOURCE_NAME|ItemMaterialsOverride\tRESOURCE_NAME_ARRAY|ItemModel\tRESOURCE_NAME|Slots\tOBJECT_ARRAY|WornMaterialsOverride\tRESOURCE_NAME_ARRAY|WornModel\tRESOURCE_NAME", "retain_relationship", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("BaseLoadoutClothComponent", "Enabled\tBOOLEAN|PhysicsOnWearEnabled\tBOOLEAN", "retain_value", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("BaseLoadoutClothComponent", "components\tOBJECT_ARRAY", "traverse_required_container", "inventory", false, "Native configuration used by inventory");
+		policy.AddClass("CharacterModifierAttributes", "inventory");
+		policy.AddRule("CharacterModifierAttributes", "ADSSpeedLimit\tSCALAR|AllowGadgetUse\tBOOLEAN|AllowJumping\tBOOLEAN|AllowReloadingWithRoll\tBOOLEAN|CanBeEquippedInVehicle\tBOOLEAN|DefaultADSSpeedModifier\tBOOLEAN|SpeedLimit\tSCALAR|SpeedLimitHighready\tSCALAR|SpeedLimitItemPrimaryAction\tSCALAR|StanceLimits\tVECTOR2|Supress1hShooting\tBOOLEAN|TurnLimit\tINTEGER", "retain_value", "inventory", false, "Native configuration used by inventory");
+		policy.AddClass("HolsteredItemAttributes", "inventory");
+		policy.AddRule("HolsteredItemAttributes", "AngularOffset\tVECTOR3|HiddenHolstered\tBOOLEAN|LinearOffset\tVECTOR3", "retain_value", "inventory", false, "Native configuration used by inventory");
+		policy.AddClass("InventoryItemComponent", "inventory");
+		policy.AddRule("InventoryItemComponent", "WbPlacementFromAttributes\tBOOLEAN", "exclude", "excluded", false, "Non-gameplay setting of a mixed-purpose InventoryItemComponent container");
+		policy.AddRule("InventoryItemComponent", "Attributes\tOBJECT", "retain_relationship", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("InventoryItemComponent", "Enabled\tBOOLEAN", "retain_value", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("InventoryItemComponent", "components\tOBJECT_ARRAY", "traverse_required_container", "inventory", false, "Native configuration used by inventory");
+		policy.AddClass("ItemAttributeCollection", "inventory");
+		policy.AddRule("ItemAttributeCollection", "ItemAnimationAttributes\tOBJECT", "exclude", "excluded", false, "Presentation, authoring, lifecycle, replication, animation, audio, or cosmetic effect setting");
+		policy.AddRule("ItemAttributeCollection", "CustomAttributes\tOBJECT_ARRAY|ItemDisplayName\tOBJECT|ItemPhysAttributes\tOBJECT", "retain_relationship", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("ItemAttributeCollection", "CommonItemType\tSTRING", "retain_value", "inventory", false, "Native configuration used by inventory");
+		policy.AddClass("ItemPhysicalAttributes", "inventory");
+		policy.AddRule("ItemPhysicalAttributes", "ActivePhysicalSimulation\tINTEGER|PivotBoneName\tSTRING|RestingAdditiveOffsetLS\tVECTOR3|RestingAdditiveRotationLS\tVECTOR3|RestingUP\tINTEGER", "exclude", "excluded", false, "Non-gameplay setting of a mixed-purpose ItemPhysicalAttributes container");
+		policy.AddRule("ItemPhysicalAttributes", "DimensionScaler\tSCALAR|ItemDimensions\tVECTOR3|ItemVolume\tSCALAR|SizeSetupStrategy\tINTEGER|Weight\tSCALAR", "retain_value", "inventory", false, "Native configuration used by inventory");
+		policy.AddClass("SCR_BaseInventoryItemComponent", "inventory");
+		policy.AddClass("SCR_DeployableInventoryItemInventoryComponent", "inventory");
+		policy.AddRule("SCR_DeployableInventoryItemInventoryComponent", "WbPlacementFromAttributes\tBOOLEAN", "exclude", "excluded", false, "Presentation, authoring, lifecycle, replication, animation, audio, or cosmetic effect setting");
+		policy.AddRule("SCR_DeployableInventoryItemInventoryComponent", "Attributes\tOBJECT", "retain_relationship", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("SCR_DeployableInventoryItemInventoryComponent", "Enabled\tBOOLEAN|m_bForceItemDropOnCharacterPosition\tBOOLEAN|m_vAdditionalDropOffset\tVECTOR3|m_vAdditionalDropRotation\tVECTOR3", "retain_value", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("SCR_DeployableInventoryItemInventoryComponent", "components\tOBJECT_ARRAY", "traverse_required_container", "inventory", false, "Native configuration used by inventory");
+		policy.AddClass("SCR_ExplosiveChargeInventoryItemComponent", "inventory");
+		policy.AddRule("SCR_ExplosiveChargeInventoryItemComponent", "WbPlacementFromAttributes\tBOOLEAN", "exclude", "excluded", false, "Presentation, authoring, lifecycle, replication, animation, audio, or cosmetic effect setting");
+		policy.AddRule("SCR_ExplosiveChargeInventoryItemComponent", "Attributes\tOBJECT", "retain_relationship", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("SCR_ExplosiveChargeInventoryItemComponent", "Enabled\tBOOLEAN", "retain_value", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("SCR_ExplosiveChargeInventoryItemComponent", "components\tOBJECT_ARRAY", "traverse_required_container", "inventory", false, "Native configuration used by inventory");
+		policy.AddClass("SCR_FuelInventoryItemComponent", "inventory");
+		policy.AddRule("SCR_FuelInventoryItemComponent", "WbPlacementFromAttributes\tBOOLEAN", "exclude", "excluded", false, "Presentation, authoring, lifecycle, replication, animation, audio, or cosmetic effect setting");
+		policy.AddRule("SCR_FuelInventoryItemComponent", "Attributes\tOBJECT", "retain_relationship", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("SCR_FuelInventoryItemComponent", "Enabled\tBOOLEAN|m_fFuelWeightPerLiter\tSCALAR", "retain_value", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("SCR_FuelInventoryItemComponent", "components\tOBJECT_ARRAY", "traverse_required_container", "inventory", false, "Native configuration used by inventory");
+		policy.AddClass("SCR_HeadgearInventoryItemComponent", "inventory");
+		policy.AddRule("SCR_HeadgearInventoryItemComponent", "WbPlacementFromAttributes\tBOOLEAN", "exclude", "excluded", false, "Presentation, authoring, lifecycle, replication, animation, audio, or cosmetic effect setting");
+		policy.AddRule("SCR_HeadgearInventoryItemComponent", "Attributes\tOBJECT", "retain_relationship", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("SCR_HeadgearInventoryItemComponent", "Enabled\tBOOLEAN|m_fChanceToDetach\tINTEGER|m_fExplosiveImpulseMultiplier\tSCALAR|m_fForceThreshold\tSCALAR|m_fKineticImpulseMultiplier\tSCALAR|m_fMeleeImpulseMultiplier\tSCALAR", "retain_value", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("SCR_HeadgearInventoryItemComponent", "components\tOBJECT_ARRAY", "traverse_required_container", "inventory", false, "Native configuration used by inventory");
+		policy.AddClass("SCR_IdentityInventoryItemComponent", "inventory");
+		policy.AddRule("SCR_IdentityInventoryItemComponent", "WbPlacementFromAttributes\tBOOLEAN", "exclude", "excluded", false, "Presentation, authoring, lifecycle, replication, animation, audio, or cosmetic effect setting");
+		policy.AddRule("SCR_IdentityInventoryItemComponent", "Attributes\tOBJECT", "retain_relationship", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("SCR_IdentityInventoryItemComponent", "Enabled\tBOOLEAN|m_bCheckIfItemIsHostileFaction\tBOOLEAN", "retain_value", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("SCR_IdentityInventoryItemComponent", "components\tOBJECT_ARRAY", "traverse_required_container", "inventory", false, "Native configuration used by inventory");
+		policy.AddClass("SCR_IdentityItemAttributeCollection", "inventory");
+		policy.AddRule("SCR_IdentityItemAttributeCollection", "ItemAnimationAttributes\tOBJECT", "exclude", "excluded", false, "Presentation, authoring, lifecycle, replication, animation, audio, or cosmetic effect setting");
+		policy.AddRule("SCR_IdentityItemAttributeCollection", "CustomAttributes\tOBJECT_ARRAY|ItemDisplayName\tOBJECT|ItemPhysAttributes\tOBJECT", "retain_relationship", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("SCR_IdentityItemAttributeCollection", "CommonItemType\tSTRING|m_Size\tINTEGER|m_SlotType\tINTEGER|m_bDraggable\tBOOLEAN|m_bRefundable\tBOOLEAN|m_bStackable\tBOOLEAN|m_bVisible\tBOOLEAN|m_eQuickSlotSize\tINTEGER", "retain_value", "inventory", false, "Native configuration used by inventory");
+		policy.AddClass("SCR_ItemAttributeCollection", "inventory");
+		policy.AddRule("SCR_ItemAttributeCollection", "ItemAnimationAttributes\tOBJECT", "exclude", "excluded", false, "Non-gameplay setting of a mixed-purpose SCR_ItemAttributeCollection container");
+		policy.AddRule("SCR_ItemAttributeCollection", "CustomAttributes\tOBJECT_ARRAY|ItemDisplayName\tOBJECT|ItemPhysAttributes\tOBJECT", "retain_relationship", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("SCR_ItemAttributeCollection", "CommonItemType\tSTRING|m_Size\tINTEGER|m_SlotType\tINTEGER|m_bDraggable\tBOOLEAN|m_bRefundable\tBOOLEAN|m_bStackable\tBOOLEAN|m_bVisible\tBOOLEAN|m_eQuickSlotSize\tINTEGER", "retain_value", "inventory", false, "Native configuration used by inventory");
+		policy.AddClass("SCR_MineInventoryItemComponent", "inventory");
+		policy.AddRule("SCR_MineInventoryItemComponent", "WbPlacementFromAttributes\tBOOLEAN", "exclude", "excluded", false, "Presentation, authoring, lifecycle, replication, animation, audio, or cosmetic effect setting");
+		policy.AddRule("SCR_MineInventoryItemComponent", "Attributes\tOBJECT", "retain_relationship", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("SCR_MineInventoryItemComponent", "Enabled\tBOOLEAN", "retain_value", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("SCR_MineInventoryItemComponent", "components\tOBJECT_ARRAY", "traverse_required_container", "inventory", false, "Native configuration used by inventory");
+		policy.AddClass("SCR_PlaceableInventoryItemComponent", "inventory");
+		policy.AddRule("SCR_PlaceableInventoryItemComponent", "WbPlacementFromAttributes\tBOOLEAN", "exclude", "excluded", false, "Presentation, authoring, lifecycle, replication, animation, audio, or cosmetic effect setting");
+		policy.AddRule("SCR_PlaceableInventoryItemComponent", "Attributes\tOBJECT", "retain_relationship", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("SCR_PlaceableInventoryItemComponent", "Enabled\tBOOLEAN", "retain_value", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("SCR_PlaceableInventoryItemComponent", "components\tOBJECT_ARRAY", "traverse_required_container", "inventory", false, "Native configuration used by inventory");
+		policy.AddClass("SCR_ReusableDeployableInventoryComponent", "inventory");
+		policy.AddRule("SCR_ReusableDeployableInventoryComponent", "WbPlacementFromAttributes\tBOOLEAN", "exclude", "excluded", false, "Presentation, authoring, lifecycle, replication, animation, audio, or cosmetic effect setting");
+		policy.AddRule("SCR_ReusableDeployableInventoryComponent", "Attributes\tOBJECT", "retain_relationship", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("SCR_ReusableDeployableInventoryComponent", "Enabled\tBOOLEAN|m_bForceItemDropOnCharacterPosition\tBOOLEAN|m_iMaxNumberOfUses\tINTEGER|m_vAdditionalDropOffset\tVECTOR3|m_vAdditionalDropRotation\tVECTOR3", "retain_value", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("SCR_ReusableDeployableInventoryComponent", "components\tOBJECT_ARRAY", "traverse_required_container", "inventory", false, "Native configuration used by inventory");
+		policy.AddClass("SCR_VisibleInventoryItemComponent", "inventory");
+		policy.AddRule("SCR_VisibleInventoryItemComponent", "WbPlacementFromAttributes\tBOOLEAN", "exclude", "excluded", false, "Presentation, authoring, lifecycle, replication, animation, audio, or cosmetic effect setting");
+		policy.AddRule("SCR_VisibleInventoryItemComponent", "Attributes\tOBJECT", "retain_relationship", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("SCR_VisibleInventoryItemComponent", "Enabled\tBOOLEAN", "retain_value", "inventory", false, "Native configuration used by inventory");
+		policy.AddRule("SCR_VisibleInventoryItemComponent", "components\tOBJECT_ARRAY", "traverse_required_container", "inventory", false, "Native configuration used by inventory");
+	}
+}

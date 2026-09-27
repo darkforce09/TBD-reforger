@@ -41,6 +41,8 @@ class TBD_SourceExportNode
 	string m_sResource;
 	string m_sAncestor;
 	string m_sNativeInstanceId;
+	string m_sSelection = "retained";
+	string m_sAncestorResource;
 	ref array<string> m_aAddons = {};
 	ref array<string> m_aChildren = {};
 	ref array<string> m_aDeclared = {};
