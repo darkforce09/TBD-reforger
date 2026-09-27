@@ -11,6 +11,7 @@ Developers and agents changing the mod start here after the code README of the a
 
 ```text
 documentation_v2/mod/
+├── improved_layout/                              mod suite reorganization specifications and execution roadmaps
 ├── script_modularisation_progress_checkpoint.md  program record: resume state of the mod script modularisation
 ├── tbd-emcp/                                     the Enfusion MCP bridge: call paths, bootstrap and loading rules
 ├── tbd-export/                                   the export addon: map export, terrain export runbook, equipment evidence
@@ -84,5 +85,7 @@ and the [agent continuation handoff](/documentation_v2/archive/handoffs_and_kick
 
 ## Related documentation
 
+- [Mod reorganization specifications](/documentation_v2/mod/improved_layout/README.md) —
+  detailed design proposals and phased migration roadmap for the mod suite.
 - [Glossary](/documentation_v2/glossary/README.md) — mod, Enfusion, Workbench, EnfScript and mission
   header.

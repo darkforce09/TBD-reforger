@@ -15,6 +15,7 @@ documentation_v2/website/
 ├── api_v2/           the API: overview, environment variables, decisions and verification evidence
 ├── frontend/         the single-page app: page and app feature docs, design references, the editor corpus
 ├── graphics-engine/  the pure renderer: its modules, one frame, design and open work
+├── improved_layout/  reorganization proposals, architecture specifications, and execution roadmap
 └── map-engine/       the map engine: overview, map streaming, the editing layer, draft persistence
 ```
 
