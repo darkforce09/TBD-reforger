@@ -333,6 +333,18 @@ struct RemoteTarget {
     ssh_identity: Option<String>,
 }
 
+/// The remote script that prints the newest run's `console.log` under `profile` (its `logs/` or
+/// its `profile/logs/`) and exits 0, or exits 1 when no run has one. The loop reads `ls` through
+/// process substitution, so its `exit 0` ends the script: behind a pipe the loop would run in a
+/// subshell, its `exit 0` would leave only that subshell, and the script would always reach
+/// `exit 1`.
+pub(super) fn newest_console_log_script(profile: &str) -> String {
+    let profile = shell_quote(profile);
+    format!(
+        "\nwhile read -r d; do\n  [ -f \"$d/console.log\" ] && echo \"$d/console.log\" && exit 0\ndone < <(ls -td {profile}/logs/logs_* {profile}/profile/logs/logs_* 2>/dev/null)\nexit 1\n"
+    )
+}
+
 pub(super) fn cmd_remote() -> Result<u8> {
     // A refused setting exits 1, not ENVIRONMENT 3: nothing was probed.
     let RemoteTarget {
@@ -345,9 +357,7 @@ pub(super) fn cmd_remote() -> Result<u8> {
         Err(code) => return Ok(code),
     };
 
-    let find_log = format!(
-        "\nls -td '{profile}'/logs/logs_* '{profile}'/profile/logs/logs_* 2>/dev/null | while read -r d; do\n  [ -f \"$d/console.log\" ] && echo \"$d/console.log\" && exit 0\ndone\nexit 1\n"
-    );
+    let find_log = newest_console_log_script(&profile);
 
     let remote_log = match ssh_cmd(
         &host,
