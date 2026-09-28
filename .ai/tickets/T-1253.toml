@@ -1,0 +1,12 @@
+id = "T-1253"
+kind = "work"
+title = "Take the ballistics catalog version as a trim-export argument"
+summary = "tools_v2/xtask/src/commands/ballistics/trim_export.rs:39 fixes CATALOG_VERSION = 1, so trimming a catalog for a new game build or oracle run needs a code change instead of a flag."
+class = "bug"
+status = "idea"
+notes = "Take the catalog version (and the catalog id and title, :37 and :40) as trim-export arguments with the current values as defaults, and keep the three-run byte-identical check. Source: milestone B finding (B27)."
+created_at = "2026-09-28T16:00:36Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"

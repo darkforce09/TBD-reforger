@@ -6,6 +6,7 @@
 //! registration.
 
 use axum::Router;
+use axum::extract::DefaultBodyLimit;
 use axum::routing::{get, patch, post, put};
 
 use super::handlers;
@@ -135,14 +136,26 @@ pub fn routes() -> Router<AppState> {
             "/game-runtime/sessions/{sessionId}/deployments/{occupancyId}/end",
             post(handlers::game_runtime_deployments::end_player_life),
         )
-        // Field tools — mortar ballistics and saved fire missions.
+        // Game ballistics catalogs: public reads, administrator upload under its own body limit.
         .route(
-            "/fire-missions/solve",
-            post(handlers::fire_missions::solve_fire),
+            "/ballistics-catalogs",
+            get(handlers::ballistics_catalogs::reads::list_catalogs)
+                .post(handlers::ballistics_catalogs::upload::upload_catalog)
+                .layer(DefaultBodyLimit::max(
+                    handlers::ballistics_catalogs::upload::MAX_CATALOG_UPLOAD_BODY_BYTES,
+                )),
         )
-        .route("/fire-missions", post(handlers::fire_missions::save_fire))
+        .route(
+            "/ballistics-catalogs/{catalogId}/versions/{version}",
+            get(handlers::ballistics_catalogs::reads::get_catalog_version),
+        )
+        // Field tools — re-solved, saved fire missions and an event's list.
+        .route(
+            "/fire-missions",
+            post(handlers::fire_missions::save::save_fire_mission),
+        )
         .route(
             "/events/{id}/fire-missions",
-            get(handlers::fire_missions::list_event_fire_missions),
+            get(handlers::fire_missions::list::list_fire_missions),
         )
 }

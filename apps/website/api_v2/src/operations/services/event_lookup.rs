@@ -25,22 +25,6 @@ pub(crate) async fn load_event(pool: &PgPool, id: &str) -> Result<Event, ApiErro
     .ok_or_else(|| ApiError::not_found("event not found"))
 }
 
-/// Answer `404 event not found` unless an event that is not deleted carries `id`; for a surface
-/// that only points at an event and never reads its row.
-pub(crate) async fn require_event(pool: &PgPool, id: Uuid) -> Result<(), ApiError> {
-    let exists: bool = sqlx::query_scalar(
-        "SELECT EXISTS (SELECT 1 FROM events WHERE id = $1 AND deleted_at IS NULL)",
-    )
-    .bind(id)
-    .fetch_one(pool)
-    .await?;
-    if exists {
-        Ok(())
-    } else {
-        Err(ApiError::not_found("event not found"))
-    }
-}
-
 pub(crate) async fn load_em(pool: &PgPool, emid: &str) -> Result<EventMission, ApiError> {
     let Ok(id) = Uuid::parse_str(emid) else {
         return Err(ApiError::bad_request("invalid id"));

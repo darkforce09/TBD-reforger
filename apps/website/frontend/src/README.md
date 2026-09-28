@@ -71,6 +71,7 @@ renders padded in a scrolling one.
 | `/tools/mortar` | `MortarCalculatorPage` | `none` | full-bleed |
 | `/debug/building-viewer` | `BuildingViewerPage` | `none` | full-bleed, chromeless |
 | `/debug/world-los` | `WorldLosPage` | `none` | full-bleed, chromeless |
+| `/debug/ballistics-agreement` | `BallisticsAgreementPage` | `none` | full-bleed, chromeless |
 | `/settings` | `SettingsPage` | `none` | padded |
 | `/admin/events` | `EventManagerPage` | `admin` | padded |
 | `/admin/approvals` | `MissionApprovalsPage` | `admin` | full-bleed |
@@ -78,6 +79,7 @@ renders padded in a scrolling one.
 | `/admin/personnel` | `PersonnelRosterPage` | `admin` | full-bleed |
 | `/admin/content` | `ContentManagerPage` | `admin` | full-bleed |
 | `/admin/audit` | `AuditLogsPage` | `admin` | full-bleed |
+| `/admin/ballistics-catalogs` | `BallisticsCatalogsPage` | `admin` | padded |
 | any other path | `NotFoundPage` | `none` | padded |
 
 ## Boundaries

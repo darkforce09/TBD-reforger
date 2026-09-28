@@ -1577,18 +1577,135 @@
     },
     {
       "id": "verification_game_ballistics",
-      "behavior": "Shared headless game model supports elevation drag wind dispersion battery solutions offline with native/WASM agreement within one mil and game-derived fixtures.",
+      "behavior": "Administrators upload calibrated ballistics catalogs as immutable versions, anyone reads them, and a saved fire mission is re-solved on the server against its pinned catalog and stored with its guns.",
       "implementation": [
-        "apps/website/api_v2/src/core"
+        "apps/website/api_v2/src/operations/handlers/ballistics_catalogs",
+        "apps/website/api_v2/src/operations/handlers/fire_missions",
+        "apps/website/api_v2/src/operations/models/ballistics_catalog.rs",
+        "apps/website/api_v2/src/operations/models/fire_mission.rs",
+        "apps/website/api_v2/src/operations/services/ballistics_catalogs",
+        "apps/website/api_v2/src/operations/services/fire_mission_resolve.rs",
+        "apps/website/api_v2/src/operations/services/fire_mission_store.rs",
+        "apps/website/api_v2/migrations/0060_game_ballistics_catalogs_and_fire_mission_inputs.sql",
+        "contracts_v2/definitions/fire-mission.schema.json",
+        "apps/website/frontend/src/v2/pages/administration/ballistics_catalogs"
       ],
       "checks": [
         "verification_game_ballistics",
         "backend_regression",
+        "verification_route_acceptance",
+        "verification_contract_parity"
+      ],
+      "assumptions": [
+        "PostgreSQL transactions and constraints operate correctly; tests exercise observable implementation behavior rather than proving external systems."
+      ]
+    },
+    {
+      "id": "game_ballistics_flight_model",
+      "behavior": "The headless flight model integrates game shells with gravity, quadratic drag and wind from the catalog's weapon, shell and charge data, bounded by the shell's time to live.",
+      "implementation": [
+        "apps/website/map-engine/src/data/scenario/ballistics/flight_model",
+        "apps/website/map-engine/src/data/scenario/ballistics/wind.rs",
+        "apps/website/map-engine/src/data/scenario/ballistics/angular_units.rs",
+        "apps/website/map-engine/src/data/scenario/ballistics/catalog",
+        "contracts_v2/definitions/ballistics-catalog.schema.json",
+        "contracts_v2/catalogs/ballistics"
+      ],
+      "checks": [
+        "game_ballistics_flight_model"
+      ],
+      "assumptions": [
+        "The oracle fixtures and the vanilla catalog are pinned to game build 1.8.0.13; a new game build needs a new oracle export and a new catalog version."
+      ]
+    },
+    {
+      "id": "game_ballistics_calibration",
+      "behavior": "A catalog is accepted only when its calibration bundle from the in-game oracle agrees with the flight model on every native table row and oracle sample and its provenance digests match.",
+      "implementation": [
+        "apps/website/map-engine/src/data/scenario/ballistics/calibration",
+        "contracts_v2/definitions/ballistics-calibration.schema.json",
+        "contracts_v2/fixtures/ballistics",
+        "apps/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle",
+        "apps/mod/tbd-export/Scripts/Game/TBD/Export/BallisticsOracle",
+        "tools_v2/xtask/src/commands/ballistics"
+      ],
+      "checks": [
+        "game_ballistics_calibration"
+      ],
+      "assumptions": [
+        "The oracle fixtures and the vanilla catalog are pinned to game build 1.8.0.13; a new game build needs a new oracle export and a new catalog version."
+      ]
+    },
+    {
+      "id": "game_ballistics_elevation_wind_dispersion",
+      "behavior": "The solver returns the high-angle elevation, time of flight and apex per charge with typed refusals, wind-corrected aim, probable-error dispersion, time-fuze settings and crest clearance.",
+      "implementation": [
+        "apps/website/map-engine/src/data/scenario/ballistics/solver",
+        "apps/website/map-engine/src/data/scenario/ballistics/dispersion.rs",
+        "apps/website/map-engine/src/data/scenario/ballistics/fuze.rs",
+        "apps/website/map-engine/src/data/scenario/ballistics/crest_clearance.rs"
+      ],
+      "checks": [
+        "game_ballistics_elevation_wind_dispersion"
+      ],
+      "assumptions": [
+        "Dispersion is a documented interpretation of the weapon and shell dispersion fields and is not verified in-engine.",
+        "The oracle fixtures and the vanilla catalog are pinned to game build 1.8.0.13; a new game build needs a new oracle export and a new catalog version."
+      ]
+    },
+    {
+      "id": "game_ballistics_battery",
+      "behavior": "A fire mission solves every gun of a battery independently onto one target and compares a client solution with the server solution within one weapon mil and 0.1 s.",
+      "implementation": [
+        "apps/website/map-engine/src/data/scenario/ballistics/battery.rs",
+        "apps/website/map-engine/src/data/scenario/ballistics/fire_mission.rs",
+        "apps/website/map-engine/src/data/scenario/ballistics/fire_mission_comparison.rs"
+      ],
+      "checks": [
+        "game_ballistics_battery"
+      ],
+      "assumptions": [
+        "The oracle fixtures and the vanilla catalog are pinned to game build 1.8.0.13; a new game build needs a new oracle export and a new catalog version."
+      ]
+    },
+    {
+      "id": "game_ballistics_wasm_agreement",
+      "behavior": "The WASM build of the solver in the browser returns bit-identical solutions to the native build across the shared agreement cases.",
+      "implementation": [
+        "apps/website/map-engine/src/data/scenario/ballistics/agreement_cases.rs",
+        "apps/website/map-engine/src/data/scenario/ballistics/solution_wording.rs",
+        "apps/website/frontend/src/v2/apps/debug/ballistics_agreement.rs",
+        "apps/website/frontend/src/v2/apps/debug/ballistics_agreement",
+        "tools_v2/developer-tools/src/browser_testing/ballistics_agreement"
+      ],
+      "checks": [
+        "game_ballistics_wasm_agreement",
+        "game_ballistics_shared_solution_cases"
+      ],
+      "assumptions": [
+        "Agreement is measured in headless Chrome on this workstation; transcendentals come from the libm crate on both targets."
+      ]
+    },
+    {
+      "id": "game_ballistics_offline_page",
+      "behavior": "The mortar page solves fire missions from a map picker offline after a service worker caches the application shell, the pinned catalog and the map pack.",
+      "implementation": [
+        "apps/website/frontend/src/v2/pages/field_tools/mortar",
+        "apps/website/frontend/src/v2/core/offline",
+        "apps/website/frontend/src/v2/core/map_view",
+        "apps/website/frontend/service_worker.js",
+        "apps/website/frontend/manifest.webmanifest",
+        "apps/website/offline-service-worker",
+        "tools_v2/developer-tools/src/browser_testing/mortar_offline",
+        "tools_v2/xtask/src/commands/map/tile_index.rs"
+      ],
+      "checks": [
+        "game_ballistics_offline_page",
         "frontend_quality",
         "browser_acceptance"
       ],
       "assumptions": [
-        "PostgreSQL transactions and constraints operate correctly; tests exercise observable implementation behavior rather than proving external systems."
+        "The offline gate needs the local gitignored tile pyramid, tile index and tbd-sat and fails closed without them."
       ]
     },
     {
@@ -2510,7 +2627,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 66,
+      "minimum_cases": 73,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*route_acceptance[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2524,7 +2641,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 85,
+      "minimum_cases": 86,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*contract_parity[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2696,9 +2813,122 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1,
+      "minimum_cases": 29,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*game_ballistics[A-Za-z0-9_]* \\.\\.\\. ok$"
+    },
+    {
+      "id": "game_ballistics_flight_model",
+      "class": "implementation",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "website-map-engine",
+        "--all-features",
+        "--locked",
+        "data::scenario::ballistics::"
+      ],
+      "timeout_seconds": 1800,
+      "minimum_cases": 51,
+      "success_marker": "test result: ok.",
+      "case_pattern": "(?m)^test data::scenario::ballistics::(?:flight_model|wind|angular_units|catalog)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
+    },
+    {
+      "id": "game_ballistics_calibration",
+      "class": "implementation",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "website-map-engine",
+        "--all-features",
+        "--locked",
+        "data::scenario::ballistics::"
+      ],
+      "timeout_seconds": 1800,
+      "minimum_cases": 34,
+      "success_marker": "test result: ok.",
+      "case_pattern": "(?m)^test data::scenario::ballistics::(?:calibration)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
+    },
+    {
+      "id": "game_ballistics_elevation_wind_dispersion",
+      "class": "implementation",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "website-map-engine",
+        "--all-features",
+        "--locked",
+        "data::scenario::ballistics::"
+      ],
+      "timeout_seconds": 1800,
+      "minimum_cases": 81,
+      "success_marker": "test result: ok.",
+      "case_pattern": "(?m)^test data::scenario::ballistics::(?:solver|dispersion|fuze|crest_clearance|tests_bounded_failure|tests_end_to_end|tests_oracle_elevation_and_wind|tests_symmetry)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
+    },
+    {
+      "id": "game_ballistics_battery",
+      "class": "implementation",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "website-map-engine",
+        "--all-features",
+        "--locked",
+        "data::scenario::ballistics::"
+      ],
+      "timeout_seconds": 1800,
+      "minimum_cases": 29,
+      "success_marker": "test result: ok.",
+      "case_pattern": "(?m)^test data::scenario::ballistics::(?:battery|fire_mission|fire_mission_comparison)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
+    },
+    {
+      "id": "game_ballistics_shared_solution_cases",
+      "class": "implementation",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "website-map-engine",
+        "--all-features",
+        "--locked",
+        "data::scenario::ballistics::"
+      ],
+      "timeout_seconds": 1800,
+      "minimum_cases": 18,
+      "success_marker": "test result: ok.",
+      "case_pattern": "(?m)^test data::scenario::ballistics::(?:agreement_cases|solution_wording)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
+    },
+    {
+      "id": "game_ballistics_wasm_agreement",
+      "class": "implementation",
+      "command": [
+        "cargo",
+        "xtask",
+        "mk",
+        "ballistics-wasm-agreement"
+      ],
+      "timeout_seconds": 3600,
+      "minimum_cases": 32,
+      "success_marker": "ballistics-wasm-agreement: PASS 32/32",
+      "case_pattern": "(?m)^case ballistics_wasm_agreement_[A-Za-z0-9_]+ \\.\\.\\. ok$"
+    },
+    {
+      "id": "game_ballistics_offline_page",
+      "class": "implementation",
+      "command": [
+        "cargo",
+        "xtask",
+        "mk",
+        "mortar-offline-gate"
+      ],
+      "timeout_seconds": 3600,
+      "minimum_cases": 15,
+      "success_marker": "mortar-offline: PASS",
+      "case_pattern": "(?m)^case mortar_offline_[a-z0-9_]+ \\.\\.\\. ok$"
     },
     {
       "id": "staging_fleet",
@@ -2737,7 +2967,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1302,
+      "minimum_cases": 1339,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test [^\\n]+ \\.\\.\\. ok$"
     },
@@ -2751,7 +2981,7 @@
         "ci-local-leptos"
       ],
       "timeout_seconds": 3600,
-      "minimum_cases": 1826,
+      "minimum_cases": 1982,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test [^\\n]+ \\.\\.\\. ok$"
     },
@@ -2765,8 +2995,8 @@
         "leptos-gates"
       ],
       "timeout_seconds": 3600,
-      "minimum_cases": 25,
-      "success_marker": "25/25 routes match the frozen oracle",
+      "minimum_cases": 26,
+      "success_marker": "26/26 routes match the frozen oracle",
       "case_pattern": "(?m)^PASS\\s+\\S+\\s+diffs=0\\b"
     },
     {

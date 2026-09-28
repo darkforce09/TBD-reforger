@@ -24,8 +24,12 @@ apps/website/api_v2/src/core/middleware/
 `crate::core::http_router` applies the chain, outermost first: `request_id`, `logging`, the
 metrics observer of `crate::core::observability`, panic recovery, `cors`, the default body limit
 `MAX_JSON_BODY` (1 MiB), and `rate_limit`. The `/api/v1/cms/uploads` route raises its own limit to
-`MAX_MULTIPART_BODY` (6 MiB), and the [mission](/documentation_v2/glossary/g_to_m.md#mission) version save
-route takes the limit that `MISSION_VERSION_MAX_BODY_BYTES` sets.
+`MAX_MULTIPART_BODY` (6 MiB), the [mission](/documentation_v2/glossary/g_to_m.md#mission) version save
+route takes the limit that `MISSION_VERSION_MAX_BODY_BYTES` sets, and the ballistics catalog
+upload `POST /api/v1/ballistics-catalogs` takes `MAX_CATALOG_UPLOAD_BODY_BYTES` (17 MiB + 64 KiB:
+the `calibration` part's 16 MiB cap, the `catalog` part's 1 MiB cap and 64 KiB of multipart
+framing), declared in `crate::operations::handlers::ballistics_catalogs::upload`, which also
+answers 413 for a single part over its own cap.
 
 ```text
 request ─▶ request_id ─▶ logging ─▶ metrics observer ─▶ panic recovery

@@ -41,7 +41,8 @@ A schema reaches code in one of three ways:
 - **Gates and tests.** `cargo xtask schema validate` validates the fixtures of
   `contracts_v2/fixtures/`, the catalogues of `contracts_v2/catalogs/` and the committed Everon
   manifests against these schemas, resolving cross-file `$ref`s through each map-object schema's
-  `$id`; the developer tools' map verifications read the terrain, label and geometry schemas; and
+  `$id`, and holds the committed ballistics catalog and its calibration bundle to one game build,
+  export generation and catalog SHA-256; the developer tools' map verifications read the terrain, label and geometry schemas; and
   the API's contract suites validate live responses, request bodies and the frontend's captured
   API goldens (`apps/website/api_v2/tests/contract_support/mod.rs`).
 
@@ -61,10 +62,12 @@ A schema reaches code in one of three ways:
 | Missions | `mission`, `mission-editor-payload`, `mission-review`, `mission-deployment` | API validators and generated models; the mod's mission DTOs; the Mission Creator; the map engine's tests |
 | Arsenal and factions | `registry-items`, `registry-compat`, `registry`, `loadout-export`, `faction-library` | API validators, generated and hand-written models; the registry export plugin; the mod's loadout equip path; the Mission Creator's [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) |
 | Terrain | `terrain-manifest`, `terrain-anchors`, `terrain-registry`, `locations`, `height-labels` | the schema gate; the developer tools' map verifications |
+| Offline map tile index | `map-tile-index` | `cargo xtask map tile-index`, which writes `/map-assets/<terrain>/tiles/map/index.json`; the offline service worker crate's `MapTileIndex` and the web app's offline pack download |
 | World objects | `map-object-enums`, `map-object-prefab`, `map-object-instance`, `map-object-region`, `map-object-roads`, `map-object-resolved`, `map-object-catalog`, `map-object-type-inventory` | the schema gates; the developer tools' world export and golden gates |
 | Building geometry | `building-blueprint`, `building-instances`, `prefab-descriptor`, `blas-manifest` | the developer tools' blueprint compiler and map verifications |
 | Workbench equipment export | `equipment-vehicle-export` | `cargo xtask mod validate-equipment-vehicle-export` and `publish-equipment-vehicle-export` |
 | Voice bridge | `bridge-messages` | the schema gate, over `contracts_v2/fixtures/bridge_samples/` |
+| Game ballistics | `ballistics-catalog`, `ballistics-calibration` | the map engine's ballistics catalog types and calibration evaluator; the API's ballistics catalog routes; the schema gate, over the committed catalog in `contracts_v2/catalogs/ballistics/` and its calibration bundle in `contracts_v2/fixtures/ballistics/` |
 
 `match-telemetry.schema.json` describes the event read page at its root and carries the
 machine-authenticated ingest shapes of `/api/v1/ingest/matches`, `/api/v1/ingest/match-results` and

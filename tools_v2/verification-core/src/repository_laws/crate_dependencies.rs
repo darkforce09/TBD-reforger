@@ -4,7 +4,8 @@
 //! `CLAUDE.md` law 6 — the renderer knows no map, page or server; the map engine knows no page or
 //! server; the frontend reaches the renderer only through the map engine and never links the
 //! server; the server links the map engine's mission domain and neither the renderer nor the
-//! frontend — and that a test-only feature is declared, off by default and enabled only by the
+//! frontend; the offline service worker links none of the server, the frontend or the renderer —
+//! and that a test-only feature is declared, off by default and enabled only by the
 //! crate's own dev-dependency on itself.
 //! **Position:** reads manifests through [`super::cargo_manifest`]; consumed by the
 //! `engineering_laws` test binary of `website-api`.
@@ -60,12 +61,22 @@ pub const WEBSITE_API_RULE: CrateDependencyRule = CrateDependencyRule {
              the renderer nor the frontend",
 };
 
+/// The offline service worker: cache policy the page also links, never the server, the page or
+/// the renderer.
+pub const OFFLINE_SERVICE_WORKER_RULE: CrateDependencyRule = CrateDependencyRule {
+    crate_rel: "apps/website/offline-service-worker",
+    forbidden_packages: &["website-api", "website-frontend", "website-graphics-engine"],
+    reason: "the offline service worker is a leaf the frontend links; it reaches the server over \
+             HTTP and links neither the page nor the renderer",
+};
+
 /// Every dependency-direction rule of the website crates.
 pub const CRATE_DEPENDENCY_RULES: &[CrateDependencyRule] = &[
     GRAPHICS_ENGINE_RULE,
     MAP_ENGINE_RULE,
     FRONTEND_RULE,
     WEBSITE_API_RULE,
+    OFFLINE_SERVICE_WORKER_RULE,
 ];
 
 /// One forbidden dependency edge.

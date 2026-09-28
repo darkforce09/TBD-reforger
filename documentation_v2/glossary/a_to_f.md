@@ -10,7 +10,7 @@ links one.
 ### administration
 
 The administrator-only side of the platform: the API domain of the member roster, bans, warnings,
-membership grace, the Discord role resync and the audit log, and the six `/admin/*` pages.
+membership grace, the Discord role resync and the audit log, and the seven `/admin/*` pages.
 
 In code: `apps/website/api_v2/src/administration/`; `apps/website/frontend/src/v2/pages/administration/`.
 
@@ -95,6 +95,17 @@ publication, reservations, runtime sessions, fleet commands and mission deployme
 In code: `spawn_all` and `WorkerHandles` in `apps/website/api_v2/src/background_workers/mod.rs`.
 
 See: [Background workers](/apps/website/api_v2/src/background_workers/README.md).
+
+### charge ring
+
+One of the propellant increments on a mortar shell; the number of rings fitted is the shell's
+charge, and each charge multiplies the shell's initial speed by its own coefficient. A shell's
+charges are listed by ring count in a ballistics catalog, with one marked default; the firing
+solver solves every charge and recommends the one with the fewest rings that reaches the target.
+
+In code: `Charge` (`rings`, `init_speed_coef`, `is_default`) in `apps/website/map-engine/src/data/scenario/ballistics/catalog/shell.rs`; `charges` in `contracts_v2/definitions/ballistics-catalog.schema.json`; the game's `SCR_MortarShellGadgetComponent` `m_aChargeRingConfig`.
+
+See: [probable error](/documentation_v2/glossary/n_to_z.md#probable-error), [time fuze](/documentation_v2/glossary/n_to_z.md#time-fuze), [Game ballistics engine](/documentation_v2/website/map-engine/data/scenario/ballistics/game_ballistics_engine.md).
 
 ### command center
 

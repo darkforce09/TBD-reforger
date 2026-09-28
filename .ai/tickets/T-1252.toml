@@ -1,0 +1,12 @@
+id = "T-1252"
+kind = "work"
+title = "Recompile the API when a migration file changes"
+summary = "apps/website/api_v2 embeds its migrations with sqlx::migrate! at compile time but has no build.rs emitting cargo:rerun-if-changed=migrations, so adding a migration file does not rebuild the crate and the binary and tests keep the old migration set until an unrelated source change."
+class = "bug"
+status = "idea"
+notes = "Add apps/website/api_v2/build.rs printing cargo:rerun-if-changed=migrations (the sqlx recipe for embedded migrations), so a new or edited migration rebuilds the crate. Source: milestone B finding B14 F2 (0060 was not seen until an unrelated rebuild)."
+created_at = "2026-09-28T15:59:32Z"
+
+[scope]
+domain = "website"
+layer = "backend"

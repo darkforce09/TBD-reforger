@@ -74,8 +74,9 @@ stream's bookkeeping compile natively, so the native `cargo test` covers them.
 - `client`: the verbs `api_get`, `api_post`, `api_put`, `api_patch`, `api_delete`, `api_post_ok`,
   `api_post_raw` and `api_upload_file`; `bootstrap`, which the app layout spawns at startup; the
   failure types `ApiErr` and `ApiRefusal`, and the readers `api_error_message`,
-  `error_body_message` and `split_error_lines`. The four `_keeping_refusal` verbs serve
-  `endpoints/` alone, and `Fetched` and `ApiFailure` have no user outside `client/`.
+  `error_body_message` and `split_error_lines`. The four JSON `_keeping_refusal` verbs serve
+  `endpoints/` alone; `api_post_form_keeping_refusal` sends a multipart form for the ballistics
+  catalog upload page. `Fetched` and `ApiFailure` have no user outside `client/`.
 - `dto`: every wire type, flat.
 - `endpoints::<file>`: each route's path builder and typed call, and `encode_path_segment`, which
   pages use for the paths they build themselves.

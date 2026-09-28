@@ -1,0 +1,306 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "BallisticsCalibrationContract",
+  "description": "Calibration bundles: the game's own ballistic tables and engine oracle samples that a ballistics catalog's flight model must reproduce within tolerance before the catalog is accepted. The root is one bundle, the `calibration` part of POST /api/v1/ballistics-catalogs. A bundle names its catalog by id, version and the SHA-256 of the catalog bytes, and both are pinned to one game build and export generation.",
+  "$ref": "#/definitions/CalibrationBundle",
+  "definitions": {
+    "CalibrationBundle": {
+      "description": "Every calibration case for one catalog version. Every (shell, charge) of the catalog has at least one native table and at least one simulation sample.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "catalog_id",
+        "catalog_version",
+        "catalog_sha256",
+        "game_build",
+        "export_generation_id",
+        "resources",
+        "oracle_run",
+        "native_tables",
+        "wind_tables",
+        "oracle_samples"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "catalog_id": {
+          "$ref": "#/definitions/Slug"
+        },
+        "catalog_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "catalog_sha256": {
+          "description": "SHA-256 of the exact catalog bytes this bundle calibrates.",
+          "$ref": "#/definitions/Sha256"
+        },
+        "game_build": {
+          "$ref": "#/definitions/GameBuild"
+        },
+        "export_generation_id": {
+          "$ref": "#/definitions/EnfusionGuid"
+        },
+        "resources": {
+          "description": "Every game resource the tables were read from, with the SHA-256 of its exported bytes.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/CalibrationResource"
+          }
+        },
+        "oracle_run": {
+          "$ref": "#/definitions/OracleRun"
+        },
+        "native_tables": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/NativeTable"
+          }
+        },
+        "wind_tables": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WindTable"
+          }
+        },
+        "oracle_samples": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/OracleSample"
+          }
+        }
+      }
+    },
+    "CalibrationResource": {
+      "description": "One game resource: its 16-hex-digit GUID, its resource name and the SHA-256 of its exported bytes. Matches ballistics-catalog.schema.json#/definitions/CatalogResource.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "guid",
+        "resource_name",
+        "sha256"
+      ],
+      "properties": {
+        "guid": {
+          "$ref": "#/definitions/EnfusionGuid"
+        },
+        "resource_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/definitions/Sha256"
+        }
+      }
+    },
+    "OracleRun": {
+      "description": "The Workbench oracle plugin run the samples and the catalog's gravity come from.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "plugin_revision",
+        "gravity_reported_m_s2",
+        "run_at",
+        "output_sha256"
+      ],
+      "properties": {
+        "plugin_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "gravity_reported_m_s2": {
+          "description": "Gravity the physics world reported during the run; the catalog's gravity_m_s2 equals it.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "run_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "output_sha256": {
+          "description": "SHA-256 of the raw oracle output the samples were trimmed from.",
+          "$ref": "#/definitions/Sha256"
+        }
+      }
+    },
+    "NativeTable": {
+      "description": "One game ballistic table for a shell at one muzzle speed coefficient. A row passes when its range lies within the model's range over its elevation plus or minus 1 mil (6400 convention) and the model's time of flight at its elevation is within 0.1 s.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "shell_id",
+        "init_speed_coef",
+        "rows"
+      ],
+      "properties": {
+        "shell_id": {
+          "$ref": "#/definitions/Slug"
+        },
+        "init_speed_coef": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "rows": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/NativeTableRow"
+          }
+        }
+      }
+    },
+    "NativeTableRow": {
+      "description": "One table row. The game does not store the row's elevation: elevation_mils_6400 is assigned from the oracle's forward-angle sample of equal range and time of flight. column_1 is the game's second column, kept verbatim and not interpreted.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lattice_index",
+        "elevation_mils_6400",
+        "range_m",
+        "column_1",
+        "time_of_flight_s"
+      ],
+      "properties": {
+        "lattice_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "elevation_mils_6400": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1600
+        },
+        "range_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "column_1": {
+          "type": "number"
+        },
+        "time_of_flight_s": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "WindTable": {
+      "description": "One game wind table for a shell at one muzzle speed coefficient and one wind speed.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "shell_id",
+        "init_speed_coef",
+        "wind_speed_m_s",
+        "rows"
+      ],
+      "properties": {
+        "shell_id": {
+          "$ref": "#/definitions/Slug"
+        },
+        "init_speed_coef": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "wind_speed_m_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "rows": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/WindTableRow"
+          }
+        }
+      }
+    },
+    "WindTableRow": {
+      "description": "One wind table row: elevation in radians, range and apex height in metres, and the game's undecoded value list kept verbatim.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "elevation_rad",
+        "range_m",
+        "apex_m",
+        "values"
+      ],
+      "properties": {
+        "elevation_rad": {
+          "type": "number"
+        },
+        "range_m": {
+          "type": "number"
+        },
+        "apex_m": {
+          "type": "number"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "OracleSample": {
+      "description": "One engine oracle call: forward_angle (range and time of flight at an elevation), simulation (impact point and time of flight for a full launch state with wind and target height) or altitude_difference (aim and time of flight for a height difference). inputs and outputs carry the call's arguments and results under the engine's parameter names, in metres, seconds and radians.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "shell_id",
+        "init_speed_coef",
+        "inputs",
+        "outputs"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "forward_angle",
+            "simulation",
+            "altitude_difference"
+          ]
+        },
+        "shell_id": {
+          "$ref": "#/definitions/Slug"
+        },
+        "init_speed_coef": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "inputs": {
+          "type": "object"
+        },
+        "outputs": {
+          "type": "object"
+        }
+      }
+    },
+    "Slug": {
+      "description": "Lowercase identifier: letters and digits in groups joined by single underscores or hyphens.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+([_-][a-z0-9]+)*$",
+      "maxLength": 64
+    },
+    "EnfusionGuid": {
+      "description": "Enfusion resource or export GUID: 16 uppercase hexadecimal digits, no braces.",
+      "type": "string",
+      "pattern": "^[0-9A-F]{16}$"
+    },
+    "GameBuild": {
+      "description": "Arma Reforger build number, dotted (for example 1.8.0.13).",
+      "type": "string",
+      "pattern": "^[0-9]+(\\.[0-9]+){1,3}$"
+    },
+    "Sha256": {
+      "description": "Lowercase hexadecimal SHA-256.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

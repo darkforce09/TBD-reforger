@@ -71,8 +71,10 @@ renders its own refusal through `AdminGate`. The rows below follow the sidebar's
 | `/admin/personnel` | `PersonnelRosterPage` | `admin` | [administration/personnel/](/apps/website/frontend/src/v2/pages/administration/personnel/) | [personnel_roster_page.md](/documentation_v2/website/frontend/pages/administration/personnel/personnel_roster_page.md) |
 | `/admin/content` | `ContentManagerPage` | `admin` | [administration/content_manager/](/apps/website/frontend/src/v2/pages/administration/content_manager/) | [content_manager_page.md](/documentation_v2/website/frontend/pages/administration/content_manager/content_manager_page.md) |
 | `/admin/audit` | `AuditLogsPage` | `admin` | [administration/audit_logs/](/apps/website/frontend/src/v2/pages/administration/audit_logs/) | [audit_logs_page.md](/documentation_v2/website/frontend/pages/administration/audit_logs/audit_logs_page.md) |
+| `/admin/ballistics-catalogs` | `BallisticsCatalogsPage` | `admin` | [administration/ballistics_catalogs/](/apps/website/frontend/src/v2/pages/administration/ballistics_catalogs/) | [ballistics_catalogs_page.md](/documentation_v2/website/frontend/pages/administration/ballistics_catalogs/ballistics_catalogs_page.md) |
 | `/debug/building-viewer` | `BuildingViewerPage` | `none` | [apps/debug/building_viewer/](/apps/website/frontend/src/v2/apps/debug/building_viewer/) | [building_viewer_page.md](/documentation_v2/website/frontend/apps/debug/building_viewer_page.md) |
 | `/debug/world-los` | `WorldLosPage` | `none` | [apps/debug/world_los/](/apps/website/frontend/src/v2/apps/debug/world_los/) | [world_los_page.md](/documentation_v2/website/frontend/apps/debug/world_los_page.md) |
+| `/debug/ballistics-agreement` | `BallisticsAgreementPage` | `none` | [apps/debug/ballistics_agreement/](/apps/website/frontend/src/v2/apps/debug/ballistics_agreement/) | [ballistics_agreement_page.md](/documentation_v2/website/frontend/apps/debug/ballistics_agreement_page.md) |
 | any other path | `NotFoundPage` | `none` | [navigation/](/apps/website/frontend/src/v2/pages/navigation/) | [app_layout_and_navigation.md](/documentation_v2/website/frontend/pages/navigation/app_layout_and_navigation.md) |
 
 Page folders sit under `apps/website/frontend/src/v2/pages/`, workspace folders under
@@ -93,7 +95,8 @@ Page folders sit under `apps/website/frontend/src/v2/pages/`, workspace folders 
 - `/missions/:id/edit` and the review workspace fill the viewport without the sidebar and the top
   bar; the review workspace opens the Mission Creator read-only on the version an
   [artifact](/documentation_v2/glossary/a_to_f.md#artifact) was compiled from.
-- `/debug/building-viewer` and `/debug/world-los` are URL-only: no navigation entry leads to them.
+- `/debug/building-viewer`, `/debug/world-los` and `/debug/ballistics-agreement` are URL-only: no
+  navigation entry leads to them.
 
 ### Page areas and workspaces
 

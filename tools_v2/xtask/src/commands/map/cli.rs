@@ -2,6 +2,13 @@ use clap::Subcommand;
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum MapCmd {
+    /// Write `tiles/map/index.json`, the list of every cartographic tile file of a terrain's
+    /// pyramid, next to the pyramid (`--terrain <terrain>`). A missing or empty pyramid exits 2.
+    #[command(name = "tile-index")]
+    TileIndex {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
     /// Classify a staged Workbench export for TERRAIN / PHASE.
     /// Unknown tokens exit 1; a missing staged raw export exits 2.
     #[command(name = "export-terrain", disable_help_flag = true)]

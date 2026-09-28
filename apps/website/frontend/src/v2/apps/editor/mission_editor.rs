@@ -67,13 +67,13 @@ pub use crate::v2::apps::editor::bridge::boot::boot_progress;
 #[cfg(target_arch = "wasm32")]
 pub(crate) use crate::v2::apps::editor::bridge::boot::hand_over;
 pub(crate) use crate::v2::apps::editor::bridge::boot::BootPhase;
-#[cfg(target_arch = "wasm32")]
-pub(crate) use crate::v2::apps::editor::bridge::viewport::{
-    device_size, register_editor_cam, register_self_checks, register_slot_stats, start_raf,
-};
 #[cfg(any(test, target_arch = "wasm32"))]
 pub(crate) use crate::v2::apps::editor::bridge::viewport::{
     mark_registry_fetch_failed, registry_session,
+};
+#[cfg(target_arch = "wasm32")]
+pub(crate) use crate::v2::apps::editor::bridge::viewport::{
+    register_editor_cam, register_self_checks, register_slot_stats, start_raf,
 };
 
 #[path = "mission_editor/registry_loading.rs"]

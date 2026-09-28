@@ -404,22 +404,25 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "wasm-ci",
-        help: "Fmt + clippy + test the map-engine and graphics-engine crates",
+        help: "Fmt + clippy + test the map-engine, graphics-engine and offline service worker crates",
         group: "build",
         lane: Lane::Borrowed,
         // A crate these steps do not name goes ungated: built only as a dependency, never
-        // formatted, linted or tested. Both engine crates are named in every step, wasm32
-        // included, because the browser half is where they ship.
+        // formatted, linted or tested. Both engine crates and the offline service worker are
+        // named in every step, wasm32 included, because the browser half is where they ship.
         steps: &[
-            sh!("cargo fmt --check -p website-map-engine -p website-graphics-engine"),
             sh!(
-                "cargo clippy -p website-map-engine -p website-graphics-engine --all-targets --all-features -- -D warnings"
+                "cargo fmt --check -p website-map-engine -p website-graphics-engine -p website-offline-service-worker"
             ),
             sh!(
-                "cargo clippy -p website-map-engine -p website-graphics-engine --target wasm32-unknown-unknown -- -D warnings"
+                "cargo clippy -p website-map-engine -p website-graphics-engine -p website-offline-service-worker --all-targets --all-features -- -D warnings"
+            ),
+            sh!(
+                "cargo clippy -p website-map-engine -p website-graphics-engine -p website-offline-service-worker --target wasm32-unknown-unknown -- -D warnings"
             ),
             sh!("cargo test -p website-map-engine --all-features"),
             sh!("cargo test -p website-graphics-engine --all-features"),
+            sh!("cargo test -p website-offline-service-worker --all-features"),
         ],
     },
     Task {

@@ -1,54 +1,46 @@
-//! `POST /api/v1/fire-missions` must persist the solution it computed, and
-//! `GET /api/v1/events/{id}/fire-missions` must hand it back.
+//! The single-tube columns of `fire_missions` that migration `0020` added, and its coordinate
+//! backfill, against the list route `GET /api/v1/events/{id}/fire-missions`.
 //!
 //! # Why this suite exists in this shape
 //!
-//! The defect this guards against is a save endpoint that answers **201 CREATED** carrying a full
-//! firing solution and writes a third of it: `charge`, `azimuth_mils` and `time_of_flight_s`
-//! computed, serialised into the response, and dropped on the way to the INSERT, with the four
-//! coordinates the caller sent reaching no column at all. Every one of those is invisible from the
-//! response body, because the response is built from the in-memory `FireSolution` and never
-//! re-reads the row. That is this program's signature defect exactly — a tool reporting success
-//! over an input it never examined — and it means **a test that asserts on the 201 body proves
-//! nothing here.** A handler that drops the columns passes that test.
-//!
-//! So every assertion below lands on one of two things the handler cannot fake:
+//! Rows stored before `0020` exist, and the failure mode is not a 500 but a `0` where a `null`
+//! belongs. So every assertion below lands on one of two things a handler cannot fake:
 //!
 //! * the **database row**, read back with a direct `sqlx` query on its own pool connection, not
 //!   through any handler;
-//! * the **list endpoint's** body, which is built by a `SELECT` — so a column the INSERT never
-//!   wrote cannot appear in it, and a column the `SELECT` forgets to project cannot either.
+//! * the **list endpoint's** body, which is built by a `SELECT` — so a column the `SELECT`
+//!   forgets to project cannot appear in it.
+//!
+//! The save path (`POST /api/v1/fire-missions`) re-solves against a stored ballistics catalog;
+//! its cases live in `tests/game_ballistics_fire_missions.rs`.
 //!
 //! # The cases
 //!
-//! 1. [`saved_solution_reaches_the_row_and_comes_back_out`] — the headline. Save, read the row,
-//!    read the list, and require all three to agree on all seven values.
-//! 2. [`a_row_written_before_this_migration_still_lists_and_restores`] — the columns are nullable
+//! 1. [`a_row_written_before_this_migration_still_lists_and_restores`] — the columns are nullable
 //!    because rows predating the migration exist. One is forged directly into the table with all
 //!    seven `NULL` and must come back as `null` rather than as `0`, and must not panic the
 //!    handler's decode.
-//! 3. [`the_shipped_backfill_recovers_coordinates_from_the_grid_encoding`] — runs the migration's
+//! 2. [`the_shipped_backfill_recovers_coordinates_from_the_grid_encoding`] — runs the migration's
 //!    **own** `UPDATE` statements, read out of the shipped `.sql` file, over rows this test
 //!    inserts. A transcribed copy of the SQL would test the copy.
-//! 4. [`out_of_range_and_unknown_weapon_still_answer_422_and_400`] — `solve_checked` carries no
-//!    unreachable range guard; these are the two statuses it must answer.
 //!
-//! # The claim case 3 has to check
+//! # The claim case 2 has to check
 //!
 //! 0020's comment calls its accept regex `parse_grid`'s, "deliberately character for character".
 //! It is not: `parse::<f64>` also takes `+1000, 2000`, `.5, 2`, `5., 2` and `1e3, 500`, and the
 //! regex takes none of them. A fixture set that omits **exactly** those four forms agrees with the
-//! claim by never testing it — the same shape as the defect this file guards against. Two cases
-//! close that:
+//! claim by never testing it. Two cases close that:
 //!
-//! 5. [`the_backfill_regex_is_narrower_than_parse_grid`] — measures both readers on the divergent
+//! 3. [`the_backfill_regex_is_narrower_than_parse_grid`] — measures both readers on the divergent
 //!    forms, on the agreed forms (same `f64` bits, not just "both accept"), and on the one input
 //!    class where the regex is the *wider* of the two.
-//! 6. [`the_transcription_of_parse_grid_is_still_the_shipped_one`] — case 5 needs a copy of
-//!    `parse_grid` (the frontend is a wasm crate and cannot be linked here); this pins the copy
-//!    against the shipped function token for token.
+//! 4. [`the_transcription_of_parse_grid_is_still_the_shipped_one`] — case 3 needs a copy of the
+//!    calculator's legacy `x, y` reader, `parse_legacy_grid` in
+//!    `frontend/src/v2/pages/field_tools/mortar/saved_fires/restore.rs` (the frontend is a wasm
+//!    crate and cannot be linked here); this pins the copy against the shipped function token
+//!    for token.
 //!
-//! Skips without `TEST_DATABASE_URL`, like every DB-backed suite in this crate.
+//! Every case needs `TEST_DATABASE_URL`, like every DB-backed suite in this crate.
 
 mod common;
 
@@ -63,12 +55,6 @@ use website_api::core::application_state::AppState;
 use website_api::core::configuration::Config;
 use website_api::core::database;
 use website_api::core::http_router;
-
-/// FP (1000, 2000) → TGT (2200, 1800) on an `M252 81mm`: the field report's own probe.
-/// 1217 m at 99.5°, which `website_map_engine::data::scenario::ballistics` reaches on charge 2 — a solution with a
-/// **non-zero** charge and a **non-zero** TOF, so a handler that wrote zeros could not pass by
-/// accident.
-const SAVE_BODY: &str = r#"{"weapon_system":"M252 81mm","fp_x":1000,"fp_y":2000,"tgt_x":2200,"tgt_y":1800,"fp_grid":"1000, 2000","target_grid":"2200, 1800","event_id":"EVENT"}"#;
 
 async fn boot() -> Option<(Router, PgPool)> {
     let url = common::require_test_database_url()?;
@@ -145,95 +131,6 @@ async fn plant_event(pool: &PgPool) -> String {
     .fetch_one(pool)
     .await
     .expect("plant the event the fire missions name")
-}
-
-/// **The headline.** Save a solution, then prove it is in the database and comes back out.
-#[tokio::test]
-async fn saved_solution_reaches_the_row_and_comes_back_out() {
-    let Some((app, pool)) = boot().await else {
-        eprintln!("skip: TEST_DATABASE_URL unset");
-        return;
-    };
-    let tok = common::dev_login_token(&app, "fire_mission_solution", "admin").await;
-    let event = plant_event(&pool).await;
-
-    let (st, body) = call(
-        &app,
-        "POST",
-        "/api/v1/fire-missions",
-        &tok,
-        Some(&SAVE_BODY.replace("EVENT", &event)),
-    )
-    .await;
-    assert_eq!(st, StatusCode::CREATED, "save fire: {body}");
-
-    // ── What the handler CLAIMS it computed. Not evidence of anything being stored: this half
-    // ── of the body is `serde_json::to_value(&sol)`, built without reading the row back.
-    let sol = &body["solution"];
-    assert_eq!(sol["distance_m"], 1217);
-    assert_eq!(sol["charge"], 2);
-    assert_eq!(sol["azimuth_mils"], 1768);
-    assert_eq!(sol["time_of_flight_s"], 29.4);
-    let id = body["fire_mission"]["id"]
-        .as_str()
-        .expect("201 carries the row id")
-        .to_string();
-
-    // ── What is actually in the table. This is the assertion a handler that drops the columns
-    // ── fails: it answers the identical 201 above with all seven of these NULL.
-    let (fp_x, fp_y, tgt_x, tgt_y, az_mils, charge, tof) = stored_solution(&pool, &id).await;
-    assert_eq!(
-        (fp_x, fp_y, tgt_x, tgt_y),
-        (Some(1000.0), Some(2000.0), Some(2200.0), Some(1800.0)),
-        "the four coordinates the caller sent are not in the row"
-    );
-    assert_eq!(charge, Some(2), "charge is not in the row");
-    assert_eq!(az_mils, Some(1768), "azimuth_mils is not in the row");
-    assert_eq!(tof, Some(29.4), "time_of_flight_s is not in the row");
-
-    // ── And the row agrees with what the caller was told. A handler that stored a *different*
-    // ── charge from the one it returned would pass both blocks above and fail here.
-    assert_eq!(charge.map(Value::from), Some(sol["charge"].clone()));
-    assert_eq!(az_mils.map(Value::from), Some(sol["azimuth_mils"].clone()));
-    assert_eq!(tof.map(Value::from), Some(sol["time_of_flight_s"].clone()));
-
-    // ── The 201's own `fire_mission` half comes from `RETURNING`, so it must carry them too.
-    let returned = &body["fire_mission"];
-    assert_eq!(returned["charge"], 2, "RETURNING dropped charge");
-    assert_eq!(returned["time_of_flight_s"], 29.4, "RETURNING dropped TOF");
-    assert_eq!(returned["fp_x"], 1000.0, "RETURNING dropped fp_x");
-
-    // ── The read path. Built by a SELECT, so a column the INSERT never wrote cannot show up
-    // ── here, and one the SELECT forgets to project cannot either.
-    let (st, list) = call(
-        &app,
-        "GET",
-        &format!("/api/v1/events/{event}/fire-missions"),
-        &tok,
-        None,
-    )
-    .await;
-    assert_eq!(st, StatusCode::OK, "list: {list}");
-    let rows = list["data"].as_array().expect("data is an array");
-    assert_eq!(rows.len(), 1, "one saved fire mission on this operation");
-    let row = &rows[0];
-    assert_eq!(row["id"], id.as_str());
-    assert_eq!(row["fp_x"], 1000.0);
-    assert_eq!(row["fp_y"], 2000.0);
-    assert_eq!(row["tgt_x"], 2200.0);
-    assert_eq!(row["tgt_y"], 1800.0);
-    assert_eq!(row["azimuth_mils"], 1768);
-    assert_eq!(row["charge"], 2, "a reload cannot see the charge");
-    assert_eq!(
-        row["time_of_flight_s"], 29.4,
-        "a reload cannot see the time of flight"
-    );
-    // The shipped columns are untouched by this change.
-    assert_eq!(row["distance_m"], 1217);
-    assert_eq!(row["azimuth_deg"], 99.5);
-    assert_eq!(row["elevation_mils"], sol["elevation_mils"]);
-    assert_eq!(row["fp_grid"], "1000, 2000");
-    assert_eq!(row["target_grid"], "2200, 1800");
 }
 
 /// A fire mission saved before this migration must still list and still read as "not recorded".
@@ -323,7 +220,7 @@ async fn a_row_written_before_this_migration_still_lists_and_restores() {
 ///
 /// The criterion under test is **not** "accept exactly what `parse_grid` accepts" — 0020's comment
 /// claims that and it is false. It is the direction: the regex must never accept a grid
-/// `parse_grid` would refuse, because that invents coordinates for a row the calculator has always
+/// `parse_legacy_grid` would refuse, because that invents coordinates for a row the calculator has always
 /// shown as unrestorable. Accepting *less* is survivable and is what actually happens for four
 /// syntactic forms; those four are in the table below, and
 /// [`the_backfill_regex_is_narrower_than_parse_grid`] measures the divergence directly.
@@ -333,7 +230,7 @@ async fn the_shipped_backfill_recovers_coordinates_from_the_grid_encoding() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    let event = Uuid::new_v4().to_string();
+    let event = plant_event(&pool).await;
 
     // `fp_grid`, `target_grid`, and what each pair of columns must hold after the backfill.
     // `None` = "this grid is not `fmt_grid`'s encoding, so the row keeps NULL coordinates".
@@ -362,13 +259,14 @@ async fn the_shipped_backfill_recovers_coordinates_from_the_grid_encoding() {
         // One grid is the encoding and the other is not. The two pairs are backfilled by two
         // independent statements, so this row gets one real pair and one NULL pair.
         ("500, 600", "GRID REF ALPHA", Some((500.0, 600.0)), None),
-        // ── The four forms `parse_grid` accepts and the regex does not.
+        // ── The four forms `parse_legacy_grid` accepts and the regex does not.
         //
         // The six cases above are exactly the ones where 0020's "character for character" claim
         // is TRUE, and a suite that stops there never tests the inputs that break it.
         // These four are those inputs, and they must come back NULL — the regex refuses them, and
-        // refusing is the safe direction. `restore()` still reads such a row through `parse_grid`,
-        // so nothing is stranded; see `the_backfill_regex_is_narrower_than_parse_grid`.
+        // refusing is the safe direction. `restore()` still reads such a row through
+        // `parse_legacy_grid`, so nothing is stranded; see
+        // `the_backfill_regex_is_narrower_than_parse_grid`.
         ("+1000, 2000", "+2200, 1800", None, None), // `-?` has no `+`
         (".5, 2", ".25, .75", None, None),          // `\d+` wants a digit before the point
         ("5., 2", "6., 3", None, None),             // `(\.\d+)?` wants digits after it
@@ -412,7 +310,7 @@ async fn the_shipped_backfill_recovers_coordinates_from_the_grid_encoding() {
         updates.len()
     );
     for stmt in &updates {
-        // `event` is a `Uuid` this test generated, not caller input — that is the whole audit
+        // `event` is the id of an event this test planted, not caller input — that is the whole audit
         // `AssertSqlSafe` is asking for. The scoping exists so a parallel sibling suite's fixture
         // rows in the same database are not rewritten by this replay.
         let scoped = format!("{stmt} AND event_id = '{event}'::uuid");
@@ -448,21 +346,27 @@ async fn the_shipped_backfill_recovers_coordinates_from_the_grid_encoding() {
 
 // ───────────────────────── the claim 0020 makes about its own regex ─────────────────────────────
 
-/// `frontend/src/v2/pages/field_tools/mortar/grid.rs::parse_grid`, transcribed.
+/// `frontend/src/v2/pages/field_tools/mortar/saved_fires/restore.rs::parse_legacy_grid`, the
+/// calculator's reader of the legacy `x, y` grid text, transcribed.
 ///
 /// The frontend is a separate crate (`website-frontend`, built for `wasm32`) and cannot be linked
 /// into an API test binary, so the rule is restated here and
 /// [`the_transcription_of_parse_grid_is_still_the_shipped_one`] pins every line of it against the
 /// shipped source. A transcription nothing checks is how the divergence this test measures got
 /// into a comment in the first place.
-fn parse_grid(s: &str) -> Option<(f64, f64)> {
-    let (a, b) = s.split_once(',')?;
+fn parse_legacy_grid(text: &str) -> Option<(f64, f64)> {
+    let (a, b) = text.split_once(',')?;
     let x: f64 = a.trim().parse().ok()?;
     let y: f64 = b.trim().parse().ok()?;
     (x.is_finite() && y.is_finite()).then_some((x, y))
 }
 
-const SHIPPED_MORTAR: &str = include_str!("../../frontend/src/v2/pages/field_tools/mortar/grid.rs");
+/// The shipped source that defines the calculator's legacy grid reader.
+const SHIPPED_LEGACY_GRID_READER: &str =
+    include_str!("../../frontend/src/v2/pages/field_tools/mortar/saved_fires/restore.rs");
+/// Where [`SHIPPED_LEGACY_GRID_READER`] lives, for failure messages.
+const SHIPPED_LEGACY_GRID_READER_PATH: &str =
+    "frontend/src/v2/pages/field_tools/mortar/saved_fires/restore.rs";
 const MIGRATION_0020: &str = include_str!("../migrations/0020_fire_missions_solution.sql");
 
 /// The accept regex out of the shipped migration — both copies, which must be the same regex.
@@ -494,19 +398,22 @@ fn shipped_accept_regex() -> String {
 /// rather than merely asserted to resemble it.
 const THIS_SUITE: &str = include_str!("fire_mission_solution.rs");
 
-/// `fn parse_grid`'s source out of `src`, comment lines dropped and whitespace flattened.
+/// `fn parse_legacy_grid`'s source out of `src`, comment lines dropped and whitespace flattened.
 ///
 /// The signature is assembled with `concat!` so this needle does not itself occur as a literal in
 /// this file — otherwise it would match its own definition before the function's.
-fn parse_grid_source(src: &str, whose: &str) -> String {
-    let needle = concat!("fn ", "parse_grid(s: &str) -> Option<(f64, f64)> {");
+fn parse_legacy_grid_source(src: &str, whose: &str) -> String {
+    let needle = concat!(
+        "fn ",
+        "parse_legacy_grid(text: &str) -> Option<(f64, f64)> {"
+    );
     let start = src
         .find(needle)
         .unwrap_or_else(|| panic!("{whose} no longer defines `{needle}`"));
     let rest = &src[start..];
     let end = rest
         .find("\n}")
-        .unwrap_or_else(|| panic!("{whose}'s parse_grid has no closing brace at column 0"))
+        .unwrap_or_else(|| panic!("{whose}'s parse_legacy_grid has no closing brace at column 0"))
         + 2;
     rest[..end]
         .lines()
@@ -516,27 +423,25 @@ fn parse_grid_source(src: &str, whose: &str) -> String {
         .join(" ")
 }
 
-/// The transcribed `parse_grid` above **is** the shipped one, token for token.
+/// The transcribed `parse_legacy_grid` above **is** the shipped one, token for token.
 ///
 /// Not "contains these lines" — that would pass while the copy in this file drifted, which is the
 /// same shape of defect as the comment this suite corrects: a check that agrees with itself.
 #[test]
 fn the_transcription_of_parse_grid_is_still_the_shipped_one() {
     assert_eq!(
-        parse_grid_source(THIS_SUITE, "this suite"),
-        parse_grid_source(
-            SHIPPED_MORTAR,
-            "frontend/src/v2/pages/field_tools/mortar/grid.rs"
-        ),
-        "the copy of parse_grid in this file is no longer the shipped one — every assertion about \
-         'what the calculator accepts' below is measuring a function nothing ships"
+        parse_legacy_grid_source(THIS_SUITE, "this suite"),
+        parse_legacy_grid_source(SHIPPED_LEGACY_GRID_READER, SHIPPED_LEGACY_GRID_READER_PATH),
+        "the copy of parse_legacy_grid in this file is no longer the shipped one — every \
+         assertion about 'what the calculator accepts' below is measuring a function nothing ships"
     );
-    // …and the corrected claim is where a reader of `parse_grid` will find it, since 0020 is
-    // applied + checksummed and its own comment can never be edited.
+    // …and the corrected claim is where a reader of `parse_legacy_grid` finds it, since 0020 is
+    // applied and checksummed and its own comment can never be edited.
     assert!(
-        SHIPPED_MORTAR.contains("The divergence is under-permissive, which is the safe direction."),
-        "the divergence correction is gone from grid.rs, and 0020's false 'character for character' \
-         claim is once again the only description of the accept set"
+        SHIPPED_LEGACY_GRID_READER
+            .contains("**The divergence is under-permissive, which is the safe direction.**"),
+        "the divergence correction is gone from {SHIPPED_LEGACY_GRID_READER_PATH}, and 0020's \
+         false 'character for character' claim is once again the only description of the accept set"
     );
 }
 
@@ -547,13 +452,13 @@ fn the_transcription_of_parse_grid_is_still_the_shipped_one() {
 ///
 /// 1. **Under-permissive on four syntactic forms** — `+1000, 2000`, `.5, 2`, `5., 2`, `1e3, 500`.
 ///    `parse::<f64>` takes all four; the regex takes none. This is the safe direction: the row
-///    keeps NULL coordinates and `restore()` reads it through `parse_grid` exactly as before.
+///    keeps NULL coordinates and `restore()` reads it through `parse_legacy_grid` exactly as before.
 /// 2. **Never over-permissive in the dangerous direction** — every string the regex accepts,
-///    `parse_grid` also accepts, and Postgres's cast lands on the *same* `f64` bits. That is the
+///    `parse_legacy_grid` also accepts, and Postgres's cast lands on the *same* `f64` bits. That is the
 ///    property that matters: an accept the reader would refuse is an invented coordinate.
 /// 3. **One over-permissive class, and it is not a coordinate** — a digit string past `f64::MAX`
 ///    matches the regex and then fails `::double precision`, which would have aborted the whole
-///    migration. `parse_grid` refuses it (`inf` is not finite). No writer can produce one:
+///    migration. `parse_legacy_grid` refuses it (`inf` is not finite). No writer can produce one:
 ///    `fmt_grid`'s longest output is `f64::MAX`'s 309 digits, which casts cleanly.
 #[tokio::test]
 async fn the_backfill_regex_is_narrower_than_parse_grid() {
@@ -576,7 +481,7 @@ async fn the_backfill_regex_is_narrower_than_parse_grid() {
     // 1 ── the divergence, form by form. Measured, not taken on trust.
     for form in ["+1000, 2000", ".5, 2", "5., 2", "1e3, 500"] {
         assert!(
-            parse_grid(form).is_some(),
+            parse_legacy_grid(form).is_some(),
             "{form:?} must parse in grid.rs — if it no longer does, the divergence closed and \
              this test is describing history"
         );
@@ -590,9 +495,9 @@ async fn the_backfill_regex_is_narrower_than_parse_grid() {
     // …and the form both accept, so the test above is not passing because the regex accepts
     // nothing at all.
     assert!(regex_accepts(&pool, &regex, "1000, 2000").await);
-    assert_eq!(parse_grid("1000, 2000"), Some((1000.0, 2000.0)));
+    assert_eq!(parse_legacy_grid("1000, 2000"), Some((1000.0, 2000.0)));
 
-    // 2 ── the direction that would be a defect: an accept `parse_grid` refuses. Every accepted
+    // 2 ── the direction that would be a defect: an accept `parse_legacy_grid` refuses. Every accepted
     // string must parse to the same f64 on both sides, bit for bit.
     for (grid, want) in [
         ("1000, 2000", (1000.0_f64, 2000.0_f64)),
@@ -608,7 +513,7 @@ async fn the_backfill_regex_is_narrower_than_parse_grid() {
             "the regex stopped accepting {grid:?} — rows it has always backfilled would strand"
         );
         assert_eq!(
-            parse_grid(grid),
+            parse_legacy_grid(grid),
             Some(want),
             "{grid:?} does not parse to {want:?} in grid.rs"
         );
@@ -642,7 +547,11 @@ async fn the_backfill_regex_is_narrower_than_parse_grid() {
             !regex_accepts(&pool, &regex, grid).await,
             "regex took {grid:?}"
         );
-        assert_eq!(parse_grid(grid), None, "grid.rs took {grid:?}");
+        assert_eq!(
+            parse_legacy_grid(grid),
+            None,
+            "parse_legacy_grid took {grid:?}"
+        );
     }
 
     // 3 ── the pathological edge, recorded for the next reader. 309 nines is past `f64::MAX`.
@@ -650,12 +559,12 @@ async fn the_backfill_regex_is_narrower_than_parse_grid() {
     assert!(
         regex_accepts(&pool, &regex, &huge).await,
         "a 309-digit grid matches the regex — this is the one input class where it is WIDER than \
-         parse_grid, and the consequence is an aborted migration, not a wrong coordinate"
+         parse_legacy_grid, and the consequence is an aborted migration, not a wrong coordinate"
     );
     assert_eq!(
-        parse_grid(&huge),
+        parse_legacy_grid(&huge),
         None,
-        "parse_grid must refuse it: `parse::<f64>` overflows to inf and `is_finite` rejects"
+        "parse_legacy_grid must refuse it: `parse::<f64>` overflows to inf and `is_finite` rejects"
     );
     let cast = sqlx::query_scalar::<_, f64>("SELECT btrim(split_part($1::text, ',', 1))::float8")
         .bind(&huge)
@@ -688,49 +597,4 @@ async fn the_backfill_regex_is_narrower_than_parse_grid() {
     .await
     .expect("f64::MAX must cast cleanly — fmt_grid can emit it");
     assert_eq!(x, f64::MAX);
-}
-
-/// `solve_checked` dispatches on a direct `match` and carries no unreachable range guard. These
-/// are the two statuses it must answer — an unknown weapon is a **400** and it beats the **422**
-/// an out-of-range target gets, and the 422 still carries the partial solution in `details`.
-#[tokio::test]
-async fn out_of_range_and_unknown_weapon_still_answer_422_and_400() {
-    let Some((app, _pool)) = boot().await else {
-        eprintln!("skip: TEST_DATABASE_URL unset");
-        return;
-    };
-    let tok = common::dev_login_token(&app, "fire_mission_solution", "admin").await;
-
-    let (st, body) = call(
-        &app,
-        "POST",
-        "/api/v1/fire-missions/solve",
-        &tok,
-        Some(r#"{"weapon_system":"M252 81mm","fp_x":0,"fp_y":0,"tgt_x":0,"tgt_y":100000}"#),
-    )
-    .await;
-    assert_eq!(st, StatusCode::UNPROCESSABLE_ENTITY, "out of range: {body}");
-    assert_eq!(
-        body["details"]["distance_m"], 100000,
-        "the 422 must still carry the partial solution — the OutOfRange payload is on the wire"
-    );
-
-    for weapon in ["M120 120mmm", "Potato Launcher", "m252_81mm"] {
-        let (st, body) = call(
-            &app,
-            "POST",
-            "/api/v1/fire-missions/solve",
-            &tok,
-            Some(&format!(
-                r#"{{"weapon_system":"{weapon}","fp_x":0,"fp_y":0,"tgt_x":0,"tgt_y":100000}}"#
-            )),
-        )
-        .await;
-        assert_eq!(st, StatusCode::BAD_REQUEST, "{weapon}: {body}");
-        assert_eq!(
-            body["error"],
-            format!("unknown weapon_system '{weapon}'"),
-            "the weapon must be reported verbatim"
-        );
-    }
 }

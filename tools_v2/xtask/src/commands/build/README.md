@@ -50,12 +50,14 @@ since half of them cover that module's pin.
   | `rust-clippy` | `cargo clippy --all-targets -- -D warnings` in `apps/website/api_v2` |
   | `rust-sqlx-prepare` | `cargo sqlx prepare` in `apps/website/api_v2` |
   | `rust-ci` | `rust-fmt`, `rust-clippy`, `rust-build`, `wasm-ci`, then the integration tests against a fresh `rust_it` database; needs `cargo xtask db up` |
-  | `wasm-ci` | fmt, clippy (native with all features, and `wasm32-unknown-unknown`) and tests of `website-map-engine` and `website-graphics-engine` |
+  | `wasm-ci` | fmt, clippy (native with all features, and `wasm32-unknown-unknown`) and tests of `website-map-engine`, `website-graphics-engine` and `website-offline-service-worker` |
   | `leptos` | `trunk serve --release` in `apps/website/frontend`; stays in the foreground on :3000 |
   | `leptos-debug` | `trunk serve`, a debug build; stays in the foreground |
   | `leptos-build` | `trunk build --release` into `apps/website/frontend/dist` |
   | `gate-doctor` | `leptos-build`, then `gate doctor` from `developer-tools` |
   | `leptos-gates` | `leptos-build` once, `gate doctor`, `gate editor-suite` and `gate v-suite verify` |
+  | `mortar-offline-gate` | `leptos-build`, then `gate mortar-offline`: the mortar calculator's offline pack, a reload with the server gone, and the page's solution against the native one; needs the Everon tile index and the recorded catalog reads |
+  | `ballistics-wasm-agreement` | `leptos-build`, then `gate ballistics-agreement`: the seeded agreement cases solved by the browser bench `/debug/ballistics-agreement` against the native solves, one `case ballistics_wasm_agreement_<id>` line each; needs the recorded catalog reads |
   | `ci-local-leptos` | `website-frontend` fmt, wasm32 clippy of all targets, native tests, then `trunk build --release` |
 
 - Exit codes: 0 done, or a dry run printed; 2 no target, or an unknown one (`--list` with no

@@ -34,7 +34,6 @@ use crate::streaming::loaders::world_loader::WorldHost;
 
 /// Re-export `crate::streaming::memory::budget::hud_suffixasmemory_hud_suffix`.
 pub use crate::streaming::memory::budget::hud_suffix as memory_hud_suffix;
-use crate::world::terrain::dem::png::decode_png_to_meters;
 use crate::world::terrain::relief::hillshade::build_hillshade_image;
 use crate::world::terrain::relief::host::DemVectors;
 use std::cell::{Cell, RefCell};

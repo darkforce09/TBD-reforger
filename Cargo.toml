@@ -10,6 +10,7 @@ members = [
     "apps/website/frontend",
     "apps/website/map-engine",
     "apps/website/graphics-engine",
+    "apps/website/offline-service-worker",
     # Dependency-light verification and ticket libraries consumed by repository tooling.
     "tools_v2/verification-core",
     "tools_v2/ticket-engine",

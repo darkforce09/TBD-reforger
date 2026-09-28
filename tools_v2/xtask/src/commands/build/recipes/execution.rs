@@ -50,6 +50,8 @@ pub(crate) fn run(args: &[String]) -> Result<u8> {
         "leptos-build" => leptos_build(),
         "gate-doctor" => gate_doctor(),
         "leptos-gates" => leptos_gates(),
+        "mortar-offline-gate" => mortar_offline_gate(),
+        "ballistics-wasm-agreement" => ballistics_wasm_agreement(),
         "ci-local-leptos" => ci_local_leptos(),
         "rust-ci" => {
             if dry {

@@ -10,11 +10,12 @@ render engine the entry points that move its camera.
 
 ```text
 apps/website/map-engine/src/camera/
-├── grid_reference.rs  the 1 km grid spacing and the three-digit grid reference of a coordinate
+├── grid_reference.rs  the 1 km grid spacing, and grid references formatted and parsed at 6, 8 and 10 figures
 ├── math/              f64 matrix and scalar helpers that reproduce gl-matrix and deck.gl arithmetic
 ├── mod.rs             the module tree
 ├── orbit/             the doll preview's perspective camera, turned by yaw alone
 ├── ortho/             the tactical map's orthographic camera: matrices, controls, unprojection
+├── tests/             unit tests for the grid reference
 └── viewport.rs        the render engine's resize, view, pan, zoom and camera-changed entry points
 ```
 
@@ -46,7 +47,13 @@ markers.
 `grid_reference.rs` fixes the grid at `GRID_STEP_M`, 1000 m. `grid_ref_3digit` formats a world
 coordinate as its hundreds of metres modulo 1000, zero-padded (6400 m reads `064`), and answers
 `000` for a negative or non-finite input; `grid_lines_in_range` lists the grid lines inside a
-span, so an edge label always sits on a drawn line.
+span, so an edge label always sits on a drawn line. `format_grid(x, y, GridFigures)` writes a full
+reference as easting digits, a space and northing digits: `GridFigures::Six` reads `064 129` (a
+100 m cell, each half exactly `grid_ref_3digit`), `Eight` reads `0642 1298` (10 m) and `Ten` reads
+`06423 12987` (1 m); every precision wraps at `GRID_WRAP_M`, 100 km. `parse_grid` reads 6, 8 or 10
+digits, split into two equal halves by whitespace or contiguous, and returns the centre of the named
+cell inside the first 100 km; any other input is a `GridParseError` (empty, a non-digit character,
+an unsupported digit count, halves of different lengths, or more than two groups).
 
 ## Public surface
 
@@ -56,6 +63,8 @@ span, so an edge label always sits on a drawn line.
 - `grid_reference::{GRID_STEP_M, grid_ref_3digit, grid_lines_in_range}`: re-exported by the
   toolbelt's `apps/website/frontend/src/v2/apps/editor/ui/docks/toolbelt/grid_reference.rs` and
   `scale_math.rs`, and used by `crate::editing::commands::selection_digest`.
+- `grid_reference::{GRID_WRAP_M, GridFigures, GridParseError, format_grid, parse_grid}`: the
+  6-, 8- and 10-figure references for grid entry and display, such as the mortar page's.
 - `orbit::projection::{view_proj_gl, view_proj_wgpu}`: for `crate::doll`.
 - `viewport`: the `RenderEngine` methods above, called by the Mission Creator's bridge and input
   handlers and by the debug benches.

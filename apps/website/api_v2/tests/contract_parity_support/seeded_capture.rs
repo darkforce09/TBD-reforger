@@ -5,6 +5,9 @@
 //! `seeds/registry_dev.sql` then `seeds/content_golden.sql`, publish every pending audit line
 //! through the production publisher, then send each `_index.tsv` request in index order and keep
 //! the status and body (an event stream's leading frames), and the window the requests ran in.
+//! Immediately before the first ballistics-catalog row the committed vanilla catalog pair is
+//! uploaded through `POST /api/v1/ballistics-catalogs` as the administrator, so the catalog
+//! reads and the fire-mission save answer over a version the route itself judged and stored.
 //!
 //! **Position:** the only writer of the `contract_parity_goldens` database; the reproduction and
 //! event-stream cases of `tests/contract_parity_goldens.rs` read [`seeded_capture`].
@@ -13,8 +16,10 @@
 //! The capture runs on its own runtime inside the first caller and is never repeated, because the
 //! writes it sends change what a second pass would read.
 //!
-//! **Invariants:** nothing is edited between seeding and requesting; each request comes from a
-//! fresh synthetic peer so the per-IP limiter never answers in the handler's place; an event
+//! **Invariants:** nothing is edited between seeding and requesting except by that upload, which
+//! runs after every earlier row (the audit log reads among them) has answered over the seeds
+//! alone; each request comes from a fresh synthetic peer so the per-IP limiter never answers in
+//! the handler's place; an event
 //! stream is read until it holds as many complete frames as its golden, or for at most
 //! [`STREAM_READ_LIMIT`].
 
@@ -51,6 +56,20 @@ const SUITE: &str = "contract_parity_goldens";
 const AUDIT_BATCH: i64 = 1000;
 const REGISTRY_DEV_SEED: &str = include_str!("../../seeds/registry_dev.sql");
 const CONTENT_GOLDEN_SEED: &str = include_str!("../../seeds/content_golden.sql");
+/// The route that uploads a catalog pair; every golden whose path starts with it follows the
+/// upload.
+const BALLISTICS_CATALOGS: &str = "/api/v1/ballistics-catalogs";
+/// The committed catalog and calibration bundle, relative to the repository root.
+const COMMITTED_CATALOG_PAIR: [(&str, &str); 2] = [
+    (
+        "catalog",
+        "contracts_v2/catalogs/ballistics/vanilla_mortars.v1.catalog.json",
+    ),
+    (
+        "calibration",
+        "contracts_v2/fixtures/ballistics/vanilla_mortars.v1/calibration.json",
+    ),
+];
 
 /// One live answer: its status and body (for an event stream, the leading bytes read).
 #[derive(Debug)]
@@ -121,7 +140,12 @@ async fn capture(url: String) -> Result<SeededCapture, String> {
 
     let mut answers = Vec::new();
     let opened_at = chrono::Utc::now();
+    let mut catalog_uploaded = false;
     for row in read_index() {
+        if !catalog_uploaded && row.path.starts_with(BALLISTICS_CATALOGS) {
+            upload_committed_catalog(&app, &token).await?;
+            catalog_uploaded = true;
+        }
         let answer = request(&app, &token, &row).await?;
         answers.push((row, answer));
     }
@@ -152,6 +176,53 @@ async fn publish_pending_audit_lines(pool: &PgPool) -> Result<(), String> {
             return Ok(());
         }
     }
+}
+
+/// Uploads the committed catalog pair as the administrator and requires the route's 201.
+async fn upload_committed_catalog(app: &Router, token: &str) -> Result<(), String> {
+    let boundary = "contract-parity-goldens-catalog";
+    let mut body = Vec::new();
+    for (part, relative) in COMMITTED_CATALOG_PAIR {
+        let path = format!("{}/../../../{relative}", env!("CARGO_MANIFEST_DIR"));
+        let bytes = std::fs::read(&path).map_err(|error| format!("read {path}: {error}"))?;
+        body.extend_from_slice(
+            format!(
+                "--{boundary}\r\nContent-Disposition: form-data; name=\"{part}\"; \
+                 filename=\"{part}.json\"\r\nContent-Type: application/json\r\n\r\n"
+            )
+            .as_bytes(),
+        );
+        body.extend_from_slice(&bytes);
+        body.extend_from_slice(b"\r\n");
+    }
+    body.extend_from_slice(format!("--{boundary}--\r\n").as_bytes());
+    let mut request = Request::builder()
+        .method("POST")
+        .uri(BALLISTICS_CATALOGS)
+        .header(header::AUTHORIZATION, format!("Bearer {token}"))
+        .header(
+            header::CONTENT_TYPE,
+            format!("multipart/form-data; boundary={boundary}"),
+        )
+        .body(Body::from(body))
+        .map_err(|error| format!("build the catalog upload: {error}"))?;
+    request.extensions_mut().insert(ConnectInfo(next_peer()));
+    let response = app
+        .clone()
+        .oneshot(request)
+        .await
+        .map_err(|error| format!("the catalog upload failed below HTTP: {error}"))?;
+    let status = response.status();
+    if status == StatusCode::CREATED {
+        return Ok(());
+    }
+    let answer = to_bytes(response.into_body(), usize::MAX)
+        .await
+        .map(|bytes| String::from_utf8_lossy(&bytes[..bytes.len().min(600)]).into_owned())
+        .unwrap_or_default();
+    Err(format!(
+        "upload the committed catalog pair: {status} {answer}"
+    ))
 }
 
 static PEER: AtomicU32 = AtomicU32::new(1);

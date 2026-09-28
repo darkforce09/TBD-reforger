@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "catalog_id": "mortar-page-test",
+  "catalog_version": 2,
+  "title": "Mortar page test catalog",
+  "game_build": "1.8.0.13",
+  "export_generation_id": "6A6F008DC5395616",
+  "gravity_m_s2": 9.807,
+  "gravity_source": "oracle",
+  "resources": [],
+  "weapons": [
+    {
+      "weapon_id": "m252",
+      "display_name": "M252 81mm",
+      "prefab_guid": "0000000000000001",
+      "caliber_mm": 81.0,
+      "mils_per_circle": 6400,
+      "elevation_min_deg": 45.0,
+      "elevation_max_deg": 85.0,
+      "muzzle_init_speed_coef": 1.0,
+      "dispersion_diameter_m": 1.0,
+      "dispersion_range_m": 48.0,
+      "shell_ids": ["m821", "m853a1", "not-in-catalog"]
+    },
+    {
+      "weapon_id": "2b14",
+      "display_name": "2B14 82mm",
+      "prefab_guid": "0000000000000002",
+      "caliber_mm": 82.0,
+      "mils_per_circle": 6000,
+      "elevation_min_deg": 45.0,
+      "elevation_max_deg": 85.0,
+      "muzzle_init_speed_coef": 1.0,
+      "dispersion_diameter_m": 1.0,
+      "dispersion_range_m": 48.0,
+      "shell_ids": ["o-832du"]
+    }
+  ],
+  "shells": [
+    {
+      "shell_id": "m821",
+      "display_name": "M821 HE",
+      "prefab_guid": "0000000000000011",
+      "role": "he",
+      "init_speed_m_s": 66.0,
+      "init_speed_variation": 3.0,
+      "mass_kg": 4.06,
+      "air_drag": 0.000462,
+      "side_air_drag_scale": 10.0,
+      "wind_influence_multiplier": 1.0,
+      "dispersion_multiplier": 1.0,
+      "time_to_live_s": 60.0,
+      "standard_dispersion_m": 15.0,
+      "charges": [
+        { "rings": 0, "init_speed_coef": 1.0, "is_default": false },
+        { "rings": 1, "init_speed_coef": 1.531, "is_default": false },
+        { "rings": 2, "init_speed_coef": 2.085, "is_default": true },
+        { "rings": 3, "init_speed_coef": 2.541, "is_default": false },
+        { "rings": 4, "init_speed_coef": 2.977, "is_default": false }
+      ]
+    },
+    {
+      "shell_id": "m853a1",
+      "display_name": "M853A1 Illumination",
+      "prefab_guid": "0000000000000012",
+      "role": "illumination",
+      "init_speed_m_s": 152.0,
+      "init_speed_variation": 3.0,
+      "mass_kg": 4.0,
+      "air_drag": 0.001488,
+      "side_air_drag_scale": 10.0,
+      "wind_influence_multiplier": 1.0,
+      "dispersion_multiplier": 1.0,
+      "time_to_live_s": 60.0,
+      "standard_dispersion_m": 15.0,
+      "charges": [
+        { "rings": 1, "init_speed_coef": 0.638, "is_default": false },
+        { "rings": 2, "init_speed_coef": 1.0, "is_default": true },
+        { "rings": 3, "init_speed_coef": 1.281, "is_default": false },
+        { "rings": 4, "init_speed_coef": 1.596, "is_default": false }
+      ],
+      "time_fuze": { "min_s": 10.0, "max_s": 40.0, "default_s": 24.0 }
+    },
+    {
+      "shell_id": "o-832du",
+      "display_name": "O-832DU HE",
+      "prefab_guid": "0000000000000013",
+      "role": "he",
+      "init_speed_m_s": 76.0,
+      "init_speed_variation": 3.0,
+      "mass_kg": 3.1,
+      "air_drag": 0.000615,
+      "side_air_drag_scale": 10.0,
+      "wind_influence_multiplier": 1.0,
+      "dispersion_multiplier": 1.0,
+      "time_to_live_s": 60.0,
+      "standard_dispersion_m": 15.0,
+      "charges": [
+        { "rings": 0, "init_speed_coef": 1.0, "is_default": true },
+        { "rings": 1, "init_speed_coef": 1.321, "is_default": false },
+        { "rings": 2, "init_speed_coef": 1.736, "is_default": false },
+        { "rings": 3, "init_speed_coef": 2.087, "is_default": false },
+        { "rings": 4, "init_speed_coef": 2.455, "is_default": false }
+      ]
+    }
+  ]
+}

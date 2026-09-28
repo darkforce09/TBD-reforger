@@ -12,10 +12,11 @@ apps/website/frontend/src/v2/core/api/client/
 ├── fetched.rs       `Fetched`: a settled request's data or its named failure, with no empty default
 ├── mod.rs           the module tree; re-exports the verbs, the failure types and the refresh policy
 ├── public_reads.rs  `public_get`: anonymous, cancellable GETs that never touch the session
+├── rate_limit_retry.rs  the rate-limit retry: a `429` waited out (`Retry-After`, 2 s default, 60 s cap) and sent again, three sends at most
 ├── refresh.rs       the refresh policy: one retry per 401, the per-tab single flight, the cross-tab lock
 ├── refusals.rs      `ApiRefusal`: a refused answer kept whole, with the reason its `details` names
 ├── requests.rs      the request verbs, the file upload and the cold-start `bootstrap`; browser-only
-└── tests/           unit tests for the retry contract, the refresh generations, refusals and `Fetched`
+└── tests/           unit tests for the retry contract, the rate-limit retry, the refresh generations, refusals and `Fetched`
 ```
 
 ## How it works
@@ -28,8 +29,8 @@ verb ─▶ wait for the cold-start restore ─▶ fetch /api/v1<path> with the 
      ─▶ body, or (status, message), or ApiRefusal for the `_keeping_refusal` verbs
 ```
 
-Every JSON verb goes through one private `request` function, and the file upload through the same
-refresh contract. A retry that is still 401, and any other status, goes back to the caller; status
+Every JSON verb and the multipart form verb go through one private `request` function, and the
+file upload through the same refresh contract. A retry that is still 401, and any other status, goes back to the caller; status
 `0` means the request never reached the backend or its body could not be read. A request whose
 session generation changed while it ran answers `(401, None)`, so no answer lands in the session
 that replaced the one that asked. Refresh tokens are single-use and the API revokes the whole

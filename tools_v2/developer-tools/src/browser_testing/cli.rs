@@ -3,6 +3,8 @@
 //!   `gate v-suite <verify|accept> [--leptos-dir d] [--only slug] [--note why]`
 //!   `gate s-routes`
 //!   `gate serve --dir <dist> [--port 5198] [--api-proxy http://127.0.0.1:8080] [--map-assets dir]`
+//!   `gate mortar-offline [--dist d] [--port 5402] [--debug-port 9402] [--api-corpus dir]`
+//!   `gate ballistics-agreement [--dist d] [--seed 1] [--count 32] [--catalog f] [--api-goldens d] [--timeout-s 600]`
 //!
 //! Exit codes: 0 green · 1 gate fail · 2 usage · 3 driver error.
 
@@ -123,6 +125,45 @@ enum Cmd {
         #[arg(long, default_value_t = false)]
         no_freeze: bool,
     },
+    /// The mortar calculator offline: pack download, service-worker reload, native solution
+    #[command(name = "mortar-offline")]
+    MortarOffline {
+        #[arg(long, default_value = "apps/website/frontend/dist")]
+        dist: PathBuf,
+        #[arg(long, default_value_t = 5402)]
+        port: u16,
+        #[arg(long, default_value_t = 9402)]
+        debug_port: u16,
+        /// The recorded API corpus served under `/api/`.
+        #[arg(long, default_value = crate::browser_testing::mortar_offline::API_CORPUS_DIR)]
+        api_corpus: PathBuf,
+    },
+    /// The fire-mission solver's wasm build against its native build, case by case
+    #[command(name = "ballistics-agreement")]
+    BallisticsAgreement {
+        #[arg(long, default_value = "apps/website/frontend/dist")]
+        dist: PathBuf,
+        #[arg(long, default_value_t = 1)]
+        seed: u64,
+        #[arg(long, default_value_t = 32)]
+        count: usize,
+        #[arg(
+            long,
+            default_value = crate::browser_testing::ballistics_agreement::COMMITTED_CATALOG
+        )]
+        catalog: PathBuf,
+        #[arg(
+            long,
+            default_value = crate::browser_testing::ballistics_agreement::API_GOLDENS
+        )]
+        api_goldens: PathBuf,
+        #[arg(long, default_value_t = 5407)]
+        port: u16,
+        #[arg(long, default_value_t = 9407)]
+        debug_port: u16,
+        #[arg(long, default_value_t = 600)]
+        timeout_s: u64,
+    },
     /// Static SPA server with COOP/COEP
     Serve {
         #[arg(long)]
@@ -200,6 +241,46 @@ pub fn run() -> ExitCode {
                 })
                 .await
             }
+            Cmd::MortarOffline {
+                dist,
+                port,
+                debug_port,
+                api_corpus,
+            } => {
+                crate::browser_testing::mortar_offline::run(
+                    &crate::browser_testing::mortar_offline::MortarOfflineArgs {
+                        dist,
+                        port,
+                        debug_port,
+                        api_corpus,
+                    },
+                )
+                .await
+            }
+            Cmd::BallisticsAgreement {
+                dist,
+                seed,
+                count,
+                catalog,
+                api_goldens,
+                port,
+                debug_port,
+                timeout_s,
+            } => {
+                crate::browser_testing::ballistics_agreement::run(
+                    &crate::browser_testing::ballistics_agreement::AgreementArgs {
+                        dist,
+                        seed,
+                        count,
+                        catalog,
+                        api_goldens,
+                        port,
+                        debug_port,
+                        timeout_s,
+                    },
+                )
+                .await
+            }
             Cmd::Serve {
                 dir,
                 port,
@@ -211,6 +292,7 @@ pub fn run() -> ExitCode {
                         dir: dir.clone(),
                         api_proxy,
                         map_assets: map_assets.map(MapAssetMounts::beside_terrains),
+                        api_fixture_corpus: None,
                     },
                     port,
                 )

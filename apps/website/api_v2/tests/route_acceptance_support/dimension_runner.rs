@@ -19,6 +19,7 @@
 
 use serde_json::Value;
 use website_api::core::middleware::{MAX_JSON_BODY, MAX_MULTIPART_BODY};
+use website_api::operations::handlers::ballistics_catalogs::upload::MAX_CATALOG_UPLOAD_BODY_BYTES;
 
 use super::contracts::{json_violations, schema_of};
 use super::derived_probes::{Plan, plan};
@@ -40,6 +41,9 @@ fn body_limit(row: &RouteRow, world_limit: i64) -> usize {
         None => MAX_JSON_BODY,
         Some(expr) if expr.ends_with("MAX_MULTIPART_BODY") => MAX_MULTIPART_BODY,
         Some(expr) if expr.ends_with("MAX_JSON_BODY") => MAX_JSON_BODY,
+        Some(expr) if expr.ends_with("MAX_CATALOG_UPLOAD_BODY_BYTES") => {
+            MAX_CATALOG_UPLOAD_BODY_BYTES
+        }
         Some("version_limit") => usize::try_from(world_limit).expect("a positive body limit"),
         Some(other) => panic!("{}: unknown route body limit `{other}`", row.key()),
     }

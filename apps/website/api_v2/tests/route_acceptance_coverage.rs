@@ -173,6 +173,12 @@ fn route_acceptance_route_table_holds_a_known_route_per_domain() {
     );
     let versions = find(rows, "POST /api/v1/missions/{id}/versions");
     assert_eq!(versions.body_limit.as_deref(), Some("version_limit"));
+    // A limit argument the formatter wraps onto its own line reads without its trailing comma.
+    let catalog_upload = find(rows, "POST /api/v1/ballistics-catalogs");
+    assert_eq!(
+        catalog_upload.body_limit.as_deref(),
+        Some("handlers::ballistics_catalogs::upload::MAX_CATALOG_UPLOAD_BODY_BYTES")
+    );
     assert_eq!(find(rows, "GET /api/v1/me").body_limit, None);
 }
 

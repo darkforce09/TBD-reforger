@@ -11,7 +11,9 @@ primitives, small utilities, and the helpers the crate's own tests share.
 apps/website/frontend/src/v2/core/
 ├── api/           the HTTP client, typed endpoint calls, wire types and the live status stream
 ├── auth/          the session store, the role ladder, the route guard and the link guard
+├── map_view/      the shared map seam: canvas, engine, camera fit, pump, navigation, 2 m heights
 ├── mod.rs         the module tree
+├── offline/       the service worker registration and the offline pack download, with its state
 ├── test_support/  the source scrubber, the captured API responses and the source pins, for tests
 ├── ui/            the interface primitives: gates, form controls, overlays, notices, layouts
 └── utils/         timestamps, the countdown, the avatar sanitiser and the clipboard write
@@ -27,11 +29,13 @@ From then on a page fetches through `api/`, gates on `auth/`, and draws with `ui
 |---|---|
 | `api/` | `auth/`: the store's tokens, the stored session, the single flight and the refresh transaction |
 | `auth/` | `api/`: `dto::MeResponse` and the client's refresh lock; `ui/`: the notice for a refused route |
+| `map_view/` | none |
+| `offline/` | none |
 | `ui/` | `auth/`: the store, for the gates |
 | `utils/` | `auth/`: the link guard; `ui/`: the toast context and the placeholder avatar |
 
-`mod.rs` declares `api/`, `auth/`, `ui/` and `utils/` without a `cfg` gate, so the native build
-compiles all four; browser-only code below them carries its own `#[cfg(target_arch = "wasm32")]`,
+`mod.rs` declares `api/`, `auth/`, `map_view/`, `offline/`, `ui/` and `utils/` without a `cfg`
+gate, so the native build compiles all six; browser-only code below them carries its own `#[cfg(target_arch = "wasm32")]`,
 on its item or on its `pub mod` line, so `cargo test -p website-frontend` runs the logic of all of
 it without a browser. `test_support/` compiles only in test builds.
 
@@ -53,6 +57,15 @@ route guard in `auth/` reads the route table of `crate::router`.
   `PageHeader`, `cn`, `SearchBox`, `Select`, `Slider`, `badge_class`, the `split_pane` layout, the
   `toast` context and viewport, and `modal_stack`, which the Mission Creator's overlays register
   with.
+- `map_view`: the map seam (`handles::MapViewHandles`, `engine_mount`, `frame_pump`, `resize`,
+  `navigation`, `mount::mount_map_view`, `camera_fit`, `terrain_height::TerrainHeights`,
+  `terrain_preferences`); see its README.
+- `offline`: `offline_status` and the `data-offline-state` / `data-offline-progress` attributes;
+  `offline_optional_files` (`OptionalFiles`: whether the pack's one optional part, the
+  cross-origin icon font, is cached) and the `data-offline-optional` attribute (`complete` or
+  `missing` once a download finishes), which the mortar calculator's offline line reads to add
+  its icon font notice; `service_worker_registration::register_at_boot` and
+  `offline_pack::OfflinePackRouteWatcher`, which `main.rs` calls and mounts; see its README.
 - `utils`: `countdown_label`, `safe_avatar_url`, the `datefmt` and `utc_timestamp` readers, and
   `clipboard::write_clipboard`.
 - `test_support`: the scrubber, fixtures and pins, for the crate's tests.
@@ -64,7 +77,10 @@ route guard in `auth/` reads the route table of `crate::router`.
   - the Mission Creator's `crate::v2::apps::editor::shell`, in four places: `auth/store.rs` calls
     `hydrate::purge_local_documents`, and `ui/search_box.rs`, `ui/select.rs` and `ui/slider.rs`
     import `layout::HOVER_FILL` and `layout::DISABLED_GLYPH`;
-  - `website_map_engine::data`, in the wire types;
+  - `website_map_engine::data`, in the wire types; `website_map_engine` `frame`, `camera`,
+    `streaming` and `world::terrain::dem`, in `map_view/`;
+  - `website_offline_service_worker` (cache names, request classes, the terrain pack list), in
+    `offline/`;
   - `leptos`, `leptos_router`, `gloo-net`, `gloo-timers`, `web-sys`, `js-sys`, `wasm-bindgen`,
     `wasm-bindgen-futures`, `futures`, `serde`, `serde_json`, `url` and `base64`.
 - Used by: `apps/website/frontend/src/router.rs`, for the roles; the pages under

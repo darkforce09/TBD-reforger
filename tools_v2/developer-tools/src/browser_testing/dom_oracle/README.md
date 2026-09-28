@@ -10,7 +10,7 @@ that feeds it, and the verify and accept modes that compare the capture with the
 ```text
 tools_v2/developer-tools/src/browser_testing/dom_oracle/
 ├── fixture_router.rs  what each intercepted request receives: a fixture, a canned reply or a miss
-├── routes.rs          the 25 routes, the auth seed, `capture_route`, `diff_node` and `run`
+├── routes.rs          the 26 routes, the auth seed, `capture_route`, `diff_node` and `run`
 └── run_modes.rs       the verify and accept loops over the selected routes
 ```
 
@@ -36,7 +36,7 @@ accept: validate_accept_dom ──▶ <slug>.dom.json, <slug>.png, manifest.json
 `fixture_router.rs` maps a request to the corpus in `apps/website/frontend/tests/fixtures/api/`:
 the method, two underscores, and the path after `/api/v1/` with every `/` as `__`, then `.json`
 (served minified) or `.sse.txt` (served as `text/event-stream`); the query string never selects a
-fixture. `/api/v1/auth/refresh` gets an access token from
+fixture. `/api/v1/auth/refresh` gets a complete Bearer token pair from `gate_refresh_answer` in
 `tools_v2/developer-tools/src/browser_testing/session_tokens.rs` and `/api/v1/auth/logout` an empty
 object. A signed-in capture answers 401 to an API request that carries no bearer token, as the
 API would, so the app's refresh installs the session. An API request with no fixture is let through

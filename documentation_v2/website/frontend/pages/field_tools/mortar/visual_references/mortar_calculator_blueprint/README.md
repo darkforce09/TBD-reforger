@@ -21,10 +21,13 @@ The blueprint shows a map on a fine grid with two markers and the line between t
 "Distance" (1,240 m), "Azimuth" (342.5°) and "Elevation" (1084 mils), a "Firing Solution" panel
 with the same three figures, and the hint "Drag markers on the map to recalculate.".
 
-The built page differs: the positions are typed into four number fields, and the preview draws
-the points on a plain frame with nothing to drag; the solution adds the charge and the time of
-flight; and the tube and [event](/documentation_v2/glossary/a_to_f.md#event) pickers, the saved state
-line and the saved fire missions are additions. The
+The built page follows the map and its markers: the guns and the target sit on the Everon map
+and are placed by a click or moved by a drag. It differs in the rest: positions are grid
+references with a height each, a battery of up to twelve guns shares one target, the weapon,
+shell, charge, wind and burst height are inputs, and the solution is a panel of battery rows,
+charge tables, a crest line, a fuze card and a dispersion card rather than three readouts; the
+[event](/documentation_v2/glossary/a_to_f.md#event) picker, the offline pack line and the saved
+fire missions are additions. The
 [mortar calculator page](/documentation_v2/website/frontend/pages/field_tools/mortar/mortar_calculator_page.md)
 feature doc holds the full comparison.
 

@@ -14,6 +14,7 @@ use crate::v2::pages::account::login::LoginPage;
 use crate::v2::pages::account::settings::SettingsPage;
 use crate::v2::pages::administration::approvals::MissionApprovalsPage;
 use crate::v2::pages::administration::audit_logs::AuditLogsPage;
+use crate::v2::pages::administration::ballistics_catalogs::BallisticsCatalogsPage;
 use crate::v2::pages::administration::content_manager::ContentManagerPage;
 use crate::v2::pages::administration::personnel::PersonnelRosterPage;
 use crate::v2::pages::administration::server_control::ServerControlPage;
@@ -76,6 +77,10 @@ pub fn AppRoutes() -> impl IntoView {
                 path=path!("/debug/world-los")
                 view=crate::v2::apps::debug::world_los::WorldLosPage
             />
+            <Route
+                path=path!("/debug/ballistics-agreement")
+                view=crate::v2::apps::debug::ballistics_agreement::BallisticsAgreementPage
+            />
             <Route path=path!("/settings") view=SettingsPage />
             <Route path=path!("/admin/events") view=crate::v2::pages::administration::event_manager::EventManagerPage />
             <Route path=path!("/admin/approvals") view=MissionApprovalsPage />
@@ -83,6 +88,7 @@ pub fn AppRoutes() -> impl IntoView {
             <Route path=path!("/admin/personnel") view=PersonnelRosterPage />
             <Route path=path!("/admin/content") view=ContentManagerPage />
             <Route path=path!("/admin/audit") view=AuditLogsPage />
+            <Route path=path!("/admin/ballistics-catalogs") view=BallisticsCatalogsPage />
         </Routes>
     }
 }

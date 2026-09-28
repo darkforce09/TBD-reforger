@@ -54,3 +54,4 @@ pub(crate) mod cli;
 pub(crate) mod dispatch;
 
 pub(crate) mod terrain_export;
+pub(crate) mod tile_index;

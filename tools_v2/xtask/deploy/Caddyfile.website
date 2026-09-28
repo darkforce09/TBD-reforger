@@ -16,6 +16,10 @@
 	header Cross-Origin-Opener-Policy same-origin
 	header Cross-Origin-Embedder-Policy credentialless
 
+	# The offline service worker loader revalidates on every update check, so a new build's
+	# worker is found on the next visit.
+	header /service_worker.js Cache-Control no-cache
+
 	handle /api/* {
 		reverse_proxy 127.0.0.1:8080
 	}

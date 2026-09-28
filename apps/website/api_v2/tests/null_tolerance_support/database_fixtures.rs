@@ -16,6 +16,7 @@ use website_api::core::configuration::Config;
 use website_api::core::database;
 use website_api::core::http_router;
 
+use super::fire_mission_fixtures::{ballistics_catalog_sweep, seed_fire_missions};
 use super::{NULL_UID, OBSERVABILITY_TOKEN, REACHABILITY_KEEP, STATE_BOUND_KEEP, SweepCaller};
 use crate::common;
 
@@ -563,14 +564,7 @@ pub async fn seed(pool: &PgPool) -> Seed {
     // clear the very column the WHERE clause matches on. `blast_nulls` enforces that.
     rows.push(("audit_logs", "action = 'null.seed'".into()));
 
-    exec!(
-        "INSERT INTO fire_missions (event_id, created_by, weapon_system, fp_grid, target_grid, distance_m, azimuth_deg, elevation_mils, created_at) \
-         VALUES ($1, $2, 'm252', '012345', '054321', 1000, 90.0, 800, now())",
-        event,
-        NULL_UID
-    );
-    // `created_by`, not `event_id` — see the audit_logs note.
-    rows.push(("fire_missions", format!("created_by = '{NULL_UID}'")));
+    rows.extend(seed_fire_missions(pool, event).await);
 
     exec!(
         "INSERT INTO identity_link_codes (code, discord_id, arma_id, expires_at, consumed_at, created_at) \
@@ -993,4 +987,7 @@ pub fn route_sweep(s: &Seed) -> Vec<(&'static str, String, SweepCaller)> {
             SweepCaller::Member,
         ),
     ]
+    .into_iter()
+    .chain(ballistics_catalog_sweep())
+    .collect()
 }

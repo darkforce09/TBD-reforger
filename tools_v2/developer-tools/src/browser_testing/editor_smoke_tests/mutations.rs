@@ -1,5 +1,5 @@
 use super::*;
-use crate::browser_testing::session_tokens::gate_access_token;
+use crate::browser_testing::session_tokens::gate_refresh_answer;
 use crate::repository_layout::MapAssetMounts;
 use std::path::Path;
 
@@ -128,10 +128,7 @@ pub async fn r_auth(dist_override: Option<String>) -> Result<u8> {
                     rp.fulfill_json(
                         request_id,
                         200,
-                        &json!({
-                            "access_token": gate_access_token("auth-refresh"), "refresh_token": "new-rt",
-                            "expires_at": "2026-01-01T01:00:00Z",
-                        }),
+                        &gate_refresh_answer("auth-refresh", "new-rt", "2026-01-01T01:00:00Z"),
                     )
                     .await
                 } else if u.contains("/api/v1/me") {

@@ -56,7 +56,7 @@ their links, as `nav_config.rs` labels them:
 | "Mission Hub" | "Mission Library" `/missions` |
 | "Field Tools" | "Mortar Calculator" `/tools/mortar` |
 | "Doctrine & Info" | "SOPs & Manuals" `/wiki`, "Vehicle Database" `/vehicles`, "Modpacks" `/modpacks` |
-| "Administration" | "Event Manager" `/admin/events`, "Mission Approvals" `/admin/approvals`, "Server Control" `/admin/server`, "Personnel Roster" `/admin/personnel`, "Comms Broadcaster" `/admin/content`, "Audit Logs" `/admin/audit` |
+| "Administration" | "Event Manager" `/admin/events`, "Mission Approvals" `/admin/approvals`, "Server Control" `/admin/server`, "Personnel Roster" `/admin/personnel`, "Comms Broadcaster" `/admin/content`, "Audit Logs" `/admin/audit`, "Ballistics Catalogs" `/admin/ballistics-catalogs` |
 
 The top bar shows the route's breadcrumb from `router::breadcrumb`. Its account area renders from a
 memo of the name, avatar and linked Arma identity, so a profile poll that changes none of them

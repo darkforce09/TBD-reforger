@@ -3,13 +3,14 @@
 # Export addon Workbench exporter documentation
 
 The deeper documents of the export addon's [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)
-exporters: the map exporters that feed the terrain data, and the acceptance evidence of the
-equipment and vehicle source exporter.
+exporters: the map exporters that feed the terrain data, the acceptance evidence of the
+equipment and vehicle source exporter, and the ballistics oracle.
 
 ## Contents
 
 ```text
 documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/
+├── BallisticsOracle/        the ballistics oracle feature doc
 ├── EquipmentVehicleExport/  the equipment and vehicle exporter's acceptance evidence
 └── MapExport/               the map export feature doc and the terrain export runbook
 ```
@@ -24,6 +25,7 @@ plugin have no documents here: their code READMEs cover them.
 |---|---|---|
 | Map export | the Net API handler `EMCP_WB_TbdBlueprint` through `cargo xtask mcp wbcall`; no menu entries | [map export](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md), [terrain export runbook](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/MapExport/terrain_export_runbook.md) |
 | Equipment and vehicle source export | the menu entry "Export Equipment and Vehicles" and the Net API handler `EMCP_WB_SourceExport` | [acceptance evidence](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/README.md) |
+| Ballistics oracle | the menu entry "Ballistics Oracle", then playing the export world | [ballistics oracle](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/ballistics_oracle.md) |
 | Registry items | none: the plugin's menu entry is commented out | none |
 
 ## Code

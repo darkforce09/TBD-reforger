@@ -1,11 +1,20 @@
-//! Attaches canvas gestures, cancellation, and resize listeners.
+//! Attaches the Mission Creator's canvas gestures, cancellation and resize tracking.
+//!
+//! **Role:** wires the editor's pointer gestures and hotkeys, the pointer-leave and
+//! pointer-cancel resets, and the shared map seam's resize tracking
+//! ([`crate::v2::core::map_view::resize::observe_container_resize`]) to the mounted canvas.
+//! **Position:** called last by the canvas mount, after the boot tasks started.
+//! **Signals & state:** the in-flight pan and the hover state live for the mount; the mount's
+//! `disposed` flag is set when the page unmounts.
+//! **Invariants:** a cancelled pointer releases its capture and rolls back whatever gesture it
+//! held; nothing resizes or draws after disposal.
 
 use super::*;
 use crate::v2::apps::editor::bridge::host_state::armed_placement;
+use crate::v2::core::map_view::handles::MapViewHandles;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::atomic::Ordering;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
@@ -13,17 +22,13 @@ use wasm_bindgen::JsCast;
 pub(super) struct InputContext {
     pub container: web_sys::HtmlDivElement,
     pub canvas: web_sys::HtmlCanvasElement,
-    pub engine: Rc<RefCell<Option<website_map_engine::frame::engine::RenderEngine>>>,
+    pub view: MapViewHandles,
     pub doc: mission_doc::DocHandle,
     pub selection: selection::SelectionHandle,
     pub left: Rc<RefCell<Option<selection::LeftGesture>>>,
-    pub map_host: website_map_engine::streaming::host::HostHandle,
-    pub dem_grid: website_map_engine::streaming::host::DemGridHandle,
     pub ruler: Rc<RefCell<website_map_engine::editing::tools::ruler::RulerChain>>,
     pub los: Rc<RefCell<LosState>>,
     pub viewshed: Rc<RefCell<ViewshedState>>,
-    pub win: web_sys::Window,
-    pub disposed: Arc<AtomicBool>,
     pub cursor: RwSignal<Option<(f64, f64, Option<f64>)>>,
     pub tool_mode: RwSignal<website_map_engine::editing::tools::ruler::EditorTool>,
     pub los_mode: RwSignal<LosMode>,
@@ -45,17 +50,13 @@ pub(super) fn attach(ctx: InputContext) {
     let InputContext {
         container,
         canvas,
-        engine,
+        view,
         doc,
         selection,
         left,
-        map_host,
-        dem_grid,
         ruler,
         los,
         viewshed,
-        win,
-        disposed,
         cursor,
         tool_mode,
         los_mode,
@@ -71,6 +72,9 @@ pub(super) fn attach(ctx: InputContext) {
         dock_right_collapsed,
         debug_hud_shown,
     } = ctx;
+    let engine = view.engine.clone();
+    let map_host = view.map_host.clone();
+    let dem_grid = view.dem_grid.clone();
     let pan_px: Rc<Cell<Option<(f64, f64)>>> = Rc::new(Cell::new(None));
 
     let hover_state: Rc<Cell<HoverState>> = Rc::new(Cell::new(HoverState::default()));
@@ -128,7 +132,7 @@ pub(super) fn attach(ctx: InputContext) {
         let container = container.clone();
         let left = left.clone();
         let engine = engine.clone();
-        let doc = doc.clone(); // T-796 — to re-bind the comment lane on a cancelled drag
+        let doc = doc.clone(); // re-binds the comment lane on a cancelled drag
         move |ev: web_sys::PointerEvent| {
             armed_placement::cancel_pending();
             engine_ops::cancel_connect();
@@ -168,10 +172,8 @@ pub(super) fn attach(ctx: InputContext) {
                         e.upload_marquee(0.0, 0.0, 0.0, 0.0, false);
                     }
                 }
-                Some(LG::Rotate { .. }) => {
-                    if container.has_pointer_capture(ev.pointer_id()) {
-                        let _ = container.release_pointer_capture(ev.pointer_id());
-                    }
+                Some(LG::Rotate { .. }) if container.has_pointer_capture(ev.pointer_id()) => {
+                    let _ = container.release_pointer_capture(ev.pointer_id());
                 }
                 _ => {}
             }
@@ -184,27 +186,10 @@ pub(super) fn attach(ctx: InputContext) {
     let _ = container
         .add_event_listener_with_callback("pointerleave", onpointerleave.as_ref().unchecked_ref());
 
-    let onresize = Closure::<dyn FnMut()>::new({
-        let engine = engine.clone();
-        let canvas = canvas.clone();
-        let container = container.clone();
-        move || {
-            let dpr = web_sys::window()
-                .map(|w| w.device_pixel_ratio())
-                .unwrap_or(1.0);
-            let rect = container.get_bounding_client_rect();
-            let (dw, dh) = device_size(rect.width(), rect.height(), dpr);
-            canvas.set_width(dw);
-            canvas.set_height(dh);
-            if let Some(e) = engine.borrow_mut().as_mut() {
-                let _ = e.resize(rect.width(), rect.height(), dpr);
-            }
-        }
-    });
-    let _ = win.add_event_listener_with_callback("resize", onresize.as_ref().unchecked_ref());
+    crate::v2::core::map_view::resize::observe_container_resize(&container, &canvas, &view);
 
-    onresize.forget();
     onpointercancel.forget();
     onpointerleave.forget();
+    let disposed = view.disposed.clone();
     on_cleanup(move || disposed.store(true, Ordering::Relaxed));
 }

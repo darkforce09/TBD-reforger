@@ -17,7 +17,7 @@ crate-type = ["rlib"]
 # scheduler. `default` is now `scenario` alone so `website-api` links the compiler and nothing else.
 [features]
 default = ["scenario"]
-scenario = ["dep:serde", "dep:serde_json", "dep:thiserror"]
+scenario = ["dep:serde", "dep:serde_json", "dep:thiserror", "dep:libm"]
 store = ["scenario", "dep:yrs"]
 bvh = []
 # `dep:website-graphics-engine` sits HERE and not on `render` alone. Measured, not guessed: the
@@ -52,6 +52,8 @@ png = { version = "0.17", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
 serde_json = { version = "1", optional = true, features = ["preserve_order"] }
 thiserror = { version = "2", optional = true }
+# Pure-Rust transcendentals for the shell flight model: the same bits on native and wasm32.
+libm = { version = "0.2", optional = true }
 # The CRDT layer behind `store` (folded in from `website-mission-core` at T-0xx Phase 2A).
 yrs = { version = "0.27", optional = true }
 flate2 = { version = "1", optional = true }
@@ -79,3 +81,6 @@ serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
 # The editing layer hands a host-supplied async read to `editing::persist::merge_policy`, so a
 # native test of that ordering needs an executor to drive the future to completion.
 futures = "0.3"
+# The catalog tests validate their sample against `contracts_v2/definitions/ballistics-catalog.schema.json`
+# with the same validator the xtask schema checks use.
+jsonschema = { version = "0.46.10", default-features = false }

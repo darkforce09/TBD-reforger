@@ -45,7 +45,9 @@ reqwest = { version = "0.13.4", default-features = false, features = ["json", "c
 rust_decimal = { version = "1.42.1", features = ["db-postgres"] }
 rustls = { version = "0.23.41", default-features = false, features = ["ring", "std", "tls12", "logging"] }
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = { version = "1.0.150", features = ["raw_value"] }
+# float_roundtrip parses every number bit-exactly, so a fire solution re-solved from a client or
+# catalog document starts from the same f64 inputs the wasm client used.
+serde_json = { version = "1.0.150", features = ["float_roundtrip", "raw_value"] }
 sha2 = "0.11.0"
 sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "sqlite-bundled", "uuid", "chrono", "json", "macros", "migrate", "rust_decimal"] }
 subtle = "2.6.1"

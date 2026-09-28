@@ -8268,6 +8268,7 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
  "website-map-engine",
+ "website-offline-service-worker",
 ]
 
 [[package]]
@@ -8293,6 +8294,8 @@ dependencies = [
  "futures",
  "gloo-net",
  "js-sys",
+ "jsonschema",
+ "libm",
  "png 0.17.16",
  "rkyv 0.8.18",
  "serde",
@@ -8304,6 +8307,19 @@ dependencies = [
  "website-graphics-engine",
  "wgpu 29.0.4",
  "yrs",
+]
+
+[[package]]
+name = "website-offline-service-worker"
+version = "0.1.0"
+dependencies = [
+ "js-sys",
+ "serde",
+ "serde_json",
+ "url",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]

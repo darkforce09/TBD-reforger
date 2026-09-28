@@ -1,7 +1,7 @@
 # DOM oracle goldens
 
 The frozen reference captures that `gate v-suite` compares the single-page app against: for each of
-the 25 routes it checks, the page's normalized DOM tree and a screenshot, plus a manifest that
+the 26 routes it checks, the page's normalized DOM tree and a screenshot, plus a manifest that
 records where each golden came from.
 
 ## Contents

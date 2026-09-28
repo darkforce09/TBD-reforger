@@ -64,6 +64,9 @@ enum Body {
     /// content type is set by hand, because the call that normally sets it is exactly the one this
     /// variant exists to skip, and the backend's JSON extractor rejects the request without it.
     Raw(std::rc::Rc<String>),
+    /// A multipart form, shared between attempts: cloning copies the browser handle, not the
+    /// parts. The content type is left to the browser, which adds the boundary for form data.
+    Form(web_sys::FormData),
 }
 
 /// One request through the client's contract: inject the bearer token, single-flight a `401`
@@ -109,6 +112,7 @@ async fn request<T: DeserializeOwned + Clone + 'static>(
                 Body::Raw(s) => req
                     .header("Content-Type", "application/json")
                     .body(s.as_str()),
+                Body::Form(form) => req.body(form.clone()),
                 Body::None => req.build(),
             };
             let Ok(req) = built else {
@@ -344,6 +348,16 @@ pub async fn api_delete_keeping_refusal<T: DeserializeOwned>(
     path: &str,
 ) -> Result<T, ApiRefusal> {
     request_keeping_refusal(store, gloo_net::http::Method::DELETE, path, Body::None).await
+}
+
+/// `POST` `path` with a multipart form body, keeping a refusal's structured reason.
+#[allow(dead_code)] // Called only from browser-side pages; the native build has no caller.
+pub async fn api_post_form_keeping_refusal<T: DeserializeOwned>(
+    store: AuthStore,
+    path: &str,
+    form: web_sys::FormData,
+) -> Result<T, ApiRefusal> {
+    request_keeping_refusal(store, gloo_net::http::Method::POST, path, Body::Form(form)).await
 }
 
 /// `POST` a multipart upload under the form field `file`.

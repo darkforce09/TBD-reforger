@@ -10,6 +10,7 @@ work its commands do. The tree above them lives in `tools_v2/xtask/src/cli/`, th
 ```text
 tools_v2/xtask/src/commands/
 ├── agent_context/  `ai`: the agent tool-call guard hook and the filtered command runner
+├── ballistics/     `ballistics`: the game ballistics catalog and calibration fixtures from the export
 ├── build/          `mk`: build, lint, test and development-server recipes, and the target-dir checks
 ├── ci/             `ci` and `help`: the CI, schema, verify and map task table and its runner
 ├── db/             `db`: local Postgres, seeds, backups, integration tests, milestone announcement

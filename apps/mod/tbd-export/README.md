@@ -13,9 +13,9 @@ plays the export [mission header](/documentation_v2/glossary/g_to_m.md#mission-h
 apps/mod/tbd-export/
 ├── addon.gproj           the `TBD_Export` project: GUID, title, dependencies on vanilla and `TBD_EMCP`
 ├── Missions/             the export mission header that boots the export world
-├── Prefabs/              the export game mode prefab that carries the road export component
+├── Prefabs/              the export game mode prefab that carries the road export and ballistics oracle components
 ├── resourceDatabase.rdb  the addon's resource database, which Workbench maintains
-├── Scripts/              the exporters: the runtime road export and the Workbench module
+├── Scripts/              the exporters: the runtime road export, the ballistics oracle and the Workbench module
 └── worlds/               the export world, a sub-scene of vanilla Everon with the export game mode
 ```
 
@@ -37,13 +37,15 @@ Workbench, apps/mod/tbd-export/addon.gproj open
 
 Missions/TBD_Export_Everon.conf ──▶ worlds/TBD_Export_Everon.ent ──▶ Prefabs/Systems/TBD_Export_GameMode.et
    └─ played: Scripts/Game/ road export ──▶ $profile:TBD_Export/everon/roads/
+              Scripts/Game/ ballistics oracle simulation ──▶ $profile:TBD_BallisticsOracle/<generation id>/
 ```
 
 The [EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript) under `Scripts/` holds two modules:
-`Scripts/Game/` compiles into the game and holds only the runtime road network export, which the
-export game mode component runs once the export world plays; `Scripts/WorkbenchGame/` compiles
+`Scripts/Game/` compiles into the game and holds the runtime road network export and the
+ballistics oracle's simulation run, which the export game mode components run once the export
+world plays; `Scripts/WorkbenchGame/` compiles
 into Workbench and holds the map layer exporters, the equipment and vehicle source exporter with
-its diagnostic menu entries, and the item registry export. `Missions/`, `worlds/` and `Prefabs/`
+its diagnostic menu entries, the item registry export and the ballistics oracle menu entry. `Missions/`, `worlds/` and `Prefabs/`
 exist for the road export: the header boots the export world, a sub-scene of vanilla
 [Eden](/documentation_v2/glossary/a_to_f.md#eden) (Everon), whose layer places the export game mode
 and Eden's AI world. The developer tools read the exports from the Workbench profile folder, which

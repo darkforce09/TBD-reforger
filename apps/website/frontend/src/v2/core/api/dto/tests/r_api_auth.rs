@@ -67,23 +67,30 @@ fn members_envelope() {
 // Their answers carry values the server generates per request; the goldens hold the fixed
 // placeholders of the API's golden normalisation table at those fields.
 
-/// The rotated pair as the session store decodes it. `token_type` is always `Bearer` and no field
-/// reads it, so it rides a test-local catch-all beside the DTO and is listed as unclaimed.
-#[derive(Serialize, Deserialize)]
-struct RefreshAnswer {
-    #[serde(flatten)]
-    pair: crate::v2::core::auth::session::RefreshResponse,
-    #[serde(flatten)]
-    unread: serde_json::Map<String, Value>,
-}
-
+/// The rotated pair as the session store decodes it. `token_type` is claimed: the read requires
+/// `Bearer`, and the write emits it again.
 #[test]
 fn session_refresh() {
     const G: &str = golden!("POST__auth__refresh.json");
-    assert_golden::<RefreshAnswer>(G, &["token_type"]);
-    let answer: RefreshAnswer = serde_json::from_str(G).unwrap();
-    assert!(!answer.pair.access_token.is_empty() && !answer.pair.refresh_token.is_empty());
-    assert_eq!(answer.unread.get("token_type"), Some(&json!("Bearer")));
+    assert_golden::<crate::v2::core::auth::session::RefreshResponse>(G, &[]);
+    let pair: crate::v2::core::auth::session::RefreshResponse = serde_json::from_str(G).unwrap();
+    assert!(!pair.access_token.is_empty() && !pair.refresh_token.is_empty());
+}
+
+/// A pair whose token type is anything but `Bearer`, or that carries none, fails the read.
+#[test]
+fn session_refresh_refuses_a_token_type_other_than_bearer() {
+    let mut pair: Value = serde_json::from_str(golden!("POST__auth__refresh.json")).unwrap();
+    pair["token_type"] = json!("Basic");
+    let refused =
+        serde_json::from_value::<crate::v2::core::auth::session::RefreshResponse>(pair.clone());
+    assert!(refused.is_err(), "a Basic token type must fail the read");
+    pair.as_object_mut().unwrap().remove("token_type");
+    let refused = serde_json::from_value::<crate::v2::core::auth::session::RefreshResponse>(pair);
+    assert!(
+        refused.is_err(),
+        "a pair without its token type must fail the read"
+    );
 }
 
 #[test]

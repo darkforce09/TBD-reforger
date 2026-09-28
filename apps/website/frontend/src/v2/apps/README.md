@@ -26,7 +26,7 @@ it renders without the sidebar and the top bar:
 | Workspace | Routes | Access |
 |---|---|---|
 | `editor/` | `/missions/:id/edit`, and `/missions/:id/artifacts/:artifact_id/workspace` through the mission hub's review workspace page | `mission_maker` |
-| `debug/` | `/debug/building-viewer`, `/debug/world-los` | `none`; no navigation entry |
+| `debug/` | `/debug/building-viewer`, `/debug/world-los`, `/debug/ballistics-agreement` | `none`; no navigation entry |
 | `aar/`, `planner/` | no route; `mod.rs` declares no module for them | not routed |
 
 A workspace creates its own `RenderEngine` from `website_map_engine::frame` and reaches the
@@ -38,8 +38,8 @@ handle compiles for `wasm32` only, so the native test build covers each workspac
 ## Public surface
 
 - The route components `apps/website/frontend/src/app_routes.rs` mounts:
-  `editor::mission_editor::MissionEditorPage`, `debug::building_viewer::BuildingViewerPage` and
-  `debug::world_los::WorldLosPage`.
+  `editor::mission_editor::MissionEditorPage`, `debug::building_viewer::BuildingViewerPage`,
+  `debug::world_los::WorldLosPage` and `debug::ballistics_agreement::BallisticsAgreementPage`.
 - The Mission Creator's review mode and shell helpers, which pages and `crate::v2::core` reuse; the
   [editor README](/apps/website/frontend/src/v2/apps/editor/README.md) lists them.
 

@@ -9,7 +9,7 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::browser_testing::session_tokens::gate_access_token;
+use crate::browser_testing::session_tokens::gate_refresh_answer;
 use serde_json::{Value, json};
 
 /// The fixture corpus — shared with the frontend's R-api round-trip tests and the editor smokes.
@@ -80,11 +80,11 @@ pub(super) fn fixture_for(method: &str, url: &str) -> Option<(PathBuf, &'static 
 /// Decide one request. `url` is the full request URL; `method` is its HTTP verb.
 pub(super) fn route(method: &str, url: &str) -> Reply {
     if url.contains("/api/v1/auth/refresh") {
-        return Reply::Canned(json!({
-            "access_token": gate_access_token("dom-oracle"),
-            "refresh_token": "rt-v2",
-            "expires_at": "2026-01-01T01:00:00Z"
-        }));
+        return Reply::Canned(gate_refresh_answer(
+            "dom-oracle",
+            "rt-v2",
+            "2026-01-01T01:00:00Z",
+        ));
     }
     if url.contains("/api/v1/auth/logout") {
         return Reply::Canned(json!({}));

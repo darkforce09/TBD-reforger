@@ -28,12 +28,14 @@ exporter. Start from the exporter you need:
 | Runtime road network | [Export game scripts](/apps/mod/tbd-export/Scripts/Game/TBD/Export/README.md) | playing the export mission header | [map export](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) |
 | Equipment and vehicle source export | [EquipmentVehicleExport](/apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/README.md) | menu "Export Equipment and Vehicles"; Net API `EMCP_WB_SourceExport` | [acceptance evidence](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/README.md) |
 | Equipment and vehicle diagnostics | [EquipmentExport](/apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/README.md), [VehicleExport](/apps/mod/tbd-export/Scripts/WorkbenchGame/VehicleExport/README.md) | their menu entries | the code READMEs |
+| Ballistics oracle: engine ballistic tables, trajectory simulation and gravity of the vanilla mortar shells | [BallisticsOracle plugin](/apps/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/README.md), [game scripts](/apps/mod/tbd-export/Scripts/Game/TBD/Export/BallisticsOracle/README.md) | menu "Ballistics Oracle", then playing the export mission header | [ballistics oracle](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/ballistics_oracle.md) |
 | Registry items and compatibility | `apps/mod/tbd-export/Scripts/WorkbenchGame/TBD_RegistryItemsExportPlugin.c` | none: its menu entry is commented out | the [contract catalogs](/contracts_v2/catalogs/README.md) it feeds |
 
 The addon also carries its own export world and
 [mission header](/documentation_v2/glossary/g_to_m.md#mission-header) (`apps/mod/tbd-export/worlds/`,
 `apps/mod/tbd-export/Missions/`) and the export game mode prefab
-(`apps/mod/tbd-export/Prefabs/Systems/`), which the runtime road export needs.
+(`apps/mod/tbd-export/Prefabs/Systems/`), which the runtime road export and the ballistics
+oracle's simulation run need.
 
 ```text
                      addon.gproj dependencies

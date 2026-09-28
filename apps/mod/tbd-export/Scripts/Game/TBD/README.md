@@ -2,13 +2,13 @@
 
 The export addon's [EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript) that compiles into the game
 rather than into [Workbench](/documentation_v2/glossary/n_to_z.md#workbench): the runtime road network
-export, which runs inside a playing export world.
+export and the ballistics oracle's simulation run, which run inside a playing export world.
 
 ## Contents
 
 ```text
 apps/mod/tbd-export/Scripts/Game/TBD/
-└── Export/  the runtime road network exporter: a game mode component and its helpers
+└── Export/  the runtime road network exporter and the ballistics oracle simulation run: game mode components and helpers
 ```
 
 ## How it works
@@ -16,11 +16,15 @@ apps/mod/tbd-export/Scripts/Game/TBD/
 The folder holds one subsystem, `Export/`. The export game mode prefab
 carries `TBD_RoadExportComponent`; playing the export
 [mission header](/documentation_v2/glossary/g_to_m.md#mission-header) starts it, and it writes the road
-files to `$profile:TBD_Export/everon/roads/`.
+files to `$profile:TBD_Export/everon/roads/`. It also carries
+`TBD_BallisticsOracleSimulationComponent`, which samples the engine's projectile simulation into
+`$profile:TBD_BallisticsOracle/<generation id>/` when the Workbench ballistics oracle has recorded
+a generation.
 
 ## Authority
 
-- Server: the road export, which returns on a client (`RplSession.Mode()` is `RplMode.Client`).
+- Server: the road export and the ballistics oracle simulation run, which return on a client
+  (`RplSession.Mode()` is `RplMode.Client`).
 - Client: nothing.
 - Owner: nothing.
 - RPCs: none.

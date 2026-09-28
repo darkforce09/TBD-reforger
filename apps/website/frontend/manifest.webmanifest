@@ -1,0 +1,11 @@
+{
+  "name": "TBD Reforger",
+  "short_name": "TBD",
+  "description": "The TBD Arma Reforger community platform: events, missions, the Mission Creator and field tools that work offline.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0d1322",
+  "theme_color": "#0d1322"
+}

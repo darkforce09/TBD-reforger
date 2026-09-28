@@ -58,12 +58,14 @@ a subcommand prints its usage, and a clap usage error exits 2.
 ### gate
 
 - Synopsis: `gate <COMMAND>`: `v-suite`, `s-routes`, `smoke`, `editor-suite`, `doctor`, `r-auth`,
-  `render-check`, `serve`, `equipment-data-viewer`.
+  `render-check`, `serve`, `equipment-data-viewer`, `mortar-offline`, `ballistics-agreement`.
 - Does: drives headless Chromium over the DevTools protocol against the built app: the DOM oracle
   (`v-suite verify|accept`), the route-table drift check (`s-routes`), one Mission Creator smoke or
   the whole suite, the session-refresh gate (`r-auth`), a render check with an optional probe script
   and screenshot, a static server with the cross-origin isolation headers, and a live check of the
-  equipment data viewer through a running website (`equipment-data-viewer`); `doctor` is the
+  equipment data viewer through a running website (`equipment-data-viewer`), and the mortar
+  calculator with the server gone (`mortar-offline`), and the fire-mission solver's WebAssembly
+  build against its native build (`ballistics-agreement`); `doctor` is the
   preflight the others rely on, checked against `tools_v2/developer-tools/gate-env.json`.
 - Exit codes: 0 green; 1 a gate failed; 2 usage; 3 a driver error.
 - Example: `cargo run -q -p developer-tools --bin gate -- doctor`

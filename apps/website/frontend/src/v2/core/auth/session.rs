@@ -56,13 +56,53 @@ pub struct Session {
     pub arma_linked: bool,
 }
 
-/// The rotated pair a refresh returns; its `token_type` is not read.
+/// The rotated pair a refresh returns. On the wire it also carries `token_type`, which is always
+/// `Bearer`: the read requires it and refuses any other value, and the write emits it, so the
+/// type holds only the three values a session uses.
 /// @contract session-token.schema.json#/definitions/SessionTokenPair
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[serde(from = "SessionTokenPairWire", into = "SessionTokenPairWire")]
 pub struct RefreshResponse {
     pub access_token: String,
     pub refresh_token: String,
     pub expires_at: String,
+}
+
+/// The token scheme of a [`RefreshResponse`]; the contract fixes it to `Bearer`.
+#[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+enum BearerTokenType {
+    Bearer,
+}
+
+/// The wire form of a [`RefreshResponse`]: its three values plus the constant token type.
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SessionTokenPairWire {
+    access_token: String,
+    refresh_token: String,
+    expires_at: String,
+    token_type: BearerTokenType,
+}
+
+impl From<SessionTokenPairWire> for RefreshResponse {
+    fn from(wire: SessionTokenPairWire) -> Self {
+        Self {
+            access_token: wire.access_token,
+            refresh_token: wire.refresh_token,
+            expires_at: wire.expires_at,
+        }
+    }
+}
+
+impl From<RefreshResponse> for SessionTokenPairWire {
+    fn from(pair: RefreshResponse) -> Self {
+        Self {
+            access_token: pair.access_token,
+            refresh_token: pair.refresh_token,
+            expires_at: pair.expires_at,
+            token_type: BearerTokenType::Bearer,
+        }
+    }
 }
 
 /// Browser-storage key the session slice is persisted under.

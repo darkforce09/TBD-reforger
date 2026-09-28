@@ -11,12 +11,15 @@ attendance derived from match results.
 ```text
 apps/website/api_v2/src/operations/services/
 ├── access_administration/         stored access settings and the evidence explaining them
+├── ballistics_catalogs/           catalog upload judgement and the immutable catalog store
 ├── event_access/                  policy evaluation, membership facts and visibility
 ├── event_lifecycle_sweep.rs       stores the derived event status and audits each move
 ├── event_lifecycle_transition.rs  stores an event's status before its schedule changes
 ├── event_lookup.rs                the event and event-mission reads a handler starts from
 ├── event_reservations/            every reservation writer: locks, planning, claims, promotion
 ├── event_status_rules.rs          the derived event status and the operator's transitions
+├── fire_mission_resolve.rs        a fire-mission save re-solved and checked against the client
+├── fire_mission_store.rs          the transactional fire-mission insert and the per-event read
 ├── live_slot_occupancy.rs         authorize a player life into a slot, and end one
 ├── mod.rs                         the module tree; re-exports the map engine's ORBAT template
 └── participation_attribution.rs   match provenance and the attendance derived from results
@@ -42,6 +45,12 @@ be linked, the account available and the slot free of any other open life. An al
 recorded under the runtime's life id, so a retry gets it unchanged, and releasing a reservation
 never ends a life. Its lock order is event and attachment (share), identity, account, slot, runtime
 session (share), the order the reservation writers in `event_reservations/` also follow.
+
+`fire_mission_resolve.rs` loads the catalog version a fire-mission save pins, re-solves the save
+with the map engine's one assembler on the blocking pool, and compares the client's solution with
+the re-solve (1 mil in the weapon's convention, 0.1 s); `fire_mission_store.rs` then writes the
+mission and one row per gun in one transaction, the lead gun's fired charge in the single-tube
+columns, and reads an event's missions with their guns.
 
 `participation_attribution.rs` derives attendance from finalized match results: a reservation
 active when its exact event mission's match was finalized is a no-show unless its player took

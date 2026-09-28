@@ -107,8 +107,8 @@ is in [Factory waves](/documentation_v2/runbooks/factory_waves/README.md).
    cargo run -q -p developer-tools --bin gate -- v-suite verify
    ```
 
-   Expected: a `PASS` or `FAIL` line with the difference count for each of the 25 routes, then
-   `25/25 routes match the frozen oracle` and exit 0; each failing route's first differences
+   Expected: a `PASS` or `FAIL` line with the difference count for each of the 26 routes, then
+   `26/26 routes match the frozen oracle` and exit 0; each failing route's first differences
    follow as JSON, and the exit is 1. `--only <slug>` limits the run to one route.
 
 ### Update a DOM oracle reference
@@ -142,7 +142,7 @@ Run the whole oracle again after the accepted updates, and again once they are o
 cargo run -q -p developer-tools --bin gate -- v-suite verify
 ```
 
-Expected: `25/25 routes match the frozen oracle` and exit 0.
+Expected: `26/26 routes match the frozen oracle` and exit 0.
 
 ## Troubleshooting
 

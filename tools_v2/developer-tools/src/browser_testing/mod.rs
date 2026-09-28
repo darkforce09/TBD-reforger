@@ -21,3 +21,7 @@ pub mod cli;
 pub mod capture_cli;
 
 pub mod equipment_data_viewer;
+
+pub mod mortar_offline;
+
+pub mod ballistics_agreement;

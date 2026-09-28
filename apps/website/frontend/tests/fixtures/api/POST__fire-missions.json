@@ -1,30 +1,247 @@
 {
   "fire_mission": {
     "azimuth_deg": 99.5,
-    "azimuth_mils": 1768,
+    "azimuth_mils": 1769,
+    "burst_height_m": null,
+    "catalog_id": "vanilla_mortars",
+    "catalog_version": 1,
     "charge": 2,
+    "charge_rings": null,
     "created_at": "2000-01-01T00:00:00Z",
     "created_by": "000000000000000001",
+    "dispersion": {
+      "deflection_probable_error_m": 10.525057658223497,
+      "ellipse_orientation_deg": 99.40252778464948,
+      "ellipse_semi_major_m": 33.83063898286146,
+      "ellipse_semi_minor_m": 18.372561058376117,
+      "range_probable_error_m": 19.38046806185389,
+      "standard_dispersion_m": 69.0,
+      "verified_in_engine": false
+    },
     "distance_m": 1217,
-    "elevation_mils": 1315,
+    "elevation_mils": 1177,
     "event_id": "c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7",
     "fp_grid": "1000, 2000",
     "fp_x": 1000.0,
     "fp_y": 2000.0,
+    "fuze_time_s": null,
+    "guns": [
+      {
+        "azimuth_mils": 1769.2715345032716,
+        "charge_rings": 2,
+        "elevation_mils": 1176.8936248690554,
+        "gun_index": 0,
+        "height_m": 25.0,
+        "height_source": "manual",
+        "label": "Gun 1",
+        "time_of_flight_s": 24.320057865781557,
+        "x": 1000.0,
+        "y": 2000.0
+      },
+      {
+        "azimuth_mils": 1740.528223056238,
+        "charge_rings": 2,
+        "elevation_mils": 1198.1647155743099,
+        "gun_index": 1,
+        "height_m": 27.5,
+        "height_source": "dem",
+        "label": "Gun 2",
+        "time_of_flight_s": 24.558787694907473,
+        "x": 1040.0,
+        "y": 1960.0
+      }
+    ],
     "id": "99999999-9999-4999-9999-999999999999",
+    "mils_per_circle": 6400,
+    "shell_id": "m821",
+    "solver_revision": "game-ballistics-2",
     "target_grid": "2200, 1800",
+    "target_height_m": 40.0,
+    "target_height_source": "dem",
     "tgt_x": 2200.0,
     "tgt_y": 1800.0,
-    "time_of_flight_s": 29.4,
-    "weapon_system": "M252 81mm"
+    "time_of_flight_s": 24.320057865781557,
+    "weapon_id": "m252",
+    "weapon_system": "M252 - Mortar",
+    "wind_from_deg": 270.0,
+    "wind_speed_m_s": 3.0
   },
   "solution": {
-    "azimuth_deg": 99.5,
-    "azimuth_mils": 1768,
-    "charge": 2,
-    "distance_m": 1217,
-    "elevation_mils": 1315,
-    "time_of_flight_s": 29.4,
-    "weapon_system": "M252 81mm"
+    "catalog_id": "vanilla_mortars",
+    "catalog_version": 1,
+    "dispersion": {
+      "deflection_probable_error_m": 10.525057658223497,
+      "ellipse_orientation_deg": 99.40252778464948,
+      "ellipse_semi_major_m": 33.83063898286146,
+      "ellipse_semi_minor_m": 18.372561058376117,
+      "range_probable_error_m": 19.38046806185389,
+      "standard_dispersion_m": 69.0,
+      "verified_in_engine": false
+    },
+    "guns": [
+      {
+        "azimuth_deg": 99.46232220802563,
+        "azimuth_mils": 1768.2190614760111,
+        "charges": [
+          {
+            "aim_azimuth_deg": null,
+            "aim_azimuth_mils": null,
+            "apex_m": null,
+            "deflection_correction_mils": null,
+            "elevation_deg": null,
+            "elevation_mils": null,
+            "range_correction_m": null,
+            "refusal": "out_of_range",
+            "rings": 0,
+            "time_of_flight_s": null
+          },
+          {
+            "aim_azimuth_deg": null,
+            "aim_azimuth_mils": null,
+            "apex_m": null,
+            "deflection_correction_mils": null,
+            "elevation_deg": null,
+            "elevation_mils": null,
+            "range_correction_m": null,
+            "refusal": "out_of_range",
+            "rings": 1,
+            "time_of_flight_s": null
+          },
+          {
+            "aim_azimuth_deg": 99.52152381580903,
+            "aim_azimuth_mils": 1769.2715345032716,
+            "apex_m": 733.1751098632812,
+            "deflection_correction_mils": 1.0524730272605727,
+            "elevation_deg": 66.20026639888437,
+            "elevation_mils": 1176.8936248690554,
+            "range_correction_m": 0.0006368730598751426,
+            "refusal": null,
+            "rings": 2,
+            "time_of_flight_s": 24.320057865781557
+          },
+          {
+            "aim_azimuth_deg": 99.56280678177663,
+            "aim_azimuth_mils": 1770.005453898251,
+            "apex_m": 1150.515625,
+            "deflection_correction_mils": 1.7863924222401502,
+            "elevation_deg": 74.12673511697344,
+            "elevation_mils": 1317.8086243017501,
+            "range_correction_m": -0.0016686217077221954,
+            "refusal": null,
+            "rings": 3,
+            "time_of_flight_s": 30.52709130314212
+          },
+          {
+            "aim_azimuth_deg": 99.60982969037522,
+            "aim_azimuth_mils": 1770.8414167177818,
+            "apex_m": 1558.488525390625,
+            "deflection_correction_mils": 2.6223552417708196,
+            "elevation_deg": 77.99277239641994,
+            "elevation_mils": 1386.5381759363545,
+            "range_correction_m": -0.004256539570633322,
+            "refusal": null,
+            "rings": 4,
+            "time_of_flight_s": 35.56570568402554
+          }
+        ],
+        "dispersion": {
+          "deflection_probable_error_m": 10.525057658223497,
+          "ellipse_orientation_deg": 99.40252778464948,
+          "ellipse_semi_major_m": 33.83063898286146,
+          "ellipse_semi_minor_m": 18.372561058376117,
+          "range_probable_error_m": 19.38046806185389,
+          "standard_dispersion_m": 69.0,
+          "verified_in_engine": false
+        },
+        "distance_m": 1216.552506059644,
+        "gun_index": 0,
+        "height_difference_m": 15.0,
+        "label": "Gun 1",
+        "mils_per_circle": 6400,
+        "recommended_rings": 2
+      },
+      {
+        "azimuth_deg": 97.85331330197823,
+        "azimuth_mils": 1739.6144587018352,
+        "charges": [
+          {
+            "aim_azimuth_deg": null,
+            "aim_azimuth_mils": null,
+            "apex_m": null,
+            "deflection_correction_mils": null,
+            "elevation_deg": null,
+            "elevation_mils": null,
+            "range_correction_m": null,
+            "refusal": "out_of_range",
+            "rings": 0,
+            "time_of_flight_s": null
+          },
+          {
+            "aim_azimuth_deg": null,
+            "aim_azimuth_mils": null,
+            "apex_m": null,
+            "deflection_correction_mils": null,
+            "elevation_deg": null,
+            "elevation_mils": null,
+            "range_correction_m": null,
+            "refusal": "out_of_range",
+            "rings": 1,
+            "time_of_flight_s": null
+          },
+          {
+            "aim_azimuth_deg": 97.90471254691339,
+            "aim_azimuth_mils": 1740.528223056238,
+            "apex_m": 746.1452026367188,
+            "deflection_correction_mils": 0.9137643544028308,
+            "elevation_deg": 67.39676525105493,
+            "elevation_mils": 1198.1647155743099,
+            "range_correction_m": 0.0005733432615215861,
+            "refusal": null,
+            "rings": 2,
+            "time_of_flight_s": 24.558787694907473
+          },
+          {
+            "aim_azimuth_deg": 97.9401540433408,
+            "aim_azimuth_mils": 1741.1582941038364,
+            "apex_m": 1158.01025390625,
+            "deflection_correction_mils": 1.5438354020012435,
+            "elevation_deg": 74.81201480595884,
+            "elevation_mils": 1329.9913743281572,
+            "range_correction_m": -0.001415437883224513,
+            "refusal": null,
+            "rings": 3,
+            "time_of_flight_s": 30.645325826485475
+          },
+          {
+            "aim_azimuth_deg": 97.98076785390752,
+            "aim_azimuth_mils": 1741.8803174028005,
+            "apex_m": 1563.9542236328125,
+            "deflection_correction_mils": 2.2658587009653504,
+            "elevation_deg": 78.48828219059213,
+            "elevation_mils": 1395.3472389438598,
+            "range_correction_m": -0.00268617772962898,
+            "refusal": null,
+            "rings": 4,
+            "time_of_flight_s": 35.64443440669051
+          }
+        ],
+        "dispersion": {
+          "deflection_probable_error_m": 10.633436417124296,
+          "ellipse_orientation_deg": 97.8005000639976,
+          "ellipse_semi_major_m": 33.006728256606856,
+          "ellipse_semi_minor_m": 18.561754275324194,
+          "range_probable_error_m": 18.908478269308517,
+          "standard_dispersion_m": 69.0,
+          "verified_in_engine": false
+        },
+        "distance_m": 1170.9824934643557,
+        "gun_index": 1,
+        "height_difference_m": 12.5,
+        "label": "Gun 2",
+        "mils_per_circle": 6400,
+        "recommended_rings": 2
+      }
+    ],
+    "solver_revision": "game-ballistics-2"
   }
 }

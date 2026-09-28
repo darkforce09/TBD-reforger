@@ -4,19 +4,20 @@ The [administration](/documentation_v2/glossary/a_to_f.md#administration) pages,
 sidebar and the only one reserved for the `admin` [role](/documentation_v2/glossary/n_to_z.md#role):
 the operations calendar of [events](/documentation_v2/glossary/a_to_f.md#event), the
 [mission](/documentation_v2/glossary/g_to_m.md#mission) approval queue, the game servers, the member
-roster, the announcements and the audit trail.
+roster, the announcements, the audit trail and the ballistics catalogs.
 
 ## Contents
 
 ```text
 apps/website/frontend/src/v2/pages/administration/
-├── approvals/        the mission approval queue: the artifact under review and the decision on it
-├── audit_logs/       the administrative action trail, live and page by page, and one entry's record
-├── content_manager/  announcements: write, publish, push to Discord and archive them
-├── event_manager/    the operations calendar: schedule, edit and delete events, and set who may join
-├── mod.rs            the module tree; re-exports the six route components
-├── personnel/        the paged member roster and one member's dossier: bans, warnings, role resync
-└── server_control/   the game servers: fleet commands, deployments, fleet scenarios and credentials
+├── approvals/           the mission approval queue: the artifact under review and the decision on it
+├── audit_logs/          the administrative action trail, live and page by page, and one entry's record
+├── ballistics_catalogs/  ballistics catalog versions: upload with calibration, validation report, list
+├── content_manager/     announcements: write, publish, push to Discord and archive them
+├── event_manager/       the operations calendar: schedule, edit and delete events, and set who may join
+├── mod.rs               the module tree; re-exports the seven route components
+├── personnel/           the paged member roster and one member's dossier: bans, warnings, role resync
+└── server_control/      the game servers: fleet commands, deployments, fleet scenarios and credentials
 ```
 
 ## How it works
@@ -29,6 +30,7 @@ apps/website/frontend/src/v2/pages/administration/
 | "Personnel Roster" | `/admin/personnel` | `PersonnelRosterPage` in `personnel/` |
 | "Comms Broadcaster" | `/admin/content` | `ContentManagerPage` in `content_manager/` |
 | "Audit Logs" | `/admin/audit` | `AuditLogsPage` in `audit_logs/` |
+| "Ballistics Catalogs" | `/admin/ballistics-catalogs` | `BallisticsCatalogsPage` in `ballistics_catalogs/` |
 
 Every route declares the `admin` tier, and the sidebar hides the Administration section from any
 other role. The route guard redirects no one from an `admin` route: each page wraps its body in
@@ -38,7 +40,7 @@ its own fetches and signals, and nothing is shared between pages. Every request 
 build only; a native build resolves each fetch to nothing and renders the failure branch.
 
 The pages reach five [API](/documentation_v2/glossary/a_to_f.md#api) domains: `operations` for events,
-their missions and their access; `missions` for
+their missions and their access, and for the ballistics catalogs; `missions` for
 [approvals](/documentation_v2/glossary/a_to_f.md#approvals), reviews, the library and mission
 [deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment); `server_infrastructure` for
 servers, [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command),
@@ -49,10 +51,10 @@ paged roster, bans, warnings, the role resync, the audit trail and its live stre
 
 ## Public surface
 
-- `AuditLogsPage`, `ContentManagerPage`, `EventManagerPage`, `MissionApprovalsPage`,
-  `PersonnelRosterPage` and `ServerControlPage`: the route components
+- `AuditLogsPage`, `BallisticsCatalogsPage`, `ContentManagerPage`, `EventManagerPage`,
+  `MissionApprovalsPage`, `PersonnelRosterPage` and `ServerControlPage`: the route components
   `apps/website/frontend/src/app_routes.rs` mounts, each imported from its own module; `mod.rs`
-  also re-exports all six. Each child's README gives its route, tier and layout.
+  also re-exports all seven. Each child's README gives its route, tier and layout.
 
 ## Boundaries
 

@@ -138,7 +138,7 @@ fn echo_matches_make() {
     assert_eq!(
         wasm_ci()[2].echo(),
         "cargo clippy -p website-map-engine -p website-graphics-engine \
-         --target wasm32-unknown-unknown -- -D warnings"
+         -p website-offline-service-worker --target wasm32-unknown-unknown -- -D warnings"
     );
     // The quoted psql argument: make echoed the recipe TEXT, quotes included.
     assert_eq!(
@@ -153,6 +153,93 @@ fn echo_matches_make() {
             cwd_root().display()
         )
     );
+}
+
+/// The offline service worker crate is formatted, linted (host and wasm32) and tested by
+/// `wasm-ci`: a browser crate the lane does not name is never gated.
+#[test]
+fn wasm_ci_gates_the_offline_service_worker_in_every_step() {
+    let lines: Vec<String> = wasm_ci().iter().map(|s| s.echo()).collect();
+    for prefix in [
+        "cargo fmt --check",
+        "cargo clippy",
+        "cargo test -p website-offline-service-worker",
+    ] {
+        assert!(
+            lines
+                .iter()
+                .any(|l| l.starts_with(prefix) && l.contains("-p website-offline-service-worker")),
+            "no `{prefix}` step names website-offline-service-worker: {lines:?}"
+        );
+    }
+    let clippy: Vec<&String> = lines
+        .iter()
+        .filter(|l| l.starts_with("cargo clippy"))
+        .collect();
+    assert_eq!(clippy.len(), 2, "{lines:?}");
+    assert!(
+        clippy
+            .iter()
+            .all(|l| l.contains("-p website-offline-service-worker")),
+        "{clippy:?}"
+    );
+    assert!(
+        clippy
+            .iter()
+            .any(|l| l.contains("--target wasm32-unknown-unknown"))
+    );
+}
+
+/// `mk wasm-ci` and the `wasm-ci` row of `cargo xtask ci` are the same lane spelled twice; the two
+/// spellings run the same lines in the same order.
+#[test]
+fn wasm_ci_recipe_and_ci_task_row_run_the_same_lines() {
+    use crate::commands::ci::task_runner::{Step as CiStep, TASKS};
+    let row = TASKS
+        .iter()
+        .find(|t| t.name == "wasm-ci")
+        .expect("the ci task table has a wasm-ci row");
+    let ci_lines: Vec<String> = row
+        .steps
+        .iter()
+        .map(|step| match step {
+            CiStep::Cmd { line, .. } => (*line).to_string(),
+            _ => panic!("the wasm-ci row runs only command lines"),
+        })
+        .collect();
+    let mk_lines: Vec<String> = wasm_ci().iter().map(|s| s.echo()).collect();
+    assert_eq!(ci_lines, mk_lines);
+}
+
+/// `mortar-offline-gate` builds the release app once, then runs `gate mortar-offline` on it.
+#[test]
+fn mortar_offline_gate_builds_then_runs_the_offline_gate() {
+    let lines: Vec<String> = mortar_offline_gate().iter().map(|s| s.echo()).collect();
+    assert_eq!(
+        lines,
+        vec![
+            "cd apps/website/frontend && trunk build --release".to_string(),
+            "cargo run -q -p developer-tools --bin gate -- mortar-offline".to_string(),
+        ]
+    );
+    assert!(TARGETS.contains(&"mortar-offline-gate"));
+}
+
+/// `ballistics-wasm-agreement` builds the release app once, then runs `gate ballistics-agreement`.
+#[test]
+fn ballistics_wasm_agreement_builds_then_runs_the_agreement_gate() {
+    let lines: Vec<String> = ballistics_wasm_agreement()
+        .iter()
+        .map(|s| s.echo())
+        .collect();
+    assert_eq!(
+        lines,
+        vec![
+            "cd apps/website/frontend && trunk build --release".to_string(),
+            "cargo run -q -p developer-tools --bin gate -- ballistics-agreement".to_string(),
+        ]
+    );
+    assert!(TARGETS.contains(&"ballistics-wasm-agreement"));
 }
 
 /// `leptos-gates` runs `trunk build --release` ONCE — make builds a prerequisite once per run.

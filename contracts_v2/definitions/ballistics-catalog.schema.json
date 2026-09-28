@@ -1,0 +1,457 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "BallisticsCatalogContract",
+  "description": "Game ballistics catalogs: the weapons and shells whose flight parameters the fire-mission solver reads, pinned to the game build and equipment export they came from. The root is one catalog document, the body of GET /api/v1/ballistics-catalogs/{catalogId}/versions/{version} and the `catalog` part of POST /api/v1/ballistics-catalogs. Units: metres, seconds, kilograms, degrees; a weapon's mils divide its circle into mils_per_circle parts.",
+  "$ref": "#/definitions/BallisticsCatalog",
+  "definitions": {
+    "BallisticsCatalog": {
+      "description": "One immutable catalog version. catalog_id and catalog_version identify it; the SHA-256 of the exact uploaded bytes pins it for calibration bundles and saved fire missions.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "catalog_id",
+        "catalog_version",
+        "title",
+        "game_build",
+        "export_generation_id",
+        "gravity_m_s2",
+        "gravity_source",
+        "resources",
+        "weapons",
+        "shells"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "catalog_id": {
+          "$ref": "#/definitions/Slug"
+        },
+        "catalog_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "game_build": {
+          "$ref": "#/definitions/GameBuild"
+        },
+        "export_generation_id": {
+          "$ref": "#/definitions/EnfusionGuid"
+        },
+        "gravity_m_s2": {
+          "description": "Gravitational acceleration the flight model integrates with, as the game's physics world reports it.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "gravity_source": {
+          "description": "Where gravity_m_s2 comes from: the engine oracle run recorded in the calibration bundle.",
+          "type": "string",
+          "enum": [
+            "oracle"
+          ]
+        },
+        "resources": {
+          "description": "Every game resource the catalog's values were read from, with the SHA-256 of its exported bytes.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/CatalogResource"
+          }
+        },
+        "weapons": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/WeaponSystem"
+          }
+        },
+        "shells": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/Shell"
+          }
+        }
+      }
+    },
+    "CatalogResource": {
+      "description": "One game resource: its 16-hex-digit GUID, its resource name and the SHA-256 of its exported bytes.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "guid",
+        "resource_name",
+        "sha256"
+      ],
+      "properties": {
+        "guid": {
+          "$ref": "#/definitions/EnfusionGuid"
+        },
+        "resource_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/definitions/Sha256"
+        }
+      }
+    },
+    "WeaponSystem": {
+      "description": "One launcher: its angle convention, elevation limits, muzzle speed coefficient, muzzle dispersion and the shells it fires. Every shell_ids entry names a shell of the same catalog.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "weapon_id",
+        "display_name",
+        "prefab_guid",
+        "caliber_mm",
+        "mils_per_circle",
+        "elevation_min_deg",
+        "elevation_max_deg",
+        "muzzle_init_speed_coef",
+        "dispersion_diameter_m",
+        "dispersion_range_m",
+        "shell_ids"
+      ],
+      "properties": {
+        "weapon_id": {
+          "$ref": "#/definitions/Slug"
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "prefab_guid": {
+          "$ref": "#/definitions/EnfusionGuid"
+        },
+        "caliber_mm": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "mils_per_circle": {
+          "description": "Mils in a full circle in this weapon's sight convention (6400 for the M252, 6000 for the 2B14).",
+          "type": "integer",
+          "minimum": 1
+        },
+        "elevation_min_deg": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 90
+        },
+        "elevation_max_deg": {
+          "description": "Upper elevation limit; strictly greater than elevation_min_deg.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 90
+        },
+        "muzzle_init_speed_coef": {
+          "description": "Weapon factor on the shell's muzzle speed: v0 = init_speed_m_s x charge init_speed_coef x muzzle_init_speed_coef.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "dispersion_diameter_m": {
+          "description": "Diameter of the uniform dispersion disc at dispersion_range_m.",
+          "type": "number",
+          "minimum": 0
+        },
+        "dispersion_range_m": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "shell_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/definitions/Slug"
+          }
+        }
+      }
+    },
+    "Shell": {
+      "description": "One shell's flight parameters. Acceleration is -g z - (air_drag / mass_kg) |v_rel| v_rel with v_rel = v - wind_influence_multiplier x wind.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "shell_id",
+        "display_name",
+        "prefab_guid",
+        "role",
+        "init_speed_m_s",
+        "init_speed_variation",
+        "mass_kg",
+        "air_drag",
+        "side_air_drag_scale",
+        "wind_influence_multiplier",
+        "dispersion_multiplier",
+        "time_to_live_s",
+        "standard_dispersion_m",
+        "charges"
+      ],
+      "properties": {
+        "shell_id": {
+          "$ref": "#/definitions/Slug"
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "prefab_guid": {
+          "$ref": "#/definitions/EnfusionGuid"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "he",
+            "smoke",
+            "illumination",
+            "practice",
+            "other"
+          ]
+        },
+        "init_speed_m_s": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "init_speed_variation": {
+          "description": "Half-width of the uniform muzzle speed spread, in the game's unit.",
+          "type": "number",
+          "minimum": 0
+        },
+        "mass_kg": {
+          "description": "The shell movement component's mass, which the drag term divides by.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "air_drag": {
+          "type": "number",
+          "minimum": 0
+        },
+        "side_air_drag_scale": {
+          "type": "number",
+          "minimum": 0
+        },
+        "wind_influence_multiplier": {
+          "type": "number",
+          "minimum": 0
+        },
+        "dispersion_multiplier": {
+          "type": "number",
+          "minimum": 0
+        },
+        "time_to_live_s": {
+          "description": "Flight time after which the game removes the shell; a trajectory that needs longer is refused.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "standard_dispersion_m": {
+          "description": "The range card's standard dispersion.",
+          "type": "number",
+          "minimum": 0
+        },
+        "charges": {
+          "description": "Every charge the shell accepts, rings unique, exactly one is_default.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/Charge"
+          },
+          "contains": {
+            "type": "object",
+            "properties": {
+              "is_default": {
+                "const": true
+              }
+            },
+            "required": [
+              "is_default"
+            ]
+          }
+        },
+        "time_fuze": {
+          "$ref": "#/definitions/TimeFuze"
+        }
+      }
+    },
+    "Charge": {
+      "description": "One charge: the number of propellant rings and the factor it applies to the shell's init_speed_m_s.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rings",
+        "init_speed_coef",
+        "is_default"
+      ],
+      "properties": {
+        "rings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "init_speed_coef": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "is_default": {
+          "type": "boolean"
+        }
+      }
+    },
+    "TimeFuze": {
+      "description": "A settable time fuze: the window min_s to max_s and the factory setting default_s inside it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "min_s",
+        "max_s",
+        "default_s"
+      ],
+      "properties": {
+        "min_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "max_s": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "default_s": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "BallisticsCatalogSummary": {
+      "description": "One stored catalog version without its weapons and shells.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "catalog_id",
+        "catalog_version",
+        "title",
+        "game_build",
+        "export_generation_id",
+        "catalog_sha256",
+        "uploaded_at"
+      ],
+      "properties": {
+        "catalog_id": {
+          "$ref": "#/definitions/Slug"
+        },
+        "catalog_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "game_build": {
+          "$ref": "#/definitions/GameBuild"
+        },
+        "export_generation_id": {
+          "$ref": "#/definitions/EnfusionGuid"
+        },
+        "catalog_sha256": {
+          "$ref": "#/definitions/Sha256"
+        },
+        "uploaded_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "BallisticsCatalogList": {
+      "description": "GET /api/v1/ballistics-catalogs (public): every stored catalog version.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BallisticsCatalogSummary"
+          }
+        }
+      }
+    },
+    "CatalogUploadReport": {
+      "description": "POST /api/v1/ballistics-catalogs (administrator) outcome of running the flight model against the calibration bundle: 201 with accepted true and no failures, or 422 with accepted false and every failed case under details.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accepted",
+        "cases",
+        "failures",
+        "forward_samples_not_judged"
+      ],
+      "properties": {
+        "accepted": {
+          "type": "boolean"
+        },
+        "cases": {
+          "description": "Calibration cases evaluated.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "failures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CalibrationFailure"
+          }
+        },
+        "forward_samples_not_judged": {
+          "description": "Forward-angle oracle samples that lie between native table rows. The engine answers them by interpolating its own ballistic table between those rows, so they say nothing about the flight model: they are counted here, never judged, and never counted in cases.",
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "CalibrationFailure": {
+      "description": "One calibration case outside tolerance, or one provenance mismatch: the case it names and what differs.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_id",
+        "reason"
+      ],
+      "properties": {
+        "case_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "Slug": {
+      "description": "Lowercase identifier: letters and digits in groups joined by single underscores or hyphens.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+([_-][a-z0-9]+)*$",
+      "maxLength": 64
+    },
+    "EnfusionGuid": {
+      "description": "Enfusion resource or export GUID: 16 uppercase hexadecimal digits, no braces.",
+      "type": "string",
+      "pattern": "^[0-9A-F]{16}$"
+    },
+    "GameBuild": {
+      "description": "Arma Reforger build number, dotted (for example 1.8.0.13).",
+      "type": "string",
+      "pattern": "^[0-9]+(\\.[0-9]+){1,3}$"
+    },
+    "Sha256": {
+      "description": "Lowercase hexadecimal SHA-256.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

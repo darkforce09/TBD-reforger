@@ -45,6 +45,7 @@
 #![allow(dead_code)]
 
 pub mod database_fixtures;
+pub mod fire_mission_fixtures;
 pub mod source_scan;
 
 /// This suite's own Discord id. Every seeded row is owned by / assigned to it and the session
@@ -140,6 +141,9 @@ pub const REACHABILITY_KEEP: &[&str] = &[
     // `operations/handlers/game_runtime_roster.rs`: a machine credential reads only the roster
     // of an event bound to its own server.
     "events.server_id",
+    // `operations/services/fire_mission_store.rs`: the per-event list reads
+    // `WHERE fire_missions.event_id = $1`.
+    "fire_missions.event_id",
 ];
 
 /// Columns NULL only in other row states: a CHECK constraint requires them for the state the
@@ -264,8 +268,36 @@ pub const OPTION_FIELDS: &[(&str, &str)] = &[
     // administration::models::audit_log::AuditLog
     ("audit_logs", "actor_id"),
     ("audit_logs", "metadata"),
-    // operations::models::fire_mission::FireMission
+    // operations::models::fire_mission::FireMission — the catalog-model inputs are `None` on a
+    // row stored before catalogs, the optional ones also on a catalog-model row without them;
+    // the legacy coordinate and sight columns are `None` on a row stored before they existed.
     ("fire_missions", "event_id"),
+    ("fire_missions", "fp_x"),
+    ("fire_missions", "fp_y"),
+    ("fire_missions", "tgt_x"),
+    ("fire_missions", "tgt_y"),
+    ("fire_missions", "azimuth_mils"),
+    ("fire_missions", "charge"),
+    ("fire_missions", "time_of_flight_s"),
+    ("fire_missions", "catalog_id"),
+    ("fire_missions", "catalog_version"),
+    ("fire_missions", "weapon_id"),
+    ("fire_missions", "shell_id"),
+    ("fire_missions", "charge_rings"),
+    ("fire_missions", "target_height_m"),
+    ("fire_missions", "target_height_source"),
+    ("fire_missions", "wind_speed_m_s"),
+    ("fire_missions", "wind_from_deg"),
+    ("fire_missions", "burst_height_m"),
+    ("fire_missions", "fuze_time_s"),
+    ("fire_missions", "mils_per_circle"),
+    ("fire_missions", "dispersion"),
+    ("fire_missions", "solver_revision"),
+    // operations::models::fire_mission::FireMissionGun — the solution is `None` when no charge
+    // solved.
+    ("fire_mission_guns", "elevation_mils"),
+    ("fire_mission_guns", "charge_rings"),
+    ("fire_mission_guns", "time_of_flight_s"),
     // community_content::models::wiki::WikiPage
     ("wiki_pages", "updated_by"),
     // missions::models::registry::RegistryItem — every one of these is `Option`, and NULL means

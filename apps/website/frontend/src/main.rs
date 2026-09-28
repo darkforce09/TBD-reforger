@@ -18,8 +18,12 @@ mod v2;
 pub fn start_app() {
     use leptos::prelude::*;
     use leptos_router::components::Router;
+    use v2::core::offline::offline_pack::OfflinePackRouteWatcher;
     use v2::pages::navigation::layout::AppLayout;
     console_error_panic_hook::set_once();
+    // The offline service worker registers before the app mounts; the watcher inside the router
+    // downloads the offline pack on the first mortar calculator visit.
+    v2::core::offline::service_worker_registration::register_at_boot();
     // Mount inside a `<div id="root">` to mirror React's Vite mount node exactly (body > #root >
     // app). Beyond drop-in structural parity, it keeps the V-gate's positional-id numbering
     // aligned: dom.js numbers every [id] in document order, so a leading #root on ONE side would
@@ -29,6 +33,7 @@ pub fn start_app() {
             <div id="root">
                 <Router>
                     <AppLayout />
+                    <OfflinePackRouteWatcher />
                 </Router>
             </div>
         }

@@ -46,7 +46,8 @@ that stores it. The roster and deployment authorization read the slot bindings a
 [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) recorded, so the game, the
 roster and seat authorization name one [artifact](/documentation_v2/glossary/a_to_f.md#artifact). The
 ballistics of the fire missions live in `website_map_engine::data::scenario::ballistics`; this
-domain solves through them and stores the solution.
+domain re-solves every saved fire mission through them against the stored catalog version it
+pins, refuses a client solution that disagrees, and stores the server's solution.
 
 ## Public surface
 
@@ -92,9 +93,16 @@ domain solves through them and stores the solution.
     authorize a player life into a slot (a refusal answers 200 with the decision).
   - `POST /api/v1/game-runtime/sessions/{sessionId}/deployments/{occupancyId}/end`: `mod_runtime`
     credential; end that life.
-  - `POST /api/v1/fire-missions/solve`: `AuthUser`; a firing solution, not stored.
-  - `POST /api/v1/fire-missions`: `AuthUser`; solve and store a fire mission.
-  - `GET /api/v1/events/{id}/fire-missions`: `AuthUser`; an event's fire missions, oldest first.
+  - `GET /api/v1/ballistics-catalogs`: public; every stored ballistics catalog version.
+  - `GET /api/v1/ballistics-catalogs/{catalogId}/versions/{version}`: public; one catalog
+    document, immutably cached under the ETag of its SHA-256.
+  - `POST /api/v1/ballistics-catalogs`: `AdminUser`; upload a catalog with its calibration bundle
+    (multipart, own body limit), stored only when the calibration lists no failure.
+  - `POST /api/v1/fire-missions`: `AuthUser`; re-solve a save against its pinned ballistics
+    catalog, refuse a client solution beyond 1 mil or 0.1 s (422 `solution_mismatch`), and store
+    the server's solution with its guns.
+  - `GET /api/v1/events/{id}/fire-missions`: `AuthUser` the event admits; an event's fire
+    missions, oldest first.
 - `services::event_lifecycle_sweep::sweep_once`, run by the event lifecycle sweeper worker.
 - `services::event_reservations`: `reevaluation_queue::request_reevaluation_for_account` for the
   bans in `administration` and the membership cache in `identity_and_access`, and the queue and

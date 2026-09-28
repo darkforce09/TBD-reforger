@@ -168,6 +168,7 @@ pub(super) async fn liveness_probe(dist: &str, env: Option<&Value>) -> Result<Li
             api_proxy: None,
             // A relative serving directory resolves against the gate's working directory.
             map_assets: Some(MapAssetMounts::from_root(Path::new(""))),
+            api_fixture_corpus: None,
         },
         5299,
     )
@@ -175,6 +176,7 @@ pub(super) async fn liveness_probe(dist: &str, env: Option<&Value>) -> Result<Li
     let browser = cdp::launch(9399, &[]).await?;
     let auth_seed = crate::browser_testing::dom_oracle::seed_script()?;
     let page = cdp::new_page(&browser, None, &[auth_seed.as_str()]).await?;
+    page.bypass_service_worker().await?;
     let url = format!("http://localhost:{}{}", srv.port, EDIT_PATH);
 
     let probe = async {

@@ -2,8 +2,10 @@
 
 The parts the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s canvas mount runs
 once the canvas element loads: the document setup, the two boot tasks and their handshake, the
-review workspace's restore, the item [registry](/documentation_v2/glossary/n_to_z.md#registry) loading and
-the page-level input listeners. The parent module,
+review workspace's restore, the item [registry](/documentation_v2/glossary/n_to_z.md#registry) loading,
+the chrome and dock reflow, and the page-level input listeners. Canvas sizing, engine creation,
+the frame pump and resize tracking come from the shared map seam,
+`apps/website/frontend/src/v2/core/map_view/`. The parent module,
 `apps/website/frontend/src/v2/apps/editor/mission_editor/canvas_mount.rs`, declares these modules
 and runs them from `install_canvas_mount`.
 
@@ -12,8 +14,9 @@ and runs them from `install_canvas_mount`.
 ```text
 apps/website/frontend/src/v2/apps/editor/mission_editor/canvas_mount/
 ├── boot_tasks.rs        document restore and render-engine start in parallel, and their handshake
+├── dock_reflow.rs       chrome and dock latches, engine resize, the pane-centre camera hold
 ├── document_setup.rs    seeds the document, publishes its smoke bridge, registers document commands
-├── input_listeners.rs   the gesture context; pointercancel, pointerleave and resize listeners
+├── input_listeners.rs   the gesture context; pointercancel and pointerleave; seam resize tracking
 ├── registry_effects.rs  the registry and compatibility feed, from the tab cache or the API
 ├── review_restore.rs    a review workspace's restore: exactly the reviewed version, nothing armed
 └── signals.rs           `PageMountSignals`, the page signals the mount takes over
@@ -33,8 +36,9 @@ document task
 └── otherwise ──> draft from IndexedDB (shell::persist) ──> server hydrate (shell::hydrate)
                   ──> arm the debounced draft writer, the warm-session marker,
                       the flush on hide and the cross-tab sync
-engine task: RenderEngine::create ──> bind the slot and vehicle lanes ──> start_raf
-             ──> world_assets::bootstrap for the document's terrain (everon when unset)
+engine task: map_view::engine_mount::create_engine (12.8 km camera square, centre, zoom -2)
+             ──> bind the slot and vehicle lanes ──> start_raf
+             ──> world_assets::bootstrap (full scope) for the document's terrain (everon when unset)
 handshake: restore settled and world ready ──> hand_over ──> BootPhase::Ready
 engine failure ──> BootPhase::Failed on the stage it reached; map_disabled holds the reason
 ```
@@ -46,12 +50,16 @@ tab filled it, and otherwise fetches them; a retry bumps `registry_fetch_gen` an
 a failure marks both catalogs failed and the feed unavailable. `input_listeners::attach` builds the
 `EditorGestureContext` and attaches the canvas gestures and the chord listener from
 `apps/website/frontend/src/v2/apps/editor/input/`; its own `pointercancel` drops an armed place, a
-pending connection and an in-flight gesture, and its window `resize` resizes the canvas backing
-store at the current device-pixel ratio.
+pending connection and an in-flight gesture, and `map_view::resize::observe_container_resize`
+re-sizes the canvas backing store and the engine whenever the container or the window resizes.
+`dock_reflow::install` mirrors the hide-chrome and dock-collapse signals into the shell layout and,
+when a dock reflow moves the pane centre, shifts the camera so the world under it stays put.
 
 ## Boundaries
 
-- Depends on: the parent's imports: the bridge's document host, editor context, boot machine,
+- Depends on: the shared map seam `apps/website/frontend/src/v2/core/map_view/` (handles, canvas
+  sizing, engine creation, resize tracking); the parent's imports: the bridge's document host,
+  editor context, boot machine,
   viewport and world-assets host in `apps/website/frontend/src/v2/apps/editor/bridge/`; the
   session's draft writer, hydrate, review mode, warm-session marker and document commands in
   `apps/website/frontend/src/v2/apps/editor/shell/`; the registry fetches in

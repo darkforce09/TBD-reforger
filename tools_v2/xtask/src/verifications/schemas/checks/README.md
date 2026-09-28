@@ -8,6 +8,7 @@ in `contracts_v2/definitions/`, the documents that must follow them, and the cod
 
 ```text
 tools_v2/xtask/src/verifications/schemas/checks/
+├── ballistics_validation.rs    the suite's ballistics section: catalog and calibration schemas, provenance, coverage
 ├── contract_citations.rs       `schema citations`: every `@contract` tag in code resolves to a schema and pointer
 ├── contract_validation/        the full validation suite and the one-file mission check
 ├── contract_validation.rs      declares the suite and the one-file check; re-exports both
@@ -30,7 +31,7 @@ tools_v2/xtask/src/verifications/schemas/checks/
 | Gate | Checks |
 |---|---|
 | `schema citations` | walks `.c`, `.go`, `.js`, `.mjs`, `.rs`, `.ts` and `.tsx` files under `apps/` and `tools_v2/` (skipping `node_modules`, `dist`, `.git`, `build`, `coverage`, `vendor`) for `@contract <file>.schema.json#<pointer>`, and resolves each against `contracts_v2/definitions/`; a missing root or zero citations fails as an unexamined scan |
-| `schema validate` | the suite in `contract_validation/`, with the [mission](/documentation_v2/glossary/g_to_m.md#mission) and registry sections here |
+| `schema validate` | the suite in `contract_validation/`, with the [mission](/documentation_v2/glossary/g_to_m.md#mission), registry and ballistics sections here; the ballistics section prints `NOT RUN`, never `PASS`, while neither the catalog nor its calibration bundle is committed, and fails when only one is |
 | `schema map-object-enums` | the golden prefabs, `contracts_v2/rules/prefab-classify.json`, the Everon region sample and the glyph manifest keys use only the kinds and classes of `map-object-enums.schema.json` |
 | `schema type-inventory` | `INSTANCE_KINDS` matches the schema's kinds and the world-export pipeline's list, then every committed type inventory passes its schema and invariants I1 to I5 and I7 (kind sums, class sums, closed class keys, a complete census, manifest counts) |
 | `schema map-glyphs` | every icon key the golden prefabs and the committed Everon catalog use has a glyph, each glyph's SVG exists with a view box and sane render fields, and a built atlas, when present, matches the manifest |

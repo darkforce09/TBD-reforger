@@ -9,6 +9,7 @@ smokes, plus the capture rig that photographs the running Mission Creator.
 
 ```text
 tools_v2/developer-tools/src/browser_testing/
+├── ballistics_agreement/  `gate ballistics-agreement`: the browser bench's solves against the native solves
 ├── capture_cli.rs         the `capture` command line: `shot`, `zoomsweep` and `crop`
 ├── cdp/                   Chromium discovery and launch, page setup and polling helpers
 ├── cdp.rs                 `Browser`, `Page` and `GpuBackend`: the DevTools protocol client
@@ -22,19 +23,22 @@ tools_v2/developer-tools/src/browser_testing/
 ├── equipment_data_viewer/  `gate equipment-data-viewer`: the live equipment data viewer check
 ├── fixture_injection.rs   `FREEZE_SRC` and `DOM_SERIALIZER_SRC`, the scripts injected into each page
 ├── mod.rs                 the module tree
+├── mortar_offline/        `gate mortar-offline`: the mortar calculator's offline pack and a reload with the server gone
 ├── route_drift.rs         `gate s-routes`: the router's route table against the committed CSV
 ├── screen_capture/        the `shot`, `zoomsweep` and `crop` drivers
 ├── screen_capture.rs      the capture viewport, debug port, overlay selector and blank-canvas floor
-├── server.rs              the static server: isolation headers, SPA fallback, API proxy, map assets
-├── session_tokens.rs      the unsigned access tokens the harness answers a token refresh with
-└── tests/                 unit tests for the fixture router, accept floor, payload pins, server, tokens
+├── server/                the recorded API corpus route of the static server
+├── server.rs              the static server: isolation headers, SPA fallback, API proxy, API corpus, map assets
+├── session_tokens.rs      the unsigned access tokens and Bearer token-pair answers of a token refresh
+└── tests/                 unit tests for the fixture router, accept floor, payload pins, server, API corpus, tokens, offline gate, agreement gate
 ```
 
 ## How it works
 
 ```text
 bin/gate.rs    ──▶ cli::run ──▶ doctor · v-suite · s-routes · smoke · editor-suite · r-auth
-                                · render-check · serve · equipment-data-viewer
+                                · render-check · serve · equipment-data-viewer · mortar-offline
+                                · ballistics-agreement
 bin/capture.rs ──▶ capture_cli::run ──▶ screen_capture::{shot, zoomsweep, crop}
 
 every browser gate:  server::start_server(dist) ◀── cdp::launch (SwiftShader, 1440×900)
@@ -52,7 +56,7 @@ frame by frame, and serves `/map-assets/` from the terrain and glyph folders wit
 | Command | Module | What it asserts | Exit |
 |---|---|---|---|
 | `gate doctor` | `diagnostics/` | Chromium, pins, memory, stray processes and fonts, then a 15 s Mission Creator liveness probe | 0, 1 |
-| `gate v-suite verify` | `dom_oracle/` | each of 25 routes' normalised DOM equals its golden, with every [API](/documentation_v2/glossary/a_to_f.md#api) call fed from fixtures | 0, 1, 2 |
+| `gate v-suite verify` | `dom_oracle/` | each of 26 routes' normalised DOM equals its golden, with every [API](/documentation_v2/glossary/a_to_f.md#api) call fed from fixtures | 0, 1, 2 |
 | `gate v-suite accept` | `dom_oracle/` | replaces one route's golden, with a note | 0, 2 |
 | `gate s-routes` | `route_drift.rs` | the `ROUTES` table of `apps/website/frontend/src/router.rs` equals `manifests/routes.csv` | 0, 1 |
 | `gate smoke <name>`, `gate editor-suite` | `editor_smoke_tests/` | the Mission Creator smokes, one or all in `EDITOR_SUITE` order | 0, 1, 2 |
@@ -60,6 +64,8 @@ frame by frame, and serves `/map-assets/` from the terrain and glyph folders wit
 | `gate render-check` | `editor_smoke_tests/` | a path renders, contains `--expect` and passes `--assert-js` | 0, 1 |
 | `gate serve` | `server.rs` | none: serves a dist on port 5198 until Ctrl-C | 0 |
 | `gate equipment-data-viewer` | `equipment_data_viewer/` | the running website's `/debug/data-viewer` renders, navigates and polls against the imported generation | 0; a failed check exits 3 |
+| `gate mortar-offline` | `mortar_offline/` | the first `/tools/mortar` visit stores the offline pack; with the server stopped, the service worker answers the reload, the page is cross-origin isolated, a typed and map-placed fire mission solves to the native solution and the map draws | 0, 1 |
+| `gate ballistics-agreement` | `ballistics_agreement/` | the catalog goldens are the committed catalog, and every seeded case the `/debug/ballistics-agreement` bench solves in the browser matches the native solve within 1 mil and 0.1 s; prints a `case ballistics_wasm_agreement_<id> ... ok` line per case and the bit-identical count | 0, 1 |
 
 Every command also exits 2 on a clap usage error and 3 on a driver error. `gate s-routes` writes
 the router's rows as `path,component,fullBleed,chromeless,router_auth`, sorted by path, and prints
@@ -73,7 +79,15 @@ make a capture deterministic: `FREEZE_SRC` fixes the clock at 1 700 000 000 000 
 `gate doctor`, `gate editor-suite` and `gate v-suite verify`, each through
 `cargo run -q -p developer-tools --bin gate`, stopping at the first failure;
 `cargo xtask mk gate-doctor` runs the build and the doctor alone. The `hydrate` smoke in the suite
-needs the API on `127.0.0.1:8080`.
+needs the API on `127.0.0.1:8080`. `cargo xtask mk mortar-offline-gate` runs the build, then
+`gate mortar-offline`. `cargo xtask mk ballistics-wasm-agreement` runs the build, then
+`gate ballistics-agreement`.
+
+The doctor's probe, the editor smokes, `render-check`, `r-auth` and the DOM oracle open their pages
+with `Page::bypass_service_worker` (`Network.setBypassServiceWorker`), as does
+`gate ballistics-agreement`, so the app's offline service worker never answers in place of the
+gate's server, its fixtures or its request interception.
+`gate mortar-offline` is the one gate that keeps the worker, because the worker is what it tests.
 
 ## Public surface
 

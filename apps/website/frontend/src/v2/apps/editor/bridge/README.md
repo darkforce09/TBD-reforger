@@ -21,7 +21,7 @@ apps/website/frontend/src/v2/apps/editor/bridge/
 ├── tactical_graphics.rs            the tactical-graphic rows: parse, curve, pack for the lane, pick
 ├── tactical_graphics_authoring.rs  the tactical-graphic draw, vertex drag and delete
 ├── tests/                          unit tests for the Z arm, elevation drag and graphic geometry
-├── viewport.rs                     device-pixel sizing, frame pump, harness gates, registry cache
+├── viewport.rs                     frame-pump readouts, harness gates, registry cache
 └── world_assets.rs                 preferences and registration for the engine's streaming host
 ```
 
@@ -34,9 +34,9 @@ through the boot:
 canvas mount
 ├── document_host: seed the document, set the history context ──> undo driver
 ├── host_state: install the editor context ──> docks, inspectors, tools
-├── viewport::device_size ──> canvas backing store = CSS size × devicePixelRatio
 ├── world_assets::bootstrap ──> engine streaming host (terrain, satellite, world objects)
-├── viewport::start_raf ──> frame pump: object wash tick, scale readout, 1 s debug HUD sample
+├── viewport::start_raf ──> core::map_view::frame_pump: object wash tick, scale readout,
+│                           1 s debug HUD sample
 └── boot: Hydrating ──> LoadingMap ──> Ready (hand_over after 220 ms); Failed is sticky
 ```
 
@@ -45,8 +45,8 @@ progress events the engine's streaming bridge reports, and names a failed segmen
 overlay. `viewport.rs` also publishes the harness gates (`__selfChecks`, `__editorBench`,
 `__editorCam`, `__editorCamSet`, `__wgpuSlotStats`) and keeps `registry_session`, a tab cache of the
 item [registry](/documentation_v2/glossary/n_to_z.md#registry) and its compatibility feed that a second
-editor mount reuses. `world_assets.rs` feeds the streaming host the live world-layer, basemap and
-hillshade preferences and registers the engine and host pair with a cleanup that clears only the
+editor mount reuses. `world_assets.rs` boots the streaming host in its full scope with the live world-layer, basemap
+and hillshade preferences and registers the engine and host pair with a cleanup that clears only the
 pair it registered. The tactical-graphics lane parses the `tacticalGraphics` environment rows once
 and both draws and picks that one list, so what is drawn and what a click can find are one set; only
 a closed draw, a committed vertex drag and a delete write the environment, each as one undo step.
@@ -62,7 +62,7 @@ the document.
 
 - `boot::{BootPhase, boot_progress, hand_over}`: the page's boot overlay and the canvas mount's boot
   tasks, re-exported by `apps/website/frontend/src/v2/apps/editor/mission_editor.rs`.
-- `viewport`: `device_size`, `start_raf`, the `register_*` harness gates, `registry_session` and
+- `viewport`: `start_raf`, the `register_*` harness gates, `registry_session` and
   `mark_registry_fetch_failed`, for the canvas mount and the registry loading.
 - `document_host` and `host_state`: the document handle, the undo driver, the editor context,
   placement, selection and grouped gestures, used across the editor (see their READMEs).

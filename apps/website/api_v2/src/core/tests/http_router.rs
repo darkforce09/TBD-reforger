@@ -381,3 +381,86 @@ async fn the_eight_domain_route_tables_merge_into_one_router() {
     }
     let _: Router = app_with(dead_pool());
 }
+
+// ───────────────────── offline service worker and map tile index: static files ─────────────────────
+
+/// A router serving a scratch SPA dist and a scratch terrain tree, each holding the one file the
+/// offline pack reads from it.
+fn static_files_app(label: &str) -> (Router, std::path::PathBuf) {
+    let scratch = std::env::temp_dir().join(format!("tbd-router-{label}-{}", std::process::id()));
+    let dist = scratch.join("dist");
+    let terrains = scratch.join("terrains");
+    std::fs::create_dir_all(&dist).expect("dist dir");
+    std::fs::create_dir_all(terrains.join("everon/tiles/map")).expect("pyramid dir");
+    std::fs::write(dist.join("index.html"), "<!doctype html>").expect("index.html");
+    std::fs::write(dist.join("service_worker.js"), "// loader").expect("loader");
+    std::fs::write(
+        terrains.join("everon/tiles/map/index.json"),
+        r#"{"schemaVersion":1,"terrainId":"everon","tiles":[]}"#,
+    )
+    .expect("tile index");
+    let mut cfg = Config::for_tests("postgres://unused", "router-test-secret");
+    cfg.spa_dist_dir = dist.to_string_lossy().into_owned();
+    cfg.map_assets_dir = terrains.to_string_lossy().into_owned();
+    (router(AppState::new(dead_pool(), cfg)), scratch)
+}
+
+async fn get_with_headers(app: &Router, uri: &str) -> (StatusCode, axum::http::HeaderMap, String) {
+    let resp = app
+        .clone()
+        .oneshot(
+            HttpRequest::builder()
+                .uri(uri)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("router call");
+    let status = resp.status();
+    let headers = resp.headers().clone();
+    let body = to_bytes(resp.into_body(), 1 << 20).await.expect("body");
+    (status, headers, String::from_utf8_lossy(&body).into_owned())
+}
+
+/// The service worker loader revalidates on every update check (`no-cache`) and keeps the
+/// cross-origin isolation headers; the SPA document beside it does not take the directive.
+#[tokio::test]
+async fn the_service_worker_loader_is_served_with_no_cache() {
+    let (app, scratch) = static_files_app("service-worker");
+    let (status, headers, body) = get_with_headers(&app, "/service_worker.js").await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body, "// loader");
+    assert_eq!(
+        headers
+            .get("cache-control")
+            .map(|v| v.to_str().expect("ascii")),
+        Some("no-cache")
+    );
+    assert_eq!(
+        headers
+            .get("cross-origin-embedder-policy")
+            .map(|v| v.to_str().expect("ascii")),
+        Some("credentialless")
+    );
+    let (status, headers, _) = get_with_headers(&app, "/tools/mortar").await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(headers.get("cache-control"), None);
+    let _ = std::fs::remove_dir_all(scratch);
+}
+
+/// `/map-assets` serves the map tile index as a static JSON file from the terrain tree.
+#[tokio::test]
+async fn the_map_tile_index_is_served_as_a_static_file() {
+    let (app, scratch) = static_files_app("tile-index");
+    let (status, headers, body) =
+        get_with_headers(&app, "/map-assets/everon/tiles/map/index.json").await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(
+        headers
+            .get("content-type")
+            .map(|v| v.to_str().expect("ascii")),
+        Some("application/json")
+    );
+    assert!(body.contains(r#""terrainId":"everon""#), "{body}");
+    let _ = std::fs::remove_dir_all(scratch);
+}

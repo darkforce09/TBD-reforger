@@ -189,7 +189,7 @@ the wave gate and the slice gate. Rule ids (FMT-2, LANG-1, TEST-1 and the rest) 
 | Rust formatting | `cargo xtask mk rust-fmt` | in `rust-ci` | `website-api` | changed files |
 | API clippy, `-D warnings` | `cargo xtask mk rust-clippy` | in `rust-ci` | `website-api` | changed crates (slice); API (wave) |
 | API build | `cargo xtask mk rust-build` | in `rust-ci` | `website-api` | `cargo check` |
-| map and graphics engines: fmt, clippy `-D warnings` (host and wasm32), tests | `cargo xtask mk wasm-ci` | in `rust-ci` | `map-engine` | clippy and tests (wave) |
+| map and graphics engines and the offline service worker: fmt, clippy `-D warnings` (host and wasm32), tests | `cargo xtask mk wasm-ci` | in `rust-ci` | `map-engine` | clippy and tests (wave) |
 | API tests with Postgres (TEST-1) | `cargo xtask ci rust-test-it`; `cargo xtask db test-it` | in `rust-ci` | `website-api` (`cargo xtask ci website-api-test`) | wave |
 | developer-tools library tests | `cargo xtask ci developer-tools-test` | no | `website-api` | wave, with the xtask tests |
 | app: fmt, clippy (wasm32), tests, Trunk build (TEST-2) | `cargo xtask mk ci-local-leptos` | yes | `website-frontend` | wasm32 check, clippy and tests; Trunk when the app changed |
@@ -204,6 +204,7 @@ the wave gate and the slice gate. Rule ids (FMT-2, LANG-1, TEST-1 and the rest) 
 | mod boot verdict self-test | `cargo xtask mod world-boot --selftest` | no | `mod-gates-hosted` | no |
 | mod compile and world boot | `cargo xtask mod compile`, `cargo xtask mod world-boot` | no | `mod-gates.yml`, nightly on a self-hosted runner with the dedicated server | no |
 | editor smokes and DOM comparison | `cargo xtask mk leptos-gates` | no | `editor-gates.yml`, nightly, on demand and on pull requests touching the app, the map engine or developer-tools | no |
+| mortar calculator offline: pack download, service-worker reload, native solution | `cargo xtask mk mortar-offline-gate` | no | no; needs the local Everon tile index and the recorded catalog reads | no |
 | documentation gates: README coverage, Markdown placement (no Markdown but README.md in a code tree), links | `cargo xtask ci verify-documentation`: `cargo xtask verify readme-coverage`, `link-check`, `markdown-placement` | yes | `language-gates` | no |
 
 `ci.yml` runs on every push and pull request to `main` with no path filter; `contracts.yml` and

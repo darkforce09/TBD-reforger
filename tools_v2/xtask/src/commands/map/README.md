@@ -1,7 +1,7 @@
 # Map asset commands
 
 The `cargo xtask map` group: the terrain export that turns a staged Workbench world export into
-the committed object and road artifacts, and the building-blueprint and line-of-sight tools that
+the committed object and road artifacts, the map tile index the offline pack reads, and the building-blueprint and line-of-sight tools that
 build and check the occlusion data the
 [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s line-of-sight tool uses. Map
 and mod developers run them by hand; the work itself lives in the `developer-tools` crate.
@@ -10,17 +10,18 @@ and mod developers run them by hand; the work itself lives in the `developer-too
 
 ```text
 tools_v2/xtask/src/commands/map/
-├── cli.rs             the `MapCmd` clap enum: thirteen commands, each taking its arguments raw
+├── cli.rs             the `MapCmd` clap enum: fourteen commands, each taking its arguments raw
 ├── dispatch.rs        routes each `MapCmd` to its adapter
 ├── mod.rs             the module tree; one adapter per developer-tools entry, given the checkout root
 ├── terrain_export.rs  `export-terrain`: phase gate, staged export check, object and road builds
-└── tests/             unit tests for the export-terrain argument parser
+├── tile_index.rs      `tile-index`: the map tile pyramid's `index.json`, for the offline pack
+└── tests/             unit tests for the export-terrain parser and the tile index writer
 ```
 
 ## How it works
 
 `tools_v2/xtask/src/cli/dispatch.rs` passes the parsed `MapCmd` to `dispatch::run`. Every command
-but `export-terrain` is a one-line adapter in `mod.rs` that finds the checkout root and hands the
+but `export-terrain` and `tile-index` is a one-line adapter in `mod.rs` that finds the checkout root and hands the
 raw arguments to a `developer_tools` entry, which parses them, does the work and returns the exit
 code: `blueprint::run` (`blueprint-from-voxels`), `blueprint::ingest::run`,
 `blueprint::parity_report::run`, `blueprint::run_voxels_from_mesh`, `run_bvh_parity`,
@@ -43,6 +44,12 @@ export-terrain <terrain> [--phase Pn]
 
 The staged export sits under `assets_v2/scratch/<terrain>/`, which git ignores.
 
+`tile-index` runs in-process: it reads the terrain's `manifest.json` for `tiles.map.path`, the
+tile extension of `tiles.map.urlTemplate` and the zoom range, walks `<z>/<x>/<y>.<extension>`
+under the pyramid, and writes `index.json` (`contracts_v2/definitions/map-tile-index.schema.json`)
+beside it, where `/map-assets/<terrain>/tiles/map/index.json` serves it from the API and the gate
+server.
+
 ## Commands
 
 Each runs as `cargo xtask map <command> <arguments>`. `--help` prints the argument summary clap
@@ -57,6 +64,18 @@ holds for each command, except on `export-terrain`, which takes `--help` as an a
 - Exit codes: 0 built; 1 no terrain, an unknown argument or `--phase` without a value, or a failed
   build; 2 the staged raw export is missing; 127 cargo is not installed; the phase gate's own code.
 - Example: `cargo xtask map export-terrain everon --phase P1_buildings`
+
+### tile-index
+
+- Synopsis: `cargo xtask map tile-index --terrain <terrain>`.
+- Does: writes `assets_v2/terrains/<terrain>/tiles/map/index.json`, every tile of the map tile
+  pyramid sorted by zoom, column and row with its size in bytes; warns when a zoom level of the
+  manifest's range has no tile, because the offline pack then stays incomplete. The index is
+  gitignored with the pyramid.
+- Exit codes: 0 written; 1 no terrain, an unknown argument, an unreadable manifest, a template
+  without a tile extension, or a tile outside the zoom range or its level's grid; 2 the pyramid
+  is missing or holds no tile (nothing is written).
+- Example: `cargo xtask map tile-index --terrain everon`
 
 ### Building blueprints
 
@@ -114,7 +133,9 @@ holds for each command, except on `export-terrain`, which takes `--help` as an a
   commands read.
 - Rules: `export-terrain` runs the phase gate before anything is built, and a missing staged
   export is exit 2, never a build over nothing; the argument parser keeps its defaults and refusals
-  (`parse_phase_and_default`, `parse_unknown_arg` in `tests/terrain_export/tests.rs`); the crate
+  (`parse_phase_and_default`, `parse_unknown_arg` in `tests/terrain_export/tests.rs`); `tile-index`
+  never writes an index over a missing or empty pyramid, and what it writes validates against
+  `map-tile-index.schema.json` (`tests/tile_index/tests.rs`); the crate
   takes no dependency on `website-map-engine`
   (`tools_v2/xtask/src/tests/tooling_dependency_boundaries.rs`), so engine-backed work stays in
   `developer-tools`.

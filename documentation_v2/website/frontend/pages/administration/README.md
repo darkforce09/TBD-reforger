@@ -2,7 +2,7 @@
 
 # Administration pages
 
-The documentation of the six [administration](/documentation_v2/glossary/a_to_f.md#administration) pages
+The documentation of the seven [administration](/documentation_v2/glossary/a_to_f.md#administration) pages
 under `/admin/*`, one folder per page: each holds the page's feature doc and, where a design set
 exists, its design references. Developers and AI agents read it before changing an administration
 page.
@@ -11,19 +11,20 @@ page.
 
 ```text
 documentation_v2/website/frontend/pages/administration/
-├── approvals/        the mission approvals page: reviewing the artifacts missions submit
-├── audit_logs/       the audit logs page: the read-only trail of administrative actions
-├── content_manager/  the content manager page, labelled Comms Broadcaster: announcements
-├── event_manager/    the event manager page: the operations calendar and event access
-├── personnel/        the personnel roster page: members, bans, warnings and the role resync
-└── server_control/   the server control page: commands, deployments, scenarios and credentials
+├── approvals/            the mission approvals page: reviewing the artifacts missions submit
+├── audit_logs/           the audit logs page: the read-only trail of administrative actions
+├── ballistics_catalogs/  the ballistics catalogs page: calibrated catalog uploads and stored versions
+├── content_manager/      the content manager page, labelled Comms Broadcaster: announcements
+├── event_manager/        the event manager page: the operations calendar and event access
+├── personnel/            the personnel roster page: members, bans, warnings and the role resync
+└── server_control/       the server control page: commands, deployments, scenarios and credentials
 ```
 
 ## How it works
 
 The folders mirror the page folders under `apps/website/frontend/src/v2/pages/administration/` and
 keep their spelling. Each holds a README index, the page's feature doc and, except for server
-control, a `visual_references/` folder with one or two design-phase blueprint sets. A feature doc
+control and ballistics catalogs, a `visual_references/` folder with one or two design-phase blueprint sets. A feature doc
 follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md): Where it
 lives, Behaviour (ending in the known discrepancies between the page and the
 [API](/documentation_v2/glossary/a_to_f.md#api), where there are any), Data (what each call means
@@ -44,6 +45,7 @@ sidebar's Administration section and renders its body inside `AdminGate`
 | Personnel roster | `/admin/personnel`, `PersonnelRosterPage` | Personnel Roster | [personnel_roster_page.md](/documentation_v2/website/frontend/pages/administration/personnel/personnel_roster_page.md) |
 | Content manager | `/admin/content`, `ContentManagerPage` | Comms Broadcaster | [content_manager_page.md](/documentation_v2/website/frontend/pages/administration/content_manager/content_manager_page.md) |
 | Audit logs | `/admin/audit`, `AuditLogsPage` | Audit Logs | [audit_logs_page.md](/documentation_v2/website/frontend/pages/administration/audit_logs/audit_logs_page.md) |
+| Ballistics catalogs | `/admin/ballistics-catalogs`, `BallisticsCatalogsPage` | Ballistics Catalogs | [ballistics_catalogs_page.md](/documentation_v2/website/frontend/pages/administration/ballistics_catalogs/ballistics_catalogs_page.md) |
 
 A new administration page gets a folder here named like its code folder, with a README, its
 feature doc and, when a design set exists, a `visual_references/` folder; it also gets a line in
@@ -51,7 +53,7 @@ Contents and a row in the table.
 
 ## Code
 
-- [Administration pages](/apps/website/frontend/src/v2/pages/administration/) — the six route
+- [Administration pages](/apps/website/frontend/src/v2/pages/administration/) — the seven route
   components and their panels, which the feature docs describe.
 - [Administration domain](/apps/website/api_v2/src/administration/) — the roster, bans, warnings,
   role resync and audit trail behind the personnel and audit logs pages.
@@ -62,7 +64,7 @@ Contents and a row in the table.
 - [Operations domain](/apps/website/api_v2/src/operations/) — the
   [events](/documentation_v2/glossary/a_to_f.md#event), their attached
   [missions](/documentation_v2/glossary/g_to_m.md#mission) and the access administration of the event
-  manager.
+  manager, and the ballistics catalog upload.
 - [Server infrastructure domain](/apps/website/api_v2/src/server_infrastructure/) — the servers,
   [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command),
   [fleet scenarios](/documentation_v2/glossary/a_to_f.md#fleet-scenario) and
@@ -74,7 +76,7 @@ Contents and a row in the table.
   the [documentation folder README template](/documentation_v2/standards/templates/readme_documentation_folder.md);
   the [glossary](/documentation_v2/glossary/README.md); the page code, the API handlers it calls and the
   ticket registry in `.ai/tickets/`, which the feature docs are written from.
-- Used by: the glossary's entries for the six pages and for administration; the in-code READMEs of
+- Used by: the glossary's entries for the six older pages and for administration; the in-code READMEs of
   the page folders, which link their feature docs under Related documentation; the API domain
   READMEs that link the feature doc of the page they serve.
 - Rules: one folder per page folder of the code, spelled the same; a page's feature doc is named

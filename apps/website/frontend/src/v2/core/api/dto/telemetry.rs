@@ -1,24 +1,18 @@
-//! Aggregate figures: the dashboard summary with its fleet, the leaderboards, and the fire
-//! missions of the mortar tool.
+//! Aggregate figures: the dashboard summary with its fleet, and the leaderboards.
 //!
 //! **Role:** the derived numbers the platform reports back — what the dashboard shows at a
-//! glance (the configured fleet and its totals among it, and the newest announcements), how the
-//! leaderboards rank, the ballistic answer the mortar tool asks for, and the fire missions saved
-//! against an event.
+//! glance (the configured fleet and its totals among it, and the newest announcements), and how
+//! the leaderboards rank.
 //! **Position:** deserialised straight from the backend's JSON and handed to the pages that
 //! render it; re-serialised unchanged by the round-trip tests.
 //! **Signals & state:** none — these are plain data.
-//! **Invariants:** the fire solution is computed on the backend; the mortar page sends the geometry and
-//! renders what comes back, so nothing here is recomputed on the client. The fleet totals are
-//! the backend's sums over the active servers and are rendered as sent, never re-added from the
-//! rows. The fleet's server statuses carry the telemetry queue reading the contract defines. A
-//! null the backend sends — an unmeasured K/D ratio, a saved fire mission's unrecorded
-//! coordinates or solution figures — stays an explicit `null` when serialising.
+//! **Invariants:** the fleet totals are the backend's sums over the active servers and are
+//! rendered as sent, never re-added from the rows. The fleet's server statuses carry the
+//! telemetry queue reading the contract defines. A null the backend sends — an unmeasured K/D
+//! ratio — stays an explicit `null` when serialising.
 //! @contract match-telemetry.schema.json#/definitions/TelemetryQueueStatus
 //! @contract command-center.schema.json#/definitions/Dashboard
 //! @contract command-center.schema.json#/definitions/LeaderboardPage
-//! @contract fire-mission.schema.json#/definitions/FireSolution
-//! @contract fire-mission.schema.json#/definitions/FireMissionList
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -109,63 +103,4 @@ pub struct LeaderboardRow {
     pub command_wins: i64,
     pub command_win_rate: f64,
     pub rank: i64,
-}
-
-/// A firing solution for one target: the elevations and flight times the backend
-/// computed, with whatever the request could not be answered for reported alongside.
-/// @contract fire-mission.schema.json#/definitions/FireSolution
-#[allow(dead_code)]
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-pub struct FireSolution {
-    pub weapon_system: String,
-    pub distance_m: i64,
-    pub azimuth_deg: f64,
-    pub azimuth_mils: i64,
-    pub elevation_mils: i64,
-    pub charge: i64,
-    pub time_of_flight_s: f64,
-    #[serde(flatten)]
-    pub extra: serde_json::Map<String, Value>,
-}
-
-/// One fire mission saved against an event, as the per-event list and the save answer carry it.
-///
-/// **Typed, and with no default on anything the backend marks required.** A renamed column fails
-/// the decode and the saved list goes to its error state, instead of rendering a confident `0 m`.
-///
-/// `event_id` is absent for a fire mission saved with no event. The four coordinates and the
-/// charge, `azimuth_mils` and `time_of_flight_s` are `null` on a row stored before they were
-/// recorded; they are also defaulted, so a response captured before those columns existed still
-/// decodes. Every other field stays required.
-/// @contract fire-mission.schema.json#/definitions/FireMission
-#[allow(dead_code)]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SavedFire {
-    pub id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub event_id: Option<String>,
-    pub created_by: String,
-    pub weapon_system: String,
-    pub fp_grid: String,
-    pub target_grid: String,
-    pub distance_m: i64,
-    pub azimuth_deg: f64,
-    pub elevation_mils: i64,
-    /// The four coordinates, as real numbers. `None` for a row written before the columns
-    /// existed, whose only record of them is the `x, y` text of the two grid strings.
-    #[serde(default)]
-    pub fp_x: Option<f64>,
-    #[serde(default)]
-    pub fp_y: Option<f64>,
-    #[serde(default)]
-    pub tgt_x: Option<f64>,
-    #[serde(default)]
-    pub tgt_y: Option<f64>,
-    #[serde(default)]
-    pub azimuth_mils: Option<i64>,
-    #[serde(default)]
-    pub charge: Option<i64>,
-    #[serde(default)]
-    pub time_of_flight_s: Option<f64>,
-    pub created_at: String,
 }

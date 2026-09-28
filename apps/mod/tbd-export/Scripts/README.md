@@ -2,7 +2,7 @@
 
 The export addon's [EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript), in the two modules
 [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) compiles separately: the game module, which
-holds the runtime road network export, and the
+holds the runtime road network export and the ballistics oracle's simulation run, and the
 [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) module, which holds every exporter that
 runs inside the editor.
 
@@ -10,23 +10,26 @@ runs inside the editor.
 
 ```text
 apps/mod/tbd-export/Scripts/
-├── Game/           the game module: the runtime road network exporter
-└── WorkbenchGame/  the Workbench module: map, equipment and vehicle, and item registry exporters
+├── Game/           the game module: the runtime road network exporter and the ballistics oracle simulation run
+└── WorkbenchGame/  the Workbench module: map, equipment and vehicle, item registry and ballistics oracle exporters
 ```
 
 ## How it works
 
 Enfusion compiles `Game/` into the game, a server and Workbench's play mode, and `WorkbenchGame/`
-into Workbench alone. The road network exporter is the one export that needs a running world: the
-export game mode prefab carries its component, and it writes the road files once the export
-[mission header](/documentation_v2/glossary/g_to_m.md#mission-header) is playing. Every other exporter
+into Workbench alone. The road network exporter and the ballistics oracle's simulation run are the
+exports that need a running world: the export game mode prefab carries their components, and they
+write once the export [mission header](/documentation_v2/glossary/g_to_m.md#mission-header) is
+playing; the oracle's first half is a Workbench menu entry that hands its generation id to the
+second. Every other exporter
 reads the loaded world, prefabs and configs from inside the editor and runs from a Workbench menu
 entry or a Net API call. Both modules write to the Workbench profile, mostly under
 `$profile:TBD_Export/`.
 
 ## Authority
 
-- Server: the road export in `Game/`; it returns without running on a client.
+- Server: the road export and the ballistics oracle simulation run in `Game/`; each returns
+  without running on a client.
 - Client: nothing.
 - Owner: nothing.
 - RPCs: none.

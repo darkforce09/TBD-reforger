@@ -10,7 +10,7 @@ Developers and AI agents read it before changing a field tool.
 
 ```text
 documentation_v2/website/frontend/pages/field_tools/
-└── mortar/  the mortar calculator page: firing solutions and the fire missions saved to an event
+└── mortar/  the mortar calculator page: on-device firing solutions and fire missions saved to an event
 ```
 
 ## How it works
@@ -21,8 +21,8 @@ keeps their spelling. A page's folder holds a README index, its feature doc, whi
 `visual_references/` folder of design-phase sets.
 
 A field tool stands on its own: it hangs off no [mission](/documentation_v2/glossary/g_to_m.md#mission),
-owns a route under `/tools/`, renders inside `AuthGate`, and sits in the sidebar's "Field Tools"
-section. The debug benches are apps, documented under
+owns a route under `/tools/` and sits in the sidebar's "Field Tools" section. The mortar calculator
+is public and works offline; only its save area renders inside `AuthGate`. The debug benches are apps, documented under
 [the debug benches documentation](/documentation_v2/website/frontend/apps/debug/README.md).
 
 | Page | Route and component | Label on screen | Feature doc |
@@ -36,8 +36,8 @@ a line in Contents and a row in the table.
 
 - [Field tools pages](/apps/website/frontend/src/v2/pages/field_tools/) — the route components the
   feature docs describe.
-- [Operations domain](/apps/website/api_v2/src/operations/) — the fire-mission routes behind the
-  mortar calculator.
+- [Operations domain](/apps/website/api_v2/src/operations/) — the ballistics catalog and
+  fire-mission routes behind the mortar calculator.
 
 ## Boundaries
 

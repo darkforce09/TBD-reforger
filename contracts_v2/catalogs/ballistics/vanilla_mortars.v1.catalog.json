@@ -1,0 +1,390 @@
+{
+  "schema_version": 1,
+  "catalog_id": "vanilla_mortars",
+  "catalog_version": 1,
+  "title": "Vanilla Arma Reforger mortars",
+  "game_build": "1.8.0.13",
+  "export_generation_id": "6A6F008DC5395616",
+  "gravity_m_s2": 9.81,
+  "gravity_source": "oracle",
+  "resources": [
+    {
+      "guid": "38BAE094333E31BF",
+      "resource_name": "{38BAE094333E31BF}Prefabs/Weapons/Ammo/Ammo_Shell_81mm_HE_M821.et",
+      "sha256": "71502c291fe872030140d428f757fc547658f439ba3f9f8c32eaed13cfd11c18"
+    },
+    {
+      "guid": "6113990D163E5249",
+      "resource_name": "{6113990D163E5249}Prefabs/Items/Equipment/BallisticTable/BallisticTable_US.et",
+      "sha256": "3b3541a3ae68bbbbf44c22918c9e1bc482de405d31c2ddfdea667eea5eb2fd58"
+    },
+    {
+      "guid": "8094D99689ABE241",
+      "resource_name": "{8094D99689ABE241}Prefabs/Weapons/Mortars/M252/Mortar_M252.et",
+      "sha256": "5c0d59d73121803fc35563062cf37d87efebe13cfe3717986ee65922b9b819f2"
+    },
+    {
+      "guid": "98EC9C526AFBA282",
+      "resource_name": "{98EC9C526AFBA282}Prefabs/Weapons/Ammo/Ammo_Shell_82mm_HE_O832DU.et",
+      "sha256": "54eb1e81f8cccf0abef14abeed3abdc025a6c7c8bf35233e4afa750c49ce84dc"
+    },
+    {
+      "guid": "A544A2C131DE2C64",
+      "resource_name": "{A544A2C131DE2C64}Prefabs/Weapons/Ammo/Ammo_Shell_82mm_Smoke_D832DU.et",
+      "sha256": "ca20f04101dd0639199b2fddf0338568e2844ea187cd58e307274655c34050cd"
+    },
+    {
+      "guid": "B41607EAB58A4252",
+      "resource_name": "{B41607EAB58A4252}Prefabs/Items/Equipment/BallisticTable/BallisticTable_USSR.et",
+      "sha256": "520239878b230b2087aa9e91d08f58c36ce8d896a964a04c1069753e5e0d2025"
+    },
+    {
+      "guid": "C8A906FB198D1A33",
+      "resource_name": "{C8A906FB198D1A33}Prefabs/Weapons/Ammo/Ammo_Shell_82mm_Illum_S832S.et",
+      "sha256": "1fd96514bee7f9764cab9fb048c93f4ad1a28e7049f08f5873ec60eb23b6d13e"
+    },
+    {
+      "guid": "D1FFE458E8AC4BDB",
+      "resource_name": "{D1FFE458E8AC4BDB}Prefabs/Weapons/Mortars/2B14/Mortar_2B14.et",
+      "sha256": "65abc244ba65e37d20d394b2839f112d80502a0889389bdb3c74760f06a5cb6f"
+    },
+    {
+      "guid": "DD2065AE34D8DFA9",
+      "resource_name": "{DD2065AE34D8DFA9}Prefabs/Weapons/Ammo/Ammo_Shell_81mm_Illum_M853A1.et",
+      "sha256": "08a3f86ae918e8f5fdcc74dd08120e6853c93f41ad554ca4a520fc3800d4dbf6"
+    },
+    {
+      "guid": "DD6844AB03FDA84F",
+      "resource_name": "{DD6844AB03FDA84F}Prefabs/Weapons/Ammo/Ammo_Shell_81mm_Practice_M879.et",
+      "sha256": "2a5047f10db93bb5a1e69ad7c365d329cce25fc82419bc092499c590cc0519cd"
+    },
+    {
+      "guid": "F7807293E94D3C88",
+      "resource_name": "{F7807293E94D3C88}Prefabs/Weapons/Ammo/Ammo_Shell_81mm_Smoke_M819.et",
+      "sha256": "c04a41f9248b03b663ee196fa060751d01bbb81791422371dd1d5f926c316ada"
+    }
+  ],
+  "weapons": [
+    {
+      "weapon_id": "m252",
+      "display_name": "M252 - Mortar",
+      "prefab_guid": "8094D99689ABE241",
+      "caliber_mm": 81.0,
+      "mils_per_circle": 6400,
+      "elevation_min_deg": 45.0,
+      "elevation_max_deg": 85.0,
+      "muzzle_init_speed_coef": 1.0,
+      "dispersion_diameter_m": 1.0,
+      "dispersion_range_m": 48.0,
+      "shell_ids": [
+        "m821",
+        "m819",
+        "m853a1",
+        "m879"
+      ]
+    },
+    {
+      "weapon_id": "2b14",
+      "display_name": "2B14 - Mortar",
+      "prefab_guid": "D1FFE458E8AC4BDB",
+      "caliber_mm": 82.0,
+      "mils_per_circle": 6000,
+      "elevation_min_deg": 45.0,
+      "elevation_max_deg": 85.0,
+      "muzzle_init_speed_coef": 1.0,
+      "dispersion_diameter_m": 1.0,
+      "dispersion_range_m": 48.0,
+      "shell_ids": [
+        "o832du",
+        "d832du",
+        "s832s"
+      ]
+    }
+  ],
+  "shells": [
+    {
+      "shell_id": "m821",
+      "display_name": "81mm M821 Fragmentation Shell",
+      "prefab_guid": "38BAE094333E31BF",
+      "role": "he",
+      "init_speed_m_s": 66.0,
+      "init_speed_variation": 3.0,
+      "mass_kg": 4.06,
+      "air_drag": 0.000462,
+      "side_air_drag_scale": 10.0,
+      "wind_influence_multiplier": 1.0,
+      "dispersion_multiplier": 1.0,
+      "time_to_live_s": 60.0,
+      "standard_dispersion_m": 69.0,
+      "charges": [
+        {
+          "rings": 0,
+          "init_speed_coef": 1.0,
+          "is_default": false
+        },
+        {
+          "rings": 1,
+          "init_speed_coef": 1.531,
+          "is_default": false
+        },
+        {
+          "rings": 2,
+          "init_speed_coef": 2.085,
+          "is_default": false
+        },
+        {
+          "rings": 3,
+          "init_speed_coef": 2.541,
+          "is_default": false
+        },
+        {
+          "rings": 4,
+          "init_speed_coef": 2.977,
+          "is_default": true
+        }
+      ]
+    },
+    {
+      "shell_id": "m819",
+      "display_name": "81mm M819 Smoke Shell",
+      "prefab_guid": "F7807293E94D3C88",
+      "role": "smoke",
+      "init_speed_m_s": 137.0,
+      "init_speed_variation": 3.0,
+      "mass_kg": 4.85,
+      "air_drag": 0.0009139,
+      "side_air_drag_scale": 10.0,
+      "wind_influence_multiplier": 1.0,
+      "dispersion_multiplier": 1.0,
+      "time_to_live_s": 60.0,
+      "standard_dispersion_m": 57.0,
+      "charges": [
+        {
+          "rings": 1,
+          "init_speed_coef": 0.666,
+          "is_default": false
+        },
+        {
+          "rings": 2,
+          "init_speed_coef": 0.959,
+          "is_default": false
+        },
+        {
+          "rings": 3,
+          "init_speed_coef": 1.184,
+          "is_default": false
+        },
+        {
+          "rings": 4,
+          "init_speed_coef": 1.387,
+          "is_default": true
+        }
+      ]
+    },
+    {
+      "shell_id": "m853a1",
+      "display_name": "81mm M853A1 Illumination Shell",
+      "prefab_guid": "DD2065AE34D8DFA9",
+      "role": "illumination",
+      "init_speed_m_s": 152.0,
+      "init_speed_variation": 3.0,
+      "mass_kg": 4.0,
+      "air_drag": 0.001488,
+      "side_air_drag_scale": 10.0,
+      "wind_influence_multiplier": 1.0,
+      "dispersion_multiplier": 1.0,
+      "time_to_live_s": 60.0,
+      "standard_dispersion_m": 59.0,
+      "charges": [
+        {
+          "rings": 1,
+          "init_speed_coef": 0.638,
+          "is_default": false
+        },
+        {
+          "rings": 2,
+          "init_speed_coef": 1.0,
+          "is_default": false
+        },
+        {
+          "rings": 3,
+          "init_speed_coef": 1.281,
+          "is_default": false
+        },
+        {
+          "rings": 4,
+          "init_speed_coef": 1.596,
+          "is_default": true
+        }
+      ],
+      "time_fuze": {
+        "min_s": 10.0,
+        "max_s": 40.0,
+        "default_s": 24.0
+      }
+    },
+    {
+      "shell_id": "m879",
+      "display_name": "81mm M879 Training Shell",
+      "prefab_guid": "DD6844AB03FDA84F",
+      "role": "practice",
+      "init_speed_m_s": 66.0,
+      "init_speed_variation": 3.0,
+      "mass_kg": 4.26,
+      "air_drag": 0.000469,
+      "side_air_drag_scale": 10.0,
+      "wind_influence_multiplier": 1.0,
+      "dispersion_multiplier": 1.0,
+      "time_to_live_s": 60.0,
+      "standard_dispersion_m": 68.0,
+      "charges": [
+        {
+          "rings": 0,
+          "init_speed_coef": 1.0,
+          "is_default": false
+        },
+        {
+          "rings": 1,
+          "init_speed_coef": 1.573,
+          "is_default": false
+        },
+        {
+          "rings": 2,
+          "init_speed_coef": 2.082,
+          "is_default": false
+        },
+        {
+          "rings": 3,
+          "init_speed_coef": 2.532,
+          "is_default": false
+        },
+        {
+          "rings": 4,
+          "init_speed_coef": 2.932,
+          "is_default": true
+        }
+      ]
+    },
+    {
+      "shell_id": "o832du",
+      "display_name": "82mm O-832DU Fragmentation Shell",
+      "prefab_guid": "98EC9C526AFBA282",
+      "role": "he",
+      "init_speed_m_s": 76.0,
+      "init_speed_variation": 3.0,
+      "mass_kg": 3.1,
+      "air_drag": 0.000615,
+      "side_air_drag_scale": 10.0,
+      "wind_influence_multiplier": 1.0,
+      "dispersion_multiplier": 1.0,
+      "time_to_live_s": 60.0,
+      "standard_dispersion_m": 55.0,
+      "charges": [
+        {
+          "rings": 0,
+          "init_speed_coef": 1.0,
+          "is_default": false
+        },
+        {
+          "rings": 1,
+          "init_speed_coef": 1.321,
+          "is_default": false
+        },
+        {
+          "rings": 2,
+          "init_speed_coef": 1.736,
+          "is_default": false
+        },
+        {
+          "rings": 3,
+          "init_speed_coef": 2.087,
+          "is_default": false
+        },
+        {
+          "rings": 4,
+          "init_speed_coef": 2.455,
+          "is_default": true
+        }
+      ]
+    },
+    {
+      "shell_id": "d832du",
+      "display_name": "82mm D-832DU Smoke Shell",
+      "prefab_guid": "A544A2C131DE2C64",
+      "role": "smoke",
+      "init_speed_m_s": 71.0,
+      "init_speed_variation": 3.0,
+      "mass_kg": 3.48,
+      "air_drag": 0.000655,
+      "side_air_drag_scale": 10.0,
+      "wind_influence_multiplier": 1.0,
+      "dispersion_multiplier": 1.0,
+      "time_to_live_s": 60.0,
+      "standard_dispersion_m": 40.0,
+      "charges": [
+        {
+          "rings": 0,
+          "init_speed_coef": 1.0,
+          "is_default": false
+        },
+        {
+          "rings": 1,
+          "init_speed_coef": 1.339,
+          "is_default": false
+        },
+        {
+          "rings": 2,
+          "init_speed_coef": 1.748,
+          "is_default": false
+        },
+        {
+          "rings": 3,
+          "init_speed_coef": 2.086,
+          "is_default": true
+        }
+      ]
+    },
+    {
+      "shell_id": "s832s",
+      "display_name": "82mm S-832S Illumination Shell",
+      "prefab_guid": "C8A906FB198D1A33",
+      "role": "illumination",
+      "init_speed_m_s": 127.0,
+      "init_speed_variation": 3.0,
+      "mass_kg": 3.51,
+      "air_drag": 0.001836,
+      "side_air_drag_scale": 10.0,
+      "wind_influence_multiplier": 1.0,
+      "dispersion_multiplier": 1.0,
+      "time_to_live_s": 60.0,
+      "standard_dispersion_m": 53.0,
+      "charges": [
+        {
+          "rings": 1,
+          "init_speed_coef": 0.698,
+          "is_default": false
+        },
+        {
+          "rings": 2,
+          "init_speed_coef": 1.111,
+          "is_default": false
+        },
+        {
+          "rings": 3,
+          "init_speed_coef": 1.512,
+          "is_default": false
+        },
+        {
+          "rings": 4,
+          "init_speed_coef": 2.154,
+          "is_default": true
+        }
+      ],
+      "time_fuze": {
+        "min_s": 10.0,
+        "max_s": 40.0,
+        "default_s": 19.0
+      }
+    }
+  ]
+}

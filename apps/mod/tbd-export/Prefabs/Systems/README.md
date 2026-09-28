@@ -1,14 +1,15 @@
 # Export game mode prefab
 
 The game mode the export world places: a plain vanilla game mode that carries the runtime road
-exporter as a component, so playing the export
-[mission header](/documentation_v2/glossary/g_to_m.md#mission-header) runs the road export.
+exporter and the ballistics oracle simulation run as components, so playing the export
+[mission header](/documentation_v2/glossary/g_to_m.md#mission-header) runs the road export and,
+when the Workbench ballistics oracle has recorded a generation, the simulation run.
 
 ## Contents
 
 ```text
 apps/mod/tbd-export/Prefabs/Systems/
-├── TBD_Export_GameMode.et       the export game mode: `TBD_RoadExportComponent` and no auto respawn
+├── TBD_Export_GameMode.et       the export game mode: the road export and ballistics oracle components, no auto respawn
 └── TBD_Export_GameMode.et.meta  its resource GUID, `{C3D4E5F6A7B80001}`
 ```
 
@@ -16,7 +17,9 @@ apps/mod/tbd-export/Prefabs/Systems/
 
 `TBD_Export_GameMode.et` is an `SCR_BaseGameMode` derived from the vanilla
 `{1B76F75A3175E85C}Prefabs/MP/Modes/Plain/GameMode_Plain.et`. It adds a `TBD_RoadExportComponent`
-block, whose class lives in `apps/mod/tbd-export/Scripts/Game/TBD/Export/`, overrides the vanilla
+block, whose class lives in `apps/mod/tbd-export/Scripts/Game/TBD/Export/`, and a
+`TBD_BallisticsOracleSimulationComponent` block, whose class lives in
+`apps/mod/tbd-export/Scripts/Game/TBD/Export/BallisticsOracle/`; it overrides the vanilla
 `SCR_RespawnSystemComponent` with an empty loading layout, and switches off automatic player
 respawn (`m_bAutoPlayerRespawn 0`) and faction changes (`m_bAllowFactionChange 0`).
 
@@ -39,11 +42,14 @@ respawn (`m_bAutoPlayerRespawn 0`) and faction changes (`m_bAllowFactionChange 0
   at `6400 0 6400`.
 - `TBD_RoadExportComponent` attaches to it by class, from
   `apps/mod/tbd-export/Scripts/Game/TBD/Export/TBD_RoadExportComponent.c`.
+- `TBD_BallisticsOracleSimulationComponent` attaches to it by class, from
+  `apps/mod/tbd-export/Scripts/Game/TBD/Export/BallisticsOracle/TBD_BallisticsOracleSimulationComponent.c`.
 
 ## Boundaries
 
 - Depends on: the vanilla parent prefab `GameMode_Plain.et` and `SCR_RespawnSystemComponent` from
-  the game's data; the component class `TBD_RoadExportComponent`.
+  the game's data; the component classes `TBD_RoadExportComponent` and
+  `TBD_BallisticsOracleSimulationComponent`.
 - Used by: the export world's layer, and through it the export mission header in
   `apps/mod/tbd-export/Missions/`.
 - Rules: the GUID `{C3D4E5F6A7B80001}` stays stable; the prefab and its `.meta` are committed

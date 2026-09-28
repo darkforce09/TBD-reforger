@@ -7,7 +7,8 @@
 //! first (the mission patch, armory and versions, the squad and slot writes, the event mission
 //! attachment, the fleet executor and the event access writes) are proven by the derived
 //! malformed and boundary probes of the `route_acceptance_*` binaries, whose worlds supply real
-//! rows.
+//! rows. The administrator ballistics catalog upload reads a multipart form under its own body
+//! limit, so its case sends a JSON body (415) and a form one byte over that limit (413).
 //! **Position:** boots `core::http_router::router` over this binary's own test database with the
 //! development test configuration; user sessions come from `common::access_token`, and a
 //! `mod_runtime` machine credential is issued through the administrator credential route for a
@@ -35,6 +36,7 @@ use website_api::core::configuration::Config;
 use website_api::core::database;
 use website_api::core::http_router;
 use website_api::core::middleware::MAX_JSON_BODY;
+use website_api::operations::handlers::ballistics_catalogs::upload::MAX_CATALOG_UPLOAD_BODY_BYTES;
 
 const SUITE: &str = "json_rejection_envelopes";
 
@@ -59,7 +61,7 @@ struct BodyCase {
     caller: Caller,
 }
 
-const CASES: [BodyCase; 34] = [
+const CASES: [BodyCase; 33] = [
     BodyCase {
         area: "admin_user_role",
         method: "PATCH",
@@ -185,12 +187,6 @@ const CASES: [BodyCase; 34] = [
         method: "POST",
         path: "/api/v1/missions/{id}/review-comments",
         caller: Caller::Role("mission_maker"),
-    },
-    BodyCase {
-        area: "fire_mission_solve",
-        method: "POST",
-        path: "/api/v1/fire-missions/solve",
-        caller: Caller::Role("enlisted"),
     },
     BodyCase {
         area: "fire_mission_save",
@@ -520,11 +516,6 @@ async fn contract_parity_json_rejections_answer_the_error_envelope_mission_revie
 }
 
 #[tokio::test]
-async fn contract_parity_json_rejections_answer_the_error_envelope_fire_mission_solve() {
-    assert_json_rejection_envelopes("fire_mission_solve").await;
-}
-
-#[tokio::test]
 async fn contract_parity_json_rejections_answer_the_error_envelope_fire_mission_save() {
     assert_json_rejection_envelopes("fire_mission_save").await;
 }
@@ -582,4 +573,66 @@ async fn contract_parity_json_rejections_answer_the_error_envelope_runtime_sessi
 #[tokio::test]
 async fn contract_parity_json_rejections_answer_the_error_envelope_runtime_relayed_deployment() {
     assert_json_rejection_envelopes("runtime_relayed_deployment").await;
+}
+
+/// The catalog upload: a JSON body answers 415 and a form one byte over the route's own limit
+/// 413, both in the envelope.
+#[tokio::test]
+async fn contract_parity_json_rejections_answer_the_error_envelope_ballistics_catalog_upload() {
+    let url = common::require_test_database_url()
+        .expect("the per-binary test database is provisioned before any case runs");
+    let pool = database::connect(&url).await.expect("connect");
+    let state = AppState::new(pool, Config::for_tests(url, "json-rejection-secret"));
+    let app = http_router::router(state.clone());
+    let actor = "json-rejection-ballistics_catalog_upload";
+    let bearer = common::access_token(&state, SUITE, actor, "admin", true).await;
+    let path = "/api/v1/ballistics-catalogs";
+    let label = format!("POST {path}");
+
+    let (status, bytes) = send(
+        &app,
+        "POST",
+        path,
+        Some(&bearer),
+        Some("application/json"),
+        b"{}".to_vec(),
+    )
+    .await;
+    envelope(
+        &format!("{label} with a JSON body"),
+        status,
+        StatusCode::UNSUPPORTED_MEDIA_TYPE,
+        &bytes,
+    );
+
+    // A part the route skips, so no part cap answers before the route's body limit does.
+    let boundary = "json-rejection-catalog-upload";
+    let head = format!(
+        "--{boundary}\r\nContent-Disposition: form-data; name=\"padding\"; \
+         filename=\"padding.json\"\r\nContent-Type: application/json\r\n\r\n"
+    );
+    let tail = format!("\r\n--{boundary}--\r\n");
+    let mut over_limit = head.into_bytes();
+    over_limit.resize(MAX_CATALOG_UPLOAD_BODY_BYTES + 1 - tail.len(), b' ');
+    over_limit.extend_from_slice(tail.as_bytes());
+    assert_eq!(over_limit.len(), MAX_CATALOG_UPLOAD_BODY_BYTES + 1);
+    let (status, bytes) = send(
+        &app,
+        "POST",
+        path,
+        Some(&bearer),
+        Some(&format!("multipart/form-data; boundary={boundary}")),
+        over_limit,
+    )
+    .await;
+    let body = envelope(
+        &format!("{label} over the body limit"),
+        status,
+        StatusCode::PAYLOAD_TOO_LARGE,
+        &bytes,
+    );
+    assert_eq!(
+        body["details"]["code"], "request_too_large",
+        "{label} over the body limit: {body}"
+    );
 }

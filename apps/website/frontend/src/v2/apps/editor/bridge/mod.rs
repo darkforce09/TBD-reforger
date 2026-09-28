@@ -1,14 +1,17 @@
-//! The frontend's side of the engine seam: the canvas mount and everything that drives a frame.
+//! The Mission Creator's side of the engine seam: everything that drives its frames.
 //!
-//! **Role:** owns the surface the map is drawn on and the machinery that keeps it current — the
-//! boot machine that raises the document and the world, the viewport belt that sizes the backing
-//! store and paces the frame pump, the floating overlays laid over the map, the pure geometry the
-//! renderer and the pick paths share, the asset host that feeds terrain and imagery in, the hosted
-//! document with its undo drive, and the host signal state the engine's hosted commands read.
-//! **Position:** the only place in the editor that holds a live engine, document or host handle
-//! and hands it to `website_map_engine`. The docked chrome under [`super::ui`] and the
-//! interactive tools under [`super::input::tools`] reach the map through [`host_state`] and the
-//! command layers, never through a handle of their own.
+//! **Role:** owns the machinery that keeps the editor's map current — the boot machine that
+//! raises the document and the world, the frame-loop readouts on the shared map seam's pump
+//! (`crate::v2::core::map_view`, which also sizes the canvas), the floating overlays laid over
+//! the map, the pure geometry the renderer and the pick paths share, the asset host that feeds
+//! terrain and imagery in, the hosted document with its undo drive, and the host signal state the
+//! engine's hosted commands read.
+//! **Position:** between the canvas mount (`mission_editor/canvas_mount.rs`, which creates the
+//! engine, document and host handles) and `website_map_engine`; the document commands
+//! (`shell/document_commands.rs`) and the pointer gestures (`input/pointer_gestures.rs`) hold
+//! those handles too. The docked chrome under [`super::ui`] and the interactive tools under
+//! [`super::input::tools`] reach the map through [`host_state`] and the command layers, never
+//! through a handle of their own.
 //! **Signals & state:** the boot phase, the frame-timing samples, the widget-pivot registry and
 //! the hover cursor are all tab-local — they die with the browser tab and never reach the
 //! document. Anything an operator authored travels through `website_map_engine::editing` instead.
@@ -43,8 +46,8 @@ pub mod tactical_graphics;
 /// vertices, drag an authored vertex, and delete a finished graphic. Reaches the live document.
 #[cfg(target_arch = "wasm32")]
 pub mod tactical_graphics_authoring;
-/// The viewport and frame-timing belt: CSS-to-device-pixel sizing, the frame pump's leptos half
-/// with its debug-HUD sample and scale publish, the window-gate registrars the headless harness
+/// The frame-timing belt: the editor's hook on the shared frame pump with its debug-HUD sample
+/// and scale publish, the window-gate registrars the headless harness
 /// drives, and the registry-fetch failure signal and its session cache.
 pub mod viewport;
 /// The map-asset host: supplies the editor's live layer, basemap and render preferences to the

@@ -11,7 +11,8 @@ links one.
 
 The domain around [events](/documentation_v2/glossary/a_to_f.md#event): the event calendar, the [ORBAT](#orbat) and slotting, squad
 reservations and the waitlist, member search, [service records](#service-record) and leave requests;
-the API domain also serves the mortar fire-mission tools and the game-runtime roster and deployments.
+the API domain also serves the ballistics catalogs, the mortar fire missions and the game-runtime
+roster and deployments.
 
 In code: `apps/website/api_v2/src/operations/`; `apps/website/frontend/src/v2/pages/operations/`.
 
@@ -23,11 +24,13 @@ A source an agent checks a fact against instead of recalling it. The Enfusion sc
 `enf` tool over the vanilla game scripts and the upstream framework: it indexes their symbols,
 answers lookups and checks `@idx` citations. Its sources, the gitignored oracle lanes, are linked
 into every [slice](#slice) worktree to read and cite, never to copy. The DOM oracle is the frozen
-page goldens that `gate v-suite` holds the built app to.
+page goldens that `gate v-suite` holds the built app to. The ballistics oracle is the tbd-export
+Workbench plugin and play-mode component that record the engine's own shell flights, against
+which a ballistics catalog is calibrated.
 
-In code: `tools_v2/developer-tools/src/enfusion_tooling/` (the `enf` binary); the lane links in `tools_v2/xtask/src/commands/platform/slice_worktree/git_plain.rs`; `cargo xtask verify no-crf-leak`; `tools_v2/developer-tools/src/browser_testing/dom_oracle/` and the goldens in `tools_v2/developer-tools/fixtures/dom_oracle/`.
+In code: `tools_v2/developer-tools/src/enfusion_tooling/` (the `enf` binary); the lane links in `tools_v2/xtask/src/commands/platform/slice_worktree/git_plain.rs`; `cargo xtask verify no-crf-leak`; `tools_v2/developer-tools/src/browser_testing/dom_oracle/` and the goldens in `tools_v2/developer-tools/fixtures/dom_oracle/`; `apps/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/` and `apps/mod/tbd-export/Scripts/Game/TBD/Export/BallisticsOracle/`.
 
-See: [Enfusion script oracle](/tools_v2/developer-tools/src/enfusion_tooling/README.md), [Oracle lanes](/documentation_v2/runbooks/mod_slice_workflow.md#oracle-lanes), [DOM oracle fixtures](/tools_v2/developer-tools/fixtures/dom_oracle/README.md).
+See: [Enfusion script oracle](/tools_v2/developer-tools/src/enfusion_tooling/README.md), [Oracle lanes](/documentation_v2/runbooks/mod_slice_workflow.md#oracle-lanes), [DOM oracle fixtures](/tools_v2/developer-tools/fixtures/dom_oracle/README.md), [Ballistics oracle run](/documentation_v2/runbooks/ballistics_oracle_run.md).
 
 ### ORBAT
 
@@ -56,6 +59,17 @@ member's [role](#role) follows their Discord roles, so the dossier explains it a
 In code: `PersonnelRosterPage` in `apps/website/frontend/src/v2/pages/administration/personnel/`.
 
 See: [Personnel roster page](/documentation_v2/website/frontend/pages/administration/personnel/personnel_roster_page.md).
+
+### probable error
+
+The distance within which half of a gun's impacts fall along one axis, 0.6745 times the standard
+deviation; the mortar calculator reports it along range and along deflection with the 50 % impact
+ellipse. The platform derives it from the game's dispersion parameters, a documented
+interpretation that no engine call verifies, not from measured impacts.
+
+In code: `charge_dispersion` in `apps/website/map-engine/src/data/scenario/ballistics/dispersion.rs`; the dispersion card in `apps/website/frontend/src/v2/pages/field_tools/mortar/solution/dispersion_card.rs`.
+
+See: [charge ring](/documentation_v2/glossary/a_to_f.md#charge-ring), [Game ballistics engine](/documentation_v2/website/map-engine/data/scenario/ballistics/game_ballistics_engine.md).
 
 ### RCON
 
@@ -157,6 +171,17 @@ In code: `apps/website/api_v2/src/operations/handlers/member_service_record.rs`;
 
 See: [Deployments page](/documentation_v2/website/frontend/pages/operations/deployments/deployments_page.md).
 
+### service worker pack
+
+The files the mortar calculator stores for offline use on its first visit: the app shell, every
+published ballistics catalog version, the Everon manifest, elevation, imagery and map tiles z0–6,
+about 248 MB. The Rust service worker answers from it with no connection; the page calls it the
+offline pack and shows its state in `data-offline-state`.
+
+In code: `apps/website/offline-service-worker/` (the worker); `offline_pack` and `offline_manifest` in `apps/website/frontend/src/v2/core/offline/`; `cargo xtask map tile-index` writes the tile list the pack reads.
+
+See: [Offline mortar page](/documentation_v2/runbooks/offline_mortar_page.md), [Mortar calculator page](/documentation_v2/website/frontend/pages/field_tools/mortar/mortar_calculator_page.md).
+
 ### slice
 
 One ticket's unit of work in the [factory](/documentation_v2/glossary/a_to_f.md#factory) or the mod
@@ -219,6 +244,19 @@ change it makes runs a `cargo xtask ticket` command.
 In code: `apps/ticketboard/`, which reads the registry through `tools_v2/ticket-engine/`.
 
 See: [Ticketboard](/apps/ticketboard/README.md).
+
+### time fuze
+
+A fuze that bursts the shell a set time after firing, carried by the illumination shells; its
+window and default come from the shell's catalog entry. The mortar calculator sets it from a burst
+height: the time of flight to the burst point above the target, on the charge with the fewest
+rings whose time lies inside the window. A refused setting carries no time and names its cause:
+outside the window, or the burst point out of reach (above the apex, beyond range, inside the
+minimum range).
+
+In code: `TimeFuze` (`min_s`, `max_s`, `default_s`) in `apps/website/map-engine/src/data/scenario/ballistics/catalog/shell.rs`; `solve_time_fuze_over_charges` and `FuzeRefusal` in `apps/website/map-engine/src/data/scenario/ballistics/fuze.rs`; `FuzeSetting` and `FuzeRefusal` in `contracts_v2/definitions/fire-mission.schema.json`.
+
+See: [charge ring](/documentation_v2/glossary/a_to_f.md#charge-ring), [Game ballistics engine](/documentation_v2/website/map-engine/data/scenario/ballistics/game_ballistics_engine.md).
 
 ### wave
 

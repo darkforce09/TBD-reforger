@@ -19,6 +19,7 @@ apps/website/
 ├── graphics-engine/            GPU rendering with no map concept, crate `website-graphics-engine`
 ├── improved_layout/            the planning anchor for the platform's directory reorganization, no code
 ├── map-engine/                 world, streaming and mission domain, crate `website-map-engine`
+├── offline-service-worker/     the offline service worker, crate `website-offline-service-worker`
 └── shared/                     the URL-guard test table that the API and the app both include
 ```
 

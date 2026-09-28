@@ -1,8 +1,8 @@
-//! The operations reservations part's world: a fresh operation per reservation probe, a saved
-//! fire mission, and one event running on the world's server under an open runtime session.
+//! The operations reservations part's world: a fresh operation per reservation probe and one
+//! event running on the world's server under an open runtime session.
 //!
 //! **Role:** implements [`PartWorld`] for the seat registration, seat assignment, squad hold,
-//! waitlist promotion, fire mission and game-runtime roster and deployment routes.
+//! waitlist promotion and game-runtime roster and deployment routes.
 //!
 //! **Position:** mounted by `tests/route_acceptance_operations_reservations.rs` with `#[path]`;
 //! its specs are `specs/operations_reservations.rs`. The running event comes from
@@ -64,7 +64,7 @@ struct RunningEvent {
 /// The operations reservations world.
 pub struct OperationsReservationsWorld {
     running: RunningEvent,
-    /// An event bound to the world's server with no deployment in effect and no fire mission.
+    /// An event bound to the world's server with no deployment in effect.
     idle_event: Uuid,
     /// An event bound to no server.
     unbound_event: Uuid,
@@ -288,11 +288,6 @@ impl OperationsReservationsWorld {
         operation
     }
 
-    fn fire_body(event: Option<Uuid>) -> Value {
-        json!({"weapon_system": "M252 81mm", "fp_x": 1000.0, "fp_y": 2000.0, "tgt_x": 1500.0,
-            "tgt_y": 2600.0, "fp_grid": "010020", "target_grid": "015026", "event_id": event})
-    }
-
     fn deployment_body(&self, account: &UserActor, seat: usize, life: String) -> Value {
         json!({"event_mission_id": self.running.attachment,
             "orbat_slot_id": self.running.seats[seat], "arma_id": arma_of(account),
@@ -478,17 +473,6 @@ impl OperationsReservationsWorld {
         let enlisted = core.actors.user(Role::Enlisted);
         let peer = core.actors.peer(Role::Enlisted);
         let fixture = match key {
-            "GET /api/v1/events/{id}/fire-missions" => {
-                Fixture::new().param("id", self.running.event.to_string())
-            }
-            "fire-missions-none" => Fixture::new().param("id", self.idle_event.to_string()),
-            "POST /api/v1/fire-missions/solve" => Fixture::new().body(json!({
-                "weapon_system": "M252 81mm", "fp_x": 1000.0, "fp_y": 2000.0, "tgt_x": 1500.0,
-                "tgt_y": 2600.0
-            })),
-            "POST /api/v1/fire-missions" => {
-                Fixture::new().body(Self::fire_body(Some(self.running.event)))
-            }
             "GET /api/v1/game-runtime/events/{id}/roster" => {
                 Fixture::new().param("id", self.running.event.to_string())
             }
@@ -555,15 +539,6 @@ impl PartWorld for OperationsReservationsWorld {
             "POST",
             &register_uri(attachment),
             Some(&seat),
-        )
-        .await;
-        let fire = Self::fire_body(Some(event));
-        require(
-            &app,
-            &enlisted.token,
-            "POST",
-            "/api/v1/fire-missions",
-            Some(&fire),
         )
         .await;
         let author = &actors.user(Role::Admin).discord_id;

@@ -1328,11 +1328,13 @@ ON CONFLICT (id) DO UPDATE SET
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- §15 Saved fire missions. GET /events/:id/fire-missions lists the golden
---     operation's two rows, oldest first: one saved before the solution
---     columns existed, whose coordinates are its parsed grids and whose sight
---     setting, charge and time of flight are null, and one holding the whole
---     solution POST /fire-missions/solve answers for its inputs. No other route
---     reads fire_missions, so these rows change no other fixture.
+--     operation's two rows, oldest first, both legacy single-tube rows stored
+--     before ballistics catalogs: one saved before the solution columns
+--     existed, whose coordinates are its parsed grids and whose sight setting,
+--     charge and time of flight are null, and one holding the single-tube
+--     solution recorded with it. Their catalog-model columns are null and they
+--     own no guns, so the list serves both as rows no catalog re-solves. No
+--     other route reads fire_missions, so these rows change no other fixture.
 -- ═══════════════════════════════════════════════════════════════════════════
 
 INSERT INTO fire_missions (id, event_id, created_by, weapon_system, fp_grid, target_grid,
@@ -1450,7 +1452,15 @@ ON CONFLICT (id) DO NOTHING;
 --      PUT__, PATCH__, DELETE__), the path is the row's second column, query
 --      included, and a write sends the sibling `<file stem>.request.json` as its
 --      JSON body when that file exists (the waitlist promotion and the deletes
---      take none). The reads come first and the writes last, in index order,
+--      take none). Before the first /api/v1/ballistics-catalogs row, upload the
+--      committed vanilla catalog pair with the same token: POST
+--      /api/v1/ballistics-catalogs as multipart/form-data, part `catalog` from
+--      contracts_v2/catalogs/ballistics/vanilla_mortars.v1.catalog.json and part
+--      `calibration` from
+--      contracts_v2/fixtures/ballistics/vanilla_mortars.v1/calibration.json, each
+--      declared application/json; this file holds no catalog row, because a
+--      catalog enters only through that route's calibration. The reads come
+--      first and the writes last, in index order,
 --      because a write changes what a later request sees: the event access
 --      writes each name the access revision the write before them left, and
 --      Cold Anvil's review writes run before the modpack edit, so its

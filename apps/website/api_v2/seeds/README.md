@@ -46,7 +46,10 @@ renders.
 `apps/website/frontend/tests/fixtures/api/` again reproduces every one of them, the audit log and
 its event stream included. Its closing comment holds the capture recipe: boot an API of its own on
 a fresh database, take a dev-login token, apply `registry_dev.sql` and then this file, and request
-each row of the fixtures' `_index.tsv` in order, reads first and writes last. A write's JSON body
+each row of the fixtures' `_index.tsv` in order, reads first and writes last, uploading the
+committed vanilla ballistics catalog pair (`contracts_v2/catalogs/ballistics/vanilla_mortars.v1.catalog.json`
+as part `catalog`, `contracts_v2/fixtures/ballistics/vanilla_mortars.v1/calibration.json` as part
+`calibration`) through `POST /api/v1/ballistics-catalogs` before the first catalog row. A write's JSON body
 is the fixture's sibling `<file stem>.request.json`, and each captured body is written key-sorted
 and two-space indented. Its sections follow foreign-key order, because `psql` runs each statement
 on its own, except its audit section, which runs first: it owns audit ids 1 to 10, replacing the

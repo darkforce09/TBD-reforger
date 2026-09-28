@@ -256,6 +256,9 @@ fn fixture_dir_constant_documented() {
 #[path = "r_api_auth.rs"]
 mod auth;
 #[cfg(test)]
+#[path = "r_api_ballistics_catalogs.rs"]
+mod ballistics_catalogs;
+#[cfg(test)]
 #[path = "r_api_content.rs"]
 mod content;
 #[cfg(test)]
@@ -264,6 +267,9 @@ mod event_access;
 #[cfg(test)]
 #[path = "r_api_events.rs"]
 mod events;
+#[cfg(test)]
+#[path = "r_api_fire_missions.rs"]
+mod fire_missions;
 #[cfg(test)]
 #[path = "r_api_fleet.rs"]
 mod fleet;

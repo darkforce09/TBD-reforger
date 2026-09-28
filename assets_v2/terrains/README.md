@@ -62,7 +62,9 @@ check branches on `status`, which records how far a terrain's export has come.
   (`.gitattributes`: the `assets_v2/terrains/**` rules for `.png`, `.r16`, `.tbd-sat`, `.bin`,
   `.rkyv`, `.dem`, `.tbd-bath` and `prefabs/blas/*.bvh`), except the density tiles, which the last
   rule keeps as plain blobs. Each terrain's `tiles/` pyramids are local build output, gitignored
-  (`.gitignore`: `assets_v2/terrains/**/tiles/`).
+  (`.gitignore`: `assets_v2/terrains/**/tiles/`), and so is the map tile index
+  `tiles/map/index.json` that `cargo xtask map tile-index --terrain <terrain>` writes from the
+  pyramid for the offline pack.
 - Schema: `contracts_v2/definitions/terrain-registry.schema.json` for the registry and
   `contracts_v2/definitions/terrain-manifest.schema.json` for each terrain's `manifest.json`.
 - Adding a file: a new terrain is a folder named by its id with a `manifest.json`, and a registry

@@ -1,6 +1,6 @@
 //! Route acceptance of the operations reservation routes: seat registration and withdrawal,
-//! leader seat assignment and clearing, squad holds, waitlist promotion, fire missions, and the
-//! game-runtime roster and player deployments.
+//! leader seat assignment and clearing, squad holds, waitlist promotion, and the game-runtime
+//! roster and player deployments.
 //!
 //! One test function per acceptance dimension runs every probe of that dimension over
 //! `specs/operations_reservations.rs` against its own world (`world/operations_reservations.rs`);

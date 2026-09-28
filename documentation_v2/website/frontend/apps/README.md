@@ -29,7 +29,7 @@ inside the platform frame; the
 | Workspace | Route | State | Start at |
 |---|---|---|---|
 | Mission Creator | `/missions/:id/edit`, and the mission hub's review workspace | built | [editor/README.md](/documentation_v2/website/frontend/apps/editor/README.md) |
-| Debug benches | `/debug/building-viewer`, `/debug/world-los` | built | [debug/README.md](/documentation_v2/website/frontend/apps/debug/README.md) |
+| Debug benches | `/debug/building-viewer`, `/debug/world-los`, `/debug/ballistics-agreement` | built | [debug/README.md](/documentation_v2/website/frontend/apps/debug/README.md) |
 | Mission planner | none | planned; the code folder holds only its README | [planner/README.md](/documentation_v2/website/frontend/apps/planner/README.md) |
 | After-action review | none | planned; the code folder holds only its README | [aar/README.md](/documentation_v2/website/frontend/apps/aar/README.md) |
 

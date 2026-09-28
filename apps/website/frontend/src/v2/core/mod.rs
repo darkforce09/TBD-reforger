@@ -11,6 +11,8 @@
 
 pub mod api;
 pub mod auth;
+pub mod map_view;
+pub mod offline;
 pub mod ui;
 pub mod utils;
 

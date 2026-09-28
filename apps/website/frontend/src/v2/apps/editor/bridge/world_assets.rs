@@ -25,18 +25,20 @@ pub fn register_render_ctx(engine: EngineHandle, host: HostHandle) {
     crate::v2::apps::editor::input::tools::ruler_tool::install_seam(&RENDER_CTX, (engine, host));
 }
 
-/// Supply the editor's live preference readers to the graphics asset loader.
+/// Boot every layer the Mission Creator draws, with the editor's live preference readers.
 pub async fn bootstrap(
     engine: EngineHandle,
     terrain: String,
     host: HostHandle,
     dem_out: DemGridHandle,
+    full_dem_out: website_map_engine::world::terrain::dem::full_resolution::FullResolutionDemHandle,
     report: website_map_engine::streaming::bridge::progress::ProgressFn,
 ) {
     use website_map_engine::streaming::bridge::host_preferences::{
-        HostPreferences, RenderPreferences,
+        BootstrapScope, HostPreferences, RenderPreferences,
     };
     let preferences = HostPreferences {
+        scope: BootstrapScope::Full,
         world_layers: crate::v2::apps::editor::shell::world_layer_prefs::load_prefs,
         basemap: crate::v2::apps::editor::shell::world_layer_prefs::load_basemap_view,
         render: || {
@@ -53,6 +55,7 @@ pub async fn bootstrap(
         terrain,
         host,
         dem_out,
+        full_dem_out,
         report,
         preferences,
     )

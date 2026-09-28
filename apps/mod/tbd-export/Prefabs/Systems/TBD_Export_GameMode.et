@@ -3,6 +3,8 @@ SCR_BaseGameMode : "{1B76F75A3175E85C}Prefabs/MP/Modes/Plain/GameMode_Plain.et" 
  components {
   TBD_RoadExportComponent "{B3C4D5E6F7890123}" {
   }
+  TBD_BallisticsOracleSimulationComponent "{39AC74281D7867DB}" {
+  }
   SCR_RespawnSystemComponent "{56B2B4793051E7C9}" {
    m_sLoadingLayout ""
   }

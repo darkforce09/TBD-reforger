@@ -3,6 +3,7 @@ path,component,fullBleed,chromeless,router_auth
 /,DashboardPage,true,false,none
 /admin/approvals,MissionApprovalsPage,true,false,admin
 /admin/audit,AuditLogsPage,true,false,admin
+/admin/ballistics-catalogs,BallisticsCatalogsPage,false,false,admin
 /admin/content,ContentManagerPage,true,false,admin
 /admin/events,EventManagerPage,false,false,admin
 /admin/personnel,PersonnelRosterPage,true,false,admin
@@ -10,6 +11,7 @@ path,component,fullBleed,chromeless,router_auth
 /announcements,AnnouncementsPage,true,false,none
 /announcements/:id,AnnouncementsPage,true,false,none
 /auth/callback,AuthCallbackPage,false,false,none
+/debug/ballistics-agreement,BallisticsAgreementPage,true,true,none
 /debug/building-viewer,BuildingViewerPage,true,true,none
 /debug/data-viewer,DataViewerPage,true,true,none
 /debug/world-los,WorldLosPage,true,true,none

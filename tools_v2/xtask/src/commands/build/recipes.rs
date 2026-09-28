@@ -4,7 +4,9 @@
 //! `rust-api rust-build rust-test rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci
 //! leptos leptos-debug leptos-build leptos-gates ci-local-leptos verify-cargo-target
 //! print-cargo-target-dir reclaim-target-ci`. There is no Makefile; this module
-//! only has to make the equivalents exist and be provably identical.
+//! only has to make the equivalents exist and be provably identical. `mortar-offline-gate`
+//! (a release build, then `gate mortar-offline`) has no Makefile ancestor.
+//! `ballistics-wasm-agreement` (a release build, then `gate ballistics-agreement`) has none either.
 //!
 //! ── WHERE THE TARGET-DIR PIN LIVES ───────────────────────────────────────────────────────────
 //!
@@ -156,10 +158,13 @@ pub(crate) const TARGETS: &[&str] = &[
     "leptos-build",
     "gate-doctor",
     "leptos-gates",
+    "mortar-offline-gate",
+    "ballistics-wasm-agreement",
     "ci-local-leptos",
 ];
 
 mod shell_word;
+pub(crate) use shell_word::ballistics_wasm_agreement;
 pub(crate) use shell_word::ci_local_leptos;
 pub(crate) use shell_word::gate_doctor;
 pub(crate) use shell_word::handles;
@@ -167,6 +172,7 @@ pub(crate) use shell_word::leptos;
 pub(crate) use shell_word::leptos_build;
 pub(crate) use shell_word::leptos_debug;
 pub(crate) use shell_word::leptos_gates;
+pub(crate) use shell_word::mortar_offline_gate;
 use shell_word::run_steps;
 pub(crate) use shell_word::rust_api;
 pub(crate) use shell_word::rust_build;

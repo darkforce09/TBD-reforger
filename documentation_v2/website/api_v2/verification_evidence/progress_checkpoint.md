@@ -2,12 +2,11 @@
 
 # API v2 verification checkpoint — 2026-09-28
 
-Milestones E, F, M, T, C and V are implemented and verified; overall readiness is **not
-passing**, because staging (S) has not started, game ballistics (B) is a later phase (see
-`remaining_milestones.md`), and no receipt exists: `cargo xtask verify api-readiness --execute`
-was not run (it needs a quiet working tree). T is committed on main as 0ef292758 and C as
-b49fb86c1; V is committed as bd6ec3edf (2026-09-28), with its fourteen tickets shipped and
-stamped.
+Milestones E, F, M, T, C, V and B are implemented and verified; overall readiness is **not
+passing**, because staging (S) has not started (see `remaining_milestones.md`) and no receipt
+exists: `cargo xtask verify api-readiness --execute` was not run (it needs a quiet working tree).
+T is committed on main as 0ef292758 and C as b49fb86c1; V is committed as bd6ec3edf (2026-09-28),
+with its fourteen tickets shipped and stamped. B is complete and not yet committed.
 
 ## Milestone status
 
@@ -20,9 +19,50 @@ stamped.
 | C — personnel pagination, audit replay and query recovery, audit frontend, vehicle mutations, wiki features, content storage | Complete, committed as b49fb86c1 (design: `administration_and_content.md`). |
 | V — route acceptance, contract parity, properties, controlled races, failure injection, engineering laws | Complete 2026-09-28, committed as bd6ec3edf (design: `verification_completeness.md`; findings: `verification_findings.md`; execution record below). |
 | S | Not started (`remaining_milestones.md`). |
-| B | Later separate phase by operator decision (2026-09-23). |
+| B — game ballistics: flight model, oracle calibration, solver, dispersion, fuze, crest, battery, catalog API, saved fire missions, offline mortar page | Complete 2026-09-28, not committed (design: `game_ballistics.md`; execution record below). |
 
-Migrations 0057–0059 are pinned; the next migration is 0060. Versions 0022–0024 stay retired.
+Migrations 0057–0060 are pinned (B adds 0060); the next migration is 0061. Versions 0022–0024 stay retired.
+
+## B in brief
+
+- **Engine.** `map-engine/src/data/scenario/ballistics/`: the flight model is the engine's own
+  integrator, identified from 4,185 oracle simulations (fixed 1/30 s step, gravity first,
+  quadratic air-relative drag, mean-velocity position, linear crossing; `f32` state as the
+  engine); per-ring solver with typed refusals and wind-corrected aim; dispersion as a documented
+  interpretation (not verified in-engine); fuze search over charges; crest clearance; battery of
+  up to twelve guns; one fire-mission assembler for API and page (`SOLVER_REVISION`
+  game-ballistics-2).
+- **Calibration.** A tbd-export `BallisticsOracle` plugin and play-mode component export
+  forward angles (1.5625-mil lattice) and simulations; `cargo xtask ballistics trim-export`
+  writes the vanilla catalog and calibration bundle (31 native and 31 wind tables, every native
+  row matched, nothing interpolated), pinned to game build 1.8.0.13. Upload evaluates 7,865
+  cases, 0 failures.
+- **API.** Migration 0060 (immutable `ballistics_catalogs`, catalog-model fire-mission columns,
+  `fire_mission_guns`, the event foreign key with dangling rows detached); catalog list, version
+  read (ETag, immutable) and admin upload; `POST /api/v1/fire-missions` re-solves and refuses a
+  mismatch over 1 mil or 0.1 s; `POST /fire-missions/solve` retired; list and save follow
+  `viewer_event_access`.
+- **Frontend.** Mortar page on the map-engine renderer (`core/map_view`) with grid entry,
+  per-gun cards, saved fires; admin catalogs page; offline pack through the
+  `offline-service-worker` crate (shell, catalog, map pack; saved copies behind a failing API).
+- **Register.** Seven B requirements, five map-engine checks on one command (213 cases), two
+  gates; minimums at the measured counts (below).
+
+## B verification (2026-09-28; logs in `target/api-progress-checkpoint/2026-09-28-b/`, gitignored)
+
+| Gate | Result |
+|---|---|
+| map-engine `data::scenario::ballistics::` | 213 passed; full crate 1,687 passed, 0 failed, 2 ignored; clippy native, per feature and wasm32 clean (`f2-map-engine-*.log`) |
+| `cargo xtask db test-it` (full) | 1,339 passed, 0 failed, 0 ignored: game_ballistics 29, route_acceptance 73, contract_parity 86, controlled_races 9, failure_injection 27, engineering_laws 10 (`f2-db-test-it.log`) |
+| Frontend | `cargo test -p website-frontend` 1,982 passed, 0 failed; fmt clean (`z-frontend-test-2.log`); `mk ci-local-leptos` (the frontend_quality command) exit 0, 1,982 passed |
+| `mk leptos-gates` | doctor OK, 21 editor smokes, 26/26 routes match the frozen oracle (`z-leptos-gates.log`) |
+| `mk ballistics-wasm-agreement` | PASS 32/32, bit-identical 32/32 (`z-wasm-agreement.log`) |
+| `mk mortar-offline-gate` | 15 cases, `mortar-offline: PASS` (`z-mortar-offline.log`) |
+| Tool crates | developer-tools 313 passed, 4 ignored; offline crate 28, clippy host and wasm32 clean; xtask 1,058 passed, 1 red on untracked files (prose rule) |
+| `ci rust-ci` | run 3 PASS (`z-ci-rust-ci-3.log`): rust-fmt, rust-clippy, rust-build, wasm-ci (with the offline crate) and rust-test-it, 3,098 passed, 0 failed, 2 ignored (the two pre-existing map-engine ignores, unfiltered in wasm-ci); runs 1 and 2 red at rust-fmt, formatted |
+| `ci ci-local` | stops at verify-no-python and verify-no-shell only on the 11 unstaged deletions (cleared at commit); every other step PASS run one by one (`z-ci-*.log`); `ci ci-local-schema` PASS, 483 citations |
+| Perturbations | orchestrator `p-*.log`, each restored sha256-equal: drag zeroed, Δh ignored, fixture row +5 m, wind sign flipped, comparison tolerances 0, token_type any scheme, bench TOF ×1.01 — each red |
+| `verify api-readiness` (judge only, after the register edits; `b28-api-readiness.log`) | The register validates (79 requirements, 98 checks, every implementation path exists); FAIL with no receipts (79 violations, 98 checks did not run), as expected without `--execute` |
 
 ## V in brief
 
@@ -185,6 +225,12 @@ Foreign files C touched, each only in its own separate hunk: `Cargo.lock` and
 
 ## Open items
 
+- **B commit.** T-940.10, the T-1177 remainder and T-1245 carry their delivery evidence in
+  `notes` and ship and stamp after the B commit (V precedent). B's NOTE findings are T-1252
+  (API rebuild on a migration change), T-1253 (catalog version flag), T-1254 (signed-out
+  Administration nav), T-1255 (`gate s-routes` workspace row), T-1257 (native frontend dead
+  code); T-1256 files the under-barrel grenade launcher idea; the dead `null_tolerance_*` skip
+  branches are added to T-1232. `ci rust-ci` passed on run 3.
 - **V commit.** bd6ec3edf records V with its seven deletions; T-1041, T-1026, T-1012, T-1105,
   T-951, T-1055, T-944, T-949, T-1014, T-1088, T-1126, T-1173, T-1216 and T-1218 are shipped and
   stamped with it (`ticket check` OK). `verify api-readiness --execute` needs a quiet tree.
@@ -204,8 +250,6 @@ Foreign files C touched, each only in its own separate hunk: `Cargo.lock` and
     review workspace route's role tier), T-1209 (advertised server schema versions), T-1210 (the
     voice bridge radioClass values), T-1204 and T-1137 (the CI lanes for route-tags,
     no-select-star, doc-layout and the tool crates).
-  - T-1177 remainder: fire missions skip viewer access, and `fire_missions.event_id` has no
-    foreign key (a migration and a dangling-row policy; V-F98).
   - T-1241 (reports on a lapsed claim lease), T-1243 (closed request schemas whose handlers
     accept unknown fields), T-1244 (retiring the refusal-only `PATCH /admin/users/{discordId}`),
     T-1246 (the unread local `legacy/` export archive folder).
@@ -221,108 +265,219 @@ Foreign files C touched, each only in its own separate hunk: `Cargo.lock` and
 - In-engine exercise of match registration, events and results needs a LIVE round with a connected
   admin client (the two-client playtest runbook); the API side is covered by the integration
   suites.
-- **Next:** S, with a quiet working tree for
-  `verify api-readiness --execute`; game ballistics (B) follows in its own later phase by
-  operator decision.
+- **Next:** commit B, then S with a quiet working tree for
+  `verify api-readiness --execute`.
 
 ## Milestone V execution record
 
-Plan: `/home/Samuel/.claude/plans/pasted-content-id-1946-resume-the-joyful-meadow.md` (roster of 32
-sub-agents with pre-written prompts; shared brief in the session scratchpad `v_brief.md`). At the
-start of V the working tree was clean: the other agent committed its equipment work as a967a75bb,
-3be13084c and 9a8d56c59 (with 9574714ee), so no uncommitted foreign files exist; the foreign
-snapshot is re-taken at each wave boundary.
-
-| Date | Phase handoff |
-|---|---|
-| 2026-09-28 | P0 started: shims, database, empty foreign snapshot, brief written; baselines running (full `db test-it`, frontend tests). |
-| 2026-09-28 | P0 baselines (`target/api-progress-checkpoint/2026-09-28-v/p0-*.log`): `db test-it` 1,075 passed, 0 failed (lib 515; build 86 s, tests 153 s over 115 binaries); every identity_* and administration_* check at its minimum with every named case; V checks as planned (five at 0, property 19/25, 7 property records missing). Frontend 1,802 passed, 1 failed: `doc_audit`, 100 findings, all in the other agent's committed 3be13084c (`apps/website/frontend/src/v2/apps/debug/data_viewer` 93, `apps/website/frontend/src/v2/core/api/dto/equipment_data_viewer` 7). `xtask api_readiness` 56 passed. |
-| 2026-09-28 | Wave 1 launched: T0 (triage, read-only), A1 (design note), A2 (failpoints core), A3 (response contracts; inventory first), D1 (golden reproducibility). Prompts: plan §<agent>, stored as `prompt_<agent>.md` in the session scratchpad. |
-| 2026-09-28 | Wave 1 done. T0: 57 triaged rows (FIX 13, CLOSE 9, NOTE 35; session scratchpad `triage.md`). A1: `verification_completeness.md` (355 lines, documentation gates pass). A2: `core/failpoints/` with `failpoints` feature and self dev-dependency; release `api` and rlib carry 0 catalogue names, test builds all 18; lib failpoints 16/16; clippy both configurations clean. A3: 169-row route→contract inventory; 19 new response schemas; 123 `@contract` tags in 53 files (T-1026 done); `ci-local-schema` PASS (353 citations). D1: all 53 goldens reproduce from `registry_dev.sql` + `content_golden.sql` (three fresh captures 53/53); 18 goldens changed, 3 `*.request.json` added; T-949 fixed red-first. |
-| 2026-09-28 | Operator decisions on the triage: V fixes the other agent's committed red items (F-1 `doc_audit` 100 findings → L1; F-2 route-tags on the nested equipment router → K1; F-9 module header → L1); the `/api/v1/debug/equipment-data/*` routes become development-only like `/auth/dev-login` (F-6 → K1); the equipment-viewer goldens join the reproduction chain with a committed dataset fixture (F-7 → C1); the rest of the triage runs as classified. |
-| 2026-09-28 | Operator away overnight: autonomous mode (orchestrator decides open questions with evidence, logged as "orchestrator decision (delegated)"; no commits). Wave 2 launched: R0, A4, L1, Y1, D2. |
-| 2026-09-28 | Test-only agents launched early (they edit no `src/`, so no rebuild contention): C1, C2, Q1, Q2. K1 split into K1a (API: equipment routes development-only + into `routes.rs`, `Query` envelopes, T-951, T-1216) and K1b (tooling: T-1014, T-1012, T-1105, T-1126, equipment definition READMEs) — orchestrator decision (delegated), to keep each under budget and avoid file overlap with A4. |
-| 2026-09-28 | Y1 done: tracked symlinks fingerprint by tagged link text; untracked, escaping and dangling links refused; `api_readiness` 60 passed; the judge-only readiness run now completes (FAIL: 91 checks without receipts, 73 unmet requirements — none about fingerprints). K1b launched. D2 done: frontend 1,795 passed, 1 failed (`doc_audit`, L1 in progress); developer-tools 265 passed; DTO `@contract` tags; frontend README golden lines corrected. D3 launched. |
-| 2026-09-28 | A4 done: 18 failpoints placed in 13 production files; shared `tests/failpoint_and_race_support/` + `failure_injection_self_checks` (5 cases); lib 531; the 10 affected suites unchanged green (81 passed); release `api` has 0 catalogue strings. Launched K1a, X1, X2, F1, F2 (parallel: shared support built once). |
-| 2026-09-28 | K1b done: T-1014 (seed psql stops on the first failed statement), T-1012 (help lists no make targets), T-1105, T-1126 (unknown `--only` slug and empty runs exit 2) — 7 red-first tests; xtask `commands::db` 36/36, developer-tools `dom_oracle` 20/20; READMEs for the two equipment definition folders. Leftovers V-F22..V-F24 queued for E1/G1. |
-| 2026-09-28 | C1 done: `contract_parity_goldens` (5 cases, support in `tests/contract_parity_support/`): 51/51 JSON goldens and 2/2 event-stream goldens reproduce from the seed; schema validation and generated-type decoding red only on the registry rows (V-F25 → A3b). Equipment-viewer goldens are trimmed samples of a local 4.7 GB dataset (V-F26): orchestrator decision (delegated) — keep the operator's "include" decision and give agent E3 a hard feasibility stop before any NOTE. Q3, Q4, A3b, E3 launched. |
-| 2026-09-28 | Q1 done: `session_authority_properties` — `protected_actions_require_effective_session_authority` and `refresh_replay_revokes_concurrently_issued_successor` each 256/256 at seed 2026092201 (6 s); perturbations (revocation check removed; replay revocation removed) red with shrunk counterexamples; no findings. |
-| 2026-09-28 | C2 done: `contract_parity_mod_wire` 6/6 twice (structs, body builders, schema-enum constants, every API DTO cites a contract, roster wire version, mission schema window); 30 mod scripts, comment lines only (`partial` projections declared, F-4 fixed red-first); `mod compile` 0 TBD warnings, `enfusion-comments` 0, `ci-local-schema` 408 citations. T-1088 closable. |
-| 2026-09-28 | A3b done: closed `RegistryItemRow`/`RegistryCompatRow` in `arsenal-envelopes.schema.json`; `contract_parity_goldens` 5/5 (runs 1, 2, 4; run 3 saw another agent's transient perturbation); `ci-local-schema` 408 citations. |
-| 2026-09-28 | R0 done: `route_acceptance_support/` (runtime route table over 170 routes, table-driven specs with derived probes, actors, runner, contracts), `route_acceptance_coverage` 9/10 (only exactly-one-spec red, awaiting R1–R6), identity_and_core part 6/8 (red only on real handler defects V-F35/V-F36, queued for K2). R1–R6 launched. |
-| 2026-09-28 | X1 partial: `controlled_races_reservations` (2) and `controlled_races_identity` (3) pass once (last seat, assignment/withdrawal, refresh winner + replay, replay after successor use, linking — both orders); the permission classifier denied its lock-removal perturbation and its reruns (V-F39); determinism reruns move to the orchestrator gates. |
-| 2026-09-28 | D3 done: 15 new goldens for consumed routes (68/68 reproduce on two fresh captures), `contract_parity_goldens` 5/5, frontend `r_api` 107/107 (+8 cases). 21 write routes answer server-generated ids, secrets or request-time timestamps (V-F40): orchestrator decision (delegated) — capture them with the spec's documented normalisation table (format-checked placeholders only) → D3b after D4. D4 launched (+ `SavedFire` DTO move). |
-| 2026-09-28 | E3 done (operator decision F-7 fulfilled): `contract_parity_equipment_viewer` 2/2 twice — the production importer builds the viewer index from a 97 KB committed fixture and all 12 development-only routes reproduce their goldens (the six `contracts_v2` positive fixtures replaced by captures; frontend parity 6/6 unchanged); 0 production lines changed. |
-| 2026-09-28 | Q2 done: `mission_artifact_properties` — `approval_and_deployment_share_immutable_artifact` 256/256 twice (15–18 s), every outcome class reached; its perturbation was denied by the permission classifier (V-F47, not run). |
-| 2026-09-28 | F2 done: 12 `failure_injection_*` cases in four binaries (telemetry 2, fleet 5, audit 3, Discord 2), 12/12 twice; the half-open-listener case evidences T-944's second half; perturbation (publication worker gives up on error) red. It restored the perturbed worker with `git checkout -- <file>` (forbidden by the brief; the file had no other changes); the orchestrator re-verified all 19 failpoint call sites intact. |
-| 2026-09-28 | F1 done: 10 `failure_injection_*` cases (identity 4 incl. the documented family revocation after a lost refresh answer, operations 2, missions 4 incl. the relayed deployment call site), 2 runs green; perturbation (reservation before-commit failpoint moved after commit) red with the changed-row diff; restored by sha256. |
-| 2026-09-28 | L1 done: `verification_core::repository_laws` (file length, sibling tests, exemption mechanisms, cargo manifests, crate directions, engine layers; 143 verification-core tests); xtask `verify file-length` and `verify engine-layers` delegate with byte-identical output except T-1055 (rules 4 and 7 now cover `editing`); `engineering_laws` 10/10 twice (1.5 s); 5 perturbations red; the frontend `doc_audit` grandfather table removed (T-1041) and the other agent's 100 undocumented items documented (F-1) → `doc_audit` 11/11. |
-| 2026-09-28 | K1a done: the 12 equipment routes live in `community_content/routes.rs`, registered only in development (operator decision F-6); `verify route-tags` PASS 165/165; 12 bare `Query` sites answer the error envelope; T-951 listener registry pruned; T-1216 docstring — 18 red-first tests. K2 launched for the remaining envelope defects (V-F35, V-F36, V-F53). |
-| 2026-09-28 | Q3 done: `telemetry_revisions_contribute_exactly_once` and `command_executor_fencing_preserves_observed_outcomes` 256/256 twice (every verdict class reached; 6–25 s); perturbations (duplicate applied; fencing comparison dropped) red with shrunk counterexamples. |
-| 2026-09-28 | X2 done: 4 `controlled_races_*` cases (approve vs reject, duplicate revisions, corrected revisions in either order, inverted audit commit order), 3 runs green; perturbations on the mission, match and publication-state locks red (the review-row lock alone is redundant with the mission-row lock, V-F56). T-944 is evidenced in both halves with F2 (V-F58). |
-| 2026-09-28 | Q4 done: `audit_publication_preserves_committed_event_delivery` and `reservation_transactions_conserve_slots_and_participants` 256/256 (identical input digests across runs; every required outcome class reached); its perturbations were denied by the permission classifier (V-F59, not run). All seven property records now exist. |
-| 2026-09-28 | G1 (closing fixes, batch 1) launched early for ledger items V-F23 (code), V-F24, V-F32, V-F33, V-F45, V-F49 (source comments), V-F50, V-F57; a second batch follows the gates if needed. |
-| 2026-09-28 | R3 done: `missions_library` part, 22 routes with all seven dimensions (7 route_acceptance + 1 contract_parity cases); red only on real handler defects (V-F62..V-F68, incl. a hidden-draft bookmark leak) queued for K3 after the R wave. |
-| 2026-09-28 | R1 done: `operations_events` part, 24 routes (7 + 1 cases); unauthorized (69 probes), ownership, guest and ban green; red only on framework gaps (V-F70, V-F71) and handler defects (V-F72, V-F73, K2's JSON set) queued for K3. |
-| 2026-09-28 | R5 done: `fleet_and_telemetry` part, 24 routes (7 + 1 cases, ~12 s); own probes green; red only on derived-probe handler defects (V-F75..V-F78) and the timestamp round-trip gap (V-F79), queued for K3. |
-| 2026-09-28 | R6 done: `administration_center_content` part, 50 routes (7 + 1 cases; 100 malformed, 91 boundary, 38 guest probes; 46 authorized exchanges) incl. the development-only equipment routes; red only on the timestamp round-trip gap, K2's JSON class and the refusal-only PATCH users route (V-F81: orchestrator decision (delegated) — explicit refusal-only success shape in the framework + retirement ticket). K2 amended with every JSON-body envelope defect (V-F82). |
-| 2026-09-28 | D4 done: typed `ModpackMod`, `Announcement`, `LeaderboardRow`, `SavedFire` (moved from the mortar page) with `@contract` tags; modpacks, announcements, CMS announcements, leaderboards and dashboard announcements claim every key; frontend 1,810 passed, 0 failed (two runs); trunk release ok. D3b launched. |
-| 2026-09-28 | R2 done: `operations_reservations` part, 13 routes (7 + 1 cases); red only on K2's JSON class and V-F84/V-F85 (fire-mission event existence, T-1177; malformed slot id) queued for K3. |
-| 2026-09-28 | K3 split (orchestrator decision (delegated)): K3a (route-acceptance framework: timestamps compared as instants with the wire format still asserted, top-level array contracts, an explicit refusal-only success shape with a documented reason) launched now; K3b (handler defects V-F62..V-F66, V-F72, V-F73, V-F75, V-F76, V-F84, V-F85 and a shared path-rejection envelope) after K2 and R4. |
-| 2026-09-28 | K2 done: every JSON body and query in the API goes through `from_json_rejection`/`from_query_rejection` (≈37 handler files incl. the development-only equipment viewer; the game-runtime session body; the malformed OAuth callback redirects); 34 `contract_parity_json_rejections_*` + 12 equipment query cases; five existing suites moved from the old flat 400 pins to the spec statuses (status assertions kept, messages no longer claim a wrong field); lib 532; route-tags 165/165. |
-| 2026-09-28 | G1 done: V-F23 (code), V-F24, V-F32, V-F33 (new `contract_parity_registry_row_constraints_match_the_catalogue_schemas`), V-F45, V-F49 (source comments), V-F50, V-F57 fixed; xtask db/ci/selftest 50/50; `ci-local-schema` 420 citations; engine-layers PASS with unchanged pins. Leftovers V-F89..V-F94 queued (E1/G2). |
-| 2026-09-28 | K3b launched (after K2) for the handler defects V-F62..V-F66, V-F72, V-F73, V-F75, V-F76, V-F84, V-F85 and one API-wide path-rejection envelope; R4's findings, when it reports, go to G2. |
-| 2026-09-28 | K3a done: round trip compares `date-time` fields as instants while asserting the API's own spelling; `Contract::schema_items` for top-level arrays; `refusal_only` success shape with a documenting-module reason (PATCH admin/users); coverage 14/14 (+4 framework cases); parity deterministic on 3 runs; the 16 remaining reds are exactly K3b's handler list. |
-| 2026-09-28 | D3b done: goldens for the 21 write routes with server-generated ids, secrets or request-time timestamps; 43 normalised fields in the design note's normalisation table (7 kinds, each format-checked; a secret golden stores only its placeholder); `_index.tsv` 89 rows; `contract_parity_goldens` 6/6 twice; frontend `r_api` 127/127 (+16). |
-| 2026-09-28 | K3b done: `core/http/path_parameters.rs` (`PathParams<T>` + `ApiError::from_path_rejection`) replaces all 97 `Path<…>` extractors in 49 handlers; bookmark writes and `scope=bookmarked` honour mission visibility (information leak closed, T-1173); armory quantity, unknown event scope, unknown roster account, status-stream and commands 404s, fire-mission event existence (T-1177 existence part) and malformed slot ids fixed; all 16 red probes green, 20 existing suites green, lib 536, route-tags 165/165. Early full `db test-it` started. |
-| 2026-09-28 | Frontend gate: `cargo test -p website-frontend` 1,826 passed, 0 failed; `identity_browser_session_transactions` 9/9 (`g-frontend-test.log`). The early full `db test-it` failed to build: `/home` reached 100% (the shared host target `~/.cache/tbd-target` had grown to 209 GB with 123 GB of stale website-api test executables and 60 GB of incremental cache; Postgres could not save container state). Orchestrator decision (delegated): removed only rebuildable caches (`debug/incremental` and the website-api test executables in `debug/deps`); `/home` back to 165 GB free, database healthy, the failed run's database dropped; repository (Disk_2) unaffected. Full `db test-it` re-run. |
-| 2026-09-28 | Gate run 1 (`g-db-test-it-1.log`): 1,294 passed, 2 failed (build 3 min 27 s, tests 209 s over 148 binaries; V prefixes route_acceptance 66, contract_parity 79, controlled_races 9, failure_injection 27, engineering_laws 10; 29 property records). Both failures are V fallout (V-F103). Frontend clippy wasm32 exit 0 (6 warnings in changed files, V-F102); frontend fmt drift only in the other agent's data_viewer files (V-F101); xtask 1,027 passed, 3 failed (V-F104). G2 launched with every queued small fix. |
-| 2026-09-28 | E1 split (orchestrator decision (delegated), ledger size): E1a (READMEs incl. api_v2 test map and `failpoints` feature, design note to implemented state, `@contract` grammar in the standards, stale engine-layer and seed references, READMEs for the other agent's committed equipment folders) and E1b (ship/close/note tickets, known bugs, ticket sync) launched. R4 asked to wrap up (no edits since 02:13; its binary passes). |
-| 2026-09-28 | G2 done: gate-run-1 failures fixed (415 expectation; equipment GET routes skipped from the Postgres null sweep with a reason); the other agent's `legacy_archive` concept renamed `unversioned_export_archive` (history rule green; on-disk names changed, V-F108); gameplay test race fixed (shared cwd lock); fmt clean on five crates; clippy clean (api, xtask, verification-core, map-engine, wasm32 touched files); engine-layers output byte-identical with `text::gpu` removed; participants world seeded (array check no longer vacuous, perturbation red); xtask 1,029 passed (1 red until the new files are committed); frontend 1,826. |
-| 2026-09-28 | Static gates (`target/api-progress-checkpoint/2026-09-28-v/g-*.log`): route-tags PASS 165/165; file-length 0 violations over 4,103 files; enfusion-comments 0; engine-layers PASS; schema-codegen leaves the tree unchanged; ci-local-schema PASS (420 citations); mod compile clean (0 TBD warnings); release `api` build carries 0 of the 18 failpoint names and no `failpoint` string while a test binary carries them. |
-| 2026-09-28 | E1b done: shipped T-1041, T-1026, T-1012, T-1105, T-951, T-1055, T-944, T-949 (evidence notes); T-1014, T-1088, T-1126, T-1173, T-1216, T-1218 filled but not yet shipped (`ticket ship` refuses while the stamp gap keeps `ticket check` red — ship after the commit is stamped); cancelled with proof T-948, T-986, T-933, T-906, T-953; notes on T-1177 and T-1131; 18 new idea tickets T-1229–T-1246 for the NOTE findings; `ticket check` red only on the 16 expected ship-before-stamp errors. |
-| 2026-09-28 | E1a done: 46 Markdown files (29 new): api_v2 README (`failpoints`, verification-suite map, configuration rows), core/seeds/workers READMEs, design note at the implemented state (499 lines, normalisation table byte-identical), `@contract` grammar in the documentation standards, engine-boundary and seed/runbook references, 27 READMEs for the other agent's committed equipment folders; remaining_milestones follow-up measured (all six EnfScript files ≤ 500). 67 readme-coverage gaps + 2 link breaks remain in other committed folders (V-F111) → E1c launched. G3 launched for V-F105..V-F107, V-F109. `rust-api-container` started for leptos-gates. |
-| 2026-09-28 | G3 done: three more handlers on `from_query_rejection` (5 red-first cases, `query_rejection_envelopes` 30/30); upload 413 comment corrected; data_viewer `aria-expanded` renders "true"/"false"; stale `text::gpu` history comments in both engines rewritten; clippy (api all-targets, engines native + wasm32) clean. Trunk release build started. |
-| 2026-09-28 | Final full `db test-it` (`g-db-test-it-final.log`): 1,301 passed, 1 failed (E3's fixture-coverage case now also saw E1a's `positive/README.md` → micro-fix G4); lib 536; 148 binaries, tests 234 s, build 78 s. Trunk release success. `ci-local-schema` re-run PASS after the fixture READMEs. |
-| 2026-09-28 | `mk leptos-gates` run 1 (`g-leptos-gates.log`): DOM oracle 15/25; the 10 divergent routes (dashboard, approvals, audit, servercontrol, deployments, events, eventhub, missions, missionview, settings) all trace to golden content now reproduced from the seed (2030 dates and weekdays, countdown years, seeded audit rows, the c000-004 briefing, library order, attendance 50); the five D4 typed-DTO pages matched unchanged. Each divergence was screenshot-audited and accepted with a note (`g-accept-*.log`); one seed-realism quirk noted (V-F113: an upcoming event shows ATTENDED). Re-run started. |
-| 2026-09-28 | G4 done (fixture-coverage case counts `*.json` samples only; stray-sample perturbation red). `mk leptos-gates` re-run (`g-leptos-gates-2.log`): exit 0, gate doctor OK, editor suite 21/21, DOM oracle 25/25. Clippy `-D warnings` clean: website-api all targets and `--lib --bins` (failpoints off), xtask + verification-core all targets; `fmt --check` clean on website-api, xtask, verification-core, developer-tools, map-engine, graphics-engine. |
-| 2026-09-28 | R4 stopped by the orchestrator (no report after the wrap-up request; its last message says both perturbation attempts were refused by the permission classifier). Its `missions_reviews` part (spec 515 lines, world 473, binary) is complete per coverage and passes in the orchestrator's full runs (V-F114). |
-| 2026-09-28 | Frontend final (`g-frontend-test-final.log`): 1,826 passed, 0 failed; `identity_browser_session_transactions` 9/9. Orchestrator perturbation re-checks (each restored, sha256 equal): a changed `GET__factions.json` value → `contract_parity_every_frontend_golden_is_reproduced_by_the_seeded_api` + index case red; a 501-line production file → `engineering_laws_production_files_stay_within_500_lines` red; a removed `@route` tag → `route_acceptance_route_table_matches_every_route_tag` red; the logout failpoint moved after commit → `failure_injection_logout_before_commit_keeps_the_session_and_a_retry_logs_out` red; `decide_revision` applying a duplicate → `telemetry_revisions_contribute_exactly_once` red. Race re-check not attempted (the classifier refused lock-removal edits to X1; X2's four lock perturbations are the race evidence). |
-| 2026-09-28 | E1c done: README coverage for the other agent's committed tbd-export, data_viewer, equipment DTO, developer-tools and xtask folders (readme-coverage 67 → 21 violations; link-check 0 breaks); the remaining 19 are the Workbench-generated `Gameplay/Policy/Generated/` folders whose generator refuses foreign files (V-F115, orchestrator decision (delegated): noted for the operator, not renamed unattended); 2 clear when V's deletions are staged. Final full `db test-it` (run 2) started. |
-| 2026-09-28 | Final gates: `db test-it` 1,302 passed, 0 failed, 0 ignored (all V prefixes and 7 property records 256/256; lib 536); ci `rust-test-it` 1,302/0; rust-fmt, rust-build, wasm-ci (1,493) PASS; xtask api_readiness 60, property configuration 8, verification-core 144, developer-tools 269; `ci ci-local` stops at verify-no-python on V's 7 unstaged deletions (resolve at commit); documentation gates fail only on V's uncommitted files and V-F115. H1 launched. |
-| 2026-09-28 | H1 done: register minimums raised to the measured counts and the V implementation paths added (the register validates); `verification_findings.md`; this checkpoint and `remaining_milestones.md` at V complete; the milestone C record archived; T-1247 to T-1251 filed for V-F110, V-F112, V-F113, V-F115 and V-F116 (written in the minted shape, because `ticket add` refuses while `ticket check` is red on the stamp gap) and `ticket sync` run; judge-only `verify api-readiness` FAIL with no receipts (73 violations, 91 checks did not run). |
-| 2026-09-28 | Committed as bd6ec3edf (752 files); the fourteen V tickets shipped and stamped (`ticket check` OK). Post-commit (`pc-ci-*.log`): verify-no-python and verify-no-shell PASS; `ci verify-documentation` fails only on the 19 Workbench-generated `Gameplay/Policy/Generated/` folders (T-1250, operator decision). |
-
-### Milestone V launch amendments
-
-| Agent | Addition to the pre-written prompt |
-|---|---|
-| brief (all) | Tree clean at P0 (other agent committed all work): the foreign set is whatever uncommitted change V did not make, re-snapshotted per wave; files the other agent committed are ordinary code, still edited only by their owning V agent. |
-| A2 | `Cargo.toml` is no longer foreign (committed by the other agent); own hunks only. |
-| A3 | The committed equipment routes and `equipment-data-viewer` schemas are inventoried like any route (schemas read-only); write the inventory first with `pending:` rows so R0 can start. |
-| D1 | Trees are clean; captures compile committed code only. |
-| R0 | Parser handles both the nested equipment router and K1's later dev-only rows in `routes.rs`; known expected-red envelope gaps (12 bare `Query` handlers, K1 fixes); keep specs data-driven. |
-| A4 | Read `failpoints_api.md` instead of the module source; re-run the release strings probe after placing call sites; do not touch `audit_notifier.rs` or `Query` extractors (K1). |
-| L1 | Dependency law corrected (orchestrator decision (delegated), evidence: the `website-map-engine` line in `api_v2/Cargo.toml` is documented as mission-domain only): website-api depends on neither graphics-engine nor frontend; the frontend does not depend on website-api. Also owns F-1 (100 `doc_audit` doc lines in the other agent's committed files, operator-approved) and T-1055. |
-| Y1 | Baseline `api_readiness` 56 passing. |
-| D2 | Owns the editor-smoke and arsenal expectation lines for the new registry golden, the routes.csv attendance note, and the now-committed frontend README golden lines. |
-| C1 | Run the production audit publisher before reading the SSE `ready` frame (D1 note); operator decision F-7: equipment-viewer goldens reproduced from a committed dataset fixture under a development configuration. |
-| C2 | F-4 (fleet-command arguments pointer) red-first; verify T-1088 (all tagged) and cover every tagged class. |
-| Q1, Q2 | Binary ≤ 60 s: shared state, unique ids per case. |
-| D3 | C1's binary may not exist yet: prove by second-capture diff, then run C1's binary when it lands; skip equipment routes (C1) and the four Value-row DTOs (D4); report added frontend cases. |
-| K1a | Keep A4's `fail_point!` calls in place; mirror the `/auth/dev-login` gating so R0's parser reads the dev-only rows. |
-| X1, X2, F1, F2 | Read `injection_support_api.md`; placement files named; X2/F2 name the cases that evidence T-944's two halves; F1 does not duplicate the inert-until-armed case; F2 asserts the documented Discord lease-expiry recovery and the 204 claim-after-commit behaviour. |
-| C2 | (message) Fix own clippy `collapsible_if` before reporting. |
-| K1a | (message) Its `Result<Query>` change broke `tests/leaderboards_paging.rs` direct calls — fix them and include that binary in its checks. |
-| A3b | New small agent (orchestrator decision (delegated)): closed registry row contracts for V-F25. |
-| E3 | New agent for operator decision F-7 with a hard feasibility stop (≤ 60k tokens reading the importer). |
-| R1–R6 | R0 facts (worlds mounted by `#[path]`; `/me*` covered by R0); known handler defects are expected red and belong to K1a/K2; R6: equipment routes development-only, verify the PATCH users 409. |
-
-### Milestone V findings
-
-Every V finding, its class and its outcome are in [verification_findings.md](verification_findings.md).
+The milestone V execution record, launch amendments and findings pointer are archived verbatim in
+[milestone_v_execution_record.md](/documentation_v2/archive/api_v2_completion/milestone_v_execution_record.md).
 
 ## Milestone C execution record
 
 The milestone C execution record and launch amendments are archived verbatim in
 [milestone_c_execution_record.md](/documentation_v2/archive/api_v2_completion/milestone_c_execution_record.md).
+
+## Milestone B execution record
+
+Plan: `/home/Samuel/.claude/plans/pasted-content-id-1072-resume-the-radiant-conway.md` (30 sub-agents in
+8 waves plus operator checkpoint W; shared brief `b_brief.md`, facts `decisions.md` and prompts
+`prompt_<agent>.md` in the session scratchpad). Operator decisions of 2026-09-28 are in the plan §3 and
+the design note `game_ballistics.md`.
+
+| Date | Phase handoff |
+|---|---|
+| 2026-09-28 | P0: shims, database, empty foreign snapshot (tree clean at 2365b1586), brief written; baselines (`target/api-progress-checkpoint/2026-09-28-b/p0-*.log`): map-engine 1,449 passed, 0 failed, 2 ignored; frontend 1,826 passed, 0 failed; `db test-it` taken from V's final run (1,302; only a documentation commit since). Wave 1 launched: B01, B02, B03, B04, B06, B15, B16. |
+| 2026-09-28 | B01 done: `game_ballistics.md` (367 lines; link-check 20/20, markdown-placement and readme-coverage OK). Its NOTE findings became amendments to B09, B11 and B27. |
+
+| 2026-09-28 | B04 done: ballistics-catalog, ballistics-calibration and fire-mission v2 schemas; `ballistics_validation` check (10 tests, NOT RUN until the fixture lands; two perturbations red); schema-codegen changes nothing; `schema citations` red on 4 dangling tags the API and frontend slices remove. Orchestrator decision: B07 waits for checkpoint W (the strict schema requires the oracle run), so B10 is not needed.
+
+| 2026-09-28 | B14 launched early (depends only on B04).
+
+| 2026-09-28 | B16 done: `format_grid`/`parse_grid` (6/8/10 figures, cell centre) and `overlay/fire_mission_marks.rs` on the existing marker, connection and zone lanes; 26 tests (11 + 15) twice green; four perturbations red; wasm32 clippy clean; native clippy red only on B06 in-flight test code (needless_range_loop) and the full crate on B15 in-flight `full_resolution` test. Stale overlay tests README entry → B27.
+
+| 2026-09-28 | B06 done: `flight_model/` (RK4, Hermite crossing, trajectory) and `wind.rs`; 22 tests (15 + 7) twice green incl. the export spot check (45°, coef 1: 427.31 m, 9.417 s, 108.73 m); clippy native and wasm32 clean; eight perturbations red; `libm` optional under `scenario`.
+
+| 2026-09-28 | B05 launched (B04 and B06 done).
+
+| 2026-09-28 | B05 done: `catalog/` (weapon, shell, lookup) and `angular_units.rs`; 25 tests twice green (schema conformance via a `jsonschema` dev-dependency; the side-drag omission test destructures `FlightParameters`); clippy native and wasm32 clean; four perturbations red. B08 launched.
+
+| 2026-09-28 | B14 done: migration 0060 (catalog table with immutability trigger, fire-mission input columns, `fire_mission_guns`, preserve-and-detach of dangling event ids, event FK ON DELETE SET NULL after the matches precedent) pinned; models; `game_ballistics_migration` 5 cases red-first then twice green, `db_migrate` and the pin suite green; two perturbation sets red; clippy clean. Save and list routes stay broken at runtime until B19 selects the new columns (B19 amended).
+
+| 2026-09-28 | B02 done: tbd-export `BallisticsOracle` (edit-mode plugin for BallisticTable forward angles and altitude probes; play-mode component on the export game mode for `GetProjectileSimulationResult`, whose compiled signature adds `mustFallDown`, maximum time and horizontal distance and returns the end position, TOF by 16-step bisection; needs the engine projectile-debugging diagnostic; SHA-256 self-test; sidecars). `mod compile` and a probe compile 0 TBD warnings, enfusion-comments 0. Not run in Workbench (checkpoint W). The two `resourceDatabase.rdb` changes (11:52) come from the operator's running Workbench, not from B: added to the foreign snapshot, never staged by B.
+
+| 2026-09-28 | B03 done: `apps/website/offline-service-worker` (lib: cache names, request classes, Range slicing, offline pack; wasm32 bin), 17-line loader, webmanifest, `index.html` worker link, crate-direction rule; 22 crate tests twice green; clippy host and wasm32 clean; trunk release passes; `repository_laws` 76; engine-layers PASS; perturbations red. Trunk writes unhashed worker files at dist root. Navigations network-first. A throwaway Node smoke of the built worker ran from the scratchpad (outside the repo). B18 launched.
+
+| 2026-09-28 | B15 done: `BootstrapScope` (terrain-and-imagery boot skips world objects, forest, water and labels) with a full 2 m `FullResolutionDem` handle; `frontend/src/v2/core/map_view/` seam; the Mission Creator moved onto it (`canvas_mount.rs` 499 → 447; T-1045 lines fixed in `bridge/mod.rs`). map-engine clippy clean; tests: full_resolution 7 twice, map_view 17, editor 1,037, frontend full 1,843; trunk release ok; `gate editor-suite` 20/21 (the `hydrate` smoke needs the API; the orchestrator runs it at the wave gate). Three perturbations red. Frontend wasm32 clippy `--all-targets -D warnings` was already red before B (≈173 findings outside B; ci-local-leptos runs it without `-D warnings`), B15 fixed the 12 in its files. Orchestrator decision: the wave-1 gate runs together with the wave-2 gate, because B08 and B18 edit the same crates now.
+
+| 2026-09-28 | Wave 1 complete (B01–B04, B06, B15, B16). B20 launched early (depends on B04 and B05 only). Waiting on checkpoint W for B07.
+
+| 2026-09-28 | B08 done: `solver/` (golden-section max-range angle, Brent root capped at 60 iterations, typed refusals, per-ring rows, lowest-solving-ring recommendation), old solver and its tests deleted, API on a temporary `legacy_flat_solution` shim; 18 tests three times green; map-engine full 1,539 passed, 0 failed, 2 ignored; clippy native and wasm32 clean; six perturbation sets red. Its finding F3 is a defect (with wind set, the azimuth is geometric and the solution misses the target): orchestrator FIX via new agent B08b (wind-corrected aim, TimeToLive bracket), launched now; B11–B13 amended to use its fields. Stale mortar README and feature-doc links to the deleted file go to B24 and B27.
+
+| 2026-09-28 | B20 done: `dto/fire_missions.rs` (shared `SavedFireMissionAnswer`, T-1245) and `dto/ballistics_catalogs.rs` with parity tests; `token_type` claimed as Bearer (T-1245); `dto` 161 passed, 6 failed: 3 goldens await re-capture (B21b amended with the event list golden) and 3 inline tests red on four `ChargeSolution` fields B08b added without the schema (B08b amended by message to add them). Its perturbation was refused by the permission classifier; the orchestrator runs it at the gates.
+
+| 2026-09-28 | B23 launched early (depends on B20).
+
+| 2026-09-28 | B18 done: `frontend/src/v2/core/offline/` (registration at boot, pack download on the first mortar visit, quota and persist, state on `<html>`); `map-tile-index.schema.json`; `cargo xtask map tile-index` (Everon: 5,461 tiles z0–6); API and Caddy serve `service_worker.js` no-cache; offline 19 + tile index 7 + router 2 tests twice green; four perturbations red. B22 launched.
+
+| 2026-09-28 | B08b done: `solver/wind_corrected_aim.rs` (outer aim iteration, calm air bit-identical, TimeToLive bracket), four `ChargeSolution` fields added to the schema; solver 23 tests twice green (impact within 0.05 m of the target under crosswind, quartering, Δh); clippy native and wasm32 clean; three perturbations red. Three frontend DTO tests need the four keys in their hand-built rows (B21b amended). B11 and B12 launched.
+
+| 2026-09-28 | B23 done: `pages/administration/ballistics_catalogs/` (upload form, version list, validation report) with route, nav and breadcrumb; 19 tests green; perturbations red. It added a multipart client verb `api_post_form_keeping_refusal` (`Body::Form`) in `core/api/client/requests.rs` outside its list; reviewed by the orchestrator and accepted (14 lines, no duplication of the refresh path). The admin nav entry changes the sidebar on admin oracle routes (B26 amended); doc-audit item in `core/offline/mod.rs:98` queued for the closing fix run; admin page feature doc → B27.
+
+| 2026-09-28 | B12 done: `battery.rs`, `crest_clearance.rs`, `agreement_cases.rs` (splitmix64 lattice over the catalog); 27 tests green; map-engine full 1,564 passed, 2 ignored; clippy clean; four perturbations red. Its finding (no shared `FireMissionSolution` assembler) → new agent B12b (one assembler plus the mismatch comparison for API and page), launched after B11; B22 told by message, B19 and B25a amended.
+
+| 2026-09-28 | B11 done: `dispersion.rs` (finite-difference PE ellipse, documented interpretation, InitSpeedVariation in m/s) and `fuze.rs` (burst-point time fuze with its own aim); 15 tests; map-engine 1,564 passed, 2 ignored; clippy clean; eight perturbations red. Orchestrator review: the prompt expected range PE to grow with range; on the high-angle branch only the speed share does (F1), so the ring-2 test asserts the speed share — a corrected expectation, recorded, not a weakening. F2 (the burst aim is missing from the wire `FuzeSetting`) → B12b amended to own that definition. B12b launched.
+
+| 2026-09-28 | B12b done: `fire_mission.rs` (one assembler, `SOLVER_REVISION` game-ballistics-1) and `fire_mission_comparison.rs` (mismatch rule); `FuzeSetting.burst_aim` + `FuzeBurstAim` in the schema; 15 tests four times green; map-engine 1,579 passed, 2 ignored; clippy clean; two perturbations red. Frontend DTO `FuzeSetting` must accept `burst_aim` (B21b owns `dto/fire_missions.rs` now); the `fuze.rs` partial projection tag goes to the closing fix run.
+
+| 2026-09-28 | Map-engine gate after B05–B16 and B08b/B11/B12/B12b (`g1-*.log`): `cargo test -p website-map-engine --all-features` 1,601 passed, 0 failed, 2 ignored (127 ballistics cases); clippy all-features all-targets `-D warnings` clean; clippy wasm32 default features `-D warnings` clean. Waiting on checkpoint W (B07 → B09 → B13, B17, B19) and B22.
+
+| 2026-09-28 | B22 done: mortar page restructured (`catalog_source`, `inputs/`, `solve_bridge` mapping onto the shared `solve_fire_mission`), page public with only the save area behind sign-in; mortar tests 40/40 twice; perturbations red. Frontend full 1,913 passed, 7 failed, all in other agents' pending work (six `r_api::fire_missions` goldens → B21b; doc-audit item → closing fix). B24 launched (map mount with heights, crest profile, save button, public nav link).
+
+| 2026-09-28 | Checkpoint W: operator restarted Workbench on tbd-export (the NET API cannot compile new plugin classes); the orchestrator drove the rest via enfusion-mcp: plugin run (operator typed the generation id in its dialog) → `forward_angles.json` complete (7 shells, no errors, sha256 9679868b…4d6b); export world played → `simulation.json` complete (4,185 samples, no shell errors, sha256 31d3b3c2…2e83; the availability probe passed without a diagnostic toggle); engine gravity `PhysicsWorld.GetGravity` = 9.8100004196167 (f32). Both sidecars match; copied to `assets_v2/scratch/ballistics_oracle/6A6F008DC5395616/` (gitignored); `active_generation.txt` removed; play stopped. B07 launched.
+
+| 2026-09-28 | B24 stopped at its budget: map picker (markers, connections and zone meshes through the engine overlays), solution cards, saved fires split with the event picker moved in, offline status, public nav link, `allow(dead_code)` removed from `core/map_view`; old mortar files deleted (old tests kept in the scratchpad; removed cases listed with reasons). Frontend does not compile (two E0308: the page passes the engine `FireMissionSolution` where the DTO still has a copy). Orchestrator split: B20b (DTO re-export, legacy DTO removal, parity rows) now, then B24b (tests twice, perturbations, clippy, trunk). Foreign snapshot re-taken (the Workbench restart rewrote the two `.rdb` files again).
+
+| 2026-09-28 | B20b done: `dto/fire_missions.rs` re-exports the engine solution types, legacy `FireSolution` DTO and its test deleted, parity rows carry the aim fields and `burst_aim`; the stored row keeps the const-false dispersion guard. Frontend compiles; `dto` 163 passed, 3 failed (the three goldens B21b re-captures); clippy wasm32 clean in its files. Its perturbation was refused by the permission classifier (orchestrator owes it); the engine-side const-false enforcement goes to the closing fix run. B24b launched.
+
+| 2026-09-28 | B24b done: mortar suite 59/59 twice (one test input moved 1 km south because its target lay outside the 12,800 m Everon DEM; assertions unchanged, orchestrator reviewed); clippy wasm32 clean in mortar; trunk release ok; two perturbations red. Frontend full 1,934 passed, 4 failed (three fire-mission goldens and `SavedFire` column parity → B21b; doc audit `core/offline/mod.rs:98` → closing fix).
+
+| 2026-09-28 | B07 done: `cargo xtask ballistics trim-export` (deterministic, three runs byte-identical), committed vanilla catalog (gravity 9.81 from the oracle; default-charge standard dispersion) and calibration bundle (31 native + 31 wind tables, 6,231 oracle samples) with four negative bundles; `schema validate` ballistics 4 PASS; 17 tests twice green; perturbations red. Deviation: the game tables use 12.5-mil and finer steps near vertical and the oracle sampled every 25 mils, so of 476 native rows 406 matched directly, 62 at lattice ends, 7 placed by interpolation, 1 left out. Operator decision: finer oracle re-run (1.5625-mil forward lattice) and a strict re-trim with no interpolation or omission: B02b (plugin) now, then the operator restarts Workbench, the orchestrator drives the run, then B07b. Non-charge tables dropped (only charge coefficients are fired in game). B09 launched on the current fixture (its code does not depend on the row evidence rules).
+
+| 2026-09-28 | B02b done: oracle forward lattice 1600 → 800 mils in 1.5625-mil steps (whole sixteenths, exact decimals), revision `tbd-ballistics-oracle/2` (one-line constant bump in `TBD_BallisticsOracleRun.c`); mod compile and probe 0 TBD warnings; enfusion-comments 0. Estimate 52,839 forward samples, ≈13.9 MB, ≈8–10 s. Operator asked to restart Workbench for the second oracle run.
+
+| 2026-09-28 | Oracle run 2 (operator restarted Workbench and typed the generation id; the orchestrator drove the rest via MCP): `forward_angles.json` revision 2 complete (13,888,200 bytes, 1.5625-mil lattice, sha256 cadf9f9b…33e4); `simulation.json` complete (4,185 samples, 0 shell errors, sha256 591d3147…d16d); sidecars match; revision-1 output kept as `.revision1`; play stopped; foreign `.rdb` snapshot re-taken. B07b launched.
+
+| 2026-09-28 | B07b done: strict trim restored — every native row of the 31 tables matched (414 by a forward sample, 62 by the lattice-end rule the engine needs: it answers TOF −1 at both lattice ends of every table); nothing interpolated or omitted; calibration sha256 12be201b…d3d0 (catalog unchanged 24a68cc5…fbde); three trims byte-identical; 18 tests twice; schema validate ballistics PASS ×4; perturbation red. B09 told by message (fixture regenerated; its clippy finding).
+
+| 2026-09-28 | B09 done with red: `calibration/` (native, wind, oracle, provenance, report, pure-Rust SHA-256) and 27 tests; 20 green (provenance, four negatives, the red-case checks, column_1 = range·tan θ), the seven per-shell committed-bundle tests red — no tolerance loosened. Residuals: R1 5,262 of 15,841 forward samples (the engine forward lookup is linear interpolation of its sparse table between rows, not flight); R2 30 native rows and 258 wind-row ranges at 40–48° (±1 mil window under 0.1 m wide, model max range −0.07…+2.9 m off); R3 84 simulation samples overshoot range ≈0.11 % (limit ≈0.1 %), TOF within 0.05 s; R4 75 near-vertical wind cases at mm scale. Findings: `m_aValues` = [crosswind deflection mrad, head/tail range change m, angle of fall deg]; SideAirDragScale not applied (drift ratio 0.998–1.002 without, 7.95–9.93 with). Orchestrator: the g = 9.807 preference against the engine's true 9.81 points at a different engine integrator; B09b launched to identify it from the oracle and make the flight model engine-faithful. Criterion questions (R1, R2, R4) go to the operator after B09b.
+
+| 2026-09-28 | B09b done: engine integrator identified from the 4,185 oracle simulations — fixed 1/30 s step, gravity first, linear air-relative drag, position by mean velocity, linear chord crossing (f32: max 0.0078 m, RMS 0.0013; f64: 0.016 m; RK4 reference 2.87 m); flight model rebuilt on it (f64); native rows within 0.011 m / 0.0007 s; simulation failures 84 → 0; flight tests 17 green; RK4-specific expectations moved to the scheme's chord-sag bound (listed, orchestrator reviewed); perturbation (RK4 back) red. Remaining: R1 forward samples between rows, one wind row at 42° (0.003 m outside the window), 54 crosswind rows (judge decoding bug), 3 solver vacuum tests assuming RK4 exactness. Operator decisions: R1 forward samples are row evidence only; the model moves to f32 state like the engine (no tolerance floor). B09c launched.
+
+| 2026-09-28 | B09c done: flight in explicit f32 with the engine constants (simulation residual max 0.0078 m, native rows 0.0057 m / 0.0008 s); forward samples judged only at native rows (414 judged, 15,427 counted as engine table interpolation); crosswind judge compares the decoded angle within 1 mil; solver vacuum tests bounded by chord sag plus one f32 rounding per step (still discriminating); Brent converges on all 21 f32 brackets; all seven per-shell calibration tests green with unchanged tolerances; three perturbations red. One red: dispersion calm-air symmetry at f64-level tolerance under f32 noise. Orchestrator decision (delegated reasoning, no tolerance change): dispersion is a documented interpretation and a derivative, so it runs on the f64 copy of the same engine step with h restored to 1e-5 rad; the upload report gains the unjudged forward-sample count. B09d launched.
+
+| 2026-09-28 | B13 and B17 launched (calibration green).
+
+| 2026-09-28 | B09d done: dispersion runs on the f64 copy of the engine step (h 1e-5 restored; a new test bounds f64-vs-f32 impact separation at 0.02 m and proves the paths differ), `forward_samples_not_judged` serialised in the upload report and required by the schema; ballistics 167 tests twice green; clippy native and wasm32 clean; two perturbations red. It added a public `fly_to_height_double_precision` wrapper in `flight_model` (outside its list; reviewed, accepted). B17 told by message to carry the new field; frontend DTO field → B21b.
+
+| 2026-09-28 | B17 done: catalog services and handlers (admin multipart upload → engine calibration → immutable insert + audit in one transaction; public list and detail with ETag/304 and immutable caching); `game_ballistics_catalog_upload` 8 twice green (vanilla 201 with 15,427 unjudged forward samples, four negatives 422 pinned to their case ids, 409, 403/401, 405, 400/415, 413 at limit+1) + 5 unit; route-tags 168/168; four perturbations red. Calibration bundle is 6.4 MB: part caps 16 MiB / 1 MiB, route 17 MiB + 64 KiB. api clippy all-targets blocked only by `fire_mission_solution.rs:465` including the deleted mortar `grid.rs` → B19. B19 launched.
+
+| 2026-09-28 | B13 done with red: 25 sweep tests (symmetry 4, bounded failure 11 over 10×1,000 seeded draws, oracle elevation and wind 8, end to end 2); 18 green, 7 oracle tests red on 314 samples — a solver defect (F1: the aim loop's first iteration aims at the target ignoring wind and a refusal there ends the solve, so reachable crosswind targets near 45°/85° are refused) → new agent B08c. Orchestrator review of deviations: symmetry holds to 0.01 mil / 1e-3 s instead of 1e-9 because rotation changes the f32 rounding of the engine-faithful flight (operator chose f32 state; exact quantities stay 1e-9); oracle inversions at exactly 45°/85° allow the 1-mil tolerance at the limits; 147 low-branch oracle samples are checked to resolve to the high-angle answer. Accepted and recorded. Three perturbation sets red.
+
+| 2026-09-28 | B08c done: after a range-bound refusal the aim loop re-aims from the refused bracket-end flight's drift (refusal kept only if the aim point stops moving or the last iteration is refused; solved and calm paths bit-identical); B13's 7 oracle tests green unchanged (0 of 314 fail); ballistics 196 passed twice; clippy native and wasm32 clean; perturbation (early return) red.
+
+| 2026-09-28 | B25a and B25b launched in parallel with B19 (end-to-end runs wait for B21b's catalog goldens).
+
+| 2026-09-28 | B19 done: `handlers/fire_missions/{save,list}`, `services/fire_mission_resolve.rs` (pinned catalog, shared assembler in `spawn_blocking`, `compare_solutions`; 422 `solution_mismatch`/`fire_mission_refused`/`no_firing_solution`) and `fire_mission_store.rs` (one transaction with guns, FK 404); solve route and `legacy_flat_solution` removed; `game_ballistics_fire_missions` 9/9 on three runs; `fire_mission_solution` 4/4 (solve cases removed, pin re-pointed line-exact to `restore.rs::parse_legacy_grid`); api clippy all-targets clean; route-tags 167/167; schema citations 482/482; perturbation (tolerances 0) 6 red. It ran `git rm --cached` once and reset the entry itself; the orchestrator verified the index is empty. Findings → closing fix run: `serde_json` float_roundtrip, the dropped pin doc assertion, a 12-gun battery cap (orchestrator decision); `fixture_router` solve pin → B21b. B21a and B21b launched.
+
+| 2026-09-28 | B21a done: solve block removed from `admin_approvals_cms_field_tools.rs` (980 → 959); null tolerance extended with a catalog-model fire mission, a gun and both catalog GET routes (`null_tolerance_reads` red-first, then 3/3 twice; select scan 1/1); `admin_approvals…` 5/5, `fire_mission_solution` 4/4, `game_ballistics_catalog_upload` 8/8; seed §15 comment only; perturbation red. Finding: `select_literals` cannot see `concat!`-built SELECTs, so the select scan is fail-open on `fire_mission_store.rs` → closing fix run (FIX class).
+
+| 2026-09-28 | B25b stopped past its budget (≈305k; orchestrator asked it to wrap up): `gate mortar-offline` (plan, page driver, expected native solution, map-pixel check) with a corpus-backed `/api/` route in the gate server; `Network.setBypassServiceWorker` in doctor, editor-suite/smokes/render-check and v-suite; the offline crate in all four `wasm-ci` steps and the CI task row; `mk mortar-offline-gate` recipe; 17 developer-tools + 3 xtask tests; clippy clean; perturbations red. End to end on a scratch corpus from the committed catalog: every step through `mission_entered` ok, `solution_matches_native` red (page elevation 1179.8 vs native 1179.9 mil, apex 1 m lower; inputs identical: grids at cell centres, manual heights, same wind). Orchestrator hypothesis: display truncation on the page (both differences one display unit lower); B25a's raw-bits bench decides; follow-up B25c after B25a reports. Goldens still await B21b.
+
+| 2026-09-28 | B21b done: goldens captured from the real `api` built from the tree on a fresh seeded database (vanilla pair uploaded through the route: 201, 7,865 cases, 15,427 unjudged forward samples; save captured with the server's own solution); new `operations_ballistics` route-acceptance part (8 twice), `contract_parity_goldens` 6/6 twice, coverage 14/14, reservations part 8/8, `json_rejection_envelopes` 34/34, frontend dto + admin 185/185, developer-tools fixtures 26/26; five perturbations red. FIX inside its files: `fire_mission_saved` asserted the geometric azimuth; the API stores the wind-corrected aim. Link-check on the evidence folder fails only on a backticked path to the untracked offline crate (clears at commit). G1 (closing fixes batch 1) launched.
+
+| 2026-09-28 | B25a done: URL-only bench `/debug/ballistics-agreement` and `gate ballistics-agreement` (served golden checked against the committed catalog; native solve through the shared assembler); `cargo xtask mk ballistics-wasm-agreement` against the real goldens PASS 32/32, bit-identical 32/32 (`B25a-recipe.log`); developer-tools 306 passed, 4 ignored; 20 + 13 new tests twice green; perturbation (×(1+1e-3)) 29 red, 0 bit-identical. The shipped WASM equals native bit for bit, so B25b's 0.1-mil page difference is on the page side (display or input), not the model. Case mapping duplicated in bench and gate → closing fixes batch 2.
+
+| 2026-09-28 | B27 launched (docs; parallel with G1).
+
+| 2026-09-28 | G1 done (9 of 10 items): offline doc + no allow; fuze tag marked partial; engine dispersion refuses `verified_in_engine: true`; api `serde_json` float_roundtrip; the pin's under-permissive assertion restored; 12-gun battery cap (schema, handler 400, page); select scan reads `concat!` + `name!()` macros and fails on an unreadable part (it found 7 more legacy Option columns); golden recipe gains the upload step. map-engine ballistics 197; six API binaries twice green; frontend mortar/offline/doc_audit 90; clippy clean; perturbations red. Not done: the 34 native dead-code warnings in mortar — the native frontend build already had 124 warnings before B (nothing mounts the app natively): NOTE for a ticket (B28), not a B defect. NOTE: `null_tolerance_select_scan` skips without `TEST_DATABASE_URL` (the readiness judge refuses skip output; ticket). B25c and G2 launched.
+
+| 2026-09-28 | B27 done: mortar page and admin catalogs feature docs, map-engine ballistics docs (`game_ballistics_engine.md`), runbooks (`ballistics_oracle_run.md`, `offline_mortar_page.md`), glossary (four terms), `api_overview.md`, EVIDENCE README count and row, design note at 448 lines with the engine scheme and decisions, middleware body-limit line, code README Contents fixes. It left CLAUDE.md to the orchestrator with a 14-line atlas patch; reviewed and applied by the orchestrator (plan-approved atlas update). Documentation gates with untracked files: markdown-placement OK; readme-coverage 22 (19 are the pre-existing `Policy/Generated/` folders, T-1250; 3 clear at commit); link-check 1, a stale pre-B citation of the removed `doc_audit/allowlist.rs` → closing fixes batch 2.
+
+| 2026-09-28 | G2 done: case→inputs mapping, lead summary and bit walk live once in map-engine `agreement_cases.rs` (bench and gate import them; mirror test retired as one source remains); stale allowlist citation rewritten; two Related links added; map-engine ballistics 201; developer-tools and frontend bench tests twice green; `mk ballistics-wasm-agreement` PASS 32/32 bit-identical 32/32; link-check with untracked OK; perturbation red.
+
+| 2026-09-28 | B25c done: the 0.1-mil page difference came from a stale `dist` (the page predated the B08c solver edits), not from truncation; a fresh recipe passed unchanged. Shared `solution_wording.rs` in map-engine (round to nearest, ties to even) used by the page and the gate; the gate names the failing step; map-engine 1,660 passed, 2 ignored; frontend mortar 61 twice; developer-tools mortar_offline 21; `cargo xtask mk mortar-offline-gate` PASS in 105 s (trunk 80 s); perturbation (page truncation) red in two frontend tests and in `mortar_offline_solution_matches_native`. B26 launched.
+
+| 2026-09-28 | Final gate run 1 (`f-db-test-it.log`, after pruning rebuildable caches: /home 84 → 142 GB free): 1,338 passed, 1 failed, 0 ignored over 152 runner sections; `game_ballistics*` 29 cases. The failure: `POST__fire-missions.json` dispersion deflection PE differs by one ulp from the live answer — the golden predates G1's serde_json `float_roundtrip`; G3 re-captures it through the recipe.
+
+| 2026-09-28 | G3 done: `POST__fire-missions.json` re-captured through the recipe (one byte: …496 → …497); all 90 index rows replayed with matching statuses; no other golden affected; `contract_parity_goldens` 6/6 twice; frontend `r_api` 137. Static gates (`f-*.log`): route-tags 167/167; file-length 0 violations over 4,306 files; enfusion-comments 0; engine-layers PASS; `ci ci-local-schema` PASS (482 citations); mod compile 0 TBD warnings. Map-engine: 1,682 passed, 0 failed, 2 ignored; clippy `-D warnings` clean all-features, each of the eight feature sets (lib), wasm32 default and all-features.
+
+| 2026-09-28 | B26 done: `v-suite verify` 26/26 routes match the frozen oracle; `mortar` public, new `ballistics_catalogs` route and golden; 24 routes accepted after audit — for all 22 sidebar routes the new DOM minus the new nav link equals the old golden exactly, PNG changes are the sidebar only; the mortar golden shows the offline pack state without a service worker (named in its note). FIX inside its scope: the fixture router's canned refresh lacked `token_type` (B20 refuses it; every seeded capture signed out) + 1 test red-first. The editor smokes' canned refreshes lack it too → G4. NOTE tickets: signed-out Administration nav, `gate s-routes` missing a pre-B route row.
+
+| 2026-09-28 | Final gates, backend and frontend (`f-*.log`): full `db test-it` run 2 1,339 passed, 0 failed, 0 ignored (game_ballistics 29, route_acceptance 73, contract_parity 86, controlled_races 9, failure_injection 27, engineering_laws 10; no skip lines); `website-api --lib` 543; api clippy `-D warnings` all targets and `--lib --bins` clean; frontend fmt clean, `cargo test -p website-frontend` 1,952 passed, 0 failed, wasm32 clippy no warning in a B line; xtask 1,058 passed, 1 red (`every_rust_file_named_in_prose_exists`: three new files still untracked, clears at commit).
+
+| 2026-09-28 | G4 done: one `gate_refresh_answer` constructor (complete Bearer pair) used by the DOM oracle and every editor smoke; developer-tools 309 passed, 4 ignored; clippy clean; editor smokes 20/21 without the API (hydrate needs it); perturbation red in its test and B26's.
+
+| 2026-09-28 | Final browser gates (`f-leptos-gates.log`, API on :8080, dev DB migrated to 0060): `mk leptos-gates` exit 0 — gate doctor OK, 21 editor smokes pass (hydrate included), DOM oracle 26/26. Live walkthrough started: vanilla catalog uploaded as admin through the API (201, 7,865 cases, 0 failures); the admin page lists version 1. The local `spa-gate-serve` launch config (untracked) mounted `--map-assets assets_v2/terrains/everon` instead of the terrains root; fixed. Walkthrough finding: the browser pane cannot reach `fonts.googleapis.com`, and one failed optional font request marks the whole offline pack `failed` → G5 (essential vs optional pack entries).
+
+| 2026-09-28 | Live walkthrough, online (browser pane, gate serve + API; the pane has no WebGL2 so the map shows its fallback and grids are typed, heights manual — the map itself is proven by the headless gates): admin page lists the uploaded version; a 3-gun M252/M853A1 battery with wind 3.5 m/s from 250° solves on the page (per-gun charge, elevation, wind-corrected aim, deflection and range corrections, dispersion labelled as interpretation); a single-gun M821 mission (1179.9 mil, as the native gate) saved to a new upcoming event → `POST /api/v1/fire-missions` 201 (server re-solve agreed) and listed. Finding: the illumination fuze only tries the ground-recommended charge (burst 300 m refused although charges 3–4 reach it) → G6.
+
+| 2026-09-28 | G5 done: offline pack splits essential and optional (cross-origin icon font) entries; optional-only failure ends `ready` with `data-offline-optional="missing"` and a visible notice (progress 99, documented); essential failure stays `failed`; frontend offline + mortar 86 twice; developer-tools mortar_offline 23; `mk mortar-offline-gate` PASS; perturbation red. Two README lines queued.
+
+| 2026-09-28 | Live walkthrough, offline (API stopped, SPA still served by the gate proxy): after a `ready` pack (optional font missing, service worker controlling, cross-origin isolated), the reload shows "catalogs could not be loaded (502) … no offline copy" and the pack flips to `failed`: behind a proxy a stopped API answers 502, and neither the service worker (network-first falls back only on network errors) nor the page falls back to the cached catalogs; the gate missed it because it stops the whole listener. Defect → G7 (5xx fallback in the service worker and page, no downgrade of a complete pack, a 502 step in the gate).
+
+| 2026-09-28 | G6 done: `solve_time_fuze_over_charges` (lowest ring whose burst aim solves inside the fuze window; refusals `OutsideFuzeWindow` / `NoBurstCrossing`), operator charge still pins the fuze, `SOLVER_REVISION` game-ballistics-2; the fuze card names the real cause; ballistics 212 twice; clippy clean; perturbation red. Red: `game_ballistics_fire_missions` hard-codes the old revision; the save goldens carry it → G8 (tests on the constant, golden re-capture, a precise fuze refusal cause in the contract, fuze docs, two README lines).
+
+| 2026-09-28 | G8 done: API tests assert the exported `SOLVER_REVISION`; save goldens re-captured through the recipe on fresh databases (only `solver_revision` 1 → 2; 91 rows replayed); `FuzeRefusal` carries the precise causes (above apex, beyond range, inside minimum range, outside fuze window, …) in the engine, contract and fuze card; fuze docs, glossary entry and the core README offline line updated; ballistics 213, fire missions 10, goldens 6, frontend r_api + mortar 206 (each twice); schema citations 483; three perturbations red. It stopped its probe API with a host `pkill` on the api binary name (no other API was running).
+
+| 2026-09-28 | G7 done: service-worker `network_fallback` (network error or any 5xx → saved copy, 4xx passed through, `x-served-from-offline-cache` marker); page `saved_copies` with dated copies; a failed refresh keeps a complete pack `ready` (`data-offline-refresh=kept-saved-copy`); one shared key function for pack and page; gate `mortar-offline` gains an API-down-behind-proxy (502) visit — 15 cases PASS; tests twice green; perturbation red in the SW test and the gate. Walkthrough re-run: online visit filled the pack (`ready`, optional font missing, refreshed); API stopped (proxy answers 502) → reload shows "Offline copy from 28 Sep 2026, 15:25 UTC", pack stays `ready`, M252/M821 with wind solves offline to 1179.9 mil (identical to online). Remaining UX gap: offline, the save area shows the sign-in prompt instead of "saving needs a connection"; G7 dropped the 429 retry on catalog reads → G9.
+
+| 2026-09-28 | G9 done: offline save area says saving needs a connection (no sign-in prompt offline); one shared 429 retry helper for `public_get` and the saved-copy reads; frontend 109 twice; `mk mortar-offline-gate` PASS (15 cases); two perturbations red; `page.rs`, `client/public_reads.rs`, `client/mod.rs` edited outside its list (reviewed, accepted). Re-gates: map-engine 1,687 passed, 0 failed, 2 ignored, clippy native all-features, per feature set and wasm32 clean; full `db test-it` 1,339 passed, 0 failed, 0 ignored (game_ballistics 29, route_acceptance 73, contract_parity 86). Orchestrator perturbations (`p-*.log`, each restored sha256-equal): drag term zeroed → 11 calibration red; Δh ignored → 17 red; fixture row +5 m (m821 2.541 row 4) → 4 red naming the row; wind sign flipped → 29 red; comparison tolerances 0 → the skewed-save case red; token_type any scheme → `session_refresh_refuses_a_token_type_other_than_bearer` red; bench TOF ×1.01 → WASM gate FAIL 0/32; frontend dispersion guard disabled → nothing red (redundant since the engine type refuses the claim) → G10 removes it.
+
+| 2026-09-28 | Final sweep (`z-*.log`): G10 removed the redundant frontend guard (test proven by the engine guard); G11 documented two items and formatted one test. Frontend fmt clean, 1,982 passed, 0 failed; developer-tools 313 passed, 4 ignored, clippy clean; offline crate 28, clippy host + wasm32 clean; xtask 1,058 passed, 1 red (prose rule, untracked files); `mk leptos-gates` doctor OK, 21 smokes, 26/26; `mk ballistics-wasm-agreement` PASS 32/32, bit-identical 32/32; `mk mortar-offline-gate` 15 cases PASS; documentation gates: link-check PASS, markdown-placement red only on this checkpoint (527 lines → B28 archives the V record), readme-coverage 19 pre-existing generated folders + 7 entries of the 11 deletions; `ci ci-local` stops at verify-no-python on the 11 unstaged deletions (as in V); run one by one: editorconfig, no-node, ci-shell, engine-layers, coding-standards, staging-compose-paths, mission-rest-size-limits, ci-schema-parity PASS, no-shell red only on the deletions; `ci rust-ci` running. B28 launched.
+
+| 2026-09-28 | `ci` steps, final: `rust-ci` run 1 and 2 red at rust-fmt (two B files, then one import order in `xtask …/recipes.rs`), formatted by the orchestrator; run 3 (`z-ci-rust-ci-3.log`) PASS — rust-fmt, rust-clippy, rust-build, wasm-ci (incl. the offline crate) and rust-test-it, 3,098 passed, 0 failed, 2 ignored (the two pre-existing ignored map-engine tests, run unfiltered by wasm-ci); `ci ci-local-schema` PASS (483 citations); `mk ci-local-leptos` exit 0, 1,982 passed.
+| 2026-09-28 | B28 done: register — seven B requirements (real implementation paths, assumptions: dispersion not verified in-engine, offline gate needs the local tile pyramid, tile index and tbd-sat, fixtures pinned to game build 1.8.0.13), five map-engine checks on one command (51 + 34 + 81 + 29 + 18 = 213, each pattern verified against `f2-map-engine-test.log`), the two gate checks (32, 15), `verification_game_ballistics` 29; backend_regression 1,339, frontend_quality 1,982, route_acceptance 73, contract_parity 86, browser_acceptance 26 with the 26/26 marker; judge-only `verify api-readiness` validates the register (FAIL without receipts). V execution record archived; `remaining_milestones.md` §B implemented; T-940.10 re-anchored with evidence, T-1177 remainder and T-1245 evidenced (ship after the stamp); T-1252 to T-1257 filed, T-1232 extended; `ticket check` OK; `game_ballistics.md` register table, fuze search and `SOLVER_REVISION` updated; documentation gates with untracked files: link-check and markdown-placement OK, readme-coverage 19 generated folders + 7 entries of the deletions. |
+
+### Milestone B launch amendments
+
+| Agent | Addition to the pre-written prompt |
+|---|---|
+| brief (all) | Path shorthands and the P0 baselines added at the top of the brief. |
+| B09 | Wind-table rows judged by the range criterion (decision 3); native column 1 is B09's to decode against the oracle forward samples (design note open question 1). |
+| B11 | Deflection spread maps to azimuth as δ/cos θ; the InitSpeedVariation working unit is m/s (design note open question 4). |
+| B27 | Fix the EVIDENCE README count and domain table; restore the full `cargo xtask` citations and paths in the design note once they exist. |
+| B07 | Launched only after checkpoint W; `--oracle` required for the committed fixture; schema validate must PASS the ballistics section. |
+| B14, B19, B20 | Remove the dangling `@contract` tags to the retired FireSolveRequest/FireSolution in their files; B04's schema choices listed. |
+| B27 | (add) overlay tests README Contents fix (B16 F3). |
+| B05 | Owns the test that `side_air_drag_scale` does not enter `FlightParameters` (B06 F1). |
+| B19 | (add) select the 14 new columns and load `guns`; `fire_mission_solution.rs` must pass; migration re-embed note. |
+| B28 | File NOTE tickets: no API build.rs rerun for migrations (B14 F2) and every B NOTE finding. |
+| B18 | Trunk worker naming, `BuildId::script_url()`, network-first navigations; a `map-tile-index.schema.json` contract for `MapTileIndex` with `@contract` tags. |
+| B24 | Use the B15 seam; remove every `#[allow(dead_code)]` B15 placed on picker-only modules. |
+| B08b | New agent (orchestrator FIX of B08 F3): wind-corrected aim and the TimeToLive bracket. |
+| B11, B12, B13 | Use the solver's aim azimuth and drift correction (B08b). |
+| B19 | (add) fix the `fire_missions.rs:38` doc link; delete `legacy_flat_solution.rs`. |
+| B08b | (message) Owns the four new `ChargeSolution` fields in `fire-mission.schema.json`. |
+| B21b | (add) re-capture the event fire-mission list golden. |
+| B24 | (add) delete the legacy frontend `FireSolution` DTO and its golden test. |
+| B22, B24, B25b | Offline state on `<html>`, `offline_status()`, the tile-index producer, aim fields (B08b). |
+| B21b | (add) the four `ChargeSolution` keys in `r_api_fire_missions.rs` hand-built rows. |
+| B26 | Accept a divergent route only when its whole diff is the new nav entry (or the mortar/admin pages themselves), each noted. |
+| B27 | (add) admin ballistics catalogs page feature doc. |
+| B12b | New agent: shared `fire_mission.rs` assembler and `compare_solutions`. |
+| B19, B25a | Use the B12b assembler and comparison; `agreement_cases` takes the catalog. |
+| B12b | (add) owns `FuzeSetting` in the fire-mission schema: burst-point aim. |
+| B21b | (add) owns `dto/fire_missions.rs` for `burst_aim`; prefer re-exporting the map-engine types. |
+| B24 | (add) heights mount, crest profile, event picker move, save button, public nav link (B22 F3, F4). |
+| B07 | (add) oracle output paths, sha256 values and engine gravity. |
+| B20b | New agent: frontend fire-mission DTOs onto the engine types (taken from B21b). |
+| B24b | New agent: finish B24 (compile, tests twice, perturbations, clippy, trunk). |
+| B21b | (add) DTO items moved to B20b; keeps golden re-captures and the solve golden deletion. |
+| B21b | (add) `SavedFire` mirrors every new `FireMission` column (B24b F1). |
+| B02b | New agent: oracle forward lattice 1.5625 mils, revision 2 (operator decision). |
+| B07b | New agent: strict re-trim on the fine lattice; relaxed evidence rules removed. |
+| B09b | New agent: identify the engine integrator from the oracle simulation samples; engine-faithful flight model; no tolerance changes. |
+| B09c | New agent: f32 state, forward samples as row evidence only, wind judge decoding, solver vacuum bounds; calibration green with unchanged tolerances. |
+| B27 | (add) identified engine scheme and the R1 and f32 decisions in the design note and catalog README. |
+| B09d | New agent: dispersion on the f64 step (h 1e-5 restored), f32/f64 agreement test, `forward_samples_not_judged` in the upload report. |
+| B13, B17 | Engine scheme and green calibration facts; B17 body limit from measured bundle sizes. |
+| B21b | (add) `forward_samples_not_judged` in the frontend `CatalogUploadReport`. |
+| B19 | (add) re-point the fire_mission_solution shipped-source pin to `restore.rs::parse_legacy_grid`; use `catalog_store::load_catalog`. |
+| B27 | (add) middleware README body-limit row for the catalog upload. |
+| B08c | New agent: wind-corrected aim continues past a first-step refusal (B13 F1). |
+| B25a, B25b | Parallel launch; shared recipe/gate registration files; wait for B21b goldens for the end-to-end runs. |
+| B21b | (add) re-point the `fixture_router` test off the solve golden. |
+| G1 | Closing fixes batch 1: the items queued in `closing_fixes.md` (listed in its prompt). |
+| B25c | New agent: page rounding fix and shared formatting in the offline gate; finish B25b end to end. |
+| G2 | Closing fixes batch 2: one shared agreement-case mapping. |
+| G2 | (add) the stale allowlist citation and two Related links (B27 F2, F3). |
+| B26 | Fresh dist first; expected divergences and screenshot audit per route. |
+| G3 | New agent: re-capture the fire-mission save golden after float_roundtrip. |
+| G4 | New agent: every canned refresh answer in the browser gates carries `token_type: Bearer` (one shared constructor). |
+| G5 | New agent: offline pack essential vs optional entries; optional font failure keeps `ready` with a visible flag. |
+| G6 | New agent: fuze burst aim searched over every ring (walkthrough finding). |
+| G7 | New agent: offline behind a proxy — 5xx fallback, pack not downgraded, 502 gate step (walkthrough finding). |
+| G8 | New agent: revision constant in tests, golden re-capture, fuze refusal cause in the contract, fuze docs. |
+| G9 | New agent: offline save-area wording; restore the 429 retry on catalog reads. |
+| G10 | New agent: remove the redundant frontend dispersion guard; prove the engine guard carries the test. |

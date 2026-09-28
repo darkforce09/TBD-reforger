@@ -12,21 +12,24 @@ bench probes.
 
 ```text
 documentation_v2/website/frontend/apps/debug/
-├── building_viewer_page.md  the building viewer bench: one blueprint, its line of sight and viewshed
-└── world_los_page.md        the world line-of-sight bench: the object catalogue around a map point
+├── ballistics_agreement_page.md  the ballistics agreement bench: the solver's wasm build, case by case
+├── building_viewer_page.md      the building viewer bench: one blueprint, its line of sight and viewshed
+└── world_los_page.md            the world line-of-sight bench: the object catalogue around a map point
 ```
 
 ## How it works
 
 Each feature doc follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md)
-and covers one bench. Both benches mount their own canvas and render engine, read only committed
-assets under `/map-assets`, need no sign-in, have no navigation entry and take every run parameter
-from the URL, so a reading reproduces from its address.
+and covers one bench. The two map benches mount their own canvas and render engine and read only
+committed assets under `/map-assets`; the ballistics agreement bench has no canvas and reads the
+public ballistics catalog routes. Every bench needs no sign-in, has no navigation entry and takes
+every run parameter from the URL, so a reading reproduces from its address.
 
 | Bench | Route and component | Feature doc |
 |---|---|---|
 | Building viewer | `/debug/building-viewer`, `BuildingViewerPage` | [building_viewer_page.md](/documentation_v2/website/frontend/apps/debug/building_viewer_page.md) |
 | World line of sight | `/debug/world-los`, `WorldLosPage` | [world_los_page.md](/documentation_v2/website/frontend/apps/debug/world_los_page.md) |
+| Ballistics agreement | `/debug/ballistics-agreement`, `BallisticsAgreementPage` | [ballistics_agreement_page.md](/documentation_v2/website/frontend/apps/debug/ballistics_agreement_page.md) |
 
 A new bench gets its own feature doc here, named after its route component, a line in Contents and
 a row in the table.

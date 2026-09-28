@@ -12,13 +12,14 @@ and player [deployments](/documentation_v2/glossary/a_to_f.md#deployment).
 
 ```text
 apps/website/api_v2/src/operations/handlers/
+├── ballistics_catalogs/            the game ballistics catalog upload and its public reads
 ├── event_access_administration.rs  an event's access view and evidence; its policies and pools
 ├── event_create_update.rs          create, update and delete an event under the event-scope locks
 ├── event_group_administration.rs   an event's roster and partner-guild groups and their members
 ├── event_hub.rs                    one event's dossier, projected for what the viewer may see
 ├── event_listing.rs                the calendar list, filtered to the events the viewer may see
 ├── event_mission_attachment.rs     attach a mission with a snapshot of its ORBAT, and detach it
-├── fire_missions.rs                the mortar firing solution, saved fire missions, an event's list
+├── fire_missions/                  re-solved fire-mission saves and an event's saved fire missions
 ├── game_runtime_deployments.rs     authorize and end player lives for a game runtime
 ├── game_runtime_roster.rs          the event roster a game runtime seats players from
 ├── leave_requests.rs               file and read the caller's leave requests; administrator review
@@ -56,9 +57,11 @@ server.
 - `game_runtime_roster.rs` reads the slot bindings of the deployment the server runs and compiles
   nothing; `game_runtime_deployments.rs` answers a refused player life with 200 and
   `decision = "denied"`.
-- `fire_missions.rs` solves through `website_map_engine::data::scenario::ballistics` and stores
-  the whole solution; a target out of range answers 422. A saved fire mission names an event that
-  exists or none, so saving against, or listing those of, an event that does not exist answers 404.
+- `fire_missions/` re-solves every save against its pinned ballistics catalog through
+  `website_map_engine::data::scenario::ballistics` and stores the server's solution with one row
+  per gun; a client solution beyond the tolerance answers 422 `solution_mismatch`. A saved fire
+  mission names an event the caller fully sees or none, so saving against, or listing those of,
+  an event that is missing or hidden answers 404.
 - `slot_registration.rs` answers 400 for a `slot_id` that is not a UUID and 404 for a well-formed
   one that names no seat; `event_group_administration.rs` answers 404 for a roster account that
   does not exist.

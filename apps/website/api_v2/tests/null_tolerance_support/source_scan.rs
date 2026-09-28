@@ -121,12 +121,23 @@ pub fn string_literal(src: &str, from: usize) -> Option<(usize, String)> {
 
 /// Whitespace-normalised `SELECT ...` literals passed to `query_as` / `QueryBuilder::new`,
 /// with the 1-based source line of the call.
-pub fn select_literals(src: &str) -> Vec<(usize, String)> {
+///
+/// An argument built as `concat!("SELECT ", columns!(), " FROM ...")` is read whole: each
+/// literal part in order, each `name!()` part expanded from its `macro_rules! name` in
+/// `macro_source` (the whole scanned tree, since a column-list macro is shared across files). A
+/// part that is neither panics, so a statement the scan cannot read fails the suite instead of
+/// passing as an unreadable prefix.
+pub fn select_literals(src: &str, macro_source: &str) -> Vec<(usize, String)> {
     let mut out = Vec::new();
     for marker in ["query_as", "QueryBuilder::new"] {
         for (idx, _) in src.match_indices(marker) {
-            let Some((_, raw)) = string_literal(src, idx + marker.len()) else {
-                continue;
+            let after = idx + marker.len();
+            let raw = match concat_argument(src, after) {
+                Some(open) => concat_parts(src, open, macro_source),
+                None => match string_literal(src, after) {
+                    Some((_, raw)) => raw,
+                    None => continue,
+                },
             };
             let sql = raw.split_whitespace().collect::<Vec<_>>().join(" ");
             if sql.len() >= 6 && sql[..6].eq_ignore_ascii_case("SELECT") {
@@ -135,6 +146,67 @@ pub fn select_literals(src: &str) -> Vec<(usize, String)> {
         }
     }
     out
+}
+
+/// Index of the `(` of a `concat!(` that is the call's first argument, when it is one: the call
+/// at `after` (past an optional `::<..>` turbofish) opens with `concat!(`.
+fn concat_argument(src: &str, after: usize) -> Option<usize> {
+    let mut rest = &src[after..];
+    if let Some(turbofish) = rest.strip_prefix("::<") {
+        rest = &turbofish[turbofish.find('>')? + 1..];
+    }
+    let rest = rest.trim_start().strip_prefix('(')?.trim_start();
+    let body = rest.strip_prefix("concat!")?.trim_start();
+    body.starts_with('(').then(|| src.len() - body.len())
+}
+
+/// The concatenated text of the `concat!(..)` whose `(` is at `open`, macros expanded from
+/// `macro_source`.
+fn concat_parts(src: &str, open: usize, macro_source: &str) -> String {
+    let close = balanced_end(src, open).expect("concat! has a closing parenthesis") - 1;
+    let mut text = String::new();
+    let mut at = open + 1;
+    loop {
+        let rest = &src[at..close];
+        let skipped = rest.len() - rest.trim_start_matches([' ', '\t', '\n', '\r', ',']).len();
+        at += skipped;
+        if at >= close {
+            return text;
+        }
+        if src[at..].starts_with('"') {
+            let (end, part) = string_literal(src, at).expect("a closed string literal");
+            text.push_str(&part);
+            at = end;
+            continue;
+        }
+        let name_len = src[at..close]
+            .find(|c: char| !(c.is_ascii_alphanumeric() || c == '_'))
+            .unwrap_or(close - at);
+        let name = &src[at..at + name_len];
+        let invocation = &src[at + name_len..close];
+        assert!(
+            !name.is_empty() && invocation.starts_with("!()"),
+            "concat! part at byte {at} is neither a string literal nor a `name!()` macro: {:?}",
+            &src[at..close]
+        );
+        text.push_str(&macro_literal(macro_source, name));
+        at += name_len + 3;
+    }
+}
+
+/// The single string literal a `macro_rules! name { () => { "..." }; }` expands to.
+fn macro_literal(src: &str, name: &str) -> String {
+    let definition = format!("macro_rules! {name} ");
+    let start = src
+        .find(&definition)
+        .unwrap_or_else(|| panic!("`{name}!()` has no `macro_rules!` in the scanned sources"));
+    let arm = start + src[start..].find("=>").expect("a macro_rules! arm");
+    let (end, literal) = string_literal(src, arm).expect("the arm expands to a string literal");
+    assert!(
+        src[end..].trim_start().starts_with('}'),
+        "`{name}!()` expands to more than one string literal"
+    );
+    literal
 }
 
 /// `alias -> table` for every `FROM`/`JOIN` in the statement. A table with no alias maps to

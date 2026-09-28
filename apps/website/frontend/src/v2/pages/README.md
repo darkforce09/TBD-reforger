@@ -11,7 +11,7 @@ workspaces live in `apps/website/frontend/src/v2/apps/` instead.
 ```text
 apps/website/frontend/src/v2/pages/
 ├── account/            sign-in, the sign-in callback and the viewer's settings
-├── administration/     the six administrator-only screens under `/admin/*`
+├── administration/     the seven administrator-only screens under `/admin/*`
 ├── command_center/     the landing dashboard, the server intel panel and the announcement board
 ├── doctrine_and_info/  the doctrine wiki, the vehicle database and the modpack manifests
 ├── field_tools/        the standalone tactical aids: the mortar calculator
@@ -36,11 +36,11 @@ frame reads, and the breadcrumb the top bar shows.
 | "Mission Hub" | `mission_hub/` | `/missions`, `/missions/:id`, `/missions/:id/artifacts/:artifact_id/workspace` |
 | "Field Tools" | `field_tools/` | `/tools/mortar` |
 | "Doctrine & Info" | `doctrine_and_info/` | `/wiki`, `/wiki/:slug`, `/vehicles`, `/modpacks` |
-| "Administration" | `administration/` | `/admin/events`, `/admin/approvals`, `/admin/server`, `/admin/personnel`, `/admin/content`, `/admin/audit` |
+| "Administration" | `administration/` | `/admin/events`, `/admin/approvals`, `/admin/server`, `/admin/personnel`, `/admin/content`, `/admin/audit`, `/admin/ballistics-catalogs` |
 | none | `account/` | `/login`, `/auth/callback`, `/settings` |
 | none | `navigation/` | the not-found page for any path no route matches |
 
-The six [administration](/documentation_v2/glossary/a_to_f.md#administration) routes declare the `admin`
+The seven [administration](/documentation_v2/glossary/a_to_f.md#administration) routes declare the `admin`
 tier and each of their pages also wraps its body in `AdminGate`; the Mission Creator route
 `/missions/:id/edit` and the review workspace declare `mission_maker`; every other route declares
 `none`. The signed-in pages put their data behind `AuthGate`, so a signed-out viewer sees a sign-in

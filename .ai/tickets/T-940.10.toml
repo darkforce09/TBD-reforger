@@ -1,7 +1,7 @@
 id = "T-940.10"
 kind = "work"
 title = "Mortar ballistics crate for API and offline frontend"
-summary = "A new tbd-ballistics crate models elevation delta, drag, wind, dispersion and battery solutions; the API service and the mortar page both call it, so the page works offline."
+summary = "One headless game-ballistics model in the map engine (flight, solver, dispersion, fuze, crest, battery) serves the API's fire-mission re-solve and the mortar page, which also solves offline."
 class = "feature"
 status = "ready"
 order = 8140
@@ -9,46 +9,43 @@ spec = "documentation_v2/tickets/specs/t940_website_platform.md"
 plan = "documentation_v2/tickets/plans/t-940_10_plan.md"
 executor = "claude-code"
 priority = 2
+notes = "2026-09-28 (milestone B): delivered; ships after the B commit is stamped. Evidence: map-engine data::scenario::ballistics:: 213 passed (tests/symmetry.rs:394 raising_the_target_lowers_the_elevation_and_shortens_the_flight); db test-it game_ballistics 29 (tests/game_ballistics_fire_missions.rs:245 agreeing save, :356 skewed client solution refused); mk ballistics-wasm-agreement PASS 32/32 bit-identical; mk mortar-offline-gate 15 cases PASS (API down behind a 502 proxy and server gone). Logs: target/api-progress-checkpoint/2026-09-28-b/."
 parent = "T-940"
 main_goal = "Mortar solutions are physically credible and computed on the client too."
 context = [
-    "Anchor 2026-09-04: services/mortar.rs:51-60 uses a vacuum model with GRAVITY and a per-charge muzzle table; error handling at :20-49 is sound.",
-    "pages/public/mortar.rs calls the API over HTTP for every solution.",
-    "services/mod.rs is untouched (mortar.rs is already registered); the root Cargo.toml gains the workspace member and both app crates the dependency.",
+    "apps/website/map-engine/src/data/scenario/ballistics/ holds the flight model, calibration, solver, dispersion, fuze, crest clearance, battery and fire-mission assembler; apps/website/api_v2 and apps/website/frontend both depend on it (no separate crate).",
+    "The API solve route is retired; POST /api/v1/fire-missions re-solves against the pinned catalog in apps/website/api_v2/src/operations/services/fire_mission_resolve.rs.",
+    "apps/website/frontend/src/v2/pages/field_tools/mortar/ solves in the browser through solve_bridge.rs; apps/website/offline-service-worker and core/offline cache the shell, the catalog and the map pack.",
 ]
 requirement = [
-    "New crates/tbd-ballistics (Cargo.toml, src/lib.rs, workspace member): solve(target, charge table, env) with elevation delta, quadratic drag, wind, dispersion ellipse and battery sheaf; wasm-clean.",
-    "services/mortar.rs delegates to the crate; API responses keep their shape and gain dispersion.",
-    "pages/public/mortar.rs computes locally through the crate and shows dispersion and battery rows; the API path remains for saved fire missions.",
+    "The map-engine ballistics module solves with elevation delta, quadratic drag, wind, dispersion and per-gun battery solutions from a calibrated catalog, and is wasm-clean.",
+    "The API re-solves a saved fire mission with the same module and refuses a client solution that differs by more than one weapon mil or 0.1 s.",
+    "The mortar page computes locally, shows dispersion and battery rows, and works offline; the API path stays for saved fire missions.",
 ]
-current_state = ["Vacuum model in the API; the frontend is fully online."]
-approach = [
-    "Verify on main: a test with a 100 m elevation delta returns the flat-ground solution; paste the red.",
-    "Write the crate with unit tests against a published range table; add it to both Cargo.toml files; delegate; rebuild the page.",
-    "Perturbation: zero the drag term; the table test must go red; restore, touch, green.",
-]
+current_state = ["Delivered by milestone B (not yet committed): the ballistics module, catalog API and migration 0060, the fire-mission save re-solve, the mortar page with map picker and offline pack."]
+approach = ["Calibrate an engine-faithful flight model against the in-game oracle export, solve per ring, and share one fire-mission assembler between API and page (milestone B)."]
 verify = [
-    "cargo test -p tbd-ballistics",
+    "cargo test -p website-map-engine --all-features --locked data::scenario::ballistics::",
     "cargo xtask db test-it",
     "cargo xtask mk ci-local-leptos",
     "cargo xtask mk leptos-gates",
-    "cargo xtask platform wave gate --slice T-940.10",
+    "cargo xtask mk ballistics-wasm-agreement",
+    "cargo xtask mk mortar-offline-gate",
 ]
 acceptance = [
-    "A solution with the target 100 m above the gun differs from the flat solution by the crate's elevation correction.",
-    "The mortar page produces a solution with the network disabled.",
+    "A target above the gun changes the elevation and time of flight against the flat solution.",
+    "The mortar page produces a solution with the API unreachable.",
     "The API and the page agree on the same inputs to one mil.",
 ]
 created_at = "2026-09-05T02:33:18Z"
 owns = [
-    "apps/website/api/src/services/mortar.rs",
-    "crates/tbd-ballistics/Cargo.toml",
-    "crates/tbd-ballistics/src/lib.rs",
-    "Cargo.toml",
-    "Cargo.lock",
-    "apps/website/api/Cargo.toml",
-    "apps/website/frontend/Cargo.toml",
-    "apps/website/frontend/src/pages/public/mortar.rs",
+    "apps/website/map-engine/src/data/scenario/ballistics/mod.rs",
+    "apps/website/api_v2/src/operations/services/fire_mission_resolve.rs",
+    "apps/website/api_v2/src/operations/handlers/fire_missions/save.rs",
+    "apps/website/frontend/src/v2/pages/field_tools/mortar/page.rs",
+    "apps/website/frontend/src/v2/pages/field_tools/mortar/solve_bridge.rs",
+    "apps/website/frontend/src/v2/core/offline/mod.rs",
+    "apps/website/offline-service-worker/src/lib.rs",
 ]
 
 [scope]

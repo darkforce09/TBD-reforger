@@ -1,23 +1,41 @@
 //! Starts document restoration and the render engine in parallel.
 //!
-//! The Mission Creator restores the local draft, reconciles it with the server and arms the draft
-//! writer; a review workspace restores exactly the reviewed version instead and arms nothing
-//! ([`review_restore`]).
+//! **Role:** the Mission Creator restores the local draft, reconciles it with the server and arms
+//! the draft writer; a review workspace restores exactly the reviewed version instead and arms
+//! nothing ([`review_restore`]). In parallel the engine starts on the shared map seam
+//! ([`crate::v2::core::map_view::engine_mount::create_engine`]), gets the editor's lanes, and
+//! boots every terrain and world layer.
+//! **Position:** started by the canvas mount once the document is set up.
+//! **Signals & state:** the boot phase, progress and map-disabled signals; two readiness cells
+//! (`engine_mounted`, `world_ready`) rendezvous with the document restore.
+//! **Invariants:** the boot overlay is handed over only when both the document and the world
+//! have settled; nothing touches the engine after the mount is disposed.
 
 use super::*;
 
 #[path = "review_restore.rs"]
 mod review_restore;
+use crate::v2::core::map_view::camera_fit::{ViewState, WorldBounds};
+use crate::v2::core::map_view::engine_mount::{create_engine, CanvasSize, EngineStartup};
+use crate::v2::core::map_view::handles::MapViewHandles;
 use leptos::task::spawn_local;
-use std::cell::{Cell, RefCell};
+use std::cell::Cell;
 use std::rc::Rc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
 
-const TERRAIN_W: f64 = 12_800.0;
-const TERRAIN_H: f64 = 12_800.0;
-const INITIAL_TARGET: (f64, f64) = (6_400.0, 6_400.0);
-const INITIAL_ZOOM: f64 = -2.0;
+/// Camera pan bounds of the Mission Creator: the 12.8 km square every built-in terrain fits in.
+const CAMERA_BOUNDS: WorldBounds = WorldBounds {
+    min_x: 0.0,
+    min_y: 0.0,
+    max_x: 12_800.0,
+    max_y: 12_800.0,
+};
+
+/// The Mission Creator's first view: the square's centre at zoom -2.
+const INITIAL_VIEW: ViewState = ViewState {
+    target_x: 6_400.0,
+    target_y: 6_400.0,
+    zoom: -2.0,
+};
 
 /// Inputs shared by document restoration and engine startup.
 pub(super) struct BootContext {
@@ -29,16 +47,11 @@ pub(super) struct BootContext {
     pub boot: RwSignal<BootPhase>,
     pub progress: RwSignal<boot_progress::BootProgress>,
     pub map_disabled: RwSignal<Option<String>>,
-    pub engine: Rc<RefCell<Option<website_map_engine::frame::engine::RenderEngine>>>,
-    pub map_host: website_map_engine::streaming::host::HostHandle,
-    pub dem_grid: website_map_engine::streaming::host::DemGridHandle,
-    pub disposed: Arc<AtomicBool>,
+    pub view: MapViewHandles,
     pub restore_settled: Rc<Cell<bool>>,
     pub canvas: web_sys::HtmlCanvasElement,
     pub force_webgl: bool,
-    pub width: f64,
-    pub height: f64,
-    pub dpr0: f64,
+    pub canvas_size: CanvasSize,
     pub debug_hud: RwSignal<String>,
     pub scale_mpp: RwSignal<f64>,
 }
@@ -54,20 +67,14 @@ pub(super) fn start(ctx: BootContext) {
         boot,
         progress,
         map_disabled,
-        engine,
-        map_host,
-        dem_grid,
-        disposed,
+        view,
         restore_settled,
         canvas,
         force_webgl,
-        width,
-        height,
-        dpr0,
+        canvas_size,
         debug_hud,
         scale_mpp,
     } = ctx;
-    let rect0 = (width, height);
     let engine_mounted = Rc::new(Cell::new(false));
     let world_ready = Rc::new(Cell::new(false));
     let report: boot_progress::ProgressFn = Rc::new(move |ev| progress.update(|p| p.apply(ev)));
@@ -101,15 +108,11 @@ pub(super) fn start(ctx: BootContext) {
         boot,
         progress,
         map_disabled,
-        engine,
-        map_host,
-        dem_grid,
-        disposed,
+        view,
         restore_settled,
         canvas,
         force_webgl,
-        size: rect0,
-        dpr0,
+        canvas_size,
         debug_hud,
         scale_mpp,
         engine_mounted,
@@ -230,15 +233,11 @@ struct EngineStart {
     boot: RwSignal<BootPhase>,
     progress: RwSignal<boot_progress::BootProgress>,
     map_disabled: RwSignal<Option<String>>,
-    engine: Rc<RefCell<Option<website_map_engine::frame::engine::RenderEngine>>>,
-    map_host: website_map_engine::streaming::host::HostHandle,
-    dem_grid: website_map_engine::streaming::host::DemGridHandle,
-    disposed: Arc<AtomicBool>,
+    view: MapViewHandles,
     restore_settled: Rc<Cell<bool>>,
     canvas: web_sys::HtmlCanvasElement,
     force_webgl: bool,
-    size: (f64, f64),
-    dpr0: f64,
+    canvas_size: CanvasSize,
     debug_hud: RwSignal<String>,
     scale_mpp: RwSignal<f64>,
     engine_mounted: Rc<Cell<bool>>,
@@ -253,36 +252,37 @@ fn start_engine(start: EngineStart) {
         boot,
         progress,
         map_disabled,
-        engine,
-        map_host,
-        dem_grid,
-        disposed,
+        view,
         restore_settled,
         canvas,
         force_webgl,
-        size,
-        dpr0,
+        canvas_size,
         debug_hud,
         scale_mpp,
         engine_mounted,
         world_ready,
         report,
     } = start;
+    let MapViewHandles {
+        engine,
+        map_host,
+        dem_grid,
+        heights,
+        disposed,
+    } = view.clone();
+    let startup = EngineStartup {
+        force_webgl,
+        size: canvas_size,
+        bounds: CAMERA_BOUNDS,
+        view: INITIAL_VIEW,
+    };
     spawn_local({
-        let (cw, ch) = size;
         async move {
-            match website_map_engine::frame::engine::RenderEngine::create(canvas, force_webgl).await
-            {
+            match create_engine(canvas, startup).await {
                 Ok(mut eng) => {
-                    if disposed.load(Ordering::Relaxed) {
+                    if view.is_disposed() {
                         return;
                     }
-                    let _ = eng.resize(cw, ch, dpr0);
-                    eng.set_camera_bounds(0.0, 0.0, TERRAIN_W, TERRAIN_H);
-                    eng.set_view(INITIAL_TARGET.0, INITIAL_TARGET.1, INITIAL_ZOOM);
-                    eng.hide_calibration();
-                    eng.disable_frame_timing();
-                    eng.set_continuous_render(false); // damage-driven, matches the prod oracle
                     {
                         let (rgba, width, height, uv) =
                             website_map_engine::overlay::symbology::markers::build_marker_slot_atlas();
@@ -339,6 +339,7 @@ fn start_engine(start: EngineStart) {
                             terrain,
                             host,
                             dem_grid.clone(),
+                            heights.handle(),
                             report.clone(),
                         );
                         let world_ready = world_ready.clone();
@@ -352,14 +353,9 @@ fn start_engine(start: EngineStart) {
                         });
                     }
                 }
-                Err(e) => {
-                    let reason = js_sys::Error::from(wasm_bindgen::JsValue::from(e))
-                        .message()
-                        .as_string()
-                        .filter(|s| !s.is_empty())
-                        .unwrap_or_else(|| "the render engine failed to start".to_string());
+                Err(reason) => {
                     leptos::logging::error!("RenderEngine::create: {reason}");
-                    if disposed.load(Ordering::Relaxed) {
+                    if view.is_disposed() {
                         return;
                     }
                     let seg = progress.get_untracked().stage();

@@ -52,6 +52,31 @@ async fn migrate_creates_full_schema() {
     .expect("count matviews");
     assert_eq!(matviews, 1, "expected leaderboard_totals matview");
 
+    // The game ballistics tables and the trigger that keeps a catalog version immutable.
+    let ballistics_tables: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' \
+         AND table_name IN ('ballistics_catalogs', 'fire_mission_guns')",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("count ballistics tables");
+    assert_eq!(
+        ballistics_tables, 2,
+        "expected ballistics_catalogs and fire_mission_guns"
+    );
+    let immutability_triggers: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal \
+         AND tgname = 'ballistics_catalogs_are_immutable' \
+         AND tgrelid = 'public.ballistics_catalogs'::regclass",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("count catalog immutability triggers");
+    assert_eq!(
+        immutability_triggers, 1,
+        "expected ballistics_catalogs_are_immutable"
+    );
+
     // Idempotent: a second run is a no-op (already-applied migration).
     database::migrate(&pool).await.expect("migrate idempotent");
 }

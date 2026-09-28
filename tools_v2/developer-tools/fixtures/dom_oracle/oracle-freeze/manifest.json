@@ -11,78 +11,91 @@
       "slug": "notfound",
       "path": "/this-route-does-not-exist",
       "authed": true,
-      "bytes": 64043,
-      "sha256": "00709eac03e2c009c2d3c0840bacda3862e4039082769f69763376e4503b3f43"
+      "bytes": 66120,
+      "sha256": "8a374b89e9b7d76082ef2444dcffa119a3f1c555981f002fa975a8a709f6cc16",
+      "goldenSource": "leptos",
+      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
     },
     {
       "slug": "dashboard",
       "path": "/",
       "authed": true,
-      "bytes": 126800,
-      "sha256": "e492f50444aa72d56370046762dcb2ebf1383524c81a6a91c531b499469d65eb",
+      "bytes": 128877,
+      "sha256": "821c988daa0cce5063dce4acd2a5d54fd7f96c1d9bcbdfc4f6b009c2479e8e05",
       "goldenSource": "leptos",
-      "acceptedDelta": "V: golden seed upcoming events moved to 2030 (seed rule 4); countdown text only"
+      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
     },
     {
       "slug": "approvals",
       "path": "/admin/approvals",
       "authed": true,
-      "bytes": 133296,
-      "sha256": "8d55a979b5b12f498403258fbb79bbf23f9bb5923f2ba73743b98799a8f69549",
+      "bytes": 135373,
+      "sha256": "f894569b5466b3ed96e32612a8845bf2966d3b19a935beaa638f7154d72203fd",
       "goldenSource": "leptos",
-      "acceptedDelta": "V: approvals drawer shows the seeded c000-004 mission briefing (golden reproduced from the seed)"
+      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
     },
     {
       "slug": "audit",
       "path": "/admin/audit",
       "authed": true,
-      "bytes": 125184,
-      "sha256": "f379202123064013123b2ae7528adf6bc6a563b34dbe4cc412147daa6ad20186",
+      "bytes": 127261,
+      "sha256": "a80a851bee89e02c72e2dc16769156fd2b15378dc6a1e354e7b9630b3e63ad3d",
       "goldenSource": "leptos",
-      "acceptedDelta": "V: audit history is the seed-reproduced GET__admin__audit-logs golden (16 rows incl. event audit rows with pinned timestamps)"
+      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
+    },
+    {
+      "slug": "ballistics_catalogs",
+      "path": "/admin/ballistics-catalogs",
+      "authed": true,
+      "goldenSource": "leptos",
+      "bytes": 95607,
+      "sha256": "49adc89bd8c0d78d5cc3091ead80d7cc83b7f4147e57f490f203012086cd00b8",
+      "acceptedDelta": "B: new golden for the administrator Ballistics Catalogs page (/admin/ballistics-catalogs): catalog list from GET__ballistics-catalogs plus the catalog + calibration upload form; the Administration sidebar group carries the new Ballistics Catalogs entry, active on this route"
     },
     {
       "slug": "content",
       "path": "/admin/content",
       "authed": true,
-      "bytes": 117495,
-      "sha256": "90057dd22d674181b50775fa9506d192b591620fe769a9bc45cb4967f55989b8",
+      "bytes": 119572,
+      "sha256": "2312116c06720e216b4d1b9578b13f035159a427195b129bbeceebbaa54c7a36",
       "goldenSource": "leptos",
-      "acceptedDelta": "The reference ContentManager pre-filled a hardcoded mock briefing (\"Operation Blue Storm Briefing\", published switch on), and the first Leptos accept recorded the manager starting empty because no /cms/announcements fixture existed. GET__cms__announcements.json now supplies the live-shaped list — four published rows and one draft, ordered pinned-first then most recently updated — so the manager renders its real populated state. React reference kept at content.react.dom.json."
+      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
     },
     {
       "slug": "eventmgr",
       "path": "/admin/events",
       "authed": true,
-      "bytes": 146112,
-      "sha256": "7e209c4b0de37d85cf25fa057eccf6d152a88657be451c3ac33758da552981a9"
+      "bytes": 148189,
+      "sha256": "e43167f3b71dd235a35afcdd844e8eb383d953fcc070e230eae048505e69887f",
+      "goldenSource": "leptos",
+      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
     },
     {
       "slug": "personnel",
       "path": "/admin/personnel",
       "authed": true,
-      "bytes": 140161,
-      "sha256": "fe55b1747a52f9c88cbb0e2b01d7b9d552cadbe11a68ebb394625c5445e47508",
+      "bytes": 142238,
+      "sha256": "59d24eb63d0916343c96cfec4fa6f9ef1d7d6d42db506a7fb29a60077b4ba48c",
       "goldenSource": "leptos",
-      "acceptedDelta": "Milestone C personnel pager: page shape {items,page,per_page,total}; pager bar (previous/next, page n of m, per-page select, member count); sort/filter titles say they act on this page"
+      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
     },
     {
       "slug": "servercontrol",
       "path": "/admin/server",
       "authed": true,
-      "bytes": 185903,
-      "sha256": "be982a4c7e8b850db88ec4eabba6d9917f1bd8ff9cd34fb1bfc74ab3e929a01b",
+      "bytes": 187980,
+      "sha256": "24f01d8b72c2db0b6dc36e36455a6eb125424407a17e9c82ade9ef779642598e",
       "goldenSource": "leptos",
-      "acceptedDelta": "V: seeded deployment expiry follows the golden seed dates (2031)"
+      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
     },
     {
       "slug": "announcements",
       "path": "/announcements",
       "authed": true,
-      "bytes": 91980,
-      "sha256": "ad32d8bfd855fdaf4a7861d2520e30a40e8ac12a958396140e3a18d83548e9c2",
+      "bytes": 94057,
+      "sha256": "253052477537579dbbc133d5762750ab6a99ccff402af7e65e14e7086fcb964a",
       "goldenSource": "leptos",
-      "acceptedDelta": "The React capture recorded the empty board as a paragraph. GET__announcements.json feeds four entries, each a selectable card."
+      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
     },
     {
       "slug": "callback",
@@ -95,46 +108,46 @@
       "slug": "deployments",
       "path": "/deployments",
       "authed": true,
-      "bytes": 180754,
-      "sha256": "40f605132dbebba1c6ffc6b8b0e3a26db7b092abe0ca0bf4d16e4a106a5580cd",
+      "bytes": 182831,
+      "sha256": "96db6199814532b3ed11350b7759dc2c8ff422a47a03e9a775f1c304837c30b0",
       "goldenSource": "leptos",
-      "acceptedDelta": "V: seed upcoming events moved to 2030 (weekday and countdown change); deployments list reproduced from the seed"
+      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
     },
     {
       "slug": "events",
       "path": "/events",
       "authed": true,
-      "bytes": 221985,
-      "sha256": "725743ba5a32555bae80786850b549b80205e1ceac62423c40f24d4198e6d1d1",
+      "bytes": 224062,
+      "sha256": "a364b42fefb962af56f7e8458c8063069ebf68ff5149c60111779e80dbbfe703",
       "goldenSource": "leptos",
-      "acceptedDelta": "V: seed upcoming events moved to 2030 (weekday, countdown, seat counts reproduced from the seed)"
+      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
     },
     {
       "slug": "eventhub",
       "path": "/events/c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7",
       "authed": true,
-      "bytes": 193530,
-      "sha256": "02b4851edae4d35a4f4dbfb76fb0424dd307f395cd2c53351dc526cf0ed24a5a",
+      "bytes": 195607,
+      "sha256": "6aa645c0f2050d9200f3fc5ee2fcab2111351bb70a62b0b92dfbf55921306441",
       "goldenSource": "leptos",
-      "acceptedDelta": "V: event hub golden reproduced from the seed (2030 dates, countdown, seeded participant rows)"
+      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
     },
     {
       "slug": "orbat",
       "path": "/events/c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7/missions/89b1b731-37a8-4926-901a-3c7ff7de5eb3/orbat",
       "authed": true,
-      "bytes": 129004,
-      "sha256": "dd383f6a1c4e2ba9571c2fca1a78954d4bf1871429015c29f3c112053e9c5bed",
+      "bytes": 131081,
+      "sha256": "515954dc8a447867b5698c7a9fde51ab962815c2d690fd7952bcce7fb82895ea",
       "goldenSource": "leptos",
-      "acceptedDelta": "E: the reservation footer stacks the refusal notice above the standing and actions row"
+      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
     },
     {
       "slug": "leaderboards",
       "path": "/leaderboards",
       "authed": true,
-      "bytes": 102675,
-      "sha256": "d8e9cd71b69503aaec78dae201a6f0e4f4aaaaf3bc8f4869c9b12490b6d3c011",
+      "bytes": 104752,
+      "sha256": "95b9d72d16a63618a313456f4100718b66b0c4c83bd0a18c824d91ece60b4ad8",
       "goldenSource": "leptos",
-      "acceptedDelta": "Ladder rows come from GET__leaderboards.json. The React capture rendered its own mock ladder (\"Reaper\", 5.92), which no fixture has ever contained."
+      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
     },
     {
       "slug": "login",
@@ -147,82 +160,82 @@
       "slug": "missions",
       "path": "/missions",
       "authed": true,
-      "bytes": 164174,
-      "sha256": "137eaee12c80cb564a87ab6a96d90bf9bf0794fcf2def4482e52027f846f57fe",
+      "bytes": 166251,
+      "sha256": "3ee79b28ff330ab6c7d480e940bab81d954ce08473d52b91f497772bef977804",
       "goldenSource": "leptos",
-      "acceptedDelta": "V: mission library golden reproduced from the seed (card order and statuses from the seeded missions)"
+      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
     },
     {
       "slug": "missionview",
       "path": "/missions/512d8658-7025-4a70-94e9-a1b44a7aa155",
       "authed": true,
-      "bytes": 95008,
-      "sha256": "986f109b27f3c56090670136191534f26be0c37b1bef6f83ece140edc2579ea0",
+      "bytes": 97085,
+      "sha256": "06d67e6090b6ae02ee013a4a0c97d3ca35c3a6ac7863937c0968acc72bf1209e",
       "goldenSource": "leptos",
-      "acceptedDelta": "V: mission 512d8658 golden reproduced from the seed (one extra dossier section from the seeded data)"
+      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
     },
     {
       "slug": "modpacks",
       "path": "/modpacks",
       "authed": true,
-      "bytes": 90900,
-      "sha256": "78fa7d10aac68f1e7995b52bfa23ab6a6115bfa37095797e379e8d9aaeb64d96",
+      "bytes": 92977,
+      "sha256": "7bda6d2eeacbb52dab9d7401cc75c7f6889f083e11dbac5b0d42e702919317cf",
       "goldenSource": "leptos",
-      "acceptedDelta": "GET__modpacks.json carries one modpack, Core Modern Expansion 2.1. The React capture rendered a three-entry 2.4.1 mock that no fixture has ever contained, which is why the Leptos capture is the smaller of the two."
+      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
     },
     {
       "slug": "serverintel",
       "path": "/server-intel",
       "authed": true,
-      "bytes": 111376,
-      "sha256": "6b6afb91eaee4014a342b8bd80a3179ee6bc357c5ea8baa7168567f34b0d332f",
+      "bytes": 113453,
+      "sha256": "2c5f3e9ee75e222e4be5bc797aeb06ae6a4e058ab26199c15bd0097966b9052d",
       "goldenSource": "leptos",
-      "acceptedDelta": "The status stream is fixtured for the first time: GET__servers__00000000-0000-4000-d000-000000000001__status__stream.sse.txt is served as text/event-stream, so the panel's preferred source is a decoded frame rather than the empty object the router used to return for an unmatched API call. The rendered difference is the populated panel fed by GET__servers.json in place of the React capture's unfed paragraph; the frame reproduces that row's cached status by design, so both sources agree."
+      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
     },
     {
       "slug": "settings",
       "path": "/settings",
       "authed": true,
-      "bytes": 82369,
-      "sha256": "d8d824133d18729eb39d2158ea8624f1e6069510bded49903a018aa332c715f1",
+      "bytes": 84446,
+      "sha256": "de1c6550b2fcd3fbe13e59c1276e7429a9fcdc85553265970e3a56b0b0ffcb26",
       "goldenSource": "leptos",
-      "acceptedDelta": "V: GET /me golden reproduced from the seed; attendance derived from registrations reads 50"
+      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
     },
     {
       "slug": "mortar",
       "path": "/tools/mortar",
-      "authed": true,
-      "bytes": 90566,
-      "sha256": "02c197fbfd9c96d2e1c38c4ec0c0c5a5488af4c61c9db8f298851ca067b24ddd",
+      "authed": false,
+      "bytes": 115049,
+      "sha256": "0814de92ad5548fb51fbf13c7b1db40f234fb50e80782046bddecc42fa3b357c",
       "goldenSource": "leptos",
-      "acceptedDelta": "The calculator gained a Weapon select and an Operation select after the freeze, which is the pair of extra fields and the input grid moving from four columns to three, and the plot became a real SVG rather than positioned divs. Default firing-point coordinates changed with it."
+      "acceptedDelta": "B: the mortar calculator is public, so it is captured signed out (header: Sign in with Discord in place of the account menu; browse-mode sidebar incl. the new Ballistics Catalogs entry). The page is the catalog-driven calculator: weapon, shell, charge and terrain selects, target grid with height source, gun rows with Add gun, wind inputs. The offline-pack line reads 'Offline copy failed' because the v-suite bypasses the service worker and serves no /map-assets; stable across two verify runs"
     },
     {
       "slug": "vehicles",
       "path": "/vehicles",
       "authed": true,
-      "bytes": 122625,
-      "sha256": "18f5d96fa7a5bf07d7d6e2c509ff680c54ea2112a96fb769a0cd8c825099e87b",
+      "bytes": 124702,
+      "sha256": "f927289eb821b3b9ec9847ba7d8d2c927636637042a7a8c044e100dd1103f1c7",
       "goldenSource": "leptos",
-      "acceptedDelta": "Milestone C vehicle admin UI: typed Vehicle rows; admin Add vehicle action (compact, beside the title) and Edit/Delete in the spec drawer (oracle signs in as admin); image through safe_image_src"
+      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
     },
     {
       "slug": "wiki",
       "path": "/wiki",
       "authed": true,
-      "bytes": 121279,
-      "sha256": "4dc7716c13a9c373e10d30109e88f2b9f68ce467ce24a0c00da52880a4943ed0",
+      "bytes": 123356,
+      "sha256": "5a42bbe72d87a7e08dee64585f4f10ac1e911629cc5548c42cc381f87603032d",
       "goldenSource": "leptos",
-      "acceptedDelta": "Milestone C wiki: same page as wikislug (first summary selected): typed summaries navigation, article rendered from the server block AST, revision history panel with pager"
+      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
     },
     {
       "slug": "wikislug",
       "path": "/wiki/field-manual",
       "authed": true,
-      "bytes": 121279,
-      "sha256": "4dc7716c13a9c373e10d30109e88f2b9f68ce467ce24a0c00da52880a4943ed0",
+      "bytes": 123356,
+      "sha256": "5a42bbe72d87a7e08dee64585f4f10ac1e911629cc5548c42cc381f87603032d",
       "goldenSource": "leptos",
-      "acceptedDelta": "Milestone C wiki: navigation from typed summaries, article from /wiki/{slug} rendered from the server block AST (text nodes only, heading anchors, safe links/images), revision history panel with pager, editor sends base_revision"
+      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
     }
   ]
 }

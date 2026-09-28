@@ -12,11 +12,13 @@
 
 pub mod administration;
 pub mod auth;
+pub mod ballistics_catalogs;
 pub mod common;
 pub mod content;
 pub mod event_access_administration;
 pub mod event_viewer_access;
 pub mod events;
+pub mod fire_missions;
 pub mod fleet_commands;
 pub mod fleet_scenarios;
 pub mod match_events;
@@ -35,6 +37,7 @@ pub use content::*;
 pub use event_access_administration::*;
 pub use event_viewer_access::*;
 pub use events::*;
+pub use fire_missions::*;
 pub use fleet_commands::*;
 pub use fleet_scenarios::*;
 pub use match_events::*;

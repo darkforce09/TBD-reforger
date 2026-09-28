@@ -2,8 +2,8 @@
 
 The data transfer objects: one Rust shape per JSON body the [API](/documentation_v2/glossary/a_to_f.md#api)
 sends or accepts, grouped by domain. Most files are re-exported flat from `mod.rs`, so a caller names
-the type (`MissionDetail`) rather than the file it lives in; the administration, vehicle, wiki and
-equipment data viewer types are named by their module (`dto::wiki::WikiArticle`).
+the type (`MissionDetail`) rather than the file it lives in; the administration, ballistics catalog,
+vehicle, wiki and equipment data viewer types are named by their module (`dto::wiki::WikiArticle`).
 
 ## Contents
 
@@ -11,22 +11,24 @@ equipment data viewer types are named by their module (`dto::wiki::WikiArticle`)
 apps/website/frontend/src/v2/core/api/dto/
 ├── administration.rs               the personnel roster page, audit lines, the audit stream's ready and reset
 ├── auth.rs                         the viewer's profile, the Arma link, member rows and the member search page
+├── ballistics_catalogs.rs          the stored catalog versions, the map engine's catalog document, the upload report
 ├── common.rs                       the list envelopes: `Paginated`, `DataEnvelope`, `CursorList`
 ├── content.rs                      modpack rows with their mods, the current modpack, announcement rows
 ├── equipment_data_viewer/          the equipment data viewer's read-only pages, one module per endpoint family
 ├── event_access_administration.rs  an event's access policies, groups, pools and every change body
 ├── event_viewer_access.rs          what the viewer may see and reserve in one event
 ├── events.rs                       the event list, ORBAT and hub, the service record, leave requests
+├── fire_missions.rs                the save body, the stored fire mission with its guns, the save answer; re-exports the engine solution
 ├── fleet_commands.rs               fleet command receipts, their list and the request constructors
 ├── fleet_scenarios.rs              the terrain-to-mission-header entries and the body that sets one
 ├── match_events.rs                 a page of a match's detailed events, each payload typed by its kind
 ├── mission_deployments.rs          a mission deployment, a server's page of them, the request body
 ├── mission_reviews.rs              review history and thread, decisions, artifacts, review workspace
 ├── missions.rs                     mission cards, rows, detail and versions; armory; approval rows
-├── mod.rs                          the module tree; re-exports the DTOs flat, but for four modules
+├── mod.rs                          the module tree; re-exports the DTOs flat, but for five modules
 ├── registry.rs                     registry items, compatibility edges, cargo defaults and factions
 ├── servers.rs                      server rows, the live status frame with its telemetry queue, credentials
-├── telemetry.rs                    the dashboard summary with its fleet, leaderboards, fire solutions and saved fire missions
+├── telemetry.rs                    the dashboard summary with its fleet, and the leaderboards
 ├── tests/                          unit tests for the golden round trips and the fixture-free shapes
 ├── vehicles.rs                     vehicle database rows, the create and replace body, the three-state patch
 └── wiki.rs                         wiki summaries, the article and its typed blocks, saves, refusals, revisions
@@ -76,6 +78,14 @@ modules, check the stream events, write bodies and refusals no capture carries.
   (`Option<Option<String>>` through `absent_null_or_value`): absent leaves the field, `null`
   clears it, a value sets it. A required field is absent or a value, because the API refuses a
   cleared one.
+- A fire mission's solution (the battery, each gun's charge rows with their refusals and wind
+  corrections, the dispersion, the time fuze with its burst-point aim, the crest clearance) and a
+  ballistics catalog document are the map engine's own types, re-exported, so the mortar
+  calculator renders, solves and posts exactly the shapes the engine produces and the API
+  re-solves. A solution's `fuze` and `crest`, and the save body's `event_id`, `charge_rings`,
+  `wind` and `burst_height_m`, are absent rather than `null` when unset; a stored mission whose
+  dispersion claims `verified_in_engine: true` fails the read, refused by the engine's
+  dispersion deserializer.
 - The audit stream's `ready` and `reset` events carry publication sequences, never audit line ids;
   an audit line's `metadata` is carried as the writer recorded it.
 - `IssuedMachineCredential`, the one answer that carries a

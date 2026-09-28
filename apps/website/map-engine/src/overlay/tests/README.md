@@ -1,11 +1,13 @@
-# core/pipeline/tests
+# overlay/tests
 
-WebGPU context ownership, persistent GPU buffers, visibility culling, damage tracking, and the ordered draw-lane contract.
+Unit tests of the map overlay: the ordered draw-lane contract, level-of-detail thresholds and the
+fire-mission marks, each declared by its module through `#[path = "tests/<file>.rs"]`.
 
 ## Contents
 
-- `damage_tests.rs`
 - `draw_order.rs`
+- `fire_mission_marks_tests.rs`
+- `lod_tests.rs`
 - `tests`
 
 ## Boundaries

@@ -136,6 +136,8 @@ pub fn validate_all() -> Result<u8> {
         &v_compat,
     )?;
 
+    let ballistics = ballistics_validation::validate(&root, &schema, &compile, &check, &failures)?;
+
     println!("Faction library:");
     check(
         "faction-library.sample.json",
@@ -468,6 +470,9 @@ pub fn validate_all() -> Result<u8> {
     if failures.get() > 0 {
         eprintln!("\n{} validation failure(s).", failures.get());
         Ok(1)
+    } else if let ballistics_validation::BallisticsOutcome::NotRun(reason) = ballistics {
+        println!("\nNo validation failures; ballistics section NOT RUN: {reason}.");
+        Ok(0)
     } else {
         println!("\nAll contracts valid.");
         Ok(0)

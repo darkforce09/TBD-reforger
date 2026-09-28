@@ -112,8 +112,10 @@ GET /api/v1/events/:id event-hub.schema.json#
 PATCH /api/v1/events/:id event-schedule.schema.json#/definitions/Event
 POST /api/v1/events/:id/missions event-schedule.schema.json#/definitions/EventMission
 GET /api/v1/events/:id/fire-missions fire-mission.schema.json#/definitions/FireMissionList
-POST /api/v1/fire-missions/solve fire-mission.schema.json#/definitions/FireSolution
 POST /api/v1/fire-missions fire-mission.schema.json#/definitions/SavedFireMission
+GET /api/v1/ballistics-catalogs ballistics-catalog.schema.json#/definitions/BallisticsCatalogList
+GET /api/v1/ballistics-catalogs/{catalogId}/versions/{version} ballistics-catalog.schema.json#/definitions/BallisticsCatalog
+POST /api/v1/ballistics-catalogs ballistics-catalog.schema.json#/definitions/CatalogUploadReport
 GET /api/v1/events/:id/access event-access-administration.schema.json#/definitions/EventAccessAdministration
 PUT /api/v1/events/:id/access-policy event-access-administration.schema.json#/definitions/AccessChangeOutcome
 PUT /api/v1/events/:id/reservation-quotas event-access-administration.schema.json#/definitions/AccessChangeOutcome

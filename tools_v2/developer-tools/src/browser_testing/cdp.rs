@@ -387,6 +387,21 @@ impl Page {
     }
 
     /// Close the tab via the browser HTTP endpoint (same as Node's `close`).
+    /// Makes every request of this page skip service workers (`Network.setBypassServiceWorker`),
+    /// so a worker the app registers never answers in place of the gate's server, its request
+    /// interception or its fixtures. The network domain is enabled first because Chromium
+    /// applies the bypass only while that domain is enabled; it buffers no response bodies.
+    pub async fn bypass_service_worker(&self) -> Result<()> {
+        self.send(
+            "Network.enable",
+            json!({ "maxTotalBufferSize": 0, "maxResourceBufferSize": 0 }),
+        )
+        .await?;
+        self.send("Network.setBypassServiceWorker", json!({ "bypass": true }))
+            .await?;
+        Ok(())
+    }
+
     pub async fn close(&self) {
         let _ = self
             .http

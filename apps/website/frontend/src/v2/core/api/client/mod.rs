@@ -15,6 +15,7 @@
 
 pub mod errors;
 pub mod fetched;
+pub mod rate_limit_retry;
 pub mod refresh;
 pub mod refusals;
 #[cfg(target_arch = "wasm32")]
@@ -36,8 +37,8 @@ pub use refusals::{decode_answer, ApiRefusal};
 #[allow(unused_imports)]
 pub use requests::{
     api_delete, api_delete_keeping_refusal, api_get, api_patch, api_patch_keeping_refusal,
-    api_post, api_post_keeping_refusal, api_post_ok, api_post_raw, api_put,
-    api_put_keeping_refusal, api_upload_file, bootstrap,
+    api_post, api_post_form_keeping_refusal, api_post_keeping_refusal, api_post_ok, api_post_raw,
+    api_put, api_put_keeping_refusal, api_upload_file, bootstrap,
 };
 
 /// A pending request: resolves to the deserialised body, or to the failure pair.

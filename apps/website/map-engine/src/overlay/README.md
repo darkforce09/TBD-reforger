@@ -9,6 +9,7 @@ belong to `crate::frame` and `website-graphics-engine`, which see only an opaque
 
 ```text
 apps/website/map-engine/src/overlay/
+├── fire_mission_marks.rs  gun, target and burst glyphs, gun→target lines and dispersion ellipses
 ├── lanes.rs        `LaneRole`: 48 lanes, paint order, renderer key, two wire-id sets
 ├── lanes_prefs.rs  layer visibility, texture lane opacity, clear colour, the 1 km grid
 ├── lod.rs          zoom gates per world render class, the instance budget and the contour interval
@@ -59,6 +60,11 @@ its lanes, `set_lane_opacity` re-tints a texture lane in place, and `set_grid` b
 - `lanes_prefs`: `set_world_layer_visible`, `set_lane_opacity`, `set_grid` and `set_clear_color`
   on `RenderEngine`, for `crate::streaming::host` and `crate::streaming::loaders::world_loader`,
   and the debug apps' clear colour.
+- `fire_mission_marks`: `build_fire_mission_marks` turns a `FireMissionPlot` (guns, target, burst,
+  dispersion ellipses in world metres) into anchor-relative glyph quads for `MissionMarkers`, one
+  `LineList` of gun→target lines trimmed to the glyph edges plus ellipse outlines for
+  `MissionConnections`, and ellipse polygon rings for `MissionZones`; `dispersion_ring` builds one
+  ring. Non-finite inputs are skipped, so every emitted coordinate is finite.
 - `symbology`: see its README.
 
 ## Boundaries

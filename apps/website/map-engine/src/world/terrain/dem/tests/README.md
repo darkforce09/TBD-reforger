@@ -4,6 +4,7 @@ Terrain decoding and sampling, hillshade and contour geometry, satellite selecti
 
 ## Contents
 
+- `full_resolution_tests.rs`
 - `grid_tests.rs`
 - `png_tests.rs`
 - `raw_tests.rs`

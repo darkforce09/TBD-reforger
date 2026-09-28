@@ -3,25 +3,27 @@
 The export addon's game script module: the [EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript)
 that the engine compiles into the game, a server and
 [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)'s play mode. It holds the runtime road network
-export, the one export that needs a running world.
+export and the ballistics oracle's simulation run, the exports that need a running world.
 
 ## Contents
 
 ```text
 apps/mod/tbd-export/Scripts/Game/
-└── TBD/  the TBD game scripts: the runtime road network exporter
+└── TBD/  the TBD game scripts: the runtime road network exporter and the ballistics oracle simulation run
 ```
 
 ## How it works
 
 Enfusion compiles each addon's `Scripts/Game/` into the game module. For this addon that is the
-road export component in `TBD/Export/`, which the export game mode carries and which writes the road
-files once the export [mission header](/documentation_v2/glossary/g_to_m.md#mission-header) is playing.
+road export component in `TBD/Export/` and the ballistics oracle simulation component in
+`TBD/Export/BallisticsOracle/`, which the export game mode carries and which write once the export
+[mission header](/documentation_v2/glossary/g_to_m.md#mission-header) is playing.
 The addon's other exports live in `Scripts/WorkbenchGame/`, compiled into Workbench only.
 
 ## Authority
 
-- Server: the road export; it returns without running on a client.
+- Server: the road export and the ballistics oracle simulation run; each returns without running
+  on a client.
 - Client: nothing.
 - Owner: nothing.
 - RPCs: none.

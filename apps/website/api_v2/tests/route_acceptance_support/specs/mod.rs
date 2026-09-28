@@ -18,6 +18,7 @@ pub mod fleet_and_telemetry;
 pub mod identity_and_core;
 pub mod missions_library;
 pub mod missions_reviews;
+pub mod operations_ballistics;
 pub mod operations_events;
 pub mod operations_reservations;
 
@@ -27,6 +28,7 @@ pub fn all_specs() -> Vec<RouteSpec> {
         identity_and_core::specs(),
         operations_events::specs(),
         operations_reservations::specs(),
+        operations_ballistics::specs(),
         missions_library::specs(),
         missions_reviews::specs(),
         fleet_and_telemetry::specs(),

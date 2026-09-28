@@ -267,6 +267,8 @@ mod registry_validation;
 
 mod mission_validation;
 
+mod ballistics_validation;
+
 mod contract_citations;
 pub use contract_citations::citations;
 

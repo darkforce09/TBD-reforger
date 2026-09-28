@@ -9,6 +9,10 @@
 //! `Contours`, `RoadsCasing`, `Landcover`, `AirfieldApron` — and they belong with the map they
 //! name. The renderer keeps only the opaque `crate::frame::LaneId`.
 
+/// The fire-mission overlay: gun, target and burst glyphs, gun→target lines, dispersion ellipses.
+#[cfg(feature = "streaming")]
+pub mod fire_mission_marks;
+
 /// The 48 named lane identities, their paint order, and the two public id namespaces.
 #[cfg(feature = "streaming")]
 pub mod lanes;

@@ -1,4 +1,7 @@
-//! Admin + approvals + CMS + field-tools. Skips without `TEST_DATABASE_URL`.
+//! Admin + approvals + CMS. Skips without `TEST_DATABASE_URL`.
+//!
+//! The field tools' fire-mission save path re-solves against a stored ballistics catalog; its
+//! cases live in `tests/game_ballistics_fire_missions.rs`.
 //!
 //! Dev-login minting goes through [`common::dev_login_token`] so a non-302 or
 //! missing `Location` reports status + body + suite instead of
@@ -692,30 +695,6 @@ async fn admin_approvals_cms_field() {
     )
     .await;
     assert_eq!(st, StatusCode::NOT_FOUND);
-
-    // --- field tools (mortar) ---
-    let (st, sol) = call(
-        &app,
-        "POST",
-        "/api/v1/fire-missions/solve",
-        &t,
-        Some(r#"{"weapon_system":"M252 81mm","fp_x":0,"fp_y":0,"tgt_x":0,"tgt_y":1000}"#),
-    )
-    .await;
-    assert_eq!(st, StatusCode::OK, "solve: {sol}");
-    assert_eq!(sol["distance_m"], 1000);
-    let (st, _) = call(
-        &app,
-        "POST",
-        "/api/v1/fire-missions/solve",
-        &t,
-        Some(r#"{"weapon_system":"M252 81mm","fp_x":0,"fp_y":0,"tgt_x":0,"tgt_y":100000}"#),
-    )
-    .await;
-    assert_eq!(st, StatusCode::UNPROCESSABLE_ENTITY, "out of range → 422");
-    let (st, saved) = call(&app, "POST", "/api/v1/fire-missions", &t, Some(r#"{"weapon_system":"M252 81mm","fp_x":0,"fp_y":0,"tgt_x":0,"tgt_y":1000,"fp_grid":"012345","target_grid":"012845"}"#)).await;
-    assert_eq!(st, StatusCode::CREATED, "save fire: {saved}");
-    assert_eq!(saved["fire_mission"]["distance_m"], 1000);
 }
 
 /// Manual promotion and global sync cannot invent authority for an unverified account.

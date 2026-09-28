@@ -3,13 +3,16 @@
 The live item [registry](/documentation_v2/glossary/n_to_z.md#registry) of the current modpack, exported
 from the [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion)
 [Workbench](/documentation_v2/glossary/n_to_z.md#workbench): every item the
-[arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) offers and the compatibility graph between them.
-This is production content the platform imports, not test data.
+[arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) offers and the compatibility graph between them;
+and, under `ballistics/`, the game ballistics catalogs the fire-mission solver reads, trimmed from the
+gameplay equipment export (their own README describes them). This is production content the
+platform imports, not test data.
 
 ## Contents
 
 ```text
 contracts_v2/catalogs/
+├── ballistics/                     the game ballistics catalogs the fire-mission solver reads
 ├── registry-compat.workbench.json  the compatibility graph: which item fits in or on which
 └── registry-items.workbench.json   the item catalogue: every placeable and equipable engine item
 ```

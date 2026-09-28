@@ -12,7 +12,7 @@ tools_v2/xtask/src/verifications/schemas/
 ├── checks/    one module per gate, the validation suite, and the shared JSON and verdict helpers
 ├── checks.rs  the shared constants and pins, the submodule wiring, and the six gate entries
 ├── mod.rs     the module tree
-└── tests/     unit tests for the instance-kind lockstep, unread wire fields, the objective spine, goldens
+└── tests/     unit tests for the instance-kind lockstep, unread wire fields, the objective spine, goldens, ballistics
 ```
 
 ## How it works

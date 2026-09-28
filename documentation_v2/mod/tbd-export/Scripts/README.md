@@ -10,7 +10,7 @@ module's runtime road export is covered by the map export feature doc.
 
 ```text
 documentation_v2/mod/tbd-export/Scripts/
-└── WorkbenchGame/  the map export and the equipment and vehicle exporter documents
+└── WorkbenchGame/  the map export, the equipment and vehicle exporter and the ballistics oracle documents
 ```
 
 ## Code

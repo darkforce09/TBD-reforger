@@ -1,6 +1,7 @@
 //! HTTP handlers owned by the operations domain. The routes that reach them are registered in
 //! [`super::routes`].
 
+pub mod ballistics_catalogs;
 pub mod event_access_administration;
 pub mod event_create_update;
 pub mod event_group_administration;

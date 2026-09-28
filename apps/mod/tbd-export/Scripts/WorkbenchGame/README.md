@@ -10,6 +10,7 @@ the map layers, the equipment and vehicle source export with its diagnostics, an
 
 ```text
 apps/mod/tbd-export/Scripts/WorkbenchGame/
+├── BallisticsOracle/                the ballistics oracle menu entry: engine ballistic table answers per mortar shell
 ├── EquipmentExport/                 equipment diagnostic menu entries over the source exporter
 ├── EquipmentVehicleExport/          the equipment and vehicle source exporter and its Net API handler
 ├── MapExport/                       the map layer exporters and the building blueprint handler
@@ -28,6 +29,7 @@ classes exist only while Workbench has the addon loaded. Three kinds of entry po
 | Map layers (`MapExport/`) | none in the menu: every plugin attribute is commented out; the Net API handler `EMCP_WB_TbdBlueprint` | `TBD_Export/<map>/…`, `TBD_WorldExport_full.jsonl` |
 | Equipment and vehicle source export (`EquipmentVehicleExport/`) | the menu entry "Export Equipment and Vehicles" (`TBD`); the Net API handler `EMCP_WB_SourceExport` | `TBD_Export/equipment_vehicle_exports/…` |
 | Equipment and vehicle diagnostics (`EquipmentExport/`, `VehicleExport/`) | the "Diagnostic Export: …" entries (`TBD Diagnostics`) | `TBD_Export/equipment_vehicle_exports/generations/…` |
+| Ballistics oracle (`BallisticsOracle/`) | the menu entry "Ballistics Oracle" (`TBD`), then playing the export world | `TBD_BallisticsOracle/<generation id>/…` |
 | Item registry (`TBD_RegistryItemsExportPlugin.c`) | none: its plugin attribute is commented out | `TBD_RegistryItems.json`, `TBD_RegistryCompat.json` |
 
 A menu entry is a `WorkbenchPlugin` class registered by `[WorkbenchPluginAttribute]`; a Net API

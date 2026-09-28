@@ -5,19 +5,21 @@ The rows and wire shapes of the [operations](/documentation_v2/glossary/n_to_z.m
 [missions](/documentation_v2/glossary/g_to_m.md#mission), [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat)
 seats and registrations, access policies and groups, reservation pools and allocations, the
 [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime)'s roster and player
-[deployments](/documentation_v2/glossary/a_to_f.md#deployment), leave requests and saved fire missions.
+[deployments](/documentation_v2/glossary/a_to_f.md#deployment), leave requests, saved fire missions and
+the ballistics catalog versions they are solved against.
 Keys are snake_case, absent values are skipped and timestamps are RFC 3339.
 
 ## Contents
 
 ```text
 apps/website/api_v2/src/operations/models/
+├── ballistics_catalog.rs           a stored ballistics catalog version's summary and the list
 ├── event.rs                        the event, its missions, seats, squad holds, registrations
 ├── event_access_administration.rs  the manager's access changes and views, participant evidence
 ├── event_access_policy.rs          `EventAccessPolicy`: grants, conditions and their bounds
 ├── event_group.rs                  an event group: a managed roster or a partner guild
 ├── event_viewer_access.rs          what the viewer may see and reserve in one event
-├── fire_mission.rs                 `FireMission`, a saved mortar firing solution
+├── fire_mission.rs                 `FireMission` with its catalog inputs, `FireMissionGun`
 ├── game_runtime_roster.rs          the roster wire: seat assignments and compiled slots
 ├── generated/                      types generated from the event and game-runtime schemas
 ├── leave_request.rs                `LeaveRequest` and its review states
@@ -52,8 +54,9 @@ player deployment is a `DeploymentDecision` with its `DeploymentDenial`, not an 
   `reservation-response` in `contracts_v2/definitions/`. The hand-written wire types carry
   `@contract` tags: `event.rs` cites `event-schedule.schema.json` (`Event`, `EventStatus`,
   `EventMission`) and `reservation-actions.schema.json` (`SquadReservation`),
-  `leave_request.rs` cites `leave-request.schema.json`, and `fire_mission.rs` cites
-  `fire-mission.schema.json`; `cargo xtask schema citations` resolves them.
+  `leave_request.rs` cites `leave-request.schema.json`, `fire_mission.rs` cites
+  `fire-mission.schema.json` and `ballistics_catalog.rs` cites `ballistics-catalog.schema.json`;
+  `cargo xtask schema citations` resolves them.
 - Used by: the domain's handlers and services; the dashboard in `command_center` (`Event`,
   `EventMission`, `OrbatSlot`); the [API](/documentation_v2/glossary/a_to_f.md#api) tests
   `apps/website/api_v2/tests/models_serde.rs`, `apps/website/api_v2/tests/event_access_contract.rs`,

@@ -88,6 +88,7 @@ async fn start_proxy(upstream_port: u16) -> RunningServer {
             dir: std::env::temp_dir(),
             api_proxy: Some(format!("http://127.0.0.1:{upstream_port}")),
             map_assets: None,
+            api_fixture_corpus: None,
         },
         0,
     )

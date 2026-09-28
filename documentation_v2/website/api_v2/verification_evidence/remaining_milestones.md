@@ -11,14 +11,14 @@ TLA+, TLAPS, TLC or formal-proof toolchain is part of this work.
 The scope is set by `completion_plan.md` and `requirements.json`; the current resume point is
 `progress_checkpoint.md`.
 
-Game ballistics (B) is out of the T, C, V, S sequence by operator decision (2026-09-23): it is
-done later, in a separate phase whose approach is redesigned there. Its requirement
-`verification_game_ballistics` stays registered, so readiness stays fail-closed until that
-phase delivers it.
+Game ballistics (B) ran out of the T, C, V, S sequence by operator decision (2026-09-23), in its
+own phase with a redesigned approach; it is implemented and verified 2026-09-28 (design in
+`game_ballistics.md`).
 
 ## Status of the remaining checks
 
-The status comes from the last full `cargo xtask db test-it` (1,302 cases, 2026-09-28; V rows,
+The status comes from the last full `cargo xtask db test-it` (1,339 cases, 2026-09-28; B rows,
+with the map-engine filter run and the two B gates), the V run (1,302 cases, 2026-09-28; V rows,
 with `cargo xtask mk ci-local-leptos` for the browser session row), the 2026-09-27 run (1,075
 cases; C rows), the 2026-09-26 run (877 cases; T rows) and the 2026-09-23 run (784 cases; the
 other rows).
@@ -42,7 +42,14 @@ other rows).
 | C | content_vehicle_mutations | content_vehicle_mutations | db test-it | 18 | `vehicle_mutations*` | passing (18 cases, 2026-09-27) |
 | C | content_wiki_features | content_wiki_features (+ frontend_quality, browser_acceptance) | db test-it | 15 | `wiki_features*` | passing (15 cases, 2026-09-27) |
 | C | content_content_storage | content_content_storage | db test-it | 15 | `content_storage*` | passing (15 cases, 2026-09-27) |
-| B | verification_game_ballistics | verification_game_ballistics (+ frontend_quality, browser_acceptance) | db test-it | 1 | `game_ballistics*` | missing — separate later phase |
+| B | verification_game_ballistics | verification_game_ballistics (+ backend_regression, route acceptance, contract parity) | db test-it | 29 | `game_ballistics*` | passing (29 cases, 2026-09-28) |
+| B | game_ballistics_flight_model | game_ballistics_flight_model | map-engine `data::scenario::ballistics::` | 51 | modules flight_model, wind, angular_units, catalog | passing (51 cases, 2026-09-28) |
+| B | game_ballistics_calibration | game_ballistics_calibration | map-engine `data::scenario::ballistics::` | 34 | module calibration | passing (34 cases, 2026-09-28) |
+| B | game_ballistics_elevation_wind_dispersion | game_ballistics_elevation_wind_dispersion | map-engine `data::scenario::ballistics::` | 81 | modules solver, dispersion, fuze, crest_clearance, tests_* | passing (81 cases, 2026-09-28) |
+| B | game_ballistics_battery | game_ballistics_battery | map-engine `data::scenario::ballistics::` | 29 | modules battery, fire_mission, fire_mission_comparison | passing (29 cases, 2026-09-28) |
+| B | game_ballistics_wasm_agreement | game_ballistics_shared_solution_cases | map-engine `data::scenario::ballistics::` | 18 | modules agreement_cases, solution_wording | passing (18 cases, 2026-09-28) |
+| B | game_ballistics_wasm_agreement | game_ballistics_wasm_agreement | mk ballistics-wasm-agreement | 32 | `case ballistics_wasm_agreement_*` | passing (32 of 32, bit-identical, 2026-09-28) |
+| B | game_ballistics_offline_page | game_ballistics_offline_page (+ frontend_quality, browser_acceptance) | mk mortar-offline-gate | 15 | `case mortar_offline_*` | passing (15 cases, 2026-09-28) |
 | V | verification_route_acceptance | verification_route_acceptance | db test-it | 66 | `route_acceptance*` | passing (66 cases, 2026-09-28) |
 | V | verification_contract_parity | verification_contract_parity (+ schema_quality) | db test-it | 85 | `contract_parity*` | passing (85 cases, 2026-09-28) |
 | V | verification_property_invariants | verification_property_invariants | db test-it | 26 | the named property cases | passing (26 cases; seven V property records at 256 of 256, 2026-09-28) |
@@ -121,11 +128,14 @@ in `progress_checkpoint.md`.
 
 ## B — Game ballistics
 
-**Phase:** moved out of the T, C, V, S sequence by operator decision (2026-09-23); done later in
-its own phase, whose approach is redesigned there. The behavior below records the current
-register scope.
+**State:** implemented and verified 2026-09-28, not yet committed; design in `game_ballistics.md`,
+evidence in `progress_checkpoint.md`. It ran in its own phase, out of the T, C, V, S sequence, by
+operator decision (2026-09-23).
 
-**Covers:** verification_game_ballistics and T-940.10.
+**Covers:** verification_game_ballistics, game_ballistics_flight_model,
+game_ballistics_calibration, game_ballistics_elevation_wind_dispersion, game_ballistics_battery,
+game_ballistics_wasm_agreement and game_ballistics_offline_page; T-940.10, the T-1177 remainder
+and T-1245.
 
 **Required behavior:**
 - The map-engine game-ballistics module gains elevation, drag, wind, dispersion and battery

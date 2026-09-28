@@ -126,6 +126,17 @@ pub fn router(state: AppState) -> Router {
     if !state.cfg.spa_dist_dir.is_empty() {
         let dist = state.cfg.spa_dist_dir.clone();
         let index = format!("{dist}/index.html");
+        // The offline service worker's loader answers with `Cache-Control: no-cache`, so every
+        // update check revalidates it and a new build's worker is found on the next visit rather
+        // than after the HTTP cache lets the old script expire.
+        let service_worker = tower::Layer::layer(
+            &tower_http::set_header::SetResponseHeaderLayer::overriding(
+                axum::http::header::CACHE_CONTROL,
+                axum::http::HeaderValue::from_static("no-cache"),
+            ),
+            ServeFile::new(format!("{dist}/service_worker.js")),
+        );
+        r = r.route_service("/service_worker.js", service_worker);
         r = r.fallback_service(ServeDir::new(dist).fallback(ServeFile::new(index)));
     }
 

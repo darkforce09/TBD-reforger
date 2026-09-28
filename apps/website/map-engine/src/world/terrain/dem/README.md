@@ -9,15 +9,16 @@ and the downsampled grid that contours, the sea band, the airfield apron and the
 
 ```text
 apps/website/map-engine/src/world/terrain/dem/
-├── grid.rs      `DemVectorGrid`: the box-averaged metres grid, its 2× reduction and its sampling
-├── loader.rs    the browser fetch of a manifest-declared raw grid, streamed with progress reports
-├── manifest.rs  `DemManifest`: the raster's world rectangle, size, axis flips and height range
-├── mod.rs       the module tree
-├── png.rs       16-bit PNG decode into samples and into the `f32` metres cache
-├── raw.rs       the `TBDE` raw grid: whole or streamed decode, and the framing an emitter writes
-├── sample/      the sampling and terrain line-of-sight items under one path, and their tests
-├── sampling.rs  sample-to-metres conversion, world-to-pixel mapping and bilinear sampling
-└── tests/       unit tests for the vector grid, the PNG decode and the raw grid
+├── full_resolution.rs  `FullResolutionDem`: the native `u16` raster, its handle, its 2 m lookup
+├── grid.rs             `DemVectorGrid`: the box-averaged metres grid, its 2× reduction, its sampling
+├── loader.rs           the browser fetch of a manifest-declared raw grid, streamed with progress
+├── manifest.rs         `DemManifest`: the raster's world rectangle, size, axis flips and height range
+├── mod.rs              the module tree
+├── png.rs              16-bit PNG decode into samples and into the `f32` metres cache
+├── raw.rs              the `TBDE` raw grid: whole or streamed decode, and the emitter framing
+├── sample/             the sampling and terrain line-of-sight items under one path, and their tests
+├── sampling.rs         sample-to-metres conversion, world-to-pixel mapping and bilinear sampling
+└── tests/              unit tests for the full-resolution raster, vector grid, PNG decode, raw grid
 ```
 
 ## How it works
@@ -49,6 +50,13 @@ the cache by `DEM_VECTOR_GRID_FACTOR` (4), Everon's 6400² samples at 2 m becomi
 8 m cells, and records its highest value, which bounds the contour levels; `reduce_grid_2x` halves
 a grid for the coarse contour intervals, and `sample_grid_meters` reads a height from it.
 
+`FullResolutionDem` keeps the source `u16` samples at their native spacing with the linear
+`SampleEncoding` of either source, over the manifest's `worldBounds` footprint, oriented like the
+vector grid (sample `(0, 0)` at the footprint's south-west corner). `height_at` interpolates
+bilinearly and answers `None` off the footprint. The terrain boot publishes it into a
+`FullResolutionDemHandle` only when its scope keeps the raster (the terrain-and-imagery scope a
+fire-planning map uses); the Mission Creator's full scope leaves the handle empty.
+
 ## Public surface
 
 - `manifest`: `DemManifest` and `PixelCoord`.
@@ -58,6 +66,8 @@ a grid for the coarse contour intervals, and `sample_grid_meters` reads a height
 - `raw`: `RawDem`, `RawDemSink` and `to_bytes`; `loader::load_declared_raw`.
 - `grid`: `DemVectorGrid`, `DEM_VECTOR_GRID_FACTOR`, `downsample_dem_grid`, `reduce_grid_2x` and
   `sample_grid_meters`.
+- `full_resolution`: `FullResolutionDem`, `SampleEncoding`, `RasterFootprint`,
+  `FullResolutionDemHandle`, `new_full_resolution_dem_handle` and `height_from_handle`.
 
 ## Boundaries
 

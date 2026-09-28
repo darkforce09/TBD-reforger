@@ -10,6 +10,7 @@ played.
 
 ```text
 apps/mod/tbd-export/Scripts/Game/TBD/Export/
+├── BallisticsOracle/          the ballistics oracle's play-mode simulation run and the classes it shares with its plugin
 ├── TBD_RoadClassifier.c       `TBD_ERoadLayer` and the rules that put a road in one of six classes
 ├── TBD_RoadExportComponent.c  the game mode component: finds the roads, links them, writes the files
 ├── TBD_RoadExportJson.c       `TBD_RoadExportJson`: JSON string escaping and checked file writes
@@ -18,6 +19,10 @@ apps/mod/tbd-export/Scripts/Game/TBD/Export/
 ```
 
 ## How it works
+
+`BallisticsOracle/` holds a second, independent game mode component with its own
+[README](/apps/mod/tbd-export/Scripts/Game/TBD/Export/BallisticsOracle/README.md); the rest of
+this section covers the road export.
 
 `TBD_RoadExportComponent` is an `SCR_BaseGameModeComponent`; the export game mode prefab
 (`apps/mod/tbd-export/Prefabs/Systems/TBD_Export_GameMode.et`) carries it. `OnPostInit` schedules

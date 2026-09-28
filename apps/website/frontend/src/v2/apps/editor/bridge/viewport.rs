@@ -1,14 +1,17 @@
-//! Editor viewport sizing, frame loop, and debug bridges.
+//! Editor frame loop readouts, debug bridges, and the registry session cache.
+//!
+//! **Role:** the Mission Creator's per-frame readouts (map scale, the debug HUD) on the shared
+//! map seam's frame pump, the browser diagnostics hooks, and the registry and compatibility cache
+//! kept across editor mounts.
+//! **Position:** called by the canvas mount's boot tasks; canvas sizing and the pump itself live
+//! in [`crate::v2::core::map_view`].
+//! **Signals & state:** the scale and HUD signals the pump hook writes; the thread-local registry
+//! cache.
+//! **Invariants:** the scale signal is written only when its readout text changes, never once
+//! per frame.
 #![allow(dead_code)]
 
 use leptos::prelude::*;
-
-/// Converts CSS dimensions and device pixel ratio to canvas pixels.
-#[cfg(target_arch = "wasm32")]
-pub(crate) fn device_size(css_w: f64, css_h: f64, dpr: f64) -> (u32, u32) {
-    let r = |v: f64| ((v * dpr + 0.5).floor().max(1.0)) as u32;
-    (r(css_w), r(css_h))
-}
 
 /// Starts the damage-driven editor render loop.
 #[cfg(target_arch = "wasm32")]
@@ -20,48 +23,43 @@ pub(crate) fn start_raf(
     debug_hud: RwSignal<String>,
     scale_mpp: RwSignal<f64>,
 ) {
-    use website_map_engine::frame::RafPump;
-
     let mut frames_at_sample = 0u32;
     let mut last_sample = 0.0f64;
     let mut last_scale_text = String::new();
 
-    RafPump::new(engine, disposed)
-        .after_frame(move |e, frames| {
-            crate::v2::apps::editor::input::tools::los_world_wasm::tick_object_wash(e);
-            {
-                let mpp = crate::v2::apps::editor::ui::docks::toolbelt::m_per_px(e.zoom());
-                let text = crate::v2::apps::editor::ui::docks::toolbelt::format_m_per_px(mpp);
-                if text != last_scale_text {
-                    last_scale_text = text;
-                    scale_mpp.set(mpp);
-                }
+    crate::v2::core::map_view::frame_pump::start_frame_pump(engine, disposed, move |e, frames| {
+        crate::v2::apps::editor::input::tools::los_world_wasm::tick_object_wash(e);
+        {
+            let mpp = crate::v2::apps::editor::ui::docks::toolbelt::m_per_px(e.zoom());
+            let text = crate::v2::apps::editor::ui::docks::toolbelt::format_m_per_px(mpp);
+            if text != last_scale_text {
+                last_scale_text = text;
+                scale_mpp.set(mpp);
             }
-            {
-                let now = js_sys::Date::now();
-                if last_sample == 0.0 {
-                    last_sample = now;
-                } else if now - last_sample >= 1000.0 {
-                    let window = frames.wrapping_sub(frames_at_sample);
-                    let fps = (f64::from(window) * 1000.0 / (now - last_sample)).round();
-                    let stats: serde_json::Value =
-                        serde_json::from_str(&e.stats()).unwrap_or_default();
-                    let chunks = stats["chunks"].as_u64().unwrap_or(0);
-                    let glyphs = stats["tree_glyphs"].as_u64().unwrap_or(0);
-                    let rf_ms = stats["render_cpu_ms_ema"].as_f64().unwrap_or(0.0);
-                    let rf_eq = if rf_ms > 0.0 { 1000.0 / rf_ms } else { 0.0 };
-                    debug_hud.set(format!(
+        }
+        {
+            let now = js_sys::Date::now();
+            if last_sample == 0.0 {
+                last_sample = now;
+            } else if now - last_sample >= 1000.0 {
+                let window = frames.wrapping_sub(frames_at_sample);
+                let fps = (f64::from(window) * 1000.0 / (now - last_sample)).round();
+                let stats: serde_json::Value = serde_json::from_str(&e.stats()).unwrap_or_default();
+                let chunks = stats["chunks"].as_u64().unwrap_or(0);
+                let glyphs = stats["tree_glyphs"].as_u64().unwrap_or(0);
+                let rf_ms = stats["render_cpu_ms_ema"].as_f64().unwrap_or(0.0);
+                let rf_eq = if rf_ms > 0.0 { 1000.0 / rf_ms } else { 0.0 };
+                debug_hud.set(format!(
                         "z {:.2} · c{chunks} · glyph {glyphs} · {fps:.0} FPS · rf {rf_ms:.2}ms ({rf_eq:.0} eq){}{}",
                         e.zoom(),
                         crate::v2::apps::editor::input::tools::los_world_wasm::hud_suffix(),
                         website_map_engine::streaming::memory::budget::hud_suffix()
                     ));
-                    frames_at_sample = frames;
-                    last_sample = now;
-                }
+                frames_at_sample = frames;
+                last_sample = now;
             }
-        })
-        .start();
+        }
+    });
 }
 
 /// Exposes GPU readback self-checks to the browser gate.

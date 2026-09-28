@@ -46,7 +46,8 @@ in front. Beside it the router serves `/healthz`, `/metrics`, the upload directo
 (created when the router is built), the terrain and glyph trees at `/map-assets` and
 `/map-assets/glyphs` (a warning is logged at boot when either directory is missing), and, when
 `SPA_DIST_DIR` is set, the built single-page app with an `index.html` fallback and the
-cross-origin isolation headers. The middleware chain wraps all of it, outermost first: request
+cross-origin isolation headers, its offline service worker loader `/service_worker.js` with
+`Cache-Control: no-cache`. The middleware chain wraps all of it, outermost first: request
 id, access log, metrics, panic recovery, CORS, body limit, rate limit; the two asset mounts sit
 below the rate limit and never reach it.
 

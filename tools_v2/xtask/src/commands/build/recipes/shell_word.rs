@@ -144,13 +144,13 @@ pub(crate) fn rust_sqlx_prepare() -> Vec<Step> {
     vec![Step::new(&["cargo", "sqlx", "prepare"]).cd(WEB)]
 }
 
-/// Fmt / clippy / test for the engine crates.
+/// Fmt / clippy / test for the engine crates and the offline service worker.
 ///
-/// `website-graphics-engine` was added to every step when the engine split created it: the crate
-/// reached CI only as a transitive dependency of the frontend, so nothing fmt-checked it, nothing
-/// clippied it and its tests never ran. Kept in lockstep with the `wasm-ci` row in
-/// `crate::commands::ci::task_definitions` — the two are the same lane spelled twice, and `mk_build_tests` pins the
-/// wasm32 line's echo against drift.
+/// Every crate that ships to the browser is named in every step, wasm32 included: a crate the
+/// lane does not name reaches CI only as a dependency of the frontend, so nothing fmt-checks it,
+/// nothing clippies it and its tests never run. Kept in lockstep with the `wasm-ci` row in
+/// `crate::commands::ci::task_definitions` — the two are the same lane spelled twice, and
+/// `mk_build_tests` pins the wasm32 line's echo and the two spellings against drift.
 pub(crate) fn wasm_ci() -> Vec<Step> {
     vec![
         Step::new(&[
@@ -161,6 +161,8 @@ pub(crate) fn wasm_ci() -> Vec<Step> {
             "website-map-engine",
             "-p",
             "website-graphics-engine",
+            "-p",
+            "website-offline-service-worker",
         ]),
         Step::new(&[
             "cargo",
@@ -169,6 +171,8 @@ pub(crate) fn wasm_ci() -> Vec<Step> {
             "website-map-engine",
             "-p",
             "website-graphics-engine",
+            "-p",
+            "website-offline-service-worker",
             "--all-targets",
             "--all-features",
             "--",
@@ -182,6 +186,8 @@ pub(crate) fn wasm_ci() -> Vec<Step> {
             "website-map-engine",
             "-p",
             "website-graphics-engine",
+            "-p",
+            "website-offline-service-worker",
             "--target",
             "wasm32-unknown-unknown",
             "--",
@@ -200,6 +206,13 @@ pub(crate) fn wasm_ci() -> Vec<Step> {
             "test",
             "-p",
             "website-graphics-engine",
+            "--all-features",
+        ]),
+        Step::new(&[
+            "cargo",
+            "test",
+            "-p",
+            "website-offline-service-worker",
             "--all-features",
         ]),
     ]
@@ -263,6 +276,42 @@ pub(crate) fn leptos_gates() -> Vec<Step> {
         "--",
         "v-suite",
         "verify",
+    ]));
+    v
+}
+
+/// `mortar-offline-gate` — a release build, then `gate mortar-offline`: the mortar calculator's
+/// offline pack downloads on the first visit and the page solves with the server gone.
+pub(crate) fn mortar_offline_gate() -> Vec<Step> {
+    let mut v = leptos_build();
+    v.push(Step::new(&[
+        "cargo",
+        "run",
+        "-q",
+        "-p",
+        "developer-tools",
+        "--bin",
+        "gate",
+        "--",
+        "mortar-offline",
+    ]));
+    v
+}
+
+/// `ballistics-wasm-agreement` — the release build, then `gate ballistics-agreement`: the
+/// fire-mission solver's wasm build in the browser against its native build, case by case.
+pub(crate) fn ballistics_wasm_agreement() -> Vec<Step> {
+    let mut v = leptos_build();
+    v.push(Step::new(&[
+        "cargo",
+        "run",
+        "-q",
+        "-p",
+        "developer-tools",
+        "--bin",
+        "gate",
+        "--",
+        "ballistics-agreement",
     ]));
     v
 }

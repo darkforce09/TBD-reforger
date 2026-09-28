@@ -3,6 +3,9 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
+/// Full-resolution elevation raster: the native `u16` samples and their bilinear height lookup.
+pub mod full_resolution;
+
 /// Grid.
 pub mod grid;
 

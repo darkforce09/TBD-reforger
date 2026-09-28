@@ -1,4 +1,5 @@
 use crate::commands::agent_context::cli::AiCmd;
+use crate::commands::ballistics::cli::BallisticsCmd;
 use crate::commands::debug::cli::DebugCmd;
 use crate::commands::deploy::cli::DeployCmd;
 use crate::commands::fetch::cli::FetchCmd;
@@ -80,6 +81,11 @@ pub(crate) enum TopCmd {
     Fetch {
         #[command(subcommand)]
         cmd: FetchCmd,
+    },
+    /// Game ballistics catalog and calibration fixtures
+    Ballistics {
+        #[command(subcommand)]
+        cmd: BallisticsCmd,
     },
     /// Map-asset pipeline helpers
     Map {

@@ -1,6 +1,6 @@
 //! Route specs of the `operations_reservations` part: seat registration and withdrawal, leader
-//! seat assignment, squad holds, waitlist promotion, fire missions, and the game-runtime roster
-//! and player deployments.
+//! seat assignment, squad holds, waitlist promotion, and the game-runtime roster and player
+//! deployments.
 //!
 //! Each spec supplies only what the framework cannot derive: the success status and contract,
 //! the ownership probes, the domain's malformed and boundary probes, and a reason for every
@@ -23,14 +23,7 @@ const MEMBERS_ONLY: &str = "an event without its own access policy admits member
      event policy, not the route's access class, refuses a guest's registration";
 const ANY_LEADER: &str = "the waitlist belongs to the attachment: any leader or administrator \
      may run the promotion";
-const SHARED_READ: &str = "an event's fire missions are shared with every member: no row is \
-     owned by the reader";
-const STATELESS: &str = "a firing solution is computed from the body alone and addresses no \
-     stored row";
-const OWN_NEW_ROW: &str = "the saved fire mission is the caller's own new row; the event it \
-     names is shared by every member";
 const RESERVATIONS: &str = "reservation-actions.schema.json";
-const FIRE: &str = "fire-mission.schema.json";
 const DEPLOYMENT: &str = "game-runtime-deployment.schema.json";
 const ENLISTED: Actor = Actor::User(Role::Enlisted);
 const LEADER: Actor = Actor::User(Role::Leader);
@@ -227,80 +220,6 @@ fn reservation_specs() -> Vec<RouteSpec> {
     ]
 }
 
-fn fire_mission_specs() -> Vec<RouteSpec> {
-    vec![
-        RouteSpec::authenticated("GET /api/v1/events/{id}/fire-missions")
-            .ok(200, Contract::schema(FIRE, "FireMissionList"))
-            .no_ownership(SHARED_READ)
-            .boundary(
-                Probe::new("an event without fire missions lists none", ENLISTED)
-                    .fixture("fire-missions-none")
-                    .expect_with(Expect::success().json_at("/data", json!([]))),
-            ),
-        RouteSpec::authenticated("POST /api/v1/fire-missions/solve")
-            .ok(200, Contract::schema(FIRE, "FireSolution"))
-            .request_contract(Contract::schema(FIRE, "FireSolveRequest"))
-            .no_ownership(STATELESS)
-            .malformed(
-                Probe::new("missing target", ENLISTED)
-                    .change(Change::RemoveField("tgt_x"))
-                    .expect(400),
-            )
-            .malformed(
-                Probe::new("unknown weapon", ENLISTED)
-                    .merge_body(json!({"weapon_system": "M999 99mm"}))
-                    .expect_with(Expect::status(400).error_contains("unknown weapon_system")),
-            )
-            .malformed(
-                Probe::new("weapon with trailing whitespace", ENLISTED)
-                    .merge_body(json!({"weapon_system": "M252 81mm "}))
-                    .expect(400),
-            )
-            .boundary(
-                Probe::new("target out of range", ENLISTED)
-                    .merge_body(json!({"tgt_x": 90000.0, "tgt_y": 90000.0}))
-                    .expect_with(Expect::status(422).error_contains("out of range")),
-            )
-            .boundary(
-                Probe::new("zero coordinates are a real grid", ENLISTED)
-                    .merge_body(json!({"fp_x": 0.0, "fp_y": 0.0, "tgt_x": 300.0, "tgt_y": 400.0})),
-            ),
-        RouteSpec::authenticated("POST /api/v1/fire-missions")
-            .ok(201, Contract::schema(FIRE, "SavedFireMission"))
-            .request_contract(Contract::schema(FIRE, "FireMissionSave"))
-            .no_ownership(OWN_NEW_ROW)
-            .malformed(
-                Probe::new("blank event id", ENLISTED)
-                    .merge_body(json!({"event_id": " "}))
-                    .expect(400),
-            )
-            .malformed(
-                Probe::new("non-uuid event id", ENLISTED)
-                    .merge_body(json!({"event_id": "not-a-uuid"}))
-                    .expect(400),
-            )
-            .malformed(
-                Probe::new("blank grid", ENLISTED)
-                    .merge_body(json!({"target_grid": "  "}))
-                    .expect(400),
-            )
-            .boundary(
-                Probe::new("a fire mission without an event", ENLISTED)
-                    .merge_body(json!({"event_id": null})),
-            )
-            .boundary(
-                Probe::new("nonexistent event", ENLISTED)
-                    .merge_body(json!({"event_id": "00000000-0000-4000-8000-000000000000"}))
-                    .expect(404),
-            )
-            .boundary(
-                Probe::new("target out of range", ENLISTED)
-                    .merge_body(json!({"tgt_x": 90000.0, "tgt_y": 90000.0}))
-                    .expect(422),
-            ),
-    ]
-}
-
 fn game_runtime_specs() -> Vec<RouteSpec> {
     vec![
         RouteSpec::machine(
@@ -401,12 +320,8 @@ fn game_runtime_specs() -> Vec<RouteSpec> {
 
 /// Every spec of the `operations_reservations` part.
 pub fn specs() -> Vec<RouteSpec> {
-    [
-        reservation_specs(),
-        fire_mission_specs(),
-        game_runtime_specs(),
-    ]
-    .into_iter()
-    .flatten()
-    .collect()
+    [reservation_specs(), game_runtime_specs()]
+        .into_iter()
+        .flatten()
+        .collect()
 }

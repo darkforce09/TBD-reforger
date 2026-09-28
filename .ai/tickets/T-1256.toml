@@ -1,0 +1,12 @@
+id = "T-1256"
+kind = "work"
+title = "Solve under-barrel grenade launchers from ballistics catalogs"
+summary = "The ballistics catalog, oracle and solver cover the vanilla M252 and 2B14 mortars only. Under-barrel grenade launchers (M203, GP-25) fire direct and indirect arcs and could come through the same oracle export, catalog and solver."
+class = "feature"
+status = "idea"
+notes = "Needs an operator decision on scope. The oracle plugin, trim-export, catalog schema (role, charges) and solver would need a direct-fire branch and launcher-specific elevation limits. Source: milestone B plan (M252 and 2B14 scope)."
+created_at = "2026-09-28T16:01:08Z"
+
+[scope]
+domain = "website"
+layer = "frontend"

@@ -10,12 +10,14 @@ the API or the deployed host serves.
 
 ```text
 apps/website/frontend/
-├── Cargo.toml   the `website-frontend` package: one binary, and the map engine's features per target
-├── index.html   the Trunk entry: the wasm build, the stylesheet link, the icon font, the dark theme
-├── src/         the entry point, the route table and the `v2/` tree of pages, workspaces and core
-├── style/       the Aegis stylesheet Tailwind compiles into the build
-├── tests/       the captured API responses in `fixtures/api/` that the golden and page tests embed
-└── Trunk.toml   the build, the dev server on 127.0.0.1:3000 and its proxy to the API
+├── Cargo.toml            the `website-frontend` package: one binary, the map engine's features per target
+├── index.html            the Trunk entry: the app and worker builds, stylesheet, icon font, web manifest
+├── manifest.webmanifest  the web app manifest: name, start URL, scope, standalone display, colours
+├── service_worker.js     the service worker loader: imports the Rust worker and forwards its events
+├── src/                  the entry point, the route table and the `v2/` tree of pages, workspaces and core
+├── style/                the Aegis stylesheet Tailwind compiles into the build
+├── tests/                the captured API responses in `fixtures/api/` the golden and page tests embed
+└── Trunk.toml            the build, the dev server on 127.0.0.1:3000 and its proxy to the API
 ```
 
 ## How it works
@@ -27,9 +29,19 @@ the module, its JavaScript glue and the stylesheet into `dist/`. In the browser,
 function in `src/main.rs` mounts the app layout under a router, the layout restores a stored
 session, and the route table in `src/app_routes.rs` and `src/router.rs` picks the page.
 
+The same `index.html` builds the offline service worker from
+`apps/website/offline-service-worker` as a Trunk worker (`data-type="worker"`,
+`data-bindgen-target="no-modules"`): Trunk writes `offline_service_worker.js` and
+`offline_service_worker_bg.wasm` to the root of `dist/` with no content hash and links neither from
+the page. It copies `service_worker.js`, the loader the page registers as
+`/service_worker.js?build=<id>`, and `manifest.webmanifest`, which the page links as its web app
+manifest, unchanged to the root of `dist/`.
+
 ```text
 index.html ─▶ trunk ─┬─▶ cargo build --target wasm32-unknown-unknown ─▶ wasm-bindgen
                      │       ─▶ wasm-opt at level z, release builds only ──────────▶ dist/
+                     ├─▶ offline_service_worker worker build (no-modules) ─────────▶ dist/
+                     ├─▶ copy service_worker.js, manifest.webmanifest ─────────────▶ dist/
                      └─▶ tailwindcss style/aegis.css ─────────────────────────────▶ dist/
 browser ─▶ dist/index.html ─▶ start_app ─▶ AppLayout ─▶ route ─▶ page or workspace
                                                └─▶ /api/v1 and /map-assets on the same origin

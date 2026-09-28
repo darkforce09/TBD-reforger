@@ -72,6 +72,7 @@ const DEPLOYMENT_CANCEL: &str = "/api/v1/servers/00000000-0000-4000-d000-0000000
 const FACTIONS: &str = "/api/v1/factions";
 const FACTION: &str = "/api/v1/factions/00000000-0000-4000-b100-000000000003";
 const FIRE_MISSIONS: &str = "/api/v1/fire-missions";
+const BALLISTICS_CATALOGS: &str = "/api/v1/ballistics-catalogs";
 const EVENT_GROUPS: &str = "/api/v1/events/c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7/groups";
 const LEAVE_REQUESTS: &str = "/api/v1/me/leave-requests";
 const COMMANDS: &str = "/api/v1/servers/00000000-0000-4000-d000-000000000001/commands";
@@ -84,6 +85,12 @@ const FLEET_SCENARIO: &str = "/api/v1/fleet/scenarios/everon";
 
 /// Every normalised field, grouped by golden in index order.
 pub const NORMALISED_FIELDS: &[NormalisedField] = &[
+    field(
+        "GET",
+        BALLISTICS_CATALOGS,
+        "/data/0/uploaded_at",
+        RequestTime,
+    ),
     field("POST", REJECT, "/reviewed_at", RequestTime),
     field("POST", REJECT, "/updated_at", RequestTime),
     field("POST", SUBMIT, "/updated_at", RequestTime),

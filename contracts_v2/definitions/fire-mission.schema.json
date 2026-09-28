@@ -1,35 +1,90 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "FireMissionContract",
-  "description": "Mortar fire missions: the ballistic solution for a firing point and a target in map metres, and the saved missions of an event. The root is the solution.",
-  "$ref": "#/definitions/FireSolution",
+  "description": "Mortar fire missions: per-gun ballistic solutions onto one target from a pinned ballistics catalog, the save body that carries a client solution for the server to re-solve, and the saved missions of an event. Map metres: x east, y north; azimuth clockwise from north. Mils are in each weapon's own convention (mils_per_circle). The root is the solution.",
+  "$ref": "#/definitions/FireMissionSolution",
   "definitions": {
-    "FireSolution": {
-      "description": "POST /api/v1/fire-missions/solve answer: range, bearing in degrees and mils, elevation, the lowest charge that reaches, and time of flight. A target out of range answers 422 with this shape under details.",
+    "FireMissionSolution": {
+      "description": "One battery solution: every gun solved independently onto the same target with the catalog version and solver revision that produced it. dispersion, fuze and crest describe the lead gun (guns[0]) at its recommended charge; dispersion is null when that gun has no solving charge.",
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "weapon_system",
-        "distance_m",
-        "azimuth_deg",
-        "azimuth_mils",
-        "elevation_mils",
-        "charge",
-        "time_of_flight_s"
+        "guns",
+        "dispersion",
+        "catalog_id",
+        "catalog_version",
+        "solver_revision"
       ],
       "properties": {
-        "weapon_system": {
-          "type": "string",
-          "enum": [
-            "M252 81mm",
-            "M821 81mm",
-            "2B14 82mm",
-            "M120 120mm"
+        "guns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/GunFireSolution"
+          }
+        },
+        "dispersion": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Dispersion"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
-        "distance_m": {
+        "fuze": {
+          "$ref": "#/definitions/FuzeSetting"
+        },
+        "crest": {
+          "$ref": "#/definitions/CrestClearance"
+        },
+        "catalog_id": {
+          "$ref": "#/definitions/Slug"
+        },
+        "catalog_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "solver_revision": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "GunFireSolution": {
+      "description": "One gun's solution: bearing, one row per charge the shell accepts (every charge evaluated, high-angle branch) and the recommended charge, the lowest that solves (null when none does).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gun_index",
+        "label",
+        "distance_m",
+        "height_difference_m",
+        "azimuth_deg",
+        "azimuth_mils",
+        "mils_per_circle",
+        "charges",
+        "recommended_rings",
+        "dispersion"
+      ],
+      "properties": {
+        "gun_index": {
           "type": "integer",
           "minimum": 0
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "distance_m": {
+          "description": "Horizontal distance from the gun to the target.",
+          "type": "number",
+          "minimum": 0
+        },
+        "height_difference_m": {
+          "description": "Target height minus gun height.",
+          "type": "number"
         },
         "azimuth_deg": {
           "type": "number",
@@ -37,92 +92,335 @@
           "exclusiveMaximum": 360
         },
         "azimuth_mils": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "elevation_mils": {
-          "type": "integer"
-        },
-        "charge": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "time_of_flight_s": {
+          "description": "Azimuth in the weapon's convention, in [0, mils_per_circle).",
           "type": "number",
           "minimum": 0
+        },
+        "mils_per_circle": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "charges": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/ChargeSolution"
+          }
+        },
+        "recommended_rings": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "dispersion": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Dispersion"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     },
-    "FireSolveRequest": {
-      "description": "POST /api/v1/fire-missions/solve body: the weapon key (exact spelling) and the firing point and target in map metres.",
+    "ChargeSolution": {
+      "description": "One charge's result: the wind-corrected aim, the elevation, time of flight and apex when it solves, or the refusal when it does not (the numeric fields are then null).",
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "weapon_system",
-        "fp_x",
-        "fp_y",
-        "tgt_x",
-        "tgt_y"
+        "rings",
+        "elevation_deg",
+        "elevation_mils",
+        "time_of_flight_s",
+        "apex_m",
+        "aim_azimuth_deg",
+        "aim_azimuth_mils",
+        "deflection_correction_mils",
+        "range_correction_m",
+        "refusal"
       ],
       "properties": {
-        "weapon_system": {
-          "type": "string",
-          "enum": [
-            "M252 81mm",
-            "M821 81mm",
-            "2B14 82mm",
-            "M120 120mm"
+        "rings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "elevation_deg": {
+          "type": [
+            "number",
+            "null"
           ]
         },
-        "fp_x": {
+        "elevation_mils": {
+          "description": "Elevation in the weapon's convention.",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "time_of_flight_s": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "apex_m": {
+          "description": "Apex height above the gun.",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "aim_azimuth_deg": {
+          "description": "Azimuth to lay, degrees clockwise from north in [0, 360): the geometric azimuth plus the wind's deflection correction.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "exclusiveMaximum": 360
+        },
+        "aim_azimuth_mils": {
+          "description": "Azimuth to lay in the weapon's mils convention, [0, mils_per_circle).",
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "deflection_correction_mils": {
+          "description": "Aim azimuth minus the geometric azimuth in the weapon's mils, at most half a turn either way; positive lays right (clockwise) of the target line; zero in calm air.",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "range_correction_m": {
+          "description": "Horizontal distance to the aim point minus the gun-to-target distance, metres; zero in calm air. The head- or tailwind share of the drift is already inside the elevation.",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "refusal": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SolutionRefusal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "SolutionRefusal": {
+      "description": "Why a charge does not solve: too_close (range at maximum elevation exceeds the distance), out_of_range (maximum range falls short), unreachable (target above the apex), did_not_converge (elevation root search or wind-corrected aim iteration exhausted), time_to_live_exceeded (no elevation that reaches the target lands within the shell's time to live), invalid_input (a non-finite or non-physical input).",
+      "type": "string",
+      "enum": [
+        "too_close",
+        "out_of_range",
+        "unreachable",
+        "did_not_converge",
+        "time_to_live_exceeded",
+        "invalid_input"
+      ]
+    },
+    "Dispersion": {
+      "description": "Impact spread derived from the game's dispersion parameters. A documented interpretation, not verified in-engine: verified_in_engine is always false.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "range_probable_error_m",
+        "deflection_probable_error_m",
+        "ellipse_semi_major_m",
+        "ellipse_semi_minor_m",
+        "ellipse_orientation_deg",
+        "standard_dispersion_m",
+        "verified_in_engine"
+      ],
+      "properties": {
+        "range_probable_error_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "deflection_probable_error_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "ellipse_semi_major_m": {
+          "description": "Semi-major axis of the 50 % ellipse.",
+          "type": "number",
+          "minimum": 0
+        },
+        "ellipse_semi_minor_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "ellipse_orientation_deg": {
+          "description": "Bearing of the semi-major axis, clockwise from north, in [0, 180).",
+          "type": "number",
+          "minimum": 0,
+          "exclusiveMaximum": 180
+        },
+        "standard_dispersion_m": {
+          "description": "The shell's range-card standard dispersion.",
+          "type": "number",
+          "minimum": 0
+        },
+        "verified_in_engine": {
+          "const": false
+        }
+      }
+    },
+    "FuzeSetting": {
+      "description": "Time fuze for a burst at burst_height_m above the target: the time to the descending crossing of that height with the aim the gun lays for that burst (burst_aim, not the ground-impact aim), or the refusal (FuzeRefusal) when no allowed charge sets a time inside the fuze window. refusal is null exactly when time_s is not; burst_aim is null exactly when time_s is.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "burst_height_m",
+        "time_s",
+        "min_s",
+        "max_s",
+        "default_s",
+        "refusal",
+        "burst_aim"
+      ],
+      "properties": {
+        "burst_height_m": {
           "type": "number"
         },
-        "fp_y": {
+        "time_s": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "min_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "max_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "default_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "refusal": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/FuzeRefusal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "burst_aim": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/FuzeBurstAim"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "FuzeRefusal": {
+      "description": "Why a fuze setting is refused: outside_fuze_window (every allowed charge that reaches the burst point does so at a time outside the shell's fuze window); otherwise the burst point is reached by no allowed charge and the value is the solver's cause at the lowest charge considered: above_apex (above the apex of the flight at the maximum elevation), beyond_range (beyond the maximum range), inside_minimum_range (inside the minimum range the maximum elevation sets), did_not_converge (elevation root search or wind-corrected aim iteration exhausted), time_to_live_exceeded (no elevation that reaches the burst point gets there within the shell's time to live), invalid_input (a non-finite or non-physical input).",
+      "type": "string",
+      "enum": [
+        "outside_fuze_window",
+        "above_apex",
+        "beyond_range",
+        "inside_minimum_range",
+        "did_not_converge",
+        "time_to_live_exceeded",
+        "invalid_input"
+      ]
+    },
+    "FuzeBurstAim": {
+      "description": "The aim a time-fuzed charge lays to burst above the target: the fired charge's rings, the aim azimuth and the elevation in degrees and in the weapon's mils.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rings",
+        "aim_azimuth_deg",
+        "aim_azimuth_mils",
+        "elevation_deg",
+        "elevation_mils"
+      ],
+      "properties": {
+        "rings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "aim_azimuth_deg": {
+          "type": "number",
+          "minimum": 0,
+          "exclusiveMaximum": 360
+        },
+        "aim_azimuth_mils": {
+          "type": "number",
+          "minimum": 0
+        },
+        "elevation_deg": {
           "type": "number"
         },
-        "tgt_x": {
+        "elevation_mils": {
+          "type": "number"
+        }
+      }
+    },
+    "CrestClearance": {
+      "description": "Trajectory clearance over a terrain profile along the line of fire: the smallest clearance, where it occurs, and the first sample the trajectory passes below (null when none).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "min_clearance_m",
+        "min_clearance_downrange_m",
+        "first_blocking_downrange_m"
+      ],
+      "properties": {
+        "min_clearance_m": {
           "type": "number"
         },
-        "tgt_y": {
-          "type": "number"
+        "min_clearance_downrange_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "first_blocking_downrange_m": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
         }
       }
     },
     "FireMissionSave": {
-      "description": "POST /api/v1/fire-missions body: the solve inputs, the two grid references and the event the mission belongs to (absent or null for none).",
+      "description": "POST /api/v1/fire-missions body (signed-in member): the solve inputs against a pinned catalog version and the client's solution. The server re-solves; a gun differing by more than 1 mil (weapon convention) or 0.1 s answers 422 with details.code solution_mismatch. event_id absent or null saves outside an event.",
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "weapon_system",
-        "fp_x",
-        "fp_y",
-        "tgt_x",
-        "tgt_y",
-        "fp_grid",
-        "target_grid"
+        "catalog_id",
+        "catalog_version",
+        "weapon_id",
+        "shell_id",
+        "target",
+        "guns",
+        "target_grid",
+        "client_solution"
       ],
       "properties": {
-        "weapon_system": {
-          "type": "string",
-          "enum": [
-            "M252 81mm",
-            "M821 81mm",
-            "2B14 82mm",
-            "M120 120mm"
-          ]
-        },
-        "fp_x": {
-          "type": "number"
-        },
-        "fp_y": {
-          "type": "number"
-        },
-        "tgt_x": {
-          "type": "number"
-        },
-        "tgt_y": {
-          "type": "number"
-        },
         "event_id": {
           "type": [
             "string",
@@ -130,18 +428,143 @@
           ],
           "format": "uuid"
         },
-        "fp_grid": {
-          "type": "string",
-          "minLength": 1
+        "catalog_id": {
+          "$ref": "#/definitions/Slug"
+        },
+        "catalog_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "weapon_id": {
+          "$ref": "#/definitions/Slug"
+        },
+        "shell_id": {
+          "$ref": "#/definitions/Slug"
+        },
+        "charge_rings": {
+          "description": "A charge chosen by the operator; absent or null takes each gun's recommended charge.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "target": {
+          "$ref": "#/definitions/MapPoint"
+        },
+        "guns": {
+          "description": "The battery, lead gun first: one to twelve guns.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/definitions/GunPosition"
+          }
+        },
+        "wind": {
+          "$ref": "#/definitions/Wind"
+        },
+        "burst_height_m": {
+          "description": "Burst height above the target for a time-fuzed shell.",
+          "type": [
+            "number",
+            "null"
+          ]
         },
         "target_grid": {
           "type": "string",
           "minLength": 1
+        },
+        "client_solution": {
+          "$ref": "#/definitions/FireMissionSolution"
+        }
+      }
+    },
+    "MapPoint": {
+      "description": "A point in map metres with its height and where the height came from: dem (sampled from the terrain elevation model) or manual (typed by the operator).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x",
+        "y",
+        "height_m",
+        "height_source"
+      ],
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "height_m": {
+          "type": "number"
+        },
+        "height_source": {
+          "$ref": "#/definitions/HeightSource"
+        }
+      }
+    },
+    "GunPosition": {
+      "description": "One gun of the battery: its label and position in map metres with its height.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "x",
+        "y",
+        "height_m",
+        "height_source"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "height_m": {
+          "type": "number"
+        },
+        "height_source": {
+          "$ref": "#/definitions/HeightSource"
+        }
+      }
+    },
+    "HeightSource": {
+      "type": "string",
+      "enum": [
+        "dem",
+        "manual"
+      ]
+    },
+    "Wind": {
+      "description": "Constant wind: speed and the meteorological direction it blows from, in degrees clockwise from north.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "speed_m_s",
+        "from_deg"
+      ],
+      "properties": {
+        "speed_m_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "from_deg": {
+          "type": "number",
+          "minimum": 0,
+          "exclusiveMaximum": 360
         }
       }
     },
     "FireMission": {
-      "description": "One saved fire mission. event_id is absent for a mission outside an event; the map coordinates and the charge, azimuth_mils and time_of_flight_s are null on rows stored before they were recorded.",
+      "description": "One saved fire mission. event_id is absent for a mission outside an event. The map coordinates and the charge, azimuth_mils and time_of_flight_s are null on rows stored before they were recorded. The catalog-model fields (catalog_id through solver_revision) are all null on rows stored before catalogs, and all set on rows stored with one; guns is empty on the former. weapon_system keeps legacy weapon names, including ones no catalog solves.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -160,6 +583,21 @@
         "azimuth_mils",
         "charge",
         "time_of_flight_s",
+        "catalog_id",
+        "catalog_version",
+        "weapon_id",
+        "shell_id",
+        "charge_rings",
+        "target_height_m",
+        "target_height_source",
+        "wind_speed_m_s",
+        "wind_from_deg",
+        "burst_height_m",
+        "fuze_time_s",
+        "mils_per_circle",
+        "dispersion",
+        "solver_revision",
+        "guns",
         "created_at"
       ],
       "properties": {
@@ -236,14 +674,180 @@
             "null"
           ]
         },
+        "catalog_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "catalog_version": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "weapon_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "shell_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "charge_rings": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "target_height_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "target_height_source": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "dem",
+            "manual",
+            null
+          ]
+        },
+        "wind_speed_m_s": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "wind_from_deg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "burst_height_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "fuze_time_s": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "mils_per_circle": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "dispersion": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Dispersion"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "solver_revision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "guns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FireMissionGun"
+          }
+        },
         "created_at": {
           "type": "string",
           "format": "date-time"
         }
       }
     },
+    "FireMissionGun": {
+      "description": "One stored gun of a saved mission with the server's solution for it; the solution fields are null when no charge solved.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gun_index",
+        "label",
+        "x",
+        "y",
+        "height_m",
+        "height_source",
+        "azimuth_mils",
+        "elevation_mils",
+        "charge_rings",
+        "time_of_flight_s"
+      ],
+      "properties": {
+        "gun_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "height_m": {
+          "type": "number"
+        },
+        "height_source": {
+          "$ref": "#/definitions/HeightSource"
+        },
+        "azimuth_mils": {
+          "type": "number",
+          "minimum": 0
+        },
+        "elevation_mils": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "charge_rings": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "time_of_flight_s": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        }
+      }
+    },
     "SavedFireMission": {
-      "description": "POST /api/v1/fire-missions answer (201): the solution and the stored mission.",
+      "description": "POST /api/v1/fire-missions answer (201): the server's solution and the stored mission.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -252,7 +856,7 @@
       ],
       "properties": {
         "solution": {
-          "$ref": "#/definitions/FireSolution"
+          "$ref": "#/definitions/FireMissionSolution"
         },
         "fire_mission": {
           "$ref": "#/definitions/FireMission"
@@ -260,7 +864,7 @@
       }
     },
     "FireMissionList": {
-      "description": "GET /api/v1/events/:id/fire-missions (any signed-in member): the event's saved fire missions.",
+      "description": "GET /api/v1/events/:id/fire-missions: the event's saved fire missions, for a viewer the event's access rules admit.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -274,6 +878,12 @@
           }
         }
       }
+    },
+    "Slug": {
+      "description": "Lowercase identifier matching ballistics-catalog.schema.json#/definitions/Slug.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+([_-][a-z0-9]+)*$",
+      "maxLength": 64
     }
   }
 }

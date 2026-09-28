@@ -3,7 +3,8 @@
 //! Serves a built SPA with the SAME cross-origin-isolation headers the app expects
 //! (`crossOriginIsolated === true` for the wasm/SAB path). Any path without a file extension
 //! falls back to index.html (client routing). Optional same-origin `/api/` proxy (the Trunk
-//! `[[proxy]]` equivalent) and `/map-assets/` passthrough to the real assets_v2/terrains.
+//! `[[proxy]]` equivalent) or recorded API corpus (`api_fixture_corpus`), and `/map-assets/`
+//! passthrough to the real assets_v2/terrains.
 
 use std::path::{Component, Path, PathBuf};
 
@@ -55,6 +56,10 @@ pub struct ServeConfig {
     /// joins the pair under one URL prefix exactly as the API router does, which is what makes a
     /// smoke exercise the arrangement the browser actually sees.
     pub map_assets: Option<MapAssetMounts>,
+    /// A directory of recorded `GET` response bodies that answers every `/api/` request in
+    /// place of the proxy (see [`api_fixture_corpus::corpus_file_name`]); `None` leaves `/api/`
+    /// to the proxy or the single-page fallback.
+    pub api_fixture_corpus: Option<PathBuf>,
 }
 
 struct AppState {
@@ -274,6 +279,13 @@ async fn handler(
         }
     }
 
+    // Recorded API corpus: takes every `/api/` request, so nothing falls through to the proxy.
+    if let Some(corpus) = &state.cfg.api_fixture_corpus
+        && path.starts_with("/api/")
+    {
+        return api_fixture_corpus::answer(corpus, &method, &path).await;
+    }
+
     // Same-origin API proxy.
     if let Some(proxy) = &state.cfg.api_proxy
         && path.starts_with("/api/")
@@ -455,3 +467,6 @@ pub fn repo_root() -> PathBuf {
 #[cfg(test)]
 #[path = "tests/server/tests.rs"]
 mod tests;
+
+#[path = "server/api_fixture_corpus.rs"]
+pub mod api_fixture_corpus;

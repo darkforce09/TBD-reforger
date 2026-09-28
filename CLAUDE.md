@@ -94,8 +94,8 @@ apps/
 │   │   ├── Prefabs/                     <-- Export game mode carrying the road export component
 │   │   ├── worlds/                      <-- Standalone export world over vanilla Eden
 │   │   └── Scripts/
-│   │       ├── Game/TBD/Export/         <-- Runtime road-network export component
-│   │       └── WorkbenchGame/           <-- Workbench export plugins (MapExport, EquipmentExport, EquipmentVehicleExport, VehicleExport, registry)
+│   │       ├── Game/TBD/Export/         <-- Runtime road-network export component; ballistics oracle play-mode simulation run
+│   │       └── WorkbenchGame/           <-- Workbench export plugins (MapExport, EquipmentExport, EquipmentVehicleExport, VehicleExport, BallisticsOracle, registry)
 │   ├── tbd-emcp/                        <-- Enfusion MCP bridge handler scripts (TBD_EMCP)
 │   │   └── Scripts/WorkbenchGame/EnfusionMCP/ <-- 19 committed NetAPI automation handlers
 │   ├── crf_framework/                   <-- Reference: upstream Coalition Reforger Framework scripts (gitignored)
@@ -112,7 +112,7 @@ apps/
     │       ├── identity_and_access/     <-- Discord OAuth2, session tokens, profile, Arma link handshake
     │       ├── match_telemetry/         <-- Game-runtime heartbeats and finished match results
     │       ├── missions/                <-- Missions, versions, artifacts, reviews, deployments, armory, registries
-    │       ├── operations/              <-- Events, ORBAT slotting, reservations, service records, fire missions
+    │       ├── operations/              <-- Events, ORBAT slotting, reservations, service records, fire missions, ballistics catalogs
     │       ├── server_infrastructure/   <-- Game-server registry, live status SSE, machine credentials, fleet commands, runtime sessions
     │       └── tests/architecture_rules.rs <-- Executable layout rules checked against src/
     ├── frontend/                        <-- Leptos 0.8 CSR single-page app (Trunk/WASM, :3000)
@@ -120,6 +120,8 @@ apps/
     │       ├── core/                    <-- Shared foundations across the frontend
     │       │   ├── api/                 <-- HTTP client, DTOs, endpoints, SSE subscriber
     │       │   ├── auth/                <-- Session storage, role hierarchy, route guards
+    │       │   ├── map_view/            <-- Shared map mount seam (Mission Creator, mortar map picker), terrain heights
+    │       │   ├── offline/             <-- Service worker registration, offline pack download, storage quota, offline state
     │       │   ├── ui/                  <-- Reusable design system primitives (dialogs, sheets, selects, toasts)
     │       │   └── utils/               <-- Time formatting, clipboard, sanitising helpers
     │       ├── pages/                   <-- Standard platform navigation & document pages
@@ -139,7 +141,7 @@ apps/
     │       │   │   ├── mission_review/  <-- Shared review record: history, thread, artifact provenance, submit control
     │       │   │   └── review_workspace/ <-- Mission Creator opened read-only on a submitted version
     │       │   ├── field_tools/         <-- Interactive tactical utilities
-    │       │   │   └── mortar/          <-- Mortar ballistics calculation and firing solutions
+    │       │   │   └── mortar/          <-- Mortar calculator: catalog-driven on-device firing solutions, map picker, offline pack
     │       │   ├── doctrine_and_info/   <-- Knowledgebase and reference catalogs
     │       │   │   ├── wiki/            <-- Markdown tactical doctrine and rules articles
     │       │   │   ├── vehicles/        <-- Vehicle identification index and dossiers
@@ -150,7 +152,8 @@ apps/
     │       │       ├── personnel/       <-- Member roster, rank, and permission management
     │       │       ├── approvals/       <-- Mission submission review and approval queue
     │       │       ├── content_manager/ <-- Announcement authoring ("Comms Broadcaster")
-    │       │       └── audit_logs/      <-- Audit trail of administrative actions
+    │       │       ├── audit_logs/      <-- Audit trail of administrative actions
+    │       │       └── ballistics_catalogs/ <-- Calibrated ballistics catalog uploads and stored versions
     │       └── apps/                    <-- Standalone CAD workspaces & interactive tools
     │           ├── editor/              <-- Mission Creator: top-down 2D CAD workspace (3D only in the Arsenal paper doll)
     │           │   ├── mission_editor/  <-- Route component parts: canvas mount, page effects, registry loading, transforms
@@ -161,10 +164,11 @@ apps/
     │           │   └── arsenal/         <-- Loadout domain, gear catalog trees, 3D paper doll
     │           ├── planner/             <-- Reserved for the mission planner whiteboard (README only, no code)
     │           ├── aar/                 <-- Reserved for the after-action review replay (README only, no code)
-    │           └── debug/               <-- URL-only benches: building viewer, building interior, world line of sight
+    │           └── debug/               <-- URL-only benches: building viewer, building interior, world line of sight, ballistics agreement
+    ├── offline-service-worker/          <-- Rust/WASM service worker: offline pack caches, Range→206 from cache (no JS policy)
     ├── map-engine/                      <-- World, spatial computation, formats, and mission domain
     │   └── src/
-    │       ├── data/                    <-- Mission domain (`scenario` module: shapes, compiler, checks) + Yjs CRDT store
+    │       ├── data/                    <-- Mission domain (`scenario` module: shapes, compiler, checks, game ballistics) + Yjs CRDT store
     │       ├── editing/                 <-- Live mission document, undo history, headless map tools (select, ruler, LOS, viewshed)
     │       ├── world/                   <-- Terrain (DEM, relief, roads, satellite, water), buildings, vegetation, labels
     │       ├── spatial/                 <-- BVHs, point indexes, picking, line of sight (terrain, world, building interiors)
@@ -210,7 +214,7 @@ tools_v2/                               <-- Every developer tool in the reposito
 contracts_v2/                            <-- Every shape that crosses a network, process, or language boundary
 ├── definitions/                         <-- Authoritative JSON Schemas (missions, events, registry, loadouts, map objects, terrain, fleet)
 ├── rules/                               <-- Prefab classification and mission kit aliases
-├── catalogs/                            <-- Live Workbench exports the platform ingests
+├── catalogs/                            <-- Live Workbench exports the platform ingests; ballistics catalogs
 └── fixtures/                            <-- Golden test data, positive and negative
 
 assets_v2/                               <-- Terrain datasets and the world-object glyph set

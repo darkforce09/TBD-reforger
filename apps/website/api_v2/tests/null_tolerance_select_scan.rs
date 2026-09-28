@@ -20,7 +20,7 @@ use null_tolerance_support::*;
 ///
 /// A behavioural sweep only reaches code whose predicates the seed satisfies; this one needs no
 /// predicate at all. For every `SELECT` literal handed to `query_as` / `QueryBuilder::new` in
-/// `src/`, it cross-references the select list against `information_schema` nullability and
+/// `src/`, a `concat!` of literals and column-list macros read whole, it cross-references the select list against `information_schema` nullability and
 /// fails on:
 ///   * a bare `*` / `t.*` over a table that has nullable columns (the model
 ///     silently acquires whatever nullability the DDL has), or
@@ -52,14 +52,19 @@ async fn no_query_as_reads_a_nullable_column_without_coalesce() {
     // KNOWN_OPEN key.
     let mut findings: Vec<(String, String, String)> = Vec::new();
     let mut statements = 0usize;
-    for path in &files {
-        let src = std::fs::read_to_string(path).expect("read source");
+    let sources: Vec<String> = files
+        .iter()
+        .map(|path| std::fs::read_to_string(path).expect("read source"))
+        .collect();
+    // Column-list macros are shared across files, so `concat!` parts expand against the tree.
+    let macro_source = sources.concat();
+    for (path, src) in files.iter().zip(&sources) {
         let rel = path
             .strip_prefix(env!("CARGO_MANIFEST_DIR"))
             .unwrap_or(path)
             .display()
             .to_string();
-        for (line, sql) in select_literals(&src) {
+        for (line, sql) in select_literals(src, &macro_source) {
             statements += 1;
             let aliases = table_aliases(&sql);
             let live: Vec<&str> = aliases
@@ -151,5 +156,50 @@ async fn no_query_as_reads_a_nullable_column_without_coalesce() {
             .map(|s| s.as_str())
             .collect::<Vec<_>>()
             .join("\n  ")
+    );
+}
+
+/// A `SELECT` assembled with `concat!` from literals and column-list macros is read whole, so the
+/// scan above inspects its select list rather than a bare `SELECT ` prefix.
+#[test]
+fn game_ballistics_select_scan_reads_concat_built_queries() {
+    let src = r##"
+macro_rules! row_columns {
+    () => {
+        "id, \
+         nullable_note"
+    };
+}
+async fn read() {
+    let rows: Vec<Row> = sqlx::query_as(concat!(
+        "SELECT ",
+        row_columns!(),
+        " FROM notes WHERE id = $1"
+    ));
+}
+"##;
+    let statements = select_literals(src, src);
+    assert_eq!(
+        statements,
+        vec![(
+            9,
+            "SELECT id, nullable_note FROM notes WHERE id = $1".to_owned()
+        )]
+    );
+    assert_eq!(
+        select_items(&statements[0].1),
+        vec!["id".to_owned(), "nullable_note".to_owned()]
+    );
+
+    // The shipped fire-mission store builds its reads this way; both are scanned whole.
+    let store = include_str!("../src/operations/services/fire_mission_store.rs");
+    let tables: Vec<String> = select_literals(store, store)
+        .iter()
+        .flat_map(|(_, sql)| table_aliases(sql).into_values())
+        .collect();
+    assert!(
+        tables.contains(&"fire_missions".to_owned())
+            && tables.contains(&"fire_mission_guns".to_owned()),
+        "the store's concat!-built SELECTs are scanned: {tables:?}"
     );
 }

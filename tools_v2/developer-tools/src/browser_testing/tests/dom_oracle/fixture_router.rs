@@ -19,18 +19,18 @@ fn a_path_becomes_a_method_prefixed_corpus_name() {
     );
 }
 
-/// The committed `POST__fire-missions__solve.json` answers the mortar page. A `GET`-only naming
-/// rule looked past it, so the route rendered without its firing solution.
+/// The committed `POST__fire-missions.json` answers the mortar page's save. A `GET`-only naming
+/// rule would look past it, so a `POST` corpus entry must be reachable by its method.
 #[test]
 fn the_method_selects_the_fixture_so_a_post_corpus_entry_is_reachable() {
     assert_eq!(
-        stem("POST", "/api/v1/fire-missions/solve"),
-        "POST__fire-missions__solve.json"
+        stem("POST", "/api/v1/fire-missions"),
+        "POST__fire-missions.json"
     );
     // The same path under a different verb is a different fixture, and its absence is reported.
     assert_eq!(
-        stem("DELETE", "/api/v1/fire-missions/solve"),
-        "DELETE__fire-missions__solve.json"
+        stem("DELETE", "/api/v1/fire-missions"),
+        "DELETE__fire-missions.json"
     );
 }
 
@@ -131,6 +131,28 @@ fn the_token_endpoints_are_answered_without_a_fixture() {
         route("POST", &format!("{BASE}/api/v1/auth/logout")),
         Reply::Canned(_)
     ));
+}
+
+/// The canned refresh answer is a whole `SessionTokenPair`: the SPA refuses a pair without the
+/// constant `token_type`, and a refused refresh signs the seeded capture out, so every
+/// signed-in route would render its sign-in gate instead of the page.
+#[test]
+fn the_canned_refresh_answer_is_a_complete_bearer_token_pair() {
+    let Reply::Canned(pair) = route("POST", &format!("{BASE}/api/v1/auth/refresh")) else {
+        panic!("the refresh exchange is answered without a fixture");
+    };
+    let mut fields: Vec<&str> = pair
+        .as_object()
+        .expect("the refresh answer is a JSON object")
+        .keys()
+        .map(String::as_str)
+        .collect();
+    fields.sort_unstable();
+    assert_eq!(
+        fields,
+        ["access_token", "expires_at", "refresh_token", "token_type"]
+    );
+    assert_eq!(pair["token_type"], "Bearer");
 }
 
 #[test]

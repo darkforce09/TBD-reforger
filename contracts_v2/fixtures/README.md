@@ -10,6 +10,7 @@ stage it into a game server.
 
 ```text
 contracts_v2/fixtures/
+├── ballistics/             calibration bundles of the ballistics catalogs, and bundles that must fail
 ├── bridge_samples/         voice bridge messages across a voice session's lifecycle
 ├── enfusion_samples/       one sample per mission-schema definition the mod's JSON classes read
 ├── equipment-data-viewer/  accepted and refused pages of the equipment data viewer's debug routes
@@ -48,8 +49,9 @@ instead of letting malformed missions through until one reaches a live
 
 ## Producers and consumers
 
-- Producers: people, apart from two files that tools regenerate: the map engine's compiled
-  two-faction mission in `missions/valid/` and the density tile in `map/density/`.
+- Producers: people, apart from files that tools regenerate: the map engine's compiled
+  two-faction mission in `missions/valid/`, the density tile in `map/density/`, and everything in
+  `ballistics/`, which `cargo xtask ballistics trim-export` writes.
 - Consumers:
   - the xtask schema gates in `tools_v2/xtask/src/verifications/schemas/checks/` and the
     map-object golden gates in `tools_v2/developer-tools/src/map_verification/object_goldens/`,

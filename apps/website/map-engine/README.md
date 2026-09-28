@@ -35,7 +35,7 @@ render ──▶ streaming ──▶ io ──▶ world ──▶ bvh
    │           │         └─────▶ scenario, rkyv
    │           └──────▶ flate2
    └──────────▶ website-graphics-engine
-editing ──▶ store ──▶ scenario ──▶ serde, serde_json, thiserror   (store adds yrs)
+editing ──▶ store ──▶ scenario ──▶ serde, serde_json, thiserror, libm   (store adds yrs)
 editing ──▶ world, streaming
 ```
 
@@ -72,7 +72,7 @@ Cargo features, in `Cargo.toml`:
 
 | Feature | Turns on | Taken by |
 |---|---|---|
-| `scenario` (default) | `serde`, `serde_json`, `thiserror`; `data::scenario` | the API |
+| `scenario` (default) | `serde`, `serde_json`, `thiserror`, `libm`; `data::scenario` | the API |
 | `store` | `scenario`, `yrs`; `data::store` | the frontend |
 | `bvh` | no crate; gates `spatial::bvh`, which also needs `world` | implied by `world`; `tools_v2/developer-tools` names it too |
 | `world` | `bvh`, `png`, `website-graphics-engine`; `world`, `spatial`, `overlay`, `frame` | the frontend, `tools_v2/developer-tools` |
@@ -100,10 +100,12 @@ imagery by range requests alone and never fetches the whole bundle, and `t9382=1
 ## Boundaries
 
 - Depends on: `website-graphics-engine` (optional, from the `world` tier up); `serde`,
-  `serde_json`, `thiserror`, `yrs`, `png`, `rkyv`, `flate2`, `bytemuck` and `earcutr`; on wasm32,
-  `wgpu`, `wasm-bindgen`, `wasm-bindgen-futures`, `js-sys`, `web-sys`, `gloo-net`, `futures` and
-  `console_error_panic_hook`; `contracts_v2/rules/kit-aliases.json`; and at run time the terrain
-  assets of `assets_v2/terrains/`, which the API serves under `/map-assets`.
+  `serde_json`, `thiserror`, `libm`, `yrs`, `png`, `rkyv`, `flate2`, `bytemuck` and `earcutr`; on
+  wasm32, `wgpu`, `wasm-bindgen`, `wasm-bindgen-futures`, `js-sys`, `web-sys`, `gloo-net`,
+  `futures` and `console_error_panic_hook`; `contracts_v2/rules/kit-aliases.json`; and at run
+  time the terrain assets of `assets_v2/terrains/`, which the API serves under `/map-assets`.
+  Its tests also use `jsonschema` (dev-dependency), which validates the ballistics catalog sample
+  against `contracts_v2/definitions/ballistics-catalog.schema.json`.
 - Used by:
   - the API (`apps/website/api_v2/Cargo.toml`), at the default `scenario` tier;
   - the frontend (`apps/website/frontend/Cargo.toml`): `world`, `io`, `store` and `editing` on

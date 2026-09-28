@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.tbdevent.eu/map-tile-index/v1.json",
+  "title": "TBD Map Tile Index",
+  "description": "Every cartographic map tile file of one terrain, served at `/map-assets/<terrain>/tiles/map/index.json` next to the tile pyramid it lists. `cargo xtask map tile-index --terrain <terrain>` writes it from the pyramid on disk; the page reads it to list the offline pack. Tiles are ordered by zoom, then column, then row, and each (z, x, y) appears once. A tile's URL is the terrain manifest's `tiles.map.urlTemplate` with `{z}`, `{x}` and `{y}` substituted.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "terrainId", "tiles"],
+  "properties": {
+    "schemaVersion": {
+      "const": 1,
+      "description": "Version of this index shape."
+    },
+    "terrainId": {
+      "type": "string",
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "The terrain the tiles belong to; equals the manifest's `terrainId`."
+    },
+    "tiles": {
+      "type": "array",
+      "description": "Every tile file of the pyramid.",
+      "items": { "$ref": "#/$defs/tile" }
+    }
+  },
+  "$defs": {
+    "tile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["z", "x", "y", "bytes"],
+      "properties": {
+        "z": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 31,
+          "description": "Zoom level, within the manifest's `tiles.minZoom`..`tiles.maxZoom`."
+        },
+        "x": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Column, below 2^z."
+        },
+        "y": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Row in the XYZ disk layout, below 2^z."
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "File size in bytes."
+        }
+      }
+    }
+  }
+}

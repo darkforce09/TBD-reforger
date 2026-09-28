@@ -18,8 +18,9 @@ pub use fixture_router::MissingFixture;
 use fixture_router::Reply;
 use fixture_router::fixtures_dir;
 
-/// slug → { path, authed }. 25 of routes.csv's 26 rows (the editor is excluded — its
-/// regression gate is the CDP editor smokes, strictly stronger than a DOM snapshot).
+/// slug → { path, authed }. 26 of routes.csv's 32 rows: the editor is excluded (its regression
+/// gate is the CDP editor smokes, strictly stronger than a DOM snapshot), as are the URL-only
+/// debug benches and `/announcements/:id`, which renders the `/announcements` page.
 pub fn routes() -> Vec<Route> {
     let r = |slug: &'static str, path: String, authed: bool| Route { slug, path, authed };
     vec![
@@ -27,6 +28,11 @@ pub fn routes() -> Vec<Route> {
         r("dashboard", "/".into(), true),
         r("approvals", "/admin/approvals".into(), true),
         r("audit", "/admin/audit".into(), true),
+        r(
+            "ballistics_catalogs",
+            "/admin/ballistics-catalogs".into(),
+            true,
+        ),
         r("content", "/admin/content".into(), true),
         r("eventmgr", "/admin/events".into(), true),
         r("personnel", "/admin/personnel".into(), true),
@@ -48,7 +54,7 @@ pub fn routes() -> Vec<Route> {
         r("modpacks", "/modpacks".into(), true),
         r("serverintel", "/server-intel".into(), true),
         r("settings", "/settings".into(), true),
-        r("mortar", "/tools/mortar".into(), true),
+        r("mortar", "/tools/mortar".into(), false),
         r("vehicles", "/vehicles".into(), true),
         r("wiki", "/wiki".into(), true),
         r("wikislug", "/wiki/field-manual".into(), true),
@@ -152,6 +158,7 @@ pub async fn capture_route(
             dir: dir.to_path_buf(),
             api_proxy: None,
             map_assets: None,
+            api_fixture_corpus: None,
         },
         port,
     )
@@ -169,6 +176,7 @@ pub(super) async fn capture_inner(browser: &Browser, port: u16, route: &Route) -
         init.push(&seed);
     }
     let page = Arc::new(cdp::new_page(browser, None, &init).await?);
+    page.bypass_service_worker().await?;
     // The harness re-applies the viewport before Fetch.enable (mirrors captureRoute).
     page.send(
         "Emulation.setDeviceMetricsOverride",

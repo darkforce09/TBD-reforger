@@ -13,6 +13,8 @@
 //! document, never persists, and never imports from a sibling workspace. Every parameter of a run
 //! is in the URL, so a reading reproduces exactly.
 
+/// The native/wasm ballistics agreement bench behind `/debug/ballistics-agreement`.
+pub mod ballistics_agreement;
 /// Interior plan lanes shared by both benches: walls, doors, glazing, furniture and vegetation.
 pub mod building_interior;
 /// The single-prefab blueprint bench behind `/debug/building-viewer`.

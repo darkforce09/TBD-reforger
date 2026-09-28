@@ -1,4 +1,4 @@
-//! Captured-response round trips for the dashboard, leaderboards and fire solutions.
+//! Captured-response round trips for the dashboard and the leaderboards.
 
 use super::*;
 
@@ -80,74 +80,4 @@ fn a_leaderboard_row_without_a_measured_kd_ratio_keeps_its_null() {
     assert_golden::<Leaderboard>(&wire, &[]);
     let decoded: Leaderboard = serde_json::from_str(&wire).unwrap();
     assert_eq!(decoded.data[0].kd_ratio, None);
-}
-
-/// The saved fire missions of one event. The capture holds a row stored before the charge,
-/// azimuth in mils and flight time were recorded (all three `null`) and one that records them, so
-/// both arms of the nullable figures round-trip as sent.
-#[test]
-fn saved_fire_missions_of_an_event() {
-    const G: &str =
-        golden!("GET__events__c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7__fire-missions.json");
-    assert_golden::<DataEnvelope<SavedFire>>(G, &[]);
-    let list: DataEnvelope<SavedFire> = serde_json::from_str(G).unwrap();
-    assert!(list
-        .data
-        .iter()
-        .all(|row| row.event_id.as_deref() == Some("c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7")));
-    assert!(list.data.iter().any(|row| row.charge.is_none()
-        && row.azimuth_mils.is_none()
-        && row.time_of_flight_s.is_none()));
-    assert!(list.data.iter().any(|row| row.charge == Some(1)
-        && row.azimuth_mils == Some(0)
-        && row.time_of_flight_s == Some(18.3)));
-}
-
-/// A fire mission saved with no event carries no `event_id` key, and it round-trips that way.
-#[test]
-fn a_fire_mission_saved_without_an_event_has_no_event_id_key() {
-    let list: Value = serde_json::from_str(golden!(
-        "GET__events__c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7__fire-missions.json"
-    ))
-    .unwrap();
-    let mut row = list["data"][1].clone();
-    row.as_object_mut().unwrap().remove("event_id");
-    let wire = row.to_string();
-    assert_golden::<SavedFire>(&wire, &[]);
-    let decoded: SavedFire = serde_json::from_str(&wire).unwrap();
-    assert!(decoded.event_id.is_none());
-}
-
-/// A live firing-solution response, captured for a target a kilometre due north. It pins the
-/// integer fields: a float distance deserialises happily and only fails on the way back out.
-#[test]
-fn fire_solution() {
-    const G: &str = golden!("POST__fire-missions__solve.json");
-    assert_golden::<FireSolution>(G, &[]);
-    let sol: FireSolution = serde_json::from_str(G).unwrap();
-    assert_eq!(sol.weapon_system, "M252 81mm");
-    assert_eq!(sol.distance_m, 1000);
-    assert_eq!(sol.azimuth_mils, 0);
-    assert_eq!(sol.charge, 1);
-    assert!(sol.elevation_mils > 800, "high-angle solution");
-    assert!(
-        sol.extra.is_empty(),
-        "every wire key must be a named field, not absorbed by extra"
-    );
-}
-
-/// The answer to saving a fire mission: the solution and the stored row. The mortar page decodes
-/// it through a private pairing of these two DTOs, so the round trip holds the same pairing here.
-#[derive(Serialize, Deserialize)]
-struct SavedFireAnswer {
-    solution: FireSolution,
-    fire_mission: SavedFire,
-}
-
-#[test]
-fn fire_mission_saved() {
-    const G: &str = golden!("POST__fire-missions.json");
-    assert_golden::<SavedFireAnswer>(G, &[]);
-    let saved: SavedFireAnswer = serde_json::from_str(G).unwrap();
-    assert_eq!(saved.fire_mission.charge, Some(saved.solution.charge));
 }

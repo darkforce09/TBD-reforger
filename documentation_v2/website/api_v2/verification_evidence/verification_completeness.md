@@ -131,8 +131,8 @@ The `route_acceptance_coverage` binary holds the table and the specifications to
 ### Part binaries
 
 Each part runs as `tests/route_acceptance_<part>.rs`: `identity_and_core`, `operations_events`,
-`operations_reservations`, `missions_library`, `missions_reviews`, `fleet_and_telemetry` and
-`administration_center_content`. Each has one test fn per dimension named
+`operations_reservations`, `operations_ballistics`, `missions_library`, `missions_reviews`,
+`fleet_and_telemetry` and `administration_center_content`. Each has one test fn per dimension named
 `route_acceptance_<part>_<dimension>_…`, plus `contract_parity_<part>_responses_match_their_contracts`:
 every authorized JSON response validates against its schema definition, decodes into the
 generated type where one exists and re-serialises to an equal value, and every request body an
@@ -220,6 +220,7 @@ The capture window runs from just before the first indexed request to just after
 | `PUT /api/v1/factions/00000000-0000-4000-b100-000000000003` | `/updated_at` | `request_time`: stamped when the request runs |
 | `POST /api/v1/fire-missions` | `/fire_mission/id` | `server_uuid`: an id the server generates for the created row |
 | `POST /api/v1/fire-missions` | `/fire_mission/created_at` | `request_time`: stamped when the request runs |
+| `GET /api/v1/ballistics-catalogs` | `/data/0/uploaded_at` | `request_time`: stamped when the capture, as the administrator, uploads the committed vanilla catalog pair through `POST /api/v1/ballistics-catalogs` just before the first row of that path, so every earlier read answers over the seeds alone |
 | `POST /api/v1/events/c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7/groups` | `/access/groups/1/id` | `server_uuid`: an id the server generates for the created row |
 | `POST /api/v1/events/c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7/groups` | `/access/groups/1/provenance/created_at` | `request_time`: stamped when the request runs |
 | `POST /api/v1/me/leave-requests` | `/id` | `server_uuid`: an id the server generates for the created row |
@@ -458,7 +459,7 @@ feature, UX change or refactor, sits in a file another change owns, or is large;
 for a [ticket](/documentation_v2/glossary/n_to_z.md#ticket) (`cargo xtask ticket add`) or a
 [known bug](/documentation_v2/known_bugs/README.md) entry, and never leaves a verification check
 red. CLOSE: an open ticket the code already fixes, closed with the test name or `file:line`. The
-[Milestone V findings](progress_checkpoint.md#milestone-v-findings) table records every finding.
+[Milestone V findings](verification_findings.md) table records every finding.
 T-1041 (remove the doc-audit grandfather allowlist) closes with the removal of the frontend
 `doc_audit` grandfather table, held by `engineering_laws_no_exemption_mechanism_exists`.
 

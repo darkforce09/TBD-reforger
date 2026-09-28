@@ -33,3 +33,5 @@ pub(crate) mod ci;
 pub(crate) mod db;
 
 pub(crate) mod build;
+
+pub(crate) mod ballistics;

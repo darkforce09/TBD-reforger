@@ -43,7 +43,7 @@ The verdict is one JSON object of named checks; the smoke exits 0 only when ever
 ## Boundaries
 
 - Depends on: the parent's `Harness`, readiness expressions and input and assertion helpers;
-  `gate_access_token` from `tools_v2/developer-tools/src/browser_testing/session_tokens.rs`;
+  `gate_refresh_answer` from `tools_v2/developer-tools/src/browser_testing/session_tokens.rs`;
   `crate::repository_layout`; the fixtures `GET__me.json` and `GET__registry.json`; the editor's
   `window.__editorCommands`, `__editorSelection`, `__editorHistory` and `__missionDoc` hooks.
 - Used by: `outliner_drag.rs`, which re-exports `run`; `run_smoke` in

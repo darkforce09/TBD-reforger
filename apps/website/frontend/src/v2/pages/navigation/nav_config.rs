@@ -10,8 +10,9 @@
 //! them against the live pathname by prefix. Exactly one section is marked `admin`, which gives
 //! it both its own visibility check and its distinct framing.
 //!
-//! Every item currently declares [`Role::Enlisted`], so browse mode shows the first five sections
-//! to everyone; only the Administration section, and its six items, ask for [`Role::Admin`].
+//! Every item declares [`Role::Enlisted`] except the public Mortar Calculator, which declares
+//! [`Role::Guest`] so a signed-in guest sees it too; browse mode shows the first five sections to
+//! everyone; only the Administration section, and its seven items, ask for [`Role::Admin`].
 
 use crate::v2::core::auth::Role;
 
@@ -106,7 +107,7 @@ pub static NAVIGATION: &[NavSection] = &[
             label: "Mortar Calculator",
             path: "/tools/mortar",
             icon: "calculate",
-            min_role: Role::Enlisted,
+            min_role: Role::Guest,
         }],
     },
     NavSection {
@@ -171,6 +172,12 @@ pub static NAVIGATION: &[NavSection] = &[
                 label: "Audit Logs",
                 path: "/admin/audit",
                 icon: "receipt_long",
+                min_role: Role::Admin,
+            },
+            NavItem {
+                label: "Ballistics Catalogs",
+                path: "/admin/ballistics-catalogs",
+                icon: "track_changes",
                 min_role: Role::Admin,
             },
         ],

@@ -9,7 +9,7 @@ toggles the residency applies.
 
 ```text
 apps/website/map-engine/src/streaming/bridge/
-├── host_preferences.rs  `HostPreferences`: the page's world-layer, basemap and render readers
+├── host_preferences.rs  `HostPreferences`: the boot scope and the world-layer, basemap, render readers
 ├── mod.rs               the module tree
 ├── preferences.rs       `WorldLayerPrefs`: the twelve world-layer switches and their defaults
 ├── progress.rs          boot progress events and segments, the Range split and ordered reassembly
@@ -22,8 +22,11 @@ apps/website/map-engine/src/streaming/bridge/
 `preferences`, `host_preferences` and `progress` compile in every build of the streaming module;
 `toggles` needs the `streaming` feature, and `statistics` wasm32 with `render`.
 
-- **Preferences in.** `HostPreferences` holds three `fn` pointers (`world_layers`, `basemap`,
-  `render`), so loaders read the current setting at each use, after an await included.
+- **Preferences in.** `HostPreferences` holds the boot's `BootstrapScope` (`Full`: every layer;
+  `TerrainAndImagery`: manifest, DEM with its full-resolution raster kept, hillshade, satellite,
+  basemap tiles and grid, and no world objects, forest, water or labels) and three `fn` pointers
+  (`world_layers`, `basemap`, `render`), so loaders read the current setting at each use, after an
+  await included.
   `WorldLayerPrefs` holds twelve serialised switches (`townLabels` and `roadNames` in camelCase),
   all on by default except props.
 - **Progress out.** Loaders report `BootEvent`s against four `BootSeg`ments

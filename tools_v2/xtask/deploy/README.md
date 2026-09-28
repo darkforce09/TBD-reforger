@@ -68,8 +68,9 @@ systemd/           ──see that folder's README for what installs each unit
 [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s WebAssembly needs
 (`Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Embedder-Policy: credentialless`). It
 proxies `/api/*`, `/uploads/*`, `/map-assets/*` and `/healthz` to `127.0.0.1:8080`, and serves every
-other path from the built app's `apps/website/frontend/dist` with an `index.html` fallback. Its
-site root is a fixed absolute path, edited when the checkout sits elsewhere on the host.
+other path from the built app's `apps/website/frontend/dist` with an `index.html` fallback; the
+offline service worker loader `/service_worker.js` carries `Cache-Control: no-cache`, so every
+update check revalidates it. Its site root is a fixed absolute path, edited when the checkout sits elsewhere on the host.
 
 ## Installed by
 

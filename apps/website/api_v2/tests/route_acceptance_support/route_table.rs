@@ -485,10 +485,14 @@ fn two_arguments<'a>(args: &'a str, scope: &Scope) -> Result<[&'a str; 2], Strin
     }
 }
 
+/// The limit expression of a `DefaultBodyLimit::max(..)` layer, without the trailing comma a
+/// formatter leaves on an argument it wraps onto its own line.
 fn body_limit_argument(call: &Call, scope: &Scope) -> Result<String, String> {
     let calls = call_chain(&call.args).map_err(|e| format!("{}: {e}", scope.file.display()))?;
     match calls.as_slice() {
-        [limit] if limit.path.ends_with("DefaultBodyLimit::max") => Ok(limit.args.trim().into()),
+        [limit] if limit.path.ends_with("DefaultBodyLimit::max") => {
+            Ok(limit.args.trim().trim_end_matches(',').trim_end().into())
+        }
         _ => Err(format!(
             "{}: unsupported route layer `{}`",
             scope.file.display(),

@@ -1,116 +1,171 @@
 # Mortar calculator page
 
-The `/tools/mortar` page: a fire position, a target and a mortar tube go in, and the firing solution
-the [API](/documentation_v2/glossary/a_to_f.md#api) computes comes back. With an
-[event](/documentation_v2/glossary/a_to_f.md#event) selected the solution is saved against it, and the page
-reloads that event's saved fire missions.
+The `/tools/mortar` page: pick a weapon, shell and charge from a ballistics catalog, place a
+battery of one to twelve guns (the contract's cap on a saved battery) and a target by grid
+reference, give the wind and, for a time-fuzed shell, the
+burst height, and the page solves every gun's firing solution on the device with the map engine's
+solver. The page is open to every viewer; a signed-in viewer also sees the
+[event](/documentation_v2/glossary/a_to_f.md#event) picker and the fire missions saved against the
+selected event.
 
 ## Contents
 
 ```text
 apps/website/frontend/src/v2/pages/field_tools/mortar/
-├── firing_solution.rs  the solution card: its five figures and whether they survive a reload
-├── grid.rs             pure maths: the grid string, its inverse, the preview fit, integer grouping
-├── map_picker.rs       the four coordinate fields and the preview with its line and markers
+├── catalog_source.rs   the public catalog reads (server or saved copy), the newest version per catalog, the dated offline wording
+├── inputs/             weapon and shell, positions, battery, wind and illumination inputs
+├── map_picker/         the Everon map: placement picker, click and drag placing, the fire-mission overlay, the mount, the lead gun's crest profile
 ├── mod.rs              the module tree; re-exports `MortarCalculatorPage`
-├── page.rs             `MortarCalculatorPage`: signals, both fetches, effects and the solve request
-├── saved_fires.rs      the save answer, the request body, restore rules, stored event, list panel
-├── tests/              unit tests for the save round trip, grid string, preview and hydration
-└── weapon_selector.rs  the tube and event pickers, and `WEAPONS`, the tubes the solver accepts
+├── offline_status.rs   the offline pack line: state and download progress, the icon font notice when `data-offline-optional` is `missing`, the "refresh failed, using the saved copy from <date>" notice
+├── page.rs             `MortarCalculatorPage`: signals, catalog loading, Calculate, the layout
+├── saved_fires/        the save area: event picker, save request, saved list, restore, hydration
+├── solution/           the solution panel: battery summary, charge tables, dispersion, fuze, crest
+├── solve_bridge.rs     drafts → `FireMissionInputs` → the map engine's `solve_fire_mission`; rows worded by its `solution_wording`
+└── tests/              unit tests: inputs and catalog source, solve bridge, map picker, solution, saved fire missions, offline line, shared test mission and catalog
 ```
 
 ## How it works
 
-`MortarCalculatorPage` renders inside `AuthGate`. The server solves the ballistics; nothing in this
-folder computes a firing solution.
-
 ```text
-event selected ──▶ POST /api/v1/fire-missions ───────▶ solution + stored row ──▶ "Saved"
-no event       ──▶ POST /api/v1/fire-missions/solve ──▶ solution ──────────────▶ "Not saved"
+GET /api/v1/ballistics-catalogs ──▶ newest version per catalog ──▶ chosen CatalogKey
+GET /api/v1/ballistics-catalogs/{id}/versions/{v} ──▶ BallisticsCatalog (identity checked)
+      (offline: the service worker answers both from its cache)
+inputs (weapon, shell, charge, terrain, target, guns, wind, burst height)
+      ▲ map clicks and marker drags write 10-figure grid references
+      │ Calculate
+      ▼
+map_picker::profile::lead_gun_profile ──▶ TerrainProfile (lead gun → target, 2 m steps)
+solve_bridge::solve_mission ──▶ every problem at once, or
+      resolve grids + heights ──▶ FireMissionInputs ──▶ solve_fire_mission ──▶ FireMissionSolution
+      ▼
+solution panel (battery, crest, fuze, dispersion, charge tables) and the map overlay
+      │ Save Fire Mission (signed in, event chosen)
+      ▼
+POST /api/v1/fire-missions { inputs, client_solution } ──▶ the API re-solves and compares
 ```
 
-With an event selected one request computes and saves, so the card never shows numbers that failed
-to save, and the saved list refetches; without one the page solves only and says the result is
-lost on reload. Both requests send the same body, with `event_id` left out rather than sent blank
-when no event is selected.
+The catalogs are read with the public reads, without credentials. The list is reduced to the
+newest version of each catalog; a picker appears when more than one catalog is published. A
+document whose `catalog_id` or `catalog_version` differs from the version asked for is refused.
+When the server cannot answer (unreachable, or a `5xx` such as a proxy's `502` while the API is
+down) the saved copy the offline pack stored answers instead — through the service worker, or read
+from Cache Storage by the page when no worker controls it, under the key the pack writes — and the
+page says "Offline copy from <date>", the copy's `Date`; a `4xx` is shown as the failure it is. A
+read that fails with no saved copy is explained from the offline pack's state (`offline_status`).
+The offline pack line under the header shows that state and the download progress on every visit,
+adds the icon font notice when the optional icon font is not cached (`data-offline-optional`
+`missing`), and, when a re-run could not refresh the pack but every essential file is still cached
+(`data-offline-refresh` `kept-saved-copy`), stays ready with "Refresh failed, using the saved copy
+from <date>".
 
-The selected event is kept in `localStorage` under `tbd-mortar-event`, so a reload returns to it;
-once the event list lands, a stored id that names no listed event is cleared. The saved fire
-missions are fetched per event, and each batch is tagged with the event it was fetched for, so
-nothing acts on a batch that belongs to another event. The newest saved row fills the form once per
-event (`hydration_step`), and any row loads on a click. The four inputs are plain metric x and y
-values, and `fmt_grid` stores each pair as the lossless string `x, y`, not a military grid
-reference. `restore` reads a row's numeric coordinates first and falls back to those strings; a
-row with neither restores nothing. The preview has no terrain behind it: it fits both points into a
-square frame, centred between them and 1.6 times their larger span, so both markers stay on screen
-at any separation.
+Weapons are labelled with their mils convention (6,400 or 6,000). Only the shells the weapon
+lists and the catalog defines are offered, and every charge of the shell after "Recommended".
+Changing the weapon or the catalog reconciles the selection.
+
+Positions are typed as 6-, 8- or 10-figure grid references or placed on the map. On Everon the
+map (`core::map_view::mount::mount_map_view`, terrain-and-imagery scope) shares the page's
+`TerrainHeights`, so a terrain height resolves once the 2 m raster loads; a click writes the
+position chosen in "Place on the map" as a 10-figure grid reference, and a press on a placed
+marker grabs it and drags it (the press never reaches the map's pan). The overlay draws the guns,
+the target, the gun→target lines and, after a solve, each gun's dispersion ellipse through the
+map engine's `overlay::fire_mission_marks` lanes. Arland has no elevation model: no map, and every
+height is typed. A terrain height that is not there yet is an error, never a zero.
+
+Calculate samples the ground from the lead gun to the target (`spatial::los::terrain::sampler`)
+into a `TerrainProfile`, then `solve_fire_mission` — the one assembler the API re-solves a saved
+fire mission with — returns the whole solution. The panel shows a battery line per gun (the laid
+charge's elevation, aim azimuth and time of flight), the crest check (a warning when the flight
+passes below the terrain, or "No crest check" without map heights), the time fuze for a burst
+height, the lead gun's dispersion labelled "Interpretation, not verified in-engine", and one
+charge table per gun in the weapon's mils and in degrees.
+
+The save area renders inside `AuthGate` while the platform answers (while the catalog comes from
+the offline copy it is replaced by a needs-a-connection notice, with no sign-in link): the event picker, "Save Fire Mission" (enabled with a
+solution and an event), and the saved fire missions of the selected event. The save posts a
+`FireMissionSave` whose `client_solution` is the page's own solution; a 422 `solution_mismatch`
+says the server's solve differs. The newest saved row fills the drafts once per event, any row
+on a click: every gun with its label, heights (a manual height stays manual), the weapon, shell
+and charge, the wind and the burst height; a row stored before catalogs restores its target and
+one gun from its coordinates or its legacy `x, y` grid text. The selected event is kept in
+`localStorage` under `tbd-mortar-event`.
 
 ## Routes
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/tools/mortar` | `MortarCalculatorPage` | route tier `none`; the calculator renders only for a signed-in viewer | full-bleed inside the navigation frame; breadcrumb Field Tools / Mortar Calculator |
+| `/tools/mortar` | `MortarCalculatorPage` | route tier `none`; the calculator renders for every viewer, the save area for a signed-in one | full-bleed inside the navigation frame; breadcrumb Field Tools / Mortar Calculator |
 
 ## Data
 
-- `GET /api/v1/events`: read as `Paginated<EventOption>`, each event's `id`, `name_override` and
-  `start_time`, for the event picker.
+- `GET /api/v1/ballistics-catalogs`: `BallisticsCatalogList`, public.
+- `GET /api/v1/ballistics-catalogs/{catalogId}/versions/{version}`: the `BallisticsCatalog`
+  document, public.
+- `GET /api/v1/events`: read as `Paginated<EventOption>` for the event picker (signed in).
 - `GET /api/v1/events/{id}/fire-missions`: the selected event's saved rows, read as
-  `DataEnvelope<SavedFire>` (the shared DTO in
-  `apps/website/frontend/src/v2/core/api/dto/telemetry.rs`).
-- `POST /api/v1/fire-missions`: with an event selected; sends `weapon_system`, `fp_x`, `fp_y`,
-  `tgt_x`, `tgt_y`, `fp_grid`, `target_grid` and `event_id`, and reads `SaveResponse`: the
-  `FireSolution` and the stored `SavedFire`.
-- `POST /api/v1/fire-missions/solve`: with no event; the same body without `event_id`, read as
-  `FireSolution`.
-- `localStorage` key `tbd-mortar-event`: read at mount, written when an event is picked, removed
-  when none is picked or the stored id names no listed event.
-- The page reads the `AuthStore` and the toast queue from context. The requests and the storage
-  run in the browser build only.
+  `DataEnvelope<SavedFire>` (signed in).
+- `POST /api/v1/fire-missions`: a `FireMissionSave` body, answered by `SavedFireMissionAnswer`
+  (signed in).
+- `/map-assets/everon/…`: the manifest, elevation, hillshade, satellite and grid the map boots.
+- `localStorage` key `tbd-mortar-event`.
+- The page reads the `AuthStore`, `offline_status()` and, for terrain heights, a
+  `TerrainHeights` reader a mounted map view fills. Requests run in the browser build only.
 
 ## States
 
 | State | What the viewer sees |
 |---|---|
-| session restoring | "Loading session…" |
-| signed out | "Sign in to load live data from the platform." and a "Sign in with Discord" link to `/login` |
-| inputs | "Mortar Calculator", "Enter grid coordinates, pick a tube, and save the solution to an operation.", then "Weapon" (`M252 81mm`, `M821 81mm`, `2B14 82mm`, `M120 120mm`), "Operation" ("— none (not saved) —", or "<name> — <date>" with "Untitled Operation" for an unnamed event), "FP X", "FP Y", "TGT X" and "TGT Y" |
-| button | "Calculate & Save" with an event, "Calculate Solution" without, "Computing…" while a request runs |
-| no solution | "Firing Solution — <weapon>" over "Enter coordinates and calculate to see solution." |
-| solution | "Saved — survives a reload" or "Not saved — lost on reload", then "Distance" in m, "Azimuth" in degrees, "Elevation" in mils, "Charge" and "TOF" in s; "—" for a charge or flight time an older saved row lacks |
-| saved list | "Saved Fire Missions" with "Loading…" (also while a batch for another event is held), "Could not load saved fire missions.", "Nothing saved on this operation yet.", "Pick an operation to save and reload solutions.", or rows "<fp grid> → <target grid>" over "<n> m · <deg>° · <n> mils", newest first |
-| toasts | "Firing solution saved to the operation", "Not saved — pick an operation to keep this solution", or on failure the API's message or "Could not compute firing solution" |
+| catalogs loading | the inputs with empty pickers; "Calculate Solution" disabled |
+| catalog failure | "No ballistics catalog has been published yet…", or "The ballistics catalogs could not be loaded (…)." / "The chosen ballistics catalog could not be loaded (…)." followed by the offline explanation |
+| offline copy | "Offline — solving with the catalog saved on this device." |
+| no outcome | "Enter the target and the guns, then calculate." |
+| input problems | a list, one sentence per problem |
+| solution | the battery table, the crest line, the fuze card, the dispersion card, and one table per gun headed "<label> — <m> m · line <mils> mils · <deg>° · Δh <m> m" |
+| map | "Loading the map…", then the map; on a failed mount "The map could not load (…); type the grid references instead."; on Arland a note instead of the map |
+| saving | "Saving…", then "Saved (<created_at>)." or the refusal sentence |
+| signed out | the save area shows "Sign in to load live data from the platform." and a sign-in link |
+| save area | the event picker ("— none (not saved) —" or "<name> — <date>"), "Save Fire Mission" and "Saved Fire Missions" |
 
 ## Boundaries
 
-- Depends on: `crate::v2::core::api` (`api_get`, `api_post`, `api_error_message`, and
-  `FireSolution`, `SavedFire`, `DataEnvelope` and `Paginated` from
-  `apps/website/frontend/src/v2/core/api/dto/telemetry.rs` and
-  `apps/website/frontend/src/v2/core/api/dto/common.rs`), `crate::v2::core::ui` (`AuthGate`,
-  `PageHeader`, the toast queue), `crate::v2::core::utils::datefmt::format_short_date`, the
-  `AuthStore` context, and the browser's `localStorage` through `web_sys`.
+- Depends on: `crate::v2::core::api` (`public_reads::public_get`, `api_get`, the ballistics
+  catalog and fire-mission DTOs in `apps/website/frontend/src/v2/core/api/dto/`),
+  `crate::v2::core::offline` (`offline_status`), `crate::v2::core::map_view` (`mount`,
+  `handles`, `navigation_math`, `terrain_height`, `terrain_preferences`, `engine_mount`),
+  `crate::v2::core::ui` (`AuthGate`, `PageHeader`), `crate::v2::core::utils::datefmt`;
+  `website_map_engine` (`camera::grid_reference`, `data::scenario::ballistics::fire_mission`,
+  `battery`, `solver`, `dispersion`, `fuze` and `crest_clearance`, `overlay::fire_mission_marks`,
+  `overlay::symbology::markers`, `spatial::los::terrain::sampler`,
+  `editing::tools::line_of_sight::terrain_survey::everon_manifest`).
 - Used by: the `/tools/mortar` route in `apps/website/frontend/src/app_routes.rs` and
   `apps/website/frontend/src/router.rs`; the sidebar's "Mortar Calculator" link in
-  `apps/website/frontend/src/v2/pages/navigation/nav_config.rs`; the DOM oracle's `mortar` capture
+  `apps/website/frontend/src/v2/pages/navigation/nav_config.rs`; the offline pack trigger in
+  `apps/website/frontend/src/v2/core/offline/offline_pack.rs`; the DOM oracle's `mortar` capture
   in `tools_v2/developer-tools/src/browser_testing/dom_oracle/routes.rs`.
 - Rules:
-  - `WEAPONS` mirrors the tube keys of `charges_for` in
-    `apps/website/map-engine/src/data/scenario/ballistics/mortar_fire_solution.rs`
-    (`the_offered_weapons_are_the_keys_the_api_accepts` pins the copy);
-  - the grid string round-trips every coordinate the inputs accept
-    (`every_coordinate_the_inputs_accept_round_trips_through_the_grid_string`), and `restore` keeps
-    its grid fallback for rows without numeric coordinates
-    (`a_row_saved_before_the_migration_still_restores_and_shows_no_tof_or_charge`);
+  - the page's solution is the engine's `solve_fire_mission` answer byte for byte
+    (`the_solution_is_the_engine_fire_mission_solution_byte_for_byte`), from inputs pinned to the
+    catalog (`the_drafts_map_onto_the_engine_inputs_pinned_to_the_catalog`);
+  - every gun is solved as if it fired alone (`every_gun_is_solved_as_if_it_fired_alone`);
+  - 6-, 8- and 10-figure grids resolve to their cell centres
+    (`grids_of_six_eight_and_ten_figures_resolve_to_their_cell_centres`), and Arland never reads
+    a terrain height (`arland_only_resolves_manual_heights_and_never_reads_the_terrain`);
+  - every input problem is reported at once (`every_input_problem_is_reported_at_once`);
   - hydration acts only on a batch fetched for the selected event, at most once per event
-    (`hydration_refuses_a_batch_fetched_for_a_different_operation`,
-    `returning_to_an_operation_does_not_re_hydrate_over_unsaved_edits`);
-  - both preview markers move with every coordinate
-    (`both_preview_markers_move_when_any_input_moves`), and a missing charge or flight time shows
-    "—", never a zero.
+    (`hydration_refuses_a_batch_fetched_for_a_different_event`);
+  - the save posts the solve's own inputs and solution
+    (`the_save_body_carries_the_solved_inputs_and_the_client_solution`);
+  - a click writes only the placed position (`a_click_writes_only_the_placed_position_as_a_ten_figure_grid`),
+    and the crest check warns over a ridge (`the_crest_check_clears_low_ground_and_warns_over_a_ridge`);
+  - the dispersion is labelled an interpretation
+    (`the_dispersion_is_labelled_an_interpretation_not_verified_in_engine`).
 
 ## Related documentation
 
 - [Mortar calculator page](/documentation_v2/website/frontend/pages/field_tools/mortar/mortar_calculator_page.md)
   — the page's behaviour and design.
-- [Operations domain](/apps/website/api_v2/src/operations/README.md) — the fire-mission routes this
-  page calls.
+- [Firing solver](/apps/website/map-engine/src/data/scenario/ballistics/solver/README.md) — the
+  solver the page runs.
+- [Offline core](/apps/website/frontend/src/v2/core/offline/README.md) — the offline pack and
+  its state.
+- [Operations domain](/apps/website/api_v2/src/operations/README.md) — the catalog and
+  fire-mission routes.

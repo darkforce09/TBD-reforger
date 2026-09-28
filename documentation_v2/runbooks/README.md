@@ -13,6 +13,7 @@ at hand before running any of its commands.
 
 ```text
 documentation_v2/runbooks/
+├── ballistics_oracle_run.md   record the engine oracle, trim, calibrate and publish a ballistics catalog
 ├── cursor_workspace_setup.md  set up Cursor: project rules, the local stack, the MCP server, checks
 ├── database_operations.md     SQL, sample data, integration tests, checksum repair, backups, restores
 ├── editor_capture.md          screenshot a running Mission Creator in headless Chromium
@@ -22,6 +23,7 @@ documentation_v2/runbooks/
 ├── game_server_staging/       prepare, deploy, verify and join the staging dedicated server
 ├── local_development.md       bring up Postgres, the API and the single-page app on a dev machine
 ├── mod_slice_workflow.md      run a mod wave: slice agents in worktrees, `mod wave` landing
+├── offline_mortar_page.md     prepare the offline pack of the mortar calculator, gate it, check it by hand
 ├── spawn_determinism.md       prove Workbench Play, spawn and equip repeat byte-identically
 ├── testing_and_ci.md          run the repository's gates locally before a push
 ├── ticket_run_pipeline.md     take one ticket from idea to shipped with `ticket run`
@@ -51,6 +53,8 @@ Start from the task:
 | Running the dedicated game server | [game server staging](/documentation_v2/runbooks/game_server_staging/README.md), or [two-client playtest](/documentation_v2/runbooks/two_client_playtest/README.md) on a development machine |
 | Mod work that needs Workbench | [Enfusion MCP tooling](/documentation_v2/runbooks/enfusion_mcp_tooling.md), then [spawn determinism](/documentation_v2/runbooks/spawn_determinism.md) after a spawn or loadout change |
 | Rebuilding a terrain's object and road data | [terrain export runbook](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/MapExport/terrain_export_runbook.md) |
+| A new game build, or a change to the ballistics oracle | [ballistics oracle run](/documentation_v2/runbooks/ballistics_oracle_run.md) |
+| The mortar calculator offline | [offline mortar page](/documentation_v2/runbooks/offline_mortar_page.md) |
 | One ticket, one agent | [ticket run pipeline](/documentation_v2/runbooks/ticket_run_pipeline.md) |
 | A [wave](/documentation_v2/glossary/n_to_z.md#wave) of tickets in parallel | [factory waves](/documentation_v2/runbooks/factory_waves/README.md) for the platform, [mod slice workflow](/documentation_v2/runbooks/mod_slice_workflow.md) for the mod |
 
@@ -60,7 +64,8 @@ feature folder, rather than here; this index lists it so every procedure is foun
 ## Code
 
 - [xtask command groups](/tools_v2/xtask/src/commands/) — every `cargo xtask` command the runbooks
-  run: `mk`, `ci`, `db`, `deploy`, `mod`, `mcp`, `map`, `platform`, `wave`, `ticket` and `setup`.
+  run: `mk`, `ci`, `db`, `deploy`, `mod`, `mcp`, `map`, `ballistics`, `schema`, `platform`, `wave`,
+  `ticket` and `setup`.
 - [Browser testing](/tools_v2/developer-tools/src/browser_testing/) — the gate, doctor and
   capture drivers behind the editor gates and editor capture.
 - [Deploy files](/tools_v2/xtask/deploy/) — the templates and systemd units the deployment

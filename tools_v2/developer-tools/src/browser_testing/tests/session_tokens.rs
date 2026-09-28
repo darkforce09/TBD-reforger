@@ -43,3 +43,27 @@ fn the_gate_session_id_is_a_nonnil_hyphenated_uuid() {
     );
     assert_eq!(GATE_SESSION_ID, GATE_SESSION_ID.to_ascii_lowercase());
 }
+
+#[test]
+fn the_refresh_answer_is_a_complete_bearer_token_pair() {
+    let answer = gate_refresh_answer("arsenal", "rt-seed", "2030-01-01T00:00:00Z");
+    let mut keys: Vec<&str> = answer
+        .as_object()
+        .expect("the refresh answer is a JSON object")
+        .keys()
+        .map(String::as_str)
+        .collect();
+    keys.sort_unstable();
+    assert_eq!(
+        keys,
+        ["access_token", "expires_at", "refresh_token", "token_type"]
+    );
+    assert_eq!(answer["token_type"], "Bearer");
+    assert_eq!(answer["refresh_token"], "rt-seed");
+    assert_eq!(answer["expires_at"], "2030-01-01T00:00:00Z");
+    let access_token = answer["access_token"]
+        .as_str()
+        .expect("a string access token");
+    assert_eq!(access_token, gate_access_token("arsenal"));
+    assert_eq!(claims(access_token)["sid"], GATE_SESSION_ID);
+}

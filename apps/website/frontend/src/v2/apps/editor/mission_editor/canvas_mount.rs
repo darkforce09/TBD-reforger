@@ -1,4 +1,14 @@
-//! Mounts the browser canvas and installs editor host state.
+//! Mounts the Mission Creator's canvas on the shared map seam and installs editor host state.
+//!
+//! **Role:** on canvas load, sizes the canvas and creates the per-mount map handles through
+//! [`crate::v2::core::map_view`], installs the editor's tools, document context and chrome
+//! effects, then starts the boot tasks and the input listeners.
+//! **Position:** called once by the Mission Creator page; the seam owns sizing, engine creation,
+//! the frame pump and resize tracking, and this module owns everything editor-specific.
+//! **Signals & state:** the page's signals arrive in [`PageMountSignals`]; the tool states
+//! (selection, ruler, line of sight, viewshed) are created here and live for the mount.
+//! **Invariants:** document setup completes before the boot tasks start; every handle the tasks
+//! and listeners share comes from one [`crate::v2::core::map_view::handles::MapViewHandles`].
 
 #[path = "canvas_mount/document_setup.rs"]
 mod document_setup;
@@ -13,6 +23,9 @@ mod input_listeners;
 
 #[path = "canvas_mount/boot_tasks.rs"]
 mod boot_tasks;
+
+#[path = "canvas_mount/dock_reflow.rs"]
+mod dock_reflow;
 
 use super::*;
 
@@ -71,7 +84,6 @@ pub(super) fn install_canvas_mount(signals: PageMountSignals) {
     } = signals;
     use std::cell::{Cell, RefCell};
     use std::rc::Rc;
-    use std::sync::{atomic::AtomicBool, Arc};
 
     let mission_id = mission_id.clone();
 
@@ -92,25 +104,11 @@ pub(super) fn install_canvas_mount(signals: PageMountSignals) {
             return;
         };
         let container: web_sys::HtmlDivElement = container;
-        let win = web_sys::window().expect("window");
-
-        let force_webgl = win
-            .location()
-            .search()
-            .map(|s| s.contains("force=webgl"))
-            .unwrap_or(false);
-
-        let dpr0 = win.device_pixel_ratio();
-        let rect0 = container.get_bounding_client_rect();
-        let (dw, dh) = device_size(rect0.width(), rect0.height(), dpr0);
-        canvas.set_width(dw);
-        canvas.set_height(dh);
-
-        let engine: Rc<RefCell<Option<website_map_engine::frame::engine::RenderEngine>>> =
-            Rc::new(RefCell::new(None));
-        let map_host = website_map_engine::streaming::host::new_host_handle();
-        let dem_grid = website_map_engine::streaming::host::new_dem_grid_handle();
-        let disposed = Arc::new(AtomicBool::new(false));
+        let force_webgl = crate::v2::core::map_view::engine_mount::force_webgl_from_location();
+        let canvas_size = crate::v2::core::map_view::engine_mount::size_canvas(&container, &canvas);
+        let view = crate::v2::core::map_view::handles::MapViewHandles::new();
+        let engine = view.engine.clone();
+        let dem_grid = view.dem_grid.clone();
 
         let (doc, doc_ver) = document_setup::initialize(auth, mission_id.clone(), current_semver);
 
@@ -149,7 +147,6 @@ pub(super) fn install_canvas_mount(signals: PageMountSignals) {
             let los = los.clone();
             let viewshed = viewshed.clone();
             let engine = engine.clone();
-            let sync_los = sync_los;
             Effect::new(move |_| {
                 let is_los = tool_mode.get().is_los();
                 let viewshed_active = is_los && los_mode.get().is_viewshed();
@@ -327,7 +324,7 @@ pub(super) fn install_canvas_mount(signals: PageMountSignals) {
                     mission_history::refresh_selection();
                 }
                 if let Some(e) = engine.borrow_mut().as_mut() {
-                    e.set_view(cx, cy, e.zoom()); // centre on the offender (React flyTo)
+                    e.set_view(cx, cy, e.zoom()); // centre on the offender
                     e.on_camera_changed();
                 }
                 true
@@ -395,91 +392,42 @@ pub(super) fn install_canvas_mount(signals: PageMountSignals) {
 
         mission_history::refresh_hud();
 
-        {
-            let engine = engine.clone();
-            let container = container.clone();
-            Effect::new(move |_| {
-                let hidden = chrome_hidden.get();
-                let left = dock_left_collapsed.get();
-                let right = dock_right_collapsed.get();
-                let was_hidden = crate::v2::apps::editor::shell::layout::chrome_hidden();
-
-                let rect = container.get_bounding_client_rect();
-                let (w, h) = (rect.width(), rect.height());
-                if !(w > 0.0 && h > 0.0) {
-                    crate::v2::apps::editor::shell::layout::set_chrome_hidden(hidden);
-                    crate::v2::apps::editor::shell::layout::set_dock_left_collapsed(left);
-                    crate::v2::apps::editor::shell::layout::set_dock_right_collapsed(right);
-                    return;
-                }
-
-                let before = crate::v2::apps::editor::shell::layout::pane_center_px(w, h);
-                crate::v2::apps::editor::shell::layout::set_chrome_hidden(hidden);
-                crate::v2::apps::editor::shell::layout::set_dock_left_collapsed(left);
-                crate::v2::apps::editor::shell::layout::set_dock_right_collapsed(right);
-                let after = crate::v2::apps::editor::shell::layout::pane_center_px(w, h);
-
-                let dpr = web_sys::window()
-                    .map(|win| win.device_pixel_ratio())
-                    .unwrap_or(1.0);
-                if let Some(e) = engine.borrow_mut().as_mut() {
-                    let _ = e.resize(w, h, dpr);
-                    let dock_reflow = !was_hidden && !hidden;
-                    if dock_reflow
-                        && ((before.0 - after.0).abs() > f64::EPSILON
-                            || (before.1 - after.1).abs() > f64::EPSILON)
-                    {
-                        let scale = e.zoom().exp2();
-                        let (nx, ny) = crate::v2::apps::editor::shell::layout::centre_hold_target(
-                            e.target_x(),
-                            e.target_y(),
-                            scale,
-                            before,
-                            after,
-                        );
-                        e.set_view(nx, ny, e.zoom());
-                    }
-                }
-            });
-        }
+        dock_reflow::install(
+            engine.clone(),
+            container.clone(),
+            chrome_hidden,
+            dock_left_collapsed,
+            dock_right_collapsed,
+        );
 
         boot_tasks::start(boot_tasks::BootContext {
             doc: doc.clone(),
             mission_id: mission_id.clone(),
-            auth: auth,
-            current_semver: current_semver,
-            conflict: conflict,
-            boot: boot,
-            progress: progress,
-            map_disabled: map_disabled,
-            engine: engine.clone(),
-            map_host: map_host.clone(),
-            dem_grid: dem_grid.clone(),
-            disposed: disposed.clone(),
+            auth,
+            current_semver,
+            conflict,
+            boot,
+            progress,
+            map_disabled,
+            view: view.clone(),
             restore_settled: restore_settled.clone(),
             canvas: canvas.clone(),
-            force_webgl: force_webgl,
-            width: rect0.width(),
-            height: rect0.height(),
-            dpr0: dpr0,
-            debug_hud: debug_hud,
-            scale_mpp: scale_mpp,
+            force_webgl,
+            canvas_size,
+            debug_hud,
+            scale_mpp,
         });
 
         input_listeners::attach(input_listeners::InputContext {
             container,
             canvas,
-            engine,
+            view,
             doc,
             selection,
             left,
-            map_host,
-            dem_grid,
             ruler,
             los,
             viewshed,
-            win,
-            disposed,
             cursor,
             tool_mode,
             los_mode,

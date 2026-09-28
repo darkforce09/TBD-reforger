@@ -1,0 +1,13 @@
+{
+  "data": [
+    {
+      "catalog_id": "vanilla_mortars",
+      "catalog_sha256": "24a68cc5e22b5d3dc62ec80d82d0e004916e1d300ac0a964d1660847e8f9fbde",
+      "catalog_version": 1,
+      "export_generation_id": "6A6F008DC5395616",
+      "game_build": "1.8.0.13",
+      "title": "Vanilla Arma Reforger mortars",
+      "uploaded_at": "2000-01-01T00:00:00Z"
+    }
+  ]
+}

@@ -53,7 +53,8 @@ request ─▶ request id ─▶ access log ─▶ metrics ─▶ panic recovery
                      └─▶ /map-assets, /map-assets/glyphs (mounted below the rate limit)
 ```
 
-The body limit is 1 MiB, raised per route for the CMS upload (6 MiB) and the
+The body limit is 1 MiB, raised per route for the CMS upload (6 MiB), the ballistics catalog
+upload (17 MiB + 64 KiB, a 16 MiB calibration part and a 1 MiB catalog part) and the
 [mission](/documentation_v2/glossary/g_to_m.md#mission) version save (`MISSION_VERSION_MAX_BODY_BYTES`,
 256 MiB by default). The rate limit keeps an in-memory bucket per client address and, on the
 unauthenticated `/api/v1/auth/` family, a stricter one with a second bucket in Postgres that
@@ -147,7 +148,7 @@ lists every route with its methods and tier.
 |---|---|---|
 | [identity and access](/apps/website/api_v2/src/identity_and_access/README.md#public-surface) | `/auth/discord/login`, `/auth/discord/callback`, `/auth/refresh`, `/auth/logout`, `/auth/dev-login` (development only), `/me`, `/me/link`, `/me/link/status`, `/ingest/link-confirm` | public, member, machine |
 | [administration](/apps/website/api_v2/src/administration/README.md#public-surface) | `/admin/users` (searched by `q`, paged by `page` and `per_page`), `/admin/users/{discordId}` with `/ban`, `/warnings` and `/membership-grace`, `/admin/roles/sync`, `/admin/audit-logs` with `/export.csv` and `/stream` (ready, rows, reset) | administrator; the grace route is member with administrator authority checked in its service |
-| [operations](/apps/website/api_v2/src/operations/README.md#public-surface) | `/events` and `/events/{id}/…` (missions, access, access policy, reservation quotas, groups, fire missions), `/event-missions/{emid}/…` (ORBAT, register, slot assignment, squad reserve and release, waitlist promotion, squad and slot access policies), `/members`, `/me/deployments`, `/me/leave-requests`, `/admin/leave-requests`, `/fire-missions`, `/fire-missions/solve`, `/game-runtime/events/{id}/roster`, `/game-runtime/sessions/{sessionId}/deployments/…` | member, leader, administrator, machine |
+| [operations](/apps/website/api_v2/src/operations/README.md#public-surface) | `/events` and `/events/{id}/…` (missions, access, access policy, reservation quotas, groups, fire missions), `/event-missions/{emid}/…` (ORBAT, register, slot assignment, squad reserve and release, waitlist promotion, squad and slot access policies), `/members`, `/me/deployments`, `/me/leave-requests`, `/admin/leave-requests`, `/fire-missions`, `/ballistics-catalogs` and `/ballistics-catalogs/{catalogId}/versions/{version}`, `/game-runtime/events/{id}/roster`, `/game-runtime/sessions/{sessionId}/deployments/…` | public (the catalog reads), member, leader, administrator, machine |
 | [missions](/apps/website/api_v2/src/missions/README.md#public-surface) | `/missions` and `/missions/{id}/…` (submit, reviews, review comments, artifacts, versions, armory, bookmark, export), `/registry`, `/registry/compat`, `/factions`, `/approvals`, `/admin/mission-default-overrides`, `/servers/{id}/deployments`, `/game-runtime/deployment`, `/game-runtime/deployments`, `/game-runtime/artifacts/{artifactId}`, `/game-runtime/missions` | member, mission maker, author or administrator, administrator, machine |
 | [match telemetry](/apps/website/api_v2/src/match_telemetry/README.md#public-surface) | `/game-runtime/sessions/{sessionId}/heartbeats`, `/ingest/matches`, `/ingest/match-results`, `/ingest/match-events`, `/matches/{matchId}/events` | machine, member |
 | [command center](/apps/website/api_v2/src/command_center/README.md#public-surface) | `/dashboard`, `/leaderboards`, `/users/{discordId}/stats` | member |
@@ -257,8 +258,6 @@ DTO in `apps/website/frontend/src/v2/core/api/dto/`. Acceptance of the API as a 
   `DELETE /api/v1/servers/{id}` (`apps/website/api_v2/src/server_infrastructure/routes.rs`) and
   accepts `server_id` on event create and update, while the server control page only lists
   `/api/v1/servers`.
-- The mortar page solves through the API: `POST /api/v1/fire-missions/solve` runs the map engine's
-  ballistics on the server, so the page needs the API to answer.
 
 ## Open work
 
@@ -266,8 +265,11 @@ DTO in `apps/website/frontend/src/v2/core/api/dto/`. Acceptance of the API as a 
   (queued, [plan](/documentation_v2/tickets/plans/t-940_plan.md)): the program whose open children
   follow.
 - [T-940.10 — Mortar ballistics crate for API and offline frontend](/documentation_v2/tickets/specs/t940_website_platform.md)
-  (ready, [plan](/documentation_v2/tickets/plans/t-940_10_plan.md)): one ballistics model serves
-  both the API and the mortar page, so the page solves without the API.
+  (ready, [plan](/documentation_v2/tickets/plans/t-940_10_plan.md)): the scope is built by
+  milestone B, [game ballistics](/documentation_v2/website/api_v2/verification_evidence/game_ballistics.md):
+  the map engine's `solve_fire_mission` runs in the mortar page, which solves without the API
+  and works offline, and in `POST /api/v1/fire-missions`, which re-solves every save; the
+  registry closes the ticket with the milestone.
 - [T-940.13 — Combat, medical and vehicle telemetry events](/documentation_v2/tickets/specs/t940_website_platform.md)
   (ready, [plan](/documentation_v2/tickets/plans/t-940_13_plan.md)): the events schema
   (`contracts_v2/definitions/match-telemetry.schema.json`), `POST /api/v1/ingest/match-events` and

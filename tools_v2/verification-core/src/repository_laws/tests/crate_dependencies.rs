@@ -5,7 +5,7 @@ use super::*;
 use crate::repository_laws::cargo_manifest::parse_manifest;
 use crate::repository_laws::temporary_checkout::TemporaryCheckout;
 
-/// A checkout whose four website crates declare only the edges the layer order allows.
+/// A checkout whose five website crates declare only the edges the layer order allows.
 fn layered_checkout(name: &str) -> TemporaryCheckout {
     let checkout = TemporaryCheckout::empty(name);
     checkout.write(
@@ -27,6 +27,11 @@ fn layered_checkout(name: &str) -> TemporaryCheckout {
         "apps/website/api_v2/Cargo.toml",
         "[package]\nname = \"website-api\"\n\n[dependencies]\n\
          website-map-engine = { path = \"../map-engine\" }\n",
+    );
+    checkout.write(
+        "apps/website/offline-service-worker/Cargo.toml",
+        "[package]\nname = \"website-offline-service-worker\"\n\n[dependencies]\n\
+         serde = \"1\"\n",
     );
     checkout
 }
@@ -83,6 +88,34 @@ fn a_forbidden_edge_in_any_table_or_spelling_is_a_finding() {
             "{findings:#?}"
         );
     }
+}
+
+#[test]
+fn the_offline_service_worker_may_link_none_of_the_server_page_or_renderer() {
+    for (forbidden, folder) in [
+        ("website-api", "api_v2"),
+        ("website-frontend", "frontend"),
+        ("website-graphics-engine", "graphics-engine"),
+    ] {
+        let checkout = layered_checkout("directions-offline-worker");
+        checkout.write(
+            "apps/website/offline-service-worker/Cargo.toml",
+            &format!(
+                "[package]\nname = \"website-offline-service-worker\"\n\n\
+                 [target.'cfg(target_arch = \"wasm32\")'.dependencies]\n\
+                 {forbidden} = {{ path = \"../{folder}\" }}\n"
+            ),
+        );
+        let findings = crate_dependency_findings(checkout.root()).unwrap();
+        assert_eq!(findings.len(), 1, "{forbidden}: {findings:#?}");
+        assert_eq!(
+            findings[0].manifest,
+            "apps/website/offline-service-worker/Cargo.toml"
+        );
+        assert_eq!(findings[0].package, forbidden);
+        assert_eq!(findings[0].reason, OFFLINE_SERVICE_WORKER_RULE.reason);
+    }
+    assert!(CRATE_DEPENDENCY_RULES.contains(&OFFLINE_SERVICE_WORKER_RULE));
 }
 
 #[test]

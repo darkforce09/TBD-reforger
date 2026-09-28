@@ -89,6 +89,7 @@ impl Harness {
                 dir: PathBuf::from(dist),
                 api_proxy,
                 map_assets,
+                api_fixture_corpus: None,
             },
             port,
         )
@@ -100,6 +101,7 @@ impl Harness {
         scripts.push(auth_seed.as_str());
         scripts.extend_from_slice(init_scripts);
         let page = Arc::new(cdp::new_page(&browser, None, &scripts).await?);
+        page.bypass_service_worker().await?;
         page.send("Runtime.enable", json!({})).await?;
         page.send("Log.enable", json!({})).await?;
         page.send(

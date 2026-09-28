@@ -17,6 +17,7 @@ pub(crate) fn run() -> Result<u8> {
         TopCmd::Db { cmd } => crate::commands::db::operations::run(cmd),
         TopCmd::Setup { cmd } => commands::setup::dispatch::run(cmd),
         TopCmd::Fetch { cmd } => commands::fetch::dispatch::run(cmd),
+        TopCmd::Ballistics { cmd } => commands::ballistics::dispatch::run(cmd),
         TopCmd::Map { cmd } => commands::map::dispatch::run(cmd),
         TopCmd::Verify { cmd } => commands::verify::dispatch::run(cmd),
         TopCmd::SliceCollisions { args } => commands::wave::collisions(&args),

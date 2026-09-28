@@ -1,0 +1,12 @@
+id = "T-1257"
+kind = "work"
+title = "Remove dead page code from the native frontend build"
+summary = "Nothing mounts the website-frontend app natively, so every page view is dead code there: 124 dead-code warnings before milestone B, and the mortar page adds 34. The noise hides real native warnings."
+class = "feature"
+status = "idea"
+notes = "Either give the native build an app root or gate the page modules to wasm32 so native checks see only live code; the mortar page's 34 warnings are the same class. Source: milestone B finding (G1)."
+created_at = "2026-09-28T16:01:25Z"
+
+[scope]
+domain = "website"
+layer = "frontend"

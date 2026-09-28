@@ -11,7 +11,8 @@ Status: archived — frozen records.
 
 ```text
 documentation_v2/archive/api_v2_completion/
-└── milestone_c_execution_record.md  milestone C's phase handoffs and the additions to its agent prompts
+├── milestone_c_execution_record.md  milestone C's phase handoffs and the additions to its agent prompts
+└── milestone_v_execution_record.md  milestone V's phase handoffs, the additions to its agent prompts and its findings pointer
 ```
 
 ## How it works
@@ -30,7 +31,7 @@ now. Paths, counts and log names in the records are as they stood when each row 
 ## Boundaries
 
 - Depends on: nothing live; the records quote the code and the logs of their time.
-- Used by: the verification checkpoint, which points here for the milestone C record.
+- Used by: the verification checkpoint, which points here for the milestone C and V records.
 - Rules: never reworded, only links change; a milestone's record moves here verbatim when the
   live checkpoint needs its room.
 

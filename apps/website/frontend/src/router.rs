@@ -192,6 +192,14 @@ pub static ROUTES: &[RouteDef] = &[
         auth: "none",
     },
     RouteDef {
+        // Debug bench — URL-only: the fire-mission solver's wasm build against the native gate.
+        path: "/debug/ballistics-agreement",
+        component: "BallisticsAgreementPage",
+        full_bleed: true,
+        chromeless: true,
+        auth: "none",
+    },
+    RouteDef {
         path: "/settings",
         component: "SettingsPage",
         full_bleed: false,
@@ -237,6 +245,13 @@ pub static ROUTES: &[RouteDef] = &[
         path: "/admin/audit",
         component: "AuditLogsPage",
         full_bleed: true,
+        chromeless: false,
+        auth: "admin",
+    },
+    RouteDef {
+        path: "/admin/ballistics-catalogs",
+        component: "BallisticsCatalogsPage",
+        full_bleed: false,
         chromeless: false,
         auth: "admin",
     },
@@ -294,6 +309,7 @@ pub fn breadcrumb(path: &str) -> Option<(&'static str, &'static str)> {
         "/admin/personnel" => ("Administration", "Personnel Roster"),
         "/admin/content" => ("Administration", "Comms Broadcaster"),
         "/admin/audit" => ("Administration", "Audit Logs"),
+        "/admin/ballistics-catalogs" => ("Administration", "Ballistics Catalogs"),
         _ => return None,
     })
 }

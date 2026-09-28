@@ -40,6 +40,9 @@ js-sys = "0.3"
 # discipline. Naming it here just makes the direct use honest. See `src/url_guard.rs` for why the
 # predicate is a port and not a shared crate.
 url = "2.5"
+# The offline policy the service worker applies (cache names, request classes, the terrain pack
+# list), linked so the page's offline pack download writes the caches and keys the worker reads.
+website-offline-service-worker = { path = "../offline-service-worker" }
 wasm-bindgen = "0.2"
 web-sys = { version = "0.3", features = [
     "Window",
@@ -114,6 +117,13 @@ web-sys = { version = "0.3", features = [
     "OffscreenCanvas",
     "OffscreenCanvasRenderingContext2d",
     "ImageData",
+    # The offline core: service worker registration, the offline pack's cache writes, the
+    # document's asset links and the storage estimate / persistence request.
+    "Cache",
+    "CacheStorage",
+    "NodeList",
+    "ServiceWorkerContainer",
+    "StorageManager",
 ] }
 
 # Rendering and browser asset I/O share the frontend's WebAssembly module.
