@@ -15,7 +15,7 @@
 //! when the website API does not answer; it runs no compose command, because the website stack on
 //! the host belongs to `cargo xtask deploy website` (`cargo xtask verify staging-compose-paths`
 //! holds that); the rsync excludes every path the host keeps for itself, which `--delete` then
-//! leaves alone.
+//! leaves alone, and every path only a development machine holds.
 
 use super::*;
 use crate::core::deploy_environment::DEPLOY_ENV_OVERRIDE_VARIABLE;
@@ -31,9 +31,11 @@ pub fn ssh_argv(base: &SshBase, host: &str, remote: &[String]) -> Vec<String> {
 }
 
 /// The full `rsync` argv. The exclude list is the licence boundary described in [`super`]'s header;
-/// the ORDER is the bash's, because a wave log diff should not show reordered flags.
+/// the ORDER is the bash's, because a wave log diff should not show reordered flags. The paths
+/// only a development machine holds, which `deploy website` excludes too, follow this lane's own
+/// exclusions.
 pub fn rsync_argv(base: &SshBase, mono_root: &Path, host: &str, remote_dir: &str) -> Vec<String> {
-    vec![
+    let mut argv: Vec<String> = vec![
         "rsync".into(),
         "-e".into(),
         base.rsync_e(),
@@ -62,9 +64,11 @@ pub fn rsync_argv(base: &SshBase, mono_root: &Path, host: &str, remote_dir: &str
         // share, and which the staging Caddy serves: this rsync must neither replace it with the
         // development machine's build nor delete it.
         "--exclude=apps/website/frontend/dist/".into(),
-        format!("{}/", mono_root.display()),
-        format!("{host}:{remote_dir}/"),
-    ]
+    ];
+    argv.extend(crate::commands::deploy::development_machine_only_paths::exclude_arguments());
+    argv.push(format!("{}/", mono_root.display()));
+    argv.push(format!("{host}:{remote_dir}/"));
+    argv
 }
 
 /// `ExecStart` per mode.

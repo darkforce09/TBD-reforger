@@ -168,20 +168,12 @@ impl DeployCfg {
         }
 
         println!(
-            "==> rsync (excludes secrets, build artifacts, the terrain + scratch asset trees, \
-             the packages/ tree, oracle lanes)"
+            "==> rsync (excludes secrets, build artifacts, worktrees and local tool state, the \
+             terrain + scratch asset trees, the packages/ tree, oracle lanes)"
         );
         if self.dry_run {
-            println!(
-                "[dry-run] rsync -avz --delete … {}:{}/",
-                self.host, self.remote_dir
-            );
-            // The exclude list is the whole point of a dry run: with `--delete` and no
-            // `--delete-excluded`, every entry is also what keeps rsync from removing that path
-            // on the server. Print it rather than eliding it behind the ellipsis.
-            let argv = rsync_argv::rsync_argv("", "", "");
-            for excluded in rsync_argv::exclusions(&argv) {
-                println!("[dry-run]   --exclude={excluded}");
+            for line in rsync_argv::dry_run_lines(&self.host, &self.remote_dir) {
+                println!("{line}");
             }
         } else if let Err(code) = self.rsync_to_remote() {
             return Ok(code);

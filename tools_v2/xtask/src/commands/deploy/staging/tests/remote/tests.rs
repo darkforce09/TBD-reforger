@@ -1,4 +1,5 @@
 use super::*;
+use crate::commands::deploy::development_machine_only_paths::DEVELOPMENT_MACHINE_ONLY_PATHS;
 use crate::commands::deploy::staging::config::tests::base;
 
 // ── ARGV: the stand-in for live coverage ────────────────────────────────────────────────
@@ -94,6 +95,32 @@ fn rsync_argv_keeps_every_exclude_in_order() {
         assert!(argv.iter().any(|a| a == needed), "missing {needed}");
     }
     // Source has a trailing slash (rsync copies CONTENTS) and so does the destination.
+    assert_eq!(argv[argv.len() - 2], "/repo/");
+    assert_eq!(argv[argv.len() - 1], "deploy@h:/home/deploy/tbd/repo/");
+}
+
+/// Both deploys exclude what only a development machine holds; this lane appends it after its own
+/// exclusions, so their order stays the one the wave logs show.
+#[test]
+fn rsync_argv_excludes_every_development_machine_only_path() {
+    let argv = rsync_argv(
+        &SshBase::Plain,
+        Path::new("/repo"),
+        "deploy@h",
+        "/home/deploy/tbd/repo",
+    );
+    let last_own_exclusion = argv
+        .iter()
+        .position(|a| a == "--exclude=apps/website/frontend/dist/")
+        .expect("the lane's own last exclusion");
+    for pattern in DEVELOPMENT_MACHINE_ONLY_PATHS {
+        let needed = format!("--exclude={pattern}");
+        let at = argv.iter().position(|a| *a == needed);
+        assert!(
+            at.is_some_and(|at| at > last_own_exclusion),
+            "missing {needed} after the lane's own exclusions"
+        );
+    }
     assert_eq!(argv[argv.len() - 2], "/repo/");
     assert_eq!(argv[argv.len() - 1], "deploy@h:/home/deploy/tbd/repo/");
 }

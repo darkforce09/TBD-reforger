@@ -94,11 +94,16 @@ Run the development-machine steps from the repository root; a step that runs on 
    probe, the rsync with one `[dry-run]   --exclude=` line per protected path (`.git/`,
    `target/`, the gate build folders, `node_modules/`, `apps/website/frontend/dist/`, the server's
    `apps/website/api_v2/.env`, `tools_v2/xtask/deploy/deploy.env`, `assets_v2/terrains/`,
-   `assets_v2/scratch/`, `packages/` and the reference mod folders), the six remote steps below,
+   `assets_v2/scratch/`, `packages/` and the reference mod folders, then what only the
+   development machine holds, anchored at the checkout root: `/target-*/` and the other build
+   folders, the worktrees under `.ai/artifacts/worktrees/`, the wave gate's receipts, and the
+   local files of Claude Code, Codex and `.mcp.json`), the six remote steps below,
    `==> remote: restart tbd-website-api.service`,
    `==> unit: tools_v2/xtask/deploy/systemd/tbd-website-api.service is installed by hand (see documentation_v2/runbooks/website_deployment.md Phase D)`,
    the smoke hints and `==> done`. The printed list is the authority; the code is
-   `tools_v2/xtask/src/commands/deploy/website/rsync_argv.rs`.
+   `tools_v2/xtask/src/commands/deploy/website/rsync_argv.rs`, and the development-machine-only
+   paths, which `cargo xtask deploy staging` excludes too, are in
+   `tools_v2/xtask/src/commands/deploy/development_machine_only_paths.rs`.
 
    | Remote step, as printed | What runs on the host |
    |---|---|
@@ -162,7 +167,9 @@ the password its volume was first created with. The database listens on the host
 The rsync mirrors the checkout with `--delete`: a file on the host outside the excluded paths
 disappears at the next deploy, so the server keeps its own files only at `apps/website/api_v2/.env`,
 under `assets_v2/terrains/` and outside the checkout. The glyph atlas `assets_v2/glyphs/` is not
-excluded; it is tracked and arrives with every deploy.
+excluded; it is tracked and arrives with every deploy. An excluded path that is already on the
+host is neither updated nor deleted: a development machine's build folder or tool state found
+there stays until it is removed by hand.
 
 A host that serves only the [mission](/documentation_v2/glossary/g_to_m.md#mission) library needs no map assets: every `/map-assets` request
 answers 404 and the deploy warns and continues. For the

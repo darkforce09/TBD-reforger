@@ -9,20 +9,21 @@ on the host run the backup and the drill.
 
 ```text
 tools_v2/xtask/src/commands/deploy/
-├── cli.rs                     the `DeployCmd` clap enum: `website`, `db` and `staging`
-├── database_backup.rs         `deploy db backup`: a verified `pg_dump -Fc` with retention by count
-├── database_operations/       the runtime and container helpers, the allow-list and the dump verifier
-├── database_operations.rs     the `DeployDbCmd` clap enum; declares the helpers and re-exports them
-├── database_restore.rs        `deploy db restore`: guard, verify, then `pg_restore --clean --if-exists`
-├── database_restore_drill/    the drill: restore into a scratch database, then the table and boot audits
-├── database_restore_drill.rs  the scratch-drop guard; declares the drill and re-exports `run`
-├── dispatch.rs                routes each `DeployCmd` to its entry
-├── mod.rs                     the module tree
-├── staging/                   the staging deploy: settings, render, payloads, pipeline and boot verdict
-├── staging.rs                 `deploy staging`: `Paths`, the flag parser and the mode order
-├── tests/                     unit tests for backup, the helpers, the drill, staging flags and website
-├── website/                   the website deploy's pure steps: rsync argv, remote shells, probe, unit
-└── website.rs                 `deploy website`: deploy.env, the refusals and the step runner
+├── cli.rs                             the `DeployCmd` clap enum: `website`, `db` and `staging`
+├── database_backup.rs                 `deploy db backup`: a verified `pg_dump -Fc` with retention by count
+├── database_operations/               the runtime and container helpers, the allow-list and the dump verifier
+├── database_operations.rs             the `DeployDbCmd` clap enum; declares the helpers and re-exports them
+├── database_restore.rs                `deploy db restore`: guard, verify, then `pg_restore --clean --if-exists`
+├── database_restore_drill/            the drill: restore into a scratch database, then the table and boot audits
+├── database_restore_drill.rs          the scratch-drop guard; declares the drill and re-exports `run`
+├── development_machine_only_paths.rs  the rsync excludes both deploys share: build folders and local tool state
+├── dispatch.rs                        routes each `DeployCmd` to its entry
+├── mod.rs                             the module tree
+├── staging/                           the staging deploy: settings, render, payloads, pipeline and boot verdict
+├── staging.rs                         `deploy staging`: `Paths`, the flag parser and the mode order
+├── tests/                             unit tests for backup, the helpers, the drill, the shared excludes, staging flags and website
+├── website/                           the website deploy's pure steps: rsync argv, remote shells, probe, unit
+└── website.rs                         `deploy website`: deploy.env, the refusals and the step runner
 ```
 
 ## How it works
@@ -38,6 +39,13 @@ environment filling only the others; a missing file exits 1 and names `deploy.en
 host is whatever `TBD_SSH_HOST` names, and the remote folders default under its user's
 `/home/<user>`; ssh runs through sshpass when `TBD_SSH_PASS` is set, else with `-i` when
 `TBD_SSH_IDENTITY_FILE` is, always with `StrictHostKeyChecking=no`.
+
+Both rsyncs append the patterns of `development_machine_only_paths.rs` to their own exclusions:
+anchored at the checkout root, they name what only a development machine holds, namely the cargo
+target folders beside `target/` (also those beside the app), the gates' and the debug app builds,
+the vanilla compile baseline, slice and ticket worktrees, the wave gate's receipts, and the local
+files of Claude Code, Codex and the MCP configuration. None of them is tracked, and the host needs
+none of them.
 
 ```text
 deploy website: asset probe ─▶ rsync --delete ─▶ compose postgres ─▶ API build ─▶ app build
@@ -143,6 +151,11 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
     `tools_v2/xtask/deploy/systemd/`, which run `deploy db backup` and `deploy db drill`;
   - the operator, for both deploys.
 - Rules: `deploy.env` is never executed and never rsynced (both exclude lists name `DEPLOY_ENV`);
+  both rsyncs exclude every development-machine-only path, no such path matches a tracked file,
+  and each pattern is anchored at the checkout root
+  (`no_tracked_file_matches_a_development_machine_only_path` and
+  `every_development_machine_only_path_is_anchored_and_uses_only_the_star_wildcard` in
+  `tests/development_machine_only_paths/tests.rs`);
   documents name the host only as `TBD_SSH_HOST`; the scratch allow-list refuses `tbd_reforger`
   (`safe_scratch_allow_list_admits_scratch_names_and_refuses_the_live_database` in
   `tests/database_operations/tests.rs`); the website deploy refuses a remote folder outside the

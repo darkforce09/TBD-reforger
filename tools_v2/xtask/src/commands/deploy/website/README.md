@@ -12,7 +12,7 @@ tools_v2/xtask/src/commands/deploy/website/
 ├── asset_preflight.rs  the remote map-asset probe, its three verdicts and the move a refusal prints
 ├── help_text.rs        the `--help` block: the settings file, its precedence rule and every key
 ├── remote_steps.rs     each remote step's shell, and the login-shell word ssh sends it as: compose, builds, restart
-├── rsync_argv.rs       the rsync argv, whose exclude list is also the `--delete` guard
+├── rsync_argv.rs       the rsync argv, whose exclude list is also the `--delete` guard, and its dry-run lines
 └── systemd_unit.rs     the default API unit name, its template path and its one-time install command
 ```
 
@@ -27,9 +27,14 @@ tools_v2/xtask/src/commands/deploy/website/
   build output (`target/`, `target-gate-*/`, `dist-gate-*/`, `node_modules`,
   `apps/website/frontend/dist/`), the server's secrets (the API's `.env` and `.tools/`,
   `deploy.env`), the served terrain tree `assets_v2/terrains/`, the scratch and equipment asset
-  trees, `packages/`, the untracked reference trees under `apps/mod/` and the local test profile.
-  With no `--delete-excluded`, every exclusion is also a path rsync never deletes on the server;
-  `assets_v2/glyphs/` is tracked and travels with the rsync.
+  trees, `packages/`, the untracked reference trees under `apps/mod/` and the local test profile,
+  followed by the patterns `deploy staging` excludes too, from
+  `tools_v2/xtask/src/commands/deploy/development_machine_only_paths.rs`: what only a
+  development machine holds, such as the cargo target folders beside `target/`, worktrees and
+  the local files of its agents and tools. With no `--delete-excluded`, every exclusion is also a
+  path rsync never deletes on the server; `assets_v2/glyphs/` is tracked and travels with the
+  rsync. `dry_run_lines` renders the transfer and one `[dry-run]   --exclude=` line per exclusion,
+  in argv order, which is what `--dry-run` prints.
 - `remote_steps`: every compose step `cd`s into `TBD_REMOTE_DIR`, exports
   `TBD_POSTGRES_HOST_PORT` and defines `staging_compose`, a shell function that runs
   `apps/website/docker-compose.staging.yml` under docker compose when the host has docker, else
@@ -57,14 +62,19 @@ tools_v2/xtask/src/commands/deploy/website/
 ## Boundaries
 
 - Depends on: `crate::core::repository_layout` (`DEPLOY_ENV`, `WEBSITE_API_UNIT`,
-  `SYSTEMD_UNITS_DIR`); `tools_v2/xtask/src/commands/deploy/website.rs` reads the settings through
-  `crate::core::deploy_environment`; on the host, the `postgres` and `caddy` services of
-  `apps/website/docker-compose.staging.yml` and the Caddyfile the `caddy` service mounts.
+  `SYSTEMD_UNITS_DIR`); `crate::commands::deploy::development_machine_only_paths` for the
+  exclusions both deploys share; `tools_v2/xtask/src/commands/deploy/website.rs` reads the
+  settings through `crate::core::deploy_environment`; on the host, the `postgres` and `caddy`
+  services of `apps/website/docker-compose.staging.yml` and the Caddyfile the `caddy` service
+  mounts.
 - Used by: `tools_v2/xtask/src/commands/deploy/website.rs`; `cargo xtask verify
   staging-compose-paths`, which reads `remote_steps.rs` as text.
 - Rules: the exclude list keeps the secrets, the asset and scratch trees
   (`rsync_excludes_the_secrets_asset_and_scratch_trees` in
-  `tools_v2/xtask/src/commands/deploy/tests/website/tests.rs`) and ends with source and destination
+  `tools_v2/xtask/src/commands/deploy/tests/website/tests.rs`) and every development-machine-only
+  path (`rsync_excludes_every_development_machine_only_path`), the dry run prints every exclusion
+  (`the_dry_run_prints_every_exclusion_the_development_machine_only_paths_included`), and the argv
+  ends with source and destination
   (`rsync_argv_keeps_source_and_destination_last`); the plan ends with the checksum repair and the
   state move (`the_remote_plan_ends_with_the_checksum_repair_and_the_state_move`), and the Caddy
   step follows compose, not the app build (`the_web_server_step_follows_compose_and_not_the_app_build`);

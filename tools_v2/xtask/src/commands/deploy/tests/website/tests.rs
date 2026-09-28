@@ -1,4 +1,5 @@
 use super::*;
+use crate::commands::deploy::development_machine_only_paths::DEVELOPMENT_MACHINE_ONLY_PATHS;
 
 #[test]
 fn prairielearn_case_insensitive() {
@@ -57,6 +58,41 @@ fn rsync_excludes_the_secrets_asset_and_scratch_trees() {
         !excluded.iter().any(|e| e.starts_with("assets_v2/glyphs")),
         "assets_v2/glyphs must not be excluded — the API serves it"
     );
+}
+
+/// Both deploys exclude what only a development machine holds, the cargo target folders beside
+/// `target/` and the local tool state among it.
+#[test]
+fn rsync_excludes_every_development_machine_only_path() {
+    let argv = rsync_argv::rsync_argv("ssh", "/repo/", "deploy@192.0.2.10:/home/deploy/tbd/repo/");
+    let excluded = rsync_argv::exclusions(&argv);
+    for pattern in DEVELOPMENT_MACHINE_ONLY_PATHS {
+        assert!(excluded.contains(pattern), "missing --exclude={pattern}");
+    }
+}
+
+/// The dry run prints one line per exclusion of the argv, the development-machine-only paths
+/// included, because each is also a path `--delete` leaves alone on the host.
+#[test]
+fn the_dry_run_prints_every_exclusion_the_development_machine_only_paths_included() {
+    let lines = rsync_argv::dry_run_lines("deploy@192.0.2.10", "/home/deploy/tbd/repo");
+    assert_eq!(
+        lines[0],
+        "[dry-run] rsync -avz --delete … deploy@192.0.2.10:/home/deploy/tbd/repo/"
+    );
+    for pattern in DEVELOPMENT_MACHINE_ONLY_PATHS {
+        let line = format!("[dry-run]   --exclude={pattern}");
+        assert!(lines.contains(&line), "the dry run lacks {line}");
+    }
+    let argv = rsync_argv::rsync_argv("", "", "");
+    let printed: Vec<&str> = lines[1..]
+        .iter()
+        .map(|line| {
+            line.strip_prefix("[dry-run]   --exclude=")
+                .expect("an exclusion line")
+        })
+        .collect();
+    assert_eq!(printed, rsync_argv::exclusions(&argv));
 }
 
 #[test]

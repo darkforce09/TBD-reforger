@@ -51,9 +51,12 @@ untracked reference trees under `apps/mod/` (the Coalition framework, the vanill
 playable selector), a `Tbd_framework` folder and the local test profile, the
 `apps/mod/tbd-export/` and `apps/mod/tbd-emcp/` addons, `node_modules`, the API's `.env` and
 `.tools/`, `deploy.env`, the `assets_v2` terrain, scratch and equipment trees, and
-`apps/website/frontend/dist/`, the app the website deploy built in the same checkout; with
-`--delete` and no `--delete-excluded`, each exclusion also keeps rsync from deleting that path on
-the server.
+`apps/website/frontend/dist/`, the app the website deploy built in the same checkout; after them
+come the patterns the website deploy excludes too, from
+`tools_v2/xtask/src/commands/deploy/development_machine_only_paths.rs`: what only a development
+machine holds, such as the cargo target folders beside `target/`, worktrees and the local files
+of its agents and tools. With `--delete` and no `--delete-excluded`, each exclusion also keeps
+rsync from deleting that path on the server.
 
 `verify_boot_remote` finds the newest `logs_*` folder under the profile, waits for
 `Server registered with address:`, pulls the log (a failed or empty pull fails the deploy), measures
@@ -66,12 +69,15 @@ missions, and `TBD_SCENARIO` seeds only a server without one.
 ## Boundaries
 
 - Depends on: `super::config::Env`, `super::payloads`, `super::boot`, `super::render` and
-  `super::host_agent`; `verification_core::proc` for spawns; ssh, sshpass and rsync on the
-  development machine, and bash, curl, systemd user units and cargo on the host, with the website
-  API that `cargo xtask deploy website` runs there.
+  `super::host_agent`; `crate::commands::deploy::development_machine_only_paths` for the
+  exclusions both deploys share; `verification_core::proc` for spawns; ssh, sshpass and rsync on
+  the development machine, and bash, curl, systemd user units and cargo on the host, with the
+  website API that `cargo xtask deploy website` runs there.
 - Used by: `run` in `tools_v2/xtask/src/commands/deploy/staging.rs`.
 - Rules: every spawn's argv is pure and pinned (`ssh_argv_plain_identity_and_sshpass`,
-  `rsync_argv_keeps_every_exclude_in_order`, `exec_start_config_mode_carries_both_flags` in
+  `rsync_argv_keeps_every_exclude_in_order`,
+  `rsync_argv_excludes_every_development_machine_only_path`,
+  `exec_start_config_mode_carries_both_flags` in
   `tools_v2/xtask/src/commands/deploy/staging/tests/remote/tests.rs`); a dry run spawns nothing
   (`dry_run_never_spawns`, `the_website_api_check_never_spawns_on_a_dry_run`); the API check names
   the health route and the website deploy
