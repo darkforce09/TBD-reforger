@@ -14,7 +14,7 @@ or on the platform's [game runtime](/documentation_v2/glossary/g_to_m.md#game-ru
 documentation_v2/runbooks/game_server_staging/
 ├── boot_and_log_verification.md                    the boot verdict, `mod remote-logs` and the log lines
 ├── client_join_and_mod_updates.md                  Direct Join, launch flags, ports, script changes
-├── host_preparation.md                             one-time host setup: deploy.env, server, API, firewall
+├── host_preparation.md                             one-time host setup: name, deploy.env, build tools, server, API, firewall
 ├── machine_credentials_and_mission_deployment.md   credentials, event binding, mission deployment
 └── staging_deploy.md                               `deploy staging`: settings, stages, host agent
 ```
@@ -101,8 +101,8 @@ Facts every topic relies on:
 
 - Depends on: the [runbook template](/documentation_v2/standards/templates/runbook.md); the xtask
   `deploy`, `mod`, `setup` and `debug` command trees; `tools_v2/xtask/deploy/deploy.env.example`;
-  `apps/website/docker-compose.staging.yml`; the mod's log lines under
-  `apps/mod/tbd-framework/Scripts/Game/TBD/`.
+  the website on the same host, which `cargo xtask deploy website` puts there; the mod's log
+  lines under `apps/mod/tbd-framework/Scripts/Game/TBD/`.
 - Used by: `cargo xtask mod bootstrap-staging` and `cargo xtask mod dev-server`, which print this
   README's path (`STAGING_SERVER_RUNBOOK` in `tools_v2/xtask/src/core/repository_layout.rs`); code
   comments in `TBD_Log.c`, `TBD_FrameworkManager.c`, `modpack_admin.rs` and
@@ -114,8 +114,9 @@ Facts every topic relies on:
 
 ## Related documentation
 
-- [Website deployment](/documentation_v2/runbooks/website_deployment.md) — running the API and
-  Postgres on the same host, which the staging deploy needs.
+- [Website deployment](/documentation_v2/runbooks/website_deployment.md) — running the API,
+  Postgres and Caddy on the same host; the staging deploy checks that the API answers before it
+  changes anything.
 - [Two-client playtest](/documentation_v2/runbooks/two_client_playtest/README.md) — a joinable,
   mod-loaded server on a development machine with `cargo xtask mod playtest`.
 - [Fleet host agent](/documentation_v2/fleet_host_agent/README.md) — the agent the deploy can

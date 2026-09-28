@@ -12,7 +12,7 @@ tools_v2/xtask/src/verifications/
 ├── architecture/                    engine layer walls, API route tags, Mission Creator ORBAT coherency
 ├── ci/                              workflow `run:` step rules and CI schema parity
 ├── database/                        faction library and wiki seed pins, and the API's SELECT * ban
-├── deployment/                      the staging deploy's compose file path
+├── deployment/                      the staging compose file's one owner, the website deploy
 ├── documentation/                   the readme-coverage, markdown-placement and link-check gates
 ├── language_bans/                   the shell, Python and Node bans and the file length limits
 ├── licensing/                       upstream framework identifiers and asset GUIDs kept out of the addons

@@ -13,7 +13,7 @@ API's release image and staging stack.
 ```text
 apps/website/
 ├── api_v2/                     the REST API and SSE hub, crate `website-api`
-├── docker-compose.staging.yml  the staging stack: Postgres, and the API under the `api` profile
+├── docker-compose.staging.yml  the staging stack: Postgres, the Caddy web server, and the API under the `api` profile
 ├── Dockerfile                  the API's release image, built from the repository root
 ├── frontend/                   the single-page app, crate `website-frontend`, built by Trunk
 ├── graphics-engine/            GPU rendering with no map concept, crate `website-graphics-engine`
@@ -74,21 +74,31 @@ guide to frame rate. The map needs the Everon height map and satellite bundle fr
 - `docker-compose.staging.yml` defines:
   - `postgres`: Postgres 18, container `tbd_staging_db`, user `tbd`, database `tbd_reforger`,
     password `POSTGRES_PASSWORD`, bound to loopback on `TBD_POSTGRES_HOST_PORT` (5432 by default);
+  - `caddy`: the `caddy:2` image, container `tbd_staging_caddy`, on the host's network, running
+    `tools_v2/xtask/deploy/Caddyfile.website`: it serves the built app on `:3080` and proxies the
+    API's paths to `127.0.0.1:8080`. It mounts `tools_v2/xtask/deploy/` at `/etc/tbd-caddy` and
+    `frontend/` at `/srv/tbd-frontend`, both read-only and both folders rather than the Caddyfile
+    or `dist` themselves, which the rsync and Trunk replace; its state lives on two named volumes;
   - `api`, under the `api` profile only: the image built from the `Dockerfile`, container
     `tbd_staging_api`, bound to loopback port 8080, set up from the shell's `APP_ENV`, `JWT_SECRET`,
     `FRONTEND_URL`, `ALLOWED_ORIGINS`, `OBSERVABILITY_TOKEN`, `TRUSTED_PROXIES` and `DISCORD_*` values,
     with `assets_v2/terrains/` and `assets_v2/glyphs/` mounted read-only and the uploads on a named
     volume.
 
+  `postgres` and `caddy` restart `unless-stopped`, so the container runtime brings them back at
+  boot. Compose names the project after this folder, `website`, and the named volumes carry that
+  prefix on the host.
+
 ## Installed by
 
 - `cargo xtask deploy website` rsyncs the checkout to the host that `TBD_SSH_HOST` names in
   `tools_v2/xtask/deploy/deploy.env`, starts the compose file's `postgres` service there with
-  `TBD_POSTGRES_HOST_PORT` from that file (`TBD_SKIP_COMPOSE=1` skips the step), builds the API
-  and a release build of the app there, and restarts the API's systemd unit, `tbd-website-api` by
-  default; the deployed API does not run from the image.
-- `cargo xtask deploy staging` runs
-  `docker compose -f apps/website/docker-compose.staging.yml up -d --build` on that host.
+  `TBD_POSTGRES_HOST_PORT` from that file, builds the API and a release build of the app there,
+  starts the `caddy` service and has it reload the Caddyfile (`TBD_SKIP_COMPOSE=1` skips both
+  compose steps), and restarts the API's systemd unit, `tbd-website-api` by default; the deployed
+  API does not run from the image. It is the only command that runs this compose file:
+  `cargo xtask deploy staging` only checks that the API answers
+  (`cargo xtask verify staging-compose-paths` holds both).
 - By hand, `docker build -f apps/website/Dockerfile .` from the repository root builds the image,
   as does the compose file with `--profile api`.
 

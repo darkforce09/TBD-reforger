@@ -69,7 +69,7 @@ the API's release image and the staging compose stack.
 ```text
 apps/website/
 ├── api_v2/                     the REST API and SSE hub, crate `website-api`
-├── docker-compose.staging.yml  the staging stack: Postgres, and the API under the `api` profile
+├── docker-compose.staging.yml  the staging stack: Postgres, Caddy, and the API under the `api` profile
 ├── Dockerfile                  the API's release image, built from the repository root
 ├── frontend/                   the single-page app, crate `website-frontend`, built by Trunk
 ├── graphics-engine/            GPU rendering with no map concept, crate `website-graphics-engine`
@@ -119,20 +119,21 @@ to the API. In development, `/api/v1/auth/dev-login?role=admin` signs in without
   The runtime image runs as uid 65534, listens on `PORT` (8080), needs `DATABASE_URL` and
   `JWT_SECRET`, and does not serve the app.
 - `docker-compose.staging.yml` defines `postgres` (Postgres 18, container `tbd_staging_db`, bound to
-  loopback on `TBD_POSTGRES_HOST_PORT`, 5432 by default, password `POSTGRES_PASSWORD`) and, under the
-  `api` profile, `api`: the image built from the `Dockerfile`, bound to loopback port 8080 and set up
+  loopback on `TBD_POSTGRES_HOST_PORT`, 5432 by default, password `POSTGRES_PASSWORD`), `caddy` (the
+  web server on the host's `:3080`, running `tools_v2/xtask/deploy/Caddyfile.website`) and, under
+  the `api` profile, `api`: the image built from the `Dockerfile`, bound to loopback port 8080 and set up
   from the shell's `APP_ENV`, `JWT_SECRET`, `FRONTEND_URL`, `ALLOWED_ORIGINS`, `OBSERVABILITY_TOKEN`,
   `TRUSTED_PROXIES` and `DISCORD_*` values, with the terrain and glyph trees mounted read-only and the
   uploads on a named volume.
 
 ## Installed by
 
-- `cargo xtask deploy website` starts the compose file's `postgres` service on the host that
-  `TBD_SSH_HOST` names, with `TBD_POSTGRES_HOST_PORT` taken from
-  `tools_v2/xtask/deploy/deploy.env` (`TBD_SKIP_COMPOSE=1` skips the step). The API itself runs
-  there as the `tbd-website-api` systemd unit, not from the image.
-- `cargo xtask deploy staging` runs
-  `docker compose -f apps/website/docker-compose.staging.yml up -d --build` on that host.
+- `cargo xtask deploy website` starts the compose file's `postgres` and `caddy` services on the
+  host that `TBD_SSH_HOST` names, with `TBD_POSTGRES_HOST_PORT` taken from
+  `tools_v2/xtask/deploy/deploy.env` (`TBD_SKIP_COMPOSE=1` skips both). The API itself runs there
+  as the `tbd-website-api` systemd unit, not from the image.
+- `cargo xtask deploy staging` runs no compose command; it checks that the API answers on that
+  host.
 - The image is built by that compose file with `--profile api`, or by hand with
   `docker build -f apps/website/Dockerfile .` from the repository root.
 

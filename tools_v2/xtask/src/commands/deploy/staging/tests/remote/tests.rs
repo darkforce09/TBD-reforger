@@ -88,6 +88,8 @@ fn rsync_argv_keeps_every_exclude_in_order() {
         "--exclude=assets_v2/terrains/",
         "--exclude=assets_v2/scratch/",
         "--exclude=assets_v2/equipment/",
+        // The app the website deploy built on the host, which the staging Caddy serves.
+        "--exclude=apps/website/frontend/dist/",
     ] {
         assert!(argv.iter().any(|a| a == needed), "missing {needed}");
     }
@@ -168,6 +170,39 @@ fn not_run_never_reads_as_success() {
             secs: 7200
         }),
         1
+    );
+}
+
+/// The check asks for the health route under the URL the mod calls, and its refusal sends the
+/// operator to the command that owns the website stack.
+#[test]
+fn the_website_api_check_names_the_health_route_and_the_website_deploy() {
+    assert_eq!(
+        website_api_health_url("http://127.0.0.1:8080"),
+        "http://127.0.0.1:8080/healthz"
+    );
+    assert_eq!(
+        website_api_health_url("https://api.example.test/"),
+        "https://api.example.test/healthz"
+    );
+    let refusal = website_api_refusal("http://127.0.0.1:8080/healthz", 7);
+    assert!(
+        refusal.starts_with("ERROR: http://127.0.0.1:8080/healthz does not answer"),
+        "{refusal}"
+    );
+    assert!(refusal.contains("(probe exit 7)"), "{refusal}");
+    assert!(
+        refusal.contains("`cargo xtask deploy website`"),
+        "{refusal}"
+    );
+}
+
+#[test]
+fn the_website_api_check_never_spawns_on_a_dry_run() {
+    let r = Runner { dry_run: true };
+    assert_eq!(
+        require_website_api(&r, &SshBase::Pass("pw".into()), "deploy@h", &base()),
+        Ok(())
     );
 }
 

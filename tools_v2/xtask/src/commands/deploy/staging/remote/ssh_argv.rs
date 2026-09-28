@@ -1,3 +1,22 @@
+//! The staging deploy pipeline and the argument lists it spawns.
+//!
+//! **Role:** [`deploy`] runs the whole game server deploy in order: the website API check, the
+//! rsync, the profile, the game-runtime smoke, the server config and unit, the boot verdict, the
+//! host agent and the final log check; beside it sit the pure `ssh` and `rsync` argv builders,
+//! `ExecStart` per launch mode, and the exit-code reading of `mod remote-logs`.
+//!
+//! **Position:** called by `run` in `tools_v2/xtask/src/commands/deploy/staging.rs` through
+//! [`super::deploy`]; it sends through [`super::Runner`], which prints instead of spawning on a
+//! dry run, and takes every remote script from `super::super::payloads`.
+//!
+//! **Signals & state:** none held; one run spawns `rsync`, `ssh` and the `mod remote-logs` child.
+//!
+//! **Invariants:** the deploy stops at the first step that fails, with that step's code, or with 1
+//! when the website API does not answer; it runs no compose command, because the website stack on
+//! the host belongs to `cargo xtask deploy website` (`cargo xtask verify staging-compose-paths`
+//! holds that); the rsync excludes every path the host keeps for itself, which `--delete` then
+//! leaves alone.
+
 use super::*;
 use crate::core::deploy_environment::DEPLOY_ENV_OVERRIDE_VARIABLE;
 
@@ -11,7 +30,7 @@ pub fn ssh_argv(base: &SshBase, host: &str, remote: &[String]) -> Vec<String> {
     argv
 }
 
-/// The full `rsync` argv. The exclude list is the licence boundary described in the module header;
+/// The full `rsync` argv. The exclude list is the licence boundary described in [`super`]'s header;
 /// the ORDER is the bash's, because a wave log diff should not show reordered flags.
 pub fn rsync_argv(base: &SshBase, mono_root: &Path, host: &str, remote_dir: &str) -> Vec<String> {
     vec![
@@ -39,6 +58,10 @@ pub fn rsync_argv(base: &SshBase, mono_root: &Path, host: &str, remote_dir: &str
         "--exclude=assets_v2/terrains/".into(),
         "--exclude=assets_v2/scratch/".into(),
         "--exclude=assets_v2/equipment/".into(),
+        // The app `cargo xtask deploy website` built on the host, in the checkout both deploys
+        // share, and which the staging Caddy serves: this rsync must neither replace it with the
+        // development machine's build nor delete it.
+        "--exclude=apps/website/frontend/dist/".into(),
         format!("{}/", mono_root.display()),
         format!("{host}:{remote_dir}/"),
     ]
@@ -171,6 +194,20 @@ pub fn deploy(paths: &Paths, cli: &Cli) -> Result<u8> {
     let host = env.deploy_host.ssh_destination();
     // The one address the backend room advertises, derived from TBD_SSH_HOST unless set.
     println!("==> publicAddress {}", env.public_address);
+
+    // ── the website API this server depends on ──────────────────────────────────────────────
+    // First, before anything changes on the host: the website stack (API, Postgres, Caddy) is
+    // `cargo xtask deploy website`'s, and this deploy only checks that the API answers.
+    let health_url = website_api_health_url(&env.backend_url);
+    println!("==> website API ({health_url} on the host)");
+    if cli.dry_run {
+        println!(
+            "[dry-run] curl -sSf {health_url} on the host; the deploy stops unless it answers"
+        );
+    } else if let Err(code) = require_website_api(&runner, &base, &host, &env) {
+        return Ok(code);
+    }
+
     // ── rsync ───────────────────────────────────────────────────────────────────────────────
     println!("==> rsync to {}", env.remote_dir);
     if cli.dry_run {
@@ -207,26 +244,6 @@ pub fn deploy(paths: &Paths, cli: &Cli) -> Result<u8> {
         &host,
         &["bash".to_string(), "-s".to_string()],
         Some(profile_payload(&env)),
-    ) {
-        return Ok(code);
-    }
-
-    // ── docker compose ──────────────────────────────────────────────────────────────────────
-    // The compose file lives at apps/website/docker-compose.staging.yml, not under
-    // apps/website/api_v2/. Match `cargo xtask deploy website`.
-    println!("==> docker compose (API + Postgres)");
-    if cli.dry_run {
-        println!(
-            "[dry-run] cd $TBD_REMOTE_DIR && docker compose -f apps/website/docker-compose.staging.yml up -d --build"
-        );
-    } else if let Err(code) = runner.ssh_ok(
-        &base,
-        &host,
-        &[format!(
-            "cd '{}' && docker compose -f apps/website/docker-compose.staging.yml up -d --build",
-            env.remote_dir
-        )],
-        None,
     ) {
         return Ok(code);
     }

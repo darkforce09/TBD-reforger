@@ -82,7 +82,7 @@ pub(crate) enum VerifyCmd {
         #[arg(long = "path", value_name = "PATH")]
         paths: Vec<String>,
     },
-    /// `deploy staging` must resolve the compose file by an absolute path
+    /// `deploy website` names the staging compose file in every compose step; `deploy staging` runs none
     #[command(name = "staging-compose-paths")]
     StagingComposePaths,
     /// Faction library seed reaches the DB

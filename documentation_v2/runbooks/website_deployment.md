@@ -4,20 +4,24 @@
 
 Deploys the website [API](/documentation_v2/glossary/a_to_f.md#api) and the single-page app to the home
 server: `cargo xtask deploy website` copies the checkout to the host, starts the staging Postgres,
-builds the release API and the app there and restarts the API's systemd user unit; Caddy serves
-the app on port 3080 and a Cloudflare Tunnel can publish it. The first
+builds the release API and the app there, starts the Caddy web server and reloads its
+configuration, and restarts the API's systemd user unit. Caddy serves the app on port 3080 and a
+Cloudflare Tunnel can publish it. Postgres and Caddy run from the staging compose file, so the
+container runtime brings both back after a reboot. The first
 [deployment](/documentation_v2/glossary/a_to_f.md#deployment) runs Phases A to E once, about an hour with
 the server-side builds; every later one is the single command under
 [Redeploy](#redeploy). The dedicated game server on the same host has its own runbook,
 [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md).
 
 ```text
-browser ──▶ Cloudflare Tunnel (optional, Phase E) ──▶ Caddy :3080  (tools_v2/xtask/deploy/Caddyfile.website)
+browser ──▶ Cloudflare Tunnel (optional, Phase E) ──▶ Caddy :3080  (container tbd_staging_caddy, host network)
+                                                      │  site: tools_v2/xtask/deploy/Caddyfile.website
                                                       ├── /api/*, /uploads/*, /map-assets/*, /healthz
                                                       │     ──▶ API 0.0.0.0:8080  (tbd-website-api.service, Phase D)
                                                       └── every other path ──▶ apps/website/frontend/dist
-API ──▶ Postgres tbd_staging_db on 127.0.0.1:${TBD_POSTGRES_HOST_PORT:-5432}  (apps/website/docker-compose.staging.yml)
+API ──▶ Postgres tbd_staging_db on 127.0.0.1:${TBD_POSTGRES_HOST_PORT:-5432}
 API uploads ──▶ ~/.local/state/tbd-website-api/uploads  (outside the checkout)
+apps/website/docker-compose.staging.yml runs tbd_staging_caddy and tbd_staging_db (restart: unless-stopped)
 ```
 
 The host is whatever `TBD_SSH_HOST` names in `tools_v2/xtask/deploy/deploy.env`; this runbook
@@ -35,20 +39,27 @@ On the development machine:
   keeps its address through a router DHCP reservation, because the game server's public address is
   fixed at deploy time.
 
-On the host:
+On the host, which [Prepare the staging host](/documentation_v2/runbooks/game_server_staging/host_preparation.md)
+sets up on Ubuntu:
 
 - docker or podman with a compose provider; the deploy tries `docker compose` first, then
-  `podman compose`. Check: `docker compose version` or `podman compose version`.
-- rustup under `~/.cargo/bin`, with Trunk installed there too: the remote build steps put only
-  `$HOME/.cargo/bin` on `PATH`. The root `rust-toolchain.toml` pins 1.95.0 with the
-  `wasm32-unknown-unknown` target, and rustup installs it on the first build. Check:
-  `~/.cargo/bin/trunk --version`.
-- Caddy, and cloudflared only for the tunnel in Phase E.
-- Ports 3080, 8080 and the Postgres port free: `ss -tlnp`. The host runs other services; the
-  deploy refuses a `TBD_REMOTE_DIR`, `TBD_SSH_HOST` or `TBD_PROFILE_DIR` that contains
-  `prairielearn` in any case, and a `TBD_REMOTE_DIR` outside the deploy user's `/home/<user>/tbd/`
-  that `require_tbd_remote_prefix` checks (`tools_v2/xtask/src/commands/deploy/website.rs`),
-  because the rsync runs with `--delete`.
+  `podman compose`. Check: `docker compose version` or `podman compose version`. The runtime
+  must start at boot, because it is what restarts Postgres and Caddy: `systemctl is-enabled docker`
+  prints `enabled`; on a Podman host, `systemctl --user enable podman-restart.service` does it for
+  the deploy user.
+- No Caddy install: Caddy runs in the `caddy` service of `apps/website/docker-compose.staging.yml`,
+  and the deploy pulls its image.
+- A C toolchain (`build-essential`) and rustup under `~/.cargo/bin`, with Trunk installed there
+  too: the remote build steps put only `$HOME/.cargo/bin` on `PATH`. The root
+  `rust-toolchain.toml` pins 1.95.0 with the `wasm32-unknown-unknown` target, and rustup installs
+  it on the first build. Check: `~/.cargo/bin/trunk --version`.
+- cloudflared, only for the tunnel in Phase E.
+- Ports 3080, 8080, 2019 (Caddy's admin endpoint, on localhost) and the Postgres port free:
+  `ss -tlnp`. The host runs other services; the deploy refuses a `TBD_REMOTE_DIR`,
+  `TBD_SSH_HOST` or `TBD_PROFILE_DIR` that contains `prairielearn` in any case, and a
+  `TBD_REMOTE_DIR` outside the deploy user's `/home/<user>/tbd/` that
+  `require_tbd_remote_prefix` checks (`tools_v2/xtask/src/commands/deploy/website.rs`), because
+  the rsync runs with `--delete`.
 - Disk space: the website needs little; the game server beside it needs at least 30 GB
   (`df -h ~`).
 
@@ -83,8 +94,8 @@ Run the development-machine steps from the repository root; a step that runs on 
    probe, the rsync with one `[dry-run]   --exclude=` line per protected path (`.git/`,
    `target/`, the gate build folders, `node_modules/`, `apps/website/frontend/dist/`, the server's
    `apps/website/api_v2/.env`, `tools_v2/xtask/deploy/deploy.env`, `assets_v2/terrains/`,
-   `assets_v2/scratch/`, `packages/` and the reference mod folders), the five remote steps below,
-   `==> remote: restart tbd-website-api.service`, the Caddy hint,
+   `assets_v2/scratch/`, `packages/` and the reference mod folders), the six remote steps below,
+   `==> remote: restart tbd-website-api.service`,
    `==> unit: tools_v2/xtask/deploy/systemd/tbd-website-api.service is installed by hand (see documentation_v2/runbooks/website_deployment.md Phase D)`,
    the smoke hints and `==> done`. The printed list is the authority; the code is
    `tools_v2/xtask/src/commands/deploy/website/rsync_argv.rs`.
@@ -94,8 +105,12 @@ Run the development-machine steps from the repository root; a step that runs on 
    | `staging Postgres (docker compose)` | `compose -f apps/website/docker-compose.staging.yml up -d postgres` with `TBD_POSTGRES_HOST_PORT`; skipped by `TBD_SKIP_COMPOSE=1` |
    | `cargo build --release -p website-api --bin api` | the release API into `target/release/api`; skipped by `TBD_SKIP_API_BUILD=1` |
    | `trunk build --release (Leptos SPA → frontend/dist)` | the app into `apps/website/frontend/dist`; skipped by `TBD_SKIP_SPA_BUILD=1` |
+   | `staging Caddy on :3080 (docker compose), then reload its Caddyfile` | `compose … up -d caddy`, then `compose … exec -T caddy caddy reload --config /etc/tbd-caddy/Caddyfile.website --adapter caddyfile`, up to 5 attempts a second apart; skipped by `TBD_SKIP_COMPOSE=1`, and still run with `TBD_SKIP_SPA_BUILD=1`, serving the `dist` already on the host |
    | `repoint the checksums of comments-only migration edits` | `TBD_DB_CONTAINER=tbd_staging_db cargo xtask db repair-migration-checksum --force` |
    | `move runtime files into the unit's state directory` | creates `~/.local/state/tbd-website-api/uploads` and moves an `uploads` folder left inside `apps/website/api_v2/` into it |
+
+   Every compose step runs from `<TBD_REMOTE_DIR>` with `TBD_POSTGRES_HOST_PORT` exported, under
+   `docker compose` when the host has docker and `podman compose` otherwise.
 
    A failing step stops the deploy before the restart, so the running API keeps serving the
    previous build. A failed restart only warns: the code is on the host by then.
@@ -125,7 +140,7 @@ deploy's login shell (the remote steps run through `bash -lc`), and falls back t
 Export a real one in the deploy user's `~/.profile` before the first deploy: the container keeps
 the password its volume was first created with. The database listens on the host's loopback only.
 
-### Phase C — Sync, build and start Postgres
+### Phase C — Sync, build and start the compose services
 
 5. Run the deploy.
 
@@ -136,7 +151,8 @@ the password its volume was first created with. The database listens on the host
    Expected on the first run: the probe prints
    `WARN: no map asset tree on the server (neither assets_v2/terrains nor packages/map-assets).`
    and continues, rsync lists the files it copies, compose starts `tbd_staging_db`, both builds
-   finish, and then the checksum repair stops the deploy with
+   finish, compose starts `tbd_staging_caddy` and Caddy takes the Caddyfile, and then the checksum
+   repair stops the deploy with
    `could not read _sqlx_migrations (psql exit 1)` and exit 1, because a fresh database has no
    migration table until the API first boots. Phase D boots it; the [redeploy](#redeploy) then
    runs through. Once the API has applied its migrations, the deploy runs to the end: it prints
@@ -239,28 +255,33 @@ run one or the other.
 
 ### Phase E — Caddy and the Cloudflare Tunnel
 
-12. On the host, check the site root in the Caddyfile. `tools_v2/xtask/deploy/Caddyfile.website`
-    names the built app's folder as a fixed absolute path, which matches the template's
-    `TBD_REMOTE_DIR`; edit that `root` line on the host when the checkout sits elsewhere, then
-    confirm it.
+12. On the host, check that Caddy serves the app. Nothing is installed or started by hand: the
+    deploy starts the compose file's `caddy` service, container `tbd_staging_caddy`, and reloads
+    `tools_v2/xtask/deploy/Caddyfile.website` in it, so an edited Caddyfile applies with the next
+    deploy. The service mounts `tools_v2/xtask/deploy/` at `/etc/tbd-caddy` and
+    `apps/website/frontend/` at `/srv/tbd-frontend`, both read-only, and serves
+    `/srv/tbd-frontend/dist`, wherever the checkout sits.
 
     ```bash
-    grep -n 'root \*' <TBD_REMOTE_DIR>/tools_v2/xtask/deploy/Caddyfile.website
+    curl -sfI http://127.0.0.1:3080/
     ```
 
-    Expected: one line naming `<TBD_REMOTE_DIR>/apps/website/frontend/dist`.
+    Expected: `HTTP/1.1 200 OK` with `Cross-Origin-Opener-Policy: same-origin` and
+    `Cross-Origin-Embedder-Policy: credentialless` (the Mission Creator's WebAssembly needs both).
+    Caddy proxies `/api/*`, `/uploads/*`, `/map-assets/*` and `/healthz` to `127.0.0.1:8080`, and
+    serves every other path from the built app with an `index.html` fallback.
 
-13. On the host, start Caddy on the site. Later changes to the file take
-    `caddy reload --config` with the same path, the line every deploy prints.
+13. On the host, check that Postgres and Caddy come back after a reboot: the container runtime
+    restarts both, because the compose file gives them `restart: unless-stopped`.
 
     ```bash
-    caddy start --config <TBD_REMOTE_DIR>/tools_v2/xtask/deploy/Caddyfile.website
+    docker inspect --format '{{.Name}} {{.HostConfig.RestartPolicy.Name}}' tbd_staging_caddy tbd_staging_db && systemctl is-enabled docker
     ```
 
-    Expected: Caddy listens on `:3080`, sends `Cross-Origin-Opener-Policy: same-origin` and
-    `Cross-Origin-Embedder-Policy: credentialless` (the Mission Creator's WebAssembly needs both),
-    proxies `/api/*`, `/uploads/*`, `/map-assets/*` and `/healthz` to `127.0.0.1:8080`, and serves
-    every other path from the built app with an `index.html` fallback.
+    Expected: `/tbd_staging_caddy unless-stopped`, `/tbd_staging_db unless-stopped`, then
+    `enabled`. On a Podman host, `podman inspect` with the same arguments prints the two names
+    without the leading slash, and `systemctl --user is-enabled podman-restart.service` prints
+    `enabled`.
 
 14. Publish the site through the tunnel. No command: in Cloudflare Zero Trust, under Networks and
     Tunnels, add a public hostname for the site to the host's tunnel with the service
@@ -287,7 +308,8 @@ run one or the other.
     Expected: every step of the dry run in step 2 runs, the restart prints `active`, and the deploy
     ends with `==> done`. The checksum repair prints
     `every applied migration examined matches its file. Nothing to repair.` unless a migration's
-    comments changed. Caddy serves the new build at once; it reads the built files per request.
+    comments changed. Caddy serves the new build at once, since it reads the built files per
+    request, and the Caddy step's reload applies a changed Caddyfile.
 
 ### Game server credentials
 
@@ -314,12 +336,14 @@ Run the checks on the host unless the row says otherwise.
 |---|---|---|
 | ssh, from the development machine | `ssh <TBD_SSH_HOST> true` | exit 0 |
 | Postgres | `docker exec tbd_staging_db pg_isready -U tbd -d tbd_reforger` (or `podman exec`) | `accepting connections` |
+| Caddy container | `docker ps --filter name=tbd_staging_caddy --format '{{.Status}}'` (or `podman ps`) | `Up …` |
 | API | `curl -sf http://127.0.0.1:8080/healthz` | `{"status":"ok"}` |
 | app through Caddy | `curl -sfI http://127.0.0.1:3080/` | `HTTP/1.1 200 OK` |
 | API through Caddy | `curl -sf http://127.0.0.1:3080/healthz` | `{"status":"ok"}` |
+| after a reboot | the Caddy and Postgres rows again, with nothing started by hand | the same answers |
 | tunnel | the public hostname in a browser | the app loads |
 | sign-in | Discord sign-in in the browser | back on `/auth/callback`, signed in |
-| isolation | `ss -tlnp` | the website holds only 3080, 8080 and the Postgres port; the other services keep theirs |
+| isolation | `ss -tlnp` | the website holds only 3080, 8080, the Postgres port and Caddy's admin endpoint on `localhost:2019`; the other services keep theirs |
 
 `/healthz` answers 503 with `{"status":"unavailable"}` while the database is down or the
 migrations are unreadable. The API has no other health route.
@@ -342,7 +366,11 @@ migrations are unreadable. The API has no other health route.
 | the journal shows `DISCORD_CLIENT_ID is required` (or the secret or redirect) | outside development the three Discord settings are required | step 6 |
 | `UPLOAD_DIR is malformed: must be an absolute path outside development` | the API was started without the unit, which sets it | start it through the unit (steps 8 to 10) |
 | every `/map-assets` request answers 404 and the journal says nothing | the terrain tree is missing, or the API runs with another working directory; the asset server never checks its root | put the tree at `assets_v2/terrains/`, and run the API through the unit, which pins both folders |
-| the Mission Creator reports that `SharedArrayBuffer` is missing | the page is not served through the Caddyfile, so it lacks the cross-origin isolation headers | serve the app through Caddy (step 13) |
+| the Mission Creator reports that `SharedArrayBuffer` is missing | the page is not served through the Caddyfile, so it lacks the cross-origin isolation headers | open the site through Caddy on port 3080 or the tunnel (step 12) |
+| the deploy stops at `staging Caddy on :3080 …`, and `docker logs tbd_staging_caddy` shows `address already in use` | another process holds port 3080 or Caddy's admin port 2019 on the host, such as a Caddy started outside the compose file | stop it (`caddy stop` for such a Caddy; `ss -tlnp` names the holder), then deploy again |
+| the deploy stops at the Caddy step with `adapting config using caddyfile: …` | the Caddyfile does not parse; a running Caddy keeps its previous configuration | fix `tools_v2/xtask/deploy/Caddyfile.website`, then deploy again |
+| every page but the API paths answers 404 | there is no `apps/website/frontend/dist` on the host: the app build was skipped (`TBD_SKIP_SPA_BUILD=1`) or never ran | deploy without `TBD_SKIP_SPA_BUILD` |
+| Caddy and Postgres are gone after a reboot | the container runtime does not start at boot | `sudo systemctl enable --now docker`; on a Podman host, `systemctl --user enable --now podman-restart.service` with lingering on (step 4) |
 | the API stops when the deploy user logs out | lingering is off | step 4 |
 | the backup timers fail to find their container | the backup units name `tbd_reforger_db`; the deploy's compose starts `tbd_staging_db` | [Database operations](/documentation_v2/runbooks/database_operations.md#schedule-the-home-servers-backups) |
 

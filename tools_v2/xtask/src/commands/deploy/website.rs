@@ -1,21 +1,30 @@
-//! `cargo xtask deploy website` — rsync the monorepo to the server, bring up staging Postgres,
-//! build the release API and the Leptos SPA there, restart the user-systemd unit, print the
-//! Caddy hints.
+//! `cargo xtask deploy website` — rsync the monorepo to the server, start the staging Postgres,
+//! build the release API and the Leptos SPA there, start and reload the Caddy web server, and
+//! restart the API's user-systemd unit.
 //!
-//! Two refusals shape the command. The settings come from `deploy.env` through
-//! [`crate::core::deploy_environment`], which parses and never executes it, so a deploy cannot be
-//! turned into arbitrary shell by editing a configuration file; a missing, unreadable or
-//! malformed file exits 1 rather than deploying with defaults. Live `rsync`, `ssh` and `sshpass`
-//! run through `verification_core::proc::Run`, so a missing tool or a killed child is reported as
-//! itself and can never fold into "deploy succeeded".
+//! **Role:** reads the deploy settings, refuses what the `--delete` rsync must never touch, and
+//! runs the steps in order: the map-asset probe, the rsync, the remote steps of
+//! [`remote_steps`], and the restart.
 //!
-//! The rsync runs with `--delete`, so `TBD_REMOTE_DIR` must sit under the deploy user's
-//! `/home/<user>/tbd` (from `TBD_SSH_HOST`), and a host named without a user is refused. Two
-//! behaviours are deliberate and easy to misread as bugs. Trailing slashes on `TBD_REMOTE_DIR`
-//! are stripped only for that prefix check — echoed remote paths and `cd '…'` payloads keep the
-//! operator's raw value, so what is printed is what runs. And a failed `systemctl --user restart`
-//! warns instead of aborting: the code and the database are already on the server by then, so the
-//! deploy is done and the restart is the operator's to finish.
+//! **Position:** called by `cargo xtask deploy website` from the development machine; the
+//! settings come from `deploy.env` through [`crate::core::deploy_environment`], and every remote
+//! step's text comes from [`remote_steps`], so `--dry-run` prints exactly what a live run sends.
+//!
+//! **Signals & state:** none held; one run spawns `rsync`, `ssh` and `sshpass` through
+//! `verification_core::proc::Run` and prints their merged output.
+//!
+//! **Invariants:** a missing, unreadable or malformed `deploy.env` exits 1 rather than deploying
+//! with defaults, and the file is parsed, never executed; a missing tool or a killed child is
+//! reported as itself and never folds into "deploy succeeded"; `TBD_REMOTE_DIR` sits under the
+//! deploy user's `/home/<user>/tbd` (from `TBD_SSH_HOST`), and a host named without a user is
+//! refused; a failing remote step stops the deploy before the restart, so the running API keeps
+//! serving the previous build.
+//!
+//! Two behaviours are deliberate and easy to misread as bugs. Trailing slashes on
+//! `TBD_REMOTE_DIR` are stripped only for that prefix check — echoed remote paths and `cd '…'`
+//! payloads keep the operator's raw value, so what is printed is what runs. And a failed
+//! `systemctl --user restart` warns instead of aborting: the code and the database are already on
+//! the server by then, so the deploy is done and the restart is the operator's to finish.
 
 use std::io::{self, Write};
 use std::path::PathBuf;
@@ -191,7 +200,7 @@ impl DeployCfg {
         } else {
             // A failed restart warns and the deploy continues: the code is already on the
             // server, and aborting here would leave the operator without the hints below.
-            match self.ssh_cmd_status(&["bash", "-lc", &restart]) {
+            match self.ssh_login_shell_status(&restart) {
                 Ok(0) => {}
                 Ok(_) | Err(_) => {
                     eprintln!(
@@ -210,17 +219,6 @@ impl DeployCfg {
             }
         }
 
-        println!("==> Caddy");
-        println!(
-            "    Ensure {} is loaded on the server",
-            repository_layout::CADDYFILE
-        );
-        println!("    (root → $TBD_REMOTE_DIR/apps/website/frontend/dist; proxy /api → :8080).");
-        println!(
-            "    Example: caddy reload --config '{}/{}'",
-            self.remote_dir,
-            repository_layout::CADDYFILE
-        );
         println!(
             "==> unit: {} is installed by hand (see {} Phase D)",
             systemd_unit::template_for(&self.systemd_unit),
@@ -237,16 +235,22 @@ impl DeployCfg {
         Ok(0)
     }
 
-    /// The ordered remote steps between the rsync and the restart. The checksum repair and the
-    /// state-directory move come last, once the new tree is on the server and before the unit picks
-    /// it up: a comments-only migration edit must be repointed before the new binary boots, or the
-    /// boot refuses it, and the runtime files must already be where the unit's environment points.
+    /// The ordered remote steps between the rsync and the restart.
+    ///
+    /// Postgres comes first, because the API build and the checksum repair need it. The web
+    /// server follows the app build and belongs to compose, not to the build: `TBD_SKIP_COMPOSE`
+    /// drops both compose steps, and `TBD_SKIP_SPA_BUILD` drops only the build, so Caddy still
+    /// starts, reloads its Caddyfile and serves the `dist` already on the host. The checksum
+    /// repair and the state-directory move come last, once the new tree is on the server and
+    /// before the unit picks it up: a comments-only migration edit must be repointed before the
+    /// new binary boots, or the boot refuses it, and the runtime files must already be where the
+    /// unit's environment points.
     fn remote_plan(&self) -> Vec<RemoteStep> {
         let mut plan = Vec::new();
         if !self.skip_compose {
             plan.push(RemoteStep::new(
                 "staging Postgres (docker compose)",
-                remote_steps::compose_up(&self.remote_dir, &self.postgres_port),
+                remote_steps::postgres_start(&self.remote_dir, &self.postgres_port),
             ));
         }
         if !self.skip_api {
@@ -259,6 +263,12 @@ impl DeployCfg {
             plan.push(RemoteStep::new(
                 "trunk build --release (Leptos SPA → frontend/dist)",
                 remote_steps::spa_build(&self.remote_dir),
+            ));
+        }
+        if !self.skip_compose {
+            plan.push(RemoteStep::new(
+                "staging Caddy on :3080 (docker compose), then reload its Caddyfile",
+                remote_steps::web_server_start_and_reload(&self.remote_dir, &self.postgres_port),
             ));
         }
         plan.push(RemoteStep::new(
@@ -280,7 +290,7 @@ impl DeployCfg {
             println!("[dry-run] ssh … {}", step.command);
             return Ok(());
         }
-        self.ssh_cmd(&["bash", "-lc", &step.command])
+        self.ssh_login_shell(&step.command)
     }
 
     fn ssh_base_program_args(&self) -> (String, Vec<String>) {
@@ -313,17 +323,19 @@ impl DeployCfg {
         }
     }
 
-    fn ssh_cmd(&self, remote_args: &[&str]) -> Result<(), u8> {
-        let code = self.ssh_cmd_status(remote_args)?;
+    /// Runs `command` on the host in a login shell; a non-zero exit becomes the deploy's status.
+    fn ssh_login_shell(&self, command: &str) -> Result<(), u8> {
+        let code = self.ssh_login_shell_status(command)?;
         if code == 0 { Ok(()) } else { Err(code as u8) }
     }
 
-    fn ssh_cmd_status(&self, remote_args: &[&str]) -> Result<i32, u8> {
+    /// Runs `command` on the host in a login shell and returns its exit status. The command goes
+    /// to ssh as the one quoted word [`remote_steps::login_shell`] builds, because ssh joins its
+    /// remote arguments into a single line for the host's shell.
+    fn ssh_login_shell_status(&self, command: &str) -> Result<i32, u8> {
         let (program, mut args) = self.ssh_base_program_args();
         args.push(self.host.clone());
-        for a in remote_args {
-            args.push((*a).into());
-        }
+        args.push(remote_steps::login_shell(command));
         // Closed fail-open: absent ssh/sshpass is NotRun, not a silent success.
         if let Err(e) = proc::which(&program) {
             return Err(not_run_exit(&e));
@@ -351,7 +363,7 @@ impl DeployCfg {
             println!("[dry-run] ssh … {script}");
             return Ok(());
         }
-        let code = self.ssh_cmd_status(&["bash", "-lc", &script])?;
+        let code = self.ssh_login_shell_status(&script)?;
         asset_preflight::report(asset_preflight::classify(code), &self.remote_dir)
     }
 

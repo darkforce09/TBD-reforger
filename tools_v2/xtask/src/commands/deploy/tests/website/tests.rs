@@ -156,17 +156,145 @@ fn plan_for(skip_compose: bool, skip_api: bool, skip_spa: bool) -> Vec<String> {
 #[test]
 fn the_remote_plan_ends_with_the_checksum_repair_and_the_state_move() {
     let full = plan_for(false, false, false);
-    assert_eq!(full.len(), 5, "{full:?}");
+    assert_eq!(full.len(), 6, "{full:?}");
     assert!(full[0].contains("Postgres"));
     assert!(full[1].contains("cargo build"));
     assert!(full[2].contains("trunk build"));
-    assert!(full[3].contains("checksums"));
-    assert!(full[4].contains("state directory"));
+    assert!(full[3].contains("Caddy"));
+    assert!(full[4].contains("checksums"));
+    assert!(full[5].contains("state directory"));
 
     let builds_skipped = plan_for(true, true, true);
     assert_eq!(builds_skipped.len(), 2, "{builds_skipped:?}");
     assert!(builds_skipped[0].contains("checksums"));
     assert!(builds_skipped[1].contains("state directory"));
+}
+
+/// The web server step belongs to compose, not to the app build: skipping the build keeps Caddy
+/// serving the `dist` already on the host, and skipping compose drops Postgres and Caddy together.
+#[test]
+fn the_web_server_step_follows_compose_and_not_the_app_build() {
+    let spa_skipped = plan_for(false, false, true);
+    assert_eq!(spa_skipped.len(), 5, "{spa_skipped:?}");
+    assert!(spa_skipped[2].contains("Caddy"), "{spa_skipped:?}");
+
+    let compose_skipped = plan_for(true, false, false);
+    assert_eq!(compose_skipped.len(), 4, "{compose_skipped:?}");
+    assert!(
+        !compose_skipped
+            .iter()
+            .any(|title| title.contains("Postgres") || title.contains("Caddy")),
+        "{compose_skipped:?}"
+    );
+}
+
+/// Both compose steps run the staging compose file from the checkout root with the configured
+/// Postgres port, under docker compose when the host has docker and podman compose otherwise.
+#[test]
+fn every_compose_step_runs_the_staging_compose_file_from_the_checkout() {
+    let dir = "/home/deploy/tbd/repo";
+    for (command, action) in [
+        (
+            remote_steps::postgres_start(dir, "5433"),
+            "staging_compose up -d postgres",
+        ),
+        (
+            remote_steps::web_server_start_and_reload(dir, "5433"),
+            "staging_compose up -d caddy",
+        ),
+    ] {
+        assert!(
+            command.starts_with(
+                "cd '/home/deploy/tbd/repo' && export TBD_POSTGRES_HOST_PORT='5433' && "
+            ),
+            "{command}"
+        );
+        assert!(
+            command.contains(
+                "if command -v docker >/dev/null 2>&1; then \
+                 docker compose -f apps/website/docker-compose.staging.yml \"$@\"; else \
+                 podman compose -f apps/website/docker-compose.staging.yml \"$@\"; fi;"
+            ),
+            "{command}"
+        );
+        assert!(command.contains(action), "{command}");
+    }
+    assert!(remote_steps::postgres_start(dir, "5433").ends_with("staging_compose up -d postgres"));
+}
+
+/// The reload runs after `up`, inside the `caddy` service, on the Caddyfile the service was started
+/// with, and gives up with exit 1 after a bounded number of attempts rather than looping forever.
+#[test]
+fn the_web_server_step_starts_caddy_then_reloads_the_mounted_caddyfile() {
+    let command = remote_steps::web_server_start_and_reload("/home/deploy/tbd/repo", "5432");
+    let reload = format!(
+        "staging_compose exec -T caddy caddy reload --config {} --adapter caddyfile",
+        remote_steps::caddyfile_in_container()
+    );
+    let start = command
+        .find("staging_compose up -d caddy && ")
+        .expect("the start");
+    let reload_at = command.find(&reload).expect("the reload");
+    assert!(start < reload_at, "{command}");
+    assert!(
+        command.contains(&format!(
+            "if [ \"$attempt\" -ge {} ]; then exit 1; fi;",
+            remote_steps::CADDY_RELOAD_ATTEMPTS
+        )),
+        "{command}"
+    );
+    assert!(command.ends_with("sleep 1; done"), "{command}");
+}
+
+/// ssh joins its remote arguments into one line for the host's shell, so a step reaches
+/// `bash -lc` intact only as one quoted word: a POSIX shell reading that word gives back the step
+/// byte for byte, its own quotes included.
+#[test]
+fn a_remote_step_reaches_the_login_shell_as_one_word() {
+    assert_eq!(
+        remote_steps::login_shell("cd '/r' && pwd"),
+        "bash -lc 'cd '\\''/r'\\'' && pwd'"
+    );
+    let step = remote_steps::web_server_start_and_reload("/home/deploy/tbd/repo", "5432");
+    let line = remote_steps::login_shell(&step);
+    let word = line.strip_prefix("bash -lc ").expect("a bash -lc line");
+    let read_back = std::process::Command::new("sh")
+        .arg("-c")
+        .arg(format!("printf '%s' {word}"))
+        .output()
+        .expect("sh runs");
+    assert!(read_back.status.success());
+    assert_eq!(String::from_utf8(read_back.stdout).unwrap(), step);
+}
+
+/// The compose file's `caddy` service, the Caddyfile and the reload agree: the service mounts the
+/// deploy folder where the reload looks for the Caddyfile and starts Caddy on that file, and it
+/// mounts the app's folder where the Caddyfile's site root points.
+#[test]
+fn the_caddy_service_serves_what_the_caddyfile_and_the_reload_name() {
+    const COMPOSE: &str =
+        include_str!("../../../../../../../apps/website/docker-compose.staging.yml");
+    const CADDYFILE: &str = include_str!("../../../../../deploy/Caddyfile.website");
+    let in_container = remote_steps::caddyfile_in_container();
+    assert_eq!(in_container, "/etc/tbd-caddy/Caddyfile.website");
+    let mount = remote_steps::CADDY_CONFIG_MOUNT;
+    for line in [
+        "  caddy:\n".to_string(),
+        "    container_name: tbd_staging_caddy\n".to_string(),
+        "    network_mode: host\n".to_string(),
+        format!(
+            "    command: [\"caddy\", \"run\", \"--config\", \"{in_container}\", \"--adapter\", \"caddyfile\"]\n"
+        ),
+        format!(
+            "      - ../../{}:{mount}:ro\n",
+            crate::core::repository_layout::DEPLOY_DIR
+        ),
+        "      - ./frontend:/srv/tbd-frontend:ro\n".to_string(),
+    ] {
+        assert!(COMPOSE.contains(&line), "the compose file lacks {line:?}");
+    }
+    assert!(CADDYFILE.contains("\t\troot * /srv/tbd-frontend/dist\n"));
+    assert!(CADDYFILE.contains(":3080 {\n"));
 }
 
 #[test]

@@ -1,8 +1,9 @@
-//! `cargo xtask deploy staging` — put the platform on the staging box and prove it booted.
+//! `cargo xtask deploy staging` — put the game server on the staging box and prove it booted.
 //!
-//! Rsync the monorepo, rebuild the API, refresh the Reforger profile, render and push
-//! `server.config.json`, restart the game server, then read the server's own console log and
-//! assert the boot rather than assume it.
+//! Check that the website API answers on the host, rsync the monorepo, refresh the Reforger
+//! profile, render and push `server.config.json`, restart the game server, then read the
+//! server's own console log and assert the boot rather than assume it. The website stack itself
+//! (API, Postgres, Caddy) is `cargo xtask deploy website`'s.
 //!
 //! ── MODULE SPLIT (what each file owns) ───────────────────────────────────────────────────────
 //!
@@ -17,14 +18,14 @@
 //! | [`config`] | the deploy file, the defaults it fills in, and the launch-mode gate |
 //! | [`render`] | modpack resolution and the `server.config.json` render and validate |
 //! | [`pycompat`] | JSON behaviours a `python3` implementation made observable in output |
-//! | [`remote`] | ssh, rsync and compose transport, the deploy pipeline, the console-log read |
+//! | [`remote`] | ssh and rsync transport, the website API check, the deploy pipeline, the console-log read |
 //! | [`payloads`] | the exact text of every remote `bash -s` heredoc |
 //!
 //! ── WHAT IS AND IS NOT VERIFIED ──────────────────────────────────────────────────────────────
 //!
 //! [`crate::core::repository_layout::DEPLOY_ENV`] exists on no development machine: it is
-//! gitignored and rsync-excluded (see the exclude list in [`remote`]), so every ssh, rsync and
-//! compose path in [`remote`] is unreachable from a checkout. Those paths are covered by
+//! gitignored and rsync-excluded (see the exclude list in [`remote`]), so every ssh and rsync
+//! path in [`remote`] is unreachable from a checkout. Those paths are covered by
 //! argv-construction tests that assert the exact program and argument vector, in order, that
 //! would be spawned. That is structural fidelity rather than live proof, and each test says so
 //! in its name.

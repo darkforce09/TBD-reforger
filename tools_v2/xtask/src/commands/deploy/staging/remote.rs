@@ -1,11 +1,11 @@
-//! ssh / rsync / compose / systemd transport and the deploy pipeline.
+//! ssh / rsync / systemd transport and the deploy pipeline.
 //!
 //! ── NOTHING IN THIS FILE RUNS OUTSIDE A LIVE DEPLOY ──────────────────────────────────────────
 //!
 //! `tools_v2/xtask/deploy/deploy.env` is absent on every development machine — it is gitignored
 //! AND rsync-excluded by design, so the credential exists only on the operator's PC. Every
-//! function below that spawns `ssh`, `rsync`, `docker compose`, `systemctl` or `curl` is
-//! therefore live-unverified. What IS verified:
+//! function below that spawns `ssh`, `rsync`, `systemctl` or `curl` is therefore
+//! live-unverified. What IS verified:
 //!
 //! * the exact program + argument vector, in order, for every spawn — `tests`;
 //! * the exact stdin payload for every `ssh … bash -s` heredoc — `tests`;
@@ -13,9 +13,9 @@
 //! * the whole `--dry-run` walk, which opens no socket (see the note on [`Runner`]).
 //!
 //! What is NOT verified: whether a real `ssh` accepts these argv, whether the remote `bash -s`
-//! payloads behave on the host, whether `docker compose` is reachable there, and whether the boot
-//! wait loop's timing assumptions hold. Only the operator running a live deploy exercises those,
-//! so this is a statement about the test environment, not about the code.
+//! payloads behave on the host, whether the website API answers there, and whether the boot wait
+//! loop's timing assumptions hold. Only the operator running a live deploy exercises those, so
+//! this is a statement about the test environment, not about the code.
 //!
 //! ── THE EXCLUDE LIST IS A LICENCE BOUNDARY, NOT AN OPTIMISATION ──────────────────────────────
 //!
@@ -214,6 +214,11 @@ mod deployed_scenario;
 use deployed_scenario::deployed_scenario;
 #[cfg(test)]
 pub(crate) use deployed_scenario::scenario_of_config;
+
+mod website_api_health_check;
+#[cfg(test)]
+use website_api_health_check::website_api_refusal;
+use website_api_health_check::{require_website_api, website_api_health_url};
 
 #[cfg(test)]
 pub(crate) use ssh_argv::{exec_start, rsync_argv, v6_verdict};

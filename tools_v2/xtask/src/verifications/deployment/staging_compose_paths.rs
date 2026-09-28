@@ -1,22 +1,36 @@
-//! The staging-deploy compose-path pin.
+//! The staging compose file and its one owner, `cargo xtask deploy website`.
+//!
+//! **Role:** holds that every compose command the website deploy sends to the host names
+//! `apps/website/docker-compose.staging.yml`, that the game server deploy sends none, and that
+//! the compose file sits where both expect it.
+//!
+//! **Position:** the body of `cargo xtask verify staging-compose-paths`, which `ci-local`, the
+//! wave gate's `VERIFY_STEPS` and the `mod-gates-hosted` job of `.github/workflows/ci.yml` run;
+//! it reads [`WEBSITE_DEPLOY_SOURCE`] and [`STAGING_DEPLOY_SOURCE`] as text and runs nothing.
+//!
+//! **Signals & state:** none; reads of the checkout.
+//!
+//! **Invariants:** the status is binary, 0 when every check held and 1 otherwise, and an input it
+//! could not read is named as "did not run" in the report; a comment never counts as a compose
+//! command, so it can neither satisfy the pin nor trip the ban.
 //!
 //! ── WHAT THE GATE IS FOR ─────────────────────────────────────────────────────────────────────
 //!
-//! Staging deploys must point `docker compose -f` at `apps/website/docker-compose.staging.yml`,
-//! never at an `apps/website/api_v2/` sibling. Getting it wrong does not fail loudly — compose
-//! happily starts *a* stack from *a* file, so the deploy goes green and staging quietly runs the
-//! wrong topology. Hence a static pin rather than a smoke test.
+//! Compose happily starts *a* stack from *a* file, so a compose command that names the wrong file
+//! does not fail loudly: the deploy goes green and the host quietly runs the wrong topology. And a
+//! second deploy that runs compose on the same host starts services the website deploy owns,
+//! without the settings the website deploy passes (the Postgres host port), and with the website
+//! deploy's plan no longer describing the host. Hence a static pin rather than a smoke test.
 //!
-//! Two false-green shapes this gate is built to refuse:
+//! Two false-green shapes the gate refuses:
 //!
-//! 1. a `//` or `#` comment containing the good path counting as presence;
-//! 2. banning one exact `cd` string, so the live path can use the api/ compose file while the
-//!    dry-run plan stays good.
+//! 1. a `//` or `#` comment naming the good path counting as a compose command;
+//! 2. a relative `-f` path that looks right but resolves against the wrong folder: the gate
+//!    requires the exact checkout-relative path, and separately bans a `cd` into
+//!    `apps/website/api_v2`.
 //!
-//! So the gate strips comments first, then requires the good `-f` path on **both** the dry-run
-//! plan line and the live ssh line, requires those two to agree with each other, and separately
-//! rejects the stale api/ path on either. "Dry-run says one thing, live does another" is the
-//! failure this shape exists to catch: a dry run is the only rehearsal anyone gets.
+//! The website deploy prints each command under `--dry-run` from the same string it runs live, so
+//! there is no separate rehearsal text that could disagree with the real one.
 //!
 //! ── FAILED AND DID-NOT-RUN ARE DIFFERENT ─────────────────────────────────────────────────────
 //!
@@ -34,12 +48,11 @@
 //!
 //! ── REPOINTING THE PIN ───────────────────────────────────────────────────────────────────────
 //!
-//! **Everything about *what* is pinned lives in the consts below** — [`DEPLOY_SOURCE`],
-//! [`GOOD_PATH`], [`BAD_PATH`], [`CD_INTO_API_SQ`], [`CD_INTO_API_DQ`], [`DRY_RUN_KEY`],
-//! [`LIVE_KEY`] — and every message is `format!`ed from them. To follow the deploy driver
-//! elsewhere, change [`DEPLOY_SOURCE`]; if the new host has no remote shell line, replace
-//! `strip_comments` and the two `cd` bans with the equivalent for whatever sets the working
-//! directory there, rather than deleting them.
+//! **Everything about *what* is pinned lives in the consts below** — [`WEBSITE_DEPLOY_SOURCE`],
+//! [`STAGING_DEPLOY_SOURCE`], [`GOOD_PATH`], [`BAD_PATH`], [`COMPOSE_COMMAND`] and
+//! [`CD_INTO_API`] — and every message is `format!`ed from them. To follow the deploy code
+//! elsewhere, change the two sources; if the new code sets its working folder another way,
+//! replace [`CD_INTO_API`] with the equivalent ban rather than deleting it.
 
 use std::path::Path;
 
@@ -53,43 +66,36 @@ use verification_core::{Finding, Kind, NotRun, Pattern, Verdict, gate};
 /// `cargo xtask verify staging-compose-paths` transcripts are grepped for exactly this string.
 const GATE_NAME: &str = "staging-compose-paths";
 
-/// Source containing both the dry-run plan and live SSH compose invocation, repo-relative.
-/// The transport facade delegates to this module; auditing the facade alone would miss both
-/// command strings and cannot establish that rehearsal and execution use the same compose file.
-const DEPLOY_SOURCE: &str = "tools_v2/xtask/src/commands/deploy/staging/remote/ssh_argv.rs";
+/// The source that builds every compose command `cargo xtask deploy website` sends to the host,
+/// repo-relative. The deploy's step runner in front of it only prints and sends those strings, so
+/// auditing the runner alone would see no compose command at all.
+const WEBSITE_DEPLOY_SOURCE: &str = "tools_v2/xtask/src/commands/deploy/website/remote_steps.rs";
 
-/// The one true compose file. Double duty: the string that must follow `-f`, **and** — joined
+/// The game server deploy's pipeline, repo-relative. It runs no compose command: the staging
+/// compose stack belongs to the website deploy.
+const STAGING_DEPLOY_SOURCE: &str = "tools_v2/xtask/src/commands/deploy/staging/remote/ssh_argv.rs";
+
+/// The one staging compose file. Double duty: the string that must follow `-f`, **and** — joined
 /// onto the repo root — the file that must exist. Two spellings of one contract drift, so there
 /// is exactly one here.
 const GOOD_PATH: &str = "apps/website/docker-compose.staging.yml";
 
-/// The stale location. Must appear on neither compose line and must not exist on disk — a file
-/// left there is what makes the wrong `-f` path a *plausible* edit rather than an obvious typo,
-/// so the gate removes the temptation as well as the reference.
+/// A staging compose file beside the API. It must appear on no compose line and must not exist on
+/// disk: a file there is what makes the wrong `-f` path a *plausible* edit rather than an obvious
+/// typo, so the gate removes the temptation as well as the reference.
 const BAD_PATH: &str = "apps/website/api_v2/docker-compose.staging.yml";
 
-/// Banned outright: `cd`-ing the remote shell into `api/` before compose. Both quotings, because
-/// banning one exact string is banning nothing.
-const CD_INTO_API_SQ: &str = "cd '$TBD_REMOTE_DIR/apps/website/api_v2'";
-/// The double-quoted twin of [`CD_INTO_API_SQ`].
-const CD_INTO_API_DQ: &str = r#"cd "$TBD_REMOTE_DIR/apps/website/api_v2""#;
+/// A compose command, under either provider and in either spelling: `docker compose`,
+/// `podman compose`, `docker-compose`, `podman-compose`. The word after it must end in a space,
+/// a tab or the line's end, so the compose file's own name, `docker-compose.staging.yml`, is not
+/// a command.
+const COMPOSE_COMMAND: &str = r"\b(?:docker|podman)(?:[ \t]+|-)compose(?:[ \t]|$)";
 
-/// How the dry-run compose line is recognised: the driver prints its plan with this prefix.
-const DRY_RUN_KEY: &str = "[dry-run]";
-/// Names the live dispatch (`Runner::ssh_ok`) in operator-facing messages. It is NOT a matcher:
-/// that call spans lines, so classification is "does this compose line carry the dry-run marker".
-/// The const exists so a failure still tells the reader WHICH invocation is wrong.
-const LIVE_KEY: &str = "ssh_ok";
-
-/// The two compose invocations, classified out of the stripped source.
-///
-/// `None` is itself a finding: a *missing* dry-run or live compose line is a failure, never
-/// vacuously satisfied. A gate that goes quiet because the thing it audits was deleted checks
-/// nothing.
-struct ComposeLines<'a> {
-    dry: Option<&'a str>,
-    live: Option<&'a str>,
-}
+/// A `cd` into `apps/website/api_v2` under any quoting, as the Rust source spells it: single
+/// quotes, escaped double quotes or none, after any prefix such as `{remote_dir}/`. One pattern
+/// for every quoting, because banning one spelling bans nothing.
+const CD_INTO_API: &str =
+    r#"\bcd[ \t]+(?:\\?["'])?[^ \t"'\\;&|]*apps/website/api_v2(?:[/\\"' \t;&|]|$)"#;
 
 #[cfg(test)]
 #[path = "tests/staging_compose_paths/tests.rs"]
@@ -99,4 +105,4 @@ mod source_audit;
 pub use source_audit::verify_staging_compose_paths;
 
 #[cfg(test)]
-use source_audit::{audit, f_path, f_regex, source_basename, strip_comments};
+use source_audit::{audit, compose_lines, f_path, f_regex, source_basename, strip_comments};

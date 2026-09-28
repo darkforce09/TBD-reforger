@@ -3,6 +3,17 @@ use crate::commands::deploy::staging::config::tests::{RUNTIME_CREDENTIAL, base};
 use crate::commands::deploy::staging::remote::exec_start;
 
 #[test]
+fn website_api_health_payload_fails_on_an_error_status_and_a_silent_server() {
+    let p = website_api_health_payload("http://127.0.0.1:8080/healthz");
+    assert_eq!(
+        p,
+        "set -euo pipefail\n\
+         curl -sSf --max-time 10 'http://127.0.0.1:8080/healthz'\n\
+         echo\n"
+    );
+}
+
+#[test]
 fn profile_payload_hands_the_credential_to_setup() {
     let p = profile_payload(&base());
     assert!(p.starts_with("set -euo pipefail\n"));

@@ -69,7 +69,8 @@ Run each as `cargo xtask verify <verb>` from the repository root.
 ### Deployment gate
 
 - Synopsis: `verify staging-compose-paths`
-- Does: `cargo xtask deploy staging` resolves the staging compose file by an absolute path. Body:
+- Does: every compose command of `cargo xtask deploy website` names
+  `apps/website/docker-compose.staging.yml`, and `cargo xtask deploy staging` runs none. Body:
   `tools_v2/xtask/src/verifications/deployment/`.
 - Example: `cargo xtask verify staging-compose-paths`
 

@@ -20,6 +20,20 @@
 
 use super::config::Env;
 
+/// The website API probe, run on the host, where the mod calls the API: `GET <health_url>`.
+///
+/// `-f` turns any status of 400 or more into a failure, so an API that answers 503 because its
+/// database is down stops the deploy as surely as one that is not running. `--max-time` bounds a
+/// URL that accepts the connection and never answers. The trailing `echo` ends the printed body's
+/// line.
+pub fn website_api_health_payload(health_url: &str) -> String {
+    format!(
+        "set -euo pipefail\n\
+         curl -sSf --max-time 10 '{health_url}'\n\
+         echo\n"
+    )
+}
+
 /// The `ssh_cmd bash -s <<EOF` payload that sets up the remote profile and the addon symlink.
 ///
 /// `setup server-profile` writes `TBD_BackendConfig.json` from the committed example with the

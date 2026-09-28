@@ -41,8 +41,9 @@ host is whatever `TBD_SSH_HOST` names, and the remote folders default under its 
 
 ```text
 deploy website: asset probe ─▶ rsync --delete ─▶ compose postgres ─▶ API build ─▶ app build
-                ─▶ checksum repair ─▶ uploads to the state folder ─▶ restart the unit ─▶ hints
-deploy staging: settings check ─▶ rsync --delete ─▶ profile ─▶ compose ─▶ runtime smoke
+                ─▶ compose caddy, then its reload ─▶ checksum repair ─▶ uploads to the state folder
+                ─▶ restart the unit ─▶ hints
+deploy staging: settings check ─▶ website API check ─▶ rsync --delete ─▶ profile ─▶ runtime smoke
                 ─▶ server config ─▶ unit restart ─▶ boot verdict ─▶ host agent ─▶ log check
 deploy db:      container helpers ─▶ backup | verify-dump | restore | drill
 ```
@@ -64,12 +65,14 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
   `prairielearn` in any case, a host without a user, and a remote folder outside
   `/home/<user>/tbd/` or holding `..`, then probes the server's map assets, rsyncs the checkout,
   and over ssh brings up the staging Postgres (`TBD_POSTGRES_HOST_PORT`, default 5432), builds the
-  release API and the app, repoints comments-only migration checksums, moves uploads into the
-  unit's state folder and restarts `TBD_WEBSITE_SYSTEMD_UNIT` (default `tbd-website-api.service`).
-  `TBD_SKIP_COMPOSE`, `TBD_SKIP_API_BUILD` and `TBD_SKIP_SPA_BUILD` set to 1 skip a step. A failed
-  restart only warns and prints the unit's install command. It ends with the Caddy reload line and
-  two `curl` smoke hints. `--dry-run` prints the plan, with every rsync exclusion, and connects to
-  nothing; it still needs a filled `deploy.env`.
+  release API and the app, starts the staging Caddy and reloads its Caddyfile, repoints
+  comments-only migration checksums, moves uploads into the unit's state folder and restarts
+  `TBD_WEBSITE_SYSTEMD_UNIT` (default `tbd-website-api.service`). Set to 1, `TBD_SKIP_COMPOSE`
+  skips both compose steps (Postgres and Caddy), `TBD_SKIP_API_BUILD` the API build and
+  `TBD_SKIP_SPA_BUILD` the app build, after which Caddy serves the build already on the host. A
+  failing step stops the deploy before the restart; a failed restart only warns and prints the
+  unit's install command. It ends with two `curl` smoke hints. `--dry-run` prints the plan, with
+  every rsync exclusion, and connects to nothing; it still needs a filled `deploy.env`.
 - Exit codes: 0 deployed, or the plan printed; 1 no `deploy.env`, an unreadable or malformed one,
   a missing required value, a refused path or host, or a refused asset layout; 2 an unknown option; a failing
   rsync or ssh step's own code; 127 ssh, sshpass or rsync not installed.
@@ -79,16 +82,19 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
 
 - Synopsis: `cargo xtask deploy staging [--dry-run] [--render-only <path>] [--verify-boot
   <console.log>] [--verify-boot-selftest]`
-- Does: deploys the checkout to the staging host and boots the dedicated server in
+- Does: checks that the website API answers `/healthz` at `TBD_BACKEND_URL` on the staging host,
+  then deploys the checkout there and boots the dedicated server in
   `TBD_SERVER_MODE` (`config` by default, or `addons`), asserting from the server's log that the
   synced addon won, a room registered and the config loaded; with `TBD_INSTALL_HOST_AGENT=1` it
   also installs the [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent).
+  It runs no compose command: the website stack on the host is `deploy website`'s.
   `--render-only` writes the server config to a local file after the settings check;
   `--verify-boot` judges a log you already have; `--verify-boot-selftest` proves the verdict can
   fail. The last two need no `deploy.env`.
 - Exit codes: 0 deployed, rendered or judged healthy; 1 a missing or refused setting (among them
-  a `TBD_PUBLIC_ADDRESS` that is not IPv4, or none set and none resolved), a failed boot
-  verdict or a failed final log check; 2 an unknown option or a flag without its value,
+  a `TBD_PUBLIC_ADDRESS` that is not IPv4, or none set and none resolved), a website API that does
+  not answer on the host, a failed boot verdict or a failed final log check; 2 an unknown option
+  or a flag without its value,
   `--render-only` in addons mode, or `--verify-boot` without `TBD_ADDONS_STAGING`; a failing step's
   own code; 127 a tool that is not installed.
 - Example: `cargo xtask deploy staging --verify-boot-selftest`

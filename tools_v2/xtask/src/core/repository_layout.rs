@@ -16,9 +16,9 @@ pub const DEPLOY_ENV: &str = "tools_v2/xtask/deploy/deploy.env";
 /// The committed template an operator copies to [`DEPLOY_ENV`] and fills in.
 pub const DEPLOY_ENV_EXAMPLE: &str = "tools_v2/xtask/deploy/deploy.env.example";
 
-/// Caddy reverse proxy serving the SPA and proxying `/api` to the API port. `cargo xtask deploy
-/// website` names it in the reload instruction it prints; `forwarded_for_trust` pins its
-/// loopback upstream.
+/// Caddy reverse proxy serving the SPA and proxying `/api` to the API port. The staging compose
+/// file's `caddy` service runs it, and every `cargo xtask deploy website` starts that service and
+/// reloads the file; `forwarded_for_trust` pins its loopback upstream.
 pub const CADDYFILE: &str = "tools_v2/xtask/deploy/Caddyfile.website";
 
 /// systemd unit templates an operator installs into `~/.config/systemd/user`.

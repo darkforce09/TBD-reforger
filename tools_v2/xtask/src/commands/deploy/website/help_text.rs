@@ -5,17 +5,18 @@
 
 use crate::core::repository_layout;
 
+/// The usage text: what the deploy does, its flags, and every `deploy.env` key it reads.
 pub fn usage() -> String {
     format!(
         "\
 Usage: cargo xtask deploy website [--dry-run] [--help]
 
   Rsync the monorepo to TBD_REMOTE_DIR, bring up staging Postgres (compose),
-  build the release API binary + Leptos SPA on the server, restart the
-  user-systemd API unit, and print Caddy reload hints.
+  build the release API binary + Leptos SPA on the server, start the staging
+  Caddy (compose) and reload its Caddyfile, and restart the user-systemd API unit.
 
-  --dry-run   Print the plan (rsync/ssh/compose/build/checksum-repair/state-dir/restart)
-              without executing.
+  --dry-run   Print the plan (rsync/ssh/compose/build/web server/checksum-repair/
+              state-dir/restart) without executing.
   -h, --help  Show this help.
 
 Settings ({deploy_env}, or the file DEPLOY_ENV names):
@@ -28,8 +29,9 @@ Settings ({deploy_env}, or the file DEPLOY_ENV names):
   TBD_SSH_IDENTITY_FILE     optional (ssh -i)
   TBD_POSTGRES_HOST_PORT    optional (default 5432) — compose host port
   TBD_WEBSITE_SYSTEMD_UNIT  optional (default tbd-website-api.service)
-  TBD_SKIP_COMPOSE          set to 1 to skip docker compose postgres up
-  TBD_SKIP_SPA_BUILD        set to 1 to skip remote trunk build
+  TBD_SKIP_COMPOSE          set to 1 to skip both compose steps (Postgres, Caddy)
+  TBD_SKIP_SPA_BUILD        set to 1 to skip remote trunk build (Caddy still
+                            starts and serves the dist already on the server)
   TBD_SKIP_API_BUILD        set to 1 to skip remote cargo build
 
 Smoke (no SSH):

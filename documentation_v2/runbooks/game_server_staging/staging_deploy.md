@@ -2,17 +2,19 @@
 
 # Deploy the checkout to the staging game server
 
-`cargo xtask deploy staging` syncs the checkout to the staging host, refreshes the
-[mod](/documentation_v2/glossary/g_to_m.md#mod)'s server profile,
+`cargo xtask deploy staging` checks that the website API answers on the staging host, syncs the
+checkout there, refreshes the [mod](/documentation_v2/glossary/g_to_m.md#mod)'s server profile,
 checks the platform's game-runtime routes, renders the server config, restarts the dedicated
-server, and then proves from the server's own log that it loaded the checkout it just synced. Run
-it after every change the staging server should run; a deploy takes a few minutes, most of it the
-rsync and the engine's boot.
+server, and then proves from the server's own log that it loaded the checkout it just synced. It
+starts nothing of the website: the API, its Postgres and Caddy come from
+`cargo xtask deploy website`. Run it after every change the staging server should run; a deploy
+takes a few minutes, most of it the rsync and the engine's boot.
 
 ## Prerequisites
 
-- A prepared host with the API answering on its `127.0.0.1:8080`
-  ([host preparation](/documentation_v2/runbooks/game_server_staging/host_preparation.md)).
+- A prepared host with the website deployed, so the API answers `/healthz` at `TBD_BACKEND_URL`
+  ([host preparation](/documentation_v2/runbooks/game_server_staging/host_preparation.md),
+  [website deployment](/documentation_v2/runbooks/website_deployment.md)).
 - `tools_v2/xtask/deploy/deploy.env` filled in, including `TBD_MOD_RUNTIME_CREDENTIAL`
   ([machine credentials](/documentation_v2/runbooks/game_server_staging/machine_credentials_and_mission_deployment.md)).
 - In config mode, a source for `game.mods[]` (see Settings).
@@ -93,9 +95,11 @@ before it is pushed: valid JSON, the required keys, `a2s.port` different from `b
    cargo xtask deploy staging --dry-run
    ```
 
-   Expected, in order: `==> publicAddress <IPv4 address>`, `==> rsync to <TBD_REMOTE_DIR>`,
-   `==> remote profile + addon symlink`,
-   `==> docker compose (API + Postgres)`, `==> game-runtime smoke (V2–V4)`,
+   Expected, in order: `==> publicAddress <IPv4 address>`,
+   `==> website API (<TBD_BACKEND_URL>/healthz on the host)` with
+   `[dry-run] curl -sSf <TBD_BACKEND_URL>/healthz on the host; the deploy stops unless it answers`,
+   `==> rsync to <TBD_REMOTE_DIR>`, `==> remote profile + addon symlink`,
+   `==> game-runtime smoke (V2–V4)`,
    `==> systemd user service + restart game server (mode: config)` with the
    `[dry-run] ExecStart=…` line, `==> host agent (fleet-host-agent)`, `==> V6 remote log grep` and
    `[dry-run] DEPLOY_ENV=<path of deploy.env> cargo run -q -p xtask -- mod remote-logs`, exit 0.
@@ -107,15 +111,15 @@ before it is pushed: valid JSON, the required keys, `a2s.port` different from `b
    ```
 
    Expected: the stages below, then `==> deploy complete`, exit 0. Any stage that fails stops the
-   deploy with its exit code.
+   deploy with its exit code; a website API that does not answer stops it with 1.
 
 The stages, in order:
 
 | Stage | What runs on the host |
 |---|---|
-| rsync | the checkout to `TBD_REMOTE_DIR` with `--delete`, excluding `.git/`, `target/`, `node_modules/`, the reference mods, `apps/mod/tbd-export/`, `apps/mod/tbd-emcp/`, the terrain, scratch and equipment asset trees, `apps/website/api_v2/.env` and `deploy.env`; excluded paths on the host survive `--delete` |
+| website API | `curl -sSf --max-time 10 <TBD_BACKEND_URL>/healthz`; any failure, a 503 from an API whose database is down included, stops the deploy with exit 1 before anything on the host changes, naming `cargo xtask deploy website` |
+| rsync | the checkout to `TBD_REMOTE_DIR` with `--delete`, excluding `.git/`, `target/`, `node_modules/`, the reference mods, `apps/mod/tbd-export/`, `apps/mod/tbd-emcp/`, the terrain, scratch and equipment asset trees, `apps/website/api_v2/.env`, the app the website deploy built (`apps/website/frontend/dist/`) and `deploy.env`; excluded paths on the host survive `--delete` |
 | profile and addon link | links `TBD_ADDONS_STAGING/tbd-framework` to the synced `apps/mod/tbd-framework`, runs `cargo xtask setup server-profile TBD_PROFILE_DIR` with the token and credential, and sets `backendUrl` |
-| compose | `docker compose -f apps/website/docker-compose.staging.yml up -d --build`, which starts Postgres only: the compose file's `api` service needs `--profile api` |
 | game-runtime smoke | V2: `GET /api/v1/game-runtime/deployment` with the credential answers 200, or 404 `NO_DEPLOYMENT`; V3: with a deployment, the artifact's bytes hash to `artifact_sha256`; V4: the read without a credential answers 401 |
 | server config and unit | config mode keeps the live config's `scenarioId` (`keeping the deployed scenario …`), renders, checks and pushes the config; then writes `~/.config/systemd/user/tbd-reforger.service` with the mode's `ExecStart`, reloads, enables and restarts it |
 | boot verdict | polls the newest `TBD_PROFILE_DIR/logs/logs_*/console.log` every 10 s for `Server registered with address:`, up to `TBD_BOOT_VERIFY_TIMEOUT`, pulls the log and runs the verdict of [boot and log verification](/documentation_v2/runbooks/game_server_staging/boot_and_log_verification.md); addons mode checks the addon only |
@@ -170,13 +174,14 @@ Expected: `active`, then one listener on 2001 and one on 17777.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `Missing …deploy.env — copy from tools_v2/xtask/deploy/deploy.env.example` | no deploy file | [host preparation](/documentation_v2/runbooks/game_server_staging/host_preparation.md) step 1 |
+| `Missing …deploy.env — copy from tools_v2/xtask/deploy/deploy.env.example` | no deploy file | [host preparation](/documentation_v2/runbooks/game_server_staging/host_preparation.md) step 6 |
+| `ERROR: <TBD_BACKEND_URL>/healthz does not answer on the staging host (probe exit <n>).`, exit 1 | the website is not deployed on the host or its API is down: 7 means nothing listens, 22 an error status such as the 503 of an API without its database | `cargo xtask deploy website` ([website deployment](/documentation_v2/runbooks/website_deployment.md)), then deploy staging again |
 | `TBD_PUBLIC_ADDRESS is unset and <host> has no IPv4 address from here …` | the development machine cannot resolve `TBD_SSH_HOST` to IPv4: avahi is not running on the host, or mDNS does not reach this machine | start avahi-daemon on the host, or set `TBD_PUBLIC_ADDRESS` |
 | `TBD_SERVER_MODE=config requires TBD_WORKSHOP_MOD_ID …` | no mod source in config mode | set `TBD_WORKSHOP_MOD_ID=B2C3D4E5F6A78901`, or a modpack source |
 | `FAIL: TBD_MODPACK_URL is set but TBD_MODPACK_TOKEN is empty.` | the modpack route needs a user's bearer token | set the token, or save the body and use `TBD_MODPACK_JSON` |
 | `NOTE: TBD_ADMIN_IDENTITY_IDS is empty, so game.admins[] will be [].` | no admins configured | add the admins' identityIds; `passwordAdmin` does not feed `game.admins[]` |
 | `game.scenarioId … is rejected by the engine's schema` | the value is not a bracketed 16-hex GUID followed by a path; one that stops right after the GUID was cut by shell brace parsing before it reached the deploy | write the whole `{GUID}Missions/….conf` value in `deploy.env`, which the deploy parses without a shell |
-| the smoke stage fails with a `curl` error | nothing answers on the host's `127.0.0.1:8080`: the compose step starts no API | start the API ([host preparation](/documentation_v2/runbooks/game_server_staging/host_preparation.md) step 4) |
+| the smoke stage fails with a `curl` error | nothing answers on the host's `127.0.0.1:8080`, which the smoke reads whatever `TBD_BACKEND_URL` names | deploy the website to this host ([host preparation](/documentation_v2/runbooks/game_server_staging/host_preparation.md) step 12) |
 | `V2 game-runtime deployment: HTTP 401` | the credential is revoked or another server's | issue a fresh one and deploy again |
 | `FAIL: the server produced no log directory under …/logs after <n>s.` | the unit never started | `systemctl --user status tbd-reforger.service` on the host |
 | `DEPLOY FAILED ITS OWN ACCEPTANCE CHECK.` | the boot verdict failed | read the FAIL lines above it; [boot and log verification](/documentation_v2/runbooks/game_server_staging/boot_and_log_verification.md) |

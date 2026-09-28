@@ -1,12 +1,12 @@
-# Local reverse proxy for the Leptos SPA + Axum API on the home server.
+# The home server's web site: the built Leptos app, with the API's paths proxied to the API.
 #
-# Install (example): copy to /etc/caddy/Caddyfile.website or
-# ~/.config/caddy/Caddyfile.website and point caddy at it:
-#   caddy run --config tools_v2/xtask/deploy/Caddyfile.website
+# Served by the `caddy` service of apps/website/docker-compose.staging.yml, which mounts this
+# folder read-only at /etc/tbd-caddy and apps/website/frontend read-only at /srv/tbd-frontend, so
+# the paths below are the container's. `cargo xtask deploy website` rsyncs this file, starts the
+# service and runs `caddy reload` on it, so an edit here reaches the host with the next deploy.
 #
-# Cloudflare Tunnel should target http://127.0.0.1:3080 (see
-# documentation_v2/runbooks/website_deployment.md Phase E). Adjust root path if TBD_REMOTE_DIR
-# differs from /home/sam/tbd/repo.
+# A Cloudflare Tunnel targets http://127.0.0.1:3080 (documentation_v2/runbooks/website_deployment.md
+# Phase E).
 #
 # COOP/COEP match Trunk.toml / gate serve — required for Mission Creator wasm
 # SharedArrayBuffer (crossOriginIsolated).
@@ -33,7 +33,7 @@
 		reverse_proxy 127.0.0.1:8080
 	}
 	handle {
-		root * /home/sam/tbd/repo/apps/website/frontend/dist
+		root * /srv/tbd-frontend/dist
 		try_files {path} /index.html
 		file_server
 	}

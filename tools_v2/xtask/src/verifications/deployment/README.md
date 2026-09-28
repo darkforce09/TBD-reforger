@@ -1,9 +1,10 @@
 # Deployment verifications
 
 Source checks for the deploy commands. One gate lives here:
-`cargo xtask verify staging-compose-paths` holds that the staging
-[deployment](/documentation_v2/glossary/a_to_f.md#deployment) starts its API and Postgres stack from
-`apps/website/docker-compose.staging.yml`, in the dry-run plan and on the live remote shell alike.
+`cargo xtask verify staging-compose-paths` holds that the staging compose file,
+`apps/website/docker-compose.staging.yml`, has one owner: every compose command of
+`cargo xtask deploy website` names it, and `cargo xtask deploy staging`, the game server
+[deployment](/documentation_v2/glossary/a_to_f.md#deployment), runs none.
 
 ## Contents
 
@@ -11,28 +12,34 @@ Source checks for the deploy commands. One gate lives here:
 tools_v2/xtask/src/verifications/deployment/
 ├── mod.rs                    the module tree
 ├── staging_compose_paths/    the compose path audit: entry point, comment stripper, compose line pins
-├── staging_compose_paths.rs  the staging-compose-paths gate: what it pins, and the pinned paths and keys
+├── staging_compose_paths.rs  the staging-compose-paths gate: what it pins, and the pinned paths and patterns
 └── tests/                    unit tests for the staging compose path gate
 ```
 
 ## How it works
 
-The gate reads `DEPLOY_SOURCE`, `tools_v2/xtask/src/commands/deploy/staging/remote/ssh_argv.rs`,
-the file that prints the `cargo xtask deploy staging` plan and builds its ssh commands. After
-stripping `//` and `#` comments it finds two compose lines: the one printed with the `[dry-run]`
-prefix and the live one. It then requires, and reports every failure of one run:
+The gate reads two sources as text: `WEBSITE_DEPLOY_SOURCE`,
+`tools_v2/xtask/src/commands/deploy/website/remote_steps.rs`, which builds every compose command
+the website deploy sends to the host, and `STAGING_DEPLOY_SOURCE`,
+`tools_v2/xtask/src/commands/deploy/staging/remote/ssh_argv.rs`, the game server deploy's
+pipeline. After stripping `//` and `#` comments it takes every line that runs compose
+(`docker compose`, `podman compose`, `docker-compose` or `podman-compose`; the compose file's own
+name does not count) and requires, reporting every failure of one run:
 
-1. both lines exist and each carries a parseable `-f` path;
-2. both paths equal `apps/website/docker-compose.staging.yml`, and each other;
-3. neither line names `BAD_PATH`, the same file name under `apps/website/api_v2/`;
-4. the source never runs `cd` into `$TBD_REMOTE_DIR/apps/website/api_v2`, single- or
-   double-quoted;
-5. `apps/website/docker-compose.staging.yml` exists, and nothing, not even a dangling symlink,
+1. the website deploy's source holds at least one compose line, and each carries a parseable `-f`
+   path;
+2. each of those paths equals `apps/website/docker-compose.staging.yml`;
+3. no compose line names `BAD_PATH`, the same file name under `apps/website/api_v2/`;
+4. the website deploy's source never runs `cd` into `apps/website/api_v2`, under any quoting;
+5. the game server deploy's source holds no compose line;
+6. `apps/website/docker-compose.staging.yml` exists, and nothing, not even a dangling symlink,
    sits at `BAD_PATH`.
 
-It prints each failure, then `staging-compose-paths: PASS` or `staging-compose-paths: FAIL`. A
-missing or unreadable input is reported as "did not run", but the exit status stays 0 or 1,
-because the wave gate and CI record pass or fail from it.
+The website deploy prints each command under `--dry-run` from the same string it runs, so no
+separate dry-run text needs pinning. The gate prints each failure, then
+`staging-compose-paths: PASS` or `staging-compose-paths: FAIL`. A missing or unreadable source is
+reported as "did not run", but the exit status stays 0 or 1, because the wave gate and CI record
+pass or fail from it.
 
 ## Public surface
 
@@ -42,7 +49,7 @@ because the wave gate and CI record pass or fail from it.
 ## Boundaries
 
 - Depends on: `verification-core` (`Pattern`, `gate`, `Verdict`, `NotRun`) and the `regex`
-  crate; it reads the deploy source as text and never runs it.
+  crate; it reads the deploy sources as text and never runs them.
 - Used by:
   - `tools_v2/xtask/src/commands/verify/dispatch.rs`, for
     `cargo xtask verify staging-compose-paths`;
@@ -52,14 +59,17 @@ because the wave gate and CI record pass or fail from it.
     `tools_v2/xtask/src/commands/platform/wave_execution/gate.rs`, and the `mod-gates-hosted`
     job of `.github/workflows/ci.yml`.
 - Rules:
-  - the dry-run plan and the live command must name the same compose file, so a rehearsal can
-    never differ from the deploy (`every_source_perturbation_bites`);
-  - the pinned source is the implementation, not the transport facade in front of it
-    (`a_transport_facade_cannot_substitute_for_the_compose_implementation`);
-  - moving the compose file or the deploy code means changing `GOOD_PATH` or `DEPLOY_SOURCE`
-    in `staging_compose_paths.rs`, and every message follows from those constants.
+  - a comment naming the compose file is never a compose command
+    (`every_website_source_perturbation_bites`, `a_compose_command_in_the_game_server_deploy_bites`);
+  - the pinned source is the one that builds the compose commands, not the step runner in front
+    of it (`the_step_runner_cannot_substitute_for_the_compose_implementation`);
+  - moving the compose file or the deploy code means changing `GOOD_PATH`,
+    `WEBSITE_DEPLOY_SOURCE` or `STAGING_DEPLOY_SOURCE` in `staging_compose_paths.rs`, and every
+    message follows from those constants.
 
 ## Related documentation
 
+- [Website deployment](/documentation_v2/runbooks/website_deployment.md) — the deploy that owns the
+  staging compose stack.
 - [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — the staging
   host that `cargo xtask deploy staging` sets up.

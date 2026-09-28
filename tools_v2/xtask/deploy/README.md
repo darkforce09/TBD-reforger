@@ -42,7 +42,8 @@ deploy.env.example ──copy, fill in──▶ deploy.env ──read by──�
                                                                mod bootstrap-staging | mod remote-logs |
                                                                debug direct-join | debug a2s-probe |
                                                                setup client-addons
-Caddyfile.website  ──loaded by Caddy on the host; deploy website prints the reload line
+Caddyfile.website  ──served by the caddy service of apps/website/docker-compose.staging.yml;
+                     deploy website starts that service and reloads the file
 systemd/           ──see that folder's README for what installs each unit
 ```
 
@@ -60,9 +61,10 @@ systemd/           ──see that folder's README for what installs each unit
   sit under `/home/<user>/tbd/` (the `--delete` guard `require_tbd_remote_prefix` checks, so a
   `TBD_SSH_HOST` without a user is refused); `TBD_POSTGRES_HOST_PORT` (default 5432), the host port
   of the staging compose Postgres; `TBD_WEBSITE_SYSTEMD_UNIT` (default `tbd-website-api.service`);
-  and `TBD_SKIP_COMPOSE`, `TBD_SKIP_SPA_BUILD` and `TBD_SKIP_API_BUILD`, which skip a step when set
-  to 1. `TBD_REMOTE_DIR`, `TBD_SSH_HOST` and `TBD_PROFILE_DIR` are refused when they contain
-  `prairielearn` in any case.
+  and, each skipping its step when set to 1, `TBD_SKIP_COMPOSE` (both compose steps, Postgres and
+  Caddy), `TBD_SKIP_SPA_BUILD` (the app build only: Caddy still starts and serves the build
+  already on the host) and `TBD_SKIP_API_BUILD`. `TBD_REMOTE_DIR`, `TBD_SSH_HOST` and
+  `TBD_PROFILE_DIR` are refused when they contain `prairielearn` in any case.
 - Game server, read by `tools_v2/xtask/src/commands/deploy/staging/config.rs`:
   `TBD_MOD_RUNTIME_CREDENTIAL` (a `mod_runtime` machine credential, the mod's only secret) is
   required.
@@ -87,7 +89,11 @@ systemd/           ──see that folder's README for what installs each unit
 proxies `/api/*`, `/uploads/*`, `/map-assets/*` and `/healthz` to `127.0.0.1:8080`, and serves every
 other path from the built app's `apps/website/frontend/dist` with an `index.html` fallback; the
 offline service worker loader `/service_worker.js` carries `Cache-Control: no-cache`, so every
-update check revalidates it. Its site root is a fixed absolute path, edited when the checkout sits elsewhere on the host.
+update check revalidates it. Its paths are the `caddy` container's: the compose service mounts this
+folder read-only at `/etc/tbd-caddy` and `apps/website/frontend/` read-only at
+`/srv/tbd-frontend`, so the site root `/srv/tbd-frontend/dist` is the built app wherever the
+checkout sits. The service runs on the host's network, so Caddy listens on the host's `:3080` and
+the API sees every proxied request come from `127.0.0.1`, the proxy its `TRUSTED_PROXIES` trusts.
 
 ## Installed by
 
@@ -96,18 +102,25 @@ update check revalidates it. Its site root is a fixed absolute path, edited when
   `cargo xtask mod bootstrap-staging`, `cargo xtask mod remote-logs`,
   `cargo xtask debug direct-join`, `cargo xtask debug a2s-probe` (without `--host`) and
   `cargo xtask setup client-addons` (for its Direct Join hint).
-- `Caddyfile.website`: loaded by Caddy on the host by hand; `cargo xtask deploy website` ends by
-  printing the `caddy reload --config` line for it. `apps/website/api_v2/tests/forwarded_for_trust.rs`
-  pins its `reverse_proxy 127.0.0.1:8080` upstream.
+- `Caddyfile.website`: rsynced with the checkout and served by the `caddy` service of
+  `apps/website/docker-compose.staging.yml`, which every `cargo xtask deploy website` starts and
+  then reloads with `caddy reload --config /etc/tbd-caddy/Caddyfile.website`, so an edit applies
+  with the next deploy. `apps/website/api_v2/tests/forwarded_for_trust.rs` pins its
+  `reverse_proxy 127.0.0.1:8080` upstream, and
+  `the_caddy_service_serves_what_the_caddyfile_and_the_reload_name` in
+  `tools_v2/xtask/src/commands/deploy/tests/website/tests.rs` pins its site root against the
+  compose service's mounts.
 - `systemd/`: each unit's install step is in its header and in that folder's README.
 
 ## Boundaries
 
-- Depends on: ssh, rsync and, with `TBD_SSH_PASS`, sshpass on the development machine; Caddy,
-  systemd user units and a container runtime on the host.
+- Depends on: ssh, rsync and, with `TBD_SSH_PASS`, sshpass on the development machine; systemd
+  user units and a container runtime with compose on the host, which runs Caddy from the staging
+  compose file.
 - Used by: the `deploy`, `mod`, `setup` and `debug` commands above, through the layout constants
-  and the loader in `tools_v2/xtask/src/core/deploy_environment.rs`; the API's forwarded-for test,
-  which reads the Caddyfile.
+  and the loader in `tools_v2/xtask/src/core/deploy_environment.rs`; the `caddy` service of
+  `apps/website/docker-compose.staging.yml`, which mounts this folder; the API's forwarded-for
+  test, which reads the Caddyfile.
 - Rules: `deploy.env` is never committed and never rsynced (both exclude lists name
   `DEPLOY_ENV`, and `the_deploy_secrets_file_sits_beside_its_example` in
   `tools_v2/xtask/src/tests/repository_layout_tests.rs` pins its place beside the example); a

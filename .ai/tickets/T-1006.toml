@@ -3,9 +3,35 @@ kind = "work"
 title = "Fix staging deploy compose step that never starts the API"
 summary = "`cargo xtask deploy staging` prints `(API + Postgres)` at `tools_v2/xtask/src/commands/deploy/staging/remote/ssh_argv.rs:214`, but its compose command (:217 dry-run, :223) lacks `--profile api`; the `api` service is profile-gated (`apps/website/docker-compose.staging.yml:44`), so only Postgres starts."
 class = "bug"
-status = "idea"
-notes = """Rechecked at HEAD by README writer R17.2 (TF11 batch): the compose step still lacks --profile api; at HEAD the lines are tools_v2/xtask/src/commands/deploy/staging/remote/ssh_argv.rs:213 (the '(API + Postgres)' banner), :216 (dry-run) and :222 (the real command); the working tree reads one line later because of another session's uncommitted rsync exclude in the same file. apps/website/docker-compose.staging.yml:43-44 still gates api behind profiles ["api"]. The fix is in xtask code, so the scope's layer (docs) does not match; that is a correction for the operator. Second gap in the same step (TF15, doc writer F14a): the staging compose command (tools_v2/xtask/src/commands/deploy/staging/remote/ssh_argv.rs:216-223) exports no TBD_POSTGRES_HOST_PORT, while 'deploy website' exports it from deploy.env before its compose (tools_v2/xtask/src/commands/deploy/website/remote_steps.rs:29-35, website.rs:89-93), so on a host where 5432 is taken the staging Postgres fails to bind (apps/website/docker-compose.staging.yml:29 defaults to 5432). Pass the deploy.env value in the same fix."""
+status = "shipped"
+order = 9828
+notes = """Rechecked at HEAD by README writer R17.2 (TF11 batch): the compose step still lacks --profile api; at HEAD the lines are tools_v2/xtask/src/commands/deploy/staging/remote/ssh_argv.rs:213 (the '(API + Postgres)' banner), :216 (dry-run) and :222 (the real command); the working tree reads one line later because of another session's uncommitted rsync exclude in the same file. apps/website/docker-compose.staging.yml:43-44 still gates api behind profiles ["api"]. The fix is in xtask code, so the scope's layer (docs) does not match; that is a correction for the operator. Second gap in the same step (TF15, doc writer F14a): the staging compose command (tools_v2/xtask/src/commands/deploy/staging/remote/ssh_argv.rs:216-223) exports no TBD_POSTGRES_HOST_PORT, while 'deploy website' exports it from deploy.env before its compose (tools_v2/xtask/src/commands/deploy/website/remote_steps.rs:29-35, website.rs:89-93), so on a host where 5432 is taken the staging Postgres fails to bind (apps/website/docker-compose.staging.yml:29 defaults to 5432). Pass the deploy.env value in the same fix. 2026-09-28: delivered by removing the step rather than completing it. deploy staging runs no compose command: its first remote step asks the host for TBD_BACKEND_URL/healthz (tools_v2/xtask/src/commands/deploy/staging/remote/website_api_health_check.rs, probe text website_api_health_payload in staging/payloads.rs) and stops with exit 1 naming cargo xtask deploy website when the API does not answer, before the rsync. The website stack (API, Postgres and the Caddy web server, now a caddy service of apps/website/docker-compose.staging.yml) belongs to deploy website alone, which already exports TBD_POSTGRES_HOST_PORT, so the second gap closes with the first. cargo xtask verify staging-compose-paths now pins every compose line of tools_v2/xtask/src/commands/deploy/website/remote_steps.rs to the staging compose file and bans compose in staging/remote/ssh_argv.rs. The staging rsync also excludes apps/website/frontend/dist/, the app deploy website builds in the same checkout. The [scope] layer stays docs for the operator to correct."""
+main_goal = "cargo xtask deploy staging claims nothing it does not do: it runs no compose command, and it stops before touching the host when the website API does not answer."
+context = [
+    "The staging deploy's compose step printed '(API + Postgres)' but passed no --profile api, so it started Postgres alone and exported no TBD_POSTGRES_HOST_PORT.",
+    "cargo xtask deploy website already owns that compose stack on the same host, which now includes the Caddy web server.",
+]
+requirement = [
+    "The staging compose stack has one owner, cargo xtask deploy website; deploy staging runs no compose command.",
+    "Before changing the host, deploy staging checks that the API answers /healthz at TBD_BACKEND_URL, and stops with exit 1 naming cargo xtask deploy website otherwise.",
+]
+current_state = [
+    "require_website_api (tools_v2/xtask/src/commands/deploy/staging/remote/website_api_health_check.rs) runs first in deploy, before the rsync, sending website_api_health_payload over ssh; ssh_argv.rs holds no compose step.",
+    "cargo xtask verify staging-compose-paths pins the compose lines of tools_v2/xtask/src/commands/deploy/website/remote_steps.rs and bans compose in the staging pipeline; the staging rsync excludes apps/website/frontend/dist/.",
+]
+approach = [
+    "Replace the staging compose step with a health probe run on the host through the existing Runner, before the rsync.",
+    "Repoint the staging-compose-paths gate to the website deploy's remote steps, and add a ban on compose in the staging pipeline.",
+]
+verify = [
+    "cargo test -p xtask the_website_api_check_names_the_health_route_and_the_website_deploy",
+    "cargo test -p xtask website_api_health_payload_fails_on_an_error_status_and_a_silent_server",
+    "cargo test -p xtask a_compose_command_in_the_game_server_deploy_bites",
+    "cargo xtask verify staging-compose-paths",
+]
+acceptance = ["The staging dry run prints the website API check before the rsync and no compose step; a live deploy against a host whose API does not answer stops with exit 1 and names cargo xtask deploy website; the staging-compose-paths gate passes, and fails when a compose command returns to the staging pipeline."]
 created_at = "2026-09-24T02:04:26Z"
+completed_at = "2026-09-28T17:31:05Z"
 
 [scope]
 domain = "repo"

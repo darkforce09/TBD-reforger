@@ -25,7 +25,8 @@ impl Tree {
 
     fn good(name: &str) -> Tree {
         let t = Tree::new(name);
-        t.write(DEPLOY_SOURCE, GOOD_SOURCE);
+        t.write(WEBSITE_DEPLOY_SOURCE, GOOD_WEBSITE_SOURCE);
+        t.write(STAGING_DEPLOY_SOURCE, GOOD_STAGING_SOURCE);
         t.write(GOOD_PATH, "services: {}\n");
         t
     }
@@ -47,26 +48,33 @@ impl Tree {
     }
 }
 
-/// A compose block shaped like the audited source, comment included — the comment is the point:
-/// it names the good path, so a gate grepping the raw file would pass on the comment alone.
-const GOOD_SOURCE: &str = r#"echo "==> docker compose (API + Postgres)"
-# compose file lives at apps/website/docker-compose.staging.yml,
-# not under apps/website/api_v2/. Match `cargo xtask deploy website`.
-if [ "$DRY_RUN" -eq 1 ]; then
-  echo "[dry-run] cd \$TBD_REMOTE_DIR && docker compose -f apps/website/docker-compose.staging.yml up -d --build"
-else
-  ssh_cmd "cd '$TBD_REMOTE_DIR' && docker compose -f apps/website/docker-compose.staging.yml up -d --build"
-fi
-"#;
+/// A compose helper shaped like the website deploy's, comments included — the comments are the
+/// point: they name the good path, so a gate grepping the raw file would pass on them alone.
+const GOOD_WEBSITE_SOURCE: &str = r##"/// Every step runs docker compose -f apps/website/docker-compose.staging.yml.
+fn compose_session(remote_dir: &str) -> String {
+    // podman compose -f apps/website/docker-compose.staging.yml when the host has no docker
+    format!(
+        "cd '{remote_dir}' && staging_compose() {{ if command -v docker >/dev/null 2>&1; then \
+         docker compose -f apps/website/docker-compose.staging.yml \"$@\"; else \
+         podman compose -f apps/website/docker-compose.staging.yml \"$@\"; fi; }}"
+    )
+}
+"##;
 
-/// Rewrite the audited source in a good tree, then require every `want` substring in the report
+/// A game server pipeline shaped like the real one: it mentions compose only in a comment, and
+/// only in the comment may it.
+const GOOD_STAGING_SOURCE: &str = r##"// The website deploy runs docker compose -f apps/website/docker-compose.staging.yml.
+println!("==> website API ({health_url} on the host)");
+"##;
+
+/// Rewrite one audited source in a good tree, then require every `want` substring in the report
 /// AND exit 1.
 ///
 /// Anti-vacuity: one green line is no evidence, so what makes this gate worth having is that each
 /// arm still bites on the perturbation it names.
-fn bites(name: &str, script: &str, want: &[&str]) {
+fn bites(name: &str, source: &str, body: &str, want: &[&str]) {
     let t = Tree::good(name);
-    t.write(DEPLOY_SOURCE, script);
+    t.write(source, body);
     let text = t.text();
     for w in want {
         assert!(text.contains(w), "[{name}] missing {w:?} in:\n{text}");
@@ -78,20 +86,28 @@ fn bites(name: &str, script: &str, want: &[&str]) {
     );
 }
 
-/// The live tree must satisfy the gate. Moving the deploy driver turns this red first, which is
+/// The live tree must satisfy the gate. Moving the deploy code turns this red first, which is
 /// the intended alarm: the pin needs repointing, not deleting.
 #[test]
-fn the_live_deploy_source_holds() {
+fn the_live_deploy_sources_hold() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .expect("tools_v2/xtask has a parent")
         .parent()
         .unwrap();
+    assert_eq!(
+        audit(root)
+            .unwrap()
+            .iter()
+            .filter(|v| !matches!(v, Verdict::Held))
+            .count(),
+        0
+    );
     assert_eq!(verify_staging_compose_paths(root).unwrap(), 0);
 }
 
 #[test]
-fn a_correct_source_holds() {
+fn a_correct_tree_holds() {
     assert_eq!(Tree::good("ok").text(), "");
     assert_eq!(
         verify_staging_compose_paths(&Tree::good("ok2").0).unwrap(),
@@ -99,91 +115,153 @@ fn a_correct_source_holds() {
     );
 }
 
-/// Six source-level perturbations, each the gate must catch.
+/// Every perturbation of the website deploy's source that the gate must catch.
 #[test]
-fn every_source_perturbation_bites() {
+fn every_website_source_perturbation_bites() {
     // The compose path goes relative — the perturbation the gate's title names.
     bites(
         "relative",
-        &GOOD_SOURCE.replace(GOOD_PATH, "docker-compose.staging.yml"),
+        WEBSITE_DEPLOY_SOURCE,
+        &GOOD_WEBSITE_SOURCE.replace(GOOD_PATH, "docker-compose.staging.yml"),
         &[
-            "FAIL: dry-run -f path must be apps/website/docker-compose.staging.yml \
-                 (got: docker-compose.staging.yml)",
-            &format!(
-                "FAIL: live {LIVE_KEY} -f path must be apps/website/docker-compose.staging.yml \
-                 (got: docker-compose.staging.yml)"
-            ),
+            "FAIL: compose -f path must be apps/website/docker-compose.staging.yml \
+             (got: docker-compose.staging.yml)",
         ],
     );
-    // Live regresses to api/ while the dry-run stays clean. Three separate messages must fire —
-    // wrong path, divergence, stale reference.
-    let live = format!("ssh_cmd \"cd '$TBD_REMOTE_DIR' && docker compose -f {GOOD_PATH}");
+    // One provider's line regresses to the API folder's file while the other stays clean. Both
+    // messages must fire — wrong path and the reference itself.
+    let podman = format!("podman compose -f {GOOD_PATH}");
     bites(
-        "live-api",
-        &GOOD_SOURCE.replace(&live, &live.replace(GOOD_PATH, BAD_PATH)),
+        "api-folder",
+        WEBSITE_DEPLOY_SOURCE,
+        &GOOD_WEBSITE_SOURCE.replace(&podman, &podman.replace(GOOD_PATH, BAD_PATH)),
         &[
-            &format!(
-                "FAIL: live {LIVE_KEY} -f path must be apps/website/docker-compose.staging.yml \
-                 (got: apps/website/api_v2/docker-compose.staging.yml)"
-            ),
-            "FAIL: dry-run and live compose -f paths diverge:",
-            "FAIL: live compose line still references \
+            "FAIL: compose -f path must be apps/website/docker-compose.staging.yml \
+                 (got: apps/website/api_v2/docker-compose.staging.yml)",
+            "FAIL: compose line still references \
                  apps/website/api_v2/docker-compose.staging.yml",
         ],
     );
     // The false-green this gate exists for: the good path present ONLY in `#` and `//` comments.
     bites(
         "comment-only",
-        &format!("# docker compose -f {GOOD_PATH}\n// docker compose -f {GOOD_PATH}\n"),
-        &[
-            "FAIL: no dry-run docker compose -f line after comment strip",
-            &format!("FAIL: no live {LIVE_KEY} docker compose -f line after comment strip"),
-        ],
-    );
-    // The banned `cd`, each quoting on its own.
-    bites(
-        "cd-sq",
-        &format!("{GOOD_SOURCE}{CD_INTO_API_SQ}\n"),
+        WEBSITE_DEPLOY_SOURCE,
+        &format!("# docker compose -f {GOOD_PATH}\n// podman compose -f {GOOD_PATH}\n"),
         &[&format!(
-            "FAIL: {} still cds into apps/website/api_v2 (compose must not)",
-            source_basename()
+            "FAIL: no compose command in {} after comment strip",
+            source_basename(WEBSITE_DEPLOY_SOURCE)
         )],
     );
-    bites(
-        "cd-dq",
-        &format!("{GOOD_SOURCE}{CD_INTO_API_DQ}\n"),
-        &[&format!(
-            "FAIL: {} still cds into apps/website/api_v2 (double-quoted form)",
-            source_basename()
-        )],
-    );
-    // `-f` with no argument: its own message, echoing the line at the report's six-space indent.
+    // `-f` with no argument, and a compose command with no `-f` at all: their own message,
+    // echoing the line at the report's six-space indent.
     bites(
         "no-arg",
-        "  echo \"[dry-run] docker compose -f\"\n  ssh_cmd \"docker compose -f\"\n",
+        WEBSITE_DEPLOY_SOURCE,
+        "  let c = \"docker compose -f\";\n  let d = \"podman-compose up -d caddy\";\n",
         &[
-            "FAIL: dry-run compose line has no parseable -f path:\n      \
-                 echo \"[dry-run] docker compose -f\"",
-            "FAIL: live compose line has no parseable -f path:\n      \
-                 ssh_cmd \"docker compose -f\"",
+            "FAIL: compose line has no parseable -f path:\n      \
+                 let c = \"docker compose -f\";",
+            "FAIL: compose line has no parseable -f path:\n      \
+                 let d = \"podman-compose up -d caddy\";",
         ],
     );
 }
 
-/// The on-disk pair: the compose file moved away (`-f`), and a leftover restored at the stale
-/// path (`-e`). Neither uses [`bites`] — one needs a tree that is deliberately not good.
+/// The `cd` into the API folder, under every quoting the Rust source can spell it with.
+#[test]
+fn a_cd_into_the_api_folder_bites_under_every_quoting() {
+    let message = format!(
+        "FAIL: {} cds into apps/website/api_v2 (compose runs from the checkout root)",
+        source_basename(WEBSITE_DEPLOY_SOURCE)
+    );
+    for (name, line) in [
+        (
+            "cd-sq",
+            "let c = \"cd '{remote_dir}/apps/website/api_v2' && true\";",
+        ),
+        (
+            "cd-dq",
+            "let c = \"cd \\\"{remote_dir}/apps/website/api_v2\\\" && true\";",
+        ),
+        (
+            "cd-bare",
+            "let c = \"cd $TBD_REMOTE_DIR/apps/website/api_v2 && true\";",
+        ),
+    ] {
+        bites(
+            name,
+            WEBSITE_DEPLOY_SOURCE,
+            &format!("{GOOD_WEBSITE_SOURCE}{line}\n"),
+            &[&message],
+        );
+    }
+    // A path that only passes through the folder's name is not a cd into it.
+    let t = Tree::good("cd-elsewhere");
+    t.write(
+        WEBSITE_DEPLOY_SOURCE,
+        &format!(
+            "{GOOD_WEBSITE_SOURCE}let c = \"cd '{{remote_dir}}/apps/website/frontend' && true\";\n"
+        ),
+    );
+    assert_eq!(t.text(), "");
+}
+
+/// The game server deploy may name compose in a comment and nowhere else, under either provider
+/// and either spelling.
+#[test]
+fn a_compose_command_in_the_game_server_deploy_bites() {
+    let header = format!(
+        "FAIL: {} runs compose; the staging compose stack belongs to cargo xtask deploy website:",
+        source_basename(STAGING_DEPLOY_SOURCE)
+    );
+    for (name, line) in [
+        (
+            "staging-docker",
+            "&[format!(\"cd '{}' && docker compose -f apps/website/docker-compose.staging.yml up -d\", dir)],",
+        ),
+        ("staging-podman-hyphen", "let c = \"podman-compose up -d\";"),
+    ] {
+        bites(
+            name,
+            STAGING_DEPLOY_SOURCE,
+            &format!("{GOOD_STAGING_SOURCE}{line}\n"),
+            &[&format!("{header}\n      {line}")],
+        );
+    }
+}
+
+/// The compose file's own name is not a compose command, and neither is the helper the website
+/// deploy calls its steps through.
+#[test]
+fn the_compose_recognizer_takes_commands_and_not_file_names() {
+    let text = "docker compose -f a.yml\npodman compose up\ndocker-compose up\npodman-compose\n\
+                cat apps/website/docker-compose.staging.yml\nstaging_compose up -d caddy\n";
+    assert_eq!(
+        compose_lines(text).unwrap(),
+        vec![
+            "docker compose -f a.yml",
+            "podman compose up",
+            "docker-compose up",
+            "podman-compose"
+        ]
+    );
+}
+
+/// The on-disk pair: the compose file moved away (`-f`), and a second one restored beside the
+/// API (`-e`). Neither uses [`bites`] — one needs a tree that is deliberately not good.
 #[test]
 fn the_on_disk_compose_pair_bites() {
     let gone = Tree::new("no-compose");
-    gone.write(DEPLOY_SOURCE, GOOD_SOURCE);
+    gone.write(WEBSITE_DEPLOY_SOURCE, GOOD_WEBSITE_SOURCE);
+    gone.write(STAGING_DEPLOY_SOURCE, GOOD_STAGING_SOURCE);
     assert_eq!(gone.text(), format!("FAIL: missing {GOOD_PATH}\n"));
     assert_eq!(verify_staging_compose_paths(&gone.0).unwrap(), 1);
 
-    let stale = Tree::good("stale");
-    stale.write(BAD_PATH, "services: {}\n");
+    let second = Tree::good("second");
+    second.write(BAD_PATH, "services: {}\n");
     assert_eq!(
-        stale.text(),
-        format!("FAIL: unexpected {BAD_PATH} (stale path)\n")
+        second.text(),
+        format!("FAIL: unexpected {BAD_PATH}: the staging compose file is {GOOD_PATH} alone\n")
     );
 }
 
@@ -199,6 +277,11 @@ fn a_missing_deploy_source_does_not_read_as_pass() {
         verify_staging_compose_paths(Path::new("/nonexistent/staging-compose-paths")).unwrap(),
         1
     );
+    let website_only = Tree::new("website-only");
+    website_only.write(WEBSITE_DEPLOY_SOURCE, GOOD_WEBSITE_SOURCE);
+    website_only.write(GOOD_PATH, "services: {}\n");
+    assert_eq!(verify_staging_compose_paths(&website_only.0).unwrap(), 1);
+    assert!(website_only.text().contains(STAGING_DEPLOY_SOURCE));
 }
 
 #[test]
@@ -235,14 +318,17 @@ fn a_backslash_before_a_closing_single_quote_swallows_the_rest() {
     assert_eq!(strip_comments("a='x\\' # gone\n"), "a='x\\' # gone\n");
 }
 
+/// The pinned source is the one that builds the compose commands, not the step runner in front
+/// of it: the same helper in the runner's file leaves the gate blind, and it says so.
 #[test]
-fn a_transport_facade_cannot_substitute_for_the_compose_implementation() {
-    let tree = Tree::new("facade-only");
+fn the_step_runner_cannot_substitute_for_the_compose_implementation() {
+    let tree = Tree::new("runner-only");
     tree.write(
-        "tools_v2/xtask/src/commands/deploy/staging/remote.rs",
-        GOOD_SOURCE,
+        "tools_v2/xtask/src/commands/deploy/website.rs",
+        GOOD_WEBSITE_SOURCE,
     );
+    tree.write(STAGING_DEPLOY_SOURCE, GOOD_STAGING_SOURCE);
     tree.write(GOOD_PATH, "services: {}\n");
     assert_eq!(verify_staging_compose_paths(&tree.0).unwrap(), 1);
-    assert!(tree.text().contains(DEPLOY_SOURCE));
+    assert!(tree.text().contains(WEBSITE_DEPLOY_SOURCE));
 }

@@ -97,7 +97,7 @@ tbd-reforger.service      ── read by nothing; deploy staging writes its own 
 
 ## Related documentation
 
-- [Website deployment](/documentation_v2/runbooks/website_deployment.md) — installing the API unit,
-  Caddy and the backup timers.
+- [Website deployment](/documentation_v2/runbooks/website_deployment.md) — installing the API unit
+  and the backup timers; Caddy runs from the staging compose file, not from a unit here.
 - [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — the game server
   unit and the host agent.

@@ -1,19 +1,24 @@
-# T-251 — home-server / staging stack for the website.
+# The website's stack on the home server: Postgres and the Caddy web server, plus the API as an
+# optional container under the `api` profile.
 #
-# Always starts Postgres. The API container is optional (Compose profile `api`)
-# so you can run the release binary under user systemd instead
-# (documentation_v2/runbooks/website_deployment.md Phase D) while still getting a managed DB.
+# `cargo xtask deploy website` starts `postgres` before it builds on the host and `caddy` after the
+# app build, then reloads Caddy's configuration; the API itself runs as the systemd user unit
+# tools_v2/xtask/deploy/systemd/tbd-website-api.service (documentation_v2/runbooks/website_deployment.md
+# Phase D). `restart: unless-stopped` brings both services back when the container runtime starts
+# at boot.
 #
-# From repo root (or apps/website/):
-#   docker compose -f apps/website/docker-compose.staging.yml up -d
+# Compose names the project after this folder, `website`, so the named volumes below exist on the
+# host as `website_<volume>`; a project name set another way would start from empty volumes.
+# Relative paths below resolve against this folder.
+#
+# From the repository root:
+#   docker compose -f apps/website/docker-compose.staging.yml up -d postgres caddy
 #   docker compose -f apps/website/docker-compose.staging.yml --profile api up -d --build
 #   docker compose -f apps/website/docker-compose.staging.yml config   # validate
 #
-# Host Postgres port: TBD_POSTGRES_HOST_PORT (default 5432) — see
-# tools_v2/xtask/deploy/deploy.env.example. Local laptop stack remains
-# apps/website/api_v2/docker-compose.yml on host 5434.
-#
-# SPA + COOP/COEP: tools_v2/xtask/deploy/Caddyfile.website (not this file).
+# Host Postgres port: TBD_POSTGRES_HOST_PORT (default 5432), which `deploy website` exports from
+# tools_v2/xtask/deploy/deploy.env. The development stack is apps/website/api_v2/docker-compose.yml
+# on host port 5434.
 
 services:
   postgres:
@@ -37,9 +42,33 @@ services:
       timeout: 3s
       retries: 10
 
-  # Optional — enable with `--profile api`. Prefer host systemd + Caddy for the
-  # first home-server cutover (documentation_v2/runbooks/website_deployment.md Phases D–E);
-  # this profile is the containerized alternative once the Dockerfile build is trusted on the box.
+  # The web server: serves the built app on :3080 and proxies the API paths to the API on
+  # 127.0.0.1:8080, as tools_v2/xtask/deploy/Caddyfile.website says.
+  caddy:
+    image: docker.io/library/caddy:2
+    container_name: tbd_staging_caddy
+    restart: unless-stopped
+    # Host networking: Caddy listens on the host's :3080 and reaches the API, which runs on the
+    # host rather than in this stack, at 127.0.0.1:8080. The API therefore sees every proxied
+    # request arrive from 127.0.0.1, the one peer TRUSTED_PROXIES (127.0.0.1/32) trusts for
+    # X-Forwarded-For. Caddy's admin endpoint listens on the host's localhost:2019.
+    network_mode: host
+    command: ["caddy", "run", "--config", "/etc/tbd-caddy/Caddyfile.website", "--adapter", "caddyfile"]
+    volumes:
+      # Folders, never single files and never the build output itself: the rsync replaces a file
+      # by writing a new one and renaming it over the old, and Trunk may remove and recreate
+      # `dist`, and a bind mount keeps the object it was started with. A missing source folder
+      # would also be created by the container runtime as root, which the deploy user's build
+      # could then not write. Both folders always exist in the checkout.
+      - ../../tools_v2/xtask/deploy:/etc/tbd-caddy:ro
+      - ./frontend:/srv/tbd-frontend:ro
+      # Caddy's own state: /data is its storage, /config the last configuration it loaded.
+      - tbd_staging_caddy_data:/data
+      - tbd_staging_caddy_config:/config
+
+  # Optional — enable with `--profile api`. The deploy runs the API as the host's systemd unit
+  # (documentation_v2/runbooks/website_deployment.md Phase D); this profile is the containerized
+  # alternative and binds the same 127.0.0.1:8080, so run one or the other.
   api:
     profiles: ["api"]
     build:
@@ -85,4 +114,6 @@ services:
 
 volumes:
   tbd_staging_pgdata:
+  tbd_staging_caddy_data:
+  tbd_staging_caddy_config:
   tbd_staging_api_state:

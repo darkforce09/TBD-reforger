@@ -1,10 +1,10 @@
 # Staging compose path audit
 
 The body of `cargo xtask verify staging-compose-paths`: the entry point, the audit that returns
-every verdict in print order, the comment stripper, and the parsing of the `-f` path out of the
-dry-run and live compose lines. The parent file
-`tools_v2/xtask/src/verifications/deployment/staging_compose_paths.rs` holds the pinned paths
-and keys.
+every verdict in print order, the comment stripper, the recognition of compose lines, the parsing
+of their `-f` path, and the bans on a `cd` into the API folder and on compose in the game server
+deploy. The parent file `tools_v2/xtask/src/verifications/deployment/staging_compose_paths.rs`
+holds the pinned paths and patterns.
 
 ## Contents
 
@@ -16,9 +16,9 @@ tools_v2/xtask/src/verifications/deployment/staging_compose_paths/
 ## Boundaries
 
 - Depends on: the parent's constants; `verification_core` (`Pattern`, `gate::ban_str`,
-  `Verdict`, `NotRun`); the `regex` crate for the `-f` argument.
+  `gate::probe_str`, `Verdict`, `NotRun`); the `regex` crate for the `-f` argument.
 - Used by: the parent module, which re-exports `verify_staging_compose_paths`; its tests call
-  `audit`, `strip_comments`, `f_path`, `f_regex` and `source_basename`.
+  `audit`, `compose_lines`, `strip_comments`, `f_path`, `f_regex` and `source_basename`.
 - Rules:
   - `audit` returns every failure of one run, not only the first;
   - the stripper removes `//` and `#` comments outside quotes before any pin, so a comment

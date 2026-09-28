@@ -14,9 +14,9 @@ tools_v2/xtask/src/commands/deploy/staging/
 ├── boot.rs        the `Out` sink that prints or captures; declares boot/ and re-exports its functions
 ├── config.rs      `Env`: the settings from deploy.env, their defaults, the public address, the settings check
 ├── host_agent.rs  the fleet host agent's settings, credential check, rcon block and install payload
-├── payloads.rs    the remote `bash -s` scripts: profile and addon symlink, runtime smoke, unit install
+├── payloads.rs    the remote `bash -s` scripts: website API probe, profile and addon symlink, runtime smoke, unit install
 ├── pycompat.rs    the JSON and message behaviours of Python that the render's output reproduces
-├── remote/        the deploy pipeline, the ssh and rsync argv, `ExecStart` and the remote boot wait
+├── remote/        the deploy pipeline, the website API check, the ssh and rsync argv, `ExecStart`, the boot wait
 ├── remote.rs      `SshBase` and `Runner`, the ssh transport that prints instead of spawning on dry runs
 ├── render.rs      the modpack source, `game.mods[]`, the server config render, its check, `--render-only`
 └── tests/         unit tests for boot, config, the host agent, payloads, pycompat, remote and render
@@ -37,8 +37,13 @@ staging::run
        ├─ config::Env::load (deploy.env beats the environment) and Env::validate
        ├─ print ==> publicAddress <IPv4 address>
        ├─ --render-only <path> ─▶ render::render_only
-       └─ rsync, profile, compose, smoke, server config, unit, boot verdict, host agent, log check
+       └─ website API check, rsync, profile, smoke, server config, unit, boot verdict, host agent,
+          log check
 ```
+
+The deploy starts nothing of the website: it first asks the host for `<TBD_BACKEND_URL>/healthz`
+and stops with exit 1, naming `cargo xtask deploy website`, when the API does not answer. The API,
+its Postgres and Caddy are that command's, which owns the staging compose file.
 
 `Env::from_environment` takes the settings from `crate::core::deploy_environment`: the file
 decides every key it assigns and the environment fills the rest. `TBD_SSH_HOST` is required; the
@@ -72,9 +77,9 @@ single `TBD_WORKSHOP_MOD_ID`; every source passes the same checks.
 - Depends on: `crate::core::repository_root` and `crate::core::deploy_environment` (the settings
   file, the deploy host and the remote folder defaults); `verification_core::proc`; `serde_json` and `regex`;
   `tools_v2/xtask/deploy/systemd/fleet-host-agent.service`, embedded by `host_agent.rs`; on the
-  host, `cargo xtask setup server-profile`, `apps/website/docker-compose.staging.yml`, the
-  `fleet-host-agent` crate and the dedicated server; and `cargo xtask mod remote-logs` for the last
-  check.
+  host, the website API that `cargo xtask deploy website` runs there, `cargo xtask setup
+  server-profile`, the `fleet-host-agent` crate and the dedicated server; and
+  `cargo xtask mod remote-logs` for the last check.
 - Used by: `tools_v2/xtask/src/commands/deploy/dispatch.rs`; people deploying the staging server.
 - Rules: `deploy.env` is parsed, never executed, and a command line in it stops the deploy
   (`a_command_line_in_the_deploy_file_is_refused_and_never_run` in `tests/config/tests.rs`); its
@@ -85,7 +90,8 @@ single `TBD_WORKSHOP_MOD_ID`; every source passes the same checks.
   (`raw_substitution_can_emit_non_json_and_the_validator_catches_it` in `tests/render/tests.rs`); a
   modpack URL without a token fails before any network call
   (`modpack_url_without_a_token_fails_before_any_network_call`); the remote payloads are pinned
-  byte for byte in `tests/payloads/tests.rs`.
+  byte for byte in `tests/payloads/tests.rs`; the pipeline runs no compose command
+  (`cargo xtask verify staging-compose-paths`).
 
 ## Related documentation
 

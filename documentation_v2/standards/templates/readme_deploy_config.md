@@ -117,8 +117,8 @@ copy. The commands parse it as `KEY=VALUE` lines and never execute it. The deplo
 Creator's WebAssembly needs (`Cross-Origin-Opener-Policy: same-origin`,
 `Cross-Origin-Embedder-Policy: credentialless`), proxies `/api/*`, `/uploads/*`, `/map-assets/*`
 and `/healthz` to `127.0.0.1:8080`, and serves every other path from the built app's `dist` folder
-with an `index.html` fallback. Its site root is a fixed path, edited when the checkout sits
-elsewhere.
+with an `index.html` fallback. Its paths are the `caddy` container's, which mounts this folder
+and the app's folder read-only, so the site root holds wherever the checkout sits.
 
 ## Installed by
 
@@ -127,15 +127,16 @@ elsewhere.
   `cargo xtask mod bootstrap-staging`, `cargo xtask mod remote-logs`,
   `cargo xtask debug direct-join`, `cargo xtask debug a2s-probe` and
   `cargo xtask setup client-addons`.
-- `Caddyfile.website`: loaded by Caddy on the host by hand; `cargo xtask deploy website` ends by
-  printing the `caddy reload --config` line for it. `apps/website/api_v2/tests/forwarded_for_trust.rs`
-  pins its `reverse_proxy 127.0.0.1:8080` upstream.
+- `Caddyfile.website`: served by the `caddy` service of `apps/website/docker-compose.staging.yml`,
+  which `cargo xtask deploy website` starts and then reloads, so an edit applies with the next
+  deploy. `apps/website/api_v2/tests/forwarded_for_trust.rs` pins its `reverse_proxy
+  127.0.0.1:8080` upstream.
 - `systemd/`: each unit's install command is in its header and in that folder's README.
 
 ## Boundaries
 
-- Depends on: ssh and rsync on the development machine, and Caddy, systemd user units and a
-  container runtime on the host.
+- Depends on: ssh and rsync on the development machine, and systemd user units and a container
+  runtime with compose, which runs Caddy, on the host.
 - Used by: the `deploy`, `mod` and `debug` commands above, through the layout constants; the API's
   forwarded-for test, which reads the Caddyfile.
 - Rules: `deploy.env` is never committed and never rsynced; a path added here gets its constant in

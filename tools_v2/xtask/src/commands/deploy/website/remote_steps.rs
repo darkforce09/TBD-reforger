@@ -1,8 +1,25 @@
-//! The commands each remote step runs over ssh, as the text the shell receives.
+//! The commands each remote step of `cargo xtask deploy website` runs over ssh, as the text the
+//! host's shell receives.
 //!
-//! Pure functions, so the dry run prints exactly what the live run executes and the tests pin the
-//! parts the server depends on: the working directory, the container the checksum repair talks
-//! to, and the state directory the runtime files move into.
+//! **Role:** builds every remote step's command: the staging compose services (Postgres, and
+//! Caddy with its configuration reload), the API and app builds, the migration checksum repair,
+//! the move of runtime files into the unit's state folder, and the unit restart; and
+//! [`login_shell`], the one quoted word ssh carries each of them in.
+//!
+//! **Position:** called by [`crate::commands::deploy::website`], which prints each command under
+//! `--dry-run` and sends it through ssh as a [`login_shell`] word otherwise, so the dry run shows
+//! exactly what a live run executes. `tests/website/tests.rs` pins what the host depends on, and
+//! `cargo xtask verify staging-compose-paths` reads this file's compose lines.
+//!
+//! **Signals & state:** none; pure functions.
+//!
+//! **Invariants:** every compose command runs from the checkout root with
+//! `TBD_POSTGRES_HOST_PORT` exported, names `apps/website/docker-compose.staging.yml`, and runs
+//! under `docker compose` when the host has docker, else under `podman compose`; the Caddy reload
+//! names the Caddyfile at the path the compose file's `caddy` service mounts it
+//! ([`caddyfile_in_container`]).
+
+use crate::core::repository_layout;
 
 /// The user-systemd `StateDirectory=` name the API unit declares; `%S/<this>` is where the API
 /// keeps what it writes (CMS uploads), outside the checkout the rsync deletes in.
@@ -10,6 +27,34 @@ pub const STATE_DIRECTORY: &str = "tbd-website-api";
 
 /// The Postgres container `apps/website/docker-compose.staging.yml` starts on the server.
 pub const STAGING_DB_CONTAINER: &str = "tbd_staging_db";
+
+/// Where the compose file's `caddy` service mounts [`repository_layout::DEPLOY_DIR`], read-only.
+pub const CADDY_CONFIG_MOUNT: &str = "/etc/tbd-caddy";
+
+/// [`repository_layout::CADDYFILE`] as the compose file's `caddy` service sees it: the file in
+/// the deploy folder mounted at [`CADDY_CONFIG_MOUNT`]. The service starts Caddy on this path.
+pub fn caddyfile_in_container() -> String {
+    let file_name = repository_layout::CADDYFILE
+        .rsplit_once('/')
+        .map_or(repository_layout::CADDYFILE, |(_, name)| name);
+    format!("{CADDY_CONFIG_MOUNT}/{file_name}")
+}
+
+/// How many times the web server step asks Caddy to reload, one second apart. `compose up -d`
+/// returns once the container has started, which can be before Caddy's admin endpoint listens.
+pub const CADDY_RELOAD_ATTEMPTS: u32 = 5;
+
+/// The one ssh argument that runs `command` in a login shell on the host, so the deploy user's
+/// profile (`PATH` with `~/.cargo/bin`, `POSTGRES_PASSWORD`) applies.
+///
+/// ssh joins its remote arguments with spaces into a single line for the host's own shell. Sent
+/// as the three arguments `bash`, `-lc` and the command, `bash -lc` would receive only the
+/// command's first word, and the rest would run in the host's plain shell, from the home folder
+/// and without the profile. The command is therefore single-quoted into one word, each `'`
+/// inside it written as `'\''`.
+pub fn login_shell(command: &str) -> String {
+    format!("bash -lc '{}'", command.replace('\'', "'\\''"))
+}
 
 /// One remote step in the order the deploy runs them: the line the operator sees, and the shell.
 pub struct RemoteStep {
@@ -26,10 +71,37 @@ impl RemoteStep {
     }
 }
 
-/// Bring up the staging Postgres with whichever compose provider the host has.
-pub fn compose_up(remote_dir: &str, postgres_port: &str) -> String {
+/// The start of every compose step: the checkout root as the working folder, the Postgres host
+/// port the compose file interpolates, and `staging_compose`, a shell function that runs the
+/// staging compose file under docker compose when the host has docker, else under podman compose.
+fn compose_session(remote_dir: &str, postgres_port: &str) -> String {
     format!(
-        "cd '{remote_dir}' &&     export TBD_POSTGRES_HOST_PORT='{postgres_port}' &&     if command -v docker >/dev/null 2>&1; then       docker compose -f apps/website/docker-compose.staging.yml up -d postgres;     else       podman compose -f apps/website/docker-compose.staging.yml up -d postgres;     fi"
+        "cd '{remote_dir}' && export TBD_POSTGRES_HOST_PORT='{postgres_port}' && \
+         staging_compose() {{ if command -v docker >/dev/null 2>&1; then \
+         docker compose -f apps/website/docker-compose.staging.yml \"$@\"; else \
+         podman compose -f apps/website/docker-compose.staging.yml \"$@\"; fi; }}"
+    )
+}
+
+/// Start the staging Postgres, or leave it running.
+pub fn postgres_start(remote_dir: &str, postgres_port: &str) -> String {
+    format!(
+        "{} && staging_compose up -d postgres",
+        compose_session(remote_dir, postgres_port)
+    )
+}
+
+/// Start the Caddy web server, or leave it running, then have it reload the Caddyfile, so an
+/// edited Caddyfile applies without a restart. A container that `up` has just (re)created reads
+/// the current file as it starts, and the reload then finds nothing to change.
+pub fn web_server_start_and_reload(remote_dir: &str, postgres_port: &str) -> String {
+    format!(
+        "{session} && staging_compose up -d caddy && attempt=1 && \
+         until staging_compose exec -T caddy caddy reload --config {caddyfile} \
+         --adapter caddyfile; do if [ \"$attempt\" -ge {CADDY_RELOAD_ATTEMPTS} ]; then exit 1; fi; \
+         attempt=$((attempt + 1)); sleep 1; done",
+        session = compose_session(remote_dir, postgres_port),
+        caddyfile = caddyfile_in_container(),
     )
 }
 
