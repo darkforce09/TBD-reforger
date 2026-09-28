@@ -135,7 +135,7 @@ pub fn cmd_direct_join_log(
         run_id,
         "H4",
         "ping",
-        json!({"ms": ping, "host": "192.168.0.140"}),
+        json!({"ms": ping, "host": "192.168.0.129"}),
     )?;
     append(
         log,

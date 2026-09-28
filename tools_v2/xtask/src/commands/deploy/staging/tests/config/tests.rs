@@ -8,7 +8,7 @@ pub(crate) const RUNTIME_CREDENTIAL: &str = "tbdm_0123456789abcdef0123456789abcd
 /// render test pass against inputs the loader can no longer produce.
 pub(crate) fn base() -> Env {
     Env {
-        ssh_host: "sam@192.168.0.140".into(),
+        ssh_host: "sam@192.168.0.129".into(),
         remote_dir: "/home/sam/tbd/repo".into(),
         profile_dir: "/home/sam/tbd/profile".into(),
         addons_staging: "/home/sam/tbd/addons".into(),
@@ -16,11 +16,11 @@ pub(crate) fn base() -> Env {
         backend_url: "http://127.0.0.1:8080".into(),
         addon_guid: "B2C3D4E5F6A78901".into(),
         scenario: "{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf".into(),
-        bind_ip: "192.168.0.140".into(),
+        bind_ip: "192.168.0.129".into(),
         server_dir: "/home/sam/steam/arma-reforger-server".into(),
         server_mode: "config".into(),
         workshop_mod_id: "5EAF00DBEEF01234".into(),
-        public_address: "192.168.0.140".into(),
+        public_address: "192.168.0.129".into(),
         game_port: "2001".into(),
         a2s_port: "17777".into(),
         server_name: "TBD Staging POC".into(),

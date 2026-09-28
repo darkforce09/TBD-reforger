@@ -129,7 +129,7 @@ fn the_remediation_names_every_directory_that_must_move() {
 fn plan_for(skip_compose: bool, skip_api: bool, skip_spa: bool) -> Vec<String> {
     let cfg = DeployCfg {
         root: PathBuf::from("/tmp/repo"),
-        host: "sam@192.168.0.140".into(),
+        host: "sam@192.168.0.129".into(),
         remote_dir: "/home/sam/tbd/repo".into(),
         postgres_port: "5432".into(),
         systemd_unit: "tbd-website-api.service".into(),

@@ -31,7 +31,7 @@ pub fn selftest(_paths: &Paths) -> u8 {
          00:12:51.285   ENGINE       : gproj: '/home/sam/tbd/profile/addons/TBDFramework_{guid}/addon.gproj' guid: '{guid}'\n\
          00:12:28.401  BACKEND      : Server config loaded.\n\
          00:12:28.401   BACKEND      : JSON is Valid\n\
-         00:12:58.689 BACKEND      : Server registered with address: 192.168.0.140:2001\n\
+         00:12:58.689 BACKEND      : Server registered with address: 192.168.0.129:2001\n\
          00:12:58.689 SCRIPT       : [TBD][Stage] LOADING -> LOBBY\n"
     );
     // (b) THE FIX: -addonsDir + -config. Same two healthy lines, different gproj path.
@@ -42,7 +42,7 @@ pub fn selftest(_paths: &Paths) -> u8 {
          00:20:30.564   ENGINE       : gproj: '{staging}/tbd-framework/addon.gproj' guid: '{guid}'\n\
          00:20:28.401  BACKEND      : Server config loaded.\n\
          00:20:28.401   BACKEND      : JSON is Valid\n\
-         00:20:58.689 BACKEND      : Server registered with address: 192.168.0.140:2001\n"
+         00:20:58.689 BACKEND      : Server registered with address: 192.168.0.129:2001\n"
     );
     // (c) addons mode: right code, no room. The other broken half.
     let addons_only = format!(
@@ -56,7 +56,7 @@ pub fn selftest(_paths: &Paths) -> u8 {
          00:30:30.564   ENGINE       : gproj: './addons/core/core.gproj' guid: '5614BBCCBB55ED1C'\n\
          00:30:28.401  BACKEND      : Server config loaded.\n\
          00:30:28.401   BACKEND      : JSON is Valid\n\
-         00:30:58.689 BACKEND      : Server registered with address: 192.168.0.140:2001\n"
+         00:30:58.689 BACKEND      : Server registered with address: 192.168.0.129:2001\n"
         .to_string();
 
     for (name, body) in [

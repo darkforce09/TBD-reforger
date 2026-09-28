@@ -5,7 +5,7 @@ use std::path::PathBuf;
 pub(crate) enum DebugCmd {
     #[command(name = "a2s-probe")]
     A2sProbe {
-        #[arg(long, default_value = "192.168.0.140")]
+        #[arg(long, default_value = "192.168.0.129")]
         host: String,
         #[arg(long, default_value = "2001,17777")]
         ports: String,

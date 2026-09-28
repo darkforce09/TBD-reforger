@@ -92,7 +92,7 @@ pub fn run_with_root(root: &Path, home: &Path) -> Result<u8> {
         staging.display()
     );
     println!();
-    println!("Restart the game, then Direct Join → 192.168.0.140 port 2001");
+    println!("Restart the game, then Direct Join → 192.168.0.129 port 2001");
 
     Ok(0)
 }

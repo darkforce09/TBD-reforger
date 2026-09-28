@@ -19,7 +19,7 @@ Usage: cargo xtask deploy website [--dry-run] [--help]
   -h, --help  Show this help.
 
 Environment ({deploy_env}):
-  TBD_SSH_HOST              required (e.g. sam@192.168.0.140)
+  TBD_SSH_HOST              required (e.g. sam@192.168.0.129)
   TBD_REMOTE_DIR            required (must be under /home/sam/tbd/ — never prairielearn)
   TBD_SSH_PASS              optional (sshpass)
   TBD_SSH_IDENTITY_FILE     optional (ssh -i)

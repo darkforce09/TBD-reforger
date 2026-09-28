@@ -26,7 +26,7 @@ use verification_core::verdict::NotRun;
 
 use crate::core::repository_root::find_repo_root;
 
-const PING_HOST: &str = "192.168.0.140";
+const PING_HOST: &str = "192.168.0.129";
 const A2S_PORTS: &[u16] = &[2001, 17777];
 
 /// Remote probe body — byte-stable with the former bash `<<'RS'` heredoc.

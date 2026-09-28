@@ -226,7 +226,7 @@ impl Env {
             None
         };
 
-        let bind_ip = def("TBD_BIND_IP", "192.168.0.140");
+        let bind_ip = def("TBD_BIND_IP", "192.168.0.129");
         Ok(Env {
             ssh_host,
             remote_dir,
