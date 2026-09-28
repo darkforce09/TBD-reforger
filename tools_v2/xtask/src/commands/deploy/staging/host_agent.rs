@@ -116,6 +116,7 @@ pub fn install_payload(
 ) -> String {
     format!(
         "set -euo pipefail\n\
+         {toolchain}\n\
          umask 077\n\
          AGENT_DIR=\"$HOME/.config/fleet-host-agent\"\n\
          mkdir -p \"$AGENT_DIR\" \"$HOME/.local/bin\" \"$HOME/.config/systemd/user\"\n\
@@ -160,6 +161,7 @@ pub fn install_payload(
         config = server_config_remote,
         port = settings.rcon_port,
         unit = UNIT_TEMPLATE,
+        toolchain = crate::commands::deploy::remote_rust_toolchain::PUT_RUST_TOOLCHAIN_ON_PATH,
     )
 }
 

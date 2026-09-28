@@ -62,7 +62,9 @@ fn install_payload_writes_secret_files_and_reads_the_unit_state_back() {
         "/home/deploy/tbd/repo",
         "/home/deploy/tbd/server.config.json",
     );
-    assert!(p.starts_with("set -euo pipefail\numask 077\n"));
+    assert!(
+        p.starts_with("set -euo pipefail\nexport PATH=\"$HOME/.cargo/bin:$PATH\"\numask 077\n")
+    );
     assert!(
         p.contains("(cd '/home/deploy/tbd/repo' && cargo build --release -q -p fleet-host-agent)")
     );
@@ -123,4 +125,20 @@ fn the_live_scenario_is_read_only_from_a_valid_config() {
         scenario_of_config(r#"{"game": {"scenarioId": "{69A85365FC09E2CA"}}"#),
         None
     );
+}
+
+/// ssh runs the payload in a non-login shell, which never reads `~/.profile`: the agent build
+/// finds `cargo` only because the payload puts the toolchain on `PATH` before it.
+#[test]
+fn install_payload_puts_the_rust_toolchain_on_path_before_the_agent_build() {
+    let p = install_payload(
+        &settings(),
+        "/home/deploy/tbd/repo",
+        "/home/deploy/tbd/server.config.json",
+    );
+    let toolchain = p
+        .find(crate::commands::deploy::remote_rust_toolchain::PUT_RUST_TOOLCHAIN_ON_PATH)
+        .expect("the payload puts the toolchain on PATH");
+    let build = p.find("cargo build").expect("the payload builds the agent");
+    assert!(toolchain < build, "PATH must be set before cargo runs");
 }

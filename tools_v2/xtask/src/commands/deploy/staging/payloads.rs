@@ -43,6 +43,7 @@ pub fn website_api_health_payload(health_url: &str) -> String {
 pub fn profile_payload(env: &Env) -> String {
     format!(
         "set -euo pipefail\n\
+         {toolchain}\n\
          mkdir -p \"{addons}\" \"{profile}\"\n\
          ln -sfn \"{remote}/apps/mod/tbd-framework\" \"{addons}/tbd-framework\"\n\
          export TBD_MACHINE_CREDENTIAL='{credential}'\n\
@@ -54,6 +55,7 @@ pub fn profile_payload(env: &Env) -> String {
         remote = env.remote_dir,
         credential = env.mod_runtime_credential,
         backend = env.backend_url,
+        toolchain = crate::commands::deploy::remote_rust_toolchain::PUT_RUST_TOOLCHAIN_ON_PATH,
     )
 }
 

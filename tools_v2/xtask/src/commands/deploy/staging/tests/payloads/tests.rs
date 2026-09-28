@@ -18,11 +18,20 @@ fn profile_payload_hands_the_credential_to_setup() {
     let p = profile_payload(&base());
     assert!(p.starts_with("set -euo pipefail\n"));
     assert!(p.contains("mkdir -p \"/home/deploy/tbd/addons\" \"/home/deploy/tbd/profile\""));
-    // `setup server-profile` reads the credential from its environment; it is the only export.
-    assert!(p.contains(&format!(
-        "export TBD_MACHINE_CREDENTIAL='{RUNTIME_CREDENTIAL}'"
-    )));
-    assert_eq!(p.matches("export ").count(), 1, "{p}");
+    // `setup server-profile` reads the credential from its environment; beside the toolchain's
+    // PATH line it is the only export.
+    let exports: Vec<&str> = p
+        .lines()
+        .filter(|line| line.starts_with("export "))
+        .collect();
+    assert_eq!(
+        exports,
+        [
+            crate::commands::deploy::remote_rust_toolchain::PUT_RUST_TOOLCHAIN_ON_PATH.to_string(),
+            format!("export TBD_MACHINE_CREDENTIAL='{RUNTIME_CREDENTIAL}'"),
+        ],
+        "{p}"
+    );
     assert!(p.contains(
         "(cd \"/home/deploy/tbd/repo\" && cargo run -q -p xtask -- setup server-profile \"/home/deploy/tbd/profile\")"
     ));
@@ -87,4 +96,18 @@ fn smoke_payload_reads_the_deployment_with_and_without_the_credential() {
             .count(),
         "{p}"
     );
+}
+
+/// ssh runs the payload in a non-login shell, which never reads `~/.profile`: `setup
+/// server-profile` finds `cargo` only because the payload puts the toolchain on `PATH` before it.
+#[test]
+fn profile_payload_puts_the_rust_toolchain_on_path_before_cargo() {
+    let p = profile_payload(&base());
+    let toolchain = p
+        .find(crate::commands::deploy::remote_rust_toolchain::PUT_RUST_TOOLCHAIN_ON_PATH)
+        .expect("the payload puts the toolchain on PATH");
+    let cargo = p
+        .find("cargo run")
+        .expect("the payload runs setup server-profile");
+    assert!(toolchain < cargo, "PATH must be set before cargo runs");
 }

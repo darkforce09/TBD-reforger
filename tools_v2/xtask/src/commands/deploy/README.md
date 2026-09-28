@@ -19,6 +19,7 @@ tools_v2/xtask/src/commands/deploy/
 ├── development_machine_only_paths.rs  the rsync excludes both deploys share: build folders and local tool state
 ├── dispatch.rs                        routes each `DeployCmd` to its entry
 ├── mod.rs                             the module tree
+├── remote_rust_toolchain.rs           the PATH line every remote step runs before it calls cargo or trunk
 ├── staging/                           the staging deploy: settings, render, payloads, pipeline and boot verdict
 ├── staging.rs                         `deploy staging`: `Paths`, the flag parser and the mode order
 ├── tests/                             unit tests for backup, the helpers, the drill, the shared excludes, staging flags and website

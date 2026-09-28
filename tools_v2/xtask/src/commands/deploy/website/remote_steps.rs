@@ -19,6 +19,7 @@
 //! names the Caddyfile at the path the compose file's `caddy` service mounts it
 //! ([`caddyfile_in_container`]).
 
+use crate::commands::deploy::remote_rust_toolchain::PUT_RUST_TOOLCHAIN_ON_PATH;
 use crate::core::repository_layout;
 
 /// The user-systemd `StateDirectory=` name the API unit declares; `%S/<this>` is where the API
@@ -109,14 +110,14 @@ pub fn web_server_start_and_reload(remote_dir: &str, postgres_port: &str) -> Str
 /// Build the release API binary in the remote checkout.
 pub fn api_build(remote_dir: &str) -> String {
     format!(
-        "cd '{remote_dir}' &&     export PATH=\"$HOME/.cargo/bin:$PATH\" &&     cargo build --release -p website-api --bin api &&     test -x target/release/api"
+        "cd '{remote_dir}' &&     {PUT_RUST_TOOLCHAIN_ON_PATH} &&     cargo build --release -p website-api --bin api &&     test -x target/release/api"
     )
 }
 
 /// Build the Leptos SPA into `frontend/dist`.
 pub fn spa_build(remote_dir: &str) -> String {
     format!(
-        "cd '{remote_dir}/apps/website/frontend' &&     export PATH=\"$HOME/.cargo/bin:$PATH\" &&     trunk build --release"
+        "cd '{remote_dir}/apps/website/frontend' &&     {PUT_RUST_TOOLCHAIN_ON_PATH} &&     trunk build --release"
     )
 }
 
@@ -129,7 +130,7 @@ pub fn spa_build(remote_dir: &str) -> String {
 /// checkout before it is committed (`tests/migrations_are_immutable.rs` pins the hashes).
 pub fn migration_checksum_repair(remote_dir: &str) -> String {
     format!(
-        "cd '{remote_dir}' &&     export PATH=\"$HOME/.cargo/bin:$PATH\" &&     TBD_DB_CONTAINER={STAGING_DB_CONTAINER} cargo xtask db repair-migration-checksum --force"
+        "cd '{remote_dir}' &&     {PUT_RUST_TOOLCHAIN_ON_PATH} &&     TBD_DB_CONTAINER={STAGING_DB_CONTAINER} cargo xtask db repair-migration-checksum --force"
     )
 }
 
