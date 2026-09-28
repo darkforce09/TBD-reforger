@@ -49,8 +49,10 @@ acceptance = [
     "Deployment decisions, fleet broadcast, kick and load_mission, and the relay and link chat replies behave as before, run from the main thread.",
     "The Enfusion compile, the comment card, the file-length ceiling and the three documentation gates pass.",
 ]
+shipped_at = "3d3fa6eb9"
 created_at = "2026-09-28T17:17:07Z"
 completed_at = "2026-09-28T17:21:04Z"
+estimated = ["tokens"]
 
 [scope]
 domain = "mod"
