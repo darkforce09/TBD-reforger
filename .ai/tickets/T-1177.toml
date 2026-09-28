@@ -3,9 +3,33 @@ kind = "work"
 title = "Check event existence and access for fire mission save, list"
 summary = "POST /fire-missions stores any well-formed event_id without checking the event exists (no foreign key either: migration 0019:109-110), and GET /events/{id}/fire-missions returns an event's rows to any signed-in user without viewer_event_access (operations/handlers/fire_missions.rs:191-265, :274-291)."
 class = "bug"
-status = "idea"
+status = "shipped"
+order = 9823
 notes = "Paths under apps/website/api_v2. src/operations/handlers/fire_missions.rs:221-238 parses event_id and inserts it with no SELECT on events; migrations/0019_ingest_pointer_foreign_keys.sql:109-110 leaves fire_missions.event_id unconstrained because save_fire has no foreign_key_error arm, so a fire mission can point at a missing or deleted event and is then unreachable. :274-291 list_event_fire_missions takes AuthUser (_u unused) and returns every row for the event id, while other event reads apply operations/services/event_access/visibility.rs viewer_event_access (operations/handlers/event_listing.rs:87). Check existence and visibility on save and list (and add the FK with an error arm). Source: Phase 5 doc writer F03. 2026-09-28 (milestone V): the existence half is fixed; list and save for a missing event answer 404 through require_event (src/operations/handlers/fire_missions.rs:237,292). Still open: the list takes AuthUser without viewer_event_access (:286), and fire_missions.event_id has no foreign key, which needs a migration and a dangling-row policy (operator decision). 2026-09-28 (milestone B): the remainder is delivered. src/operations/handlers/fire_missions/mod.rs:37 applies viewer_event_access to list and save; migrations/0060_game_ballistics_catalogs_and_fire_mission_inputs.sql:59-86 detaches dangling rows into detached_event_id and adds fire_missions_event_id_fkey. Evidence: tests/game_ballistics_fire_missions.rs:660 game_ballistics_fire_mission_event_foreign_keys_answer_404, :737 game_ballistics_fire_mission_list_and_save_follow_viewer_event_access; tests/game_ballistics_migration.rs:339 game_ballistics_migration_detaches_fire_missions_naming_a_missing_event. Ships after the B commit is stamped."
+main_goal = "A fire mission names only an existing event the viewer may see."
+context = [
+    "apps/website/api_v2/src/operations/handlers/fire_missions/mod.rs require_full_event_access applies services::event_access::visibility::viewer_event_access; save.rs and list.rs call it for the named event.",
+    "apps/website/api_v2/migrations/0060_game_ballistics_catalogs_and_fire_mission_inputs.sql adds detached_event_id and the fire_missions_event_id_fkey foreign key.",
+]
+requirement = [
+    "POST /api/v1/fire-missions and GET /api/v1/events/{id}/fire-missions answer 404 for a missing or deleted event and apply viewer_event_access.",
+    "fire_missions.event_id references events(id) ON DELETE SET NULL; a row naming a missing event keeps that id in detached_event_id.",
+]
+current_state = ["Delivered by milestone B (55a6eab9f): viewer_event_access on save and list, and migration 0060 detaches dangling rows and adds the foreign key."]
+approach = ["Route save and list through one shared event access check, and preserve-and-detach dangling rows before adding the foreign key (milestone B)."]
+verify = [
+    "cargo xtask db test-it --test game_ballistics_fire_missions",
+    "cargo xtask db test-it --test game_ballistics_migration",
+]
+acceptance = [
+    "Saving or listing fire missions for a missing or deleted event answers 404.",
+    "A viewer who cannot see an event neither lists nor saves its fire missions.",
+    "The database refuses a fire mission row naming a missing event, and the migration moves an existing row's missing event id into detached_event_id.",
+]
+shipped_at = "55a6eab9f"
 created_at = "2026-09-25T23:35:04Z"
+completed_at = "2026-09-28T16:10:43Z"
+estimated = ["tokens"]
 
 [scope]
 domain = "website"

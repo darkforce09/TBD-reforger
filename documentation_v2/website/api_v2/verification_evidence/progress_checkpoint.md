@@ -6,7 +6,7 @@ Milestones E, F, M, T, C, V and B are implemented and verified; overall readines
 passing**, because staging (S) has not started (see `remaining_milestones.md`) and no receipt
 exists: `cargo xtask verify api-readiness --execute` was not run (it needs a quiet working tree).
 T is committed on main as 0ef292758 and C as b49fb86c1; V is committed as bd6ec3edf (2026-09-28),
-with its fourteen tickets shipped and stamped. B is complete and not yet committed.
+with its fourteen tickets shipped and stamped. B is committed as 55a6eab9f (2026-09-28), with T-940.10, T-1177 and T-1245 shipped and stamped.
 
 ## Milestone status
 
@@ -19,7 +19,7 @@ with its fourteen tickets shipped and stamped. B is complete and not yet committ
 | C — personnel pagination, audit replay and query recovery, audit frontend, vehicle mutations, wiki features, content storage | Complete, committed as b49fb86c1 (design: `administration_and_content.md`). |
 | V — route acceptance, contract parity, properties, controlled races, failure injection, engineering laws | Complete 2026-09-28, committed as bd6ec3edf (design: `verification_completeness.md`; findings: `verification_findings.md`; execution record below). |
 | S | Not started (`remaining_milestones.md`). |
-| B — game ballistics: flight model, oracle calibration, solver, dispersion, fuze, crest, battery, catalog API, saved fire missions, offline mortar page | Complete 2026-09-28, not committed (design: `game_ballistics.md`; execution record below). |
+| B — game ballistics: flight model, oracle calibration, solver, dispersion, fuze, crest, battery, catalog API, saved fire missions, offline mortar page | Complete 2026-09-28, committed as 55a6eab9f (design: `game_ballistics.md`; execution record below). |
 
 Migrations 0057–0060 are pinned (B adds 0060); the next migration is 0061. Versions 0022–0024 stay retired.
 
@@ -225,8 +225,8 @@ Foreign files C touched, each only in its own separate hunk: `Cargo.lock` and
 
 ## Open items
 
-- **B commit.** T-940.10, the T-1177 remainder and T-1245 carry their delivery evidence in
-  `notes` and ship and stamp after the B commit (V precedent). B's NOTE findings are T-1252
+- **B commit.** 55a6eab9f; T-940.10, the T-1177 remainder and T-1245 are shipped and stamped with
+  it (bodies filled from the delivered evidence). B's NOTE findings are T-1252
   (API rebuild on a migration change), T-1253 (catalog version flag), T-1254 (signed-out
   Administration nav), T-1255 (`gate s-routes` workspace row), T-1257 (native frontend dead
   code); T-1256 files the under-barrel grenade launcher idea; the dead `null_tolerance_*` skip
@@ -418,6 +418,8 @@ the design note `game_ballistics.md`.
 
 | 2026-09-28 | `ci` steps, final: `rust-ci` run 1 and 2 red at rust-fmt (two B files, then one import order in `xtask …/recipes.rs`), formatted by the orchestrator; run 3 (`z-ci-rust-ci-3.log`) PASS — rust-fmt, rust-clippy, rust-build, wasm-ci (incl. the offline crate) and rust-test-it, 3,098 passed, 0 failed, 2 ignored (the two pre-existing ignored map-engine tests, run unfiltered by wasm-ci); `ci ci-local-schema` PASS (483 citations); `mk ci-local-leptos` exit 0, 1,982 passed.
 | 2026-09-28 | B28 done: register — seven B requirements (real implementation paths, assumptions: dispersion not verified in-engine, offline gate needs the local tile pyramid, tile index and tbd-sat, fixtures pinned to game build 1.8.0.13), five map-engine checks on one command (51 + 34 + 81 + 29 + 18 = 213, each pattern verified against `f2-map-engine-test.log`), the two gate checks (32, 15), `verification_game_ballistics` 29; backend_regression 1,339, frontend_quality 1,982, route_acceptance 73, contract_parity 86, browser_acceptance 26 with the 26/26 marker; judge-only `verify api-readiness` validates the register (FAIL without receipts). V execution record archived; `remaining_milestones.md` §B implemented; T-940.10 re-anchored with evidence, T-1177 remainder and T-1245 evidenced (ship after the stamp); T-1252 to T-1257 filed, T-1232 extended; `ticket check` OK; `game_ballistics.md` register table, fuze search and `SOLVER_REVISION` updated; documentation gates with untracked files: link-check and markdown-placement OK, readme-coverage 19 generated folders + 7 entries of the deletions. |
+
+| 2026-09-28 | Committed as 55a6eab9f (557 files; the two Workbench `.rdb` files stay unstaged); T-940.10 shipped and stamped; T-1177 and T-1245 bodies filled from the delivered evidence, shipped and stamped; `ticket check` OK.
 
 ### Milestone B launch amendments
 

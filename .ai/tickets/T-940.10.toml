@@ -3,13 +3,13 @@ kind = "work"
 title = "Mortar ballistics crate for API and offline frontend"
 summary = "One headless game-ballistics model in the map engine (flight, solver, dispersion, fuze, crest, battery) serves the API's fire-mission re-solve and the mortar page, which also solves offline."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 8140
 spec = "documentation_v2/tickets/specs/t940_website_platform.md"
 plan = "documentation_v2/tickets/plans/t-940_10_plan.md"
 executor = "claude-code"
-priority = 2
 notes = "2026-09-28 (milestone B): delivered; ships after the B commit is stamped. Evidence: map-engine data::scenario::ballistics:: 213 passed (tests/symmetry.rs:394 raising_the_target_lowers_the_elevation_and_shortens_the_flight); db test-it game_ballistics 29 (tests/game_ballistics_fire_missions.rs:245 agreeing save, :356 skewed client solution refused); mk ballistics-wasm-agreement PASS 32/32 bit-identical; mk mortar-offline-gate 15 cases PASS (API down behind a 502 proxy and server gone). Logs: target/api-progress-checkpoint/2026-09-28-b/."
+priority = 2
 parent = "T-940"
 main_goal = "Mortar solutions are physically credible and computed on the client too."
 context = [
@@ -37,7 +37,10 @@ acceptance = [
     "The mortar page produces a solution with the API unreachable.",
     "The API and the page agree on the same inputs to one mil.",
 ]
+shipped_at = "55a6eab9f"
 created_at = "2026-09-05T02:33:18Z"
+completed_at = "2026-09-28T16:08:33Z"
+estimated = ["tokens"]
 owns = [
     "apps/website/map-engine/src/data/scenario/ballistics/mod.rs",
     "apps/website/api_v2/src/operations/services/fire_mission_resolve.rs",

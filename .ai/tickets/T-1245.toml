@@ -3,9 +3,32 @@ kind = "work"
 title = "Share the mortar save DTO and decode refresh token_type"
 summary = "Frontend src/v2 pages/field_tools/mortar/saved_fires.rs:45 keeps SaveResponse private and decode-only, so r_api_telemetry.rs:142 pairs a test-local SavedFireAnswer; core/auth/session.rs:62 RefreshResponse leaves token_type unclaimed (dto/tests/r_api_auth.rs:83)."
 class = "chore"
-status = "idea"
+status = "shipped"
+order = 9824
 notes = "Paths under apps/website/frontend/src/v2. Move SaveResponse into core/api/dto beside SavedFire so the golden round trip uses the page's own type, and decide whether RefreshResponse claims token_type (always Bearer) or keeps it listed as unclaimed. Source: milestone V finding V-F97 (golden reproduction). 2026-09-28 (milestone B): delivered. src/v2/core/api/dto/fire_missions.rs:223 SavedFireMissionAnswer is the page's own save answer (pages/field_tools/mortar/saved_fires/save_request.rs:115) and the golden type (core/api/dto/tests/r_api_fire_missions.rs:52, :197); core/auth/session.rs:84 claims token_type as BearerTokenType, evidence core/api/dto/tests/r_api_auth.rs:82 session_refresh_refuses_a_token_type_other_than_bearer. Ships after the B commit is stamped."
+main_goal = "The mortar save and the session refresh decode through shared, fully claimed DTOs."
+context = [
+    "apps/website/frontend/src/v2/core/api/dto/fire_missions.rs holds SavedFireMissionAnswer, used by pages/field_tools/mortar/saved_fires/save_request.rs and the golden test core/api/dto/tests/r_api_fire_missions.rs.",
+    "apps/website/frontend/src/v2/core/auth/session.rs RefreshResponse claims token_type as BearerTokenType.",
+]
+requirement = [
+    "The mortar page decodes the save answer with the core DTO SavedFireMissionAnswer, and the golden round trip uses that same type.",
+    "The session refresh decodes token_type and refuses any value other than Bearer.",
+]
+current_state = ["Delivered by milestone B (55a6eab9f): SavedFireMissionAnswer is shared and RefreshResponse claims token_type through BearerTokenType."]
+approach = ["Move the page-private save answer into core/api/dto and claim token_type with a one-variant enum (milestone B)."]
+verify = [
+    "cargo test -p website-frontend r_api_fire_missions",
+    "cargo test -p website-frontend session_refresh_refuses_a_token_type_other_than_bearer",
+]
+acceptance = [
+    "No page-private or test-local copy of the fire-mission save answer remains.",
+    "A refresh answer whose token_type is not Bearer fails to decode.",
+]
+shipped_at = "55a6eab9f"
 created_at = "2026-09-28T01:14:54Z"
+completed_at = "2026-09-28T16:11:03Z"
+estimated = ["tokens"]
 
 [scope]
 domain = "website"
