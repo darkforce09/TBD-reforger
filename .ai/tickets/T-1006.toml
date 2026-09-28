@@ -30,8 +30,10 @@ verify = [
     "cargo xtask verify staging-compose-paths",
 ]
 acceptance = ["The staging dry run prints the website API check before the rsync and no compose step; a live deploy against a host whose API does not answer stops with exit 1 and names cargo xtask deploy website; the staging-compose-paths gate passes, and fails when a compose command returns to the staging pipeline."]
+shipped_at = "6663025b6"
 created_at = "2026-09-24T02:04:26Z"
 completed_at = "2026-09-28T17:31:05Z"
+estimated = ["tokens"]
 
 [scope]
 domain = "repo"
