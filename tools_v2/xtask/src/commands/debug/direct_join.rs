@@ -1,39 +1,54 @@
 //! `cargo xtask debug direct-join` — one summary of why a client cannot join the staging server.
 //!
-//! An orchestrator: it runs `debug a2s-probe`, `debug direct-join-log` and `debug ndjson-append`
-//! and collects their answers into one line per probe.
+//! **Role:** an orchestrator: it runs the probes of `debug a2s-probe`, `debug direct-join-log` and
+//! `debug ndjson-append` in process and collects their answers into one report.
 //!
-//! Every local probe is soft, because the summary is worth more complete than strict: a missing
-//! Steam manifest or an unmatched `buildid` reports `unknown`, a `readlink -f` that fails reports
-//! `missing`, and a ping with no `time=` reports `fail`. A `buildid` line with only two fields —
-//! which is what Steam writes — reports empty rather than `unknown`, so an operator can tell
-//! "the file said nothing here" from "there was no file".
+//! **Position:** called by [`crate::commands::debug::dispatch`]. The staging host comes from
+//! `deploy.env` through [`crate::core::deploy_environment`]; it is resolved to an IPv4 address
+//! once, and the ping and the A2S probe both use that address.
 //!
-//! The remote probe is the one place that fails loudly: when `TBD_SSH_HOST` is set and `ssh` is
-//! not installed, the summary reports `service=tool_absent` instead of an empty remote section.
-//! Transport failures and non-zero remote exits still collapse to empty — the server being
-//! unreachable is the thing being diagnosed, and it must not abort the local half of the summary.
+//! **Signals & state:** prepends `$HOME/.local/bin` to `PATH` for the run and restores it on
+//! return; appends six rows to `.cursor/debug-8fc1e0.log` in the checkout.
+//!
+//! **Invariants:** every local probe is soft, because the summary is worth more complete than
+//! strict: a missing Steam manifest or an unmatched `buildid` reports `unknown`, a symlink that
+//! does not resolve reports `missing`, and a ping with no `time=` reports `fail`. A `buildid`
+//! line with only two fields — which is what Steam writes — reports empty rather than `unknown`,
+//! so an operator can tell "the file said nothing here" from "there was no file". With no host,
+//! or a `deploy.env` that does not load, the remote, ping and A2S probes record `skipped`, one
+//! stderr line names the settings file, and the command still exits 0. With a host set and no
+//! `ssh`, the remote probe reports `service=tool_absent`; any other ssh failure leaves the remote
+//! section empty, because the unreachable server is the thing being diagnosed.
 
-use std::collections::HashMap;
 use std::fs;
+use std::net::Ipv4Addr;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use regex::Regex;
 use verification_core::proc::{self, Run};
 use verification_core::verdict::NotRun;
 
+use crate::commands::debug::probes::{self, DirectJoinObservations};
+use crate::core::deploy_environment::{
+    DeployEnvironment, DeployHostFolder, deploy_environment_path,
+};
 use crate::core::repository_root::find_repo_root;
 
-const PING_HOST: &str = "192.168.0.129";
 const A2S_PORTS: &[u16] = &[2001, 17777];
 
-/// Remote probe body — byte-stable with the former bash `<<'RS'` heredoc.
-const REMOTE_SCRIPT: &str = r#"SVC=$(systemctl --user is-active tbd-reforger.service 2>/dev/null || echo inactive)
+/// What a probe that needs the staging host records when there is none.
+const SKIPPED: &str = "skipped";
+
+/// The remote probe, run through `ssh … bash -s`: the game server unit, its UDP listeners and the
+/// last listen, A2S and client lines of the newest `console.log` under the profile folder.
+fn remote_probe_script(profile: &str) -> String {
+    format!(
+        r#"SVC=$(systemctl --user is-active tbd-reforger.service 2>/dev/null || echo inactive)
 P2001=$(ss -ulnp 2>/dev/null | grep -c ':2001 ' || echo 0)
 P17777=$(ss -ulnp 2>/dev/null | grep -c ':17777 ' || echo 0)
-LOG=$(ls -td /home/sam/tbd/profile/logs/logs_* 2>/dev/null | head -1)/console.log
+LOG=$(ls -td {profile}/logs/logs_* 2>/dev/null | head -1)/console.log
 LISTEN=$(grep "listening on address" "$LOG" 2>/dev/null | tail -1 || echo none)
 A2S=$(grep -i A2S "$LOG" 2>/dev/null | tail -2 || echo none)
 CLIENT=$(grep -iE "connect|client|join|session" "$LOG" 2>/dev/null | tail -3 || echo none)
@@ -41,34 +56,45 @@ echo "service=$SVC udp2001=$P2001 udp17777=$P17777"
 echo "listen=$LISTEN"
 echo "a2s=$A2S"
 echo "client_lines=$CLIENT"
-"#;
-
-/// The checkout locations this command reads.
-struct Paths {
-    mono_root: PathBuf,
-    #[allow(dead_code)]
-    mod_root: PathBuf,
-    #[allow(dead_code)]
-    schema: PathBuf,
-    #[allow(dead_code)]
-    web: PathBuf,
-    deploy_env: PathBuf,
+"#,
+        profile = single_quoted(profile)
+    )
 }
 
-impl Paths {
-    fn from_root(root: &Path) -> Self {
-        Self {
-            mono_root: root.to_path_buf(),
-            mod_root: root.join("apps/mod"),
-            schema: developer_tools::repository_layout::contracts_dir(root),
-            web: root.join("apps/website/api_v2"),
-            deploy_env: root.join(crate::core::repository_layout::DEPLOY_ENV),
-        }
-    }
+/// `value` as one POSIX shell word, whatever it holds.
+fn single_quoted(value: &str) -> String {
+    format!("'{}'", value.replace('\'', r"'\''"))
+}
 
-    fn debug_log(&self) -> PathBuf {
-        self.mono_root.join(".cursor/debug-8fc1e0.log")
-    }
+/// The staging host the remote, ping and A2S probes reach, resolved once.
+struct StagingHost {
+    destination: String,
+    name: String,
+    address: Result<Ipv4Addr, String>,
+    /// The profile folder, or why the remote probe is skipped.
+    profile: Result<String, String>,
+    ssh_pass: Option<String>,
+}
+
+/// The staging host named in `environment`, or the reason the probes that need one are skipped.
+fn staging_host(environment: &DeployEnvironment) -> Result<StagingHost, String> {
+    let host = environment
+        .deploy_host()
+        .map_err(|error| error.to_string())?;
+    Ok(StagingHost {
+        destination: host.ssh_destination(),
+        name: host.host().to_string(),
+        address: host.resolve_ipv4(),
+        profile: DeployHostFolder::Profile
+            .resolve(environment, &host)
+            .map_err(|error| error.to_string()),
+        ssh_pass: environment.value("TBD_SSH_PASS").map(str::to_string),
+    })
+}
+
+/// The report file, in the checkout's `.cursor/`.
+fn debug_log_path(root: &Path) -> PathBuf {
+    root.join(".cursor/debug-8fc1e0.log")
 }
 
 /// Entry for `xtask debug direct-join [RUN_ID]`.
@@ -77,86 +103,102 @@ pub fn run(run_id: Option<&str>) -> Result<u8> {
     let home = std::env::var_os("HOME")
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from("/"));
-    run_with(
-        root.as_path(),
-        home.as_path(),
-        run_id.unwrap_or("user-repro"),
-    )
+    let run_id = run_id.unwrap_or("user-repro");
+    match DeployEnvironment::load_if_present(&deploy_environment_path(&root)) {
+        Ok(environment) => run_with(&root, &home, &environment, run_id),
+        Err(error) => write_report(&root, &home, Err(error.to_string()), run_id),
+    }
 }
 
-/// Testable entry with explicit mono root + HOME (throwaway Steam trees).
-pub fn run_with(root: &Path, home: &Path, run_id: &str) -> Result<u8> {
-    let paths = Paths::from_root(root);
+/// Testable entry with the checkout root, `HOME` and the deploy settings injected.
+pub fn run_with(
+    root: &Path,
+    home: &Path,
+    environment: &DeployEnvironment,
+    run_id: &str,
+) -> Result<u8> {
+    write_report(root, home, staging_host(environment), run_id)
+}
 
-    // bash: PATH="$HOME/.local/bin:$PATH" — restore on drop so unit tests never leak PATH.
+fn write_report(
+    root: &Path,
+    home: &Path,
+    target: Result<StagingHost, String>,
+    run_id: &str,
+) -> Result<u8> {
+    // Restored on drop, so a test never leaks the prepended PATH.
     let _path = crate::core::test_environment::PathGuard::prepend_dir(&home.join(".local/bin"));
-
-    // bash: `[ -f "$ENV_FILE" ] && source "$ENV_FILE"` then read TBD_SSH_*.
-    let (ssh_host, ssh_pass) = load_ssh_vars(&paths.deploy_env);
 
     let client_build = steam_build_id(home, "1874880");
     let server_build = steam_build_id(home, "1874900");
     let symlink = read_symlink(home);
-    let remote_out = remote_probe(ssh_host.as_deref(), ssh_pass.as_deref());
-    let ping = ping_ms(PING_HOST);
-    let a2s_json = crate::commands::debug::probes::a2s_probe_json(PING_HOST, A2S_PORTS);
+    let (remote, ping_ms, ping_host, ping_address, a2s_json) = match &target {
+        Err(reason) => {
+            eprintln!("debug direct-join: {reason}; the remote, ping and A2S probes are skipped");
+            let skipped = serde_json::json!({ "skipped": reason }).to_string();
+            (
+                SKIPPED.to_string(),
+                SKIPPED.to_string(),
+                String::new(),
+                String::new(),
+                skipped,
+            )
+        }
+        Ok(host) => {
+            let remote = match &host.profile {
+                Ok(profile) => remote_probe(
+                    &host.destination,
+                    host.ssh_pass.as_deref(),
+                    &remote_probe_script(profile),
+                ),
+                Err(reason) => {
+                    eprintln!("debug direct-join: {reason}; the remote probe is skipped");
+                    SKIPPED.to_string()
+                }
+            };
+            let (ping_ms, ping_address) = match &host.address {
+                Ok(address) => (ping(&address.to_string()), address.to_string()),
+                Err(_) => ("fail".to_string(), String::new()),
+            };
+            let a2s_json = probes::a2s_probe_json_for(&host.name, &host.address, A2S_PORTS);
+            (remote, ping_ms, host.name.clone(), ping_address, a2s_json)
+        }
+    };
 
-    let log = paths.debug_log();
-    crate::commands::debug::probes::cmd_direct_join_log(
+    let log = debug_log_path(root);
+    probes::cmd_direct_join_log(
         &log,
-        run_id,
-        &remote_out,
-        &client_build,
-        &server_build,
-        &symlink,
-        &ping,
-        &a2s_json,
+        &DirectJoinObservations {
+            run_id,
+            remote: &remote,
+            client_build: &client_build,
+            server_build: &server_build,
+            symlink: &symlink,
+            ping_ms: &ping_ms,
+            ping_host: &ping_host,
+            ping_address: &ping_address,
+            a2s_json: &a2s_json,
+        },
     )?;
 
     println!("Wrote debug log: {}", log.display());
     println!("--- summary ---");
     println!("Client build: {client_build} | Server build: {server_build}");
     println!("Symlink: {symlink}");
-    // bash: `echo "$REMOTE_OUT"` — empty still prints a blank line.
-    println!("{remote_out}");
+    let ping_target = match (ping_host.is_empty(), ping_address.is_empty()) {
+        (true, _) => String::new(),
+        (false, true) => format!(" {ping_host}"),
+        (false, false) => format!(" {ping_host} ({ping_address})"),
+    };
+    println!("Ping{ping_target}: {ping_ms}");
+    println!("A2S: {a2s_json}");
+    // An empty remote section still prints its blank line.
+    println!("{remote}");
     Ok(0)
 }
 
-fn load_ssh_vars(deploy_env: &Path) -> (Option<String>, Option<String>) {
-    let mut host = std::env::var("TBD_SSH_HOST").ok().filter(|s| !s.is_empty());
-    let mut pass = std::env::var("TBD_SSH_PASS").ok().filter(|s| !s.is_empty());
-    if deploy_env.is_file()
-        && let Ok(map) = parse_deploy_env(deploy_env)
-    {
-        // bash `source` overlays file onto the shell.
-        if let Some(v) = map.get("TBD_SSH_HOST").filter(|s| !s.is_empty()) {
-            host = Some(v.clone());
-        }
-        if let Some(v) = map.get("TBD_SSH_PASS").filter(|s| !s.is_empty()) {
-            pass = Some(v.clone());
-        }
-    }
-    (host, pass)
-}
-
-fn parse_deploy_env(path: &Path) -> Result<HashMap<String, String>> {
-    let mut map = HashMap::new();
-    let text = fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
-    for line in text.lines() {
-        let line = line.trim();
-        if line.is_empty() || line.starts_with('#') {
-            continue;
-        }
-        let line = line.strip_prefix("export ").unwrap_or(line).trim();
-        if let Some((k, v)) = line.split_once('=') {
-            let v = v.trim().trim_matches('"').trim_matches('\'').to_string();
-            map.insert(k.trim().to_string(), v);
-        }
-    }
-    Ok(map)
-}
-
-/// bash: `grep buildid FILE | awk '{print $3}' | tr -d '"' || echo unknown`
+/// The third whitespace field of each `buildid` line of the app's Steam manifest, quotes removed;
+/// `unknown` when the manifest or the line is missing.
 fn steam_build_id(home: &Path, app_id: &str) -> String {
     let path = home
         .join(".local/share/Steam/steamapps")
@@ -183,7 +225,7 @@ fn steam_build_id(home: &Path, app_id: &str) -> String {
     if any { out } else { "unknown".into() }
 }
 
-/// bash: `readlink -f "$HOME/.local/share/tbd-server-addons/tbd-framework" || echo missing`
+/// The resolved client addon link, or `missing`.
 fn read_symlink(home: &Path) -> String {
     let path = home.join(".local/share/tbd-server-addons/tbd-framework");
     match fs::canonicalize(&path) {
@@ -192,12 +234,8 @@ fn read_symlink(home: &Path) -> String {
     }
 }
 
-fn remote_probe(host: Option<&str>, pass: Option<&str>) -> String {
-    let Some(host) = host.filter(|s| !s.is_empty()) else {
-        return String::new();
-    };
-
-    // Closed fail-open: bash would `|| true` over a missing ssh/sshpass into empty remote.
+fn remote_probe(destination: &str, pass: Option<&str>, script: &str) -> String {
+    // An absent ssh or sshpass is reported as itself, never as an empty remote section.
     let program_check = if pass.is_some() { "sshpass" } else { "ssh" };
     if let Err(NotRun::ToolAbsent(_)) = proc::which(program_check) {
         return "service=tool_absent".into();
@@ -210,28 +248,23 @@ fn remote_probe(host: Option<&str>, pass: Option<&str>) -> String {
     }
 
     let mut args: Vec<String> = Vec::new();
-    let program;
-    if let Some(p) = pass.filter(|s| !s.is_empty()) {
-        program = "sshpass";
-        args.push("-p".into());
-        args.push(p.into());
-        args.push("ssh".into());
-        args.push("-o".into());
-        args.push("StrictHostKeyChecking=no".into());
-        args.push(host.into());
-        args.push("bash".into());
-        args.push("-s".into());
-    } else {
-        program = "ssh";
-        args.push("-o".into());
-        args.push("StrictHostKeyChecking=no".into());
-        args.push(host.into());
-        args.push("bash".into());
-        args.push("-s".into());
-    }
+    let program = match pass {
+        Some(p) => {
+            args.extend(["-p".into(), p.into(), "ssh".into()]);
+            "sshpass"
+        }
+        None => "ssh",
+    };
+    args.extend([
+        "-o".into(),
+        "StrictHostKeyChecking=no".into(),
+        destination.into(),
+        "bash".into(),
+        "-s".into(),
+    ]);
 
-    // Preserved oddity: transport / nonzero → empty remote (bash `2>/dev/null || true`).
-    let mut run = Run::new(program).stdin(REMOTE_SCRIPT);
+    // A transport failure or a non-zero remote exit leaves the remote section empty.
+    let mut run = Run::new(program).stdin(script);
     for a in &args {
         run = run.arg(a);
     }
@@ -241,10 +274,10 @@ fn remote_probe(host: Option<&str>, pass: Option<&str>) -> String {
     }
 }
 
-/// bash: `ping -c 1 -W 2 HOST 2>&1 | grep -oP 'time=\K[0-9.]+' || echo fail`
-fn ping_ms(host: &str) -> String {
+/// The round trip of one `ping -c 1 -W 2` in milliseconds, or `fail`.
+fn ping(address: &str) -> String {
     let output = Command::new("ping")
-        .args(["-c", "1", "-W", "2", host])
+        .args(["-c", "1", "-W", "2", address])
         .output();
     let Ok(out) = output else {
         return "fail".into();

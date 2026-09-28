@@ -1,34 +1,14 @@
 use super::*;
+use std::path::Path;
 
-fn fixture_root(tag: &str) -> PathBuf {
-    let root = PathBuf::from(format!(
-        "/tmp/xtask-bootstrap-staging/fixture-{tag}-{}",
-        std::process::id()
-    ));
-    let _ = fs::remove_dir_all(&root);
-    fs::create_dir_all(root.join(".ai/tickets")).unwrap();
-    fs::write(root.join(".ai/tickets/ROOT"), "{}").unwrap();
-    fs::create_dir_all(root.join(crate::core::repository_layout::DEPLOY_DIR)).unwrap();
-    fs::create_dir_all(root.join("apps/mod")).unwrap();
-    root
-}
-
-/// The deploy file inside a fixture tree.
-fn fixture_deploy_env(root: &Path) -> PathBuf {
-    root.join(crate::core::repository_layout::DEPLOY_ENV)
-}
-
-fn clear_ssh_env() {
-    unsafe {
-        std::env::remove_var("TBD_SSH_HOST");
-        std::env::remove_var("TBD_SSH_PASS");
-        std::env::remove_var("TBD_SSH_IDENTITY_FILE");
-        std::env::remove_var("TBD_REMOTE_DIR");
-        std::env::remove_var("TBD_PROFILE_DIR");
-        std::env::remove_var("TBD_ADDONS_STAGING");
-        std::env::remove_var(ENV_SSH);
-        std::env::remove_var(ENV_SSHPASS);
-    }
+/// Deploy settings from `file` alone, with no process variables.
+fn settings(file: &str) -> DeployEnvironment {
+    DeployEnvironment::from_text(
+        Path::new("/home/deploy/checkout/tools_v2/xtask/deploy/deploy.env"),
+        Some(file),
+        [],
+    )
+    .expect("parses")
 }
 
 struct OverrideGuard {
@@ -63,43 +43,25 @@ impl Drop for OverrideGuard {
 
 #[test]
 fn arm_missing_host_exits_1() {
-    let _g = crate::core::test_environment::lock_env();
-    clear_ssh_env();
-    let root = fixture_root("missing-host");
-    // empty deploy.env — no TBD_SSH_HOST
-    fs::write(fixture_deploy_env(&root), "").unwrap();
-    let code = run_with_root(&root).unwrap();
+    let code = run_with_environment(&settings("")).unwrap();
     assert_eq!(code, 1, "missing TBD_SSH_HOST must exit 1");
 }
 
 #[test]
 fn arm_prairielearn_exits_1() {
-    let _g = crate::core::test_environment::lock_env();
-    clear_ssh_env();
-    let root = fixture_root("prairielearn");
-    fs::write(
-        fixture_deploy_env(&root),
-        "TBD_SSH_HOST=127.0.0.1\nTBD_REMOTE_DIR=/home/sam/prairielearn/tbd\n",
-    )
-    .unwrap();
-    let code = run_with_root(&root).unwrap();
+    let file = "TBD_SSH_HOST=deploy@192.0.2.10\nTBD_REMOTE_DIR=/home/deploy/prairielearn/tbd\n";
+    let code = run_with_environment(&settings(file)).unwrap();
     assert_eq!(code, 1, "a prairielearn remote path must exit 1");
 }
 
 #[test]
 fn the_prairielearn_refusal_is_case_sensitive() {
     let _g = crate::core::test_environment::lock_env();
-    clear_ssh_env();
-    let root = fixture_root("PrairieLearn-case");
     // The refusal matches the lowercase substring only, so `PrairieLearn` passes it. Proven
     // through an absent `ssh` (the override seam) rather than by wiping PATH.
-    fs::write(
-        fixture_deploy_env(&root),
-        "TBD_SSH_HOST=127.0.0.1\nTBD_REMOTE_DIR=/home/sam/PrairieLearn/tbd\n",
-    )
-    .unwrap();
+    let file = "TBD_SSH_HOST=deploy@192.0.2.10\nTBD_REMOTE_DIR=/home/deploy/PrairieLearn/tbd\n";
     let _no_ssh = OverrideGuard::set_absent(ENV_SSH);
-    let code = run_with_root(&root).unwrap();
+    let code = run_with_environment(&settings(file)).unwrap();
     assert_eq!(
         code, 127,
         "case-sensitive: PrairieLearn must not match prairielearn refuse (got ToolAbsent)"
@@ -107,23 +69,17 @@ fn the_prairielearn_refusal_is_case_sensitive() {
 }
 
 #[test]
-fn defaults_fill_when_unset() {
-    let _g = crate::core::test_environment::lock_env();
-    clear_ssh_env();
-    let root = fixture_root("defaults");
-    fs::write(fixture_deploy_env(&root), "TBD_SSH_HOST=127.0.0.1\n").unwrap();
-    let cfg = load_cfg(&fixture_deploy_env(&root)).unwrap();
-    assert_eq!(cfg.remote_dir, DEFAULT_REMOTE_DIR);
-    assert_eq!(cfg.profile_dir, DEFAULT_PROFILE_DIR);
-    assert_eq!(cfg.addons_staging, DEFAULT_ADDONS_STAGING);
+fn folders_default_under_the_deploy_users_home() {
+    let cfg = load_cfg(&settings("TBD_SSH_HOST=deploy@192.0.2.10\n")).unwrap();
+    assert_eq!(cfg.host, "deploy@192.0.2.10");
+    assert_eq!(cfg.remote_dir, "/home/deploy/tbd/repo");
+    assert_eq!(cfg.profile_dir, "/home/deploy/tbd/profile");
+    assert_eq!(cfg.addons_staging, "/home/deploy/tbd/addons-staging");
 }
 
 #[test]
-fn the_deploy_file_resolves_against_the_given_root() {
-    let root = Path::new("/tmp/fake-mono");
-    let p = Paths::from_root(root);
-    assert_eq!(
-        p.deploy_env,
-        root.join(crate::core::repository_layout::DEPLOY_ENV)
-    );
+fn a_host_without_a_user_needs_every_folder_set() {
+    let bare = settings("TBD_SSH_HOST=192.0.2.10\n");
+    assert_eq!(load_cfg(&bare).err(), Some(bare.missing("TBD_REMOTE_DIR")));
+    assert_eq!(run_with_environment(&bare).unwrap(), 1);
 }

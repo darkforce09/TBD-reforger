@@ -62,9 +62,11 @@ The crate has no features and reads no configuration file of its own. What it re
   (`src/core/cargo_target_directory.rs`), and `mk rust-api` builds into `target-dev-api`.
 - `.ai/tickets/ROOT`: the marker that identifies the checkout root (`find_repo_root` in
   `tools_v2/ticket-engine/src/repository.rs`).
-- `deploy/deploy.env`: the deploy host, credentials and remote paths, copied from
-  `deploy/deploy.env.example` and never committed; `cargo xtask deploy website` also accepts a
-  `DEPLOY_ENV` variable naming another file. The deploy README lists every key.
+- `deploy/deploy.env`: the deploy host (`TBD_SSH_HOST`, the one place the staging host is named),
+  credentials and remote paths, copied from `deploy/deploy.env.example` and never committed. Every
+  command that reads it (`src/core/deploy_environment.rs`) lets the file decide every key it
+  assigns and the process environment fill only the others, and takes a `DEPLOY_ENV` variable
+  naming another file. The deploy README lists every key.
 - Command-level variables (`TBD_FETCH_DELAY`, `TBD_BACKUP_DIR`, `PORT` for `ci editor-api-boot`
   and the rest): each group's README lists the ones its commands read.
 

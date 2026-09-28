@@ -75,10 +75,10 @@ fn timeout_values_read_the_way_timeout_1_reads_them() {
 
 #[test]
 fn the_join_details_are_scraped_out_of_the_engines_lines() {
-    let reg = "BACKEND  : Server registered with address: 192.168.0.117:2001";
+    let reg = "BACKEND  : Server registered with address: 198.51.100.7:2001";
     assert_eq!(
         super::super::grep_o(r"[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+", reg)[0],
-        "192.168.0.117:2001"
+        "198.51.100.7:2001"
     );
     assert_eq!(
         super::super::grep_o("[0-9]{6,}", "BACKEND  : Direct Join Code: 0207990185")[0],

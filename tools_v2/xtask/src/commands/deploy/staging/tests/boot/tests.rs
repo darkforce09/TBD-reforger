@@ -29,25 +29,25 @@ fn addon_check_discriminates_on_path_not_guid() {
     fs::write(
         &win,
         format!(
-            "ENGINE : Loaded addons:\n ENGINE : gproj: '/home/sam/tbd/addons/tbd-framework/addon.gproj' guid: '{guid}'\n"
+            "ENGINE : Loaded addons:\n ENGINE : gproj: '/home/deploy/tbd/addons/tbd-framework/addon.gproj' guid: '{guid}'\n"
         ),
     )
     .unwrap();
     fs::write(
         &lose,
         format!(
-            "ENGINE : Loaded addons:\n ENGINE : gproj: '/home/sam/tbd/profile/addons/TBDFramework_{guid}/addon.gproj' guid: '{guid}'\n"
+            "ENGINE : Loaded addons:\n ENGINE : gproj: '/home/deploy/tbd/profile/addons/TBDFramework_{guid}/addon.gproj' guid: '{guid}'\n"
         ),
     )
     .unwrap();
     let mut o = Out::captured();
     assert_eq!(
-        assert_local_addon_won(&mut o, &win, guid, "/home/sam/tbd/addons"),
+        assert_local_addon_won(&mut o, &win, guid, "/home/deploy/tbd/addons"),
         0
     );
     let mut o = Out::captured();
     assert_eq!(
-        assert_local_addon_won(&mut o, &lose, guid, "/home/sam/tbd/addons"),
+        assert_local_addon_won(&mut o, &lose, guid, "/home/deploy/tbd/addons"),
         1
     );
     assert!(
@@ -70,13 +70,13 @@ fn last_loaded_addons_block_wins() {
         &log,
         format!(
             "ENGINE : Loaded addons:\n ENGINE : gproj: '/profile/addons/TBDFramework_{guid}/addon.gproj' guid: '{guid}'\n\
-             ENGINE : Loaded addons:\n ENGINE : gproj: '/home/sam/tbd/addons/tbd-framework/addon.gproj' guid: '{guid}'\n"
+             ENGINE : Loaded addons:\n ENGINE : gproj: '/home/deploy/tbd/addons/tbd-framework/addon.gproj' guid: '{guid}'\n"
         ),
     )
     .unwrap();
     let mut o = Out::captured();
     assert_eq!(
-        assert_local_addon_won(&mut o, &log, guid, "/home/sam/tbd/addons"),
+        assert_local_addon_won(&mut o, &log, guid, "/home/deploy/tbd/addons"),
         0
     );
     let _ = fs::remove_dir_all(&d);

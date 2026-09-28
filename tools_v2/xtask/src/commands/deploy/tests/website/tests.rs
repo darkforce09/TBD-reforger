@@ -2,17 +2,22 @@ use super::*;
 
 #[test]
 fn prairielearn_case_insensitive() {
-    assert!(refuse_prairielearn("TBD_REMOTE_DIR", "/home/sam/PrairieLearn/x").is_err());
-    assert!(refuse_prairielearn("TBD_SSH_HOST", "sam@PRAIRIELEARN.local").is_err());
-    assert!(refuse_prairielearn("TBD_REMOTE_DIR", "/home/sam/tbd/repo").is_ok());
+    assert!(refuse_prairielearn("TBD_REMOTE_DIR", "/home/deploy/PrairieLearn/x").is_err());
+    assert!(refuse_prairielearn("TBD_SSH_HOST", "deploy@PRAIRIELEARN.local").is_err());
+    assert!(refuse_prairielearn("TBD_REMOTE_DIR", "/home/deploy/tbd/repo").is_ok());
 }
 
 #[test]
 fn remote_prefix_rejects_escape_and_outside() {
-    assert!(require_tbd_remote_prefix("/home/sam/tbd/../elsewhere").is_err());
-    assert!(require_tbd_remote_prefix("/tmp/not-tbd-at-all").is_err());
-    assert!(require_tbd_remote_prefix("/home/sam/tbd").is_ok());
-    assert!(require_tbd_remote_prefix("/home/sam/tbd/repo///").is_ok());
+    assert!(
+        require_tbd_remote_prefix("/home/deploy/tbd/../elsewhere", "/home/deploy/tbd").is_err()
+    );
+    assert!(require_tbd_remote_prefix("/tmp/not-tbd-at-all", "/home/deploy/tbd").is_err());
+    assert!(require_tbd_remote_prefix("/home/deploy/tbd", "/home/deploy/tbd").is_ok());
+    assert!(require_tbd_remote_prefix("/home/deploy/tbd/repo///", "/home/deploy/tbd").is_ok());
+    // The guard root is the deploy user's, not a fixed one.
+    assert!(require_tbd_remote_prefix("/home/deploy/tbd/repo", "/home/other/tbd").is_err());
+    assert!(require_tbd_remote_prefix("/home/deploy/tbdx", "/home/deploy/tbd").is_err());
 }
 
 #[test]
@@ -56,14 +61,17 @@ fn rsync_excludes_the_secrets_asset_and_scratch_trees() {
 
 #[test]
 fn rsync_argv_keeps_source_and_destination_last() {
-    let argv = rsync_argv::rsync_argv("ssh", "/repo/", "sam@h:/home/sam/tbd/repo/");
+    let argv = rsync_argv::rsync_argv("ssh", "/repo/", "deploy@192.0.2.10:/home/deploy/tbd/repo/");
     assert_eq!(argv[0], "-e");
     assert_eq!(argv[1], "ssh");
     assert_eq!(argv[2], "-avz");
     assert_eq!(argv[3], "--delete");
     // rsync copies CONTENTS when the source has a trailing slash; both sides keep theirs.
     assert_eq!(argv[argv.len() - 2], "/repo/");
-    assert_eq!(argv[argv.len() - 1], "sam@h:/home/sam/tbd/repo/");
+    assert_eq!(
+        argv[argv.len() - 1],
+        "deploy@192.0.2.10:/home/deploy/tbd/repo/"
+    );
 }
 
 #[test]
@@ -81,8 +89,8 @@ fn asset_probe_distinguishes_the_three_layouts() {
 /// missing bind-mount source as an empty directory, and that must not read as Ready.
 #[test]
 fn asset_probe_checks_the_registry_file_and_the_legacy_directory() {
-    let script = asset_preflight::probe_script("/home/sam/tbd/repo");
-    assert!(script.contains("cd '/home/sam/tbd/repo'"));
+    let script = asset_preflight::probe_script("/home/deploy/tbd/repo");
+    assert!(script.contains("cd '/home/deploy/tbd/repo'"));
     assert!(script.contains("-f assets_v2/terrains/terrain-registry.json"));
     assert!(!script.contains("-d assets_v2/terrains"));
     assert!(script.contains("-d packages/map-assets"));
@@ -91,10 +99,10 @@ fn asset_probe_checks_the_registry_file_and_the_legacy_directory() {
 #[test]
 fn the_unit_install_command_renders_the_shipped_template_for_the_remote_dir() {
     let cmd =
-        systemd_unit::install_command("/home/sam/tbd/repo", systemd_unit::default_unit_name());
+        systemd_unit::install_command("/home/deploy/tbd/repo", systemd_unit::default_unit_name());
     // The template spells `/TBD_REPO_DIR_PLACEHOLDER/…`, so the value must not carry a slash.
     assert!(
-        cmd.contains("s|TBD_REPO_DIR_PLACEHOLDER|home/sam/tbd/repo|g"),
+        cmd.contains("s|TBD_REPO_DIR_PLACEHOLDER|home/deploy/tbd/repo|g"),
         "{cmd}"
     );
     let unit = systemd_unit::default_unit_name();
@@ -110,7 +118,7 @@ fn the_unit_install_command_renders_the_shipped_template_for_the_remote_dir() {
 #[test]
 fn only_a_legacy_or_unreadable_layout_refuses_the_deploy() {
     use asset_preflight::{AssetLayout, report};
-    let dir = "/home/sam/tbd/repo";
+    let dir = "/home/deploy/tbd/repo";
     assert!(report(AssetLayout::Ready, dir).is_ok());
     assert!(report(AssetLayout::Absent, dir).is_ok());
     assert!(report(AssetLayout::OldPackagesTree, dir).is_err());
@@ -119,7 +127,7 @@ fn only_a_legacy_or_unreadable_layout_refuses_the_deploy() {
 
 #[test]
 fn the_remediation_names_every_directory_that_must_move() {
-    let fix = asset_preflight::remediation("/home/sam/tbd/repo");
+    let fix = asset_preflight::remediation("/home/deploy/tbd/repo");
     assert!(fix.contains("mkdir -p assets_v2/terrains"));
     for moved in ["everon", "arland", "terrain-registry.json"] {
         assert!(fix.contains(moved), "remediation omits {moved}");
@@ -129,8 +137,8 @@ fn the_remediation_names_every_directory_that_must_move() {
 fn plan_for(skip_compose: bool, skip_api: bool, skip_spa: bool) -> Vec<String> {
     let cfg = DeployCfg {
         root: PathBuf::from("/tmp/repo"),
-        host: "sam@192.168.0.129".into(),
-        remote_dir: "/home/sam/tbd/repo".into(),
+        host: "deploy@192.0.2.10".into(),
+        remote_dir: "/home/deploy/tbd/repo".into(),
         postgres_port: "5432".into(),
         systemd_unit: "tbd-website-api.service".into(),
         skip_compose,
@@ -163,8 +171,8 @@ fn the_remote_plan_ends_with_the_checksum_repair_and_the_state_move() {
 
 #[test]
 fn the_checksum_repair_runs_in_the_remote_checkout_against_the_staging_container() {
-    let cmd = remote_steps::migration_checksum_repair("/home/sam/tbd/repo");
-    assert!(cmd.starts_with("cd '/home/sam/tbd/repo' &&"), "{cmd}");
+    let cmd = remote_steps::migration_checksum_repair("/home/deploy/tbd/repo");
+    assert!(cmd.starts_with("cd '/home/deploy/tbd/repo' &&"), "{cmd}");
     assert!(
         cmd.contains(
             "TBD_DB_CONTAINER=tbd_staging_db cargo xtask db repair-migration-checksum --force"
@@ -175,14 +183,14 @@ fn the_checksum_repair_runs_in_the_remote_checkout_against_the_staging_container
 
 #[test]
 fn the_state_move_targets_the_unit_state_directory_and_is_idempotent() {
-    let cmd = remote_steps::runtime_state_move("/home/sam/tbd/repo");
+    let cmd = remote_steps::runtime_state_move("/home/deploy/tbd/repo");
     assert!(
         cmd.contains("${XDG_STATE_HOME:-$HOME/.local/state}/tbd-website-api"),
         "{cmd}"
     );
     assert!(cmd.contains("for tree in uploads;"), "{cmd}");
     assert!(
-        cmd.contains("'/home/sam/tbd/repo/apps/website/api_v2/'"),
+        cmd.contains("'/home/deploy/tbd/repo/apps/website/api_v2/'"),
         "{cmd}"
     );
     assert!(

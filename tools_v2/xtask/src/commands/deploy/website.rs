@@ -2,29 +2,31 @@
 //! build the release API and the Leptos SPA there, restart the user-systemd unit, print the
 //! Caddy hints.
 //!
-//! Two refusals shape the command. The host file at
-//! [`repository_layout::DEPLOY_ENV`] is parsed as `KEY=VALUE` and never executed, so a deploy
-//! cannot be turned into arbitrary shell by editing a configuration file; an unreadable or
+//! Two refusals shape the command. The settings come from `deploy.env` through
+//! [`crate::core::deploy_environment`], which parses and never executes it, so a deploy cannot be
+//! turned into arbitrary shell by editing a configuration file; a missing, unreadable or
 //! malformed file exits 1 rather than deploying with defaults. Live `rsync`, `ssh` and `sshpass`
 //! run through `verification_core::proc::Run`, so a missing tool or a killed child is reported as
 //! itself and can never fold into "deploy succeeded".
 //!
-//! Two behaviours are deliberate and easy to misread as bugs. Trailing slashes on
-//! `TBD_REMOTE_DIR` are stripped only for the `/home/sam/tbd/` prefix check — echoed remote paths
-//! and `cd '…'` payloads keep the operator's raw value, so what is printed is what runs. And a
-//! failed `systemctl --user restart` warns instead of aborting: the code and the database are
-//! already on the server by then, so the deploy is done and the restart is the operator's to
-//! finish.
+//! The rsync runs with `--delete`, so `TBD_REMOTE_DIR` must sit under the deploy user's
+//! `/home/<user>/tbd` (from `TBD_SSH_HOST`), and a host named without a user is refused. Two
+//! behaviours are deliberate and easy to misread as bugs. Trailing slashes on `TBD_REMOTE_DIR`
+//! are stripped only for that prefix check — echoed remote paths and `cd '…'` payloads keep the
+//! operator's raw value, so what is printed is what runs. And a failed `systemctl --user restart`
+//! warns instead of aborting: the code and the database are already on the server by then, so the
+//! deploy is done and the restart is the operator's to finish.
 
-use std::collections::HashMap;
-use std::fs;
 use std::io::{self, Write};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use verification_core::proc::{self, Run};
 use verification_core::verdict::NotRun;
 
+use crate::core::deploy_environment::{
+    DeployEnvironment, DeployHostFolder, deploy_environment_path,
+};
 use crate::core::repository_layout;
 use crate::core::repository_root::find_repo_root;
 
@@ -56,58 +58,51 @@ pub fn run(args: &[String]) -> Result<u8> {
     }
 
     let root = find_repo_root()?;
-    let env_file = match std::env::var("DEPLOY_ENV") {
-        Ok(p) if !p.is_empty() => PathBuf::from(p),
-        _ => root.join(repository_layout::DEPLOY_ENV),
-    };
-
-    if !env_file.is_file() {
-        eprintln!(
-            "Missing {} — copy from {}",
-            env_file.display(),
-            repository_layout::DEPLOY_ENV_EXAMPLE
-        );
-        return Ok(1);
-    }
-
-    let map = match parse_deploy_env(&env_file) {
-        Ok(m) => m,
-        Err(e) => {
-            eprintln!("{e:#}");
+    let environment = match DeployEnvironment::load_required(&deploy_environment_path(&root)) {
+        Ok(environment) => environment,
+        Err(error) => {
+            eprintln!("{error}");
             return Ok(1);
         }
     };
-
-    let host = match require_var(&map, "TBD_SSH_HOST", 79) {
-        Ok(v) => v,
-        Err(code) => return Ok(code),
+    let deploy_host = match environment.deploy_host() {
+        Ok(host) => host,
+        Err(error) => {
+            eprintln!("{error}");
+            return Ok(1);
+        }
     };
-    let remote_dir = match require_var(&map, "TBD_REMOTE_DIR", 80) {
-        Ok(v) => v,
-        Err(code) => return Ok(code),
+    let Some(tbd_folder) = deploy_host.tbd_folder() else {
+        eprintln!(
+            "Refusing to deploy: TBD_SSH_HOST must name the deploy user (user@host), because \
+             TBD_REMOTE_DIR must stay under that user's /home/<user>/tbd/ (got: {})",
+            deploy_host.ssh_destination()
+        );
+        return Ok(1);
     };
-    let postgres_port = map
-        .get("TBD_POSTGRES_HOST_PORT")
-        .filter(|s| !s.is_empty())
-        .map(|s| s.as_str())
-        .unwrap_or("5432");
-    let systemd_unit: String = map
-        .get("TBD_WEBSITE_SYSTEMD_UNIT")
-        .filter(|s| !s.is_empty())
-        .cloned()
-        .unwrap_or_else(|| systemd_unit::default_unit_name().to_string());
-    let skip_compose = map.get("TBD_SKIP_COMPOSE").map(|s| s.as_str()) == Some("1");
-    let skip_spa = map.get("TBD_SKIP_SPA_BUILD").map(|s| s.as_str()) == Some("1");
-    let skip_api = map.get("TBD_SKIP_API_BUILD").map(|s| s.as_str()) == Some("1");
-    let ssh_pass = map.get("TBD_SSH_PASS").filter(|s| !s.is_empty()).cloned();
-    let ssh_identity = map
-        .get("TBD_SSH_IDENTITY_FILE")
-        .filter(|s| !s.is_empty())
-        .cloned();
-    let profile_dir = map
-        .get("TBD_PROFILE_DIR")
-        .filter(|s| !s.is_empty())
-        .cloned();
+    let remote_dir = match DeployHostFolder::Checkout.resolve(&environment, &deploy_host) {
+        Ok(folder) => folder,
+        Err(error) => {
+            eprintln!("{error}");
+            return Ok(1);
+        }
+    };
+    let host = deploy_host.ssh_destination();
+    let postgres_port = environment.value_or("TBD_POSTGRES_HOST_PORT", "5432");
+    let systemd_unit = environment
+        .value_or(
+            "TBD_WEBSITE_SYSTEMD_UNIT",
+            systemd_unit::default_unit_name(),
+        )
+        .to_string();
+    let skip_compose = environment.value("TBD_SKIP_COMPOSE") == Some("1");
+    let skip_spa = environment.value("TBD_SKIP_SPA_BUILD") == Some("1");
+    let skip_api = environment.value("TBD_SKIP_API_BUILD") == Some("1");
+    let ssh_pass = environment.value("TBD_SSH_PASS").map(str::to_string);
+    let ssh_identity = environment
+        .value("TBD_SSH_IDENTITY_FILE")
+        .map(str::to_string);
+    let profile_dir = environment.value("TBD_PROFILE_DIR");
 
     if let Err(code) = refuse_prairielearn("TBD_REMOTE_DIR", &remote_dir) {
         return Ok(code);
@@ -115,12 +110,12 @@ pub fn run(args: &[String]) -> Result<u8> {
     if let Err(code) = refuse_prairielearn("TBD_SSH_HOST", &host) {
         return Ok(code);
     }
-    if let Some(ref p) = profile_dir
+    if let Some(p) = profile_dir
         && let Err(code) = refuse_prairielearn("TBD_PROFILE_DIR", p)
     {
         return Ok(code);
     }
-    if let Err(code) = require_tbd_remote_prefix(&remote_dir) {
+    if let Err(code) = require_tbd_remote_prefix(&remote_dir, &tbd_folder) {
         return Ok(code);
     }
 
@@ -406,23 +401,11 @@ fn not_run_exit(e: &NotRun) -> u8 {
     }
 }
 
-fn require_var(map: &HashMap<String, String>, key: &str, line: u32) -> Result<String, u8> {
-    match map.get(key) {
-        Some(v) if !v.is_empty() => Ok(v.clone()),
-        _ => {
-            // `line` is the line of the deploy file the value is expected on, so the message
-            // points at the edit to make rather than at the check that refused.
-            eprintln!("deploy.env: line {line}: {key}: {key} required in deploy.env");
-            Err(1)
-        }
-    }
-}
-
 fn refuse_prairielearn(label: &str, value: &str) -> Result<(), u8> {
     if value.to_ascii_lowercase().contains("prairielearn") {
         eprintln!("Refusing to deploy: {label} must not contain 'prairielearn' (got: {value})");
         eprintln!(
-            "TBD lives under /home/sam/tbd/ only — see {}.",
+            "TBD lives only under the deploy user's /home/<user>/tbd/ — see {}.",
             crate::core::repository_layout::documentation::HOME_SERVER_RUNBOOK
         );
         return Err(1);
@@ -430,7 +413,9 @@ fn refuse_prairielearn(label: &str, value: &str) -> Result<(), u8> {
     Ok(())
 }
 
-fn require_tbd_remote_prefix(raw: &str) -> Result<(), u8> {
+/// Refuses a `TBD_REMOTE_DIR` outside `tbd_folder` or holding `..`: the rsync runs with
+/// `--delete`, so its destination must stay inside the one folder the deploy owns.
+fn require_tbd_remote_prefix(raw: &str, tbd_folder: &str) -> Result<(), u8> {
     let mut dir = raw.to_string();
     while dir.ends_with('/') && dir != "/" {
         dir.pop();
@@ -438,36 +423,17 @@ fn require_tbd_remote_prefix(raw: &str) -> Result<(), u8> {
     if dir.contains("..") {
         eprintln!("Refusing to deploy: TBD_REMOTE_DIR must not contain '..' (got: {raw})");
         eprintln!(
-            "TBD_REMOTE_DIR must be under /home/sam/tbd/ — see {}.",
+            "TBD_REMOTE_DIR must be under {tbd_folder}/ — see {}.",
             crate::core::repository_layout::documentation::HOME_SERVER_RUNBOOK
         );
         return Err(1);
     }
-    let allowed = "/home/sam/tbd";
-    if dir != allowed && !dir.starts_with(&format!("{allowed}/")) {
-        eprintln!("Refusing to deploy: TBD_REMOTE_DIR must be under /home/sam/tbd/ (got: {raw})");
-        eprintln!("rsync --delete to paths outside /home/sam/tbd/ is forbidden.");
+    if dir != tbd_folder && !dir.starts_with(&format!("{tbd_folder}/")) {
+        eprintln!("Refusing to deploy: TBD_REMOTE_DIR must be under {tbd_folder}/ (got: {raw})");
+        eprintln!("rsync --delete to paths outside {tbd_folder}/ is forbidden.");
         return Err(1);
     }
     Ok(())
-}
-
-/// KEY=VALUE parser (not a shell `source`). Strips an optional leading `export `.
-fn parse_deploy_env(path: &Path) -> Result<HashMap<String, String>> {
-    let mut map = HashMap::new();
-    let text = fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
-    for line in text.lines() {
-        let line = line.trim();
-        if line.is_empty() || line.starts_with('#') {
-            continue;
-        }
-        let line = line.strip_prefix("export ").unwrap_or(line).trim();
-        if let Some((k, v)) = line.split_once('=') {
-            let v = v.trim().trim_matches('"').trim_matches('\'').to_string();
-            map.insert(k.trim().to_string(), v);
-        }
-    }
-    Ok(map)
 }
 
 #[cfg(test)]

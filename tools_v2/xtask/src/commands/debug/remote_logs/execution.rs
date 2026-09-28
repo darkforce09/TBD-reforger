@@ -1,4 +1,7 @@
 use super::*;
+use crate::core::deploy_environment::{
+    DeployEnvironment, DeployHostFolder, deploy_environment_path,
+};
 
 /// Entry for `xtask mod remote-logs`.
 pub fn run(file: Option<PathBuf>, selftest: bool) -> Result<u8> {
@@ -293,44 +296,53 @@ pub(super) fn check_log_quiet(log: &Path) -> u8 {
     }
 }
 
-/// What to say when a required value is in neither the environment nor the deploy file.
-fn missing_variable_message(key: &str) -> String {
-    format!(
-        "{key}: set {key} in the environment or in {}",
-        crate::core::repository_layout::DEPLOY_ENV
-    )
+/// The staging host, its profile folder and the ssh credentials, from `deploy.env`; a refusal
+/// is printed and answered with exit 1.
+fn remote_target() -> Result<Result<RemoteTarget, u8>> {
+    let root = find_repo_root()?;
+    let path = deploy_environment_path(&root);
+    let environment = match DeployEnvironment::load_if_present(&path) {
+        Ok(environment) => environment,
+        Err(error) => {
+            eprintln!("{error}");
+            return Ok(Err(1));
+        }
+    };
+    let resolved = environment.deploy_host().and_then(|host| {
+        let profile = DeployHostFolder::Profile.resolve(&environment, &host)?;
+        Ok(RemoteTarget {
+            destination: host.ssh_destination(),
+            profile,
+            ssh_pass: environment.value("TBD_SSH_PASS").map(str::to_string),
+            ssh_identity: environment
+                .value("TBD_SSH_IDENTITY_FILE")
+                .map(str::to_string),
+        })
+    });
+    Ok(resolved.map_err(|error| {
+        eprintln!("{error}");
+        1
+    }))
+}
+
+/// Where `cmd_remote` reads the log from.
+struct RemoteTarget {
+    destination: String,
+    profile: String,
+    ssh_pass: Option<String>,
+    ssh_identity: Option<String>,
 }
 
 pub(super) fn cmd_remote() -> Result<u8> {
-    let root = find_repo_root()?;
-    let env_file = root.join(crate::core::repository_layout::DEPLOY_ENV);
-    let mut host = std::env::var("TBD_SSH_HOST").ok();
-    let mut profile = std::env::var("TBD_PROFILE_DIR").ok();
-    let mut ssh_pass = std::env::var("TBD_SSH_PASS").ok();
-    let mut ssh_ident = std::env::var("TBD_SSH_IDENTITY_FILE").ok();
-
-    if env_file.is_file() {
-        let parsed = parse_deploy_env(&env_file)?;
-        host = host.or_else(|| parsed.get("TBD_SSH_HOST").cloned());
-        profile = profile.or_else(|| parsed.get("TBD_PROFILE_DIR").cloned());
-        ssh_pass = ssh_pass.or_else(|| parsed.get("TBD_SSH_PASS").cloned());
-        ssh_ident = ssh_ident.or_else(|| parsed.get("TBD_SSH_IDENTITY_FILE").cloned());
-    }
-
-    // A missing required value exits 1, not ENVIRONMENT 3: nothing was probed.
-    let host = match host.filter(|s| !s.is_empty()) {
-        Some(h) => h,
-        None => {
-            eprintln!("{}", missing_variable_message("TBD_SSH_HOST"));
-            return Ok(1);
-        }
-    };
-    let profile = match profile.filter(|s| !s.is_empty()) {
-        Some(p) => p,
-        None => {
-            eprintln!("{}", missing_variable_message("TBD_PROFILE_DIR"));
-            return Ok(1);
-        }
+    // A refused setting exits 1, not ENVIRONMENT 3: nothing was probed.
+    let RemoteTarget {
+        destination: host,
+        profile,
+        ssh_pass,
+        ssh_identity: ssh_ident,
+    } = match remote_target()? {
+        Ok(target) => target,
+        Err(code) => return Ok(code),
     };
 
     let find_log = format!(

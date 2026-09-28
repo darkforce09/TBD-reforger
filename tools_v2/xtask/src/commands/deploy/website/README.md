@@ -10,7 +10,7 @@ the dry run print exactly what a live run executes and lets the tests pin it.
 ```text
 tools_v2/xtask/src/commands/deploy/website/
 ├── asset_preflight.rs  the remote map-asset probe, its three verdicts and the move a refusal prints
-├── help_text.rs        the `--help` block, built around the `DEPLOY_ENV` path the command reads
+├── help_text.rs        the `--help` block: the settings file, its precedence rule and every key
 ├── remote_steps.rs     each remote step's shell: compose, API and app builds, checksum repair, restart
 ├── rsync_argv.rs       the rsync argv, whose exclude list is also the `--delete` guard
 └── systemd_unit.rs     the default API unit name, its template path and its one-time install command
@@ -45,7 +45,8 @@ tools_v2/xtask/src/commands/deploy/website/
 ## Boundaries
 
 - Depends on: `crate::core::repository_layout` (`DEPLOY_ENV`, `WEBSITE_API_UNIT`,
-  `SYSTEMD_UNITS_DIR`).
+  `SYSTEMD_UNITS_DIR`); `tools_v2/xtask/src/commands/deploy/website.rs` reads the settings through
+  `crate::core::deploy_environment`.
 - Used by: `tools_v2/xtask/src/commands/deploy/website.rs`.
 - Rules: the exclude list keeps the secrets, the asset and scratch trees
   (`rsync_excludes_the_secrets_asset_and_scratch_trees` in

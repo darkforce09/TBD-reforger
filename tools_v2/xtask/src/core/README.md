@@ -1,8 +1,9 @@
 # Xtask shared plumbing
 
 The helpers every xtask command group shares: finding the checkout root, the one spelling of each
-repository location xtask reads, running host binaries from inside the development container, the
-cargo target directory policy, and the `PATH` guard tests use. The command groups use them
+repository location xtask reads, the one reader of the deploy settings file, running host binaries
+from inside the development container, the cargo target directory policy, and the `PATH` guard
+tests use. The command groups use them
 without owning [ticket](/documentation_v2/glossary/n_to_z.md#ticket) storage or map processing, which stay in `ticket-engine` and
 `developer-tools`.
 
@@ -11,12 +12,14 @@ without owning [ticket](/documentation_v2/glossary/n_to_z.md#ticket) storage or 
 ```text
 tools_v2/xtask/src/core/
 ├── cargo_target_directory.rs  the shared target directory, the glibc stamp guard, and the target checks
+├── deploy_environment/        the deploy settings grammar, the deploy host and the remote folder defaults
+├── deploy_environment.rs      `DeployEnvironment`: loads `deploy.env` under one precedence rule; errors
 ├── host_execution.rs          `Host`: runs host binaries through the container bridge, or directly on the host
 ├── mod.rs                     the module tree
 ├── repository_layout.rs       repository-relative locations, the ticket-engine ones re-exported, and `documentation`
 ├── repository_root.rs         `find_repo_root` for commands, `test_repo_root` for tests
 ├── test_environment.rs        `PathGuard`: prepends a folder to `PATH` and keeps the system tools reachable
-└── tests/                     unit tests for the host bridge and the `PATH` construction
+└── tests/                     unit tests for the deploy settings, the host bridge and the `PATH` construction
 ```
 
 ## How it works
@@ -29,6 +32,19 @@ dedicated-server profiles, the MCP transcript fixtures, the ticket locations re-
 `documentation` submodule, every document or documentation root a command names or walks: the
 runbooks that refusals cite, the [API](/documentation_v2/glossary/a_to_f.md#api) readiness register, and the roots and exemptions of the
 documentation gates.
+
+`deploy_environment` is the only reader of `tools_v2/xtask/deploy/deploy.env`, the file that names
+the deploy host (`TBD_SSH_HOST`) and nothing else in the repository does. `deploy_environment_path`
+takes the file from `DEPLOY_ENV` when that is set (made absolute against the working directory),
+else from `DEPLOY_ENV` in `repository_layout`. `DeployEnvironment` answers each key under one rule
+for every command: the file decides every key it assigns, an empty assignment counting as unset,
+and the process environment fills only the keys the file never assigns; a command-line flag, where
+a command has one, beats both. `load_required` refuses a missing file, `load_if_present` allows
+one, and both refuse an unreadable file and a line that breaks the grammar with `<path>:<line>`. A
+refused value reports `<path>:<line>: <KEY>: <problem>` (or `<KEY> (process environment): …`), a
+missing one `<KEY> is not set: add it to <path>`. `deploy_host` parses `TBD_SSH_HOST`, and
+`DeployHostFolder` defaults the remote folders under `/home/<user>`; the folder's README gives the
+grammar.
 
 `host_execution::Host` exists because the development container cannot run host-linked binaries
 (Steam, [Workbench](/documentation_v2/glossary/n_to_z.md#workbench), `ArmaReforgerServer`). `Host::detect` asks whether this process is in a
@@ -59,6 +75,10 @@ returns 127 and `capture` returns nothing. Cargo is never routed through the bri
 - Used by:
   - `repository_root` and `repository_layout`: nearly every command group and verification in
     `tools_v2/xtask/src/`;
+  - `deploy_environment`: `deploy website` and `deploy staging`
+    (`tools_v2/xtask/src/commands/deploy/`), `mod bootstrap-staging` and `setup client-addons`
+    (`tools_v2/xtask/src/commands/setup/`), `mod remote-logs`, `debug direct-join` and
+    `debug a2s-probe` (`tools_v2/xtask/src/commands/debug/`);
   - `host_execution`: the `db` group (`tools_v2/xtask/src/commands/db/operations.rs`), the
     playtest server of the `mod` group
     (`tools_v2/xtask/src/commands/mod_ops/playtest_server/host.rs`) and the platform [wave](/documentation_v2/glossary/n_to_z.md#wave) driver
@@ -73,6 +93,10 @@ returns 127 and `capture` returns nothing. Cargo is never routed through the bri
     `tools_v2/xtask/src/tests/tooling_prose_rules.rs`), and every committed location in
     `repository_layout` exists (`every_committed_location_exists_in_the_checkout` in
     `tools_v2/xtask/src/tests/repository_layout_tests.rs`).
+  - The file decides every key it assigns, even empty, over the process environment
+    (`an_empty_assignment_in_the_file_beats_the_process_environment` in
+    `tests/deploy_environment/tests.rs`), and the committed example loads and masks no optional
+    key (`the_committed_example_loads_and_masks_nothing`).
   - The bridge is never used outside a container (`bridge_is_never_used_on_the_metal` in
     `tests/host_execution/tests.rs`).
   - A new `PATH` always keeps the system tools (`prepended_path_onto_stub_only_path_keeps_system_bins_reachable`

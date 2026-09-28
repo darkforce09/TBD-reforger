@@ -15,7 +15,7 @@ pub(crate) enum SetupCmd {
     /// Flattened pak symlink farm for enfusion-mcp.
     #[command(name = "mcp-game-root")]
     McpGameRoot {
-        /// Game install with addons/ (default: Steam Arma Reforger path)
+        /// Game install with addons/ (default: $HOME/.local/share/Steam/steamapps/common/Arma Reforger)
         game: Option<PathBuf>,
         /// Output symlink farm (default: $HOME/.cache/enfusion-mcp-root)
         fake: Option<PathBuf>,

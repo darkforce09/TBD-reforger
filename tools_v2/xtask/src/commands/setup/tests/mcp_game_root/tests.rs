@@ -19,6 +19,21 @@ fn is_pak_case_insensitive() {
 }
 
 #[test]
+fn the_roots_default_under_home_and_need_home_when_left_out() {
+    let home = Path::new("/home/developer");
+    let (game, fake) = roots(None, None, Some(home)).unwrap();
+    assert_eq!(game, home.join(GAME_UNDER_HOME));
+    assert_eq!(fake, home.join(".cache/enfusion-mcp-root"));
+    let given = (Path::new("/games/reforger"), Path::new("/tmp/farm"));
+    assert_eq!(
+        roots(Some(given.0), Some(given.1), None).unwrap(),
+        (given.0.to_path_buf(), given.1.to_path_buf())
+    );
+    let error = roots(Some(given.0), None, None).unwrap_err().to_string();
+    assert!(error.contains("GAME and FAKE"), "{error}");
+}
+
+#[test]
 fn clean_tree_links_flattened_names() {
     let base = tempfile_dir("clean");
     let game = base.join("game");

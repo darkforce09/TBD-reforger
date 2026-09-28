@@ -9,33 +9,54 @@
 //! Preserved oddities:
 //! - Flatten naming is bash `${rel//\//_}` (every `/` → `_`), including preserving `.PAK` case
 //!   from `-iname "*.pak"`.
-//! - Default GAME is the hardcoded Steam path from the former script (not `$HOME`-relative).
-//! - Default FAKE is `$HOME/.cache/enfusion-mcp-root` (falls back to `/home/Samuel` if HOME unset,
-//!   matching common shell behaviour when HOME is empty — we use the same hard-coded user home
-//!   only when `HOME` is unset via `std::env::var` Err; empty HOME still joins `.cache/...`).
+//! - GAME defaults to the Steam library in the home folder,
+//!   `$HOME/.local/share/Steam/steamapps/common/Arma Reforger`, and FAKE to
+//!   `$HOME/.cache/enfusion-mcp-root`; with `HOME` unset, an argument left out is an error that
+//!   names GAME and FAKE, never a guessed home folder.
 //! - Success line is exactly `Linked N pak files into <fake>/addons/` (trailing slash on addons).
 
 use std::fs;
 use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 
-/// The default game root when the operator names none.
-const DEFAULT_GAME: &str = "/home/Samuel/.local/share/Steam/steamapps/common/Arma Reforger";
+/// The Steam install of Arma Reforger, under the home folder: GAME's default.
+const GAME_UNDER_HOME: &str = ".local/share/Steam/steamapps/common/Arma Reforger";
+
+/// The flattened pak folder, under the home folder: FAKE's default.
+const FAKE_UNDER_HOME: &str = ".cache/enfusion-mcp-root";
 
 /// Entry for `xtask setup mcp-game-root [GAME] [FAKE]`.
 pub fn run(game: Option<&Path>, fake: Option<&Path>) -> Result<u8> {
-    let game = game
-        .map(Path::to_path_buf)
-        .unwrap_or_else(|| PathBuf::from(DEFAULT_GAME));
-    let fake = fake.map(Path::to_path_buf).unwrap_or_else(default_fake);
+    let home = std::env::var_os("HOME")
+        .filter(|home| !home.is_empty())
+        .map(PathBuf::from);
+    let (game, fake) = roots(game, fake, home.as_deref())?;
     run_with_paths(&game, &fake)
 }
 
-fn default_fake() -> PathBuf {
-    let home = std::env::var("HOME").unwrap_or_else(|_| "/home/Samuel".into());
-    PathBuf::from(home).join(".cache/enfusion-mcp-root")
+/// GAME and FAKE: each argument when given, else its default under `home`.
+fn roots(
+    game: Option<&Path>,
+    fake: Option<&Path>,
+    home: Option<&Path>,
+) -> Result<(PathBuf, PathBuf)> {
+    let or_under_home = |given: Option<&Path>, relative: &str| {
+        given
+            .map(Path::to_path_buf)
+            .or_else(|| home.map(|home| home.join(relative)))
+    };
+    match (
+        or_under_home(game, GAME_UNDER_HOME),
+        or_under_home(fake, FAKE_UNDER_HOME),
+    ) {
+        (Some(game), Some(fake)) => Ok((game, fake)),
+        _ => bail!(
+            "HOME is unset, so GAME and FAKE have no default: pass both, as \
+             `cargo xtask setup mcp-game-root <GAME> <FAKE>`"
+        ),
+    }
 }
 
 /// Testable entry with explicit GAME + FAKE roots (throwaways under `/tmp`).

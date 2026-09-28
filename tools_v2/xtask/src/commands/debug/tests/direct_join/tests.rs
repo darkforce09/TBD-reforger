@@ -10,6 +10,16 @@ fn fixture_root(tag: &str) -> PathBuf {
     root
 }
 
+/// Deploy settings with no file and no process variables: no staging host.
+fn no_settings(root: &Path) -> DeployEnvironment {
+    DeployEnvironment::from_text(
+        &root.join(crate::core::repository_layout::DEPLOY_ENV),
+        None,
+        [],
+    )
+    .expect("an absent file always loads")
+}
+
 fn empty_home(tag: &str) -> PathBuf {
     let home = std::env::temp_dir().join(format!("direct-join-home-{tag}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&home);
@@ -23,7 +33,7 @@ fn arm_nocursor_exits_err() {
     let root = fixture_root("nocursor");
     // no .cursor/
     let home = empty_home("nocursor");
-    let err = run_with(&root, &home, "arm-nocursor").unwrap_err();
+    let err = run_with(&root, &home, &no_settings(&root), "arm-nocursor").unwrap_err();
     let msg = format!("{err:#}");
     assert!(
         msg.contains("open") && msg.contains("debug-8fc1e0.log"),
@@ -37,7 +47,7 @@ fn arm_logdir_exits_err() {
     let root = fixture_root("logdir");
     fs::create_dir_all(root.join(".cursor/debug-8fc1e0.log")).unwrap();
     let home = empty_home("logdir");
-    let err = run_with(&root, &home, "arm-logdir").unwrap_err();
+    let err = run_with(&root, &home, &no_settings(&root), "arm-logdir").unwrap_err();
     let msg = format!("{err:#}");
     assert!(
         msg.contains("open") && msg.contains("debug-8fc1e0.log"),
@@ -51,17 +61,28 @@ fn clean_empty_home_writes_unknown_and_missing() {
     let root = fixture_root("clean");
     fs::create_dir_all(root.join(".cursor")).unwrap();
     let home = empty_home("clean");
-    // Isolate from operator deploy.env / SSH.
-    unsafe {
-        std::env::remove_var("TBD_SSH_HOST");
-        std::env::remove_var("TBD_SSH_PASS");
-    }
-    let code = run_with(&root, &home, "clean-baseline").unwrap();
+    let code = run_with(&root, &home, &no_settings(&root), "clean-baseline").unwrap();
     assert_eq!(code, 0);
     let log = fs::read_to_string(root.join(".cursor/debug-8fc1e0.log")).unwrap();
     assert!(log.contains("\"client_build\":\"unknown\""));
     assert!(log.contains("\"server_build\":\"unknown\""));
     assert!(log.contains("\"path\":\"missing\""));
+    // No host: the probes that need one record `skipped` and reach no network.
+    assert!(log.contains("\"raw\":\"skipped\""), "{log}");
+    assert!(log.contains("\"ms\":\"skipped\""), "{log}");
+    assert!(
+        log.contains("\"skipped\":\"TBD_SSH_HOST is not set"),
+        "{log}"
+    );
+}
+
+#[test]
+fn the_remote_probe_quotes_the_profile_folder() {
+    let script = remote_probe_script("/home/deploy/tbd/it's profile");
+    assert!(
+        script.contains("LOG=$(ls -td '/home/deploy/tbd/it'\\''s profile'/logs/logs_* "),
+        "{script}"
+    );
 }
 
 #[test]

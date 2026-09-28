@@ -1,11 +1,20 @@
-//! Deploy.env, modpack resolution and the `server.config.json` render half
-//! (bash lines 1072–1522).
+//! `Env`: every setting `cargo xtask deploy staging` reads, and the settings check it runs before
+//! anything reaches the host.
 //!
-//! ── THE RENDER IS A PURE FUNCTION THAT WRITES A FILE ─────────────────────────────────────────
+//! **Role:** builds [`Env`] from `deploy.env` and the process environment, fills in the defaults,
+//! and refuses what the host or the engine would refuse ([`Env::validate`]).
 //!
-//! The push is a separate step that copies that file. Fusing the two into one
-//! `ssh_cmd "cat > remote" <<EOF` heredoc, which meant the only way to see what this script
-//! produces was to deploy it to a live server — so nothing ever checked it.
+//! **Position:** fed by [`crate::core::deploy_environment`], which owns the file's grammar and the
+//! precedence rule (the file decides every key it assigns; the process environment fills only the
+//! keys it never assigns); consumed by the render, the payloads and the deploy pipeline.
+//!
+//! **Signals & state:** none; [`Env`] is built once per run. The public address default asks the
+//! resolver for the host's IPv4 address.
+//!
+//! **Invariants:** the remote folders default under the deploy user's home
+//! ([`DeployHostFolder`]); `publicAddress` is `TBD_PUBLIC_ADDRESS` when set, which must be IPv4,
+//! else the first IPv4 address `TBD_SSH_HOST` resolves to at deploy time, else the deploy stops;
+//! the server config is rendered from these values and nothing else.
 //!
 //! ── WHERE `game.mods[]` COMES FROM ───────────────────────────────────────────────────────────
 //!
@@ -49,15 +58,20 @@
 //! `json.dumps(..., ensure_ascii=True)` (see `ensure_ascii`) and `%r` string formatting (see
 //! `py_repr`). Getting either wrong would change error text a wave log greps for.
 
-use std::fs;
+use std::net::Ipv4Addr;
 use std::path::Path;
 
 use regex::Regex;
 
+use crate::core::deploy_environment::{
+    DeployEnvironment, DeployHost, DeployHostFolder, SettingError,
+};
+
 /// Every setting the deploy reads, after `deploy.env` and the `:=` defaults have been applied.
 #[derive(Debug, Clone)]
 pub struct Env {
-    pub ssh_host: String,
+    /// `TBD_SSH_HOST`: the ssh destination, and the name the public address resolves from.
+    pub deploy_host: DeployHost,
     pub remote_dir: String,
     pub profile_dir: String,
     pub addons_staging: String,
@@ -67,16 +81,11 @@ pub struct Env {
     pub backend_url: String,
     pub addon_guid: String,
     pub scenario: String,
-    /// `TBD_BIND_IP`. Its ONLY consumer is the `TBD_PUBLIC_ADDRESS` default, which is resolved in
-    /// [`Env::load`] — the addons-mode ExecStart hardcodes `-bindIP 0.0.0.0` and never reads this.
-    /// Kept as a field anyway: it is a documented deploy.env knob, and dropping it from the struct
-    /// would hide from the next reader that the resolved value is observable.
-    #[allow(dead_code)]
-    pub bind_ip: String,
     pub server_dir: String,
     pub server_mode: String,
     pub workshop_mod_id: String,
-    pub public_address: String,
+    /// `publicAddress` of the server config: the address the backend room advertises.
+    pub public_address: Ipv4Addr,
     pub game_port: String,
     pub a2s_port: String,
     pub server_name: String,
@@ -93,39 +102,6 @@ pub struct Env {
     pub host_agent: Option<super::host_agent::HostAgentSettings>,
     pub ssh_pass: Option<String>,
     pub ssh_identity_file: Option<String>,
-}
-
-/// KEY=VALUE parser. **Not** a shell `source`.
-///
-/// FAIL-OPEN CLOSED (1 of 3). The bash `source`d this file, i.e. EXECUTED it. A syntax error
-/// aborted under `set -e`, but a stray command in it ran silently with the deploy's privileges and
-/// its network reach. Nothing about the deploy needs shell in a config file. Same call as
-/// the website deploy makes for its own remote steps.
-///
-/// The consequence to keep in mind: `export FOO=$(hostname)` used to work and now yields the
-/// literal text. No committed `deploy.env.example` line uses substitution, and a value that is
-/// really a command belongs in the script.
-fn parse_deploy_env(path: &Path) -> Result<Vec<(String, String)>, u8> {
-    let text = match fs::read_to_string(path) {
-        Ok(t) => t,
-        Err(e) => {
-            eprintln!("FAIL: could not read {}: {e}", path.display());
-            return Err(1);
-        }
-    };
-    let mut out = Vec::new();
-    for line in text.lines() {
-        let line = line.trim();
-        if line.is_empty() || line.starts_with('#') {
-            continue;
-        }
-        let line = line.strip_prefix("export ").unwrap_or(line).trim();
-        if let Some((k, v)) = line.split_once('=') {
-            let v = v.trim().trim_matches('"').trim_matches('\'').to_string();
-            out.push((k.trim().to_string(), v));
-        }
-    }
-    Ok(out)
 }
 
 /// `dirname`, POSIX. Strip trailing slashes, drop the last component, and answer `.` for a bare
@@ -158,65 +134,87 @@ pub(super) fn xargs_like(s: &str) -> String {
     s.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-impl Env {
-    /// Read the deploy file, require what must be set, and fill in the rest.
-    ///
-    /// Deploy-file values OVERRIDE the process environment, so `TBD_A2S_PORT=1 cargo xtask deploy
-    /// staging` is ignored when the deploy file sets `TBD_A2S_PORT`. Keys the file does not
-    /// mention still come from the environment, which is how `TBD_MODPACK_JSON=… --render-only`
-    /// works.
-    pub fn load(env_file: &Path) -> Result<Env, u8> {
-        if !env_file.is_file() {
-            eprintln!(
-                "Missing {} — copy from {}",
-                env_file.display(),
-                crate::core::repository_layout::DEPLOY_ENV_EXAMPLE
-            );
-            return Err(1);
-        }
-        let pairs = parse_deploy_env(env_file)?;
-        // Snapshot the process environment, then let the file win.
-        let mut map: std::collections::HashMap<String, String> = std::env::vars().collect();
-        for (k, v) in pairs {
-            map.insert(k, v);
-        }
-        // Unset and empty are the same thing to every read below.
-        let get = |k: &str| -> String { map.get(k).cloned().unwrap_or_default() };
-        // `line` is the line of the deploy file the value is expected on, so the message points
-        // at the edit to make rather than at the check that refused.
-        let req = |k: &str, line: u32, msg: &str| -> Result<String, u8> {
-            let v = get(k);
-            if v.is_empty() {
-                eprintln!("deploy.env: line {line}: {k}: {msg}");
-                return Err(1);
-            }
-            Ok(v)
-        };
-        let def = |k: &str, d: &str| -> String {
-            let v = get(k);
-            if v.is_empty() { d.to_string() } else { v }
-        };
+/// `TBD_PUBLIC_ADDRESS` when set, which must be an IPv4 address; else the first IPv4 address
+/// `host` resolves to from this machine.
+fn public_address(
+    environment: &DeployEnvironment,
+    host: &DeployHost,
+) -> Result<Ipv4Addr, SettingError> {
+    const KEY: &str = "TBD_PUBLIC_ADDRESS";
+    if let Some(explicit) = environment.value(KEY) {
+        return explicit
+            .parse::<Ipv4Addr>()
+            .map_err(|_| environment.invalid(KEY, format!("`{explicit}` is not an IPv4 address")));
+    }
+    host.resolve_ipv4().map_err(|cause| {
+        environment.not_derivable(
+            KEY,
+            format!("{} has no IPv4 address from here ({cause})", host.host()),
+            "run avahi-daemon on the host",
+        )
+    })
+}
 
-        let ssh_host = req("TBD_SSH_HOST", 1079, "TBD_SSH_HOST required in deploy.env")?;
-        let remote_dir = req("TBD_REMOTE_DIR", 1080, "TBD_REMOTE_DIR required")?;
-        let profile_dir = req("TBD_PROFILE_DIR", 1081, "TBD_PROFILE_DIR required")?;
-        let addons_staging = req("TBD_ADDONS_STAGING", 1082, "TBD_ADDONS_STAGING required")?;
+impl Env {
+    /// Loads the deploy file, which must exist, and builds [`Env`] from it; a refusal is
+    /// printed and answered with exit 1.
+    pub fn load(env_file: &Path) -> Result<Env, u8> {
+        match DeployEnvironment::load_required(env_file) {
+            Ok(environment) => Env::from_environment(&environment),
+            Err(error) => {
+                eprintln!("{error}");
+                Err(1)
+            }
+        }
+    }
+
+    /// Requires what must be set and fills in the rest. Deploy-file values override the process
+    /// environment, so `TBD_A2S_PORT=1 cargo xtask deploy staging` is ignored when the deploy
+    /// file sets `TBD_A2S_PORT`; keys the file never assigns still come from the environment,
+    /// which is how `TBD_MODPACK_JSON=… --render-only` works.
+    pub fn from_environment(environment: &DeployEnvironment) -> Result<Env, u8> {
+        let refuse = |error: SettingError, hint: &str| -> u8 {
+            eprintln!("{error}");
+            if !hint.is_empty() {
+                eprintln!("  {hint}");
+            }
+            1
+        };
+        let get = |k: &str| -> String { environment.value(k).unwrap_or_default().to_string() };
+        let def = |k: &str, d: &str| -> String { environment.value_or(k, d).to_string() };
+        let req = |k: &str, hint: &str| -> Result<String, u8> {
+            environment
+                .required(k)
+                .map(str::to_string)
+                .map_err(|error| refuse(error, hint))
+        };
+        let deploy_host = environment
+            .deploy_host()
+            .map_err(|error| refuse(error, ""))?;
+        let folder = |folder: DeployHostFolder| {
+            folder
+                .resolve(environment, &deploy_host)
+                .map_err(|error| refuse(error, "TBD_SSH_HOST names no user to default it under"))
+        };
+        let remote_dir = folder(DeployHostFolder::Checkout)?;
+        let profile_dir = folder(DeployHostFolder::Profile)?;
+        let addons_staging = folder(DeployHostFolder::AddonsStaging)?;
+        let server_dir = folder(DeployHostFolder::ServerInstall)?;
+        let public_address =
+            public_address(environment, &deploy_host).map_err(|error| refuse(error, ""))?;
         let mod_runtime_credential = req(
             "TBD_MOD_RUNTIME_CREDENTIAL",
-            35,
-            "TBD_MOD_RUNTIME_CREDENTIAL required: issue a mod_runtime credential for this server",
+            "issue a mod_runtime credential for this server in Server Control",
         )?;
         let backend_url = def("TBD_BACKEND_URL", "http://127.0.0.1:8080");
         let host_agent = if def("TBD_INSTALL_HOST_AGENT", "0") == "1" {
             Some(super::host_agent::HostAgentSettings {
                 credential: req(
                     "TBD_HOST_AGENT_CREDENTIAL",
-                    42,
                     "required with TBD_INSTALL_HOST_AGENT=1: issue a host_agent credential for this server",
                 )?,
                 rcon_password: req(
                     "TBD_RCON_PASSWORD",
-                    43,
                     "required with TBD_INSTALL_HOST_AGENT=1",
                 )?,
                 rcon_port: def("TBD_RCON_PORT", "19999"),
@@ -226,9 +224,8 @@ impl Env {
             None
         };
 
-        let bind_ip = def("TBD_BIND_IP", "192.168.0.129");
         Ok(Env {
-            ssh_host,
+            deploy_host,
             remote_dir,
             profile_dir: profile_dir.clone(),
             addons_staging,
@@ -249,13 +246,13 @@ impl Env {
                 "TBD_SCENARIO",
                 "{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf",
             ),
-            server_dir: def("TBD_SERVER_DIR", "/home/sam/steam/arma-reforger-server"),
+            server_dir,
             // Server launch mode. `config` is THE DEFAULT and the only mode that is both correct
             // and joinable; see `boot.rs` for why the default is not `addons` and why that is
             // the wrong half to default to.
             server_mode: def("TBD_SERVER_MODE", "config"),
             workshop_mod_id: get("TBD_WORKSHOP_MOD_ID"),
-            public_address: def("TBD_PUBLIC_ADDRESS", &bind_ip),
+            public_address,
             game_port: def("TBD_GAME_PORT", "2001"),
             // MUST differ from TBD_GAME_PORT or replication fails.
             a2s_port: def("TBD_A2S_PORT", "17777"),
@@ -279,12 +276,10 @@ impl Env {
             modpack_token: get("TBD_MODPACK_TOKEN"),
             workshop_mod_name: def("TBD_WORKSHOP_MOD_NAME", "TBD_Framework"),
             host_agent,
-            ssh_pass: map.get("TBD_SSH_PASS").filter(|v| !v.is_empty()).cloned(),
-            ssh_identity_file: map
-                .get("TBD_SSH_IDENTITY_FILE")
-                .filter(|v| !v.is_empty())
-                .cloned(),
-            bind_ip,
+            ssh_pass: environment.value("TBD_SSH_PASS").map(str::to_string),
+            ssh_identity_file: environment
+                .value("TBD_SSH_IDENTITY_FILE")
+                .map(str::to_string),
         })
     }
 

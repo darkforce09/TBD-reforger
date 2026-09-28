@@ -23,22 +23,6 @@ pub(super) fn shell_quote(s: &str) -> String {
     out
 }
 
-pub(super) fn parse_deploy_env(path: &Path) -> Result<std::collections::HashMap<String, String>> {
-    let mut map = std::collections::HashMap::new();
-    let text = fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
-    for line in text.lines() {
-        let line = line.trim();
-        if line.is_empty() || line.starts_with('#') {
-            continue;
-        }
-        if let Some((k, v)) = line.split_once('=') {
-            let v = v.trim().trim_matches('"').trim_matches('\'').to_string();
-            map.insert(k.trim().to_string(), v);
-        }
-    }
-    Ok(map)
-}
-
 pub(super) fn tempfile_dir(prefix: &str) -> Result<PathBuf> {
     let mut p = std::env::temp_dir();
     p.push(format!("{prefix}.{}", std::process::id()));

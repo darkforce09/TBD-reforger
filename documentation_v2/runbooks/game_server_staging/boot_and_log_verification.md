@@ -11,8 +11,9 @@ server's newest log or any saved one. Each takes seconds.
 
 ## Prerequisites
 
-- For the remote log: `TBD_SSH_HOST` and `TBD_PROFILE_DIR`, in the environment or in
-  `tools_v2/xtask/deploy/deploy.env`; here the environment wins. The server writes its log to
+- For the remote log: `TBD_SSH_HOST`, and `TBD_PROFILE_DIR` when the profile is not
+  `/home/<user>/tbd/profile`, in `tools_v2/xtask/deploy/deploy.env` or in the environment; a key
+  the file sets wins, and the environment fills only keys the file never sets. The server writes its log to
   `$TBD_PROFILE_DIR/logs/logs_<time>/console.log` (`mod remote-logs` also looks under
   `$TBD_PROFILE_DIR/profile/logs/`).
 - For the boot verdict: a local copy of the log, and the `-addonsDir` path the server ran with.
@@ -84,7 +85,7 @@ Read the exit code, never `!= 0`. `mod remote-logs` has four outcomes, and so do
 |---|---|---|
 | 0 | PASS: healthy boot and a player was seated | passes |
 | 2 | PARTIAL: healthy boot, nobody joined yet; the normal state right after a deploy | passes |
-| 1 | FAIL: a required line is missing, or an error class is present; an unset `TBD_SSH_HOST` or `TBD_PROFILE_DIR` also exits 1 | fails |
+| 1 | FAIL: a required line is missing, or an error class is present; a missing or malformed setting (no `TBD_SSH_HOST`, no profile folder) also exits 1 | fails |
 | 3 | ENVIRONMENT: no log was examined, so it says nothing about the mod | fails |
 
 ## What each verdict proves

@@ -18,9 +18,12 @@ Usage: cargo xtask deploy website [--dry-run] [--help]
               without executing.
   -h, --help  Show this help.
 
-Environment ({deploy_env}):
-  TBD_SSH_HOST              required (e.g. sam@192.168.0.129)
-  TBD_REMOTE_DIR            required (must be under /home/sam/tbd/ — never prairielearn)
+Settings ({deploy_env}, or the file DEPLOY_ENV names):
+  The file decides every key it sets (an empty value counts as unset); the process
+  environment fills only keys the file never sets.
+  TBD_SSH_HOST              required, user@host (e.g. sam@dooley.local)
+  TBD_REMOTE_DIR            optional (default /home/<user>/tbd/repo; must stay under
+                            /home/<user>/tbd/ — never prairielearn)
   TBD_SSH_PASS              optional (sshpass)
   TBD_SSH_IDENTITY_FILE     optional (ssh -i)
   TBD_POSTGRES_HOST_PORT    optional (default 5432) — compose host port

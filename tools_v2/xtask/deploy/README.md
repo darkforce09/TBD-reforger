@@ -18,15 +18,30 @@ tools_v2/xtask/deploy/
 Every path here is a constant in `tools_v2/xtask/src/core/repository_layout.rs` (`DEPLOY_DIR`,
 `DEPLOY_ENV`, `DEPLOY_ENV_EXAMPLE`, `CADDYFILE`, `SYSTEMD_UNITS_DIR`, `WEBSITE_API_UNIT`), which
 the command that reads a file joins onto the checkout root. The operator's `deploy.env` holds the
-host, the credentials and the remote paths. The repository's root `.gitignore` names it, and both rsync lanes
-exclude it, so a development machine never overwrites the server's copy. The commands parse it
-as `KEY=VALUE` lines, with an optional `export ` prefix, and never execute it; a missing file
-exits 1 and names the example to copy. The deploy host is whatever `TBD_SSH_HOST` names there.
+host, the credentials and the remote paths; `TBD_SSH_HOST` there is the one place the deploy host
+is named. The repository's root `.gitignore` names it, and both rsync lanes exclude it, so a
+development machine never overwrites the server's copy.
+
+Every command reads it through `tools_v2/xtask/src/core/deploy_environment.rs`, the same way:
+
+- `KEY=VALUE` lines, parsed and never executed: an optional `export `, values in `"…"` or `'…'`
+  taken verbatim, a comment on its own line or after whitespace; a line that breaks the grammar
+  stops the command with `<path>:<line>`.
+- The file decides every key it assigns, and an empty assignment counts as unset; the process
+  environment fills only the keys the file never assigns. A stale exported `TBD_SSH_HOST` therefore
+  never redirects a deploy, and the example leaves its optional keys commented out. A command-line
+  flag (`debug a2s-probe --host`) beats both.
+- A `DEPLOY_ENV` variable points every command at another file; `deploy staging` hands the
+  resolved path to the `mod remote-logs` it runs last.
+- A value the command refuses is reported as `<path>:<line>: <KEY>: <problem>`, and a missing one
+  as `<KEY> is not set: add it to <path>`. A missing file exits 1 and names the example to copy for
+  the deploys; the other readers then take everything from the environment.
 
 ```text
 deploy.env.example ──copy, fill in──▶ deploy.env ──read by──▶ deploy website | deploy staging |
                                                                mod bootstrap-staging | mod remote-logs |
-                                                               debug direct-join
+                                                               debug direct-join | debug a2s-probe |
+                                                               setup client-addons
 Caddyfile.website  ──loaded by Caddy on the host; deploy website prints the reload line
 systemd/           ──see that folder's README for what installs each unit
 ```
@@ -35,28 +50,30 @@ systemd/           ──see that folder's README for what installs each unit
 
 `deploy.env`, from `deploy.env.example`:
 
-- Host access, read by every command that reaches the host: `TBD_SSH_HOST` (required;
-  `deploy website` exits 1 without it, with a message that cites deploy.env line 79), and
+- Host access, read by every command that reaches the host: `TBD_SSH_HOST` (required), `user@host`
+  or `host`, where the user is the deploy account whose home the remote folders default under; and
   `TBD_SSH_PASS` (for sshpass) or `TBD_SSH_IDENTITY_FILE` (for `ssh -i`), both optional.
-- Website, read by `tools_v2/xtask/src/commands/deploy/website.rs`: `TBD_REMOTE_DIR` (required;
-  exit 1 without it, with a message that cites line 80), which must sit under the fixed deploy
-  prefix `require_tbd_remote_prefix` checks; `TBD_POSTGRES_HOST_PORT` (default 5432), the host port
+- Remote folders, each defaulting under `/home/<user>` of `TBD_SSH_HOST` and required when it names
+  no user: `TBD_REMOTE_DIR` (`tbd/repo`), `TBD_PROFILE_DIR` (`tbd/profile`), `TBD_ADDONS_STAGING`
+  (`tbd/addons-staging`) and `TBD_SERVER_DIR` (`steam/arma-reforger-server`).
+- Website, read by `tools_v2/xtask/src/commands/deploy/website.rs`: `TBD_REMOTE_DIR`, which must
+  sit under `/home/<user>/tbd/` (the `--delete` guard `require_tbd_remote_prefix` checks, so a
+  `TBD_SSH_HOST` without a user is refused); `TBD_POSTGRES_HOST_PORT` (default 5432), the host port
   of the staging compose Postgres; `TBD_WEBSITE_SYSTEMD_UNIT` (default `tbd-website-api.service`);
   and `TBD_SKIP_COMPOSE`, `TBD_SKIP_SPA_BUILD` and `TBD_SKIP_API_BUILD`, which skip a step when set
   to 1. `TBD_REMOTE_DIR`, `TBD_SSH_HOST` and `TBD_PROFILE_DIR` are refused when they contain
-  `prairielearn` in any case. A `DEPLOY_ENV` environment variable points this command, and only
-  this one, at another file.
-- Game server, read by `tools_v2/xtask/src/commands/deploy/staging/config.rs`, where a value in
-  the file wins over the process environment: `TBD_REMOTE_DIR`, `TBD_PROFILE_DIR`,
-  `TBD_ADDONS_STAGING` and `TBD_MOD_RUNTIME_CREDENTIAL` (a `mod_runtime` machine credential, the
-  mod's only secret) are required.
+  `prairielearn` in any case.
+- Game server, read by `tools_v2/xtask/src/commands/deploy/staging/config.rs`:
+  `TBD_MOD_RUNTIME_CREDENTIAL` (a `mod_runtime` machine credential, the mod's only secret) is
+  required.
   `TBD_SERVER_MODE` defaults to `config`, which also needs a mod source: `TBD_WORKSHOP_MOD_ID`, or
   a modpack through `TBD_MODPACK_JSON` or `TBD_MODPACK_URL`; the `addons` mode needs none and
   registers no joinable room. Settings with defaults: `TBD_BACKEND_URL` (`http://127.0.0.1:8080`),
   `TBD_ADDON_GUID`, `TBD_SCENARIO` (the [mission header](/documentation_v2/glossary/g_to_m.md#mission-header)
   the server boots, `{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf`), `TBD_SERVER_DIR`,
   `TBD_GAME_PORT` (2001), `TBD_A2S_PORT` (17777, which must differ from the game port),
-  `TBD_BIND_IP` and `TBD_PUBLIC_ADDRESS`, `TBD_SERVER_NAME`, `TBD_ADMIN_PASSWORD`,
+  `TBD_PUBLIC_ADDRESS` (an IPv4 address; unset, the first IPv4 address `TBD_SSH_HOST` resolves to
+  at deploy time, and the deploy stops when there is none), `TBD_SERVER_NAME`, `TBD_ADMIN_PASSWORD`,
   `TBD_MAX_PLAYERS` (64), `TBD_ADMIN_IDENTITY_IDS`, `TBD_SERVER_CONFIG_REMOTE`,
   `TBD_BOOT_VERIFY_TIMEOUT` (180 s), `TBD_MODPACK_TOKEN` and `TBD_WORKSHOP_MOD_NAME`
   (`TBD_Framework`).
@@ -76,8 +93,9 @@ update check revalidates it. Its site root is a fixed absolute path, edited when
 
 - `deploy.env.example`: the operator copies it to `deploy.env` beside it and fills it in. The
   file is read by `cargo xtask deploy website`, `cargo xtask deploy staging`,
-  `cargo xtask mod bootstrap-staging`, `cargo xtask mod remote-logs` and
-  `cargo xtask debug direct-join`.
+  `cargo xtask mod bootstrap-staging`, `cargo xtask mod remote-logs`,
+  `cargo xtask debug direct-join`, `cargo xtask debug a2s-probe` (without `--host`) and
+  `cargo xtask setup client-addons` (for its Direct Join hint).
 - `Caddyfile.website`: loaded by Caddy on the host by hand; `cargo xtask deploy website` ends by
   printing the `caddy reload --config` line for it. `apps/website/api_v2/tests/forwarded_for_trust.rs`
   pins its `reverse_proxy 127.0.0.1:8080` upstream.
@@ -87,15 +105,17 @@ update check revalidates it. Its site root is a fixed absolute path, edited when
 
 - Depends on: ssh, rsync and, with `TBD_SSH_PASS`, sshpass on the development machine; Caddy,
   systemd user units and a container runtime on the host.
-- Used by: the `deploy`, `mod` and `debug` commands above, through the layout constants
-  (`tools_v2/xtask/src/commands/deploy/`, `tools_v2/xtask/src/commands/setup/staging_server.rs`,
-  `tools_v2/xtask/src/commands/debug/`); the API's forwarded-for test, which reads the Caddyfile.
+- Used by: the `deploy`, `mod`, `setup` and `debug` commands above, through the layout constants
+  and the loader in `tools_v2/xtask/src/core/deploy_environment.rs`; the API's forwarded-for test,
+  which reads the Caddyfile.
 - Rules: `deploy.env` is never committed and never rsynced (both exclude lists name
   `DEPLOY_ENV`, and `the_deploy_secrets_file_sits_beside_its_example` in
   `tools_v2/xtask/src/tests/repository_layout_tests.rs` pins its place beside the example); a
   path added here gets its constant in `tools_v2/xtask/src/core/repository_layout.rs`, which
-  `every_committed_location_exists_in_the_checkout` checks; documents name the host only as
-  `TBD_SSH_HOST`.
+  `every_committed_location_exists_in_the_checkout` checks; the example loads under the grammar
+  and assigns no optional key empty (`the_committed_example_loads_and_masks_nothing`); documents
+  name the host only as `TBD_SSH_HOST`, and no production file under `tools_v2` names a
+  private-network address (`no_production_tooling_file_names_a_private_network_address`).
 
 ## Related documentation
 

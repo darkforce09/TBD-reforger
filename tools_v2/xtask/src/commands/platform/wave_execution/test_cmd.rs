@@ -1,7 +1,7 @@
 //! Ad-hoc `cargo test` into a PER-SLICE private `CARGO_TARGET_DIR`.
 //!
 //! DEFECT: concurrent slice worktrees export the same shared cache
-//! (`CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target` / `$MAIN_ROOT/target`). `cargo test` BUILDS
+//! (`CARGO_TARGET_DIR=$HOME/.cache/tbd-target` / `$MAIN_ROOT/target`). `cargo test` BUILDS
 //! AND THEN RUNS a binary, so one worktree can execute another's `website_frontend-<hash>` (one run
 //! live: arsenal.rs:4733 failure that did not exist in that tree; line tracked a sibling). The
 //! per-slice gate and the wave-gate `test frontend` step already use private dirs; ad-hoc agent

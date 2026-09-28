@@ -3,10 +3,12 @@ use std::path::PathBuf;
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum DebugCmd {
+    /// A2S query of each port; prints one JSON object keyed `p<port>`.
     #[command(name = "a2s-probe")]
     A2sProbe {
-        #[arg(long, default_value = "192.168.0.129")]
-        host: String,
+        /// Host to query (default: the host of TBD_SSH_HOST in deploy.env).
+        #[arg(long)]
+        host: Option<String>,
         #[arg(long, default_value = "2001,17777")]
         ports: String,
     },
@@ -39,10 +41,16 @@ pub(crate) enum DebugCmd {
         symlink: String,
         #[arg(long)]
         ping: String,
+        /// The host name that was pinged and A2S-probed.
+        #[arg(long, default_value = "")]
+        host: String,
+        /// The IPv4 address the ping and the A2S probe went to.
+        #[arg(long, default_value = "")]
+        address: String,
         #[arg(long)]
         a2s_json: String,
     },
-    /// Orchestrator: runs every probe below and prints one summary.
+    /// Orchestrator: runs the probes above and prints one summary.
     #[command(name = "direct-join")]
     DirectJoin {
         /// Run id written into the NDJSON block (default: user-repro).

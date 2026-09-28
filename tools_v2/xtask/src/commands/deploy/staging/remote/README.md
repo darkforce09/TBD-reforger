@@ -20,6 +20,7 @@ tools_v2/xtask/src/commands/deploy/staging/remote/
 ```text
 deploy(paths, cli)
   ├─ Env::load + validate (deploy.env) ─ --render-only renders locally and stops here
+  ├─ print ==> publicAddress <IPv4 address>
   ├─ rsync -avz --delete <checkout>/ <host>:<TBD_REMOTE_DIR>/   (exclusions below)
   ├─ ssh bash -s < profile_payload     setup server-profile, addon symlink, backendUrl
   ├─ ssh: docker compose -f apps/website/docker-compose.staging.yml up -d --build
@@ -28,7 +29,8 @@ deploy(paths, cli)
   ├─ ssh bash -s < unit_payload        write tbd-reforger.service with ExecStart, restart it
   ├─ verify_boot_remote                poll every 10 s up to TBD_BOOT_VERIFY_TIMEOUT, then verdict
   ├─ TBD_INSTALL_HOST_AGENT=1: ssh bash -s < install_payload (the fleet host agent)
-  └─ cargo run -q -p xtask -- mod remote-logs ─▶ v6_verdict: 0 and 2 pass, 1, 3 and others fail
+  └─ DEPLOY_ENV=<this run's deploy.env> cargo run -q -p xtask -- mod remote-logs
+       ─▶ v6_verdict: 0 and 2 pass, 1, 3 and others fail
 ```
 
 Every step that exits non-zero stops the deploy with that code; a tool that is not installed

@@ -8,7 +8,7 @@
 ;
 ; Install (on the deploy host, as the deploy user):
 ;   mkdir -p ~/.config/systemd/user
-;   sed 's|/TBD_REPO_DIR_PLACEHOLDER|/home/sam/tbd/TBD-Reforger|' \
+;   sed 's|/TBD_REPO_DIR_PLACEHOLDER|<TBD_REMOTE_DIR>|' \
 ;       tools_v2/xtask/deploy/systemd/tbd-website-backup.service \
 ;       > ~/.config/systemd/user/tbd-website-backup.service
 ;   cp tools_v2/xtask/deploy/systemd/tbd-website-backup.timer ~/.config/systemd/user/

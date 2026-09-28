@@ -59,12 +59,12 @@ fn settings_the_agent_or_the_engine_would_refuse_are_refused_first() {
 fn install_payload_writes_secret_files_and_reads_the_unit_state_back() {
     let p = install_payload(
         &settings(),
-        "/home/sam/tbd/repo",
-        "/home/sam/tbd/server.config.json",
+        "/home/deploy/tbd/repo",
+        "/home/deploy/tbd/server.config.json",
     );
     assert!(p.starts_with("set -euo pipefail\numask 077\n"));
     assert!(
-        p.contains("(cd '/home/sam/tbd/repo' && cargo build --release -q -p fleet-host-agent)")
+        p.contains("(cd '/home/deploy/tbd/repo' && cargo build --release -q -p fleet-host-agent)")
     );
     assert!(p.contains(&format!(
         "printf '%s' '{AGENT_CREDENTIAL}' > \"$AGENT_DIR/machine-credential\""
@@ -73,7 +73,7 @@ fn install_payload_writes_secret_files_and_reads_the_unit_state_back() {
     assert!(p.contains("chmod 600 \"$AGENT_DIR/machine-credential\" \"$AGENT_DIR/rcon-password\""));
     // The configuration names the unit the agent controls and the config it rewrites.
     assert!(p.contains("systemd_user_unit = \"tbd-reforger.service\"\n"));
-    assert!(p.contains("server_config_path = \"/home/sam/tbd/server.config.json\"\n"));
+    assert!(p.contains("server_config_path = \"/home/deploy/tbd/server.config.json\"\n"));
     assert!(p.contains("[rcon]\naddress = \"127.0.0.1\"\nport = 19999\n"));
     // The unit goes over verbatim from the committed template.
     assert!(p.contains(&format!("<<'UNITEOF'\n{UNIT_TEMPLATE}UNITEOF\n")));

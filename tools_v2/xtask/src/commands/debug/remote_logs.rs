@@ -7,8 +7,10 @@
 //! log that cannot be read is ENVIRONMENT, the same as a log that is not there — never a zero
 //! count, which would read as the STALE BUILD verdict.
 //!
-//! An unset `TBD_SSH_HOST` exits 1 rather than ENVIRONMENT 3: it is a missing required value, the
-//! same class as the deploy's own required-variable refusal, and it is reported the same way.
+//! The host and the profile folder come from `deploy.env` under the precedence rule of
+//! [`crate::core::deploy_environment`]. A missing or malformed setting exits 1 rather than
+//! ENVIRONMENT 3: it is a refused setting, the same class as the deploy's own refusals, and it is
+//! reported the same way.
 
 use std::fs;
 use std::io::Write;
@@ -45,7 +47,6 @@ pub use execution::run;
 
 mod shell_quote;
 use shell_quote::append_line;
-use shell_quote::parse_deploy_env;
 use shell_quote::shell_quote;
 use shell_quote::tempfile_dir;
 use shell_quote::write_log;

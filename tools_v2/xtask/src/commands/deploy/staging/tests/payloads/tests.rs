@@ -6,14 +6,14 @@ use crate::commands::deploy::staging::remote::exec_start;
 fn profile_payload_hands_the_credential_to_setup() {
     let p = profile_payload(&base());
     assert!(p.starts_with("set -euo pipefail\n"));
-    assert!(p.contains("mkdir -p \"/home/sam/tbd/addons\" \"/home/sam/tbd/profile\""));
+    assert!(p.contains("mkdir -p \"/home/deploy/tbd/addons\" \"/home/deploy/tbd/profile\""));
     // `setup server-profile` reads the credential from its environment; it is the only export.
     assert!(p.contains(&format!(
         "export TBD_MACHINE_CREDENTIAL='{RUNTIME_CREDENTIAL}'"
     )));
     assert_eq!(p.matches("export ").count(), 1, "{p}");
     assert!(p.contains(
-        "(cd \"/home/sam/tbd/repo\" && cargo run -q -p xtask -- setup server-profile \"/home/sam/tbd/profile\")"
+        "(cd \"/home/deploy/tbd/repo\" && cargo run -q -p xtask -- setup server-profile \"/home/deploy/tbd/profile\")"
     ));
     // Left for the REMOTE shell.
     assert!(p.contains("\"backendUrl\": \"http://127.0.0.1:8080\""));
@@ -22,7 +22,7 @@ fn profile_payload_hands_the_credential_to_setup() {
     assert!(!p.contains("missionId") && !p.contains("eventId"), "{p}");
     // The symlink is what makes -addonsDir point at the checkout this deploy just rsynced.
     assert!(p.contains(
-        "ln -sfn \"/home/sam/tbd/repo/apps/mod/tbd-framework\" \"/home/sam/tbd/addons/tbd-framework\""
+        "ln -sfn \"/home/deploy/tbd/repo/apps/mod/tbd-framework\" \"/home/deploy/tbd/addons/tbd-framework\""
     ));
 }
 
@@ -35,10 +35,10 @@ fn unit_payload_nests_a_quoted_heredoc() {
     assert!(
         p.contains("Description=TBD Arma Reforger dedicated server (TBD_Dev_POC, mode=config)")
     );
-    assert!(p.contains("WorkingDirectory=/home/sam/steam/arma-reforger-server\n"));
-    assert!(
-        p.contains("ExecStart=/home/sam/steam/arma-reforger-server/ArmaReforgerServer -addonsDir")
-    );
+    assert!(p.contains("WorkingDirectory=/home/deploy/steam/arma-reforger-server\n"));
+    assert!(p.contains(
+        "ExecStart=/home/deploy/steam/arma-reforger-server/ArmaReforgerServer -addonsDir"
+    ));
     assert!(p.contains("\nUNITEOF\nsystemctl --user daemon-reload\n"));
     // `enable` is allowed to fail (the unit may already be enabled); `restart` falls back to
     // `start` for a unit that has never run. Both `||` forms are load-bearing.

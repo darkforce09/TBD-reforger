@@ -7,31 +7,31 @@ use crate::commands::deploy::staging::config::tests::base;
 fn ssh_argv_plain_identity_and_sshpass() {
     let remote = vec!["bash".to_string(), "-s".to_string()];
     assert_eq!(
-        ssh_argv(&SshBase::Plain, "sam@h", &remote),
+        ssh_argv(&SshBase::Plain, "deploy@h", &remote),
         vec![
             "ssh",
             "-o",
             "StrictHostKeyChecking=no",
-            "sam@h",
+            "deploy@h",
             "bash",
             "-s"
         ]
     );
     assert_eq!(
-        ssh_argv(&SshBase::Identity("/k/id".into()), "sam@h", &remote),
+        ssh_argv(&SshBase::Identity("/k/id".into()), "deploy@h", &remote),
         vec![
             "ssh",
             "-i",
             "/k/id",
             "-o",
             "StrictHostKeyChecking=no",
-            "sam@h",
+            "deploy@h",
             "bash",
             "-s"
         ]
     );
     assert_eq!(
-        ssh_argv(&SshBase::Pass("pw".into()), "sam@h", &remote),
+        ssh_argv(&SshBase::Pass("pw".into()), "deploy@h", &remote),
         vec![
             "sshpass",
             "-p",
@@ -39,7 +39,7 @@ fn ssh_argv_plain_identity_and_sshpass() {
             "ssh",
             "-o",
             "StrictHostKeyChecking=no",
-            "sam@h",
+            "deploy@h",
             "bash",
             "-s"
         ]
@@ -64,8 +64,8 @@ fn rsync_argv_keeps_every_exclude_in_order() {
     let argv = rsync_argv(
         &SshBase::Plain,
         Path::new("/repo"),
-        "sam@h",
-        "/home/sam/tbd/repo",
+        "deploy@h",
+        "/home/deploy/tbd/repo",
     );
     assert_eq!(argv[0], "rsync");
     assert_eq!(argv[1], "-e");
@@ -93,16 +93,16 @@ fn rsync_argv_keeps_every_exclude_in_order() {
     }
     // Source has a trailing slash (rsync copies CONTENTS) and so does the destination.
     assert_eq!(argv[argv.len() - 2], "/repo/");
-    assert_eq!(argv[argv.len() - 1], "sam@h:/home/sam/tbd/repo/");
+    assert_eq!(argv[argv.len() - 1], "deploy@h:/home/deploy/tbd/repo/");
 }
 
 #[test]
 fn exec_start_config_mode_carries_both_flags() {
     // The whole point: without -addonsDir the engine loads the Workshop copy.
     let s = exec_start(&base());
-    assert!(s.contains(" -addonsDir /home/sam/tbd/addons "), "{s}");
+    assert!(s.contains(" -addonsDir /home/deploy/tbd/addons "), "{s}");
     assert!(
-        s.contains(" -config /home/sam/tbd/server.config.json "),
+        s.contains(" -config /home/deploy/tbd/server.config.json "),
         "{s}"
     );
     assert!(
@@ -179,7 +179,7 @@ fn dry_run_never_spawns() {
     let code = r
         .ssh(
             &SshBase::Pass("pw".into()),
-            "sam@h",
+            "deploy@h",
             &["bash".to_string(), "-s".to_string()],
             Some("payload".into()),
         )

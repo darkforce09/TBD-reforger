@@ -2,6 +2,8 @@ pub(crate) mod host_execution;
 
 pub(crate) mod cargo_target_directory;
 
+pub(crate) mod deploy_environment;
+
 pub(crate) mod repository_layout;
 
 pub(crate) mod repository_root;

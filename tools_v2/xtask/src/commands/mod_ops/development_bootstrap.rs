@@ -279,7 +279,10 @@ fn symlinked_home_path(path: &Path) -> PathBuf {
 }
 
 fn apply_default_env() {
-    let home = std::env::var("HOME").unwrap_or_else(|_| "/home/Samuel".into());
+    // Every default sits under the home folder; without HOME the variables stay unset.
+    let Ok(home) = std::env::var("HOME") else {
+        return;
+    };
     set_default(
         "ENFUSION_GAME_PATH",
         &format!("{home}/.cache/enfusion-mcp-root"),

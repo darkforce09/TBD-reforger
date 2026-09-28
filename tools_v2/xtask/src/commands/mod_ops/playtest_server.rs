@@ -24,7 +24,7 @@
 //!   ENGINE : Loaded addons:
 //!            gproj: '<addonsDir>/tbd-framework/addon.gproj' guid: 'B2C3D4E5F6A78901'
 //!   NETWORK: Starting RPL server, listening on address 0.0.0.0:2001, fastValidation=true
-//!   BACKEND: Server registered with address: 192.168.0.117:2001
+//!   BACKEND: Server registered with address: <LAN address>:2001
 //!   BACKEND: Direct Join Code: 0207990185
 //! ```
 //!

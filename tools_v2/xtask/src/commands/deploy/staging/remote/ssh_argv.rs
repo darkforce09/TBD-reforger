@@ -1,4 +1,5 @@
 use super::*;
+use crate::core::deploy_environment::DEPLOY_ENV_OVERRIDE_VARIABLE;
 
 /// The full `ssh` argv, program included at index 0. Pure, so it can be asserted without spawning.
 pub fn ssh_argv(base: &SshBase, host: &str, remote: &[String]) -> Vec<String> {
@@ -167,7 +168,9 @@ pub fn deploy(paths: &Paths, cli: &Cli) -> Result<u8> {
     let runner = Runner {
         dry_run: cli.dry_run,
     };
-    let host = env.ssh_host.clone();
+    let host = env.deploy_host.ssh_destination();
+    // The one address the backend room advertises, derived from TBD_SSH_HOST unless set.
+    println!("==> publicAddress {}", env.public_address);
     // ── rsync ───────────────────────────────────────────────────────────────────────────────
     println!("==> rsync to {}", env.remote_dir);
     if cli.dry_run {
@@ -339,11 +342,16 @@ pub fn deploy(paths: &Paths, cli: &Cli) -> Result<u8> {
 
     // ── V6 ──────────────────────────────────────────────────────────────────────────────────
     println!("==> V6 remote log grep");
+    // The child re-reads the deploy settings; the absolute path keeps it on this run's file.
+    let settings_file = paths.deploy_env.to_string_lossy().into_owned();
     if cli.dry_run {
-        println!("[dry-run] cargo run -q -p xtask -- mod remote-logs");
+        println!(
+            "[dry-run] {DEPLOY_ENV_OVERRIDE_VARIABLE}={settings_file} cargo run -q -p xtask -- mod remote-logs"
+        );
         return Ok(0);
     }
     let out = Run::new("cargo")
+        .env(DEPLOY_ENV_OVERRIDE_VARIABLE, settings_file)
         .arg("run")
         .arg("-q")
         .arg("-p")

@@ -25,8 +25,10 @@ players. The server side needs only a redeploy; players need a Workshop publish.
    ```
 
    Expected: `BACKEND      : Server registered with address: <address>:2001` and
-   `BACKEND      : Direct Join Code: <code>`. The address is `TBD_PUBLIC_ADDRESS`; when it is not
-   the host's LAN address, set it in `deploy.env` and redeploy.
+   `BACKEND      : Direct Join Code: <code>`. The address is the server config's `publicAddress`:
+   `TBD_PUBLIC_ADDRESS` when set, else the IPv4 address `TBD_SSH_HOST` resolved to when the deploy
+   ran. When players reach the host at another address, set `TBD_PUBLIC_ADDRESS` in `deploy.env`
+   and redeploy.
 
 2. In the client, open Multiplayer, then Direct Join, and enter `<address>:2001` or the Direct
    Join Code. Then, as a listed admin, type `#tbd` in chat.
@@ -44,8 +46,10 @@ players. The server side needs only a redeploy; players need a Workshop publish.
 
    Expected: `Wrote debug log: <checkout>/.cursor/debug-8fc1e0.log`, then a `--- summary ---`
    with the Steam build ids of the client and dedicated server installed on this machine, the
-   client addon link, the host's `tbd-reforger.service` state and UDP listeners on 2001 and
-   17777, the last listen, A2S and client lines of its newest log, and the ping and A2S answers.
+   client addon link, the ping and A2S answers of the host's IPv4 address, and the host's
+   `tbd-reforger.service` state, UDP listeners on 2001 and 17777 and the last listen, A2S and
+   client lines of its newest log. Without `TBD_SSH_HOST` the host's probes read `skipped` and one
+   line on stderr names the settings file.
    Repeat with `after-join` right after a failed attempt and compare the two blocks.
 
 4. On the client machine, list the join flow of the client's newest log. Under Steam's Proton the
@@ -132,8 +136,9 @@ every log line. The boot verdict's gproj path is the check that tells them apart
 To load the checkout in a local client instead of the Workshop copy,
 `cargo xtask setup client-addons` links `apps/mod/tbd-framework/` into
 `~/.local/share/tbd-server-addons/` and prints the Steam launch options
-(`-addonsDir "<that folder>" -addons B2C3D4E5F6A78901`); ignore the host address its last line
-prints.
+(`-addonsDir "<that folder>" -addons B2C3D4E5F6A78901`); its last line,
+`Restart the game, then Direct Join → <host> (<IPv4 address>) port 2001`, names the host of
+`TBD_SSH_HOST`, or says to set it when `deploy.env` names none.
 
 ## Troubleshooting
 

@@ -91,17 +91,20 @@ copy. The commands parse it as `KEY=VALUE` lines and never execute it. The deplo
 
 `deploy.env`, from `deploy.env.example`:
 
-- Host access: `TBD_SSH_HOST`, required by every command that reaches the host; `TBD_SSH_PASS`
-  (for sshpass) or `TBD_SSH_IDENTITY_FILE` (for `ssh -i`), both optional.
-- Website, read by `tools_v2/xtask/src/commands/deploy/website.rs`: `TBD_REMOTE_DIR`, required and
-  held under the deploy prefix that `cargo xtask deploy website --help` prints;
+- Host access: `TBD_SSH_HOST` (`user@host`), required by every command that reaches the host and
+  the one place the host is named; `TBD_SSH_PASS` (for sshpass) or `TBD_SSH_IDENTITY_FILE` (for
+  `ssh -i`), both optional. The file decides every key it assigns, an empty value counting as
+  unset, and the process environment fills only the others.
+- Website, read by `tools_v2/xtask/src/commands/deploy/website.rs`: `TBD_REMOTE_DIR`, by default
+  `/home/<user>/tbd/repo` and held under `/home/<user>/tbd/`;
   `TBD_POSTGRES_HOST_PORT` (default 5432), the host port of the staging compose Postgres;
   `TBD_WEBSITE_SYSTEMD_UNIT` (default `tbd-website-api.service`); and `TBD_SKIP_COMPOSE`,
   `TBD_SKIP_SPA_BUILD` and `TBD_SKIP_API_BUILD`, which skip a step when set to 1. A `DEPLOY_ENV`
-  environment variable points the command at another settings file.
-- Game server, read by `tools_v2/xtask/src/commands/deploy/staging/config.rs`: `TBD_REMOTE_DIR`,
-  `TBD_PROFILE_DIR`, `TBD_ADDONS_STAGING` and `TBD_MOD_RUNTIME_CREDENTIAL` (a `mod_runtime`
-  machine credential, the mod's only secret) are required. `TBD_SERVER_MODE` defaults to `config`, which also
+  environment variable points every command at another settings file.
+- Game server, read by `tools_v2/xtask/src/commands/deploy/staging/config.rs`:
+  `TBD_MOD_RUNTIME_CREDENTIAL` (a `mod_runtime` machine credential, the mod's only secret) is
+  required; the remote folders default under `/home/<user>`, and `TBD_PUBLIC_ADDRESS` to the first
+  IPv4 address `TBD_SSH_HOST` resolves to at deploy time. `TBD_SERVER_MODE` defaults to `config`, which also
   needs a mod source: `TBD_WORKSHOP_MOD_ID`, or a modpack through `TBD_MODPACK_JSON` or
   `TBD_MODPACK_URL`; the `addons` mode needs none. Among the settings that default are
   `TBD_BACKEND_URL` (`http://127.0.0.1:8080`) and `TBD_SCENARIO` (the mission header the server
@@ -121,8 +124,9 @@ elsewhere.
 
 - `deploy.env.example`: the operator copies it to `deploy.env` beside it and fills it in. The file
   is read by `cargo xtask deploy website`, `cargo xtask deploy staging`,
-  `cargo xtask mod bootstrap-staging`, `cargo xtask mod remote-logs` and
-  `cargo xtask debug direct-join`.
+  `cargo xtask mod bootstrap-staging`, `cargo xtask mod remote-logs`,
+  `cargo xtask debug direct-join`, `cargo xtask debug a2s-probe` and
+  `cargo xtask setup client-addons`.
 - `Caddyfile.website`: loaded by Caddy on the host by hand; `cargo xtask deploy website` ends by
   printing the `caddy reload --config` line for it. `apps/website/api_v2/tests/forwarded_for_trust.rs`
   pins its `reverse_proxy 127.0.0.1:8080` upstream.

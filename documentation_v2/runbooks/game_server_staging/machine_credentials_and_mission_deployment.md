@@ -127,7 +127,7 @@ Expected: `{"version":2,"eventId":…,"missionId":…,"assignments":[…],"slots
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| the deploy stops with `TBD_MOD_RUNTIME_CREDENTIAL is not a machine credential (tbdm_<32 hex>_<64 hex>)` | the value is truncated or not a platform credential (an empty one stops at `deploy.env: line 35: TBD_MOD_RUNTIME_CREDENTIAL: …`) | step 1, then copy the whole secret |
+| the deploy stops with `TBD_MOD_RUNTIME_CREDENTIAL is not a machine credential (tbdm_<32 hex>_<64 hex>)` | the value is truncated or not a platform credential (an empty one stops at `TBD_MOD_RUNTIME_CREDENTIAL is not set: add it to <path>`) | step 1, then copy the whole secret |
 | the smoke or `mod test-game-runtime-api` answers 401 with the credential | the credential is revoked or belongs to another server | issue a fresh one (step 1) and deploy again |
 | the roster answers 403 | the event is not bound to this server | step 3 |
 | `[TBD][Mission] NO MISSION - …` (ERROR) in the server log | nothing is deployed to this server; the server stays in LOADING | step 4 |

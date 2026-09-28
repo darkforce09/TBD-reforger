@@ -117,8 +117,8 @@ fn a_broken_bridge_answers_nothing_even_when_one_exists() {
 fn capture_trimmed_deletes_all_whitespace_like_tr_d() {
     let h = on_metal();
     assert_eq!(
-        h.capture_trimmed(&["printf", "  192.168.0.117 \n"]),
-        "192.168.0.117"
+        h.capture_trimmed(&["printf", "  198.51.100.7 \n"]),
+        "198.51.100.7"
     );
 }
 

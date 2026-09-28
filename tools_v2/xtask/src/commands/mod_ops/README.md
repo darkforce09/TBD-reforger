@@ -106,9 +106,9 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
 ### remote-logs
 
 - Synopsis: `mod remote-logs [--file <FILE>] [--selftest]`
-- Does: reads the staging server's `console.log` over SSH from `TBD_SSH_HOST` (or `--file`
-  locally) and classifies the boot; `--selftest` proves the verdict can fail.
-- Exit codes: 0 healthy; 1 fail, or `TBD_SSH_HOST` unset; 2 partial; 3 environment.
+- Does: reads the staging server's `console.log` over SSH from `TBD_SSH_HOST` in `deploy.env`
+  (or `--file` locally) and classifies the boot; `--selftest` proves the verdict can fail.
+- Exit codes: 0 healthy; 1 fail, or a missing or malformed setting; 2 partial; 3 environment.
 - Example: `cargo xtask mod remote-logs --file console.log`
 
 ### spawn-determinism
@@ -163,9 +163,10 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
 
 - Synopsis: `mod bootstrap-staging`
 - Does: discovers the staging host named by `TBD_SSH_HOST` in
-  `tools_v2/xtask/deploy/deploy.env` and creates the folders the deploy expects there.
-- Exit codes: 0 done; 1 no host, an unreadable deploy file or a refused remote folder; 127 no
-  `ssh` or `sshpass`.
+  `tools_v2/xtask/deploy/deploy.env` and creates the folders the deploy expects there (by default
+  under `/home/<user>/tbd/`).
+- Exit codes: 0 done; 1 no host, a deploy file that does not load, or a folder that cannot be
+  resolved or is refused; 127 no `ssh` or `sshpass`.
 - Example: `cargo xtask mod bootstrap-staging`
 
 ### seed-announcement

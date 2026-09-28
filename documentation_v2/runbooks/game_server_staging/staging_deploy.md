@@ -19,16 +19,18 @@ rsync and the engine's boot.
 
 ## Settings
 
-The deploy reads `deploy.env` as `KEY=VALUE` lines (an `export ` prefix and quotes are stripped)
-and never executes it, so `$(…)` stays literal text. A key the file sets beats the process
-environment; a key it leaves out may come from the environment.
+The deploy reads `deploy.env` (or the file a `DEPLOY_ENV` variable names) as `KEY=VALUE` lines
+(an `export ` prefix and quotes are stripped) and never executes it, so `$(…)` stays literal text
+and a line that is not an assignment stops the deploy with `<path>:<line>`. A key the file sets
+beats the process environment, and an empty value there counts as unset; a key the file never
+sets may come from the environment.
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `TBD_SSH_HOST` | required | `user@host` of the staging host |
+| `TBD_SSH_HOST` | required | `user@host` of the staging host; the user's home, `/home/<user>`, is where the folders below default |
 | `TBD_SSH_PASS`, `TBD_SSH_IDENTITY_FILE` | none | password through `sshpass`, else a key file, else plain `ssh` |
-| `TBD_REMOTE_DIR`, `TBD_PROFILE_DIR`, `TBD_ADDONS_STAGING` | required | the checkout, the `-profile` folder and the `-addonsDir` folder on the host |
-| `TBD_SERVER_DIR` | `steam/arma-reforger-server` in the deploy account's home | the dedicated server install |
+| `TBD_REMOTE_DIR`, `TBD_PROFILE_DIR`, `TBD_ADDONS_STAGING` | `tbd/repo`, `tbd/profile`, `tbd/addons-staging` in `/home/<user>`; required when `TBD_SSH_HOST` names no user | the checkout, the `-profile` folder and the `-addonsDir` folder on the host |
+| `TBD_SERVER_DIR` | `steam/arma-reforger-server` in `/home/<user>`; required when `TBD_SSH_HOST` names no user | the dedicated server install |
 | `TBD_MOD_RUNTIME_CREDENTIAL` | required | the server's `mod_runtime` credential; becomes `machineCredential` |
 | `TBD_BACKEND_URL` | `http://127.0.0.1:8080` | the `backendUrl` the mod calls |
 | `TBD_SERVER_MODE` | `config` | `config` (`-addonsDir` + `-config`, joinable) or `addons` (`-server` + `-addons`, log checks only) |
@@ -38,7 +40,7 @@ environment; a key it leaves out may come from the environment.
 | `TBD_MODPACK_JSON` | none | a file holding a `GET /api/v1/modpacks/current` body; its mods become `game.mods[]` |
 | `TBD_MODPACK_URL`, `TBD_MODPACK_TOKEN` | none | fetch that body from the API; the route needs a user's bearer access token |
 | `TBD_GAME_PORT`, `TBD_A2S_PORT` | `2001`, `17777` | must differ |
-| `TBD_BIND_IP`, `TBD_PUBLIC_ADDRESS` | a LAN address fixed in `config.rs`, then `TBD_BIND_IP` | the address the backend room advertises; set it to the host's |
+| `TBD_PUBLIC_ADDRESS` | the first IPv4 address `TBD_SSH_HOST` resolves to on the development machine at deploy time | the address the backend room advertises (`publicAddress`); must be IPv4; set it only when players reach the host at another address |
 | `TBD_SERVER_NAME`, `TBD_ADMIN_PASSWORD`, `TBD_MAX_PLAYERS` | `TBD Staging POC`, fixed in `config.rs`, `64` | server identity; set your own admin password |
 | `TBD_ADMIN_IDENTITY_IDS` | empty | comma-separated identityIds or 17-digit SteamIDs; they become `game.admins[]` |
 | `TBD_SERVER_CONFIG_REMOTE` | `server.config.json` beside `TBD_PROFILE_DIR` | where the rendered config goes on the host |
@@ -51,7 +53,11 @@ environment; a key it leaves out may come from the environment.
 
 Before anything is sent, the deploy refuses, with exit 1:
 
-- a missing required setting (`deploy.env: line <n>: <KEY>: …`), or no `deploy.env` at all;
+- a missing required setting (`<KEY> is not set: add it to <path>`), a value it cannot use
+  (`<path>:<line>: <KEY>: …`), or no `deploy.env` at all;
+- no `TBD_PUBLIC_ADDRESS` and no IPv4 address for `TBD_SSH_HOST` from the development machine
+  (`TBD_PUBLIC_ADDRESS is unset and <host> has no IPv4 address from here (…): run avahi-daemon on
+  the host or set TBD_PUBLIC_ADDRESS in <path>`);
 - a `TBD_ADDON_GUID` that differs from the gproj;
 - a `TBD_REMOTE_DIR` containing `prairielearn`;
 - a runtime or host-agent credential not shaped `tbdm_<32 hex>_<64 hex>`;
@@ -87,11 +93,12 @@ before it is pushed: valid JSON, the required keys, `a2s.port` different from `b
    cargo xtask deploy staging --dry-run
    ```
 
-   Expected, in order: `==> rsync to <TBD_REMOTE_DIR>`, `==> remote profile + addon symlink`,
+   Expected, in order: `==> publicAddress <IPv4 address>`, `==> rsync to <TBD_REMOTE_DIR>`,
+   `==> remote profile + addon symlink`,
    `==> docker compose (API + Postgres)`, `==> game-runtime smoke (V2–V4)`,
    `==> systemd user service + restart game server (mode: config)` with the
    `[dry-run] ExecStart=…` line, `==> host agent (fleet-host-agent)`, `==> V6 remote log grep` and
-   `[dry-run] cargo run -q -p xtask -- mod remote-logs`, exit 0.
+   `[dry-run] DEPLOY_ENV=<path of deploy.env> cargo run -q -p xtask -- mod remote-logs`, exit 0.
 
 3. Deploy.
 
@@ -113,7 +120,7 @@ The stages, in order:
 | server config and unit | config mode keeps the live config's `scenarioId` (`keeping the deployed scenario …`), renders, checks and pushes the config; then writes `~/.config/systemd/user/tbd-reforger.service` with the mode's `ExecStart`, reloads, enables and restarts it |
 | boot verdict | polls the newest `TBD_PROFILE_DIR/logs/logs_*/console.log` every 10 s for `Server registered with address:`, up to `TBD_BOOT_VERIFY_TIMEOUT`, pulls the log and runs the verdict of [boot and log verification](/documentation_v2/runbooks/game_server_staging/boot_and_log_verification.md); addons mode checks the addon only |
 | host agent | with `TBD_INSTALL_HOST_AGENT=1`, the install below; otherwise `[SKIP] host agent — TBD_INSTALL_HOST_AGENT=1 to install it.` |
-| V6 | runs `cargo xtask mod remote-logs` on the development machine; 0 (a player was seated) and 2 (booted, nobody joined yet) pass, 1 and 3 fail the deploy |
+| V6 | runs `cargo xtask mod remote-logs` on the development machine, with `DEPLOY_ENV` set to the settings file this deploy read; 0 (a player was seated) and 2 (booted, nobody joined yet) pass, 1 and 3 fail the deploy |
 
 The unit the deploy writes is its own: `tools_v2/xtask/deploy/systemd/tbd-reforger.service` is a
 template no code reads. The written `ExecStart`, in config mode:
@@ -164,6 +171,7 @@ Expected: `active`, then one listener on 2001 and one on 17777.
 | Symptom | Cause | Fix |
 |---|---|---|
 | `Missing …deploy.env — copy from tools_v2/xtask/deploy/deploy.env.example` | no deploy file | [host preparation](/documentation_v2/runbooks/game_server_staging/host_preparation.md) step 1 |
+| `TBD_PUBLIC_ADDRESS is unset and <host> has no IPv4 address from here …` | the development machine cannot resolve `TBD_SSH_HOST` to IPv4: avahi is not running on the host, or mDNS does not reach this machine | start avahi-daemon on the host, or set `TBD_PUBLIC_ADDRESS` |
 | `TBD_SERVER_MODE=config requires TBD_WORKSHOP_MOD_ID …` | no mod source in config mode | set `TBD_WORKSHOP_MOD_ID=B2C3D4E5F6A78901`, or a modpack source |
 | `FAIL: TBD_MODPACK_URL is set but TBD_MODPACK_TOKEN is empty.` | the modpack route needs a user's bearer token | set the token, or save the body and use `TBD_MODPACK_JSON` |
 | `NOTE: TBD_ADMIN_IDENTITY_IDS is empty, so game.admins[] will be [].` | no admins configured | add the admins' identityIds; `passwordAdmin` does not feed `game.admins[]` |

@@ -25,8 +25,9 @@ before booking the second player.
    ```
 
    Expected: `apps/mod/tbd-framework/` linked into `~/.local/share/tbd-server-addons/` and the
-   Steam launch options to paste (`-addonsDir "<that folder>" -addons B2C3D4E5F6A78901`); ignore
-   the host address its last line prints.
+   Steam launch options to paste (`-addonsDir "<that folder>" -addons B2C3D4E5F6A78901`); its
+   last line points at the staging host of `TBD_SSH_HOST`, not at the playtest server, so join the
+   address the playtest server prints instead.
 
 2. Plan the second player's client. It gets the Workshop copy; no second machine has yet joined a
    server running the checkout, so it may refuse on a content mismatch or join and run old

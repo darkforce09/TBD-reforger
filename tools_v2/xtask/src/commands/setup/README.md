@@ -32,13 +32,16 @@ against throwaway trees instead of the operator's Steam install or home.
 
 `staging_server.rs` is not a `setup` subcommand: `tools_v2/xtask/src/commands/mod_ops/dispatch.rs`
 sends `cargo xtask mod bootstrap-staging` to it. It reads `TBD_SSH_HOST`, `TBD_REMOTE_DIR`,
-`TBD_PROFILE_DIR`, `TBD_ADDONS_STAGING`, `TBD_SSH_PASS` and `TBD_SSH_IDENTITY_FILE` from the
-environment, with `tools_v2/xtask/deploy/deploy.env` overriding them when it exists, then over SSH
-prints the host's disk, the listeners on 5432, 8080 and 2001 and the container runtime, creates
-the three remote directories, and prints the manual next steps (among them the API's `.env`,
-which needs `JWT_SECRET` and `OBSERVABILITY_TOKEN`). It exits 1 without a host, with an
-unreadable deploy file, or with a remote directory containing `prairielearn`, and 127 when `ssh`
-or `sshpass` is missing.
+`TBD_PROFILE_DIR`, `TBD_ADDONS_STAGING`, `TBD_SSH_PASS` and `TBD_SSH_IDENTITY_FILE` from
+`tools_v2/xtask/deploy/deploy.env` through `crate::core::deploy_environment` (the file decides every
+key it assigns, the environment fills the rest, and an absent file leaves everything to the
+environment); the three folders default to `/home/<user>/tbd/repo`, `…/profile` and
+`…/addons-staging` under the user of `TBD_SSH_HOST`. Over SSH it prints the host's disk, the
+listeners on 5432, 8080 and 2001 and the container runtime, creates the three remote directories,
+and prints the manual next steps (among them the API's `.env`, which needs `JWT_SECRET` and
+`OBSERVABILITY_TOKEN`, and `sudo loginctl enable-linger "$USER"` on the host). It exits 1 without
+a host, with a deploy file that does not load, with a folder it cannot resolve, or with a remote
+directory containing `prairielearn`, and 127 when `ssh` or `sshpass` is missing.
 
 ## Commands
 
@@ -75,12 +78,14 @@ command prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
 
 ### mcp-game-root
 
-- Synopsis: `setup mcp-game-root [GAME] [FAKE]`; `FAKE` defaults to
-  `$HOME/.cache/enfusion-mcp-root`, and `GAME` to a fixed Steam install path.
+- Synopsis: `setup mcp-game-root [GAME] [FAKE]`; `GAME` defaults to
+  `$HOME/.local/share/Steam/steamapps/common/Arma Reforger` and `FAKE` to
+  `$HOME/.cache/enfusion-mcp-root`; with `HOME` unset, both must be given.
 - Does: deletes `FAKE`, then links every `*.pak` found at any depth under `GAME/addons/` into
   `FAKE/addons/` under a flat name (each `/` of its path becomes `_`), because the enfusion-mcp
   file system reads only paks directly in `addons/`.
-- Exit codes: 0 `Linked N pak files into <FAKE>/addons/`; 1 `GAME/addons` is not a folder.
+- Exit codes: 0 `Linked N pak files into <FAKE>/addons/`; 1 `GAME/addons` is not a folder, or
+  `HOME` is unset and an argument is left out.
 - Example: `cargo xtask setup mcp-game-root`
 
 ### client-addons
@@ -88,14 +93,16 @@ command prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
 - Synopsis: `setup client-addons`
 - Does: links `apps/mod/tbd-framework/` into `$HOME/.local/share/tbd-server-addons/` (the link is
   made even when the target is missing) and prints the Steam launch options that load it and a
-  direct-join hint with a fixed host address.
+  Direct Join hint: `Direct Join → <host> (<IPv4 address>) port 2001` for the host of
+  `TBD_SSH_HOST` in `deploy.env`, the host with the reason when it has no IPv4 address from here, or
+  `the staging host, port 2001 (set TBD_SSH_HOST in <path> to print its address)`.
 - Exit codes: 0 linked; the exit code of `mkdir` or `ln` when either fails.
 - Example: `cargo xtask setup client-addons`
 
 ## Boundaries
 
-- Depends on: `crate::core::repository_root` and `crate::core::repository_layout` (`DEPLOY_ENV`,
-  the staging runbook); `verification_core::proc` for `ssh` and `sshpass`; `mkdir`, `ln` and
+- Depends on: `crate::core::repository_root`, `crate::core::repository_layout` (the staging
+  runbook) and `crate::core::deploy_environment` (the deploy host and the remote folders); `verification_core::proc` for `ssh` and `sshpass`; `mkdir`, `ln` and
   `whoami`; `serde_json` for the backend config.
 - Used by:
   - `tools_v2/xtask/src/cli/dispatch.rs`, which mounts the group, and
@@ -112,6 +119,8 @@ command prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
     `tests/server_profile/tests.rs`).
   - A missing input exits 1 rather than succeeding (`missing_backend_exits_1`,
     `missing_gproj_exits_1`, `missing_addons_dir_exits_1`, `arm_missing_host_exits_1`).
+  - The Direct Join hint never fails the command and names the host, its address or the setting
+    to fill (`the_join_hint_names_the_host_its_address_or_the_setting_to_fill`).
   - Tests use the `run_with_*` entries on throwaway roots and never touch the real Steam tree or
     home.
 

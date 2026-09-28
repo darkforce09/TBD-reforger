@@ -10,7 +10,7 @@
 ; the deploy commands, which is the regression a diff genuinely can cause.
 ;
 ; Install (as the deploy user, after tbd-website-backup.timer):
-;   sed 's|/TBD_REPO_DIR_PLACEHOLDER|/home/sam/tbd/TBD-Reforger|' \
+;   sed 's|/TBD_REPO_DIR_PLACEHOLDER|<TBD_REMOTE_DIR>|' \
 ;       tools_v2/xtask/deploy/systemd/tbd-website-backup-drill.service \
 ;       > ~/.config/systemd/user/tbd-website-backup-drill.service
 ;   cp tools_v2/xtask/deploy/systemd/tbd-website-backup-drill.timer ~/.config/systemd/user/

@@ -74,9 +74,13 @@ Facts every topic relies on:
 - **Log format.** Every current mod line reads `[TBD][<channel>] …`; a line with no channel tag
   comes from an old Workshop build. The stage machine prints both `[TBD][Stage] <from> -> <to>` and
   the flat `[TBD] Stage → <stage>`, so a check matches either.
-- **Host paths.** Everything the deploy writes lives under the deploy account's `tbd/` folder;
-  the deploy refuses a `TBD_REMOTE_DIR` containing `prairielearn`, the neighbouring project on the
+- **Host paths.** Everything the deploy writes lives under the deploy account's home: by default
+  `/home/<user>/tbd/repo`, `…/tbd/profile` and `…/tbd/addons-staging`, and the server in
+  `/home/<user>/steam/arma-reforger-server`, where `<user>` is the user of `TBD_SSH_HOST`; the
+  deploy refuses a `TBD_REMOTE_DIR` containing `prairielearn`, the neighbouring project on the
   same host.
+- **One host name.** `TBD_SSH_HOST` in `deploy.env` is the only place the host is named: the
+  deploy derives the server's `publicAddress` from it, and the probes and hints resolve it too.
 
 ## Code
 

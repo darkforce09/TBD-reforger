@@ -31,8 +31,9 @@ On the development machine:
   `command -v ssh rsync`.
 - The Rust toolchain, for `cargo xtask`.
 - ssh access to the host as the deploy user; a key (`TBD_SSH_IDENTITY_FILE`) is preferred over a
-  password. The host keeps a fixed LAN address (a DHCP reservation on the router), so
-  `TBD_SSH_HOST` stays valid across reboots.
+  password. `TBD_SSH_HOST` is `user@<host>.local`: the host answers as `<host>.local` via avahi and
+  keeps its address through a router DHCP reservation, because the game server's public address is
+  fixed at deploy time.
 
 On the host:
 
@@ -45,9 +46,9 @@ On the host:
 - Caddy, and cloudflared only for the tunnel in Phase E.
 - Ports 3080, 8080 and the Postgres port free: `ss -tlnp`. The host runs other services; the
   deploy refuses a `TBD_REMOTE_DIR`, `TBD_SSH_HOST` or `TBD_PROFILE_DIR` that contains
-  `prairielearn` in any case, and a `TBD_REMOTE_DIR` outside the fixed prefix
-  `require_tbd_remote_prefix` checks (`tools_v2/xtask/src/commands/deploy/website.rs`), because the
-  rsync runs with `--delete`.
+  `prairielearn` in any case, and a `TBD_REMOTE_DIR` outside the deploy user's `/home/<user>/tbd/`
+  that `require_tbd_remote_prefix` checks (`tools_v2/xtask/src/commands/deploy/website.rs`),
+  because the rsync runs with `--delete`.
 - Disk space: the website needs little; the game server beside it needs at least 30 GB
   (`df -h ~`).
 
@@ -57,18 +58,20 @@ Run the development-machine steps from the repository root; a step that runs on 
 
 ### Phase A — Configure the deploy
 
-1. Create the deploy settings from the template, then set `TBD_SSH_HOST`, either
-   `TBD_SSH_IDENTITY_FILE` or `TBD_SSH_PASS`, `TBD_REMOTE_DIR` and, when 5432 is taken on the host,
+1. Create the deploy settings from the template, then set `TBD_SSH_HOST` (`user@host`), either
+   `TBD_SSH_IDENTITY_FILE` or `TBD_SSH_PASS` when plain ssh does not log in, `TBD_REMOTE_DIR` when
+   the checkout is not `/home/<user>/tbd/repo` and, when 5432 is taken on the host,
    `TBD_POSTGRES_HOST_PORT`. The file is gitignored and never rsynced; the commands parse it as
-   `KEY=VALUE` lines and never run it. Every key the website deploy reads is in the
+   `KEY=VALUE` lines and never run it. A key the file sets beats the process environment, and an
+   empty value there counts as unset. Every key the website deploy reads is in the
    [deployment templates README](/tools_v2/xtask/deploy/README.md#configuration).
 
    ```bash
    cp tools_v2/xtask/deploy/deploy.env.example tools_v2/xtask/deploy/deploy.env
    ```
 
-   Expected: no output. A `DEPLOY_ENV` environment variable points `deploy website`, and only
-   that command, at another file.
+   Expected: no output. A `DEPLOY_ENV` environment variable points `deploy website`, and every
+   other command that reads the file, at another one.
 
 2. Print the plan without contacting the host.
 
@@ -326,8 +329,10 @@ migrations are unreadable. The API has no other health route.
 | Symptom | Cause | Fix |
 |---|---|---|
 | `Missing <path> — copy from tools_v2/xtask/deploy/deploy.env.example`, exit 1 | no `deploy.env`, or `DEPLOY_ENV` names a missing file | step 1 |
-| `deploy.env: line 79: TBD_SSH_HOST: TBD_SSH_HOST required in deploy.env`, exit 1 (`line 80` for `TBD_REMOTE_DIR`) | the value is missing or empty; the line number is fixed in the message, not the file's line | set the value |
-| `Refusing to deploy: TBD_REMOTE_DIR must be under …`, or `… must not contain 'prairielearn'`, exit 1 | the folder is outside the deploy prefix, contains `..`, or names the other service | point `TBD_REMOTE_DIR` inside the prefix |
+| `TBD_SSH_HOST is not set: add it to <path>`, exit 1 | the value is missing, or empty in the file | set the value |
+| `<path>:<line>: TBD_SSH_HOST: …`, or `<path>:<line>: <message>`, exit 1 | the value on that line of the file is not `user@host`, or the line is not `KEY=VALUE` | fix that line |
+| `Refusing to deploy: TBD_SSH_HOST must name the deploy user (user@host) …`, exit 1 | `TBD_SSH_HOST` names no user, so there is no `/home/<user>/tbd/` to hold `TBD_REMOTE_DIR` | write `user@host` |
+| `Refusing to deploy: TBD_REMOTE_DIR must be under …`, or `… must not contain 'prairielearn'`, exit 1 | the folder is outside `/home/<user>/tbd/`, contains `..`, or names the other service | point `TBD_REMOTE_DIR` inside `/home/<user>/tbd/`, or leave it unset |
 | `ERROR: could not determine the server's map asset layout (probe exit 12)` | `TBD_REMOTE_DIR` does not exist on the host; exit 255 means ssh itself failed | step 3; check ssh with the Verify row |
 | `ERROR: <dir>/assets_v2/terrains is missing, but the pre-relocation packages/map-assets is present.` | the host keeps its terrain tree at the old place, which this build does not serve | on the host, move `packages/map-assets/everon`, `arland` and `terrain-registry.json` into `assets_v2/terrains/`, as the message prints, then deploy again |
 | `sshpass: command not found`, exit 127 | `TBD_SSH_PASS` is set without sshpass installed | install sshpass, or use `TBD_SSH_IDENTITY_FILE` |

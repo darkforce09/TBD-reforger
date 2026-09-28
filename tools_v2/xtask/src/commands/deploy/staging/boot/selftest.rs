@@ -16,7 +16,7 @@ pub fn selftest(_paths: &Paths) -> u8 {
         return 1;
     }
     let guid = "B2C3D4E5F6A78901";
-    let staging = "/home/sam/tbd/addons";
+    let staging = "/home/deploy/tbd/addons";
     let mut pass = 0u32;
     let mut fail = 0u32;
 
@@ -25,24 +25,24 @@ pub fn selftest(_paths: &Paths) -> u8 {
     let config_only = format!(
         "00:12:47.281 BACKEND      : Addon Download started {guid} - TBD Framework\n\
          00:12:47.281 BACKEND      : Downloading {guid} version 1.0.2\n\
-         00:12:51.113 ENGINE       : FileSystem: Adding package '/home/sam/tbd/profile/addons/TBDFramework_{guid}/' (pak count: 1) to filesystem under name TBD_Framework\n\
+         00:12:51.113 ENGINE       : FileSystem: Adding package '/home/deploy/tbd/profile/addons/TBDFramework_{guid}/' (pak count: 1) to filesystem under name TBD_Framework\n\
          00:12:51.285  ENGINE       : Loaded addons:\n\
          00:12:51.285   ENGINE       : gproj: './addons/core/core.gproj' guid: '5614BBCCBB55ED1C'\n\
-         00:12:51.285   ENGINE       : gproj: '/home/sam/tbd/profile/addons/TBDFramework_{guid}/addon.gproj' guid: '{guid}'\n\
+         00:12:51.285   ENGINE       : gproj: '/home/deploy/tbd/profile/addons/TBDFramework_{guid}/addon.gproj' guid: '{guid}'\n\
          00:12:28.401  BACKEND      : Server config loaded.\n\
          00:12:28.401   BACKEND      : JSON is Valid\n\
-         00:12:58.689 BACKEND      : Server registered with address: 192.168.0.129:2001\n\
+         00:12:58.689 BACKEND      : Server registered with address: 192.0.2.10:2001\n\
          00:12:58.689 SCRIPT       : [TBD][Stage] LOADING -> LOBBY\n"
     );
     // (b) THE FIX: -addonsDir + -config. Same two healthy lines, different gproj path.
     let both_flags = format!(
-        "00:20:30.385 ENGINE       : FileSystem: Adding relative directory '/home/sam/tbd/apps/mod/tbd-framework' to filesystem under name TBD_Framework\n\
+        "00:20:30.385 ENGINE       : FileSystem: Adding relative directory '/home/deploy/tbd/apps/mod/tbd-framework' to filesystem under name TBD_Framework\n\
          00:20:30.564  ENGINE       : Loaded addons:\n\
          00:20:30.564   ENGINE       : gproj: './addons/core/core.gproj' guid: '5614BBCCBB55ED1C'\n\
          00:20:30.564   ENGINE       : gproj: '{staging}/tbd-framework/addon.gproj' guid: '{guid}'\n\
          00:20:28.401  BACKEND      : Server config loaded.\n\
          00:20:28.401   BACKEND      : JSON is Valid\n\
-         00:20:58.689 BACKEND      : Server registered with address: 192.168.0.129:2001\n"
+         00:20:58.689 BACKEND      : Server registered with address: 192.0.2.10:2001\n"
     );
     // (c) addons mode: right code, no room. The other broken half.
     let addons_only = format!(
@@ -56,7 +56,7 @@ pub fn selftest(_paths: &Paths) -> u8 {
          00:30:30.564   ENGINE       : gproj: './addons/core/core.gproj' guid: '5614BBCCBB55ED1C'\n\
          00:30:28.401  BACKEND      : Server config loaded.\n\
          00:30:28.401   BACKEND      : JSON is Valid\n\
-         00:30:58.689 BACKEND      : Server registered with address: 192.168.0.129:2001\n"
+         00:30:58.689 BACKEND      : Server registered with address: 192.0.2.10:2001\n"
         .to_string();
 
     for (name, body) in [

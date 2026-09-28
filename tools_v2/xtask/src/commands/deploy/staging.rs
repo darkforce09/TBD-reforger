@@ -38,8 +38,9 @@
 //! A deploy that reports having run a check it did not run is worse than one that stops, so
 //! three places refuse instead:
 //!
-//! 1. [`config`] parses the deploy file as `KEY=VALUE` and never executes it, so a stray command
-//!    in it is inert rather than run with the deploy's privileges.
+//! 1. [`config`] reads the deploy file through [`crate::core::deploy_environment`], which parses it
+//!    as `KEY=VALUE` and never executes it, so a stray command in it is refused rather than run
+//!    with the deploy's privileges.
 //! 2. [`host_agent`] refuses a credential, RCON password or API origin the agent or the engine
 //!    would refuse, before anything is deployed, and its install reads the unit's state back.
 //! 3. [`remote`] checks the status of the console-log pull. A partial transfer yields a
@@ -56,7 +57,8 @@
 //! * `--render-only --dry-run` takes `--dry-run` as the output path: a value argument is read as
 //!   a value, with no lookahead for a leading dash, so a file may legitimately be named that.
 //! * Deploy-file values override the process environment, so `TBD_A2S_PORT=1 cargo xtask deploy
-//!   staging` is ignored when the deploy file sets that key.
+//!   staging` is ignored when the deploy file sets that key; an empty assignment in the file
+//!   counts as unset and is not filled from the environment either.
 //! * `TBD_SCENARIO`'s default carries a `{ResourceGUID}`; the validator that catches a truncated
 //!   GUID is kept, because a truncated default is silent everywhere else.
 //! * `TBD_WORKSHOP_MOD_ID` emptiness is read from the deploy file's value, so exporting an empty
@@ -81,7 +83,8 @@ mod render;
 pub struct Paths {
     /// Repository root: the rsync source, and the base for every other path.
     pub mono_root: PathBuf,
-    /// Host secrets and remote paths. Gitignored, rsync-excluded, development machine only.
+    /// Host secrets and remote paths: the file `DEPLOY_ENV` names, else the checkout's
+    /// gitignored, rsync-excluded `deploy.env`. Absolute whenever the root is.
     pub deploy_env: PathBuf,
 }
 
@@ -89,7 +92,7 @@ impl Paths {
     pub fn resolve() -> Result<Paths> {
         let mono_root = crate::core::repository_root::find_repo_root()?;
         Ok(Paths {
-            deploy_env: mono_root.join(crate::core::repository_layout::DEPLOY_ENV),
+            deploy_env: crate::core::deploy_environment::deploy_environment_path(&mono_root),
             mono_root,
         })
     }

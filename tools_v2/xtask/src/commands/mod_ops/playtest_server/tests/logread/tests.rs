@@ -204,7 +204,7 @@ fn console_path_takes_the_newest_logs_dir() {
 
 #[test]
 fn the_registered_marker_and_the_fatals_are_the_engines_own_strings() {
-    let t = "BACKEND  : Server registered with address: 192.168.0.117:2001\n";
+    let t = "BACKEND  : Server registered with address: 198.51.100.7:2001\n";
     assert!(has(t, "Server registered with address:"));
     for fatal in [
         "There are errors in server config!",

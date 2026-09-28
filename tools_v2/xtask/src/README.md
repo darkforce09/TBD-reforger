@@ -9,7 +9,7 @@ repository verifications they run, and the shared plumbing they stand on.
 tools_v2/xtask/src/
 ├── cli/            the top-level clap tree and the dispatch to each command group
 ├── commands/       one folder per command group: its clap enum, dispatch and work
-├── core/           repository root and layout, cargo target directory, host execution, test setup
+├── core/           repository root and layout, deploy settings, cargo target directory, host execution, test setup
 ├── main.rs         the binary entry: runs the dispatch and turns its result into the exit code
 ├── tests/          crate-level tests: dependency direction, file limits, prose rules, layout paths
 └── verifications/  the repository checks behind `cargo xtask verify`, grouped by invariant
@@ -56,5 +56,5 @@ wired by the modules they test.
     1000 (`tooling_source_files_stay_below_their_structural_limits`), and no test module is inline
     (`tooling_test_modules_live_in_separate_files`);
   - comments, help text and documents under `tools_v2/` carry no ticket ids, retired spellings,
-    script file names, history words or names of Rust files that do not exist
-    (`tools_v2/xtask/src/tests/tooling_prose_rules.rs`).
+    script file names, history words or names of Rust files that do not exist, and no production
+    file names a private-network address (`tools_v2/xtask/src/tests/tooling_prose_rules.rs`).

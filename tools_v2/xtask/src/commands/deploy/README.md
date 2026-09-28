@@ -31,12 +31,13 @@ tools_v2/xtask/src/commands/deploy/
 `website`, `staging`, `db backup`, `db drill`, `db ct` and `db ct-i` commands take their arguments
 raw and parse them themselves; the other `db` commands parse with clap.
 
-Both deploys read `tools_v2/xtask/deploy/deploy.env`, which is gitignored and excluded from both
-rsyncs, as `KEY=VALUE` lines with an optional `export `, and never execute it; a missing file exits
-1 and names `deploy.env.example`. The host is whatever `TBD_SSH_HOST` names; ssh runs through
-sshpass when `TBD_SSH_PASS` is set, else with `-i` when `TBD_SSH_IDENTITY_FILE` is, always with
-`StrictHostKeyChecking=no`. `deploy website` honours a `DEPLOY_ENV` path override and lets the
-file's values stand alone; `deploy staging` layers the file over the process environment.
+Both deploys read `tools_v2/xtask/deploy/deploy.env` (or the file `DEPLOY_ENV` names), which is
+gitignored and excluded from both rsyncs, through `crate::core::deploy_environment`: parsed as
+`KEY=VALUE` lines and never executed, the file deciding every key it assigns and the process
+environment filling only the others; a missing file exits 1 and names `deploy.env.example`. The
+host is whatever `TBD_SSH_HOST` names, and the remote folders default under its user's
+`/home/<user>`; ssh runs through sshpass when `TBD_SSH_PASS` is set, else with `-i` when
+`TBD_SSH_IDENTITY_FILE` is, always with `StrictHostKeyChecking=no`.
 
 ```text
 deploy website: asset probe ─▶ rsync --delete ─▶ compose postgres ─▶ API build ─▶ app build
@@ -58,9 +59,10 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
 ### website
 
 - Synopsis: `cargo xtask deploy website [--dry-run] [--help]`
-- Does: reads `TBD_SSH_HOST` and `TBD_REMOTE_DIR` (both required), refuses a host, remote folder
-  or `TBD_PROFILE_DIR` that contains `prairielearn` in any case and a remote folder outside the
-  fixed deploy prefix or holding `..`, then probes the server's map assets, rsyncs the checkout,
+- Does: reads `TBD_SSH_HOST` (required, with the deploy user) and `TBD_REMOTE_DIR` (default
+  `/home/<user>/tbd/repo`), refuses a host, remote folder or `TBD_PROFILE_DIR` that contains
+  `prairielearn` in any case, a host without a user, and a remote folder outside
+  `/home/<user>/tbd/` or holding `..`, then probes the server's map assets, rsyncs the checkout,
   and over ssh brings up the staging Postgres (`TBD_POSTGRES_HOST_PORT`, default 5432), builds the
   release API and the app, repoints comments-only migration checksums, moves uploads into the
   unit's state folder and restarts `TBD_WEBSITE_SYSTEMD_UNIT` (default `tbd-website-api.service`).
@@ -68,8 +70,8 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
   restart only warns and prints the unit's install command. It ends with the Caddy reload line and
   two `curl` smoke hints. `--dry-run` prints the plan, with every rsync exclusion, and connects to
   nothing; it still needs a filled `deploy.env`.
-- Exit codes: 0 deployed, or the plan printed; 1 no `deploy.env`, an unreadable one, a missing
-  required value, a refused path or host, or a refused asset layout; 2 an unknown option; a failing
+- Exit codes: 0 deployed, or the plan printed; 1 no `deploy.env`, an unreadable or malformed one,
+  a missing required value, a refused path or host, or a refused asset layout; 2 an unknown option; a failing
   rsync or ssh step's own code; 127 ssh, sshpass or rsync not installed.
 - Example: `cargo xtask deploy website --dry-run`
 
@@ -84,7 +86,8 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
   `--render-only` writes the server config to a local file after the settings check;
   `--verify-boot` judges a log you already have; `--verify-boot-selftest` proves the verdict can
   fail. The last two need no `deploy.env`.
-- Exit codes: 0 deployed, rendered or judged healthy; 1 a missing or refused setting, a failed boot
+- Exit codes: 0 deployed, rendered or judged healthy; 1 a missing or refused setting (among them
+  a `TBD_PUBLIC_ADDRESS` that is not IPv4, or none set and none resolved), a failed boot
   verdict or a failed final log check; 2 an unknown option or a flag without its value,
   `--render-only` in addons mode, or `--verify-boot` without `TBD_ADDONS_STAGING`; a failing step's
   own code; 127 a tool that is not installed.
@@ -136,8 +139,9 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
 - Rules: `deploy.env` is never executed and never rsynced (both exclude lists name `DEPLOY_ENV`);
   documents name the host only as `TBD_SSH_HOST`; the scratch allow-list refuses `tbd_reforger`
   (`safe_scratch_allow_list_admits_scratch_names_and_refuses_the_live_database` in
-  `tests/database_operations/tests.rs`); the website deploy refuses a remote folder outside its
-  prefix (`remote_prefix_rejects_escape_and_outside` in `tests/website/tests.rs`); an unknown
+  `tests/database_operations/tests.rs`); the website deploy refuses a remote folder outside the
+  deploy user's `tbd` folder (`remote_prefix_rejects_escape_and_outside` in
+  `tests/website/tests.rs`); an unknown
   staging option stops before `--help` (`unknown_option_short_circuits_before_help` in
   `tests/staging/tests.rs`).
 

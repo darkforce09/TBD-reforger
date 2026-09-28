@@ -12,10 +12,10 @@ fn v(s: &[&str]) -> Vec<String> {
 /// answer for every checkout is what makes it one extra target, not one per worktree.
 #[test]
 fn run_target_is_one_child_of_the_shared_cache_and_never_the_cache_itself() {
-    let shared = "/home/Samuel/.cache/tbd-target";
+    let shared = "/home/developer/.cache/tbd-target";
     let run = run_target_dir_for(shared);
     assert_eq!(run, format!("{shared}/{RUN_TARGET_SUBDIR}"));
-    assert_eq!(run, "/home/Samuel/.cache/tbd-target/run-main");
+    assert_eq!(run, "/home/developer/.cache/tbd-target/run-main");
     assert_ne!(
         run, shared,
         "the run target collapsed onto the shared cache"

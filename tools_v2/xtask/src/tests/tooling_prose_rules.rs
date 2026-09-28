@@ -87,6 +87,11 @@ fn history_word_pattern() -> Regex {
 /// A shell, Python or Node source file name. The tooling ships none of them.
 const SCRIPT_FILE_NAME: &str = r"[A-Za-z0-9_./-]+\.(sh|py|mjs|cjs)\b";
 
+/// A private-network IPv4 address (10/8, 172.16/12, 192.168/16): a machine on one LAN, whose
+/// address moves with its DHCP lease. The deploy host lives in `deploy.env` as `TBD_SSH_HOST`.
+const PRIVATE_NETWORK_ADDRESS: &str =
+    r"\b(10\.[0-9]{1,3}|172\.(1[6-9]|2[0-9]|3[01])|192\.168)\.[0-9]{1,3}\.[0-9]{1,3}\b";
+
 /// A repository path literal. Only a layout module may spell one.
 const REPOSITORY_PATH_LITERAL: &str = r#""(scripts|docs|\.ai|documentation_v2)/"#;
 
@@ -325,6 +330,18 @@ fn nothing_narrates_its_own_history() {
     );
 }
 
+#[test]
+fn no_production_tooling_file_names_a_private_network_address() {
+    let root = crate::core::repository_root::test_repo_root();
+    let files = tracked_tooling_files(&root);
+    let pattern = Regex::new(PRIVATE_NETWORK_ADDRESS).expect("private network address");
+    let select = |path: &str, _line: &str| !is_test_source(path) && !in_any(path, &FIXTURE_TREES);
+    assert_clean(
+        "a production file names a LAN address; name TBD_SSH_HOST or a documentation address:",
+        &offences(&root, &files, &pattern, &select),
+    );
+}
+
 /// Every Rust file name in the workspace, by basename.
 fn workspace_rust_file_names(root: &Path) -> BTreeSet<String> {
     let output = Command::new("git")
@@ -425,6 +442,23 @@ fn every_rule_fires_on_a_line_that_breaks_it() {
     let history = history_word_pattern();
     assert_eq!(lines.iter().filter(|l| history.is_match(l)).count(), 1);
     assert_eq!(HISTORY_WORDS.len(), 8);
+
+    let private = Regex::new(PRIVATE_NETWORK_ADDRESS).expect("private network address");
+    for (octets, expected) in [
+        (("192", "168", "0", "129"), true),
+        (("10", "0", "0", "1"), true),
+        (("172", "20", "1", "2"), true),
+        (("172", "32", "1", "2"), false),
+        (("192", "0", "2", "10"), false),
+        (("198", "51", "100", "7"), false),
+    ] {
+        let line = format!(
+            "ssh deploy@{}.{}.{}.{}",
+            octets.0, octets.1, octets.2, octets.3
+        );
+        assert_eq!(private.is_match(&line), expected, "{line}");
+    }
+    assert!(!private.is_match("engine 1.7.0.54"));
 
     let literal = Regex::new(REPOSITORY_PATH_LITERAL).expect("repository path literal");
     assert_eq!(lines.iter().filter(|l| literal.is_match(l)).count(), 1);
