@@ -100,7 +100,11 @@ applies it.
    scratch database from it. Afterwards the command drops every database of the run, whatever the
    tests did, and exits with the test run's code. Two runs never share a database.
    `--test <binary>` (repeatable), `--lib` and a name filter narrow the run, which then prints
-   `test-selection: narrowed development run; not a readiness receipt`.
+   `test-selection: narrowed development run; not a readiness receipt`. The binaries that arm
+   the API's `failpoints` feature (`failure_injection_*` and `controlled_races_*`) serialise their
+   own cases, so they need no `--test-threads` flag; the
+   [API README](/apps/website/api_v2/README.md#verification-suites) maps every verification
+   suite to its binaries.
 
 ### Repair a migration checksum
 

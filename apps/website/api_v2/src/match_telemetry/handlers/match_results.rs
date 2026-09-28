@@ -23,7 +23,7 @@ pub async fn ingest_match_results(
     body: Result<Json<Value>, JsonRejection>,
 ) -> Result<Json<MatchResultsAnswer>, ApiError> {
     caller.require_executor(ExecutorKind::ModRuntime)?;
-    let Json(body) = body.map_err(|_| ApiError::bad_request("the body must be a JSON object"))?;
+    let Json(body) = body.map_err(ApiError::from_json_rejection)?;
     let revision = decode_results_revision(&body)?;
     Ok(Json(
         ingest_results_revision(&state, &caller, &revision).await?,

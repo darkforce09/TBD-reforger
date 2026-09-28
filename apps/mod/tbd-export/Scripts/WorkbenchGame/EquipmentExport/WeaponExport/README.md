@@ -1,103 +1,71 @@
-# Weapon Export Hub (`Scripts/WorkbenchGame/EquipmentExport/WeaponExport`)
+# Weapon exports
 
-Twelve Workbench extractors, one per weapon domain, that read the loaded addon set and write the
-weapon half of the TBD arsenal catalog to `$profile:TBD_Export/equipment/`.
+Twelve [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) extractors, one per weapon
+domain, that read the loaded addon set and write the weapon half of the equipment catalogs under
+`$profile:TBD_Export/equipment/`.
 
----
-
-## Architecture Overview
-
-Every domain answers the same question about a different piece of hardware: what does this prefab
-genuinely declare? Extraction is ground truth only — omitted values serialize as JSON null, engine
-localization tokens are preserved verbatim including the leading `#`, and no field is synthesized
-to fill a gap. Nothing here runs at game time; these are Workbench plugins.
-
-The domains do not know about each other. Cross-domain relationships are exported as foreign keys
-(a rifle names its magazine wells, a handguard names its required attachment type) and resolved by
-the platform against the sibling catalogs. `M16/` is the single deliberate exception and says so in
-its own README.
+## Contents
 
 ```text
-WeaponExport/
-├── Ammo/                  <-- Magazines, ammo configs, and projectiles
-├── Attachment/            <-- Breadth sweep over all non-optic attachments
-├── Bayonet/               <-- Bayonets and mounted blades
-├── Handguard/             <-- Handguards, rails, foregrips
-├── Illuminator/           <-- Weapon lights, IR illuminators, laser pointers
-├── M16/                   <-- M16 platform compatibility matrix (plugin disabled)
-├── Muzzle/                <-- Suppressors, flash hiders, muzzle brakes
-├── Optic/                 <-- Sights and scopes
-├── Rifle/                 <-- Rifle-only deep intrinsic pass (plugin disabled)
-├── Stock/                 <-- Buttstocks
-├── Underbarrel/           <-- Underbarrel launchers and accessories
-└── Weapon/                <-- Master arsenal sweep, bucketed by weapon class
+apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/WeaponExport/
+├── Ammo/         magazines, ammunition configs, projectiles and ballistic tables
+├── Attachment/   the breadth sweep over every non-optic attachment, by family
+├── Bayonet/      bayonets and mounted blades with their melee properties
+├── Handguard/    handguards, rails and foregrips with their handling modifiers
+├── Illuminator/  weapon lights, infrared illuminators and laser pointers
+├── M16/          the M16 platform compatibility matrix
+├── Muzzle/       suppressors, flash hiders and muzzle brakes
+├── Optic/        sights and scopes with magnification, field of view and eye relief
+├── Rifle/        a rifle-only pass deeper than the master weapon sweep
+├── Stock/        buttstocks with their handling modifiers
+├── Underbarrel/  underbarrel launchers and accessories, including secondary muzzles
+└── Weapon/       every weapon in every addon, in nine categories
 ```
 
----
+## How it works
 
-## Subdirectories
+Every domain answers the same question about a different piece of hardware: what does this prefab
+declare? A value the prefab omits serializes as JSON null, an engine localization token keeps its
+leading `#`, and no field is made up to fill a gap.
 
-| Subdirectory | Responsibility | Key Classes |
-|---|---|---|
-| **`Ammo/`** | Magazines and the projectiles they chamber, split by caliber. | `TBD_MagazineInfo`, `TBD_ProjectileInfo`, `TBD_AmmoMagazineExtractor`, `TBD_AmmoProjectileExtractor`, `TBD_AmmoCatalog`, `TBD_AmmoCatalogWriter` |
-| **`Attachment/`** | One pass over every non-optic attachment, producing per-family catalogs and the combined rollup. | `TBD_AttachmentInfo`, `TBD_AttachmentFamilyExtractor`, `TBD_AttachmentScanner` |
-| **`Bayonet/`** | Bayonets and mounted blades, with melee combat properties. | `TBD_BayonetInfo`, `TBD_BayonetCombatExtractor`, `TBD_BayonetScanner` |
-| **`Handguard/`** | Handguards, rail systems, and foregrips, with handling modifiers. | `TBD_HandguardInfo`, `TBD_HandguardMountingExtractor`, `TBD_HandguardScanner` |
-| **`Illuminator/`** | Weapon lights, IR illuminators, and laser pointers, with lens emission properties. | `TBD_IlluminatorInfo`, `TBD_IlluminatorEmissionExtractor`, `TBD_IlluminatorScanner` |
-| **`M16/`** | Resolved compatibility matrix for the M16 platform. Plugin attribute commented out. | `TBD_M16WeaponVariantInfo`, `TBD_M16CandidateExtractor`, `TBD_M16DeepScanner` |
-| **`Muzzle/`** | Suppressors, flash hiders, and brakes, with their acoustic and ballistic modifiers. | `TBD_MuzzleInfo`, `TBD_MuzzleScanner` |
-| **`Optic/`** | Sights and scopes, with magnification, field of view, and eye relief. | `TBD_OpticInfo`, `TBD_OpticSightsExtractor`, `TBD_OpticScanner` |
-| **`Rifle/`** | Rifle-only intrinsic pass, deeper than the master arsenal sweep. Plugin attribute commented out. | `TBD_RifleWeaponInfo`, `TBD_RifleExtractor`, `TBD_RifleScanner` |
-| **`Stock/`** | Buttstocks. Structurally parallel to `Handguard/`. | `TBD_StockInfo`, `TBD_StockMountingExtractor`, `TBD_StockNaming`, `TBD_StockScanner` |
-| **`Underbarrel/`** | Underbarrel launchers and accessories, including secondary muzzles. | `TBD_UnderbarrelInfo`, `TBD_UnderbarrelLauncherExtractor`, `TBD_UnderbarrelScanner` |
-| **`Weapon/`** | Every weapon in every addon, bucketed into seven categories. | `TBD_WeaponInfo`, `TBD_WeaponMuzzleExtractor`, `TBD_WeaponScanner` |
+A domain is `TBD_<Domain>Model.c` (data carriers, no behaviour), one or more extractors (each reads
+part of one prefab and fills part of one carrier), `TBD_<Domain>Scanner.c` (sweeps the addon set,
+buckets and serializes through `RunScan()`) and `TBD_<Domain>ExportPlugin.c`. The number of
+extractors follows the carrier: a domain whose extraction fits one file has
+`TBD_<Domain>Extractor.c`; otherwise each extractor is named for the part it fills
+(`TBD_WeaponMuzzleExtractor`, `TBD_AttachmentMountingExtractor`). `Ammo/` splits by object instead,
+since a magazine and a projectile have different carriers.
 
----
+"Export All Equipment" (`TBD_EquipmentExportPlugin` in
+`apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/`) runs the `Weapon/`, `Attachment/`,
+`Optic/` and `Ammo/` scanners. Every domain plugin's `[WorkbenchPluginAttribute]` is commented
+out, so the other eight domains run only when their attribute is restored.
 
-## Technical Contracts
+The domains share readers only in one direction: `Weapon/` and `Optic/` read mounting through
+`TBD_AttachmentMountingExtractor` from `Attachment/`, and `Weapon/` reads sights through
+`TBD_OpticSightsExtractor` from `Optic/`. Cross-domain relationships are exported as foreign keys
+(a rifle names its magazine wells, a handguard names the attachment type its rail requires), and
+the reader resolves them against the sibling catalogs. `M16/` is the one domain that resolves
+compatibility at scan time and says so in its README. Every domain writes one subdirectory
+(`ammunition/`, `attachments/`, `bayonets/`, `handguards/`, `illuminators/`, `muzzles/`, `optics/`,
+`stocks/`, `underbarrel/`, `weapons/`), each data file paired with a `_meta.json` sidecar; `Rifle/`
+and `M16/` write `rifles.json` and `m16_deep_export.json` at the equipment root instead.
 
-1. **The shape of a domain:**
-   A domain is `TBD_<Domain>Model.c` (data carriers, no behaviour), one or more extractors (each
-   reads part of one prefab and fills part of one carrier), `TBD_<Domain>Scanner.c` (sweeps the
-   addon set, buckets, and serializes), and `TBD_<Domain>ExportPlugin.c` (the Workbench entry
-   point).
+## Authority
 
-   How many extractors a domain has follows its carrier, not a fixed count. A domain whose
-   extraction fits in one file has `TBD_<Domain>Extractor.c` and nothing more. Where it does not,
-   each extractor is named for the part of the carrier it fills — `TBD_WeaponMuzzleExtractor`,
-   `TBD_AttachmentMountingExtractor` — and the scanner calls them in turn. `Ammo/` is the one
-   domain with no `TBD_AmmoExtractor` at all: a magazine and a projectile are different objects
-   with different carriers, so it splits along that line instead.
+None: Workbench runs these scripts in the editor.
 
-2. **One-way dependency:**
-   `ExportPlugin -> Scanner -> Extractor -> Model -> Core`. No domain imports another domain's
-   classes, and no carrier reaches back to a scanner. The edge is a straight line in every folder.
+## Boundaries
 
-3. **Shared infrastructure lives in `EquipmentExport/Core/`:**
-   The export destination and JSON writing (`TBD_EquipmentExportConfig`, `TBD_EquipmentExportPaths`,
-   `TBD_EquipmentExportJson`), the prefab component and ancestor walk
-   (`TBD_EquipmentComponentGraph`), and the readers for a prefab's names and resource references
-   (`TBD_EquipmentDisplayAttributes`, `TBD_EquipmentResourceNames`) all sit there. EnfScript
-   resolves classes by global name, so a domain reaches them without any path reference, and they
-   are never duplicated per domain.
-
-   A domain declares its own copy only where its behaviour genuinely differs, under a name that
-   says whose it is: the `Stock/` domain searches wider for a display name than the other six that
-   share the Core reader, and the `Attachment/` domain reads its custom attributes under a
-   different key. Two further helpers stay with their caller because they are per-scan policy, not
-   shared behaviour: each scanner declares the `COMPONENT_DEPTH_CAP` it passes to the shared walk,
-   and each domain picks which of the two resource-name resolvers its fields go through.
-
-4. **Output root:**
-   Everything lands under `$profile:TBD_Export/equipment/`, one subdirectory per domain
-   (`ammunition/`, `attachments/`, `bayonets/`, `handguards/`, `illuminators/`, `muzzles/`,
-   `optics/`, `stocks/`, `underbarrel/`, `weapons/`). Every data file is paired with a
-   `_meta.json` sidecar carrying the row count and the UTC generation timestamp. The two disabled
-   plugins write loose files at the equipment root instead: `rifles.json` and `m16_deep_export.json`.
-
-5. **Workbench entry points:**
-   Every plugin is `class TBD_<X>ExportPlugin : WorkbenchPlugin` carrying
-   `[WorkbenchPluginAttribute(name: "Export …", category: "TBD")]`, which places it under
-   `Plugins > TBD`. New `.c` files require a Workbench cold restart — the script list is built at
-   load. `cargo xtask mod compile` does not cover this tree; `Scripts/WorkbenchGame` compiles only
-   inside Workbench.
+- Depends on: `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/Core/` (destination, JSON
+  writing, component walk, display attributes, resource names) and `TBD_ItemInventoryExtractor` in
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/ItemExport/`.
+- Used by: `TBD_EquipmentExportPlugin`; the static weapon extractor in
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/StaticExport/`, which reads muzzles and
+  attachment slots through the `Weapon/` extractors; the verification handler in
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/Core/ExportDestination/`.
+- Rules: dependencies run plugin to scanner to extractor to model to the shared core in every folder, and
+  a domain uses another domain's classes only for the shared readers above; a domain declares its
+  own copy of a shared core reader only where its behaviour differs, under a name that says whose it
+  is (`TBD_StockNaming`, `TBD_AttachmentCustomAttributes`); each scanner declares the `COMPONENT_DEPTH_CAP` it passes to
+  the shared component walk.

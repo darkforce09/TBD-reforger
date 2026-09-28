@@ -1,0 +1,196 @@
+{
+  "schema_version": 2,
+  "resource_id": "guid:3333333333333333",
+  "root_node": "root",
+  "nodes": [
+    {
+      "node_id": "root",
+      "view": "effective",
+      "class_name": "Vehicle",
+      "instance_name": "",
+      "native_instance_id": null,
+      "instance_identity_kind": "structural_path",
+      "resource_name": "{3333333333333333}Prefabs/Vehicles/Wheeled/Truck_Fixture.et",
+      "source_addons": [
+        "ArmaReforger"
+      ],
+      "ancestor_id": null,
+      "children": [],
+      "declared_properties": [
+        "Object",
+        "components"
+      ],
+      "properties": {
+        "components": {
+          "value": [
+            {
+              "node_id": "root/properties/components/0"
+            },
+            {
+              "node_id": "root/properties/components/1"
+            }
+          ],
+          "status": "present",
+          "native_type": "OBJECT_ARRAY",
+          "origin": "declared",
+          "native_unit": null,
+          "unit_evidence": null,
+          "enum_values": [],
+          "object_base_class": "GenericComponent",
+          "reason": null,
+          "source": {
+            "resource_name": "{3333333333333333}Prefabs/Vehicles/Wheeled/Truck_Fixture.et",
+            "node_id": "root",
+            "property": "components",
+            "method": "BaseContainer.GetObjectArray"
+          }
+        },
+        "Object": {
+          "value": "{7777777777777777}Assets/Vehicles/Wheeled/Truck_Fixture.xob",
+          "status": "present",
+          "native_type": "RESOURCE_NAME",
+          "origin": "declared",
+          "native_unit": null,
+          "unit_evidence": null,
+          "enum_values": [],
+          "object_base_class": null,
+          "reason": null,
+          "source": {
+            "resource_name": "{3333333333333333}Prefabs/Vehicles/Wheeled/Truck_Fixture.et",
+            "node_id": "root",
+            "property": "Object",
+            "method": "BaseContainer.Get"
+          }
+        }
+      }
+    },
+    {
+      "node_id": "root/properties/components/0",
+      "view": "effective",
+      "class_name": "SCR_EditableVehicleComponent",
+      "instance_name": "",
+      "native_instance_id": null,
+      "instance_identity_kind": "structural_path",
+      "resource_name": "{3333333333333333}Prefabs/Vehicles/Wheeled/Truck_Fixture.et",
+      "source_addons": [
+        "ArmaReforger"
+      ],
+      "ancestor_id": null,
+      "children": [],
+      "declared_properties": [
+        "m_UIInfo"
+      ],
+      "properties": {
+        "m_UIInfo": {
+          "value": {
+            "node_id": "root/properties/components/0/properties/m_UIInfo"
+          },
+          "status": "present",
+          "native_type": "OBJECT",
+          "origin": "declared",
+          "native_unit": null,
+          "unit_evidence": null,
+          "enum_values": [],
+          "object_base_class": "SCR_EditableEntityUIInfo",
+          "reason": null,
+          "source": {
+            "resource_name": "{3333333333333333}Prefabs/Vehicles/Wheeled/Truck_Fixture.et",
+            "node_id": "root/properties/components/0",
+            "property": "m_UIInfo",
+            "method": "BaseContainer.GetObject"
+          }
+        }
+      }
+    },
+    {
+      "node_id": "root/properties/components/0/properties/m_UIInfo",
+      "view": "effective",
+      "class_name": "SCR_EditableVehicleUIInfo",
+      "instance_name": "",
+      "native_instance_id": null,
+      "instance_identity_kind": "structural_path",
+      "resource_name": "{3333333333333333}Prefabs/Vehicles/Wheeled/Truck_Fixture.et",
+      "source_addons": [
+        "ArmaReforger"
+      ],
+      "ancestor_id": null,
+      "children": [],
+      "declared_properties": [
+        "Name"
+      ],
+      "properties": {
+        "Name": {
+          "value": "#AR-Fixture_Truck_Name",
+          "status": "present",
+          "native_type": "STRING",
+          "origin": "declared",
+          "native_unit": null,
+          "unit_evidence": null,
+          "enum_values": [],
+          "object_base_class": null,
+          "reason": null,
+          "source": {
+            "resource_name": "{3333333333333333}Prefabs/Vehicles/Wheeled/Truck_Fixture.et",
+            "node_id": "root/properties/components/0/properties/m_UIInfo",
+            "property": "Name",
+            "method": "BaseContainer.Get"
+          }
+        }
+      }
+    },
+    {
+      "node_id": "root/properties/components/1",
+      "view": "effective",
+      "class_name": "VehicleWheeledSimulation",
+      "instance_name": "",
+      "native_instance_id": null,
+      "instance_identity_kind": "structural_path",
+      "resource_name": "{3333333333333333}Prefabs/Vehicles/Wheeled/Truck_Fixture.et",
+      "source_addons": [
+        "ArmaReforger"
+      ],
+      "ancestor_id": null,
+      "children": [],
+      "declared_properties": [
+        "Mass",
+        "MaxSpeed"
+      ],
+      "properties": {
+        "Mass": {
+          "value": 6500,
+          "status": "present",
+          "native_type": "SCALAR",
+          "origin": "declared",
+          "native_unit": "kg",
+          "unit_evidence": null,
+          "enum_values": [],
+          "object_base_class": null,
+          "reason": null,
+          "source": {
+            "resource_name": "{3333333333333333}Prefabs/Vehicles/Wheeled/Truck_Fixture.et",
+            "node_id": "root/properties/components/1",
+            "property": "Mass",
+            "method": "BaseContainer.Get"
+          }
+        },
+        "MaxSpeed": {
+          "value": 85,
+          "status": "present",
+          "native_type": "SCALAR",
+          "origin": "declared",
+          "native_unit": null,
+          "unit_evidence": null,
+          "enum_values": [],
+          "object_base_class": null,
+          "reason": null,
+          "source": {
+            "resource_name": "{3333333333333333}Prefabs/Vehicles/Wheeled/Truck_Fixture.et",
+            "node_id": "root/properties/components/1",
+            "property": "MaxSpeed",
+            "method": "BaseContainer.Get"
+          }
+        }
+      }
+    }
+  ]
+}

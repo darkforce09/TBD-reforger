@@ -22,12 +22,14 @@ async fn current_profile_handler_schema_generated_types_and_frontend_golden_agre
     let pool = database::connect(&url).await.unwrap();
     database::migrate(&pool).await.unwrap();
     let state = AppState::new(pool, Config::for_tests(url, "current-profile-contract"));
+    let app = http_router::router(state.clone());
     let expected: Value = serde_json::from_str(GOLDEN).unwrap();
     let user = &expected["user"];
     let actor = user["discord_id"].as_str().unwrap();
-    let token =
-        common::access_token(&state, "current_profile_contract", actor, "admin", true).await;
-    sqlx::query(
+    // The golden is captured with the development login's admin session, whose account holds no
+    // verified Discord membership; the same login here reproduces its membership flags.
+    let token = common::dev_login_token(&app, "current_profile_contract", "admin").await;
+    let restored = sqlx::query(
         "UPDATE users SET username=$2, discord_handle=$3, avatar_url=$4, arma_id=$5,
         arma_character=$6, total_deployments=$7, attendance_rate=$8, created_at=$9,
         updated_at=$10, last_login_at=$11 WHERE discord_id=$1",
@@ -64,12 +66,17 @@ async fn current_profile_handler_schema_generated_types_and_frontend_golden_agre
     .execute(&state.pool)
     .await
     .unwrap();
-    // The displayed rate comes from decided facts: 37 attended of 40 past observations = 92.5%.
+    assert_eq!(
+        restored.rows_affected(),
+        1,
+        "the development login signs in as the golden's account"
+    );
+    // The displayed rate comes from decided facts: 1 attended of 2 past observations = 50%.
     sqlx::query("WITH fixture_mission AS (
         INSERT INTO missions(title, author_id, terrain, game_mode, max_players, status)
         VALUES ('Profile contract', $1, 'everon', 'pve_coop', 1, 'live') RETURNING id
     ), fixture_events AS (
-        INSERT INTO events(start_time, created_by) SELECT now() - interval '2 days', $1 FROM generate_series(1,40) RETURNING id
+        INSERT INTO events(start_time, created_by) SELECT now() - interval '2 days', $1 FROM generate_series(1,2) RETURNING id
     ), attachments AS (
         INSERT INTO event_missions(event_id, mission_id, start_time)
         SELECT e.id, m.id, now() - interval '2 days' FROM fixture_events e CROSS JOIN fixture_mission m RETURNING id, event_id
@@ -80,10 +87,10 @@ async fn current_profile_handler_schema_generated_types_and_frontend_golden_agre
         FROM attachments JOIN allocations USING (event_id))
     INSERT INTO event_registrations(event_mission_id, discord_id, reservation_state, attendance_state, legacy_attendance_state, allocation_id)
     SELECT id, $1, 'legacy_unknown',
-        CASE WHEN position <= 37 THEN 'attended'::registration_state ELSE 'no_show'::registration_state END,
-        CASE WHEN position <= 37 THEN 'attended'::registration_state ELSE 'no_show'::registration_state END, allocation FROM observations")
+        CASE WHEN position <= 1 THEN 'attended'::registration_state ELSE 'no_show'::registration_state END,
+        CASE WHEN position <= 1 THEN 'attended'::registration_state ELSE 'no_show'::registration_state END, allocation FROM observations")
         .bind(actor).execute(&state.pool).await.unwrap();
-    let response = http_router::router(state)
+    let response = app
         .oneshot(
             Request::builder()
                 .uri("/api/v1/me")

@@ -13,22 +13,12 @@
 #![allow(dead_code)]
 
 use super::article_viewer::reader;
+use crate::v2::core::api::dto::Announcement;
 use crate::v2::core::ui::split_pane::{ListDetailItem, SplitPane, SplitPaneEmpty};
 use crate::v2::core::ui::{badge_class, MaterialIcon};
 use crate::v2::core::utils::datefmt::format_short_date;
 use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
-use serde_json::Value;
-
-/// The string at `k`, or an empty string when the key is absent or is not a string.
-pub(super) fn vstr(v: &Value, k: &str) -> String {
-    v.get(k).and_then(Value::as_str).unwrap_or_default().into()
-}
-
-/// The boolean at `k`, or `false` when the key is absent or is not a boolean.
-pub(super) fn vbool(v: &Value, k: &str) -> bool {
-    v.get(k).and_then(Value::as_bool).unwrap_or(false)
-}
 
 /// The badge variant a dispatch tag is drawn in.
 ///
@@ -42,7 +32,7 @@ pub(super) fn tag_variant(tag: &str) -> &'static str {
     }
 }
 
-/// The badge text for a dispatch tag: underscores become spaces, and an absent tag reads
+/// The badge text for a dispatch tag: underscores become spaces, and an empty tag reads
 /// `NOTICE`.
 pub(super) fn tag_label(tag: &str) -> String {
     if tag.is_empty() {
@@ -54,22 +44,20 @@ pub(super) fn tag_label(tag: &str) -> String {
 /// A row's preview line: the snippet the backend wrote, else the body's opening paragraph.
 ///
 /// No truncation happens here — the row clamps the text to two lines itself.
-pub(super) fn preview_text(p: &Value) -> String {
-    let s = vstr(p, "snippet");
-    if !s.is_empty() {
-        return s;
+pub(super) fn preview_text(p: &Announcement) -> String {
+    if !p.snippet.is_empty() {
+        return p.snippet.clone();
     }
-    let body = vstr(p, "body");
-    body.split("\n\n").next().unwrap_or_default().to_string()
+    p.body.split("\n\n").next().unwrap_or_default().to_string()
 }
 
 /// The board for `posts`: the ordered master list beside the reading pane.
 ///
 /// Reads `id`, `is_pinned`, `tag`, `title`, `published_at`, `snippet` and `body` from each row.
-pub(super) fn board(posts: Vec<Value>) -> impl IntoView {
+pub(super) fn board(posts: Vec<Announcement>) -> impl IntoView {
     // Pinned first, then the server's order, which a stable sort preserves.
     let mut posts = posts;
-    posts.sort_by_key(|p| !vbool(p, "is_pinned"));
+    posts.sort_by_key(|p| !p.is_pinned);
     let posts = StoredValue::new(posts);
     let params = use_params_map();
     let selected = Memo::new(move |_| {
@@ -98,18 +86,17 @@ pub(super) fn board(posts: Vec<Value>) -> impl IntoView {
                     posts
                         .iter()
                         .map(|p| {
-                            let id = vstr(p, "id");
+                            let id = p.id.clone();
                             let click_id = id.clone();
                             let navigate = navigate.clone();
-                            let pinned = vbool(p, "is_pinned");
-                            let tag = vstr(p, "tag");
-                            let title = vstr(p, "title");
-                            let title = if title.is_empty() {
+                            let pinned = p.is_pinned;
+                            let tag = p.tag.clone();
+                            let title = if p.title.is_empty() {
                                 "Untitled Post".to_string()
                             } else {
-                                title
+                                p.title.clone()
                             };
-                            let date = format_short_date(&vstr(p, "published_at"));
+                            let date = format_short_date(p.published_at.as_deref().unwrap_or_default());
                             let preview = preview_text(p);
                             let is_active = sel.as_deref() == Some(id.as_str());
                             view! {
@@ -155,7 +142,7 @@ pub(super) fn board(posts: Vec<Value>) -> impl IntoView {
             };
             posts
                 .with_value(|posts| {
-                    match posts.iter().find(|p| vstr(p, "id") == id) {
+                    match posts.iter().find(|p| p.id == id) {
                         Some(p) => reader(p).into_any(),
                         // Deep link to an id that is not in the current feed.
                         None => {

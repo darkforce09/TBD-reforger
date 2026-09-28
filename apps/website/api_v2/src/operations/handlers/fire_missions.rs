@@ -1,8 +1,16 @@
 //! Field tools — the mortar fire-mission calculator: a live firing solution, the persisted
-//! fire-mission row, and the per-event list the gun line reads back.
+//! fire-mission row, and the per-event list the gun line reads back. A fire mission names an
+//! event that exists or no event at all: saving one against, or listing those of, an event that
+//! does not exist (or is deleted) answers `404 event not found`.
+//!
+//! @contract fire-mission.schema.json#/definitions/FireSolveRequest
+//! @contract fire-mission.schema.json#/definitions/FireSolution
+//! @contract fire-mission.schema.json#/definitions/FireMissionSave
+//! @contract fire-mission.schema.json#/definitions/SavedFireMission
+//! @contract fire-mission.schema.json#/definitions/FireMissionList
 
+use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::Json;
 use serde::Deserialize;
@@ -11,8 +19,10 @@ use uuid::Uuid;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AuthUser;
 use crate::operations::models::fire_mission::FireMission;
+use crate::operations::services::event_lookup::require_event;
 use website_map_engine::data::scenario::ballistics::{
     FireSolution, SolveError, solve_fire_mission,
 };
@@ -109,9 +119,7 @@ pub async fn solve_fire(
 ) -> Result<Json<Value>, ApiError> {
     // Names all five, because all five must be *present* — an omitted coordinate lands here as a
     // decode error, and "invalid body" tells a caller nothing about which of the five it forgot.
-    let Json(input) = body.map_err(|_| {
-        ApiError::bad_request("weapon_system, fp_x, fp_y, tgt_x and tgt_y are required")
-    })?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
     let sol = solve_checked(&input)?;
     Ok(Json(serde_json::to_value(&sol).unwrap()))
 }
@@ -196,11 +204,7 @@ pub async fn save_fire(
     // Names all seven, because `solve` is `#[serde(flatten)]`ed into this body: a missing
     // `weapon_system` and a missing `fp_grid` are the same decode error arriving here, so a
     // message that only mentions the grids would send a caller hunting for a field they sent.
-    let Json(input) = body.map_err(|_| {
-        ApiError::bad_request(
-            "weapon_system, fp_x, fp_y, tgt_x, tgt_y, fp_grid and target_grid are required",
-        )
-    })?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
     if input.fp_grid.trim().is_empty() || input.target_grid.trim().is_empty() {
         return Err(ApiError::bad_request(
             "fp_grid and target_grid are required",
@@ -227,6 +231,11 @@ pub async fn save_fire(
         }
         Some(v) => Some(Uuid::parse_str(v).map_err(|_| ApiError::bad_request("invalid event_id"))?),
     };
+    // A present `event_id` must name an event that exists: `fire_missions.event_id` carries no
+    // foreign key, so a row pointing at a missing event would be stored and never listed.
+    if let Some(event) = event_id {
+        require_event(&state.pool, event).await?;
+    }
     let fm: FireMission = sqlx::query_as(concat!(
         "INSERT INTO fire_missions \
          (event_id, created_by, weapon_system, fp_grid, target_grid, distance_m, azimuth_deg, \
@@ -263,7 +272,8 @@ pub async fn save_fire(
     ))
 }
 
-/// `GET /api/v1/events/:id/fire-missions` — saved fire missions on an event.
+/// `GET /api/v1/events/:id/fire-missions` — saved fire missions on an event; an event that does
+/// not exist answers 404.
 ///
 /// **This is the only reader of `fire_missions`.** Rows written before migration `0020` come back
 /// with `null` in all seven solution fields — the calculator renders `—` for those — and rows
@@ -274,11 +284,12 @@ pub async fn save_fire(
 pub async fn list_event_fire_missions(
     State(state): State<AppState>,
     _u: AuthUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<Json<Value>, ApiError> {
     let Ok(eid) = Uuid::parse_str(&id) else {
         return Err(ApiError::bad_request("invalid id"));
     };
+    require_event(&state.pool, eid).await?;
     let fms: Vec<FireMission> = sqlx::query_as(concat!(
         "SELECT ",
         fire_mission_columns!(),

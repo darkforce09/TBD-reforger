@@ -4,6 +4,9 @@
 //! expressed as `skip_serializing_if`, and RFC3339Nano timestamps rendered through
 //! [`crate::core::wire_format`]. Soft-delete columns are absent from these structs — the
 //! filter is enforced in the query layer (`users` is one of the four soft-deletable tables).
+//!
+//! @contract current-profile.schema.json#/definitions/UserAccount
+//! @contract profile-update.schema.json#/definitions/UserAccount
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

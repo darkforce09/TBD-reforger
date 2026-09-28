@@ -1,0 +1,43 @@
+{
+  "resource_id": "guid:2222222222222222",
+  "resource_name": "{2222222222222222}Prefabs/Items/Equipment/Pouches/Pouch_Fixture.et",
+  "capabilities": {
+    "inventory": [
+      {
+        "node_id": "root/properties/components/0/properties/Attributes",
+        "facts": {
+          "weight": {
+            "source": {
+              "property": "Weight"
+            }
+          }
+        }
+      }
+    ],
+    "storage": [
+      {
+        "node_id": "root/properties/components/0",
+        "facts": {
+          "max_cumulative_volume": {
+            "source": {
+              "property": "MaxCumulativeVolume"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "names": [
+    {
+      "node_id": "root/properties/components/0/properties/Attributes/properties/ItemDisplayName",
+      "display_name_en": {
+        "status": "present",
+        "value": "Fixture Utility Pouch"
+      }
+    }
+  ],
+  "references": [],
+  "source_addons": [
+    "ArmaReforger"
+  ]
+}

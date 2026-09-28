@@ -1,6 +1,13 @@
 //! Single-use refresh rotation and transactional logout. Replaying a consumed token in an active
 //! session revokes the account's current sessions. Already retired sessions cannot revoke later
 //! recovery logins. Account locking serializes replay, successor issuance and revocation.
+//!
+//! A body that does not decode answers through [`ApiError::from_json_rejection`] (413 over the
+//! body limit, 415 without a JSON content type, 400 otherwise); an empty `refresh_token` answers
+//! 400.
+//!
+//! @contract session-token.schema.json#/definitions/SessionTokenRequest
+//! @contract session-token.schema.json#/definitions/SessionTokenPair
 
 use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
@@ -28,7 +35,7 @@ pub async fn refresh(
     State(state): State<AppState>,
     body: Result<Json<RefreshRequest>, JsonRejection>,
 ) -> Result<Json<Value>, ApiError> {
-    let Json(req) = body.map_err(|_| ApiError::bad_request("refresh_token required"))?;
+    let Json(req) = body.map_err(ApiError::from_json_rejection)?;
     if req.refresh_token.is_empty() {
         return Err(ApiError::bad_request("refresh_token required"));
     }
@@ -49,7 +56,7 @@ pub async fn logout(
     State(state): State<AppState>,
     body: Result<Json<RefreshRequest>, JsonRejection>,
 ) -> Result<StatusCode, ApiError> {
-    let Json(req) = body.map_err(|_| ApiError::bad_request("refresh_token required"))?;
+    let Json(req) = body.map_err(ApiError::from_json_rejection)?;
     if req.refresh_token.is_empty() {
         return Err(ApiError::bad_request("refresh_token required"));
     }

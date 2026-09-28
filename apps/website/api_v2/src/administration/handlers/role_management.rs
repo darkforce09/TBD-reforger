@@ -1,7 +1,9 @@
 //! Discord authority administration and explicit rejection of independent website role changes.
+//!
+//! @contract personnel-actions.schema.json#/definitions/RoleResyncOutcome
 
+use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, State};
 use axum::response::Json;
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -10,6 +12,7 @@ use crate::administration::models::audit_log::AuditSeverity;
 use crate::administration::services::audit_writer::{actor_display_name, write_audit};
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AdminUser;
 use crate::identity_and_access::models::user_account::UserRole;
 use crate::identity_and_access::services::discord_role_sync::resync_all_roles;
@@ -42,10 +45,10 @@ pub struct UpdateUserInput {
 pub async fn update_user(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path(discord_id): Path<String>,
+    PathParams(discord_id): PathParams<String>,
     body: Result<Json<UpdateUserInput>, JsonRejection>,
 ) -> Result<Json<Value>, ApiError> {
-    let Json(input) = body.map_err(|_| ApiError::bad_request("role required"))?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
     // This `is_empty()` is deliberately NOT `trim().is_empty()`, and `role` is deliberately not
     // trimmed before `valid_role`. This guard fails *closed*: `valid_role` is an exact match over
     // four literals, so `"  admin  "` is rejected with 400 "invalid role" and the value bound

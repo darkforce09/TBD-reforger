@@ -1,0 +1,51 @@
+{
+  "resource_id": "guid:3333333333333333",
+  "resource_name": "{3333333333333333}Prefabs/Vehicles/Wheeled/Truck_Fixture.et",
+  "capabilities": {
+    "physics": [
+      {
+        "node_id": "root/properties/components/1",
+        "facts": {
+          "mass": {
+            "source": {
+              "property": "Mass"
+            }
+          }
+        }
+      }
+    ],
+    "vehicle_systems": [
+      {
+        "node_id": "root/properties/components/1",
+        "facts": {
+          "max_speed": {
+            "source": {
+              "property": "MaxSpeed"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "names": [
+    {
+      "node_id": "root/properties/components/0/properties/m_UIInfo",
+      "display_name_en": {
+        "status": "present",
+        "value": "Fixture Utility Truck"
+      }
+    }
+  ],
+  "references": [
+    {
+      "node_id": "root",
+      "property": "Object",
+      "resource_name": "{7777777777777777}Assets/Vehicles/Wheeled/Truck_Fixture.xob",
+      "kind": "binary",
+      "method": "BaseContainer.Get"
+    }
+  ],
+  "source_addons": [
+    "ArmaReforger"
+  ]
+}

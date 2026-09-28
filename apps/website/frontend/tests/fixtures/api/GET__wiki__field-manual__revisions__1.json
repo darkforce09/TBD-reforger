@@ -1,0 +1,157 @@
+{
+  "author_id": "000000000000000001",
+  "blocks": [
+    {
+      "anchor": "tbd-field-manual",
+      "inlines": [
+        {
+          "text": "TBD Field Manual",
+          "type": "text"
+        }
+      ],
+      "level": 1,
+      "type": "heading"
+    },
+    {
+      "inlines": [
+        {
+          "text": "The field manual is the single source of truth for how this unit fights. Where a mission briefing contradicts it, the briefing wins for that operation only.",
+          "type": "text"
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "anchor": "1-chain-of-command",
+      "inlines": [
+        {
+          "text": "1. Chain of command",
+          "type": "text"
+        }
+      ],
+      "level": 2,
+      "type": "heading"
+    },
+    {
+      "inlines": [
+        {
+          "text": "Platoon staff issue intent, not instructions. Squad leads own execution inside their assigned boundary.",
+          "type": "text"
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "anchor": "2-movement",
+      "inlines": [
+        {
+          "text": "2. Movement",
+          "type": "text"
+        }
+      ],
+      "level": 2,
+      "type": "heading"
+    },
+    {
+      "items": [
+        {
+          "blocks": [
+            {
+              "inlines": [
+                {
+                  "text": "Default formation is a staggered column on roads, wedge in the open.",
+                  "type": "text"
+                }
+              ],
+              "type": "paragraph"
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "inlines": [
+                {
+                  "text": "Bounding overwatch inside 400 m of a suspected contact.",
+                  "type": "text"
+                }
+              ],
+              "type": "paragraph"
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "inlines": [
+                {
+                  "text": "Nobody crosses a linear danger area without near-side security set.",
+                  "type": "text"
+                }
+              ],
+              "type": "paragraph"
+            }
+          ]
+        }
+      ],
+      "ordered": false,
+      "type": "list"
+    },
+    {
+      "anchor": "3-contact-drills",
+      "inlines": [
+        {
+          "text": "3. Contact drills",
+          "type": "text"
+        }
+      ],
+      "level": 2,
+      "type": "heading"
+    },
+    {
+      "inlines": [
+        {
+          "text": "On contact: return fire, take cover, report. In that order. The contact report is ",
+          "type": "text"
+        },
+        {
+          "text": "CONTACT — direction — distance — description",
+          "type": "code"
+        },
+        {
+          "text": ".",
+          "type": "text"
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "anchor": "4-casualties",
+      "inlines": [
+        {
+          "text": "4. Casualties",
+          "type": "text"
+        }
+      ],
+      "level": 2,
+      "type": "heading"
+    },
+    {
+      "inlines": [
+        {
+          "text": "Stabilise where the casualty falls only if the position is covered. Otherwise drag to cover first. Medics do not move forward of the base of fire.",
+          "type": "text"
+        }
+      ],
+      "type": "paragraph"
+    }
+  ],
+  "body_md": "# TBD Field Manual\n\nThe field manual is the single source of truth for how this unit fights. Where a mission briefing contradicts it, the briefing wins for that operation only.\n\n## 1. Chain of command\n\nPlatoon staff issue intent, not instructions. Squad leads own execution inside their assigned boundary.\n\n## 2. Movement\n\n- Default formation is a staggered column on roads, wedge in the open.\n- Bounding overwatch inside 400 m of a suspected contact.\n- Nobody crosses a linear danger area without near-side security set.\n\n## 3. Contact drills\n\nOn contact: return fire, take cover, report. In that order. The contact report is `CONTACT — direction — distance — description`.\n\n## 4. Casualties\n\nStabilise where the casualty falls only if the position is covered. Otherwise drag to cover first. Medics do not move forward of the base of fire.",
+  "category": "Doctrine",
+  "created_at": "2026-07-14T10:12:00Z",
+  "icon": "menu_book",
+  "nav_order": 1,
+  "revision": 1,
+  "slug": "field-manual",
+  "title": "Field Manual"
+}

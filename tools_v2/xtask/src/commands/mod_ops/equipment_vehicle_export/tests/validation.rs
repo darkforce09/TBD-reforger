@@ -232,7 +232,7 @@ fn partial_and_unverified_exports_cannot_publish() {
 fn publication_is_sealed_retryable_and_preserves_old_data() {
     let f = Fixture::new();
     fs::create_dir(f.root.join("equipment")).unwrap();
-    fs::write(f.root.join("equipment/legacy.json"), "legacy").unwrap();
+    fs::write(f.root.join("equipment/unversioned.json"), "unversioned").unwrap();
     publication::publish(&f.input).unwrap();
     let root = f.root.join("equipment_vehicle_exports");
     let before = fs::read(root.join("current.json")).unwrap();
@@ -243,8 +243,11 @@ fn publication_is_sealed_retryable_and_preserves_old_data() {
         files::digest(&fs::read(sealed.join("generation.json")).unwrap()).sha256
     );
     assert_eq!(
-        fs::read_to_string(root.join("legacy/test_generation/equipment/legacy.json")).unwrap(),
-        "legacy"
+        fs::read_to_string(
+            root.join("unversioned_exports/test_generation/equipment/unversioned.json")
+        )
+        .unwrap(),
+        "unversioned"
     );
     publication::publish(&f.input).unwrap();
     assert_eq!(fs::read(root.join("current.json")).unwrap(), before);
@@ -340,7 +343,7 @@ fn finalized_hashes_detect_consistent_but_tampered_facts() {
 }
 
 #[test]
-fn archive_failure_restores_every_legacy_directory() {
+fn archive_failure_restores_every_unversioned_export_folder() {
     let f = Fixture::new();
     fs::create_dir(f.root.join("equipment")).unwrap();
     fs::write(f.root.join("equipment/old.json"), b"old equipment").unwrap();
@@ -374,15 +377,15 @@ fn interrupted_archival_is_recovered_before_validation() {
     fs::create_dir(f.root.join("vehicles")).unwrap();
     fs::write(f.root.join("vehicles/old.json"), b"keep unmoved vehicles").unwrap();
     let root = f.root.join("equipment_vehicle_exports");
-    let archived = root.join("legacy/interrupted/equipment");
+    let archived = root.join("unversioned_exports/interrupted/equipment");
     fs::create_dir_all(&archived).unwrap();
     fs::write(archived.join("old.json"), b"keep old data").unwrap();
     let journal = json!({"generation_id":"interrupted","entries":[
-        {"source":"equipment","destination":"legacy/interrupted/equipment"},
-        {"source":"vehicles","destination":"legacy/interrupted/vehicles"}
+        {"source":"equipment","destination":"unversioned_exports/interrupted/equipment"},
+        {"source":"vehicles","destination":"unversioned_exports/interrupted/vehicles"}
     ]});
     fs::write(
-        root.join(".legacy-archive.json"),
+        root.join(".unversioned-export-archive.json"),
         serde_json::to_vec(&journal).unwrap(),
     )
     .unwrap();
@@ -392,7 +395,7 @@ fn interrupted_archival_is_recovered_before_validation() {
         fs::read(f.root.join("equipment/old.json")).unwrap(),
         b"keep old data"
     );
-    assert!(!root.join(".legacy-archive.json").exists());
+    assert!(!root.join(".unversioned-export-archive.json").exists());
     assert!(!root.join("current.json").exists());
     assert_eq!(
         fs::read(f.root.join("vehicles/old.json")).unwrap(),

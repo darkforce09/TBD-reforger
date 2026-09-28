@@ -10,7 +10,7 @@
 //!
 //! | arm | subject | its RED proof |
 //! |---|---|---|
-//! | 1 frozen baseline | the port's rendered recipes vs text captured from `make -n` on 2026-08-12 | the baseline is a separate literal; drift in either direction fails |
+//! | 1 frozen baseline | the port's rendered recipes vs the pinned `make -n` text (seed lines with `-v ON_ERROR_STOP=1`) | the baseline is a separate literal; drift in either direction fails |
 //! | 2 Makefile pin | the LIVE `Makefile` recipe bodies vs the same renderers | any edit to the recipes fails the arm until the port follows |
 //! | 3 allow-list refusal | `TBD_IT_BASE_DB=tbd_reforger cargo xtask db test-it` | asserts rc≠0 AND that `tbd_reforger` still exists afterwards |
 //! | 4 reap | two `<base>_<suite>_it` databases really disappear | asserts they EXISTED first, and that an unrelated database survives |
@@ -52,9 +52,10 @@ use super::test_it::{reap, reap_select};
 use crate::commands::deploy::database_operations as dbc;
 use crate::core::repository_root::find_repo_root;
 
-/// Captured from `make -n` at the repo root on 2026-08-12, before a single line of the port
-/// existed. This is the baseline the whole lane is measured against; it stays here with no Makefile
-/// deletes the Makefile, which is the point — arm 2 dies with the file, arm 1 does not.
+/// The pinned recipe text the whole lane is measured against: what `make -n` printed at the repo
+/// root, with each `seed` line carrying the `-v ON_ERROR_STOP=1` the port passes so a failed seed
+/// statement ends the run. It is a literal held apart from [`rendered_recipes`], so arm 1 keeps
+/// its comparison with no `Makefile` in the checkout.
 const BASELINE: &[(&str, &[&str])] = &[
     (
         "db-up",
@@ -71,11 +72,11 @@ const BASELINE: &[(&str, &[&str])] = &[
     (
         "seed",
         &[
-            "cd apps/website/api_v2 && podman compose exec -T db psql -U tbd -d tbd_reforger < seeds/discord_roles.sql",
-            "cd apps/website/api_v2 && podman compose exec -T db psql -U tbd -d tbd_reforger < seeds/registry_dev.sql",
-            "cd apps/website/api_v2 && podman compose exec -T db psql -U tbd -d tbd_reforger < seeds/faction_library.sql",
-            "cd apps/website/api_v2 && podman compose exec -T db psql -U tbd -d tbd_reforger < seeds/vehicle_database.sql",
-            "cd apps/website/api_v2 && podman compose exec -T db psql -U tbd -d tbd_reforger < seeds/wiki_pages.sql",
+            "cd apps/website/api_v2 && podman compose exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < seeds/discord_roles.sql",
+            "cd apps/website/api_v2 && podman compose exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < seeds/registry_dev.sql",
+            "cd apps/website/api_v2 && podman compose exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < seeds/faction_library.sql",
+            "cd apps/website/api_v2 && podman compose exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < seeds/vehicle_database.sql",
+            "cd apps/website/api_v2 && podman compose exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < seeds/wiki_pages.sql",
         ],
     ),
     (

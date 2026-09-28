@@ -2,6 +2,9 @@
 use super::{data::use_read, layout::*, page::ViewerContext};
 use crate::v2::core::api::dto::equipment_data_viewer::EquipmentRelationshipPage;
 use leptos::prelude::*;
+/// The relationships section of a resource: its outgoing references or incoming uses, filterable
+/// by kind and configuration view. Selecting one shows its source component, property, method and
+/// target, with links to the originating property and the referenced resource.
 #[component]
 pub fn Relationships() -> impl IntoView {
     let c = expect_context::<ViewerContext>();

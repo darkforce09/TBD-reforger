@@ -4,9 +4,11 @@
 //! `event_missions` row. That snapshot is the only ORBAT this API ever writes, so everything
 //! this module refuses — an unreadable template, a template that seats nobody, a faction that
 //! cannot match its armory — is refused here or not at all.
+//!
+//! @contract event-schedule.schema.json#/definitions/EventMissionAttachment
 
+use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::Json;
 use chrono::{DateTime, Utc};
@@ -20,6 +22,7 @@ use crate::administration::services::required_audit::append_actor_audit;
 use crate::core::application_state::AppState;
 use crate::core::database::postgres_errors::is_unique_violation;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AdminUser;
 use crate::operations::models::EventMission;
 use crate::operations::services::event_lookup::load_event;
@@ -197,12 +200,11 @@ pub struct AddMissionInput {
 pub async fn add_event_mission(
     State(state): State<AppState>,
     _a: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
     body: Result<Json<AddMissionInput>, JsonRejection>,
 ) -> Result<(StatusCode, Json<EventMission>), ApiError> {
     let ev = load_event(&state.pool, &id).await?;
-    let Json(input) =
-        body.map_err(|_| ApiError::bad_request("mission_id and start_time are required"))?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
     let Some(start_time) = input.start_time else {
         return Err(ApiError::bad_request(
             "mission_id and start_time are required",
@@ -364,7 +366,7 @@ pub async fn add_event_mission(
 pub async fn remove_event_mission(
     State(state): State<AppState>,
     administrator: AdminUser,
-    Path((id, emid)): Path<(String, String)>,
+    PathParams((id, emid)): PathParams<(String, String)>,
 ) -> Result<StatusCode, ApiError> {
     let ev = load_event(&state.pool, &id).await?;
     let Ok(em_id) = Uuid::parse_str(&emid) else {

@@ -3,15 +3,20 @@
 //! The replacement is destructive by design — its transaction opens with an unconditional DELETE —
 //! so the input types here require every field whose absence would turn a malformed request into
 //! an accepted "clear the armory".
+//!
+//! @contract mission-library.schema.json#/definitions/MissionArmoryList
+//! @contract mission-library.schema.json#/definitions/MissionArmoryChange
+//! @contract mission-library.schema.json#/definitions/ArmoryItemWrite
 
+use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, State};
 use axum::response::Json;
 use serde::Deserialize;
 use serde_json::{Value, json};
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::{AuthUser, MissionMakerUser};
 use crate::missions::models::mission::MissionArmory;
 use crate::missions::services::mission_lookup::load_mission_or_404;
@@ -23,7 +28,7 @@ use crate::missions::validation::access::{can_edit, can_view};
 pub async fn get_armory(
     State(state): State<AppState>,
     user: AuthUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<Json<Value>, ApiError> {
     let m = load_mission_or_404(&state.pool, &id).await?;
     if !can_view(&user, &m) {
@@ -91,9 +96,10 @@ pub struct SetArmoryInput {
 ///
 /// Wholesale means the first statement in the transaction is an unconditional DELETE, so every
 /// way this body can be wrong is a way to lose the armory. `{"items":[]}` clears it deliberately
-/// and answers 200; a missing `items`, a blank `item_name`, a missing body, the wrong
-/// `Content-Type` and malformed JSON all answer 400 with the rows untouched — as do a missing,
-/// blank or whitespace-padded `faction`, because it is the Event Hub's join key.
+/// and answers 200; a missing `items`, a blank `item_name`, a negative `quantity` (absent or null
+/// means unlimited, so a count is never below zero), a missing body, the wrong `Content-Type` and
+/// malformed JSON all answer 400 with the rows untouched — as do a missing, blank or
+/// whitespace-padded `faction`, because it is the Event Hub's join key.
 ///
 /// **Authz:** same tier as the metadata patch — demotion revokes armory replace.
 ///
@@ -101,7 +107,7 @@ pub struct SetArmoryInput {
 pub async fn set_armory(
     State(state): State<AppState>,
     maker: MissionMakerUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
     body: Result<Json<SetArmoryInput>, JsonRejection>,
 ) -> Result<Json<Value>, ApiError> {
     let user = &maker.0;
@@ -116,9 +122,7 @@ pub async fn set_armory(
     // The message names every required field because all of them now fail here: `{}` misses
     // `items`, and `{"items":[{}]}` misses both a `faction` and an `item_name`. Naming only the
     // outer one sends the author of the second body looking for a field their request plainly has.
-    let Json(input) = body.map_err(|_| {
-        ApiError::bad_request("items is required, and every item needs a faction and an item_name")
-    })?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
     // Validate every item BEFORE opening the transaction. The DELETE is the first statement in
     // it, so validating inside the loop would mean the armory is already gone by the time the
     // bad row is found — correct only because the transaction rolls back, and needlessly
@@ -147,6 +151,11 @@ pub async fn set_armory(
         if it.faction != it.faction.trim() {
             return Err(ApiError::bad_request(format!(
                 "items[{i}].faction must not have leading or trailing whitespace"
+            )));
+        }
+        if it.quantity.is_some_and(|quantity| quantity < 0) {
+            return Err(ApiError::bad_request(format!(
+                "items[{i}].quantity must not be negative"
             )));
         }
     }

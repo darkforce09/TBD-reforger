@@ -1,0 +1,35 @@
+//! Repository laws — the engineering rules of `CLAUDE.md` law 6 and law 7 as pure checks over a
+//! checkout.
+//!
+//! **Role:** answers, for a repository root, whether the tree keeps the structural laws: every
+//! production file at or under 500 lines and every test file at or under 1000
+//! ([`file_length`]); unit tests only in sibling files, never in an inline test-module body
+//! ([`sibling_test_placement`]); no exemption mechanism for either rule
+//! ([`exemption_mechanisms`]); the engine layer walls ([`engine_layers`]); and the dependency
+//! direction between the website crates ([`crate_dependencies`]).
+//!
+//! **Position:** a library layer of `verification-core`. `cargo xtask verify file-length` and
+//! `cargo xtask verify engine-layers` render these results as their gate output, and the
+//! `engineering_laws` test binary of `website-api` asserts on them directly. It reads files and
+//! nothing else: no process, no network, no environment variable.
+//!
+//! **Signals & state:** none. Every public function takes the repository root and returns
+//! findings, or [`crate::NotRun`] when an input the rule needs is missing or unreadable.
+//!
+//! **Invariants:** a rule that could not read its input never reports a pass — a missing root
+//! or an unreadable file is [`crate::NotRun`], and a walk that found nothing is reported as a
+//! count of zero for the caller to refuse. Every law reads the same roots
+//! ([`source_roots::FILE_LENGTH_PINS`] plus each `apps/website/<crate>/src` and `tests`), so the
+//! gates and the test binary can never disagree about what the tree is.
+
+pub mod cargo_manifest;
+pub mod crate_dependencies;
+pub mod engine_layers;
+pub mod exemption_mechanisms;
+pub mod file_length;
+pub mod sibling_test_placement;
+pub mod source_roots;
+
+#[cfg(test)]
+#[path = "tests/temporary_checkout.rs"]
+mod temporary_checkout;

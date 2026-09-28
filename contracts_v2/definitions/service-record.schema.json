@@ -1,0 +1,201 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ServiceRecordContract",
+  "description": "GET /api/v1/me/deployments (any signed-in member): the caller's service record. The root is the record.",
+  "$ref": "#/definitions/ServiceRecord",
+  "definitions": {
+    "ServiceRecord": {
+      "description": "The caller's totals, upcoming reservations and match history, with the leaderboard view's rates: kd_ratio is null when no match recorded a death count; command_win_rate is null until the caller commanded a match.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total_operations",
+        "attendance_rate",
+        "kills",
+        "deaths",
+        "kd_ratio",
+        "command_games",
+        "command_wins",
+        "command_win_rate",
+        "upcoming",
+        "service_history"
+      ],
+      "properties": {
+        "total_operations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "attendance_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "kills": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "deaths": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "kd_ratio": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "command_games": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "command_wins": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "command_win_rate": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "upcoming": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/UpcomingDeployment"
+          }
+        },
+        "service_history": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ServiceHistoryEntry"
+          },
+          "maxItems": 50
+        }
+      }
+    },
+    "UpcomingDeployment": {
+      "description": "One registered or waitlisted reservation on a future event mission, soonest first. name is the event's name, else the mission's title. faction, squad and role are absent until the caller holds an assigned slot.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "event_mission_id",
+        "name",
+        "terrain",
+        "start_time",
+        "state",
+        "reservation_state",
+        "attendance_state"
+      ],
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "event_mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "terrain": {
+          "type": "string",
+          "enum": [
+            "everon",
+            "arland",
+            "custom",
+            ""
+          ],
+          "description": "The terrain of the first attached mission; empty when the event has none."
+        },
+        "start_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "registered",
+            "waitlisted",
+            "withdrawn",
+            "attended",
+            "no_show",
+            "legacy_unknown"
+          ]
+        },
+        "reservation_state": {
+          "type": "string",
+          "enum": [
+            "registered",
+            "waitlisted",
+            "withdrawn",
+            "legacy_unknown"
+          ]
+        },
+        "attendance_state": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "attended",
+            "no_show",
+            null
+          ]
+        },
+        "faction": {
+          "type": "string",
+          "minLength": 1
+        },
+        "squad": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "ServiceHistoryEntry": {
+      "description": "One recorded match line, newest first, at most 50. date is the match start (0001-01-01T00:00:00Z when the match row is gone, with an empty outcome and operation); aar_replay_url is absent without a replay.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "date",
+        "operation",
+        "role",
+        "outcome"
+      ],
+      "properties": {
+        "date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "operation": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "outcome": {
+          "type": "string",
+          "enum": [
+            "success",
+            "failure",
+            "aborted",
+            "pending",
+            ""
+          ]
+        },
+        "aar_replay_url": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

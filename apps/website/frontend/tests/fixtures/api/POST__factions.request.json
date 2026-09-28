@@ -1,0 +1,13 @@
+{
+  "emblem": "insurgents",
+  "name": "Insurgent Cell",
+  "roles": [
+    {
+      "character": "{9C1D2E3F4A5B6C7D}Prefabs/Characters/Factions/OPFOR/USSR/Character_USSR_TL.et",
+      "role": "Cell Leader",
+      "tag": "CL"
+    }
+  ],
+  "side": "OPFOR",
+  "vehicles": []
+}

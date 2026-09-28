@@ -10,9 +10,11 @@
 //! repeats or skips a row; a `limit` or `offset` that is not an integer answers 400 in the
 //! `{error, details?}` envelope through [`ApiError::from_query_rejection`]; a malformed id answers
 //! 400 and an unknown or unpublished one 404.
+//!
+//! @contract announcement.schema.json#/definitions/AnnouncementPage
 
 use axum::extract::rejection::QueryRejection;
-use axum::extract::{Path, Query, State};
+use axum::extract::{Query, State};
 use axum::response::Json;
 use serde_json::{Value, json};
 use uuid::Uuid;
@@ -21,6 +23,7 @@ use crate::community_content::models::announcement::Announcement;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::http::pagination::PageParams;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AuthUser;
 
 /// `GET /api/v1/announcements` — published feed, pinned first then newest; rows published at the
@@ -61,7 +64,7 @@ pub async fn list_announcements(
 pub async fn get_announcement(
     State(state): State<AppState>,
     _u: AuthUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<Json<Announcement>, ApiError> {
     let Ok(id) = Uuid::parse_str(&id) else {
         return Err(ApiError::bad_request("invalid id"));

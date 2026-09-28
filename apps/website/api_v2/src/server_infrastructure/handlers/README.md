@@ -44,13 +44,15 @@ executor kind.
 - `server_registry.rs` validates at the boundary what the `servers` table does not constrain: a
   trimmed, non-blank name, the address, the port and an existing modpack; an explicit `null` for
   `required_modpack_id` clears the modpack, and an absent key keeps it.
-- `fleet_commands.rs` answers 202 with the receipt, and 400 for `load_mission` and
+- `fleet_commands.rs` answers 202 with the receipt, 404 for the command list of an unknown server
+  (as `machine_credentials.rs` does for its credential list), and 400 for `load_mission` and
   `restart_with_mission`, which only a
   [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) issues; `fleet_executor.rs`
   answers 204 when nothing is claimable.
 - `fleet_scenarios.rs` keys a scenario by a terrain key (lowercase ASCII, digits and underscores,
   starting with a letter, at most 64 bytes) and a `{16 uppercase hex}` resource ending in `.conf`.
-- `server_status_stream.rs` answers 404 to a non-administrator for an inactive server, otherwise
+- `server_status_stream.rs` resolves the server before any stream opens: a malformed id answers
+  400, an unknown server 404, and an inactive one 404 for anyone but an administrator; otherwise it
   opens with the current snapshot (read through `status_broadcast::SELECT_SERVER_STATUS`, the same
   projection the publishers use), then relays every frame the realtime hub fans out on
   `server:{id}`.
@@ -72,3 +74,10 @@ executor kind.
   imports another domain's handlers (`apps/website/api_v2/src/tests/architecture_rules.rs`); the
   server writes live under `/api/v1/servers`, not `/api/v1/admin/servers`, because every
   signed-in member may read the servers.
+- Body decoding: every JSON body is read through `ApiError::from_json_rejection`: 413 with
+  `details.code = request_too_large` over the body limit, 415 without a JSON content type, and 400
+  with the decoder's message (which names the failing field) otherwise. The game-runtime session
+  start treats an empty body as no loaded artifact and reads any other body the same way.
+- Path decoding: every path segment is read through `core::http::path_parameters::PathParams`: a
+  segment that does not decode into its type answers 400 in the `{error}` envelope with a message
+  naming the parameter, never axum's plain-text rejection.

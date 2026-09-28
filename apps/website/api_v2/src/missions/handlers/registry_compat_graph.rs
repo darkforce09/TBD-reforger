@@ -7,10 +7,15 @@
 //! Modpack resolution, the weak ETag and the page clamp are shared with
 //! [`super::registry_items`].
 //!
-//! @contract registry-compat.schema.json#/$defs/edge (each `/registry/compat` row in "data")
+//! @contract arsenal-envelopes.schema.json#/definitions/RegistryCompatRow (each "data" row)
+//!
+//! @contract arsenal-envelopes.schema.json#/definitions/RegistryCompatPage
+//! @contract arsenal-envelopes.schema.json#/definitions/RegistryCargoDefaults
+//! @contract arsenal-envelopes.schema.json#/definitions/CargoDefaultRow
 
 use std::collections::BTreeMap;
 
+use axum::extract::rejection::QueryRejection;
 use axum::extract::{Query, State};
 use axum::http::{HeaderMap, StatusCode, header};
 use axum::response::{IntoResponse, Json, Response};
@@ -145,8 +150,11 @@ pub async fn list_registry_compat(
     State(state): State<AppState>,
     _u: MissionMakerUser,
     headers: HeaderMap,
-    Query(q): Query<RegistryCompatQuery>,
+    query: Result<Query<RegistryCompatQuery>, QueryRejection>,
 ) -> Result<Response, ApiError> {
+    let Query(q) = query.map_err(|rejection| {
+        ApiError::from_query_rejection(rejection, "registry compatibility query")
+    })?;
     let mp = resolve_modpack(&state.pool, q.modpack.as_deref()).await?;
     let view = q.view.as_deref().map(str::trim).filter(|s| !s.is_empty());
 

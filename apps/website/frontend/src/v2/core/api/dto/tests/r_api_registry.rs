@@ -39,3 +39,28 @@ fn registry_compat_envelope() {
 fn factions_envelope() {
     assert_golden::<FactionListResponse>(golden!("GET__factions.json"), &[]);
 }
+
+/// One faction read by id is the row the viewer's faction list carries, document included.
+#[test]
+fn faction_read_by_id() {
+    const G: &str = golden!("GET__factions__00000000-0000-4000-b100-000000000001.json");
+    assert_golden::<UserFaction>(G, &[]);
+    let faction: UserFaction = serde_json::from_str(G).unwrap();
+    let list: FactionListResponse = serde_json::from_str(golden!("GET__factions.json")).unwrap();
+    assert!(
+        list.data.iter().any(|row| row == &faction),
+        "the faction read by id must equal its row in the list"
+    );
+}
+
+/// A created and a revised faction; the server stamps their times and the created one's id.
+#[test]
+fn faction_created_and_revised() {
+    const CREATED: &str = golden!("POST__factions.json");
+    const REVISED: &str = golden!("PUT__factions__00000000-0000-4000-b100-000000000003.json");
+    assert_golden::<UserFaction>(CREATED, &[]);
+    assert_golden::<UserFaction>(REVISED, &[]);
+    let revised: UserFaction = serde_json::from_str(REVISED).unwrap();
+    assert_eq!(revised.id, "00000000-0000-4000-b100-000000000003");
+    assert_ne!(revised.created_at, revised.updated_at);
+}

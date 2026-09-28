@@ -13,6 +13,7 @@ use super::deployment_settlement::settle_server_deployment;
 use crate::administration::services::required_audit::append_actor_audit;
 use crate::core::configuration::Config;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::failpoints::fail_point;
 use crate::core::middleware::{AuthUser, role_rank};
 use crate::identity_and_access::services::account_authority::holds_administrator_authority;
 use crate::identity_and_access::services::identity_ownership::lock_accounts;
@@ -214,6 +215,7 @@ pub async fn request_deployment(
     .await?;
     let (account, via) = authorize_requester(connection, &requester, config).await?;
     let deployment = record(connection, server, &selection, &account, via).await?;
+    fail_point!(DeploymentRequestBeforeCommit);
     load_deployment(connection, server, deployment).await
 }
 

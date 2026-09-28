@@ -3,10 +3,15 @@
 //! Both surfaces are read-only. The ORBAT groups the materialized `orbat_slots` rows by
 //! `(faction, squad)` and resolves display names for occupants and reservers; the directory is
 //! the offset-paginated, ban-filtered user list the assignment UI picks an assignee out of.
+//!
+//! @contract event-orbat.schema.json#
+//! @contract member-directory.schema.json#/definitions/MemberSearchPage
+//! @contract member-directory.schema.json#/definitions/MemberSummary
 
 use std::collections::{HashMap, HashSet};
 
-use axum::extract::{Path, Query, State};
+use axum::extract::rejection::QueryRejection;
+use axum::extract::{Query, State};
 use axum::response::Json;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -15,6 +20,7 @@ use sqlx::{Postgres, QueryBuilder};
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::http::pagination::PageParams;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::{AuthUser, LeaderUser};
 use crate::operations::models::event::{OrbatReservation, OrbatSlot};
 use crate::operations::models::event_viewer_access::{SlotViewerAccess, SlotViewerEligibility};
@@ -64,7 +70,7 @@ struct OrbatSquadDto {
 pub async fn get_orbat(
     State(state): State<AppState>,
     user: AuthUser,
-    Path(emid): Path<String>,
+    PathParams(emid): PathParams<String>,
 ) -> Result<Json<Value>, ApiError> {
     let em = load_em(&state.pool, &emid).await?;
     let mut connection = state.pool.acquire().await?;
@@ -240,8 +246,10 @@ fn push_member_search_filter(qb: &mut QueryBuilder<Postgres>, search: &str) {
 pub async fn search_members(
     State(state): State<AppState>,
     _l: LeaderUser,
-    Query(q): Query<MemberQuery>,
+    query: Result<Query<MemberQuery>, QueryRejection>,
 ) -> Result<Json<Value>, ApiError> {
+    let Query(q) = query
+        .map_err(|rejection| ApiError::from_query_rejection(rejection, "member search query"))?;
     let (limit, offset) = PageParams {
         limit: q.limit,
         offset: q.offset,

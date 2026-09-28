@@ -9,6 +9,7 @@ use uuid::Uuid;
 use super::command_ledger::{RECEIPT_COLUMNS, state_conflict};
 use crate::administration::services::required_audit::append_system_audit;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::failpoints::fail_point;
 use crate::identity_and_access::services::account_authority::holds_administrator_authority;
 use crate::server_infrastructure::models::fleet_command::{
     ClaimedFleetCommand, ExecutionResult, FleetAction, FleetCommandReceipt, FleetCommandState,
@@ -323,5 +324,6 @@ pub async fn record_result(
         ),
     )
     .await?;
+    fail_point!(FleetCommandResultBeforeCommit);
     receipt(connection, command).await
 }

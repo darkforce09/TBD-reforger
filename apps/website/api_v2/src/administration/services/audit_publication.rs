@@ -2,6 +2,8 @@
 
 use sqlx::PgPool;
 
+use crate::core::failpoints::fail_point;
+
 /// Publish at most `batch_size` audit facts, with the requested size clamped to 1..=1000.
 ///
 /// The singleton lock is acquired before reading pending entries and held through commit.
@@ -63,6 +65,7 @@ pub async fn publish_audit_batch(pool: &PgPool, batch_size: i64) -> Result<u64, 
         .execute(&mut *transaction)
         .await?;
 
+    fail_point!(AuditPublicationBeforeCommit);
     transaction.commit().await?;
     Ok(count as u64)
 }

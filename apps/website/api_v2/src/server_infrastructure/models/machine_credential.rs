@@ -1,5 +1,11 @@
 //! Machine credentials: the per-server, per-executor secrets that authenticate a game host's
 //! control agent or a game runtime. The stored row never carries the secret itself.
+//!
+//! @contract machine-credential.schema.json#
+//! @contract machine-credential.schema.json#/definitions/ExecutorKind
+//! @contract machine-credential.schema.json#/definitions/MachineCredential
+//! @contract machine-credential.schema.json#/definitions/MachineCredentialIssue
+//! @contract machine-credential.schema.json#/definitions/MachineCredentialList
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

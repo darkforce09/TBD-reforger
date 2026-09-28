@@ -6,7 +6,9 @@ use std::path::Path;
 use anyhow::{Context, Result, ensure};
 use serde_json::json;
 
-use super::{FileDigest, ValidationReport, files, legacy_archive, upload_bundle, validate};
+use super::{
+    FileDigest, ValidationReport, files, unversioned_export_archive, upload_bundle, validate,
+};
 
 pub(super) fn publish(input: &Path) -> Result<()> {
     let input = input.canonicalize()?;
@@ -29,7 +31,7 @@ pub(super) fn publish(input: &Path) -> Result<()> {
     );
     let _lock = PublicationLock::acquire(root)?;
     if !gameplay {
-        legacy_archive::recover(root)?;
+        unversioned_export_archive::recover(root)?;
     }
     let (generation, _) = files::read(&input, "generation.json")?;
     ensure!(
@@ -150,11 +152,11 @@ fn prepare_and_publish(
         durable_write(&backup, &fs::read(&current)?)?;
     }
     if !current.exists() && !gameplay {
-        legacy_archive::archive(root, id)?;
+        unversioned_export_archive::archive(root, id)?;
     }
     if let Err(error) = fs::rename(&temp, &current) {
         if !gameplay {
-            legacy_archive::recover(root)?;
+            unversioned_export_archive::recover(root)?;
         }
         return Err(error.into());
     }
@@ -165,14 +167,14 @@ fn prepare_and_publish(
             fs::remove_file(&current)?;
         }
         if !gameplay {
-            legacy_archive::recover(root)?;
+            unversioned_export_archive::recover(root)?;
         }
         return Err(error.into());
     }
     if let Err(error) = if gameplay {
         Ok(())
     } else {
-        legacy_archive::recover(root)
+        unversioned_export_archive::recover(root)
     } {
         eprintln!("Publication succeeded; archive journal cleanup will retry: {error:#}");
     }

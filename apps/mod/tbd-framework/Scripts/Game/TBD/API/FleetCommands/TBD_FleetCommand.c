@@ -70,6 +70,7 @@ class TBD_FleetCommand
 	//! The `result` report body: the fencing token with `succeeded` and `outcome`, or with
 	//! `failure_reason`.
 	//! @return the JSON body
+	//! @contract fleet-command.schema.json#/definitions/ExecutionResult
 	string BuildResultBody()
 	{
 		if (m_bSucceeded)

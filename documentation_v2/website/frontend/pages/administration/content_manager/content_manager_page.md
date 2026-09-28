@@ -149,3 +149,7 @@ lists each call with the DTO or body it reads or sends. Server-side, in
   edit that was just published.
 - Deleting archives: the row stays in the database, and both the members' feed (published posts
   only) and this list (drafts and published posts) drop it.
+- The list reads typed `Announcement` rows: a row missing a key the contract requires fails the
+  fetch and shows the list's error with its retry, never a partly blank post
+  (`the_captured_cms_list_maps_drafts_and_published_posts` in
+  `apps/website/frontend/src/v2/pages/administration/content_manager/tests/content.rs`).

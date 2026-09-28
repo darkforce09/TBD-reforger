@@ -1,4 +1,8 @@
 //! Account linking code issuance, status, and explicit unlinking.
+//!
+//! @contract arma-link.schema.json#/definitions/LinkCode
+//! @contract arma-link.schema.json#/definitions/LinkStatus
+//! @contract arma-link.schema.json#/definitions/LinkRemoval
 use crate::core::{
     application_state::AppState, error_handling::api_error::ApiError, middleware::AuthUser,
 };

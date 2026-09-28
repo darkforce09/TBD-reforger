@@ -9,6 +9,10 @@
 //! server never appears in the list or the totals; a server without a status row is listed with
 //! no status and counts as offline; totals sum only online servers' players and capacity and
 //! every reported queue's backlog and drops.
+//!
+//! @contract command-center.schema.json#/definitions/FleetOverview
+//! @contract command-center.schema.json#/definitions/FleetServer
+//! @contract command-center.schema.json#/definitions/FleetTotals
 
 use serde::Serialize;
 use sqlx::PgPool;

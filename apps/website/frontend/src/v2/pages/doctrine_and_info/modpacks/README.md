@@ -45,8 +45,9 @@ below.
 ## Data
 
 - `GET /api/v1/modpacks`: read as `DataEnvelope<ModpackDto>`: each pack's `id`, `name`,
-  `version`, `total_size_bytes`, `workshop_url` and `is_current`, and its `mods` rows as untyped
-  JSON (`name`, `is_key_dependency`, `workshop_id`, `mod_guid`, `version`).
+  `version`, `total_size_bytes`, `workshop_url` and `is_current`, and its `mods` rows as
+  `ModpackMod` (`name`, `is_key_dependency`, `workshop_id`, `mod_guid`, `version`; the last three
+  read empty when the wire leaves them out).
 - `POST /api/v1/modpacks`: sends a blank pack (`New Modpack`, version `0.1.0`, no addons), read
   back as `ModpackDto`.
 - `PUT /api/v1/modpacks/{id}`: sends the draft from `PackEdit::to_put_body`, read back as
@@ -76,7 +77,7 @@ below.
 ## Boundaries
 
 - Depends on: `crate::v2::core::api` (`api_get`, `api_post`, `api_put`, `api_post_ok`,
-  `api_delete`, `api_error_message`, and `ModpackDto` and `DataEnvelope` from
+  `api_delete`, `api_error_message`, and `ModpackDto`, `ModpackMod` and `DataEnvelope` from
   `apps/website/frontend/src/v2/core/api/dto/content.rs` and
   `apps/website/frontend/src/v2/core/api/dto/common.rs`), `crate::v2::core::auth`
   (`has_min_role_authed`, `Role`, the `AuthStore` context) and `crate::v2::core::ui` (`AuthGate`,

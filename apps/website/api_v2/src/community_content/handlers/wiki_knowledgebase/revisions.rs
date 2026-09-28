@@ -14,7 +14,7 @@
 //! does not hold, while a revision that is not a number answers 400.
 
 use axum::extract::rejection::QueryRejection;
-use axum::extract::{Path, Query, State};
+use axum::extract::{Query, State};
 use axum::response::Json;
 use serde::Deserialize;
 
@@ -23,6 +23,7 @@ use crate::community_content::models::wiki::{WikiRevision, WikiRevisionPage};
 use crate::community_content::services::wiki_markup::read_markup;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AuthUser;
 
 /// The page served when `page` is absent.
@@ -45,7 +46,7 @@ pub struct RevisionPageQuery {
 pub async fn list_wiki_revisions(
     State(state): State<AppState>,
     _member: AuthUser,
-    Path(slug): Path<String>,
+    PathParams(slug): PathParams<String>,
     query: Result<Query<RevisionPageQuery>, QueryRejection>,
 ) -> Result<Json<WikiRevisionPage>, ApiError> {
     let Query(query) = query
@@ -71,7 +72,7 @@ pub async fn list_wiki_revisions(
 pub async fn get_wiki_revision(
     State(state): State<AppState>,
     _member: AuthUser,
-    Path((slug, revision)): Path<(String, String)>,
+    PathParams((slug, revision)): PathParams<(String, String)>,
 ) -> Result<Json<WikiRevision>, ApiError> {
     let revision: i64 = revision
         .parse()

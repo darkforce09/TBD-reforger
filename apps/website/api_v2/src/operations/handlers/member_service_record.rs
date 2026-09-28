@@ -30,6 +30,10 @@
 //! two cases stay distinguishable on the wire. This route deliberately diverges from
 //! `leaderboards::get_user_stats`, which `unwrap_or`s an all-zero row for a player with no matches
 //! and so cannot tell the two apart.
+//!
+//! @contract service-record.schema.json#/definitions/ServiceRecord
+//! @contract service-record.schema.json#/definitions/UpcomingDeployment
+//! @contract service-record.schema.json#/definitions/ServiceHistoryEntry
 
 use axum::extract::State;
 use axum::response::Json;

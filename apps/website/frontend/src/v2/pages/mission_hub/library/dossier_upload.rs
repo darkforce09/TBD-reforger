@@ -189,8 +189,10 @@ pub(super) fn upload_failure(
             ),
             Vec::new(),
         ),
-        // The server names its own limit in its refusal; echo that back rather than restating a
-        // number this file would then have to keep in sync with the server's configuration.
+        // The server refuses an over-limit body with the generic `request body is too large`
+        // envelope (`details.code = "request_too_large"`), which does not state its limit; that
+        // message is echoed as sent rather than restating a number this file would then have to
+        // keep in sync with the server's configuration.
         413 => (
             head.unwrap_or_else(|| "The server refused the document as too large.".to_string()),
             Vec::new(),

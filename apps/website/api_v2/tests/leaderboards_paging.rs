@@ -1,11 +1,15 @@
-//! LIMIT/OFFSET paging over the content golden's 4-way ties yields every row
-//! exactly once, in the one order the ORDER BY whitelist specifies.
+//! LIMIT/OFFSET paging over the content golden's players plus thirty tied players yields every
+//! row exactly once, in the one order the ORDER BY whitelist specifies.
 //!
 //! Why the defect needs Postgres: a bounded (`LIMIT 2`) top-N sort and the full sort of the
 //! next page are free to order tied rows differently, so without a total ORDER BY one row can
-//! appear on two pages while another appears on none. The whitelist's shape (every arm ends in
-//! the `lt.discord_id ASC` tie-breaker; nothing off-list reaches ORDER BY) is pinned by the pure
-//! unit tests that stay next to the handler in `src/command_center/handlers/leaderboards.rs`.
+//! appear on two pages while another appears on none. Six golden players are too few for that:
+//! a board that small is sorted the same way on every page, so the set comparison below could
+//! not fail. The thirty tied players, equal on every ranking column, make each page's sort pick
+//! among thirty equal rows, which is what lets a missing tie-breaker repeat and skip rows. The
+//! whitelist's shape (every arm ends in the `lt.discord_id ASC` tie-breaker; nothing off-list
+//! reaches ORDER BY) is pinned by the pure unit tests that stay next to the handler in
+//! `src/command_center/handlers/leaderboards.rs`.
 //!
 //! Why it lives in `tests/` and not in that file: the source pin
 //! (`common::assert_no_raw_test_database_url_reads_outside_common`) forbids a raw
@@ -13,7 +17,9 @@
 //! may read it, and `tests/common` is not reachable from a lib test. So this binary gets the
 //! shape every other suite has: its own `<base>_leaderboards_paging_it` database, dropped and
 //! recreated on first use, migrated, the database-name allow-list asserted on both the
-//! operator's name and the derived one. The content golden is applied on top here.
+//! operator's name and the derived one. The content golden and the tied players are applied on
+//! top here; the tied players stay out of the content golden, whose leaderboard fixture they
+//! would change.
 //!
 //! Never a `skip:` — a missing `TEST_DATABASE_URL` is a FAIL. The whole point of this test is
 //! the database; `cargo xtask db test-it` always exports it.
@@ -48,10 +54,7 @@ const CATEGORIES: [&str; 5] = [
 /// `ON CONFLICT … DO UPDATE` and §12 refreshes the view, so applying it is idempotent — also over
 /// the `dev-login` row `common` primes (`…001`, a golden player too).
 const CONTENT_GOLDEN: &str = include_str!("../seeds/content_golden.sql");
-/// The six golden players with `match_player_stats` rows (content_golden §7) — the whole
-/// board. Ties the paging crosses: `missions_played` = 2 for …001-…004, `team_kills` = 0 for
-/// …001/…002/…004/…005, `command_win_rate` = 0 for …003-…006 (4-way each); `kd` and
-/// `longest_kill` are tie-free by construction.
+/// The six golden players with `match_player_stats` rows (content_golden §7).
 const GOLDEN_PLAYERS: [&str; 6] = [
     "000000000000000001",
     "000000000000000002",
@@ -60,13 +63,37 @@ const GOLDEN_PLAYERS: [&str; 6] = [
     "000000000000000005",
     "000000000000000006",
 ];
-/// Categories whose golden board carries a 4-way tie — the pin that keeps the paging test
-/// from going vacuous if the seed ever changes.
-const FOUR_WAY_TIED: [&str; 3] = ["missions", "team_kills", "command_win"];
-/// Page size that splits every 4-way tie across at least two pages.
+/// How many tied players [`TIED_PLAYERS_SQL`] adds. Each plays one match with the same line, so
+/// all of them share one value in every category: kd 1.00, one mission, a 100 m longest kill, no
+/// team kills and a command win rate of 0, the last two shared with golden players as well.
+const TIED_PLAYERS: usize = 30;
+/// Thirty members, `900000000000000001`…`900000000000000030`, each with one identical stat line
+/// in golden match …f000-000000000001, and the view rebuilt over them.
+const TIED_PLAYERS_SQL: &str = "
+    INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character,
+                       role, is_banned, created_at, updated_at)
+    SELECT format('9%s', lpad(n::text, 17, '0')), format('Tied %s', n), '', '',
+           format('tied-arma-%s', n), '', 'enlisted', false,
+           '2026-07-01 00:00:00+00', '2026-07-01 00:00:00+00'
+    FROM generate_series(1, 30) AS n
+    ON CONFLICT (discord_id) DO NOTHING;
+    INSERT INTO match_player_stats (match_id, discord_id, arma_id, role_played, kills, deaths,
+                                    team_kills, longest_kill_m, vehicles_destroyed, is_command,
+                                    command_win, source_event_id, created_at)
+    SELECT '00000000-0000-4000-f000-000000000001', format('9%s', lpad(n::text, 17, '0')),
+           format('tied-arma-%s', n), 'Rifleman', 5, 5, 0, 100, 0, false, NULL,
+           'rf-evt-20260620-01', '2026-06-20 21:48:00+00'
+    FROM generate_series(1, 30) AS n
+    ON CONFLICT DO NOTHING;
+    REFRESH MATERIALIZED VIEW leaderboard_totals;";
+/// Page size: every tie of [`TIED_PLAYERS`] rows spans fifteen pages.
 const PAGE: i64 = 2;
+/// The route's largest page. The whole board has to fit in one, or the unpaged read the pages
+/// are compared with would itself be a truncated page.
+const LARGEST_PAGE: i64 = 50;
 
-/// This binary's database, seeded with the content golden. [`common::require_test_database_url`]
+/// This binary's database, seeded with the content golden and the tied players.
+/// [`common::require_test_database_url`]
 /// has already dropped, recreated and migrated it, and refused any name outside the
 /// database-name allow-list; a missing URL is a FAIL here, not a skip. Returns its URL and an
 /// open pool.
@@ -85,6 +112,10 @@ async fn provision_golden_database() -> (String, PgPool) {
         .execute(&pool)
         .await
         .unwrap_or_else(|e| panic!("apply seeds/content_golden.sql to `{url}`: {e}"));
+    sqlx::raw_sql(TIED_PLAYERS_SQL)
+        .execute(&pool)
+        .await
+        .unwrap_or_else(|e| panic!("add the tied players to `{url}`: {e}"));
     (url, pool)
 }
 
@@ -125,7 +156,7 @@ async fn board(state: &AppState, category: &str, limit: i64, offset: i64) -> Vec
     let Json(body) = get_leaderboards(
         State(state.clone()),
         bearer(),
-        query(category, limit, offset),
+        Ok(query(category, limit, offset)),
     )
     .await
     .unwrap_or_else(|e| {
@@ -188,28 +219,32 @@ async fn paging_the_golden_ties_yields_every_row_exactly_once() {
     let state = AppState::new(pool, Config::for_tests(url, "paging-test-secret"));
 
     // Acceptance 2: the whitelist is still the only source of ORDER BY text.
-    let rejected = get_leaderboards(State(state.clone()), bearer(), query("bogus", PAGE, 0))
+    let rejected = get_leaderboards(State(state.clone()), bearer(), Ok(query("bogus", PAGE, 0)))
         .await
         .expect_err("an unknown category must be rejected, never ordered by");
     assert_eq!(rejected.into_response().status(), StatusCode::BAD_REQUEST);
 
     for category in CATEGORIES {
-        let whole = board(&state, category, 50, 0).await;
+        let whole = board(&state, category, LARGEST_PAGE, 0).await;
         let whole_ids: Vec<&str> = whole.iter().map(id).collect();
         let expected: BTreeSet<&str> = whole_ids.iter().copied().collect();
+        assert_eq!(
+            whole.len(),
+            GOLDEN_PLAYERS.len() + TIED_PLAYERS,
+            "{category}: the board is the golden and tied players, and it fits in one \
+             {LARGEST_PAGE}-row read: {whole_ids:?}"
+        );
         for player in GOLDEN_PLAYERS {
             assert!(
                 expected.contains(player),
                 "{category}: golden player {player} is not on the board: {whole_ids:?}"
             );
         }
-        if FOUR_WAY_TIED.contains(&category) {
-            assert!(
-                largest_tie(category, &whole) >= 4,
-                "{category}: the golden no longer makes a 4-way tie, so paging it proves \
-                 nothing: {whole:?}"
-            );
-        }
+        assert!(
+            largest_tie(category, &whole) >= TIED_PLAYERS,
+            "{category}: the board no longer ties the {TIED_PLAYERS} tied players, so paging it \
+             proves nothing: {whole:?}"
+        );
 
         // Acceptance 1: LIMIT 2 pages across the tie — every row exactly once, one order.
         let mut paged: Vec<Value> = Vec::new();

@@ -1,19 +1,20 @@
 -- content_golden.sql — the populated content golden
 --
 -- THE POPULATED CONTENT GOLDEN. This is the database state that the committed
--- fixture corpus at apps/website/frontend/tests/fixtures/api/ was captured from.
--- Apply it to an empty, migrated database and every fixture in that directory
--- reproduces (see the "REPRODUCING THE FIXTURES" recipe at the bottom).
+-- fixture corpus at apps/website/frontend/tests/fixtures/api/ is captured from.
+-- Apply registry_dev.sql and then this file to a freshly migrated database, after
+-- the dev login that mints the capture token, and every fixture listed in that
+-- directory's _index.tsv reproduces (see the "REPRODUCING THE FIXTURES" recipe at
+-- the bottom).
 --
 -- WHY THIS FILE EXISTS
 -- --------------------
--- Eleven of the twenty-one committed fixtures were captured against a database
--- that had no content: `{"data":[]}`. Because those goldens only ever proved the
--- EMPTY branch of a page renders, the populated branch of servers / events /
--- announcements / leaderboards / audit-logs / vehicle-database / me-deployments
--- was never written at all — the pages are dead, not untested. This seed gives
--- those pages rows to render, so the gate can start proving the code that
--- actually matters.
+-- A fixture captured against an empty database only proves the EMPTY branch of a
+-- page: `{"data":[]}` never exercises the populated rendering of servers, events,
+-- announcements, leaderboards, audit logs, the vehicle database or a member's
+-- deployments. This seed gives every read the fixtures record rows to render, with
+-- more than one row per collection and real nulls, so the fixtures prove the
+-- populated wire and the frontend types that decode it.
 --
 -- DESIGN RULES (deliberate, do not "clean up"):
 --
@@ -22,11 +23,11 @@
 --      `now()` here would rewrite half the corpus on every capture run and drown
 --      real contract drift in timestamp churn.
 --
---   2. §1 REPRODUCES THE PRE-EXISTING GOLDENS EXACTLY. The user, modpack,
---      mission, mission version, event and event-mission below carry the exact
---      ids and timestamps already committed in GET__me.json,
---      GET__modpacks*.json, GET__missions__512d8658-*.json and
---      GET__events__c71a4d1a-*.json. Change a value in §1 and you invalidate a
+--   2. EVERY ROW CARRIES THE ID ITS FIXTURES ALREADY NAME. The user, modpack,
+--      missions, event and event mission of §1 carry the ids and timestamps
+--      committed in GET__me.json, GET__modpacks*.json,
+--      GET__missions__512d8658-*.json and GET__events__c71a4d1a-*.json, and the
+--      browser gates route to those ids. Change a value here and you change a
 --      fixture you did not mean to touch.
 --
 --   3. MORE THAN ONE ROW PER COLLECTION, AND REAL NULLS. A one-row list renders
@@ -37,11 +38,13 @@
 --      audit lines with and without an actor, vehicles with and without a
 --      profile image, ORBAT slots both claimed and open.
 --
---   4. THE DATES ARE FIXED, SO THEY EVENTUALLY GO STALE. /events?scope=upcoming
---      and the dashboard's next_event filter on `start_time > now()`. The
---      upcoming rows here run to 2027-02; past rows sit in 2026-06/07. When
---      "upcoming" stops being upcoming, bump §6/§8 and recapture — do not switch
---      to now(), that breaks rule 1.
+--   4. THE DATES ARE FIXED, SO THEY EVENTUALLY GO STALE. /events?scope=upcoming,
+--      the dashboard's next_event and registration all compare `start_time`
+--      with the statement time. The upcoming operations (§1, §8) run from
+--      2030-08-01 to 2031-02-06 and the queued fleet command (§13) expires
+--      2031-07-25; past rows sit in 2026-06/07. When "upcoming" stops being
+--      upcoming, move those rows forward and recapture — do not switch to now(),
+--      that breaks rule 1.
 --
 --   5. SECTION ORDER IS A FOREIGN-KEY ORDER, NOT A NARRATIVE ONE. Every
 --      statement here is fed to psql INDIVIDUALLY, IN AUTOCOMMIT by the seed
@@ -55,13 +58,90 @@
 --      the constraints; a violation looks like a seed that "suddenly stopped
 --      loading" and takes the whole environment with it.
 --
--- Idempotent: every INSERT is ON CONFLICT DO UPDATE / DO NOTHING, so re-running
--- converges instead of erroring. Mission versions and mission artifacts are
--- immutable (a trigger refuses any UPDATE), so their inserts are DO NOTHING: a
--- changed value in either reaches only a database that does not hold the row yet.
+--   6. AUDIT IDS 1–10 BELONG TO §0. A freshly migrated database already holds
+--      audit lines stamped with the wall clock (the migrations' own, and the
+--      capture login's session line); §0 runs first and replaces ids 1–10 with
+--      pinned lines, so the event inserts after it take ids 11–15 and §8 pins
+--      the creation time of those five trigger lines.
 --
--- Apply order: 0001..0007 migrations (the API runs these on boot) → this file.
--- registry_dev.sql is INDEPENDENT of this file and still owns GET__registry.json.
+-- Idempotent: every INSERT is ON CONFLICT DO UPDATE / DO NOTHING, so re-running
+-- it over its own rows converges instead of erroring. Over reservations the API
+-- has changed since (a promotion, a withdrawal), the registration statement can
+-- be refused by the allocation check, and those rows keep the API's state; the
+-- capture recipe always starts from a fresh database. Mission versions and
+-- mission artifacts are immutable (a trigger refuses any UPDATE), so their
+-- inserts are DO NOTHING: a changed value in either reaches only a database that
+-- does not hold the row yet.
+--
+-- Apply order: the migrations (the API runs them on boot) → the dev login that
+-- mints the capture token → registry_dev.sql, which owns GET__registry.json and
+-- the current modpack's registry → this file.
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- §0  Audit log. Explicit ids on a bigserial column, so the sequence has to be
+--     dragged past them afterwards or the next real write collides — see the
+--     setval at the end of this section. It runs before every other section
+--     (rule 6): the event inserts below fire the event audit trigger, and their
+--     lines take the ids after these.
+--
+--     Severities span all three enum values; one line has no actor (a system
+--     action) and one has no target, which are the two Option/empty arms of the
+--     row that a uniform seed would never produce.
+-- ═══════════════════════════════════════════════════════════════════════════
+
+INSERT INTO audit_logs (id, severity, actor_id, actor_name, action, message, target_type,
+                        target_id, metadata, created_at)
+VALUES
+  (1, 'info', '000000000000000001', 'Dev Operator', 'mission.approve',
+   'Dev Operator approved mission ''Operation Iron Veil''', 'mission',
+   '00000000-0000-4000-c000-000000000001',
+   '{"semver": "1.2.0", "previous_status": "pending_approval"}'::jsonb,
+   '2026-06-11 10:02:00+00'),
+  (2, 'info', '000000000000000001', 'Dev Operator', 'mission.approve',
+   'Dev Operator approved mission ''Operation Static Line''', 'mission',
+   '00000000-0000-4000-c000-000000000002', NULL, '2026-06-27 09:14:00+00'),
+  (3, 'warn', '000000000000000002', 'Rhodes', 'user.warn',
+   'Rhodes issued a warning to Kessler for friendly fire', 'user',
+   '000000000000000006', '{"reason": "friendly fire", "count": 1}'::jsonb,
+   '2026-06-28 21:15:00+00'),
+  -- No actor: emitted by the telemetry ingest path, not a person.
+  (4, 'warn', NULL, '', 'server.fps_drop',
+   'Primary server FPS dropped below 20 (17.3) with 61 players connected', 'server',
+   '00000000-0000-4000-d000-000000000001',
+   '{"server_fps": 17.3, "player_count": 61, "threshold": 20}'::jsonb,
+   '2026-07-04 21:03:12+00'),
+  (5, 'warn', '000000000000000001', 'Dev Operator', 'mission.reject',
+   'Dev Operator rejected mission ''Operation Glass House''', 'mission',
+   '00000000-0000-4000-c000-000000000006',
+   '{"reason": "ORBAT slot count mismatch"}'::jsonb, '2026-07-16 12:30:00+00'),
+  (6, 'crit', '000000000000000001', 'Dev Operator', 'user.ban',
+   'Dev Operator banned Kessler — repeated team-killing after two warnings', 'user',
+   '000000000000000006',
+   '{"warnings": 2, "team_kills": 3, "permanent": true}'::jsonb,
+   '2026-07-11 23:47:19+00'),
+  (7, 'info', '000000000000000001', 'Dev Operator', 'modpack.publish',
+   'Dev Operator published modpack ''Core Modern Expansion'' v2.1', 'modpack',
+   '00000000-0000-4000-a000-000000000001',
+   '{"version": "2.1", "size_bytes": 48532275200}'::jsonb, '2026-07-22 16:41:03+00'),
+  -- No target at all: a login event references nothing but its actor.
+  (8, 'info', '000000000000000003', 'Vance', 'auth.login',
+   'Vance signed in from a new device', NULL, NULL, NULL, '2026-07-25 21:03:55+00'),
+  (9, 'info', '000000000000000002', 'Rhodes', 'orbat.reserve',
+   'Rhodes reserved squad ''Bravo'' on Operation Byte Parity Night', 'event_mission',
+   '89b1b731-37a8-4926-901a-3c7ff7de5eb3', '{"squad": "Bravo"}'::jsonb,
+   '2026-07-18 08:30:00+00'),
+  (10, 'info', '000000000000000001', 'Dev Operator', 'announcement.publish',
+   'Dev Operator published ''Modpack 2.1 is mandatory from Saturday''', 'announcement',
+   '00000000-0000-4000-1000-000000000001', NULL, '2026-07-22 17:00:00+00')
+ON CONFLICT (id) DO UPDATE SET
+    severity = EXCLUDED.severity, actor_id = EXCLUDED.actor_id,
+    actor_name = EXCLUDED.actor_name, action = EXCLUDED.action, message = EXCLUDED.message,
+    target_type = EXCLUDED.target_type, target_id = EXCLUDED.target_id,
+    metadata = EXCLUDED.metadata, created_at = EXCLUDED.created_at;
+
+-- Explicit ids bypass the sequence; without this the next audit write reuses id 1.
+SELECT setval('audit_logs_id_seq', (SELECT max(id) FROM audit_logs), true);
 
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -72,8 +152,10 @@
 -- The dev-login operator. dev-login itself upserts this row and stamps
 -- last_login_at/updated_at with the wall clock, so this UPDATE must run AFTER
 -- the login that mints the capture token, or GET__me.json will not reproduce.
--- total_deployments / attendance_rate are the denormalized counters that
--- GET /me/deployments reports as total_operations / attendance_rate.
+-- total_deployments is the denormalized counter GET /me/deployments reports as
+-- total_operations. The attendance rate GET /me and GET /me/deployments report is
+-- derived from this member's decided past registrations (§9: one attended, one
+-- no-show, so 50.0), never from the stored attendance_rate column.
 --
 -- §7 seeds ELEVEN match_player_stats rows, and only TWO of them belong to
 -- this user -- which is why service_history in the captured
@@ -145,12 +227,30 @@ ON CONFLICT (id) DO NOTHING;
 UPDATE missions SET current_version_id = '563e2aa1-b555-4437-be29-80e9d2550d83'
 WHERE id = '512d8658-7025-4a70-94e9-a1b44a7aa155';
 
--- The event + event-mission behind GET__events__c71a4d1a-*.json and the V-suite
--- `eventhub` / `orbat` routes.
+-- The mission's armory, two items per side. GET /missions/:id lists it in sort order and the
+-- event hub groups it by faction in first-seen order, so both reads carry a populated armory.
+INSERT INTO mission_armories (id, mission_id, faction, category, item_name, quantity, icon,
+                              sort_order)
+VALUES
+  ('a1000000-0000-4000-8000-000000000001', '512d8658-7025-4a70-94e9-a1b44a7aa155',
+   'BLUFOR', 'rifle', 'M4A1', 24, 'm4.png', 0),
+  ('a1000000-0000-4000-8000-000000000002', '512d8658-7025-4a70-94e9-a1b44a7aa155',
+   'BLUFOR', 'launcher', 'AT4', 6, 'at4.png', 1),
+  ('a1000000-0000-4000-8000-000000000003', '512d8658-7025-4a70-94e9-a1b44a7aa155',
+   'OPFOR', 'rifle', 'AK-74', 30, 'ak74.png', 2),
+  ('a1000000-0000-4000-8000-000000000004', '512d8658-7025-4a70-94e9-a1b44a7aa155',
+   'OPFOR', 'mg', 'PKM', 4, 'pkm.png', 3)
+ON CONFLICT (id) DO UPDATE SET
+    mission_id = EXCLUDED.mission_id, faction = EXCLUDED.faction,
+    category = EXCLUDED.category, item_name = EXCLUDED.item_name,
+    quantity = EXCLUDED.quantity, icon = EXCLUDED.icon, sort_order = EXCLUDED.sort_order;
+
+-- The event + event-mission behind GET__events__c71a4d1a-*.json and the DOM oracle's
+-- `eventhub` / `orbat` routes. Upcoming (rule 4), so it still accepts registrations.
 INSERT INTO events (id, name_override, start_time, briefing, banner_image_url, status,
                     registration_locked, max_slots, created_by, created_at, updated_at)
 VALUES ('c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7', 'Operation Byte Parity Night',
-        '2026-08-01 19:00:00+00', NULL, NULL, 'scheduled', false, 0, '000000000000000001',
+        '2030-08-01 19:00:00+00', NULL, NULL, 'scheduled', false, 0, '000000000000000001',
         '2026-07-15 14:05:44.629713+00', '2026-07-15 14:05:44.629713+00')
 ON CONFLICT (id) DO UPDATE SET
     name_override = EXCLUDED.name_override, start_time = EXCLUDED.start_time,
@@ -161,7 +261,7 @@ ON CONFLICT (id) DO UPDATE SET
 
 INSERT INTO event_missions (id, event_id, mission_id, start_time, created_at, updated_at)
 VALUES ('89b1b731-37a8-4926-901a-3c7ff7de5eb3', 'c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7',
-        '512d8658-7025-4a70-94e9-a1b44a7aa155', '2026-08-01 19:00:00+00',
+        '512d8658-7025-4a70-94e9-a1b44a7aa155', '2030-08-01 19:00:00+00',
         '2026-07-15 14:05:44.629713+00', '2026-07-15 14:05:44.629713+00')
 ON CONFLICT (id) DO UPDATE SET
     event_id = EXCLUDED.event_id, mission_id = EXCLUDED.mission_id,
@@ -275,7 +375,7 @@ ON CONFLICT (id) DO NOTHING;
 -- ═══════════════════════════════════════════════════════════════════════════
 -- §4  Announcements. The list filters `status='published'`, orders pinned-first
 --     then newest, and the dashboard takes the top 3. The draft row proves the
---     filter still excludes; it must never appear in a fixture.
+--     filter still excludes; it appears only in the content manager's list.
 -- ═══════════════════════════════════════════════════════════════════════════
 
 INSERT INTO announcements (id, title, body, snippet, tag, thumbnail_url, author_id, status,
@@ -308,12 +408,14 @@ VALUES
    'Submissions open for the winter campaign arc.', 'important', NULL,
    '000000000000000001', 'published', false, false, NULL,
    '2026-07-08 15:45:00+00', '2026-07-08 15:40:00+00', '2026-07-08 15:45:00+00'),
-  -- Draft — must be invisible to GET /announcements and to the dashboard feed.
+  -- Draft — must be invisible to GET /announcements and to the dashboard feed, and
+  -- listed by the content manager's GET /cms/announcements.
   ('00000000-0000-4000-1000-000000000005',
-   'DRAFT — do not publish',
-   'Placeholder body for the unpublished-filter proof.', NULL, 'update', NULL,
-   '000000000000000001', 'draft', false, false, NULL,
-   NULL, '2026-07-25 08:00:00+00', '2026-07-25 08:00:00+00')
+   'Winter campaign briefing — draft',
+   E'Phase one lands on Everon''s northern shelf.\n\n**Not published yet** — the ORBAT and the timetable are still open, and the modpack delta is unconfirmed. Hold this until the campaign thread is locked.',
+   'Phase one lands on Everon''s northern shelf. ORBAT and timetable still open.',
+   'event', NULL, '000000000000000001', 'draft', false, false, NULL,
+   NULL, '2026-07-25 08:12:44+00', '2026-07-25 08:12:44+00')
 ON CONFLICT (id) DO UPDATE SET
     title = EXCLUDED.title, body = EXCLUDED.body, snippet = EXCLUDED.snippet,
     tag = EXCLUDED.tag, thumbnail_url = EXCLUDED.thumbnail_url,
@@ -484,6 +586,34 @@ FROM (VALUES
 ) AS v(mission_id, id)
 WHERE missions.id = v.mission_id;
 
+-- The operator's own rejected mission, behind GET__missions__82b937fc-*.json and the
+-- GET /missions?scope=mine fixture, whose card carries the rejection reason an author sees.
+INSERT INTO missions (id, title, author_id, terrain, game_mode, weather, time_of_day,
+                      max_players, status, thumbnail_url, briefing, rejection_reason,
+                      reviewed_by, reviewed_at, created_at, updated_at)
+VALUES ('82b937fc-c88e-4bb9-abb3-0bef67379398', 'Operation Feedback Loop', '000000000000000001',
+        'everon', 'pve_coop', 'overcast', '06:30:00', 32, 'rejected', '',
+        'T-389 round-trip probe.',
+        'ORBAT has two squad leaders in Bravo and no medic anywhere. Fix the roster and resubmit.',
+        '000000000000000001', '2026-07-26 13:11:09.949271+00',
+        '2026-07-26 13:10:57.135777+00', '2026-07-26 13:10:57.167418+00')
+ON CONFLICT (id) DO UPDATE SET
+    title = EXCLUDED.title, author_id = EXCLUDED.author_id, terrain = EXCLUDED.terrain,
+    game_mode = EXCLUDED.game_mode, weather = EXCLUDED.weather,
+    time_of_day = EXCLUDED.time_of_day, max_players = EXCLUDED.max_players,
+    status = EXCLUDED.status, thumbnail_url = EXCLUDED.thumbnail_url,
+    briefing = EXCLUDED.briefing, rejection_reason = EXCLUDED.rejection_reason,
+    reviewed_by = EXCLUDED.reviewed_by, reviewed_at = EXCLUDED.reviewed_at,
+    created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at;
+
+INSERT INTO mission_versions (id, mission_id, semver, json_payload, created_by, created_at)
+VALUES ('94dcc728-92b5-45e0-a853-880ae2384616', '82b937fc-c88e-4bb9-abb3-0bef67379398',
+        '0.1.0', '{}'::jsonb, '000000000000000001', '2026-07-26 13:10:57.135777+00')
+ON CONFLICT (id) DO NOTHING;
+
+UPDATE missions SET current_version_id = '94dcc728-92b5-45e0-a853-880ae2384616'
+WHERE id = '82b937fc-c88e-4bb9-abb3-0bef67379398';
+
 -- One bookmark for the caller, so ?scope=bookmarked is not a dead branch and the
 -- `bookmarked: true` flag appears on at least one card in the default list.
 INSERT INTO mission_bookmarks (discord_id, mission_id)
@@ -579,7 +709,7 @@ VALUES
   ('00000000-0000-4000-9000-000000000010', '00000000-0000-4000-f000-000000000002',
    '000000000000000004', '76561190000000004', 'Automatic Rifleman',
    7, 3, 0, 167, 0, false, NULL, 'rf-evt-20260704-01', '2026-07-04 22:12:00+00'),
-  -- Kessler's team-kills — the rows the ban in §2 and the audit trail in §10
+  -- Kessler's team-kills — the rows the ban in §2 and the audit trail in §0
   -- both refer to.
   ('00000000-0000-4000-9000-000000000011', '00000000-0000-4000-f000-000000000002',
    '000000000000000006', '76561190000000006', 'Rifleman',
@@ -685,19 +815,19 @@ INSERT INTO events (id, name_override, start_time, briefing, banner_image_url, s
                     registration_locked, max_slots, created_by, created_at, updated_at)
 VALUES
   ('00000000-0000-4000-7000-000000000001', 'OP IRON VEIL — Main Effort',
-   '2026-09-05 19:00:00+00',
+   '2030-09-05 19:00:00+00',
    E'Company operation on Arland. Two rifle platoons plus a weapons detachment.\n\nOrders group one hour prior in Command.',
    'https://cdn.tbd-reforger.example/events/iron-veil-banner.jpg',
    'open', false, 48, '000000000000000001',
    '2026-07-20 14:00:00+00', '2026-07-25 09:12:00+00'),
   -- Locked registration + no briefing/banner: the "you cannot sign up" branch.
   ('00000000-0000-4000-7000-000000000002', 'OP STATIC LINE — Force on Force',
-   '2026-10-03 18:30:00+00', NULL, NULL,
+   '2030-10-03 18:30:00+00', NULL, NULL,
    'locked', true, 64, '000000000000000001',
    '2026-07-22 10:30:00+00', '2026-07-25 20:00:00+00'),
   -- No name_override: the hub falls back to the attached mission's title.
   ('00000000-0000-4000-7000-000000000003', NULL,
-   '2027-02-06 19:00:00+00', E'Winter arc, first serial.', NULL,
+   '2031-02-06 19:00:00+00', E'Winter arc, first serial.', NULL,
    'scheduled', false, 40, '000000000000000002',
    '2026-07-25 16:45:00+00', '2026-07-25 16:45:00+00'),
   -- Completed and in the past — ?scope=past, and nothing else.
@@ -712,22 +842,39 @@ ON CONFLICT (id) DO UPDATE SET
     max_slots = EXCLUDED.max_slots, created_by = EXCLUDED.created_by,
     created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at;
 
+-- The event audit trigger stamps each inserted operation's `event.create` line with the wall
+-- clock; the line takes its operation's creation time instead (rule 1). Only a first insert
+-- fires the trigger, so a re-run finds the same five lines.
+UPDATE audit_logs SET created_at = e.created_at
+FROM events e
+WHERE audit_logs.action = 'event.create' AND audit_logs.target_type = 'event'
+  AND audit_logs.target_id = e.id::text
+  AND e.id IN ('c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7', '00000000-0000-4000-7000-000000000001',
+               '00000000-0000-4000-7000-000000000002', '00000000-0000-4000-7000-000000000003',
+               '00000000-0000-4000-7000-000000000004')
+  AND audit_logs.created_at IS DISTINCT FROM e.created_at;
+
 INSERT INTO event_missions (id, event_id, mission_id, start_time, created_at, updated_at)
 VALUES
   ('00000000-0000-4000-6000-000000000001', '00000000-0000-4000-7000-000000000001',
-   '00000000-0000-4000-c000-000000000001', '2026-09-05 19:00:00+00',
+   '00000000-0000-4000-c000-000000000001', '2030-09-05 19:00:00+00',
    '2026-07-20 14:01:00+00', '2026-07-20 14:01:00+00'),
   -- Two missions on one event: mission_count = 2 on the list card, which a
   -- single-mission event can never produce.
   ('00000000-0000-4000-6000-000000000002', '00000000-0000-4000-7000-000000000001',
-   '00000000-0000-4000-c000-000000000003', '2026-09-05 21:30:00+00',
+   '00000000-0000-4000-c000-000000000003', '2030-09-05 21:30:00+00',
    '2026-07-20 14:02:00+00', '2026-07-20 14:02:00+00'),
   ('00000000-0000-4000-6000-000000000003', '00000000-0000-4000-7000-000000000002',
-   '00000000-0000-4000-c000-000000000002', '2026-10-03 18:30:00+00',
+   '00000000-0000-4000-c000-000000000002', '2030-10-03 18:30:00+00',
    '2026-07-22 10:31:00+00', '2026-07-22 10:31:00+00'),
   ('00000000-0000-4000-6000-000000000004', '00000000-0000-4000-7000-000000000004',
    '00000000-0000-4000-c000-000000000001', '2026-07-04 19:00:00+00',
-   '2026-06-25 12:01:00+00', '2026-06-25 12:01:00+00')
+   '2026-06-25 12:01:00+00', '2026-06-25 12:01:00+00'),
+  -- The shakeout's second serial. With the first it holds the operator's two decided
+  -- past observations (§9), which the derived attendance rate counts.
+  ('00000000-0000-4000-6000-000000000005', '00000000-0000-4000-7000-000000000004',
+   '00000000-0000-4000-c000-000000000002', '2026-07-04 21:00:00+00',
+   '2026-06-25 12:02:00+00', '2026-06-25 12:02:00+00')
 ON CONFLICT (id) DO UPDATE SET
     event_id = EXCLUDED.event_id, mission_id = EXCLUDED.mission_id,
     start_time = EXCLUDED.start_time, created_at = EXCLUDED.created_at,
@@ -816,10 +963,31 @@ VALUES ('00000000-0000-4000-4000-000000000001', '89b1b731-37a8-4926-901a-3c7ff7d
         'Bravo', '000000000000000002', '2026-07-18 08:30:00+00')
 ON CONFLICT (id) DO NOTHING;
 
+-- OP IRON VEIL's second serial has one open seat and one waiting participant (…a100-009), so a
+-- promotion there has a seat to give. An attachment admits no more participants than it has
+-- seats, which is why the first serial, whose one seat the operator's reservation already
+-- counts against, cannot take him.
+INSERT INTO orbat_slots (id, event_mission_id, faction, squad, callsign, role, loadout, tag,
+                         slot_index, assigned_to, assigned_at)
+VALUES ('00000000-0000-4000-5000-000000000021', '00000000-0000-4000-6000-000000000002',
+        'BLUFOR', 'Ground', 'GROUND', 'Squad Leader', NULL, 'SL', 0, NULL, NULL)
+ON CONFLICT (id) DO UPDATE SET
+    event_mission_id = EXCLUDED.event_mission_id, faction = EXCLUDED.faction,
+    squad = EXCLUDED.squad, callsign = EXCLUDED.callsign, role = EXCLUDED.role,
+    loadout = EXCLUDED.loadout, tag = EXCLUDED.tag, slot_index = EXCLUDED.slot_index,
+    assigned_to = EXCLUDED.assigned_to, assigned_at = EXCLUDED.assigned_at;
+
 -- Registrations. The caller's own row is what makes GET /me/deployments return
 -- a non-empty `upcoming` list and the dashboard return a `my_assignment`.
 -- Every active reservation references its participant's event allocation; one
 -- statement writes both so each commit leaves them consistent.
+--
+-- Attendance is a preserved legacy observation on three of the operator's rows: the
+-- seat on this operation (…a100-001) is already `attended`, so re-registering for it
+-- answers with both states, and the shakeout's two serials (…a100-010 attended,
+-- …a100-011 no-show) are the decided past observations the attendance rate counts.
+-- Vance waits on OP IRON VEIL's second serial (…a100-009) for its one open seat, the
+-- waiter POST /event-missions/:id/waitlist/promote seats there.
 WITH allocations AS (
     INSERT INTO event_participant_allocations (id, event_id, discord_id, quota_kind, acquired_at)
     VALUES
@@ -834,41 +1002,56 @@ WITH allocations AS (
       ('00000000-0000-4000-a200-000000000005', 'c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7',
        '000000000000000005', 'guest', '2026-07-17 20:03:47+00'),
       ('00000000-0000-4000-a200-000000000006', '00000000-0000-4000-7000-000000000001',
-       '000000000000000001', 'member', '2026-07-21 18:05:00+00')
+       '000000000000000001', 'member', '2026-07-21 18:05:00+00'),
+      ('00000000-0000-4000-a200-000000000007', '00000000-0000-4000-7000-000000000004',
+       '000000000000000001', 'member', '2026-06-28 18:00:00+00')
     ON CONFLICT (id) DO NOTHING
     RETURNING id
 )
-INSERT INTO event_registrations (id, event_mission_id, discord_id, slot_id, reservation_state, registered_at, allocation_id)
+INSERT INTO event_registrations (id, event_mission_id, discord_id, slot_id, reservation_state,
+                                 registered_at, allocation_id, attendance_state,
+                                 legacy_attendance_state)
 VALUES
   ('00000000-0000-4000-a100-000000000001', '89b1b731-37a8-4926-901a-3c7ff7de5eb3',
    '000000000000000001', '00000000-0000-4000-5000-000000000001', 'registered',
-   '2026-07-16 09:14:22+00', '00000000-0000-4000-a200-000000000001'),
+   '2026-07-16 09:14:22+00', '00000000-0000-4000-a200-000000000001', 'attended', 'attended'),
   ('00000000-0000-4000-a100-000000000002', '89b1b731-37a8-4926-901a-3c7ff7de5eb3',
    '000000000000000002', '00000000-0000-4000-5000-000000000002', 'registered',
-   '2026-07-16 09:15:40+00', '00000000-0000-4000-a200-000000000002'),
+   '2026-07-16 09:15:40+00', '00000000-0000-4000-a200-000000000002', NULL, NULL),
   ('00000000-0000-4000-a100-000000000003', '89b1b731-37a8-4926-901a-3c7ff7de5eb3',
    '000000000000000003', '00000000-0000-4000-5000-000000000003', 'registered',
-   '2026-07-16 09:16:05+00', '00000000-0000-4000-a200-000000000003'),
+   '2026-07-16 09:16:05+00', '00000000-0000-4000-a200-000000000003', NULL, NULL),
   ('00000000-0000-4000-a100-000000000004', '89b1b731-37a8-4926-901a-3c7ff7de5eb3',
    '000000000000000004', '00000000-0000-4000-5000-000000000004', 'registered',
-   '2026-07-17 20:01:11+00', '00000000-0000-4000-a200-000000000004'),
+   '2026-07-17 20:01:11+00', '00000000-0000-4000-a200-000000000004', NULL, NULL),
   ('00000000-0000-4000-a100-000000000005', '89b1b731-37a8-4926-901a-3c7ff7de5eb3',
    '000000000000000005', '00000000-0000-4000-5000-000000000005', 'registered',
-   '2026-07-17 20:03:47+00', '00000000-0000-4000-a200-000000000005'),
-  -- Registered without claiming a slot (slot_id NULL) — a real state the
-  -- registration flow produces and the counters have to handle.
+   '2026-07-17 20:03:47+00', '00000000-0000-4000-a200-000000000005', NULL, NULL),
+  -- Waiting without a seat (slot_id NULL) — a real state the registration flow
+  -- produces and the counters have to handle. Kessler is banned, so no promotion
+  -- seats him.
   ('00000000-0000-4000-a100-000000000006', '89b1b731-37a8-4926-901a-3c7ff7de5eb3',
-   '000000000000000006', NULL, 'waitlisted', '2026-07-19 07:44:00+00', NULL),
+   '000000000000000006', NULL, 'waitlisted', '2026-07-19 07:44:00+00', NULL, NULL, NULL),
   -- Withdrawn: excluded from the `registered` count on the list card.
   ('00000000-0000-4000-a100-000000000007', '00000000-0000-4000-6000-000000000001',
-   '000000000000000004', NULL, 'withdrawn', '2026-07-21 18:00:00+00', NULL),
+   '000000000000000004', NULL, 'withdrawn', '2026-07-21 18:00:00+00', NULL, NULL, NULL),
   ('00000000-0000-4000-a100-000000000008', '00000000-0000-4000-6000-000000000001',
    '000000000000000001', NULL, 'registered', '2026-07-21 18:05:00+00',
-   '00000000-0000-4000-a200-000000000006')
+   '00000000-0000-4000-a200-000000000006', NULL, NULL),
+  ('00000000-0000-4000-a100-000000000009', '00000000-0000-4000-6000-000000000002',
+   '000000000000000003', NULL, 'waitlisted', '2026-07-22 19:30:00+00', NULL, NULL, NULL),
+  ('00000000-0000-4000-a100-000000000010', '00000000-0000-4000-6000-000000000004',
+   '000000000000000001', NULL, 'registered', '2026-06-28 18:00:00+00',
+   '00000000-0000-4000-a200-000000000007', 'attended', 'attended'),
+  ('00000000-0000-4000-a100-000000000011', '00000000-0000-4000-6000-000000000005',
+   '000000000000000001', NULL, 'registered', '2026-06-28 18:00:00+00',
+   '00000000-0000-4000-a200-000000000007', 'no_show', 'no_show')
 ON CONFLICT (id) DO UPDATE SET
     event_mission_id = EXCLUDED.event_mission_id, discord_id = EXCLUDED.discord_id,
     slot_id = EXCLUDED.slot_id, reservation_state = EXCLUDED.reservation_state,
-    registered_at = EXCLUDED.registered_at, allocation_id = EXCLUDED.allocation_id;
+    registered_at = EXCLUDED.registered_at, allocation_id = EXCLUDED.allocation_id,
+    attendance_state = EXCLUDED.attendance_state,
+    legacy_attendance_state = EXCLUDED.legacy_attendance_state;
 
 -- The waiting queue orders by the time a participant joined it; pin it to the signup.
 UPDATE event_registrations SET queue_entered_at = registered_at
@@ -912,69 +1095,15 @@ WHERE id = 'c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7';
 UPDATE event_reservation_quota_pools SET seat_limit = 2
 WHERE event_id = 'c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7' AND quota_kind = 'guest';
 
+-- OP IRON VEIL admits TBD members and, by name, its two participants: no member here holds a
+-- verified Discord membership, so the operator's reservation (…a100-008) stays eligible and the
+-- waiting Vance (…a100-009) takes its one guest place when the promotion seats him.
+UPDATE events SET access_revision = 1, access_policy =
+    '{"grants":[{"conditions":[{"kind":"tbd_member"}]},{"conditions":[{"kind":"named_account","discord_id":"000000000000000001"}]},{"conditions":[{"kind":"named_account","discord_id":"000000000000000003"}]}]}'
+WHERE id = '00000000-0000-4000-7000-000000000001';
 
--- ═══════════════════════════════════════════════════════════════════════════
--- §10 Audit log. Explicit ids on a bigserial column, so the sequence has to be
---     dragged past them afterwards or the next real write collides — see the
---     setval at the end of this section.
---
---     Severities span all three enum values; one line has no actor (a system
---     action) and one has no target, which are the two Option/empty arms of the
---     row that a uniform seed would never produce.
--- ═══════════════════════════════════════════════════════════════════════════
-
-INSERT INTO audit_logs (id, severity, actor_id, actor_name, action, message, target_type,
-                        target_id, metadata, created_at)
-VALUES
-  (1, 'info', '000000000000000001', 'Dev Operator', 'mission.approve',
-   'Dev Operator approved mission ''Operation Iron Veil''', 'mission',
-   '00000000-0000-4000-c000-000000000001',
-   '{"semver": "1.2.0", "previous_status": "pending_approval"}'::jsonb,
-   '2026-06-11 10:02:00+00'),
-  (2, 'info', '000000000000000001', 'Dev Operator', 'mission.approve',
-   'Dev Operator approved mission ''Operation Static Line''', 'mission',
-   '00000000-0000-4000-c000-000000000002', NULL, '2026-06-27 09:14:00+00'),
-  (3, 'warn', '000000000000000002', 'Rhodes', 'user.warn',
-   'Rhodes issued a warning to Kessler for friendly fire', 'user',
-   '000000000000000006', '{"reason": "friendly fire", "count": 1}'::jsonb,
-   '2026-06-28 21:15:00+00'),
-  -- No actor: emitted by the telemetry ingest path, not a person.
-  (4, 'warn', NULL, '', 'server.fps_drop',
-   'Primary server FPS dropped below 20 (17.3) with 61 players connected', 'server',
-   '00000000-0000-4000-d000-000000000001',
-   '{"server_fps": 17.3, "player_count": 61, "threshold": 20}'::jsonb,
-   '2026-07-04 21:03:12+00'),
-  (5, 'warn', '000000000000000001', 'Dev Operator', 'mission.reject',
-   'Dev Operator rejected mission ''Operation Glass House''', 'mission',
-   '00000000-0000-4000-c000-000000000006',
-   '{"reason": "ORBAT slot count mismatch"}'::jsonb, '2026-07-16 12:30:00+00'),
-  (6, 'crit', '000000000000000001', 'Dev Operator', 'user.ban',
-   'Dev Operator banned Kessler — repeated team-killing after two warnings', 'user',
-   '000000000000000006',
-   '{"warnings": 2, "team_kills": 3, "permanent": true}'::jsonb,
-   '2026-07-11 23:47:19+00'),
-  (7, 'info', '000000000000000001', 'Dev Operator', 'modpack.publish',
-   'Dev Operator published modpack ''Core Modern Expansion'' v2.1', 'modpack',
-   '00000000-0000-4000-a000-000000000001',
-   '{"version": "2.1", "size_bytes": 48532275200}'::jsonb, '2026-07-22 16:41:03+00'),
-  -- No target at all: a login event references nothing but its actor.
-  (8, 'info', '000000000000000003', 'Vance', 'auth.login',
-   'Vance signed in from a new device', NULL, NULL, NULL, '2026-07-25 21:03:55+00'),
-  (9, 'info', '000000000000000002', 'Rhodes', 'orbat.reserve',
-   'Rhodes reserved squad ''Bravo'' on Operation Byte Parity Night', 'event_mission',
-   '89b1b731-37a8-4926-901a-3c7ff7de5eb3', '{"squad": "Bravo"}'::jsonb,
-   '2026-07-18 08:30:00+00'),
-  (10, 'info', '000000000000000001', 'Dev Operator', 'announcement.publish',
-   'Dev Operator published ''Modpack 2.1 is mandatory from Saturday''', 'announcement',
-   '00000000-0000-4000-1000-000000000001', NULL, '2026-07-22 17:00:00+00')
-ON CONFLICT (id) DO UPDATE SET
-    severity = EXCLUDED.severity, actor_id = EXCLUDED.actor_id,
-    actor_name = EXCLUDED.actor_name, action = EXCLUDED.action, message = EXCLUDED.message,
-    target_type = EXCLUDED.target_type, target_id = EXCLUDED.target_id,
-    metadata = EXCLUDED.metadata, created_at = EXCLUDED.created_at;
-
--- Explicit ids bypass the sequence; without this the next audit write reuses id 1.
-SELECT setval('audit_logs_id_seq', (SELECT max(id) FROM audit_logs), true);
+UPDATE event_reservation_quota_pools SET seat_limit = 1
+WHERE event_id = '00000000-0000-4000-7000-000000000001' AND quota_kind = 'guest';
 
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -1110,7 +1239,7 @@ VALUES
    '2026-07-24 15:45:05+00', NULL, 'the chat channel was unavailable'),
   -- Queued far into the future so the reconciler never expires it under a capture.
   ('00000000-0000-4000-f200-000000000003', '00000000-0000-4000-d000-000000000001', 'host_agent', 'list_players', '{}'::jsonb, true, false,
-   '000000000000000001', '2026-07-25 08:00:00+00', '2027-07-25 08:05:00+00', 'queued', 0, 0,
+   '000000000000000001', '2026-07-25 08:00:00+00', '2031-07-25 08:05:00+00', 'queued', 0, 0,
    NULL, NULL, NULL, NULL, NULL, NULL),
   ('00000000-0000-4000-f200-000000000004', '00000000-0000-4000-d000-000000000001', 'host_agent', 'restart_with_mission', '{"deployment_id": "00000000-0000-4000-f400-000000000002", "artifact_id": "00000000-0000-4000-f000-000000000001", "artifact_sha256": "be02eddd923ceab2751a2634cd78bec2c49b919c07300742fcfa7b78eef76291", "scenario_id": "{1111222233334444}Missions/TBD_Arland.conf"}'::jsonb, false, true,
    '000000000000000001', '2026-07-25 09:00:00+00', '2026-07-25 09:05:00+00', 'expired', 0, 0,
@@ -1153,54 +1282,194 @@ ON CONFLICT DO NOTHING;
 
 
 -- ═══════════════════════════════════════════════════════════════════════════
+-- §14 Leave requests and the registry compatibility graph.
+--     GET /me/leave-requests lists the operator's two requests and
+--     GET /admin/leave-requests all four, newest first: pending, approved with
+--     a reviewer and a reason, and denied with a reviewer and no reason.
+--     GET /registry/compat?edge_type=mag_in_vehicle_weapon answers the current
+--     modpack's two edges of that family, one magazine feeding two mounts.
+-- ═══════════════════════════════════════════════════════════════════════════
+
+INSERT INTO leave_requests (id, discord_id, starts_on, ends_on, reason, status, reviewed_by,
+                            created_at)
+VALUES
+  ('44fa4c17-5bd5-4c6b-b02d-4ccd52af6910', '000000000000000001', '2026-09-01', '2026-09-03',
+   'Family commitment', 'pending', NULL, '2026-07-26 23:27:01.118063+00'),
+  ('9c2e7d41-88b5-4f0a-a3d6-5e90b7c41af2', '000000000000000003', '2026-09-12', '2026-09-14',
+   'Work travel', 'pending', NULL, '2026-07-25 10:15:52.883401+00'),
+  ('0f5a6b83-2c19-4e77-b841-7d3f92ac60be', '000000000000000004', '2026-08-29', '2026-08-31',
+   NULL, 'denied', '000000000000000001', '2026-07-21 07:48:12.401557+00'),
+  ('6b1f0e92-3a7c-4d55-9f20-1c8ad2b4e771', '000000000000000001', '2026-08-08', '2026-08-16',
+   'Annual leave — no network access', 'approved', '000000000000000002',
+   '2026-07-12 18:04:37.220914+00')
+ON CONFLICT (id) DO UPDATE SET
+    discord_id = EXCLUDED.discord_id, starts_on = EXCLUDED.starts_on,
+    ends_on = EXCLUDED.ends_on, reason = EXCLUDED.reason, status = EXCLUDED.status,
+    reviewed_by = EXCLUDED.reviewed_by, created_at = EXCLUDED.created_at;
+
+INSERT INTO registry_compat (id, modpack_id, from_node, to_node, edge_type, evidence, qty,
+                             created_at, updated_at)
+VALUES
+  ('3e7c347b-9bee-422b-9f36-089c7cd5964e', '00000000-0000-4000-a000-000000000001',
+   '{022E370A593D62DE}Prefabs/Weapons/Magazines/NSV/Box_127x108_NSV_50rnd_Base.et',
+   '{9483B197D72F2AE9}Prefabs/Weapons/HeavyWeapons/NSV/HMG_NSV_SPP.et',
+   'mag_in_vehicle_weapon', 'MagazineWellNSV', 1,
+   '2026-07-18 01:10:31.561603+00', '2026-07-18 01:10:31.561603+00'),
+  ('3e79d4f1-42fe-4ad3-9852-eee19a2aab71', '00000000-0000-4000-a000-000000000001',
+   '{022E370A593D62DE}Prefabs/Weapons/Magazines/NSV/Box_127x108_NSV_50rnd_Base.et',
+   '{DC722F3E51BDA181}Prefabs/Weapons/HeavyWeapons/NSV/Deployable_HMG_NSV_SPP.et',
+   'mag_in_vehicle_weapon', 'MagazineWellNSV', 1,
+   '2026-07-18 01:10:31.561603+00', '2026-07-18 01:10:31.561603+00')
+ON CONFLICT (id) DO UPDATE SET
+    modpack_id = EXCLUDED.modpack_id, from_node = EXCLUDED.from_node,
+    to_node = EXCLUDED.to_node, edge_type = EXCLUDED.edge_type, evidence = EXCLUDED.evidence,
+    qty = EXCLUDED.qty, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at;
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- §15 Saved fire missions. GET /events/:id/fire-missions lists the golden
+--     operation's two rows, oldest first: one saved before the solution
+--     columns existed, whose coordinates are its parsed grids and whose sight
+--     setting, charge and time of flight are null, and one holding the whole
+--     solution POST /fire-missions/solve answers for its inputs. No other route
+--     reads fire_missions, so these rows change no other fixture.
+-- ═══════════════════════════════════════════════════════════════════════════
+
+INSERT INTO fire_missions (id, event_id, created_by, weapon_system, fp_grid, target_grid,
+                           distance_m, azimuth_deg, elevation_mils, fp_x, fp_y, tgt_x, tgt_y,
+                           azimuth_mils, charge, time_of_flight_s, created_at)
+VALUES
+  ('00000000-0000-4000-f600-000000000001', 'c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7',
+   '000000000000000001', 'M252 81mm', '1000, 2000', '2200, 1800', 1217, 99.5, 1315,
+   1000, 2000, 2200, 1800, NULL, NULL, NULL, '2026-07-14 20:05:00+00'),
+  ('00000000-0000-4000-f600-000000000002', 'c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7',
+   '000000000000000002', 'M252 81mm', '0, 0', '0, 1000', 1000, 0.0, 1042,
+   0, 0, 0, 1000, 0, 1, 18.3, '2026-07-15 19:40:00+00')
+ON CONFLICT (id) DO UPDATE SET
+    event_id = EXCLUDED.event_id, created_by = EXCLUDED.created_by,
+    weapon_system = EXCLUDED.weapon_system, fp_grid = EXCLUDED.fp_grid,
+    target_grid = EXCLUDED.target_grid, distance_m = EXCLUDED.distance_m,
+    azimuth_deg = EXCLUDED.azimuth_deg, elevation_mils = EXCLUDED.elevation_mils,
+    fp_x = EXCLUDED.fp_x, fp_y = EXCLUDED.fp_y, tgt_x = EXCLUDED.tgt_x, tgt_y = EXCLUDED.tgt_y,
+    azimuth_mils = EXCLUDED.azimuth_mils, charge = EXCLUDED.charge,
+    time_of_flight_s = EXCLUDED.time_of_flight_s, created_at = EXCLUDED.created_at;
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- §16 State for the writes whose answers carry a value the server generates per
+--     request (an id, a secret, or a time stamped at the request). Their goldens
+--     hold a fixed placeholder at each such field, and the normalisation table
+--     of the golden comparison (tests/contract_parity_support/normalised_fields.rs)
+--     names every one. The other writes of that group need no rows of their own:
+--     they reject, resubmit and approve Cold Anvil's review of §13 (the
+--     resubmission compiles to the artifact §13 pins, so the approval names it),
+--     comment on it, deploy it, and edit §11's militia faction, §13's queued
+--     command and the golden operation's access view.
+--     No read golden sees the rows below: no read lists sessions, and the
+--     deployment, its command and the credential belong to the secondary server,
+--     whose deployments, commands and credentials no read golden requests.
+--
+--     The session is a development session (development_role set), so a
+--     production API refuses to rotate it; its refresh token is the fixture
+--     value 5eed…5eed (the pattern `5eed` sixteen times), stored as its SHA-256
+--     like every refresh token. POST /auth/refresh spends it once. The
+--     credential's digest is of a fixture secret no server holds.
+-- ═══════════════════════════════════════════════════════════════════════════
+
+INSERT INTO authentication_sessions (id, discord_id, created_at, expires_at, revoked_at,
+                                     development_role)
+VALUES ('00000000-0000-4000-f700-000000000001', '000000000000000001',
+        '2026-07-26 08:00:00+00', '2031-07-26 08:00:00+00', NULL, 'admin')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO refresh_tokens (id, discord_id, token_hash, expires_at, revoked_at, created_at,
+                            session_id)
+VALUES ('00000000-0000-4000-f700-000000000002', '000000000000000001',
+        '9619e2c3275e1e8be9ca29f0d7e0668cfdc675efcac99dbfa3ed48872c69809f',
+        '2031-07-26 08:00:00+00', NULL, '2026-07-26 08:00:00+00',
+        '00000000-0000-4000-f700-000000000001')
+ON CONFLICT (id) DO NOTHING;
+
+-- A deployment still in flight on the secondary server, with the queued restart command that
+-- carries it; POST …/deployments/:id/cancel cancels both.
+INSERT INTO fleet_commands (id, server_id, executor_kind, action, arguments, idempotent,
+    process_changing, requested_by, requested_at, expires_at, state, fencing_token, attempts,
+    claimed_by, claimed_at, executing_at, finished_at, outcome, failure_reason)
+VALUES ('00000000-0000-4000-f200-000000000005', '00000000-0000-4000-d000-000000000002',
+        'host_agent', 'restart_with_mission',
+        '{"deployment_id": "00000000-0000-4000-f400-000000000003", "artifact_id": "00000000-0000-4000-f000-000000000001", "artifact_sha256": "be02eddd923ceab2751a2634cd78bec2c49b919c07300742fcfa7b78eef76291", "scenario_id": "{1111222233334444}Missions/TBD_Arland.conf"}'::jsonb,
+        false, true, '000000000000000001', '2026-07-26 09:00:00+00', '2031-07-26 09:05:00+00',
+        'queued', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO mission_deployments (id, server_id, mission_id, artifact_id, event_mission_id,
+    terrain_key, scenario_id, transition, fleet_command_id, requested_by, requested_via,
+    requested_at, deadline_at, state, confirmed_runtime_session_id, finished_at, failure_reason)
+VALUES ('00000000-0000-4000-f400-000000000003', '00000000-0000-4000-d000-000000000002',
+        '00000000-0000-4000-c000-000000000001', '00000000-0000-4000-f000-000000000001',
+        NULL, 'arland', '{1111222233334444}Missions/TBD_Arland.conf', 'host_restart',
+        '00000000-0000-4000-f200-000000000005', '000000000000000001', 'web',
+        '2026-07-26 09:00:00+00', '2031-07-26 09:20:00+00', 'requested', NULL, NULL, NULL)
+ON CONFLICT (id) DO NOTHING;
+
+-- A live host-agent credential of the secondary server; DELETE …/credentials/:id revokes it.
+INSERT INTO server_machine_credentials (id, server_id, executor_kind, secret_sha256, label,
+                                        created_by, created_at, last_used_at, revoked_at,
+                                        revoked_by, revoke_reason)
+VALUES ('00000000-0000-4000-e000-000000000004', '00000000-0000-4000-d000-000000000002',
+        'host_agent', 'e10bcfc26a2c2e04d723dbb5a85e1c276e08932c1e9bb8c424b93fedf9d821df',
+        'Secondary host agent', '000000000000000001', '2026-07-26 09:30:00+00', NULL, NULL,
+        NULL, NULL)
+ON CONFLICT (id) DO NOTHING;
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
 -- REPRODUCING THE FIXTURES
 --
---   1. createdb, then boot the API against it (it migrates on boot):
+--   1. Create an empty database and boot an API of your own against it (it
+--      migrates on boot); never capture against a long-running :8080, which may
+--      be a binary from an unrelated build:
 --        DATABASE_URL=postgres://tbd:tbd@localhost:5434/<db>?sslmode=disable \
 --        JWT_SECRET=<anything> APP_ENV=development PORT=<port> \
---        DISCORD_GUILD_ID=100000000000000001 \
+--        DISCORD_GUILD_ID=100000000000000001 DISCORD_CLIENT_ID= \
+--        DISCORD_CLIENT_SECRET= DISCORD_BOT_TOKEN= DISCORD_WEBHOOK_URL= \
 --        cargo run -p website-api --bin api
---      The access-participants golden names the configured guild, so the guild
+--      The access-participants fixture names the configured guild, so the guild
 --      id is part of the recipe. The API also reads apps/website/api_v2/.env,
---      which never overrides a variable already set, so set the Discord client,
---      bot token and webhook variables to empty strings on the command line and
---      the capture API never calls Discord.
---      Do NOT capture against a long-running :8080 — that process may be a
---      deleted-inode binary from an unrelated build. Boot your own and know
---      what you are talking to.
---   2. curl the dev-login redirect and take access_token out of the fragment:
---        GET /api/v1/auth/dev-login?role=admin
---   3. psql -f seeds/registry_dev.sql, then psql -f seeds/content_golden.sql.
---      THIS ORDER MATTERS: dev-login stamps the operator's last_login_at with
---      the wall clock, and §1 above pins it back to the committed value.
---   4. GET each path in tests/fixtures/api/_index.tsv with that bearer token
---      and write the body to its fixture file, in index order: the two writes
---      at its end run last, because each changes what the reads before it see.
---      A capture is written with its keys sorted, two-space indented, with a
---      final newline (`jq -S .`); the round-trip tests compare canonical JSON,
---      so the layout only keeps diffs readable. GET__admin__audit-logs.json is
---      not reproduced: the §8 event inserts fire the event audit trigger, and
---      the event lifecycle worker (every 60 s) records the operations'
---      transitions, so a fresh database holds audit lines stamped with the
---      capture's wall clock; that fixture stays as committed.
---      PUT /events/c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7/access-policy restates the
---      seeded policy with {"expected_access_revision": 4, "policy": <the §9 policy>}.
---      POST /event-missions/89b1b731-37a8-4926-901a-3c7ff7de5eb3/waitlist/promote
---      (no body) promotes only while the operation accepts registrations and its
---      waiter is available: the seeded waiter (…006) is banned and the operation
---      has passed, so that golden is captured after moving the operation and its
---      mission 30 days ahead and lifting the waiter's ban in the capture database
---      only. It promotes the waiter into the first free seat (…5000-000000000006).
---   5. §13's artifact rows are the compiler's output for its two versions. A
+--      which never overrides a variable already set, so the empty Discord
+--      variables keep the capture API from calling Discord.
+--   2. Take a development login token: GET /api/v1/auth/dev-login?role=admin,
+--      then read access_token out of the redirect's fragment.
+--   3. Apply registry_dev.sql, then this file, with psql. THIS ORDER MATTERS:
+--      the login stamps the operator's last_login_at with the wall clock and
+--      writes a session audit line, and this file pins both back (§1, §0).
+--   4. Wait a few seconds, so the API's audit publisher has published the
+--      fifteen audit lines the audit event stream's `ready` frame counts.
+--   5. Request each row of tests/fixtures/api/_index.tsv in index order with the
+--      bearer token. The method is the file name's prefix (GET__, POST__,
+--      PUT__, PATCH__, DELETE__), the path is the row's second column, query
+--      included, and a write sends the sibling `<file stem>.request.json` as its
+--      JSON body when that file exists (the waitlist promotion and the deletes
+--      take none). The reads come first and the writes last, in index order,
+--      because a write changes what a later request sees: the event access
+--      writes each name the access revision the write before them left, and
+--      Cold Anvil's review writes run before the modpack edit, so its
+--      resubmission compiles against the modpack version §13's artifact names.
+--      Write each JSON body key-sorted, two-space indented, with a final newline
+--      (`jq -S .`), and each event stream's leading frames as received. A
+--      committed fixture whose capture is equal as canonical JSON keeps its
+--      bytes; the round-trip tests compare canonical JSON, so the layout only
+--      keeps diffs readable. Every fixture reproduces this way, with no edit
+--      to the capture database, so a capture that differs from its fixture is
+--      a change in the API or in the seeds — except at the fields the
+--      normalisation table names (a server-generated id, secret or request
+--      time): the fixture holds that kind's placeholder there instead, so a new
+--      capture of such a write replaces each of those values by its placeholder.
+--   6. §13's artifact rows are the compiler's output for its two versions. A
 --      change to the compiler, the document schema, the catalog or a modpack
 --      changes their bytes and digests: seed a fresh database up to §12, insert
 --      the two §13 versions as the missions' current versions (Iron Veil as a
 --      draft), POST /missions/:id/submit for both, and copy each resulting
 --      mission_artifacts row — document as hex, digests, metadata, diagnostics
 --      — into §13 under its pinned id and timestamp.
---
--- GET__registry.json is NOT reproducible this way and is not captured by this
--- recipe: registry_dev.sql lets Postgres generate the registry_items ids, so a
--- re-seed produces different uuids on every run. That fixture stays as
--- committed until someone pins those ids.
 -- ═══════════════════════════════════════════════════════════════════════════

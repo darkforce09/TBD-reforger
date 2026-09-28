@@ -229,7 +229,7 @@ Remaining, outside P3-C's paths:
 
 Bugs noticed but not fixed, collected by P3-C and P6-C.
 
-- P5-1 (to file at P6-C): `apps/mod/tbd-emcp/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_ExecuteAction.c:82,87` discards `Trim()` results; `ModifyEntity/EMCP_WB_ModifyEntityPropertyActions.c:31,59` setProperty/clearProperty run outside an entity action (not one undo step); `EMCP_WB_Layers.c:19` `visible`/`subScene` unused, no setVisible action; `EMCP_WB_SelectEntity.c:139` "select" only clears the selection yet answers ok; `EMCP_WB_EditorControl.c:97` saveAs runs Save.
+- P5-1 (to file at P6-C): `apps/mod/tbd-emcp/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_ExecuteAction.c` lines 82 and 87 discard `Trim()` results; `ModifyEntity/EMCP_WB_ModifyEntityPropertyActions.c:31,59` setProperty/clearProperty run outside an entity action (not one undo step); `EMCP_WB_Layers.c:19` `visible`/`subScene` unused, no setVisible action; `EMCP_WB_SelectEntity.c:139` "select" only clears the selection yet answers ok; `EMCP_WB_EditorControl.c:97` saveAs runs Save.
 
 - P2-1: `Systems/AI/TBD_WaypointRuntime.c:481` leaks a non-group entity: no ticket; resolved by P2-1's `TBD_AIGroupFactory.SpawnGroup`, which deletes a non-group spawn (WaypointRuntime calls it).
 - P2-1: `Session/Briefing/TBD_BriefingService.c:445` no null check on `doc`: no ticket; resolved by P2-1's `TBD_MissionFactionNames.DisplayName` (guards null), and `Build` returns before any read when `doc` is null.

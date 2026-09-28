@@ -1,4 +1,7 @@
 //! Modpack manifest models: the downloadable dependency set and its nested mod rows.
+//!
+//! @contract modpack.schema.json#/definitions/Modpack
+//! @contract modpack.schema.json#/definitions/ModpackMod
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

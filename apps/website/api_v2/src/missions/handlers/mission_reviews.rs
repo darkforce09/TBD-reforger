@@ -6,8 +6,8 @@
 //! cannot see answers 404, exactly like a missing one; a visible mission the caller does not own
 //! answers 403.
 
+use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::{Json, Response};
 use serde::Serialize;
@@ -16,6 +16,7 @@ use uuid::Uuid;
 use crate::administration::services::required_audit::append_actor_audit;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::{AuthUser, MissionMakerUser};
 use crate::missions::handlers::artifact_document_response::artifact_document_response;
 use crate::missions::models::mission::{Mission, MissionVersion};
@@ -53,7 +54,7 @@ fn parse_artifact_id(raw: &str) -> Result<Uuid, ApiError> {
 pub async fn list_mission_reviews(
     State(state): State<AppState>,
     user: AuthUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<Json<MissionReviewHistory>, ApiError> {
     let mission = load_reviewable(&state, &user, &id).await?;
     let mut connection = state.pool.acquire().await?;
@@ -67,10 +68,10 @@ pub async fn list_mission_reviews(
 pub async fn add_mission_review_comment(
     State(state): State<AppState>,
     maker: MissionMakerUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
     body: Result<Json<ReviewCommentRequest>, JsonRejection>,
 ) -> Result<(StatusCode, Json<ReviewComment>), ApiError> {
-    let Json(request) = body.map_err(|_| ApiError::bad_request("body is required"))?;
+    let Json(request) = body.map_err(ApiError::from_json_rejection)?;
     let user = &maker.0;
     let mut mission = load_reviewable(&state, user, &id).await?;
     let mut transaction = state.pool.begin().await?;
@@ -103,7 +104,7 @@ pub async fn add_mission_review_comment(
 pub async fn get_mission_artifact(
     State(state): State<AppState>,
     user: AuthUser,
-    Path((id, artifact_id)): Path<(String, String)>,
+    PathParams((id, artifact_id)): PathParams<(String, String)>,
 ) -> Result<Json<MissionArtifact>, ApiError> {
     let mission = load_reviewable(&state, &user, &id).await?;
     let artifact_id = parse_artifact_id(&artifact_id)?;
@@ -120,7 +121,7 @@ pub async fn get_mission_artifact(
 pub async fn get_mission_artifact_document(
     State(state): State<AppState>,
     user: AuthUser,
-    Path((id, artifact_id)): Path<(String, String)>,
+    PathParams((id, artifact_id)): PathParams<(String, String)>,
 ) -> Result<Response, ApiError> {
     let mission = load_reviewable(&state, &user, &id).await?;
     let artifact_id = parse_artifact_id(&artifact_id)?;
@@ -145,7 +146,7 @@ pub struct ReviewWorkspace {
 pub async fn get_review_workspace(
     State(state): State<AppState>,
     user: AuthUser,
-    Path((id, artifact_id)): Path<(String, String)>,
+    PathParams((id, artifact_id)): PathParams<(String, String)>,
 ) -> Result<Json<ReviewWorkspace>, ApiError> {
     let mission = load_reviewable(&state, &user, &id).await?;
     let artifact_id = parse_artifact_id(&artifact_id)?;

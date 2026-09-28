@@ -6,9 +6,11 @@
 //! uniqueness rule.
 //!
 //! @contract faction-library.schema.json#/
+//!
+//! @contract arsenal-envelopes.schema.json#/definitions/FactionList
 
 use axum::extract::rejection::JsonRejection;
-use axum::extract::{Json, Path, State};
+use axum::extract::{Json, State};
 use axum::http::StatusCode;
 use serde_json::Value;
 use sqlx::types::Json as SqlxJson;
@@ -16,6 +18,7 @@ use uuid::Uuid;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::MissionMakerUser;
 use crate::missions::contract::schema_validators::validate_faction_library_doc;
 use crate::missions::models::faction::UserFaction;
@@ -76,7 +79,7 @@ pub async fn list_factions(
 pub async fn get_faction(
     State(state): State<AppState>,
     maker: MissionMakerUser,
-    Path(id): Path<Uuid>,
+    PathParams(id): PathParams<Uuid>,
 ) -> Result<Json<UserFaction>, ApiError> {
     let row: Option<UserFaction> = sqlx::query_as(
         "SELECT id, owner_id, side, name, doc, created_at, updated_at FROM user_factions \
@@ -98,7 +101,7 @@ pub async fn create_faction(
     maker: MissionMakerUser,
     body: Result<Json<Value>, JsonRejection>,
 ) -> Result<(StatusCode, Json<UserFaction>), ApiError> {
-    let Json(doc) = body.map_err(|_| ApiError::bad_request("a faction-library doc is required"))?;
+    let Json(doc) = body.map_err(ApiError::from_json_rejection)?;
     let (side, name) = validated_side_name(&doc)?;
 
     let row: Option<UserFaction> = sqlx::query_as(
@@ -122,10 +125,10 @@ pub async fn create_faction(
 pub async fn update_faction(
     State(state): State<AppState>,
     maker: MissionMakerUser,
-    Path(id): Path<Uuid>,
+    PathParams(id): PathParams<Uuid>,
     body: Result<Json<Value>, JsonRejection>,
 ) -> Result<Json<UserFaction>, ApiError> {
-    let Json(doc) = body.map_err(|_| ApiError::bad_request("a faction-library doc is required"))?;
+    let Json(doc) = body.map_err(ApiError::from_json_rejection)?;
     let (side, name) = validated_side_name(&doc)?;
 
     // Name collision with a DIFFERENT owned row → 409 (the unique index would abort).
@@ -165,7 +168,7 @@ pub async fn update_faction(
 pub async fn delete_faction(
     State(state): State<AppState>,
     maker: MissionMakerUser,
-    Path(id): Path<Uuid>,
+    PathParams(id): PathParams<Uuid>,
 ) -> Result<StatusCode, ApiError> {
     let res = sqlx::query("DELETE FROM user_factions WHERE id = $1 AND owner_id = $2")
         .bind(id)

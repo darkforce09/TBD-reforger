@@ -1,7 +1,13 @@
 //! Squad managers change seats under the event-scope lock order with current authority,
 //! eligibility of the assignee, quota, capacity and seatability of existing place holders.
+//!
+//! @contract reservation-actions.schema.json#/definitions/SlotAssignmentRequest
+//! @contract reservation-actions.schema.json#/definitions/SlotAssignmentOutcome
+//! @contract reservation-actions.schema.json#/definitions/SlotClearance
+//! @contract reservation-actions.schema.json#/definitions/SquadRequest
+//! @contract reservation-actions.schema.json#/definitions/SquadRelease
+use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Json, Response};
 use serde::Deserialize;
@@ -11,6 +17,7 @@ use uuid::Uuid;
 use crate::administration::services::required_audit::append_actor_audit;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::LeaderUser;
 use crate::identity_and_access::services::discord_membership_enrollment::request_event_membership_verification;
 use crate::operations::models::event::OrbatReservation;
@@ -37,13 +44,13 @@ pub struct AssignSlotInput {
 pub async fn assign_slot(
     State(state): State<AppState>,
     leader: LeaderUser,
-    Path((emid, slot_id_s)): Path<(String, String)>,
+    PathParams((emid, slot_id_s)): PathParams<(String, String)>,
     body: Result<Json<AssignSlotInput>, JsonRejection>,
 ) -> Result<Json<Value>, ApiError> {
     let em = load_em(&state.pool, &emid).await?;
     let slot_id =
         Uuid::parse_str(&slot_id_s).map_err(|_| ApiError::bad_request("invalid slot id"))?;
-    let Json(input) = body.map_err(|_| ApiError::bad_request("discord_id required"))?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
     if input.discord_id.is_empty() || input.discord_id.len() > 128 {
         return Err(ApiError::bad_request(
             "discord_id required (maximum 128 bytes)",
@@ -126,7 +133,7 @@ pub async fn assign_slot(
 pub async fn clear_slot(
     State(state): State<AppState>,
     leader: LeaderUser,
-    Path((emid, slot_id_s)): Path<(String, String)>,
+    PathParams((emid, slot_id_s)): PathParams<(String, String)>,
 ) -> Result<Json<Value>, ApiError> {
     let em = load_em(&state.pool, &emid).await?;
     let slot_id =
@@ -180,11 +187,11 @@ pub struct SquadBody {
 pub async fn reserve_squad(
     State(state): State<AppState>,
     leader: LeaderUser,
-    Path(emid): Path<String>,
+    PathParams(emid): PathParams<String>,
     body: Result<Json<SquadBody>, JsonRejection>,
 ) -> Result<Response, ApiError> {
     let em = load_em(&state.pool, &emid).await?;
-    let Json(input) = body.map_err(|_| ApiError::bad_request("squad is required"))?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
     if input.squad.is_empty() {
         return Err(ApiError::bad_request("squad is required"));
     }
@@ -244,11 +251,11 @@ pub async fn reserve_squad(
 pub async fn release_squad(
     State(state): State<AppState>,
     leader: LeaderUser,
-    Path(emid): Path<String>,
+    PathParams(emid): PathParams<String>,
     body: Result<Json<SquadBody>, JsonRejection>,
 ) -> Result<Json<Value>, ApiError> {
     let em = load_em(&state.pool, &emid).await?;
-    let Json(input) = body.map_err(|_| ApiError::bad_request("squad is required"))?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
     if input.squad.is_empty() {
         return Err(ApiError::bad_request("squad is required"));
     }

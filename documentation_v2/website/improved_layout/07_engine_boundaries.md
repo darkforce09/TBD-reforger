@@ -57,8 +57,8 @@ through `crate::frame::...`. Direct imports of the frame vocabulary elsewhere in
 refused.
 
 ### Rule 3b: GPU Module Isolation
-`website-map-engine` never imports GPU resource modules (`device`, `pipeline`, `shaders`, `loop`,
-`text::gpu`) from `graphics-engine`, except for the two pinned residue sites documented in
+`website-map-engine` never imports GPU resource modules (`device`, `pipeline`, `shaders`, `loop`)
+from `graphics-engine`, except for the two pinned residue sites documented in
 `RULE3B_PIN` (`map-engine/src/frame/mod.rs` and `pump.rs`).
 
 ### Rule 4: Data Layer Isolation

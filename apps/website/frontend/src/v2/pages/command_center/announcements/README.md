@@ -43,9 +43,10 @@ An optional field the [API](/documentation_v2/glossary/a_to_f.md#api) leaves out
 
 ## Data
 
-- `GET /api/v1/announcements`: the list, read as `Paginated<serde_json::Value>`; the rows carry
-  `id`, `is_pinned`, `tag`, `title`, `published_at`, `snippet`, `body`, `author_id`,
-  `thumbnail_url` and `pushed_to_discord`.
+- `GET /api/v1/announcements`: the list, read as `Paginated<Announcement>`; the board reads each
+  row's `id`, `is_pinned`, `tag`, `title`, `published_at`, `snippet`, `body`, `author_id`,
+  `thumbnail_url` and `pushed_to_discord`. A row missing a key the contract requires fails the
+  fetch, which shows "Failed to load data.".
 - The page reads the session from the `AuthStore` context and the `:id` parameter from the router,
   and writes nothing. The fetch runs in the browser build only.
 
@@ -64,7 +65,7 @@ An optional field the [API](/documentation_v2/glossary/a_to_f.md#api) leaves out
 
 ## Boundaries
 
-- Depends on: `crate::v2::core::api` (the `api_get` client, `Paginated`), `crate::v2::core::ui`
+- Depends on: `crate::v2::core::api` (the `api_get` client, `Paginated`, `Announcement`), `crate::v2::core::ui`
   (`AuthGate`, `SplitPane`, `SplitPaneEmpty`, `ListDetailItem`, `MaterialIcon`, `badge_class`),
   `crate::v2::core::auth::url_guard`, `crate::v2::core::utils` (short and local date formatting),
   the `AuthStore` context and the router's `use_params_map` and `use_navigate`.

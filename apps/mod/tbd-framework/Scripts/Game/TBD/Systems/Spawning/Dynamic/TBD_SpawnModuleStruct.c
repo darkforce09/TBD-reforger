@@ -37,7 +37,7 @@ class TBD_SpawnModuleStruct
 }
 
 //! Root of the spawn-modules pass: declares `spawnModules` and nothing else.
-//! @contract mission.schema.json#/properties/spawnModules
+//! @contract mission.schema.json#/ partial
 class TBD_SpawnModulesDocStruct
 {
 	ref array<ref TBD_SpawnModuleStruct> spawnModules; //!< JSON `spawnModules`; allocated even when absent

@@ -28,7 +28,8 @@ transaction: it locks the server and settles its
 [event](/documentation_v2/glossary/a_to_f.md#event) mission when one is named), locks the requester's
 account and rechecks their administrator authority, then records the fleet command, the
 `mission_deployments` row, its [slot](/documentation_v2/glossary/n_to_z.md#slot) bindings and the audit
-row.
+row. In a test build it passes the failpoint `DeploymentRequestBeforeCommit` after the audit row;
+both requesting handlers pass `DeploymentRequestAfterCommit` after their commit.
 
 A refused selection stores nothing and answers with a `code`:
 

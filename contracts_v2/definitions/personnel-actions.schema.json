@@ -1,0 +1,136 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PersonnelActionsContract",
+  "description": "Administrator actions on one member (bans, warnings, membership grace) and the Discord role resync. The roster itself is personnel-roster.schema.json. The root is a ban state.",
+  "$ref": "#/definitions/BanState",
+  "definitions": {
+    "BanState": {
+      "description": "POST /api/v1/admin/users/:discordId/ban answers banned true; DELETE on the same path answers banned false. A ban revokes the member's live sessions.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "banned"
+      ],
+      "properties": {
+        "banned": {
+          "type": "boolean"
+        }
+      }
+    },
+    "BanRequest": {
+      "description": "POST /api/v1/admin/users/:discordId/ban body: the reason recorded on the account and in the audit log.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reason"
+      ],
+      "properties": {
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "Warning": {
+      "description": "POST /api/v1/admin/users/:discordId/warnings answer (201): the recorded warning. issued_by is the administrator's Discord id.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "discord_id",
+        "issued_by",
+        "reason",
+        "created_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "discord_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "issued_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "WarningRequest": {
+      "description": "POST /api/v1/admin/users/:discordId/warnings body.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reason"
+      ],
+      "properties": {
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "MembershipGraceExtension": {
+      "description": "POST /api/v1/admin/users/:discordId/membership-grace answer: the member whose guild membership counts as current until expires_at.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "discord_id",
+        "expires_at"
+      ],
+      "properties": {
+        "discord_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "MembershipGraceRequest": {
+      "description": "POST /api/v1/admin/users/:discordId/membership-grace body: a grace of 1 to 48 hours and its reason. Unknown keys answer 400.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "duration_hours",
+        "reason"
+      ],
+      "properties": {
+        "duration_hours": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 48
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "RoleResyncOutcome": {
+      "description": "POST /api/v1/admin/roles/sync answer: how many members' website roles the Discord role mapping changed.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "updated"
+      ],
+      "properties": {
+        "updated": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

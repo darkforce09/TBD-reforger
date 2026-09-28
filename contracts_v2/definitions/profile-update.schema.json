@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ProfileUpdateContract",
+  "description": "PATCH /api/v1/me (any signed-in member). Every account field belongs to the Discord sign-in or the Arma link flow, so the route reads no body and answers the account as it stands. The root is that answer.",
+  "$ref": "#/definitions/UpdatedProfile",
+  "definitions": {
+    "UpdatedProfile": {
+      "description": "PATCH /api/v1/me answer: the caller's account with the effective session role.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "user"
+      ],
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/UserAccount"
+        }
+      }
+    },
+    "UserAccount": {
+      "description": "The signed-in member's account row. The same shape as current-profile.schema.json#/definitions/UserAccount. role is the effective session role.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "discord_id",
+        "username",
+        "discord_handle",
+        "avatar_url",
+        "arma_id",
+        "arma_character",
+        "role",
+        "is_banned",
+        "total_deployments",
+        "attendance_rate",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "discord_id": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "discord_handle": {
+          "type": "string"
+        },
+        "avatar_url": {
+          "type": "string"
+        },
+        "arma_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "arma_character": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "guest",
+            "enlisted",
+            "leader",
+            "mission_maker",
+            "admin"
+          ]
+        },
+        "is_banned": {
+          "type": "boolean"
+        },
+        "ban_reason": {
+          "type": "string"
+        },
+        "banned_by": {
+          "type": "string"
+        },
+        "banned_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "total_deployments": {
+          "type": "integer"
+        },
+        "attendance_rate": {
+          "type": "number"
+        },
+        "last_login_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

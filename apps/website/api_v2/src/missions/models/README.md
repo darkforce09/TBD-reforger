@@ -44,7 +44,10 @@ each transition's wire name and confirmation deadline: `scenario_restart` 600 s,
   follows `contracts_v2/definitions/mission-review.schema.json` and
   `contracts_v2/definitions/mission-deployment.schema.json`; `faction.rs` and `registry.rs` carry
   the `@contract` tags of `faction-library.schema.json`, `registry-items.schema.json` and
-  `registry-compat.schema.json`.
+  `registry-compat.schema.json`, and `faction.rs` also cites the faction row of
+  `arsenal-envelopes.schema.json` (`UserFaction`, whose `doc` is the faction-library document).
+  `mission.rs` cites `mission-review.schema.json` (`MissionRow`, `MissionVersion`),
+  `mission-library.schema.json` (`MissionArmory`) and `mission-default-overrides.schema.json`.
 - Used by: the domain's handlers and services; `operations` (`MissionArmory`, `TerrainType`,
   `GameMode` in the [event](/documentation_v2/glossary/a_to_f.md#event) hub), `match_telemetry` and
   `server_infrastructure` (`TerrainType`); the [API](/documentation_v2/glossary/a_to_f.md#api) tests

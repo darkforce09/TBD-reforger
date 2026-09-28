@@ -57,6 +57,7 @@ class TBD_RuntimeStatusReadings
 	//! serving nobody. The platform flips a server offline on its own only when a session expires,
 	//! so a clean shutdown says so itself.
 	//! @return `"is_online":false,"player_count":0`
+	//! @contract game-runtime-session.schema.json#/definitions/RuntimeHeartbeat
 	static string BuildOfflineFields()
 	{
 		return "\"is_online\":false,\"player_count\":0";

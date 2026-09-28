@@ -10,12 +10,15 @@
 //! event's SSE id is a publication sequence, never an audit id; the stream's first event is
 //! `ready`, and a cursor it cannot replay becomes `reset` to the tail, never an error status; a
 //! `Last-Event-ID` that is not a non-negative integer answers 400.
+//!
+//! @contract audit-log.schema.json#/definitions/AuditLogPage
 
 use std::borrow::Cow;
 use std::convert::Infallible;
 use std::time::Duration;
 
 use async_stream::stream;
+use axum::extract::rejection::QueryRejection;
 use axum::extract::{Query, State};
 use axum::http::{HeaderMap, HeaderName, header};
 use axum::response::sse::{Event, KeepAlive, Sse};
@@ -78,8 +81,10 @@ fn apply_filters(qb: &mut QueryBuilder<sqlx::Postgres>, f: &AuditFilter) {
 pub async fn list_audit_logs(
     State(state): State<AppState>,
     _a: AdminUser,
-    Query(f): Query<AuditFilter>,
+    query: Result<Query<AuditFilter>, QueryRejection>,
 ) -> Result<Json<Value>, ApiError> {
+    let Query(f) =
+        query.map_err(|rejection| ApiError::from_query_rejection(rejection, "audit log filter"))?;
     let (limit, _) = PageParams {
         limit: f.limit,
         offset: None,
@@ -111,8 +116,10 @@ pub async fn list_audit_logs(
 pub async fn export_audit_logs_csv(
     State(state): State<AppState>,
     _a: AdminUser,
-    Query(f): Query<AuditFilter>,
+    query: Result<Query<AuditFilter>, QueryRejection>,
 ) -> Result<Response, ApiError> {
+    let Query(f) =
+        query.map_err(|rejection| ApiError::from_query_rejection(rejection, "audit log filter"))?;
     let mut qb = QueryBuilder::new(
         "SELECT id, severity, actor_id, COALESCE(actor_name, '') AS actor_name, action, message, COALESCE(target_type, '') AS target_type, COALESCE(target_id, '') AS target_id, metadata, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at FROM audit_logs WHERE true",
     );

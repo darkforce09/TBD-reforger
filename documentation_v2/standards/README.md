@@ -59,7 +59,7 @@ these answers; a rule that fits an existing standard goes into it.
 - Used by: every README and document under `documentation_v2/` and the code trees, which follow
   the README standard and the templates; gate code and CI that cite a standard by section
   (`tools_v2/xtask/src/commands/ci/task_definitions.rs`,
-  `tools_v2/xtask/src/verifications/architecture/engine_layer_rules.rs`,
+  `tools_v2/verification-core/src/repository_laws/engine_layers/`,
   `.github/workflows/ci.yml`, `.github/workflows/contracts.yml`, `.editorconfig`); the Cursor rule
   `.cursor/rules/tbd-platform.mdc`; the runbooks and the entry README.
 - Rules: each standard names the gate that holds each enforced rule; a standard stays at or under

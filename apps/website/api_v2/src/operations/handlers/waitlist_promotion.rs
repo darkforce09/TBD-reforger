@@ -2,7 +2,7 @@
 //! The earliest eligible waiting participants receive actual seats and places; the request
 //! cannot choose who is promoted.
 
-use axum::extract::{Path, State};
+use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::Json;
 use serde_json::{Value, json};
@@ -10,6 +10,7 @@ use serde_json::{Value, json};
 use crate::administration::services::required_audit::append_actor_audit;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::LeaderUser;
 use crate::operations::services::event_lookup::load_em;
 use crate::operations::services::event_reservations::{
@@ -22,7 +23,7 @@ use crate::operations::services::event_reservations::{
 pub async fn promote_waitlisted_participants(
     State(state): State<AppState>,
     leader: LeaderUser,
-    Path(emid): Path<String>,
+    PathParams(emid): PathParams<String>,
 ) -> Result<Json<Value>, ApiError> {
     let em = load_em(&state.pool, &emid).await?;
     let mut tx = state.pool.begin().await?;

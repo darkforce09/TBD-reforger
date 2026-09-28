@@ -1,0 +1,144 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ReservationActionsContract",
+  "description": "The reservation actions beside POST /api/v1/event-missions/:id/register, whose answer is reservation-response.schema.json: withdrawal, a leader's slot assignment and clearance, and squad holds. The root is the registration body.",
+  "$ref": "#/definitions/RegistrationRequest",
+  "definitions": {
+    "RegistrationRequest": {
+      "description": "POST /api/v1/event-missions/:emid/register body: the wanted slot id, or an empty string to register without a seat.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "slot_id"
+      ],
+      "properties": {
+        "slot_id": {
+          "type": "string",
+          "anyOf": [
+            {
+              "format": "uuid"
+            },
+            {
+              "maxLength": 0
+            }
+          ]
+        }
+      }
+    },
+    "RegistrationWithdrawal": {
+      "description": "DELETE /api/v1/event-missions/:emid/register answer: the caller's reservation is withdrawn and its seat released.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "withdrawn"
+      ],
+      "properties": {
+        "withdrawn": {
+          "const": true
+        }
+      }
+    },
+    "SlotAssignmentRequest": {
+      "description": "PUT /api/v1/event-missions/:emid/slots/:slotId/assign body (leader): the member to seat.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "discord_id"
+      ],
+      "properties": {
+        "discord_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "SlotAssignmentOutcome": {
+      "description": "PUT /api/v1/event-missions/:emid/slots/:slotId/assign answer: the member now holding the slot.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assigned_to"
+      ],
+      "properties": {
+        "assigned_to": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "SlotClearance": {
+      "description": "DELETE /api/v1/event-missions/:emid/slots/:slotId/assign answer: the slot is empty.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cleared"
+      ],
+      "properties": {
+        "cleared": {
+          "const": true
+        }
+      }
+    },
+    "SquadRequest": {
+      "description": "POST /api/v1/event-missions/:emid/squads/reserve and .../release body (leader): the squad name.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "squad"
+      ],
+      "properties": {
+        "squad": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "SquadReservation": {
+      "description": "POST /api/v1/event-missions/:emid/squads/reserve answer: the squad hold, 201 when created, 200 when it already existed.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "event_mission_id",
+        "squad",
+        "reserved_by",
+        "reserved_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "event_mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "squad": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reserved_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reserved_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "SquadRelease": {
+      "description": "POST /api/v1/event-missions/:emid/squads/release answer: the squad hold is gone.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "released"
+      ],
+      "properties": {
+        "released": {
+          "const": true
+        }
+      }
+    }
+  }
+}

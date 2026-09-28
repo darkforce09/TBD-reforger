@@ -18,12 +18,13 @@
 use super::firing_solution::firing_solution;
 use super::map_picker::{coordinate_inputs, terrain_preview};
 use super::saved_fires::{
-    hydration_step, read_event_pref, restore, saved_list, write_event_pref, EventOption, SavedFire,
-    SavedFor, Shown,
+    hydration_step, read_event_pref, restore, saved_list, write_event_pref, EventOption, SavedFor,
+    Shown,
 };
 #[cfg(target_arch = "wasm32")]
 use super::saved_fires::{save_body, SaveResponse};
 use super::weapon_selector::{operation_select, weapon_select, WEAPONS};
+use crate::v2::core::api::dto::SavedFire;
 #[cfg(target_arch = "wasm32")]
 use crate::v2::core::api::dto::{DataEnvelope, FireSolution, Paginated};
 use crate::v2::core::ui::{AuthGate, PageHeader};

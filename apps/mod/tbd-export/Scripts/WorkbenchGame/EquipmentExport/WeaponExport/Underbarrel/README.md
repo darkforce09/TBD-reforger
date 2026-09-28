@@ -1,13 +1,36 @@
-# WeaponExport/Underbarrel
+# Underbarrel device export
 
-Underbarrel grenade launchers and accessories mounted below the handguard.
+Underbarrel grenade launchers and accessories mounted below the handguard, written under
+`$profile:TBD_Export/equipment/underbarrel/`.
 
-### Roles & Responsibilities
-- `TBD_UnderbarrelModel.c`: `TBD_UnderbarrelInfo` with mounting, launcher, physical, and visual sub-carriers. The launcher carrier holds the secondary muzzle and its magazine wells for devices that fire, such as the M203 and GP-25.
-- `TBD_UnderbarrelExtractor.c`: Reads how the device mounts, and its mass, volume, and mesh.
-- `TBD_UnderbarrelLauncherExtractor.c`: Reads the secondary weapon a launching device adds — its own muzzle, the magazine wells it feeds from, the projectile it launches, and its zeroing distances, which arrive unordered and duplicated across the ancestry and are collected uniquely and sorted.
-- `TBD_UnderbarrelScanner.c`: Sweeps every loaded addon for underbarrel prefabs and serializes the catalog.
-- `TBD_UnderbarrelExportPlugin.c`: Workbench entry point `Plugins > TBD > Export All Underbarrel Devices`. Writes `$profile:TBD_Export/equipment/underbarrel/`.
+## Contents
 
-### Call Flow & Contracts
-Menu action -> `TBD_UnderbarrelExportPlugin.Run()` -> `TBD_UnderbarrelScanner.Scan()` -> both extractors -> `TBD_UnderbarrelInfo` -> `equipment/underbarrel/underbarrel.json` plus `underbarrel_meta.json`. Magazine wells are foreign keys into the `Ammo/` catalogs, never inlined rounds.
+```text
+apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/WeaponExport/Underbarrel/
+├── TBD_UnderbarrelExportPlugin.c       the underbarrel plugin class; its menu attribute is commented out
+├── TBD_UnderbarrelExtractor.c          how the device mounts, and its mass, volume and mesh
+├── TBD_UnderbarrelLauncherExtractor.c  the secondary muzzle, its magazine wells, projectile and zeroing
+├── TBD_UnderbarrelModel.c              `TBD_UnderbarrelInfo` with mounting, launcher, physical and visual parts
+└── TBD_UnderbarrelScanner.c            the addon sweep and the catalog
+```
+
+## How it works
+
+Its plugin's `[WorkbenchPluginAttribute]` is commented out and "Export All Equipment" does not run
+this scanner, so the domain runs only when the attribute is restored.
+
+`TBD_UnderbarrelScanner.RunScan()` has both extractors fill one `TBD_UnderbarrelInfo` per prefab and
+writes `underbarrel.json` and `underbarrel_meta.json`. The launcher carrier holds the secondary
+muzzle of a device that fires, such as the M203 and GP-25; its zeroing distances arrive unordered
+and repeated across the ancestry and are collected once each, sorted.
+
+## Authority
+
+None: Workbench runs these scripts in the editor.
+
+## Boundaries
+
+- Depends on: `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/Core/` (component walk,
+  destination, JSON writing, display attributes and resource names).
+- Used by: nothing while its plugin attribute stays commented out.
+- Rules: magazine wells are foreign keys into the ammunition catalogs, never inlined rounds.

@@ -2,13 +2,14 @@
 //! one life. Both require a `mod_runtime` machine credential and act only within the
 //! credential's own server and runtime session.
 
+use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, State};
 use axum::response::Json;
 use uuid::Uuid;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::operations::models::live_occupancy::{DeploymentDecision, DeploymentRequest, EndedLife};
 use crate::operations::services::live_slot_occupancy::{authorize_deployment, end_life};
 use crate::server_infrastructure::models::machine_credential::ExecutorKind;
@@ -24,14 +25,12 @@ fn parse_id(raw: &str, field: &str) -> Result<Uuid, ApiError> {
 pub async fn authorize_player_deployment(
     State(state): State<AppState>,
     caller: MachineCaller,
-    Path(session): Path<String>,
+    PathParams(session): PathParams<String>,
     body: Result<Json<DeploymentRequest>, JsonRejection>,
 ) -> Result<Json<DeploymentDecision>, ApiError> {
     caller.require_executor(ExecutorKind::ModRuntime)?;
     let session = parse_id(&session, "runtime session id")?;
-    let Json(request) = body.map_err(|rejection| {
-        ApiError::bad_request(format!("invalid body: {}", rejection.body_text()))
-    })?;
+    let Json(request) = body.map_err(ApiError::from_json_rejection)?;
     let mut transaction = state.pool.begin().await?;
     let decision = authorize_deployment(
         &mut transaction,
@@ -49,7 +48,7 @@ pub async fn authorize_player_deployment(
 pub async fn end_player_life(
     State(state): State<AppState>,
     caller: MachineCaller,
-    Path((session, occupancy)): Path<(String, String)>,
+    PathParams((session, occupancy)): PathParams<(String, String)>,
 ) -> Result<Json<EndedLife>, ApiError> {
     caller.require_executor(ExecutorKind::ModRuntime)?;
     let session = parse_id(&session, "runtime session id")?;

@@ -59,8 +59,15 @@ fn equipment_viewer_field_inventory_parity() {
 }
 
 #[test]
-fn equipment_viewer_resource_cards_parity(){
-    let root=std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../contracts_v2/fixtures/equipment-data-viewer");
-    assert_golden::<EquipmentResourceCardPage>(&std::fs::read_to_string(root.join("positive/resource-cards.json")).unwrap(),&[]);
-    assert!(serde_json::from_str::<EquipmentResourceCardPage>(&std::fs::read_to_string(root.join("negative/resource-cards.json")).unwrap()).is_err());
+fn equipment_viewer_resource_cards_parity() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../contracts_v2/fixtures/equipment-data-viewer");
+    assert_golden::<EquipmentResourceCardPage>(
+        &std::fs::read_to_string(root.join("positive/resource-cards.json")).unwrap(),
+        &[],
+    );
+    assert!(serde_json::from_str::<EquipmentResourceCardPage>(
+        &std::fs::read_to_string(root.join("negative/resource-cards.json")).unwrap()
+    )
+    .is_err());
 }

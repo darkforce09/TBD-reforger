@@ -6,10 +6,13 @@
 //!
 //! Route registration lives in [`super::super::routes`]; auth tier travels with the handler via
 //! the [`AuthUser`] extractor each takes, so a registration typo cannot silently downgrade it.
+//!
+//! @contract server-intel.schema.json#/definitions/ServerIntel
+//! @contract server-intel.schema.json#/definitions/ServerIntelList
 
 use std::collections::{HashMap, HashSet};
 
-use axum::extract::{Path, State};
+use axum::extract::State;
 use axum::response::Json;
 use serde::Serialize;
 use serde_json::{Value, json};
@@ -20,6 +23,7 @@ use crate::community_content::models::modpack::{Modpack, ModpackMod};
 use crate::community_content::services::modpack_lookup::{ModpackDto, load_modpack};
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::{AuthUser, role_rank};
 use crate::missions::models::mission::TerrainType;
 use crate::server_infrastructure::models::server::{
@@ -236,7 +240,7 @@ pub async fn list_servers(
 pub async fn get_server_status(
     State(state): State<AppState>,
     user: AuthUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<Json<ServerIntelDto>, ApiError> {
     let Ok(id) = Uuid::parse_str(&id) else {
         return Err(ApiError::bad_request("invalid id"));

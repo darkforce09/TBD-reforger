@@ -1,38 +1,29 @@
 {
   "completed": 0,
-  "generation_id": "6A6E9885CF2F83F9",
+  "dataset_kind": "diagnostic",
+  "generation_id": "D1A6000000000001",
   "generations": [
-    "6A6E9885CF2F83F9"
+    "D1A6000000000001"
   ],
   "message": null,
   "next_cursor": null,
   "overview": {
-    "bytes": 4002903858,
+    "bytes": 29354,
     "capabilities": {
-      "projectile": 323,
-      "utility": 929,
-      "magazine": 260,
-      "visuals": 2472,
-      "communications": 129,
-      "sights": 248,
-      "weapon": 336,
-      "attachment": 1029,
-      "storage": 993,
-      "vehicle_systems": 430,
-      "medical_effects": 22,
-      "inventory": 1422,
-      "physics": 2174,
-      "protection": 1455
+      "inventory": 2,
+      "vehicle_systems": 1,
+      "physics": 1,
+      "storage": 2,
+      "visuals": 1
     },
-    "dependencies": 1719,
-    "equipment": 1327,
-    "facts": 6282833,
-    "fields": 11314,
-    "nodes": 580993,
-    "resources": 3265,
-    "vehicles": 219
+    "dependencies": 1,
+    "equipment": 2,
+    "facts": 24,
+    "fields": 16,
+    "nodes": 15,
+    "resources": 3,
+    "vehicles": 1
   },
   "stage": "ready",
-  "total": 0,
-  "dataset_kind": "diagnostic"
+  "total": 0
 }

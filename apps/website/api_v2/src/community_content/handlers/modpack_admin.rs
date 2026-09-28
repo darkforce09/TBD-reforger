@@ -2,13 +2,15 @@
 //!
 //! Nested mods are always written as a whole list rather than patched per row, so a pack and its
 //! `game.mods[]` entries can never disagree about which mods the pack contains.
+//!
+//! @contract modpack.schema.json#/definitions/ModpackWrite
+//! @contract modpack.schema.json#/definitions/ModWrite
 
+use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::Json;
 use serde::Deserialize;
-use serde_json::json;
 use sqlx::{Postgres, Transaction};
 use uuid::Uuid;
 
@@ -18,6 +20,7 @@ use crate::community_content::models::modpack::Modpack;
 use crate::community_content::services::modpack_lookup::{ModpackDto, modpack_cols, with_mods};
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AdminUser;
 
 /// One mod in a create/replace body.
@@ -92,14 +95,6 @@ fn validated_mod(
     ))
 }
 
-fn body_error(e: JsonRejection) -> ApiError {
-    ApiError::with_details(
-        StatusCode::BAD_REQUEST,
-        "invalid modpack payload (expected name, version, total_size_bytes, mods[])",
-        json!({ "reason": e.body_text() }),
-    )
-}
-
 /// Clear `is_current` on every pack except `keep` (or all packs when `keep` is None).
 async fn clear_current(
     tx: &mut Transaction<'_, Postgres>,
@@ -166,7 +161,7 @@ pub async fn create_modpack(
     admin: AdminUser,
     body: Result<Json<ModpackInput>, JsonRejection>,
 ) -> Result<(StatusCode, Json<ModpackDto>), ApiError> {
-    let Json(input) = body.map_err(body_error)?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
     let name = validated_name(&input.name)?;
     let version = validated_version(&input.version)?;
     if input.total_size_bytes < 0 {
@@ -227,13 +222,13 @@ pub async fn create_modpack(
 pub async fn replace_modpack(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
     body: Result<Json<ModpackInput>, JsonRejection>,
 ) -> Result<Json<ModpackDto>, ApiError> {
     let Ok(id) = Uuid::parse_str(&id) else {
         return Err(ApiError::bad_request("invalid id"));
     };
-    let Json(input) = body.map_err(body_error)?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
     let name = validated_name(&input.name)?;
     let version = validated_version(&input.version)?;
     if input.total_size_bytes < 0 {
@@ -295,7 +290,7 @@ pub async fn replace_modpack(
 pub async fn set_current_modpack(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<Json<ModpackDto>, ApiError> {
     let Ok(id) = Uuid::parse_str(&id) else {
         return Err(ApiError::bad_request("invalid id"));
@@ -341,7 +336,7 @@ pub async fn set_current_modpack(
 pub async fn delete_modpack(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<StatusCode, ApiError> {
     let Ok(id) = Uuid::parse_str(&id) else {
         return Err(ApiError::bad_request("invalid id"));

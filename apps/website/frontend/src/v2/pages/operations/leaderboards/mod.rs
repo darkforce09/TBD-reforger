@@ -18,6 +18,8 @@ pub use page::LeaderboardsPage;
 // The guard battery spans every shard of this page, so the names it reaches for through
 // `use super::*` are gathered here.
 #[cfg(test)]
+use crate::v2::core::api::dto::{Leaderboard, LeaderboardRow};
+#[cfg(test)]
 use board_table::{avatar_img_src, initials, stat_for};
 #[cfg(test)]
 use page::{parse_row, win_rate_pct};

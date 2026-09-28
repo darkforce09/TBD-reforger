@@ -1,0 +1,21 @@
+{
+  "created_at": "2000-01-01T00:00:00Z",
+  "id": "99999999-9999-4999-9999-999999999999",
+  "is_current": false,
+  "mods": [
+    {
+      "id": "99999999-9999-4999-9999-999999999999",
+      "is_key_dependency": true,
+      "mod_guid": "5A1B2C3D4E5F6071",
+      "modpack_id": "99999999-9999-4999-9999-999999999999",
+      "name": "Parity Test Mod",
+      "sort_order": 1,
+      "version": "1.0.2",
+      "workshop_id": "987654322"
+    }
+  ],
+  "name": "Golden Parity Test Pack",
+  "total_size_bytes": 1048576,
+  "version": "0.9",
+  "workshop_url": "https://steamcommunity.com/sharedfiles/filedetails/?id=987654321"
+}

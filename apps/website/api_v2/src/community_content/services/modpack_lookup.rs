@@ -1,6 +1,8 @@
 //! Modpack manifest loading: the pack-plus-nested-mods DTO and the three read paths
 //! (by id, the active pack, and mod hydration) shared by the modpack endpoints, the
 //! dashboard, and the server detail view.
+//!
+//! @contract modpack.schema.json#/definitions/Modpack
 
 use serde::Serialize;
 use sqlx::PgPool;

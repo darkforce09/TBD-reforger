@@ -4,7 +4,7 @@
 //! transaction.
 
 use axum::extract::rejection::{JsonRejection, QueryRejection};
-use axum::extract::{Path, Query, State};
+use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::Json;
 use sqlx::PgConnection;
@@ -12,6 +12,7 @@ use uuid::Uuid;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::{AdminUser, role_rank};
 use crate::identity_and_access::services::session_authorization::authorize_on_connection;
 use crate::server_infrastructure::models::machine_credential::{
@@ -51,13 +52,11 @@ async fn lock_server_as_admin(
 pub async fn issue_server_credential(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
     body: Result<Json<MachineCredentialIssue>, JsonRejection>,
 ) -> Result<(StatusCode, Json<IssuedMachineCredential>), ApiError> {
     let server = server_id(&id)?;
-    let Json(request) = body.map_err(|rejection| {
-        ApiError::bad_request(format!("invalid body: {}", rejection.body_text()))
-    })?;
+    let Json(request) = body.map_err(ApiError::from_json_rejection)?;
     let mut transaction = state.pool.begin().await?;
     let (actor, active) = lock_server_as_admin(&mut transaction, &state, &admin, server).await?;
     if !active {
@@ -81,7 +80,7 @@ pub async fn issue_server_credential(
 pub async fn list_server_credentials(
     State(state): State<AppState>,
     _admin: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<Json<MachineCredentialList>, ApiError> {
     let server = server_id(&id)?;
     let exists: bool = sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM servers WHERE id = $1)")
@@ -100,14 +99,15 @@ pub async fn list_server_credentials(
 pub async fn revoke_server_credential(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path((id, credential)): Path<(String, String)>,
+    PathParams((id, credential)): PathParams<(String, String)>,
     query: Result<Query<MachineCredentialRevocation>, QueryRejection>,
 ) -> Result<Json<MachineCredential>, ApiError> {
     let server = server_id(&id)?;
     let credential =
         Uuid::parse_str(&credential).map_err(|_| ApiError::bad_request("invalid credential id"))?;
-    let Query(revocation) =
-        query.map_err(|_| ApiError::bad_request("a reason query parameter is required"))?;
+    let Query(revocation) = query.map_err(|rejection| {
+        ApiError::from_query_rejection(rejection, "credential revocation query")
+    })?;
     let mut transaction = state.pool.begin().await?;
     let (actor, _) = lock_server_as_admin(&mut transaction, &state, &admin, server).await?;
     let revoked = revoke_machine_credential(

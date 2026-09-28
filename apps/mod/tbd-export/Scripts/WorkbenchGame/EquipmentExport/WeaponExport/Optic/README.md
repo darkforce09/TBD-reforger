@@ -1,13 +1,43 @@
-# WeaponExport/Optic
+# Optic export
 
-Optical sights and scopes: collimators, reflex and holographic sights, telescopic and variable-power scopes, launcher sights, and backup irons.
+Optical sights and scopes (collimators, reflex and holographic sights, fixed and variable scopes,
+launcher sights and backup irons) written under `$profile:TBD_Export/equipment/optics/`.
 
-### Roles & Responsibilities
-- `TBD_OpticModel.c`: `TBD_OpticInfo` with mounting, sights, physical, and visual sub-carriers. The sights carrier records magnification range, field of view, eye relief, and whether the optic is magnified at all.
-- `TBD_OpticExtractor.c`: Reads how the optic mounts, and its mass, volume, and mesh.
-- `TBD_OpticSightsExtractor.c`: Reads what the sight shows the player — magnification, field of view, eye relief, objective diameter, zeroing distances, reticle texture and colours, and whether it ranges. One pass up the container ancestry fills the whole carrier, because a variant prefab declares only what it changes and each value has to be searched for independently.
-- `TBD_OpticScanner.c`: Sweeps every loaded addon for optic prefabs and serializes the catalog.
-- `TBD_OpticExportPlugin.c`: Workbench entry point `Plugins > TBD > Export All Optics & Sights`. Writes `$profile:TBD_Export/equipment/optics/`.
+## Contents
 
-### Call Flow & Contracts
-Menu action -> `TBD_OpticExportPlugin.Run()` -> `TBD_OpticScanner.Scan()` -> both extractors -> `TBD_OpticInfo` -> `equipment/optics/optics.json` plus `optics_meta.json`. Omitted values serialize as JSON null, localization tokens are preserved verbatim including the leading `#`, and the mounting keys reflect only what the BaseContainer genuinely declares.
+```text
+apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/WeaponExport/Optic/
+├── TBD_OpticExportPlugin.c     the optic plugin class; its menu attribute is commented out
+├── TBD_OpticExtractor.c        how the optic mounts, and its mass, volume and mesh
+├── TBD_OpticModel.c            `TBD_OpticInfo` with mounting, sights, physical and visual parts
+├── TBD_OpticScanner.c          the addon sweep and the catalog
+└── TBD_OpticSightsExtractor.c  magnification, field of view, eye relief, zeroing, reticle and ranging
+```
+
+## How it works
+
+"Export All Equipment" runs `TBD_OpticScanner.RunScan()` in its sixth phase; the domain's own plugin
+attribute is commented out.
+
+The scanner has both extractors fill one `TBD_OpticInfo` per prefab and writes `optics.json` and
+`optics_meta.json`. The sights extractor fills the whole sights carrier in one pass up the container
+ancestry, because a variant prefab declares only what it changes.
+
+## Authority
+
+None: Workbench runs these scripts in the editor.
+
+## Boundaries
+
+- Depends on: `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/Core/` (component walk,
+  destination, JSON writing, display attributes and resource names); `TBD_ItemInventoryExtractor` in
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/ItemExport/`;
+  `TBD_AttachmentMountingExtractor` from
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/WeaponExport/Attachment/`.
+- Used by: `TBD_EquipmentExportPlugin` in
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/`;
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/WeaponExport/Weapon/` reads a weapon's
+  own sights through `TBD_OpticSightsExtractor`.
+- Rules: the mounting keys reflect only what the container declares; mounting is read through
+  `TBD_AttachmentMountingExtractor` from
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/WeaponExport/Attachment/`.

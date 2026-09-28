@@ -128,3 +128,18 @@ fn the_api_directory_resolves_against_the_given_root() {
     let p = Paths::from_root(&root);
     assert_eq!(p.web, root.join("apps/website/api_v2"));
 }
+
+/// The title and the body name the same event day, Saturday 22 August 2026.
+#[test]
+fn title_and_body_name_the_same_saturday() {
+    assert_eq!(
+        SQL.matches("Saturday ").count(),
+        2,
+        "the announcement names its day once in the title and once in the body"
+    );
+    assert_eq!(
+        SQL.matches("Saturday 22 August 2026").count(),
+        2,
+        "the title and the body disagree on the event day"
+    );
+}

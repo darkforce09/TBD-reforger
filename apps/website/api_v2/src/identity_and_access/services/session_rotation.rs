@@ -9,6 +9,7 @@ use super::session_storage::{
 use crate::core::application_state::AppState;
 use crate::core::authentication_primitives::hash_token;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::failpoints::fail_point;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
@@ -22,6 +23,8 @@ async fn token_owner(state: &AppState, hash: &str) -> Result<Option<String>, Api
     )
 }
 
+/// Spends the presented refresh token and issues its successor under the account lock, in one
+/// transaction; replaying a spent token revokes every session of the account instead.
 pub async fn rotate_session(
     state: &AppState,
     raw: &str,
@@ -109,7 +112,9 @@ pub async fn rotate_session(
             arma_id_is_linked(&account.arma_id),
         )
         .map_err(|_| ApiError::internal("could not issue token"))?;
+    fail_point!(SessionRotationBeforeCommit);
     tx.commit().await?;
+    fail_point!(SessionRotationAfterCommit);
     Ok((access, expires_at, refresh))
 }
 
@@ -139,6 +144,7 @@ pub async fn logout_session(state: &AppState, raw: &str) -> Result<(), ApiError>
         )
         .await?;
     }
+    fail_point!(SessionLogoutBeforeCommit);
     tx.commit().await?;
     Ok(())
 }

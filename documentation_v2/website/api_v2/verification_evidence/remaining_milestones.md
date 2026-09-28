@@ -18,8 +18,10 @@ phase delivers it.
 
 ## Status of the remaining checks
 
-The status comes from the last full `cargo xtask db test-it` (1,075 cases, 2026-09-27; C rows), the
-2026-09-26 run (877 cases; T rows) and the 2026-09-23 run (784 cases; the other rows).
+The status comes from the last full `cargo xtask db test-it` (1,302 cases, 2026-09-28; V rows,
+with `cargo xtask mk ci-local-leptos` for the browser session row), the 2026-09-27 run (1,075
+cases; C rows), the 2026-09-26 run (877 cases; T rows) and the 2026-09-23 run (784 cases; the
+other rows).
 "Missing" means the register's case pattern matched no passing test. The pattern shorthand
 `name*` means a test whose name starts with `name`.
 
@@ -41,13 +43,13 @@ The status comes from the last full `cargo xtask db test-it` (1,075 cases, 2026-
 | C | content_wiki_features | content_wiki_features (+ frontend_quality, browser_acceptance) | db test-it | 15 | `wiki_features*` | passing (15 cases, 2026-09-27) |
 | C | content_content_storage | content_content_storage | db test-it | 15 | `content_storage*` | passing (15 cases, 2026-09-27) |
 | B | verification_game_ballistics | verification_game_ballistics (+ frontend_quality, browser_acceptance) | db test-it | 1 | `game_ballistics*` | missing — separate later phase |
-| V | verification_route_acceptance | verification_route_acceptance | db test-it | 1 | `route_acceptance*` | missing |
-| V | verification_contract_parity | verification_contract_parity (+ schema_quality) | db test-it | 1 | `contract_parity*` | missing |
-| V | verification_property_invariants | verification_property_invariants | db test-it | 25 | the named property cases | 19 of 25 |
-| V | verification_controlled_races | verification_controlled_races | db test-it | 1 | `controlled_races*` | missing |
-| V | verification_failure_injection | verification_failure_injection | db test-it | 1 | `failure_injection*` | missing |
-| V | verification_engineering_laws | verification_engineering_laws; repository_quality (`ci ci-local`) | db test-it | 1 | `engineering_laws*` | missing |
-| V | identity_refresh_rotation | identity_browser_session_transactions | mk ci-local-leptos | 9 | the named browser session cases | needs the frontend lane |
+| V | verification_route_acceptance | verification_route_acceptance | db test-it | 66 | `route_acceptance*` | passing (66 cases, 2026-09-28) |
+| V | verification_contract_parity | verification_contract_parity (+ schema_quality) | db test-it | 85 | `contract_parity*` | passing (85 cases, 2026-09-28) |
+| V | verification_property_invariants | verification_property_invariants | db test-it | 26 | the named property cases | passing (26 cases; seven V property records at 256 of 256, 2026-09-28) |
+| V | verification_controlled_races | verification_controlled_races | db test-it | 9 | `controlled_races*` | passing (9 cases, 2026-09-28) |
+| V | verification_failure_injection | verification_failure_injection | db test-it | 27 | `failure_injection*` | passing (27 cases, 2026-09-28) |
+| V | verification_engineering_laws | verification_engineering_laws; repository_quality (`ci ci-local`) | db test-it | 10 | `engineering_laws*` | passing (10 cases, 2026-09-28) |
+| V | identity_refresh_rotation | identity_browser_session_transactions | mk ci-local-leptos | 9 | the named browser session cases | passing (9 cases, 2026-09-28) |
 | S | staging_fleet | staging_fleet | external | 1 | `case staging_fleet*` | not run |
 | S | staging_discord (also on the identity Discord requirements) | staging_discord | external | 1 | `case staging_discord*` | not run |
 | S | staging_load | staging_load | external | 1 | `case staging_load*` | not run |
@@ -134,8 +136,12 @@ register scope.
 
 ## V — Verification completeness
 
+**State:** implemented and verified 2026-09-28 (uncommitted); design in
+`verification_completeness.md`, evidence in `progress_checkpoint.md`, findings in
+`verification_findings.md`.
+
 **Covers:** verification_route_acceptance, verification_contract_parity,
-verification_property_invariants (6 more cases), verification_controlled_races,
+verification_property_invariants (seven more cases), verification_controlled_races,
 verification_failure_injection and verification_engineering_laws (with the
 `repository_quality` replay `cargo xtask ci ci-local`). It also covers every identity_* or
 administration_* check that still lacks exact cases, including
@@ -184,15 +190,20 @@ identity_browser_session_transactions.
 
 ## Follow-up recorded by E, F and M
 
-CLAUDE.md law 7 has no exemptions. Six EnfScript files were already over 500 lines before
-E, F and M, and E/F/M only keeps them from growing:
+CLAUDE.md law 7 has no exemptions. The six EnfScript files this follow-up named each stand at or
+under 500 lines, measured on 2026-09-28; `cargo xtask verify file-length` scans 4,103 source files
+(411 of them `.c`) and reports no violation:
 
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Manager/TBD_SpawnManager.c`
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/Mission/TBD_MissionLoader.c`
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/TBD_FrameworkManager.c`
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/Service/TBD_LobbyService.c`
-- `apps/mod/tbd-framework/Scripts/Game/TBD/API/Results/TBD_ResultsReporter.c`
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/TBD_AdminService.c`
+| File | Lines |
+|---|---|
+| `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Manager/TBD_SpawnManager.c` | 287 |
+| `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/Mission/TBD_MissionLoader.c` | 342 |
+| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/TBD_FrameworkManager.c` | 377 |
+| `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/Service/TBD_LobbyService.c` | 291 |
+| `apps/mod/tbd-framework/Scripts/Game/TBD/API/Results/TBD_ResultsReporter.c` | 186 |
+| `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/TBD_AdminService.c` | 406 |
 
-Each is decomposed by responsibility in a dedicated pass, verified by `cargo xtask mod compile`
-and an in-game playtest.
+The [mod script modularisation](/documentation_v2/mod/script_modularisation_progress_checkpoint.md)
+program decomposed them by responsibility, verified by `cargo xtask mod compile`; the operator
+waived its in-game playtest for the pre-alpha. `cargo xtask verify file-length` and the API's
+`engineering_laws` suite hold the ceiling from here on.

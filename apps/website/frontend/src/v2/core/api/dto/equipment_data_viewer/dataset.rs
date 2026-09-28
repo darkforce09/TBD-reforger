@@ -1,4 +1,7 @@
 //! Mirrors the generated equipment viewer API contract.
+/// The status of one equipment dataset (`gameplay` or `diagnostic`), as the `status` and
+/// `overview` endpoints return it: the import stage with its progress and message, the ready
+/// generation, the overview counts, and a cursor-paged list of preserved generations.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct EquipmentDatasetStatus {

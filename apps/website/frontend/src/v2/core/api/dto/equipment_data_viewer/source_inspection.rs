@@ -1,4 +1,7 @@
 //! Mirrors the generated equipment viewer API contract.
+/// One page of source entries, as the `selection`, `containers`, `properties`, `values` and
+/// `documents` endpoints return it: the entries, the node metadata JSON that describes them, the
+/// total and the next page's cursor.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct EquipmentSourcePage {

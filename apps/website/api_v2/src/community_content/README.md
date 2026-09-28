@@ -4,7 +4,8 @@ The [API](/documentation_v2/glossary/a_to_f.md#api)'s
 [community content](/documentation_v2/glossary/a_to_f.md#community-content) domain: what members read and
 administrators author. It holds the announcement feed and the CMS that writes it, the push that
 mirrors an announcement to Discord, CMS image uploads, the doctrine wiki, the vehicle database, and
-the modpack manifests that game servers and players resolve against.
+the modpack manifests that game servers and players resolve against. In development it also
+serves the equipment data viewer's anonymous debug reads.
 
 ## Contents
 
@@ -35,9 +36,9 @@ nesting deeper than 16, and records each accepted save as a numbered revision.
 
 ## Public surface
 
-- `routes::routes()`: the table `core::http_router` merges under `/api/v1`. It registers the flat
-  handlers and the `handlers::vehicle_database` and `handlers::wiki_knowledgebase` handlers
-  itself; one route each:
+- `routes::routes(dev)`: the table `core::http_router` merges under `/api/v1`. It registers the
+  flat handlers and the `handlers::vehicle_database`, `handlers::wiki_knowledgebase` and
+  `handlers::equipment_data_viewer` handlers itself; one route each:
   - `GET /api/v1/announcements` and `GET /api/v1/announcements/{id}`: `AuthUser`; published rows.
   - `GET` and `POST /api/v1/cms/announcements`: `AdminUser`; every row, and create.
   - `PATCH` and `DELETE /api/v1/cms/announcements/{id}`: `AdminUser`; partial edit, archive.
@@ -58,6 +59,10 @@ nesting deeper than 16, and records each accepted save as a numbered revision.
   - `GET /api/v1/modpacks/current`: `AuthUser`; the current pack.
   - `PUT` and `DELETE /api/v1/modpacks/{id}`: `AdminUser`; full replace, delete.
   - `POST /api/v1/modpacks/{id}/set-current`: `AdminUser`; mark the current pack.
+  - `GET /api/v1/debug/equipment-data/{status, overview, resources, relationships, fields,
+    resource-cards, selection, containers, properties, values, documents, download}`: anonymous,
+    registered only when `dev` is true (`Config::is_development`), so a production router answers
+    404; generation-pinned reads of the exported equipment datasets.
 - `services::modpack_lookup`: `ModpackDto`, `load_modpack` and `load_current_modpack`, the one
   pack-plus-mods read, used by the dashboard in `command_center` and the server intel in
   `server_infrastructure`.

@@ -36,7 +36,7 @@ class TBD_SampleWidget : ScriptComponent
 	protected int m_iCount; //!< events counted; JSON key "count"
 
 	protected string m_sUrl = "http://example//x"; //!< endpoint; default the sample host
-	protected string m_sMode = "legacy slice; wave"; //!< mode name; default sample
+	protected string m_sMode = "reworked slice; wave"; //!< mode name; default sample
 	protected ref array<int> m_aSteps = {1, 2}; //!< step history; default {1, 2}
 
 	//! Asks the server to count one event.
@@ -247,12 +247,16 @@ fn context_free_prose_rule_passes_and_fails() {
     let history = fails(
         &edited(
             "//! Asks the server to count one event.",
-            "//! Asks the server (T-1092.3, 2026-09-26); previously a Slice TODO.",
+            concat!(
+                "//! Asks the server (T-1092.3, 2026-09-26); previous",
+                "ly a Slice TODO."
+            ),
         ),
         RuleId::ContextFreeProse,
     );
     let messages: Vec<&str> = history.iter().map(|f| f.message.as_str()).collect();
-    for expected in ["ticket id", "date", "`previously`", "`slice`", "`TODO`"] {
+    let history_word = concat!("`previous", "ly`");
+    for expected in ["ticket id", "date", history_word, "`slice`", "`TODO`"] {
         assert!(
             messages.iter().any(|m| m.contains(expected)),
             "{expected} in {messages:?}"

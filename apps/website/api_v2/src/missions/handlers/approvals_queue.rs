@@ -2,8 +2,8 @@
 //! review, approve it (optionally with conditions) into the live library, or return it to its
 //! author with a reason. Each decision names the exact artifact it decides.
 
-use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, Query, State};
+use axum::extract::rejection::{JsonRejection, QueryRejection};
+use axum::extract::{Query, State};
 use axum::response::Json;
 use chrono::{DateTime, Utc};
 use serde::Serialize;
@@ -13,6 +13,7 @@ use uuid::Uuid;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::http::pagination::PageParams;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::{AdminUser, role_rank};
 use crate::core::wire_format::rfc3339_utc;
 use crate::identity_and_access::services::session_authorization::authorize_on_connection;
@@ -94,8 +95,10 @@ const LIST_APPROVALS_SQL: &str = "SELECT m.id, m.title, m.terrain, m.author_id, 
 pub async fn list_approvals(
     State(state): State<AppState>,
     _a: AdminUser,
-    Query(page): Query<PageParams>,
+    query: Result<Query<PageParams>, QueryRejection>,
 ) -> Result<Json<Value>, ApiError> {
+    let Query(page) = query
+        .map_err(|rejection| ApiError::from_query_rejection(rejection, "approval page query"))?;
     let (limit, offset) = page.bounds();
     let total: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM missions WHERE status = 'pending_approval' AND deleted_at IS NULL",
@@ -193,10 +196,10 @@ async fn lock_pending(
 pub async fn approve_mission(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
     body: Result<Json<ApprovalDecision>, JsonRejection>,
 ) -> Result<Json<Mission>, ApiError> {
-    let Json(decision) = body.map_err(|_| ApiError::bad_request("artifact_id is required"))?;
+    let Json(decision) = body.map_err(ApiError::from_json_rejection)?;
     let mut transaction = state.pool.begin().await?;
     let (mission, reviewer) = lock_pending(&mut transaction, &state, &admin, &id).await?;
     decide_review(
@@ -224,11 +227,10 @@ pub async fn approve_mission(
 pub async fn reject_mission(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
     body: Result<Json<RejectionDecision>, JsonRejection>,
 ) -> Result<Json<Mission>, ApiError> {
-    let Json(decision) =
-        body.map_err(|_| ApiError::bad_request("artifact_id and reason are required"))?;
+    let Json(decision) = body.map_err(ApiError::from_json_rejection)?;
     let mut transaction = state.pool.begin().await?;
     let (mission, reviewer) = lock_pending(&mut transaction, &state, &admin, &id).await?;
     decide_review(

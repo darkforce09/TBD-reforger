@@ -19,27 +19,27 @@
       "path": "/",
       "authed": true,
       "bytes": 126800,
-      "sha256": "1a79e6c3e5a7ab2d7216bf28da033b50c3598de43ad54d77dacd3719b229ecfc",
+      "sha256": "e492f50444aa72d56370046762dcb2ebf1383524c81a6a91c531b499469d65eb",
       "goldenSource": "leptos",
-      "acceptedDelta": "T telemetry: the single server uplink card becomes the configured-fleet list (one row per active server: name, state, players, FPS) with its totals row (online/configured, players, queue backlog, drops) from the dashboard fleet block"
+      "acceptedDelta": "V: golden seed upcoming events moved to 2030 (seed rule 4); countdown text only"
     },
     {
       "slug": "approvals",
       "path": "/admin/approvals",
       "authed": true,
-      "bytes": 133168,
-      "sha256": "a4183ef954372dadc1b70f787d959754a65b11930d9300ce385b4f5d4ed49a6c",
+      "bytes": 133296,
+      "sha256": "8d55a979b5b12f498403258fbb79bbf23f9bb5923f2ba73743b98799a8f69549",
       "goldenSource": "leptos",
-      "acceptedDelta": "M: the review queue and drawer read the pending review - version and artifact badges, submission time, review record, decision form and review-workspace link"
+      "acceptedDelta": "V: approvals drawer shows the seeded c000-004 mission briefing (golden reproduced from the seed)"
     },
     {
       "slug": "audit",
       "path": "/admin/audit",
       "authed": true,
-      "bytes": 108164,
-      "sha256": "beb37054d2b1e93d629ce58388456be26b99342db9f0fecb66111c23b7da8aa7",
+      "bytes": 125184,
+      "sha256": "f379202123064013123b2ae7528adf6bc6a563b34dbe4cc412147daa6ad20186",
       "goldenSource": "leptos",
-      "acceptedDelta": "Milestone C audit live stream: status badge (stream fixture ends after ready, so Reconnecting) and live-row count in the filter aside; rows typed as AuditLogEntry and merged by audit id"
+      "acceptedDelta": "V: audit history is the seed-reproduced GET__admin__audit-logs golden (16 rows incl. event audit rows with pinned timestamps)"
     },
     {
       "slug": "content",
@@ -71,9 +71,9 @@
       "path": "/admin/server",
       "authed": true,
       "bytes": 185903,
-      "sha256": "23cc5ce3925846d293653fdd659085a1a4056584f24d6af7bb3661125790bfa1",
+      "sha256": "be982a4c7e8b850db88ec4eabba6d9917f1bd8ff9cd34fb1bfc74ab3e929a01b",
       "goldenSource": "leptos",
-      "acceptedDelta": "T telemetry: the server card gains a Telemetry Queue column (backlog/capacity, dropped, oldest age, reported at) and inactive servers carry an Inactive badge"
+      "acceptedDelta": "V: seeded deployment expiry follows the golden seed dates (2031)"
     },
     {
       "slug": "announcements",
@@ -95,28 +95,28 @@
       "slug": "deployments",
       "path": "/deployments",
       "authed": true,
-      "bytes": 179921,
-      "sha256": "953d1abbdb46b45a6bc7aa114bc32626cfc98844bc3c3fd64546137a898b5e52",
+      "bytes": 180754,
+      "sha256": "40f605132dbebba1c6ffc6b8b0e3a26db7b092abe0ca0bf4d16e4a106a5580cd",
       "goldenSource": "leptos",
-      "acceptedDelta": "E: active orders show the reservation standing (Reservation: <state>), with attendance shown separately when recorded"
+      "acceptedDelta": "V: seed upcoming events moved to 2030 (weekday and countdown change); deployments list reproduced from the seed"
     },
     {
       "slug": "events",
       "path": "/events",
       "authed": true,
-      "bytes": 221318,
-      "sha256": "e01c98aca6efc12457be9f46dcdcf0af69fee6778214135b7d5845074fbae909",
+      "bytes": 221985,
+      "sha256": "725743ba5a32555bae80786850b549b80205e1ceac62423c40f24d4198e6d1d1",
       "goldenSource": "leptos",
-      "acceptedDelta": "E: the event hub shows the Places panel (eligibility, viewer access, reservation quotas) before the mission dossiers"
+      "acceptedDelta": "V: seed upcoming events moved to 2030 (weekday, countdown, seat counts reproduced from the seed)"
     },
     {
       "slug": "eventhub",
       "path": "/events/c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7",
       "authed": true,
-      "bytes": 192863,
-      "sha256": "0c25992c1ef78771d1412708b4c2390f88405588f17a6669a6fa42e6c294de2d",
+      "bytes": 193530,
+      "sha256": "02b4851edae4d35a4f4dbfb76fb0424dd307f395cd2c53351dc526cf0ed24a5a",
       "goldenSource": "leptos",
-      "acceptedDelta": "E: the event hub shows the Places panel (eligibility, viewer access, reservation quotas) before the mission dossiers"
+      "acceptedDelta": "V: event hub golden reproduced from the seed (2030 dates, countdown, seeded participant rows)"
     },
     {
       "slug": "orbat",
@@ -147,19 +147,19 @@
       "slug": "missions",
       "path": "/missions",
       "authed": true,
-      "bytes": 152235,
-      "sha256": "74947efc96df2700544c0c596f889aa1fee1e48006de18863a611cb529a38e62",
+      "bytes": 164174,
+      "sha256": "137eaee12c80cb564a87ab6a96d90bf9bf0794fcf2def4482e52027f846f57fe",
       "goldenSource": "leptos",
-      "acceptedDelta": "The /missions scrollport drops backdrop-blur-xl because the per-frame re-blur caused scroll lag, and the glass tint moved to a static z-0 layer behind the composited scroller — that is the relative-to-absolute and children-count difference here. The catalogue itself is fed by GET__missions.json. React reference kept at missions.react.dom.json."
+      "acceptedDelta": "V: mission library golden reproduced from the seed (card order and statuses from the seeded missions)"
     },
     {
       "slug": "missionview",
       "path": "/missions/512d8658-7025-4a70-94e9-a1b44a7aa155",
       "authed": true,
-      "bytes": 86993,
-      "sha256": "ca794ca150480a6a6f4cb12592407b2a3729fe4c5540aeec0aad18cccead8e3b",
+      "bytes": 95008,
+      "sha256": "986f109b27f3c56090670136191534f26be0c37b1bef6f83ece140edc2579ea0",
       "goldenSource": "leptos",
-      "acceptedDelta": "M: the mission overview shows the review record card to the author and administrators"
+      "acceptedDelta": "V: mission 512d8658 golden reproduced from the seed (one extra dossier section from the seeded data)"
     },
     {
       "slug": "modpacks",
@@ -183,10 +183,10 @@
       "slug": "settings",
       "path": "/settings",
       "authed": true,
-      "bytes": 82371,
-      "sha256": "465e4308b66a1feaec939c3a0165292d97caafa396b89363681ed58102e53d65",
+      "bytes": 82369,
+      "sha256": "d8d824133d18729eb39d2158ea8624f1e6069510bded49903a018aa332c715f1",
       "goldenSource": "leptos",
-      "acceptedDelta": "Service totals come from GET__me__deployments.json, committed 2026-07-26 — nine days after the 2026-07-17 freeze. The oracle's zeros are the unfed state, not a UI state; the fixture's 17 operations and 92.5 per cent attendance are what the page is given."
+      "acceptedDelta": "V: GET /me golden reproduced from the seed; attendance derived from registrations reads 50"
     },
     {
       "slug": "mortar",

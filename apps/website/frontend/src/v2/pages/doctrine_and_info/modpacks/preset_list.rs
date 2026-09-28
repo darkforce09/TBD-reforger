@@ -11,7 +11,7 @@
 //! create. The search matches a pack's name or any of its addon names. The create request runs
 //! on `wasm32` only; natively the button clears its busy flag and does nothing.
 
-use super::pack_edit::{format_bytes, vstr};
+use super::pack_edit::format_bytes;
 use crate::v2::core::api::dto::{DataEnvelope, ModpackDto};
 use crate::v2::core::ui::split_pane::{ListDetailItem, SidebarSearch};
 use leptos::prelude::*;
@@ -118,7 +118,7 @@ pub(super) fn pack_list(
             let mods: String = p
                 .mods
                 .iter()
-                .map(|m| vstr(m, "name"))
+                .map(|m| m.name.as_str())
                 .collect::<Vec<_>>()
                 .join(" ");
             crate::v2::core::ui::split_pane::search_matches(
@@ -126,7 +126,6 @@ pub(super) fn pack_list(
                 &format!("{} {mods}", p.modpack.name),
             )
         })
-        .cloned()
         .map(|p| {
             let trailing = if p.modpack.is_current {
                 view! { <span class=BADGE_SUCCESS>"Active"</span> }.into_any()

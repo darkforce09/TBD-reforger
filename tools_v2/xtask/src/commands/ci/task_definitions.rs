@@ -274,7 +274,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "verify-engine-layers",
-        help: "§5 rules 1, 2, 3a, 3b, 4, 7 of documentation_v2/standards/engine_boundary_rules.md — graphics-engine imports no map engine and declares no map noun; map-engine names the frame vocabulary at one enumerated seam and no GPU module at all; data/scenario imports nothing outside itself; data/ and world/ name each other nowhere",
+        help: "§5 rules 1, 2, 3a, 3b, 4, 5, 6, 7 of documentation_v2/standards/engine_boundary_rules.md — graphics-engine imports no map engine and declares no map noun; map-engine names the frame vocabulary at one enumerated seam and GPU modules only at the pinned seams; data/scenario imports nothing outside itself; editing/ names no browser crate; the frontend does not reach graphics-engine; data/ and world/ name each other nowhere",
         group: "verify",
         lane: Lane::Alias,
         steps: &[xt!(

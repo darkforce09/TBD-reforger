@@ -4,8 +4,11 @@
 //! The modpack resolution, ETag and paging helpers live here because both registry surfaces need
 //! them; [`super::registry_compat_graph`] reads them from this module rather than restating them.
 //!
-//! @contract registry-items.schema.json#/$defs/item (each `/registry` row in "data")
+//! @contract arsenal-envelopes.schema.json#/definitions/RegistryItemRow (each "data" row)
+//!
+//! @contract arsenal-envelopes.schema.json#/definitions/RegistryItemPage
 
+use axum::extract::rejection::QueryRejection;
 use axum::extract::{Query, State};
 use axum::http::{HeaderMap, StatusCode, header};
 use axum::response::{IntoResponse, Json, Response};
@@ -119,8 +122,10 @@ pub async fn list_registry(
     State(state): State<AppState>,
     _u: MissionMakerUser,
     headers: HeaderMap,
-    Query(q): Query<RegistryQuery>,
+    query: Result<Query<RegistryQuery>, QueryRejection>,
 ) -> Result<Response, ApiError> {
+    let Query(q) =
+        query.map_err(|rejection| ApiError::from_query_rejection(rejection, "registry query"))?;
     let mp = resolve_modpack(&state.pool, q.modpack.as_deref()).await?;
 
     // COALESCE nullable columns to the model's zero values (non-`Option` fields read NULL as

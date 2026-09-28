@@ -40,7 +40,7 @@ const ENV_PODMAN: &str = "TBD_SEED_MILESTONE_PODMAN";
 const SQL: &str = r#"INSERT INTO announcements (title, body, pinned, published, published_at)
 SELECT
   'Milestone #1 — Saturday 22 August 2026',
-  E'Our first **manual TBD PvP event** target is **Saturday 21 August 2026** (internal test, 20–40 players).
+  E'Our first **manual TBD PvP event** target is **Saturday 22 August 2026** (internal test, 20–40 players).
 
 Mission loads from the backend; ORBAT slots enforce roles; VOIP is optional.
 

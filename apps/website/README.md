@@ -17,6 +17,7 @@ apps/website/
 ├── Dockerfile                  the API's release image, built from the repository root
 ├── frontend/                   the single-page app, crate `website-frontend`, built by Trunk
 ├── graphics-engine/            GPU rendering with no map concept, crate `website-graphics-engine`
+├── improved_layout/            the planning anchor for the platform's directory reorganization, no code
 ├── map-engine/                 world, streaming and mission domain, crate `website-map-engine`
 └── shared/                     the URL-guard test table that the API and the app both include
 ```

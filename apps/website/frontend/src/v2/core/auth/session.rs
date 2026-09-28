@@ -56,7 +56,8 @@ pub struct Session {
     pub arma_linked: bool,
 }
 
-/// The rotated pair a refresh returns.
+/// The rotated pair a refresh returns; its `token_type` is not read.
+/// @contract session-token.schema.json#/definitions/SessionTokenPair
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct RefreshResponse {
     pub access_token: String,

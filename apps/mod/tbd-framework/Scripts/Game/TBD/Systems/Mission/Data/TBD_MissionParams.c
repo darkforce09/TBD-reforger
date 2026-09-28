@@ -29,7 +29,7 @@ class TBD_MissionParamStruct
 	string titleKey;                //!< i18n key for the launcher-facing title. Empty when omitted.
 	ref array<int> values;          //!< Allowed integers (Arma `values[]`). Presence = Count().
 	ref array<string> displays;     //!< Parallel labels (Arma `texts[]`). Presence = Count().
-	int authoredDefault = ABSENT;   //!< Filled from wire key `default` by TBD_MissionParams.
+	int authoredDefault = ABSENT;   //!< JSON key `default`, read by TBD_MissionParams in a second pass.
 }
 
 //! One row of `$profile:TBD_MissionParams.json` `selections[]`; the server config, not the

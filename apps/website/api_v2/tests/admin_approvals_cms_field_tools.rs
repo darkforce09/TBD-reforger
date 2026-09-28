@@ -262,7 +262,8 @@ async fn ban_reason_survives_a_malformed_reban() {
     };
 
     // (label, content-type, body) — every way the extractor can fail, plus a blank reason
-    // that decodes cleanly and so gets past the extractor entirely.
+    // that decodes cleanly and so gets past the extractor entirely. A body without a JSON
+    // content type answers 415; every other refusal answers 400.
     let rejected: [(&str, Option<&str>, Option<&str>); 6] = [
         ("well-formed {}", Some("application/json"), Some("{}")),
         ("no body", Some("application/json"), None),
@@ -296,12 +297,25 @@ async fn ban_reason_survives_a_malformed_reban() {
             body,
         )
         .await;
-        assert_eq!(
-            st,
-            StatusCode::BAD_REQUEST,
-            "{label}: expected 400, got {r}"
+        let (status, message) = match (ct, label) {
+            (Some("application/json"), "whitespace-only reason") => {
+                (StatusCode::BAD_REQUEST, Some("reason is required"))
+            }
+            (Some("application/json"), "well-formed {}") => {
+                (StatusCode::BAD_REQUEST, Some("missing field `reason`"))
+            }
+            (Some("application/json"), _) => (StatusCode::BAD_REQUEST, None),
+            _ => (StatusCode::UNSUPPORTED_MEDIA_TYPE, None),
+        };
+        assert_eq!(st, status, "{label}: expected {status}, got {r}");
+        let error = r["error"].as_str().unwrap_or_default();
+        assert!(
+            !error.is_empty(),
+            "{label}: no `error` in the envelope: {r}"
         );
-        assert_eq!(r["error"], "reason is required", "{label}: message");
+        if let Some(message) = message {
+            assert!(error.contains(message), "{label}: message {error:?}");
+        }
         let (is_banned, reason, banned_at) = read(pool.clone()).await;
         assert_eq!(reason, SENTINEL, "{label}: prior ban reason was clobbered");
         assert!(is_banned, "{label}: prior ban was lifted");

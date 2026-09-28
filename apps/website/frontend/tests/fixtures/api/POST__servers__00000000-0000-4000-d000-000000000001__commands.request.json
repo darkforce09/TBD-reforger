@@ -1,0 +1,6 @@
+{
+  "action": "broadcast",
+  "arguments": {
+    "message": "Server restarts in 5 minutes"
+  }
+}

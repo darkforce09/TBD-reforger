@@ -36,11 +36,16 @@ fn admin_users_page() {
 #[test]
 fn members_envelope() {
     const G: &str = golden!("GET__members.json");
-    assert_golden::<DataEnvelope<Member>>(G, &[]);
-    let env: DataEnvelope<Member> = serde_json::from_str(G).unwrap();
+    assert_golden::<MemberSearchPage>(G, &[]);
+    let env: MemberSearchPage = serde_json::from_str(G).unwrap();
     assert!(
         env.data.len() >= 2,
         "members golden must cover more than one row"
+    );
+    assert_eq!(
+        env.total,
+        env.data.len() as i64,
+        "the seeded directory fits one page, so the total counts exactly the rows"
     );
     assert!(
         env.data.iter().any(|m| m.avatar_url.is_some()),
@@ -56,4 +61,35 @@ fn members_envelope() {
             .all(|m| !m.discord_id.is_empty() && !m.username.is_empty()),
         "discord_id and username must round-trip populated"
     );
+}
+
+// ── session and identity writes ──
+// Their answers carry values the server generates per request; the goldens hold the fixed
+// placeholders of the API's golden normalisation table at those fields.
+
+/// The rotated pair as the session store decodes it. `token_type` is always `Bearer` and no field
+/// reads it, so it rides a test-local catch-all beside the DTO and is listed as unclaimed.
+#[derive(Serialize, Deserialize)]
+struct RefreshAnswer {
+    #[serde(flatten)]
+    pair: crate::v2::core::auth::session::RefreshResponse,
+    #[serde(flatten)]
+    unread: serde_json::Map<String, Value>,
+}
+
+#[test]
+fn session_refresh() {
+    const G: &str = golden!("POST__auth__refresh.json");
+    assert_golden::<RefreshAnswer>(G, &["token_type"]);
+    let answer: RefreshAnswer = serde_json::from_str(G).unwrap();
+    assert!(!answer.pair.access_token.is_empty() && !answer.pair.refresh_token.is_empty());
+    assert_eq!(answer.unread.get("token_type"), Some(&json!("Bearer")));
+}
+
+#[test]
+fn link_code_issued() {
+    const G: &str = golden!("POST__me__link.json");
+    assert_golden::<LinkCodeResponse>(G, &[]);
+    let issued: LinkCodeResponse = serde_json::from_str(G).unwrap();
+    assert!(issued.expires_at.is_some(), "an issued code always expires");
 }

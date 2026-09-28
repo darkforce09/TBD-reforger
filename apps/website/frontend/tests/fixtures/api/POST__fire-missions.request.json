@@ -1,0 +1,10 @@
+{
+  "event_id": "c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7",
+  "fp_grid": "1000, 2000",
+  "fp_x": 1000,
+  "fp_y": 2000,
+  "target_grid": "2200, 1800",
+  "tgt_x": 2200,
+  "tgt_y": 1800,
+  "weapon_system": "M252 81mm"
+}

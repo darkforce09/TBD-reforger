@@ -8,13 +8,14 @@ refresh policy that keeps a session alive across tabs without spending a refresh
 
 ```text
 apps/website/frontend/src/v2/core/api/client/
-├── errors.rs    the `(status, message)` failure pair, the error-body reader and `ApiFailure`
-├── fetched.rs   `Fetched`: a settled request's data or its named failure, with no empty default
-├── mod.rs       the module tree; re-exports the verbs, the failure types and the refresh policy
-├── refresh.rs   the refresh policy: one retry per 401, the per-tab single flight, the cross-tab lock
-├── refusals.rs  `ApiRefusal`: a refused answer kept whole, with the reason its `details` names
-├── requests.rs  the request verbs, the file upload and the cold-start `bootstrap`; browser-only
-└── tests/       unit tests for the retry contract, the refresh generations, refusals and `Fetched`
+├── errors.rs        the `(status, message)` failure pair, the error-body reader and `ApiFailure`
+├── fetched.rs       `Fetched`: a settled request's data or its named failure, with no empty default
+├── mod.rs           the module tree; re-exports the verbs, the failure types and the refresh policy
+├── public_reads.rs  `public_get`: anonymous, cancellable GETs that never touch the session
+├── refresh.rs       the refresh policy: one retry per 401, the per-tab single flight, the cross-tab lock
+├── refusals.rs      `ApiRefusal`: a refused answer kept whole, with the reason its `details` names
+├── requests.rs      the request verbs, the file upload and the cold-start `bootstrap`; browser-only
+└── tests/           unit tests for the retry contract, the refresh generations, refusals and `Fetched`
 ```
 
 ## How it works
@@ -38,6 +39,11 @@ and spends it on `POST /api/v1/auth/refresh` with a 30 s deadline, persisting an
 successor, or ending the session when that fails. Web Locks need a secure context; without them
 the refresh and the cold-start read return nothing and leave the stored credentials untouched.
 
+`public_get` in `public_reads.rs` is the one read that bypasses all of this: it sends no bearer
+token and no credentials, reads and changes no session state, and runs at most four requests at
+once, each cancellable through its `AbortSignal` and retried up to twice after a 429, waiting as
+`Retry-After` says (at most 60 s). The equipment data viewer reads through it.
+
 `bootstrap`, spawned once by the app layout, restores the stored session under the same lock and
 fetches `GET /api/v1/me`. `Fetched` and `ApiFailure` keep a dead session, a refusal and a network
 failure apart, so a render site that holds one cannot show a refusal as an empty list; no page
@@ -54,7 +60,8 @@ uses them, and the pages read a failure as the `(status, message)` pair through
   in `apps/website/frontend/src/v2/core/auth/session.rs`, for the refresh lock; the pages under
   `apps/website/frontend/src/v2/pages/`, the app layout's `bootstrap` among them; the
   [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) under
-  `apps/website/frontend/src/v2/apps/editor/`.
+  `apps/website/frontend/src/v2/apps/editor/`; `public_get`, by the equipment data viewer in
+  `apps/website/frontend/src/v2/apps/debug/data_viewer/data/`.
 - Rules:
   - one refresh and one retry per 401 (`retries_once_after_refresh`,
     `no_loop_if_retry_still_401` and `two_concurrent_401s_share_one_refresh` in `tests/client.rs`);

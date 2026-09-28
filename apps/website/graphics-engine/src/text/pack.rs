@@ -77,9 +77,9 @@ pub fn screen_yaw_for_heading_deg(heading_deg: f64) -> f64 {
 }
 
 /// Canonical text uniform bytes value.
-// T-0xx Phase 2B: moved here from `text/gpu.rs`. Neither this nor `text_uniform_bytes` names
-// a `wgpu` type — they are the CPU side of the `TextUniforms` block, which is byte layout,
-// which is this module. `text/gpu.rs` itself became `frame/atlas.rs`.
+// Neither this nor `text_uniform_bytes` names a `wgpu` type: they are the CPU side of the
+// `TextUniforms` block, which is byte layout and so belongs to this module. The atlas's GPU
+// handles that bind the block live in `frame::atlas`.
 pub const TEXT_UNIFORM_BYTES: u64 = 16;
 
 /// `TextUniforms` block: `px_to_m = 1`, then the atlas grid dims the sampler needs.

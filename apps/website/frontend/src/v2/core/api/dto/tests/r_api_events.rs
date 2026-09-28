@@ -484,3 +484,13 @@ fn leave_dates_are_the_backend_midnight_utc_spelling() {
 fn reservation_response() {
     assert_golden::<ReservationResponse>(golden!("POST__event-missions__register.json"), &[]);
 }
+
+/// A submitted leave request starts pending and unreviewed.
+#[test]
+fn leave_request_submitted() {
+    const G: &str = golden!("POST__me__leave-requests.json");
+    assert_golden::<LeaveRequest>(G, &[]);
+    let request: LeaveRequest = serde_json::from_str(G).unwrap();
+    assert_eq!(request.status, "pending");
+    assert!(request.reviewed_by.is_none());
+}

@@ -2,7 +2,26 @@
 
 use super::super::article_feed::preview_text;
 use super::*;
-use serde_json::json;
+
+/// A published dispatch with the given preview line and body, every other field filled in.
+fn dispatch(snippet: &str, body: &str) -> Announcement {
+    Announcement {
+        id: "00000000-0000-4000-1000-000000000001".into(),
+        title: "Dispatch".into(),
+        body: body.into(),
+        snippet: snippet.into(),
+        tag: "update".into(),
+        thumbnail_url: String::new(),
+        author_id: "000000000000000001".into(),
+        status: "published".into(),
+        is_pinned: false,
+        pushed_to_discord: false,
+        discord_message_id: String::new(),
+        published_at: Some("2026-07-22T17:00:00Z".into()),
+        created_at: "2026-07-22T16:41:03Z".into(),
+        updated_at: "2026-07-22T17:00:00Z".into(),
+    }
+}
 
 /// The strings fed to the view's text nodes must still contain bare `<` and `&`.
 /// RED: pretreat with HTML-escaping before split — this fails on `&lt;`.
@@ -18,10 +37,10 @@ fn body_paragraphs_preserve_bare_angle_brackets() {
 
 #[test]
 fn preview_prefers_snippet_but_falls_back_to_body_without_entities() {
-    let with_snip = json!({"snippet": "teaser < ok", "body": "ignored"});
+    let with_snip = dispatch("teaser < ok", "ignored");
     assert_eq!(preview_text(&with_snip), "teaser < ok");
 
-    let from_body = json!({"snippet": "", "body": "a < b\n\nmore"});
+    let from_body = dispatch("", "a < b\n\nmore");
     assert_eq!(preview_text(&from_body), "a < b");
     assert!(!preview_text(&from_body).contains("&lt;"));
 }

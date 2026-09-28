@@ -1,7 +1,10 @@
 //! Event writes validate current authority and serialize schedule, capacity and reservation changes.
+//!
+//! @contract event-schedule.schema.json#/definitions/EventCreation
+//! @contract event-schedule.schema.json#/definitions/EventChange
 
+use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::Json;
 use chrono::{DateTime, Utc};
@@ -12,6 +15,7 @@ use uuid::Uuid;
 use crate::administration::services::required_audit::append_actor_audit;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AdminUser;
 use crate::core::text::http_url_guard::is_http_url;
 use crate::operations::models::{Event, EventStatus};
@@ -111,7 +115,7 @@ pub async fn create_event(
     _a: AdminUser,
     body: Result<Json<CreateEventInput>, JsonRejection>,
 ) -> Result<(StatusCode, Json<Event>), ApiError> {
-    let Json(input) = body.map_err(|_| ApiError::bad_request("start_time is required"))?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
     let (Some(start_time), true) = (input.start_time, (0..=256).contains(&input.max_slots)) else {
         return Err(ApiError::bad_request("start_time is required"));
     };
@@ -197,10 +201,10 @@ pub struct PatchEventInput {
 pub async fn update_event(
     State(state): State<AppState>,
     _a: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
     body: Result<Json<PatchEventInput>, JsonRejection>,
 ) -> Result<Json<Event>, ApiError> {
-    let Json(mut input) = body.map_err(|_| ApiError::bad_request("invalid body"))?;
+    let Json(mut input) = body.map_err(ApiError::from_json_rejection)?;
     input.start_time = input.start_time.map(normalize_schedule_time).transpose()?;
     let event_id = Uuid::parse_str(&id).map_err(|_| ApiError::bad_request("invalid id"))?;
     let mut tx = state.pool.begin().await?;
@@ -313,7 +317,7 @@ pub async fn update_event(
 pub async fn delete_event(
     State(state): State<AppState>,
     _a: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<StatusCode, ApiError> {
     let event_id = Uuid::parse_str(&id).map_err(|_| ApiError::bad_request("invalid id"))?;
     let mut tx = state.pool.begin().await?;

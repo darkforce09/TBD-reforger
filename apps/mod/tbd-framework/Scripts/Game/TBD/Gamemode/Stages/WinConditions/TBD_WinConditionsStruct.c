@@ -9,7 +9,7 @@
  * is the one reader of it; an absent block reads as an empty `mode` (schema-required inside it).
  */
 
-//! @contract mission.schema.json#/$defs/winConditions
+//! @contract mission.schema.json#/$defs/winConditions partial
 class TBD_WinConditionsStruct
 {
 	static const int ABSENT_INT = -1; //!< initializer marking an absent integer key; `timeoutMinutes` has `minimum: 1`
@@ -21,7 +21,7 @@ class TBD_WinConditionsStruct
 }
 
 //! Document root of the win-rule pass; declares `winConditions` only, so no other key is read.
-//! @contract mission.schema.json#/properties/winConditions
+//! @contract mission.schema.json#/ partial
 class TBD_WinConditionDocStruct
 {
 	ref TBD_WinConditionsStruct winConditions; //!< JSON `winConditions`; allocated even when absent

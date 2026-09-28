@@ -207,13 +207,17 @@ engine as values and closures, and keeps the state [section 1](#where-state-live
 ## 5. Gate rules
 
 `cargo xtask verify engine-layers` checks the rules below. It runs as the `verify-engine-layers`
-step of `cargo xtask ci ci-local` (`tools_v2/xtask/src/commands/ci/task_definitions.rs:46`) and as
+step of `cargo xtask ci ci-local` (`tools_v2/xtask/src/commands/ci/task_definitions.rs:48`) and as
 a step of the `language-gates` job in `.github/workflows/ci.yml`, beside the language gates: it
 reads the working tree, needs no database, LFS object or wasm target, and takes seconds.
 `cargo xtask ci verify-engine-layers` is an alias of the same verb. The code is in
-`tools_v2/xtask/src/verifications/architecture/`: the rules and their reasons in
-`engine_layer_boundaries.rs`, the matchers, pins and messages in `engine_layer_rules.rs`, the
-walks and pin arithmetic in `engine_layer_scan.rs`; the
+`tools_v2/verification-core/src/repository_laws/engine_layers/`: the rule catalogue and its
+reasons in `mod.rs`, the matchers, pins and scanned roots in `rules.rs`, the head lines and
+messages in `report_text.rs`, the walks in `crate_walks.rs` and the pin arithmetic in
+`scanning.rs`, as its [README](/tools_v2/verification-core/src/repository_laws/engine_layers/README.md)
+lists. `tools_v2/xtask/src/verifications/architecture/engine_layer_boundaries.rs` prints that
+library's report for `cargo xtask verify engine-layers`, and the `engineering_laws` test binary of
+`website-api` reads the same library; the
 [architecture gates README](/tools_v2/xtask/src/verifications/architecture/README.md) summarises
 all three architecture gates.
 
@@ -243,11 +247,11 @@ all three architecture gates.
 | 1 | `apps/website/graphics-engine` | no `website_map_engine` in source, no `website-map-engine` edge in `Cargo.toml` |
 | 2 | `apps/website/graphics-engine` | no declared name (after `struct`, `enum`, `trait`, `type`, `fn`, `const`, `static`, `mod`) containing terrain, symbology, mission, orbat or arma, case-insensitive |
 | 3a | `apps/website/map-engine/src` | `website_graphics_engine::frame` appears only in `frame/mod.rs`, exactly 8 times |
-| 3b | `apps/website/map-engine/src` | `website_graphics_engine::` followed by `device`, `pipeline`, `shaders`, `r#loop` or `text::gpu` appears only at the pinned sites: 3 in `frame/mod.rs`, 2 in `frame/pump.rs` |
-| 4 | `data/scenario` | names none of `crate::` `camera`, `diagnostics`, `doll`, `frame`, `io`, `overlay`, `spatial`, `streaming`, `world`, `data::store`, nor `website_graphics_engine`, nor a `super::` chain ending on one of them (`diagnostics` excepted), outside two pinned `cfg(feature = "store")` test files |
+| 3b | `apps/website/map-engine/src` | `website_graphics_engine::` followed by `device`, `pipeline`, `shaders` or `r#loop` appears only at the pinned sites: 3 in `frame/mod.rs`, 2 in `frame/pump.rs` |
+| 4 | `data/scenario` | names none of `crate::` `camera`, `diagnostics`, `doll`, `editing`, `frame`, `io`, `overlay`, `spatial`, `streaming`, `world`, `data::store`, nor `website_graphics_engine`, nor a `super::` chain ending on one of them (`diagnostics` excepted), outside two pinned `cfg(feature = "store")` test files |
 | 5 | `editing` | no `web_sys`, `leptos` or `wasm_bindgen`, prose included |
 | 6 | `apps/website/frontend` | no `website_graphics_engine::` path or `extern crate`, no `website-graphics-engine` edge in `Cargo.toml` |
-| 7 | `data` and `world` | `data/` names none of the nine sibling modules of rule 4 nor the graphics engine; `world/` names neither `crate::data` nor `yrs::` |
+| 7 | `data` and `world` | `data/` names none of the ten sibling modules of rule 4 nor the graphics engine; `world/` names neither `crate::data` nor `yrs::` |
 
 The paths of rules 4, 5 and 7 are under `apps/website/map-engine/src/`.
 
@@ -290,8 +294,8 @@ The paths of rules 4, 5 and 7 are under `apps/website/map-engine/src/`.
 ### Rule 3b: no GPU-resource module in the map engine
 
 - Subject: the `.rs` files under `apps/website/map-engine/src`.
-- Forbids: `website_graphics_engine::` followed by `device`, `pipeline`, `shaders`, `r#loop` or
-  `text::gpu` and a word boundary (`GPU_MODULE_RE`), outside the pins.
+- Forbids: `website_graphics_engine::` followed by `device`, `pipeline`, `shaders` or `r#loop`
+  and a word boundary (`GPU_MODULE_RE`), outside the pins.
 - Why: Kind A of [2C.1](#2c1-what-may-name-a-graphics-type). These modules create and own GPU
   resources; the fix for a new site is to move the construction into the graphics engine, not to
   add a pin row.
@@ -307,10 +311,10 @@ The paths of rules 4, 5 and 7 are under `apps/website/map-engine/src/`.
 ### Rule 4: the mission compiler imports nothing outside itself
 
 - Subject: the `.rs` files under `apps/website/map-engine/src/data/scenario`.
-- Forbids (`RULE4_RE`): `crate::` followed by `camera`, `diagnostics`, `doll`, `frame`, `io`,
-  `overlay`, `spatial`, `streaming`, `world` or `data::store`; `website_graphics_engine`; and a
-  `super::` chain of any length ending on `store`, `camera`, `doll`, `frame`, `io`, `overlay`,
-  `spatial`, `streaming` or `world`. `diagnostics` is left out of the `super::` arm because
+- Forbids (`RULE4_RE`): `crate::` followed by `camera`, `diagnostics`, `doll`, `editing`,
+  `frame`, `io`, `overlay`, `spatial`, `streaming`, `world` or `data::store`;
+  `website_graphics_engine`; and a `super::` chain of any length ending on `store`, `camera`,
+  `doll`, `editing`, `frame`, `io`, `overlay`, `spatial`, `streaming` or `world`. `diagnostics` is left out of the `super::` arm because
   `data/scenario/compiler/flatten/diagnostics.rs` is a module inside the tree.
 - Why: [2A](#2a-the-apis-thin-tier). The `super::` arm exists because a `crate::`-only matcher
   would leave a one-line bypass, and a depth count would be unsound where `#[path]` separates file
@@ -344,10 +348,10 @@ The paths of rules 4, 5 and 7 are under `apps/website/map-engine/src/`.
 - Subject: the `.rs` files under `apps/website/map-engine/src/data` and
   `apps/website/map-engine/src/world`, judged as one rule with one findings list.
 - Forbids: under `data/` (`RULE7_DATA_RE`), `crate::` followed by `camera`, `diagnostics`, `doll`,
-  `frame`, `io`, `overlay`, `spatial`, `streaming` or `world`, `website_graphics_engine`, or a
-  `super::` chain ending on one of them but `diagnostics`; under `world/` (`RULE7_WORLD_RE`),
-  `crate::data`, `yrs::` or a `super::` chain ending on `data`. `yrs::` rather than the bare word,
-  so "3 yrs" in prose passes.
+  `editing`, `frame`, `io`, `overlay`, `spatial`, `streaming` or `world`,
+  `website_graphics_engine`, or a `super::` chain ending on one of them but `diagnostics`; under
+  `world/` (`RULE7_WORLD_RE`), `crate::data`, `yrs::` or a `super::` chain ending on `data`.
+  `yrs::` rather than the bare word, so "3 yrs" in prose passes.
 - Why: [2D](#2d-static-world-and-authored-document). A build of `--features store` alone compiles
   `data/` without the world modules, but the `--all-features` build CI runs does not, and nothing
   in the compiler stops `world/` naming `data/`.
@@ -355,9 +359,10 @@ The paths of rules 4, 5 and 7 are under `apps/website/map-engine/src/`.
 
 ### Changing a rule or a pin
 
-- A pin row is a reviewed edit to `engine_layer_rules.rs`, carrying its file, exact count and
-  reason; the unit tests in `tools_v2/xtask/src/verifications/architecture/tests/` hold each
-  rule's shape (`naming_the_frame_vocabulary_outside_the_boundary_fails`,
+- A pin row is a reviewed edit to
+  `tools_v2/verification-core/src/repository_laws/engine_layers/rules.rs`, carrying its file,
+  exact count and reason; the unit tests in
+  `tools_v2/verification-core/src/repository_laws/engine_layers/tests/` hold each rule's shape (`naming_the_frame_vocabulary_outside_the_boundary_fails`,
   `a_new_gpu_module_import_in_the_map_engine_fails`,
   `the_scenario_tree_reaching_outside_itself_fails`,
   `inputs_that_were_never_read_do_not_pass`).
@@ -368,29 +373,16 @@ The paths of rules 4, 5 and 7 are under `apps/website/map-engine/src/`.
 
 ## 6. Known gaps and open work
 
-- **Rules 4 and 7 omit `editing`.** Their matchers list nine sibling modules, and the gate's
-  comments say the crate has ten top-level modules (`engine_layer_rules.rs:108-111`,
-  `engine_layer_boundaries.rs:72`); `lib.rs` declares eleven. `data/` or `data/scenario/` naming
-  `crate::editing` passes today.
 - **Rule 2's noun list is short.** Declared names such as `BuildingInstance`,
   `create_building_pipeline`, `create_forest_density_pipeline` and `create_map_shader` name map
   concepts the five nouns do not catch (`apps/website/graphics-engine/src/draw/instances.rs`,
   `pipeline/`).
-- **A stale matcher arm.** Rule 3b matches `text::gpu`, a module the graphics engine does not have
-  (`apps/website/graphics-engine/src/text/`); the arm can never fire.
-- **Rule lists that omit rules 5 and 6.** The `verify-engine-layers` task help
-  (`tools_v2/xtask/src/commands/ci/task_definitions.rs:293`), the `verify engine-layers` doc
-  (`tools_v2/xtask/src/commands/verify/cli.rs:91`) and the CI step name and comment
-  (`.github/workflows/ci.yml:260-261`) list rules 1, 2, 3a, 3b, 4 and 7; the gate runs all eight.
 - **The wave gate does not run it.** `VERIFY_STEPS` in
   `tools_v2/xtask/src/commands/platform/wave_execution/gate.rs:59` has no engine-layers row; only
   `ci-local` and CI run the gate.
 
 Tickets:
 
-- [T-1055 — Fix engine-layers gate omitting the map engine editing module](/.ai/tickets/T-1055.toml)
-  (idea, no plan): adds `editing` to rules 4 and 7, fixes the module count, drops the `text::gpu`
-  arm and names all eight rules in the help and CI texts.
 - [T-1070 — Remove map nouns from graphics engine names; widen rule 2](/.ai/tickets/T-1070.toml)
   (idea, no plan): renames the graphics engine's map-named items to geometry terms and adds
   building, forest, map, hillshade, slot, town and road to rule 2's nouns.

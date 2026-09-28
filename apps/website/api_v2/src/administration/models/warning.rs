@@ -1,4 +1,6 @@
 //! The disciplinary warning record.
+//!
+//! @contract personnel-actions.schema.json#/definitions/Warning
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

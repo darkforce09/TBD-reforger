@@ -1,7 +1,9 @@
 //! Pushing an announcement to the Discord #announcements channel: the shared push-and-record
 //! step used by the CMS writers, and the dedicated manual (re)push route.
+//!
+//! @contract announcement.schema.json#/definitions/DiscordPushOutcome
 
-use axum::extract::{Path, State};
+use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::Json;
 use serde_json::{Value, json};
@@ -14,6 +16,7 @@ use crate::community_content::models::announcement::{Announcement, AnnouncementS
 use crate::community_content::services::discord_webhook::sanitize_discord_embed_field;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AdminUser;
 
 /// Push an announcement to the webhook; record the result. Returns success.
@@ -66,7 +69,7 @@ pub(super) async fn push_to_discord(state: &AppState, a: &Announcement) -> bool 
 pub async fn push_announcement_discord(
     State(state): State<AppState>,
     _a: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<Json<Value>, ApiError> {
     let Ok(id) = Uuid::parse_str(&id) else {
         return Err(ApiError::bad_request("invalid id"));

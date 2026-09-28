@@ -1,0 +1,82 @@
+{
+  "resource_id": "guid:1111111111111111",
+  "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+  "capabilities": {
+    "inventory": [
+      {
+        "node_id": "root/properties/components/0/properties/Attributes",
+        "facts": {
+          "weight": {
+            "source": {
+              "property": "Weight"
+            }
+          }
+        }
+      }
+    ],
+    "storage": [
+      {
+        "node_id": "root/properties/components/0",
+        "facts": {
+          "capacity_coefficient": {
+            "source": {
+              "property": "CapacityCoefficient"
+            }
+          },
+          "max_cumulative_volume": {
+            "source": {
+              "property": "MaxCumulativeVolume"
+            }
+          }
+        }
+      }
+    ],
+    "visuals": [
+      {
+        "node_id": "root/properties/components/1",
+        "facts": {
+          "model": {
+            "source": {
+              "property": "Object"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "names": [
+    {
+      "node_id": "root/properties/components/0/properties/Attributes/properties/ItemDisplayName",
+      "display_name_en": {
+        "status": "present",
+        "value": "Fixture Field Pack"
+      }
+    }
+  ],
+  "references": [
+    {
+      "node_id": "root/properties/components/0",
+      "property": "Pouch",
+      "resource_name": "{2222222222222222}Prefabs/Items/Equipment/Pouches/Pouch_Fixture.et",
+      "kind": "gameplay",
+      "method": "BaseContainer.Get"
+    },
+    {
+      "node_id": "root/properties/components/1",
+      "property": "Object",
+      "resource_name": "{5555555555555555}Assets/Items/Equipment/Backpacks/Backpack_Fixture.xob",
+      "kind": "binary",
+      "method": "BaseContainer.Get"
+    },
+    {
+      "node_id": "root/properties/components/1/ancestor",
+      "property": "Object",
+      "resource_name": "{A4048C2AA75EF832}Common/Models/Default.xob",
+      "kind": "binary",
+      "method": "BaseContainer.Get"
+    }
+  ],
+  "source_addons": [
+    "ArmaReforger"
+  ]
+}

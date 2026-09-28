@@ -1,16 +1,56 @@
-# WeaponExport/Weapon
+# Weapon export
 
-The master arsenal sweep: every weapon in every loaded addon, bucketed by class of weapon.
+The master weapon sweep: every weapon in every loaded addon, sorted into nine categories and written
+under `$profile:TBD_Export/equipment/weapons/`.
 
-### Roles & Responsibilities
-- `TBD_WeaponModel.c`: `TBD_WeaponInfo` with fire-mode, muzzle, attachment-slot, sights, ballistics, physical, and classification sub-carriers. This is the broadest carrier in the subtree and the reference shape the per-hardware domains specialize.
-- `TBD_WeaponExtractor.c`: Reads what a weapon is as a physical object — mass, volume, inventory footprint, bipod and disposable flags — plus its sights zeroing and its ballistic table.
-- `TBD_WeaponClassificationExtractor.c`: Decides what kind of weapon a prefab is, mapping the engine's integer weapon-type enum to the catalog's string and detecting a bipod by recursive container search.
-- `TBD_WeaponMuzzleExtractor.c`: Reads each muzzle a weapon declares — magazine wells, default magazine, barrel and chamber properties — and the fire modes it supports with rate of fire and burst length.
-- `TBD_WeaponMountingExtractor.c`: Reads the attachment slots a weapon offers, the type each requires, the prefab already fitted, and the types a fitted attachment obstructs.
-- `TBD_WeaponNaming.c`: Reads display name, description, and icon from `UIInfo`, and derives the catalog family from the prefab path.
-- `TBD_WeaponScanner.c`: Sweeps every loaded addon, sorts each weapon into `rifles`, `machine_guns`, `handguns`, `launchers`, `grenades`, `explosives`, or `underbarrel`, and serializes one catalog per category plus the `weapons_all` rollup.
-- `TBD_WeaponExportPlugin.c`: Workbench entry point `Plugins > TBD > Export All Weapons (Master Arsenal)`. Writes `$profile:TBD_Export/equipment/weapons/`.
+## Contents
 
-### Call Flow & Contracts
-Menu action -> `TBD_WeaponExportPlugin.Run()` -> `TBD_WeaponScanner.Scan()` -> the five extractors in turn -> one `TBD_WeaponInfo` -> `equipment/weapons/<category>.json` for each of the seven categories, then `weapons_all.json`, each with a `_meta.json` sidecar. Categories are derived from the prefab's path under `Prefabs/Weapons/`, so a weapon that lives outside that tree is skipped rather than guessed at. The five extractors do not call each other except where a value genuinely spans them: the muzzle extractor cleans fire-mode localization tokens through `TBD_WeaponNaming`, and the physical extractor asks `TBD_WeaponClassificationExtractor` whether a bipod is present.
+```text
+apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/WeaponExport/Weapon/
+├── TBD_WeaponClassificationExtractor.c  the weapon type string and the bipod search
+├── TBD_WeaponExportPlugin.c             the weapon plugin class; its menu attribute is commented out
+├── TBD_WeaponExtractor.c                mass, volume, inventory footprint, flags, sights zeroing and ballistic table
+├── TBD_WeaponModel.c                    `TBD_WeaponInfo`, the broadest carrier, and its parts
+├── TBD_WeaponMountingExtractor.c        attachment slots, required types, fitted prefabs, obstructed types
+├── TBD_WeaponMuzzleExtractor.c          muzzles, magazine wells, barrel and chamber, fire modes
+├── TBD_WeaponNaming.c                   display name, description, icon and catalog family
+└── TBD_WeaponScanner.c                  the addon sweep, the nine categories and the catalogs
+```
+
+## How it works
+
+"Export All Equipment" runs `TBD_WeaponScanner.RunScan()` in its first phase; the domain's own
+plugin attribute is commented out.
+
+The scanner sorts each weapon into `rifles`, `machine_guns`, `handguns`, `launchers`, `flares`,
+`heavy_weapons`, `grenades`, `explosives` or `underbarrel` by the prefab's folder under
+`Prefabs/Weapons/`, so a weapon outside that tree is skipped rather than guessed at. The five
+extractors fill one `TBD_WeaponInfo`, and the scanner writes `<category>.json` for each category and
+`weapons_all.json`, each with its `_meta.json` sidecar.
+
+The extractors call each other only where a value spans them: the muzzle extractor cleans fire-mode
+localization tokens through `TBD_WeaponNaming`, and the physical extractor asks
+`TBD_WeaponClassificationExtractor` whether a bipod is present. Mounting and sights come through
+`TBD_AttachmentMountingExtractor` and `TBD_OpticSightsExtractor`.
+
+## Authority
+
+None: Workbench runs these scripts in the editor.
+
+## Boundaries
+
+- Depends on: `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/Core/` (component walk,
+  destination, JSON writing, display attributes and resource names); `TBD_ItemInventoryExtractor` in
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/ItemExport/`;
+  `TBD_AttachmentMountingExtractor` and `TBD_AttachmentSlotInfo` from
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/WeaponExport/Attachment/`;
+  `TBD_OpticSightsExtractor` from
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/WeaponExport/Optic/`.
+- Used by: `TBD_EquipmentExportPlugin` in
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/`; the static weapon extractor in
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/StaticExport/`, through the muzzle and
+  mounting extractors; the verification handler in
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/Core/ExportDestination/`, which runs
+  the scanner and probes fire modes.
+- Rules: a weapon's category comes from its prefab folder alone; a weapon outside `Prefabs/Weapons/`
+  is skipped.

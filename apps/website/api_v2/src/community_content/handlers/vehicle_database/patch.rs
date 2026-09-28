@@ -11,8 +11,8 @@
 //! `FOR UPDATE` lock, so a concurrent write cannot slip between the read and the store; the row
 //! write and its audit line, which names the changed fields, commit together.
 
+use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, State};
 use axum::response::Json;
 
 use super::validation::VehiclePatchBody;
@@ -22,6 +22,7 @@ use super::vehicle_rows::{
 use crate::community_content::models::VehicleDatabase;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AdminUser;
 
 /// `PATCH /api/v1/vehicle-database/{id}`: changes the named fields of a live row.
@@ -30,7 +31,7 @@ use crate::core::middleware::AdminUser;
 pub async fn patch_vehicle(
     State(state): State<AppState>,
     administrator: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
     body: Result<Json<VehiclePatchBody>, JsonRejection>,
 ) -> Result<Json<VehicleDatabase>, ApiError> {
     let id = parse_vehicle_id(&id)?;

@@ -74,6 +74,7 @@ class TBD_LoadedArtifactReport
 
 	//! The session start body.
 	//! @return both fields together, or `{}` when the world runs no artifact
+	//! @contract game-runtime-session.schema.json#/definitions/RuntimeSessionStart
 	static string BuildStartBody()
 	{
 		if (!NamesArtifact())

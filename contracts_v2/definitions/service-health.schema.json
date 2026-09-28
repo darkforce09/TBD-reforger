@@ -1,0 +1,156 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ServiceHealthContract",
+  "description": "GET /healthz: the liveness and readiness probe outside /api/v1. The status code carries the verdict: 200 with status ok when the database answers and every migration applied, else 503 with status unavailable, in both shapes. The root is the public shape.",
+  "$ref": "#/definitions/PublicHealth",
+  "definitions": {
+    "PublicHealth": {
+      "description": "GET /healthz without the OBSERVABILITY_TOKEN bearer: the verdict only; nothing about the build, the process or the schema.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "unavailable"
+          ]
+        }
+      }
+    },
+    "DetailedHealth": {
+      "description": "GET /healthz with the OBSERVABILITY_TOKEN bearer: the verdict, the build version, the process uptime, each check and the connection pool gauges.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "version",
+        "uptime_seconds",
+        "checks",
+        "pool"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "unavailable"
+          ]
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "uptime_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checks": {
+          "description": "The database round trip and the migration ledger.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "database",
+            "migrations"
+          ],
+          "properties": {
+            "database": {
+              "$ref": "#/definitions/DatabaseCheck"
+            },
+            "migrations": {
+              "$ref": "#/definitions/MigrationCheck"
+            }
+          }
+        },
+        "pool": {
+          "$ref": "#/definitions/ConnectionPoolGauge"
+        }
+      }
+    },
+    "DatabaseCheck": {
+      "description": "One bounded database ping. error is null when the ping succeeded.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "latency_ms",
+        "error"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "up",
+            "down"
+          ]
+        },
+        "latency_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "MigrationCheck": {
+      "description": "The migration ledger: up when the database answered and no migration failed. error is null when the ledger was read.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "applied",
+        "failed",
+        "error"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "up",
+            "down"
+          ]
+        },
+        "applied": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "ConnectionPoolGauge": {
+      "description": "The database pool at probe time: open connections and the idle share of them.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "connections",
+        "idle"
+      ],
+      "properties": {
+        "connections": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "idle": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

@@ -49,7 +49,11 @@ player deployment is a `DeploymentDecision` with its `DeploymentDenial`, not an 
 - Depends on: `core::wire_format` for timestamps; serde and sqlx. `generated/` follows the
   schemas `event-access-administration`, `event-viewer-access`, `event-hub`, `event-orbat`,
   `waitlist-promotion-response`, `game-runtime-roster`, `game-runtime-deployment` and
-  `reservation-response` in `contracts_v2/definitions/`.
+  `reservation-response` in `contracts_v2/definitions/`. The hand-written wire types carry
+  `@contract` tags: `event.rs` cites `event-schedule.schema.json` (`Event`, `EventStatus`,
+  `EventMission`) and `reservation-actions.schema.json` (`SquadReservation`),
+  `leave_request.rs` cites `leave-request.schema.json`, and `fire_mission.rs` cites
+  `fire-mission.schema.json`; `cargo xtask schema citations` resolves them.
 - Used by: the domain's handlers and services; the dashboard in `command_center` (`Event`,
   `EventMission`, `OrbatSlot`); the [API](/documentation_v2/glossary/a_to_f.md#api) tests
   `apps/website/api_v2/tests/models_serde.rs`, `apps/website/api_v2/tests/event_access_contract.rs`,

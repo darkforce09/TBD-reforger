@@ -46,9 +46,10 @@ because a publish refuses a relative one. Every request runs in the browser buil
 
 ## Data
 
-- `GET /api/v1/cms/announcements?limit=100`: read as `Paginated<Value>`; each row reads `id`,
-  `title`, `body`, `tag`, `status`, `thumbnail_url`, `published_at`, `updated_at` and
-  `created_at`, the date shown being the first of the last three that is present.
+- `GET /api/v1/cms/announcements?limit=100`: read as `Paginated<Announcement>`; each row reads
+  `id`, `title`, `body`, `tag`, `status`, `thumbnail_url`, `published_at`, `updated_at` and
+  `created_at`, the date shown being the first of the last three that is present (a draft has no
+  `published_at`).
 - `POST /api/v1/cms/announcements` for a local post, and `PATCH /api/v1/cms/announcements/{id}`
   for a saved one, each sending `title`, `body`, `tag`, `thumbnail_url`, `is_pinned: false`,
   `push_to_discord` and `status: "published"`; the create's answer gives the post its `id`.
@@ -81,7 +82,7 @@ because a publish refuses a relative one. Every request runs in the browser buil
 ## Boundaries
 
 - Depends on: `crate::v2::core::api` (`api_get`, `api_post`, `api_post_ok`, `api_patch`,
-  `api_delete`, `api_upload_file`, `api_error_message`, `Paginated`), `crate::v2::core::auth`
+  `api_delete`, `api_upload_file`, `api_error_message`, `Paginated`, `Announcement`), `crate::v2::core::auth`
   (`AuthStore`) and `crate::v2::core::ui` (`AdminGate`, `SplitPane`, `SplitPaneEmpty`,
   `ListDetailItem`, `MaterialIcon`, the toast queue); over HTTP, the
   announcement and upload routes of the

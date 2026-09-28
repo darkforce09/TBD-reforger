@@ -63,3 +63,9 @@ apps/website/api_v2/src/match_telemetry/handlers/
   imports another domain's handlers (`apps/website/api_v2/src/tests/architecture_rules.rs`); the
   three ingests validate in `models/` and write in `services/`, while the heartbeat keeps its fenced
   status upsert in its own transaction.
+- Body decoding: every JSON body is read through `ApiError::from_json_rejection`: 413 with
+  `details.code = request_too_large` over the body limit, 415 without a JSON content type, and 400
+  with the decoder's message (which names the failing field) otherwise.
+- Path decoding: every path segment is read through `core::http::path_parameters::PathParams`: a
+  segment that does not decode into its type answers 400 in the `{error}` envelope with a message
+  naming the parameter, never axum's plain-text rejection.

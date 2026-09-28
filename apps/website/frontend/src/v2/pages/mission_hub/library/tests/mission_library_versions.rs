@@ -57,6 +57,7 @@ fn levie_v1() -> Value {
 ///   4. `s4` **added**
 ///   5. terrain everon → arland, `environment.timeOfDay` dawn → dusk, `environment.weather`
 ///      **deleted**
+///
 /// The slot array is also written in a different order than v1, so any test that passes here
 /// has also proved the diff is order-insensitive.
 fn levie_v2() -> Value {
@@ -490,12 +491,14 @@ fn non_validation_failures_say_what_to_do_instead() {
         "409 must name the taken version; got {head:?}"
     );
 
-    // The backend computes its own MB figure from MISSION_VERSION_MAX_BODY_BYTES. Echo it —
-    // restating a number here would be a second source of truth that silently goes stale.
-    let (head, _) = upload_failure(413, Some("payload too large (max 256 MB)"), "0.2.0");
-    assert!(
-        head.contains("256 MB"),
-        "413 must carry the server's own limit verbatim; got {head:?}"
+    // The backend answers 413 with the shared `request_too_large` envelope
+    // (`{"error":"request body is too large","details":{"code":"request_too_large"}}`). Echo its
+    // `error` text — restating a message here would be a second source of truth that silently
+    // goes stale.
+    let (head, _) = upload_failure(413, Some("request body is too large"), "0.2.0");
+    assert_eq!(
+        head, "request body is too large",
+        "413 must carry the server's own message verbatim; got {head:?}"
     );
 
     let (head, _) = upload_failure(401, None, "0.2.0");

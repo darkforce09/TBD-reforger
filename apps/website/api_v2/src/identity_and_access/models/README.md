@@ -17,7 +17,10 @@ apps/website/api_v2/src/identity_and_access/models/
 ## Boundaries
 
 - Depends on: `core::wire_format` for timestamps, serde and sqlx; `generated/` follows
-  `contracts_v2/definitions/current-profile.schema.json`.
+  `contracts_v2/definitions/current-profile.schema.json`. `current_profile.rs` and
+  `user_account.rs` carry `@contract` tags for `current-profile.schema.json` (the root and
+  `UserAccount`) and `profile-update.schema.json` (`UpdatedProfile`, the `PATCH /api/v1/me`
+  answer), which `cargo xtask schema citations` resolves.
 - Used by: the domain's handlers and services; `administration` handlers and
   `operations::services::event_access`, which read `UserRole`; the contract test
   `apps/website/api_v2/tests/current_profile_contract.rs`, which decodes live answers into the

@@ -1,0 +1,22 @@
+{
+  "expected_access_revision": 4,
+  "policy": {
+    "grants": [
+      {
+        "conditions": [
+          {
+            "kind": "tbd_member"
+          }
+        ]
+      },
+      {
+        "conditions": [
+          {
+            "group_id": "00000000-0000-4000-b100-000000000001",
+            "kind": "event_group"
+          }
+        ]
+      }
+    ]
+  }
+}

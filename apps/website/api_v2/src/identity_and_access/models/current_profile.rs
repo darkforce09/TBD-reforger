@@ -1,4 +1,7 @@
 //! Current account responses use effective session authority and cached membership status.
+//!
+//! @contract current-profile.schema.json#
+//! @contract profile-update.schema.json#/definitions/UpdatedProfile
 
 use super::User;
 use serde::{Deserialize, Serialize};

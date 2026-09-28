@@ -1,0 +1,26 @@
+{
+  "completed": 1,
+  "dataset_kind": "gameplay",
+  "generation_id": "6A3E000000000001",
+  "generations": [
+    "6A3E000000000001"
+  ],
+  "message": null,
+  "next_cursor": null,
+  "overview": {
+    "bytes": 4859,
+    "capabilities": {
+      "storage": 1,
+      "inventory": 1
+    },
+    "dependencies": 0,
+    "equipment": 1,
+    "facts": 2,
+    "fields": 2,
+    "nodes": 2,
+    "resources": 1,
+    "vehicles": 0
+  },
+  "stage": "ready",
+  "total": 1
+}

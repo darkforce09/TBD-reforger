@@ -1,5 +1,9 @@
 //! The scenario the fleet runs for each terrain: a deployment of an artifact on that terrain
 //! starts or restarts the server on this scenario header.
+//!
+//! @contract mission-deployment.schema.json#/definitions/FleetScenario
+//! @contract mission-deployment.schema.json#/definitions/FleetScenarioUpdate
+//! @contract mission-deployment.schema.json#/definitions/FleetScenarioList
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

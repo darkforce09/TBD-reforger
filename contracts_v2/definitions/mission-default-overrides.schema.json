@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MissionDefaultOverridesContract",
+  "description": "GET /api/v1/admin/mission-default-overrides (administrator): for every zone rule key with a schema default, how many missions' current versions override it and with which values. The root is the report.",
+  "$ref": "#/definitions/MissionDefaultOverrideReport",
+  "definitions": {
+    "MissionDefaultOverrideReport": {
+      "description": "One row per default-bearing rule key, in schema order, and when the report was computed.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data",
+        "generated_at"
+      ],
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MissionDefaultOverride"
+          }
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "MissionDefaultOverride": {
+      "description": "missions_total counts missions whose current version has zones; missions_overriding those with a zone setting the key to a value other than default_value; override_fraction is their ratio (0 without missions); histogram counts missions per set value, most frequent first.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key",
+        "default_value",
+        "missions_total",
+        "missions_overriding",
+        "override_fraction",
+        "histogram"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "default_value": {},
+        "missions_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "missions_overriding": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "override_fraction": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "histogram": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MissionDefaultValueBucket"
+          }
+        }
+      }
+    },
+    "MissionDefaultValueBucket": {
+      "description": "One value missions set for the key, and how many missions set it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "value",
+        "count"
+      ],
+      "properties": {
+        "value": {},
+        "count": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}

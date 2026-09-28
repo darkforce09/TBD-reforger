@@ -6,8 +6,9 @@
 //!
 //! **Position:** `core`; every domain's handlers and services return it, and axum turns it into
 //! the response through [`IntoResponse`]. [`ApiError::from_json_rejection`] maps axum's JSON body
-//! rejections into it, [`ApiError::from_query_rejection`] its query string rejections, and a
-//! `sqlx::Error` converts into it.
+//! rejections into it, [`ApiError::from_query_rejection`] its query string rejections,
+//! [`ApiError::from_path_rejection`] its path parameter rejections (through
+//! [`crate::core::http::path_parameters::PathParams`]), and a `sqlx::Error` converts into it.
 //!
 //! **Signals & state:** none; plain values.
 //!
@@ -16,10 +17,12 @@
 //! its text; a JSON body over the request limit answers 413 with `details.code =
 //! "request_too_large"`, a missing or wrong JSON content type 415, and every other unreadable JSON
 //! body 400 with the rejection's reason as its message; a query string that does not decode
-//! answers 400 with a message naming the query and the rejection's reason.
+//! answers 400 with a message naming the query and the rejection's reason; a path segment that
+//! does not decode answers 400 naming the parameter, and a path extractor that does not match its
+//! route answers a logged 500.
 
 use axum::Json;
-use axum::extract::rejection::{JsonRejection, QueryRejection};
+use axum::extract::rejection::{JsonRejection, PathRejection, QueryRejection};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use serde_json::json;
@@ -118,6 +121,28 @@ impl ApiError {
     /// deserialize query string: limit: invalid digit found in string`.
     pub fn from_query_rejection(rejection: QueryRejection, query_name: &str) -> Self {
         Self::bad_request(format!("invalid {query_name}: {}", rejection.body_text()))
+    }
+
+    /// The failure a handler answers when axum's [`axum::extract::Path`] extractor refuses the
+    /// path parameters; [`crate::core::http::path_parameters::PathParams`] applies it to every
+    /// route.
+    ///
+    /// - A segment that does not decode into the target type (a non-UUID id, a segment that is
+    ///   not UTF-8) answers `400 Bad Request` in the `{error, details?}` envelope with the message
+    ///   `invalid path parameter: <reason>`, where the reason is the rejection's text and names
+    ///   the parameter and the refused value.
+    /// - A rejection axum classifies as a server error (the extractor's type does not match the
+    ///   route's parameters) is a defect of the route, not of the request: it is logged and
+    ///   answers `500 internal error`.
+    pub fn from_path_rejection(rejection: PathRejection) -> Self {
+        if rejection.status().is_server_error() {
+            tracing::error!(
+                rejection = %rejection.body_text(),
+                "a path extractor does not match its route"
+            );
+            return Self::internal("internal error");
+        }
+        Self::bad_request(format!("invalid path parameter: {}", rejection.body_text()))
     }
 }
 

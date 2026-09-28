@@ -1,6 +1,8 @@
 //! One player's aggregate statistics card.
+//!
+//! @contract command-center.schema.json#/definitions/PlayerStatsCard
 
-use axum::extract::{Path, State};
+use axum::extract::State;
 use axum::response::Json;
 use serde_json::{Value, json};
 use sqlx::QueryBuilder;
@@ -8,6 +10,7 @@ use sqlx::QueryBuilder;
 use super::leaderboards::{LB_SELECT, LeaderboardRow};
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AuthUser;
 use crate::identity_and_access::services::user_lookup::load_user;
 
@@ -17,7 +20,7 @@ use crate::identity_and_access::services::user_lookup::load_user;
 pub async fn get_user_stats(
     State(state): State<AppState>,
     _u: AuthUser,
-    Path(discord_id): Path<String>,
+    PathParams(discord_id): PathParams<String>,
 ) -> Result<Json<Value>, ApiError> {
     let Some(user) = load_user(&state.pool, &discord_id).await? else {
         return Err(ApiError::not_found("user not found"));

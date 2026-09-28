@@ -126,3 +126,5 @@ lists each call with its DTO. Server-side:
 - A referenced pack cannot be deleted: servers, events and registry items name it without a
   foreign key, so the API counts the references and refuses rather than orphan them.
 - The launch button does not pretend to launch: the browser cannot start the game, so it says so.
+- A pack's addons are typed rows (`ModpackMod`): an addon without a workshop id, GUID or version
+  reads those as empty, because the API leaves them out when unset.

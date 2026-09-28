@@ -10,14 +10,16 @@ an immutable, sealed copy with a `current.json` pointer. It serves
 
 ```text
 tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/
-├── files.rs              safe paths under a root, SHA-256 digests, JSON reads that refuse duplicate keys
-├── graph.rs              per-resource record and snapshot checks: identity, facts, links, cycles
-├── legacy_archive.rs     journalled move of the unversioned export folders aside at first publication
-├── mod.rs                the module tree, the validation report and the two command entry points
-├── publication.rs        the locked, staged, hash-verified publication and the pointer swap
-├── relationships.rs      reference, type and class-hierarchy checks across resources
-├── tests/                unit tests for validation, publication, recovery and tampering
-└── validation.rs         the generation walk against the export schema and every census check
+├── files.rs                       safe paths under a root, SHA-256 digests, JSON reads that refuse duplicate keys
+├── gameplay_receipt.rs            the gameplay publication receipt: fact bytes by section, diagnostic inventory, schema check
+├── graph.rs                       per-resource record and snapshot checks: identity, facts, links, cycles
+├── mod.rs                         the module tree, the validation report and the two command entry points
+├── publication.rs                 the locked, staged, hash-verified publication and the pointer swap
+├── relationships.rs               reference, type and class-hierarchy checks across resources
+├── tests/                         unit tests for validation, publication, recovery and tampering
+├── unversioned_export_archive.rs  journalled move of the unversioned export folders aside at first publication
+├── upload_bundle.rs               the `archives/<generation id>.tar.gz` upload bundle of a published gameplay generation
+└── validation.rs                  the generation walk against the export schema and every census check
 ```
 
 ## How it works
@@ -39,8 +41,9 @@ The Workbench plugins write a generation under
   renames the staging folder to `published/<generation id>/`. It then replaces `current.json`
   through a temporary file, keeping the previous pointer until the swap is durable. An id that is
   already published must match byte for byte. The first publication moves the export root's
-  `equipment/` and `vehicles/` folders into an archive under a durable journal, and every run
-  first recovers an interrupted move.
+  `equipment/` and `vehicles/` folders into `unversioned_exports/<generation id>/` under a
+  durable journal (`.unversioned-export-archive.json`), and every run first recovers an
+  interrupted move.
 
 ## Boundaries
 

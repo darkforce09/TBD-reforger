@@ -66,7 +66,7 @@ class TBD_EditorTriggerStruct
 }
 
 //! The document root of the trigger pass: declares `editorTriggers` and nothing else.
-//! @contract mission.schema.json#/properties/editorTriggers
+//! @contract mission.schema.json#/ partial
 class TBD_TriggerDocStruct
 {
 	ref array<ref TBD_EditorTriggerStruct> editorTriggers; //!< `editorTriggers`; null when the key is absent

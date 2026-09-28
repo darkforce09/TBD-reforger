@@ -2,8 +2,8 @@
 //! what the runtime runs, the exact bytes of an artifact deployed to it, the missions an in-game
 //! administrator may deploy to it, and an in-game administrator's deployment request.
 
+use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::{Json, Response};
 use serde_json::json;
@@ -11,6 +11,8 @@ use uuid::Uuid;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::failpoints::fail_point;
+use crate::core::http::path_parameters::PathParams;
 use crate::missions::handlers::artifact_document_response::artifact_document_response;
 use crate::missions::models::mission_deployment::{
     DeployableMission, DeployableMissionList, MissionDeployment, RelayedDeploymentRequest,
@@ -54,7 +56,7 @@ pub async fn current_deployment(
 pub async fn deployed_artifact_document(
     State(state): State<AppState>,
     caller: MachineCaller,
-    Path(artifact): Path<String>,
+    PathParams(artifact): PathParams<String>,
 ) -> Result<Response, ApiError> {
     caller.require_executor(ExecutorKind::ModRuntime)?;
     let artifact =
@@ -117,9 +119,7 @@ pub async fn relayed_deployment_request(
     body: Result<Json<RelayedDeploymentRequest>, JsonRejection>,
 ) -> Result<(StatusCode, Json<MissionDeployment>), ApiError> {
     caller.require_executor(ExecutorKind::ModRuntime)?;
-    let Json(request) = body.map_err(|_| {
-        ApiError::bad_request("mission_id, artifact_id and requested_by_arma_id are required")
-    })?;
+    let Json(request) = body.map_err(ApiError::from_json_rejection)?;
     let mut transaction = state.pool.begin().await?;
     let deployment = request_deployment(
         &mut transaction,
@@ -134,5 +134,6 @@ pub async fn relayed_deployment_request(
     )
     .await?;
     transaction.commit().await?;
+    fail_point!(DeploymentRequestAfterCommit);
     Ok((StatusCode::ACCEPTED, Json(deployment)))
 }

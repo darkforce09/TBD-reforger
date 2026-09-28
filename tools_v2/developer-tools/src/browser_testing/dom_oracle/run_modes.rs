@@ -1,3 +1,13 @@
+//! The verify and accept loops of `gate v-suite` over the selected routes.
+//!
+//! - **Role:** captures each selected route, then diffs it against its frozen golden (`verify`)
+//!   or re-sources the golden from the capture with the operator's note (`accept`).
+//! - **Position:** called by `routes::run` after the argument checks and the browser launch; in
+//!   accept mode it writes goldens, PNGs and `manifest.json` in the oracle-freeze folder.
+//! - **Signals & state:** none held; accept mode rewrites files on disk.
+//! - **Invariants:** a run that covered no route exits 2, a failed route makes it exit 1, and
+//!   accept refuses an implausible capture before it overwrites a golden.
+
 use super::*;
 
 pub(super) async fn run_modes(
@@ -121,5 +131,16 @@ pub(super) async fn run_modes(
             }
         }
     }
-    Ok(u8::from(fail > 0))
+    Ok(run_exit_code(routes.len(), fail))
+}
+
+/// The exit code of a finished run over `covered` routes of which `failed` failed: 2 when it
+/// covered no route (an empty selection is a usage error, never a pass), 1 when any route failed,
+/// 0 otherwise.
+pub(super) fn run_exit_code(covered: usize, failed: usize) -> u8 {
+    if covered == 0 {
+        2
+    } else {
+        u8::from(failed > 0)
+    }
 }

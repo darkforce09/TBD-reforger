@@ -1,0 +1,49 @@
+{
+  "dataset_kind": "diagnostic",
+  "generation_id": "D1A6000000000001",
+  "items": [
+    {
+      "class_name": "SCR_UniversalInventoryStorageComponent",
+      "entry_kind": "node",
+      "expanded": true,
+      "key": "root/properties/components/0",
+      "label": "components [0] · SCR_UniversalInventoryStorageComponent",
+      "links": [],
+      "metadata_json": "{\"native_instance_id\":null,\"instance_identity_kind\":\"structural_path\",\"instance_name\":\"\"}",
+      "native_type": null,
+      "native_unit": null,
+      "node_id": "root/properties/components/0",
+      "origin": null,
+      "status": null,
+      "unit_evidence": null,
+      "value_count": 0,
+      "value_json": "null",
+      "value_kind": "null",
+      "view": "effective"
+    },
+    {
+      "class_name": "MeshObject",
+      "entry_kind": "node",
+      "expanded": true,
+      "key": "root/properties/components/1",
+      "label": "components [1] · MeshObject",
+      "links": [],
+      "metadata_json": "{\"native_instance_id\":null,\"instance_identity_kind\":\"structural_path\",\"instance_name\":\"\"}",
+      "native_type": null,
+      "native_unit": null,
+      "node_id": "root/properties/components/1",
+      "origin": null,
+      "status": null,
+      "unit_evidence": null,
+      "value_count": 0,
+      "value_json": "null",
+      "value_kind": "null",
+      "view": "effective"
+    }
+  ],
+  "next_cursor": null,
+  "node_id": "root",
+  "node_metadata_json": "{}",
+  "resource_id": "guid:1111111111111111",
+  "total": 2
+}

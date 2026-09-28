@@ -3,9 +3,12 @@
 //!
 //! Every handler here is `MissionMakerUser` tier on top of the author-or-admin [`can_edit`]
 //! predicate, so a demotion revokes the write even for the mission's own author.
+//!
+//! @contract mission-library.schema.json#/definitions/MissionCreation
+//! @contract mission-library.schema.json#/definitions/MissionChange
 
+use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::Json;
 use serde::Deserialize;
@@ -16,6 +19,7 @@ use uuid::Uuid;
 use crate::administration::services::required_audit::append_actor_audit;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::MissionMakerUser;
 use crate::missions::handlers::mission_versions::validate_payload;
 use crate::missions::models::mission::{Mission, MissionStatus, WeatherType};
@@ -56,9 +60,7 @@ pub async fn create_mission(
     maker: MissionMakerUser,
     body: Result<Json<CreateMissionInput>, JsonRejection>,
 ) -> Result<(StatusCode, Json<Mission>), ApiError> {
-    let Json(input) = body.map_err(|_| {
-        ApiError::bad_request("title, terrain, game_mode and max_players are required")
-    })?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
     // Trim+non-empty: a whitespace-only title is not a title.
     let title = validated_mission_title(&input.title)?;
     if input.terrain.is_empty() || input.game_mode.is_empty() {
@@ -169,7 +171,7 @@ pub struct PatchMissionInput {
 pub async fn update_mission(
     State(state): State<AppState>,
     maker: MissionMakerUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
     body: Result<Json<PatchMissionInput>, JsonRejection>,
 ) -> Result<Json<Mission>, ApiError> {
     let user = &maker.0;
@@ -177,7 +179,7 @@ pub async fn update_mission(
     if !can_edit(user, &m) {
         return Err(ApiError::forbidden("not your mission"));
     }
-    let Json(input) = body.map_err(|_| ApiError::bad_request("invalid body"))?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
 
     // Validated before the query builder so a rejected URL leaves every other field untouched —
     // PATCH is the only HTTP writer for this column (create hardcodes `''`).
@@ -333,7 +335,7 @@ async fn apply_status_patch(
 pub async fn delete_mission(
     State(state): State<AppState>,
     maker: MissionMakerUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<StatusCode, ApiError> {
     let user = &maker.0;
     let mut m = load_mission_or_404(&state.pool, &id).await?;

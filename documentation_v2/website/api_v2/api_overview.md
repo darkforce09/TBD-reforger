@@ -77,6 +77,11 @@ Role ranks run `guest`, `enlisted`, `leader`, `mission_maker`, `admin`, lowest f
 role follows their Discord roles through the `discord_roles` mapping; the API never sets it by
 hand.
 
+Every refusal answers the `{error, details?}` envelope. A path segment that does not decode into
+its type (a non-UUID id, say) is a 400 whose message names the parameter: every handler reads its
+path through `PathParams`
+([request-shape primitives](/apps/website/api_v2/src/core/http/README.md)).
+
 ### Callers
 
 - The single-page app in `apps/website/frontend/` calls the member, role and public routes. In
@@ -106,8 +111,9 @@ Two routes answer [SSE](/documentation_v2/glossary/n_to_z.md#sse) streams, and e
 viewer's session at least every five seconds, ending the stream with an `authorization_expired`
 SSE event once it stops qualifying:
 
-- `GET /api/v1/servers/{id}/status/stream` (member; an inactive server is a 404 for anyone but an
-  administrator): one server's live status, its telemetry queue reading included, published on
+- `GET /api/v1/servers/{id}/status/stream` (member; before the stream opens, a malformed id is a
+  400, an unknown server a 404, and an inactive server a 404 for anyone but an administrator): one
+  server's live status, its telemetry queue reading included, published on
   the in-process hub's `server:{id}` topic by the heartbeat, the runtime-session expiry and the
   status publisher worker, which republishes the active servers only.
 - `GET /api/v1/admin/audit-logs/stream` (administrator): committed audit rows in publication

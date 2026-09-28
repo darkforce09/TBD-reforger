@@ -70,11 +70,15 @@ fn legacy_nato_root_matches_blufor_chip() {
 fn vehicle_tree_keeps_the_family_folder() {
     let tree = build_vehicle_catalog_tree(&vehicle_items());
 
-    assert_eq!(tree.len(), 1, "one addon root");
-    assert_eq!(tree[0].id, "ArmaReforger");
-    assert!(tree[0].default_expanded, "addon root opens");
+    assert_eq!(
+        tree.iter().map(|n| n.id.as_str()).collect::<Vec<_>>(),
+        vec!["NATO", "ArmaReforger"],
+        "one root per addon: the golden's NATO vehicles and the fixture's ArmaReforger rows"
+    );
+    let arma = &tree[1];
+    assert!(arma.default_expanded, "addon root opens");
 
-    let vehicles = &tree[0].children[0];
+    let vehicles = &arma.children[0];
     assert_eq!(vehicles.id, "ArmaReforger/Vehicles");
     assert!(vehicles.default_expanded, "depth 1 opens too");
 
@@ -129,12 +133,34 @@ fn vehicle_tree_excludes_abstract_and_non_vehicle_rows() {
 
     assert_eq!(
         found,
-        vec!["UAZ469".to_string(), "UAZ469 PKM".to_string()],
+        vec![
+            "M1025 Humvee (M2)".to_string(),
+            "M113 APC (M2)".to_string(),
+            "M923A1 Cargo Truck".to_string(),
+            "M998 Humvee (Transport)".to_string(),
+            "UAZ469".to_string(),
+            "UAZ469 PKM".to_string(),
+        ],
         "the abstract Mi8MT base and every character/gear row are excluded"
     );
-    assert!(
-        !tree.iter().any(|n| n.label == "NATO"),
-        "the Factions tree must not leak into the Vehicles tab"
+    let nato = tree
+        .iter()
+        .find(|n| n.label == "NATO")
+        .expect("the golden's NATO vehicle rows form a root");
+    let mut nato_folders = Vec::new();
+    fn folders(nodes: &[CatalogNode], out: &mut Vec<String>) {
+        for n in nodes {
+            if n.payload.is_none() {
+                out.push(n.id.clone());
+            }
+            folders(&n.children, out);
+        }
+    }
+    folders(std::slice::from_ref(nato), &mut nato_folders);
+    assert_eq!(
+        nato_folders,
+        vec!["NATO", "NATO/US_Army", "NATO/US_Army/Vehicles"],
+        "the Factions tree (role and gear folders) must not leak into the Vehicles tab"
     );
 }
 

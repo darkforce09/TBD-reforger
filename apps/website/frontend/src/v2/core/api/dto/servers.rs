@@ -17,12 +17,15 @@
 //! without a telemetry queue reading has no `telemetry_queue` key; the reading is never
 //! synthesised.
 //! @contract match-telemetry.schema.json#/definitions/TelemetryQueueStatus
+//! @contract server-intel.schema.json#/definitions/ServerIntelList
+//! @contract server-intel.schema.json#/definitions/ServerStatus
 
 use serde::{Deserialize, Serialize};
 
 use super::content::ModpackDto;
 
 /// One live telemetry sample from a game server.
+/// @contract server-intel.schema.json#/definitions/ServerStatus
 #[allow(dead_code)]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerStatusDto {
@@ -146,6 +149,7 @@ pub(crate) fn is_power_of_ten(n: u64) -> bool {
 }
 
 /// One game server as the intel page lists it.
+/// @contract server-intel.schema.json#/definitions/ServerIntel
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct ServerRowDto {

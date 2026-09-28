@@ -41,11 +41,14 @@ server.
 
 - `event_listing.rs` counts and pages only the events the viewer may see, and `event_hub.rs`
   answers a hidden event like a missing one (404); both report the effective status of
-  `services::event_status_rules`.
+  `services::event_status_rules`. The list's `scope` is `upcoming` (the default), `past` or `all`;
+  any other word answers 400.
 - Every reservation write, and every change to an existing event or its access, takes the event
   scope of `services::event_reservations` first and rechecks the actor's authority after the waits;
   refusals carry a stable `details.code`, and access changes also check the access revision their
-  form was loaded at.
+  form was loaded at. In a test build a member's own claim in `slot_registration.rs` passes the
+  failpoint `ReservationClaimBeforeCommit` after its audit row and `ReservationClaimAfterCommit`
+  after its commit.
 - `event_mission_attachment.rs` copies the mission's ORBAT into `orbat_slots` rows of the new event
   mission, the only ORBAT the [API](/documentation_v2/glossary/a_to_f.md#api) writes, so it refuses an
   unreadable template, one that seats nobody, and a blank or padded faction, which no
@@ -54,7 +57,11 @@ server.
   nothing; `game_runtime_deployments.rs` answers a refused player life with 200 and
   `decision = "denied"`.
 - `fire_missions.rs` solves through `website_map_engine::data::scenario::ballistics` and stores
-  the whole solution; a target out of range answers 422.
+  the whole solution; a target out of range answers 422. A saved fire mission names an event that
+  exists or none, so saving against, or listing those of, an event that does not exist answers 404.
+- `slot_registration.rs` answers 400 for a `slot_id` that is not a UUID and 404 for a well-formed
+  one that names no seat; `event_group_administration.rs` answers 404 for a roster account that
+  does not exist.
 
 ## Boundaries
 
@@ -78,6 +85,12 @@ server.
   roster never compiles or pairs at read time
   (`roster_reads_the_deployed_artifact_bindings_and_never_compiles` in
   `tests/game_runtime_roster.rs`).
+- Body decoding: every JSON body is read through `ApiError::from_json_rejection`: 413 with
+  `details.code = request_too_large` over the body limit, 415 without a JSON content type, and 400
+  with the decoder's message (which names the failing field) otherwise.
+- Path decoding: every path segment is read through `core::http::path_parameters::PathParams`: a
+  segment that does not decode into its type answers 400 in the `{error}` envelope with a message
+  naming the parameter, never axum's plain-text rejection.
 
 ## Related documentation
 

@@ -7,6 +7,7 @@ use uuid::Uuid;
 
 use crate::administration::services::required_audit::append_actor_audit;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::failpoints::fail_point;
 use crate::missions::models::mission::Mission;
 use crate::missions::models::mission_review::{MissionReview, MissionReviewHistory, ReviewComment};
 use crate::missions::services::mission_artifacts::artifact_store::compile_artifact;
@@ -197,6 +198,7 @@ pub async fn decide_review(
         ),
     )
     .await?;
+    fail_point!(ReviewDecisionBeforeCommit);
     load_review(connection, review).await
 }
 

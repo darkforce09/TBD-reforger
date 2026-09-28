@@ -112,6 +112,7 @@ class TBD_FleetCommandExecution
 	//! @route POST /api/v1/fleet-executor/commands/{id}/executing
 	//! @route POST /api/v1/fleet-executor/commands/{id}/result
 	//! @authority server
+	//! @contract fleet-command.schema.json#/definitions/ExecutionStart
 	protected static void SendReport(notnull TBD_FleetCommand command, bool result)
 	{
 		string path = TBD_FleetCommandPoller.ROUTE_PREFIX + "/" + command.m_sCommandId;

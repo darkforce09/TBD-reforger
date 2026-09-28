@@ -565,9 +565,8 @@ async fn servers_write_validation_rejects_at_the_boundary() {
     )
     .await;
 
-    // A malformed body is a 400 whose `details.reason` names the offending field. Before
-    // `body_error` this answered "name, ip and port are required" — three fields that were all
-    // present and correct.
+    // A malformed body is a 400 whose `error` names the offending field, not a generic list of
+    // required fields that were all present and correct.
     let (st, b) = req(
         &app,
         Method::POST,
@@ -581,7 +580,7 @@ async fn servers_write_validation_rejects_at_the_boundary() {
     .await;
     assert_eq!(st, StatusCode::BAD_REQUEST, "{b}");
     assert!(
-        b["details"]["reason"]
+        b["error"]
             .as_str()
             .unwrap_or_default()
             .contains("required_modpack_id"),

@@ -20,7 +20,7 @@ pub async fn ingest_match_events(
     body: Result<Json<Value>, JsonRejection>,
 ) -> Result<Json<MatchEventBatchAnswer>, ApiError> {
     caller.require_executor(ExecutorKind::ModRuntime)?;
-    let Json(body) = body.map_err(|_| ApiError::bad_request("the body must be a JSON object"))?;
+    let Json(body) = body.map_err(ApiError::from_json_rejection)?;
     let batch = decode_event_batch(&body)?;
     Ok(Json(ingest_event_batch(&state, &caller, &batch).await?))
 }

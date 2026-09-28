@@ -1,8 +1,14 @@
 //! Leave of absence: a member files an LOA against a date range, reads back their own queue, and
 //! an admin approves or denies from the review console.
+//!
+//! @contract leave-request.schema.json#/definitions/LeaveRequestSubmission
+//! @contract leave-request.schema.json#/definitions/LeaveRequestList
+//! @contract leave-request.schema.json#/definitions/LeaveRequestPage
+//! @contract leave-request.schema.json#/definitions/LeaveReview
+//! @contract leave-request.schema.json#/definitions/LeaveReviewOutcome
 
-use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, Query, State};
+use axum::extract::rejection::{JsonRejection, QueryRejection};
+use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::Json;
 use chrono::NaiveDate;
@@ -13,6 +19,7 @@ use uuid::Uuid;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::http::pagination::PageParams;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::{AdminUser, AuthUser};
 use crate::operations::models::LeaveRequest;
 
@@ -32,7 +39,8 @@ pub struct CreateLeaveInput {
     reason: String,
 }
 
-/// `POST /api/v1/me/leave-requests` — file an LOA.
+/// `POST /api/v1/me/leave-requests` — file an LOA. A body that does not decode (the `reason` key
+/// missing included) answers through [`ApiError::from_json_rejection`].
 ///
 /// @route POST /api/v1/me/leave-requests
 pub async fn submit_leave(
@@ -40,8 +48,7 @@ pub async fn submit_leave(
     user: AuthUser,
     body: Result<Json<CreateLeaveInput>, JsonRejection>,
 ) -> Result<(StatusCode, Json<LeaveRequest>), ApiError> {
-    let Json(input) =
-        body.map_err(|_| ApiError::bad_request("starts_on, ends_on and reason are required"))?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
     if input.starts_on.is_empty() || input.ends_on.is_empty() {
         return Err(ApiError::bad_request("starts_on and ends_on are required"));
     }
@@ -98,8 +105,11 @@ pub async fn list_my_leave(
 pub async fn list_all_leave(
     State(state): State<AppState>,
     _a: AdminUser,
-    Query(page): Query<PageParams>,
+    query: Result<Query<PageParams>, QueryRejection>,
 ) -> Result<Json<Value>, ApiError> {
+    let Query(page) = query.map_err(|rejection| {
+        ApiError::from_query_rejection(rejection, "leave request page query")
+    })?;
     let (limit, offset) = page.bounds();
     let total: i64 = sqlx::query_scalar("SELECT count(*) FROM leave_requests")
         .fetch_one(&state.pool)
@@ -123,19 +133,20 @@ pub struct ReviewLeaveInput {
     status: String,
 }
 
-/// `PATCH /api/v1/admin/leave-requests/:id` — approve/deny an LOA (admin).
+/// `PATCH /api/v1/admin/leave-requests/:id` — approve/deny an LOA (admin). A body that does not
+/// decode answers through [`ApiError::from_json_rejection`].
 ///
 /// @route PATCH /api/v1/admin/leave-requests/:id
 pub async fn review_leave(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
     body: Result<Json<ReviewLeaveInput>, JsonRejection>,
 ) -> Result<Json<Value>, ApiError> {
     let Ok(id) = Uuid::parse_str(&id) else {
         return Err(ApiError::bad_request("invalid id"));
     };
-    let Json(input) = body.map_err(|_| ApiError::bad_request("status required"))?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
     if input.status.is_empty() {
         return Err(ApiError::bad_request("status required"));
     }

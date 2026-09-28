@@ -4,7 +4,14 @@ title = "Stop listing bookmarked missions the viewer can no longer open"
 summary = "The bookmarked scope of GET /missions (api_v2 missions/handlers/mission_library.rs:93-97) lists every bookmarked mission whatever its status, but GET /missions/{id} 404s a non-live mission to anyone but its author or an admin (validation/access.rs:13-14)."
 class = "bug"
 status = "idea"
-notes = "Paths under apps/website/api_v2/src/missions. handlers/mission_library.rs:93-97 filters the bookmarked scope by mission_bookmarks only, while the global scope (:98-102) admits live missions and the viewer's own non-archived ones. handlers/mission_library.rs:182-185 get_mission returns 404 unless validation/access.rs:13-14 can_view (live, or author or admin). A mission bookmarked while live and then archived, rejected or pulled back to draft by its author stays in the viewer's Bookmarked tab and 404s when opened. Apply can_view's predicate to the bookmarked scope (or show such rows as unavailable). Source: Phase 5 doc writer F03."
+notes = "Paths under apps/website/api_v2/src/missions. handlers/mission_library.rs:93-97 filters the bookmarked scope by mission_bookmarks only, while the global scope (:98-102) admits live missions and the viewer's own non-archived ones. handlers/mission_library.rs:182-185 get_mission returns 404 unless validation/access.rs:13-14 can_view (live, or author or admin). A mission bookmarked while live and then archived, rejected or pulled back to draft by its author stays in the viewer's Bookmarked tab and 404s when opened. Apply can_view's predicate to the bookmarked scope (or show such rows as unavailable). Source: Phase 5 doc writer F03. 2026-09-28 (milestone V): delivered. apps/website/api_v2/src/missions/handlers/mission_library.rs:108 filters the bookmarked scope with can_view (live, authored by the caller, or any mission for an administrator), as GET /missions/{id} does; evidence tests/missions_library_paging_and_overrides.rs:204 library_bookmarked_scope_lists_only_missions_the_caller_can_view."
+main_goal = "The bookmarked library tab lists only missions the viewer can open."
+context = ["The bookmarked scope filtered by bookmark rows only, so a mission that left the viewer's view stayed listed and answered 404 when opened."]
+requirement = ["The bookmarked scope applies the same visibility rule as the mission overview."]
+current_state = ["mission_library.rs applies can_view to the bookmarked scope and to both bookmark writes, so a bookmark on a mission outside the caller's view drops out of the tab."]
+approach = ["Apply can_view's predicate in the bookmarked scope query and add an integration test (milestone V, K3b)."]
+verify = ["cargo xtask db test-it --test missions_library_paging_and_overrides"]
+acceptance = ["A bookmarked mission that is archived, rejected or back in draft is absent from another member's bookmarked tab."]
 created_at = "2026-09-25T23:33:06Z"
 
 [scope]

@@ -19,6 +19,7 @@ tools_v2/developer-tools/src/browser_testing/
 ├── dom_oracle.rs          the DOM oracle's types and the accept size floor; re-exports its entries
 ├── editor_smoke_tests/    the Mission Creator smokes and the render-check, session and perf gates
 ├── editor_smoke_tests.rs  the shared smoke `Harness`, `EDITOR_SUITE` and the perf probe scripts
+├── equipment_data_viewer/  `gate equipment-data-viewer`: the live equipment data viewer check
 ├── fixture_injection.rs   `FREEZE_SRC` and `DOM_SERIALIZER_SRC`, the scripts injected into each page
 ├── mod.rs                 the module tree
 ├── route_drift.rs         `gate s-routes`: the router's route table against the committed CSV
@@ -33,7 +34,7 @@ tools_v2/developer-tools/src/browser_testing/
 
 ```text
 bin/gate.rs    ──▶ cli::run ──▶ doctor · v-suite · s-routes · smoke · editor-suite · r-auth
-                                · render-check · serve
+                                · render-check · serve · equipment-data-viewer
 bin/capture.rs ──▶ capture_cli::run ──▶ screen_capture::{shot, zoomsweep, crop}
 
 every browser gate:  server::start_server(dist) ◀── cdp::launch (SwiftShader, 1440×900)
@@ -58,6 +59,7 @@ frame by frame, and serves `/map-assets/` from the terrain and glyph folders wit
 | `gate r-auth` | `editor_smoke_tests/` | a refused session refreshes exactly once | 0, 1, 2 |
 | `gate render-check` | `editor_smoke_tests/` | a path renders, contains `--expect` and passes `--assert-js` | 0, 1 |
 | `gate serve` | `server.rs` | none: serves a dist on port 5198 until Ctrl-C | 0 |
+| `gate equipment-data-viewer` | `equipment_data_viewer/` | the running website's `/debug/data-viewer` renders, navigates and polls against the imported generation | 0; a failed check exits 3 |
 
 Every command also exits 2 on a clap usage error and 3 on a driver error. `gate s-routes` writes
 the router's rows as `path,component,fullBleed,chromeless,router_auth`, sorted by path, and prints

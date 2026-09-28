@@ -1,5 +1,7 @@
 //! Batched native container cards mirror the generated viewer contract.
 use super::EquipmentSourcePageItemsItem;
+/// One page of the `resource-cards` endpoint: the native container cards of one resource from
+/// position `start_index`, with the container total and the next page's cursor.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct EquipmentResourceCardPage {
@@ -11,6 +13,8 @@ pub struct EquipmentResourceCardPage {
     pub next_cursor: Option<String>,
     pub items: Vec<EquipmentResourceCard>,
 }
+/// One native container of a resource: its identity, configuration view, position, capabilities
+/// and metadata JSON, with its first page of field facts and the cursor of the next.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct EquipmentResourceCard {

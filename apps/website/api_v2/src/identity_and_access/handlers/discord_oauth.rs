@@ -3,13 +3,16 @@
 //! `discord_login` sets a 10-min httpOnly `oauth_state` CSRF cookie and 307-redirects
 //! to Discord consent. `discord_callback` validates state (constant-time), exchanges
 //! the code, upserts the user, syncs roles, and 302-redirects to the SPA callback with
-//! the tokens in the URL fragment — or to an error reason on any failure.
+//! the tokens in the URL fragment — or to an error reason on any failure. A callback query string
+//! that does not decode (a repeated `code` or `state`) carries no usable code, so it redirects with
+//! `missing_code` like an absent one, never with an API error body.
 //!
 //! **Role-sync invariant.** Roles are only ever written when Discord actually answered.
 //! An unreachable Discord preserves the verified snapshot. Session issuance evaluates its
 //! age and any audited grace extension without treating transport failure as departure.
 
 use axum::body::Body;
+use axum::extract::rejection::QueryRejection;
 use axum::extract::{Query, State};
 // Split rather than `{HeaderMap, HeaderValue, StatusCode, header}`: the two rustfmt style
 // editions in play disagree on where a lowercase module sorts inside a brace list, and the
@@ -84,9 +87,12 @@ pub async fn discord_login(State(state): State<AppState>) -> Response {
 pub async fn discord_callback(
     State(state): State<AppState>,
     headers: HeaderMap,
-    Query(q): Query<CallbackQuery>,
+    query: Result<Query<CallbackQuery>, QueryRejection>,
 ) -> Response {
     let fe = &state.cfg.frontend_url;
+    let Ok(Query(q)) = query else {
+        return with_set_cookie(redirect_auth_error(fe, "missing_code"), OAUTH_STATE_CLEAR);
+    };
     if let Some(reject) = callback_csrf_reject(fe, &state.cfg.discord_redirect_url, &q, &headers) {
         return reject;
     }

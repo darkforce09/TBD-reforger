@@ -98,7 +98,7 @@ fn the_list_golden_decodes_into_typed_lines() {
     let epoch = board.restart();
     assert!(board.merge_history(epoch, page));
     let ids: Vec<i64> = board.rows().iter().map(|l| l.id).collect();
-    assert_eq!(ids, (1..=10).rev().collect::<Vec<i64>>());
+    assert_eq!(ids, (1..=15).rev().collect::<Vec<i64>>());
     let system = board.get(4).expect("line 4 is in the golden");
     assert_eq!(system.actor_id, None);
     assert!(system.actor_name.is_empty());

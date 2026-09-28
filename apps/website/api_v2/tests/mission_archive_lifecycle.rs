@@ -320,10 +320,9 @@ async fn version_route_bypasses_the_1mb_global_cap() {
         StatusCode::PAYLOAD_TOO_LARGE,
         "version route must accept a >1 MB body (not 413)"
     );
-    // A globally-capped route truncates the same body at 1 MB → invalid JSON → 400
-    // (only the version route special-cases the length limit into a 413).
+    // A globally-capped route refuses the same body over its 1 MB limit with the shared 413.
     let patch = format!(r#"{{"briefing":"{big}"}}"#);
-    let (st, _) = call(
+    let (st, body) = call(
         &app,
         "PATCH",
         &format!("/api/v1/missions/{id}"),
@@ -333,7 +332,8 @@ async fn version_route_bypasses_the_1mb_global_cap() {
     .await;
     assert_eq!(
         st,
-        StatusCode::BAD_REQUEST,
-        "over-cap body on a normal route → 400 invalid body"
+        StatusCode::PAYLOAD_TOO_LARGE,
+        "over-cap body on a normal route → 413 request_too_large"
     );
+    assert_eq!(body["details"]["code"], "request_too_large", "{body}");
 }

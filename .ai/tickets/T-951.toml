@@ -3,8 +3,18 @@ kind = "work"
 title = "Audit listener registry is never pruned"
 summary = "services/audit_notify.rs keys a listener map on the Arc address of connect_options and never removes entries. One leaks per pool created, and a freed address can be recycled into a new pool key."
 class = "audit"
-status = "idea"
+status = "shipped"
+order = 9816
+notes = "2026-09-28 (milestone V): delivered. apps/website/api_v2/src/administration/services/audit_notifier.rs keeps a Weak beside each registry entry (:120) and counts a hit only while it points at the live options; evidence services/tests/audit_notifier.rs:49 a_dropped_pool_leaves_no_entry_for_a_new_pool_to_reuse."
+main_goal = "A new pool never reuses the audit listener of a dropped pool."
+context = ["The listener registry was keyed on the connect-options address with no pruning, so a freed address could re-key a new pool onto a stale listener."]
+requirement = ["A registry hit requires the entry's options to be the caller's live allocation, and dead entries are pruned."]
+current_state = ["Each entry keeps a Weak on its PgConnectOptions allocation; a hit counts only when the Weak points at the caller's options, and entries whose pool is gone are pruned."]
+approach = ["Keep a Weak beside each entry, compare with ptr_eq on hit and prune dead entries (milestone V, K1)."]
+verify = ["cargo test -p website-api --lib a_dropped_pool_leaves_no_entry_for_a_new_pool_to_reuse"]
+acceptance = ["Dropping a pool and opening another never hands the new pool the old listener."]
 created_at = "2026-09-06T00:09:12Z"
+completed_at = "2026-09-28T01:18:37Z"
 
 [scope]
 domain = "repo"

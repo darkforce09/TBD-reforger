@@ -13,8 +13,9 @@ it as one immutable bundle.
 apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/
 ├── Capabilities/   organized records: facts by capability, field names, English names, type hierarchy
 ├── Discovery/      the prefab search that classes each loaded prefab as equipment, vehicle or neither
+├── Gameplay/       the gameplay dataset: selection policy, generated tables, generation, resource files
 ├── Generation/     one generation's run: queue, records, snapshots, environment, `generation.json`
-├── Plugins/        the "Export Equipment and Vehicles" menu entry and the shared diagnostic runner
+├── Plugins/        the export and full-diagnostics menu entries and the shared diagnostic runner
 ├── Serialization/  the JSON encoding and checked file writes every part uses
 ├── Source/         the source reader: containers into typed facts, nodes and references
 └── Verification/   reader checks before every run, and the `EMCP_WB_SourceExport` Net API handler
@@ -23,7 +24,7 @@ apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/
 ## How it works
 
 ```text
-menu "Export Equipment and Vehicles" (Plugins/)   or   cargo xtask mcp wbcall EMCP_WB_SourceExport (Verification/)
+menu "Export Full Equipment and Vehicle Diagnostics" (Plugins/)   or   EMCP_WB_SourceExport (Verification/)
         │
         ▼
 Generation/: reader verification (Verification/) ─▶ discovery census (Discovery/) ─▶ queue
@@ -50,17 +51,27 @@ Gameplay configurations each get a record of their own, so every gameplay link r
 the bundle; models, textures, audio and other assets stay external references. Each child README
 holds the detail.
 
-Diagnostic actions, in `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/` and
-`apps/mod/tbd-export/Scripts/WorkbenchGame/VehicleExport/`, run the same pipeline over a selected
-set; their generations have scope `diagnostic`, and the publisher rejects them.
+The source generation above is the full diagnostic dataset. The published gameplay dataset comes
+from `Gameplay/`: "Export Equipment and Vehicles" and the `start` action of `EMCP_WB_SourceExport`
+run a `TBD_GameplayExportGeneration`, which uses the same discovery and source reader but keeps
+only the classes and fields the reviewed selection policy in `contracts_v2/rules/equipment-gameplay/`
+selects, follows only the references it approves, and writes compact resource files under
+`equipment_vehicle_exports/gameplay/generations/<generation id>/`. The same two `cargo xtask`
+commands validate and publish either kind; a gameplay generation publishes inside `gameplay/`.
+The `diagnostic` action of `EMCP_WB_SourceExport`, and `TBD_SourceDiagnosticExport` in `Plugins/`,
+run the source pipeline over a selected set; those generations have scope `diagnostic`, and the
+publisher rejects them.
 
 ### Complete export
 
 1. Open `apps/mod/tbd-export/addon.gproj` in Workbench. Cold-restart Workbench after adding a
    script file; reload scripts after editing one.
-2. Run Plugins → TBD → Export Equipment and Vehicles, or drive it from outside with the
-   `start` action of `EMCP_WB_SourceExport` and `step` until it reports `completed`.
-3. Find the generation under `$profile:TBD_Export/equipment_vehicle_exports/generations/<generation id>/`.
+2. Run Plugins → TBD → Export Full Equipment and Vehicle Diagnostics, or drive it from outside
+   with the `full_diagnostic` action of `EMCP_WB_SourceExport` and `step` until it reports
+   `completed`. For the gameplay dataset, run Export Equipment and Vehicles or the `start` action.
+3. Find the generation under `$profile:TBD_Export/equipment_vehicle_exports/generations/<generation id>/`,
+   or under `equipment_vehicle_exports/gameplay/generations/<generation id>/` for the gameplay
+   dataset.
 4. Validate and publish it:
 
 ```bash
@@ -73,7 +84,7 @@ validates again under a lock, copies and hash-checks every file into `published/
 writes a SHA-256 `manifest.json`, and replaces `current.json` atomically. Consumers read the
 directory `current.json` names, never the newest staging folder. The first publication moves the
 unversioned `equipment/` and `vehicles/` export folders beside `equipment_vehicle_exports/` into
-`equipment_vehicle_exports/legacy/<generation id>/` under a durable journal, recovered on the
+`equipment_vehicle_exports/unversioned_exports/<generation id>/` under a durable journal, recovered on the
 next run after an interruption; other exports stay in place. Earlier published generations stay
 for rollback, and publishing an already published id again selects it without rewriting it.
 
@@ -85,10 +96,10 @@ None: Workbench runs these scripts in the editor.
 
 - Depends on: Workbench's `WorkbenchPlugin`, `NetApiHandler` and resource search; the engine's
   `BaseContainer` reflection, `TypeName`, `WidgetManager`, `GameProject`, `JsonSaveContext` and
-  `FileIO`; the loaded addons' prefabs and configs; nothing from `tbd-framework`.
-- Used by: the diagnostic plugins in `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/`
-  and `apps/mod/tbd-export/Scripts/WorkbenchGame/VehicleExport/`, which call
-  `TBD_SourceDiagnosticExport`; `cargo xtask mcp wbcall`, which reaches `EMCP_WB_SourceExport`; the
+  `FileIO`; the loaded addons' prefabs and configs; the selection tables generated from
+  `contracts_v2/rules/equipment-gameplay/`; nothing from `tbd-framework`.
+- Used by: people, through the two Workbench menu entries; `cargo xtask mcp wbcall`, which reaches
+  `EMCP_WB_SourceExport`; the
   validation and publication commands in `tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/`,
   which read the generation files.
 - Rules: the exporter writes source facts only and every consumer derives its own values from

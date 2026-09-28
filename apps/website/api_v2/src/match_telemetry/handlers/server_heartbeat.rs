@@ -6,9 +6,11 @@
 //! body. Each heartbeat names its runtime session, that session's generation and a sequence that
 //! strictly increases within the session; the fence and the status write commit together, so a
 //! delayed or stale-runtime heartbeat can never overwrite the state a newer one reported.
+//!
+//! @contract runtime-heartbeat-receipt.schema.json#/definitions/HeartbeatReceipt
 
+use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, State};
 use axum::response::Json;
 use chrono::Utc;
 use serde_json::{Value, json};
@@ -18,6 +20,7 @@ use crate::administration::models::audit_log::AuditSeverity;
 use crate::administration::services::audit_writer::write_audit;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::server_infrastructure::models::machine_credential::ExecutorKind;
 use crate::server_infrastructure::services::machine_credentials::MachineCaller;
 use crate::server_infrastructure::services::runtime_sessions::admit_heartbeat;
@@ -47,14 +50,13 @@ struct EffectiveStatus {
 pub async fn ingest_server_status(
     State(state): State<AppState>,
     caller: MachineCaller,
-    Path(session): Path<String>,
+    PathParams(session): PathParams<String>,
     body: Result<Json<ServerStatusInput>, JsonRejection>,
 ) -> Result<Json<Value>, ApiError> {
     caller.require_executor(ExecutorKind::ModRuntime)?;
     let session = Uuid::parse_str(&session)
         .map_err(|_| ApiError::bad_request("invalid runtime session id"))?;
-    let Json(input) =
-        body.map_err(|_| ApiError::bad_request("generation and sequence are required"))?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
     if input.server_id.is_some() {
         return Err(ApiError::bad_request(
             "server_id is not accepted: the machine credential identifies the server",

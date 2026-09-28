@@ -12,10 +12,9 @@
 #![allow(dead_code)]
 
 use super::article_feed::board;
-use crate::v2::core::api::dto::Paginated;
+use crate::v2::core::api::dto::{Announcement, Paginated};
 use crate::v2::core::ui::AuthGate;
 use leptos::prelude::*;
-use serde_json::Value;
 
 /// The announcements route: the board behind the sign-in gate.
 #[component]
@@ -34,14 +33,17 @@ fn AnnouncementsInner() -> impl IntoView {
     let posts = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::v2::core::api::client::api_get::<Paginated<Value>>(store, "/announcements")
-                .await
-                .ok()
+            crate::v2::core::api::client::api_get::<Paginated<Announcement>>(
+                store,
+                "/announcements",
+            )
+            .await
+            .ok()
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
             let _ = store;
-            None::<Paginated<Value>>
+            None::<Paginated<Announcement>>
         }
     });
     view! {

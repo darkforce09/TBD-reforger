@@ -1,6 +1,9 @@
 //! The three rows that describe a dedicated server: its registration, its single hot status
 //! row (with its outbound telemetry queue reading), and the time series those status rows are
 //! archived into.
+//!
+//! @contract server-intel.schema.json#/definitions/ServerStatus
+//! @contract server-intel.schema.json#/definitions/TelemetryQueueStatus
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

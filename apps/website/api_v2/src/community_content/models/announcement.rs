@@ -1,4 +1,8 @@
 //! Announcement models: the news-feed / CMS row and its two Postgres ENUM vocabularies.
+//!
+//! @contract announcement.schema.json#/definitions/Announcement
+//! @contract announcement.schema.json#/definitions/AnnouncementTag
+//! @contract announcement.schema.json#/definitions/AnnouncementStatus
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

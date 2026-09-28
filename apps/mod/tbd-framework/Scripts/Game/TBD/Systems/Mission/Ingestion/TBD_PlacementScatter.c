@@ -15,7 +15,7 @@
  */
 
 //! One `slots[]` row's scatter fields. Field names are the JSON keys.
-//! @contract mission.schema.json#/$defs/slot
+//! @contract mission.schema.json#/$defs/slot partial
 class TBD_PlacementScatterSlotWireStruct
 {
 	static const float ABSENT = -1000000; //!< "`placementRadius` absent from JSON"
@@ -33,7 +33,7 @@ class TBD_PlacementScatterSlotWireStruct
 }
 
 //! One `$defs/group` object's scatter fields. Field names are the JSON keys.
-//! @contract mission.schema.json#/$defs/group
+//! @contract mission.schema.json#/$defs/group partial
 class TBD_PlacementScatterGroupWireStruct
 {
 	static const float ABSENT = -1000000; //!< "`placementRadius` absent from JSON"
@@ -57,8 +57,7 @@ class TBD_PlacementScatterFactionWireStruct
 }
 
 //! Root of the second parse. Declares `slots` and `orbat` and nothing else.
-//! @contract mission.schema.json#/properties/slots
-//! @contract mission.schema.json#/properties/orbat
+//! @contract mission.schema.json#/ partial
 class TBD_PlacementScatterDocStruct
 {
 	ref array<ref TBD_PlacementScatterSlotWireStruct> slots; //!< `slots[]`

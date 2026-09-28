@@ -160,12 +160,24 @@ fn event_missions_come_from_operations_on_this_server() {
     let calendar: Paginated<EventListItem> =
         serde_json::from_str(golden!("GET__events.json")).unwrap();
     let server = "00000000-0000-4000-d000-000000000001";
-    assert!(operations_on_server(&calendar.data, server).is_empty());
+    let ids = |operations: Vec<&EventListItem>| -> Vec<String> {
+        operations.iter().map(|o| o.id.clone()).collect()
+    };
+    assert_eq!(
+        ids(operations_on_server(&calendar.data, server)),
+        ["00000000-0000-4000-7000-000000000001"],
+        "the golden schedules only IRON VEIL on this server"
+    );
     let mut bound = calendar.data.clone();
-    bound[1].server_id = Some(server.to_string());
-    let on_server = operations_on_server(&bound, server);
-    assert_eq!(on_server.len(), 1);
-    assert_eq!(on_server[0].id, "00000000-0000-4000-7000-000000000001");
+    bound[2].server_id = Some(server.to_string());
+    assert_eq!(
+        ids(operations_on_server(&bound, server)),
+        [
+            "00000000-0000-4000-7000-000000000001",
+            "00000000-0000-4000-7000-000000000002",
+        ],
+        "binding a second operation to the server offers it too, in calendar order"
+    );
     let hub: EventHub = serde_json::from_str(golden!(
         "GET__events__c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7.json"
     ))
@@ -175,7 +187,7 @@ fn event_missions_come_from_operations_on_this_server() {
         vec![EventMissionChoice {
             event_mission_id: "89b1b731-37a8-4926-901a-3c7ff7de5eb3".into(),
             mission_id: "512d8658-7025-4a70-94e9-a1b44a7aa155".into(),
-            label: "Operation Byte Parity Night — Operation Byte Parity (2026-08-01 19:00 UTC)"
+            label: "Operation Byte Parity Night — Operation Byte Parity (2030-08-01 19:00 UTC)"
                 .into(),
         }]
     );

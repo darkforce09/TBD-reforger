@@ -10,8 +10,8 @@
 //! URL) answers before any statement runs and stores nothing; PUT locks the row before it writes;
 //! the row write and its audit line commit together or not at all.
 
+use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::Json;
 
@@ -23,6 +23,7 @@ use super::vehicle_rows::{
 use crate::community_content::models::VehicleDatabase;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AdminUser;
 
 /// `POST /api/v1/vehicle-database`: adds a row and answers it with 201.
@@ -58,7 +59,7 @@ pub async fn create_vehicle(
 pub async fn replace_vehicle(
     State(state): State<AppState>,
     administrator: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
     body: Result<Json<VehicleWriteBody>, JsonRejection>,
 ) -> Result<Json<VehicleDatabase>, ApiError> {
     let id = parse_vehicle_id(&id)?;

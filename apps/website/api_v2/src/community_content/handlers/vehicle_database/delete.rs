@@ -9,7 +9,7 @@
 //! and answers 404 on every route that names it, a second DELETE included; the row is locked
 //! before the stamp is written, and the stamp and its audit line commit together.
 
-use axum::extract::{Path, State};
+use axum::extract::State;
 use axum::response::Json;
 
 use super::vehicle_rows::{
@@ -18,6 +18,7 @@ use super::vehicle_rows::{
 use crate::community_content::models::VehicleDatabase;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AdminUser;
 
 /// `DELETE /api/v1/vehicle-database/{id}`: soft-deletes a live row and answers it with 200.
@@ -26,7 +27,7 @@ use crate::core::middleware::AdminUser;
 pub async fn delete_vehicle(
     State(state): State<AppState>,
     administrator: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<Json<VehicleDatabase>, ApiError> {
     let id = parse_vehicle_id(&id)?;
     let actor = administrator.0.discord_id.as_str();

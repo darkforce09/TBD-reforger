@@ -1,7 +1,11 @@
 //! Disciplinary actions against a member: bans, ban lifts, and warnings.
+//!
+//! @contract personnel-actions.schema.json#/definitions/BanRequest
+//! @contract personnel-actions.schema.json#/definitions/BanState
+//! @contract personnel-actions.schema.json#/definitions/WarningRequest
 
+use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::Json;
 use chrono::Utc;
@@ -14,6 +18,7 @@ use crate::administration::services::audit_writer::{actor_display_name, write_au
 use crate::administration::services::required_audit::append_actor_audit_with_severity;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AdminUser;
 use crate::identity_and_access::services::identity_ownership::lock_accounts;
 use crate::operations::services::event_reservations::reevaluation_queue::request_reevaluation_for_account;
@@ -40,7 +45,7 @@ pub struct BanInput {
 pub async fn ban_user(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path(discord_id): Path<String>,
+    PathParams(discord_id): PathParams<String>,
     body: Result<Json<BanInput>, JsonRejection>,
 ) -> Result<Json<Value>, ApiError> {
     // `map_err`, not `.ok()`: collapsing every extractor failure — a missing body, a wrong
@@ -52,7 +57,7 @@ pub async fn ban_user(
     // The `Content-Type` case is the one that actually bites: an admin who types a real reason
     // but whose client sends `text/plain` would get a 200 and a blank ban. They are told the ban
     // succeeded and never learn the reason was dropped.
-    let Json(input) = body.map_err(|_| ApiError::bad_request("reason is required"))?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
     // A reason of spaces is the same lie as no reason. Trim once and use the trimmed value for
     // both the column and the audit message, so the two can never disagree.
     let reason = input.reason.trim();
@@ -108,7 +113,7 @@ pub async fn ban_user(
 pub async fn unban_user(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path(discord_id): Path<String>,
+    PathParams(discord_id): PathParams<String>,
 ) -> Result<Json<Value>, ApiError> {
     let actor = &admin.0.discord_id;
     let mut tx = state.pool.begin().await?;
@@ -174,7 +179,7 @@ pub struct WarnInput {
 pub async fn issue_warning(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path(discord_id): Path<String>,
+    PathParams(discord_id): PathParams<String>,
     body: Result<Json<WarnInput>, JsonRejection>,
 ) -> Result<(StatusCode, Json<Warning>), ApiError> {
     // The guard is `trim()`-based, so `{"reason":"   "}` is rejected rather than stored. The
@@ -194,7 +199,7 @@ pub async fn issue_warning(
     // The message is "reason is required", the wording `ban_user` uses, `reject_mission` in
     // `missions/handlers/approvals_queue.rs` uses, and the SPA already shows the operator. A client
     // matching on error text would be surprised by a difference.
-    let Json(input) = body.map_err(|_| ApiError::bad_request("reason is required"))?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
     let reason = input.reason.trim();
     if reason.is_empty() {
         return Err(ApiError::bad_request("reason is required"));

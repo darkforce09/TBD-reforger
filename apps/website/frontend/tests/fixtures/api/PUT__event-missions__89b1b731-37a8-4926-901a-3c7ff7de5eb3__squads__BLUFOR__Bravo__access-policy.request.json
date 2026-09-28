@@ -1,0 +1,23 @@
+{
+  "expected_access_revision": 11,
+  "policy": {
+    "grants": [
+      {
+        "conditions": [
+          {
+            "discord_id": "000000000000000006",
+            "kind": "named_account"
+          }
+        ]
+      },
+      {
+        "conditions": [
+          {
+            "group_id": "00000000-0000-4000-b100-000000000001",
+            "kind": "event_group"
+          }
+        ]
+      }
+    ]
+  }
+}

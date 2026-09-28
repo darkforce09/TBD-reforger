@@ -8,11 +8,9 @@ fn equipment_viewer_resource_memory_keeps_expansions_and_evicts_old_resources() 
     m.expanded.insert(("opaque/id".into(), "Zero".into()));
     save("first".into(), m);
     assert_eq!(restore("first").scroll_top, 123.);
-    assert!(
-        restore("first")
-            .expanded
-            .contains(&("opaque/id".into(), "Zero".into()))
-    );
+    assert!(restore("first")
+        .expanded
+        .contains(&("opaque/id".into(), "Zero".into())));
     for i in 0..8 {
         save(format!("next-{i}"), ResourceMemory::default());
     }

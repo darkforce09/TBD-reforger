@@ -18,10 +18,9 @@ use crate::world::terrain::satellite::textures::TexLane;
 use wasm_bindgen::prelude::*;
 
 /// Re-export `website_graphics_engine::layout::pack::TEXT_UNIFORM_BYTES`.
-// T-0xx Phase 2B (Kind A): the size of the text atlas's uniform block is byte layout, not a
-// GPU resource — it names no `wgpu` type. It moved out of graphics-engine's `text::gpu` into
-// `text::pack` and reaches us through `layout`, the enumerated ABI surface. Re-exported here
-// so the bind-group layout in `core/context/device_2.rs` keeps its spelling.
+// The size of the text atlas's uniform block is byte layout, not a GPU resource: it names no
+// `wgpu` type, lives in graphics-engine's `text::pack` and reaches this crate through `layout`,
+// the enumerated ABI surface. The bind-group layout in `frame/boot.rs` imports it from here.
 pub(crate) use website_graphics_engine::layout::pack::TEXT_UNIFORM_BYTES;
 
 #[wasm_bindgen]

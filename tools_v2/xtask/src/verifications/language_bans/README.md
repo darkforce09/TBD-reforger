@@ -10,8 +10,8 @@ script file, 1000 for tests).
 ```text
 tools_v2/xtask/src/verifications/language_bans/
 ├── mod.rs                   the module tree
-├── node_and_file_limits/    the file-length walk, the no-node checks and the font table generator
-├── node_and_file_limits.rs  the file-length limits, roots and addon script roots, the no-node scan subjects; re-exports the entries
+├── node_and_file_limits/    the file-length report, the no-node checks and the font table generator
+├── node_and_file_limits.rs  the no-node scan subjects; re-exports the entries
 ├── python_scripts.rs        `verify no-python`: the same ban walk as `no-shell`, under its own name
 ├── shell_scripts.rs         `verify no-shell`: the tracked-language ban table, shebangs, `python3` calls
 └── tests/                   unit tests for the ban walk, shebang parsing and fixture checkouts
@@ -38,8 +38,10 @@ everything else, and [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) `
 `git ls-files`, an empty listing or an unreadable tracked path fails the gate rather than passing
 it.
 
-`node_and_file_limits/` holds the `no-node` and `file-length` bodies; its README gives their roots
-and rules.
+`node_and_file_limits/` holds the `no-node` and `file-length` bodies; its README gives their
+rules. The file-length roots, ceilings and test-file rule live in
+`verification_core::repository_laws` and are shared with the `engineering_laws` test binary of
+`website-api`.
 
 ## Public surface
 
@@ -54,8 +56,8 @@ Exit codes: 0 clean; 1 a banned path, an over-long file or a walk that examined 
 
 ## Boundaries
 
-- Depends on: `git`; `verification_core` (`scan`, `Verdict`, `NotRun`) for the file-length walk;
-  `anyhow`.
+- Depends on: `git`; `verification_core` (`repository_laws::file_length` for the file-length
+  scan, `Verdict` and `NotRun` for its refusal); `anyhow`.
 - Used by:
   - `tools_v2/xtask/src/commands/verify/dispatch.rs` and
     `tools_v2/xtask/src/commands/generate/dispatch.rs`;

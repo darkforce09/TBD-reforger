@@ -8,11 +8,11 @@
 //! `crate::frame::…`; the one other legitimate door to the renderer is `graphics_engine::layout`,
 //! the POD/bit-packing ABI, which belts import directly beside their data (§2C.1 Kind B).
 //!
-//! T-0xx Phase 2B.1: `core/` and `renderers/` are gone and this is where most of them landed.
-//! `core/context/state.rs` is `engine.rs`, `device_{1,2}.rs` are `boot.rs`,
-//! `core/pipeline/bindings.rs` is `bindings.rs`, `core/culling/engine.rs` is `cull.rs` — that
-//! last one is **not** a spatial query, it is GPU indirect-draw bookkeeping over a fixed lane
-//! list, and the frustum arithmetic it uses crossed to graphics-engine in Phase 1.
+//! The engine's own GPU lifecycle lives in this folder: `engine.rs` holds the engine state,
+//! `boot.rs` the adapter and device bring-up, `bindings.rs` the lane bind-group policy and
+//! `cull.rs` the indirect-draw compaction. `cull.rs` is **not** a spatial query: it is GPU
+//! indirect-draw bookkeeping over a fixed lane list, and the frustum arithmetic it uses lives in
+//! the graphics engine.
 
 /// Lane → pipeline and bind-group policy, travelling on the batch.
 #[cfg(all(target_arch = "wasm32", feature = "render"))]
@@ -47,35 +47,33 @@ pub mod pump;
 pub mod upload;
 
 /// Buffers.
-// T-0xx Phase 1C: moved to `website-graphics-engine`. Re-exported at its former path so
-// every call site in this crate keeps its spelling — the move is a relocation, not a rename.
-//
-// T-0xx Phase 2B: one of the two `device`/`pipeline` sites gate rule 3b still allows, and it
-// is allowed at one named seam rather than at its three call sites. `LanePool` and
-// `ReadbackLane` are GPU buffer bookkeeping that belongs to graphics-engine and lives there;
-// this crate has to *name* them only because `RenderEngine` holds them, and `RenderEngine`
-// did not cross in Phase 1. See `tools_v2/xtask/src/verifications/architecture/engine_layer_boundaries.rs` for the pinned list.
+// `LanePool` and `ReadbackLane` are GPU buffer bookkeeping that belongs to graphics-engine and
+// lives there; this crate names them only because `RenderEngine`, which holds them, is defined
+// here. This alias is one of the two `device`/`pipeline` seams engine-layer rule 3b allows, named
+// once here rather than at its three call sites, which spell it `crate::frame::buffers`. The
+// pinned list is `RULE3B_PIN` in
+// `tools_v2/verification-core/src/repository_laws/engine_layers/rules.rs`.
 pub use website_graphics_engine::device::buffers;
 
 /// Pipelines.
-// T-0xx Phase 2B: the second allowed site. Eighteen call sites — `frame/boot.rs`, twelve
+// The second seam rule 3b allows. Eighteen call sites — `frame/boot.rs`, twelve
 // `diagnostics/readback/*` probes and `diagnostics/probes/runner.rs` — build render pipelines
-// against `RenderEngine`'s own shader module and bind-group layouts. Deleting this alias would
-// spell graphics-engine's pipeline module eighteen times instead of once; the pipelines
-// themselves are already built by graphics-engine code. What has not happened is
-// `RenderEngine` crossing, which is what would let this line go.
+// against `RenderEngine`'s own shader module and bind-group layouts. Without this alias they
+// would spell graphics-engine's pipeline module eighteen times instead of once; the pipelines
+// themselves are built by graphics-engine code. The alias closes only when `RenderEngine` is
+// defined in graphics-engine.
 pub use website_graphics_engine::pipeline as pipelines;
 
 // ── THE PACKET VOCABULARY ────────────────────────────────────────────────────────────────────
 //
-// T-0xx Phase 2C, §2C.1 Kind C. Everything the renderer's `frame` module publishes that this
-// crate consumes, enumerated. **The eight `pub use` lines below are the only places in
-// `website-map-engine` that spell the path they spell** — gate rule 3a in
-// `tools_v2/xtask/src/verifications/architecture/engine_layer_boundaries.rs` pins that in both directions, at exactly eight, so a ninth
-// import is a diff to this list and a lost one is a stale pin. The 38 call sites that used to
-// spell it for themselves now read `use crate::frame::DrawBatch;`. (The pin counts the
-// re-exports and not this prose on purpose: a gate that fails on a typo fix in a comment is a
-// gate that gets suppressed.)
+// §2C.1 Kind C. Everything the renderer's `frame` module publishes that this crate consumes,
+// enumerated. **The eight `pub use` lines below are the only places in `website-map-engine`
+// that spell the path they spell** — engine-layer rule 3a (`RULE3A_PIN` in
+// `tools_v2/verification-core/src/repository_laws/engine_layers/rules.rs`) pins that in both
+// directions, at exactly eight, so a ninth import is a diff to this list and a lost one is a
+// stale pin. Every other module of the crate reads `use crate::frame::DrawBatch;`. (This prose
+// never spells the path, so the pinned count is exactly the size of the re-export list and a
+// comment edit cannot turn the gate red.)
 //
 // Enumerated and never a glob, because the value of the chokepoint is not the indirection —
 // re-exports cost nothing at runtime and a glob would compile identically. The value is that
@@ -145,12 +143,11 @@ pub use engine::RenderEngine;
 pub use pump::{FrameTarget, RafPump};
 
 /// A mounted engine, or an empty slot during initialization and teardown.
-// T-0xx Phase 2B.1: from `core/context/handles.rs`, a ten-line file whose eleven importers —
-// five of them in the frontend — all wanted exactly this alias.
+// The one spelling of the engine slot that every holder, the frontend included, shares.
 #[cfg(all(target_arch = "wasm32", feature = "render"))]
 pub type EngineHandle = std::rc::Rc<std::cell::RefCell<Option<RenderEngine>>>;
 
-// T-0xx Phase 2C: the rule-3 pin. `RenderDamage`'s own state machine is tested in
+// Damage discipline. `RenderDamage`'s own state machine is tested in
 // `website-graphics-engine`; this asserts that this crate still consults it — that `render()`
 // refuses an undamaged frame, that every lane mutation marks damage, and that the packet
 // borrows the persistent batch list instead of rebuilding one per frame. Not gated on

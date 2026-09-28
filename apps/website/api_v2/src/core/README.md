@@ -14,7 +14,8 @@ apps/website/api_v2/src/core/
 ├── configuration/              `Config`, read from the environment at boot, and proxy parsing
 ├── database/                   the Postgres pool, the embedded migrations and SQLSTATE predicates
 ├── error_handling/             `ApiError`, the failure handlers return, and its JSON envelope
-├── http/                       request-shape primitives: offset pagination
+├── failpoints/                 test-build fault injection: `fail_point!`, the catalogue, the registry
+├── http/                       request-shape primitives: offset pagination, the path-parameter extractor
 ├── http_client/                the bounded retry for outbound calls answered with 429
 ├── http_router.rs              `router`: every route and mount, and the middleware chain
 ├── middleware/                 the request middleware chain and the authentication extractors
@@ -56,6 +57,13 @@ position in the router. Logic that
 more than one domain needs and that names no domain concept lives here: pagination, SQLSTATE
 predicates, wire formats, the URL guard, the 429 retry, the token primitives.
 
+Every refusal a route handler answers carries the `{error, details?}` envelope of
+`error_handling`, extractor rejections included: a handler takes its path segments through
+`http::path_parameters::PathParams` (a segment that does not decode answers 400), turns a JSON
+body rejection into 413 `request_too_large`, 415 or 400 through `ApiError::from_json_rejection`,
+and a query string rejection into 400 through `ApiError::from_query_rejection`, so no route
+answers axum's plain-text rejection body.
+
 ## Public surface
 
 - `http_router::router`: the whole application, for `apps/website/api_v2/src/bin/api.rs` and the
@@ -66,7 +74,8 @@ predicates, wire formats, the URL guard, the 429 retry, the token primitives.
   and `ConfigError`.
 - `database`: `connect`, `migrate` and `connect_lazy` for the binaries and suites;
   `postgres_errors` for handlers that answer a constraint violation with a 4xx.
-- `error_handling::api_error::ApiError`: the error every domain returns.
+- `error_handling::api_error::ApiError`: the error every domain returns, with the
+  `from_json_rejection`, `from_query_rejection` and `from_path_rejection` mappings.
 - `middleware`: the extractors, `json_error`, `role_rank`, `MAX_MULTIPART_BODY`,
   `authorized_event_stream::authorize_event_stream` for [SSE](/documentation_v2/glossary/n_to_z.md#sse)
   handlers, and `PgRateLimiter` for the
@@ -76,7 +85,11 @@ predicates, wire formats, the URL guard, the 429 retry, the token primitives.
   `identity_and_access` implements.
 - `process_lifecycle::process_shutdown` and `ShutdownSignal`: the process-wide shutdown signal
   the `api` binary begins and every event stream ends on.
-- `realtime_hub::Hub`, `http::pagination::PageParams`,
+- `failpoints`: the `fail_point!` macro call sites place on commit and external-effect paths,
+  and, in test builds only (the `failpoints` feature, which the crate's self dev-dependency
+  turns on), `Failpoint`, `lock_suite`, `FailAction`, `ArmGuard` and `PauseHandle` for the
+  failure and race suites. A deploy build compiles every call site to nothing.
+- `realtime_hub::Hub`, `http::pagination::PageParams`, `http::path_parameters::PathParams`,
   `http_client::retry_on_429::send_with_retry_on_429`, the `text` guard and preview helpers, and
   the `wire_format` serializers.
 - The HTTP routes `core` owns: `GET /healthz` (public status; the detailed report with the
@@ -89,8 +102,8 @@ predicates, wire formats, the URL guard, the 429 retry, the token primitives.
   the other crates in `apps/website/api_v2/Cargo.toml`; the migrations in
   `apps/website/api_v2/migrations/`, embedded at compile time; and, in the two composition-root
   files only, the domains: `application_state.rs` builds `identity_and_access`'s Discord client
-  and session authority and `community_content`'s webhook client, and `http_router.rs` merges all
-  eight route tables.
+  and session authority and `community_content`'s webhook client and equipment datasets, and
+  `http_router.rs` merges all eight route tables.
 - Used by: `apps/website/api_v2/src/bin/api.rs` and
   `apps/website/api_v2/src/bin/import_registry.rs`; every domain module and
   `apps/website/api_v2/src/background_workers/`; the integration suites under

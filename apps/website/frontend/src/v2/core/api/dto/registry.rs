@@ -8,6 +8,10 @@
 //! **Invariants:** resource paths are the identity of a registry item — two items never share one. A
 //! compatibility edge carries a quantity that defaults to one, so a payload written before
 //! quantities existed still reads correctly.
+//! @contract arsenal-envelopes.schema.json#/definitions/RegistryItemPage
+//! @contract arsenal-envelopes.schema.json#/definitions/RegistryCompatPage
+//! @contract arsenal-envelopes.schema.json#/definitions/RegistryCargoDefaults
+//! @contract arsenal-envelopes.schema.json#/definitions/FactionList
 
 use serde::{Deserialize, Serialize};
 
@@ -54,6 +58,7 @@ pub struct RegistryItem {
 }
 
 /// A page of registry entries.
+/// @contract arsenal-envelopes.schema.json#/definitions/RegistryItemPage
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct RegistryResponse {
@@ -95,6 +100,7 @@ fn default_edge_qty() -> i64 {
 }
 
 /// The compatibility edges for a set of registry entries.
+/// @contract arsenal-envelopes.schema.json#/definitions/RegistryCompatPage
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct RegistryCompatResponse {
@@ -111,6 +117,7 @@ pub struct RegistryCompatResponse {
 }
 
 /// The default cargo one character prefab is issued.
+/// @contract arsenal-envelopes.schema.json#/definitions/CargoDefaultRow
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct RegistryCargoDefaultRow {
@@ -120,6 +127,7 @@ pub struct RegistryCargoDefaultRow {
 }
 
 /// Default cargo for a set of character prefabs.
+/// @contract arsenal-envelopes.schema.json#/definitions/RegistryCargoDefaults
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct RegistryCargoDefaultsResponse {
@@ -134,6 +142,7 @@ pub struct RegistryCargoDefaultsResponse {
 }
 
 /// A faction as it appears against one user.
+/// @contract arsenal-envelopes.schema.json#/definitions/UserFaction
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct UserFaction {
@@ -147,6 +156,7 @@ pub struct UserFaction {
 }
 
 /// Every faction available to the viewer.
+/// @contract arsenal-envelopes.schema.json#/definitions/FactionList
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct FactionListResponse {

@@ -6,8 +6,8 @@ awaits. Each keeps shared state current when no request would: expired credentia
 silent [game runtimes](/documentation_v2/glossary/g_to_m.md#game-runtime),
 [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command) and
 [mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment) in flight, queued
-reservation re-evaluations, unpublished audit facts, and Discord changes nobody signed in to pick
-up.
+reservation re-evaluations, unpublished audit facts, Discord changes nobody signed in to pick
+up, and new equipment export publications.
 
 ## Contents
 
@@ -16,6 +16,7 @@ apps/website/api_v2/src/background_workers/
 ├── audit_publication_worker.rs       publishes committed audit facts in bounded batches
 ├── discord_membership_reconciler.rs  re-reads members' Discord membership under Postgres leases
 ├── discord_role_synchronizer.rs      re-resolves every member's role from the stored Discord roles
+├── equipment_export_watcher.rs       restores the equipment datasets and imports new publications
 ├── event_lifecycle_sweeper.rs        converges the stored `events.status` column
 ├── event_reservation_reevaluator.rs  drains the queued event reservation re-evaluations
 ├── fleet_command_reconciler.rs       expires, re-queues or marks indeterminate the fleet commands
@@ -47,6 +48,7 @@ data, so a handler or a test reaches the same operation without a timer:
 | `audit_publication_worker` | 250 ms after each pass of up to ten batches of 1000 | `administration::services::audit_publication::publish_audit_batch` |
 | `discord_membership_reconciler` | enrolment every 30 s; a request every 40 ms, at most 32 at once | `identity_and_access::services::discord_rest_reconciliation`: `enroll_accounts`, `reconcile_one` |
 | `discord_role_synchronizer` | `ROLE_RESYNC_INTERVAL_SECS`, 86400 by default | `identity_and_access::services::discord_role_sync::resync_all_roles` |
+| `equipment_export_watcher` | 5 s, doubling after each failed import up to 300 s | `community_content::services::equipment_data_viewer::importing::generation_import`: `initialize` for both datasets once, then `poll` of the gameplay source |
 | `event_lifecycle_sweeper` | 60 s | `operations::services::event_lifecycle_sweep::sweep_once` |
 | `event_reservation_reevaluator` | 1 s | `operations::services::event_reservations`: a leased request from `reevaluation_queue`, then `eligibility_reevaluation::reevaluate_event_reservations` in one transaction |
 | `fleet_command_reconciler` | 5 s | `server_infrastructure::services::fleet_commands::command_reconciliation::reconcile_fleet_commands` |
@@ -65,8 +67,8 @@ never handle the same account or request at once.
 
 ## Boundaries
 
-- Depends on: `crate::core` (`AppState`, the pool, the hub, `ApiError`, `PgRateLimiter`) and the
-  domain services in the table.
+- Depends on: `crate::core` (`AppState`, the pool, the hub, the equipment datasets, `ApiError`,
+  `PgRateLimiter`) and the domain services in the table.
 - Used by: `apps/website/api_v2/src/bin/api.rs`, which calls `spawn_all`; integration suites under
   `apps/website/api_v2/tests/` that run one pass directly (`drain_due_reevaluations`,
   `expire_runtime_sessions`) or the bucket pruning.

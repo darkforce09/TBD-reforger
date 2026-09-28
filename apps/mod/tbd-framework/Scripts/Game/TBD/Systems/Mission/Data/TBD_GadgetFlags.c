@@ -15,7 +15,7 @@
  */
 
 //! One `slots[]` row's gadget flags. Field names are the JSON keys.
-//! @contract mission.schema.json#/$defs/slot
+//! @contract mission.schema.json#/$defs/slot partial
 class TBD_GadgetFlagsSlotWireStruct
 {
 	string id; //!< `id`
@@ -25,7 +25,7 @@ class TBD_GadgetFlagsSlotWireStruct
 }
 
 //! Root of the second parse. Declares `slots` and nothing else.
-//! @contract mission.schema.json#/properties/slots
+//! @contract mission.schema.json#/ partial
 class TBD_GadgetFlagsDocStruct
 {
 	ref array<ref TBD_GadgetFlagsSlotWireStruct> slots; //!< `slots[]`

@@ -3,6 +3,9 @@ use super::{data::use_polled_read, navigation_state::Navigation};
 use crate::v2::core::api::dto::equipment_data_viewer::EquipmentDatasetStatus;
 use leptos::prelude::*;
 
+/// The state every viewer panel reads from the Leptos context: the parsed location, the export
+/// generation reads target (the pinned one, or the latest published one while following), and
+/// the most recent dataset status poll.
 #[derive(Clone, Copy)]
 pub struct ViewerContext {
     pub nav: Memo<Navigation>,
@@ -10,6 +13,10 @@ pub struct ViewerContext {
     pub status: RwSignal<Option<EquipmentDatasetStatus>>,
 }
 
+/// The equipment and vehicle data viewer at `/debug/data-viewer`. It polls the export status
+/// every five seconds while the browser tab is visible, resolves the generation to read, moves to
+/// a newly published generation when the location follows `latest`, shows import progress, and
+/// mounts the tab the location names.
 #[component]
 pub fn DataViewerPage() -> impl IntoView {
     let query = leptos_router::hooks::use_query_map();

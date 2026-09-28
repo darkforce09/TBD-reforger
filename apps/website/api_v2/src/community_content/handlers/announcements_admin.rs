@@ -13,9 +13,13 @@
 //! string that does not decode through [`ApiError::from_query_rejection`] (400); a refused field
 //! leaves the row untouched; the list orders pinned rows first, then by `updated_at DESC, id DESC`,
 //! a total order.
+//!
+//! @contract announcement.schema.json#/definitions/AnnouncementPage
+//! @contract announcement.schema.json#/definitions/AnnouncementCreation
+//! @contract announcement.schema.json#/definitions/AnnouncementChange
 
 use axum::extract::rejection::{JsonRejection, QueryRejection};
-use axum::extract::{Path, Query, State};
+use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::Json;
 use serde::Deserialize;
@@ -31,6 +35,7 @@ use crate::community_content::models::announcement::{
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::http::pagination::PageParams;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AdminUser;
 use crate::core::text::html_sanitizer::{cap_runes, snippet};
 use crate::core::text::http_url_guard::is_http_url;
@@ -257,7 +262,7 @@ pub struct AnnouncementUpdate {
 pub async fn update_announcement(
     State(state): State<AppState>,
     _a: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
     body: Result<Json<AnnouncementUpdate>, JsonRejection>,
 ) -> Result<Json<Announcement>, ApiError> {
     let Ok(id) = Uuid::parse_str(&id) else {
@@ -358,7 +363,7 @@ pub async fn update_announcement(
 pub async fn delete_announcement(
     State(state): State<AppState>,
     _a: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<StatusCode, ApiError> {
     let Ok(id) = Uuid::parse_str(&id) else {
         return Err(ApiError::bad_request("invalid id"));

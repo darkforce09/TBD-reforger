@@ -1,4 +1,6 @@
 //! The member-facing modpack catalog: every pack with its mods, and the active manifest.
+//!
+//! @contract modpack.schema.json#/definitions/ModpackList
 
 use axum::extract::State;
 use axum::response::Json;

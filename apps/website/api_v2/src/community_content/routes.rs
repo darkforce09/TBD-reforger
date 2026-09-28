@@ -2,7 +2,9 @@
 //!
 //! Paths are written relative to the `/api/v1` nest applied by `core::http_router`. Auth tiers
 //! are enforced per-handler by the extractor each takes (`AuthUser` for the reads, `AdminUser`
-//! for the writes), so they travel with the handler rather than with the registration.
+//! for the writes), so they travel with the handler rather than with the registration. The
+//! equipment data viewer's anonymous debug reads are the one exception: they are registered only
+//! in development, so a production router answers 404 for them.
 
 use axum::Router;
 use axum::extract::DefaultBodyLimit;
@@ -13,9 +15,10 @@ use crate::core::middleware;
 
 use super::handlers;
 
-pub fn routes() -> Router<AppState> {
-    Router::new()
-        .merge(handlers::equipment_data_viewer::routes())
+/// `dev` gates the equipment data viewer's debug reads, which are registered only when the
+/// configuration reports a development environment.
+pub fn routes(dev: bool) -> Router<AppState> {
+    let mut r = Router::new()
         // Content reads (member tier via each handler's AuthUser extractor).
         .route(
             "/announcements",
@@ -91,5 +94,58 @@ pub fn routes() -> Router<AppState> {
             "/cms/uploads",
             post(handlers::media_upload::upload_image)
                 .layer(DefaultBodyLimit::max(middleware::MAX_MULTIPART_BODY)),
-        )
+        );
+    if dev {
+        // Development-only equipment data viewer reads: anonymous and generation-pinned.
+        r = r
+            .route(
+                "/debug/equipment-data/status",
+                get(handlers::equipment_data_viewer::dataset::status),
+            )
+            .route(
+                "/debug/equipment-data/overview",
+                get(handlers::equipment_data_viewer::dataset::overview),
+            )
+            .route(
+                "/debug/equipment-data/resources",
+                get(handlers::equipment_data_viewer::resources::resources),
+            )
+            .route(
+                "/debug/equipment-data/relationships",
+                get(handlers::equipment_data_viewer::resources::relationships),
+            )
+            .route(
+                "/debug/equipment-data/fields",
+                get(handlers::equipment_data_viewer::resources::fields),
+            )
+            .route(
+                "/debug/equipment-data/resource-cards",
+                get(handlers::equipment_data_viewer::source_inspection::resource_cards),
+            )
+            .route(
+                "/debug/equipment-data/selection",
+                get(handlers::equipment_data_viewer::source_inspection::selection),
+            )
+            .route(
+                "/debug/equipment-data/containers",
+                get(handlers::equipment_data_viewer::source_inspection::containers),
+            )
+            .route(
+                "/debug/equipment-data/properties",
+                get(handlers::equipment_data_viewer::source_inspection::properties),
+            )
+            .route(
+                "/debug/equipment-data/values",
+                get(handlers::equipment_data_viewer::source_inspection::values),
+            )
+            .route(
+                "/debug/equipment-data/documents",
+                get(handlers::equipment_data_viewer::source_inspection::documents),
+            )
+            .route(
+                "/debug/equipment-data/download",
+                get(handlers::equipment_data_viewer::downloads::download),
+            );
+    }
+    r
 }

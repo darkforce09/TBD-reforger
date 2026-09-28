@@ -3,15 +3,17 @@
 //! executor has claimed. Every read settles the server's deployment in flight first, so what an
 //! operator sees is current.
 
-use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, Query, State};
+use axum::extract::rejection::{JsonRejection, QueryRejection};
+use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::Json;
 use uuid::Uuid;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::failpoints::fail_point;
 use crate::core::http::pagination::PageParams;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AdminUser;
 use crate::missions::models::mission_deployment::{
     DeploymentRequest, MissionDeployment, MissionDeploymentPage,
@@ -35,12 +37,11 @@ fn parse_id(raw: &str, what: &str) -> Result<Uuid, ApiError> {
 pub async fn request_server_deployment(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path(server): Path<String>,
+    PathParams(server): PathParams<String>,
     body: Result<Json<DeploymentRequest>, JsonRejection>,
 ) -> Result<(StatusCode, Json<MissionDeployment>), ApiError> {
     let server = parse_id(&server, "server")?;
-    let Json(request) =
-        body.map_err(|_| ApiError::bad_request("mission_id and artifact_id are required"))?;
+    let Json(request) = body.map_err(ApiError::from_json_rejection)?;
     let mut transaction = state.pool.begin().await?;
     let deployment = request_deployment(
         &mut transaction,
@@ -53,6 +54,7 @@ pub async fn request_server_deployment(
     )
     .await?;
     transaction.commit().await?;
+    fail_point!(DeploymentRequestAfterCommit);
     Ok((StatusCode::ACCEPTED, Json(deployment)))
 }
 
@@ -62,9 +64,11 @@ pub async fn request_server_deployment(
 pub async fn list_server_deployments(
     State(state): State<AppState>,
     _admin: AdminUser,
-    Path(server): Path<String>,
-    Query(page): Query<PageParams>,
+    PathParams(server): PathParams<String>,
+    query: Result<Query<PageParams>, QueryRejection>,
 ) -> Result<Json<MissionDeploymentPage>, ApiError> {
+    let Query(page) = query
+        .map_err(|rejection| ApiError::from_query_rejection(rejection, "deployment page query"))?;
     let server = parse_id(&server, "server")?;
     let (limit, offset) = page.bounds();
     let mut transaction = state.pool.begin().await?;
@@ -80,7 +84,7 @@ pub async fn list_server_deployments(
 pub async fn get_server_deployment(
     State(state): State<AppState>,
     _admin: AdminUser,
-    Path((server, deployment)): Path<(String, String)>,
+    PathParams((server, deployment)): PathParams<(String, String)>,
 ) -> Result<Json<MissionDeployment>, ApiError> {
     let server = parse_id(&server, "server")?;
     let deployment = parse_id(&deployment, "deployment")?;
@@ -98,7 +102,7 @@ pub async fn get_server_deployment(
 pub async fn cancel_server_deployment(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path((server, deployment)): Path<(String, String)>,
+    PathParams((server, deployment)): PathParams<(String, String)>,
 ) -> Result<Json<MissionDeployment>, ApiError> {
     let server = parse_id(&server, "server")?;
     let deployment = parse_id(&deployment, "deployment")?;

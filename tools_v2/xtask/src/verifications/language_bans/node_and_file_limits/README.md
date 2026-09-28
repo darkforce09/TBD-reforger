@@ -3,35 +3,39 @@
 The bodies of two repository gates, `cargo xtask verify file-length` and
 `cargo xtask verify no-node`, plus the Spleen font table generator that `cargo xtask gen font-table`
 runs. The parent file `tools_v2/xtask/src/verifications/language_bans/node_and_file_limits.rs`
-holds their constants and re-exports the entry points.
+holds the no-node scan subjects and re-exports the entry points.
 
 ## Contents
 
 ```text
 tools_v2/xtask/src/verifications/language_bans/node_and_file_limits/
-├── repository_access.rs  the file-length walk and verdict, the test-file rule, and the font table generator
+├── repository_access.rs  the checkout lookup, the file-length report over the library scan, and the font table generator
 └── verify_no_node.rs     the no-node gate: tracked Node scripts, node and npx calls, setup-node steps
 ```
 
 ## How it works
 
-`verify file-length` walks every `.rs` and `.c` file (`LENGTH_GATED_EXTENSIONS`) under the roots
+`verify file-length` runs `verification_core::repository_laws::file_length::scan_file_lengths`
+and prints its result. The scan walks every `.rs` and `.c` file under the law roots of
+[`repository_laws`](/tools_v2/verification-core/src/repository_laws/README.md): the pinned roots
 in `FILE_LENGTH_PINS` (the four `tools_v2` crates, `apps/ticketboard/src`,
 `apps/fleet_host_agent/src` and `tests`, `apps/website/api_v2/src`, `apps/website/frontend/src`,
-`apps/mod/tbd-framework/Scripts`, `apps/mod/tbd-emcp/Scripts`)
-plus every `src/` and `tests/` folder directly under `apps/website/`. A file is a test file when a
-path component is `tests` or its stem ends in `_tests` (`.rs` or `.c`); a test file may hold 1000
-lines (`SIZE_3_TEST_MAX_LINES`), any other file 500 (`SIZE_3_PRODUCTION_MAX_LINES`). There is no
-exemption list. Each file over its limit prints one `SIZE-3:` line, and the summary line reads
-`scanned N source file(s) (R .rs, C .c)`. A missing root or an unreadable file is a check that did
-not run, never a pass, and so is a walk that found no source file at all.
+`apps/mod/tbd-framework/Scripts`, `apps/mod/tbd-emcp/Scripts`) plus every `src/` and `tests/`
+folder directly under `apps/website/`. A file is a test file when a path component is `tests` or
+its stem ends in `_tests` (`.rs` or `.c`); a test file may hold 1000 lines (`TEST_MAX_LINES`), any
+other file 500 (`PRODUCTION_MAX_LINES`). There is no exemption list. Each file over its limit
+prints one `SIZE-3:` line on stderr, and the summary line on stdout reads
+`scanned N source file(s) (R .rs, C .c)`. A missing root or an unreadable file is a check that
+did not run, never a pass, and so is a walk that found no source file at all. The
+`engineering_laws` test binary of `website-api` reads the same scan, so the gate and that binary
+judge the tree the same way.
 
 `MOD_SCRIPT_ROOTS` names the three addon script roots (`apps/mod/tbd-framework/Scripts`,
-`apps/mod/tbd-emcp/Scripts`, `apps/mod/tbd-export/Scripts`), the only `apps/mod` trees the gate may
+`apps/mod/tbd-emcp/Scripts`, `apps/mod/tbd-export/Scripts`), the only `apps/mod` trees the law may
 pin; a compile-time assertion (`mod_pins_are_script_roots`) rejects any other `apps/mod` pin, so the
 gitignored `crf_framework` and `vanilla_reference` references never enter the walk. The framework
-and tbd-emcp roots are pinned; T-1092 adds the tbd-export root at P6-C, once that addon's scripts
-sit under the ceilings.
+and tbd-emcp roots are pinned; the tbd-export root joins once that addon's scripts sit under the
+ceilings.
 
 `verify no-node` runs three checks and counts each failure:
 
@@ -50,8 +54,9 @@ run; `no-node` 0 clean, 1 any check failed.
 
 ## Boundaries
 
-- Depends on: the constants and the `verification_core` imports of the parent file;
-  `verification_core::scan::walk_files` and its `NotRun` causes; `git` for the tracked-file list.
+- Depends on: the constants and imports of the parent file;
+  `verification_core::repository_laws::file_length` for the roots, ceilings and scan, and its
+  `NotRun` causes; `git` for the tracked-file list.
 - Used by: `tools_v2/xtask/src/commands/verify/dispatch.rs` (`verify file-length`,
   `verify no-node`); `tools_v2/xtask/src/commands/generate/dispatch.rs` (`gen font-table`); the
   `verify-coding-standards` and `verify-no-node` rows of

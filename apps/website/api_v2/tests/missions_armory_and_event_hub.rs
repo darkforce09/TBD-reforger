@@ -41,15 +41,13 @@ async fn armory_survives_a_body_that_never_mentions_it() {
         "`{{}}` must not be a wholesale delete: {}",
         String::from_utf8_lossy(&b)
     );
-    assert_eq!(
-        json(&b)["error"],
-        "items is required, and every item needs a faction and an item_name"
-    );
+    let error = json(&b)["error"].as_str().unwrap_or_default().to_owned();
+    assert!(error.contains("missing field `items`"), "{error}");
     assert_eq!(armory_len(&app, &url, t).await, 4, "`{{}}` kept the rows");
 
     // No body at all.
     let (st, _) = call_ct(&app, "PUT", &url, t, None, None).await;
-    assert_eq!(st, StatusCode::BAD_REQUEST, "missing body");
+    assert_eq!(st, StatusCode::UNSUPPORTED_MEDIA_TYPE, "missing body");
     assert_eq!(
         armory_len(&app, &url, t).await,
         4,
@@ -66,7 +64,7 @@ async fn armory_survives_a_body_that_never_mentions_it() {
         Some(r#"{"items":[]}"#),
     )
     .await;
-    assert_eq!(st, StatusCode::BAD_REQUEST, "wrong Content-Type");
+    assert_eq!(st, StatusCode::UNSUPPORTED_MEDIA_TYPE, "wrong Content-Type");
     assert_eq!(
         armory_len(&app, &url, t).await,
         4,
@@ -129,10 +127,8 @@ async fn armory_item_without_a_name_is_refused_before_the_delete() {
         "a nameless item must not replace the armory: {}",
         String::from_utf8_lossy(&b)
     );
-    assert_eq!(
-        json(&b)["error"],
-        "items is required, and every item needs a faction and an item_name"
-    );
+    let error = json(&b)["error"].as_str().unwrap_or_default().to_owned();
+    assert!(error.contains("missing field `"), "{error}");
     assert_eq!(armory_len(&app, &url, t).await, 4, "rows untouched");
 
     // A whitespace-only name decodes fine and is the same lie, so the runtime guard catches it —
@@ -202,10 +198,8 @@ async fn armory_faction_is_the_event_hub_join_key() {
         "an item that never names a faction must not replace the armory: {}",
         String::from_utf8_lossy(&b)
     );
-    assert_eq!(
-        json(&b)["error"],
-        "items is required, and every item needs a faction and an item_name"
-    );
+    let error = json(&b)["error"].as_str().unwrap_or_default().to_owned();
+    assert!(error.contains("missing field `faction`"), "{error}");
     assert_eq!(armory_len(&app, &url, t).await, 4, "rows untouched");
 
     // Half two — padding. Refused rather than canonicalised, so the stored bytes never diverge

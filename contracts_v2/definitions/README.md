@@ -13,7 +13,9 @@ against them.
 
 ```text
 contracts_v2/definitions/
-└── *.schema.json  one JSON Schema per contract, named `<subject>.schema.json` after what it shapes
+├── equipment-data-viewer/  the equipment data viewer's debug API pages, one schema per page
+├── equipment-gameplay/     the published equipment gameplay dataset and its receipt
+└── *.schema.json           one JSON Schema per contract, named `<subject>.schema.json`
 ```
 
 ## How it works
@@ -50,6 +52,7 @@ A schema reaches code in one of three ways:
 | Contract | Schemas | Read by |
 |---|---|---|
 | Web API responses | `current-profile`, `reservation-response`, `event-hub`, `event-orbat`, `event-viewer-access`, `event-access-administration`, `waitlist-promotion-response` | generated API models; API contract tests |
+| Web API responses without generated types | `service-health`, `session-token`, `profile-update`, `arma-link`, `personnel-actions`, `command-center`, `service-record`, `leave-request`, `event-schedule`, `reservation-actions`, `member-directory`, `fire-mission`, `announcement`, `modpack`, `mission-library`, `mission-default-overrides`, `arsenal-envelopes`, `server-intel`, `runtime-heartbeat-receipt` | the `@contract` tags of the hand-written API models and handlers; the API's route-acceptance and golden parity tests |
 | Fleet and machine credentials | `machine-credential`, `fleet-command` | generated API models; the fleet host agent's ledger client; API contract tests |
 | Game runtime | `game-runtime-session`, `game-runtime-roster`, `game-runtime-deployment` | generated API models; API contract tests; the [mod](/documentation_v2/glossary/g_to_m.md#mod)'s API bridge, which calls these routes |
 | Administration | `personnel-roster`, `audit-log` | generated API models in `apps/website/api_v2/src/administration/models/generated/`; API contract tests; the web app's DTOs |
@@ -69,6 +72,19 @@ machine-authenticated ingest shapes of `/api/v1/ingest/matches`, `/api/v1/ingest
 reading. The `RuntimeHeartbeat` definition of `game-runtime-session.schema.json` carries the same
 queue reading as its optional `telemetry_queue` block: absent keeps the stored reading, and present
 requires all four counters with `backlog` at most `capacity`.
+
+Every JSON success answer of the API has a definition here. The web API schemas outside codegen
+are self-contained: the API's contract tests compile one file's `definitions` at a time, so a
+shape two files need (a modpack, an announcement, a server status, a mission row) is repeated in
+each and says which file it matches, as `event-hub.schema.json` does.
+`arsenal-envelopes.schema.json` holds the envelopes around the arsenal data. A faction row's `doc`
+is an open object that a consumer validates against the draft 2020-12 `faction-library` on its
+own. The registry pages' rows are closed `RegistryItemRow` and `RegistryCompatRow` definitions:
+the `registry-items#/$defs/item` or `registry-compat#/$defs/edge` fields with their constraints
+repeated, plus the storage columns the API adds (`id`, `modpack_id`, `sort_order` or `qty`, and the
+timestamps). `profile-update` and
+`runtime-heartbeat-receipt` hold answers of routes whose request or sibling shapes live in a
+codegen target, which stays unchanged so its generated module does not go stale.
 
 `audit-log.schema.json` carries the audit stream's `ready` and `reset` event payloads beside the
 history page, and each stream row is an `AuditLogEntry`. In `wiki-page.schema.json`, `WikiBlock`

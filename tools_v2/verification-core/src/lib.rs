@@ -58,6 +58,7 @@ pub mod lock;
 pub mod pattern;
 pub mod proc;
 pub mod report;
+pub mod repository_laws;
 pub mod scan;
 pub mod verdict;
 

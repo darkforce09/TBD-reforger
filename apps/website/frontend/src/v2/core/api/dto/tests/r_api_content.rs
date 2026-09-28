@@ -12,16 +12,70 @@ fn modpack_current() {
     assert_golden::<ModpackDto>(golden!("GET__modpacks__current.json"), &[]);
 }
 
+/// The modpacks page reads the list as `DataEnvelope<ModpackDto>`, and every key of every row is
+/// a named field.
 #[test]
 fn modpacks_list_envelope() {
-    assert_golden::<DataEnvelope<Value>>(golden!("GET__modpacks.json"), &["data/*"]);
+    const G: &str = golden!("GET__modpacks.json");
+    assert_golden::<DataEnvelope<ModpackDto>>(G, &[]);
+    let list: DataEnvelope<ModpackDto> = serde_json::from_str(G).unwrap();
+    assert!(
+        list.data.iter().filter(|p| p.modpack.is_current).count() <= 1,
+        "at most one pack is current"
+    );
 }
 
-/// Still `Value`, and that is the honest statement: no DTO reads `/announcements` — the page
-/// itself takes `Paginated<Value>`. Type this the day an `AnnouncementDto` lands.
+/// The captured packs carry no mods, so a pack with two mod rows is built here: one that records
+/// every optional id and one that records none. Both arms of the absent-when-empty fields
+/// round-trip, and every key of a mod row is a named field.
+#[test]
+fn modpack_mod_rows_round_trip_with_and_without_their_optional_ids() {
+    let mut pack: Value = serde_json::from_str(golden!("GET__modpacks__current.json")).unwrap();
+    pack["mods"] = json!([
+        {
+            "id": "00000000-0000-4000-a100-000000000001",
+            "modpack_id": pack["id"],
+            "name": "RHS Status Quo",
+            "is_key_dependency": true,
+            "sort_order": 0,
+            "workshop_id": "595F2BF2F44836FB",
+            "mod_guid": "595F2BF2F44836FB",
+            "version": "1.0.2"
+        },
+        {
+            "id": "00000000-0000-4000-a100-000000000002",
+            "modpack_id": pack["id"],
+            "name": "Local texture pack",
+            "is_key_dependency": false,
+            "sort_order": 1
+        }
+    ]);
+    let wire = pack.to_string();
+    assert_golden::<ModpackDto>(&wire, &[]);
+    let decoded: ModpackDto = serde_json::from_str(&wire).unwrap();
+    let (full, bare) = (&decoded.mods[0], &decoded.mods[1]);
+    assert!(full.is_key_dependency && full.version == "1.0.2");
+    assert!(bare.workshop_id.is_empty() && bare.mod_guid.is_empty() && bare.version.is_empty());
+}
+
+/// The public feed: published rows only, each a named `Announcement` field for every key. The
+/// capture holds a row with every optional key and one without a preview line, hero image or
+/// chat message, so both arms of the absent-when-empty fields round-trip.
 #[test]
 fn announcements_envelope() {
-    assert_golden::<Paginated<Value>>(golden!("GET__announcements.json"), &["data/*"]);
+    const G: &str = golden!("GET__announcements.json");
+    assert_golden::<Paginated<Announcement>>(G, &[]);
+    let page: Paginated<Announcement> = serde_json::from_str(G).unwrap();
+    assert!(page
+        .data
+        .iter()
+        .all(|a| a.status == "published" && a.published_at.is_some()));
+    assert!(page.data.iter().any(|a| !a.snippet.is_empty()
+        && !a.thumbnail_url.is_empty()
+        && !a.discord_message_id.is_empty()));
+    assert!(page.data.iter().any(|a| a.snippet.is_empty()
+        && a.thumbnail_url.is_empty()
+        && a.discord_message_id.is_empty()));
 }
 
 /// The navigation list: summaries only, no markdown. The capture holds a page without an icon, so
@@ -111,11 +165,19 @@ fn audit_logs_envelope() {
 
 /// The Comms Broadcaster's own list, which is drafts **and** published — the public feed is
 /// published only, so a corpus built from it alone leaves the draft branch of the surface unfed.
-/// Still `Paginated<Value>` because that is what the page reads; the structural claim below is
-/// what pins the wire shape.
+/// The content manager reads it as `Paginated<Announcement>`; a draft round-trips without a
+/// publication instant.
 #[test]
 fn cms_announcements_envelope() {
-    assert_golden::<Paginated<Value>>(golden!("GET__cms__announcements.json"), &["data/*"]);
+    const G: &str = golden!("GET__cms__announcements.json");
+    assert_golden::<Paginated<Announcement>>(G, &[]);
+    let page: Paginated<Announcement> = serde_json::from_str(G).unwrap();
+    let draft = page
+        .data
+        .iter()
+        .find(|a| a.status == "draft")
+        .expect("the CMS capture holds a draft");
+    assert!(draft.published_at.is_none() && !draft.pushed_to_discord);
 }
 
 /// The CMS rows and the public-feed rows are the same backend model, so a CMS row may carry no key
@@ -188,4 +250,104 @@ fn cms_announcement_rows_carry_the_public_feed_shape_plus_drafts() {
             row["id"]
         );
     }
+}
+
+/// One revision read by number: the seeded page is at its first revision, so the revision holds
+/// the article's content and every block shape the article decodes, and it agrees with the
+/// history's only row on its author and time.
+#[test]
+fn wiki_revision_read_by_number() {
+    const G: &str = golden!("GET__wiki__field-manual__revisions__1.json");
+    assert_golden::<WikiRevision>(G, &[]);
+    let revision: WikiRevision = serde_json::from_str(G).unwrap();
+    let article: WikiArticle =
+        serde_json::from_str(golden!("GET__wiki__field-manual.json")).unwrap();
+    assert_eq!(
+        (revision.revision, &revision.title, &revision.body_md),
+        (article.revision, &article.title, &article.body_md)
+    );
+    assert_eq!(revision.blocks, article.blocks);
+    let history: WikiRevisionPage =
+        serde_json::from_str(golden!("GET__wiki__field-manual__revisions.json")).unwrap();
+    let listed = &history.items[0];
+    assert_eq!(
+        (&revision.author_id, &revision.created_at),
+        (&listed.author_id, &listed.created_at)
+    );
+}
+
+/// A replaced modpack answers the stored pack: its id and creation time stay, the new version
+/// and the replaced (here empty) mod list come back.
+#[test]
+fn modpack_replacement() {
+    const G: &str = golden!("PUT__modpacks__00000000-0000-4000-a000-000000000001.json");
+    assert_golden::<ModpackDto>(G, &[]);
+    let replaced: Value = serde_json::from_str(G).unwrap();
+    let before: Value = serde_json::from_str(golden!("GET__modpacks__current.json")).unwrap();
+    assert_eq!(
+        (&replaced["id"], &replaced["created_at"]),
+        (&before["id"], &before["created_at"])
+    );
+    assert_eq!(
+        (&before["version"], &replaced["version"]),
+        (&json!("2.1"), &json!("2.2"))
+    );
+    assert_eq!(replaced["mods"], json!([]));
+}
+
+/// A replaced vehicle answers the stored row with every field; a deleted one answers the row it
+/// soft-deleted exactly as the list carried it, here a row that records no optional field.
+#[test]
+fn vehicle_replacement_and_deletion() {
+    const REPLACED: &str =
+        golden!("PUT__vehicle-database__00000000-0000-4000-3000-000000000003.json");
+    const DELETED: &str =
+        golden!("DELETE__vehicle-database__00000000-0000-4000-3000-000000000006.json");
+    assert_golden::<Vehicle>(REPLACED, &[]);
+    assert_golden::<Vehicle>(DELETED, &[]);
+    let list: DataEnvelope<Vehicle> =
+        serde_json::from_str(golden!("GET__vehicle-database.json")).unwrap();
+    let replaced: Vehicle = serde_json::from_str(REPLACED).unwrap();
+    let listed = list.data.iter().find(|v| v.id == replaced.id).unwrap();
+    assert!(listed.profile_image_url.is_empty() && !replaced.profile_image_url.is_empty());
+    assert_eq!(
+        (&replaced.name, &replaced.faction),
+        (&listed.name, &listed.faction)
+    );
+    let deleted: Vehicle = serde_json::from_str(DELETED).unwrap();
+    assert_eq!(
+        Some(&deleted),
+        list.data.iter().find(|v| v.id == deleted.id)
+    );
+    assert!(deleted.amphibious.is_empty() && deleted.primary_threat.is_empty());
+}
+
+// ── content writes ──
+// Each answer carries server-generated ids or request-time stamps; the goldens hold the fixed
+// placeholders of the API's golden normalisation table at those fields.
+
+/// A created pack answers with its mods, each tied to the new pack.
+#[test]
+fn modpack_created() {
+    const G: &str = golden!("POST__modpacks.json");
+    assert_golden::<ModpackDto>(G, &[]);
+    let pack: ModpackDto = serde_json::from_str(G).unwrap();
+    assert!(!pack.modpack.is_current);
+    assert_eq!(pack.mods.len(), 1);
+    assert_eq!(pack.mods[0].modpack_id, pack.modpack.id);
+}
+
+#[test]
+fn vehicle_created() {
+    assert_golden::<Vehicle>(golden!("POST__vehicle-database.json"), &[]);
+}
+
+/// A page saved without a base revision is created at revision 1, its body parsed into blocks.
+#[test]
+fn wiki_page_created() {
+    const G: &str = golden!("PUT__wiki__night-operations.json");
+    assert_golden::<WikiArticle>(G, &[]);
+    let page: WikiArticle = serde_json::from_str(G).unwrap();
+    assert_eq!((page.slug.as_str(), page.revision), ("night-operations", 1));
+    assert!(!page.blocks.is_empty());
 }

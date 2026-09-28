@@ -205,3 +205,64 @@ fn fleet_scenario_update_body() {
         })
     );
 }
+
+// ── fleet writes ──
+// Their answers carry server-generated ids and request-time stamps; the goldens hold the fixed
+// placeholders of the API's golden normalisation table at those fields.
+
+/// A requested deployment is in flight with its queued command; a cancelled one names the
+/// cancelled command.
+#[test]
+fn deployment_requested_and_cancelled() {
+    const REQUESTED: &str =
+        golden!("POST__servers__00000000-0000-4000-d000-000000000001__deployments.json");
+    const CANCELLED: &str = golden!(
+        "POST__servers__00000000-0000-4000-d000-000000000002__deployments__00000000-0000-4000-f400-000000000003__cancel.json"
+    );
+    assert_golden::<MissionDeployment>(REQUESTED, &[]);
+    assert_golden::<MissionDeployment>(CANCELLED, &[]);
+    let requested: MissionDeployment = serde_json::from_str(REQUESTED).unwrap();
+    let cancelled: MissionDeployment = serde_json::from_str(CANCELLED).unwrap();
+    assert_eq!(
+        (
+            requested.state.as_str(),
+            requested.fleet_command_state.as_str()
+        ),
+        ("requested", "queued")
+    );
+    assert_eq!(
+        (
+            cancelled.state.as_str(),
+            cancelled.fleet_command_state.as_str()
+        ),
+        ("cancelled", "cancelled")
+    );
+}
+
+/// A broadcast is queued with its message as its argument; a cancelled command keeps its request
+/// stamps and gains its end.
+#[test]
+fn fleet_command_requested_and_cancelled() {
+    const REQUESTED: &str =
+        golden!("POST__servers__00000000-0000-4000-d000-000000000001__commands.json");
+    const CANCELLED: &str = golden!(
+        "POST__servers__00000000-0000-4000-d000-000000000001__commands__00000000-0000-4000-f200-000000000003__cancel.json"
+    );
+    assert_golden::<FleetCommandReceipt>(REQUESTED, &["arguments/message"]);
+    assert_golden::<FleetCommandReceipt>(CANCELLED, &[]);
+    let requested: FleetCommandReceipt = serde_json::from_str(REQUESTED).unwrap();
+    let cancelled: FleetCommandReceipt = serde_json::from_str(CANCELLED).unwrap();
+    assert_eq!(
+        (requested.action.as_str(), requested.state.as_str()),
+        ("broadcast", "queued")
+    );
+    assert_eq!(cancelled.state, "cancelled");
+}
+
+#[test]
+fn fleet_scenario_replaced() {
+    const G: &str = golden!("PUT__fleet__scenarios__everon.json");
+    assert_golden::<FleetScenario>(G, &[]);
+    let scenario: FleetScenario = serde_json::from_str(G).unwrap();
+    assert_eq!(scenario.terrain_key, "everon");
+}

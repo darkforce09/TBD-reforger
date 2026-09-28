@@ -8243,6 +8243,8 @@ dependencies = [
  "tracing-subscriber",
  "url",
  "uuid",
+ "verification-core",
+ "website-api",
  "website-map-engine",
 ]
 

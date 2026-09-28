@@ -23,12 +23,14 @@ documentation_v2/website/api_v2/verification_evidence/
 ├── mission_artifacts.md                mission artifacts, reviews, approval and mission deployments
 ├── progress_checkpoint.md              the completion program's latest verification checkpoint
 ├── property_test_evidence.md           how property runs count generated cases apart from tests
-├── remaining_milestones.md             the milestones T, C, B, V and S still to land
+├── remaining_milestones.md             the milestones after M (T, C, B, V, S) and their register status
 ├── requirements.json                   the acceptance register: requirements and the checks that prove them
 ├── reservation_attendance.md           reservation state kept apart from attendance, and corrections
 ├── reservation_mutation_guards.md      reauthorization and capacity inside the six reservation writes
 ├── reservation_transaction_design.md   the reservation transaction design and its implementation state
-└── telemetry.md                        match identity, results revisions, detailed events, fleet status
+├── telemetry.md                        match identity, results revisions, detailed events, fleet status
+├── verification_completeness.md        route acceptance, contract parity, properties, races, failpoints, laws
+└── verification_findings.md            milestone V's findings, each with its class and outcome
 ```
 
 ## How it works
@@ -40,8 +42,8 @@ register entry.
 | Kind | Files | What it holds |
 |---|---|---|
 | Register | `requirements.json` | version 1; 73 requirements, each with its behaviour, the implementation paths it rests on, its assumptions and the checks that prove it; 91 checks, 82 of class `implementation`, 6 `property` and 3 `operational`, each with its command, timeout, minimum case count, success marker and case pattern |
-| Program records | `completion_plan.md`, `progress_checkpoint.md`, `remaining_milestones.md` | the acceptance contract; the checkpoint after milestones E, F and M; the design and register work of milestones T (telemetry), C (administration and content), B (game ballistics), V (verification completeness) and S (staging) |
-| Design notes | the other thirteen | one subject each: the semantics chosen for a group of requirements, the lock order, the refusals with their codes, and the tests that hold them |
+| Program records | `completion_plan.md`, `progress_checkpoint.md`, `remaining_milestones.md`, `verification_findings.md` | the acceptance contract; the checkpoint after milestone V; the design and register work of milestones T (telemetry), C (administration and content), B (game ballistics), V (verification completeness) and S (staging); the findings of V with the ticket or fix each ended in |
+| Design notes | the other fourteen | one subject each: the semantics chosen for a group of requirements, the lock order, the refusals with their codes, and the tests that hold them |
 
 The design notes by domain:
 
@@ -53,7 +55,7 @@ The design notes by domain:
 | [server infrastructure](/documentation_v2/glossary/n_to_z.md#server-infrastructure) | `machine_credentials.md`, `fleet_command_ledger.md` |
 | [match telemetry](/documentation_v2/glossary/g_to_m.md#match-telemetry) and [command center](/documentation_v2/glossary/a_to_f.md#command-center) | `telemetry.md` |
 | [administration](/documentation_v2/glossary/a_to_f.md#administration) and [community content](/documentation_v2/glossary/a_to_f.md#community-content) | `administration_and_content.md` |
-| verification | `property_test_evidence.md` |
+| verification | `property_test_evidence.md`, `verification_completeness.md` |
 
 Requirement identifiers start with their area: `events` (14), `identity` (13), `verification`
 (10), `missions` (8), `fleet` (7), `telemetry` (7), `administration` (6), `content` (3),
@@ -91,7 +93,6 @@ code wins:
   (`apps/website/api_v2/src/missions/services/mission_deployments/deployment_requests.rs`; the
   [mission deployments README](/apps/website/api_v2/src/missions/services/mission_deployments/README.md)
   has the full table).
-- `progress_checkpoint.md:7-8` says the work is uncommitted; it is committed on `main`.
 
 ## Code
 

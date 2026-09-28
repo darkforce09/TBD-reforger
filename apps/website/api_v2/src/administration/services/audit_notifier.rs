@@ -10,7 +10,10 @@
 //! Shape:
 //! - **One listener per pool, not per client.** [`AuditNotify::for_pool`] registers the pool
 //!   (keyed by its connect-options allocation, so every clone of a `PgPool` maps to the same
-//!   entry) and spawns the pump task on first use. A subscriber costs a broadcast receiver, not a
+//!   entry) and spawns the pump task on first use. Each entry keeps a `Weak` on that allocation:
+//!   the address stays reserved while the entry lives, a hit counts only when the `Weak` points at
+//!   the caller's own allocation, and an entry whose pool is gone is pruned at the next
+//!   registration rather than handed to a new pool. A subscriber costs a broadcast receiver, not a
 //!   database connection; the pump pins exactly one pooled connection while it is up.
 //! - **Reconnect with backoff, explicit up/down.** sqlx's `PgListener` can redial on its own, but
 //!   silently — and a silent gap is exactly when the stream must poll instead. So the pump sets
@@ -28,11 +31,11 @@
 //! same whatever `is_listening()` says, because a live listener does not prove a successful read.
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock, Weak};
 use std::time::Duration;
 
 use sqlx::PgPool;
-use sqlx::postgres::{PgListener, PgNotification};
+use sqlx::postgres::{PgConnectOptions, PgListener, PgNotification};
 use tokio::sync::broadcast;
 
 /// The channel `0025_audit_notify.sql` raises on every `audit_logs` insert.
@@ -108,15 +111,49 @@ pub struct AuditNotify {
     shared: Arc<Shared>,
 }
 
-fn registry() -> &'static Mutex<HashMap<usize, Arc<Shared>>> {
-    static REGISTRY: OnceLock<Mutex<HashMap<usize, Arc<Shared>>>> = OnceLock::new();
+/// One registered pool: its listener state and a weak handle on the connect-options allocation
+/// whose address is the entry's key.
+struct Registration {
+    /// Holding it keeps the allocation's control block alive, so no other pool's options can be
+    /// allocated at the key's address while the entry exists; a strong count of zero marks the
+    /// pool as gone.
+    options: Weak<PgConnectOptions>,
+    shared: Arc<Shared>,
+}
+
+fn registry() -> &'static Mutex<HashMap<usize, Registration>> {
+    static REGISTRY: OnceLock<Mutex<HashMap<usize, Registration>>> = OnceLock::new();
     REGISTRY.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-/// Identity of a pool across its clones: the `Arc` behind `connect_options()` is allocated once
-/// per `PgPool::connect*` and shared by every clone.
-fn pool_key(pool: &PgPool) -> usize {
-    Arc::as_ptr(&pool.connect_options()) as usize
+/// The listener state registered for `pool`, created on first use.
+///
+/// A pool's identity across its clones is the `Arc` behind `connect_options()`, allocated once
+/// per `PgPool::connect*` and shared by every clone. Entries whose pool is gone are pruned first,
+/// and a hit counts only when its `Weak` points at this pool's own allocation, so a pool never
+/// inherits another pool's listener state.
+fn registered_shared(
+    registrations: &mut HashMap<usize, Registration>,
+    pool: &PgPool,
+) -> Arc<Shared> {
+    registrations.retain(|_, registration| registration.options.strong_count() > 0);
+    let options = pool.connect_options();
+    let weak = Arc::downgrade(&options);
+    let key = Arc::as_ptr(&options) as usize;
+    if let Some(registration) = registrations.get(&key)
+        && Weak::ptr_eq(&registration.options, &weak)
+    {
+        return Arc::clone(&registration.shared);
+    }
+    let shared = Arc::new(Shared::new(pool_label(pool)));
+    registrations.insert(
+        key,
+        Registration {
+            options: weak,
+            shared: Arc::clone(&shared),
+        },
+    );
+    shared
 }
 
 fn pool_label(pool: &PgPool) -> String {
@@ -137,10 +174,7 @@ impl AuditNotify {
     pub fn for_pool(pool: &PgPool) -> Self {
         let shared = {
             let mut reg = registry().lock().unwrap_or_else(|e| e.into_inner());
-            Arc::clone(
-                reg.entry(pool_key(pool))
-                    .or_insert_with(|| Arc::new(Shared::new(pool_label(pool)))),
-            )
+            registered_shared(&mut reg, pool)
         };
         if !shared.pump_alive.swap(true, Ordering::AcqRel) {
             match tokio::runtime::Handle::try_current() {

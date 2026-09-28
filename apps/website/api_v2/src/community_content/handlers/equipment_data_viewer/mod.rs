@@ -1,23 +1,44 @@
-//! Anonymous, generation-pinned reads through the normal API middleware.
-mod dataset;
-mod downloads;
-mod resources;
-mod source_inspection;
+//! The equipment data viewer's debug reads: anonymous, generation-pinned views of the exported
+//! equipment datasets, served through the normal API middleware.
+//!
+//! **Role:** the handlers behind `GET /api/v1/debug/equipment-data/*` — dataset status and
+//! overview, resource, relationship and field listings, source inspection and whole-document
+//! downloads — and the failure and page-size shaping they answer through.
+//! **Position:** [`crate::community_content::routes::routes`] registers them only when the
+//! configuration reports a development environment, so a production router answers 404; each
+//! handler reads through `AppState::equipment_data`, the service in
+//! [`crate::community_content::services::equipment_data_viewer`].
+//! **Signals & state:** none; the dataset service owns the loaded generations.
+//! **Invariants:** every answer but the `download` stream re-reads as its generated contract type
+//! and serialises to at most [`PAGE_BYTES`]; a failure the handlers raise answers 400 in the
+//! `{error}` envelope, and so does a query string that does not decode (through
+//! [`ApiError::from_query_rejection`]).
+pub mod dataset;
+pub mod downloads;
+pub mod resources;
+pub mod source_inspection;
 
-use crate::community_content::services::equipment_data_viewer::PAGE_BYTES;
-use crate::core::application_state::AppState;
-use axum::{Json, Router, http::StatusCode, routing::get};
+use crate::community_content::services::equipment_data_viewer::{PAGE_BYTES, queries::ViewerQuery};
+use crate::core::error_handling::api_error::ApiError;
+use axum::Json;
+use axum::extract::Query;
+use axum::extract::rejection::QueryRejection;
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 
-type Failure = (StatusCode, Json<Value>);
+type Failure = ApiError;
 type ReadResult<T> = Result<Json<T>, Failure>;
 
+/// A failure the handlers raise: 400 in the `{error}` envelope carrying the failure's text.
 fn failure(error: impl std::fmt::Display) -> Failure {
-    (
-        StatusCode::BAD_REQUEST,
-        Json(json!({"error":error.to_string()})),
-    )
+    ApiError::bad_request(error.to_string())
+}
+
+/// The decoded viewer query, or the 400 `{error}` envelope naming the parameter that failed.
+fn viewer_query(query: Result<Query<ViewerQuery>, QueryRejection>) -> Result<ViewerQuery, Failure> {
+    query.map(|Query(query)| query).map_err(|rejection| {
+        ApiError::from_query_rejection(rejection, "equipment data viewer query")
+    })
 }
 
 fn response<T: DeserializeOwned + Serialize>(
@@ -32,23 +53,4 @@ fn response<T: DeserializeOwned + Serialize>(
         ));
     }
     Ok(Json(result))
-}
-
-pub fn routes() -> Router<AppState> {
-    Router::new().nest(
-        "/debug/equipment-data",
-        Router::new()
-            .route("/status", get(dataset::status))
-            .route("/overview", get(dataset::overview))
-            .route("/resources", get(resources::resources))
-            .route("/relationships", get(resources::relationships))
-            .route("/fields", get(resources::fields))
-            .route("/resource-cards", get(source_inspection::resource_cards))
-            .route("/selection", get(source_inspection::selection))
-            .route("/containers", get(source_inspection::containers))
-            .route("/properties", get(source_inspection::properties))
-            .route("/values", get(source_inspection::values))
-            .route("/documents", get(source_inspection::documents))
-            .route("/download", get(downloads::download)),
-    )
 }

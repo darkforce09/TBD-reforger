@@ -1,0 +1,203 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AnnouncementContract",
+  "description": "Announcements: the members' published feed and the administrator's content manager. The root is one announcement.",
+  "$ref": "#/definitions/Announcement",
+  "definitions": {
+    "Announcement": {
+      "description": "One announcement row. snippet, thumbnail_url and discord_message_id are absent when unset; published_at is absent until the row is first published. author_id is the Discord id of the author.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "body",
+        "tag",
+        "author_id",
+        "status",
+        "is_pinned",
+        "pushed_to_discord",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "body": {
+          "type": "string"
+        },
+        "snippet": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tag": {
+          "$ref": "#/definitions/AnnouncementTag"
+        },
+        "thumbnail_url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "author_id": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/AnnouncementStatus"
+        },
+        "is_pinned": {
+          "type": "boolean"
+        },
+        "pushed_to_discord": {
+          "type": "boolean"
+        },
+        "discord_message_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "published_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "AnnouncementTag": {
+      "type": "string",
+      "enum": [
+        "update",
+        "event",
+        "modpack_update",
+        "important"
+      ]
+    },
+    "AnnouncementStatus": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "published",
+        "archived"
+      ]
+    },
+    "AnnouncementPage": {
+      "description": "GET /api/v1/announcements?limit=&offset= (any signed-in member: published rows, pinned first, then newest published) and GET /api/v1/cms/announcements (administrator: drafts and published rows, pinned first, then newest edited). limit defaults to 20 and is at most 100; a limit or offset that is not an integer answers 400.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data",
+        "total",
+        "limit",
+        "offset"
+      ],
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Announcement"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "AnnouncementCreation": {
+      "description": "POST /api/v1/cms/announcements body (administrator; answers 201 with the Announcement). title, body and tag are required in substance; an absent status creates a draft; push_to_discord posts a published row to the webhook.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "snippet": {
+          "type": "string"
+        },
+        "tag": {
+          "$ref": "#/definitions/AnnouncementTag"
+        },
+        "thumbnail_url": {
+          "type": "string"
+        },
+        "is_pinned": {
+          "type": "boolean"
+        },
+        "status": {
+          "$ref": "#/definitions/AnnouncementStatus"
+        },
+        "push_to_discord": {
+          "type": "boolean"
+        }
+      }
+    },
+    "AnnouncementChange": {
+      "description": "PATCH /api/v1/cms/announcements/:id body (administrator): an absent key leaves its field unchanged; title and body must not be blank.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "snippet": {
+          "type": "string"
+        },
+        "tag": {
+          "$ref": "#/definitions/AnnouncementTag"
+        },
+        "thumbnail_url": {
+          "type": "string"
+        },
+        "is_pinned": {
+          "type": "boolean"
+        },
+        "status": {
+          "$ref": "#/definitions/AnnouncementStatus"
+        },
+        "push_to_discord": {
+          "type": "boolean"
+        }
+      }
+    },
+    "DiscordPushOutcome": {
+      "description": "POST /api/v1/cms/announcements/:id/push-discord answer: the webhook accepted the post. A webhook failure answers 502.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pushed"
+      ],
+      "properties": {
+        "pushed": {
+          "const": true
+        }
+      }
+    }
+  }
+}

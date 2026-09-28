@@ -1,7 +1,9 @@
 //! Observers measure content without adding nested scrolling surfaces.
 use leptos::prelude::*;
-use wasm_bindgen::{JsCast, closure::Closure};
+use wasm_bindgen::{closure::Closure, JsCast};
 
+/// Reports the content box width and height of `node` to `callback` each time it resizes,
+/// through a `ResizeObserver` that disconnects when the reactive owner is cleaned up.
 pub fn size(node: NodeRef<leptos::html::Div>, callback: Callback<(f64, f64)>) {
     let observer = StoredValue::new_local(None);
     Effect::new(move |_| {
@@ -29,6 +31,9 @@ pub fn size(node: NodeRef<leptos::html::Div>, callback: Callback<(f64, f64)>) {
     });
 }
 
+/// Keeps `visible` true while `node` is within 240 pixels of the visible area of the scroll
+/// container `root`, through an `IntersectionObserver` that disconnects when the reactive owner
+/// is cleaned up.
 pub fn near(
     node: NodeRef<leptos::html::Div>,
     root: NodeRef<leptos::html::Div>,

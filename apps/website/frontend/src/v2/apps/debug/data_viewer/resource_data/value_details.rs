@@ -2,6 +2,9 @@
 use super::super::{data::use_read, page::ViewerContext, source_inspector::display};
 use crate::v2::core::api::dto::equipment_data_viewer::EquipmentSourcePage;
 use leptos::prelude::*;
+/// An in-place browser of a large field value, or of its expandable metadata with `metadata`:
+/// lists the entries at the current JSON pointer page by page, opens nested arrays and objects,
+/// steps back to the parent, and links entries that name a container.
 #[component]
 pub fn ValueDetails(
     node: String,

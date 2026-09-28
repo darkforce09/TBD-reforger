@@ -1,21 +1,17 @@
-//! Role: frame atlas.
-//! Position: `frame` in the graphics engine.
-//! Signals & state: the two cell-atlas textures, their uniform buffers and their bind groups.
-//! Invariants: an atlas here is a grid of cells with a uniform block. What a cell depicts —
+//! **Role:** the cell-atlas GPU handles (texture, uniform buffer, bind group) of the text atlas
+//! and the glyph atlas, and the constructors that build them.
+//! **Position:** `frame` in the graphics engine: frame vocabulary, because a cell atlas's
+//! `bind_group` is what a [`super::TextRun`]'s `atlas: BindGroupId` resolves to.
+//! `website-map-engine`'s `RenderEngine` owns the atlas slots and names these types through
+//! `frame`.
+//! **Signals & state:** the two cell-atlas textures, their uniform buffers and their bind groups.
+//! **Invariants:** an atlas here is a grid of cells with a uniform block. What a cell depicts —
 //! a letter, a unit, a vehicle — is the caller's business and never reaches this module.
 //!
-//! T-0xx Phase 2B: this was `text/gpu.rs`. It moved for two reasons. `text/` declares
-//! "glyph shapes and byte layouts only" and these are neither — they are live GPU handles,
-//! and a cell atlas's `bind_group` is precisely what a [`super::TextRun`]'s
-//! `atlas: BindGroupId` resolves to, which makes it frame vocabulary. And gate rule 3b bans
-//! `website_graphics_engine::text::gpu` from every module of `website-map-engine`: the
-//! caller that owns the atlas slot is `RenderEngine`, which did not cross in Phase 1, so the
-//! handle type has to be nameable from map-engine. Naming it here puts it behind rule 3a's
-//! single seam instead of behind no rule at all.
-//!
-//! The uniform-block *packing* did not come with it: `TEXT_UNIFORM_BYTES` and
-//! `text_uniform_bytes()` touch no `wgpu` type at all, so they belong with the rest of the
-//! byte layout in `text::pack` — reachable from map-engine through `crate::layout`.
+//! The handles are live GPU resources, so they sit here rather than in `text`, which holds glyph
+//! shapes and byte layouts only. The uniform-block packing, `TEXT_UNIFORM_BYTES` and
+//! `text_uniform_bytes()`, names no `wgpu` type and lives with the rest of the byte layout in
+//! `text::pack`, which map-engine reaches through `layout::pack`.
 
 /// Text atlas gpu.
 pub struct TextAtlasGpu {

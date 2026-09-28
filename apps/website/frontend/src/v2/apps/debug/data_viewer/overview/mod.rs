@@ -2,13 +2,16 @@
 mod selection_summary;
 use super::{
     data::use_read,
-    layout::{Feedback, number, title},
+    layout::{number, title, Feedback},
     page::ViewerContext,
 };
 use crate::v2::core::api::dto::equipment_data_viewer::EquipmentDatasetStatus;
 use leptos::prelude::*;
 pub use selection_summary::SelectionSummary;
 
+/// The Overview tab of the selected generation: resource counts per domain, every capability with
+/// its resource count, the preserved source totals, and links to the selection policy, export
+/// details, native types and extraction results.
 #[component]
 pub fn Overview() -> impl IntoView {
     let c = expect_context::<ViewerContext>();
@@ -29,6 +32,8 @@ pub fn Overview() -> impl IntoView {
     </section>}
 }
 
+/// The export history tab: the preserved export generations, cursor-paged, each opening its
+/// overview, and a link back to following the latest export.
 #[component]
 pub fn GenerationHistory() -> impl IntoView {
     let c = expect_context::<ViewerContext>();

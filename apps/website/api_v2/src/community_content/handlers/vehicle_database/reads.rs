@@ -9,7 +9,7 @@
 //! deleted rows; a deleted or unknown id answers 404, a malformed one 400; an empty optional
 //! column is left off the wire.
 
-use axum::extract::{Path, State};
+use axum::extract::State;
 use axum::response::Json;
 
 use super::vehicle_rows::{find_live_vehicle, list_live_vehicles, parse_vehicle_id};
@@ -17,6 +17,7 @@ use crate::community_content::models::VehicleDatabase;
 use crate::community_content::models::vehicle_database::VehicleDatabaseList;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AuthUser;
 
 /// `GET /api/v1/vehicle-database`: every live row of the identification table.
@@ -36,7 +37,7 @@ pub async fn list_vehicles(
 pub async fn get_vehicle(
     State(state): State<AppState>,
     _member: AuthUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<Json<VehicleDatabase>, ApiError> {
     let id = parse_vehicle_id(&id)?;
     Ok(Json(find_live_vehicle(&state.pool, id).await?))

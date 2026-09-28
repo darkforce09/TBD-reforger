@@ -100,7 +100,11 @@ Run every command from the repository root.
 
    Expected: the API's test binaries pass against a new randomly named database, dropped at the
    end; [Database operations](/documentation_v2/runbooks/database_operations.md#run-the-integration-tests)
-   has the options.
+   has the options. Beside the per-domain suites, the run holds the whole-API verification
+   suites, whose case names start with `route_acceptance_`, `contract_parity_`,
+   `controlled_races_`, `failure_injection_` and `engineering_laws_`, and the property binaries
+   (`*_properties`), each printing a `property-run:` line per property. Every test build compiles
+   the API's `failpoints` feature in; the deploy build leaves it out.
 
 ### Run the browser gates
 

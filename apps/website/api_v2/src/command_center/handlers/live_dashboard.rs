@@ -1,4 +1,8 @@
 //! Home dashboard aggregation: many best-effort, null-safe lookups composed into one response.
+//!
+//! @contract command-center.schema.json#/definitions/Dashboard
+//! @contract command-center.schema.json#/definitions/DashboardEvent
+//! @contract command-center.schema.json#/definitions/DashboardAssignment
 
 use axum::extract::State;
 use axum::response::Json;

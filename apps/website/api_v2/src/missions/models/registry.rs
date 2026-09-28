@@ -1,7 +1,8 @@
-//! Registry models: the flat per-modpack item catalog and the directed compatibility graph
-//! that says what goes in or on what.
+//! Registry models: the stored rows of the flat per-modpack item catalog and of the directed
+//! compatibility graph that says what goes in or on what, as the registry pages answer them.
 //!
-//! @contract registry-items.schema.json#/$defs/item
+//! @contract arsenal-envelopes.schema.json#/definitions/RegistryItemRow
+//! @contract arsenal-envelopes.schema.json#/definitions/RegistryCompatRow
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -73,8 +74,6 @@ pub struct RegistryItem {
 /// to_node, edge_type, COALESCE(evidence, ''))`; `edge_type` holds
 /// the registry-compat schema edge vocabulary as plain text — new edge families
 /// need no model/DDL change.
-///
-/// @contract registry-compat.schema.json#/$defs/edge
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct RegistryCompatEdge {
     pub id: Uuid,

@@ -60,9 +60,14 @@ fn leaf_id_and_payload_carry_the_resource_name() {
 #[test]
 fn gear_rows_are_excluded() {
     let items = golden_items();
-    assert_eq!(items.len(), 21, "golden row count");
+    assert_eq!(items.len(), 25, "golden row count");
     let characters = items.iter().filter(|i| i.kind == "character").count();
     assert_eq!(characters, 8);
+    let vehicles = items.iter().filter(|i| i.kind == "vehicle").count();
+    assert_eq!(
+        vehicles, 4,
+        "the golden's vehicle rows stay out of the character tree too"
+    );
 
     let tree = build_catalog_tree(&items, "BLUFOR");
     let leaves = tree[0].children[0].children.len();

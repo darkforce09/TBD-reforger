@@ -64,9 +64,11 @@ A clap usage error exits 2.
 - Does: applies `discord_roles.sql`, `registry_dev.sql`, `faction_library.sql`,
   `vehicle_database.sql` and `wiki_pages.sql` from `apps/website/api_v2/seeds/`, in that order
   (`registry_dev.sql` references the roles the first file seeds), each through
-  `compose exec -T db psql -U tbd -d tbd_reforger`; it stops at the first failure. Needs `db up`.
-- Exit codes: 0 all five applied; the failing `psql` run's code; 2 a seed file that cannot be
-  opened.
+  `compose exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger`, so a failed statement
+  ends that file with a non-zero exit and the command stops there. Needs `db up` and the tables
+  the API's boot migrations create: start `cargo xtask mk rust-api` once before seeding.
+- Exit codes: 0 all five applied; the failing `psql` run's code (3 for a failed statement); 2 a
+  seed file that cannot be opened.
 - Example: `cargo xtask db seed`
 
 ### backup, backup-verify, backup-drill, restore

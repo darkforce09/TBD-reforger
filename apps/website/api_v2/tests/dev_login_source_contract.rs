@@ -550,3 +550,94 @@ fn raw_string_arm_decoy_is_blanked_live_arms_kept() {
         "/* */ comment-arm must stay RED"
     );
 }
+
+/// The docstring on `dev_login` names every role the handler accepts and the role any other or
+/// missing value signs in as.
+///
+/// Both sets are read from the live code — the accepted roles from the `@ ( … )` match arm, the
+/// fallback from its `_ => "…"` arm — so a role added to the handler must reach its docstring.
+/// The code is compared with its whitespace removed and the docstring with its whitespace
+/// collapsed, so reformatting either cannot turn this red or green.
+#[test]
+fn dev_login_docstring_names_every_accepted_role_and_the_admin_fallback() {
+    let handler = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("src/identity_and_access/handlers/developer_login.rs");
+    let src = std::fs::read_to_string(&handler)
+        .unwrap_or_else(|e| panic!("source pin: read {}: {e}", handler.display()));
+    let code = strip_rust_comments_outside_literals(&src);
+    let compact: String = fn_body(&code, "dev_login")
+        .chars()
+        .filter(|c| !c.is_whitespace())
+        .collect();
+
+    let arm_open = compact
+        .find("@(")
+        .expect("source pin: `dev_login` has no `binding @ ( … )` role arm")
+        + 2;
+    let arm_close = arm_open
+        + compact[arm_open..]
+            .find(')')
+            .expect("source pin: the role arm is not closed");
+    let accepted: Vec<&str> = compact[arm_open..arm_close]
+        .split('|')
+        .map(|literal| literal.trim_matches('"'))
+        .collect();
+    assert!(
+        accepted.len() >= 5 && accepted.contains(&"guest"),
+        "source pin: the role arm reads {accepted:?}; expected the five roles including guest"
+    );
+    let fallback_at = compact
+        .find("_=>\"")
+        .expect("source pin: `dev_login` has no `_ => \"…\"` fallback arm")
+        + 4;
+    let fallback = &compact[fallback_at
+        ..fallback_at
+            + compact[fallback_at..]
+                .find('"')
+                .expect("source pin: the fallback literal is not closed")];
+    assert_eq!(fallback, "admin", "source pin: the fallback role changed");
+
+    let fn_at = src
+        .find("pub async fn dev_login")
+        .expect("source pin: no `pub async fn dev_login`");
+    let doc_lines: Vec<&str> = src[..fn_at]
+        .lines()
+        .rev()
+        .take_while(|line| line.trim_start().starts_with("///"))
+        .map(|line| line.trim_start().trim_start_matches('/'))
+        .collect();
+    let doc = doc_lines
+        .into_iter()
+        .rev()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase();
+    let words: Vec<&str> = doc
+        .split(|c: char| !(c.is_ascii_alphanumeric() || c == '_'))
+        .filter(|word| !word.is_empty())
+        .collect();
+    let unnamed: Vec<&&str> = accepted
+        .iter()
+        .filter(|role| !words.contains(role))
+        .collect();
+    assert!(
+        unnamed.is_empty(),
+        "the `dev_login` docstring does not name the accepted role(s) {unnamed:?}; docstring: {doc}"
+    );
+    const FALLBACK_PHRASES: [&str; 5] = [
+        "any other",
+        "otherwise",
+        "unknown",
+        "falls back",
+        "fallback",
+    ];
+    let names_fallback = FALLBACK_PHRASES.iter().any(|phrase| doc.contains(phrase));
+    assert!(
+        names_fallback && words.contains(&fallback),
+        "the `dev_login` docstring does not say that any other role signs in as `{fallback}`; \
+         docstring: {doc}"
+    );
+}

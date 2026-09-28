@@ -1,5 +1,5 @@
 //! Resource, relationship and native-field catalogs.
-use super::{ReadResult, failure, response};
+use super::{ReadResult, failure, response, viewer_query};
 use crate::community_content::{
     models::generated::equipment_data_viewer::{
         field_inventory::EquipmentFieldPage, relationships::EquipmentRelationshipPage,
@@ -8,13 +8,15 @@ use crate::community_content::{
     services::equipment_data_viewer::queries::{self, ViewerQuery},
 };
 use crate::core::application_state::AppState;
+use axum::extract::rejection::QueryRejection;
 use axum::extract::{Query, State};
 
 /// @route GET /api/v1/debug/equipment-data/resources
 pub async fn resources(
     State(state): State<AppState>,
-    Query(p): Query<ViewerQuery>,
+    query: Result<Query<ViewerQuery>, QueryRejection>,
 ) -> ReadResult<EquipmentResourcePage> {
+    let p = viewer_query(query)?;
     let d = state
         .equipment_data
         .select(p.dataset.as_deref())
@@ -31,8 +33,9 @@ pub async fn resources(
 /// @route GET /api/v1/debug/equipment-data/relationships
 pub async fn relationships(
     State(state): State<AppState>,
-    Query(p): Query<ViewerQuery>,
+    query: Result<Query<ViewerQuery>, QueryRejection>,
 ) -> ReadResult<EquipmentRelationshipPage> {
+    let p = viewer_query(query)?;
     let d = state
         .equipment_data
         .select(p.dataset.as_deref())
@@ -51,8 +54,9 @@ pub async fn relationships(
 /// @route GET /api/v1/debug/equipment-data/fields
 pub async fn fields(
     State(state): State<AppState>,
-    Query(p): Query<ViewerQuery>,
+    query: Result<Query<ViewerQuery>, QueryRejection>,
 ) -> ReadResult<EquipmentFieldPage> {
+    let p = viewer_query(query)?;
     let d = state
         .equipment_data
         .select(p.dataset.as_deref())

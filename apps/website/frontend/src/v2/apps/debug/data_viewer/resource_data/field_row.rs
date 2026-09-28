@@ -6,6 +6,8 @@ use super::super::{
 use super::{card_grid::GridContext, inline_details::InlineDetails};
 use crate::v2::core::api::dto::equipment_data_viewer::EquipmentSourcePageItemsItem;
 use leptos::prelude::*;
+/// The element id of the row for `property` on the card at `index`; the property name is
+/// hex-encoded so any source name yields a valid, unique id.
 pub fn field_id(index: usize, property: &str) -> String {
     format!(
         "dv-field-{index}-{}",
@@ -16,6 +18,9 @@ pub fn field_id(index: usize, property: &str) -> String {
             .collect::<String>()
     )
 }
+/// One field of a container card: its name, value summary, native type and unit, toggling inline
+/// details and a permalink on click. The expanded state lives in the grid's reading position, and
+/// the row the location names scrolls itself into view.
 #[component]
 pub fn FieldRow(fact: EquipmentSourcePageItemsItem, node: String, index: usize) -> impl IntoView {
     let grid = expect_context::<GridContext>();

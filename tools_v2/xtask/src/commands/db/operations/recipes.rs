@@ -1,17 +1,17 @@
-//! The Makefile recipes this lane reproduces, as text.
+//! The recipes this lane reproduces, as text.
 //!
-//! Split out of [`super`] for one reason: this is the half that must OUTLIVE the
-//! Makefile. `selftest`'s arm 2 diffs these renderings against the live `Makefile` today; when
-//! Deletes that file, arm 1 keeps diffing them against a frozen copy of what `make -n`
-//! printed on 2026-08-12, and this module is the thing on the other side of that comparison.
+//! Split out of [`super`] because the text outlives any `Makefile`: `selftest`'s arm 1 diffs
+//! these renderings against the pinned recipe text it holds, and arm 2 diffs them against a
+//! `Makefile` should one return to the checkout.
 //!
-//! Everything here is derived from the same consts the runners use ([`super::WEB`],
-//! [`super::SEEDS`], [`super::IT_BASE_DB`], `super::reap_select`), so a change to what the port
-//! RUNS necessarily changes what it CLAIMS to run — the two cannot drift apart quietly, which is
-//! the failure mode a hand-copied "expected output" table always ends in.
+//! Everything here is derived from the same consts and argument builders the runners use
+//! ([`super::WEB`], [`super::SEEDS`], [`super::IT_BASE_DB`], [`super::seed_psql_arguments`],
+//! `super::reap_select`), so a change to what the port RUNS necessarily changes what it CLAIMS to
+//! run — the two cannot drift apart quietly, which is the failure mode a hand-copied "expected
+//! output" table always ends in.
 
 use super::test_it::reap_select;
-use super::{IT_BASE_DB, IT_MAINT_DB, SEEDS, WEB};
+use super::{IT_BASE_DB, IT_MAINT_DB, SEEDS, WEB, seed_psql_arguments};
 
 /// Every recipe line the port reproduces, rendered with make's own variable values
 /// (`$(WEB)` → `apps/website/api_v2`, `$(COMPOSE)` → `podman compose` on a host with no docker).
@@ -22,9 +22,10 @@ use super::{IT_BASE_DB, IT_MAINT_DB, SEEDS, WEB};
 /// slice's acceptance notes — not by a text pin of a command the port never issues.
 pub(crate) fn rendered_recipes() -> Vec<(&'static str, Vec<String>)> {
     let c = "podman compose";
+    let seed_command = seed_psql_arguments().join(" ");
     let seed_lines: Vec<String> = SEEDS
         .iter()
-        .map(|f| format!("cd {WEB} && {c} exec -T db psql -U tbd -d {IT_MAINT_DB} < seeds/{f}"))
+        .map(|f| format!("cd {WEB} && {c} {seed_command} < seeds/{f}"))
         .collect();
     vec![
         ("db-up", vec![format!("cd {WEB} && {c} up -d db")]),

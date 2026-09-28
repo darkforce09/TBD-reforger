@@ -30,4 +30,5 @@ apps/website/api_v2/src/administration/models/
   `generated/` is written by `cargo xtask ci schema-codegen` and never edited by hand
   (`cargo xtask ci verify-codegen-fresh` checks it); every hand-written wire type carries its
   `@contract` tag (`AuditLog` → `AuditLogEntry`, `AuditStreamReady`, `AuditStreamReset`,
-  `PersonnelPage`, `PersonnelRow`), which `cargo xtask schema citations` resolves.
+  `PersonnelPage`, `PersonnelRow`, `Warning` → `personnel-actions.schema.json#/definitions/Warning`),
+  which `cargo xtask schema citations` resolves.

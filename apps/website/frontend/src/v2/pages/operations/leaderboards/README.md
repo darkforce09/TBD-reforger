@@ -12,7 +12,7 @@ apps/website/frontend/src/v2/pages/operations/leaderboards/
 ├── mod.rs               the module tree; re-exports `LeaderboardsPage`
 ├── operator_dossier.rs  `OperatorDossier`: one operator's stat card, fetched when a row opens it
 ├── page.rs              the route component: category and search controls, board fetch and sheet
-└── tests/               unit tests for the row reader, win-rate scaling, initials and avatar sink
+└── tests/               unit tests for the row reader over the captured board, win-rate scaling, initials and avatar sink
 ```
 
 ## How it works
@@ -23,8 +23,8 @@ the API orders and filters, so the ranking holds across the whole table rather t
 page of rows. The controls sit outside the `Transition`, so the search field keeps its focus and
 the resolved board stays on screen while the next one is in flight.
 
-`page.rs` reads each untyped wire row into its `Row` (the server's `rank`, or the row's position
-when the rank is missing or zero) and holds the win-rate scaling the other files share: the
+`page.rs` reads each typed `LeaderboardRow` into its `Row` (the server's `rank`, or the row's
+position when the rank is zero; an unmeasured K/D ratio, sent as `null`, reads as zero) and holds the win-rate scaling the other files share: the
 command win rate arrives as a fraction and shows as a percentage, while the attendance rate
 arrives multiplied out. `board_table.rs` puts the top three on a podium and the rest in roster
 rows, each with the statistic pair of the active category; an avatar emits an `<img src>` only for
@@ -50,8 +50,9 @@ open nothing.
 ## Data
 
 - `GET /api/v1/leaderboards?category=<category>&q=<query>`: the board, read as `Leaderboard`
-  (`category` and untyped `data` rows); `q` is sent URL-encoded and only when the trimmed query is
-  not empty.
+  (`category` and `data` rows as `LeaderboardRow`; a row missing a key the contract requires fails
+  the fetch, which shows "Failed to load the leaderboard."); `q` is sent URL-encoded and only when
+  the trimmed query is not empty.
 - `GET /api/v1/users/{discordId}/stats`: the opened operator's card, read untyped (`stats`,
   `total_operations`, `attendance_rate`), so the page adds no shape to the shared DTOs; the sheet's
   avatar, name and rank come from the clicked row.
@@ -76,7 +77,7 @@ open nothing.
 
 ## Boundaries
 
-- Depends on: `crate::v2::core::api` (the `api_get` client, `Leaderboard`), `crate::v2::core::ui`
+- Depends on: `crate::v2::core::api` (the `api_get` client, `Leaderboard`, `LeaderboardRow`), `crate::v2::core::ui`
   (`AuthGate`, `PageHeader`, `Sheet`, `MaterialIcon`, `cn`), `crate::v2::core::auth::url_guard`
   and the `AuthStore` context.
 - Used by: the `/leaderboards` route in `apps/website/frontend/src/app_routes.rs`.

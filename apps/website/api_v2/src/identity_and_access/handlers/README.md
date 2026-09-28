@@ -29,16 +29,22 @@ apps/website/api_v2/src/identity_and_access/handlers/
   row, records the guild-member observation (or the failure) under a membership refresh lease,
   refuses a banned account, issues a session and redirects (302) to the SPA's `/auth/callback`
   with the tokens in the URL fragment. Every failure redirects with an `#error=` reason instead,
-  and every exit after the state check clears the cookie with `OAUTH_STATE_CLEAR`.
+  and every exit after the state check clears the cookie with `OAUTH_STATE_CLEAR`; a callback
+  query string that does not decode (a repeated `code` or `state`) redirects with `missing_code`
+  and clears the cookie too.
 - **[Dev login](/documentation_v2/glossary/a_to_f.md#dev-login).** `dev_login` is registered only in
   development and answers 404 when the configuration says otherwise. `?role=` takes `guest`,
-  `enlisted`, `leader`, `mission_maker` or `admin`; anything else signs in as `admin`. Each
+  `enlisted`, `leader`, `mission_maker` or `admin`; anything else signs in as `admin`, and a query
+  string that does not decode (a repeated `role`) answers 400 in the `{error}` envelope
+  (`ApiError::from_query_rejection`). Each
   [role](/documentation_v2/glossary/n_to_z.md#role) has its own fixed Discord id and Arma id, and the
   redirect is the one the Discord callback sends.
 - **Sessions.** `POST /api/v1/auth/refresh` rotates a single-use refresh token and answers the new
   access token, its expiry and the next refresh token; replaying a consumed token revokes the
   account's current sessions. `POST /api/v1/auth/logout` revokes the session and answers 204, also
-  for an unknown token.
+  for an unknown token. Both read their body through `ApiError::from_json_rejection` (413
+  `request_too_large` over the body limit, 415 without a JSON content type, 400 otherwise), and
+  an empty `refresh_token` answers 400.
 - **Profile.** `GET /api/v1/me` answers the stored account with the session's role, `arma_linked`
   and the membership flags (`membership_stale`, `membership_override_active`,
   `can_manage_membership_override`). `PATCH /api/v1/me` changes nothing: every field is owned by
@@ -47,7 +53,7 @@ apps/website/api_v2/src/identity_and_access/handlers/
   supersedes the caller's pending one (201); `GET /api/v1/me/link/status` reports the link and
   whether a code is pending; `DELETE /api/v1/me/link` removes the link. The game server spends the
   code with `POST /api/v1/ingest/link-confirm` (`{code, arma_id, arma_character}`, unknown fields
-  refused), authenticated by its `mod_runtime`
+  refused, the body read through `ApiError::from_json_rejection`), authenticated by its `mod_runtime`
   [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential) (`MachineCaller`);
   the `identity.link` audit row names the confirming server.
 

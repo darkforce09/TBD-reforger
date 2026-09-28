@@ -74,6 +74,7 @@ class TBD_TelemetryQueueStatsStruct
 
 	//! The reading as a JSON object.
 	//! @return `{"backlog":..,"capacity":..,"dropped_total":..,"oldest_age_seconds":..}`
+	//! @contract match-telemetry.schema.json#/definitions/TelemetryQueueReading
 	string ToJson()
 	{
 		return string.Format("{\"backlog\":%1,\"capacity\":%2,\"dropped_total\":%3,\"oldest_age_seconds\":%4}",

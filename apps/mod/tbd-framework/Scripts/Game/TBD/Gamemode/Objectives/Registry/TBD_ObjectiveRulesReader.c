@@ -42,7 +42,7 @@ class TBD_ObjectiveRulesStruct
 
 //! Just enough of a zone to join this pass onto the loader's; `shape` is not declared, because
 //! geometry belongs to `TBD_Zone`.
-//! @contract mission.schema.json#/$defs/zone
+//! @contract mission.schema.json#/$defs/zone partial
 class TBD_ObjectiveZoneStruct
 {
 	string id; //!< `id`
@@ -53,7 +53,7 @@ class TBD_ObjectiveZoneStruct
 //! The document root of the rules pass; declares `zones` only. The primary loader's
 //! `TBD_MissionDocumentStruct` models `entities[]` and the other keys; this root re-reads zone
 //! `rules.*` alone.
-//! @contract mission.schema.json#/properties/zones
+//! @contract mission.schema.json#/ partial
 class TBD_ObjectiveDocStruct
 {
 	ref array<ref TBD_ObjectiveZoneStruct> zones; //!< `zones[]`

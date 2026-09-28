@@ -5,9 +5,13 @@
 //! `live` rather than as whatever the stored column still says. Non-administrators see only the
 //! events their access admits; totals and pages count only those events, and an event visible
 //! through child policies alone is decorated from the seats the viewer may see.
+//!
+//! @contract event-schedule.schema.json#/definitions/EventListPage
+//! @contract event-schedule.schema.json#/definitions/EventListItem
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
+use axum::extract::rejection::QueryRejection;
 use axum::extract::{Query, State};
 use axum::response::Json;
 use serde::{Deserialize, Serialize};
@@ -34,24 +38,39 @@ pub struct EventListItem {
     percent: i64,
 }
 
+/// The `scope` query word of the event list; an absent scope is `upcoming`, and any other word
+/// fails the query decode, which answers 400.
+#[derive(Debug, Clone, Copy, Default, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum EventListScope {
+    /// Events still to start, and those running now.
+    #[default]
+    Upcoming,
+    /// Events that have started, newest first.
+    Past,
+    /// Every event, oldest first.
+    All,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct EventListQuery {
-    scope: Option<String>,
+    #[serde(default)]
+    scope: EventListScope,
     limit: Option<i64>,
     offset: Option<i64>,
 }
 
-/// The scope's filter and order. Scope words are a hardcoded whitelist, never bound text.
+/// The scope's filter and order; the SQL is fixed per scope, never bound text.
 /// The `upcoming` filter tests the EFFECTIVE status, so an operation that started while the
 /// sweep was between ticks is still listed as live, and one past its end horizon drops off.
-fn scope_sql(scope: Option<&str>) -> (String, &'static str) {
-    match scope.unwrap_or("upcoming") {
-        "past" => (
+fn scope_sql(scope: EventListScope) -> (String, &'static str) {
+    match scope {
+        EventListScope::Past => (
             "e.start_time <= now()".to_owned(),
             "e.start_time DESC, e.id",
         ),
-        "all" => ("true".to_owned(), "e.start_time ASC, e.id"),
-        _ => (
+        EventListScope::All => ("true".to_owned(), "e.start_time ASC, e.id"),
+        EventListScope::Upcoming => (
             format!(
                 "(e.start_time > now() OR ({})::text = 'live')",
                 &*EFFECTIVE_STATUS_SQL
@@ -61,20 +80,22 @@ fn scope_sql(scope: Option<&str>) -> (String, &'static str) {
     }
 }
 
-/// `GET /api/v1/events` — Upcoming/Calendar list.
+/// `GET /api/v1/events` — Upcoming/Calendar list; an unknown `scope` answers 400.
 ///
 /// @route GET /api/v1/events
 pub async fn list_events(
     State(state): State<AppState>,
     user: AuthUser,
-    Query(q): Query<EventListQuery>,
+    query: Result<Query<EventListQuery>, QueryRejection>,
 ) -> Result<Json<Value>, ApiError> {
+    let Query(q) =
+        query.map_err(|rejection| ApiError::from_query_rejection(rejection, "event list query"))?;
     let (limit, offset) = PageParams {
         limit: q.limit,
         offset: q.offset,
     }
     .bounds();
-    let (filter, order) = scope_sql(q.scope.as_deref());
+    let (filter, order) = scope_sql(q.scope);
     let mut tx = state.pool.begin().await?;
     sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
         .execute(&mut *tx)

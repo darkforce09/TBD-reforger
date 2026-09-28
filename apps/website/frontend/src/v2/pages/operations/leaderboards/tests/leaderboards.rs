@@ -2,6 +2,7 @@
 //! and the avatar image sink.
 
 use super::*;
+use crate::v2::core::test_support::fixtures::golden;
 
 /// The exact row `GET /api/v1/leaderboards` served off the dev stack, against a seeded totals
 /// table. It pins [`parse_row`] to the handler's own field names.
@@ -14,9 +15,14 @@ fn wire() -> Value {
     serde_json::from_str(WIRE_ROW).expect("fixture parses")
 }
 
+/// `v` decoded as the typed wire row the page reads.
+fn row(v: Value) -> LeaderboardRow {
+    serde_json::from_value(v).expect("the wire row decodes into LeaderboardRow")
+}
+
 #[test]
 fn parse_row_reads_every_rendered_field() {
-    let r = parse_row(&wire(), 0);
+    let r = parse_row(&row(wire()), 0);
     assert_eq!(r.rank, 1);
     assert_eq!(r.discord_id, "000000000000000001");
     assert_eq!(r.username, "Dev Operator");
@@ -33,26 +39,56 @@ fn parse_row_prefers_the_server_rank_over_position() {
     // Page 2 of the board: the handler ranks `offset + i + 1`, so row 0 is #21, not #1.
     let mut v = wire();
     v["rank"] = Value::from(21);
-    assert_eq!(parse_row(&v, 0).rank, 21);
+    assert_eq!(parse_row(&row(v), 0).rank, 21);
 }
 
 #[test]
 fn parse_row_falls_back_to_position_when_rank_is_missing_or_zero() {
-    // Without the fallback every operator renders as "#0" / "00".
+    // Without the fallback every operator renders as "#0" / "00". A row without a rank never
+    // reaches the reader: the decode refuses it and the board shows its failure state.
     let mut absent = wire();
     absent.as_object_mut().expect("object").remove("rank");
-    assert_eq!(parse_row(&absent, 2).rank, 3);
+    assert!(serde_json::from_value::<LeaderboardRow>(absent).is_err());
     let mut zero = wire();
     zero["rank"] = Value::from(0);
-    assert_eq!(parse_row(&zero, 2).rank, 3);
+    assert_eq!(parse_row(&row(zero), 2).rank, 3);
 }
 
+/// The one statistic the wire may leave unmeasured is the K/D ratio, sent as `null`; it renders
+/// as zero. A row missing a statistic the contract requires is refused by the decode rather than
+/// rendered as a confident zero.
 #[test]
-fn parse_row_survives_a_row_missing_its_stats() {
-    let r = parse_row(&Value::Null, 0);
-    assert_eq!(r.rank, 1);
-    assert_eq!(r.username, "");
-    assert_eq!(r.kills, 0);
+fn a_row_missing_its_stats_is_refused_and_an_unmeasured_ratio_reads_zero() {
+    let mut unmeasured = wire();
+    unmeasured["kd_ratio"] = Value::Null;
+    let r = parse_row(&row(unmeasured), 0);
+    assert_eq!((r.rank, r.kd_ratio, r.kills), (1, 0.0, 3));
+    assert_eq!(stat_for(&r, "kd").0, "0.00");
+
+    let mut missing = wire();
+    missing.as_object_mut().expect("object").remove("kills");
+    assert!(serde_json::from_value::<LeaderboardRow>(missing).is_err());
+}
+
+/// The captured board reads into render rows in the server's order, each keeping the rank the
+/// server gave it.
+#[test]
+fn the_captured_board_reads_into_ranked_rows() {
+    let board: Leaderboard =
+        serde_json::from_str(golden!("GET__leaderboards.json")).expect("the golden decodes");
+    let rows: Vec<_> = board
+        .data
+        .iter()
+        .enumerate()
+        .map(|(i, v)| parse_row(v, i))
+        .collect();
+    assert_eq!(board.category, "kd");
+    let ranks: Vec<i64> = rows.iter().map(|r| r.rank).collect();
+    assert_eq!(ranks, (1..=rows.len() as i64).collect::<Vec<_>>());
+    assert_eq!(
+        (rows[0].username.as_str(), rows[0].kd_ratio, rows[0].kills),
+        ("Rhodes", 8.33, 25)
+    );
 }
 
 #[test]
@@ -65,14 +101,14 @@ fn command_win_rate_renders_the_wire_fraction_as_a_percentage() {
 
     let mut v = wire();
     v["command_win_rate"] = Value::from(0.812);
-    let r = parse_row(&v, 0);
+    let r = parse_row(&row(v), 0);
     assert_eq!(stat_for(&r, "command_win").0, "81%");
 }
 
 #[test]
 fn stat_for_leaves_kd_ratio_unscaled() {
     // kd_ratio is kills/deaths, not a proportion — scaling it would be the mirror mistake.
-    let r = parse_row(&wire(), 0);
+    let r = parse_row(&row(wire()), 0);
     assert_eq!(stat_for(&r, "kd").0, "1.50");
 }
 

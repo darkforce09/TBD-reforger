@@ -1,54 +1,49 @@
-# Inventory Item Export Hub (`Scripts/WorkbenchGame/EquipmentExport/ItemExport`)
+# Inventory item export
 
-Universal Workbench extractors that introspect loaded Reforger addons and write the inventory items catalog to `$profile:TBD_Export/equipment/items/`.
+The inventory items of every loaded addon (medical supplies, radios, navigation aids, binoculars,
+lights, tools, explosives, throwables, weapon parts, survival gear and intel), classified into
+eleven catalogs under `$profile:TBD_Export/equipment/items/`.
 
----
-
-## Architecture Overview
-
-Arma Reforger models inventory items as physical or functional entities carrying an `InventoryItemComponent`. These items are carried within player pockets, vest pouches, backpacks, or vehicle cargo.
-
-This domain provides a zero-hardcoding discovery and extraction pipeline across all loaded addons. It scans every prefab, filters out already-exported hardware (firearms in `WeaponExport/` and garments/armor/backpacks in `WearableExport/`), inspects component graphs across ancestry, extracts physical, medical, radio, optical, tool, explosive, throwable, and survival properties, and classifies items into 11 dedicated sub-catalogs plus a combined master catalog.
+## Contents
 
 ```text
-ItemExport/
-├── README.md                 <-- This document
-├── TBD_ItemModel.c           <-- Strongly typed data models and JSON serialization
-├── TBD_ItemExtractor.c       <-- Pure container introspection (physical, medical, radio, gadget, explosive, tool, survival)
-├── TBD_ItemNaming.c          <-- Display name, description, icon resolution, prefix stripping, and stem humanization
-├── TBD_ItemScanner.c         <-- Addon enumeration, dynamic categorization, and catalog writers
-└── TBD_ItemExportPlugin.c    <-- Workbench entry point (Plugins > TBD > "Export Inventory Items")
+apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/ItemExport/
+├── TBD_ItemExportPlugin.c        the item plugin class; its menu attribute is commented out
+├── TBD_ItemExtractor.c           physical, medical, radio, gadget, explosive, tool and survival properties
+├── TBD_ItemInventoryExtractor.c  inventory attributes, body mass and individual storage compartments
+├── TBD_ItemModel.c               the item data carriers
+├── TBD_ItemNaming.c              display name, description, icon, prefix stripping and readable stems
+└── TBD_ItemScanner.c             the addon sweep, the category decision and the catalog writers
 ```
 
----
+## How it works
 
-## Technical Contracts
+"Export All Equipment" runs `TBD_ItemScanner.RunScan()` in its fourth phase. The scanner searches
+every loaded addon for prefabs carrying an `InventoryItemComponent`, skips the hardware other
+domains export (firearms go to the weapon exports; garments, armour and backpacks to the wearables),
+walks each prefab's components across its ancestry, and has the extractors fill one item carrier.
+Classification reads component and attribute classes, and a modded subclass resolves through
+`typename.IsInherited()` to the base type it extends, so no GUID, path list or prefab list is
+written into the code.
 
-1. **One-Way Dependency**:
-   `ItemExportPlugin -> ItemScanner -> ItemExtractor -> ItemModel -> Core`.
-   No domain imports another domain's private classes. Shared infrastructure is called directly from `EquipmentExport/Core/` (`TBD_EquipmentComponentGraph`, `TBD_EquipmentExportPaths`, `TBD_EquipmentExportJson`, `TBD_EquipmentDisplayAttributes`, `TBD_EquipmentResourceNames`).
+Each item lands in one of `medical`, `radios`, `navigation`, `binoculars`, `flashlights`, `tools`,
+`explosives`, `throwables`, `weapon_parts`, `survival` or `intel_and_misc`; the scanner writes one
+catalog per category and the `items_master.json` rollup, each with its `_meta.json` sidecar.
+`TBD_ItemInventoryExtractor` is shared: the wearable, weapon, static weapon, attachment, optic and
+ammunition extractors and the discovery sweep read inventory attributes and storage through it.
 
-2. **Zero Hardcoded Data**:
-   No hardcoded GUIDs, file path allowlists, or mod-specific prefab lists. Prefabs are discovered dynamically via `GameProject.GetLoadedAddons` and `Workbench.SearchResources`.
+## Authority
 
-3. **Dynamic Typename Inheritance**:
-   Classification uses component and attribute class introspection. Mod subclasses (e.g. custom medical or radio components) resolve through `typename.IsInherited()` to their mapped base component types.
+None: Workbench runs these scripts in the editor.
 
-4. **Output Structure**:
-   Catalogs are written under `$profile:TBD_Export/equipment/items/`:
-   - `medical.json` (Tourniquets, field dressings, morphine, saline, medkits)
-   - `radios.json` (Handheld transceivers, squad radios)
-   - `navigation.json` (Compasses, maps, watches, GPS)
-   - `binoculars.json` (Handheld binoculars, spotting scopes, rangefinders)
-   - `flashlights.json` (Handheld torches, personal lights, chem lights)
-   - `tools.json` (Entrenching tools, demining flags, repair kits, building tools)
-   - `explosives.json` (Landmines, demolition blocks, blasting machines, detonators)
-   - `throwables.json` (Fragmentation grenades, smoke grenades)
-   - `weapon_parts.json` (Disassembled tripods, mortar barrels, baseplates, ballistic tables)
-   - `survival.json` (Canteens, field rations, packed tents, portable jerrycans)
-   - `intel_and_misc.json` (Documents, cache notes, notebooks, personal effects)
-   - `items_master.json` (Rollup of all 11 categories)
-   - Matching `_meta.json` sidecars per catalog.
+## Boundaries
 
-5. **Strict File Size Limits**:
-   Every source file is strictly maintained under 500 lines of code.
+- Depends on: `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/Core/` (component walk,
+  paths, JSON writing, display attributes, resource names); Workbench's resource search and
+  `GameProject.GetLoadedAddons`.
+- Used by: `TBD_EquipmentExportPlugin` in
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/`; `TBD_ItemInventoryExtractor` also by
+  the other domains' extractors, the discovery sweep, the display reader `TBD_EquipmentDisplayAttributes`
+  and the vehicle extractors.
+- Rules: dependencies run plugin to scanner to extractor to model to the shared core; an item belongs to
+  exactly one category.

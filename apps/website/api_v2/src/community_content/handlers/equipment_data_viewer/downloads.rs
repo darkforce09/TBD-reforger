@@ -1,12 +1,12 @@
 //! Stream complete original documents selected through the validated index.
-use super::{Failure, failure};
+use super::{Failure, failure, viewer_query};
 use crate::{
     community_content::services::equipment_data_viewer::{queries::ViewerQuery, source::manifest},
     core::application_state::AppState,
 };
 use axum::{
     body::Body,
-    extract::{Query, State},
+    extract::{Query, State, rejection::QueryRejection},
     http::{Response, header},
 };
 use tokio::io::AsyncReadExt;
@@ -14,8 +14,9 @@ use tokio::io::AsyncReadExt;
 /// @route GET /api/v1/debug/equipment-data/download
 pub async fn download(
     State(state): State<AppState>,
-    Query(p): Query<ViewerQuery>,
+    query: Result<Query<ViewerQuery>, QueryRejection>,
 ) -> Result<Response<Body>, Failure> {
+    let p = viewer_query(query)?;
     let d = state
         .equipment_data
         .select(p.dataset.as_deref())

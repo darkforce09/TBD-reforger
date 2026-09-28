@@ -83,7 +83,7 @@ example, and section 10 the checks.
 | Tag | Written on | Checked by |
 |---|---|---|
 | `@route <METHOD> <path>` | every Axum handler; every EnfScript REST call site | `cargo xtask verify route-tags` (Rust side, both directions); `cargo xtask verify enfusion-comments` (EnfScript call sites, ECM-6) |
-| `@contract <schema>#<pointer>` | every type that projects a schema definition: Rust models and DTOs, hand-written EnfScript DTOs | `cargo xtask schema citations`: every citation resolves; `cargo xtask verify enfusion-comments`: present on every EnfScript `*Struct` (ECM-6) |
+| `@contract <schema>#<pointer>[ (<sub-path>)][ partial]` | every type that projects a schema definition: Rust models and DTOs, hand-written EnfScript DTOs | `cargo xtask schema citations`: every citation resolves; `cargo xtask verify enfusion-comments`: present on every EnfScript `*Struct` (ECM-6); the API's `contract_parity_mod_wire` suite: every tagged EnfScript class matches the node it cites |
 | `@authority server\|client\|owner` | every EnfScript method whose correctness depends on where it runs | `cargo xtask verify enfusion-comments` (ECM-5) |
 | `@rpc <Reliable\|Unreliable> <Server\|Owner\|Broadcast>` | directly above every `[RplRpc]` | `cargo xtask verify enfusion-comments` (ECM-5) |
 | `@replicated <prop>` | directly above every `[RplProp]` | `cargo xtask verify enfusion-comments` (ECM-5) |
@@ -170,15 +170,29 @@ pub async fn list_audit_logs(
 ```
 
 **Contract tags.** A model or DTO that projects a schema definition carries
-`@contract <schema>#<pointer>`: the schema's file name in `contracts_v2/definitions/`, then an RFC
-6901 JSON pointer, `#/` for the whole document. A module of such types carries it in its `//!`
+`@contract <schema>#<pointer>[ (<sub-path>)][ partial]`: the schema's file name in
+`contracts_v2/definitions/`, then an RFC 6901 JSON pointer, `#` or `#/` for the whole document.
+Two optional parts follow, in this order and each after one space:
+
+- `(<sub-path>)` walks nested properties below the pointer, dot-separated, with `name[]` stepping
+  into an array's items: `mission.schema.json#/$defs/slot (loadout.cargo[])` cites the items of a
+  slot's `loadout.cargo` array. A pointer that lands on a `oneOf` list cites every alternative.
+- `partial` declares a projection that reads a subset of the cited object, so it need not carry
+  every property the object requires; without it, the type carries every required property.
+
+The grammar is closed: a tag of any other shape is an error. `cargo xtask schema citations`
+resolves the schema and pointer of every tag, and the API's `contract_parity_mod_wire` suite reads
+the whole tag on the mod scripts, parsed by
+`apps/website/api_v2/tests/enfscript_source_support/contract_tag.rs`: every field name and `//!<`
+JSON key binding of a tagged class must be a property of the cited node, and a class without
+`partial` must carry every required one. A module of such types carries the tag in its `//!`
 header (`apps/website/api_v2/src/missions/models/registry.rs:4`); a single type in its `///`
-comment (the same file, lines 77-79):
+comment (`apps/website/api_v2/src/administration/models/audit_stream.rs:19-21`):
 
 ```rust
-/// @contract registry-compat.schema.json#/$defs/edge
-#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
-pub struct RegistryCompatEdge {
+/// @contract audit-log.schema.json#/definitions/AuditStreamReady
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AuditStreamReady {
 ```
 
 ## 6. Enfusion comments
@@ -416,7 +430,9 @@ surface, commands or boundaries it changes, and the feature docs whose behaviour
 Two checks hold the cross-boundary tags of section 3. `cargo xtask verify route-tags` compares
 every Rust `@route` tag with the routes the API registers, in both directions, and
 `cargo xtask schema citations` resolves every `@contract` citation against
-`contracts_v2/definitions/`. `cargo xtask ci verify-coding-standards` and
+`contracts_v2/definitions/`. On the mod scripts, the API test binary `contract_parity_mod_wire`
+(run by `cargo xtask db test-it`) also holds each tag's sub-path and `partial` marker against the
+fields of the class it sits on. `cargo xtask ci verify-coding-standards` and
 `cargo xtask ci verify-citations` run them, and `cargo xtask ci ci-local` runs both. The citation
 check reads `.c`, `.go`, `.js`, `.mjs`, `.rs`, `.ts` and `.tsx` files under `apps/` and
 `tools_v2/`, never Markdown, and prints that scope on every run; when the printed scope and this

@@ -19,6 +19,7 @@ tools_v2/xtask/src/commands/mod_ops/
 ├── development_bootstrap.rs   `mod dev-bootstrap`: MCP package, game root, Workbench launch, MCP warm-up
 ├── development_server.rs      `mod dev-server`: the argument gate in front of `mod playtest`
 ├── dispatch.rs                routes each `ModCmd` to its implementation
+├── equipment_gameplay/        the gameplay selection policy: table generation, projection, validation
 ├── equipment_vehicle_export/  validation and sealed publication of Workbench equipment exports
 ├── game_runtime_api_smoke.rs  `mod test-game-runtime-api`: the game-runtime routes with a server credential
 ├── mission_test.rs            `mod test-mission`: the Workbench profile's cached mission artifact
@@ -65,12 +66,32 @@ exits 2.
 
 Run each as `cargo xtask mod <subcommand>` from the repository root.
 
+### generate-equipment-gameplay-policy
+
+- Synopsis: `mod generate-equipment-gameplay-policy [--check]`
+- Does: generates the export addon's gameplay selection tables in
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Gameplay/Policy/Generated/`
+  from `contracts_v2/rules/equipment-gameplay/`; with `--check` it writes nothing and compares.
+- Exit codes: 0 written, or unchanged under `--check`; 1 the policy could not be read, or with
+  `--check` a table differs or an extra file is present.
+- Example: `cargo xtask mod generate-equipment-gameplay-policy --check`
+
+### project-equipment-gameplay
+
+- Synopsis: `mod project-equipment-gameplay --input <INPUT> --output <OUTPUT>`
+- Does: projects a complete source generation through the gameplay selection policy into a new
+  gameplay generation folder, which must not exist yet.
+- Exit codes: 0 projected; 1 the input is not a complete source generation, the output exists, or
+  the projection failed.
+- Example: `cargo xtask mod project-equipment-gameplay --input <generation folder> --output <new folder>`
+
 ### validate-equipment-vehicle-export
 
 - Synopsis: `mod validate-equipment-vehicle-export --input <INPUT>`
 - Does: validates a Workbench equipment and vehicle generation folder against
-  `contracts_v2/definitions/equipment-vehicle-export.schema.json` and its census rules, and
-  prints the report as JSON.
+  `contracts_v2/definitions/equipment-vehicle-export.schema.json` and its census rules, or a
+  gameplay generation against the gameplay selection policy (`equipment_gameplay/`), and prints
+  the report as JSON.
 - Exit codes: 0 valid; 1 invalid, or the input could not be read.
 - Example: `cargo xtask mod validate-equipment-vehicle-export --input <profile>/TBD_Export/equipment_vehicle_exports/generations/<id>`
 

@@ -22,8 +22,8 @@
 //! - Lock order: the page row `FOR UPDATE`, then the revision insert, then the audit row; any
 //!   failure rolls all three back. The editor is the caller, never a body field.
 
+use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::Json;
 
@@ -35,6 +35,7 @@ use crate::community_content::models::wiki::{
 use crate::community_content::services::wiki_markup::read_markup;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AdminUser;
 
 /// The largest `body_md` a save accepts, in bytes.
@@ -52,7 +53,7 @@ const AUDIT_TARGET_TYPE: &str = "wiki_page";
 pub async fn save_wiki_page(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path(slug): Path<String>,
+    PathParams(slug): PathParams<String>,
     body: Result<Json<WikiSaveRequest>, JsonRejection>,
 ) -> Result<(StatusCode, Json<WikiArticle>), ApiError> {
     if !is_valid_slug(&slug) {

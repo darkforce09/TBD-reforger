@@ -1383,7 +1383,18 @@
       "id": "verification_route_acceptance",
       "behavior": "Every registered route has authorized unauthorized ownership guest ban malformed and boundary acceptance coverage.",
       "implementation": [
-        "apps/website/api_v2/src/core"
+        "apps/website/api_v2/src/core",
+        "apps/website/api_v2/tests/route_acceptance_administration_center_content.rs",
+        "apps/website/api_v2/tests/route_acceptance_coverage.rs",
+        "apps/website/api_v2/tests/route_acceptance_fleet_and_telemetry.rs",
+        "apps/website/api_v2/tests/route_acceptance_identity_and_core.rs",
+        "apps/website/api_v2/tests/route_acceptance_missions_library.rs",
+        "apps/website/api_v2/tests/route_acceptance_missions_reviews.rs",
+        "apps/website/api_v2/tests/route_acceptance_operations_events.rs",
+        "apps/website/api_v2/tests/route_acceptance_operations_reservations.rs",
+        "apps/website/api_v2/tests/route_acceptance_support",
+        "apps/website/api_v2/tests/debug_routes_are_development_only.rs",
+        "apps/website/api_v2/src/core/http/path_parameters.rs"
       ],
       "checks": [
         "verification_route_acceptance",
@@ -1397,7 +1408,35 @@
       "id": "verification_contract_parity",
       "behavior": "Current handler responses schemas generated types frontend DTOs and mod wire versions remain compatible.",
       "implementation": [
-        "apps/website/api_v2/src/core"
+        "apps/website/api_v2/src/core",
+        "apps/website/api_v2/tests/contract_parity_equipment_viewer.rs",
+        "apps/website/api_v2/tests/contract_parity_goldens.rs",
+        "apps/website/api_v2/tests/contract_parity_mod_wire.rs",
+        "apps/website/api_v2/tests/contract_parity_support",
+        "apps/website/api_v2/tests/enfscript_source_support",
+        "apps/website/api_v2/tests/json_rejection_envelopes.rs",
+        "apps/website/api_v2/tests/query_rejection_envelopes.rs",
+        "apps/website/api_v2/seeds/content_golden.sql",
+        "apps/website/frontend/tests/fixtures/api",
+        "contracts_v2/definitions/announcement.schema.json",
+        "contracts_v2/definitions/arma-link.schema.json",
+        "contracts_v2/definitions/arsenal-envelopes.schema.json",
+        "contracts_v2/definitions/command-center.schema.json",
+        "contracts_v2/definitions/event-schedule.schema.json",
+        "contracts_v2/definitions/fire-mission.schema.json",
+        "contracts_v2/definitions/leave-request.schema.json",
+        "contracts_v2/definitions/member-directory.schema.json",
+        "contracts_v2/definitions/mission-default-overrides.schema.json",
+        "contracts_v2/definitions/mission-library.schema.json",
+        "contracts_v2/definitions/modpack.schema.json",
+        "contracts_v2/definitions/personnel-actions.schema.json",
+        "contracts_v2/definitions/profile-update.schema.json",
+        "contracts_v2/definitions/reservation-actions.schema.json",
+        "contracts_v2/definitions/runtime-heartbeat-receipt.schema.json",
+        "contracts_v2/definitions/server-intel.schema.json",
+        "contracts_v2/definitions/service-health.schema.json",
+        "contracts_v2/definitions/service-record.schema.json",
+        "contracts_v2/definitions/session-token.schema.json"
       ],
       "checks": [
         "verification_contract_parity",
@@ -1443,7 +1482,8 @@
       "implementation": [
         "tools_v2/xtask/src/verifications/api_readiness",
         "tools_v2/xtask/src/verifications/property_test_configuration.rs",
-        "apps/website/api_v2/src/tests/property_evidence.rs"
+        "apps/website/api_v2/src/tests/property_evidence.rs",
+        "tools_v2/xtask/src/verifications/api_readiness/fingerprint.rs"
       ],
       "checks": [
         "readiness_self_tests",
@@ -1457,7 +1497,9 @@
       "id": "verification_engineering_laws",
       "behavior": "Production files under500 lines, tests under1000 lines, separate tests and architectural boundary compliance.",
       "implementation": [
-        "apps/website/api_v2/src/core"
+        "apps/website/api_v2/src/core",
+        "apps/website/api_v2/tests/engineering_laws.rs",
+        "tools_v2/verification-core/src/repository_laws"
       ],
       "checks": [
         "verification_engineering_laws",
@@ -1472,7 +1514,14 @@
       "id": "verification_property_invariants",
       "behavior": "Rust proptest invariants cover authorization policies quotas linking sessions artifacts telemetry commands and audit ordering.",
       "implementation": [
-        "apps/website/api_v2/src/core"
+        "apps/website/api_v2/src/core",
+        "apps/website/api_v2/tests/audit_publication_properties.rs",
+        "apps/website/api_v2/tests/fleet_command_properties.rs",
+        "apps/website/api_v2/tests/mission_artifact_properties.rs",
+        "apps/website/api_v2/tests/reservation_transaction_properties.rs",
+        "apps/website/api_v2/tests/session_authority_properties.rs",
+        "apps/website/api_v2/tests/telemetry_revision_properties.rs",
+        "apps/website/api_v2/tests/session_authority_support"
       ],
       "checks": [
         "verification_property_invariants",
@@ -1486,7 +1535,13 @@
       "id": "verification_controlled_races",
       "behavior": "Tokio barriers deterministically exercise last-seat refresh replay assignment withdrawal linking approval ingest and commit ordering.",
       "implementation": [
-        "apps/website/api_v2/src/core"
+        "apps/website/api_v2/src/core",
+        "apps/website/api_v2/tests/controlled_races_audit.rs",
+        "apps/website/api_v2/tests/controlled_races_identity.rs",
+        "apps/website/api_v2/tests/controlled_races_missions_and_telemetry.rs",
+        "apps/website/api_v2/tests/controlled_races_reservations.rs",
+        "apps/website/api_v2/tests/failpoint_and_race_support",
+        "apps/website/api_v2/src/core/failpoints"
       ],
       "checks": [
         "verification_controlled_races",
@@ -1500,7 +1555,17 @@
       "id": "verification_failure_injection",
       "behavior": "Explicit failpoints verify rollback recovery and effect/acknowledgement failure boundaries.",
       "implementation": [
-        "apps/website/api_v2/src/core"
+        "apps/website/api_v2/src/core",
+        "apps/website/api_v2/tests/failure_injection_audit.rs",
+        "apps/website/api_v2/tests/failure_injection_discord.rs",
+        "apps/website/api_v2/tests/failure_injection_fleet.rs",
+        "apps/website/api_v2/tests/failure_injection_identity.rs",
+        "apps/website/api_v2/tests/failure_injection_missions.rs",
+        "apps/website/api_v2/tests/failure_injection_operations.rs",
+        "apps/website/api_v2/tests/failure_injection_self_checks.rs",
+        "apps/website/api_v2/tests/failure_injection_telemetry.rs",
+        "apps/website/api_v2/tests/failpoint_and_race_support",
+        "apps/website/api_v2/src/core/failpoints"
       ],
       "checks": [
         "verification_failure_injection",
@@ -2445,7 +2510,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1,
+      "minimum_cases": 66,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*route_acceptance[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2459,7 +2524,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1,
+      "minimum_cases": 85,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*contract_parity[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2501,7 +2566,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1,
+      "minimum_cases": 10,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*engineering_laws[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2515,9 +2580,9 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 25,
+      "minimum_cases": 26,
       "success_marker": "test result: ok.",
-      "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*(?:grant_and_condition_bounds_are_exact|identity_bounds_count_utf8_bytes_and_reject_padding|event_access_is_exactly_or_of_and_grants|slot_then_squad_then_event_selects_exactly_one_policy|grant_and_condition_permutations_preserve_authority|every_mandatory_gate_blocks_every_satisfied_grant|discord_roles_are_guild_scoped_and_independent_grants_survive_missing_guilds|generated_operation_sequences_conserve_allocations_and_capacity|arbitrary_u64_usage_agrees_with_wide_integer_arithmetic|every_valid_u32_or_explicit_null_limit_round_trips|generated_identity_operation_sequences_preserve_ownership_codes_and_aggregates|protected_actions_require_effective_session_authority|refresh_replay_revokes_concurrently_issued_successor|approval_and_deployment_share_immutable_artifact|telemetry_revisions_contribute_exactly_once|command_executor_fencing_preserves_observed_outcomes|audit_publication_preserves_committed_event_delivery|generated_reservation_operations_conserve_allocations_quota_and_seatability|seat_matching_agrees_with_exhaustive_assignment|priority_matching_keeps_the_greedy_basis_of_earlier_holders|seatability_is_independent_of_holder_and_seat_order|planned_promotions_respect_quota_capacity_eligibility_and_seatability|promotion_order_is_independent_of_input_permutation|eligibility_releases_are_confirmed_minimal_and_restore_seatability|pending_membership_evidence_only_relabels_policy_denials) \\.\\.\\. ok$",
+      "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*(?:grant_and_condition_bounds_are_exact|identity_bounds_count_utf8_bytes_and_reject_padding|event_access_is_exactly_or_of_and_grants|slot_then_squad_then_event_selects_exactly_one_policy|grant_and_condition_permutations_preserve_authority|every_mandatory_gate_blocks_every_satisfied_grant|discord_roles_are_guild_scoped_and_independent_grants_survive_missing_guilds|generated_operation_sequences_conserve_allocations_and_capacity|arbitrary_u64_usage_agrees_with_wide_integer_arithmetic|every_valid_u32_or_explicit_null_limit_round_trips|generated_identity_operation_sequences_preserve_ownership_codes_and_aggregates|protected_actions_require_effective_session_authority|refresh_replay_revokes_concurrently_issued_successor|approval_and_deployment_share_immutable_artifact|telemetry_revisions_contribute_exactly_once|command_executor_fencing_preserves_observed_outcomes|audit_publication_preserves_committed_event_delivery|reservation_transactions_conserve_slots_and_participants|generated_reservation_operations_conserve_allocations_quota_and_seatability|seat_matching_agrees_with_exhaustive_assignment|priority_matching_keeps_the_greedy_basis_of_earlier_holders|seatability_is_independent_of_holder_and_seat_order|planned_promotions_respect_quota_capacity_eligibility_and_seatability|promotion_order_is_independent_of_input_permutation|eligibility_releases_are_confirmed_minimal_and_restore_seatability|pending_membership_evidence_only_relabels_policy_denials) \\.\\.\\. ok$",
       "properties": [
         {
           "id": "grant_and_condition_bounds_are_exact",
@@ -2603,7 +2668,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1,
+      "minimum_cases": 9,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*controlled_races[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2617,7 +2682,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1,
+      "minimum_cases": 27,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*failure_injection[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2672,7 +2737,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1075,
+      "minimum_cases": 1302,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test [^\\n]+ \\.\\.\\. ok$"
     },
@@ -2686,7 +2751,7 @@
         "ci-local-leptos"
       ],
       "timeout_seconds": 3600,
-      "minimum_cases": 1802,
+      "minimum_cases": 1826,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test [^\\n]+ \\.\\.\\. ok$"
     },
@@ -2758,7 +2823,7 @@
         "--locked"
       ],
       "timeout_seconds": 600,
-      "minimum_cases": 55,
+      "minimum_cases": 59,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test verifications::api_readiness::(?:[A-Za-z0-9_]+::)*(?:tests|source_tests)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
     },

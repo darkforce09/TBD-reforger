@@ -1,19 +1,52 @@
-# WeaponExport/Ammo
+# Ammunition export
 
-Magazines, ammunition configs, and the projectiles they fire.
+Magazines, ammunition configs, the projectiles they fire and the ballistic tables those projectiles
+reference, written under `$profile:TBD_Export/equipment/ammunition/`.
 
-### Roles & Responsibilities
-- `TBD_AmmoModel.c`: Data carriers for both halves of the domain. `TBD_MagazineInfo` holds capacity, caliber, magazine-well class, tracer ratio, and physical mass/volume; `TBD_ProjectileInfo` holds ballistics, warhead, tracer, and visual properties.
-- `TBD_AmmoMagazineExtractor.c`: Reads one magazine prefab — the wells it fits, its capacity, its caliber and ammo type, its empty and loaded mass — and files it under a caliber category. Owns the ammunition-config indirection that links a magazine to the projectile it chambers.
-- `TBD_AmmoProjectileExtractor.c`: Reads one projectile prefab — muzzle velocity, mass, drag and ballistic table; warhead yield, penetration, fragmentation and effect prefab; the meshes it renders as round and cartridge — and files it under a caliber category.
-- `TBD_AmmoTracerExtractor.c`: Reads tracer behaviour for both halves: the tracer ratio and pattern a magazine is loaded with, and whether a projectile is itself a tracer and what colour it burns.
-- `TBD_AmmoNaming.c`: Reads display name, description, and icon from `UIInfo` and `ItemDisplayName`, and derives the catalog family from the prefab path.
-- `TBD_AmmoCatalog.c`: `TBD_AmmoCatalog` holds the classified rows of one scan — magazines bucketed by caliber, projectiles by kind, and a rollup of each half. It is the hand-off between discovery and serialization, and holding the buckets here is what lets the writer stay stateless.
-- `TBD_AmmoScanner.c`: Sweeps every loaded addon for magazine and projectile prefabs, classifies each one, and fills a `TBD_AmmoCatalog`.
-- `TBD_AmmoCatalogWriter.c`: Serializes a catalog to disk — one file per magazine caliber, one per projectile category, a rollup for each half, and the unified `ammunition_all` catalog, each with its `_meta.json` sidecar.
-- `TBD_AmmoExportPlugin.c`: Workbench entry point `Plugins > TBD > Export All Ammunition & Magazines`. Writes `$profile:TBD_Export/equipment/ammunition/`.
+## Contents
 
-### Call Flow & Contracts
-Menu action -> `TBD_AmmoExportPlugin.Run()` -> `TBD_AmmoScanner.RunScan()` discovers prefabs -> the magazine, projectile, tracer and naming extractors fill `TBD_MagazineInfo` / `TBD_ProjectileInfo` -> rows are filed into `TBD_AmmoCatalog` -> `TBD_AmmoCatalogWriter` serializes through `TBD_EquipmentExportJson` to `equipment/ammunition/magazines/<caliber>.json` and `equipment/ammunition/projectiles/<caliber>.json`, each paired with a `_meta.json` sidecar carrying the row count and UTC timestamp. Magazines reference projectiles by resource name; the pairing is never inlined.
+```text
+apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/WeaponExport/Ammo/
+├── TBD_AmmoBallisticTableExporter.c  the native ballistic and wind tables the ammunition references, each once
+├── TBD_AmmoCatalog.c                 the classified rows of one scan, handed from discovery to serialization
+├── TBD_AmmoCatalogWriter.c           per-caliber and per-category files, the rollups and `ammunition_all`
+├── TBD_AmmoExportPlugin.c            the ammunition plugin class; its menu attribute is commented out
+├── TBD_AmmoMagazineExtractor.c       magazine wells, capacity, caliber, ammo type, mass and the ammo config link
+├── TBD_AmmoModel.c                   `TBD_MagazineInfo` and `TBD_ProjectileInfo`
+├── TBD_AmmoNaming.c                  display name, description, icon and catalog family
+├── TBD_AmmoProjectileExtractor.c     ballistics, warhead, fragmentation and the meshes of one projectile
+├── TBD_AmmoScanner.c                 the addon sweep that classifies each prefab and fills the catalog
+└── TBD_AmmoTracerExtractor.c         tracer ratio and pattern of a magazine, tracer colour of a projectile
+```
 
-This is the one domain with no single `TBD_AmmoExtractor`. A magazine and a projectile are different objects with different carriers, so the domain splits along that line rather than routing both through one class that would share nothing but a name.
+## How it works
+
+"Export All Equipment" runs `TBD_AmmoScanner.RunScan()` in its seventh phase; the domain's own
+plugin attribute is commented out.
+
+The scanner discovers magazine and projectile prefabs; the magazine, projectile, tracer and naming
+extractors fill `TBD_MagazineInfo` and `TBD_ProjectileInfo`, and the rows are filed into a
+`TBD_AmmoCatalog`, magazines by caliber and projectiles by kind. `TBD_AmmoCatalogWriter` then writes
+`magazines/<caliber>.json`, `projectiles/<category>.json`, a rollup for each half and the unified
+`ammunition_all` catalog, each with its `_meta.json` sidecar. While scanning,
+`TBD_AmmoBallisticTableExporter` collects the ballistic and wind tables the projectiles and their
+effects reference and writes each table once to `ballistic_tables.json`; it simulates no trajectory
+and generates no table.
+
+This is the one domain without a single `TBD_AmmoExtractor`: a magazine and a projectile are
+different objects with different carriers. A magazine references its projectile by resource name;
+the pairing is never inlined.
+
+## Authority
+
+None: Workbench runs these scripts in the editor.
+
+## Boundaries
+
+- Depends on: `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/Core/` (component walk,
+  destination, JSON writing, display attributes and resource names); `TBD_ItemInventoryExtractor` in
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/ItemExport/`.
+- Used by: `TBD_EquipmentExportPlugin` in
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/`.
+- Rules: the catalog holds the scan's buckets, so the writer stays stateless; a ballistic table is
+  written once per run however many projectiles reference it.

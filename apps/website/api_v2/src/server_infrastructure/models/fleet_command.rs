@@ -1,5 +1,13 @@
 //! Fleet commands: the durable record of one operator command to one server, from acceptance
 //! through an executor's claim to its observed outcome.
+//!
+//! @contract fleet-command.schema.json#/definitions/FleetAction
+//! @contract fleet-command.schema.json#/definitions/FleetCommandRequest
+//! @contract fleet-command.schema.json#/definitions/FleetCommandReceipt
+//! @contract fleet-command.schema.json#/definitions/FleetCommandList
+//! @contract fleet-command.schema.json#/definitions/ClaimedFleetCommand
+//! @contract fleet-command.schema.json#/definitions/ExecutionStart
+//! @contract fleet-command.schema.json#/definitions/ExecutionResult
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

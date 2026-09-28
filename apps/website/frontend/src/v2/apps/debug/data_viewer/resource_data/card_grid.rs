@@ -7,6 +7,10 @@ use super::{component_card::ComponentCard, grid_layout::RowLayout, grid_loading,
 use crate::v2::core::api::dto::equipment_data_viewer::EquipmentResourceCardPage;
 use leptos::prelude::*;
 use std::collections::BTreeMap;
+/// The shared state of one card grid, provided as context to its rows, cards and loaders: the
+/// scroll container, its scroll offset and height, the column count, the total card count, the
+/// measured row layout, the remembered reading position, the loaded card pages keyed by start
+/// index, a retry counter, and load errors keyed by page start.
 #[derive(Clone, Copy)]
 pub struct GridContext {
     pub root: NodeRef<leptos::html::Div>,
@@ -20,6 +24,10 @@ pub struct GridContext {
     pub retry: RwSignal<u64>,
     pub errors: RwSignal<BTreeMap<usize, String>>,
 }
+/// A windowed grid of variable-height container cards in one to three columns by width. It loads
+/// the pages of twelve cards that the visible rows need, keeps the content in view anchored as
+/// rows above it are measured, and restores and remembers its reading position under
+/// `memory_key`.
 #[component]
 pub fn CardGrid(memory_key: String) -> impl IntoView {
     let c = expect_context::<ViewerContext>();
@@ -111,6 +119,9 @@ pub fn CardGrid(memory_key: String) -> impl IntoView {
         </div>
     </div>}
 }
+/// One positioned row of cards. Once every card in it has loaded, it records the row's measured
+/// height and, when the row lies above the viewport, shifts the scroll offset by the height change
+/// so the content in view stays put.
 #[component]
 fn CardRow(row: usize) -> impl IntoView {
     let grid = expect_context::<GridContext>();

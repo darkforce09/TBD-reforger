@@ -1,5 +1,8 @@
 //! `GET /healthz` — the database and migration-state probe, and the bounded `SELECT 1`
 //! that `/metrics` shares with it.
+//!
+//! @contract service-health.schema.json#/definitions/PublicHealth
+//! @contract service-health.schema.json#/definitions/DetailedHealth
 
 use std::time::{Duration, Instant};
 

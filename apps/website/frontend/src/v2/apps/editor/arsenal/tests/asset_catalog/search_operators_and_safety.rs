@@ -173,22 +173,27 @@ fn class_tail_matches_a_bare_classname_on_a_real_guid_headed_id() {
 fn mod_operator_filters_by_the_addon_root() {
     let tree = build_vehicle_catalog_tree(&vehicle_items());
     assert_eq!(
-        tree[0].label, "ArmaReforger",
-        "guard: the root is the addon"
+        tree.iter().map(|n| n.label.as_str()).collect::<Vec<_>>(),
+        vec!["NATO", "ArmaReforger"],
+        "guard: each root is an addon"
     );
-    let all_leaves = tree[0].children[0].children.len();
+    let arma_only = vec![tree[1].clone()];
+    let all_leaves = arma_only[0].children[0].children.len();
 
     let hit = filter_catalog(&tree, "mod:ArmaReforger");
-    assert_eq!(hit, tree, "an addon hit keeps the addon's whole subtree");
+    assert_eq!(
+        hit, arma_only,
+        "an addon hit keeps the addon's whole subtree"
+    );
 
     assert_eq!(
         filter_catalog(&tree, "mod:arma"),
-        tree,
+        arma_only,
         "`mod:` is a PREFIX and case-insensitive"
     );
     assert_eq!(
         filter_catalog(&tree, "mod ArmaReforger"),
-        tree,
+        arma_only,
         "the space-separated spelling is the same operator"
     );
     assert!(
@@ -251,8 +256,8 @@ fn glob_patterns_are_whole_string_over_the_selected_field() {
     let vehicles = build_vehicle_catalog_tree(&vehicle_items());
     assert_eq!(
         filter_catalog(&vehicles, "mod:Arma*"),
-        vehicles,
-        "glob over the addon root"
+        vec![vehicles[1].clone()],
+        "glob over the addon root: ArmaReforger stays, NATO drops"
     );
 }
 
@@ -337,8 +342,8 @@ fn regex_patterns_search_the_selected_field() {
     let vehicles = build_vehicle_catalog_tree(&vehicle_items());
     assert_eq!(
         filter_catalog(&vehicles, "mod:/^arma(reforger|3)$/"),
-        vehicles,
-        "regex over the addon root"
+        vec![vehicles[1].clone()],
+        "regex over the addon root: ArmaReforger stays, NATO drops"
     );
 }
 

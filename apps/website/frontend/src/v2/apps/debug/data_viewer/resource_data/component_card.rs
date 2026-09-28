@@ -5,6 +5,8 @@ use crate::v2::core::api::dto::equipment_data_viewer::{
     EquipmentResourceCard, EquipmentSourcePage, EquipmentSourcePageItemsItem,
 };
 use leptos::prelude::*;
+/// The card of the container at grid position `index`: a loading message with a retry button
+/// until its page arrives, then the container's header and fields.
 #[component]
 pub fn ComponentCard(index: usize) -> impl IntoView {
     let grid = expect_context::<GridContext>();
@@ -29,6 +31,9 @@ pub fn ComponentCard(index: usize) -> impl IntoView {
         <For each=move||available.get() key=|id|id.clone() children=move |_|view!{<CardFields card=card.get_untracked().unwrap()/>}/>
     </article>}
 }
+/// The body of a loaded container card: capability and view tags, identity and inheritance
+/// metadata with parent and child links, the property the location names when it is not loaded
+/// yet, and the fields, whose next pages load as the card's end nears the viewport or on request.
 #[component]
 fn CardFields(card: EquipmentResourceCard) -> impl IntoView {
     let c = expect_context::<ViewerContext>();

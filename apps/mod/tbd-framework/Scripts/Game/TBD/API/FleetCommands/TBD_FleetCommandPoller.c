@@ -18,7 +18,7 @@
 //! `POST .../claim` answer. Field names are the JSON keys. The arguments are read separately
 //! (`TBD_FleetCommandArgumentsStruct`), so arguments that cannot be read hide neither the command
 //! id nor the fencing token the command's failure is reported with.
-//! @contract fleet-command.schema.json#/definitions/ClaimedFleetCommand
+//! @contract fleet-command.schema.json#/definitions/ClaimedFleetCommand partial
 class TBD_ClaimedFleetCommandStruct
 {
 	string command_id; //!< JSON key `command_id`
@@ -29,7 +29,7 @@ class TBD_ClaimedFleetCommandStruct
 }
 
 //! The claimed command's `arguments`, every value as text. The field name is the JSON key.
-//! @contract fleet-command.schema.json#/definitions/ClaimedFleetCommand
+//! @contract fleet-command.schema.json#/definitions/ClaimedFleetCommand partial
 class TBD_FleetCommandArgumentsStruct
 {
 	ref map<string, string> arguments; //!< JSON key `arguments`; null when not text values
@@ -123,6 +123,7 @@ class TBD_FleetCommandPoller
 	//! first.
 	//! @route POST /api/v1/fleet-executor/commands/claim
 	//! @authority server
+	//! @contract fleet-command.schema.json#/definitions/ClaimRequest
 	protected static void Claim()
 	{
 		if (!s_bRunning)

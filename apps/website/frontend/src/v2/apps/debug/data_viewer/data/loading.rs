@@ -2,14 +2,19 @@
 use super::request_cache;
 use crate::v2::core::api::client::public_reads::public_get;
 use leptos::prelude::*;
-use serde::{Serialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Serialize};
 
+/// The reactive result of one viewer read: the decoded response, the last error message, and
+/// whether a request is outstanding while there is no value to show.
 #[derive(Clone, Copy)]
 pub struct ReadState<T: Send + Sync + 'static> {
     pub value: RwSignal<Option<T>>,
     pub error: RwSignal<Option<String>>,
     pub loading: RwSignal<bool>,
 }
+/// Reads `url` each time it changes: clears the previous result, aborts the superseded request,
+/// serves a cached response when one exists and fetches otherwise. An empty URL issues no
+/// request.
 pub fn use_read<T: DeserializeOwned + Serialize + Clone + Send + Sync + 'static>(
     url: Memo<String>,
 ) -> ReadState<T> {

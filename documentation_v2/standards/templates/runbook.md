@@ -117,11 +117,10 @@ repository root; the first API build takes several minutes.
    ```
 
    Expected: one line per seed file in `apps/website/api_v2/seeds/`, in order, from
-   `cd apps/website/api_v2 && podman compose exec -T db psql -U tbd -d tbd_reforger < seeds/discord_roles.sql`
+   `cd apps/website/api_v2 && podman compose exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < seeds/discord_roles.sql`
    through `registry_dev.sql`, `faction_library.sql` and `vehicle_database.sql` to
-   `wiki_pages.sql`, each followed by psql's command tags and no `ERROR:` line. psql carries on
-   past a failed statement, so the exit code alone proves nothing; the command stops early only
-   when psql itself fails, as when the database is down.
+   `wiki_pages.sql`, each followed by psql's command tags, and exit 0. Each psql run stops at its
+   first failed statement, so a failed seed ends the command with psql's exit code 3.
 
 ## Verify
 
@@ -138,7 +137,7 @@ applied.
 |---|---|---|
 | `db up` stops with "no container runtime" | none of `TBD_CONTAINER_RUNTIME`, podman, docker or `distrobox-host-exec` resolved | install podman or docker, or set `TBD_CONTAINER_RUNTIME` |
 | the API exits at boot with `DATABASE_URL is required` or `JWT_SECRET is required` | `apps/website/api_v2/.env` is missing; the API reads it from its working directory | step 1 |
-| `db seed` prints `relation "discord_roles" does not exist` yet exits 0 | the seeds ran before the API applied the migrations, and psql carries on past a failed statement | run step 3 first, then seed again |
+| `db seed` prints `relation "discord_roles" does not exist` and exits 3 | the seeds ran before the API applied the migrations, so the first seed's first statement failed | run step 3 first, then seed again |
 | `curl` exits 22 on `/healthz` | the probe returned 503: the database is down or the migrations are unreadable | check step 2's container, then the API's log |
 
 ## Related

@@ -62,13 +62,14 @@
         "BLUFOR",
         "OPFOR"
       ],
-      "filled": 6,
+      "filled": 5,
       "game_mode": "pve_coop",
       "mission_id": "512d8658-7025-4a70-94e9-a1b44a7aa155",
+      "my_attendance_state": "attended",
       "my_reservation_state": "registered",
       "my_slot_id": "00000000-0000-4000-5000-000000000001",
-      "my_state": "registered",
-      "start_time": "2026-08-01T19:00:00Z",
+      "my_state": "attended",
+      "start_time": "2030-08-01T19:00:00Z",
       "terrain": "everon",
       "title": "Operation Byte Parity",
       "total": 16,
@@ -107,7 +108,7 @@
       "seat_limit": 0
     }
   ],
-  "start_time": "2026-08-01T19:00:00Z",
+  "start_time": "2030-08-01T19:00:00Z",
   "status": "scheduled",
   "updated_at": "2026-07-15T14:05:44.629713Z",
   "viewer_access": {

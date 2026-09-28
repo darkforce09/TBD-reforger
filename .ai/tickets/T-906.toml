@@ -3,12 +3,13 @@ kind = "work"
 title = "Split 7 T-145 API SIZE-3 allowlist files"
 summary = "Split T-145 API SIZE-3 files (7) the T-899 allowlist is holding"
 class = "feature"
-status = "ready"
+status = "cancelled"
 order = 8290
 spec = "documentation_v2/tickets/specs/t853_shell_to_xtask_waves.md"
 plan = "documentation_v2/tickets/plans/t-906_plan.md"
 executor = "claude-code"
 notes = """
+2026-09-28 (milestone V): cancelled, obsolete. apps/website/api/ no longer exists and the size gate has no exemption mechanism (tools_v2/verification-core/src/repository_laws/file_length.rs:39 No exemptions permitted); evidence apps/website/api_v2/tests/engineering_laws.rs:74 engineering_laws_production_files_stay_within_500_lines and :106 engineering_laws_no_exemption_mechanism_exists.
 2026-09-05 wave 248 (T-940.5): apps/website/api/src/config.rs is 994 lines against the 1000 SIZE-3 cap; the next slice touching it must split it — config.rs joins this split.
 --- HEAD migration_legacy (verbatim) ---
 
@@ -52,6 +53,7 @@ citations = [
     "t853_shell_to_xtask_waves.md",
     "apps/website/api/src",
 ]
+completed_at = "2026-09-28T01:15:58Z"
 estimated = ["scope"]
 owns = [
     "apps/website/api/src/app.rs",

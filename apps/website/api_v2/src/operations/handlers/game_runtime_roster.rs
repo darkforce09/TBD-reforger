@@ -6,12 +6,13 @@
 //! event mission's seats with its artifact, so the roster, the game and deployment authorization
 //! all name the same artifact and nothing is compiled or paired at read time.
 
-use axum::extract::{Path, State};
+use axum::extract::State;
 use axum::response::Json;
 use uuid::Uuid;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::missions::services::mission_deployments::deployment_reads::deployment_in_effect;
 use crate::missions::services::mission_deployments::deployment_settlement::lock_and_settle;
 use crate::operations::models::game_runtime_roster::{EventRoster, RosterAssignment, RosterSlot};
@@ -46,7 +47,7 @@ use crate::server_infrastructure::services::machine_credentials::MachineCaller;
 pub async fn event_roster(
     State(state): State<AppState>,
     caller: MachineCaller,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<Json<EventRoster>, ApiError> {
     caller.require_executor(ExecutorKind::ModRuntime)?;
     let ev = load_event(&state.pool, &id).await?;

@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RuntimeHeartbeatReceiptContract",
+  "description": "POST /api/v1/game-runtime/sessions/:sessionId/heartbeats answer (mod_runtime machine credential). The body is game-runtime-session.schema.json#/definitions/RuntimeHeartbeat; refusals carry RuntimeFenceRefusal details. The root is the receipt.",
+  "$ref": "#/definitions/HeartbeatReceipt",
+  "definitions": {
+    "HeartbeatReceipt": {
+      "description": "The heartbeat is stored and the server's status row updated.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ok"
+      ],
+      "properties": {
+        "ok": {
+          "const": true
+        }
+      }
+    }
+  }
+}

@@ -49,7 +49,7 @@ class TBD_AudioBlockStruct
 }
 
 //! The document root for the audio pass: declares `audio` and nothing else.
-//! @contract mission.schema.json#/properties/audio
+//! @contract mission.schema.json#/ partial
 class TBD_AudioDocStruct
 {
 	ref TBD_AudioBlockStruct audio; //!< JSON `audio`; allocated even when absent

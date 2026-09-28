@@ -200,3 +200,17 @@ fn decision_bodies() {
         serde_json::json!({"artifact_id": artifact, "reason": "The pad sits in the minefield"})
     );
 }
+
+/// A comment posted on the approved artifact; its id and time are server-generated, so the golden
+/// holds the normalisation placeholders there.
+#[test]
+fn review_comment_posted() {
+    const G: &str =
+        golden!("POST__missions__00000000-0000-4000-c000-000000000004__review-comments.json");
+    assert_golden::<ReviewComment>(G, &[]);
+    let comment: ReviewComment = serde_json::from_str(G).unwrap();
+    assert_eq!(
+        comment.artifact_id.as_deref(),
+        Some("00000000-0000-4000-f000-000000000004")
+    );
+}

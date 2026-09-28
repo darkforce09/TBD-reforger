@@ -1,5 +1,8 @@
 //! Resource identity and tabs do not replace the filtered catalog.
 use super::*;
+/// The selected resource: its identity and counts, a notice when it lies outside the catalog
+/// filter, record and source downloads, and its data, relationships and names sections. When the
+/// resource does not exist in the selected generation, an absence notice replaces them.
 #[component]
 pub fn ResourceDetails() -> impl IntoView {
     let c = expect_context::<ViewerContext>();

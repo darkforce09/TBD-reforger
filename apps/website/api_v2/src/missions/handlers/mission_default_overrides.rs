@@ -8,6 +8,8 @@
 //! aggregation over `mission_versions.json_payload`, reporting per authored default-bearing key
 //! the fraction of missions whose LATEST version differs from the schema default, plus the value
 //! histogram.
+//!
+//! @contract mission-default-overrides.schema.json#/definitions/MissionDefaultOverrideReport
 
 use axum::extract::State;
 use axum::response::Json;

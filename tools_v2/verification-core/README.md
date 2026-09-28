@@ -3,7 +3,9 @@
 The `verification-core` crate, imported as `verification_core`: the small, fail-closed library that
 every `cargo xtask` verification and many xtask commands are written with. It gives a check three
 outcomes instead of two (held, failed, did not run), so a check whose input is missing, whose tool
-is absent or whose child process was killed can never report a pass.
+is absent or whose child process was killed can never report a pass. Its `repository_laws` module
+holds the structural engineering laws (file length, test placement, no exemptions, the engine
+layer walls, the website crate dependency directions) as pure checks over a checkout.
 
 ## Contents
 
@@ -64,17 +66,19 @@ settings belong to its callers: `cargo xtask platform wave` takes the lock path 
 
 - The library `verification_core`, with `Verdict`, `NotRun`, `Finding`, `Kind`, `Pattern`,
   `Report`, `GateLock` and `flock_exclusive` at its root and the modules `gate`, `scan`, `proc`,
-  `report`, `lock`, `pattern` and `verdict`. The [source README](/tools_v2/verification-core/src/README.md)
-  says which xtask folders use each.
+  `report`, `repository_laws`, `lock`, `pattern` and `verdict`. The
+  [source README](/tools_v2/verification-core/src/README.md) says which folders use each.
 - No binary.
 
 ## Boundaries
 
 - Depends on: `regex` 1 and `libc` 0.2, and no workspace crate.
-- Used by: `tools_v2/xtask/` only, by path dependency: its verifications under
+- Used by: `tools_v2/xtask/`, by path dependency: its verifications under
   `tools_v2/xtask/src/verifications/`, its command groups under `tools_v2/xtask/src/commands/`
   (the lock holders are the platform wave driver and the MCP broker start in
-  `tools_v2/xtask/src/commands/mcp/call.rs`), and `tools_v2/xtask/src/core/`.
+  `tools_v2/xtask/src/commands/mcp/call.rs`), and `tools_v2/xtask/src/core/`; and
+  `website-api`, by path dev-dependency, whose `apps/website/api_v2/tests/engineering_laws.rs`
+  asserts the `repository_laws` checks over the repository.
 - Rules:
   - the crate depends on no workspace crate (`foundational_engines_have_no_workspace_dependencies`
     in `tools_v2/xtask/src/tests/tooling_dependency_boundaries.rs`);

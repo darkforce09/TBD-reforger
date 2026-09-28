@@ -12,10 +12,7 @@ its own `cargo xtask verify` verb.
 tools_v2/xtask/src/verifications/architecture/
 ├── editor_orbat_coherency/     the ORBAT coherency runner: static checks, cargo test pins, output
 ├── editor_orbat_coherency.rs   the ORBAT coherency gate's target files, bans, colour pins and test pins
-├── engine_layer_boundaries/    the engine-layer gate's runner and rule evaluation
-├── engine_layer_boundaries.rs  the engine-layer gate: its eight rules and why each is shaped so
-├── engine_layer_rules.rs       the engine-layer matchers, pinned residues and report text
-├── engine_layer_scan.rs        engine-layer helpers: output lines, build-output pruning, pins, refusals
+├── engine_layer_boundaries.rs  the engine-layer gate: prints the library's engine-layer report
 ├── mod.rs                      the module tree
 ├── route_tags/                 route-tag extraction, report collation and the runner
 ├── route_tags.rs               the route-tag gate's paths, patterns, sentinels and report text
@@ -37,22 +34,12 @@ check that did not run, never as a pass.
 
 ### Engine layers
 
-The rules, with their matchers in `engine_layer_rules.rs`:
-
-| Rule | Subject | Must hold |
-|---|---|---|
-| 1 | `apps/website/graphics-engine` | no `website_map_engine` in source, no `website-map-engine` edge in `Cargo.toml` |
-| 2 | `apps/website/graphics-engine` | no declared name (after `struct`, `enum`, `trait`, `type`, `fn`, `const`, `static`, `mod`) containing terrain, symbology, mission, orbat or arma, case-insensitive |
-| 3a | `apps/website/map-engine/src` | `website_graphics_engine::frame` appears only in `frame/mod.rs`, exactly 8 times |
-| 3b | `apps/website/map-engine/src` | `website_graphics_engine::` followed by `device`, `pipeline`, `shaders`, `r#loop` or `text::gpu` appears only at the pinned sites: 3 in `frame/mod.rs`, 2 in `frame/pump.rs` |
-| 4 | `data/scenario` | names none of `crate::` `camera`, `diagnostics`, `doll`, `frame`, `io`, `overlay`, `spatial`, `streaming`, `world`, `data::store`, nor `website_graphics_engine`, nor a `super::` chain ending on one of them (`diagnostics` excepted, which names a module inside the tree), outside two pinned `cfg(feature = "store")` test files |
-| 5 | `editing` | no `web_sys`, `leptos` or `wasm_bindgen`, prose included |
-| 6 | `apps/website/frontend` | no `website_graphics_engine::` path or `extern crate`, no `website-graphics-engine` edge in `Cargo.toml` |
-| 7 | `data` and `world` | `data/` names none of the nine sibling modules of rule 4 nor the graphics engine; `world/` names neither `crate::data` nor `yrs::` |
-
-A pin is a ratchet: an unpinned file that matches fails, and so does a pinned file whose count
-rises or falls or that no longer exists. Any folder below the root named `target` or starting
-with `target-` is build output and is pruned from the walks.
+`verify engine-layers` prints the report of
+`verification_core::repository_laws::engine_layers::check_engine_layers` line for line and exits
+with its code. The eight rules, their matchers, pins and report text live in
+[`tools_v2/verification-core/src/repository_laws/engine_layers/`](/tools_v2/verification-core/src/repository_laws/engine_layers/README.md),
+which the `engineering_laws` test binary of `website-api` reads as well, so the gate and that
+binary judge the tree the same way.
 
 ### Route tags
 
@@ -85,8 +72,9 @@ the first failure.
 
 ## Boundaries
 
-- Depends on: `verification-core` (patterns, gates, scans, verdicts, `proc::Run`); the `regex`
-  and `syn` crates; `cargo` for the ORBAT test pins.
+- Depends on: `verification-core` (patterns, gates, scans, verdicts, `proc::Run`, and
+  `repository_laws::engine_layers` for the engine-layer rules); the `regex` and `syn` crates;
+  `cargo` for the ORBAT test pins.
 - Used by:
   - `tools_v2/xtask/src/commands/verify/dispatch.rs`, for `cargo xtask verify engine-layers`,
     `cargo xtask verify route-tags` and `cargo xtask verify editor-orbat-coherency`;
@@ -101,13 +89,13 @@ the first failure.
     `wave_gate_sources.rs`.
 - Rules:
   - a check that could not read its input never reads as a pass: engine-layers and route-tags
-    exit 2 (`inputs_that_were_never_read_do_not_pass` in both test files), and the ORBAT gate
-    exits 1 with the cause named (`a_missing_target_never_reads_as_a_pass`);
+    exit 2 (`engine_layer_gate_refuses_a_checkout_it_cannot_read` and
+    `inputs_that_were_never_read_do_not_pass` in the test files), and the ORBAT gate exits 1
+    with the cause named (`a_missing_target_never_reads_as_a_pass`);
   - every matcher is a compiled constant, probed on known subjects before it judges source;
-  - every pin in `engine_layer_rules.rs` carries its file, exact count and reason, and changing
-    one is a reviewed edit (`naming_the_frame_vocabulary_outside_the_boundary_fails`,
-    `a_new_gpu_module_import_in_the_map_engine_fails`,
-    `the_scenario_tree_reaching_outside_itself_fails`).
+  - the engine-layer gate passes this checkout with every rule judged
+    (`engine_layer_gate_passes_this_checkout_with_every_rule_judged`); its pins and rules are
+    tested beside them in `tools_v2/verification-core/src/repository_laws/engine_layers/tests/`.
 
 ## Related documentation
 

@@ -2,9 +2,9 @@
 pub(super) mod files;
 pub(super) mod gameplay_receipt;
 mod graph;
-mod legacy_archive;
 mod publication;
 mod relationships;
+mod unversioned_export_archive;
 mod upload_bundle;
 mod validation;
 

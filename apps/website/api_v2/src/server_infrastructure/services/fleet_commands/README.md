@@ -37,7 +37,10 @@ executor whose kind the action needs, checks that the requester still holds admi
 authority, and requires the current fencing token on every later report, so an executor whose
 lease lapsed cannot overwrite a newer claim; a
 [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) names its open runtime session, and a
-command bound to another session fails. `command_reconciliation.rs` runs every pass over all
+command bound to another session fails. In a test build `record_result` passes the failpoint
+`FleetCommandResultBeforeCommit` after the outcome's audit row; the executor handlers pass
+`FleetCommandClaimAfterCommit` and `FleetCommandResultAfterCommit` after their commits.
+`command_reconciliation.rs` runs every pass over all
 servers, skipping rows another transaction holds. Lock order: server, runtime session, command rows.
 
 ## Boundaries

@@ -36,11 +36,15 @@ register.rs ──▶ fingerprint.rs (source, configuration) ──▶ [--execut
    property list exactly on `property` checks, and every check named by some requirement.
 2. `fingerprint.rs` hashes the source: every tracked or untracked, not ignored file
    (`git ls-files --cached --others --exclude-standard`) under `apps/`, `tools_v2/`,
-   `contracts_v2/`, `.cargo/`, `.github/` and the evidence folder with a source extension (Markdown included), plus a fixed list of root
-   files (the workspace manifest and lock, the toolchain, format and lint settings,
-   `.editorconfig`, `.gitignore`); a symlink anywhere on an input's path fails the run. The configuration digest covers the three `.env`
-   files and `deploy.env` (present or absent), every `PROPTEST_*` variable, and a fixed list of
-   build and API environment variables; no value is printed.
+   `contracts_v2/`, `.cargo/`, `.github/` and the evidence folder with a source extension
+   (Markdown included), plus a fixed list of root files (the workspace manifest and lock, the
+   toolchain, format and lint settings, `AGENTS.md`, `.editorconfig`, `.gitignore`). A symlink
+   that Git tracks (index mode 120000) is hashed as its link text under its own tag, and only
+   when it resolves to an existing entry inside the repository; any other symlink on an input's
+   path (one Git does not track as a symlink, or a symlinked ancestor directory) fails the run.
+   The configuration digest covers the three `.env` files and `deploy.env` (present or absent),
+   every `PROPTEST_*` variable, and a fixed list of build and API environment variables, and
+   refuses a symlinked configuration file; no value is printed.
 3. With `--execute`, every check that carries a command and is not `operational` runs once per
    distinct command, from the repository root, under its timeout, with `PROPTEST_RNG_SEED` set
    and `PROPTEST_CASES` removed. The merged output becomes `<id>.log` and the receipt `<id>.json`
@@ -80,6 +84,14 @@ runner writes those receipts into the evidence folder.
   - evidence goes stale on any change to a fingerprinted file, Markdown included, or to the
     configuration, and after 24 hours
     (`stale_changed_failed_and_omitted_evidence_is_rejected` in `tests/evidence.rs`);
+  - a tracked symlink binds its link text, so retargeting it invalidates evidence, and it never
+    shares a hash input with a regular file holding the same bytes; an untracked, escaping or
+    dangling symlink fails the fingerprint
+    (`tracked_symlink_is_fingerprinted_stably_by_its_tagged_link_text`,
+    `retargeting_a_tracked_symlink_changes_the_fingerprint`,
+    `untracked_symlink_beside_an_accepted_tracked_symlink_is_refused`,
+    `tracked_symlink_resolving_outside_the_repository_or_nowhere_is_refused` in
+    `tests/source_fingerprint.rs`);
   - a receipt or log is published by an atomic rename inside a directory opened without
     following symlinks, and never writes through an existing link
     (`evidence_writes_do_not_follow_symlinks_or_modify_hardlinked_targets`);

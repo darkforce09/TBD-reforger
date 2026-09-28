@@ -1,0 +1,13 @@
+id = "T-1239"
+kind = "work"
+title = "Import the diagnostic equipment catalogue in the production watcher"
+summary = "apps/website/api_v2/src/background_workers/equipment_export_watcher.rs:9 only initialises the diagnostic catalogue and its poll loop (:20) imports only gameplay publications, so a new diagnostic publication is never imported in production; only tests poll it."
+class = "bug"
+status = "idea"
+notes = "No diagnostic publication source is configured in production; decide whether the diagnostic catalogue gets a source and a poll, or is documented as import-at-start only. Source: milestone V finding V-F44 (equipment viewer reproduction)."
+created_at = "2026-09-28T01:14:08Z"
+
+[scope]
+domain = "website"
+layer = "backend"
+component = "services"

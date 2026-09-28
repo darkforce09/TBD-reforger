@@ -1,0 +1,335 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ServerIntelContract",
+  "description": "The game-server registry as operators and members read it: the intel cards, one server's card, the live status stream and the administrator's registry writes. The root is one card.",
+  "$ref": "#/definitions/ServerIntel",
+  "definitions": {
+    "ServerIntel": {
+      "description": "One server intel card: the registration row, its live status (null before the first heartbeat), the modpack it requires (absent when none) and the terrain of the match it runs (null when none). required_modpack_id is absent when unset. GET /api/v1/servers/:id/status answers it (an inactive server only to an administrator, else 404); POST /api/v1/servers (201) and PATCH answer the written card.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "ip",
+        "port",
+        "is_active",
+        "status",
+        "terrain"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "ip": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "required_modpack_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "is_active": {
+          "type": "boolean"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ServerStatus"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "required_modpack": {
+          "$ref": "#/definitions/Modpack"
+        },
+        "terrain": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "everon",
+            "arland",
+            "custom",
+            null
+          ]
+        }
+      }
+    },
+    "ServerIntelList": {
+      "description": "GET /api/v1/servers (any signed-in member): the active servers, and inactive ones for an administrator, by name then id.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ServerIntel"
+          }
+        }
+      }
+    },
+    "ServerStatus": {
+      "description": "A server's live status row. current_match_id is absent when no match runs; ingame_time and ingame_weather are absent when the runtime has not reported them; telemetry_queue is absent until the runtime reports a queue reading. updated_at is the last heartbeat. GET /api/v1/servers/:id/status/stream sends the current row as its first data frame, then every broadcast of the same shape.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "server_id",
+        "is_online",
+        "player_count",
+        "max_players",
+        "server_fps",
+        "uptime_seconds",
+        "updated_at"
+      ],
+      "properties": {
+        "server_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "is_online": {
+          "type": "boolean"
+        },
+        "player_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_players": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "server_fps": {
+          "type": "number",
+          "minimum": 0
+        },
+        "uptime_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "current_match_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "ingame_time": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ingame_weather": {
+          "type": "string",
+          "minLength": 1
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "telemetry_queue": {
+          "$ref": "#/definitions/TelemetryQueueStatus"
+        }
+      }
+    },
+    "TelemetryQueueStatus": {
+      "description": "ServerStatus.telemetry_queue: the last outbound telemetry queue reading the server reported and when. Absent when the server never reported one. The same shape as match-telemetry.schema.json#/definitions/TelemetryQueueStatus.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "backlog",
+        "capacity",
+        "dropped_total",
+        "oldest_age_seconds",
+        "reported_at"
+      ],
+      "properties": {
+        "backlog": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "capacity": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "dropped_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "oldest_age_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reported_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "Modpack": {
+      "description": "One modpack manifest with its mods. At most one pack is current. workshop_url is absent when unset.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "version",
+        "total_size_bytes",
+        "is_current",
+        "created_at",
+        "mods"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "total_size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "workshop_url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "is_current": {
+          "type": "boolean"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "mods": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ModpackMod"
+          }
+        }
+      }
+    },
+    "ModpackMod": {
+      "description": "One mod of a modpack, key dependencies first, then by sort_order. workshop_id, mod_guid and version are absent when unset.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "modpack_id",
+        "name",
+        "is_key_dependency",
+        "sort_order"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "modpack_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "is_key_dependency": {
+          "type": "boolean"
+        },
+        "sort_order": {
+          "type": "integer"
+        },
+        "workshop_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mod_guid": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "ServerRegistration": {
+      "description": "POST /api/v1/servers body (administrator): name, ip and port are required; the port is 1 to 65535.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "ip",
+        "port"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ip": {
+          "type": "string",
+          "minLength": 1
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "required_modpack_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "is_active": {
+          "type": "boolean"
+        }
+      }
+    },
+    "ServerChange": {
+      "description": "PATCH /api/v1/servers/:id body (administrator): an absent key leaves its field unchanged; required_modpack_id null clears it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ip": {
+          "type": "string",
+          "minLength": 1
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "required_modpack_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "is_active": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

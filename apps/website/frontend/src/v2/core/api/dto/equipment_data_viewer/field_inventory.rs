@@ -1,4 +1,6 @@
 //! Mirrors the generated equipment viewer API contract.
+/// One page of the `fields` endpoint: native fields with their occurrence counts, or the
+/// occurrences of the selected field, with the total and the next page's cursor.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct EquipmentFieldPage {

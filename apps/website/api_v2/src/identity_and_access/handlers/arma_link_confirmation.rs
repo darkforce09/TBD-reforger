@@ -1,4 +1,9 @@
-//! Game confirmations consume link codes through the shared ownership transaction.
+//! Game confirmations consume link codes through the shared ownership transaction. A body that
+//! does not decode (a missing or unknown field included) answers through
+//! [`ApiError::from_json_rejection`].
+//!
+//! @contract arma-link.schema.json#/definitions/LinkConfirmRequest
+//! @contract arma-link.schema.json#/definitions/LinkConfirmation
 use crate::core::{application_state::AppState, error_handling::api_error::ApiError};
 use crate::identity_and_access::services::identity_linking::confirm_identity;
 use crate::server_infrastructure::models::machine_credential::ExecutorKind;
@@ -28,8 +33,7 @@ pub async fn ingest_link_confirm(
     body: Result<Json<LinkConfirmRequest>, JsonRejection>,
 ) -> Result<Json<Value>, ApiError> {
     caller.require_executor(ExecutorKind::ModRuntime)?;
-    let Json(req) =
-        body.map_err(|_| ApiError::bad_request("code, arma_id and arma_character are required"))?;
+    let Json(req) = body.map_err(ApiError::from_json_rejection)?;
     let arma_id = req.arma_id.trim();
     let confirmed = confirm_identity(
         &state,

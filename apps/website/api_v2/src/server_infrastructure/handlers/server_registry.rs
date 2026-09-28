@@ -12,15 +12,17 @@
 //!
 //! Each write answers with the same [`ServerIntelDto`] shape `GET /servers` serves, so an admin
 //! form can drop the row straight into the list it already renders.
+//!
+//! @contract server-intel.schema.json#/definitions/ServerRegistration
+//! @contract server-intel.schema.json#/definitions/ServerChange
 
 use std::net::IpAddr;
 
+use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::Json;
 use serde::{Deserialize, Deserializer};
-use serde_json::json;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -28,6 +30,7 @@ use crate::administration::models::audit_log::AuditSeverity;
 use crate::administration::services::audit_writer::{actor_display_name, write_audit};
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AdminUser;
 use crate::server_infrastructure::models::server::Server;
 
@@ -150,23 +153,11 @@ async fn require_modpack(pool: &PgPool, id: Uuid) -> Result<(), ApiError> {
     Ok(())
 }
 
-/// A malformed body is a 400 that says *what* was malformed.
-///
-/// A flat `bad_request("name, ip and port are required")` would be accurate for an empty body and
-/// a lie for anything else — measured over HTTP, `{"required_modpack_id": "not-a-uuid"}` would
-/// answer by naming three fields that were all present and correct. axum's own text names the
-/// offending field, and a deserialization failure carries nothing sensitive, so it is passed
-/// through in `details` (the field `ApiError` already has for exactly this — schema-validation
-/// messages use it in `factions.rs`).
-fn body_error(e: JsonRejection) -> ApiError {
-    ApiError::with_details(
-        StatusCode::BAD_REQUEST,
-        "invalid server payload (expected an object with name, ip and port)",
-        json!({ "reason": e.body_text() }),
-    )
-}
-
 /// `POST /api/v1/servers` — register a game server (admin).
+///
+/// A body that does not decode answers through [`ApiError::from_json_rejection`], whose 400
+/// message names the offending field (`{"required_modpack_id": "not-a-uuid"}` names
+/// `required_modpack_id`, not every required field).
 ///
 /// Returns **201** carrying the same [`ServerIntelDto`] shape `GET /servers` serves. A freshly
 /// created server has no `server_statuses` row, so `status` and `terrain` are both JSON `null`.
@@ -177,7 +168,7 @@ pub async fn create_server(
     admin: AdminUser,
     body: Result<Json<ServerInput>, JsonRejection>,
 ) -> Result<(StatusCode, Json<ServerIntelDto>), ApiError> {
-    let Json(input) = body.map_err(body_error)?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
     let Some(raw_name) = input.name.as_deref() else {
         return Err(ApiError::bad_request("name is required"));
     };
@@ -242,14 +233,14 @@ pub async fn create_server(
 pub async fn update_server(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
     body: Result<Json<ServerInput>, JsonRejection>,
 ) -> Result<Json<ServerIntelDto>, ApiError> {
     // Mirrors `get_server_status`: an unparseable uuid is a malformed request, not a missing row.
     let Ok(id) = Uuid::parse_str(&id) else {
         return Err(ApiError::bad_request("invalid id"));
     };
-    let Json(input) = body.map_err(body_error)?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
 
     let name = input.name.as_deref().map(validated_name).transpose()?;
     let ip = input.ip.as_deref().map(validated_ip).transpose()?;
@@ -360,7 +351,7 @@ pub async fn update_server(
 pub async fn deactivate_server(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<StatusCode, ApiError> {
     let Ok(id) = Uuid::parse_str(&id) else {
         return Err(ApiError::bad_request("invalid id"));

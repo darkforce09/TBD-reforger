@@ -43,7 +43,7 @@ fn api_v1_routes(dev: bool, version_limit: usize) -> Router<AppState> {
         .merge(crate::administration::routes())
         .merge(crate::match_telemetry::routes())
         .merge(crate::command_center::routes())
-        .merge(crate::community_content::routes())
+        .merge(crate::community_content::routes(dev))
 }
 
 /// Build the application: `/healthz`, `/metrics`, `/api/v1/*`, static `/uploads`, the optional

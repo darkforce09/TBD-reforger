@@ -1,17 +1,19 @@
 //! Bounded source pages; explicit expansion exposes complete values.
-use super::{ReadResult, failure, response};
+use super::{ReadResult, failure, response, viewer_query};
 use crate::community_content::{
     models::generated::equipment_data_viewer::source_inspection::EquipmentSourcePage,
     services::equipment_data_viewer::queries::{self, ViewerQuery},
 };
 use crate::core::application_state::AppState;
+use axum::extract::rejection::QueryRejection;
 use axum::extract::{Query, State};
 
 /// @route GET /api/v1/debug/equipment-data/selection
 pub async fn selection(
     State(state): State<AppState>,
-    Query(p): Query<ViewerQuery>,
+    query: Result<Query<ViewerQuery>, QueryRejection>,
 ) -> ReadResult<EquipmentSourcePage> {
+    let p = viewer_query(query)?;
     let service = state
         .equipment_data
         .select(p.dataset.as_deref())
@@ -28,8 +30,9 @@ pub async fn selection(
 /// @route GET /api/v1/debug/equipment-data/containers
 pub async fn containers(
     State(state): State<AppState>,
-    Query(p): Query<ViewerQuery>,
+    query: Result<Query<ViewerQuery>, QueryRejection>,
 ) -> ReadResult<EquipmentSourcePage> {
+    let p = viewer_query(query)?;
     let d = state
         .equipment_data
         .select(p.dataset.as_deref())
@@ -72,27 +75,34 @@ async fn inspect(
 /// @route GET /api/v1/debug/equipment-data/properties
 pub async fn properties(
     State(state): State<AppState>,
-    Query(p): Query<ViewerQuery>,
+    query: Result<Query<ViewerQuery>, QueryRejection>,
 ) -> ReadResult<EquipmentSourcePage> {
+    let p = viewer_query(query)?;
     inspect(state, p, "properties").await
 }
 /// @route GET /api/v1/debug/equipment-data/values
 pub async fn values(
     State(state): State<AppState>,
-    Query(p): Query<ViewerQuery>,
+    query: Result<Query<ViewerQuery>, QueryRejection>,
 ) -> ReadResult<EquipmentSourcePage> {
+    let p = viewer_query(query)?;
     inspect(state, p, "values").await
 }
 /// @route GET /api/v1/debug/equipment-data/documents
 pub async fn documents(
     State(state): State<AppState>,
-    Query(p): Query<ViewerQuery>,
+    query: Result<Query<ViewerQuery>, QueryRejection>,
 ) -> ReadResult<EquipmentSourcePage> {
+    let p = viewer_query(query)?;
     inspect(state, p, "document").await
 }
 
 /// @route GET /api/v1/debug/equipment-data/resource-cards
-pub async fn resource_cards(State(state): State<AppState>, Query(p): Query<ViewerQuery>) -> ReadResult<crate::community_content::models::generated::equipment_data_viewer::resource_cards::EquipmentResourceCardPage>{
+pub async fn resource_cards(
+    State(state): State<AppState>,
+    query: Result<Query<ViewerQuery>, QueryRejection>,
+) -> ReadResult<crate::community_content::models::generated::equipment_data_viewer::resource_cards::EquipmentResourceCardPage>{
+    let p = viewer_query(query)?;
     let service = state
         .equipment_data
         .select(p.dataset.as_deref())

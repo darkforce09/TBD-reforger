@@ -65,7 +65,8 @@ pub(super) fn vehicle_row(
 }
 
 pub(super) fn vehicle_items() -> Vec<RegistryItem> {
-    let mut v = golden_items(); // 8 characters + 13 gear — none may reach this tree
+    // 8 characters + 13 gear (none may reach this tree) + 4 NATO vehicles under `NATO/US_Army/Vehicles`
+    let mut v = golden_items();
     v.push(vehicle_row(
         "{A}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469.et",
         "UAZ469",

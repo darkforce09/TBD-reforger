@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MemberDirectoryContract",
+  "description": "GET /api/v1/members?q=&limit=&offset= (leader): the member search the slot assignment picker and the event access roster use. The root is one page.",
+  "$ref": "#/definitions/MemberSearchPage",
+  "definitions": {
+    "MemberSearchPage": {
+      "description": "Members who are not banned, by username; q matches the username or Discord handle, ignoring case. limit defaults to 20 and is at most 100.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data",
+        "total",
+        "limit",
+        "offset"
+      ],
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MemberSummary"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "MemberSummary": {
+      "description": "One member. avatar_url is absent when unset.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "discord_id",
+        "username"
+      ],
+      "properties": {
+        "discord_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "username": {
+          "type": "string"
+        },
+        "avatar_url": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

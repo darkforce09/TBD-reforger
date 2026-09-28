@@ -11,6 +11,7 @@ it is, and read the live document it points at for how it is now.
 
 ```text
 documentation_v2/archive/
+├── api_v2_completion/          execution records of finished milestones of the API completion program
 ├── api_v2_refactor/            inventory, plan and phase handoffs of the API's domain restructuring
 ├── assets_v2_relocation/       census, storage plan and handoff of the move of assets into assets_v2
 ├── audits/                     codebase and architecture audits and their finding-to-ticket maps
@@ -45,6 +46,7 @@ authority.
 
 | Topic | Live replacement |
 |---|---|
+| API completion program | [API verification evidence](/documentation_v2/website/api_v2/verification_evidence/README.md) |
 | API restructuring | [API documentation](/documentation_v2/website/api_v2/README.md) |
 | Assets and contracts moves | [assets](/documentation_v2/assets_v2/README.md), [contracts](/documentation_v2/contracts_v2/README.md) |
 | Documentation move | [documentation entry](/documentation_v2/README.md), [documentation standards](/documentation_v2/standards/documentation_standards.md) |

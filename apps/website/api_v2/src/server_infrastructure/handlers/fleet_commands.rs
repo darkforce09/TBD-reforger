@@ -3,7 +3,7 @@
 //! reauthorizes the administrator on that transaction and audits in it.
 
 use axum::extract::rejection::{JsonRejection, QueryRejection};
-use axum::extract::{Path, Query, State};
+use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::Json;
 use serde::Deserialize;
@@ -12,6 +12,7 @@ use uuid::Uuid;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::{AdminUser, role_rank};
 use crate::identity_and_access::services::session_authorization::authorize_on_connection;
 use crate::server_infrastructure::models::fleet_command::{
@@ -50,13 +51,11 @@ async fn lock_server_as_admin(
 pub async fn request_server_command(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
     body: Result<Json<FleetCommandRequest>, JsonRejection>,
 ) -> Result<(StatusCode, Json<FleetCommandReceipt>), ApiError> {
     let server = parse(&id, "server id")?;
-    let Json(request) = body.map_err(|rejection| {
-        ApiError::bad_request(format!("invalid body: {}", rejection.body_text()))
-    })?;
+    let Json(request) = body.map_err(ApiError::from_json_rejection)?;
     let mut transaction = state.pool.begin().await?;
     let (actor, active) = lock_server_as_admin(&mut transaction, &state, &admin, server).await?;
     if !active {
@@ -81,19 +80,31 @@ fn default_limit() -> i64 {
     50
 }
 
+/// A server's command receipts, newest first, one page at a time; an unknown server answers 404,
+/// and a query that does not decode answers 400 through [`ApiError::from_query_rejection`].
+///
 /// @route GET /api/v1/servers/:id/commands
 pub async fn list_server_commands(
     State(state): State<AppState>,
     _admin: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
     page: Result<Query<CommandPage>, QueryRejection>,
 ) -> Result<Json<FleetCommandList>, ApiError> {
     let server = parse(&id, "server id")?;
-    let Query(page) = page.map_err(|_| ApiError::bad_request("invalid limit or offset"))?;
+    let Query(page) = page.map_err(|rejection| {
+        ApiError::from_query_rejection(rejection, "server command page query")
+    })?;
     if !(1..=100).contains(&page.limit) || page.offset < 0 {
         return Err(ApiError::bad_request(
             "limit must be 1 to 100 and offset non-negative",
         ));
+    }
+    let exists: bool = sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM servers WHERE id = $1)")
+        .bind(server)
+        .fetch_one(&state.pool)
+        .await?;
+    if !exists {
+        return Err(ApiError::not_found("server not found"));
     }
     Ok(Json(FleetCommandList {
         items: list_receipts(&state.pool, server, page.limit, page.offset).await?,
@@ -104,7 +115,7 @@ pub async fn list_server_commands(
 pub async fn get_server_command(
     State(state): State<AppState>,
     _admin: AdminUser,
-    Path((id, command)): Path<(String, String)>,
+    PathParams((id, command)): PathParams<(String, String)>,
 ) -> Result<Json<FleetCommandReceipt>, ApiError> {
     let (server, command) = (parse(&id, "server id")?, parse(&command, "command id")?);
     Ok(Json(load_receipt(&state.pool, server, command).await?))
@@ -114,7 +125,7 @@ pub async fn get_server_command(
 pub async fn cancel_server_command(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path((id, command)): Path<(String, String)>,
+    PathParams((id, command)): PathParams<(String, String)>,
 ) -> Result<Json<FleetCommandReceipt>, ApiError> {
     let (server, command) = (parse(&id, "server id")?, parse(&command, "command id")?);
     let mut transaction = state.pool.begin().await?;

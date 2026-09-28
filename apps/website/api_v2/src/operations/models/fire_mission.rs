@@ -1,4 +1,6 @@
 //! The saved mortar firing solution model.
+//!
+//! @contract fire-mission.schema.json#/definitions/FireMission
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

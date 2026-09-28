@@ -29,8 +29,8 @@ use website_api::core::{database, http_router};
 
 use audit_shutdown_support::{
     AUDIT_STREAM_PATH, ApiProcess, SseEvent, http_client, open_process_stream, open_router_stream,
-    plant_rows, publications_after, publish_all, retained_floor, server_status_stream_path,
-    wait_published,
+    plant_rows, publications_after, publish_all, register_silent_server, retained_floor,
+    server_status_stream_path, wait_published,
 };
 
 const SUITE: &str = "audit_replay_shutdown";
@@ -107,7 +107,7 @@ async fn audit_replay_shutdown_ends_open_streams_so_clients_reconnect_and_replay
         .await;
     let opened_after = ready.sequence();
     assert_ready(&ready, opened_after, retained_floor(&pool).await);
-    let status_path = server_status_stream_path(Uuid::new_v4());
+    let status_path = server_status_stream_path(register_silent_server(&pool, SUITE).await);
     let mut status = open_process_stream(&api, &client, &token, &status_path, None).await;
 
     let served = plant_rows(&pool, &tag, 3).await;
@@ -152,7 +152,7 @@ async fn audit_replay_shutdown_ends_open_streams_so_clients_reconnect_and_replay
     );
     assert!(
         status_events.is_empty(),
-        "an unknown server's status stream closes with no event: {status_events:?}"
+        "a silent server's status stream closes with no event: {status_events:?}"
     );
     let mut delivered = received(&live);
     // Only rows may precede the end: shutdown adds no event of its own.
@@ -204,7 +204,7 @@ async fn audit_replay_shutdown_ends_open_streams_so_clients_reconnect_and_replay
     let mut status = open_router_stream(
         &app,
         &token,
-        &server_status_stream_path(Uuid::new_v4()),
+        &server_status_stream_path(register_silent_server(&pool, SUITE).await),
         None,
     )
     .await;

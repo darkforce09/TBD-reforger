@@ -57,7 +57,7 @@ class TBD_VehicleStateWireStruct
 }
 
 //! Root of the second parse. Declares `vehicles` and nothing else.
-//! @contract mission.schema.json#/properties/vehicles
+//! @contract mission.schema.json#/ partial
 class TBD_VehicleStateDocStruct
 {
 	ref array<ref TBD_VehicleStateWireStruct> vehicles; //!< `vehicles[]`

@@ -26,12 +26,13 @@
 //! instead of quietly becoming a pass. Every check names explicit files, so no recursive search
 //! and no ignore-file default is in play.
 //!
-//! ── `--features "doc mission"`, NOT `doc` ALONE ──────────────────────────────────────────────
+//! ── `--features "scenario store"`: THE MISSION-AUTHORING TIER ────────────────────────────────
 //!
-//! `doc/store.rs`'s own tests call `crate::mission::compile::compile_payload`, and `mission` is a
-//! separate feature gate, so `--features doc` cannot COMPILE the lib test target (`error[E0433]:
-//! cannot find mission in crate`). Adding `mission` cannot weaken the gate: strictly more code
-//! compiled, selectors unchanged, one shared test binary instead of a second feature set.
+//! The store rows exercise `data/store` (the Yjs document store, feature `store`), and the derive
+//! and compile rows exercise `data/scenario` (the mission AST and compiler, feature `scenario`).
+//! `store` enables `scenario`, and `scenario` is the crate default, so the pair builds exactly what
+//! `store` alone builds; the pin names both so its failure text shows the whole tier, and every
+//! row of the tier shares one lib test binary.
 //!
 //! ── A SELECTOR THAT MATCHES NOTHING IS NOT A PASS ────────────────────────────────────────────
 //!
@@ -220,7 +221,7 @@ type PinRow = (&'static str, Option<&'static str>, bool, &'static str, Option<&'
 
 #[rustfmt::skip]
 const CARGO_PINS: &[PinRow] = &[
-    // A / B / H — store feature. `scenario store`, not `store` alone; module docs §2.
+    // A / B / H — the mission-authoring tier `scenario store`; module docs §2.
     (MC, MSN, true, "place_", None),
     (MC, MSN, true, "set_leader_exclusive", None),
     (MC, MSN, true, "empty_squad_garbage_collected", None),
@@ -240,13 +241,14 @@ const CARGO_PINS: &[PinRow] = &[
     (MC, MSN, true, "derives_from_editor_sorted", None),
     (MC, MSN, true, "compile_export_orbat_loadout", Some("derive/compile loadout gates")),
     // ── THE COMPILE BOUNDARY. Read this before trimming the list above. ─────────────────────
-    // Every selector up to here proves the editor can AUTHOR an ORBAT value (doc::place_orbat,
-    // doc::store), that the map can DRAW it (slots_gpu), or that the ORBAT derive keeps it
-    // (mission::orbat, mission::compile). None of them crosses the edge where the document is
-    // handed to the game server. MEASURED 2026-07-26 without these two rows: a payload authoring
-    // a squad's leaderSlotId, a slot's tag / callsign / rank / stance and the whole vehicle roster
-    // compiles to a document carrying none of them, with this gate printing ALL PASS. A gate is
-    // worth nothing until you know what it looked at. These two rows are that missing edge — the
+    // Every selector up to here proves the editor can AUTHOR an ORBAT value
+    // (data::store::operations::place_orbat, data::store::rows), that the map can DRAW it
+    // (overlay::symbology), or that the ORBAT derive keeps it (data::scenario::ast::factions,
+    // data::scenario::compiler). None of them crosses the edge where the document is handed to
+    // the game server: without these two rows, a payload authoring a squad's leaderSlotId, a
+    // slot's tag / callsign / rank / stance and the whole vehicle roster could compile to a
+    // document carrying none of them while this gate prints ALL PASS. A gate is worth nothing
+    // until you know what it looked at. These two rows are that edge — the
     // ledger walks each value from the saved payload to the serialized wire against
     // mission.schema.json, so a widened contract turns the newly-legal key's row red and the dead
     // feature becomes visible work; the second pins the compiled slot's key set, so nothing is

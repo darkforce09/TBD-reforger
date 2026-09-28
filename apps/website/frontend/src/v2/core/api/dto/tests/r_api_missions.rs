@@ -4,10 +4,15 @@ use super::*;
 
 #[test]
 fn mission_detail() {
-    // `json_payload` is the editor superset, deliberately opaque (`Value`).
-    assert_golden::<MissionDetail>(
-        golden!("GET__missions__512d8658-7025-4a70-94e9-a1b44a7aa155.json"),
-        &["current_version/json_payload"],
+    // `json_payload` is the editor superset, deliberately opaque (`Value`); so are the armory
+    // lines, which the dossier and the armory editor read as JSON.
+    const G: &str = golden!("GET__missions__512d8658-7025-4a70-94e9-a1b44a7aa155.json");
+    assert_golden::<MissionDetail>(G, &["armory/*", "current_version/json_payload"]);
+    let d: MissionDetail = serde_json::from_str(G).unwrap();
+    assert_eq!(
+        d.armory.len(),
+        4,
+        "the golden carries the four armory lines the event hub lists for this mission"
     );
 }
 
@@ -252,9 +257,8 @@ fn mission_detail_of_the_first_pending_submission() {
     );
 }
 
-/// The row a submission or a decision answers with has no captured golden of its own — a decision
-/// is a write — so its shape is held against the captured listing's row with the card-only
-/// decoration removed, which is exactly how the backend composes the card from the row.
+/// The row a submission or a decision answers with is the card without its decoration, which is
+/// exactly how the backend composes the card from the row; every captured card holds that shape.
 #[test]
 fn mission_row_is_the_card_without_its_decoration() {
     let page: Paginated<Value> = serde_json::from_str(golden!("GET__missions.json")).unwrap();
@@ -269,4 +273,32 @@ fn mission_row_is_the_card_without_its_decoration() {
         let text = Value::Object(row).to_string();
         assert_golden::<MissionRow>(&text, &[]);
     }
+}
+
+/// The rows the review writes answer, in capture order: the rejection carries its reason and
+/// reviewer, the resubmission clears both, and the approval names the artifact it decided. Their
+/// request-time stamps hold the placeholders of the API's golden normalisation table.
+#[test]
+fn mission_rows_answered_by_a_rejection_a_resubmission_and_an_approval() {
+    const REJECTED: &str =
+        golden!("POST__approvals__00000000-0000-4000-c000-000000000004__reject.json");
+    const RESUBMITTED: &str =
+        golden!("POST__missions__00000000-0000-4000-c000-000000000004__submit.json");
+    const APPROVED: &str =
+        golden!("POST__approvals__00000000-0000-4000-c000-000000000004__approve.json");
+    for golden in [REJECTED, RESUBMITTED, APPROVED] {
+        assert_golden::<MissionRow>(golden, &[]);
+    }
+    let rejected: MissionRow = serde_json::from_str(REJECTED).unwrap();
+    let resubmitted: MissionRow = serde_json::from_str(RESUBMITTED).unwrap();
+    let approved: MissionRow = serde_json::from_str(APPROVED).unwrap();
+    assert_eq!(rejected.status, "rejected");
+    assert!(rejected.rejection_reason.is_some() && rejected.reviewed_by.is_some());
+    assert_eq!(resubmitted.status, "pending_approval");
+    assert!(resubmitted.rejection_reason.is_none() && resubmitted.reviewed_by.is_none());
+    assert_eq!(approved.status, "live");
+    assert_eq!(
+        approved.approved_artifact_id.as_deref(),
+        Some("00000000-0000-4000-f000-000000000004")
+    );
 }

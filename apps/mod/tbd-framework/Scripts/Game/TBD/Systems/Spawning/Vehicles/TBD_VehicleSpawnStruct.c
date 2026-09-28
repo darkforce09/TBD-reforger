@@ -49,7 +49,7 @@ class TBD_VehicleSpawnStruct
 }
 
 //! Root of the vehicles pass: declares `vehicles` and nothing else.
-//! @contract mission.schema.json#/properties/vehicles
+//! @contract mission.schema.json#/ partial
 class TBD_VehicleSpawnDocStruct
 {
 	ref array<ref TBD_VehicleSpawnStruct> vehicles; //!< JSON `vehicles`; allocated even when absent

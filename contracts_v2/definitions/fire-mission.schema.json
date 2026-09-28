@@ -1,0 +1,279 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FireMissionContract",
+  "description": "Mortar fire missions: the ballistic solution for a firing point and a target in map metres, and the saved missions of an event. The root is the solution.",
+  "$ref": "#/definitions/FireSolution",
+  "definitions": {
+    "FireSolution": {
+      "description": "POST /api/v1/fire-missions/solve answer: range, bearing in degrees and mils, elevation, the lowest charge that reaches, and time of flight. A target out of range answers 422 with this shape under details.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "weapon_system",
+        "distance_m",
+        "azimuth_deg",
+        "azimuth_mils",
+        "elevation_mils",
+        "charge",
+        "time_of_flight_s"
+      ],
+      "properties": {
+        "weapon_system": {
+          "type": "string",
+          "enum": [
+            "M252 81mm",
+            "M821 81mm",
+            "2B14 82mm",
+            "M120 120mm"
+          ]
+        },
+        "distance_m": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "azimuth_deg": {
+          "type": "number",
+          "minimum": 0,
+          "exclusiveMaximum": 360
+        },
+        "azimuth_mils": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "elevation_mils": {
+          "type": "integer"
+        },
+        "charge": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "time_of_flight_s": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "FireSolveRequest": {
+      "description": "POST /api/v1/fire-missions/solve body: the weapon key (exact spelling) and the firing point and target in map metres.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "weapon_system",
+        "fp_x",
+        "fp_y",
+        "tgt_x",
+        "tgt_y"
+      ],
+      "properties": {
+        "weapon_system": {
+          "type": "string",
+          "enum": [
+            "M252 81mm",
+            "M821 81mm",
+            "2B14 82mm",
+            "M120 120mm"
+          ]
+        },
+        "fp_x": {
+          "type": "number"
+        },
+        "fp_y": {
+          "type": "number"
+        },
+        "tgt_x": {
+          "type": "number"
+        },
+        "tgt_y": {
+          "type": "number"
+        }
+      }
+    },
+    "FireMissionSave": {
+      "description": "POST /api/v1/fire-missions body: the solve inputs, the two grid references and the event the mission belongs to (absent or null for none).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "weapon_system",
+        "fp_x",
+        "fp_y",
+        "tgt_x",
+        "tgt_y",
+        "fp_grid",
+        "target_grid"
+      ],
+      "properties": {
+        "weapon_system": {
+          "type": "string",
+          "enum": [
+            "M252 81mm",
+            "M821 81mm",
+            "2B14 82mm",
+            "M120 120mm"
+          ]
+        },
+        "fp_x": {
+          "type": "number"
+        },
+        "fp_y": {
+          "type": "number"
+        },
+        "tgt_x": {
+          "type": "number"
+        },
+        "tgt_y": {
+          "type": "number"
+        },
+        "event_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "fp_grid": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_grid": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "FireMission": {
+      "description": "One saved fire mission. event_id is absent for a mission outside an event; the map coordinates and the charge, azimuth_mils and time_of_flight_s are null on rows stored before they were recorded.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "created_by",
+        "weapon_system",
+        "fp_grid",
+        "target_grid",
+        "distance_m",
+        "azimuth_deg",
+        "elevation_mils",
+        "fp_x",
+        "fp_y",
+        "tgt_x",
+        "tgt_y",
+        "azimuth_mils",
+        "charge",
+        "time_of_flight_s",
+        "created_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "event_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "created_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "weapon_system": {
+          "type": "string"
+        },
+        "fp_grid": {
+          "type": "string"
+        },
+        "target_grid": {
+          "type": "string"
+        },
+        "distance_m": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "azimuth_deg": {
+          "type": "number"
+        },
+        "elevation_mils": {
+          "type": "integer"
+        },
+        "fp_x": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "fp_y": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "tgt_x": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "tgt_y": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "azimuth_mils": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "charge": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "time_of_flight_s": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "SavedFireMission": {
+      "description": "POST /api/v1/fire-missions answer (201): the solution and the stored mission.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "solution",
+        "fire_mission"
+      ],
+      "properties": {
+        "solution": {
+          "$ref": "#/definitions/FireSolution"
+        },
+        "fire_mission": {
+          "$ref": "#/definitions/FireMission"
+        }
+      }
+    },
+    "FireMissionList": {
+      "description": "GET /api/v1/events/:id/fire-missions (any signed-in member): the event's saved fire missions.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FireMission"
+          }
+        }
+      }
+    }
+  }
+}

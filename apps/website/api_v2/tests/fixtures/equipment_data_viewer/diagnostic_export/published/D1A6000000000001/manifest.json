@@ -1,0 +1,35 @@
+{
+  "schema_version": 2,
+  "generation_id": "D1A6000000000001",
+  "resource_count": 3,
+  "files": {
+    "generation.json": {
+      "bytes": 1077,
+      "sha256": "2f592c6d088f16a8d4c0fcea3e3a00716cb7525070e1e2f2d35de8c4b97f283d"
+    },
+    "records/backpack_fixture.json": {
+      "bytes": 2048,
+      "sha256": "456f81c3d0802bf765e2ee34ef94ace0d317c4cd3e0914764f2b14b7196c081a"
+    },
+    "records/pouch_fixture.json": {
+      "bytes": 962,
+      "sha256": "c2502388de9c649cb90f7502fcf14777ecbacb0c1b187351a502c61dcbbabd40"
+    },
+    "records/truck_fixture.json": {
+      "bytes": 1097,
+      "sha256": "580c18455632f23d644f3e723dd9ddb6aaaa78eef79657174811ae0589bead96"
+    },
+    "sources/backpack_fixture.json": {
+      "bytes": 11862,
+      "sha256": "312c1f1afaf9208f05c6fd8df68f01e2702c572c04bf70721c770000e3fdd170"
+    },
+    "sources/pouch_fixture.json": {
+      "bytes": 6284,
+      "sha256": "1b56ac6614793feba8baaaf857e1b9b68e0f9119a06409cd543de02fd44ffaf0"
+    },
+    "sources/truck_fixture.json": {
+      "bytes": 6024,
+      "sha256": "1dc3e84b1a4819b84ba6e58dbf9995a3b998be74772905239332dc61ca1a2ecd"
+    }
+  }
+}

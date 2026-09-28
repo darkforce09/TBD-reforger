@@ -1,17 +1,19 @@
 //! Dataset availability and generation-pinned summaries.
-use super::{ReadResult, failure, response};
+use super::{ReadResult, failure, response, viewer_query};
 use crate::community_content::{
     models::generated::equipment_data_viewer::dataset::EquipmentDatasetStatus,
     services::equipment_data_viewer::queries::ViewerQuery,
 };
 use crate::core::application_state::AppState;
+use axum::extract::rejection::QueryRejection;
 use axum::extract::{Query, State};
 
 /// @route GET /api/v1/debug/equipment-data/status
 pub async fn status(
     State(state): State<AppState>,
-    Query(p): Query<ViewerQuery>,
+    query: Result<Query<ViewerQuery>, QueryRejection>,
 ) -> ReadResult<EquipmentDatasetStatus> {
+    let p = viewer_query(query)?;
     response(
         p.dataset.clone().unwrap_or_else(|| "gameplay".into()),
         state
@@ -27,8 +29,9 @@ pub async fn status(
 /// @route GET /api/v1/debug/equipment-data/overview
 pub async fn overview(
     State(state): State<AppState>,
-    Query(p): Query<ViewerQuery>,
+    query: Result<Query<ViewerQuery>, QueryRejection>,
 ) -> ReadResult<EquipmentDatasetStatus> {
+    let p = viewer_query(query)?;
     let dataset = state
         .equipment_data
         .select(p.dataset.as_deref())

@@ -1,0 +1,525 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MissionLibraryContract",
+  "description": "The mission library: the catalog page, one mission's dossier, bookmarks, the armory and the author's mission writes. Mission writes answer mission-review.schema.json#/definitions/MissionRow. The root is the catalog page.",
+  "$ref": "#/definitions/MissionLibraryPage",
+  "definitions": {
+    "MissionLibraryPage": {
+      "description": "GET /api/v1/missions?scope=&terrain=&mode=&player_count=&q=&limit=&offset= (any signed-in member): scope global (the default: live missions and the caller's own not archived), mine or bookmarked, newest edit first. limit defaults to 20 and is at most 100.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data",
+        "total",
+        "limit",
+        "offset"
+      ],
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MissionCard"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "MissionCard": {
+      "description": "One mission row with its author's name and avatar (empty when unknown) and whether the caller bookmarked it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "author_id",
+        "terrain",
+        "game_mode",
+        "weather",
+        "time_of_day",
+        "max_players",
+        "status",
+        "created_at",
+        "updated_at",
+        "author_name",
+        "author_avatar",
+        "bookmarked"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "author_id": {
+          "type": "string"
+        },
+        "terrain": {
+          "$ref": "#/definitions/TerrainType"
+        },
+        "custom_terrain_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "game_mode": {
+          "$ref": "#/definitions/GameMode"
+        },
+        "weather": {
+          "$ref": "#/definitions/WeatherType"
+        },
+        "time_of_day": {
+          "type": "string",
+          "pattern": "^[0-9]{2}:[0-9]{2}:[0-9]{2}$"
+        },
+        "max_players": {
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/definitions/MissionStatus"
+        },
+        "thumbnail_url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "briefing": {
+          "type": "string",
+          "minLength": 1
+        },
+        "current_version_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "approved_artifact_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "rejection_reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewed_by": {
+          "type": "string"
+        },
+        "reviewed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "author_name": {
+          "type": "string"
+        },
+        "author_avatar": {
+          "type": "string"
+        },
+        "bookmarked": {
+          "type": "boolean"
+        }
+      }
+    },
+    "MissionDetail": {
+      "description": "GET /api/v1/missions/:id (any signed-in member who may view the mission, else 404): the card, the armory in sort order and the current version (absent before the first save).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "author_id",
+        "terrain",
+        "game_mode",
+        "weather",
+        "time_of_day",
+        "max_players",
+        "status",
+        "created_at",
+        "updated_at",
+        "author_name",
+        "author_avatar",
+        "bookmarked",
+        "armory"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "author_id": {
+          "type": "string"
+        },
+        "terrain": {
+          "$ref": "#/definitions/TerrainType"
+        },
+        "custom_terrain_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "game_mode": {
+          "$ref": "#/definitions/GameMode"
+        },
+        "weather": {
+          "$ref": "#/definitions/WeatherType"
+        },
+        "time_of_day": {
+          "type": "string",
+          "pattern": "^[0-9]{2}:[0-9]{2}:[0-9]{2}$"
+        },
+        "max_players": {
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/definitions/MissionStatus"
+        },
+        "thumbnail_url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "briefing": {
+          "type": "string",
+          "minLength": 1
+        },
+        "current_version_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "approved_artifact_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "rejection_reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewed_by": {
+          "type": "string"
+        },
+        "reviewed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "author_name": {
+          "type": "string"
+        },
+        "author_avatar": {
+          "type": "string"
+        },
+        "bookmarked": {
+          "type": "boolean"
+        },
+        "armory": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MissionArmory"
+          }
+        },
+        "current_version": {
+          "$ref": "#/definitions/MissionVersion"
+        }
+      }
+    },
+    "MissionArmory": {
+      "description": "One armory line of a mission. The same shape as event-hub.schema.json#/definitions/MissionArmory. quantity is absent when the item is unlimited.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "mission_id",
+        "faction",
+        "category",
+        "item_name",
+        "sort_order"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "faction": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "item_name": {
+          "type": "string"
+        },
+        "quantity": {
+          "type": "integer"
+        },
+        "icon": {
+          "type": "string"
+        },
+        "sort_order": {
+          "type": "integer"
+        }
+      }
+    },
+    "MissionVersion": {
+      "description": "One immutable saved version of a mission. The same shape as mission-review.schema.json#/definitions/MissionVersion.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "mission_id",
+        "semver",
+        "json_payload",
+        "created_by",
+        "created_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "semver": {
+          "type": "string",
+          "minLength": 1
+        },
+        "json_payload": {
+          "type": "object"
+        },
+        "editor_notes": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_by": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "TerrainType": {
+      "type": "string",
+      "enum": [
+        "everon",
+        "arland",
+        "custom"
+      ]
+    },
+    "GameMode": {
+      "type": "string",
+      "enum": [
+        "pve_coop",
+        "pvp",
+        "zeus"
+      ]
+    },
+    "WeatherType": {
+      "type": "string",
+      "enum": [
+        "clear",
+        "overcast",
+        "heavy_rain",
+        "dense_fog"
+      ]
+    },
+    "MissionStatus": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "pending_approval",
+        "live",
+        "rejected",
+        "archived"
+      ]
+    },
+    "BookmarkState": {
+      "description": "POST /api/v1/missions/:id/bookmark answers bookmarked true; DELETE answers bookmarked false. Both are idempotent.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bookmarked"
+      ],
+      "properties": {
+        "bookmarked": {
+          "type": "boolean"
+        }
+      }
+    },
+    "MissionArmoryList": {
+      "description": "GET /api/v1/missions/:id/armory and the PUT answer: the mission's armory lines in sort order.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MissionArmory"
+          }
+        }
+      }
+    },
+    "MissionArmoryChange": {
+      "description": "PUT /api/v1/missions/:id/armory body (the author or an administrator): the complete new armory; every item needs a faction and an item_name.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ArmoryItemWrite"
+          }
+        }
+      }
+    },
+    "ArmoryItemWrite": {
+      "description": "One armory line to store. quantity null or absent means unlimited.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "faction",
+        "item_name"
+      ],
+      "properties": {
+        "faction": {
+          "type": "string",
+          "minLength": 1
+        },
+        "category": {
+          "type": "string"
+        },
+        "item_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "quantity": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "icon": {
+          "type": "string"
+        },
+        "sort_order": {
+          "type": "integer"
+        }
+      }
+    },
+    "MissionCreation": {
+      "description": "POST /api/v1/missions body (mission maker); answers 201 with the MissionRow. title, terrain, game_mode and max_players are required in substance; payload is an optional first editor payload.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "terrain": {
+          "$ref": "#/definitions/TerrainType"
+        },
+        "custom_terrain_name": {
+          "type": "string"
+        },
+        "game_mode": {
+          "$ref": "#/definitions/GameMode"
+        },
+        "weather": {
+          "$ref": "#/definitions/WeatherType"
+        },
+        "time_of_day": {
+          "type": "string"
+        },
+        "max_players": {
+          "type": "integer"
+        },
+        "briefing": {
+          "type": "string"
+        },
+        "payload": {
+          "type": [
+            "object",
+            "null"
+          ]
+        }
+      }
+    },
+    "MissionChange": {
+      "description": "PATCH /api/v1/missions/:id body (the author or an administrator): an absent key leaves its field unchanged.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "terrain": {
+          "$ref": "#/definitions/TerrainType"
+        },
+        "custom_terrain_name": {
+          "type": "string"
+        },
+        "game_mode": {
+          "$ref": "#/definitions/GameMode"
+        },
+        "weather": {
+          "$ref": "#/definitions/WeatherType"
+        },
+        "time_of_day": {
+          "type": "string"
+        },
+        "max_players": {
+          "type": "integer"
+        },
+        "briefing": {
+          "type": "string"
+        },
+        "thumbnail_url": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/MissionStatus"
+        }
+      }
+    }
+  }
+}

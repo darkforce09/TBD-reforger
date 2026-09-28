@@ -9,7 +9,8 @@ use crate::command_center::services::{
     user_stats::recompute_user_stats_on_connection,
 };
 use crate::core::{
-    application_state::AppState, error_handling::api_error::ApiError, middleware::AuthUser,
+    application_state::AppState, error_handling::api_error::ApiError, failpoints::fail_point,
+    middleware::AuthUser,
 };
 
 /// Attendance keeps its factual account and mission context when gameplay attribution changes.
@@ -128,6 +129,7 @@ pub async fn confirm_identity(
     append_required_audit(&mut tx, &discord_id, "identity.link", &discord_id,
         &format!("Verified Arma identity on server {confirming_server}; attributed {claimed} historical match rows and {attended} attendance records")).await?;
     refresh_leaderboard_on_connection(&mut tx).await?;
+    fail_point!(IdentityLinkConfirmBeforeCommit);
     tx.commit().await?;
     Ok(ConfirmedIdentity {
         discord_id,

@@ -134,6 +134,19 @@ async fn stored_solution(pool: &PgPool, id: &str) -> StoredRow {
     .expect("read the stored fire mission back")
 }
 
+/// Plants an event for the fire missions to name: saving against, or listing, an event that does
+/// not exist answers 404. The creator is the dev-login administrator, so a caller mints its token
+/// first.
+async fn plant_event(pool: &PgPool) -> String {
+    sqlx::query_scalar(
+        "INSERT INTO events (name_override, start_time, created_by, created_at) \
+         VALUES ('Fire mission fixture', now(), '000000000000000001', now()) RETURNING id::text",
+    )
+    .fetch_one(pool)
+    .await
+    .expect("plant the event the fire missions name")
+}
+
 /// **The headline.** Save a solution, then prove it is in the database and comes back out.
 #[tokio::test]
 async fn saved_solution_reaches_the_row_and_comes_back_out() {
@@ -142,7 +155,7 @@ async fn saved_solution_reaches_the_row_and_comes_back_out() {
         return;
     };
     let tok = common::dev_login_token(&app, "fire_mission_solution", "admin").await;
-    let event = Uuid::new_v4().to_string();
+    let event = plant_event(&pool).await;
 
     let (st, body) = call(
         &app,
@@ -239,7 +252,7 @@ async fn a_row_written_before_this_migration_still_lists_and_restores() {
         return;
     };
     let tok = common::dev_login_token(&app, "fire_mission_solution", "admin").await;
-    let event = Uuid::new_v4().to_string();
+    let event = plant_event(&pool).await;
 
     let id: Uuid = sqlx::query_scalar(
         "INSERT INTO fire_missions \

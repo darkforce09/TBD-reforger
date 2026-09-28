@@ -1,15 +1,27 @@
 {
-  "generation_id": "6A6E9885CF2F83F9",
+  "dataset_kind": "diagnostic",
+  "generation_id": "D1A6000000000001",
   "items": [
+    {
+      "kind": "gameplay",
+      "method": "BaseContainer.Get",
+      "node_id": "root/properties/components/0",
+      "property": "Pouch",
+      "resource_id": "guid:1111111111111111",
+      "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+      "target_resource_id": "guid:2222222222222222",
+      "target_resource_name": "{2222222222222222}Prefabs/Items/Equipment/Pouches/Pouch_Fixture.et",
+      "view": "effective"
+    },
     {
       "kind": "binary",
       "method": "BaseContainer.Get",
       "node_id": "root/properties/components/1",
       "property": "Object",
-      "resource_id": "guid:95D4766BBE46F23D",
-      "resource_name": "{95D4766BBE46F23D}Prefabs/Items/Equipment/Backpacks/Backpack_IIFS_FieldPack.et",
+      "resource_id": "guid:1111111111111111",
+      "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
       "target_resource_id": null,
-      "target_resource_name": "{582D5ED9889AB099}Assets/Items/Equipment/Backpacks/Backpack_IIFS_FieldPack/Backpack_IIFS_FieldPack_item.xob",
+      "target_resource_name": "{5555555555555555}Assets/Items/Equipment/Backpacks/Backpack_Fixture.xob",
       "view": "effective"
     },
     {
@@ -17,25 +29,13 @@
       "method": "BaseContainer.Get",
       "node_id": "root/properties/components/1/ancestor",
       "property": "Object",
-      "resource_id": "guid:95D4766BBE46F23D",
-      "resource_name": "{95D4766BBE46F23D}Prefabs/Items/Equipment/Backpacks/Backpack_IIFS_FieldPack.et",
+      "resource_id": "guid:1111111111111111",
+      "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
       "target_resource_id": null,
       "target_resource_name": "{A4048C2AA75EF832}Common/Models/Default.xob",
       "view": "ancestor"
-    },
-    {
-      "kind": "binary",
-      "method": "BaseContainer.Get",
-      "node_id": "root/properties/components/3/properties/m_aAudioSourceConfiguration/0",
-      "property": "m_sSoundProject",
-      "resource_id": "guid:95D4766BBE46F23D",
-      "resource_name": "{95D4766BBE46F23D}Prefabs/Items/Equipment/Backpacks/Backpack_IIFS_FieldPack.et",
-      "target_resource_id": null,
-      "target_resource_name": "{3D8789E7ACF6EDD3}Sounds/Items/_SharedData/PickUp/Items_PickUp_BackPack.acp",
-      "view": "effective"
     }
   ],
   "next_cursor": null,
-  "total": 35,
-  "dataset_kind": "diagnostic"
+  "total": 3
 }

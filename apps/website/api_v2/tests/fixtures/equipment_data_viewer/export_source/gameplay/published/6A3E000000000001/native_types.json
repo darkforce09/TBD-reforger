@@ -1,0 +1,7 @@
+{
+  "types": {
+    "ItemAttributeCollection": {
+      "parent": "BaseContainer"
+    }
+  }
+}

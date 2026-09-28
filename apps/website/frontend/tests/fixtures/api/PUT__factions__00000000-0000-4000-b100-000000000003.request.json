@@ -1,0 +1,16 @@
+{
+  "name": "Local Militia",
+  "roles": [
+    {
+      "character": "{7A9B0C1D2E3F4A5B}Prefabs/Characters/Factions/INDFOR/Militia/Character_Militia_Rifleman.et",
+      "role": "Fighter"
+    },
+    {
+      "character": "{7A9B0C1D2E3F4A5B}Prefabs/Characters/Factions/INDFOR/Militia/Character_Militia_Rifleman.et",
+      "role": "Marksman",
+      "tag": "MK"
+    }
+  ],
+  "side": "INDFOR",
+  "vehicles": []
+}

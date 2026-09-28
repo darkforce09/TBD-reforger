@@ -38,7 +38,8 @@ pub async fn load_mission_on(
         .await
 }
 
-/// Parse `:id` and load the mission (404 on bad id or missing).
+/// Parse `:id` and load the mission: `400 invalid id` when `:id` is not a UUID, `404 mission not
+/// found` when no mission has that id.
 pub(crate) async fn load_mission_or_404(pool: &PgPool, id: &str) -> Result<Mission, ApiError> {
     let Ok(id) = Uuid::parse_str(id) else {
         return Err(ApiError::bad_request("invalid id"));

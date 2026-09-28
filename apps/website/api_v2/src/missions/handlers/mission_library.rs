@@ -2,9 +2,19 @@
 //! per-caller bookmark toggle.
 //!
 //! Every handler here is `AuthUser` tier and owner-scoped — the scope tabs and the bookmark
-//! rows are all keyed on the calling user's discord id.
+//! rows are all keyed on the calling user's discord id. The overview, both bookmark writes and the
+//! `bookmarked` scope apply one visibility rule, [`can_view`]: a live mission is visible to
+//! everyone, any other mission to its author and to administrators. A mission the caller cannot
+//! see answers `404 mission not found`, exactly like a mission that does not exist, and a bookmark
+//! row on a mission that has left the caller's view drops out of the `bookmarked` scope.
+//!
+//! @contract mission-library.schema.json#/definitions/MissionLibraryPage
+//! @contract mission-library.schema.json#/definitions/MissionCard
+//! @contract mission-library.schema.json#/definitions/MissionDetail
+//! @contract mission-library.schema.json#/definitions/BookmarkState
 
-use axum::extract::{Path, Query, State};
+use axum::extract::rejection::QueryRejection;
+use axum::extract::{Query, State};
 use axum::response::Json;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -13,6 +23,7 @@ use uuid::Uuid;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AuthUser;
 use crate::missions::models::mission::{Mission, MissionArmory, MissionVersion};
 use crate::missions::services::mission_lookup::load_mission_or_404;
@@ -85,7 +96,11 @@ pub struct ListQuery {
 }
 
 /// Push the scope + filter WHERE conditions (shared by count + select).
-fn push_filters(qb: &mut QueryBuilder<Postgres>, f: &ListQuery, me: &str) {
+///
+/// The `bookmarked` scope keeps only the bookmarked missions the caller can see now: the SQL form
+/// of [`can_view`] (live, or authored by the caller, or any mission for an administrator).
+fn push_filters(qb: &mut QueryBuilder<Postgres>, f: &ListQuery, user: &AuthUser) {
+    let me = &user.discord_id;
     match f.scope.as_deref().unwrap_or("global") {
         "mine" => {
             qb.push(" AND author_id = ").push_bind(me.to_string());
@@ -93,6 +108,10 @@ fn push_filters(qb: &mut QueryBuilder<Postgres>, f: &ListQuery, me: &str) {
         "bookmarked" => {
             qb.push(" AND id IN (SELECT mission_id FROM mission_bookmarks WHERE discord_id = ")
                 .push_bind(me.to_string())
+                .push(") AND (status = 'live' OR author_id = ")
+                .push_bind(me.to_string())
+                .push(" OR ")
+                .push_bind(user.role == "admin")
                 .push(")");
         }
         _ => {
@@ -137,14 +156,16 @@ fn push_filters(qb: &mut QueryBuilder<Postgres>, f: &ListQuery, me: &str) {
 pub async fn list_missions(
     State(state): State<AppState>,
     user: AuthUser,
-    Query(f): Query<ListQuery>,
+    query: Result<Query<ListQuery>, QueryRejection>,
 ) -> Result<Json<Value>, ApiError> {
+    let Query(f) = query
+        .map_err(|rejection| ApiError::from_query_rejection(rejection, "mission library query"))?;
     let me = &user.discord_id;
     let limit = f.limit.filter(|&n| n > 0 && n <= 100).unwrap_or(20);
     let offset = f.offset.filter(|&n| n >= 0).unwrap_or(0);
 
     let mut cq = QueryBuilder::new("SELECT count(*) FROM missions WHERE deleted_at IS NULL");
-    push_filters(&mut cq, &f, me);
+    push_filters(&mut cq, &f, &user);
     let total: i64 = cq
         .build_query_scalar()
         .fetch_one(&state.pool)
@@ -154,7 +175,7 @@ pub async fn list_missions(
     let mut sq = QueryBuilder::new(format!(
         "SELECT {MISSION_COLS} FROM missions WHERE deleted_at IS NULL"
     ));
-    push_filters(&mut sq, &f, me);
+    push_filters(&mut sq, &f, &user);
     sq.push(" ORDER BY updated_at DESC LIMIT ")
         .push_bind(limit)
         .push(" OFFSET ")
@@ -177,12 +198,9 @@ pub async fn list_missions(
 pub async fn get_mission(
     State(state): State<AppState>,
     user: AuthUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<Json<Value>, ApiError> {
-    let m = load_mission_or_404(&state.pool, &id).await?;
-    if !can_view(&user, &m) {
-        return Err(ApiError::not_found("mission not found"));
-    }
+    let m = load_visible_mission(&state.pool, &user, &id).await?;
     let card = decorate(&state.pool, &user.discord_id, vec![m.clone()])
         .await?
         .pop()
@@ -211,43 +229,55 @@ pub async fn get_mission(
     Ok(Json(body))
 }
 
-/// `POST /api/v1/missions/:id/bookmark` — idempotent add.
+/// Load the mission the overview or a bookmark write addresses: `400` for a malformed id,
+/// `404 mission not found` for a mission that does not exist or that the caller cannot see
+/// ([`can_view`]).
+async fn load_visible_mission(
+    pool: &PgPool,
+    user: &AuthUser,
+    id: &str,
+) -> Result<Mission, ApiError> {
+    let mission = load_mission_or_404(pool, id).await?;
+    if !can_view(user, &mission) {
+        return Err(ApiError::not_found("mission not found"));
+    }
+    Ok(mission)
+}
+
+/// `POST /api/v1/missions/:id/bookmark` — idempotent add of a mission the caller can see.
 ///
 /// @route POST /api/v1/missions/:id/bookmark
 pub async fn bookmark_mission(
     State(state): State<AppState>,
     user: AuthUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<Json<Value>, ApiError> {
-    let Ok(mid) = Uuid::parse_str(&id) else {
-        return Err(ApiError::bad_request("invalid id"));
-    };
+    let mission = load_visible_mission(&state.pool, &user, &id).await?;
     sqlx::query(
         "INSERT INTO mission_bookmarks (discord_id, mission_id, created_at) VALUES ($1, $2, now()) \
          ON CONFLICT (discord_id, mission_id) DO NOTHING",
     )
     .bind(&user.discord_id)
-    .bind(mid)
+    .bind(mission.id)
     .execute(&state.pool)
     .await?;
     Ok(Json(json!({ "bookmarked": true })))
 }
 
-/// `DELETE /api/v1/missions/:id/bookmark`.
+/// `DELETE /api/v1/missions/:id/bookmark` — idempotent removal of the caller's bookmark on a
+/// mission the caller can see.
 ///
 /// @route DELETE /api/v1/missions/:id/bookmark
 pub async fn remove_bookmark(
     State(state): State<AppState>,
     user: AuthUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<Json<Value>, ApiError> {
-    let Ok(mid) = Uuid::parse_str(&id) else {
-        return Err(ApiError::bad_request("invalid id"));
-    };
-    let _ = sqlx::query("DELETE FROM mission_bookmarks WHERE discord_id = $1 AND mission_id = $2")
+    let mission = load_visible_mission(&state.pool, &user, &id).await?;
+    sqlx::query("DELETE FROM mission_bookmarks WHERE discord_id = $1 AND mission_id = $2")
         .bind(&user.discord_id)
-        .bind(mid)
+        .bind(mission.id)
         .execute(&state.pool)
-        .await;
+        .await?;
     Ok(Json(json!({ "bookmarked": false })))
 }

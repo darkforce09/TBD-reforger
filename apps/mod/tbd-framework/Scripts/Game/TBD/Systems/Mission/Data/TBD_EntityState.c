@@ -72,7 +72,7 @@ class TBD_EntityStateWireStruct
 }
 
 //! Root of the second parse. Declares `entities` and nothing else.
-//! @contract mission.schema.json#/properties/entities
+//! @contract mission.schema.json#/ partial
 class TBD_EntityStateDocStruct
 {
 	ref array<ref TBD_EntityStateWireStruct> entities; //!< `entities[]`

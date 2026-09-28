@@ -18,6 +18,8 @@ mod resources;
 mod source_inspector;
 #[cfg(target_arch = "wasm32")]
 pub use page::DataViewerPage;
+/// The viewer page on non-browser targets, where its panels are not compiled: it renders nothing
+/// and keeps the route table building for the native test suite.
 #[cfg(not(target_arch = "wasm32"))]
 #[leptos::component]
 pub fn DataViewerPage() -> impl leptos::IntoView {

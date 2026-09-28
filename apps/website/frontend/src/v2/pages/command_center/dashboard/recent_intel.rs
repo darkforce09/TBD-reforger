@@ -3,20 +3,19 @@
 //! **Role:** renders the most recent announcements as a scrolling list of linked rows.
 //! **Position:** the last child of the dashboard column, below the card grid, and the only one
 //! that grows to fill the remaining height.
-//! **Signals & state:** none — the announcement list arrives owned and is read once.
+//! **Signals & state:** none — the typed announcement list arrives owned and is read once.
 //! **Invariants:** an empty list renders one line of empty-state text under the heading rather
 //! than an empty box. A row without an identifier links to the board itself instead of to a
 //! post that cannot be addressed.
 #![allow(dead_code)]
 
-use super::helpers::{vbool, vstr};
+use crate::v2::core::api::dto::Announcement;
 use crate::v2::core::ui::MaterialIcon;
 use crate::v2::core::utils::datefmt::format_short_date;
 use leptos::prelude::*;
-use serde_json::Value;
 
 /// The intelligence feed for `announcements`, newest first as the payload ordered them.
-pub(super) fn recent_intel(announcements: Vec<Value>) -> impl IntoView {
+pub(super) fn recent_intel(announcements: Vec<Announcement>) -> impl IntoView {
     view! {
         <div class="relative flex flex-col overflow-hidden rounded-xl p-6 glass flex-1 gap-4">
             <h3 class="flex items-center gap-2 border-b border-border-subtle pb-3 text-label-sm text-on-surface-variant uppercase">
@@ -40,35 +39,26 @@ pub(super) fn recent_intel(announcements: Vec<Value>) -> impl IntoView {
 /// One feed row: a date pill, the headline with its pin marker, and the preview line.
 ///
 /// Reads `id`, `title`, `is_pinned`, `published_at`, `snippet` and `body` from the
-/// announcement object. The whole row is the link to the post.
-fn intel_row(a: Value) -> impl IntoView {
-    let id = vstr(&a, "id");
-    let href = if id.is_empty() {
+/// announcement. The whole row is the link to the post.
+fn intel_row(a: Announcement) -> impl IntoView {
+    let href = if a.id.is_empty() {
         "/announcements".to_string()
     } else {
-        format!("/announcements/{id}")
+        format!("/announcements/{}", a.id)
     };
-    let title = vstr(&a, "title");
-    let title = if title.is_empty() {
+    let title = if a.title.is_empty() {
         "Untitled Post".to_string()
     } else {
-        title
+        a.title
     };
-    let pinned = vbool(&a, "is_pinned");
-    let date = format_short_date(&vstr(&a, "published_at"));
-    // `snippet` is optional on the wire; fall back to the body's opening paragraph so a post
-    // published without one is not a bare headline.
-    let snippet = {
-        let s = vstr(&a, "snippet");
-        if s.is_empty() {
-            vstr(&a, "body")
-                .split("\n\n")
-                .next()
-                .unwrap_or_default()
-                .to_string()
-        } else {
-            s
-        }
+    let pinned = a.is_pinned;
+    let date = format_short_date(a.published_at.as_deref().unwrap_or_default());
+    // `snippet` is absent on the wire when the author wrote none; fall back to the body's opening
+    // paragraph so a post published without one is not a bare headline.
+    let snippet = if a.snippet.is_empty() {
+        a.body.split("\n\n").next().unwrap_or_default().to_string()
+    } else {
+        a.snippet
     };
     view! {
         <a

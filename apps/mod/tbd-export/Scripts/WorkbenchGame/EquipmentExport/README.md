@@ -1,35 +1,53 @@
-# Equipment diagnostic exports
+# Standard equipment exports
 
-[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) menu entries that export a chosen slice of
-the installed equipment (all of it, inventory items, wearables, weapons and their parts) for
-inspection. Each one selects resources and hands them to the shared equipment and vehicle source
-exporter, so a diagnostic uses the same reader, identity, snapshots, capability fields, dependency
-traversal and schema as the complete export.
+The [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) exporter that sweeps every loaded
+addon for equipment and writes one JSON catalog per class of hardware under
+`$profile:TBD_Export/equipment/`: weapons, static weapons, wearables, inventory items, weapon
+attachments, optics and ammunition, plus a discovery catalog of every equipment prefab.
 
 ## Contents
 
 ```text
 apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/
-├── ItemExport/                  the inventory item diagnostic
-├── TBD_EquipmentExportPlugin.c  "Diagnostic Export: All Equipment": every discovered equipment prefab
-├── WeaponExport/                the weapon, ammunition and attachment diagnostics
-└── WearableExport/              the wearables and gear diagnostic
+├── Core/                        what every domain shares: output, JSON, component walks, names
+├── ItemExport/                  inventory items, tools and crates, in eleven category catalogs
+├── StaticExport/                mortars, tripod-mounted weapons and bare mounts
+├── TBD_EquipmentExportPlugin.c  "Export All Equipment": every standard scanner, then discovery
+├── TBD_EquipmentScanItem.c      one discovery row: identity, root capabilities, measurements
+├── TBD_EquipmentScanner.c       the discovery sweep behind `equipment_all.json`
+├── WeaponExport/                weapons, attachments, optics and ammunition, one folder per domain
+└── WearableExport/              clothing, protective equipment, load-bearing gear and backpacks
 ```
 
 ## How it works
 
-Every plugin here is a `WorkbenchPlugin` in the `TBD Diagnostics` menu category whose `Run` calls
-`TBD_SourceDiagnosticExport.Run("equipment", nativeTypes, folder)` from
-`apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Plugins/`. The runner starts
-from the equipment census of the exporter's discovery and keeps the prefabs under `folder`, when
-one is given, whose effective nodes inherit one of `nativeTypes`, when any are given; "All
-Equipment" passes neither and takes the whole census. The selection and its gameplay dependencies
-go into a generation of scope `diagnostic` under
-`$profile:TBD_Export/equipment_vehicle_exports/generations/`, and the plugin prints its directory.
+`TBD_EquipmentExportPlugin` is the one menu entry, `Plugins > TBD > Export All Equipment`. Its
+`Run` builds a `TBD_EquipmentExportConfig` (from `Core/`) with the destination directory and runs
+eight phases in order, each a scanner's `RunScan()` writing its own catalogs:
 
-A diagnostic generation is for inspection only: the publisher rejects it, so it can never become
-the current bundle, and no plugin here writes a catalog or summary of its own. A complete export
-is the "Export Equipment and Vehicles" entry under `TBD`.
+```text
+TBD_WeaponScanner        (WeaponExport/Weapon/)    ─▶ equipment/weapons/
+TBD_StaticWeaponScanner  (StaticExport/)           ─▶ equipment/statics/
+TBD_WearableScanner      (WearableExport/)         ─▶ equipment/wearables/
+TBD_ItemScanner          (ItemExport/)             ─▶ equipment/items/
+TBD_AttachmentScanner    (WeaponExport/Attachment/)─▶ equipment/attachments/
+TBD_OpticScanner         (WeaponExport/Optic/)     ─▶ equipment/optics/
+TBD_AmmoScanner          (WeaponExport/Ammo/)      ─▶ equipment/ammunition/
+TBD_EquipmentScanner     (this folder)             ─▶ equipment/equipment_all.json, equipment_meta.json
+```
+
+Every domain has the same shape: a model of plain data carriers, extractors that each fill part of
+one carrier from a prefab's effective configuration, a scanner that searches the addons, buckets
+and serializes, and a plugin class. Only the master plugin carries a
+`[WorkbenchPluginAttribute]`; the attribute of every domain plugin is commented out, so a single
+domain runs through the master export or by restoring its attribute. Values are read as the prefab
+declares them: an omitted value serializes as JSON null, localization tokens keep their leading
+`#`, and every data file is paired with a `_meta.json` sidecar holding the row count and the UTC
+generation timestamp.
+
+`TBD_EquipmentScanner` searches the established prefab roots, skips structures, environment and
+editor systems, and keeps a `TBD_EquipmentScanItem` per equipment prefab, with the native
+capabilities of the root entity kept apart from components installed on child entities.
 
 ## Authority
 
@@ -37,17 +55,21 @@ None: Workbench runs these scripts in the editor.
 
 ## Boundaries
 
-- Depends on: `TBD_SourceDiagnosticExport` and the rest of the source exporter in
-  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/`; Workbench's
-  `WorkbenchPlugin`.
-- Used by: people, through the Workbench menu; nothing in the repository calls these plugins.
-- Rules: a diagnostic only selects resources and never reads or writes a fact itself; its
-  generation cannot publish (`partial_and_unverified_exports_cannot_publish` in
-  `tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/tests/validation.rs`). The scripts
-  compile only when Workbench loads `tbd-export`, and a new plugin class appears in the menu after
-  a Workbench cold restart.
+- Depends on: Workbench's `WorkbenchPlugin`, resource search and `NetApiHandler`; the engine's
+  `BaseContainer` reflection, `JsonSaveContext` and `FileIO`; the loaded addons' prefabs; nothing
+  from `tbd-framework`.
+- Used by: people, through the Workbench menu; the `TBD_StandardExportVerification` Net API handler
+  in `Core/`, which runs the scanners into an isolated folder; the first publication of a source
+  export, which moves the unversioned `equipment/` folder into its archive
+  (`tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/publication.rs`).
+- Rules: dependencies run one way, plugin to scanner to extractor to model to `Core/`, and no
+  domain uses another domain's classes; the scripts compile only when Workbench loads `tbd-export`,
+  and a new script file appears after a Workbench cold restart. `cargo xtask mod compile` compiles
+  the framework addon alone (`tools_v2/xtask/src/commands/mod_ops/compile/execution.rs`).
 
 ## Related documentation
 
 - [Equipment and vehicle source export](/apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/README.md)
-  — the shared exporter, its records, and the validate and publish commands.
+  — the source-backed exporter, its gameplay dataset, and the validate and publish commands.
+- [Vehicle exports](/apps/mod/tbd-export/Scripts/WorkbenchGame/VehicleExport/README.md) — the
+  vehicle catalogs written beside `equipment/`.

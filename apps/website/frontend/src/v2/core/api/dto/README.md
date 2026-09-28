@@ -2,17 +2,18 @@
 
 The data transfer objects: one Rust shape per JSON body the [API](/documentation_v2/glossary/a_to_f.md#api)
 sends or accepts, grouped by domain. Most files are re-exported flat from `mod.rs`, so a caller names
-the type (`MissionDetail`) rather than the file it lives in; the administration, vehicle and wiki
-types are named by their module (`dto::wiki::WikiArticle`).
+the type (`MissionDetail`) rather than the file it lives in; the administration, vehicle, wiki and
+equipment data viewer types are named by their module (`dto::wiki::WikiArticle`).
 
 ## Contents
 
 ```text
 apps/website/frontend/src/v2/core/api/dto/
 ├── administration.rs               the personnel roster page, audit lines, the audit stream's ready and reset
-├── auth.rs                         the viewer's profile, the Arma link and member rows
+├── auth.rs                         the viewer's profile, the Arma link, member rows and the member search page
 ├── common.rs                       the list envelopes: `Paginated`, `DataEnvelope`, `CursorList`
-├── content.rs                      modpack rows and the current modpack
+├── content.rs                      modpack rows with their mods, the current modpack, announcement rows
+├── equipment_data_viewer/          the equipment data viewer's read-only pages, one module per endpoint family
 ├── event_access_administration.rs  an event's access policies, groups, pools and every change body
 ├── event_viewer_access.rs          what the viewer may see and reserve in one event
 ├── events.rs                       the event list, ORBAT and hub, the service record, leave requests
@@ -22,10 +23,10 @@ apps/website/frontend/src/v2/core/api/dto/
 ├── mission_deployments.rs          a mission deployment, a server's page of them, the request body
 ├── mission_reviews.rs              review history and thread, decisions, artifacts, review workspace
 ├── missions.rs                     mission cards, rows, detail and versions; armory; approval rows
-├── mod.rs                          the module tree; re-exports the DTOs flat, but for three modules
+├── mod.rs                          the module tree; re-exports the DTOs flat, but for four modules
 ├── registry.rs                     registry items, compatibility edges, cargo defaults and factions
 ├── servers.rs                      server rows, the live status frame with its telemetry queue, credentials
-├── telemetry.rs                    the dashboard summary with its fleet, leaderboards and a fire solution
+├── telemetry.rs                    the dashboard summary with its fleet, leaderboards, fire solutions and saved fire missions
 ├── tests/                          unit tests for the golden round trips and the fixture-free shapes
 ├── vehicles.rs                     vehicle database rows, the create and replace body, the three-state patch
 └── wiki.rs                         wiki summaries, the article and its typed blocks, saves, refusals, revisions
@@ -34,8 +35,9 @@ apps/website/frontend/src/v2/core/api/dto/
 ## How it works
 
 The DTOs mirror the snake_case models of the API in `apps/website/api_v2/src/<domain>/models/`,
-and the API wins a disagreement. They are plain `serde` data, and all of them compile into the
-native test build. `tests/r_api.rs` holds each DTO to a captured answer from
+and the API wins a disagreement. A DTO that projects a definition in `contracts_v2/definitions/`
+names it in an `@contract` line of its docs, which `cargo xtask schema citations` resolves. They
+are plain `serde` data, and all of them compile into the native test build. `tests/r_api.rs` holds each DTO to a captured answer from
 `apps/website/frontend/tests/fixtures/api/`: re-serialising reproduces the capture canonically,
 byte for byte, and the keys no named field reads (the ones a `#[serde(flatten)]` catch-all sweeps
 up, found by poisoning each value) are exactly the ones the test lists. The `tests/r_api_*.rs`
@@ -49,7 +51,12 @@ modules, check the stream events, write bodies and refusals no capture carries.
   reservation values) travels as a string, so a new value lists instead of failing the read.
 - A null the capture carries stays explicit when serialising: an unclaimed
   [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) [slot](/documentation_v2/glossary/n_to_z.md#slot), a
-  finding with no subject, a pool with no limit.
+  finding with no subject, a pool with no limit, an unmeasured K/D ratio, a saved fire mission's
+  unrecorded coordinates and solution figures.
+- A text field the API skips when empty (a modpack's `workshop_url`, a mod's `workshop_id`,
+  `mod_guid` and `version`, an announcement's `snippet`, `thumbnail_url` and
+  `discord_message_id`) reads as an empty string and is left out again when serialising; an
+  announcement's tag and status travel as strings, like the other extensible value sets.
 - The [event](/documentation_v2/glossary/a_to_f.md#event) access conditions and group sources are tagged
   by `kind` and refuse unknown fields, because the
   [event manager](/documentation_v2/glossary/a_to_f.md#event-manager) sends them back and must not
@@ -87,9 +94,10 @@ modules, check the stream events, write bodies and refusals no capture carries.
 - Used by: the client, endpoint calls and live status stream in
   `apps/website/frontend/src/v2/core/api/`, the auth store in
   `apps/website/frontend/src/v2/core/auth/store.rs`, the pages under
-  `apps/website/frontend/src/v2/pages/`, and the
+  `apps/website/frontend/src/v2/pages/`, the
   [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) under
-  `apps/website/frontend/src/v2/apps/editor/`.
+  `apps/website/frontend/src/v2/apps/editor/`, and the equipment data viewer under
+  `apps/website/frontend/src/v2/apps/debug/data_viewer/`.
 - Rules: the API model changes first and the DTO follows; a golden round-trips, and its unread
   keys match its list, so drift either way fails (`cargo test -p website-frontend`);
   `byte_equality_alone_cannot_see_a_dropped_field_under_flatten` in `tests/r_api.rs` shows why the

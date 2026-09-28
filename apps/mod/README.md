@@ -10,10 +10,10 @@ the platform ingests and one that lets the Enfusion MCP tools drive Workbench.
 
 ```text
 apps/mod/
-├── .mcp.json       the MCP server entry that starts `enfusion-mcp` for sessions opened here
-├── tbd-emcp/       addon `TBD_EMCP`: the Workbench Net API handlers the MCP `wb_*` tools call
-├── tbd-export/     addon `TBD_Export`: Workbench map, equipment, vehicle and registry export tooling
-└── tbd-framework/  addon `TBD_Framework`: the game mod dedicated servers run
+├── improved_layout/  the planning anchor for the mod suite's directory reorganization, no code
+├── tbd-emcp/         addon `TBD_EMCP`: the Workbench Net API handlers the MCP `wb_*` tools call
+├── tbd-export/       addon `TBD_Export`: Workbench map, equipment, vehicle and registry export tooling
+└── tbd-framework/    addon `TBD_Framework`: the game mod dedicated servers run
 ```
 
 ## How it works

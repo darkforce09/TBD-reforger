@@ -42,7 +42,7 @@ class TBD_WaypointWireStruct
 }
 
 //! The `$defs/group` keys the waypoint pass reads.
-//! @contract mission.schema.json#/$defs/group
+//! @contract mission.schema.json#/$defs/group partial
 class TBD_WaypointGroupWireStruct
 {
 	string callsign; //!< JSON `callsign`: the join key onto flattened slots
@@ -57,7 +57,7 @@ class TBD_WaypointFactionWireStruct
 }
 
 //! Root of the waypoint pass: declares `orbat` and nothing else.
-//! @contract mission.schema.json#/
+//! @contract mission.schema.json#/ partial
 class TBD_WaypointDocStruct
 {
 	ref map<string, ref TBD_WaypointFactionWireStruct> orbat; //!< JSON `orbat`: faction key -> faction

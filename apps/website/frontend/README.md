@@ -141,11 +141,12 @@ only a secure context offers: `localhost`, `127.0.0.1` or HTTPS.
     the gate CI runs: `cargo fmt --check`, clippy for `wasm32-unknown-unknown` over all targets,
     `cargo test -p website-frontend`, and a release Trunk build;
   - no file imports `website_graphics_engine` (`cargo xtask verify engine-layers`);
-  - the captures in `tests/fixtures/api/` are taken from a database seeded with
-    `apps/website/api_v2/seeds/content_golden.sql`, by the recipe that closes that file, and every
-    one but `GET__registry.json` reproduces that way, since
-    `apps/website/api_v2/seeds/registry_dev.sql` leaves the ids of the
-    [registry](/documentation_v2/glossary/n_to_z.md#registry) items to Postgres;
+  - the captures in `tests/fixtures/api/` are taken from a fresh database seeded with
+    `apps/website/api_v2/seeds/registry_dev.sql` and then
+    `apps/website/api_v2/seeds/content_golden.sql`, by the recipe that closes
+    `content_golden.sql`, and every golden reproduces from the seed through that recipe: the reads
+    in `_index.tsv` order, then its writes in index order, each sending its `*.request.json` body
+    when it has one;
   - every production file under `src/v2/` passes the documentation audit of
     `src/v2/tests/doc_audit/mod.rs`.
 

@@ -1,0 +1,20 @@
+{
+  "artifact_digest": "bcfb3b1c4109fe03ac0292372a3fdfb86052d44979c2f2638e7e419e7f234577",
+  "artifact_id": "00000000-0000-4000-f000-000000000004",
+  "artifact_sha256": "815fa594db434d9a8ffa297dda126ddab4a6493d3fa1db1c62525abe4f409739",
+  "bound_slots": 0,
+  "deadline_at": "2000-01-01T00:00:00Z",
+  "fleet_command_id": "99999999-9999-4999-9999-999999999999",
+  "fleet_command_state": "queued",
+  "id": "99999999-9999-4999-9999-999999999999",
+  "mission_id": "00000000-0000-4000-c000-000000000004",
+  "mission_title": "Operation Cold Anvil",
+  "requested_at": "2000-01-01T00:00:00Z",
+  "requested_by": "000000000000000001",
+  "requested_via": "web",
+  "scenario_id": "{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf",
+  "server_id": "00000000-0000-4000-d000-000000000001",
+  "state": "requested",
+  "terrain_key": "everon",
+  "transition": "host_restart"
+}

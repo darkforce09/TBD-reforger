@@ -2,6 +2,10 @@
 use super::{data::use_read, layout::*, page::ViewerContext};
 use crate::v2::core::api::dto::equipment_data_viewer::EquipmentFieldPage;
 use leptos::prelude::*;
+/// The Fields tab: every observed native field grouped by component class, with its effective,
+/// ancestor and resource counts, units and system aliases, filterable by capability and
+/// searchable. Selecting a field lists its exact occurrences, each linking to the source property
+/// on the Resources tab.
 #[component]
 pub fn Fields() -> impl IntoView {
     let c = expect_context::<ViewerContext>();

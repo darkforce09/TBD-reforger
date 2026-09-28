@@ -107,10 +107,10 @@ cargo xtask db seed      # a second terminal, once the API logs `migrations appl
 cargo xtask mk leptos    # the app on 127.0.0.1:3000, a release build; stays in the foreground
 ```
 
-The seeds fill tables the migrations create, and only the API applies the migrations; psql carries
-on past a failed statement, so seeding a fresh database before the API's first boot loads nothing
-and still exits 0. The app's server proxies `/api` and `/map-assets` to the API. In development,
-`/api/v1/auth/dev-login?role=admin` signs in without Discord.
+The seeds fill tables the migrations create, and only the API applies the migrations; each psql
+run stops at the first failed statement, so seeding a fresh database before the API's first boot
+stops at the first seed with psql's exit code 3. The app's server proxies `/api` and `/map-assets`
+to the API. In development, `/api/v1/auth/dev-login?role=admin` signs in without Discord.
 
 ## Configuration
 

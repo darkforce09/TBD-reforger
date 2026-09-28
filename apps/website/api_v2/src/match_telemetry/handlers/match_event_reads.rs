@@ -1,12 +1,14 @@
 //! `GET /api/v1/matches/{matchId}/events` — a match's detailed events, in sequence order.
 
-use axum::extract::{Path, Query, State};
+use axum::extract::rejection::QueryRejection;
+use axum::extract::{Query, State};
 use axum::response::Json;
 use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AuthUser;
 use crate::match_telemetry::models::match_event_page::{MatchEventPage, StoredMatchEvent};
 
@@ -25,9 +27,11 @@ pub struct EventPageQuery {
 pub async fn list_match_events(
     State(state): State<AppState>,
     _user: AuthUser,
-    Path(match_id): Path<Uuid>,
-    Query(query): Query<EventPageQuery>,
+    PathParams(match_id): PathParams<Uuid>,
+    query: Result<Query<EventPageQuery>, QueryRejection>,
 ) -> Result<Json<MatchEventPage>, ApiError> {
+    let Query(query) = query
+        .map_err(|rejection| ApiError::from_query_rejection(rejection, "match event page query"))?;
     let limit = query.limit.unwrap_or(DEFAULT_PAGE);
     if !(1..=MAX_PAGE).contains(&limit) {
         return Err(ApiError::bad_request(format!(

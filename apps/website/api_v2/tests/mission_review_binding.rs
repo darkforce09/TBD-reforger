@@ -368,21 +368,37 @@ async fn approval_binding_stale_decision_is_refused_with_the_artifact_under_revi
     assert!(pending.get("approved_artifact_id").is_none(), "{pending}");
 
     let approve = format!("/api/v1/approvals/{mission}/approve");
-    for (body, why) in [
-        (None, "no body"),
-        (Some(json!({})), "no artifact"),
+    // A body-less request carries no JSON content type, so the shared JSON rejection rule answers
+    // 415; every JSON body that fails to name the artifact under review answers 400. Each refusal
+    // carries the `{error}` envelope and leaves the review pending.
+    for (body, expected, why) in [
+        (None, StatusCode::UNSUPPORTED_MEDIA_TYPE, "no body"),
+        (Some(json!({})), StatusCode::BAD_REQUEST, "no artifact"),
         (
             Some(json!({ "artifact_id": "not-a-uuid" })),
+            StatusCode::BAD_REQUEST,
             "malformed artifact",
         ),
         (
             Some(json!({ "artifact_id": second, "extra": true })),
+            StatusCode::BAD_REQUEST,
             "unknown field",
         ),
     ] {
         let (status, response) = f.call(Some(&f.admin), "POST", &approve, body).await;
-        assert_eq!(status, StatusCode::BAD_REQUEST, "{why}: {response}");
+        assert_eq!(status, expected, "{why}: {response}");
+        assert!(
+            response["error"]
+                .as_str()
+                .is_some_and(|error| !error.is_empty()),
+            "{why}: refusal without an error envelope: {response}"
+        );
     }
+    let still_pending = f.mission(&f.author, mission).await;
+    assert_eq!(
+        still_pending["status"], "pending_approval",
+        "{still_pending}"
+    );
     let (status, body) = f
         .call(
             Some(&f.author),

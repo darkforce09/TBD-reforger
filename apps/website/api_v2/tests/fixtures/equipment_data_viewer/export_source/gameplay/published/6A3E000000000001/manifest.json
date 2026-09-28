@@ -1,0 +1,36 @@
+{
+  "dataset_kind": "gameplay",
+  "schema_version": 1,
+  "generation_id": "6A3E000000000001",
+  "resource_count": 1,
+  "files": {
+    "field_definitions.json": {
+      "bytes": 936,
+      "sha256": "e136e7dc530e1fef6cac792f628ed32d50269c228c59737fcf88bbc7e844d02b"
+    },
+    "generation.json": {
+      "bytes": 159,
+      "sha256": "89d080aff558e5bdac573c977ff73b20e9972721cb13b81e38a32414c1966a82"
+    },
+    "native_types.json": {
+      "bytes": 92,
+      "sha256": "9981f17879689c31eeece2da024c977d488b89432a09ab21671fedd1e0ca7bda"
+    },
+    "publication_receipt.json": {
+      "bytes": 212,
+      "sha256": "336f419e49d79c55460049c2488dd05c8bb461db6c4995ccc6732927304382de"
+    },
+    "resource_index.json": {
+      "bytes": 309,
+      "sha256": "f494a3b523f544ff141cd062a154106945d07e1372237a2f45d75c5f1c4d6e9b"
+    },
+    "resources/backpack_fixture.json": {
+      "bytes": 2273,
+      "sha256": "470d173e4ac34cd4768fdbfb5a65307d51a77367d9de5140116a6a47cf40ab20"
+    },
+    "selection_report.json": {
+      "bytes": 878,
+      "sha256": "bf0b5a41a4fd8a70ac670cd7f08d0ee565b28387bd89ff5f4dd75fc4c4046753"
+    }
+  }
+}

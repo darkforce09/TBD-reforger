@@ -14,7 +14,7 @@ apps/website/frontend/src/v2/pages/field_tools/mortar/
 ├── map_picker.rs       the four coordinate fields and the preview with its line and markers
 ├── mod.rs              the module tree; re-exports `MortarCalculatorPage`
 ├── page.rs             `MortarCalculatorPage`: signals, both fetches, effects and the solve request
-├── saved_fires.rs      saved-row types, the request body, restore rules, stored event, list panel
+├── saved_fires.rs      the save answer, the request body, restore rules, stored event, list panel
 ├── tests/              unit tests for the save round trip, grid string, preview and hydration
 └── weapon_selector.rs  the tube and event pickers, and `WEAPONS`, the tubes the solver accepts
 ```
@@ -56,7 +56,8 @@ at any separation.
 - `GET /api/v1/events`: read as `Paginated<EventOption>`, each event's `id`, `name_override` and
   `start_time`, for the event picker.
 - `GET /api/v1/events/{id}/fire-missions`: the selected event's saved rows, read as
-  `DataEnvelope<SavedFire>`.
+  `DataEnvelope<SavedFire>` (the shared DTO in
+  `apps/website/frontend/src/v2/core/api/dto/telemetry.rs`).
 - `POST /api/v1/fire-missions`: with an event selected; sends `weapon_system`, `fp_x`, `fp_y`,
   `tgt_x`, `tgt_y`, `fp_grid`, `target_grid` and `event_id`, and reads `SaveResponse`: the
   `FireSolution` and the stored `SavedFire`.
@@ -83,7 +84,7 @@ at any separation.
 ## Boundaries
 
 - Depends on: `crate::v2::core::api` (`api_get`, `api_post`, `api_error_message`, and
-  `FireSolution`, `DataEnvelope` and `Paginated` from
+  `FireSolution`, `SavedFire`, `DataEnvelope` and `Paginated` from
   `apps/website/frontend/src/v2/core/api/dto/telemetry.rs` and
   `apps/website/frontend/src/v2/core/api/dto/common.rs`), `crate::v2::core::ui` (`AuthGate`,
   `PageHeader`, the toast queue), `crate::v2::core::utils::datefmt::format_short_date`, the

@@ -1,0 +1,10 @@
+{
+  "excluded_diagnostic_dependencies": [
+    "guid:2222222222222222"
+  ],
+  "retained_fact_json_bytes_by_section": {
+    "inventory": 96,
+    "storage": 112
+  },
+  "structure_metadata_and_indexes_bytes": 2048
+}

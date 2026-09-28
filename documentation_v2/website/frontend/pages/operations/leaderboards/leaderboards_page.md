@@ -127,3 +127,7 @@ The page writes nothing and stores nothing in the browser.
   (`avatar_img_emits_src_only_for_http_urls`, same test file).
 - The dossier adds no shape to the shared DTOs: it reads the statistics untyped, and takes the
   avatar, name and rank from the clicked row.
+- The board reads typed rows (`LeaderboardRow`): a row missing a statistic the contract requires
+  fails the fetch and shows "Failed to load the leaderboard." rather than a confident zero; only
+  the K/D ratio may be unmeasured, sent as `null`, and it shows as zero
+  (`a_row_missing_its_stats_is_refused_and_an_unmeasured_ratio_reads_zero`, same test file).

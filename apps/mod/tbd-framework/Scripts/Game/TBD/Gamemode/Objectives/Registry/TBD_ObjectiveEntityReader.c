@@ -47,7 +47,7 @@ class TBD_ObjectiveEntityStruct
 }
 
 //! The document root of the typed-objective pass; declares `objectives` only.
-//! @contract mission.schema.json#/properties/objectives
+//! @contract mission.schema.json#/ partial
 class TBD_ObjectiveEntityDocStruct
 {
 	ref array<ref TBD_ObjectiveEntityStruct> objectives; //!< `objectives[]`

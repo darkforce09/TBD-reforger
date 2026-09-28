@@ -81,6 +81,7 @@ class TBD_RuntimeSessionClosing
 	//! @route POST /api/v1/game-runtime/sessions/{id}/heartbeats
 	//! @route POST /api/v1/game-runtime/sessions/{id}/end
 	//! @authority server
+	//! @contract game-runtime-session.schema.json#/definitions/RuntimeHeartbeat
 	protected static void Next()
 	{
 		if (s_InFlight || !s_aSessions || s_aSessions.IsEmpty())

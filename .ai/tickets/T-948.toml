@@ -3,8 +3,11 @@ kind = "work"
 title = "audit_notify tests pass green with no database"
 summary = "apps/website/api/tests/audit_notify.rs skips six DB tests when TEST_DATABASE_URL is unset and reports ok in 0.01s. T-311 wrote the opposite rule in the same wave: a missing URL is a FAIL."
 class = "audit"
-status = "idea"
+status = "cancelled"
+order = 9813
+notes = "2026-09-28 (milestone V): cancelled, already fixed. apps/website/api_v2/tests/common/database.rs:190-192 panics when TEST_DATABASE_URL is unset, so no database test passes without its database; evidence tests/test_support_self_checks.rs:36 missing_database_fails_in_ci_and_verification_gates. The unreachable skip branches left behind are T-1232."
 created_at = "2026-09-06T00:08:53Z"
+completed_at = "2026-09-28T01:15:29Z"
 
 [scope]
 domain = "repo"

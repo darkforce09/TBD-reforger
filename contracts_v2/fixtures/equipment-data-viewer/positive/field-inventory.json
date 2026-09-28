@@ -1,57 +1,229 @@
 {
-  "generation_id": "6A6E9885CF2F83F9",
+  "dataset_kind": "diagnostic",
+  "generation_id": "D1A6000000000001",
   "items": [
     {
+      "aliases": [],
+      "ancestor_count": 0,
+      "capabilities": [],
+      "class_name": "GenericEntity",
+      "effective_count": 1,
+      "field_id": 1,
+      "native_type": "STRING",
+      "property": "EOnActivate",
+      "resource_count": 1,
+      "units": []
+    },
+    {
+      "aliases": [],
+      "ancestor_count": 0,
+      "capabilities": [],
+      "class_name": "GenericEntity",
+      "effective_count": 2,
+      "field_id": 2,
+      "native_type": "OBJECT_ARRAY",
+      "property": "components",
+      "resource_count": 2,
+      "units": []
+    },
+    {
+      "aliases": [],
+      "ancestor_count": 0,
+      "capabilities": [],
+      "class_name": "ItemAttributeCollection",
+      "effective_count": 2,
+      "field_id": 7,
+      "native_type": "OBJECT",
+      "property": "ItemDisplayName",
+      "resource_count": 2,
+      "units": []
+    },
+    {
       "aliases": [
-        "storage.max_cumulative_volume"
+        "inventory.weight"
       ],
-      "ancestor_count": 32,
+      "ancestor_count": 0,
+      "capabilities": [
+        "inventory"
+      ],
+      "class_name": "ItemAttributeCollection",
+      "effective_count": 2,
+      "field_id": 8,
+      "native_type": "SCALAR",
+      "property": "Weight",
+      "resource_count": 2,
+      "units": [
+        "kg"
+      ]
+    },
+    {
+      "aliases": [
+        "visuals.model"
+      ],
+      "ancestor_count": 1,
+      "capabilities": [
+        "visuals"
+      ],
+      "class_name": "MeshObject",
+      "effective_count": 1,
+      "field_id": 10,
+      "native_type": "RESOURCE_NAME",
+      "property": "Object",
+      "resource_count": 1,
+      "units": []
+    },
+    {
+      "aliases": [],
+      "ancestor_count": 0,
+      "capabilities": [],
+      "class_name": "SCR_EditableVehicleComponent",
+      "effective_count": 1,
+      "field_id": 13,
+      "native_type": "OBJECT",
+      "property": "m_UIInfo",
+      "resource_count": 1,
+      "units": []
+    },
+    {
+      "aliases": [],
+      "ancestor_count": 0,
+      "capabilities": [],
+      "class_name": "SCR_EditableVehicleUIInfo",
+      "effective_count": 1,
+      "field_id": 14,
+      "native_type": "STRING",
+      "property": "Name",
+      "resource_count": 1,
+      "units": []
+    },
+    {
+      "aliases": [],
+      "ancestor_count": 0,
+      "capabilities": [],
+      "class_name": "SCR_UniversalInventoryStorageComponent",
+      "effective_count": 2,
+      "field_id": 3,
+      "native_type": "OBJECT",
+      "property": "Attributes",
+      "resource_count": 2,
+      "units": []
+    },
+    {
+      "aliases": [
+        "storage.capacity_coefficient"
+      ],
+      "ancestor_count": 0,
       "capabilities": [
         "storage"
       ],
-      "class_name": "ClothNodeStorageComponent",
-      "effective_count": 28,
-      "field_id": 4958,
+      "class_name": "SCR_UniversalInventoryStorageComponent",
+      "effective_count": 1,
+      "field_id": 4,
       "native_type": "SCALAR",
-      "property": "MaxCumulativeVolume",
-      "resource_count": 28,
+      "property": "CapacityCoefficient",
+      "resource_count": 1,
       "units": []
     },
     {
       "aliases": [
         "storage.max_cumulative_volume"
       ],
-      "ancestor_count": 76,
+      "ancestor_count": 1,
       "capabilities": [
         "storage"
       ],
-      "class_name": "EquipedWeaponStorageComponent",
-      "effective_count": 80,
-      "field_id": 3569,
+      "class_name": "SCR_UniversalInventoryStorageComponent",
+      "effective_count": 2,
+      "field_id": 5,
       "native_type": "SCALAR",
       "property": "MaxCumulativeVolume",
-      "resource_count": 80,
+      "resource_count": 2,
+      "units": []
+    },
+    {
+      "aliases": [],
+      "ancestor_count": 0,
+      "capabilities": [],
+      "class_name": "SCR_UniversalInventoryStorageComponent",
+      "effective_count": 1,
+      "field_id": 6,
+      "native_type": "RESOURCE_NAME",
+      "property": "Pouch",
+      "resource_count": 1,
+      "units": []
+    },
+    {
+      "aliases": [],
+      "ancestor_count": 0,
+      "capabilities": [],
+      "class_name": "UIInfo",
+      "effective_count": 2,
+      "field_id": 9,
+      "native_type": "STRING",
+      "property": "Name",
+      "resource_count": 2,
+      "units": []
+    },
+    {
+      "aliases": [],
+      "ancestor_count": 0,
+      "capabilities": [],
+      "class_name": "Vehicle",
+      "effective_count": 1,
+      "field_id": 11,
+      "native_type": "RESOURCE_NAME",
+      "property": "Object",
+      "resource_count": 1,
+      "units": []
+    },
+    {
+      "aliases": [],
+      "ancestor_count": 0,
+      "capabilities": [],
+      "class_name": "Vehicle",
+      "effective_count": 1,
+      "field_id": 12,
+      "native_type": "OBJECT_ARRAY",
+      "property": "components",
+      "resource_count": 1,
       "units": []
     },
     {
       "aliases": [
-        "storage.max_cumulative_volume"
+        "physics.mass"
       ],
-      "ancestor_count": 140,
+      "ancestor_count": 0,
       "capabilities": [
-        "storage"
+        "physics"
       ],
-      "class_name": "SCR_CharacterInventoryStorageComponent",
-      "effective_count": 74,
-      "field_id": 8526,
+      "class_name": "VehicleWheeledSimulation",
+      "effective_count": 1,
+      "field_id": 15,
       "native_type": "SCALAR",
-      "property": "MaxCumulativeVolume",
-      "resource_count": 74,
+      "property": "Mass",
+      "resource_count": 1,
+      "units": [
+        "kg"
+      ]
+    },
+    {
+      "aliases": [
+        "vehicle_systems.max_speed"
+      ],
+      "ancestor_count": 0,
+      "capabilities": [
+        "vehicle_systems"
+      ],
+      "class_name": "VehicleWheeledSimulation",
+      "effective_count": 1,
+      "field_id": 16,
+      "native_type": "SCALAR",
+      "property": "MaxSpeed",
+      "resource_count": 1,
       "units": []
     }
   ],
   "next_cursor": null,
   "occurrences": [],
-  "total": 13,
-  "dataset_kind": "diagnostic"
+  "total": 16
 }

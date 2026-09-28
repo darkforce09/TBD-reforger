@@ -1,0 +1,80 @@
+{
+  "document_type": "gameplay_resource",
+  "schema_version": 1,
+  "resource_id": "guid:1111111111111111",
+  "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+  "root_node": "root/properties/components/0",
+  "nodes": [
+    {
+      "node_id": "root/properties/components/0",
+      "class_name": "SCR_UniversalInventoryStorageComponent",
+      "instance_name": "",
+      "native_instance_id": null,
+      "instance_identity_kind": "exporter_structural_path",
+      "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+      "source_addons": [
+        "ArmaReforger"
+      ],
+      "view": "effective",
+      "ancestor_id": null,
+      "ancestor_resource_name": null,
+      "selection": "retained",
+      "children": [
+        "root/properties/components/0/properties/Attributes"
+      ],
+      "declared_properties": [
+        "MaxCumulativeVolume"
+      ],
+      "properties": {
+        "MaxCumulativeVolume": {
+          "definition_id": "storage.max_cumulative_volume",
+          "status": "present",
+          "value": 2500,
+          "origin": "declared",
+          "reason": null
+        }
+      }
+    },
+    {
+      "node_id": "root/properties/components/0/properties/Attributes",
+      "class_name": "ItemAttributeCollection",
+      "instance_name": "",
+      "native_instance_id": null,
+      "instance_identity_kind": "exporter_structural_path",
+      "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+      "source_addons": [
+        "ArmaReforger"
+      ],
+      "view": "effective",
+      "ancestor_id": null,
+      "ancestor_resource_name": null,
+      "selection": "retained",
+      "children": [],
+      "declared_properties": [
+        "Weight"
+      ],
+      "properties": {
+        "Weight": {
+          "definition_id": "inventory.weight",
+          "status": "present",
+          "value": 1.2,
+          "origin": "declared",
+          "reason": null
+        }
+      }
+    }
+  ],
+  "capabilities": {
+    "inventory": [
+      "root/properties/components/0/properties/Attributes"
+    ],
+    "storage": [
+      "root/properties/components/0"
+    ]
+  },
+  "source_addons": [
+    "ArmaReforger"
+  ],
+  "names": [],
+  "references": []
+}

@@ -1,5 +1,11 @@
 //! Mission library models: the library row, its immutable version snapshots, the armory,
 //! the authored-default census rows, and bookmarks.
+//!
+//! @contract mission-review.schema.json#/definitions/MissionRow
+//! @contract mission-review.schema.json#/definitions/MissionVersion
+//! @contract mission-library.schema.json#/definitions/MissionArmory
+//! @contract mission-default-overrides.schema.json#/definitions/MissionDefaultOverride
+//! @contract mission-default-overrides.schema.json#/definitions/MissionDefaultValueBucket
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

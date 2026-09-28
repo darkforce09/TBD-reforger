@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "resources": [
+    {
+      "resource_id": "guid:1111111111111111",
+      "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+      "resource_file": "resources/backpack_fixture.json",
+      "domains": [
+        "equipment"
+      ]
+    }
+  ]
+}

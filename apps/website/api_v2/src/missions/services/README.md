@@ -45,7 +45,9 @@ rereads the actor's authority, so a demotion or a change of author during the wa
 metadata patch, the delete, submission and review comments take it; saving a version and setting
 the current version check authorship without it.
 `mission_reviews.rs` supersedes an earlier pending review when it opens one, and a decision that
-names another artifact than the one under review answers 409 `REVIEWED_ARTIFACT_CHANGED`.
+names another artifact than the one under review answers 409 `REVIEWED_ARTIFACT_CHANGED`. In a
+test build `decide_review` passes the failpoint `ReviewDecisionBeforeCommit` after the decision's
+audit row, inside the caller's transaction.
 `registry_import.rs` validates an envelope against its schema before any SQL runs, then upserts
 in chunks of 10,000 rows; a re-run of the same envelope changes no row.
 

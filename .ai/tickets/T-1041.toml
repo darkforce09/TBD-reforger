@@ -3,8 +3,21 @@ kind = "work"
 title = "Remove the doc-audit grandfather allowlist (law 7)"
 summary = "apps/website/frontend/src/v2/tests/doc_audit/allowlist.rs:13 keeps a dated grandfather table (empty) that mod.rs:363-437 applies to exempt files from the 500-line, inline-test and ticket-comment rules (:332,349,356); CLAUDE.md law 7 forbids any allowlist. Delete the mechanism and its tests (mod.rs:463-626)."
 class = "chore"
-status = "idea"
+status = "shipped"
+order = 9816
+notes = "2026-09-28 (milestone V): delivered. apps/website/frontend/src/v2/tests/doc_audit/ holds mod.rs only (allowlist.rs and the GrandfatherRow table are gone); evidence apps/website/api_v2/tests/engineering_laws.rs:106 engineering_laws_no_exemption_mechanism_exists."
+main_goal = "No exemption mechanism exists for the law 7 size and test-placement rules."
+context = ["CLAUDE.md law 7 forbids any allowlist; the frontend doc_audit suite kept a dated grandfather table that exempted files from the 500-line, inline-test and ticket-comment rules."]
+requirement = ["doc_audit applies its rules to every file with no grandfather table, and a repository law test refuses any exemption mechanism."]
+current_state = ["apps/website/frontend/src/v2/tests/doc_audit/ holds mod.rs only; engineering_laws_no_exemption_mechanism_exists (apps/website/api_v2/tests/engineering_laws.rs:106) checks through verification_core::repository_laws that no allowlist file, allowlist comment or grandfather table exists."]
+approach = ["Delete allowlist.rs and the grandfather code and tests from doc_audit, then add the no-exemption law to the engineering_laws binary (milestone V, L1)."]
+verify = [
+    "cargo xtask db test-it --test engineering_laws",
+    "cargo xtask mk ci-local-leptos",
+]
+acceptance = ["No allowlist or grandfather table exists and engineering_laws_no_exemption_mechanism_exists passes."]
 created_at = "2026-09-24T10:27:58Z"
+completed_at = "2026-09-28T01:18:37Z"
 
 [scope]
 domain = "repo"

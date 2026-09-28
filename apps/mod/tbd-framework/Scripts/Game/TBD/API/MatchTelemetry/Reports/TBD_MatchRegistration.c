@@ -109,6 +109,7 @@ class TBD_MatchRegistration
 	//! The heartbeat's `current_match_id` member: the current round's match id, or an empty value,
 	//! which clears the stored match, while a round's registration is unanswered.
 	//! @return `,"current_match_id":"<id>"`, or empty before this process's first round
+	//! @contract game-runtime-session.schema.json#/definitions/RuntimeHeartbeat
 	static string BuildHeartbeatField()
 	{
 		if (s_sSourceMatchId.IsEmpty())

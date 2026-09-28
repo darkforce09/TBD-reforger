@@ -1,0 +1,7 @@
+{
+  "expected_access_revision": 14,
+  "name": "Allied partner roster",
+  "source": {
+    "kind": "managed_roster"
+  }
+}

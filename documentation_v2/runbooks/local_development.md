@@ -78,11 +78,11 @@ Run every command from the repository root unless a step says otherwise.
    ```
 
    Expected: one line per file, from
-   `cd apps/website/api_v2 && podman compose exec -T db psql -U tbd -d tbd_reforger < seeds/discord_roles.sql`
+   `cd apps/website/api_v2 && podman compose exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < seeds/discord_roles.sql`
    through `registry_dev.sql`, `faction_library.sql` and `vehicle_database.sql` to
-   `wiki_pages.sql`, each followed by psql's command tags (`INSERT 0 3` for the roles) and no
-   `ERROR:` line. psql carries on past a failed statement, so check the output, not only the
-   exit code. The seeds upsert, so running them again converges.
+   `wiki_pages.sql`, each followed by psql's command tags (`INSERT 0 3` for the roles), and exit 0.
+   Each psql run stops at its first failed statement, so an `ERROR:` line ends the command with
+   psql's exit code 3 at that file. The seeds upsert, so running them again converges.
 
 5. Serve the app. Trunk builds a release build and stays in the foreground on
    `127.0.0.1:3000`, proxying `/api` and `/map-assets` to the API on `127.0.0.1:8080`, with the

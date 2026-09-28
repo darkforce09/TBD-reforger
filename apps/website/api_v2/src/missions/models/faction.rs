@@ -2,6 +2,8 @@
 //! Mission Creator palette (side → faction → roles/vehicles).
 //!
 //! @contract faction-library.schema.json#/
+//!
+//! @contract arsenal-envelopes.schema.json#/definitions/UserFaction
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

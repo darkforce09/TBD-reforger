@@ -235,3 +235,28 @@ fn the_audit_message_names_the_offending_field_and_both_structs() {
     assert!(msg.contains("ServerStatusDto") && msg.contains("ServerStatus"));
     assert!(msg.contains("REJECTED and dropped"));
 }
+
+// ── machine credential writes ──
+// The issued secret and id, and the revocation time, are server-generated; the goldens hold the
+// fixed placeholders of the API's golden normalisation table there, never a live secret.
+
+#[test]
+fn machine_credential_issued() {
+    const G: &str =
+        golden!("POST__servers__00000000-0000-4000-d000-000000000001__credentials.json");
+    assert_golden::<IssuedMachineCredential>(G, &[]);
+    let issued: IssuedMachineCredential = serde_json::from_str(G).unwrap();
+    assert!(issued.secret.starts_with("tbdm_"));
+    assert!(issued.credential.revoked_at.is_none());
+}
+
+#[test]
+fn machine_credential_revoked() {
+    const G: &str = golden!(
+        "DELETE__servers__00000000-0000-4000-d000-000000000002__credentials__00000000-0000-4000-e000-000000000004.json"
+    );
+    assert_golden::<MachineCredential>(G, &[]);
+    let revoked: MachineCredential = serde_json::from_str(G).unwrap();
+    assert_eq!(revoked.revoke_reason.as_deref(), Some("Host retired"));
+    assert!(revoked.revoked_at.is_some() && revoked.revoked_by.is_some());
+}

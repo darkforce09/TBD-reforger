@@ -12,7 +12,7 @@
 //! or to update.
 #![allow(dead_code)]
 
-use serde_json::Value;
+use crate::v2::core::api::dto::Announcement;
 
 /// One post, as the editor holds it.
 ///
@@ -40,11 +40,6 @@ pub(super) const CATEGORY_OPTIONS: &[(&str, &str)] = &[
     ("modpack", "Modpack Update"),
     ("important", "Important"),
 ];
-
-/// The string at `k`, or an empty string when the key is absent or is not a string.
-pub(super) fn vstr(v: &Value, k: &str) -> String {
-    v.get(k).and_then(Value::as_str).unwrap_or_default().into()
-}
 
 /// The admin listing route: drafts and published posts together.
 pub(super) fn announcement_list_path() -> &'static str {
@@ -113,30 +108,26 @@ pub(super) fn date_ymd(iso: &str) -> String {
 ///
 /// The date shown is the most specific one the row has: when it was published, else when it was
 /// last changed, else when it was created.
-pub(super) fn doc_from_announcement(v: &Value) -> Option<Doc> {
-    let id = vstr(v, "id");
-    if id.is_empty() {
+pub(super) fn doc_from_announcement(v: &Announcement) -> Option<Doc> {
+    if v.id.is_empty() {
         return None;
     }
-    let status = vstr(v, "status");
-    let published = status == "published";
-    let published_at = vstr(v, "published_at");
-    let created_at = vstr(v, "created_at");
-    let updated_at = vstr(v, "updated_at");
+    let published = v.status == "published";
+    let published_at = v.published_at.as_deref().unwrap_or_default();
     let date_src = if !published_at.is_empty() {
         published_at
-    } else if !updated_at.is_empty() {
-        updated_at
+    } else if !v.updated_at.is_empty() {
+        v.updated_at.as_str()
     } else {
-        created_at
+        v.created_at.as_str()
     };
     Some(Doc {
-        id,
-        title: vstr(v, "title"),
-        category: tag_category(&vstr(v, "tag")),
+        id: v.id.clone(),
+        title: v.title.clone(),
+        category: tag_category(&v.tag),
         published,
-        date: date_ymd(&date_src),
-        body: vstr(v, "body"),
-        thumbnail_url: vstr(v, "thumbnail_url"),
+        date: date_ymd(date_src),
+        body: v.body.clone(),
+        thumbnail_url: v.thumbnail_url.clone(),
     })
 }

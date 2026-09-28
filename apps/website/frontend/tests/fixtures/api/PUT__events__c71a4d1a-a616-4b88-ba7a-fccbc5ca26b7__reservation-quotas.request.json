@@ -1,0 +1,17 @@
+{
+  "expected_access_revision": 5,
+  "reservation_quotas": {
+    "guest": {
+      "opens_at": "2026-07-15T14:05:44.629713Z",
+      "seats": 3
+    },
+    "member": {
+      "opens_at": "2026-07-15T14:05:44.629713Z",
+      "seats": null
+    },
+    "open": {
+      "opens_at": "2026-07-15T14:05:44.629713Z",
+      "seats": 1
+    }
+  }
+}

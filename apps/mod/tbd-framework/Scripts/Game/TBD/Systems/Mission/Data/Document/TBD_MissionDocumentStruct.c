@@ -12,7 +12,7 @@
  */
 
 //! The mission header: identity, display name and terrain.
-//! @contract mission.schema.json#/$defs/meta
+//! @contract mission.schema.json#/$defs/meta partial
 class TBD_MissionMetaStruct
 {
 	string id;      //!< JSON `id`: the content-hash id a published mission carries.

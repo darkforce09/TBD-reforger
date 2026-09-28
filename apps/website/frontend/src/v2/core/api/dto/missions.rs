@@ -13,6 +13,8 @@
 //! never approved from an artifact. `MissionDetail` deliberately has no catch-all for unknown keys,
 //! so a field the backend stops sending fails the round-trip test instead of quietly rendering as a
 //! placeholder.
+//! @contract mission-library.schema.json#/definitions/MissionLibraryPage
+//! @contract mission-library.schema.json#/definitions/MissionDetail
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -20,6 +22,7 @@ pub use website_map_engine::data::store::operations::environment::MissionEnv;
 
 /// One mission as the library lists it, including the review stamp an author needs to
 /// see why their submission came back.
+/// @contract mission-library.schema.json#/definitions/MissionCard
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct MissionCard {
@@ -118,6 +121,7 @@ pub struct ApprovalRow {
 
 /// One immutable saved version of a mission: its number, the authored editor payload, and who
 /// saved it when.
+/// @contract mission-library.schema.json#/definitions/MissionVersion
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct MissionVersion {
@@ -133,6 +137,7 @@ pub struct MissionVersion {
 }
 
 /// A mission in full: its metadata, its review stamp, and the version a dossier lists.
+/// @contract mission-library.schema.json#/definitions/MissionDetail
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct MissionDetail {

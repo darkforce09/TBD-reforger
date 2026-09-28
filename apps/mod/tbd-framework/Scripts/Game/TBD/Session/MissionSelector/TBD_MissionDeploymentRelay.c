@@ -14,7 +14,7 @@
  */
 
 //! The accepted deployment (202), as far as the admin is told about it. Field names are the JSON keys.
-//! @contract mission-deployment.schema.json#/definitions/MissionDeployment
+//! @contract mission-deployment.schema.json#/definitions/MissionDeployment partial
 class TBD_RelayedDeploymentStruct
 {
 	string id; //!< JSON `id`: the deployment id
@@ -48,6 +48,7 @@ class TBD_MissionDeploymentRelay
 	//! @param number the 1-based list number
 	//! @return the immediate reply: the request is on its way, or why it was not sent
 	//! @route POST /api/v1/game-runtime/deployments
+	//! @contract mission-deployment.schema.json#/definitions/RelayedDeploymentRequest
 	static string RequestByNumber(int adminPlayerId, int number)
 	{
 		TBD_DeployableMissionStruct entry = TBD_DeployableMissionList.GetEntryByNumber(number);

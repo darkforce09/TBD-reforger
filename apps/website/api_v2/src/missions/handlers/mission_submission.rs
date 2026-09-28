@@ -2,13 +2,14 @@
 //! artifact and a review of exactly that artifact opens, in one transaction with the status change
 //! and its audit record.
 
-use axum::extract::{Path, State};
+use axum::extract::State;
 use axum::response::Json;
 
 use crate::administration::services::audit_writer::actor_display_name;
 use crate::administration::services::required_audit::append_actor_audit;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::MissionMakerUser;
 use crate::missions::models::mission::{Mission, MissionStatus};
 use crate::missions::services::mission_lookup::{load_mission_on, load_mission_or_404};
@@ -43,7 +44,7 @@ use crate::missions::services::mission_write_lock::lock_editable_mission;
 pub async fn submit_mission(
     State(state): State<AppState>,
     maker: MissionMakerUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<Json<Mission>, ApiError> {
     let user = &maker.0;
     let mut m = load_mission_or_404(&state.pool, &id).await?;

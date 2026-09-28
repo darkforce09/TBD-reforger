@@ -160,13 +160,6 @@
       "branch": "ticket/T-905"
     },
     {
-      "id": "T-906",
-      "title": "Split 7 T-145 API SIZE-3 allowlist files",
-      "status": "ready",
-      "spec": "documentation_v2/tickets/specs/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-906"
-    },
-    {
       "id": "T-907",
       "title": "Split 11 map-engine SIZE-3 allowlist files",
       "status": "ready",
@@ -179,13 +172,6 @@
       "status": "ready",
       "spec": "documentation_v2/tickets/specs/t853_shell_to_xtask_waves.md",
       "branch": "ticket/T-908"
-    },
-    {
-      "id": "T-933",
-      "title": "leptos-gates v-suite goldens break pre-close exit-0",
-      "status": "ready",
-      "spec": "documentation_v2/tickets/specs/t933_leptos_gates_exit.md",
-      "branch": "ticket/T-933"
     },
     {
       "id": "T-816",

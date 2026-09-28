@@ -11,7 +11,7 @@ totals, the viewer's own assignment, the current modpack and the latest announce
 apps/website/frontend/src/v2/pages/command_center/dashboard/
 ├── deployment.rs     the Deployment card: the viewer's faction, squad and role for the next event
 ├── fleet_totals.rs   the Server Uplink totals row: online of configured, players, telemetry backlog and drops
-├── helpers.rs        `vstr` and `vbool`: total field reads over the untyped parts of the payload
+├── helpers.rs        `vstr`: the total string read over the untyped parts of the payload
 ├── hero_banner.rs    the banner: the countdown to the next event, its name and terrain, a hub link
 ├── mod.rs            the module tree; re-exports `DashboardPage`
 ├── modpack.rs        the Modpack card: the current modpack's name, version, size and sync chip
@@ -41,9 +41,10 @@ active servers in the backend's order (name, then id), each with its online stat
 its cap and the frame rate as the wire sent it; a server without a status row reads "OFFLINE" with
 "—" for both. Its pill and its totals row print the backend's fleet totals as sent, never re-added
 from the rows, and dropped telemetry above zero shows in the error tone. A feed row links to its announcement, or to `/announcements` when the row has no id,
-and previews its `snippet` or else the first paragraph of its `body`. The next event, the
-assignment and the announcements are untyped JSON, read through `helpers.rs`, where a missing key,
-a null and a wrong type all read as empty.
+and previews its `snippet` or else the first paragraph of its `body`. The next event and the
+assignment are untyped JSON, read through `helpers.rs`, where a missing key, a null and a wrong
+type all read as empty; the announcements are typed `Announcement` rows, so a row missing a key the
+contract requires fails the fetch instead of rendering blank.
 
 ## Routes
 
@@ -56,8 +57,8 @@ a null and a wrong type all read as empty.
 - `GET /api/v1/dashboard`: read as `DashboardResponse`: `next_event` (`start_time`, `name`,
   `terrain`, `event_id`), `my_assignment` (`faction`, `squad`, `role`), `fleet` as
   `FleetOverviewDto` (`servers` as `FleetServerDto` with an optional `ServerStatusDto`, `totals` as
-  `FleetTotalsDto`), `current_modpack` as `ModpackDto`, and `recent_announcements` (`id`, `title`,
-  `is_pinned`, `published_at`, `snippet`, `body`).
+  `FleetTotalsDto`), `current_modpack` as `ModpackDto`, and `recent_announcements` as `Announcement` rows (`id`,
+  `title`, `is_pinned`, `published_at`, `snippet`, `body`).
 - The page reads the session from the `AuthStore` context and writes nothing. The fetch runs in
   the browser build only; a native build renders the failure branch.
 
@@ -80,7 +81,7 @@ a null and a wrong type all read as empty.
 ## Boundaries
 
 - Depends on: `crate::v2::core::api` (the `api_get` client, `DashboardResponse`,
-  `FleetOverviewDto`, `FleetServerDto`, `FleetTotalsDto`, `ModpackDto`), `crate::v2::core::ui`
+  `FleetOverviewDto`, `FleetServerDto`, `FleetTotalsDto`, `ModpackDto`, `Announcement`), `crate::v2::core::ui`
   (`AuthGate`, `MaterialIcon`, `cn`), `crate::v2::core::utils` (countdown and short date
   formatting), the `AuthStore` context,
   and the banner image on `lh3.googleusercontent.com`.

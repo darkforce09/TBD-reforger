@@ -1,0 +1,118 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ArmaLinkContract",
+  "description": "The Arma identity link handshake: a member asks for a single-use code, types it in game, and the game runtime confirms it with the player's Arma identity. The root is the member's link status.",
+  "$ref": "#/definitions/LinkStatus",
+  "definitions": {
+    "LinkCode": {
+      "description": "POST /api/v1/me/link answer (201): a fresh single-use code; issuing it cancels the caller's previous pending code.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "expires_at"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "LinkStatus": {
+      "description": "GET /api/v1/me/link/status: whether an Arma identity is linked, which one, and whether an unexpired code is pending. arma_id is null until a link exists; arma_character is empty until one is confirmed.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "linked",
+        "arma_id",
+        "arma_character",
+        "pending_code"
+      ],
+      "properties": {
+        "linked": {
+          "type": "boolean"
+        },
+        "arma_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "arma_character": {
+          "type": "string"
+        },
+        "pending_code": {
+          "type": "boolean"
+        }
+      }
+    },
+    "LinkRemoval": {
+      "description": "DELETE /api/v1/me/link answer: the account has no linked Arma identity.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "linked"
+      ],
+      "properties": {
+        "linked": {
+          "const": false
+        }
+      }
+    },
+    "LinkConfirmRequest": {
+      "description": "POST /api/v1/ingest/link-confirm body (mod_runtime machine credential): the code the player typed and the player's Arma identity. Unknown keys answer 400.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "arma_id",
+        "arma_character"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "arma_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "arma_character": {
+          "type": "string"
+        }
+      }
+    },
+    "LinkConfirmation": {
+      "description": "POST /api/v1/ingest/link-confirm answer: the confirmed link.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "linked",
+        "discord_id",
+        "arma_id",
+        "arma_character"
+      ],
+      "properties": {
+        "linked": {
+          "const": true
+        },
+        "discord_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "arma_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "arma_character": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

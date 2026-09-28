@@ -1,0 +1,34 @@
+{
+  "blocks": [
+    {
+      "anchor": "night-operations",
+      "inlines": [
+        {
+          "text": "Night Operations",
+          "type": "text"
+        }
+      ],
+      "level": 1,
+      "type": "heading"
+    },
+    {
+      "inlines": [
+        {
+          "text": "Night vision on before the step-off. Infrared strobes mark friendly positions.",
+          "type": "text"
+        }
+      ],
+      "type": "paragraph"
+    }
+  ],
+  "body_md": "# Night Operations\n\nNight vision on before the step-off. Infrared strobes mark friendly positions.",
+  "category": "Doctrine",
+  "icon": "dark_mode",
+  "id": "99999999-9999-4999-9999-999999999999",
+  "nav_order": 6,
+  "revision": 1,
+  "slug": "night-operations",
+  "title": "Night Operations",
+  "updated_at": "2000-01-01T00:00:00Z",
+  "updated_by": "000000000000000001"
+}

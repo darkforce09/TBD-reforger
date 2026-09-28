@@ -1,0 +1,12 @@
+id = "T-1245"
+kind = "work"
+title = "Share the mortar save DTO and decode refresh token_type"
+summary = "Frontend src/v2 pages/field_tools/mortar/saved_fires.rs:45 keeps SaveResponse private and decode-only, so r_api_telemetry.rs:142 pairs a test-local SavedFireAnswer; core/auth/session.rs:62 RefreshResponse leaves token_type unclaimed (dto/tests/r_api_auth.rs:83)."
+class = "chore"
+status = "idea"
+notes = "Paths under apps/website/frontend/src/v2. Move SaveResponse into core/api/dto beside SavedFire so the golden round trip uses the page's own type, and decide whether RefreshResponse claims token_type (always Bearer) or keeps it listed as unclaimed. Source: milestone V finding V-F97 (golden reproduction)."
+created_at = "2026-09-28T01:14:54Z"
+
+[scope]
+domain = "website"
+layer = "frontend"

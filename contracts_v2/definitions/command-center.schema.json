@@ -1,0 +1,622 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CommandCenterContract",
+  "description": "The command center reads: the home dashboard, the leaderboards and one member's stats card. Nested shapes repeat modpack.schema.json, announcement.schema.json and server-intel.schema.json so the file validates on its own. The root is the dashboard.",
+  "$ref": "#/definitions/Dashboard",
+  "definitions": {
+    "Dashboard": {
+      "description": "GET /api/v1/dashboard (any signed-in member): the next upcoming event (the caller's own when one is upcoming, else the community's), the caller's next assigned ORBAT slot, the active fleet with its totals, the current modpack and the three newest published announcements. next_event, my_assignment and current_modpack are null when there is none.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "next_event",
+        "my_assignment",
+        "fleet",
+        "current_modpack",
+        "recent_announcements"
+      ],
+      "properties": {
+        "next_event": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DashboardEvent"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "my_assignment": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DashboardAssignment"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fleet": {
+          "$ref": "#/definitions/FleetOverview"
+        },
+        "current_modpack": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Modpack"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "recent_announcements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Announcement"
+          },
+          "maxItems": 3
+        }
+      }
+    },
+    "DashboardEvent": {
+      "description": "The next upcoming event. name is the event's name, else its first mission's title; registered counts registered, waitlisted and legacy reservations across its missions.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "name",
+        "terrain",
+        "start_time",
+        "registered",
+        "max_slots",
+        "status"
+      ],
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "terrain": {
+          "type": "string",
+          "enum": [
+            "everon",
+            "arland",
+            "custom",
+            ""
+          ],
+          "description": "The terrain of the first attached mission; empty when the event has none."
+        },
+        "start_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "registered": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_slots": {
+          "type": "integer"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "scheduled",
+            "open",
+            "locked",
+            "live",
+            "completed",
+            "cancelled"
+          ]
+        }
+      }
+    },
+    "DashboardAssignment": {
+      "description": "The caller's next assigned ORBAT slot on an upcoming event mission.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "name",
+        "faction",
+        "squad",
+        "role"
+      ],
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "faction": {
+          "type": "string"
+        },
+        "squad": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        }
+      }
+    },
+    "FleetOverview": {
+      "description": "Every active server, by name then id, with its status, and the fleet totals.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "servers",
+        "totals"
+      ],
+      "properties": {
+        "servers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FleetServer"
+          }
+        },
+        "totals": {
+          "$ref": "#/definitions/FleetTotals"
+        }
+      }
+    },
+    "FleetServer": {
+      "description": "One active server. status is absent until the server first reports.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "server_id",
+        "name"
+      ],
+      "properties": {
+        "server_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/ServerStatus"
+        }
+      }
+    },
+    "FleetTotals": {
+      "description": "configured counts active servers; online, players and max_players sum the online ones; the telemetry totals sum every reported queue reading.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "configured",
+        "online",
+        "players",
+        "max_players",
+        "telemetry_backlog",
+        "telemetry_dropped_total"
+      ],
+      "properties": {
+        "configured": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "online": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "players": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_players": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "telemetry_backlog": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "telemetry_dropped_total": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "ServerStatus": {
+      "description": "A server's live status row. current_match_id is absent when no match runs; ingame_time and ingame_weather are absent when the runtime has not reported them; telemetry_queue is absent until the runtime reports a queue reading. updated_at is the last heartbeat.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "server_id",
+        "is_online",
+        "player_count",
+        "max_players",
+        "server_fps",
+        "uptime_seconds",
+        "updated_at"
+      ],
+      "properties": {
+        "server_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "is_online": {
+          "type": "boolean"
+        },
+        "player_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_players": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "server_fps": {
+          "type": "number",
+          "minimum": 0
+        },
+        "uptime_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "current_match_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "ingame_time": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ingame_weather": {
+          "type": "string",
+          "minLength": 1
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "telemetry_queue": {
+          "$ref": "#/definitions/TelemetryQueueStatus"
+        }
+      }
+    },
+    "TelemetryQueueStatus": {
+      "description": "ServerStatus.telemetry_queue: the last outbound telemetry queue reading the server reported and when. Absent when the server never reported one. The same shape as match-telemetry.schema.json#/definitions/TelemetryQueueStatus.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "backlog",
+        "capacity",
+        "dropped_total",
+        "oldest_age_seconds",
+        "reported_at"
+      ],
+      "properties": {
+        "backlog": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "capacity": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "dropped_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "oldest_age_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reported_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "Modpack": {
+      "description": "One modpack manifest with its mods. At most one pack is current. workshop_url is absent when unset.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "version",
+        "total_size_bytes",
+        "is_current",
+        "created_at",
+        "mods"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "total_size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "workshop_url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "is_current": {
+          "type": "boolean"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "mods": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ModpackMod"
+          }
+        }
+      }
+    },
+    "ModpackMod": {
+      "description": "One mod of a modpack, key dependencies first, then by sort_order. workshop_id, mod_guid and version are absent when unset.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "modpack_id",
+        "name",
+        "is_key_dependency",
+        "sort_order"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "modpack_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "is_key_dependency": {
+          "type": "boolean"
+        },
+        "sort_order": {
+          "type": "integer"
+        },
+        "workshop_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mod_guid": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "Announcement": {
+      "description": "One announcement row. snippet, thumbnail_url and discord_message_id are absent when unset; published_at is absent until the row is first published. author_id is the Discord id of the author.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "body",
+        "tag",
+        "author_id",
+        "status",
+        "is_pinned",
+        "pushed_to_discord",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "body": {
+          "type": "string"
+        },
+        "snippet": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tag": {
+          "$ref": "#/definitions/AnnouncementTag"
+        },
+        "thumbnail_url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "author_id": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/AnnouncementStatus"
+        },
+        "is_pinned": {
+          "type": "boolean"
+        },
+        "pushed_to_discord": {
+          "type": "boolean"
+        },
+        "discord_message_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "published_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "AnnouncementTag": {
+      "type": "string",
+      "enum": [
+        "update",
+        "event",
+        "modpack_update",
+        "important"
+      ]
+    },
+    "AnnouncementStatus": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "published",
+        "archived"
+      ]
+    },
+    "LeaderboardPage": {
+      "description": "GET /api/v1/leaderboards?category=&q=&limit=&offset= (any signed-in member): one page of members ordered by the category (kd by default; an unknown category answers 400), ties by Discord id. q filters usernames; limit defaults to 20 and is at most 50.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "category",
+        "data"
+      ],
+      "properties": {
+        "category": {
+          "type": "string",
+          "enum": [
+            "kd",
+            "command_win",
+            "missions",
+            "longest_kill",
+            "team_kills"
+          ]
+        },
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LeaderboardRow"
+          },
+          "maxItems": 50
+        }
+      }
+    },
+    "LeaderboardRow": {
+      "description": "One member's combat totals from the leaderboard view. kd_ratio is kills per death rounded to 2 places: null when no match recorded a death count, the kill count when the recorded deaths are 0. command_win_rate is command wins per commanded match, rounded to 3 places, 0 without commanded matches. rank is the 1-based position on the requested page, 0 on a stats card.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "discord_id",
+        "username",
+        "avatar_url",
+        "kills",
+        "deaths",
+        "kd_ratio",
+        "team_kills",
+        "longest_kill_m",
+        "vehicles_destroyed",
+        "missions_played",
+        "command_wins",
+        "command_win_rate",
+        "rank"
+      ],
+      "properties": {
+        "discord_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "username": {
+          "type": "string"
+        },
+        "avatar_url": {
+          "type": "string"
+        },
+        "kills": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "deaths": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "kd_ratio": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "team_kills": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "longest_kill_m": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "vehicles_destroyed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "missions_played": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "command_wins": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "command_win_rate": {
+          "type": "number",
+          "minimum": 0
+        },
+        "rank": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "PlayerStatsCard": {
+      "description": "GET /api/v1/users/:discordId/stats (any signed-in member; 404 for an unknown member): the member's leaderboard totals (zeros and rank 0 before their first match), recorded deployments and attendance percentage.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stats",
+        "total_operations",
+        "attendance_rate"
+      ],
+      "properties": {
+        "stats": {
+          "$ref": "#/definitions/LeaderboardRow"
+        },
+        "total_operations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "attendance_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    }
+  }
+}

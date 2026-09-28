@@ -52,7 +52,10 @@ missing one, and a write by someone who may not edit the mission answers 403.
   [artifact](/documentation_v2/glossary/a_to_f.md#artifact) under review, and `approvals_queue.rs` decides
   exactly that artifact, both through `services::mission_reviews`.
 - `mission_armory.rs` validates every row before its transaction deletes the armory, so a
-  malformed body never clears it.
+  malformed body (a blank name or faction, a negative `quantity`) never clears it.
+- `mission_library.rs` applies the same visibility to the overview, both bookmark writes and the
+  `bookmarked` scope: a bookmark write on a mission the caller cannot see answers 404 like a missing
+  one, and the `bookmarked` scope lists only the bookmarked missions the caller can see now.
 - `artifact_document_response.rs` serves the stored bytes unchanged, with their SHA-256 as the
   strong `ETag` and the compile's findings in the `x-compile-diagnostics-count` and
   `x-compile-diagnostics-rules` headers, since `mission.schema.json` admits no extra key.
@@ -76,6 +79,12 @@ missing one, and a write by someone who may not edit the mission answers 403.
   imports another domain's handlers (`apps/website/api_v2/src/tests/architecture_rules.rs`); every
   mission write takes `MissionMakerUser` as well as ownership, so a demotion revokes it
   (`mission_mutators_require_mission_maker_tier` in `tests/mission_lifecycle.rs`).
+- Body decoding: every JSON body is read through `ApiError::from_json_rejection`: 413 with
+  `details.code = request_too_large` over the body limit, 415 without a JSON content type, and 400
+  with the decoder's message (which names the failing field) otherwise.
+- Path decoding: every path segment is read through `core::http::path_parameters::PathParams`: a
+  segment that does not decode into its type answers 400 in the `{error}` envelope with a message
+  naming the parameter, never axum's plain-text rejection.
 
 ## Related documentation
 

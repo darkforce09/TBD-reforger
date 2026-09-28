@@ -12,7 +12,7 @@
  */
 
 //! One `$defs/group` object: the callsign and the four AI attributes.
-//! @contract mission.schema.json#/$defs/group
+//! @contract mission.schema.json#/$defs/group partial
 class TBD_GroupStateWireStruct
 {
 	string callsign; //!< JSON `callsign`: the join key onto flattened slots
@@ -44,7 +44,7 @@ class TBD_GroupStateFactionWireStruct
 }
 
 //! Root of the group-state pass: declares `orbat` and nothing else.
-//! @contract mission.schema.json#/
+//! @contract mission.schema.json#/ partial
 class TBD_GroupStateDocStruct
 {
 	ref map<string, ref TBD_GroupStateFactionWireStruct> orbat; //!< JSON `orbat`: faction key -> faction

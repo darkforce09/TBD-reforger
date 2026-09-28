@@ -1,4 +1,6 @@
 //! Leave-of-absence requests and the review state an admin moves them through.
+//!
+//! @contract leave-request.schema.json#/definitions/LeaveRequest
 
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};

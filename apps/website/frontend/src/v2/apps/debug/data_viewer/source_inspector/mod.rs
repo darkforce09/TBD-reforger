@@ -2,4 +2,4 @@
 mod provenance;
 mod value_renderer;
 pub use provenance::metadata;
-pub use value_renderer::{DocumentInspector, display, summary};
+pub use value_renderer::{display, summary, DocumentInspector};

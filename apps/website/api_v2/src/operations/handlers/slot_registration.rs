@@ -1,8 +1,12 @@
 //! Self-service reservation changes preserve attendance and follow the event-scope lock order.
 //! Capacity includes unresolved historical allocations until an explicit release resolves them.
+//!
+//! @contract reservation-actions.schema.json#/definitions/RegistrationRequest
+//! @contract reservation-response.schema.json#
+//! @contract reservation-actions.schema.json#/definitions/RegistrationWithdrawal
 
+use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, State};
 use axum::response::Json;
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -11,6 +15,8 @@ use uuid::Uuid;
 use crate::administration::services::required_audit::append_actor_audit;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::failpoints::fail_point;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AuthUser;
 use crate::identity_and_access::services::discord_membership_enrollment::request_event_membership_verification;
 use crate::operations::models::RegistrationState;
@@ -26,26 +32,28 @@ use crate::operations::services::event_reservations::{
     waitlist_promotion::promote_waiting_participants,
 };
 
+/// The registration body: an empty `slot_id` asks for no particular seat, a UUID for that seat.
 #[derive(Debug, Deserialize)]
 pub struct RegisterBody {
     slot_id: String,
 }
 
+/// Claim a seat (or a place without one) on an event mission. A `slot_id` that is not a UUID
+/// answers 400; a well-formed id that names no seat of the mission answers 404.
+///
 /// @route POST /api/v1/event-missions/:emid/register
 pub async fn register_for_event_mission(
     State(state): State<AppState>,
     user: AuthUser,
-    Path(emid): Path<String>,
+    PathParams(emid): PathParams<String>,
     body: Result<Json<RegisterBody>, JsonRejection>,
 ) -> Result<Json<Value>, ApiError> {
     let em = load_em(&state.pool, &emid).await?;
-    let Json(body) = body.map_err(|_| {
-        ApiError::bad_request("slot_id is required (send \"\" to register without a seat)")
-    })?;
+    let Json(body) = body.map_err(ApiError::from_json_rejection)?;
     let want: Option<Uuid> = if body.slot_id.is_empty() {
         None
     } else {
-        Some(Uuid::parse_str(&body.slot_id).map_err(|_| ApiError::not_found("slot not found"))?)
+        Some(Uuid::parse_str(&body.slot_id).map_err(|_| ApiError::bad_request("invalid slot_id"))?)
     };
 
     let mut tx = state.pool.begin().await?;
@@ -115,7 +123,9 @@ pub async fn register_for_event_mission(
         )
         .await?;
     }
+    fail_point!(ReservationClaimBeforeCommit);
     tx.commit().await?;
+    fail_point!(ReservationClaimAfterCommit);
     let response = ReservationResponse {
         state: registration.state,
         reservation_state: registration.reservation_state,
@@ -131,7 +141,7 @@ pub async fn register_for_event_mission(
 pub async fn withdraw_from_event_mission(
     State(state): State<AppState>,
     user: AuthUser,
-    Path(emid): Path<String>,
+    PathParams(emid): PathParams<String>,
 ) -> Result<Json<Value>, ApiError> {
     let em = load_em(&state.pool, &emid).await?;
     let mut tx = state.pool.begin().await?;

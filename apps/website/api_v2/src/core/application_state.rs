@@ -59,7 +59,14 @@ impl AppState {
             .collect();
         let cfg = Arc::new(cfg);
         Self {
-            equipment_data: Arc::new(crate::community_content::services::equipment_data_viewer::EquipmentDatasets::new(&cfg.equipment_data_dir, cfg.equipment_export_source_dir.as_ref().map(std::path::PathBuf::from))),
+            equipment_data: Arc::new(
+                crate::community_content::services::equipment_data_viewer::EquipmentDatasets::new(
+                    &cfg.equipment_data_dir,
+                    cfg.equipment_export_source_dir
+                        .as_ref()
+                        .map(std::path::PathBuf::from),
+                ),
+            ),
             session_authority: Arc::new(DatabaseSessionAuthority {
                 pool: pool.clone(),
                 config: cfg.clone(),

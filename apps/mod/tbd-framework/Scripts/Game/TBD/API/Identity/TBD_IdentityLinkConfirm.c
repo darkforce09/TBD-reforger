@@ -126,6 +126,7 @@ class TBD_IdentityLinkConfirm
 	//! is a decode failure (400) and an empty `code` or `arma_id` is rejected by the handler. An
 	//! empty `arma_character` value is legal; nothing joins on it.
 	//! @return the JSON body
+	//! @contract arma-link.schema.json#/definitions/LinkConfirmRequest
 	protected static string BuildPayload(notnull TBD_IdentityLinkPending pending)
 	{
 		string json = "{";

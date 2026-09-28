@@ -1,0 +1,356 @@
+{
+  "schema_version": 2,
+  "resource_id": "guid:1111111111111111",
+  "root_node": "root",
+  "nodes": [
+    {
+      "node_id": "root",
+      "view": "effective",
+      "class_name": "GenericEntity",
+      "instance_name": "",
+      "native_instance_id": null,
+      "instance_identity_kind": "structural_path",
+      "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+      "source_addons": [
+        "ArmaReforger"
+      ],
+      "ancestor_id": null,
+      "children": [],
+      "declared_properties": [
+        "EOnActivate",
+        "components"
+      ],
+      "properties": {
+        "components": {
+          "value": [
+            {
+              "node_id": "root/properties/components/0"
+            },
+            {
+              "node_id": "root/properties/components/1"
+            }
+          ],
+          "status": "present",
+          "native_type": "OBJECT_ARRAY",
+          "origin": "declared",
+          "native_unit": null,
+          "unit_evidence": null,
+          "enum_values": [],
+          "object_base_class": "GenericComponent",
+          "reason": null,
+          "source": {
+            "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+            "node_id": "root",
+            "property": "components",
+            "method": "BaseContainer.GetObjectArray"
+          }
+        },
+        "EOnActivate": {
+          "value": "",
+          "status": "present",
+          "native_type": "STRING",
+          "origin": "engine_default",
+          "native_unit": null,
+          "unit_evidence": null,
+          "enum_values": [],
+          "object_base_class": null,
+          "reason": null,
+          "source": {
+            "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+            "node_id": "root",
+            "property": "EOnActivate",
+            "method": "BaseContainer.Get"
+          }
+        }
+      }
+    },
+    {
+      "node_id": "root/properties/components/0",
+      "view": "effective",
+      "class_name": "SCR_UniversalInventoryStorageComponent",
+      "instance_name": "",
+      "native_instance_id": null,
+      "instance_identity_kind": "structural_path",
+      "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+      "source_addons": [
+        "ArmaReforger"
+      ],
+      "ancestor_id": "root/properties/components/0/ancestor",
+      "children": [],
+      "declared_properties": [
+        "Attributes",
+        "CapacityCoefficient",
+        "MaxCumulativeVolume",
+        "Pouch"
+      ],
+      "properties": {
+        "Attributes": {
+          "value": {
+            "node_id": "root/properties/components/0/properties/Attributes"
+          },
+          "status": "present",
+          "native_type": "OBJECT",
+          "origin": "declared",
+          "native_unit": null,
+          "unit_evidence": null,
+          "enum_values": [],
+          "object_base_class": "ItemAttributeCollection",
+          "reason": null,
+          "source": {
+            "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+            "node_id": "root/properties/components/0",
+            "property": "Attributes",
+            "method": "BaseContainer.GetObject"
+          }
+        },
+        "CapacityCoefficient": {
+          "value": 1.25,
+          "status": "present",
+          "native_type": "SCALAR",
+          "origin": "declared",
+          "native_unit": null,
+          "unit_evidence": null,
+          "enum_values": [],
+          "object_base_class": null,
+          "reason": null,
+          "source": {
+            "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+            "node_id": "root/properties/components/0",
+            "property": "CapacityCoefficient",
+            "method": "BaseContainer.Get"
+          }
+        },
+        "MaxCumulativeVolume": {
+          "value": 2500,
+          "status": "present",
+          "native_type": "SCALAR",
+          "origin": "declared",
+          "native_unit": null,
+          "unit_evidence": null,
+          "enum_values": [],
+          "object_base_class": null,
+          "reason": null,
+          "source": {
+            "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+            "node_id": "root/properties/components/0",
+            "property": "MaxCumulativeVolume",
+            "method": "BaseContainer.Get"
+          }
+        },
+        "Pouch": {
+          "value": "{2222222222222222}Prefabs/Items/Equipment/Pouches/Pouch_Fixture.et",
+          "status": "present",
+          "native_type": "RESOURCE_NAME",
+          "origin": "declared",
+          "native_unit": null,
+          "unit_evidence": null,
+          "enum_values": [],
+          "object_base_class": null,
+          "reason": null,
+          "source": {
+            "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+            "node_id": "root/properties/components/0",
+            "property": "Pouch",
+            "method": "BaseContainer.Get"
+          }
+        }
+      }
+    },
+    {
+      "node_id": "root/properties/components/0/ancestor",
+      "view": "ancestor",
+      "class_name": "SCR_UniversalInventoryStorageComponent",
+      "instance_name": "",
+      "native_instance_id": null,
+      "instance_identity_kind": "structural_path",
+      "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+      "source_addons": [
+        "ArmaReforger"
+      ],
+      "ancestor_id": null,
+      "children": [],
+      "declared_properties": [],
+      "properties": {
+        "MaxCumulativeVolume": {
+          "value": 2000,
+          "status": "present",
+          "native_type": "SCALAR",
+          "origin": "declared",
+          "native_unit": null,
+          "unit_evidence": null,
+          "enum_values": [],
+          "object_base_class": null,
+          "reason": null,
+          "source": {
+            "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+            "node_id": "root/properties/components/0/ancestor",
+            "property": "MaxCumulativeVolume",
+            "method": "BaseContainer.Get"
+          }
+        }
+      }
+    },
+    {
+      "node_id": "root/properties/components/0/properties/Attributes",
+      "view": "effective",
+      "class_name": "ItemAttributeCollection",
+      "instance_name": "",
+      "native_instance_id": null,
+      "instance_identity_kind": "structural_path",
+      "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+      "source_addons": [
+        "ArmaReforger"
+      ],
+      "ancestor_id": null,
+      "children": [],
+      "declared_properties": [
+        "ItemDisplayName",
+        "Weight"
+      ],
+      "properties": {
+        "ItemDisplayName": {
+          "value": {
+            "node_id": "root/properties/components/0/properties/Attributes/properties/ItemDisplayName"
+          },
+          "status": "present",
+          "native_type": "OBJECT",
+          "origin": "declared",
+          "native_unit": null,
+          "unit_evidence": null,
+          "enum_values": [],
+          "object_base_class": "UIInfo",
+          "reason": null,
+          "source": {
+            "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+            "node_id": "root/properties/components/0/properties/Attributes",
+            "property": "ItemDisplayName",
+            "method": "BaseContainer.GetObject"
+          }
+        },
+        "Weight": {
+          "value": 1.2,
+          "status": "present",
+          "native_type": "SCALAR",
+          "origin": "declared",
+          "native_unit": "kg",
+          "unit_evidence": null,
+          "enum_values": [],
+          "object_base_class": null,
+          "reason": null,
+          "source": {
+            "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+            "node_id": "root/properties/components/0/properties/Attributes",
+            "property": "Weight",
+            "method": "BaseContainer.Get"
+          }
+        }
+      }
+    },
+    {
+      "node_id": "root/properties/components/0/properties/Attributes/properties/ItemDisplayName",
+      "view": "effective",
+      "class_name": "UIInfo",
+      "instance_name": "",
+      "native_instance_id": null,
+      "instance_identity_kind": "structural_path",
+      "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+      "source_addons": [
+        "ArmaReforger"
+      ],
+      "ancestor_id": null,
+      "children": [],
+      "declared_properties": [
+        "Name"
+      ],
+      "properties": {
+        "Name": {
+          "value": "#AR-Fixture_Backpack_Name",
+          "status": "present",
+          "native_type": "STRING",
+          "origin": "declared",
+          "native_unit": null,
+          "unit_evidence": null,
+          "enum_values": [],
+          "object_base_class": null,
+          "reason": null,
+          "source": {
+            "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+            "node_id": "root/properties/components/0/properties/Attributes/properties/ItemDisplayName",
+            "property": "Name",
+            "method": "BaseContainer.Get"
+          }
+        }
+      }
+    },
+    {
+      "node_id": "root/properties/components/1",
+      "view": "effective",
+      "class_name": "MeshObject",
+      "instance_name": "",
+      "native_instance_id": null,
+      "instance_identity_kind": "structural_path",
+      "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+      "source_addons": [
+        "ArmaReforger"
+      ],
+      "ancestor_id": "root/properties/components/1/ancestor",
+      "children": [],
+      "declared_properties": [
+        "Object"
+      ],
+      "properties": {
+        "Object": {
+          "value": "{5555555555555555}Assets/Items/Equipment/Backpacks/Backpack_Fixture.xob",
+          "status": "present",
+          "native_type": "RESOURCE_NAME",
+          "origin": "declared",
+          "native_unit": null,
+          "unit_evidence": null,
+          "enum_values": [],
+          "object_base_class": null,
+          "reason": null,
+          "source": {
+            "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+            "node_id": "root/properties/components/1",
+            "property": "Object",
+            "method": "BaseContainer.Get"
+          }
+        }
+      }
+    },
+    {
+      "node_id": "root/properties/components/1/ancestor",
+      "view": "ancestor",
+      "class_name": "MeshObject",
+      "instance_name": "",
+      "native_instance_id": null,
+      "instance_identity_kind": "structural_path",
+      "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+      "source_addons": [
+        "ArmaReforger"
+      ],
+      "ancestor_id": null,
+      "children": [],
+      "declared_properties": [],
+      "properties": {
+        "Object": {
+          "value": "{A4048C2AA75EF832}Common/Models/Default.xob",
+          "status": "present",
+          "native_type": "RESOURCE_NAME",
+          "origin": "declared",
+          "native_unit": null,
+          "unit_evidence": null,
+          "enum_values": [],
+          "object_base_class": null,
+          "reason": null,
+          "source": {
+            "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+            "node_id": "root/properties/components/1/ancestor",
+            "property": "Object",
+            "method": "BaseContainer.Get"
+          }
+        }
+      }
+    }
+  ]
+}

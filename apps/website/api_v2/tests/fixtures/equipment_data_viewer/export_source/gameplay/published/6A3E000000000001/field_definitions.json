@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "fields": {
+    "storage.max_cumulative_volume": {
+      "class_name": "SCR_UniversalInventoryStorageComponent",
+      "property": "MaxCumulativeVolume",
+      "field_name": "max_cumulative_volume",
+      "section": "storage",
+      "native_type": "SCALAR",
+      "native_unit": null,
+      "unit_evidence": null,
+      "method": "BaseContainer.Get",
+      "disposition": "retain_value",
+      "follow_reference": false,
+      "object_base_class": null,
+      "enum_values": []
+    },
+    "inventory.weight": {
+      "class_name": "ItemAttributeCollection",
+      "property": "Weight",
+      "field_name": "weight",
+      "section": "inventory",
+      "native_type": "SCALAR",
+      "native_unit": "kg",
+      "unit_evidence": null,
+      "method": "BaseContainer.Get",
+      "disposition": "retain_value",
+      "follow_reference": false,
+      "object_base_class": null,
+      "enum_values": []
+    }
+  }
+}

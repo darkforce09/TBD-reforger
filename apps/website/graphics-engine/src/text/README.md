@@ -59,4 +59,4 @@ atlas grid size.
   overlapping specs (`width_declutter_drops_overlapping_long_names`); the `TextUniforms` block
   stays 16 bytes, matching `shader.wgsl` (tested in `crate::shaders`); nothing here owns a GPU
   resource, so the map engine may import this module directly (`cargo xtask verify engine-layers`
-  restricts only `text::gpu`, which does not exist).
+  restricts none of it).

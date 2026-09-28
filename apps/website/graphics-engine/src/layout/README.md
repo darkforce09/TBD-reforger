@@ -29,4 +29,4 @@ apps/website/graphics-engine/src/layout/
 - Rules: everything listed is plain data, a constant that sizes it or a function that writes it;
   nothing here owns a GPU resource or holds logic. Adding an item widens the cross-crate contract
   and belongs in this file alone. `cargo xtask verify engine-layers` leaves this module open to
-  the map engine (rule 3b restricts only `device`, `pipeline`, `shaders`, `r#loop` and `text::gpu`).
+  the map engine (rule 3b restricts only `device`, `pipeline`, `shaders` and `r#loop`).

@@ -62,7 +62,11 @@ pub(crate) enum TopCmd {
         #[command(subcommand)]
         cmd: DeployCmd,
     },
-    /// Local database lane: up / down / seed / migrate / test-it
+    /// Local database lane: container, seeds, backups, registry import, integration test runs
+    ///
+    /// `cargo xtask db --help` lists every command. The names live in `DbCmd` and in
+    /// `LANE_COMMANDS`, which a unit test diffs against it, so this line names what the lane
+    /// covers rather than keeping an unchecked third copy of the list.
     Db {
         #[command(subcommand)]
         cmd: crate::commands::db::operations::DbCmd,

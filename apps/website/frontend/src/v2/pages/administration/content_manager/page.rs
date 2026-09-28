@@ -22,11 +22,10 @@ use super::doc::{doc_from_announcement, Doc};
 use super::editor_form::editor;
 #[cfg(target_arch = "wasm32")]
 use super::editor_form::today_iso;
-use crate::v2::core::api::dto::Paginated;
+use crate::v2::core::api::dto::{Announcement, Paginated};
 use crate::v2::core::ui::split_pane::{SplitPane, SplitPaneEmpty};
 use crate::v2::core::ui::MaterialIcon;
 use leptos::prelude::*;
-use serde_json::Value;
 
 /// The content screen, behind the administrator gate.
 #[component]
@@ -47,7 +46,7 @@ pub fn ContentManagerPage() -> impl IntoView {
     let list_res = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::v2::core::api::client::api_get::<Paginated<Value>>(
+            crate::v2::core::api::client::api_get::<Paginated<Announcement>>(
                 store,
                 announcement_list_path(),
             )
@@ -56,7 +55,7 @@ pub fn ContentManagerPage() -> impl IntoView {
         #[cfg(not(target_arch = "wasm32"))]
         {
             let _ = store;
-            Err::<Paginated<Value>, crate::v2::core::api::client::ApiErr>((
+            Err::<Paginated<Announcement>, crate::v2::core::api::client::ApiErr>((
                 0,
                 Some("CMS list unavailable off wasm".into()),
             ))

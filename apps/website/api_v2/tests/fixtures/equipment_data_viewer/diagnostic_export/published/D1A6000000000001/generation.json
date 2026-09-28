@@ -1,0 +1,37 @@
+{
+  "generation_id": "D1A6000000000001",
+  "schema_version": 2,
+  "scope": "complete",
+  "status": "completed",
+  "errors": [],
+  "resources": [
+    {
+      "resource_id": "guid:1111111111111111",
+      "resource_name": "{1111111111111111}Prefabs/Items/Equipment/Backpacks/Backpack_Fixture.et",
+      "record_file": "records/backpack_fixture.json",
+      "source_file": "sources/backpack_fixture.json",
+      "domains": [
+        "equipment"
+      ]
+    },
+    {
+      "resource_id": "guid:2222222222222222",
+      "resource_name": "{2222222222222222}Prefabs/Items/Equipment/Pouches/Pouch_Fixture.et",
+      "record_file": "records/pouch_fixture.json",
+      "source_file": "sources/pouch_fixture.json",
+      "domains": [
+        "equipment",
+        "dependency"
+      ]
+    },
+    {
+      "resource_id": "guid:3333333333333333",
+      "resource_name": "{3333333333333333}Prefabs/Vehicles/Wheeled/Truck_Fixture.et",
+      "record_file": "records/truck_fixture.json",
+      "source_file": "sources/truck_fixture.json",
+      "domains": [
+        "vehicle"
+      ]
+    }
+  ]
+}

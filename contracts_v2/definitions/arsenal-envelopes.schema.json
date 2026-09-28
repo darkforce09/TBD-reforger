@@ -1,0 +1,447 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ArsenalEnvelopesContract",
+  "description": "The API envelopes around the arsenal data: the faction library rows and list, and the registry item and compatibility pages. A faction's doc keeps its own draft 2020-12 schema (faction-library). A registry row repeats the constraints of the registry-items item or registry-compat edge it stores, beside its storage columns, because this draft-07 file cannot reference the 2020-12 $defs. The root is the faction list.",
+  "$ref": "#/definitions/FactionList",
+  "definitions": {
+    "FactionList": {
+      "description": "GET /api/v1/factions (mission maker): the caller's saved factions by side, then name. The list is never paged: limit equals total and offset is 0.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data",
+        "total",
+        "limit",
+        "offset"
+      ],
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/UserFaction"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "offset": {
+          "const": 0
+        }
+      }
+    },
+    "UserFaction": {
+      "description": "One saved faction of its owner, as GET /api/v1/factions/:id, POST (201) and PUT answer it. doc is the faction-library.schema.json document (draft 2020-12) the owner stored, validated on write; side and name repeat its fields.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "owner_id",
+        "side",
+        "name",
+        "doc",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "owner_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "side": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "doc": {
+          "type": "object"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "RegistryItemPage": {
+      "description": "GET /api/v1/registry?modpack=&limit=&offset= (mission maker): the modpack's registry items by sort_order, then display name, each a RegistryItemRow. total, limit and offset are present together when a limit was requested (at most 500). The ETag header repeats etag; a matching If-None-Match answers 304 without a body.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data",
+        "etag",
+        "modpack_id",
+        "modpack_version"
+      ],
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RegistryItemRow"
+          }
+        },
+        "etag": {
+          "type": "string",
+          "minLength": 1
+        },
+        "modpack_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "modpack_version": {
+          "type": "string"
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "dependencies": {
+        "total": [
+          "limit",
+          "offset"
+        ],
+        "limit": [
+          "total",
+          "offset"
+        ],
+        "offset": [
+          "total",
+          "limit"
+        ]
+      }
+    },
+    "RegistryItemRow": {
+      "description": "One stored registry item of a modpack: the registry-items.schema.json#/$defs/item fields with that definition's constraints, plus the storage columns id, modpack_id, sort_order, created_at and updated_at. An optional item field is absent when its column is NULL, and icon_url when it is empty. A timestamp column that is NULL answers 0001-01-01T00:00:00Z.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "modpack_id",
+        "resource_name",
+        "display_name",
+        "category",
+        "kind",
+        "sort_order",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "modpack_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "resource_name": {
+          "type": "string",
+          "pattern": "^\\{[0-9A-F]{16}\\}[A-Za-z0-9/_.\\- ()']+$"
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1
+        },
+        "icon_url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "character",
+            "gear_primary",
+            "gear_handgun",
+            "gear_launcher",
+            "gear_throwable",
+            "gear_explosive",
+            "gear_uniform",
+            "gear_jacket",
+            "gear_pants",
+            "gear_boots",
+            "gear_vest",
+            "gear_armored_vest",
+            "gear_helmet",
+            "gear_backpack",
+            "gear_glasses",
+            "gear_gloves",
+            "gear_binoculars",
+            "gear_item",
+            "magazine",
+            "ammo",
+            "optic",
+            "attachment",
+            "vehicle",
+            "vehicle_weapon",
+            "crate",
+            "other"
+          ]
+        },
+        "abstract": {
+          "type": "boolean"
+        },
+        "arsenal_type": {
+          "type": "string"
+        },
+        "weight_kg": {
+          "type": "number",
+          "minimum": 0
+        },
+        "volume_cm3": {
+          "type": "number",
+          "minimum": 0
+        },
+        "max_weight_kg": {
+          "type": "number",
+          "minimum": 0
+        },
+        "max_volume_cm3": {
+          "type": "number",
+          "minimum": 0
+        },
+        "cargo_grid_w": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cargo_grid_h": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "addon": {
+          "type": "string"
+        },
+        "variant_of": {
+          "type": "string",
+          "pattern": "^\\{[0-9A-F]{16}\\}[A-Za-z0-9/_.\\- ()']+$"
+        },
+        "sort_order": {
+          "type": "integer"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "RegistryCompatPage": {
+      "description": "GET /api/v1/registry/compat?modpack=&edge_type=&limit=&offset= (mission maker): the modpack's compatibility edges by edge type, then from and to node, optionally only the listed edge types, each a RegistryCompatRow. total, limit and offset are present together when a limit was requested (at most 500). The ETag header repeats etag; a matching If-None-Match answers 304 without a body.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data",
+        "etag",
+        "modpack_id",
+        "modpack_version"
+      ],
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RegistryCompatRow"
+          }
+        },
+        "etag": {
+          "type": "string",
+          "minLength": 1
+        },
+        "modpack_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "modpack_version": {
+          "type": "string"
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "dependencies": {
+        "total": [
+          "limit",
+          "offset"
+        ],
+        "limit": [
+          "total",
+          "offset"
+        ],
+        "offset": [
+          "total",
+          "limit"
+        ]
+      }
+    },
+    "RegistryCompatRow": {
+      "description": "One stored compatibility edge of a modpack: the registry-compat.schema.json#/$defs/edge fields with that definition's constraints, plus the storage columns id, modpack_id, qty, created_at and updated_at. evidence is absent when it is empty. qty is the edge's multiplicity: the number of aggregated character_default_cargo entries, 1 for the other edge types.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "modpack_id",
+        "from_node",
+        "to_node",
+        "edge_type",
+        "qty",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "modpack_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "from_node": {
+          "type": "string",
+          "pattern": "^\\{[0-9A-F]{16}\\}[A-Za-z0-9/_.\\- ()']+$"
+        },
+        "to_node": {
+          "type": "string",
+          "pattern": "^\\{[0-9A-F]{16}\\}[A-Za-z0-9/_.\\- ()']+$"
+        },
+        "edge_type": {
+          "type": "string",
+          "enum": [
+            "mag_in_weapon",
+            "ammo_in_mag",
+            "optic_on_weapon",
+            "attachment_on_weapon",
+            "mag_in_vehicle_weapon",
+            "ammo_in_vehicle_weapon",
+            "character_default_loadout",
+            "character_default_weapon",
+            "character_default_cargo"
+          ]
+        },
+        "evidence": {
+          "type": "string",
+          "minLength": 1
+        },
+        "qty": {
+          "type": "integer"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "RegistryCargoDefaults": {
+      "description": "GET /api/v1/registry/compat?view=cargo_defaults (mission maker): each character's default cargo, aggregated from its character_default_cargo edges: data maps a character resource name to its container rows. source_edge_count is the number of edges read before aggregation.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "view",
+        "data",
+        "etag",
+        "modpack_id",
+        "modpack_version",
+        "source_edge_count"
+      ],
+      "properties": {
+        "view": {
+          "const": "cargo_defaults"
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/CargoDefaultRow"
+            }
+          }
+        },
+        "source_edge_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "etag": {
+          "type": "string",
+          "minLength": 1
+        },
+        "modpack_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "modpack_version": {
+          "type": "string"
+        }
+      }
+    },
+    "CargoDefaultRow": {
+      "description": "One item a character carries by default in one clothing container, with the summed quantity.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "container",
+        "item",
+        "qty"
+      ],
+      "properties": {
+        "container": {
+          "type": "string",
+          "enum": [
+            "pants",
+            "jacket",
+            "vest",
+            "backpack"
+          ]
+        },
+        "item": {
+          "type": "string",
+          "minLength": 1
+        },
+        "qty": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

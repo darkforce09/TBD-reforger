@@ -4,7 +4,8 @@ URL-only benches that drive one part of the map engine in isolation, with none o
 [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s document, persistence or
 chrome around it: the building viewer, which loads one extracted building blueprint and probes
 line of sight and the viewshed through it, and the world line-of-sight bench, which loads the
-committed object catalogue around a map point and probes one segment through it.
+committed object catalogue around a map point and probes one segment through it. Beside them, the
+equipment data viewer reads the imported Workbench equipment and vehicle datasets from the API.
 
 ## Contents
 
@@ -14,6 +15,7 @@ apps/website/frontend/src/v2/apps/debug/
 ├── building_interior.rs   `InteriorLanes`: the lane set both benches draw on; compound tessellation
 ├── building_viewer/       the `/debug/building-viewer` bench: page, pure geometry, browser host
 ├── building_viewer.rs     the building viewer's module root: shared types and the default prefab
+├── data_viewer/           the `/debug/data-viewer` equipment and vehicle dataset reader
 ├── mod.rs                 the module tree
 ├── tests/                 unit tests for the interior lanes and the world bench's scene geometry
 ├── world_los/             the world bench's browser host: catalogue load, lane upload, the probe
@@ -45,27 +47,31 @@ build covers, and a browser half (the `live` modules), which compiles for `wasm3
 |---|---|---|---|
 | `/debug/building-viewer` | `BuildingViewerPage` | route tier `none`; no sign-in needed | full-bleed, chromeless; no navigation entry |
 | `/debug/world-los` | `WorldLosPage` | route tier `none`; no sign-in needed | full-bleed, chromeless; no navigation entry |
+| `/debug/data-viewer` | `DataViewerPage` | route tier `none`; no sign-in needed | full-bleed, chromeless; no navigation entry |
 
 ## Public surface
 
-- `building_viewer::BuildingViewerPage` and `world_los::WorldLosPage`: the route components
-  `apps/website/frontend/src/app_routes.rs` mounts. Nothing else leaves the folder.
+- `building_viewer::BuildingViewerPage`, `world_los::WorldLosPage` and
+  `data_viewer::DataViewerPage`: the route components `apps/website/frontend/src/app_routes.rs`
+  mounts. Nothing else leaves the folder.
 
 ## Boundaries
 
 - Depends on: `website_map_engine` (`world`, `spatial`, `streaming`, `frame`, `overlay::lanes`,
   `camera::ortho` and the viewshed texture of `editing::tools::line_of_sight`), with the `io`
   feature `apps/website/frontend/Cargo.toml` enables for the blueprint raycaster; `gloo_net`,
-  `futures`, `js_sys`, `wasm_bindgen` and `web_sys` in the browser build. Nothing from
-  `crate::v2::core`.
-- Used by: the two routes in `apps/website/frontend/src/app_routes.rs`, with their rows in
+  `futures`, `js_sys`, `wasm_bindgen` and `web_sys` in the browser build. The data viewer depends
+  on `crate::v2::core::api` (its anonymous reads and the equipment data viewer DTOs); nothing else
+  here uses `crate::v2::core`.
+- Used by: the three routes in `apps/website/frontend/src/app_routes.rs`, with their rows in
   `apps/website/frontend/src/router.rs`; nothing in the navigation links to them.
-- Rules: a bench reads committed assets and engine code only; it never writes a
-  [mission](/documentation_v2/glossary/g_to_m.md#mission) document, never persists, and imports nothing
-  from a page or a sibling workspace. The native `role_id` mirror in `building_interior.rs` must
+- Rules: a map bench reads committed assets and engine code only, and the data viewer only reads
+  the API anonymously; no bench writes a
+  [mission](/documentation_v2/glossary/g_to_m.md#mission) document or persists anything, and none
+  imports from a page or a sibling workspace. The native `role_id` mirror in `building_interior.rs` must
   equal `apps/website/map-engine/src/overlay/lanes.rs` (`lane_ids_match_the_render_crate` in
   `tests/building_interior.rs`), and no wall may land on a borrowed lane
-  (`walls_never_use_borrowed_lanes`). Both route rows must match
+  (`walls_never_use_borrowed_lanes`). The three route rows must match
   `tools_v2/developer-tools/fixtures/dom_oracle/manifests/routes.csv`, which the route-drift gate
   `gate s-routes` of `tools_v2/developer-tools/` compares.
 

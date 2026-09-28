@@ -1,0 +1,15 @@
+{
+  "expected_access_revision": 9,
+  "policy": {
+    "grants": [
+      {
+        "conditions": [
+          {
+            "group_id": "00000000-0000-4000-b100-000000000001",
+            "kind": "event_group"
+          }
+        ]
+      }
+    ]
+  }
+}

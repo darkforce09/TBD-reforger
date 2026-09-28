@@ -39,8 +39,9 @@ calls it with a request of `action`, `resource` and `resources`, and gets back `
 
 | Action | What it does | Writes |
 |---|---|---|
-| `start` | starts a complete generation | the generation directory |
-| `diagnostic` | starts a diagnostic generation over `resources` | the generation directory |
+| `start` | starts a gameplay generation (`TBD_GameplayExportGeneration`) | the gameplay generation directory |
+| `full_diagnostic` | starts a complete source generation | the generation directory |
+| `diagnostic` | starts a diagnostic source generation over `resources` | the generation directory |
 | `step` | captures the next queued resource; repeat until `completed` | the generation directory |
 | `status` | reports the running generation | nothing |
 | `verify` | runs the reader verification | `source_reader_probes/verification.json` |

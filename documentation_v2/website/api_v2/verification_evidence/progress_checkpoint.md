@@ -1,16 +1,14 @@
 **Status:** live
 
-# API v2 verification checkpoint — 2026-09-27
+# API v2 verification checkpoint — 2026-09-28
 
-Milestones E, F, M, T and C are implemented and verified; overall readiness is **not passing**,
-because milestones V and S have not started and game ballistics (B) is a later phase (see
-`remaining_milestones.md`), and `cargo xtask verify api-readiness --execute` was not run (it needs
-a quiet working tree). T is committed on main as 0ef292758 and C as b49fb86c1 (pushed
-2026-09-27; T-940.7, T-940.8 and T-940.9 stamped). Do not reset, clean, stash or revert
-anything in the working tree: it holds another agent's uncommitted work
-(equipment/vehicle export and the equipment data viewer in `tools_v2/xtask`,
-`apps/website/api_v2/src/community_content`, the frontend `data_viewer`,
-`contracts_v2/definitions/equipment-*` and the untracked assets_v2/equipment folder).
+Milestones E, F, M, T, C and V are implemented and verified; overall readiness is **not
+passing**, because staging (S) has not started, game ballistics (B) is a later phase (see
+`remaining_milestones.md`), and no receipt exists: `cargo xtask verify api-readiness --execute`
+was not run (it needs a quiet working tree). T is committed on main as 0ef292758 and C as
+b49fb86c1; V completed on 2026-09-28 and is uncommitted. Do not reset, clean, stash or revert
+anything in the working tree: it holds V's uncommitted work, including seven deletions the
+commit records with `git rm`.
 
 ## Milestone status
 
@@ -21,10 +19,74 @@ anything in the working tree: it holds another agent's uncommitted work
 | M — artifacts, reviews, approval binding, deployments, authored preservation, workspace | Complete. |
 | T — match identity, revisions, corrections, atomicity, detailed events, telemetry queue, fleet dashboard, statistics | Complete (design: `telemetry.md`). |
 | C — personnel pagination, audit replay and query recovery, audit frontend, vehicle mutations, wiki features, content storage | Complete, committed as b49fb86c1 (design: `administration_and_content.md`). |
-| V, S | Not started (`remaining_milestones.md`). |
+| V — route acceptance, contract parity, properties, controlled races, failure injection, engineering laws | Complete 2026-09-28, uncommitted (design: `verification_completeness.md`; findings: `verification_findings.md`; execution record below). |
+| S | Not started (`remaining_milestones.md`). |
 | B | Later separate phase by operator decision (2026-09-23). |
 
 Migrations 0057–0059 are pinned; the next migration is 0060. Versions 0022–0024 stay retired.
+
+## V in brief
+
+- **Route acceptance.** `tests/route_acceptance_support/` reads the route table from the router
+  source at test time and holds it against every `@route` tag in both directions. Each route has
+  one table-driven specification over seven dimensions (authorized, unauthorized, ownership,
+  guest, ban, malformed, boundary); the framework derives every probe that needs no domain
+  knowledge. Seven part binaries, `route_acceptance_coverage` and
+  `debug_routes_are_development_only` run them.
+- **Contract parity.** 19 new response schemas and 123 `@contract` tags in 53 files.
+  `contract_parity_goldens` reproduces every frontend golden (89 `_index.tsv` rows) from
+  `registry_dev.sql` and `content_golden.sql`, with the 43 normalised fields listed in the design
+  note; `contract_parity_mod_wire` checks the mod's DTO fields, wire version and mission schema
+  window; the equipment viewer goldens reproduce from a 97 KB committed fixture. Modpacks,
+  announcements, CMS announcements and leaderboards decode into typed DTOs.
+- **Refusal envelopes.** Every JSON body, query and path rejection answers `{error, details?}`
+  with 400, 413 `request_too_large` or 415 (`from_json_rejection`, `from_query_rejection`, and
+  `core/http/path_parameters.rs`, which replaces 97 `Path` extractors in 49 handlers). The 12
+  `/api/v1/debug/equipment-data/*` routes are registered only in development.
+- **Handler defects.** A hidden draft no longer leaks through a peer's bookmark (T-1173);
+  nonexistent missions, events, servers and roster accounts answer 404; a negative armory
+  quantity, an unknown event scope and a malformed slot id answer 400 (every row in
+  `verification_findings.md`).
+- **Properties.** Seven properties at 256 generated cases each, seed 2026092201.
+- **Failpoints, races, failure injection.** `core/failpoints/` holds 18 named failpoints behind
+  the test-only `failpoints` feature, compiled out of the release `api`. Nine controlled-race
+  cases cover last seat, refresh, replay, assignment against withdrawal, linking, approval,
+  ingest and commit ordering; 27 failure-injection cases cover rollback before commit,
+  idempotent or documented retries after commit, and external-effect boundaries.
+- **Engineering laws.** `verification_core::repository_laws` holds the file-length,
+  test-placement, no-exemption, crate-direction and engine-layer laws; `verify file-length` and
+  `verify engine-layers` delegate to it; the frontend `doc_audit` grandfather table is gone
+  (T-1041).
+- **Readiness fingerprint.** A tracked symlink is fingerprinted by its link text; untracked,
+  escaping and dangling links stay refused.
+- **Register.** Minimums at the measured counts: route_acceptance 66, contract_parity 85,
+  controlled_races 9, failure_injection 27, engineering_laws 10, property invariants 26 (with
+  `reservation_transactions_conserve_slots_and_participants` in the pattern), backend_regression
+  1,302, frontend_quality 1,826, readiness_self_tests 59. The V requirements name their test
+  binaries, support folders, failpoints, path extractor, repository laws, schemas, seed and
+  goldens.
+- **Findings.** 116 findings triaged in `verification_findings.md`; 23 new idea tickets,
+  T-1229 to T-1251.
+
+## V verification (2026-09-28; logs in `target/api-progress-checkpoint/2026-09-28-v/`, gitignored)
+
+| Gate | Result |
+|---|---|
+| `cargo xtask db test-it` (full) | 1,302 passed, 0 failed, 0 ignored over 148 binaries; tests 222 s, build 46 s; lib 536 (`g-db-test-it-final-2.log`). V prefixes: route_acceptance 66 (coverage 14, seven parts × 7, `debug_routes_are_development_only` 3), contract_parity 85 (goldens 6, mod_wire 6, equipment_viewer 2, `json_rejection_envelopes` 34, `query_rejection_envelopes` 30, seven part responses 7), controlled_races 9, failure_injection 27, engineering_laws 10. Every identity_* and administration_* check at its minimum with every named case |
+| Property records | 256/256 at seed 2026092201 for `protected_actions_require_effective_session_authority`, `refresh_replay_revokes_concurrently_issued_successor`, `approval_and_deployment_share_immutable_artifact`, `telemetry_revisions_contribute_exactly_once`, `command_executor_fencing_preserves_observed_outcomes`, `audit_publication_preserves_committed_event_delivery`, `reservation_transactions_conserve_slots_and_participants` |
+| Runtime | full `db test-it` inside the 900 s target; register timeout 1,800 s |
+| `ci rust-test-it` | exit 0: 1,302 passed, 0 failed over 148 suites on the fixed `rust_it` database (`g-ci-rust-test-it.log`) |
+| Frontend | `cargo test -p website-frontend` 1,826 passed, 0 failed; `identity_browser_session_transactions` 9/9 (`g-frontend-test-final.log`); clippy wasm32 exit 0, no warning in a V file; fmt clean; trunk release success |
+| `mk leptos-gates` | exit 0, gate doctor OK, editor suite 21/21, DOM oracle 25/25 (`g-leptos-gates-2.log`) after 10 screenshot-audited accepts (`g-accept-*.log`: dashboard, approvals, audit, servercontrol, deployments, events, eventhub, missions, missionview, settings), each tracing to golden content now reproduced from the seed |
+| Clippy `-D warnings` | clean: website-api all targets and `--lib --bins` (failpoints off); xtask and verification-core; map-engine and graphics-engine |
+| rustfmt | `fmt --check` clean on website-api, xtask, verification-core, developer-tools, map-engine, graphics-engine and the frontend; ci `rust-fmt` PASS |
+| Static gates | route-tags PASS 165/165; file-length 0 violations over 4,103 files; enfusion-comments 0; engine-layers PASS; schema-codegen leaves the tree unchanged; ci-local-schema PASS (420 citations); mod compile clean; verify-coding-standards PASS (no-select-star clean); editorconfig, no-node, ci-shell, staging-compose-paths, mission-rest-size-limits and ci-schema-parity PASS; no-python and no-shell FAIL only on V's 7 unstaged deletions (cleared by `git rm` at commit) |
+| Tooling tests | xtask `api_readiness` 60 passed (the register pattern matches 59); `property_test_configuration` 8; verification-core 144; developer-tools 269 (4 ignored); full xtask 1,029 passed, 1 red until the new files are committed (`every_rust_file_named_in_prose_exists`) |
+| Compile-out | the release `api` carries 0 of the 18 failpoint names and no `failpoint` string; a test binary carries them |
+| Documentation (`--with-untracked`) | markdown-placement PASS; link-check 0 breaks (1 check did not run: a deleted tracked README, cleared at commit); readme-coverage 21 violations: 19 in the Workbench-generated `Gameplay/Policy/Generated/` folders (V-F115, T-1250) and 2 cleared at commit |
+| `ci ci-local` | stops at step 2 (verify-no-python) on the 7 unstaged deletions (`g-ci-local.log`); every other step run on its own: editorconfig, no-node, ci-shell, engine-layers, rust-fmt, rust-clippy (website-api `-D warnings`), rust-build, wasm-ci (1,493 tests), verify-coding-standards, the ci-local-leptos steps, ci-local-schema, staging-compose-paths, mission-rest-size-limits and ci-schema-parity PASS; rust-test-it as above; verify-documentation judges the index and fails only on V's uncommitted files and V-F115 |
+| Perturbations | Orchestrator re-checks (`g-perturb-*.log`), each restored sha256-equal: a golden value → contract_parity red; a 501-line file → engineering_laws red; a removed `@route` tag → route_acceptance red; a failpoint moved after commit → failure_injection red; a duplicate applied → property red. Agent perturbations are in the execution record rows. Not run (the permission classifier refused the edits): X1's race lock removal, Q2, Q4, R6's handler role gate, R4 |
+| `verify api-readiness` (judge only, after the register edits; `h1-api-readiness.log`) | The register validates (every implementation path exists) and fingerprinting completes. Verdict `api-readiness: FAIL — 73 violation(s), 91 check(s) DID NOT RUN (of 164)`, exit 2: no receipt exists for any of the 91 checks because `--execute` was not run, so all 73 requirements are unmet. With receipts it would still fail on S (the three operational staging checks) and B (game ballistics) |
 
 ## C in brief
 
@@ -124,98 +186,146 @@ Foreign files C touched, each only in its own separate hunk: `Cargo.lock` and
 
 ## Open items
 
-- **C commit (b49fb86c1).** Built through a temporary index holding only C's paths and C-only
-  versions of the eight shared files; the other agent's hunks stay uncommitted in the working
-  tree. The commit tree was verified on its own before `main` moved: website-api clippy
-  `-D warnings` and frontend wasm32 clippy with `--locked`, `cargo test -p website-frontend`
-  1,788 passed / 0 failed (`doc_audit` passes without the other agent's files), full
-  `db test-it` 1,064 passed / 0 failed, verify-codegen-fresh PASS (logs `commit-verify-*.log`).
-  That check caught one C test that relied on the other agent's `pub(crate) assert_golden`; the
-  test moved into `r_api_content.rs` before the commit.
-- **Tickets.** T-940.13 (detailed events) is still `ready` from T, and T-1222 still has no
-  `shipped_at` stamp (`ticket stamp-sha T-1222 0ef292758`). T-950 ("Audit SSE stream has no
-  client", `idea`) has its scope delivered by the audit page; whether to ship or close it is the
-  operator's decision. T-944 ("Audit stream: id-order race and half-open socket", `queued`) was
-  not assessed against C.
+- **Commit V, then stamp.** After the commit, in order: `git rm` V's seven deletions (the
+  language bans, the deleted-README link check, 2 readme-coverage violations and xtask's
+  `every_rust_file_named_in_prose_exists` clear with them); `cargo xtask ticket stamp-sha` the
+  eight shipped tickets T-1041, T-1026, T-1012, T-1105, T-951, T-1055, T-944 and T-949 (their 16
+  errors are the only `ticket check` reds); then ship and stamp T-1014, T-1088, T-1126, T-1173,
+  T-1216 and T-1218. `verify api-readiness --execute` needs the quiet tree that follows.
+- **Perturbations not run.** The permission classifier refused these edits; the operator may
+  run them: X1's race lock removal (the discriminating defect removes `lock_account` from
+  `rotate_session`, V-F38), Q2's approved-artifact check removal, Q4's publication-order and
+  capacity-check defects, R6's handler role-gate removal and R4's `missions_reviews` defects
+  (V-F39, V-F47, V-F59, V-F83, V-F114).
+- **Operator decisions.**
+  - T-950 (the audit stream has no client): its scope is delivered by the audit page; ship or
+    close it.
+  - T-940.13 (combat, medical and vehicle telemetry events) is still `ready` from T.
+  - T-1131 (whether Markdown edits invalidate readiness evidence), including V-F18: `CLAUDE.md`
+    is not a fingerprint input, because `AGENTS.md` hashes as its link text.
+  - T-1184 (SKIP_MIGRATE and RUST_LOG in the readiness digest), T-1109 (db test-it isolation for
+    the rust-ci integration step), T-1163 (a server route for the mission export), T-1175 (the
+    review workspace route's role tier), T-1209 (advertised server schema versions), T-1210 (the
+    voice bridge radioClass values), T-1204 and T-1137 (the CI lanes for route-tags,
+    no-select-star, doc-layout and the tool crates).
+  - T-1177 remainder: fire missions skip viewer access, and `fire_missions.event_id` has no
+    foreign key (a migration and a dangling-row policy; V-F98).
+  - T-1241 (reports on a lapsed claim lease), T-1243 (closed request schemas whose handlers
+    accept unknown fields), T-1244 (retiring the refusal-only `PATCH /admin/users/{discordId}`),
+    T-1246 (the unread local `legacy/` export archive folder).
+  - V-F115 (T-1250): the 19 Workbench-generated `Gameplay/Policy/Generated/` folders keep
+    readme-coverage red; the fix renames the folder for the generator and refreshes the
+    Workbench resource database.
 - **Legacy audit rows.** Rows stored with a NULL `created_at` before C still read as
   `0001-01-01`; system rows appended since C stamp `now()`.
 - **`view!` attributes.** A follow-up task was spawned to brace the unbraced `view!` comparisons
   outside C's pages (C's pages are braced and guarded by `view_attributes_*`).
 - **Schema length.** `wiki-page.schema.json` is 764 lines. JSON schemas follow the precedent of
   `mission.schema.json` (1,713 lines) and are outside the `verify file-length` gate.
-- **Readiness gate.** `cargo xtask verify api-readiness` stops at fingerprinting on the tracked
-  `AGENTS.md` symlink (a root fingerprint input); resolving that is a tooling decision for the
-  operator. `--execute` was not run: it also needs a quiet working tree.
 - In-engine exercise of match registration, events and results needs a LIVE round with a connected
   admin client (the two-client playtest runbook); the API side is covered by the integration
   suites.
-- `apps/website/frontend/tests/fixtures/api/GET__dashboard.json` keeps its pre-existing
-  `next_event`/`my_assignment` (the seed's dates are past rule 4); the V milestone re-baselines the
-  goldens.
-- The dashboard `fleet` and `MatchEventPage` shapes cite `match-telemetry.schema.json`; a dashboard
-  response schema is part of V's contract parity.
-- **Next:** milestone V, then S, with a quiet working tree for `verify api-readiness --execute`;
-  game ballistics (B) follows in its own later phase by operator decision.
+- **Next:** commit V (post-commit steps above), then S, with a quiet working tree for
+  `verify api-readiness --execute`; game ballistics (B) follows in its own later phase by
+  operator decision.
 
-## Milestone C execution record
+## Milestone V execution record
 
-Plan: `/home/Samuel/.claude/plans/pasted-content-id-5ce1-resume-the-compiled-moth.md` (sub-agent
-roster P1–P8 with pre-written prompts; shared brief in the session scratchpad `c_brief.md`).
+Plan: `/home/Samuel/.claude/plans/pasted-content-id-1946-resume-the-joyful-meadow.md` (roster of 32
+sub-agents with pre-written prompts; shared brief in the session scratchpad `v_brief.md`). At the
+start of V the working tree was clean: the other agent committed its equipment work as a967a75bb,
+3be13084c and 9a8d56c59 (with 9574714ee), so no uncommitted foreign files exist; the foreign
+snapshot is re-taken at each wave boundary.
 
 | Date | Phase handoff |
 |---|---|
-| 2026-09-26 | P0 done: shims, foreign baseline (4,649 files hashed), brief written; P1 (A1, A2, A3) launching. |
-| 2026-09-26 | P1 done: design note, five schemas + codegen (ci-local-schema PASS), migrations 0057–0059 pinned (listed suites green); P2 B0 ∥ B1 launching. |
-| 2026-09-26 | B0 done (content_url_policy, from_json_rejection, handler directory modules; lib 425); B2 ∥ B3 launched with the central-routes correction. |
-| 2026-09-26 | B1 done (personnel page, audit ready/reset/floor, lib 427, admin suites green); C1 ∥ C2 launched. |
-| 2026-09-27 | C2 done (personnel_pagination 9, audit_frontend 5); B2 done (vehicles, uploads, announcements; lib 500); C3 launched. |
-| 2026-09-27 | C1 done (audit_replay 10, audit_query_recovery 4); B3 done (wiki markup + revisions; lib 501); C4 ∥ D1 launched. |
-| 2026-09-27 | C3 done (vehicle_mutations 18, content_storage 14); announcement Query-rejection envelope queued for G1. |
-| 2026-09-27 | C4 done (wiki_features 15). P3 complete; P3 phase gate (full db test-it) running while D1 works. |
-| 2026-09-27 | P3 gate: full `db test-it` 1,058 passed, 0 failed (`target/api-progress-checkpoint/2026-09-26-c/p3-db-test-it.log`). |
-| 2026-09-27 | D1 done (seed revision invariant, goldens, DTO modules, safe_url; r_api 98). P5 F1–F4 launched. G1 queue: announcement Query envelope, system audit `created_at`. |
-| 2026-09-27 | G1 done (`from_query_rejection` helper; system audit lines stamp `now()`; content_storage 15, audit_frontend 6, lib 503). G2 queue: T's unformatted `telemetry_url_guard.rs`, wiki revisions onto the helper. |
-| 2026-09-27 | F1 done (personnel pager, URL state; personnel tests 37). |
-| 2026-09-27 | F4 done (vehicle admin UI; vehicles tests 52). A `git mv` staging slip was restored; index verified equal to session start. |
-| 2026-09-27 | F3 done (AST renderer, per-slug article, revisions + restore, editor refusals; wiki tests 55; also updated `core/test_support/pins.rs` wiki include list). |
-| 2026-09-27 | F2 done (SSE frame parser, audit stream client, live merge, oracle `.sse.txt`). P5 complete. E1 ∥ G2 launched; P7 frontend lane started (fmt: only foreign diffs). |
-| 2026-09-27 | P7 frontend lane: fmt diffs only in foreign data_viewer/equipment files; clippy wasm32 exit 0 with 0 warnings in C files; `cargo test -p website-frontend` 1,795 passed, 1 failed (`doc_audit`, 100 findings all foreign); trunk release success. |
-| 2026-09-27 | G2 done (T's `telemetry_url_guard.rs` formatted; wiki revisions on the shared helper). E1 done (api_overview, stale docs, T-940.7/.8/.9 shipped + wave repack). P7 backend: db test-it 1,062/0; lib 503; clippy website-api and xtask clean; ci-local-schema PASS (codegen fresh, 230 citations); route-tags FAIL only on the other agent's 12 equipment-viewer tags (153 routes documented); file-length 0 violations. leptos-gates: editor 21/21, oracle 20/25 (only the five C routes); personnel, audit, vehicles accepted after screenshot audit; wikislug accept reverted (leaked view! text in the revisions pager) → G3. |
-| 2026-09-27 | ci-local steps so far: verify-editorconfig FAIL (3,205 findings, all in the other agent's untracked assets_v2/equipment folder); verify-no-python / verify-no-shell FAIL only on 9 tracked-but-deleted paths (8 C deletions awaiting `git rm` at commit + the other agent's `apps/mod/.mcp.json`), banned paths none; verify-no-node, verify-ci-shell, verify-engine-layers, verify-staging-compose-paths, verify-mission-rest-size-limits PASS. |
-| 2026-09-27 | G3 done (braced view! attributes in every C page, compact vehicles header, revisions pager fits; `view_attributes_*` guard with mutation proof; dist rebuilt). wikislug, wiki, vehicles accepted after screenshot audit; leptos-gates re-run for the official result. Dev DB: wiki/vehicle seeds applied; 17 temporary `walkthrough-*` users for the paging walkthrough (removed afterwards). |
-| 2026-09-27 | leptos-gates re-run: exit 0, editor 21/21, DOM oracle 25/25. Live walkthrough (rust-api-container + spa-gate-serve, dev-login admin): personnel per_page=10 over 22 members (pages 1–3, Next disabled at the end, URL state survives reload); audit stream LIVE, vehicle create/PUT/soft DELETE rows arrived live, rows written while the API was down replayed once after restart; vehicle form refused `javascript:` image URL client-side; wiki-formatting-guide renders H1–H6 with anchors, safe external links (rel noopener noreferrer nofollow), lazy no-referrer image, aligned table, disabled checklist, all callouts, code, quote, rule; two saves → revisions 2, 3; stale editor save → 409 with reload; revision 1 restored → revision 4. Walkthrough users and vehicle removed. Found: graceful shutdown never ends open SSE streams (the stopped API lingered until SIGKILL) → G4. |
-| 2026-09-27 | G4 done: `core/process_lifecycle` holds the process-wide shutdown signal, every open event stream closes on SIGINT or SIGTERM and the stopped API exits in about 3 ms; `audit_replay_shutdown` binary. Final backend gates: `db test-it` 1,075 passed, 0 failed; lib 515; clippy website-api re-run clean. |
-| 2026-09-27 | H1 done: `requirements.json` (C implementation paths, measured minimums), this checkpoint, `remaining_milestones.md` and the shutdown clause in `api_overview.md`. C is complete and awaits the operator's commit. |
+| 2026-09-28 | P0 started: shims, database, empty foreign snapshot, brief written; baselines running (full `db test-it`, frontend tests). |
+| 2026-09-28 | P0 baselines (`target/api-progress-checkpoint/2026-09-28-v/p0-*.log`): `db test-it` 1,075 passed, 0 failed (lib 515; build 86 s, tests 153 s over 115 binaries); every identity_* and administration_* check at its minimum with every named case; V checks as planned (five at 0, property 19/25, 7 property records missing). Frontend 1,802 passed, 1 failed: `doc_audit`, 100 findings, all in the other agent's committed 3be13084c (`apps/website/frontend/src/v2/apps/debug/data_viewer` 93, `apps/website/frontend/src/v2/core/api/dto/equipment_data_viewer` 7). `xtask api_readiness` 56 passed. |
+| 2026-09-28 | Wave 1 launched: T0 (triage, read-only), A1 (design note), A2 (failpoints core), A3 (response contracts; inventory first), D1 (golden reproducibility). Prompts: plan §<agent>, stored as `prompt_<agent>.md` in the session scratchpad. |
+| 2026-09-28 | Wave 1 done. T0: 57 triaged rows (FIX 13, CLOSE 9, NOTE 35; session scratchpad `triage.md`). A1: `verification_completeness.md` (355 lines, documentation gates pass). A2: `core/failpoints/` with `failpoints` feature and self dev-dependency; release `api` and rlib carry 0 catalogue names, test builds all 18; lib failpoints 16/16; clippy both configurations clean. A3: 169-row route→contract inventory; 19 new response schemas; 123 `@contract` tags in 53 files (T-1026 done); `ci-local-schema` PASS (353 citations). D1: all 53 goldens reproduce from `registry_dev.sql` + `content_golden.sql` (three fresh captures 53/53); 18 goldens changed, 3 `*.request.json` added; T-949 fixed red-first. |
+| 2026-09-28 | Operator decisions on the triage: V fixes the other agent's committed red items (F-1 `doc_audit` 100 findings → L1; F-2 route-tags on the nested equipment router → K1; F-9 module header → L1); the `/api/v1/debug/equipment-data/*` routes become development-only like `/auth/dev-login` (F-6 → K1); the equipment-viewer goldens join the reproduction chain with a committed dataset fixture (F-7 → C1); the rest of the triage runs as classified. |
+| 2026-09-28 | Operator away overnight: autonomous mode (orchestrator decides open questions with evidence, logged as "orchestrator decision (delegated)"; no commits). Wave 2 launched: R0, A4, L1, Y1, D2. |
+| 2026-09-28 | Test-only agents launched early (they edit no `src/`, so no rebuild contention): C1, C2, Q1, Q2. K1 split into K1a (API: equipment routes development-only + into `routes.rs`, `Query` envelopes, T-951, T-1216) and K1b (tooling: T-1014, T-1012, T-1105, T-1126, equipment definition READMEs) — orchestrator decision (delegated), to keep each under budget and avoid file overlap with A4. |
+| 2026-09-28 | Y1 done: tracked symlinks fingerprint by tagged link text; untracked, escaping and dangling links refused; `api_readiness` 60 passed; the judge-only readiness run now completes (FAIL: 91 checks without receipts, 73 unmet requirements — none about fingerprints). K1b launched. D2 done: frontend 1,795 passed, 1 failed (`doc_audit`, L1 in progress); developer-tools 265 passed; DTO `@contract` tags; frontend README golden lines corrected. D3 launched. |
+| 2026-09-28 | A4 done: 18 failpoints placed in 13 production files; shared `tests/failpoint_and_race_support/` + `failure_injection_self_checks` (5 cases); lib 531; the 10 affected suites unchanged green (81 passed); release `api` has 0 catalogue strings. Launched K1a, X1, X2, F1, F2 (parallel: shared support built once). |
+| 2026-09-28 | K1b done: T-1014 (seed psql stops on the first failed statement), T-1012 (help lists no make targets), T-1105, T-1126 (unknown `--only` slug and empty runs exit 2) — 7 red-first tests; xtask `commands::db` 36/36, developer-tools `dom_oracle` 20/20; READMEs for the two equipment definition folders. Leftovers V-F22..V-F24 queued for E1/G1. |
+| 2026-09-28 | C1 done: `contract_parity_goldens` (5 cases, support in `tests/contract_parity_support/`): 51/51 JSON goldens and 2/2 event-stream goldens reproduce from the seed; schema validation and generated-type decoding red only on the registry rows (V-F25 → A3b). Equipment-viewer goldens are trimmed samples of a local 4.7 GB dataset (V-F26): orchestrator decision (delegated) — keep the operator's "include" decision and give agent E3 a hard feasibility stop before any NOTE. Q3, Q4, A3b, E3 launched. |
+| 2026-09-28 | Q1 done: `session_authority_properties` — `protected_actions_require_effective_session_authority` and `refresh_replay_revokes_concurrently_issued_successor` each 256/256 at seed 2026092201 (6 s); perturbations (revocation check removed; replay revocation removed) red with shrunk counterexamples; no findings. |
+| 2026-09-28 | C2 done: `contract_parity_mod_wire` 6/6 twice (structs, body builders, schema-enum constants, every API DTO cites a contract, roster wire version, mission schema window); 30 mod scripts, comment lines only (`partial` projections declared, F-4 fixed red-first); `mod compile` 0 TBD warnings, `enfusion-comments` 0, `ci-local-schema` 408 citations. T-1088 closable. |
+| 2026-09-28 | A3b done: closed `RegistryItemRow`/`RegistryCompatRow` in `arsenal-envelopes.schema.json`; `contract_parity_goldens` 5/5 (runs 1, 2, 4; run 3 saw another agent's transient perturbation); `ci-local-schema` 408 citations. |
+| 2026-09-28 | R0 done: `route_acceptance_support/` (runtime route table over 170 routes, table-driven specs with derived probes, actors, runner, contracts), `route_acceptance_coverage` 9/10 (only exactly-one-spec red, awaiting R1–R6), identity_and_core part 6/8 (red only on real handler defects V-F35/V-F36, queued for K2). R1–R6 launched. |
+| 2026-09-28 | X1 partial: `controlled_races_reservations` (2) and `controlled_races_identity` (3) pass once (last seat, assignment/withdrawal, refresh winner + replay, replay after successor use, linking — both orders); the permission classifier denied its lock-removal perturbation and its reruns (V-F39); determinism reruns move to the orchestrator gates. |
+| 2026-09-28 | D3 done: 15 new goldens for consumed routes (68/68 reproduce on two fresh captures), `contract_parity_goldens` 5/5, frontend `r_api` 107/107 (+8 cases). 21 write routes answer server-generated ids, secrets or request-time timestamps (V-F40): orchestrator decision (delegated) — capture them with the spec's documented normalisation table (format-checked placeholders only) → D3b after D4. D4 launched (+ `SavedFire` DTO move). |
+| 2026-09-28 | E3 done (operator decision F-7 fulfilled): `contract_parity_equipment_viewer` 2/2 twice — the production importer builds the viewer index from a 97 KB committed fixture and all 12 development-only routes reproduce their goldens (the six `contracts_v2` positive fixtures replaced by captures; frontend parity 6/6 unchanged); 0 production lines changed. |
+| 2026-09-28 | Q2 done: `mission_artifact_properties` — `approval_and_deployment_share_immutable_artifact` 256/256 twice (15–18 s), every outcome class reached; its perturbation was denied by the permission classifier (V-F47, not run). |
+| 2026-09-28 | F2 done: 12 `failure_injection_*` cases in four binaries (telemetry 2, fleet 5, audit 3, Discord 2), 12/12 twice; the half-open-listener case evidences T-944's second half; perturbation (publication worker gives up on error) red. It restored the perturbed worker with `git checkout -- <file>` (forbidden by the brief; the file had no other changes); the orchestrator re-verified all 19 failpoint call sites intact. |
+| 2026-09-28 | F1 done: 10 `failure_injection_*` cases (identity 4 incl. the documented family revocation after a lost refresh answer, operations 2, missions 4 incl. the relayed deployment call site), 2 runs green; perturbation (reservation before-commit failpoint moved after commit) red with the changed-row diff; restored by sha256. |
+| 2026-09-28 | L1 done: `verification_core::repository_laws` (file length, sibling tests, exemption mechanisms, cargo manifests, crate directions, engine layers; 143 verification-core tests); xtask `verify file-length` and `verify engine-layers` delegate with byte-identical output except T-1055 (rules 4 and 7 now cover `editing`); `engineering_laws` 10/10 twice (1.5 s); 5 perturbations red; the frontend `doc_audit` grandfather table removed (T-1041) and the other agent's 100 undocumented items documented (F-1) → `doc_audit` 11/11. |
+| 2026-09-28 | K1a done: the 12 equipment routes live in `community_content/routes.rs`, registered only in development (operator decision F-6); `verify route-tags` PASS 165/165; 12 bare `Query` sites answer the error envelope; T-951 listener registry pruned; T-1216 docstring — 18 red-first tests. K2 launched for the remaining envelope defects (V-F35, V-F36, V-F53). |
+| 2026-09-28 | Q3 done: `telemetry_revisions_contribute_exactly_once` and `command_executor_fencing_preserves_observed_outcomes` 256/256 twice (every verdict class reached; 6–25 s); perturbations (duplicate applied; fencing comparison dropped) red with shrunk counterexamples. |
+| 2026-09-28 | X2 done: 4 `controlled_races_*` cases (approve vs reject, duplicate revisions, corrected revisions in either order, inverted audit commit order), 3 runs green; perturbations on the mission, match and publication-state locks red (the review-row lock alone is redundant with the mission-row lock, V-F56). T-944 is evidenced in both halves with F2 (V-F58). |
+| 2026-09-28 | Q4 done: `audit_publication_preserves_committed_event_delivery` and `reservation_transactions_conserve_slots_and_participants` 256/256 (identical input digests across runs; every required outcome class reached); its perturbations were denied by the permission classifier (V-F59, not run). All seven property records now exist. |
+| 2026-09-28 | G1 (closing fixes, batch 1) launched early for ledger items V-F23 (code), V-F24, V-F32, V-F33, V-F45, V-F49 (source comments), V-F50, V-F57; a second batch follows the gates if needed. |
+| 2026-09-28 | R3 done: `missions_library` part, 22 routes with all seven dimensions (7 route_acceptance + 1 contract_parity cases); red only on real handler defects (V-F62..V-F68, incl. a hidden-draft bookmark leak) queued for K3 after the R wave. |
+| 2026-09-28 | R1 done: `operations_events` part, 24 routes (7 + 1 cases); unauthorized (69 probes), ownership, guest and ban green; red only on framework gaps (V-F70, V-F71) and handler defects (V-F72, V-F73, K2's JSON set) queued for K3. |
+| 2026-09-28 | R5 done: `fleet_and_telemetry` part, 24 routes (7 + 1 cases, ~12 s); own probes green; red only on derived-probe handler defects (V-F75..V-F78) and the timestamp round-trip gap (V-F79), queued for K3. |
+| 2026-09-28 | R6 done: `administration_center_content` part, 50 routes (7 + 1 cases; 100 malformed, 91 boundary, 38 guest probes; 46 authorized exchanges) incl. the development-only equipment routes; red only on the timestamp round-trip gap, K2's JSON class and the refusal-only PATCH users route (V-F81: orchestrator decision (delegated) — explicit refusal-only success shape in the framework + retirement ticket). K2 amended with every JSON-body envelope defect (V-F82). |
+| 2026-09-28 | D4 done: typed `ModpackMod`, `Announcement`, `LeaderboardRow`, `SavedFire` (moved from the mortar page) with `@contract` tags; modpacks, announcements, CMS announcements, leaderboards and dashboard announcements claim every key; frontend 1,810 passed, 0 failed (two runs); trunk release ok. D3b launched. |
+| 2026-09-28 | R2 done: `operations_reservations` part, 13 routes (7 + 1 cases); red only on K2's JSON class and V-F84/V-F85 (fire-mission event existence, T-1177; malformed slot id) queued for K3. |
+| 2026-09-28 | K3 split (orchestrator decision (delegated)): K3a (route-acceptance framework: timestamps compared as instants with the wire format still asserted, top-level array contracts, an explicit refusal-only success shape with a documented reason) launched now; K3b (handler defects V-F62..V-F66, V-F72, V-F73, V-F75, V-F76, V-F84, V-F85 and a shared path-rejection envelope) after K2 and R4. |
+| 2026-09-28 | K2 done: every JSON body and query in the API goes through `from_json_rejection`/`from_query_rejection` (≈37 handler files incl. the development-only equipment viewer; the game-runtime session body; the malformed OAuth callback redirects); 34 `contract_parity_json_rejections_*` + 12 equipment query cases; five existing suites moved from the old flat 400 pins to the spec statuses (status assertions kept, messages no longer claim a wrong field); lib 532; route-tags 165/165. |
+| 2026-09-28 | G1 done: V-F23 (code), V-F24, V-F32, V-F33 (new `contract_parity_registry_row_constraints_match_the_catalogue_schemas`), V-F45, V-F49 (source comments), V-F50, V-F57 fixed; xtask db/ci/selftest 50/50; `ci-local-schema` 420 citations; engine-layers PASS with unchanged pins. Leftovers V-F89..V-F94 queued (E1/G2). |
+| 2026-09-28 | K3b launched (after K2) for the handler defects V-F62..V-F66, V-F72, V-F73, V-F75, V-F76, V-F84, V-F85 and one API-wide path-rejection envelope; R4's findings, when it reports, go to G2. |
+| 2026-09-28 | K3a done: round trip compares `date-time` fields as instants while asserting the API's own spelling; `Contract::schema_items` for top-level arrays; `refusal_only` success shape with a documenting-module reason (PATCH admin/users); coverage 14/14 (+4 framework cases); parity deterministic on 3 runs; the 16 remaining reds are exactly K3b's handler list. |
+| 2026-09-28 | D3b done: goldens for the 21 write routes with server-generated ids, secrets or request-time timestamps; 43 normalised fields in the design note's normalisation table (7 kinds, each format-checked; a secret golden stores only its placeholder); `_index.tsv` 89 rows; `contract_parity_goldens` 6/6 twice; frontend `r_api` 127/127 (+16). |
+| 2026-09-28 | K3b done: `core/http/path_parameters.rs` (`PathParams<T>` + `ApiError::from_path_rejection`) replaces all 97 `Path<…>` extractors in 49 handlers; bookmark writes and `scope=bookmarked` honour mission visibility (information leak closed, T-1173); armory quantity, unknown event scope, unknown roster account, status-stream and commands 404s, fire-mission event existence (T-1177 existence part) and malformed slot ids fixed; all 16 red probes green, 20 existing suites green, lib 536, route-tags 165/165. Early full `db test-it` started. |
+| 2026-09-28 | Frontend gate: `cargo test -p website-frontend` 1,826 passed, 0 failed; `identity_browser_session_transactions` 9/9 (`g-frontend-test.log`). The early full `db test-it` failed to build: `/home` reached 100% (the shared host target `~/.cache/tbd-target` had grown to 209 GB with 123 GB of stale website-api test executables and 60 GB of incremental cache; Postgres could not save container state). Orchestrator decision (delegated): removed only rebuildable caches (`debug/incremental` and the website-api test executables in `debug/deps`); `/home` back to 165 GB free, database healthy, the failed run's database dropped; repository (Disk_2) unaffected. Full `db test-it` re-run. |
+| 2026-09-28 | Gate run 1 (`g-db-test-it-1.log`): 1,294 passed, 2 failed (build 3 min 27 s, tests 209 s over 148 binaries; V prefixes route_acceptance 66, contract_parity 79, controlled_races 9, failure_injection 27, engineering_laws 10; 29 property records). Both failures are V fallout (V-F103). Frontend clippy wasm32 exit 0 (6 warnings in changed files, V-F102); frontend fmt drift only in the other agent's data_viewer files (V-F101); xtask 1,027 passed, 3 failed (V-F104). G2 launched with every queued small fix. |
+| 2026-09-28 | E1 split (orchestrator decision (delegated), ledger size): E1a (READMEs incl. api_v2 test map and `failpoints` feature, design note to implemented state, `@contract` grammar in the standards, stale engine-layer and seed references, READMEs for the other agent's committed equipment folders) and E1b (ship/close/note tickets, known bugs, ticket sync) launched. R4 asked to wrap up (no edits since 02:13; its binary passes). |
+| 2026-09-28 | G2 done: gate-run-1 failures fixed (415 expectation; equipment GET routes skipped from the Postgres null sweep with a reason); the other agent's `legacy_archive` concept renamed `unversioned_export_archive` (history rule green; on-disk names changed, V-F108); gameplay test race fixed (shared cwd lock); fmt clean on five crates; clippy clean (api, xtask, verification-core, map-engine, wasm32 touched files); engine-layers output byte-identical with `text::gpu` removed; participants world seeded (array check no longer vacuous, perturbation red); xtask 1,029 passed (1 red until the new files are committed); frontend 1,826. |
+| 2026-09-28 | Static gates (`target/api-progress-checkpoint/2026-09-28-v/g-*.log`): route-tags PASS 165/165; file-length 0 violations over 4,103 files; enfusion-comments 0; engine-layers PASS; schema-codegen leaves the tree unchanged; ci-local-schema PASS (420 citations); mod compile clean (0 TBD warnings); release `api` build carries 0 of the 18 failpoint names and no `failpoint` string while a test binary carries them. |
+| 2026-09-28 | E1b done: shipped T-1041, T-1026, T-1012, T-1105, T-951, T-1055, T-944, T-949 (evidence notes); T-1014, T-1088, T-1126, T-1173, T-1216, T-1218 filled but not yet shipped (`ticket ship` refuses while the stamp gap keeps `ticket check` red — ship after the commit is stamped); cancelled with proof T-948, T-986, T-933, T-906, T-953; notes on T-1177 and T-1131; 18 new idea tickets T-1229–T-1246 for the NOTE findings; `ticket check` red only on the 16 expected ship-before-stamp errors. |
+| 2026-09-28 | E1a done: 46 Markdown files (29 new): api_v2 README (`failpoints`, verification-suite map, configuration rows), core/seeds/workers READMEs, design note at the implemented state (499 lines, normalisation table byte-identical), `@contract` grammar in the documentation standards, engine-boundary and seed/runbook references, 27 READMEs for the other agent's committed equipment folders; remaining_milestones follow-up measured (all six EnfScript files ≤ 500). 67 readme-coverage gaps + 2 link breaks remain in other committed folders (V-F111) → E1c launched. G3 launched for V-F105..V-F107, V-F109. `rust-api-container` started for leptos-gates. |
+| 2026-09-28 | G3 done: three more handlers on `from_query_rejection` (5 red-first cases, `query_rejection_envelopes` 30/30); upload 413 comment corrected; data_viewer `aria-expanded` renders "true"/"false"; stale `text::gpu` history comments in both engines rewritten; clippy (api all-targets, engines native + wasm32) clean. Trunk release build started. |
+| 2026-09-28 | Final full `db test-it` (`g-db-test-it-final.log`): 1,301 passed, 1 failed (E3's fixture-coverage case now also saw E1a's `positive/README.md` → micro-fix G4); lib 536; 148 binaries, tests 234 s, build 78 s. Trunk release success. `ci-local-schema` re-run PASS after the fixture READMEs. |
+| 2026-09-28 | `mk leptos-gates` run 1 (`g-leptos-gates.log`): DOM oracle 15/25; the 10 divergent routes (dashboard, approvals, audit, servercontrol, deployments, events, eventhub, missions, missionview, settings) all trace to golden content now reproduced from the seed (2030 dates and weekdays, countdown years, seeded audit rows, the c000-004 briefing, library order, attendance 50); the five D4 typed-DTO pages matched unchanged. Each divergence was screenshot-audited and accepted with a note (`g-accept-*.log`); one seed-realism quirk noted (V-F113: an upcoming event shows ATTENDED). Re-run started. |
+| 2026-09-28 | G4 done (fixture-coverage case counts `*.json` samples only; stray-sample perturbation red). `mk leptos-gates` re-run (`g-leptos-gates-2.log`): exit 0, gate doctor OK, editor suite 21/21, DOM oracle 25/25. Clippy `-D warnings` clean: website-api all targets and `--lib --bins` (failpoints off), xtask + verification-core all targets; `fmt --check` clean on website-api, xtask, verification-core, developer-tools, map-engine, graphics-engine. |
+| 2026-09-28 | R4 stopped by the orchestrator (no report after the wrap-up request; its last message says both perturbation attempts were refused by the permission classifier). Its `missions_reviews` part (spec 515 lines, world 473, binary) is complete per coverage and passes in the orchestrator's full runs (V-F114). |
+| 2026-09-28 | Frontend final (`g-frontend-test-final.log`): 1,826 passed, 0 failed; `identity_browser_session_transactions` 9/9. Orchestrator perturbation re-checks (each restored, sha256 equal): a changed `GET__factions.json` value → `contract_parity_every_frontend_golden_is_reproduced_by_the_seeded_api` + index case red; a 501-line production file → `engineering_laws_production_files_stay_within_500_lines` red; a removed `@route` tag → `route_acceptance_route_table_matches_every_route_tag` red; the logout failpoint moved after commit → `failure_injection_logout_before_commit_keeps_the_session_and_a_retry_logs_out` red; `decide_revision` applying a duplicate → `telemetry_revisions_contribute_exactly_once` red. Race re-check not attempted (the classifier refused lock-removal edits to X1; X2's four lock perturbations are the race evidence). |
+| 2026-09-28 | E1c done: README coverage for the other agent's committed tbd-export, data_viewer, equipment DTO, developer-tools and xtask folders (readme-coverage 67 → 21 violations; link-check 0 breaks); the remaining 19 are the Workbench-generated `Gameplay/Policy/Generated/` folders whose generator refuses foreign files (V-F115, orchestrator decision (delegated): noted for the operator, not renamed unattended); 2 clear when V's deletions are staged. Final full `db test-it` (run 2) started. |
+| 2026-09-28 | Final gates: `db test-it` 1,302 passed, 0 failed, 0 ignored (all V prefixes and 7 property records 256/256; lib 536); ci `rust-test-it` 1,302/0; rust-fmt, rust-build, wasm-ci (1,493) PASS; xtask api_readiness 60, property configuration 8, verification-core 144, developer-tools 269; `ci ci-local` stops at verify-no-python on V's 7 unstaged deletions (resolve at commit); documentation gates fail only on V's uncommitted files and V-F115. H1 launched. |
+| 2026-09-28 | H1 done: register minimums raised to the measured counts and the V implementation paths added (the register validates); `verification_findings.md`; this checkpoint and `remaining_milestones.md` at V complete; the milestone C record archived; T-1247 to T-1251 filed for V-F110, V-F112, V-F113, V-F115 and V-F116 (written in the minted shape, because `ticket add` refuses while `ticket check` is red on the stamp gap) and `ticket sync` run; judge-only `verify api-readiness` FAIL with no receipts (73 violations, 91 checks did not run). |
 
-### Milestone C launch amendments
+### Milestone V launch amendments
 
 | Agent | Addition to the pre-written prompt |
 |---|---|
-| brief (all) | Every `cargo xtask …` runs on the host via `<scratchpad>/bin/hostcargo xtask …`; only `mk` recipes, `trunk` and frontend cargo run in the container with `target-container-api-v2` (glibc stamp guard). |
-| A1 | Explicit current-layout paths for the path map; the suite file/case-glob list; ≤ 500 lines. |
-| A2 | Check typify handles the recursive `type`-tagged block oneOf (restructure the schema, never the generator); TARGETS entries placed before the other agent's equipment block; callout kinds note, tip, important, info, warning, caution, critical. |
-| A3 | Backfill/null-legacy details restated; `hostcargo test -p website-api --lib prose`; a hand probe of the floor trigger in a throwaway `c_floor_probe` database. |
-| brief (all) | Section "Contract decisions fixed in P1" appended after A2 (refusal detail shapes, finding codes, revision shapes, callout kinds, upload URL pattern, PATCH tri-state, landed migrations). |
-| B0 | URL policy must agree with the schema `pattern`s (read them); explicit refusal list incl. mixed-case schemes and `http:` for images; keep existing `@route` tags; README-coverage `--with-untracked` checks for community_content and core. |
-| B1 | Read the design note sections and the two schemas; Query rejection answers the standard envelope with 400; ready id = resume_after; `audit_row_stream` yields rows only; no new C suites (C1/C2 own them), sibling unit tests allowed. |
-| B2 | Route-tags reads only `<domain>/routes.rs`: remove B0's `vehicle_database::routes()` and list every vehicle route in `routes.rs` (re-read before each edit; B3 edits wiki lines concurrently); design-note/schema reading list; vehicle row `FOR UPDATE` before the audit append; no new C suites. |
-| B3 | Same route correction for the wiki; may update the `WikiInput` doc link in `fire_missions.rs`; revisions list paging rules (default 20, clamp 100, 400 invalid); also repairs `community_content_reads.rs` for B2's changes; README in `services/wiki_markup/`. |
-| F3, F4, E1 | (queued) `vehicle_database_page.md` (lines 49,59) and `wiki_page.md` (lines 78) name the deleted handler files; the glossary "audit logs" entry (`glossary/a_to_f.md`) says the page does not use the SSE feed. |
-| B2, B3 | (message) May add null-tolerance sweep/skip entries for their own GET routes in `tests/null_tolerance_support/` (`every_get_route_is_swept_or_skipped_with_a_reason`). |
-| C1 | B1 implementation facts; fallback failure-injection methods if the rename does not fail the read; run each suite twice (flakiness). |
-| C2 | B1 implementation facts (`q` escaping, 400 envelope); literal `%`/`_` search case; scope users by a unique `q` prefix; run each suite twice. |
-| E1 | (queued) stale shapes in `api_overview.md` (lines 112,237), `personnel_roster_page.md` (lines 72–74,118), `audit_logs_page.md` (lines 65–67) (the latter two also for F1/F2). |
-| C3 | B2 implementation facts (400 invalid id, PUT clears absent optionals, audit action names, upload 413 code, non-multipart 400); own copy of the raising-trigger failure injection; `upload_dir` pointing at a regular file for the 503 case; run each suite twice. |
-| F4, E1 | (queued) `content_manager_page.md` (lines 101) cites the retired `media_upload.rs`. |
-| C4 | B3 implementation facts (404 numeric base on missing page, code language, soft break, bracket callouts, finding codes); extra cases: nesting > 16, unknown body field, one audit row per save, revision-invariant check through the API; own raising-trigger copy. |
-| D1 | Seed invariant: every seeded wiki page has a revision row for its current revision (owns `wiki_pages.sql` and `content_golden.sql` for that); formatting-guide article golden; minimal compile fixes allowed in page code after the `AdminUserRow` move (listed). |
-| brief (all) | Frontend clippy runs exactly as the lane (no `-D warnings`; ~198 pre-existing warnings) with zero warnings in the agent's own files; section "Frontend facts fixed in P4" appended (DTO module paths, safe_url helpers, goldens, DOM-oracle fixture rule). |
-| F1–F4 | No trunk build per agent (the orchestrator builds once in P7); `doc_audit` filter run; oracle fixture names per route. |
-| F2 | Deterministic oracle stream: new `GET__admin__audit-logs__stream.sse.txt` (one `ready` frame) + `_index.tsv` row; Offline badge state; also owns the glossary "audit logs" entry. |
-| F3, F4 | Own the stale retired-handler lines in their feature docs. |
-| G1 | Launched early (parallel with P5) for the two queued backend items; red-before case required; shared `from_query_rejection` helper preferred; later gate failures go to a second closing-fix run. |
-| E1 | (queued) `personnel_roster_blueprint/README.md` (lines 30-31) ("the table shows no record count") is stale after the pager. |
-| E1 | (queued) `apps/website/frontend/src/v2/pages/doctrine_and_info/README.md` (lines 24,28) ("untyped JSON", "only reads") and `documentation_v2/website/frontend/pages/doctrine_and_info/README.md` (lines 32) are stale after F4 (and F3). |
-| E1 | Collected stale-doc list from B0–F4 reports; `--with-untracked` documentation gates; T-950 scope check (report only); foreign `apps/website/frontend/README.md` stale lines reported, not edited. |
-| G2 | Launched before the P7 backend gates (telemetry_url_guard fmt from T; wiki revisions onto `from_query_rejection`). |
-| G4 | Launched after the walkthrough: SSE streams end on shutdown (process-wide lifecycle signal in core, no `AppState` field — foreign file), `audit_replay_shutdown` test binary, hand proof with SIGTERM; also adds G3's wiki README rule line. |
+| brief (all) | Tree clean at P0 (other agent committed all work): the foreign set is whatever uncommitted change V did not make, re-snapshotted per wave; files the other agent committed are ordinary code, still edited only by their owning V agent. |
+| A2 | `Cargo.toml` is no longer foreign (committed by the other agent); own hunks only. |
+| A3 | The committed equipment routes and `equipment-data-viewer` schemas are inventoried like any route (schemas read-only); write the inventory first with `pending:` rows so R0 can start. |
+| D1 | Trees are clean; captures compile committed code only. |
+| R0 | Parser handles both the nested equipment router and K1's later dev-only rows in `routes.rs`; known expected-red envelope gaps (12 bare `Query` handlers, K1 fixes); keep specs data-driven. |
+| A4 | Read `failpoints_api.md` instead of the module source; re-run the release strings probe after placing call sites; do not touch `audit_notifier.rs` or `Query` extractors (K1). |
+| L1 | Dependency law corrected (orchestrator decision (delegated), evidence: the `website-map-engine` line in `api_v2/Cargo.toml` is documented as mission-domain only): website-api depends on neither graphics-engine nor frontend; the frontend does not depend on website-api. Also owns F-1 (100 `doc_audit` doc lines in the other agent's committed files, operator-approved) and T-1055. |
+| Y1 | Baseline `api_readiness` 56 passing. |
+| D2 | Owns the editor-smoke and arsenal expectation lines for the new registry golden, the routes.csv attendance note, and the now-committed frontend README golden lines. |
+| C1 | Run the production audit publisher before reading the SSE `ready` frame (D1 note); operator decision F-7: equipment-viewer goldens reproduced from a committed dataset fixture under a development configuration. |
+| C2 | F-4 (fleet-command arguments pointer) red-first; verify T-1088 (all tagged) and cover every tagged class. |
+| Q1, Q2 | Binary ≤ 60 s: shared state, unique ids per case. |
+| D3 | C1's binary may not exist yet: prove by second-capture diff, then run C1's binary when it lands; skip equipment routes (C1) and the four Value-row DTOs (D4); report added frontend cases. |
+| K1a | Keep A4's `fail_point!` calls in place; mirror the `/auth/dev-login` gating so R0's parser reads the dev-only rows. |
+| X1, X2, F1, F2 | Read `injection_support_api.md`; placement files named; X2/F2 name the cases that evidence T-944's two halves; F1 does not duplicate the inert-until-armed case; F2 asserts the documented Discord lease-expiry recovery and the 204 claim-after-commit behaviour. |
+| C2 | (message) Fix own clippy `collapsible_if` before reporting. |
+| K1a | (message) Its `Result<Query>` change broke `tests/leaderboards_paging.rs` direct calls — fix them and include that binary in its checks. |
+| A3b | New small agent (orchestrator decision (delegated)): closed registry row contracts for V-F25. |
+| E3 | New agent for operator decision F-7 with a hard feasibility stop (≤ 60k tokens reading the importer). |
+| R1–R6 | R0 facts (worlds mounted by `#[path]`; `/me*` covered by R0); known handler defects are expected red and belong to K1a/K2; R6: equipment routes development-only, verify the PATCH users 409. |
+
+### Milestone V findings
+
+Every V finding, its class and its outcome are in [verification_findings.md](verification_findings.md).
+
+## Milestone C execution record
+
+The milestone C execution record and launch amendments are archived verbatim in
+[milestone_c_execution_record.md](/documentation_v2/archive/api_v2_completion/milestone_c_execution_record.md).

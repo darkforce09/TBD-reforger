@@ -56,14 +56,11 @@ impl PackEdit {
                 .mods
                 .iter()
                 .map(|m| ModEdit {
-                    name: vstr(m, "name"),
-                    required: m
-                        .get("is_key_dependency")
-                        .and_then(Value::as_bool)
-                        .unwrap_or(false),
-                    workshop_id: vstr(m, "workshop_id"),
-                    mod_guid: vstr(m, "mod_guid"),
-                    version: vstr(m, "version"),
+                    name: m.name.clone(),
+                    required: m.is_key_dependency,
+                    workshop_id: m.workshop_id.clone(),
+                    mod_guid: m.mod_guid.clone(),
+                    version: m.version.clone(),
                 })
                 .collect(),
         }
@@ -90,14 +87,6 @@ impl PackEdit {
             })).collect::<Vec<_>>(),
         })
     }
-}
-
-/// The string at `k`, or an empty string when the key is absent or is not a string.
-pub(super) fn vstr(v: &Value, k: &str) -> String {
-    v.get(k)
-        .and_then(Value::as_str)
-        .unwrap_or_default()
-        .to_string()
 }
 
 /// A byte count as a short human-readable size.

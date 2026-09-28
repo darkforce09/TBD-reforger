@@ -1,16 +1,50 @@
-# WeaponExport/Attachment
+# Weapon attachment export
 
-The umbrella sweep over every non-optic weapon attachment, producing the combined attachment catalog.
+The breadth sweep over every non-optic weapon attachment, producing one catalog per attachment
+family and the combined attachment catalog under `$profile:TBD_Export/equipment/attachments/`.
 
-### Roles & Responsibilities
-- `TBD_AttachmentModel.c`: `TBD_AttachmentInfo` plus one carrier per attachment family (muzzle, bayonet, illuminator, handguard, mount, stock, camouflage, bipod). These families overlap with the dedicated `Muzzle/`, `Bayonet/`, `Illuminator/`, `Handguard/`, and `Stock/` domains, which extract the same hardware in greater depth.
-- `TBD_AttachmentExtractor.c`: Reads what an attachment is as an object — mass, volume, dimensions, inventory footprint, and the mesh it renders as.
-- `TBD_AttachmentMountingExtractor.c`: Reads how an attachment fits a weapon — the type it presents, every type it is compatible with by walking the type's inheritance chain, the types it obstructs, and the nested slots it offers to further attachments.
-- `TBD_AttachmentFamilyExtractor.c`: Decides which family an attachment belongs to, then reads the properties only that family has — suppression for a muzzle device, melee damage for a bayonet, beam colour and range for an illuminator.
-- `TBD_AttachmentNaming.c`: Reads display name, description, and icon, falling back to a stem derived from the prefab filename more often than a single-family domain needs to.
-- `TBD_AttachmentCustomAttributes.c`: Reads the custom attribute list under the key this domain uses, `m_aAttributes`, where Core's reader uses `CustomAttributes`.
-- `TBD_AttachmentScanner.c`: Sweeps every loaded addon, buckets each attachment into its family, and writes one catalog per family plus the `attachments_all` rollup.
-- `TBD_AttachmentExportPlugin.c`: Workbench entry point `Plugins > TBD > Export All Weapon Attachments`. Writes `$profile:TBD_Export/equipment/attachments/`.
+## Contents
 
-### Call Flow & Contracts
-Menu action -> `TBD_AttachmentExportPlugin.Run()` -> `TBD_AttachmentScanner.Scan()` -> the four extractors -> family carrier -> `WriteCategoryCatalog()` emits `muzzles.json`, `bipods.json`, `handguards.json`, `illuminators.json`, `bayonets.json`, `stocks.json`, `mounts.json`, and `camouflage.json` under `equipment/attachments/`, followed by `attachments_all.json`. Each file carries a `_meta.json` sidecar. This domain is the breadth pass; the per-hardware domains are the depth pass, and the two write to different directories so neither overwrites the other.
+```text
+apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/WeaponExport/Attachment/
+├── TBD_AttachmentCustomAttributes.c   the custom attribute list under this domain's key, `m_aAttributes`
+├── TBD_AttachmentExportPlugin.c       the attachment plugin class; its menu attribute is commented out
+├── TBD_AttachmentExtractor.c          mass, volume, dimensions, inventory footprint and mesh
+├── TBD_AttachmentFamilyExtractor.c    the family decision and the properties only that family has
+├── TBD_AttachmentModel.c              `TBD_AttachmentInfo` and one carrier per attachment family
+├── TBD_AttachmentMountingExtractor.c  attachment type, compatible and obstructed types, nested slots
+├── TBD_AttachmentNaming.c             display name, description and icon, with a filename stem fallback
+└── TBD_AttachmentScanner.c            the addon sweep, the family buckets and the catalogs
+```
+
+## How it works
+
+"Export All Equipment" runs `TBD_AttachmentScanner.RunScan()` in its fifth phase; the domain's own
+plugin attribute is commented out.
+
+The scanner has the four extractors read each attachment into a family carrier (muzzle, bipod,
+handguard, illuminator, bayonet, stock, mount or camouflage) and writes `muzzles.json`,
+`bipods.json`, `handguards.json`, `illuminators.json`, `bayonets.json`, `stocks.json`, `mounts.json`
+and `camouflage.json`, then `attachments_all.json`, each with its `_meta.json` sidecar. The mounting
+extractor finds every compatible type by walking the attachment type's inheritance chain.
+
+This domain is the breadth pass. The muzzle, bayonet, illuminator, handguard and stock domains
+beside this one extract the same hardware in depth and write their own directories, so neither pass
+overwrites the other.
+
+## Authority
+
+None: Workbench runs these scripts in the editor.
+
+## Boundaries
+
+- Depends on: `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/Core/` (component walk,
+  destination, JSON writing, display attributes and resource names); `TBD_ItemInventoryExtractor` in
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/ItemExport/`.
+- Used by: `TBD_EquipmentExportPlugin` in
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/`;
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/WeaponExport/Weapon/` and
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/WeaponExport/Optic/` read mounting
+  through `TBD_AttachmentMountingExtractor`, and the weapon domain uses `TBD_AttachmentSlotInfo`.
+- Rules: custom attributes are read under `m_aAttributes` here, where the shared reader uses
+  `CustomAttributes`, so the domain keeps its own reader.

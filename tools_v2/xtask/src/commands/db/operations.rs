@@ -43,7 +43,7 @@
 //! output, so the port reproduces it **verbatim** for every target whose recipe shells out — same
 //! text, same order, flushed before the child starts so interleaving matches.
 //!
-//! Two deliberate divergences, both narrow and both louder rather than quieter:
+//! Three deliberate divergences, all narrow and all louder rather than quieter:
 //!
 //! 1. **The four `deploy db` wrappers echo nothing.** `db-backup`/`db-restore`/`db-backup-drill`/
 //!    `db-backup-verify` are one-line recipes that shell out to `cargo run -q -p xtask -- deploy
@@ -58,6 +58,9 @@
 //!    port returns the child's raw rc (127 stays 127) and reports a signalled child as a signal —
 //!    the `verification_core::proc` thesis. Nothing consumes make's `Error N` line; several things would
 //!    like the real rc.
+//! 3. **`seed` stops at the first failed statement.** Its `psql` runs carry `-v ON_ERROR_STOP=1`
+//!    ([`seed_psql_arguments`]), so a seed that fails part-way exits non-zero where the make
+//!    recipe's `psql` carried on and exited 0.
 //!
 //! ── ODDITIES PRESERVED (reproduce, pin, document — not silently "improved") ───────────────────
 //!
@@ -164,13 +167,15 @@ const USAGE_VERIFY: &str = "usage: cargo xtask db backup-verify --dump <file.dum
 /// Subcommands under `cargo xtask db`.
 #[derive(Subcommand, Debug)]
 pub enum DbCmd {
-    /// `make db-up` — start local Postgres in the background.
+    /// Start the local Postgres container in the background.
     Up,
-    /// `make db-down` — stop local Postgres (keeps the data volume).
+    /// Stop the local Postgres container, keeping its data volume.
     Down,
-    /// `make db-logs` — tail the Postgres logs (`-f`, runs until interrupted).
+    /// Follow the Postgres container log until interrupted.
     Logs,
-    /// `make seed` — apply the five data seeds to the running DB.
+    /// Apply the five development seeds in order, stopping at the first failed statement.
+    ///
+    /// The tables come from the API's boot migrations: run `cargo xtask mk rust-api` first.
     Seed,
     /// Verified dump + prune.
     Backup {
@@ -190,7 +195,7 @@ pub enum DbCmd {
         #[arg(long)]
         create: bool,
     },
-    /// `make db-backup-drill` — restore the newest backup into a scratch DB and prove it boots.
+    /// Restore the newest backup into a scratch database and prove it boots.
     #[command(name = "backup-drill")]
     BackupDrill {
         #[arg(long)]
@@ -200,7 +205,7 @@ pub enum DbCmd {
         #[arg(long)]
         fresh: bool,
     },
-    /// `make db-backup-verify DUMP=…` — re-verify an existing dump without taking a new one.
+    /// Re-verify an existing dump without taking a new one.
     #[command(name = "backup-verify")]
     BackupVerify {
         #[arg(long)]
@@ -209,7 +214,7 @@ pub enum DbCmd {
     /// Ingest the committed registry envelopes into the dev DB.
     #[command(name = "registry-import")]
     RegistryImport,
-    /// `make rust-test-it` — fresh `rust_it` DB, run the suite, reap the per-binary leftovers.
+    /// Run the API test suite against a fresh scratch database, then drop the run's databases.
     /// A selection narrows the run for development only; readiness receipts use the full suite.
     #[command(name = "test-it")]
     TestIt {
@@ -404,13 +409,20 @@ fn compose(args: &[&str], redirect_in: Option<&str>) -> Result<u8> {
     Ok(finish_status(&argv.join(" "), st))
 }
 
-/// `make seed` — five appliers; make aborts at the first failing line, so this does too.
+/// The `compose` arguments that apply one seed file read on stdin: `psql` in the `db` service,
+/// with `ON_ERROR_STOP` set so a failed statement ends the file with a non-zero exit instead of
+/// `psql` carrying on and exiting 0.
+pub(crate) fn seed_psql_arguments() -> Vec<String> {
+    let command = format!("exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d {IT_MAINT_DB}");
+    command.split(' ').map(str::to_string).collect()
+}
+
+/// Applies the [`SEEDS`] in order and stops at the first file whose `psql` run fails.
 fn seed() -> Result<u8> {
+    let arguments = seed_psql_arguments();
+    let arguments: Vec<&str> = arguments.iter().map(String::as_str).collect();
     for file in SEEDS {
-        let rc = compose(
-            &["exec", "-T", "db", "psql", "-U", "tbd", "-d", IT_MAINT_DB],
-            Some(&format!("seeds/{file}")),
-        )?;
+        let rc = compose(&arguments, Some(&format!("seeds/{file}")))?;
         if rc != 0 {
             return Ok(rc);
         }

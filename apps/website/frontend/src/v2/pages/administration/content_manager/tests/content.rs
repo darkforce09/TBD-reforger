@@ -4,6 +4,7 @@ use super::{
     announcement_create_path, announcement_id_path, announcement_list_path, announcement_push_path,
     apply_md_tool, category_tag, date_ymd, doc_from_announcement, is_server_id, tag_category,
 };
+use crate::v2::core::api::dto::Announcement;
 use serde_json::json;
 
 /// Every category the editor offers, standing orders included, must resolve to a stored tag.
@@ -39,22 +40,64 @@ fn tag_category_round_trips_live_tags() {
 
 #[test]
 fn doc_from_announcement_maps_status_and_dates() {
-    let row = json!({
+    let row: Announcement = serde_json::from_value(json!({
         "id": "44fa4c17-5bd5-4c6b-b02d-4ccd52af6910",
         "title": "Live row",
         "body": "hello",
         "tag": "modpack_update",
+        "author_id": "000000000000000001",
         "status": "published",
+        "is_pinned": false,
+        "pushed_to_discord": false,
         "published_at": "2026-07-27T12:00:00Z",
         "created_at": "2026-07-01T00:00:00Z",
         "updated_at": "2026-07-27T12:00:00Z",
-    });
+    }))
+    .expect("the row decodes into Announcement");
     let doc = doc_from_announcement(&row).expect("row maps");
     assert_eq!(doc.id, "44fa4c17-5bd5-4c6b-b02d-4ccd52af6910");
     assert_eq!(doc.category, "modpack");
     assert!(doc.published);
     assert_eq!(doc.date, "2026-07-27");
     assert_eq!(date_ymd("2026-06-18T00:00:00Z"), "2026-06-18");
+}
+
+/// The captured CMS list maps row for row: a published post shows its publication day, and a
+/// draft, which has no publication instant, shows the day it was last changed.
+#[test]
+fn the_captured_cms_list_maps_drafts_and_published_posts() {
+    use crate::v2::core::api::dto::Paginated;
+    use crate::v2::core::test_support::fixtures::golden;
+    let page: Paginated<Announcement> =
+        serde_json::from_str(golden!("GET__cms__announcements.json")).expect("the golden decodes");
+    let docs: Vec<_> = page.data.iter().filter_map(doc_from_announcement).collect();
+    assert_eq!(docs.len(), page.data.len());
+    let draft = docs
+        .iter()
+        .find(|d| !d.published)
+        .expect("the capture holds a draft");
+    assert_eq!(
+        (
+            draft.id.as_str(),
+            draft.date.as_str(),
+            draft.category.as_str()
+        ),
+        (
+            "00000000-0000-4000-1000-000000000005",
+            "2026-07-25",
+            "event"
+        )
+    );
+    let pinned = &docs[0];
+    assert!(pinned.published);
+    assert_eq!(
+        (pinned.date.as_str(), pinned.category.as_str()),
+        ("2026-07-22", "modpack")
+    );
+    assert_eq!(
+        pinned.thumbnail_url,
+        "https://cdn.tbd-reforger.example/news/modpack-21.jpg"
+    );
 }
 
 #[test]
@@ -130,7 +173,7 @@ fn content_boots_from_cms_list_not_mock_docs() {
     );
     assert!(
         prod.contains("LocalResource::new")
-            && prod.contains("api_get::<Paginated<Value>>(")
+            && prod.contains("api_get::<Paginated<Announcement>>(")
             && prod.contains("announcement_list_path()"),
         "boot must LocalResource api_get the CMS list (perturbation: drop Resource)"
     );
@@ -258,7 +301,7 @@ fn strip_toml_comments(src: &str) -> String {
         }
         if c == '/' && matches!(chars.peek(), Some('/')) {
             chars.next();
-            while let Some(n) = chars.next() {
+            for n in chars.by_ref() {
                 if n == '\n' {
                     out.push('\n');
                     break;
@@ -267,7 +310,7 @@ fn strip_toml_comments(src: &str) -> String {
             continue;
         }
         if c == '#' {
-            while let Some(n) = chars.next() {
+            for n in chars.by_ref() {
                 if n == '\n' {
                     out.push('\n');
                     break;
@@ -289,7 +332,7 @@ fn strip_rust_comments(src: &str) -> String {
             match chars.peek() {
                 Some('/') => {
                     chars.next();
-                    while let Some(n) = chars.next() {
+                    for n in chars.by_ref() {
                         if n == '\n' {
                             out.push('\n');
                             break;
@@ -341,7 +384,7 @@ fn content_list_error_does_not_seed_as_empty_success() {
     let prod: &str = &prod;
 
     // List Resource must not collapse Err→None (perturbation: restore `.await.ok()`).
-    let list_get = "api_get::<Paginated<Value>>(";
+    let list_get = "api_get::<Paginated<Announcement>>(";
     let list_region = prod
         .split("LocalResource::new")
         .nth(1)

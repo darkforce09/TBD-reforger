@@ -348,4 +348,43 @@ pub const ROUTE_SWEEP_SKIP: &[(&str, &str)] = &[
         "/servers/{id}/status/stream",
         "SSE — never completes under oneshot",
     ),
+    ("/debug/equipment-data/status", EQUIPMENT_DATA_VIEWER_SKIP),
+    ("/debug/equipment-data/overview", EQUIPMENT_DATA_VIEWER_SKIP),
+    (
+        "/debug/equipment-data/resources",
+        EQUIPMENT_DATA_VIEWER_SKIP,
+    ),
+    (
+        "/debug/equipment-data/relationships",
+        EQUIPMENT_DATA_VIEWER_SKIP,
+    ),
+    ("/debug/equipment-data/fields", EQUIPMENT_DATA_VIEWER_SKIP),
+    (
+        "/debug/equipment-data/resource-cards",
+        EQUIPMENT_DATA_VIEWER_SKIP,
+    ),
+    (
+        "/debug/equipment-data/selection",
+        EQUIPMENT_DATA_VIEWER_SKIP,
+    ),
+    (
+        "/debug/equipment-data/containers",
+        EQUIPMENT_DATA_VIEWER_SKIP,
+    ),
+    (
+        "/debug/equipment-data/properties",
+        EQUIPMENT_DATA_VIEWER_SKIP,
+    ),
+    ("/debug/equipment-data/values", EQUIPMENT_DATA_VIEWER_SKIP),
+    (
+        "/debug/equipment-data/documents",
+        EQUIPMENT_DATA_VIEWER_SKIP,
+    ),
+    ("/debug/equipment-data/download", EQUIPMENT_DATA_VIEWER_SKIP),
 ];
+
+/// Why the development-only equipment data viewer routes stay outside the NULL blast: they read
+/// an on-disk SQLite export, never a Postgres model column, so nulling Postgres columns cannot
+/// reach them.
+const EQUIPMENT_DATA_VIEWER_SKIP: &str = "development-only debug surface reading an on-disk \
+     SQLite dataset, not Postgres; covered by contract_parity_equipment_viewer and route acceptance";

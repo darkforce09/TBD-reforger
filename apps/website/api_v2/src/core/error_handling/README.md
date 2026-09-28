@@ -35,15 +35,24 @@ envelope, never axum's plain-text body, with the message `invalid <query name>: 
 reason names the refused parameter. A handler opts in by taking
 `Result<Query<T>, QueryRejection>` and mapping the error through it with the name of its query.
 
+`ApiError::from_path_rejection` does the same for the rejection of axum's `Path` extractor: a path
+segment that does not decode into its type answers `400` in the envelope with the message
+`invalid path parameter: <reason>`, whose reason names the parameter, and a rejection axum
+classifies as a server error (the extractor does not match the route's parameters) answers a logged
+`500 internal error`. Handlers do not call it themselves: every one reads its path through
+`crate::core::http::path_parameters::PathParams`, which applies it, and whose tests cover it.
+
 ## Boundaries
 
-- Depends on: `axum` (the response types and the `Json` and `Query` rejections), `serde_json` and
-  `tracing`; the tests drive the rejections through `tower`'s `ServiceExt::oneshot`.
+- Depends on: `axum` (the response types and the `Json`, `Query` and `Path` rejections),
+  `serde_json` and `tracing`; the tests drive the rejections through `tower`'s `ServiceExt::oneshot`.
 - Used by: the handlers and services of all eight domains, among them the vehicle database, wiki
   and announcement handlers of `community_content`, which map their JSON body rejections through
-  `from_json_rejection`; the announcement list handlers of `community_content` and the personnel
-  roster of `administration`, which map their query string rejections through
-  `from_query_rejection`; the `event_reservation_reevaluator`
+  `from_json_rejection`; the list reads of announcements, events, missions, members,
+  leaderboards, leave requests, approvals, the registry and its compatibility graph, server
+  deployments, fleet commands, match events, the personnel roster and the audit log, which map
+  their query string rejections through `from_query_rejection`; `crate::core::http::path_parameters`,
+  whose extractor maps every path rejection through `from_path_rejection`; the `event_reservation_reevaluator`
   and `runtime_session_expiry`
   [background workers](/documentation_v2/glossary/a_to_f.md#background-workers);
   `crate::core::authentication_primitives`, whose `SessionAuthority` refuses with it; two
@@ -54,4 +63,5 @@ reason names the refused parameter. A handler opts in by taking
   parses; a database error never reaches the client as text; the rejection mapping answers `413`,
   `415` and `400` exactly as `ContentRefusal` in
   `contracts_v2/definitions/content-upload.schema.json` describes, and an undecodable query string
-  answers `400` in the envelope (`tests/api_error.rs`).
+  or path segment answers `400` in the envelope (`tests/api_error.rs`,
+  `../http/tests/path_parameters.rs`).

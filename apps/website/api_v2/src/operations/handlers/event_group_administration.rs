@@ -3,7 +3,7 @@
 //! self-asserted and comes only from bot-authenticated Discord observations.
 
 use axum::extract::rejection::{JsonRejection, QueryRejection};
-use axum::extract::{Path, Query, State};
+use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::Json;
 use sqlx::{PgConnection, types::Json as SqlJson};
@@ -12,6 +12,7 @@ use uuid::Uuid;
 use super::event_access_administration::finish_access_change;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AdminUser;
 use crate::identity_and_access::services::discord_membership_enrollment::enroll_event_partner_guild;
 use crate::operations::models::event_access_administration::{
@@ -32,17 +33,21 @@ fn ids(event: &str, group: &str) -> Result<(Uuid, Uuid), ApiError> {
 }
 
 fn body<T>(input: Result<Json<T>, JsonRejection>) -> Result<T, ApiError> {
-    input.map(|Json(value)| value).map_err(|rejection| {
-        ApiError::bad_request(format!("invalid body: {}", rejection.body_text()))
-    })
+    input
+        .map(|Json(value)| value)
+        .map_err(ApiError::from_json_rejection)
 }
 
+/// The access revision a bodiless change was prepared against; a query that does not decode
+/// answers 400 through [`ApiError::from_query_rejection`], naming the parameter and the reason.
 fn precondition(
     input: Result<Query<AccessRevisionPrecondition>, QueryRejection>,
 ) -> Result<i64, ApiError> {
     input
         .map(|Query(value)| value.expected_access_revision)
-        .map_err(|_| ApiError::bad_request("expected_access_revision query parameter is required"))
+        .map_err(|rejection| {
+            ApiError::from_query_rejection(rejection, "access revision precondition")
+        })
 }
 
 /// The group's current source, if it belongs to the event and has not been removed.
@@ -67,7 +72,7 @@ async fn group_source(
 pub async fn create_event_group(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
     input: Result<Json<EventGroupCreation>, JsonRejection>,
 ) -> Result<(StatusCode, Json<AccessChangeOutcome>), ApiError> {
     let creation = body(input)?;
@@ -99,7 +104,7 @@ pub async fn create_event_group(
 pub async fn update_event_group(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path((id, group_id)): Path<(String, String)>,
+    PathParams((id, group_id)): PathParams<(String, String)>,
     input: Result<Json<EventGroupChange>, JsonRejection>,
 ) -> Result<Json<AccessChangeOutcome>, ApiError> {
     let change = body(input)?;
@@ -137,7 +142,7 @@ pub async fn update_event_group(
 pub async fn delete_event_group(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path((id, group_id)): Path<(String, String)>,
+    PathParams((id, group_id)): PathParams<(String, String)>,
     query: Result<Query<AccessRevisionPrecondition>, QueryRejection>,
 ) -> Result<Json<AccessChangeOutcome>, ApiError> {
     let expected = precondition(query)?;
@@ -162,11 +167,14 @@ pub async fn delete_event_group(
     Ok(Json(outcome))
 }
 
+/// Add an account to a managed roster group; an account that does not exist answers
+/// `404 user not found`, and a partner-guild group, which has no roster, answers 409.
+///
 /// @route PUT /api/v1/events/:id/groups/:groupId/members/:discordId
 pub async fn add_event_group_member(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path((id, group_id, discord_id)): Path<(String, String, String)>,
+    PathParams((id, group_id, discord_id)): PathParams<(String, String, String)>,
     input: Result<Json<AccessRevisionPrecondition>, JsonRejection>,
 ) -> Result<Json<AccessChangeOutcome>, ApiError> {
     let expected = body(input)?.expected_access_revision;
@@ -188,7 +196,7 @@ pub async fn add_event_group_member(
     .fetch_one(&mut *tx)
     .await?;
     if !known {
-        return Err(ApiError::bad_request("user not found"));
+        return Err(ApiError::not_found("user not found"));
     }
     advance_access_revision(&mut tx, event, expected).await?;
     sqlx::query(
@@ -219,7 +227,7 @@ pub async fn add_event_group_member(
 pub async fn remove_event_group_member(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path((id, group_id, discord_id)): Path<(String, String, String)>,
+    PathParams((id, group_id, discord_id)): PathParams<(String, String, String)>,
     query: Result<Query<AccessRevisionPrecondition>, QueryRejection>,
 ) -> Result<Json<AccessChangeOutcome>, ApiError> {
     let expected = precondition(query)?;

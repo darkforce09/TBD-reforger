@@ -35,6 +35,9 @@ details, which carry `WikiMarkupFinding`s.
   `wiki-page.schema.json` (summaries, the article with its typed `WikiBlock` and `WikiInline`
   tree, the save and its refusal, the revisions) and `content-upload.schema.json`
   (`UploadResponse`, `ContentError`, `ContentRefusal`) in `contracts_v2/definitions/`.
+  `announcement.rs` cites `announcement.schema.json` (`Announcement`, `AnnouncementTag`,
+  `AnnouncementStatus`) and `modpack.rs` cites `modpack.schema.json` (`Modpack`, `ModpackMod`)
+  with `@contract` tags, which `cargo xtask schema citations` resolves.
 - Used by: the domain's handlers and services; `command_center`'s dashboard (`Announcement`);
   `server_infrastructure`'s server intel (`Modpack`, `ModpackMod`); `missions`'
   [registry](/documentation_v2/glossary/n_to_z.md#registry) items (`Modpack`); the web app's

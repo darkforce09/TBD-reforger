@@ -1,6 +1,9 @@
 //! Native metadata is rendered without substituting missing values.
 use leptos::prelude::*;
 
+/// Renders the metadata JSON `text` as nested definition and numbered lists with every value as
+/// given. Text that is not JSON shows as one string, and nesting deeper than five levels shows as
+/// pretty-printed JSON.
 pub fn metadata(text: &str) -> impl IntoView {
     let value = serde_json::from_str::<serde_json::Value>(text)
         .unwrap_or(serde_json::Value::String(text.into()));

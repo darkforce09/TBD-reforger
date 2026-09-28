@@ -3,8 +3,11 @@ kind = "work"
 title = "Migration numbering gap 0022-0024"
 summary = "apps/website/api/migrations jumps 0021 to 0025. A sibling slice landing 0022-0024 later would apply after 0025 on any migrated database, and two slices can collide on one number."
 class = "chore"
-status = "idea"
+status = "cancelled"
+order = 9815
+notes = "2026-09-28 (milestone V): cancelled, already fixed. Versions 0022 to 0024 are retired: apps/website/api_v2/migrations/README.md:26 and :77 keep them empty, and tests/migrations_are_immutable.rs:105 refuses any migration that fills them."
 created_at = "2026-09-06T00:09:25Z"
+completed_at = "2026-09-28T01:16:08Z"
 
 [scope]
 domain = "repo"

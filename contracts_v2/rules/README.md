@@ -1,15 +1,17 @@
 # Contract rules
 
 The deterministic lookup tables the platform applies while it produces data: the classification of
-every [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) prefab the world export meets, and the kit
-and vehicle aliases a compiled [mission](/documentation_v2/glossary/g_to_m.md#mission) names. What they
-shape is a committed artifact or a compiled document, so an edit here takes effect only when that
+every [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) prefab the world export meets, the kit
+and vehicle aliases a compiled [mission](/documentation_v2/glossary/g_to_m.md#mission) names, and the
+selection policy of the equipment export's gameplay dataset. What they shape is a committed
+artifact, a compiled document or a published export, so an edit here takes effect only when that
 output is rebuilt.
 
 ## Contents
 
 ```text
 contracts_v2/rules/
+├── equipment-gameplay/   which native classes and fields the equipment export's gameplay dataset keeps
 ├── kit-aliases.json      Enfusion resource name to `kit:` and `veh:` alias, with faction defaults
 └── prefab-classify.json  Enfusion prefab to world-object classification, first matching rule wins
 ```
@@ -52,10 +54,19 @@ embeds the file at compile time and resolves aliases while compiling the
 whose character has no kit row flattens to its faction's default kit with a warning, and a placed
 vehicle with no vehicle row fails the compile.
 
+### Equipment gameplay selection
+
+`equipment-gameplay/` reviews every (class, property, native type) field a complete diagnostic
+equipment export reports and gives it one disposition with a reason; its README holds the row
+format and the loader's refusals. `cargo xtask mod generate-equipment-gameplay-policy` turns it
+into the export addon's selection tables, and a published gameplay generation records the
+policy's digest.
+
 ## Format
 
 - Encoding: UTF-8 JSON, one table per file, named `<subject>-<purpose>.json`. Both files open with
-  a documentation string (`description` or `$comment`).
+  a documentation string (`description` or `$comment`); `equipment-gameplay/` is a folder of
+  tables with a manifest, described in its README.
 - Schema: no JSON Schema. `prefab-classify.json` is read by the classifier in
   `tools_v2/developer-tools/src/world_export_pipeline/classify.rs`, and its `kind` and `class`
   values must belong to the enums of `contracts_v2/definitions/map-object-enums.schema.json`.
@@ -66,7 +77,7 @@ vehicle with no vehicle row fails the compile.
 
 ## Producers and consumers
 
-- Producers: people edit both files. The `kits` rows are derived from the `kit:` entries of the
+- Producers: people edit every table. The `kits` rows are derived from the `kit:` entries of the
   spawn registry, and the `vehicles` rows from the `vehicle` items of
   `contracts_v2/catalogs/registry-items.workbench.json`.
 - Consumers:
@@ -85,7 +96,10 @@ vehicle with no vehicle row fails the compile.
   - `cargo xtask schema validate`
     (`tools_v2/xtask/src/verifications/schemas/checks/mission_validation.rs`), which requires every
     `kit:` alias of the spawn registry to appear in `kits` with the same prefab and the reverse, and
-    every faction default to resolve in the registry.
+    every faction default to resolve in the registry;
+  - the xtask equipment gameplay and equipment export commands, the export addon's generated
+    selection tables and the [API](/documentation_v2/glossary/a_to_f.md#api)'s equipment data
+    viewer, which read `equipment-gameplay/` as its README lists.
 
 ## Boundaries
 
@@ -94,7 +108,8 @@ vehicle with no vehicle row fails the compile.
   `apps/mod/tbd-framework/Data/registry.json` and the vehicle items of
   `contracts_v2/catalogs/registry-items.workbench.json`.
 - Used by: the developer tools' world export, the map engine's mission compiler and the API that
-  links it, the xtask schema gates and the wave gate.
+  links it, the xtask schema gates and the wave gate, and the equipment export's gameplay
+  selection.
 - Rules: every classification uses closed enum values (`cargo xtask schema map-object-enums`); new
   classification rules are appended, never inserted above a rule they would steal from; the kit
   table mirrors the spawn registry both ways (`cargo xtask schema validate`); a rule edit ships

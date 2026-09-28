@@ -117,3 +117,6 @@ each call with its DTO. Server-side:
   elevation, tens of mils off.
 - The picked event lives in the browser, and a stale one is dropped when the event list arrives,
   because the API stores a fire mission against any event id without checking it.
+- A saved row is the shared `SavedFire` DTO, typed with every required field required: a renamed
+  column fails the decode and the list shows "Could not load saved fire missions." instead of a
+  confident `0 m`.

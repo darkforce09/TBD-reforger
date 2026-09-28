@@ -11,6 +11,9 @@ mod value_details;
 use super::{layout::Search, page::ViewerContext};
 use leptos::prelude::*;
 
+/// The data section of a resource: a configuration view selector, the contents menu and a field
+/// search above one card grid. The grid remounts, with its own remembered reading position,
+/// whenever the dataset, generation, resource, view or search changes.
 #[component]
 pub fn ResourceData() -> impl IntoView {
     let c = expect_context::<ViewerContext>();

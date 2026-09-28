@@ -51,6 +51,15 @@ impl Drop for Fixture {
 
 #[test]
 fn gameplay_preserves_numeric_tokens_and_rejects_broken_publication() {
+    // Projection, validation and publication resolve the repository root from the cwd, which the
+    // chdir-ing tests move into scratch trees they later delete. Holding the cwd lock for the
+    // whole case keeps every one of those resolutions on the checkout.
+    crate::commands::platform::wave_execution::testcwd::resolve_under_lock(
+        numeric_tokens_survive_and_broken_publications_are_refused,
+    );
+}
+
+fn numeric_tokens_survive_and_broken_publications_are_refused() {
     let fixture = Fixture::new();
     let bytes = fs::read_to_string(fixture.resource()).unwrap();
     assert!(bytes.contains("1.0000000000000000001"));
@@ -97,8 +106,7 @@ fn gameplay_preserves_numeric_tokens_and_rejects_broken_publication() {
 
 #[test]
 fn gameplay_policy_retains_gameplay_controls_and_excludes_presentation() {
-    let policy =
-        policy::Policy::load(&crate::core::repository_root::find_repo_root().unwrap()).unwrap();
+    let policy = policy::Policy::load(&crate::core::repository_root::test_repo_root()).unwrap();
     assert_eq!(policy.fields.len(), 11314);
     for (class, property, native) in [
         (

@@ -20,26 +20,20 @@ fn equipment_viewer_dataset_identity_separates_catalog_and_inspection_requests()
     let current = Navigation::parse(
         "dataset=diagnostic&generation=pinned&resource=scope&node=old&catalog_capability=attachment&q=scope",
     );
-    assert!(
-        current
-            .catalog_request("pinned", false)
-            .contains("dataset=diagnostic")
-    );
-    assert!(
-        current
-            .inspection_request("resource-cards", "pinned", &[])
-            .contains("dataset=diagnostic")
-    );
+    assert!(current
+        .catalog_request("pinned", false)
+        .contains("dataset=diagnostic"));
+    assert!(current
+        .inspection_request("resource-cards", "pinned", &[])
+        .contains("dataset=diagnostic"));
     let changed = current.changed(&[("dataset", "gameplay")]);
     assert_eq!(changed.generation(), "latest");
     assert_eq!(changed.get("node"), "");
     assert_eq!(changed.get("resource"), "scope");
     assert_eq!(changed.get("catalog_capability"), "attachment");
-    assert!(
-        changed
-            .inspection_request("resource-cards", "new", &[])
-            .contains("dataset=gameplay")
-    );
+    assert!(changed
+        .inspection_request("resource-cards", "new", &[])
+        .contains("dataset=gameplay"));
 }
 #[test]
 fn equipment_viewer_locations_preserve_opaque_identity_and_back_context() {
@@ -75,11 +69,10 @@ fn equipment_viewer_new_generation_resets_installations_but_preserves_resource()
     for key in ["node", "property", "relation", "field"] {
         assert_eq!(result.get(key), "");
     }
-    assert!(
-        n.changed(&[("generation", "a")])
-            .after_publication("a", "b")
-            .is_none()
-    );
+    assert!(n
+        .changed(&[("generation", "a")])
+        .after_publication("a", "b")
+        .is_none());
     assert!(n.after_publication("a", "a").is_none());
 }
 
@@ -112,15 +105,11 @@ fn equipment_viewer_catalog_filters_survive_resource_and_source_navigation() {
         assert_eq!(location.get("catalog_capability"), "attachment");
         assert_eq!(location.get("q"), "scope");
         assert_eq!(location.get("resource_cursor"), "50");
-        assert!(
-            location
-                .catalog_request("generation", false)
-                .contains("capability=attachment")
-        );
-        assert!(
-            !location
-                .inspection_request("resource-cards", "generation", &[])
-                .contains("capability")
-        );
+        assert!(location
+            .catalog_request("generation", false)
+            .contains("capability=attachment"));
+        assert!(!location
+            .inspection_request("resource-cards", "generation", &[])
+            .contains("capability"));
     }
 }

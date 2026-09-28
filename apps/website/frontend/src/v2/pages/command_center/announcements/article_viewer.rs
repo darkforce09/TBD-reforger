@@ -12,12 +12,12 @@
 //! checked again here even though the writer already guarded it.
 #![allow(dead_code)]
 
-use super::article_feed::{tag_label, tag_variant, vbool, vstr};
+use super::article_feed::{tag_label, tag_variant};
+use crate::v2::core::api::dto::Announcement;
 use crate::v2::core::auth::url_guard;
 use crate::v2::core::ui::{badge_class, MaterialIcon};
 use crate::v2::core::utils::datefmt::format_local_datetime;
 use leptos::prelude::*;
-use serde_json::Value;
 
 #[cfg(test)]
 #[path = "tests/announcements.rs"]
@@ -55,21 +55,20 @@ fn body_paragraphs(body: &str) -> impl IntoView + use<> {
 /// The reading pane for one dispatch.
 ///
 /// Reads `tag`, `is_pinned`, `title`, `published_at`, `author_id`, `thumbnail_url`,
-/// `pushed_to_discord` and `body` from the dispatch object.
-pub(super) fn reader(p: &Value) -> impl IntoView + use<> {
-    let tag = vstr(p, "tag");
-    let pinned = vbool(p, "is_pinned");
-    let title = vstr(p, "title");
-    let title = if title.is_empty() {
+/// `pushed_to_discord` and `body` from the dispatch.
+pub(super) fn reader(p: &Announcement) -> impl IntoView + use<> {
+    let tag = p.tag.clone();
+    let pinned = p.is_pinned;
+    let title = if p.title.is_empty() {
         "Untitled Post".to_string()
     } else {
-        title
+        p.title.clone()
     };
-    let published = format_local_datetime(&vstr(p, "published_at"));
-    let author = vstr(p, "author_id");
-    let thumb = vstr(p, "thumbnail_url");
-    let pushed = vbool(p, "pushed_to_discord");
-    let body = vstr(p, "body");
+    let published = format_local_datetime(p.published_at.as_deref().unwrap_or_default());
+    let author = p.author_id.clone();
+    let thumb = p.thumbnail_url.clone();
+    let pushed = p.pushed_to_discord;
+    let body = p.body.clone();
     view! {
         <article class="mx-auto flex w-full max-w-3xl flex-col gap-6 px-8 py-10">
             <header class="flex flex-col gap-3 border-b border-outline-variant/30 pb-6">

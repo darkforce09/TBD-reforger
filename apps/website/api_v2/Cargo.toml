@@ -65,5 +65,16 @@ uuid = { version = "1.23.4", features = ["v4", "serde"] }
 # mission domain and nothing else.
 website-map-engine = { path = "../map-engine" }
 
+# `failpoints` compiles the fault-injection registry of `src/core/failpoints/` in. Only the self
+# dev-dependency below enables it: every test build of this crate carries it, and the deploy
+# build (`cargo build --release -p website-api --bin api`) compiles it out. Never add it to
+# `default` or pass it on a deploy build.
+[features]
+failpoints = []
+
 [dev-dependencies]
 proptest = "1"
+# The repository-law scanners the `engineering_laws` suite runs.
+verification-core = { path = "../../../tools_v2/verification-core" }
+# The crate itself with `failpoints` on, for the lib unit tests and every `tests/*.rs` binary.
+website-api = { path = ".", features = ["failpoints"] }

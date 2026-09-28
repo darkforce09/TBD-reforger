@@ -140,3 +140,7 @@ The page writes nothing and stores nothing in the browser.
   the single escape).
 - A thumbnail loads only from an `http(s)` URL, checked again at render although the writer
   already checks it (`announcement_thumbnail_emits_src_only_for_http_urls`, same file).
+- The feed reads typed `Announcement` rows, the same shape the dashboard and the content manager
+  read: a row missing a key the contract requires fails the fetch and shows "Failed to load
+  data." rather than a blank dispatch; the keys the API leaves out when empty (`snippet`,
+  `thumbnail_url`, `discord_message_id`, and `published_at` on a draft) read as empty.

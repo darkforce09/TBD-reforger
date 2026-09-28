@@ -24,7 +24,7 @@ pub async fn ingest_match_registration(
     body: Result<Json<Value>, JsonRejection>,
 ) -> Result<(StatusCode, Json<MatchRegistrationAnswer>), ApiError> {
     caller.require_executor(ExecutorKind::ModRuntime)?;
-    let Json(body) = body.map_err(|_| ApiError::bad_request("the body must be a JSON object"))?;
+    let Json(body) = body.map_err(ApiError::from_json_rejection)?;
     let registration = decode_registration(&body)?;
     let answer = register_match(&state, &caller, &registration).await?;
     let status = if answer.registered {

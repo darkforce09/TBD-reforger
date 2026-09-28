@@ -298,6 +298,7 @@ class TBD_DeploymentRequestQueue
 
 	//! Send `request` to `session` and record it in flight.
 	//! @route POST /api/v1/game-runtime/sessions/{sessionId}/deployments
+	//! @contract game-runtime-deployment.schema.json#/definitions/DeploymentRequest
 	protected static void Send(notnull TBD_DeploymentRequest request, string session)
 	{
 		string body = "{";

@@ -1,4 +1,5 @@
-//! Isolated Git inventories distinguish source bytes, tracked deletions and invalid inputs.
+//! Isolated Git inventories distinguish source bytes, tracked deletions, tracked symlinks and
+//! invalid inputs.
 use super::*;
 use std::{
     fs,
@@ -31,7 +32,7 @@ impl Repository {
         repository
     }
 
-    fn git(&self, arguments: &[&str]) {
+    fn git(&self, arguments: &[&str]) -> String {
         let output = Command::new("git")
             .args(arguments)
             .current_dir(&self.root)
@@ -42,6 +43,7 @@ impl Repository {
             "Git {arguments:?} failed: {}",
             String::from_utf8_lossy(&output.stderr)
         );
+        String::from_utf8(output.stdout).expect("Git fixture output is UTF-8")
     }
 
     fn write(&self, path: &str, contents: &str) {
@@ -58,6 +60,41 @@ impl Repository {
 
     fn fingerprint(&self) -> String {
         source(&self.root).unwrap()
+    }
+
+    #[cfg(unix)]
+    fn refusal(&self) -> String {
+        source(&self.root)
+            .expect_err("fingerprint must refuse this tree")
+            .to_string()
+    }
+
+    /// Replaces whatever sits at `path` with a symlink holding `target` as its link text.
+    #[cfg(unix)]
+    fn link(&self, target: impl AsRef<Path>, path: &str) {
+        let path = self.root.join(path);
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        if fs::symlink_metadata(&path).is_ok() {
+            fs::remove_file(&path).unwrap();
+        }
+        std::os::unix::fs::symlink(target, path).unwrap();
+    }
+
+    #[cfg(unix)]
+    fn index_mode(&self, path: &str) -> String {
+        let entry = self.git(&["ls-files", "--stage", "--", path]);
+        entry.split(' ').next().unwrap_or_default().to_owned()
+    }
+
+    /// Seeds the workspace plus `AGENTS.md`, tracked with Git mode 120000 as a link to
+    /// `CLAUDE.md`, the layout of the real repository root.
+    #[cfg(unix)]
+    fn seed_with_tracked_symlink(&self) {
+        self.seed();
+        self.write("CLAUDE.md", "# Instructions\n");
+        self.link("CLAUDE.md", "AGENTS.md");
+        self.git(&["add", "--", "CLAUDE.md", "AGENTS.md"]);
+        assert_eq!(self.index_mode("AGENTS.md"), "120000");
     }
 }
 
@@ -262,5 +299,117 @@ fn symlink_files_and_ancestor_directories_fail_instead_of_becoming_tombstones() 
             .unwrap_err()
             .to_string()
             .contains("symlink fingerprint input")
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn tracked_symlink_is_fingerprinted_stably_by_its_tagged_link_text() {
+    let repository = Repository::new();
+    repository.seed_with_tracked_symlink();
+    let linked = repository.fingerprint();
+    assert_eq!(linked, repository.fingerprint());
+
+    repository.write("apps/addition.rs", "pub const NEW: bool = true;\n");
+    assert_ne!(repository.fingerprint(), linked, "other inputs stay bound");
+    fs::remove_file(repository.root.join("apps/addition.rs")).unwrap();
+    assert_eq!(repository.fingerprint(), linked);
+
+    fs::remove_file(repository.root.join("AGENTS.md")).unwrap();
+    repository.write("AGENTS.md", "CLAUDE.md");
+    repository.git(&["add", "--", "AGENTS.md"]);
+    assert_eq!(repository.index_mode("AGENTS.md"), "100644");
+    assert_ne!(
+        repository.fingerprint(),
+        linked,
+        "a regular file holding the link text must not collide with the symlink"
+    );
+
+    repository.link("CLAUDE.md", "AGENTS.md");
+    repository.git(&["add", "--", "AGENTS.md"]);
+    assert_eq!(repository.index_mode("AGENTS.md"), "120000");
+    assert_eq!(repository.fingerprint(), linked);
+}
+
+#[cfg(unix)]
+#[test]
+fn retargeting_a_tracked_symlink_changes_the_fingerprint() {
+    let repository = Repository::new();
+    repository.seed_with_tracked_symlink();
+    repository.write("INSTRUCTIONS.md", "# Instructions\n");
+    repository.git(&["add", "--", "INSTRUCTIONS.md"]);
+    let original = repository.fingerprint();
+
+    repository.link("INSTRUCTIONS.md", "AGENTS.md");
+    let retargeted = repository.fingerprint();
+    assert_ne!(
+        retargeted, original,
+        "a new link text over identical target bytes is a new fingerprint"
+    );
+    repository.git(&["add", "--", "AGENTS.md"]);
+    assert_eq!(repository.fingerprint(), retargeted);
+
+    repository.link("CLAUDE.md", "AGENTS.md");
+    assert_eq!(repository.fingerprint(), original);
+}
+
+#[cfg(unix)]
+#[test]
+fn untracked_symlink_beside_an_accepted_tracked_symlink_is_refused() {
+    let repository = Repository::new();
+    repository.seed_with_tracked_symlink();
+    let accepted = repository.fingerprint();
+
+    repository.link("module.rs", "apps/linked.rs");
+    assert!(
+        repository
+            .refusal()
+            .contains("symlink fingerprint input is not tracked as a symlink: apps/linked.rs")
+    );
+    fs::remove_file(repository.root.join("apps/linked.rs")).unwrap();
+    assert_eq!(repository.fingerprint(), accepted);
+
+    repository.link("../Cargo.toml", "apps/module.rs");
+    assert_eq!(repository.index_mode("apps/module.rs"), "100644");
+    assert!(
+        repository
+            .refusal()
+            .contains("symlink fingerprint input is not tracked as a symlink: apps/module.rs")
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn tracked_symlink_resolving_outside_the_repository_or_nowhere_is_refused() {
+    let repository = Repository::new();
+    repository.seed_with_tracked_symlink();
+    repository.fingerprint();
+    let outside = Repository::new();
+    outside.write("target.md", "# Instructions\n");
+    let outside_name = outside.root.file_name().unwrap().to_str().unwrap();
+
+    for target in [
+        outside.root.join("target.md"),
+        PathBuf::from(format!("../{outside_name}/target.md")),
+        PathBuf::from("hop"),
+    ] {
+        repository.link(outside.root.join("target.md"), "hop");
+        repository.link(&target, "AGENTS.md");
+        repository.git(&["add", "--", "AGENTS.md"]);
+        assert_eq!(repository.index_mode("AGENTS.md"), "120000");
+        assert!(
+            repository
+                .refusal()
+                .contains("symlink fingerprint input resolves outside the repository: AGENTS.md"),
+            "{target:?} escapes the repository"
+        );
+    }
+
+    repository.link("missing.md", "AGENTS.md");
+    repository.git(&["add", "--", "AGENTS.md"]);
+    assert!(
+        repository
+            .refusal()
+            .contains("symlink fingerprint input does not resolve: AGENTS.md")
     );
 }

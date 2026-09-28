@@ -2,7 +2,8 @@
 //!
 //! **Role:** runs the real `api` binary over this binary's private database, opens event streams
 //! on it over HTTP and on the in-process router, reads SSE bodies to their end with bounded waits,
-//! and plants audit rows and reads back their publications.
+//! registers the silent server whose status stream stays quiet, and plants audit rows and reads
+//! back their publications.
 //! **Position:** compiled into `tests/audit_replay_shutdown.rs` only
 //! (`mod audit_shutdown_support;`); it adds no test binary. It reaches the database through the
 //! suite's pool, the binary through `CARGO_BIN_EXE_api`, and the router through
@@ -21,6 +22,7 @@ mod sse_reader;
 use axum::Router;
 use axum::body::Body;
 use axum::http::{Request, StatusCode, header};
+use sqlx::PgPool;
 use tower::ServiceExt;
 use uuid::Uuid;
 
@@ -31,10 +33,23 @@ pub use sse_reader::{SseEvent, SseReader};
 /// The live audit feed.
 pub const AUDIT_STREAM_PATH: &str = "/api/v1/admin/audit-logs/stream";
 
-/// The live status feed of `server`; an id no server row carries opens a stream with no snapshot
-/// that stays open until it is closed.
+/// The live status feed of `server`; a server with no status row opens a stream with no snapshot
+/// that stays open until it is closed, and an unknown server answers 404.
 pub fn server_status_stream_path(server: Uuid) -> String {
     format!("/api/v1/servers/{server}/status/stream")
+}
+
+/// Registers an active server with no status row, so its status stream opens with no snapshot;
+/// the name carries `suite` and a fresh UUID.
+pub async fn register_silent_server(pool: &PgPool, suite: &str) -> Uuid {
+    sqlx::query_scalar(
+        "INSERT INTO servers (name, ip, port, is_active) VALUES ($1, '127.0.0.1', 2001, true) \
+         RETURNING id",
+    )
+    .bind(format!("{suite} silent server {}", Uuid::new_v4()))
+    .fetch_one(pool)
+    .await
+    .expect("register the silent server")
 }
 
 /// Asserts a stream answer: 200 with `text/event-stream`.

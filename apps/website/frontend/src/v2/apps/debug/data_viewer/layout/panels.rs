@@ -1,5 +1,8 @@
 //! Pointer and keyboard resizing stays local to the viewer.
 use leptos::prelude::*;
+/// A side panel, `initial` pixels wide, that the reader resizes between 220 and 640 pixels by
+/// dragging its separator or with the Left and Right arrow keys in 20-pixel steps; `label` names
+/// the separator for assistive technology.
 #[component]
 pub fn Panel(
     #[prop(default = 300)] initial: i32,

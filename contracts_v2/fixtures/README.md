@@ -10,24 +10,27 @@ stage it into a game server.
 
 ```text
 contracts_v2/fixtures/
-├── bridge_samples/    voice bridge messages across a voice session's lifecycle
-├── enfusion_samples/  one sample per mission-schema definition the mod's JSON classes read
-├── map/               terrain and world-object samples, chunk and density binaries included
-├── missions/          complete missions that must pass, and wrapped missions that must fail
-└── registry/          item, compatibility, alias, loadout, faction and editor-payload samples
+├── bridge_samples/         voice bridge messages across a voice session's lifecycle
+├── enfusion_samples/       one sample per mission-schema definition the mod's JSON classes read
+├── equipment-data-viewer/  accepted and refused pages of the equipment data viewer's debug routes
+├── map/                    terrain and world-object samples, chunk and density binaries included
+├── missions/               complete missions that must pass, and wrapped missions that must fail
+└── registry/               item, compatibility, alias, loadout, faction and editor-payload samples
 ```
 
 ## How it works
 
-`cargo xtask schema validate` reads every folder here: it validates each sample against its schema
-in `contracts_v2/definitions/`, requires each invalid mission to fail its named gate at its named
-pointer, and cross-checks kit aliases and registry references.
+`cargo xtask schema validate` reads every folder here but `equipment-data-viewer/`: it validates
+each sample against its schema in `contracts_v2/definitions/`, requires each invalid mission to
+fail its named gate at its named pointer, and cross-checks kit aliases and registry references.
 `cargo xtask schema map-object-golden` adds the world export's semantic gates over `map/`, including
 the byte-level checks of its binary twins. Both run in the `schema-validate` CI task, and the
 `schema.yml` workflow runs the first on every change under `contracts_v2/`. Beyond the gates, the
 [API](/documentation_v2/glossary/a_to_f.md#api)'s and the map engine's tests load single fixtures by path,
 and the xtask [mod](/documentation_v2/glossary/g_to_m.md#mod) commands stage missions from
-`missions/valid/` into a game server.
+`missions/valid/` into a game server. The equipment data viewer's pages are held by the
+API's `contract_parity_equipment_viewer` test binary, which reproduces every accepted page from a
+committed export, and by the frontend's DTO parity tests.
 
 The negative fixtures matter as much as the positive ones. Each invalid mission isolates one
 defect at one pointer, so a gate that grows permissive fails here, naming the rule that broke,
@@ -52,8 +55,8 @@ instead of letting malformed missions through until one reaches a live
     map-object golden gates in `tools_v2/developer-tools/src/map_verification/object_goldens/`,
     which reach these folders through `tools_v2/developer-tools/src/repository_layout.rs`;
   - the xtask mod commands `world-boot`, `test-mission` and `dev-server`;
-  - tests in `apps/website/api_v2/`, `apps/website/map-engine/` and `tools_v2/`, named in each
-    folder's README.
+  - tests in `apps/website/api_v2/`, `apps/website/frontend/`, `apps/website/map-engine/` and
+    `tools_v2/`, named in each folder's README.
 
 ## Boundaries
 

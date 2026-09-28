@@ -47,6 +47,24 @@ The integration suites in `tests/` build one test binary per top-level file. A b
 a database derives its own scratch database from `TEST_DATABASE_URL`, creates and migrates it,
 and the suites that drive HTTP build the same router the `api` binary serves. Shared support
 lives in `tests/common/` and the `*_support/` folders, which produce no binary of their own.
+Every test build compiles the crate with its `failpoints` feature, which places named fault
+points on commit and external-effect paths; the deploy build compiles them out.
+
+### Verification suites
+
+Besides the per-domain suites, six groups of binaries verify the API as a whole; each case's
+name starts with its group's prefix, which the verification register counts.
+
+| Group | Binaries | Shared support |
+|---|---|---|
+| route acceptance | `route_acceptance_coverage`, one `route_acceptance_<part>` per part (`identity_and_core`, `operations_events`, `operations_reservations`, `missions_library`, `missions_reviews`, `fleet_and_telemetry`, `administration_center_content`), and `debug_routes_are_development_only` | `route_acceptance_support/`: the route table read from `src/`, the specs and worlds per part, the derived probes and the dimension runner |
+| contract parity | `contract_parity_goldens`, `contract_parity_equipment_viewer`, `contract_parity_mod_wire`, `json_rejection_envelopes`, `query_rejection_envelopes`, and each route acceptance part's `contract_parity_<part>_…` case | `contract_parity_support/` (golden index, normalisation, seeded capture, route contracts), `enfscript_source_support/` (the `@contract` tag grammar of the mod scripts), `fixtures/equipment_data_viewer/` |
+| properties | `session_authority_properties`, `mission_artifact_properties`, `telemetry_revision_properties`, `fleet_command_properties`, `audit_publication_properties`, `reservation_transaction_properties` | `common::property_evidence`, the recorder every property runs through; `session_authority_support/` |
+| controlled races | `controlled_races_identity`, `controlled_races_reservations`, `controlled_races_missions_and_telemetry`, `controlled_races_audit` | `failpoint_and_race_support/`: arming, interleavings, row-lock barriers, persisted-state checks |
+| failure injection | `failure_injection_<area>` for `identity`, `operations`, `missions`, `telemetry`, `fleet`, `audit` and `discord`, and `failure_injection_self_checks` | `failpoint_and_race_support/` |
+| engineering laws | `engineering_laws` | the `verification-core` dev-dependency |
+
+The design note linked under Related documentation specifies each group.
 
 ## Getting started
 
@@ -62,11 +80,12 @@ cargo xtask mk rust-test # the library and binary unit tests, source rules inclu
 ```
 
 `db seed` applies five development seeds in a fixed order to tables that only the API's
-migrations create. `psql` carries on past a failed statement, so seeding before the API's first
-boot loads nothing and still exits 0. `db test-it` needs only `db up`: it creates the scratch
-databases, and each suite applies the migrations itself. `cargo xtask db registry-import` loads
-the committed Workbench [registry](/documentation_v2/glossary/n_to_z.md#registry) exports into the local
-database, `cargo xtask mk leptos` serves the single-page app on port 3000, proxying `/api` and
+migrations create. Each `psql` run stops at the first failed statement, so seeding before the
+API's first boot stops at the first seed with psql's exit code 3. `db test-it` needs only
+`db up`: it creates the scratch databases, and each suite applies the migrations itself.
+`cargo xtask db registry-import` loads the committed Workbench
+[registry](/documentation_v2/glossary/n_to_z.md#registry) exports into the local database,
+`cargo xtask mk leptos` serves the single-page app on port 3000, proxying `/api` and
 `/map-assets` to the API, `cargo xtask db down` stops Postgres and keeps its volume, and
 `cargo xtask ci ci-local` replays the whole CI suite once `db up` has run.
 
@@ -87,6 +106,12 @@ value that is set but unusable stops the boot for `UPLOAD_DIR`, `DISCORD_BOT_TOK
 values; `TRUSTED_PROXIES`, `MISSION_VERSION_MAX_BODY_BYTES`, `SKIP_MIGRATE`, `RUST_LOG` and
 `TEST_DATABASE_URL` are not in it.
 
+The crate has one Cargo feature, `failpoints`, off by default. `Cargo.toml` enables it only
+through the crate's dev-dependency on itself, so every test build (the unit tests and every
+`tests/*.rs` binary) carries the fault-injection registry of `src/core/failpoints/`, and the
+deploy build, `cargo build --release -p website-api --bin api`, which passes no feature flag,
+compiles every fault point to nothing. The `engineering_laws` suite holds both halves.
+
 | Variable | Default | Required | Read by |
 |---|---|---|---|
 | `PORT` | `8080` | no | `Config::load` |
@@ -98,6 +123,8 @@ values; `TRUSTED_PROXIES`, `MISSION_VERSION_MAX_BODY_BYTES`, `SKIP_MIGRATE`, `RU
 | `MAP_ASSETS_DIR` | `../../../assets_v2/terrains`, relative to the working directory | no | `Config::load` |
 | `GLYPH_ASSETS_DIR` | `../../../assets_v2/glyphs`, relative to the working directory | no | `Config::load` |
 | `UPLOAD_DIR` | `../../../assets_v2/scratch/website-api/uploads` in development; the systemd unit sets its state directory | outside development, absolute | `Config::load` |
+| `EQUIPMENT_DATA_DIR` | `../../../assets_v2/equipment` in development, empty otherwise, which leaves the equipment datasets unconfigured; the imported equipment datasets and their indexes | no | `Config::load` |
+| `EQUIPMENT_EXPORT_SOURCE_DIR` | empty, which disables importing; the Workbench equipment export publication the import worker polls | no | `Config::load` |
 | `DATABASE_URL` | none | yes | `Config::load`; `import-registry` |
 | `TBD_DB_POOL_MAX_CONNECTIONS` | `25` | no | `src/core/database/connection_pool.rs` |
 | `TBD_DB_POOL_IDLE_TIMEOUT_SECS` | `300` | no | `src/core/database/connection_pool.rs` |
@@ -150,6 +177,8 @@ values; `TRUSTED_PROXIES`, `MISSION_VERSION_MAX_BODY_BYTES`, `SKIP_MIGRATE`, `RU
   `src/core/http_router.rs`, a domain's handlers never import another domain's handlers, and
   `background_workers` is imported only by `src/bin/api.rs` (`src/tests/architecture_rules.rs`
   checks all three); an applied migration never changes (`tests/migrations_are_immutable.rs`);
+  the crate depends on neither `website-graphics-engine` nor `website-frontend`, and
+  `failpoints` stays a test-only feature (`tests/engineering_laws.rs`);
   `rust-toolchain.toml` pins the same toolchain as the workspace root's `rust-toolchain.toml`; the
   filled `.env` is never committed.
 
@@ -170,5 +199,8 @@ values; `TRUSTED_PROXIES`, `MISSION_VERSION_MAX_BODY_BYTES`, `SKIP_MIGRATE`, `RU
   the API on the home server.
 - [API completion and verification](/documentation_v2/website/api_v2/verification_evidence/completion_plan.md)
   — the acceptance contract and requirement register the API is verified against.
+- [Verification completeness](/documentation_v2/website/api_v2/verification_evidence/verification_completeness.md)
+  — the route acceptance, contract parity, property, race, failure injection and engineering-law
+  suites, and the failpoint catalogue.
 - [API verification evidence](/documentation_v2/website/api_v2/verification_evidence/README.md)
   — the index of the register, the program records and the design notes.

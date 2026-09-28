@@ -1,14 +1,40 @@
-# WeaponExport/Stock
+# Buttstock export
 
-Buttstocks.
+Buttstocks with their mounting, slots and handling modifiers, written under
+`$profile:TBD_Export/equipment/stocks/`.
 
-### Roles & Responsibilities
-- `TBD_StockModel.c`: `TBD_StockInfo` with mounting, slot, handling, physical, and visual sub-carriers. Structurally parallel to `TBD_HandguardModel.c`, since both describe a rail-mounted furniture piece that modifies weapon handling.
-- `TBD_StockExtractor.c`: Reads the recoil and sway handling modifiers a buttstock applies, and its mass and volume.
-- `TBD_StockMountingExtractor.c`: Reads how the buttstock fits a weapon — the type it presents, the types it is compatible with by walking the type's inheritance chain, the types it obstructs, and any slot it offers in turn.
-- `TBD_StockNaming.c`: Reads display name, description, and icon. Searches wider than Core's shared reader: it accepts `UIInfo` in place of `ItemDisplayName`, probes `UIInfo` on each component, and makes a second pass over every non-slot component, because buttstock prefabs often declare their strings outside the node the shared reader looks at.
-- `TBD_StockScanner.c`: Sweeps every loaded addon for buttstock prefabs and serializes the catalog.
-- `TBD_StockExportPlugin.c`: Workbench entry point `Plugins > TBD > Export All Buttstocks`. Writes `$profile:TBD_Export/equipment/stocks/`.
+## Contents
 
-### Call Flow & Contracts
-Menu action -> `TBD_StockExportPlugin.Run()` -> `TBD_StockScanner.Scan()` -> the three extractors -> `TBD_StockInfo` -> `equipment/stocks/stocks.json` plus `stocks_meta.json`.
+```text
+apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/WeaponExport/Stock/
+├── TBD_StockExportPlugin.c       the stock plugin class; its menu attribute is commented out
+├── TBD_StockExtractor.c          recoil and sway modifiers, mass and volume
+├── TBD_StockModel.c              `TBD_StockInfo` with mounting, slot, handling, physical and visual parts
+├── TBD_StockMountingExtractor.c  attachment type, compatible and obstructed types, the slot offered
+├── TBD_StockNaming.c             display name, description and icon, searched wider than the shared reader
+└── TBD_StockScanner.c            the addon sweep and the catalog
+```
+
+## How it works
+
+Its plugin's `[WorkbenchPluginAttribute]` is commented out and "Export All Equipment" does not run
+this scanner, so the domain runs only when the attribute is restored.
+
+`TBD_StockScanner.RunScan()` has the three extractors fill one `TBD_StockInfo` per prefab and writes
+`stocks.json` and `stocks_meta.json`. The model parallels the handguard domain's, since both
+describe a mounted furniture piece that changes weapon handling. `TBD_StockNaming` accepts `UIInfo`
+in place of `ItemDisplayName`, probes `UIInfo` on each component and makes a second pass over every
+non-slot component, because buttstock prefabs often declare their strings outside the node the
+shared reader looks at.
+
+## Authority
+
+None: Workbench runs these scripts in the editor.
+
+## Boundaries
+
+- Depends on: `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/Core/` (component walk,
+  destination, JSON writing, display attributes and resource names).
+- Used by: nothing while its plugin attribute stays commented out.
+- Rules: the wider name search stays in `TBD_StockNaming` and never changes the shared reader in
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/Core/PrefabNaming/`.

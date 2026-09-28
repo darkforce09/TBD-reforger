@@ -1,0 +1,178 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ModpackContract",
+  "description": "Modpack manifests: the members' catalog, the current pack, and the administrator's writes. The root is one modpack with its mods.",
+  "$ref": "#/definitions/Modpack",
+  "definitions": {
+    "Modpack": {
+      "description": "One modpack manifest with its mods. At most one pack is current. workshop_url is absent when unset. GET /api/v1/modpacks/current answers the current pack (404 when none); POST (201), PUT and POST .../set-current answer the written pack.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "version",
+        "total_size_bytes",
+        "is_current",
+        "created_at",
+        "mods"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "total_size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "workshop_url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "is_current": {
+          "type": "boolean"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "mods": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ModpackMod"
+          }
+        }
+      }
+    },
+    "ModpackMod": {
+      "description": "One mod of a modpack, key dependencies first, then by sort_order. workshop_id, mod_guid and version are absent when unset.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "modpack_id",
+        "name",
+        "is_key_dependency",
+        "sort_order"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "modpack_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "is_key_dependency": {
+          "type": "boolean"
+        },
+        "sort_order": {
+          "type": "integer"
+        },
+        "workshop_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mod_guid": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "ModpackList": {
+      "description": "GET /api/v1/modpacks (any signed-in member): every pack, the current one first, then newest first.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Modpack"
+          }
+        }
+      }
+    },
+    "ModpackWrite": {
+      "description": "POST /api/v1/modpacks and PUT /api/v1/modpacks/:id body (administrator). mods replaces the pack's mods; is_current true makes this the only current pack.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "total_size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "workshop_url": {
+          "type": "string"
+        },
+        "is_current": {
+          "type": "boolean"
+        },
+        "mods": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ModWrite"
+          }
+        }
+      }
+    },
+    "ModWrite": {
+      "description": "One mod of a modpack write.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "is_key_dependency": {
+          "type": "boolean"
+        },
+        "sort_order": {
+          "type": "integer"
+        },
+        "workshop_id": {
+          "type": "string"
+        },
+        "mod_guid": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -6,7 +6,7 @@
 //! required audit record in the same transaction.
 
 use axum::extract::rejection::{JsonRejection, QueryRejection};
-use axum::extract::{Path, Query, State};
+use axum::extract::{Query, State};
 use axum::response::Json;
 use sqlx::PgConnection;
 use uuid::Uuid;
@@ -14,6 +14,7 @@ use uuid::Uuid;
 use crate::administration::services::required_audit::append_actor_audit;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AdminUser;
 use crate::operations::models::event_access_administration::{
     AccessChangeOutcome, AccessPolicyChange, AccessRevisionPrecondition, EventAccessAdministration,
@@ -39,17 +40,21 @@ fn event_id(raw: &str) -> Result<Uuid, ApiError> {
 }
 
 fn body<T>(input: Result<Json<T>, JsonRejection>) -> Result<T, ApiError> {
-    input.map(|Json(value)| value).map_err(|rejection| {
-        ApiError::bad_request(format!("invalid body: {}", rejection.body_text()))
-    })
+    input
+        .map(|Json(value)| value)
+        .map_err(ApiError::from_json_rejection)
 }
 
+/// The access revision a bodiless change was prepared against; a query that does not decode
+/// answers 400 through [`ApiError::from_query_rejection`], naming the parameter and the reason.
 fn precondition(
     input: Result<Query<AccessRevisionPrecondition>, QueryRejection>,
 ) -> Result<i64, ApiError> {
     input
         .map(|Query(value)| value.expected_access_revision)
-        .map_err(|_| ApiError::bad_request("expected_access_revision query parameter is required"))
+        .map_err(|rejection| {
+            ApiError::from_query_rejection(rejection, "access revision precondition")
+        })
 }
 
 /// Active attachments read in a consistent snapshot, for read-only views.
@@ -106,7 +111,7 @@ pub(super) async fn finish_access_change(
 pub async fn get_event_access(
     State(state): State<AppState>,
     _admin: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<Json<EventAccessAdministration>, ApiError> {
     let event = load_event(&state.pool, &id).await?;
     let mut tx = state.pool.begin().await?;
@@ -123,7 +128,7 @@ pub async fn get_event_access(
 pub async fn get_event_access_participants(
     State(state): State<AppState>,
     _admin: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<Json<Vec<ParticipantAccessExplanation>>, ApiError> {
     let event = load_event(&state.pool, &id).await?;
     let mut tx = state.pool.begin().await?;
@@ -141,7 +146,7 @@ pub async fn get_event_access_participants(
 pub async fn put_event_access_policy(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
     input: Result<Json<AccessPolicyChange>, JsonRejection>,
 ) -> Result<Json<AccessChangeOutcome>, ApiError> {
     let change = body(input)?;
@@ -185,7 +190,7 @@ async fn lock_attachment_scope(
 pub async fn put_squad_access_policy(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path((emid, faction, squad)): Path<(String, String, String)>,
+    PathParams((emid, faction, squad)): PathParams<(String, String, String)>,
     input: Result<Json<AccessPolicyChange>, JsonRejection>,
 ) -> Result<Json<AccessChangeOutcome>, ApiError> {
     let change = body(input)?;
@@ -217,7 +222,7 @@ pub async fn put_squad_access_policy(
 pub async fn delete_squad_access_policy(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path((emid, faction, squad)): Path<(String, String, String)>,
+    PathParams((emid, faction, squad)): PathParams<(String, String, String)>,
     query: Result<Query<AccessRevisionPrecondition>, QueryRejection>,
 ) -> Result<Json<AccessChangeOutcome>, ApiError> {
     let expected = precondition(query)?;
@@ -242,7 +247,7 @@ pub async fn delete_squad_access_policy(
 pub async fn put_slot_access_policy(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path((emid, slot_id)): Path<(String, String)>,
+    PathParams((emid, slot_id)): PathParams<(String, String)>,
     input: Result<Json<AccessPolicyChange>, JsonRejection>,
 ) -> Result<Json<AccessChangeOutcome>, ApiError> {
     let change = body(input)?;
@@ -275,7 +280,7 @@ pub async fn put_slot_access_policy(
 pub async fn delete_slot_access_policy(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path((emid, slot_id)): Path<(String, String)>,
+    PathParams((emid, slot_id)): PathParams<(String, String)>,
     query: Result<Query<AccessRevisionPrecondition>, QueryRejection>,
 ) -> Result<Json<AccessChangeOutcome>, ApiError> {
     let expected = precondition(query)?;
@@ -301,7 +306,7 @@ pub async fn delete_slot_access_policy(
 pub async fn put_reservation_quotas(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
     input: Result<Json<ReservationQuotaChange>, JsonRejection>,
 ) -> Result<Json<AccessChangeOutcome>, ApiError> {
     let change = body(input)?;

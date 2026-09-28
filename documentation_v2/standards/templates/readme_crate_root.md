@@ -107,9 +107,9 @@ cargo xtask db test-it   # the integration suites against a scratch rust_it data
 ```
 
 `db seed` applies the five development seeds in dependency order to tables that only the API's
-migrations create. psql carries on past a failed statement, so seeding before the API's first boot
-loads nothing and still exits 0. `db test-it` needs only `db up`: it creates the scratch database,
-and each suite applies the migrations itself.
+migrations create. Each psql run stops at the first failed statement, so seeding before the API's
+first boot stops at the first seed with psql's exit code 3. `db test-it` needs only `db up`: it
+creates the scratch database, and each suite applies the migrations itself.
 
 With `APP_ENV=development`, `GET /api/v1/auth/dev-login?role=<role>` signs in without Discord
 (`guest`, `enlisted`, `leader`, `mission_maker` or `admin`; any other value signs in as `admin`) and

@@ -40,7 +40,7 @@ cargo xtask mod dev-bootstrap
 bash scripts/mod/mcp-call.sh wb_connect '{}'
 ```
 
-Optional: copy [`apps/mod/.mcp.json`](../../../apps/mod/.mcp.json) for native MCP tools; **`mcp-call.sh` is sufficient** in terminal sessions. Verify `ENFUSION_*` paths match this machine.
+Optional: copy `apps/mod/.mcp.json` for native MCP tools; **`mcp-call.sh` is sufficient** in terminal sessions. Verify `ENFUSION_*` paths match this machine.
 
 **If bootstrap exit 1** (port still closed or `wb_connect` fails): report blocker in verify paste — human may need to open `addon.gproj` once and enable Net API (File → Options → General), then **Claude Code re-runs bootstrap**. Do not fabricate export JSON.
 

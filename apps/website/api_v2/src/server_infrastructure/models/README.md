@@ -42,6 +42,10 @@ conversion folds the five `telemetry_queue_*` columns, all set or all null, into
   `contracts_v2/definitions/game-runtime-session.schema.json` (whose `RuntimeHeartbeat` carries the
   optional `telemetry_queue` block) and `contracts_v2/definitions/machine-credential.schema.json`;
   `TelemetryQueueStatus` cites `match-telemetry.schema.json#/definitions/TelemetryQueueStatus`.
+  `fleet_command.rs`, `machine_credential.rs` and `fleet_scenario.rs` carry `@contract` tags for
+  the fleet command, machine credential and `mission-deployment.schema.json` fleet scenario
+  definitions they serialize, and `server.rs` also cites `server-intel.schema.json`
+  (`ServerStatus`, `TelemetryQueueStatus`); `cargo xtask schema citations` resolves every tag.
 - Used by: the domain's handlers and services; `match_telemetry` (`ExecutorKind`),
   `identity_and_access` (`ExecutorKind`), `missions` (`ExecutorKind`, `FleetAction`), `operations`
   (`ExecutorKind`) and `command_center` (`ServerStatus`, `ServerStatusRow`); the contract test `apps/website/api_v2/tests/game_runtime_contract.rs`, which

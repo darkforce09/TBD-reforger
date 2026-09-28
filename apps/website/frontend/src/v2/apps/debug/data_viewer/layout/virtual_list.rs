@@ -1,5 +1,7 @@
 //! Fixed-height navigation rows mount only the visible window plus overscan.
 use leptos::prelude::*;
+/// One navigation row of a `VirtualList`: its link target, title, detail line, badge text, and
+/// whether it shows as selected.
 #[derive(Clone)]
 pub struct LinkRow {
     pub href: String,
@@ -8,6 +10,10 @@ pub struct LinkRow {
     pub badge: String,
     pub selected: bool,
 }
+/// A list of 72-pixel [`LinkRow`]s that mounts only the rows in view plus overscan; the Up and
+/// Down arrow keys scroll it by one row. With `memory_key` it restores and remembers its scroll
+/// offset and marks the row whose resource the location selects; without one, each row's own
+/// `selected` flag applies.
 #[component]
 pub fn VirtualList(
     rows: Vec<LinkRow>,

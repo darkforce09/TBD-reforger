@@ -19,15 +19,15 @@ class TBD_MissionVariantStruct
 }
 
 //! The `variantId` of one `slots[]` or `vehicles[]` row; every other key of the row is ignored.
-//! @contract mission.schema.json#/$defs/slot
-//! @contract mission.schema.json#/$defs/vehicle
+//! @contract mission.schema.json#/$defs/slot partial
+//! @contract mission.schema.json#/$defs/vehicle partial
 class TBD_VariantRowRefStruct
 {
 	string variantId; //!< JSON `variantId`: variant gate; empty = unconditional row.
 }
 
 //! Root of the slot and vehicle gate pass: only those two arrays are declared.
-//! @contract mission.schema.json#/
+//! @contract mission.schema.json#/ partial
 class TBD_VariantGateSkeletonStruct
 {
 	ref array<ref TBD_VariantRowRefStruct> slots;    //!< JSON `slots`: one gate per slot row.

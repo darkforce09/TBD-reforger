@@ -1,5 +1,5 @@
 //! Role: gpu.
-//! Position: `overlay/symbology/atlas` in the graphics engine.
+//! Position: `overlay/symbology/atlas` in the map engine.
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
@@ -8,12 +8,11 @@ use crate::frame::engine::RenderEngine;
 use wasm_bindgen::prelude::*;
 
 /// Re-export `crate::frame::GlyphAtlasGpu`.
-// T-0xx Phase 2B (Kind A): the cell-atlas texture/uniform/bind-group build lives in
-// `website-graphics-engine`, and moved inside it from `text::gpu` to `frame::atlas` — a live
-// atlas is a GPU handle, and its bind group is what an icon batch's `BindGroupId` resolves
-// to. `upload_glyph_atlas` itself stays: it is a `#[wasm_bindgen]` export on this crate's own
-// type, and its uniform block is packed by `Self::pack_icon_uniforms`, whose UV table is
-// symbology's cell layout.
+// The cell-atlas texture, uniform buffer and bind-group build live in
+// `website-graphics-engine`'s `frame::atlas`: a live atlas is a GPU handle, and its bind group
+// is what an icon batch's `BindGroupId` resolves to. `upload_glyph_atlas` lives here: it is a
+// `#[wasm_bindgen]` export on this crate's own type, and its uniform block is packed by
+// `Self::pack_icon_uniforms`, whose UV table is symbology's cell layout.
 pub(crate) use crate::frame::GlyphAtlasGpu;
 
 #[wasm_bindgen]

@@ -11,6 +11,9 @@
 //! what the captured order-of-battle fixtures carry; omitting it would drift the round-trip. Leave
 //! status, seat eligibility, policy sources and release reasons are carried as strings rather than
 //! enums so that a value added on the backend cannot make the app reject the response.
+//! @contract event-schedule.schema.json#/definitions/EventListItem
+//! @contract service-record.schema.json#/definitions/ServiceRecord
+//! @contract leave-request.schema.json#/definitions/LeaveRequest
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -19,6 +22,7 @@ use super::event_viewer_access::{EventViewerAccess, ReservationQuotaAvailability
 use super::missions::ArmoryFaction;
 
 /// One operation in a listing: when it runs, how full it is, and the copy the card shows.
+/// @contract event-schedule.schema.json#/definitions/EventListItem
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct EventListItem {
@@ -170,6 +174,7 @@ pub struct EventHub {
 }
 
 /// An upcoming signup carries allocation and attendance independently.
+/// @contract service-record.schema.json#/definitions/UpcomingDeployment
 #[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DeploymentUpcoming {
@@ -192,6 +197,7 @@ pub struct DeploymentUpcoming {
 }
 
 /// The operations a viewer is signed up for, grouped for the dashboard.
+/// @contract service-record.schema.json#/definitions/ServiceRecord
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Deployments {
@@ -208,6 +214,7 @@ pub struct Deployments {
 }
 
 /// One leave request, with its review stamp when it has been decided.
+/// @contract leave-request.schema.json#/definitions/LeaveRequest
 #[allow(dead_code)]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LeaveRequest {
@@ -227,6 +234,7 @@ pub struct LeaveRequest {
 }
 
 /// The body that files a leave request.
+/// @contract leave-request.schema.json#/definitions/LeaveRequestSubmission
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct CreateLeaveInput {
@@ -237,6 +245,7 @@ pub struct CreateLeaveInput {
 }
 
 /// The body that approves or denies a leave request.
+/// @contract leave-request.schema.json#/definitions/LeaveReview
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct ReviewLeaveInput {

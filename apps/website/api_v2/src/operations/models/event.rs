@@ -1,5 +1,10 @@
 //! The scheduled operation container, the missions attached to it, and the ORBAT seats, squad
 //! holds and registrations that hang off those missions.
+//!
+//! @contract event-schedule.schema.json#/definitions/Event
+//! @contract event-schedule.schema.json#/definitions/EventStatus
+//! @contract event-schedule.schema.json#/definitions/EventMission
+//! @contract reservation-actions.schema.json#/definitions/SquadReservation
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

@@ -3,6 +3,8 @@ use super::super::{data::use_read, page::ViewerContext};
 use super::card_grid::GridContext;
 use crate::v2::core::api::dto::equipment_data_viewer::EquipmentResourceCardPage;
 use leptos::prelude::*;
+/// Stores a loaded card page in `grid`: updates the card total, clears that page's error, and
+/// keeps at most four pages by evicting those farthest from the new one.
 pub fn accept(grid: GridContext, page: EquipmentResourceCardPage) {
     grid.total.set(page.total as usize);
     let start = page.start_index as usize;
@@ -17,6 +19,8 @@ pub fn accept(grid: GridContext, page: EquipmentResourceCardPage) {
         errors.remove(&start);
     });
 }
+/// Loads the card page starting at `offset`, unless the grid already holds it, and stores the page
+/// or its error in the grid. It renders nothing.
 #[component]
 pub fn BatchLoader(offset: usize) -> impl IntoView {
     let c = expect_context::<ViewerContext>();
@@ -50,8 +54,10 @@ pub fn BatchLoader(offset: usize) -> impl IntoView {
             });
         }
     });
-    ()
 }
+/// Brings the container the location names into view: loads its card page, expands the named
+/// property, and scrolls the grid to its row. When the container is not in the current
+/// configuration view, it offers a link to look in all configurations.
 #[component]
 pub fn FocusCard(focus: Memo<(String, String)>) -> impl IntoView {
     let c = expect_context::<ViewerContext>();

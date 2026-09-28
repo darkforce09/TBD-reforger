@@ -4,8 +4,8 @@
 //! The save boundary for `mission_versions.json_payload` lives here too — [`validate_payload`] is
 //! the one gate every write to that column passes through.
 
+use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::Json;
 use serde::Deserialize;
@@ -22,6 +22,7 @@ use crate::administration::services::audit_writer::{actor_display_name, write_au
 use crate::core::application_state::AppState;
 use crate::core::database::postgres_errors::is_unique_violation;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::{AuthUser, MissionMakerUser};
 use crate::missions::contract::schema_validators::validate_mission_editor_payload_with_catalog;
 use crate::missions::models::mission::{Mission, MissionVersion};
@@ -52,7 +53,7 @@ pub struct CreateVersionInput {
 pub async fn create_version(
     State(state): State<AppState>,
     maker: MissionMakerUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
     body: Result<Json<CreateVersionInput>, JsonRejection>,
 ) -> Result<(StatusCode, Json<MissionVersion>), ApiError> {
     let user = &maker.0;
@@ -60,17 +61,7 @@ pub async fn create_version(
     if !can_edit(user, &m) {
         return Err(ApiError::forbidden("not your mission"));
     }
-    let Json(input) = body.map_err(|rej| {
-        if rej.status() == StatusCode::PAYLOAD_TOO_LARGE {
-            let mb = state.cfg.mission_version_body_limit() / (1 << 20);
-            ApiError::new(
-                StatusCode::PAYLOAD_TOO_LARGE,
-                format!("payload too large (max {mb} MB)"),
-            )
-        } else {
-            ApiError::bad_request("semver and payload are required")
-        }
-    })?;
+    let Json(input) = body.map_err(ApiError::from_json_rejection)?;
     let (Some(payload), false) = (&input.payload, input.semver.is_empty()) else {
         return Err(ApiError::bad_request("semver and payload are required"));
     };
@@ -172,7 +163,7 @@ pub async fn create_version(
 pub async fn get_version(
     State(state): State<AppState>,
     user: AuthUser,
-    Path((id, vid)): Path<(String, String)>,
+    PathParams((id, vid)): PathParams<(String, String)>,
 ) -> Result<Json<MissionVersion>, ApiError> {
     let m = load_mission_or_404(&state.pool, &id).await?;
     if !can_view(&user, &m) {
@@ -207,7 +198,7 @@ pub async fn get_version(
 pub async fn set_current_version(
     State(state): State<AppState>,
     maker: MissionMakerUser,
-    Path((id, vid)): Path<(String, String)>,
+    PathParams((id, vid)): PathParams<(String, String)>,
 ) -> Result<Json<Mission>, ApiError> {
     let user = &maker.0;
     let m = load_mission_or_404(&state.pool, &id).await?;

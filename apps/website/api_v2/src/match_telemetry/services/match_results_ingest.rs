@@ -22,6 +22,7 @@ use crate::command_center::services::leaderboard_view::refresh_leaderboard_on_co
 use crate::command_center::services::user_stats::recompute_user_stats_on_connection;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::failpoints::fail_point;
 use crate::identity_and_access::services::identity_ownership::{lock_accounts, lock_identities};
 use crate::match_telemetry::models::MissionOutcome;
 use crate::match_telemetry::models::match_results_revision::{
@@ -222,7 +223,9 @@ pub async fn ingest_results_revision(
         recompute_user_stats_on_connection(&mut tx, account).await?;
     }
     refresh_leaderboard_on_connection(&mut tx).await?;
+    fail_point!(ResultsRevisionBeforeCommit);
     tx.commit().await?;
+    fail_point!(ResultsRevisionAfterCommit);
     Ok(result)
 }
 

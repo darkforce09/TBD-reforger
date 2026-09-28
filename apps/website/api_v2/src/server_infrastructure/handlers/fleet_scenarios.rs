@@ -1,14 +1,15 @@
 //! The fleet scenario registry (administrator): which scenario header the fleet runs for each
 //! terrain. Deployments of an artifact are refused for a terrain with no registered scenario.
 
+use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::Json;
 
 use crate::administration::services::required_audit::append_actor_audit;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::{AdminUser, role_rank};
 use crate::identity_and_access::services::identity_ownership::lock_accounts;
 use crate::identity_and_access::services::session_authorization::authorize_on_connection;
@@ -81,11 +82,10 @@ pub async fn list_fleet_scenarios(
 pub async fn put_fleet_scenario(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path(terrain_key): Path<String>,
+    PathParams(terrain_key): PathParams<String>,
     body: Result<Json<FleetScenarioUpdate>, JsonRejection>,
 ) -> Result<Json<FleetScenario>, ApiError> {
-    let Json(update) =
-        body.map_err(|_| ApiError::bad_request("scenario_id and display_name are required"))?;
+    let Json(update) = body.map_err(ApiError::from_json_rejection)?;
     if !valid_terrain_key(&terrain_key) {
         return Err(ApiError::bad_request(
             "the terrain key is lowercase letters, digits and underscores, starting with a letter",
@@ -140,7 +140,7 @@ pub async fn put_fleet_scenario(
 pub async fn delete_fleet_scenario(
     State(state): State<AppState>,
     admin: AdminUser,
-    Path(terrain_key): Path<String>,
+    PathParams(terrain_key): PathParams<String>,
 ) -> Result<StatusCode, ApiError> {
     let mut transaction = state.pool.begin().await?;
     let actor = reauthorize(&mut transaction, &state, &admin).await?;

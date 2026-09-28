@@ -4,6 +4,9 @@ use crate::v2::core::api::dto::equipment_data_viewer::EquipmentResourcePage;
 use leptos::prelude::*;
 mod resource_details;
 
+/// The Resources tab: a resizable catalog of resources, filterable by domain and capability and
+/// searchable, beside the selected resource's details. The catalog stays mounted, with its scroll
+/// position remembered, while the selection changes.
 #[component]
 pub fn Resources() -> impl IntoView {
     let c = expect_context::<ViewerContext>();

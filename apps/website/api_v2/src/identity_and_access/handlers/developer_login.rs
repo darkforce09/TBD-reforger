@@ -1,6 +1,7 @@
 //! Development-only login shortcut: mints a session without Discord, redirecting to the SPA
 //! callback with the token fragment exactly like the real callback.
 
+use axum::extract::rejection::QueryRejection;
 use axum::extract::{Query, State};
 use axum::response::Response;
 use serde::Deserialize;
@@ -62,17 +63,22 @@ fn arma_id_for_role(role: &str) -> &'static str {
     }
 }
 
-/// `GET /api/v1/auth/dev-login?role=admin|mission_maker|leader|enlisted`.
+/// `GET /api/v1/auth/dev-login?role=guest|enlisted|leader|mission_maker|admin`: signs in as the
+/// development account of that role; any other or missing role signs in as `admin`. A query
+/// string that does not decode (a repeated `role`) answers 400 through
+/// [`ApiError::from_query_rejection`].
 ///
 /// @route GET /api/v1/auth/dev-login
 pub async fn dev_login(
     State(state): State<AppState>,
-    Query(q): Query<DevLoginQuery>,
+    query: Result<Query<DevLoginQuery>, QueryRejection>,
 ) -> Result<Response, ApiError> {
     // Registered only in development, but re-guard at request time.
     if !state.cfg.is_development() {
         return Err(ApiError::not_found("not found"));
     }
+    let Query(q) =
+        query.map_err(|rejection| ApiError::from_query_rejection(rejection, "dev login query"))?;
 
     let role = match q.role.as_str() {
         r @ ("guest" | "enlisted" | "leader" | "mission_maker" | "admin") => r,

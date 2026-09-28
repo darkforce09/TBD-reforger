@@ -1,7 +1,7 @@
 //! The global ladders: five orderings of the same operator table, searched and ranked server-side.
 //!
-//! **Role:** owns the category and search controls, keys the board fetch on both, parses the wire
-//! rows, and mounts the slide-over operator dossier.
+//! **Role:** owns the category and search controls, keys the board fetch on both, reads the typed
+//! wire rows into render rows, and mounts the slide-over operator dossier.
 //! **Position:** the `/leaderboards` route, rendered inside the navigation frame behind the
 //! sign-in gate.
 //! **Signals & state:** owns the category and query signals, the board resource keyed on them,
@@ -16,14 +16,14 @@
 
 use super::board_table::board_body;
 use super::operator_dossier::OperatorDossier;
-use crate::v2::core::api::dto::Leaderboard;
+use crate::v2::core::api::dto::{Leaderboard, LeaderboardRow};
 use crate::v2::core::ui::{PageHeader, Sheet};
 use leptos::prelude::*;
 use serde_json::Value;
 
 /// One ranked operator, as rendered.
 ///
-/// Mirrors the wire row for the fields this page shows; the dossier reads the full stat card
+/// Mirrors the [`LeaderboardRow`] fields this page shows; the dossier reads the full stat card
 /// straight off the per-user stats endpoint.
 #[derive(Clone)]
 pub(super) struct Row {
@@ -48,14 +48,6 @@ const LEADERBOARD_TABS: [(&str, &str); 5] = [
     ("Wall of Shame", "team_kills"),
 ];
 
-/// The string at `key`, or an empty string when it is absent or not a string.
-fn v_str(v: &Value, key: &str) -> String {
-    v.get(key)
-        .and_then(Value::as_str)
-        .unwrap_or_default()
-        .to_string()
-}
-
 /// The integer at `key`, or zero when it is absent or not an integer.
 pub(super) fn v_i64(v: &Value, key: &str) -> i64 {
     v.get(key).and_then(Value::as_i64).unwrap_or(0)
@@ -69,25 +61,21 @@ pub(super) fn v_f64(v: &Value, key: &str) -> f64 {
 /// One wire row, read into a [`Row`].
 ///
 /// The handler ranks server-side and the board already arrives in category order, so the rank is
-/// taken from the payload. The positional fallback only covers a row that arrived without one,
-/// which would otherwise render every operator as rank zero.
-pub(super) fn parse_row(v: &Value, index: usize) -> Row {
-    let rank = v
-        .get("rank")
-        .and_then(Value::as_i64)
-        .filter(|&r| r > 0)
-        .unwrap_or(index as i64 + 1);
+/// taken from the payload. The positional fallback only covers a row ranked zero, which would
+/// otherwise render every operator as rank zero. An unmeasured K/D ratio renders as zero.
+pub(super) fn parse_row(v: &LeaderboardRow, index: usize) -> Row {
+    let rank = if v.rank > 0 { v.rank } else { index as i64 + 1 };
     Row {
         rank,
-        discord_id: v_str(v, "discord_id"),
-        username: v_str(v, "username"),
-        avatar_url: v_str(v, "avatar_url"),
-        kills: v_i64(v, "kills"),
-        kd_ratio: v_f64(v, "kd_ratio"),
-        team_kills: v_i64(v, "team_kills"),
-        command_win_rate: v_f64(v, "command_win_rate"),
-        missions_played: v_i64(v, "missions_played"),
-        longest_kill_m: v_i64(v, "longest_kill_m"),
+        discord_id: v.discord_id.clone(),
+        username: v.username.clone(),
+        avatar_url: v.avatar_url.clone(),
+        kills: v.kills,
+        kd_ratio: v.kd_ratio.unwrap_or(0.0),
+        team_kills: v.team_kills,
+        command_win_rate: v.command_win_rate,
+        missions_played: v.missions_played,
+        longest_kill_m: v.longest_kill_m,
     }
 }
 

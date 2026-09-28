@@ -1,7 +1,7 @@
 //! Persisting a firing solution against an operation, and reading it back.
 //!
-//! **Role:** owns the wire types for a stored fire mission, the request body the page posts, the
-//! rules for turning a stored row back into a populated form, the browser preference that
+//! **Role:** owns the save answer the page reads, the request body the page posts, the rules for
+//! turning a stored row ([`SavedFire`]) back into a populated form, the browser preference that
 //! remembers which operation was last worked, and the list panel those rows render in.
 //! **Position:** the saved-fire-missions card floats over the bottom-left corner of the map panel
 //! on `/tools/mortar`; everything else here sits behind the page's effects.
@@ -13,7 +13,7 @@
 //! operation; a row that carries no coordinates restores as nothing rather than as the origin.
 
 use super::grid::{fmt_grid, locale_int, parse_grid};
-use crate::v2::core::api::dto::FireSolution;
+use crate::v2::core::api::dto::{FireSolution, SavedFire};
 use leptos::prelude::*;
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -31,49 +31,6 @@ const CARD_SAVED: &str = "flex flex-col gap-2 overflow-hidden rounded-xl p-4 gla
 /// none of the operator's own.
 pub(super) const EVENT_PREF_KEY: &str = "tbd-mortar-event";
 
-/// One `fire_missions` row, as the per-operation list route returns it.
-///
-/// **Typed, not `serde_json::Value`, and with no `#[serde(default)]` on anything the backend marks
-/// required.** A `Value` read through `.get("distance_m").and_then(as_i64).unwrap_or(0)` renders a
-/// confident `0 m` when a field is renamed and the page keeps working; here a renamed column fails
-/// the decode and the list goes to its error state instead.
-///
-/// `event_id` is genuinely absent for a fire mission saved with no operation, so it needs the
-/// default. The seven columns that were added later are `Option` *and* defaulted, and they need
-/// both: `Option` because the column is nullable, and defaulted because a response captured before
-/// those columns existed is the one thing that can prove such a row still decodes. The relaxation
-/// is narrow — every field the backend marks required stays required here.
-#[derive(Clone, Debug, PartialEq, Deserialize)]
-pub(super) struct SavedFire {
-    pub(super) id: String,
-    #[serde(default)]
-    pub(super) event_id: Option<String>,
-    pub(super) created_by: String,
-    pub(super) weapon_system: String,
-    pub(super) fp_grid: String,
-    pub(super) target_grid: String,
-    pub(super) distance_m: i64,
-    pub(super) azimuth_deg: f64,
-    pub(super) elevation_mils: i64,
-    /// The four coordinates, as real numbers. `None` for a row written before the columns existed,
-    /// whose only record of them is the [`fmt_grid`] encoding in the grid strings.
-    #[serde(default)]
-    pub(super) fp_x: Option<f64>,
-    #[serde(default)]
-    pub(super) fp_y: Option<f64>,
-    #[serde(default)]
-    pub(super) tgt_x: Option<f64>,
-    #[serde(default)]
-    pub(super) tgt_y: Option<f64>,
-    #[serde(default)]
-    pub(super) azimuth_mils: Option<i64>,
-    #[serde(default)]
-    pub(super) charge: Option<i64>,
-    #[serde(default)]
-    pub(super) time_of_flight_s: Option<f64>,
-    pub(super) created_at: String,
-}
-
 /// The 201 body of a save: the live solution and the row it was written as.
 ///
 /// Both halves are used. `solution` is the full-fidelity answer that populates the card, time of
@@ -83,6 +40,7 @@ pub(super) struct SavedFire {
 ///
 /// No `Debug`: the fire-solution DTO deliberately does not derive it, and adding one there is not
 /// this page's edit to make.
+/// @contract fire-mission.schema.json#/definitions/SavedFireMission
 #[derive(Clone, PartialEq, Deserialize)]
 pub(super) struct SaveResponse {
     pub(super) solution: FireSolution,

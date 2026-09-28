@@ -7,7 +7,7 @@
 
 use std::collections::{BTreeSet, HashMap};
 
-use axum::extract::{Path, State};
+use axum::extract::State;
 use axum::response::Json;
 use chrono::{DateTime, Utc};
 use serde::Serialize;
@@ -16,6 +16,7 @@ use uuid::Uuid;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AuthUser;
 use crate::core::wire_format::{rfc3339_utc, rfc3339_utc_opt};
 use crate::missions::models::mission::MissionArmory;
@@ -124,7 +125,7 @@ struct ViewerRegistration {
 pub async fn get_event(
     State(state): State<AppState>,
     user: AuthUser,
-    Path(id): Path<String>,
+    PathParams(id): PathParams<String>,
 ) -> Result<Json<Value>, ApiError> {
     let event = load_event(&state.pool, &id).await?;
     let mut tx = state.pool.begin().await?;

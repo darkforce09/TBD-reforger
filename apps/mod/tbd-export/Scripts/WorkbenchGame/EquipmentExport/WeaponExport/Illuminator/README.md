@@ -1,13 +1,36 @@
-# WeaponExport/Illuminator
+# Illuminator export
 
-Weapon lights, IR illuminators, and laser pointers.
+Weapon lights, infrared illuminators and laser pointers with their mounting and emission properties,
+written under `$profile:TBD_Export/equipment/illuminators/`.
 
-### Roles & Responsibilities
-- `TBD_IlluminatorModel.c`: `TBD_IlluminatorInfo` with mounting, capability, lens, physical, and visual sub-carriers. The lens carrier records cone angle, intensity, colour, and whether the emission is visible or infrared.
-- `TBD_IlluminatorExtractor.c`: Reads how the illuminator mounts, and its mass, volume, and mesh.
-- `TBD_IlluminatorEmissionExtractor.c`: Reads what the device emits — beam colour, intensity, cone angle and range, whether it is visible light or infrared, and whether it is a laser, a flashlight, or both. The engine spreads these across a light component, a laser component, and a lens configuration, so each value is searched up the container ancestry.
-- `TBD_IlluminatorScanner.c`: Sweeps every loaded addon for illuminator prefabs and serializes the catalog.
-- `TBD_IlluminatorExportPlugin.c`: Workbench entry point `Plugins > TBD > Export All Tactical Lights & Pointers`. Writes `$profile:TBD_Export/equipment/illuminators/`.
+## Contents
 
-### Call Flow & Contracts
-Menu action -> `TBD_IlluminatorExportPlugin.Run()` -> `TBD_IlluminatorScanner.Scan()` -> both extractors -> `TBD_IlluminatorInfo` -> `equipment/illuminators/illuminators.json` plus `illuminators_meta.json`. An emitter that declares no lens leaves the lens carrier null rather than substituting a default.
+```text
+apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/WeaponExport/Illuminator/
+├── TBD_IlluminatorEmissionExtractor.c  beam colour, intensity, cone, range, visible or infrared, laser or light
+├── TBD_IlluminatorExportPlugin.c       the illuminator plugin class; its menu attribute is commented out
+├── TBD_IlluminatorExtractor.c          how the illuminator mounts, and its mass, volume and mesh
+├── TBD_IlluminatorModel.c              `TBD_IlluminatorInfo` with mounting, capability, lens, physical and visual parts
+└── TBD_IlluminatorScanner.c            the addon sweep and the catalog
+```
+
+## How it works
+
+Its plugin's `[WorkbenchPluginAttribute]` is commented out and "Export All Equipment" does not run
+this scanner, so the domain runs only when the attribute is restored.
+
+`TBD_IlluminatorScanner.RunScan()` has both extractors fill one `TBD_IlluminatorInfo` per prefab and
+writes `illuminators.json` and `illuminators_meta.json`. The engine spreads emission values across a
+light component, a laser component and a lens configuration, so each value is searched up the
+container ancestry.
+
+## Authority
+
+None: Workbench runs these scripts in the editor.
+
+## Boundaries
+
+- Depends on: `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/Core/` (component walk,
+  destination, JSON writing, display attributes and resource names).
+- Used by: nothing while its plugin attribute stays commented out.
+- Rules: an emitter that declares no lens leaves the lens carrier null rather than taking a default.

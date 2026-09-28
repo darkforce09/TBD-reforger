@@ -33,7 +33,7 @@ class TBD_TaskScheduleStruct
 }
 
 //! The document root of the task pass; declares `tasks` only.
-//! @contract mission.schema.json#/properties/tasks
+//! @contract mission.schema.json#/ partial
 class TBD_TaskDocStruct
 {
 	ref array<ref TBD_TaskStruct> tasks; //!< `tasks[]`

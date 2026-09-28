@@ -1,0 +1,13 @@
+id = "T-1242"
+kind = "work"
+title = "Cover or retire the manual waitlist promotion success path"
+summary = "POST /event-missions/:emid/waitlist/promote (api_v2 operations/handlers/waitlist_promotion.rs:22) never answers 200 in generated runs, because every freeing transaction promotes waiters itself (tests/reservation_transaction_properties.rs:103-106); only the seeded promote golden covers success."
+class = "audit"
+status = "idea"
+notes = "Decide whether the manual promote has a reachable success case (for example after a capacity increase) that the property should generate, or whether the route is redundant. Source: milestone V finding V-F61."
+created_at = "2026-09-28T01:14:31Z"
+
+[scope]
+domain = "website"
+layer = "backend"
+component = "http_api"

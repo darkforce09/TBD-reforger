@@ -2,33 +2,18 @@
 //!
 //! **Role:** walks the v2 tree and enforces five rules on each production file — it opens with
 //! a `//!` header, it is at most [`MAX_LINES`] lines, every visible item carries a doc comment,
-//! it holds no inline test module, and no comment names a ticket or a wave. Also owns the dated
-//! grandfather allowlist that carries a named file past three of those rules until a named date.
+//! it holds no inline test module, and no comment names a ticket or a wave.
 //! **Position:** compiled only under `cfg(test)`, declared from `v2/mod.rs`. It lives inside the
 //! `tests` subtree the walk skips, so it never audits itself.
 //! **Signals & state:** none. Every rule is a pure function over one file's text.
-//! **Invariants:** the header rule and the documentation rule are never exemptible — a row
-//! suppresses the size, inline-test-module and ticket/wave rules and nothing else. Every row
-//! carries a date on which it stops exempting, and every row must name a file the walk saw.
-
-mod allowlist;
+//! **Invariants:** all five rules apply to every production file, with no exemption path: a file
+//! that breaks a rule is fixed, never listed.
 
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Longest a v2 production file is allowed to be.
 const MAX_LINES: usize = 500;
-
-/// One dated exemption from the audit's three structural rules.
-struct GrandfatherRow {
-    /// Path of the exempt file, relative to `src/v2`, with `/` separators.
-    path: &'static str,
-    /// Why the file is still carried, and what clears it. An empty reason exempts nothing.
-    reason: &'static str,
-    /// UTC `YYYY-MM-DD` of the last day the row is in force.
-    expires: &'static str,
-}
 
 /// Every `.rs` file under `dir` that is not inside a `tests/` subtree, sorted by path.
 fn production_files(dir: &Path) -> Vec<PathBuf> {
@@ -308,11 +293,7 @@ fn past_closing_quote(chars: &[char], from: usize, quote: char) -> usize {
 /// literals blanked, so that quoted Rust source is not audited as if it were code; the doc-comment
 /// and ticket/wave rules read it with only literals blanked, so a real comment still answers them
 /// and a quoted one never does.
-///
-/// `exempt` is true when a live grandfather row covers the file. It suppresses the size rule,
-/// the inline-test-module rule and the ticket/wave rule. The `//!` header rule and the
-/// documented-item rule report regardless, because no row may ever hide undocumented code.
-fn findings(rel: &str, text: &str, exempt: bool) -> Vec<String> {
+fn findings(rel: &str, text: &str) -> Vec<String> {
     let mut bad: Vec<String> = Vec::new();
     let lines: Vec<&str> = text.lines().collect();
     let code_text = masked(text, Blanked::CommentsAndLiterals);
@@ -329,7 +310,7 @@ fn findings(rel: &str, text: &str, exempt: bool) -> Vec<String> {
         Some(first) if first.trim_start().starts_with("//!") => {}
         _ => bad.push(format!("{rel}:1: file does not open with a `//!` header")),
     }
-    if !exempt && lines.len() > MAX_LINES {
+    if lines.len() > MAX_LINES {
         bad.push(format!(
             "{rel}:{}: {} lines exceeds the {MAX_LINES}-line limit",
             lines.len(),
@@ -346,101 +327,23 @@ fn findings(rel: &str, text: &str, exempt: bool) -> Vec<String> {
                 bad.push(format!("{rel}:{}: item is undocumented", i + 1));
             }
         }
-        if !exempt && line.trim_start().starts_with("#[cfg(test)]") {
+        if line.trim_start().starts_with("#[cfg(test)]") {
             if let Some(next) = code[i + 1..].iter().find(|l| !l.trim().is_empty()) {
                 if is_inline_mod(next) {
                     bad.push(format!("{rel}:{}: inline test module", i + 1));
                 }
             }
         }
-        if !exempt && names_ticket_or_wave(unquoted[i]) {
+        if names_ticket_or_wave(unquoted[i]) {
             bad.push(format!("{rel}:{}: comment names a ticket or wave", i + 1));
         }
     }
     bad
 }
 
-/// True when `row` is well formed and still in force on `today`.
-fn row_is_live(row: &GrandfatherRow, today: &str) -> bool {
-    !row.reason.trim().is_empty() && expires_ok(row.expires, today)
-}
-
-/// True when some live row in `rows` covers `rel`.
-fn is_exempt(rel: &str, rows: &[GrandfatherRow], today: &str) -> bool {
-    rows.iter()
-        .any(|row| row.path == rel && row_is_live(row, today))
-}
-
-/// True when `expires` is a real `YYYY-MM-DD` that `today` has not passed.
-///
-/// There is deliberately no never-expires spelling: every row names the day it dies, so a file
-/// that Phase 3C has not reached starts failing the audit on its own schedule.
-fn expires_ok(expires: &str, today: &str) -> bool {
-    let b = expires.as_bytes();
-    b.len() == 10
-        && b[4] == b'-'
-        && b[7] == b'-'
-        && b.iter().enumerate().all(|(i, c)| {
-            if i == 4 || i == 7 {
-                true
-            } else {
-                c.is_ascii_digit()
-            }
-        })
-        && expires >= today
-}
-
-/// Findings that report a row naming a path none of the `audited` files carries.
-///
-/// A row must always name a file the walk saw, so that splitting, moving or deleting that file
-/// forces the row to be updated or removed rather than quietly outliving its subject.
-fn rows_without_a_file(rows: &[GrandfatherRow], audited: &[String]) -> Vec<String> {
-    rows.iter()
-        .filter(|row| !audited.iter().any(|seen| seen == row.path))
-        .map(|row| {
-            format!(
-                "{}: allowlist row names a path that no v2 production file has",
-                row.path
-            )
-        })
-        .collect()
-}
-
-/// The findings for one file with the allowlist applied — the composition the walk runs per file.
-fn audit_one(rel: &str, text: &str, rows: &[GrandfatherRow], today: &str) -> Vec<String> {
-    findings(rel, text, is_exempt(rel, rows, today))
-}
-
-/// Today's UTC civil date as `YYYY-MM-DD`, read from the system clock.
-fn today_ymd() -> String {
-    let days = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("system clock reads at or after the unix epoch")
-        .as_secs()
-        / 86_400;
-    civil_ymd(days)
-}
-
-/// UTC `YYYY-MM-DD` from a count of days since the unix epoch (Hinnant's `civil_from_days`).
-fn civil_ymd(unix_days: u64) -> String {
-    let z = unix_days as i64 + 719_468;
-    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
-    let doe = (z - era * 146_097) as u64;
-    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
-    let y = yoe as i64 + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let d = doy - (153 * mp + 2) / 5 + 1;
-    let m = if mp < 10 { mp + 3 } else { mp - 9 };
-    let y = if m <= 2 { y + 1 } else { y };
-    format!("{y:04}-{m:02}-{d:02}")
-}
-
 #[test]
 fn v2_production_files_meet_the_documentation_standard() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/v2");
-    let today = today_ymd();
-    let mut audited: Vec<String> = Vec::new();
     let mut bad: Vec<String> = Vec::new();
     for path in production_files(&root) {
         let text = fs::read_to_string(&path).expect("read v2 source");
@@ -449,10 +352,8 @@ fn v2_production_files_meet_the_documentation_standard() {
             .unwrap_or(&path)
             .to_string_lossy()
             .replace('\\', "/");
-        bad.extend(audit_one(&rel, &text, allowlist::ROWS, &today));
-        audited.push(rel);
+        bad.extend(findings(&rel, &text));
     }
-    bad.extend(rows_without_a_file(allowlist::ROWS, &audited));
     assert!(
         bad.is_empty(),
         "v2 documentation audit failed:\n{}",
@@ -460,30 +361,15 @@ fn v2_production_files_meet_the_documentation_standard() {
     );
 }
 
-/* ── the allowlist mechanism, pinned against fixture text rather than the live tree ── */
-
-/// The fixed civil date the mechanism tests reason from, so no test depends on the wall clock.
-const FIXTURE_TODAY: &str = "2026-09-17";
+/* ── every rule reports on every file, pinned against fixture text rather than the live tree ── */
 
 /// Path the fixture file is audited under.
 const FIXTURE_PATH: &str = "apps/editor/oversized_workspace.rs";
 
-/// A reason of the shape a real row carries.
-const FIXTURE_REASON: &str = "Split into per-dock modules by the editor decomposition work.";
-
-/// A row built from parts, for the mechanism tests.
-fn row(path: &'static str, reason: &'static str, expires: &'static str) -> GrandfatherRow {
-    GrandfatherRow {
-        path,
-        reason,
-        expires,
-    }
-}
-
-/// Fixture source that breaks exactly the three exemptible rules: it is over the line limit, it
+/// Fixture source that breaks exactly the three structural rules: it is over the line limit, it
 /// holds an inline test module, and one comment names a ticket. It satisfies the header rule and
-/// declares no item, so the two unexemptible rules stay silent.
-fn text_breaking_only_the_exemptible_rules() -> String {
+/// declares no item, so the header and documented-item rules stay silent.
+fn text_breaking_the_three_structural_rules() -> String {
     let mut text = String::from("//! Fixture header.\n");
     text.push_str("// Behaviour pinned by t-123.\n");
     text.push_str("#[cfg(test)]\nmod tests {}\n");
@@ -493,15 +379,16 @@ fn text_breaking_only_the_exemptible_rules() -> String {
     text
 }
 
-/// Fixture source that breaks exactly the two unexemptible rules: no header, one bare `pub` item.
-fn text_breaking_only_the_unexemptible_rules() -> &'static str {
+/// Fixture source that breaks exactly the header and documented-item rules: no header, one bare
+/// `pub` item.
+fn text_breaking_the_header_and_documented_item_rules() -> &'static str {
     "pub fn mount_workspace() {}\n"
 }
 
 #[test]
-fn the_fixture_breaks_the_three_exemptible_rules_when_no_row_covers_it() {
-    let text = text_breaking_only_the_exemptible_rules();
-    let bad = audit_one(FIXTURE_PATH, &text, &[], FIXTURE_TODAY);
+fn the_fixture_breaks_the_three_structural_rules() {
+    let text = text_breaking_the_three_structural_rules();
+    let bad = findings(FIXTURE_PATH, &text);
     assert_eq!(bad.len(), 3, "{bad:#?}");
     assert!(bad.iter().any(|b| b.contains("exceeds")), "{bad:#?}");
     assert!(
@@ -515,55 +402,21 @@ fn the_fixture_breaks_the_three_exemptible_rules_when_no_row_covers_it() {
 }
 
 #[test]
-fn a_row_that_has_not_expired_exempts_the_three_structural_rules() {
-    let text = text_breaking_only_the_exemptible_rules();
-    let rows = [row(FIXTURE_PATH, FIXTURE_REASON, "2999-01-01")];
-    let bad = audit_one(FIXTURE_PATH, &text, &rows, FIXTURE_TODAY);
-    assert!(bad.is_empty(), "{bad:#?}");
-}
-
-#[test]
-fn an_expired_row_stops_exempting() {
-    let text = text_breaking_only_the_exemptible_rules();
-    let rows = [row(FIXTURE_PATH, FIXTURE_REASON, "2020-01-01")];
-    assert!(!is_exempt(FIXTURE_PATH, &rows, FIXTURE_TODAY));
-    let bad = audit_one(FIXTURE_PATH, &text, &rows, FIXTURE_TODAY);
-    assert_eq!(bad.len(), 3, "{bad:#?}");
-}
-
-#[test]
-fn a_row_whose_reason_is_empty_exempts_nothing() {
-    let text = text_breaking_only_the_exemptible_rules();
-    for blank in ["", "   "] {
-        let rows = [GrandfatherRow {
-            path: FIXTURE_PATH,
-            reason: blank,
-            expires: "2999-01-01",
-        }];
-        assert!(!is_exempt(FIXTURE_PATH, &rows, FIXTURE_TODAY));
-        let bad = audit_one(FIXTURE_PATH, &text, &rows, FIXTURE_TODAY);
-        assert_eq!(bad.len(), 3, "reason {blank:?} must not exempt: {bad:#?}");
-    }
-}
-
-#[test]
-fn a_row_naming_a_path_no_file_has_is_a_failure() {
-    let rows = [row(FIXTURE_PATH, FIXTURE_REASON, "2999-01-01")];
-    let present = vec![FIXTURE_PATH.to_string()];
-    assert!(rows_without_a_file(&rows, &present).is_empty());
-
-    let absent = vec!["apps/editor/somewhere_else.rs".to_string()];
-    let bad = rows_without_a_file(&rows, &absent);
+fn a_file_at_the_line_limit_passes_and_one_line_over_fails() {
+    let at_limit = format!("//! Fixture header.\n{}", "\n".repeat(MAX_LINES - 1));
+    assert!(findings(FIXTURE_PATH, &at_limit).is_empty());
+    let over_limit = format!("//! Fixture header.\n{}", "\n".repeat(MAX_LINES));
+    let bad = findings(FIXTURE_PATH, &over_limit);
     assert_eq!(bad.len(), 1, "{bad:#?}");
-    assert!(bad[0].contains(FIXTURE_PATH), "{bad:#?}");
+    assert!(bad[0].contains("exceeds the 500-line limit"), "{bad:#?}");
 }
 
 #[test]
-fn a_row_never_exempts_the_header_rule_or_the_documented_item_rule() {
-    let text = text_breaking_only_the_unexemptible_rules();
-    let rows = [row(FIXTURE_PATH, FIXTURE_REASON, "2999-01-01")];
-    assert!(is_exempt(FIXTURE_PATH, &rows, FIXTURE_TODAY));
-    let bad = audit_one(FIXTURE_PATH, text, &rows, FIXTURE_TODAY);
+fn the_header_rule_and_the_documented_item_rule_report_a_bare_item() {
+    let bad = findings(
+        FIXTURE_PATH,
+        text_breaking_the_header_and_documented_item_rules(),
+    );
     assert_eq!(bad.len(), 2, "{bad:#?}");
     assert!(
         bad.iter().any(|b| b.contains("does not open with a `//!`")),
@@ -573,56 +426,6 @@ fn a_row_never_exempts_the_header_rule_or_the_documented_item_rule() {
         bad.iter().any(|b| b.contains("item is undocumented")),
         "{bad:#?}"
     );
-}
-
-#[test]
-fn no_spelling_of_expires_can_outlive_a_date() {
-    for spelling in ["MC-perf", "never", "forever", "", "2026/12/31", "2026-12-3"] {
-        assert!(
-            !expires_ok(spelling, FIXTURE_TODAY),
-            "{spelling:?} must not be accepted as an expiry"
-        );
-    }
-    assert!(expires_ok("2026-12-31", FIXTURE_TODAY));
-    assert!(
-        expires_ok(FIXTURE_TODAY, FIXTURE_TODAY),
-        "expiry day is live"
-    );
-    assert!(
-        !expires_ok("2026-09-16", FIXTURE_TODAY),
-        "a row whose last day has passed is dead"
-    );
-}
-
-#[test]
-fn every_shipped_row_is_well_formed_and_dated() {
-    for row in allowlist::ROWS {
-        assert!(
-            !row.reason.trim().is_empty(),
-            "{}: allowlist row carries no reason",
-            row.path
-        );
-        assert!(
-            expires_ok(row.expires, "1970-01-01"),
-            "{}: `{}` is not a real YYYY-MM-DD expiry",
-            row.path,
-            row.expires
-        );
-    }
-}
-
-#[test]
-fn the_civil_date_arithmetic_tracks_the_utc_calendar() {
-    assert_eq!(civil_ymd(0), "1970-01-01");
-    assert_eq!(civil_ymd(20_454), "2026-01-01");
-    assert_eq!(civil_ymd(20_818), "2026-12-31");
-}
-
-#[test]
-fn the_clock_reads_a_ten_character_civil_date() {
-    let today = today_ymd();
-    assert_eq!(today.len(), 10, "{today}");
-    assert!(expires_ok(&today, &today), "{today}");
 }
 
 /* ── the rules read code, not the Rust source quoted inside literals and comments ── */
@@ -652,22 +455,15 @@ mod tests {}
 
 #[test]
 fn a_public_item_inside_a_literal_is_not_an_undocumented_item() {
-    let bad = audit_one(
-        FIXTURE_PATH,
-        text_whose_only_items_are_quoted(),
-        &[],
-        FIXTURE_TODAY,
-    );
+    let bad = findings(FIXTURE_PATH, text_whose_only_items_are_quoted());
     assert!(bad.is_empty(), "{bad:#?}");
 }
 
 #[test]
 fn a_public_item_in_real_code_is_still_an_undocumented_item() {
-    let bad = audit_one(
+    let bad = findings(
         FIXTURE_PATH,
         "//! Fixture header.\npub fn mount_workspace() {}\n",
-        &[],
-        FIXTURE_TODAY,
     );
     assert_eq!(bad.len(), 1, "{bad:#?}");
     assert!(bad[0].contains(":2: item is undocumented"), "{bad:#?}");
@@ -675,19 +471,12 @@ fn a_public_item_in_real_code_is_still_an_undocumented_item() {
 
 #[test]
 fn an_inline_test_module_counts_in_code_and_never_inside_a_literal() {
-    let quoted = audit_one(
-        FIXTURE_PATH,
-        text_quoting_an_inline_test_module(),
-        &[],
-        FIXTURE_TODAY,
-    );
+    let quoted = findings(FIXTURE_PATH, text_quoting_an_inline_test_module());
     assert!(quoted.is_empty(), "{quoted:#?}");
 
-    let live = audit_one(
+    let live = findings(
         FIXTURE_PATH,
         "//! Fixture header.\n#[cfg(test)]\nmod tests {}\n",
-        &[],
-        FIXTURE_TODAY,
     );
     assert_eq!(live.len(), 1, "{live:#?}");
     assert!(live[0].contains(":2: inline test module"), "{live:#?}");
@@ -695,11 +484,9 @@ fn an_inline_test_module_counts_in_code_and_never_inside_a_literal() {
 
 #[test]
 fn a_ticket_name_counts_in_a_comment_and_never_inside_a_literal() {
-    let commented = audit_one(
+    let commented = findings(
         FIXTURE_PATH,
         "//! Fixture header.\n// Behaviour pinned by t-123.\n",
-        &[],
-        FIXTURE_TODAY,
     );
     assert_eq!(commented.len(), 1, "{commented:#?}");
     assert!(
@@ -707,24 +494,20 @@ fn a_ticket_name_counts_in_a_comment_and_never_inside_a_literal() {
         "{commented:#?}"
     );
 
-    let quoted = audit_one(
+    let quoted = findings(
         FIXTURE_PATH,
         "//! Fixture header.\nconst NOTE: &str = \"// Behaviour pinned by t-123.\";\n",
-        &[],
-        FIXTURE_TODAY,
     );
     assert!(quoted.is_empty(), "{quoted:#?}");
 }
 
 #[test]
 fn an_escaped_quote_does_not_desynchronise_the_mask() {
-    let bad = audit_one(
+    let bad = findings(
         FIXTURE_PATH,
         "//! Fixture header.\n\
          const ESCAPED: &str = \"quoting \\\"pub fn ghost() {}\\\" mid-literal\";\n\
          pub fn mount_workspace() {}\n",
-        &[],
-        FIXTURE_TODAY,
     );
     assert_eq!(bad.len(), 1, "{bad:#?}");
     assert!(bad[0].contains(":3: item is undocumented"), "{bad:#?}");
@@ -732,28 +515,24 @@ fn an_escaped_quote_does_not_desynchronise_the_mask() {
 
 #[test]
 fn a_block_comment_hides_its_contents_and_closes_where_it_ends() {
-    let flat = audit_one(
+    let flat = findings(
         FIXTURE_PATH,
         "//! Fixture header.\n\
          /* pub fn commented_out() {}\n\
          pub fn also_commented_out() {}\n\
          */\n\
          pub fn mount_workspace() {}\n",
-        &[],
-        FIXTURE_TODAY,
     );
     assert_eq!(flat.len(), 1, "{flat:#?}");
     assert!(flat[0].contains(":5: item is undocumented"), "{flat:#?}");
 
-    let nested = audit_one(
+    let nested = findings(
         FIXTURE_PATH,
         "//! Fixture header.\n\
          /* outer /* inner */ still inside the outer comment\n\
          pub fn still_commented_out() {}\n\
          */\n\
          pub fn mount_workspace() {}\n",
-        &[],
-        FIXTURE_TODAY,
     );
     assert_eq!(nested.len(), 1, "{nested:#?}");
     assert!(
@@ -764,7 +543,7 @@ fn a_block_comment_hides_its_contents_and_closes_where_it_ends() {
 
 #[test]
 fn a_character_literal_is_masked_and_a_lifetime_is_not() {
-    let quote_char = audit_one(
+    let quote_char = findings(
         FIXTURE_PATH,
         "//! Fixture header.\n\
          /// Documented.\n\
@@ -772,8 +551,6 @@ fn a_character_literal_is_masked_and_a_lifetime_is_not() {
          '\"'\n\
          }\n\
          pub fn mount_workspace() {}\n",
-        &[],
-        FIXTURE_TODAY,
     );
     assert_eq!(quote_char.len(), 1, "{quote_char:#?}");
     assert!(
@@ -781,14 +558,12 @@ fn a_character_literal_is_masked_and_a_lifetime_is_not() {
         "{quote_char:#?}"
     );
 
-    let lifetime = audit_one(
+    let lifetime = findings(
         FIXTURE_PATH,
         "//! Fixture header.\n\
          /// Documented.\n\
          pub struct Borrowed<'a>(&'a str);\n\
          pub fn mount_workspace() {}\n",
-        &[],
-        FIXTURE_TODAY,
     );
     assert_eq!(lifetime.len(), 1, "{lifetime:#?}");
     assert!(

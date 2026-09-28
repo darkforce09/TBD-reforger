@@ -1,11 +1,27 @@
+//! The gameplay selection policy: the recorded decision for every reviewed native field.
+//!
+//! **Role:** renders the viewer's `selection` tab — a count per decision kind, the number of
+//! diagnostic-only dependencies left out with a link to the publication receipt, and a
+//! searchable, cursor-paged list of decisions, each with its native type, disposition, section
+//! and reason.
+//! **Position:** mounted by the viewer page when the location's tab is `selection`; reads the
+//! `/debug/equipment-data/selection` endpoint through the viewer's cancellable read and takes the
+//! location and generation from the shared viewer context.
+//! **Signals & state:** one read owned by the component; the decision filter, search text and
+//! page cursor live in the URL query (`selection_kind`, `selection_q`, `cursor`).
+//! **Invariants:** read-only — every filter and page change is a link to a new viewer location,
+//! so each view of the policy can be shared; a missing count or decision field renders as zero
+//! or empty text instead of failing the page.
 use super::super::{
     data::use_read,
-    layout::{Feedback, Pager, Search, number, title},
+    layout::{number, title, Feedback, Pager, Search},
     page::ViewerContext,
 };
 use crate::v2::core::api::dto::equipment_data_viewer::EquipmentSourcePage;
 use leptos::prelude::*;
 
+/// The selection tab of the gameplay dataset: why each reviewed native field is included in or
+/// excluded from the gameplay catalog, filterable by decision kind and searchable.
 #[component]
 pub fn SelectionSummary() -> impl IntoView {
     let context = expect_context::<ViewerContext>();

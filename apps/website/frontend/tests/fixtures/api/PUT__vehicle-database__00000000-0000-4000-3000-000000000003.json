@@ -1,0 +1,9 @@
+{
+  "amphibious": "No",
+  "armor_type": "Unarmoured",
+  "faction": "USSR",
+  "id": "00000000-0000-4000-3000-000000000003",
+  "name": "UAZ-469",
+  "primary_threat": "Small arms only",
+  "profile_image_url": "https://cdn.tbd-reforger.example/iff/uaz469.png"
+}

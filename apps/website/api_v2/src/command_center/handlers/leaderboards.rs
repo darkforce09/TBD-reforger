@@ -1,5 +1,9 @@
 //! The ranked community leaderboard tables.
+//!
+//! @contract command-center.schema.json#/definitions/LeaderboardPage
+//! @contract command-center.schema.json#/definitions/LeaderboardRow
 
+use axum::extract::rejection::QueryRejection;
 use axum::extract::{Query, State};
 use axum::response::Json;
 use serde::{Deserialize, Serialize};
@@ -69,8 +73,10 @@ pub struct LeaderboardQuery {
 pub async fn get_leaderboards(
     State(state): State<AppState>,
     _u: AuthUser,
-    Query(q): Query<LeaderboardQuery>,
+    query: Result<Query<LeaderboardQuery>, QueryRejection>,
 ) -> Result<Json<Value>, ApiError> {
+    let Query(q) = query
+        .map_err(|rejection| ApiError::from_query_rejection(rejection, "leaderboard query"))?;
     let category = q.category.as_deref().unwrap_or("kd").to_string();
     let Some(order) = order_clause(&category) else {
         return Err(ApiError::bad_request("unknown category"));

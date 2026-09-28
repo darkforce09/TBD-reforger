@@ -49,8 +49,10 @@ failure. `accept` needs `--only` and `--note`; it copies the existing golden to
 `<slug>.react.dom.json` the first time, refuses a capture that is `null`, not JSON, or shorter than
 `MIN_ACCEPT_DOM_JS_LEN` (256 UTF-16 units), and records the note, size and SHA-256 in
 `manifest.json`. There is no whole-tree mode: `freeze` exits 2 because the goldens cannot be
-regenerated from any dist the repository builds. `run` exits 0 when every selected route matches,
-1 on any difference or missing golden, and 2 on a usage error.
+regenerated from any dist the repository builds. An `--only` slug that names no route is refused
+with the known slugs before a browser launches, in both modes. `run` exits 0 when every selected
+route matches, 1 on any difference or missing golden, and 2 on a usage error; a run that covered no
+route exits 2, never 0.
 
 ## Boundaries
 
@@ -67,8 +69,10 @@ regenerated from any dist the repository builds. `run` exits 0 when every select
   (`an_unanswered_api_call_is_reported_rather_than_filled_in` and the rest of
   `tools_v2/developer-tools/src/browser_testing/tests/dom_oracle/fixture_router.rs`); accept refuses
   an empty capture (`accept_refuses_literal_null`, `accept_refuses_undersized_object` in
-  `tools_v2/developer-tools/src/browser_testing/tests/dom_oracle/tests.rs`); goldens change one
-  route at a time, with a note.
+  `tools_v2/developer-tools/src/browser_testing/tests/dom_oracle/tests.rs`); an unknown `--only`
+  slug never passes (`only_refuses_a_slug_that_names_no_route`,
+  `a_run_that_covers_no_route_exits_2` in the same file); goldens change one route at a time,
+  with a note.
 
 ## Related documentation
 

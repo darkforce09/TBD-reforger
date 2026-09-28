@@ -1,3 +1,13 @@
+//! The route table and capture half of `gate v-suite`.
+//!
+//! - **Role:** lists the leaf routes, builds the signed-in session seed, captures one route's DOM
+//!   and PNG against the fixture corpus, diffs DOM trees, and runs the suite from its arguments.
+//! - **Position:** included by `dom_oracle.rs`; `gate v-suite` in `browser_testing/cli.rs` calls
+//!   [`run`], which hands the selected routes to `run_modes`.
+//! - **Signals & state:** a per-capture record of unanswered fixture requests; no global state.
+//! - **Invariants:** every usage error (a retired or unknown mode, accept without `--only` and
+//!   `--note`, an `--only` slug that names no route) exits 2 before a browser launches.
+
 use super::*;
 
 use std::sync::Mutex;
@@ -361,6 +371,28 @@ pub fn diff_node(o: &Value, l: &Value, path: &str, out: &mut Vec<Value>, cap: us
     }
 }
 
+/// The usage line `run` prints with every usage error.
+const USAGE: &str =
+    "usage: gate v-suite <verify|accept> [--leptos-dir d] [--only slug] [--note why]";
+
+/// The routes a run covers: every route when `only` is empty, else the route whose slug is
+/// `only`. A slug that names no route is refused with the known slugs, so a mistyped `--only`
+/// never selects nothing and reports a pass.
+pub(super) fn select_routes<'a>(all: &'a [Route], only: &str) -> Result<Vec<&'a Route>, String> {
+    if only.is_empty() {
+        return Ok(all.iter().collect());
+    }
+    let selected: Vec<&Route> = all.iter().filter(|r| r.slug == only).collect();
+    if selected.is_empty() {
+        let known: Vec<&str> = all.iter().map(|r| r.slug).collect();
+        return Err(format!(
+            "--only `{only}` names no route; known slugs: {}",
+            known.join(", ")
+        ));
+    }
+    Ok(selected)
+}
+
 /// Run the suite. Returns the process exit code (0 green, 1 diff/missing, 2 usage).
 pub async fn run(args: &VSuiteArgs) -> Result<u8> {
     if args.mode == "freeze" {
@@ -374,9 +406,7 @@ pub async fn run(args: &VSuiteArgs) -> Result<u8> {
         return Ok(2);
     }
     if !["verify", "accept"].contains(&args.mode.as_str()) {
-        eprintln!(
-            "usage: gate v-suite <verify|accept> [--leptos-dir d] [--only slug] [--note why]"
-        );
+        eprintln!("{USAGE}");
         return Ok(2);
     }
     if args.mode == "accept" && (args.only.is_empty() || args.note.is_empty()) {
@@ -385,10 +415,12 @@ pub async fn run(args: &VSuiteArgs) -> Result<u8> {
     }
     let gold = gold_dir();
     let all = routes();
-    let selected: Vec<&Route> = if args.only.is_empty() {
-        all.iter().collect()
-    } else {
-        all.iter().filter(|r| r.slug == args.only).collect()
+    let selected = match select_routes(&all, &args.only) {
+        Ok(selected) => selected,
+        Err(refusal) => {
+            eprintln!("{refusal}\n{USAGE}");
+            return Ok(2);
+        }
     };
 
     // Fonts: `cdp::launch` pins gate-owned `XDG_CACHE_HOME` on the chromium child

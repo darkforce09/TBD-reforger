@@ -344,15 +344,23 @@ async fn register_rejects_bad_bodies_and_withdraw_frees_orphaned_seats() {
     // Each of these used to return 200 and null the registration's `slot_id` while leaving
     // `assigned_to` set — the orphan. `{}` is in the list on purpose: it is well-formed JSON,
     // and only decodes as "no seat" if `slot_id` carries `#[serde(default)]`.
-    for (label, body) in [
-        ("malformed json", Some(r#"{"slot_id":"#)),
-        ("empty object", Some("{}")),
-        ("wrong json type", Some("[]")),
-        ("no body / no content-type", None),
+    for (label, body, status) in [
+        (
+            "malformed json",
+            Some(r#"{"slot_id":"#),
+            StatusCode::BAD_REQUEST,
+        ),
+        ("empty object", Some("{}"), StatusCode::BAD_REQUEST),
+        ("wrong json type", Some("[]"), StatusCode::BAD_REQUEST),
+        (
+            "no body / no content-type",
+            None,
+            StatusCode::UNSUPPORTED_MEDIA_TYPE,
+        ),
     ] {
         assert_eq!(
             register(&emid, body).await,
-            StatusCode::BAD_REQUEST,
+            status,
             "{label} must be rejected"
         );
         assert_eq!(

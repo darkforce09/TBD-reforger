@@ -6,8 +6,13 @@
 //! render it; re-serialised unchanged by the round-trip tests.
 //! **Signals & state:** none — these are plain data.
 //! **Invariants:** `MeResponse` is the authority on the current session's role; a page must never infer
-//! one from anything else. A link code is short-lived and single-use on the backend.
+//! one from anything else. A link code is short-lived and single-use on the backend. A member search
+//! answers a paged envelope whose `total` counts every match, not only the rows on the page.
+//! @contract arma-link.schema.json#/definitions/LinkStatus
+//! @contract arma-link.schema.json#/definitions/LinkCode
+//! @contract member-directory.schema.json#/definitions/MemberSearchPage
 
+use super::common::Paginated;
 use crate::v2::core::auth::User;
 use serde::{Deserialize, Serialize};
 
@@ -26,6 +31,7 @@ pub struct MeResponse {
 }
 
 /// Whether the viewer has linked a game account, and what is known about it.
+/// @contract arma-link.schema.json#/definitions/LinkStatus
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct LinkStatus {
@@ -39,6 +45,7 @@ pub struct LinkStatus {
 }
 
 /// A freshly minted account-linking code, and when it stops being accepted.
+/// @contract arma-link.schema.json#/definitions/LinkCode
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct LinkCodeResponse {
@@ -48,6 +55,7 @@ pub struct LinkCodeResponse {
 }
 
 /// One member of the community, as the roster and pickers list them.
+/// @contract member-directory.schema.json#/definitions/MemberSummary
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Member {
@@ -56,3 +64,9 @@ pub struct Member {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub avatar_url: Option<String>,
 }
+
+/// One page of a member search: members who are not banned, by username, with the paging the
+/// pickers read.
+/// @contract member-directory.schema.json#/definitions/MemberSearchPage
+#[allow(dead_code)]
+pub type MemberSearchPage = Paginated<Member>;

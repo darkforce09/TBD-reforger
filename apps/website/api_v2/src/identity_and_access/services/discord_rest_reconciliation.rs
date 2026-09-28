@@ -5,6 +5,7 @@ use super::discord_membership_cache::{
     record_membership_failure,
 };
 use crate::core::application_state::AppState;
+use crate::core::failpoints::fail_point;
 use chrono::Duration;
 use sqlx::PgPool;
 
@@ -54,6 +55,9 @@ async fn reserve_request_budget(
     Ok(admitted)
 }
 
+/// Refreshes the one membership whose refresh is due: claims its lease, reserves request budget,
+/// reads the member from Discord and records the observation or the failure under that lease.
+/// Answers `false` when nothing is due, the lease is taken or the budget is spent.
 pub async fn reconcile_one(state: &AppState) -> sqlx::Result<bool> {
     if state.cfg.discord_bot_token.is_empty() {
         return Ok(false);
@@ -72,11 +76,13 @@ pub async fn reconcile_one(state: &AppState) -> sqlx::Result<bool> {
     if !reserve_request_budget(&state.pool, &lease).await? {
         return Ok(false);
     }
-    match state
+    fail_point!(DiscordRoleSyncBeforeEffect);
+    let fetched = state
         .discord
         .fetch_member_with_bot(&state.cfg.discord_bot_token, &guild_id, &discord_id)
-        .await
-    {
+        .await;
+    fail_point!(DiscordRoleSyncAfterEffect);
+    match fetched {
         Ok(member) => {
             accept_membership_observation(
                 &state.pool,

@@ -6,6 +6,9 @@ use super::super::{
 use super::value_details::ValueDetails;
 use crate::v2::core::api::dto::equipment_data_viewer::EquipmentSourcePageItemsItem;
 use leptos::prelude::*;
+/// The expanded details of one field: status, origin and unit tags, the full value when it is
+/// small, links to the containers it references, source and inheritance evidence, and in-place
+/// value browsers for a large value and for expandable metadata.
 #[component]
 pub fn InlineDetails(fact: EquipmentSourcePageItemsItem, node: String) -> impl IntoView {
     let c = expect_context::<ViewerContext>();

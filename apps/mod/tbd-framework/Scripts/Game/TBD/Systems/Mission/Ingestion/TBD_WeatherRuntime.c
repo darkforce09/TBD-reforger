@@ -40,7 +40,7 @@ class TBD_WeatherTimelineStruct
 }
 
 //! The document root for the weather pass: declares `weatherTimeline` and nothing else.
-//! @contract mission.schema.json#/properties/weatherTimeline
+//! @contract mission.schema.json#/ partial
 class TBD_WeatherDocStruct
 {
 	ref TBD_WeatherTimelineStruct weatherTimeline; //!< `weatherTimeline`, always allocated

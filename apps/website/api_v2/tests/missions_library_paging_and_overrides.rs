@@ -195,6 +195,88 @@ async fn library_bookmark_lookup_survives_page1_overflow() {
         .expect("soft-delete the planted fillers");
 }
 
+/// The `bookmarked` scope lists only the bookmarked missions the caller can see now. A peer's
+/// bookmark row on someone else's draft (a row written before bookmark writes checked
+/// visibility, or a mission that left the live state) stays out of the peer's list until the
+/// mission is live, while the author's own bookmark on the same draft lists; a peer cannot write
+/// such a bookmark through the API at all.
+#[tokio::test]
+async fn library_bookmarked_scope_lists_only_missions_the_caller_can_view() {
+    let (app, pool, maker, _) = app_pool_and_tokens()
+        .await
+        .expect("the library suite requires its PostgreSQL database");
+    let (_, peer) = app_and_token("enlisted")
+        .await
+        .expect("the library suite requires its PostgreSQL database");
+    const PEER: &str = "000000000000000002"; // enlisted dev-login discord_id
+    const BOOKMARKED: &str = "/api/v1/missions?scope=bookmarked";
+
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let (st, b) = call(
+        &app,
+        "POST",
+        "/api/v1/missions",
+        Some(&maker),
+        None,
+        Some(&format!(
+            r#"{{"title":"Bookmark-Visibility-{stamp}","terrain":"everon","game_mode":"pve_coop","max_players":16}}"#
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "{}", String::from_utf8_lossy(&b));
+    let draft = json(&b)["id"].as_str().unwrap().to_string();
+    let bookmark = format!("/api/v1/missions/{draft}/bookmark");
+
+    let (st, b) = call(&app, "POST", &bookmark, Some(&maker), None, None).await;
+    assert_eq!(st, StatusCode::OK, "{}", String::from_utf8_lossy(&b));
+    let (st, b) = call(&app, "POST", &bookmark, Some(&peer), None, None).await;
+    assert_eq!(
+        st,
+        StatusCode::NOT_FOUND,
+        "a peer cannot bookmark a hidden draft: {}",
+        String::from_utf8_lossy(&b)
+    );
+
+    sqlx::query("INSERT INTO mission_bookmarks (discord_id, mission_id, created_at) VALUES ($1, $2::uuid, now())")
+        .bind(PEER)
+        .bind(&draft)
+        .execute(&pool)
+        .await
+        .expect("plant the peer's bookmark row on the draft");
+    assert!(
+        !find_id_in_missions_list(&app, &peer, BOOKMARKED, &draft).await,
+        "a draft the peer cannot see must not list in the peer's bookmarked scope"
+    );
+    assert!(
+        find_id_in_missions_list(&app, &maker, BOOKMARKED, &draft).await,
+        "the author's own bookmarked draft must list in the author's bookmarked scope"
+    );
+
+    sqlx::query("UPDATE missions SET status = 'live' WHERE id = $1::uuid")
+        .bind(&draft)
+        .execute(&pool)
+        .await
+        .expect("make the draft live");
+    assert!(
+        find_id_in_missions_list(&app, &peer, BOOKMARKED, &draft).await,
+        "once live, the mission lists in the peer's bookmarked scope"
+    );
+
+    sqlx::query("DELETE FROM mission_bookmarks WHERE mission_id = $1::uuid")
+        .bind(&draft)
+        .execute(&pool)
+        .await
+        .expect("remove this run's bookmarks");
+    sqlx::query("UPDATE missions SET deleted_at = now() WHERE id = $1::uuid")
+        .bind(&draft)
+        .execute(&pool)
+        .await
+        .expect("soft-delete this run's mission");
+}
+
 /// The whole point of the aggregate: which mission defaults every author changes, answered as a
 /// QUERY over the corpus rather than a machine-parse of shipped PBOs.
 ///

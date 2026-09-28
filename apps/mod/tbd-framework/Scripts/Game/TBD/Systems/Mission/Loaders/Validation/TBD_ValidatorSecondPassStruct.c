@@ -14,14 +14,14 @@
  */
 
 //! One `orbat.*.groups[].roles[]` entry, radio only.
-//! @contract mission.schema.json#/$defs/role
+//! @contract mission.schema.json#/$defs/role partial
 class TBD_ValidatorRawRoleStruct
 {
 	ref array<string> radio; //!< JSON `radio`: null = key absent; empty = authored `[]`; else authored net ids.
 }
 
 //! One `orbat.*.groups[]` entry, roles only.
-//! @contract mission.schema.json#/$defs/group
+//! @contract mission.schema.json#/$defs/group partial
 class TBD_ValidatorRawGroupStruct
 {
 	ref array<ref TBD_ValidatorRawRoleStruct> roles; //!< JSON `roles`: the group's roles.
@@ -35,7 +35,7 @@ class TBD_ValidatorRawOrbatFactionStruct
 }
 
 //! One `factions[]` entry: the key, so a finding can name the side, and the tickets.
-//! @contract mission.schema.json#/$defs/faction
+//! @contract mission.schema.json#/$defs/faction partial
 class TBD_ValidatorRawFactionStruct
 {
 	string key;      //!< JSON `key`: the faction key.
@@ -43,7 +43,7 @@ class TBD_ValidatorRawFactionStruct
 }
 
 //! Document root for the second pass: the three vocabularies, nothing else.
-//! @contract mission.schema.json#/
+//! @contract mission.schema.json#/ partial
 class TBD_ValidatorSecondPassStruct
 {
 	ref array<string> layers;                                    //!< JSON `layers`: null = key absent; empty = authored `[]`.
