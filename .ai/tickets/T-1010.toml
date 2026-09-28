@@ -23,8 +23,10 @@ verify = [
     "cargo test -p xtask remote_prefix_rejects_escape_and_outside",
 ]
 acceptance = ["git grep for the staging host's LAN addresses outside tickets and archives prints nothing, and no production tooling file names a private-network address or a personal home path."]
+shipped_at = "0e7e7ccf3"
 created_at = "2026-09-24T02:32:35Z"
 completed_at = "2026-09-28T16:40:52Z"
+estimated = ["tokens"]
 
 [scope]
 domain = "repo"
