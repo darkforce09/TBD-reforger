@@ -1,11 +1,13 @@
-//! Game-server rows, their live telemetry, the decoder for the telemetry stream, and the machine
-//! credentials that authenticate a server's programs.
+//! Game-server rows, the bodies that register and change one, their live telemetry, the decoder
+//! for the telemetry stream, and the machine credentials that authenticate a server's programs.
 //!
-//! **Role:** the server list the intel page renders, the status frame the live stream pushes,
-//! the audit line written when a frame cannot be read, and the credential list, issue answer and
-//! issue request the server control screen works with.
+//! **Role:** the server list the intel page renders, the registration and change bodies the server
+//! control screen sends, the status frame the live stream pushes, the audit line written when a
+//! frame cannot be read, and the credential list, issue answer and issue request the server control
+//! screen works with.
 //! **Position:** deserialised straight from the backend's JSON and handed to the pages that
-//! render it; re-serialised unchanged by the round-trip tests.
+//! render it; re-serialised unchanged by the round-trip tests. A registration or change answers
+//! with a [`ServerRowDto`], the row `GET /servers` lists.
 //! **Signals & state:** none — these are plain data.
 //! **Invariants:** frame decoding lives here rather than beside the stream reader because the reader is
 //! browser-only and therefore never compiled by the native test build, while decoding a frame is
@@ -15,13 +17,17 @@
 //! distinction exists to prevent. A credential row never carries its secret; the one answer that
 //! does derives no `Debug`, so the secret cannot reach a log line through a formatter. A status
 //! without a telemetry queue reading has no `telemetry_queue` key; the reading is never
-//! synthesised.
+//! synthesised. A change tells an absent `required_modpack_id` (left as stored), `null` (cleared)
+//! and an id apart.
 //! @contract match-telemetry.schema.json#/definitions/TelemetryQueueStatus
 //! @contract server-intel.schema.json#/definitions/ServerIntelList
 //! @contract server-intel.schema.json#/definitions/ServerStatus
+//! @contract server-intel.schema.json#/definitions/ServerRegistration
+//! @contract server-intel.schema.json#/definitions/ServerChange
 
 use serde::{Deserialize, Serialize};
 
+use super::common::absent_null_or_value;
 use super::content::ModpackDto;
 
 /// One live telemetry sample from a game server.
@@ -166,6 +172,54 @@ pub struct ServerRowDto {
     pub required_modpack: Option<ModpackDto>,
     /// The theatre the current match runs on, and null when the server is between matches.
     pub terrain: Option<String>,
+}
+
+/// `POST /servers` body: a game server to register.
+///
+/// `ip` is a literal IPv4 or IPv6 address, never a hostname or an address with a `/mask`, and
+/// `port` is 1 to 65535; the backend refuses anything else and names the field. An absent
+/// `required_modpack_id` requires no modpack, and an absent `is_active` registers the server
+/// active.
+/// @contract server-intel.schema.json#/definitions/ServerRegistration
+#[allow(dead_code)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ServerRegistration {
+    /// Trimmed and not blank.
+    pub name: String,
+    pub ip: String,
+    pub port: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub required_modpack_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub is_active: Option<bool>,
+}
+
+/// `PATCH /servers/:id` body: the fields of a server's registration to change.
+///
+/// Each outer `None` is an absent key and leaves its field as stored. `required_modpack_id` also
+/// tells `null` apart: `Some(None)` clears the requirement and `Some(Some(id))` sets it.
+/// `is_active` deactivates or reactivates the server. The backend refuses a change that names no
+/// field, and checks each field it names as a registration's.
+/// @contract server-intel.schema.json#/definitions/ServerChange
+#[allow(dead_code)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ServerChange {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ip: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub port: Option<i64>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "absent_null_or_value"
+    )]
+    pub required_modpack_id: Option<Option<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub is_active: Option<bool>,
 }
 
 /// The program a machine credential authenticates on its server.

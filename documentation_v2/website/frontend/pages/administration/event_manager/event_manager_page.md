@@ -6,17 +6,18 @@ The `/admin/events` page, titled "Operations Calendar": administrators schedule
 [events](/documentation_v2/glossary/a_to_f.md#event), which the screen calls operations, on a month
 calendar, attach [missions](/documentation_v2/glossary/g_to_m.md#mission) whose
 [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) becomes each event mission's
-[slots](/documentation_v2/glossary/n_to_z.md#slot), edit an operation's time, briefing, capacity, lifecycle
-state and registration, delete it, and decide in an access sheet who may join, from which pools, and
-why each participant is admitted.
+[slots](/documentation_v2/glossary/n_to_z.md#slot), choose the game server each operation runs on, edit an
+operation's time, briefing, capacity, server, lifecycle state and registration, delete it, and
+decide in an access sheet who may join, from which pools, and why each participant is admitted.
 
 ## Where it lives
 
 - Code: [`apps/website/frontend/src/v2/pages/administration/event_manager/`](/apps/website/frontend/src/v2/pages/administration/event_manager/):
   `page.rs` holds the route component `EventManagerPage`; `state.rs` the screen's state and its
-  three fetches; `event_table.rs` the heading, the month grid and the day panel;
+  four fetches; `event_table.rs` the heading, the month grid and the day panel;
   `schedule_dialog.rs` and `edit_dialog.rs` the two forms; `mission_picker.rs` the mission
-  staging list and the attached-missions roster; `confirm_dialogs.rs` the delete and detach
+  staging list and the attached-missions roster; `server_choice.rs` the game server choice both
+  forms share; `confirm_dialogs.rs` the delete and detach
   confirmations; `lifecycle.rs` the six states and the moves between them; `dates.rs` the date
   arithmetic; `access/` the access sheet. The folder's
   [README](/apps/website/frontend/src/v2/pages/administration/event_manager/README.md) describes
@@ -58,8 +59,9 @@ mention.
 ### Scheduling an operation
 
 1. "Schedule Operation" opens a dialog of that name for the selected day: a time (19:00 unless
-   changed), a name, a staging list of missions picked from the library, and whether registration
-   is open or locked.
+   changed), a name, the game server it runs on (none unless chosen), a staging list of missions
+   picked from the library, and whether registration is open or locked. The game servers are read
+   when the dialog opens, and a deactivated one is marked.
 2. "Publish Event" needs a time. It creates the operation, then attaches each staged mission at
    the operation's start time, one request each. It toasts the result, resets the form and reads
    the calendar again.
@@ -67,7 +69,10 @@ mention.
 ### Editing an operation
 
 1. "Edit Selected Operation" opens "Edit Operation": date, time, name, briefing, banner image URL,
-   max slots, the attached missions, the lifecycle status and whether registration is open.
+   max slots, the game server, the attached missions, the lifecycle status and whether
+   registration is open. The game server's choice opens on the operation's server; the operation's
+   server is the one whose game runtime reads its roster and whose mission deployments may bind its
+   seats.
 2. The attached missions come from the operation's hub, read while the form is open: one row per
    mission with its local time, its filled places and a detach control. "Attach Mission" attaches
    another at the operation's start time.
@@ -75,7 +80,9 @@ mention.
    `live` or `cancelled`; `open` to `locked`, `live` or `cancelled`; `locked` to `open`, `live` or
    `cancelled`; `live` to `open`, `locked`, `completed` or `cancelled`. Completed and cancelled
    operations are terminal, and the form says so.
-4. "Save Changes" sends only the fields that changed, and nothing when none did. A max-slots value
+4. "Save Changes" sends only the fields that changed, and nothing when none did; choosing "No game
+   server" for an operation that had one clears it. While the servers are unread the choice cannot
+   change, so a failed read leaves the operation's server as it is. A max-slots value
    that is not a whole number of 0 or more is refused in the form. A refusal shows the API's
    sentence, such as "cannot move an event to open once its start time has passed — reschedule it
    in the same request to postpone it".
@@ -136,8 +143,7 @@ operation.
   (`state.rs` in the code folder).
 - The schedule form ignores a failed mission attach: "Event published with N missions" counts the
   staged missions, not the attached ones (`schedule_dialog.rs`).
-- Neither form sets an operation's server or modpack, which the API accepts; the server control
-  page offers a deployment's event missions only from operations scheduled on that server.
+- Neither form sets an operation's modpack, which the API accepts as `modpack_id`.
 
 ## Data
 
@@ -154,17 +160,20 @@ lists each call with the DTO or fields it reads or sends. Server-side, in
   first, 20 of them since the page sends no `limit`.
 - `GET /api/v1/events/{id}` (`get_event` in `event_hub.rs`): the hub behind the edit form's
   attached missions, and the access sheet's missions.
+- `GET /api/v1/servers` (`list_servers` in
+  `apps/website/api_v2/src/server_infrastructure/handlers/server_intel.rs`): every server, active
+  or not, for the game server choice.
 - `POST /api/v1/events` (`create_event` in `event_create_update.rs`): the API requires a start time, a
   `max_slots` of 0 to 256, a pre-start status (`scheduled`, `open` or `locked`), an absolute
-  banner URL and a name that is not blank; it also accepts `server_id` and `modpack_id`. It
-  records `event.created`.
+  banner URL and a name that is not blank; a `server_id` must name a known server ("server_id
+  does not name a known server"), and it also accepts `modpack_id`. It records `event.created`.
 - `PATCH /api/v1/events/{id}` (`update_event`): the API checks the
   capacity and the lifecycle move ("cannot move an event from X to Y"), refuses a move into a
   pre-start state (`scheduled`, `open` or `locked`) once the start time has passed unless the same
   request moves the start into the future, shifts every attached mission's start time by the same
   amount when the start moves, withdraws every reservation when the operation is cancelled
   (reason `event_cancelled`), then seats waiting participants the change makes room for and
-  records `event.updated`.
+  records `event.updated`. `server_id` is checked as on create, and `null` clears it.
 - `DELETE /api/v1/events/{id}` (`delete_event`): withdraws every reservation, marks the operation
   deleted and records `event.deleted`; the row stays, so it can be restored in the database.
 - `POST /api/v1/events/{id}/missions` (`add_event_mission` in
@@ -247,9 +256,6 @@ ACCESS SHEET (side sheet over the calendar)
 - [T-1019 — Fix operation scheduling toasting failed mission attaches as success](/.ai/tickets/T-1019.toml)
   (idea, no plan): the schedule form checks each mission attach and reports a failed one instead
   of counting the staged missions.
-- [T-1022 — Add website admin UI to manage game servers](/.ai/tickets/T-1022.toml) (idea, no
-  plan): the event manager's forms set an operation's server, which the API already accepts, and
-  a page creates, edits and deactivates servers.
 
 ## Decisions
 

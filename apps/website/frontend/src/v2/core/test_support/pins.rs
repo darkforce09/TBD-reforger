@@ -258,7 +258,8 @@ pub(crate) fn deployments_source() -> String {
 }
 
 /// The operations calendar, as one text: the route component, the state, the calendar body, the
-/// two forms, the mission pickers, the destructive confirmations, and the access panel.
+/// two forms, the mission pickers, the game server choice, the destructive confirmations, and the
+/// access panel.
 pub(crate) fn event_manager_source() -> String {
     [
         include_str!("../../pages/administration/event_manager/mod.rs"),
@@ -270,6 +271,7 @@ pub(crate) fn event_manager_source() -> String {
         include_str!("../../pages/administration/event_manager/mission_picker.rs"),
         include_str!("../../pages/administration/event_manager/page.rs"),
         include_str!("../../pages/administration/event_manager/schedule_dialog.rs"),
+        include_str!("../../pages/administration/event_manager/server_choice.rs"),
         include_str!("../../pages/administration/event_manager/state.rs"),
         include_str!("../../pages/administration/event_manager/access/mod.rs"),
         include_str!("../../pages/administration/event_manager/access/change_report.rs"),
@@ -292,14 +294,22 @@ pub(crate) fn event_manager_source() -> String {
     .concat()
 }
 
-/// Server control, as one text: the route component, the picker and card, the fleet command
-/// console, the deployments panel, the fleet scenario sheet, and the machine-credential sheet.
+/// Server control, as one text: the route component, the server registry and its registration
+/// sheet, the picker and card, the fleet command console, the deployments panel, the fleet
+/// scenario sheet, and the machine-credential sheet.
 pub(crate) fn server_control_source() -> String {
     [
         include_str!("../../pages/administration/server_control/mod.rs"),
         include_str!("../../pages/administration/server_control/page.rs"),
         include_str!("../../pages/administration/server_control/server_cards.rs"),
         include_str!("../../pages/administration/server_control/server_card_telemetry.rs"),
+        include_str!("../../pages/administration/server_control/server_registry/mod.rs"),
+        include_str!(
+            "../../pages/administration/server_control/server_registry/registration_sheet.rs"
+        ),
+        include_str!(
+            "../../pages/administration/server_control/server_registry/registration_wording.rs"
+        ),
         include_str!("../../pages/administration/server_control/fleet_commands/mod.rs"),
         include_str!("../../pages/administration/server_control/fleet_commands/command_history.rs"),
         include_str!(

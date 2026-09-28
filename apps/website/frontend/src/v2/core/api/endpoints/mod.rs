@@ -1,5 +1,5 @@
 //! One typed call per backend route of operation access, registration, machine credentials, mission
-//! reviews, fleet commands, mission deployments and fleet scenarios.
+//! reviews, fleet commands, mission deployments, fleet scenarios and the game-server registry.
 //!
 //! **Role:** names each route's path, request body and answer in one place, so a page calls
 //! `put_event_access_policy(store, event, &change)` rather than assembling a path, a body and a
@@ -10,8 +10,8 @@
 //! **Invariants:** every path builder is pure and compiled into the native build, so the tests hold
 //! each one against the backend's route tables; the calls themselves are browser-only, like the
 //! verbs under them. A path segment or query value taken from data — a faction or squad name, an
-//! account id, a revocation reason, a terrain key — is percent-encoded, because a squad name may
-//! carry a space or a slash. A change answers an [`ApiRefusal`](super::client::ApiRefusal) on failure, since its
+//! account id, a revocation reason, a terrain key, a server id — is percent-encoded, because a
+//! squad name may carry a space or a slash. A change answers an [`ApiRefusal`](super::client::ApiRefusal) on failure, since its
 //! callers branch on the reason; a read answers the plain failure pair the fetch wrappers take.
 
 pub mod event_access_administration;
@@ -21,6 +21,7 @@ pub mod fleet_scenarios;
 pub mod machine_credentials;
 pub mod mission_deployments;
 pub mod mission_reviews;
+pub mod server_registry;
 
 /// Percent-encode one path segment or query value: every byte but the RFC 3986 unreserved
 /// characters (`A-Z a-z 0-9 - . _ ~`) becomes `%XX`, so the backend's router decodes exactly the

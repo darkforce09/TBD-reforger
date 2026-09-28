@@ -47,6 +47,7 @@ pub(super) fn event_table(st: Manager) -> impl IntoView {
         edit_max_slots,
         edit_reg_open,
         edit_status,
+        edit_server_id,
         edit_attach_open,
         edit_open,
         ..
@@ -75,6 +76,7 @@ pub(super) fn event_table(st: Manager) -> impl IntoView {
         edit_max_slots.set(op.max_slots.to_string());
         edit_reg_open.set(!op.registration_locked);
         edit_status.set(op.status.clone());
+        edit_server_id.set(op.server_id.clone().unwrap_or_default());
         edit_orig.set(Some(op));
         edit_attach_open.set(false);
         edit_open.set(true);
@@ -221,7 +223,7 @@ pub(super) fn event_table(st: Manager) -> impl IntoView {
                                         .into_any(),
                                 );
                         }
-                        while cells.len() % 7 != 0 {
+                        while !cells.len().is_multiple_of(7) {
                             cells.push(view! { <div></div> }.into_any());
                         }
                         cells.collect_view()

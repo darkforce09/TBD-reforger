@@ -5,7 +5,8 @@
 //! confirmed first — the broadcast form, and the kick form with its player and session pickers.
 //! **Position:** the top of the fleet command section of the selected server's card.
 //! **Signals & state:** owns the pending confirmation, the broadcast message and the kick's three
-//! fields; sends through the [`CommandConsole`].
+//! fields; reads the server's name from the card, so a renamed server is named at once; sends
+//! through the [`CommandConsole`].
 //! **Invariants:** only the six actions an operator may request are offered; the two a mission
 //! deployment issues are not. A broadcast and a kick are checked as the backend checks them before
 //! anything is sent. A kick names the Arma identity and the runtime session it is issued against:
@@ -37,11 +38,10 @@ enum Disruptive {
 /// The request controls of one server's console.
 pub(in super::super) fn command_requests(
     console: CommandConsole,
-    server_name: String,
+    server_name: Signal<String>,
     suggested_session: Signal<Option<String>>,
 ) -> impl IntoView {
     let confirming = RwSignal::new(None::<Disruptive>);
-    let server_name = StoredValue::new(server_name);
     let send = move |request: FleetCommandRequest| {
         confirming.set(None);
         console.request(request);
@@ -80,12 +80,12 @@ pub(in super::super) fn command_requests(
                     .map(|action| {
                         let (question, confirm, request) = match action {
                             Disruptive::Stop => (
-                                format!("Stop {}? Every connected player is disconnected.", server_name.get_value()),
+                                format!("Stop {}? Every connected player is disconnected.", server_name.get()),
                                 "Stop the server",
                                 FleetCommandRequest::stop(),
                             ),
                             Disruptive::Restart => (
-                                format!("Restart {}? Every connected player is disconnected until it is back.", server_name.get_value()),
+                                format!("Restart {}? Every connected player is disconnected until it is back.", server_name.get()),
                                 "Restart the server",
                                 FleetCommandRequest::restart(),
                             ),

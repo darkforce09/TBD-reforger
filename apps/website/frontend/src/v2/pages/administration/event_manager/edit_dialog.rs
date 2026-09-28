@@ -1,8 +1,8 @@
 //! The edit form: changing an operation that already exists.
 //!
 //! **Role:** the frosted form that rewrites a published operation — start date and time, name,
-//! briefing, banner, slot ceiling, attached missions, lifecycle state and registration — and the
-//! save action behind it.
+//! briefing, banner, slot ceiling, game server, attached missions, lifecycle state and
+//! registration — and the save action behind it.
 //! **Position:** a dialog over the operations calendar, opened from the day panel.
 //! **Signals & state:** every field is an `edit_*` signal, seeded when the form opens; `edit_orig`
 //! holds the row they were seeded from. `edit_open` gates the dialog and `save_busy` the button. A
@@ -12,8 +12,8 @@
 //! back would re-send a start time on a save that only renamed the operation — and a start time in
 //! the body is what the server's pre-start guard measures. Blanking the briefing or the banner is
 //! itself a change: the empty string is sent and clears the field, while leaving the key out leaves
-//! it alone. Start times are compared as instants, not as text. A save with nothing changed sends
-//! no request at all. The date field exists because reopening a started operation requires pushing
+//! it alone. Start times are compared as instants, not as text; the game server is sent only when
+//! the choice differs, and `null` clears it. A save with nothing changed sends no request at all. The date field exists because reopening a started operation requires pushing
 //! its start into the future in the same request, which is otherwise unexpressible.
 #![allow(dead_code)]
 
@@ -21,14 +21,18 @@
 use super::dates::{combine_iso, parse_date_value, same_instant, split_hm};
 use super::lifecycle::{can_transition, EVENT_STATUSES};
 use super::mission_picker::attached_missions;
+#[cfg(target_arch = "wasm32")]
+use super::server_choice::server_id_change;
+use super::server_choice::server_picker;
 use super::state::Manager;
 use crate::v2::core::ui::{cn, Dialog, MaterialIcon};
 use leptos::prelude::*;
 
 /// The Edit Operation form.
 ///
-/// Renders the date and time fields, the name, briefing, banner and slot-ceiling fields, the
-/// attached-mission section, the lifecycle picker, the registration switch and the save button.
+/// Renders the date and time fields, the name, briefing, banner and slot-ceiling fields, the game
+/// server choice, the attached-mission section, the lifecycle picker, the registration switch and
+/// the save button.
 pub(super) fn edit_dialog(st: Manager) -> impl IntoView {
     let Manager {
         store,
@@ -43,6 +47,7 @@ pub(super) fn edit_dialog(st: Manager) -> impl IntoView {
         edit_max_slots,
         edit_reg_open,
         edit_status,
+        edit_server_id,
         save_busy,
         ..
     } = st;
@@ -110,6 +115,11 @@ pub(super) fn edit_dialog(st: Manager) -> impl IntoView {
             let st = edit_status.get_untracked();
             if st != orig.status {
                 body.insert("status".into(), st.into());
+            }
+            if let Some(server) =
+                server_id_change(orig.server_id.as_deref(), &edit_server_id.get_untracked())
+            {
+                body.insert("server_id".into(), server);
             }
             if body.is_empty() {
                 edit_open.set(false);
@@ -208,6 +218,8 @@ pub(super) fn edit_dialog(st: Manager) -> impl IntoView {
                     class="w-32 rounded-full bg-white/5 px-5 py-3 font-mono text-sm text-on-surface placeholder:text-on-surface-variant/60 outline-none focus:ring-1 focus:ring-primary/50 [color-scheme:dark]"
                 />
             </div>
+
+            {server_picker(st.servers, edit_server_id)}
 
             {attached_missions(st)}
 

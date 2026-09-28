@@ -3,8 +3,8 @@
 The `/admin/events` page, the [event manager](/documentation_v2/glossary/a_to_f.md#event-manager), headed
 "Operations Calendar": administrators schedule [events](/documentation_v2/glossary/a_to_f.md#event), which
 the screen calls operations, on a month grid, attach
-[missions](/documentation_v2/glossary/g_to_m.md#mission) to them, edit and delete them, and open the access
-sheet that decides who may join each one.
+[missions](/documentation_v2/glossary/g_to_m.md#mission) to them, choose the game server each runs on, edit
+and delete them, and open the access sheet that decides who may join each one.
 
 ## Contents
 
@@ -20,34 +20,40 @@ apps/website/frontend/src/v2/pages/administration/event_manager/
 ├── mod.rs               the module tree; re-exports `EventManagerPage`
 ├── page.rs              `EventManagerPage`: the gate, then the panels and the sheet in stacking order
 ├── schedule_dialog.rs   the "Schedule Operation" form and its two-step publish
-├── state.rs             `Manager`: calendar position, form fields, busy flags and the three fetches
-└── tests/               unit tests for the edit form's wiring and the delete confirmation's copy
+├── server_choice.rs     the "Game server" choice both forms share and the `server_id` each sends
+├── state.rs             `Manager`: calendar position, form fields, busy flags and the four fetches
+└── tests/               unit tests for the edit form's wiring, the server choice and the delete copy
 ```
 
 ## How it works
 
 `EventManagerPage` renders `EventManagerInner` inside `AdminGate`. The inner component builds one
 copyable `Manager` handle, which every panel takes instead of a parameter list, so the calendar's
-position, both forms' fields and the three fetches have one source. Its fetches are the event list,
-the mission library the attach pickers offer, and the hub of the event the edit form is open on;
-that last one is keyed on the form being open, so clicking through a day costs no request, and it
-answers with the event id it belongs to, so the attached missions show only under the event they
-were fetched for. `dates.rs` groups events by the local calendar day of their start, so the grid,
+position, both forms' fields and the four fetches have one source. Its fetches are the event list,
+the mission library the attach pickers offer, the game servers both forms offer, and the hub of the
+event the edit form is open on. The servers are read each time either form opens, so the calendar
+alone reads none; the hub is keyed on the edit form being open, so clicking through a day costs no
+request, and it answers with the event id it belongs to, so the attached missions show only under
+the event they were fetched for. `dates.rs` groups events by the local calendar day of their start, so the grid,
 the day panel and the forms agree on which day an event is on; only the value sent is UTC.
 
 | Surface | Opened by | What it sends |
 |---|---|---|
-| schedule form | "Schedule Operation", or "Schedule one." on an empty day | the create, then one attach per staged mission at the event's start time, a failed attach going unreported; then the list refetches |
+| schedule form | "Schedule Operation", or "Schedule one." on an empty day | the create, with the chosen game server, then one attach per staged mission at the event's start time, a failed attach going unreported; then the list refetches |
 | edit form | "Edit Selected Operation" | a `PATCH` of the changed fields only, diffed against the list row the form was seeded from; attaches and detaches |
 | delete confirmation | "Delete Selected Operation" | the delete; then the list refetches |
 | detach confirmation | a mission's detach control in the edit form | the detach; then the list and the attached missions refetch |
 | access sheet | "Access, Groups & Places" | the changes in [access/](/apps/website/frontend/src/v2/pages/administration/event_manager/access/README.md) |
 
 The edit form compares start times as instants, sends an empty string to clear the briefing or the
-banner, and sends nothing when nothing changed. Its Status picker offers only the moves
+banner, sends `server_id` only when the chosen game server differs from the operation's (`null`
+clears it), and sends nothing when nothing changed. While the servers are unread the choice cannot
+change, so a failed read never clears an operation's server. Its Status picker offers only the moves
 `lifecycle::can_transition` allows, which mirror the [API](/documentation_v2/glossary/a_to_f.md#api)'s
-rules; a rule the browser cannot check comes back as the API's own sentence. Neither form sets an
-event's server or modpack, and neither posts to Discord. The detach confirmation renders last
+rules; a rule the browser cannot check comes back as the API's own sentence. The game server an
+operation runs on is the one whose game runtime reads its roster and whose
+[mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment) may bind its seats.
+Neither form sets an event's modpack, and neither posts to Discord. The detach confirmation renders last
 because it shares a stacking level with the edit form that opens it. Every request runs in the
 browser build only; a native build resolves each fetch to nothing.
 
@@ -68,11 +74,16 @@ browser build only; a native build resolves each fetch to nothing.
 - `GET /api/v1/events/{id}`: read as `EventHub` while the edit form is open; its `missions`
   (`event_mission_id`, `mission_id`, `title`, `start_time`, `filled`, `total`) are the attached
   missions.
+- `GET /api/v1/servers`: read as `DataEnvelope<ServerRowDto>` each time either form opens; the
+  choice offers each server's `id` and `name`, marked when `is_active` is false. The edit form
+  seeds its choice from the list row's `server_id`.
 - `POST /api/v1/events`: sends `start_time`, `registration_locked` and, when a name is typed,
-  `name_override`; the answer's `id` keys the attaches that follow.
+  `name_override`, and, when a game server is chosen, `server_id`; the answer's `id` keys the
+  attaches that follow.
 - `POST /api/v1/events/{id}/missions`: sends `{mission_id, start_time}`, with the event's start time.
 - `PATCH /api/v1/events/{id}`: sends the changed fields among `start_time`, `name_override`,
-  `briefing`, `banner_image_url`, `max_slots`, `registration_locked` and `status`.
+  `briefing`, `banner_image_url`, `max_slots`, `registration_locked`, `status` and `server_id`
+  (`null` to clear it).
 - `DELETE /api/v1/events/{id}` and `DELETE /api/v1/events/{id}/missions/{emid}`: delete the event,
   detach one mission.
 - The access sheet:
@@ -106,8 +117,9 @@ browser build only; a native build resolves each fetch to nothing.
 | list loading or failed | the grid without marks, and every day reads as empty |
 | empty day | the local date, "Scheduled Operations", "No operations scheduled. " and the link "Schedule one." |
 | day with events | per event its name ("Untitled Operation" when unnamed), "<local time> · N mission(s) · filled/total", its lifecycle badge and "Open" or "Locked"; with one focused, "Edit Selected Operation", "Access, Groups & Places" and "Delete Selected Operation" |
-| schedule form | "Schedule Operation" over the long date; the time (19:00 at first), "Operation name (e.g. Twin Theaters)", "Missions" with "No missions attached yet." until one is staged, "Attach Mission" and "No more missions in the library."; "Registration" "Open" or "Locked"; "Publish Event" ("Publishing…") |
-| edit form | "Edit Operation": start date and time, name, "Briefing (Markdown supported)", "Banner image URL", "Max slots", "Attached Missions", "Status", "Registration" and "Save Changes" ("Saving…"); a terminal event's picker is disabled under "Completed and cancelled operations are terminal — rerunning one is a new operation, not an edit." |
+| schedule form | "Schedule Operation" over the long date; the time (19:00 at first), "Operation name (e.g. Twin Theaters)", "Game server", "Missions" with "No missions attached yet." until one is staged, "Attach Mission" and "No more missions in the library."; "Registration" "Open" or "Locked"; "Publish Event" ("Publishing…") |
+| edit form | "Edit Operation": start date and time, name, "Briefing (Markdown supported)", "Banner image URL", "Max slots", "Game server", "Attached Missions", "Status", "Registration" and "Save Changes" ("Saving…"); a terminal event's picker is disabled under "Completed and cancelled operations are terminal — rerunning one is a new operation, not an edit." |
+| game server choice | "Game server": "Reading the game servers…", then "No game server" and each server by name, "(deactivated)" after a deactivated one; "The game servers could not be read; the operation's server stays as it is." when the read fails; "Its game runtime reads this operation's roster, and its mission deployments may bind the operation's seats." |
 | attached missions | "Loading…", "Could not load attached missions.", "No missions attached.", or per mission "<local time> · filled/total filled" with a detach control; "Attach Mission" ("Attaching…") |
 | delete confirmation | "Delete this operation?", "It leaves the schedule, the dashboard and everyone's deployments, and no one can register on it. Nothing is erased — the attached missions, their ORBATs and every registration are kept, so an administrator can still restore it from the database.", "Cancel" and "Delete operation" |
 | detach confirmation | "Detach this mission?", "The mission's ORBAT slots and every registration on it are deleted. The mission itself stays in the library. This cannot be undone.", "Cancel" and "Detach mission" |
@@ -130,11 +142,13 @@ browser build only; a native build resolves each fetch to nothing.
 
 - Depends on: `crate::v2::core::api` (`api_get`, `api_post`, `api_patch`, `api_delete`,
   `api_error_message`; `Paginated`, `EventListItem`, `EventHub`, `EventMissionDossier`,
-  `MissionCard` and the access DTOs), `crate::v2::core::auth` (`AuthStore`), `crate::v2::core::ui`
+  `MissionCard`, `ServerRowDto` and the access DTOs; `load_servers` of the `server_registry`
+  endpoint module), `crate::v2::core::auth` (`AuthStore`), `crate::v2::core::ui`
   (`AdminGate`, `Dialog`, `MaterialIcon`, the badge classes, the toast queue) and
   `crate::v2::core::utils` (local date formatting); over HTTP, the events, event mission and access
-  routes of the [operations](/documentation_v2/glossary/n_to_z.md#operations) domain and the mission
-  library of the missions domain.
+  routes of the [operations](/documentation_v2/glossary/n_to_z.md#operations) domain, the mission
+  library of the missions domain and the server list of the
+  [server infrastructure](/documentation_v2/glossary/n_to_z.md#server-infrastructure) domain.
 - Used by: the `/admin/events` route in `apps/website/frontend/src/app_routes.rs` and
   `apps/website/frontend/src/router.rs`; the sidebar's "Event Manager" link in
   `apps/website/frontend/src/v2/pages/navigation/nav_config.rs`; `event_manager_source` in
@@ -144,7 +158,9 @@ browser build only; a native build resolves each fetch to nothing.
 - Rules: the edit form sends only changed fields and clears the briefing and banner with an empty
   string (`edit_dialog_reattach_and_empty_string_clear_are_wired`); the delete confirmation never
   promises a permanent cascade (`delete_confirm_copy_matches_the_soft_delete_handler`), both in
-  `tests/event_manager.rs`; the Status picker offers only moves `lifecycle::can_transition`
+  `tests/event_manager.rs`; an edit sends the game server only when it changes
+  (`an_edit_sends_the_server_only_when_it_changes`) and both forms send the chosen one
+  (`both_forms_send_the_chosen_server`), in `tests/server_choice.rs`; the Status picker offers only moves `lifecycle::can_transition`
   allows, and the API stays the judge.
 
 ## Related documentation

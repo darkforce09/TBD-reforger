@@ -1,25 +1,28 @@
 //! The server picker and the selected server's card: its identity, its telemetry, its fleet command
 //! console and its mission deployments.
 //!
-//! **Role:** the master list of configured servers, the header with the credential and launch
-//! controls, the small readings the card formats, and the two sections that act on the server —
-//! fleet commands and mission deployments. The telemetry band under the header is
-//! [`super::server_card_telemetry::telemetry_columns`].
+//! **Role:** the master list of configured servers, the header with the server's address and id
+//! and the edit, credential and launch controls, the small readings the card formats, and the two
+//! sections that act on the server — fleet commands and mission deployments. The telemetry band
+//! under the header is [`super::server_card_telemetry::telemetry_columns`].
 //! **Position:** the two panes of the server control screen.
-//! **Signals & state:** the list writes `selected_id`. The card creates the state of the server it
-//! shows — its command console, its deployments panel and its credential sheet — so switching
-//! servers never shows one server's commands, deployments, credentials or a secret just issued for
-//! it under another's name.
-//! **Invariants:** the card shows only what `GET /servers` carries: a server between matches reads
-//! its terrain as a dash, and an inactive server (outside the configured fleet) carries an
-//! "Inactive" badge in the list and in the card header. Launching the game cannot be done from a browser, so
-//! the launch control says that instead of pretending. The kick form is offered the runtime session
-//! that confirmed the server's newest confirmed deployment — the one session id the web reads.
+//! **Signals & state:** the list writes the registry's `selected_id`. The card creates the state of
+//! the server it shows — its command console, its deployments panel and its credential sheet — so
+//! switching servers never shows one server's commands, deployments, credentials or a secret just
+//! issued for it under another's name; it reads its row from the [`ServerRegistry`], so an edit,
+//! a deactivation or a reactivation shows at once and keeps that state.
+//! **Invariants:** the card shows only what `GET /servers` and the registry's writes carry: a
+//! server between matches reads its terrain as a dash, and an inactive server (outside the
+//! configured fleet) carries an "Inactive" badge in the list and in the card header. Launching the
+//! game cannot be done from a browser, so the launch control says that instead of pretending. The
+//! kick form is offered the runtime session that confirmed the server's newest confirmed
+//! deployment — the one session id the web reads.
 
 use super::fleet_commands::{command_history, command_requests, CommandConsole};
 use super::machine_credentials::{credential_sheet, CredentialPanel};
 use super::mission_deployments::{deployment_list, deployment_request, DeploymentPanel};
 use super::server_card_telemetry::telemetry_columns;
+use super::server_registry::ServerRegistry;
 use crate::v2::core::api::dto::{ModpackDto, ServerRowDto};
 use crate::v2::core::ui::{badge_class, cn, MaterialIcon};
 use leptos::prelude::*;
@@ -81,15 +84,6 @@ pub(super) fn terrain_reading(server: &ServerRowDto) -> String {
         }
         None => "—".to_string(),
     }
-}
-
-/// The server the screen opens on: the active one, else the first, else none.
-pub(super) fn pick_default_id(servers: &[ServerRowDto]) -> Option<String> {
-    servers
-        .iter()
-        .find(|s| s.is_active)
-        .or_else(|| servers.first())
-        .map(|s| s.id.clone())
 }
 
 /// One selectable row per configured server, with a status dot and its label.
@@ -154,37 +148,71 @@ pub(super) fn server_list(
 }
 
 /// The selected server's card: identity, telemetry, the command console and the deployments.
-pub(super) fn server_detail(s: ServerRowDto) -> impl IntoView {
-    let store = expect_context::<crate::v2::core::auth::AuthStore>();
-    let toasts = crate::v2::core::ui::toast::use_toasts();
-    let name = s.name.clone();
-    let endpoint = format_endpoint(&s.ip, s.port);
-    let telemetry = telemetry_columns(&s);
+///
+/// Built once per selected server. Its row is read from the registry, so a write that changes it
+/// updates the header and the telemetry band without rebuilding the console, the deployments panel
+/// or the credential sheet.
+pub(super) fn server_detail(registry: ServerRegistry, id: String) -> impl IntoView {
+    let store = registry.store;
+    let toasts = registry.toasts;
+    let row = Memo::new({
+        let id = id.clone();
+        move |_| registry.row(&id)
+    });
+    let name = Signal::derive(move || {
+        row.with(|s| s.as_ref().map(|s| s.name.clone()))
+            .unwrap_or_default()
+    });
+    let is_active = Signal::derive(move || row.with(|s| s.as_ref().is_some_and(|s| s.is_active)));
+    let endpoint = move || {
+        row.with(|s| s.as_ref().map(|s| format_endpoint(&s.ip, s.port)))
+            .unwrap_or_default()
+    };
 
     let on_launch = move |_| {
         #[cfg(target_arch = "wasm32")]
         toasts.message("Launch requires the Reforger client");
     };
 
-    let credentials = CredentialPanel::new(store, s.id.clone(), name.clone());
-    let console = CommandConsole::new(store, toasts, s.id.clone());
-    let deployments = DeploymentPanel::new(store, toasts, s.id.clone());
+    let credentials = CredentialPanel::new(store, id.clone(), name);
+    let console = CommandConsole::new(store, toasts, id.clone());
+    let deployments = DeploymentPanel::new(store, toasts, id.clone());
     let suggested_session = Signal::derive(move || deployments.latest_confirmed_session());
+    let shown_id = id.clone();
+    let edit_id = StoredValue::new(id);
 
     view! {
         <div class="flex min-h-full min-w-0 flex-1 flex-col">
             <header class="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 p-6 pb-6">
                 <div class="min-w-0">
                     <div class="flex min-w-0 items-center gap-3">
-                        <h2 class="truncate text-headline-lg text-on-surface">{name.clone()}</h2>
-                        {inactive_badge(s.is_active)}
+                        <h2 class="truncate text-headline-lg text-on-surface">{move || name.get()}</h2>
+                        {move || inactive_badge(is_active.get())}
                     </div>
-                    <div class="mt-2 inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1">
-                        <MaterialIcon name="lan" class="text-[16px] text-on-surface-variant" />
-                        <span class="font-mono text-code-md text-on-surface">{endpoint}</span>
+                    <div class="mt-2 flex flex-wrap items-center gap-2">
+                        <div class="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1">
+                            <MaterialIcon name="lan" class="text-[16px] text-on-surface-variant" />
+                            <span class="font-mono text-code-md text-on-surface">{endpoint}</span>
+                        </div>
+                        <span
+                            class="select-all font-mono text-code-md text-outline"
+                            title="Server id"
+                            data-testid="server-control-id"
+                        >
+                            {shown_id}
+                        </span>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2">
+                    <button
+                        type="button"
+                        data-testid="server-control-edit"
+                        on:click=move |_| registry.open_to_edit(edit_id.get_value())
+                        class="flex items-center gap-1.5 rounded-full border border-white/10 px-4 py-2.5 text-label-md text-on-surface transition hover:bg-white/5"
+                    >
+                        <MaterialIcon name="edit" class="text-[18px]" />
+                        "Edit"
+                    </button>
                     <button
                         type="button"
                         data-testid="server-control-credentials"
@@ -205,7 +233,7 @@ pub(super) fn server_detail(s: ServerRowDto) -> impl IntoView {
                     </button>
                 </div>
             </header>
-            {telemetry}
+            {move || row.with(|s| s.as_ref().map(telemetry_columns))}
             <div class="grid gap-6 p-6 2xl:grid-cols-2">
                 <section class="space-y-4" data-testid="server-control-fleet-commands">
                     {section_heading("terminal", "Fleet commands")}

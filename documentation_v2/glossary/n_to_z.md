@@ -144,7 +144,8 @@ See: [fleet scenario](/documentation_v2/glossary/a_to_f.md#fleet-scenario).
 
 ### server control
 
-The `/admin/server` page: the configured game servers with their live state and, for the selected
+The `/admin/server` page: the configured game servers with their live state, the server registry
+where administrators register, edit, deactivate and reactivate a server, and, for the selected
 server, its [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command), [mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment) and
 [machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential), with the [fleet scenario](/documentation_v2/glossary/a_to_f.md#fleet-scenario) registry.
 

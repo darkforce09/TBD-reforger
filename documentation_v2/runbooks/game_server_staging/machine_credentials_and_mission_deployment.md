@@ -14,8 +14,13 @@ issued once per server; binding an event and deploying a
 - The API running on the staging host
   ([host preparation](/documentation_v2/runbooks/game_server_staging/host_preparation.md)).
 - An administrator login on the website, and the staging server registered in
-  [server control](/documentation_v2/glossary/n_to_z.md#server-control) (`/admin/server`); its server
-  uuid is on its card.
+  [server control](/documentation_v2/glossary/n_to_z.md#server-control) (`/admin/server`). To register
+  it, choose "Add server" at the foot of the server list (or in the empty page), enter a name, the
+  address players connect to as a literal IPv4 or IPv6 address (a hostname or an address with a
+  `/mask` is refused), the dedicated server's game port, and optionally the modpack a deployed
+  artifact must be compiled against, then "Register server". The server's card opens with its
+  address and its server uuid; "Edit" on the card changes the registration later, and its
+  "Service" section deactivates or reactivates the server.
 - An approved [artifact](/documentation_v2/glossary/a_to_f.md#artifact) of the mission to deploy.
 - For the `curl` forms: `$ADMIN_TOKEN`, an administrator's access token, and `$API`, the API
   origin (`http://127.0.0.1:8080` on the host).
@@ -51,7 +56,9 @@ issued once per server; binding an event and deploying a
    `load_mission`.
 
 3. For an event: bind it to this server. An event bound elsewhere answers the server's roster
-   read with 403, and a deployment of its event mission here is refused.
+   read with 403, and a deployment of its event mission here is refused. In `/admin/events`,
+   select the event, choose "Edit Selected Operation", pick the server under "Game server" and
+   "Save Changes", or call the route.
 
    ```bash
    curl -s -X PATCH -H "Authorization: Bearer $ADMIN_TOKEN" -H 'Content-Type: application/json' -d '{"server_id":"<server uuid>"}' "$API/api/v1/events/<event uuid>"
@@ -130,6 +137,7 @@ Expected: `{"version":2,"eventId":…,"missionId":…,"assignments":[…],"slots
 | the deploy stops with `TBD_MOD_RUNTIME_CREDENTIAL is not a machine credential (tbdm_<32 hex>_<64 hex>)` | the value is truncated or not a platform credential (an empty one stops at `TBD_MOD_RUNTIME_CREDENTIAL is not set: add it to <path>`) | step 1, then copy the whole secret |
 | the smoke or `mod test-game-runtime-api` answers 401 with the credential | the credential is revoked or belongs to another server | issue a fresh one (step 1) and deploy again |
 | the roster answers 403 | the event is not bound to this server | step 3 |
+| "Register server" shows "The address must be a literal IPv4 or IPv6 address — not a hostname, and not a /mask" | the address is a hostname, or carries a `/mask` | enter the host's public IP address as digits, with no mask |
 | `[TBD][Mission] NO MISSION - …` (ERROR) in the server log | nothing is deployed to this server; the server stays in LOADING | step 4 |
 | `[TBD][Runtime] runtime session loop STOPPED` (ERROR) | another runtime started a session with the same credential, or the credential was revoked or rejected | give each server its own credential, then restart the game server |
 | every player hears that the event roster has not loaded on this server yet | the roster fetch fails; the `[TBD][Roster]` ERROR says why | fix the cause (no `machineCredential`, 403, 401); a running server retries on its own |
@@ -138,7 +146,9 @@ Expected: `{"version":2,"eventId":…,"missionId":…,"assignments":[…],"slots
 ## Related
 
 - [Server control page](/documentation_v2/website/frontend/pages/administration/server_control/server_control_page.md)
-  — the credentials, deployments and fleet command panels.
+  — registering and editing the server, and the credentials, deployments and fleet command panels.
+- [Event manager page](/documentation_v2/website/frontend/pages/administration/event_manager/event_manager_page.md)
+  — binding an operation to its game server.
 - [Server infrastructure domain](/apps/website/api_v2/src/server_infrastructure/README.md) — the
   credential, session and fleet command routes.
 - [Fleet command execution](/documentation_v2/fleet_host_agent/fleet_command_execution.md) — how a

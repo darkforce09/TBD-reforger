@@ -7,6 +7,7 @@ use super::fleet_scenarios::*;
 use super::machine_credentials::*;
 use super::mission_deployments::*;
 use super::mission_reviews::*;
+use super::server_registry::*;
 use super::*;
 
 /// Every route template the backend's domain route tables register.
@@ -81,6 +82,9 @@ fn every_endpoint_path_lands_on_a_registered_route() {
         operation_path("e"),
         fleet_scenarios_path(),
         fleet_scenario_path("arland"),
+        servers_path(),
+        server_path("s"),
+        required_modpack_choices_path(),
     ];
     for path in paths {
         assert!(
@@ -173,6 +177,30 @@ fn fleet_paths_name_the_registered_route_templates() {
         );
         assert!(fits(template, &path), "{path} does not fit {template}");
     }
+}
+
+/// The server registry's paths name exactly the routes the server infrastructure and content route
+/// tables register: the collection that lists and registers, the server that a change and a
+/// deactivation address, and the modpack list the registration form offers.
+#[test]
+fn server_registry_paths_name_the_registered_route_templates() {
+    let routes = backend_routes();
+    for (path, template) in [
+        (servers_path(), "/servers"),
+        (server_path("s"), "/servers/{id}"),
+        (required_modpack_choices_path(), "/modpacks"),
+    ] {
+        assert!(
+            routes.iter().any(|route| route == template),
+            "the backend no longer registers {template}"
+        );
+        assert!(fits(template, &path), "{path} does not fit {template}");
+    }
+    assert_eq!(
+        server_path("00000000-0000-4000-d000-000000000002"),
+        "/servers/00000000-0000-4000-d000-000000000002"
+    );
+    assert_eq!(server_path("s/../x"), "/servers/s%2F..%2Fx");
 }
 
 /// A `DELETE` carries its precondition in the query, as the backend's query extractor reads it.

@@ -1,12 +1,12 @@
 //! The schedule form: creating an operation on the selected day.
 //!
-//! **Role:** the frosted form that overlays the calendar — start time, optional name, the missions
-//! to attach, whether registration opens — and the publish action behind it.
+//! **Role:** the frosted form that overlays the calendar — start time, optional name, the game
+//! server, the missions to attach, whether registration opens — and the publish action behind it.
 //! **Position:** a dialog over the operations calendar, opened from the page heading or from the
 //! empty day panel.
 //! **Signals & state:** reads `selected` for the day being scheduled and the form's own `time`,
-//! `name`, `open_reg` and `staged`; `form_open` gates the dialog and `publish_busy` the button. A
-//! successful publish clears the form, shuts it, and refetches the operation list.
+//! `name`, `server_id`, `open_reg` and `staged`; `form_open` gates the dialog and `publish_busy`
+//! the button. A successful publish clears the form, shuts it, and refetches the operation list.
 //! **Invariants:** the day comes from the calendar, not from a field in this form, so the operation
 //! lands on the day the operator was looking at. Creation is two steps — the operation is created
 //! first, then each staged mission is attached to it — and every attachment is given the operation's
@@ -16,6 +16,9 @@
 
 use super::dates::{js_date, locale_date_string};
 use super::mission_picker::staged_missions;
+#[cfg(target_arch = "wasm32")]
+use super::server_choice::chosen_server_id;
+use super::server_choice::server_picker;
 use super::state::Manager;
 use crate::v2::core::ui::{cn, Dialog, MaterialIcon};
 use leptos::prelude::*;
@@ -32,6 +35,7 @@ pub(super) fn schedule_dialog(st: Manager) -> impl IntoView {
         name,
         time,
         open_reg,
+        server_id,
         staged,
         form_open,
         publish_busy,
@@ -69,6 +73,9 @@ pub(super) fn schedule_dialog(st: Manager) -> impl IntoView {
             if !nm.is_empty() {
                 body["name_override"] = serde_json::Value::String(nm);
             }
+            if let Some(server) = chosen_server_id(&server_id.get_untracked()) {
+                body["server_id"] = serde_json::Value::String(server);
+            }
             let to_attach = staged.get_untracked();
             leptos::task::spawn_local(async move {
                 match crate::v2::core::api::client::api_post::<serde_json::Value>(
@@ -102,6 +109,7 @@ pub(super) fn schedule_dialog(st: Manager) -> impl IntoView {
                             "Event published".to_string()
                         });
                         name.set(String::new());
+                        server_id.set(String::new());
                         staged.set(Vec::new());
                         open_reg.set(true);
                         form_open.set(false);
@@ -147,6 +155,7 @@ pub(super) fn schedule_dialog(st: Manager) -> impl IntoView {
                 class="mt-3 w-full rounded-full bg-white/5 px-5 py-3 text-sm text-on-surface placeholder:text-on-surface-variant/60 outline-none focus:ring-1 focus:ring-primary/50"
             />
 
+            {server_picker(st.servers, server_id)}
 
             {staged_missions(st)}
 

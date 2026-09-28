@@ -253,13 +253,6 @@ DTO in `apps/website/frontend/src/v2/core/api/dto/`. Acceptance of the API as a 
 `cargo xtask verify api-readiness`, which judges the receipts described in the
 [verification evidence](/documentation_v2/website/api_v2/verification_evidence/README.md).
 
-### Known discrepancies
-
-- The server registry writes have no page: the API serves `POST /api/v1/servers` and `PATCH` and
-  `DELETE /api/v1/servers/{id}` (`apps/website/api_v2/src/server_infrastructure/routes.rs`) and
-  accepts `server_id` on event create and update, while the server control page only lists
-  `/api/v1/servers`.
-
 ## Open work
 
 - [T-940 — Website platform: events, telemetry, admin, content](/documentation_v2/tickets/specs/t940_website_platform.md)
@@ -276,8 +269,6 @@ DTO in `apps/website/frontend/src/v2/core/api/dto/`. Acceptance of the API as a 
   (`contracts_v2/definitions/match-telemetry.schema.json`), `POST /api/v1/ingest/match-events` and
   `GET /api/v1/matches/{matchId}/events` exist; the after-action replay that plays them does
   not.
-- [T-1022 — Add website admin UI to manage game servers](/.ai/tickets/T-1022.toml) (idea, no
-  plan): a page calls the server registry writes and sends `server_id` with events.
 - [T-952 — website-api set_var mutates a shared test process](/.ai/tickets/T-952.toml) (idea, no
   plan): the pool-setting tests in `apps/website/api_v2/src/core/database/tests/connection.rs`
   stop mutating the process environment and use `DbPoolConfig::from_lookup`.

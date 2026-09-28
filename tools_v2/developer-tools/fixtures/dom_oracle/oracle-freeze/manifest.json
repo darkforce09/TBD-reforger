@@ -83,10 +83,10 @@
       "slug": "servercontrol",
       "path": "/admin/server",
       "authed": true,
-      "bytes": 187980,
-      "sha256": "24f01d8b72c2db0b6dc36e36455a6eb125424407a17e9c82ade9ef779642598e",
+      "bytes": 192421,
+      "sha256": "f91272f0d430fc553da1aa764029e73bf37a1763eadf51ab64e7094a1a0d4422",
       "goldenSource": "leptos",
-      "acceptedDelta": "B: the Administration sidebar group gains the Ballistics Catalogs link (/admin/ballistics-catalogs) as its seventh item; the whole DOM diff is that one li (ul children 6 to 7), the rest equals the previous golden; the re-captured PNG shows the same page, its glyph rasterisation differs from the previous capture"
+      "acceptedDelta": "T-1022: the picker's list ends with the Add server control (aside list children 3 to 4); the card header gains Edit before Credentials, and the address pill moves into a wrapping row beside the server id (select-all, titled Server id); the rest equals the previous golden"
     },
     {
       "slug": "announcements",

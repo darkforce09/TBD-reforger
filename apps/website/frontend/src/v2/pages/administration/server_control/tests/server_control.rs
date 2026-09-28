@@ -36,13 +36,18 @@ fn no_mock_servers_or_fabricated_console() {
     );
 }
 
+/// The list is read through the typed endpoint, which asks `GET /servers` for the rows the
+/// picker and the card render.
 #[test]
 fn loads_servers_via_typed_api() {
     let src = live();
-    let get = format!("{}{}", "api_get", "::<DataEnvelope<ServerRowDto>>");
     assert!(
-        src.contains(&get) && src.contains(r#""/servers""#),
-        "page must GET /servers as DataEnvelope<ServerRowDto> on a live path"
+        src.contains("load_servers(self.store)"),
+        "the registry must read the list through the typed endpoint on a live path"
+    );
+    assert_eq!(
+        crate::v2::core::api::endpoints::server_registry::servers_path(),
+        "/servers"
     );
 }
 
@@ -75,7 +80,8 @@ fn no_rcon_route_is_called_or_served() {
 }
 
 /// Each card builds the console, the deployments panel and the credential sheet of the server it
-/// shows, from that server's id.
+/// shows, from that server's id, and reads that server's row from the registry, so a write updates
+/// the card without rebuilding that state.
 #[test]
 fn every_card_builds_the_state_of_its_own_server() {
     let src = crate::v2::core::test_support::class_r_scrub::live_code(
@@ -86,13 +92,21 @@ fn every_card_builds_the_state_of_its_own_server() {
         "pub(super) fn server_detail(",
     );
     for needle in [
-        "CredentialPanel::new(store, s.id.clone(), name.clone())",
-        "CommandConsole::new(store, toasts, s.id.clone())",
-        "DeploymentPanel::new(store, toasts, s.id.clone())",
+        "move |_| registry.row(&id)",
+        "CredentialPanel::new(store, id.clone(), name)",
+        "CommandConsole::new(store, toasts, id.clone())",
+        "DeploymentPanel::new(store, toasts, id.clone())",
         "Signal::derive(move || deployments.latest_confirmed_session())",
+        "registry.open_to_edit(edit_id.get_value())",
     ] {
         assert!(card.contains(needle), "the card must build {needle}");
     }
+    let board = crate::v2::core::test_support::class_r_scrub::only_body(&src, "fn control_board(");
+    assert!(
+        board.contains("Some(id) => server_detail(registry, id)")
+            && board.contains(".then_some(id)"),
+        "the card is keyed on the selected id alone, so a row write never rebuilds it"
+    );
 }
 
 /// The card reads the theatre off the server row, and a server between matches reads as a dash.
@@ -185,11 +199,32 @@ fn the_card_says_no_reading_and_badges_inactive_servers() {
         "the list badges inactive rows"
     );
     assert!(
-        card.contains("inactive_badge(s.is_active)"),
+        card.contains("inactive_badge(is_active.get())"),
         "the card header badges it too"
     );
     assert!(
-        card.contains("telemetry_columns(&s)"),
+        card.contains("map(telemetry_columns)"),
         "the card renders the telemetry band"
     );
+}
+
+/// The picker offers the registration sheet at its foot, and an empty fleet offers it in the
+/// detail pane with the reason to register one.
+#[test]
+fn the_picker_and_an_empty_fleet_offer_to_add_a_server() {
+    let src = live();
+    for needle in [
+        "data-testid=\"server-control-add\"",
+        "data-testid=\"server-control-add-first\"",
+        "\"No servers configured.\"",
+        "\"Add server\"",
+    ] {
+        assert!(src.contains(needle), "the screen must render {needle}");
+    }
+    let code = crate::v2::core::test_support::class_r_scrub::live_code(
+        &crate::v2::core::test_support::pins::server_control_source(),
+    );
+    let add =
+        crate::v2::core::test_support::class_r_scrub::only_body(&code, "fn add_server_control(");
+    assert!(add.contains("registry.open_to_register()"));
 }

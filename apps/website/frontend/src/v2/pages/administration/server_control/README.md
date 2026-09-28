@@ -1,7 +1,8 @@
 # Server control page
 
 The `/admin/server` page, [server control](/documentation_v2/glossary/n_to_z.md#server-control):
-administrators pick one of the configured game servers, read its live state, issue
+administrators register game servers, change their registration and take them out of service or
+back, pick one of the configured servers, read its live state, issue
 [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command) to it, deploy a
 [mission](/documentation_v2/glossary/g_to_m.md#mission)'s approved
 [artifact](/documentation_v2/glossary/a_to_f.md#artifact) to it, keep the
@@ -17,20 +18,26 @@ apps/website/frontend/src/v2/pages/administration/server_control/
 ├── machine_credentials/      the card's credential sheet: issue with a one-time secret, list and revoke
 ├── mission_deployments/      the card's deployments panel: request, follow, list, detail and cancel
 ├── mod.rs                    the module tree; re-exports `ServerControlPage`
-├── page.rs                   `ServerControlPage`: the gate, the server list, the picker and the sheet
+├── page.rs                   `ServerControlPage`: the gate, the list states, the picker with "Add server", the sheets
 ├── server_card_telemetry.rs  the card's telemetry band: personnel, terrain, frame rate, telemetry queue
 ├── server_cards.rs           the picker's rows and the selected server's card with its readings
+├── server_registry/          the server list, the selection, and the sheet that registers, edits and deactivates
 └── tests/                    unit tests for the typed server read, the card's readings and its state
 ```
 
 ## How it works
 
-`ServerControlPage` renders `ServerControlInner` inside `AdminGate`. The inner component fetches
-the server list once and builds the one `ScenarioRegistry`, which belongs to the whole fleet, so
-the picker's heading opens its sheet. The picker opens on the first active server, else the first
-one (`pick_default_id`). `server_detail` builds the card of the selected server and, with it, that
-server's `CommandConsole`, `DeploymentPanel` and `CredentialPanel`, so switching servers never
-shows one server's commands, deployments, credentials or fresh secret under another's name.
+`ServerControlPage` renders `ServerControlInner` inside `AdminGate`. The inner component builds the
+`ServerRegistry` of [server_registry/](/apps/website/frontend/src/v2/pages/administration/server_control/server_registry/README.md),
+which reads the server list once, and the one `ScenarioRegistry`, which belongs to the whole
+fleet, so the picker's heading opens its sheet. The picker opens on the first active server, else
+the first one (`pick_default_id`), and ends with "Add server", which opens the registration sheet;
+the card's "Edit" opens the same sheet on that server. `server_detail` builds the card of the
+selected server and, with it, that server's `CommandConsole`, `DeploymentPanel` and
+`CredentialPanel`, so switching servers never shows one server's commands, deployments,
+credentials or fresh secret under another's name. The card is rebuilt only when the selection
+changes: it reads its row from the registry, so a registration, change, deactivation or
+reactivation shows at once and keeps the console's and panels' state.
 
 Nothing here reaches a host directly. A command or a deployment is a request the
 [API](/documentation_v2/glossary/a_to_f.md#api) records and answers with 202; the page then reads its
@@ -39,9 +46,8 @@ reports it. The card shows only what the server row carries: a server with no st
 zeros and dashes, a server that never reported a telemetry queue reading reads "No reading" in
 the queue column, an inactive server carries an "Inactive" badge in the picker and the card, the terrain is capitalised or a dash between matches, and "Active Mission" shows
 the current match id, since the row names no mission. The launch control only says the game client
-is needed. The page has no [RCON](/documentation_v2/glossary/n_to_z.md#rcon) console, and no control adds,
-edits or deactivates a server. Every request runs in the browser build only; a native build
-renders the failure branch.
+is needed. The page has no [RCON](/documentation_v2/glossary/n_to_z.md#rcon) console. Every request runs
+in the browser build only; a native build renders the failure branch.
 
 ## Routes
 
@@ -57,6 +63,15 @@ renders the failure branch.
   `uptime_seconds`, `server_fps`, `current_match_id`, and `telemetry_queue` as
   `TelemetryQueueDto`: `backlog`, `capacity`, `dropped_total`, `oldest_age_seconds`,
   `reported_at`).
+- The server registry (`server_registry/`):
+  - `POST /api/v1/servers`: sends a `ServerRegistration` (`name`, `ip`, `port`, and
+    `required_modpack_id` when one is chosen), read as the registered `ServerRowDto`.
+  - `PATCH /api/v1/servers/{id}`: sends a `ServerChange` naming only the changed fields among
+    `name`, `ip`, `port` and `required_modpack_id` (`null` clears it), or `{"is_active": true}` to
+    reactivate; read as the changed `ServerRowDto`.
+  - `DELETE /api/v1/servers/{id}`: deactivates the server; answered 204 with no body.
+  - The form's choices, read each time the sheet opens: `GET /api/v1/modpacks`
+    (`DataEnvelope<ModpackDto>`).
 - Fleet commands (`fleet_commands/`):
   - `GET /api/v1/servers/{id}/commands`: read as `FleetCommandList` of `FleetCommandReceipt`.
   - `POST /api/v1/servers/{id}/commands`: sends a `FleetCommandRequest` (`action`, `arguments`),
@@ -96,10 +111,23 @@ renders the failure branch.
 | below `admin` | "Admin access required." |
 | loading | "Loading servers…" |
 | failed | "Failed to load servers." |
-| picker | "Servers" with their count, "Fleet scenarios" (titled "Which scenario the fleet runs for each terrain"), and per server its name and "Online" with a pulsing dot, or "Offline", and an "Inactive" badge on an inactive server |
-| no servers | "No servers configured." |
+| picker | "Servers" with their count, "Fleet scenarios" (titled "Which scenario the fleet runs for each terrain"), per server its name and "Online" with a pulsing dot, or "Offline", and an "Inactive" badge on an inactive server, then "Add server" |
+| no servers | "No servers configured.", "Add the game server to issue its machine credentials, send it fleet commands and deploy missions to it." and "Add server" |
 | none selected | "No server selected." |
-| card | the name (with "Inactive" on an inactive server) and `ip:port`, "Credentials" and "LAUNCH & CONNECT" (which toasts "Launch requires the Reforger client"); "Active Personnel" (players / max), "Uptime" ("Nd HHh MMm", the day part dropped under a day), "Terrain", "Active Mission" (the match id), "Server FPS" ("x.y Hz"), "Mod Configuration" ("name vX") and "Telemetry Queue" (backlog / capacity, "Dropped" in the error tone above zero, "Oldest" as "Ns", "Nm SSs" or the uptime form, "Reported" in the viewer's zone); "—" and zeros without a status; "No reading" in the queue column when the server never reported one |
+| card | the name (with "Inactive" on an inactive server), `ip:port` and the server id, "Edit", "Credentials" and "LAUNCH & CONNECT" (which toasts "Launch requires the Reforger client"); "Active Personnel" (players / max), "Uptime" ("Nd HHh MMm", the day part dropped under a day), "Terrain", "Active Mission" (the match id), "Server FPS" ("x.y Hz"), "Mod Configuration" ("name vX") and "Telemetry Queue" (backlog / capacity, "Dropped" in the error tone above zero, "Oldest" as "Ns", "Nm SSs" or the uptime form, "Reported" in the viewer's zone); "—" and zeros without a status; "No reading" in the queue column when the server never reported one |
+
+### Registration sheet
+
+| State | What the viewer sees |
+|---|---|
+| adding | "Add a server" and "Register a game server to issue its machine credentials, send it fleet commands and deploy missions to it." |
+| editing | "Server settings" and "<name> · <ip>:<port>" |
+| form | "Registration": "Name" ("TBD Staging — Everon"), "Address — a literal IPv4 or IPv6 address, not a hostname" ("203.0.113.24"), "Game port" ("2001"), "Required modpack — a deployment's artifact must be compiled against it" with "No required modpack" and each modpack as "<name> v<version>", " (current)" after the current one; "Reading the modpacks…", or the failure followed by "; the required modpack stays as it is"; "Register server" or "Save changes" |
+| form checks | "The name is required", "The address is required", "The address must be a literal IPv4 or IPv6 address — not a hostname, and not a /mask", "The address must not carry the port — enter the game port in its own field", "The game port is required", "The game port must be a whole number between 1 and 65535", "Nothing to save: every field is as registered" |
+| service, active | "Service": "Active: its host agent and game runtime authenticate, and it takes fleet commands, deployments and new credentials." and "Deactivate" ("Keep it active") |
+| deactivation asked | "Deactivating takes the server out of service at once: its host agent and game runtime are refused, it takes no fleet command, deployment or new credential, and members stop seeing it. Nothing is deleted — reactivating it restores all of this with the same credentials." and "Deactivate the server" |
+| service, deactivated | "Deactivated: its host agent and game runtime are refused, it takes no fleet command, deployment or new credential, and members do not see it." and "Reactivate" |
+| toasts | "Registered <name>", "Saved <name>", "Deactivated <name>", "Reactivated <name>"; a refusal shows the API's sentence in the sheet, else "The server could not be registered", "The server's registration could not be changed", "The server could not be deactivated" or "The server could not be reactivated" |
 
 ### Fleet commands
 
@@ -147,14 +175,16 @@ renders the failure branch.
 
 ## Boundaries
 
-- Depends on: `crate::v2::core::api` (`api_get`, `DataEnvelope`, `ServerRowDto`, `ModpackDto` and
-  the command, deployment, scenario and credential DTOs and endpoint modules),
+- Depends on: `crate::v2::core::api` (`DataEnvelope`, `ServerRowDto`, `ServerRegistration`,
+  `ServerChange`, `ModpackDto` and the command, deployment, scenario and credential DTOs; the
+  server registry, command, deployment, scenario and credential endpoint modules),
   `crate::v2::core::auth` (`AuthStore`), `crate::v2::core::ui` (`AdminGate`, `SplitPane`, `Sheet`,
   `MaterialIcon`, `cn`, the toast queue) and `crate::v2::core::utils` (`utc_timestamp`,
   `clipboard`); over HTTP, the server, command, scenario and credential routes of the
   [server infrastructure](/documentation_v2/glossary/n_to_z.md#server-infrastructure) domain, the
   deployment routes and mission library of the [missions](/documentation_v2/glossary/g_to_m.md#missions)
-  domain, and the event reads of the [operations](/documentation_v2/glossary/n_to_z.md#operations) domain.
+  domain, the event reads of the [operations](/documentation_v2/glossary/n_to_z.md#operations) domain,
+  and the modpack list of the community content domain.
 - Used by: the `/admin/server` route in `apps/website/frontend/src/app_routes.rs` and
   `apps/website/frontend/src/router.rs`; the sidebar's "Server Control" link in
   `apps/website/frontend/src/v2/pages/navigation/nav_config.rs`; `server_control_source` in
@@ -163,14 +193,16 @@ renders the failure branch.
   `tools_v2/developer-tools/src/browser_testing/dom_oracle/routes.rs`.
 - Rules: the page never calls an RCON route (`no_rcon_route_is_called_or_served`) and shows no
   invented server or console (`no_mock_servers_or_fabricated_console`); every card builds the
-  state of its own server (`every_card_builds_the_state_of_its_own_server`); the default pick
-  prefers an active server (`pick_default_prefers_active`), all in `tests/server_control.rs`;
-  each panel's own rules are in its folder's README.
+  state of its own server and is keyed on the selection alone
+  (`every_card_builds_the_state_of_its_own_server`); the default pick prefers an active server
+  (`pick_default_prefers_active`); the picker and an empty fleet offer "Add server"
+  (`the_picker_and_an_empty_fleet_offer_to_add_a_server`), all in `tests/server_control.rs`; each
+  panel's own rules are in its folder's README.
 
 ## Related documentation
 
 - [Server control page](/documentation_v2/website/frontend/pages/administration/server_control/server_control_page.md)
   — the page's behaviour, what each call means server-side, its design, open work and decisions.
 - [Server infrastructure domain](/apps/website/api_v2/src/server_infrastructure/README.md) — the
-  server, command, scenario and credential routes.
+  server registry, command, scenario and credential routes.
 - [Missions domain](/apps/website/api_v2/src/missions/README.md) — the deployment routes.

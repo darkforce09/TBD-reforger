@@ -34,7 +34,7 @@ pub(in super::super) fn credential_sheet(panel: CredentialPanel) -> impl IntoVie
                     <div class="min-w-0">
                         <h2 class="text-headline-sm text-on-surface">"Machine credentials"</h2>
                         <p class="mt-1 truncate text-label-md text-on-surface-variant">
-                            {panel.server_name.get_value()}
+                            {move || panel.server_name.get()}
                         </p>
                     </div>
                     <button

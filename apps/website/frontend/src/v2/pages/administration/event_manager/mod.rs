@@ -1,13 +1,13 @@
 //! The operations calendar: scheduling, editing and cancelling the unit's operations.
 //!
 //! **Role:** declares the route component, the state every panel reads, the month grid and day
-//! panel, the schedule and edit forms, the mission pickers they share, the two destructive
-//! confirmations, and the access panel that administers one operation's policies, groups, places
-//! and participant evidence.
+//! panel, the schedule and edit forms, the mission pickers and game server choice they share, the
+//! two destructive confirmations, and the access panel that administers one operation's policies,
+//! groups, places and participant evidence.
 //! **Position:** the `/admin/events` route, in the administration hub.
 //! **Signals & state:** none at this level; the page builds the state and hands it down.
 //! **Invariants:** every panel takes the same copyable state handle rather than a parameter list,
-//! so there is exactly one source for the calendar's position, the two forms' fields and the three
+//! so there is exactly one source for the calendar's position, the two forms' fields and the four
 //! fetches behind them.
 #![allow(dead_code)]
 
@@ -20,6 +20,7 @@ mod lifecycle;
 mod mission_picker;
 mod page;
 mod schedule_dialog;
+mod server_choice;
 mod state;
 
 pub use page::EventManagerPage;

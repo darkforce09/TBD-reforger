@@ -2,8 +2,9 @@
 
 # Server control page
 
-The `/admin/server` page, titled Server Control: administrators pick one of the configured game
-servers, read its live state, issue [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command) to
+The `/admin/server` page, titled Server Control: administrators register game servers, change
+their registration and take them out of service or back, pick one of the configured servers, read
+its live state, issue [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command) to
 it and follow each to its outcome, deploy a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s
 approved [artifact](/documentation_v2/glossary/a_to_f.md#artifact) to it, keep the
 [registry](/documentation_v2/glossary/n_to_z.md#registry) of
@@ -16,9 +17,10 @@ session reports.
 ## Where it lives
 
 - Code: [`apps/website/frontend/src/v2/pages/administration/server_control/`](/apps/website/frontend/src/v2/pages/administration/server_control/):
-  `page.rs` holds the route component `ServerControlPage`, the server list fetch and the picker;
+  `page.rs` holds the route component `ServerControlPage`, the list states and the picker;
   `server_cards.rs` the server list rows and the selected server's card, whose telemetry band is
-  `server_card_telemetry.rs`; four subfolders hold
+  `server_card_telemetry.rs`; `server_registry/` holds the server list, the selection and the
+  registration sheet; four subfolders hold
   the card's panels: `fleet_commands/` (the command console), `mission_deployments/` (the
   deployments panel), `fleet_scenarios/` (the fleet scenario sheet) and `machine_credentials/`
   (the credential sheet). The folder's
@@ -48,12 +50,15 @@ mention.
 ### Servers and the server card
 
 1. The server list loads on arrival. The picker counts the servers, offers the "Fleet scenarios"
-   button, and marks each server online, with a pulsing dot, or offline. A server outside the
-   configured fleet (`is_active` false) carries an "Inactive" badge.
-2. The first active server opens, else the first one; the detail says so when there are no
-   servers, or none is selected.
-3. The card shows the server's name (with the "Inactive" badge when it is inactive) and address,
-   a "Credentials" button that opens the credential sheet, and a launch control that only toasts
+   button, marks each server online, with a pulsing dot, or offline, and ends with "Add server". A
+   server outside the configured fleet (`is_active` false) carries an "Inactive" badge.
+2. The first active server opens, else the first one; the detail says when none is selected. With
+   no server configured it says so, explains that a registered server is what gets machine
+   credentials, fleet commands and deployments, and offers "Add server".
+3. The card shows the server's name (with the "Inactive" badge when it is inactive), its address
+   and its id, an "Edit" button that opens the registration sheet on it, a "Credentials" button
+   that opens the
+   credential sheet, and a launch control that only toasts
    that the Reforger client is needed. Four telemetry columns follow: the players over the maximum
    and the uptime; the terrain and the active mission, which shows the current match id, since
    the server row names no mission; the server FPS and the required modpack; the telemetry queue
@@ -63,8 +68,26 @@ mention.
    server that never reported a queue reading shows "No reading" in the queue column. The
    [telemetry specification](/documentation_v2/website/api_v2/verification_evidence/telemetry.md#game-runtime-telemetry-queue)
    defines the reading.
-4. The page offers no way to add, edit or deactivate a server: the registry's write routes are
-   API-only.
+
+### Registering and editing servers
+
+1. "Add server" opens the registration sheet, "Add a server": a name, an address, a game port
+   and an optional required modpack, chosen from the modpacks read when the sheet opens. "Edit" on
+   a card opens it as "Server settings", filled from the server's row.
+2. The form is checked as the API checks it before anything is sent: the name is trimmed and
+   required; the address must be a literal IPv4 or IPv6 address — not a hostname, and not a
+   `/mask` — and an address typed with its port is told to put the port in its own field; the game
+   port is a whole number from 1 to 65535. The address is sent in its canonical form.
+3. "Register server" adds the answered server at the end of the picker and selects it, so its
+   card, with "Credentials", shows at once. "Save changes" sends only the fields that differ from
+   the server's row, clearing the required modpack with `null`; with nothing changed it says so
+   and sends nothing. A refusal shows the API's sentence in the sheet and keeps the form.
+4. The sheet's "Service" section says whether the server is active. "Deactivate" asks first,
+   explaining that the server's host agent and game runtime are refused at once, that it takes no
+   fleet command, deployment or new credential, that members stop seeing it, and that nothing is
+   deleted. A deactivated server offers "Reactivate", which restores it with the same
+   credentials. Each change updates the card in place, so its command console, deployments and
+   credential sheet keep their state.
 
 ### Fleet commands
 
@@ -138,12 +161,6 @@ mention.
    stops the credential at once and ends every game-runtime session it authenticated, leaving the
    server's other credentials untouched.
 
-### Known discrepancies
-
-- The deployment form offers event missions only from operations whose server is this one, and
-  no page sets an operation's server: the event manager's forms never send `server_id`, which the
-  events API accepts. An operation gets a server only through the API.
-
 ## Data
 
 The README's [Data](/apps/website/frontend/src/v2/pages/administration/server_control/README.md#data)
@@ -153,6 +170,26 @@ lists each call with the DTO it reads or sends. Server-side:
   `apps/website/api_v2/src/server_infrastructure/handlers/server_intel.rs`): every server,
   active or not, in name order, each with its cached
   status row, its required modpack and the terrain of its current match.
+- `POST /api/v1/servers` (`create_server` in
+  `apps/website/api_v2/src/server_infrastructure/handlers/server_registry.rs`): registers a
+  server, active unless the body says otherwise, and answers 201 with its row, whose `status` and
+  `terrain` are `null` until the server reports. It trims the name and refuses a blank one
+  ("name is required"), refuses an `ip` that is not a literal address ("ip must be a literal IPv4
+  or IPv6 address — not a hostname, and not a /mask"): the column is `inet`, which cannot hold a
+  hostname and would silently drop a mask. It refuses a port outside 1 to 65535 and an unknown
+  `required_modpack_id`, and records `server.create`.
+- `PATCH /api/v1/servers/{id}` (`update_server`): changes the fields the body names, with the same
+  checks; `required_modpack_id: null` clears the requirement, `is_active` deactivates or
+  reactivates, and a body naming nothing is refused. It answers the changed row and records
+  `server.update`, at warning severity when it deactivates.
+- `DELETE /api/v1/servers/{id}` (`deactivate_server`): sets `is_active` to false and nothing
+  else, answers 204 even for a server already inactive, and records `server.deactivate` at
+  warning severity. The row, its credentials and its history stay; there is no hard delete. A
+  deactivated server's machine credentials are refused (403 "the credential's server is
+  deactivated"), it is refused commands, deployments (`SERVER_INACTIVE`) and new credentials, and
+  members no longer list it.
+- `GET /api/v1/modpacks` (`list_modpacks` in the community content domain): every modpack, for
+  the registration form's required-modpack choice.
 - `GET /api/v1/servers/{id}/commands` (`list_server_commands` in
   `apps/website/api_v2/src/server_infrastructure/handlers/fleet_commands.rs`): the server's
   commands, newest first, 50 by default.
@@ -209,17 +246,17 @@ lists each call with the DTO it reads or sends. Server-side:
 ## Design
 
 - A full-bleed `SplitPane` over the topographic backdrop: a 17rem picker and the server card as
-  the detail. The fleet scenario and credential sheets slide in from the side. The layout as built
-  (the address is a placeholder):
+  the detail. The registration, fleet scenario and credential sheets slide in from the side. The
+  layout as built (the address is a placeholder):
 
 ```text
 +-----------------+-----------------------------------------------------------+
-| SERVERS 3       | TBD Primary — Everon          [Credentials] [LAUNCH ...]  |
-| [Fleet scen.]   | <ip>:<port>                                               |
+| SERVERS 3       | TBD Primary — Everon   [Edit] [Credentials] [LAUNCH ...]  |
+| [Fleet scen.]   | <ip>:<port>  <server id>                                  |
 | ● Primary       |-----------------------------------------------------------|
 | ○ Secondary [I] | PERSONNEL 47/64 | TERRAIN Everon | FPS 58.7 | QUEUE 3/512 |
 | ○ Staging   [I] |-----------------------------------------------------------|
-|                 | FLEET COMMANDS              | MISSION DEPLOYMENTS         |
+| [+ Add server]  | FLEET COMMANDS              | MISSION DEPLOYMENTS         |
 |                 | [Start][Stop][Restart]      | [Request a deployment]      |
 |                 | [List players]              |  mission v  event mission v |
 |                 | Broadcast [ message ] [>]   |  [Deploy]                   |
@@ -236,6 +273,13 @@ FLEET SCENARIOS SHEET (side sheet)            CREDENTIALS SHEET (side sheet)
 |   Updated by you, …        [Edit][Remove]|  | revoke with a reason        |
 | Register or replace: [terrain][name]     |
 |   [scenario id]              [Save]      |
+
+REGISTRATION SHEET (side sheet: "Add a server", or "Server settings" from Edit)
+| Name [TBD Staging — Everon]                     |
+| Address [203.0.113.24]          Game port [2001] |
+| Required modpack [No required modpack v]        |
+|                       [Register server | Save]  |
+| Service: Active …                  [Deactivate] |
 ```
 
 - No visual reference set exists for this page, and the archived platform spec has no section
@@ -243,9 +287,6 @@ FLEET SCENARIOS SHEET (side sheet)            CREDENTIALS SHEET (side sheet)
 
 ## Open work
 
-- [T-1022 — Add website admin UI to manage game servers](/.ai/tickets/T-1022.toml) (idea, no
-  plan): the page creates, edits and deactivates servers, which the API already allows, and the
-  event manager sets an operation's server, so the deployment form can offer its event missions.
 - [T-086 — Server Control + RCON API](/.ai/tickets/T-086.toml) (deferred, no plan): a live server
   control panel wired to an RCON backend; the page has no RCON console and calls no RCON route.
 
@@ -260,5 +301,10 @@ FLEET SCENARIOS SHEET (side sheet)            CREDENTIALS SHEET (side sheet)
   deployment.
 - A credential's secret is shown once and never stored in the page: closing the sheet discards
   it, and the list shows credentials without secrets.
+- A server leaves the fleet only by deactivation, which the page offers with its consequences
+  stated and undoes with "Reactivate": the API keeps every server row, because its statuses,
+  credentials, commands and deployments refer to it.
+- The registration form refuses a hostname rather than resolving it: the API stores a literal
+  address, and a name resolved in the browser could differ from the one players resolve.
 - Process control, the player list, broadcasts and kicks are fleet commands and loading a mission
   is a deployment; the page has no RCON console.

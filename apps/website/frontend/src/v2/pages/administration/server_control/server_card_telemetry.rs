@@ -5,8 +5,9 @@
 //! they show — the player count and uptime, the terrain and current match, the frame rate and
 //! modpack, and the telemetry queue reading (backlog against capacity, dropped total, oldest
 //! entry age and when it was reported).
-//! **Position:** called by [`super::server_cards::server_detail`] with the selected server row.
-//! **Signals & state:** none — the row is read once.
+//! **Position:** called by [`super::server_cards::server_detail`] with the selected server row,
+//! and again whenever a registry write changes that row.
+//! **Signals & state:** none — each call reads the row it is given once.
 //! **Invariants:** the band shows only what `GET /servers` carries: a server with no status reads
 //! as zeros and dashes, and a server that never reported a queue reading says "No reading"
 //! rather than showing zeros that would claim an empty queue. Dropped telemetry above zero renders

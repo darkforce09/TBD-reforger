@@ -6,7 +6,8 @@
 //! **Position:** a side sheet over the server control screen, opened from the selected server's
 //! header.
 //! **Signals & state:** [`CredentialPanel`] is one copyable handle, created by the server card for
-//! the server it shows. The issued secret lives in one signal, and nowhere else: it is cleared when
+//! the server it shows, reading that server's name from the card so a renamed server is named at
+//! once. The issued secret lives in one signal, and nowhere else: it is cleared when
 //! the operator says it is stored and whenever the sheet closes, and it is never written to storage
 //! or a log.
 //! **Invariants:** the secret is shown exactly once, because the backend never shows it again; the
@@ -46,7 +47,8 @@ pub(super) struct IssuedSecret {
 pub(super) struct CredentialPanel {
     pub(super) store: AuthStore,
     pub(super) server_id: StoredValue<String>,
-    pub(super) server_name: StoredValue<String>,
+    /// The server's name as the card reads it from the registry.
+    pub(super) server_name: Signal<String>,
     pub(super) open: RwSignal<bool>,
     pub(super) list: RwSignal<CredentialList>,
     pub(super) busy: RwSignal<bool>,
@@ -56,11 +58,11 @@ pub(super) struct CredentialPanel {
 
 impl CredentialPanel {
     /// A shut sheet for one server, owned by the server card that creates it.
-    pub(super) fn new(store: AuthStore, server_id: String, server_name: String) -> Self {
+    pub(super) fn new(store: AuthStore, server_id: String, server_name: Signal<String>) -> Self {
         let panel = Self {
             store,
             server_id: StoredValue::new(server_id),
-            server_name: StoredValue::new(server_name),
+            server_name,
             open: RwSignal::new(false),
             list: RwSignal::new(CredentialList::Idle),
             busy: RwSignal::new(false),

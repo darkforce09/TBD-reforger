@@ -234,6 +234,7 @@ The capture window runs from just before the first indexed request to just after
 | `POST /api/v1/servers/00000000-0000-4000-d000-000000000001/credentials` | `/secret` | `machine_credential_secret`: a random secret shown once |
 | `DELETE /api/v1/servers/00000000-0000-4000-d000-000000000002/credentials/00000000-0000-4000-e000-000000000004?reason=Host%20retired` | `/revoked_at` | `request_time`: stamped when the request runs |
 | `PUT /api/v1/fleet/scenarios/everon` | `/updated_at` | `request_time`: stamped when the request runs |
+| `POST /api/v1/servers` | `/id` | `server_uuid`: an id the server generates for the created row |
 
 ### Equipment data viewer goldens
 
@@ -283,8 +284,7 @@ scripts:
   says `partial`;
 - every body builder emits only keys of its cited definition, and every constant group holds only
   values of its cited schema enum;
-- `TBD_RosterLoader.c` `WIRE_VERSION` equals the schema's const and the `version` the backend
-  emits;
+- `TBD_RosterLoader.c` `WIRE_VERSION` equals the schema's const and the `version` the backend emits;
 - the mod's accepted mission `schemaVersion` window contains the mission compiler's version;
 - every mod JSON DTO that crosses the API boundary cites a contract.
 

@@ -1,4 +1,5 @@
-//! Captured-response round trips for server rows, and the telemetry frame decoder.
+//! Captured-response round trips for server rows and the registry's writes, and the telemetry
+//! frame decoder.
 
 use super::*;
 use crate::v2::core::api::dto::servers::is_power_of_ten;
@@ -34,6 +35,76 @@ fn server_rows_carry_the_queue_reading_only_where_one_was_reported() {
         queue_of("00000000-0000-4000-d000-000000000002"),
         Some(None),
         "a status without a reading has no telemetry_queue"
+    );
+}
+
+// ── server registry writes ──
+// A registration's id is server-generated; its golden holds the normalisation table's placeholder.
+
+/// The registration answer is a row of the list: active, with no status and no terrain yet, and
+/// the modpack it requires.
+#[test]
+fn server_registered() {
+    const G: &str = golden!("POST__servers.json");
+    assert_golden::<ServerRowDto>(G, &[]);
+    let row: ServerRowDto = serde_json::from_str(G).unwrap();
+    assert!(row.is_active && row.status.is_none() && row.terrain.is_none());
+    assert_eq!(
+        row.required_modpack
+            .as_ref()
+            .map(|pack| pack.modpack.id.as_str()),
+        row.required_modpack_id.as_deref()
+    );
+}
+
+/// The change answer is the changed row: the new port, and no modpack keys once the requirement
+/// is cleared.
+#[test]
+fn server_changed() {
+    const G: &str = golden!("PATCH__servers__00000000-0000-4000-d000-000000000002.json");
+    assert_golden::<ServerRowDto>(G, &[]);
+    let row: ServerRowDto = serde_json::from_str(G).unwrap();
+    assert_eq!(row.port, 2012);
+    assert!(row.required_modpack_id.is_none() && row.required_modpack.is_none());
+}
+
+/// The captured request bodies round-trip through their DTOs: the registration names its fields
+/// and its modpack; the change names only what it changes and clears the modpack with `null`.
+#[test]
+fn server_registration_and_change_bodies() {
+    assert_golden::<ServerRegistration>(golden!("POST__servers.request.json"), &[]);
+    const CHANGE: &str =
+        golden!("PATCH__servers__00000000-0000-4000-d000-000000000002.request.json");
+    assert_golden::<ServerChange>(CHANGE, &[]);
+    let change: ServerChange = serde_json::from_str(CHANGE).unwrap();
+    assert_eq!(
+        change,
+        ServerChange {
+            port: Some(2012),
+            required_modpack_id: Some(None),
+            ..ServerChange::default()
+        }
+    );
+    assert_eq!(
+        serde_json::to_value(ServerChange::default()).unwrap(),
+        serde_json::json!({}),
+        "an absent key is never written"
+    );
+    assert_eq!(
+        serde_json::to_value(ServerChange {
+            required_modpack_id: Some(Some("00000000-0000-4000-a000-000000000001".into())),
+            is_active: Some(true),
+            ..ServerChange::default()
+        })
+        .unwrap(),
+        serde_json::json!({
+            "is_active": true,
+            "required_modpack_id": "00000000-0000-4000-a000-000000000001"
+        })
+    );
+    assert!(
+        serde_json::from_str::<ServerChange>(r#"{"hostname": "tbd.example.com"}"#).is_err(),
+        "a key the contract does not define is refused"
     );
 }
 

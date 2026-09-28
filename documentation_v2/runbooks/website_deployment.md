@@ -325,7 +325,8 @@ run one or the other.
 
 Each game server signs in to the API with its own
 [machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential), which an administrator
-issues on the [Server Control](/documentation_v2/glossary/n_to_z.md#server-control) page (`/admin/server`; `POST /api/v1/servers/{id}/credentials`). The
+issues on the [Server Control](/documentation_v2/glossary/n_to_z.md#server-control) page (`/admin/server`; `POST /api/v1/servers/{id}/credentials`)
+once the server is registered there with "Add server" (`POST /api/v1/servers`). The
 secret, `tbdm_…`, is shown once; revoking it stops its executor at the next request.
 
 | Executor | Credential kind | Where the secret goes | Commands it runs |

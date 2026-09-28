@@ -15,6 +15,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use super::common::absent_null_or_value;
+
 /// One vehicle of the identification table; the list is ordered by name, then id.
 /// @contract vehicle-database.schema.json#/definitions/Vehicle
 #[allow(dead_code)]
@@ -87,38 +89,6 @@ pub struct VehiclePatch {
         with = "absent_null_or_value"
     )]
     pub profile_image_url: Option<Option<String>>,
-}
-
-/// The wire form of a patch field that tells an absent key, `null` and a value apart.
-///
-/// `serde` reads a present `null` into an `Option<Option<T>>` as the outer `None`, the same as an
-/// absent key. Reading a present key as `Some(inner)`, and leaving the absent key to
-/// `#[serde(default)]`, keeps `null` as `Some(None)`; writing skips the outer `None` through
-/// `skip_serializing_if` and writes the inner option as `null` or the value.
-mod absent_null_or_value {
-    use serde::{Deserialize, Deserializer, Serialize, Serializer};
-
-    /// Writes a present key: `null` for `Some(None)`, the value for `Some(Some(value))`. The outer
-    /// `None` is skipped before this runs, and would write `null` if it were not.
-    pub fn serialize<T, S>(field: &Option<Option<T>>, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        T: Serialize,
-        S: Serializer,
-    {
-        match field {
-            Some(inner) => inner.serialize(serializer),
-            None => serializer.serialize_none(),
-        }
-    }
-
-    /// Reads a present key: `null` becomes `Some(None)`, a value `Some(Some(value))`.
-    pub fn deserialize<'de, T, D>(deserializer: D) -> Result<Option<Option<T>>, D::Error>
-    where
-        T: Deserialize<'de>,
-        D: Deserializer<'de>,
-    {
-        Option::<T>::deserialize(deserializer).map(Some)
-    }
 }
 
 #[cfg(test)]

@@ -88,3 +88,5 @@
 201	/api/v1/servers/00000000-0000-4000-d000-000000000001/credentials	POST__servers__00000000-0000-4000-d000-000000000001__credentials.json	400B
 200	/api/v1/servers/00000000-0000-4000-d000-000000000002/credentials/00000000-0000-4000-e000-000000000004?reason=Host%20retired	DELETE__servers__00000000-0000-4000-d000-000000000002__credentials__00000000-0000-4000-e000-000000000004.json	365B
 200	/api/v1/fleet/scenarios/everon	PUT__fleet__scenarios__everon.json	210B
+201	/api/v1/servers	POST__servers.json	602B
+200	/api/v1/servers/00000000-0000-4000-d000-000000000002	PATCH__servers__00000000-0000-4000-d000-000000000002.json	410B

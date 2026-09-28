@@ -82,6 +82,7 @@ const CREDENTIALS: &str = "/api/v1/servers/00000000-0000-4000-d000-000000000001/
 const CREDENTIAL_REVOKE: &str = "/api/v1/servers/00000000-0000-4000-d000-000000000002\
     /credentials/00000000-0000-4000-e000-000000000004?reason=Host%20retired";
 const FLEET_SCENARIO: &str = "/api/v1/fleet/scenarios/everon";
+const SERVERS: &str = "/api/v1/servers";
 
 /// Every normalised field, grouped by golden in index order.
 pub const NORMALISED_FIELDS: &[NormalisedField] = &[
@@ -164,4 +165,5 @@ pub const NORMALISED_FIELDS: &[NormalisedField] = &[
     field("POST", CREDENTIALS, "/secret", MachineCredentialSecret),
     field("DELETE", CREDENTIAL_REVOKE, "/revoked_at", RequestTime),
     field("PUT", FLEET_SCENARIO, "/updated_at", RequestTime),
+    field("POST", SERVERS, "/id", ServerUuid),
 ];

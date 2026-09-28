@@ -1,23 +1,26 @@
 //! Everything the operations calendar remembers, and the reads derived from it.
 //!
 //! **Role:** one copyable handle holding the calendar's position, the two dialogs' form fields,
-//! the in-flight flags that keep a double click from sending a second request, and the three
+//! the in-flight flags that keep a double click from sending a second request, and the four
 //! fetches the screen runs. The panels take this handle instead of a parameter list.
 //! **Position:** created once by the route component; every panel and every action reads it.
 //! **Signals & state:** `view` is the month on screen and `selected` the highlighted day;
 //! `selected_event` the operation the day panel has focus on. `events` lists every operation in
-//! every state, `missions` the global library the attach pickers offer, and `hub` the attached
-//! roster of the operation the edit dialog is open on. The `*_busy` flags are set around their
-//! request and cleared when it settles. `access` is the access panel's own handle.
+//! every state, `missions` the global library the attach pickers offer, `servers` the game servers
+//! both forms offer, and `hub` the attached roster of the operation the edit dialog is open on. The
+//! `*_busy` flags are set around their request and cleared when it settles. `access` is the access
+//! panel's own handle.
 //! **Invariants:** the resources are browser-only — a native build resolves each to nothing.
 //! `hub` is keyed on the edit dialog being open, so closing it stops fetching, and it answers with
 //! the event id it belongs to because a resource keeps serving its previous value while the next
-//! run is in flight. Days are grouped by the **local** calendar day of each start time, so the
-//! grid, the grouping and the forms all agree on which day an operation is on.
+//! run is in flight; `servers` is keyed on either form being open, so the calendar alone reads no
+//! server. Days are grouped by the **local** calendar day of each start time, so the grid, the
+//! grouping and the forms all agree on which day an operation is on.
 #![allow(dead_code)]
 
 use super::access::AccessPanel;
 use super::dates::{day_key, iso_day_key};
+use super::server_choice::ServerChoices;
 #[cfg(target_arch = "wasm32")]
 use crate::v2::core::api::dto::EventHub;
 use crate::v2::core::api::dto::{EventListItem, EventMissionDossier, MissionCard, Paginated};
@@ -57,6 +60,8 @@ pub(super) struct Manager {
     pub(super) events: LocalResource<Option<Paginated<EventListItem>>>,
     /// The global mission library, for both attach pickers.
     pub(super) missions: LocalResource<Option<Paginated<MissionCard>>>,
+    /// The game servers both forms offer, read while either form is open.
+    pub(super) servers: LocalResource<ServerChoices>,
     /// The attached roster of the operation the edit dialog is open on.
     pub(super) hub: LocalResource<Roster>,
     /// The id of the operation the day panel has focus on.
@@ -67,6 +72,8 @@ pub(super) struct Manager {
     pub(super) time: RwSignal<String>,
     /// Schedule form: whether registration opens immediately.
     pub(super) open_reg: RwSignal<bool>,
+    /// Schedule form: the chosen game server's id; empty for none.
+    pub(super) server_id: RwSignal<String>,
     /// Schedule form: the (mission id, title) pairs staged for attachment on publish.
     pub(super) staged: RwSignal<Vec<(String, String)>>,
     /// Whether the schedule form's attach picker is dropped down.
@@ -99,6 +106,8 @@ pub(super) struct Manager {
     pub(super) edit_reg_open: RwSignal<bool>,
     /// Edit form: the lifecycle state picked.
     pub(super) edit_status: RwSignal<String>,
+    /// Edit form: the chosen game server's id; empty for none.
+    pub(super) edit_server_id: RwSignal<String>,
     /// Set while the edit save is in flight.
     pub(super) save_busy: RwSignal<bool>,
     /// The (attachment id, title) the detach confirmation is armed for.
@@ -116,7 +125,7 @@ pub(super) struct Manager {
 }
 
 impl Manager {
-    /// Build the screen's state: today's position, empty forms, and the three fetches.
+    /// Build the screen's state: today's position, empty forms, and the four fetches.
     ///
     /// Must be called from inside the route component, so the resources belong to that owner and
     /// are disposed with it.
@@ -169,8 +178,34 @@ impl Manager {
             }
         });
 
+        let form_open = RwSignal::new(false);
         let edit_open = RwSignal::new(false);
         let selected_event = RwSignal::new(None::<String>);
+
+        // Read each time a form opens, so a server registered meanwhile is offered; the calendar
+        // alone never asks for the servers.
+        let servers = LocalResource::new(move || {
+            let wanted = form_open.get() || edit_open.get();
+            async move {
+                #[cfg(target_arch = "wasm32")]
+                {
+                    if !wanted {
+                        return ServerChoices::Idle;
+                    }
+                    match crate::v2::core::api::endpoints::server_registry::load_servers(store)
+                        .await
+                    {
+                        Ok(list) => ServerChoices::Loaded(list.data),
+                        Err(_) => ServerChoices::Failed,
+                    }
+                }
+                #[cfg(not(target_arch = "wasm32"))]
+                {
+                    let _ = (store, wanted);
+                    ServerChoices::Idle
+                }
+            }
+        });
 
         // The attachment id the detach request keys on exists only on the hub payload — the list
         // row carries a count and nothing else. Keyed on the dialog rather than on selection so
@@ -210,14 +245,16 @@ impl Manager {
             selected,
             events,
             missions,
+            servers,
             hub,
             selected_event,
             name: RwSignal::new(String::new()),
             time: RwSignal::new("19:00".to_string()),
             open_reg: RwSignal::new(true),
+            server_id: RwSignal::new(String::new()),
             staged: RwSignal::new(Vec::<(String, String)>::new()),
             attach_open: RwSignal::new(false),
-            form_open: RwSignal::new(false),
+            form_open,
             confirm_open: RwSignal::new(false),
             publish_busy: RwSignal::new(false),
             delete_busy: RwSignal::new(false),
@@ -231,6 +268,7 @@ impl Manager {
             edit_max_slots: RwSignal::new(String::new()),
             edit_reg_open: RwSignal::new(true),
             edit_status: RwSignal::new(String::new()),
+            edit_server_id: RwSignal::new(String::new()),
             save_busy: RwSignal::new(false),
             detach_target: RwSignal::new(None::<(String, String)>),
             detach_open: RwSignal::new(false),

@@ -12,7 +12,7 @@ apps/website/frontend/src/v2/core/api/dto/
 ├── administration.rs               the personnel roster page, audit lines, the audit stream's ready and reset
 ├── auth.rs                         the viewer's profile, the Arma link, member rows and the member search page
 ├── ballistics_catalogs.rs          the stored catalog versions, the map engine's catalog document, the upload report
-├── common.rs                       the list envelopes: `Paginated`, `DataEnvelope`, `CursorList`
+├── common.rs                       the list envelopes and `absent_null_or_value`, the patch field's wire form
 ├── content.rs                      modpack rows with their mods, the current modpack, announcement rows
 ├── equipment_data_viewer/          the equipment data viewer's read-only pages, one module per endpoint family
 ├── event_access_administration.rs  an event's access policies, groups, pools and every change body
@@ -27,7 +27,7 @@ apps/website/frontend/src/v2/core/api/dto/
 ├── missions.rs                     mission cards, rows, detail and versions; armory; approval rows
 ├── mod.rs                          the module tree; re-exports the DTOs flat, but for five modules
 ├── registry.rs                     registry items, compatibility edges, cargo defaults and factions
-├── servers.rs                      server rows, the live status frame with its telemetry queue, credentials
+├── servers.rs                      server rows, registration and change bodies, the status frame, credentials
 ├── telemetry.rs                    the dashboard summary with its fleet, and the leaderboards
 ├── tests/                          unit tests for the golden round trips and the fixture-free shapes
 ├── vehicles.rs                     vehicle database rows, the create and replace body, the three-state patch
@@ -75,9 +75,11 @@ modules, check the stream events, write bodies and refusals no capture carries.
   formatting-guide capture shows every variant (`tests/wiki.rs` checks that it still does).
   `WikiSaveRequest` always sends `base_revision`, `null` when the save creates the page.
 - `VehiclePatch` tells an absent key, `null` and a value apart for each optional field
-  (`Option<Option<String>>` through `absent_null_or_value`): absent leaves the field, `null`
-  clears it, a value sets it. A required field is absent or a value, because the API refuses a
-  cleared one.
+  (`Option<Option<String>>` through `absent_null_or_value` in `common.rs`): absent leaves the
+  field, `null` clears it, a value sets it. A required field is absent or a value, because the API
+  refuses a cleared one. `ServerChange`, the server registry's `PATCH` body, reads its
+  `required_modpack_id` the same way, and a server registration or change answers with the
+  `ServerRowDto` the server list reads.
 - A fire mission's solution (the battery, each gun's charge rows with their refusals and wind
   corrections, the dispersion, the time fuze with its burst-point aim, the crest clearance) and a
   ballistics catalog document are the map engine's own types, re-exported, so the mortar

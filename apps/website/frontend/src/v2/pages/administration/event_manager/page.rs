@@ -4,7 +4,7 @@
 //! panels and the access sheet in the order the layout depends on.
 //! **Position:** the `/admin/events` route, rendered inside the navigation frame.
 //! **Signals & state:** creates the [`Manager`] handle every panel below reads; owns nothing else.
-//! **Invariants:** the state is built inside this component, so its signals and its three fetches
+//! **Invariants:** the state is built inside this component, so its signals and its four fetches
 //! belong to this owner and are disposed with the route. The detach confirmation is rendered last
 //! because it and the edit form share a stacking level, and document order is what puts it on top.
 #![allow(dead_code)]
