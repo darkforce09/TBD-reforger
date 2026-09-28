@@ -85,5 +85,8 @@ tools_v2/xtask/src/commands/deploy/website/
   reload names the Caddyfile where the compose service mounts it, and the Caddyfile's site root
   is where it mounts the app (`the_caddy_service_serves_what_the_caddyfile_and_the_reload_name`);
   the state folder is the one the API unit declares
-  (`the_unit_template_declares_the_state_directory_the_deploy_moves_into`); the install command
+  (`the_unit_template_declares_the_state_directory_the_deploy_moves_into`); the
+  `apps/website/api_v2/.env.example` the host's `.env` starts from sets none of the variables the
+  API unit pins, since a value in the `.env` overrides the unit's
+  (`the_env_template_sets_none_of_the_variables_the_unit_pins`); the install command
   renders the shipped template (`the_unit_install_command_renders_the_shipped_template_for_the_remote_dir`).

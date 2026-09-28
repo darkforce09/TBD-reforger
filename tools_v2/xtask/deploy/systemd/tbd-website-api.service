@@ -24,11 +24,18 @@
 ;
 ; ── WHY THE RUNTIME DIRECTORIES ARE SET EXPLICITLY ──────────────────────────────────────────
 ;
-; The API writes CMS uploads (served back at /uploads). Outside development it refuses to boot
-; unless UPLOAD_DIR is named absolutely, so that what it writes never lands inside the checkout the
-; deploy rsyncs with --delete. systemd creates %S/tbd-website-api (StateDirectory=), and
+; The API writes CMS uploads (served back at /uploads) and the equipment datasets it imports, with
+; their indexes. Outside development it refuses to boot unless UPLOAD_DIR is named absolutely, and
+; refuses an EQUIPMENT_DATA_DIR that is set but relative, so that what it writes never lands inside
+; the checkout the deploy rsyncs with --delete. systemd creates %S/tbd-website-api
+; (StateDirectory=); the API creates uploads/ at boot and equipment/ on its first import, and
 ; `cargo xtask deploy website` moves any uploads found under apps/website/api_v2/uploads into it
 ; before restarting this unit.
+;
+; The .env loaded below must leave MAP_ASSETS_DIR, GLYPH_ASSETS_DIR, UPLOAD_DIR and
+; EQUIPMENT_DATA_DIR out: systemd lets an EnvironmentFile= value override an Environment= line for
+; the same variable, so a path set there replaces the pin here, and a relative UPLOAD_DIR or
+; EQUIPMENT_DATA_DIR stops the boot outside development.
 
 [Unit]
 Description=TBD Reforger website API
@@ -51,6 +58,10 @@ Environment=GLYPH_ASSETS_DIR=/TBD_REPO_DIR_PLACEHOLDER/assets_v2/glyphs
 ; note above; `%S` is $XDG_STATE_HOME (~/.local/state) for a user unit.
 StateDirectory=tbd-website-api
 Environment=UPLOAD_DIR=%S/tbd-website-api/uploads
+
+; The imported equipment datasets and their indexes: runtime storage like the uploads, so absolute
+; outside development. Leave EQUIPMENT_DATA_DIR out of the .env; a value there overrides this line.
+Environment=EQUIPMENT_DATA_DIR=%S/tbd-website-api/equipment
 
 ExecStart=/TBD_REPO_DIR_PLACEHOLDER/target/release/api
 

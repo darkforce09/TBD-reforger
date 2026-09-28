@@ -19,8 +19,9 @@ there is one, then reads the process environment; a variable already exported wi
 file. It fills the defaults and hands the result to a validation step that fails boot with a
 `ConfigError` naming the variable:
 `DATABASE_URL` or `JWT_SECRET` empty; outside development, a blank `DISCORD_CLIENT_ID`,
-`DISCORD_CLIENT_SECRET` or `DISCORD_REDIRECT_URL`, or an `UPLOAD_DIR` that is unset or not
-absolute; in every environment, an `UPLOAD_DIR` with surrounding whitespace, a
+`DISCORD_CLIENT_SECRET` or `DISCORD_REDIRECT_URL`, an `UPLOAD_DIR` that is unset or not
+absolute, or an `EQUIPMENT_DATA_DIR` or `EQUIPMENT_EXPORT_SOURCE_DIR` that is set and not
+absolute; in every environment, any of those three directories with surrounding whitespace, a
 `DISCORD_BOT_TOKEN` holding whitespace, or a `TRUSTED_PROXIES` entry that `ProxyNet::parse`
 refuses. `JWT_ACCESS_TTL_MIN` and `MISSION_VERSION_MAX_BODY_BYTES` fall back to their defaults
 when they do not parse. The full list of settings, with defaults, is the crate's

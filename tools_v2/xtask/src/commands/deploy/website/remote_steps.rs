@@ -22,7 +22,8 @@
 use crate::core::repository_layout;
 
 /// The user-systemd `StateDirectory=` name the API unit declares; `%S/<this>` is where the API
-/// keeps what it writes (CMS uploads), outside the checkout the rsync deletes in.
+/// keeps what it writes (CMS uploads, imported equipment data), outside the checkout the rsync
+/// deletes in.
 pub const STATE_DIRECTORY: &str = "tbd-website-api";
 
 /// The Postgres container `apps/website/docker-compose.staging.yml` starts on the server.

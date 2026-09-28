@@ -101,10 +101,10 @@ fragment; outside development the route answers 404.
 `.env` found from the working directory upward; an exported variable wins. `DATABASE_URL` and
 `JWT_SECRET` are always required. Outside development, `DISCORD_CLIENT_ID`,
 `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URL` and an absolute `UPLOAD_DIR` are required too. A
-value that is set but unusable stops the boot for `UPLOAD_DIR`, `DISCORD_BOT_TOKEN`,
-`TRUSTED_PROXIES` and the pool settings. `.env.example` carries most variables with development
-values; `TRUSTED_PROXIES`, `MISSION_VERSION_MAX_BODY_BYTES`, `SKIP_MIGRATE`, `RUST_LOG` and
-`TEST_DATABASE_URL` are not in it.
+value that is set but unusable stops the boot for `UPLOAD_DIR`, `EQUIPMENT_DATA_DIR`,
+`EQUIPMENT_EXPORT_SOURCE_DIR`, `DISCORD_BOT_TOKEN`, `TRUSTED_PROXIES` and the pool settings.
+`.env.example` carries most variables with development values; `TRUSTED_PROXIES`,
+`MISSION_VERSION_MAX_BODY_BYTES`, `SKIP_MIGRATE`, `RUST_LOG` and `TEST_DATABASE_URL` are not in it.
 
 The crate has one Cargo feature, `failpoints`, off by default. `Cargo.toml` enables it only
 through the crate's dev-dependency on itself, so every test build (the unit tests and every
@@ -123,8 +123,8 @@ compiles every fault point to nothing. The `engineering_laws` suite holds both h
 | `MAP_ASSETS_DIR` | `../../../assets_v2/terrains`, relative to the working directory | no | `Config::load` |
 | `GLYPH_ASSETS_DIR` | `../../../assets_v2/glyphs`, relative to the working directory | no | `Config::load` |
 | `UPLOAD_DIR` | `../../../assets_v2/scratch/website-api/uploads` in development; the systemd unit sets its state directory | outside development, absolute | `Config::load` |
-| `EQUIPMENT_DATA_DIR` | `../../../assets_v2/equipment` in development, empty otherwise, which leaves the equipment datasets unconfigured; the imported equipment datasets and their indexes | no | `Config::load` |
-| `EQUIPMENT_EXPORT_SOURCE_DIR` | empty, which disables importing; the Workbench equipment export publication the import worker polls | no | `Config::load` |
+| `EQUIPMENT_DATA_DIR` | `../../../assets_v2/equipment` in development, empty otherwise, which leaves the equipment datasets unconfigured; the systemd unit sets its state directory; the imported equipment datasets and their indexes | no; when set outside development, absolute | `Config::load` |
+| `EQUIPMENT_EXPORT_SOURCE_DIR` | empty, which disables importing; the Workbench equipment export publication the import worker polls | no; when set outside development, absolute | `Config::load` |
 | `DATABASE_URL` | none | yes | `Config::load`; `import-registry` |
 | `TBD_DB_POOL_MAX_CONNECTIONS` | `25` | no | `src/core/database/connection_pool.rs` |
 | `TBD_DB_POOL_IDLE_TIMEOUT_SECS` | `300` | no | `src/core/database/connection_pool.rs` |

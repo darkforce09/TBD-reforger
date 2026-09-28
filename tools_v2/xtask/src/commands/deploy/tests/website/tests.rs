@@ -376,4 +376,44 @@ fn the_unit_template_declares_the_state_directory_the_deploy_moves_into() {
         "{UNIT}"
     );
     assert!(UNIT.contains(&format!("Environment=UPLOAD_DIR=%S/{state}/uploads\n")));
+    assert!(UNIT.contains(&format!(
+        "Environment=EQUIPMENT_DATA_DIR=%S/{state}/equipment\n"
+    )));
+}
+
+/// The host's `.env` starts as a copy of `.env.example`, the unit loads it through
+/// `EnvironmentFile=`, and systemd lets a value from that file override the unit's own
+/// `Environment=` line for the same variable. So the template leaves every variable the unit pins
+/// unset: an active line would replace the unit's absolute path with the template's relative
+/// development one, which the API refuses outside development.
+#[test]
+fn the_env_template_sets_none_of_the_variables_the_unit_pins() {
+    const UNIT: &str = include_str!("../../../../../deploy/systemd/tbd-website-api.service");
+    const ENV_TEMPLATE: &str =
+        include_str!("../../../../../../../apps/website/api_v2/.env.example");
+    let pinned: Vec<&str> = UNIT
+        .lines()
+        .filter_map(|line| line.strip_prefix("Environment="))
+        .filter_map(|assignment| assignment.split_once('=').map(|(name, _)| name))
+        .collect();
+    for name in [
+        "MAP_ASSETS_DIR",
+        "GLYPH_ASSETS_DIR",
+        "UPLOAD_DIR",
+        "EQUIPMENT_DATA_DIR",
+    ] {
+        assert!(pinned.contains(&name), "the unit no longer pins {name}");
+    }
+    for name in pinned {
+        let set_by_template = ENV_TEMPLATE.lines().map(str::trim_start).any(|line| {
+            !line.starts_with('#')
+                && line
+                    .split_once('=')
+                    .is_some_and(|(key, _)| key.trim() == name)
+        });
+        assert!(
+            !set_by_template,
+            ".env.example sets {name}, which would override the unit's pin; comment it out"
+        );
+    }
 }

@@ -44,6 +44,9 @@ where `apps/website/api_v2/.env.example` and the code disagree, this reference f
   empty or only whitespace.
 - `UPLOAD_DIR` empty outside development, with leading or trailing whitespace anywhere, or
   relative outside development.
+- `EQUIPMENT_DATA_DIR` or `EQUIPMENT_EXPORT_SOURCE_DIR` set with leading or trailing whitespace
+  anywhere, or set and relative outside development; the error names the variable and the
+  reason, as in `EQUIPMENT_DATA_DIR is malformed: must be an absolute path outside development`.
 - `DISCORD_BOT_TOKEN` set and holding whitespace.
 - A `TRUSTED_PROXIES` entry that is not an address or a CIDR block written as its network address
   (`10.0.0.5/8` is refused); the error quotes the entry.
@@ -62,7 +65,10 @@ behaves as production. Development:
   outside development the route is not registered, and a session a dev login issued stops
   authorizing;
 - drops `; Secure` from the `oauth_state` cookie, so Discord sign-in works over plain HTTP;
-- keeps blank Discord credentials legal and fills the `UPLOAD_DIR` default;
+- keeps blank Discord credentials legal and fills the `UPLOAD_DIR` and `EQUIPMENT_DATA_DIR`
+  defaults;
+- registers the equipment data viewer's anonymous `/api/v1/debug/equipment-data/*` reads, which
+  outside development are not registered;
 - refuses to start the Discord flow when `FRONTEND_URL` and `DISCORD_REDIRECT_URL` name different
   hosts (`apps/website/api_v2/src/identity_and_access/handlers/oauth_host_guard.rs`); production
   logs one warning instead, since a split-host deployment is legitimate there.
@@ -70,13 +76,13 @@ behaves as production. Development:
 ### Known discrepancies
 
 - `.env.example` says a blank `DISCORD_GUILD_ID` writes an `auth.role_sync_skipped` WARN audit
-  row (`apps/website/api_v2/.env.example:122-124`) — the code writes none: with a blank guild,
+  row (`apps/website/api_v2/.env.example:135-137`) — the code writes none: with a blank guild,
   sign-in takes no membership lease and reads no guild membership, so the member's stored role
   stays as it is (`claim_membership_refresh` in
   `apps/website/api_v2/src/identity_and_access/services/discord_membership_cache.rs`, and
   `apps/website/api_v2/src/identity_and_access/handlers/discord_oauth.rs:173-180`).
 - `.env.example` ties the `/map-assets` mount to `SPA_DIST_DIR`
-  (`apps/website/api_v2/.env.example:40-41`) — the router always mounts `/map-assets` and
+  (`apps/website/api_v2/.env.example:41-42`) — the router always mounts `/map-assets` and
   `/map-assets/glyphs` (`apps/website/api_v2/src/core/http_router.rs`); `SPA_DIST_DIR` adds only
   the built app and the cross-origin isolation headers.
 - `.env.example` omits five variables the code reads: `TRUSTED_PROXIES`,
@@ -109,6 +115,8 @@ The template sets `FRONTEND_URL=http://localhost:3000` and both local origins in
 | `MAP_ASSETS_DIR` | `../../../assets_v2/terrains` | no | Config; the default applies in `apps/website/api_v2/src/core/http_router.rs` | the terrain tree served at `/map-assets`; a missing directory logs a warning at boot |
 | `GLYPH_ASSETS_DIR` | `../../../assets_v2/glyphs` | no | the same | the glyph atlas served at `/map-assets/glyphs` |
 | `UPLOAD_DIR` | `../../../assets_v2/scratch/website-api/uploads` in development; none otherwise | outside development, absolute | Config | where the CMS upload writes and `/uploads` serves from; the router creates it at boot |
+| `EQUIPMENT_DATA_DIR` | `../../../assets_v2/equipment` in development; none otherwise, which leaves the equipment datasets unconfigured | no; when set outside development, absolute | Config | the imported equipment datasets and their indexes, which the development-only `/api/v1/debug/equipment-data/*` reads serve; the import worker creates it on its first import, and a missing folder reads as waiting for an import |
+| `EQUIPMENT_EXPORT_SOURCE_DIR` | empty: nothing is imported | no; when set outside development, absolute | Config | the Workbench equipment export's publication folder, which the import worker (`apps/website/api_v2/src/background_workers/equipment_export_watcher.rs`) polls and copies into `EQUIPMENT_DATA_DIR` |
 
 ### Database
 
@@ -180,11 +188,15 @@ means the default, and the boot log states the interval each worker got.
 - Development: `apps/website/api_v2/.env`, copied from the template.
 - The deploy host: the systemd unit `tools_v2/xtask/deploy/systemd/tbd-website-api.service`
   loads the server's own `apps/website/api_v2/.env` (the deploy never copies one there) and sets
-  `MAP_ASSETS_DIR`, `GLYPH_ASSETS_DIR` and `UPLOAD_DIR` itself, the last under the unit's state
-  directory.
+  `MAP_ASSETS_DIR`, `GLYPH_ASSETS_DIR`, `UPLOAD_DIR` and `EQUIPMENT_DATA_DIR` itself, the last two
+  under the unit's state directory: `%S/tbd-website-api/uploads` and
+  `%S/tbd-website-api/equipment`, where `%S` is `~/.local/state` for a user unit. systemd lets a
+  value in the `.env` override the unit's own, so the `.env` leaves these four out, as the
+  template does.
 - Staging: the `api` service of `apps/website/docker-compose.staging.yml` sets the variables in
   its `environment` block, `TRUSTED_PROXIES` defaulting to `127.0.0.1/32` and the asset and upload
-  directories to absolute paths inside the container.
+  directories to absolute paths inside the container; it leaves `EQUIPMENT_DATA_DIR` unset, so the
+  equipment datasets are unconfigured there.
 
 ## Design
 
@@ -221,6 +233,6 @@ variables, without printing any value
   ([decisions log](/documentation_v2/website/api_v2/decisions.md)).
 - An empty `TRUSTED_PROXIES` ignores `X-Forwarded-For` entirely: a rate-limit key any client can
   forge limits nobody, while a shared key still limits everyone.
-- `UPLOAD_DIR` is absolute outside development: the process working directory is a deployment
-  detail, and the deploy rsyncs the checkout with `--delete`, so nothing the API writes may live
-  in it.
+- `UPLOAD_DIR`, and `EQUIPMENT_DATA_DIR` and `EQUIPMENT_EXPORT_SOURCE_DIR` when set, are absolute
+  outside development: the process working directory is a deployment detail, and the deploy
+  rsyncs the checkout with `--delete`, so nothing the API writes may live in it.

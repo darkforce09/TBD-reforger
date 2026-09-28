@@ -21,6 +21,7 @@ browser ──▶ Cloudflare Tunnel (optional, Phase E) ──▶ Caddy :3080  (
                                                       └── every other path ──▶ apps/website/frontend/dist
 API ──▶ Postgres tbd_staging_db on 127.0.0.1:${TBD_POSTGRES_HOST_PORT:-5432}
 API uploads ──▶ ~/.local/state/tbd-website-api/uploads  (outside the checkout)
+API equipment data ──▶ ~/.local/state/tbd-website-api/equipment  (outside the checkout)
 apps/website/docker-compose.staging.yml runs tbd_staging_caddy and tbd_staging_db (restart: unless-stopped)
 ```
 
@@ -203,8 +204,10 @@ checkout, with `terrain-registry.json` at its top; see
    | `DISCORD_GUILD_ID`, `DISCORD_BOT_TOKEN`, `DISCORD_WEBHOOK_URL` | optional; empty turns the path that needs them off |
    | `OBSERVABILITY_TOKEN` | the output of `openssl rand -hex 32`; the bearer a scraper sends to `/metrics` and the detailed `/healthz`, and nothing else accepts it |
 
-   The unit sets `MAP_ASSETS_DIR`, `GLYPH_ASSETS_DIR` and `UPLOAD_DIR` itself; leave them out of
-   the file.
+   The unit sets `MAP_ASSETS_DIR`, `GLYPH_ASSETS_DIR`, `UPLOAD_DIR` and `EQUIPMENT_DATA_DIR`
+   itself; leave them out of the file, as the template does. systemd lets a value in the file
+   override the unit's own, and outside development a relative `UPLOAD_DIR` or
+   `EQUIPMENT_DATA_DIR` stops the boot.
 
 7. On the host, create the user unit folder.
 
@@ -224,8 +227,8 @@ checkout, with `terrain-registry.json` at its top; see
 
    Expected: no output. The unit runs `target/release/api` from `apps/website/api_v2`, loads that
    folder's `.env`, pins `MAP_ASSETS_DIR` and `GLYPH_ASSETS_DIR` to the checkout's
-   `assets_v2/terrains` and `assets_v2/glyphs`, and keeps uploads under its state directory
-   (`StateDirectory=tbd-website-api`); the
+   `assets_v2/terrains` and `assets_v2/glyphs`, and keeps uploads and the imported equipment data
+   under its state directory (`StateDirectory=tbd-website-api`); the
    [systemd README](/tools_v2/xtask/deploy/systemd/README.md#configuration) explains each line.
    When a deploy's restart fails, the deploy prints steps 7 to 10 as one line
    (`install_command` in `tools_v2/xtask/src/commands/deploy/website/systemd_unit.rs`).
@@ -371,7 +374,9 @@ migrations are unreadable. The API has no other health route.
 | `WARN: systemctl restart failed — is tbd-website-api.service installed?` | the unit is not installed, or its boot failed | Phase D; the journal shows why a boot failed |
 | the API refuses to boot with `migration N was previously applied but has been modified` | a comments-only edit to an applied migration; sqlx hashes the whole file | the deploy repairs it before each restart; by hand, [repair a migration checksum](/documentation_v2/runbooks/database_operations.md#repair-a-migration-checksum) (step 2 there, on the host). Never reset the database for it |
 | the journal shows `DISCORD_CLIENT_ID is required` (or the secret or redirect) | outside development the three Discord settings are required | step 6 |
-| `UPLOAD_DIR is malformed: must be an absolute path outside development` | the API was started without the unit, which sets it | start it through the unit (steps 8 to 10) |
+| `UPLOAD_DIR is required` | the API was started without the unit, which sets it | start it through the unit (steps 8 to 10) |
+| `UPLOAD_DIR is malformed: must be an absolute path outside development` | the `.env` sets `UPLOAD_DIR` to a relative path, and a value in the `.env` overrides the unit's | delete that line from the `.env` (step 6), then `systemctl --user restart tbd-website-api.service` |
+| `EQUIPMENT_DATA_DIR is malformed: must be an absolute path outside development` | the `.env` sets `EQUIPMENT_DATA_DIR` to a relative path, and a value in the `.env` overrides the unit's | delete that line from the `.env` (step 6), then `systemctl --user restart tbd-website-api.service` |
 | every `/map-assets` request answers 404 and the journal says nothing | the terrain tree is missing, or the API runs with another working directory; the asset server never checks its root | put the tree at `assets_v2/terrains/`, and run the API through the unit, which pins both folders |
 | the Mission Creator reports that `SharedArrayBuffer` is missing | the page is not served through the Caddyfile, so it lacks the cross-origin isolation headers | open the site through Caddy on port 3080 or the tunnel (step 12) |
 | the deploy stops at `staging Caddy on :3080 …`, and `docker logs tbd_staging_caddy` shows `address already in use` | another process holds port 3080 or Caddy's admin port 2019 on the host, such as a Caddy started outside the compose file | stop it (`caddy stop` for such a Caddy; `ss -tlnp` names the holder), then deploy again |

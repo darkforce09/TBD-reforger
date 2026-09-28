@@ -11,7 +11,7 @@ database backup with its weekly restore drill. Every unit runs as the deploy use
 tools_v2/xtask/deploy/systemd/
 ├── fleet-host-agent.service           the fleet host agent of one game server, run from the user's ~/.local/bin
 ├── tbd-reforger.service               a reference unit for the dedicated game server in addons mode
-├── tbd-website-api.service            the website API release binary, with its asset and upload paths pinned
+├── tbd-website-api.service            the website API release binary, with its asset and runtime storage paths pinned
 ├── tbd-website-backup-drill.service   one restore drill of the newest backup into a scratch database
 ├── tbd-website-backup-drill.timer     runs the restore drill every Sunday at 04:10
 ├── tbd-website-backup.service         one verified Postgres dump, with retention by count
@@ -40,9 +40,13 @@ tbd-reforger.service      ── read by nothing; deploy staging writes its own 
   `EnvironmentFile` is that folder's `.env`, the server's own secrets; `MAP_ASSETS_DIR` and
   `GLYPH_ASSETS_DIR` are pinned to the checkout's `assets_v2/terrains` and `assets_v2/glyphs`,
   because the API's fallback resolves them against its working directory and a wrong root answers
-  404 without an error; `StateDirectory=tbd-website-api` and `UPLOAD_DIR=%S/tbd-website-api/uploads`
-  keep uploads out of the rsynced checkout; `ExecStart` is `target/release/api`; it restarts on
-  failure after 5 s.
+  404 without an error; `StateDirectory=tbd-website-api`, `UPLOAD_DIR=%S/tbd-website-api/uploads`
+  and `EQUIPMENT_DATA_DIR=%S/tbd-website-api/equipment` keep uploads and the imported equipment
+  data out of the rsynced checkout, the API creating `uploads/` at boot and `equipment/` on its
+  first import, so neither needs a `mkdir`; the `.env` leaves all four directories out, because
+  systemd lets an `EnvironmentFile` value override an `Environment=` line for the same variable
+  and, outside development, a relative `UPLOAD_DIR` or `EQUIPMENT_DATA_DIR` stops the boot;
+  `ExecStart` is `target/release/api`; it restarts on failure after 5 s.
 - `tbd-reforger.service`: placeholders `TBD_SERVER_DIR_PLACEHOLDER`, `TBD_PROFILE_DIR_PLACEHOLDER`,
   `TBD_ADDONS_STAGING_PLACEHOLDER`, `TBD_ADDON_GUID_PLACEHOLDER` and `TBD_SCENARIO_PLACEHOLDER`,
   named after the `deploy.env` keys they stand for; it starts `ArmaReforgerServer` with
@@ -93,7 +97,10 @@ tbd-reforger.service      ── read by nothing; deploy staging writes its own 
   `tbd-reforger.service` by name.
 - Rules: the repository placeholder keeps its leading slash, so the templates verify as they stand;
   the API unit's file name is the default unit `deploy website` restarts (`default_unit_name`);
-  the API unit's `.env` stays on the host and is never rsynced.
+  the API unit's `.env` stays on the host and is never rsynced; the template it is copied from,
+  `apps/website/api_v2/.env.example`, sets none of the variables the API unit pins
+  (`the_env_template_sets_none_of_the_variables_the_unit_pins` in
+  `tools_v2/xtask/src/commands/deploy/tests/website/tests.rs`).
 
 ## Related documentation
 

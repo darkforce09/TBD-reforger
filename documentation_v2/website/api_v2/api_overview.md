@@ -216,7 +216,8 @@ holds the full rules:
 - `apps/website/api_v2/seeds/`: the development data `cargo xtask db seed` applies once the API
   has migrated the database, and the Workbench [registry](/documentation_v2/glossary/n_to_z.md#registry)
   exports that `cargo xtask db registry-import` loads.
-- The upload directory, the only files the API writes.
+- The upload directory (`UPLOAD_DIR`) and the equipment data directory (`EQUIPMENT_DATA_DIR`),
+  the only files the API writes.
 
 ## Design
 
