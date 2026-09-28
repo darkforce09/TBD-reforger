@@ -68,7 +68,19 @@ into `TBD_MissionDocumentStruct` (`Data/Document/`), filters it to its active va
 `TBD_MissionValidator.Run` in `Validation/`. An ERROR (the mission cannot be played) discards the
 document, so the stage machine never leaves `LOADING`; a WARNING (it can be played but may not end)
 lets the round run, and `#tbd validate` (`TBD_AdminCommands`) replays the findings. A valid document
-is applied to the world and arms the readers and reports; each subfolder's README has the detail.
+resolves the mission parameters and arms the reports; the parse changes nothing in the world.
+`TBD_LoadingGate` applies the document to the world later, on the main thread, through
+`TBD_MissionWorldApplier`; each subfolder's README has the detail.
+
+### Threads
+
+Every step here runs on the main thread. The deployment read, the artifact fetch and the roster
+fetch are answered through `TBD_GameRuntimeHttp`, which runs each `OnAnswered` on the main thread
+(see [Threads](/apps/mod/tbd-framework/Scripts/Game/TBD/API/Http/README.md#threads)); a finished
+verification settles one frame later from the call queue (`TBD_DeployedMission.SettleVerification`),
+once its own call stack has unwound. No step spawns an entity or applies a world setting: the
+loaded document reaches the world only through `TBD_LoadingGate`, after the world has created its
+entities.
 
 ### Event roster
 

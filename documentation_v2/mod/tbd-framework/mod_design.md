@@ -112,7 +112,9 @@ a **build error**). The spine:
 
 ## 5. Load-bearing Enfusion facts
 
-Proven, not remembered. Each resolves through `cargo run -q -p developer-tools --bin enf -- citations`.
+Proven, not remembered. Each `@idx` marker resolves through
+`cargo run -q -p developer-tools --bin enf -- citations`; a fact about the engine's runtime quotes
+the engine's own log lines.
 
 **Deploy is a POSSESS request, not a raw takeover.** `SCR_PossessSpawnData` @idx api#SCR_PossessSpawnData
 exposes `static SCR_PossessSpawnData FromEntity (notnull IEntity entity)`, handed to
@@ -140,6 +142,18 @@ serialisation via `RplSave` @idx crf#RplSave / `RplLoad` @idx crf#RplLoad rather
 **Menus derive from `ChimeraMenuBase`** @idx api#ChimeraMenuBase. **Vanilla respawn lives in
 `SCR_RespawnSystemComponent`** @idx api#SCR_RespawnSystemComponent, which TBD stands down on
 framework worlds. **`SCR_BaseGameMode`** @idx api#SCR_BaseGameMode is the gamemode base.
+
+**REST answers arrive off the main thread.** The engine runs a `RestCallback`'s success and error
+handlers on its REST callback thread. A dedicated server's logs show what world changes made there
+cost: every entity spawned from that thread loses its signals ("Trying to register a signal ...
+outside of the main thread. Request ignored."), and a spawn while the main thread is still creating
+the world's entities deadlocks the two threads until the engine's watchdog force-crashes the server
+("Application hangs (force crash) 300 s"). So `TBD_GameRuntimeHttp` records each answer in the
+request's `TBD_GameRuntimeRestCallback` on that thread and runs every `OnAnswered` on the main
+thread, and the loaded mission reaches the world only from `TBD_LoadingGate`, after the world has
+created its entities; the
+[transport's thread model](/apps/mod/tbd-framework/Scripts/Game/TBD/API/Http/README.md#threads)
+gives the detail.
 
 **Enfusion is lenient.** `int x = ;` compiles clean; undefined symbols are what actually error.
 Do not rely on the compiler to catch sloppiness.

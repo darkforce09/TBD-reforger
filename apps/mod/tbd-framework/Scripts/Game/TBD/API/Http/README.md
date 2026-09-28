@@ -1,17 +1,19 @@
 # Backend connection
 
 The server's connection to the platform backend: the settings it reads from the profile, the shared
-transport of every machine-credential route and the classification of its answers, and the text
-helpers every backend payload and backend log line uses.
+transport of every machine-credential route, which hands each answer from the engine's REST callback
+thread to the main thread, the classification of its answers, and the text helpers every backend
+payload and backend log line uses.
 
 ## Contents
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/API/Http/
-├── TBD_BackendConfig.c      reads the backend URL and the machine credential from the profile
-├── TBD_BackendText.c        JSON string escaping, UUID check, RFC 3339 UTC time, two-digit padding, backend description
-├── TBD_GameRuntimeAnswer.c  classifies an answer: success, 409 refusal, transient, permanent
-└── TBD_GameRuntimeHttp.c    the machine-credential transport: one answer per call, backoff
+├── TBD_BackendConfig.c            reads the backend URL and the machine credential from the profile
+├── TBD_BackendText.c              JSON string escaping, UUID check, RFC 3339 UTC time, two-digit padding, backend description
+├── TBD_GameRuntimeAnswer.c        classifies an answer: success, 409 refusal, transient, permanent
+├── TBD_GameRuntimeHttp.c          the machine-credential transport: one answer per call on the main thread, backoff
+└── TBD_GameRuntimeRestCallback.c  one request's engine callback, recording its answer on the engine's callback thread
 ```
 
 ## How it works
@@ -54,6 +56,40 @@ a server error) or `PERMANENT` (any other client error), and keeps the `details.
 such as `NO_DEPLOYMENT`, for the caller. `BackoffMs` gives the exponential retry delay every loop
 uses.
 
+### Threads
+
+The engine runs a `RestCallback`'s success and error handlers on its REST callback thread, not on
+the main thread. An entity spawned from there loses its signals ("Trying to register a signal ...
+outside of the main thread. Request ignored.") and, while the main thread is still creating the
+world's entities, deadlocks the server until the engine's watchdog force-crashes it
+("Application hangs (force crash) 300 s"). So the transport keeps every answer handler off that
+thread:
+
+```text
+REST callback thread                          main thread
+TBD_GameRuntimeRestCallback.CaptureSuccess/   TBD_GameRuntimeHttp.DeliverReportedAnswers
+  CaptureError: status, transport result,       (repeats every frame while a call is in flight)
+  body into the callback's own fields,           -> oldest reported call out of flight
+  m_bReported last                               -> TBD_GameRuntimeAnswer.Reported
+                                                 -> call.OnAnswered(answer)
+                                              TBD_GameRuntimeHttp.OnCallWatchdog (25 s)
+                                                 -> the reported answer, else TRANSIENT
+```
+
+- The two capture handlers are the only code that runs on the REST callback thread. They write
+  the fields of the callback they are handed and nothing else: no container, no call queue, no
+  log, no entity, no player.
+- Every `OnAnswered` runs on the main thread, from the delivery pass or the watchdog, and never
+  inside `Post` or `Get`, so every sender may spawn, kick, broadcast, restart the scenario, chat or
+  arm the call queue from its answer handler.
+- `Post`, `Get` and every static of the transport run on the main thread; `Track` arms the
+  delivery pass there, and the pass leaves the call queue once no call is in flight.
+- A call the engine never reports is answered `TRANSIENT` by its watchdog, whose detail names the
+  engine's own transport result (`no answer within 25000 ms (engine rest=...)`), and its callback
+  is retired: kept (at most 16) until the engine reports it, because the script owns a callback
+  while its request is in flight. The delivery pass and the watchdogs live on the game's call
+  queue, which outlives a world, so a call sent before a scenario restart is still answered once.
+
 ### Backend text
 
 `JsonEscape` copies its input through `string.Format` (`string.Replace` mutates in place),
@@ -75,8 +111,9 @@ the URL with the reason a credential is unusable.
 
 ## Boundaries
 
-- Depends on: the engine's `RestApi`, `RestContext`, `RestCallback`, `JsonLoadContext`,
-  `JsonSaveContext`, `FileIO` and `System` UTC clock.
+- Depends on: the engine's `RestApi`, `RestContext`, `RestCallback`, `ScriptCallQueue` (the
+  delivery pass and the watchdogs), `JsonLoadContext`, `JsonSaveContext`, `FileIO` and `System` UTC
+  clock.
 - Used by: every sender of the game-runtime routes: `TBD_DeployedMission`,
   `TBD_MissionArtifactVerification` and `TBD_RosterLoader` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`; `TBD_DeploymentAuthorization`,
@@ -88,7 +125,9 @@ the URL with the reason a credential is unusable.
   results report, the match telemetry reports and the runtime session there.
   `TBD_BackendConfig.SetBackend` by `TBD_AdminCommands`.
 - Rules: no secret is ever printed; answers are read by status and `details.code`, never by message
-  text; lines added stay ASCII; `cargo xtask mod compile` checks that the scripts compile.
+  text; nothing but the capture handlers runs on the engine's REST callback thread, and every answer
+  handler runs on the main thread; lines added stay ASCII; `cargo xtask mod compile` checks that
+  the scripts compile.
 
 ## Related documentation
 

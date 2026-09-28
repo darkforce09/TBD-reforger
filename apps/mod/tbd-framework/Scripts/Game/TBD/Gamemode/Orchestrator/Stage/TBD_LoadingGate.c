@@ -2,13 +2,18 @@
  * @file TBD_LoadingGate.c
  * @brief Carries the round from LOADING to LOBBY once the mission, roster and loadouts are settled.
  *
- * Role: polls the mission load, applies the mission's flow, weather and settings, loads the
- * registry, materializes the slot bodies, then waits for the event roster and the loadout settle
- * before asking for LOBBY.  Position: owned by TBD_FrameworkManager, which calls Begin from
- * OnPostInit on the server; reads TBD_MissionLoader, TBD_RosterLoader and TBD_SpawnManager.
+ * Role: polls the mission load, puts the valid document into force (its entities, settings,
+ * environment and gadget hook through TBD_MissionWorldApplier, then its flow, weather and latched
+ * settings), loads the registry, materializes the slot bodies, then waits for the event roster and
+ * the loadout settle before asking for LOBBY.  Position: owned by TBD_FrameworkManager, which calls
+ * Begin from OnPostInit on the server; reads TBD_MissionLoader, TBD_RosterLoader and
+ * TBD_SpawnManager.
  * State: the roster settle tick counter and two call-queue polls; server only.
- * Invariants: LOBBY is requested exactly once per load; an invalid mission stays in LOADING; the
- * roster force-settles after 4 ticks (2 s) and the loadout settle is waited on for up to 24 ticks.
+ * Invariants: the valid document is put into force only here, on the main thread from the call
+ * queue, once per load and after the world has created its entities, never from the parse or a
+ * request's answer; LOBBY is requested exactly once per load; an invalid mission stays in LOADING;
+ * the roster force-settles after 4 ticks (2 s) and the loadout settle is waited on for up to 24
+ * ticks.
  */
 
 //! LOADING to LOBBY gate of one framework world.
@@ -64,7 +69,11 @@ class TBD_LoadingGate : Managed
 
 		GetGame().GetCallqueue().Remove(TickLoading);
 
-		// Flow first: `flow.safeStartSeconds` reaches the safe start while SAFE_START cannot yet run.
+		// The document's own world effects before anything that reads them: the authored wind
+		// direction below overrides the environment, and the slot bodies claim the placed vehicles.
+		TBD_MissionWorldApplier.Apply();
+
+		// Flow next: `flow.safeStartSeconds` reaches the safe start while SAFE_START cannot yet run.
 		TBD_MissionFlowReport.Apply();
 		TBD_StageEnvironment.ApplyAuthoredWeather();
 		m_Manager.LatchAuthoredSettings();

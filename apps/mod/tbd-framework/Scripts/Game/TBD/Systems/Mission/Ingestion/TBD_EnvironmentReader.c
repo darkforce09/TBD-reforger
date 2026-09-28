@@ -5,8 +5,8 @@
  * Role: binds `$defs/environment` and applies its fog and wind through the
  * `BaseWeatherManagerEntity` overrides and `viewDistance` through `ChimeraGame.SetViewDistance`.
  * Position: bound by `JsonLoadContext` onto `TBD_MissionDocumentStruct.environment`; `Apply`
- * runs from `TBD_MissionLoader` after a valid parse, on the server load path; the engine
- * replicates weather to clients.
+ * runs from `TBD_MissionWorldApplier.Apply` when `TBD_LoadingGate` puts the valid document into
+ * force, on the server's main thread; the engine replicates weather to clients.
  * State: none.  Invariants: every number starts at `ABSENT`, because 0 is a legal fog, wind and
  * direction, and an absent key leaves the world default; `dateTime` and `weatherPreset` are bound
  * but not applied; a value outside its range logs a WARNING and is skipped.
@@ -32,8 +32,8 @@ class TBD_MissionEnvironmentStruct
 class TBD_EnvironmentReader
 {
 	//! Apply the authored axes of the loaded mission's `environment`. Called from
-	//! `TBD_MissionLoader` after a valid parse. Does nothing when none of the four axes is
-	//! authored or no mission is loaded.
+	//! `TBD_MissionWorldApplier.Apply` once the document is valid. Does nothing when none of the
+	//! four axes is authored or no mission is loaded.
 	//! @authority server
 	static void Apply()
 	{

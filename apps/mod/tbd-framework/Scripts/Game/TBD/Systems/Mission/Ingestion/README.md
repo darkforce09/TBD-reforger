@@ -16,7 +16,8 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Ingestion/
 
 ## How it works
 
-- `TBD_EnvironmentReader.Apply()` runs from `TBD_MissionLoader` after a valid parse. It reads
+- `TBD_EnvironmentReader.Apply()` runs from `TBD_MissionWorldApplier.Apply` when
+  `TBD_LoadingGate` puts the valid document into force, on the main thread. It reads
   `TBD_MissionEnvironmentStruct`, the document's `environment` block, and applies `fog`, `wind` and
   `windDirDeg` through the `BaseWeatherManagerEntity` overrides and `viewDistance` through
   `ChimeraGame.SetViewDistance`. Each number starts at the `ABSENT` sentinel (-1e6), since 0 is a
@@ -58,8 +59,9 @@ whose root the caller reads into its own struct, or null with `NO_DOCUMENT` or `
   test); `TBD_Log`; the engine's `BaseWeatherManagerEntity`, `TimeAndWeatherManagerEntity` and
   `ChimeraGame`; the `environment`, `weatherTimeline`, slot and group definitions in
   `contracts_v2/definitions/mission.schema.json`.
-- Used by: `TBD_MissionLoader`, which calls `TBD_EnvironmentReader.Apply` and binds
-  `TBD_MissionEnvironmentStruct` as the document's `environment`; `TBD_SlotBodyMaterializer` in
+- Used by: `TBD_MissionWorldApplier`, which calls `TBD_EnvironmentReader.Apply`;
+  `TBD_MissionLoader`, whose parse binds `TBD_MissionEnvironmentStruct` as the document's
+  `environment`; `TBD_SlotBodyMaterializer` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/`, which calls
   `TBD_PlacementScatter.ForSlot`; `TBD_RuntimeHeartbeat`, which calls `TBD_WeatherRuntime.Clear`
   and `Tick`; every second-pass reader, which calls `TBD_MissionJsonPass.LoadRoot`.

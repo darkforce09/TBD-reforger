@@ -1,28 +1,46 @@
 /**
  * @file TBD_MissionWorldApplier.c
- * @brief Applies a freshly validated mission to the world: places `entities[]` and hands the
- * spectator policy to its seam.
+ * @brief Applies the held, validated mission to the world: places `entities[]`, hands the
+ * spectator policy to its seam, applies the authored environment and hooks the gadget flags.
  *
- * Role: the world-side effects of a successful load that belong to the mission document itself.
- * Position: called once per load by `TBD_MissionLoader.ParseMissionJson` after validation passes;
- * reads `TBD_MissionLoader.GetEntities` and `GetSettings`; writes to `TBD_MissionVehicleRoster`,
- * `TBD_EntityState` and `TBD_SpectatorTargets`.
+ * Role: the world-side effects that belong to the mission document itself, kept out of the parse.
+ * Position: `Apply` is called once per world by `TBD_LoadingGate` when it puts the valid document
+ * into force, before the flow, the authored weather and the slot bodies; reads
+ * `TBD_MissionLoader.GetEntities` and `GetSettings`; writes to `TBD_MissionVehicleRoster`,
+ * `TBD_EntityState` and `TBD_SpectatorTargets`, and runs `TBD_EnvironmentReader.Apply` and
+ * `TBD_GadgetFlags.Bind`.
  * State: none of its own; the spawned bodies are indexed by `TBD_MissionVehicleRoster` and
- * `TBD_EntityState`.  Invariants: both indexes reset on every call, before any early return, so a
- * reload never inherits the previous mission's world pointers; a row whose alias does not resolve
- * or whose prefab does not load is skipped with a log line, never retried.
+ * `TBD_EntityState`.  Invariants: it runs on the main thread from the call queue, after the world
+ * has finished creating its entities, never from the parse or a request's answer; both indexes
+ * reset on every spawn pass, before any early return, so a reload never inherits the previous
+ * mission's world pointers; a row whose alias does not resolve or whose prefab does not load is
+ * skipped with a log line, never retried.
  */
 
 //! Static world application of the loaded mission.
 class TBD_MissionWorldApplier
 {
+	//! Put the held document's own world effects into force, in order: the `entities[]` bodies,
+	//! the settings, the authored environment and the gadget-flag spawn hook. Called once per world
+	//! by `TBD_LoadingGate` on the main thread, once the document is loaded and valid.
+	//! @authority server
+	static void Apply()
+	{
+		SpawnMissionEntities();
+		ApplyMissionSettings();
+
+		// Each reader is a no-op when the mission authors none of its keys.
+		TBD_EnvironmentReader.Apply();
+		TBD_GadgetFlags.Bind();
+	}
+
 	//! Spawn every `entities[]` row of the valid mission so destroy-alias resolution
 	//! (`TBD_ObjectiveDestroyTargets.ArmDestroyTargets`) finds the prefabs in its zone. Each alias resolves
 	//! through `TBD_Registry` (loaded on demand); each spawned body is recorded under its uid and its
 	//! alias|x|z fingerprint so the `vehicles[]` roster row of the same vehicle claims it instead of
 	//! spawning a second copy.
 	//! @authority server
-	static void SpawnMissionEntities()
+	protected static void SpawnMissionEntities()
 	{
 		// Both indexes reset before the early return below, so a mission with no entities[] never
 		// inherits the previous mission's world pointers.
@@ -97,7 +115,7 @@ class TBD_MissionWorldApplier
 	//! with a WARNING. `respawn` and `nightVision: true` have no setter and are logged so the
 	//! authored value is visible in the boot log.
 	//! @authority server
-	static void ApplyMissionSettings()
+	protected static void ApplyMissionSettings()
 	{
 		TBD_MissionSettingsStruct s = TBD_MissionLoader.GetSettings();
 		if (!s)

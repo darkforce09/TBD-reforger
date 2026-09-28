@@ -6,13 +6,15 @@
  * Role: the parse of the verified artifact bytes into `TBD_MissionDocumentStruct`, the load
  * sequence around it, and the read API every system uses.  Position: `BeginLoad` is called by
  * `TBD_FrameworkManager.OnPostInit` on the server and hands off to `TBD_DeployedMission`, which
- * calls `LoadDocument` once the artifact's SHA-256 matches; the variant filter, the validator and
- * the world applier run inside the parse; nothing here fetches, caches or reads files.
+ * calls `LoadDocument` once the artifact's SHA-256 matches; the variant filter and the validator
+ * run inside the parse; `TBD_LoadingGate` later puts the valid document into force through
+ * `TBD_MissionWorldApplier`; nothing here fetches, caches or reads files.
  * State: the static document, its raw text, the loaded and valid flags and the active variant ids,
  * owned by the server and cleared by `BeginLoad` for every world.  Invariants: a document over
  * `MISSION_FILE_MAX_BYTES` is never parsed; a document that fails validation is discarded, so
  * `IsValid` stays false and the stage machine never leaves LOADING; the gated queries answer null
- * until a valid document is held.
+ * until a valid document is held; the parse changes nothing in the world: no entity is spawned and
+ * no world setting is applied here.
  */
 
 //! The mission document this world runs and the queries every system asks of it.
@@ -271,8 +273,9 @@ class TBD_MissionLoader
 		return data.Length() <= MISSION_FILE_MAX_BYTES;
 	}
 
-	//! Parse `data`, filter it to its active variant set, validate it, and on success apply it to
-	//! the world and arm the readers and reports that need a valid document.
+	//! Parse `data`, filter it to its active variant set, validate it, and on success resolve the
+	//! mission parameters and arm the reports that need a valid document. The world effects wait for
+	//! `TBD_LoadingGate`.
 	//! @param data the document text
 	//! @return true when the document is valid; on false the document and variant set are cleared
 	//! @authority server
@@ -312,12 +315,7 @@ class TBD_MissionLoader
 
 		s_Valid = true;
 
-		TBD_MissionWorldApplier.SpawnMissionEntities();
-		TBD_MissionWorldApplier.ApplyMissionSettings();
-
-		// Each reader is a no-op when the mission authors none of its keys.
-		TBD_EnvironmentReader.Apply();
-		TBD_GadgetFlags.Bind();
+		// A no-op when the mission authors no `missionParams`.
 		TBD_MissionParams.Resolve();
 
 		// A valid document is the earliest moment a results report means anything. Both arms are

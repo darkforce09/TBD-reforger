@@ -29,16 +29,18 @@ call-queue entry they armed.
 
 ```text
 OnPostInit ─▶ LOADING ── mission loaded and valid ──▶ roster settled ──▶ LOBBY
-                             apply flow, weather,        (2 s, longer while
-                             settings; registry;          loadouts settle)
-                             materialize slot bodies
+                             place entities; apply       (2 s, longer while
+                             flow, weather, settings;     loadouts settle)
+                             registry; materialize
+                             slot bodies
 LOBBY ──▶ BRIEFING ──▶ SAFE_START ── countdown ──▶ LIVE ── win or time ──▶ END ──▶ DEBRIEF
       (admin: #tbd stage next | <STAGE>)                  (TBD_SafestartManager.GoLive)
 ```
 
 - Loading: `OnPostInit` schedules `TBD_FrameworkRollCall` one frame later and, on the server,
   enters `LOADING`, starts `TBD_MissionLoader.BeginLoad()` and hands over to `TBD_LoadingGate`
-  (`Stage/`), which applies the mission and asks for `LOBBY` once the roster and loadouts settle.
+  (`Stage/`), which applies the mission to the world on the main thread, the only place it does,
+  and asks for `LOBBY` once the roster and loadouts settle.
 - `SetStage` is the only way the stage changes. It refuses `SAFE_START` on a world without
   `TBD_SafestartManager`, and any stage `TBD_SpawnManager.StageRefusalFor` refuses, keeping the
   reason for `GetLastStageRefusal()`. A transition logs `[TBD][Stage] <FROM> -> <TO>` and

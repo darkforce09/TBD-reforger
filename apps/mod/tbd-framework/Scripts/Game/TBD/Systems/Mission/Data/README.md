@@ -33,7 +33,7 @@ into wire structs that declare only the keys they read, so the primary structs d
 |---|---|---|---|
 | `TBD_EntityState` | `entities[]` `health`, `allowDamage`, `showModel`, `size`, `stamina` | `TBD_MissionWorldApplier.SpawnMissionEntities` records each placed body (`RecordSpawn`) | `ApplySpawned`: `SetHealthScaled`, `EnableDamageHandling`, the `VISIBLE` flag, `SetScale`; `stamina` is logged and not applied (the engine has no stamina toggle) |
 | `TBD_VehicleState` (in `Vehicles/`) | `vehicles[]` `lock`, `fuel`, `ammo` | the vehicles already in the world | `ApplySpawned`: `LockPilotControls`, fuel nodes (slotted tanks included), turret and cargo magazines |
-| `TBD_GadgetFlags` | `slots[].gadgets` as `map<string, bool>` | `Bind()` after a valid parse, which hooks `SCR_BaseGameMode.GetOnPlayerSpawned` | 800 ms after a player spawns (after the loadout's cargo lands), adds or removes each authored gadget |
+| `TBD_GadgetFlags` | `slots[].gadgets` as `map<string, bool>` | `Bind()` from `TBD_MissionWorldApplier.Apply` once the document is valid, which hooks `SCR_BaseGameMode.GetOnPlayerSpawned` | 800 ms after a player spawns (after the loadout's cargo lands), adds or removes each authored gadget |
 | `TBD_MissionParams` | `missionParams[]` and each row's `default` | `Resolve()` after a valid parse | the value per symbol: the selection in `$profile:TBD_MissionParams.json` when it is in the row's `values[]`, else the authored default; `Get(symbol)` returns `EMPTY` (0) for an unknown or unusable symbol, and `Has(symbol)` tells it from an authored 0 |
 
 One authored vehicle arrives as two rows, an `entities[]` row and a `vehicles[]` row with its
@@ -64,8 +64,10 @@ id with one WARNING.
 ## Authority
 
 - Server: everything that reads or applies. `TBD_MissionLoader` binds and resolves on the server
-  load path only, `TBD_GadgetFlags` returns on a client (`TBD_Authority.IsClient`), and the state
-  readers run from `TBD_SlotBodyMaterializer` on the server.
+  load path only, `TBD_MissionWorldApplier` records the placed bodies and binds the gadget flags from
+  `TBD_LoadingGate` on the server's main thread, `TBD_GadgetFlags` returns on a client
+  (`TBD_Authority.IsClient`), and the state readers run from `TBD_SlotBodyMaterializer` on the
+  server.
 - Client: the struct classes only, as data: the lobby's `TBD_KitInfo` carries a
   `TBD_SlotLoadoutStruct` that the client's kit preview reads.
 - Owner: nothing.
@@ -82,8 +84,8 @@ id with one WARNING.
   `TBD_Log`; the engine's `DamageManagerComponent`, `VehicleControllerComponent`,
   `FuelManagerComponent`, `BaseWeaponManagerComponent`, `SCR_GadgetManagerComponent` and
   compartment classes; the wire shape in `contracts_v2/definitions/mission.schema.json`.
-- Used by: `TBD_MissionLoader` and `TBD_MissionWorldApplier` (document fields, `ResetIndex`,
-  `RecordSpawn`, `Bind`, `Resolve`); `TBD_SlotBodyMaterializer` (`ApplySpawned`); the loadout scripts in
+- Used by: `TBD_MissionLoader` (document fields, `Resolve`) and `TBD_MissionWorldApplier`
+  (`ResetIndex`, `RecordSpawn`, `Bind`); `TBD_SlotBodyMaterializer` (`ApplySpawned`); the loadout scripts in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Loadouts/`; `TBD_WaypointRuntime` (vehicle rows);
   and, through `TBD_MissionSlotStruct`, `apps/mod/tbd-framework/Scripts/Game/TBD/API/Results/TBD_ResultsReporter.c`,
   the objective, safe-start and win-condition scripts under

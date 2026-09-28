@@ -19,10 +19,13 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/
 `Loaders/` runs first, once per world: `TBD_MissionLoader.BeginLoad` starts the boot sequence in
 `TBD_DeployedMission`, which ends in `TBD_MissionLoader.LoadDocument` once the artifact's SHA-256
 matches. The parse binds the primary structs, including those in `Data/`; `TBD_MissionValidator`
-blocks the load on any error; a valid document then arms the readers in `Data/` and `Ingestion/`
-(`TBD_EnvironmentReader.Apply`, `TBD_GadgetFlags.Bind`, `TBD_MissionParams.Resolve`). The rest
-apply later, from `TBD_SpawnManager` while slot bodies materialize and spawn, and from the game
-mode's tick while the round is live.
+blocks the load on any error; a valid document resolves `TBD_MissionParams` and changes nothing in
+the world. `TBD_LoadingGate` then puts it into force on the main thread: `TBD_MissionWorldApplier`
+places the entities, applies the settings and arms the readers in `Data/` and `Ingestion/`
+(`TBD_EnvironmentReader.Apply`, `TBD_GadgetFlags.Bind`). The rest apply later, from
+`TBD_SpawnManager` while slot bodies materialize and spawn, and from the game mode's tick while the
+round is live. Nothing in these folders runs on the engine's REST callback thread: every platform
+answer reaches them on the main thread through `TBD_GameRuntimeHttp`.
 
 Two rules hold across the three folders:
 

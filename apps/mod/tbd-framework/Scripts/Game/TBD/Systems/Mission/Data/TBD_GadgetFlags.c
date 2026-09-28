@@ -4,7 +4,7 @@
  *
  * Role: a second `JsonLoadContext` pass over the held mission JSON whose root declares only
  * `slots[]` gadgets, and the inventory edits that honour them after each player spawn.
- * Position: `Bind` runs from `TBD_MissionLoader` after a valid parse and hooks
+ * Position: `Bind` runs from `TBD_MissionWorldApplier.Apply` once the document is valid and hooks
  * `SCR_BaseGameMode.GetOnPlayerSpawned`; reads `TBD_MissionJsonPass.LoadRoot`,
  * `TBD_SpawnManager.GetAssignedSlot` and the body's gadget and inventory managers.
  * State: the static parsed rows keyed to the mission id, and the one-time spawn hook, server only.
@@ -56,8 +56,8 @@ class TBD_GadgetFlags
 	protected static bool s_bArmed; //!< the spawn hook is installed
 	protected static string s_sParsedForMission; //!< mission id `s_aSlots` was parsed for
 
-	//! Parse the gadgets block and arm the spawn hook. Called from `TBD_MissionLoader` after a
-	//! valid parse. A mission whose slots author no gadgets keeps every kit's gadgets.
+	//! Parse the gadgets block and arm the spawn hook. Called from `TBD_MissionWorldApplier.Apply`
+	//! once the document is valid. A mission whose slots author no gadgets keeps every kit's gadgets.
 	//! @authority server
 	static void Bind()
 	{

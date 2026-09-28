@@ -2,14 +2,16 @@
  * @file TBD_GameRuntimeAnswer.c
  * @brief The answer to one game-runtime request, classified for its sender.
  *
- * Role: reads status, body and error envelope from the `RestCallback` the engine answered through
- * and classifies the outcome.  Position: built by `TBD_GameRuntimeHttp` and delivered to the
- * request's `TBD_GameRuntimeCall.OnAnswered`.
+ * Role: turns the status, transport result and body the engine reported for one request into an
+ * answer, reading the error envelope and classifying the outcome.  Position: built on the main
+ * thread by `TBD_GameRuntimeHttp` from the request's `TBD_GameRuntimeRestCallback`, or by its
+ * watchdog, and delivered to the request's `TBD_GameRuntimeCall.OnAnswered`.
  * State: none beyond each answer's own fields.  Invariants: answers are classified by HTTP status
  * and by the machine-readable `details.code` of a 409, never by message text; the `details.code`
  * of any other error status (404 `NO_DEPLOYMENT`, 403 and 422 refusals) is carried in
- * `m_sErrorCode`; `RestCallback.GetData()` returns the request body on a transport failure, so an
- * answer carries a body only when a status arrived with it.
+ * `m_sErrorCode`; an answer carries a body only when a status arrived with it or the success
+ * handler fired, because `RestCallback.GetData()` returns the request body on a transport failure
+ * and `TBD_GameRuntimeRestCallback` keeps no body then.
  */
 
 //! How a finished game-runtime request is handled.
@@ -54,23 +56,24 @@ class TBD_GameRuntimeAnswer
 	string m_sErrorCode; //!< `details.code` of an error answer of any status, or empty
 	string m_sDetail; //!< one log line: the status and response body, or the transport result
 
-	//! The answer the engine reported through `callback`.
+	//! The answer the engine reported for one request, as its callback recorded it.
+	//! @param code the HTTP status; `HTTP_CODE_NULL` when none arrived
+	//! @param restResult the engine's transport result
+	//! @param body the response body; empty when no status arrived and the error handler fired
 	//! @param arrivedOnSuccess which handler fired; a success handler that reports no status still
 	//! delivered its body
 	//! @return the classified answer
-	static TBD_GameRuntimeAnswer Read(notnull RestCallback callback, bool arrivedOnSuccess)
+	static TBD_GameRuntimeAnswer Reported(HttpCode code, ERestResult restResult, string body, bool arrivedOnSuccess)
 	{
 		TBD_GameRuntimeAnswer answer = new TBD_GameRuntimeAnswer();
-		answer.m_eCode = callback.GetHttpCode();
-		if (answer.m_eCode != HttpCode.HTTP_CODE_NULL || arrivedOnSuccess)
-			answer.m_sBody = callback.GetData();
-
+		answer.m_eCode = code;
+		answer.m_sBody = body;
 		answer.m_eOutcome = answer.Classify(arrivedOnSuccess);
 
 		// The enum's ordinal is not the HTTP status, so the status goes out by name.
 		string status = typename.EnumToString(HttpCode, answer.m_eCode);
 		if (answer.m_eCode == HttpCode.HTTP_CODE_NULL)
-			answer.m_sDetail = status + " rest=" + typename.EnumToString(ERestResult, callback.GetRestResult());
+			answer.m_sDetail = status + " rest=" + typename.EnumToString(ERestResult, restResult);
 		else
 			answer.m_sDetail = status + " response=" + LoggableBody(answer.m_sBody);
 

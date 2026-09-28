@@ -24,7 +24,11 @@ and this server's `machineCredential` from the profile. The machine credential
 (`Authorization: Bearer tbdm_...`) carries every `/api/v1/game-runtime/`, `/api/v1/fleet-executor/`
 and `/api/v1/ingest/` route through `TBD_GameRuntimeHttp`, which delivers exactly one classified
 `TBD_GameRuntimeAnswer` per call: identity link confirmation (`Identity/`, interactive, in memory)
-and match telemetry (`MatchTelemetry/`, through the durable queue) included.
+and match telemetry (`MatchTelemetry/`, through the durable queue) included. The engine reports a
+request on its REST callback thread; the transport records the answer there and runs every
+`OnAnswered` on the main thread (see [Threads](/apps/mod/tbd-framework/Scripts/Game/TBD/API/Http/README.md#threads)),
+so the fleet command effects, the deployment decisions and the chat replies that follow an answer
+run on the main thread.
 
 ```text
 SCR_BaseGameMode.OnGameStart (authority, framework world)
@@ -81,8 +85,10 @@ byte for byte the one match results carry. Each subfolder's README describes its
   by `TBD_RuntimeHeartbeat` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/Heartbeat/`.
 - Rules: every `arma_id` on the wire comes from `TBD_PlayerIdentity.GetArmaId`, and a player
   without one is dropped, never sent under a substitute; no secret is logged; answers are read by
-  status and `details.code`, never by message text; a world's session starts only after its
-  artifact report is decided and the previous session has closed; the wire shapes follow
+  status and `details.code`, never by message text; no answer handler runs on the engine's REST
+  callback thread, so an answer may change the world, a player or the chat; a world's session
+  starts only after its artifact report is decided and the previous session has closed; the wire
+  shapes follow
   `contracts_v2/definitions/game-runtime-session.schema.json`,
   `contracts_v2/definitions/match-telemetry.schema.json` and
   `contracts_v2/definitions/fleet-command.schema.json`; lines added stay ASCII and
