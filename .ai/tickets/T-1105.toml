@@ -13,8 +13,10 @@ current_state = ["The body names Saturday 22 August 2026, as the title does."]
 approach = ["Correct the body date and pin title and body with a unit test (milestone V, K1)."]
 verify = ["cargo test -p xtask title_and_body_name_the_same_saturday"]
 acceptance = ["The announcement names Saturday 22 August 2026 exactly twice, in the title and the body."]
+shipped_at = "bd6ec3edf"
 created_at = "2026-09-25T05:09:51Z"
 completed_at = "2026-09-28T01:18:38Z"
+estimated = ["tokens"]
 
 [scope]
 domain = "repo"

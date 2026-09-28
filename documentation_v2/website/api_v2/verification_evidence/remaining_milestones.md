@@ -136,7 +136,7 @@ register scope.
 
 ## V — Verification completeness
 
-**State:** implemented and verified 2026-09-28 (uncommitted); design in
+**State:** implemented and verified 2026-09-28, committed as bd6ec3edf; design in
 `verification_completeness.md`, evidence in `progress_checkpoint.md`, findings in
 `verification_findings.md`.
 

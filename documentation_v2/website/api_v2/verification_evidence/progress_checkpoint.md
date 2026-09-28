@@ -6,9 +6,8 @@ Milestones E, F, M, T, C and V are implemented and verified; overall readiness i
 passing**, because staging (S) has not started, game ballistics (B) is a later phase (see
 `remaining_milestones.md`), and no receipt exists: `cargo xtask verify api-readiness --execute`
 was not run (it needs a quiet working tree). T is committed on main as 0ef292758 and C as
-b49fb86c1; V completed on 2026-09-28 and is uncommitted. Do not reset, clean, stash or revert
-anything in the working tree: it holds V's uncommitted work, including seven deletions the
-commit records with `git rm`.
+b49fb86c1; V is committed as bd6ec3edf (2026-09-28), with its fourteen tickets shipped and
+stamped.
 
 ## Milestone status
 
@@ -19,7 +18,7 @@ commit records with `git rm`.
 | M — artifacts, reviews, approval binding, deployments, authored preservation, workspace | Complete. |
 | T — match identity, revisions, corrections, atomicity, detailed events, telemetry queue, fleet dashboard, statistics | Complete (design: `telemetry.md`). |
 | C — personnel pagination, audit replay and query recovery, audit frontend, vehicle mutations, wiki features, content storage | Complete, committed as b49fb86c1 (design: `administration_and_content.md`). |
-| V — route acceptance, contract parity, properties, controlled races, failure injection, engineering laws | Complete 2026-09-28, uncommitted (design: `verification_completeness.md`; findings: `verification_findings.md`; execution record below). |
+| V — route acceptance, contract parity, properties, controlled races, failure injection, engineering laws | Complete 2026-09-28, committed as bd6ec3edf (design: `verification_completeness.md`; findings: `verification_findings.md`; execution record below). |
 | S | Not started (`remaining_milestones.md`). |
 | B | Later separate phase by operator decision (2026-09-23). |
 
@@ -186,12 +185,9 @@ Foreign files C touched, each only in its own separate hunk: `Cargo.lock` and
 
 ## Open items
 
-- **Commit V, then stamp.** After the commit, in order: `git rm` V's seven deletions (the
-  language bans, the deleted-README link check, 2 readme-coverage violations and xtask's
-  `every_rust_file_named_in_prose_exists` clear with them); `cargo xtask ticket stamp-sha` the
-  eight shipped tickets T-1041, T-1026, T-1012, T-1105, T-951, T-1055, T-944 and T-949 (their 16
-  errors are the only `ticket check` reds); then ship and stamp T-1014, T-1088, T-1126, T-1173,
-  T-1216 and T-1218. `verify api-readiness --execute` needs the quiet tree that follows.
+- **V commit.** bd6ec3edf records V with its seven deletions; T-1041, T-1026, T-1012, T-1105,
+  T-951, T-1055, T-944, T-949, T-1014, T-1088, T-1126, T-1173, T-1216 and T-1218 are shipped and
+  stamped with it (`ticket check` OK). `verify api-readiness --execute` needs a quiet tree.
 - **Perturbations not run.** The permission classifier refused these edits; the operator may
   run them: X1's race lock removal (the discriminating defect removes `lock_account` from
   `rotate_session`, V-F38), Q2's approved-artifact check removal, Q4's publication-order and
@@ -225,7 +221,7 @@ Foreign files C touched, each only in its own separate hunk: `Cargo.lock` and
 - In-engine exercise of match registration, events and results needs a LIVE round with a connected
   admin client (the two-client playtest runbook); the API side is covered by the integration
   suites.
-- **Next:** commit V (post-commit steps above), then S, with a quiet working tree for
+- **Next:** S, with a quiet working tree for
   `verify api-readiness --execute`; game ballistics (B) follows in its own later phase by
   operator decision.
 
@@ -295,6 +291,7 @@ snapshot is re-taken at each wave boundary.
 | 2026-09-28 | E1c done: README coverage for the other agent's committed tbd-export, data_viewer, equipment DTO, developer-tools and xtask folders (readme-coverage 67 → 21 violations; link-check 0 breaks); the remaining 19 are the Workbench-generated `Gameplay/Policy/Generated/` folders whose generator refuses foreign files (V-F115, orchestrator decision (delegated): noted for the operator, not renamed unattended); 2 clear when V's deletions are staged. Final full `db test-it` (run 2) started. |
 | 2026-09-28 | Final gates: `db test-it` 1,302 passed, 0 failed, 0 ignored (all V prefixes and 7 property records 256/256; lib 536); ci `rust-test-it` 1,302/0; rust-fmt, rust-build, wasm-ci (1,493) PASS; xtask api_readiness 60, property configuration 8, verification-core 144, developer-tools 269; `ci ci-local` stops at verify-no-python on V's 7 unstaged deletions (resolve at commit); documentation gates fail only on V's uncommitted files and V-F115. H1 launched. |
 | 2026-09-28 | H1 done: register minimums raised to the measured counts and the V implementation paths added (the register validates); `verification_findings.md`; this checkpoint and `remaining_milestones.md` at V complete; the milestone C record archived; T-1247 to T-1251 filed for V-F110, V-F112, V-F113, V-F115 and V-F116 (written in the minted shape, because `ticket add` refuses while `ticket check` is red on the stamp gap) and `ticket sync` run; judge-only `verify api-readiness` FAIL with no receipts (73 violations, 91 checks did not run). |
+| 2026-09-28 | Committed as bd6ec3edf (752 files); the fourteen V tickets shipped and stamped (`ticket check` OK). Post-commit (`pc-ci-*.log`): verify-no-python and verify-no-shell PASS; `ci verify-documentation` fails only on the 19 Workbench-generated `Gameplay/Policy/Generated/` folders (T-1250, operator decision). |
 
 ### Milestone V launch amendments
 

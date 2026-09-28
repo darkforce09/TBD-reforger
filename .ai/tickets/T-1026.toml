@@ -13,8 +13,10 @@ current_state = ["The three models cite current-profile.schema.json, profile-upd
 approach = ["Inventory every JSON success response, add the missing schema definitions and tag each model (milestone V, A3)."]
 verify = ["cargo xtask schema citations"]
 acceptance = ["Every @contract citation in the three models resolves to an existing schema definition."]
+shipped_at = "bd6ec3edf"
 created_at = "2026-09-24T04:32:58Z"
 completed_at = "2026-09-28T01:18:39Z"
+estimated = ["tokens"]
 
 [scope]
 domain = "repo"

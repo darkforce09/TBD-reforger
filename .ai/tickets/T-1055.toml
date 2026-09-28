@@ -16,8 +16,10 @@ verify = [
     "cargo xtask verify engine-layers",
 ]
 acceptance = ["A data/ file naming crate::editing is reported as a rule violation."]
+shipped_at = "bd6ec3edf"
 created_at = "2026-09-24T15:19:02Z"
 completed_at = "2026-09-28T01:18:37Z"
+estimated = ["tokens"]
 
 [scope]
 domain = "repo"

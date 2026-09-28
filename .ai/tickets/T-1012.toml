@@ -13,8 +13,10 @@ current_state = ["tools_v2/xtask/src/commands/db/operations.rs describes every D
 approach = ["Rewrite the help lines from the DbCmd verbs and pin them with a unit test (milestone V, K1 and G1)."]
 verify = ["cargo test -p xtask database_lane_help_describes_every_command_without_make_targets"]
 acceptance = ["No db help line names a make target or a migrate subcommand."]
+shipped_at = "bd6ec3edf"
 created_at = "2026-09-24T02:33:03Z"
 completed_at = "2026-09-28T01:18:38Z"
+estimated = ["tokens"]
 
 [scope]
 domain = "repo"

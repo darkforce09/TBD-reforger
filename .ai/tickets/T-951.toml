@@ -13,8 +13,10 @@ current_state = ["Each entry keeps a Weak on its PgConnectOptions allocation; a 
 approach = ["Keep a Weak beside each entry, compare with ptr_eq on hit and prune dead entries (milestone V, K1)."]
 verify = ["cargo test -p website-api --lib a_dropped_pool_leaves_no_entry_for_a_new_pool_to_reuse"]
 acceptance = ["Dropping a pool and opening another never hands the new pool the old listener."]
+shipped_at = "bd6ec3edf"
 created_at = "2026-09-06T00:09:12Z"
 completed_at = "2026-09-28T01:18:37Z"
+estimated = ["tokens"]
 
 [scope]
 domain = "repo"

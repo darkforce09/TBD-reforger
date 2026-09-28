@@ -38,8 +38,10 @@ acceptance = [
     "A late-committing audit row is streamed exactly once; no row is skipped or duplicated across a concurrent-writer test.",
     "With the DB socket silently dropped, the stream falls back to polling within the heartbeat deadline and recovers after redial.",
 ]
+shipped_at = "bd6ec3edf"
 created_at = "2026-09-05T16:47:42Z"
 completed_at = "2026-09-28T01:18:38Z"
+estimated = ["tokens"]
 owns = [
     "apps/website/api/src/handlers/admin/audit.rs",
     "apps/website/api/src/services/audit_notify.rs",

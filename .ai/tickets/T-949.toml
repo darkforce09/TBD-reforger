@@ -13,8 +13,10 @@ current_state = ["leaderboards_paging.rs pages the seeded content golden, whose 
 approach = ["Seed tied rows in content_golden.sql and page them below the tie size (milestone V, D1)."]
 verify = ["cargo xtask db test-it --test leaderboards_paging"]
 acceptance = ["Removing the tiebreak from the leaderboard order makes paging_the_golden_ties_yields_every_row_exactly_once fail."]
+shipped_at = "bd6ec3edf"
 created_at = "2026-09-06T00:08:59Z"
 completed_at = "2026-09-28T01:18:38Z"
+estimated = ["tokens"]
 
 [scope]
 domain = "repo"
