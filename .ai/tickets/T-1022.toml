@@ -53,8 +53,10 @@ acceptance = [
     "An operation's game server is set, changed and cleared from the event manager, and the deployment form of that server then offers the operation's event missions.",
     "The frontend tests, the wasm32 clippy, the contract parity goldens, the citation, route-tag, file-length and documentation gates, and the servercontrol DOM oracle pass.",
 ]
+shipped_at = "bcfbcf73c"
 created_at = "2026-09-24T04:20:39Z"
 completed_at = "2026-09-28T18:58:57Z"
+estimated = ["tokens"]
 
 [scope]
 domain = "repo"
