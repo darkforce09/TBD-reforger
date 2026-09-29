@@ -73,6 +73,12 @@ pub struct GuildMember {
 
 impl DiscordService {
     /// Construct the client with production defaults + a 10s timeout.
+    ///
+    /// The builder keeps reqwest's environment proxy, read once here: `HTTPS_PROXY` carries every
+    /// Discord request of this client through that proxy as a `CONNECT` tunnel, and `NO_PROXY`
+    /// exempts hosts. A host therefore cuts the API off from Discord by pointing `HTTPS_PROXY` at
+    /// a closed port and restarting, which turns each membership read into
+    /// `Discord transport unavailable` (`tests/discord_client_proxy_environment.rs`).
     pub fn new(
         client_id: String,
         client_secret: String,

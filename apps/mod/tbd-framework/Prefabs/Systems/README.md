@@ -24,7 +24,9 @@ resource by its path inside the addon:
 
 ```text
 Missions/TBD_Dev_POC.conf ──World──▶ worlds/TBD_Dev_POC.ent
+Missions/TBD_Dev_POC_Arland.conf ──World──▶ worlds/TBD_Dev_POC_Arland.ent
 worlds/TBD_Dev_POC_Layers/default.layer ──places──▶ Prefabs/Systems/TBD_GameMode.et
+worlds/TBD_Dev_POC_Arland_Layers/default.layer ──places──▶ Prefabs/Systems/TBD_GameMode.et
 Prefabs/Systems/TBD_GameMode.et ──PlayerControllerPrefab──▶ Prefabs/Systems/TBD_PlayerController.et
 ```
 
@@ -51,8 +53,9 @@ controller because its class is `SCR_PlayerController`.
 
 ## Referenced by
 
-- `apps/mod/tbd-framework/worlds/TBD_Dev_POC_Layers/default.layer` places the game mode by resource
-  GUID: `SCR_BaseGameMode TBD_GameMode : "{7A5B8572ECC15707}Prefabs/Systems/TBD_GameMode.et"`.
+- `apps/mod/tbd-framework/worlds/TBD_Dev_POC_Layers/default.layer` (Everon) and
+  `apps/mod/tbd-framework/worlds/TBD_Dev_POC_Arland_Layers/default.layer` (Arland) place the game
+  mode by resource GUID: `SCR_BaseGameMode TBD_GameMode : "{7A5B8572ECC15707}Prefabs/Systems/TBD_GameMode.et"`.
 - `TBD_GameMode.et` names the player controller by resource GUID in its `PlayerControllerPrefab`
   property.
 - The framework's manager components attach to the game mode by class: `TBD_FrameworkManager`,
@@ -63,6 +66,9 @@ controller because its class is `SCR_PlayerController`.
 - The mission header `apps/mod/tbd-framework/Missions/TBD_Dev_POC.conf` reaches the game mode
   through its world, `apps/mod/tbd-framework/worlds/TBD_Dev_POC.ent`, which it names as the
   resource `{F652B97A6F497348}worlds/TBD_Dev_POC.ent`.
+- The Arland mission header `apps/mod/tbd-framework/Missions/TBD_Dev_POC_Arland.conf` reaches it the
+  same way through `apps/mod/tbd-framework/worlds/TBD_Dev_POC_Arland.ent`
+  (`{C664C066F1476634}worlds/TBD_Dev_POC_Arland.ent`).
 - Everon's exported type inventory lists the game mode prefab by resource name
   (`assets_v2/terrains/everon/objects/type-inventory.json`).
 

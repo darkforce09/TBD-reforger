@@ -53,10 +53,12 @@ pub async fn write_audit(
 /// **Why trimming is safe *here* when it usually is not.** The rule is that a trim on read must
 /// agree with the trim on write:
 /// - **No writer trims, so there is no counterpart to disagree with.** `users.username` has
-///   exactly two writers — `identity_and_access/handlers/discord_oauth.rs` binds
-///   `du.display_name()` (Discord's `global_name`, else `username`) with no trim and no guard at
-///   any hop, and `identity_and_access/handlers/developer_login.rs` binds the literal
-///   `'Dev Operator'`. No CHECK constraint, no trigger, no `btrim` in SQL, and no request body
+///   exactly two writers — `identity_and_access/services/account_registration.rs` binds the name
+///   its caller passes with no trim and no guard at any hop (the OAuth callback passes
+///   `du.display_name()`, Discord's `global_name`, else `username`; the `staging-fixtures` host
+///   tool passes its synthetic `Load Member <n>` names), and
+///   `identity_and_access/handlers/developer_login.rs` binds the literal `'Dev Operator'`. No
+///   CHECK constraint, no trigger, no `btrim` in SQL, and no request body
 ///   anywhere in the crate carries a `username` field. `display_name()`
 ///   (`identity_and_access/services/discord_user_profile.rs`) selects on whether `global_name`
 ///   is blank, so a Discord `global_name` of `"   "` reaches `users.username` verbatim when that

@@ -11,6 +11,7 @@ use crate::commands::platform::cli::PlatformCmd;
 use crate::commands::reproduction::cli::ReproCmd;
 use crate::commands::schema::cli::SchemaCmd;
 use crate::commands::setup::cli::SetupCmd;
+use crate::commands::staging::cli::StagingCmd;
 use crate::commands::ticket::cli::TicketCmd;
 use crate::commands::verify::cli::VerifyCmd;
 use crate::commands::wave::cli::WaveLockCmd;
@@ -71,6 +72,11 @@ pub(crate) enum TopCmd {
     Db {
         #[command(subcommand)]
         cmd: crate::commands::db::operations::DbCmd,
+    },
+    /// Staging acceptance harness: preflight, status, host actions and the recorded receipts
+    Staging {
+        #[command(subcommand)]
+        cmd: StagingCmd,
     },
     /// Local / dedicated-server profile setup
     Setup {

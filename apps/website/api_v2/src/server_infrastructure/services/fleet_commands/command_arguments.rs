@@ -1,11 +1,21 @@
 //! Typed validation of a command's arguments. Executors receive only arguments that passed
 //! this gate, and each action accepts exactly its own keys.
+//!
+//! **Role:** the argument gate of the operator command route: the keys each action accepts,
+//! their bounds, and the form the ledger stores and an executor receives.
+//! **Position:** called by
+//! [`crate::server_infrastructure::services::fleet_commands::command_ledger::enqueue_command`]
+//! before a command row is written; each executor re-validates what it receives.
+//! **Signals & state:** none; pure functions.
+//! **Invariants:** an action without arguments stores `{}`; text is trimmed, holds 1 to its
+//! byte bound and no control character; a console line is one line that does not start with
+//! `@`; the deployment-only actions are refused here.
 
 use serde_json::{Map, Value};
 use uuid::Uuid;
 
 use crate::core::error_handling::api_error::ApiError;
-use crate::server_infrastructure::models::fleet_command::FleetAction;
+use crate::server_infrastructure::models::fleet_command::{ConsoleCommandArguments, FleetAction};
 
 /// Printable text without control characters, trimmed, of 1 to `max` bytes.
 fn bounded_text(arguments: &Map<String, Value>, key: &str, max: usize) -> Result<String, ApiError> {
@@ -32,6 +42,41 @@ fn only_keys(arguments: &Map<String, Value>, allowed: &[&str]) -> Result<(), Api
         ))),
         None => Ok(()),
     }
+}
+
+/// One line for the server's RCON console, trimmed of surrounding whitespace: 1 to
+/// [`ConsoleCommandArguments::LINE_MAX_BYTES`] bytes, with no control character and no line or
+/// paragraph separator anywhere in what was sent, so exactly one line reaches the console. A
+/// leading `@` is refused: it starts Reforger's custom RCON commands (`@logout`), which act on
+/// the RCON session itself, and that session belongs to the host agent.
+fn console_line(arguments: &Map<String, Value>) -> Result<ConsoleCommandArguments, ApiError> {
+    let sent = arguments
+        .get("line")
+        .and_then(Value::as_str)
+        .ok_or_else(|| ApiError::bad_request("line is required"))?;
+    if sent
+        .chars()
+        .any(|c| c.is_control() || matches!(c, '\u{2028}' | '\u{2029}'))
+    {
+        return Err(ApiError::bad_request(
+            "line must be one line without control characters",
+        ));
+    }
+    let line = sent.trim();
+    if line.is_empty() || line.len() > ConsoleCommandArguments::LINE_MAX_BYTES {
+        return Err(ApiError::bad_request(format!(
+            "line must contain 1 to {} bytes",
+            ConsoleCommandArguments::LINE_MAX_BYTES
+        )));
+    }
+    if line.starts_with('@') {
+        return Err(ApiError::bad_request(
+            "line must not start with @: RCON session commands belong to the host agent",
+        ));
+    }
+    Ok(ConsoleCommandArguments {
+        line: line.to_owned(),
+    })
 }
 
 /// The validated arguments of `action`, in their stored form. A kick names the Arma identity
@@ -69,6 +114,12 @@ pub fn validated_arguments(
                 stored["reason"] = Value::from(bounded_text(arguments, "reason", 128)?);
             }
             Ok((stored, Some(session)))
+        }
+        FleetAction::ConsoleCommand => {
+            only_keys(arguments, &["line"])?;
+            let stored = serde_json::to_value(console_line(arguments)?)
+                .map_err(|error| ApiError::internal(format!("console arguments: {error}")))?;
+            Ok((stored, None))
         }
         FleetAction::LoadMission | FleetAction::RestartWithMission => {
             Err(ApiError::bad_request(format!(

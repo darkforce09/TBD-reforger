@@ -2,9 +2,9 @@
 //! ended, the checks a request passes before it is sent, and what a refusal is told.
 //!
 //! **Role:** names every action and state, summarises a receipt's arguments and outcome, reads the
-//! players a player listing reported, classifies a followed receipt into how it ended and announces
-//! that exactly once, validates a broadcast and a kick as the backend does, and words a refused
-//! request or cancellation.
+//! players a player listing reported and the reply a console command reported, classifies a
+//! followed receipt into how it ended and announces that exactly once, validates a broadcast, a
+//! kick and a console line as the backend does, and words a refused request or cancellation.
 //! **Position:** read by the command console's request controls, its followed-command panel and its
 //! history.
 //! **Signals & state:** none; pure over its arguments.
@@ -12,10 +12,12 @@
 //! `succeeded` is announced as success. `indeterminate` is announced as unknown — the executor
 //! stopped reporting after the effect may have started and nothing repeats the command — never as
 //! success or failure. A state this build does not know is announced as unknown rather than
-//! followed forever. Instants are shown as UTC lines, so every sentence is testable natively.
+//! followed forever. A console line is checked on what was typed, before trimming, exactly as the
+//! API checks it, and a console reply is summarised without being rewritten. Instants are shown as
+//! UTC lines, so every sentence is testable natively.
 
 use crate::v2::core::api::client::ApiRefusal;
-use crate::v2::core::api::dto::FleetCommandReceipt;
+use crate::v2::core::api::dto::{ConsoleCommandOutcome, FleetCommandReceipt, FleetCommandRequest};
 use crate::v2::core::utils::utc_timestamp::utc_label;
 use serde_json::{Map, Value};
 
@@ -28,6 +30,7 @@ pub(crate) fn action_label(action: &str) -> String {
         "list_players" => "List players".to_string(),
         "broadcast" => "Broadcast".to_string(),
         "kick" => "Kick".to_string(),
+        "console_command" => "Console command".to_string(),
         "load_mission" => "Load mission (issued by a deployment)".to_string(),
         "restart_with_mission" => "Restart with mission (issued by a deployment)".to_string(),
         other => other.replace('_', " "),
@@ -119,9 +122,13 @@ pub(crate) fn latest_player_listing(
         .find(|r| r.action == "list_players" && r.state == "succeeded")
 }
 
-/// What a receipt's executor observed, summarised; a player listing names its players.
+/// What a receipt's executor observed, summarised; a player listing names its players and a
+/// console command says what the server replied.
 pub(crate) fn outcome_summary(receipt: &FleetCommandReceipt) -> Option<String> {
     let outcome = receipt.outcome.as_ref()?;
+    if let Some(console) = receipt.console_outcome() {
+        return Some(console_reply_summary(&console));
+    }
     if receipt.action == "list_players" {
         let players = listed_players(receipt);
         let names: Vec<String> = players
@@ -144,6 +151,38 @@ pub(crate) fn outcome_summary(receipt: &FleetCommandReceipt) -> Option<String> {
         });
     }
     Some(fields_text(outcome))
+}
+
+/// How many characters of a one-line console reply a summary quotes; the whole reply is shown
+/// beside it.
+const QUOTED_REPLY_CHARS: usize = 120;
+
+/// A console command's reply in a few words: empty, its one line, or how many lines it holds, and
+/// whether the host agent cut it.
+pub(crate) fn console_reply_summary(outcome: &ConsoleCommandOutcome) -> String {
+    let lines: Vec<&str> = outcome
+        .response
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .collect();
+    let replied = match lines.as_slice() {
+        [] => "the server's reply was empty".to_string(),
+        [only] => {
+            let quoted: String = only.chars().take(QUOTED_REPLY_CHARS).collect();
+            let more = if quoted.len() < only.len() { "…" } else { "" };
+            format!("the server replied \"{quoted}{more}\"")
+        }
+        many => format!("the server replied with {} lines", many.len()),
+    };
+    if outcome.response_truncated {
+        format!(
+            "{replied}; the host agent kept only its first {} bytes",
+            ConsoleCommandOutcome::RESPONSE_MAX_BYTES
+        )
+    } else {
+        replied
+    }
 }
 
 /// How a followed command ended.
@@ -287,6 +326,40 @@ pub(crate) fn validated_kick(
         text => Some(bounded_text(text, "kick reason", 128)?),
     };
     Ok((arma_id, session.to_string(), reason))
+}
+
+/// A console line as the backend accepts it: one line with no control character and no line or
+/// paragraph separator anywhere in what was typed, 1 to
+/// [`FleetCommandRequest::CONSOLE_LINE_MAX_BYTES`] bytes once trimmed, and no leading `@`, which
+/// starts the commands that act on the host agent's own RCON session.
+pub(crate) fn validated_console_line(typed: &str) -> Result<String, String> {
+    if typed
+        .chars()
+        .any(|c| c.is_control() || matches!(c, '\u{2028}' | '\u{2029}'))
+    {
+        return Err(
+            "The console line must be one line, without line breaks or control characters"
+                .to_string(),
+        );
+    }
+    let line = typed.trim();
+    if line.is_empty() {
+        return Err("Enter the console line".to_string());
+    }
+    if line.len() > FleetCommandRequest::CONSOLE_LINE_MAX_BYTES {
+        return Err(format!(
+            "The console line is too long: at most {} bytes",
+            FleetCommandRequest::CONSOLE_LINE_MAX_BYTES
+        ));
+    }
+    if line.starts_with('@') {
+        return Err(
+            "The console line cannot start with @: those commands act on the host \
+                    agent's own RCON session"
+                .to_string(),
+        );
+    }
+    Ok(line.to_string())
 }
 
 /// What a refused request or cancellation is told; `fallback` when the backend sent no sentence.

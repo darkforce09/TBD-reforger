@@ -7,7 +7,8 @@ description = "TBD Reforger platform backend: Axum REST API and SSE realtime hub
 license = "UNLICENSED"
 publish = false
 
-# One library crate holds every module; binaries: api (server) + import-registry (envelope ingest).
+# One library crate holds every module; binaries: api (server), import-registry (envelope ingest)
+# and staging-fixtures (the staging host tool).
 [lib]
 name = "website_api"
 path = "src/lib.rs"
@@ -19,6 +20,10 @@ path = "src/bin/api.rs"
 [[bin]]
 name = "import-registry"
 path = "src/bin/import_registry.rs"
+
+[[bin]]
+name = "staging-fixtures"
+path = "src/bin/staging_fixtures/main.rs"
 
 [dependencies]
 ammonia = "4.1.3"

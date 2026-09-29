@@ -1,77 +1,76 @@
-//! `cargo xtask deploy staging` — put the game server on the staging box and prove it booted.
+//! `cargo xtask deploy staging` — put the staging fleet's game servers on the host and prove each
+//! one booted.
 //!
-//! Check that the website API answers on the host, rsync the monorepo, refresh the Reforger
-//! profile, render and push `server.config.json`, restart the game server, then read the
-//! server's own console log and assert the boot rather than assume it. The website stack itself
-//! (API, Postgres, Caddy) is `cargo xtask deploy website`'s.
+//! Check that the website API answers on the host and that the fleet's secret files are there,
+//! rsync the monorepo, write every instance's profile and server config on the host, install the
+//! template units, restart every game server, then read each server's own console log and assert
+//! its boot rather than assume it; then start the relay and the host agents. The website stack
+//! itself (API, Postgres, Caddy) is `cargo xtask deploy website`'s.
 //!
 //! ── MODULE SPLIT (what each file owns) ───────────────────────────────────────────────────────
-//!
-//! Staging operations are grouped by the artefact they build; supporting modules own the shared
-//! configuration and rendering.
 //!
 //! | file | owns |
 //! |------|------|
 //! | this file | [`Paths`], the CLI parse, and mode dispatch |
-//! | [`host_agent`] | the host agent's settings, its server-config `rcon` block and its install |
+//! | [`config`] | the deploy file, its defaults, the retired settings it refuses |
+//! | [`fleet_instances`] | the instances: ports, names, visibility, folders, units, the relay |
+//! | [`fleet_server_config`] | each instance's `server.config.json` and `--render-only` |
+//! | [`render`] | modpack resolution, `game.mods[]` and the server config check |
+//! | [`payloads`] | the secret file check, each instance's files, profile writer and V2–V4 smoke |
+//! | [`fleet_units`] | the three template units and their install |
+//! | [`host_agent`] | each instance's `agent.toml` and the agents' install |
+//! | [`acknowledgement_relay`] | the relay in front of the relay instance's agent |
+//! | [`legacy_single_instance_migration`] | `--migrate-single-instance` |
 //! | [`boot`] | the boot verdict over a `console.log`, plus its selftest |
-//! | [`config`] | the deploy file, the defaults it fills in, and the launch-mode gate |
-//! | [`render`] | modpack resolution and the `server.config.json` render and validate |
 //! | [`pycompat`] | JSON behaviours a `python3` implementation made observable in output |
-//! | [`remote`] | ssh and rsync transport, the website API check, the deploy pipeline, the console-log read |
-//! | [`payloads`] | the exact text of every remote `bash -s` heredoc |
+//! | [`remote`] | ssh and rsync transport, the pipeline, the boot verdict per instance |
 //!
 //! ── WHAT IS AND IS NOT VERIFIED ──────────────────────────────────────────────────────────────
 //!
 //! [`crate::core::repository_layout::DEPLOY_ENV`] exists on no development machine: it is
-//! gitignored and rsync-excluded (see the exclude list in [`remote`]), so every ssh and rsync
-//! path in [`remote`] is unreachable from a checkout. Those paths are covered by
-//! argv-construction tests that assert the exact program and argument vector, in order, that
-//! would be spawned. That is structural fidelity rather than live proof, and each test says so
-//! in its name.
+//! gitignored and rsync-excluded, so every ssh and rsync path in [`remote`] is unreachable from a
+//! checkout. Those paths are covered by tests that assert the exact argument vectors and payloads
+//! that would be sent, and the secret file check is run under a local `bash`. That is structural
+//! fidelity rather than live proof.
 //!
 //! Everything reachable offline — `--help`, `--render-only`, `--verify-boot`,
-//! `--verify-boot-selftest`, `--dry-run`, bad-flag and missing-value handling, and the exact text
-//! of every remote payload — is exercised by this crate's tests.
+//! `--verify-boot-selftest`, the `--dry-run` plan, bad-flag and missing-value handling, and the
+//! exact text of every remote payload — is exercised by this crate's tests.
 //!
-//! ── WHY THREE CHECKS REFUSE RATHER THAN SKIP ─────────────────────────────────────────────────
+//! ── WHY CHECKS REFUSE RATHER THAN SKIP ───────────────────────────────────────────────────────
 //!
-//! A deploy that reports having run a check it did not run is worse than one that stops, so
-//! three places refuse instead:
+//! A deploy that reports having run a check it did not run is worse than one that stops:
 //!
 //! 1. [`config`] reads the deploy file through [`crate::core::deploy_environment`], which parses it
-//!    as `KEY=VALUE` and never executes it, so a stray command in it is refused rather than run
-//!    with the deploy's privileges.
-//! 2. [`host_agent`] refuses a credential, RCON password or API origin the agent or the engine
-//!    would refuse, before anything is deployed, and its install reads the unit's state back.
-//! 3. [`remote`] checks the status of the console-log pull. A partial transfer yields a
-//!    non-empty file, so a size check alone would read a truncated log as a complete one.
+//!    as `KEY=VALUE` and never executes it, and refuses a setting the fleet does not read.
+//! 2. The secret files are checked on the host before anything changes there, and every unit the
+//!    deploy starts has its state read back.
+//! 3. [`remote`] judges only a log written by the boot it started, pulled whole.
 //!
 //! ── BEHAVIOURS THAT LOOK LIKE BUGS AND ARE NOT ───────────────────────────────────────────────
 //!
-//! Each is pinned by a test and documented at its site:
-//!
 //! * `--render-only` runs after the deploy file's existence check and its required values, so it
-//!   needs a filled deploy file even though it touches no server; the render legitimately reads
-//!   `TBD_PROFILE_DIR` for `TBD_SERVER_CONFIG_REMOTE`. `--verify-boot*` runs before that point
-//!   and is genuinely credential-free.
-//! * `--render-only --dry-run` takes `--dry-run` as the output path: a value argument is read as
-//!   a value, with no lookahead for a leading dash, so a file may legitimately be named that.
-//! * Deploy-file values override the process environment, so `TBD_A2S_PORT=1 cargo xtask deploy
-//!   staging` is ignored when the deploy file sets that key; an empty assignment in the file
-//!   counts as unset and is not filled from the environment either.
+//!   needs a filled deploy file even though it touches no server. `--verify-boot*` runs before that
+//!   point and is genuinely credential-free.
+//! * `--render-only --dry-run` takes `--dry-run` as the output directory: a value argument is read
+//!   as a value, with no lookahead for a leading dash.
+//! * Deploy-file values override the process environment; an empty assignment in the file counts
+//!   as unset and is not filled from the environment either.
 //! * `TBD_SCENARIO`'s default carries a `{ResourceGUID}`; the validator that catches a truncated
 //!   GUID is kept, because a truncated default is silent everywhere else.
-//! * `TBD_WORKSHOP_MOD_ID` emptiness is read from the deploy file's value, so exporting an empty
-//!   one on the command line does not trip the config-mode requirement.
 
 use anyhow::Result;
 use std::path::PathBuf;
 
+mod acknowledgement_relay;
 mod boot;
 mod config;
+pub(crate) mod fleet_instances;
+mod fleet_server_config;
+mod fleet_units;
 mod host_agent;
-mod payloads;
+mod legacy_single_instance_migration;
+pub(crate) mod payloads;
 mod pycompat;
 mod remote;
 mod render;
@@ -101,13 +100,15 @@ impl Paths {
 
 /// The `--help` block.
 const USAGE: &str = "\
-Usage: cargo xtask deploy staging [--dry-run] [--render-only <path>]
+Usage: cargo xtask deploy staging [--dry-run] [--migrate-single-instance] [--render-only <directory>]
                                   [--verify-boot <console.log>] [--verify-boot-selftest]";
 
-/// Everything the CLI loop can produce. Mirrors the bash's five mode variables plus `DRY_RUN`.
+/// Everything the CLI loop can produce.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Cli {
     pub dry_run: bool,
+    /// `--migrate-single-instance`: retire the single-instance server so the fleet takes its ports.
+    pub migrate_single_instance: bool,
     pub render_only_out: Option<String>,
     pub verify_boot_log: Option<String>,
     pub verify_boot_selftest: bool,
@@ -141,15 +142,15 @@ pub fn parse(args: &[String]) -> Parsed {
     while i < args.len() {
         match args[i].as_str() {
             "--dry-run" => cli.dry_run = true,
-            // Render the server config to a LOCAL path and exit 0 before any rsync/ssh
-            // runs. This is the only way to exercise the render half without touching a real
-            // server, and it is what the perturbation gate drives.
+            "--migrate-single-instance" => cli.migrate_single_instance = true,
+            // Render every instance's server config into a LOCAL directory and exit before any
+            // rsync/ssh runs: the render half, exercised without touching a real server.
             "--render-only" => {
                 i += 1;
                 match args.get(i) {
                     Some(v) if !v.is_empty() => cli.render_only_out = Some(v.clone()),
                     _ => {
-                        eprintln!("--render-only requires an output path");
+                        eprintln!("--render-only requires an output directory");
                         return Parsed::Stop(2);
                     }
                 }
@@ -192,17 +193,12 @@ pub fn run(args: &[String]) -> Result<u8> {
     };
     let paths = Paths::resolve()?;
 
-    // ── Mode dispatch, in the bash's order ───────────────────────────────────────────────────
+    // ── Mode dispatch ────────────────────────────────────────────────────────────────────────
     //
-    // The ORDER IS THE CONTRACT, not an implementation detail: both --verify-boot forms sit
-    // BEFORE the deploy.env existence check, so they run on a
-    // machine with no staging credentials at all. --render-only sits AFTER it (bash line 1514 vs
-    // the check at 1072) and therefore needs a filled deploy.env despite the header advertising
-    // it as "no rsync, no ssh, no deploy". That is preserved, not fixed: the render genuinely
-    // reads TBD_PROFILE_DIR (for TBD_SERVER_CONFIG_REMOTE) and TBD_GAME_PORT, so a deploy.env-less
-    // render would have to invent values and would then be rendering a different config than the
-    // deploy does — the exact "validating something you did not deploy" defect this file is
-    // written against.
+    // The ORDER IS THE CONTRACT: both --verify-boot forms sit BEFORE the deploy.env existence
+    // check, so they run on a machine with no staging settings at all. --render-only sits AFTER it:
+    // the render reads the fleet's ports, the public address and the mod source from deploy.env,
+    // and a render from invented values would be a different config than the deploy pushes.
     if cli.verify_boot_selftest {
         println!("==> boot verdict selftest (local only, no deploy, no ssh)");
         return Ok(boot::selftest(&paths));

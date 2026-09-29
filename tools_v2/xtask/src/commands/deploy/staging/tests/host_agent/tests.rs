@@ -1,144 +1,81 @@
-//! The host agent's settings, the rcon block it adds to the server config, and its install.
+//! Each instance's agent configuration and the agents' install.
 use super::*;
-use crate::commands::deploy::staging::config::tests::{RUNTIME_CREDENTIAL, base};
+use crate::commands::deploy::staging::config::tests::base;
 use crate::commands::deploy::staging::remote::scenario_of_config;
-use crate::commands::deploy::staging::render::render_server_config;
-
-const AGENT_CREDENTIAL: &str = "tbdm_fedcba9876543210fedcba9876543210_fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210";
-
-fn settings() -> HostAgentSettings {
-    HostAgentSettings {
-        credential: AGENT_CREDENTIAL.into(),
-        rcon_password: "rcon-secret".into(),
-        rcon_port: "19999".into(),
-        api_base_url: "http://127.0.0.1:8080".into(),
-    }
-}
 
 #[test]
-fn machine_credentials_must_have_the_issued_shape() {
-    assert_eq!(validate_machine_credential("K", RUNTIME_CREDENTIAL), Ok(()));
-    for bad in [
-        "",
-        "replace-with-the-mod_runtime-machine-credential-of-this-server",
-        "tbdm_0123456789ABCDEF0123456789abcdef_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-        "tbdm_0123456789abcdef0123456789abcdef_0123",
-        "tbdx_0123456789abcdef0123456789abcdef_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-    ] {
-        assert_eq!(validate_machine_credential("K", bad), Err(1), "{bad}");
-    }
-}
-
-#[test]
-fn settings_the_agent_or_the_engine_would_refuse_are_refused_first() {
-    assert_eq!(settings().validate("config"), Ok(()));
+fn each_agent_configuration_names_its_instance_files_and_unit() {
+    let instances = base().fleet.instances();
     assert_eq!(
-        settings().validate("addons"),
-        Err(1),
-        "mission restarts need a config file"
+        agent_configuration(&instances[1]),
+        "api_base_url = \"http://127.0.0.1:8080\"\n\
+         credential_file = \"$HOME/tbd/fleet/instance-2/secrets/host-agent-credential\"\n\
+         poll_interval_seconds = 5\n\
+         \n\
+         [game_server]\n\
+         systemd_user_unit = \"tbd-reforger@2.service\"\n\
+         server_config_path = \"$HOME/tbd/fleet/instance-2/server.config.json\"\n\
+         \n\
+         [rcon]\n\
+         address = \"127.0.0.1\"\n\
+         port = 20000\n\
+         password_file = \"$HOME/tbd/fleet/instance-2/secrets/rcon-password\"\n"
     );
-    for password in ["ab", "has space", "quo\"te", "sin'gle", "back\\slash"] {
-        let mut s = settings();
-        s.rcon_password = password.into();
-        assert_eq!(s.validate("config"), Err(1), "{password}");
-    }
-    for port in ["0", "65536", "port"] {
-        let mut s = settings();
-        s.rcon_port = port.into();
-        assert_eq!(s.validate("config"), Err(1), "{port}");
-    }
-    let mut remote_http = settings();
-    remote_http.api_base_url = "http://tbd.example.org".into();
-    assert_eq!(remote_http.validate("config"), Err(1));
-    let mut https = settings();
-    https.api_base_url = "https://tbd.example.org".into();
-    assert_eq!(https.validate("config"), Ok(()));
+    // The relay instance's agent polls the relay.
+    assert!(
+        agent_configuration(&instances[4])
+            .starts_with("api_base_url = \"http://127.0.0.1:18085\"\n")
+    );
 }
 
 #[test]
-fn install_payload_writes_secret_files_and_reads_the_unit_state_back() {
-    let p = install_payload(
-        &settings(),
-        "/home/deploy/tbd/repo",
-        "/home/deploy/tbd/server.config.json",
-    );
+fn the_install_writes_every_configuration_and_reads_every_unit_back() {
+    let env = base();
+    let p = host_agents_install_payload(&env.remote_dir, &env.fleet.instances());
     assert!(
         p.starts_with("set -euo pipefail\nexport PATH=\"$HOME/.cargo/bin:$PATH\"\numask 077\n")
     );
-    assert!(
-        p.contains("(cd '/home/deploy/tbd/repo' && cargo build --release -q -p fleet-host-agent)")
-    );
-    assert!(p.contains(&format!(
-        "printf '%s' '{AGENT_CREDENTIAL}' > \"$AGENT_DIR/machine-credential\""
-    )));
-    assert!(p.contains("printf '%s' 'rcon-secret' > \"$AGENT_DIR/rcon-password\""));
-    assert!(p.contains("chmod 600 \"$AGENT_DIR/machine-credential\" \"$AGENT_DIR/rcon-password\""));
-    // The configuration names the unit the agent controls and the config it rewrites.
-    assert!(p.contains("systemd_user_unit = \"tbd-reforger.service\"\n"));
-    assert!(p.contains("server_config_path = \"/home/deploy/tbd/server.config.json\"\n"));
-    assert!(p.contains("[rcon]\naddress = \"127.0.0.1\"\nport = 19999\n"));
-    // The unit goes over verbatim from the committed template.
-    assert!(p.contains(&format!("<<'UNITEOF'\n{UNIT_TEMPLATE}UNITEOF\n")));
-    assert!(p.contains("RestartPreventExitStatus=78"));
-    // Do not trust the enable: read the state back and fail the deploy when it is not active.
-    assert!(p.contains("show -p ActiveState --value fleet-host-agent.service"));
-    assert!(p.contains("if [ \"$state\" != \"active\" ]; then\n"));
-}
-
-#[test]
-fn server_config_gains_a_loopback_monitor_rcon_block_for_the_agent() {
-    let dir = std::env::temp_dir().join(format!("tbd-rcon-render-{}", std::process::id()));
-    std::fs::create_dir_all(&dir).unwrap();
-    let mut env = base();
-    env.host_agent = Some(settings());
-    let path = dir.join("with-agent.json");
-    render_server_config(&env, "{0123456789ABCDEF}Missions/Deployed.conf", &path).unwrap();
-    let config: serde_json::Value =
-        serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+    assert!(p.contains(
+        "(cd '/home/deploy/tbd/repo' && cargo build --release -q -p fleet-host-agent)\n"
+    ));
+    for n in 1..=5 {
+        assert!(p.contains(&format!(
+            "AGENT_DIR=\"$HOME/.config/fleet-host-agent/instance-{n}\"\nmkdir -p \"$AGENT_DIR\"\nchmod 700 \"$AGENT_DIR\"\n"
+        )));
+    }
+    assert_eq!(p.matches("<<AGENTTOML\n").count(), 5);
     assert_eq!(
-        config["rcon"],
-        serde_json::json!({ "address": "127.0.0.1", "port": 19999, "password": "rcon-secret",
-                            "permission": "monitor", "maxClients": 2 })
+        p.matches("chmod 600 \"$AGENT_DIR/agent.toml\"\n").count(),
+        5
     );
-    assert_eq!(
-        config["game"]["scenarioId"],
-        "{0123456789ABCDEF}Missions/Deployed.conf"
-    );
-    let without = dir.join("without-agent.json");
-    render_server_config(&base(), &base().scenario, &without).unwrap();
-    let config: serde_json::Value =
-        serde_json::from_str(&std::fs::read_to_string(&without).unwrap()).unwrap();
-    assert!(config.get("rcon").is_none());
-    std::fs::remove_dir_all(&dir).unwrap();
-}
-
-#[test]
-fn the_live_scenario_is_read_only_from_a_valid_config() {
-    let config = r#"{"game": {"scenarioId": "{0123456789ABCDEF}Missions/Deployed.conf"}}"#;
-    assert_eq!(
-        scenario_of_config(config).as_deref(),
-        Some("{0123456789ABCDEF}Missions/Deployed.conf")
-    );
-    assert_eq!(scenario_of_config(""), None, "no config yet");
-    assert_eq!(scenario_of_config("{\"game\": {}}"), None);
-    assert_eq!(
-        scenario_of_config(r#"{"game": {"scenarioId": "{69A85365FC09E2CA"}}"#),
-        None
-    );
+    let units = "fleet-host-agent@1.service fleet-host-agent@2.service fleet-host-agent@3.service \
+                 fleet-host-agent@4.service fleet-host-agent@5.service";
+    assert!(p.contains(&format!("systemctl --user restart {units}\n")));
+    assert!(p.contains(&format!("for unit in {units}; do\n")));
+    assert!(p.contains("show -p ActiveState --value \"$unit\""));
+    assert!(p.ends_with("exit \"$failed\"\n"));
+    // It names secret files and never writes a secret.
+    assert!(!p.contains("printf '%s'"), "{p}");
 }
 
 /// ssh runs the payload in a non-login shell, which never reads `~/.profile`: the agent build
 /// finds `cargo` only because the payload puts the toolchain on `PATH` before it.
 #[test]
-fn install_payload_puts_the_rust_toolchain_on_path_before_the_agent_build() {
-    let p = install_payload(
-        &settings(),
-        "/home/deploy/tbd/repo",
-        "/home/deploy/tbd/server.config.json",
-    );
+fn the_install_puts_the_rust_toolchain_on_path_before_the_agent_build() {
+    let env = base();
+    let p = host_agents_install_payload(&env.remote_dir, &env.fleet.instances());
     let toolchain = p
         .find(crate::commands::deploy::remote_rust_toolchain::PUT_RUST_TOOLCHAIN_ON_PATH)
         .expect("the payload puts the toolchain on PATH");
-    let build = p.find("cargo build").expect("the payload builds the agent");
-    assert!(toolchain < build, "PATH must be set before cargo runs");
+    assert!(toolchain < p.find("cargo build").expect("the payload builds the agent"));
+}
+
+#[test]
+fn the_live_scenario_is_read_only_from_a_valid_value() {
+    assert_eq!(
+        scenario_of_config("{0123456789ABCDEF}Missions/Deployed.conf\n").as_deref(),
+        Some("{0123456789ABCDEF}Missions/Deployed.conf")
+    );
+    assert_eq!(scenario_of_config(""), None, "no config yet");
+    assert_eq!(scenario_of_config("{69A85365FC09E2CA"), None);
 }

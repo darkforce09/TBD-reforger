@@ -12,9 +12,12 @@
 //!
 //! **Signals & state:** a counter for unique server names and source match ids.
 //!
-//! **Invariants:** the executor queue of the machine credentials' server only ever holds
-//! `list_players` commands (never process-changing), so a host-agent claim succeeds whenever a
-//! fixture queued one; the administrator command routes act on a separate server, so their
+//! **Invariants:** the executor queue of the machine credentials' server holds `list_players`
+//! commands (never process-changing), so a host-agent claim succeeds whenever a fixture queued
+//! one; the only process change on it is the console command of `executing-console-command`,
+//! claimed right after a drain, and a refused console response leaves that command executing,
+//! which blocks every later console claim, so the refused-response probe is that fixture's last
+//! user; the administrator command routes act on a separate server, so their
 //! commands never reach the executor probes; every consuming fixture (session end, claim,
 //! executing report, result, cancel, revocation, deactivation, registration) mints its own rows.
 
@@ -191,6 +194,37 @@ impl FleetAndTelemetryWorld {
     /// A claimed command already reported executing: `(command id, fencing token)`.
     async fn executing_command(core: &WorldCore) -> (Uuid, i64) {
         let (command, token) = Self::claimed_command(core).await;
+        let uri = format!("/api/v1/fleet-executor/commands/{command}/executing");
+        let bearer = machine(&core.actors, Executor::HostAgent);
+        let body = json!({"fencing_token": token});
+        call(&core.app, "POST", &uri, bearer, Some(&body)).await;
+        (command, token)
+    }
+
+    /// A console command on the machine credentials' server, claimed and reported executing:
+    /// `(command id, fencing token)`. The host-agent queue is drained first, so the claim takes
+    /// this command and no older one.
+    async fn executing_console_command(core: &WorldCore) -> (Uuid, i64) {
+        Self::drain_claims(core).await;
+        let line = json!({"action": "console_command", "arguments": {"line": "#players"}});
+        let command =
+            queue_command(&core.app, &core.actors, Self::machine_server(core), &line).await;
+        let bearer = machine(&core.actors, Executor::HostAgent);
+        let claim_uri = "/api/v1/fleet-executor/commands/claim";
+        let (status, claimed) = call(&core.app, "POST", claim_uri, bearer, Some(&json!({}))).await;
+        assert_eq!(
+            status,
+            StatusCode::OK,
+            "{}: the console command is claimable: {claimed}",
+            core.suite
+        );
+        assert_eq!(
+            uuid_at(&claimed, "/command_id"),
+            command,
+            "{}: the drained queue holds only the console command",
+            core.suite
+        );
+        let token = integer_at(&claimed, "/fencing_token");
         let uri = format!("/api/v1/fleet-executor/commands/{command}/executing");
         let bearer = machine(&core.actors, Executor::HostAgent);
         let body = json!({"fencing_token": token});
@@ -382,6 +416,10 @@ impl FleetAndTelemetryWorld {
                     command,
                     json!({"fencing_token": token, "succeeded": true, "outcome": outcome}),
                 )
+            }
+            "executing-console-command" => {
+                let (command, token) = Self::executing_console_command(core).await;
+                Self::executor_fixture(command, json!({"fencing_token": token}))
             }
             "result-before-executing" => {
                 let (command, token) = Self::claimed_command(core).await;

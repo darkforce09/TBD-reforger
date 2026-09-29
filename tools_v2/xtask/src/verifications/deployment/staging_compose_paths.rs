@@ -6,7 +6,8 @@
 //!
 //! **Position:** the body of `cargo xtask verify staging-compose-paths`, which `ci-local`, the
 //! wave gate's `VERIFY_STEPS` and the `mod-gates-hosted` job of `.github/workflows/ci.yml` run;
-//! it reads [`WEBSITE_DEPLOY_SOURCE`] and [`STAGING_DEPLOY_SOURCE`] as text and runs nothing.
+//! it reads [`WEBSITE_DEPLOY_SOURCE`] and every production source of [`STAGING_DEPLOY_MODULE`]
+//! as text and runs nothing.
 //!
 //! **Signals & state:** none; reads of the checkout.
 //!
@@ -49,9 +50,9 @@
 //! ── REPOINTING THE PIN ───────────────────────────────────────────────────────────────────────
 //!
 //! **Everything about *what* is pinned lives in the consts below** — [`WEBSITE_DEPLOY_SOURCE`],
-//! [`STAGING_DEPLOY_SOURCE`], [`GOOD_PATH`], [`BAD_PATH`], [`COMPOSE_COMMAND`] and
-//! [`CD_INTO_API`] — and every message is `format!`ed from them. To follow the deploy code
-//! elsewhere, change the two sources; if the new code sets its working folder another way,
+//! [`STAGING_DEPLOY_PIPELINE`], [`STAGING_DEPLOY_MODULE`], [`GOOD_PATH`], [`BAD_PATH`],
+//! [`COMPOSE_COMMAND`] and [`CD_INTO_API`] — and every message is `format!`ed from them. To follow
+//! the deploy code elsewhere, change the sources; if the new code sets its working folder another way,
 //! replace [`CD_INTO_API`] with the equivalent ban rather than deleting it.
 
 use std::path::Path;
@@ -71,9 +72,16 @@ const GATE_NAME: &str = "staging-compose-paths";
 /// auditing the runner alone would see no compose command at all.
 const WEBSITE_DEPLOY_SOURCE: &str = "tools_v2/xtask/src/commands/deploy/website/remote_steps.rs";
 
-/// The game server deploy's pipeline, repo-relative. It runs no compose command: the staging
-/// compose stack belongs to the website deploy.
-const STAGING_DEPLOY_SOURCE: &str = "tools_v2/xtask/src/commands/deploy/staging/remote/ssh_argv.rs";
+/// The game server deploy's pipeline, repo-relative: the file that runs every step the deploy
+/// sends to the host. It must exist, so a moved pipeline turns the gate red rather than blind.
+const STAGING_DEPLOY_PIPELINE: &str =
+    "tools_v2/xtask/src/commands/deploy/staging/remote/fleet_deploy.rs";
+
+/// The game server deploy's module, repo-relative. `<module>.rs` and every `.rs` file under
+/// `<module>/` outside a `tests/` folder build what the deploy sends to the host, the pipeline and
+/// each payload module alike, so each is audited: the deploy runs no compose command, because the
+/// staging compose stack belongs to the website deploy.
+const STAGING_DEPLOY_MODULE: &str = "tools_v2/xtask/src/commands/deploy/staging";
 
 /// The one staging compose file. Double duty: the string that must follow `-f`, **and** — joined
 /// onto the repo root — the file that must exist. Two spellings of one contract drift, so there

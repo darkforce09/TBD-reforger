@@ -14,7 +14,8 @@ tools_v2/xtask/
 ├── dedicated_server_profiles/  the dedicated-server profile the local mod servers start from
 ├── deploy/                     deploy settings template, Caddy site and systemd units for the hosts
 ├── fixtures/                   recorded tool output that the commands' selftests replay
-└── src/                        the binary: command tree, command groups, verifications, shared core
+├── src/                        the binary: command tree, command groups, verifications, shared core
+└── staging/                    committed load workload and population the staging load receipt runs
 ```
 
 ## How it works

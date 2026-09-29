@@ -9,7 +9,7 @@ repository verifications they run, and the shared plumbing they stand on.
 tools_v2/xtask/src/
 ├── cli/            the top-level clap tree and the dispatch to each command group
 ├── commands/       one folder per command group: its clap enum, dispatch and work
-├── core/           repository root and layout, deploy settings, cargo target directory, host execution, test setup
+├── core/           repository root and layout, deploy settings, ssh transport, cargo target, host execution, test setup
 ├── main.rs         the binary entry: runs the dispatch and turns its result into the exit code
 ├── tests/          crate-level tests: dependency direction, file limits, prose rules, layout paths
 └── verifications/  the repository checks behind `cargo xtask verify`, grouped by invariant

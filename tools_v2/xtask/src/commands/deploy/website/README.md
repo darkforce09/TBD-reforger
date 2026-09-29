@@ -39,16 +39,23 @@ tools_v2/xtask/src/commands/deploy/website/
   `TBD_POSTGRES_HOST_PORT` and defines `staging_compose`, a shell function that runs
   `apps/website/docker-compose.staging.yml` under docker compose when the host has docker, else
   under podman compose. The steps are: `staging_compose up -d postgres`; `cargo build --release -p
-  website-api --bin api`; `trunk build --release` in `apps/website/frontend`;
+  website-api --bin api`; the staging host tools of `STAGING_HOST_TOOLS`, `cargo build --release
+  -p website-api --bin staging-fixtures` and `cargo build --release -p developer-tools --bin
+  acknowledgement-dropping-relay`, each proven by `test -x target/release/<executable>`, so the
+  staging harness and `cargo xtask deploy staging` find them built from the same checkout;
+  `trunk build --release` in `apps/website/frontend`;
   `staging_compose up -d caddy`, then `staging_compose exec -T caddy caddy reload --config
   /etc/tbd-caddy/Caddyfile.website --adapter caddyfile`, tried up to `CADDY_RELOAD_ATTEMPTS` (5)
   times a second apart, because `up -d` returns before Caddy's admin endpoint listens;
   `TBD_DB_CONTAINER=tbd_staging_db cargo xtask db repair-migration-checksum --force`; the move of
   any `uploads` folder left in `apps/website/api_v2/` into the unit's state folder
   `tbd-website-api`; and the `systemctl --user restart` of the unit followed by `is-active`.
-  `website.rs` orders them: Postgres, the two builds, Caddy, the checksum repair and the state
-  move. `TBD_SKIP_COMPOSE=1` drops both compose steps; `TBD_SKIP_SPA_BUILD=1` drops only the app
-  build, so Caddy still starts, reloads and serves the build already on the host. Every command,
+  `website.rs` orders them: Postgres, the API build, the host tools build, the app build, Caddy,
+  the checksum repair and the state move. `TBD_SKIP_COMPOSE=1` drops both compose steps;
+  `TBD_SKIP_API_BUILD=1` drops both cargo steps; `TBD_SKIP_SPA_BUILD=1` drops only the app
+  build, so Caddy still starts, reloads and serves the build already on the host. The Caddyfile's
+  global options trust a forwarded client address from the tunnel's loopback peer
+  `127.0.0.1/32` alone. Every command,
   the map-asset probe and the restart included, reaches ssh through `login_shell`, as the one word
   `bash -lc '<command>'`: ssh joins its remote arguments into a single line for the host's shell,
   so an unquoted command would lose all but its first word to that shell, which runs in the home
@@ -63,7 +70,8 @@ tools_v2/xtask/src/commands/deploy/website/
 
 - Depends on: `crate::core::repository_layout` (`DEPLOY_ENV`, `WEBSITE_API_UNIT`,
   `SYSTEMD_UNITS_DIR`); `crate::commands::deploy::development_machine_only_paths` for the
-  exclusions both deploys share; `tools_v2/xtask/src/commands/deploy/website.rs` reads the
+  exclusions both deploys share; the `[[bin]]` names of `apps/website/api_v2/Cargo.toml` and
+  `tools_v2/developer-tools/Cargo.toml` for the host tools; `tools_v2/xtask/src/commands/deploy/website.rs` reads the
   settings through `crate::core::deploy_environment`; on the host, the `postgres` and `caddy`
   services of `apps/website/docker-compose.staging.yml` and the Caddyfile the `caddy` service
   mounts.
@@ -78,6 +86,12 @@ tools_v2/xtask/src/commands/deploy/website/
   (`rsync_argv_keeps_source_and_destination_last`); the plan ends with the checksum repair and the
   state move (`the_remote_plan_ends_with_the_checksum_repair_and_the_state_move`), and the Caddy
   step follows compose, not the app build (`the_web_server_step_follows_compose_and_not_the_app_build`);
+  the host tools build after the API and skip with it
+  (`the_staging_host_tools_build_after_the_api_and_skip_with_it`), each is built and proven
+  (`the_staging_host_tools_step_builds_and_proves_every_executable`) and is a `[[bin]]` of the
+  package it names, the relay under the name its unit runs
+  (`every_staging_host_tool_is_an_executable_its_package_declares`); the Caddyfile trusts only
+  the tunnel's peer (`the_caddyfile_trusts_forwarded_addresses_only_from_the_tunnel_peer`);
   every compose step names the staging compose file
   (`every_compose_step_runs_the_staging_compose_file_from_the_checkout`, and
   `cargo xtask verify staging-compose-paths` over this folder's `remote_steps.rs`); a step reaches

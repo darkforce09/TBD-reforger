@@ -192,13 +192,14 @@ fn plan_for(skip_compose: bool, skip_api: bool, skip_spa: bool) -> Vec<String> {
 #[test]
 fn the_remote_plan_ends_with_the_checksum_repair_and_the_state_move() {
     let full = plan_for(false, false, false);
-    assert_eq!(full.len(), 6, "{full:?}");
+    assert_eq!(full.len(), 7, "{full:?}");
     assert!(full[0].contains("Postgres"));
     assert!(full[1].contains("cargo build"));
-    assert!(full[2].contains("trunk build"));
-    assert!(full[3].contains("Caddy"));
-    assert!(full[4].contains("checksums"));
-    assert!(full[5].contains("state directory"));
+    assert!(full[2].contains("staging host tools"));
+    assert!(full[3].contains("trunk build"));
+    assert!(full[4].contains("Caddy"));
+    assert!(full[5].contains("checksums"));
+    assert!(full[6].contains("state directory"));
 
     let builds_skipped = plan_for(true, true, true);
     assert_eq!(builds_skipped.len(), 2, "{builds_skipped:?}");
@@ -211,16 +212,97 @@ fn the_remote_plan_ends_with_the_checksum_repair_and_the_state_move() {
 #[test]
 fn the_web_server_step_follows_compose_and_not_the_app_build() {
     let spa_skipped = plan_for(false, false, true);
-    assert_eq!(spa_skipped.len(), 5, "{spa_skipped:?}");
-    assert!(spa_skipped[2].contains("Caddy"), "{spa_skipped:?}");
+    assert_eq!(spa_skipped.len(), 6, "{spa_skipped:?}");
+    assert!(spa_skipped[3].contains("Caddy"), "{spa_skipped:?}");
 
     let compose_skipped = plan_for(true, false, false);
-    assert_eq!(compose_skipped.len(), 4, "{compose_skipped:?}");
+    assert_eq!(compose_skipped.len(), 5, "{compose_skipped:?}");
     assert!(
         !compose_skipped
             .iter()
             .any(|title| title.contains("Postgres") || title.contains("Caddy")),
         "{compose_skipped:?}"
+    );
+}
+
+/// The staging host tools build right after the API, whose checkout and database they share, and
+/// the step names every tool it builds; `TBD_SKIP_API_BUILD` drops both cargo steps together.
+#[test]
+fn the_staging_host_tools_build_after_the_api_and_skip_with_it() {
+    let full = plan_for(false, false, false);
+    let api = full
+        .iter()
+        .position(|title| title.contains("--bin api"))
+        .expect("the API build");
+    let tools = &full[api + 1];
+    for tool in &remote_steps::STAGING_HOST_TOOLS {
+        assert!(tools.contains(tool.executable), "{tools}");
+    }
+
+    let api_skipped = plan_for(false, true, false);
+    assert_eq!(api_skipped.len(), 5, "{api_skipped:?}");
+    assert!(
+        !api_skipped
+            .iter()
+            .any(|title| title.contains("cargo build")),
+        "{api_skipped:?}"
+    );
+}
+
+/// Each tool builds in the checkout with the deploy account's toolchain, one `cargo build` per
+/// package, and the step fails unless every executable then exists under `target/release/`.
+#[test]
+fn the_staging_host_tools_step_builds_and_proves_every_executable() {
+    let command = remote_steps::staging_host_tools_build("/home/deploy/tbd/repo");
+    let preamble = format!(
+        "cd '/home/deploy/tbd/repo' && {} && ",
+        crate::commands::deploy::remote_rust_toolchain::PUT_RUST_TOOLCHAIN_ON_PATH
+    );
+    assert!(command.starts_with(&preamble), "{command}");
+    for (package, executable) in [
+        ("website-api", "staging-fixtures"),
+        ("developer-tools", "acknowledgement-dropping-relay"),
+    ] {
+        let build = format!("cargo build --release -p {package} --bin {executable}");
+        let proof = format!("test -x target/release/{executable}");
+        let built_at = command.find(&build).unwrap_or_else(|| panic!("{command}"));
+        let proven_at = command.find(&proof).unwrap_or_else(|| panic!("{command}"));
+        assert!(built_at < proven_at, "{command}");
+    }
+    assert_eq!(remote_steps::STAGING_HOST_TOOLS.len(), 2);
+    assert!(command.ends_with("test -x target/release/acknowledgement-dropping-relay"));
+}
+
+/// Every tool the deploy builds is a `[[bin]]` of the package it names, and the relay unit that
+/// `cargo xtask deploy staging` installs runs the relay under the same executable name, so the
+/// host never builds or runs a name that no longer exists.
+#[test]
+fn every_staging_host_tool_is_an_executable_its_package_declares() {
+    const WEBSITE_API: &str = include_str!("../../../../../../../apps/website/api_v2/Cargo.toml");
+    const DEVELOPER_TOOLS: &str = include_str!("../../../../../../developer-tools/Cargo.toml");
+    const RELAY_UNIT: &str =
+        include_str!("../../../../../deploy/systemd/acknowledgement-dropping-relay@.service");
+    for tool in &remote_steps::STAGING_HOST_TOOLS {
+        let manifest: toml::Value = [WEBSITE_API, DEVELOPER_TOOLS]
+            .iter()
+            .map(|text| text.parse::<toml::Value>().expect("a manifest parses"))
+            .find(|manifest| manifest["package"]["name"].as_str() == Some(tool.package))
+            .unwrap_or_else(|| panic!("no manifest declares the package {}", tool.package));
+        let executables: Vec<&str> = manifest
+            .get("bin")
+            .and_then(toml::Value::as_array)
+            .map(|bins| bins.iter().filter_map(|bin| bin["name"].as_str()).collect())
+            .unwrap_or_default();
+        assert!(
+            executables.contains(&tool.executable),
+            "{} declares no [[bin]] named {} (it declares {executables:?})",
+            tool.package,
+            tool.executable
+        );
+    }
+    assert!(
+        RELAY_UNIT.contains("ExecStart=%h/.local/bin/acknowledgement-dropping-relay serve "),
+        "{RELAY_UNIT}"
     );
 }
 
@@ -331,6 +413,32 @@ fn the_caddy_service_serves_what_the_caddyfile_and_the_reload_name() {
     }
     assert!(CADDYFILE.contains("\t\troot * /srv/tbd-frontend/dist\n"));
     assert!(CADDYFILE.contains(":3080 {\n"));
+}
+
+/// The Caddyfile trusts a forwarded client address from the tunnel's loopback peer alone: its
+/// global options open the file and name exactly `127.0.0.1/32`, and nothing else in it trusts a
+/// proxy. With a wider range, a LAN client's own `X-Forwarded-For` text would travel upstream as
+/// though a proxy had written it.
+#[test]
+fn the_caddyfile_trusts_forwarded_addresses_only_from_the_tunnel_peer() {
+    const CADDYFILE: &str = include_str!("../../../../../deploy/Caddyfile.website");
+    let first_block = CADDYFILE
+        .lines()
+        .find(|line| !line.is_empty() && !line.starts_with('#'))
+        .expect("a directive");
+    assert_eq!(
+        first_block, "{",
+        "the global options must open the Caddyfile"
+    );
+    assert!(
+        CADDYFILE.contains("{\n\tservers {\n\t\ttrusted_proxies static 127.0.0.1/32\n\t}\n}\n"),
+        "{CADDYFILE}"
+    );
+    let trusting: Vec<&str> = CADDYFILE
+        .lines()
+        .filter(|line| !line.trim_start().starts_with('#') && line.contains("trusted_proxies"))
+        .collect();
+    assert_eq!(trusting, ["\t\ttrusted_proxies static 127.0.0.1/32"]);
 }
 
 #[test]

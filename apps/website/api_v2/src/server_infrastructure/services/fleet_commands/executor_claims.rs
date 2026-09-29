@@ -7,6 +7,7 @@ use sqlx::PgConnection;
 use uuid::Uuid;
 
 use super::command_ledger::{RECEIPT_COLUMNS, state_conflict};
+use super::command_outcomes::validated_outcome;
 use crate::administration::services::required_audit::append_system_audit;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::failpoints::fail_point;
@@ -259,7 +260,8 @@ pub async fn mark_executing(
 }
 
 /// Record the outcome the executor observed. Success is accepted only for a command whose
-/// effect was reported as starting; a failure may also end a claim before that.
+/// effect was reported as starting; a failure may also end a claim before that. The reported
+/// outcome must meet its action's contract ([`validated_outcome`]), or nothing is written.
 pub async fn record_result(
     connection: &mut PgConnection,
     caller: &MachineCaller,
@@ -291,12 +293,14 @@ pub async fn record_result(
             ));
         }
     };
+    let action = FleetAction::parse(&claim.action)
+        .ok_or_else(|| ApiError::internal("unknown fleet action"))?;
+    let outcome = validated_outcome(action, result.succeeded, result.outcome.as_ref())?;
     let state = if result.succeeded {
         FleetCommandState::Succeeded
     } else {
         FleetCommandState::Failed
     };
-    let outcome = result.outcome.clone().map(serde_json::Value::Object);
     sqlx::query(
         "UPDATE fleet_commands SET state = $2, finished_at = clock_timestamp(), outcome = $3,
              failure_reason = $4, claimed_by = NULL, lease_expires_at = NULL

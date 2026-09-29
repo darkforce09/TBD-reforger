@@ -11,10 +11,11 @@ silent.
 apps/website/api_v2/src/server_infrastructure/services/fleet_commands/
 ├── command_arguments.rs       per-action argument validation: each action accepts exactly its own keys
 ├── command_ledger.rs          the operator side: accept, cancel an unclaimed command, read receipts
+├── command_outcomes.rs        per-action outcome validation: a console command's reply shape and bound
 ├── command_reconciliation.rs  expiry, lapsed leases and indeterminate outcomes, decided by time
 ├── executor_claims.rs         the executor side: claim under a lease, report the start and the outcome
 ├── mod.rs                     the module tree
-└── tests/                     unit tests for the argument validation
+└── tests/                     unit tests for the argument and outcome validation
 ```
 
 ## How it works
@@ -40,6 +41,10 @@ lease lapsed cannot overwrite a newer claim; a
 command bound to another session fails. In a test build `record_result` passes the failpoint
 `FleetCommandResultBeforeCommit` after the outcome's audit row; the executor handlers pass
 `FleetCommandClaimAfterCommit` and `FleetCommandResultAfterCommit` after their commits.
+`record_result` passes the reported outcome through `command_outcomes.rs` before writing it: a
+succeeded `console_command` reports exactly `{response, response_truncated}` with a response of at
+most 4096 bytes (a failed one reports that or nothing), any other console outcome answers 400 and
+leaves the command as it was, and every other action's outcome is stored as reported.
 `command_reconciliation.rs` runs every pass over all
 servers, skipping rows another transaction holds. Lock order: server, runtime session, command rows.
 
@@ -54,9 +59,11 @@ servers, skipping rows another transaction holds. Lock order: server, runtime se
   (`enqueue_deployment_command`, `cancel_command`); the `fleet_command_reconciler` worker in
   `apps/website/api_v2/src/background_workers/`; the integration test
   `apps/website/api_v2/tests/fleet_command_ledger.rs`.
-- Rules: no action carries free text to a shell, and an executor receives only arguments that
-  passed `command_arguments.rs`; nothing repeats a non-idempotent command whose outcome is unknown,
-  which becomes `indeterminate` for an operator to decide.
+- Rules: no argument reaches a shell, and the one free-text argument, a console command's line,
+  reaches only the server's RCON console; an executor receives only arguments that passed
+  `command_arguments.rs`, and the ledger stores only outcomes that passed `command_outcomes.rs`;
+  nothing repeats a non-idempotent command whose outcome is unknown, which becomes `indeterminate`
+  for an operator to decide.
 
 ## Related documentation
 

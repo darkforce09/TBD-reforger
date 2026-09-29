@@ -316,6 +316,9 @@ pub(crate) fn server_control_source() -> String {
             "../../pages/administration/server_control/fleet_commands/command_requests.rs"
         ),
         include_str!("../../pages/administration/server_control/fleet_commands/command_wording.rs"),
+        include_str!(
+            "../../pages/administration/server_control/fleet_commands/console_command_form.rs"
+        ),
         include_str!("../../pages/administration/server_control/mission_deployments/mod.rs"),
         include_str!(
             "../../pages/administration/server_control/mission_deployments/deployment_list.rs"

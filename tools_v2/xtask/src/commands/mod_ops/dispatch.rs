@@ -16,9 +16,11 @@ pub(crate) fn run(cmd: ModCmd) -> Result<u8> {
         ModCmd::PublishEquipmentVehicleExport { input } => {
             super::equipment_vehicle_export::publish_command(&input)
         }
-        ModCmd::RemoteLogs { file, selftest } => {
-            crate::commands::debug::remote_logs::run(file, selftest)
-        }
+        ModCmd::RemoteLogs {
+            file,
+            selftest,
+            instance,
+        } => crate::commands::debug::remote_logs::run(file, selftest, instance),
         ModCmd::SpawnDeterminism {
             preflight,
             selftest,

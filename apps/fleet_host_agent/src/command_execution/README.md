@@ -9,20 +9,22 @@ dedicated server's config.
 
 ```text
 apps/fleet_host_agent/src/command_execution/
-├── command_refusal.rs       `CommandRefusal`, why a claimed command is refused without acting
-├── host_action_executor.rs  `FleetActionExecutor` and the game host's `HostActionExecutor`
-├── host_command.rs          `HostCommand::from_claim`, the action and argument check of a claim
-├── mission_deployment.rs    `MissionDeployment` and `ScenarioId`, the `restart_with_mission` arguments
-├── mission_restart.rs       `restart_with_mission`: switch the config's `scenarioId`, then restart
-├── mod.rs                   the module tree; re-exports the refusal, command, deployment and executors
-└── tests/                   unit tests for the command and mission deployment checks
+├── command_refusal.rs           `CommandRefusal`, why a claimed command is refused without acting
+├── console_line.rs              `ConsoleLine`, the `console_command` argument: one line for the server console
+├── console_response_capture.rs  `ConsoleResponseCapture`, the `console_command` reply bounded to 4096 bytes
+├── host_action_executor.rs      `FleetActionExecutor` and the game host's `HostActionExecutor`
+├── host_command.rs              `HostCommand::from_claim`, the action and argument check of a claim
+├── mission_deployment.rs        `MissionDeployment` and `ScenarioId`, the `restart_with_mission` arguments
+├── mission_restart.rs           `restart_with_mission`: switch the config's `scenarioId`, then restart
+├── mod.rs                       the module tree; re-exports the refusal, commands, arguments, capture and executors
+└── tests/                       unit tests for the command, console line, reply capture and mission deployment checks
 ```
 
 ## How it works
 
 The [API](/documentation_v2/glossary/a_to_f.md#api) validated a command when it accepted it; the agent
 checks it again, by the same rules, before anything reaches systemctl, the server config or RCON,
-so no text from the API can widen what the host runs. `HostCommand::from_claim` accepts five
+so no text from the API can widen what the host runs. `HostCommand::from_claim` accepts six
 actions, each with exactly its own argument keys:
 
 | Action | Arguments | Performed as | Succeeded when | Outcome keys |
@@ -32,6 +34,7 @@ actions, each with exactly its own argument keys:
 | `restart` | none | `ProcessAction::Restart` | the unit is loaded and `active` after the dwell | as `start` |
 | `list_players` | none | RCON `#players` | the server answered | `players` (`player_id`, `arma_id`, `name`), and `raw_lines` when a line was not understood |
 | `restart_with_mission` | `MissionDeployment` | `mission_restart::restart_with_mission` | the config names the new mission header, and the restart succeeded | `scenario_id`, `config_path`, `unit_active_state` |
+| `console_command` | `line` (`ConsoleLine`) | the line over RCON in a single transmission (`RconClient::execute_once`) | the server answered | `response` (at most 4096 bytes), `response_truncated` |
 
 `broadcast`, `kick` and `load_mission` run in the
 [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) and are refused as
@@ -59,19 +62,37 @@ The agent never fetches the [artifact](/documentation_v2/glossary/a_to_f.md#arti
 digest only identify the deployment in the log. The game runtime reads its deployment when it
 boots, loads and verifies the artifact and reports it, and that report confirms the deployment.
 
+A `console_command` carries one line an operator typed for the game server's console. Its only
+argument, `line`, is 1 to 256 bytes that are not blank and hold no control character and no
+Unicode line or paragraph separator, so the line never breaks; its first character after any
+leading whitespace is not `@`, the prefix of the custom RCON commands such as `@logout`, which
+would end the agent's login. The line may change the server, so it goes out through
+`RconClient::execute_once`: a login is retried and a held one confirmed first, both safe to
+repeat, and the line itself is transmitted exactly once and never sent again, not even after a
+new login. The reply is kept verbatim up to 4096 bytes; a longer one is cut at the last
+character boundary at or before that bound and reported with `response_truncated: true`
+(`ConsoleResponseCapture`). When no reply arrives, the command fails with the reason "no RCON
+response; the command may or may not have run" and no outcome; a refused or unanswered login
+fails it with the RCON error, and then nothing was sent.
+
 ## Boundaries
 
 - Depends on: `crate::process_control` (`ProcessControl`, `ProcessAction`), `crate::rcon`
-  (`RconClient`, `reforger_commands::PLAYERS_COMMAND` and `parse_player_listing`),
+  (`RconClient::execute` and `RconClient::execute_once`, and from `reforger_commands`
+  `PLAYERS_COMMAND`, `parse_player_listing` and `RCON_CUSTOM_COMMAND_PREFIX`),
   `crate::dedicated_server_config` and `crate::action_verdict`; the `serde_json`, `uuid`,
   `tokio` and `tracing` crates.
 - Used by: `crate::ledger_client::command_loop`, which validates each claim with
   `HostCommand::from_claim` and runs it through a `FleetActionExecutor`;
   `apps/fleet_host_agent/src/main.rs`, which builds the `HostActionExecutor`; and the integration
-  tests `apps/fleet_host_agent/tests/host_agent_ledger.rs` and
-  `apps/fleet_host_agent/tests/process_control.rs`.
+  tests `apps/fleet_host_agent/tests/host_agent_ledger.rs`,
+  `apps/fleet_host_agent/tests/process_control.rs` and
+  `apps/fleet_host_agent/tests/rcon_transport.rs`, which runs `console_command` against a lossy
+  BattlEye RCon server.
 - Rules: the command loop calls `FleetActionExecutor::execute` only after the ledger acknowledged
   the `executing` report; the accepted actions and argument keys match the API's rules in
-  `contracts_v2/definitions/fleet-command.schema.json` (`tests/host_command.rs` and
-  `tests/mission_deployment.rs` hold every refusal); the `scenario_id` reaches the host only as a
-  JSON string value in the config, never on a command line.
+  `contracts_v2/definitions/fleet-command.schema.json` (`tests/host_command.rs`,
+  `tests/console_line.rs` and `tests/mission_deployment.rs` hold every refusal); the
+  `scenario_id` reaches the host only as a JSON string value in the config, never on a command
+  line; the console line reaches only the RCON port, in one packet, and a reply never exceeds
+  4096 bytes in the outcome (`tests/console_response_capture.rs`).

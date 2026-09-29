@@ -1,13 +1,15 @@
-//! The command console's request controls: process control, the player list, a broadcast and a
-//! kick.
+//! The command console's request controls: process control, the player list, a console line, a
+//! broadcast and a kick.
 //!
 //! **Role:** the Start, Stop, Restart and List players controls — Stop and Restart asking to be
-//! confirmed first — the broadcast form, and the kick form with its player and session pickers.
-//! **Position:** the top of the fleet command section of the selected server's card.
+//! confirmed first — the console box, the broadcast form, and the kick form with its player and
+//! session pickers.
+//! **Position:** the top of the fleet command section of the selected server's card; the console
+//! box is [`super::console_command_form`].
 //! **Signals & state:** owns the pending confirmation, the broadcast message and the kick's three
 //! fields; reads the server's name from the card, so a renamed server is named at once; sends
 //! through the [`CommandConsole`].
-//! **Invariants:** only the six actions an operator may request are offered; the two a mission
+//! **Invariants:** only the seven actions an operator may request are offered; the two a mission
 //! deployment issues are not. A broadcast and a kick are checked as the backend checks them before
 //! anything is sent. A kick names the Arma identity and the runtime session it is issued against:
 //! the players offered are the ones the newest successful player listing reported, and the session
@@ -17,16 +19,17 @@
 use super::command_wording::{
     latest_player_listing, listed_players, validated_broadcast, validated_kick,
 };
+use super::console_command_form::console_command_form;
 use super::{CommandConsole, CommandHistory};
 use crate::v2::core::api::dto::FleetCommandRequest;
 use crate::v2::core::ui::MaterialIcon;
 use leptos::prelude::*;
 
 /// Shared styling for the console's fields.
-const FIELD: &str = "w-full rounded-md border border-outline-variant/40 bg-surface px-3 py-1.5 text-sm text-on-surface outline-none focus:border-primary/60";
+pub(super) const FIELD: &str = "w-full rounded-md border border-outline-variant/40 bg-surface px-3 py-1.5 text-sm text-on-surface outline-none focus:border-primary/60";
 
 /// Shared styling for the console's plain buttons.
-const BUTTON: &str = "flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-label-sm text-on-surface transition hover:bg-white/10 disabled:opacity-50";
+pub(super) const BUTTON: &str = "flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-label-sm text-on-surface transition hover:bg-white/10 disabled:opacity-50";
 
 /// The process-control action waiting on its confirmation.
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -105,6 +108,7 @@ pub(in super::super) fn command_requests(
                         }
                     })
             }}
+            {console_command_form(console)}
             {broadcast_form(console)}
             {kick_form(console, suggested_session)}
             {move || {

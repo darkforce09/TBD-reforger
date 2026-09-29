@@ -142,3 +142,34 @@ and [mission artifacts](/documentation_v2/website/api_v2/verification_evidence/m
 notes record the full semantics.
 
 **Supersedes:** none.
+
+### 2026-09-29 — Administrators send console commands over RCON, each line transmitted once
+
+**Context:** Operators need the dedicated server's own console commands, such as `#players`, on
+every [fleet instance](/documentation_v2/glossary/a_to_f.md#fleet-instance) without a shell on the
+host. The 2026-09-23 entry left the API without an RCON console route. BattlEye RCON runs over UDP
+with no delivery guarantee, and the agent's RCON client retransmits an unanswered command, so a
+console line sent that way could run twice.
+
+**Decision:** `console_command` is a [fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command)
+for the host-agent executor, open to administrators (`AdminUser`). Its one argument is a line of 1
+to 256 bytes with no line break, no control character and no leading `@`; it is not idempotent, it
+may change the server, and its window is 30 seconds. Migration `0061_fleet_console_command.sql`
+admits the action in `fleet_commands_action_check`, and the request audit records the line. The
+[fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) sends it through
+`SessionRequest::ExecuteOnce`: it may repeat the login, transmits the line in one datagram once and
+never resends it. The outcome is the reply cut to at most 4,096 bytes on a character boundary with
+`response_truncated`; without a reply the result reads "no RCON response; the command may or may
+not have run". Server Control sends it from `console_command_form.rs` and shows the outcome.
+
+**Consequences:** The API still never connects to a host: a console line travels as a claimed
+command like any other. A lost reply is reported as unknown and never retried, so the operator
+decides whether to send the line again. The `fleet_console_command` API tests, the console and
+`execute_once` cases of the `rcon_transport` suite, the contract parity fixture of
+`fleet-command.schema.json` and the register requirement `fleet_console_command` in
+[requirements.json](/documentation_v2/website/api_v2/verification_evidence/requirements.json) hold
+the decision in place.
+
+**Supersedes:** the sentence "The API has no RCON console route." of
+[2026-09-23 — Game hosts are reached only through work they claim](#2026-09-23--game-hosts-are-reached-only-through-work-they-claim);
+the rest of that entry holds.

@@ -4,5 +4,6 @@
 
 pub mod command_arguments;
 pub mod command_ledger;
+pub mod command_outcomes;
 pub mod command_reconciliation;
 pub mod executor_claims;

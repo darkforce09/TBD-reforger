@@ -1,25 +1,26 @@
 # Developer tools source tree
 
-The source of the `developer_tools` library and its six executables: offline tooling for
+The source of the `developer_tools` library and its seven executables: offline tooling for
 [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) archives and scripts, the headless browser gates
-of the single-page app, the building-blueprint compiler, and the pipelines that build and verify the
-terrain and map assets under `assets_v2/`.
+of the single-page app, the building-blueprint compiler, the pipelines that build and verify the
+terrain and map assets under `assets_v2/`, and the engines of the staging verification receipts.
 
 ## Contents
 
 ```text
 tools_v2/developer-tools/src/
-├── bin/                     the six entry points (`enf`, `gate`, `mcpd`, `world`, `map`, `capture`)
+├── bin/                     the seven entry points, one `main` per executable
 ├── blueprint/               the building-blueprint compiler: mesh decode, voxels, walls, BVH, archives
 ├── browser_testing/         headless Chromium over the DevTools protocol: gates, smokes, captures
 ├── content_digest.rs        SHA-384 of a file's bytes, in the hex spelling `sqlx` stores for migrations
 ├── enfusion_pak/            the game's `.pak` archives and loose folders behind one virtual file system
 ├── enfusion_tooling/        the Enfusion script oracle behind `enf` and the enfusion-mcp broker
-├── lib.rs                   the library root: declares the eleven public modules
+├── lib.rs                   the library root: declares the twelve public modules
 ├── map_raster_pipeline/     map images and archives: orthophoto, satellite, cartographic, labels, water
 ├── map_verification/        map-asset checks against the map engine: goldens, labels, manifests, sight
 ├── repository_layout.rs     every repository path the crate spells, as constants and path functions
 ├── repository_paths.rs      checkout discovery: walks up to the ticket registry's root marker
+├── staging_verification/    engines the staging harness runs against the staging host: the member load, the relay
 ├── tests/                   unit tests for the digest, the layout and the checkout discovery
 ├── timestamp_formatting.rs  UTC ISO-8601 timestamps with milliseconds for the emitted artifacts
 └── world_export_pipeline/   the world-export pipeline behind `world`: objects, roads, density, gates
@@ -39,6 +40,8 @@ bin/gate, bin/capture  ──▶ browser_testing              ──┤
 bin/world              ──▶ world_export_pipeline        ──┼──▶ enfusion_pak, repository_layout,
 bin/map                ──▶ map_raster_pipeline          ──┤    repository_paths, website_map_engine
 cargo xtask map, schema ─▶ blueprint, map_verification  ──┘
+
+bin/acknowledgement_dropping_relay ──▶ staging_verification::acknowledgement_relay
 ```
 
 `blueprint` and `map_verification` have no binary of their own: the `cargo xtask map` and `cargo
@@ -57,7 +60,12 @@ xtask schema` commands call their entry functions directly with the checkout roo
 - `repository_layout`: the contract, fixture, terrain, glyph and MCP package paths that xtask
   commands and verifications resolve, `mission_fixtures_valid_dir` among them.
 - `content_digest`: the migration checksum `cargo xtask db repair-migration-checksum` computes.
-- The six binaries, whose commands `bin/` lists.
+- `staging_verification::load_generation`: `run` and its plan and report types, the member load
+  engine behind the staging load receipt.
+- `staging_verification::acknowledgement_relay`: `entrypoint`, `start`, `serve` and the
+  `RelayStatus` document `control` prints, the relay behind the staging fleet receipt's
+  lost-acknowledgement cases.
+- The seven binaries, whose commands `bin/` lists.
 
 ## Boundaries
 

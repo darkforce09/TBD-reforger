@@ -50,6 +50,10 @@ server.
   form was loaded at. In a test build a member's own claim in `slot_registration.rs` passes the
   failpoint `ReservationClaimBeforeCommit` after its audit row and `ReservationClaimAfterCommit`
   after its commit.
+- `event_create_update.rs` creates an event through `services::event_authoring::event_creation`,
+  whose field validators `PATCH` also applies, and `event_mission_attachment.rs` attaches through
+  `services::event_authoring::mission_attachment`; the `staging-fixtures` host tool writes through
+  the same services.
 - `event_mission_attachment.rs` copies the mission's ORBAT into `orbat_slots` rows of the new event
   mission, the only ORBAT the [API](/documentation_v2/glossary/a_to_f.md#api) writes, so it refuses an
   unreadable template, one that seats nobody, and a blank or padded faction, which no

@@ -108,7 +108,8 @@ command prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
   - `tools_v2/xtask/src/cli/dispatch.rs`, which mounts the group, and
     `tools_v2/xtask/src/commands/mod_ops/dispatch.rs`, for `mod bootstrap-staging`;
   - `cargo xtask deploy staging`, whose remote payload runs `setup server-profile` on the staging
-    host (`tools_v2/xtask/src/commands/deploy/staging/payloads.rs`);
+    host (`tools_v2/xtask/src/commands/deploy/staging/payloads.rs`), and `cargo xtask staging fleet
+    --record`, whose `mod_runtime` credential promotion runs the same payload commands;
   - the mod, whose registry loader names `cargo xtask setup server-profile` when no registry file
     exists (`apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Registry.c`);
   - people setting up a machine, following the runbooks below.

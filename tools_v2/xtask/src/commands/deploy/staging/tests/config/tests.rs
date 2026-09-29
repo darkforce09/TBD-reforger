@@ -1,38 +1,42 @@
 use super::*;
+use crate::commands::deploy::staging::fleet_instances::RelaySettings;
 
-/// A well-formed `mod_runtime` machine credential; no server accepts it.
-pub(crate) const RUNTIME_CREDENTIAL: &str = "tbdm_0123456789abcdef0123456789abcdef_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-
-/// Shared fixture: a fully-resolved `Env` with the documented defaults. `pub(super)` so
-/// [`super::super::render`]'s tests use the SAME baseline — two drifting fixtures would let a
-/// render test pass against inputs the loader can no longer produce.
+/// Shared fixture: a fully-resolved `Env` with the documented defaults and the staging fleet of
+/// five instances, the relay on instance 5. `pub(crate)` so every other test module of the deploy
+/// uses the SAME baseline — two drifting fixtures would let a render test pass against inputs the
+/// loader can no longer produce.
 pub(crate) fn base() -> Env {
     Env {
         deploy_host: DeployHost::parse("deploy@192.0.2.10").expect("parses"),
         remote_dir: "/home/deploy/tbd/repo".into(),
         profile_dir: "/home/deploy/tbd/profile".into(),
         addons_staging: "/home/deploy/tbd/addons".into(),
-        mod_runtime_credential: RUNTIME_CREDENTIAL.into(),
         backend_url: "http://127.0.0.1:8080".into(),
         addon_guid: "B2C3D4E5F6A78901".into(),
         scenario: "{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf".into(),
         server_dir: "/home/deploy/steam/arma-reforger-server".into(),
-        server_mode: "config".into(),
         workshop_mod_id: "5EAF00DBEEF01234".into(),
         public_address: Ipv4Addr::new(192, 0, 2, 10),
-        game_port: "2001".into(),
-        a2s_port: "17777".into(),
-        server_name: "TBD Staging POC".into(),
         admin_password: "tbd-admin".into(),
         max_players: "64".into(),
         admin_identity_ids: String::new(),
-        server_config_remote: "/home/deploy/tbd/server.config.json".into(),
         boot_verify_timeout: "180".into(),
         modpack_json: String::new(),
         modpack_url: String::new(),
         modpack_token: String::new(),
         workshop_mod_name: "TBD_Framework".into(),
-        host_agent: None,
+        fleet: FleetSettings {
+            instance_count: 5,
+            game_port_base: 2000,
+            a2s_port_base: 17776,
+            rcon_port_base: 19998,
+            agent_api_url: "http://127.0.0.1:8080".into(),
+            relay: Some(RelaySettings {
+                instance: 5,
+                port: 18085,
+                upstream: "http://127.0.0.1:8080".into(),
+            }),
+        },
         ssh_pass: None,
         ssh_identity_file: None,
     }
@@ -92,22 +96,20 @@ fn admin_id_schema_is_the_engines() {
 }
 
 #[test]
-fn mode_gate_matches_the_bash_case() {
+fn the_fleet_needs_a_mod_source_and_distinct_ports() {
     let mut e = base();
-    e.server_mode = "bogus".into();
-    assert!(e.validate(Path::new("/nonexistent")).is_err());
-    // addons mode skips every config-mode requirement, including the port rule.
-    e.server_mode = "addons".into();
-    e.a2s_port = e.game_port.clone();
     e.workshop_mod_id = String::new();
-    assert!(e.validate(Path::new("/nonexistent")).is_ok());
-    // config mode with no mod source at all.
-    e.server_mode = "config".into();
-    assert!(e.validate(Path::new("/nonexistent")).is_err());
+    assert!(
+        e.validate(Path::new("/nonexistent")).is_err(),
+        "no mod source at all"
+    );
     // …satisfied by a modpack file instead of the single-mod id.
     e.modpack_json = "/tmp/pack.json".into();
-    e.a2s_port = "17777".into();
     assert!(e.validate(Path::new("/nonexistent")).is_ok());
+    // An A2S base that puts instance 1's A2S port on instance 2's game port stops the deploy
+    // before anything is sent.
+    e.fleet.a2s_port_base = e.fleet.game_port_base + 1;
+    assert!(e.validate(Path::new("/nonexistent")).is_err());
 }
 
 #[test]
@@ -138,19 +140,16 @@ fn mod_source_label_names_the_actual_source() {
 #[test]
 fn deploy_env_file_beats_the_process_environment() {
     let head = "# comment\nexport TBD_SSH_HOST=\"deploy@192.0.2.10\"\n\
-                TBD_PROFILE_DIR=/p/q\nTBD_A2S_PORT=9999\nTBD_SSH_PASS=\n";
+                TBD_PROFILE_DIR=/p/q\nTBD_MAX_PLAYERS=12\nTBD_SSH_PASS=\n";
     let process = [
         ("TBD_SSH_HOST", "deploy@198.51.100.7"),
-        ("TBD_A2S_PORT", "1"),
+        ("TBD_MAX_PLAYERS", "1"),
         ("TBD_SSH_PASS", "exported"),
         ("TBD_MODPACK_JSON", "/tmp/pack.json"),
     ];
-    // The runtime credential is required; without it the settings do not load.
-    assert!(env_from(head, &process).is_err());
-    let full = format!("{head}TBD_MOD_RUNTIME_CREDENTIAL={RUNTIME_CREDENTIAL}\n");
-    let e = env_from(&full, &process).expect("loads");
+    let e = env_from(head, &process).expect("loads");
     assert_eq!(e.deploy_host.ssh_destination(), "deploy@192.0.2.10");
-    assert_eq!(e.a2s_port, "9999");
+    assert_eq!(e.max_players, "12");
     assert_eq!(
         e.ssh_pass, None,
         "an empty assignment is not filled from the environment"
@@ -159,44 +158,154 @@ fn deploy_env_file_beats_the_process_environment() {
         e.modpack_json, "/tmp/pack.json",
         "a key the file never assigns"
     );
-    assert_eq!(e.mod_runtime_credential, RUNTIME_CREDENTIAL);
-    assert!(e.host_agent.is_none(), "the host agent is opt-in");
-    // Defaults: the folders under the deploy user's home, and the `:=` default of a port.
+    // Defaults: the folders under the deploy user's home, and the fleet of five with its ports.
     assert_eq!(e.remote_dir, "/home/deploy/tbd/repo");
     assert_eq!(e.addons_staging, "/home/deploy/tbd/addons-staging");
     assert_eq!(e.server_dir, "/home/deploy/steam/arma-reforger-server");
-    assert_eq!(e.game_port, "2001");
-    // dirname of TBD_PROFILE_DIR.
-    assert_eq!(e.server_config_remote, "/p/server.config.json");
+    assert_eq!(e.fleet.instance_count, 5);
+    assert_eq!(
+        (
+            e.fleet.game_port_base,
+            e.fleet.a2s_port_base,
+            e.fleet.rcon_port_base
+        ),
+        (2000, 17776, 19998)
+    );
+    assert_eq!(
+        e.fleet.relay, None,
+        "the relay runs only when an instance is named"
+    );
+    // The single-instance config the migration archives sits beside TBD_PROFILE_DIR.
+    assert_eq!(e.single_instance_server_config(), "/p/server.config.json");
     // The scenario default is NOT truncated — the measured brace-expansion defect.
     assert_eq!(e.scenario, "{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf");
     // A missing file is the documented rc-1 message, not a panic.
     assert!(Env::load(Path::new("/nonexistent/deploy.env")).is_err());
 }
 
+/// Every setting the fleet no longer reads is refused, all of them at once, and the refusal names
+/// the line and the replacement but never the value.
 #[test]
-fn host_agent_settings_are_required_once_the_install_is_asked_for() {
-    let head = format!(
-        "TBD_SSH_HOST=deploy@192.0.2.10\nTBD_MOD_RUNTIME_CREDENTIAL={RUNTIME_CREDENTIAL}\n\
-         TBD_INSTALL_HOST_AGENT=1\n"
+fn a_retired_setting_is_refused_with_its_replacement_and_without_its_value() {
+    let mut file = String::from("TBD_SSH_HOST=deploy@192.0.2.10\n");
+    for (index, (key, _)) in RETIRED_SETTINGS.iter().enumerate() {
+        file.push_str(&format!("{key}=retired-value-{index}\n"));
+    }
+    assert!(env_from(&file, &[]).is_err());
+    let environment = settings(&file, &[]).expect("parses");
+    let refusals = retired_setting_refusals(&environment);
+    assert_eq!(refusals.len(), RETIRED_SETTINGS.len());
+    for (index, refusal) in refusals.iter().enumerate() {
+        let text = refusal.to_string();
+        let (key, replacement) = RETIRED_SETTINGS[index];
+        assert!(
+            text.starts_with(&format!(
+                "{SETTINGS_FILE}:{}: {key}: is no longer read",
+                index + 2
+            )),
+            "{text}"
+        );
+        assert!(text.contains(replacement), "{text}");
+        assert!(
+            !text.contains("retired-value"),
+            "a refusal printed the value: {text}"
+        );
+    }
+    for secret in [
+        "TBD_MOD_RUNTIME_CREDENTIAL",
+        "TBD_HOST_AGENT_CREDENTIAL",
+        "TBD_RCON_PASSWORD",
+    ] {
+        assert!(
+            RETIRED_SETTINGS.iter().any(|(key, _)| *key == secret),
+            "{secret}"
+        );
+    }
+    // An exported retired key is refused too, so no stale shell variable is silently ignored.
+    let exported = settings(
+        "TBD_SSH_HOST=deploy@192.0.2.10\n",
+        &[("TBD_GAME_PORT", "2001")],
+    )
+    .expect("parses");
+    assert_eq!(retired_setting_refusals(&exported).len(), 1);
+}
+
+#[test]
+fn the_relay_is_read_only_with_its_port_and_a_loopback_upstream() {
+    let head = "TBD_SSH_HOST=deploy@192.0.2.10\nTBD_FLEET_RELAY_INSTANCE=5\n";
+    assert!(env_from(head, &[]).is_err(), "the relay port is required");
+    let e = env_from(&format!("{head}TBD_FLEET_RELAY_PORT=18085\n"), &[]).expect("loads");
+    assert_eq!(
+        e.fleet.relay,
+        Some(RelaySettings {
+            instance: 5,
+            port: 18085,
+            upstream: "http://127.0.0.1:8080".into(),
+        })
+    );
+    let public_upstream = format!(
+        "{head}TBD_FLEET_RELAY_PORT=18085\nTBD_HOST_AGENT_API_URL=https://tbd.example.org\n"
     );
     assert!(
-        env_from(&head, &[]).is_err(),
-        "the agent needs its own credential and the RCON password"
+        env_from(&public_upstream, &[]).is_err(),
+        "the relay forwards to loopback only"
     );
-    let e = env_from(
-        &format!("{head}TBD_HOST_AGENT_CREDENTIAL=tbdm_x\nTBD_RCON_PASSWORD=secret\n"),
+    let outside = "TBD_SSH_HOST=deploy@192.0.2.10\nTBD_FLEET_INSTANCES=3\n\
+                   TBD_FLEET_RELAY_INSTANCE=4\nTBD_FLEET_RELAY_PORT=18084\n";
+    assert!(
+        env_from(outside, &[]).is_err(),
+        "the relay instance must exist"
+    );
+}
+
+#[test]
+fn the_agents_api_origin_must_be_https_or_loopback_http() {
+    let head = "TBD_SSH_HOST=deploy@192.0.2.10\n";
+    let e = env_from(head, &[]).expect("loads");
+    assert_eq!(
+        e.fleet.agent_api_url, "http://127.0.0.1:8080",
+        "defaults to TBD_BACKEND_URL"
+    );
+    for refused in [
+        "TBD_HOST_AGENT_API_URL=http://tbd.example.org\n",
+        "TBD_BACKEND_URL=http://tbd.example.org\n",
+        "TBD_FLEET_INSTANCES=6\n",
+        "TBD_FLEET_INSTANCES=0\n",
+        "TBD_FLEET_GAME_PORT_BASE=two-thousand\n",
+    ] {
+        assert!(
+            env_from(&format!("{head}{refused}"), &[]).is_err(),
+            "{refused}"
+        );
+    }
+    let https = env_from(
+        &format!("{head}TBD_HOST_AGENT_API_URL=https://tbd.example.org\n"),
         &[],
     )
     .expect("loads");
-    let agent = e.host_agent.as_ref().expect("the install is asked for");
-    assert_eq!(agent.rcon_port, "19999");
+    assert_eq!(https.fleet.agent_api_url, "https://tbd.example.org");
+}
+
+/// The deploy reads `TBD_BACKEND_URL` through the fleet's one reader, the reading `cargo xtask
+/// staging` shares: the profiles' `backendUrl` and the agents' origin carry no trailing `/`.
+#[test]
+fn the_backend_url_is_the_one_reading_without_a_trailing_slash() {
+    let file = "TBD_SSH_HOST=deploy@192.0.2.10\nTBD_BACKEND_URL=https://api.example.org/\n";
+    let e = env_from(file, &[]).expect("loads");
+    assert_eq!(e.backend_url, "https://api.example.org");
     assert_eq!(
-        agent.api_base_url, "http://127.0.0.1:8080",
-        "defaults to TBD_BACKEND_URL"
+        e.backend_url,
+        fleet_instances::backend_url(&settings(file, &[]).expect("parses"))
     );
-    // A malformed agent credential is refused by the validation, before any deploy step.
-    assert!(e.validate(Path::new("/nonexistent")).is_err());
+    assert_eq!(e.fleet.agent_api_url, "https://api.example.org");
+    let profile = crate::commands::deploy::staging::payloads::instance_profile_commands(
+        &e.remote_dir,
+        &e.backend_url,
+    );
+    assert!(
+        profile.contains("\"backendUrl\": \"https://api.example.org\"|"),
+        "{profile}"
+    );
 }
 
 #[test]
@@ -208,8 +317,7 @@ fn a_command_line_in_the_deploy_file_is_refused_and_never_run() {
     std::fs::write(
         &f,
         format!(
-            "TBD_SSH_HOST=deploy@192.0.2.10\nTBD_MOD_RUNTIME_CREDENTIAL={RUNTIME_CREDENTIAL}\n\
-             touch {}\n",
+            "TBD_SSH_HOST=deploy@192.0.2.10\ntouch {}\n",
             canary.display()
         ),
     )
@@ -224,8 +332,7 @@ fn a_command_line_in_the_deploy_file_is_refused_and_never_run() {
 
 #[test]
 fn a_host_without_a_user_needs_its_folders_set() {
-    let file =
-        format!("TBD_SSH_HOST=192.0.2.10\nTBD_MOD_RUNTIME_CREDENTIAL={RUNTIME_CREDENTIAL}\n");
+    let file = "TBD_SSH_HOST=192.0.2.10\n".to_string();
     assert!(env_from(&file, &[]).is_err());
     let folders = format!(
         "{file}TBD_REMOTE_DIR=/r\nTBD_PROFILE_DIR=/p/q\nTBD_ADDONS_STAGING=/a\nTBD_SERVER_DIR=/s\n"

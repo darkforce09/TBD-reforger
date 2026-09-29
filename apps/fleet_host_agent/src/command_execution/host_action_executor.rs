@@ -1,9 +1,25 @@
-//! Performing a validated command on this host: process actions through the systemd user
-//! manager, the player list through the game server's RCON port, and a cross-terrain mission
-//! deployment through the dedicated server's config and a restart.
+//! Performing a validated command on this host.
+//!
+//! **Role:** Carries out each [`HostCommand`]: process actions through the systemd user manager,
+//! the player list through the game server's RCON port, the operator's console line through RCON
+//! in a single transmission, and a cross-terrain mission deployment through the dedicated
+//! server's config and a restart.
+//!
+//! **Position:** `crate::ledger_client::command_loop` calls [`FleetActionExecutor::execute`] once
+//! the ledger acknowledged the `executing` report, and reports the returned [`ActionVerdict`];
+//! `main.rs` builds the [`HostActionExecutor`].
+//!
+//! **Signals & state:** none of its own; it holds handles to process control, the RCON session
+//! task and the server config file.
+//!
+//! **Invariants:** each call performs its command once; the console line is never retransmitted,
+//! and a line that gets no reply fails with "no RCON response; the command may or may not have
+//! run".
 
 use std::future::Future;
 
+use super::console_line::ConsoleLine;
+use super::console_response_capture::ConsoleResponseCapture;
 use super::host_command::HostCommand;
 use super::mission_restart::restart_with_mission;
 use crate::action_verdict::ActionVerdict;
@@ -54,6 +70,16 @@ impl HostActionExecutor {
             ),
         }
     }
+
+    /// The line, transmitted once, its reply captured into `{"response", "response_truncated"}`.
+    /// A failure reason is the RCON failure itself: a refused or unanswered login sent nothing,
+    /// and a missing reply leaves open whether the line ran.
+    async fn console_command(&self, line: &ConsoleLine) -> ActionVerdict {
+        match self.rcon.execute_once(line.as_str()).await {
+            Ok(reply) => ActionVerdict::success(ConsoleResponseCapture::of(&reply).into_outcome()),
+            Err(error) => ActionVerdict::failure(&error.to_string(), None),
+        }
+    }
 }
 
 impl FleetActionExecutor for HostActionExecutor {
@@ -66,6 +92,7 @@ impl FleetActionExecutor for HostActionExecutor {
             HostCommand::RestartWithMission(deployment) => {
                 restart_with_mission(&self.server_config, &self.process_control, deployment).await
             }
+            HostCommand::ConsoleCommand(line) => self.console_command(line).await,
         }
     }
 }

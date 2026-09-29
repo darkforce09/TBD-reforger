@@ -1,0 +1,357 @@
+{
+  "seed": 20260929,
+  "ramp_seconds": 60,
+  "measured_seconds": 1800,
+  "clients": 100,
+  "source_address_count": 5,
+  "requests_per_second": 27,
+  "accounts_per_client": 11,
+  "account_hold_seconds": 160,
+  "jitter_fraction": 0.05,
+  "request_timeout_seconds": 10,
+  "census_window_seconds": 10,
+  "per_address_ceilings": {
+    "all_requests": {
+      "max_requests": 8,
+      "window_seconds": 1
+    },
+    "auth_requests": {
+      "max_requests": 1,
+      "window_seconds": 2
+    }
+  },
+  "request_mix": [
+    {
+      "id": "events",
+      "class": "json_read",
+      "weight": 16,
+      "steps": [
+        {
+          "method": "GET",
+          "path": "/api/v1/events",
+          "expected_statuses": [
+            200
+          ]
+        }
+      ]
+    },
+    {
+      "id": "event_hub",
+      "class": "json_read",
+      "weight": 10,
+      "steps": [
+        {
+          "method": "GET",
+          "path": "/api/v1/events/{event_id}",
+          "expected_statuses": [
+            200
+          ]
+        }
+      ]
+    },
+    {
+      "id": "missions",
+      "class": "json_read",
+      "weight": 8,
+      "steps": [
+        {
+          "method": "GET",
+          "path": "/api/v1/missions",
+          "expected_statuses": [
+            200
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dashboard",
+      "class": "json_read",
+      "weight": 8,
+      "steps": [
+        {
+          "method": "GET",
+          "path": "/api/v1/dashboard",
+          "expected_statuses": [
+            200
+          ]
+        }
+      ]
+    },
+    {
+      "id": "leaderboards",
+      "class": "json_read",
+      "weight": 6,
+      "steps": [
+        {
+          "method": "GET",
+          "path": "/api/v1/leaderboards",
+          "expected_statuses": [
+            200
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wiki",
+      "class": "json_read",
+      "weight": 5,
+      "steps": [
+        {
+          "method": "GET",
+          "path": "/api/v1/wiki",
+          "expected_statuses": [
+            200
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vehicles",
+      "class": "json_read",
+      "weight": 5,
+      "steps": [
+        {
+          "method": "GET",
+          "path": "/api/v1/vehicle-database",
+          "expected_statuses": [
+            200
+          ]
+        }
+      ]
+    },
+    {
+      "id": "announcements",
+      "class": "json_read",
+      "weight": 6,
+      "steps": [
+        {
+          "method": "GET",
+          "path": "/api/v1/announcements",
+          "expected_statuses": [
+            200
+          ]
+        }
+      ]
+    },
+    {
+      "id": "me",
+      "class": "json_read",
+      "weight": 8,
+      "steps": [
+        {
+          "method": "GET",
+          "path": "/api/v1/me",
+          "expected_statuses": [
+            200
+          ]
+        }
+      ]
+    },
+    {
+      "id": "servers",
+      "class": "json_read",
+      "weight": 4,
+      "steps": [
+        {
+          "method": "GET",
+          "path": "/api/v1/servers",
+          "expected_statuses": [
+            200
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ballistics_catalogs",
+      "class": "json_read",
+      "weight": 4,
+      "steps": [
+        {
+          "method": "GET",
+          "path": "/api/v1/ballistics-catalogs",
+          "expected_statuses": [
+            200
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mission_bookmark",
+      "class": "json_write",
+      "weight": 8,
+      "steps": [
+        {
+          "method": "POST",
+          "path": "/api/v1/missions/{mission_id}/bookmark",
+          "expected_statuses": [
+            200
+          ]
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/missions/{mission_id}/bookmark",
+          "expected_statuses": [
+            200
+          ]
+        }
+      ]
+    },
+    {
+      "id": "own_slot",
+      "class": "json_write",
+      "weight": 8,
+      "steps": [
+        {
+          "method": "POST",
+          "path": "/api/v1/event-missions/{event_mission_id}/register",
+          "body": {
+            "slot_id": "{slot_id}"
+          },
+          "expected_statuses": [
+            200
+          ]
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/event-missions/{event_mission_id}/register",
+          "expected_statuses": [
+            200
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fire_mission_save",
+      "class": "json_write",
+      "weight": 4,
+      "steps": [
+        {
+          "method": "POST",
+          "path": "/api/v1/fire-missions",
+          "body": {
+            "catalog_id": "vanilla_mortars",
+            "catalog_version": 1,
+            "weapon_id": "m252",
+            "shell_id": "m821",
+            "target": {
+              "x": 2200.0,
+              "y": 1800.0,
+              "height_m": 40.0,
+              "height_source": "dem"
+            },
+            "guns": [
+              {
+                "label": "Gun 1",
+                "x": 1000.0,
+                "y": 2000.0,
+                "height_m": 25.0,
+                "height_source": "manual"
+              }
+            ],
+            "target_grid": "0220 0180",
+            "client_solution": {
+              "guns": [
+                {
+                  "gun_index": 0,
+                  "label": "Gun 1",
+                  "distance_m": 1216.552506059644,
+                  "height_difference_m": 15.0,
+                  "azimuth_deg": 99.46232220802563,
+                  "azimuth_mils": 1768.2190614760111,
+                  "mils_per_circle": 6400,
+                  "charges": [
+                    {
+                      "rings": 0,
+                      "elevation_deg": null,
+                      "elevation_mils": null,
+                      "time_of_flight_s": null,
+                      "apex_m": null,
+                      "aim_azimuth_deg": null,
+                      "aim_azimuth_mils": null,
+                      "deflection_correction_mils": null,
+                      "range_correction_m": null,
+                      "refusal": "out_of_range"
+                    },
+                    {
+                      "rings": 1,
+                      "elevation_deg": null,
+                      "elevation_mils": null,
+                      "time_of_flight_s": null,
+                      "apex_m": null,
+                      "aim_azimuth_deg": null,
+                      "aim_azimuth_mils": null,
+                      "deflection_correction_mils": null,
+                      "range_correction_m": null,
+                      "refusal": "out_of_range"
+                    },
+                    {
+                      "rings": 2,
+                      "elevation_deg": 65.90756547500756,
+                      "elevation_mils": 1171.6900528890233,
+                      "time_of_flight_s": 24.249825590963937,
+                      "apex_m": 729.0306396484375,
+                      "aim_azimuth_deg": 99.46232220802563,
+                      "aim_azimuth_mils": 1768.2190614760111,
+                      "deflection_correction_mils": 0.0,
+                      "range_correction_m": 0.0,
+                      "refusal": null
+                    },
+                    {
+                      "rings": 3,
+                      "elevation_deg": 73.88741888604932,
+                      "elevation_mils": 1313.5541135297653,
+                      "time_of_flight_s": 30.474507245830246,
+                      "apex_m": 1146.643310546875,
+                      "aim_azimuth_deg": 99.46232220802563,
+                      "aim_azimuth_mils": 1768.2190614760111,
+                      "deflection_correction_mils": 0.0,
+                      "range_correction_m": 0.0,
+                      "refusal": null
+                    },
+                    {
+                      "rings": 4,
+                      "elevation_deg": 77.75967853028843,
+                      "elevation_mils": 1382.3942849829052,
+                      "time_of_flight_s": 35.518652022609245,
+                      "apex_m": 1554.473876953125,
+                      "aim_azimuth_deg": 99.46232220802563,
+                      "aim_azimuth_mils": 1768.2190614760111,
+                      "deflection_correction_mils": 0.0,
+                      "range_correction_m": 0.0,
+                      "refusal": null
+                    }
+                  ],
+                  "recommended_rings": 2,
+                  "dispersion": {
+                    "range_probable_error_m": 19.266827139279687,
+                    "deflection_probable_error_m": 10.469594890920947,
+                    "ellipse_semi_major_m": 33.63225407837073,
+                    "ellipse_semi_minor_m": 18.27576865270145,
+                    "ellipse_orientation_deg": 99.46232221063855,
+                    "standard_dispersion_m": 69.0,
+                    "verified_in_engine": false
+                  }
+                }
+              ],
+              "dispersion": {
+                "range_probable_error_m": 19.266827139279687,
+                "deflection_probable_error_m": 10.469594890920947,
+                "ellipse_semi_major_m": 33.63225407837073,
+                "ellipse_semi_minor_m": 18.27576865270145,
+                "ellipse_orientation_deg": 99.46232221063855,
+                "standard_dispersion_m": 69.0,
+                "verified_in_engine": false
+              },
+              "catalog_id": "vanilla_mortars",
+              "catalog_version": 1,
+              "solver_revision": "game-ballistics-2"
+            }
+          },
+          "expected_statuses": [
+            201
+          ]
+        }
+      ]
+    }
+  ]
+}

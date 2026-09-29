@@ -57,7 +57,18 @@ fn the_tooling_tree_holds_its_executables_manifests_and_layout_modules() {
         .map(|bin| bin["name"].as_str().unwrap())
         .collect();
     names.sort();
-    assert_eq!(names, ["capture", "enf", "gate", "map", "mcpd", "world"]);
+    assert_eq!(
+        names,
+        [
+            "acknowledgement-dropping-relay",
+            "capture",
+            "enf",
+            "gate",
+            "map",
+            "mcpd",
+            "world"
+        ]
+    );
     for relative in [
         "tools_v2/xtask/Cargo.toml",
         "tools_v2/developer-tools/Cargo.toml",

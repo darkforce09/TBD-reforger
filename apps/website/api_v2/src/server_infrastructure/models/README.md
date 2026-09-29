@@ -10,7 +10,7 @@ absent values are skipped and timestamps are RFC 3339.
 
 ```text
 apps/website/api_v2/src/server_infrastructure/models/
-├── fleet_command.rs       `FleetAction`, `FleetCommandState` and the command ledger's wire shapes
+├── fleet_command.rs       `FleetAction`, `FleetCommandState`, the ledger's wire shapes and console types
 ├── fleet_scenario.rs      `FleetScenario`, one terrain's mission header, with its update body and list
 ├── generated/             types generated from the fleet command, session and credential schemas
 ├── machine_credential.rs  `ExecutorKind` and the credential views, issue body, revocation and list
@@ -24,9 +24,13 @@ apps/website/api_v2/src/server_infrastructure/models/
 `load_mission` run in the [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime), everything
 else on the host agent, since Reforger's [RCON](/documentation_v2/glossary/n_to_z.md#rcon) has no
 broadcast), whether repeating it is harmless (`start`, `stop`, `list_players`), whether it changes
-the server process (at most one such command runs per server), whether only a
+the server process (at most one such command runs per server; a `console_command` counts, since a
+console line can stop or restart the server), whether only a
 [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) may issue it (`load_mission`,
 `restart_with_mission`), and how long its execution may take (30 to 180 seconds).
+`ConsoleCommandArguments` is the stored console line (at most `LINE_MAX_BYTES`, 256) and
+`ConsoleCommandOutcome` the reply a succeeded console command reports (at most
+`RESPONSE_MAX_BYTES`, 4096, with `response_truncated`).
 `FleetCommandState` runs from `queued` through `claimed` and `executing` to `succeeded`, `failed`,
 `expired`, `cancelled` or `indeterminate`. `ServerStatus` is read through `ServerStatusRow`, the flat
 `server_statuses` projection the `server_status_columns!` macro spells once for every query; the
@@ -54,5 +58,6 @@ conversion folds the five `telemetry_queue_*` columns, all set or all null, into
   `fleet_scenarios.rs`) mirror these shapes.
 - Rules: `generated/` is written by `cargo xtask ci schema-codegen` and never edited by hand
   (`cargo xtask ci verify-codegen-fresh` checks it); a new action gets its executor, idempotence,
-  process and execution-window answers here and its argument rules in the ledger's
-  `command_arguments.rs`.
+  process and execution-window answers here, its argument rules in the ledger's
+  `command_arguments.rs` and, when its outcome has a contract, its outcome rules in
+  `command_outcomes.rs`.

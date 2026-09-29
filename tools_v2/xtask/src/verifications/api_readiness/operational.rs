@@ -1,12 +1,30 @@
 //! Quantitative staging acceptance is checked independently of runner success messages.
+//!
+//! **Role:** Defines the measurements an operational receipt carries for the staging fleet,
+//! Discord and load checks, and the thresholds each must meet.
+//!
+//! **Position:** `evidence.rs` calls [`validate`] on every `operational` receipt it judges;
+//! `operational_recording.rs` calls it before it writes a staging receipt and re-exports
+//! [`Observations`] to the `cargo xtask staging` procedures that measure them.
+//!
+//! **Signals & state:** none; pure functions over deserialized values.
+//!
+//! **Invariants:** a check id accepts only its own measurement kind. The fleet needs five
+//! distinct non-empty server ids, two clients, every fleet scenario and a SHA-256 fixture digest;
+//! Discord needs every Discord scenario and a fixture digest; load needs 30 minutes, 1000 member
+//! accounts, 100 concurrent clients, 20 completed requests a second, no unexpected error, reads
+//! and writes that are both present and together no more than the completed requests, p95 JSON
+//! reads within 500 ms and writes within 1000 ms, a recorded hardware and network, and a
+//! workload digest.
 
 use anyhow::{Result, ensure};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
+/// The measured values of one staging run, tagged by `kind`.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
-pub(super) enum Observations {
+pub(crate) enum Observations {
     Fleet {
         server_ids: Vec<String>,
         client_count: u64,

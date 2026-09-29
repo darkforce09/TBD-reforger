@@ -1,17 +1,32 @@
+//! The verdict of `mod remote-logs` over one log, its self-test, and the entry that picks a path.
+//!
+//! **Role:** `run` routes to the self-test, a local `--file` or the remote fetch of
+//! [`super::remote_fetch`]; `check_log` grades one log.
+//!
+//! **Position:** called by `crate::commands::mod_ops::dispatch`; the patterns come from the parent.
+//!
+//! **Signals & state:** none held; the self-test writes and removes a temp folder.
+//!
+//! **Invariants:** an unreadable or absent log is ENVIRONMENT 3, never a zero count; `--instance`
+//! with `--file` or `--selftest` is ENVIRONMENT, because nothing is fetched.
+
 use super::*;
-use crate::core::deploy_environment::{
-    DeployEnvironment, DeployHostFolder, deploy_environment_path,
-};
 
 /// Entry for `xtask mod remote-logs`.
-pub fn run(file: Option<PathBuf>, selftest: bool) -> Result<u8> {
+pub fn run(file: Option<PathBuf>, selftest: bool, instance: Option<u16>) -> Result<u8> {
+    if instance.is_some() && (selftest || file.is_some()) {
+        return Ok(env_fail(
+            "--instance picks the staging server whose log is fetched; it does not combine with \
+             --file or --selftest",
+        ));
+    }
     if selftest {
         return Ok(cmd_selftest());
     }
     if let Some(path) = file {
         return Ok(check_log(&path));
     }
-    cmd_remote()
+    super::remote_fetch::cmd_remote(instance)
 }
 
 pub(super) fn min_tagged() -> u32 {
@@ -294,171 +309,4 @@ pub(super) fn check_log_quiet(log: &Path) -> u8 {
     } else {
         2
     }
-}
-
-/// The staging host, its profile folder and the ssh credentials, from `deploy.env`; a refusal
-/// is printed and answered with exit 1.
-fn remote_target() -> Result<Result<RemoteTarget, u8>> {
-    let root = find_repo_root()?;
-    let path = deploy_environment_path(&root);
-    let environment = match DeployEnvironment::load_if_present(&path) {
-        Ok(environment) => environment,
-        Err(error) => {
-            eprintln!("{error}");
-            return Ok(Err(1));
-        }
-    };
-    let resolved = environment.deploy_host().and_then(|host| {
-        let profile = DeployHostFolder::Profile.resolve(&environment, &host)?;
-        Ok(RemoteTarget {
-            destination: host.ssh_destination(),
-            profile,
-            ssh_pass: environment.value("TBD_SSH_PASS").map(str::to_string),
-            ssh_identity: environment
-                .value("TBD_SSH_IDENTITY_FILE")
-                .map(str::to_string),
-        })
-    });
-    Ok(resolved.map_err(|error| {
-        eprintln!("{error}");
-        1
-    }))
-}
-
-/// Where `cmd_remote` reads the log from.
-struct RemoteTarget {
-    destination: String,
-    profile: String,
-    ssh_pass: Option<String>,
-    ssh_identity: Option<String>,
-}
-
-/// The remote script that prints the newest run's `console.log` under `profile` (its `logs/` or
-/// its `profile/logs/`) and exits 0, or exits 1 when no run has one. The loop reads `ls` through
-/// process substitution, so its `exit 0` ends the script: behind a pipe the loop would run in a
-/// subshell, its `exit 0` would leave only that subshell, and the script would always reach
-/// `exit 1`.
-pub(super) fn newest_console_log_script(profile: &str) -> String {
-    let profile = shell_quote(profile);
-    format!(
-        "\nwhile read -r d; do\n  [ -f \"$d/console.log\" ] && echo \"$d/console.log\" && exit 0\ndone < <(ls -td {profile}/logs/logs_* {profile}/profile/logs/logs_* 2>/dev/null)\nexit 1\n"
-    )
-}
-
-pub(super) fn cmd_remote() -> Result<u8> {
-    // A refused setting exits 1, not ENVIRONMENT 3: nothing was probed.
-    let RemoteTarget {
-        destination: host,
-        profile,
-        ssh_pass,
-        ssh_identity: ssh_ident,
-    } = match remote_target()? {
-        Ok(target) => target,
-        Err(code) => return Ok(code),
-    };
-
-    let find_log = newest_console_log_script(&profile);
-
-    let remote_log = match ssh_cmd(
-        &host,
-        ssh_pass.as_deref(),
-        ssh_ident.as_deref(),
-        &["bash", "-lc", &shell_quote(&find_log)],
-    ) {
-        Ok(out) if out.code == 0 => out.stdout.trim().to_string(),
-        // bash: `REMOTE_LOG="$(ssh_cmd … 2>/dev/null || true)"` — any SSH failure → empty → env_fail.
-        // Closed: we do not treat SSH failure as a log verdict; ENVIRONMENT below.
-        _ => String::new(),
-    };
-
-    if remote_log.is_empty() {
-        return Ok(env_fail(&format!(
-            "no console.log found under {profile} (logs/ or profile/logs/) on {host}"
-        )));
-    }
-
-    let local_copy = {
-        let mut p = std::env::temp_dir();
-        p.push(format!("tbd-remote-log.{}", std::process::id()));
-        p
-    };
-
-    let cat = ssh_cmd(
-        &host,
-        ssh_pass.as_deref(),
-        ssh_ident.as_deref(),
-        &["cat", &remote_log],
-    );
-    match cat {
-        Ok(out) if out.code == 0 => {
-            if out.stdout.is_empty() {
-                let _ = fs::remove_file(&local_copy);
-                return Ok(env_fail(&format!("{remote_log} on {host} is empty")));
-            }
-            fs::write(&local_copy, &out.stdout).context("write local log copy")?;
-        }
-        _ => {
-            let _ = fs::remove_file(&local_copy);
-            return Ok(env_fail(&format!(
-                "could not read {remote_log} from {host}"
-            )));
-        }
-    }
-
-    println!("Remote log: {host}:{remote_log}");
-    let rc = check_log(&local_copy);
-    let _ = fs::remove_file(&local_copy);
-    Ok(rc)
-}
-
-pub(super) fn ssh_cmd(
-    host: &str,
-    pass: Option<&str>,
-    ident: Option<&str>,
-    remote_args: &[&str],
-) -> Result<SshOut, NotRun> {
-    let mut args: Vec<String> = Vec::new();
-    let program;
-    if let Some(p) = pass.filter(|s| !s.is_empty()) {
-        program = "sshpass".to_string();
-        args.push("-p".into());
-        args.push(p.into());
-        args.push("ssh".into());
-        args.push("-o".into());
-        args.push("StrictHostKeyChecking=no".into());
-        args.push(host.into());
-        for a in remote_args {
-            args.push((*a).into());
-        }
-    } else if let Some(id) = ident.filter(|s| !s.is_empty()) {
-        program = "ssh".to_string();
-        args.push("-i".into());
-        args.push(id.into());
-        args.push("-o".into());
-        args.push("StrictHostKeyChecking=no".into());
-        args.push(host.into());
-        for a in remote_args {
-            args.push((*a).into());
-        }
-    } else {
-        program = "ssh".to_string();
-        args.push("-o".into());
-        args.push("StrictHostKeyChecking=no".into());
-        args.push(host.into());
-        for a in remote_args {
-            args.push((*a).into());
-        }
-    }
-
-    // Prefer tbd-gate Run so ToolAbsent / Signalled stay NotRun (not a FAIL verdict).
-    let _ = proc::which(&program)?;
-    let mut run = Run::new(&program);
-    for a in &args {
-        run = run.arg(a);
-    }
-    let out = run.output()?;
-    Ok(SshOut {
-        code: out.code,
-        stdout: out.stdout,
-    })
 }

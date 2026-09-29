@@ -10,9 +10,11 @@
 //! - `command_sequence`: command sequence numbers and their wrap-around.
 //! - `response_assembly`: reassembly of split responses.
 //! - `server_message_window`: duplicate detection for server messages.
-//! - `rcon_session`: the task that owns the socket, logs in, retransmits, keeps the login alive
-//!   and logs in again after the session lapses.
-//! - [`RconClient`]: the handle the agent sends commands through.
+//! - `rcon_session`: the task that owns the socket, logs in, retransmits a command that is safe
+//!   to repeat and transmits one that is not in a single datagram, keeps the login alive and logs
+//!   in again after the session lapses.
+//! - [`RconClient`]: the handle the agent sends commands through: `execute` for commands that are
+//!   safe to repeat, `execute_once` for one that must not run twice.
 //! - [`reforger_commands`]: the game commands this agent sends and the reading of their
 //!   responses.
 

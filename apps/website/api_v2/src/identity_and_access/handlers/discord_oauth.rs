@@ -2,10 +2,10 @@
 //!
 //! `discord_login` sets a 10-min httpOnly `oauth_state` CSRF cookie and 307-redirects
 //! to Discord consent. `discord_callback` validates state (constant-time), exchanges
-//! the code, upserts the user, syncs roles, and 302-redirects to the SPA callback with
-//! the tokens in the URL fragment — or to an error reason on any failure. A callback query string
-//! that does not decode (a repeated `code` or `state`) carries no usable code, so it redirects with
-//! `missing_code` like an absent one, never with an API error body.
+//! the code, registers the account (`account_registration`), syncs roles, and 302-redirects to
+//! the SPA callback with the tokens in the URL fragment — or to an error reason on any failure.
+//! A callback query string that does not decode (a repeated `code` or `state`) carries no usable
+//! code, so it redirects with `missing_code` like an absent one, never with an API error body.
 //!
 //! **Role-sync invariant.** Roles are only ever written when Discord actually answered.
 //! An unreachable Discord preserves the verified snapshot. Session issuance evaluates its
@@ -24,9 +24,9 @@ use serde::Deserialize;
 
 use crate::core::application_state::AppState;
 use crate::core::authentication_primitives;
-// `users.avatar_url` is public tier; guarded at this write boundary like every other URL
-// column.
-use crate::core::text::http_url_guard::is_http_url;
+use crate::identity_and_access::services::account_registration::{
+    AccountProfile, register_account,
+};
 use crate::identity_and_access::services::discord_client::GuildMember;
 use crate::identity_and_access::services::discord_membership_cache::{
     accept_membership_observation, claim_membership_refresh, record_membership_failure,
@@ -116,52 +116,17 @@ pub async fn discord_callback(
             return err("discord_unreachable");
         }
     };
-    // **The write boundary for `users.avatar_url`, the highest-exposure column of the group.**
-    // It is public tier (anyone who can trigger a login writes it), and it reaches an
-    // `<img src>` on four SPA surfaces — leaderboards, the layout chrome, settings and the event
-    // hub — so it is read by far more of the platform than the admin-tier columns.
-    //
-    // `avatar_url()` refuses to build a URL out of an `id`/`avatar` that is not a bare path
-    // segment, so in practice this second check is belt to that brace. It is here anyway because
-    // the two guard different things and can fail independently: that one asserts "Discord's
-    // strings did not escape the path", this one asserts "whatever ended up in this variable is
-    // an http(s) URL". A future edit that adds a config-driven CDN base, or swaps in a different
-    // identity provider, moves the first guarantee without touching the second — and this is the
-    // column where finding that out late is most expensive.
-    //
-    // Falls back to `""` instead of 400-ing, because this is an OAuth callback: refusing a login
-    // over a cosmetic field would turn a bad avatar into an outage. `""` is the column's existing
-    // "no avatar" value and every reader already handles it.
-    let avatar_url = du.avatar_url();
-    let avatar_url = if is_http_url(&avatar_url) {
-        avatar_url
-    } else {
-        if !avatar_url.is_empty() {
-            tracing::warn!(
-                discord_id = %du.id,
-                "discarded a non-http(s) avatar URL built from Discord's profile response"
-            );
-        }
-        String::new()
+    // Register the account from the fresh Discord profile; `account_registration` is the write
+    // boundary of the profile columns, the avatar URL guard included. The role follows below,
+    // from the membership observation.
+    let (username, handle, avatar_url) = (du.display_name(), du.handle(), du.avatar_url());
+    let profile = AccountProfile {
+        discord_id: &du.id,
+        username: &username,
+        discord_handle: &handle,
+        avatar_url: &avatar_url,
     };
-
-    // Upsert the user from the fresh Discord profile (role is set separately below).
-    let upsert = sqlx::query(
-        "INSERT INTO users \
-         (discord_id, username, discord_handle, avatar_url, arma_character, is_banned, ban_reason, \
-          last_login_at, created_at, updated_at) \
-         VALUES ($1, $2, $3, $4, '', false, '', now(), now(), now()) \
-         ON CONFLICT (discord_id) DO UPDATE SET \
-          username = EXCLUDED.username, discord_handle = EXCLUDED.discord_handle, \
-          avatar_url = EXCLUDED.avatar_url, last_login_at = EXCLUDED.last_login_at, updated_at = now()",
-    )
-    .bind(&du.id)
-    .bind(du.display_name())
-    .bind(du.handle())
-    .bind(&avatar_url)
-    .execute(&state.pool)
-    .await;
-    if upsert.is_err() {
+    if register_account(&state.pool, &profile).await.is_err() {
         return err("server_error");
     }
 

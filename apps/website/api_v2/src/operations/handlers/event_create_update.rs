@@ -1,5 +1,18 @@
 //! Event writes validate current authority and serialize schedule, capacity and reservation changes.
 //!
+//! **Role:** the `POST`, `PATCH` and `DELETE` routes of an event: request shapes, the
+//! administrator's authority recheck, and the event-scope locks of a change.
+//!
+//! **Position:** `POST /api/v1/events` validates through
+//! [`EventCreation`] and writes through [`event_creation::create_event`], the service the
+//! `staging-fixtures` host tool also writes through; `PATCH` applies the same field validators to
+//! the fields it changes under the event scope of `services::event_reservations`.
+//!
+//! **Signals & state:** none; each route runs one transaction.
+//!
+//! **Invariants:** every write rechecks the administrator's authority on its own transaction
+//! before it changes a row; a change commits with its audit row or not at all.
+//!
 //! @contract event-schedule.schema.json#/definitions/EventCreation
 //! @contract event-schedule.schema.json#/definitions/EventChange
 
@@ -17,8 +30,13 @@ use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AdminUser;
-use crate::core::text::http_url_guard::is_http_url;
+use crate::identity_and_access::services::identity_ownership::lock_accounts;
+use crate::identity_and_access::services::session_authorization::authorize_on_connection;
 use crate::operations::models::{Event, EventStatus};
+use crate::operations::services::event_authoring::event_creation::{
+    self, EventCreation, EventCreationRequest, check_name_override, require_event_modpack,
+    require_server, validated_banner_image_url,
+};
 use crate::operations::services::event_reservations::event_administration::{
     load_locked_event, lock_event_scope, normalize_schedule_time, release_event_reservations,
     reschedule_missions, validate_capacity,
@@ -28,64 +46,12 @@ use crate::operations::services::event_status_rules::{
     can_transition, is_pre_start, valid_event_status,
 };
 
-fn validated_banner_image_url(raw: &str) -> Result<String, ApiError> {
-    let trimmed = raw.trim();
-    if trimmed.is_empty() || is_http_url(trimmed) {
-        return Ok(trimmed.to_string());
-    }
-    Err(ApiError::bad_request(
-        "banner_image_url must be an absolute http:// or https:// URL",
-    ))
-}
-
-fn check_name_override(n: &str) -> Result<(), ApiError> {
-    if !n.is_empty() && n.trim().is_empty() {
-        return Err(ApiError::bad_request(
-            "name_override must not be blank — send \"\" to clear it and fall back to the \
-             mission's title",
-        ));
-    }
-    Ok(())
-}
-
 fn present_option<'de, D, T>(d: D) -> Result<Option<Option<T>>, D::Error>
 where
     D: Deserializer<'de>,
     T: Deserialize<'de>,
 {
     Option::<T>::deserialize(d).map(Some)
-}
-
-async fn require_server<'e, E: sqlx::Executor<'e, Database = Postgres>>(
-    executor: E,
-    id: Uuid,
-) -> Result<(), ApiError> {
-    let found: Option<Uuid> = sqlx::query_scalar("SELECT id FROM servers WHERE id = $1")
-        .bind(id)
-        .fetch_optional(executor)
-        .await?;
-    if found.is_none() {
-        return Err(ApiError::bad_request(
-            "server_id does not name a known server",
-        ));
-    }
-    Ok(())
-}
-
-async fn require_event_modpack<'e, E: sqlx::Executor<'e, Database = Postgres>>(
-    executor: E,
-    id: Uuid,
-) -> Result<(), ApiError> {
-    let found: Option<Uuid> = sqlx::query_scalar("SELECT id FROM modpacks WHERE id = $1")
-        .bind(id)
-        .fetch_optional(executor)
-        .await?;
-    if found.is_none() {
-        return Err(ApiError::bad_request(
-            "modpack_id does not name a known modpack",
-        ));
-    }
-    Ok(())
 }
 
 #[derive(Debug, Deserialize)]
@@ -112,74 +78,32 @@ pub struct CreateEventInput {
 /// @route POST /api/v1/events
 pub async fn create_event(
     State(state): State<AppState>,
-    _a: AdminUser,
+    administrator: AdminUser,
     body: Result<Json<CreateEventInput>, JsonRejection>,
 ) -> Result<(StatusCode, Json<Event>), ApiError> {
     let Json(input) = body.map_err(ApiError::from_json_rejection)?;
-    let (Some(start_time), true) = (input.start_time, (0..=256).contains(&input.max_slots)) else {
-        return Err(ApiError::bad_request("start_time is required"));
-    };
-    let start_time = normalize_schedule_time(start_time)?;
-    let Some(status) = valid_event_status(&input.status) else {
-        return Err(ApiError::bad_request("invalid status"));
-    };
-    if !is_pre_start(status) {
-        return Err(ApiError::bad_request(
-            "an event may only be created as scheduled, open or locked",
-        ));
-    }
-    check_name_override(&input.name_override)?;
-    let banner_image_url = validated_banner_image_url(&input.banner_image_url)?;
-    if let Some(sid) = input.server_id {
-        require_server(&state.pool, sid).await?;
-    }
-    if let Some(mid) = input.modpack_id {
-        require_event_modpack(&state.pool, mid).await?;
-    }
+    let creation = EventCreation::new(EventCreationRequest {
+        start_time: input.start_time,
+        name_override: input.name_override,
+        briefing: input.briefing,
+        banner_image_url: input.banner_image_url,
+        max_slots: input.max_slots,
+        registration_locked: input.registration_locked,
+        status: input.status,
+        server_id: input.server_id,
+        modpack_id: input.modpack_id,
+    })?;
     let mut tx = state.pool.begin().await?;
-    crate::identity_and_access::services::identity_ownership::lock_accounts(
-        &mut tx,
-        std::slice::from_ref(&_a.0.discord_id),
-    )
-    .await?;
+    lock_accounts(&mut tx, std::slice::from_ref(&administrator.0.discord_id)).await?;
     let actor =
-        crate::identity_and_access::services::session_authorization::authorize_on_connection(
-            &mut tx,
-            &state.cfg,
-            &_a.0.session_claims,
-        )
-        .await?;
+        authorize_on_connection(&mut tx, &state.cfg, &administrator.0.session_claims).await?;
     if actor.role != "admin" {
         return Err(ApiError::forbidden("insufficient role"));
     }
-    let id: Uuid = sqlx::query_scalar(
-        "INSERT INTO events (name_override, start_time, briefing, banner_image_url, status, \
-         registration_locked, max_slots, created_by, server_id, modpack_id, created_at, updated_at) \
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now(), now()) RETURNING id",
-    )
-    .bind(&input.name_override)
-    .bind(start_time)
-    .bind(&input.briefing)
-    .bind(&banner_image_url)
-    .bind(status)
-    .bind(input.registration_locked)
-    .bind(input.max_slots)
-    .bind(&_a.0.discord_id)
-    .bind(input.server_id)
-    .bind(input.modpack_id)
-    .fetch_one(&mut *tx).await?;
-    let ev = load_locked_event(&mut tx, id).await?;
-    append_actor_audit(
-        &mut tx,
-        &_a.0.discord_id,
-        "event.created",
-        "event",
-        &id.to_string(),
-        "Event created with TBD-member access",
-    )
-    .await?;
+    let event =
+        event_creation::create_event(&mut tx, &creation, &administrator.0.discord_id).await?;
     tx.commit().await?;
-    Ok((StatusCode::CREATED, Json(ev)))
+    Ok((StatusCode::CREATED, Json(event)))
 }
 
 #[derive(Debug, Deserialize)]

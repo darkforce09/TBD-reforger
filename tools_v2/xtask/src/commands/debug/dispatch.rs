@@ -54,6 +54,8 @@ pub(crate) fn run(cmd: DebugCmd) -> Result<u8> {
             log,
             run_id,
             remote,
+            game_port,
+            a2s_port,
             client_build,
             server_build,
             symlink,
@@ -67,6 +69,7 @@ pub(crate) fn run(cmd: DebugCmd) -> Result<u8> {
                 &DirectJoinObservations {
                     run_id: &run_id,
                     remote: &remote,
+                    listener_ports: Some([game_port, a2s_port]),
                     client_build: &client_build,
                     server_build: &server_build,
                     symlink: &symlink,
@@ -78,8 +81,8 @@ pub(crate) fn run(cmd: DebugCmd) -> Result<u8> {
             )?;
             Ok(0)
         }
-        DebugCmd::DirectJoin { run_id } => {
-            crate::commands::debug::direct_join::run(run_id.as_deref())
+        DebugCmd::DirectJoin { run_id, instance } => {
+            crate::commands::debug::direct_join::run(run_id.as_deref(), instance)
         }
     }
 }

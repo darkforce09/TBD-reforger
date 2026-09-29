@@ -16,7 +16,7 @@ pub fn verify_staging_compose_paths(repo_root: &Path) -> Result<u8> {
     // names this gate's subject rather than a generic pin. The CAUSE is still the typed one, so a
     // caller matching the verdict sees `DidNotRun`, not a violation.
     let mut blind = false;
-    for source in [WEBSITE_DEPLOY_SOURCE, STAGING_DEPLOY_SOURCE] {
+    for source in [WEBSITE_DEPLOY_SOURCE, STAGING_DEPLOY_PIPELINE] {
         let source_path = repo_root.join(source);
         if !source_path.is_file() {
             let absent = Verdict::DidNotRun(
@@ -54,7 +54,7 @@ pub fn verify_staging_compose_paths(repo_root: &Path) -> Result<u8> {
 }
 
 /// Every check, in the order the report prints them: the website deploy's compose pins and its
-/// `cd` ban, the game server deploy's compose ban, then the two on-disk file checks.
+/// `cd` ban, the game server deploy's compose ban per source, then the two on-disk file checks.
 ///
 /// Split out from [`verify_staging_compose_paths`] so the contract is testable against a scratch
 /// tree without capturing stdout, and returning a LIST rather than stopping at the first failure:
@@ -71,16 +71,69 @@ pub(super) fn audit(repo_root: &Path) -> Result<Vec<Verdict>> {
         }
         Err(unread) => out.push(unread),
     }
-    match read_source(repo_root, STAGING_DEPLOY_SOURCE) {
-        Ok(source) => out.push(ban_compose_in_the_game_server_deploy(&strip_comments(
-            &source,
-        ))?),
+    match staging_deploy_sources(repo_root) {
+        Ok(sources) => {
+            for (source, text) in sources {
+                let stripped = strip_comments(&text);
+                out.push(ban_compose_in_the_game_server_deploy(&source, &stripped)?);
+            }
+        }
         Err(unread) => out.push(unread),
     }
     // Checked whatever happened above: the operator should still learn whether the compose file
     // is where it belongs.
     out.extend(compose_files_on_disk(repo_root));
     Ok(out)
+}
+
+/// Every production source of the game server deploy, repo-relative and in path order, with its
+/// text: `<module>.rs` when present and each `.rs` file under the module folder outside a `tests/`
+/// folder. An absent [`STAGING_DEPLOY_PIPELINE`] or an unreadable file is the "did not run" verdict
+/// that names it, so a moved deploy never reads as a deploy without compose.
+pub(super) fn staging_deploy_sources(repo_root: &Path) -> Result<Vec<(String, String)>, Verdict> {
+    let pipeline = repo_root.join(STAGING_DEPLOY_PIPELINE);
+    if !pipeline.is_file() {
+        return Err(Verdict::did_not_run(
+            format!("missing {}", pipeline.display()),
+            Kind::Pin,
+            NotRun::TargetMissing(pipeline),
+        ));
+    }
+    let unlisted = |folder: &Path, cause: std::io::Error| {
+        Verdict::did_not_run(
+            format!("cannot list {}", folder.display()),
+            Kind::Pin,
+            NotRun::Unreadable {
+                path: folder.to_path_buf(),
+                source: cause,
+            },
+        )
+    };
+    let mut sources = Vec::new();
+    let module_file = format!("{STAGING_DEPLOY_MODULE}.rs");
+    if repo_root.join(&module_file).is_file() {
+        sources.push(module_file);
+    }
+    let mut folders = vec![repo_root.join(STAGING_DEPLOY_MODULE)];
+    while let Some(folder) = folders.pop() {
+        for entry in std::fs::read_dir(&folder).map_err(|cause| unlisted(&folder, cause))? {
+            let path = entry.map_err(|cause| unlisted(&folder, cause))?.path();
+            if path.is_dir() {
+                if path.file_name().is_some_and(|name| name != "tests") {
+                    folders.push(path);
+                }
+            } else if path.extension().is_some_and(|extension| extension == "rs")
+                && let Ok(relative) = path.strip_prefix(repo_root)
+            {
+                sources.push(relative.to_string_lossy().into_owned());
+            }
+        }
+    }
+    sources.sort();
+    sources
+        .into_iter()
+        .map(|source| read_source(repo_root, &source).map(|text| (source, text)))
+        .collect()
 }
 
 /// One audited source's text, or the "did not run" verdict that names why it could not be read.
@@ -299,17 +352,19 @@ pub(super) fn ban_cd_into_api(stripped: &str) -> Result<Verdict> {
     ))
 }
 
-/// The game server deploy runs no compose command: every one in its stripped source is reported,
-/// each on its own continuation line.
-pub(super) fn ban_compose_in_the_game_server_deploy(stripped: &str) -> Result<Verdict> {
+/// The game server deploy runs no compose command: every one in the stripped text of `source`, a
+/// repo-relative path, is reported, each on its own continuation line.
+pub(super) fn ban_compose_in_the_game_server_deploy(
+    source: &str,
+    stripped: &str,
+) -> Result<Verdict> {
     let lines = compose_lines(stripped)?;
     if lines.is_empty() {
         return Ok(Verdict::Held);
     }
     Ok(detailed(
         &format!(
-            "{} runs compose; the staging compose stack belongs to cargo xtask deploy website:",
-            source_basename(STAGING_DEPLOY_SOURCE)
+            "{source} runs compose; the staging compose stack belongs to cargo xtask deploy website:"
         ),
         lines.into_iter().map(str::to_string).collect(),
     ))

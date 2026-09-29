@@ -229,7 +229,8 @@ contradicted one. Record any further contradiction as file:line on both sides (b
   root holds only `main.rs`, `app_routes.rs`, `router.rs` and `tests/route_authorization.rs`.
 - **Deploy files.** The deploy templates and units live under `tools_v2/xtask/deploy/`:
   `Caddyfile.website`, `deploy.env.example`, `README.md` and `systemd/` (`tbd-website-api.service`,
-  `tbd-reforger.service`, `fleet-host-agent.service`, and the `tbd-website-backup` and
+  the fleet templates `tbd-reforger@.service`, `fleet-host-agent@.service` and
+  `acknowledgement-dropping-relay@.service`, and the `tbd-website-backup` and
   `tbd-website-backup-drill` service and timer pairs). The operator's filled copy is
   `tools_v2/xtask/deploy/deploy.env`: gitignored (`.gitignore:11`), named by `DEPLOY_ENV` in
   `tools_v2/xtask/src/core/repository_layout.rs:14`; `cargo xtask deploy website` also accepts a

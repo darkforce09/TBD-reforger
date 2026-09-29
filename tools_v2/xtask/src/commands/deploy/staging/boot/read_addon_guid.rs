@@ -1,4 +1,21 @@
+//! The boot verdict's reads and assertions over one `console.log`.
+//!
+//! **Role:** reads the addon GUID from the gproj ([`read_addon_guid()`]); asserts that the deployed
+//! checkout won the addon contest, that the backend room registered and that the admins are
+//! configured; and combines them with the rival measurement into [`verify_boot_log`], the verdict
+//! behind `--verify-boot` ([`verify_boot_cli`]).
+//!
+//! **Position:** a part of `boot.rs`, which re-exports its functions; called by the deploy's
+//! per-instance boot verdict (`remote/instance_boot_verdict.rs`), the selftest and `--verify-boot`.
+//!
+//! **Signals & state:** none; each call reads its log file and writes its lines to an [`Out`].
+//!
+//! **Invariants:** a log that cannot be read fails the check and says that the check did not run;
+//! only the gproj path of the last `Loaded addons:` block decides the addon contest; a lost contest
+//! points at the game server unit of the fleet instance ([`game_server_unit_of`]).
+
 use super::*;
+use crate::commands::deploy::staging::fleet_instances::game_server_unit_of;
 
 /// `read_addon_guid` — the addon GUID, read from the gproj rather than trusted from `deploy.env`.
 ///
@@ -114,8 +131,12 @@ pub fn assert_local_addon_won(out: &mut Out, log: &Path, guid: &str, addons_dir:
     out.e("  this deploy just rsynced. Every log line after this one would be a true statement");
     out.e("  about the wrong code.");
     out.e("");
-    out.e("  Cause is almost always a missing -addonsDir on the ExecStart. Check the unit:");
-    out.e("      systemctl --user cat tbd-reforger.service | grep ExecStart");
+    out.e("  Cause is almost always a missing -addonsDir on the ExecStart. Check the game server");
+    out.e("  unit of the fleet instance this log came from, N being its number:");
+    out.e(format!(
+        "      systemctl --user cat {} | grep ExecStart",
+        game_server_unit_of("N")
+    ));
     out.e("  It must carry BOTH -addonsDir and -config.");
     1
 }

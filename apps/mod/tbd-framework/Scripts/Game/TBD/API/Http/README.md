@@ -50,8 +50,9 @@ prefix; the fleet executor, the link confirmation and the telemetry delivery pas
 content type and a 15 s timeout (`REQUEST_TIMEOUT_S`), and deliver exactly one
 `TBD_GameRuntimeAnswer` to the sender's `TBD_GameRuntimeCall` subclass; a request the engine never
 reports is answered transient by a 25 s watchdog (`WATCHDOG_MS`). `TBD_GameRuntimeAnswer` classifies
-by HTTP status and by the `details.code` of a 409, never by message text: `SUCCESS` (2xx),
-`REFUSED` (a 409 fence refusal, with its parsed details), `TRANSIENT` (no answer, a timeout, 408 or
+by HTTP status and by the `details.code` of a 409, never by message text: `SUCCESS` (200, 201 or
+202), `NO_CONTENT` (204, which the engine reports through the success handler as the raw status
+`HttpCode` names no member for; only the fleet command claim answers it), `REFUSED` (a 409 fence refusal, with its parsed details), `TRANSIENT` (no answer, a timeout, 408 or
 a server error) or `PERMANENT` (any other client error), and keeps the `details.code` of any error,
 such as `NO_DEPLOYMENT`, for the caller. `BackoffMs` gives the exponential retry delay every loop
 uses.

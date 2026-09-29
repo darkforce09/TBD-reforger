@@ -125,7 +125,7 @@ compiles every fault point to nothing. The `engineering_laws` suite holds both h
 | `UPLOAD_DIR` | `../../../assets_v2/scratch/website-api/uploads` in development; the systemd unit sets its state directory | outside development, absolute | `Config::load` |
 | `EQUIPMENT_DATA_DIR` | `../../../assets_v2/equipment` in development, empty otherwise, which leaves the equipment datasets unconfigured; the systemd unit sets its state directory; the imported equipment datasets and their indexes | no; when set outside development, absolute | `Config::load` |
 | `EQUIPMENT_EXPORT_SOURCE_DIR` | empty, which disables importing; the Workbench equipment export publication the import worker polls | no; when set outside development, absolute | `Config::load` |
-| `DATABASE_URL` | none | yes | `Config::load`; `import-registry` |
+| `DATABASE_URL` | none | yes | `Config::load`; `import-registry`; `staging-fixtures`, from the API env file |
 | `TBD_DB_POOL_MAX_CONNECTIONS` | `25` | no | `src/core/database/connection_pool.rs` |
 | `TBD_DB_POOL_IDLE_TIMEOUT_SECS` | `300` | no | `src/core/database/connection_pool.rs` |
 | `TBD_DB_POOL_MAX_LIFETIME_SECS` | `1800` | no | `src/core/database/connection_pool.rs` |
@@ -134,7 +134,7 @@ compiles every fault point to nothing. The `engineering_laws` suite holds both h
 | `JWT_SECRET` | none; signs the access tokens | yes | `Config::load` |
 | `JWT_ACCESS_TTL_MIN` | `15` | no | `Config::load` |
 | `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URL` | empty | outside development | `Config::load` |
-| `DISCORD_GUILD_ID` | empty; the guild whose roles decide members' roles | no | `Config::load` |
+| `DISCORD_GUILD_ID` | empty; the guild whose roles decide members' roles | no | `Config::load`; `staging-fixtures`, from the API env file |
 | `DISCORD_BOT_TOKEN` | empty, meaning no bot; a value holding whitespace stops the boot | no | `Config::load` |
 | `DISCORD_WEBHOOK_URL` | empty, which disables announcement pushes | no | `Config::load` |
 | `OBSERVABILITY_TOKEN` | empty, which answers 401 on `/metrics` and serves only the public `/healthz`; sent as `Authorization: Bearer` | no | `Config::load` |
@@ -153,6 +153,10 @@ compiles every fault point to nothing. The `engineering_laws` suite holds both h
 - The `import-registry` binary: imports Workbench registry envelopes (`--items`, `--compat`) into
   Postgres for the envelope's modpack, which `--modpack` overrides; `--prune` deletes that
   modpack's rows the envelope lacks.
+- The `staging-fixtures` binary: the staging host tool; `provision-fleet` registers the staging
+  fleet's servers and writes their machine credentials into mode-600 files, and
+  `rotate-credential` stages and promotes a new credential. Every subcommand is a dry run unless
+  `--apply` is given, and runs only against the database `--confirm-database` names.
 - The HTTP surface: `/api/v1`, `/healthz` (the detailed report with the `OBSERVABILITY_TOKEN`
   bearer), `/metrics` (`OBSERVABILITY_TOKEN` bearer), `/uploads`, `/map-assets` and
   `/map-assets/glyphs`, and the built app as the fallback when `SPA_DIST_DIR` is set.

@@ -83,3 +83,24 @@ fn a_host_without_a_user_needs_every_folder_set() {
     assert_eq!(load_cfg(&bare).err(), Some(bare.missing("TBD_REMOTE_DIR")));
     assert_eq!(run_with_environment(&bare).unwrap(), 1);
 }
+
+/// The manual steps name the fleet's per-instance credential files, never the retired
+/// `deploy.env` credential keys.
+#[test]
+fn next_steps_name_the_fleets_per_instance_credential_files() {
+    let steps = next_steps().join("\n");
+    for retired in [
+        "TBD_MOD_RUNTIME_CREDENTIAL",
+        "TBD_HOST_AGENT_CREDENTIAL",
+        "TBD_RCON_PASSWORD",
+    ] {
+        assert!(!steps.contains(retired), "{retired} in:\n{steps}");
+    }
+    for file in [
+        "~/tbd/fleet/instance-N/secrets/mod-runtime-credential",
+        "host-agent-credential",
+        "~/tbd/fleet/join-password",
+    ] {
+        assert!(steps.contains(file), "{file} missing in:\n{steps}");
+    }
+}

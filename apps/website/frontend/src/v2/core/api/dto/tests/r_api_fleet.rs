@@ -259,6 +259,71 @@ fn fleet_command_requested_and_cancelled() {
     assert_eq!(cancelled.state, "cancelled");
 }
 
+/// A console command is queued for the host agent with its line as its only argument, carries no
+/// outcome yet, and the body the console sends for that line is the captured request.
+#[test]
+fn fleet_console_command_requested() {
+    const REQUESTED: &str = golden!(
+        "POST__servers__00000000-0000-4000-d000-000000000001__commands-console-command.json"
+    );
+    const REQUEST: &str = golden!(
+        "POST__servers__00000000-0000-4000-d000-000000000001__commands-console-command.request.json"
+    );
+    assert_golden::<FleetCommandReceipt>(REQUESTED, &["arguments/line"]);
+    assert_golden::<FleetCommandRequest>(REQUEST, &["arguments/line"]);
+    let requested: FleetCommandReceipt = serde_json::from_str(REQUESTED).unwrap();
+    assert_eq!(
+        (
+            requested.action.as_str(),
+            requested.executor_kind.as_str(),
+            requested.state.as_str()
+        ),
+        ("console_command", "host_agent", "queued")
+    );
+    assert_eq!(
+        requested
+            .arguments
+            .get("line")
+            .and_then(serde_json::Value::as_str),
+        Some("#players")
+    );
+    assert_eq!(requested.console_outcome(), None);
+    assert_eq!(
+        serde_json::to_value(FleetCommandRequest::console_command("#players")).unwrap(),
+        serde_json::from_str::<serde_json::Value>(REQUEST).unwrap()
+    );
+}
+
+/// A console command's outcome reads as the reply and whether the host agent cut it, and writes
+/// back unchanged; another action's outcome, and an outcome of another shape, never read as one.
+#[test]
+fn fleet_console_command_outcome() {
+    let reply = serde_json::json!({
+        "response": "Players on server:\n(0 players in total)",
+        "response_truncated": false
+    });
+    let read: ConsoleCommandOutcome = serde_json::from_value(reply.clone()).unwrap();
+    assert_eq!(serde_json::to_value(&read).unwrap(), reply);
+    let mut receipt: FleetCommandReceipt = serde_json::from_str(golden!(
+        "POST__servers__00000000-0000-4000-d000-000000000001__commands-console-command.json"
+    ))
+    .unwrap();
+    receipt.state = "succeeded".into();
+    receipt.outcome = reply.as_object().cloned();
+    assert_eq!(receipt.console_outcome(), Some(read));
+    for other_shape in [
+        serde_json::json!({"response": "Players on server:"}),
+        serde_json::json!({"response": 7, "response_truncated": false}),
+        serde_json::json!({"reply": "Players on server:", "response_truncated": false}),
+    ] {
+        receipt.outcome = other_shape.as_object().cloned();
+        assert_eq!(receipt.console_outcome(), None, "{other_shape}");
+    }
+    receipt.outcome = reply.as_object().cloned();
+    receipt.action = "list_players".into();
+    assert_eq!(receipt.console_outcome(), None);
+}
+
 #[test]
 fn fleet_scenario_replaced() {
     const G: &str = golden!("PUT__fleet__scenarios__everon.json");

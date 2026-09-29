@@ -284,6 +284,138 @@ fn operational_load_requires_all_recorded_acceptance_conditions() {
 }
 
 #[test]
+fn operational_load_refuses_more_reads_and_writes_than_completed_requests_and_a_blank_network() {
+    let observations = operational::Observations::Load {
+        duration_seconds: 1800,
+        member_accounts: 1000,
+        minimum_concurrent_clients: 100,
+        completed_requests: 36000,
+        unexpected_errors: 0,
+        json_read_count: 25000,
+        json_write_count: 11000,
+        p95_json_read_ms: 120.0,
+        p95_json_write_ms: 240.0,
+        workload_sha256: "a".repeat(64),
+        hardware: "recorded host".into(),
+        network: "recorded network".into(),
+    };
+    assert!(operational::validate("staging_load", &observations).is_ok());
+    let value = serde_json::to_value(&observations).unwrap();
+    for (field, replacement) in [
+        ("json_write_count", serde_json::json!(11001)),
+        ("json_read_count", serde_json::json!(0)),
+        ("json_write_count", serde_json::json!(0)),
+        ("network", serde_json::json!("")),
+        ("network", serde_json::json!(" \t")),
+        ("workload_sha256", serde_json::json!("a".repeat(63))),
+    ] {
+        let mut invalid = value.clone();
+        invalid[field] = replacement;
+        let observation = serde_json::from_value(invalid).unwrap();
+        assert!(
+            operational::validate("staging_load", &observation).is_err(),
+            "accepted deficient {field}"
+        );
+    }
+    assert!(operational::validate("staging_fleet", &observations).is_err());
+}
+
+const FLEET_SCENARIOS: [&str; 9] = [
+    "start",
+    "stop",
+    "restart",
+    "kick",
+    "custom_console",
+    "same_terrain",
+    "cross_terrain",
+    "lost_acknowledgement",
+    "identity_link",
+];
+
+const DISCORD_SCENARIOS: [&str; 9] = [
+    "role_demotion",
+    "departure_to_guest",
+    "partner_membership",
+    "rate_limit",
+    "network_outage",
+    "cached_grace",
+    "staleness_warning",
+    "admin_override",
+    "eligibility_release",
+];
+
+/// Every observation with one required scenario removed is refused.
+fn assert_each_scenario_required(check: &str, value: &serde_json::Value, scenarios: &[&str]) {
+    for missing in scenarios {
+        let mut invalid = value.clone();
+        invalid["scenarios"] = serde_json::json!(
+            scenarios
+                .iter()
+                .filter(|scenario| *scenario != missing)
+                .collect::<Vec<_>>()
+        );
+        let observation = serde_json::from_value(invalid).unwrap();
+        assert!(
+            operational::validate(check, &observation).is_err(),
+            "{check} accepted observations without {missing}"
+        );
+    }
+}
+
+#[test]
+fn operational_fleet_requires_five_servers_two_clients_every_scenario_and_a_fixture_digest() {
+    let observations = operational::Observations::Fleet {
+        server_ids: (1..=5).map(|n| format!("server-{n}")).collect(),
+        client_count: 2,
+        scenarios: FLEET_SCENARIOS.map(String::from).to_vec(),
+        fixture_sha256: "a".repeat(64),
+    };
+    assert!(operational::validate("staging_fleet", &observations).is_ok());
+    let value = serde_json::to_value(&observations).unwrap();
+    for (field, replacement) in [
+        (
+            "server_ids",
+            serde_json::json!(["server-1", "server-2", "server-3", "server-4", "server-4"]),
+        ),
+        (
+            "server_ids",
+            serde_json::json!(["server-1", "server-2", "server-3", "server-4", ""]),
+        ),
+        ("client_count", serde_json::json!(1)),
+        ("fixture_sha256", serde_json::json!("a".repeat(63))),
+        ("fixture_sha256", serde_json::json!("g".repeat(64))),
+    ] {
+        let mut invalid = value.clone();
+        invalid[field] = replacement;
+        let observation = serde_json::from_value(invalid).unwrap();
+        assert!(
+            operational::validate("staging_fleet", &observation).is_err(),
+            "accepted deficient {field}"
+        );
+    }
+    assert_each_scenario_required("staging_fleet", &value, &FLEET_SCENARIOS);
+    assert!(operational::validate("staging_discord", &observations).is_err());
+}
+
+#[test]
+fn operational_discord_requires_every_scenario_and_a_fixture_digest() {
+    let observations = operational::Observations::Discord {
+        scenarios: DISCORD_SCENARIOS.map(String::from).to_vec(),
+        fixture_sha256: "b".repeat(64),
+    };
+    assert!(operational::validate("staging_discord", &observations).is_ok());
+    let value = serde_json::to_value(&observations).unwrap();
+    for replacement in [serde_json::json!(""), serde_json::json!("b".repeat(65))] {
+        let mut invalid = value.clone();
+        invalid["fixture_sha256"] = replacement;
+        let observation = serde_json::from_value(invalid).unwrap();
+        assert!(operational::validate("staging_discord", &observation).is_err());
+    }
+    assert_each_scenario_required("staging_discord", &value, &DISCORD_SCENARIOS);
+    assert!(operational::validate("staging_load", &observations).is_err());
+}
+
+#[test]
 fn duplicate_output_cannot_substitute_for_distinct_acceptance_cases() {
     let (mut check, mut receipt, _) = fixture();
     check.minimum_cases = 2;

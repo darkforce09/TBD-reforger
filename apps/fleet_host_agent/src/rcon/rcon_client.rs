@@ -1,12 +1,25 @@
-//! The handle through which the agent sends RCON commands. One background task owns the UDP
-//! socket and the session ([`super::rcon_session`]); commands queue on a channel and run one
-//! at a time.
+//! The handle through which the agent sends RCON commands.
 //!
-//! Delivery is at least once. Within a session an unanswered command is retransmitted under
-//! its sequence number, and the protocol does not say whether the server runs a retransmitted
-//! command once or again; after a lost session the command is sent once more following a new
-//! login. The client therefore carries only commands that are safe to repeat: the agent sends
-//! the `#players` read alone.
+//! **Role:** Queues each command for the one session task ([`super::rcon_session`]) that owns
+//! the UDP socket, in one of two deliveries. [`RconClient::execute`] delivers at least once:
+//! within a session an unanswered command is retransmitted under its sequence number, and the
+//! protocol does not say whether the server runs a retransmitted command once or again; after a
+//! lost session the command is sent once more following a new login. [`RconClient::execute_once`]
+//! transmits the command in exactly one packet and never again, not even after a new login; only
+//! the login, and the empty command packet that confirms it, are repeated.
+//!
+//! **Position:** `main.rs` starts the client from the [`RconSettings`] that
+//! `crate::agent_configuration` builds; `crate::command_execution` sends the `#players` read
+//! through `execute` and the operator's console line through `execute_once`; `main.rs` calls
+//! [`RconClient::log_out`] on shutdown.
+//!
+//! **Signals & state:** the sending half of the session task's request channel, 16 commands
+//! deep; the session task owns every other piece of state.
+//!
+//! **Invariants:** a command is 1 to [`MAX_COMMAND_BYTES`] bytes of text without control
+//! characters, or it is refused before anything is sent; `execute` carries only commands that are
+//! safe to repeat; a command whose last transmission goes unanswered fails with
+//! [`RconError::NoResponse`], because the server may or may not have run it.
 
 use std::net::SocketAddr;
 use std::time::Duration;
@@ -14,7 +27,7 @@ use std::time::Duration;
 use thiserror::Error;
 use tokio::sync::{mpsc, oneshot};
 
-use super::rcon_session::{RconSession, SessionRequest};
+use super::rcon_session::{CommandReply, RconSession, SessionRequest};
 use crate::secret_text::SecretText;
 
 /// Longest command text sent in one packet.
@@ -23,10 +36,12 @@ pub const MAX_COMMAND_BYTES: usize = 1024;
 /// Commands waiting while the session is busy with another one.
 const QUEUED_COMMANDS: usize = 16;
 
+/// Where the game server's RCON port listens, its password and the protocol timings.
 #[derive(Debug, Clone)]
 pub struct RconSettings {
     /// The game server's RCON address and port.
     pub server: SocketAddr,
+    /// The server config's `rcon.password`, exposed only in the login packet.
     pub password: SecretText,
     pub timings: RconTimings,
 }
@@ -45,8 +60,10 @@ pub struct RconTimings {
 }
 
 impl Default for RconTimings {
-    /// One command, login included, takes at most 16 s even when the session has to be
-    /// re-established, inside the ledger's 30 s execution window for RCON actions.
+    /// One `execute`, login included, takes at most 16 s even when the session has to be
+    /// re-established; one `execute_once` takes at most 12 s: 4 s to confirm a held login, 4 s
+    /// to log in again, and 4 s of waiting for the answer to its single transmission. Both fit
+    /// inside the ledger's 30 s execution window for RCON actions.
     fn default() -> Self {
         Self {
             response_timeout: Duration::from_secs(1),
@@ -56,22 +73,28 @@ impl Default for RconTimings {
     }
 }
 
+/// Why a command produced no response text.
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum RconError {
+    /// The server refused the login; the command was not sent.
     #[error("the RCON server refused the password")]
     LoginRejected,
+    /// No transmission of the login was answered; the command was not sent.
     #[error(
         "the RCON server at {0} did not answer the login (RCON disabled, wrong address or port, \
          or the game server is not running)"
     )]
     LoginUnanswered(SocketAddr),
-    #[error("the RCON server stopped answering; the command may or may not have run")]
+    /// The command's last transmission went unanswered: the server may or may not have run it.
+    #[error("no RCON response; the command may or may not have run")]
     NoResponse,
+    /// The command cannot be one packet of text; nothing was sent.
     #[error(
         "the RCON command is empty, longer than {max} bytes, or contains control characters",
         max = MAX_COMMAND_BYTES
     )]
     InvalidCommand,
+    /// The session task has stopped.
     #[error("the RCON client has stopped")]
     ClientStopped,
 }
@@ -92,23 +115,22 @@ impl RconClient {
         Ok(Self { requests })
     }
 
-    /// Sends `command` and returns the server's response text.
+    /// Sends `command`, which must be safe to repeat, and returns the server's response text.
+    /// An unanswered command is retransmitted, and after a lost session sent once more
+    /// following a new login.
     pub async fn execute(&self, command: &str) -> Result<String, RconError> {
-        if command.is_empty()
-            || command.len() > MAX_COMMAND_BYTES
-            || command.chars().any(char::is_control)
-        {
-            return Err(RconError::InvalidCommand);
-        }
-        let (reply, response) = oneshot::channel();
-        self.requests
-            .send(SessionRequest::Execute {
-                command: command.to_owned(),
-                reply,
-            })
+        let command = packet_text(command)?;
+        self.submit(|reply| SessionRequest::Execute { command, reply })
             .await
-            .map_err(|_| RconError::ClientStopped)?;
-        response.await.map_err(|_| RconError::ClientStopped)?
+    }
+
+    /// Sends `command` in exactly one transmission and returns the server's response text. The
+    /// login is confirmed, or renewed, before the command leaves; the command itself is never
+    /// sent again, and without its complete response it fails with [`RconError::NoResponse`].
+    pub async fn execute_once(&self, command: &str) -> Result<String, RconError> {
+        let command = packet_text(command)?;
+        self.submit(|reply| SessionRequest::ExecuteOnce { command, reply })
+            .await
     }
 
     /// Ends the session: a logged-in session sends `@logout`, which frees its slot on the server
@@ -126,4 +148,29 @@ impl RconClient {
             let _ = done.await;
         }
     }
+
+    /// Queues the request `build` makes around the reply channel and waits for its answer.
+    async fn submit(
+        &self,
+        build: impl FnOnce(CommandReply) -> SessionRequest,
+    ) -> Result<String, RconError> {
+        let (reply, response) = oneshot::channel();
+        self.requests
+            .send(build(reply))
+            .await
+            .map_err(|_| RconError::ClientStopped)?;
+        response.await.map_err(|_| RconError::ClientStopped)?
+    }
+}
+
+/// `command` as the text of one command packet: 1 to [`MAX_COMMAND_BYTES`] bytes without control
+/// characters.
+fn packet_text(command: &str) -> Result<String, RconError> {
+    if command.is_empty()
+        || command.len() > MAX_COMMAND_BYTES
+        || command.chars().any(char::is_control)
+    {
+        return Err(RconError::InvalidCommand);
+    }
+    Ok(command.to_owned())
 }

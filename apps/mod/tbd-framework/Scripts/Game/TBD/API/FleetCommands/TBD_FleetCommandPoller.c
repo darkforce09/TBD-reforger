@@ -8,8 +8,9 @@
  * `TBD_GameRuntimeHttp` with the `mod_runtime` credential.
  * State: world counter, running and claim-in-flight flags, failure log throttle; server statics.
  * Invariants: one command at a time, nothing is claimed while one is executed or reported, so no
- * effect runs twice or overlaps another; a claim answered with no body (204) means nothing is
- * claimable; a claim refused because the session ended goes to `TBD_RuntimeSession`; any other
+ * effect runs twice or overlaps another; a claim answered 204 (`NO_CONTENT`) means nothing is
+ * claimable: the poller stays idle and logs nothing for it; a claim refused because the session
+ * ended goes to `TBD_RuntimeSession`; any other
  * failure is logged at most once a minute and the next claim goes out on schedule; an answer to a
  * claim of an earlier world is dropped, and its command returns to the queue when its 30 s lease
  * lapses.
@@ -154,8 +155,8 @@ class TBD_FleetCommandPoller
 	}
 
 	//! Called by `TBD_FleetClaimCall` with the platform's answer: a command body begins execution,
-	//! an empty body means nothing to claim, an ended session is reported, and any other failure is
-	//! noted. Answers for another world are dropped.
+	//! a 204 or an empty body means nothing to claim and leaves the poller idle, an ended session
+	//! is reported, and any other failure is noted. Answers for another world are dropped.
 	//! @authority server
 	static void OnClaimAnswered(notnull TBD_FleetClaimCall call, notnull TBD_GameRuntimeAnswer answer)
 	{
@@ -163,6 +164,13 @@ class TBD_FleetCommandPoller
 			return;
 
 		s_bClaimInFlight = false;
+
+		// Nothing claimable: the claim was answered, so only a recovery after logged failures prints.
+		if (answer.m_eOutcome == TBD_EGameRuntimeOutcome.NO_CONTENT)
+		{
+			NoteAnswered();
+			return;
+		}
 
 		if (answer.m_eOutcome == TBD_EGameRuntimeOutcome.SUCCESS)
 		{

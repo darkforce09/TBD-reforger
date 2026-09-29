@@ -17,9 +17,9 @@ use serde::Deserialize;
 /// not "this user has no username", it is **not a user object**: a gateway or CDN answering
 /// 200 with something else, or an API shape change. Defaulted, that decodes cleanly into
 /// `DiscordUser { username: "" }`, and because [`Self::display_name`] falls back to
-/// `username` and [`Self::handle`] is built from it,
-/// [`crate::identity_and_access::handlers::discord_oauth`] would bind two empty strings into
-/// `users.username` and `users.discord_handle`.
+/// `username` and [`Self::handle`] is built from it, the OAuth callback would pass two empty
+/// strings to [`crate::identity_and_access::services::account_registration::register_account`],
+/// which binds them into `users.username` and `users.discord_handle`.
 ///
 /// **The right answer is to fail the login, not to patch the value.** Keeping the stored
 /// name would need a `COALESCE` in the oauth upsert, which is the wrong place to encode

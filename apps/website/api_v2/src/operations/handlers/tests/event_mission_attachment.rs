@@ -4,17 +4,21 @@
 use website_map_engine::data::scenario::orbat::validate_faction_join_key;
 
 const ATTACHMENT: &str = include_str!("../event_mission_attachment.rs");
+const MISSION_ATTACHMENT: &str =
+    include_str!("../../services/event_authoring/mission_attachment.rs");
 
-/// `add_event_mission` must call the join-key guard, and `materialize_slots` must bind
-/// `&sq.faction` verbatim (never `.trim()`).
-#[test]
-fn add_event_mission_refuses_and_materialize_stores_verbatim() {
-    let production = ATTACHMENT
+fn production_half(source: &str) -> &str {
+    source
         .split("#[cfg(test)]")
         .next()
-        .expect("production source before tests module");
+        .expect("production source before tests module")
+}
 
-    let add = production
+/// `add_event_mission` must seat only an `AttachmentTemplate`, whose one constructor calls the
+/// join-key guard, and `materialize_slots` must bind `&sq.faction` verbatim (never `.trim()`).
+#[test]
+fn add_event_mission_refuses_and_materialize_stores_verbatim() {
+    let add = production_half(ATTACHMENT)
         .split("pub async fn add_event_mission")
         .nth(1)
         .expect("add_event_mission")
@@ -22,8 +26,43 @@ fn add_event_mission_refuses_and_materialize_stores_verbatim() {
         .next()
         .expect("handler body");
     assert!(
-        add.contains("validate_faction_join_key"),
-        "add_event_mission must refuse bad orbat[].faction before materialize"
+        add.contains("AttachmentTemplate::resolve(") && add.contains("attach_mission("),
+        "add_event_mission must resolve an AttachmentTemplate and attach through the service"
+    );
+
+    let production = production_half(MISSION_ATTACHMENT);
+    let checked = production
+        .split("fn checked(")
+        .nth(1)
+        .expect("AttachmentTemplate::checked")
+        .split("\n    }\n")
+        .next()
+        .expect("fn body");
+    assert!(
+        checked.contains("validate_faction_join_key"),
+        "the attachment template must refuse bad orbat[].faction before materialize"
+    );
+    let template = production
+        .split("pub struct AttachmentTemplate {")
+        .nth(1)
+        .expect("AttachmentTemplate")
+        .split('}')
+        .next()
+        .expect("struct body");
+    assert!(
+        !template.contains("pub"),
+        "AttachmentTemplate fields must stay private so only the checks can build one"
+    );
+    let attach = production
+        .split("pub async fn attach_mission(")
+        .nth(1)
+        .expect("attach_mission")
+        .split(')')
+        .next()
+        .expect("parameter list");
+    assert!(
+        attach.contains("template: &AttachmentTemplate"),
+        "attach_mission must take only a checked AttachmentTemplate"
     );
 
     let mat = production

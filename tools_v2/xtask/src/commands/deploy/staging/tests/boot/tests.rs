@@ -57,6 +57,34 @@ fn addon_check_discriminates_on_path_not_guid() {
     let _ = fs::remove_dir_all(&d);
 }
 
+/// A lost addon contest points at the fleet instance's game server unit, never at the retired
+/// single-instance `tbd-reforger.service`.
+#[test]
+fn a_lost_addon_contest_names_the_instance_unit() {
+    let d = tmp("unit");
+    let guid = "B2C3D4E5F6A78901";
+    let lose = d.join("lose.log");
+    fs::write(
+        &lose,
+        format!(
+            "ENGINE : Loaded addons:\n ENGINE : gproj: '/home/deploy/tbd/fleet/instance-3/profile/addons/TBDFramework_{guid}/addon.gproj' guid: '{guid}'\n"
+        ),
+    )
+    .unwrap();
+    let mut o = Out::captured();
+    assert_eq!(
+        assert_local_addon_won(&mut o, &lose, guid, "/home/deploy/tbd/addons"),
+        1
+    );
+    let text = o.text();
+    assert!(
+        text.contains("systemctl --user cat tbd-reforger@N.service | grep ExecStart"),
+        "{text}"
+    );
+    assert!(!text.contains("tbd-reforger.service"), "{text}");
+    let _ = fs::remove_dir_all(&d);
+}
+
 #[test]
 fn last_loaded_addons_block_wins() {
     // The engine prints `Loaded addons:` twice per boot; the FINAL block is the one that ran.

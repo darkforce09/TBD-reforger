@@ -11,11 +11,12 @@
 //!
 //! # Why Postgres and not Redis
 //!
-//! This deployment runs exactly one datastore (`tools_v2/xtask/deploy/systemd/tbd-reforger.service` plus the
-//! compose Postgres on 5434). A second one is a new process to run, monitor, back up and secure in
-//! order to hold a few hundred float counters. [`PgRateLimiter::check`] is one statement, and
-//! `ON CONFLICT DO UPDATE` takes the row lock, so refill-and-spend is atomic across processes
-//! without an advisory lock or a transaction round trip.
+//! This deployment runs the API (`tools_v2/xtask/deploy/systemd/tbd-website-api.service`) against
+//! exactly one datastore, the compose Postgres on 5434. A second one is a new process to run,
+//! monitor, back up and secure in order to hold a few hundred float counters.
+//! [`PgRateLimiter::check`] is one statement, and `ON CONFLICT DO UPDATE` takes the row lock, so
+//! refill-and-spend is atomic across processes without an advisory lock or a transaction round
+//! trip.
 //!
 //! # The three pieces this module depends on
 //!

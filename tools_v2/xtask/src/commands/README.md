@@ -26,6 +26,7 @@ tools_v2/xtask/src/commands/
 ├── reproduction/   `repro`: the mission-version upload reproduction and its helpers
 ├── schema/         `schema`: contract codegen, contract and map-asset gates, mission-file tools
 ├── setup/          `setup`: server profiles, Workbench, the MCP game root and client addons
+├── staging/        `staging`: the staging acceptance harness, its host actions and recorded receipts
 ├── ticket/         `ticket` and `registry-get`: the ticket registry commands over ticket-engine
 ├── verify/         `verify`: the command adapters of the repository verifications
 └── wave/           `wave` and `slice-collisions`: the wave lock over ticket-engine

@@ -1,5 +1,6 @@
 //! The fleet command console: how a followed command's outcome is read and announced, the checks a
-//! request passes, what a refusal is told, and the wiring of the request and follow paths.
+//! request passes, how a console reply reads, what a refusal is told, and the wiring of the
+//! request, console and follow paths.
 //!
 //! The follow loop is browser-only, so the decision it makes — what a receipt's state means, and
 //! which announcement it earns — lives in [`announce_receipt`], which runs here natively against a
@@ -8,7 +9,9 @@
 
 use super::command_wording::*;
 use crate::v2::core::api::client::ApiRefusal;
-use crate::v2::core::api::dto::{FleetCommandList, FleetCommandReceipt, FleetCommandRequest};
+use crate::v2::core::api::dto::{
+    ConsoleCommandOutcome, FleetCommandList, FleetCommandReceipt, FleetCommandRequest,
+};
 use crate::v2::core::test_support::class_r_scrub::{live_code, only_body, only_item};
 use crate::v2::core::test_support::fixtures::golden;
 use serde_json::json;
@@ -35,6 +38,22 @@ fn moved_to(state: &str) -> FleetCommandReceipt {
     let mut receipt = in_state("failed");
     receipt.state = state.into();
     receipt.failure_reason = None;
+    receipt
+}
+
+/// The captured console command, as the API accepted it.
+fn captured_console_command() -> FleetCommandReceipt {
+    serde_json::from_str(golden!(
+        "POST__servers__00000000-0000-4000-d000-000000000001__commands-console-command.json"
+    ))
+    .unwrap()
+}
+
+/// The captured console command, succeeded with `outcome` as what the host agent observed.
+fn console_replied(outcome: serde_json::Value) -> FleetCommandReceipt {
+    let mut receipt = captured_console_command();
+    receipt.state = "succeeded".into();
+    receipt.outcome = outcome.as_object().cloned();
     receipt
 }
 
@@ -211,6 +230,144 @@ fn requests_are_checked_as_the_backend_checks_them() {
     assert!(is_uuid(session) && !is_uuid("00000000000040000f3000000000000001"));
 }
 
+/// A console line is checked as the API's argument gate checks it, case for case: what was typed
+/// holds no control character and no line or paragraph separator, and once trimmed it holds 1 to
+/// 256 bytes and does not start with `@`. The trimmed line is what is sent.
+#[test]
+fn a_console_line_is_checked_as_the_backend_checks_it() {
+    for (typed, sent) in [
+        ("#players", "#players"),
+        ("  #players  ", "#players"),
+        ("say -1 meet @ the gate", "say -1 meet @ the gate"),
+    ] {
+        assert_eq!(
+            validated_console_line(typed),
+            Ok(sent.to_string()),
+            "{typed:?}"
+        );
+    }
+    for line in ["p".repeat(256), "é".repeat(128)] {
+        assert_eq!(validated_console_line(&line), Ok(line.clone()));
+    }
+    for typed in [
+        String::new(),
+        "   ".into(),
+        "p".repeat(257),
+        "é".repeat(129),
+        "#players\n#shutdown".into(),
+        "#players\n".into(),
+        "#players\r".into(),
+        "#players\t#shutdown".into(),
+        "#players\u{7}".into(),
+        "#players\u{85}".into(),
+        "#players\u{2028}#shutdown".into(),
+        "#players\u{2029}".into(),
+        "@logout".into(),
+        "  @logout".into(),
+    ] {
+        assert!(
+            validated_console_line(&typed).is_err(),
+            "{typed:?} must be refused"
+        );
+    }
+    for (typed, why) in [
+        (
+            "#players\n",
+            "The console line must be one line, without line breaks or control characters",
+        ),
+        ("   ", "Enter the console line"),
+        (
+            "  @logout",
+            "The console line cannot start with @: those commands act on the host agent's own \
+             RCON session",
+        ),
+    ] {
+        assert_eq!(validated_console_line(typed), Err(why.to_string()));
+    }
+    assert_eq!(
+        validated_console_line(&"p".repeat(257)),
+        Err("The console line is too long: at most 256 bytes".to_string())
+    );
+    assert_eq!(FleetCommandRequest::CONSOLE_LINE_MAX_BYTES, 256);
+}
+
+/// A console command is accepted as waiting for the host agent, and its reply reads as the server
+/// sent it: several lines counted, one line quoted, an empty reply named, a cut reply said to be
+/// cut; a line the server never answered fails with the host agent's words.
+#[test]
+fn a_console_reply_reads_as_the_server_sent_it() {
+    let accepted = captured_console_command();
+    assert_eq!(
+        accepted_line(&accepted),
+        "Console command accepted — waiting for the host agent to carry it out"
+    );
+    assert_eq!(arguments_summary(&accepted), "line: #players");
+    assert_eq!(receipt_outcome(&accepted), None);
+    let players = console_replied(json!({
+        "response": "Players on server:\n[#] [IP Address]:[Port] [Ping] [GUID] [Name]\n\
+                     ------------------------------\n0   198.51.100.7:2001   38   0f1e2d3c   Vance\n\
+                     (1 players in total)\n",
+        "response_truncated": false
+    }));
+    assert_eq!(
+        receipt_outcome(&players),
+        Some(ReceiptOutcome::Succeeded(
+            "Console command succeeded — the server replied with 5 lines".into()
+        ))
+    );
+    let recorder = Recorder::default();
+    assert!(announce_receipt(&players, &recorder));
+    assert_eq!(recorder.0.into_inner()[0].0, "succeeded");
+    let one =
+        console_replied(json!({"response": "  Player kicked  \n", "response_truncated": false}));
+    assert_eq!(
+        outcome_summary(&one).as_deref(),
+        Some("the server replied \"Player kicked\"")
+    );
+    let empty = console_replied(json!({"response": "", "response_truncated": false}));
+    assert_eq!(
+        outcome_summary(&empty).as_deref(),
+        Some("the server's reply was empty")
+    );
+    let long = "y".repeat(ConsoleCommandOutcome::RESPONSE_MAX_BYTES);
+    let cut = console_replied(json!({"response": long, "response_truncated": true}));
+    assert_eq!(
+        outcome_summary(&cut),
+        Some(format!(
+            "the server replied \"{}…\"; the host agent kept only its first 4096 bytes",
+            "y".repeat(120)
+        ))
+    );
+    let mut unanswered = captured_console_command();
+    unanswered.state = "failed".into();
+    unanswered.failure_reason =
+        Some("no RCON response; the command may or may not have run".into());
+    assert_eq!(
+        receipt_outcome(&unanswered),
+        Some(ReceiptOutcome::Failed(
+            "Console command failed: no RCON response; the command may or may not have run".into()
+        ))
+    );
+    let other_shape = console_replied(json!({"reply": "x"}));
+    assert_eq!(outcome_summary(&other_shape).as_deref(), Some("reply: x"));
+}
+
+/// A console reply is shown under the followed command and under its history row, as the text the
+/// server sent.
+#[test]
+fn a_console_reply_is_shown_under_the_panel_and_the_history_row() {
+    let history = live_code(include_str!("../command_history.rs"));
+    for item in ["fn followed_panel(", "fn history_row("] {
+        assert!(
+            compact(only_body(&history, item)).contains("{console_reply(&receipt)}"),
+            "{item} must show a console reply"
+        );
+    }
+    let reply = compact(only_body(&history, "fn console_reply("));
+    assert!(reply.contains("receipt.console_outcome()?.response"));
+    assert!(reply.contains("{reply}") && !reply.contains("inner_html"));
+}
+
 /// A refused cancellation names the state the command reached; an ended session says why the kick
 /// cannot land; anything else keeps the backend's sentence.
 #[test]
@@ -251,11 +408,43 @@ fn compact(text: &str) -> String {
         .replace(",)", ")")
 }
 
-/// The console offers the six operator actions, each built by its request constructor, and names
-/// the two a deployment issues without offering them.
+/// Every `FleetCommandRequest::<constructor>(` call in `src`, by constructor name.
+fn requested_constructors(src: &str) -> std::collections::BTreeSet<String> {
+    let prefix = "FleetCommandRequest::";
+    src.match_indices(prefix)
+        .filter_map(|(at, _)| {
+            let rest = &src[at + prefix.len()..];
+            let name: String = rest
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+                .collect();
+            rest[name.len()..].starts_with('(').then_some(name)
+        })
+        .collect()
+}
+
+/// The console offers the seven operator actions, each built by its request constructor — the
+/// console line from the checked line, never from the raw field — and names the two a deployment
+/// issues without offering them.
 #[test]
 fn the_console_offers_exactly_the_operator_actions() {
-    let src = compact(&live_code(include_str!("../command_requests.rs")));
+    let requests = compact(&live_code(include_str!("../command_requests.rs")));
+    let console_box = compact(&live_code(include_str!("../console_command_form.rs")));
+    let src = format!("{requests}{console_box}");
+    assert_eq!(
+        requested_constructors(&src),
+        [
+            "broadcast",
+            "console_command",
+            "kick",
+            "list_players",
+            "restart",
+            "start",
+            "stop"
+        ]
+        .map(String::from)
+        .into()
+    );
     for constructor in [
         "FleetCommandRequest::start()",
         "FleetCommandRequest::stop()",
@@ -263,17 +452,40 @@ fn the_console_offers_exactly_the_operator_actions() {
         "FleetCommandRequest::list_players()",
         "FleetCommandRequest::broadcast(&text)",
         "FleetCommandRequest::kick(&identity, &runtime_session, why.as_deref())",
+        "FleetCommandRequest::console_command(&checked)",
     ] {
         assert!(
             src.contains(&compact(constructor)),
             "the console must request {constructor}"
         );
     }
+    assert!(requests.contains("{console_command_form(console)}"));
+    assert!(console_box.contains("ev.prevent_default()"));
+    assert!(console_box.contains(&compact("if console.busy.get_untracked() { return; }")));
+    let checked = console_box
+        .find(&compact(
+            "match validated_console_line(&line.get_untracked()) { Ok(checked) => {",
+        ))
+        .expect("the console box sends only a checked line");
+    let cleared = console_box
+        .find(&compact("line.set(String::new())"))
+        .expect("a sent line leaves the field");
+    let sent = console_box
+        .find(&compact(
+            "console.request(FleetCommandRequest::console_command(&checked))",
+        ))
+        .expect("the console box requests the checked line");
+    assert!(checked < cleared && cleared < sent);
     assert!(!src.contains("load_mission") && !src.contains("restart_with_mission"));
     assert_eq!(
         serde_json::to_value(FleetCommandRequest::list_players()).unwrap(),
         json!({"action": "list_players"})
     );
+    assert_eq!(
+        serde_json::to_value(FleetCommandRequest::console_command("#players")).unwrap(),
+        json!({"action": "console_command", "arguments": {"line": "#players"}})
+    );
+    assert_eq!(action_label("console_command"), "Console command");
     assert!(action_label("load_mission").contains("issued by a deployment"));
     assert!(action_label("restart_with_mission").contains("issued by a deployment"));
 }

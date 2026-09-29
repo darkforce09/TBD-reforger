@@ -67,7 +67,7 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
 
 ```text
 apps/
-├── fleet_host_agent/                    <-- Agent on each game host: claims fleet commands from the API, runs process control, RCON reads, mission header switches
+├── fleet_host_agent/                    <-- Agent per game-server instance: claims fleet commands from the API, runs process control, RCON reads and console lines, mission header switches
 ├── ticketboard/                         <-- Native egui/eframe desktop viewer for .ai/tickets
 ├── mod/                                 <-- Enfusion engine mod suite (three addons)
 │   ├── tbd-framework/                   <-- Shipping game mod (TBD_Framework; depends on vanilla only)
@@ -105,7 +105,7 @@ apps/
     │   └── src/                         <-- Domain-driven backend: core + workers + eight domains
     │       ├── core/                    <-- Configuration, database, state, errors, router, middleware, observability, realtime hub, auth primitives
     │       ├── background_workers/      <-- Interval tasks the API binary arms at boot
-    │       ├── bin/                     <-- The `api` server and the `import-registry` tool
+    │       ├── bin/                     <-- The `api` server, the `import-registry` tool and the `staging-fixtures` host tool
     │       ├── administration/          <-- Member roster, moderation actions, Discord role resync, audit log
     │       ├── command_center/          <-- Dashboard, leaderboards, per-player statistics
     │       ├── community_content/       <-- Announcements, wiki, vehicle database, modpacks, uploads
@@ -196,19 +196,21 @@ tools_v2/                               <-- Every developer tool in the reposito
 ├── verification-core/                  <-- Fail-closed verdicts, pattern scans, process isolation, repository verification lock
 ├── ticket-engine/                      <-- Ticket storage, validation, queue and roadmap sync, wave lock, metrics
 ├── developer-tools/                    <-- Heavy async CLI suite, blueprint compiler, map verification
-│   ├── src/bin/                        <-- Executables: enf, gate, mcpd, world, map, capture
+│   ├── src/bin/                        <-- Executables: enf, gate, mcpd, world, map, capture, acknowledgement-dropping-relay
 │   │   ├── enf                         <-- Symbol indexes, lookups and checks over Enfusion scripts
 │   │   ├── gate                        <-- Headless CDP Chrome gates of the single-page app
 │   │   ├── mcpd                        <-- Enfusion MCP broker daemon
 │   │   ├── world                       <-- World-export pipeline and its verification gates
 │   │   ├── map                         <-- Satellite, cartographic, label, water and glyph map assets
-│   │   └── capture                     <-- Mission Creator screenshots, zoom sweeps, crops
+│   │   ├── capture                     <-- Mission Creator screenshots, zoom sweeps, crops
+│   │   └── acknowledgement-dropping-relay <-- Staging fault injection: withholds one fleet executor answer
 │   ├── fixtures/dom_oracle/            <-- DOM goldens, screenshots and route inventories the browser gates compare against
 │   └── test_fixtures/blueprint/        <-- Prefab and world-object inputs for the blueprint compiler tests
 ├── xtask/                              <-- `cargo xtask` command router, repository verifications, platform execution
 │   ├── deploy/                         <-- deploy.env.example, Caddyfile.website, systemd/ units and timers
 │   ├── dedicated_server_profiles/      <-- Dedicated-server profile the local mod servers start from
-│   └── fixtures/mcp/                   <-- Recorded MCP transcripts `cargo xtask mcp selftest` replays
+│   ├── fixtures/mcp/                   <-- Recorded MCP transcripts `cargo xtask mcp selftest` replays
+│   └── staging/                        <-- Committed load workload and population of the staging load receipt
 └── enfusion_mcp_node_package/          <-- Pinned enfusion-mcp npm package (node_modules gitignored)
 
 contracts_v2/                            <-- Every shape that crosses a network, process, or language boundary
@@ -276,6 +278,13 @@ cargo xtask ticket sync        # Regenerate queue.json and the roadmap next-work
 # Deployment (tools_v2/xtask/deploy/deploy.env)
 cargo xtask deploy website --dry-run  # Print the plan: asset preflight, rsync excludes, remote steps
 cargo xtask deploy website     # Rsync, build the API + SPA on the server, restart the unit
+cargo xtask deploy staging     # Five game-server instances, their host agents and the relay on the staging host
+
+# Staging verification (documentation_v2/runbooks/staging_verification/)
+cargo xtask staging preflight  # Read-only: every precondition of the fleet, Discord and load procedures
+cargo xtask staging action-list <fleet|discord|load>  # The numbered real actions a procedure run asks approval for
+cargo xtask staging load --rehearse-local  # The load path against the local stack; records nothing
+cargo xtask staging <fleet|discord|load> --record  # Run a procedure and write its operational receipt
 ```
 
 ### Dev Login (No Discord Required)

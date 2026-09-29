@@ -2,11 +2,11 @@
 
 # Prepare the staging host
 
-Prepares an Ubuntu 24.04 host once to run the staging game server and the website beside it: the
-host's name on the network, the deploy settings on the development machine, the host's folders,
-the build tools, the Arma Reforger dedicated server, the platform API the
-[mod](/documentation_v2/glossary/g_to_m.md#mod) talks to, and the firewall. Run the steps in order; after
-them a server needs its credentials
+Prepares an Ubuntu 24.04 host once to run the staging game server fleet and the website beside it:
+the host's name on the network, the deploy settings on the development machine, the host's
+folders, the build tools, the Arma Reforger experimental dedicated server, the platform API the
+[mod](/documentation_v2/glossary/g_to_m.md#mod) talks to, and the firewall for the fleet's ports.
+Run the steps in order; after them the fleet needs its credentials and join password
 ([machine credentials and mission deployment](/documentation_v2/runbooks/game_server_staging/machine_credentials_and_mission_deployment.md))
 before the first [staging deploy](/documentation_v2/runbooks/game_server_staging/staging_deploy.md).
 
@@ -21,7 +21,7 @@ before the first [staging deploy](/documentation_v2/runbooks/game_server_staging
   `sudo` (`groups` lists `docker`); `steamcmd`; `curl` and `sha256sum` for the deploy's
   game-runtime smoke.
 - Access to the home router's DHCP settings.
-- A Steam account that may download the dedicated server.
+- A Steam account that may download the experimental dedicated server.
 
 The host is written `<host>` below: its name, which it announces on the network as
 `<host>.local`. `<LAN interface>` is the host's network interface on the home network and `<LAN>`
@@ -69,8 +69,8 @@ that network's address with its last byte 0; `ip -4 route` on the host prints bo
 
 5. Reserve that address for the host in the home router's DHCP settings. No command: the router's
    web page lists the host's lease, and a reservation keeps it. The deploy writes the address it
-   resolves into the game server's config as the server's public address, so the address must not
-   change between deploys.
+   resolves into every instance's server config as the server's public address, so the address
+   must not change between deploys.
 
    Expected: the router lists a reservation for the host at its current address.
 
@@ -82,12 +82,16 @@ that network's address with its last byte 0; `ip -4 route` on the host prints bo
    ```
 
    Expected: no output. Set `TBD_SSH_HOST` to `<user>@<host>.local`, then `TBD_SSH_PASS` or
-   `TBD_SSH_IDENTITY_FILE` (neither means plain `ssh` with the agent's keys). The four host paths
-   default under the deploy account's home, `~/tbd/repo`, `~/tbd/profile`, `~/tbd/addons-staging`
-   and `~/steam/arma-reforger-server` (`TBD_REMOTE_DIR`, `TBD_PROFILE_DIR`,
-   `TBD_ADDONS_STAGING`, `TBD_SERVER_DIR`); set them only when the host keeps them elsewhere. The
+   `TBD_SSH_IDENTITY_FILE` (neither means plain `ssh` with the agent's keys). The host paths
+   default under the deploy account's home: `~/tbd/repo`, `~/tbd/addons-staging` and
+   `~/steam/arma-reforger-server` (`TBD_REMOTE_DIR`, `TBD_ADDONS_STAGING`, `TBD_SERVER_DIR`), and
+   `~/tbd/profile` (`TBD_PROFILE_DIR`), the single server's profile that the first fleet deploy
+   archives; set them only when the host keeps them elsewhere. The `TBD_FLEET_*` settings keep
+   the template's five instances. The machine credentials, RCON passwords and join password are
+   files on the host, never settings: the deploy refuses the settings that would hold them. The
    other settings come later; the
-   [staging deploy](/documentation_v2/runbooks/game_server_staging/staging_deploy.md) lists them all.
+   [staging deploy](/documentation_v2/runbooks/game_server_staging/staging_deploy.md) lists them
+   all.
 
 7. Discover the host and create its folders. The command reads `TBD_SSH_HOST`, the three `tbd/`
    paths and the SSH settings from the environment, with `deploy.env` winning where it sets them;
@@ -101,10 +105,13 @@ that network's address with its last byte 0; `ip -4 route` on the host prints bo
    8080 and 2001 under `--- ports 5432 8080 2001 ---` (or `(none listening on those TCP ports)`),
    and the Docker version under `--- docker ---`; then
    `==> Create TBD directories (not prairielearn)`, `OK: <repo> <profile> <addons-staging>`, and a
-   five-line "Next steps" list. Its first line names Steam app 1890870; see step 11.
+   "Next steps" list whose first step names Steam app 1890870 (step 11 here). Its credential
+   step is what `cargo xtask staging provision-fleet` does
+   ([machine credentials and mission deployment](/documentation_v2/runbooks/game_server_staging/machine_credentials_and_mission_deployment.md)).
 
 8. On the host, install the C toolchain the Rust builds link with. Both deploys build on the
-   host: the website deploy the API and the app, the staging deploy `xtask` and the host agent.
+   host: the website deploy the API, the app and the staging host tools, the staging deploy
+   `xtask`, the host agent and the relay.
 
    ```bash
    sudo apt install build-essential
@@ -132,27 +139,27 @@ that network's address with its last byte 0; `ip -4 route` on the host prints bo
     Expected: cargo ends with an `Installed package` line for `trunk`; `~/.cargo/bin/trunk --version`
     prints a version.
 
-11. On the host, install the dedicated server into `TBD_SERVER_DIR`, replacing `<steam user>` and
-    `<server app id>`.
+11. On the host, install Steam app 1890870, the Arma Reforger experimental dedicated server, into
+    `TBD_SERVER_DIR`, replacing `<steam user>`. Every instance runs this one install.
 
     ```bash
-    steamcmd +login <steam user> +force_install_dir "$HOME/steam/arma-reforger-server" +app_update <server app id> validate +quit
+    steamcmd +login <steam user> +force_install_dir "$HOME/steam/arma-reforger-server" +app_update 1890870 validate +quit
     ```
 
     Expected: steamcmd reports the app fully installed, and `ArmaReforgerServer` sits in the
-    install folder. The repository names two server app ids: `debug direct-join` reads the server
-    build from the manifest of app 1874900 (`tools_v2/xtask/src/commands/debug/direct_join.rs`),
-    while `mod bootstrap-staging` and the install hints of `mod compile`, `mod world-boot` and
-    `mod playtest` name app 1890870. Whichever you install, the server's game version must match
-    the clients' (see
-    [client join](/documentation_v2/runbooks/game_server_staging/client_join_and_mod_updates.md)).
+    install folder. Later updates run the same `validate` through
+    `cargo xtask staging update-game-server`. The server's game version must match the clients'
+    (see [client join](/documentation_v2/runbooks/game_server_staging/client_join_and_mod_updates.md));
+    the "Server build" that `debug direct-join` prints is the build of server app 1874900 on the
+    development machine (`tools_v2/xtask/src/commands/debug/direct_join.rs`), not the host's.
 
 12. Deploy the platform API to the same host. The staging deploy starts nothing of the website:
     before it changes anything on the host it checks that the API answers `/healthz` at
     `TBD_BACKEND_URL` (default `http://127.0.0.1:8080`), and stops when it does not. The
     [website deployment](/documentation_v2/runbooks/website_deployment.md) runbook covers the API's
-    `.env` on the host, the `tbd-website-api` unit, and the Postgres and Caddy containers the
-    website deploy starts; its dry run prints the plan first.
+    `.env` on the host, the `tbd-website-api` unit, the Postgres and Caddy containers the website
+    deploy starts, and the host tools `staging-fixtures` and `acknowledgement-dropping-relay` it
+    builds into the checkout's `target/release/`; its dry run prints the plan first.
 
     ```bash
     cargo xtask deploy website --dry-run
@@ -163,7 +170,7 @@ that network's address with its last byte 0; `ip -4 route` on the host prints bo
     `OBSERVABILITY_TOKEN`; the mod authenticates every call with its machine credential.
 
 13. On the host, let the deploy account's user services run while nobody is logged in; the game
-    server and the host agent are user units.
+    servers, the host agents and the relay are user units.
 
     ```bash
     sudo loginctl enable-linger "$USER"
@@ -180,14 +187,17 @@ that network's address with its last byte 0; `ip -4 route` on the host prints bo
     Expected: `Status: active` and its rules, or `Status: inactive`. The rules the next steps add
     are kept either way, and take effect once ufw is enabled.
 
-15. On the host, open the game port for UDP and TCP and the A2S query port for UDP.
+15. On the host, open the five instances' game ports for UDP and TCP and their A2S query ports
+    for UDP: instance N's game port is 2000 + N and its A2S port 17776 + N. With other
+    `TBD_FLEET_*` values in `deploy.env`, open those ports instead.
 
     ```bash
-    sudo ufw allow 2001/udp && sudo ufw allow 2001/tcp && sudo ufw allow 17777/udp
+    sudo ufw allow 2001:2005/udp && sudo ufw allow 2001:2005/tcp && sudo ufw allow 17777:17781/udp
     ```
 
-    Expected: `Rule added` and `Rule added (v6)` for each port (`Rules updated` while ufw is
-    inactive).
+    Expected: `Rule added` and `Rule added (v6)` for each rule (`Rules updated` while ufw is
+    inactive). RCON (19999 to 20003) and the relay (18085) listen on `127.0.0.1` only, so they get
+    no rule.
 
 16. On the host, let the home network reach avahi, so `<host>.local` keeps resolving with the
     firewall on.
@@ -241,6 +251,41 @@ that network's address with its last byte 0; `ip -4 route` on the host prints bo
     Expected: `Created symlink …/sys-subsystem-net-devices-<wifi interface>.device.wants/wifi-power-save-off.service → /etc/systemd/system/wifi-power-save-off.service`;
     `iw dev <wifi interface> get power_save` prints `Power save: off`.
 
+## The fleet folder
+
+Everything instance-specific lives in the deploy account's `~/tbd/fleet/`.
+`cargo xtask staging provision-fleet` creates it with the credentials, the operator adds the join
+password, and `cargo xtask deploy staging` writes the rest. Folders are mode 700 and files mode
+600, and the deploy refuses a secret file that group or others may read.
+
+```text
+~/tbd/fleet/
+├── join-password                  the join password every instance requires, written by the operator
+└── instance-1/ … instance-5/      one folder per instance, 1 to TBD_FLEET_INSTANCES
+    ├── server.config.json         the instance's -config, both passwords filled in on the host
+    ├── profile/                   its -profile: profile/TBD_BackendConfig.json, logs/logs_<time>/console.log
+    ├── relay.env                  the relay instance only: RELAY_LISTEN and RELAY_UPSTREAM, no secret
+    └── secrets/
+        ├── mod-runtime-credential the mod's machine credential, from provision-fleet
+        ├── host-agent-credential  the host agent's machine credential, from provision-fleet
+        └── rcon-password          generated once on the host by the deploy
+```
+
+Beside it, the deploy writes each host agent's `~/.config/fleet-host-agent/instance-N/agent.toml`,
+and `--migrate-single-instance` moves the single server's files into
+`~/tbd/retired/single-instance-<UTC time>/`.
+
+- **The join password** is `game.password` of every instance: players type it when they join. It
+  is 3 to 64 of `A-Z a-z 0-9 . _ ~ + = : @ % -`, characters that need no escaping in JSON or in the
+  game's password box. The operator writes it by hand on the host once `provision-fleet` has made
+  the folder
+  ([machine credentials and mission deployment](/documentation_v2/runbooks/game_server_staging/machine_credentials_and_mission_deployment.md)
+  step 2) and hands it to the players; no document, setting or printed line holds it. Every
+  deploy reads it on the host and fills it into each instance's config there.
+- **RCON** listens on `127.0.0.1` only. Each instance's `rcon` block grants the `admin`
+  permission, which the console command needs, to the 32-hex-digit password the deploy generated
+  on the host, and only the instance's host agent logs in with it.
+
 ## Verify
 
 From the development machine, the host's name resolves to its home-network address alone, and
@@ -262,7 +307,7 @@ to
 |---|---|---|
 | `getent ahostsv4 <host>.local` prints nothing | avahi is not running on the host, the firewall drops mDNS, or the development machine has no mDNS resolver | steps 1 to 3 and 16; on the development machine, `nss-mdns` with `mdns4_minimal` in the `hosts:` line of `/etc/nsswitch.conf` |
 | `<host>.local` resolves to a `172.x` address | avahi announces the Docker bridges' addresses too | steps 2 and 3 |
-| the game server's public address is stale after a router restart | the host took a new DHCP lease | step 5, then deploy staging again |
+| the servers' public address is stale after a router restart | the host took a new DHCP lease | step 5, then deploy staging again |
 | `TBD_SSH_HOST is not set: add it to <path>`, exit 1 | no host in the deploy file or the environment | step 6 |
 | `could not read …deploy.env: …`, exit 1 | the deploy file exists but cannot be read | fix its permissions; an unreadable file is never treated as empty |
 | `Refusing: TBD_REMOTE_DIR must not be under prairielearn/`, exit 1 | the remote path names the neighbouring project's tree | point `TBD_REMOTE_DIR` at the deploy account's `tbd/repo` |
@@ -271,7 +316,8 @@ to
 | `linker 'cc' not found` during a deploy's build | the C toolchain is missing on the host | step 8 |
 | `trunk: command not found` during the website deploy | Trunk is not in `~/.cargo/bin` | step 10 |
 | `curl` on `/healthz` exits 7 | nothing listens on 127.0.0.1:8080 | step 12 |
-| the game server stops when the SSH session ends | linger is off, so user units stop at logout | step 13 |
+| the game servers stop when the SSH session ends | linger is off, so user units stop at logout | step 13 |
+| clients reach instance 1 but not another instance | the firewall opens only some of the fleet's ports | step 15, with every instance's game and A2S port |
 | SSH stops answering once ufw is enabled | ufw was enabled before SSH was allowed | on the host's console, `sudo ufw allow OpenSSH` |
 | `iw dev <wifi interface> get power_save` prints `Power save: on` again after a reconnect | NetworkManager manages the Wi-Fi and applies its own `wifi.powersave` setting on each connection, after the unit ran | set `wifi.powersave = 2` under `[connection]` in a file in `/etc/NetworkManager/conf.d/`, then `sudo systemctl restart NetworkManager` |
 
@@ -279,8 +325,8 @@ to
 
 - [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — the index and
   the facts every step relies on.
-- [Website deployment](/documentation_v2/runbooks/website_deployment.md) — the API, Postgres and
-  Caddy on the same host.
+- [Website deployment](/documentation_v2/runbooks/website_deployment.md) — the API, Postgres,
+  Caddy and the host tools on the same host.
 - [Setup command group](/tools_v2/xtask/src/commands/setup/README.md) — what
   `mod bootstrap-staging` and `setup server-profile` do.
 - [Deploy files](/tools_v2/xtask/deploy/README.md) — `deploy.env.example`, the Caddyfile and the

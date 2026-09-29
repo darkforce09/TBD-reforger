@@ -15,7 +15,8 @@ where `apps/website/api_v2/.env.example` and the code disagree, this reference f
   (the pool settings), three workers in
   [`apps/website/api_v2/src/background_workers/`](/apps/website/api_v2/src/background_workers/)
   (their intervals), and [`apps/website/api_v2/src/bin/api.rs`](/apps/website/api_v2/src/bin/api.rs)
-  (`SKIP_MIGRATE`, `RUST_LOG`).
+  (`SKIP_MIGRATE`, `RUST_LOG`); `reqwest` reads the proxy variables when `AppState::new` builds
+  the outbound HTTP clients.
 - Entry: the template [`apps/website/api_v2/.env.example`](/apps/website/api_v2/.env.example),
   copied to the gitignored `apps/website/api_v2/.env`.
 - Related: the [configuration README](/apps/website/api_v2/src/core/configuration/README.md), the
@@ -36,6 +37,8 @@ where `apps/website/api_v2/.env.example` and the code disagree, this reference f
 3. `Config::validate` then refuses the boot on the rules below, naming the variable.
 4. `core::database::connect` reads the four `TBD_DB_POOL_*` variables when it opens the pool,
    and `spawn_all` reads the three worker intervals when it arms the workers.
+5. `AppState::new` builds the API's two outbound HTTP clients, the Discord client and the
+   announcement webhook client, and `reqwest` reads the proxy variables then, once per client.
 
 ### What stops the boot
 
@@ -80,7 +83,11 @@ behaves as production. Development:
   sign-in takes no membership lease and reads no guild membership, so the member's stored role
   stays as it is (`claim_membership_refresh` in
   `apps/website/api_v2/src/identity_and_access/services/discord_membership_cache.rs`, and
-  `apps/website/api_v2/src/identity_and_access/handlers/discord_oauth.rs:173-180`).
+  `apps/website/api_v2/src/identity_and_access/handlers/discord_oauth.rs`, whose callback reads the
+  guild membership only for a configured guild and registers the account through
+  `register_account` in
+  `apps/website/api_v2/src/identity_and_access/services/account_registration.rs`, which never
+  writes the role).
 - `.env.example` ties the `/map-assets` mount to `SPA_DIST_DIR`
   (`apps/website/api_v2/.env.example:41-42`) — the router always mounts `/map-assets` and
   `/map-assets/glyphs` (`apps/website/api_v2/src/core/http_router.rs`); `SPA_DIST_DIR` adds only
@@ -122,7 +129,7 @@ The template sets `FRONTEND_URL=http://localhost:3000` and both local origins in
 
 | Variable | Default | Required | Read by | Meaning |
 |---|---|---|---|---|
-| `DATABASE_URL` | none | yes | Config; `apps/website/api_v2/src/bin/import_registry.rs` | the Postgres URL; locally `postgres://tbd:tbd@localhost:5434/tbd_reforger?sslmode=disable` |
+| `DATABASE_URL` | none | yes | Config; `apps/website/api_v2/src/bin/import_registry.rs`; `apps/website/api_v2/src/bin/staging_fixtures/main.rs`, from the API env file | the Postgres URL; locally `postgres://tbd:tbd@localhost:5434/tbd_reforger?sslmode=disable` |
 | `TBD_DB_POOL_MAX_CONNECTIONS` | `25` | no | `DbPoolConfig::from_env` in `connection_pool.rs` | pool ceiling, at least 1 |
 | `TBD_DB_POOL_IDLE_TIMEOUT_SECS` | `300` | no | the same | seconds a connection may sit idle |
 | `TBD_DB_POOL_MAX_LIFETIME_SECS` | `1800` | no | the same | seconds a connection may live |
@@ -138,7 +145,7 @@ The template sets `FRONTEND_URL=http://localhost:3000` and both local origins in
 | `DISCORD_CLIENT_ID` | empty | outside development | Config | the OAuth2 application id; empty sends sign-in back with `#error=oauth_unconfigured` |
 | `DISCORD_CLIENT_SECRET` | empty | outside development | Config | the OAuth2 secret for the token exchange; a wrong one ends sign-in with `#error=discord_unreachable` |
 | `DISCORD_REDIRECT_URL` | empty | outside development | Config | the callback registered byte-exact in the Discord Developer Portal; the template's is `http://localhost:8080/api/v1/auth/discord/callback` |
-| `DISCORD_GUILD_ID` | empty | no | Config | the guild whose members' roles decide website [roles](/documentation_v2/glossary/n_to_z.md#role) through `apps/website/api_v2/seeds/discord_roles.sql`; empty skips membership reads, enrolment and reconciliation |
+| `DISCORD_GUILD_ID` | empty | no | Config; `apps/website/api_v2/src/bin/staging_fixtures/guarded_context.rs`, from the API env file | the guild whose members' roles decide website [roles](/documentation_v2/glossary/n_to_z.md#role) through `apps/website/api_v2/seeds/discord_roles.sql`; empty skips membership reads, enrolment and reconciliation |
 | `DISCORD_BOT_TOKEN` | empty: no bot | no | Config, read only through `Config::require_discord_bot_token` | the bot token; an unset token is reported by name where a path needs it |
 | `DISCORD_WEBHOOK_URL` | empty: pushing off | no | Config; `apps/website/api_v2/src/community_content/services/discord_webhook.rs` | the channel webhook announcements are pushed to; while empty the push route answers 400 "discord webhook not configured" and a publish that asks to push writes a CRIT `webhook.push_failed` audit row |
 
@@ -173,6 +180,7 @@ means the default, and the boot log states the interval each worker got.
 |---|---|---|---|
 | `SKIP_MIGRATE` | unset | `apps/website/api_v2/src/bin/api.rs` | any value, even empty, skips the migrations at boot, for a harness that migrates a shared database itself |
 | `RUST_LOG` | `info` | `apps/website/api_v2/src/bin/api.rs` | the `tracing` filter; an unparseable value means `info` |
+| `HTTPS_PROXY`, `NO_PROXY` | unset: direct connections | `reqwest`, in the clients of `apps/website/api_v2/src/identity_and_access/services/discord_client.rs` and `apps/website/api_v2/src/community_content/services/discord_webhook.rs` | every outbound HTTPS request of the API, Discord's included, goes through the `HTTPS_PROXY` proxy unless its host matches the comma-separated `NO_PROXY` list; lowercase `https_proxy` and `no_proxy` apply when the uppercase name is unset. A proxy that cannot be reached fails each Discord member read as `unavailable` and leaves the recorded membership as it was: the staging outage drill sets `HTTPS_PROXY=http://127.0.0.1:9`, a closed loopback port, and `apps/website/api_v2/tests/discord_client_proxy_environment.rs` proves both the proxying and that outcome over loopback |
 
 ### Tests
 

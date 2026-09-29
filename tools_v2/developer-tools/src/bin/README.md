@@ -1,28 +1,30 @@
 # Developer tool executables
 
-The six executables of the `developer-tools` crate: the
+The seven executables of the `developer-tools` crate: the
 [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) script oracle, the headless browser gates, the
-enfusion-mcp broker, the world-export and map-image pipelines, and [Mission
-Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) captures. Developers run them by hand, and
+enfusion-mcp broker, the world-export and map-image pipelines, [Mission
+Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) captures, and the staging host's
+acknowledgement-dropping relay. Developers run them by hand, and
 xtask recipes and CI tasks run them by name.
 
 ## Contents
 
 ```text
 tools_v2/developer-tools/src/bin/
-├── capture.rs  the `capture` binary: Mission Creator screenshots, zoom sweeps and crops
-├── enf.rs      the `enf` binary: symbol indexes, lookups and checks over Enfusion scripts
-├── gate.rs     the `gate` binary: the headless browser gates of the single-page app
-├── map.rs      the `map` binary: satellite, cartographic, label, water and glyph map assets
-├── mcpd.rs     the `mcpd` binary: the persistent enfusion-mcp broker and its offline stub
-└── world.rs    the `world` binary: the world-export pipeline and its verification gates
+├── acknowledgement_dropping_relay.rs  the `acknowledgement-dropping-relay` binary: the staging relay
+├── capture.rs                         the `capture` binary: Mission Creator screenshots, zoom sweeps and crops
+├── enf.rs                             the `enf` binary: symbol indexes, lookups and checks over Enfusion scripts
+├── gate.rs                            the `gate` binary: the headless browser gates of the single-page app
+├── map.rs                             the `map` binary: satellite, cartographic, label, water and glyph map assets
+├── mcpd.rs                            the `mcpd` binary: the persistent enfusion-mcp broker and its offline stub
+└── world.rs                           the `world` binary: the world-export pipeline and its verification gates
 ```
 
 ## How it works
 
 Each file is a three-line `main` that calls one entry function of the `developer_tools` library and
 returns its `ExitCode`; the `[[bin]]` tables of `tools_v2/developer-tools/Cargo.toml` name the
-binaries. Argument parsing, help text and error reporting live in the owning module: five binaries
+binaries. Argument parsing, help text and error reporting live in the owning module: six binaries
 parse with clap's derive API, and `mcpd` reads its few flags itself.
 
 ```text
@@ -32,6 +34,7 @@ capture.rs  ──▶ browser_testing::capture_cli::run
 mcpd.rs     ──▶ enfusion_tooling::mcp_broker::run
 world.rs    ──▶ world_export_pipeline::cli::entrypoint
 map.rs      ──▶ map_raster_pipeline::cli::entrypoint
+acknowledgement_dropping_relay.rs ──▶ staging_verification::acknowledgement_relay::entrypoint
 ```
 
 Default paths such as `apps/website/frontend/dist` and `.ai/artifacts/enf-index` are relative to the
@@ -115,6 +118,25 @@ a subcommand prints its usage, and a clap usage error exits 2.
   zoom level.
 - Example: `cargo run -q -p developer-tools --bin capture -- crop editor.png 0 0 400 300 2 crop.png`
 
+### acknowledgement-dropping-relay
+
+- Synopsis: `acknowledgement-dropping-relay serve --listen <loopback address:port> --upstream
+  <http origin on a loopback host> --control-socket <path>`;
+  `acknowledgement-dropping-relay control --control-socket <path> arm
+  drop-next-claim-response|drop-next-result-response`, `… control --control-socket <path> disarm`,
+  `… control --control-socket <path> status`.
+- Does: `serve` relays every exchange between one fleet host agent and the API, and, once armed,
+  withholds the next `200` answer to a claim or to a result report for 30 s, past the agent's 20 s
+  request timeout, then closes that connection without a byte of the answer; it refuses a
+  non-loopback listen address or upstream, creates the control socket mode 600, and runs until
+  SIGTERM or SIGINT. `control` sends one request to a running relay and prints its status as one
+  JSON line: the arming, the counts, and the command id and fencing token of the last withheld
+  answer.
+- Exit codes: 0 served until a signal, or the relay answered; 1 an address was refused, the relay
+  could not start, or no relay answered or it refused the request; 2 usage.
+- Example: `cargo run -q -p developer-tools --bin acknowledgement-dropping-relay -- control
+  --control-socket "$XDG_RUNTIME_DIR/acknowledgement-dropping-relay-5/control.sock" status`
+
 ## Boundaries
 
 - Depends on: the `developer_tools` library modules in the diagram, in
@@ -127,10 +149,13 @@ a subcommand prints its usage, and a clap usage error exits 2.
   - the `map-water-everon`, `map-cartographic-everon` and `map-cartographic-verify` tasks of `cargo
     xtask ci`, which run `map`;
   - people, for `enf` and `capture`; `cargo xtask fetch vanilla-api` and `cargo xtask fetch
-    vanilla-source` print the `enf` step that follows them.
+    vanilla-source` print the `enf` step that follows them;
+  - `cargo xtask deploy staging`, which builds and installs `acknowledgement-dropping-relay` on the
+    staging host for the unit `acknowledgement-dropping-relay@N`, and the staging fleet procedure,
+    which runs its `control` command there.
 - Rules: an entry file holds only `main` and its one call, and stays under 250 lines
   (`tooling_source_files_stay_below_their_structural_limits` in
-  `tools_v2/xtask/src/tests/tooling_dependency_boundaries.rs`); the six binary names are stable,
+  `tools_v2/xtask/src/tests/tooling_dependency_boundaries.rs`); the seven binary names are stable,
   because xtask recipes and CI tasks call them by `--bin <name>`
   (`the_tooling_tree_holds_its_executables_manifests_and_layout_modules`); a new binary adds its
   `[[bin]]` table and its file in the same change.

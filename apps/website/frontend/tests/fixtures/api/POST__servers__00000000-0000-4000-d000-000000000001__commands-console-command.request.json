@@ -1,0 +1,6 @@
+{
+  "action": "console_command",
+  "arguments": {
+    "line": "#players"
+  }
+}

@@ -12,10 +12,12 @@
 //!   outcome, so an unexpected format is visible instead of silently dropped.
 //! - `@logout` is the custom RCON command that de-authenticates the client at once and frees
 //!   its slot (same wiki page, Custom RCON Commands); without it the server drops the client
-//!   after its 45 second timeout.
+//!   after its 45 second timeout. The custom RCON commands start with `@`, so an operator's
+//!   console line never starts with it and cannot end the agent's login.
 //!
 //! Both are reads or session housekeeping, so sending one again after a lost answer is
-//! harmless. Reforger's RCON has no broadcast command, so broadcasts run in the game runtime.
+//! harmless. The operator's console line, which may change the server, is transmitted once
+//! instead. Reforger's RCON has no broadcast command, so broadcasts run in the game runtime.
 
 use serde_json::{Map, Value, json};
 
@@ -24,6 +26,9 @@ pub const PLAYERS_COMMAND: &str = "#players";
 
 /// De-authenticates this RCON client at once and frees its slot on the server.
 pub const SESSION_LOGOUT_COMMAND: &str = "@logout";
+
+/// The first character of Reforger's custom RCON commands, such as [`SESSION_LOGOUT_COMMAND`].
+pub const RCON_CUSTOM_COMMAND_PREFIX: char = '@';
 
 /// Longest identity accepted in a player row: a Bohemia identity UID is a 36-character UUID.
 const IDENTITY_MAX_BYTES: usize = 64;

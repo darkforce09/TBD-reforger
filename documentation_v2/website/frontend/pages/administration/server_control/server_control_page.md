@@ -91,23 +91,36 @@ mention.
 
 ### Fleet commands
 
-1. The "Fleet commands" section offers start, stop, restart and list players, a broadcast and a
-   kick. Stop and restart ask first, since every connected player is disconnected.
+1. The "Fleet commands" section offers start, stop, restart and list players, the "Server console"
+   box, a broadcast and a kick. Stop and restart ask first, since every connected player is
+   disconnected.
 2. A broadcast needs 1 to 256 bytes without line breaks or control characters. A kick needs the
    player's Arma identity (up to 128 bytes), the runtime session it is issued against, and an
    optional reason shown to the player (up to 128 bytes). The players of the newest successful
    player listing are offered for the identity, and the session that confirmed the latest
-   deployment is offered for the session.
-3. An accepted request is toasted as waiting for its executor, the host agent or the
+   deployment is offered for the session. A console line may hold no control character and no
+   line or paragraph separator anywhere in what was typed; once trimmed it needs 1 to 256 bytes
+   and must not start with `@`, which begins the [RCON](/documentation_v2/glossary/n_to_z.md#rcon)
+   commands for the host agent's own RCON session. The trimmed line is what is sent.
+3. The console box sits under the process-control buttons, because the host agent carries out a
+   `console_command` over RCON, as it does the player list. "Send" and Enter in the field both
+   send the line; nothing is sent while another request is in flight, and a sent line leaves the
+   field, since the host agent transmits a line once and nothing repeats it.
+4. An accepted request is toasted as waiting for its executor, the host agent or the
    [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime), and the "Your command" panel
    follows it, re-read every two seconds. The follow stops when the card goes away, when a newer
    request replaces it, or after five failed reads in a row.
-4. Only `succeeded` is announced as a success, with what the command observed. `failed` gives the
+5. Only `succeeded` is announced as a success, with what the command observed. `failed` gives the
    executor's reason; `expired` says no executor carried it out in time, so nothing ran;
    `cancelled` says it was cancelled before any executor claimed it; `indeterminate` says the
    executor stopped reporting after the command started, so it may or may not have taken effect,
    nothing repeats it, and the server needs inspecting before the command is issued again.
-5. "History" lists the server's commands: state, action, executor and claim count, who requested
+6. A succeeded console command says what the server replied: its one line quoted (at most 120
+   characters of it), how many lines it holds, or that it was empty, and that the host agent kept
+   only its first 4096 bytes when it cut the reply. The reply shows whole, as the server sent it,
+   under "Your command" and under the command's history row. A line the server never answered
+   fails with "no RCON response; the command may or may not have run".
+7. "History" lists the server's commands: state, action, executor and claim count, who requested
    it and when, when it was claimed, started, finished or expires, its arguments, its outcome and
    failure reason. A command still queued offers "Cancel"; one an executor has taken up is
    refused as no longer cancellable.
@@ -177,7 +190,9 @@ lists each call with the DTO it reads or sends. Server-side:
   ("name is required"), refuses an `ip` that is not a literal address ("ip must be a literal IPv4
   or IPv6 address — not a hostname, and not a /mask"): the column is `inet`, which cannot hold a
   hostname and would silently drop a mask. It refuses a port outside 1 to 65535 and an unknown
-  `required_modpack_id`, and records `server.create`.
+  `required_modpack_id`, and records `server.create` in the transaction that writes the row
+  (`register_server` in
+  `apps/website/api_v2/src/server_infrastructure/services/server_registration.rs`).
 - `PATCH /api/v1/servers/{id}` (`update_server`): changes the fields the body names, with the same
   checks; `required_modpack_id: null` clears the requirement, `is_active` deactivates or
   reactivates, and a body naming nothing is refused. It answers the changed row and records
@@ -196,13 +211,17 @@ lists each call with the DTO it reads or sends. Server-side:
 - `POST /api/v1/servers/{id}/commands` (`request_server_command`): records the command and answers 202 with its receipt; a
   deactivated server is refused with 409 "a deactivated server accepts no commands", and a kick
   against a session that has ended with 409 `RUNTIME_SESSION_ENDED`. It records
-  `server.command_requested`. `start`, `stop`, `restart` and `list_players` go to the fleet host
-  agent; `broadcast` and `kick` go to the game runtime (`FleetAction` in
-  `apps/website/api_v2/src/server_infrastructure/models/fleet_command.rs`). A queued command
-  expires unclaimed after 300 seconds. Once an executor reports that it is executing, it has an
-  execution window to report the outcome: 30 seconds for `list_players`, `broadcast` and `kick`,
-  120 for `stop`, 180 for `start` and `restart`. A window that lapses leaves the command
-  `indeterminate`, which nothing repeats.
+  `server.command_requested`, whose audit row carries a console command's line. `start`, `stop`,
+  `restart`, `list_players` and `console_command` go to the fleet host agent; `broadcast` and
+  `kick` go to the game runtime (`FleetAction` in
+  `apps/website/api_v2/src/server_infrastructure/models/fleet_command.rs`). A console line is
+  stored trimmed and refused with 400 outside 1 to 256 bytes, with a control character or a line
+  or paragraph separator, or starting with `@`; a succeeded console command reports
+  `{response, response_truncated}`, the server's reply cut by the host agent on a character
+  boundary at 4096 bytes. A queued command expires unclaimed after 300 seconds. Once an executor
+  reports that it is executing, it has an execution window to report the outcome: 30 seconds for
+  `list_players`, `broadcast`, `kick` and `console_command`, 120 for `stop`, 180 for `start` and
+  `restart`. A window that lapses leaves the command `indeterminate`, which nothing repeats.
 - `GET /api/v1/servers/{id}/commands/{commandId}` (`get_server_command`) and
   `POST /api/v1/servers/{id}/commands/{commandId}/cancel` (`cancel_server_command`): one receipt,
   and cancellation while the command is still queued (409 `COMMAND_NOT_CANCELLABLE`, with its
@@ -241,7 +260,8 @@ lists each call with the DTO it reads or sends. Server-side:
   (`revoke_server_credential`) revokes one credential, keeping the reason in the audit trail and
   ending the game-runtime sessions it authenticated.
 - The API has no [RCON](/documentation_v2/glossary/n_to_z.md#rcon) route. RCON is the host agent's
-  business: it lists players over RCON when it carries out `list_players`.
+  business: it lists players over RCON when it carries out `list_players`, and sends a console
+  line, once, when it carries out `console_command`.
 
 ## Design
 
@@ -259,7 +279,8 @@ lists each call with the DTO it reads or sends. Server-side:
 | [+ Add server]  | FLEET COMMANDS              | MISSION DEPLOYMENTS         |
 |                 | [Start][Stop][Restart]      | [Request a deployment]      |
 |                 | [List players]              |  mission v  event mission v |
-|                 | Broadcast [ message ] [>]   |  [Deploy]                   |
+|                 | Console [ #players ] [Send] |  [Deploy]                   |
+|                 | Broadcast [ message ] [>]   |                             |
 |                 | Kick [uid][session][reason] | refusal: unbound seats …    |
 |                 | Your command: queued …      | Your deployment: recorded … |
 |                 | HISTORY            Refresh  | DEPLOYMENTS       Refresh   |
@@ -288,7 +309,9 @@ REGISTRATION SHEET (side sheet: "Add a server", or "Server settings" from Edit)
 ## Open work
 
 - [T-086 — Server Control + RCON API](/.ai/tickets/T-086.toml) (deferred, no plan): a live server
-  control panel wired to an RCON backend; the page has no RCON console and calls no RCON route.
+  control panel wired to an RCON backend. The page's console box sends one line at a time as a
+  `console_command` fleet command and shows the reply the host agent reports; it streams no live
+  console and calls no RCON route.
 
 ## Decisions
 
@@ -306,5 +329,7 @@ REGISTRATION SHEET (side sheet: "Add a server", or "Server settings" from Edit)
   credentials, commands and deployments refer to it.
 - The registration form refuses a hostname rather than resolving it: the API stores a literal
   address, and a name resolved in the browser could differ from the one players resolve.
-- Process control, the player list, broadcasts and kicks are fleet commands and loading a mission
-  is a deployment; the page has no RCON console.
+- Process control, the player list, console lines, broadcasts and kicks are fleet commands and
+  loading a mission is a deployment. The console box reaches RCON only through a `console_command`
+  the host agent carries out, so every line is authorised, recorded, audited and followed to its
+  outcome like any other command, and the page calls no RCON route.

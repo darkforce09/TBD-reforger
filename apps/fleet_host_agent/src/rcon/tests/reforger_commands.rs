@@ -92,3 +92,9 @@ fn the_outcome_names_each_player_by_identity() {
         json!({"players": [], "raw_lines": ["Unknown response"]})
     );
 }
+
+#[test]
+fn the_logout_command_is_a_custom_rcon_command() {
+    assert!(SESSION_LOGOUT_COMMAND.starts_with(RCON_CUSTOM_COMMAND_PREFIX));
+    assert!(!PLAYERS_COMMAND.starts_with(RCON_CUSTOM_COMMAND_PREFIX));
+}

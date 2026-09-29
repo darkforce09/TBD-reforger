@@ -9,6 +9,7 @@ account lookup other domains share.
 ```text
 apps/website/api_v2/src/identity_and_access/services/
 ├── account_authority.rs              an account's permissions from its verified Discord snapshot
+├── account_registration.rs           creates an account or refreshes its Discord profile at sign-in
 ├── cached_membership_permissions.rs  grace, staleness and override decisions over a cached snapshot
 ├── discord_client.rs                 the Discord OAuth2 and guild-member HTTP client
 ├── discord_membership_cache.rs       fenced membership observations: lease, accept, record a failure
@@ -26,12 +27,15 @@ apps/website/api_v2/src/identity_and_access/services/
 ├── session_issuance.rs               mints a session and builds the SPA callback redirect
 ├── session_rotation.rs               single-use refresh rotation and logout under the account lock
 ├── session_storage.rs                persists sessions and refresh tokens, and revokes them
-├── tests/                            unit tests for the permission, Discord and session services
+├── tests/                            unit tests for the permission, registration, Discord and session services
 └── user_lookup.rs                    loads the live account row behind a Discord id
 ```
 
 ## How it works
 
+- **Accounts.** `account_registration.rs` is the one write of an account's Discord profile
+  columns: the OAuth callback registers the profile Discord returned, creating the account at its
+  first sign-in, and the avatar URL reaches `users.avatar_url` only when it is http(s).
 - **Sessions.** An access token names a persisted session; `session_authorization.rs` rechecks
   that session and the account's authority in PostgreSQL on every request, through
   `DatabaseSessionAuthority`, which the `AuthUser` extractor in `core` calls. Session writers lock
@@ -74,7 +78,10 @@ apps/website/api_v2/src/identity_and_access/services/
   `operations`, `server_infrastructure` and `match_telemetry` (`authorize_on_connection`,
   `lock_accounts`, `lock_identities`, `holds_administrator_authority`,
   `evaluate_cached_membership_permissions`, the membership enrollment); `command_center`
-  (`load_user`); the integration tests in `apps/website/api_v2/tests/`.
+  (`load_user`); the `staging-fixtures` host tool in `apps/website/api_v2/src/bin/staging_fixtures/`
+  (`register_account`, `claim_membership_refresh`, `accept_membership_observation`,
+  `issue_refresh`, `lock_account`, `holds_administrator_authority`); the integration tests in
+  `apps/website/api_v2/tests/`.
 - Rules: every writer that touches identities or accounts takes the `identity_ownership.rs` lock
   order; a failed Discord call never downgrades a verified snapshot; `user_lookup.rs` is the one
   read of the account row, so the soft-delete filter lives there once.

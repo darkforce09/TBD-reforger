@@ -96,20 +96,32 @@ pub fn run_with_environment(environment: &DeployEnvironment) -> Result<u8> {
     }
 
     println!();
-    println!(
-        "Next steps (manual — see {}):",
-        crate::core::repository_layout::documentation::STAGING_SERVER_RUNBOOK
-    );
-    println!("  1. steamcmd +app_update 1890870 on server");
-    println!("  2. Create apps/website/api_v2/.env on server (JWT_SECRET + OBSERVABILITY_TOKEN)");
-    println!("  3. sudo loginctl enable-linger \"$USER\"   (on the host, as the deploy user)");
-    println!(
-        "  4. Issue this server's mod_runtime (and host_agent) credentials in Server Control and"
-    );
-    println!("     put them in deploy.env (TBD_MOD_RUNTIME_CREDENTIAL, TBD_HOST_AGENT_CREDENTIAL)");
-    println!("  5. cargo xtask deploy staging");
+    for line in next_steps() {
+        println!("{line}");
+    }
 
     Ok(0)
+}
+
+/// The manual steps after discovery. The fleet's secrets are files on the host, one set per
+/// instance, which `cargo xtask deploy staging` checks before it changes anything; the deploy
+/// generates each instance's RCON password itself.
+fn next_steps() -> Vec<String> {
+    vec![
+        format!(
+            "Next steps (manual — see {}):",
+            crate::core::repository_layout::documentation::STAGING_SERVER_RUNBOOK
+        ),
+        "  1. steamcmd +app_update 1890870 on server".into(),
+        "  2. Create apps/website/api_v2/.env on server (JWT_SECRET + OBSERVABILITY_TOKEN)".into(),
+        "  3. sudo loginctl enable-linger \"$USER\"   (on the host, as the deploy user)".into(),
+        "  4. Register one game server per fleet instance N in Server Control, issue each its".into(),
+        "     mod_runtime and host_agent credentials, and write them on the host to".into(),
+        "     ~/tbd/fleet/instance-N/secrets/mod-runtime-credential and host-agent-credential".into(),
+        "     (folders mode 700, files mode 600); put the join password in ~/tbd/fleet/join-password"
+            .into(),
+        "  5. cargo xtask deploy staging".into(),
+    ]
 }
 
 struct Cfg {

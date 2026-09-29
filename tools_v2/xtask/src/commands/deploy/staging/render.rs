@@ -1,14 +1,10 @@
-//! Modpack resolution and the `server.config.json` render, split
-//! out of [`super::config`] for SIZE-3.
+//! Modpack resolution, the `game.mods[]` render and the server config check.
 //!
-//! [`super::config`] owns the INPUTS (`deploy.env`, the `:=` defaults, the mode gate). This module
-//! owns the ARTEFACT they produce. The split is the bash's own: `render_server_config()` is a pure
-//! function of an already-validated environment, and this split exists precisely because a render
-//! once fused to the push and therefore unobservable.
-//!
-//! The render is reached by two callers and must be identical for both: `--render-only <path>`
-//! (local, no ssh) and the deploy's config-mode step, which renders locally, validates, and only
-//! then `cat`s the bytes onto the host.
+//! [`super::config`] owns the INPUTS (`deploy.env` and its defaults). This module owns the mod list
+//! every instance's config carries and the structural check every rendered config passes;
+//! [`super::fleet_server_config`] renders one config per instance from them. A render is a pure
+//! function of an already-validated environment, split from the push so it stays observable:
+//! `--render-only <directory>` writes exactly what the deploy would push.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -16,7 +12,7 @@ use std::path::{Path, PathBuf};
 use regex::Regex;
 use serde_json::{Map, Value};
 
-use super::config::{Env, xargs_like};
+use super::config::Env;
 use super::pycompat::{
     ensure_ascii, json_repr, py_json_error, py_repr, py_str_or_empty, py_type_name,
 };
@@ -84,13 +80,14 @@ pub fn resolve_modpack_doc(env: &Env) -> Result<(String, String), u8> {
     }
 }
 
-/// `curl -sS -o "$out" -w '%{http_code}' -H "Authorization: Bearer …" "$url"`.
+/// `curl -sS -o "$out" -w '%{http_code}' -H @- "$url"`, the `Authorization` header on stdin.
 ///
 /// **NEVER EXECUTED LOCALLY.** No credential of this tier exists on any machine in this program
 /// (see the module header), so this path has no live coverage at all; `tests::curl_argv_is_stable`
 /// pins the argv instead. `curl` is spawned rather than a Rust HTTP client added, because the
 /// argv is the thing under test and because adding reqwest+TLS to xtask for one unreachable call
-/// would be a large dependency bought with no evidence.
+/// would be a large dependency bought with no evidence. The bearer token travels on curl's stdin
+/// ([`curl_header_stdin`]), so no process list and no printed argv ever holds it.
 fn fetch_modpack_url(env: &Env) -> Result<(String, String), u8> {
     let out = std::env::temp_dir().join(format!("tbd-modpack.{}.json", std::process::id()));
     let args = curl_argv(env, &out);
@@ -102,7 +99,10 @@ fn fetch_modpack_url(env: &Env) -> Result<(String, String), u8> {
     for a in &args {
         run = run.arg(a);
     }
-    let res = run.timeout(std::time::Duration::from_secs(120)).output();
+    let res = run
+        .stdin(curl_header_stdin(env))
+        .timeout(std::time::Duration::from_secs(120))
+        .output();
     let code = match res {
         // `|| { echo FAIL: could not reach …; exit 1; }` — curl's own non-zero status.
         Ok(o) if o.code == 0 => o.stdout.trim().to_string(),
@@ -133,9 +133,14 @@ fn curl_argv(env: &Env, out: &Path) -> Vec<String> {
         "-w".into(),
         "%{http_code}".into(),
         "-H".into(),
-        format!("Authorization: Bearer {}", env.modpack_token),
+        "@-".into(),
         env.modpack_url.clone(),
     ]
+}
+
+/// The header curl reads from stdin for `-H @-`: the modpack token as a bearer credential.
+fn curl_header_stdin(env: &Env) -> String {
+    format!("Authorization: Bearer {}\n", env.modpack_token)
 }
 
 pub fn modpack_mods_json(doc_text: &str, src: &str) -> Result<String, u8> {
@@ -248,81 +253,6 @@ pub fn modpack_mods_json(doc_text: &str, src: &str) -> Result<String, u8> {
         })
         .collect::<Vec<_>>()
         .join("\n"))
-}
-
-/// `render_server_config` — the complete server config to the LOCAL path `out`, then validate it.
-///
-/// ODDITY PRESERVED, and it is the reason the validator exists: the template substitutes RAW,
-/// unescaped values. A `TBD_SERVER_NAME` containing a double quote, or a non-numeric
-/// `TBD_GAME_PORT`, produces a document that is not JSON at all — and the validator then catches
-/// it by re-parsing the file. Escaping the values here would be a behaviour change that silently
-/// accepted configs the engine may still reject, and would make the "is not valid JSON" branch of
-/// the validator unreachable.
-///
-/// `scenario` is the scenario the server runs: deployments own it once the host agent has
-/// switched it, so the deploy passes the live config's value and `TBD_SCENARIO` seeds only a
-/// server that has none. With the host agent configured, the config gains its loopback `rcon`
-/// block.
-pub fn render_server_config(env: &Env, scenario: &str, out: &Path) -> Result<(), u8> {
-    let (doc, src_label) = resolve_modpack_doc(env)?;
-    let rcon = env
-        .host_agent
-        .as_ref()
-        .map(|agent| format!("\n  {}", agent.rcon_block()))
-        .unwrap_or_default();
-    let mods_json = modpack_mods_json(&doc, &src_label)?;
-
-    // A JSON array of admin identityIds from the comma-separated env var. Also raw — an id that
-    // could break the quoting was already rejected by `Env::validate`.
-    let admins_json = env
-        .admin_identity_ids
-        .split(',')
-        .map(xargs_like)
-        .filter(|s| !s.is_empty())
-        .map(|s| format!("\"{s}\""))
-        .collect::<Vec<_>>()
-        .join(", ");
-
-    let body = format!(
-        r#"{{
-  "bindAddress": "0.0.0.0",
-  "bindPort": {game_port},
-  "publicAddress": "{public_address}",
-  "publicPort": {game_port},
-  "a2s": {{ "address": "0.0.0.0", "port": {a2s_port} }},{rcon}
-  "game": {{
-    "name": "{server_name}",
-    "password": "",
-    "passwordAdmin": "{admin_password}",
-    "admins": [{admins_json}],
-    "scenarioId": "{scenario}",
-    "maxPlayers": {max_players},
-    "visible": true,
-    "crossPlatform": false,
-    "gameProperties": {{
-      "battlEye": false,
-      "disableThirdPerson": false,
-      "fastValidation": false,
-      "VONDisableUI": false,
-      "VONDisableDirectSpeechUI": false
-    }},
-    "mods": {mods_json}
-  }},
-  "operating": {{ "lobbyPlayerSynchronise": true }}
-}}
-"#,
-        game_port = env.game_port,
-        public_address = env.public_address,
-        a2s_port = env.a2s_port,
-        server_name = env.server_name,
-        admin_password = env.admin_password,
-        max_players = env.max_players,
-    );
-    if let Err(e) = fs::write(out, &body) {
-        eprintln!("FAIL: could not write {}: {e}", out.display());
-        return Err(1);
-    }
-    validate_server_config(out)
 }
 
 /// `validate_server_config` — structural check of a rendered server config.
@@ -450,18 +380,6 @@ pub fn validate_server_config(path: &Path) -> Result<(), u8> {
             .join(", ")
     );
     Ok(())
-}
-/// `--render-only <path>`: render locally, validate, exit.
-pub fn render_only(env: &Env, out: &str) -> u8 {
-    if env.server_mode != "config" {
-        eprintln!("--render-only requires TBD_SERVER_MODE=config (addons mode renders no config).");
-        return 2;
-    }
-    println!("==> render server config (local only, no deploy) -> {out}");
-    match render_server_config(env, &env.scenario, Path::new(out)) {
-        Ok(()) => 0,
-        Err(code) => code,
-    }
 }
 
 #[cfg(test)]

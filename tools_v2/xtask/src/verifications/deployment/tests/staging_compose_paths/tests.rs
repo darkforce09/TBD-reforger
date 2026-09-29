@@ -26,7 +26,7 @@ impl Tree {
     fn good(name: &str) -> Tree {
         let t = Tree::new(name);
         t.write(WEBSITE_DEPLOY_SOURCE, GOOD_WEBSITE_SOURCE);
-        t.write(STAGING_DEPLOY_SOURCE, GOOD_STAGING_SOURCE);
+        t.write(STAGING_DEPLOY_PIPELINE, GOOD_STAGING_SOURCE);
         t.write(GOOD_PATH, "services: {}\n");
         t
     }
@@ -212,7 +212,7 @@ fn a_cd_into_the_api_folder_bites_under_every_quoting() {
 fn a_compose_command_in_the_game_server_deploy_bites() {
     let header = format!(
         "FAIL: {} runs compose; the staging compose stack belongs to cargo xtask deploy website:",
-        source_basename(STAGING_DEPLOY_SOURCE)
+        STAGING_DEPLOY_PIPELINE
     );
     for (name, line) in [
         (
@@ -223,7 +223,7 @@ fn a_compose_command_in_the_game_server_deploy_bites() {
     ] {
         bites(
             name,
-            STAGING_DEPLOY_SOURCE,
+            STAGING_DEPLOY_PIPELINE,
             &format!("{GOOD_STAGING_SOURCE}{line}\n"),
             &[&format!("{header}\n      {line}")],
         );
@@ -253,7 +253,7 @@ fn the_compose_recognizer_takes_commands_and_not_file_names() {
 fn the_on_disk_compose_pair_bites() {
     let gone = Tree::new("no-compose");
     gone.write(WEBSITE_DEPLOY_SOURCE, GOOD_WEBSITE_SOURCE);
-    gone.write(STAGING_DEPLOY_SOURCE, GOOD_STAGING_SOURCE);
+    gone.write(STAGING_DEPLOY_PIPELINE, GOOD_STAGING_SOURCE);
     assert_eq!(gone.text(), format!("FAIL: missing {GOOD_PATH}\n"));
     assert_eq!(verify_staging_compose_paths(&gone.0).unwrap(), 1);
 
@@ -281,7 +281,7 @@ fn a_missing_deploy_source_does_not_read_as_pass() {
     website_only.write(WEBSITE_DEPLOY_SOURCE, GOOD_WEBSITE_SOURCE);
     website_only.write(GOOD_PATH, "services: {}\n");
     assert_eq!(verify_staging_compose_paths(&website_only.0).unwrap(), 1);
-    assert!(website_only.text().contains(STAGING_DEPLOY_SOURCE));
+    assert!(website_only.text().contains(STAGING_DEPLOY_PIPELINE));
 }
 
 #[test]
@@ -327,8 +327,60 @@ fn the_step_runner_cannot_substitute_for_the_compose_implementation() {
         "tools_v2/xtask/src/commands/deploy/website.rs",
         GOOD_WEBSITE_SOURCE,
     );
-    tree.write(STAGING_DEPLOY_SOURCE, GOOD_STAGING_SOURCE);
+    tree.write(STAGING_DEPLOY_PIPELINE, GOOD_STAGING_SOURCE);
     tree.write(GOOD_PATH, "services: {}\n");
     assert_eq!(verify_staging_compose_paths(&tree.0).unwrap(), 1);
     assert!(tree.text().contains(WEBSITE_DEPLOY_SOURCE));
+}
+
+/// The ban reads every production source of the game server deploy — the fleet pipeline, each
+/// payload module and the module file — and no test file. The paths are literal, so a pin left on
+/// a retired file cannot pass by agreeing with itself.
+#[test]
+fn a_compose_command_in_any_game_server_deploy_source_bites() {
+    let line = "let c = \"docker compose up -d\";";
+    for (index, source) in [
+        "tools_v2/xtask/src/commands/deploy/staging/remote/fleet_deploy.rs",
+        "tools_v2/xtask/src/commands/deploy/staging/fleet_units.rs",
+        "tools_v2/xtask/src/commands/deploy/staging.rs",
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        bites(
+            &format!("any-staging-source-{index}"),
+            source,
+            &format!("{GOOD_STAGING_SOURCE}{line}\n"),
+            &[&format!(
+                "FAIL: {source} runs compose; the staging compose stack belongs to cargo xtask \
+                 deploy website:\n      {line}"
+            )],
+        );
+    }
+    let tests_only = Tree::good("staging-tests-only");
+    tests_only.write(
+        "tools_v2/xtask/src/commands/deploy/staging/tests/fleet_units/tests.rs",
+        &format!("{line}\n"),
+    );
+    assert_eq!(tests_only.text(), "");
+}
+
+/// A tree that still holds the retired pin, `remote/ssh_argv.rs`, but no fleet pipeline does not
+/// read as a pass: the gate names the pipeline it could not find.
+#[test]
+fn a_missing_fleet_pipeline_does_not_read_as_pass() {
+    let tree = Tree::new("no-fleet-pipeline");
+    tree.write(WEBSITE_DEPLOY_SOURCE, GOOD_WEBSITE_SOURCE);
+    tree.write(
+        "tools_v2/xtask/src/commands/deploy/staging/remote/ssh_argv.rs",
+        GOOD_STAGING_SOURCE,
+    );
+    tree.write(GOOD_PATH, "services: {}\n");
+    assert_eq!(verify_staging_compose_paths(&tree.0).unwrap(), 1);
+    let text = tree.text();
+    assert!(
+        text.contains("missing ")
+            && text.contains("tools_v2/xtask/src/commands/deploy/staging/remote/fleet_deploy.rs"),
+        "{text}"
+    );
 }

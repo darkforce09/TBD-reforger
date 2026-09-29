@@ -15,6 +15,7 @@ use crate::core::authentication_primitives::Manager;
 use crate::core::authentication_primitives::session_authority::SessionAuthority;
 use crate::core::configuration::Config;
 use crate::core::middleware::IpLimiter;
+use crate::core::observability::metrics_registry::Registry;
 use crate::core::realtime_hub::Hub;
 use crate::identity_and_access::services::discord_client::DiscordService;
 use crate::identity_and_access::services::session_authorization::DatabaseSessionAuthority;
@@ -34,6 +35,9 @@ pub struct AppState {
     pub rl_strict: Arc<IpLimiter>,
     /// In-process SSE pub/sub hub (server-status fan-out).
     pub hub: Arc<Hub>,
+    /// The Prometheus metrics of this state: the router's middleware, `/metrics` and `/healthz`
+    /// and the background workers all record into and read this one registry.
+    pub metrics_registry: Arc<Registry>,
     /// Discord OAuth2 + guild-member client.
     pub discord: Arc<DiscordService>,
     /// Announcement → Discord webhook.
@@ -77,6 +81,7 @@ impl AppState {
             rl_global: Arc::new(IpLimiter::new(20, 40)),
             rl_strict: Arc::new(IpLimiter::new(1, 10)),
             hub: Arc::new(Hub::new()),
+            metrics_registry: Arc::new(Registry::new()),
             discord: Arc::new(discord),
             webhook: Arc::new(webhook),
             cfg,

@@ -204,6 +204,28 @@ fn command_specs() -> Vec<RouteSpec> {
                     .merge_body(json!({"action": "load_mission"}))
                     .expect(400),
             )
+            .malformed(
+                Probe::new("a console line holding a newline", ADMIN)
+                    .body(json!({"action": "console_command",
+                        "arguments": {"line": "#players\n#shutdown"}}))
+                    .expect(400),
+            )
+            .malformed(
+                Probe::new("a console line starting with @", ADMIN)
+                    .body(json!({"action": "console_command", "arguments": {"line": "@logout"}}))
+                    .expect(400),
+            )
+            .boundary(
+                Probe::new("console line of 257 bytes", ADMIN)
+                    .body(json!({"action": "console_command",
+                        "arguments": {"line": "c".repeat(257)}}))
+                    .expect(400),
+            )
+            .boundary(
+                Probe::new("console line of 256 bytes", ADMIN).body(
+                    json!({"action": "console_command", "arguments": {"line": "c".repeat(256)}}),
+                ),
+            )
             .boundary(
                 Probe::new("broadcast of 257 bytes", ADMIN)
                     .body(json!({"action": "broadcast", "arguments": {"message": "b".repeat(257)}}))
@@ -392,6 +414,22 @@ fn executor_specs() -> Vec<RouteSpec> {
             Probe::new("failure reason of 512 bytes", HOST_AGENT)
                 .merge_body(json!({"succeeded": false, "failure_reason": "f".repeat(512)}))
                 .expect_with(Expect::success().json_at("/state", json!("failed"))),
+        )
+        .boundary(
+            Probe::new("console response of 4096 bytes", HOST_AGENT)
+                .fixture("executing-console-command")
+                .merge_body(json!({"succeeded": true,
+                    "outcome": {"response": "r".repeat(4096), "response_truncated": true}}))
+                .expect_with(Expect::success().json_at("/state", json!("succeeded"))),
+        )
+        // Last user of its fixture: the refused command stays executing and holds back any
+        // later console claim.
+        .boundary(
+            Probe::new("console response of 4097 bytes", HOST_AGENT)
+                .fixture("executing-console-command")
+                .merge_body(json!({"succeeded": true,
+                    "outcome": {"response": "r".repeat(4097), "response_truncated": true}}))
+                .expect(400),
         )
         .boundary(
             refused(

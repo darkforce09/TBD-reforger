@@ -26,6 +26,7 @@ documentation_v2/website/api_v2/verification_evidence/
 ├── property_test_evidence.md           how property runs count generated cases apart from tests
 ├── remaining_milestones.md             the milestones after M (T, C, B, V, S) and their register status
 ├── requirements.json                   the acceptance register: requirements and the checks that prove them
+├── staging.md                          staging receipts: fleet, Discord and load procedures, evidence and witness rules
 ├── reservation_attendance.md           reservation state kept apart from attendance, and corrections
 ├── reservation_mutation_guards.md      reauthorization and capacity inside the six reservation writes
 ├── reservation_transaction_design.md   the reservation transaction design and its implementation state
@@ -42,9 +43,9 @@ register entry.
 
 | Kind | Files | What it holds |
 |---|---|---|
-| Register | `requirements.json` | version 1; 79 requirements, each with its behaviour, the implementation paths it rests on, its assumptions and the checks that prove it; 98 checks, 89 of class `implementation`, 6 `property` and 3 `operational`, each with its command, timeout, minimum case count, success marker and case pattern |
+| Register | `requirements.json` | version 1; 80 requirements, each with its behaviour, the implementation paths it rests on, its assumptions and the checks that prove it; 102 checks, 93 of class `implementation`, 6 `property` and 3 `operational`, each with its command, timeout, minimum case count, success marker and case pattern |
 | Program records | `completion_plan.md`, `progress_checkpoint.md`, `remaining_milestones.md`, `verification_findings.md` | the acceptance contract; the checkpoint after milestone B; the design and register work of milestones T (telemetry), C (administration and content), B (game ballistics), V (verification completeness) and S (staging); the findings of V with the ticket or fix each ended in |
-| Design notes | the other fifteen | one subject each: the semantics chosen for a group of requirements, the lock order, the refusals with their codes, and the tests that hold them |
+| Design notes | the other sixteen | one subject each: the semantics chosen for a group of requirements, the lock order, the refusals with their codes, and the tests that hold them |
 
 The design notes by domain:
 
@@ -58,10 +59,11 @@ The design notes by domain:
 | [administration](/documentation_v2/glossary/a_to_f.md#administration) and [community content](/documentation_v2/glossary/a_to_f.md#community-content) | `administration_and_content.md` |
 | [operations](/documentation_v2/glossary/n_to_z.md#operations): fire missions and ballistics catalogs | `game_ballistics.md` |
 | verification | `property_test_evidence.md`, `verification_completeness.md` |
+| staging: the fleet, Discord and load receipts | `staging.md` |
 
 Requirement identifiers start with their area: `events` (14), `identity` (13), `verification`
-(10), `missions` (8), `fleet` (7), `telemetry` (7), `administration` (6), `content` (3),
-`staging` (3) and `dashboard` (2).
+(10), `fleet` (8), `missions` (8), `telemetry` (7), `administration` (6), `game_ballistics` (6),
+`content` (3), `staging` (3) and `dashboard` (2).
 
 ### What the readiness check reads
 

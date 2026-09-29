@@ -1,5 +1,12 @@
 //! Prometheus text exposition format 0.0.4 — rendering the registry, and serving `GET /metrics`.
 //!
+//! **Role:** renders every metric family as Prometheus text and answers the scrape.
+//! **Position:** `core`; reads the application state's [`Registry`], and is served by
+//! [`crate::core::http_router::router`] behind the `OBSERVABILITY_TOKEN` bearer.
+//! **Signals & state:** none of its own; each scrape samples a database ping and the pool depth.
+//! **Invariants:** every family carries its `# HELP` and `# TYPE` lines even with no series; label
+//! values are escaped; the Discord outcome family lists every outcome, zeros included.
+//!
 //! The registry itself is I/O-free: values it cannot accumulate (a live database ping, the
 //! connection-pool depth) are sampled here and passed in as a [`Scrape`].
 
@@ -12,7 +19,9 @@ use axum::response::{IntoResponse, Response};
 use sqlx::PgPool;
 
 use super::health_probe::probe_db;
-use super::metrics_registry::{LATENCY_BUCKETS_S, Registry};
+use super::metrics_registry::{
+    DiscordReconcileOutcome, DiscordReconcileOutcomeCounts, LATENCY_BUCKETS_S, Registry,
+};
 
 /// Prometheus text exposition content type (format version 0.0.4).
 pub const CONTENT_TYPE: &str = "text/plain; version=0.0.4; charset=utf-8";
@@ -110,6 +119,8 @@ impl Registry {
             );
         }
 
+        write_discord_reconcile_outcomes(&mut out, self.discord_reconcile_outcomes());
+
         out.push_str("# HELP tbd_db_up 1 when the database answered SELECT 1 at scrape.\n");
         out.push_str("# TYPE tbd_db_up gauge\n");
         let _ = writeln!(out, "tbd_db_up {}", u8::from(s.db_up));
@@ -136,6 +147,27 @@ impl Registry {
         );
 
         out
+    }
+}
+
+/// The `tbd_discord_reconcile_outcomes_total` family of `counts`: its `# HELP` and `# TYPE` lines
+/// and one series per [`DiscordReconcileOutcome`], zeros included, so a rate over any outcome has
+/// a series from the first scrape.
+pub(super) fn write_discord_reconcile_outcomes(
+    out: &mut String,
+    counts: &DiscordReconcileOutcomeCounts,
+) {
+    out.push_str(
+        "# HELP tbd_discord_reconcile_outcomes_total Discord membership reconciliation requests by outcome.\n",
+    );
+    out.push_str("# TYPE tbd_discord_reconcile_outcomes_total counter\n");
+    for outcome in DiscordReconcileOutcome::ALL {
+        let _ = writeln!(
+            out,
+            "tbd_discord_reconcile_outcomes_total{{outcome=\"{}\"}} {}",
+            outcome.label(),
+            counts.count(outcome)
+        );
     }
 }
 

@@ -1,6 +1,8 @@
 //! The RCON transport against an in-process BattlEye RCon server that loses, corrupts,
 //! duplicates, reorders and fragments packets, forgets logins on restart, and drops idle
-//! logins the way Arma Reforger does after 45 seconds (scaled down here).
+//! logins the way Arma Reforger does after 45 seconds (scaled down here). A command that is safe
+//! to repeat is retransmitted and sent again after a new login; a console command is transmitted
+//! once, whatever happens to its answer, and its reply is captured for the ledger.
 
 #[path = "test_support/fake_battleye_server.rs"]
 mod fake_battleye_server;
@@ -8,12 +10,20 @@ mod fake_battleye_server;
 use std::time::Duration;
 
 use fake_battleye_server::{FakeBattlEyeServer, Faults, PLAYERS_RESPONSE};
+use fleet_host_agent::command_execution::{
+    CONSOLE_RESPONSE_MAX_BYTES, FleetActionExecutor, HostActionExecutor, HostCommand,
+};
+use fleet_host_agent::dedicated_server_config::DedicatedServerConfig;
+use fleet_host_agent::process_control::{ProcessControl, ProcessControlSettings, SystemdUnitName};
 use fleet_host_agent::rcon::{RconClient, RconError, RconSettings, RconTimings};
 use fleet_host_agent::secret_text::SecretText;
+use serde_json::{Value, json};
 use tokio::net::UdpSocket;
 use tokio::time::{Instant, sleep, timeout};
 
 const PASSWORD: &str = "range-master";
+/// The failure reason of a console command whose one transmission got no reply.
+const NO_RESPONSE: &str = "no RCON response; the command may or may not have run";
 /// Long enough that the server never drops a login in tests that are not about idle time.
 const PATIENT_SERVER: Duration = Duration::from_secs(600);
 
@@ -41,6 +51,27 @@ async fn client_of(
 
 async fn players(client: &RconClient) -> Result<String, RconError> {
     client.execute("#players").await
+}
+
+/// The game host's executor with RCON pointed at `server`. A console command never reaches its
+/// process control or its server config, which name nothing that exists.
+async fn console_host(server: &FakeBattlEyeServer) -> HostActionExecutor {
+    let process_control = ProcessControl::new(ProcessControlSettings {
+        systemctl_program: "/nonexistent/systemctl".into(),
+        unit: SystemdUnitName::parse("tbd-reforger.service").unwrap(),
+        start_dwell: Duration::ZERO,
+        verb_timeout: Duration::from_secs(1),
+        state_read_timeout: Duration::from_secs(1),
+    });
+    HostActionExecutor::new(
+        process_control,
+        client_of(server, PASSWORD, timings()).await,
+        DedicatedServerConfig::new("/nonexistent/server.json".into()),
+    )
+}
+
+fn console_command(line: &str) -> HostCommand {
+    HostCommand::from_claim("console_command", &json!({ "line": line })).expect("a console line")
 }
 
 /// Waits until `condition` holds, failing after two seconds.
@@ -274,6 +305,174 @@ async fn rcon_transport_refuses_commands_that_cannot_be_one_packet_of_text() {
             Err(RconError::InvalidCommand),
             "{command:?}"
         );
+        assert_eq!(
+            client.execute_once(command).await,
+            Err(RconError::InvalidCommand),
+            "{command:?}"
+        );
     }
     assert_eq!(server.login_attempts(), 0, "nothing was sent");
+}
+
+#[tokio::test]
+async fn rcon_transport_execute_once_transmits_the_command_in_a_single_packet() {
+    let server = FakeBattlEyeServer::start(PASSWORD, PATIENT_SERVER).await;
+    let client = client_of(&server, PASSWORD, timings()).await;
+    assert_eq!(
+        client.execute_once("#restart").await.unwrap(),
+        "executed #restart"
+    );
+    assert_eq!(server.transmissions_of("#restart").len(), 1);
+    assert_eq!(server.executed_commands(), vec!["#restart"]);
+    assert_eq!(server.login_attempts(), 1);
+}
+
+#[tokio::test]
+async fn rcon_transport_execute_once_never_retransmits_an_unanswered_command() {
+    let server = FakeBattlEyeServer::start(PASSWORD, PATIENT_SERVER).await;
+    server.set_faults(Faults {
+        discard_commands: 1,
+        ..Faults::default()
+    });
+    let client = client_of(&server, PASSWORD, timings()).await;
+    assert_eq!(
+        client.execute_once("#restart").await,
+        Err(RconError::NoResponse)
+    );
+    assert_eq!(server.transmissions_of("#restart").len(), 1, "sent once");
+    assert!(server.executed_commands().is_empty());
+}
+
+#[tokio::test]
+async fn rcon_transport_execute_once_retries_the_login_but_never_sends_the_command_without_one() {
+    let silent = UdpSocket::bind("127.0.0.1:0").await.unwrap();
+    let address = silent.local_addr().unwrap();
+    let client = RconClient::start(RconSettings {
+        server: address,
+        password: SecretText::new(PASSWORD),
+        timings: timings(),
+    })
+    .await
+    .unwrap();
+    assert_eq!(
+        client.execute_once("#restart").await,
+        Err(RconError::LoginUnanswered(address))
+    );
+    let mut buffer = [0u8; 512];
+    let mut logins = 0;
+    while let Ok(Ok(length)) = timeout(Duration::from_millis(100), silent.recv(&mut buffer)).await {
+        assert_eq!(&buffer[7..length], b"\x00range-master", "a login packet");
+        logins += 1;
+    }
+    assert_eq!(logins, timings().transmission_attempts);
+}
+
+#[tokio::test]
+async fn rcon_transport_execute_once_reassembles_a_multi_part_reply() {
+    let server = FakeBattlEyeServer::start(PASSWORD, PATIENT_SERVER).await;
+    let client = client_of(&server, PASSWORD, timings()).await;
+    server.set_faults(Faults {
+        fragment_bytes: Some(7),
+        reverse_fragments: true,
+        duplicate_fragments: true,
+        ..Faults::default()
+    });
+    assert_eq!(
+        client.execute_once("#players").await.unwrap(),
+        PLAYERS_RESPONSE
+    );
+    assert_eq!(server.transmissions_of("#players").len(), 1);
+}
+
+#[tokio::test]
+async fn rcon_transport_execute_once_lost_reply_is_not_resent_after_the_new_login() {
+    let server = FakeBattlEyeServer::start(PASSWORD, PATIENT_SERVER).await;
+    server.set_faults(Faults {
+        discard_responses: 1,
+        ..Faults::default()
+    });
+    let client = client_of(&server, PASSWORD, timings()).await;
+    assert_eq!(
+        client.execute_once("#restart").await,
+        Err(RconError::NoResponse)
+    );
+    assert_eq!(players(&client).await.unwrap(), PLAYERS_RESPONSE);
+    assert_eq!(
+        server.login_attempts(),
+        2,
+        "the next command logged in again"
+    );
+    assert_eq!(server.transmissions_of("#restart").len(), 1);
+    assert_eq!(server.executed_commands(), vec!["#restart", "#players"]);
+}
+
+#[tokio::test]
+async fn rcon_transport_execute_once_renews_a_forgotten_login_before_the_command_leaves() {
+    let server = FakeBattlEyeServer::start(PASSWORD, PATIENT_SERVER).await;
+    let client = client_of(&server, PASSWORD, timings()).await;
+    assert_eq!(players(&client).await.unwrap(), PLAYERS_RESPONSE);
+    server.restart();
+    assert_eq!(
+        client.execute_once("#restart").await.unwrap(),
+        "executed #restart"
+    );
+    assert_eq!(server.login_attempts(), 2);
+    assert_eq!(server.transmissions_of("#restart").len(), 1);
+    assert_eq!(server.executed_commands(), vec!["#players", "#restart"]);
+}
+
+#[tokio::test]
+async fn rcon_transport_console_command_reports_the_reply_and_that_it_is_whole() {
+    let server = FakeBattlEyeServer::start(PASSWORD, PATIENT_SERVER).await;
+    let host = console_host(&server).await;
+    let verdict = host.execute(&console_command("#players")).await;
+    assert!(verdict.succeeded(), "{verdict:?}");
+    assert_eq!(
+        verdict.outcome().cloned().map(Value::Object),
+        Some(json!({ "response": PLAYERS_RESPONSE, "response_truncated": false }))
+    );
+}
+
+#[tokio::test]
+async fn rcon_transport_console_reply_beyond_the_capture_is_cut_on_a_character_boundary() {
+    let server = FakeBattlEyeServer::start(PASSWORD, PATIENT_SERVER).await;
+    // A three-byte character across the 4,096-byte bound, split between the reply's two parts.
+    let reply = format!(
+        "{}€{}",
+        "x".repeat(CONSOLE_RESPONSE_MAX_BYTES - 2),
+        "y".repeat(900)
+    );
+    server.set_reply("#dump", &reply);
+    server.set_faults(Faults {
+        fragment_bytes: Some(CONSOLE_RESPONSE_MAX_BYTES - 1),
+        reverse_fragments: true,
+        ..Faults::default()
+    });
+    let host = console_host(&server).await;
+    let verdict = host.execute(&console_command("#dump")).await;
+    assert!(verdict.succeeded(), "{verdict:?}");
+    assert_eq!(
+        verdict.outcome().cloned().map(Value::Object),
+        Some(json!({
+            "response": &reply[..CONSOLE_RESPONSE_MAX_BYTES - 2],
+            "response_truncated": true,
+        }))
+    );
+    assert_eq!(server.transmissions_of("#dump").len(), 1);
+}
+
+#[tokio::test]
+async fn rcon_transport_console_command_without_a_reply_may_or_may_not_have_run() {
+    let server = FakeBattlEyeServer::start(PASSWORD, PATIENT_SERVER).await;
+    server.set_faults(Faults {
+        discard_responses: 1,
+        ..Faults::default()
+    });
+    let host = console_host(&server).await;
+    let verdict = host.execute(&console_command("#restart")).await;
+    assert!(!verdict.succeeded());
+    assert_eq!(verdict.failure_reason(), Some(NO_RESPONSE));
+    assert_eq!(verdict.outcome(), None);
+    assert_eq!(server.executed_commands(), vec!["#restart"], "it did run");
+    assert_eq!(server.transmissions_of("#restart").len(), 1);
 }

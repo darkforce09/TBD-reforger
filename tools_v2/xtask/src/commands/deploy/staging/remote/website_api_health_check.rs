@@ -21,9 +21,11 @@ use crate::commands::deploy::staging::payloads::website_api_health_payload;
 /// The exit status ssh reserves for its own failure: the remote command never ran.
 const SSH_FAILURE: i32 = 255;
 
-/// The API's health route under `TBD_BACKEND_URL`, the origin the mod calls.
+/// The API's health route under `backend_url`, the origin the mod calls: `TBD_BACKEND_URL`'s one
+/// reading ([`crate::commands::deploy::staging::fleet_instances::backend_url`]), which already
+/// comes without a trailing `/`.
 pub(super) fn website_api_health_url(backend_url: &str) -> String {
-    format!("{}/healthz", backend_url.trim_end_matches('/'))
+    format!("{backend_url}/healthz")
 }
 
 /// What the deploy prints when the probe on the host exits `code`.

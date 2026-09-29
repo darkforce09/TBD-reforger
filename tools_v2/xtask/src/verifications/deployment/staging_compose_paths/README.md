@@ -19,11 +19,14 @@ tools_v2/xtask/src/verifications/deployment/staging_compose_paths/
   `gate::probe_str`, `Verdict`, `NotRun`); the `regex` crate for the `-f` argument.
 - Used by: the parent module, which re-exports `verify_staging_compose_paths`; its tests call
   `audit`, `compose_lines`, `strip_comments`, `f_path`, `f_regex` and `source_basename`.
+- Reads: the website deploy's source, and `staging_deploy_sources` lists the game server deploy's
+  module file and every `.rs` file under its folder outside `tests/`, in path order.
 - Rules:
   - `audit` returns every failure of one run, not only the first;
   - the stripper removes `//` and `#` comments outside quotes before any pin, so a comment
     naming the right path is not presence; a backslash before a closing single quote keeps it
     in quote mode for the rest of the file, a known limitation pinned by
     `a_backslash_before_a_closing_single_quote_swallows_the_rest`;
-  - a missing deploy source prints `FAIL: missing <path>` with no summary line and exits 1
-    (`a_missing_deploy_source_does_not_read_as_pass`).
+  - a missing deploy source or fleet pipeline prints `FAIL: missing <path>` with no summary line
+    and exits 1 (`a_missing_deploy_source_does_not_read_as_pass`,
+    `a_missing_fleet_pipeline_does_not_read_as_pass`).

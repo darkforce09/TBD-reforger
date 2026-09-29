@@ -1,9 +1,9 @@
 //! One server's fleet command console: request a command, follow it to its outcome, read the history
 //! and cancel what no executor has taken up.
 //!
-//! **Role:** declares the request controls, the followed-command panel with the history, and the
-//! wording under them, and holds the console's state with its four operations — read the history,
-//! request, follow and cancel.
+//! **Role:** declares the request controls with their console box, the followed-command panel with
+//! the history, and the wording under them, and holds the console's state with its four operations
+//! — read the history, request, follow and cancel.
 //! **Position:** a section of the selected server's card on the server control screen.
 //! **Signals & state:** [`CommandConsole`] is one copyable handle, created by the server card for
 //! the server it shows. It holds the history as read, the command this console requested and is
@@ -18,6 +18,7 @@
 mod command_history;
 mod command_requests;
 pub(super) mod command_wording;
+mod console_command_form;
 
 pub(super) use command_history::command_history;
 pub(super) use command_requests::command_requests;

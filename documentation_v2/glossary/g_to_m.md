@@ -46,6 +46,18 @@ In code: `LaneRole` in `apps/website/map-engine/src/overlay/lanes.rs`; `LaneId` 
 
 See: [frame packet](/documentation_v2/glossary/a_to_f.md#frame-packet), [Map overlay](/apps/website/map-engine/src/overlay/README.md).
 
+### load workload
+
+The committed definition of the staging load run, `tools_v2/xtask/staging/load_workload.json`: its
+seed, a 60-second ramp and 1,800 measured seconds, 100 virtual clients over five source addresses at
+27 requests per second, the per-address ceilings, the account hold time, and the weighted request
+mix with each request's class, method, path and body templates and expected statuses. The run's
+`workload_sha256` covers it and `load_population.json`, each length-framed.
+
+In code: `workload_plan.rs` in `tools_v2/developer-tools/src/staging_verification/load_generation/`, which refuses unknown fields; the data folder `tools_v2/xtask/staging/`.
+
+See: [synthetic load account](/documentation_v2/glossary/n_to_z.md#synthetic-load-account), [staging harness](/documentation_v2/glossary/n_to_z.md#staging-harness), [Staging load data](/tools_v2/xtask/staging/README.md).
+
 ### machine credential
 
 A per-server secret that authenticates one program on a game host: `host_agent` for the

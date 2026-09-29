@@ -55,15 +55,15 @@ fn api_v1_routes(dev: bool, version_limit: usize) -> Router<AppState> {
 /// limiter. Everything else, including the SPA fallback and the other `ServeDir` (`/uploads`), is
 /// above it. The seam is commented in full at the call site.
 ///
-/// The metrics registry is created here, once per router, and shared by the `observe`
-/// middleware, `/metrics` and `/healthz` — see [`Registry`] for why it is not a `static`.
+/// The metrics registry is the application state's ([`AppState::metrics_registry`]), which the
+/// background workers record into as well; the `observe` middleware, `/metrics` and `/healthz`
+/// share it here — see [`Registry`] for why it is not a `static`.
 pub fn router(state: AppState) -> Router {
     let dev = state.cfg.is_development();
     let version_limit = state.cfg.mission_version_body_limit() as usize;
-    let registry = Arc::new(Registry::new());
+    let registry: Arc<Registry> = state.metrics_registry.clone();
 
-    // `/metrics` and `/healthz` need the registry, which is not an `AppState` field, so both are
-    // closures over the `Arc`.
+    // `/metrics` and `/healthz` are closures over the registry's `Arc`.
     let reg_metrics = registry.clone();
     let reg_health = registry.clone();
     // Uploads are served from the directory the upload handler writes into; the API owns it, so

@@ -22,7 +22,7 @@ apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/
 ```text
 TBD_FleetCommandPoller (every CLAIM_INTERVAL_MS = 5 s, only when idle)
   POST /api/v1/fleet-executor/commands/claim {runtime_session_id}
-    204                       -> nothing claimable
+    204 (NO_CONTENT)          -> nothing claimable: idle, nothing logged
     409 RUNTIME_SESSION_ENDED -> TBD_RuntimeSession.ReportSessionEnded
     200 claimed command       -> TBD_FleetCommandExecution.Begin
          CHECKING             TBD_FleetCommandArguments.Check; a refusal -> report failed

@@ -1,5 +1,17 @@
 //! Prometheus metric accumulation: the families, their label keys, and the cardinality cap.
 //!
+//! **Role:** accumulates every metric the API exposes in one [`Registry`]: the HTTP families and
+//! the Discord membership reconciliation outcomes.
+//! **Position:** `core`; the registry is a field of
+//! [`crate::core::application_state::AppState`], fed through that state by the `observe`
+//! middleware and by the Discord membership reconciliation
+//! (`identity_and_access::services::discord_rest_reconciliation`), and read by
+//! [`crate::core::observability::metrics_exposition`].
+//! **Signals & state:** per [`Registry`], atomics behind one `RwLock` for the HTTP families and a
+//! fixed array of atomics for the reconciliation outcomes; no process-global state.
+//! **Invariants:** a [`Registry`] family never holds more than [`Registry::MAX_SERIES`] series;
+//! the Discord outcome family holds exactly one series per [`DiscordReconcileOutcome`].
+//!
 //! # Why there is no metrics crate in `Cargo.toml`
 //!
 //! The obvious move is `metrics` + `metrics-exporter-prometheus`. It is not taken, and the
@@ -20,9 +32,11 @@
 //!    [`Registry::MAX_SERIES`] as a hard backstop with its own
 //!    `tbd_metrics_series_dropped_total` counter.
 //!
-//! A need for OTLP export, or for handler-level instrumentation from modules that do not
-//! hold the `Arc<Registry>`, is the moment to take the dependency — and the natural home for
-//! the handle is then an `AppState` field.
+//! Every recorder reaches the registry through the application state it already holds: the
+//! `observe` middleware through the router, and the Discord membership reconciliation, which
+//! records outside the request path, through the state its worker receives. A need for OTLP
+//! export, or for instrumentation from code that holds no application state, is the moment to
+//! take the dependency.
 
 use std::collections::BTreeMap;
 use std::sync::RwLock;
@@ -44,6 +58,78 @@ pub const UNMATCHED_ROUTE: &str = "<unmatched>";
 
 /// The status a throttled request carries, mirrored into `tbd_http_rate_limited_total`.
 const TOO_MANY_REQUESTS: u16 = 429;
+
+/// Number of [`DiscordReconcileOutcome`] variants, and of `tbd_discord_reconcile_outcomes_total`
+/// series.
+pub const DISCORD_RECONCILE_OUTCOME_COUNT: usize = 5;
+
+/// How one Discord membership reconciliation request ended: the `outcome` label of
+/// `tbd_discord_reconcile_outcomes_total` and the `outcome` field of the `discord_reconciliation`
+/// log line.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DiscordReconcileOutcome {
+    /// Discord returned the member, and the membership was recorded under the lease.
+    Member,
+    /// Discord answered Unknown Member, and the non-membership was recorded under the lease.
+    Nonmember,
+    /// Discord answered, but the lease had lapsed or a newer claim held it, so the answer was
+    /// discarded unrecorded.
+    LeaseLost,
+    /// Discord answered 429: the shared request schedule and the snapshot back off.
+    RateLimited,
+    /// Discord gave no usable answer (a transport failure, an unconfigured bot, a non-success
+    /// status or a malformed body): the recorded membership stays and `last_error` names why.
+    Unavailable,
+}
+
+impl DiscordReconcileOutcome {
+    /// Every outcome in exposition order; each variant's discriminant is its index here and its
+    /// slot in [`DiscordReconcileOutcomeCounts`].
+    pub const ALL: [Self; DISCORD_RECONCILE_OUTCOME_COUNT] = [
+        Self::Member,
+        Self::Nonmember,
+        Self::LeaseLost,
+        Self::RateLimited,
+        Self::Unavailable,
+    ];
+
+    /// The label value: `member`, `nonmember`, `lease_lost`, `rate_limited` or `unavailable`.
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Member => "member",
+            Self::Nonmember => "nonmember",
+            Self::LeaseLost => "lease_lost",
+            Self::RateLimited => "rate_limited",
+            Self::Unavailable => "unavailable",
+        }
+    }
+}
+
+/// One counter per [`DiscordReconcileOutcome`], behind `tbd_discord_reconcile_outcomes_total`.
+pub struct DiscordReconcileOutcomeCounts([AtomicU64; DISCORD_RECONCILE_OUTCOME_COUNT]);
+
+impl Default for DiscordReconcileOutcomeCounts {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl DiscordReconcileOutcomeCounts {
+    /// Every counter at zero.
+    pub const fn new() -> Self {
+        Self([const { AtomicU64::new(0) }; DISCORD_RECONCILE_OUTCOME_COUNT])
+    }
+
+    /// Count one reconciliation request that ended in `outcome`.
+    pub fn record(&self, outcome: DiscordReconcileOutcome) {
+        self.0[outcome as usize].fetch_add(1, Ordering::Relaxed);
+    }
+
+    /// How many reconciliation requests ended in `outcome`.
+    pub fn count(&self, outcome: DiscordReconcileOutcome) -> u64 {
+        self.0[outcome as usize].load(Ordering::Relaxed)
+    }
+}
 
 /// A cumulative-bucket latency histogram. Buckets are incremented for every bound the
 /// observation falls under, so rendering is a straight read with no prefix sum.
@@ -87,7 +173,9 @@ pub(super) struct Tables {
     pub(super) limited: BTreeMap<String, AtomicU64>,
 }
 
-/// One registry per [`crate::core::http_router::router`] call.
+/// The API's metrics: one registry per [`crate::core::application_state::AppState`], shared
+/// through that state by the router's `observe` middleware, `/metrics`, `/healthz` and the
+/// background workers.
 ///
 /// Deliberately **not** a `static`: a process-global recorder makes every test that
 /// asserts a count depend on which other tests ran first, which is precisely the
@@ -99,6 +187,8 @@ pub struct Registry {
     tables: RwLock<Tables>,
     in_flight: AtomicI64,
     dropped: AtomicU64,
+    /// `tbd_discord_reconcile_outcomes_total{outcome}`
+    discord_reconcile_outcomes: DiscordReconcileOutcomeCounts,
 }
 
 impl Default for Registry {
@@ -123,10 +213,12 @@ impl Registry {
             tables: RwLock::new(Tables::default()),
             in_flight: AtomicI64::new(0),
             dropped: AtomicU64::new(0),
+            discord_reconcile_outcomes: DiscordReconcileOutcomeCounts::new(),
         }
     }
 
-    /// How long this router has been assembled.
+    /// How long this registry has existed: since its application state was built, which is
+    /// immediately before the router is assembled.
     pub fn uptime(&self) -> Duration {
         self.start.elapsed()
     }
@@ -222,6 +314,17 @@ impl Registry {
             .get(&key)
             .map(|c| c.load(Ordering::Relaxed))
             .unwrap_or(0)
+    }
+
+    /// Count one Discord membership reconciliation request that ended in `outcome`, in
+    /// `tbd_discord_reconcile_outcomes_total`.
+    pub fn record_discord_reconcile_outcome(&self, outcome: DiscordReconcileOutcome) {
+        self.discord_reconcile_outcomes.record(outcome);
+    }
+
+    /// This registry's Discord membership reconciliation outcome counts.
+    pub fn discord_reconcile_outcomes(&self) -> &DiscordReconcileOutcomeCounts {
+        &self.discord_reconcile_outcomes
     }
 
     /// Current value of `tbd_http_rate_limited_total` for one route.

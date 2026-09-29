@@ -49,11 +49,12 @@ files of Claude Code, Codex and the MCP configuration. None of them is tracked, 
 none of them.
 
 ```text
-deploy website: asset probe ─▶ rsync --delete ─▶ compose postgres ─▶ API build ─▶ app build
-                ─▶ compose caddy, then its reload ─▶ checksum repair ─▶ uploads to the state folder
-                ─▶ restart the unit ─▶ hints
-deploy staging: settings check ─▶ website API check ─▶ rsync --delete ─▶ profile ─▶ runtime smoke
-                ─▶ server config ─▶ unit restart ─▶ boot verdict ─▶ host agent ─▶ log check
+deploy website: asset probe ─▶ rsync --delete ─▶ compose postgres ─▶ API build ─▶ host tools build
+                ─▶ app build ─▶ compose caddy, then its reload ─▶ checksum repair
+                ─▶ uploads to the state folder ─▶ restart the unit ─▶ hints
+deploy staging: settings check ─▶ website API check ─▶ secret files ─▶ single-instance check
+                ─▶ rsync --delete ─▶ per instance: files and runtime smoke ─▶ units, restart
+                ─▶ boot verdict per instance ─▶ relay ─▶ host agents ─▶ log check per instance
 deploy db:      container helpers ─▶ backup | verify-dump | restore | drill
 ```
 
@@ -74,10 +75,11 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
   `prairielearn` in any case, a host without a user, and a remote folder outside
   `/home/<user>/tbd/` or holding `..`, then probes the server's map assets, rsyncs the checkout,
   and over ssh brings up the staging Postgres (`TBD_POSTGRES_HOST_PORT`, default 5432), builds the
-  release API and the app, starts the staging Caddy and reloads its Caddyfile, repoints
+  release API, the staging host tools `staging-fixtures` and `acknowledgement-dropping-relay`
+  into `target/release/` and the app, starts the staging Caddy and reloads its Caddyfile, repoints
   comments-only migration checksums, moves uploads into the unit's state folder and restarts
   `TBD_WEBSITE_SYSTEMD_UNIT` (default `tbd-website-api.service`). Set to 1, `TBD_SKIP_COMPOSE`
-  skips both compose steps (Postgres and Caddy), `TBD_SKIP_API_BUILD` the API build and
+  skips both compose steps (Postgres and Caddy), `TBD_SKIP_API_BUILD` both cargo builds and
   `TBD_SKIP_SPA_BUILD` the app build, after which Caddy serves the build already on the host. A
   failing step stops the deploy before the restart; a failed restart only warns and prints the
   unit's install command. It ends with two `curl` smoke hints. `--dry-run` prints the plan, with
@@ -89,23 +91,34 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
 
 ### staging
 
-- Synopsis: `cargo xtask deploy staging [--dry-run] [--render-only <path>] [--verify-boot
-  <console.log>] [--verify-boot-selftest]`
+- Synopsis: `cargo xtask deploy staging [--dry-run] [--migrate-single-instance] [--render-only
+  <directory>] [--verify-boot <console.log>] [--verify-boot-selftest]`
 - Does: checks that the website API answers `/healthz` at `TBD_BACKEND_URL` on the staging host,
-  then deploys the checkout there and boots the dedicated server in
-  `TBD_SERVER_MODE` (`config` by default, or `addons`), asserting from the server's log that the
-  synced addon won, a room registered and the config loaded; with `TBD_INSTALL_HOST_AGENT=1` it
-  also installs the [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent).
+  then deploys the checkout there and runs the fleet of `TBD_FLEET_INSTANCES` (at most 5)
+  dedicated servers of the experimental server install (Steam app 1890870): instance N runs as
+  `tbd-reforger@N.service` with `-addonsDir` and its own `-config` and `-profile` under
+  `~/tbd/fleet/instance-N/`, beside its
+  [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent)
+  `fleet-host-agent@N.service`; the relay instance's agent polls the API through
+  `acknowledgement-dropping-relay@N.service`. Each instance's boot is judged from its own log:
+  the synced addon won, a room registered and the config loaded. The machine credentials are
+  files `cargo xtask staging provision-fleet` writes on the host after `deploy website` built its
+  tool, the RCON passwords are generated on the host, and the join password is the operator's
+  `~/tbd/fleet/join-password`; the deploy refuses a missing one, and refuses the retired
+  single-server settings such as `TBD_MOD_RUNTIME_CREDENTIAL` without printing their values.
+  While the single-server units `tbd-reforger.service` and `fleet-host-agent.service` are
+  installed it refuses, and `--migrate-single-instance` stops, disables and archives them first.
   It runs no compose command: the website stack on the host is `deploy website`'s.
-  `--render-only` writes the server config to a local file after the settings check;
-  `--verify-boot` judges a log you already have; `--verify-boot-selftest` proves the verdict can
-  fail. The last two need no `deploy.env`.
-- Exit codes: 0 deployed, rendered or judged healthy; 1 a missing or refused setting (among them
-  a `TBD_PUBLIC_ADDRESS` that is not IPv4, or none set and none resolved), a website API that does
-  not answer on the host, a failed boot verdict or a failed final log check; 2 an unknown option
-  or a flag without its value,
-  `--render-only` in addons mode, or `--verify-boot` without `TBD_ADDONS_STAGING`; a failing step's
-  own code; 127 a tool that is not installed.
+  `--render-only` writes every instance's `instance-N/server.config.json` into a local directory
+  after the settings check; `--verify-boot` judges a log you already have;
+  `--verify-boot-selftest` proves the verdict can fail. The last two need no `deploy.env`.
+- Exit codes: 0 deployed, rendered or judged healthy; 1 a missing, retired or refused setting
+  (among them a `TBD_PUBLIC_ADDRESS` that is not IPv4, or none set and none resolved), a missing
+  or malformed secret file, the single-server units still installed without
+  `--migrate-single-instance`, a website API that does not answer on the host, a failed boot
+  verdict or a failed final log check; 2 an unknown option or a flag without its value, or
+  `--verify-boot` without `TBD_ADDONS_STAGING`; a failing step's own code; 127 a tool that is not
+  installed.
 - Example: `cargo xtask deploy staging --verify-boot-selftest`
 
 ### db

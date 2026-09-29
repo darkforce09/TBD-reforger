@@ -1,6 +1,6 @@
 //! `cargo xtask deploy website` — rsync the monorepo to the server, start the staging Postgres,
-//! build the release API and the Leptos SPA there, start and reload the Caddy web server, and
-//! restart the API's user-systemd unit.
+//! build the release API, the staging host tools and the Leptos SPA there, start and reload the
+//! Caddy web server, and restart the API's user-systemd unit.
 //!
 //! **Role:** reads the deploy settings, refuses what the `--delete` rsync must never touch, and
 //! runs the steps in order: the map-asset probe, the rsync, the remote steps of
@@ -229,14 +229,15 @@ impl DeployCfg {
 
     /// The ordered remote steps between the rsync and the restart.
     ///
-    /// Postgres comes first, because the API build and the checksum repair need it. The web
-    /// server follows the app build and belongs to compose, not to the build: `TBD_SKIP_COMPOSE`
-    /// drops both compose steps, and `TBD_SKIP_SPA_BUILD` drops only the build, so Caddy still
-    /// starts, reloads its Caddyfile and serves the `dist` already on the host. The checksum
-    /// repair and the state-directory move come last, once the new tree is on the server and
-    /// before the unit picks it up: a comments-only migration edit must be repointed before the
-    /// new binary boots, or the boot refuses it, and the runtime files must already be where the
-    /// unit's environment points.
+    /// Postgres comes first, because the API build and the checksum repair need it. The staging
+    /// host tools build right after the API, from the same checkout, and `TBD_SKIP_API_BUILD`
+    /// drops both cargo steps. The web server follows the app build and belongs to compose, not
+    /// to the build: `TBD_SKIP_COMPOSE` drops both compose steps, and `TBD_SKIP_SPA_BUILD` drops
+    /// only the build, so Caddy still starts, reloads its Caddyfile and serves the `dist` already
+    /// on the host. The checksum repair and the state-directory move come last, once the new tree
+    /// is on the server and before the unit picks it up: a comments-only migration edit must be
+    /// repointed before the new binary boots, or the boot refuses it, and the runtime files must
+    /// already be where the unit's environment points.
     fn remote_plan(&self) -> Vec<RemoteStep> {
         let mut plan = Vec::new();
         if !self.skip_compose {
@@ -249,6 +250,11 @@ impl DeployCfg {
             plan.push(RemoteStep::new(
                 "cargo build --release -p website-api --bin api",
                 remote_steps::api_build(&self.remote_dir),
+            ));
+            plan.push(RemoteStep::new(
+                "cargo build --release: the staging host tools (staging-fixtures, \
+                 acknowledgement-dropping-relay)",
+                remote_steps::staging_host_tools_build(&self.remote_dir),
             ));
         }
         if !self.skip_spa {

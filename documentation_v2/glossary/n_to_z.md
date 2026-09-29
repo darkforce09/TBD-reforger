@@ -7,6 +7,19 @@ The glossary's entries from N to Z, in alphabetical order, each in the format of
 [glossary index](/documentation_v2/glossary/README.md) lists every term and says how a document
 links one.
 
+### operational receipt
+
+The evidence an operational check (`staging_fleet`, `staging_discord`, `staging_load`) leaves when
+the [staging harness](#staging-harness) records a run: `<check>.log`, `<check>.fixture.json` and
+`<check>.json` under `target/api-readiness/`, holding the environment, the fingerprints taken at the
+start, every observation with the SHA-256 of its raw artifact, and one case line per declared case.
+It passes only when every declared case is ok and the judge accepts it; a partial run still writes
+a failing receipt that names its missing dependencies.
+
+In code: `tools_v2/xtask/src/verifications/api_readiness/operational_recording.rs` and `operational_log.rs`; the operational checks in `documentation_v2/website/api_v2/verification_evidence/requirements.json`.
+
+See: [Verification evidence](/documentation_v2/website/api_v2/verification_evidence/README.md), [API readiness judge](/tools_v2/xtask/src/verifications/api_readiness/README.md).
+
 ### operations
 
 The domain around [events](/documentation_v2/glossary/a_to_f.md#event): the event calendar, the [ORBAT](#orbat) and slotting, squad
@@ -85,12 +98,13 @@ See: [charge ring](/documentation_v2/glossary/a_to_f.md#charge-ring), [Game ball
 ### RCON
 
 BattlEye RCon, the remote-console protocol the dedicated server speaks over UDP; the [fleet host
-agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) uses it to list players. The platform has no RCON console: broadcasts and
-kicks run in the [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime), and Reforger's RCON has no broadcast command.
+agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) uses it to list players and to send an administrator's
+[console command](/documentation_v2/glossary/a_to_f.md#console-command), one line transmitted once. Broadcasts and kicks run in the
+[game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime), and Reforger's RCON has no broadcast command.
 
 In code: `apps/fleet_host_agent/src/rcon/`; `FleetAction` in `apps/website/api_v2/src/server_infrastructure/models/fleet_command.rs`.
 
-See: [fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command).
+See: [fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command), [console command](/documentation_v2/glossary/a_to_f.md#console-command).
 
 ### registry
 
@@ -225,6 +239,20 @@ In code: `Hub` in `apps/website/api_v2/src/core/realtime_hub/mod.rs` (the status
 
 See: [audit logs](/documentation_v2/glossary/a_to_f.md#audit-logs), [server infrastructure](#server-infrastructure).
 
+### staging harness
+
+`cargo xtask staging`, the tool that runs the three operational checks against the staging host and
+records their [operational receipts](#operational-receipt). It checks and fingerprints the
+environment, performs the confirmed remote actions (backup, game server update, fleet provisioning,
+credential rotation, load seeding), and for each procedure step prints `AWAIT <step>: <instruction>`
+and polls its read-only observers (host shell, database, unit journal, console log, metrics, Discord
+member reads, saved Chrome page reads) until the effect shows or the deadline passes, without ever
+reading stdin.
+
+In code: `tools_v2/xtask/src/commands/staging/` with `procedure_runner/` and the `fleet_procedure/`, `discord_procedure/` and `load_procedure/` step tables; the host tool `staging-fixtures` in `apps/website/api_v2/src/bin/staging_fixtures/`.
+
+See: [fleet instance](/documentation_v2/glossary/a_to_f.md#fleet-instance), [acknowledgement-dropping relay](/documentation_v2/glossary/a_to_f.md#acknowledgement-dropping-relay), [load workload](/documentation_v2/glossary/g_to_m.md#load-workload), [Staging harness](/tools_v2/xtask/src/commands/staging/README.md).
+
 ### Stitch visual reference
 
 A design-phase picture of a page or screen made with Stitch, an AI interface design tool, kept as a
@@ -236,6 +264,18 @@ set in the `visual_references/` folder of the feature it depicts. A set is named
 In code: none; the built styles a set is compared with are `apps/website/frontend/style/aegis.css` on the website and `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UITheme.c` in the mod.
 
 See: [Design system](/documentation_v2/design_system/README.md), [Stitch token exports](/documentation_v2/design_system/token_exports/README.md).
+
+### synthetic load account
+
+One of the 1,100 member accounts the staging load run signs in as, created by
+`staging-fixtures seed-load-population` with the Player role and a Discord id from the reserved range
+9100000000000000000 to 9100000000000099999, and removed by `clean-load-population`, which deletes
+reserved accounts only. Seeding refuses while the API's Discord bot token is set or when any reserved
+id already exists.
+
+In code: `apps/website/api_v2/src/bin/staging_fixtures/reserved_accounts.rs` and `load_population/`; `tools_v2/xtask/staging/load_population.json`; `account_rotation.rs` in `tools_v2/developer-tools/src/staging_verification/load_generation/`.
+
+See: [load workload](/documentation_v2/glossary/g_to_m.md#load-workload), [staging harness](#staging-harness).
 
 ### ticket
 

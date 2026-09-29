@@ -7,18 +7,20 @@
  * thread by `TBD_GameRuntimeHttp` from the request's `TBD_GameRuntimeRestCallback`, or by its
  * watchdog, and delivered to the request's `TBD_GameRuntimeCall.OnAnswered`.
  * State: none beyond each answer's own fields.  Invariants: answers are classified by HTTP status
- * and by the machine-readable `details.code` of a 409, never by message text; the `details.code`
- * of any other error status (404 `NO_DEPLOYMENT`, 403 and 422 refusals) is carried in
- * `m_sErrorCode`; an answer carries a body only when a status arrived with it or the success
- * handler fired, because `RestCallback.GetData()` returns the request body on a transport failure
- * and `TBD_GameRuntimeRestCallback` keeps no body then.
+ * and by the machine-readable `details.code` of a 409, never by message text; a 204 is its own
+ * `NO_CONTENT` outcome, neither a success with a body nor a failure; the `details.code` of any
+ * other error status (404 `NO_DEPLOYMENT`, 403 and 422 refusals) is carried in `m_sErrorCode`; an
+ * answer carries a body only when a status arrived with it or the success handler fired, because
+ * `RestCallback.GetData()` returns the request body on a transport failure and
+ * `TBD_GameRuntimeRestCallback` keeps no body then.
  */
 
 //! How a finished game-runtime request is handled.
 enum TBD_EGameRuntimeOutcome
 {
-	SUCCESS,   //!< 2xx: the body is the answer.
-	REFUSED,   //!< 409 carrying a fence code in `details.code`.
+	SUCCESS,    //!< 200, 201 or 202, or a status-less success handler: the body is the answer.
+	NO_CONTENT, //!< 204: the platform answered and has nothing to return; only the fleet command claim answers it.
+	REFUSED,    //!< 409 carrying a fence code in `details.code`.
 	TRANSIENT, //!< No answer, a timeout or a server-side failure: the same request may succeed later.
 	PERMANENT, //!< A client-error status: repeating the same request cannot succeed.
 }
@@ -48,6 +50,7 @@ class TBD_GameRuntimeErrorBody
 class TBD_GameRuntimeAnswer
 {
 	protected static const int LOGGED_BODY_MAX_BYTES = 400; //!< cap of a logged body, in bytes; `Print` drops a line over 1024 bytes
+	protected static const int HTTP_STATUS_NO_CONTENT = 204; //!< the raw status the engine reports for a 204, through the success handler; `HttpCode` names no 204 member
 
 	TBD_EGameRuntimeOutcome m_eOutcome; //!< how the sender handles the answer
 	HttpCode m_eCode; //!< the HTTP status; `HTTP_CODE_NULL` when none arrived
@@ -70,7 +73,8 @@ class TBD_GameRuntimeAnswer
 		answer.m_sBody = body;
 		answer.m_eOutcome = answer.Classify(arrivedOnSuccess);
 
-		// The enum's ordinal is not the HTTP status, so the status goes out by name.
+		// The status goes out by its `HttpCode` name; a status the enum does not name, 204 among
+		// them, reads `unknown`.
 		string status = typename.EnumToString(HttpCode, answer.m_eCode);
 		if (answer.m_eCode == HttpCode.HTTP_CODE_NULL)
 			answer.m_sDetail = status + " rest=" + typename.EnumToString(ERestResult, restResult);
@@ -105,14 +109,18 @@ class TBD_GameRuntimeAnswer
 		return body;
 	}
 
-	//! Classify this answer: 2xx, or a status-less success handler, is SUCCESS; no status otherwise
-	//! is TRANSIENT; a 409 with `details.code` is REFUSED; a client error is PERMANENT; anything
-	//! else is TRANSIENT. Sets `m_sErrorCode` from any `details.code` and `m_Refusal` for a 409.
+	//! Classify this answer: 200, 201, 202, or a status-less success handler, is SUCCESS; 204 is
+	//! NO_CONTENT; no status otherwise is TRANSIENT; a 409 with `details.code` is REFUSED; a client
+	//! error is PERMANENT; anything else is TRANSIENT. Sets `m_sErrorCode` from any `details.code`
+	//! and `m_Refusal` for a 409.
 	//! @return the outcome
 	protected TBD_EGameRuntimeOutcome Classify(bool arrivedOnSuccess)
 	{
 		if (m_eCode == HttpCode.HTTP_CODE_200 || m_eCode == HttpCode.HTTP_CODE_201 || m_eCode == HttpCode.HTTP_CODE_202)
 			return TBD_EGameRuntimeOutcome.SUCCESS;
+
+		if (m_eCode == HTTP_STATUS_NO_CONTENT)
+			return TBD_EGameRuntimeOutcome.NO_CONTENT;
 
 		if (m_eCode == HttpCode.HTTP_CODE_NULL)
 		{

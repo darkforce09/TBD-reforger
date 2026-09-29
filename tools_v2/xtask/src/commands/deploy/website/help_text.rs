@@ -12,10 +12,12 @@ pub fn usage() -> String {
 Usage: cargo xtask deploy website [--dry-run] [--help]
 
   Rsync the monorepo to TBD_REMOTE_DIR, bring up staging Postgres (compose),
-  build the release API binary + Leptos SPA on the server, start the staging
-  Caddy (compose) and reload its Caddyfile, and restart the user-systemd API unit.
+  build the release API binary, the staging host tools (staging-fixtures,
+  acknowledgement-dropping-relay) and the Leptos SPA on the server, start the
+  staging Caddy (compose) and reload its Caddyfile, and restart the user-systemd
+  API unit.
 
-  --dry-run   Print the plan (rsync/ssh/compose/build/web server/checksum-repair/
+  --dry-run   Print the plan (rsync/ssh/compose/builds/web server/checksum-repair/
               state-dir/restart) without executing.
   -h, --help  Show this help.
 
@@ -32,7 +34,8 @@ Settings ({deploy_env}, or the file DEPLOY_ENV names):
   TBD_SKIP_COMPOSE          set to 1 to skip both compose steps (Postgres, Caddy)
   TBD_SKIP_SPA_BUILD        set to 1 to skip remote trunk build (Caddy still
                             starts and serves the dist already on the server)
-  TBD_SKIP_API_BUILD        set to 1 to skip remote cargo build
+  TBD_SKIP_API_BUILD        set to 1 to skip both remote cargo builds (the API
+                            and the staging host tools)
 
 Smoke (no SSH):
   cargo xtask deploy website --help

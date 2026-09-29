@@ -1,21 +1,22 @@
 # Developer tools
 
-The `developer-tools` crate: the `developer_tools` library and six executables (`enf`, `gate`,
-`mcpd`, `world`, `map`, `capture`) that do the heavy offline work around the platform. They index
-[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) scripts and read the game's archives, run the
-headless browser gates of the single-page app and the [Mission
-Creator](/documentation_v2/glossary/g_to_m.md#mission-creator), compile building blueprints, and build and
-verify the terrain and map assets under `assets_v2/`. Developers run the binaries, and `cargo xtask`
+The `developer-tools` crate: the `developer_tools` library and seven executables (`enf`, `gate`,
+`mcpd`, `world`, `map`, `capture`, `acknowledgement-dropping-relay`) that do the heavy offline work
+around the platform. They index [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) scripts and
+read the game's archives, run the headless browser gates of the single-page app and the [Mission
+Creator](/documentation_v2/glossary/g_to_m.md#mission-creator), compile building blueprints, build and
+verify the terrain and map assets under `assets_v2/`, and run the engines of the staging
+verification receipts: the member load generator and the acknowledgement-dropping relay. Developers run the binaries, and `cargo xtask`
 recipes, CI tasks and xtask verifications call them or the library.
 
 ## Contents
 
 ```text
 tools_v2/developer-tools/
-├── Cargo.toml      the `developer-tools` package: the `developer_tools` library and six `[[bin]]` targets
+├── Cargo.toml      the `developer-tools` package: the `developer_tools` library and seven `[[bin]]` targets
 ├── fixtures/       committed reference data the browser gates compare the single-page app against
 ├── gate-env.json   the pinned Chromium build, toolchain versions and limits `gate doctor` checks
-├── src/            the library modules and the six entry points in `src/bin/`
+├── src/            the library modules and the seven entry points in `src/bin/`
 └── test_fixtures/  blueprint, prefab and world-parity inputs the library's unit tests read
 ```
 
@@ -23,12 +24,13 @@ tools_v2/developer-tools/
 
 Each file in `src/bin/` is a `main` that calls one subsystem's command-line entry in the library:
 `enfusion_tooling` for `enf` and `mcpd`, `browser_testing` for `gate` and `capture`,
-`world_export_pipeline` for `world` and `map_raster_pipeline` for `map`. The `blueprint` and
-`map_verification` modules have no binary; `cargo xtask map` and the xtask schema and map-asset
-verifications call their entry functions with the checkout root. Every subsystem reads the game's
-`.pak` archives through `enfusion_pak`, resolves repository paths through `repository_layout`, and
-takes its formats, geometry and spatial indexes from `website-map-engine`, the one workspace crate
-it depends on; `xtask` depends on it in turn.
+`world_export_pipeline` for `world`, `map_raster_pipeline` for `map` and `staging_verification`
+for `acknowledgement-dropping-relay`. The `blueprint` and `map_verification` modules have no binary;
+`cargo xtask map` and the xtask schema and map-asset verifications call their entry functions with
+the checkout root. Every subsystem but the staging verification engines, which speak only to the
+staging API, reads the game's `.pak` archives through `enfusion_pak`, resolves repository paths
+through `repository_layout`, and takes its formats, geometry and spatial indexes from
+`website-map-engine`, the one workspace crate it depends on; `xtask` depends on it in turn.
 
 Binary formats, schema versions, numeric thresholds, operation order and the emitted bytes are
 contracts the unit tests pin against the inputs in `test_fixtures/` and against synthetic data; the
@@ -39,7 +41,7 @@ browser gates compare against `fixtures/`.
 Run these from the repository root.
 
 ```bash
-cargo build -p developer-tools --bins                 # the six executables
+cargo build -p developer-tools --bins                 # the seven executables
 cargo run -q -p developer-tools --bin map -- --help   # any binary's command list; likewise enf, gate, world, capture
 cargo test -p developer-tools                         # the unit tests; no database, browser or game install
 cargo xtask ci developer-tools-test                   # the CI lane: cargo test -p developer-tools --lib
@@ -72,7 +74,7 @@ ci-local` nor the CI workflow runs them.
 
 ## Public surface
 
-- The six binaries; their commands are in the [executables
+- The seven binaries; their commands are in the [executables
   README](/tools_v2/developer-tools/src/bin/README.md).
 - The library modules `tools_v2/xtask/` imports: `blueprint` and `map_verification` entry functions,
   `repository_layout` paths, `content_digest::sha384_hex`,
@@ -90,7 +92,7 @@ ci-local` nor the CI workflow runs them.
   `mcp`, `db`, `mod`, `schema` and `platform` commands call the library or the binaries); the CI
   workflow `.github/workflows/ci.yml`, through `cargo xtask ci developer-tools-test`; and people.
 - Rules: the crate never depends on `xtask` and `xtask` depends on it by path
-  (`tooling_dependency_direction_is_enforced`); the six binary names are fixed
+  (`tooling_dependency_direction_is_enforced`); the seven binary names are fixed
   (`the_tooling_tree_holds_its_executables_manifests_and_layout_modules`); files stay under 500
   lines, test files under 1,000, `src/bin/` files under 250 and editor smoke scenarios under 450,
   and tests live in separate `tests/` files
@@ -111,6 +113,6 @@ ci-local` nor the CI workflow runs them.
 - [Map asset commands](/tools_v2/xtask/src/commands/map/README.md) — the xtask commands that wrap
   `world` and the blueprint compiler.
 - [Developer tools documentation](/documentation_v2/tools_v2/developer-tools/README.md) — the
-  Enfusion script oracle and the map raster pipeline, end to end.
+  Enfusion script oracle, the map raster pipeline and the staging verification engines, end to end.
 - [Terrain export and map assets](/documentation_v2/assets_v2/terrain_export_and_map_assets.md) —
   the world export flow from Workbench to the committed terrain.

@@ -10,7 +10,7 @@ commands read these files, carry them to the host, or print how to install them.
 tools_v2/xtask/deploy/
 ├── Caddyfile.website   the Caddy site on :3080: the built app, with API paths proxied to :8080
 ├── deploy.env.example  the settings template, copied to the gitignored deploy.env beside it
-└── systemd/            user units for the API, game server, fleet host agent and database backups
+└── systemd/            user units for the API, the game server fleet, its host agents and relay, and database backups
 ```
 
 ## How it works
@@ -65,23 +65,32 @@ systemd/           ──see that folder's README for what installs each unit
   Caddy), `TBD_SKIP_SPA_BUILD` (the app build only: Caddy still starts and serves the build
   already on the host) and `TBD_SKIP_API_BUILD`. `TBD_REMOTE_DIR`, `TBD_SSH_HOST` and
   `TBD_PROFILE_DIR` are refused when they contain `prairielearn` in any case.
-- Game server, read by `tools_v2/xtask/src/commands/deploy/staging/config.rs`:
-  `TBD_MOD_RUNTIME_CREDENTIAL` (a `mod_runtime` machine credential, the mod's only secret) is
-  required.
-  `TBD_SERVER_MODE` defaults to `config`, which also needs a mod source: `TBD_WORKSHOP_MOD_ID`, or
-  a modpack through `TBD_MODPACK_JSON` or `TBD_MODPACK_URL`; the `addons` mode needs none and
-  registers no joinable room. Settings with defaults: `TBD_BACKEND_URL` (`http://127.0.0.1:8080`),
-  `TBD_ADDON_GUID`, `TBD_SCENARIO` (the [mission header](/documentation_v2/glossary/g_to_m.md#mission-header)
-  the server boots, `{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf`), `TBD_SERVER_DIR`,
-  `TBD_GAME_PORT` (2001), `TBD_A2S_PORT` (17777, which must differ from the game port),
-  `TBD_PUBLIC_ADDRESS` (an IPv4 address; unset, the first IPv4 address `TBD_SSH_HOST` resolves to
-  at deploy time, and the deploy stops when there is none), `TBD_SERVER_NAME`, `TBD_ADMIN_PASSWORD`,
-  `TBD_MAX_PLAYERS` (64), `TBD_ADMIN_IDENTITY_IDS`, `TBD_SERVER_CONFIG_REMOTE`,
+- Game server fleet, read by `tools_v2/xtask/src/commands/deploy/staging/config.rs` and
+  `fleet_instances.rs` beside it: `TBD_FLEET_INSTANCES` (5, at most 5) instances, instance N on game
+  port `TBD_FLEET_GAME_PORT_BASE` + N (2000), A2S port `TBD_FLEET_A2S_PORT_BASE` + N (17776) and
+  loopback RCON port `TBD_FLEET_RCON_PORT_BASE` + N (19998), all distinct; the host agent of
+  `TBD_FLEET_RELAY_INSTANCE` polls the relay on `127.0.0.1:TBD_FLEET_RELAY_PORT`, which is then
+  required, and the other agents poll `TBD_HOST_AGENT_API_URL` (default `TBD_BACKEND_URL`, https or
+  loopback http). Every instance starts with `-config` and needs a mod source:
+  `TBD_WORKSHOP_MOD_ID`, or a modpack through `TBD_MODPACK_JSON` or `TBD_MODPACK_URL`. Settings with
+  defaults: `TBD_BACKEND_URL` (`http://127.0.0.1:8080`), `TBD_ADDON_GUID`, `TBD_SCENARIO` (the
+  [mission header](/documentation_v2/glossary/g_to_m.md#mission-header) a new instance boots,
+  `{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf`), `TBD_SERVER_DIR` (the install of Steam app
+  1890870, the experimental server), `TBD_PUBLIC_ADDRESS` (an IPv4 address; unset, the first IPv4
+  address `TBD_SSH_HOST` resolves to at deploy time, and the deploy stops when there is none),
+  `TBD_ADMIN_PASSWORD`, `TBD_MAX_PLAYERS` (64), `TBD_ADMIN_IDENTITY_IDS`,
   `TBD_BOOT_VERIFY_TIMEOUT` (180 s), `TBD_MODPACK_TOKEN` and `TBD_WORKSHOP_MOD_NAME`
-  (`TBD_Framework`).
-- Fleet host agent, read only when `TBD_INSTALL_HOST_AGENT=1`: `TBD_HOST_AGENT_CREDENTIAL` and
-  `TBD_RCON_PASSWORD` are required; `TBD_RCON_PORT` defaults to 19999 and
-  `TBD_HOST_AGENT_API_URL` to `TBD_BACKEND_URL`.
+  (`TBD_Framework`). `TBD_PROFILE_DIR` names the single-instance profile that
+  `--migrate-single-instance` archives.
+- No secret is a setting. The deploy refuses, naming the replacement, a file that still assigns
+  `TBD_MOD_RUNTIME_CREDENTIAL`, `TBD_HOST_AGENT_CREDENTIAL`, `TBD_RCON_PASSWORD`, `TBD_RCON_PORT`,
+  `TBD_GAME_PORT`, `TBD_A2S_PORT`, `TBD_INSTALL_HOST_AGENT`, `TBD_SERVER_MODE`, `TBD_SERVER_NAME` or
+  `TBD_SERVER_CONFIG_REMOTE`. Each instance's credentials are files on the host under
+  `~/tbd/fleet/instance-N/secrets/`, its RCON password is generated there, and the join password is
+  the host's `~/tbd/fleet/join-password`.
+- Staging verification harness, read by `cargo xtask staging`: `TBD_STAGING_DB_CONTAINER`
+  (`tbd_staging_db`), `TBD_STAGING_OPERATOR_DISCORD_ID`, `TBD_STAGING_PARTNER_GUILD_ID`,
+  `TBD_STAGING_PARTNER_ROLE_ID`, `TBD_LOAD_TARGET_ORIGIN` and `TBD_LOAD_SOURCE_ADDRESSES`.
 
 `Caddyfile.website` listens on `:3080` and sends the cross-origin isolation headers the
 [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s WebAssembly needs
@@ -94,6 +103,11 @@ folder read-only at `/etc/tbd-caddy` and `apps/website/frontend/` read-only at
 `/srv/tbd-frontend`, so the site root `/srv/tbd-frontend/dist` is the built app wherever the
 checkout sits. The service runs on the host's network, so Caddy listens on the host's `:3080` and
 the API sees every proxied request come from `127.0.0.1`, the proxy its `TRUSTED_PROXIES` trusts.
+Caddy trusts forwarded addresses only from the tunnel's loopback peer
+(`trusted_proxies static 127.0.0.1/32` in the global `servers` block of `Caddyfile.website`): it
+keeps the `X-Forwarded-For` that `cloudflared` sends and replaces any other peer's with that
+peer's own address, so the API keys each visitor by their real address and each LAN client by its
+own.
 
 ## Installed by
 

@@ -2,19 +2,23 @@
 //! anything reaches the host.
 //!
 //! **Role:** builds [`Env`] from `deploy.env` and the process environment, fills in the defaults,
-//! and refuses what the host or the engine would refuse ([`Env::validate`]).
+//! refuses the settings the fleet does not read ([`RETIRED_SETTINGS`]), and refuses what the host
+//! or the engine would refuse ([`Env::validate`]).
 //!
 //! **Position:** fed by [`crate::core::deploy_environment`], which owns the file's grammar and the
 //! precedence rule (the file decides every key it assigns; the process environment fills only the
-//! keys it never assigns); consumed by the render, the payloads and the deploy pipeline.
+//! keys it never assigns); consumed by the render, the payloads and the deploy pipeline. The fleet
+//! settings are [`super::fleet_instances::FleetSettings`]'s.
 //!
 //! **Signals & state:** none; [`Env`] is built once per run. The public address default asks the
 //! resolver for the host's IPv4 address.
 //!
-//! **Invariants:** the remote folders default under the deploy user's home
-//! ([`DeployHostFolder`]); `publicAddress` is `TBD_PUBLIC_ADDRESS` when set, which must be IPv4,
-//! else the first IPv4 address `TBD_SSH_HOST` resolves to at deploy time, else the deploy stops;
-//! the server config is rendered from these values and nothing else.
+//! **Invariants:** no secret is a setting: machine credentials, RCON passwords and the join password
+//! live only in files on the host; the remote folders default under the deploy user's home
+//! ([`DeployHostFolder`]); `backend_url` is [`fleet_instances::backend_url`]'s reading, the one
+//! `cargo xtask staging` shares; `publicAddress` is `TBD_PUBLIC_ADDRESS` when set, which must be
+//! IPv4, else the first IPv4 address `TBD_SSH_HOST` resolves to at deploy time, else the deploy
+//! stops; the server configs are rendered from these values and nothing else.
 //!
 //! ── WHERE `game.mods[]` COMES FROM ───────────────────────────────────────────────────────────
 //!
@@ -63,6 +67,7 @@ use std::path::Path;
 
 use regex::Regex;
 
+use super::fleet_instances::{self, FleetSettings, MAXIMUM_FLEET_INSTANCES};
 use crate::core::deploy_environment::{
     DeployEnvironment, DeployHost, DeployHostFolder, SettingError,
 };
@@ -73,41 +78,86 @@ pub struct Env {
     /// `TBD_SSH_HOST`: the ssh destination, and the name the public address resolves from.
     pub deploy_host: DeployHost,
     pub remote_dir: String,
+    /// `TBD_PROFILE_DIR`: the single-instance server's profile, which
+    /// `--migrate-single-instance` archives. No fleet instance uses it.
     pub profile_dir: String,
+    /// `TBD_ADDONS_STAGING`: the `-addonsDir` every instance shares.
     pub addons_staging: String,
-    /// `TBD_MOD_RUNTIME_CREDENTIAL`: the game runtime's `mod_runtime` machine credential, written
-    /// into the profile's `TBD_BackendConfig.json` as `machineCredential`.
-    pub mod_runtime_credential: String,
+    /// `TBD_BACKEND_URL` without a trailing `/` ([`fleet_instances::backend_url`]): every
+    /// instance profile's `backendUrl`, and the origin the health check probes.
     pub backend_url: String,
     pub addon_guid: String,
+    /// `TBD_SCENARIO`: the scenario of an instance whose config does not exist yet.
     pub scenario: String,
+    /// `TBD_SERVER_DIR`: the install of Steam app 1890870, the experimental dedicated server.
     pub server_dir: String,
-    pub server_mode: String,
     pub workshop_mod_id: String,
-    /// `publicAddress` of the server config: the address the backend room advertises.
+    /// `publicAddress` of every server config: the address the backend rooms advertise.
     pub public_address: Ipv4Addr,
-    pub game_port: String,
-    pub a2s_port: String,
-    pub server_name: String,
     pub admin_password: String,
     pub max_players: String,
     pub admin_identity_ids: String,
-    pub server_config_remote: String,
     pub boot_verify_timeout: String,
     pub modpack_json: String,
     pub modpack_url: String,
     pub modpack_token: String,
     pub workshop_mod_name: String,
-    /// The host agent install, when `TBD_INSTALL_HOST_AGENT=1`.
-    pub host_agent: Option<super::host_agent::HostAgentSettings>,
+    /// The instances, their ports and the relay.
+    pub fleet: FleetSettings,
     pub ssh_pass: Option<String>,
     pub ssh_identity_file: Option<String>,
 }
 
+/// Settings the fleet deploy does not read, each with what the fleet reads instead. A deploy file
+/// that assigns one is refused, so no value is silently ignored and no secret stays on the
+/// development machine.
+pub const RETIRED_SETTINGS: &[(&str, &str)] = &[
+    (
+        "TBD_MOD_RUNTIME_CREDENTIAL",
+        "each instance's mod_runtime credential lives on the host in \
+         ~/tbd/fleet/instance-N/secrets/mod-runtime-credential",
+    ),
+    (
+        "TBD_HOST_AGENT_CREDENTIAL",
+        "each instance's host_agent credential lives on the host in \
+         ~/tbd/fleet/instance-N/secrets/host-agent-credential",
+    ),
+    (
+        "TBD_RCON_PASSWORD",
+        "each instance's RCON password is generated on the host into \
+         ~/tbd/fleet/instance-N/secrets/rcon-password",
+    ),
+    (
+        "TBD_RCON_PORT",
+        "instance N's RCON port is TBD_FLEET_RCON_PORT_BASE + N",
+    ),
+    (
+        "TBD_GAME_PORT",
+        "instance N's game port is TBD_FLEET_GAME_PORT_BASE + N",
+    ),
+    (
+        "TBD_A2S_PORT",
+        "instance N's A2S port is TBD_FLEET_A2S_PORT_BASE + N",
+    ),
+    (
+        "TBD_INSTALL_HOST_AGENT",
+        "every fleet instance runs its host agent",
+    ),
+    (
+        "TBD_SERVER_MODE",
+        "every fleet instance starts with -config",
+    ),
+    ("TBD_SERVER_NAME", "instance N is named \"TBD Staging N\""),
+    (
+        "TBD_SERVER_CONFIG_REMOTE",
+        "instance N's config is ~/tbd/fleet/instance-N/server.config.json",
+    ),
+];
+
 /// `dirname`, POSIX. Strip trailing slashes, drop the last component, and answer `.` for a bare
-/// name. Used only for the `TBD_SERVER_CONFIG_REMOTE` default; measured against coreutils:
-/// `/p/q`→`/p`, `/p`→`/`, `p`→`.`, `/p/q/`→`/p`.
-fn dirname(p: &str) -> String {
+/// name. Used for the single-instance server config beside `TBD_PROFILE_DIR`; measured against
+/// coreutils: `/p/q`→`/p`, `/p`→`/`, `p`→`.`, `/p/q/`→`/p`.
+pub(super) fn dirname(p: &str) -> String {
     let s = p.trim_end_matches('/');
     if s.is_empty() {
         return if p.starts_with('/') {
@@ -155,6 +205,20 @@ fn public_address(
     })
 }
 
+/// Every [`RETIRED_SETTINGS`] key the settings still assign, as refusals naming the replacement.
+pub fn retired_setting_refusals(environment: &DeployEnvironment) -> Vec<SettingError> {
+    RETIRED_SETTINGS
+        .iter()
+        .filter(|(key, _)| environment.value(key).is_some())
+        .map(|(key, replacement)| {
+            environment.invalid(
+                key,
+                format!("is no longer read ({replacement}); delete the assignment"),
+            )
+        })
+        .collect()
+}
+
 impl Env {
     /// Loads the deploy file, which must exist, and builds [`Env`] from it; a refusal is
     /// printed and answered with exit 1.
@@ -168,11 +232,18 @@ impl Env {
         }
     }
 
-    /// Requires what must be set and fills in the rest. Deploy-file values override the process
-    /// environment, so `TBD_A2S_PORT=1 cargo xtask deploy staging` is ignored when the deploy
-    /// file sets `TBD_A2S_PORT`; keys the file never assigns still come from the environment,
-    /// which is how `TBD_MODPACK_JSON=… --render-only` works.
+    /// Refuses every retired setting at once, then fills in the rest. Deploy-file values override
+    /// the process environment, so `TBD_MAX_PLAYERS=1 cargo xtask deploy staging` is ignored when
+    /// the deploy file sets `TBD_MAX_PLAYERS`; keys the file never assigns still come from the
+    /// environment, which is how `TBD_MODPACK_JSON=… --render-only` works.
     pub fn from_environment(environment: &DeployEnvironment) -> Result<Env, u8> {
+        let retired = retired_setting_refusals(environment);
+        if !retired.is_empty() {
+            for refusal in &retired {
+                eprintln!("{refusal}");
+            }
+            return Err(1);
+        }
         let refuse = |error: SettingError, hint: &str| -> u8 {
             eprintln!("{error}");
             if !hint.is_empty() {
@@ -182,12 +253,6 @@ impl Env {
         };
         let get = |k: &str| -> String { environment.value(k).unwrap_or_default().to_string() };
         let def = |k: &str, d: &str| -> String { environment.value_or(k, d).to_string() };
-        let req = |k: &str, hint: &str| -> Result<String, u8> {
-            environment
-                .required(k)
-                .map(str::to_string)
-                .map_err(|error| refuse(error, hint))
-        };
         let deploy_host = environment
             .deploy_host()
             .map_err(|error| refuse(error, ""))?;
@@ -202,70 +267,40 @@ impl Env {
         let server_dir = folder(DeployHostFolder::ServerInstall)?;
         let public_address =
             public_address(environment, &deploy_host).map_err(|error| refuse(error, ""))?;
-        let mod_runtime_credential = req(
-            "TBD_MOD_RUNTIME_CREDENTIAL",
-            "issue a mod_runtime credential for this server in Server Control",
-        )?;
-        let backend_url = def("TBD_BACKEND_URL", "http://127.0.0.1:8080");
-        let host_agent = if def("TBD_INSTALL_HOST_AGENT", "0") == "1" {
-            Some(super::host_agent::HostAgentSettings {
-                credential: req(
-                    "TBD_HOST_AGENT_CREDENTIAL",
-                    "required with TBD_INSTALL_HOST_AGENT=1: issue a host_agent credential for this server",
-                )?,
-                rcon_password: req(
-                    "TBD_RCON_PASSWORD",
-                    "required with TBD_INSTALL_HOST_AGENT=1",
-                )?,
-                rcon_port: def("TBD_RCON_PORT", "19999"),
-                api_base_url: def("TBD_HOST_AGENT_API_URL", &backend_url),
-            })
-        } else {
-            None
-        };
+        let backend_url = fleet_instances::backend_url(environment);
+        let fleet = FleetSettings::from_environment(environment).map_err(|error| {
+            refuse(
+                error,
+                &format!("the fleet runs 1 to {MAXIMUM_FLEET_INSTANCES} instances"),
+            )
+        })?;
 
         Ok(Env {
             deploy_host,
             remote_dir,
-            profile_dir: profile_dir.clone(),
+            profile_dir,
             addons_staging,
-            mod_runtime_credential,
             backend_url,
             addon_guid: def("TBD_ADDON_GUID", "B2C3D4E5F6A78901"),
-            // NOT `: "${TBD_SCENARIO:={69A85365FC09E2CA}Missions/...}"`. That idiom — which
-            // is what this line was — is silently truncated by bash: the `}` of the ResourceGUID
-            // closes the parameter expansion, so the default became `{69A85365FC09E2CA` and the
-            // rest of the line was parsed as literal text and discarded. Measured:
+            // NOT `: "${TBD_SCENARIO:={69A85365FC09E2CA}Missions/...}"`. That idiom is silently
+            // truncated by bash: the `}` of the ResourceGUID closes the parameter expansion, so the
+            // default became `{69A85365FC09E2CA` and the rest was discarded. Measured:
             //   $ : "${X:={69A85365FC09E2CA}Missions/TBD_Dev_POC.conf}"; echo "[$X]"
             //   [{69A85365FC09E2CA]
-            // Every deploy that did NOT override TBD_SCENARIO rendered a config the engine
-            // hard-rejects, and found out ~90 s into the boot, after a full rsync and script
-            // compile. Rust has no such parse, but `validate_server_config` still checks for the
-            // truncated shape — that validator is what caught it.
+            // Rust has no such parse, but `validate_server_config` still checks for the truncated
+            // shape, which the engine hard-rejects ~90 s into a boot.
             scenario: def(
                 "TBD_SCENARIO",
                 "{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf",
             ),
             server_dir,
-            // Server launch mode. `config` is THE DEFAULT and the only mode that is both correct
-            // and joinable; see `boot.rs` for why the default is not `addons` and why that is
-            // the wrong half to default to.
-            server_mode: def("TBD_SERVER_MODE", "config"),
             workshop_mod_id: get("TBD_WORKSHOP_MOD_ID"),
             public_address,
-            game_port: def("TBD_GAME_PORT", "2001"),
-            // MUST differ from TBD_GAME_PORT or replication fails.
-            a2s_port: def("TBD_A2S_PORT", "17777"),
-            server_name: def("TBD_SERVER_NAME", "TBD Staging POC"),
             admin_password: def("TBD_ADMIN_PASSWORD", "tbd-admin"),
             max_players: def("TBD_MAX_PLAYERS", "64"),
             // comma-separated identityIds → in-game admins (#tbd commands)
             admin_identity_ids: get("TBD_ADMIN_IDENTITY_IDS"),
-            server_config_remote: def(
-                "TBD_SERVER_CONFIG_REMOTE",
-                &format!("{}/server.config.json", dirname(&profile_dir)),
-            ),
-            // How long to wait for the engine to reach a verdict before failing the deploy.
+            // How long to wait for the engines to reach a verdict before failing the deploy.
             // Room registration landed 14 s after start on a measured 2026-08-01 boot, but that
             // number is not reliable — the playtest runner records the same binary and config
             // registering in 13 s on one boot and never across 300 s on another. This is a bound
@@ -275,7 +310,7 @@ impl Env {
             modpack_url: get("TBD_MODPACK_URL"),
             modpack_token: get("TBD_MODPACK_TOKEN"),
             workshop_mod_name: def("TBD_WORKSHOP_MOD_NAME", "TBD_Framework"),
-            host_agent,
+            fleet,
             ssh_pass: environment.value("TBD_SSH_PASS").map(str::to_string),
             ssh_identity_file: environment
                 .value("TBD_SSH_IDENTITY_FILE")
@@ -283,9 +318,15 @@ impl Env {
         })
     }
 
-    /// The gproj cross-check, the prairielearn refusal and the `TBD_SERVER_MODE` case, in the
-    /// bash's order (guid at 1143, prairielearn at 1197, mode at 1202). The order is observable:
-    /// a deploy.env with both a stale guid and a prairielearn path reports the guid.
+    /// The single-instance server config the migration archives: `server.config.json` beside
+    /// `TBD_PROFILE_DIR`.
+    pub fn single_instance_server_config(&self) -> String {
+        format!("{}/server.config.json", dirname(&self.profile_dir))
+    }
+
+    /// The gproj cross-check, the prairielearn refusal, the fleet's port rules, the mod source and
+    /// the admin ids, in that order. The order is observable: a deploy.env with both a stale guid
+    /// and a prairielearn path reports the guid.
     pub fn validate(&self, mono_root: &Path) -> Result<(), u8> {
         // The GUID is the join between the deployed checkout and game.mods[], and if
         // deploy.env drifts from the gproj the addon assertion starts checking the wrong id — it
@@ -306,90 +347,61 @@ impl Env {
             eprintln!("Refusing to deploy: TBD_REMOTE_DIR must not be under prairielearn/");
             return Err(1);
         }
-        super::host_agent::validate_machine_credential(
-            "TBD_MOD_RUNTIME_CREDENTIAL",
-            &self.mod_runtime_credential,
-        )?;
-        if let Some(host_agent) = &self.host_agent {
-            host_agent.validate(&self.server_mode)?;
+        if let Err(problem) = self.fleet.check_port_rules() {
+            eprintln!("Refusing to deploy: {problem}.");
+            return Err(1);
         }
-        match self.server_mode.as_str() {
-            "addons" => {}
-            "config" => {
-                // TBD_WORKSHOP_MOD_ID is the single-mod env fallback and is only required when
-                // no modpack document is configured — a modpack carries its own workshop ids.
-                if self.workshop_mod_id.is_empty()
-                    && self.modpack_json.is_empty()
-                    && self.modpack_url.is_empty()
-                {
-                    eprintln!(
-                        "TBD_SERVER_MODE=config requires TBD_WORKSHOP_MOD_ID (publish tbd-framework"
-                    );
-                    eprintln!(
-                        "to the Workshop first, then set its modId in deploy.env), or a modpack"
-                    );
-                    eprintln!("source: TBD_MODPACK_JSON=<file> / TBD_MODPACK_URL=<url>.");
-                    return Err(1);
-                }
-                if self.a2s_port == self.game_port {
-                    eprintln!(
-                        "TBD_A2S_PORT must differ from TBD_GAME_PORT (a2s/game can't share a UDP port)."
-                    );
-                    return Err(1);
-                }
-                // Validate admin ids against the ENGINE's own schema, here, before anything
-                // is rsynced. Both patterns copied verbatim out of the engine's rejection of a bad
-                // value (1.7.0.54):
-                //   BACKEND (E): RegEx Pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-                //   BACKEND (E): RegEx Pattern: "^[0-9]{17}$"
-                // A bad entry is a HARD FATAL at boot ("There are errors in server config!" ->
-                // "Unable to initialize the game") reported ~90 s in, AFTER a full deploy and
-                // script compile. Failing here costs a millisecond and names the value instead of
-                // burning a deploy cycle.
-                if !self.admin_identity_ids.is_empty() {
-                    let uuid = Regex::new(
-                        "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
-                    )
-                    .expect("static");
-                    let steam = Regex::new("^[0-9]{17}$").expect("static");
-                    for raw in self.admin_identity_ids.split(',') {
-                        let aid = xargs_like(raw);
-                        if aid.is_empty() {
-                            continue;
-                        }
-                        if !uuid.is_match(&aid) && !steam.is_match(&aid) {
-                            eprintln!(
-                                "TBD_ADMIN_IDENTITY_IDS contains '{aid}', which is neither an identityId nor a SteamID."
-                            );
-                            eprintln!(
-                                "  identityId: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx  (lowercase hex)"
-                            );
-                            eprintln!("  SteamID:    17 digits");
-                            eprintln!(
-                                "  The engine rejects anything else and refuses to start; this is its schema, not ours."
-                            );
-                            return Err(1);
-                        }
-                    }
-                } else {
-                    println!(
-                        "NOTE: TBD_ADMIN_IDENTITY_IDS is empty, so game.admins[] will be []. Every '#tbd'"
-                    );
-                    println!(
-                        "      command answers 'TBD: admin only.' — TBD_AdminService.IsAdmin() resolves from"
-                    );
-                    println!(
-                        "      vanilla's SCR_PlayerListedAdminManagerComponent, which is populated ONLY from"
-                    );
-                    println!(
-                        "      game.admins[]. 'passwordAdmin' is a different mechanism and does not feed it."
-                    );
-                }
+        // TBD_WORKSHOP_MOD_ID is the single-mod env fallback and is only required when no modpack
+        // document is configured — a modpack carries its own workshop ids.
+        if self.workshop_mod_id.is_empty()
+            && self.modpack_json.is_empty()
+            && self.modpack_url.is_empty()
+        {
+            eprintln!(
+                "The fleet's -config servers need TBD_WORKSHOP_MOD_ID (publish tbd-framework"
+            );
+            eprintln!("to the Workshop first, then set its modId in deploy.env), or a modpack");
+            eprintln!("source: TBD_MODPACK_JSON=<file> / TBD_MODPACK_URL=<url>.");
+            return Err(1);
+        }
+        // Validate admin ids against the ENGINE's own schema, here, before anything is rsynced.
+        // Both patterns copied verbatim out of the engine's rejection of a bad value (1.7.0.54):
+        //   BACKEND (E): RegEx Pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        //   BACKEND (E): RegEx Pattern: "^[0-9]{17}$"
+        // A bad entry is a HARD FATAL at boot ("There are errors in server config!" -> "Unable to
+        // initialize the game") reported ~90 s in, AFTER a full deploy and script compile.
+        if self.admin_identity_ids.is_empty() {
+            println!(
+                "NOTE: TBD_ADMIN_IDENTITY_IDS is empty, so game.admins[] will be []. Every '#tbd'"
+            );
+            println!(
+                "      command answers 'TBD: admin only.' — TBD_AdminService.IsAdmin() resolves from"
+            );
+            println!(
+                "      vanilla's SCR_PlayerListedAdminManagerComponent, which is populated ONLY from"
+            );
+            println!(
+                "      game.admins[]. 'passwordAdmin' is a different mechanism and does not feed it."
+            );
+            return Ok(());
+        }
+        let uuid = Regex::new("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+            .expect("static");
+        let steam = Regex::new("^[0-9]{17}$").expect("static");
+        for raw in self.admin_identity_ids.split(',') {
+            let aid = xargs_like(raw);
+            if aid.is_empty() || uuid.is_match(&aid) || steam.is_match(&aid) {
+                continue;
             }
-            other => {
-                eprintln!("Invalid TBD_SERVER_MODE='{other}' (expected: addons | config)");
-                return Err(1);
-            }
+            eprintln!(
+                "TBD_ADMIN_IDENTITY_IDS contains '{aid}', which is neither an identityId nor a SteamID."
+            );
+            eprintln!("  identityId: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx  (lowercase hex)");
+            eprintln!("  SteamID:    17 digits");
+            eprintln!(
+                "  The engine rejects anything else and refuses to start; this is its schema, not ours."
+            );
+            return Err(1);
         }
         Ok(())
     }

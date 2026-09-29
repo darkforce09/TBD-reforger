@@ -1,8 +1,9 @@
 //! Prometheus metrics and the health probe — everything that reports on the running API.
 //!
-//! * [`metrics_registry`] — a dependency-free Prometheus registry, one instance per
-//!   [`crate::core::http_router::router`] call (so tests are hermetic and there is no
-//!   process-global mutable state).
+//! * [`metrics_registry`] — a dependency-free Prometheus registry, one instance per application
+//!   state ([`crate::core::application_state::AppState::metrics_registry`]), which the router and
+//!   the background workers share (so tests are hermetic and there is no process-global mutable
+//!   state).
 //! * [`metrics_exposition`] — the 0.0.4 text format and `GET /metrics`, gated on the operator's
 //!   `OBSERVABILITY_TOKEN` bearer ([`observability_auth`]).
 //! * [`request_observer`] — the middleware that feeds the registry.

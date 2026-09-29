@@ -1,10 +1,12 @@
 # Fleet host agent
 
 The `fleet-host-agent` crate: the [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent)
-that runs on each game host beside the Arma Reforger dedicated server. It polls the
+that runs beside each Arma Reforger dedicated server of a game host, one agent per fleet instance.
+It polls the
 [API](/documentation_v2/glossary/a_to_f.md#api) outbound over HTTPS for the
 [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command) addressed to its server, performs each
-one through fixed process-control actions, [RCON](/documentation_v2/glossary/n_to_z.md#rcon) reads or a
+one through fixed process-control actions, [RCON](/documentation_v2/glossary/n_to_z.md#rcon) reads, an
+operator's console line sent once over RCON, or a
 [mission header](/documentation_v2/glossary/g_to_m.md#mission-header) switch in the server's JSON config,
 and reports every step to the API's command ledger.
 
@@ -42,7 +44,9 @@ command at a time:
 
 The host performs `start`, `stop` and `restart` of the game server's systemd user unit, judged by
 the unit state read back after a dwell rather than by `systemctl`'s exit status; `list_players`
-over RCON (`#players`); and `restart_with_mission`, a cross-terrain
+over RCON (`#players`); `console_command`, one operator line for the game server's console,
+transmitted once over RCON with its reply of at most 4096 bytes as the outcome; and
+`restart_with_mission`, a cross-terrain
 [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) that rewrites only
 `game.scenarioId` in the server config and then restarts the unit. `broadcast`, `kick` and
 `load_mission` run in the [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime), and the agent
@@ -53,9 +57,12 @@ refuses them. `src/command_execution/README.md` tables each action's success rul
 - No shell: `systemctl` runs directly with fixed argument vectors whose only variable is the unit
   name validated at startup, with a cleared environment (only `XDG_RUNTIME_DIR` and
   `DBUS_SESSION_BUS_ADDRESS` pass), no standard input and a timeout.
-- No free text reaches the host: each claimed command is validated again, a mission header
-  reaches the config only as a JSON string value, and RCON carries only the agent's fixed read
-  commands.
+- Free text reaches the host only as a console line: each claimed command is validated again, a
+  mission header reaches the config only as a JSON string value, and RCON carries the agent's
+  fixed read commands and the console line. The line is one line of at most 256 bytes without
+  control characters or line separators and never starts with `@`, so it cannot end the agent's
+  own RCON login; it reaches only the game server's RCON port, in one packet that is never sent
+  again, and a line that gets no reply is reported as possibly run.
 - The server config changes atomically and surgically: only `game.scenarioId` changes, the file
   mode is kept, and a failure at any step leaves the original file and no partial file.
 - Secrets live in files the configuration names, each readable by its owner alone, and go only to
@@ -74,27 +81,35 @@ Run these from the repository root:
 ```bash
 cargo test -p fleet-host-agent --locked     # unit and integration tests; loopback sockets only
 cargo build --release -p fleet-host-agent   # target/release/fleet-host-agent
-cargo xtask deploy staging --dry-run        # prints the staging plan; host agent steps with TBD_INSTALL_HOST_AGENT=1
+cargo xtask deploy staging --dry-run        # prints the staging plan, the host agent of every fleet instance included
 ```
 
-With `TBD_INSTALL_HOST_AGENT=1` in `tools_v2/xtask/deploy/deploy.env`, `cargo xtask deploy staging`
-builds the agent on the host that `TBD_SSH_HOST` names, writes `~/.config/fleet-host-agent/`
-(`agent.toml`, `machine-credential` and `rcon-password`, mode 600 in a mode 700 directory),
-installs the user unit `tools_v2/xtask/deploy/systemd/fleet-host-agent.service`, enables lingering,
-starts the unit and fails unless it is `active`. It needs `TBD_SERVER_MODE=config`, a
-`TBD_HOST_AGENT_CREDENTIAL` and a `TBD_RCON_PASSWORD`; the rendered server config then gains a
-loopback `rcon` block with monitor permission.
+`cargo xtask deploy staging` runs one agent per fleet instance on the host that `TBD_SSH_HOST`
+names: it builds the agent there, installs it as `~/.local/bin/fleet-host-agent`, writes each
+instance's `~/.config/fleet-host-agent/instance-N/agent.toml` (mode 600 in a mode 700 directory),
+installs the template unit `tools_v2/xtask/deploy/systemd/fleet-host-agent@.service`, enables
+lingering, restarts `fleet-host-agent@N.service` for every instance N from 1 to
+`TBD_FLEET_INSTANCES` and fails unless each is `active`. Each configuration names its instance's
+game server unit `tbd-reforger@N.service`, its `~/tbd/fleet/instance-N/server.config.json` and two
+owner-only files under `~/tbd/fleet/instance-N/secrets/`: `host-agent-credential`, which
+`cargo xtask staging provision-fleet` writes, and `rcon-password`, which the deploy generates on
+the host. Each instance's rendered server config carries a loopback `rcon` block with admin
+permission on port `TBD_FLEET_RCON_PORT_BASE + N`. Every agent polls `TBD_HOST_AGENT_API_URL`
+(default `TBD_BACKEND_URL`) except the relay instance's (`TBD_FLEET_RELAY_INSTANCE`, instance 5
+on staging), which polls the acknowledgement-dropping relay on `127.0.0.1:TBD_FLEET_RELAY_PORT`,
+itself forwarding to the API.
 
-By hand, as the user that runs the game server's unit (so `systemctl --user` reaches that user's
-manager): install the binary as `~/.local/bin/fleet-host-agent`, write the configuration and the
-two secret files under `~/.config/fleet-host-agent/` with mode 600, copy the unit to
-`~/.config/systemd/user/`, then:
+By hand, as the user that runs the game server units (so `systemctl --user` reaches that user's
+manager): install the binary as `~/.local/bin/fleet-host-agent`, write instance N's configuration
+as `~/.config/fleet-host-agent/instance-N/agent.toml` and its two secret files under
+`~/tbd/fleet/instance-N/secrets/`, each mode 600 in a mode 700 directory, copy the template unit
+to `~/.config/systemd/user/`, then, for instance 1:
 
 ```bash
 systemctl --user daemon-reload
-systemctl --user enable --now fleet-host-agent.service
-loginctl enable-linger "$USER"                  # keep the user manager and both units running without a login
-journalctl --user -u fleet-host-agent.service -f
+systemctl --user enable --now fleet-host-agent@1.service
+loginctl enable-linger "$USER"                  # keep the user manager and the fleet's units running without a login
+journalctl --user -u fleet-host-agent@1.service -f
 ```
 
 The agent stops claiming on SIGTERM or SIGINT, finishes and reports a command in progress, sends
@@ -103,33 +118,36 @@ and allows 200 s for a stop.
 
 ## Configuration
 
-The binary takes one argument, the path of its TOML configuration file:
+The binary takes one argument, the path of its TOML configuration file. The example is fleet
+instance 1's, for a deploy user whose home is `/home/tbd`, with the optional keys at their
+defaults:
 
 ```toml
 # The API origin: https, or http only on a loopback host.
 api_base_url = "https://tbd.example.org"
 # The host_agent machine credential (tbdm_...), issued with POST /api/v1/servers/{id}/credentials.
-credential_file = "/home/tbd/.config/fleet-host-agent/machine-credential"
+credential_file = "/home/tbd/tbd/fleet/instance-1/secrets/host-agent-credential"
 # Seconds between claims while nothing is queued (1 to 300, default 5).
 poll_interval_seconds = 5
 
 [game_server]
-# The game server's systemd user unit.
-systemd_user_unit = "tbd-reforger.service"
+# The game server's systemd user unit: tbd-reforger@N.service for fleet instance N.
+systemd_user_unit = "tbd-reforger@1.service"
 # The dedicated server's JSON config (its -config file), which restart_with_mission rewrites:
 # an absolute path to an existing file the agent can write, in a directory it can write.
-server_config_path = "/home/tbd/reforger/configs/server.json"
+server_config_path = "/home/tbd/tbd/fleet/instance-1/server.config.json"
 # Seconds to wait after start and restart before reading the unit's state (0 to 30, default 8).
 start_dwell_seconds = 8
 # Absolute path of systemctl (default /usr/bin/systemctl).
 systemctl_program = "/usr/bin/systemctl"
 
 [rcon]
-# The address (an IP address) and port (default 19999) of the server config's rcon block.
+# The address (an IP address) and port (default 19999) of the server config's rcon block;
+# fleet instance N's port is TBD_FLEET_RCON_PORT_BASE + N.
 address = "127.0.0.1"
 port = 19999
 # The server config's rcon.password.
-password_file = "/home/tbd/.config/fleet-host-agent/rcon-password"
+password_file = "/home/tbd/tbd/fleet/instance-1/secrets/rcon-password"
 ```
 
 Loading rejects an unknown key and validates every value before the agent starts; each secret
@@ -156,13 +174,14 @@ bits. `src/agent_configuration/README.md` lists every rule. `RUST_LOG` sets the 
   `contracts_v2/definitions/machine-credential.schema.json`; the calling user's systemd manager;
   the dedicated server's JSON config and its BattlEye RCon port.
 - Used by: `cargo xtask deploy staging` (`tools_v2/xtask/src/commands/deploy/staging/host_agent.rs`),
-  which builds, configures and installs it with the unit
-  `tools_v2/xtask/deploy/systemd/fleet-host-agent.service`; over HTTP, the API's fleet command
+  which builds it, configures one agent per fleet instance and runs each as an instance of
+  `tools_v2/xtask/deploy/systemd/fleet-host-agent@.service`; over HTTP, the API's fleet command
   ledger, which Server Control and mission deployments feed.
 - Rules: the tests in `tests/` need no network beyond the loopback sockets they open, and
   `tests/test_support/` holds their stand-ins; the claim, fencing and reporting rules hold under
   the `host_agent_ledger_*` tests, the systemctl argument vectors and verdicts under the
-  `process_control_*` tests, and the RCON transport under the `rcon_transport_*` tests;
+  `process_control_*` tests, and the RCON transport, the console command's single transmission
+  included, under the `rcon_transport_*` tests;
   `cargo xtask verify file-length` covers `src/` and `tests/`.
 
 ## Related documentation

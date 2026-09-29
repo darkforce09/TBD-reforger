@@ -1,0 +1,14 @@
+{
+  "id_base": "9100000000000000000",
+  "accounts": 1100,
+  "discord_role": "Player",
+  "fixture_events": {
+    "count": 10,
+    "title_prefix": "[Load fixture]",
+    "factions": 2,
+    "squads_per_faction": 8,
+    "slots_per_squad": 8,
+    "start_offset_days": 14,
+    "mission_title": "TBD Staging Everon"
+  }
+}

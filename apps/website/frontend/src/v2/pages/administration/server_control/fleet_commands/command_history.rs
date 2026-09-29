@@ -3,7 +3,8 @@
 //! **Role:** the followed command's receipt — accepted, in flight, or how it ended, with an explicit
 //! unknown outcome for an indeterminate one — and every receipt of the server with its state,
 //! action, executor, who requested it and when, how many claims it took, its arguments, its
-//! observed outcome and its failure reason, and a cancel control on a queued one.
+//! observed outcome and its failure reason, and a cancel control on a queued one. A console
+//! command's reply is shown under both as the server sent it.
 //! **Position:** under the request controls in the fleet command section of the selected server's
 //! card.
 //! **Signals & state:** reads the [`CommandConsole`]; cancels through it.
@@ -11,7 +12,8 @@
 //! reads as queued, an indeterminate one as an unknown outcome. Only a queued command offers a
 //! cancel control, because only a command no executor has claimed can be cancelled. The executor's
 //! fencing token belongs to the claim and is not part of a receipt, so the history shows the
-//! claim count instead.
+//! claim count instead. A console reply is shown as text, line breaks kept, and never parsed or
+//! rewritten.
 
 use super::super::machine_credentials::executor_label;
 use super::command_wording::{
@@ -83,6 +85,7 @@ fn followed_panel(receipt: FleetCommandReceipt) -> impl IntoView {
             class=format!("rounded-xl border px-4 py-3 text-sm text-on-surface {tone}")>
             <p class="font-mono text-label-sm tracking-widest text-outline uppercase">"Your command"</p>
             <p class="mt-1">{text}</p>
+            {console_reply(&receipt)}
         </div>
     }
 }
@@ -150,6 +153,7 @@ fn history_row(
                 .map(|observed| {
                     view! { <p class="mt-1 break-all text-xs text-on-surface">{format!("Outcome — {observed}")}</p> }
                 })}
+            {console_reply(&receipt)}
             {receipt
                 .failure_reason
                 .clone()
@@ -164,4 +168,18 @@ fn history_row(
                 })}
         </li>
     }
+}
+
+/// A console command's reply as the server sent it; nothing for another action or for an empty
+/// reply, which the outcome line already names.
+fn console_reply(receipt: &FleetCommandReceipt) -> Option<impl IntoView> {
+    let reply = receipt.console_outcome()?.response;
+    (!reply.trim().is_empty()).then(|| {
+        view! {
+            <pre data-testid="fleet-command-console-reply"
+                class="mt-2 max-h-60 overflow-auto whitespace-pre-wrap break-all rounded-md border border-white/10 bg-surface px-3 py-2 font-mono text-code-md text-on-surface">
+                {reply}
+            </pre>
+        }
+    })
 }

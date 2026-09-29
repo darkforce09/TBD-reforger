@@ -3,6 +3,7 @@
 //! retention.
 
 pub mod account_authority;
+pub mod account_registration;
 pub mod cached_membership_permissions;
 pub mod discord_client;
 pub mod discord_membership_cache;

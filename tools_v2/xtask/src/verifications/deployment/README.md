@@ -18,11 +18,13 @@ tools_v2/xtask/src/verifications/deployment/
 
 ## How it works
 
-The gate reads two sources as text: `WEBSITE_DEPLOY_SOURCE`,
+The gate reads the deploy sources as text: `WEBSITE_DEPLOY_SOURCE`,
 `tools_v2/xtask/src/commands/deploy/website/remote_steps.rs`, which builds every compose command
-the website deploy sends to the host, and `STAGING_DEPLOY_SOURCE`,
-`tools_v2/xtask/src/commands/deploy/staging/remote/ssh_argv.rs`, the game server deploy's
-pipeline. After stripping `//` and `#` comments it takes every line that runs compose
+the website deploy sends to the host, and every production source of `STAGING_DEPLOY_MODULE`, the
+game server deploy: `tools_v2/xtask/src/commands/deploy/staging.rs` and each `.rs` file under
+`tools_v2/xtask/src/commands/deploy/staging/` outside a `tests/` folder, the pipeline and each
+payload module alike. The pipeline, `STAGING_DEPLOY_PIPELINE`
+(`tools_v2/xtask/src/commands/deploy/staging/remote/fleet_deploy.rs`), must exist. After stripping `//` and `#` comments it takes every line that runs compose
 (`docker compose`, `podman compose`, `docker-compose` or `podman-compose`; the compose file's own
 name does not count) and requires, reporting every failure of one run:
 
@@ -31,7 +33,7 @@ name does not count) and requires, reporting every failure of one run:
 2. each of those paths equals `apps/website/docker-compose.staging.yml`;
 3. no compose line names `BAD_PATH`, the same file name under `apps/website/api_v2/`;
 4. the website deploy's source never runs `cd` into `apps/website/api_v2`, under any quoting;
-5. the game server deploy's source holds no compose line;
+5. no source of the game server deploy holds a compose line, each named by its path;
 6. `apps/website/docker-compose.staging.yml` exists, and nothing, not even a dangling symlink,
    sits at `BAD_PATH`.
 
@@ -63,9 +65,12 @@ pass or fail from it.
     (`every_website_source_perturbation_bites`, `a_compose_command_in_the_game_server_deploy_bites`);
   - the pinned source is the one that builds the compose commands, not the step runner in front
     of it (`the_step_runner_cannot_substitute_for_the_compose_implementation`);
+  - every production source of the game server deploy is audited, and a missing pipeline is
+    "did not run", never a pass (`a_compose_command_in_any_game_server_deploy_source_bites`,
+    `a_missing_fleet_pipeline_does_not_read_as_pass`);
   - moving the compose file or the deploy code means changing `GOOD_PATH`,
-    `WEBSITE_DEPLOY_SOURCE` or `STAGING_DEPLOY_SOURCE` in `staging_compose_paths.rs`, and every
-    message follows from those constants.
+    `WEBSITE_DEPLOY_SOURCE`, `STAGING_DEPLOY_PIPELINE` or `STAGING_DEPLOY_MODULE` in
+    `staging_compose_paths.rs`, and every message follows from those constants.
 
 ## Related documentation
 

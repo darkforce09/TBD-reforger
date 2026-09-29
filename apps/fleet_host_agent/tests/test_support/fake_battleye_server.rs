@@ -1,8 +1,9 @@
 //! An in-process BattlEye RCon server for the transport tests. It is written from the protocol
 //! specification independently of the agent's codec, answers like an Arma Reforger server
-//! (`#players` gets a player listing, any other command an acknowledgement naming it, the empty
-//! keep-alive an empty answer), ignores commands from clients that are not logged in or whose
-//! login lapsed, and loses, corrupts, duplicates, reorders and fragments packets on request.
+//! (`#players` gets a player listing, a command given a scripted reply that reply, any other
+//! command an acknowledgement naming it, the empty keep-alive an empty answer), ignores commands
+//! from clients that are not logged in or whose login lapsed, and loses, corrupts, duplicates,
+//! reorders and fragments packets on request.
 
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -54,6 +55,8 @@ struct ServerState {
     /// Logged-in clients and when each last sent a command packet.
     sessions: HashMap<SocketAddr, Instant>,
     faults: Faults,
+    /// Replies given to particular commands in place of the default answer.
+    scripted_replies: HashMap<String, String>,
     login_attempts: usize,
     received_commands: Vec<ReceivedCommand>,
     executed_commands: Vec<String>,
@@ -76,6 +79,7 @@ impl FakeBattlEyeServer {
             idle_timeout,
             sessions: HashMap::new(),
             faults: Faults::default(),
+            scripted_replies: HashMap::new(),
             login_attempts: 0,
             received_commands: Vec::new(),
             executed_commands: Vec::new(),
@@ -95,6 +99,13 @@ impl FakeBattlEyeServer {
 
     pub fn set_faults(&self, faults: Faults) {
         self.state().faults = faults;
+    }
+
+    /// Answers every later `command` with `reply`.
+    pub fn set_reply(&self, command: &str, reply: &str) {
+        self.state()
+            .scripted_replies
+            .insert(command.to_owned(), reply.to_owned());
     }
 
     /// Forgets every login, as a restarted game server does.
@@ -226,9 +237,10 @@ impl ServerState {
         if take(&mut self.faults.discard_responses) {
             return Vec::new();
         }
-        let response = match text.as_str() {
-            "#players" => PLAYERS_RESPONSE.to_owned(),
-            other => format!("executed {other}"),
+        let response = match (self.scripted_replies.get(&text), text.as_str()) {
+            (Some(reply), _) => reply.clone(),
+            (None, "#players") => PLAYERS_RESPONSE.to_owned(),
+            (None, other) => format!("executed {other}"),
         };
         let mut datagrams = self.response_datagrams(sequence, response.as_bytes());
         if take(&mut self.faults.corrupt_responses) {

@@ -57,70 +57,42 @@ fn every_fail_closed_branch_fires() {
     assert!(modpack_mods_json(r#"{"mods":[{"name":"A","workshop_id":"W"}]}"#, "t").is_ok());
 }
 
+/// The check re-reads the file: a document that is not JSON, a truncated scenario and a shared
+/// A2S and game port are each refused, and the honest document beside them passes.
 #[test]
-fn validator_catches_the_truncated_scenario_and_the_port_clash() {
-    // The two cases a format-only validator is BLIND to.
-    let d = std::env::temp_dir().join(format!("tbd-t853-cfg-{}", std::process::id()));
+fn the_config_check_refuses_what_the_engine_refuses() {
+    let d = std::env::temp_dir().join(format!("tbd-config-check-{}", std::process::id()));
     let _ = fs::create_dir_all(&d);
-
-    let mut e = base();
-    e.scenario = "{69A85365FC09E2CA".into();
-    assert!(
-        render_server_config(&e, &e.scenario, &d.join("trunc.json")).is_err(),
-        "truncated scenario must fail"
-    );
-
-    let mut e = base();
-    e.a2s_port = e.game_port.clone();
-    assert!(
-        render_server_config(&e, &e.scenario, &d.join("clash.json")).is_err(),
-        "a2s == bindPort must fail"
-    );
-
-    // And the honest config must pass, or the two above are vacuous.
-    assert!(render_server_config(&base(), &base().scenario, &d.join("ok.json")).is_ok());
+    let write = |name: &str, text: &str| {
+        let path = d.join(name);
+        fs::write(&path, text).unwrap();
+        path
+    };
+    let honest = r#"{"bindAddress": "0.0.0.0", "bindPort": 2001, "publicAddress": "192.0.2.10",
+        "publicPort": 2001, "a2s": {"address": "0.0.0.0", "port": 17777},
+        "game": {"name": "TBD Staging 1", "passwordAdmin": "a", "admins": [],
+                 "scenarioId": "{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf", "maxPlayers": 64,
+                 "mods": [{"modId": "5EAF00DBEEF01234", "name": "TBD_Framework"}]},
+        "operating": {}}"#;
+    assert!(validate_server_config(&write("ok.json", honest)).is_ok());
+    let truncated = honest.replace("}Missions/TBD_Dev_POC.conf", "");
+    assert!(validate_server_config(&write("trunc.json", &truncated)).is_err());
+    let clash = honest.replace("\"port\": 17777", "\"port\": 2001");
+    assert!(validate_server_config(&write("clash.json", &clash)).is_err());
+    assert!(validate_server_config(&write("raw.json", "{\"bindPort\": not-a-port}")).is_err());
     let _ = fs::remove_dir_all(&d);
 }
 
 #[test]
-fn raw_substitution_can_emit_non_json_and_the_validator_catches_it() {
-    // ODDITY PINNED: the template does not escape. A quote in the server name breaks the
-    // document, and the "not valid JSON" branch — otherwise unreachable — fires.
-    let d = std::env::temp_dir().join(format!("tbd-t853-raw-{}", std::process::id()));
-    let _ = fs::create_dir_all(&d);
-    let mut e = base();
-    e.server_name = "a\" , \"evil\": 1, \"x\": \"b".into();
-    let p = d.join("raw.json");
-    let res = render_server_config(&e, &e.scenario, &p);
-    let text = fs::read_to_string(&p).unwrap_or_default();
-    assert!(
-        res.is_err() || text.contains("evil"),
-        "raw substitution must be observable"
-    );
-    // A non-numeric port is the cleaner case: it cannot parse at all.
-    let mut e = base();
-    e.game_port = "not-a-port".into();
-    assert!(render_server_config(&e, &e.scenario, &d.join("port.json")).is_err());
-    let _ = fs::remove_dir_all(&d);
-}
-
-#[test]
-fn render_only_refuses_addons_mode() {
-    let mut e = base();
-    e.server_mode = "addons".into();
-    assert_eq!(render_only(&e, "/tmp/never-written-t853.json"), 2);
-    assert!(!Path::new("/tmp/never-written-t853.json").exists());
-}
-
-#[test]
-fn curl_argv_is_stable() {
+fn curl_argv_is_stable_and_the_token_travels_on_stdin() {
     // NEVER EXECUTED: no credential of this tier exists anywhere in this program. The argv is
     // the only thing that can be asserted, so it is asserted exactly.
     let mut e = base();
     e.modpack_url = "https://tbd.example/api/v1/modpacks/current".into();
     e.modpack_token = "jwt.abc.def".into();
+    let argv = curl_argv(&e, Path::new("/tmp/out.json"));
     assert_eq!(
-        curl_argv(&e, Path::new("/tmp/out.json")),
+        argv,
         vec![
             "-sS",
             "-o",
@@ -128,10 +100,12 @@ fn curl_argv_is_stable() {
             "-w",
             "%{http_code}",
             "-H",
-            "Authorization: Bearer jwt.abc.def",
+            "@-",
             "https://tbd.example/api/v1/modpacks/current",
         ]
     );
+    assert!(argv.iter().all(|a| !a.contains("jwt.abc.def")));
+    assert_eq!(curl_header_stdin(&e), "Authorization: Bearer jwt.abc.def\n");
 }
 
 #[test]

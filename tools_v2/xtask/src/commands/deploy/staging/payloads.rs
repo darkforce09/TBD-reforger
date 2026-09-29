@@ -1,24 +1,38 @@
-//! The remote-shell payloads (bash lines 1591–1849), split out of [`super::remote`] for SIZE-3.
+//! The remote-shell payloads of one fleet instance, and of the checks that run before any change.
 //!
-//! Every function here builds the exact text that goes to a remote `bash -s` on stdin. They are
-//! pure and therefore the ONLY part of the remote surface that can be asserted on a machine with
-//! no `deploy.env`: the tests below pin the bytes, which is the stand-in for live coverage this
-//! port cannot have.
+//! **Role:** builds the exact text each remote `bash -s` reads on stdin: the website API probe, the
+//! secret file check, the instance files (folders, RCON password, profile, server config) and the
+//! V2–V4 game-runtime smoke; the profile's commands ([`instance_profile_commands`]) are the one
+//! writer of an instance's `TBD_BackendConfig.json`.
 //!
-//! ── HEREDOC QUOTING IS THE WHOLE SUBTLETY ────────────────────────────────────────────────────
+//! **Position:** called by the deploy pipeline in `super::remote`, and for the profile's commands by
+//! the staging harness's `mod_runtime` credential promotion
+//! (`crate::commands::staging::fleet_procedure`); pure, so the tests pin the bytes, which is the
+//! stand-in for live coverage a development machine cannot have.
 //!
-//! Two quoting regimes are in use, and mixing them up would silently change what runs on the
-//! host:
+//! **Signals & state:** none.
 //!
-//! * `<<EOF` (UNQUOTED) — `$TBD_*` expanded on the DEV machine while writing the payload;
-//!   `\$CFG`, `\$HOME`, `\$code` were escaped so they survive to the REMOTE shell.
-//! * `<<'UNITEOF'` nested INSIDE an unquoted `<<EOF` — the systemd unit body: the outer heredoc
-//!   substituted `${TBD_SERVER_MODE}` and `${EXECSTART}` locally, and the inner quoted delimiter
-//!   then stopped the remote shell touching the result again.
-//!
-//! Each function below notes which regime it reproduces.
+//! **Invariants:** no payload carries a secret and no payload prints one. Machine credentials, the
+//! RCON password and the join password are read on the host from mode-600 files into shell
+//! variables, reach `setup server-profile` through its environment and `curl` through stdin
+//! (`-H @-`), and are substituted into the server config with shell parameter expansion, so no
+//! process's argument vector holds one. A template here is a raw string whose `@NAME@` markers are
+//! replaced before sending; everything else is for the remote shell.
 
 use super::config::Env;
+use super::fleet_instances::{
+    FLEET_ROOT_UNDER_HOME, FleetInstance, HOST_AGENT_CREDENTIAL_FILE, JOIN_PASSWORD_FILE,
+    MOD_RUNTIME_CREDENTIAL_FILE, RCON_PASSWORD_FILE,
+};
+use super::fleet_server_config::{JOIN_PASSWORD_PLACEHOLDER, RCON_PASSWORD_PLACEHOLDER};
+
+/// A machine credential as the platform issues it, as a bash regular expression.
+pub const MACHINE_CREDENTIAL_SHAPE: &str = "^tbdm_[0-9a-f]{32}_[0-9a-f]{64}$";
+/// The join password's allowed shape: 3 to 64 characters that need no escaping in JSON or in the
+/// game client's password box.
+pub const JOIN_PASSWORD_SHAPE: &str = "^[A-Za-z0-9._~+=:@%-]{3,64}$";
+/// The RCON password the host generates: 32 lowercase hex digits (128 random bits).
+pub const RCON_PASSWORD_SHAPE: &str = "^[0-9a-f]{32}$";
 
 /// The website API probe, run on the host, where the mod calls the API: `GET <health_url>`.
 ///
@@ -34,99 +48,198 @@ pub fn website_api_health_payload(health_url: &str) -> String {
     )
 }
 
-/// The `ssh_cmd bash -s <<EOF` payload that sets up the remote profile and the addon symlink.
-///
-/// `setup server-profile` writes `TBD_BackendConfig.json` from the committed example with the
-/// runtime's machine credential taken from its environment; the payload
-/// then points `backendUrl` at this deployment's API. Values are expanded here, locally; `$CFG`
-/// is for the remote shell.
-pub fn profile_payload(env: &Env) -> String {
-    format!(
-        "set -euo pipefail\n\
-         {toolchain}\n\
-         mkdir -p \"{addons}\" \"{profile}\"\n\
-         ln -sfn \"{remote}/apps/mod/tbd-framework\" \"{addons}/tbd-framework\"\n\
-         export TBD_MACHINE_CREDENTIAL='{credential}'\n\
-         (cd \"{remote}\" && cargo run -q -p xtask -- setup server-profile \"{profile}\")\n\
-         CFG=\"{profile}/profile/TBD_BackendConfig.json\"\n\
-         sed -i 's|\"backendUrl\": \"[^\"]*\"|\"backendUrl\": \"{backend}\"|' \"$CFG\"\n",
-        addons = env.addons_staging,
-        profile = env.profile_dir,
-        remote = env.remote_dir,
-        credential = env.mod_runtime_credential,
-        backend = env.backend_url,
-        toolchain = crate::commands::deploy::remote_rust_toolchain::PUT_RUST_TOOLCHAIN_ON_PATH,
-    )
+const SECRET_FILES_CHECK: &str = r#"set -uo pipefail
+FLEET="$HOME/@FLEET@"
+CREDENTIAL_SHAPE='@CREDENTIAL_SHAPE@'
+JOIN_PASSWORD_SHAPE='@JOIN_SHAPE@'
+problems=0
+check() {
+  local label="$1" file="$2" shape="$3" value
+  if ! [ -f "$file" ] || [ "$(( 8#$(stat -c %a "$file") & 8#077 ))" -ne 0 ]; then
+    echo "  MISSING $label: $file is absent, not a regular file, or open to other users"
+    problems=$((problems + 1))
+    return
+  fi
+  value="$(<"$file")"
+  if [[ $value =~ $shape ]]; then
+    echo "  ok      $label"
+  else
+    echo "  INVALID $label: $file does not hold the expected shape"
+    problems=$((problems + 1))
+  fi
+}
+check "join password" "$FLEET/@JOIN_FILE@" "$JOIN_PASSWORD_SHAPE"
+for n in @INSTANCES@; do
+  check "instance $n mod_runtime credential" "$FLEET/instance-$n/secrets/@RUNTIME_FILE@" "$CREDENTIAL_SHAPE"
+  check "instance $n host_agent credential" "$FLEET/instance-$n/secrets/@AGENT_FILE@" "$CREDENTIAL_SHAPE"
+done
+if [ "$problems" -ne 0 ]; then
+  echo "FAIL: $problems secret file(s) under $FLEET are not ready." >&2
+  exit 1
+fi
+"#;
+
+/// The instance numbers as a shell word list: `1 2 3 4 5`.
+pub fn instance_numbers(instances: &[FleetInstance]) -> String {
+    instances
+        .iter()
+        .map(|instance| instance.number.to_string())
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
-/// The V2–V4 game-runtime smoke, run on the server against its own API with the runtime's
-/// machine credential:
+/// The check that every secret file the fleet reads exists on the host: the join password and
+/// each instance's two machine credentials, as regular files with no group or other permission and
+/// with the expected shape. It prints one line per file, never a value, and exits 1 when any file
+/// is not ready.
+pub fn fleet_secret_files_check_payload(instances: &[FleetInstance]) -> String {
+    SECRET_FILES_CHECK
+        .replace("@FLEET@", FLEET_ROOT_UNDER_HOME)
+        .replace("@CREDENTIAL_SHAPE@", MACHINE_CREDENTIAL_SHAPE)
+        .replace("@JOIN_SHAPE@", JOIN_PASSWORD_SHAPE)
+        .replace("@JOIN_FILE@", JOIN_PASSWORD_FILE)
+        .replace("@INSTANCES@", &instance_numbers(instances))
+        .replace("@RUNTIME_FILE@", MOD_RUNTIME_CREDENTIAL_FILE)
+        .replace("@AGENT_FILE@", HOST_AGENT_CREDENTIAL_FILE)
+}
+
+const INSTANCE_FILES: &str = r#"set -euo pipefail
+@TOOLCHAIN@
+umask 077
+FLEET="$HOME/@FLEET@"
+INSTANCE="$HOME/@INSTANCE_FOLDER@"
+SECRETS="$INSTANCE/secrets"
+mkdir -p "$SECRETS" "$INSTANCE/profile" "@ADDONS@"
+chmod 700 "$FLEET" "$INSTANCE" "$SECRETS" "$INSTANCE/profile"
+ln -sfn "@REMOTE@/apps/mod/tbd-framework" "@ADDONS@/tbd-framework"
+if [ ! -s "$SECRETS/@RCON_FILE@" ]; then
+  RCON_PASSWORD="$(head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+  (set -o noclobber; printf '%s\n' "$RCON_PASSWORD" > "$SECRETS/@RCON_FILE@")
+  echo "  instance @N@: generated its RCON password on the host"
+fi
+chmod 600 "$SECRETS/@RCON_FILE@"
+RCON_PASSWORD="$(<"$SECRETS/@RCON_FILE@")"
+RCON_PASSWORD_SHAPE='@RCON_SHAPE@'
+if ! [[ $RCON_PASSWORD =~ $RCON_PASSWORD_SHAPE ]]; then
+  echo "FAIL: $SECRETS/@RCON_FILE@ does not hold 32 lowercase hex digits; delete it to generate a new one" >&2
+  exit 1
+fi
+JOIN_PASSWORD="$(<"$FLEET/@JOIN_FILE@")"
+JOIN_PASSWORD_SHAPE='@JOIN_SHAPE@'
+if ! [[ $JOIN_PASSWORD =~ $JOIN_PASSWORD_SHAPE ]]; then
+  echo "FAIL: $FLEET/@JOIN_FILE@ does not hold 3 to 64 of A-Z a-z 0-9 . _ ~ + = : @ % -" >&2
+  exit 1
+fi
+@PROFILE@cat > "$INSTANCE/server.config.template.json" <<'CONFIGEOF'
+@CONFIG@CONFIGEOF
+CONFIG="$(<"$INSTANCE/server.config.template.json")"
+rm -f "$INSTANCE/server.config.template.json"
+CONFIG="${CONFIG//@RCON_PLACEHOLDER@/"$RCON_PASSWORD"}"
+CONFIG="${CONFIG//@JOIN_PLACEHOLDER@/"$JOIN_PASSWORD"}"
+case "$CONFIG" in
+  *_FROM_HOST_FILE*) echo "FAIL: a password placeholder survived in instance @N@'s config" >&2; exit 1 ;;
+esac
+printf '%s\n' "$CONFIG" > "$INSTANCE/server.config.json.next"
+mv -f "$INSTANCE/server.config.json.next" "$INSTANCE/server.config.json"
+echo "  instance @N@: profile, RCON password and server config in place"
+"#;
+
+const INSTANCE_PROFILE: &str = r#"TBD_MACHINE_CREDENTIAL="$(<"$SECRETS/@RUNTIME_FILE@")"
+export TBD_MACHINE_CREDENTIAL
+(cd "@REMOTE@" && cargo run -q -p xtask -- setup server-profile "$INSTANCE/profile")
+unset TBD_MACHINE_CREDENTIAL
+sed -i 's|"backendUrl": "[^"]*"|"backendUrl": "@BACKEND@"|' "$INSTANCE/profile/profile/TBD_BackendConfig.json"
+"#;
+
+/// The commands that write a fleet instance's game profile: `setup server-profile` run from the
+/// host checkout `checkout` with the instance's `mod_runtime` credential in its environment only,
+/// then `backend_url` as the profile's `backendUrl`. They run in a `bash` whose `INSTANCE` holds
+/// the instance's folder and `SECRETS` its `secrets/` folder, as [`instance_files_payload`] sets
+/// them, with the Rust toolchain on `PATH`
+/// ([`crate::commands::deploy::remote_rust_toolchain::PUT_RUST_TOOLCHAIN_ON_PATH`]).
+pub fn instance_profile_commands(checkout: &str, backend_url: &str) -> String {
+    INSTANCE_PROFILE
+        .replace("@REMOTE@", checkout)
+        .replace("@RUNTIME_FILE@", MOD_RUNTIME_CREDENTIAL_FILE)
+        .replace("@BACKEND@", backend_url)
+}
+
+/// Instance `instance`'s files on the host: its folders (mode 700), the shared addon link, its RCON
+/// password (generated once, mode 600, never sent anywhere), its profile with its own `mod_runtime`
+/// credential and this deployment's `backendUrl` ([`instance_profile_commands`]), and its server
+/// config: `rendered_config` with both password placeholders replaced from the host's files,
+/// written mode 600 and moved into place whole.
+pub fn instance_files_payload(
+    env: &Env,
+    instance: &FleetInstance,
+    rendered_config: &str,
+) -> String {
+    let mut config = rendered_config.to_string();
+    if !config.ends_with('\n') {
+        config.push('\n');
+    }
+    INSTANCE_FILES
+        .replace(
+            "@TOOLCHAIN@",
+            crate::commands::deploy::remote_rust_toolchain::PUT_RUST_TOOLCHAIN_ON_PATH,
+        )
+        .replace("@FLEET@", FLEET_ROOT_UNDER_HOME)
+        .replace("@INSTANCE_FOLDER@", &instance.home_relative_folder())
+        .replace("@ADDONS@", &env.addons_staging)
+        .replace("@REMOTE@", &env.remote_dir)
+        .replace("@RCON_FILE@", RCON_PASSWORD_FILE)
+        .replace("@RCON_SHAPE@", RCON_PASSWORD_SHAPE)
+        .replace("@JOIN_FILE@", JOIN_PASSWORD_FILE)
+        .replace("@JOIN_SHAPE@", JOIN_PASSWORD_SHAPE)
+        .replace(
+            "@PROFILE@",
+            &instance_profile_commands(&env.remote_dir, &env.backend_url),
+        )
+        .replace("@RCON_PLACEHOLDER@", RCON_PASSWORD_PLACEHOLDER)
+        .replace("@JOIN_PLACEHOLDER@", JOIN_PASSWORD_PLACEHOLDER)
+        .replace("@N@", &instance.number.to_string())
+        .replace("@CONFIG@", &config)
+}
+
+const SMOKE: &str = r#"set -euo pipefail
+CREDENTIAL="$(<"$HOME/@INSTANCE_FOLDER@/secrets/@RUNTIME_FILE@")"
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+API='http://127.0.0.1:8080/api/v1/game-runtime'
+bearer() { printf 'Authorization: Bearer %s\n' "$CREDENTIAL"; }
+code=$(bearer | curl -sS -o "$WORK/deployment.json" -w '%{http_code}' -H @- "$API/deployment")
+echo "V2 instance @N@ game-runtime deployment: HTTP $code"
+if [ "$code" = "404" ]; then
+  grep -q '"NO_DEPLOYMENT"' "$WORK/deployment.json" || exit 1
+  echo "V3 instance @N@ artifact: no deployment yet — deploy an approved mission to this server"
+elif [ "$code" = "200" ]; then
+  ARTIFACT=$(sed -n 's/.*"artifact_id": *"\([^"]*\)".*/\1/p' "$WORK/deployment.json")
+  EXPECTED=$(sed -n 's/.*"artifact_sha256": *"\([0-9a-f]*\)".*/\1/p' "$WORK/deployment.json")
+  code=$(bearer | curl -sS -o "$WORK/artifact.json" -w '%{http_code}' -H @- "$API/artifacts/$ARTIFACT")
+  ACTUAL=$(sha256sum "$WORK/artifact.json" | cut -d' ' -f1)
+  echo "V3 instance @N@ artifact $ARTIFACT: HTTP $code, sha256 $ACTUAL"
+  [ "$code" = "200" ] && [ -n "$EXPECTED" ] && [ "$ACTUAL" = "$EXPECTED" ] || exit 1
+else
+  exit 1
+fi
+code=$(curl -sS -o /dev/null -w '%{http_code}' "$API/deployment")
+echo "V4 instance @N@ without a credential: HTTP $code"
+[ "$code" = "401" ] || exit 1
+"#;
+
+/// The V2–V4 game-runtime smoke of one instance, run on the host against its own API with the
+/// instance's `mod_runtime` credential:
 ///
 /// * V2 — `GET /api/v1/game-runtime/deployment` answers the deployment this server runs (200)
 ///   or `NO_DEPLOYMENT` (404): the credential is accepted and scoped to this server.
 /// * V3 — with a deployment, `GET /api/v1/game-runtime/artifacts/{id}` answers the artifact's
 ///   bytes, and they hash to the deployment's `artifact_sha256`.
 /// * V4 — the same deployment read without a credential answers 401.
-pub fn smoke_payload(env: &Env) -> String {
-    format!(
-        "set -euo pipefail\n\
-         CREDENTIAL='{credential}'\n\
-         API='http://127.0.0.1:8080/api/v1/game-runtime'\n\
-         code=$(curl -sS -o /tmp/tbd-deployment.json -w '%{{http_code}}' -H \"Authorization: Bearer $CREDENTIAL\" \"$API/deployment\")\n\
-         echo \"V2 game-runtime deployment: HTTP $code\"\n\
-         if [ \"$code\" = \"404\" ]; then\n\
-         \x20 grep -q '\"NO_DEPLOYMENT\"' /tmp/tbd-deployment.json || exit 1\n\
-         \x20 echo \"V3 artifact: no deployment yet — deploy an approved mission to this server\"\n\
-         elif [ \"$code\" = \"200\" ]; then\n\
-         \x20 ARTIFACT=$(sed -n 's/.*\"artifact_id\": *\"\\([^\"]*\\)\".*/\\1/p' /tmp/tbd-deployment.json)\n\
-         \x20 EXPECTED=$(sed -n 's/.*\"artifact_sha256\": *\"\\([0-9a-f]*\\)\".*/\\1/p' /tmp/tbd-deployment.json)\n\
-         \x20 code=$(curl -sS -o /tmp/tbd-artifact.json -w '%{{http_code}}' -H \"Authorization: Bearer $CREDENTIAL\" \"$API/artifacts/$ARTIFACT\")\n\
-         \x20 ACTUAL=$(sha256sum /tmp/tbd-artifact.json | cut -d' ' -f1)\n\
-         \x20 echo \"V3 artifact $ARTIFACT: HTTP $code, sha256 $ACTUAL\"\n\
-         \x20 [ \"$code\" = \"200\" ] && [ -n \"$EXPECTED\" ] && [ \"$ACTUAL\" = \"$EXPECTED\" ] || exit 1\n\
-         else\n\
-         \x20 exit 1\n\
-         fi\n\
-         code=$(curl -sS -o /dev/null -w '%{{http_code}}' \"$API/deployment\")\n\
-         echo \"V4 without a credential: HTTP $code\"\n\
-         [ \"$code\" = \"401\" ] || exit 1\n",
-        credential = env.mod_runtime_credential,
-    )
-}
-
-/// The systemd-unit install payload.
-///
-/// The INNER heredoc was `<<'UNITEOF'` (quoted) nested inside the OUTER unquoted one, so
-/// `${TBD_SERVER_MODE}` / `${EXECSTART}` were expanded by the LOCAL shell while writing the payload
-/// and then passed through verbatim on the remote. `$HOME` and `$UNIT` are the reverse: escaped
-/// locally, expanded remotely.
-pub fn unit_payload(env: &Env, exec_start: &str) -> String {
-    format!(
-        "set -euo pipefail\n\
-         UNIT=\"$HOME/.config/systemd/user/tbd-reforger.service\"\n\
-         mkdir -p \"$HOME/.config/systemd/user\"\n\
-         cat > \"$UNIT\" <<'UNITEOF'\n\
-         [Unit]\n\
-         Description=TBD Arma Reforger dedicated server (TBD_Dev_POC, mode={mode})\n\
-         After=network-online.target\n\
-         Wants=network-online.target\n\
-         \n\
-         [Service]\n\
-         Type=simple\n\
-         WorkingDirectory={server_dir}\n\
-         ExecStart={exec_start}\n\
-         Restart=on-failure\n\
-         RestartSec=10\n\
-         \n\
-         [Install]\n\
-         WantedBy=default.target\n\
-         UNITEOF\n\
-         systemctl --user daemon-reload\n\
-         systemctl --user enable tbd-reforger.service 2>/dev/null || true\n\
-         systemctl --user restart tbd-reforger.service 2>/dev/null || systemctl --user start tbd-reforger.service\n",
-        mode = env.server_mode,
-        server_dir = env.server_dir,
-    )
+pub fn smoke_payload(instance: &FleetInstance) -> String {
+    SMOKE
+        .replace("@INSTANCE_FOLDER@", &instance.home_relative_folder())
+        .replace("@RUNTIME_FILE@", MOD_RUNTIME_CREDENTIAL_FILE)
+        .replace("@N@", &instance.number.to_string())
 }
 
 #[cfg(test)]

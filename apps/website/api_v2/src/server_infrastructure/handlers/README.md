@@ -42,8 +42,10 @@ executor kind.
   members and every server, marked by `is_active`, for administrators (`sees_inactive_servers`);
   the single read of an inactive server is a 404 for anyone but an administrator.
 - `server_registry.rs` validates at the boundary what the `servers` table does not constrain: a
-  trimmed, non-blank name, the address, the port and an existing modpack; an explicit `null` for
-  `required_modpack_id` clears the modpack, and an absent key keeps it.
+  trimmed, non-blank name, the address, the port and an existing modpack, through
+  `services::server_registration`, whose `register_server` writes a new server and its
+  `server.create` audit row in one transaction; an explicit `null` for `required_modpack_id`
+  clears the modpack, and an absent key keeps it.
 - `fleet_commands.rs` answers 202 with the receipt, 404 for the command list of an unknown server
   (as `machine_credentials.rs` does for its credential list), and 400 for `load_mission` and
   `restart_with_mission`, which only a

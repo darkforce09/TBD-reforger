@@ -394,9 +394,9 @@ with the commit row, and `cargo xtask ticket check` prints `check OK` after ship
 ## Worked example
 
 API v2 milestone B (game ballistics) ran this method end to end. Its
-[execution record](/documentation_v2/website/api_v2/verification_evidence/progress_checkpoint.md#milestone-b-execution-record)
+[execution record](/documentation_v2/archive/api_v2_completion/milestone_b_execution_record.md#milestone-b-execution-record)
 shows the phase handoffs, and its
-[launch amendments](/documentation_v2/website/api_v2/verification_evidence/progress_checkpoint.md#milestone-b-launch-amendments)
+[launch amendments](/documentation_v2/archive/api_v2_completion/milestone_b_execution_record.md#milestone-b-launch-amendments)
 the routed findings:
 
 - Prompt amendments: the design note's NOTE findings amended the prompts of three later agents

@@ -3,12 +3,11 @@
 //! Every write takes an [`AdminUser`] extractor, so the auth tier travels with the handler and a
 //! registration typo in [`super::super::routes`] cannot silently downgrade it.
 //!
-//! **Validation is at the boundary, not in the database.** The `servers` table has six columns and
-//! (measured against `pg_constraint`, and true of the whole schema — `0001_initial_schema.sql`
-//! declares **zero** `FOREIGN KEY`s) only a primary key: no CHECK, no unique index beyond `id`, no
-//! FK on `required_modpack_id`, and no FK from `server_statuses.server_id` back to here. So every
-//! rule that matters is enforced in [`validated_name`], [`validated_ip`], [`validated_port`] and
-//! [`require_modpack`] — see each for what the database would otherwise have accepted.
+//! **Validation is at the boundary, not in the database.** The `servers` table has only a primary
+//! key, so every rule that matters lives in
+//! [`server_registration`](crate::server_infrastructure::services::server_registration): a create
+//! goes through [`register_server`], and an update applies the same field validators to the
+//! fields it names.
 //!
 //! Each write answers with the same [`ServerIntelDto`] shape `GET /servers` serves, so an admin
 //! form can drop the row straight into the list it already renders.
@@ -16,14 +15,11 @@
 //! @contract server-intel.schema.json#/definitions/ServerRegistration
 //! @contract server-intel.schema.json#/definitions/ServerChange
 
-use std::net::IpAddr;
-
 use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
 use axum::http::StatusCode;
 use axum::response::Json;
 use serde::{Deserialize, Deserializer};
-use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::administration::models::audit_log::AuditSeverity;
@@ -33,6 +29,10 @@ use crate::core::error_handling::api_error::ApiError;
 use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::AdminUser;
 use crate::server_infrastructure::models::server::Server;
+use crate::server_infrastructure::services::server_registration::{
+    ServerRegistration, register_server, require_modpack, validated_ip, validated_name,
+    validated_port,
+};
 
 use super::server_intel::{ServerIntelDto, server_cols, server_intel};
 
@@ -66,98 +66,13 @@ where
     Option::<T>::deserialize(d).map(Some)
 }
 
-/// `servers.name` is `text NOT NULL` with no CHECK, so `""` and `"   "` both store fine — and the
-/// Server Intel card carries no other identifier, so a blank name renders a nameless server that
-/// an admin cannot tell apart from any other.
-///
-/// Trimmed **once** here and the trimmed value is what gets stored, so the read side and the write
-/// side agree. Checked, not assumed: nothing in the crate trims or `btrim`s `servers.name` on read
-/// (`server_intel.rs::list_servers` and `server_intel.rs::get_server_status` select it raw), and
-/// it is not a key in any `WHERE`, join or
-/// `ORDER BY` comparison other than the `ORDER BY name ASC` display sort, so normalising it cannot
-/// change which row anything matches.
-///
-/// No length cap: no handler in this crate caps a `text` column (the only `len()` guard is
-/// `cms.rs`'s upload byte limit), and the global 1 MB JSON body limit is the existing boundary.
-fn validated_name(raw: &str) -> Result<String, ApiError> {
-    let name = raw.trim();
-    if name.is_empty() {
-        return Err(ApiError::bad_request("name is required"));
-    }
-    Ok(name.to_string())
-}
-
-/// `servers.ip` is Postgres `inet`, and every read renders it with `host(ip)`. Two failure modes,
-/// both real, both measured against the live dev database, both closed here rather than in the
-/// database:
-///
-/// * **A hostname is not an `inet`.** `SELECT 'tbd.example.com'::inet` raises SQLSTATE 22P02, and
-///   `From<sqlx::Error>` maps any unhandled DB error to a logged **500** — so an operator typo, or
-///   a perfectly reasonable `play.tbd.example.com`, would answer `{"error":"internal error"}`.
-///   Accepting hostnames needs a column-type migration, so until that lands the boundary rejects
-///   them with a message that says which form is wanted.
-/// * **A mask is accepted and then silently dropped.** `host('10.0.0.5/24'::inet)` = `10.0.0.5`
-///   (measured). So `{"ip":"10.0.0.5/24"}` would store, and every later read report, a *different*
-///   address than the one sent. It is rejected because of that divergence, not because a netmask
-///   is meaningless on a server address — a value accepted, stored, and then quietly altered is
-///   the defect shape this boundary exists to close.
-///
-/// Returns the address re-rendered from the parse, so what gets bound is canonical
-/// (`0:0:0:0:0:0:0:1` → `::1`) and the `RETURNING host(ip)` echo is what is actually stored.
-fn validated_ip(raw: &str) -> Result<String, ApiError> {
-    raw.trim()
-        .parse::<IpAddr>()
-        .map(|addr| addr.to_string())
-        .map_err(|_| {
-            ApiError::bad_request(
-                "ip must be a literal IPv4 or IPv6 address — not a hostname, and not a /mask",
-            )
-        })
-}
-
-/// `servers.port` is `bigint` with no CHECK, so `0`, `-1` and `999999999` all store fine and then
-/// render on the Server Intel card as an address nothing can ever connect to. A TCP/UDP port is
-/// 1–65535; `0` is the kernel's "assign me any free port" sentinel and cannot be a *published*
-/// server address, which is the only thing this column is for.
-fn validated_port(raw: i64) -> Result<i64, ApiError> {
-    if !(1..=65535).contains(&raw) {
-        return Err(ApiError::bad_request("port must be between 1 and 65535"));
-    }
-    Ok(raw)
-}
-
-/// `servers.required_modpack_id` is a `uuid` with **no foreign key** — the schema declares none at
-/// all (`grep -c 'FOREIGN KEY' migrations/0001_initial_schema.sql` = 0; confirmed against
-/// `pg_constraint`, which lists only NOT NULLs and the two primary keys for `servers` /
-/// `server_statuses`).
-///
-/// So an unknown id does **not** raise a constraint violation. It stores silently, and the card
-/// composition's `load_modpack` then returns `None`, so the card just quietly loses its modpack
-/// panel with nothing anywhere complaining — a failure even quieter than a 500, because a 500 at
-/// least tells you. This check turns it into a 400 that names the field.
-///
-/// The check is therefore advisory rather than atomic — a modpack deleted between this SELECT and
-/// the INSERT would still dangle. That race is currently unreachable (the crate exposes no modpack
-/// write route at all: `/modpacks` and `/modpacks/current` are registered GET only), and closing
-/// it properly means adding the FK, which is a migration this handler does not own.
-async fn require_modpack(pool: &PgPool, id: Uuid) -> Result<(), ApiError> {
-    let found: Option<Uuid> = sqlx::query_scalar("SELECT id FROM modpacks WHERE id = $1")
-        .bind(id)
-        .fetch_optional(pool)
-        .await?;
-    if found.is_none() {
-        return Err(ApiError::bad_request(
-            "required_modpack_id does not name a known modpack",
-        ));
-    }
-    Ok(())
-}
-
 /// `POST /api/v1/servers` — register a game server (admin).
 ///
 /// A body that does not decode answers through [`ApiError::from_json_rejection`], whose 400
 /// message names the offending field (`{"required_modpack_id": "not-a-uuid"}` names
-/// `required_modpack_id`, not every required field).
+/// `required_modpack_id`, not every required field). The fields pass
+/// [`ServerRegistration::new`], and [`register_server`] writes the row and its `server.create`
+/// audit row in one transaction.
 ///
 /// Returns **201** carrying the same [`ServerIntelDto`] shape `GET /servers` serves. A freshly
 /// created server has no `server_statuses` row, so `status` and `terrain` are both JSON `null`.
@@ -169,54 +84,26 @@ pub async fn create_server(
     body: Result<Json<ServerInput>, JsonRejection>,
 ) -> Result<(StatusCode, Json<ServerIntelDto>), ApiError> {
     let Json(input) = body.map_err(ApiError::from_json_rejection)?;
-    let Some(raw_name) = input.name.as_deref() else {
+    let Some(name) = input.name.as_deref() else {
         return Err(ApiError::bad_request("name is required"));
     };
-    let Some(raw_ip) = input.ip.as_deref() else {
+    let Some(ip) = input.ip.as_deref() else {
         return Err(ApiError::bad_request("ip is required"));
     };
-    let Some(raw_port) = input.port else {
+    let Some(port) = input.port else {
         return Err(ApiError::bad_request("port is required"));
     };
-    let name = validated_name(raw_name)?;
-    let ip = validated_ip(raw_ip)?;
-    let port = validated_port(raw_port)?;
     // `Some(None)` and `None` mean the same thing on create: no modpack.
-    let modpack = input.required_modpack_id.flatten();
-    if let Some(id) = modpack {
-        require_modpack(&state.pool, id).await?;
-    }
-
-    // `$2::text::inet` and not `$2::inet`: the FIRST cast is what Postgres infers the bind
-    // parameter's type from, so a bare `::inet` would have it expect an `inet`-encoded parameter
-    // and reject the `text` sqlx sends for a Rust `String`. Same shape as the ingest path's
-    // `$5::float8::numeric`.
-    let server: Server = sqlx::query_as(concat!(
-        "INSERT INTO servers (name, ip, port, required_modpack_id, is_active) ",
-        "VALUES ($1, $2::text::inet, $3, $4, $5) RETURNING ",
-        server_cols!()
-    ))
-    .bind(&name)
-    .bind(&ip)
-    .bind(port)
-    .bind(modpack)
-    .bind(input.is_active.unwrap_or(true))
-    .fetch_one(&state.pool)
-    .await?;
-
-    let actor = &admin.0.discord_id;
-    let actor_name = actor_display_name(&state.pool, actor).await;
-    write_audit(
-        &state.pool,
-        AuditSeverity::Info,
-        Some(actor),
-        &actor_name,
-        "server.create",
-        &format!("{actor_name} registered server {name} at {ip}:{port}"),
-        "server",
-        &server.id.to_string(),
-    )
-    .await;
+    let registration = ServerRegistration::new(
+        name,
+        ip,
+        port,
+        input.required_modpack_id.flatten(),
+        input.is_active.unwrap_or(true),
+    )?;
+    let mut transaction = state.pool.begin().await?;
+    let server = register_server(&mut transaction, &registration, &admin.0.discord_id).await?;
+    transaction.commit().await?;
     Ok((
         StatusCode::CREATED,
         Json(server_intel(&state.pool, server).await?),

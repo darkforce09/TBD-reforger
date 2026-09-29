@@ -16,6 +16,7 @@ apps/website/api_v2/src/server_infrastructure/services/
 ├── machine_credentials.rs     issue, list, revoke and verify machine credentials
 ├── mod.rs                     the module tree
 ├── runtime_sessions.rs        generation-fenced runtime sessions: start, heartbeat, share, end, expiry
+├── server_registration.rs     the server field rules and the insert with its `server.create` audit
 ├── status_broadcast.rs        the `server:{id}` SSE topic: the live-status query and its publishers
 └── tests/                     unit tests for secret parsing, caller checks and the status payload
 ```
@@ -29,6 +30,11 @@ mismatched secrets answer the same 401. The resulting `MachineCaller` names the 
 executor kind (`host_agent` or `mod_runtime`) the credential serves, and every handler checks the
 resources it touches against that server. Revoking a credential ends every runtime session it
 authenticated.
+
+`server_registration.rs` is the one path that creates a `servers` row: `ServerRegistration::new`
+trims the name and refuses a blank one, a hostname or masked address and a port outside 1 to 65535,
+and `register_server` checks the required modpack, inserts the row and appends its `server.create`
+audit row on the caller's transaction, so both commit together.
 
 A runtime session is one boot of a server's game runtime. Starting one ends the open session as
 superseded and takes the next generation; a heartbeat must name that generation and a sequence
@@ -46,6 +52,11 @@ too. The ledger in `fleet_commands/` has its own README.
 
 - `machine_credentials::MachineCaller` with the extractor in `machine_authentication.rs`: taken by
   the machine routes of this domain, of `match_telemetry`, of `missions` and of `operations`.
+- `server_registration`: `ServerRegistration` and `register_server` for `POST /servers` in this
+  domain's handlers and for the `staging-fixtures provision-fleet` host tool; the field validators
+  for `PATCH /servers/{id}`.
+- `machine_credentials::issue_machine_credential` for the credential routes and for the
+  `staging-fixtures` host tool, which writes each secret into a mode-600 file.
 - `runtime_sessions`: `admit_heartbeat` and `HeartbeatFence` for the heartbeat in `match_telemetry`;
   `share_open_session` for the live [slot](/documentation_v2/glossary/n_to_z.md#slot) occupancy in
   `operations`; `expire_silent_runtime_sessions` for the `runtime_session_expiry` worker.

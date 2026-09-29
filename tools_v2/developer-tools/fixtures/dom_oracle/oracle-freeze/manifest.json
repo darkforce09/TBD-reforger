@@ -83,10 +83,10 @@
       "slug": "servercontrol",
       "path": "/admin/server",
       "authed": true,
-      "bytes": 192421,
-      "sha256": "f91272f0d430fc553da1aa764029e73bf37a1763eadf51ab64e7094a1a0d4422",
+      "bytes": 200358,
+      "sha256": "4f443c5aef0baf932b67a06342e61619e4e75f2b0d672fe56b3e2a5c90e413d5",
       "goldenSource": "leptos",
-      "acceptedDelta": "T-1022: the picker's list ends with the Add server control (aside list children 3 to 4); the card header gains Edit before Credentials, and the address pill moves into a wrapping row beside the server id (select-all, titled Server id); the rest equals the previous golden"
+      "acceptedDelta": "S: the fleet commands' request controls gain the Server console box between the process buttons and the broadcast form (a form: the console line field, Send, the byte count and the send-once note; request controls children 3 to 4); the rest equals the previous golden"
     },
     {
       "slug": "announcements",

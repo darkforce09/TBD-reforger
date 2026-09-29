@@ -35,6 +35,9 @@ pub(crate) enum ModCmd {
         /// Prove the verdict logic can FAIL
         #[arg(long)]
         selftest: bool,
+        /// Fleet instance whose log is fetched, 1 to 5 (required on a host that runs the fleet)
+        #[arg(long)]
+        instance: Option<u16>,
     },
     /// Spawn/equip determinism over a recorded server log
     #[command(name = "spawn-determinism")]

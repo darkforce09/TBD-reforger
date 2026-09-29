@@ -4,24 +4,27 @@
 
 Deploys the website [API](/documentation_v2/glossary/a_to_f.md#api) and the single-page app to the home
 server: `cargo xtask deploy website` copies the checkout to the host, starts the staging Postgres,
-builds the release API and the app there, starts the Caddy web server and reloads its
-configuration, and restarts the API's systemd user unit. Caddy serves the app on port 3080 and a
-Cloudflare Tunnel can publish it. Postgres and Caddy run from the staging compose file, so the
+builds the release API, the staging host tools and the app there, starts the Caddy web server and
+reloads its configuration, and restarts the API's systemd user unit. Caddy serves the app on port
+3080 and a Cloudflare Tunnel can publish it. Postgres and Caddy run from the staging compose file, so the
 container runtime brings both back after a reboot. The first
 [deployment](/documentation_v2/glossary/a_to_f.md#deployment) runs Phases A to E once, about an hour with
 the server-side builds; every later one is the single command under
-[Redeploy](#redeploy). The dedicated game server on the same host has its own runbook,
+[Redeploy](#redeploy). The fleet of dedicated game servers on the same host has its own runbook,
 [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md).
 
 ```text
 browser ──▶ Cloudflare Tunnel (optional, Phase E) ──▶ Caddy :3080  (container tbd_staging_caddy, host network)
-                                                      │  site: tools_v2/xtask/deploy/Caddyfile.website
+            cloudflared on 127.0.0.1, the one peer    │  site: tools_v2/xtask/deploy/Caddyfile.website
+            whose X-Forwarded-For Caddy keeps         │
                                                       ├── /api/*, /uploads/*, /map-assets/*, /healthz
                                                       │     ──▶ API 0.0.0.0:8080  (tbd-website-api.service, Phase D)
                                                       └── every other path ──▶ apps/website/frontend/dist
 API ──▶ Postgres tbd_staging_db on 127.0.0.1:${TBD_POSTGRES_HOST_PORT:-5432}
 API uploads ──▶ ~/.local/state/tbd-website-api/uploads  (outside the checkout)
 API equipment data ──▶ ~/.local/state/tbd-website-api/equipment  (outside the checkout)
+host tools ──▶ target/release/staging-fixtures  (the staging verification harness runs it)
+           ──▶ target/release/acknowledgement-dropping-relay  (cargo xtask deploy staging installs it)
 apps/website/docker-compose.staging.yml runs tbd_staging_caddy and tbd_staging_db (restart: unless-stopped)
 ```
 
@@ -61,7 +64,7 @@ sets up on Ubuntu:
   `TBD_REMOTE_DIR` outside the deploy user's `/home/<user>/tbd/` that
   `require_tbd_remote_prefix` checks (`tools_v2/xtask/src/commands/deploy/website.rs`), because
   the rsync runs with `--delete`.
-- Disk space: the website needs little; the game server beside it needs at least 30 GB
+- Disk space: the website needs little; the game server install beside it needs at least 30 GB
   (`df -h ~`).
 
 ## Steps
@@ -98,7 +101,7 @@ Run the development-machine steps from the repository root; a step that runs on 
    `assets_v2/scratch/`, `packages/` and the reference mod folders, then what only the
    development machine holds, anchored at the checkout root: `/target-*/` and the other build
    folders, the worktrees under `.ai/artifacts/worktrees/`, the wave gate's receipts, and the
-   local files of Claude Code, Codex and `.mcp.json`), the six remote steps below,
+   local files of Claude Code, Codex and `.mcp.json`), the seven remote steps below,
    `==> remote: restart tbd-website-api.service`,
    `==> unit: tools_v2/xtask/deploy/systemd/tbd-website-api.service is installed by hand (see documentation_v2/runbooks/website_deployment.md Phase D)`,
    the smoke hints and `==> done`. The printed list is the authority; the code is
@@ -110,6 +113,7 @@ Run the development-machine steps from the repository root; a step that runs on 
    |---|---|
    | `staging Postgres (docker compose)` | `compose -f apps/website/docker-compose.staging.yml up -d postgres` with `TBD_POSTGRES_HOST_PORT`; skipped by `TBD_SKIP_COMPOSE=1` |
    | `cargo build --release -p website-api --bin api` | the release API into `target/release/api`; skipped by `TBD_SKIP_API_BUILD=1` |
+   | `cargo build --release: the staging host tools (staging-fixtures, acknowledgement-dropping-relay)` | `cargo build --release -p website-api --bin staging-fixtures`, then `-p developer-tools --bin acknowledgement-dropping-relay`, each proven by `test -x target/release/<executable>`: the staging verification harness runs `staging-fixtures` on the host, and `cargo xtask deploy staging` installs the relay; skipped by `TBD_SKIP_API_BUILD=1` |
    | `trunk build --release (Leptos SPA → frontend/dist)` | the app into `apps/website/frontend/dist`; skipped by `TBD_SKIP_SPA_BUILD=1` |
    | `staging Caddy on :3080 (docker compose), then reload its Caddyfile` | `compose … up -d caddy`, then `compose … exec -T caddy caddy reload --config /etc/tbd-caddy/Caddyfile.website --adapter caddyfile`, up to 5 attempts a second apart; skipped by `TBD_SKIP_COMPOSE=1`, and still run with `TBD_SKIP_SPA_BUILD=1`, serving the `dist` already on the host |
    | `repoint the checksums of comments-only migration edits` | `TBD_DB_CONTAINER=tbd_staging_db cargo xtask db repair-migration-checksum --force` |
@@ -156,8 +160,8 @@ the password its volume was first created with. The database listens on the host
 
    Expected on the first run: the probe prints
    `WARN: no map asset tree on the server (neither assets_v2/terrains nor packages/map-assets).`
-   and continues, rsync lists the files it copies, compose starts `tbd_staging_db`, both builds
-   finish, compose starts `tbd_staging_caddy` and Caddy takes the Caddyfile, and then the checksum
+   and continues, rsync lists the files it copies, compose starts `tbd_staging_db`, the three
+   builds finish, compose starts `tbd_staging_caddy` and Caddy takes the Caddyfile, and then the checksum
    repair stops the deploy with
    `could not read _sqlx_migrations (psql exit 1)` and exit 1, because a fresh database has no
    migration table until the API first boots. Phase D boots it; the [redeploy](#redeploy) then
@@ -199,7 +203,7 @@ checkout, with `terrain-registry.json` at its top; see
    | `DATABASE_URL` | `postgres://tbd:<POSTGRES_PASSWORD>@127.0.0.1:<TBD_POSTGRES_HOST_PORT>/tbd_reforger?sslmode=disable` |
    | `JWT_SECRET` | the output of `openssl rand -hex 32` |
    | `JWT_ACCESS_TTL_MIN` | `15`, the template's value |
-   | `TRUSTED_PROXIES` | `127.0.0.1/32`: Caddy on the loopback is the only proxy believed |
+   | `TRUSTED_PROXIES` | `127.0.0.1/32`: Caddy on the loopback is the only proxy believed; Caddy in turn keeps a forwarded address from the tunnel alone ([forwarded client addresses](#forwarded-client-addresses)) |
    | `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URL` | required outside development; the redirect is `https://<site host>/api/v1/auth/discord/callback` |
    | `DISCORD_GUILD_ID`, `DISCORD_BOT_TOKEN`, `DISCORD_WEBHOOK_URL` | optional; empty turns the path that needs them off |
    | `OBSERVABILITY_TOKEN` | the output of `openssl rand -hex 32`; the bearer a scraper sends to `/metrics` and the detailed `/healthz`, and nothing else accepts it |
@@ -298,7 +302,9 @@ run one or the other.
     `http://127.0.0.1:3080`, and point the DNS name at the tunnel. The site gets its own hostname,
     so other services on the host keep their cookies and OAuth apps apart.
 
-    Expected: the hostname loads the app in a browser.
+    Expected: the hostname loads the app in a browser. cloudflared reaches Caddy from
+    `127.0.0.1`, the one peer whose `X-Forwarded-For` the Caddyfile keeps, so the API sees each
+    visitor's own address ([forwarded client addresses](#forwarded-client-addresses)).
 
 15. Register the Discord redirect. No command: in the Discord developer portal, add
     `https://<site host>/api/v1/auth/discord/callback` to the OAuth2 redirects of the production
@@ -315,8 +321,8 @@ run one or the other.
     cargo xtask deploy website
     ```
 
-    Expected: every step of the dry run in step 2 runs, the restart prints `active`, and the deploy
-    ends with `==> done`. The checksum repair prints
+    Expected: every step of the dry run in step 2 runs, the staging host tools among them, the
+    restart prints `active`, and the deploy ends with `==> done`. The checksum repair prints
     `every applied migration examined matches its file. Nothing to repair.` unless a migration's
     comments changed. Caddy serves the new build at once, since it reads the built files per
     request, and the Caddy step's reload applies a changed Caddyfile.
@@ -324,20 +330,32 @@ run one or the other.
 ### Game server credentials
 
 Each game server signs in to the API with its own
-[machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential), which an administrator
-issues on the [Server Control](/documentation_v2/glossary/n_to_z.md#server-control) page (`/admin/server`; `POST /api/v1/servers/{id}/credentials`)
-once the server is registered there with "Add server" (`POST /api/v1/servers`). The
-secret, `tbdm_…`, is shown once; revoking it stops its executor at the next request.
+[machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential). The host runs a
+fleet of five, "TBD Staging 1" to "TBD Staging 5", and no credential passes through `deploy.env`,
+which refuses the retired `TBD_MOD_RUNTIME_CREDENTIAL` and `TBD_HOST_AGENT_CREDENTIAL`. In order:
 
-| Executor | Credential kind | Where the secret goes | Commands it runs |
+- `cargo xtask deploy website` builds the host tool `staging-fixtures`;
+- `cargo xtask staging provision-fleet` registers the five servers through it and writes each
+  one's two credentials, mode 600, under `~/tbd/fleet/instance-N/secrets/` on the host;
+- the operator writes the servers' join password into `~/tbd/fleet/join-password` (mode 600);
+- `cargo xtask deploy staging --migrate-single-instance` retires the single server's units and
+  runs the fleet; it refuses an instance whose credential files are missing.
+
+`cargo xtask staging rotate-credential` replaces one credential (`--stage`, then `--promote`).
+The [Server Control](/documentation_v2/glossary/n_to_z.md#server-control) page (`/admin/server`;
+`POST /api/v1/servers/{id}/credentials`) issues and revokes credentials too; a secret, `tbdm_…`,
+is shown once, and revoking it stops its executor at the next request.
+
+| Executor | Credential kind | File on the host | Commands it runs |
 |---|---|---|---|
-| the game runtime (the mod) | `mod_runtime` | `TBD_MOD_RUNTIME_CREDENTIAL` in `deploy.env`, written into the server profile's `TBD_BackendConfig.json` as `machineCredential` | `broadcast`, `kick`, `load_mission`; runtime sessions, heartbeats, roster reads |
-| the [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) | `host_agent` | `TBD_HOST_AGENT_CREDENTIAL` in `deploy.env`, written to `~/.config/fleet-host-agent/machine-credential` | `start`, `stop`, `restart`, `list_players`, `restart_with_mission` |
+| the game runtime (the mod) | `mod_runtime` | `~/tbd/fleet/instance-N/secrets/mod-runtime-credential`, written into the instance profile's `TBD_BackendConfig.json` as `machineCredential` | `broadcast`, `kick`, `load_mission`; runtime sessions, heartbeats, roster reads |
+| the [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) | `host_agent` | `~/tbd/fleet/instance-N/secrets/host-agent-credential`, named by `~/.config/fleet-host-agent/instance-N/agent.toml` | `start`, `stop`, `restart`, `list_players`, `restart_with_mission`, `console_command` (one line to the server's RCON console, sent once) |
 
-`cargo xtask deploy staging` installs both; which mission a server runs is a
-[mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment). Issuing them step by step,
-and the first deployment, are in
-[Give the staging server its credentials and a mission](/documentation_v2/runbooks/game_server_staging/machine_credentials_and_mission_deployment.md).
+Which mission a server runs is a
+[mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment). The fleet, its
+ports and the first deployment are in
+[Give the staging servers their credentials and a mission](/documentation_v2/runbooks/game_server_staging/machine_credentials_and_mission_deployment.md)
+and the [staging setup checklist](/documentation_v2/runbooks/staging_verification/setup_checklist.md).
 
 ## Verify
 
@@ -355,9 +373,53 @@ Run the checks on the host unless the row says otherwise.
 | tunnel | the public hostname in a browser | the app loads |
 | sign-in | Discord sign-in in the browser | back on `/auth/callback`, signed in |
 | isolation | `ss -tlnp` | the website holds only 3080, 8080, the Postgres port and Caddy's admin endpoint on `localhost:2019`; the other services keep theirs |
+| host tools | `test -x <TBD_REMOTE_DIR>/target/release/staging-fixtures && test -x <TBD_REMOTE_DIR>/target/release/acknowledgement-dropping-relay` | exit 0 |
+| forwarded addresses | the `rate_limit_buckets` read under [forwarded client addresses](#forwarded-client-addresses) | a row per visitor address, none new for `127.0.0.1` |
 
 `/healthz` answers 503 with `{"status":"unavailable"}` while the database is down or the
 migrations are unreadable. The API has no other health route.
+
+### Forwarded client addresses
+
+cloudflared reaches Caddy from `127.0.0.1` and reports the visitor in `X-Forwarded-For`. The
+Caddyfile's global options trust that peer alone (`trusted_proxies static 127.0.0.1/32`): from it
+Caddy keeps the header and appends `127.0.0.1`; from any other peer, a LAN client included, it
+replaces the header with the peer's own address. The API trusts only Caddy
+(`TRUSTED_PROXIES=127.0.0.1/32`) and keys its rate limits on the rightmost untrusted hop, so each
+visitor and each LAN address keeps a bucket of its own rather than one `127.0.0.1` bucket for the
+whole tunnel.
+
+Prove Caddy's half on the development machine with podman before a deploy; nothing reaches the
+host. From the repository root, in one shell:
+
+```bash
+proof="$(mktemp -d)" && printf '{\n\tadmin off\n}\n\n:8080 {\n\tbind 127.0.0.1\n\trespond "x-forwarded-for={header.X-Forwarded-For}"\n}\n' > "$proof/Caddyfile.echo"
+podman network create tbd-forwarding-proof && podman pod create --name tbd-forwarding-proof --network tbd-forwarding-proof
+podman run -d --pod tbd-forwarding-proof --name tbd-forwarding-proof-echo --security-opt label=disable -v "$proof:/etc/proof:ro" docker.io/library/caddy:2 caddy run --config /etc/proof/Caddyfile.echo --adapter caddyfile
+podman run -d --pod tbd-forwarding-proof --name tbd-forwarding-proof-caddy --security-opt label=disable -v "$PWD/tools_v2/xtask/deploy:/etc/tbd-caddy:ro" docker.io/library/caddy:2 caddy run --config /etc/tbd-caddy/Caddyfile.website --adapter caddyfile
+podman exec tbd-forwarding-proof-echo wget -qO- --header 'X-Forwarded-For: 203.0.113.7' http://127.0.0.1:3080/api/forwarding-proof
+podman run --rm --network tbd-forwarding-proof docker.io/library/caddy:2 sh -c 'hostname -i; wget -qO- --header "X-Forwarded-For: 203.0.113.7" http://tbd-forwarding-proof:3080/api/forwarding-proof'
+podman pod rm -f tbd-forwarding-proof && podman network rm tbd-forwarding-proof && rm -r "$proof"
+```
+
+Expected: the echo, on `127.0.0.1:8080` in the pod, answers what Caddy forwards to the API. The
+probe from the pod's loopback, where cloudflared stands, prints
+`x-forwarded-for=203.0.113.7, 127.0.0.1`; the probe from another container, where a LAN client
+stands, prints that container's own address and then `x-forwarded-for=<that address>`, with the
+claimed `203.0.113.7` gone. A Caddyfile without the `servers` block prints
+`x-forwarded-for=127.0.0.1` for the first probe: every tunnel visitor would share one bucket.
+`--security-opt label=disable` lets SELinux hosts read the mounts without relabelling the checkout.
+
+After the deploy, on the host, sign in through the public hostname (its `/api/v1/auth/` requests
+take the strict tier), then read the buckets, read-only:
+
+```bash
+docker exec -e PGOPTIONS='-c default_transaction_read_only=on' tbd_staging_db psql -X -A -U tbd -d tbd_reforger -c "SELECT bucket_key, updated_at FROM rate_limit_buckets ORDER BY updated_at DESC LIMIT 10"
+```
+
+Expected: a fresh `strict|<your public address>` row and no fresh `strict|127.0.0.1` row; a
+request from a LAN machine to `http://<host>:3080/api/v1/auth/…` adds `strict|<its LAN address>`.
+On a Podman host, `podman exec` takes the same arguments.
 
 ## Troubleshooting
 
@@ -382,6 +444,8 @@ migrations are unreadable. The API has no other health route.
 | the Mission Creator reports that `SharedArrayBuffer` is missing | the page is not served through the Caddyfile, so it lacks the cross-origin isolation headers | open the site through Caddy on port 3080 or the tunnel (step 12) |
 | the deploy stops at `staging Caddy on :3080 …`, and `docker logs tbd_staging_caddy` shows `address already in use` | another process holds port 3080 or Caddy's admin port 2019 on the host, such as a Caddy started outside the compose file | stop it (`caddy stop` for such a Caddy; `ss -tlnp` names the holder), then deploy again |
 | the deploy stops at the Caddy step with `adapting config using caddyfile: …` | the Caddyfile does not parse; a running Caddy keeps its previous configuration | fix `tools_v2/xtask/deploy/Caddyfile.website`, then deploy again |
+| the deploy stops at `cargo build --release: the staging host tools …` | the checkout does not build `staging-fixtures` or `acknowledgement-dropping-relay`, or a package no longer declares that `[[bin]]` | fix the build on the development machine (`cargo build --release -p <package> --bin <executable>`), then deploy again; `TBD_SKIP_API_BUILD=1` skips both cargo steps |
+| `rate_limit_buckets` gains only `strict\|127.0.0.1` rows for tunnel traffic | Caddy runs a Caddyfile without the `servers { trusted_proxies … }` block, or cloudflared reaches Caddy from an address other than `127.0.0.1` | deploy again so the Caddy step reloads the committed Caddyfile; point the tunnel's service at `http://127.0.0.1:3080` (step 14) |
 | every page but the API paths answers 404 | there is no `apps/website/frontend/dist` on the host: the app build was skipped (`TBD_SKIP_SPA_BUILD=1`) or never ran | deploy without `TBD_SKIP_SPA_BUILD` |
 | Caddy and Postgres are gone after a reboot | the container runtime does not start at boot | `sudo systemctl enable --now docker`; on a Podman host, `systemctl --user enable --now podman-restart.service` with lingering on (step 4) |
 | the API stops when the deploy user logs out | lingering is off | step 4 |
@@ -393,8 +457,10 @@ migrations are unreadable. The API has no other health route.
   developer machine.
 - [Database operations](/documentation_v2/runbooks/database_operations.md) — backups, restore
   drills, the backup timers and the checksum repair on the home server.
-- [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — the dedicated
-  game server and its host agent on the same host.
+- [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — the fleet of
+  dedicated game servers and their host agents on the same host.
+- [Staging verification](/documentation_v2/runbooks/staging_verification/README.md) — the runs
+  that call the host tools this deploy builds.
 - [Testing and CI](/documentation_v2/runbooks/testing_and_ci.md) — the gates a change passes before
   it is deployed.
 - [API environment variables](/documentation_v2/website/api_v2/environment_variables.md) — every

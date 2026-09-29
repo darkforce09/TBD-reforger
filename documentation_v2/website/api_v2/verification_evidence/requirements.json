@@ -577,7 +577,7 @@
         "apps/fleet_host_agent/src/dedicated_server_config/mod.rs",
         "apps/fleet_host_agent/src/dedicated_server_config/scenario_id_location.rs",
         "tools_v2/xtask/src/commands/deploy/staging/host_agent.rs",
-        "tools_v2/xtask/deploy/systemd/fleet-host-agent.service",
+        "tools_v2/xtask/deploy/systemd/fleet-host-agent@.service",
         "apps/fleet_host_agent/src/command_execution/mod.rs",
         "apps/fleet_host_agent/src/command_execution/host_command.rs",
         "apps/fleet_host_agent/src/command_execution/host_action_executor.rs",
@@ -690,6 +690,32 @@
       ],
       "assumptions": [
         "PostgreSQL transactions and constraints operate correctly; tests exercise observable implementation behavior rather than proving external systems."
+      ]
+    },
+    {
+      "id": "fleet_console_command",
+      "behavior": "Administrators send one console line to a fleet instance over RCON: 1-256 bytes on one line, no control characters, no leading @; host-agent executor, not idempotent, process-changing, 30-second window; login retries are safe, the line is transmitted once and never resent; the reply is kept to 4096 bytes cut on a character boundary with a truncation flag, a missing reply reads as may-or-may-not-have-run, and the request audit carries the line.",
+      "implementation": [
+        "apps/website/api_v2/migrations/0061_fleet_console_command.sql",
+        "apps/website/api_v2/src/server_infrastructure/models/fleet_command.rs",
+        "apps/website/api_v2/src/server_infrastructure/services/fleet_commands",
+        "contracts_v2/definitions/fleet-command.schema.json",
+        "apps/fleet_host_agent/src/rcon",
+        "apps/fleet_host_agent/src/command_execution",
+        "apps/website/frontend/src/v2/pages/administration/server_control/fleet_commands"
+      ],
+      "checks": [
+        "fleet_console_command",
+        "fleet_rcon_transport",
+        "backend_regression",
+        "verification_route_acceptance",
+        "verification_contract_parity",
+        "frontend_quality",
+        "browser_acceptance"
+      ],
+      "assumptions": [
+        "PostgreSQL transactions and constraints operate correctly; tests exercise observable implementation behavior rather than proving external systems.",
+        "The dedicated server's BattlEye RCON runs a received command packet at most once and answers on the same session; the transport tests model it with a fake BattlEye server."
       ]
     },
     {
@@ -1712,39 +1738,66 @@
       "id": "staging_fleet",
       "behavior": "Five real staging servers and clients verify remote controls identity and both terrain transitions.",
       "implementation": [
-        "tools_v2/xtask/deploy"
+        "tools_v2/xtask/src/commands/staging/fleet_procedure",
+        "tools_v2/xtask/src/commands/staging/procedure_runner",
+        "tools_v2/xtask/src/verifications/api_readiness/operational_recording.rs",
+        "tools_v2/xtask/deploy/systemd",
+        "tools_v2/developer-tools/src/staging_verification/acknowledgement_relay"
       ],
       "checks": [
-        "staging_fleet"
+        "staging_fleet",
+        "staging_harness",
+        "readiness_self_tests",
+        "staging_fixture_tool",
+        "staging_verification_engines"
       ],
       "assumptions": [
-        "Isolated staging fleet and test credentials are available; latency is measured on the recorded hardware and network."
+        "Recorded topology: one staging host, dooley, runs five Experimental-branch (Steam app 1890870) Arma Reforger dedicated servers as fleet instances 1-5, each with its own fleet host agent.",
+        "The load generator sits on the wired LAN and sends from five source addresses; latency is measured on that recorded hardware and network.",
+        "Discord is the main TBD guild plus a partner guild.",
+        "Witnessing is automated: Chrome page reads and the host, database, unit-journal, console-log and metrics observers, each journaled with the SHA-256 of its raw artifact."
       ]
     },
     {
       "id": "staging_discord",
       "behavior": "Real Discord healthy changes, cached outage grace, partner eligibility, admin override and non-blocking warnings.",
       "implementation": [
-        "tools_v2/xtask/deploy"
+        "tools_v2/xtask/src/commands/staging/discord_procedure",
+        "apps/website/api_v2/src/bin/staging_fixtures"
       ],
       "checks": [
-        "staging_discord"
+        "staging_discord",
+        "staging_harness",
+        "readiness_self_tests",
+        "staging_fixture_tool"
       ],
       "assumptions": [
-        "Isolated staging fleet and test credentials are available; latency is measured on the recorded hardware and network."
+        "Recorded topology: one staging host, dooley, runs five Experimental-branch (Steam app 1890870) Arma Reforger dedicated servers as fleet instances 1-5, each with its own fleet host agent.",
+        "The load generator sits on the wired LAN and sends from five source addresses; latency is measured on that recorded hardware and network.",
+        "Discord is the main TBD guild plus a partner guild.",
+        "Witnessing is automated: Chrome page reads and the host, database, unit-journal, console-log and metrics observers, each journaled with the SHA-256 of its raw artifact."
       ]
     },
     {
       "id": "staging_load",
       "behavior": "1000 accounts 100 concurrent clients 20 requests/sec for30 minutes; p95 JSON reads<=500ms writes<=1s with environment and request mix recorded.",
       "implementation": [
-        "tools_v2/xtask/deploy"
+        "tools_v2/xtask/src/commands/staging/load_procedure",
+        "tools_v2/developer-tools/src/staging_verification/load_generation",
+        "tools_v2/xtask/staging"
       ],
       "checks": [
-        "staging_load"
+        "staging_load",
+        "staging_harness",
+        "readiness_self_tests",
+        "staging_fixture_tool",
+        "staging_verification_engines"
       ],
       "assumptions": [
-        "Isolated staging fleet and test credentials are available; latency is measured on the recorded hardware and network."
+        "Recorded topology: one staging host, dooley, runs five Experimental-branch (Steam app 1890870) Arma Reforger dedicated servers as fleet instances 1-5, each with its own fleet host agent.",
+        "The load generator sits on the wired LAN and sends from five source addresses; latency is measured on that recorded hardware and network.",
+        "Discord is the main TBD guild plus a partner guild.",
+        "Witnessing is automated: Chrome page reads and the host, database, unit-journal, console-log and metrics observers, each journaled with the SHA-256 of its raw artifact."
       ]
     },
     {
@@ -2207,9 +2260,9 @@
         "rcon_transport"
       ],
       "timeout_seconds": 900,
-      "minimum_cases": 14,
+      "minimum_cases": 23,
       "success_marker": "test result: ok.",
-      "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*(?:rcon_transport_corrupted_response_is_dropped_and_the_command_retransmitted|rcon_transport_duplicated_and_reordered_fragments_are_reassembled_in_order|rcon_transport_keep_alive_holds_the_login_past_the_server_timeout|rcon_transport_lapsed_login_is_renewed_by_the_next_command|rcon_transport_log_out_frees_the_session_slot|rcon_transport_logs_in_once_and_round_trips_commands|rcon_transport_lost_request_is_retransmitted_with_the_same_sequence_number|rcon_transport_lost_response_is_recovered_by_retransmission|rcon_transport_refused_login_is_reported_and_not_retried|rcon_transport_refuses_commands_that_cannot_be_one_packet_of_text|rcon_transport_sequence_numbers_wrap_after_255_and_are_reused|rcon_transport_server_messages_are_acknowledged_with_their_sequence_number|rcon_transport_server_restart_forces_a_new_login|rcon_transport_unanswered_login_is_reported_after_every_attempt) \\.\\.\\. ok$"
+      "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*(?:rcon_transport_console_command_reports_the_reply_and_that_it_is_whole|rcon_transport_console_command_without_a_reply_may_or_may_not_have_run|rcon_transport_console_reply_beyond_the_capture_is_cut_on_a_character_boundary|rcon_transport_corrupted_response_is_dropped_and_the_command_retransmitted|rcon_transport_duplicated_and_reordered_fragments_are_reassembled_in_order|rcon_transport_execute_once_lost_reply_is_not_resent_after_the_new_login|rcon_transport_execute_once_never_retransmits_an_unanswered_command|rcon_transport_execute_once_reassembles_a_multi_part_reply|rcon_transport_execute_once_renews_a_forgotten_login_before_the_command_leaves|rcon_transport_execute_once_retries_the_login_but_never_sends_the_command_without_one|rcon_transport_execute_once_transmits_the_command_in_a_single_packet|rcon_transport_keep_alive_holds_the_login_past_the_server_timeout|rcon_transport_lapsed_login_is_renewed_by_the_next_command|rcon_transport_log_out_frees_the_session_slot|rcon_transport_logs_in_once_and_round_trips_commands|rcon_transport_lost_request_is_retransmitted_with_the_same_sequence_number|rcon_transport_lost_response_is_recovered_by_retransmission|rcon_transport_refused_login_is_reported_and_not_retried|rcon_transport_refuses_commands_that_cannot_be_one_packet_of_text|rcon_transport_sequence_numbers_wrap_after_255_and_are_reused|rcon_transport_server_messages_are_acknowledged_with_their_sequence_number|rcon_transport_server_restart_forces_a_new_login|rcon_transport_unanswered_login_is_reported_after_every_attempt) \\.\\.\\. ok$"
     },
     {
       "id": "fleet_kick_identity",
@@ -2935,7 +2988,7 @@
       "class": "operational",
       "command": null,
       "timeout_seconds": 7200,
-      "minimum_cases": 1,
+      "minimum_cases": 50,
       "success_marker": "staging_fleet: PASS",
       "case_pattern": "(?m)^case staging_fleet[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2944,7 +2997,7 @@
       "class": "operational",
       "command": null,
       "timeout_seconds": 7200,
-      "minimum_cases": 1,
+      "minimum_cases": 13,
       "success_marker": "staging_discord: PASS",
       "case_pattern": "(?m)^case staging_discord[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2953,7 +3006,7 @@
       "class": "operational",
       "command": null,
       "timeout_seconds": 7200,
-      "minimum_cases": 1,
+      "minimum_cases": 10,
       "success_marker": "staging_load: PASS",
       "case_pattern": "(?m)^case staging_load[A-Za-z0-9_]* \\.\\.\\. ok$"
     },
@@ -2967,7 +3020,7 @@
         "test-it"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 1339,
+      "minimum_cases": 1425,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test [^\\n]+ \\.\\.\\. ok$"
     },
@@ -2981,7 +3034,7 @@
         "ci-local-leptos"
       ],
       "timeout_seconds": 3600,
-      "minimum_cases": 1982,
+      "minimum_cases": 2005,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test [^\\n]+ \\.\\.\\. ok$"
     },
@@ -3053,7 +3106,7 @@
         "--locked"
       ],
       "timeout_seconds": 600,
-      "minimum_cases": 59,
+      "minimum_cases": 76,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test verifications::api_readiness::(?:[A-Za-z0-9_]+::)*(?:tests|source_tests)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
     },
@@ -3322,6 +3375,66 @@
       "minimum_cases": 12,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*(?:host_agent_ledger_backs_off_after_transport_errors_and_recovers|host_agent_ledger_claims_are_read_from_the_contract_shape|host_agent_ledger_mission_restart_changes_nothing_without_an_executing_acknowledgement|host_agent_ledger_mission_restart_reports_executing_before_the_config_changes|host_agent_ledger_polls_again_after_nothing_is_claimable|host_agent_ledger_refuses_arguments_that_fail_revalidation_without_acting|host_agent_ledger_reports_executing_before_the_effect_and_the_result_after_it|host_agent_ledger_retries_the_executing_report_before_acting|host_agent_ledger_retries_the_result_report_until_acknowledged|host_agent_ledger_stale_fencing_token_abandons_the_command_without_acting|host_agent_ledger_stale_fencing_token_on_the_result_is_not_retried|host_agent_ledger_unreachable_api_is_a_transient_error) \\.\\.\\. ok$"
+    },
+    {
+      "id": "fleet_console_command",
+      "class": "implementation",
+      "command": [
+        "cargo",
+        "xtask",
+        "db",
+        "test-it"
+      ],
+      "timeout_seconds": 1800,
+      "minimum_cases": 7,
+      "success_marker": "test result: ok.",
+      "case_pattern": "(?m)^test fleet_console_command[A-Za-z0-9_]* \\.\\.\\. ok$"
+    },
+    {
+      "id": "staging_harness",
+      "class": "implementation",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "xtask",
+        "--locked",
+        "commands::staging::"
+      ],
+      "timeout_seconds": 600,
+      "minimum_cases": 95,
+      "success_marker": "test result: ok.",
+      "case_pattern": "(?m)^test commands::staging::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
+    },
+    {
+      "id": "staging_verification_engines",
+      "class": "implementation",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "developer-tools",
+        "--locked",
+        "staging_verification::"
+      ],
+      "timeout_seconds": 900,
+      "minimum_cases": 84,
+      "success_marker": "test result: ok.",
+      "case_pattern": "(?m)^test staging_verification::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
+    },
+    {
+      "id": "staging_fixture_tool",
+      "class": "implementation",
+      "command": [
+        "cargo",
+        "xtask",
+        "db",
+        "test-it"
+      ],
+      "timeout_seconds": 1800,
+      "minimum_cases": 52,
+      "success_marker": "test result: ok.",
+      "case_pattern": "(?m)^test (?:[A-Za-z0-9_]+::)*staging_fixtures_[A-Za-z0-9_]* \\.\\.\\. ok$"
     }
   ]
 }

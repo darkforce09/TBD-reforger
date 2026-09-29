@@ -25,7 +25,7 @@ few seconds after systemd reported the start as done. `ProcessActionReport::verd
 when LoadState is `loaded` and ActiveState is the one the action intends, `active` after start and
 restart and `inactive` after stop; `systemctl show` reports a unit that does not exist as
 inactive, which is why LoadState is read too. A failure reason names the state observed, for
-example `restart left tbd-reforger.service failed instead of active after waiting 8s; systemctl
+example `restart left tbd-reforger@1.service failed instead of active after waiting 8s; systemctl
 --user restart exited with status 0`.
 
 Every invocation is a fixed argument vector whose only variable element is the unit name.

@@ -1,0 +1,26 @@
+# tbd-reforger@ — dedicated game server instance %i of the staging fleet (Steam app 1890870, the
+# experimental dedicated server).
+#
+# `cargo xtask deploy staging` replaces TBD_SERVER_DIR_PLACEHOLDER and
+# TBD_ADDONS_STAGING_PLACEHOLDER with deploy.env's TBD_SERVER_DIR and TBD_ADDONS_STAGING, each
+# without its leading slash (the paths below keep theirs, so the committed file verifies as it
+# stands), and writes the result to ~/.config/systemd/user/tbd-reforger@.service. Instance N runs
+# as tbd-reforger@N.service from its own config and profile under ~/tbd/fleet/instance-N/, and
+# every instance shares the addon folder.
+#
+# -config registers the backend room and supplies game.admins[]; -addonsDir makes the rsynced
+# checkout the copy of the mod that loads. -addons, which -config refuses, is never passed.
+[Unit]
+Description=TBD Arma Reforger dedicated server, fleet instance %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/TBD_SERVER_DIR_PLACEHOLDER
+ExecStart=/TBD_SERVER_DIR_PLACEHOLDER/ArmaReforgerServer -addonsDir /TBD_ADDONS_STAGING_PLACEHOLDER -config %h/tbd/fleet/instance-%i/server.config.json -profile %h/tbd/fleet/instance-%i/profile -maxFPS 60 -logStats 30000 -nothrow
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

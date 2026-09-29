@@ -8,4 +8,6 @@ pub(crate) mod repository_layout;
 
 pub(crate) mod repository_root;
 
+pub(crate) mod secure_shell_transport;
+
 pub(crate) mod test_environment;

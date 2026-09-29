@@ -1,7 +1,7 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
 // Source: contracts_v2/definitions/fleet-command.schema.json — regenerate with: cargo xtask ci schema-codegen
 
-///load_mission and restart_with_mission are issued only by mission deployments (POST /servers/:id/deployments); the operator command route refuses them.
+///load_mission and restart_with_mission are issued only by mission deployments (POST /servers/:id/deployments); the operator command route refuses them. console_command sends one administrator line (ConsoleCommandArguments) to the server's RCON console through the host agent; like start, stop, restart and the deployment actions it changes the server process, so at most one of them runs per server at a time, and nothing repeats it after an unknown outcome.
 #[derive(
     ::serde::Deserialize,
     ::serde::Serialize,
@@ -31,6 +31,8 @@ pub enum FleetAction {
     LoadMission,
     #[serde(rename = "restart_with_mission")]
     RestartWithMission,
+    #[serde(rename = "console_command")]
+    ConsoleCommand,
 }
 impl ::std::fmt::Display for FleetAction {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
@@ -43,6 +45,7 @@ impl ::std::fmt::Display for FleetAction {
             Self::Kick => f.write_str("kick"),
             Self::LoadMission => f.write_str("load_mission"),
             Self::RestartWithMission => f.write_str("restart_with_mission"),
+            Self::ConsoleCommand => f.write_str("console_command"),
         }
     }
 }
@@ -58,6 +61,7 @@ impl ::std::str::FromStr for FleetAction {
             "kick" => Ok(Self::Kick),
             "load_mission" => Ok(Self::LoadMission),
             "restart_with_mission" => Ok(Self::RestartWithMission),
+            "console_command" => Ok(Self::ConsoleCommand),
             _ => Err("invalid value".into()),
         }
     }

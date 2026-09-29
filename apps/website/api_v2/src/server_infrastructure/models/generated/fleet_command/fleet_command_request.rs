@@ -3,7 +3,7 @@
 
 use super::FleetAction;
 
-///POST /api/v1/servers/:id/commands body. start, stop, restart and list_players take no arguments; broadcast takes {message} (1 to 256 bytes, no control characters); kick takes {arma_id, runtime_session_id, reason?}, where the session must be the server's open runtime session. load_mission and restart_with_mission answer 400: mission deployments issue them.
+///POST /api/v1/servers/:id/commands body. start, stop, restart and list_players take no arguments; broadcast takes {message} (1 to 256 bytes, no control characters); kick takes {arma_id, runtime_session_id, reason?}, where the session must be the server's open runtime session; console_command takes ConsoleCommandArguments {line}. load_mission and restart_with_mission answer 400: mission deployments issue them.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct FleetCommandRequest {

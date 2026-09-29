@@ -13,6 +13,7 @@ apps/website/api_v2/src/operations/services/
 ├── access_administration/         stored access settings and the evidence explaining them
 ├── ballistics_catalogs/           catalog upload judgement and the immutable catalog store
 ├── event_access/                  policy evaluation, membership facts and visibility
+├── event_authoring/               creating events and attaching missions with their ORBAT
 ├── event_lifecycle_sweep.rs       stores the derived event status and audits each move
 ├── event_lifecycle_transition.rs  stores an event's status before its schedule changes
 ├── event_lookup.rs                the event and event-mission reads a handler starts from
@@ -70,6 +71,8 @@ too.
 - `participation_attribution`: `prior_match_accounts`, `reconcile_match` and
   `lock_obligated_registrants` for match results in `match_telemetry`, and `refresh_attendance`
   for identity linking in `identity_and_access`.
+- `event_authoring`: `event_creation` and `mission_attachment` for the `staging-fixtures` host
+  tool's load fixture events.
 - `parse_orbat_template`, `OrbatSquadTemplate` and `OrbatSlotTemplate`, re-exported from
   `website_map_engine::data::scenario::orbat`, for the
   [deployment](/documentation_v2/glossary/a_to_f.md#deployment) slot bindings in `missions`.
@@ -87,6 +90,8 @@ too.
     above;
   - the `event_lifecycle_sweeper` and `event_reservation_reevaluator` workers in
     `apps/website/api_v2/src/background_workers/`;
+  - the `staging-fixtures` host tool in `apps/website/api_v2/src/bin/staging_fixtures/`, through
+    `event_authoring`;
   - the [API](/documentation_v2/glossary/a_to_f.md#api) tests
     `apps/website/api_v2/tests/attendance_no_show_derivation.rs`,
     `apps/website/api_v2/tests/event_access_context.rs`,

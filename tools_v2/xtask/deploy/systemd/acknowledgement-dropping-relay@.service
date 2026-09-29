@@ -1,0 +1,25 @@
+# acknowledgement-dropping-relay@ — the loopback relay between the host agent of fleet instance %i
+# and the API (the acknowledgement-dropping-relay executable of tools_v2/developer-tools).
+#
+# `cargo xtask deploy staging` installs this file byte for byte, writes
+# ~/tbd/fleet/instance-N/relay.env (RELAY_LISTEN, 127.0.0.1 and TBD_FLEET_RELAY_PORT;
+# RELAY_UPSTREAM, the API origin the agents use) and runs the unit only for
+# TBD_FLEET_RELAY_INSTANCE, whose agent then polls the relay. The relay passes every request
+# through until it is armed over its control socket,
+# $XDG_RUNTIME_DIR/acknowledgement-dropping-relay-N/control.sock, in a folder of mode 700.
+[Unit]
+Description=TBD acknowledgement-dropping relay for the host agent of fleet instance %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=%h/tbd/fleet/instance-%i/relay.env
+RuntimeDirectory=acknowledgement-dropping-relay-%i
+RuntimeDirectoryMode=0700
+ExecStart=%h/.local/bin/acknowledgement-dropping-relay serve --listen ${RELAY_LISTEN} --upstream ${RELAY_UPSTREAM} --control-socket %t/acknowledgement-dropping-relay-%i/control.sock
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

@@ -105,12 +105,13 @@
         "broadcast",
         "kick",
         "load_mission",
-        "restart_with_mission"
+        "restart_with_mission",
+        "console_command"
       ],
-      "description": "load_mission and restart_with_mission are issued only by mission deployments (POST /servers/:id/deployments); the operator command route refuses them."
+      "description": "load_mission and restart_with_mission are issued only by mission deployments (POST /servers/:id/deployments); the operator command route refuses them. console_command sends one administrator line (ConsoleCommandArguments) to the server's RCON console through the host agent; like start, stop, restart and the deployment actions it changes the server process, so at most one of them runs per server at a time, and nothing repeats it after an unknown outcome."
     },
     "FleetCommandRequest": {
-      "description": "POST /api/v1/servers/:id/commands body. start, stop, restart and list_players take no arguments; broadcast takes {message} (1 to 256 bytes, no control characters); kick takes {arma_id, runtime_session_id, reason?}, where the session must be the server's open runtime session. load_mission and restart_with_mission answer 400: mission deployments issue them.",
+      "description": "POST /api/v1/servers/:id/commands body. start, stop, restart and list_players take no arguments; broadcast takes {message} (1 to 256 bytes, no control characters); kick takes {arma_id, runtime_session_id, reason?}, where the session must be the server's open runtime session; console_command takes ConsoleCommandArguments {line}. load_mission and restart_with_mission answer 400: mission deployments issue them.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -204,7 +205,7 @@
       }
     },
     "ExecutionResult": {
-      "description": "POST /api/v1/fleet-executor/commands/:commandId/result body. succeeded requires a prior executing report; a failure names failure_reason (1 to 512 bytes). list_players reports outcome {players:[{arma_id, name, ...}]}.",
+      "description": "POST /api/v1/fleet-executor/commands/:commandId/result body. succeeded requires a prior executing report; a failure names failure_reason (1 to 512 bytes). list_players reports outcome {players:[{arma_id, name, ...}]}; a succeeded console_command reports ConsoleCommandOutcome, and any other console_command outcome answers 400.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -226,6 +227,40 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 512
+        }
+      }
+    },
+    "ConsoleCommandArguments": {
+      "description": "The arguments of console_command as the ledger stores them and the host agent receives them: one line for the server's RCON console. The API trims surrounding whitespace from the requested line and answers 400 for a line outside 1 to 256 bytes, one holding a control character or a line or paragraph separator, and one starting with @, which begins Reforger's custom RCON commands for the RCON session itself (@logout), a session the host agent owns. The host agent transmits the line at most once and never resends it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "line"
+      ],
+      "properties": {
+        "line": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[^@\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029][^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$"
+        }
+      }
+    },
+    "ConsoleCommandOutcome": {
+      "description": "The outcome a succeeded console_command reports: the server's reply to the line, cut by the host agent on a character boundary at 4096 bytes, and whether it was cut. The API answers 400 for any other shape and for a response over 4096 bytes. A failed console_command may omit it; a line the server never answered fails with failure_reason \"no RCON response; the command may or may not have run\".",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "response",
+        "response_truncated"
+      ],
+      "properties": {
+        "response": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "response_truncated": {
+          "type": "boolean"
         }
       }
     }

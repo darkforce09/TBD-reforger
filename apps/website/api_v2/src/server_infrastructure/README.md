@@ -40,11 +40,17 @@ domain's, so `core` names no server concept.
 Operators never reach a game host directly. An administrator's command becomes a durable row in
 the ledger, and the program that performs it polls the API outbound with its own machine
 credential: the [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) runs process
-control and the [RCON](/documentation_v2/glossary/n_to_z.md#rcon) player list, and the game runtime runs
-broadcasts, kicks and in-process [mission](/documentation_v2/glossary/g_to_m.md#mission) loads. A
-[mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) in `missions` issues its
-`load_mission` or `restart_with_mission` command through the same ledger and needs a fleet scenario
-for its terrain. The platform has no RCON console route.
+control, the [RCON](/documentation_v2/glossary/n_to_z.md#rcon) player list and console commands, and the
+game runtime runs broadcasts, kicks and in-process [mission](/documentation_v2/glossary/g_to_m.md#mission)
+loads. A [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) in `missions`
+issues its `load_mission` or `restart_with_mission` command through the same ledger and needs a
+fleet scenario for its terrain. A console command (`console_command`) is the one free-text action:
+a single line for the server's RCON console, gated to 1 to 256 bytes, one line, no control
+characters and no leading `@`; the host agent transmits it at most once and reports the reply,
+bounded at 4096 bytes. It changes the server process as a restart does, so it waits for and holds
+back the server's other process changes and is never repeated after an unknown outcome. There is
+no separate RCON route: the console line travels through the command ledger like every other
+action.
 
 ## Public surface
 

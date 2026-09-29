@@ -112,3 +112,30 @@ fn refusals_read_as_failure_reasons() {
         "restart_with_mission needs artifact_sha256 to be 64 lowercase hex digits"
     );
 }
+
+#[test]
+fn a_console_command_carries_its_line() {
+    let command = HostCommand::from_claim("console_command", &json!({"line": "#players"})).unwrap();
+    assert_eq!(command.action_name(), "console_command");
+    assert_eq!(
+        command,
+        HostCommand::ConsoleCommand(ConsoleLine::parse("#players").unwrap())
+    );
+    for arguments in [
+        json!({}),
+        json!({"line": "@logout"}),
+        json!({"line": "#players\n#shutdown"}),
+    ] {
+        assert!(
+            matches!(
+                HostCommand::from_claim("console_command", &arguments),
+                Err(CommandRefusal::InvalidArgument {
+                    action: "console_command",
+                    key: "line",
+                    ..
+                })
+            ),
+            "{arguments}"
+        );
+    }
+}

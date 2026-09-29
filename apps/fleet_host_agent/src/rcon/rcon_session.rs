@@ -1,11 +1,25 @@
 //! The RCON session task: one UDP socket, one login, one command in flight at a time.
 //!
-//! A command packet is sent again under the same sequence number until its response is
-//! complete or [`RconTimings::transmission_attempts`] transmissions went unanswered; the session
-//! then counts as lost, and the command is sent once more after a new login. A session lost
-//! while idle logs in again on the next command. While logged in and idle, the task
-//! acknowledges server messages and sends an empty command packet whenever
-//! [`RconTimings::keep_alive_interval`] passes without a command packet.
+//! **Role:** Logs in, sends each queued command in the delivery its request names, keeps the
+//! login alive and logs out. [`SessionRequest::Execute`] sends a command again under the same
+//! sequence number until its response is complete or [`RconTimings::transmission_attempts`]
+//! transmissions went unanswered; the session then counts as lost, and the command is sent once
+//! more after a new login. [`SessionRequest::ExecuteOnce`] first confirms a held login with an
+//! empty command packet and logs in again when that goes unanswered, both safe to repeat, then
+//! transmits the command once and waits for its answer as long as every retransmission together
+//! would; unanswered, the session counts as lost and the command is not sent again.
+//!
+//! **Position:** [`super::rcon_client::RconClient::start`] spawns the task and feeds it requests
+//! over a channel; the task speaks to the game server's RCON port through a connected UDP
+//! socket.
+//!
+//! **Signals & state:** the task alone owns the socket, the login flag, the command sequence, the
+//! time of the last command packet and the server-message window.
+//!
+//! **Invariants:** one command is in flight at a time; a session lost while idle logs in again on
+//! the next command; while logged in and idle, the task acknowledges server messages and sends an
+//! empty command packet whenever [`RconTimings::keep_alive_interval`] passes without a command
+//! packet; a command sent through `ExecuteOnce` leaves in exactly one datagram.
 
 use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr};
 
@@ -28,14 +42,35 @@ use crate::secret_text::SecretText;
 /// Large enough for any UDP datagram.
 const RECEIVE_BUFFER_BYTES: usize = 65_536;
 
+/// Where the session sends a command's response text, or why there is none.
+pub(super) type CommandReply = oneshot::Sender<Result<String, RconError>>;
+
+/// What the client asks of the session task.
 pub(super) enum SessionRequest {
+    /// A command that is safe to repeat: retransmitted while unanswered, and sent once more after
+    /// a new login.
     Execute {
         command: String,
-        reply: oneshot::Sender<Result<String, RconError>>,
+        reply: CommandReply,
     },
-    LogOut {
-        reply: oneshot::Sender<()>,
+    /// A command that must not run twice: transmitted exactly once.
+    ExecuteOnce {
+        command: String,
+        reply: CommandReply,
     },
+    /// Sends `@logout` when logged in, then stops the task.
+    LogOut { reply: oneshot::Sender<()> },
+}
+
+/// How often a command packet goes out.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Transmission {
+    /// Sent again under the same sequence number while unanswered, up to
+    /// [`RconTimings::transmission_attempts`] times, each waiting
+    /// [`RconTimings::response_timeout`].
+    RepeatedWhileUnanswered,
+    /// Sent once, waiting as long as every repeated transmission together would.
+    Single,
 }
 
 pub(super) struct RconSession {
@@ -85,6 +120,10 @@ impl RconSession {
                         // A caller that stopped waiting leaves nobody to answer.
                         let _ = reply.send(result);
                     }
+                    Some(SessionRequest::ExecuteOnce { command, reply }) => {
+                        let result = self.execute_once(&command).await;
+                        let _ = reply.send(result);
+                    }
                     Some(SessionRequest::LogOut { reply }) => {
                         self.log_out().await;
                         let _ = reply.send(());
@@ -112,19 +151,56 @@ impl RconSession {
             self.log_in().await?;
         }
         debug!(command, "sending RCON command");
-        if let Some(response) = self.exchange(command.as_bytes()).await {
+        let repeated = Transmission::RepeatedWhileUnanswered;
+        if let Some(response) = self.exchange(command.as_bytes(), repeated).await {
             return Ok(String::from_utf8_lossy(&response).into_owned());
         }
         self.logged_in = false;
         warn!(server = %self.server, "RCON command unanswered; logging in again to send it once more");
         self.log_in().await?;
-        match self.exchange(command.as_bytes()).await {
+        match self.exchange(command.as_bytes(), repeated).await {
             Some(response) => Ok(String::from_utf8_lossy(&response).into_owned()),
             None => {
                 self.logged_in = false;
                 Err(RconError::NoResponse)
             }
         }
+    }
+
+    /// Sends a command that must not run twice: everything before it may be repeated, the
+    /// command itself leaves in one datagram and is never sent again.
+    async fn execute_once(&mut self, command: &str) -> Result<String, RconError> {
+        self.confirm_login().await?;
+        debug!(command, "sending RCON command once");
+        if let Some(response) = self
+            .exchange(command.as_bytes(), Transmission::Single)
+            .await
+        {
+            return Ok(String::from_utf8_lossy(&response).into_owned());
+        }
+        self.logged_in = false;
+        warn!(
+            server = %self.server,
+            "RCON command sent once went unanswered; it is not sent again, and the next command logs in again"
+        );
+        Err(RconError::NoResponse)
+    }
+
+    /// Makes sure the server knows this login right now: a held login is confirmed by an answered
+    /// empty command packet, and one the server no longer answers for (it restarted, or the login
+    /// lapsed) is renewed.
+    async fn confirm_login(&mut self) -> Result<(), RconError> {
+        if self.logged_in {
+            let confirmation = self
+                .exchange(&[], Transmission::RepeatedWhileUnanswered)
+                .await;
+            if confirmation.is_some() {
+                return Ok(());
+            }
+            self.logged_in = false;
+            warn!(server = %self.server, "RCON login unconfirmed; logging in again before the command");
+        }
+        self.log_in().await
     }
 
     async fn log_in(&mut self) -> Result<(), RconError> {
@@ -153,13 +229,25 @@ impl RconSession {
         Err(RconError::LoginUnanswered(self.server))
     }
 
-    /// Sends one command and waits for its complete response, retransmitting it under the same
-    /// sequence number while it goes unanswered. `None` when every transmission went unanswered.
-    async fn exchange(&mut self, command: &[u8]) -> Option<Vec<u8>> {
+    /// Sends one command, as often as `transmission` allows and always under the same sequence
+    /// number, and waits for its complete response. `None` when no transmission was answered.
+    async fn exchange(&mut self, command: &[u8], transmission: Transmission) -> Option<Vec<u8>> {
+        let (transmissions, answer_wait) = match transmission {
+            Transmission::RepeatedWhileUnanswered => (
+                self.timings.transmission_attempts,
+                self.timings.response_timeout,
+            ),
+            Transmission::Single => (
+                1,
+                self.timings
+                    .response_timeout
+                    .saturating_mul(self.timings.transmission_attempts),
+            ),
+        };
         let sequence = self.sequence.allocate();
         let datagram = command_packet(sequence, command);
         let mut assembly = ResponseAssembly::default();
-        for attempt in 1..=self.timings.transmission_attempts {
+        for attempt in 1..=transmissions {
             if attempt > 1 {
                 debug!(
                     sequence,
@@ -168,7 +256,7 @@ impl RconSession {
             }
             self.send(&datagram).await;
             self.last_command_sent = Instant::now();
-            let deadline = Instant::now() + self.timings.response_timeout;
+            let deadline = Instant::now() + answer_wait;
             while let Some(packet) = self.receive_until(deadline).await {
                 match packet {
                     ServerPacket::CommandResponse {
@@ -187,7 +275,10 @@ impl RconSession {
     }
 
     async fn keep_alive(&mut self) {
-        if self.exchange(&[]).await.is_none() {
+        let answered = self
+            .exchange(&[], Transmission::RepeatedWhileUnanswered)
+            .await;
+        if answered.is_none() {
             self.logged_in = false;
             warn!(server = %self.server, "RCON keep-alive unanswered; the next command logs in again");
         }

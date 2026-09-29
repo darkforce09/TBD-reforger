@@ -1,0 +1,12 @@
+SCR_BaseGameMode TBD_GameMode : "{7A5B8572ECC15707}Prefabs/Systems/TBD_GameMode.et" {
+ coords 2048 0 2048
+}
+SCR_FactionManager FactionManager : "{4A188E44289B9A50}Prefabs/MP/Managers/Factions/FactionManager_Editor.et" {
+ coords 2048 0 2048
+}
+SCR_LoadoutManager LoadoutManager : "{B54D08AEA74A5354}Prefabs/MP/Managers/Loadouts/LoadoutManager_Editor.et" {
+ coords 2048 0 2048
+}
+SCR_AIWorld AIWorld : "{01DC74137CFDDB6A}Prefabs/AI/SCR_AIWorld_Arland.et" {
+ coords 2048 0 2048
+}

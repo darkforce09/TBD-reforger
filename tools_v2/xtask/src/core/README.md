@@ -1,9 +1,9 @@
 # Xtask shared plumbing
 
 The helpers every xtask command group shares: finding the checkout root, the one spelling of each
-repository location xtask reads, the one reader of the deploy settings file, running host binaries
-from inside the development container, the cargo target directory policy, and the `PATH` guard
-tests use. The command groups use them
+repository location xtask reads, the one reader of the deploy settings file, the ssh transport to
+the deploy host, running host binaries from inside the development container, the cargo target
+directory policy, and the `PATH` guard tests use. The command groups use them
 without owning [ticket](/documentation_v2/glossary/n_to_z.md#ticket) storage or map processing, which stay in `ticket-engine` and
 `developer-tools`.
 
@@ -18,6 +18,7 @@ tools_v2/xtask/src/core/
 ├── mod.rs                     the module tree
 ├── repository_layout.rs       repository-relative locations, the ticket-engine ones re-exported, and `documentation`
 ├── repository_root.rs         `find_repo_root` for commands, `test_repo_root` for tests
+├── secure_shell_transport.rs  `SshBase` and `ssh_argv`, the shared ssh transport to the deploy host
 ├── test_environment.rs        `PathGuard`: prepends a folder to `PATH` and keeps the system tools reachable
 └── tests/                     unit tests for the deploy settings, the host bridge and the `PATH` construction
 ```
@@ -45,6 +46,12 @@ refused value reports `<path>:<line>: <KEY>: <problem>` (or `<KEY> (process envi
 missing one `<KEY> is not set: add it to <path>`. `deploy_host` parses `TBD_SSH_HOST`, and
 `DeployHostFolder` defaults the remote folders under `/home/<user>`; the folder's README gives the
 grammar.
+
+`secure_shell_transport` is the one way a command reaches the deploy host over ssh: `SshBase`
+reads `TBD_SSH_PASS` (first) or `TBD_SSH_IDENTITY_FILE` and builds `ssh`, `ssh -i <file>` or
+`sshpass -e ssh`, and `ssh_argv` appends the destination and the remote words. The password
+reaches `sshpass` only through the spawned process's `SSHPASS` variable, and `SshBase`'s `Debug`
+redacts it.
 
 `host_execution::Host` exists because the development container cannot run host-linked binaries
 (Steam, [Workbench](/documentation_v2/glossary/n_to_z.md#workbench), `ArmaReforgerServer`). `Host::detect` asks whether this process is in a
@@ -79,6 +86,9 @@ returns 127 and `capture` returns nothing. Cargo is never routed through the bri
     (`tools_v2/xtask/src/commands/deploy/`), `mod bootstrap-staging` and `setup client-addons`
     (`tools_v2/xtask/src/commands/setup/`), `mod remote-logs`, `debug direct-join` and
     `debug a2s-probe` (`tools_v2/xtask/src/commands/debug/`);
+  - `secure_shell_transport`: `deploy staging`
+    (`tools_v2/xtask/src/commands/deploy/staging/remote.rs`) and the `staging` harness
+    (`tools_v2/xtask/src/commands/staging/remote_observers/host_shell.rs`);
   - `host_execution`: the `db` group (`tools_v2/xtask/src/commands/db/operations.rs`), the
     playtest server of the `mod` group
     (`tools_v2/xtask/src/commands/mod_ops/playtest_server/host.rs`) and the platform [wave](/documentation_v2/glossary/n_to_z.md#wave) driver

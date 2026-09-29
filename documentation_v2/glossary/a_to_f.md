@@ -7,6 +7,19 @@ The glossary's entries from A to F, in alphabetical order, each in the format of
 [glossary index](/documentation_v2/glossary/README.md) lists every term and says how a document
 links one.
 
+### acknowledgement-dropping relay
+
+A loopback HTTP relay on the staging host between the API and the
+[fleet host agent](#fleet-host-agent) of one [fleet instance](#fleet-instance) (instance 5). Armed
+over its control socket, it holds back the API's next 200 answer to a claim or to a result past the
+agent's 20-second timeout and then closes the connection, so the staging fleet check proves that a
+lost acknowledgement neither repeats nor loses a [fleet command](#fleet-command); it never stores or
+logs the `Authorization` header.
+
+In code: the `acknowledgement-dropping-relay` executable (`serve`; `control arm drop-next-claim-response|drop-next-result-response`, `disarm`, `status`) in `tools_v2/developer-tools/src/staging_verification/acknowledgement_relay/`; `tools_v2/xtask/deploy/systemd/acknowledgement-dropping-relay@.service`.
+
+See: [staging harness](/documentation_v2/glossary/n_to_z.md#staging-harness), [Acknowledgement relay](/tools_v2/developer-tools/src/staging_verification/acknowledgement_relay/README.md).
+
 ### administration
 
 The administrator-only side of the platform: the API domain of the member roster, bans, warnings,
@@ -137,6 +150,19 @@ In code: `apps/website/api_v2/src/community_content/`.
 
 See: [Community content domain](/apps/website/api_v2/src/community_content/README.md).
 
+### console command
+
+The [fleet command](#fleet-command) `console_command`: one line an administrator types (1 to 256
+bytes, no control characters, no leading `@`), sent to the game server's
+[RCON](/documentation_v2/glossary/n_to_z.md#rcon) console by its [fleet host agent](#fleet-host-agent).
+The agent may repeat the login but transmits the line once and never resends it; the outcome keeps
+the reply up to 4,096 bytes with a truncation flag, and without a reply the command may or may not
+have run.
+
+In code: `FleetAction::ConsoleCommand` in `apps/website/api_v2/src/server_infrastructure/models/fleet_command.rs`; `HostCommand::ConsoleCommand` in `apps/fleet_host_agent/src/command_execution/host_command.rs` and `SessionRequest::ExecuteOnce` in `apps/fleet_host_agent/src/rcon/rcon_session.rs`; `console_command_form.rs` in `apps/website/frontend/src/v2/pages/administration/server_control/fleet_commands/`.
+
+See: [RCON](/documentation_v2/glossary/n_to_z.md#rcon), [API decisions](/documentation_v2/website/api_v2/decisions.md).
+
 ### content manager
 
 The `/admin/content` page, whose breadcrumb reads Comms Broadcaster: administrators write, publish,
@@ -261,22 +287,35 @@ See: [Feature doc template](/documentation_v2/standards/templates/feature_doc.md
 ### fleet command
 
 One operator command to one game server (`start`, `stop`, `restart`, `list_players`, `broadcast`,
-`kick`), kept in the API's command ledger from acceptance through an executor's claim to its
+`kick`, `console_command`), kept in the API's command ledger from acceptance through an executor's claim to its
 outcome; [mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment) alone issue `load_mission` and `restart_with_mission`.
 
 In code: `FleetAction` in `apps/website/api_v2/src/server_infrastructure/models/fleet_command.rs`; `fleet_commands.rs` and `fleet_executor.rs` in `apps/website/api_v2/src/server_infrastructure/handlers/`.
 
-See: [fleet host agent](#fleet-host-agent), [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime), [server control](/documentation_v2/glossary/n_to_z.md#server-control).
+See: [fleet host agent](#fleet-host-agent), [console command](#console-command), [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime), [server control](/documentation_v2/glossary/n_to_z.md#server-control).
 
 ### fleet host agent
 
-The program on each game host beside the Arma Reforger dedicated server: it polls the API outbound
-over HTTPS for the [fleet commands](#fleet-command) addressed to its server, performs process
-control, [RCON](/documentation_v2/glossary/n_to_z.md#rcon) commands and scenario switches, and reports each step; the API never connects in.
+The program beside each Arma Reforger dedicated server of a game host, one per fleet instance: it
+polls the API outbound over HTTPS for the [fleet commands](#fleet-command) addressed to its server,
+performs process control, [RCON](/documentation_v2/glossary/n_to_z.md#rcon) commands and scenario switches, and reports each step; the API never connects in.
 
-In code: `apps/fleet_host_agent/`; `tools_v2/xtask/deploy/systemd/fleet-host-agent.service`.
+In code: `apps/fleet_host_agent/`; `tools_v2/xtask/deploy/systemd/fleet-host-agent@.service`, one
+`fleet-host-agent@N.service` per fleet instance.
 
 See: [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential), [Fleet host agent](/apps/fleet_host_agent/README.md).
+
+### fleet instance
+
+One of the game servers a staging host runs side by side, numbered 1 to `TBD_FLEET_INSTANCES`
+(five on staging): instance N is the registered server "TBD Staging N", with its own dedicated server
+unit `tbd-reforger@N.service`, its own [fleet host agent](#fleet-host-agent)
+`fleet-host-agent@N.service`, its own [machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential) and RCON password, and the game port
+2000+N, the A2S port 17776+N and the loopback RCON port 19998+N.
+
+In code: `tools_v2/xtask/src/commands/deploy/staging/fleet_instances.rs`; `tools_v2/xtask/deploy/systemd/tbd-reforger@.service` and `fleet-host-agent@.service`; on the host, `~/tbd/fleet/instance-N/`.
+
+See: [acknowledgement-dropping relay](#acknowledgement-dropping-relay), [Deploy staging](/tools_v2/xtask/src/commands/deploy/staging/README.md).
 
 ### fleet scenario
 

@@ -1,4 +1,19 @@
 //! Cluster-coordinated REST reconciliation with durable leases and rate-limit backoff.
+//!
+//! **Role:** refreshes one due Discord membership per call: claims its lease, spends the shared
+//! request budget, reads the member from Discord, records the observation or the failure, and
+//! reports how the request ended.
+//! **Position:** `identity_and_access` service; driven by the membership reconciliation worker
+//! (`background_workers::discord_membership_reconciler`) and requested by the OAuth and
+//! administration hooks through [`request_account_refresh`]; reads Discord through
+//! [`crate::identity_and_access::services::discord_client::DiscordService`].
+//! **Signals & state:** the `discord_membership_snapshots` leases and the singleton
+//! `discord_rest_schedule` row in PostgreSQL; every request that reaches Discord adds one to
+//! `tbd_discord_reconcile_outcomes_total` in the application state's metrics registry
+//! ([`AppState::metrics_registry`]) and writes one `discord_reconciliation` log line.
+//! **Invariants:** at most 25 Discord requests per second across replicas; an observation or a
+//! failure is recorded only under the lease that requested it; a failure never changes the
+//! recorded membership; the log line names no account, guild id or token.
 
 use super::discord_membership_cache::{
     MembershipRefreshLease, accept_membership_observation, claim_membership_refresh,
@@ -6,8 +21,14 @@ use super::discord_membership_cache::{
 };
 use crate::core::application_state::AppState;
 use crate::core::failpoints::fail_point;
+use crate::core::observability::metrics_registry::{DiscordReconcileOutcome, Registry};
 use chrono::Duration;
 use sqlx::PgPool;
+
+/// `guild_scope` of a reconciliation of the configured main guild.
+const MAIN_GUILD_SCOPE: &str = "main";
+/// `guild_scope` of a reconciliation of any other guild: an event's partner guild.
+const PARTNER_GUILD_SCOPE: &str = "partner";
 
 /// Seed unknown accounts without inferring membership from a preexisting role cache.
 pub async fn enroll_accounts(pool: &PgPool, guild_id: &str) -> sqlx::Result<()> {
@@ -57,7 +78,9 @@ async fn reserve_request_budget(
 
 /// Refreshes the one membership whose refresh is due: claims its lease, reserves request budget,
 /// reads the member from Discord and records the observation or the failure under that lease.
-/// Answers `false` when nothing is due, the lease is taken or the budget is spent.
+/// A request that reached Discord and was recorded is then counted and logged once (see
+/// `report_outcome`). Answers `false` when nothing is due, the lease is taken or the budget is
+/// spent.
 pub async fn reconcile_one(state: &AppState) -> sqlx::Result<bool> {
     if state.cfg.discord_bot_token.is_empty() {
         return Ok(false);
@@ -82,15 +105,16 @@ pub async fn reconcile_one(state: &AppState) -> sqlx::Result<bool> {
         .fetch_member_with_bot(&state.cfg.discord_bot_token, &guild_id, &discord_id)
         .await;
     fail_point!(DiscordRoleSyncAfterEffect);
-    match fetched {
+    let (outcome, retry_after_ms) = match fetched {
         Ok(member) => {
-            accept_membership_observation(
+            let recorded = accept_membership_observation(
                 &state.pool,
                 &lease,
                 member.as_ref(),
                 &state.cfg.discord_guild_id,
             )
             .await?;
+            (observation_outcome(recorded, member.is_some()), None)
         }
         Err(failure) => {
             if failure.rate_limited {
@@ -99,9 +123,58 @@ pub async fn reconcile_one(state: &AppState) -> sqlx::Result<bool> {
             }
             record_membership_failure(&state.pool, &lease, failure.retry_after, failure.reason)
                 .await?;
+            (
+                failure.outcome(),
+                Some(failure.retry_after.num_milliseconds()),
+            )
         }
-    }
+    };
+    let guild_scope = if lease.guild_id == state.cfg.discord_guild_id {
+        MAIN_GUILD_SCOPE
+    } else {
+        PARTNER_GUILD_SCOPE
+    };
+    report_outcome(
+        &state.metrics_registry,
+        outcome,
+        guild_scope,
+        retry_after_ms,
+        lease.revision,
+    );
     Ok(true)
+}
+
+/// The outcome of a Discord answer: recorded as a member or a non-member, or discarded because
+/// the lease no longer held when the observation was written.
+fn observation_outcome(recorded: bool, is_member: bool) -> DiscordReconcileOutcome {
+    match (recorded, is_member) {
+        (false, _) => DiscordReconcileOutcome::LeaseLost,
+        (true, true) => DiscordReconcileOutcome::Member,
+        (true, false) => DiscordReconcileOutcome::Nonmember,
+    }
+}
+
+/// Counts one finished request in `metrics` ([`Registry::record_discord_reconcile_outcome`]) and
+/// writes its `discord_reconciliation` log line: `outcome`, `guild_scope` (`main` or `partner`),
+/// the snapshot `revision` the lease was claimed at, and `retry_after_ms`, present on a failure
+/// only.
+fn report_outcome(
+    metrics: &Registry,
+    outcome: DiscordReconcileOutcome,
+    guild_scope: &'static str,
+    retry_after_ms: Option<i64>,
+    revision: i64,
+) {
+    metrics.record_discord_reconcile_outcome(outcome);
+    let outcome = outcome.label();
+    tracing::info!(
+        target: "discord_reconciliation",
+        outcome,
+        guild_scope,
+        retry_after_ms,
+        revision,
+        "Discord membership reconciliation finished"
+    );
 }
 
 /// OAuth refresh and administration hooks request reconciliation without asserting affiliation.
@@ -111,18 +184,33 @@ pub async fn request_account_refresh(pool: &PgPool, discord_id: &str) -> sqlx::R
     Ok(())
 }
 
+/// Why a Discord member read produced no observation, and when to read again.
 pub struct MembershipLookupFailure {
+    /// The failure recorded as the snapshot's `last_error`; never a token or a response body.
     pub reason: &'static str,
+    /// How long the snapshot, and on a 429 the shared request schedule, waits before the next read.
     pub retry_after: Duration,
+    /// Discord answered 429.
     pub rate_limited: bool,
 }
 
 impl MembershipLookupFailure {
+    /// A failure without a usable Discord answer, read again after 60 seconds.
     pub fn unavailable(reason: &'static str) -> Self {
         Self {
             reason,
             retry_after: Duration::seconds(60),
             rate_limited: false,
+        }
+    }
+
+    /// The reconciliation outcome this failure reports: `rate_limited` on a 429, else
+    /// `unavailable`.
+    pub fn outcome(&self) -> DiscordReconcileOutcome {
+        if self.rate_limited {
+            DiscordReconcileOutcome::RateLimited
+        } else {
+            DiscordReconcileOutcome::Unavailable
         }
     }
 }

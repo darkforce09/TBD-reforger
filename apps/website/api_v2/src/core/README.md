@@ -9,7 +9,7 @@ HTTP, text and wire-format helpers the domains reuse instead of writing their ow
 
 ```text
 apps/website/api_v2/src/core/
-├── application_state.rs        `AppState`: the pool, config, token manager, hub, limiters and clients
+├── application_state.rs        `AppState`: the pool, config, token manager, hub, limiters, clients and metrics registry
 ├── authentication_primitives/  access tokens, opaque-token hashing and the session-authority trait
 ├── configuration/              `Config`, read from the environment at boot, and proxy parsing
 ├── database/                   the Postgres pool, the embedded migrations and SQLSTATE predicates

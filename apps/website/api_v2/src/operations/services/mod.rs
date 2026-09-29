@@ -4,6 +4,7 @@
 pub mod access_administration;
 pub mod ballistics_catalogs;
 pub mod event_access;
+pub mod event_authoring;
 pub mod event_lifecycle_sweep;
 pub(crate) mod event_lifecycle_transition;
 pub mod event_lookup;

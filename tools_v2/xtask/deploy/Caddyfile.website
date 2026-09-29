@@ -10,6 +10,20 @@
 #
 # COOP/COEP match Trunk.toml / gate serve — required for Mission Creator wasm
 # SharedArrayBuffer (crossOriginIsolated).
+#
+# Forwarded client addresses: cloudflared reaches Caddy from 127.0.0.1 and sends the visitor's
+# address in X-Forwarded-For. Caddy keeps an incoming X-Forwarded-For only from a trusted proxy and
+# appends the peer it saw, so the API (TRUSTED_PROXIES=127.0.0.1/32) takes the rightmost untrusted
+# hop, the visitor, as the rate-limit key. Every other peer, a LAN client included, has its
+# X-Forwarded-For replaced by its own address and keeps a bucket of its own. Only the tunnel's
+# loopback peer is trusted: with a wider range, a LAN client's own X-Forwarded-For text would
+# travel upstream as though a proxy had written it.
+
+{
+	servers {
+		trusted_proxies static 127.0.0.1/32
+	}
+}
 
 :3080 {
 	# Mission Creator wasm / SharedArrayBuffer parity with `trunk serve`

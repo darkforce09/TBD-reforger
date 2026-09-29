@@ -2,9 +2,10 @@
 //! host's shell receives.
 //!
 //! **Role:** builds every remote step's command: the staging compose services (Postgres, and
-//! Caddy with its configuration reload), the API and app builds, the migration checksum repair,
-//! the move of runtime files into the unit's state folder, and the unit restart; and
-//! [`login_shell`], the one quoted word ssh carries each of them in.
+//! Caddy with its configuration reload), the API build, the build of the staging host tools
+//! ([`STAGING_HOST_TOOLS`]), the app build, the migration checksum repair, the move of runtime
+//! files into the unit's state folder, and the unit restart; and [`login_shell`], the one quoted
+//! word ssh carries each of them in.
 //!
 //! **Position:** called by [`crate::commands::deploy::website`], which prints each command under
 //! `--dry-run` and sends it through ssh as a [`login_shell`] word otherwise, so the dry run shows
@@ -17,7 +18,8 @@
 //! `TBD_POSTGRES_HOST_PORT` exported, names `apps/website/docker-compose.staging.yml`, and runs
 //! under `docker compose` when the host has docker, else under `podman compose`; the Caddy reload
 //! names the Caddyfile at the path the compose file's `caddy` service mounts it
-//! ([`caddyfile_in_container`]).
+//! ([`caddyfile_in_container`]); every cargo build runs in the checkout and ends by proving each
+//! executable it names exists under `target/release/`.
 
 use crate::commands::deploy::remote_rust_toolchain::PUT_RUST_TOOLCHAIN_ON_PATH;
 use crate::core::repository_layout;
@@ -112,6 +114,50 @@ pub fn api_build(remote_dir: &str) -> String {
     format!(
         "cd '{remote_dir}' &&     {PUT_RUST_TOOLCHAIN_ON_PATH} &&     cargo build --release -p website-api --bin api &&     test -x target/release/api"
     )
+}
+
+/// One executable a staging verification run calls on the host: the cargo package that declares
+/// it, and its `[[bin]]` name.
+pub struct StagingHostTool {
+    pub package: &'static str,
+    pub executable: &'static str,
+}
+
+/// The staging host tools every website deploy builds into the checkout's `target/release/`, so
+/// the staging harness finds them current on the host: `staging-fixtures`, which stages the fleet's
+/// servers, credentials and load fixtures against the API's database, and
+/// `acknowledgement-dropping-relay`, which `cargo xtask deploy staging` installs in front of the
+/// relay instance's host agent.
+pub const STAGING_HOST_TOOLS: [StagingHostTool; 2] = [
+    StagingHostTool {
+        package: "website-api",
+        executable: "staging-fixtures",
+    },
+    StagingHostTool {
+        package: "developer-tools",
+        executable: "acknowledgement-dropping-relay",
+    },
+];
+
+/// Build every [`STAGING_HOST_TOOLS`] executable in the remote checkout, one `cargo build` per
+/// tool, then prove each one is an executable file.
+pub fn staging_host_tools_build(remote_dir: &str) -> String {
+    let builds = STAGING_HOST_TOOLS
+        .iter()
+        .map(|tool| {
+            format!(
+                "cargo build --release -p {} --bin {}",
+                tool.package, tool.executable
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(" && ");
+    let proofs = STAGING_HOST_TOOLS
+        .iter()
+        .map(|tool| format!("test -x target/release/{}", tool.executable))
+        .collect::<Vec<_>>()
+        .join(" && ");
+    format!("cd '{remote_dir}' && {PUT_RUST_TOOLCHAIN_ON_PATH} && {builds} && {proofs}")
 }
 
 /// Build the Leptos SPA into `frontend/dist`.

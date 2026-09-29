@@ -7,6 +7,10 @@
 //! log that cannot be read is ENVIRONMENT, the same as a log that is not there — never a zero
 //! count, which would read as the STALE BUILD verdict.
 //!
+//! `--instance N` reads fleet instance N's log under `~/tbd/fleet/instance-N/profile`; without it
+//! the single server's profile folder is read, and a host that runs a fleet is refused with
+//! ENVIRONMENT and a message naming `--instance`.
+//!
 //! The host and the profile folder come from `deploy.env` under the precedence rule of
 //! [`crate::core::deploy_environment`]. A missing or malformed setting exits 1 rather than
 //! ENVIRONMENT 3: it is a refused setting, the same class as the deploy's own refusals, and it is
@@ -44,6 +48,8 @@ mod tests;
 
 mod execution;
 pub use execution::run;
+
+mod remote_fetch;
 
 mod shell_quote;
 use shell_quote::append_line;

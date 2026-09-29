@@ -1,4 +1,5 @@
-//! Source pins for the PATCH clear contract and the duplicate-attach mapping.
+//! Source pins for the PATCH clear contract, the duplicate-attach mapping, and the event authoring
+//! services both routes write through.
 //!
 //! Empty-string clear for briefing/banner is a *live* PATCH writer shape, not a doc-comment
 //! phrase, so every assertion below runs against source with `//` and `/* */` stripped — a
@@ -6,6 +7,9 @@
 
 const CREATE_UPDATE: &str = include_str!("../event_create_update.rs");
 const ATTACHMENT: &str = include_str!("../event_mission_attachment.rs");
+const EVENT_CREATION: &str = include_str!("../../services/event_authoring/event_creation.rs");
+const MISSION_ATTACHMENT: &str =
+    include_str!("../../services/event_authoring/mission_attachment.rs");
 
 fn strip_rust_comments(src: &str) -> String {
     let bytes = src.as_bytes();
@@ -89,10 +93,12 @@ fn patch_empty_string_clear_writers_and_attach_maps_unique() {
         "update_event must WRITE banner_image_url when the key is present (incl. \"\") \
          (fails with: drop the banner qb.push arm)"
     );
-    // Banner clear path goes through the validator — empty must be Ok, not 400.
+    // Banner clear path goes through the validator — empty must be Ok, not 400. The validator
+    // lives in the event creation service, which both the POST and the PATCH routes apply.
+    let creation_code = collapse_ws(&strip_rust_comments(production_half(EVENT_CREATION)));
     assert!(
-        code.contains("fn validated_banner_image_url")
-            && code.contains("trimmed.is_empty() || is_http_url(trimmed)"),
+        creation_code.contains("pub fn validated_banner_image_url")
+            && creation_code.contains("trimmed.is_empty() || is_http_url(trimmed)"),
         "validated_banner_image_url must accept empty (clear) or http(s) \
          (fails with: refuse empty → \"\" clear 400s)"
     );
@@ -111,9 +117,48 @@ fn patch_empty_string_clear_writers_and_attach_maps_unique() {
         .expect("handler body");
     let add_code = collapse_ws(&strip_rust_comments(add));
     assert!(
-        add_code.contains("is_unique_violation")
-            && add_code.contains("already attached to this event"),
-        "add_event_mission must map idx_event_mission unique violations to a 409 \
+        add_code.contains("attach_mission(")
+            && add_code.contains("AttachmentAuthority::AdministratorSession")
+            && !add_code.contains("INSERT INTO"),
+        "add_event_mission must write through the mission attachment service for the \
+         administrator session (fails with: an attach writer inside the handler)"
+    );
+    let attach = production_half(MISSION_ATTACHMENT)
+        .split("pub async fn attach_mission")
+        .nth(1)
+        .expect("attach_mission")
+        .split("\n}\n")
+        .next()
+        .expect("service body");
+    let attach_code = collapse_ws(&strip_rust_comments(attach));
+    assert!(
+        attach_code.contains("is_unique_violation")
+            && attach_code.contains("already attached to this event"),
+        "attach_mission must map idx_event_mission unique violations to a 409 \
          (fails with: drop is_unique_violation arm → 500 on duplicate attach)"
+    );
+}
+
+/// `POST /api/v1/events` writes through the event creation service, the path the host tool's
+/// fixture events take too, and inserts no event row itself.
+#[test]
+fn create_event_writes_through_the_event_creation_service() {
+    let handler = production_half(CREATE_UPDATE)
+        .split("pub async fn create_event")
+        .nth(1)
+        .expect("create_event")
+        .split("\npub async fn ")
+        .next()
+        .expect("handler body");
+    let handler_code = collapse_ws(&strip_rust_comments(handler));
+    assert!(
+        handler_code.contains("EventCreation::new(")
+            && handler_code.contains("event_creation::create_event(&mut tx, &creation,"),
+        "create_event must validate and write through event_creation"
+    );
+    assert!(
+        !collapse_ws(&strip_rust_comments(production_half(CREATE_UPDATE)))
+            .contains("INSERT INTO events"),
+        "the handler module must not insert events itself"
     );
 }

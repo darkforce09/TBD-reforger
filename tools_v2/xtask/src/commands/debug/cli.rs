@@ -1,6 +1,8 @@
 use clap::Subcommand;
 use std::path::PathBuf;
 
+use crate::commands::debug::direct_join::{SINGLE_SERVER_A2S_PORT, SINGLE_SERVER_GAME_PORT};
+
 #[derive(Subcommand, Debug)]
 pub(crate) enum DebugCmd {
     /// A2S query of each port; prints one JSON object keyed `p<port>`.
@@ -33,6 +35,12 @@ pub(crate) enum DebugCmd {
         run_id: String,
         #[arg(long, default_value = "")]
         remote: String,
+        /// The game port whose UDP listener count `--remote` carries (H1's `udp_<port>` key).
+        #[arg(long, default_value_t = SINGLE_SERVER_GAME_PORT)]
+        game_port: u16,
+        /// The A2S port whose UDP listener count `--remote` carries.
+        #[arg(long, default_value_t = SINGLE_SERVER_A2S_PORT)]
+        a2s_port: u16,
         #[arg(long)]
         client_build: String,
         #[arg(long)]
@@ -55,5 +63,8 @@ pub(crate) enum DebugCmd {
     DirectJoin {
         /// Run id written into the NDJSON block (default: user-repro).
         run_id: Option<String>,
+        /// Fleet instance to probe, 1 to 5: unit tbd-reforger@N, game port 2000+N, A2S 17776+N.
+        #[arg(long)]
+        instance: Option<u16>,
     },
 }

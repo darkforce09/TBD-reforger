@@ -10,7 +10,8 @@
 //!
 //! **Invariants:** a host is resolved to one IPv4 address before any datagram is sent, and every
 //! A2S row names that address, or carries the resolution error; no row names a host the caller
-//! did not pass.
+//! did not pass; the H1 row keys its listener counts by the ports the caller probed, never by a
+//! fixed pair.
 
 use anyhow::{Context, Result};
 use serde_json::{Value, json};
@@ -97,6 +98,9 @@ pub struct DirectJoinObservations<'a> {
     pub run_id: &'a str,
     /// The remote probe's output: service state, UDP listeners and log lines.
     pub remote: &'a str,
+    /// The probed server's game and A2S ports, whose listener counts in `remote` H1 reads under
+    /// `udp_<port>`; `None` when the settings named no server, and H1 then carries no such key.
+    pub listener_ports: Option<[u16; 2]>,
     pub client_build: &'a str,
     pub server_build: &'a str,
     pub symlink: &'a str,
@@ -120,12 +124,7 @@ pub fn cmd_direct_join_log(log: &Path, observed: &DirectJoinObservations<'_>) ->
         run_id,
         "H1",
         "remote service and ports",
-        json!({
-            "raw": remote,
-            "service_active": remote.contains("service=active"),
-            "udp_2001": remote.contains("udp2001=1") || remote.contains("udp2001=2"),
-            "udp_17777": remote.contains("udp17777=1"),
-        }),
+        service_and_listeners(remote, observed.listener_ports),
     )?;
     append(
         log,
@@ -166,6 +165,27 @@ pub fn cmd_direct_join_log(log: &Path, observed: &DirectJoinObservations<'_>) ->
     )?;
     append(log, run_id, "H6", "a2s port probe from client PC", a2s)?;
     Ok(())
+}
+
+/// H1's data: the service state and, per probed port, whether the remote probe's
+/// `udp<port>=<count>` shows it listening: one or two sockets on the game port, one on the A2S
+/// port.
+fn service_and_listeners(remote: &str, listener_ports: Option<[u16; 2]>) -> Value {
+    let mut row = serde_json::Map::new();
+    row.insert("raw".into(), json!(remote));
+    row.insert(
+        "service_active".into(),
+        json!(remote.contains("service=active")),
+    );
+    if let Some([game, a2s]) = listener_ports {
+        let counted = |port: u16, count: u8| remote.contains(&format!("udp{port}={count}"));
+        row.insert(
+            format!("udp_{game}"),
+            json!(counted(game, 1) || counted(game, 2)),
+        );
+        row.insert(format!("udp_{a2s}"), json!(counted(a2s, 1)));
+    }
+    Value::Object(row)
 }
 
 fn append(log: &Path, run_id: &str, hid: &str, message: &str, data: Value) -> Result<()> {

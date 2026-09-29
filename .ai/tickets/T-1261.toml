@@ -1,0 +1,13 @@
+id = "T-1261"
+kind = "work"
+title = "Fix the intermittent ETXTBSY failure of the slice stub-binary test"
+summary = "commands::platform::slice_execution::tests::stub_binary_claude_dialect_parses_too fails now and then with 'Text file busy': the test executes a stub binary it has just written while another thread can still hold the file open for writing."
+class = "bug"
+status = "idea"
+notes = "tools_v2/xtask: commands::platform::slice_execution::tests::stub_binary_claude_dialect_parses_too fails intermittently with 'Text file busy' (ETXTBSY) when it executes the stub binary it has just written; the usual cause is a descriptor to that file still open for writing in a process forked by a parallel test. Make the stub write race-free (write and close before any concurrent fork, for example under the same lock, or retry the exec on ETXTBSY) and prove it with repeated runs. Seen in the milestone S baseline runs, note N-c."
+created_at = "2026-09-29T16:28:54Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "wave"

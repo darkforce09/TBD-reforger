@@ -10,7 +10,7 @@ fn usage_names_the_runnable_command_and_every_mode_flag() {
     assert_eq!(lines.len(), 2);
     assert_eq!(
         lines[0],
-        "Usage: cargo xtask deploy staging [--dry-run] [--render-only <path>]"
+        "Usage: cargo xtask deploy staging [--dry-run] [--migrate-single-instance] [--render-only <directory>]"
     );
     assert!(
         lines[1]
@@ -68,7 +68,12 @@ fn flags_accumulate() {
     match parse(&v(&["--dry-run", "--verify-boot-selftest"])) {
         Parsed::Run(cli) => {
             assert!(cli.dry_run && cli.verify_boot_selftest);
+            assert!(!cli.migrate_single_instance);
         }
+        other => panic!("{other:?}"),
+    }
+    match parse(&v(&["--migrate-single-instance", "--dry-run"])) {
+        Parsed::Run(cli) => assert!(cli.migrate_single_instance && cli.dry_run),
         other => panic!("{other:?}"),
     }
 }

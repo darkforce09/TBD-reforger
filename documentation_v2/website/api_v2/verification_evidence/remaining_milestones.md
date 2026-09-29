@@ -57,9 +57,9 @@ other rows).
 | V | verification_failure_injection | verification_failure_injection | db test-it | 27 | `failure_injection*` | passing (27 cases, 2026-09-28) |
 | V | verification_engineering_laws | verification_engineering_laws; repository_quality (`ci ci-local`) | db test-it | 10 | `engineering_laws*` | passing (10 cases, 2026-09-28) |
 | V | identity_refresh_rotation | identity_browser_session_transactions | mk ci-local-leptos | 9 | the named browser session cases | passing (9 cases, 2026-09-28) |
-| S | staging_fleet | staging_fleet | external | 1 | `case staging_fleet*` | not run |
-| S | staging_discord (also on the identity Discord requirements) | staging_discord | external | 1 | `case staging_discord*` | not run |
-| S | staging_load | staging_load | external | 1 | `case staging_load*` | not run |
+| S | staging_fleet | staging_fleet | external | 50 | `case staging_fleet*` | not run |
+| S | staging_discord (also on the identity Discord requirements) | staging_discord | external | 13 | `case staging_discord*` | not run |
+| S | staging_load | staging_load | external | 10 | `case staging_load*` | not run |
 
 Take the exact case names from `requirements.json` when implementing: several checks name
 their cases in full, and the register is the source of truth.
@@ -179,6 +179,12 @@ identity_browser_session_transactions.
 ## S — Staging
 
 **Covers:** staging_fleet, staging_discord and staging_load.
+
+**Status:** implemented and gated; receipts pending the run day. The harness, the host tool, the
+engines and the console command pass their checks in the 2026-09-29 sweep: `staging_harness` (95
+cases), `staging_verification_engines` (84), `staging_fixture_tool` (52) and `fleet_console_command`
+(7). The three operational checks declare 50, 13 and 10 cases and stay not run until the
+recorded runs on the staging host write their receipts.
 
 **Required behavior:**
 - Five real staging servers and game clients verify remote controls, identity, and both

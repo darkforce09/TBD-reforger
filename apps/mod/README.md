@@ -67,10 +67,16 @@ cargo xtask mod playtest --mission=<uuid> --admin=<identityId>  # a local dedica
 cargo xtask mod test-game-runtime-api                           # the game-runtime routes, with TBD_MACHINE_CREDENTIAL
 ```
 
-The staging server takes `cp tools_v2/xtask/deploy/deploy.env.example tools_v2/xtask/deploy/deploy.env`,
-filled with `TBD_SSH_HOST` and the tokens, then `cargo xtask deploy staging`. With
-`TBD_SERVER_MODE=config` and `TBD_WORKSHOP_MOD_ID` set, clients Direct Join it and download the
-Workshop mod; a local `-addons` client from `cargo xtask setup client-addons` cannot Direct Join.
+The staging fleet takes `cp tools_v2/xtask/deploy/deploy.env.example tools_v2/xtask/deploy/deploy.env`,
+filled with `TBD_SSH_HOST` and the `TBD_FLEET_*` settings; on the host, the machine credentials
+that `cargo xtask staging provision-fleet` writes and the join password in
+`~/tbd/fleet/join-password`; then `cargo xtask deploy staging`. Each fleet instance N runs its own
+dedicated server (`tbd-reforger@N`, game port `TBD_FLEET_GAME_PORT_BASE + N`) beside its own host
+agent (`fleet-host-agent@N`, configured by `~/.config/fleet-host-agent/instance-N/agent.toml`);
+the relay instance's agent (instance 5 on staging) reaches the API through the
+acknowledgement-dropping relay. With `TBD_WORKSHOP_MOD_ID` set, clients Direct Join an instance
+and download the Workshop mod; only instance 1 is listed in the server browser, and a local
+`-addons` client from `cargo xtask setup client-addons` cannot Direct Join.
 
 Other mod commands:
 

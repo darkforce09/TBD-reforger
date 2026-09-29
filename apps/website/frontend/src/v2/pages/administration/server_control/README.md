@@ -46,8 +46,10 @@ reports it. The card shows only what the server row carries: a server with no st
 zeros and dashes, a server that never reported a telemetry queue reading reads "No reading" in
 the queue column, an inactive server carries an "Inactive" badge in the picker and the card, the terrain is capitalised or a dash between matches, and "Active Mission" shows
 the current match id, since the row names no mission. The launch control only says the game client
-is needed. The page has no [RCON](/documentation_v2/glossary/n_to_z.md#rcon) console. Every request runs
-in the browser build only; a native build renders the failure branch.
+is needed. The console box sends one line to the server's
+[RCON](/documentation_v2/glossary/n_to_z.md#rcon) console as a `console_command` fleet command, which
+the host agent carries out, and shows the reply the host agent reports; the page itself calls no
+RCON route. Every request runs in the browser build only; a native build renders the failure branch.
 
 ## Routes
 
@@ -75,7 +77,9 @@ in the browser build only; a native build renders the failure branch.
 - Fleet commands (`fleet_commands/`):
   - `GET /api/v1/servers/{id}/commands`: read as `FleetCommandList` of `FleetCommandReceipt`.
   - `POST /api/v1/servers/{id}/commands`: sends a `FleetCommandRequest` (`action`, `arguments`),
-    read back as the `FleetCommandReceipt`.
+    read back as the `FleetCommandReceipt`; a console line is sent as `console_command` with
+    `{"line": …}`, and its receipt's `outcome` also reads as `ConsoleCommandOutcome`
+    (`response`, `response_truncated`).
   - `GET /api/v1/servers/{id}/commands/{commandId}`: the followed receipt, every two seconds.
   - `POST /api/v1/servers/{id}/commands/{commandId}/cancel` with `{}`: read as the receipt.
 - [Mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment) (`mission_deployments/`):
@@ -133,14 +137,14 @@ in the browser build only; a native build renders the failure branch.
 
 | State | What the viewer sees |
 |---|---|
-| controls | "Fleet commands": "Start", "Stop", "Restart", "List players"; "Message, at most 256 bytes" and "Broadcast"; "Arma identity (UID)", "Runtime session id — the server's open session", "Reason shown to the player (optional)" and "Kick", with the listed players offered and "Use the session that confirmed the latest deployment (<id>)" |
+| controls | "Fleet commands": "Start", "Stop", "Restart", "List players"; "Server console" with "RCON · host agent", "One line for the server console, such as #players", "Send", "<n> / 256 bytes" and "The host agent sends the line once and never repeats it; with no reply, the outcome says it may or may not have run."; "Message, at most 256 bytes" and "Broadcast"; "Arma identity (UID)", "Runtime session id — the server's open session", "Reason shown to the player (optional)" and "Kick", with the listed players offered and "Use the session that confirmed the latest deployment (<id>)" |
 | stop or restart asked | "Stop <server>? Every connected player is disconnected." or "Restart <server>? Every connected player is disconnected until it is back.", with "Stop the server" or "Restart the server", and "Keep it running" |
 | accepted | the toast "<Action> accepted — waiting for the <executor> to carry it out", and "Your command": "<Action> is <state> — following it until it finishes." |
-| ended | "<Action> succeeded" (with what it observed, such as "N player(s): …" or "No players connected"), "<Action> failed: <reason>", "<Action> expired — no executor carried it out before <time>, so nothing ran", "<Action> was cancelled before any executor claimed it — nothing ran", or "<Action>: the outcome is unknown. The executor stopped reporting after the command started, so it may or may not have taken effect, and nothing repeats it. Inspect the server before issuing it again." |
+| ended | "<Action> succeeded" (with what it observed, such as "N player(s): …", "No players connected", or for a console command "the server replied "<line>"", "the server replied with N lines" or "the server's reply was empty", followed by "; the host agent kept only its first 4096 bytes" when the reply was cut, and the reply itself shown as sent under "Your command" and under its history row), "<Action> failed: <reason>" (a console line the server never answered reads "Console command failed: no RCON response; the command may or may not have run"), "<Action> expired — no executor carried it out before <time>, so nothing ran", "<Action> was cancelled before any executor claimed it — nothing ran", or "<Action>: the outcome is unknown. The executor stopped reporting after the command started, so it may or may not have taken effect, and nothing repeats it. Inspect the server before issuing it again." |
 | follow abandoned | "Stopped following the command: <why>" |
 | history | "History" and "Refresh": "Loading the command history…", the failure ("The command history could not be read"), "No command has been requested for this server yet.", or per command its state ("Queued", "Claimed", "Executing", "Succeeded", "Failed", "Expired", "Cancelled", "Outcome unknown"), action, "<executor> · N claim(s)", "Requested by <who>, <time>", claimed, executing, finished or expires times, "Arguments — …", its outcome and failure reason; "Cancel" on a queued one, answered "<Action> cancelled — nothing ran" |
 | refused | the API's sentence, else "The command could not be requested" or "The command could not be cancelled"; an unclaimable cancel reads "The command is <state> — an executor has taken it up, so it can no longer be cancelled.", an ended session "That runtime session is not the server's open session any more — the game server has restarted since. Issue the kick against the session running now." |
-| request checks | "Enter the <field>", "The <field> is too long: at most <n> bytes", "The <field> cannot hold line breaks or control characters", "Enter the runtime session the kick is issued against, as its id" |
+| request checks | "Enter the <field>", "The <field> is too long: at most <n> bytes", "The <field> cannot hold line breaks or control characters", "Enter the runtime session the kick is issued against, as its id"; for the console, "The console line must be one line, without line breaks or control characters", "Enter the console line", "The console line is too long: at most 256 bytes" and "The console line cannot start with @: those commands act on the host agent's own RCON session" |
 
 ### Mission deployments
 

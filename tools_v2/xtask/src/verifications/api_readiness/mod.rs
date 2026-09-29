@@ -1,12 +1,30 @@
 //! API completion is the conjunction of current evidence for every registered requirement.
+//!
+//! **Role:** `cargo xtask verify api-readiness`: runs the local checks under `--execute`, judges
+//! every receipt the acceptance register names, and fails each requirement whose checks did not
+//! all hold. [`operational_recording`] writes the receipts of the staging checks.
+//!
+//! **Position:** `commands/verify/dispatch.rs` calls [`verify`]; the `cargo xtask staging`
+//! harness records staging runs through [`operational_recording`]. Receipts and logs live in the
+//! evidence folder (default `target/api-readiness`).
+//!
+//! **Signals & state:** none held; reads the register, the Git tree, the configuration files and
+//! the process environment, and writes receipts and logs into the evidence folder.
+//!
+//! **Invariants:** a receipt counts only against both current fingerprints; a run whose tree or
+//! configuration changed while it ran is refused, and `--execute` never runs an `operational`
+//! check or a check without a command.
 
 mod case_count;
 mod evidence;
 mod evidence_storage;
 mod fingerprint;
 mod operational;
+mod operational_log;
+pub(crate) mod operational_recording;
 mod property_evidence;
 mod register;
+mod tool_identity;
 
 use anyhow::{Result, ensure};
 use evidence::Receipt;
@@ -102,19 +120,7 @@ fn execute_local(
     let property_configuration =
         super::property_test_configuration::PropertyTestConfiguration::from_environment()?;
     std::fs::create_dir_all(directory)?;
-    let versions = ["rustc", "cargo", "git"]
-        .into_iter()
-        .map(|tool| {
-            let output = Run::new(tool)
-                .arg("--version")
-                .cwd(root)
-                .timeout(Duration::from_secs(10))
-                .output()
-                .map_err(|error| anyhow::anyhow!("{tool} version: {error:?}"))?;
-            ensure!(output.code == 0, "cannot identify {tool}");
-            Ok(output.stdout.trim().to_owned())
-        })
-        .collect::<Result<Vec<_>>>()?;
+    let versions = tool_identity::versions(root)?;
     let mut outputs = BTreeMap::new();
     let mut attempted = BTreeSet::new();
     let mut failures = BTreeMap::new();
