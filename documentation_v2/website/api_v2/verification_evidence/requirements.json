@@ -3106,7 +3106,7 @@
         "--locked"
       ],
       "timeout_seconds": 600,
-      "minimum_cases": 76,
+      "minimum_cases": 77,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test verifications::api_readiness::(?:[A-Za-z0-9_]+::)*(?:tests|source_tests)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
     },
@@ -3402,7 +3402,7 @@
         "commands::staging::"
       ],
       "timeout_seconds": 600,
-      "minimum_cases": 95,
+      "minimum_cases": 96,
       "success_marker": "test result: ok.",
       "case_pattern": "(?m)^test commands::staging::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
     },

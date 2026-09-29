@@ -44,8 +44,8 @@ gproj's), `TBD_ADDONS_STAGING` (required, exit 2 without it), `TBD_ADMIN_COUNT` 
   `apps/mod/tbd-framework/`.
 - Used by: `tools_v2/xtask/src/commands/deploy/staging.rs` (the two offline modes);
   `tools_v2/xtask/src/commands/deploy/staging/config.rs` (the GUID cross-check);
-  `tools_v2/xtask/src/commands/deploy/staging/remote/verify_boot_remote.rs` (the verdict after a
-  live restart).
+  `tools_v2/xtask/src/commands/deploy/staging/remote/instance_boot_verdict.rs` (each fleet
+  instance's log check after a live restart).
 - Rules: the addon check tells the checkout from the Workshop copy by path, not GUID
   (`addon_check_discriminates_on_path_not_guid` in
   `tools_v2/xtask/src/commands/deploy/staging/tests/boot/tests.rs`); the last `Loaded addons:` block

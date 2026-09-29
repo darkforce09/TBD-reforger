@@ -18,7 +18,9 @@
 //! each case owns the commands it enqueues. Every passing case ends with its commands terminal, so
 //! the next case's claims and the global reconciliation pass see only that case's commands; a case
 //! first retires any command a failed earlier case left active (none in a passing run). The
-//! coverage tally is test-local.
+//! coverage tally is test-local. Every step ends its transaction, by commit or by an awaited
+//! rollback, before the next step runs: a dropped transaction's rollback waits on the pool, and the
+//! row lock it still holds would hide that command from the next claim's `SKIP LOCKED` read.
 //! **Invariants:** a report is accepted only with the command's current fencing token from the
 //! credential holding the claim; a claim lapsed before the effect started returns to the queue
 //! under the next token; a lapse after a non-idempotent effect started makes the command
@@ -492,6 +494,18 @@ fn refusal(error: ApiError) -> Observed {
     }
 }
 
+/// The refusal of a step whose transaction is rolled back before the next step runs.
+async fn refused_after_rollback(
+    transaction: sqlx::Transaction<'_, sqlx::Postgres>,
+    error: ApiError,
+) -> Observed {
+    transaction
+        .rollback()
+        .await
+        .expect("roll back a refused step");
+    refusal(error)
+}
+
 /// The outcome object of report `marker`, so the stored outcome names the report it came from.
 fn outcome_of(marker: usize) -> serde_json::Map<String, Value> {
     let Value::Object(outcome) = json!({ "report": marker }) else {
@@ -607,7 +621,7 @@ impl LedgerWorld {
                     token: command.fencing_token,
                 })
             }
-            Err(error) => refusal(error),
+            Err(error) => refused_after_rollback(transaction, error).await,
         }
     }
 
@@ -622,7 +636,7 @@ impl LedgerWorld {
                     attempts: receipt.attempts,
                 }
             }
-            Err(error) => refusal(error),
+            Err(error) => refused_after_rollback(transaction, error).await,
         }
     }
 
@@ -655,7 +669,7 @@ impl LedgerWorld {
                     attempts: receipt.attempts,
                 }
             }
-            Err(error) => refusal(error),
+            Err(error) => refused_after_rollback(transaction, error).await,
         }
     }
 

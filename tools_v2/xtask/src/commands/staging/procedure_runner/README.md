@@ -37,12 +37,15 @@ deciding ones become the log's `observation:` lines. Probes read only: a probe w
 a read is contradicted before it reaches the host.
 
 `record` refuses a plan with no case, a duplicate, an undeclared or undecided case, a decided
-not-run case, or a request-row deadline without a request, before `RecordingSession::begin`. The
-receipt's environment is the environment identities plus the procedure's `staged_preconditions`
-(`staged_precondition=<name>`), so a precondition set up by a tool rather than by elapsed time is
-named in the receipt itself. After
-`begin` every outcome reaches `finish`: a run that stops with an error becomes a failing receipt
-naming it.
+not-run case, or a request-row deadline without a request, before `RecordingSession::begin`.
+`RecordingInputs::process_environment` carries the variables of the process the recording runs
+in (`dispatch.rs` fills it from `std::env::vars_os()`, a test passes a clean one); `begin` hands
+it to the run discipline, which refuses `TEST_DATABASE_URL`, `DEPLOY_ENV` or any `PROPTEST_*` by
+name before any run folder, log or receipt is written. The receipt's environment is the
+environment identities plus the procedure's `staged_preconditions` (`staged_precondition=<name>`),
+so a precondition set up by a tool rather than by elapsed time is named in the receipt itself.
+After `begin` every outcome reaches `finish`: a run that stops with an error becomes a failing
+receipt naming it.
 
 ## Boundaries
 

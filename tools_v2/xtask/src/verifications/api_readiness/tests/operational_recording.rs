@@ -1,5 +1,6 @@
-//! Staging recordings in isolated Git trees: a passing run is judged held, and every failing run
-//! exits 1 with its real observations, no success marker, and a receipt the judge refuses.
+//! Staging recordings in isolated Git trees: a passing run is judged held, every failing run
+//! exits 1 with its real observations, no success marker, and a receipt the judge refuses, and
+//! the run discipline judges the environment `begin` is given, never the one the test runs in.
 use super::*;
 use crate::core::repository_layout::documentation::API_READINESS_REGISTER;
 use crate::verifications::api_readiness::{case_count, now, verify};
@@ -95,7 +96,13 @@ impl Staging {
     }
 
     fn begin(&self, check: StagingCheck) -> Result<RecordingSession> {
-        RecordingSession::begin(&self.root, Path::new(EVIDENCE), check, argv(check))
+        RecordingSession::begin(
+            &self.root,
+            Path::new(EVIDENCE),
+            check,
+            argv(check),
+            clean_environment(),
+        )
     }
 
     /// Records `outcome` from a fresh session of `check`.
@@ -173,6 +180,11 @@ fn argv(check: StagingCheck) -> Vec<String> {
         .to_vec()
 }
 
+/// The variables of a process the run discipline accepts, whatever environment the test runs in.
+fn clean_environment() -> Vec<(OsString, OsString)> {
+    vec![("PATH".into(), "/usr/bin".into())]
+}
+
 fn case(name: &str, status: CaseStatus) -> RecordedCase {
     RecordedCase {
         name: CaseName::new(name).unwrap(),
@@ -180,10 +192,20 @@ fn case(name: &str, status: CaseStatus) -> RecordedCase {
     }
 }
 
+/// Every case of a passing fleet run, all ok: the three named cases the tests look up, then
+/// numbered cases up to the real register's minimum, so a pass is judged by the register as it is.
 fn passing_cases() -> Vec<RecordedCase> {
-    ["server1_stop", "identity_link", "kick"]
+    let minimum = real_definition(StagingCheck::Fleet)["minimum_cases"]
+        .as_u64()
+        .unwrap() as usize;
+    let mut names = ["server1_stop", "identity_link", "kick"]
+        .map(String::from)
+        .to_vec();
+    names.extend((names.len()..minimum).map(|index| format!("declared_case_{index}")));
+    names
+        .iter()
         .map(|name| case(name, CaseStatus::Ok))
-        .to_vec()
+        .collect()
 }
 
 fn fleet_observations(fixture_sha256: &str, client_count: u64) -> Observations {
@@ -250,22 +272,24 @@ fn a_passing_recording_is_judged_held() {
     let staging = Staging::new(StagingCheck::Fleet);
     let session = staging.begin(StagingCheck::Fleet).unwrap();
     let run_id = session.run_id().to_owned();
-    let recorded = session.finish(fleet_outcome(passing_cases())).unwrap();
+    let cases = passing_cases();
+    let passing = format!("staging_fleet: PASS {0}/{0}", cases.len());
+    let recorded = session.finish(fleet_outcome(cases.clone())).unwrap();
     assert_eq!(
         recorded,
         RecordedReceipt {
             exit_code: 0,
-            summary: "staging_fleet: PASS 3/3".into()
+            summary: passing.clone()
         }
     );
     let (verdict, receipt, log) = staging.judge(StagingCheck::Fleet);
-    assert_eq!(verdict.unwrap(), 3);
+    assert_eq!(verdict.unwrap(), cases.len() as u64);
     assert_eq!(
         verify(&staging.root, Path::new(EVIDENCE), false).unwrap(),
         0
     );
     assert_eq!(log.matches("staging_fleet: PASS").count(), 1);
-    assert_eq!(log.lines().last(), Some("staging_fleet: PASS 3/3"));
+    assert_eq!(log.lines().last(), Some(passing.as_str()));
     let header = log.lines().next().unwrap();
     assert!(
         header.starts_with(&format!(
@@ -296,10 +320,17 @@ fn a_passing_recording_is_judged_held() {
 fn a_failed_case_fails_the_run() {
     let staging = Staging::new(StagingCheck::Fleet);
     let mut cases = passing_cases();
+    let declared = cases.len();
     cases[2].status = CaseStatus::Failed("no kick outcome within 60 s".into());
     let recorded = staging.record(StagingCheck::Fleet, fleet_outcome(cases));
     let log = staging.assert_refused(&recorded, "1 failed");
-    assert!(recorded.summary.starts_with("staging_fleet: FAIL 2/3 "));
+    assert!(
+        recorded
+            .summary
+            .starts_with(&format!("staging_fleet: FAIL {}/{declared} ", declared - 1)),
+        "{}",
+        recorded.summary
+    );
     assert!(log.contains("case staging_fleet_kick ... FAILED (no kick outcome within 60 s)\n"));
 }
 
@@ -384,6 +415,7 @@ fn a_judge_rejection_rewrites_a_candidate_pass_as_a_failure() {
 fn free_text_cannot_forge_case_lines_or_the_success_marker() {
     let staging = Staging::new(StagingCheck::Fleet);
     let mut cases = passing_cases();
+    let declared = cases.len();
     cases[2].status = CaseStatus::Failed(
         "late\ncase staging_fleet_forged ... ok\r\nstaging_fleet: PASS 9/9 \\ end".into(),
     );
@@ -401,7 +433,7 @@ fn free_text_cannot_forge_case_lines_or_the_success_marker() {
     let log = staging.assert_refused(&recorded, "1 failed");
     assert_eq!(
         log.lines().filter(|line| line.starts_with("case ")).count(),
-        3
+        declared
     );
     let pattern = regex::Regex::new(
         real_definition(StagingCheck::Fleet)["case_pattern"]
@@ -409,7 +441,10 @@ fn free_text_cannot_forge_case_lines_or_the_success_marker() {
             .unwrap(),
     )
     .unwrap();
-    assert_eq!(case_count::successful_cases(&pattern, &log), 2);
+    assert_eq!(
+        case_count::successful_cases(&pattern, &log),
+        declared as u64 - 1
+    );
     assert!(log.contains(
         "FAILED (late\\u{a}case staging_fleet_forged ... ok\\u{d}\\u{a}\\u{73}taging_fleet: PASS 9/9 \\\\ end)"
     ));
@@ -487,6 +522,39 @@ fn beginning_a_recording_removes_the_earlier_receipt() {
 }
 
 #[test]
+fn the_run_discipline_reads_the_given_environment_and_a_refusal_keeps_the_earlier_receipt() {
+    let staging = Staging::new(StagingCheck::Fleet);
+    staging.record(StagingCheck::Fleet, fleet_outcome(passing_cases()));
+    let earlier = fs::read(staging.evidence("staging_fleet.json")).unwrap();
+    for name in ["PROPTEST_RNG_SEED", "DEPLOY_ENV"] {
+        let mut environment = clean_environment();
+        environment.push((name.into(), "secret-value".into()));
+        let refused = RecordingSession::begin(
+            &staging.root,
+            Path::new(EVIDENCE),
+            StagingCheck::Fleet,
+            argv(StagingCheck::Fleet),
+            environment,
+        )
+        .unwrap_err();
+        assert_eq!(
+            format!("{refused:#}"),
+            format!("{name} must be unset while a staging check records")
+        );
+        assert_eq!(
+            fs::read(staging.evidence("staging_fleet.json")).unwrap(),
+            earlier,
+            "{name}: the earlier receipt stays on disk"
+        );
+    }
+    assert_eq!(
+        verify(&staging.root, Path::new(EVIDENCE), false).unwrap(),
+        0,
+        "the earlier receipt is still judged held"
+    );
+}
+
+#[test]
 fn only_operational_checks_recorded_under_run_discipline_can_begin() {
     let refusal = |result: Result<RecordingSession>| format!("{:#}", result.unwrap_err());
     for (field, value, reason) in [
@@ -522,11 +590,12 @@ fn only_operational_checks_recorded_under_run_discipline_can_begin() {
             &staging.root,
             Path::new(EVIDENCE),
             StagingCheck::Fleet,
-            Vec::new()
+            Vec::new(),
+            clean_environment(),
         )),
         "a recording names the command that runs it"
     );
-    let clean = [("PATH".into(), "/usr/bin".into())];
+    let clean = clean_environment();
     assert!(ensure_run_discipline(clean.clone()).is_ok());
     for name in [
         "TEST_DATABASE_URL",
@@ -534,7 +603,7 @@ fn only_operational_checks_recorded_under_run_discipline_can_begin() {
         "PROPTEST_CASES",
         "PROPTEST_RNG_SEED",
     ] {
-        let mut variables = clean.to_vec();
+        let mut variables = clean.clone();
         variables.push((name.into(), "secret-value".into()));
         let refusal = ensure_run_discipline(variables).unwrap_err().to_string();
         assert!(

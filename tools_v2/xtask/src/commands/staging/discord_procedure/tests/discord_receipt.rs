@@ -123,6 +123,7 @@ fn staging_discord_record_writes_a_failing_receipt_naming_the_missing_account() 
             command: ["cargo", "xtask", "staging", "discord", "--record"]
                 .map(String::from)
                 .to_vec(),
+            process_environment: Vec::new(),
             output: &mut output,
         },
     )

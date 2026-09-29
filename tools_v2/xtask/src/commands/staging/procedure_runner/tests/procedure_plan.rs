@@ -229,6 +229,7 @@ fn staging_record_refuses_a_plan_without_cases_before_any_receipt_is_touched() {
                 "fleet".into(),
                 "--record".into(),
             ],
+            process_environment: Vec::new(),
             output: &mut output,
         },
     )

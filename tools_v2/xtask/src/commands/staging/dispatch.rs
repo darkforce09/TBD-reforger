@@ -8,8 +8,9 @@
 //! **Signals & state:** none held; one ssh transport per command.
 //!
 //! **Invariants:** `fingerprints` and `load --rehearse-local` need no `deploy.env`; a confirmed
-//! action under `--dry-run` prints its command and opens no connection; a recorded run's exit
-//! code is the recorder's.
+//! action under `--dry-run` prints its command and opens no connection; a recorded run hands the
+//! recorder this process's environment for its run discipline, and its exit code is the
+//! recorder's.
 
 use std::io::{self, Write};
 use std::path::Path;
@@ -93,6 +94,7 @@ fn with_host(
                 host,
                 clock: &SystemClock,
                 command: recorded_command(std::env::args()),
+                process_environment: std::env::vars_os().collect(),
                 output,
             },
         )

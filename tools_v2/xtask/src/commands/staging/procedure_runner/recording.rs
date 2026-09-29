@@ -5,17 +5,20 @@
 //! browser inbox, reads the environment identities and the fixture manifest, runs the procedure,
 //! and hands the outcome to the recorder.
 //!
-//! **Position:** called by `dispatch.rs` for `fleet --record`, `discord --record` and
-//! `load --record`; drives `runner.rs` through [`StagingProcedure::run`] and
-//! `crate::verifications::api_readiness::operational_recording` for the receipt.
+//! **Position:** called by `dispatch.rs`, which hands it the process environment, for
+//! `fleet --record`, `discord --record` and `load --record`; drives `runner.rs` through
+//! [`StagingProcedure::run`] and `crate::verifications::api_readiness::operational_recording`
+//! for the receipt.
 //!
 //! **Signals & state:** owns the recording session, the journal and the inbox for one run.
 //!
-//! **Invariants:** a plan the recorder could not judge honestly is refused before `begin`, so the
-//! earlier receipt stays; once `begin` has run, every outcome ends in `finish`: a failure inside
-//! the run becomes a failing receipt naming it, never a missing one; the exit code is the
-//! recorder's (0 only on PASS).
+//! **Invariants:** a plan the recorder could not judge honestly is refused before `begin`, and a
+//! process environment the run discipline refuses is refused by `begin` before anything else, so
+//! either refusal leaves the earlier receipt and writes no run folder, log or receipt; once
+//! `begin` has run, every outcome ends in `finish`: a failure inside the run becomes a failing
+//! receipt naming it, never a missing one; the exit code is the recorder's (0 only on PASS).
 
+use std::ffi::OsString;
 use std::io::Write;
 use std::path::Path;
 
@@ -44,6 +47,8 @@ pub(crate) struct RecordingInputs<'a> {
     pub clock: &'a dyn Clock,
     /// The command line the receipt records.
     pub command: Vec<String>,
+    /// The variables of the process the recording runs in, which the run discipline reads.
+    pub process_environment: Vec<(OsString, OsString)>,
     /// Where the `AWAIT` and verdict lines go.
     pub output: &'a mut dyn Write,
 }
@@ -59,6 +64,7 @@ pub(crate) fn record(procedure: &dyn StagingProcedure, inputs: RecordingInputs<'
         Path::new(EVIDENCE_DIRECTORY),
         check,
         inputs.command,
+        inputs.process_environment,
     )?;
     let identity = RunIdentity::new(inputs.root, check, session.run_id());
     writeln!(

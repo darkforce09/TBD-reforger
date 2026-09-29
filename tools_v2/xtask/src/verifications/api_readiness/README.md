@@ -76,12 +76,16 @@ records those receipts into the evidence folder through `operational_recording.r
 The three `operational` checks (`staging_fleet`, `staging_discord`, `staging_load`) have no local
 command. The staging harness records each one while its procedure runs:
 
-1. `RecordingSession::begin(root, evidence_dir, check, argv)` refuses a check the register does not
-   declare `operational` with a null command and the success marker `<check>: PASS`, and refuses
-   to start while `TEST_DATABASE_URL`, `DEPLOY_ENV` or any `PROPTEST_*` is set (the refusal names
-   the variable, never its value). It snapshots both fingerprints, the start time and the tool
-   versions (`tool_identity.rs`, which `--execute` shares), picks the run id the harness journal
-   reuses, and deletes the check's earlier receipt, so no older PASS outlives a newer attempt.
+1. `RecordingSession::begin(root, evidence_dir, check, argv, environment)` first refuses an
+   `environment` that sets `TEST_DATABASE_URL`, `DEPLOY_ENV` or any `PROPTEST_*` (the refusal names
+   the variable, never its value). This run discipline reads only the variables it is given: the
+   harness hands it its own process environment and a test a clean one, so the environment a test
+   happens to run in (such as `--execute`'s, which sets `PROPTEST_RNG_SEED`) never decides it.
+   `begin` then refuses a check the register does not declare `operational` with a null command
+   and the success marker `<check>: PASS`, snapshots both fingerprints, the start time and the
+   tool versions (`tool_identity.rs`, which `--execute` shares), picks the run id the harness
+   journal reuses, and deletes the check's earlier receipt, so no older PASS outlives a newer
+   attempt; a refusal leaves that receipt in place.
 2. The procedure ends, a partial run included, by handing `finish` a `RecordedOutcome`: every
    declared case (`Ok`, `Failed(reason)` or `NotRun { missing }`), the environment identities,
    the `Observations` that `operational.rs` judges, the fixture manifest, and the journaled

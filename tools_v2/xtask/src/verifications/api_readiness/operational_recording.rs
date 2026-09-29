@@ -3,9 +3,9 @@
 //! **Role:** Opens a recording of one staging check and, when its procedure ends, decides PASS or
 //! FAIL, writes the log, the fixture manifest and the receipt, and returns the exit code.
 //!
-//! **Position:** The `cargo xtask staging` harness calls [`RecordingSession::begin`] before a
-//! procedure's first step and [`RecordingSession::finish`] with its [`RecordedOutcome`], a
-//! partial run included. The receipts land in the evidence folder that
+//! **Position:** The `cargo xtask staging` harness calls [`RecordingSession::begin`] with its
+//! process environment before a procedure's first step and [`RecordingSession::finish`] with its
+//! [`RecordedOutcome`], a partial run included. The receipts land in the evidence folder that
 //! `cargo xtask verify api-readiness` judges through `evidence.rs`; the log grammar lives in
 //! `operational_log.rs` and the measured thresholds in `operational.rs`.
 //!
@@ -15,13 +15,15 @@
 //! and `<id>.json` through `evidence_storage.rs`, the receipt last.
 //!
 //! **Invariants:** a recording begins only for an `operational` check without a command whose
-//! success marker is the passing verdict line's, with `TEST_DATABASE_URL`, `DEPLOY_ENV` and every
-//! `PROPTEST_*` variable unset. A run passes only when both fingerprints still match the start
-//! snapshot, every declared case is ok and named once, the fleet and Discord observations cite
-//! the manifest's digest, `operational.rs` accepts the measurements, the duration is within the
-//! check's timeout, and `evidence::validate` accepts the exact receipt and log. Anything else is
-//! written as a FAIL: exit code 1, the start digests, the real observations, the missing
-//! dependencies named, and no success marker anywhere in the log.
+//! success marker is the passing verdict line's, and only when the environment `begin` is given
+//! leaves `TEST_DATABASE_URL`, `DEPLOY_ENV` and every `PROPTEST_*` variable unset: the run
+//! discipline reads the variables `begin` is given, never `std::env`, and refuses before the
+//! register is read or the earlier receipt is removed. A run passes only when both fingerprints
+//! still match the start snapshot, every declared case is ok and named once, the fleet and
+//! Discord observations cite the manifest's digest, `operational.rs` accepts the measurements,
+//! the duration is within the check's timeout, and `evidence::validate` accepts the exact receipt
+//! and log. Anything else is written as a FAIL: exit code 1, the start digests, the real
+//! observations, the missing dependencies named, and no success marker anywhere in the log.
 
 use super::{
     evidence::{self, Receipt},
@@ -143,16 +145,20 @@ pub(crate) struct RecordingSession {
 
 impl RecordingSession {
     /// Opens a recording of `check`, run by `argv` from `root`, whose evidence goes to
-    /// `evidence_directory` (relative to `root` unless absolute). Refuses a check the register
-    /// does not declare as operational without a command, snapshots both fingerprints, the tool
-    /// versions and the start time, and removes the check's earlier receipt.
+    /// `evidence_directory` (relative to `root` unless absolute). `environment` holds the
+    /// variables of the process the recording runs in: the run discipline reads them, and only
+    /// them, first, refusing one that sets `TEST_DATABASE_URL`, `DEPLOY_ENV` or any `PROPTEST_*`
+    /// by its name, never its value. Then refuses a check the register does not declare as
+    /// operational without a command, snapshots both fingerprints, the tool versions and the start
+    /// time, and removes the check's earlier receipt.
     pub(crate) fn begin(
         root: &Path,
         evidence_directory: &Path,
         check: StagingCheck,
         argv: Vec<String>,
+        environment: impl IntoIterator<Item = (OsString, OsString)>,
     ) -> Result<Self> {
-        ensure_run_discipline(std::env::vars_os())?;
+        ensure_run_discipline(environment)?;
         ensure!(
             !argv.is_empty() && argv.iter().all(|argument| !argument.is_empty()),
             "a recording names the command that runs it"

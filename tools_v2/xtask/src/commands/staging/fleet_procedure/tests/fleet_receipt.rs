@@ -1,6 +1,7 @@
 //! The fleet procedure's plan, lists, preflight, judge mapping, and one recorded run end to end:
 //! a run whose every declared case holds still ends in a failing receipt that carries a client
-//! count of 1, its real observations and the manifest it cites.
+//! count of 1, its real observations and the manifest it cites; a process environment that sets
+//! `PROPTEST_RNG_SEED` is refused before any run folder, log or receipt is written.
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::MutexGuard;
@@ -24,7 +25,9 @@ use crate::commands::staging::operator_coordination::action_list::render;
 use crate::commands::staging::procedure_runner::fake_clock::FakeClock;
 use crate::commands::staging::procedure_runner::procedure::StagingProcedure;
 use crate::commands::staging::procedure_runner::recording::{RecordingInputs, record};
-use crate::commands::staging::procedure_runner::runner_support::{scratch_folder, test_settings};
+use crate::commands::staging::procedure_runner::runner_support::{
+    ScriptedHost, scratch_folder, test_settings,
+};
 use crate::commands::staging::procedure_runner::step::{
     Measurements, ProbeSource, StepContext, StepKind,
 };
@@ -112,6 +115,43 @@ impl Drop for IsolatedRepository {
 }
 
 #[test]
+fn staging_fleet_record_refuses_a_proptest_environment_before_any_run_folder_log_or_receipt() {
+    let repository = IsolatedRepository::new();
+    let settings = test_settings();
+    let clock = FakeClock::starting_at(T0);
+    let mut host = ScriptedHost::new(&clock);
+    let mut output = Vec::new();
+    let error = record(
+        &FleetProcedure,
+        RecordingInputs {
+            root: &repository.root,
+            settings: &settings,
+            host: &mut host,
+            clock: &clock,
+            command: ["cargo", "xtask", "staging", "fleet", "--record"]
+                .map(String::from)
+                .to_vec(),
+            process_environment: vec![
+                ("PATH".into(), "/usr/bin".into()),
+                ("PROPTEST_RNG_SEED".into(), "2026092201".into()),
+            ],
+            output: &mut output,
+        },
+    )
+    .unwrap_err();
+    assert_eq!(
+        format!("{error:#}"),
+        "PROPTEST_RNG_SEED must be unset while a staging check records"
+    );
+    assert!(output.is_empty(), "{}", String::from_utf8_lossy(&output));
+    assert!(host.calls.is_empty(), "no host command ran");
+    assert!(
+        !repository.root.join("target").exists(),
+        "no run folder, log or receipt was written"
+    );
+}
+
+#[test]
 fn staging_fleet_record_writes_a_failing_receipt_with_client_count_one() {
     let repository = IsolatedRepository::new();
     let settings = test_settings();
@@ -137,6 +177,7 @@ fn staging_fleet_record_writes_a_failing_receipt_with_client_count_one() {
             command: ["cargo", "xtask", "staging", "fleet", "--record"]
                 .map(String::from)
                 .to_vec(),
+            process_environment: Vec::new(),
             output: &mut output,
         },
     )

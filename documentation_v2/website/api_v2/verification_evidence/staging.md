@@ -279,6 +279,8 @@ password generated on the host. The line never reaches a host shell.
 | S-F4 | `fleet_command_ledger.md` listed a nonexistent `change_map` and said kick used RCON | FIX | corrected; the console row added |
 | S-F5 | Discord reconciliation wrote no logs or metrics | FIX | one structured log line and `tbd_discord_reconcile_outcomes_total{outcome}` |
 | S-F6 | The staging game server ran an out-of-date Experimental build | FIX | updated before the runs |
+| S-F7 | The recorder's run discipline read the environment of whatever process ran it, so under `verify api-readiness --execute`, which gives every check `PROPTEST_RNG_SEED`, the recorder and receipt tests were refused | FIX | `RecordingSession::begin` reads the variables its caller hands it: the harness passes its own process environment, a test passes a clean one; a real recording with `PROPTEST_*` set is still refused |
+| S-F8 | The fencing property dropped a refused step's transaction, and sqlx sends that rollback only when the pool takes the connection back; until then the row lock hid the command from the next claim's `SKIP LOCKED` read, so the property failed now and then | FIX (test); NOTE (production) | the property rolls back every refused step before the next one; in production the same window costs one empty claim poll, and the agent claims the command on its next poll |
 
 ## Register
 
