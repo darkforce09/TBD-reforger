@@ -43,12 +43,13 @@ See: [ORBAT selection page](/apps/website/frontend/src/v2/pages/operations/orbat
 
 ### orchestrator
 
-In the factory, the agent session that plans, dispatches, integrates and verifies a [wave](#wave),
-never implementing; in the mod, the round orchestrator `TBD_FrameworkManager`.
+The agent session that plans, launches, reviews, integrates and verifies the work of sub-agents,
+never implementing beyond mechanical fixes: in a sub-agent program and in the factory's
+[wave](#wave) alike. In the mod, the round orchestrator `TBD_FrameworkManager`.
 
 In code: `cargo xtask platform wave`; `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/`.
 
-See: [Factory waves](/documentation_v2/runbooks/factory_waves/README.md), [command center](/documentation_v2/glossary/a_to_f.md#command-center).
+See: [Sub-agent orchestration](/documentation_v2/runbooks/sub_agent_orchestration.md), [Factory waves](/documentation_v2/runbooks/factory_waves/README.md), [command center](/documentation_v2/glossary/a_to_f.md#command-center).
 
 ### personnel
 
@@ -59,6 +60,16 @@ member's [role](#role) follows their Discord roles, so the dossier explains it a
 In code: `PersonnelRosterPage` in `apps/website/frontend/src/v2/pages/administration/personnel/`.
 
 See: [Personnel roster page](/documentation_v2/website/frontend/pages/administration/personnel/personnel_roster_page.md).
+
+### perturbation proof
+
+Evidence that a check can fail: a deliberate defect is planted in the code or data a new test or
+gate guards, the check is run and its red cases recorded, and the file is restored and proven
+byte-equal to its saved copy by `sha256sum`. Every new check in a sub-agent program carries one.
+
+In code: none; each proof is a row of the program's execution record, with its logs.
+
+See: [orchestrator](#orchestrator), [Sub-agent orchestration](/documentation_v2/runbooks/sub_agent_orchestration.md).
 
 ### probable error
 

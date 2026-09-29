@@ -107,6 +107,18 @@ In code: `Charge` (`rings`, `init_speed_coef`, `is_default`) in `apps/website/ma
 
 See: [probable error](/documentation_v2/glossary/n_to_z.md#probable-error), [time fuze](/documentation_v2/glossary/n_to_z.md#time-fuze), [Game ballistics engine](/documentation_v2/website/map-engine/data/scenario/ballistics/game_ballistics_engine.md).
 
+### closing-fix batch
+
+A list of small, independent findings the orchestrator queues during a sub-agent program and hands
+to one agent near the close, named `G1`, `G2` and on; a single defect found late (by a final gate or
+the live walkthrough) gets a closing-fix agent of its own under the same numbering. It is not a
+follow-up agent (`<ID>b`), which takes one narrow slice as soon as its owner has reported.
+
+In code: none; the queued items live in the orchestrator's session scratchpad, and each batch is a
+row of the program's execution record and amendments table.
+
+See: [orchestrator](/documentation_v2/glossary/n_to_z.md#orchestrator), [Sub-agent orchestration](/documentation_v2/runbooks/sub_agent_orchestration.md#routing-a-finding).
+
 ### command center
 
 The web app's landing area (the dashboard at `/`, server intel, announcements) and the API domain of

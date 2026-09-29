@@ -13,22 +13,23 @@ at hand before running any of its commands.
 
 ```text
 documentation_v2/runbooks/
-├── ballistics_oracle_run.md   record the engine oracle, trim, calibrate and publish a ballistics catalog
-├── cursor_workspace_setup.md  set up Cursor: project rules, the local stack, the MCP server, checks
-├── database_operations.md     SQL, sample data, integration tests, checksum repair, backups, restores
-├── editor_capture.md          screenshot a running Mission Creator in headless Chromium
-├── editor_gates.md            run and debug the headless browser gates of the single-page app
-├── enfusion_mcp_tooling.md    drive a running Workbench through the pinned MCP bridge
-├── factory_waves/             run a platform wave: plan, dispatch slices, land, verify, close
-├── game_server_staging/       prepare, deploy, verify and join the staging dedicated server
-├── local_development.md       bring up Postgres, the API and the single-page app on a dev machine
-├── mod_slice_workflow.md      run a mod wave: slice agents in worktrees, `mod wave` landing
-├── offline_mortar_page.md     prepare the offline pack of the mortar calculator, gate it, check it by hand
-├── spawn_determinism.md       prove Workbench Play, spawn and equip repeat byte-identically
-├── testing_and_ci.md          run the repository's gates locally before a push
-├── ticket_run_pipeline.md     take one ticket from idea to shipped with `ticket run`
-├── two_client_playtest/       the live mod playtest with one server and two clients
-└── website_deployment.md      deploy the API and the single-page app to the home server
+├── ballistics_oracle_run.md    record the engine oracle, trim, calibrate and publish a ballistics catalog
+├── cursor_workspace_setup.md   set up Cursor: project rules, the local stack, the MCP server, checks
+├── database_operations.md      SQL, sample data, integration tests, checksum repair, backups, restores
+├── editor_capture.md           screenshot a running Mission Creator in headless Chromium
+├── editor_gates.md             run and debug the headless browser gates of the single-page app
+├── enfusion_mcp_tooling.md     drive a running Workbench through the pinned MCP bridge
+├── factory_waves/              run a platform wave: plan, dispatch slices, land, verify, close
+├── game_server_staging/        prepare, deploy, verify and join the staging dedicated server
+├── local_development.md        bring up Postgres, the API and the single-page app on a dev machine
+├── mod_slice_workflow.md       run a mod wave: slice agents in worktrees, `mod wave` landing
+├── offline_mortar_page.md      prepare the offline pack of the mortar calculator, gate it, check it by hand
+├── spawn_determinism.md        prove Workbench Play, spawn and equip repeat byte-identically
+├── sub_agent_orchestration.md  run any multi-file task with sub-agents: plan, brief, prompts, routing, gates
+├── testing_and_ci.md           run the repository's gates locally before a push
+├── ticket_run_pipeline.md      take one ticket from idea to shipped with `ticket run`
+├── two_client_playtest/        the live mod playtest with one server and two clients
+└── website_deployment.md       deploy the API and the single-page app to the home server
 ```
 
 ## How it works
@@ -56,6 +57,7 @@ Start from the task:
 | A new game build, or a change to the ballistics oracle | [ballistics oracle run](/documentation_v2/runbooks/ballistics_oracle_run.md) |
 | The mortar calculator offline | [offline mortar page](/documentation_v2/runbooks/offline_mortar_page.md) |
 | One ticket, one agent | [ticket run pipeline](/documentation_v2/runbooks/ticket_run_pipeline.md) |
+| Any multi-file or multi-crate task run by an orchestrating session with sub-agents | [sub-agent orchestration](/documentation_v2/runbooks/sub_agent_orchestration.md) |
 | A [wave](/documentation_v2/glossary/n_to_z.md#wave) of tickets in parallel | [factory waves](/documentation_v2/runbooks/factory_waves/README.md) for the platform, [mod slice workflow](/documentation_v2/runbooks/mod_slice_workflow.md) for the mod |
 
 The terrain export runbook lives beside the exporter it drives, in the Workbench map export

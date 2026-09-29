@@ -34,6 +34,7 @@ Each standard owns one question, and the others link it rather than restate it:
 | Where does a new file go? | [where does X go?](/documentation_v2/standards/where_does_x_go.md) |
 | What does a commit carry? | [commit checklist](/documentation_v2/standards/commit_checklist.md) |
 | How is a ticket id formed and cited? | [ticket identifiers](/documentation_v2/standards/ticket_identifiers.md) |
+| How does an agent session run a multi-file or multi-crate task with sub-agents? | the standard working method, the [sub-agent orchestration](/documentation_v2/runbooks/sub_agent_orchestration.md) runbook |
 
 `CLAUDE.md` states the repository-wide laws in brief; a standard holds the detail and names the
 `cargo xtask verify` gate or test that enforces each rule it states, and a rule with no gate is a
