@@ -13,7 +13,7 @@ session reads the header and the Handoff section first.
 |---|---|
 | Branch | `claude/compassionate-cannon-nz3hts` (the operator merges to `main`) |
 | Current stage | P0 Program documents |
-| Last green commit | not yet recorded |
+| Last green commit | 74735b80c (P0; readme-coverage red only on F-001) |
 | Next action | Commit and push P0, then wait for the operator's go-ahead to start S0 |
 | Blocked on | nothing |
 
@@ -23,7 +23,7 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 ## Stages
 
 ### P0 Program documents
-- [x] P0 (orchestrator) program documents, research archive, pointers — done — commit: this stage's commit — documentation gate run before commit
+- [x] P0 (orchestrator) program documents, research archive, pointers — done — commit: 74735b80c — documentation gate run before commit
 
 ### S0 Tooling
 - [ ] Orchestrator: unshallow the clone (`git fetch --unshallow`) in every fresh container before baselines — pending
