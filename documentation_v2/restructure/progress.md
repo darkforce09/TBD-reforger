@@ -32,7 +32,7 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 - [ ] T2 (M) workspace manifest hoisting, dependency fixes — running
 - [ ] T3 (M) build output under target, trunk and wasm-bindgen-cli, Chromium discovery — running
 - [ ] T4 (L) new laws and fail-closed roots — running
-- [ ] T5 (S) `Generated` exemption (F-001) and vestigial sqlx offline settings removed — running
+- [x] T5 (S) `Generated` exemption (F-001) and vestigial sqlx offline settings removed — done, awaiting the stage commit — readme-coverage 0 violations (from 19); 5 `generated_folder_exemption_*` tests; perturbation red on exactly the 19 folders and restored
 - [x] Baselines recorded (see the execution log) — done
 - [ ] Stage commit — pending
 
@@ -170,6 +170,7 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 | 2026-10-01 | P0 | Program documents written; blueprint draft archived; clone unshallowed. link-check OK (2044), markdown-placement OK (1324), readme-coverage red only on F-001 | session scratchpad |
 | 2026-10-01 | S0 baseline | Pre-change tree (`74735b80c`): fmt OK; workspace clippy `-D warnings` red only in website-frontend native (F-004); frontend wasm32 clippy `-D warnings` red, 253 errors (F-004); editorconfig, no-python, no-node, no-shell, ci-shell, engine-layers, coding-standards, staging-compose-paths, mission-rest-size-limits, ci-schema-parity OK; verify-documentation red only on F-001; ci-local-schema red only because the Everon DEM was an unpulled LFS pointer (pulled afterwards); wasm-ci OK; rust-build OK; db test-it 159 binaries, 1425 passed, 0 failed, 0 ignored; ticket check OK; 2013 LFS files, 16226 tracked files. ci-local-schema, ci-local-leptos and leptos-gates are measured at the S0 gate, and against the base commit only if they fail | session scratchpad logs/s0-baseline-* |
 | 2026-10-01 | S0 launch | T1–T5 launched in parallel from the scratchpad brief and prompts; `db test-it` baseline still running (its build finished before launch) | session scratchpad |
+| 2026-10-01 | S0 T5 report | Exemption covers `generated` and `Generated` (`path_regions.rs`); the three `SQLX_OFFLINE` lines and two emptied `env:` keys removed from ci.yml (YAML valid); readme standard and documentation standards updated. Reviewed: diff matches the report | logs/T5-* |
 
 ## Amendments
 
@@ -185,7 +186,10 @@ become tickets at S12.
   `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Gameplay/Policy/Generated/`
   have no README. The coverage exemption matches only a lowercase `generated` folder. The fix is
   to make the exemption match the capitalised spelling Enfusion uses, or to have the gameplay
-  policy generator emit the READMEs. This predates the program.
+  policy generator emit the READMEs. This predates the program. Fixed by T5 (exemption); closes with
+  the S0 commit.
+- **F-005 (FIX, closing batch): `documentation_v2/standards/where_does_x_go.md:82` names only the
+  lowercase `generated` exemption.** Reported by T5; the file was outside its ownership.
 - **F-002 (CLOSE, P0): shallow clone.** The container's clone was shallow, so 353 archive
   permalinks failed link-check as unknown objects. `git fetch --unshallow` in P0 fixed it, and
   link-check passes (2044 checks). A fresh container clones shallow again, so every new session
