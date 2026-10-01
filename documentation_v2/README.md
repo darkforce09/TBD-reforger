@@ -7,6 +7,9 @@ references, known bugs, the product roadmap, ticket specs and plans, and the arc
 mirror of the code. Start here to find the document that covers a subject and to learn which source
 wins when two disagree.
 
+A workspace restructure program is active: its plan, target file tree and progress tracker are in
+[restructure/](/documentation_v2/restructure/README.md).
+
 ## Contents
 
 ```text
@@ -22,6 +25,7 @@ documentation_v2/
 ├── product_roadmap.md       the planned product items by area and the open product questions
 ├── refactor_*               program records: plan, brief, style lock, progress and working lists
 ├── refactor_move_manifest/  program record: the manifest's summary and checkpoint answers
+├── restructure/             the active workspace restructure program: plan, target tree, progress
 ├── runbooks/                operator procedures: development, deployment, gates, playtests
 ├── standards/               documentation and code standards, and the templates
 ├── ticketboard/             documents on the ticketboard viewer in apps/ticketboard/

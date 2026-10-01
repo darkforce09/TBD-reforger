@@ -25,6 +25,7 @@ documentation_v2/archive/
 ├── monorepo_migration/         runbook, manifests and old indexes of the monorepo merge
 ├── product_plans/              the platform build plan, the mod milestones and a milestone post
 ├── redirect_stubs/             stubs of retired docs/ paths, each pointing at its document
+├── restructure_research/       explorer, planning and verification reports of the workspace restructure
 ├── shipped_history/            the shipped-work log kept out of the agent instruction file
 └── tools_v2_refactor/          inventory, plan and phase records of the tooling restructuring
 ```

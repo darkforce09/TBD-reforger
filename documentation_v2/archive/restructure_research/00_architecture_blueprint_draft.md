@@ -1,3 +1,5 @@
+**Status:** archived — see [the restructure program](/documentation_v2/restructure/README.md)
+
 # TBD Reforger: Monorepo Architecture Blueprint
 *(Modeled on the Engineering Standards of Zed & Rerun)*
 
