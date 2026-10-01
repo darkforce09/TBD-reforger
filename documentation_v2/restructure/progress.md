@@ -31,7 +31,8 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 - [ ] T1 (L) relocation tool, xtask refactor relocate — running
 - [x] T2 (M) workspace manifest hoisting, dependency fixes — done, awaiting the stage commit — lockfile changed only by the two intended removals; resolved graph otherwise identical (865 nodes)
 - [x] T3 (M) build output under target, `rust-sqlx-prepare` removed, Chromium discovery — done, awaiting the stage commit — ran over budget (about 310k); dev-api, ci and gate-* folders now under `target/`; Chromium found with `CHROME_HEADLESS_SHELL` unset
-- [ ] T4 (L) new laws and fail-closed roots — running
+- [x] T4 (L) new laws (crate-tiers, crate-anatomy, strangler, frontend-layering, tailwind-sources) and their wiring — done, awaiting the stage commit — five gates pass on the real tree; frontend layering ceiling 12 production + 3 test edges; every law red under perturbation and restored
+- [ ] T4b (M) fail-closed source roots derived from workspace members (T4's item 7, not reached within its budget) — pending, held at the operator's pause
 - [x] T5 (S) `Generated` exemption (F-001) and vestigial sqlx offline settings removed — done, awaiting the stage commit — readme-coverage 0 violations (from 19); 5 `generated_folder_exemption_*` tests; perturbation red on exactly the 19 folders and restored
 - [x] Baselines recorded (see the execution log) — done
 - [ ] Stage commit — pending
@@ -172,6 +173,7 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 | 2026-10-01 | S0 launch | T1–T5 launched in parallel from the scratchpad brief and prompts; `db test-it` baseline still running (its build finished before launch) | session scratchpad |
 | 2026-10-01 | S0 T2 report | Root `[workspace.package]`, `[workspace.dependencies]` (identical requirements only) and `[workspace.lints]` (unsafe_code deny; missing_docs, unreachable_pub, dbg_macro, todo, unwrap_used warn); 11 member manifests inherit; `png` removed from xtask, `toml` made a dev-dependency, `earcutr` removed from the map engine; workspace and wasm32 checks pass; lint policy perturbation red on all 6 lints. Reviewed: lock diff and root manifest match the report | logs/T2-* |
 | 2026-10-01 | S0 T3 report | Build output under `target/<purpose>` (dev-api, ci, gate-trunk, gate-dist-frontend, gate-check, gate-schema, gate-api, gate-map-engine, gate-frontend, gate-tools, gate-slice-frontend-<slice>); reclaim deletes retired root folders; `rust-sqlx-prepare` removed; `find_chromium` moved to `cdp/chromium_discovery.rs` and honours `PLAYWRIGHT_BROWSERS_PATH`; 15 tests added; perturbation red on 3 tests and restored. Out-of-list edits reviewed and accepted: `cdp.rs` module wiring and the Chromium and deploy docs (law 10). Reviewed: `.gitignore` and the dev-api pin match the report | logs/T3-* |
+| 2026-10-01 | S0 T4 report | `workspace_members.rs`, a hand-written TOML subset reader under `cargo_manifest/`, and `workspace_laws/` (10 modules) in verification-core; xtask wrappers, the `verify-workspace-laws` ci task (a step of ci-local), five ci.yml steps, coding standards gates WS-1 to WS-5. 38 verification-core tests and 3 xtask tests added. Item 7 (fail-closed source roots) not reached: becomes T4b. Unowned edits reviewed and accepted: `ci/tests/task_runner.rs` (pins the new ci-local step), `task_definitions/README.md` and `workspace_law_steps.rs` (keeps `task_definitions.rs` under 500 lines) | logs/T4-* |
 | 2026-10-01 | S0 T5 report | Exemption covers `generated` and `Generated` (`path_regions.rs`); the three `SQLX_OFFLINE` lines and two emptied `env:` keys removed from ci.yml (YAML valid); readme standard and documentation standards updated. Reviewed: diff matches the report | logs/T5-* |
 
 ## Amendments
@@ -198,6 +200,8 @@ become tickets at S12.
 - **F-009 (FIX, closing batch): two tools still create root-level build folders.** `tools_v2/xtask/src/commands/mcp/daemon.rs:96` (`target-dev-mcpd`) and `tools_v2/xtask/src/commands/db/operations/selftest.rs:365` (`target-mk-db-selftest`) move under `target/`. Reported by T3.
 - **F-010 (FIX, closing batch): a slice-agent brief still tells agents to use `target-<id>-api`** (`slice_agent_brief.md:72`). Reported by T3.
 - **F-011 (NOTE, environment): eight developer-tools library tests read Git LFS objects this container has not pulled.** The S0 gate pulls the LFS objects those tests need before running them.
+- **F-012 (NOTE, operator decision): the name of the parking folder.** The repository's prose rule (`tools_v2/xtask/src/tests/tooling_prose_rules.rs:65`) bans the word "legacy" as history vocabulary, which is the planned folder name of decision D12. The laws T4 wrote name that folder, so one xtask prose test fails now. Either rename the parking folder to a present-tense name, or exempt the folder name from the rule. Reported by T4.
+- **F-013 (NOTE, S2): a legacy map engine that re-exports the graphics engine would show about 28 shims.** The S2 and S4 prompts must cut or switch them in the stage that creates them. Reported by T4.
 - **F-002 (CLOSE, P0): shallow clone.** The container's clone was shallow, so 353 archive
   permalinks failed link-check as unknown objects. `git fetch --unshallow` in P0 fixed it, and
   link-check passes (2044 checks). A fresh container clones shallow again, so every new session
