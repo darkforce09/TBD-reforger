@@ -12,9 +12,9 @@ session reads the header and the Handoff section first.
 | Field | Value |
 |---|---|
 | Branch | `claude/compassionate-cannon-nz3hts` (the operator merges to `main`) |
-| Current stage | S0 Tooling (baselines running, then T1–T5) |
+| Current stage | S0 Tooling (T1–T5 running) |
 | Last green commit | 74735b80c (P0; readme-coverage red only on F-001) |
-| Next action | Finish baselines; launch T1–T5 in parallel |
+| Next action | Review T1–T5 reports as they land; then the S0 gate |
 | Blocked on | nothing |
 
 Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A status is `pending`,
@@ -28,11 +28,11 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 ### S0 Tooling
 - [x] Orchestrator: unshallow the clone (`git fetch --unshallow`) in every fresh container before baselines — done (this container)
 - [x] Orchestrator: container setup — `dockerd` started, `cargo xtask db up`, trunk 0.21.14 installed, builds without debug info (disk) — done
-- [ ] T1 (L) relocation tool, xtask refactor relocate — pending
-- [ ] T2 (M) workspace manifest hoisting, dependency fixes — pending
-- [ ] T3 (M) build output under target, trunk and wasm-bindgen-cli, Chromium discovery — pending
-- [ ] T4 (L) new laws and fail-closed roots — pending
-- [ ] T5 (S) vestigial sqlx offline settings removed — pending
+- [ ] T1 (L) relocation tool, xtask refactor relocate — running
+- [ ] T2 (M) workspace manifest hoisting, dependency fixes — running
+- [ ] T3 (M) build output under target, trunk and wasm-bindgen-cli, Chromium discovery — running
+- [ ] T4 (L) new laws and fail-closed roots — running
+- [ ] T5 (S) `Generated` exemption (F-001) and vestigial sqlx offline settings removed — running
 - [ ] Baselines recorded (GS counts, LFS count, test census) — pending
 - [ ] Stage commit — pending
 
@@ -168,6 +168,7 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 | 2026-10-01 | Research | Explorer, planning and verification reports archived in the restructure research folder | — |
 | 2026-10-01 | Decisions | D1–D12 recorded in the program plan | — |
 | 2026-10-01 | P0 | Program documents written; blueprint draft archived; clone unshallowed. link-check OK (2044), markdown-placement OK (1324), readme-coverage red only on F-001 | session scratchpad |
+| 2026-10-01 | S0 launch | T1–T5 launched in parallel from the scratchpad brief and prompts; `db test-it` baseline still running (its build finished before launch) | session scratchpad |
 
 ## Amendments
 
