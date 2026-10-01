@@ -33,7 +33,7 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 - [ ] T3 (M) build output under target, trunk and wasm-bindgen-cli, Chromium discovery — running
 - [ ] T4 (L) new laws and fail-closed roots — running
 - [ ] T5 (S) `Generated` exemption (F-001) and vestigial sqlx offline settings removed — running
-- [ ] Baselines recorded (GS counts, LFS count, test census) — pending
+- [x] Baselines recorded (see the execution log) — done
 - [ ] Stage commit — pending
 
 ### S1 Global renames
@@ -168,6 +168,7 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 | 2026-10-01 | Research | Explorer, planning and verification reports archived in the restructure research folder | — |
 | 2026-10-01 | Decisions | D1–D12 recorded in the program plan | — |
 | 2026-10-01 | P0 | Program documents written; blueprint draft archived; clone unshallowed. link-check OK (2044), markdown-placement OK (1324), readme-coverage red only on F-001 | session scratchpad |
+| 2026-10-01 | S0 baseline | Pre-change tree (`74735b80c`): fmt OK; workspace clippy `-D warnings` red only in website-frontend native (F-004); frontend wasm32 clippy `-D warnings` red, 253 errors (F-004); editorconfig, no-python, no-node, no-shell, ci-shell, engine-layers, coding-standards, staging-compose-paths, mission-rest-size-limits, ci-schema-parity OK; verify-documentation red only on F-001; ci-local-schema red only because the Everon DEM was an unpulled LFS pointer (pulled afterwards); wasm-ci OK; rust-build OK; db test-it 159 binaries, 1425 passed, 0 failed, 0 ignored; ticket check OK; 2013 LFS files, 16226 tracked files. ci-local-schema, ci-local-leptos and leptos-gates are measured at the S0 gate, and against the base commit only if they fail | session scratchpad logs/s0-baseline-* |
 | 2026-10-01 | S0 launch | T1–T5 launched in parallel from the scratchpad brief and prompts; `db test-it` baseline still running (its build finished before launch) | session scratchpad |
 
 ## Amendments
