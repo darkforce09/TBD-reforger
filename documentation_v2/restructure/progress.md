@@ -12,9 +12,9 @@ session reads the header and the Handoff section first.
 | Field | Value |
 |---|---|
 | Branch | `claude/compassionate-cannon-nz3hts` (the operator merges to `main`) |
-| Current stage | S0 Tooling (T1–T5 running) |
+| Current stage | S0 Tooling — all agents done; paused for the operator |
 | Last green commit | 74735b80c (P0; readme-coverage red only on F-001) |
-| Next action | Review T1–T5 reports as they land; then the S0 gate |
+| Next action | Operator decisions F-012 and F-007, go-ahead for T4b, F-014 fix, then the S0 gate and commit |
 | Blocked on | nothing |
 
 Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A status is `pending`,
@@ -29,7 +29,7 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 - [x] Orchestrator: unshallow the clone (`git fetch --unshallow`) in every fresh container before baselines — done (this container)
 - [x] Orchestrator: container setup — `dockerd` started, `cargo xtask db up`, trunk 0.21.14 installed, builds without debug info (disk) — done
 - [ ] T1 (L) relocation tool, xtask refactor relocate — stopped by a container restart; about 5,200 lines left in the tree
-- [ ] T1b (L) finish the relocation tool from T1's partial work — running
+- [x] T1b (L) finish the relocation tool from T1's partial work — done, awaiting the stage commit — 28 `relocate_` tests; real-tree dry run `assets_v2` → `assets`: 4651 files moved, 644 references in 259 files, 0 unresolved; the same plan applied in a scratch clone verifies clean
 - [x] T2 (M) workspace manifest hoisting, dependency fixes — done, awaiting the stage commit — lockfile changed only by the two intended removals; resolved graph otherwise identical (865 nodes)
 - [x] T3 (M) build output under target, `rust-sqlx-prepare` removed, Chromium discovery — done, awaiting the stage commit — ran over budget (about 310k); dev-api, ci and gate-* folders now under `target/`; Chromium found with `CHROME_HEADLESS_SHELL` unset
 - [x] T4 (L) new laws (crate-tiers, crate-anatomy, strangler, frontend-layering, tailwind-sources) and their wiring — done, awaiting the stage commit — five gates pass on the real tree; frontend layering ceiling 12 production + 3 test edges; every law red under perturbation and restored
@@ -176,6 +176,7 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 | 2026-10-01 | S0 T3 report | Build output under `target/<purpose>` (dev-api, ci, gate-trunk, gate-dist-frontend, gate-check, gate-schema, gate-api, gate-map-engine, gate-frontend, gate-tools, gate-slice-frontend-<slice>); reclaim deletes retired root folders; `rust-sqlx-prepare` removed; `find_chromium` moved to `cdp/chromium_discovery.rs` and honours `PLAYWRIGHT_BROWSERS_PATH`; 15 tests added; perturbation red on 3 tests and restored. Out-of-list edits reviewed and accepted: `cdp.rs` module wiring and the Chromium and deploy docs (law 10). Reviewed: `.gitignore` and the dev-api pin match the report | logs/T3-* |
 | 2026-10-01 | S0 T4 report | `workspace_members.rs`, a hand-written TOML subset reader under `cargo_manifest/`, and `workspace_laws/` (10 modules) in verification-core; xtask wrappers, the `verify-workspace-laws` ci task (a step of ci-local), five ci.yml steps, coding standards gates WS-1 to WS-5. 38 verification-core tests and 3 xtask tests added. Item 7 (fail-closed source roots) not reached: becomes T4b. Unowned edits reviewed and accepted: `ci/tests/task_runner.rs` (pins the new ci-local step), `task_definitions/README.md` and `workspace_law_steps.rs` (keeps `task_definitions.rs` under 500 lines) | logs/T4-* |
 | 2026-10-01 | S0 restart | Container restart stopped T1 mid-run; its partial work survived on disk. T1b launched to finish it from that state | — |
+| 2026-10-01 | S0 T1b report | T1's code compiled; T1b added the READMEs, one test, formatting and clippy fixes; `--verify` perturbation red and restored. All S0 agents done; PAUSED at the operator's request before the gate | logs/T1b-* |
 | 2026-10-01 | S0 T5 report | Exemption covers `generated` and `Generated` (`path_regions.rs`); the three `SQLX_OFFLINE` lines and two emptied `env:` keys removed from ci.yml (YAML valid); readme standard and documentation standards updated. Reviewed: diff matches the report | logs/T5-* |
 
 ## Amendments
@@ -204,6 +205,8 @@ become tickets at S12.
 - **F-011 (NOTE, environment): eight developer-tools library tests read Git LFS objects this container has not pulled.** The S0 gate pulls the LFS objects those tests need before running them.
 - **F-012 (NOTE, operator decision): the name of the parking folder.** The repository's prose rule (`tools_v2/xtask/src/tests/tooling_prose_rules.rs:65`) bans the word "legacy" as history vocabulary, which is the planned folder name of decision D12. The laws T4 wrote name that folder, so one xtask prose test fails now. Either rename the parking folder to a present-tense name, or exempt the folder name from the rule. Reported by T4.
 - **F-013 (NOTE, S2): a legacy map engine that re-exports the graphics engine would show about 28 shims.** The S2 and S4 prompts must cut or switch them in the stage that creates them. Reported by T4.
+- **F-014 (FIX, before the S0 gate): the xtask prose-rule tests fail on T4's law files.** `tools_v2/xtask/src/tests/tooling_prose_rules.rs` flags the word "legacy" (see F-012) and planned paths such as `crates/map_rendering` and `prelude.rs` written in prose. Reported by T1b and T4.
+- **F-015 (NOTE): a relocation `path` row never rewrites `mod` declarations**; each stage's author edits them. Reported by T1b.
 - **F-002 (CLOSE, P0): shallow clone.** The container's clone was shallow, so 353 archive
   permalinks failed link-check as unknown objects. `git fetch --unshallow` in P0 fixed it, and
   link-check passes (2044 checks). A fresh container clones shallow again, so every new session
@@ -223,7 +226,14 @@ become tickets at S12.
 
 ## Handoff
 
-P0 is complete: the program documents, the research archive and the pointers are in place. The
-next step is S0. Write the session brief and the S0 agent prompts from the
-[program plan](/documentation_v2/restructure/program_plan.md), take the baselines, then launch T1
-to T5 in parallel.
+S0 agents T1b, T2, T3, T4 and T5 are done; their work is uncommitted in the working tree and was
+reviewed against each report. The program is paused at the operator's request. Before the S0
+gate:
+1. The operator decides F-012 (the parking folder's name) and F-007 (`unwrap` in tests).
+2. T4b (fail-closed source roots) runs.
+3. F-014 is fixed according to the F-012 decision.
+
+Then run GS, the orchestrator's perturbation proofs, the closing-fix items F-005, F-006, F-009 and
+F-010, and commit S0. In a fresh container, first run `git fetch --unshallow`, start `dockerd`, run
+`cargo xtask db up`, pull the Everon DEM through LFS, and reinstall trunk 0.21.14 and
+wasm-bindgen-cli 0.2.126 if they are missing.
