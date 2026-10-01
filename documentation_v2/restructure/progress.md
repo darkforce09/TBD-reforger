@@ -12,9 +12,9 @@ session reads the header and the Handoff section first.
 | Field | Value |
 |---|---|
 | Branch | `claude/compassionate-cannon-nz3hts` (the operator merges to `main`) |
-| Current stage | P0 Program documents |
+| Current stage | S0 Tooling (baselines running, then T1–T5) |
 | Last green commit | 74735b80c (P0; readme-coverage red only on F-001) |
-| Next action | Commit and push P0, then wait for the operator's go-ahead to start S0 |
+| Next action | Finish baselines; launch T1–T5 in parallel |
 | Blocked on | nothing |
 
 Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A status is `pending`,
@@ -26,7 +26,8 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 - [x] P0 (orchestrator) program documents, research archive, pointers — done — commit: 74735b80c — documentation gate run before commit
 
 ### S0 Tooling
-- [ ] Orchestrator: unshallow the clone (`git fetch --unshallow`) in every fresh container before baselines — pending
+- [x] Orchestrator: unshallow the clone (`git fetch --unshallow`) in every fresh container before baselines — done (this container)
+- [x] Orchestrator: container setup — `dockerd` started, `cargo xtask db up`, trunk 0.21.14 installed, builds without debug info (disk) — done
 - [ ] T1 (L) relocation tool, xtask refactor relocate — pending
 - [ ] T2 (M) workspace manifest hoisting, dependency fixes — pending
 - [ ] T3 (M) build output under target, trunk and wasm-bindgen-cli, Chromium discovery — pending
@@ -62,6 +63,7 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 - [ ] F2 (M) shell extraction, editor session rename — pending
 - [ ] F3 (S) UI tokens, logout hooks, route table — pending
 - [ ] F4 (S) review workspace, byte formatting, mission review feature — pending
+- [ ] F5 (M) frontend clippy-clean on native and wasm32 under `-D warnings` (finding F-004) — pending
 - [ ] Stage commit — pending
 
 ### S4 Tier 0–1
@@ -177,7 +179,7 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 Each finding is triaged FIX, NOTE or CLOSE as the orchestration runbook defines; NOTE findings
 become tickets at S12.
 
-- **F-001 (FIX, S0 T4): red baseline in readme-coverage.** The 19 category folders under
+- **F-001 (FIX, S0 T5; operator: exempt the capitalised `Generated` too): red baseline in readme-coverage.** The 19 category folders under
   `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Gameplay/Policy/Generated/`
   have no README. The coverage exemption matches only a lowercase `generated` folder. The fix is
   to make the exemption match the capitalised spelling Enfusion uses, or to have the gameplay
@@ -189,6 +191,15 @@ become tickets at S12.
 - **F-003 (CLOSE, P0): the blueprint draft cited planned paths.** Its four backticked planned
   paths broke link-check. Fixed by archiving it as
   [the blueprint draft](/documentation_v2/archive/restructure_research/00_architecture_blueprint_draft.md).
+- **F-004 (FIX, S3): the frontend is not clippy-clean.**
+  - The native build has 764 clippy errors under `-D warnings`, mostly imports and code used only by
+    the wasm build.
+  - The wasm32 build has 253 errors (116 bin, 137 test).
+  - CI lints the frontend for wasm32 only, without `-D warnings`, so this predates the program.
+  - Until S3, GS step 2 runs with `--exclude website-frontend`, and step 3 may not raise the wasm
+    warning count above the baseline.
+  - S3 makes the frontend clean on both targets, because it touches every frontend file. From S3
+    the GS steps apply in full.
 
 ## Handoff
 
