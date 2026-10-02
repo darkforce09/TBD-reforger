@@ -11,7 +11,7 @@ session reads the header and the Handoff section first.
 
 | Field | Value |
 |---|---|
-| Branch | `claude/compassionate-cannon-nz3hts` (the operator merges to `main`) |
+| Branch | `main` (decision D16; S0 was merged from the cloud session branch) |
 | Current stage | S1 Global renames |
 | Last green commit | b2b317446 (S0) |
 | Next action | Continue on the operator's local machine: S1 agent R1 (see Handoff) |
@@ -240,7 +240,7 @@ become tickets at S12.
 S0 is committed (`b2b317446`) and pushed; the program continues on the operator's local machine.
 
 Next step, S1 global renames:
-1. Pull the session branch and run `cargo xtask ci verify-documentation` and
+1. Pull `main` and run `cargo xtask ci verify-documentation` and
    `cargo xtask refactor relocate --verify` once, to confirm the checkout is green on that machine.
 2. Launch agent R1 with
    [its document](/documentation_v2/restructure/agent_briefs/s1_r1_global_renames.md). It runs

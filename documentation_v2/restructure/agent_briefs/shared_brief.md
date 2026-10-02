@@ -12,7 +12,7 @@ program_plan.md, target_file_tree.md, crate_catalogue.md, laws_and_gates.md, pro
 only the parts your prompt names; do not re-derive the plan.
 
 ## Rules
-- The repository checkout, branch `claude/compassionate-cannon-nz3hts`. Never create
+- The repository checkout, branch `main`. Never create
   branches, commit, stage, stash, reset, clean, checkout or restore. The orchestrator commits.
 - Read `CLAUDE.md` §1 (laws) once. Laws 3, 4, 7, 8 and 10 bind you: clean architecture, self-describing
   names, production files ≤ 500 lines and test files ≤ 1000 lines (sibling `tests/` files via

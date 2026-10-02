@@ -97,7 +97,7 @@ Each finding was checked against the code. The evidence is in the
 
 | Id | Decision |
 |---|---|
-| D1 | Commits go to the session branch `claude/compassionate-cannon-nz3hts`, one green commit per stage; the operator merges to `main`. For this program this overrides CLAUDE.md law 2. |
+| D1 | One green commit per stage. Superseded by D16 for the branch: P0 and S0 went to the cloud session branch `claude/compassionate-cannon-nz3hts`, which the operator merged into `main`. |
 | D2 | Full standards as each crate is born: thin `lib.rs` and `prelude`, `thiserror` `Error` and `Result` (fallible public API only), newtype IDs at boundaries, anyhow only in binaries. |
 | D3 | Crate folders and package names are snake_case with no organisation prefix; descriptive qualifiers (`api_`, `frontend_`, `mission_creator_`) are allowed. |
 | D4 | Mod: no missions addon; `Scripts/Game/TBD/` kept; a References folder; Objectives Engine and real `TBD_ObjectiveKindBehaviour` subclasses (Capture, Destroy, HoldUntil); bound class names frozen. |
@@ -112,6 +112,7 @@ Each finding was checked against the code. The evidence is in the
 | D13 | The parking folder keeps the name `legacy/`; the repository's prose rule exempts that folder name (the path segment and identifiers naming the folder), while the word stays banned as history vocabulary. |
 | D14 | Tests may call `unwrap()`: a root `clippy.toml` sets `allow-unwrap-in-tests`; production code under the workspace lint policy still may not. |
 | D15 | Lean gates: every stage runs the stage gate (formatting, clippy and tests of the crates it touched, the new laws, `relocate --verify`, the documentation gates); the full gate set GS, including `ci-local`, the API integration tests and the browser gates, runs only at checkpoint stages S2, S5, S8, S10 and S12. A red check is compared with the base commit only when it sits in code the stage touched. |
+| D16 | From S1 on, every commit lands directly on `main` (CLAUDE.md law 2); no session branch. |
 
 ## 4. Execution model: foundations up
 

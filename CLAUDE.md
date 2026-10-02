@@ -2,7 +2,7 @@
 
 Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event / ORBAT scheduling, mission library, the Mission Creator (a top-down 2D mission editor), game-server fleet control and telemetry, leaderboards, doctrine wiki, the TBD game mod, and Enfusion mod tooling.
 
-> **Active program — workspace restructure.** The repository is being rebuilt into standard, fine-grained Rust crates (flat `apps/`, tiered crates, no `_v2` names). Before any work, read [documentation_v2/restructure/README.md](/documentation_v2/restructure/README.md), then [progress.md](/documentation_v2/restructure/progress.md) for the current stage and the next step. For this program, commits land on the session branch named in progress.md, which overrides law 2 below.
+> **Active program — workspace restructure.** The repository is being rebuilt into standard, fine-grained Rust crates (flat `apps/`, tiered crates, no `_v2` names). Before any work, read [documentation_v2/restructure/README.md](/documentation_v2/restructure/README.md), then [progress.md](/documentation_v2/restructure/progress.md) for the current stage and the next step. Commits land directly on `main` (law 2), one green commit per stage.
 
 ---
 
