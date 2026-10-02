@@ -8,18 +8,22 @@ scripts that the [mod](/documentation/glossary/g_to_m.md#mod) builds on, cached 
 
 ```text
 tools/xtask/src/commands/fetch/
-├── cli.rs             the `FetchCmd` clap enum: `vanilla-source` and `vanilla-api`, arguments taken raw
-├── dispatch.rs        picks the checkout root for each command and calls its `run`
-├── mod.rs             the module tree
-├── tests/             unit tests for both mirrors on scratch checkouts, offline
-├── vanilla_api.rs     `vanilla-api`: the Script API reference in Doxygen HTML
-└── vanilla_source.rs  `vanilla-source`: vanilla script source pages, one per `.c` file
+├── cli.rs              the `FetchCmd` clap enum: `vanilla-source` and `vanilla-api`, arguments taken raw
+├── dispatch.rs         picks the checkout root for each command and calls its `run`
+├── mod.rs              the module tree
+├── reference_cache.rs  the cache folder each command fills in the vanilla lane, refused without `apps/mod/References/`
+├── tests/              unit tests for both mirrors on scratch checkouts, offline
+├── vanilla_api.rs      `vanilla-api`: the Script API reference in Doxygen HTML
+└── vanilla_source.rs   `vanilla-source`: vanilla script source pages, one per `.c` file
 ```
 
 ## How it works
 
-Both commands cache under `apps/mod/vanilla_reference/`, which `.gitignore` keeps out of
-git, and never fetch a page whose cached copy is non-empty. Each fetch is a `curl` run through
+Both commands cache in the `vanilla_reference` lane of the
+[reference lanes](/apps/mod/References/README.md), which `.gitignore` keeps out of git, and never
+fetch a page whose cached copy is non-empty. `reference_cache::prepare_vanilla_cache` creates the
+command's cache folder inside the lane and refuses, before any fetch, when the checkout has no
+`apps/mod/References/` folder; it never creates that folder. Each fetch is a `curl` run through
 `verification_core::proc::Run` with a browser user agent, because the upstream hosts refuse curl's
 default, and a pause of `TBD_FETCH_DELAY` seconds after each page fetched from the network. Both
 end by printing the `enf` command that indexes what they cached. `TBD_FETCH_ROOT` points either
@@ -46,8 +50,8 @@ Clap's help is turned off on both, so every argument, `--help` included, reaches
   An unknown name or an HTTP failure is reported (`MISS`, `FAIL`) and counted, not fatal. The
   pause defaults to 0.4 s.
 - Exit codes: 0 done, misses included; 1 the index held no source links, after `map.tsv` is
-  emptied; 2 `--grep` without a pattern; 1 with `xtask: <error>` when the index cannot be
-  downloaded.
+  emptied; 2 `--grep` without a pattern; 1 with `xtask: <error>` when `apps/mod/References/` is
+  missing or the index cannot be downloaded.
 - Example: `cargo xtask fetch vanilla-source --grep Respawn`
 
 ### vanilla-api
@@ -57,13 +61,15 @@ Clap's help is turned off on both, so every argument, `--help` included, reaches
   per line, skipping blank lines and `#` comments (a missing file prints grep's message and
   fetches none). A missing class page prints `MISS` and does not fail the run. The pause defaults
   to 0.3 s; `TBD_FETCH_VANILLA_API_CURL` names a curl binary to use instead of the one on `PATH`.
-- Exit codes: 0 done; 1 the class index could not be fetched; 2 `--from-file` without a path.
+- Exit codes: 0 done; 1 the class index could not be fetched; 2 `--from-file` without a path;
+  1 with `xtask: <error>` when `apps/mod/References/` is missing.
 - Example: `cargo xtask fetch vanilla-api SCR_BaseGameMode`
 
 ## Boundaries
 
 - Depends on: `verification_core::proc` for curl; `find_repo_root` in
   `tools/xtask/src/core/repository_root.rs` and `is_repo_root` from `ticket_engine::repository`;
+  the references folder and vanilla lane paths in `tools/xtask/src/core/repository_layout.rs`;
   curl and network access to the two upstream sites.
 - Used by: people; `tools/xtask/src/cli/dispatch.rs` routes the group. The `enf apidoc` and
   `enf source` commands of `tools/developer_tools/src/bin/enf.rs` read the caches, and

@@ -10,6 +10,7 @@ the platform ingests and one that lets the Enfusion MCP tools drive Workbench.
 
 ```text
 apps/mod/
+├── References/     the gitignored upstream reference lanes (CRF, vanilla, PlayableSelector) and their README
 ├── tbd-emcp/       addon `TBD_EMCP`: the Workbench Net API handlers the MCP `wb_*` tools call
 ├── tbd-export/     addon `TBD_Export`: Workbench map, equipment, vehicle and registry export tooling
 └── tbd-framework/  addon `TBD_Framework`: the game mod dedicated servers run
@@ -109,8 +110,8 @@ Other mod commands:
     another addon copies a second set that breaks the bridge, and its `wb_cleanup` on `tbd-emcp/`
     deletes the committed set.
   - Enfusion APIs are looked up with the Enfusion MCP tools or in the vanilla sources, never
-    guessed; the upstream reference copies that `.gitignore` excludes are read only and never
-    opened in Workbench.
+    guessed; the upstream reference lanes in `apps/mod/References/` are read only, never
+    committed, never deployed and never opened in Workbench.
   - A dedicated server takes `-config` or `-addons`, never both; `-addonsDir` combines with
     `-config` (`tools/xtask/src/commands/deploy/staging/remote/ssh_argv.rs`).
   - `resourceDatabase.rdb` in each addon is written by Workbench only.

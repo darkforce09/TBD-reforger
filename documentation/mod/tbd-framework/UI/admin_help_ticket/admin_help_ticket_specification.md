@@ -13,8 +13,8 @@ implements either; this document records the design target and what exists inste
   [`apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/README.md),
   run by an admin, and the game's own chat.
 - Reference: the design follows the admin menu of the Coalition Reforger Framework (CRF), whose
-  scripts sit in the gitignored local reference copy `apps/mod/crf_framework/`
-  (`CRF_AdminMenuManager.c`, `CRF_PlayerRplToAuthorityManager.c`, `CRF_RplBroadcastManager.c`);
+  scripts sit in the gitignored `crf_framework` lane of the
+  [reference lanes](/apps/mod/References/README.md) (`CRF_AdminMenuManager.c`, `CRF_PlayerRplToAuthorityManager.c`, `CRF_RplBroadcastManager.c`);
   TBD reads that code and never copies it.
 - Related features: the [in-game menu](/documentation/mod/tbd-framework/UI/in_game_menu/in_game_menu_specification.md),
   whose designed admin sidebar has a Tickets entry and whose pause sidebar has "Contact Admin".

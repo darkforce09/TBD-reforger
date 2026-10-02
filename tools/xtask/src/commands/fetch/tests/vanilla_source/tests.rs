@@ -11,7 +11,7 @@ fn scratch(name: &str) -> PathBuf {
             .as_nanos()
     ));
     let _ = fs::remove_dir_all(&p);
-    fs::create_dir_all(p.join("apps/mod/vanilla_reference/source_html")).unwrap();
+    fs::create_dir_all(p.join("apps/mod/References/vanilla_reference/source_html")).unwrap();
     fs::create_dir_all(p.join(".ai/tickets")).unwrap();
     fs::write(p.join(".ai/tickets/ROOT"), "{}").unwrap();
     p
@@ -36,7 +36,7 @@ fn grep_empty_pattern_exits_2() {
 #[test]
 fn empty_index_map_build_exits_1() {
     let root = scratch("empty-idx");
-    let cache = root.join("apps/mod/vanilla_reference/source_html");
+    let cache = root.join("apps/mod/References/vanilla_reference/source_html");
     fs::write(cache.join("files.html"), "no hrefs here\n").unwrap();
     // no map.tsv
     let code = run(&root, &["NoSuch.c".into()]).unwrap();
@@ -50,7 +50,7 @@ fn empty_index_map_build_exits_1() {
 #[test]
 fn help_is_filename_miss_rc0() {
     let root = scratch("help-miss");
-    let cache = root.join("apps/mod/vanilla_reference/source_html");
+    let cache = root.join("apps/mod/References/vanilla_reference/source_html");
     // minimal valid map so we don't hit empty-index
     fs::write(cache.join("files.html"), "x").unwrap();
     fs::write(
@@ -80,4 +80,17 @@ fn grep_usage_line_names_the_runnable_command() {
         format!("usage: {USAGE_COMMAND} --grep <pattern>"),
         "usage: cargo xtask fetch vanilla-source --grep <pattern>"
     );
+}
+
+#[test]
+fn a_checkout_without_the_references_folder_is_refused() {
+    let root = scratch("no-references");
+    fs::remove_dir_all(root.join(crate::core::repository_layout::REFERENCES_DIR)).unwrap();
+    let err = run(&root, &["NoSuch.c".into()]).unwrap_err();
+    assert!(format!("{err:#}").contains("is missing"), "{err:#}");
+    assert!(
+        !root.join("apps/mod/References").exists(),
+        "nothing recreated"
+    );
+    let _ = fs::remove_dir_all(root);
 }

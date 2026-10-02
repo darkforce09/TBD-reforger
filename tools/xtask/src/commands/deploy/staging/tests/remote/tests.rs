@@ -82,12 +82,10 @@ fn rsync_argv_keeps_every_exclude_in_order() {
     assert_eq!(argv[2], "ssh -o StrictHostKeyChecking=no");
     assert_eq!(argv[3], "-avz");
     assert_eq!(argv[4], "--delete");
-    // The licence boundary. All three oracle lanes, plus the credential itself.
+    // The licence boundary. The whole references folder, plus the credential itself.
     let deploy_env_exclude = format!("--exclude={}", crate::core::repository_layout::DEPLOY_ENV);
     for needed in [
-        "--exclude=apps/mod/crf_framework/",
-        "--exclude=apps/mod/vanilla_reference/",
-        "--exclude=apps/mod/playable_selector/",
+        "--exclude=apps/mod/References/",
         &deploy_env_exclude,
         "--exclude=apps/api/.env",
         "--exclude=apps/mod/tbd-export/",

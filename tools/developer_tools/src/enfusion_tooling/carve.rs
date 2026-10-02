@@ -101,7 +101,11 @@ fn sha8(bytes: &[u8]) -> String {
         .collect()
 }
 
-/// Carve every `*.pak` under `game_root/addons/**` into `out_dir/Carved/<pak>/`.
+/// The folder inside the output lane that holds every carved blob.
+pub const CARVED_DIR: &str = "Carved";
+
+/// Carve every `*.pak` under `game_root/addons/**` into `out_dir/Carved/<pak>/`, which must be
+/// absent or empty.
 pub fn carve(game_root: &Path, out_dir: &Path) -> Result<CarveStats> {
     let addons = game_root.join("addons");
     let mut paks: Vec<PathBuf> = Vec::new();
@@ -123,9 +127,15 @@ pub fn carve(game_root: &Path, out_dir: &Path) -> Result<CarveStats> {
         addons.display()
     );
 
-    let carved_root = out_dir.join("Carved");
-    // Regenerate from scratch so stale fragments can never linger in the index.
-    let _ = std::fs::remove_dir_all(&carved_root);
+    let carved_root = out_dir.join(CARVED_DIR);
+    // A fresh carve only: stale fragments from an earlier run must never linger beside new ones,
+    // and removing them is the caller's announced `--replace`, never a silent step here.
+    let previous = std::fs::read_dir(&carved_root).map(|mut e| e.next().is_some());
+    anyhow::ensure!(
+        !previous.unwrap_or(false),
+        "{} already holds a previous carve; clear it first",
+        carved_root.display()
+    );
     std::fs::create_dir_all(&carved_root)?;
 
     let mut st = CarveStats {
@@ -282,7 +292,7 @@ Regenerate with:
 
     cargo run -q -p developer_tools --bin enf -- carve \
       --game "$HOME/.local/share/Steam/steamapps/common/Arma Reforger" \
-      --out apps/mod/vanilla_reference
+      --out apps/mod/References/vanilla_reference --replace
 
 Filenames are `Carved/<pak>/<seq>_<sha8>.c` because scripts are **not name-addressable** inside
 the pak FILE tree — there are no `.c` names to recover. `_MANIFEST.tsv` records the pak, byte

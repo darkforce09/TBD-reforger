@@ -1,6 +1,6 @@
 # Upstream code leak scan
 
-The body of `cargo xtask verify no-crf-leak`: the four checks that keep code and asset GUIDs from
+The body of `cargo xtask verify no-crf-leak`: the checks that keep code and asset GUIDs from
 the read-only upstream reference frameworks out of the shipping [mod](/documentation/glossary/g_to_m.md#mod).
 The parent file `tools/xtask/src/verifications/licensing/upstream_code_leaks.rs` holds the
 lanes, the patterns, the output log and the tests wiring.
@@ -9,7 +9,9 @@ lanes, the patterns, the output log and the tests wiring.
 
 ```text
 tools/xtask/src/verifications/licensing/upstream_code_leaks/
-└── verify_crf_leak.rs  the entry, the identifier and GUID arms, the vanilla pak probe, grep-compatible reading
+├── asset_guid_reuse.rs   the GUID step: lane asset folders, our GUID references, one block per lane
+├── vanilla_pak_probe.rs  which shared GUIDs the vanilla paks hold, one parallel pass over the paks
+└── verify_crf_leak.rs    the entry, lane admission, the identifier step, grep-compatible reading
 ```
 
 ## Boundaries

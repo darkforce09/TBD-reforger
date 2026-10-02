@@ -56,13 +56,6 @@ const USAGE_BODY: &str = "\
 #   cargo xtask platform slice-worktree -- reap
 ";
 
-/// Whether a missing oracle lane is fatal. See the licence/policy essay in `cmd_new`.
-#[derive(PartialEq, Clone, Copy)]
-enum Policy {
-    Required,
-    Optional,
-}
-
 // ── tests ────────────────────────────────────────────────────────────────────────────────────
 // Every test builds its own throwaway repo under
 // `temp_dir()` and calls `cmd_*` with an explicit `root` — nothing here can reach the real

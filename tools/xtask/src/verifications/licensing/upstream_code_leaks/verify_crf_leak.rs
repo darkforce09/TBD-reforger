@@ -1,5 +1,21 @@
+//! The gate body of `cargo xtask verify no-crf-leak`: lane admission, the identifier step, and the
+//! grep-compatible file reading both steps share.
+//!
+//! **Role:** Admits both reference lanes, runs the identifier step for each lane prefix, hands the
+//! asset-GUID step to [`super::asset_guid_reuse`], and prints the epilogue with exit 1 or the PASS
+//! line with exit 0.
+//! **Position:** Called through [`verify_crf_leak`] by the `verify` dispatch and the mod wave gate;
+//! the tests call [`run`] with fixture [`Lanes`].
+//! **Signals & state:** None; every printed line goes through [`Log`].
+//! **Invariants:** A lane that cannot be compared, an addon tree that cannot be walked, or a file
+//! that cannot be read is exit 2 before any verdict; a pattern constant that does not compile is
+//! exit 2, never "no hits".
+
+use super::asset_guid_reuse::{asset_dirs, check_guid_leaks};
 use super::*;
 
+/// Runs the gate over the checkout at `repo_root` and returns its exit code (0 clean, 1 findings,
+/// 2 did not run), printing the transcript as it goes.
 pub fn verify_crf_leak(repo_root: &Path) -> Result<u8> {
     let mut log = Log {
         lines: Vec::new(),
@@ -8,13 +24,16 @@ pub fn verify_crf_leak(repo_root: &Path) -> Result<u8> {
     Ok(run(&Lanes::from_env(repo_root), &mut log))
 }
 
-/// The script body: four checks, then the epilogue-and-exit-1 or the PASS line.
+/// The gate body: the identifier step per prefix, the asset-GUID step over both lanes, then the
+/// epilogue-and-exit-1 or the PASS line. A lane that is absent, unreadable or holds nothing to
+/// compare is exit 2 before any step runs.
 pub(super) fn run(lanes: &Lanes, log: &mut Log) -> u8 {
+    for (label, oracle) in lanes.references() {
+        if let Err(cause) = require_lane(oracle) {
+            return refuse_lane(log, label, oracle, cause);
+        }
+    }
     let mut fail = false;
-    // One vanilla answer per bare GUID for the whole run. The two lanes share 13 GUIDs (measured)
-    // and bash re-greps each; the paks cannot change mid-run, so memoising is provably the same
-    // answer for a fraction of the I/O — and a *miss* costs 20 GB.
-    let mut memo: HashMap<String, bool> = HashMap::new();
 
     for (label, prefix) in IDENT_LANES {
         let ours = [lanes.mod_dir.as_path(), lanes.export_dir.as_path()];
@@ -23,11 +42,9 @@ pub(super) fn run(lanes: &Lanes, log: &mut Log) -> u8 {
             Err(cause) => return refuse(log, cause),
         }
     }
-    for (label, oracle) in [("CRF", &lanes.crf), ("PlayableSelector", &lanes.ps)] {
-        match check_guid_leak(log, lanes, label, oracle, &mut memo) {
-            Ok(hit) => fail |= hit,
-            Err(cause) => return refuse(log, cause),
-        }
+    match check_guid_leaks(log, lanes) {
+        Ok(hit) => fail |= hit,
+        Err(cause) => return refuse(log, cause),
     }
 
     if fail {
@@ -46,14 +63,42 @@ pub(super) fn run(lanes: &Lanes, log: &mut Log) -> u8 {
     0
 }
 
-/// Exit **2**, not the script's 1: "the tree is dirty" and "I never read the tree" are different
-/// operator actions. The wave driver tests `rc -eq 0`, so any nonzero is still FAIL there.
+/// Exit **2**: "the tree is dirty" (1) and "the tree was never read" (2) are different operator
+/// actions. The wave gate treats any nonzero code as FAIL.
 pub(super) fn refuse(log: &mut Log, cause: NotRun) -> u8 {
     let msg = "no-oracle-leak could not examine the trees it was pointed at";
     log.say(Verdict::did_not_run(msg, Kind::Ban, cause).to_string());
     2
 }
 
+/// A lane the GUID step can compare: a folder holding at least one `UI/` or `Prefabs/` folder.
+pub(super) fn require_lane(oracle: &Path) -> Result<(), NotRun> {
+    // `is_dir` follows symlinks, as a slice worktree's lanes are.
+    if !oracle.is_dir() {
+        return Err(NotRun::TargetMissing(oracle.to_path_buf()));
+    }
+    if asset_dirs(oracle)?.is_empty() {
+        let source = std::io::Error::other("the lane holds no UI/ or Prefabs/ folder");
+        return Err(NotRun::Unreadable {
+            path: oracle.to_path_buf(),
+            source,
+        });
+    }
+    Ok(())
+}
+
+/// Exit **2** for a lane the gate cannot compare against, naming the lane and how to fill it.
+pub(super) fn refuse_lane(log: &mut Log, label: &str, oracle: &Path, cause: NotRun) -> u8 {
+    let msg = format!("no-oracle-leak could not examine the {label} lane");
+    log.say(Verdict::did_not_run(msg, Kind::Ban, cause).to_string());
+    log.say(format!(
+        "      Fill {} as {REFERENCES_DIR}/README.md describes, then run the gate again.",
+        oracle.display()
+    ));
+    2
+}
+
+/// The identifier step for one lane prefix over `roots`. `Ok(true)` when it found a leak.
 pub(super) fn check_identifier_leak(
     log: &mut Log,
     roots: &[&Path],
@@ -63,7 +108,7 @@ pub(super) fn check_identifier_leak(
     log.say(format!(
         "==> {prefix} identifiers in tbd-framework + tbd-export code ({label})"
     ));
-    let ident = pattern(&format!("(^|[^A-Za-z0-9_]){prefix}"))?;
+    let ident = pattern(&identifier_pattern(prefix))?;
     let comment = pattern(COMMENT_RE)?;
 
     let mut hits: Vec<String> = Vec::new();
@@ -73,8 +118,7 @@ pub(super) fn check_identifier_leak(
             if !ident.is_match(&line) {
                 continue;
             }
-            // Build `grep -rn`'s exact rendering first: the comment filter is anchored on it, not
-            // on the source line, and `$MOD` was absolute so these paths are absolute too.
+            // The comment filter is anchored on the rendered `path:line:text`, so render first.
             let rendered = format!("{}:{line_no}:{line}", file.display());
             if !comment.is_match(&rendered) {
                 hits.push(rendered);
@@ -95,176 +139,12 @@ pub(super) fn check_identifier_leak(
     Ok(true)
 }
 
-/// `--exclude-dir=EnfusionMCP`. grep prunes the directory; [`scan::walk_files`] filters files, so
-/// we still descend into it and discard — same output, a few stat calls more.
+/// False for a file under an `EnfusionMCP` folder, which the identifier step skips.
 pub(super) fn outside_excluded_dir(path: &Path) -> bool {
     !path.components().any(|c| c.as_os_str() == EXCLUDE_DIR)
 }
 
-pub(super) fn check_guid_leak(
-    log: &mut Log,
-    lanes: &Lanes,
-    label: &str,
-    oracle: &Path,
-    memo: &mut HashMap<String, bool>,
-) -> Result<bool, NotRun> {
-    log.say(format!(
-        "==> {label} layout/prefab GUIDs reused in tbd-framework or tbd-export"
-    ));
-    // `[ -d ]` follows symlinks, and so does `is_dir`.
-    if !oracle.is_dir() {
-        log.say(format!("  SKIP — {label} {SKIP_TAIL}"));
-        return Ok(false);
-    }
-    let dirs = asset_dirs(oracle)?;
-    if dirs.is_empty() {
-        // Deliberately NOT worded as OK: reaching here means we compared nothing, which is how the
-        // `find -L` symlink bug hid itself.
-        log.say(format!(
-            "  SKIP — no UI/ or Prefabs/ dirs under {}; NO GUID comparison was made",
-            oracle.display()
-        ));
-        return Ok(false);
-    }
-
-    let guid = Regex::new(GUID_RE).map_err(|e| broken_pattern(GUID_RE, e))?;
-    let refs: Vec<&Path> = dirs.iter().map(PathBuf::as_path).collect();
-    let oracle_guids = guids_under(&guid, &refs)?;
-    // Recomputed per lane, as in the script. 143 files; the repeat costs nothing.
-    let ours = guids_under(
-        &guid,
-        &[lanes.mod_dir.as_path(), lanes.export_dir.as_path()],
-    )?;
-    if oracle_guids.is_empty() || ours.is_empty() {
-        log.say("  OK (nothing to compare)");
-        return Ok(false);
-    }
-
-    // bash `comm -12` over two `sort -u` streams. A `BTreeSet` intersection is byte order, which
-    // for these fixed-shape `{16 uppercase hex}` strings is exactly what en_AU.UTF-8 collation
-    // produces — verified against the script's own output ordering.
-    let mut leaks: Vec<&String> = Vec::new();
-    for g in oracle_guids.intersection(&ours) {
-        if in_vanilla(&lanes.vanilla, &g.replace(['{', '}'], ""), memo)? {
-            continue; // present in vanilla -> engine fact, not an oracle leak
-        }
-        leaks.push(g);
-    }
-
-    if leaks.is_empty() {
-        log.say("  OK (shared GUIDs are all vanilla engine facts)");
-        return Ok(false);
-    }
-    log.say(format!(
-        "FAIL: {label}-only asset GUIDs reused (not present in vanilla):"
-    ));
-    for g in &leaks {
-        log.say(format!("  {g}"));
-    }
-    Ok(true)
-}
-
-/// `find -L "$oracle" -maxdepth 2 -type d \( -name UI -o -name Prefabs \)`.
-///
-/// Depth 0 is included because `find` includes the start point. Symlinks are followed at every
-/// level — see the module docs; `maxdepth 2` is also what bounds a symlink cycle.
-pub(super) fn asset_dirs(oracle: &Path) -> Result<Vec<PathBuf>, NotRun> {
-    let mut out = Vec::new();
-    if is_asset_dir(oracle) {
-        out.push(oracle.to_path_buf());
-    }
-    for one in children(oracle)? {
-        if !one.is_dir() {
-            continue;
-        }
-        if is_asset_dir(&one) {
-            out.push(one.clone());
-        }
-        for two in children(&one)? {
-            if is_asset_dir(&two) {
-                out.push(two);
-            }
-        }
-    }
-    out.sort();
-    Ok(out)
-}
-
-pub(super) fn is_asset_dir(path: &Path) -> bool {
-    let named = path
-        .file_name()
-        .and_then(|n| n.to_str())
-        .is_some_and(|n| ASSET_DIR_NAMES.contains(&n));
-    named && path.is_dir()
-}
-
-/// One directory level. `find` would print a suppressed error and carry on; refusing instead is
-/// the anti-fail-open choice — a lane we could not read must not report "nothing to compare".
-pub(super) fn children(dir: &Path) -> Result<Vec<PathBuf>, NotRun> {
-    let bad = |source: std::io::Error| NotRun::Unreadable {
-        path: dir.to_path_buf(),
-        source,
-    };
-    let mut out = Vec::new();
-    for entry in std::fs::read_dir(dir).map_err(bad)? {
-        out.push(entry.map_err(bad)?.path());
-    }
-    Ok(out)
-}
-
-/// `grep -rhoE '\{[0-9A-F]{16}\}' … | sort -u`.
-///
-/// `Regex` directly rather than [`Pattern`], which exposes only `is_match` while `-o` needs every
-/// match. Scanning whole text instead of line by line is identical here: the pattern holds no `.`
-/// and no newline, so a match can never span a line break.
-pub(super) fn guids_under(guid: &Regex, roots: &[&Path]) -> Result<BTreeSet<String>, NotRun> {
-    let mut out = BTreeSet::new();
-    for file in scan::walk_files(roots, |_| true)? {
-        let bytes = read(&file)?;
-        for m in guid.find_iter(&String::from_utf8_lossy(grep_visible(&bytes))) {
-            out.insert(m.as_str().to_string());
-        }
-    }
-    Ok(out)
-}
-
-/// `[ -d "$game" ] && grep -qla "$bare" "$game"/*.pak 2>/dev/null`.
-///
-/// Every non-zero status is "not in vanilla", exactly as the `&&` chain read it: 1 is a clean
-/// miss, 2 is grep erroring on an unexpanded glob. A tool that never ran is *not* folded in — it
-/// propagates as `NotRun` and exits 2, where bash would have called 127 a leak, 92 times over.
-pub(super) fn in_vanilla(
-    dir: &Path,
-    bare: &str,
-    memo: &mut HashMap<String, bool>,
-) -> Result<bool, NotRun> {
-    if let Some(hit) = memo.get(bare) {
-        return Ok(*hit);
-    }
-    let paks = paks(dir);
-    let hit = if paks.is_empty() {
-        false // No Steam install, or a glob that matched nothing. Module docs oddity 7.
-    } else {
-        let probe = Run::new("grep").arg("-qla").arg(bare).args(&paks);
-        probe.status()? == 0
-    };
-    memo.insert(bare.to_string(), hit);
-    Ok(hit)
-}
-
-/// The shell glob `"$game"/*.pak`: sorted, dotfiles excluded, no type test — a directory named
-/// `*.pak` would be handed to grep here exactly as bash hands it over.
-pub(super) fn paks(dir: &Path) -> Vec<PathBuf> {
-    let Ok(entries) = std::fs::read_dir(dir) else {
-        return Vec::new();
-    };
-    let glob = |n: &str| n.ends_with(".pak") && !n.starts_with('.');
-    let named = |p: &PathBuf| p.file_name().and_then(|n| n.to_str()).is_some_and(glob);
-    let mut out: Vec<PathBuf> = entries.flatten().map(|e| e.path()).filter(named).collect();
-    out.sort();
-    out
-}
-
+/// The bytes of `path`, or `NotRun::Unreadable` naming it.
 pub(super) fn read(path: &Path) -> Result<Vec<u8>, NotRun> {
     std::fs::read(path).map_err(|source| NotRun::Unreadable {
         path: path.to_path_buf(),
@@ -272,13 +152,10 @@ pub(super) fn read(path: &Path) -> Result<Vec<u8>, NotRun> {
     })
 }
 
-/// The bytes GNU grep 3.8 would actually produce output from.
+/// The bytes GNU grep produces output from.
 ///
-/// Measured against `/usr/bin/grep` 3.8: a NUL inside the first read buffer flags the whole file
-/// binary and it emits nothing at all; a NUL that arrives later lets the matches *before* it print
-/// and swallows the rest. Both `--binary-files=without-match` (arm 1) and the default mode with
-/// `-o` (arm 2) behave this way on stdout, which is all the script captures — it pipes stdout and
-/// ends with `|| true`, so grep's exit status never reaches a decision.
+/// A NUL inside the first read buffer ([`GREP_BUF`]) flags the whole file binary and nothing of it
+/// is visible; a NUL that arrives later leaves the bytes before it visible and hides the rest.
 pub(super) fn grep_visible(bytes: &[u8]) -> &[u8] {
     if bytes[..bytes.len().min(GREP_BUF)].contains(&0) {
         return &[];
@@ -291,9 +168,8 @@ pub(super) fn grep_visible(bytes: &[u8]) -> &[u8] {
 
 /// `grep -n`'s numbering: 1-based, split on `\n` only.
 ///
-/// Not [`scan::matching_lines`], which uses `str::lines` and therefore **strips a trailing `\r`**.
-/// grep keeps it, and `tbd-framework` does hold a CRLF file the Workbench MCP bridge wrote, so the
-/// difference is one commit away from being observable.
+/// Not [`scan::matching_lines`], which uses `str::lines` and therefore strips a trailing `\r`;
+/// grep keeps it, and `tbd-framework` holds CRLF files written by the Workbench bridge.
 pub(super) fn numbered(bytes: &[u8]) -> Vec<(usize, String)> {
     let mut lines: Vec<&[u8]> = bytes.split(|b| *b == b'\n').collect();
     // `split` yields a trailing empty piece for a file that ends in a newline; grep does not
@@ -305,11 +181,12 @@ pub(super) fn numbered(bytes: &[u8]) -> Vec<(usize, String)> {
     lines.iter().enumerate().map(n).collect()
 }
 
-/// A pattern constant that will not compile is a bug in THIS file; it must not read as "no hits".
+/// A pattern that will not compile is a bug in this module; it must not read as "no hits".
 pub(super) fn pattern(src: &str) -> Result<Pattern, NotRun> {
     Pattern::regex(src).map_err(|e| broken_pattern(src, e))
 }
 
+/// The `NotRun` for a pattern that does not compile.
 pub(super) fn broken_pattern(src: &str, e: regex::Error) -> NotRun {
     NotRun::ToolError {
         tool: "regex".into(),

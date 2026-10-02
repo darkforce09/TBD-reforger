@@ -22,8 +22,10 @@ comment, and one that is in neither was not recorded and is re-derived from the 
   `cargo xtask platform wave`.
 - A container runtime for the local Postgres, as
   [Local development](/documentation/runbooks/local_development.md) describes.
-- The oracle lanes `apps/mod/crf_framework/` and `apps/mod/vanilla_reference/` in the main
-  checkout (both gitignored); `slice-worktree new` refuses to create a worktree without them.
+- The three oracle lanes (`crf_framework`, `vanilla_reference` and `playable_selector`) filled in
+  the main checkout's `apps/mod/References/`, as its [README](/apps/mod/References/README.md)
+  describes (all gitignored); `slice-worktree new` refuses to create a worktree without any of
+  them.
 
 ## Where the state lives
 

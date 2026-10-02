@@ -27,7 +27,7 @@ declared.
 
 - Depends on: `TBD_MissionLoader` and `TBD_MissionFactionStruct` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`.
-- Used by: `TBD_ObjectiveTypedBinder` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Registry/` and
+- Used by: `TBD_ObjectiveTypedBinder` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Registry/` and
   `TBD_ZoneVolume` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Zones/Volumes/`.
 - Rules: lines added stay ASCII; `cargo xtask mod compile` checks that the scripts compile.
 

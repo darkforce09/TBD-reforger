@@ -11,7 +11,7 @@ fn scratch(name: &str) -> PathBuf {
             .as_nanos()
     ));
     let _ = fs::remove_dir_all(&p);
-    fs::create_dir_all(p.join("apps/mod/vanilla_reference/apidoc")).unwrap();
+    fs::create_dir_all(p.join("apps/mod/References/vanilla_reference/apidoc")).unwrap();
     fs::create_dir_all(p.join(".ai/tickets")).unwrap();
     fs::write(p.join(".ai/tickets/ROOT"), "{}").unwrap();
     p
@@ -19,7 +19,7 @@ fn scratch(name: &str) -> PathBuf {
 
 fn seed_index(root: &Path) {
     fs::write(
-        root.join("apps/mod/vanilla_reference/apidoc/annotated.html"),
+        root.join("apps/mod/References/vanilla_reference/apidoc/annotated.html"),
         "<html>index</html>\n",
     )
     .unwrap();
@@ -106,4 +106,17 @@ fn from_file_usage_line_names_the_runnable_command() {
         format!("usage: {USAGE_COMMAND} --from-file <path>"),
         "usage: cargo xtask fetch vanilla-api --from-file <path>"
     );
+}
+
+#[test]
+fn a_checkout_without_the_references_folder_is_refused() {
+    let root = scratch("no-references");
+    fs::remove_dir_all(root.join(crate::core::repository_layout::REFERENCES_DIR)).unwrap();
+    let err = run(&root, &[]).unwrap_err();
+    assert!(format!("{err:#}").contains("is missing"), "{err:#}");
+    assert!(
+        !root.join("apps/mod/References").exists(),
+        "nothing recreated"
+    );
+    let _ = fs::remove_dir_all(root);
 }

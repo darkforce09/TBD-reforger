@@ -63,8 +63,8 @@ Reforger hands it nothing. **That gap is the program.**
   worse than APL rather than better: default copyright applies, so there is **no permission to copy,
   adapt or redistribute any of it**. Read it to learn how a lobby or slot picker is *shaped*, then
   write TBD's own; never a line. The `PS_` lane of `cargo xtask verify no-crf-leak` enforces it: the
-  lane reads `apps/mod/playable_selector` when a checkout holds that folder, else the folder the
-  `TBD_PS_ORACLE` variable names. The full rules are §Oracle lanes of the
+  lane reads the folder the `TBD_PS_ORACLE` variable names when it is set and not empty, else the
+  `playable_selector` lane of the [reference lanes](/apps/mod/References/README.md). The full rules are §Oracle lanes of the
   [mod slice workflow](/documentation/runbooks/mod_slice_workflow.md).
 
 ## 3. The event loop

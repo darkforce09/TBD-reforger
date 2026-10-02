@@ -1,6 +1,7 @@
 //! `cargo xtask fetch vanilla-api` — mirror Bohemia's Arma Reforger Script API reference.
 //!
-//! Doxygen HTML lands in `apps/mod/vanilla_reference/apidoc/`. Index only by default; class
+//! Doxygen HTML lands in the `apidoc/` folder of the vanilla lane in `apps/mod/References/`,
+//! which must already exist. Index only by default; class
 //! names or `--from-file` fetch pages too. A cached page that is non-empty is never refetched.
 //!
 //! Three behaviours worth knowing before reading the code:
@@ -36,8 +37,10 @@ const USAGE_COMMAND: &str = "cargo xtask fetch vanilla-api";
 
 /// Entry for `xtask fetch vanilla-api` — `args` are tokens after the subcommand.
 pub fn run(repo_root: &Path, args: &[String]) -> Result<u8> {
-    let cache = repo_root.join("apps/mod/vanilla_reference/apidoc");
-    fs::create_dir_all(&cache).with_context(|| format!("mkdir -p {}", cache.display()))?;
+    let cache = super::reference_cache::prepare_vanilla_cache(
+        repo_root,
+        super::reference_cache::SCRIPT_API_PAGES,
+    )?;
 
     out_line("==> class index")?;
     if !fetch(&cache, "annotated.html")? {

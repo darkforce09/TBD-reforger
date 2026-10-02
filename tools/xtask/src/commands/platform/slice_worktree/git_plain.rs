@@ -1,4 +1,8 @@
 use super::*;
+use crate::core::repository_layout::{
+    CRF_FRAMEWORK_REFERENCE, PLAYABLE_SELECTOR_OVERRIDE_ENV, PLAYABLE_SELECTOR_REFERENCE,
+    REFERENCES_DIR, VANILLA_REFERENCE,
+};
 
 /// Plain `git`, run from `dir`. The bash uses bare `git` everywhere except the calls listed on
 /// [`git_lfs_safe`], and that distinction is deliberate rather than sloppy — see [`cmd_merge`].
@@ -208,86 +212,67 @@ pub(super) fn cmd_new(root: &Path, slice_arg: &str) -> Result<u8> {
     }
 
     // ── ORACLE LANES ─────────────────────────────────────────────────────────────────────────
-    // The oracle sources are GITIGNORED, so a fresh worktree has none of them, and an agent with no
-    // way to query CRF or read vanilla source falls back on training-data guesses about Enfusion,
-    // which are wrong. Link them in (read-only; no disk cost, no risk of a slice mutating them).
-    // Idempotent, so re-running `new` REPAIRS a missing lane rather than skipping it.
+    // The reference lanes in `apps/mod/References/` are GITIGNORED, so a fresh worktree has the
+    // folder (its README.md is tracked) but none of the lanes, and an agent with no way to query
+    // CRF or read vanilla source falls back on training-data guesses about Enfusion, which are
+    // wrong. Link each lane in from the main checkout (read-only; no disk cost, no risk of a
+    // slice mutating them). Idempotent, so re-running `new` REPAIRS a missing lane.
     //
     // LICENCE — the lanes are NOT equivalent, and the next agent must know which is which:
     //   crf_framework      Arma Public License. Read, cite, design-mirror. Never vendored.
-    //   vanilla_reference  Bohemia game source, carved by `enf carve`. Read-only, never committed.
+    //   vanilla_reference  Bohemia game source and Script API pages. Read-only, never committed.
     //   playable_selector  NO LICENCE AT ALL — DESIGN-MIRROR ONLY. Absence of a licence is worse
     //                      than APL, not better: default copyright applies, so there is no
     //                      permission to copy, adapt or redistribute a single line. Read it to
     //                      understand how a lobby/slot-picker is SHAPED, then write our own.
     // `xtask verify no-crf-leak` enforces that (CRF_ and PS_ identifier + asset-GUID gates).
     //
-    // REQUIRED vs OPTIONAL: the refuse-on-missing rule exists for ONE failure mode — an
-    // agent with no way to CHECK an Enfusion API fact will invent one. crf_framework and
-    // vanilla_reference answer that, live in the repo, and are provisioned by repo tooling, so their
-    // absence means a broken local setup: REFUSE. playable_selector is a DESIGN mirror proving no
-    // Enfusion fact, cannot be compiled against, and sits OUTSIDE the repo on one operator's disk,
-    // so on CI it is legitimately absent — refusing would break `new` for everyone but Sam over a
-    // non-correctness problem while the two required lanes still cover the real failure mode. So:
-    // WARN, naming what the agent lost. Licence risk is unaffected either way.
-    let home = std::env::var("HOME").unwrap_or_default();
-    // `${TBD_PS_ORACLE:-…}` — the default applies when the variable is unset OR EMPTY.
-    let ps_oracle = match std::env::var("TBD_PS_ORACLE") {
-        Ok(v) if !v.is_empty() => v,
-        _ => format!("{home}/Projects/Archive/Reforger_Lobby/PlayableSelector-main"),
+    // EVERY LANE IS REQUIRED. All three are provisioned the same way into the same folder, and
+    // the slice's own `verify no-crf-leak` gate exits 2 without the CRF or PlayableSelector lane,
+    // so a tree missing any of them cannot pass its gate: refusing here names the cause at the
+    // step that can fix it instead of at the gate. `TBD_PS_ORACLE`, when set and not empty, names
+    // the PlayableSelector source in place of the main checkout's lane.
+    let references = root.join(REFERENCES_DIR);
+    let ps_source = match std::env::var_os(PLAYABLE_SELECTOR_OVERRIDE_ENV) {
+        Some(v) if !v.is_empty() => PathBuf::from(v),
+        _ => root.join(PLAYABLE_SELECTOR_REFERENCE),
     };
-    let r = root.display();
-    let mo = format!("{r}/apps/mod");
-    let (crf, van) = (
-        format!("{mo}/crf_framework"),
-        format!("{mo}/vanilla_reference"),
-    );
     let lanes = [
-        ("crf_framework", crf, Policy::Required),
-        ("vanilla_reference", van, Policy::Required),
-        ("playable_selector", ps_oracle, Policy::Optional),
+        (CRF_FRAMEWORK_REFERENCE, root.join(CRF_FRAMEWORK_REFERENCE)),
+        (VANILLA_REFERENCE, root.join(VANILLA_REFERENCE)),
+        (PLAYABLE_SELECTOR_REFERENCE, ps_source),
     ];
 
     let mut missing_oracle = false;
-    for (name, src, policy) in &lanes {
-        // `[ -d "$src" ]` follows symlinks, and so does `is_dir()`.
-        if !Path::new(src).is_dir() {
-            if *policy == Policy::Required {
-                eprintln!("  ERROR: {src} missing — cannot link the {name} oracle lane");
-                missing_oracle = true;
-            } else {
-                eprintln!(
-                    "  WARNING: no {name} oracle at {src} — this tree has NO PlayableSelector lane."
-                );
-                eprintln!(
-                    "           Design work that would cite it must STOP and ask, not guess."
-                );
-                eprintln!(
-                    "           If the checkout moved, re-run with TBD_PS_ORACLE=/path/to/PlayableSelector-main"
-                );
-            }
+    for (lane, src) in &lanes {
+        let shown = src.display();
+        // `is_dir()` follows symlinks.
+        if !src.is_dir() {
+            eprintln!("  ERROR: {shown} missing — cannot link the {lane} oracle lane");
+            eprintln!(
+                "         Fill it as {}/README.md describes.",
+                references.display()
+            );
+            missing_oracle = true;
             continue;
         }
 
-        let dst = abs_dir.join("apps/mod").join(name);
-        if let Err(e) = ln_sfn(Path::new(src), &dst) {
-            // The bash's bare `ln -sfn` under `set -e`: ln prints its own diagnostic and the script
-            // dies on the spot. Reachable when the tree has no `apps/mod/` at all.
+        let dst = abs_dir.join(lane);
+        if let Err(e) = ln_sfn(src, &dst) {
+            // `ln -sfn` failing is fatal: the worktree has no `apps/mod/References/` folder.
             eprintln!(
                 "ln: failed to create symbolic link '{}': {e}",
                 dst.display()
             );
             return Ok(1);
         }
-        // Verify rather than trust. An unreachable block here goes unnoticed,
+        // Verify rather than trust. An unreachable link here goes unnoticed,
         // because nobody checked the result — the agents just quietly lost their proof lanes.
-        if lane_is_linked(&dst, Path::new(src)) {
-            println!("  oracle ok: apps/mod/{name} -> {src}");
+        if lane_is_linked(&dst, src) {
+            println!("  oracle ok: {lane} -> {shown}");
         } else {
-            eprintln!("  ERROR: failed to link apps/mod/{name} into {dir}");
-            if *policy == Policy::Required {
-                missing_oracle = true;
-            }
+            eprintln!("  ERROR: failed to link {lane} into {dir}");
+            missing_oracle = true;
         }
     }
     if missing_oracle {
@@ -308,7 +293,7 @@ pub(super) fn cmd_new(root: &Path, slice_arg: &str) -> Result<u8> {
     println!(
         "  note: assets/terrains is LFS pointers here — run 'xtask schema validate', not 'cargo xtask ci schema-validate'"
     );
-    println!("worktree: {r}/{dir}   branch: {branch}");
+    println!("worktree: {}/{dir}   branch: {branch}", root.display());
     Ok(0)
 }
 
@@ -344,8 +329,8 @@ pub(super) fn ln_sfn(src: &Path, dst: &Path) -> std::io::Result<()> {
 /// lane that was never linked, the exact "reports success over an input it never examined" defect
 /// its own comment says the check was added to stop. Requiring a symlink resolving to `src` closes
 /// it. The happy path is unchanged so no baseline moves, and the bad path is unreachable today
-/// (both lanes are gitignored) — but one `git add apps/mod/crf_framework/` makes it reachable, and
-/// it fails silent.
+/// (the lanes are gitignored) — but one `git add -f apps/mod/References/crf_framework/` makes
+/// it reachable, and it fails silent.
 pub(super) fn lane_is_linked(dst: &Path, src: &Path) -> bool {
     match fs::symlink_metadata(dst) {
         Ok(md) if md.file_type().is_symlink() => {

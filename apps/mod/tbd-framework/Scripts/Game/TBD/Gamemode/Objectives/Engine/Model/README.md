@@ -6,7 +6,7 @@ player reads for it on the objective board.
 ## Contents
 
 ```text
-apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Model/
+apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Model/
 ├── TBD_EObjectiveKind.c     TBD_EObjectiveKind: capture, destroy or hold, or NONE for other zones
 ├── TBD_EObjectiveOnEmpty.c  TBD_EObjectiveOnEmpty: partial capture progress holds or decays
 ├── TBD_EObjectiveRole.c     TBD_EObjectiveRole: a viewer reads the attacker, defender or neutral text

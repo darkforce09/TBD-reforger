@@ -265,6 +265,126 @@ pub(super) fn cmd_prep(root: &Path, wave_arg: &str) -> u8 {
     0
 }
 
+/// One wave gate step: the label printed beside its verdict and the command it runs.
+pub(super) struct GateStep {
+    pub(super) label: &'static str,
+    pub(super) program: &'static str,
+    pub(super) args: &'static [&'static str],
+}
+
+/// The wave gate's steps, in run order. `capability` and `oracle citations` are the `enf` checks
+/// of the upstream-framework capability verdicts and of the `@idx` citations in the docs; `schema
+/// validate` is the contract sub-gate set of `cargo xtask ci schema-validate`. Exit 2 from `verify no-crf-leak` (a reference lane
+/// missing) is a FAIL like exit 1: the gate never passes a slice whose leak check did not run.
+pub(super) const GATE_STEPS: &[GateStep] = &[
+    GateStep {
+        label: "compile",
+        program: "cargo",
+        args: &["run", "-q", "-p", "xtask", "--", "mod", "compile"],
+    },
+    // Only exit 1, a real rejection of broken source, is a pass for the self-test; the
+    // classification lives in `crate::commands::mod_ops::compile::run_selftest`.
+    GateStep {
+        label: "compile-selftest",
+        program: "cargo",
+        args: &["run", "-q", "-p", "xtask", "--", "mod", "compile-selftest"],
+    },
+    GateStep {
+        label: "world boot",
+        program: "cargo",
+        args: &["run", "-q", "-p", "xtask", "--", "mod", "world-boot"],
+    },
+    GateStep {
+        label: "world-boot selftest",
+        program: "cargo",
+        args: &[
+            "run",
+            "-q",
+            "-p",
+            "xtask",
+            "--",
+            "mod",
+            "world-boot",
+            "--selftest",
+        ],
+    },
+    GateStep {
+        label: "world boot +mission",
+        program: "cargo",
+        args: &[
+            "run",
+            "-q",
+            "-p",
+            "xtask",
+            "--",
+            "mod",
+            "world-boot",
+            "--mission=bridgehead-at-levie",
+        ],
+    },
+    GateStep {
+        label: "ui layouts",
+        program: "cargo",
+        args: &["run", "-q", "-p", "xtask", "--", "verify", "ui-layouts"],
+    },
+    GateStep {
+        label: "schema validate",
+        program: "cargo",
+        args: &["run", "-q", "-p", "xtask", "--", "ci", "schema-validate"],
+    },
+    GateStep {
+        label: "capability",
+        program: "cargo",
+        args: &[
+            "run",
+            "-q",
+            "-p",
+            "developer_tools",
+            "--bin",
+            "enf",
+            "--",
+            "capability",
+        ],
+    },
+    GateStep {
+        label: "oracle citations",
+        program: "cargo",
+        args: &[
+            "run",
+            "-q",
+            "-p",
+            "developer_tools",
+            "--bin",
+            "enf",
+            "--",
+            "citations",
+        ],
+    },
+    GateStep {
+        label: "no-crf-leak",
+        program: "cargo",
+        args: &["run", "-q", "-p", "xtask", "--", "verify", "no-crf-leak"],
+    },
+    GateStep {
+        label: "ticket registry",
+        program: "distrobox-host-exec",
+        args: &["cargo", "run", "-q", "-p", "xtask", "--", "ticket", "check"],
+    },
+    GateStep {
+        label: "enf unit tests",
+        program: "distrobox-host-exec",
+        args: &[
+            "cargo",
+            "test",
+            "-q",
+            "-p",
+            "developer_tools",
+            "--lib",
+            "enf::",
+        ],
+    },
+];
+
 pub(super) fn cmd_gate(root: &Path) -> u8 {
     println!("═══ wave gate ═══");
     let mut fail = 0u8;
@@ -294,96 +414,9 @@ pub(super) fn cmd_gate(root: &Path) -> u8 {
         }
     };
 
-    run(
-        "compile",
-        "cargo",
-        &["run", "-q", "-p", "xtask", "--", "mod", "compile"],
-    );
-    // Was `distrobox-host-exec cargo xtask mod compile-selftest`. That Makefile recipe carried the
-    // rc classification (only exit 1 — a real rejection of broken source — is a pass); it now
-    // lives in `crate::commands::mod_ops::compile::run_selftest`. The host bridge is dropped for the same reason
-    // the `compile` arm above does not need it: the gate crosses it itself.
-    run(
-        "compile-selftest",
-        "cargo",
-        &["run", "-q", "-p", "xtask", "--", "mod", "compile-selftest"],
-    );
-    run(
-        "world boot",
-        "cargo",
-        &["run", "-q", "-p", "xtask", "--", "mod", "world-boot"],
-    );
-    run(
-        "world-boot selftest",
-        "cargo",
-        &[
-            "run",
-            "-q",
-            "-p",
-            "xtask",
-            "--",
-            "mod",
-            "world-boot",
-            "--selftest",
-        ],
-    );
-    run(
-        "world boot +mission",
-        "cargo",
-        &[
-            "run",
-            "-q",
-            "-p",
-            "xtask",
-            "--",
-            "mod",
-            "world-boot",
-            "--mission=bridgehead-at-levie",
-        ],
-    );
-    run(
-        "ui layouts",
-        "cargo",
-        &["run", "-q", "-p", "xtask", "--", "verify", "ui-layouts"],
-    );
-    run(
-        "schema validate",
-        "distrobox-host-exec",
-        &["make", "schema-validate"],
-    );
-    run(
-        "capability",
-        "distrobox-host-exec",
-        &["make", "verify-capability"],
-    );
-    run(
-        "oracle citations",
-        "distrobox-host-exec",
-        &["make", "verify-oracle"],
-    );
-    run(
-        "no-crf-leak",
-        "distrobox-host-exec",
-        &["make", "verify-no-crf-leak"],
-    );
-    run(
-        "ticket registry",
-        "distrobox-host-exec",
-        &["cargo", "run", "-q", "-p", "xtask", "--", "ticket", "check"],
-    );
-    run(
-        "enf unit tests",
-        "distrobox-host-exec",
-        &[
-            "cargo",
-            "test",
-            "-q",
-            "-p",
-            "developer_tools",
-            "--lib",
-            "enf::",
-        ],
-    );
+    for step in GATE_STEPS {
+        run(step.label, step.program, step.args);
+    }
 
     println!();
     if fail != 0 {

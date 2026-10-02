@@ -1,7 +1,7 @@
 //! The Enfusion oracle toolchain (the `enf` binary).
 //!
 //! Turns two unreadable code piles into queryable indexes:
-//!   * `apps/mod/crf_framework` — 266 `.c` / ~71k LOC of a working Reforger event framework
+//!   * `apps/mod/References/crf_framework` — 266 `.c` / ~71k LOC of a working Reforger event framework
 //!     (Arma Public License, reference only, gitignored).
 //!   * the vanilla game's shipped scripts, carved out of `addons/data/*.pak`.
 //!
@@ -16,6 +16,7 @@ pub mod capability;
 pub mod carve;
 pub mod citations;
 pub mod index;
+pub mod reference_output;
 pub mod source;
 pub mod symbols;
 

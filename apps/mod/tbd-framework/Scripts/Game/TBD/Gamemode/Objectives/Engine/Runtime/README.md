@@ -7,7 +7,7 @@ completions in chat and sends each player their objective board.
 ## Contents
 
 ```text
-apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Runtime/
+apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Runtime/
 ├── TBD_ObjectiveHudPublisher.c  renders each player's board and capture bar, sends it only on change
 ├── TBD_ObjectiveProgression.c   advances capture, hold and destroy objectives by one tick
 └── TBD_ObjectivesComponent.c    TBD_ObjectivesComponent: the 1 Hz server tick, presence, delivery

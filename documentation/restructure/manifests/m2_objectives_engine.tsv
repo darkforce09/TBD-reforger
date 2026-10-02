@@ -1,0 +1,9 @@
+# Stage M2 — the objectives engine grouping. Paths name the tree before the move.
+kind	from	to	scope
+#
+# the four parts of the objectives engine move under one Engine/ folder, beside which the
+# objective kind behaviours get their own folder
+path	apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Model	apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Model
+path	apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Registry	apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Registry
+path	apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Runtime	apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Runtime
+path	apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Tasks	apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Tasks

@@ -7,7 +7,7 @@ objective end trigger has fired.
 ## Contents
 
 ```text
-apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Registry/
+apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Registry/
 ├── TBD_ObjectiveDestroyTargets.c  finds a destroy objective's targets at LIVE and counts what is left
 ├── TBD_ObjectiveEndConditions.c   all captured by one side, any destroyed, any hold run out
 ├── TBD_ObjectiveEntityReader.c    reads objectives[] rows (and their wire structs), hands them out by zoneId
@@ -70,7 +70,7 @@ declares it, through `TBD_ObjectiveEndConditions`, and returns the trigger and t
   the `zone`, `zoneRules`, `objective` and `objectiveFraming` definitions in
   `contracts/definitions/mission.schema.json`.
 - Used by: `TBD_ObjectivesComponent` and `TBD_ObjectiveProgression` in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Runtime/`; `TBD_FrameworkManager`
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Runtime/`; `TBD_FrameworkManager`
   (`EvaluateEndTriggers`, `TRIGGER_*`); `TBD_MissionValidator` (`KindOf`, `TYPE_*`, `TRIGGER_*`);
   `TBD_TriggerRuntime` (`GetAll`).
 - Rules: the zone is what the runtime enforces and wins every disagreement with a typed row;

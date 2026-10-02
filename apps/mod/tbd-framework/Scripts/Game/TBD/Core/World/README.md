@@ -32,7 +32,7 @@ through `TBD_ZoneVolume.ContainsOrigin` when `checkHeightBand` is true, else
 
 - Depends on: `TBD_Zone` and `TBD_ZoneVolume` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Zones/`; the engine's
   `BaseWorld`, `Vehicle` and `ChimeraCharacter`.
-- Used by: `TBD_ObjectiveDestroyTargets` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Registry/`;
+- Used by: `TBD_ObjectiveDestroyTargets` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Registry/`;
   `TBD_VehicleState` and `TBD_MissionVehicleRoster` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/`;
   `TBD_VehicleSpawnDefaults`, `TBD_WaypointFactory` and `TBD_TriggerWorldEffects` under
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/`.

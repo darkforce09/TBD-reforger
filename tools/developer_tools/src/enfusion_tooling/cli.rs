@@ -4,7 +4,7 @@
 //! (and "what does vanilla actually do") in seconds, with a real `file:line`
 //! instead of a plausible-sounding invention.
 //!
-//!   enf index crf --root apps/mod/crf_framework --out .ai/artifacts/enf-index
+//!   enf index crf --root apps/mod/References/crf_framework --out .ai/artifacts/enf-index
 //!   enf lookup CRF_EGamemodeState --index .ai/artifacts/enf-index/crf_symbols.tsv
 //!   enf dirs --index .ai/artifacts/enf-index/crf_symbols.tsv --depth 4
 
@@ -12,6 +12,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use crate::enfusion_pak::PakVfs;
+use crate::enfusion_tooling::reference_output::{checked_reference_output, clear_previous_output};
 use crate::enfusion_tooling::{apidoc, capability, carve, citations, index, source};
 use clap::{Parser, Subcommand};
 
@@ -37,17 +38,21 @@ enum Cmd {
         out: PathBuf,
     },
     /// Carve vanilla Enfusion source out of the shipped .pak archives.
-    /// Output is BI copyrighted content: gitignored, never committed.
+    /// Output is BI copyrighted content: gitignored, never committed. `--out` must lie inside
+    /// the references folder.
     Carve {
         #[arg(long)]
         game: PathBuf,
-        #[arg(long, default_value = "apps/mod/vanilla_reference")]
+        #[arg(long, default_value = crate::repository_layout::VANILLA_REFERENCE)]
         out: PathBuf,
+        /// Remove a previous `Carved/` output first; without it the command refuses one.
+        #[arg(long)]
+        replace: bool,
     },
     /// Parse the cached official Script API docs into the oracle index.
     /// Fetch them first with `cargo xtask fetch vanilla-api`.
     Apidoc {
-        #[arg(long, default_value = "apps/mod/vanilla_reference/apidoc")]
+        #[arg(long, default_value = crate::repository_layout::VANILLA_SCRIPT_API_PAGES)]
         src: PathBuf,
         #[arg(long, default_value = crate::repository_layout::ENF_INDEX_DIR)]
         out: PathBuf,
@@ -61,10 +66,14 @@ enum Cmd {
         index_dir: PathBuf,
     },
     /// Extract vanilla scripts from the paks BY NAME via the pak file table.
-    /// Supersedes `carve` — real paths, complete files, no byte-scanning.
+    /// Supersedes `carve` — real paths, complete files, no byte-scanning. `--out` must lie
+    /// inside the references folder.
     Extract {
-        #[arg(long, default_value = "apps/mod/vanilla_reference/Scripts")]
+        #[arg(long, default_value = crate::repository_layout::VANILLA_EXTRACTED_SCRIPTS)]
         out: PathBuf,
+        /// Remove a previous extraction in `--out` first; without it the command refuses one.
+        #[arg(long)]
+        replace: bool,
         /// Only extract entries whose path inside the pak starts with this prefix. The default
         /// is the pak's own script tree, which is where every vanilla `.c` file lives.
         #[arg(long, default_value = "scripts/")]
@@ -77,10 +86,11 @@ enum Cmd {
         out: PathBuf,
     },
     /// Reconstruct vanilla .c source (WITH method bodies) from cached Doxygen source pages.
+    /// `--out` must lie inside the references folder.
     Source {
-        #[arg(long, default_value = "apps/mod/vanilla_reference/source_html")]
+        #[arg(long, default_value = crate::repository_layout::VANILLA_SOURCE_PAGES)]
         src: PathBuf,
-        #[arg(long, default_value = "apps/mod/vanilla_reference/Source")]
+        #[arg(long, default_value = crate::repository_layout::VANILLA_RECONSTRUCTED_SOURCE)]
         out: PathBuf,
     },
     /// Resolve a symbol to `file:line`. Exits 1 when it does not exist.
@@ -132,8 +142,10 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
             if !root.exists() {
                 anyhow::bail!(
                     "source root {} does not exist.\n\
-                     (crf_framework is gitignored — it must be present locally to reindex)",
-                    root.display()
+                     (the reference lanes in {} are gitignored — fill them as its README.md \
+                     describes before reindexing)",
+                    root.display(),
+                    crate::repository_layout::REFERENCES_DIR
                 );
             }
             let st = index::build(&root, &out, prefix)?;
@@ -149,13 +161,15 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
-        Cmd::Carve { game, out } => {
+        Cmd::Carve { game, out, replace } => {
+            let out = checked_reference_output(&out)?;
             if !game.join("addons").is_dir() {
                 anyhow::bail!(
                     "{} has no addons/ — expected an Arma Reforger install",
                     game.display()
                 );
             }
+            clear_previous_output(&out.join(carve::CARVED_DIR), replace)?;
             let st = carve::carve(&game, &out)?;
             println!("carved {} pak(s) -> {}", st.paks, out.display());
             println!("  blobs >=2KB   {}", st.blobs_seen);
@@ -209,7 +223,12 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
             println!("all citations resolve.");
             Ok(ExitCode::SUCCESS)
         }
-        Cmd::Extract { out, prefix } => {
+        Cmd::Extract {
+            out,
+            prefix,
+            replace,
+        } => {
+            let out = checked_reference_output(&out)?;
             let vfs = PakVfs::open_default()?;
             let paths: Vec<String> = vfs
                 .all_file_paths()
@@ -222,7 +241,7 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
                 paths.len(),
                 prefix
             );
-            let _ = std::fs::remove_dir_all(&out);
+            clear_previous_output(&out, replace)?;
             let (mut ok, mut failed, mut bytes) = (0usize, 0usize, 0u64);
             let mut first_err = String::new();
             for p in &paths {
@@ -289,6 +308,7 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
             Ok(ExitCode::SUCCESS)
         }
         Cmd::Source { src, out } => {
+            let out = checked_reference_output(&out)?;
             let st = source::build(&src, &out)?;
             println!("reconstructed vanilla source (with bodies)");
             println!("  pages  {}", st.pages);

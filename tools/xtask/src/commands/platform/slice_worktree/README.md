@@ -22,9 +22,14 @@ and an unknown subcommand prints the usage and exits 2. A two-dot sub-slice id m
 one-dot parent, so a sub-slice shares its parent's tree.
 
 - `new <slice>`: adds the worktree from `main`, with git-lfs filters and hooks neutralised. It then
-  links the gitignored oracle lanes `apps/mod/crf_framework` and `apps/mod/vanilla_reference`
-  (required) and the PlayableSelector design mirror from `TBD_PS_ORACLE` (optional) into it.
-  A missing required lane refuses with exit 1. Re-running `new` repairs a missing link.
+  links each of the three gitignored oracle lanes of the main checkout's `apps/mod/References/`
+  (`crf_framework`, `vanilla_reference` and `playable_selector`, all required; see the
+  [reference lanes](/apps/mod/References/README.md)) into the same place in the worktree, and
+  checks each link resolves. `TBD_PS_ORACLE`, when set and not empty, names the PlayableSelector
+  source in place of the `playable_selector` lane. A missing lane prints
+  `ERROR: <path> missing — cannot link the <lane> oracle lane` with the README to fill it from,
+  then `REFUSING`, and exits 1, because the slice's own `verify no-crf-leak` gate cannot run
+  without the CRF or PlayableSelector lane. Re-running `new` repairs a missing link.
 - `list`: `git worktree list`.
 - `merge <slice>`: refuses a missing, dirty or unreadable tree. It also refuses (exit 2) a slice
   whose gate verdict receipt is missing, red, or stamped for another sha
@@ -39,7 +44,8 @@ one-dot parent, so a sub-slice shares its parent's tree.
 
 ## Boundaries
 
-- Depends on: `verification_core::proc::Run`, `crate::core::repository_layout::WORKTREES_DIR`,
+- Depends on: `verification_core::proc::Run`, `crate::core::repository_layout` (`WORKTREES_DIR`,
+  `REFERENCES_DIR`, the three lane paths and `PLAYABLE_SELECTOR_OVERRIDE_ENV`),
   `crate::commands::platform::wave_execution::verdict`, and `git`.
 - Used by: `tools/xtask/src/commands/platform/slice_worktree.rs` (`run`, `run_at`); in-process
   by `cargo xtask mod wave` (`prep`, `land`, the reap) and `cargo xtask platform wave land` (the
@@ -48,8 +54,8 @@ one-dot parent, so a sub-slice shares its parent's tree.
   each covers a separate way to lose uncommitted work
   (`drop_refuses_a_dirty_tree_even_when_nothing_is_unmerged`,
   `reap_guards_every_destructive_case_in_one_pass`); `merge` refuses a slice no gate examined
-  (`merge_refuses_a_slice_no_gate_has_examined`); `new` refuses a missing required oracle lane
-  (`new_refuses_when_a_required_oracle_is_missing`); all in `tests.rs`.
+  (`merge_refuses_a_slice_no_gate_has_examined`); `new` refuses when any oracle lane is missing
+  (`new_refuses_when_any_oracle_lane_is_missing`); all in `tests.rs`.
 
 ## Related documentation
 

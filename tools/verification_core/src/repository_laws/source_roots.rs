@@ -29,8 +29,8 @@ pub const PINNED_SCRIPT_ROOTS: &[&str] = &[
 ];
 
 /// Enfusion script roots of the three shipped addons, the only `apps/mod` trees the laws may pin.
-/// `apps/mod/crf_framework` and `apps/mod/vanilla_reference` are gitignored upstream references
-/// and never enter [`PINNED_SCRIPT_ROOTS`]. Each root joins the pins once its addon's scripts sit
+/// The gitignored upstream reference lanes in `apps/mod/References/` never enter
+/// [`PINNED_SCRIPT_ROOTS`]. Each root joins the pins once its addon's scripts sit
 /// at or under the ceilings.
 pub const MOD_SCRIPT_ROOTS: &[&str] = &[
     "apps/mod/tbd-framework/Scripts",

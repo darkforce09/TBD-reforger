@@ -135,3 +135,19 @@ fn missing_lock_is_a_refusal_not_all_shipped() {
     assert_eq!(run_with_root(&root, &["land".into()]), 2);
     let _ = fs::remove_dir_all(&root);
 }
+
+/// The gate runs only commands that exist: the repository has no Makefile, so a `make` step
+/// would fail every run without testing anything.
+#[test]
+fn the_gate_names_no_make_step() {
+    for step in execution::GATE_STEPS {
+        let mut words = std::iter::once(step.program).chain(step.args.iter().copied());
+        assert!(
+            !words.any(|w| w == "make"),
+            "gate step {:?} runs make: {} {:?}",
+            step.label,
+            step.program,
+            step.args
+        );
+    }
+}

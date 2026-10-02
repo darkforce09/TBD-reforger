@@ -9,6 +9,16 @@
 //! then `merge-base(b,main) == b`, so the inequality can never hold) so that nobody later
 //! "repairs" it into something that actually reaps.
 use crate::commands::platform::slice_worktree::*;
+use crate::core::repository_layout::{
+    CRF_FRAMEWORK_REFERENCE, PLAYABLE_SELECTOR_REFERENCE, REFERENCES_DIR, VANILLA_REFERENCE,
+};
+
+/// Every reference lane `new` links, each required.
+const LANES: [&str; 3] = [
+    CRF_FRAMEWORK_REFERENCE,
+    VANILLA_REFERENCE,
+    PLAYABLE_SELECTOR_REFERENCE,
+];
 
 /// git in `dir`, args split on spaces. Returns (code, stdout).
 fn g(dir: &Path, args: &str) -> (i32, String) {
@@ -27,27 +37,28 @@ fn commit(dir: &Path, file: &str, msg: &str) {
     assert_eq!(g(dir, &format!("commit -q -m {msg}")).0, 0);
 }
 
-/// A repo shaped like TBD-Reforger: `main`, both required oracle sources, `apps/mod` tracked.
+/// A repo shaped like TBD-Reforger: `main`, the three reference lanes, the references folder's
+/// README.md tracked.
 /// Purges any previous run's directory on entry, so tests need no cleanup of their own.
 fn scratch(name: &str) -> PathBuf {
     let p = std::env::temp_dir().join(format!("tbd-sw-{}-{name}", std::process::id()));
     let _ = fs::remove_dir_all(&p);
-    for lane in ["crf_framework", "vanilla_reference"] {
-        fs::create_dir_all(p.join("apps/mod").join(lane)).unwrap();
-        fs::write(p.join("apps/mod").join(lane).join("m.txt"), lane).unwrap();
+    for lane in LANES {
+        fs::create_dir_all(p.join(lane)).unwrap();
+        fs::write(p.join(lane).join("m.txt"), lane).unwrap();
     }
+    fs::write(p.join(REFERENCES_DIR).join("README.md"), "lanes\n").unwrap();
     assert_eq!(g(&p, "init -q -b main .").0, 0);
     assert_eq!(g(&p, "config user.email t@t.t").0, 0);
     assert_eq!(g(&p, "config user.name t").0, 0);
-    // ALL THREE LANES MUST BE IGNORED — load-bearing, not tidiness. `new` symlinks them INSIDE
-    // the worktree, so an un-ignored lane shows as `?? apps/mod/<lane>` and the tree is
-    // PERMANENTLY DIRTY: every guard here then refuses forever. FOUND BY THIS TEST — the fixture
-    // first omitted `playable_selector` and `drop` refused a supposedly clean tree. The real
-    // `apps/mod/.gitignore` has the same three with the same NO-trailing-slash rule (a slash
-    // lets the link itself be staged, committing an absolute path — and unlicensed code for
-    // playable_selector). Adding a lane means editing the lane table AND that .gitignore.
-    let ignores = "crf_framework\nvanilla_reference\nplayable_selector\n";
-    fs::write(p.join("apps/mod/.gitignore"), ignores).unwrap();
+    // EVERY LANE MUST BE IGNORED — load-bearing, not tidiness. `new` symlinks them INSIDE the
+    // worktree, so an un-ignored lane shows as `?? apps/mod/References/<lane>` and the tree is
+    // PERMANENTLY DIRTY: every guard here then refuses forever. The root `.gitignore` carries
+    // the same two rules: everything in the references folder but its README.md, matched
+    // without a trailing slash so the worktree's symlinks are ignored too (a slash matches only
+    // folders, letting a link be staged with its absolute target, and unlicensed code with it).
+    let ignores = format!("/{REFERENCES_DIR}/*\n!/{REFERENCES_DIR}/README.md\n");
+    fs::write(p.join(".gitignore"), ignores).unwrap();
     commit(&p, "file.txt", "base");
     p
 }
@@ -66,8 +77,8 @@ fn branch_exists(root: &Path, slice: &str) -> bool {
 
 /// Is `lane` symlinked into `slice`'s worktree from the root checkout's copy?
 fn lane_ok(root: &Path, slice: &str, lane: &str) -> bool {
-    let dst = tree(root, slice).join("apps/mod").join(lane);
-    lane_is_linked(&dst, &root.join("apps/mod").join(lane))
+    let dst = tree(root, slice).join(lane);
+    lane_is_linked(&dst, &root.join(lane))
 }
 
 /// Record a PASS gate verdict for `slice`'s current tip, the way the slice gate would.
@@ -183,24 +194,30 @@ fn new_creates_a_tree_links_the_lanes_and_is_idempotent() {
     assert_eq!(cmd_new(&root, "T-900").unwrap(), 0);
     let t = tree(&root, "T-900");
     assert!(t.is_dir() && branch_exists(&root, "T-900"));
-    for lane in ["crf_framework", "vanilla_reference"] {
+    for lane in LANES {
         assert!(lane_ok(&root, "T-900", lane), "{lane} lane missing");
     }
     // THE UNREPAIRABLE BUG: delete a lane, re-run `new`, and it must come back rather than be
     // skipped with "already exists".
-    fs::remove_file(t.join("apps/mod/crf_framework")).unwrap();
+    fs::remove_file(t.join(CRF_FRAMEWORK_REFERENCE)).unwrap();
     assert_eq!(cmd_new(&root, "T-900").unwrap(), 0);
-    let ok = lane_ok(&root, "T-900", "crf_framework");
+    let ok = lane_ok(&root, "T-900", CRF_FRAMEWORK_REFERENCE);
     assert!(ok, "re-running `new` did not repair the lane");
 }
 
 #[test]
-fn new_refuses_when_a_required_oracle_is_missing() {
-    let root = scratch("noracle");
-    fs::remove_dir_all(root.join("apps/mod/vanilla_reference")).unwrap();
-    // The tree is still created — that is the bash's order — but the command REFUSES, so a
-    // caller that checks the status never hands the tree to an agent.
-    assert_eq!(cmd_new(&root, "T-901").unwrap(), 1, "must REFUSE, not warn");
+fn new_refuses_when_any_oracle_lane_is_missing() {
+    // The tree is still created, but the command REFUSES, so a caller that checks the status
+    // never hands the tree to an agent. The PlayableSelector lane is as required as the others.
+    for (n, lane) in [VANILLA_REFERENCE, PLAYABLE_SELECTOR_REFERENCE]
+        .into_iter()
+        .enumerate()
+    {
+        let root = scratch(&format!("noracle-{n}"));
+        fs::remove_dir_all(root.join(lane)).unwrap();
+        let rc = cmd_new(&root, &format!("T-90{n}")).unwrap();
+        assert_eq!(rc, 1, "{lane} absent must REFUSE, not warn");
+    }
 }
 
 #[test]

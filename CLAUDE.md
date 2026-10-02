@@ -166,8 +166,10 @@ apps/
 │   │       └── WorkbenchGame/           <-- Workbench export plugins (MapExport, EquipmentExport, EquipmentVehicleExport, VehicleExport, BallisticsOracle, registry)
 │   ├── tbd-emcp/                        <-- Enfusion MCP bridge handler scripts (TBD_EMCP)
 │   │   └── Scripts/WorkbenchGame/EnfusionMCP/ <-- 19 committed NetAPI automation handlers
-│   ├── crf_framework/                   <-- Reference: upstream Coalition Reforger Framework scripts (gitignored)
-│   └── vanilla_reference/               <-- Reference: extracted vanilla Reforger scripts and API docs (gitignored)
+│   └── References/                      <-- Licensed upstream reference lanes, gitignored except README
+│       ├── crf_framework/               <-- Upstream Coalition Reforger Framework scripts and assets
+│       ├── vanilla_reference/           <-- Extracted vanilla Reforger scripts and Script API pages
+│       └── playable_selector/           <-- PlayableSelector checkout (design-mirror only)
 └── ticketboard/                         <-- Native egui/eframe desktop viewer for .ai/tickets
 
 legacy/                                  <-- Parking folder of the two engine monoliths while their code moves into crates/; no new crate depends on it

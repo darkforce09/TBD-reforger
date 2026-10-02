@@ -60,6 +60,18 @@ fn rsync_excludes_the_secrets_asset_and_scratch_trees() {
     );
 }
 
+/// The licence boundary: the licensed upstream reference lanes never reach the server. One rule
+/// covers the whole references folder, so a lane added there is excluded with no edit here.
+#[test]
+fn rsync_excludes_the_licensed_reference_lanes() {
+    let argv = rsync_argv::rsync_argv("ssh", "/repo/", "h:/remote/");
+    let excluded = rsync_argv::exclusions(&argv);
+    assert!(
+        excluded.contains(&"apps/mod/References/"),
+        "missing --exclude=apps/mod/References/ in {excluded:?}"
+    );
+}
+
 /// Both deploys exclude what only a development machine holds, the cargo target folders beside
 /// `target/` and the local tool state among it.
 #[test]

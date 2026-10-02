@@ -54,9 +54,11 @@ pub fn rsync_argv(rsync_e: &str, mono: &str, dest: &str) -> Vec<String> {
         // `--delete` away from a server that still holds its map assets there; it can go once
         // every host serves them from `assets/terrains`.
         "--exclude=packages/".into(),
-        "--exclude=apps/mod/crf_framework/".into(),
-        "--exclude=apps/mod/vanilla_reference/".into(),
-        "--exclude=apps/mod/playable_selector/".into(),
+        // The licensed upstream reference lanes: never shipped (see `deploy::staging::remote`).
+        format!(
+            "--exclude={}/",
+            crate::core::repository_layout::REFERENCES_DIR
+        ),
         "--exclude=apps/mod/.local-test-profile/".into(),
     ];
     // What only a development machine holds, excluded by `deploy staging` too: the retired and

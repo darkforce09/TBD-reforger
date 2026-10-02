@@ -236,7 +236,7 @@ Bugs noticed but not fixed, collected by P3-C and P6-C.
 
 - P2-1: `Systems/AI/TBD_WaypointRuntime.c:481` leaks a non-group entity: no ticket; resolved by P2-1's `TBD_AIGroupFactory.SpawnGroup`, which deletes a non-group spawn (WaypointRuntime calls it).
 - P2-1: `Session/Briefing/TBD_BriefingService.c:445` no null check on `doc`: no ticket; resolved by P2-1's `TBD_MissionFactionNames.DisplayName` (guards null), and `Build` returns before any read when `doc` is null.
-- P3-C: END reason and winner lost for extraction, VIP and trigger endings, and the false "round will NOT end" banner: still reproduce at `Gamemode/Stages/WinConditions/TBD_WinConditionEvaluator.c:139`, `Systems/Zones/Triggers/TBD_TriggerFlowEffects.c:85` (`SetStage(END)` without `EndRound`) and `Gamemode/Objectives/Runtime/TBD_ObjectivesComponent.c:303`: existing T-1082 (its paths predate the splits).
+- P3-C: END reason and winner lost for extraction, VIP and trigger endings, and the false "round will NOT end" banner: still reproduce at `Gamemode/Stages/WinConditions/TBD_WinConditionEvaluator.c:139`, `Systems/Zones/Triggers/TBD_TriggerFlowEffects.c:85` (`SetStage(END)` without `EndRound`) and `Gamemode/Objectives/Engine/Runtime/TBD_ObjectivesComponent.c:303`: existing T-1082 (its paths predate the splits).
 - P3-C: session top bar count icon loads key `group`: still at `UI/Common/SessionChrome/TBD_SessionTopBar.c:104`: existing T-1098.
 - P3-C: `Systems/Mission/Loaders/Validation/TBD_MissionStructureChecks.c:239` warns that `GetSpawnZoneForFaction` cannot place from a spawn zone, but nothing calls it: T-1219.
 - P3-C2: occupant found by exact float equality on X/Z at `Systems/Zones/PlayArea/TBD_PlayAreaVehicleAxis.c:232`: T-1220.

@@ -4,9 +4,10 @@
 
 Where the vanilla Arma Reforger script source that the `enf` oracle indexes comes from: four lanes,
 what each one reaches, and which to use for a question. Read it before assuming a vanilla class is
-greppable. Every lane writes under `apps/mod/vanilla_reference/`, which is gitignored (Bohemia's
-copyrighted source is never committed); only the derived `.ai/artifacts/enf-index/vanilla_*.tsv`
-indexes are.
+greppable. Every lane writes into `vanilla_reference`, a gitignored folder of the
+[reference lanes](/apps/mod/References/README.md) in `apps/mod/References/` (Bohemia's copyrighted
+source is never committed); only the derived `.ai/artifacts/enf-index/vanilla_*.tsv` indexes
+are.
 
 ## The lanes
 
@@ -20,7 +21,7 @@ indexes are.
 `enf` is `cargo run -q -p developer_tools --bin enf --`. After any lane, rebuild the index:
 
 ```bash
-cargo run -q -p developer_tools --bin enf -- index vanilla --root apps/mod/vanilla_reference
+cargo run -q -p developer_tools --bin enf -- index vanilla --root apps/mod/References/vanilla_reference
 ```
 
 The committed index (`.ai/artifacts/enf-index/vanilla_files.tsv`) holds 2,146 files, 98,475
@@ -33,8 +34,8 @@ A public Doxygen build of the same game version (1.7.0.54) at arexplorer.zeroy.c
 browser enabled, publishes one
 `*_source.html` page per script: 6,495 pages, exactly the pak's script count, each with the whole
 file including method bodies. `cargo xtask fetch vanilla-source` mirrors a curated spine set
-(`--grep <pattern>` adds matches) into `apps/mod/vanilla_reference/source_html/`, and `enf source`
-rebuilds `.c` files from the cached pages into `apps/mod/vanilla_reference/Source/`. The spine
+(`--grep <pattern>` adds matches) into the `source_html/` folder of `vanilla_reference`, and
+`enf source` rebuilds `.c` files from the cached pages into its `Source/` folder. The spine
 classes resolve there: `SCR_BaseGameMode`, `SCR_RespawnSystemComponent`, `ChimeraMenuBase`,
 `SCR_SpawnRequestComponent`.
 
@@ -70,7 +71,7 @@ Fetch the class pages a slice needs, never all 7,990. The page cache is gitignor
 
 ### Byte carving
 
-`enf carve --game "<Arma Reforger install>" --out apps/mod/vanilla_reference` scans the 16 paks
+`enf carve --game "<Arma Reforger install>"` (into the `Carved/` folder of `vanilla_reference`) scans the 16 paks
 for printable runs of at least 400 bytes and keeps the Enfusion script among them: 610 files,
 1.0 MB, 41,958 lines, 1,106 declarations (882 of them `SCR_*`), 2,493 symbols. It takes about six
 minutes. It reaches the AI and behaviour-tree, camera, action-condition, UI-component and
@@ -82,8 +83,8 @@ keeps 127 files instead of 610.
 
 ## Which lane answers what
 
-1. Behaviour of a vanilla class: its reconstructed source under `apps/mod/vanilla_reference/Source/`;
-   fetch its page first when it is missing.
+1. Behaviour of a vanilla class: its reconstructed source in the `Source/` folder of
+   `vanilla_reference`; fetch its page first when it is missing.
 2. A signature or member list: `rg '^<Class>\t' .ai/artifacts/enf-index/vanilla_api_members.tsv`,
    or `cargo xtask mcp call api_search '{"query":"<Class>"}'`.
 3. How a pipeline is driven in practice: CRF's usage, through `enf lookup <symbol>` on the CRF

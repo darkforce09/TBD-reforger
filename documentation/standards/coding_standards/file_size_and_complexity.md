@@ -57,8 +57,8 @@ Outside the walk, and so unenforced by this gate:
   names the three roots the gate may pin, and T-1092 pins them one addon at a time once its
   scripts meet the ceilings: `apps/mod/tbd-framework/Scripts` and `apps/mod/tbd-emcp/Scripts`
   are pinned, and `apps/mod/tbd-export/Scripts` follows at P6-C. The gitignored
-  references `apps/mod/crf_framework` and `apps/mod/vanilla_reference` are never pinned; a
-  compile-time assertion rejects any `apps/mod` pin outside the three roots.
+  reference lanes in `apps/mod/References/` are never pinned; a compile-time assertion rejects
+  any `apps/mod` pin outside the three roots.
 - Rust files outside every member folder: none exist. The URL case table the API and the
   single-page app share is `crates/foundation/http_url_guard/src/cases.rs`, a module of a member
   crate, so the walk covers it.

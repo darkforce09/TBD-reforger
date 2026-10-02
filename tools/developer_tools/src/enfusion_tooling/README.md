@@ -1,8 +1,9 @@
 # Enfusion script oracle and MCP broker
 
 The library behind two binaries. For `enf`, it turns
-[Enfusion](/documentation/glossary/a_to_f.md#enfusion) script sources (the gitignored upstream framework
-in `apps/mod/crf_framework/` and the vanilla game scripts) into committed TSV symbol indexes,
+[Enfusion](/documentation/glossary/a_to_f.md#enfusion) script sources (the gitignored
+`crf_framework` and `vanilla_reference` lanes of the
+[reference lanes](/apps/mod/References/README.md)) into committed TSV symbol indexes,
 answers lookups against them, and checks the `@idx` citations in `documentation/` and the
 framework capability verdicts. For `mcpd`, it runs the persistent enfusion-mcp broker that `cargo
 xtask mcp` talks to, and it resolves which enfusion-mcp server every caller starts.
@@ -20,19 +21,21 @@ tools/developer_tools/src/enfusion_tooling/
 ├── index.rs                    `enf index`, `lookup` and `dirs`: the TSV index writer and its readers
 ├── mcp_broker.rs               `mcpd`: the Unix-socket broker over one enfusion-mcp child, and its stub
 ├── mod.rs                      the module tree and `refuse_empty_write`, the empty-index guard
+├── reference_output.rs         the output guard of `carve`, `extract` and `source`: inside the references folder, `--replace`
 ├── source.rs                   `enf source`: vanilla `.c` files rebuilt from cached source HTML pages
 ├── symbols.rs                  the `.c` scanner: declarations, methods, `modded` classes, `RplProp` fields
-└── tests/                      unit tests for the scanner, the parsers, citations and the server resolver
+└── tests/                      unit tests for the scanner, the parsers, citations, the server resolver and the output guard
 ```
 
 ## How it works
 
 ```text
-apps/mod/crf_framework/ ─┐
-vanilla .c tree         ─┴▶ enf index <crf|vanilla> ─▶ symbols::scan ─▶ .ai/artifacts/enf-index/<lane>_*.tsv
-game paks ─▶ enf extract (PakVfs) ─▶ apps/mod/vanilla_reference/Scripts/
+apps/mod/References/crf_framework/ ─┐
+vanilla .c tree                    ─┴▶ enf index <crf|vanilla> ─▶ symbols::scan ─▶ .ai/artifacts/enf-index/<lane>_*.tsv
+game paks ─▶ enf extract (PakVfs) ─▶ apps/mod/References/vanilla_reference/Scripts/
+          ─▶ enf carve            ─▶ apps/mod/References/vanilla_reference/Carved/
 cached HTML ─▶ enf apidoc ─▶ vanilla_api_classes.tsv, vanilla_api_members.tsv
-            ─▶ enf source ─▶ apps/mod/vanilla_reference/Source/
+            ─▶ enf source ─▶ apps/mod/References/vanilla_reference/Source/
 index TSVs ─▶ enf lookup | enf dirs | enf citations | enf capability ─▶ capability_matrix.tsv
 ```
 
@@ -51,6 +54,12 @@ index TSVs ─▶ enf lookup | enf dirs | enf citations | enf capability ─▶ 
   work.
 - `index`, `apidoc`, `source` and `carve` refuse an empty result through `refuse_empty_write` before
   they write.
+- `carve`, `extract` and `source` write only inside `apps/mod/References/`:
+  `reference_output::checked_reference_output` refuses an output folder outside it, the folder
+  itself, a path holding `..`, and a checkout without the folder. `carve` and `extract` remove a
+  previous output only when given `--replace` (`reference_output::clear_previous_output`);
+  without it they refuse. The defaults of every vanilla output are the lane paths in
+  `crate::repository_layout`.
 - `enfusion_mcp_entrypoint::resolve` picks the server command: `ENFUSION_MCP_BIN` when it names a
   file, then the module the pinned npm package installs
   (`crate::repository_layout::ENFUSION_MCP_ENTRYPOINT`), then a copy in the npx cache, then `npx -y
@@ -66,8 +75,9 @@ index TSVs ─▶ enf lookup | enf dirs | enf citations | enf capability ─▶ 
 ## Boundaries
 
 - Depends on: `crate::enfusion_pak::PakVfs` for `extract` and `dump-entry`;
-  `crate::repository_layout` for the index folder, the documentation root, the verdict table and the
-  installed MCP module; `tokio` for the broker; `clap` and `regex`.
+  `crate::repository_layout` for the index folder, the references folder and its vanilla lane
+  paths, the documentation root, the verdict table and the installed MCP module;
+  `crate::repository_paths::find_repo_root` for the output guard; `tokio` for the broker; `clap` and `regex`.
 - Used by:
   - `tools/developer_tools/src/bin/enf.rs` (`cli::entrypoint`) and
     `tools/developer_tools/src/bin/mcpd.rs` (`mcp_broker::run`);
@@ -79,7 +89,9 @@ index TSVs ─▶ enf lookup | enf dirs | enf citations | enf capability ─▶ 
     unit-test step filters on `enf::`, a path no test in this module has.
 - Rules: every lane shares the one scanner in `symbols.rs` (`does_not_invent_apis` and the other
   tests in `tests/symbols/tests.rs`); a committed index is never overwritten with an empty one
-  (`refuse_empty_write_reds_on_empty`); `enf citations` exits 1 on any unresolved marker and `enf
+  (`refuse_empty_write_reds_on_empty`); a lane output lands only inside the references folder and
+  replaces a previous one only on `--replace` (`an_output_outside_the_references_folder_is_refused`,
+  `a_previous_output_is_removed_only_on_request`); `enf citations` exits 1 on any unresolved marker and `enf
   capability` on any untriaged framework file; the server command is resolved only here, so `cargo
   xtask mcp call`, `cargo xtask mcp daemon` and `mcpd` start the same server
   (`an_installed_package_resolves_to_the_pinned_module`).

@@ -13,8 +13,9 @@ build error.
 
 - File: tab-separated text. Lines starting with `#` are comments: the table's header note and the
   section rules (`# ── spine: the event loop ──…`) that group the rows.
-- Columns: `prefix` (a path under `apps/mod/crf_framework/`, a folder or a file), `capability` (the
-  name the matrix groups by), `verdict`, `note` (why, or where TBD's version lives).
+- Columns: `prefix` (a path inside the `crf_framework` lane of `apps/mod/References/`, a folder
+  or a file), `capability` (the name the matrix groups by), `verdict`, `note` (why, or where TBD's
+  version lives).
 - Matching: the longest prefix wins, so a rule for one file overrides the rule for its folder;
   prefixes of equal length keep file order.
 - Verdicts, the only legal values (`VERDICTS` in

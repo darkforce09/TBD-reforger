@@ -27,17 +27,18 @@ document that cites a symbol the tables do not hold. Mod developers and the AI a
 ### Building the indexes
 
 ```text
-apps/mod/crf_framework/   ──▶ enf index crf     ─┐
-apps/mod/vanilla_reference/ ─▶ enf index vanilla ─┴▶ .ai/artifacts/enf-index/<lane>_{symbols,files,modded,rplprops}.tsv
-game paks ─▶ enf extract | enf carve ─▶ apps/mod/vanilla_reference/Scripts/
+apps/mod/References/crf_framework/     ──▶ enf index crf     ─┐
+apps/mod/References/vanilla_reference/ ──▶ enf index vanilla ─┴▶ .ai/artifacts/enf-index/<lane>_{symbols,files,modded,rplprops}.tsv
+game paks ─▶ enf extract | enf carve ─▶ apps/mod/References/vanilla_reference/{Scripts,Carved}/
 cargo xtask fetch vanilla-api    ─▶ cached Script API pages ─▶ enf apidoc ─▶ vanilla_api_{classes,members}.tsv
-cargo xtask fetch vanilla-source ─▶ cached source pages     ─▶ enf source ─▶ apps/mod/vanilla_reference/Source/
+cargo xtask fetch vanilla-source ─▶ cached source pages     ─▶ enf source ─▶ apps/mod/References/vanilla_reference/Source/
 ```
 
-1. The script sources are the upstream framework in `apps/mod/crf_framework/` and the vanilla
-   scripts, got out of the game's `.pak` archives (`enf extract` reads by name from the archive's
-   file table; `enf carve` scans the raw bytes) or rebuilt from the cached Script API pages. Both
-   source trees stay gitignored.
+1. The script sources are the upstream framework in the `crf_framework` lane of
+   [`apps/mod/References/`](/apps/mod/References/README.md) and the vanilla scripts in its
+   `vanilla_reference` lane, got out of the game's `.pak` archives (`enf extract` reads by name
+   from the archive's file table; `enf carve` scans the raw bytes) or rebuilt from the cached
+   source pages (`enf source`). Both source trees stay gitignored.
 2. `enf index <lane> --root <dir>` runs the one scanner over every `.c` file and writes four TSVs
    per lane: declarations, files, `modded` classes and replicated properties. They hold names and
    `file:line` coordinates, never code bodies, so they are committed while the sources are not.
@@ -85,8 +86,9 @@ filters on a module path no test has. No CI workflow runs them.
   generated `capability_matrix.tsv`.
 - `documentation/mod/tbd-framework/capability_verdicts.tsv`: the hand-kept verdict per
   framework path prefix; its format is in the capability verdicts document.
-- `apps/mod/crf_framework/` and `apps/mod/vanilla_reference/`: the gitignored source lanes,
-  linked into each slice worktree by `cargo xtask platform slice-worktree`.
+- The `crf_framework` and `vanilla_reference` lanes of
+  [`apps/mod/References/`](/apps/mod/References/README.md): the gitignored source lanes, linked
+  into each slice worktree by `cargo xtask platform slice-worktree`.
 
 ## Design
 

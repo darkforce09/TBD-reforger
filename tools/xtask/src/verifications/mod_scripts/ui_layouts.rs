@@ -29,7 +29,7 @@
 //!   inset. C3 removes the ambiguity by requiring them to agree, so it cannot matter which one the
 //!   engine reads.
 //! * Alignment is `LayoutHorizontalAlign { Left=0, Center=1, Right=2, Stretch=3 }` —
-//!   `apps/mod/vanilla_reference/Scripts/Core/generated/UI/LayoutHorizontalAlign.c`.
+//!   `apps/mod/References/vanilla_reference/Scripts/Core/generated/UI/LayoutHorizontalAlign.c`.
 //! * `ButtonSlot` / `OverlaySlot` / `SizeLayoutSlot` / `ScrollLayoutSlot` all derive from
 //!   `AlignableSlot` and accept only `HorizontalAlign` / `VerticalAlign` / `Padding`. `Anchor`,
 //!   `PositionX` and `Offset*` belong to `FrameWidgetSlot` ALONE — putting them on a

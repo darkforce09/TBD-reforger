@@ -74,7 +74,7 @@ For every library crate:
 
 ## Standard gate set
 
-Two tiers (decision D15). The **stage gate** runs at the end of every stage: formatting, clippy `-D warnings` and the tests of every crate the stage touched, the new laws, the relocation verify, and the documentation gates. The **full gate set GS** below runs at the checkpoint stages S2, S5, S8, S10 and S12.
+Two tiers (decision D20, which supersedes D15 and D19). The **stage gate** runs at the end of every stage and holds only fast checks: formatting, clippy `-D warnings` and the unit tests of every crate the stage touched, the relocation verify, the documentation gates, and a stage's one-second specifics (for example `cargo xtask mod compile`). The **full gate set GS** below runs once, at S12, and before a real deploy.
 
 GS is run between waves and before every stage commit, one command per shell call, each into its
 own log:

@@ -45,6 +45,27 @@ pub const DEV_SERVER_PROFILE: &str =
 /// `cargo xtask mcp consume` to pin the exit code of every response shape without a Workbench.
 pub const MCP_TRANSCRIPT_FIXTURES_DIR: &str = "tools/xtask/fixtures/mcp";
 
+/// The licensed upstream reference trees, one gitignored lane each beside a tracked README.md.
+/// Nothing under it is committed or deployed, and `cargo xtask verify no-crf-leak` checks that
+/// none of it reaches the shipped addons. Every tool that writes a lane writes inside this folder
+/// and refuses when the folder is absent.
+pub const REFERENCES_DIR: &str = "apps/mod/References";
+
+/// Coalition Reforger Framework scripts and assets (Arma Public License): read and cite, never
+/// copy.
+pub const CRF_FRAMEWORK_REFERENCE: &str = "apps/mod/References/crf_framework";
+
+/// Vanilla Arma Reforger scripts and the official Script API pages (Bohemia Interactive
+/// copyright), written by `cargo xtask fetch` and the `enf` extractors.
+pub const VANILLA_REFERENCE: &str = "apps/mod/References/vanilla_reference";
+
+/// The PlayableSelector checkout, which carries no licence: design mirror only.
+pub const PLAYABLE_SELECTOR_REFERENCE: &str = "apps/mod/References/playable_selector";
+
+/// An environment variable naming another PlayableSelector checkout. When it is set and not
+/// empty it replaces [`PLAYABLE_SELECTOR_REFERENCE`] as the lane's source.
+pub const PLAYABLE_SELECTOR_OVERRIDE_ENV: &str = "TBD_PS_ORACLE";
+
 /// The locations the workspace laws (`cargo xtask verify crate-tiers` and its siblings) read.
 ///
 /// The laws themselves live in `verification_core::repository_laws::workspace_laws` and know no

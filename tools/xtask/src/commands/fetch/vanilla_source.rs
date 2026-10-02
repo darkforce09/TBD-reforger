@@ -1,7 +1,7 @@
 //! `cargo xtask fetch vanilla-source` — mirror vanilla Enfusion method bodies.
 //!
-//! Pages come from arexplorer.zeroy.com and are cached under
-//! `apps/mod/vanilla_reference/source_html/`; a cached page that is non-empty is never
+//! Pages come from arexplorer.zeroy.com and are cached in the `source_html/` folder of the
+//! vanilla lane in `apps/mod/References/`, which must already exist; a cached page that is non-empty is never
 //! refetched. The default set is a curated spine of the classes the framework builds on;
 //! `--all`, `--grep <pattern>` and explicit class names widen it.
 //!
@@ -63,8 +63,10 @@ pub fn run(repo_root: &Path, args: &[String]) -> Result<u8> {
         return Ok(code);
     }
 
-    let cache = repo_root.join("apps/mod/vanilla_reference/source_html");
-    fs::create_dir_all(&cache).with_context(|| format!("mkdir -p {}", cache.display()))?;
+    let cache = super::reference_cache::prepare_vanilla_cache(
+        repo_root,
+        super::reference_cache::SOURCE_PAGES,
+    )?;
 
     let index = cache.join("files.html");
     ensure_index(&index)?;

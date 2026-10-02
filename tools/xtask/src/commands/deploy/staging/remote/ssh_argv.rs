@@ -26,9 +26,10 @@ pub fn rsync_argv(base: &SshBase, mono_root: &Path, host: &str, remote_dir: &str
         "-avz".into(),
         "--delete".into(),
         "--exclude=.git/".into(),
-        "--exclude=apps/mod/crf_framework/".into(),
-        "--exclude=apps/mod/vanilla_reference/".into(),
-        "--exclude=apps/mod/playable_selector/".into(),
+        format!(
+            "--exclude={}/",
+            crate::core::repository_layout::REFERENCES_DIR
+        ),
         "--exclude=apps/mod/Tbd_framework/".into(),
         "--exclude=apps/mod/.local-test-profile/".into(),
         "--exclude=**/node_modules/".into(),

@@ -29,10 +29,9 @@ use developer_tools::repository_layout::definition_path;
 use regex::Regex;
 use verification_core::{Finding, NotRun, Pattern, Verdict, gate};
 
-const REG_REL: &str = "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Registry/TBD_ObjectiveDestroyTargets.c";
-const COMP_REL: &str =
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Runtime/TBD_ObjectivesComponent.c";
-const RULES_REL: &str = "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Registry/TBD_ObjectiveRulesReader.c";
+const REG_REL: &str = "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Registry/TBD_ObjectiveDestroyTargets.c";
+const COMP_REL: &str = "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Runtime/TBD_ObjectivesComponent.c";
+const RULES_REL: &str = "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Registry/TBD_ObjectiveRulesReader.c";
 const VALIDATOR_REL: &str = "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/Validation/TBD_MissionUnconsumedKeyCheck.c";
 
 const EXACT_LIES: &[&str] = &[

@@ -12,9 +12,9 @@ session reads the header and the Handoff section first.
 | Field | Value |
 |---|---|
 | Branch | `main` (decision D16; S0 was merged from the cloud session branch) |
-| Current stage | M1, M2 Mod |
-| Last green commit | 24ab925b5 (S2) |
-| Next action | M2 running, then M1; then OC-mod (the orchestrator moves the ignored lanes, the operator regenerates the `.rdb` files in Workbench) |
+| Current stage | S3 Frontend in place |
+| Last green commit | the M stage commit (`refactor(restructure): M1 references and M2 objectives engine`) |
+| Next action | Write the S3 briefs (F1 alone, then F2–F5) and run S3 under decision D20 |
 | Blocked on | nothing |
 
 Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A status is `pending`,
@@ -64,10 +64,10 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 - [x] Stage commit — done (see the execution log)
 
 ### M1, M2 Mod
-- [ ] M1 (S) References folder, tools fail closed — pending (after M2)
-- [ ] M2 (S) Objectives Engine grouping — running
-- [ ] OC-mod (operator) ignored folders moved, `.rdb` regenerated, compile, world boot — pending
-- [ ] Stage commit — pending
+- [x] M1 (S) References folder, tools fail closed — done (M1b finished it), awaiting the stage commit — lanes in `apps/mod/References/`, constants in both layout modules, leak gate fails closed and runs in 8 s, deploy excludes one References rule
+- [x] M2 (S) Objectives Engine grouping — done, awaiting the stage commit — four folders moved into `Engine/` by manifest `m2_objectives_engine.tsv`
+- [x] OC-mod — done: lanes moved and PlayableSelector copied by the orchestrator; the operator regenerated both `.rdb` files in Workbench; `mod compile` clean (world boot moved to S12, D20)
+- [x] Stage commit — done (see the execution log)
 
 ### S3 Frontend in place
 - [ ] F1 (M) src/v2 split — pending
@@ -213,6 +213,10 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 | 2026-10-02 | S2 gate (D19) | fmt OK; workspace clippy `-D warnings` (frontend native excluded, F-004) OK; frontend wasm32 116 + 137, equal to the baseline; `ci-local` first run red on one API test that the package rename had rewritten (the stored compiler identity), fixed; rerun green: 188 test binaries, 7715 passed, 0 failed, 9 ignored (every API integration binary, the trunk release build, the documentation gates, the laws, `relocate --verify`); Docker build of `deploy/Dockerfile`; `deploy website --dry-run` and `deploy staging --dry-run` (with and without `--migrate-single-instance`) OK; 16324 tracked and 2013 LFS files | logs/gs-s2-* |
 | 2026-10-02 | S2 commit | `24ab925b5` pushed to `main`; 5174 files changed; the two `.rdb` files left out | — |
 | 2026-10-02 | M launch | Research: M2 is four folder moves into `Engine/` plus split-literal fixes; the "seven pinned xtask paths" were a research miscount (six name other folders). M1: no reference path is centralised; `verify no-crf-leak` passes on a missing lane, the wave gate calls a nonexistent `make` target, and stale deploy excludes would ship the references. Operator: copy PlayableSelector into `References/`; the orchestrator moves the ignored lanes; the operator regenerates both `.rdb` files in Workbench and they join the M commit; stale worktrees audited. `mod compile` baseline clean (387 TBD files, 0 warnings). Worktrees: T-212, T-939.2, T-946.55, T-946.86 (clean, merged) removed with their branches, and the detached engine-reorg baseline; T-939.4 kept (6 unmerged commits, ticket T-1002); `tbd-s-baseline` kept (milestone S) | logs/m-preflight-* |
+| 2026-10-02 | M2 report | Dry run clean; apply: 4 moves, 10 files rewritten; split tails in two schema tests and the destroy-target diagnostics README fixed by hand; `Engine/README.md`; destroy-target-diagnostics, enfusion-comments, file-length, schema and mod-script tests green | logs/M2-* |
+| 2026-10-02 | M1 and M1b reports | Lane constants in both layout modules; `verify no-crf-leak` exits 2 on a missing lane (red first), no longer flags the Workshop mod name `@CRF_Framework`, and reads the vanilla paks once (8.3 s, was over 5 minutes); the wave gate runs no `make` step; one `apps/mod/References/` deploy exclude pinned by tests; `.gitignore` ignores the lanes and keeps the README; docs, runbooks and open tickets. Orchestrator moved `crf_framework` and `vanilla_reference` into `References/` and copied PlayableSelector there | logs/M1-*, logs/M1b-* |
+| 2026-10-02 | M gate (before OC-mod) | fmt (two files reformatted), workspace clippy, xtask 1374, developer_tools 407, verification_core 188, workspace laws, file-length, enfusion-comments, destroy-target-diagnostics, `relocate --verify`, verify-documentation, `ticket check --strict`, editorconfig: all green. `verify no-crf-leak` runs all three lanes and reports four GUIDs (F-033) | logs/m-gate-* |
+| 2026-10-02 | M gate and commit | Operator regenerated both `.rdb` files in Workbench; `mod compile` clean (387 TBD files, 0 warnings, 0.9 s). Decision D20: fast stage gates, the full set once at S12. Both `.rdb` files enter the M commit | logs/m-gate-05-* |
 
 ## Amendments
 
@@ -266,6 +270,8 @@ become tickets at S12.
 - **F-030 (FIX, A7): the relocation tool makes two false rewrites its dry run cannot see**: a lone `"/"` Rust literal is read as a path, and a synthetic fixture path is re-anchored when only its leading folder is tracked. Reported by A1.
 - **F-031 (FIX, done in S2): the package rename rewrote the stored compiler identity.** `COMPILER_PACKAGE_VERSION` was built from the package name, so the text row changed the value recorded with every artifact and hashed into its digest (seed digests, goldens, tests). It is now the literal `website-map-engine 0.1.0`, the value every stored artifact carries; later stages keep it when the compiler moves crates.
 - **F-032 (NOTE): stage manifests are not the place for one-time operator moves.** Runbooks link the archived S2 brief's OC-deploy section for the server-side moves and the GitHub required checks, which stay the operator's until the next deploy.
+- **F-033 (NOTE): `verify no-crf-leak` reports four GUIDs that belong to vanilla resources** (the robotomono font in `core/data.pak`, a vest and a radio-slot prefab in `data/data007.pak`, an equipment prefab): CRF references them too, and the vanilla pak probe does not find them. The gate's precision, not a leak; operator: no further work in pre-alpha.
+- **F-034 (NOTE): `enf capability` and `enf citations` have no `cargo xtask` wrapper**; the wave gate runs them directly. T-939.4 keeps six unmerged commits (ticket T-1002).
 - **F-002 (CLOSE, P0): shallow clone.** The container's clone was shallow, so 353 archive
   permalinks failed link-check as unknown objects. `git fetch --unshallow` in P0 fixed it, and
   link-check passes (2044 checks). A fresh container clones shallow again, so every new session
@@ -285,19 +291,19 @@ become tickets at S12.
 
 ## Handoff
 
-S2 is committed on `main`; M1 and M2 are next.
+M1 and M2 are committed on `main`; S3 (frontend in place) is next.
 
-Next step, M1 and M2 (mod):
-1. Write the M1 and M2 briefs (program plan, M1, M2 row): M1 the References folder and every tool
-   path to it, failing closed; M2 the `Objectives/Engine/` grouping and the seven pinned xtask paths.
-2. Run them, then pause at OC-mod: the operator moves the ignored reference folders, regenerates
-   `resourceDatabase.rdb` in Workbench, compiles and boots the world.
-3. The two dirty `resourceDatabase.rdb` files still sit outside every commit; OC-mod regenerates them.
+Next step, S3:
+1. Write the S3 briefs from the program plan's S3 row and the crate catalogue: F1 alone (the
+   `src/v2` split into foundation, pages and workspaces; api → transport), then F2–F5 in parallel
+   (shell extraction and editor session rename; UI tokens, logout hooks, route table; review
+   workspace, byte formatting, mission review feature; frontend clippy-clean on native and wasm32,
+   F-004).
+2. Gate each stage with decision D20's fast checks; the full gate set runs at S12.
 
 Operator items left from S2: the server-side moves and `deploy staging --migrate-single-instance`
 before the next deploy, and the GitHub required checks `api (Rust 1.95 + Postgres 18)` and
-`frontend (Leptos SPA)` (the archived S2 brief's OC-deploy section). The browser gates run at S5
-(decision D19).
+`frontend (Leptos SPA)`. M3 (objective behaviours) can run any time now that M2 is in.
 
 Machine notes (this workstation). The orchestration folder is
 `target/api-progress-checkpoint/2026-10-02-restructure-s1/` (gitignored). Its `env.sh` puts two

@@ -29,10 +29,10 @@ fn invalid_side_is_neutral_but_absent_and_valid_sides_keep_their_roles() {
     let root = repo_root().expect("repo root");
     let lane = root.join("apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives");
     let objective = strip_enfusion_comments_and_strings(
-        &fs::read_to_string(lane.join("Model/TBD_Objective.c")).expect("objective source"),
+        &fs::read_to_string(lane.join("Engine/Model/TBD_Objective.c")).expect("objective source"),
     );
     let registry = strip_enfusion_comments_and_strings(
-        &fs::read_to_string(lane.join("Registry/TBD_ObjectiveTypedBinder.c"))
+        &fs::read_to_string(lane.join("Engine/Registry/TBD_ObjectiveTypedBinder.c"))
             .expect("typed binder source"),
     );
     let golden = read_json(&mission_fixtures_valid_dir(&root).join("schema-1_3-wire-fields.json"))

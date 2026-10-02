@@ -27,7 +27,7 @@ states, and declares both files.
   shares its parent's.
 - `prep`, `land` and the reap call `crate::commands::platform::slice_worktree::run_at` in-process
   with `new`, `merge` and `reap`.
-- `gate` runs twelve steps in order and prints PASS or FAIL for each, with the last 12 output lines
+- `gate` runs the twelve steps of `GATE_STEPS` in order and prints PASS or FAIL for each, with the last 12 output lines
   of a failure. It fails when any step fails:
 
   | Step | Command |
@@ -35,7 +35,9 @@ states, and declares both files.
   | compile, compile-selftest | `cargo run -q -p xtask -- mod compile` and `mod compile-selftest` |
   | world boot, world-boot selftest, world boot +mission | `mod world-boot`, `--selftest`, `--mission=bridgehead-at-levie` |
   | ui layouts | `cargo run -q -p xtask -- verify ui-layouts` |
-  | schema validate, capability, oracle citations, no-crf-leak | `distrobox-host-exec make <target>` |
+  | schema validate | `cargo run -q -p xtask -- ci schema-validate` |
+  | capability, oracle citations | `cargo run -q -p developer_tools --bin enf -- capability` and `-- citations` |
+  | no-crf-leak | `cargo run -q -p xtask -- verify no-crf-leak` (exit 2, a reference lane missing, fails too) |
   | ticket registry | `ticket check`, through `distrobox-host-exec` |
   | enf unit tests | `cargo test -q -p developer_tools --lib enf::`, through `distrobox-host-exec` |
 
@@ -52,11 +54,11 @@ states, and declares both files.
 - Rules: a missing lock refuses instead of reporting every wave shipped
   (`missing_lock_is_a_refusal_not_all_shipped`); `land` refuses a dirty worktree before merging
   anything (`land_refuses_dirty_worktree`); an unknown subcommand prints the help and exits 2
-  (`unknown_command_prints_help_rc2`); all in
+  (`unknown_command_prints_help_rc2`); no gate step runs `make`, since the repository has no
+  Makefile (`the_gate_names_no_make_step`); all in
   `tools/xtask/src/commands/mod_ops/tests/wave_execution.rs`.
 
 ## Related documentation
 
 - [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — the wave cycle these
-  subcommands automate, the slice gate a merge needs, and the stand-in checks for the gate's
-  `make` steps.
+  subcommands automate and the slice gate a merge needs.

@@ -28,9 +28,10 @@ reason in.
 - `CLAUDE.md`, the mod design and the program spec, read.
 - Everything the agents need is committed on `main`. A worktree branches from a commit, so
   anything uncommitted on `main` is missing inside it.
-- The oracle lanes in the main checkout (see [Oracle lanes](#oracle-lanes)):
-  `apps/mod/crf_framework/` and `apps/mod/vanilla_reference/` (both gitignored), and optionally a
-  PlayableSelector checkout named by `TBD_PS_ORACLE`.
+- The three oracle lanes filled in the main checkout's `apps/mod/References/` (see
+  [Oracle lanes](#oracle-lanes)): `crf_framework`, `vanilla_reference` and `playable_selector`,
+  each gitignored and filled as the [reference lanes README](/apps/mod/References/README.md)
+  describes; `TBD_PS_ORACLE` may name another PlayableSelector checkout in place of the last.
 - The Arma Reforger dedicated server under Steam and a host bridge (`distrobox-host-exec` or
   `host-spawn`), which `mod compile` and the world boot need; the
   [mod commands](/tools/xtask/src/commands/mod_ops/README.md) list the exit codes.
@@ -134,11 +135,11 @@ Run every step from the repository root of the main checkout unless it says the 
    cargo xtask mod wave prep <N>
    ```
 
-   Expected: for each slice, `  oracle ok: apps/mod/<lane> -> <source>` for each linked lane, the
-   note that `assets/terrains` holds LFS pointers in the worktree, and
-   `worktree: <root>/.ai/artifacts/worktrees/<slice>   branch: slice/<slice>`. Without a
-   PlayableSelector checkout, a `WARNING: no playable_selector oracle at …` block. `prep` exits 0
-   even when `new` refused a slice, so read the output for `REFUSING`.
+   Expected: for each slice, `  oracle ok: apps/mod/References/<lane> -> <source>` for each of
+   the three lanes, the note that `assets/terrains` holds LFS pointers in the worktree, and
+   `worktree: <root>/.ai/artifacts/worktrees/<slice>   branch: slice/<slice>`. A missing lane
+   prints an `ERROR: … missing` line and `REFUSING` for that slice instead. `prep` exits 0 even
+   when `new` refused a slice, so read the output for `REFUSING`.
 
 4. Dispatch one agent per slice, in parallel, each with a self-contained prompt: the slice id and
    worktree path, the ticket and its spec, the [rules](#rules), the [sources](#sources) and the
@@ -207,27 +208,21 @@ prints `PASS` or `FAIL` for each with the last 12 lines of a failure, and ends `
 | compile, compile-selftest | `cargo run -q -p xtask -- mod compile`, then `mod compile-selftest` |
 | world boot, world-boot selftest, world boot +mission | `mod world-boot`, `mod world-boot --selftest`, `mod world-boot --mission=bridgehead-at-levie` |
 | ui layouts | `cargo run -q -p xtask -- verify ui-layouts` |
-| schema validate, capability, oracle citations, no-crf-leak | `distrobox-host-exec make schema-validate`, `make verify-capability`, `make verify-oracle`, `make verify-no-crf-leak` |
+| schema validate | `cargo run -q -p xtask -- ci schema-validate` |
+| capability | `cargo run -q -p developer_tools --bin enf -- capability` |
+| oracle citations | `cargo run -q -p developer_tools --bin enf -- citations` |
+| no-crf-leak | `cargo run -q -p xtask -- verify no-crf-leak` |
 | ticket registry | `cargo run -q -p xtask -- ticket check`, through `distrobox-host-exec` |
 | enf unit tests | `cargo test -q -p developer_tools --lib enf::`, through `distrobox-host-exec` |
 
-On the current tree the gate cannot pass: the repository tracks no Makefile, so the four `make`
-steps always fail, and `verify ui-layouts` finds no layout because it does not walk the
-subfolders of `apps/mod/tbd-framework/UI/layouts/`. The `enf::` filter matches no test, so that
-step passes without testing anything. Until the gate is fixed, run the checks the `make` steps
-stand for by hand, each on its own:
-
-```bash
-cargo xtask ci schema-validate
-cargo run -q -p developer_tools --bin enf -- capability
-cargo run -q -p developer_tools --bin enf -- citations
-cargo xtask verify no-crf-leak
-```
-
 `enf capability` exits 1 when a framework file matches no verdict rule (UNTRIAGED); `enf citations`
-exits 1 on any `@idx` citation that does not resolve. `verify no-crf-leak` also exits 1 on the
-committed tree today; its [README](/tools/xtask/src/verifications/licensing/README.md) lists the
-hits.
+exits 1 on any `@idx` citation that does not resolve. `verify no-crf-leak` exits 1 on a leak and 2
+(did not run) when the CRF or PlayableSelector lane is missing; the gate counts both as `FAIL`, and
+the check's [README](/tools/xtask/src/verifications/licensing/README.md) describes what it scans.
+
+On the current tree the gate cannot pass: `verify ui-layouts` finds no layout because it does not
+walk the subfolders of `apps/mod/tbd-framework/UI/layouts/`. The `enf::` filter matches no test,
+so that step passes without testing anything.
 
 ## Verify
 
@@ -282,18 +277,18 @@ is generated and `enf citations` gates prose citations.
 |---|---|
 | Does a CRF or vanilla scripted symbol exist? | `cargo run -q -p developer_tools --bin enf -- lookup <Symbol>` (the CRF index by default); add `--index .ai/artifacts/enf-index/vanilla_symbols.tsv` for vanilla |
 | Is a class in the official Script API? | `rg '^<Class>\t' .ai/artifacts/enf-index/vanilla_api_classes.tsv` |
-| What does vanilla actually do? | `rg <pattern> apps/mod/vanilla_reference/Source/`: real source with method bodies |
+| What does vanilla actually do? | `rg <pattern>` over the `Source/` folder of the `vanilla_reference` lane in `apps/mod/References/`: real source with method bodies |
 | More vanilla source | `cargo xtask fetch vanilla-source <ClassName>…`, then `enf source`; the site is one person's, so never `--all` |
-| How does a working framework do it? | `rg <pattern> apps/mod/crf_framework/`: CRF, Arma Public License, reference only |
-| How is a lobby or slot picker shaped? | `rg <pattern> apps/mod/playable_selector/` in a worktree: no licence, design only ([Oracle lanes](#oracle-lanes)) |
+| How does a working framework do it? | `rg <pattern>` over the `crf_framework` lane in `apps/mod/References/`: CRF, Arma Public License, reference only |
+| How is a lobby or slot picker shaped? | `rg <pattern>` over the `playable_selector` lane in `apps/mod/References/`: no licence, design only ([Oracle lanes](#oracle-lanes)) |
 | Where does a subsystem live? | `enf dirs`, and `.ai/artifacts/enf-index/capability_matrix.tsv` |
 | Does my change compile? | `cargo xtask mod compile`: about 1.3 s on the native server, no Workbench |
 | Does an API exist, definitively? | `cargo xtask mod compile --probe=<dir>`: call it in a throwaway `.c` file in that dir; a clean compile means it exists |
 | Workbench, prefabs, resource names | the [Workbench MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md): look names up with its tools, never type a GUID by hand |
 
 **Two kinds of Enfusion class, two oracles.** A scripted class (`SCR_BaseGameMode`,
-`SCR_PlayerController`) ships as `.c` source: check it with `enf lookup` or `rg` over
-`apps/mod/vanilla_reference/Source/`. A native engine class (`BaseWorld`, `Widget`, `IEntity`) is
+`SCR_PlayerController`) ships as `.c` source: check it with `enf lookup` or `rg` over the
+`Source/` folder of the `vanilla_reference` lane. A native engine class (`BaseWorld`, `Widget`, `IEntity`) is
 compiled into the engine, has no source and is in no symbol index: a probe compile is the only
 check. `NOT FOUND` from `enf lookup` for something engine-level proves nothing; probe before
 concluding (`BaseWorld.GetBoundBox` looks absent from the index and is real).
@@ -321,14 +316,16 @@ A probe that would compile under both answers is not a probe.
 
 ## Oracle lanes
 
-`slice-worktree new` links these into every worktree; all are gitignored, so a fresh tree has
-none until that step runs. They are not equivalent, and the difference is legal, not stylistic.
+The three lanes are folders of `apps/mod/References/`, each filled on the machine that needs it
+as the [reference lanes README](/apps/mod/References/README.md) describes. `slice-worktree new`
+links each into every worktree; all are gitignored, so a fresh tree has none until that step runs.
+They are not equivalent, and the difference is legal, not stylistic.
 
 | Lane | Licence | You may | You may not | Missing at `new` |
 |---|---|---|---|---|
-| `apps/mod/vanilla_reference` | Bohemia game source, extracted with `enf` | read for behaviour, cite | commit it, ship it | refuse (exit 1); no tree handed over |
-| `apps/mod/crf_framework` | Arma Public License | read, cite (`@idx crf#OnPlayerAuditSuccess`), design-mirror | copy code, reuse asset GUIDs, vendor it | refuse (exit 1); no tree handed over |
-| `apps/mod/playable_selector` | none at all | read to understand design | copy a single line, adapt, redistribute | warn; the tree is still handed over |
+| `vanilla_reference` | Bohemia game source, extracted with `enf` | read for behaviour, cite | commit it, ship it | refuse (exit 1); no tree handed over |
+| `crf_framework` | Arma Public License | read, cite (`@idx crf#OnPlayerAuditSuccess`), design-mirror | copy code, reuse asset GUIDs, vendor it | refuse (exit 1); no tree handed over |
+| `playable_selector` | none at all | read to understand design | copy a single line, adapt, redistribute | refuse (exit 1); no tree handed over |
 
 **No licence is worse than the Arma Public License, not better.** The APL grants terms;
 PlayableSelector ships with no licence file, so default copyright applies and nothing permits
@@ -336,32 +333,35 @@ copying, adapting or redistributing any of it. It is a design mirror only: read 
 lobby or slot picker is shaped, close it, then write TBD's own. Having a PlayableSelector file open
 beside a TBD file is already the mistake.
 
-**Why PlayableSelector warns while the other two refuse.** The refusal exists for one failure: an
-agent with no way to check an Enfusion API fact invents one. The vanilla and CRF lanes answer that
-question and live inside the repository, provisioned by its tooling, so their absence is a broken
-setup and the tree is withheld. PlayableSelector answers design questions, proves no Enfusion fact,
-cannot be compiled against, and lives outside the repository on one operator's disk
-(`$HOME/Projects/Archive/Reforger_Lobby/PlayableSelector-main` unless `TBD_PS_ORACLE` names another
-folder), so it is legitimately absent on any other machine. Its absence is loud, and design work
-that would have cited it stops and asks rather than guesses.
+**Why every lane refuses.** The vanilla and CRF lanes answer Enfusion API questions, so an agent
+without them invents API facts. PlayableSelector answers design questions only, but it sits in the
+same folder, is filled the same way, and the slice's own `verify no-crf-leak` gate exits 2 (did
+not run) without it, as it does without the CRF lane. A tree missing any lane therefore cannot
+pass its gate, and `new` refuses at the step that can fix the cause rather than handing over a
+tree that fails later. `TBD_PS_ORACLE`, when set and not empty, names another PlayableSelector
+checkout in place of the `playable_selector` lane, for `new` and the leak gate alike.
 
 **The gate.** `cargo xtask verify no-crf-leak` (the name covers every lane) fails on a `CRF_` or
 `PS_` identifier in the code of `apps/mod/tbd-framework/` and `apps/mod/tbd-export/`, and on an
-oracle asset GUID reused there that no vanilla pak also contains. `apps/mod/tbd-emcp/` is
-third-party and not scanned. Comment lines naming an oracle are allowed and encouraged — citing
-what was design-mirrored is the practice — it is the prefix in code that fails.
+oracle asset GUID reused there that no vanilla pak also contains, printing under each such GUID
+the `path:line` of every reference to it in our addons. `apps/mod/tbd-emcp/` is third-party and
+not scanned. Comment lines naming an oracle are allowed and encouraged — citing what was
+design-mirrored is the practice — it is the prefix in code that fails; a `@`-prefixed Workshop mod
+name such as `@CRF_Framework` is a name, not an identifier, and passes. Without the CRF or
+PlayableSelector lane the gate exits 2 (did not run) and names the missing lane.
 
-**The deploys.** `cargo xtask deploy staging` and `cargo xtask deploy website` exclude every lane
-from their rsync. The staging server only runs `apps/mod/tbd-framework`, so an oracle on it is
-licence exposure for no benefit, and the main checkout holds the lanes as real folders, so a
-missing exclude ships a whole lane.
+**The deploys.** `cargo xtask deploy staging` and `cargo xtask deploy website` exclude the whole
+`apps/mod/References/` folder from their rsync, so every lane in it, present or future, stays off
+both servers. The staging server only runs `apps/mod/tbd-framework`, so an oracle on it is licence
+exposure for no benefit, and the main checkout holds the lanes as real folders, so a dropped
+exclude ships every lane.
 
-**Adding a lane takes four edits:** the link step in
+**Adding a lane takes four edits:** its path constant in
+`tools/xtask/src/core/repository_layout.rs`, the link step in
 `tools/xtask/src/commands/platform/slice_worktree/git_plain.rs`, the prefix and lane in
-`tools/xtask/src/verifications/licensing/upstream_code_leaks.rs`, and the `--exclude` in both
-`tools/xtask/src/commands/deploy/staging/remote/ssh_argv.rs` and
-`tools/xtask/src/commands/deploy/website/rsync_argv.rs`. A lane missing any of them is a
-liability.
+`tools/xtask/src/verifications/licensing/upstream_code_leaks.rs` when it is a licensed code lane,
+and its row in the [reference lanes README](/apps/mod/References/README.md). The deploy excludes
+need no edit, because they exclude the folder. A lane missing any of them is a liability.
 
 ## Verify agent prompt
 
@@ -402,7 +402,7 @@ WHAT TO ATTACK, in priority order
    read the diff for structural copying too.
 4. Enfusion correctness. Every API called must exist:
      cargo run -q -p developer_tools --bin enf -- lookup <Symbol>
-     rg <pattern> apps/mod/vanilla_reference/Source/
+     rg <pattern> apps/mod/References/vanilla_reference/Source/
    The compile gate catches undefined symbols, not wrong-but-existing usage: an
    [RplProp(onRplName:)] handler that assumes it fires on the authority (it fires only on the
    proxy), or set/array.Remove treated as by-key (it is by index).
@@ -435,9 +435,9 @@ UI slice as done when it only compiles.
 | Symptom | Cause | Fix |
 |---|---|---|
 | `mod wave land` prints `MERGE FAILED for <slice>` | `merge` refused: dirty tree, or `land: no gate verdict for <slice>`, a red verdict, or a verdict `STALE` against the branch tip | commit in the worktree, then run `cargo xtask platform wave gate --slice <slice id>` from the worktree and land again |
-| `Gate FAILED after merge. Worktrees kept for inspection.` | a gate step failed on merged `main`; the four `make` steps and `ui layouts` fail on every run today | read each `FAIL` block; run the replacement checks under [The mod wave gate](#the-mod-wave-gate); after a real fix on `main`, run `cargo xtask mod wave gate`, then `platform slice-worktree -- reap` and `mod wave push` by hand |
-| `new` prints `ERROR: <path> missing — cannot link the <lane> oracle lane` and `REFUSING` | a required lane is absent from the main checkout | restore `apps/mod/crf_framework/` or `apps/mod/vanilla_reference/`, then re-run `slice-worktree -- new <slice id>` |
-| `WARNING: no playable_selector oracle at …` | no PlayableSelector checkout at the default path | set `TBD_PS_ORACLE=/path/to/PlayableSelector-main` and re-run `new`, or stop design work that needs it and ask |
+| `Gate FAILED after merge. Worktrees kept for inspection.` | a gate step failed on merged `main`; `ui layouts` fails on every run today ([The mod wave gate](#the-mod-wave-gate)) | read each `FAIL` block and run the failing step's command on its own; after a real fix on `main`, run `cargo xtask mod wave gate`, then `platform slice-worktree -- reap` and `mod wave push` by hand |
+| `new` prints `ERROR: <path> missing — cannot link the <lane> oracle lane` and `REFUSING` | a lane is absent from the main checkout's `apps/mod/References/` (or `TBD_PS_ORACLE` names a missing folder) | fill the lane as the [reference lanes README](/apps/mod/References/README.md) describes, or point `TBD_PS_ORACLE` at a PlayableSelector checkout, then re-run `slice-worktree -- new <slice id>` |
+| `verify no-crf-leak` exits 2 naming a missing lane | the CRF or PlayableSelector lane is absent, so the leak check did not run | fill the lane as above and re-run the check |
 | `REFUSING to bypass the LFS hook: <n> file(s) under assets/terrains/` | the push range carries LFS-tracked files | with git-lfs installed, `git push origin main` |
 | `enf lookup <Class> --index …/vanilla_api_classes.tsv` prints `NOT FOUND` for a listed class | `lookup` reads four-column symbol indexes; the API class index has two columns | `rg '^<Class>\t'` over the TSV instead |
 | `mod wave status` exits 2 | the wave lock or `.ai/tickets/corpus-pins.toml` is missing or unreadable | `cargo xtask wave repack`, or restore the pin file |

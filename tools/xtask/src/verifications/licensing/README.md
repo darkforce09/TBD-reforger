@@ -11,71 +11,74 @@ this repository ships.
 ```text
 tools/xtask/src/verifications/licensing/
 ├── mod.rs                  the module tree
-├── tests/                  unit tests for each arm, the wordings, symlinked lanes and missing trees
-├── upstream_code_leaks/    the gate body: the identifier and GUID arms and the vanilla probe
+├── tests/                  unit tests for each step, the wordings, symlinked lanes and missing trees
+├── upstream_code_leaks/    the gate body: the identifier step, the GUID step and the vanilla probe
 └── upstream_code_leaks.rs  the lanes, patterns and output log; re-exports `verify_crf_leak`
 ```
 
 ## How it works
 
-The gate reads files on disk, tracked or not, in five lanes: our code in
-`apps/mod/tbd-framework/` and `apps/mod/tbd-export/`; the framework reference in
-`apps/mod/crf_framework/` and the PlayableSelector reference in `apps/mod/playable_selector/`
-(both gitignored, so absent on a fresh clone; with no in-repository PlayableSelector folder,
-`TBD_PS_ORACLE` names one); and the vanilla game paks under the Steam install in `$HOME`. It runs
-four arms in order:
+The gate reads files on disk, tracked or not: our code in `apps/mod/tbd-framework/` and
+`apps/mod/tbd-export/`; the `crf_framework` and `playable_selector` lanes of
+`apps/mod/References/` (gitignored, so filled per machine as
+[its README](/apps/mod/References/README.md) describes; a non-empty `TBD_PS_ORACLE` names another
+PlayableSelector checkout); and the vanilla game paks under the Steam install in `$HOME`. A lane
+that is absent or holds no `UI/` or `Prefabs/` folder stops the run with exit 2 before any check.
+Then it runs two steps:
 
 ```text
-CRF_ identifiers ─▶ PS_ identifiers ─▶ CRF asset GUIDs ─▶ PlayableSelector asset GUIDs
-   (our code, comments and EnfusionMCP skipped)    (UI/ and Prefabs/ of each reference)
+CRF_ identifiers ─▶ PS_ identifiers ─▶ asset GUIDs of both lanes, one vanilla pass
+   (our code; comments and EnfusionMCP skipped)   (UI/ and Prefabs/ of each lane)
 ```
 
-1. An identifier arm prints every line of our code where the prefix follows a non-identifier
-   character, up to 20 lines, after dropping comment lines; `EnfusionMCP` folders are skipped.
-2. A GUID arm collects every `{16 hex}` GUID under the reference's `UI/` and `Prefabs/` folders,
-   following symlinks, intersects them with the GUIDs in our code, and drops each shared GUID that
-   a vanilla `.pak` also contains. What remains fails. A reference that is absent prints `SKIP`,
-   never `OK`. Without a local game install every shared GUID is reported.
+1. The identifier step prints every line of our code where the prefix follows a character that
+   is neither an identifier character nor `@`, up to 20 lines, after dropping comment-only lines;
+   `EnfusionMCP` folders are skipped. A `@`-prefixed Workshop mod name such as `@CRF_Framework` is
+   a dependency reference, not code.
+2. The GUID step collects every `{16 hex}` GUID under each lane's `UI/` and `Prefabs/` folders,
+   following symlinks, intersects them with the GUIDs in our code, and asks the vanilla paks once
+   about all shared GUIDs: one `grep` per pak, in parallel, lists the pak's runs of 16 or more
+   uppercase hex digits, and a GUID inside any run is vanilla. Each lane's remaining GUIDs fail,
+   each printed with the `path:line` of every reference in our code. Without a local game install
+   every shared GUID is reported.
 
-Any hit prints a closing note that names the mod design document and the slice workflow runbook.
-A cold run can take several minutes, because a GUID that is not in vanilla is searched through
-every pak.
+Any finding prints a closing note that names the mod design document and the slice workflow
+runbook. A run reads the ~25 GB of paks once; on the development machine it takes about 8 s, bound
+by disk reads.
 
-On the committed tree, with a local game install and no PlayableSelector folder, the gate exits 1:
-
-- the `CRF_` arm reports the text `@CRF_Framework` in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/Catalog/TBD_MissionSummary.c`
-  (inside a trailing `//!<` comment, which the line filter does not treat as a comment) and in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Mock/TBD_MissionSelectorMock.c` (a string);
-- the framework GUID arm reports four GUIDs: the two that
-  `apps/mod/tbd-framework/Data/registry.json` references at lines 1382 and 1762, the
-  `robotomono_msdf_28.fnt` font GUID that the layouts under
-  `apps/mod/tbd-framework/UI/layouts/Session/` use, and a backpack prefab GUID in
-  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Verification/TBD_SourceReaderVerification.c`.
+With the lanes filled and a local game install, the gate exits 1 on four CRF GUIDs: the two that
+`apps/mod/tbd-framework/Data/registry.json` references, the `robotomono_msdf_28.fnt` font GUID
+that the layouts under `apps/mod/tbd-framework/UI/layouts/` use, and a backpack prefab GUID in
+`apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Verification/TBD_SourceReaderVerification.c`.
+Each is a licence decision (re-author from vanilla or record an attribution), never an exemption.
 
 ## Public surface
 
 - `upstream_code_leaks::verify_crf_leak`: the entry of `cargo xtask verify no-crf-leak`, taking the
-  checkout root. Exit codes: 0 `no-oracle-leak: PASS`; 1 a leak in any arm; 2 our code trees could
-  not be read or a pattern did not compile.
+  checkout root. Exit codes: 0 `no-oracle-leak: PASS`; 1 a finding in any step; 2 a lane, our code
+  trees or a pak could not be read, or a pattern did not compile.
 
 ## Boundaries
 
 - Depends on: `verification_core` (`scan`, `proc::Run`, `Verdict`, `NotRun`, `Pattern`); `regex`;
-  the `grep` binary; `crate::core::repository_layout::documentation` (`MOD_DESIGN`,
-  `SLICE_WORKFLOW_RUNBOOK`).
-- Used by: `tools/xtask/src/commands/verify/dispatch.rs`; people following the mod slice
-  workflow runbook, which runs the gate before a slice lands. The mod [wave](/documentation/glossary/n_to_z.md#wave) driver names a
-  `no-crf-leak` step, but that step runs `make verify-no-crf-leak`
-  (`tools/xtask/src/commands/mod_ops/wave_execution/execution.rs`), not this command.
+  the `grep` binary; `crate::core::repository_layout` (the lane paths and the documents the
+  closing note names).
+- Used by: `tools/xtask/src/commands/verify/dispatch.rs`; the mod
+  [wave](/documentation/glossary/n_to_z.md#wave) gate's `no-crf-leak` step
+  (`tools/xtask/src/commands/mod_ops/wave_execution/execution.rs`); people following the mod slice
+  workflow runbook, which runs the gate before a slice lands.
 - Rules:
-  - Three different wordings stay distinct: `OK (none)`, `OK (nothing to compare)` and `SKIP`
-    (`the_three_no_finding_wordings_stay_distinct` in `tests/upstream_code_leaks/tests.rs`).
-  - A GUID is exempt only when a vanilla pak holds it
-    (`vanilla_paks_exempt_a_shared_guid_and_only_a_shared_guid`), and symlinked reference lanes
-    are followed (`asset_dirs_descend_through_symlinked_lanes`).
-  - The command keeps the name `no-crf-leak`, which the slice workflow runbook cites, although it
-    covers both references.
+  - A lane the gate cannot compare against is exit 2 naming it, never a pass
+    (`a_lane_the_gate_cannot_compare_against_is_did_not_run` in `tests/upstream_code_leaks/tests.rs`).
+  - A Workshop mod name is not an identifier leak, a real symbol still is
+    (`a_workshop_mod_name_is_not_an_identifier_leak`).
+  - A GUID is exempt only when a vanilla pak holds it, and an unreadable pak is exit 2
+    (`vanilla_paks_exempt_a_shared_guid_and_only_a_shared_guid`); the one vanilla pass answers
+    every GUID as a `grep -qla` per GUID does
+    (`one_vanilla_pass_answers_every_guid_as_a_grep_per_guid_does`); symlinked lanes are followed
+    (`asset_dirs_descend_through_symlinked_lanes`).
+  - The command keeps the name `no-crf-leak`, which the slice workflow runbook and the wave gate
+    cite, although it covers both lanes.
   - Tests that change `PATH` keep `/usr/bin` on it, so this gate's `grep` still resolves
     (`tools/xtask/src/core/test_environment.rs`).
 

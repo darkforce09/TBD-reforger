@@ -7,7 +7,7 @@ schedule window closes, and players see the assigned tasks on the map HUD.
 ## Contents
 
 ```text
-apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Tasks/
+apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Tasks/
 ├── TBD_Task.c              TBD_Task: one prepared task, with its state and tier enums
 ├── TBD_TaskSchedule.c      the mission clock since LIVE and each task's schedule window
 ├── TBD_TaskStateMachine.c  reads tasks[], applies the transitions, resolves marker positions

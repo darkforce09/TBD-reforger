@@ -34,7 +34,8 @@ the screens; each screen folder holds its `<screen>_specification.md` feature do
 - [Framework addon](/apps/mod/tbd-framework/) — the scripts, layouts, prefabs and configs the
   design and the screen specifications describe.
 - [Mod suite](/apps/mod/README.md) — the addons beside the framework; the CRF checkout the verdict
-  table triages sits beside them in `apps/mod/crf_framework/`, gitignored and reference only.
+  table triages is the `crf_framework` lane of the
+  [reference lanes](/apps/mod/References/README.md), gitignored and reference only.
 - [Enfusion tooling](/tools/developer_tools/src/enfusion_tooling/) — `enf citations`,
   `enf capability` and the vanilla lanes.
 
