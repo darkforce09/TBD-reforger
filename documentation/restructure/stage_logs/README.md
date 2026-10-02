@@ -23,8 +23,9 @@ documentation/restructure/stage_logs/
 Each stage runs in a detached worktree beside the main checkout, so no branch exists (CLAUDE.md
 law 2): `/run/media/system/Disk_2/Projects/tbd-restructure-<stage>`. A worktree is created from
 `main` with Git LFS smudging skipped. A test that needs LFS data pulls only its paths
-(`git lfs pull --include <path>`). The three gitignored reference lanes and the API's
-development environment file are symbolic links into the main checkout. Each worktree's run folder,
+(`git lfs pull --include <path>`). The gitignored reference lanes stay in the main checkout only (a
+symbolic link to them breaks `git check-ignore`), and the API's development environment file is a
+private copy. Each worktree's run folder,
 `target/restructure-<stage>/`, holds its `env.sh`, logs, probes, agent prompts and the
 orchestrator's launch prompt.
 
