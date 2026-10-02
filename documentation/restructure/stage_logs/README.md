@@ -2,18 +2,25 @@
 
 # Restructure stage logs
 
-Stages S3, S4, S5 and S6 run in parallel (decision D21), each in its own detached git worktree
-under its own orchestrator session. This folder holds one log per stage, so the four sessions never
+Every remaining stage (S3–S12 and M3) runs in its own detached git worktree under its own
+orchestrator session (decisions D21 and D22), managed by one coordinator session. This folder holds one log per stage, so the four sessions never
 append to the same file, together with the protocol every one of them follows.
 
 ## Contents
 
 ```text
 documentation/restructure/stage_logs/
-├── s3.md   S3 frontend in place: execution log, amendments, findings
-├── s4.md   S4 tier 0–1 foundations: execution log, amendments, findings
-├── s5.md   S5 mission and ballistics: execution log, amendments, findings
-└── s6.md   S6 world CPU: execution log, amendments, findings
+├── m3.md    M3 objective behaviours: execution log, amendments, findings
+├── s10.md   S10 frontend crates: execution log, amendments, findings
+├── s11.md   S11 tools: execution log, amendments, findings
+├── s12.md   S12 close: execution log, amendments, findings
+├── s3.md    S3 frontend in place: execution log, amendments, findings
+├── s4.md    S4 tier 0–1 foundations: execution log, amendments, findings
+├── s5.md    S5 mission and ballistics: execution log, amendments, findings
+├── s6.md    S6 world CPU: execution log, amendments, findings
+├── s7.md    S7 streaming CPU and editor: execution log, amendments, findings
+├── s8.md    S8 rendering: execution log, amendments, findings
+└── s9.md    S9 API: execution log, amendments, findings
 ```
 
 ## How it works
@@ -28,6 +35,29 @@ symbolic link to them breaks `git check-ignore`), and the API's development envi
 private copy. Each worktree's run folder,
 `target/restructure-<stage>/`, holds its `env.sh`, logs, probes, agent prompts and the
 orchestrator's launch prompt.
+
+### Coordinator
+
+One session, "Restructure coordinator", manages every stage orchestrator with the operator's
+delegation (decision D22). An orchestrator sends it its question rounds (options with a recommended
+one and evidence), its plan, its status at wave boundaries, its blockers and "landed <sha>". Each
+stage plans first (`target/restructure-<stage>/PLAN.md`, its brief and agent prompts, no repository
+edits) and executes only after the coordinator's "plan approved". The coordinator escalates to the
+operator anything that changes a program decision, touches deployments or servers, or deletes data.
+A stage whose inputs are not on `main` waits for the coordinator's "go":
+
+| Stage | Inputs on `main` before it executes |
+|---|---|
+| S3 | none |
+| S4 | none |
+| S5, S6 | S4's tier 0–1 crates |
+| S7 | S5, S6 |
+| S8 | S6, S7 |
+| S9 | S5 (plans before) |
+| S10 | S3, S7, S8 |
+| S11 | S4 (J0–J2), S6 (J3), S8 (the empty legacy folder) |
+| M3 | none |
+| S12 | every other stage |
 
 ### Records
 

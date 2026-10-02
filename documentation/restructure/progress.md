@@ -308,7 +308,8 @@ orchestrator session, following the [stage logs protocol](/documentation/restruc
 | S5 Mission and ballistics | `/run/media/system/Disk_2/Projects/tbd-restructure-s5` | `target/restructure-s5/ORCHESTRATOR_PROMPT.md` |
 | S6 World CPU | `/run/media/system/Disk_2/Projects/tbd-restructure-s6` | `target/restructure-s6/ORCHESTRATOR_PROMPT.md` |
 
-S5 and S6 stop at "blocked on S4 (pre-work done)" until the S4 stage commit is on `main`. The
+Every remaining stage (S3–S12, M3) has its own worktree and orchestrator, managed by the
+"Restructure coordinator" session (decision D22; inputs per stage in the stage logs protocol). The
 launch prompts live in the gitignored run folders; if a worktree is lost, rebuild it with
 `GIT_LFS_SKIP_SMUDGE=1 git worktree add --detach <path> main` and rewrite its prompt from this table
 and the stage logs protocol.
