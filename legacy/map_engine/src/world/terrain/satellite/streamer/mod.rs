@@ -3,12 +3,12 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::io::archives::codec::access_checked;
-use crate::io::archives::satellite::ArchivedTbdSatIndexV2;
-use crate::io::archives::satellite::TbdSatIndexV2;
+use world_file_formats::archives::codec::access_checked;
+use world_file_formats::archives::satellite::ArchivedTbdSatIndexV2;
+use world_file_formats::archives::satellite::TbdSatIndexV2;
 
-use crate::io::containers::tbds::TbdsHeader;
 use serde::Deserialize;
+use world_file_formats::containers::tbds::TbdsHeader;
 mod model;
 use model::{FORMAT_WEBP, MAGIC, V1, V2};
 

@@ -25,7 +25,7 @@ fn fixture() -> (Check, Receipt, String) {
         duration_milliseconds: 10,
         exit_code: 0,
         output_file: "guests.log".into(),
-        output_sha256: fingerprint::digest(output.as_bytes()),
+        output_sha256: content_digest::sha256_hex(output.as_bytes()),
         environment: Vec::new(),
         observations: None,
         property_runs: Vec::new(),
@@ -117,7 +117,7 @@ fn empty_or_unrelated_success_does_not_satisfy_a_requirement() {
         "test result: ok. 0 passed; 0 failed",
         "test unrelated ... ok\ntest result: ok.",
     ] {
-        receipt.output_sha256 = fingerprint::digest(output.as_bytes());
+        receipt.output_sha256 = content_digest::sha256_hex(output.as_bytes());
         assert!(
             evidence::validate(&check, &receipt, output, "source", "configuration", 101).is_err()
         );
@@ -139,7 +139,7 @@ fn stale_changed_failed_and_omitted_evidence_is_rejected() {
     assert!(evidence::validate(&check, &failed, &output, "source", "configuration", 101).is_err());
     failed.exit_code = 0;
     let omitted = format!("{output}\nskip: TEST_DATABASE_URL unset");
-    failed.output_sha256 = fingerprint::digest(omitted.as_bytes());
+    failed.output_sha256 = content_digest::sha256_hex(omitted.as_bytes());
     assert!(evidence::validate(&check, &failed, &omitted, "source", "configuration", 101).is_err());
 }
 
@@ -238,7 +238,7 @@ fn ignored_tests_with_reasons_and_unreported_ignored_summaries_fail() {
         "\ntest result: ok. 1 passed; 0 failed; 1 ignored; 0 measured",
     ] {
         let altered = format!("{output}{suffix}");
-        receipt.output_sha256 = fingerprint::digest(altered.as_bytes());
+        receipt.output_sha256 = content_digest::sha256_hex(altered.as_bytes());
         assert!(
             evidence::validate(&check, &receipt, &altered, "source", "configuration", 101).is_err()
         );
@@ -420,6 +420,6 @@ fn duplicate_output_cannot_substitute_for_distinct_acceptance_cases() {
     let (mut check, mut receipt, _) = fixture();
     check.minimum_cases = 2;
     let output = "test guest_sign_in ... ok\ntest guest_sign_in ... ok\ntest result: ok. 2 passed; 0 failed; 0 ignored;";
-    receipt.output_sha256 = fingerprint::digest(output.as_bytes());
+    receipt.output_sha256 = content_digest::sha256_hex(output.as_bytes());
     assert!(evidence::validate(&check, &receipt, output, "source", "configuration", 101).is_err());
 }

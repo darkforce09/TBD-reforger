@@ -46,7 +46,7 @@ high-performance adapter. It takes the adapter's full texture resolution, the ti
 when offered, a non-sRGB surface format and FIFO presentation, then builds the shader module, the
 layouts, eight pipelines (plus the storage-buffer icon pipeline and the compute cull on WebGPU),
 the samplers, the unit quad, the calibration quads and the camera, which opens on
-`crate::world::scene::INITIAL_TARGET` within `EVERON_BOUNDS`. A failure rejects with a short code:
+`map_coordinates::terrain_frames::INITIAL_TARGET` within `EVERON_BOUNDS`. A failure rejects with a short code:
 `canvas-zero-size`, `create-surface`, `no-adapter`, `no-device`, `srgb-only-surface` or
 `surface-unsupported-by-adapter`. The crate's `#[wasm_bindgen(start)]` function, also here,
 installs the panic hook that sends Rust panics to the console.
@@ -74,18 +74,20 @@ it culls.
   belts of `upload/`: the engine's JavaScript-facing methods; the compute-cull getters and
   `submitted_last_frame` are exported too, with no caller in the repository.
 - `RafPump` and `FrameTarget`: the render loop, which the frontend reaches through this crate.
-- The frame vocabulary for the crate's own modules: `damage`, `packet`, `present`,
-  `CameraUniform`, `LaneId`, `PipelineId`, `BindGroupId`, `DrawBatch`, `DrawPayload`,
-  `FramePacket`, `IndirectDraw`, `IndexedMesh`, `InstanceBuffer`, `VertexStream`, the text run and
-  atlas types; with them `oracle`, `compute`, `buffers` and `pipelines`.
+- The GPU frame vocabulary for the crate's own modules: `packet`, `present`, `DrawBatch`,
+  `DrawPayload`, `FramePacket`, `IndirectDraw`, `IndexedMesh`, `InstanceBuffer`, `VertexStream`,
+  the text run and atlas types; with them `compute`, `buffers` and `pipelines`. The GPU-free half
+  (`LaneId`, `PipelineId`, `BindGroupId`, `CameraUniform`, damage tracking and the cull oracle) is
+  imported from `render_primitives` directly.
 - `boot::instance_descriptor`, which `crate::doll`'s renderer shares.
 
 ## Boundaries
 
-- Depends on: `graphics_engine` (the frame vocabulary, `draw`, `layout`, the pipelines and
-  the render loop); `crate::camera::ortho` (the camera); `crate::overlay` (lane ids and the symbol
-  and marker atlases and bridges); `crate::world` (the anchor, the opening view, the calibration
-  quads and the satellite texture lanes); `crate::diagnostics` (the GPU timer, the clock and
+- Depends on: `graphics_engine` (the frame vocabulary, `draw`, the pipelines and the render
+  loop); `render_primitives` (the ids, the camera uniform, damage tracking, the instance layouts
+  and the text uniform block); `camera_math::ortho` (the camera); `crate::overlay` (lane ids and
+  the symbol and marker atlases and bridges); `map_coordinates::terrain_frames` (the anchor and
+  the opening view); `crate::world` (the calibration quads and the satellite texture lanes); `crate::diagnostics` (the GPU timer, the clock and
   `poll`); and `wgpu`, `wasm-bindgen`, `web-sys` and `console_error_panic_hook`.
 - Used by:
   - inside the crate: `crate::camera::viewport`, `crate::overlay`, `crate::world`,
@@ -97,7 +99,7 @@ it culls.
     folder's imports of the graphics engine.
 - Rules:
   - `mod.rs` is the only file of the crate that names `graphics_engine::frame`, on exactly
-    eight lines (rule 3a of `cargo xtask verify engine-layers`), and the graphics engine's GPU
+    five lines (rule 3a of `cargo xtask verify engine-layers`), and the graphics engine's GPU
     modules are named only in `mod.rs` (3 sites) and `pump.rs` (2 sites) (rule 3b);
   - the renderer is damage-driven and allocates no batch list per frame: `render` returns before
     acquiring a frame when nothing is damaged, and the packet borrows the engine's own batch list

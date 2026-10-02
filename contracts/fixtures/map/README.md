@@ -59,7 +59,7 @@ read the prefab and region samples, and `cargo xtask schema type-inventory` read
 - Schema: `contracts/definitions/map-object-*.schema.json` for the object rows and bundles,
   `terrain-manifest.schema.json`, `terrain-registry.schema.json` and `locations.schema.json`;
   `map-object-type-inventory.schema.json` for the census. The binary chunk follows the `TBDC`
-  layout in `legacy/map_engine/src/io/`.
+  layout in `crates/world_formats/world_file_formats/src/`.
 - Adding a file: add the sample, name it in the gate that must read it
   (`tools/xtask/src/verifications/schemas/checks/contract_validation/validate_all.rs` or
   `tools/developer_tools/src/map_verification/object_goldens/map_object_golden.rs` names each
@@ -82,7 +82,7 @@ read the prefab and region samples, and `cargo xtask schema type-inventory` read
 
 - Depends on: the map-object, terrain and locations schemas in `contracts/definitions/`, the
   closed enums of `map-object-enums.schema.json`, and the binary formats of
-  `legacy/map_engine/src/io/`.
+  `crates/world_formats/world_file_formats/src/`.
 - Used by: the xtask schema gates and the map engine tests above.
 - Rules: every sample validates against its schema (`cargo xtask schema validate`); the chunk
   binary is the exact emitter output of its JSON twin (gate S15 of

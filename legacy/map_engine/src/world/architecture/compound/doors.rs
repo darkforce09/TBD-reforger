@@ -6,7 +6,7 @@
 use crate::world::architecture::compound::assembly::CompoundBuilding;
 use crate::world::architecture::compound::instances::Instance;
 use crate::world::architecture::compound::instances::InstanceKind;
-use crate::world::architecture::compound::transform::Rigid;
+use geometry_primitives::rigid_transform::Rigid;
 use serde::Deserialize;
 use serde::Serialize;
 

@@ -6,11 +6,11 @@
 //! wall: the renderer draws cell 6, and never learns that cell 6 means a medical cross.
 
 use crate::overlay::symbology::instances::symbols::px_to_m_at_zoom;
-use crate::overlay::symbology::text_metrics::TEXT_GLYPH_ADVANCE_RATIO;
-use crate::overlay::symbology::text_metrics::TextGlyphInstance;
-use crate::overlay::symbology::text_metrics::glyph_index_for_char;
-use crate::overlay::symbology::text_metrics::text_char_meters;
-use crate::overlay::symbology::text_packing::pack_text_icon_bytes;
+use render_primitives::text::layout::pack_text_icon_bytes;
+use render_primitives::text::metrics::TEXT_GLYPH_ADVANCE_RATIO;
+use render_primitives::text::metrics::TextGlyphInstance;
+use render_primitives::text::metrics::glyph_index_for_char;
+use render_primitives::text::metrics::text_char_meters;
 
 /// Canonical map-glyph id for a briefing marker — the drawable shape the web map renders, and the index into the widened slot atlas ([`build_marker_slot_atlas`]).
 #[repr(u16)]
@@ -50,7 +50,7 @@ pub enum MarkerGlyph {
     Target = 10,
 }
 
-/// Number of distinct canonical marker glyphs — the atlas cell count [`build_marker_slot_atlas`] emits, and the highest [`MarkerGlyph`] discriminant + 1. Well under [`graphics_engine::draw::instances::ATLAS_GLYPH_COUNT`] (32).
+/// Number of distinct canonical marker glyphs — the atlas cell count [`build_marker_slot_atlas`] emits, and the highest [`MarkerGlyph`] discriminant + 1. Well under [`render_primitives::draw::instances::ATLAS_GLYPH_COUNT`] (32).
 pub const MARKER_GLYPH_COUNT: usize = 11;
 
 #[must_use]

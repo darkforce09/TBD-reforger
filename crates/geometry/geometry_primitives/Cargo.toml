@@ -1,0 +1,22 @@
+# The plain f64 geometry the building and line-of-sight code shares: 3D vector products, 2D segment
+# and box tests, the rigid transform of a placed object and the axis-aligned 3D box, with no map,
+# world or GPU concept.
+[package]
+name = "geometry_primitives"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Plain f64 geometry: 3D vector products, 2D segment and box tests, rigid transforms and axis-aligned 3D boxes."
+
+[package.metadata.layout]
+category = "crates/geometry"
+tier = 0
+targets = "any"
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+
+[lints]
+workspace = true

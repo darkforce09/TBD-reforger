@@ -20,10 +20,10 @@ use serde_json::Value;
 use verification_core::scan;
 
 use super::website_api_client::{
-    ARTIFACT_CACHE_DIRECTORY, StagedArtifact, clear_artifact_cache, sha256_hex,
-    stage_artifact_cache,
+    ARTIFACT_CACHE_DIRECTORY, StagedArtifact, clear_artifact_cache, stage_artifact_cache,
 };
 use crate::core::repository_root::find_repo_root;
+use content_digest::sha256_hex;
 
 const CFG_REL: &str = ".local/share/Steam/steamapps/compatdata/1874910/pfx/drive_c/users/steamuser/Documents/My Games/ArmaReforgerWorkbench/profile";
 

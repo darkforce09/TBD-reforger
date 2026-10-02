@@ -1,0 +1,25 @@
+# The map-agnostic building blocks of the renderer: per-instance vertex layouts, colour
+# normalisation, triangulation and fill composition, the procedural grid, the CPU sprite-cull
+# reference, frame ids, damage tracking and the camera uniform, the bitmap font with its glyph
+# layout and packing, and the WGSL source. No GPU handle and no browser API, so every target
+# builds and tests it.
+[package]
+name = "render_primitives"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Renderer building blocks with no GPU handle: byte layouts, CPU geometry, glyph packing and the WGSL source."
+
+[package.metadata.layout]
+category = "crates/graphics"
+tier = 0
+targets = "any"
+
+[dependencies]
+bytemuck = { workspace = true, features = ["derive", "min_const_generics"] }
+earcutr = { workspace = true }
+
+[lints]
+workspace = true

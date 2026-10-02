@@ -35,15 +35,16 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 
-use map_engine::io::archives::codec::access_checked;
-use map_engine::io::archives::codec::to_bytes;
-use map_engine::io::archives::roads::RoadNetworkArchive;
-use map_engine::io::archives::roads::RoadSegmentArchive;
-use map_engine::io::archives::version::ARCHIVE_SCHEMA_VERSION;
 use map_engine::streaming::loaders::store::bytes_to_json;
 use map_engine::world::environment::locations::route_placement::road_class_code;
 use map_engine::world::terrain::roads::network::RoadSegment;
 use map_engine::world::terrain::roads::network::parse_roads_payload;
+use world_file_formats::archives::codec::access_checked;
+use world_file_formats::archives::codec::to_bytes;
+use world_file_formats::archives::roads::RoadNetworkArchive;
+use world_file_formats::archives::roads::RoadSegmentArchive;
+use world_file_formats::archives::version::ARCHIVE_SCHEMA_VERSION;
+use world_file_formats::ids::RoadSegmentId;
 
 use crate::browser_testing::server::repo_root;
 use crate::repository_layout::terrain_dir;
@@ -75,7 +76,7 @@ pub fn to_archive(segments: &[RoadSegment]) -> Result<RoadNetworkArchive> {
             );
         }
         out.push(RoadSegmentArchive {
-            id: s.id.clone(),
+            id: RoadSegmentId::new(s.id.clone()),
             road_class: code,
             #[allow(clippy::cast_possible_truncation)]
             width_m: s.width_m as f32,

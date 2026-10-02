@@ -9,25 +9,14 @@ use crate::overlay::symbology::labels::glyph_math::pack_rgba_u32;
 use crate::overlay::symbology::labels::importance::LocationLabel;
 use crate::overlay::symbology::labels::importance::declutter_town_labels;
 use crate::overlay::symbology::labels::importance::town_label_fade_alpha;
-use crate::overlay::symbology::text_metrics::TEXT_GLYPH_ADVANCE_RATIO;
-use crate::overlay::symbology::text_metrics::TextGlyphInstance;
-use crate::overlay::symbology::text_metrics::glyph_index_for_char;
-use crate::overlay::symbology::text_metrics::text_char_meters;
 use crate::world::environment::locations::peaks::HeightLabel;
 use crate::world::environment::locations::peaks::declutter_height_labels;
 use crate::world::environment::locations::route_placement::RoadLabelPlacement;
 use crate::world::environment::locations::towns::locations_to_label_specs;
-use graphics_engine::text::layout::GlyphSpec;
-
-/// Re-export `graphics_engine::text::layout::pack_text_icon_bytes`.
-// T-0xx Phase 1D: the three subject-free halves of this module — laying characters out along a
-// row, dropping width-overlapping boxes, and packing 20 B instances — moved to
-// `graphics_engine`. Re-exported at their former path; everything below stays because
-// it names a peak, a town, a road or a declutter importance.
-pub use graphics_engine::text::layout::pack_text_icon_bytes;
-
-/// Re-export `graphics_engine::text::layout::pack_text_icon_bytes_tint`.
-pub use graphics_engine::text::layout::pack_text_icon_bytes_tint;
+use render_primitives::text::layout::{GlyphSpec, GlyphSpecId, pack_text_icon_bytes_tint};
+use render_primitives::text::metrics::{
+    TEXT_GLYPH_ADVANCE_RATIO, TextGlyphInstance, glyph_index_for_char, text_char_meters,
+};
 
 /// A decluttered label, as the renderer wants it: an anchor, characters and a cell size.
 ///
@@ -37,7 +26,7 @@ fn to_glyph_specs(specs: &[LabelSpec], char_m: f32) -> Vec<GlyphSpec> {
     specs
         .iter()
         .map(|s| GlyphSpec {
-            id: s.id,
+            id: GlyphSpecId(s.id),
             x: s.x,
             y: s.y,
             text: s.text.clone(),
@@ -67,11 +56,11 @@ pub fn pack_height_label_glyphs(
     let drawn = declutter_height_labels(labels, deck_zoom);
     let specs: Vec<LabelSpec> =
         crate::world::environment::locations::peaks::height_labels_to_specs(&drawn);
-    let kept = graphics_engine::text::layout::declutter_specs_by_width(
+    let kept = render_primitives::text::layout::declutter_specs_by_width(
         &to_glyph_specs(&specs, char_m),
         char_m,
     );
-    graphics_engine::text::layout::glyphs_from_specs(
+    render_primitives::text::layout::glyphs_from_specs(
         &kept,
         char_m,
         pack_rgba_u32([220, 220, 215, 230]),
@@ -125,7 +114,7 @@ pub(crate) fn glyphs_from_specs(
     char_m: f32,
     tint: u32,
 ) -> Vec<TextGlyphInstance> {
-    graphics_engine::text::layout::glyphs_from_specs(&to_glyph_specs(specs, char_m), char_m, tint)
+    render_primitives::text::layout::glyphs_from_specs(&to_glyph_specs(specs, char_m), char_m, tint)
 }
 
 /// Pack town label bytes.

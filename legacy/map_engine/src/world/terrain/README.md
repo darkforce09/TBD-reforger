@@ -60,12 +60,12 @@ feature; the rest is plain computation that the native tools reuse:
 
 ## Boundaries
 
-- Depends on: `crate::io` (the containers and archives); `crate::streaming` (fetches, boot
-  progress, the manifest's blocks, the memory budget, chunk math); `crate::frame` (the render
-  engine); `crate::overlay` (zoom gates and lanes); `crate::world::mesh`, `crate::world::scene` and
-  `crate::world::environment` (road class names, footprint corners); `crate::camera::math`
-  (rounding); `crate::spatial::los::terrain`, whose items `dem/sample/` re-exports;
-  `graphics_engine`, `wgpu`, the `png` crate and the browser's APIs.
+- Depends on: `world_file_formats` (the containers and archives); `crate::streaming` (fetches, boot
+  progress, the manifest's blocks, the memory budget); `map_coordinates` (chunk math, the anchor,
+  rounding); `crate::frame` (the render engine); `crate::overlay` (zoom gates and lanes);
+  `crate::world::mesh` and `crate::world::environment` (road class names, footprint corners);
+  `render_primitives` (mesh shapes, triangulation, instance layouts), `graphics_engine`, `wgpu`,
+  the `png` crate and the browser's APIs.
 - Used by:
   - `crate::streaming`, which loads, holds and uploads everything here;
   - `crate::frame`, which keeps the texture lanes; `crate::spatial::los::terrain` and

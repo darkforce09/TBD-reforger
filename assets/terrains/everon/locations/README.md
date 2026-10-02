@@ -14,7 +14,7 @@ assets/terrains/everon/locations/
 ## Format
 
 - Encoding: an rkyv archive, little-endian and validated whole on read, of
-  `MapLabelsArchive` (`legacy/map_engine/src/io/archives/labels.rs`) at archive schema
+  `MapLabelsArchive` (`crates/world_formats/world_file_formats/src/archives/labels.rs`) at archive schema
   version 1: a lane of towns, a lane of spot heights, and a lane of road-name anchors, each with
   its position, angle and road class baked in. Stored in Git LFS (`.gitattributes`:
   `assets/terrains/**/*.rkyv`).
@@ -53,5 +53,5 @@ assets/terrains/everon/locations/
 
 - [Map labels: towns, roads and heights](/legacy/map_engine/src/world/environment/locations/README.md)
   — how the labels are chosen and placed.
-- [Map data archives](/legacy/map_engine/src/io/archives/README.md) — the rkyv archives and
+- [Map data archives](/crates/world_formats/world_file_formats/src/archives/README.md) — the rkyv archives and
   their validating reader.

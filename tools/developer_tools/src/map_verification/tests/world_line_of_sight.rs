@@ -3,15 +3,15 @@
 use std::fs;
 use std::sync::Arc;
 
+use geometry_primitives::rigid_transform::Rigid;
+use map_coordinates::chunk_math::TerrainSizeM;
 use map_engine::spatial::bvh::sidecar::BvhSidecar;
 use map_engine::spatial::los::world::coverage_1::BlockPolicy;
 use map_engine::spatial::los::world::coverage_1::map_to_engine;
 use map_engine::spatial::los::world::descriptor::PrefabDescriptor;
 use map_engine::spatial::los::world::state::WorldOccluder;
 use map_engine::streaming::loaders::chunk::WorldChunk;
-use map_engine::streaming::scheduler::chunk_math::TerrainSizeM;
 use map_engine::world::architecture::compound::instances::InstanceKind;
-use map_engine::world::architecture::compound::transform::Rigid;
 
 use super::*;
 use crate::blueprint::parity_report::ParityFile;

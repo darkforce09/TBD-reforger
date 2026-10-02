@@ -5,7 +5,7 @@
 //! never sees a string, a language, a place, or a reason one glyph won a contested position.
 
 use crate::frame::buffers::InstanceBuffer;
-use crate::frame::ids::{BindGroupId, LaneId, PipelineId};
+use render_primitives::frame::ids::{BindGroupId, LaneId, PipelineId};
 
 /// A run of packed glyph instances.
 ///

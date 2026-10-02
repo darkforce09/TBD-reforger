@@ -3,14 +3,14 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::camera::ortho::state::OrthoCamera;
 use crate::diagnostics::readback::scene::map_read_4;
 use crate::diagnostics::readback::scene::padded_bytes_per_row;
 use crate::frame::engine::CLEAR_COLOR;
 use crate::frame::engine::RenderEngine;
+use camera_math::ortho::state::OrthoCamera;
 
 use crate::frame::pipelines::icon::create_icon_pipeline;
-use crate::world::scene::ANCHOR;
+use map_coordinates::terrain_frames::ANCHOR;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -111,7 +111,7 @@ impl RenderEngine {
             });
 
             let tint = 74u32 | (122u32 << 8) | (50u32 << 16) | (255u32 << 24);
-            let inst = graphics_engine::layout::IconInstance {
+            let inst = render_primitives::draw::instances::IconInstance {
                 pos: [0.0, 0.0],
                 size: 40.0,
                 yaw: 0,

@@ -19,7 +19,7 @@ apps/frontend/src/v2/pages/field_tools/mortar/inputs/
 ## How it works
 
 Each group keeps a draft of what was typed and resolves it on Calculate: a position parses its 6-,
-8- or 10-figure grid to the cell centre (`camera::grid_reference::parse_grid`) and takes its height
+8- or 10-figure grid to the cell centre (`map_coordinates::grid_reference::parse_grid`) and takes its height
 from the terrain heights the map fills or from the typed value, never a zero; the battery resolves
 every gun the same way; the weapon and shell selection is reconciled whenever the catalog or the
 weapon changes. Each resolution answers every problem it finds, so the page lists them all at once.
@@ -27,7 +27,7 @@ weapon changes. Each resolution answers every problem it finds, so the page list
 ## Boundaries
 
 - Depends on: the ballistics catalog DTOs of `crate::v2::core::api::dto::ballistics_catalogs`;
-  `map_engine` (`camera::grid_reference`, the fire-mission input types of
+  `map_coordinates::grid_reference`; `map_engine` (the fire-mission input types of
   `data::scenario::ballistics::fire_mission`); the terrain heights of `crate::v2::core::map_view`.
 - Used by: the page, the solve bridge, the map picker and the save area of the mortar page.
 - Rules: a height that has not loaded is an error, never zero; Arland resolves only manual heights.

@@ -5,11 +5,11 @@
 
 use crate::streaming::buffers::packer::deinterleave;
 use crate::streaming::loaders::chunk::WorldChunk;
-use crate::streaming::scheduler::chunk_math::chunk_ids_for_viewport;
 use crate::streaming::scheduler::state::ResidencyEvent;
 use crate::streaming::scheduler::state::WorldResidency;
 use crate::world::environment::buildings::footprint::building_visible;
 use crate::world::environment::classify::class_code;
+use map_coordinates::chunk_math::chunk_ids_for_viewport;
 
 /// Canonical draw cull margin m value.
 pub const DRAW_CULL_MARGIN_M: f64 = 0.0;

@@ -34,7 +34,7 @@ are in `.ai/artifacts/eden-wiki/`, listed by the
 [scrape manifest](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_wiki_scrape_manifest.yaml).
 
 Eden edits in a 3D scene and on a 2D map. The Mission Creator's map view is top-down, drawn
-through the map engine's orthographic camera (`legacy/map_engine/src/camera/ortho/`), so an
+through the map engine's orthographic camera (`crates/geometry/camera_math/src/ortho/`), so an
 entry that exists only in 3D is marked `N/A (3D)`. Parity with the Mission Creator is not stated
 here: the [Eden gap analysis](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)
 pairs each ID with the Mission Creator's feature by ID, and the

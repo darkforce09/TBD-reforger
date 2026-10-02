@@ -1,0 +1,18 @@
+# The deterministic pseudo-random generator: SplitMix64, the one seeded stream behind every
+# reproducible scatter, test lattice and drawn case, identical on every machine and target.
+[package]
+name = "deterministic_random"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "SplitMix64: a seeded, platform-independent pseudo-random stream for reproducible draws."
+
+[package.metadata.layout]
+category = "crates/foundation"
+tier = 0
+targets = "any"
+
+[lints]
+workspace = true

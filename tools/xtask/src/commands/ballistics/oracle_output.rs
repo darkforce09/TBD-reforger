@@ -17,8 +17,9 @@
 //! the export are errors. `output_sha256` is the SHA-256 of the `sha256sum` listing of the two
 //! output files in name order, so it pins both.
 use super::engine_numbers::normalize_engine_numbers;
-use super::gameplay_export::{read_json_file, sha256_hex};
+use super::gameplay_export::read_json_file;
 use anyhow::{Context, Result, bail};
+use content_digest::sha256_hex;
 use serde_json::Value;
 use std::path::Path;
 

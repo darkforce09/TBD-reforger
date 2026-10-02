@@ -3,7 +3,7 @@
 //! Signals & state: explicit inputs only; every function here is pure over what it is handed.
 //! Invariants: the grid reference on every line comes from ONE formatter, so a digest and a grid export can never disagree about where something stands. A missing classname is spelled out, never left blank.
 
-use crate::camera::grid_reference::grid_ref_3digit;
+use map_coordinates::grid_reference::grid_ref_3digit;
 
 /* ───────────────────────── T-698 — clipboard exporters (3den E5) ─────────────────────────
  *
@@ -163,7 +163,7 @@ pub fn count_noun(n: usize, singular: &str, plural: &str) -> String {
 
 /// T-698 — the six-figure grid reference of a world position, in the map furniture's own format.
 ///
-/// **Both halves come from [`crate::camera::grid_reference::grid_ref_3digit`]** — the T-667 formatter whose
+/// **Both halves come from [`map_coordinates::grid_reference::grid_ref_3digit`]** — the T-667 formatter whose
 /// output is literally the text printed on the map-pane edge labels. Do not re-derive the rule here:
 /// a second convention that disagreed with the on-screen labels would be the confident-wrong-answer
 /// defect this exporter exists to avoid. Separator is one space (`mortar.rs`'s "012 020").

@@ -57,9 +57,9 @@ axis, and none narrower than `STRIP_MIN_PX` (1.5) pixels.
 
 ## Boundaries
 
-- Depends on: `crate::io::archives` (the road archive); `crate::world::environment` (class names,
+- Depends on: `world_file_formats::archives` (the road archive); `crate::world::environment` (class names,
   footprint corners); `crate::world::terrain::dem::grid` and `crate::world::mesh` (the apron's grid
-  and fill); `crate::streaming::scheduler::chunk_math` (the box type).
+  and fill); `map_coordinates::chunk_math` (the box type).
 - Used by: `crate::streaming`, whose loaders read the network and build the road mesh and apron,
   whose strip and glyph packers draw the strips and gate airfield structures, and whose toggles
   recompute the box; `crate::world::environment::locations`, whose road labels follow

@@ -1,9 +1,11 @@
 # Frame vocabulary
 
-The types a caller uses to describe one frame to the graphics engine: a camera matrix, a sorted
-list of draw batches, glyph runs, indirect draws, and the pipelines and bind groups they index.
-Every field names geometry or a GPU handle, never a thing in the world, and the module also holds
-the swapchain present step, the damage flag and the cell-atlas GPU handles.
+The types a caller uses to describe one frame to the graphics engine: a sorted list of draw
+batches, glyph runs, indirect draws, and the pipelines and bind groups they index. Every field
+names geometry or a GPU handle, never a thing in the world, and the module also holds the
+swapchain present step and the cell-atlas GPU handles. The GPU-free part of the vocabulary (the
+ids, damage tracking and the camera uniform) is `render_primitives::frame`
+(`crates/graphics/render_primitives/src/frame/`).
 
 ## Contents
 
@@ -12,13 +14,9 @@ legacy/graphics_engine/src/frame/
 ├── atlas.rs    `TextAtlasGpu`, `GlyphAtlasGpu` and their creators: texture, uniforms, bind group
 ├── batch.rs    `DrawBatch`, `DrawPayload` by vertex layout, and `IndirectDraw`
 ├── buffers.rs  `InstanceBuffer`, `IndexedMesh` and `VertexStream`: buffers and counts
-├── camera.rs   `CameraUniform`: the 64-byte clip-from-local matrix bound at group 0
-├── damage.rs   `RenderDamage`: whether a frame needs submitting at all
-├── ids.rs      `LaneId`, `PipelineId` and `BindGroupId`: opaque keys the caller assigns
-├── mod.rs      the module tree; re-exports the packet, batch, buffer, id and atlas types
+├── mod.rs      the module tree; re-exports the packet, batch, buffer, text run and atlas types
 ├── packet.rs   `FramePacket`: one frame's draw list; `upsert` and `remove` keep a list sorted
 ├── present.rs  `acquire` and `submit`: swapchain image, timestamp resolve, present
-├── tests/      unit tests for the damage decision
 └── text.rs     `TextRun`: a packed glyph run with its lane, atlas and pipeline
 ```
 
@@ -40,30 +38,23 @@ and returns `Skip` on `Timeout` or `Occluded`; `submit` optionally resolves a ti
 into a readback buffer, submits the command buffer and presents. `frame_ms_ema` smooths the CPU
 frame time.
 
-`RenderDamage` decides whether a render call does any GPU work: it submits while `dirty` or
-`continuous` is set, and `after_submit` clears `dirty` unless the loop runs continuously. It
-starts dirty, so the first frame always draws.
-
 `atlas.rs` uploads a cell atlas as an RGBA8 texture, checking that the byte length is width times
 height times 4, and builds its uniform buffer and bind group. `create_text_atlas` writes the
-16-byte text uniforms from `crate::text::pack`; `create_glyph_atlas` takes the caller's packed
-uniform block unread, because its UV table is the caller's cell layout.
+16-byte text uniforms from `render_primitives::text::pack`; `create_glyph_atlas` takes the
+caller's packed uniform block unread, because its UV table is the caller's cell layout.
 
-`camera.rs`, `damage.rs` and `ids.rs` compile natively; every other file names `wgpu` types and
-compiles for WebAssembly only.
+Every file names `wgpu` types and compiles for WebAssembly only.
 
 ## Boundaries
 
-- Depends on: `bytemuck`; `wgpu` in the WebAssembly build; `crate::text::pack` for the text
-  uniform block.
+- Depends on: `render_primitives` (the ids, the camera uniform and `text::pack` for the text
+  uniform block); `bytemuck`; `wgpu` in the WebAssembly build.
 - Used by: `crate::draw` (`encode.rs`, `lines.rs` and `polygons.rs` build and read these types);
   and `map_engine`, which names this module in one file,
-  `legacy/map_engine/src/frame/mod.rs`, and re-exports `damage`, `packet`, `present`,
-  `CameraUniform`, the three ids, the batch group, the buffer group and the atlas and text group
-  to the rest of its crate.
+  `legacy/map_engine/src/frame/mod.rs`, and re-exports `packet`, `present`, the batch group, the
+  buffer group and the atlas and text group to the rest of its crate.
 - Rules: fields and variants name geometry and GPU handles only, and payload variants are named
   for their vertex layout; the renderer never re-ranks lanes (`FramePacket::batches_sorted` in
-  debug builds); a clean frame skips its submit and a continuous one always submits
-  (`class_r_clean_second_frame_skips`, `class_r_continuous_always_submits`); only
-  `legacy/map_engine/src/frame/mod.rs` may name `graphics_engine::frame`, with a
-  pinned count of 8 references (`cargo xtask verify engine-layers`, rule 3a).
+  debug builds); only `legacy/map_engine/src/frame/mod.rs` may name
+  `graphics_engine::frame`, with a pinned count of 5 references (`cargo xtask verify
+  engine-layers`, rule 3a).

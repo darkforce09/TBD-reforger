@@ -9,11 +9,11 @@ use crate::overlay::lanes::LaneRole;
 use crate::overlay::lanes::lane_id;
 
 use crate::frame::{DrawBatch, DrawPayload, InstanceBuffer};
-use crate::world::scene::ANCHOR;
+use map_coordinates::terrain_frames::ANCHOR;
 use wasm_bindgen::prelude::*;
 
 /// Canonical icon uv bytes value.
-pub(crate) const ICON_UV_BYTES: usize = graphics_engine::layout::ATLAS_GLYPH_COUNT * 16;
+pub(crate) const ICON_UV_BYTES: usize = render_primitives::draw::instances::ATLAS_GLYPH_COUNT * 16;
 
 /// Canonical icon uniform bytes value.
 pub(crate) const ICON_UNIFORM_BYTES: u64 = (ICON_UV_BYTES + 16) as u64;

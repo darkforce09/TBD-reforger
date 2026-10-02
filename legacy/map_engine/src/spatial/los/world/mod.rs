@@ -68,9 +68,6 @@ pub use crate::spatial::los::world::descriptor::BlasEntry;
 /// Re-export `crate::spatial::los::world::descriptor::BlasManifest`.
 pub use crate::spatial::los::world::descriptor::BlasManifest;
 
-/// Re-export `crate::spatial::los::world::descriptor::Bounds3`.
-pub use crate::spatial::los::world::descriptor::Bounds3;
-
 /// Re-export `crate::spatial::los::world::descriptor::DESCRIPTOR_SCHEMA_VERSION`.
 pub use crate::spatial::los::world::descriptor::DESCRIPTOR_SCHEMA_VERSION;
 

@@ -3,21 +3,21 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::io::containers::header::ContainerHeader;
-use crate::io::containers::tbdb::TbdbHeader;
 use crate::streaming::loaders::manifest::WaterBlock;
 use crate::world::terrain::water::vectors::Bathymetry;
 use crate::world::terrain::water::vectors::TBDB_ENCODING_V1;
 use crate::world::terrain::water::vectors::WaterMask;
 use crate::world::terrain::water::vectors::WaterVectors;
 use crate::world::terrain::water::vectors::suffix_plan;
+use world_file_formats::containers::header::ContainerHeader;
+use world_file_formats::containers::tbdb::TbdbHeader;
 
 use crate::streaming::bridge::progress::BootEvent;
 use crate::streaming::bridge::progress::BootSeg;
 
-use crate::streaming::loaders::fetch::RangeOutcome;
-use crate::streaming::loaders::fetch::fetch_bytes;
-use crate::streaming::loaders::fetch::fetch_range_outcome;
+use browser_platform::fetch::RangeOutcome;
+use browser_platform::fetch::fetch_bytes;
+use browser_platform::fetch::fetch_range_outcome;
 
 /// The most bathymetry this loader will pull. 16 MiB puts everon on level 3 (8 m texels) and the whole of any terrain under ~4600² texels on level 0 — see the module docs for why coarser is the safe direction. Sized against the satellite bundle (42–152 MB), which this must not rival.
 pub const MAX_BATHYMETRY_BYTES: u64 = 16 << 20;

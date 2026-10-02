@@ -12,7 +12,7 @@ use super::{
     strip_top_px, toolbelt_band_px, DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX, STUB_PX,
     TOOLBELT_BAND_PX,
 };
-use map_engine::camera::ortho::state::OrthoCamera;
+use camera_math::ortho::state::OrthoCamera;
 
 /// Reset the three thread-local latches so tests don't leak state into one another (they run on
 /// the same thread). Every test that touches the accessors starts here.

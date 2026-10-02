@@ -168,7 +168,7 @@ pub(super) fn run_p2_gates(
                 ));
                 continue;
             }
-            let dec = match map_engine::io::density::tbdd::decode_tbdd(&buf) {
+            let dec = match world_file_formats::density::tbdd::decode_tbdd(&buf) {
                 Ok(d) => d,
                 Err(e) => {
                     d1.push(format!("{key}.bin: {e}"));
@@ -186,7 +186,7 @@ pub(super) fn run_p2_gates(
             }
             let mut it = key.split('_').map(|v| v.parse::<usize>().unwrap_or(0));
             let (cx, cy) = (it.next().unwrap_or(0), it.next().unwrap_or(0));
-            let rebuilt = map_engine::io::density::tbdd::encode_tbdd(
+            let rebuilt = world_file_formats::density::tbdd::encode_tbdd(
                 density::DENSITY_CELL_M,
                 density::DENSITY_COLS,
                 density::DENSITY_ROWS,

@@ -19,6 +19,8 @@ documentation/legacy/graphics_engine/
 - [Graphics engine](/legacy/graphics_engine/) — the crate the overview describes; its
   [README](/legacy/graphics_engine/README.md) gives the commands and public surface, and
   its [source README](/legacy/graphics_engine/src/README.md) the frame flow.
+- [Render primitives](/crates/graphics/render_primitives/) — the GPU-free layouts, geometry,
+  glyph packing and WGSL source the engine builds on.
 
 ## Boundaries
 

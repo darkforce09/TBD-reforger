@@ -1,7 +1,7 @@
 use anyhow::{Context, Result, ensure};
+use content_digest::Sha256Hasher;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use sha2::{Digest, Sha256};
 use std::{collections::BTreeMap, fs, path::Path};
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -42,7 +42,7 @@ impl Policy {
             manifest["policy_version"] == 1,
             "unsupported gameplay policy"
         );
-        let mut hash = Sha256::new();
+        let mut hash = Sha256Hasher::new();
         hash.update(bytes);
         let mut classes = BTreeMap::new();
         let mut fields = BTreeMap::new();
@@ -99,7 +99,7 @@ impl Policy {
         Ok(Self {
             classes,
             fields,
-            digest: format!("{:x}", hash.finalize()),
+            digest: hash.finalize_hex(),
         })
     }
 

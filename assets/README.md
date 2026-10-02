@@ -43,7 +43,7 @@ reads it yet.
   - `terrains/`: JSON (the registry, manifests, labels, locations, prefab descriptors, some of it
     gzipped) and binary payloads: a 16-bit PNG height map, `TBDC` object chunks and `TBDD`
     forest-density tiles (`.bin`), the `.tbd-sat` satellite bundle, `rkyv` archives and `.bvh`
-    building hierarchies. `legacy/map_engine/src/io/` defines the binary formats. The
+    building hierarchies. `crates/world_formats/world_file_formats/src/` defines the binary formats. The
     binaries are stored in Git LFS (`.gitattributes`), except the forest-density tiles, which are
     plain git blobs.
   - `glyphs/`: SVG sources, a WebP atlas with a JSON rectangle index, and a JSON manifest.

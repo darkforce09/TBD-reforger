@@ -56,7 +56,7 @@ set of patterns, edges, axes and thresholds.
 
 - Depends on: `crate::data::store`
   (the [slot](/documentation/glossary/n_to_z.md#slot) projection, the grid cell, the placement algebra),
-  `crate::camera::ortho` for the frozen camera, `crate::spatial` (the point index and the terrain,
+  `camera_math::ortho` for the frozen camera, `crate::spatial` (the point index and the terrain,
   world and interior line-of-sight cores), `crate::world::terrain::dem::manifest`, and
   `crate::editing::picking`.
 - Used by:

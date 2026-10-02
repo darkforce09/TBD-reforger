@@ -1,7 +1,7 @@
 //! Terrain bounds from the manifest and the camera view that fits them.
 
 use super::{fit_view, WorldBounds};
-use map_engine::camera::ortho::state::{MAX_ZOOM, MIN_ZOOM};
+use camera_math::ortho::state::{MAX_ZOOM, MIN_ZOOM};
 
 fn everon() -> WorldBounds {
     WorldBounds::new(0.0, 0.0, 12_800.0, 12_800.0).expect("valid bounds")

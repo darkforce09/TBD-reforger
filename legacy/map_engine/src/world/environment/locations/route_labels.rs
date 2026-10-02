@@ -64,7 +64,7 @@ pub fn road_name_schema_holds(drawn: &[RoadLabelPlacement]) -> bool {
 pub fn road_names_to_archive(
     names: &RoadNamesFile,
     segments: &[RoadSegment],
-) -> Result<Vec<crate::io::archives::labels::RoadNameLabel>, String> {
+) -> Result<Vec<world_file_formats::archives::labels::RoadNameLabel>, String> {
     let bake_zoom = names
         .roads
         .iter()
@@ -104,19 +104,21 @@ pub fn road_names_to_archive(
     #[allow(clippy::cast_possible_truncation)]
     Ok(baked
         .into_iter()
-        .map(|(p, code)| crate::io::archives::labels::RoadNameLabel {
-            name: p.name,
-            position: [p.x as f32, p.y as f32],
-            angle_deg: p.angle_deg as f32,
-            road_class: code,
-        })
+        .map(
+            |(p, code)| world_file_formats::archives::labels::RoadNameLabel {
+                name: p.name,
+                position: [p.x as f32, p.y as f32],
+                angle_deg: p.angle_deg as f32,
+                road_class: code,
+            },
+        )
         .collect())
 }
 
 /// The archive's `road_names` lane → candidate [`RoadLabelPlacement`]s, still in [`road_declutter_order`]. Feed them to [`build_road_label_draw_set_from_archive`].
 #[must_use]
 pub fn road_names_from_archive(
-    archive: &rkyv::Archived<crate::io::archives::labels::MapLabelsArchive>,
+    archive: &rkyv::Archived<world_file_formats::archives::labels::MapLabelsArchive>,
 ) -> Vec<RoadLabelPlacement> {
     archive
         .road_names

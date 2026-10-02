@@ -12,7 +12,6 @@ legacy/map_engine/src/world/architecture/blueprint/
 ├── attribution_1.rs  `evaluate_los`, the hit and result types, and the naming of a structural hit
 ├── attribution_2.rs  per-level annotations: windows and open doors passed, cover and stairs crossed
 ├── footprint.rs      the height profile, the overall footprint, and the roof and floor-plate grids
-├── geometry.rs       2D distance, segment intersection and segment-box helpers
 ├── mod.rs            the module tree
 ├── model/            the blueprint items under one path, and the shared blueprint test fixtures
 ├── structure.rs      the blueprint JSON model: levels with walls, doors, windows, stairs, furniture
@@ -58,7 +57,7 @@ other `LosHitKind` values (`Glass`, `DoorLeaf`, `DoorFrame`, `DoorAperture`, `Wi
 `Foliage`, `Prop`).
 
 `from_archived` reads a row of `prefabs/building_blueprints.rkyv`
-(`crate::io::archives::blueprints`) back into a `BuildingBlueprint` with the height profile and
+(`world_file_formats::archives::blueprints`) back into a `BuildingBlueprint` with the height profile and
 each level's band, footprint, walls, doors, windows, stairs and furniture. The archive carries no
 identity strings, overall footprint, roof, floor plates, door state, furniture size or pane count,
 so those come back empty or zero.
@@ -76,8 +75,9 @@ so those come back empty or zero.
 
 ## Boundaries
 
-- Depends on: `crate::spatial::bvh` (`BvhSidecar` and its first-hit traversal) and
-  `crate::io::archives::blueprints` (the archived rows); `serde` for the JSON.
+- Depends on: `crate::spatial::bvh` (`BvhSidecar` and its first-hit traversal),
+  `geometry_primitives::segment_geometry` (the 2D segment and box tests) and
+  `world_file_formats::archives::blueprints` (the archived rows); `serde` for the JSON.
 - Used by:
   - `crate::spatial::los::interior`, whose walker names shell hits with
     `attribute_structural_hit` and reports in `LosResult`, and `crate::spatial::los::world`, whose

@@ -40,6 +40,6 @@ pub mod building;
 pub fn create_map_shader(device: &wgpu::Device) -> wgpu::ShaderModule {
     device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("quad-instanced"),
-        source: wgpu::ShaderSource::Wgsl(crate::shaders::SHADER_WGSL.into()),
+        source: wgpu::ShaderSource::Wgsl(render_primitives::shaders::SHADER_WGSL.into()),
     })
 }

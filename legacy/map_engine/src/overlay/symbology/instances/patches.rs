@@ -3,14 +3,14 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::overlay::symbology::instances::packing::pack_icon_instance;
-use crate::overlay::symbology::instances::packing::pack_rgba_u32;
 use crate::overlay::symbology::instances::symbols::SLOT_GLYPH_RING;
 use crate::overlay::symbology::instances::symbols::SLOT_RING_PX;
 use crate::overlay::symbology::instances::symbols::SLOT_SELECTED_PX;
 use crate::overlay::symbology::instances::symbols::SLOT_SELECTED_RGBA;
 use crate::overlay::symbology::instances::symbols::pack_slot_symbology;
 use crate::overlay::symbology::roles::classify::SIDE_BLUFOR_RGBA;
+use render_primitives::text::pack::pack_icon_instance;
+use render_primitives::text::pack::pack_rgba_u32;
 
 /// Pack only selected slot rings (cluster short-lane / selection-only path). Full-doc row index is **not** preserved — output is dense k selected instances.
 #[must_use]

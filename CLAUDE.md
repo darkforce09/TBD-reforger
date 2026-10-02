@@ -179,9 +179,8 @@ legacy/                                  <-- Parking folder of the two engine mo
 │       ├── editing/                     <-- Live mission document, undo history, headless map tools (select, ruler, LOS, viewshed)
 │       ├── world/                       <-- Terrain (DEM, relief, roads, satellite, water), buildings, vegetation, labels
 │       ├── spatial/                     <-- BVHs, point indexes, picking, line of sight (terrain, world, building interiors)
-│       ├── camera/                      <-- Orthographic map camera, doll orbit camera, grid-reference labels
+│       ├── camera/                      <-- The browser viewport the map camera fills (the camera math is in crates/geometry)
 │       ├── streaming/                   <-- Served map data: fetch, world chunk residency, draw buffers, memory budget
-│       ├── io/                          <-- On-disk formats: rkyv archives, containers, density grids, POD layouts
 │       ├── overlay/                     <-- Map overlay lanes and draw order
 │       │   └── symbology/               <-- Bespoke unit-role and vehicle glyphs, side tints, labels, marker glyphs
 │       ├── frame/                       <-- Render engine: builds graphics_engine::frame packets, upload belts
@@ -191,19 +190,29 @@ legacy/                                  <-- Parking folder of the two engine mo
 └── graphics_engine/                     <-- Pure GPU rendering primitives (knows zero map concepts)
     └── src/
         ├── device/                      <-- Pooled per-lane GPU buffers, readback fences
-        ├── draw/                        <-- Triangulation, instance layouts, uploads, culling, the frame encoder
-        ├── frame/                       <-- Frame vocabulary: packet, batches, ids, camera, present, damage, atlases
-        ├── layout/                      <-- Every byte layout shared with callers (re-exports)
+        ├── draw/                        <-- Line and polygon uploads, GPU culling, the frame encoder
+        ├── frame/                       <-- Frame packet, batches, present, atlases
         ├── loop/                        <-- Shared requestAnimationFrame pump and its FrameTarget trait
-        ├── pipeline/                    <-- Render pipeline constructors
-        ├── shaders/                     <-- WGSL: every vertex, fragment and compute entry point
-        └── text/                        <-- Bitmap font, ASCII glyph atlas bake, glyph layout, sprite packing
+        └── pipeline/                    <-- Render pipeline constructors
 
 crates/                                  <-- Library crates grouped by category (crates/<category>/<crate>); every manifest under it is a workspace member declaring its tier
 ├── foundation/                          <-- Leaf crates with no workspace dependency
-│   └── http_url_guard/                  <-- The HTTP(S) URL check the API and the single-page app share, with its one case table
-└── contracts/                           <-- Crates that hold one boundary contract
-    └── offline_cache_policy/            <-- Offline cache names, request classes, offline pack and network fallback rules the service worker applies
+│   ├── http_url_guard/                  <-- The HTTP(S) URL check the API and the single-page app share, with its one case table
+│   ├── newtype_ids/                     <-- Macros declaring serde-transparent typed ids (string, integer, uuid; an sqlx form expanded at the call site)
+│   ├── time_source/                     <-- Wall-clock and monotonic time sources, RFC 3339 UTC formatting and validation
+│   ├── deterministic_random/            <-- The seeded SplitMix64 generator
+│   ├── content_digest/                  <-- SHA-256 and SHA-384 hex digests, framed hashing
+│   └── browser_platform/                <-- Browser console macros and fetch helpers (wasm32 only)
+├── contracts/                           <-- Crates that hold one boundary contract
+│   └── offline_cache_policy/            <-- Offline cache names, request classes, offline pack and network fallback rules the service worker applies
+├── geometry/                            <-- Engine geometry: vectors, segments, rigid transforms, map coordinates, cameras
+│   ├── geometry_primitives/             <-- 3D vector ops, 2D segment geometry, rigid transforms, axis-aligned boxes
+│   ├── map_coordinates/                 <-- Terrain frames (map centres, bounds), chunk math, rounding, grid references
+│   └── camera_math/                     <-- Orthographic map camera, orbit camera, 4x4 matrices
+├── world_formats/                       <-- On-disk world formats
+│   └── world_file_formats/              <-- rkyv archives, containers, density grids, POD layouts, their typed ids
+└── graphics/                            <-- Map-agnostic CPU rendering primitives
+    └── render_primitives/               <-- Instance layouts, geometry, triangulation, CPU cull oracle, frame ids, text atlas, the WGSL shader
 
 deploy/                                  <-- Release Dockerfile (context narrowed by the root .dockerignore), dev and staging compose files, deploy.env.example
 ├── caddy/                               <-- Caddy site on :3080; the one folder the staging Caddy container mounts

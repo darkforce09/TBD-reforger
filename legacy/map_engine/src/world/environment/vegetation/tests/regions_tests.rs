@@ -46,9 +46,9 @@ fn non_payload_is_empty() {
     assert_eq!(parse_regions_payload(&json!("<html>")).len(), 0);
 }
 
-use crate::io::archives::codec::to_bytes;
 use crate::streaming::loaders::store::bytes_to_json;
 use std::path::PathBuf;
+use world_file_formats::archives::codec::to_bytes;
 
 const EVERON_REGIONS: usize = 36;
 

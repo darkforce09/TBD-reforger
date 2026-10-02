@@ -3,15 +3,15 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::camera::ortho::state::OrthoCamera;
 use crate::diagnostics::readback::scene::map_read_4;
 use crate::diagnostics::readback::scene::padded_bytes_per_row;
 use crate::frame::engine::CLEAR_COLOR;
 use crate::frame::engine::RenderEngine;
+use camera_math::ortho::state::OrthoCamera;
 
 use crate::frame::pipelines::vector::create_line_pipeline;
 use crate::frame::pipelines::vector::create_polygon_pipeline;
-use crate::world::scene::ANCHOR;
+use map_coordinates::terrain_frames::ANCHOR;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -52,19 +52,19 @@ impl RenderEngine {
             let line_c = [173.0_f32 / 255.0, 198.0 / 255.0, 1.0, 200.0 / 255.0];
             let (x0, y0, x1, y1) = (-100.0_f32, -100.0, 100.0, 100.0);
             let fill_verts = [
-                graphics_engine::layout::LineVertex {
+                render_primitives::draw::geometry::LineVertex {
                     pos: [x0, y0],
                     color: fill_c,
                 },
-                graphics_engine::layout::LineVertex {
+                render_primitives::draw::geometry::LineVertex {
                     pos: [x1, y0],
                     color: fill_c,
                 },
-                graphics_engine::layout::LineVertex {
+                render_primitives::draw::geometry::LineVertex {
                     pos: [x1, y1],
                     color: fill_c,
                 },
-                graphics_engine::layout::LineVertex {
+                render_primitives::draw::geometry::LineVertex {
                     pos: [x0, y1],
                     color: fill_c,
                 },
@@ -75,11 +75,11 @@ impl RenderEngine {
             for e in 0..4 {
                 let a = ring[e];
                 let b = ring[(e + 1) % 4];
-                line_verts.push(graphics_engine::layout::LineVertex {
+                line_verts.push(render_primitives::draw::geometry::LineVertex {
                     pos: a,
                     color: line_c,
                 });
-                line_verts.push(graphics_engine::layout::LineVertex {
+                line_verts.push(render_primitives::draw::geometry::LineVertex {
                     pos: b,
                     color: line_c,
                 });

@@ -74,7 +74,7 @@ pub async fn mount_map_view(
     } = mount;
     let size = size_canvas(&container, &canvas);
     let manifest_url = format!("/map-assets/{terrain}/manifest.json");
-    let bounds = map_engine::streaming::host::fetch_bytes(&manifest_url)
+    let bounds = browser_platform::fetch::fetch_bytes(&manifest_url)
         .await
         .as_deref()
         .and_then(WorldBounds::from_manifest_json)

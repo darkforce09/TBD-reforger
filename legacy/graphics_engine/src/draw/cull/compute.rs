@@ -3,9 +3,9 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::draw::cull::oracle::ICON_STRIDE;
-use crate::draw::cull::oracle::cpu_count_for_encode;
-use crate::draw::cull::oracle::pack_icon_storage32;
+use render_primitives::draw::cull::oracle::ICON_STRIDE;
+use render_primitives::draw::cull::oracle::cpu_count_for_encode;
+use render_primitives::draw::cull::oracle::pack_icon_storage32;
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::rc::Rc;

@@ -14,7 +14,7 @@ use crate::frame::bindings;
 use crate::frame::engine::RenderEngine;
 use crate::overlay::lanes::LaneRole;
 use crate::overlay::lanes::lane_id;
-use crate::world::scene::ANCHOR;
+use map_coordinates::terrain_frames::ANCHOR;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -90,7 +90,7 @@ impl RenderEngine {
             max_x - ANCHOR[0],
             max_y - ANCHOR[1],
         ];
-        crate::frame::oracle::count_icons_in_frustum(&self.tree_icons_20, frustum)
+        render_primitives::draw::cull::oracle::count_icons_in_frustum(&self.tree_icons_20, frustum)
     }
 }
 

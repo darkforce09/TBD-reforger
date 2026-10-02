@@ -40,8 +40,8 @@ pub const APRON_DEM_DOWNSAMPLE_FACTOR: usize = 16;
 /// Output dims for a source raster + factor. Mirror of `demGridDims` (`demGrid.ts:32`).
 #[must_use]
 pub fn dem_grid_dims(width: usize, height: usize, factor: usize) -> (usize, usize) {
-    let cols = 2.max(crate::camera::math::shaping::round(width as f64 / factor as f64) as usize);
-    let rows = 2.max(crate::camera::math::shaping::round(height as f64 / factor as f64) as usize);
+    let cols = 2.max(map_coordinates::rounding::round(width as f64 / factor as f64) as usize);
+    let rows = 2.max(map_coordinates::rounding::round(height as f64 / factor as f64) as usize);
     (cols, rows)
 }
 
@@ -54,8 +54,8 @@ fn source_windows(out_count: usize, src_count: usize, factor: usize) -> Vec<u32>
         } else {
             (src_count as f64 - 1.0) / 2.0
         };
-        let mut a = crate::camera::math::shaping::round(center - half) as i64;
-        let mut b = crate::camera::math::shaping::round(center + half) as i64;
+        let mut a = map_coordinates::rounding::round(center - half) as i64;
+        let mut b = map_coordinates::rounding::round(center + half) as i64;
         if a < 0 {
             a = 0;
         }

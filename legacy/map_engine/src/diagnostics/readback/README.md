@@ -55,7 +55,7 @@ which drops the GPU timer.
 - Depends on: `crate::frame` (the engine, `CLEAR_COLOR`, the pipeline constructors, the packet
   tables and types, the text uniform bytes, the compute cull and its CPU oracle),
   `crate::camera` (orthographic and orbit), `crate::doll::renderer` and `crate::doll::scene` (the
-  doll check), `crate::world::scene::ANCHOR`, and `graphics_engine` (`draw::encode`,
+  doll check), `map_coordinates::terrain_frames::ANCHOR`, and `graphics_engine` (`draw::encode`,
   `layout::QuadInstance`).
 - Used by: the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
   `window.__selfChecks.texture` (`texture_self_check`, published in

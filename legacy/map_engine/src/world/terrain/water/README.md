@@ -25,7 +25,7 @@ generates water: the sea on the map is the sea band of `crate::world::terrain::r
 rivers and ponds exist only in a terrain's archive, which the host loads and keeps but does not
 draw.
 
-The bathymetry is a 32-byte `TbdbHeader` (`crate::io::containers::tbdb`) and one block per level,
+The bathymetry is a 32-byte `TbdbHeader` (`world_file_formats::containers::tbdb`) and one block per level,
 finest first: a `u16` depth grid (metres = value × depth scale) and a `u8` mask (0 dry). The host
 fetches the header by one Range request and, by another, the tail `suffix_plan` picks: the finest
 level that, with every coarser one, fits `MAX_BATHYMETRY_BYTES` (16 MiB). Levels finer than the
@@ -42,7 +42,7 @@ rings with their per-vertex colours at the layer's opacity.
 
 ## Boundaries
 
-- Depends on: `crate::io` (the `TBDB` header, the vectors archive); `crate::world::terrain::relief`
+- Depends on: `world_file_formats` (the `TBDB` header, the vectors archive); `crate::world::terrain::relief`
   and `crate::world::mesh` (the sea band and its triangulation); for the loader,
   `crate::streaming` (the manifest's water block, Range fetches, boot progress).
 - Used by: `crate::streaming::host`, which owns the `WaterHost` and answers `is_water` and

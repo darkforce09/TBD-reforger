@@ -1,9 +1,6 @@
 //! Property evidence binds observed executions to required IDs and explicit runner configuration.
 
-use super::super::{
-    fingerprint,
-    register::{EvidenceClass, PropertyRequirement},
-};
+use super::super::register::{EvidenceClass, PropertyRequirement};
 use super::*;
 use serde_json::{Value, json};
 
@@ -63,7 +60,7 @@ fn evidence(records: Vec<PropertyRun>) -> (Receipt, String) {
         duration_milliseconds: 10,
         exit_code: 0,
         output_file: "quota_properties.log".into(),
-        output_sha256: fingerprint::digest(output.as_bytes()),
+        output_sha256: content_digest::sha256_hex(output.as_bytes()),
         environment: configuration().receipt_environment(),
         observations: None,
         property_runs,

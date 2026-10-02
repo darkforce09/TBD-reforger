@@ -6,9 +6,6 @@
 /// Bench.
 pub mod bench;
 
-/// Platform.
-pub mod platform;
-
 /// Probes.
 pub mod probes;
 

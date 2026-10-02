@@ -35,12 +35,12 @@ legacy/map_engine/src/editing/commands/
   the vehicles, then the objects of the document's JSON views, and drops ids the document does not
   hold. `grid_position_text`, `classnames_text` and `selection_summary_text` build the three
   clipboard texts; every grid comes from `format_grid_ref`, which calls
-  `crate::camera::grid_reference::grid_ref_3digit`, the formatter behind the map-edge labels, so a
+  `map_coordinates::grid_reference::grid_ref_3digit`, the formatter behind the map-edge labels, so a
   pasted grid matches the one on screen. A single selection copies the bare grid (`032 048`).
 
 ## Boundaries
 
-- Depends on: `crate::camera::grid_reference` for the three-digit grid reference,
+- Depends on: `map_coordinates::grid_reference` for the three-digit grid reference,
   `crate::data::scenario::validate` (`Finding`, `Severity`) for the compile summary, and
   `serde_json`.
 - Used by: the Mission Creator's document commands

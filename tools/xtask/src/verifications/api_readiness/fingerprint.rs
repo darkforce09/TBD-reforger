@@ -19,12 +19,11 @@
 //! run. Configuration values never appear in diagnostics.
 
 use anyhow::{Result, ensure};
-use sha2::{Digest, Sha256};
+use content_digest::Sha256Hasher;
 use std::{
     collections::{BTreeMap, BTreeSet},
     ffi::OsString,
     fs::Metadata,
-    io::Read,
     path::{Component, Path, PathBuf},
 };
 use verification_core::proc::Run;
@@ -117,15 +116,6 @@ const CONFIGURATION_ENVIRONMENT: &[&str] = &[
     "RUST_TEST_THREADS",
     "TZ",
 ];
-
-pub(super) fn digest(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
-}
-
-fn framed(hash: &mut Sha256, bytes: &[u8]) {
-    hash.update((bytes.len() as u64).to_le_bytes());
-    hash.update(bytes);
-}
 
 /// Binary terrain, texture, model and media assets require separate fixture identities.
 pub(super) fn source_input(path: &str) -> bool {
@@ -238,27 +228,6 @@ fn input_exists(root: &Path, relative: &str) -> Result<bool> {
     ))
 }
 
-fn hash_file(hash: &mut Sha256, path: &Path) -> Result<()> {
-    let mut file = std::fs::File::open(path)?;
-    let length = file.metadata()?.len();
-    hash.update(length.to_le_bytes());
-    let mut read_length = 0_u64;
-    let mut buffer = [0_u8; 65536];
-    loop {
-        let count = file.read(&mut buffer)?;
-        if count == 0 {
-            break;
-        }
-        read_length += count as u64;
-        hash.update(&buffer[..count]);
-    }
-    ensure!(
-        read_length == length,
-        "fingerprint input length changed while reading"
-    );
-    Ok(())
-}
-
 #[derive(Debug, PartialEq, Eq)]
 struct SourceInventory {
     paths: BTreeSet<String>,
@@ -338,28 +307,28 @@ fn source_inventory(root: &Path) -> Result<SourceInventory> {
 /// Each path frames one tag (`deleted`, `present` with the file bytes, or `symlink` with the link
 /// text), so no two entry kinds share a hash input.
 fn hash_source_inventory(root: &Path, inventory: &SourceInventory) -> Result<String> {
-    let mut hash = Sha256::new();
-    framed(&mut hash, b"api-readiness-source-v4");
+    let mut hash = Sha256Hasher::new();
+    hash.update_length_framed(b"api-readiness-source-v4");
     for path in &inventory.paths {
         let entry = input_entry(root, path, inventory.symlinks.contains(path))?;
         ensure!(
             matches!(entry, InputEntry::Absent) == inventory.deleted.contains(path),
             "fingerprint source input presence changed after inventory: {path}"
         );
-        framed(&mut hash, path.as_bytes());
+        hash.update_length_framed(path.as_bytes());
         match entry {
-            InputEntry::Absent => framed(&mut hash, b"deleted"),
+            InputEntry::Absent => hash.update_length_framed(b"deleted"),
             InputEntry::RegularFile => {
-                framed(&mut hash, b"present");
-                hash_file(&mut hash, &root.join(path))?;
+                hash.update_length_framed(b"present");
+                hash.update_file_length_framed(&root.join(path))?;
             }
             InputEntry::TrackedSymlink(link_text) => {
-                framed(&mut hash, b"symlink");
-                framed(&mut hash, link_text.as_os_str().as_encoded_bytes());
+                hash.update_length_framed(b"symlink");
+                hash.update_length_framed(link_text.as_os_str().as_encoded_bytes());
             }
         }
     }
-    Ok(format!("{:x}", hash.finalize()))
+    Ok(hash.finalize_hex())
 }
 
 pub(super) fn source(root: &Path) -> Result<String> {
@@ -374,44 +343,44 @@ pub(super) fn source(root: &Path) -> Result<String> {
 
 /// Property settings sort names and frame raw OS bytes, including unknown future options.
 fn hash_property_environment(
-    hash: &mut Sha256,
+    hash: &mut Sha256Hasher,
     environment: impl IntoIterator<Item = (OsString, OsString)>,
 ) {
     let property_environment: BTreeMap<_, _> = environment
         .into_iter()
         .filter(|(name, _)| name.as_encoded_bytes().starts_with(b"PROPTEST_"))
         .collect();
-    framed(hash, b"property-environment");
+    hash.update_length_framed(b"property-environment");
     hash.update((property_environment.len() as u64).to_le_bytes());
     for (name, value) in property_environment {
-        framed(hash, name.as_encoded_bytes());
-        framed(hash, value.as_encoded_bytes());
+        hash.update_length_framed(name.as_encoded_bytes());
+        hash.update_length_framed(value.as_encoded_bytes());
     }
 }
 
 /// Hash raw configuration inputs and environment overrides conservatively: even a
 /// changed overridden file invalidates evidence. Values never appear in diagnostics.
 pub(super) fn configuration(root: &Path) -> Result<String> {
-    let mut hash = Sha256::new();
-    framed(&mut hash, b"api-readiness-configuration-v2");
+    let mut hash = Sha256Hasher::new();
+    hash.update_length_framed(b"api-readiness-configuration-v2");
     for relative in CONFIGURATION_FILES {
-        framed(&mut hash, relative.as_bytes());
+        hash.update_length_framed(relative.as_bytes());
         let exists = input_exists(root, relative)?;
         hash.update([u8::from(exists)]);
         if exists {
-            hash_file(&mut hash, &root.join(relative))?;
+            hash.update_file_length_framed(&root.join(relative))?;
         }
     }
     hash_property_environment(&mut hash, std::env::vars_os());
     for name in CONFIGURATION_ENVIRONMENT {
-        framed(&mut hash, name.as_bytes());
+        hash.update_length_framed(name.as_bytes());
         let value = std::env::var_os(name);
         hash.update([u8::from(value.is_some())]);
         if let Some(value) = value {
-            framed(&mut hash, value.as_encoded_bytes());
+            hash.update_length_framed(value.as_encoded_bytes());
         }
     }
-    Ok(format!("{:x}", hash.finalize()))
+    Ok(hash.finalize_hex())
 }
 
 #[cfg(test)]

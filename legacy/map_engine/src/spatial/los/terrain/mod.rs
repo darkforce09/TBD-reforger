@@ -18,3 +18,19 @@ pub mod scheduler;
 
 /// Viewshed.
 pub mod viewshed;
+
+#[cfg(test)]
+#[path = "tests/viewshed_fixtures.rs"]
+mod viewshed_fixtures;
+
+#[cfg(test)]
+#[path = "tests/sampler_tests.rs"]
+mod sampler_tests;
+
+#[cfg(test)]
+#[path = "tests/viewshed_tests.rs"]
+mod viewshed_tests;
+
+#[cfg(test)]
+#[path = "tests/scheduler_tests.rs"]
+mod scheduler_tests;

@@ -11,7 +11,7 @@ use crate::overlay::symbology::instances::patches::unselected_row_patch_for;
 use crate::overlay::symbology::instances::symbols::SLOT_ICON_STRIDE;
 use crate::overlay::symbology::instances::symbols::pack_cluster_instances;
 use crate::overlay::symbology::roles::classify::SIDE_BLUFOR_RGBA;
-use crate::world::scene::EVERON_BOUNDS;
+use map_coordinates::terrain_frames::EVERON_BOUNDS;
 use std::collections::HashSet;
 use wasm_bindgen::prelude::*;
 

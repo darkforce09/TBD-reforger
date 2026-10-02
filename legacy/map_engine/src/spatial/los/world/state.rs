@@ -9,7 +9,7 @@ use crate::spatial::los::world::coverage_1::PrefabInfo;
 use crate::spatial::los::world::coverage_1::PrefabOccluder;
 use crate::spatial::los::world::descriptor::PrefabDescriptor;
 use crate::spatial::los::world::placed::ChunkOccluder;
-use crate::streaming::scheduler::chunk_math::TerrainSizeM;
+use map_coordinates::chunk_math::TerrainSizeM;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::sync::Arc;

@@ -20,17 +20,17 @@ crate-type = ["rlib"]
 default = ["scenario"]
 scenario = ["dep:serde", "dep:serde_json", "dep:thiserror", "dep:libm"]
 store = ["scenario", "dep:yrs"]
-bvh = []
-# `dep:graphics_engine` sits on `world`, the first tier above `scenario`, because code
-# from `world` upward speaks the renderer's vocabulary: `world::mesh` re-exports
-# `graphics_engine::draw::triangulate`, which the frontend's native building viewer calls,
-# and `overlay::lod` re-exports `text::scale::REF_ZOOM` for the label glyph math the streaming
-# belts reach. `scenario` is the one tier without it, so `cargo tree -p api` carries no
-# graphics crate, no png, no rkyv and no flate2.
-world = ["bvh", "dep:png", "dep:graphics_engine"]
-io = ["world", "scenario", "serde_json/float_roundtrip", "dep:rkyv"]
+bvh = ["dep:geometry_primitives"]
+# `dep:graphics_engine` and `dep:render_primitives` sit on `world`, the first tier above
+# `scenario`, because code from `world` upward speaks the renderer's vocabulary: `world::mesh`
+# composes meshes with `render_primitives::draw::{compose, triangulate}`, and the label glyph
+# math the streaming belts reach packs `render_primitives::text` instances. `scenario` is the one
+# tier without them, so `cargo tree -p api` carries no graphics crate, no png, no rkyv and no
+# flate2.
+world = ["bvh", "dep:png", "dep:graphics_engine", "dep:render_primitives"]
+io = ["world", "scenario", "serde_json/float_roundtrip", "dep:rkyv", "dep:world_file_formats"]
 streaming = ["io", "dep:flate2"]
-render = ["streaming", "dep:graphics_engine"]
+render = ["streaming", "dep:graphics_engine", "dep:browser_platform"]
 # The editing tier drives the STREAMED world, not just the static one: the line-of-sight tool's
 # object layer washes a viewshed by testing cells against the world occluder, whose frame convention
 # and traversal live under `spatial/los/world` — which is `streaming`'s. So the honest edge for
@@ -42,6 +42,14 @@ editing = ["store", "world", "streaming"]
 # The pure renderer. The arrow points one way: the map engine speaks the renderer's frame
 # vocabulary; the renderer never learns a map noun.
 graphics_engine = { path = "../graphics_engine", optional = true }
+# The renderer's GPU-free half: instance layouts, line geometry, mesh composition, glyph text,
+# frame ids, the camera uniform and damage tracking, behind `world`.
+render_primitives = { workspace = true, optional = true }
+# The geometry crates: vector products, segment tests, rigid transforms and boxes behind `bvh`;
+# the map coordinates and the cameras, which every tier links (`camera` is ungated).
+geometry_primitives = { workspace = true, optional = true }
+map_coordinates = { workspace = true }
+camera_math = { workspace = true }
 bytemuck = { workspace = true, features = ["derive", "min_const_generics"] }
 png = { workspace = true, optional = true }
 serde = { workspace = true, features = ["derive"], optional = true }
@@ -53,7 +61,9 @@ libm = { version = "0.2", optional = true }
 yrs = { version = "0.27", optional = true }
 flate2 = { workspace = true, optional = true }
 # Validation and endian settings are part of the shared on-disk format.
-rkyv = { version = "0.8.18", optional = true, default-features = false, features = ["std", "bytecheck", "little_endian"] }
+rkyv = { workspace = true, optional = true, features = ["std", "bytecheck", "little_endian"] }
+# The on-disk formats behind `io`.
+world_file_formats = { workspace = true, optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wgpu = { workspace = true, features = ["webgpu", "webgl", "wgsl"] }
@@ -69,7 +79,8 @@ web-sys = { workspace = true, features = [
 ] }
 console_error_panic_hook = { workspace = true }
 futures = { workspace = true }
-gloo-net = { workspace = true }
+# The browser console macros and fetch helpers the `render` tier logs and loads through.
+browser_platform = { workspace = true, optional = true }
 
 [dev-dependencies]
 serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }

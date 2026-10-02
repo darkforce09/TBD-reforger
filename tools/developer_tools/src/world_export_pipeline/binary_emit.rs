@@ -40,14 +40,15 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use serde_json::Value;
 
-use map_engine::io::containers::header::ContainerHeader;
-use map_engine::io::containers::tbdc::TbdcHeader;
-use map_engine::io::pod::instance::ObjectInstancePod;
-use map_engine::io::pod::instance::instances_to_bytes;
 use map_engine::world::environment::buildings::prefab::build_prefab_maps;
 use map_engine::world::environment::buildings::prefab::narrow_prefab_rows;
 use map_engine::world::environment::classify::NO_CLASS;
 use map_engine::world::environment::classify::narrow_instance_row_v2;
+use world_file_formats::containers::header::ContainerHeader;
+use world_file_formats::containers::tbdc::TbdcHeader;
+use world_file_formats::ids::InstancePrefabId;
+use world_file_formats::pod::instance::ObjectInstancePod;
+use world_file_formats::pod::instance::instances_to_bytes;
 
 /// Prefab id (`pid.to_bits()`, the loader's key) → render-class code, for the prefab catalogue
 /// document `build-objects` is about to write.
@@ -82,7 +83,7 @@ pub fn pods_from_rows(rows: &[Value], class_by_pid: &HashMap<u64, u8>) -> Vec<Ob
             scale: r.scale as f32,
             // `pid as u16` is the loader's `prefab_idx` store verbatim (JS `Uint16Array`); everon
             // pids top out at 1623, three orders of magnitude below the wrap.
-            prefab_id: r.pid as u16,
+            prefab_id: InstancePrefabId::new(r.pid as u16),
             class_code: class_by_pid
                 .get(&r.pid.to_bits())
                 .copied()

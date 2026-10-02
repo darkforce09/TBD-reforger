@@ -8,9 +8,9 @@ use std::io::BufRead as _;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
-use map_engine::io::containers::tbde::TbdeHeader;
 use map_engine::world::terrain::dem::raw as dem_raw;
 use serde_json::{Map, Value, json};
+use world_file_formats::containers::tbde::TbdeHeader;
 
 use super::chunk_partitioner::CHUNK_SIZE_M;
 use super::classify::{Classifier, Rules, load_rules};

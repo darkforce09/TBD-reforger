@@ -9,7 +9,7 @@ use crate::world::architecture::compound::assembly::CoverTier;
 use crate::world::architecture::compound::assembly::PlacementSource;
 use crate::world::architecture::compound::doors::DoorRecord;
 use crate::world::architecture::compound::doors::DoorState;
-use crate::world::architecture::compound::transform::Rigid;
+use geometry_primitives::rigid_transform::Rigid;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;

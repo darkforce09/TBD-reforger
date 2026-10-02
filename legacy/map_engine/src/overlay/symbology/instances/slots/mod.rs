@@ -117,21 +117,6 @@ pub use crate::overlay::symbology::roles::classify::unit_role_class;
 /// Re-export `crate::overlay::symbology::roles::classify::vehicle_kind_for_alias`.
 pub use crate::overlay::symbology::roles::classify::vehicle_kind_for_alias;
 
-/// Re-export `crate::overlay::symbology::instances::packing::pack_icon_instance`.
-pub use crate::overlay::symbology::instances::packing::pack_icon_instance;
-
-/// Re-export `crate::overlay::symbology::instances::packing::pack_icon_instance_yaw`.
-pub use crate::overlay::symbology::instances::packing::pack_icon_instance_yaw;
-
-/// Re-export `crate::overlay::symbology::instances::packing::pack_rgba_u32`.
-pub use crate::overlay::symbology::instances::packing::pack_rgba_u32;
-
-/// Re-export `crate::overlay::symbology::instances::packing::screen_yaw_for_heading_deg`.
-pub use crate::overlay::symbology::instances::packing::screen_yaw_for_heading_deg;
-
-/// Re-export `crate::overlay::symbology::instances::packing::yaw_to_snorm16`.
-pub use crate::overlay::symbology::instances::packing::yaw_to_snorm16;
-
 /// Re-export `crate::overlay::symbology::instances::drag::DragGpuPhase`.
 pub use crate::overlay::symbology::instances::drag::DragGpuPhase;
 

@@ -5,8 +5,8 @@
 //! that share a layout share a variant however different the things they depict.
 
 use crate::frame::buffers::{IndexedMesh, InstanceBuffer, VertexStream};
-use crate::frame::ids::{BindGroupId, LaneId, PipelineId};
 use crate::frame::text::TextRun;
+use render_primitives::frame::ids::{BindGroupId, LaneId, PipelineId};
 
 /// What a batch draws, by vertex layout.
 pub enum DrawPayload {

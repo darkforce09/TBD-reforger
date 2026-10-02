@@ -28,7 +28,7 @@ pub(super) const MANIFEST: &str =
     "[package]\nname = \"graphics_engine\"\n\n[dependencies]\nbytemuck = \"1\"\n";
 
 /// The map engine's pinned residue, at exactly the counts [`RULE3B_PIN`] and [`RULE3A_PIN`]
-/// claim — 3 GPU-module sites and 2 more in `pump.rs`, and 8 frame-vocabulary re-exports.
+/// claim — 3 GPU-module sites and 2 more in `pump.rs`, and 5 frame-vocabulary re-exports.
 /// The fixture mirrors the real shape rather than stubbing the pins out, so the pins
 /// themselves are under test: change a count in either table and these fixtures stop
 /// matching it. The prose line below is the one that names `r#loop` and no `frame` path —
@@ -38,11 +38,8 @@ pub use graphics_engine::device::buffers;
 pub use graphics_engine::pipeline as pipelines;
 /// Re-export `graphics_engine::r#loop::{FrameTarget, RafPump}`.
 pub use pump::{FrameTarget, RafPump};
-pub use graphics_engine::frame::damage;
 pub use graphics_engine::frame::packet;
 pub use graphics_engine::frame::present;
-pub use graphics_engine::frame::CameraUniform;
-pub use graphics_engine::frame::{BindGroupId, LaneId, PipelineId};
 pub use graphics_engine::frame::{DrawBatch, DrawPayload, FramePacket, IndirectDraw};
 pub use graphics_engine::frame::{IndexedMesh, InstanceBuffer, VertexStream};
 pub use graphics_engine::frame::{

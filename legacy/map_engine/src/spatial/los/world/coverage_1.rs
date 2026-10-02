@@ -5,13 +5,13 @@
 
 use crate::spatial::bvh::surface::SurfaceKind;
 use crate::spatial::los::interior::walker::Owner;
-use crate::spatial::los::world::descriptor::Bounds3;
 use crate::spatial::los::world::descriptor::PrefabDescriptor;
 use crate::spatial::los::world::placed::ChunkOccluder;
 use crate::spatial::los::world::placed::WorldInstance;
 use crate::spatial::los::world::state::WorldOccluder;
 use crate::world::architecture::blueprint::attribution_1::LosHit;
 use crate::world::architecture::compound::instances::Instance;
+use geometry_primitives::axis_aligned_box::Bounds3;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::sync::Arc;

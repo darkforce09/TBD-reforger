@@ -55,7 +55,7 @@ census.
   1,623 prefabs, each with its resource name, kind, class, classification, spatial box and
   gameplay traits; its entry `i` is the prefab that `prefabId` `i` in a chunk row names.
 - Schema: the JSON files follow the schemas in `contracts/definitions/` named in the table; the
-  archive types are in `legacy/map_engine/src/io/archives/` (`prefabs.rs`, `forest.rs`).
+  archive types are in `crates/world_formats/world_file_formats/src/archives/` (`prefabs.rs`, `forest.rs`).
   The prefab and region archives carry archive schema version 1 and refuse another;
   `type-inventory.rkyv` carries none, and the census inside `prefabs.rkyv` is the checked copy.
 - Adding a file: never by hand. `cargo xtask map export-terrain everon --phase <phase>` rewrites
@@ -96,4 +96,4 @@ census.
 
 - [World asset loaders](/legacy/map_engine/src/streaming/loaders/README.md) — how these
   files are fetched, parsed and made resident.
-- [Map data archives](/legacy/map_engine/src/io/archives/README.md) — the rkyv archives.
+- [Map data archives](/crates/world_formats/world_file_formats/src/archives/README.md) — the rkyv archives.

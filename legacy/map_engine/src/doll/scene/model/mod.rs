@@ -36,12 +36,6 @@ pub use crate::doll::scene::instances::instances;
 /// Re-export `crate::doll::scene::instances::state_color`.
 pub use crate::doll::scene::instances::state_color;
 
-/// Re-export `crate::camera::orbit::projection::view_proj_gl`.
-pub use crate::camera::orbit::projection::view_proj_gl;
-
-/// Re-export `crate::camera::orbit::projection::view_proj_wgpu`.
-pub use crate::camera::orbit::projection::view_proj_wgpu;
-
 /// Re-export `crate::doll::interaction::picking::anchor_px`.
 pub use crate::doll::interaction::picking::anchor_px;
 

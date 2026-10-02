@@ -63,8 +63,10 @@ build covers, and a browser half (the `live` modules), which compiles for `wasm3
 
 ## Boundaries
 
-- Depends on: `map_engine` (`world`, `spatial`, `streaming`, `frame`, `overlay::lanes`,
-  `camera::ortho` and the viewshed texture of `editing::tools::line_of_sight`), with the `io`
+- Depends on: `camera_math` (`ortho`), `geometry_primitives` (`Rigid`), `render_primitives`
+  (triangulation) and `browser_platform` (`fetch`); `map_engine` (`world`, `spatial`,
+  `streaming`, `frame`, `overlay::lanes` and the viewshed texture of
+  `editing::tools::line_of_sight`), with the `io`
   feature `apps/frontend/Cargo.toml` enables for the blueprint raycaster; `gloo_net`,
   `futures`, `js_sys`, `wasm_bindgen` and `web_sys` in the browser build. The data viewer depends
   on `crate::v2::core::api` (its anonymous reads and the equipment data viewer DTOs), and the

@@ -33,6 +33,8 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
+use geometry_primitives::axis_aligned_box::Bounds3;
+use geometry_primitives::rigid_transform::Rigid;
 use map_engine::spatial::bvh::sidecar::BvhSidecar;
 use map_engine::spatial::bvh::sidecar::emit_bytes;
 use map_engine::spatial::bvh::sidecar::lift_verts;
@@ -41,7 +43,6 @@ use map_engine::spatial::bvh::surface::SurfaceKind;
 use map_engine::spatial::bvh::traversal::Bvh;
 use map_engine::spatial::los::world::descriptor::BlasEntry;
 use map_engine::spatial::los::world::descriptor::BlasManifest;
-use map_engine::spatial::los::world::descriptor::Bounds3;
 use map_engine::spatial::los::world::descriptor::DESCRIPTOR_SCHEMA_VERSION;
 use map_engine::spatial::los::world::descriptor::DescEntry;
 use map_engine::spatial::los::world::descriptor::MANIFEST_SCHEMA_VERSION;
@@ -52,7 +53,6 @@ use map_engine::world::architecture::compound::assembly::PlacementSource;
 use map_engine::world::architecture::compound::instances::InstanceKind;
 use map_engine::world::architecture::compound::instances::InstanceRecord;
 use map_engine::world::architecture::compound::instances::LocalTransform;
-use map_engine::world::architecture::compound::transform::Rigid;
 use serde_json::Value;
 
 use super::batch::{Asset, Walker, classify_prefab, cover_for_prefab, slug_of, write_if_changed};

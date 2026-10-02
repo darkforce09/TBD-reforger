@@ -55,7 +55,7 @@ its lanes, `set_lane_opacity` re-tints a texture lane in place, and `set_grid` b
   `crate::diagnostics`, the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
   document host and tools, and the debug apps in
   `apps/frontend/src/v2/apps/debug/`.
-- `lod`: the zoom gates, `REF_ZOOM`, `INSTANCE_BUDGET` and the contour interval, for
+- `lod`: the zoom gates, `INSTANCE_BUDGET` and the contour interval, for
   `crate::streaming` (bridge, buffers, scheduler) and `crate::world` (vegetation, relief).
 - `lanes_prefs`: `set_world_layer_visible`, `set_lane_opacity`, `set_grid` and `set_clear_color`
   on `RenderEngine`, for `crate::streaming::host` and `crate::streaming::loaders::world_loader`,
@@ -69,9 +69,9 @@ its lanes, `set_lane_opacity` re-tints a texture lane in place, and `set_grid` b
 
 ## Boundaries
 
-- Depends on: `crate::frame` (`RenderEngine`, `LaneId`, draw batches and payloads, bindings),
-  `crate::world::scene::ANCHOR` for the grid, `graphics_engine` (`draw::lines`,
-  `text::scale::REF_ZOOM`) and `wasm_bindgen`. The module needs the crate's `world` feature;
+- Depends on: `crate::frame` (`RenderEngine`, draw batches and payloads, bindings),
+  `render_primitives` (`LaneId`, the grid and line vertices), `map_coordinates::terrain_frames::ANCHOR`
+  for the grid, `graphics_engine` (`draw::lines`) and `wasm_bindgen`. The module needs the crate's `world` feature;
   `lanes` and `lod` also need `streaming`, `lanes_prefs` needs `wasm32` with `render`, and
   `symbology` gates its own files.
 - Used by: `crate::frame`, `crate::streaming`, `crate::world`, `crate::spatial::los::terrain`,

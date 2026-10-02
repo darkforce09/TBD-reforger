@@ -3,9 +3,9 @@ use std::fs;
 use std::path::{Component, Path, PathBuf};
 
 use anyhow::{Context, Result, bail, ensure};
+use content_digest::sha256_hex;
 use serde::de::{Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 use serde_json::{Map, Number, Value};
-use sha2::{Digest, Sha256};
 
 use super::FileDigest;
 
@@ -38,7 +38,7 @@ pub(super) fn child(root: &Path, relative: &str) -> Result<PathBuf> {
 pub(super) fn digest(bytes: &[u8]) -> FileDigest {
     FileDigest {
         bytes: bytes.len() as u64,
-        sha256: format!("{:x}", Sha256::digest(bytes)),
+        sha256: sha256_hex(bytes),
     }
 }
 

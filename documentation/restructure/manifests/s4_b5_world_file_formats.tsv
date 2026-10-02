@@ -1,0 +1,17 @@
+# Stage S4 B5 — the map engine's on-disk formats become the world_file_formats crate. Paths name the tree before the move.
+kind	from	to	scope
+#
+# the archive round-trip tests and the container header tests leave the two re-export modules
+# (archives/models, containers/headers), which are then deleted, and sit beside the modules they test
+path	legacy/map_engine/src/io/archives/models/tests/mod.rs	crates/world_formats/world_file_formats/src/archives/tests/archive_round_trip_fixtures.rs
+path	legacy/map_engine/src/io/archives/models/tests/cases_1.rs	crates/world_formats/world_file_formats/src/archives/tests/archive_round_trip_tests.rs
+path	legacy/map_engine/src/io/containers/headers/tests/mod.rs	crates/world_formats/world_file_formats/src/containers/tests/container_header_fixtures.rs
+path	legacy/map_engine/src/io/containers/headers/tests/cases_1.rs	crates/world_formats/world_file_formats/src/containers/tests/container_header_tests.rs
+path	legacy/map_engine/src/io/containers/headers/tests/README.md	crates/world_formats/world_file_formats/src/containers/tests/README.md
+#
+# the module root becomes the crate root, and the rest of the folder becomes the crate's sources
+path	legacy/map_engine/src/io/mod.rs	crates/world_formats/world_file_formats/src/lib.rs
+path	legacy/map_engine/src/io	crates/world_formats/world_file_formats/src
+#
+# the moved code names its own items from the crate root
+rust_path	crate::io::	crate::	legacy/map_engine/src/io

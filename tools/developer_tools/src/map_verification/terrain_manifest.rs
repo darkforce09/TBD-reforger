@@ -3,14 +3,14 @@ use crate::repository_layout::{definition_path, terrain_dir, terrain_manifest_pa
 #[cfg(test)]
 use crate::repository_paths::find_repo_root as repo_root;
 use anyhow::{Context, Result};
-use map_engine::io::containers::header::CONTAINER_VERSION;
-use map_engine::io::pod::instance::POD_BYTES;
-use map_engine::io::pod::instance::POD_NAME;
 use map_engine::streaming::loaders::chunk_bin::chunk_bin_path;
 use map_engine::streaming::loaders::manifest::parse_manifest_binary;
 use serde_json::Value;
 use std::fs;
 use std::path::{Path, PathBuf};
+use world_file_formats::containers::header::CONTAINER_VERSION;
+use world_file_formats::pod::instance::POD_BYTES;
+use world_file_formats::pod::instance::POD_NAME;
 fn read_json(path: &Path) -> Result<Value> {
     let raw = fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
     serde_json::from_str(&raw).with_context(|| format!("parse {}", path.display()))

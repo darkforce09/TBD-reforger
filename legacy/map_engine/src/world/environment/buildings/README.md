@@ -46,10 +46,11 @@ positions made relative to the scene anchor.
 
 ## Boundaries
 
-- Depends on: `crate::io::archives` (the catalogue and census archives, `access_checked`) and
+- Depends on: `world_file_formats::archives` (the catalogue and census archives, `access_checked`) and
   `crate::world::environment::classify`; for the buffers, `crate::streaming` (`WorldResidency`,
-  the building zoom floor), `crate::frame`, `crate::overlay::lanes`, `crate::world::scene`
-  (`ANCHOR`) and `wgpu`.
+  the building zoom floor), `crate::frame`, `crate::overlay::lanes`,
+  `map_coordinates::terrain_frames` (`ANCHOR`), `render_primitives` (the building instance layout)
+  and `wgpu`.
 - Used by:
   - `crate::streaming`: the prefab and chunk loaders and the store read the catalogue; the
     scheduler's residency and queries use the lookups and rows; the scheduler, the toggles and the

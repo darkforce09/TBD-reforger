@@ -77,7 +77,7 @@ fn everon_catalog_archives_emit_and_read_back_as_their_json() {
     assert_eq!(rebuilt.prefabs.len(), json_rows.len());
     for (i, (a, j)) in rebuilt.prefabs.iter().zip(json_rows.iter()).enumerate() {
         assert_eq!(
-            f64::from(a.prefab_id),
+            f64::from(a.prefab_id.get()),
             j.prefab_id,
             "row {i}: the archive is not in prefabs.json.gz order"
         );

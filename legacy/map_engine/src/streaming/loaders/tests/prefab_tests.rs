@@ -3,10 +3,6 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::io::archives::codec::to_bytes;
-use crate::io::archives::prefabs::PrefabCatalogArchive;
-use crate::io::archives::prefabs::TypeInventory;
-use crate::io::archives::version::ARCHIVE_SCHEMA_VERSION;
 use crate::streaming::loaders::prefab::*;
 use crate::streaming::scheduler::state::WorldResidency;
 use crate::world::environment::buildings::prefab::inventory_to_archive;
@@ -15,6 +11,10 @@ use flate2::Compression;
 use flate2::write::GzEncoder;
 use std::io::Write;
 use std::path::PathBuf;
+use world_file_formats::archives::codec::to_bytes;
+use world_file_formats::archives::prefabs::PrefabCatalogArchive;
+use world_file_formats::archives::prefabs::TypeInventory;
+use world_file_formats::archives::version::ARCHIVE_SCHEMA_VERSION;
 
 const EVERON_PREFABS: usize = 1623;
 

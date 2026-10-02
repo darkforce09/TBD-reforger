@@ -1,0 +1,34 @@
+# The workspace's time: one wall-clock trait with a system, a browser and a manual clock, a
+# monotonic millisecond source for frame timing, and UTC timestamps in RFC 3339 (millisecond and
+# whole-second formatting, and the canonical-UTC validation).
+[package]
+name = "time_source"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Wall-clock and monotonic time sources and RFC 3339 UTC timestamp formatting and validation."
+
+[package.metadata.layout]
+category = "crates/foundation"
+tier = 0
+targets = "any"
+
+[dependencies]
+thiserror = { workspace = true }
+# The RFC 3339 parser behind `validate_rfc3339_utc`; formatting is hand-written.
+time = { workspace = true, features = ["parsing"] }
+
+# The browser clock and the browser monotonic source; the crate firewall admits browser crates in
+# `time_source` only from this target table.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+js-sys = { workspace = true }
+web-sys = { workspace = true, features = ["Performance", "Window"] }
+
+[dev-dependencies]
+# The `time` formatter the whole-second format is cross-checked against.
+time = { workspace = true, features = ["formatting", "parsing"] }
+
+[lints]
+workspace = true

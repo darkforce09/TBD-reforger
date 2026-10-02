@@ -69,7 +69,7 @@ impl RenderEngine {
         );
         let rect = crate::world::scene::world_rect_rel([min_x, min_y], [max_x, max_y]);
 
-        let inst = graphics_engine::layout::QuadInstance {
+        let inst = render_primitives::draw::instances::QuadInstance {
             min: [rect[0], rect[1]],
             max: [rect[2], rect[3]],
             color: [1.0, 1.0, 1.0, 1.0],

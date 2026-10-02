@@ -28,8 +28,8 @@ offset to the south, which fails if the map is drawn upside down. The promise re
 ## Boundaries
 
 - Depends on: `crate::frame` (the engine's device, queue, shader module, layouts, unit-quad and
-  calibration buffers, `CLEAR_COLOR` and the quad pipeline constructor), `crate::camera::ortho`
-  and `crate::world::scene::ANCHOR`.
+  calibration buffers, `CLEAR_COLOR` and the quad pipeline constructor), `camera_math::ortho`
+  and `map_coordinates::terrain_frames::ANCHOR`.
 - Used by: the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
   `window.__selfChecks.calibration`, published by
   `register_self_checks` in `apps/frontend/src/v2/apps/editor/bridge/viewport.rs`; the

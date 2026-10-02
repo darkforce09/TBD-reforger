@@ -8,10 +8,11 @@ use crate::frame::engine::RenderEngine;
 use crate::overlay::lanes::LaneRole;
 use crate::overlay::lanes::lane_id;
 
-use crate::frame::{DrawBatch, DrawPayload, InstanceBuffer, LaneId};
+use crate::frame::{DrawBatch, DrawPayload, InstanceBuffer};
 use crate::overlay::symbology::instances::lanes::ICON_DRAG_OFF;
 use crate::overlay::symbology::instances::symbols::SLOT_ICON_STRIDE;
 use crate::overlay::symbology::roles::classify::SIDE_BLUFOR_RGBA;
+use render_primitives::frame::ids::LaneId;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -169,13 +170,13 @@ impl RenderEngine {
                 .map_or(crate::overlay::symbology::markers::MarkerGlyph::Disc, |a| {
                     crate::overlay::symbology::markers::marker_glyph_for_alias(a)
                 }) as u16;
-            crate::overlay::symbology::instances::packing::pack_icon_instance(
+            render_primitives::text::pack::pack_icon_instance(
                 &mut icon_bytes,
                 x,
                 y,
                 crate::overlay::symbology::instances::symbols::SLOT_RING_PX,
                 glyph,
-                crate::overlay::symbology::instances::packing::pack_rgba_u32(rgba),
+                render_primitives::text::pack::pack_rgba_u32(rgba),
             );
         }
 
@@ -225,13 +226,12 @@ impl RenderEngine {
             None => {
                 let mut b = Vec::with_capacity(n * SLOT_ICON_STRIDE);
                 for (i, sel) in selected.iter().enumerate() {
-                    let tint =
-                        crate::overlay::symbology::instances::packing::pack_rgba_u32(if *sel {
-                            crate::overlay::symbology::instances::symbols::SLOT_SELECTED_RGBA
-                        } else {
-                            crate::overlay::symbology::instances::symbols::COMMENT_NOTE_RGBA
-                        });
-                    crate::overlay::symbology::instances::packing::pack_icon_instance(
+                    let tint = render_primitives::text::pack::pack_rgba_u32(if *sel {
+                        crate::overlay::symbology::instances::symbols::SLOT_SELECTED_RGBA
+                    } else {
+                        crate::overlay::symbology::instances::symbols::COMMENT_NOTE_RGBA
+                    });
+                    render_primitives::text::pack::pack_icon_instance(
                         &mut b,
                         xy[i * 2],
                         xy[i * 2 + 1],

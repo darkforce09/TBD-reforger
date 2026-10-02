@@ -5,11 +5,11 @@
 
 use crate::spatial::bvh::sidecar::BvhSidecar;
 use crate::world::architecture::blueprint::attribution_2::collect_level_annotations;
-use crate::world::architecture::blueprint::geometry::aabb_contains_2d;
-use crate::world::architecture::blueprint::geometry::dist_2d;
-use crate::world::architecture::blueprint::geometry::point_at;
-use crate::world::architecture::blueprint::geometry::point_segment_dist_2d;
 use crate::world::architecture::blueprint::structure::BuildingBlueprint;
+use geometry_primitives::segment_geometry::aabb_contains_2d;
+use geometry_primitives::segment_geometry::dist_2d;
+use geometry_primitives::segment_geometry::point_at;
+use geometry_primitives::segment_geometry::point_segment_dist_2d;
 
 /// What a LOS ray met at one point along its path.
 #[derive(Clone, Debug, PartialEq, Eq)]

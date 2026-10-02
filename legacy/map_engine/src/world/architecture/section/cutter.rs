@@ -3,12 +3,12 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::spatial::bvh::node::cross;
-use crate::spatial::bvh::node::sub;
 use crate::spatial::bvh::sidecar::BvhSidecar;
 use crate::world::architecture::blueprint::structure::BuildingBlueprint;
 use crate::world::architecture::section::index::SparseHeights;
 use crate::world::architecture::section::index::triangles_overlapping_y;
+use geometry_primitives::vector3::cross;
+use geometry_primitives::vector3::sub;
 
 /// Heightfield cell pitch (m) — the stepped-gradient granularity.
 pub const PLAN_CELL_M: f64 = 0.2;

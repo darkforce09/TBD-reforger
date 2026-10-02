@@ -8,6 +8,7 @@ use crate::world::architecture::compound::assembly::CoverTier;
 use crate::world::architecture::compound::assembly::PlacementSource;
 use crate::world::architecture::compound::instances::InstanceKind;
 use crate::world::architecture::compound::instances::LocalTransform;
+use geometry_primitives::axis_aligned_box::Bounds3;
 
 fn record(id: &str, kind: InstanceKind, blas: &str) -> InstanceRecord {
     InstanceRecord {
@@ -130,9 +131,9 @@ fn manifest_lookups_are_binary_searches_over_sorted_entries() {
     assert_eq!(back, m);
 }
 
-use crate::io::archives::blueprints::BuildingBlueprintArchive;
-use crate::io::archives::codec::to_bytes;
-use crate::io::archives::version::ARCHIVE_SCHEMA_VERSION;
+use world_file_formats::archives::blueprints::BuildingBlueprintArchive;
+use world_file_formats::archives::codec::to_bytes;
+use world_file_formats::archives::version::ARCHIVE_SCHEMA_VERSION;
 
 fn library() -> Vec<BlasEntry> {
     vec![
@@ -361,24 +362,5 @@ fn aligned_holder_preserves_bytes_and_reads_a_misaligned_source() {
             .archive()
             .is_err(),
         "a truncated archive is an error, never a wild read"
-    );
-}
-
-#[test]
-fn bounds_union_is_componentwise() {
-    let a = Bounds3 {
-        min: [0.0, 0.0, 0.0],
-        max: [1.0, 1.0, 1.0],
-    };
-    let b = Bounds3 {
-        min: [-1.0, 0.5, 0.0],
-        max: [0.5, 2.0, 3.0],
-    };
-    assert_eq!(
-        a.union(b),
-        Bounds3 {
-            min: [-1.0, 0.0, 0.0],
-            max: [1.0, 2.0, 3.0]
-        }
     );
 }

@@ -14,8 +14,8 @@ framework; the frontend supplies the canvas, the preference readers and the page
 ```text
 legacy/map_engine/
 ├── Cargo.toml  the `map_engine` package: its feature tiers, dependencies and wasm32 crates
-├── src/        the library `map_engine`: eleven modules, each behind its feature
-└── tests/      integration suites: deck.gl camera parity and headless document operations
+├── src/        the library `map_engine`: ten modules, each behind its feature
+└── tests/      integration suites: headless document operations
 ```
 
 ## How it works
@@ -31,8 +31,8 @@ belongs to (the table in the [source README](/legacy/map_engine/src/README.md)):
 
 ```text
 render ──▶ streaming ──▶ io ──▶ world ──▶ bvh
-   │           │         │        └────▶ png, graphics_engine
-   │           │         └─────▶ scenario, rkyv
+   │           │         │        └────▶ png, graphics_engine, render_primitives
+   │           │         └─────▶ scenario, rkyv, world_file_formats
    │           └──────▶ flate2
    └──────────▶ graphics_engine
 editing ──▶ store ──▶ scenario ──▶ serde, serde_json, thiserror, libm   (store adds yrs)
@@ -42,9 +42,11 @@ editing ──▶ world, streaming
 `scenario`, the default and the tier the API links, is the headless mission compiler and
 validator: it pulls no graphics crate, PNG decoder, rkyv or flate2. `store` adds the Yjs document
 (`yrs`). `world` adds the static world, spatial queries and the overlay, and links the renderer;
-`io` adds the rkyv archive formats; `streaming` adds the loader and scheduler stack (flate2);
-`render` adds the GPU frame path, the diagnostics and the doll. `editing` joins the document to
-the streamed world, so it takes `streaming` too. Browser code (canvas, fetch, image decoding,
+`io` adds the on-disk formats (the `world_file_formats` crate, which callers import directly)
+and rkyv;
+`streaming` adds the loader and scheduler stack (flate2); `render` adds the GPU frame path, the
+diagnostics and the doll. `editing` joins the document to the streamed world, so it takes
+`streaming` too. Browser code (canvas, fetch, image decoding,
 timers, the console) compiles only for wasm32; native builds keep the geometry, codecs and state
 machines and test them without a browser.
 
@@ -75,8 +77,8 @@ Cargo features, in `Cargo.toml`:
 | `scenario` (default) | `serde`, `serde_json`, `thiserror`, `libm`; `data::scenario` | the API |
 | `store` | `scenario`, `yrs`; `data::store` | the frontend |
 | `bvh` | no crate; gates `spatial::bvh`, which also needs `world` | implied by `world`; `tools/developer_tools` names it too |
-| `world` | `bvh`, `png`, `graphics_engine`; `world`, `spatial`, `overlay`, `frame` | the frontend, `tools/developer_tools` |
-| `io` | `world`, `scenario`, rkyv and float round trips in `serde_json`; `io` and `streaming`'s bridge | the frontend, `tools/developer_tools` |
+| `world` | `bvh`, `png`, `graphics_engine`, `render_primitives`; `world`, `spatial`, `overlay`, `frame` | the frontend, `tools/developer_tools` |
+| `io` | `world`, `scenario`, `world_file_formats`, rkyv and float round trips in `serde_json`; the archive-reading modules and `streaming`'s bridge | the frontend, `tools/developer_tools` |
 | `streaming` | `io`, `flate2`; the loaders, scheduler, buffers and memory ledger | the frontend on wasm32 and in its tests, `tools/developer_tools` |
 | `render` | `streaming`, `graphics_engine`; the GPU frame path, `diagnostics`, `doll` | the frontend on wasm32 |
 | `editing` | `store`, `world`, `streaming`; `editing` | the frontend |
@@ -91,19 +93,22 @@ imagery by range requests alone and never fetches the whole bundle, and `t9382=1
 
 - The library `map_engine`: `data::scenario` for the API's missions and operations
   domains; `data`, `editing`, `world`, `streaming`, `spatial`, `overlay`, `frame`, `camera` and
-  `doll` for the frontend; `world`, `io`, `spatial`, `streaming` and `overlay` for the offline
-  tools.
+  `doll` for the frontend; `world`, `spatial`, `streaming` and `overlay` for the offline tools.
 - The JavaScript-facing methods of `RenderEngine` and `DollEngine` (`#[wasm_bindgen]`), which the
   frontend calls from Rust and the editor gate reaches through the globals the Mission Creator
   publishes (`window.__selfChecks`, `window.__editorBench`, `window.__arsenalDoll`).
 
 ## Boundaries
 
-- Depends on: `graphics_engine` (optional, from the `world` tier up); `serde`,
+- Depends on: `graphics_engine` and `render_primitives` (optional, from the `world` tier up);
+  `world_file_formats` (from the `io` tier up); `serde`,
   `serde_json`, `thiserror`, `libm`, `yrs`, `png`, `rkyv`, `flate2` and `bytemuck`; on
-  wasm32, `wgpu`, `wasm-bindgen`, `wasm-bindgen-futures`, `js-sys`, `web-sys`, `gloo-net`,
-  `futures` and `console_error_panic_hook`; `contracts/rules/kit-aliases.json`; and at run
-  time the terrain assets of `assets/terrains/`, which the API serves under `/map-assets`.
+  wasm32, `wgpu`, `wasm-bindgen`, `wasm-bindgen-futures`, `js-sys`, `web-sys`, `futures`,
+  `console_error_panic_hook` and `browser_platform` (from the `render` tier up);
+  `contracts/rules/kit-aliases.json`; and at run time the terrain assets of `assets/terrains/`,
+  which the API serves under `/map-assets`.
+  The geometry crates: `map_coordinates` and `camera_math` on every tier, and
+  `geometry_primitives` from the `bvh` tier up.
   Its tests also use `jsonschema` (dev-dependency), which validates the ballistics catalog sample
   against `contracts/definitions/ballistics-catalog.schema.json`.
 - Used by:
@@ -119,9 +124,8 @@ imagery by range requests alone and never fetches the whole bundle, and `t9382=1
     6); the rules inside the crate are listed in the source README;
   - the API's tier stays thin: `data/scenario/` names no module of a higher tier and no graphics
     crate (rule 4; the source README gives the gate's exact list);
-  - the tests run with `--all-features` (`map_engine_tests_require_all_features`), and the camera
-    matches deck.gl's orthographic viewport over 300 golden cases
-    (`tests/deckgl_ortho_parity.rs`).
+  - the tests run with `--all-features` (`map_engine_tests_require_all_features`); the camera's
+    deck.gl parity suite runs in `crates/geometry/camera_math/`.
 
 ## Related documentation
 

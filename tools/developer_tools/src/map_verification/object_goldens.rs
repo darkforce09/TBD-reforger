@@ -14,13 +14,13 @@ use serde_json::{Value, json};
 use crate::world_export_pipeline::binary_emit::{
     class_code_table, pods_from_rows, write_chunk_bin,
 };
-use map_engine::io::containers::header::CONTAINER_VERSION;
-use map_engine::io::containers::header::HEADER_BYTES;
-use map_engine::io::pod::instance::POD_BYTES;
 use map_engine::streaming::loaders::chunk::parse_chunk;
 use map_engine::streaming::loaders::chunk_bin::parse_chunk_bin_for;
 use map_engine::world::environment::buildings::prefab::build_prefab_maps;
 use map_engine::world::environment::buildings::prefab::narrow_prefab_rows;
+use world_file_formats::containers::header::CONTAINER_VERSION;
+use world_file_formats::containers::header::HEADER_BYTES;
+use world_file_formats::pod::instance::POD_BYTES;
 
 mod spatial_invariants;
 

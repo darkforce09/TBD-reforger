@@ -10,9 +10,9 @@ fn entries(values: &[(&str, &str)]) -> Vec<(OsString, OsString)> {
 }
 
 fn fingerprint(environment: impl IntoIterator<Item = (OsString, OsString)>) -> String {
-    let mut hash = Sha256::new();
+    let mut hash = Sha256Hasher::new();
     hash_property_environment(&mut hash, environment);
-    format!("{:x}", hash.finalize())
+    hash.finalize_hex()
 }
 
 #[test]
@@ -134,7 +134,7 @@ fn framing_matches_the_existing_length_prefixed_configuration_encoding() {
     expected_bytes.extend_from_slice(b"PROPTEST_RNG_SEED");
     expected_bytes.extend_from_slice(&2_u64.to_le_bytes());
     expected_bytes.extend_from_slice(b"99");
-    assert_eq!(actual, digest(&expected_bytes));
+    assert_eq!(actual, content_digest::sha256_hex(&expected_bytes));
 }
 
 #[cfg(unix)]

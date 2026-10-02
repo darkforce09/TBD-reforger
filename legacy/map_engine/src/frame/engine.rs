@@ -10,17 +10,17 @@
 //! `ANCHOR`, which had already gone there in Phase 1D. `CLEAR_COLOR` stayed: it is a render
 //! target's clear value, not a fact about Everon.
 
-use crate::camera::ortho::state::OrthoCamera;
 use crate::diagnostics::timing::gpu::GpuTimer;
 use crate::frame::DrawBatch;
-use crate::frame::LaneId;
 use crate::frame::upload::text::TextAtlasGpu;
 use crate::overlay::symbology::atlas::gpu::GlyphAtlasGpu;
 use crate::overlay::symbology::instances::bridge_1::SlotAtlasGpu;
 use crate::overlay::symbology::instances::bridge_1::SlotGpuBridge;
 use crate::world::terrain::satellite::textures::PendingTex;
 use crate::world::terrain::satellite::textures::TexLane;
-use graphics_engine::layout::QuadInstance;
+use camera_math::ortho::state::OrthoCamera;
+use render_primitives::draw::instances::QuadInstance;
+use render_primitives::frame::ids::LaneId;
 use wasm_bindgen::prelude::*;
 
 /// Background clear — (51, 68, 85, 255)/255. The f64→f32→unorm8 chain error (< 1.2e-7) is four orders of magnitude under the unorm8 rounding margin (1/510 ≈ 2e-3), so readback bytes are forced exactly (plan §S4 margin argument).
@@ -301,7 +301,7 @@ pub struct RenderEngine {
     pub(crate) timer: Option<GpuTimer>,
 
     /// Damage.
-    pub(crate) damage: crate::frame::damage::RenderDamage,
+    pub(crate) damage: render_primitives::frame::damage::RenderDamage,
 
     /// Submitted last frame.
     pub(crate) submitted_last_frame: bool,

@@ -3,14 +3,14 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::camera::ortho::state::OrthoCamera;
 use crate::diagnostics::readback::scene::map_read_4;
 use crate::diagnostics::readback::scene::padded_bytes_per_row;
 use crate::frame::engine::CLEAR_COLOR;
 use crate::frame::engine::RenderEngine;
+use camera_math::ortho::state::OrthoCamera;
 
 use crate::frame::pipelines::vector::create_polygon_pipeline;
-use crate::world::scene::ANCHOR;
+use map_coordinates::terrain_frames::ANCHOR;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -58,7 +58,7 @@ impl RenderEngine {
             ];
             let mut verts = Vec::with_capacity(4);
             for p in corners {
-                verts.push(graphics_engine::layout::LineVertex {
+                verts.push(render_primitives::draw::geometry::LineVertex {
                     pos: p,
                     color: road,
                 });

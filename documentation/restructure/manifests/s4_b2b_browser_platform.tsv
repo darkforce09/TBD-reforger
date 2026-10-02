@@ -1,0 +1,6 @@
+# Stage S4a, agent B2b — the browser_platform crate. Paths name the tree before the moves.
+kind	from	to	scope
+#
+# the map engine's browser console macros and same-origin fetch helpers become the crate's modules
+path	legacy/map_engine/src/diagnostics/platform/console.rs	crates/foundation/browser_platform/src/console.rs
+path	legacy/map_engine/src/streaming/loaders/fetch.rs	crates/foundation/browser_platform/src/fetch.rs

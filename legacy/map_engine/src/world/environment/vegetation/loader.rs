@@ -3,7 +3,6 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::io::density::tbdd::decode_tbdd;
 use crate::overlay::lod::class_visible;
 use crate::world::environment::vegetation::density::CHUNKS_PER_AXIS;
 use crate::world::environment::vegetation::density::EVERON_DENSITY_BINS;
@@ -15,6 +14,7 @@ use crate::world::environment::vegetation::mass::forest_fill_alpha;
 use crate::world::environment::vegetation::mass::forest_outline_segments_from_corners;
 use crate::world::mesh::FOREST_OUTLINE_RGBA;
 use crate::world::mesh::compose_contour_hairlines;
+use world_file_formats::density::tbdd::decode_tbdd;
 
 use crate::frame::EngineHandle;
 use crate::streaming::bridge::progress::BootEvent;
@@ -23,7 +23,7 @@ use crate::streaming::bridge::progress::BootSeg;
 use crate::streaming::bridge::statistics::BridgeHandle;
 use crate::streaming::bridge::statistics::publish;
 use crate::streaming::bridge::statistics::publish_engine;
-use crate::streaming::loaders::fetch::fetch_bytes;
+use browser_platform::fetch::fetch_bytes;
 
 /// Planned density bins.
 #[must_use]

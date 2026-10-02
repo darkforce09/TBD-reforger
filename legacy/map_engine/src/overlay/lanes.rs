@@ -9,7 +9,7 @@
 //! moved. The 48 identities are cartography — `Sea`, `Contours`, `RoadsCasing`, `Landcover`,
 //! `ForestOutline`, `AirfieldApron` — and they belong with the map, not under a `pipeline/`
 //! directory in a renderer. The renderer's half of this went opaque in Phase 1D.1 and is
-//! `crate::frame::LaneId`, which carries no name at all.
+//! `render_primitives::frame::ids::LaneId`, which carries no name at all.
 
 /// Lane role.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -227,9 +227,9 @@ pub fn lane_order(role: LaneRole) -> u8 {
 /// own, which also preserves the order those two have always drawn in (the calibration quads
 /// are pushed after the stress chunks and paint over them).
 #[must_use]
-pub fn lane_id(role: LaneRole) -> crate::frame::LaneId {
+pub fn lane_id(role: LaneRole) -> render_primitives::frame::ids::LaneId {
     let bump = u16::from(matches!(role, LaneRole::Calibration));
-    crate::frame::LaneId(u16::from(lane_order(role)) * 2 + bump)
+    render_primitives::frame::ids::LaneId(u16::from(lane_order(role)) * 2 + bump)
 }
 
 /// Canonical all lanes value.

@@ -1,6 +1,7 @@
 use super::*;
 
 use crate::repository_layout;
+use world_file_formats::ids::WaterFeatureId;
 
 /// Spec §3.3: a coarse texel keeps the **deepest** depth of the block it covers.
 ///
@@ -94,11 +95,12 @@ pub(super) fn f32_field(v: &Value, key: &str, what: &str) -> Result<f32> {
     Ok(n as f32)
 }
 
-pub(super) fn id_field(v: &Value, what: &str) -> Result<String> {
-    Ok(v.get("id")
-        .and_then(Value::as_str)
-        .with_context(|| format!("{what}: missing string `id`"))?
-        .to_string())
+pub(super) fn id_field(v: &Value, what: &str) -> Result<WaterFeatureId> {
+    Ok(WaterFeatureId::new(
+        v.get("id")
+            .and_then(Value::as_str)
+            .with_context(|| format!("{what}: missing string `id`"))?,
+    ))
 }
 
 /// A closed ring: lakes call it `polygon`, ponds call it `perimeter`

@@ -7,7 +7,6 @@ use crate::spatial::bvh::surface::SurfaceKind;
 use crate::spatial::los::interior::walker::Owner;
 use crate::spatial::los::interior::walker::TraceEvent;
 use crate::spatial::los::interior::walker::blocked_instances_where;
-use crate::spatial::los::interior::walker::point_at;
 use crate::spatial::los::interior::walker::trace_instances;
 use crate::spatial::los::world::coverage_1::BlockPolicy;
 use crate::spatial::los::world::coverage_1::Coverage;
@@ -17,7 +16,8 @@ use crate::spatial::los::world::dda::cells_on_segment;
 use crate::spatial::los::world::placed::ChunkOccluder;
 use crate::spatial::los::world::state::WorldOccluder;
 use crate::spatial::los::world::tlas::Candidate;
-use crate::streaming::scheduler::chunk_math::chunk_id;
+use geometry_primitives::segment_geometry::point_at;
+use map_coordinates::chunk_math::chunk_id;
 
 impl WorldOccluder {
     /// Chunk cells the segment crosses, in order, with the ids of the ones that are not resident.

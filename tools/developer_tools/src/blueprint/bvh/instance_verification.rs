@@ -23,11 +23,11 @@ use std::fs;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result, bail};
+use geometry_primitives::rigid_transform::Rigid;
 use map_engine::world::architecture::compound::assembly::PlacementSource;
 use map_engine::world::architecture::compound::instances::InstanceKind;
 use map_engine::world::architecture::compound::instances::InstanceRecord;
 use map_engine::world::architecture::compound::instances::InstancesFile;
-use map_engine::world::architecture::compound::transform::Rigid;
 use serde::Deserialize;
 
 pub const POS_TOL_M: f64 = 0.02;

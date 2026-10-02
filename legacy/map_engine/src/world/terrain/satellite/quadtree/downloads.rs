@@ -50,7 +50,7 @@ pub(super) async fn fetch_tiles(
 
     while let Some((ti, pi, start, end, got)) = inflight.next().await {
         if got.is_none() {
-            crate::diagnostics::platform::console::error!(
+            browser_platform::console_error!(
                 "satellite: Range bytes={start}-{end} (tile {ti}, part {pi}) failed after \
                  {RANGE_ATTEMPTS} attempts — abandoning the full-resolution basemap"
             );

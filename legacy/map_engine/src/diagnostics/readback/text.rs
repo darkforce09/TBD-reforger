@@ -3,15 +3,15 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::camera::ortho::state::OrthoCamera;
 use crate::diagnostics::readback::scene::map_read_4;
 use crate::diagnostics::readback::scene::padded_bytes_per_row;
 use crate::frame::engine::CLEAR_COLOR;
 use crate::frame::engine::RenderEngine;
+use camera_math::ortho::state::OrthoCamera;
 
 use crate::frame::pipelines::text::create_text_pipeline;
-use crate::frame::upload::text::text_uniform_bytes;
-use crate::world::scene::ANCHOR;
+use map_coordinates::terrain_frames::ANCHOR;
+use render_primitives::text::pack::text_uniform_bytes;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -49,8 +49,7 @@ impl RenderEngine {
                 }],
             });
 
-            let (rgba, aw, ah) =
-                crate::overlay::symbology::text_metrics::atlas::bake_ascii_atlas_rgba();
+            let (rgba, aw, ah) = render_primitives::text::atlas::bake_ascii_atlas_rgba();
             let tex = device.create_texture(&wgpu::TextureDescriptor {
                 label: Some("text-self-check-atlas"),
                 size: wgpu::Extent3d {
@@ -111,7 +110,7 @@ impl RenderEngine {
                 ],
             });
 
-            let inst = graphics_engine::layout::IconInstance {
+            let inst = render_primitives::draw::instances::IconInstance {
                 pos: [0.0, 0.0],
                 size: 160.0,
                 yaw: 0,

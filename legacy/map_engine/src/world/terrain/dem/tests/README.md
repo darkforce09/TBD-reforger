@@ -8,6 +8,7 @@ Terrain decoding and sampling, hillshade and contour geometry, satellite selecti
 - `grid_tests.rs`
 - `png_tests.rs`
 - `raw_tests.rs`
+- `sampling_tests.rs`
 
 ## Boundaries
 

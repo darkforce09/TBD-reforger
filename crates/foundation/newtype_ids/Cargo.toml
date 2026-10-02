@@ -1,0 +1,27 @@
+# The newtype identifier macros: `string_id!`, `integer_id!` and `uuid_id!` declare, in the calling
+# crate, an identifier type that serialises exactly as its inner value, with an optional `sqlx,`
+# arm whose derive the caller's own sqlx resolves.
+[package]
+name = "newtype_ids"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Macros that declare serde-transparent newtype identifiers over a string, an integer or a UUID."
+
+[package.metadata.layout]
+category = "crates/foundation"
+tier = 0
+targets = "any"
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+uuid = { workspace = true, features = ["serde"] }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+uuid = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,10 +1,10 @@
 use std::path::PathBuf;
 
-use map_engine::io::containers::header::HEADER_BYTES;
-use map_engine::io::pod::instance::POD_BYTES;
 use map_engine::streaming::loaders::chunk::parse_chunk;
 use map_engine::streaming::loaders::store::bytes_to_json;
 use serde_json::json;
+use world_file_formats::containers::header::HEADER_BYTES;
+use world_file_formats::pod::instance::POD_BYTES;
 
 use super::*;
 use crate::browser_testing::server::repo_root;
@@ -149,7 +149,7 @@ fn every_everon_chunk_bin_decodes_to_the_json_columns() {
                 inst.yaw.to_bits(),
                 "{at}: offset/cast yaw"
             );
-            assert_eq!(pid, inst.prefab_id, "{at}: offset/cast prefab_id");
+            assert_eq!(pid, inst.prefab_id.get(), "{at}: offset/cast prefab_id");
             assert_eq!(cls, inst.class_code, "{at}: offset/cast class_code");
 
             assert_eq!(
@@ -207,8 +207,12 @@ fn rejected_rows_are_skipped_with_no_gap() {
     ];
     let pods = pods_from_rows(&rows, &HashMap::new());
     assert_eq!(pods.len(), 2, "the malformed row must be dropped");
-    assert_eq!(pods[0].prefab_id, 1);
-    assert_eq!(pods[1].prefab_id, 3, "no gap: row 3 moves up to index 1");
+    assert_eq!(pods[0].prefab_id.get(), 1);
+    assert_eq!(
+        pods[1].prefab_id.get(),
+        3,
+        "no gap: row 3 moves up to index 1"
+    );
 }
 
 /// An empty chunk is a real everon chunk (open ocean). It must still be a valid 32-byte frame,

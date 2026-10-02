@@ -49,7 +49,7 @@ texture layer.
 ## Boundaries
 
 - Depends on: `crate::world::terrain::dem::grid` (the vector grid) and
-  `crate::camera::math::shaping` (rounding); for the host, `crate::overlay::lod` (class gates and
+  `map_coordinates::rounding` (rounding); for the host, `crate::overlay::lod` (class gates and
   the contour interval), `crate::overlay::lanes` (lane ids), `crate::world::mesh` (the contour
   hairlines), `crate::world::terrain::water::mesh` (the sea mesh) and `crate::frame` (the engine
   handle).

@@ -44,10 +44,6 @@ pub mod diagnostics;
 #[cfg(feature = "render")]
 pub mod doll;
 
-/// On-disk formats: archives, containers, density grids and the POD layouts.
-#[cfg(feature = "io")]
-pub mod io;
-
 /// Cartographic overlay: the named lanes and the symbology drawn in them.
 #[cfg(feature = "world")]
 pub mod overlay;

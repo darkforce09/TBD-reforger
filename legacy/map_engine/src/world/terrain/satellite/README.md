@@ -49,10 +49,10 @@ bytes than its base level in the diagnostics.
 
 ## Boundaries
 
-- Depends on: `crate::io` (the `TBDS` container and the archived index); `crate::streaming` (Range
+- Depends on: `world_file_formats` (the `TBDS` container and the archived index); `crate::streaming` (Range
   fetches, boot progress, the statistics bridge, the memory budget); `crate::frame` (the render
-  engine), `crate::overlay::lanes` (lane roles) and `crate::world::scene` (the anchor);
-  `graphics_engine` (the quad instance layout), `wgpu` and the browser's image APIs.
+  engine), `crate::overlay::lanes` (lane roles) and `crate::world::scene` (the anchor-relative
+  rectangle); `render_primitives` (the quad instance layout), `wgpu` and the browser's image APIs.
 - Used by:
   - `crate::streaming::host`, which loads the basemap at boot, switches the basemap view and
     uploads the hillshade;

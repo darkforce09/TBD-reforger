@@ -24,6 +24,7 @@ use anyhow::{Context, Result, bail};
 use serde_json::Value;
 
 use crate::repository_layout::terrain_dir;
+use map_coordinates::chunk_math::TerrainSizeM;
 use map_engine::spatial::bvh::sidecar::BvhSidecar;
 use map_engine::spatial::los::world::coverage_1::BlockPolicy;
 use map_engine::spatial::los::world::coverage_1::WorldVerdict;
@@ -31,7 +32,6 @@ use map_engine::spatial::los::world::descriptor::PrefabDescriptor;
 use map_engine::spatial::los::world::state::WorldOccluder;
 use map_engine::streaming::loaders::chunk::parse_chunk;
 use map_engine::streaming::loaders::chunk_bin::parse_chunk_bin_for;
-use map_engine::streaming::scheduler::chunk_math::TerrainSizeM;
 use map_engine::world::environment::buildings::prefab::build_prefab_maps;
 use map_engine::world::environment::buildings::prefab::narrow_prefab_rows;
 use map_engine::world::terrain::dem::manifest::DemManifest;
@@ -45,7 +45,7 @@ pub const CHUNK_M: f64 = 512.0;
 pub type WorldPair = (f64, f64, f64, f64, f64, f64, bool, bool, String);
 
 /// The terrain half of the `clearWorld` column: the committed 16-bit DEM behind the editor's own
-/// `DemManifest` sampler (`dem::sample`, Class R), so the CLI and the LOS tool read the same
+/// `DemManifest` sampler (`dem::sampling`, Class R), so the CLI and the LOS tool read the same
 /// heights. 2 m pixels — fine terrain detail the engine's `WORLD` trace sees is below this
 /// resolution, which is the documented caveat on the world-inclusive number.
 pub struct Dem {

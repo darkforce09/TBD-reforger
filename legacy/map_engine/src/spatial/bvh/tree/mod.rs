@@ -35,17 +35,8 @@ pub use crate::spatial::bvh::sidecar::quantize_verts;
 #[path = "../tests/tree.rs"]
 pub(crate) mod tests;
 
-/// Re-export `crate::spatial::bvh::node::cross`.
-pub use crate::spatial::bvh::node::cross;
-
-/// Re-export `crate::spatial::bvh::node::dot`.
-pub use crate::spatial::bvh::node::dot;
-
 /// Re-export `crate::spatial::bvh::node::segment_hits_tri`.
 pub use crate::spatial::bvh::node::segment_hits_tri;
-
-/// Re-export `crate::spatial::bvh::node::sub`.
-pub use crate::spatial::bvh::node::sub;
 
 /// Re-export `crate::spatial::bvh::surface::SurfaceKind`.
 pub use crate::spatial::bvh::surface::SurfaceKind;

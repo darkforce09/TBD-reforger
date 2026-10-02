@@ -17,4 +17,4 @@ needs a `wgpu::Device`, so nothing here constructs one. These are source-text pi
 `frame/{lifecycle,encode,engine}.rs` — the idiom `overlay/tests/tests/draw_order_t808_*` uses —
 and they fail loudly rather than silently when a pinned function is renamed away. The
 `RenderDamage` state machine itself is tested where it lives, in
-`graphics_engine/src/frame/tests/damage_tests.rs`.
+`crates/graphics/render_primitives/src/frame/tests/damage_tests.rs`.

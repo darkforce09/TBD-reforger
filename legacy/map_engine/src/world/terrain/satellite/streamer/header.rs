@@ -13,7 +13,7 @@ use super::V1;
 use super::V2;
 use super::access_checked;
 use super::mips_from_archive;
-use crate::io::containers::header::ContainerHeader;
+use world_file_formats::containers::header::ContainerHeader;
 
 /// Read u32 le.
 pub(super) fn read_u32_le(buf: &[u8], at: usize) -> Option<u32> {

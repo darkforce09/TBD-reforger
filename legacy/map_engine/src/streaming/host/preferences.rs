@@ -13,7 +13,7 @@ pub(super) async fn swap_basemap(engine: &EngineHandle, terrain: &str, view: &st
         )
         .await;
         if !ok {
-            crate::diagnostics::platform::console::warn!(
+            browser_platform::console_warn!(
                 "map basemap tiles unavailable — falling back to satellite"
             );
             crate::world::terrain::satellite::quadtree::show_satellite_basemap(engine);

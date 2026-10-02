@@ -3,10 +3,10 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::io::archives::codec::BinaryError;
-use crate::io::containers::header::ContainerHeader;
-use crate::io::containers::header::HEADER_BYTES;
-use crate::io::containers::tbde::TbdeHeader;
+use world_file_formats::archives::codec::BinaryError;
+use world_file_formats::containers::header::ContainerHeader;
+use world_file_formats::containers::header::HEADER_BYTES;
+use world_file_formats::containers::tbde::TbdeHeader;
 
 /// A decoded `dem/elevation.dem`: the header verbatim plus its `width * height` row-major samples.
 #[derive(Clone, Debug, PartialEq)]

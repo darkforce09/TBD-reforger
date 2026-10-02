@@ -15,7 +15,7 @@
 
 use crate::v2::pages::field_tools::mortar::inputs::battery::GunDraft;
 use crate::v2::pages::field_tools::mortar::inputs::positions::PositionDraft;
-use map_engine::camera::grid_reference::{format_grid, parse_grid, GridFigures};
+use map_coordinates::grid_reference::{format_grid, parse_grid, GridFigures};
 
 /// Radius around a placed marker, CSS pixels, within which a press grabs it for a drag.
 pub(crate) const MARKER_HIT_RADIUS_PX: f64 = 14.0;

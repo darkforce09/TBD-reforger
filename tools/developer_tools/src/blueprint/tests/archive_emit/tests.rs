@@ -41,7 +41,7 @@ fn archive_round_trips_every_committed_descriptor() {
     let by_pid: BTreeMap<u32, &_> = a
         .descriptors
         .iter()
-        .map(|d| (d.prefab_id.to_native(), d))
+        .map(|d| (d.prefab_id.get(), d))
         .collect();
     let mut blocking = 0usize;
     for path in &files {

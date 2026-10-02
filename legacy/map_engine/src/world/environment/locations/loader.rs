@@ -3,10 +3,8 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::overlay::symbology::text_metrics::text_char_meters;
 use crate::overlay::symbology::text_packing::pack_height_label_glyphs;
 use crate::overlay::symbology::text_packing::pack_road_label_bytes;
-use crate::overlay::symbology::text_packing::pack_text_icon_bytes;
 use crate::overlay::symbology::text_packing::pack_town_label_bytes;
 use crate::streaming::loaders::manifest::LabelsBlock;
 use crate::streaming::loaders::manifest::parse_manifest_binary;
@@ -21,6 +19,8 @@ use crate::world::environment::locations::towns::map_labels_from_bytes;
 use crate::world::environment::locations::towns::parse_locations_json;
 use crate::world::terrain::dem::manifest::DemManifest;
 use crate::world::terrain::roads::network::RoadSegment;
+use render_primitives::text::layout::pack_text_icon_bytes;
+use render_primitives::text::metrics::text_char_meters;
 
 use crate::frame::EngineHandle;
 use crate::streaming::bridge::preferences::WorldLayerPrefs;
@@ -28,8 +28,8 @@ use crate::streaming::bridge::progress::BootEvent;
 use crate::streaming::bridge::progress::BootSeg;
 
 use crate::streaming::host::WORLD_LABEL_FILES;
-use crate::streaming::loaders::fetch::fetch_bytes;
-use crate::streaming::loaders::fetch::fetch_text;
+use browser_platform::fetch::fetch_bytes;
+use browser_platform::fetch::fetch_text;
 
 const MAP_LABELS_ENCODING: &str = "rkyv-map-labels-v1";
 

@@ -15,6 +15,7 @@ use crate::streaming::bridge::host_preferences::HostPreferences;
 use crate::streaming::bridge::progress::{BootEvent, BootSeg};
 use crate::streaming::memory::budget::{self, Asset};
 use crate::world::terrain::dem::full_resolution::FullResolutionDemHandle;
+use browser_platform::fetch::fetch_bytes;
 
 /// Canonical world init files value.
 pub(super) const WORLD_INIT_FILES: u64 = 7;

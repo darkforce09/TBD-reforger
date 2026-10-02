@@ -106,6 +106,28 @@ type DemSource = (
     crate::world::terrain::dem::full_resolution::SampleEncoding,
 );
 
+/// Turns a streamed fetch's [`browser_platform::fetch::ByteProgress`] into the boot bar's events
+/// for `segment`: the first report (zero bytes, before the body) is the segment's byte budget, the
+/// announced `content-length` or 0 without one; every later report is the bytes that arrived
+/// since the previous one.
+fn boot_byte_progress<'report>(
+    segment: crate::streaming::bridge::progress::BootSeg,
+    report: &'report dyn Fn(crate::streaming::bridge::progress::BootEvent),
+) -> impl Fn(browser_platform::fetch::ByteProgress) + 'report {
+    use crate::streaming::bridge::progress::BootEvent;
+    let previously_received: Cell<Option<u64>> = Cell::new(None);
+    move |progress| {
+        match previously_received.get() {
+            None => report(BootEvent::Budget(segment, progress.total.unwrap_or(0))),
+            Some(previous) => report(BootEvent::Done(
+                segment,
+                progress.received.saturating_sub(previous),
+            )),
+        }
+        previously_received.set(Some(progress.received));
+    }
+}
+
 /// Stream the manifest-declared raw grid when this build reads its encoding; `None` sends the
 /// caller to the PNG.
 async fn load_declared_raw_samples(
@@ -120,8 +142,8 @@ async fn load_declared_raw_samples(
         .filter(|b| crate::world::terrain::dem::loader::raw_block_is_readable(b))?;
     let raw = crate::world::terrain::dem::loader::load_dem_raw(
         &format!("{base}/{}", block.path),
-        crate::streaming::bridge::progress::BootSeg::Terrain,
-        report,
+        crate::streaming::bridge::progress::STREAM_REPORT_BYTES,
+        &boot_byte_progress(crate::streaming::bridge::progress::BootSeg::Terrain, report),
     )
     .await?;
     let decoded = crate::world::terrain::dem::png::DecodedDem {
@@ -212,8 +234,8 @@ pub(super) async fn load_dem_and_hillshade(
         None => {
             let dem_bytes = fetch_bytes_streamed(
                 &format!("{base}/{}", manifest.dem.path),
-                BootSeg::Terrain,
-                report,
+                crate::streaming::bridge::progress::STREAM_REPORT_BYTES,
+                &boot_byte_progress(BootSeg::Terrain, report),
             )
             .await?;
             crate::streaming::memory::budget::hold(

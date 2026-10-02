@@ -14,7 +14,8 @@ use crate::world::architecture::blueprint::structure::BuildingBlueprint;
 use crate::world::architecture::compound::assembly::CompoundBuilding;
 use crate::world::architecture::compound::instances::Instance;
 use crate::world::architecture::compound::instances::InstanceKind;
-use crate::world::architecture::compound::transform::Rigid;
+use geometry_primitives::rigid_transform::Rigid;
+use geometry_primitives::segment_geometry::point_at;
 
 /// Concealment one glass pane adds (non-terminal).
 pub const GLASS_CONCEALMENT: f64 = 0.05;
@@ -52,15 +53,6 @@ pub struct TraceEvent {
 
     /// Tri.
     pub tri: u32,
-}
-
-/// Point at.
-pub(crate) fn point_at(a: [f64; 3], b: [f64; 3], t: f64) -> [f64; 3] {
-    [
-        a[0] + t * (b[0] - a[0]),
-        a[1] + t * (b[1] - a[1]),
-        a[2] + t * (b[2] - a[2]),
-    ]
 }
 
 /// Seg len.

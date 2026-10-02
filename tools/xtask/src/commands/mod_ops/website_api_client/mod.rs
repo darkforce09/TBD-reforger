@@ -26,7 +26,7 @@ pub use mission_artifact_cache::{
 };
 pub use mission_publication::{
     approved_artifact, artifact_document, create_mission, delete_mission, mission,
-    own_missions_titled, pending_review_artifact, sha256_hex, submit_mission,
+    own_missions_titled, pending_review_artifact, submit_mission,
 };
 pub use runtime_telemetry_reads::{
     ServerTelemetryStatus, TelemetryQueueReading, match_has_acknowledged_events,

@@ -30,9 +30,10 @@ use super::telemetry_check::TelemetryWatch;
 use crate::commands::mod_ops::website_api_client::{
     ApiClient, CurlTransport, DeploymentSettlement, StagedArtifact, approved_artifact,
     cancel_unclaimed_command, development_login, ensure_fleet_scenario, ensure_server,
-    issue_credential, request_deployment, revoke_credential, sha256_hex, stage_artifact_cache,
+    issue_credential, request_deployment, revoke_credential, stage_artifact_cache,
     wait_for_deployment,
 };
+use content_digest::sha256_hex;
 
 /// The name of the server row a playtest deploys to when no `--server` is given.
 const PLAYTEST_SERVER_NAME: &str = "TBD Playtest";

@@ -2,10 +2,12 @@
 
 The parsers and browser loaders for a terrain's served files: the manifest's object and binary
 blocks, prefab catalogues, object chunks in gzip JSON or `TBDC` binary form, roads and regions,
-the HTTP fetch helpers, and the two loaders that keep the
+and the two loaders that keep the
 [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s map fed: world objects and the
-line-of-sight occluder. The parsers compile natively for the tools and tests; `fetch.rs`,
-`occluder_loader.rs` and `world_loader/` compile only for wasm32 with the `render` feature.
+line-of-sight occluder. The loaders fetch through the `fetch` module of the
+[`browser_platform`](/crates/foundation/browser_platform/README.md) crate. The parsers compile
+natively for the tools and tests; `occluder_loader.rs` and `world_loader/` compile only for
+wasm32 with the `render` feature.
 
 ## Contents
 
@@ -13,7 +15,6 @@ line-of-sight occluder. The parsers compile natively for the tools and tests; `f
 legacy/map_engine/src/streaming/loaders/
 ├── chunk.rs            `WorldChunk`, one chunk's instance columns, and the gzip JSON chunk parser
 ├── chunk_bin.rs        the `TBDC` binary chunk parser, its tile id check and the path template
-├── fetch.rs            same-origin GETs: bytes, text, a streamed body with progress, Range requests
 ├── manifest.rs         the terrain manifest's `objects` block, binary blocks and chunk index cells
 ├── mod.rs              the module tree
 ├── occluder_loader.rs  `OccluderHost`: building descriptors and BVH sidecars for resident chunks
@@ -55,11 +56,12 @@ bound every pin, and `ingest_chunk_gz` and `ingest_chunk_bin`, which answer `App
 cap. `WorldStore` is the headless reader the tools use: manifest, prefab table, roads, regions and
 one chunk at a time.
 
-`fetch_bytes` and `fetch_text` answer `None` on a transport failure or a status outside 2xx;
-`fetch_bytes_streamed` reports the `content-length` as its segment's byte budget and the body's
-bytes as they arrive, every 512 KiB; `fetch_range_outcome` accepts only a 206 with a
-`Content-Range` total, reports a 429 with its `Retry-After`, and refuses a 200, so a server that
-ignores `Range` never sends a whole satellite bundle. `OccluderHost` reads the building blueprint
+`browser_platform::fetch`'s `fetch_bytes` and `fetch_text` answer `None` on a transport failure or a status outside 2xx;
+`fetch_bytes_streamed` reports `ByteProgress` (the bytes received and the `content-length`) as
+the body arrives, which the streaming host turns into its segment's byte budget and the bytes
+done every 512 KiB; `fetch_range_outcome` accepts only a 206 with a `Content-Range` total,
+reports a 429 with its `Retry-After`, and refuses a 200, so a server that ignores `Range` never
+sends a whole satellite bundle. `OccluderHost` reads the building blueprint
 archive the manifest names and `/map-assets/<terrain>/prefabs/blas-manifest.json` with its hot
 prefabs, then on each viewport mirrors the residency's inserted and evicted chunks into the
 `WorldOccluder` and fetches what resident chunks still need, descriptors before sidecars: up to 96
@@ -76,9 +78,6 @@ session.
   streaming host and the developer tools.
 - `store::{WorldStore, WorldError, bytes_to_json}`: for the developer tools' export, raster and
   verification pipelines and the tests under `crate::world`.
-- `fetch`: `fetch_bytes`, `fetch_text`, `fetch_bytes_streamed` and `fetch_range_outcome` with
-  `RangeBody` and `RangeOutcome`, for the streaming host, the satellite, water, label and
-  vegetation loaders, and the debug world line-of-sight bench.
 - `occluder_loader::OccluderHost` for the streaming host and the debug bench, and
   `world_loader::WorldHost` for the streaming host.
 - The `WorldResidency` loads and ingests of `residency.rs`, for the world loader and the debug
@@ -87,13 +86,13 @@ session.
 ## Boundaries
 
 - Depends on: `crate::streaming::scheduler` (`WorldResidency`, `IngestOutcome`, `ResidencyEvent`,
-  `TerrainSizeM`) and `crate::streaming::bridge` (progress, statistics, preferences); `crate::io`
+  `TerrainSizeM`) and `crate::streaming::bridge` (progress, statistics, preferences); `world_file_formats`
   (the `TBDC` container header, `ObjectInstancePod`, `BinaryError`); `crate::world` (prefab rows,
   catalogues and class codes, footprint lookups, road and region payloads, the airfield box, the
   road and landcover meshes); `crate::spatial::los::world` and `crate::spatial::bvh::sidecar` for
   the occluder; `crate::frame::EngineHandle` and `crate::overlay::lanes` for the uploads;
-  `crate::diagnostics::platform::console`; `serde`, `serde_json`, `flate2`, `bytemuck`,
-  `thiserror`, `futures`, `gloo-net` and the browser bindings; the files under
+  `browser_platform` for `fetch` and the console macros; `serde`,
+  `serde_json`, `flate2`, `bytemuck`, `thiserror`, `futures` and the browser bindings; the files under
   `/map-assets/<terrain>/`, whose manifest follows
   `contracts/definitions/terrain-manifest.schema.json`.
 - Used by:

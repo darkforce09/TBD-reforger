@@ -9,12 +9,6 @@
 //! `CONTOUR_REPRESENTATIVE_SLOPE` are all map-design decisions. The frustum work it was filed
 //! beside crossed to graphics-engine in Phase 1 and is `draw::cull`.
 
-/// Glyph size anchor: displayPx = baseSizePx * 2^(deckZoom − REF_ZOOM).
-// T-0xx Phase 1D: moved alone to `graphics_engine` (`text::scale`) and re-exported
-// here. Every other constant in this file switches on a world class name and stays; this one
-// is the anchor the renderer's own glyph sizing is measured against, so it had to cross.
-pub use graphics_engine::text::scale::REF_ZOOM;
-
 /// deckZoom ≥ 0 → individual tree glyphs (below: hidden; forest mass only).
 pub const TREE_GLYPH_MIN_ZOOM: f64 = 0.0;
 

@@ -127,7 +127,7 @@ missing: <dependency>
   versions and the check commands); the parent's `property_test_configuration.rs` for the seed;
   `API_READINESS_REGISTER`, `API_READINESS_EVIDENCE_PREFIX` and `DEPLOY_ENV` from
   `tools/xtask/src/core/repository_layout.rs`; `libc` for the directory-pinned writes; the
-  `regex`, `serde_json` and `sha2` crates.
+  `regex`, `serde_json` and `content_digest` crates.
 - Used by: `tools/xtask/src/commands/verify/dispatch.rs`, for
   `cargo xtask verify api-readiness [--evidence <dir>] [--execute]`. Exit 0 when every check and
   requirement held, 1 on a rejected receipt or an unfulfilled requirement (and on an error that

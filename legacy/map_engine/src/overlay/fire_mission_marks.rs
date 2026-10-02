@@ -16,7 +16,7 @@
 //! then lines and ellipse outlines.
 
 use crate::overlay::lanes::LaneRole;
-use graphics_engine::draw::geometry::LineVertex;
+use render_primitives::draw::geometry::LineVertex;
 
 /// The lane of the gun, target and burst glyph quads.
 pub const FIRE_MISSION_GLYPH_LANE: LaneRole = LaneRole::MissionMarkers;
@@ -120,7 +120,7 @@ pub struct FireMissionMarks {
     pub line_vertices: Vec<LineVertex>,
     /// Closed-by-convention polygon rings for [`FIRE_MISSION_DISPERSION_LANE`], world metres
     /// (the first vertex is not repeated), ready for
-    /// `graphics_engine::draw::triangulate::triangulate_simple`.
+    /// `render_primitives::draw::triangulate::triangulate_simple`.
     pub dispersion_rings: Vec<Vec<[f64; 2]>>,
 }
 
@@ -201,7 +201,7 @@ pub fn dispersion_ring(ellipse: &DispersionEllipse) -> Option<Vec<[f64; 2]>> {
 /// Builds the fire-mission overlay for `plot`. Glyphs are squares of side `2 × glyph_half_size_m`
 /// world metres (the caller converts its on-screen glyph size at the current zoom); positions are
 /// relative to `anchor`, the world origin the render host folds coordinates against
-/// (`crate::world::scene::ANCHOR` for the served terrains). A non-finite or negative glyph size
+/// (`map_coordinates::terrain_frames::ANCHOR` for the served terrains). A non-finite or negative glyph size
 /// draws no glyph and untrimmed lines.
 #[must_use]
 pub fn build_fire_mission_marks(

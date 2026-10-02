@@ -672,31 +672,54 @@ fn the_terrain_dem_is_streamed_against_its_content_length() {
         "the unmeasured whole-body GET must not come back"
     );
 
-    let fetch = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/streaming/loaders/fetch.rs"
-    )));
-    let streamed = only_body(&fetch, "pub async fn fetch_bytes_streamed(");
-    // `live_code` blanks string literals, so the header NAME cannot be the needle — the shape
-    // that survives is "a header off this response, parsed as a number, becomes the budget",
-    // which is the property that matters anyway.
+    // The adapter that turns the fetch's byte counts into boot events for one segment.
+    let adapter = only_body(&src, "fn boot_byte_progress<");
     assert!(
-        streamed.contains(".headers()")
-            && streamed.contains("parse::<u64>()")
-            && streamed.contains("BootEvent::Budget(seg, budget)"),
-        "the budget must be a header read off this response, not a constant and not a guess"
+        adapter.contains("BootEvent::Budget(segment, progress.total"),
+        "the budget must be the length this response announced, not a constant and not a guess"
     );
     assert!(
-        streamed.contains("reader.read()") && streamed.contains("BootEvent::Done"),
+        adapter.contains("BootEvent::Done(") && adapter.contains("progress.received"),
+        "progress must be the bytes the body reader handed over — nothing else in the adapter \
+         is allowed to be the numerator"
+    );
+
+    let fetch = live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../crates/foundation/browser_platform/src/fetch.rs"
+    )));
+    let streamed = only_body(&fetch, "pub async fn fetch_bytes_streamed(");
+    assert!(
+        streamed.contains("open_streamed_body(url)") && streamed.contains(".read_to_end("),
+        "the streamed GET must read its body through the measured reader"
+    );
+    let opened = only_body(&fetch, "pub async fn open_streamed_body(");
+    // `live_code` blanks string literals, so the header NAME cannot be the needle — the shape
+    // that survives is "a header off this response, parsed as a number, becomes the length",
+    // which is the property that matters anyway.
+    assert!(
+        opened.contains(".headers()") && opened.contains("parse::<u64>()"),
+        "the announced length must be a header read off this response"
+    );
+    let reading = only_body(&fetch, "pub async fn read_to_end(");
+    assert!(
+        reading.contains("progress(ByteProgress { received: 0, total })"),
+        "the announced length must be reported before the first byte"
+    );
+    assert!(
+        reading.contains("reader.read()")
+            && reading.contains("received += u64::from(array.length())")
+            && reading.contains("progress(ByteProgress { received, total })"),
         "progress must be the bytes that came out of the body reader — nothing else in this \
          function is allowed to be the numerator"
     );
-    let elapsed = ["Date::now", "set_timeout", "performance"];
-    for needle in elapsed {
+    for needle in ["Date::now", "set_timeout", "performance"] {
         assert!(
-            !streamed.contains(needle),
-            "`{needle}` in the streaming fetch would be a bar moving on a clock: the one \
-             defect this whole slice is aimed at"
+            ![streamed, opened, reading, adapter]
+                .iter()
+                .any(|b| b.contains(needle)),
+            "`{needle}` in the streaming fetch or its adapter would be a bar moving on a clock: \
+             the one defect this whole slice is aimed at"
         );
     }
 }

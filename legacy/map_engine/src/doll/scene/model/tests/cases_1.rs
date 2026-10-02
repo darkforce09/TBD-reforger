@@ -3,9 +3,10 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::camera::math::glmat4::perspective_no;
+use camera_math::matrix4::perspective_no;
+use camera_math::orbit::projection::view_proj_gl;
 
-use crate::camera::math::glmat4::transform_vector;
+use camera_math::matrix4::transform_vector;
 
 use super::*;
 

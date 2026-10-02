@@ -132,7 +132,7 @@ pub fn create_text_atlas(
 ) -> Result<TextAtlasGpu, String> {
     use wgpu::util::DeviceExt;
     let (texture, bytes) = upload_cell_texture(device, queue, "text-atlas", rgba, width, height)?;
-    let u_bytes = crate::text::pack::text_uniform_bytes();
+    let u_bytes = render_primitives::text::pack::text_uniform_bytes();
     let uniform_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("text-uniforms"),
         contents: &u_bytes,

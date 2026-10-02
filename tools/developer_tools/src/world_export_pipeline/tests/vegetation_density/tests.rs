@@ -1,7 +1,7 @@
 use super::*;
 use crate::repository_layout::{density_fixtures_dir, terrain_dir};
-use map_engine::io::density::tbdd::decode_tbdd;
-use map_engine::io::density::tbdd::encode_tbdd;
+use world_file_formats::density::tbdd::decode_tbdd;
+use world_file_formats::density::tbdd::encode_tbdd;
 
 /// The 625 committed everon density tiles (`objects/density/*.bin`), sorted.
 ///

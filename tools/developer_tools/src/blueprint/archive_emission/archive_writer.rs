@@ -25,21 +25,22 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result, bail};
 
 use crate::repository_layout::terrain_dir;
-use map_engine::io::archives::blueprints::BuildingBlueprintArchive;
-use map_engine::io::archives::blueprints::BuildingLevel as WireLevel;
-use map_engine::io::archives::blueprints::DoorRec as WireDoor;
-use map_engine::io::archives::blueprints::FurnitureRec as WireFurniture;
-use map_engine::io::archives::blueprints::StairsRec as WireStairs;
-use map_engine::io::archives::blueprints::VerticalProfile as WireProfile;
-use map_engine::io::archives::blueprints::WallRec as WireWall;
-use map_engine::io::archives::blueprints::WindowRec as WireWindow;
-use map_engine::io::archives::codec::access_checked;
-use map_engine::io::archives::codec::to_bytes;
-use map_engine::io::archives::version::ARCHIVE_SCHEMA_VERSION;
 use map_engine::spatial::los::world::descriptor::BlasEntry;
 use map_engine::spatial::los::world::descriptor::BlasManifest;
 use map_engine::spatial::los::world::descriptor::PrefabDescriptor;
 use map_engine::world::architecture::blueprint::structure::BuildingBlueprint as JsonBlueprint;
+use world_file_formats::archives::blueprints::BuildingBlueprintArchive;
+use world_file_formats::archives::blueprints::BuildingLevel as WireLevel;
+use world_file_formats::archives::blueprints::DoorRec as WireDoor;
+use world_file_formats::archives::blueprints::FurnitureRec as WireFurniture;
+use world_file_formats::archives::blueprints::StairsRec as WireStairs;
+use world_file_formats::archives::blueprints::VerticalProfile as WireProfile;
+use world_file_formats::archives::blueprints::WallRec as WireWall;
+use world_file_formats::archives::blueprints::WindowRec as WireWindow;
+use world_file_formats::archives::codec::access_checked;
+use world_file_formats::archives::codec::to_bytes;
+use world_file_formats::archives::version::ARCHIVE_SCHEMA_VERSION;
+use world_file_formats::ids::{DoorId, FurnitureId, PrefabId, StairsId, WallId, WindowId};
 
 use super::batch::write_if_changed;
 
@@ -127,11 +128,11 @@ pub fn build(prefabs: &Path) -> Result<Built> {
     }
     blueprints.sort_by_key(|b| b.prefab_id);
 
-    let have: Vec<u32> = blueprints.iter().map(|b| b.prefab_id).collect();
+    let have: Vec<PrefabId> = blueprints.iter().map(|b| b.prefab_id).collect();
     let without_levels = descriptors
         .iter()
         .filter(|d| d.blocks && d.kind == "building" && !have.contains(&d.prefab_id))
-        .filter_map(|d| slug_of_pid.get(&d.prefab_id).cloned())
+        .filter_map(|d| slug_of_pid.get(&d.prefab_id.get()).cloned())
         .collect();
 
     Ok(Built {
@@ -154,7 +155,7 @@ pub fn build(prefabs: &Path) -> Result<Built> {
 fn wire_blueprint(
     b: &JsonBlueprint,
     prefab_id: u32,
-) -> Result<map_engine::io::archives::blueprints::BuildingBlueprint> {
+) -> Result<world_file_formats::archives::blueprints::BuildingBlueprint> {
     let mut levels = Vec::with_capacity(b.levels.len());
     for l in &b.levels {
         levels.push(WireLevel {
@@ -166,7 +167,7 @@ fn wire_blueprint(
                 .walls
                 .iter()
                 .map(|w| WireWall {
-                    id: w.id.clone(),
+                    id: WallId::new(w.id.clone()),
                     start: pair(w.start),
                     end: pair(w.end),
                     thickness_m: w.thickness as f32,
@@ -178,8 +179,8 @@ fn wire_blueprint(
                 .doors
                 .iter()
                 .map(|d| WireDoor {
-                    id: d.id.clone(),
-                    wall_id: d.wall_id.clone(),
+                    id: DoorId::new(d.id.clone()),
+                    wall_id: WallId::new(d.wall_id.clone()),
                     position: pair(d.pos2_d),
                     width_m: d.width_m as f32,
                     height_m: d.height_m as f32,
@@ -191,8 +192,8 @@ fn wire_blueprint(
                 .windows
                 .iter()
                 .map(|w| WireWindow {
-                    id: w.id.clone(),
-                    wall_id: w.wall_id.clone(),
+                    id: WindowId::new(w.id.clone()),
+                    wall_id: WallId::new(w.wall_id.clone()),
                     position: pair(w.pos2_d),
                     width_m: w.width_m as f32,
                     sill_height_m: w.sill_height_m as f32,
@@ -207,7 +208,7 @@ fn wire_blueprint(
                 .iter()
                 .map(|s| {
                     Ok(WireStairs {
-                        id: s.id.clone(),
+                        id: StairsId::new(s.id.clone()),
                         bounds: [pair(s.bounds[0]), pair(s.bounds[1])],
                         connects_to_level: u8::try_from(s.connects_to_level).with_context(
                             || format!("connects_to_level {} does not fit u8", s.connects_to_level),
@@ -225,7 +226,7 @@ fn wire_blueprint(
                 .furniture
                 .iter()
                 .map(|f| WireFurniture {
-                    id: f.id.clone(),
+                    id: FurnitureId::new(f.id.clone()),
                     name: f.name.clone(),
                     category: f.category.clone(),
                     position: pair(f.pos2_d),
@@ -237,19 +238,21 @@ fn wire_blueprint(
                 .collect(),
         });
     }
-    Ok(map_engine::io::archives::blueprints::BuildingBlueprint {
-        prefab_id,
-        slug: b.prefab_id.clone(),
-        vertical_profile: WireProfile {
-            pivot_elevation_offset_m: b.vertical_profile.pivot_elevation_offset_m as f32,
-            foundation_skirt_depth_m: b.vertical_profile.foundation_skirt_depth_m as f32,
-            total_height_m: b.vertical_profile.total_height_m as f32,
-            eave_height_m: b.vertical_profile.eave_height_m as f32,
-            ridge_height_m: b.vertical_profile.ridge_height_m as f32,
-            roof_type: b.vertical_profile.roof_type.clone(),
+    Ok(
+        world_file_formats::archives::blueprints::BuildingBlueprint {
+            prefab_id: PrefabId::new(prefab_id),
+            slug: b.prefab_id.clone(),
+            vertical_profile: WireProfile {
+                pivot_elevation_offset_m: b.vertical_profile.pivot_elevation_offset_m as f32,
+                foundation_skirt_depth_m: b.vertical_profile.foundation_skirt_depth_m as f32,
+                total_height_m: b.vertical_profile.total_height_m as f32,
+                eave_height_m: b.vertical_profile.eave_height_m as f32,
+                ridge_height_m: b.vertical_profile.ridge_height_m as f32,
+                roof_type: b.vertical_profile.roof_type.clone(),
+            },
+            levels,
         },
-        levels,
-    })
+    )
 }
 
 fn pair(p: [f64; 2]) -> [f32; 2] {

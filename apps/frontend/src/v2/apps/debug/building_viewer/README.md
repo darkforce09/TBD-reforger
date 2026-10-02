@@ -75,8 +75,9 @@ uses).
 
 ## Boundaries
 
-- Depends on: `map_engine`: `world` (the architecture blueprints, the compound building
-  and its doors, the section cutter, and the triangulation and strip helpers),
+- Depends on: `render_primitives::draw::triangulate` (the footprint triangulation);
+  `map_engine`: `world` (the architecture blueprints, the compound building and its doors, the
+  section cutter, and the strip helpers),
   `spatial::bvh::sidecar` and `spatial::los::interior::wash`,
   `editing::tools::line_of_sight::viewshed_texture`, `frame` (`RenderEngine`, `RafPump`) and
   `overlay::lanes::role_id`; the module root's types and the bench's lane set in

@@ -1,0 +1,27 @@
+# The cameras' f64 arithmetic: the orthographic map camera that reproduces deck.gl's viewport, the
+# paper doll's orbit camera and the gl-matrix 4x4 routines both compose their matrices from. No GPU,
+# no browser binding.
+[package]
+name = "camera_math"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Camera arithmetic: the deck.gl-parity orthographic map camera, the doll's orbit camera and gl-matrix 4x4 routines."
+
+[package.metadata.layout]
+category = "crates/geometry"
+tier = 1
+targets = "any"
+
+[dependencies]
+map_coordinates = { workspace = true }
+
+[dev-dependencies]
+# The deck.gl parity suite reads its golden captures as JSON; `float_roundtrip` parses every
+# golden f64 to its exact bits, which the zero-ULP assertions compare against.
+serde_json = { workspace = true, features = ["float_roundtrip"] }
+
+[lints]
+workspace = true

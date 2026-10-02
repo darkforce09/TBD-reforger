@@ -3,14 +3,14 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::camera::ortho::state::OrthoCamera;
 use crate::diagnostics::readback::scene::map_read_4;
 use crate::diagnostics::readback::scene::padded_bytes_per_row;
 use crate::frame::engine::CLEAR_COLOR;
 use crate::frame::engine::RenderEngine;
+use camera_math::ortho::state::OrthoCamera;
 
 use crate::frame::pipelines::building::create_building_pipeline;
-use crate::world::scene::ANCHOR;
+use map_coordinates::terrain_frames::ANCHOR;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -50,7 +50,7 @@ impl RenderEngine {
             });
 
             let rad = (37.0_f64 * std::f64::consts::PI) / 180.0;
-            let inst = graphics_engine::layout::BuildingInstance {
+            let inst = render_primitives::draw::instances::BuildingInstance {
                 center: [0.0, 0.0],
                 half: [40.0, 20.0],
                 basis: [rad.cos() as f32, rad.sin() as f32],

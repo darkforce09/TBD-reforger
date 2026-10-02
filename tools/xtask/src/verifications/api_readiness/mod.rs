@@ -186,7 +186,7 @@ fn execute_local(
             duration_milliseconds: output.duration.as_millis(),
             exit_code: output.code,
             output_file,
-            output_sha256: fingerprint::digest(output.text.as_bytes()),
+            output_sha256: content_digest::sha256_hex(output.text.as_bytes()),
             environment: property_configuration.receipt_environment(),
             observations: None,
             property_runs: property_evidence::parse(&output.text).unwrap_or_default(),

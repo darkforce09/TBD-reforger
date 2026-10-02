@@ -48,7 +48,7 @@ The Workbench plugins write a generation under
 ## Boundaries
 
 - Depends on: `contracts/definitions/equipment-vehicle-export.schema.json`; the `jsonschema`,
-  `serde_json`, `sha2` and `walkdir` crates.
+  `serde_json`, `content_digest` and `walkdir` crates.
 - Used by: `tools/xtask/src/commands/mod_ops/dispatch.rs` (`validate_command`,
   `publish_command`).
 - Rules: a generation that is partial or unverified never publishes, and a failed validation

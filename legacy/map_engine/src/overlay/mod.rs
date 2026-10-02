@@ -7,7 +7,7 @@
 //! T-0xx Phase 2B: `symbology/` moved here whole, and `core/pipeline/{draw_order,roles}.rs`
 //! folded into `lanes.rs` beside it. The 48 lane identities are cartography — `Sea`,
 //! `Contours`, `RoadsCasing`, `Landcover`, `AirfieldApron` — and they belong with the map they
-//! name. The renderer keeps only the opaque `crate::frame::LaneId`.
+//! name. The renderer keeps only the opaque `render_primitives::frame::ids::LaneId`.
 
 /// The fire-mission overlay: gun, target and burst glyphs, gun→target lines, dispersion ellipses.
 #[cfg(feature = "streaming")]

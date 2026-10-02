@@ -23,6 +23,7 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use anyhow::{Context, Result, bail};
+use geometry_primitives::rigid_transform::Rigid;
 use map_engine::spatial::bvh::sidecar::BvhSidecar;
 use map_engine::spatial::bvh::sidecar::emit_bytes;
 use map_engine::spatial::bvh::sidecar::lift_verts;
@@ -37,7 +38,6 @@ use map_engine::world::architecture::compound::instances::InstanceKind;
 use map_engine::world::architecture::compound::instances::InstanceRecord;
 use map_engine::world::architecture::compound::instances::InstancesFile;
 use map_engine::world::architecture::compound::instances::LocalTransform;
-use map_engine::world::architecture::compound::transform::Rigid;
 use serde::Deserialize;
 
 use super::prefab::{PrefabResolver, ResolvedPrefab};

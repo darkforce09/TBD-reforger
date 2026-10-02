@@ -30,6 +30,16 @@ checks them.
 |---|---|---|---|
 | S2 | http_url_guard | `crates/foundation/http_url_guard/` | 0 |
 | S2 | offline_cache_policy | `crates/contracts/offline_cache_policy/` | 0 |
+| S4a | newtype_ids | `crates/foundation/newtype_ids/` | 0 |
+| S4a | time_source | `crates/foundation/time_source/` | 0 |
+| S4a | deterministic_random | `crates/foundation/deterministic_random/` | 0 |
+| S4a | content_digest | `crates/foundation/content_digest/` | 0 |
+| S4a | browser_platform (W) | `crates/foundation/browser_platform/` | 0 |
+| S4a | geometry_primitives | `crates/geometry/geometry_primitives/` | 0 |
+| S4a | map_coordinates | `crates/geometry/map_coordinates/` | 0 |
+| S4a | camera_math | `crates/geometry/camera_math/` | 1 |
+| S4a | world_file_formats | `crates/world_formats/world_file_formats/` | 1 |
+| S4a | render_primitives | `crates/graphics/render_primitives/` | 0 |
 
 Every other crate in this catalogue is still planned; its From column names the code it will take.
 
@@ -37,7 +47,7 @@ Every other crate in this catalogue is still planned; its From column names the 
 
 | Crate | From | Fixes |
 |---|---|---|
-| newtype_ids | new | `string_id!`/`integer_id!`/`uuid_id!` macros: serde-transparent, `Borrow<str>`, `#[sqlx(transparent)]` behind a cfg |
+| newtype_ids | new | `string_id!`/`integer_id!`/`uuid_id!` macros: serde-transparent, `Borrow<str>`, an optional `sqlx,` macro arm that expands `#[sqlx(transparent)]` in the calling crate (the crate has no sqlx dependency) |
 | time_source | the 5 clocks (`me diagnostics/timing/gpu.rs:11`, `editing/tools/viewshed_scheduler/host.rs:89`, `streaming/host/viewport.rs:80`, `world_loader/ingest.rs:59,92`, `data/store/crdt/undo_groups/clocks.rs`), `dt timestamp_formatting.rs`, `te timestamp.rs` | One `Clock` trait (system/browser/fixed) and UTC formatting |
 | deterministic_random | SplitMix64 (`store/operations/placement/geometry.rs`, `ballistics/agreement_cases.rs:81`), the LCG (`rows/slot_edits.rs:31`) | One generator |
 | content_digest | `dt content_digest.rs`, 11 ad-hoc SHA helpers, hand-rolled `ballistics/calibration/sha256_digest.rs:32` | sha2 0.11 only |
@@ -74,7 +84,7 @@ Every other crate in this catalogue is still planned; its From column names the 
 | map_coordinates | `world/scene.rs` consts + `world_rect_rel`, `APPLY_ANCHOR_X/Y` (`apply_faction/library.rs:11,14`), `probes/runner.rs:87`, `chunk_math.rs`, `camera/math/shaping.rs`, `grid_reference.rs` | — |
 | camera_math | `camera/{math,ortho,orbit}` | map_coordinates |
 | spatial_indexes | `spatial/bvh`, `indexing/{cluster,point_index,picking}`, TLAS build core (`los/world/tlas.rs:51`) unified with `bvh/traversal.rs:50` | geometry_primitives |
-| world_file_formats | `io/*` (shims `archives/models` and `containers/headers` deleted) | — |
+| world_file_formats | `io/*` (shims `archives/models` and `containers/headers` deleted); typed archive ids | newtype_ids |
 | prefab_catalog | `buildings/{prefab,obb}`, `environment/classify`, `loaders/prefab` | formats |
 | world_chunks | `loaders/{chunk,chunk_bin,manifest,residency}` | prefab, formats |
 | world_store | `loaders/store.rs` (world store over chunks, roads, vegetation regions) | chunks, vegetation, road_network |

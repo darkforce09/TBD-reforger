@@ -12,7 +12,7 @@ pub fn m_per_px(deck_zoom: f64) -> f64 {
     }
 }
 
-pub use map_engine::camera::grid_reference::GRID_STEP_M;
+pub use map_coordinates::grid_reference::GRID_STEP_M;
 
 /// Width and height of the current terrain in metres.
 pub const TERRAIN_SPAN_M: f64 = 12_800.0;

@@ -1,24 +1,14 @@
-//! Role: Module boundary for camera.
-//! Position: `camera` in the map engine.
-//! Signals & state: camera, spatial, asset, or GPU data owned by this module.
-//! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
-
-/// The grid reference printed on a map pane's edge labels.
-pub mod grid_reference;
-
-/// Math.
-pub mod math;
-
-/// Orbit.
-pub mod orbit;
-
-/// Ortho.
-pub mod ortho;
+//! **Role:** the render engine's viewport methods: resize, pan, zoom and the world and screen
+//! answers of its camera.
+//! **Position:** `camera` in the map engine; the Mission Creator and the debug benches call these
+//! methods on `RenderEngine`. The cameras, matrix routines and grid reference are the
+//! `camera_math` and `map_coordinates` crates, which every caller imports directly.
+//! **Signals & state:** none here; `viewport` moves the render engine's camera.
+//! **Invariants:** the cameras and the grid reference have one definition each, in their crates;
+//! this module adds only the browser-build entry points.
 
 /// Where the camera is: resize, pan/zoom entry points, and the world↔screen answers.
-// T-0xx Phase 2B.1: from `core/context/viewport.rs`. It answers "where is the camera", which
-// is this module's question. Its `on_camera_changed` calls
-// `overlay::symbology::instances::symbols::cluster_mode` — a camera → overlay cross that is
-// real and stays: what the camera did decides whether symbols cluster.
+// Its `on_camera_changed` calls `overlay::symbology::instances::symbols::cluster_mode`: what the
+// camera did decides whether symbols cluster.
 #[cfg(all(target_arch = "wasm32", feature = "render"))]
 pub mod viewport;

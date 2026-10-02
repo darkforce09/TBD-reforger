@@ -3,7 +3,7 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::world::architecture::compound::transform::Rigid;
+use geometry_primitives::rigid_transform::Rigid;
 
 use super::*;
 

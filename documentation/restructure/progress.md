@@ -78,16 +78,22 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 - [ ] Stage commit — pending
 
 ### S4 Tier 0–1
-- [ ] B0 (S) cuts — pending
-- [ ] B1 (L) tool foundations — pending
-- [ ] B2 (M) foundation crates — pending
-- [ ] B3 (M) geometry crates — pending
-- [ ] B4 (M) render primitives — pending
-- [ ] B5 (S) world file formats — pending
-- [ ] B6 (M) contract crates — pending
-- [ ] X4 (M) switch — pending
+S4 lands in two commits (operator): S4a, the crates S5 and S6 need; S4b, tool foundations and
+contract crates. Log: [stage_logs/s4.md](/documentation/restructure/stage_logs/s4.md).
+- [x] B0 (S) cuts: the `dem/sample` re-export module deleted, its 26 tests re-homed — done
+- [x] B2a (M) `newtype_ids`, `time_source`, `deterministic_random` — done
+- [x] B2b (M) `content_digest` (xtask's sha2 switched), `browser_platform` — done
+- [x] B3 (M) `geometry_primitives`, `map_coordinates`, `camera_math` — done
+- [x] B4 (M) `render_primitives` — done
+- [x] B5 (S) `world_file_formats` — done; B5b (M) its typed ids (F-S4-01) — done
+- [x] X4a (M) S4a switch: 51 shims and every forwarding facade deleted — done
+- [x] S4a stage commit — done (see the stage log)
+- [ ] B1a (L) `verification_core`, `process_runner`, `repository_laws` — pending
+- [ ] B1b (M) `repository_layout` — pending
+- [ ] B6a (M) `fleet_wire_contract` — pending
+- [ ] B6b (L) `contract_schema_types` — pending
 - [ ] B7 (S) engine rules retargeted — pending
-- [ ] Stage commit — pending
+- [ ] S4b stage commit — pending
 
 ### S5 Mission and ballistics
 - [ ] D1 (L) mission authoring crates — pending

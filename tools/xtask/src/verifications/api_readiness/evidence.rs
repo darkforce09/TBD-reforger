@@ -1,9 +1,6 @@
 //! Evidence receipts describe observations; acceptance is recomputed from their output.
 
-use super::{
-    fingerprint,
-    register::{Check, EvidenceClass, relative_path},
-};
+use super::register::{Check, EvidenceClass, relative_path};
 use anyhow::{Result, ensure};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -84,7 +81,7 @@ pub(super) fn validate(
     }
     ensure!(receipt.exit_code == 0, "check exited {}", receipt.exit_code);
     ensure!(
-        receipt.output_sha256 == fingerprint::digest(output.as_bytes()),
+        receipt.output_sha256 == content_digest::sha256_hex(output.as_bytes()),
         "output digest mismatch"
     );
     ensure!(

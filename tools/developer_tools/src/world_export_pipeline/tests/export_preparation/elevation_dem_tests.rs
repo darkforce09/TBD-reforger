@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
-use map_engine::io::containers::header::HEADER_BYTES;
 use map_engine::world::terrain::dem::png::decode_png_gray16;
 use map_engine::world::terrain::dem::raw::RawDem;
+use world_file_formats::containers::header::HEADER_BYTES;
 
 use super::*;
 use crate::repository_layout::{terrain_dir, terrain_manifest_path};

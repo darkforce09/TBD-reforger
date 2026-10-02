@@ -14,9 +14,9 @@ use crate::streaming::loaders::prefab::tables_from_bytes;
 use crate::streaming::loaders::prefab::tables_from_json;
 use crate::streaming::loaders::store::WorldError;
 use crate::streaming::loaders::store::bytes_to_json;
-use crate::streaming::scheduler::chunk_math::TerrainSizeM;
 use crate::streaming::scheduler::state::IngestOutcome;
 use crate::streaming::scheduler::state::WorldResidency;
+use map_coordinates::chunk_math::TerrainSizeM;
 use serde_json::Value;
 use std::collections::HashSet;
 

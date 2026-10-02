@@ -30,7 +30,7 @@ arrays in world metres:
 | `upload_text_labels`, `upload_town_labels`, `upload_road_labels` | 20-byte glyph instances | `WorldLabels`, `WorldTownLabels`, `WorldRoadLabels`, `PIPE_TEXT` |
 
 A role id is one of `crate::overlay::lanes::role_id`; a belt ignores an id that names no lane.
-Coordinates cross to the GPU relative to `crate::world::scene::ANCHOR`, so f32 keeps them precise:
+Coordinates cross to the GPU relative to `map_coordinates::terrain_frames::ANCHOR`, so f32 keeps them precise:
 the graphics engine's `draw::polygons` and `draw::lines` shift meshes and lines, and
 `convert_icon_world_to_anchor` shifts glyph instances. The belt then calls `upsert_lane`, which
 replaces the lane's batch in lane order and marks the frame damaged. Malformed input (an empty
@@ -41,7 +41,7 @@ road and forest lanes.
 A label belt with `visible` false removes its lane. With an empty upload and `visible` true, the
 town label belt removes its lane, while the height and road label belts leave the lane they already
 have. Every label belt first calls `ensure_text_atlas`, which bakes the ASCII atlas once from
-`crate::overlay::symbology::text_metrics::atlas`. `upload_marquee` removes both marquee lanes when
+`render_primitives::text::atlas`. `upload_marquee` removes both marquee lanes when
 hidden or empty, and otherwise draws the fill in RGB (173, 198, 255) at alpha 40 and the outline at
 alpha 200. `max_texture_dimension_2d` and `adapter_max_texture_dimension_2d` report the device's
 and the adapter's largest 2D texture.
@@ -50,7 +50,7 @@ and the adapter's largest 2D texture.
 
 - Depends on: `crate::frame` (the engine, `bindings`, the packet types and the text atlas type),
   `crate::overlay::lanes` (lane roles and role ids), `crate::overlay::symbology` (the baked text
-  atlas and the glyph shift), `crate::world::scene::ANCHOR`, and `graphics_engine`
+  atlas and the glyph shift), `map_coordinates::terrain_frames::ANCHOR`, and `graphics_engine`
   (`draw::polygons`, `draw::lines`, `draw::geometry::LineVertex` and `layout::pack`).
 - Used by:
   - inside the crate: `crate::streaming::loaders::world_loader` (terrain strips and polygons),

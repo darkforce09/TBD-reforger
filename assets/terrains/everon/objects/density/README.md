@@ -20,7 +20,7 @@ assets/terrains/everon/objects/density/
   share their border corners with the next cell. The tree plane is the canopy-blurred grid, not the
   raw count. Plain git blobs, not Git LFS: the last rule of `.gitattributes` exempts this folder
   from the `*.bin` LFS rule.
-- Schema: the codec is `legacy/map_engine/src/io/density/tbdd.rs`; the terrain manifest's
+- Schema: the codec is `crates/world_formats/world_file_formats/src/density/tbdd.rs`; the terrain manifest's
   `objects.densityPath` and `objects.densityCellM` (8) describe the folder.
 - Adding a file: never by hand. `world build-objects` rewrites the set on a density phase (P2 and
   up) and leaves it alone on any other; `cargo run -p developer_tools --bin world -- redensify
@@ -38,7 +38,7 @@ assets/terrains/everon/objects/density/
     and uploads the stitched tree plane once;
   - the density codec's tests, which decode every committed tile against a byte-by-byte reference
     (`everon_tiles_decode_bit_identically_to_the_old_loop` in
-    `legacy/map_engine/src/io/density/tests/tbdd_tests.rs`), and the world export's
+    `crates/world_formats/world_file_formats/src/density/tests/tbdd_tests.rs`), and the world export's
     vegetation density tests.
 
 ## Boundaries
@@ -52,7 +52,7 @@ assets/terrains/everon/objects/density/
 
 ## Related documentation
 
-- [Vegetation density tiles](/legacy/map_engine/src/io/density/README.md) — the `TBDD`
+- [Vegetation density tiles](/crates/world_formats/world_file_formats/src/density/README.md) — the `TBDD`
   layout and its decoder.
 - [Vegetation](/legacy/map_engine/src/world/environment/vegetation/README.md) — how the tiles
   become the forest fill and canopy.

@@ -9,7 +9,7 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use serde_json::json;
 
-use super::mission_publication::sha256_hex;
+use content_digest::sha256_hex;
 
 /// The cache directory inside a profile directory (`$profile:` in the mod).
 pub const ARTIFACT_CACHE_DIRECTORY: &str = "TBD_MissionArtifactCache";

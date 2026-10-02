@@ -7,9 +7,9 @@ use crate::spatial::bvh::node::Builder;
 use crate::spatial::bvh::node::BvhNode;
 use crate::spatial::bvh::node::TriInfo;
 use crate::spatial::bvh::node::segment_hits_tri;
-use crate::spatial::bvh::node::sub;
 use crate::spatial::bvh::surface::SurfaceKind;
 use crate::spatial::bvh::surface::kind_of;
+use geometry_primitives::vector3::sub;
 
 const _: () = assert!(std::mem::size_of::<BvhNode>() == 32);
 

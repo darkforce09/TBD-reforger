@@ -37,7 +37,7 @@ with `crate::frame::create_glyph_atlas` and destroys the texture and buffer it r
 ## Boundaries
 
 - Depends on: `crate::frame` (`RenderEngine`, `GlyphAtlasGpu`, `create_glyph_atlas`) and
-  `graphics_engine::layout::ATLAS_GLYPH_COUNT` for the upload; `wasm_bindgen`.
+  `render_primitives::draw::instances::ATLAS_GLYPH_COUNT` for the upload; `wasm_bindgen`.
 - Used by: `crate::overlay::symbology::instances` (the bridge widens the atlas, the symbol packer
   names the cell offsets, and `slots` re-exports the layout), `crate::frame` (the engine holds the
   uploaded `GlyphAtlasGpu`), and the symbology tests in

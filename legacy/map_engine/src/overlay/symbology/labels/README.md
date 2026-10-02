@@ -29,7 +29,7 @@ legacy/map_engine/src/overlay/symbology/labels/
   `town_declutter_threshold_m`. `town_label_fade_alpha`
   fades from `TOWN_LABEL_MAX_ZOOM` (2.0) to the fade end.
 - **Glyphs.** Sizes are world metres, a base size in pixels over `2^REF_ZOOM`
-  (`crate::overlay::lod::REF_ZOOM`), with tree glyphs scaled by height (×1.0 to ×1.5) and a
+  (`render_primitives::text::scale::REF_ZOOM`), with tree glyphs scaled by height (×1.0 to ×1.5) and a
   minimum on-screen size (`size_with_min_px`). `deck_angle_for_rotation_deg` turns a clockwise
   compass yaw into the screen's counter-clockwise angle, and `yaw_to_snorm16` wraps it into
   (−180°, 180°] rather than clamping. `pack_icon_instance` writes the 20-byte instance
@@ -39,7 +39,7 @@ legacy/map_engine/src/overlay/symbology/labels/
 
 ## Boundaries
 
-- Depends on: `crate::overlay::lod::REF_ZOOM`; `serde` for `LocationLabel`.
+- Depends on: `render_primitives::text::scale::REF_ZOOM`; `serde` for `LocationLabel`.
 - Used by:
   - `crate::overlay::symbology::text_packing` (label strings to glyph instances);
   - the streaming buffers (`crate::streaming::buffers::glyphs`, `packer` and `revision`) and the

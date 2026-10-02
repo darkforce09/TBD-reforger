@@ -28,8 +28,8 @@ the caller hides the callout.
 
 ## Boundaries
 
-- Depends on: `crate::camera::math::glmat4` (`invert`, `transform_vector`),
-  `crate::camera::orbit::projection::view_proj_gl` and `crate::doll::scene::instances`.
+- Depends on: `camera_math::matrix4` (`invert`, `transform_vector`),
+  `camera_math::orbit::projection::view_proj_gl` and `crate::doll::scene::instances`.
 - Used by: `crate::doll::renderer`, whose `DollEngine::pick_region` and `DollEngine::anchor_px`
   call these with the engine's yaw and CSS size; `crate::doll::scene::model`, which re-exports all
   three functions for the model tests.
@@ -42,5 +42,5 @@ the caller hides the callout.
 
 ## Related documentation
 
-- [Orbit camera](/legacy/map_engine/src/camera/orbit/README.md) — the fixed-orbit camera
+- [Orbit camera](/crates/geometry/camera_math/src/orbit/README.md) — the fixed-orbit camera
   whose `view_proj_gl` both functions invert or apply.

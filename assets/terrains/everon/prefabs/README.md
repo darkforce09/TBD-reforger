@@ -57,7 +57,7 @@ that places its model.
   `descriptors[]` (each prefab's `pid`, `path`, `kind`, `blocks`, `canopy`, mesh paths and
   instance counts, sorted by `pid`), `hot[]` and `totals`. `building_blueprints.rkyv` is a
   little-endian rkyv archive of `BuildingBlueprintArchive`
-  (`legacy/map_engine/src/io/archives/blueprints.rs`) at archive schema version 1,
+  (`crates/world_formats/world_file_formats/src/archives/blueprints.rs`) at archive schema version 1,
   validated whole on read, about 275 KB. The archive is in Git LFS (`.gitattributes`:
   `assets/terrains/**/*.rkyv`); the manifest is a plain git blob. The children's formats are in
   their READMEs.

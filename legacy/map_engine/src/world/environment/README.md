@@ -52,7 +52,7 @@ only for wasm32 with the `render` feature; the rest is plain computation the nat
 
 ## Boundaries
 
-- Depends on: `crate::io` (the catalogue, regions and labels archives, the density bins);
+- Depends on: `world_file_formats` (the catalogue, regions and labels archives, the density bins);
   `crate::overlay` (level-of-detail gates, lanes, text packers); `crate::streaming` (chunks,
   residency, fetch); `crate::world::terrain` (the elevation model and roads), `crate::world::mesh`
   and `crate::world::scene`; `crate::frame` and `wgpu` for the uploads.

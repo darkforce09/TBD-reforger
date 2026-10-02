@@ -25,11 +25,6 @@ pub mod drag;
 #[cfg(all(target_arch = "wasm32", feature = "render"))]
 pub mod lanes;
 
-/// Packing.
-// T-0xx Phase 1C: moved to `graphics_engine`. Re-exported at its former path so
-// every call site in this crate keeps its spelling — the move is a relocation, not a rename.
-pub use graphics_engine::text::pack as packing;
-
 /// Patches.
 pub mod patches;
 

@@ -15,7 +15,7 @@ use crate::frame::pipelines::textured::create_forest_density_pipeline;
 use crate::frame::pipelines::textured::create_textured_pipeline;
 use crate::frame::pipelines::vector::create_line_pipeline;
 use crate::frame::pipelines::vector::create_polygon_pipeline;
-use crate::world::scene::ANCHOR;
+use map_coordinates::terrain_frames::ANCHOR;
 use std::cell::Cell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
@@ -229,7 +229,7 @@ impl RenderEngine {
         );
         let mvp = self.camera.wgpu_clip_matrix(ANCHOR[0], ANCHOR[1]);
         let packet = crate::frame::FramePacket {
-            camera: crate::frame::CameraUniform::new(mvp),
+            camera: render_primitives::frame::camera::CameraUniform::new(mvp),
             clear: self.clear_color,
             batches: &self.batches,
             text: &[],

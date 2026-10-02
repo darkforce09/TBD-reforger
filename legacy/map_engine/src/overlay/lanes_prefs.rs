@@ -114,15 +114,15 @@ impl RenderEngine {
 /// Build the procedural 1 km grid as a `LineList` vertex buffer, anchored at `world::scene::ANCHOR`.
 // T-0xx Phase 2B.1: from `renderers/batching/lanes.rs`. The grid is a cartographic overlay
 // with a visibility preference (`over_hillshade`), so it sits with the rest of the lane
-// preferences; the line arithmetic itself is `graphics_engine::draw::grid`.
+// preferences; the line arithmetic itself is `render_primitives::draw::grid`.
 #[must_use]
 pub fn grid_lines(
     width: f64,
     height: f64,
     over_hillshade: bool,
-) -> Vec<graphics_engine::draw::geometry::LineVertex> {
-    graphics_engine::draw::grid::grid_lines(
-        crate::world::scene::ANCHOR,
+) -> Vec<render_primitives::draw::geometry::LineVertex> {
+    render_primitives::draw::grid::grid_lines(
+        map_coordinates::terrain_frames::ANCHOR,
         width,
         height,
         over_hillshade,

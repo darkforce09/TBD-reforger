@@ -66,7 +66,7 @@ once `cargo xtask db up` has started it.
 - Depends on: the mod's spawn registry `apps/mod/tbd-framework/Data/registry.json`, which the kit
   aliases and the mission fixtures must agree with; the registry export plugin in
   `apps/mod/tbd-export/Scripts/WorkbenchGame/`, which produces the catalogues; the binary chunk and
-  density formats of `legacy/map_engine/src/io/`; and the glyph keys of
+  density formats of `crates/world_formats/world_file_formats/src/`; and the glyph keys of
   `assets/glyphs/manifest.json`.
 - Used by:
   - `apps/api/`: generated models, embedded validators, the registry import binary and

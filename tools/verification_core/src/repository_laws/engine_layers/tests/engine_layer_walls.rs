@@ -21,7 +21,7 @@ fn a_pure_renderer_passes_and_prose_does_not_trip_it() {
             RULE4_HEAD,
             RULE7_HEAD,
             "  OK (none)",
-            "  OK — 8 pinned site(s) in 1 file(s), 0 unpinned.",
+            "  OK — 5 pinned site(s) in 1 file(s), 0 unpinned.",
             "  OK — 5 pinned site(s), 0 unpinned.",
             "  OK — 2 pinned site(s) in 2 file(s), 0 unpinned.",
             "  OK — 0 site(s) in both directions: 4 .rs file(s) under data/ name no world \
@@ -460,7 +460,7 @@ fn the_rule_3a_pin_is_a_ratchet_in_both_directions() {
     r.expect(
         1,
         &[
-            "legacy/map_engine/src/frame/mod.rs: pinned at 8 site(s), found 9",
+            "legacy/map_engine/src/frame/mod.rs: pinned at 5 site(s), found 6",
             "1 frame-vocab finding(s)",
         ],
     );
@@ -475,7 +475,7 @@ fn the_rule_3a_pin_is_a_ratchet_in_both_directions() {
     r.expect(
         1,
         &[
-            "legacy/map_engine/src/frame/mod.rs: pinned at 8 site(s), found 7",
+            "legacy/map_engine/src/frame/mod.rs: pinned at 5 site(s), found 4",
             "1 frame-vocab finding(s)",
         ],
     );
@@ -485,7 +485,7 @@ fn the_rule_3a_pin_is_a_ratchet_in_both_directions() {
     let all = r.expect(
         1,
         &[
-            "legacy/map_engine/src/frame/mod.rs: pinned at 8 site(s), found 0 — \
+            "legacy/map_engine/src/frame/mod.rs: pinned at 5 site(s), found 0 — \
                  the pin is stale, delete the row.",
             "1 frame-vocab finding(s)",
         ],

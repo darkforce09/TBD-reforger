@@ -90,7 +90,7 @@ pub fn redensify_from_committed(terrain: &str) -> Result<()> {
         for cx in 0..grid_cells {
             let tree_ch = density::slice_chunk_corners(&tree_canopy, tree_size, cx, cy);
             let rock_ch = density::slice_chunk_corners(&rock_grid, rock_size, cx, cy);
-            let buf = map_engine::io::density::tbdd::encode_tbdd(
+            let buf = world_file_formats::density::tbdd::encode_tbdd(
                 density::DENSITY_CELL_M,
                 density::DENSITY_COLS,
                 density::DENSITY_ROWS,
@@ -149,7 +149,7 @@ pub fn gen_density_fixture() -> Result<()> {
     let (r_grid, r_size) = density::accumulate_corners(rocks.into_iter(), world);
     let t_slice = density::slice_chunk_corners(&t_grid, t_size, ccx, ccy);
     let r_slice = density::slice_chunk_corners(&r_grid, r_size, ccx, ccy);
-    let buf = map_engine::io::density::tbdd::encode_tbdd(
+    let buf = world_file_formats::density::tbdd::encode_tbdd(
         density::DENSITY_CELL_M,
         density::DENSITY_COLS,
         density::DENSITY_ROWS,

@@ -21,12 +21,7 @@ use crate::streaming::bridge::statistics::publish;
 use crate::streaming::bridge::statistics::publish_engine;
 use crate::world::environment::vegetation::loader::ForestMassHost;
 
-/// Re-export `crate::streaming::loaders::fetch::fetch_bytes`.
-pub use crate::streaming::loaders::fetch::fetch_bytes;
-use crate::streaming::loaders::fetch::fetch_bytes_streamed;
-
-/// Re-export `crate::streaming::loaders::fetch::fetch_text`.
-pub use crate::streaming::loaders::fetch::fetch_text;
+use browser_platform::fetch::fetch_bytes_streamed;
 
 /// Re-export `crate::streaming::loaders::occluder_loader::OccluderHost`.
 pub use crate::streaming::loaders::occluder_loader::OccluderHost;

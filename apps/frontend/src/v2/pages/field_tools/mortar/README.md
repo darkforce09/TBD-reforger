@@ -132,7 +132,7 @@ one gun from its coordinates or its legacy `x, y` grid text. The selected event 
   `crate::v2::core::offline` (`offline_status`), `crate::v2::core::map_view` (`mount`,
   `handles`, `navigation_math`, `terrain_height`, `terrain_preferences`, `engine_mount`),
   `crate::v2::core::ui` (`AuthGate`, `PageHeader`), `crate::v2::core::utils::datefmt`;
-  `map_engine` (`camera::grid_reference`, `data::scenario::ballistics::fire_mission`,
+  `map_coordinates::grid_reference`; `map_engine` (`data::scenario::ballistics::fire_mission`,
   `battery`, `solver`, `dispersion`, `fuze` and `crest_clearance`, `overlay::fire_mission_marks`,
   `overlay::symbology::markers`, `spatial::los::terrain::sampler`,
   `editing::tools::line_of_sight::terrain_survey::everon_manifest`).

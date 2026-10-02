@@ -44,7 +44,8 @@ impl RenderEngine {
             let frustum = [-1_234.5_f64, -987.25, 2_345.75, 1_876.5];
 
             let mut cull = crate::frame::compute::IconComputeCull::create(&device, &shader);
-            let cpu = crate::frame::oracle::count_icons_in_frustum(&src20, frustum);
+            let cpu =
+                render_primitives::draw::cull::oracle::count_icons_in_frustum(&src20, frustum);
             cull.upload_icons(&device, &queue, &src20);
             let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("cull-self-check"),

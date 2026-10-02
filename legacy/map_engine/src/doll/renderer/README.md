@@ -68,7 +68,7 @@ reconfigures once on an outdated or lost surface, and fails if the texture still
 ## Boundaries
 
 - Depends on: `crate::doll::scene` (instances, colours, meshes), `crate::doll::interaction`
-  (picks and anchors), `crate::camera::orbit::projection::view_proj_wgpu`,
+  (picks and anchors), `camera_math::orbit::projection::view_proj_wgpu`,
   `crate::frame::boot::instance_descriptor` and the WGSL source
   `legacy/map_engine/src/shaders/doll.wgsl`; the crates `wgpu`, `wasm-bindgen`, `web-sys`
   and `bytemuck`.
@@ -94,5 +94,5 @@ reconfigures once on an outdated or lost surface, and fails if the texture still
 
 - [Arsenal](/apps/frontend/src/v2/apps/editor/arsenal/README.md) — the workspace that
   mounts the preview.
-- [Orbit camera](/legacy/map_engine/src/camera/orbit/README.md) — the camera behind the
+- [Orbit camera](/crates/geometry/camera_math/src/orbit/README.md) — the camera behind the
   render uniform.

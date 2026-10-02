@@ -16,8 +16,7 @@ impl DollEngine {
         if !self.dirty && !self.continuous {
             return Ok(());
         }
-        let mvp =
-            crate::camera::orbit::projection::view_proj_wgpu(self.yaw, self.css_w, self.css_h);
+        let mvp = camera_math::orbit::projection::view_proj_wgpu(self.yaw, self.css_w, self.css_h);
         let mut uniform = [0f32; 20];
         uniform[..16].copy_from_slice(&mvp);
 

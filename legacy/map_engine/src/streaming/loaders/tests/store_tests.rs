@@ -59,11 +59,11 @@ fn manifest_gate() {
     ));
 }
 
-use crate::io::archives::codec::to_bytes;
-use crate::io::archives::roads::RoadNetworkArchive;
-use crate::io::archives::roads::RoadSegmentArchive;
-use crate::io::archives::version::ARCHIVE_SCHEMA_VERSION;
 use crate::world::environment::locations::route_placement::road_class_code;
+use world_file_formats::archives::codec::to_bytes;
+use world_file_formats::archives::roads::RoadNetworkArchive;
+use world_file_formats::archives::roads::RoadSegmentArchive;
+use world_file_formats::archives::version::ARCHIVE_SCHEMA_VERSION;
 
 fn roads_json() -> &'static str {
     r#"{ "roadSegments": [
@@ -77,13 +77,13 @@ fn roads_rkyv() -> Vec<u8> {
         schema_version: ARCHIVE_SCHEMA_VERSION,
         segments: vec![
             RoadSegmentArchive {
-                id: "a".to_string(),
+                id: "a".into(),
                 road_class: road_class_code("track"),
                 width_m: 2.0,
                 centerline: vec![[0.0, 0.0], [0.0, 10.0]],
             },
             RoadSegmentArchive {
-                id: "b".to_string(),
+                id: "b".into(),
                 road_class: road_class_code("runway"),
                 width_m: 20.0,
                 centerline: vec![[0.0, 0.0], [0.0, 50.0]],
@@ -227,8 +227,9 @@ fn full_island_census_matches_pinned_inventory() {
     bins.sort();
     assert_eq!(bins.len(), 625);
     for f in bins.iter().take(3) {
-        let grid = crate::io::density::tbdd::decode_tbdd(&read(&objects.join("density").join(f)))
-            .unwrap_or_else(|e| panic!("{f}: {e}"));
+        let grid =
+            world_file_formats::density::tbdd::decode_tbdd(&read(&objects.join("density").join(f)))
+                .unwrap_or_else(|e| panic!("{f}: {e}"));
         assert!(grid.cols > 0 && grid.rows > 0, "{f}: empty grid");
     }
 }

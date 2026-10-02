@@ -16,6 +16,7 @@
 //! mirror can never drift. Coordinates are the building's local plan frame in metres.
 #![allow(dead_code)] // native build: the wasm host wires the live path; tests pin the pure core.
 
+use geometry_primitives::rigid_transform::Rigid;
 #[cfg(target_arch = "wasm32")]
 use map_engine::overlay::lanes::role_id;
 use map_engine::spatial::bvh::surface::SurfaceKind;
@@ -27,7 +28,6 @@ use map_engine::world::architecture::compound::assembly::CompoundBuilding;
 use map_engine::world::architecture::compound::assembly::CoverTier;
 use map_engine::world::architecture::compound::instances::Instance;
 use map_engine::world::architecture::compound::instances::InstanceKind;
-use map_engine::world::architecture::compound::transform::Rigid;
 use map_engine::world::architecture::section::cutter::section_at_owned;
 use map_engine::world::architecture::section::cutter::BuildingDrawing;
 use map_engine::world::architecture::section::cutter::Seg2;

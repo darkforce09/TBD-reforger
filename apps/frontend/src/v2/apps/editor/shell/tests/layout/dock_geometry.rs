@@ -24,7 +24,7 @@ use super::{
 };
 use crate::v2::apps::editor::ui::docks::toolbelt::STATUSBAR_H_PX;
 use crate::v2::core::test_support::class_r_scrub::live_code;
-use map_engine::camera::ortho::state::OrthoCamera;
+use camera_math::ortho::state::OrthoCamera;
 
 /// Both collapse latches off and the chrome shown, so the accessors report the EXPANDED consts.
 /// The latches are thread-locals shared with `t638_collapse`, which runs on the same thread.

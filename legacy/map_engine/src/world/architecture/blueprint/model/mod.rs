@@ -58,12 +58,3 @@ pub use crate::world::architecture::blueprint::attribution_1::LosResult;
 
 /// Re-export `crate::world::architecture::blueprint::attribution_1::clip_t_to_band`.
 pub use crate::world::architecture::blueprint::attribution_1::clip_t_to_band;
-
-/// Re-export `crate::world::architecture::blueprint::geometry::dist_2d`.
-pub use crate::world::architecture::blueprint::geometry::dist_2d;
-
-/// Re-export `crate::world::architecture::blueprint::geometry::line_segment_intersection_2d`.
-pub use crate::world::architecture::blueprint::geometry::line_segment_intersection_2d;
-
-/// Re-export `crate::world::architecture::blueprint::geometry::segment_intersects_aabb_2d`.
-pub use crate::world::architecture::blueprint::geometry::segment_intersects_aabb_2d;

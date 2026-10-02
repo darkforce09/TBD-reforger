@@ -13,9 +13,8 @@
 use anyhow::Result;
 use serde_json::Value;
 
-use super::website_api_client::{
-    ApiAnswer, ApiTransport, CurlTransport, encode_component, sha256_hex,
-};
+use super::website_api_client::{ApiAnswer, ApiTransport, CurlTransport, encode_component};
+use content_digest::sha256_hex;
 
 /// Entry for `xtask mod test-game-runtime-api`.
 pub fn run() -> Result<u8> {

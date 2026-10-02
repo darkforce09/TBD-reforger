@@ -23,6 +23,14 @@ base64 = { workspace = true }
 # structures and line-of-sight raycaster behind `/debug/building-viewer`); `editing` brings
 # `streaming` with it. The wasm32 block adds `render`.
 map_engine = { path = "../../legacy/map_engine", default-features = false, features = ["world", "io", "store", "editing"] }
+# The geometry crates the map views and debug benches name directly: the orthographic and orbit
+# cameras, the grid reference and chunk arithmetic, and the rigid transform of the building
+# interior bench.
+camera_math = { workspace = true }
+map_coordinates = { workspace = true }
+geometry_primitives = { workspace = true }
+# The ear-clipping triangulation the native building viewer fills footprints with.
+render_primitives = { workspace = true }
 gloo-net = { workspace = true }
 js-sys = { workspace = true }
 # Query strings and the offline core's URL parsing. `leptos_router` and
@@ -124,6 +132,8 @@ gloo-timers = { version = "0.3", features = ["futures"] }
 # Default features are off, as on every frontend edge to the map engine, so the crate default
 # (`scenario`) never chooses a tier.
 map_engine = { path = "../../legacy/map_engine", default-features = false, features = ["render", "streaming"] }
+# The same-origin fetch helpers the map view mount and the world line-of-sight bench load with.
+browser_platform = { workspace = true }
 # The mission document's IndexedDB persistence (database `tbd-mission-yrs`, store `doc-state`, the
 # whole `encode_state()` blob). `idb` is a wasm-first IndexedDB wrapper; its default features pull
 # `tokio` with ONLY `features=["sync"]` (oneshot), which compiles on wasm32-unknown-unknown, and

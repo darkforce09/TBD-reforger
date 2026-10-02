@@ -12,7 +12,6 @@ use crate::spatial::bvh::surface::SurfaceKind;
 use crate::spatial::bvh::traversal::Bvh;
 use crate::spatial::los::world::*;
 use crate::streaming::loaders::chunk::WorldChunk;
-use crate::streaming::scheduler::chunk_math::TerrainSizeM;
 use crate::world::architecture::blueprint::attribution_1::LosHitKind;
 use crate::world::architecture::compound::assembly::CoverTier;
 use crate::world::architecture::compound::assembly::PlacementSource;
@@ -20,8 +19,9 @@ use crate::world::architecture::compound::doors::DoorRecord;
 use crate::world::architecture::compound::instances::InstanceKind;
 use crate::world::architecture::compound::instances::InstanceRecord;
 use crate::world::architecture::compound::instances::LocalTransform;
-use crate::world::architecture::compound::transform::Rigid;
 use crate::world::environment::buildings::prefab::PrefabRow;
+use geometry_primitives::rigid_transform::Rigid;
+use map_coordinates::chunk_math::TerrainSizeM;
 
 struct Lcg(u64);
 impl Lcg {

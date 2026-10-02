@@ -116,7 +116,7 @@ impl ArchiveBoot {
         };
         for row in a.descriptors.iter() {
             let (Ok(pid), Some(paths)) = (
-                u16::try_from(row.prefab_id.to_native()),
+                u16::try_from(row.prefab_id.get()),
                 PrefabDescriptor::archived_blas_paths(row, &a.blas_index),
             ) else {
                 boot.unusable += 1;

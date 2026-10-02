@@ -1,7 +1,7 @@
 //! Toolbelt.
 #![allow(dead_code)]
+use camera_math::ortho::state::OrthoCamera;
 use leptos::prelude::*;
-use map_engine::camera::ortho::state::OrthoCamera;
 use map_engine::editing::tools::line_of_sight::capture::LosMode;
 #[cfg(target_arch = "wasm32")]
 use map_engine::editing::tools::selection;

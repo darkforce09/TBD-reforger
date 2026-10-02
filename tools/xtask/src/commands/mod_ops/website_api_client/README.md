@@ -53,7 +53,7 @@ the cached document only when its bytes hash to the recorded SHA-256.
 
 ## Boundaries
 
-- Depends on: `curl` on the path; the `anyhow`, `serde_json` and `sha2` crates.
+- Depends on: `curl` on the path; the `anyhow`, `serde_json` and `content_digest` crates.
 - Used by: `tools/xtask/src/commands/mod_ops/playtest_server/platform_deployment.rs`,
   `tools/xtask/src/commands/mod_ops/world_boot.rs` and its `compiled_lane.rs`,
   `tools/xtask/src/commands/mod_ops/mission_test.rs` and

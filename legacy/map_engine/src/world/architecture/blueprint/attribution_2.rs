@@ -6,11 +6,11 @@
 use crate::world::architecture::blueprint::attribution_1::APERTURE_SLACK_M;
 use crate::world::architecture::blueprint::attribution_1::LosHit;
 use crate::world::architecture::blueprint::attribution_1::LosHitKind;
-use crate::world::architecture::blueprint::geometry::dist_2d;
-use crate::world::architecture::blueprint::geometry::point_at;
-use crate::world::architecture::blueprint::geometry::segment_aabb_entry_t_2d;
-use crate::world::architecture::blueprint::geometry::segment_intersection_t_2d;
 use crate::world::architecture::blueprint::structure::BuildingLevel;
+use geometry_primitives::segment_geometry::dist_2d;
+use geometry_primitives::segment_geometry::point_at;
+use geometry_primitives::segment_geometry::segment_aabb_entry_t_2d;
+use geometry_primitives::segment_geometry::segment_intersection_t_2d;
 
 /// Collect level annotations.
 pub(crate) fn collect_level_annotations(

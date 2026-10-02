@@ -5,8 +5,9 @@
 //! Invariants: this is the module that speaks `graphics_engine`'s frame vocabulary.
 //! Gate rule 3a pins that naming to THIS FILE — not merely to this directory. Every other
 //! module in the crate, `frame/`'s own submodules included, reaches the vocabulary through
-//! `crate::frame::…`; the one other legitimate door to the renderer is `graphics_engine::layout`,
-//! the POD/bit-packing ABI, which belts import directly beside their data (§2C.1 Kind B).
+//! `crate::frame::…`. The GPU-free half of the renderer's vocabulary — the POD instance layouts,
+//! the bit-packing, the frame ids, the camera uniform and damage tracking — is
+//! `render_primitives`, which belts import directly beside their data (§2C.1 Kind B).
 //!
 //! The engine's own GPU lifecycle lives in this folder: `engine.rs` holds the engine state,
 //! `boot.rs` the adapter and device bring-up, `bindings.rs` the lane bind-group policy and
@@ -67,10 +68,10 @@ pub use graphics_engine::pipeline as pipelines;
 // ── THE PACKET VOCABULARY ────────────────────────────────────────────────────────────────────
 //
 // §2C.1 Kind C. Everything the renderer's `frame` module publishes that this crate consumes,
-// enumerated. **The eight `pub use` lines below are the only places in `map_engine`
+// enumerated. **The five `pub use` lines below are the only places in `map_engine`
 // that spell the path they spell** — engine-layer rule 3a (`RULE3A_PIN` in
 // `tools/verification_core/src/repository_laws/engine_layers/rules.rs`) pins that in both
-// directions, at exactly eight, so a ninth import is a diff to this list and a lost one is a
+// directions, at exactly five, so a sixth import is a diff to this list and a lost one is a
 // stale pin. Every other module of the crate reads `use crate::frame::DrawBatch;`. (This prose
 // never spells the path, so the pinned count is exactly the size of the re-export list and a
 // comment edit cannot turn the gate red.)
@@ -80,20 +81,18 @@ pub use graphics_engine::pipeline as pipelines;
 // the crate's entire graphics interface is a list you can read in one screen, and that widening
 // it is a diff to this file rather than an import somewhere in `world/` nobody reviews.
 //
-// The split into two groups is graphics-engine's own: `camera.rs`, `damage.rs` and `ids.rs` are
-// ungated there because they are arithmetic and newtypes, while `atlas`, `batch`, `buffers`,
-// `packet`, `present` and `text` name `wgpu` types and are `cfg(target_arch = "wasm32")`. This
-// mirror gates on the target for the same reason and NOT on `render`: the condition is whether
-// the item exists, and `render` is a question about whether this crate draws.
+// Every item listed names a `wgpu` type, so each is `cfg(target_arch = "wasm32")` in the graphics
+// engine: `atlas`, `batch`, `buffers`, `packet`, `present` and `text`. The arithmetic and newtypes
+// beside them — the camera uniform, damage tracking and the frame ids — are GPU-free and live in
+// `render_primitives::frame`, which callers import directly. This mirror gates on the target and
+// NOT on `render`: the condition is whether the item exists, and `render` is a question about
+// whether this crate draws.
 //
 // `IndexedMesh` and `VertexStream` are in the list without a `use` site today on purpose. They
 // are what `draw::polygons::upload_*` and `draw::lines::upload_*` hand back and what
 // `DrawPayload::{Indexed, Lines}` carry — part of the vocabulary this crate speaks whether or
 // not a belt happens to need the name spelled. Leaving them out would make the list a census of
 // current imports rather than a statement of the interface.
-
-/// Damage tracking — which frames need submitting at all.
-pub use graphics_engine::frame::damage;
 
 /// Ordered-insert and removal over a persistent `Vec<DrawBatch>` (rule 1's real case).
 #[cfg(target_arch = "wasm32")]
@@ -102,12 +101,6 @@ pub use graphics_engine::frame::packet;
 /// Swapchain acquire, submit and present.
 #[cfg(target_arch = "wasm32")]
 pub use graphics_engine::frame::present;
-
-/// The group-0 camera block every draw binds.
-pub use graphics_engine::frame::CameraUniform;
-
-/// The three opaque ids a batch travels with — lane, pipeline, bind group.
-pub use graphics_engine::frame::{BindGroupId, LaneId, PipelineId};
 
 /// One frame's complete draw list, and the draws in it.
 #[cfg(target_arch = "wasm32")]
@@ -123,10 +116,8 @@ pub use graphics_engine::frame::{
     GlyphAtlasGpu, TextAtlasGpu, TextRun, create_glyph_atlas, create_text_atlas,
 };
 
-/// The CPU frustum oracle for packed sprite instances.
-pub use graphics_engine::draw::cull::oracle;
-
-/// Its GPU compute twin — wasm only, because it needs a device.
+/// The GPU frustum compaction of packed sprite instances — wasm only, because it needs a device;
+/// its CPU oracle is `render_primitives::draw::cull::oracle`.
 #[cfg(all(target_arch = "wasm32", feature = "render"))]
 pub use graphics_engine::draw::cull::compute;
 
@@ -148,7 +139,7 @@ pub use pump::{FrameTarget, RafPump};
 pub type EngineHandle = std::rc::Rc<std::cell::RefCell<Option<RenderEngine>>>;
 
 // Damage discipline. `RenderDamage`'s own state machine is tested in
-// `graphics_engine`; this asserts that this crate still consults it — that `render()`
+// `render_primitives`; this asserts that this crate still consults it — that `render()`
 // refuses an undamaged frame, that every lane mutation marks damage, and that the packet
 // borrows the persistent batch list instead of rebuilding one per frame. Not gated on
 // `render`: it reads source text, never a GPU.

@@ -4,8 +4,9 @@
 use serde_json::{Value, json};
 
 use super::browser_inbox::{BrowserInbox, InboxRead, InboxWindow};
-use super::journal::{ARTIFACT_FOLDER, JOURNAL_FILE, JournalEntry, ObservationJournal, digest};
+use super::journal::{ARTIFACT_FOLDER, JOURNAL_FILE, JournalEntry, ObservationJournal};
 use crate::commands::staging::procedure_runner::runner_support::scratch_folder;
+use content_digest::sha256_hex;
 
 fn entry<'a>(step: &'a str, artifact: &'a [u8]) -> JournalEntry<'a> {
     JournalEntry {
@@ -29,7 +30,7 @@ fn staging_journal_archives_every_observation_by_its_digest() {
         .archive(&entry("w1_stop.server2", b"stopped\n"))
         .unwrap();
     let other = journal.archive(&entry("w1_stop.request", b"")).unwrap();
-    assert_eq!(first, digest(b"stopped\n"));
+    assert_eq!(first, sha256_hex(b"stopped\n"));
     assert_eq!(first, again, "identical bytes share one artifact");
     assert_eq!(
         other,
@@ -37,7 +38,7 @@ fn staging_journal_archives_every_observation_by_its_digest() {
     );
     let stored = std::fs::read(folder.join(ARTIFACT_FOLDER).join(format!("{first}.txt"))).unwrap();
     assert_eq!(
-        digest(&stored),
+        sha256_hex(&stored),
         first,
         "an artifact holds exactly the bytes its name digests"
     );

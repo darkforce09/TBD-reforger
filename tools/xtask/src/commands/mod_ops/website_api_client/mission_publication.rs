@@ -3,8 +3,8 @@
 //! artifact's exact document bytes.
 
 use anyhow::{Context, Result, bail};
+use content_digest::sha256_hex;
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
 
 use super::api_client::{ApiClient, text_at};
 use super::http_exchange::encode_component;
@@ -192,9 +192,4 @@ pub fn delete_mission(client: &ApiClient<'_>, mission_id: &str) -> Result<()> {
         );
     }
     Ok(())
-}
-
-/// Lowercase hex SHA-256.
-pub fn sha256_hex(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
 }

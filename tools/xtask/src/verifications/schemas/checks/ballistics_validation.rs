@@ -19,7 +19,7 @@
 //! never as `PASS`. One document without the other is a failure. Every schema compile or read
 //! error aborts the suite rather than passing.
 use super::*;
-use sha2::{Digest, Sha256};
+use content_digest::sha256_hex;
 
 /// Committed catalog, relative to `contracts/catalogs/`.
 const CATALOG_RELATIVE_PATH: &str = "ballistics/vanilla_mortars.v1.catalog.json";
@@ -107,14 +107,6 @@ pub(super) fn validate(
         }
     }
     Ok(BallisticsOutcome::Checked)
-}
-
-/// Lowercase hexadecimal SHA-256 of `bytes`.
-fn sha256_hex(bytes: &[u8]) -> String {
-    Sha256::digest(bytes)
-        .iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect()
 }
 
 fn copied_value_equal(left: f64, right: f64) -> bool {

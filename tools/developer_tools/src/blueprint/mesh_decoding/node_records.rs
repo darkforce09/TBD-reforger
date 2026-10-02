@@ -20,7 +20,7 @@
 //! each trimesh subrange's `u16` is the `.gamemat` for that run of triangles.
 
 use anyhow::{Context, Result, bail};
-use map_engine::world::architecture::compound::transform::Rigid;
+use geometry_primitives::rigid_transform::Rigid;
 
 const RECORD_LEN: usize = 36;
 const NONE: u16 = 0xFFFF;

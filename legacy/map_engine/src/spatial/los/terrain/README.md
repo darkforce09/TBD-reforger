@@ -13,6 +13,7 @@ legacy/map_engine/src/spatial/los/terrain/
 ├── overlay.rs    `viewshed_upload` and `viewshed_clear`, which show a raster as the viewshed lane
 ├── sampler.rs    `sample_segment`, the ground elevation profile along a segment
 ├── scheduler.rs  `ViewshedJob`, the viewshed computed a ray at a time under a time budget
+├── tests/        unit tests for the segment profile, the viewshed and the sliced viewshed job
 └── viewshed.rs   `Visibility`, the `Viewshed` raster and its grid, the cell cap, `compute_viewshed`
 ```
 
@@ -48,9 +49,7 @@ raster's world rectangle; its rows must be at least four bytes a texel and 256-b
 - Used by: `crate::editing::tools::line_of_sight`, whose terrain survey computes the profile and
   the viewshed and whose verdict, projection, palette and texture read them;
   `crate::editing::tools::viewshed_scheduler`, whose terrain lane runs a `ViewshedJob`;
-  `crate::spatial::los::interior`, whose wash reuses `Visibility` and `ViewshedCapRefused`;
-  `crate::world::terrain::dem::sample`, which re-exports the profile and viewshed items and holds
-  their tests; and the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s input
+  `crate::spatial::los::interior`, whose wash reuses `Visibility` and `ViewshedCapRefused`; and the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s input
   handlers (`apps/frontend/src/v2/apps/editor/input/`) and canvas mount
   (`apps/frontend/src/v2/apps/editor/mission_editor/canvas_mount.rs`) and the debug
   building viewer (`apps/frontend/src/v2/apps/debug/building_viewer/`), which upload and
@@ -59,7 +58,10 @@ raster's world rectangle; its rows must be at least four bytes a texel and 256-b
   touches the GPU or the browser; a raster over `MAX_VIEWSHED_CELLS` (300 000) cells is refused:
   `ViewshedJob::new` returns the `ViewshedCapRefused` naming the cap and the measured count, and
   `compute_viewshed` returns an empty raster, while the 2000 m / 8 m default (251 001 cells) passes
-  (`over_cap_viewshed_is_refused_with_a_message`); the sliced raster is identical to the
-  synchronous one (`sliced_viewshed_is_bit_identical_to_the_sync_path`); an observer off coverage
-  yields an all-`Unknown` raster (`viewshed_observer_off_coverage_is_all_unknown`); all in
-  `legacy/map_engine/src/world/terrain/dem/sample/tests/cases_1.rs`.
+  (`over_cap_viewshed_is_refused_with_a_message` in `tests/viewshed_tests.rs`); an observer off
+  coverage yields an all-`Unknown` raster (`viewshed_observer_off_coverage_is_all_unknown`); the
+  sliced raster is identical to the synchronous one and a job can be cancelled mid-disc
+  (`sliced_viewshed_is_bit_identical_to_the_sync_path`, `viewshed_job_cancels_mid_disc` in
+  `tests/scheduler_tests.rs`); a segment profile keeps both endpoints and drops the samples off the
+  coverage (`segment_includes_both_endpoints_and_respects_step`,
+  `segment_drops_off_coverage_samples` in `tests/sampler_tests.rs`).

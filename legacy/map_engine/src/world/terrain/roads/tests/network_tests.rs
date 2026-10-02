@@ -85,9 +85,9 @@ fn parse_payload_drops_malformed() {
     assert_eq!(parse_roads_payload(&json!("<html>")).len(), 0);
 }
 
-use crate::io::archives::codec::to_bytes;
-use crate::io::archives::roads::RoadSegmentArchive;
 use crate::world::environment::locations::route_placement::road_class_code;
+use world_file_formats::archives::codec::to_bytes;
+use world_file_formats::archives::roads::RoadSegmentArchive;
 
 fn network(segments: Vec<RoadSegmentArchive>) -> RoadNetworkArchive {
     RoadNetworkArchive {
@@ -98,7 +98,7 @@ fn network(segments: Vec<RoadSegmentArchive>) -> RoadNetworkArchive {
 
 fn one_segment() -> RoadNetworkArchive {
     network(vec![RoadSegmentArchive {
-        id: "road-everon-0007".to_string(),
+        id: "road-everon-0007".into(),
         road_class: road_class_code("road_dirt"),
         width_m: 2.5,
         centerline: vec![[1.5, -2.25], [10.0, -2.25], [10.0, 40.5]],
@@ -122,7 +122,7 @@ fn road_network_round_trips_through_the_validating_reader() {
 #[test]
 fn archive_widens_f32_exactly_and_does_not_pretend_to_be_f64() {
     let bytes = to_bytes(&network(vec![RoadSegmentArchive {
-        id: "r".to_string(),
+        id: "r".into(),
         road_class: road_class_code("track"),
         width_m: 0.1,
         centerline: vec![[0.1, 0.2], [0.3, 0.4]],
@@ -138,7 +138,7 @@ fn archive_widens_f32_exactly_and_does_not_pretend_to_be_f64() {
 fn unnameable_class_code_is_an_error_not_a_vanished_road() {
     for code in [0u8, 7, 255] {
         let bytes = to_bytes(&network(vec![RoadSegmentArchive {
-            id: "r0".to_string(),
+            id: "r0".into(),
             road_class: code,
             width_m: 4.0,
             centerline: vec![[0.0, 0.0], [1.0, 1.0]],
@@ -152,7 +152,7 @@ fn unnameable_class_code_is_an_error_not_a_vanished_road() {
 
     for class in crate::world::environment::locations::route_placement::ROAD_CLASSES {
         let bytes = to_bytes(&network(vec![RoadSegmentArchive {
-            id: "r0".to_string(),
+            id: "r0".into(),
             road_class: road_class_code(class),
             width_m: 4.0,
             centerline: vec![[0.0, 0.0], [1.0, 1.0]],

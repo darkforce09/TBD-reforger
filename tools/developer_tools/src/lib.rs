@@ -13,7 +13,6 @@
 
 pub mod blueprint;
 pub mod browser_testing;
-pub mod content_digest;
 pub mod enfusion_pak;
 pub mod enfusion_tooling;
 pub mod map_raster_pipeline;

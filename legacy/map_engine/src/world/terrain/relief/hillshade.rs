@@ -67,7 +67,7 @@ pub fn build_hillshade_image(meters: &[f32], src_w: usize, src_h: usize) -> Hill
             if hs < 0.0 {
                 hs = 0.0;
             }
-            let gray = crate::camera::math::shaping::round(hs * 255.0) as u8;
+            let gray = map_coordinates::rounding::round(hs * 255.0) as u8;
 
             let o = ((h - 1 - y) * w + x) * 4;
             data[o] = gray;

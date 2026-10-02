@@ -12,10 +12,9 @@ tools/developer_tools/src/
 ├── bin/                     the seven entry points, one `main` per executable
 ├── blueprint/               the building-blueprint compiler: mesh decode, voxels, walls, BVH, archives
 ├── browser_testing/         headless Chromium over the DevTools protocol: gates, smokes, captures
-├── content_digest.rs        SHA-384 of a file's bytes, in the hex spelling `sqlx` stores for migrations
 ├── enfusion_pak/            the game's `.pak` archives and loose folders behind one virtual file system
 ├── enfusion_tooling/        the Enfusion script oracle behind `enf` and the enfusion-mcp broker
-├── lib.rs                   the library root: declares the twelve public modules
+├── lib.rs                   the library root: declares the eleven public modules
 ├── map_raster_pipeline/     map images and archives: orthophoto, satellite, cartographic, labels, water
 ├── map_verification/        map-asset checks against the map engine: goldens, labels, manifests, sight
 ├── repository_layout.rs     every repository path the crate spells, as constants and path functions
@@ -59,7 +58,6 @@ xtask schema` commands call their entry functions directly with the checkout roo
   call` and `cargo xtask mcp daemon` start.
 - `repository_layout`: the contract, fixture, terrain, glyph and MCP package paths that xtask
   commands and verifications resolve, `mission_fixtures_valid_dir` among them.
-- `content_digest`: the migration checksum `cargo xtask db repair-migration-checksum` computes.
 - `staging_verification::load_generation`: `run` and its plan and report types, the member load
   engine behind the staging load receipt.
 - `staging_verification::acknowledgement_relay`: `entrypoint`, `start`, `serve` and the

@@ -16,7 +16,7 @@ legacy/map_engine/src/world/environment/locations/routes/
 
 - Depends on: `route_placement`, `route_labels` and `route_geometry` in
   `crate::world::environment::locations`; the tests also use `crate::world::terrain::roads`
-  (`RoadSegment`) and `crate::io::archives` (the map labels archive).
+  (`RoadSegment`) and `world_file_formats::archives` (the map labels archive).
 - Used by: nothing outside the folder; callers import the same items from the `route_*` modules.
 - Rules: the module compiles only with the `streaming` feature and defines no item of its own. Its
   tests hold the road label rules: at most `ROAD_NAME_MAX_ON_SCREEN` (24) labels survive the

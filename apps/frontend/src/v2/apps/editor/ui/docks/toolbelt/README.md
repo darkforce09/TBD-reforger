@@ -38,7 +38,7 @@ text.
 
 ## Boundaries
 
-- Depends on: `map_engine` (the ortho camera and `camera::grid_reference`, the ruler's
+- Depends on: `camera_math` (the ortho camera); `map_coordinates::grid_reference`; `map_engine` (the ruler's
   `EditorTool` and the line-of-sight `LosMode`, and in the browser build `frozen_camera`,
   `read_attrs` and `camera_snapshot`); `crate::v2::apps::editor::shell::layout` for the insets
   and toggle classes, and `shell::mission_size::format_bytes`; `cn` and `MaterialIcon` from

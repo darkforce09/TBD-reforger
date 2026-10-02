@@ -8,8 +8,8 @@
 //! forward samples are the linear interpolation of the unskewed rows, exactly as the engine
 //! answers.
 use crate::commands::ballistics::catalog_extraction::WeaponSelection;
-use crate::commands::ballistics::gameplay_export::sha256_hex;
 use crate::commands::ballistics::trim_export::TrimLocations;
+use content_digest::sha256_hex;
 use serde_json::{Value, json};
 use std::fs;
 use std::path::{Path, PathBuf};

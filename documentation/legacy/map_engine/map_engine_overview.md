@@ -13,7 +13,7 @@ The code READMEs it links hold the exact detail.
 
 - Code: [`legacy/map_engine/`](/legacy/map_engine/README.md), whose README gives the
   feature table, the commands and the public surface; [`src/`](/legacy/map_engine/src/README.md),
-  whose README gives the eleven modules and the tier each compiles under.
+  whose README gives the ten modules and the tier each compiles under.
 - Entry:
   - the API links the default `scenario` tier (`apps/api/Cargo.toml:65`) and calls
     `data::scenario` from its missions and operations domains;
@@ -44,12 +44,12 @@ never names the document; they meet only in `editing`
 | authored | `data/store` | the Yjs (`yrs`) document the Mission Creator edits, its rows and operations | `store` | [README](/legacy/map_engine/src/data/store/README.md) |
 | authored | `editing` | the editing host, hosted commands, undo drive, draft decisions and map tools | `editing` | [editing layer](/documentation/legacy/map_engine/editing_layer.md) |
 | static | `streaming` | fetch, chunk residency, draw buffers and the memory budget | `io`, `streaming` | [map streaming](/documentation/legacy/map_engine/map_streaming.md) |
-| static | `io` | the binary formats: rkyv archives, containers, density grids, POD layouts | `io` | [README](/legacy/map_engine/src/io/README.md) |
+| static | `world_file_formats` (crate) | the binary formats: rkyv archives, containers, density grids, POD layouts | `io` | [README](/crates/world_formats/world_file_formats/README.md) |
 | static | `world` | terrain, what stands on it, and building interiors | `world` | [README](/legacy/map_engine/src/world/README.md) |
 | static | `spatial` | BVHs, point indexes, picking and line of sight | `world` | [README](/legacy/map_engine/src/spatial/README.md) |
 | draw | `overlay` | the 48 lanes in paint order and the symbology drawn in them | `world` | [README](/legacy/map_engine/src/overlay/README.md) |
 | draw | `frame` | `RenderEngine`, its batch list and upload belts, the frame vocabulary | `world`; GPU half `render` | [README](/legacy/map_engine/src/frame/README.md) |
-| draw | `camera` | the map's orthographic camera, the doll's orbit camera, the grid reference | always | [README](/legacy/map_engine/src/camera/README.md) |
+| draw | `camera` | the render engine's viewport; the orthographic and orbit cameras (`camera_math`) and the grid reference (`map_coordinates`) under map engine paths | always | [README](/legacy/map_engine/src/camera/README.md) |
 | support | `diagnostics` | readback checks, the frame benchmark, clocks and console macros | `render` | [README](/legacy/map_engine/src/diagnostics/README.md) |
 | support | `doll` | the [arsenal](/documentation/glossary/a_to_f.md#arsenal)'s 3D mannequin preview, a second small renderer | `render` | [README](/legacy/map_engine/src/doll/README.md) |
 
@@ -106,10 +106,6 @@ The crate's tests need every feature: `cargo test -p map_engine --all-features`,
   `overlay/symbology/` and implements no MIL-STD-2525 set
   (`legacy/map_engine/src/overlay/symbology/README.md`). `CLAUDE.md`'s atlas also omits
   `overlay/` and `frame/`'s role as the render engine's home.
-- `legacy/map_engine/Cargo.toml:24-25` explains the `world` tier's graphics edge with
-  `frontend/Cargo.toml:27` and `renderers::primitives::triangulate`; the frontend declares the
-  map engine at `apps/frontend/Cargo.toml:33`, and the path is
-  `map_engine::world::mesh::triangulate` (`src/world/mesh.rs:17`).
 - `legacy/map_engine/src/lib.rs:1-4` calls the crate root a module "in the graphics engine"
   with placeholder role lines; the crate is the map engine.
 

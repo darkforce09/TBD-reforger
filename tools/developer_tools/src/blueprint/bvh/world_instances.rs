@@ -11,8 +11,8 @@ use std::io::Read;
 use std::path::Path;
 
 use anyhow::{Context, Result, bail};
+use geometry_primitives::rigid_transform::Rigid;
 use map_engine::world::architecture::compound::instances::InstancesFile;
-use map_engine::world::architecture::compound::transform::Rigid;
 use serde_json::Value;
 
 use super::verify::{POS_TOL_M, ReconFile, Report};

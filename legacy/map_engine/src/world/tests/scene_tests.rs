@@ -4,7 +4,7 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::world::scene::*;
-use graphics_engine::draw::instances::QuadInstance;
+use render_primitives::draw::instances::QuadInstance;
 
 // T-0xx Phase 1D: these four cases stayed on this side of the wall when
 // `renderers/batching/scene.rs` split. Every one of them encodes the 12.8 km Everon square —

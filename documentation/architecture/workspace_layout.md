@@ -22,7 +22,7 @@ stage; this document follows each stage's commit, and its last section says what
 TBD-reforger/
 ├── apps/            the products: API, single-page app, service worker, Enfusion mod suite,
 │                    fleet host agent, ticketboard
-├── crates/          the tiered library crates, grouped by category (foundation/, contracts/)
+├── crates/          the tiered library crates, grouped by category (foundation/, contracts/, geometry/, world_formats/, graphics/)
 ├── legacy/          the map and graphics engines, parked while their code moves into crates/
 ├── deploy/          the release Dockerfile, compose files, Caddy site (caddy/), deploy settings,
 │                    systemd units
@@ -61,6 +61,16 @@ rust-version 1.95 from `[workspace.package]`, except the frontend, which declare
 | [`apps/ticketboard/`](/apps/ticketboard/README.md) | `ticketboard` | the egui desktop viewer of the ticket registry |
 | [`crates/foundation/http_url_guard/`](/crates/foundation/http_url_guard/README.md) | `http_url_guard` | the HTTP(S) URL check the API and the single-page app share |
 | [`crates/contracts/offline_cache_policy/`](/crates/contracts/offline_cache_policy/README.md) | `offline_cache_policy` | the offline cache names, request classes and fallback rules the service worker applies |
+| [`crates/foundation/newtype_ids/`](/crates/foundation/newtype_ids/README.md) | `newtype_ids` | macros declaring serde-transparent typed ids |
+| [`crates/foundation/time_source/`](/crates/foundation/time_source/README.md) | `time_source` | wall-clock and monotonic time sources, RFC 3339 UTC formatting and validation |
+| [`crates/foundation/deterministic_random/`](/crates/foundation/deterministic_random/README.md) | `deterministic_random` | the seeded SplitMix64 generator |
+| [`crates/foundation/content_digest/`](/crates/foundation/content_digest/README.md) | `content_digest` | SHA-256 and SHA-384 hex digests and framed hashing |
+| [`crates/foundation/browser_platform/`](/crates/foundation/browser_platform/README.md) | `browser_platform` | browser console macros and fetch helpers (wasm32 only) |
+| [`crates/geometry/geometry_primitives/`](/crates/geometry/geometry_primitives/README.md) | `geometry_primitives` | vector ops, segment geometry, rigid transforms, axis-aligned boxes |
+| [`crates/geometry/map_coordinates/`](/crates/geometry/map_coordinates/README.md) | `map_coordinates` | terrain frames, chunk math, rounding, grid references |
+| [`crates/geometry/camera_math/`](/crates/geometry/camera_math/README.md) | `camera_math` | the orthographic map camera, the orbit camera, 4x4 matrices |
+| [`crates/world_formats/world_file_formats/`](/crates/world_formats/world_file_formats/README.md) | `world_file_formats` | the on-disk world formats and their typed ids |
+| [`crates/graphics/render_primitives/`](/crates/graphics/render_primitives/README.md) | `render_primitives` | map-agnostic CPU rendering primitives: instances, geometry, triangulation, cull oracle, text, the WGSL shader |
 | [`tools/xtask/`](/tools/xtask/README.md) | `xtask` | the `cargo xtask` command router: builds, gates, deploys, repository verifications |
 | [`tools/verification_core/`](/tools/verification_core/README.md) | `verification_core` | fail-closed verdicts, pattern scans, process isolation and the verification lock |
 | [`tools/ticket_engine/`](/tools/ticket_engine/README.md) | `ticket_engine` | ticket storage, validation, queue and roadmap sync |

@@ -9,9 +9,8 @@ and the projection of both into and out of the binary building archive the brows
 ```text
 legacy/map_engine/src/spatial/los/world/descriptor/
 ├── archive.rs     the 8-aligned archive holder, its validated read, and the boot split of its rows
-├── bounds.rs      `Bounds3`, an axis-aligned box in a prefab's object frame
 ├── manifest.rs    `BlasManifest`, the library index, with its rows, census and schema versions
-├── mod.rs         the module tree; re-exports the manifest, bounds, descriptor and archive types
+├── mod.rs         the module tree; re-exports the manifest, descriptor, archive and box types
 ├── model.rs       `PrefabDescriptor`, one catalogue prefab's collision closure
 └── projection.rs  conversions between the JSON rows and the archive rows
 ```
@@ -48,9 +47,9 @@ come back separately through `archived_blas_paths`.
 
 ## Boundaries
 
-- Depends on: `crate::io::archives` (the archive structs, `access_checked`,
+- Depends on: `world_file_formats::archives` (the archive structs, `access_checked`,
   `ARCHIVE_SCHEMA_VERSION`), `crate::world::architecture::compound::instances` (`InstanceRecord`),
-  `serde`, `rkyv` and `bytemuck`.
+  `geometry_primitives` (`Bounds3`), `serde`, `rkyv` and `bytemuck`.
 - Used by: the rest of `crate::spatial::los::world`, which re-exports the JSON types and expands
   descriptors into traceable occluders; the occluder loader
   (`legacy/map_engine/src/streaming/loaders/occluder_loader.rs`), which boots from the

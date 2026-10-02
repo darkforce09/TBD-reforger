@@ -3,10 +3,10 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use super::Bounds3;
 use super::Deserialize;
 use super::InstanceRecord;
 use super::Serialize;
+use geometry_primitives::axis_aligned_box::Bounds3;
 
 /// One catalogue prefab's collision closure.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

@@ -31,7 +31,7 @@
 use std::process::Command;
 
 use anyhow::Result;
-use developer_tools::content_digest::sha384_hex;
+use content_digest::sha384_hex;
 
 use super::super::operations::{WEB, echo};
 use crate::commands::deploy::database_operations::{ct_capture, db_user};

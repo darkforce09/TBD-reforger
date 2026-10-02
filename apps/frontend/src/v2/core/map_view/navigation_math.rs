@@ -11,7 +11,7 @@
 //! [`CLICK_SLOP_PX`] of its press is a click, anything farther is a drag.
 
 use super::camera_fit::ViewState;
-use map_engine::camera::ortho::state::OrthoCamera;
+use camera_math::ortho::state::OrthoCamera;
 
 /// Zoom levels per CSS pixel of wheel travel (500 px of wheel is one zoom level, a factor of 2).
 pub const WHEEL_ZOOM_PER_PX: f64 = 1.0 / 500.0;

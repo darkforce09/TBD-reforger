@@ -1,8 +1,8 @@
 # Render diagnostics
 
 How the render engine measures itself in the browser: byte-exact readback checks of its pipelines,
-the calibration check, the frame benchmark and engine statistics, the frame clocks, and the console
-macros the crate logs with. The [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)
+the calibration check, the frame benchmark and engine statistics, and the frame clocks. The
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)
 publishes the checks and the benchmark to the editor gate.
 
 ## Contents
@@ -11,7 +11,6 @@ publishes the checks and the benchmark to the editor gate.
 legacy/map_engine/src/diagnostics/
 ├── bench/     `render_bench`, the stress-quad pool, and `stats`, the engine's counters as JSON
 ├── mod.rs     the module tree
-├── platform/  the crate's `log!`, `warn!` and `error!` console macros
 ├── probes/    `self_check`, the byte-exact calibration check
 ├── readback/  byte-exact offscreen checks of each pipeline, and one-pixel readback of the scene
 └── timing/    the wall clocks and the GPU frame timer
@@ -36,9 +35,8 @@ Mission Creator viewport bridge           engine method
 editor gate, `selfcheck` smoke under WebGL2: calls both self-checks, fails unless both pass
 ```
 
-`timing/` and `platform/` serve the rest of the crate: `crate::frame` builds its GPU timer and times
-each frame with them, and the satellite imagery and the streaming host log through the console
-macros.
+`timing/` serves the rest of the crate: `crate::frame` builds its GPU timer and times each frame
+with it. The crate logs through `browser_platform`'s console macros.
 
 ## Public surface
 
@@ -48,18 +46,17 @@ macros.
   for the hosts that boot an engine.
 - The other readback checks, `readback_rgba`, `seed_stress` and `clear_stress`: exported to
   JavaScript, with no caller in the repository.
-- Inside the crate: `timing::gpu::{GpuTimer, now_ms, perf_now_ms}` for `crate::frame`, and the
-  console macros `platform::console::{log, warn, error}`.
+- Inside the crate: `timing::gpu::{GpuTimer, now_ms, perf_now_ms}` for `crate::frame`.
 
 ## Boundaries
 
 - Depends on: `crate::frame` (the engine, its pipelines, bindings, packet tables and compute cull),
-  `crate::camera`, `crate::overlay::lanes` (lane ids), `crate::world::scene` (the anchor and the
-  stress quads), `crate::doll` (the doll check), `graphics_engine` (`layout` and
-  `draw::encode`), and `wgpu`, `wasm-bindgen`, `js-sys` and `web-sys`.
+  `camera_math` (the check cameras), `crate::overlay::lanes` (lane ids), `crate::world::scene`
+  (the stress quads), `map_coordinates` (the anchor), `crate::doll` (the doll check),
+  `render_primitives` (instance layouts, line vertices, text packing) and `graphics_engine`
+  (`draw::encode`), and `wgpu`, `wasm-bindgen`, `js-sys` and `web-sys`.
 - Used by:
-  - inside the crate: `crate::frame` (the timer, the clocks and `poll`),
-    `crate::world::terrain::satellite` and `crate::streaming` (the console macros);
+  - inside the crate: `crate::frame` (the timer, the clocks and `poll`);
   - the Mission Creator's viewport bridge
     (`apps/frontend/src/v2/apps/editor/bridge/viewport.rs`) and canvas boot, and the debug
     benches under `apps/frontend/src/v2/apps/debug/`;

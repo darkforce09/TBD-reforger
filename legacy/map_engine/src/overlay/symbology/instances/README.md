@@ -15,7 +15,7 @@ legacy/map_engine/src/overlay/symbology/instances/
 ├── bridge_3.rs  row patches, lane uploads, vehicle, marker and comment binds, icon pools
 ├── drag.rs      `DragGpuPhase`, the drag transition rule and the drag overlay and preview packers
 ├── lanes.rs     `upload_icon_lane` for world trees, props and badges, and the icon uniform layout
-├── mod.rs       the module tree; re-exports the graphics engine's `text::pack` as `packing`
+├── mod.rs       the module tree
 ├── patches.rs   12-byte row patches for selection and hiding, and the selection-only pack
 ├── slots/       one re-export surface of this folder's vocabulary, and the tests that pin it
 └── symbols.rs   instance sizes and colours, the cluster gate, slot, vehicle and comment packers
@@ -33,7 +33,7 @@ Mission Creator bridge ──► RenderEngine (bridge_1..3)
 ```
 
 Every instance is 20 bytes (`SLOT_ICON_STRIDE`): world position, size, yaw, glyph index and packed
-RGBA, written by the graphics engine's `text::pack` (re-exported as `packing`). While the camera
+RGBA, written by `render_primitives::text::pack`. While the camera
 shows at most `SYMBOLOGY_MAX_M_PER_PX` (8 m per pixel), a slot draws as its role glyph, turned to
 its heading and tinted by side, and a selected slot uses the selected cell block in
 `SLOT_SELECTED_RGBA`; farther out every slot is a plain disc. More than `CLUSTER_SLOT_THRESHOLD`
@@ -62,8 +62,9 @@ which converts world positions to the scene anchor.
 
 - Depends on: `crate::frame` (`RenderEngine`, bindings, draw batches, instance buffers),
   `crate::overlay::lanes` (`LaneRole`, `lane_id`), `crate::overlay::symbology::atlas` and
-  `crate::overlay::symbology::roles`, `crate::world::scene` (`ANCHOR`, `EVERON_BOUNDS`),
-  `graphics_engine` (`text::pack`, `layout::ATLAS_GLYPH_COUNT`) and `wasm_bindgen`.
+  `crate::overlay::symbology::roles`, `map_coordinates::terrain_frames` (`ANCHOR`,
+  `EVERON_BOUNDS`), `render_primitives` (`text::pack`, `draw::instances::ATLAS_GLYPH_COUNT`) and
+  `wasm_bindgen`.
 - Used by:
   - `crate::frame` (boot, encode, engine, lifecycle), `crate::camera::viewport`,
     `crate::overlay::symbology::markers` and `crate::streaming::loaders::world_loader`;

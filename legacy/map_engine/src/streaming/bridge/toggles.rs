@@ -4,10 +4,10 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::overlay::lod::class_visible;
-use crate::streaming::scheduler::chunk_math::Bbox;
 use crate::streaming::scheduler::state::WorldResidency;
 use crate::world::environment::buildings::footprint::building_visible;
 use crate::world::terrain::roads::airfield::compute_airfield_bbox;
+use map_coordinates::chunk_math::Bbox;
 
 impl WorldResidency {
     /// Register atlas icon keys in UV-table order (must match `upload_glyph_atlas` UV order). Rebuilds the glyph prefab lookup when prefabs are already loaded.

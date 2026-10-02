@@ -5,13 +5,13 @@
 
 use std::collections::HashMap;
 
-use crate::io::archives::codec::BinaryError;
-use crate::io::containers::header::ContainerHeader;
-use crate::io::containers::tbdc::TbdcHeader;
-use crate::io::pod::instance::ObjectInstancePod;
-use crate::io::pod::instance::instances_from_bytes;
 use crate::streaming::loaders::chunk::WorldChunk;
 use crate::world::environment::classify::NO_CLASS;
+use world_file_formats::archives::codec::BinaryError;
+use world_file_formats::containers::header::ContainerHeader;
+use world_file_formats::containers::tbdc::TbdcHeader;
+use world_file_formats::pod::instance::ObjectInstancePod;
+use world_file_formats::pod::instance::instances_from_bytes;
 
 const CX_PLACEHOLDER: &str = "{cx}";
 
@@ -126,7 +126,7 @@ fn columns(header: &TbdcHeader, rows: &[ObjectInstancePod]) -> WorldChunk {
     for (i, r) in rows.iter().enumerate() {
         positions.push(r.x);
         positions.push(r.y);
-        prefab_idx.push(r.prefab_id);
+        prefab_idx.push(r.prefab_id.get());
         rotations.push(r.yaw);
         z.push(r.z);
         pitch.push(r.pitch);

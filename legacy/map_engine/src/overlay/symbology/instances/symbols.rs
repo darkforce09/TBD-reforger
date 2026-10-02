@@ -8,16 +8,16 @@ use crate::overlay::symbology::atlas::raster::COMMENT_SELECTED_CELL;
 use crate::overlay::symbology::atlas::raster::UNIT_CELL_BASE;
 use crate::overlay::symbology::atlas::raster::UNIT_SELECTED_CELL_BASE;
 use crate::overlay::symbology::atlas::raster::VEHICLE_CELL_BASE;
-use crate::overlay::symbology::instances::packing::pack_icon_instance;
-use crate::overlay::symbology::instances::packing::pack_icon_instance_yaw;
-use crate::overlay::symbology::instances::packing::pack_rgba_u32;
-use crate::overlay::symbology::instances::packing::screen_yaw_for_heading_deg;
 use crate::overlay::symbology::roles::classify::SIDE_BLUFOR_RGBA;
 use crate::overlay::symbology::roles::classify::UnitRoleClass;
 use crate::overlay::symbology::roles::classify::VehicleKind;
 use crate::overlay::symbology::roles::classify::side_rgba;
 use crate::overlay::symbology::roles::classify::unit_role_class;
 use crate::overlay::symbology::roles::classify::vehicle_kind_for_alias;
+use render_primitives::text::pack::pack_icon_instance;
+use render_primitives::text::pack::pack_icon_instance_yaw;
+use render_primitives::text::pack::pack_rgba_u32;
+use render_primitives::text::pack::screen_yaw_for_heading_deg;
 
 /// Icon instance stride (pos2 + size + yaw_i16 + glyph_u16 + tint_u32).
 pub const SLOT_ICON_STRIDE: usize = 20;

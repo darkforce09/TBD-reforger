@@ -12,7 +12,7 @@ legacy/map_engine/src/world/
 ├── environment/   what stands on the ground: the prefab catalogue, buildings, vegetation, labels
 ├── mesh.rs        CPU meshes of the static world: land cover, contour and forest outline lines
 ├── mod.rs         the module tree
-├── scene.rs       the scene anchor, the camera's opening view, the calibration and stress scenes
+├── scene.rs       the calibration and stress scenes on the anchor, and the anchor-relative rectangle
 ├── terrain/       the ground itself: elevation model, relief, roads, satellite imagery and water
 └── tests/         unit tests for the meshes and the synthetic scenes
 ```
@@ -25,31 +25,33 @@ objects placed on it, `architecture/` for the buildings a user looks inside. `cr
 traces sight lines through the same data, and the browser's upload methods turn the composed
 buffers into draw lanes.
 
-`scene.rs` holds `ANCHOR`, the Everon terrain centre (6400 m, 6400 m): geometry sent to the GPU is
-stored relative to it, so its f32 coordinates stay within 6400 m of zero, and `world_rect_rel`
-turns a world rectangle into that frame. The camera opens on `INITIAL_TARGET` at `INITIAL_ZOOM`
-and pans within `EVERON_BOUNDS`; `calibration_instances` (two known quads) and `stress_chunk`
-(deterministic random quads) are synthetic scenes for the render checks and benchmarks. The
-instance layouts they fill belong to `graphics_engine`, which never learns the 12.8 km
-world these numbers describe.
+Geometry sent to the GPU is stored relative to `map_coordinates::terrain_frames::ANCHOR`, the
+Everon terrain centre (6400 m, 6400 m), so its f32 coordinates stay within 6400 m of zero; the
+camera's opening view and pan bounds sit beside it in that crate. `scene.rs`'s `world_rect_rel`
+turns a world rectangle into that frame, and `calibration_instances` (two known quads) and
+`stress_chunk` (deterministic random quads) are synthetic scenes for the render checks and
+benchmarks. The instance layouts they fill belong to `render_primitives`, which never learns the
+12.8 km world these numbers describe.
 
 `mesh.rs` composes meshes on the CPU and touches no GPU: land-cover polygons coloured by kind,
-contour lines with summit rings in a second colour, and the hairlines of the forest outline. It
-re-exports the graphics engine's triangulation so the terrain modules and the debug building
-viewer reach it through this crate.
+contour lines with summit rings in a second colour, and the hairlines of the forest outline. The
+mesh buffer types, the triangulation and the ring loops it builds on are
+`render_primitives::draw::{compose, triangulate}`, which the terrain modules and the debug building
+viewer also import directly.
 
 ## Public surface
 
-- `scene`: `ANCHOR`, `world_rect_rel`, and the synthetic scenes, for `crate::frame`,
-  `crate::overlay`, `crate::diagnostics` and every upload that places geometry.
-- `mesh`: `compose_landcover_mesh`, `compose_two_tone_contours`, `compose_contour_hairlines`, the
-  mesh buffer types and `triangulate`.
+- `scene`: `world_rect_rel` and the synthetic scenes, for `crate::frame`, `crate::overlay`,
+  `crate::diagnostics` and every upload that places geometry.
+- `mesh`: `compose_landcover_mesh`, `compose_two_tone_contours`, `compose_contour_hairlines` and
+  `compose_forest_mesh`.
 - `architecture`, `environment`, `terrain`: see each folder's README.
 
 ## Boundaries
 
-- Depends on: `graphics_engine` (instance layouts, triangulation, mesh composition);
-  `crate::io` for the archives; `crate::streaming` and `crate::overlay` for the parts that load
+- Depends on: `render_primitives` (instance layouts, triangulation, mesh composition) and
+  `map_coordinates` (the anchor);
+  `world_file_formats` for the archives; `crate::streaming` and `crate::overlay` for the parts that load
   and draw; and `crate::spatial::bvh` for the building meshes.
 - Used by:
   - `crate::streaming`, `crate::spatial`, `crate::frame`, `crate::overlay`, `crate::diagnostics`

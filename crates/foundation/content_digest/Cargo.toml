@@ -1,0 +1,22 @@
+# Lowercase hex SHA-256 and SHA-384 digests: whole inputs, files, and the incremental SHA-256
+# hasher with length framing that the repository tooling fingerprints with.
+[package]
+name = "content_digest"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Lowercase hex SHA-256 and SHA-384 digests of bytes and files, and an incremental SHA-256 hasher with length framing."
+
+[package.metadata.layout]
+category = "crates/foundation"
+tier = 0
+targets = "any"
+
+[dependencies]
+sha2 = { workspace = true }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true

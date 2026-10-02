@@ -1,7 +1,7 @@
 use super::{format_m_per_px, m_per_px, pick_scale_bar};
 use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body, only_item};
-use map_engine::camera::ortho::state::MAX_ZOOM;
-use map_engine::camera::ortho::state::MIN_ZOOM;
+use camera_math::ortho::state::MAX_ZOOM;
+use camera_math::ortho::state::MIN_ZOOM;
 
 /// The readout across the whole zoom clamp, at the real rungs the operator sees. `MIN_ZOOM −6`
 /// is whole-Everon (64 m/px), `−2` the editor default (4 m/px), `0` unity, `MAX_ZOOM 6` the

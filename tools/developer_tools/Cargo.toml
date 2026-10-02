@@ -28,12 +28,17 @@ map_engine = { path = "../../legacy/map_engine", default-features = false, featu
     "bvh",
     "scenario",
 ] }
+# The on-disk world formats the export and verification pipelines write and read, and the
+# geometry crates their blueprint, chunk and line-of-sight code computes with.
+world_file_formats = { workspace = true }
+geometry_primitives = { workspace = true }
+map_coordinates = { workspace = true }
 futures-util = "0.3"
 regex = { workspace = true }
 reqwest = { workspace = true, features = ["json", "charset"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["preserve_order"] }
-sha2 = "0.11"
+sha2 = { workspace = true }
 tokio = { version = "1.52", features = ["full"] }
 tokio-tungstenite = "0.30"
 

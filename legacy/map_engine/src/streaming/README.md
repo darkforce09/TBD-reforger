@@ -13,7 +13,7 @@ legacy/map_engine/src/streaming/
 ├── bridge/     what crosses to the page: preference readers, boot progress, statistics, toggles
 ├── buffers/    the draw set and the packed icon, strip and building buffers of resident chunks
 ├── host/       the browser entry point: the boot sequence, settle refreshes and map queries
-├── loaders/    the served-file parsers, the fetch helpers, and the world and occluder loaders
+├── loaders/    the served-file parsers, and the world and occluder loaders
 ├── memory/     the memory budget ledger and the residency's statistics
 ├── mod.rs      the module tree
 └── scheduler/  the world chunk residency: chunk math, pin, eviction, ingest budget, picking
@@ -54,7 +54,7 @@ the line-of-sight occluder.
 in `loaders/`, its buffer composers in `buffers/`, its layer toggles in `bridge/` and its
 statistics in `memory/`. The module compiles with the `io` feature, where `bridge/` provides its
 preference and progress types; `buffers/`, `loaders/`, `memory/` and `scheduler/` need
-`streaming`; `host/`, the fetch helpers and the two browser loaders need wasm32 with `render`. So
+`streaming`; `host/` and the two browser loaders need wasm32 with `render`. So
 the parsers, the residency, the buffers and the budget also run natively, as the developer tools
 and the crate's tests use them.
 
@@ -66,8 +66,7 @@ and the crate's tests use them.
 - `bridge`: the preference types (`HostPreferences`, `RenderPreferences`, `WorldLayerPrefs`) and
   the progress types (`BootEvent`, `BootSeg`, `ProgressFn`) for the Mission Creator; progress,
   the Range helpers and statistics for the loaders in `crate::world`.
-- `loaders`: the chunk and manifest parsers, `WorldStore`, `bytes_to_json`, the fetch helpers and
-  `OccluderHost`, for `crate::world`, `crate::spatial::los::world`, the debug world line-of-sight
+- `loaders`: the chunk and manifest parsers, `WorldStore`, `bytes_to_json` and `OccluderHost`, for `crate::world`, `crate::spatial::los::world`, the debug world line-of-sight
   bench and the developer tools.
 - `scheduler`: `WorldResidency` and the chunk math, for `crate::spatial::los::world`,
   `crate::world`, the debug bench and the developer tools.
@@ -80,10 +79,10 @@ and the crate's tests use them.
 
 - Depends on:
   - `crate::world` (terrain, environment, meshes and the DEM, satellite, water, forest and label
-    loaders), `crate::io` (the `TBDC` container and its rows), `crate::spatial` (the world spatial
+    loaders), `world_file_formats` (the `TBDC` container and its rows), `crate::spatial` (the world spatial
     index, the line-of-sight occluder, BVH sidecars), `crate::overlay` (level-of-detail gates,
-    glyph math, lane ids), `crate::frame` (the render engine handle) and
-    `crate::diagnostics::platform::console`; nothing of `crate::data`, `crate::editing`,
+    glyph math, lane ids), `crate::frame` (the render engine handle), `map_coordinates` (the chunk
+    math) and `browser_platform` (the fetch helpers and console macros); nothing of `crate::data`, `crate::editing`,
     `crate::camera` or `crate::doll`;
   - `serde`, `serde_json`, `flate2`, `bytemuck`, `thiserror` and `futures`, and on wasm32
     `gloo-net`, `web-sys`, `js-sys`, `wasm-bindgen` and `wasm-bindgen-futures`;

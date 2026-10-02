@@ -26,7 +26,3 @@ pub mod attribution_1;
 /// Attribution 2.
 #[cfg(feature = "io")]
 pub mod attribution_2;
-
-/// Geometry.
-#[cfg(feature = "io")]
-pub mod geometry;

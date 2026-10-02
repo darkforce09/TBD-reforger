@@ -3,11 +3,11 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::io::archives::codec::to_bytes;
-use crate::io::archives::water::WaterBody;
-use crate::io::archives::water::WaterLine;
-use crate::io::containers::header::HEADER_BYTES;
 use crate::world::terrain::water::vectors::*;
+use world_file_formats::archives::codec::to_bytes;
+use world_file_formats::archives::water::WaterBody;
+use world_file_formats::archives::water::WaterLine;
+use world_file_formats::containers::header::HEADER_BYTES;
 
 const W: u32 = 4;
 const H: u32 = 4;

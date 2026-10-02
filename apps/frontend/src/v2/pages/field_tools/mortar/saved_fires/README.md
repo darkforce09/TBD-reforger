@@ -30,7 +30,7 @@ selected event, at most once per event.
 ## Boundaries
 
 - Depends on: `crate::v2::core::api` (`FireMissionSave`, `SavedFire`, `SavedFireMissionAnswer`,
-  `DataEnvelope`, `Paginated`); `map_engine::camera::grid_reference`; the mortar inputs and
+  `DataEnvelope`, `Paginated`); `map_coordinates::grid_reference`; the mortar inputs and
   the solve bridge.
 - Used by: the mortar page (`page.rs`).
 - Rules: hydration refuses a batch fetched for another event; the save body carries the solved

@@ -9,9 +9,9 @@ use crate::overlay::lanes::LaneRole;
 use crate::overlay::lanes::lane_id;
 
 use crate::frame::{DrawBatch, DrawPayload, InstanceBuffer};
-use crate::world::scene::ANCHOR;
-use graphics_engine::draw::geometry::LineVertex;
 use graphics_engine::draw::{lines as line_buffers, polygons};
+use map_coordinates::terrain_frames::ANCHOR;
+use render_primitives::draw::geometry::LineVertex;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -35,7 +35,7 @@ impl RenderEngine {
         }
         let mut instances = Vec::with_capacity(fill.len() / STRIDE);
         for c in fill.chunks_exact(STRIDE) {
-            instances.push(graphics_engine::layout::BuildingInstance {
+            instances.push(render_primitives::draw::instances::BuildingInstance {
                 center: [
                     (f64::from(c[0]) - ANCHOR[0]) as f32,
                     (f64::from(c[1]) - ANCHOR[1]) as f32,

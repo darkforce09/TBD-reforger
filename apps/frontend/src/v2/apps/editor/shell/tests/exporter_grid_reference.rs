@@ -4,7 +4,7 @@
 //! drawn by `editor::ui::docks::toolbelt` inside the frontend's own dock geometry, and the frontend may
 //! import the engine while the engine may never import the frontend.
 
-use map_engine::camera::ortho::state::OrthoCamera;
+use camera_math::ortho::state::OrthoCamera;
 use map_engine::editing::commands::selection_digest::format_grid_ref;
 
 use crate::v2::apps::editor::shell::layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};

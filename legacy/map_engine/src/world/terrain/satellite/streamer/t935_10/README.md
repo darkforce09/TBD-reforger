@@ -16,8 +16,8 @@ legacy/map_engine/src/world/terrain/satellite/streamer/t935_10/
 ## Boundaries
 
 - Depends on: the parent module, `crate::world::terrain::satellite::streamer` (the parsers, the
-  level picks, `mip_dims` and `tile_rect`); `crate::io::archives::satellite` (the archived index
-  types) and `crate::io::archives::codec` (its serialiser); `crate::io::containers` (the `TBDS`
+  level picks, `mip_dims` and `tile_rect`); `world_file_formats::archives::satellite` (the archived index
+  types) and `world_file_formats::archives::codec` (its serialiser); `world_file_formats::containers` (the `TBDS`
   header).
 - Used by: nothing; the parent declares the module only under `cfg(test)`.
 - Rules: the cases hold that a 12-byte prefix sizes the header and index of either version and a

@@ -7,6 +7,7 @@ use std::time::Duration;
 use serde_json::{Value, json};
 
 use super::*;
+use content_digest::sha256_hex;
 
 /// Answers requests from a script and records them as `METHOD url [body]`.
 #[derive(Default)]

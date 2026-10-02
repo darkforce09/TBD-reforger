@@ -6,11 +6,11 @@
 use rkyv::Archived;
 use serde_json::Value;
 
-use crate::io::archives::codec::BinaryError;
-use crate::io::archives::codec::access_checked;
-use crate::io::archives::roads::RoadNetworkArchive;
-use crate::io::archives::version::ARCHIVE_SCHEMA_VERSION;
 use crate::world::environment::locations::route_placement::road_class_name;
+use world_file_formats::archives::codec::BinaryError;
+use world_file_formats::archives::codec::access_checked;
+use world_file_formats::archives::roads::RoadNetworkArchive;
+use world_file_formats::archives::version::ARCHIVE_SCHEMA_VERSION;
 
 /// Consecutive midpoints closer than this (m) are collapsed duplicate cross-edges.
 pub const CENTERLINE_DEDUPE_M: f64 = 0.05;

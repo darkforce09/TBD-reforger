@@ -3,8 +3,8 @@
 //! Signals & state: a frozen camera snapshot and the app-side selected-id set; never the document.
 //! Invariants: the world box is ordered before it is queried, so a drag in any direction selects; slot hits come first and vehicle hits follow, each in its own query's order.
 
-use crate::camera::ortho::state::OrthoCamera;
 use crate::data::store::SlotSoa;
+use camera_math::ortho::state::OrthoCamera;
 
 /// Slot ids inside the marquee box, from the two frozen-cam screen corners. The press corner is
 /// already unprojected to `(start_wx, start_wy)`; this unprojects the release px `(end_px, end_py)`,

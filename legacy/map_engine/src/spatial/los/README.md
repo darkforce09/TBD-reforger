@@ -53,20 +53,19 @@ cancelled; `crate::editing::tools::viewshed_scheduler` runs them.
 
 - Depends on: `crate::spatial::bvh` (meshes, trees, surface kinds); `crate::world::terrain::dem`,
   `crate::world::architecture` and `crate::world::environment::buildings`; `crate::streaming` for
-  the world layer's chunks; `crate::io::archives`; and, for the browser upload only,
+  the world layer's chunks; `world_file_formats::archives`; and, for the browser upload only,
   `crate::frame`, `crate::overlay` and `wgpu`.
 - Used by:
   - `crate::editing::tools::line_of_sight` and `crate::editing::tools::viewshed_scheduler`, the
     Mission Creator's line-of-sight tool and the scheduler of its visibility jobs;
   - `crate::streaming`, whose occluder loader and host queries own and lend the world occluder;
-  - `crate::world::terrain::dem::sample`, which re-exports the terrain profile and viewshed items;
   - the Mission Creator's input handlers in `apps/frontend/src/v2/apps/editor/input/`, and
     the debug benches in `apps/frontend/src/v2/apps/debug/`;
   - the blueprint tooling and the map checks in `tools/developer_tools/src/`.
 - Rules: the three layers stay three modules; a request over a cap is refused with one
   `ViewshedCapRefused` that names the cap and the measured value
   (`over_cap_viewshed_is_refused_with_a_message` in
-  `legacy/map_engine/src/world/terrain/dem/sample/tests/cases_1.rs`,
+  `legacy/map_engine/src/spatial/los/terrain/tests/viewshed_tests.rs`,
   `over_cap_wash_radius_is_refused_with_a_message` in `interior/tests/wash.rs`); a sliced job's
   raster equals the one-call raster (`sliced_viewshed_is_bit_identical_to_the_sync_path`,
   `sliced_wash_is_bit_identical_to_the_sync_path`).

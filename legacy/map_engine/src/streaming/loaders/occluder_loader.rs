@@ -13,12 +13,12 @@ use crate::spatial::los::world::descriptor::BuildingArchiveBytes;
 use crate::spatial::los::world::descriptor::PrefabDescriptor;
 use crate::spatial::los::world::state::WorldOccluder;
 use crate::streaming::loaders::manifest::parse_manifest_binary;
-use crate::streaming::scheduler::chunk_math::TerrainSizeM;
 use crate::streaming::scheduler::state::ResidencyEvent;
 use crate::streaming::scheduler::state::WorldResidency;
+use map_coordinates::chunk_math::TerrainSizeM;
 
-use crate::streaming::loaders::fetch::fetch_bytes;
-use crate::streaming::loaders::fetch::fetch_text;
+use browser_platform::fetch::fetch_bytes;
+use browser_platform::fetch::fetch_text;
 
 const FETCH_CONCURRENCY: usize = 12;
 
@@ -120,7 +120,7 @@ impl OccluderHost {
             .and_then(|a| a.archive().ok())
             .map(|a| a.blueprints.iter().map(|b| b.levels.len()).sum::<usize>())
             .unwrap_or_default();
-        crate::diagnostics::platform::console::log!(
+        browser_platform::console_log!(
             "occluder: building_blueprints.rkyv {} KB - {census} non-blocking prefabs seeded, \
              {blocking} descriptors still JSON, {unusable} unresolved, {} blueprints \
              ({levels} levels, zero-copy)",

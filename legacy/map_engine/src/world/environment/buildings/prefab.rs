@@ -8,17 +8,18 @@ use std::collections::HashMap;
 use rkyv::Archived;
 use serde_json::Value;
 
-use crate::io::archives::codec::BinaryError;
-use crate::io::archives::codec::access_checked;
-use crate::io::archives::prefabs::KindCensus;
-use crate::io::archives::prefabs::PrefabCatalogArchive;
-use crate::io::archives::prefabs::PrefabEntry as PrefabEntryArchive;
-use crate::io::archives::prefabs::TypeInventory;
-use crate::io::archives::version::ARCHIVE_SCHEMA_VERSION;
 use crate::world::environment::classify::NO_CLASS;
 use crate::world::environment::classify::OVERSIZED_HALF_EXTENT_M;
 use crate::world::environment::classify::class_code;
 use crate::world::environment::classify::render_class_for_prefab;
+use world_file_formats::archives::codec::BinaryError;
+use world_file_formats::archives::codec::access_checked;
+use world_file_formats::archives::prefabs::KindCensus;
+use world_file_formats::archives::prefabs::PrefabCatalogArchive;
+use world_file_formats::archives::prefabs::PrefabEntry as PrefabEntryArchive;
+use world_file_formats::archives::prefabs::TypeInventory;
+use world_file_formats::archives::version::ARCHIVE_SCHEMA_VERSION;
+use world_file_formats::ids::{PrefabId, TerrainId};
 
 /// Clone-safe prefab row subset (mirror of `WorldPrefabRow`). `prefab_id` keeps full f64 precision (the join key). Spatial half-extents / render glyph fields are carried for building rendering.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -235,7 +236,7 @@ pub fn row_to_archive(i: usize, row: &PrefabRow) -> Result<PrefabEntryArchive, B
     };
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     Ok(PrefabEntryArchive {
-        prefab_id: row.prefab_id as u32,
+        prefab_id: PrefabId::new(row.prefab_id as u32),
         kind: row.kind.clone(),
         class: row.class.clone(),
         class_code: render_class_for_prefab(&row.kind, &row.class).map_or(NO_CLASS, class_code),
@@ -270,14 +271,14 @@ pub fn rows_from_archive(
                      build's RENDER_CLASS_CODES table says {want} — the archive was written \
                      against a different table and every instance of this prefab would draw as \
                      the wrong class",
-                    p.prefab_id.to_native(),
+                    p.prefab_id.get(),
                     p.class_code
                 ),
             });
         }
         let text = |s: &str| (!s.is_empty()).then(|| s.to_string());
         out.push(PrefabRow {
-            prefab_id: f64::from(p.prefab_id.to_native()),
+            prefab_id: f64::from(p.prefab_id.get()),
             kind: kind.to_string(),
             class: class.to_string(),
             label: text(p.label.as_str()),
@@ -408,7 +409,7 @@ pub fn inventory_to_archive(doc: &Value) -> Result<TypeInventory, BinaryError> {
         });
     }
     Ok(TypeInventory {
-        terrain_id: text("terrainId")?,
+        terrain_id: TerrainId::new(text("terrainId")?),
         census_status: text("censusStatus")?,
         unique_prefabs,
         total_instances: count(levels, "totalInstances")?,

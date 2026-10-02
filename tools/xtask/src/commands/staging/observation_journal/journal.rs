@@ -19,8 +19,8 @@ use std::io::{ErrorKind, Write};
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
+use content_digest::sha256_hex;
 use serde_json::json;
-use sha2::{Digest, Sha256};
 
 /// The journal's file name in the run folder.
 pub(crate) const JOURNAL_FILE: &str = "journal.jsonl";
@@ -71,7 +71,7 @@ impl ObservationJournal {
 
     /// Stores `entry`'s artifact, appends its journal line, and returns the artifact's SHA-256.
     pub(crate) fn archive(&mut self, entry: &JournalEntry<'_>) -> Result<String> {
-        let sha256 = digest(entry.artifact);
+        let sha256 = sha256_hex(entry.artifact);
         let relative = format!("{ARTIFACT_FOLDER}/{sha256}.txt");
         let path = self.directory.join(&relative);
         match OpenOptions::new().write(true).create_new(true).open(&path) {
@@ -99,9 +99,4 @@ impl ObservationJournal {
         self.journal.flush()?;
         Ok(sha256)
     }
-}
-
-/// The lowercase hexadecimal SHA-256 of `bytes`.
-pub(crate) fn digest(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
 }

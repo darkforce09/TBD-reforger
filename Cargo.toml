@@ -39,20 +39,41 @@ publish = false
 anyhow = "1"
 axum = "0.8.9"
 base64 = "0.22"
+# Browser console macros and same-origin fetch helpers for wasm32 code
+# (`crates/foundation/browser_platform`).
+browser_platform = { path = "crates/foundation/browser_platform" }
 bytemuck = "1"
+# The cameras' f64 arithmetic: deck.gl-parity orthographic camera, orbit camera, gl-matrix 4x4
+# (`crates/geometry/camera_math`).
+camera_math = { path = "crates/geometry/camera_math" }
 chrono = "0.4.45"
 clap = "4"
 console_error_panic_hook = "0.1"
+# Lowercase hex SHA-256 and SHA-384 digests (`crates/foundation/content_digest`).
+content_digest = { path = "crates/foundation/content_digest" }
+# SplitMix64, the seeded deterministic generator (`crates/foundation/deterministic_random`).
+deterministic_random = { path = "crates/foundation/deterministic_random" }
+# Ear-clipping polygon triangulation behind `render_primitives`.
+earcutr = "0.5.0"
 flate2 = "1"
 futures = "0.3"
+# Plain f64 geometry: vector products, 2D segment tests, rigid transforms, 3D boxes
+# (`crates/geometry/geometry_primitives`).
+geometry_primitives = { path = "crates/geometry/geometry_primitives" }
 gloo-net = "0.6"
 # The scheme guard on stored and rendered links (`crates/foundation/http_url_guard`).
 http_url_guard = { path = "crates/foundation/http_url_guard" }
 js-sys = "0.3"
+# The `string_id!`, `integer_id!` and `uuid_id!` newtype identifier macros
+# (`crates/foundation/newtype_ids`).
+newtype_ids = { path = "crates/foundation/newtype_ids" }
 # Default features off drop the HTTP `$ref` resolver (reqwest and the aws-lc-rs C build): every
 # schema is local or embedded, so core draft 2020-12 validation is all a member needs.
 jsonschema = { version = "0.46.10", default-features = false }
 libc = "0.2"
+# Terrain centres and bounds, the chunk grid, JavaScript rounding and grid references
+# (`crates/geometry/map_coordinates`).
+map_coordinates = { path = "crates/geometry/map_coordinates" }
 # The offline cache policy the service worker and the page share
 # (`crates/contracts/offline_cache_policy`).
 offline_cache_policy = { path = "crates/contracts/offline_cache_policy" }
@@ -60,15 +81,24 @@ png = "0.17"
 proptest = "1"
 rand = "0.10.2"
 regex = "1"
+# The renderer building blocks with no GPU handle (`crates/graphics/render_primitives`).
+render_primitives = { path = "crates/graphics/render_primitives" }
 # Default features off keep the default TLS backend (the aws-lc-rs C build) out; a member that
 # speaks HTTPS enables `rustls-no-provider` and installs the ring provider.
 reqwest = { version = "0.13.4", default-features = false }
+# Default features off; members select `std`, `bytecheck` and `little_endian`, which fix the
+# on-disk archive format.
+rkyv = { version = "0.8.18", default-features = false }
 # Default features off drop the aws-lc-rs provider; members enable `ring`.
 rustls = { version = "0.23.41", default-features = false }
 serde = "1"
 serde_json = "1"
+# The SHA-2 hash functions behind `content_digest`.
+sha2 = "0.11"
 thiserror = "2.0.18"
 time = "0.3"
+# Wall-clock and monotonic time and RFC 3339 UTC stamps (`crates/foundation/time_source`).
+time_source = { path = "crates/foundation/time_source" }
 tokio = "1.52.3"
 toml = "0.8"
 tracing = "0.1.44"
@@ -81,6 +111,8 @@ wasm-bindgen-futures = "0.4"
 web-sys = "0.3"
 # Default features off: each member selects the browser backends (`webgpu`, `webgl`) and `wgsl`.
 wgpu = { version = "29", default-features = false }
+# The on-disk formats of a terrain's map data (`crates/world_formats/world_file_formats`).
+world_file_formats = { path = "crates/world_formats/world_file_formats" }
 
 # The lint policy a crate adopts with `[lints] workspace = true`; under `-D warnings` every warning
 # fails the build. `clippy::unwrap_used` binds production code only: the root `clippy.toml` sets

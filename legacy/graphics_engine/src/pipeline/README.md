@@ -2,8 +2,8 @@
 
 The functions that build the graphics engine's render pipelines and the one shader module they
 all compile against. Each constructor pairs a vertex layout with its entry points in
-`crate::shaders::SHADER_WGSL`; the caller supplies the device, the pipeline layout and the colour
-format.
+`render_primitives::shaders::SHADER_WGSL`; the caller supplies the device, the pipeline layout
+and the colour format.
 
 ## Contents
 
@@ -43,12 +43,13 @@ the compute pass's output buffer.
 
 ## Boundaries
 
-- Depends on: `wgpu`; `crate::shaders::SHADER_WGSL`. No Leptos and no application state.
+- Depends on: `wgpu`; `render_primitives::shaders::SHADER_WGSL`. No Leptos and no application
+  state.
 - Used by: `map_engine`, which re-exports this module once as `crate::frame::pipelines`
   (`legacy/map_engine/src/frame/mod.rs`); `RenderEngine` builds its pipelines through it in
   `legacy/map_engine/src/frame/boot.rs`, and the readback probes and probe runner in
   `legacy/map_engine/src/diagnostics/` build offscreen copies.
-- Rules: each vertex stride matches its layout in `crate::draw::instances` or
-  `crate::draw::geometry`, and each entry point exists in `shader.wgsl` (checked when the pipeline
-  is created in the browser); the map engine names this module only at its one re-export
+- Rules: each vertex stride matches its layout in `render_primitives::draw::instances` or
+  `render_primitives::draw::geometry`, and each entry point exists in `shader.wgsl` (checked when
+  the pipeline is created in the browser); the map engine names this module only at its one re-export
   (`cargo xtask verify engine-layers`, rule 3b).

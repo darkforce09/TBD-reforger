@@ -10,14 +10,14 @@
 //! Kind A commit.
 
 use crate::overlay::symbology::labels::declutter::LabelSpec;
-use crate::overlay::symbology::text_metrics::TEXT_GLYPH_ADVANCE_RATIO;
-use crate::overlay::symbology::text_metrics::atlas::{
+use crate::overlay::symbology::text_packing::pack_label_glyphs;
+use render_primitives::text::atlas::{
     TEXT_ATLAS_COLS, TEXT_ATLAS_ROWS, TEXT_CELL_PX, TEXT_HALO_RGBA, TEXT_INK_RGBA, TOFU_GLYPH,
     bake_ascii_atlas_rgba, glyph_cell_uv,
 };
-use crate::overlay::symbology::text_metrics::font::FONT_16X32;
-use crate::overlay::symbology::text_metrics::glyph_index_for_char;
-use crate::overlay::symbology::text_packing::pack_label_glyphs;
+use render_primitives::text::font::FONT_16X32;
+use render_primitives::text::metrics::TEXT_GLYPH_ADVANCE_RATIO;
+use render_primitives::text::metrics::glyph_index_for_char;
 
 fn cell_px(px: &[u8], w: u32, gi: u32, dx: u32, dy: u32) -> [u8; 4] {
     let cell = TEXT_CELL_PX;

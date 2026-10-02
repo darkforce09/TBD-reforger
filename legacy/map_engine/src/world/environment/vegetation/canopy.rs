@@ -5,8 +5,8 @@
 
 use crate::overlay::lod::INSTANCE_BUDGET;
 use crate::streaming::loaders::chunk::WorldChunk;
-use crate::streaming::scheduler::chunk_math::Bbox;
 use crate::world::environment::classify::class_code;
+use map_coordinates::chunk_math::Bbox;
 use std::collections::HashMap;
 
 /// Parse `"cx_cy"` chunk id → `(cx, cy)`. Returns `None` on malformed ids.

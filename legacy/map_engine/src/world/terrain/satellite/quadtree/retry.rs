@@ -34,14 +34,14 @@ pub(super) async fn fetch_range_resilient(url: &str, start: u64, end: u64) -> Op
         let throttled = match fetch_range_outcome(url, start, end).await {
             RangeOutcome::Body(body) => {
                 if attempt > 1 {
-                    crate::diagnostics::platform::console::warn!(
+                    browser_platform::console_warn!(
                         "satellite: Range bytes={start}-{end} succeeded on attempt {attempt}"
                     );
                 }
                 return Some(body);
             }
             RangeOutcome::RateLimited { retry_after_s } => {
-                crate::diagnostics::platform::console::warn!(
+                browser_platform::console_warn!(
                     "satellite: Range bytes={start}-{end} throttled (429, Retry-After {:?}) \
                      — attempt {attempt}/{RANGE_ATTEMPTS}",
                     retry_after_s
@@ -49,7 +49,7 @@ pub(super) async fn fetch_range_resilient(url: &str, start: u64, end: u64) -> Op
                 true
             }
             RangeOutcome::Failed { status } => {
-                crate::diagnostics::platform::console::warn!(
+                browser_platform::console_warn!(
                     "satellite: Range bytes={start}-{end} failed (status {status}) — attempt \
                      {attempt}/{RANGE_ATTEMPTS}"
                 );

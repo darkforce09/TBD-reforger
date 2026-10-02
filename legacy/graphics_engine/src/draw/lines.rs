@@ -4,8 +4,8 @@
 //! Invariants: a flat array of coordinates and colours in, a GPU buffer out. Whether the
 //! segments are a grid, a boundary or a link between two things is never asked.
 
-use crate::draw::geometry::{LineVertex, rel};
 use crate::frame::buffers::VertexStream;
+use render_primitives::draw::geometry::{LineVertex, rel};
 
 /// Upload already-built vertices as a `LineList` stream.
 #[must_use]

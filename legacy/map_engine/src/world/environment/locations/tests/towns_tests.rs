@@ -3,8 +3,8 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::io::archives::codec::to_bytes;
 use crate::world::environment::locations::towns::*;
+use world_file_formats::archives::codec::to_bytes;
 
 fn archive_of(towns: Vec<TownLabel>, heights: Vec<HeightLabelWire>) -> rkyv::util::AlignedVec {
     to_bytes(&MapLabelsArchive {
@@ -107,7 +107,7 @@ fn empty_lanes_survive_the_round_trip() {
     assert!(height_labels_from_archive(a).is_empty());
 }
 
-use crate::io::archives::labels::RoadNameLabel;
+use world_file_formats::archives::labels::RoadNameLabel;
 
 fn three_lane_file() -> Vec<u8> {
     to_bytes(&MapLabelsArchive {

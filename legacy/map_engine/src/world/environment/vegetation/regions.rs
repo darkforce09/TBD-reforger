@@ -6,11 +6,12 @@
 use rkyv::Archived;
 use serde_json::Value;
 
-use crate::io::archives::codec::BinaryError;
-use crate::io::archives::codec::access_checked;
-use crate::io::archives::forest::ForestRegion;
-use crate::io::archives::forest::ForestRegionsArchive;
-use crate::io::archives::version::ARCHIVE_SCHEMA_VERSION;
+use world_file_formats::archives::codec::BinaryError;
+use world_file_formats::archives::codec::access_checked;
+use world_file_formats::archives::forest::ForestRegion;
+use world_file_formats::archives::forest::ForestRegionsArchive;
+use world_file_formats::archives::version::ARCHIVE_SCHEMA_VERSION;
+use world_file_formats::ids::ForestRegionId;
 
 /// One narrowed land-cover region (mirror of `LandCoverRegion`). `polygon` rings: first outer, rest holes.
 #[derive(Clone, Debug, PartialEq)]
@@ -182,7 +183,7 @@ pub fn region_to_archive(i: usize, r: &LandCoverRegion) -> Result<ForestRegion, 
     };
     #[allow(clippy::cast_possible_truncation)]
     Ok(ForestRegion {
-        id: r.id.clone(),
+        id: ForestRegionId::new(r.id.as_str()),
         kind: r.kind.clone(),
         polygon: r
             .polygon

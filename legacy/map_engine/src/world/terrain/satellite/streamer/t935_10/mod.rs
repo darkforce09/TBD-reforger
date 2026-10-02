@@ -3,7 +3,7 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::io::containers::header::ContainerHeader;
+use world_file_formats::containers::header::ContainerHeader;
 
 use crate::world::terrain::satellite::streamer::archive::mip_dims;
 
@@ -11,17 +11,17 @@ use crate::world::terrain::satellite::streamer::archive::tile_rect;
 
 use super::*;
 
-use crate::io::archives::satellite::SatLevel;
+use world_file_formats::archives::satellite::SatLevel;
 
-use crate::io::archives::satellite::SatTile;
+use world_file_formats::archives::satellite::SatTile;
 
-use crate::io::archives::satellite::TbdSatIndexV2;
+use world_file_formats::archives::satellite::TbdSatIndexV2;
 
-use crate::io::containers::tbds::TbdsHeader;
+use world_file_formats::containers::tbds::TbdsHeader;
 
-use crate::io::containers::header::HEADER_BYTES;
+use world_file_formats::containers::header::HEADER_BYTES;
 
-use crate::io::archives::codec::to_bytes;
+use world_file_formats::archives::codec::to_bytes;
 
 const BASE: u32 = 5;
 

@@ -10,15 +10,6 @@ use crate::overlay::lanes::LaneRole;
 use crate::overlay::lanes::lane_id;
 use wasm_bindgen::prelude::*;
 
-/// Re-export `graphics_engine::layout::pack::text_uniform_bytes`.
-// T-0xx Phase 2B (Kind A): the `TextUniforms` block is bytes, so it sits in graphics-engine's
-// `text::pack` and arrives through `layout`, the enumerated ABI surface. The live atlas —
-// texture, uniform buffer, bind group — is `frame::TextAtlasGpu`: a GPU handle, which is what
-// a `TextRun`'s `atlas: BindGroupId` resolves to. The `impl RenderEngine` blocks below stay
-// where they are — they are `#[wasm_bindgen]` exports on a type this crate defines, and
-// E0116 is symmetric.
-pub(crate) use graphics_engine::layout::pack::text_uniform_bytes;
-
 /// Re-export `crate::frame::TextAtlasGpu`.
 pub(crate) use crate::frame::TextAtlasGpu;
 
@@ -29,14 +20,14 @@ impl RenderEngine {
         if self.text_atlas.is_some() {
             return Ok(());
         }
-        let (rgba, w, h) = crate::overlay::symbology::text_metrics::atlas::bake_ascii_atlas_rgba();
+        let (rgba, w, h) = render_primitives::text::atlas::bake_ascii_atlas_rgba();
         self.upload_text_atlas(&rgba, w, h)
     }
 }
 
 #[wasm_bindgen]
 impl RenderEngine {
-    /// Upload the baked ASCII atlas (`bake_ascii_atlas_rgba` output — grid dims travel in the `TextUniforms`, see [`text_uniform_bytes`]).
+    /// Upload the baked ASCII atlas (`bake_ascii_atlas_rgba` output — grid dims travel in the `TextUniforms`, see [`render_primitives::text::pack::text_uniform_bytes`]).
     pub fn upload_text_atlas(
         &mut self,
         rgba: &[u8],

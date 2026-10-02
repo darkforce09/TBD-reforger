@@ -206,7 +206,7 @@ impl ViewshedState {
 
     /// Place a new observer at world `(x, y, z)` — REPLACES any previous observer + raster (a viewshed
     /// is a single disc, not a chain). The raster is left `None` for the host to fill via
-    /// [`compute_viewshed`](map_engine_core::dem::sample::compute_viewshed); returns nothing because,
+    /// [`compute_viewshed`](crate::spatial::los::terrain::viewshed::compute_viewshed); returns nothing because,
     /// unlike the ray, there is no "completed on the second click" event — one click IS the placement.
     pub fn place(&mut self, x: f64, y: f64, z: Option<f64>) {
         self.observer = Some((x, y, z));

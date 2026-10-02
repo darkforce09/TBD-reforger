@@ -16,10 +16,10 @@ legacy/map_engine/src/overlay/symbology/instances/slots/
 ## How it works
 
 `mod.rs` holds no logic: it re-exports items of `crate::overlay::symbology::instances`
-(`symbols`, `patches`, `drag` and the graphics engine's `packing`), of
-`crate::overlay::symbology::atlas::raster` and of `crate::overlay::symbology::roles::classify`.
-The tests import that surface with `use super::*`, so one suite pins the behaviour of files in
-three folders: the 20-byte instance stride, the three distinct side tints and the BLUFOR default,
+(`symbols`, `patches` and `drag`), of `crate::overlay::symbology::atlas::raster` and of
+`crate::overlay::symbology::roles::classify`. The tests import that surface with `use super::*`,
+beside the sprite packers of `render_primitives::text::pack`, so one suite pins the behaviour of
+files in three folders: the 20-byte instance stride, the three distinct side tints and the BLUFOR default,
 the cluster gate and disc size, the drag transitions and previews, the atlas cells and their
 shapes, the role and vehicle tables, and the compass yaw encoding.
 

@@ -9,8 +9,8 @@ use crate::overlay::lanes::lane_id;
 use crate::overlay::lanes::lane_role_from_u32;
 
 use crate::frame::{DrawBatch, DrawPayload};
-use crate::world::scene::ANCHOR;
 use graphics_engine::draw::polygons;
+use map_coordinates::terrain_frames::ANCHOR;
 use wasm_bindgen::prelude::*;
 
 // T-0xx Phase 1D: `PolyLane` is gone — it is `crate::frame::IndexedMesh`,

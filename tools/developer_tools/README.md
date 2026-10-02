@@ -78,10 +78,9 @@ ci-local` nor the CI workflow runs them.
 - The seven binaries; their commands are in the [executables
   README](/tools/developer_tools/src/bin/README.md).
 - The library modules `tools/xtask/` imports: `blueprint` and `map_verification` entry functions,
-  `repository_layout` paths, `content_digest::sha384_hex`,
-  `enfusion_tooling::enfusion_mcp_entrypoint` and `world_export_pipeline::INSTANCE_KINDS` and
-  `vegetation_density`; the [source tree README](/tools/developer_tools/src/README.md) lists
-  them.
+  `repository_layout` paths, `enfusion_tooling::enfusion_mcp_entrypoint` and
+  `world_export_pipeline::INSTANCE_KINDS` and `vegetation_density`; the [source tree
+  README](/tools/developer_tools/src/README.md) lists them.
 
 ## Boundaries
 

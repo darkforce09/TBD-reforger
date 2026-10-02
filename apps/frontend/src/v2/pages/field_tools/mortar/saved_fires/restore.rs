@@ -19,7 +19,7 @@ use crate::v2::pages::field_tools::mortar::inputs::weapon_and_shell::{
     ArmamentSelection, ChargeChoice,
 };
 use crate::v2::pages::field_tools::mortar::inputs::wind::WindDraft;
-use map_engine::camera::grid_reference::{format_grid, parse_grid, GridFigures};
+use map_coordinates::grid_reference::{format_grid, parse_grid, GridFigures};
 
 /// One restored position: map metres and, when the row recorded one, its height and source.
 #[derive(Clone, Debug, PartialEq)]

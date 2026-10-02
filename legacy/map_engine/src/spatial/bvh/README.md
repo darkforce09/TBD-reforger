@@ -49,11 +49,11 @@ as the file stores them, which makes the output deterministic: two builds emit t
 - `traversal::{Bvh, Hit}`: the tree and its queries.
 - `sidecar::{BvhSidecar, BvhParseError, emit_bytes, quantize_verts, lift_verts}` and the format
   constants `SIDECAR_MAGIC`, `SIDECAR_VERSION`, `SIDECAR_VERSION_MIN` and `FLAG_KINDS`.
-- `surface::SurfaceKind`, and the vector helpers `node::{segment_hits_tri, sub, cross, dot}`.
+- `surface::SurfaceKind`, and `node::segment_hits_tri`.
 
 ## Boundaries
 
-- Depends on: nothing outside the folder; the standard library only.
+- Depends on: `geometry_primitives::vector3` (`sub`, `cross`, `dot`); the standard library.
 - Used by:
   - `crate::spatial::los`: the interior walker and wash, and the world occluder;
   - `crate::world::architecture`: blueprint hit attribution, compound assembly and instances, and

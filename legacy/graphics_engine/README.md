@@ -1,9 +1,11 @@
 # Graphics engine
 
 The `graphics_engine` crate: the web platform's WebGPU renderer, which knows no map
-concept. It defines the frame vocabulary a caller describes a frame in, and supplies the render
-pipelines, the WGSL shader, geometry and text packing, sprite culling and the shared animation
-loop. Its one caller is `map_engine`, which draws the
+concept. It defines the GPU half of the frame vocabulary a caller describes a frame in, and
+supplies the render pipelines, the vertex and index uploads, the frame encoder, the GPU sprite cull
+and the shared animation loop. The GPU-free half it builds on (instance layouts, geometry, glyph
+packing, frame ids, damage tracking and the WGSL source) is the
+`crates/graphics/render_primitives/` crate. Its one caller is `map_engine`, which draws the
 [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s map with it.
 
 ## Contents
@@ -11,23 +13,24 @@ loop. Its one caller is `map_engine`, which draws the
 ```text
 legacy/graphics_engine/
 ├── Cargo.toml  the `graphics_engine` library; GPU dependencies on `wasm32` only
-└── src/        the frame vocabulary, draw path, pipelines, shader, text, buffers and frame pump
+└── src/        the GPU frame vocabulary, draw path, pipelines, buffers and frame pump
 ```
 
 ## How it works
 
-The crate is a library (`rlib`) with no binary and no features. `bytemuck` and `earcutr` are its
-only dependencies on every target; `wgpu` 29 (WebGPU and WebGL backends, WGSL), `wasm-bindgen`,
-`js-sys` and `web-sys` are dependencies of the `wasm32` target alone. Each source file that names
+The crate is a library (`rlib`) with no binary and no features. `bytemuck` and the workspace crate
+`render_primitives` are its only dependencies on every target; `wgpu` 29 (WebGPU and WebGL backends, WGSL), `wasm-bindgen`
+and `web-sys` are dependencies of the `wasm32` target alone. Each source file that names
 a GPU or browser type gates itself on `wasm32`, so a native build compiles the CPU half and the
 native tests cover it, while the browser build adds the uploads, pipelines, encoder, present step,
 compute cull and the `requestAnimationFrame` loop.
 
 The dependency arrow runs one way. The map engine decides what to draw, in which order and with
 which pipeline, and hands the result over as `FramePacket`s of `DrawBatch`es keyed by opaque lane
-ids; this crate binds and draws what it is told. `src/` holds eight modules: `frame` (the
-vocabulary), `draw`, `pipeline`, `shaders`, `text`, `layout` (the shared byte layouts in one
-list), `device` (buffer pools) and `r#loop` (the pump).
+ids; this crate binds and draws what it is told. `src/` holds five modules: `frame` (the
+vocabulary), `draw`, `pipeline`, `device` (buffer pools) and `r#loop` (the pump). Callers import
+the GPU-free half (instance layouts, geometry, mesh composition, glyph text, frame ids, the camera
+uniform and damage tracking) from `render_primitives` directly; this crate forwards none of it.
 
 ## Getting started
 
@@ -54,22 +57,17 @@ Rust 1.95.
 
 ## Public surface
 
-- `frame`: the frame vocabulary (`FramePacket`, `DrawBatch`, `DrawPayload`, `IndirectDraw`,
-  `TextRun`, the buffer types, `LaneId`, `PipelineId`, `BindGroupId`, `CameraUniform`), the cell
-  atlases, `RenderDamage` and the swapchain `present` step.
-- `draw`: triangulation, mesh and hairline composition, the grid, the vertex and index uploads,
-  `encode::encode` and the sprite cull pair in `draw::cull`.
-- `layout`: every shared byte layout, re-exported in one list.
+- `frame`: the GPU frame vocabulary (`FramePacket`, `DrawBatch`, `DrawPayload`, `IndirectDraw`,
+  `TextRun`, the buffer types), the cell atlases and the swapchain `present` step.
+- `draw`: the vertex and index uploads, `encode::encode` and the compute cull in `draw::cull`.
 - `pipeline`: `create_map_shader` and the ten pipeline constructors.
-- `shaders::SHADER_WGSL`: the WGSL source.
-- `text`: the ASCII atlas bake, glyph metrics, layout and sprite packing.
 - `device::buffers`: `LanePool` and `ReadbackLane`.
 - `r#loop`: `FrameTarget` and `RafPump`.
 
 ## Boundaries
 
-- Depends on: `bytemuck` and `earcutr`; `wgpu`, `wasm-bindgen`, `js-sys` and `web-sys` on
-  `wasm32`. No workspace crate.
+- Depends on: `bytemuck` and `render_primitives`; `wgpu`, `wasm-bindgen` and `web-sys` on
+  `wasm32`.
 - Used by:
   - `map_engine` (`legacy/map_engine/`), the only crate that declares it, as an
     optional dependency turned on by its `world` and `render` features;

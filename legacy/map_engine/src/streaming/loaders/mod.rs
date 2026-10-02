@@ -22,10 +22,6 @@ pub mod store;
 #[cfg(feature = "streaming")]
 pub mod residency;
 
-/// Fetch.
-#[cfg(all(target_arch = "wasm32", feature = "render"))]
-pub mod fetch;
-
 /// World loader.
 #[cfg(all(target_arch = "wasm32", feature = "render"))]
 pub mod world_loader;

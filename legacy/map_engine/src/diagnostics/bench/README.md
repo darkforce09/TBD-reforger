@@ -22,7 +22,7 @@ up to 3 s for the queue to drain and resolves to JSON with `n`, `submit_wall_ms`
 `cpu_avg_ms`, `cpu_p95_ms`, `cpu_max_ms`, `submit_avg_ms`, `fps_equiv` and `drained`.
 
 `seed_stress(n, seed)` fills the `Stress` lane with n deterministic quads from
-`crate::world::scene::stress_chunk_into`, in chunks of the graphics engine's `CHUNK_CAPACITY`, and
+`crate::world::scene::stress_chunk_into`, in chunks of `render_primitives`' `CHUNK_CAPACITY`, and
 records the generation and upload times. `clear_stress`, which `seed_stress` calls first, keeps
 the last batch of the list as the calibration batch and destroys every other batch's buffers,
 every textured lane's texture and the lane pool.
@@ -40,9 +40,9 @@ and `clear_vector_lane` call it.
 ## Boundaries
 
 - Depends on: `crate::frame` (the engine, its batch list, bindings, `encode_main_pass` and the
-  compute cull), `crate::overlay::lanes` (lane ids), `crate::world::scene` (the anchor and the
-  stress quads), `crate::diagnostics::timing` and `crate::diagnostics::readback::scene` (clocks and
-  the async sleep), and `graphics_engine::layout::CHUNK_CAPACITY`.
+  compute cull), `crate::overlay::lanes` (lane ids), `map_coordinates::terrain_frames` (the
+  anchor), `crate::world::scene` (the stress quads), `crate::diagnostics::timing` and `crate::diagnostics::readback::scene` (clocks and
+  the async sleep), and `render_primitives::draw::instances::CHUNK_CAPACITY`.
 - Used by: the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s viewport bridge
   (`apps/frontend/src/v2/apps/editor/bridge/viewport.rs`), which publishes `render_bench`
   as `window.__editorBench(n)` and shows `stats()` in its debug HUD once a second; the editor

@@ -3,9 +3,9 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::spatial::los::world::descriptor::Bounds3;
 use crate::streaming::loaders::chunk::WorldChunk;
-use crate::world::architecture::compound::transform::Rigid;
+use geometry_primitives::axis_aligned_box::Bounds3;
+use geometry_primitives::rigid_transform::Rigid;
 
 use crate::spatial::los::world::tlas::AabbTlas;
 

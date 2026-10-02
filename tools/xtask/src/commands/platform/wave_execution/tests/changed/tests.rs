@@ -21,12 +21,9 @@ fn the_wasm_scope_follows_the_frontends_dependency_graph() {
             "{engine} is compiled into the SPA's wasm and must be in scope: {scope:?}"
         );
     }
-    // The exact change that fooled the gate.
+    // A map engine source file the SPA compiles into its wasm.
     assert!(
-        wasm_scope_touched(
-            &root,
-            ["legacy/map_engine/src/io/density/tbdd.rs"].into_iter()
-        ),
+        wasm_scope_touched(&root, ["legacy/map_engine/src/frame/encode.rs"].into_iter()),
         "a map_engine source change must put the SPA in scope"
     );
     assert!(

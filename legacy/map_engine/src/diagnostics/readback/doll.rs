@@ -46,9 +46,9 @@ pub(crate) fn unorm8(c: [f32; 4]) -> [u8; 4] {
 
 /// Project px.
 pub(crate) fn project_px(world: [f64; 3]) -> (u32, u32) {
-    use crate::camera::math::glmat4::transform_vector;
+    use camera_math::matrix4::transform_vector;
     let vp =
-        crate::camera::orbit::projection::view_proj_gl(0.0, f64::from(PROBE_W), f64::from(PROBE_H));
+        camera_math::orbit::projection::view_proj_gl(0.0, f64::from(PROBE_W), f64::from(PROBE_H));
     let ndc = transform_vector(&vp, [world[0], world[1], world[2], 1.0]);
     let x = ((ndc[0] + 1.0) / 2.0 * f64::from(PROBE_W)).round();
     let y = ((1.0 - ndc[1]) / 2.0 * f64::from(PROBE_H)).round();
@@ -163,11 +163,8 @@ pub(crate) async fn run_doll_self_check(
         (boot.0, boot.1, empty, "boot front (EMPTY)"),
     ];
 
-    let mvp = crate::camera::orbit::projection::view_proj_wgpu(
-        0.0,
-        f64::from(PROBE_W),
-        f64::from(PROBE_H),
-    );
+    let mvp =
+        camera_math::orbit::projection::view_proj_wgpu(0.0, f64::from(PROBE_W), f64::from(PROBE_H));
     let mut uniform = [0f32; 20];
     uniform[..16].copy_from_slice(&mvp);
     uniform[16] = 1.0;

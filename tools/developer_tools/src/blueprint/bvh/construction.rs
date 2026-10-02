@@ -27,8 +27,8 @@ use std::sync::Arc;
 use anyhow::{Context, Result, bail};
 
 use crate::repository_layout::terrain_dir;
-use map_engine::spatial::bvh::node::dot;
-use map_engine::spatial::bvh::node::sub;
+use geometry_primitives::vector3::dot;
+use geometry_primitives::vector3::sub;
 use map_engine::spatial::bvh::sidecar::BvhSidecar;
 use map_engine::spatial::bvh::sidecar::emit_bytes;
 use map_engine::spatial::bvh::sidecar::lift_verts;

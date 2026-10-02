@@ -191,8 +191,7 @@ fn no_call_site_may_guess_a_texture_limit() {
          cannot be spelled the same way as a measured one"
     );
     assert!(
-        full.contains("crate::diagnostics::platform::console::error!")
-            && full.contains("return false;"),
+        full.contains("browser_platform::console_error!") && full.contains("return false;"),
         "a missing engine must abort the load loudly, not substitute a number"
     );
     assert!(
@@ -204,7 +203,7 @@ fn no_call_site_may_guess_a_texture_limit() {
         .find("tex_layer_commit")
         .expect("the full load must commit the basemap");
     assert!(
-        full[commit_at..].contains("crate::diagnostics::platform::console::log!"),
+        full[commit_at..].contains("browser_platform::console_log!"),
         "the load must report what LANDED, after the commit. A line printed before the upload \
          is a claim about the future, and this whole ticket exists because the map on screen \
          disagreed with what the boot implied had happened"
@@ -270,7 +269,7 @@ fn a_downscaled_basemap_warns_and_a_stuck_placeholder_warns() {
 
     let report = only_body(&src, "fn report_chosen_level(");
     assert!(
-        report.contains("crate::diagnostics::platform::console::warn!"),
+        report.contains("browser_platform::console_warn!"),
         "level > 0 means the operator is looking at a downscaled island; that must reach the \
          console at warn, not be inferred from how soft the map looks"
     );
@@ -300,7 +299,7 @@ fn a_downscaled_basemap_warns_and_a_stuck_placeholder_warns() {
          spends the remaining attempts inside the same exhausted bucket"
     );
     assert!(
-        retry.contains("crate::diagnostics::platform::console::warn!"),
+        retry.contains("browser_platform::console_warn!"),
         "a retried span must say so; silent recovery hides a degrading origin until it fails \
          outright"
     );
@@ -318,8 +317,7 @@ fn a_downscaled_basemap_warns_and_a_stuck_placeholder_warns() {
          when it returns false the <=1024 px preview stays on screen as if it were the map"
     );
     assert!(
-        load.contains("if !load_unified_full(")
-            && load.contains("crate::diagnostics::platform::console::warn!"),
+        load.contains("if !load_unified_full(") && load.contains("browser_platform::console_warn!"),
         "a failed full load must say that the placeholder is what is being displayed"
     );
 }

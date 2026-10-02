@@ -65,7 +65,7 @@ pub fn mount(s: Signals) {
                         );
                         let zoom = (cw.min(ch) / (2.4 * radius))
                             .log2()
-                            .min(map_engine::camera::ortho::state::MAX_ZOOM);
+                            .min(camera_math::ortho::state::MAX_ZOOM);
                         e.set_view(center[0], center[1], zoom);
                         e.hide_calibration();
                         e.disable_frame_timing();

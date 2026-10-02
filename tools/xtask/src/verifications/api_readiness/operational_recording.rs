@@ -92,7 +92,7 @@ impl FixtureManifest {
             serde_json::to_vec_pretty(manifest).context("serialize the fixture manifest")?;
         bytes.push(b'\n');
         Ok(Self {
-            sha256: fingerprint::digest(&bytes),
+            sha256: content_digest::sha256_hex(&bytes),
             bytes,
         })
     }
@@ -253,7 +253,7 @@ impl RecordingSession {
         let mut receipt = self.receipt(&environment, observations, duration_milliseconds);
         let passing = reasons.is_empty().then(|| log.render(&LogVerdict::Pass));
         if let Some(text) = &passing {
-            receipt.output_sha256 = fingerprint::digest(text.as_bytes());
+            receipt.output_sha256 = content_digest::sha256_hex(text.as_bytes());
             if let Err(error) = evidence::validate(
                 &self.definition,
                 &receipt,
@@ -270,7 +270,7 @@ impl RecordingSession {
             _ => {
                 let text = log.render(&LogVerdict::Fail(&reasons));
                 receipt.exit_code = 1;
-                receipt.output_sha256 = fingerprint::digest(text.as_bytes());
+                receipt.output_sha256 = content_digest::sha256_hex(text.as_bytes());
                 (text, LogVerdict::Fail(&reasons))
             }
         };

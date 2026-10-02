@@ -74,19 +74,18 @@ the tiers are boundary rules:
 - `scenario`, the default, is the tier the API links, and it pulls no graphics crate, PNG
   decoder, `rkyv` or `flate2`. [Rule 4](#rule-4-the-mission-compiler-imports-nothing-outside-itself)
   keeps it that way.
-- `world` turns the graphics engine on, not `render` alone (`legacy/map_engine/Cargo.toml:34`):
-  the upload belts of `world/`, `overlay/` and `spatial/` import the renderer's byte layouts and
-  geometry helpers directly (Kind B in [2C.1](#2c1-what-may-name-a-graphics-type)), and the
-  frontend's debug building viewer calls `map_engine::world::mesh::triangulate`, the
-  map engine's re-export of `graphics_engine::draw::triangulate`
-  (`legacy/map_engine/src/world/mesh.rs:17`).
+- `world` turns the graphics engine and `render_primitives` on, not `render` alone
+  (`legacy/map_engine/Cargo.toml:30`): the upload belts of `world/`, `overlay/` and `spatial/`
+  import the renderer's byte layouts and geometry helpers directly (Kind B in
+  [2C.1](#2c1-what-may-name-a-graphics-type)), and `world/mesh.rs` composes meshes with
+  `render_primitives::draw::{compose, triangulate}`.
 - `editing` takes `store`, `world` and `streaming`, because the line-of-sight tool tests cells
   against the streamed world's occluder under `spatial/los/world/`
-  (`legacy/map_engine/Cargo.toml:43`).
+  (`legacy/map_engine/Cargo.toml:39`).
 
 ## 2. Walls inside the map engine
 
-The map engine is one crate of eleven top-level modules (`legacy/map_engine/src/lib.rs`).
+The map engine is one crate of ten top-level modules (`legacy/map_engine/src/lib.rs`).
 Four walls inside it replace the crate boundaries a split into more crates would have drawn.
 
 ### 2A The API's thin tier
@@ -144,7 +143,7 @@ damage (`every_lane_mutation_marks_the_frame_damaged`), the packet stops reading
 list (`the_packet_reads_the_persistent_batch_list`) or the tables are rebuilt rather than refilled
 (`the_packets_lookup_tables_are_refilled_not_rebuilt`). `RenderEngine` needs a GPU device, so no
 native test can build one; the source pin is the proof that remains. The damage state machine
-itself is tested in the graphics engine (`legacy/graphics_engine/src/frame/tests/`).
+itself is tested in `render_primitives` (`crates/graphics/render_primitives/src/frame/tests/`).
 
 ### 2C.1 What may name a graphics type
 
@@ -157,14 +156,14 @@ rule:
   exist because `RenderEngine`, which holds every GPU resource, is defined in the map engine
   ([rule 3b](#rule-3b-no-gpu-resource-module-in-the-map-engine)).
 - **Kind B: byte layouts and packing.** The shared binary contract between the crates (instance
-  layouts, vertex and geometry packing, text metrics and layout) is imported directly by the
-  upload belts that sit next to their data, in `world/`, `overlay/`, `spatial/` and
-  `diagnostics/`. The graphics engine publishes it as one list, `graphics_engine::layout`,
-  beside `draw` and `text`. No rule restricts Kind B: routing it through `frame/` would put
-  vegetation and symbology knowledge into `frame/` and make it a god module.
+  layouts, vertex and geometry packing, text metrics and layout, the frame ids, the camera
+  uniform and damage tracking) is the `render_primitives` crate, which carries no GPU handle and
+  is imported directly by the upload belts that sit next to their data, in `world/`, `overlay/`,
+  `spatial/`, `frame/` and `diagnostics/`. No rule restricts Kind B: routing it through `frame/`
+  would put vegetation and symbology knowledge into `frame/` and make it a god module.
 - **Kind C: the packet vocabulary.** `FramePacket`, `DrawBatch`, `DrawPayload`, `InstanceBuffer`,
-  `LaneId`, `CameraUniform` and the rest of the graphics engine's `frame` module reach the map
-  engine through `crate::frame` only, re-exported by name (never a glob) in
+  `TextRun` and the rest of the graphics engine's `frame` module, every item of which names a
+  `wgpu` type, reach the map engine through `crate::frame` only, re-exported by name (never a glob) in
   `legacy/map_engine/src/frame/mod.rs`, so the crate's whole graphics interface is one list
   a reviewer reads on one screen, and widening it is a diff to that list
   ([rule 3a](#rule-3a-only-the-packet-boundary-names-the-frame-vocabulary)). `frame/`'s own
@@ -187,9 +186,10 @@ anything tries to persist it.
 
 ## 3. The graphics engine: a pure renderer
 
-`graphics_engine` binds and draws what it is told. It defines the frame vocabulary, and
-its eight modules (`device`, `draw`, `frame`, `layout`, `loop`, `pipeline`, `shaders`, `text`)
-hold geometry, GPU handles and byte layouts only. The map engine decides what to draw, in which
+`graphics_engine` binds and draws what it is told. It defines the GPU frame vocabulary, and
+its five modules (`device`, `draw`, `frame`, `loop`, `pipeline`) hold GPU handles and uploads
+only; the GPU-free geometry, byte layouts, glyph text and WGSL source it builds on are the
+`render_primitives` crate. The map engine decides what to draw, in which
 order and with which pipeline, and keys every batch on an opaque `LaneId`; the lane roles and
 their paint order live in `legacy/map_engine/src/overlay/lanes.rs`. A map noun in a
 declared name means a domain decision crossed the wall: move the decision to the map engine and
@@ -287,7 +287,7 @@ The paths of rules 4, 5 and 7 are under `legacy/map_engine/src/`.
 - Why: Kind C of [2C.1](#2c1-what-may-name-a-graphics-type). A directory rule ("anything under
   `frame/`") would pass thirteen files each importing what they liked; a per-file pin keeps the
   interface one list.
-- Pin (`RULE3A_PIN`): `legacy/map_engine/src/frame/mod.rs`, 8 lines, the enumerated packet
+- Pin (`RULE3A_PIN`): `legacy/map_engine/src/frame/mod.rs`, 5 lines, the enumerated packet
   vocabulary. The file's own prose never spells the path, so the count is exactly the size of the
   interface list.
 
@@ -375,7 +375,7 @@ The paths of rules 4, 5 and 7 are under `legacy/map_engine/src/`.
 
 - **Rule 2's noun list is short.** Declared names such as `BuildingInstance`,
   `create_building_pipeline`, `create_forest_density_pipeline` and `create_map_shader` name map
-  concepts the five nouns do not catch (`legacy/graphics_engine/src/draw/instances.rs`,
+  concepts the five nouns do not catch (`crates/graphics/render_primitives/src/draw/instances.rs`,
   `pipeline/`).
 - **The wave gate does not run it.** `VERIFY_STEPS` in
   `tools/xtask/src/commands/platform/wave_execution/gate.rs:59` has no engine-layers row; only

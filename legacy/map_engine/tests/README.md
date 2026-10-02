@@ -1,20 +1,21 @@
-# legacy/map_engine/tests
+# Map engine integration suites
 
-Crate-root integration suites: rendering contracts, camera parity, and — since T-0xx Phase 2A —
-the three headless document suites that came over with `website-mission-core`.
+The crate-root integration suites of the map engine: three headless document suites that run
+editor operations, paste and zone save and reload against the mission document, through the same
+headless boundary the Mission Creator and the API use.
 
 ## Contents
 
-- `camera_props.rs`
-- `deckgl_ortho_parity.rs`
-- `operation_boundaries.rs`
-- `paste_keeps_authored_z.rs`
-- `zone_round_trip.rs`
-
-The last three exercise editor operations, paste, and zone save/reload against the document
-directly, through the same headless boundary the editor and the API use. They are gated on
-`store`.
+```text
+legacy/map_engine/tests/
+├── operation_boundaries.rs    editor operations at the edges of the document
+├── paste_keeps_authored_z.rs  paste keeps each authored height
+└── zone_round_trip.rs         zones survive a save and a reload
+```
 
 ## Boundaries
 
-Tests keep the original assertions and fixtures; run the crate suite with `--all-features`.
+- Depends on: the crate's `store` tier (the suites are gated on it).
+- Used by: `cargo test -p map_engine --all-features`.
+- Rules: the suites keep their assertions and fixtures. The camera suites run in their own crate
+  (`crates/geometry/camera_math/tests/`).

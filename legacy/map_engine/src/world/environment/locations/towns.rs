@@ -5,18 +5,18 @@
 
 #![forbid(unsafe_code)]
 
-use crate::io::archives::codec::BinaryError;
-use crate::io::archives::codec::access_checked;
-use crate::io::archives::labels::HeightLabel as HeightLabelWire;
-use crate::io::archives::labels::MapLabelsArchive;
-use crate::io::archives::labels::TownLabel;
-use crate::io::archives::version::ARCHIVE_SCHEMA_VERSION;
 use crate::overlay::symbology::labels::declutter::LabelSpec;
 use crate::overlay::symbology::labels::importance::LocationLabel;
 use crate::world::environment::locations::peaks::HeightLabel;
 use crate::world::environment::locations::peaks::HeightLabelKind;
 use crate::world::environment::locations::route_labels::road_names_from_archive;
 use crate::world::environment::locations::route_placement::RoadLabelPlacement;
+use world_file_formats::archives::codec::BinaryError;
+use world_file_formats::archives::codec::access_checked;
+use world_file_formats::archives::labels::HeightLabel as HeightLabelWire;
+use world_file_formats::archives::labels::MapLabelsArchive;
+use world_file_formats::archives::labels::TownLabel;
+use world_file_formats::archives::version::ARCHIVE_SCHEMA_VERSION;
 
 use rkyv::Archived;
 

@@ -7,13 +7,13 @@ use crate::spatial::bvh::sidecar::BvhSidecar;
 use crate::spatial::bvh::surface::SurfaceKind;
 use crate::spatial::los::world::coverage_1::PrefabInfo;
 use crate::spatial::los::world::coverage_1::PrefabOccluder;
-use crate::spatial::los::world::descriptor::Bounds3;
 use crate::spatial::los::world::descriptor::PrefabDescriptor;
 use crate::spatial::los::world::placed::ChunkOccluder;
 use crate::spatial::los::world::state::WorldOccluder;
 use crate::streaming::loaders::chunk::WorldChunk;
 use crate::world::architecture::compound::instances::instances_from_records;
 use crate::world::environment::buildings::prefab::PrefabRow;
+use geometry_primitives::axis_aligned_box::Bounds3;
 use std::collections::HashSet;
 use std::sync::Arc;
 

@@ -1,34 +1,10 @@
-//! Role: glyph metrics — cell size in world meters, and the character → cell map.
-//! Position: `overlay/symbology` in the map engine.
-//! Signals & state: the atlas cell grid and the advance ratio labels are laid out against.
-//! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
-//!
-//! T-0xx Phase 2B.1: from `renderers/text/metrics.rs`. The baked ASCII atlas and the bitmap
-//! font are re-exported below at the paths `renderers/text/mod.rs` used to publish, because
-//! their twenty-one consumers are label belts that sit next to this file, not next to a GPU.
-
-/// The baked ASCII atlas — cell grid, halo/ink colours, and the RGBA bake itself.
-pub use graphics_engine::text::atlas;
-
-/// The 16×32 bitmap font tables the atlas is baked from.
-pub use graphics_engine::text::font;
+//! Role: the height-label separation oracle the label glyph tests measure against.
+//! Position: `overlay/symbology` in the map engine; the glyph cell metrics, the baked ASCII
+//! atlas and the bitmap font it is tested beside live in `render_primitives::text`.
+//! Signals & state: none; pure functions.
+//! Invariants: the separation is a cartographic rule about peaks, never a glyph-cell property.
 
 use crate::world::environment::locations::peaks::height_label_min_sep_m;
-
-/// Re-export `graphics_engine::text::metrics::TEXT_GLYPH_ADVANCE_RATIO`.
-// T-0xx Phase 1D: the cell metrics moved to `graphics_engine`. Re-exported at their
-// former path so every call site in this crate keeps its spelling — the move is a relocation,
-// not a rename.
-pub use graphics_engine::text::metrics::TEXT_GLYPH_ADVANCE_RATIO;
-
-/// Re-export `graphics_engine::text::metrics::TextGlyphInstance`.
-pub use graphics_engine::text::metrics::TextGlyphInstance;
-
-/// Re-export `graphics_engine::text::metrics::glyph_index_for_char`.
-pub use graphics_engine::text::metrics::glyph_index_for_char;
-
-/// Re-export `graphics_engine::text::metrics::text_char_meters`.
-pub use graphics_engine::text::metrics::text_char_meters;
 
 /// G4 oracle for height labels (re-export for tests).
 ///

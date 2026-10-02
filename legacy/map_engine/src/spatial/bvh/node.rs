@@ -21,24 +21,7 @@ pub(crate) const BARY_EPS: f64 = 1e-9;
 /// Parse-time depth bound. [`Bvh::any_hit`] walks with a fixed 64-slot stack (net +1 per level); rejecting > 60 at parse keeps hostile-but-forward files from overflowing it.
 pub(crate) const MAX_PARSE_DEPTH: u32 = 60;
 
-/// Sub.
-pub fn sub(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
-    [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
-}
-
-/// Cross.
-pub fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
-    [
-        a[1] * b[2] - a[2] * b[1],
-        a[2] * b[0] - a[0] * b[2],
-        a[0] * b[1] - a[1] * b[0],
-    ]
-}
-
-/// Dot.
-pub fn dot(a: [f64; 3], b: [f64; 3]) -> f64 {
-    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
-}
+use geometry_primitives::vector3::{cross, dot, sub};
 
 /// Both-sided Möller–Trumbore for segment p→q against triangle (a, b, c). Winding is ignored. Returns the raw segment parameter t — the CALLER applies the [t_lo, t_hi] range check (traversal, tests, and diagnostics each own their range).
 pub fn segment_hits_tri(

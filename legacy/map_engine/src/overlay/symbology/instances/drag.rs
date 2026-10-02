@@ -3,13 +3,13 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::overlay::symbology::instances::packing::pack_icon_instance;
-use crate::overlay::symbology::instances::packing::pack_rgba_u32;
 use crate::overlay::symbology::instances::symbols::SLOT_GLYPH_RING;
 use crate::overlay::symbology::instances::symbols::SLOT_ICON_STRIDE;
 use crate::overlay::symbology::instances::symbols::SLOT_SELECTED_PX;
 use crate::overlay::symbology::instances::symbols::SLOT_SELECTED_RGBA;
 use crate::overlay::symbology::instances::symbols::pack_slot_symbology;
+use render_primitives::text::pack::pack_icon_instance;
+use render_primitives::text::pack::pack_rgba_u32;
 
 /// World-meter drag delta applied in the shader (anchor cancels: same in relative space).
 #[must_use]

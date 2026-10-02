@@ -6,11 +6,7 @@
 use crate::streaming::loaders::manifest::DemRawBlock;
 use crate::world::terrain::dem::raw::RawDem;
 use crate::world::terrain::dem::raw::RawDemSink;
-use wasm_bindgen::JsCast;
-
-use crate::streaming::bridge::progress::BootEvent;
-use crate::streaming::bridge::progress::BootSeg;
-use crate::streaming::bridge::progress::STREAM_REPORT_BYTES;
+use browser_platform::fetch::ByteProgress;
 
 const TBDE_ENCODING_V1: &str = "tbde-v1";
 
@@ -24,10 +20,16 @@ pub fn raw_block_is_readable(block: &DemRawBlock) -> bool {
 pub async fn load_declared_raw(
     base: &str,
     block: Option<&DemRawBlock>,
-    report: &dyn Fn(BootEvent),
+    report_every_bytes: u64,
+    progress: &dyn Fn(ByteProgress),
 ) -> Option<crate::world::terrain::dem::png::DecodedDem> {
     let block = block.filter(|b| raw_block_is_readable(b))?;
-    let raw = load_dem_raw(&format!("{base}/{}", block.path), BootSeg::Terrain, report).await?;
+    let raw = load_dem_raw(
+        &format!("{base}/{}", block.path),
+        report_every_bytes,
+        progress,
+    )
+    .await?;
     Some(crate::world::terrain::dem::png::DecodedDem {
         meters: raw.metres_grid(),
         width: raw.width(),
@@ -35,47 +37,19 @@ pub async fn load_declared_raw(
     })
 }
 
-/// Stream `url` into one `Vec<u16>`.
-pub async fn load_dem_raw(url: &str, seg: BootSeg, report: &dyn Fn(BootEvent)) -> Option<RawDem> {
-    let resp = gloo_net::http::Request::get(url).send().await.ok()?;
-    if !(200..300).contains(&resp.status()) {
-        return None;
-    }
-
-    let total = resp
-        .headers()
-        .get("content-length")
-        .and_then(|v| v.parse::<u64>().ok())?;
-
-    let body = resp.body()?;
-    report(BootEvent::Budget(seg, total));
-    let reader: web_sys::ReadableStreamDefaultReader = body.get_reader().unchecked_into();
+/// Stream `url` into one `Vec<u16>`: the response must announce its `content-length`, which
+/// sizes the sink; `progress` sees the bytes as they arrive, at least every `report_every_bytes`.
+pub async fn load_dem_raw(
+    url: &str,
+    report_every_bytes: u64,
+    progress: &dyn Fn(ByteProgress),
+) -> Option<RawDem> {
+    let body = browser_platform::fetch::open_streamed_body(url).await?;
+    let total = body.content_length()?;
     let mut sink = RawDemSink::new(total);
-    let mut unreported: u64 = 0;
-    loop {
-        let chunk = wasm_bindgen_futures::JsFuture::from(reader.read())
-            .await
-            .ok()?;
-        let done = js_sys::Reflect::get(&chunk, &"done".into())
-            .ok()
-            .and_then(|v| v.as_bool())
-            .unwrap_or(true);
-        if done {
-            break;
-        }
-        let arr: js_sys::Uint8Array = js_sys::Reflect::get(&chunk, &"value".into())
-            .ok()?
-            .unchecked_into();
-
-        sink.push(&arr.to_vec()).ok()?;
-        unreported += u64::from(arr.length());
-        if unreported >= STREAM_REPORT_BYTES {
-            report(BootEvent::Done(seg, unreported));
-            unreported = 0;
-        }
-    }
-    if unreported > 0 {
-        report(BootEvent::Done(seg, unreported));
-    }
+    body.read_to_end(report_every_bytes, progress, &mut |chunk| {
+        sink.push(chunk).is_ok()
+    })
+    .await?;
     sink.finish().ok()
 }

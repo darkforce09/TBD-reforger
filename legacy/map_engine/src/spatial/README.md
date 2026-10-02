@@ -40,13 +40,12 @@ map point and its elevation.
 
 - Depends on: `crate::world` (the elevation model, building blueprints and compounds, the
   catalogue's prefab rows and object classes); `crate::streaming` (the chunks the world layer
-  reads); `crate::io::archives` (the building archive); and, for the viewshed upload only,
+  reads); `world_file_formats::archives` (the building archive); and, for the viewshed upload only,
   `crate::frame`, `crate::overlay` and `wgpu`.
 - Used by:
   - inside the crate: `crate::editing` (picking, selection, the line-of-sight tool and the
     viewshed scheduler), `crate::overlay` (the cluster layer), `crate::streaming` (the world
-    object index and the occluder loader), `crate::world::architecture` (the BVH) and
-    `crate::world::terrain::dem::sample` (terrain line-of-sight re-exports);
+    object index and the occluder loader), and `crate::world::architecture` (the BVH);
   - the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s line-of-sight tool and
     input handlers in `apps/frontend/src/v2/apps/editor/input/`, and the debug benches in
     `apps/frontend/src/v2/apps/debug/`;

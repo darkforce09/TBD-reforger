@@ -1,37 +1,15 @@
-//! Role: scene.
-//! Position: `world` in the map engine.
-//! Signals & state: the world anchor, and the two synthetic instance scenes built on it.
-//! Invariants: this is the half of the old `renderers/batching/scene.rs` that knows a
-//! specific 12.8 km world. Everything here is measured in Everon metres; the GPU instance
-//! layouts it fills went to `graphics_engine`, which must not learn this number.
+//! **Role:** the two synthetic instance scenes built on the Everon anchor
+//! (`map_coordinates::terrain_frames::ANCHOR`), and the anchor-relative world rectangle.
+//! **Position:** `world` in the map engine; `frame`, the overlay lanes and the readback checks
+//! read it.
+//! **Signals & state:** none; constants and pure functions.
+//! **Invariants:** everything here is measured in Everon metres relative to `ANCHOR`; the GPU
+//! instance layouts it fills belong to `render_primitives`, which never learns the anchor.
 
-use graphics_engine::draw::geometry;
-use graphics_engine::draw::instances::QuadInstance;
+use render_primitives::draw::geometry;
+use render_primitives::draw::instances::QuadInstance;
 
-// T-0xx Phase 2B.1: the three camera-seeding world facts below came from
-// `core/context/state.rs`, where they sat beside the GPU device because that is where
-// `RenderEngine::create` read them. They are Everon measurements, not engine state, and
-// `ANCHOR` — the same 6400 m centre — was already here (Phase 1D).
-
-// All three are read only by the browser render path — `frame/boot.rs` seeds the camera with
-// them and `overlay/symbology/instances/bridge_1.rs` clamps to the bounds — so they carry the
-// same gate their old home in `core/context/state.rs` carried as a whole module. Without it the
-// native build warns three times about facts it has no way to use.
-
-/// The camera target `RenderEngine::create` opens on — the Everon terrain centre.
-#[cfg(all(target_arch = "wasm32", feature = "render"))]
-pub(crate) const INITIAL_TARGET: [f64; 2] = [6400.0, 6400.0];
-
-/// The zoom `RenderEngine::create` opens on.
-#[cfg(all(target_arch = "wasm32", feature = "render"))]
-pub(crate) const INITIAL_ZOOM: f64 = -2.0;
-
-/// Everon's world bounds in meters, `[minX, minY, maxX, maxY]` — the camera's pan clamp.
-#[cfg(all(target_arch = "wasm32", feature = "render"))]
-pub(crate) const EVERON_BOUNDS: [f64; 4] = [0.0, 0.0, 12_800.0, 12_800.0];
-
-/// Scene anchor in world meters — the Everon terrain center. Uploaded geometry is stored relative to this point so f32 coordinates stay small (≤ 6400 m ⇒ error ≪ 1 px at all zoom levels; bound derived in `OrthoCamera::wgpu_clip_matrix` docs).
-pub const ANCHOR: [f64; 2] = [6400.0, 6400.0];
+use map_coordinates::terrain_frames::ANCHOR;
 
 /// The two calibration instances (plan §S4 calibration scene), anchor-relative: - G: green quad, world [6300,6300]…[6500,6500] → relative [-100,-100]…[100,100] - R: red quad, world [6450,6450]…[6490,6490] → relative [50,50]…[90,90], drawn after G.
 #[must_use]
@@ -101,9 +79,8 @@ pub fn stress_chunk_into(chunk_idx: u32, count: usize, seed: u64, out: &mut Vec<
 mod tests;
 
 /// Anchor-relative-meters `[minX, minY, maxX, maxY]` (f32) for a world rect — the textured-quad instance geometry, matching the `QuadInstance` anchor contract.
-// T-0xx Phase 2B.1: from `renderers/batching/lanes.rs`. The arithmetic is graphics-engine's
-// `draw::geometry::world_rect_rel`; what it could not take with it is [`ANCHOR`], which is a
-// fact about a specific 12.8 km world. This wrapper is that binding and nothing else.
+// The arithmetic is `render_primitives::draw::geometry::world_rect_rel`; this wrapper binds it
+// to [`ANCHOR`], a fact about a specific 12.8 km world, and nothing else.
 #[must_use]
 pub fn world_rect_rel(min: [f64; 2], max: [f64; 2]) -> [f32; 4] {
     geometry::world_rect_rel(ANCHOR, min, max)

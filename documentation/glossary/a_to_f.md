@@ -178,7 +178,7 @@ The rendering rule of every map canvas and of the Arsenal's doll: a frame is enc
 only while something that would be drawn has changed (the damage flag) or continuous rendering is
 on, so an idle `requestAnimationFrame` tick returns without touching the GPU.
 
-In code: `RenderDamage` and `FrameDecision` in `legacy/graphics_engine/src/frame/damage.rs`; `mark_dirty` and `set_continuous_render` on the [render engine](/documentation/glossary/n_to_z.md#render-engine) in `legacy/map_engine/src/frame/lifecycle.rs`; the frame pump in `legacy/graphics_engine/src/loop/`; the pins in `legacy/map_engine/src/frame/tests/damage_discipline.rs`.
+In code: `RenderDamage` and `FrameDecision` in `crates/graphics/render_primitives/src/frame/damage.rs`; `mark_dirty` and `set_continuous_render` on the [render engine](/documentation/glossary/n_to_z.md#render-engine) in `legacy/map_engine/src/frame/lifecycle.rs`; the frame pump in `legacy/graphics_engine/src/loop/`; the pins in `legacy/map_engine/src/frame/tests/damage_discipline.rs`.
 
 See: [frame packet](#frame-packet), [Engine boundary rules](/documentation/standards/engine_boundary_rules.md).
 

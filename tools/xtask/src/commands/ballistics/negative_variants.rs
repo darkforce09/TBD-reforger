@@ -14,8 +14,8 @@
 //! shell's default charge: no elevation reaches 5 m beyond the maximum range, so the defect fails
 //! at any angular tolerance.
 use super::contract_documents::{BallisticsCatalog, CalibrationBundle};
-use super::gameplay_export::sha256_hex;
 use anyhow::{Context, Result};
+use content_digest::sha256_hex;
 
 /// Metres added to the skewed row's range.
 pub(crate) const SKEWED_ROW_OFFSET_M: f64 = 5.0;

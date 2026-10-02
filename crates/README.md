@@ -9,7 +9,10 @@ them; a library crate never depends on an application.
 ```text
 crates/
 ├── contracts/   shapes and policies two programs share, such as the offline cache policy
-└── foundation/  dependency-free building blocks, such as the HTTP URL guard
+├── foundation/  dependency-free building blocks, such as the HTTP URL guard
+├── geometry/  plain geometry, map coordinates and camera arithmetic, such as the orthographic camera
+├── graphics/  map-agnostic renderer building blocks, such as the render primitives
+└── world_formats/  the files a terrain's map data is stored in, such as the archives and containers
 ```
 
 ## How it works

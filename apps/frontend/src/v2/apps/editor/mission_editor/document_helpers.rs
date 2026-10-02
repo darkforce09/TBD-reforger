@@ -43,7 +43,7 @@ pub(crate) fn hover_hit(
     cache: &mut Option<HoverPoints>,
     tick: u64,
     doc: &mission_doc::DocHandle,
-    cam: &map_engine::camera::ortho::state::OrthoCamera,
+    cam: &camera_math::ortho::state::OrthoCamera,
     px: f64,
     py: f64,
 ) -> bool {

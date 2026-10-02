@@ -12,7 +12,7 @@ legacy/map_engine/src/doll/scene/
 ├── instances.rs  `REGION_KEYS`, the region states, `instances()`, the state and decor colours
 ├── mesh.rs       `mesh_cube` and `mesh_cylinder`: unit meshes with interleaved position and normal
 ├── mod.rs        the module tree
-└── model/        a flat re-export of the scene, picking and orbit projection items, and their tests
+└── model/        a flat re-export of the scene and picking items, and their tests
 ```
 
 ## How it works
@@ -50,9 +50,9 @@ index with `u16`.
 
 ## Boundaries
 
-- Depends on: `crate::camera::math::glmat4` (`identity`, `multiply`, `translate_in_place`,
+- Depends on: `camera_math::matrix4` (`identity`, `multiply`, `translate_in_place`,
   `scale_in_place`) for the part matrices; `model/` also re-exports from
-  `crate::doll::interaction::picking` and `crate::camera::orbit::projection`.
+  `crate::doll::interaction::picking`.
 - Used by: `crate::doll::renderer`, `crate::doll::interaction` and
   `crate::diagnostics::readback::doll`. The arsenal preview in
   `apps/frontend/src/v2/apps/editor/arsenal/doll.rs` reaches the scene only through

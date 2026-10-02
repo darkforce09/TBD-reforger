@@ -5,9 +5,9 @@
 //! asserts sortedness in debug; it never re-ranks.
 
 use crate::frame::batch::{DrawBatch, IndirectDraw};
-use crate::frame::camera::CameraUniform;
-use crate::frame::ids::BindGroupId;
 use crate::frame::text::TextRun;
+use render_primitives::frame::camera::CameraUniform;
+use render_primitives::frame::ids::BindGroupId;
 
 /// Everything one frame needs.
 ///
@@ -30,10 +30,10 @@ pub struct FramePacket<'a> {
     /// Indirect draws, merged by lane like the rest.
     pub indirect: &'a [IndirectDraw<'a>],
 
-    /// Pipelines addressed by [`crate::frame::ids::PipelineId`].
+    /// Pipelines addressed by [`render_primitives::frame::ids::PipelineId`].
     pub pipelines: &'a [wgpu::RenderPipeline],
 
-    /// Bind groups addressed by [`crate::frame::ids::BindGroupId`], as a sparse table.
+    /// Bind groups addressed by [`render_primitives::frame::ids::BindGroupId`], as a sparse table.
     ///
     /// `None` means the caller has not built that group yet — an atlas whose upload has not
     /// landed. A batch that names an absent group is skipped, which is the same picture the
@@ -65,7 +65,7 @@ pub fn upsert(batches: &mut Vec<DrawBatch>, batch: DrawBatch) {
 
 /// Drop every batch on `lane`. Returns whether anything was actually dropped — the caller
 /// uses that to decide whether the frame needs redrawing.
-pub fn remove(batches: &mut Vec<DrawBatch>, lane: crate::frame::ids::LaneId) -> bool {
+pub fn remove(batches: &mut Vec<DrawBatch>, lane: render_primitives::frame::ids::LaneId) -> bool {
     let had = batches.iter().any(|b| b.lane == lane);
     batches.retain(|b| b.lane != lane);
     had

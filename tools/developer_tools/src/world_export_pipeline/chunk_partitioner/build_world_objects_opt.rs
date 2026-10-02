@@ -77,7 +77,7 @@ pub fn build_world_objects_opt(
             for cx in 0..grid_cells {
                 let tree_ch = density::slice_chunk_corners(&tree_canopy, tree_size, cx, cy);
                 let rock_ch = density::slice_chunk_corners(&rock_grid, rock_size, cx, cy);
-                let buf = map_engine::io::density::tbdd::encode_tbdd(
+                let buf = world_file_formats::density::tbdd::encode_tbdd(
                     density::DENSITY_CELL_M,
                     density::DENSITY_COLS,
                     density::DENSITY_ROWS,

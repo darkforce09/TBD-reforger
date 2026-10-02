@@ -1,0 +1,41 @@
+# Stage S4 X4a — the S4a switch: every consumer of a moved module imports the new crate directly, and the legacy re-export shims go.
+# One row per module-prefix line of the S4a shim ledger, split per scope. Item-path imports (single
+# items, grouped `use` trees, the console macros, the frame ids, the layout facade) cannot be prefix
+# rows and are rewritten by hand.
+kind	from	to	scope
+#
+# world_file_formats: the map engine's on-disk formats
+rust_path	crate::io::	world_file_formats::	legacy/map_engine
+rust_path	map_engine::io::	world_file_formats::	tools/developer_tools
+#
+# browser_platform: the fetch helpers
+rust_path	crate::streaming::loaders::fetch::	browser_platform::fetch::	legacy/map_engine
+rust_path	map_engine::streaming::loaders::fetch::	browser_platform::fetch::	apps/frontend
+#
+# render_primitives: the text module and the GPU-free draw modules
+rust_path	graphics_engine::text::	render_primitives::text::	legacy/map_engine
+rust_path	graphics_engine::draw::compose::	render_primitives::draw::compose::	legacy/map_engine
+rust_path	graphics_engine::draw::geometry::	render_primitives::draw::geometry::	legacy/map_engine
+rust_path	graphics_engine::draw::grid::	render_primitives::draw::grid::	legacy/map_engine
+rust_path	graphics_engine::draw::instances::	render_primitives::draw::instances::	legacy/map_engine
+rust_path	graphics_engine::draw::triangulate::	render_primitives::draw::triangulate::	legacy/map_engine
+#
+# geometry_primitives: the 2D segment helpers and the rigid transform
+rust_path	crate::world::architecture::blueprint::geometry::	geometry_primitives::segment_geometry::	legacy/map_engine
+rust_path	crate::world::architecture::compound::transform::	geometry_primitives::rigid_transform::	legacy/map_engine
+rust_path	map_engine::world::architecture::compound::transform::	geometry_primitives::rigid_transform::	tools/developer_tools
+rust_path	map_engine::world::architecture::compound::transform::	geometry_primitives::rigid_transform::	apps/frontend
+#
+# map_coordinates: chunk indexing, the grid reference and JavaScript rounding
+rust_path	crate::streaming::scheduler::chunk_math::	map_coordinates::chunk_math::	legacy/map_engine
+rust_path	map_engine::streaming::scheduler::chunk_math::	map_coordinates::chunk_math::	tools/developer_tools
+rust_path	crate::camera::grid_reference::	map_coordinates::grid_reference::	legacy/map_engine
+rust_path	map_engine::camera::grid_reference::	map_coordinates::grid_reference::	apps/frontend
+rust_path	map_engine::camera::grid_reference::	map_coordinates::grid_reference::	tools/developer_tools
+rust_path	crate::camera::math::shaping::	map_coordinates::rounding::	legacy/map_engine
+#
+# camera_math: gl-matrix's mat4 port and the two cameras
+rust_path	crate::camera::math::glmat4::	camera_math::matrix4::	legacy/map_engine
+rust_path	crate::camera::orbit::	camera_math::orbit::	legacy/map_engine
+rust_path	crate::camera::ortho::	camera_math::ortho::	legacy/map_engine
+rust_path	map_engine::camera::ortho::	camera_math::ortho::	apps/frontend

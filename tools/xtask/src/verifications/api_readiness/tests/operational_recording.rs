@@ -489,7 +489,7 @@ fn the_manifest_digest_binds_the_written_fixture_and_the_cited_observations() {
     let recorded = staging.record(StagingCheck::Fleet, fleet_outcome(passing_cases()));
     assert_eq!(recorded.exit_code, 0);
     let written = fs::read(staging.evidence("staging_fleet.fixture.json")).unwrap();
-    assert_eq!(fingerprint::digest(&written), manifest().sha256());
+    assert_eq!(content_digest::sha256_hex(&written), manifest().sha256());
     let (_, receipt, log) = staging.judge(StagingCheck::Fleet);
     assert!(log.contains(&format!(
         "fixture: sha256={} manifest=staging_fleet.fixture.json\n",

@@ -2,7 +2,7 @@
 
 use super::*;
 
-pub use map_engine::camera::grid_reference::{grid_lines_in_range, grid_ref_3digit};
+pub use map_coordinates::grid_reference::{grid_lines_in_range, grid_ref_3digit};
 
 /// A map grid reference and its current screen position.
 #[derive(Clone, Debug, PartialEq)]

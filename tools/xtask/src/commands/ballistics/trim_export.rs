@@ -22,13 +22,14 @@ use super::contract_documents::{
     BallisticsCatalog, CalibrationBundle, OracleRun, ResourceRecord, document_bytes,
 };
 use super::game_tables::{native_tables, wind_tables};
-use super::gameplay_export::{GameplayExport, sha256_hex};
+use super::gameplay_export::GameplayExport;
 use super::negative_variants::negative_variants;
 use super::oracle_output::OracleOutput;
 use super::provenance_readme::{fixture_readme, negative_readme};
 use super::record_per_line_json::record_per_line_bytes;
 use super::row_elevations::ElevationEvidence;
 use anyhow::{Context, Result, bail};
+use content_digest::sha256_hex;
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};

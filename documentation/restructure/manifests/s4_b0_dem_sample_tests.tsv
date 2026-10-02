@@ -1,0 +1,9 @@
+# Stage S4 B0 — the terrain line-of-sight tests leave the dem/sample re-export module. Paths name the tree before the move.
+kind	from	to	scope
+#
+# the shared fixtures and the cases move beside the terrain line-of-sight code they exercise; the
+# cases are then split by hand into sampler, viewshed and scheduler tests, and the elevation
+# sampling cases into the elevation model's own tests folder
+path	legacy/map_engine/src/world/terrain/dem/sample/tests/mod.rs	legacy/map_engine/src/spatial/los/terrain/tests/viewshed_fixtures.rs
+path	legacy/map_engine/src/world/terrain/dem/sample/tests/cases_1.rs	legacy/map_engine/src/spatial/los/terrain/tests/viewshed_tests.rs
+path	legacy/map_engine/src/world/terrain/dem/sample/tests/README.md	legacy/map_engine/src/spatial/los/terrain/tests/README.md

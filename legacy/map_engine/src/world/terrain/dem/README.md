@@ -16,9 +16,8 @@ legacy/map_engine/src/world/terrain/dem/
 ├── mod.rs              the module tree
 ├── png.rs              16-bit PNG decode into samples and into the `f32` metres cache
 ├── raw.rs              the `TBDE` raw grid: whole or streamed decode, and the emitter framing
-├── sample/             the sampling and terrain line-of-sight items under one path, and their tests
 ├── sampling.rs         sample-to-metres conversion, world-to-pixel mapping and bilinear sampling
-└── tests/              unit tests for the full-resolution raster, vector grid, PNG decode, raw grid
+└── tests/              unit tests: full-resolution raster, vector grid, PNG decode, raw grid, sampling
 ```
 
 ## How it works
@@ -30,7 +29,7 @@ at 2 m, `uint16-linear` from −204.78 m to 375.53 m, no axis flip. A manifest m
 `load_declared_raw` for the raw grid first, which streams it only when the block names an encoding
 this build reads; otherwise it fetches the PNG and runs `decode_png_to_meters`. Either path yields
 a `DecodedDem`: one `f32` height in metres per sample, row-major. The `TBDE` header is
-`crate::io::containers::tbde::TbdeHeader`.
+`world_file_formats::containers::tbde::TbdeHeader`.
 
 | Source | Layout | Sample to metres |
 |---|---|---|
@@ -71,9 +70,10 @@ fire-planning map uses); the Mission Creator's full scope leaves the handle empt
 
 ## Boundaries
 
-- Depends on: `crate::io::containers` and `crate::io::archives::codec` (the `TBDE` header and its
-  errors); `crate::camera::math::shaping` (rounding); the `png` crate; and, for the loader,
-  `crate::streaming` (the manifest's raw block, boot progress) and the browser fetch.
+- Depends on: `world_file_formats::containers` and `world_file_formats::archives::codec` (the `TBDE` header and its
+  errors); `map_coordinates::rounding` (rounding); the `png` crate; and, for the loader,
+  `crate::streaming` (the manifest's raw block) and `browser_platform::fetch` (the streamed GET
+  and its byte progress, which the streaming host turns into boot progress).
 - Used by:
   - `crate::streaming::host`, which boots the elevation model and keeps the vector grid;
   - `crate::world::terrain::relief` (contours, sea band), `crate::world::terrain::roads` (the
@@ -95,4 +95,9 @@ fire-planning map uses); the Mission Creator's full scope leaves the handle empt
   samples, and over Everon's height range to metres within 0.1 mm
   (`dem_and_png_decode_to_the_same_grid_and_metres`,
   `everon_range_keeps_the_grid_exact_and_metres_within_f32_rounding`); the box average keeps a
-  constant grid constant (`box_average_of_constant_is_constant` in `tests/grid_tests.rs`).
+  constant grid constant (`box_average_of_constant_is_constant` in `tests/grid_tests.rs`); a stored
+  0 reads exactly the minimum height and 65 535 the maximum (`zero_is_exact_min`,
+  `full_scale_is_max_within_epsilon` in `tests/sampling_tests.rs`); the world rectangle's corners
+  map to the first and last pixel, mirrored when the manifest flips an axis
+  (`world_to_pixel_endpoints`, `world_to_pixel_axis_flip`); a point off the raster samples as
+  `None` (`sample_elevation_out_of_bounds_is_none`).

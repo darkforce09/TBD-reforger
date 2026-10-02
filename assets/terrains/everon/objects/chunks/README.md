@@ -43,8 +43,8 @@ loader's own narrowing.
     `instanceCount`.
 - Schema: the rows follow `contracts/definitions/map-object-instance.schema.json`, which also
   records the byte layout of the binary row; the container header is defined in
-  `legacy/map_engine/src/io/containers/tbdc.rs` and the row in
-  `legacy/map_engine/src/io/pod/instance.rs`. `prefabId` indexes the catalogue in the
+  `crates/world_formats/world_file_formats/src/containers/tbdc.rs` and the row in
+  `crates/world_formats/world_file_formats/src/pod/instance.rs`. `prefabId` indexes the catalogue in the
   parent folder.
 - Adding a file: never by hand. `cargo xtask map export-terrain everon --phase <phase>` rewrites
   the whole set; `cargo run -p developer_tools --bin world -- verify-phase --terrain everon --phase
@@ -79,7 +79,7 @@ loader's own narrowing.
 
 ## Related documentation
 
-- [Map binary formats](/legacy/map_engine/src/io/README.md) — the `TBDC` container and the
+- [Map binary formats](/crates/world_formats/world_file_formats/src/README.md) — the `TBDC` container and the
   instance row.
 - [World asset loaders](/legacy/map_engine/src/streaming/loaders/README.md) — how the chunks
   are fetched, parsed and made resident.

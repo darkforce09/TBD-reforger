@@ -69,7 +69,7 @@ default state and each furniture record's footprint size (`wire_blueprint`).
   - the blueprint root's `types`, `params`, `walls`, `roof`, `march` and `hull` modules, and the
     batch walk, sources and writer in `tools/developer_tools/src/blueprint/bvh/`;
   - `map_engine::world::architecture::blueprint` (the JSON blueprint),
-    `map_engine::io::archives` (`BuildingBlueprintArchive`, the codec, the archive schema
+    `world_file_formats::archives` (`BuildingBlueprintArchive`, the codec, the archive schema
     version) and `map_engine::spatial::los::world::descriptor` (descriptors, manifest);
   - `crate::repository_layout`, `jsonschema`, and the schemas in `contracts/definitions/`.
 - Used by: the blueprint root's `run` and `interpret_one`; `run_bvh_batch` in

@@ -13,15 +13,9 @@ use crate::overlay::lanes::LaneRole;
 use crate::overlay::lanes::lane_id;
 use crate::overlay::lanes::lane_role_from_u32;
 use crate::overlay::symbology::instances::symbols::SLOT_ICON_STRIDE;
-use crate::world::scene::ANCHOR;
 use crate::world::terrain::satellite::textures::TexLane;
+use map_coordinates::terrain_frames::ANCHOR;
 use wasm_bindgen::prelude::*;
-
-/// Re-export `graphics_engine::layout::pack::TEXT_UNIFORM_BYTES`.
-// The size of the text atlas's uniform block is byte layout, not a GPU resource: it names no
-// `wgpu` type, lives in graphics-engine's `text::pack` and reaches this crate through `layout`,
-// the enumerated ABI surface. The bind-group layout in `frame/boot.rs` imports it from here.
-pub(crate) use graphics_engine::layout::pack::TEXT_UNIFORM_BYTES;
 
 #[wasm_bindgen]
 impl RenderEngine {
@@ -194,10 +188,9 @@ impl RenderEngine {
         if !self.slot_bridge.atlas_ready {
             return;
         }
-        let tint =
-            crate::overlay::symbology::instances::packing::pack_rgba_u32([173, 198, 255, 140]);
+        let tint = render_primitives::text::pack::pack_rgba_u32([173, 198, 255, 140]);
         let mut b = Vec::with_capacity(SLOT_ICON_STRIDE);
-        crate::overlay::symbology::instances::packing::pack_icon_instance(
+        render_primitives::text::pack::pack_icon_instance(
             &mut b,
             world_x,
             world_y,

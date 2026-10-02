@@ -15,13 +15,12 @@
 //! has a slot for each account that writes to it; `workload_sha256` is the SHA-256 of the two
 //! files' bytes, each preceded by its length as an 8-byte big-endian integer, workload first.
 
-use std::fmt::Write as _;
 use std::path::Path;
 
 use anyhow::{Context, Result, ensure};
+use content_digest::Sha256Hasher;
 use developer_tools::staging_verification::load_generation::WorkloadPlan;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 
 /// The committed workload, relative to the repository root.
 pub(crate) const WORKLOAD_FILE: &str = "tools/xtask/staging/load_workload.json";
@@ -167,16 +166,10 @@ impl CommittedLoadData {
 
 /// SHA-256 over each document's 8-byte big-endian length and bytes, workload first.
 pub(crate) fn workload_digest(workload: &[u8], population: &[u8]) -> String {
-    let mut hasher = Sha256::new();
+    let mut hasher = Sha256Hasher::new();
     for document in [workload, population] {
         hasher.update((document.len() as u64).to_be_bytes());
         hasher.update(document);
     }
-    hasher
-        .finalize()
-        .iter()
-        .fold(String::with_capacity(64), |mut text, byte| {
-            let _ = write!(text, "{byte:02x}");
-            text
-        })
+    hasher.finalize_hex()
 }

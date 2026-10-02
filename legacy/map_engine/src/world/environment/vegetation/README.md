@@ -49,7 +49,7 @@ The grid dimensions are Everon's: `CHUNKS_PER_AXIS` (25) chunks of 512 m a side,
 
 ## Boundaries
 
-- Depends on: `crate::io::density` (the density bin decoder) and `crate::io::archives` (the
+- Depends on: `world_file_formats::density` (the density bin decoder) and `world_file_formats::archives` (the
   regions archive); `crate::world::environment::classify` (class codes); `crate::overlay::lod`
   (the instance budget and the zoom gates); `crate::streaming` (chunks, fetch, boot progress, the
   statistics bridge); and, for the browser files, `crate::world::mesh` (hairline composition),

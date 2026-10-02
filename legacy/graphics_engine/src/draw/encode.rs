@@ -9,9 +9,9 @@
 
 use crate::frame::batch::{DrawBatch, DrawPayload};
 use crate::frame::buffers::InstanceBuffer;
-use crate::frame::ids::BindGroupId;
 use crate::frame::packet::FramePacket;
 use crate::frame::text::TextRun;
+use render_primitives::frame::ids::BindGroupId;
 
 fn group<'a>(packet: &'a FramePacket<'a>, id: BindGroupId) -> Option<&'a wgpu::BindGroup> {
     packet
@@ -123,7 +123,7 @@ fn indirect_below<'a>(
     packet: &'a FramePacket<'a>,
     camera: &'a wgpu::BindGroup,
     emitted: &mut [bool],
-    before: Option<crate::frame::ids::LaneId>,
+    before: Option<render_primitives::frame::ids::LaneId>,
 ) {
     for (i, d) in packet.indirect.iter().enumerate() {
         if emitted[i] {
@@ -156,7 +156,7 @@ fn text_below<'a>(
     packet: &'a FramePacket<'a>,
     camera: &'a wgpu::BindGroup,
     next: &mut usize,
-    before: Option<crate::frame::ids::LaneId>,
+    before: Option<render_primitives::frame::ids::LaneId>,
 ) {
     while let Some(run) = packet.text.get(*next) {
         if let Some(lane) = before

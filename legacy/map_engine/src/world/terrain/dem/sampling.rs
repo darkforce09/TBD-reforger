@@ -111,3 +111,7 @@ pub fn sample_elevation_from_meters_cache(
 pub fn in_coverage(m: &DemManifest, x: f64, y: f64) -> bool {
     x >= m.min_x && x <= m.max_x && y >= m.min_y && y <= m.max_y
 }
+
+#[cfg(test)]
+#[path = "tests/sampling_tests.rs"]
+mod tests;

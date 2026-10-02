@@ -9,7 +9,7 @@
 //! stays inside the engine camera's `[MIN_ZOOM, MAX_ZOOM]` band, so the engine never clamps the
 //! view the caller asked for.
 
-use map_engine::camera::ortho::state::{MAX_ZOOM, MIN_ZOOM};
+use camera_math::ortho::state::{MAX_ZOOM, MIN_ZOOM};
 
 /// A terrain's world rectangle in map metres (x east, y north).
 #[derive(Clone, Copy, Debug, PartialEq)]

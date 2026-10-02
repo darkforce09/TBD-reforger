@@ -14,19 +14,11 @@
 //! differs from the folder, a GUID absent from the index and a file whose SHA-256 differs from the
 //! manifest are all errors: the trim never reads an unverified byte.
 use anyhow::{Context, Result, bail};
+use content_digest::sha256_hex;
 use serde_json::Value;
-use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-
-/// Lowercase hexadecimal SHA-256 of `bytes`.
-pub(crate) fn sha256_hex(bytes: &[u8]) -> String {
-    Sha256::digest(bytes)
-        .iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect()
-}
 
 /// Reads and parses one JSON file, naming the file in every error.
 pub(crate) fn read_json_file(path: &Path) -> Result<(Vec<u8>, Value)> {

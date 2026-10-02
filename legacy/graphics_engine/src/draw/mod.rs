@@ -1,26 +1,16 @@
 //! Role: draw.
-//! Position: `legacy/graphics_engine/src` — geometry assembly and the draw path.
-//! Signals & state: vertex/index streams and instance packing.
+//! Position: `legacy/graphics_engine/src` — the GPU half of the draw path; the CPU geometry it
+//! uploads comes from `render_primitives::draw`.
+//! Signals & state: vertex/index streams and the frame encoder.
 //! Invariants: takes geometry, returns geometry. It never asks what a shape represents.
 
-/// Triangulated fills and hairline segment lists.
-pub mod compose;
-
-/// Frustum compaction of packed sprite instances — CPU oracle plus its GPU compute twin.
+/// Frustum compaction of packed sprite instances: the GPU compute pass, and the CPU oracle it is
+/// checked against.
 pub mod cull;
 
 /// Encoding a frame packet into a render pass.
 #[cfg(target_arch = "wasm32")]
 pub mod encode;
-
-/// One line vertex, and placing a rect against the caller's anchor.
-pub mod geometry;
-
-/// The procedural grid.
-pub mod grid;
-
-/// Per-instance vertex layouts.
-pub mod instances;
 
 /// `LineList` vertex streams.
 #[cfg(target_arch = "wasm32")]
@@ -29,6 +19,3 @@ pub mod lines;
 /// Indexed triangle meshes.
 #[cfg(target_arch = "wasm32")]
 pub mod polygons;
-
-/// Ear-clipping triangulation.
-pub mod triangulate;

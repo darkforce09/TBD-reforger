@@ -4,14 +4,13 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::world::mesh::*;
-// T-0xx Phase 1D: `compose.rs` dropped its four `pub use crate::world::terrain::{roads,water}::mesh`
-// re-exports, so the road and sea cases below name their own module directly.
 use crate::world::terrain::dem::grid::DemVectorGrid;
 use crate::world::terrain::relief::sea_band::SeaBandGeometry;
 use crate::world::terrain::relief::sea_band::build_sea_band_geometry;
 use crate::world::terrain::roads::mesh::RoadInput;
 use crate::world::terrain::roads::mesh::compose_roads_mesh;
 use crate::world::terrain::water::mesh::compose_sea_mesh;
+use render_primitives::draw::compose::retint_fill_alpha;
 
 #[test]
 fn roads_gated_by_zoom() {

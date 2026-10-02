@@ -3,14 +3,14 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::world::mesh::PolyMeshGpu;
-use crate::world::mesh::mesh_from_tri;
-use crate::world::mesh::triangulate::triangulate_ring_buffer;
 use crate::world::terrain::dem::grid::DemVectorGrid;
+use render_primitives::draw::compose::PolyMeshGpu;
+use render_primitives::draw::compose::mesh_from_tri;
+use render_primitives::draw::triangulate::triangulate_ring_buffer;
 
-use crate::streaming::scheduler::chunk_math::Bbox;
-use crate::streaming::scheduler::chunk_math::expand_bbox;
 use crate::world::terrain::roads::network::RoadSegment;
+use map_coordinates::chunk_math::Bbox;
+use map_coordinates::chunk_math::expand_bbox;
 
 /// Margin around runway segment AABBs (L1).
 pub const AIRFIELD_BBOX_MARGIN_M: f64 = 30.0;

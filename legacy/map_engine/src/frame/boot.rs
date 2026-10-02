@@ -10,18 +10,17 @@
 //! belongs to `graphics_engine`; what is left here is the *order* in which a map
 //! engine asks for them.
 
-use crate::camera::ortho::state::OrthoCamera;
 use crate::diagnostics::timing::gpu::GpuTimer;
 use crate::frame::bindings;
 use crate::frame::engine::CLEAR_COLOR;
 use crate::frame::engine::RenderEngine;
 use crate::overlay::lanes::LaneRole;
 use crate::overlay::lanes::lane_id;
-use crate::world::scene::EVERON_BOUNDS;
-use crate::world::scene::INITIAL_TARGET;
-use crate::world::scene::INITIAL_ZOOM;
+use camera_math::ortho::state::OrthoCamera;
+use map_coordinates::terrain_frames::EVERON_BOUNDS;
+use map_coordinates::terrain_frames::INITIAL_TARGET;
+use map_coordinates::terrain_frames::INITIAL_ZOOM;
 
-use crate::frame::lifecycle::TEXT_UNIFORM_BYTES;
 use crate::frame::pipelines::building::create_building_pipeline;
 use crate::frame::pipelines::create_map_shader;
 use crate::frame::pipelines::icon::create_icon_pipeline;
@@ -35,7 +34,8 @@ use crate::frame::pipelines::vector::create_polygon_pipeline;
 use crate::frame::{DrawBatch, DrawPayload, InstanceBuffer};
 use crate::overlay::symbology::instances::bridge_1::SlotGpuBridge;
 use crate::overlay::symbology::instances::lanes::ICON_UNIFORM_BYTES;
-use graphics_engine::layout::UNIT_QUAD;
+use render_primitives::draw::instances::UNIT_QUAD;
+use render_primitives::text::pack::TEXT_UNIFORM_BYTES;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -426,7 +426,7 @@ impl RenderEngine {
             render_cpu_ms_last: 0.0,
             render_cpu_ms_ema: 0.0,
             timer,
-            damage: crate::frame::damage::RenderDamage::new(),
+            damage: render_primitives::frame::damage::RenderDamage::new(),
             submitted_last_frame: false,
             icon_cull,
             tree_icons_20: Vec::new(),

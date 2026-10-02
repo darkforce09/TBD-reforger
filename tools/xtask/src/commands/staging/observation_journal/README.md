@@ -29,6 +29,6 @@ or refresh token, a `"token"` field or a `set-cookie` header is refused and neve
 
 ## Boundaries
 
-- Depends on: `sha2`, `serde_json`.
+- Depends on: `content_digest`, `serde_json`.
 - Used by: `tools/xtask/src/commands/staging/procedure_runner/`.
 - Rules: an artifact holds exactly the bytes its name digests; no credential is ever archived.

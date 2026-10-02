@@ -20,9 +20,6 @@ pub mod png;
 #[cfg(feature = "io")]
 pub mod raw;
 
-/// Sample.
-pub mod sample;
-
 /// Sampling.
 pub mod sampling;
 

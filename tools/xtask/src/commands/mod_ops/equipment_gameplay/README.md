@@ -45,7 +45,7 @@ into the policy digest. Three users share it:
 
 - Depends on: `contracts/rules/equipment-gameplay/`; `ValidationReport` and the file readers of
   `tools/xtask/src/commands/mod_ops/equipment_vehicle_export/`; `crate::core::repository_root`;
-  `serde_json`, `sha2`, `walkdir` and `anyhow`.
+  `serde_json`, `content_digest`, `walkdir` and `anyhow`.
 - Used by: `tools/xtask/src/commands/mod_ops/dispatch.rs`, for the two commands;
   `tools/xtask/src/commands/mod_ops/equipment_vehicle_export/mod.rs`, which hands gameplay
   generations to `validate`.

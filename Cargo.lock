@@ -903,6 +903,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "browser_platform"
+version = "0.1.0"
+dependencies = [
+ "gloo-net",
+ "js-sys",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.20.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1046,6 +1057,14 @@ dependencies = [
  "rustix 1.1.4",
  "wayland-backend",
  "wayland-client",
+]
+
+[[package]]
+name = "camera_math"
+version = "0.1.0"
+dependencies = [
+ "map_coordinates",
+ "serde_json",
 ]
 
 [[package]]
@@ -1296,6 +1315,14 @@ name = "const_str_slice_concat"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f67855af358fcb20fac58f9d714c94e2b228fe5694c1c9b4ead4a366343eda1b"
+
+[[package]]
+name = "content_digest"
+version = "0.1.0"
+dependencies = [
+ "sha2 0.11.0",
+ "thiserror 2.0.18",
+]
 
 [[package]]
 name = "convert_case"
@@ -1608,6 +1635,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "deterministic_random"
+version = "0.1.0"
+
+[[package]]
 name = "developer_tools"
 version = "0.1.0"
 dependencies = [
@@ -1618,10 +1649,12 @@ dependencies = [
  "clap",
  "flate2",
  "futures-util",
+ "geometry_primitives",
  "image",
  "image-webp",
  "jsonschema",
  "libc",
+ "map_coordinates",
  "map_engine",
  "png 0.17.16",
  "regex",
@@ -1633,6 +1666,7 @@ dependencies = [
  "tokio",
  "tokio-tungstenite",
  "webp",
+ "world_file_formats",
 ]
 
 [[package]]
@@ -2401,8 +2435,11 @@ name = "frontend"
 version = "0.1.0"
 dependencies = [
  "base64",
+ "browser_platform",
+ "camera_math",
  "console_error_panic_hook",
  "futures",
+ "geometry_primitives",
  "gloo-net",
  "gloo-timers",
  "http_url_guard",
@@ -2410,8 +2447,10 @@ dependencies = [
  "js-sys",
  "leptos",
  "leptos_router",
+ "map_coordinates",
  "map_engine",
  "offline_cache_policy",
+ "render_primitives",
  "serde",
  "serde_json",
  "url",
@@ -2562,6 +2601,13 @@ dependencies = [
  "typenum",
  "version_check",
  "zeroize",
+]
+
+[[package]]
+name = "geometry_primitives"
+version = "0.1.0"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -2812,8 +2858,7 @@ name = "graphics_engine"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
- "earcutr",
- "js-sys",
+ "render_primitives",
  "wasm-bindgen",
  "web-sys",
  "wgpu 29.0.4",
@@ -3927,19 +3972,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "map_coordinates"
+version = "0.1.0"
+dependencies = [
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "map_engine"
 version = "0.1.0"
 dependencies = [
+ "browser_platform",
  "bytemuck",
+ "camera_math",
  "console_error_panic_hook",
  "flate2",
  "futures",
- "gloo-net",
+ "geometry_primitives",
  "graphics_engine",
  "js-sys",
  "jsonschema",
  "libm",
+ "map_coordinates",
  "png 0.17.16",
+ "render_primitives",
  "rkyv 0.8.18",
  "serde",
  "serde_json",
@@ -3948,6 +4004,7 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
  "wgpu 29.0.4",
+ "world_file_formats",
  "yrs",
 ]
 
@@ -4206,6 +4263,15 @@ name = "new_debug_unreachable"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
+
+[[package]]
+name = "newtype_ids"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "uuid",
+]
 
 [[package]]
 name = "next_tuple"
@@ -5729,6 +5795,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "663ba70707f96e871406fe10d68128412e619b06d1d47cb91c3a4c6501176240"
 dependencies = [
  "bytecheck 0.8.3",
+]
+
+[[package]]
+name = "render_primitives"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "earcutr",
 ]
 
 [[package]]
@@ -7288,6 +7362,16 @@ checksum = "c431b87111666e491a90baa837f914fb45cd5dc3c268591b0220ff5057f2085f"
 dependencies = [
  "num-conv",
  "time-core",
+]
+
+[[package]]
+name = "time_source"
+version = "0.1.0"
+dependencies = [
+ "js-sys",
+ "thiserror 2.0.18",
+ "time",
+ "web-sys",
 ]
 
 [[package]]
@@ -9047,6 +9131,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
 
 [[package]]
+name = "world_file_formats"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "newtype_ids",
+ "rkyv 0.8.18",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "writeable"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9146,6 +9241,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
+ "content_digest",
  "developer_tools",
  "flate2",
  "heck",
@@ -9157,7 +9253,6 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_norway",
- "sha2 0.10.9",
  "syn 2.0.118",
  "tar",
  "ticket_engine",

@@ -4,14 +4,14 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::frame::FramePacket;
-use crate::frame::LaneId;
 use crate::frame::bindings;
 use crate::frame::engine::RenderEngine;
 use crate::frame::upload::text::TextAtlasGpu;
 use crate::overlay::symbology::atlas::gpu::GlyphAtlasGpu;
 use crate::overlay::symbology::instances::bridge_1::SlotAtlasGpu;
-use crate::world::scene::ANCHOR;
 use crate::world::terrain::satellite::textures::TexLane;
+use map_coordinates::terrain_frames::ANCHOR;
+use render_primitives::frame::ids::LaneId;
 use wasm_bindgen::prelude::*;
 
 // ── PHASE 2C §R1 — BOTH TABLES REFILL, NEITHER REALLOCATES ───────────────────────────────────
@@ -45,7 +45,7 @@ use wasm_bindgen::prelude::*;
 // The out-param is what lets the caller pass `&mut self.frame_bind_groups` alongside
 // `self.glyph_atlas.as_ref()` — disjoint field borrows, which the borrow checker splits happily.
 
-/// Refill the pipeline table a frame packet addresses by [`crate::frame::PipelineId`].
+/// Refill the pipeline table a frame packet addresses by [`render_primitives::frame::ids::PipelineId`].
 ///
 /// T-0xx Phase 1D: `draw_batches` used to take nine `&RenderPipeline` arguments and choose
 /// between them by matching on the lane. The choice is now made where a lane means something
@@ -183,7 +183,7 @@ impl RenderEngine {
         // a packet carrying a default camera would be a lie.
         let mvp = self.camera.wgpu_clip_matrix(ANCHOR[0], ANCHOR[1]);
         let packet = FramePacket {
-            camera: crate::frame::CameraUniform::new(mvp),
+            camera: render_primitives::frame::camera::CameraUniform::new(mvp),
             clear: self.clear_color,
             batches: &self.batches,
             text: &[],

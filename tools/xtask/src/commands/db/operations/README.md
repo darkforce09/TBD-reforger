@@ -67,7 +67,7 @@ whichever runtime `resolve_runtime` finds. The maintenance database `IT_MAINT_DB
   `crate::commands::deploy::database_operations` (`ct_capture`, `db_user`, `db_container`,
   `resolve_runtime`, `is_safe_scratch_database_name`, `database_exists`);
   `crate::core::host_execution` for the bridge; `crate::verifications::property_test_configuration`;
-  `developer_tools::content_digest::sha384_hex`; `verification_core` for runs and verdicts; git,
+  `content_digest::sha384_hex`; `verification_core` for runs and verdicts; git,
   cargo and a container runtime.
 - Used by: `run` in `tools/xtask/src/commands/db/operations.rs`; the ci `rust-test-it` task, which
   runs `test_it::run_complete_suite` in process; the remote checksum step of

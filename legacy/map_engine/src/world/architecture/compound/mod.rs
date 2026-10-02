@@ -7,9 +7,6 @@
 #[cfg(feature = "io")]
 pub mod scene;
 
-/// Transform.
-pub mod transform;
-
 /// Assembly.
 #[cfg(feature = "io")]
 pub mod assembly;

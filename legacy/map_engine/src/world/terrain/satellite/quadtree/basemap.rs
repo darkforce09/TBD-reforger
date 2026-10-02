@@ -33,7 +33,7 @@ pub async fn load_map_basemap(
     terrain_h: f64,
 ) -> bool {
     let Some(limit) = texture_limit(engine) else {
-        crate::diagnostics::platform::console::error!(
+        browser_platform::console_error!(
             "map basemap: no render engine when the pyramid zoom had to be chosen — refusing to \
              guess a GPU texture limit."
         );
@@ -118,12 +118,12 @@ pub async fn load_satellite(
 
     if !load_unified_full(&engine, &url, terrain_w, terrain_h, &bridge, report).await {
         if preview_ok {
-            crate::diagnostics::platform::console::warn!(
+            browser_platform::console_warn!(
                 "satellite: the full-resolution basemap did NOT load — the <={PREVIEW_MAX_EDGE} px \
                  preview placeholder is what is on screen."
             );
         } else {
-            crate::diagnostics::platform::console::error!(
+            browser_platform::console_error!(
                 "satellite: no basemap loaded at all — neither the preview nor the full mip chain."
             );
         }

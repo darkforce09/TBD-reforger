@@ -13,7 +13,7 @@
 
 use crate::v2::pages::field_tools::mortar::inputs::battery::GunDraft;
 use crate::v2::pages::field_tools::mortar::inputs::positions::{MortarTerrain, PositionDraft};
-use map_engine::camera::grid_reference::parse_grid;
+use map_coordinates::grid_reference::parse_grid;
 use map_engine::data::scenario::ballistics::crest_clearance::{TerrainProfile, TerrainSample};
 use map_engine::editing::tools::line_of_sight::terrain_survey::everon_manifest;
 use map_engine::spatial::los::terrain::sampler::sample_segment;

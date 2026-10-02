@@ -74,8 +74,8 @@ runs the full scope, which leaves the heights empty.
 
 ## Boundaries
 
-- Depends on: `map_engine` (`frame::engine::RenderEngine`, `frame::RafPump`,
-  `camera::ortho::state`, `streaming::host` for the boot, the host and grid handles and the
+- Depends on: `camera_math` (`ortho::state`); `browser_platform` (`fetch`); `map_engine`
+  (`frame::engine::RenderEngine`, `frame::RafPump`, `streaming::host` for the boot, the host and grid handles and the
   camera settle, `streaming::bridge` for the preferences and progress types,
   `world::terrain::dem::full_resolution` for the heights); `web-sys`, `js-sys`, `wasm-bindgen`,
   `serde` and `serde_json`.

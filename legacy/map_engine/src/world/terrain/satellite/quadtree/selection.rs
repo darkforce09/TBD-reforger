@@ -62,7 +62,7 @@ pub(super) fn report_chosen_level(index: &TbdSatIndex, base: usize, limit: Textu
     } else {
         String::new()
     };
-    crate::diagnostics::platform::console::warn!(
+    browser_platform::console_warn!(
         "satellite: DOWNSCALED basemap — showing level {} ({}x{}) instead of level 0 ({}x{}). GPU \
          maxTextureDimension2D = {} (adapter {}); {}{}.",
         base,

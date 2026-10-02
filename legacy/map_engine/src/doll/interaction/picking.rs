@@ -3,10 +3,10 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::camera::math::glmat4::invert;
-use crate::camera::math::glmat4::transform_vector;
-use crate::camera::orbit::projection::view_proj_gl;
 use crate::doll::scene::instances::instances;
+use camera_math::matrix4::invert;
+use camera_math::matrix4::transform_vector;
+use camera_math::orbit::projection::view_proj_gl;
 
 /// Representative world point for a region's callout: the first instance's model translation (the part's center).
 #[must_use]

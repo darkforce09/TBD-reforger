@@ -82,7 +82,7 @@ total fits or nothing more may go.
   (the walker's trace, blocking test, crossing reduction and concealment fold, and
   `segment_aabb_window`), `crate::world::architecture` (instances, rigid transforms, the `LosHit`
   types), `crate::world::environment::buildings::prefab` (the catalogue's `PrefabRow`),
-  `crate::streaming` (`WorldChunk`, `chunk_id`, `TerrainSizeM`) and `crate::io::archives`.
+  `crate::streaming` (`WorldChunk`, `chunk_id`, `TerrainSizeM`) and `world_file_formats::archives`.
 - Used by:
   - `crate::streaming`: the occluder loader
     (`legacy/map_engine/src/streaming/loaders/occluder_loader.rs`), the world loader's

@@ -9,9 +9,9 @@ use crate::overlay::lanes::LaneRole;
 use crate::overlay::lanes::lane_id;
 
 use crate::frame::{DrawBatch, DrawPayload};
-use crate::world::scene::ANCHOR;
-use graphics_engine::draw::geometry::LineVertex;
 use graphics_engine::draw::{lines, polygons};
+use map_coordinates::terrain_frames::ANCHOR;
+use render_primitives::draw::geometry::LineVertex;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]

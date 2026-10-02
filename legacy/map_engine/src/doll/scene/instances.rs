@@ -3,10 +3,10 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::camera::math::glmat4::identity;
-use crate::camera::math::glmat4::multiply;
-use crate::camera::math::glmat4::scale_in_place;
-use crate::camera::math::glmat4::translate_in_place;
+use camera_math::matrix4::identity;
+use camera_math::matrix4::multiply;
+use camera_math::matrix4::scale_in_place;
+use camera_math::matrix4::translate_in_place;
 
 /// Clickable regions, RAIL order (contract with `loadout/arsenalDollModel.ts`).
 pub const REGION_KEYS: [&str; 14] = [

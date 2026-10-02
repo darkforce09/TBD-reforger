@@ -5,6 +5,7 @@
 
 use super::*;
 
+use render_primitives::text::pack::{pack_rgba_u32, screen_yaw_for_heading_deg, yaw_to_snorm16};
 use std::collections::HashSet;
 
 mod cases_1;

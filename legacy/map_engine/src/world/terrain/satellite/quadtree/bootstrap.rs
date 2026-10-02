@@ -33,15 +33,13 @@ pub(super) async fn load_unified_full(
     report: &dyn Fn(BootEvent),
 ) -> bool {
     let Some((index, file_size)) = fetch_index_head(url, true).await else {
-        crate::diagnostics::platform::console::error!(
-            "satellite: could not read the .tbd-sat index from {url}"
-        );
+        browser_platform::console_error!("satellite: could not read the .tbd-sat index from {url}");
         return false;
     };
 
     let limit = texture_limit(engine);
     let Some(base) = pick_base_level_for_limit(&index, limit.map(|l| l.device)) else {
-        crate::diagnostics::platform::console::error!(
+        browser_platform::console_error!(
             "satellite: no render engine when the basemap level had to be chosen — refusing to \
              guess a GPU texture limit. The <={PREVIEW_MAX_EDGE} px preview is what is on screen."
         );
@@ -66,7 +64,7 @@ pub(super) async fn load_unified_full(
     });
     let walk = crate::streaming::memory::budget::claim_satellite_floor(&level_bytes, base);
     for (level, bytes, decision) in &walk.rejected {
-        crate::diagnostics::platform::console::warn!(
+        browser_platform::console_warn!(
             "satellite: memory budget {decision:?}d level {level} ({} MiB resident — RGBA plus \
              tile bodies, held together across the decode) — raising the mip floor by one. \
              Budget {budget_mib} MiB, {held_mib} MiB already held by the other world assets.",
@@ -75,7 +73,7 @@ pub(super) async fn load_unified_full(
     }
     let base = walk.base;
     let Some(base_mip) = index.mips.get(base).cloned() else {
-        crate::diagnostics::platform::console::error!(
+        browser_platform::console_error!(
             "satellite: index has no mip at the chosen base level {base}"
         );
         return false;
@@ -113,7 +111,7 @@ pub(super) async fn load_unified_full(
     })
     .await
     else {
-        crate::diagnostics::platform::console::error!(
+        browser_platform::console_error!(
             "satellite: the Range fetch of {} tiles ({total} B) from level {base} down did not \
              complete",
             tiles.len()
@@ -124,7 +122,7 @@ pub(super) async fn load_unified_full(
     let mut levels: Vec<(u32, TbdSatTile, Decoded)> = Vec::with_capacity(plan.len());
     for ((rel, tile), bytes) in plan.into_iter().zip(bodies) {
         let Some(d) = decode_webp(&bytes, webgl2).await else {
-            crate::diagnostics::platform::console::error!(
+            browser_platform::console_error!(
                 "satellite: WebP decode failed for the {}x{} tile at ({},{}) of relative level \
                  {rel} ({} B, webgl2={webgl2})",
                 tile.width,
@@ -141,7 +139,7 @@ pub(super) async fn load_unified_full(
     {
         let mut guard = engine.borrow_mut();
         let Some(e) = guard.as_mut() else {
-            crate::diagnostics::platform::console::error!(
+            browser_platform::console_error!(
                 "satellite: the render engine went away before upload"
             );
             return false;
@@ -157,7 +155,7 @@ pub(super) async fn load_unified_full(
             mip_count,
             MODE_UNIFIED,
         ) {
-            crate::diagnostics::platform::console::error!(
+            browser_platform::console_error!(
                 "satellite: could not allocate the {}x{} basemap texture with {mip_count} mips: \
                  {err:?}",
                 base_mip.width,
@@ -167,7 +165,7 @@ pub(super) async fn load_unified_full(
         }
         for (rel, tile, d) in levels {
             if !upload_decoded(e, ROLE_BASEMAP, rel, tile.x, tile.y, d) {
-                crate::diagnostics::platform::console::error!(
+                browser_platform::console_error!(
                     "satellite: GPU upload rejected the {}x{} tile at ({},{}) of relative level \
                      {rel}",
                     tile.width,
@@ -179,14 +177,12 @@ pub(super) async fn load_unified_full(
             }
         }
         if let Err(err) = e.tex_layer_commit(ROLE_BASEMAP, 1.0_f32, true) {
-            crate::diagnostics::platform::console::error!(
-                "satellite: basemap commit failed: {err:?}"
-            );
+            browser_platform::console_error!("satellite: basemap commit failed: {err:?}");
             return false;
         }
     }
 
-    crate::diagnostics::platform::console::log!(
+    browser_platform::console_log!(
         "satellite: basemap up — level {base}, {}x{} with {mip_count} mips ({total} B over {} \
          Range requests); GPU maxTextureDimension2D = {}",
         base_mip.width,

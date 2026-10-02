@@ -1,6 +1,7 @@
 //! Role: frame.
 //! Position: `legacy/graphics_engine/src` — the vocabulary this crate defines.
-//! Signals & state: geometry and GPU handles.
+//! Signals & state: geometry and GPU handles; the GPU-free ids, damage tracking and camera
+//! uniform live in `render_primitives::frame`.
 //! Invariants: **these types may reference geometry and GPU handles ONLY.** A field named for
 //! a thing in the world — a road, a label, a town, a coastline — is a bug in the boundary, not
 //! a convenience. The caller speaks this vocabulary; this crate never speaks the caller's.
@@ -16,15 +17,6 @@ pub mod batch;
 /// Frame buffers.
 #[cfg(target_arch = "wasm32")]
 pub mod buffers;
-
-/// Frame camera.
-pub mod camera;
-
-/// Damage tracking — which frames need submitting at all.
-pub mod damage;
-
-/// Frame ids.
-pub mod ids;
 
 /// Frame packet.
 #[cfg(target_arch = "wasm32")]
@@ -44,8 +36,6 @@ pub use atlas::{GlyphAtlasGpu, TextAtlasGpu, create_glyph_atlas, create_text_atl
 pub use batch::{DrawBatch, DrawPayload, IndirectDraw};
 #[cfg(target_arch = "wasm32")]
 pub use buffers::{IndexedMesh, InstanceBuffer, VertexStream};
-pub use camera::CameraUniform;
-pub use ids::{BindGroupId, LaneId, PipelineId};
 #[cfg(target_arch = "wasm32")]
 pub use packet::FramePacket;
 #[cfg(target_arch = "wasm32")]

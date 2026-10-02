@@ -214,7 +214,7 @@ pub(super) fn append_spatial_gates(
         let (r_grid, r_size) = accumulate_corners(pos("rockPositions").into_iter(), world);
         let t_slice = slice_chunk_corners(&t_grid, t_size, ccx, ccy);
         let r_slice = slice_chunk_corners(&r_grid, r_size, ccx, ccy);
-        let rebuilt = map_engine::io::density::tbdd::encode_tbdd(
+        let rebuilt = world_file_formats::density::tbdd::encode_tbdd(
             DENSITY_CELL_M,
             DENSITY_COLS,
             DENSITY_ROWS,
@@ -233,7 +233,7 @@ pub(super) fn append_spatial_gates(
         if rebuilt != density_bin {
             errs.push("encode(fixture) != committed density-fixture.bin".into());
         }
-        match map_engine::io::density::tbdd::decode_tbdd(density_bin) {
+        match world_file_formats::density::tbdd::decode_tbdd(density_bin) {
             Ok(dec) => {
                 if dec.version != TBDD_VERSION
                     || dec.cell_m != DENSITY_CELL_M

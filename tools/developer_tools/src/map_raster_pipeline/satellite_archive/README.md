@@ -47,7 +47,7 @@ source PNG (+ TBD_SatExport_meta.json beside it)
 
 - Depends on: `super::image_operations` for PNG decode, resizing and WebP encode;
   `super::satellite_archive_container` for the version 2 index, bytes and checks, and through it
-  `map_engine::io::archives::satellite` and `map_engine::io::containers::tbds`;
+  `world_file_formats::archives::satellite` and `world_file_formats::containers::tbds`;
   `crate::repository_layout::terrain_assets_dir` and `crate::browser_testing::server::repo_root` for
   `assets/terrains/`; `crate::timestamp_formatting` and
   `crate::world_export_pipeline::json_number_formatting` for the version 1 table.
@@ -65,5 +65,5 @@ source PNG (+ TBD_SatExport_meta.json beside it)
 
 ## Related documentation
 
-- [Map engine archives](/legacy/map_engine/src/io/archives/README.md) — the `TbdSatIndexV2`
+- [Map engine archives](/crates/world_formats/world_file_formats/src/archives/README.md) — the `TbdSatIndexV2`
   archive the map engine reads.

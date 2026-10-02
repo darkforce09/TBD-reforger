@@ -1,33 +1,24 @@
-# Cameras
+# Camera viewport
 
-The map engine's cameras: the orthographic camera the tactical map of the
-[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) draws with, the orbit camera of
-the [arsenal](/documentation/glossary/a_to_f.md#arsenal)'s doll preview, the matrix math both are built
-from, and the grid reference printed on the map's edges. In the browser build it also gives the
-render engine the entry points that move its camera.
+The render engine's camera entry points. The cameras themselves live in crates: the orthographic
+camera of the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s tactical map,
+the orbit camera of the [arsenal](/documentation/glossary/a_to_f.md#arsenal)'s doll preview and
+their matrix math in `crates/geometry/camera_math/`, the grid reference and JavaScript rounding in
+`crates/geometry/map_coordinates/`; every caller imports them from those crates. This module, in
+the browser build, gives the render engine the methods that move its camera.
 
 ## Contents
 
 ```text
 legacy/map_engine/src/camera/
-├── grid_reference.rs  the 1 km grid spacing, and grid references formatted and parsed at 6, 8 and 10 figures
-├── math/              f64 matrix and scalar helpers that reproduce gl-matrix and deck.gl arithmetic
-├── mod.rs             the module tree
-├── orbit/             the doll preview's perspective camera, turned by yaw alone
-├── ortho/             the tactical map's orthographic camera: matrices, controls, unprojection
-├── tests/             unit tests for the grid reference
-└── viewport.rs        the render engine's resize, view, pan, zoom and camera-changed entry points
+├── mod.rs       the module tree: `viewport`
+└── viewport.rs  the render engine's resize, view, pan, zoom and camera-changed entry points
 ```
 
 ## How it works
 
-`ortho::OrthoCamera` is plain f64 state and arithmetic that reproduces deck.gl's orthographic
-viewport; `orbit/` builds the doll's perspective matrices from a yaw; both compose their matrices
-with `math/`. Neither touches a GPU, so the module compiles in every build of the crate, the
-[API](/documentation/glossary/a_to_f.md#api)'s included.
-
-The one exception is `viewport.rs`, compiled only for wasm32 with the `render` feature. The render
-engine (`crate::frame::engine::RenderEngine`) owns one `OrthoCamera`, and `viewport.rs` adds the
+`viewport.rs` is compiled only for wasm32 with the `render` feature. The render engine
+(`crate::frame::engine::RenderEngine`) owns one `OrthoCamera`, and `viewport.rs` adds the
 engine's JavaScript-facing methods that move it:
 
 - `resize(css_w, css_h, dpr)` sizes the camera in CSS pixels and the surface at
@@ -44,58 +35,26 @@ is ready; then it refreshes the slot lanes' zoom uniform, asks
 zoom, rebuilds the slot lane when that answer flips and no drag is live, and feeds the cluster
 markers.
 
-`grid_reference.rs` fixes the grid at `GRID_STEP_M`, 1000 m. `grid_ref_3digit` formats a world
-coordinate as its hundreds of metres modulo 1000, zero-padded (6400 m reads `064`), and answers
-`000` for a negative or non-finite input; `grid_lines_in_range` lists the grid lines inside a
-span, so an edge label always sits on a drawn line. `format_grid(x, y, GridFigures)` writes a full
-reference as easting digits, a space and northing digits: `GridFigures::Six` reads `064 129` (a
-100 m cell, each half exactly `grid_ref_3digit`), `Eight` reads `0642 1298` (10 m) and `Ten` reads
-`06423 12987` (1 m); every precision wraps at `GRID_WRAP_M`, 100 km. `parse_grid` reads 6, 8 or 10
-digits, split into two equal halves by whitespace or contiguous, and returns the centre of the named
-cell inside the first 100 km; any other input is a `GridParseError` (empty, a non-digit character,
-an unsupported digit count, halves of different lengths, or more than two groups).
-
 ## Public surface
 
-- `ortho::state::OrthoCamera`, its constants and its control, projection and unprojection methods:
-  the camera of `crate::frame`, `crate::editing` and `crate::diagnostics`, the Mission Creator's
-  toolbelt and the debug benches.
-- `grid_reference::{GRID_STEP_M, grid_ref_3digit, grid_lines_in_range}`: re-exported by the
-  toolbelt's `apps/frontend/src/v2/apps/editor/ui/docks/toolbelt/grid_reference.rs` and
-  `scale_math.rs`, and used by `crate::editing::commands::selection_digest`.
-- `grid_reference::{GRID_WRAP_M, GridFigures, GridParseError, format_grid, parse_grid}`: the
-  6-, 8- and 10-figure references for grid entry and display, such as the mortar page's.
-- `orbit::projection::{view_proj_gl, view_proj_wgpu}`: for `crate::doll`.
 - `viewport`: the `RenderEngine` methods above, called by the Mission Creator's bridge and input
   handlers and by the debug benches.
-- `math::glmat4`: public for the crate's own modules; nothing outside the crate imports it.
 
 ## Boundaries
 
-- Depends on: nothing outside the folder, except `viewport.rs`, which extends
-  `crate::frame::engine::RenderEngine` (its camera, surface, device and damage), calls the slot and
-  cluster methods of `crate::overlay::symbology::instances`, and uses `wasm-bindgen`.
-- Used by:
-  - inside the crate: `crate::frame`, `crate::editing` (picking, the selection tools and the
-    selection digest), `crate::doll`, `crate::diagnostics`, and `crate::world::terrain`, which
-    rounds with `math::shaping::round`;
-  - the Mission Creator's bridge, input handlers and toolbelt under
-    `apps/frontend/src/v2/apps/editor/`, and the debug benches under
-    `apps/frontend/src/v2/apps/debug/`;
-  - the integration suites `legacy/map_engine/tests/camera_props.rs` and
-    `legacy/map_engine/tests/deckgl_ortho_parity.rs`.
-- Rules:
-  - `ortho/` matches deck.gl's orthographic viewport: bit exact at integer zooms and within a few
-    ULP elsewhere (the parity suite named in its README);
-  - the grid reference has one convention: the Mission Creator's edge labels and its clipboard
-    exporters take it from here (`grid_formatter_arma_3digit_with_wrap` and
-    `labels_match_grid_lines` in
-    `apps/frontend/src/v2/apps/editor/ui/docks/tests/toolbelt/furniture_geometry.rs`,
-    `the_exporter_grid_ref_is_the_map_furnitures_own_label_text` in
-    `apps/frontend/src/v2/apps/editor/shell/tests/exporter_grid_reference.rs`);
-  - only `viewport.rs` names the render engine or the overlay, so the rest of the module stays
-    free of the `render` feature and of any browser binding.
+- Depends on: `crate::frame::engine::RenderEngine` (its `camera_math` orthographic camera,
+  surface, device and damage), the slot and cluster methods of
+  `crate::overlay::symbology::instances`, and `wasm-bindgen`.
+- Used by: the Mission Creator's bridge and input handlers under
+  `apps/frontend/src/v2/apps/editor/` and the debug benches under `apps/frontend/src/v2/apps/debug/`,
+  through `RenderEngine`'s JavaScript-facing methods.
+- Rules: only `viewport.rs` lives here, compiled for wasm32 with `render`; the cameras and the grid
+  reference have one definition each, in `camera_math` and `map_coordinates`.
 
 ## Related documentation
 
+- [Camera math](/crates/geometry/camera_math/README.md) — the orthographic and orbit cameras and
+  their deck.gl parity.
+- [Map coordinates](/crates/geometry/map_coordinates/README.md) — the grid reference and the
+  rounding rule.
 - [Mission Creator feature inventory: map viewport and camera](/documentation/apps/frontend/apps/editor/feature_inventory/map_viewport_and_camera.md) — pan, zoom and the map view in the Mission Creator.

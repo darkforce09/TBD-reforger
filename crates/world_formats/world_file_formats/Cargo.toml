@@ -1,0 +1,32 @@
+# The byte formats a terrain's served map data is written in: the validated rkyv archives (roads,
+# labels, water, prefabs, forest, building blueprints, satellite index), the four fixed-header
+# binary containers, the vegetation density grid and the world object row. The developer tools
+# write these files; the map engine reads them.
+[package]
+name = "world_file_formats"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The on-disk formats of a terrain's map data: rkyv archives, fixed-header binary containers, density grids and object rows."
+
+[package.metadata.layout]
+category = "crates/world_formats"
+tier = 1
+targets = "any"
+
+[dependencies]
+bytemuck = { workspace = true, features = ["derive", "min_const_generics"] }
+# The identifier types of the archive records and the object row are declared with its macros.
+newtype_ids = { workspace = true }
+# Validation and endian settings are part of the shared on-disk format.
+rkyv = { workspace = true, features = ["std", "bytecheck", "little_endian"] }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+# The identifier tests assert each identifier's JSON form is its bare inner value.
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

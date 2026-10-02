@@ -10,8 +10,8 @@ use crate::world::environment::buildings::prefab::PrefabEntry;
 use crate::spatial::indexing::world::WorldSpatialIndex;
 use crate::streaming::loaders::chunk::WorldChunk;
 use crate::streaming::loaders::manifest::ObjectsManifest;
-use crate::streaming::scheduler::chunk_math::Bbox;
-use crate::streaming::scheduler::chunk_math::TerrainSizeM;
+use map_coordinates::chunk_math::Bbox;
+use map_coordinates::chunk_math::TerrainSizeM;
 use std::collections::HashMap;
 use std::collections::HashSet;
 

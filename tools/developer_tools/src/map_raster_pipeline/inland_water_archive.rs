@@ -41,15 +41,15 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result, bail};
 use serde_json::Value;
 
-use map_engine::io::archives::codec::access_checked;
-use map_engine::io::archives::codec::to_bytes;
-use map_engine::io::archives::version::ARCHIVE_SCHEMA_VERSION;
-use map_engine::io::archives::water::WaterBody;
-use map_engine::io::archives::water::WaterLine;
-use map_engine::io::archives::water::WaterVectorsArchive;
-use map_engine::io::containers::header::ContainerHeader;
-use map_engine::io::containers::tbdb::TbdbHeader;
 use map_engine::world::terrain::water::vectors::downsample_index;
+use world_file_formats::archives::codec::access_checked;
+use world_file_formats::archives::codec::to_bytes;
+use world_file_formats::archives::version::ARCHIVE_SCHEMA_VERSION;
+use world_file_formats::archives::water::WaterBody;
+use world_file_formats::archives::water::WaterLine;
+use world_file_formats::archives::water::WaterVectorsArchive;
+use world_file_formats::containers::header::ContainerHeader;
+use world_file_formats::containers::tbdb::TbdbHeader;
 
 use crate::browser_testing::server::repo_root;
 

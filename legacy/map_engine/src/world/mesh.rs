@@ -1,49 +1,21 @@
 //! Role: composing CPU meshes for the static world — contours, forest, land cover.
-//! Position: `world` in the map engine.
+//! Position: `world` in the map engine; the mesh shapes, the ring triangulation and the
+//! ring→segment loops come from `render_primitives::draw`, and the overlay lanes upload what
+//! this module composes.
 //! Signals & state: triangle meshes and colour arrays built from static world data.
 //! Invariants: **zero GPU.** Nothing here touches a device, a queue or a buffer. That is what
 //! makes it cacheable and damage-gateable independently of drawing, which is the point of
 //! building it on this side of the packet boundary.
-//!
-//! T-0xx Phase 2B.1: from `renderers/primitives/compose.rs`, moved whole. It was in the draw
-//! path and composed nothing that changes per frame.
-
-/// Ear-clipping triangulation.
-// T-0xx Phase 2B.1: re-exported here from `graphics_engine`. It stood at
-// `renderers/primitives/triangulate`, and its consumers are this file, `world/terrain/roads`
-// and the frontend's building viewer — all mesh composition, all beside this module. The
-// frontend must not name `graphics_engine` itself (gate rule 6), so it needs a path
-// in this crate.
-pub use graphics_engine::draw::triangulate;
 
 use crate::world::environment::vegetation::mass::ForestMassGeometry;
-use crate::world::mesh::triangulate::triangulate_region_rings;
-use crate::world::mesh::triangulate::triangulate_ring_buffer;
-
-/// Re-export `graphics_engine::draw::compose::HairlineGpu`.
-// T-0xx Phase 1D: the buffer shapes and the two ring→segment loops moved to
-// `graphics_engine` (`draw::compose`) and are re-exported here at their former path.
-// Four `pub use crate::world::terrain::{roads,water}::mesh::*` re-exports were DELETED rather than
-// moved — they were a shortcut that let a caller reach road and sea meshing through the
-// renderer, which is the exact coupling the split exists to remove. Their callers name
-// `crate::world::terrain::…` directly now.
-pub use graphics_engine::draw::compose::HairlineGpu;
-
-/// Re-export `graphics_engine::draw::compose::PolyMeshGpu`.
-pub use graphics_engine::draw::compose::PolyMeshGpu;
-
-/// Re-export `graphics_engine::draw::compose::mesh_from_tri`.
-pub use graphics_engine::draw::compose::mesh_from_tri;
-
-/// Re-export `graphics_engine::draw::compose::retint_fill_alpha`.
-pub use graphics_engine::draw::compose::retint_fill_alpha;
-
-use graphics_engine::draw::compose::u8_rgba_to_f32;
+use render_primitives::color_normalization::u8_rgba_to_f32;
+use render_primitives::draw::compose::{HairlineGpu, PolyMeshGpu, mesh_from_tri};
+use render_primitives::draw::triangulate::{triangulate_region_rings, triangulate_ring_buffer};
 
 /// Contour interleaved `[x0,y0,x1,y1]…` → hairline verts with fixed rgba.
 #[must_use]
 pub fn compose_contour_hairlines(segments: &[f32], rgba: [u8; 4]) -> HairlineGpu {
-    graphics_engine::draw::compose::compose_hairlines(segments, rgba)
+    render_primitives::draw::compose::compose_hairlines(segments, rgba)
 }
 
 /// Ownership: contours are the ONLY caller (a two-tone set); [`compose_contour_hairlines`] stays the single-colour path for the forest outline (`forest_mass.rs`), so this is an additive signature — the flat-`Vec<f32>` compose is unchanged.
@@ -61,7 +33,7 @@ pub fn compose_two_tone_contours(
 ) -> HairlineGpu {
     let points: Vec<&[(f64, f64)]> = rings.iter().map(|r| r.points.as_slice()).collect();
     let closed: Vec<bool> = rings.iter().map(|r| r.closed).collect();
-    graphics_engine::draw::compose::compose_two_tone_hairlines(
+    render_primitives::draw::compose::compose_two_tone_hairlines(
         &points,
         &closed,
         summit_idx,

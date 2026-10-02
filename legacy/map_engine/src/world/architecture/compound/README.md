@@ -14,8 +14,6 @@ legacy/map_engine/src/world/architecture/compound/
 ├── instances.rs  the `<slug>.instances.json` model: instance records and kinds, and live instances
 ├── mod.rs        the module tree
 ├── scene/        the compound items under one path, and the instances JSON round-trip test
-├── tests/        unit tests for rigid transforms: inverses, quaternions, nested precision
-└── transform.rs  `Rigid`: rotation, translation and uniform scale, and Enfusion angle conversion
 ```
 
 ## How it works
@@ -50,7 +48,7 @@ between closed and fully open; `set_door` and `door_state` refuse an id that is 
 BVH over the union; `FlatMesh::owner` gives each triangle's owner, 0 for the shell and `i + 1` for
 instance `i`. The section drawings and height fields read that mesh.
 
-`Rigid` maps a point as `m · (scale · p) + t`. `compose` applies its argument first, `inverse`
+`Rigid` (`crates/geometry/geometry_primitives/src/rigid_transform.rs`) maps a point as `m · (scale · p) + t`. `compose` applies its argument first, `inverse`
 transposes the rotation and takes the reciprocal scale, and `from_enfusion` turns Enfusion's
 `coords`, `angles` (pitch, yaw and roll, in degrees) and `scale` into
 `rot_y(yaw) ∘ rot_x(−pitch) ∘ rot_z(−roll)` at that position. `to_quat` returns the quaternion
@@ -65,11 +63,11 @@ transformed box.
 - `instances`: `InstancesFile`, `InstanceRecord`, `InstanceKind`, `LocalTransform`, `Instance` and
   `instances_from_records`.
 - `doors`: `DoorRecord` and `DoorState`.
-- `transform`: `Rigid`.
 
 ## Boundaries
 
-- Depends on: `crate::spatial::bvh` (`BvhSidecar`, `Bvh` and `SurfaceKind`); `serde` for the JSON.
+- Depends on: `crate::spatial::bvh` (`BvhSidecar`, `Bvh` and `SurfaceKind`); `geometry_primitives`
+  (`Rigid`); `serde` for the JSON.
 - Used by:
   - `crate::spatial::los::interior`, whose walker traces through a `CompoundBuilding` and whose
     wash rasters it;
@@ -91,7 +89,8 @@ transformed box.
   composed with its inverse is the identity, a quaternion round-trips, and a prop
   nested in a building at world coordinates maps back within a micrometre
   (`rot_y_turns_x_toward_z_and_inverse_undoes`, `quaternion_round_trips_and_matches_euler_axes`,
-  `nested_composition_keeps_sub_micrometre_precision` in `tests/transform_tests.rs`).
+  `nested_composition_keeps_sub_micrometre_precision` in
+  `crates/geometry/geometry_primitives/src/tests/rigid_transform.rs`).
 
 ## Related documentation
 

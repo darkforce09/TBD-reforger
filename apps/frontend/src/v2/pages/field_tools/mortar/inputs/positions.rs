@@ -5,7 +5,7 @@
 //! **Position:** the target row and every gun row of the inputs card; the battery reuses
 //! [`PositionDraft`] and [`resolve_position`] per gun, and the solve bridge reads the resolved
 //! [`FireMissionPoint`]. Grid references go through the map engine's
-//! [`map_engine::camera::grid_reference::parse_grid`]; terrain heights come from the
+//! [`map_coordinates::grid_reference::parse_grid`]; terrain heights come from the
 //! page's [`crate::v2::core::map_view::terrain_height::TerrainHeights`].
 //! **Signals & state:** the view reads and writes the page's draft and terrain signals; the pure
 //! functions hold nothing.
@@ -15,7 +15,7 @@
 
 use super::INPUT_CLASS;
 use leptos::prelude::*;
-use map_engine::camera::grid_reference::{parse_grid, GridParseError};
+use map_coordinates::grid_reference::{parse_grid, GridParseError};
 use map_engine::data::scenario::ballistics::fire_mission::{FireMissionPoint, HeightSource};
 
 /// The terrain the positions are on.

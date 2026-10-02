@@ -3,11 +3,11 @@
 //! Signals & state: explicit frozen camera and document projections.
 //! Invariants: square slot hits, circular vehicle hits, slot-first ties and marquee order.
 
-use crate::camera::ortho::state::OrthoCamera;
 use crate::data::store::MissionDocCore;
 use crate::data::store::SlotSoa;
 use crate::overlay::symbology::links::squad_links::SquadLinkInput;
 use crate::spatial::indexing::picking as spatial;
+use camera_math::ortho::state::OrthoCamera;
 
 fn world_query(cam: &OrthoCamera, px: f64, py: f64) -> ([f64; 2], f64) {
     let c = cam.unproject_xy(px, py);

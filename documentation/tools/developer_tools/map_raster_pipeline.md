@@ -72,8 +72,8 @@ complete and agrees with the manifest.
 - `build-unified` writes container version 2 by default (a 32-byte header and an rkyv index) or
   version 1 on request; both carry byte-identical tile payloads. It prints the manifest block and
   never edits `manifest.json` itself.
-- The binary formats are the map engine's: the lanes write through
-  `map_engine::io`, so the reader and the writer cannot drift apart.
+- The binary formats are `world_file_formats`: the lanes write through the crate the map
+  engine reads with, so the reader and the writer cannot drift apart.
 
 ### Known discrepancies
 

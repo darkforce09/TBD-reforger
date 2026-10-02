@@ -9,13 +9,13 @@ use crate::world::environment::vegetation::canopy::exact_tree_count;
 
 use crate::world::environment::vegetation::canopy::visible_tree_count;
 
-use crate::streaming::scheduler::chunk_math::Bbox;
+use map_coordinates::chunk_math::Bbox;
 
-use crate::streaming::scheduler::chunk_math::chunk_ids_for_rect;
+use map_coordinates::chunk_math::chunk_ids_for_rect;
 
-use crate::streaming::scheduler::chunk_math::chunk_ids_for_viewport;
+use map_coordinates::chunk_math::chunk_ids_for_viewport;
 
-use crate::streaming::scheduler::chunk_math::chunk_rect_for_bbox;
+use map_coordinates::chunk_math::chunk_rect_for_bbox;
 
 use std::collections::HashSet;
 

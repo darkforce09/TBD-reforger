@@ -41,10 +41,10 @@ The status legend is in the [inventory index](/documentation/apps/frontend/apps/
 
 1. The map engine renders the terrain through its own orthographic camera; +Y is north and the
    map never tilts or rotates. The Mission Creator has no 3D view: the orbit camera in
-   `legacy/map_engine/src/camera/orbit/` serves only the arsenal's doll preview.
+   `crates/geometry/camera_math/src/orbit/` serves only the arsenal's doll preview.
 2. The view opens centred on (6400, 6400) at zoom -2, and the camera target is clamped to the
    0–12800 m square (`apps/frontend/src/v2/apps/editor/mission_editor/canvas_mount/boot_tasks.rs`,
-   `legacy/map_engine/src/camera/ortho/controllers.rs`).
+   `crates/geometry/camera_math/src/ortho/controllers.rs`).
 
 ### MAP-PAN-001 — Pan
 
@@ -62,7 +62,7 @@ The status legend is in the [inventory index](/documentation/apps/frontend/apps/
 
 1. Each wheel event zooms about the cursor by `-deltaY / 500` zoom steps.
 2. Zoom is clamped to -6…6, 64 m per pixel to about 0.016 m per pixel
-   (`legacy/map_engine/src/camera/ortho/state.rs`).
+   (`crates/geometry/camera_math/src/ortho/state.rs`).
 3. A wheel over the docks and toolbars (any element under `[data-eden-chrome]`) does not zoom
    the map.
 4. Double-click never zooms: it opens the Attributes dialog on a slot or vehicle, the asset

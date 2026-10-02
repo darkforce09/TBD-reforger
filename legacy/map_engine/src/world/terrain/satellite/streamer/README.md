@@ -25,7 +25,7 @@ A container starts with the bytes `TBDS` and a version:
 ```text
 version 1  magic u32 | version u32 = 1 | JSON length u32 | JSON index | tile payload
            the JSON gives every tile's x, y, width, height and absolute offset and length
-version 2  32-byte TbdsHeader (crate::io::containers::tbds) | rkyv TbdSatIndexV2 | tile payload
+version 2  32-byte TbdsHeader (world_file_formats::containers::tbds) | rkyv TbdSatIndexV2 | tile payload
            the index gives the base size, tile_px, and per level the tile grid and each tile's
            offset from the payload start, length and format
 ```
@@ -59,7 +59,7 @@ the `map` binary (`tools/developer_tools/src/map_raster_pipeline/`) writes eithe
 
 ## Boundaries
 
-- Depends on: `crate::io::containers` (the `TBDS` header) and `crate::io::archives` (the archived
+- Depends on: `world_file_formats::containers` (the `TBDS` header) and `world_file_formats::archives` (the archived
   index and its validation); `serde_json` for the version 1 index.
 - Used by: `crate::world::terrain::satellite::quadtree`, which reads the index and picks the
   levels; and the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s tests in

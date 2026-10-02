@@ -4,16 +4,19 @@
 
 `graphics_engine` is the web platform's renderer: a `wgpu` library that draws what it is
 told and knows no map concept. It defines the frame vocabulary a caller describes a frame in, and
-supplies the pipelines, the WGSL shader, geometry and text packing, sprite culling, the swapchain
-steps and the animation-frame loop. Its one caller is the map engine, which draws the
+supplies the pipelines, the vertex uploads, the encoder, GPU sprite culling, the swapchain steps
+and the animation-frame loop. The GPU-free half it builds on (instance layouts, geometry and
+triangulation, glyph packing, frame ids, damage tracking and the WGSL shader) is the
+[`render_primitives`](/crates/graphics/render_primitives/README.md) crate. Its one caller is the map engine, which draws the
 [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s map with it.
 
 ## Where it lives
 
 - Code: [`legacy/graphics_engine/`](/legacy/graphics_engine/README.md), whose README
   gives the commands, the dependencies and the public surface;
-  [`src/`](/legacy/graphics_engine/src/README.md), whose README gives the eight modules and
-  the frame flow.
+  [`src/`](/legacy/graphics_engine/src/README.md), whose README gives the six modules and
+  the frame flow; [`crates/graphics/render_primitives/`](/crates/graphics/render_primitives/README.md)
+  for the GPU-free building blocks.
 - Entry: the map engine's `RenderEngine` (`legacy/map_engine/src/frame/`), which creates the
   device and surface, builds its pipelines with `pipeline::create_map_shader` and the pipeline
   constructors, keeps the sorted batch list, and implements `r#loop::FrameTarget` so that
@@ -28,18 +31,19 @@ steps and the animation-frame loop. Its one caller is the map engine, which draw
 
 | Module | What it holds | README |
 |---|---|---|
-| `frame` | the frame vocabulary (`FramePacket`, `DrawBatch`, `DrawPayload`, `IndirectDraw`, `TextRun`, the buffer types, `LaneId`, `PipelineId`, `BindGroupId`, `CameraUniform`), `RenderDamage`, the cell atlases and the swapchain `present` step | [frame](/legacy/graphics_engine/src/frame/README.md) |
-| `draw` | triangulation, mesh and hairline composition, the grid, instance layouts, vertex uploads, `encode::encode`, and the sprite cull pair in `draw::cull` | [draw](/legacy/graphics_engine/src/draw/README.md), [cull](/legacy/graphics_engine/src/draw/cull/README.md) |
+| `frame` | the GPU frame vocabulary (`FramePacket`, `DrawBatch`, `DrawPayload`, `IndirectDraw`, `TextRun`, the buffer types), the cell atlases and the swapchain `present` step | [frame](/legacy/graphics_engine/src/frame/README.md) |
+| `draw` | vertex uploads, `encode::encode` and the compute cull in `draw::cull` | [draw](/legacy/graphics_engine/src/draw/README.md), [cull](/legacy/graphics_engine/src/draw/cull/README.md) |
 | `pipeline` | `create_map_shader` and ten pipeline constructors | [pipeline](/legacy/graphics_engine/src/pipeline/README.md) |
-| `shaders` | `SHADER_WGSL`, the one WGSL program every pipeline and the compute cull use | [shaders](/legacy/graphics_engine/src/shaders/README.md) |
-| `text` | the ASCII atlas bake, glyph metrics, layout, decluttering and sprite packing | [text](/legacy/graphics_engine/src/text/README.md) |
-| `layout` | every shared byte layout, re-exported as one list | [layout](/legacy/graphics_engine/src/layout/README.md) |
+| `render_primitives::shaders` (crate) | `SHADER_WGSL`, the one WGSL program every pipeline and the compute cull use | [shaders](/crates/graphics/render_primitives/src/shaders/README.md) |
+| `render_primitives::text` (crate) | the ASCII atlas bake, glyph metrics, layout, decluttering and sprite packing | [text](/crates/graphics/render_primitives/src/text/README.md) |
+| `render_primitives::draw` and `frame` (crate) | triangulation, composition, the grid, instance layouts, the cull oracle, the ids, damage tracking and the camera uniform | [draw](/crates/graphics/render_primitives/src/draw/README.md), [frame](/crates/graphics/render_primitives/src/frame/README.md) |
 | `device` | `LanePool` and `ReadbackLane`: persistent lane buffers and the readback guard | [device](/legacy/graphics_engine/src/device/README.md) |
 | `loop` (`r#loop`) | `FrameTarget` and `RafPump`, the animation-frame loop | [loop](/legacy/graphics_engine/src/loop/README.md) |
 
 `lib.rs` declares every module without a gate; each file that names a GPU or browser type gates
-itself on `wasm32`. A native build keeps the CPU half (triangulation, composition, instance
-layouts, text, damage, the cull oracle and the pump's `tick`), which the native tests cover.
+itself on `wasm32`. The CPU half (triangulation, composition, instance layouts, text, damage and
+the cull oracle) lives in `render_primitives`, whose tests run natively; the native build of this
+crate keeps the pump's `tick`, the buffer pools and the compute cull's source check.
 
 ### One frame
 
@@ -63,8 +67,8 @@ layouts, text, damage, the cull oracle and the pump's `tick`), which the native 
 On WebGPU the caller can cull sprite lanes on the GPU: `draw::cull::compute` packs each lane's
 20-byte sprites into 32-byte storage records, dispatches `cs_icon_cull` in workgroups of 64, and
 writes the survivor count straight into the `draw_indirect` arguments, so the draw needs no CPU
-round trip. `draw::cull::oracle` is the CPU reference the tests and the debug readout compare
-against.
+round trip. `render_primitives::draw::cull::oracle` is the CPU reference the tests and the debug readout
+compare against.
 
 ### Conventions
 
@@ -76,20 +80,18 @@ each draws single-sampled.
 ### Known discrepancies
 
 - `CLAUDE.md:168-171` lists `gpu_context/`, `render_passes/` and `frame_loop/`; the crate's
-  modules are `device`, `draw`, `frame`, `layout`, `loop`, `pipeline`, `shaders` and `text`
-  (`legacy/graphics_engine/src/lib.rs`), and adapter, device, queue and surface creation
+  modules are `device`, `draw`, `frame`, `loop` and `pipeline`
+  (`legacy/graphics_engine/src/lib.rs`), with `render_primitives` beside them, and adapter, device, queue and surface creation
   live in the map engine (`legacy/map_engine/src/frame/boot.rs`).
 - Declared names such as `BuildingInstance`, `create_building_pipeline`,
   `create_forest_density_pipeline` and `create_map_shader`, and the `slot-icon-lane` buffer label
   (`src/device/buffers/pool.rs:123`), name map concepts in a crate `CLAUDE.md` law 6 says knows
   none; rule 2 of the gate checks five nouns and lets them through.
-- `src/draw/instances.rs:62` describes a 28-entry UV table; the shader's table has 32 entries.
-- `src/draw/cull/oracle.rs:11` links a `crate::scene` that does not exist.
 
 ## Data
 
 The crate reads no file, environment variable or feature flag, and makes no network call. Its
-inputs are the caller's values: geometry and instances in the byte layouts `layout` lists, RGBA8
+inputs are the caller's values: geometry and instances in the byte layouts of `render_primitives`, RGBA8
 atlas pixels, the camera matrix, and the `wgpu::Device` and `wgpu::Queue` the caller created. The
 byte layouts are the shared binary contract with the map engine's upload belts; changing one is a
 change to both crates.
@@ -131,7 +133,8 @@ change to both crates.
   `frame/mod.rs`.
 - One call per frame: `encode` takes the whole packet, so the crate boundary costs one call, not
   one per batch.
-- Browser code is selected by the `wasm32` target, not by a feature: the crate has no features,
-  and a native build compiles and tests the CPU half.
-- The shared byte layouts are one list (`layout`): the binary contract between the crates reads
-  in one place, and the map engine's belts import it directly rather than through its `frame/`.
+- Browser code is selected by the `wasm32` target, not by a feature: the crate has no features.
+  The CPU half is its own crate, `render_primitives`, which builds and tests on every target.
+- The shared byte layouts are one crate (`render_primitives`): the binary contract between the
+  crates reads in one place, and the map engine's belts import it directly rather than through
+  its `frame/`.

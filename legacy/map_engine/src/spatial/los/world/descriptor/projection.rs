@@ -7,11 +7,12 @@ use super::ArchiveProjectionError;
 use super::ArchivedBlasEntry;
 use super::ArchivedOccluderDescriptor;
 use super::BlasEntry;
-use super::Bounds3;
 use super::DESCRIPTOR_SCHEMA_VERSION;
 use super::PrefabDescriptor;
 use super::WireBlasEntry;
 use super::WireDescriptor;
+use geometry_primitives::axis_aligned_box::Bounds3;
+use world_file_formats::ids::PrefabId;
 
 impl PrefabDescriptor {
     /// To archived.
@@ -38,7 +39,7 @@ impl PrefabDescriptor {
             max: [0.0; 3],
         });
         Ok(WireDescriptor {
-            prefab_id: self.prefab_id,
+            prefab_id: PrefabId::new(self.prefab_id),
             slug: self.slug.clone(),
             kind: self.kind.clone(),
             blocks: self.blocks,
@@ -84,7 +85,7 @@ impl PrefabDescriptor {
         };
         Self {
             schema_version: DESCRIPTOR_SCHEMA_VERSION.to_string(),
-            prefab_id: a.prefab_id.to_native(),
+            prefab_id: a.prefab_id.get(),
             slug: a.slug.to_string(),
             kind: a.kind.to_string(),
             blocks,

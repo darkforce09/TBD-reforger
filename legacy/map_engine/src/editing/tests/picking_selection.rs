@@ -123,8 +123,8 @@ fn marquee_ids_with_vehicles_appends_vehicles_after_slots() {
 }
 
 /// Camera centred on Everon mid-map @ zoom 2 (scale = 4 px/m). Centre px (400,300) → (6400,6400).
-fn mix_test_cam() -> crate::camera::ortho::state::OrthoCamera {
-    let mut cam = crate::camera::ortho::state::OrthoCamera::new(800.0, 600.0, 6400.0, 6400.0, 2.0);
+fn mix_test_cam() -> camera_math::ortho::state::OrthoCamera {
+    let mut cam = camera_math::ortho::state::OrthoCamera::new(800.0, 600.0, 6400.0, 6400.0, 2.0);
     cam.set_bounds(0.0, 0.0, 12_800.0, 12_800.0);
     cam
 }

@@ -25,7 +25,7 @@ impl RenderEngine {
         height: u32,
         uv: &[f32],
     ) -> Result<(), JsError> {
-        use graphics_engine::layout::ATLAS_GLYPH_COUNT;
+        use render_primitives::draw::instances::ATLAS_GLYPH_COUNT;
 
         if uv.len() > ATLAS_GLYPH_COUNT * 4 {
             return Err(JsError::new(&format!(

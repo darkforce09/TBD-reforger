@@ -85,8 +85,8 @@ fn brute_section_at_owned(
     y: f64,
     max_abs_ny: f64,
 ) -> Vec<(Seg2, u32)> {
-    use crate::spatial::bvh::node::cross;
-    use crate::spatial::bvh::node::sub;
+    use geometry_primitives::vector3::cross;
+    use geometry_primitives::vector3::sub;
     let mut out = Vec::new();
     for (ti, &[ia, ib, ic]) in occl.tris.iter().enumerate() {
         let v = [

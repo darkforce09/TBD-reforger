@@ -6,12 +6,12 @@
 use bytemuck::cast_slice;
 use rkyv::Archived;
 
-use crate::io::archives::codec::BinaryError;
-use crate::io::archives::codec::access_checked;
-use crate::io::archives::version::ARCHIVE_SCHEMA_VERSION;
-use crate::io::archives::water::WaterVectorsArchive;
-use crate::io::containers::header::ContainerHeader;
-use crate::io::containers::tbdb::TbdbHeader;
+use world_file_formats::archives::codec::BinaryError;
+use world_file_formats::archives::codec::access_checked;
+use world_file_formats::archives::version::ARCHIVE_SCHEMA_VERSION;
+use world_file_formats::archives::water::WaterVectorsArchive;
+use world_file_formats::containers::header::ContainerHeader;
+use world_file_formats::containers::tbdb::TbdbHeader;
 
 /// `manifest.water.encoding` this build reads (spec §5). A block naming anything else describes a container this code does not implement, and reading it anyway is how a mask answers confidently about the wrong terrain.
 pub const TBDB_ENCODING_V1: &str = "tbdb-v1";

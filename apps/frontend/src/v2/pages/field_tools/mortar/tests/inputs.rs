@@ -27,7 +27,7 @@ use crate::v2::pages::field_tools::mortar::catalog_source::{
     check_document_matches, choose_catalog, failure_message, latest_catalog_versions,
     origin_notice, origin_of_read, CatalogFailure, CatalogKey, CatalogOrigin,
 };
-use map_engine::camera::grid_reference::GridParseError;
+use map_coordinates::grid_reference::GridParseError;
 use map_engine::data::scenario::ballistics::fire_mission::{FireMissionWind as Wind, HeightSource};
 
 fn catalog() -> BallisticsCatalog {

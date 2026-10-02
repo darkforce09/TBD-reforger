@@ -44,8 +44,8 @@ are the ones this module reads; the Workbench water exporter in
 
 ## Boundaries
 
-- Depends on: `map_engine::io::archives` (`water`, `codec`, `version`),
-  `map_engine::io::containers` (`header`, `tbdb`) and
+- Depends on: `world_file_formats::archives` (`water`, `codec`, `version`),
+  `world_file_formats::containers` (`header`, `tbdb`) and
   `map_engine::world::terrain::water::vectors::downsample_index`, which fix both formats;
   `crate::repository_layout` and `crate::browser_testing::server::repo_root` for the folders.
 - Used by: `tools/developer_tools/src/map_raster_pipeline/cli.rs` (`map water`); no xtask recipe

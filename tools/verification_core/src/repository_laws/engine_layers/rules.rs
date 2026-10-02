@@ -40,11 +40,16 @@ pub(super) const FRAME_VOCAB_RE: &str = r"graphics_engine::frame\b";
 /// naming the frame vocabulary is almost never the right fix, because the thing it wants is
 /// already re-exported from `frame/mod.rs` under `crate::frame::…`. The count is the size of that
 /// re-export list, so a diff here is a deliberate widening of the crate's graphics interface.
+///
+/// The count is five `pub use graphics_engine::frame::…` lines: the `packet` and `present`
+/// modules, the batch/payload/packet/indirect group, the buffer group and the text group. The
+/// GPU-free half of the vocabulary (the camera uniform, damage tracking, the three ids) is
+/// `render_primitives::frame`, which no matcher here counts.
 pub(super) const RULE3A_PIN: &[(&str, usize, &str)] = &[(
     "legacy/map_engine/src/frame/mod.rs",
-    8,
-    "the enumerated packet vocabulary (§2C.1 Kind C): damage, packet, present, CameraUniform, \
-     the three ids, the batch/payload/packet/indirect group, the buffer group, the text group",
+    5,
+    "the enumerated packet vocabulary (§2C.1 Kind C): packet, present, the \
+     batch/payload/packet/indirect group, the buffer group, the text group",
 )];
 
 /// Rule 3b's matcher — the four graphics modules that own GPU resources.
@@ -114,11 +119,13 @@ pub(super) const SCENARIO_REL: &str = "legacy/map_engine/src/data/scenario";
 
 // ── RULES 4 AND 7'S MATCHERS ─────────────────────────────────────────────────────────────────
 //
-// Rule 4 and rule 7's `data` side spell "outside this tree" as the ten top-level modules that are
+// Rule 4 and rule 7's `data` side spell "outside this tree" as the top-level modules that are
 // not the tree's own, plus the renderer crate. That is the whole of it written out, because
-// `map_engine` declares exactly eleven top-level modules (`lib.rs`: camera, data,
-// diagnostics, doll, editing, frame, io, overlay, spatial, streaming, world) and an enumeration is
-// cheaper to read — and impossible to widen by accident — than a negation would be. `\b` after each group is what keeps a future
+// `map_engine` declares exactly ten top-level modules (`lib.rs`: camera, data, diagnostics, doll,
+// editing, frame, overlay, spatial, streaming, world) and an enumeration is cheaper to read — and
+// impossible to widen by accident — than a negation would be. The list also keeps `io`, so a
+// module declared under that name is outside the tree as well; the on-disk formats themselves are
+// the `world_file_formats` crate, which the `scenario` tier does not link. `\b` after each group is what keeps a future
 // `crate::io_util` or `crate::worldgen` from being caught by its prefix rather than by its name.
 //
 // A raw string processes no escapes, so these stay one line each: a `\` continuation inside

@@ -3,7 +3,7 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::camera::ortho::state::OrthoCamera;
+use camera_math::ortho::state::OrthoCamera;
 use std::cell::Cell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
@@ -11,7 +11,7 @@ use wasm_bindgen::prelude::*;
 use crate::frame::engine::CLEAR_COLOR;
 use crate::frame::engine::RenderEngine;
 use crate::frame::pipelines::quad::create_quad_pipeline;
-use crate::world::scene::ANCHOR;
+use map_coordinates::terrain_frames::ANCHOR;
 
 const PROBE_W: u32 = 800;
 const PROBE_H: u32 = 600;

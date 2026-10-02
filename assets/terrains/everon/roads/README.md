@@ -14,7 +14,7 @@ assets/terrains/everon/roads/
 ## Format
 
 - Encoding: an rkyv archive, little-endian and validated whole on read, of `RoadNetworkArchive`
-  (`legacy/map_engine/src/io/archives/roads.rs`) at archive schema version 1: the segments
+  (`crates/world_formats/world_file_formats/src/archives/roads.rs`) at archive schema version 1: the segments
   of `objects/roads.json.gz` with their centrelines already derived and each class as a code.
   About 435 KB, stored in Git LFS (`.gitattributes`: `assets/terrains/**/*.rkyv`).
 - Schema: no JSON Schema; the Rust type is the contract, and the gzip JSON twin follows

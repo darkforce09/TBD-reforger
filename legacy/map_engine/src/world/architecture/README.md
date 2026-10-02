@@ -53,7 +53,7 @@ compound flattened at its current door states.
 ## Boundaries
 
 - Depends on: `crate::spatial::bvh` (the sidecar meshes, their BVH traversal and surface kinds) and
-  `crate::io::archives::blueprints` (the blueprint archive); `serde` for the JSON files.
+  `world_file_formats::archives::blueprints` (the blueprint archive); `serde` for the JSON files.
 - Used by:
   - `crate::spatial::los::interior` (the walker and the wash) and `crate::spatial::los::world`
     (the world occluder, its descriptors and residency);

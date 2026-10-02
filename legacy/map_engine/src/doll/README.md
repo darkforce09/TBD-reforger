@@ -27,7 +27,7 @@ renderer/     DollEngine: own device and surface, damage-driven frames
 scene/        regions, parts, colours, meshes  ◄──  interaction/  pick, anchor_px
    │
    ▼
-crate::camera::orbit   view_proj_gl for picking, view_proj_wgpu for drawing
+camera_math::orbit   view_proj_gl for picking, view_proj_wgpu for drawing
 ```
 
 The page pushes one state byte per region (empty, equipped, active) and the hovered region; the
@@ -49,7 +49,7 @@ wasm32 as well.
 
 ## Boundaries
 
-- Depends on: `crate::camera::math::glmat4` and `crate::camera::orbit::projection`;
+- Depends on: `camera_math::matrix4` and `camera_math::orbit::projection`;
   `crate::frame::boot::instance_descriptor`; the shader
   `legacy/map_engine/src/shaders/doll.wgsl`; on wasm32, `wgpu`, `wasm-bindgen` and
   `web-sys`; and `bytemuck`.
@@ -68,5 +68,5 @@ wasm32 as well.
 
 - [Arsenal](/apps/frontend/src/v2/apps/editor/arsenal/README.md) — the workspace that
   mounts the preview and owns the loadout it shows.
-- [Orbit camera](/legacy/map_engine/src/camera/orbit/README.md) — the fixed-orbit camera the
+- [Orbit camera](/crates/geometry/camera_math/src/orbit/README.md) — the fixed-orbit camera the
   preview draws and picks with.

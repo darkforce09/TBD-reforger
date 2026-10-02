@@ -18,11 +18,11 @@ fn seg(id: &str, cls: &str, points: Vec<[f64; 2]>) -> RoadSegment {
     }
 }
 
-use crate::io::archives::labels::MapLabelsArchive;
+use world_file_formats::archives::labels::MapLabelsArchive;
 
-use crate::io::archives::codec::access_checked;
+use world_file_formats::archives::codec::access_checked;
 
-use crate::io::archives::codec::to_bytes;
+use world_file_formats::archives::codec::to_bytes;
 
 fn class_codes_round_trip_fixture() -> (RoadNamesFile, Vec<RoadSegment>) {
     let segments = vec![

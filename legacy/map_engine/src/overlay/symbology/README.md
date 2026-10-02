@@ -19,7 +19,7 @@ legacy/map_engine/src/overlay/symbology/
 ├── mod.rs            the module tree; `instances`, `markers` and the text files need `streaming`
 ├── roles/            the role, vehicle and side classification tables
 ├── tests/            unit tests for the marker vocabulary, its atlas, captions and the text atlas
-├── text_metrics.rs   the graphics engine's text atlas, font and metrics; height label spacing
+├── text_metrics.rs   the height label spacing the text atlas tests measure against
 └── text_packing.rs   label, town, height and road text packed into glyph instances
 ```
 
@@ -44,7 +44,7 @@ one of `MARKER_GLYPH_COUNT` (11) glyphs, folding case and separators and falling
 the same downgrade the game [mod](/documentation/glossary/g_to_m.md#mod) makes; its atlas shares cells 0
 and 1 (ring, disc) with the slot
 atlas. Captions and place names go through one text pipeline: `text_packing.rs` lays glyphs of the
-graphics engine's baked ASCII atlas beside their anchors, and hands `LabelSpec` labels to the
+baked ASCII atlas of `render_primitives::text` beside their anchors, and hands `LabelSpec` labels to the
 renderer without their importance, which only decides what reaches it. Nothing here depends on the
 UI framework or editor state; browser I/O (the atlas upload, the lane binds) compiles only on
 `wasm32` with the `render` feature.
@@ -59,16 +59,16 @@ UI framework or editor state; browser I/O (the atlas upload, the lane binds) com
   Creator's marker dock and canvas mount.
 - `instances`: the packers, `drag::pack_vehicle_drag_preview` and the `RenderEngine` binds, for
   `crate::frame`, `crate::camera::viewport`, the streaming world loader and the Mission Creator.
-- `labels`, `text_metrics` and `text_packing`, for `crate::streaming`, the location loaders in
+- `labels`, `text_metrics::height_label_sep_m` and `text_packing`, for `crate::streaming`, the location loaders in
   `crate::world::environment::locations`, `crate::frame` and `crate::diagnostics`, and the
   town-label verification in `tools/developer_tools/src/map_verification/labels/`.
 
 ## Boundaries
 
 - Depends on: `crate::frame` (`RenderEngine` and its lanes), `crate::overlay::lanes` and
-  `crate::overlay::lod`, `crate::world::scene` (the anchor and Everon bounds),
-  `graphics_engine` (`text` atlas, font, metrics, layout and pack; `layout`), `serde` and
-  `wasm_bindgen`.
+  `crate::overlay::lod`, `map_coordinates::terrain_frames` (the anchor and Everon bounds),
+  `render_primitives` (the `text` atlas, font, metrics, layout, scale and pack, and the instance
+  layouts), `serde` and `wasm_bindgen`.
 - Used by: `crate::editing` (lanes, picking), `crate::frame`, `crate::camera`, `crate::streaming`,
   `crate::world::environment::locations`, `crate::diagnostics`; the Mission Creator in
   `apps/frontend/src/v2/apps/editor/`; `tools/developer_tools/`.

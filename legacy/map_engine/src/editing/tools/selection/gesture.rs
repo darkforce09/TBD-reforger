@@ -6,7 +6,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::camera::ortho::state::OrthoCamera;
+use camera_math::ortho::state::OrthoCamera;
 
 /// Motion (CSS px) separating a click from a drag — the React `useSelectTool` `DRAG_THRESHOLD`.
 pub const DRAG_THRESHOLD_PX: f64 = 4.0;

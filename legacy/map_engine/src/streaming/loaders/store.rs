@@ -12,7 +12,6 @@ use crate::streaming::loaders::chunk::WorldChunk;
 use crate::streaming::loaders::chunk::parse_chunk;
 use crate::streaming::loaders::manifest::ObjectsManifest;
 use crate::streaming::loaders::manifest::parse_objects_manifest;
-use crate::streaming::scheduler::chunk_math::Bbox;
 use crate::world::environment::buildings::prefab::PrefabEntry;
 use crate::world::environment::buildings::prefab::build_prefab_maps;
 use crate::world::environment::buildings::prefab::narrow_prefab_rows;
@@ -22,6 +21,7 @@ use crate::world::terrain::roads::airfield::compute_airfield_bbox;
 use crate::world::terrain::roads::network::RoadSegment;
 use crate::world::terrain::roads::network::parse_roads_payload;
 use crate::world::terrain::roads::network::road_network_from_bytes;
+use map_coordinates::chunk_math::Bbox;
 
 /// A world-parse failure (gunzip, JSON, a binary archive, or a manifest missing the object-export paths).
 #[derive(Debug, thiserror::Error)]

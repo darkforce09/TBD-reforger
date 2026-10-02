@@ -9,7 +9,7 @@ use crate::spatial::bvh::traversal::Bvh;
 use crate::world::architecture::compound::instances::Instance;
 use crate::world::architecture::compound::instances::InstanceRecord;
 use crate::world::architecture::compound::instances::instances_from_records;
-use crate::world::architecture::compound::transform::Rigid;
+use geometry_primitives::rigid_transform::Rigid;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;

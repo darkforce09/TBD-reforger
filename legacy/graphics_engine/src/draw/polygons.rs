@@ -4,8 +4,8 @@
 //! Invariants: positions, colours and indices in, a GPU mesh out. `item_count` is carried
 //! through untouched — it is the caller's own statistic, never used to draw.
 
-use crate::draw::geometry::{LineVertex, rel};
 use crate::frame::buffers::IndexedMesh;
+use render_primitives::draw::geometry::{LineVertex, rel};
 
 /// Upload already-built vertices and indices as an indexed triangle list.
 #[must_use]

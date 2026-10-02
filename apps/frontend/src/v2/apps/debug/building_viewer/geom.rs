@@ -12,9 +12,9 @@ use map_engine::world::architecture::section::cutter::HeightField;
 use map_engine::world::architecture::section::cutter::FLOOR_WINDOW_M;
 use map_engine::world::architecture::section::cutter::PIT_DEPTH_M;
 use map_engine::world::architecture::section::cutter::PLAN_CELL_M;
-use map_engine::world::mesh::triangulate::triangulate_simple;
 use map_engine::world::terrain::roads::styling::expand_polyline_strip;
 use map_engine::world::terrain::roads::styling::StripVertex;
+use render_primitives::draw::triangulate::triangulate_simple;
 
 /// The building is placed at the engine's world anchor so f32 lane coords stay tiny.
 pub const ANCHOR: [f64; 2] = [6400.0, 6400.0];
@@ -132,7 +132,7 @@ pub fn fit_camera(bp: &BuildingBlueprint, css: (f64, f64)) -> (f64, f64, f64) {
     let target = to_world([cx, cz]);
     let zoom = ((css.0 / (w * 1.25)).min(css.1 / (d * 1.25)))
         .log2()
-        .min(map_engine::camera::ortho::state::MAX_ZOOM);
+        .min(camera_math::ortho::state::MAX_ZOOM);
     (target[0], target[1], zoom)
 }
 

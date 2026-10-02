@@ -71,7 +71,7 @@ constant 150 px on screen), at most `PEAK_LABEL_MAX` (48), and only between zoom
 ## Boundaries
 
 - Depends on: `crate::world::terrain::dem` (`DemManifest`) and `crate::world::terrain::roads`
-  (`RoadSegment`); `crate::io::archives` (`MapLabelsArchive`, `access_checked`);
+  (`RoadSegment`); `world_file_formats::archives` (`MapLabelsArchive`, `access_checked`);
   `crate::overlay::symbology` (`LocationLabel`, `LabelSpec`, the text packers); and, for
   `loader.rs`, `crate::streaming` (fetch, manifest parsing, boot progress, layer preferences) and
   `crate::frame` (`EngineHandle`).

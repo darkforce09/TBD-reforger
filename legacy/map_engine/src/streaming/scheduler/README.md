@@ -11,12 +11,10 @@ the resident chunks.
 ```text
 legacy/map_engine/src/streaming/scheduler/
 ├── budget.rs      the per-frame ingest budget (`APPLY_BUDGET_MS`) and the apply-frame accounting
-├── chunk_math.rs  viewport to chunk ids: preload margin, clamped chunk rects, row-major id order
 ├── mod.rs         the module tree
 ├── queries.rs     picking and lookups over the resident chunks: nearest, rectangle, chunk, sizes
 ├── residency/     one path for the residency's types and constants, and the residency tests
 ├── state.rs       `WorldResidency`, `IngestOutcome` and `ResidencyEvent`
-├── tests/         unit tests for the chunk math
 └── viewport.rs    the pin, in-flight marks, the fetch-failure cap, chunk insert and LRU eviction
 ```
 
@@ -67,10 +65,6 @@ in `crate::world::environment::buildings::footprint`.
   `release_inflight`, `note_fetch_failure`, `note_undelivered`, `invalidate_chunk`,
   `pin_settled`, `inflight_count`), its ingest-frame calls and its queries (`pick_nearest`,
   `pick_rect`, `chunk`, `terrain`, `chunk_size_m`, `prefab_rows`).
-- `chunk_math`: `Bbox`, `TerrainSizeM`, `ChunkRect`, `chunk_id`, `expand_bbox` and the id and
-  rectangle functions, for `crate::spatial::los::world`, `crate::world::terrain::roads::airfield`,
-  `crate::world::environment::vegetation::canopy` and the developer tools' world line-of-sight
-  verification.
 - The constants `LRU_MIN_CHUNKS`, `FETCH_FAILURE_CAP`, `DRAW_CULL_MARGIN_M` and `APPLY_BUDGET_MS`.
 
 ## Boundaries
@@ -79,7 +73,7 @@ in `crate::world::environment::buildings::footprint`.
   `DEFAULT_CHUNK_SIZE_M`) and `crate::streaming::buffers` (the rebuilds and `deinterleave`);
   `crate::spatial::indexing::world::WorldSpatialIndex` for picking;
   `crate::world::environment` (prefab entries, footprint lookups, class codes,
-  `building_visible`).
+  `building_visible`); `map_coordinates::chunk_math` (chunk ids, rectangles and terrain sizes).
 - Used by:
   - the rest of `crate::streaming`: the loaders, the buffer composers, the bridge's toggles and
     the memory statistics;
@@ -90,9 +84,9 @@ in `crate::world::environment::buildings::footprint`.
     and the world line-of-sight verification and its tests in
     `tools/developer_tools/src/map_verification/`.
 - Rules:
-  - the chunk math clamps to the terrain, keeps the preload margin, lists ids row-major and adds
+  - the chunk math it relies on clamps to the terrain, keeps the preload margin, lists ids row-major and adds
     the oversized ring (`chunk_rect_pinned_cases`, `preload_margin_pinned_cases`,
     `viewport_ids_length_and_order`, `ids_for_rect_row_major` and `oversized_ring_expands_rect` in
-    `tests/chunk_math_tests.rs`);
+    `crates/geometry/map_coordinates/src/tests/chunk_math.rs`);
   - pinned and known-empty chunks are never evicted, a chunk at the failure cap becomes an empty
     stub, and a new pin resets the failure counts; the tests in `residency/` hold the lifecycle.

@@ -18,7 +18,9 @@ use crate::world::architecture::blueprint::structure::BuildingWindow;
 impl BuildingBlueprint {
     /// Rebuild the tactical subset from an archived blueprint.
     #[must_use]
-    pub fn from_archived(a: &crate::io::archives::blueprints::ArchivedBuildingBlueprint) -> Self {
+    pub fn from_archived(
+        a: &world_file_formats::archives::blueprints::ArchivedBuildingBlueprint,
+    ) -> Self {
         Self {
             schema_version: String::new(),
             prefab_id: a.slug.to_string(),
@@ -66,7 +68,7 @@ pub(crate) fn pair(p: &[rkyv::rend::f32_le; 2]) -> [f64; 2] {
 /// Level from archived.
 #[cfg(feature = "io")]
 pub(crate) fn level_from_archived(
-    a: &crate::io::archives::blueprints::ArchivedBuildingLevel,
+    a: &world_file_formats::archives::blueprints::ArchivedBuildingLevel,
 ) -> BuildingLevel {
     BuildingLevel {
         level_index: usize::from(a.level_index),

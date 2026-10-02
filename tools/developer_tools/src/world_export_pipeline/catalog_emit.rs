@@ -34,12 +34,6 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 
-use map_engine::io::archives::codec::access_checked;
-use map_engine::io::archives::codec::to_bytes;
-use map_engine::io::archives::forest::ForestRegionsArchive;
-use map_engine::io::archives::prefabs::PrefabCatalogArchive;
-use map_engine::io::archives::prefabs::TypeInventory;
-use map_engine::io::archives::version::ARCHIVE_SCHEMA_VERSION;
 use map_engine::streaming::loaders::store::bytes_to_json;
 use map_engine::world::environment::buildings::prefab::catalog_from_bytes;
 use map_engine::world::environment::buildings::prefab::inventory_from_bytes;
@@ -49,6 +43,12 @@ use map_engine::world::environment::buildings::prefab::row_to_archive;
 use map_engine::world::environment::vegetation::regions::parse_regions_payload;
 use map_engine::world::environment::vegetation::regions::region_to_archive;
 use map_engine::world::environment::vegetation::regions::regions_from_bytes;
+use world_file_formats::archives::codec::access_checked;
+use world_file_formats::archives::codec::to_bytes;
+use world_file_formats::archives::forest::ForestRegionsArchive;
+use world_file_formats::archives::prefabs::PrefabCatalogArchive;
+use world_file_formats::archives::prefabs::TypeInventory;
+use world_file_formats::archives::version::ARCHIVE_SCHEMA_VERSION;
 
 /// The gz-JSON prefab catalogue, relative to a terrain directory.
 pub const PREFABS_GZ: &str = "objects/prefabs.json.gz";
@@ -218,7 +218,7 @@ pub fn emit_catalog_archives(terrain_dir: &Path) -> Result<Vec<(PathBuf, usize)>
     out.push((p.clone(), write_prefab_catalog_rkyv(&p, &catalog)?));
     let read_back = catalog_from_bytes(
         &std::fs::read(&p).with_context(|| format!("read back {}", p.display()))?,
-        &terrain,
+        terrain.as_str(),
     )
     .map_err(|e| anyhow::anyhow!("{} does not read back: {e}", p.display()))?;
     if read_back.by_id.len() != prefab_rows {

@@ -3,18 +3,18 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::io::archives::blueprints::ArchivedBlasEntry;
-use crate::io::archives::blueprints::ArchivedBuildingBlueprintArchive;
-use crate::io::archives::blueprints::ArchivedOccluderDescriptor;
-use crate::io::archives::blueprints::BlasEntry as WireBlasEntry;
-use crate::io::archives::blueprints::BuildingBlueprintArchive;
-use crate::io::archives::blueprints::OccluderDescriptor as WireDescriptor;
-use crate::io::archives::codec::BinaryError;
-use crate::io::archives::codec::access_checked;
-use crate::io::archives::version::ARCHIVE_SCHEMA_VERSION;
 use crate::world::architecture::compound::instances::InstanceRecord;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+use world_file_formats::archives::blueprints::ArchivedBlasEntry;
+use world_file_formats::archives::blueprints::ArchivedBuildingBlueprintArchive;
+use world_file_formats::archives::blueprints::ArchivedOccluderDescriptor;
+use world_file_formats::archives::blueprints::BlasEntry as WireBlasEntry;
+use world_file_formats::archives::blueprints::BuildingBlueprintArchive;
+use world_file_formats::archives::blueprints::OccluderDescriptor as WireDescriptor;
+use world_file_formats::archives::codec::BinaryError;
+use world_file_formats::archives::codec::access_checked;
+use world_file_formats::archives::version::ARCHIVE_SCHEMA_VERSION;
 
 mod manifest;
 #[cfg(test)]
@@ -26,10 +26,6 @@ pub use manifest::{
     BlasEntry, BlasManifest, DESCRIPTOR_SCHEMA_VERSION, DescEntry, KindTotals,
     MANIFEST_SCHEMA_VERSION, Totals,
 };
-mod bounds;
-
-/// Re-export `bounds::Bounds3`.
-pub use bounds::Bounds3;
 
 mod model;
 

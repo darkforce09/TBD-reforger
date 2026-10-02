@@ -7,7 +7,7 @@ use crate::frame::engine::BasemapMode;
 use crate::frame::engine::RenderEngine;
 use crate::overlay::lanes::LaneRole;
 
-use graphics_engine::layout::QuadInstance;
+use render_primitives::draw::instances::QuadInstance;
 use wasm_bindgen::prelude::*;
 
 /// Tex lane.
