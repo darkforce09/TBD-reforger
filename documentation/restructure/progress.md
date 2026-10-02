@@ -13,8 +13,8 @@ session reads the header and the Handoff section first.
 |---|---|
 | Branch | `main` (decision D16; S0 was merged from the cloud session branch) |
 | Current stage | M1, M2 Mod |
-| Last green commit | the S2 stage commit (`refactor(restructure): S2 apps and deploy`) |
-| Next action | M1 and M2, then the operator's OC-mod checkpoint in Workbench (see Handoff) |
+| Last green commit | 24ab925b5 (S2) |
+| Next action | M2 running, then M1; then OC-mod (the orchestrator moves the ignored lanes, the operator regenerates the `.rdb` files in Workbench) |
 | Blocked on | nothing |
 
 Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A status is `pending`,
@@ -64,8 +64,8 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 - [x] Stage commit — done (see the execution log)
 
 ### M1, M2 Mod
-- [ ] M1 (S) References folder — pending
-- [ ] M2 (S) Objectives Engine grouping — pending
+- [ ] M1 (S) References folder, tools fail closed — pending (after M2)
+- [ ] M2 (S) Objectives Engine grouping — running
 - [ ] OC-mod (operator) ignored folders moved, `.rdb` regenerated, compile, world boot — pending
 - [ ] Stage commit — pending
 
@@ -211,6 +211,8 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 | 2026-10-02 | S2 wave 2 reports | A2 (stopped at budget; A2b finished db compose, F-018), A3 (wave execution; four fail-open defects fixed), A4 (Dockerfile builds, `.dockerignore`, compose project names), A5 (two crates born under their own manifest; ticket files granted; no false slash rewrite occurred), A6 (documentation, D17 prose), A7 (tool false rewrites) | logs/A2..A7-* |
 | 2026-10-02 | S2 closing batch | G-S2: documentation gates judge every tracked top-level folder; website checkout set gains the compile-time `contracts/` inputs. G2a: API test paths, build-lane runtime, citation roots over every member, CI and wave-gate tests derived from the workspace members. G2b: Caddyfile in `deploy/caddy/`, mounted alone. G2c: executed S1 and S2 briefs archived, documentation. Orchestrator: dev compose project `api` (the live volume `api_tbd_pgdata`), `wave.lock` T-251 row, the births manifest's never-retired README row dropped, the compiler identity pinned as the stored literal it was (F-031), the member-glob test, the testing runbook | logs/G*-* |
 | 2026-10-02 | S2 gate (D19) | fmt OK; workspace clippy `-D warnings` (frontend native excluded, F-004) OK; frontend wasm32 116 + 137, equal to the baseline; `ci-local` first run red on one API test that the package rename had rewritten (the stored compiler identity), fixed; rerun green: 188 test binaries, 7715 passed, 0 failed, 9 ignored (every API integration binary, the trunk release build, the documentation gates, the laws, `relocate --verify`); Docker build of `deploy/Dockerfile`; `deploy website --dry-run` and `deploy staging --dry-run` (with and without `--migrate-single-instance`) OK; 16324 tracked and 2013 LFS files | logs/gs-s2-* |
+| 2026-10-02 | S2 commit | `24ab925b5` pushed to `main`; 5174 files changed; the two `.rdb` files left out | — |
+| 2026-10-02 | M launch | Research: M2 is four folder moves into `Engine/` plus split-literal fixes; the "seven pinned xtask paths" were a research miscount (six name other folders). M1: no reference path is centralised; `verify no-crf-leak` passes on a missing lane, the wave gate calls a nonexistent `make` target, and stale deploy excludes would ship the references. Operator: copy PlayableSelector into `References/`; the orchestrator moves the ignored lanes; the operator regenerates both `.rdb` files in Workbench and they join the M commit; stale worktrees audited. `mod compile` baseline clean (387 TBD files, 0 warnings). Worktrees: T-212, T-939.2, T-946.55, T-946.86 (clean, merged) removed with their branches, and the detached engine-reorg baseline; T-939.4 kept (6 unmerged commits, ticket T-1002); `tbd-s-baseline` kept (milestone S) | logs/m-preflight-* |
 
 ## Amendments
 
