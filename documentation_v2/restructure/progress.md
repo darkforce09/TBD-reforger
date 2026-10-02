@@ -12,9 +12,9 @@ session reads the header and the Handoff section first.
 | Field | Value |
 |---|---|
 | Branch | `claude/compassionate-cannon-nz3hts` (the operator merges to `main`) |
-| Current stage | S0 Tooling — all agents done; paused for the operator |
+| Current stage | S0 Tooling — closing work (T4b, G0) |
 | Last green commit | 74735b80c (P0; readme-coverage red only on F-001) |
-| Next action | Operator decisions F-012 and F-007, go-ahead for T4b, F-014 fix, then the S0 gate and commit |
+| Next action | T4b and G0 running; then the S0 gate, commit, and straight on into S1 (operator: continue without pausing) |
 | Blocked on | nothing |
 
 Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A status is `pending`,
@@ -33,7 +33,8 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 - [x] T2 (M) workspace manifest hoisting, dependency fixes — done, awaiting the stage commit — lockfile changed only by the two intended removals; resolved graph otherwise identical (865 nodes)
 - [x] T3 (M) build output under target, `rust-sqlx-prepare` removed, Chromium discovery — done, awaiting the stage commit — ran over budget (about 310k); dev-api, ci and gate-* folders now under `target/`; Chromium found with `CHROME_HEADLESS_SHELL` unset
 - [x] T4 (L) new laws (crate-tiers, crate-anatomy, strangler, frontend-layering, tailwind-sources) and their wiring — done, awaiting the stage commit — five gates pass on the real tree; frontend layering ceiling 12 production + 3 test edges; every law red under perturbation and restored
-- [ ] T4b (M) fail-closed source roots derived from workspace members (T4's item 7, not reached within its budget) — pending, held at the operator's pause
+- [ ] T4b (M) fail-closed source roots derived from workspace members (T4's item 7, not reached within its budget) — running
+- [ ] G0 (M) closing batch: F-014 (prose rule, D13), F-007 (clippy.toml, D14), F-005, F-006, F-009, F-010 — running
 - [x] T5 (S) `Generated` exemption (F-001) and vestigial sqlx offline settings removed — done, awaiting the stage commit — readme-coverage 0 violations (from 19); 5 `generated_folder_exemption_*` tests; perturbation red on exactly the 19 folders and restored
 - [x] Baselines recorded (see the execution log) — done
 - [ ] Stage commit — pending
@@ -178,6 +179,7 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 | 2026-10-01 | S0 restart | Container restart stopped T1 mid-run; its partial work survived on disk. T1b launched to finish it from that state | — |
 | 2026-10-01 | S0 T1b report | T1's code compiled; T1b added the READMEs, one test, formatting and clippy fixes; `--verify` perturbation red and restored. All S0 agents done; PAUSED at the operator's request before the gate | logs/T1b-* |
 | 2026-10-01 | S0 T5 report | Exemption covers `generated` and `Generated` (`path_regions.rs`); the three `SQLX_OFFLINE` lines and two emptied `env:` keys removed from ci.yml (YAML valid); readme standard and documentation standards updated. Reviewed: diff matches the report | logs/T5-* |
+| 2026-10-02 | S0 decisions | Operator: D13 keep `legacy/` with a prose-rule exemption for the folder name; D14 allow `unwrap()` in tests; finish S0 and continue into S1 without pausing. Container restarted: `dockerd` and Postgres restarted, `target/` cleaned (18.5 GiB) | — |
 
 ## Amendments
 
@@ -198,12 +200,12 @@ become tickets at S12.
 - **F-005 (FIX, closing batch): `documentation_v2/standards/where_does_x_go.md:82` names only the
   lowercase `generated` exemption.** Reported by T5; the file was outside its ownership.
 - **F-006 (FIX, closing batch): the map engine READMEs still list `earcutr`** (`apps/website/map-engine/README.md:103`, `apps/website/map-engine/src/README.md:86`). Reported by T2.
-- **F-007 (NOTE, operator): `clippy::unwrap_used` in the workspace lint policy also fires in `#[cfg(test)]` code.** New crates' tests then use `expect`. The alternative is a root `clippy.toml` with `allow-unwrap-in-tests = true`. Reported by T2.
+- **F-007 (decided, D14): `clippy::unwrap_used` in the workspace lint policy also fires in `#[cfg(test)]` code.** New crates' tests then use `expect`. The alternative is a root `clippy.toml` with `allow-unwrap-in-tests = true`. Reported by T2.
 - **F-008 (NOTE, environment): one verification-core `file_length` test fails in this container because it runs as root, which can read a mode-000 file.** The test assumes a non-root user, as CI is. Gates run here record it as environmental. Reported by T2.
 - **F-009 (FIX, closing batch): two tools still create root-level build folders.** `tools_v2/xtask/src/commands/mcp/daemon.rs:96` (`target-dev-mcpd`) and `tools_v2/xtask/src/commands/db/operations/selftest.rs:365` (`target-mk-db-selftest`) move under `target/`. Reported by T3.
 - **F-010 (FIX, closing batch): a slice-agent brief still tells agents to use `target-<id>-api`** (`slice_agent_brief.md:72`). Reported by T3.
 - **F-011 (NOTE, environment): eight developer-tools library tests read Git LFS objects this container has not pulled.** The S0 gate pulls the LFS objects those tests need before running them.
-- **F-012 (NOTE, operator decision): the name of the parking folder.** The repository's prose rule (`tools_v2/xtask/src/tests/tooling_prose_rules.rs:65`) bans the word "legacy" as history vocabulary, which is the planned folder name of decision D12. The laws T4 wrote name that folder, so one xtask prose test fails now. Either rename the parking folder to a present-tense name, or exempt the folder name from the rule. Reported by T4.
+- **F-012 (decided, D13): the name of the parking folder.** The repository's prose rule (`tools_v2/xtask/src/tests/tooling_prose_rules.rs:65`) bans the word "legacy" as history vocabulary, which is the planned folder name of decision D12. The laws T4 wrote name that folder, so one xtask prose test fails now. Either rename the parking folder to a present-tense name, or exempt the folder name from the rule. Reported by T4.
 - **F-013 (NOTE, S2): a legacy map engine that re-exports the graphics engine would show about 28 shims.** The S2 and S4 prompts must cut or switch them in the stage that creates them. Reported by T4.
 - **F-014 (FIX, before the S0 gate): the xtask prose-rule tests fail on T4's law files.** `tools_v2/xtask/src/tests/tooling_prose_rules.rs` flags the word "legacy" (see F-012) and planned paths such as `crates/map_rendering` and `prelude.rs` written in prose. Reported by T1b and T4.
 - **F-015 (NOTE): a relocation `path` row never rewrites `mod` declarations**; each stage's author edits them. Reported by T1b.

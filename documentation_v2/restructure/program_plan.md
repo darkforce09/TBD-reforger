@@ -93,7 +93,7 @@ Each finding was checked against the code. The evidence is in the
     `CHROME_HEADLESS_SHELL` pointed at it. trunk 0.21.14 and wasm-bindgen-cli 0.2.126 must be
     installed.
 
-## 3. Binding decisions (operator, 2026-10-01)
+## 3. Binding decisions (operator, 2026-10-01 and 2026-10-02)
 
 | Id | Decision |
 |---|---|
@@ -109,6 +109,8 @@ Each finding was checked against the code. The evidence is in the
 | D10 | Strip the unused `#[wasm_bindgen]` exports; no JS facade crate; proven by a JS-glue export diff. |
 | D11 | Extracted frontend crates move to edition 2024 in their own wave. |
 | D12 | The dying monoliths park in a top-level legacy folder from S2; no new crate may depend on it. |
+| D13 | The parking folder keeps the name `legacy/`; the repository's prose rule exempts that folder name (the path segment and identifiers naming the folder), while the word stays banned as history vocabulary. |
+| D14 | Tests may call `unwrap()`: a root `clippy.toml` sets `allow-unwrap-in-tests`; production code under the workspace lint policy still may not. |
 
 ## 4. Execution model: foundations up
 
