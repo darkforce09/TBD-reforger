@@ -14,7 +14,7 @@ session reads the header and the Handoff section first.
 | Branch | `main` (decision D16; S0 was merged from the cloud session branch) |
 | Current stage | S1 Global renames |
 | Last green commit | b2b317446 (S0) |
-| Next action | Continue on the operator's local machine: S1 agent R1 (see Handoff) |
+| Next action | S1 agent R1 running on the operator's local machine; then R2, R3 and R4 |
 | Blocked on | nothing |
 
 Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A status is `pending`,
@@ -40,7 +40,7 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 - [x] Stage commit — done (see the execution log)
 
 ### S1 Global renames
-- [ ] R1 (M) scripted renames and ticket path rewrites — pending
+- [ ] R1 (M) scripted renames and ticket path rewrites — running
 - [ ] R2 (M) layout modules and xtask literals — pending
 - [ ] R3 (S) LFS rules, workflows, editor config, gate environment, codegen header — pending
 - [ ] R4 (M) link-check spellings, READMEs, agent instruction files, mirror rule — pending
@@ -185,11 +185,14 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 | 2026-10-02 | S0 gate (first pass) | fmt OK; workspace clippy `-D warnings` (frontend excluded, F-004) OK; frontend wasm32 warnings 116 + 137, equal to the baseline; relocate --verify OK; crate-tiers, crate-anatomy, strangler, frontend-layering, tailwind-sources, file-length, ci-schema-parity OK; API release check OK; verification-core 185/186 and xtask 1322/1324 (only the root-permission cases, F-008); ci-local stopped at `rust-test-it` because it calls `podman` (environment: a `podman`→`docker` shim added to the program env); ticket-engine round-trip red on T-086 (F-016) and `ticket check --strict` red on a retired id spelling (F-017), both pre-existing; leptos-gates red on satellite, roads and buildings because the Everon LFS objects were not pulled (pulled: all 2013) | logs/s0-gate-* |
 | 2026-10-02 | S0 G0b report | F-016: T-086 rewritten by `ticket set-status` (a pure line move, no value changed); F-017: plan slice ids in the mod modularisation checkpoint respelled; ticket-engine 236 passed, `ticket check --strict` OK, verify-documentation OK | logs/G0b-* |
 | 2026-10-02 | S0 gate (final) | `ci-local` green with a `podman`→`docker` shim: 172 test binaries, 5189 passed, 0 failed (includes API integration tests, trunk release build, documentation gates, the five new laws); browser gates: every smoke passes except outliner-drag and perf, which time out in `Runtime.evaluate`; outliner-drag fails the same way on the pre-S0 commit (F-019). Operator: too much testing — decision D15 (lean gates) | logs/s0-gate-*, s0-smoke-* |
+| 2026-10-02 | S1 launch | Local machine: pre-flight on `36c2fa22a` green (verify-documentation OK, 16294 tracked files; `relocate --verify` OK); 2013 LFS files; builds run on the host against the shared warm cache through a cargo shim (amendment A3); the two Workbench-regenerated `resourceDatabase.rdb` files stay uncommitted and foreign; 36 API integration binaries that spell a moved path selected for the S1 gate. Operator: continue into S2 after the S1 commit | target/api-progress-checkpoint/2026-10-02-restructure-s1/logs/s1-preflight-* |
 
 ## Amendments
 
 | Date | Agent | Amendment |
 |---|---|---|
+| 2026-10-02 | R1 | A2: the tracked-file baseline is 16294 (16226 in the brief predates the S0 commit and the handoff commits); the LFS baseline stays 2013 |
+| 2026-10-02 | all S1 and S2 agents | A3: `<scratch>` is `target/api-progress-checkpoint/2026-10-02-restructure-s1/` (gitignored, durable); its `env.sh` puts a cargo shim first on PATH that runs host cargo against the shared cache with git-lfs on PATH, and a podman shim; the two `resourceDatabase.rdb` files are in the foreign baseline |
 
 ## Open findings
 
