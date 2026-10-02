@@ -13,8 +13,8 @@ session reads the header and the Handoff section first.
 |---|---|
 | Branch | `main` (decision D16; S0 was merged from the cloud session branch) |
 | Current stage | S2 Apps and deploy |
-| Last green commit | the S1 stage commit (`refactor(restructure): S1 global renames`) |
-| Next action | Commit the S2 agent briefs, then launch A1 (see Handoff) |
+| Last green commit | 64f16d1da (S1) |
+| Next action | S2 agent A1 running; then A2 to A6 in parallel (see Handoff) |
 | Blocked on | nothing |
 
 Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A status is `pending`,
@@ -48,11 +48,12 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 - [x] Stage commit — done (see the execution log)
 
 ### S2 Apps and deploy
-- [ ] A1 (M) app flattening, legacy parking, deploy folder — pending
+- [ ] A1 (M) app flattening, legacy parking, deploy folder — running
 - [ ] A2 (M) xtask deploy, staging and db — pending
 - [ ] A3 (M) wave execution paths — pending
-- [ ] A4 (S) Dockerfile, systemd, env example, runtime fallbacks — pending
+- [ ] A4 (S) Dockerfile repair (D18), systemd, env example, runtime fallbacks — pending
 - [ ] A5 (M) http_url_guard and offline_cache_policy — pending
+- [ ] A6 (S) documentation — pending
 - [ ] OC-deploy (operator) gitignored env files and server environment file moved — pending
 - [ ] Stage commit — pending
 
@@ -195,6 +196,8 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 | 2026-10-02 | S2 briefs drafted | Outside the tree from the snapshot `3ed754a64`: A1 brief with a 38-row manifest draft and run-time name table, A2–A5 bodies, OC-deploy steps, gate extras. Operator: D17 (fleet host agent renamed everywhere), D18 (A4 repairs the Dockerfile); the stale gitignored `target-container-api-v2/` under the frontend deleted | s2_drafts/ |
 | 2026-10-02 | S1 R5 report | Escape-adjacent paths, `file://` URLs and `/../` macro pieces rewritten or reported; the manifests README is live; a file takes the treatment of where it lands; closed tickets' `owns` entries rewritten; the dry run verifies the planned tree; perturbation red on both new passes and restored. Orchestrator copied the tool's own clone output for the 35 files moved into the archive (R4's status lines kept, three README indexes kept at R4's version, F-029) and 33 ticket records (31 closed tickets' `owns`, T-1073, T-1112) | logs/R5-*, probes/R5/s1-clone |
 | 2026-10-02 | S1 gate | fmt OK (four app files reformatted after the shorter paths); workspace clippy `-D warnings` (frontend native excluded, F-004) OK; frontend wasm32 clippy 116 + 137, equal to the baseline; per-package tests: xtask 1336, verification_core 187, ticket_engine 236, developer_tools 403 (4 ignored), and R3's app runs (map engine 1665 lib with `--all-features`, frontend 2005, API lib 566, 36 API integration binaries 262); `verify-workspace-laws` OK; file-length 4608 files, 0 violations; `relocate --verify` OK (28 checks); verify-documentation OK; `ticket check --strict` OK; `ci-local-schema` OK; route-tags OK; editorconfig OK; `ci-schema-parity` OK; `git lfs fsck --pointers` OK, 2013 LFS files; 16301 tracked files (16294 + 7 new); no retired spelling outside the archive and ticket records. A workspace-wide `cargo test` fails 24 developer_tools tests on reqwest feature unification (F-028, predates S1) | logs/gate-s1-* |
+| 2026-10-02 | S1 commit | `64f16d1da` pushed to `main`; 9415 files changed; the two `.rdb` files left out | — |
+| 2026-10-02 | S2 launch | Briefs reviewed and finalised: A1 checks that the library-name text rows shadow no binding before its apply; the staging host still runs the single instance (read-only check), so `--migrate-single-instance` stays and carries the D17 rename; A5 runs its own births manifest; A6 added for documentation. The briefs stay in the run folder until the S2 commit (amendment A6) | s2_drafts/ |
 
 ## Amendments
 
@@ -204,6 +207,7 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 | 2026-10-02 | all S1 and S2 agents | A3: `<scratch>` is `target/api-progress-checkpoint/2026-10-02-restructure-s1/` (gitignored, durable); its `env.sh` puts a cargo shim first on PATH that runs host cargo against the shared cache with git-lfs on PATH, and a podman shim; the two `resourceDatabase.rdb` files are in the foreign baseline |
 | 2026-10-02 | R3, R5 | A4: R3 also owns the apps' run-time path pieces and the moved-path API integration binaries; R5 is added to fix the relocation tool's blind spots before S2 (F-021, F-022); the CI task id `developer-tools-test` and the `verification-core-*` temporary-folder prefixes stay (kebab-case ids, not package names) |
 | 2026-10-02 | R5 | A5: closed tickets' `owns` entries take path rewrites like `spec` and `plan` (F-023); a file moved into a frozen area takes the frozen treatment (F-024); the clone proof also applies, so the orchestrator copies the archived files and the 10 ticket records from the tool's own output |
+| 2026-10-02 | A1–A6 | A6: the S2 briefs live in `<scratch>/s2_drafts/` until the S2 commit, because their planned paths fail link-check before A1 and A1's apply would rewrite the manifest draft inside them; the S2 commit adds them under `agent_briefs/` with the draft replaced by a pointer to the committed manifest |
 
 ## Open findings
 
@@ -264,9 +268,9 @@ become tickets at S12.
 S1 is committed on `main`; S2 is next on the operator's local machine.
 
 Next step, S2 apps and deploy:
-1. Commit the S2 agent briefs (`documentation/restructure/agent_briefs/s2_*`), drafted from the
-   snapshot and finalised with decisions D17 and D18, then launch A1 alone with its brief.
-2. When A1 reports, run A2 to A6 in parallel from their bodies.
+1. Launch A1 alone with its brief, `<scratch>/s2_drafts/s2_a1_apps_and_deploy.md` (amendment
+   A6; `<scratch>` is the run folder named under machine notes).
+2. When A1 reports, run A2 to A6 in parallel from `<scratch>/s2_drafts/s2_a2_to_a6.md`.
 3. Pause at OC-deploy: the operator moves the gitignored and server-side files and runs the host
    migration of the fleet host agent (D17).
 4. Run the full gate set GS (S2 is a checkpoint stage) and commit S2.
