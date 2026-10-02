@@ -12,9 +12,9 @@ session reads the header and the Handoff section first.
 | Field | Value |
 |---|---|
 | Branch | `main` (decision D16; S0 was merged from the cloud session branch) |
-| Current stage | S3 Frontend in place |
-| Last green commit | the M stage commit (`refactor(restructure): M1 references and M2 objectives engine`) |
-| Next action | Write the S3 briefs (F1 alone, then F2–F5) and run S3 under decision D20 |
+| Current stage | S3, S4, S5, S6 in parallel (decision D21) |
+| Last green commit | ac4101cd3 (M1, M2) |
+| Next action | Four stage orchestrators in their worktrees (see Handoff and the stage logs) |
 | Blocked on | nothing |
 
 Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A status is `pending`,
@@ -217,6 +217,7 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 | 2026-10-02 | M1 and M1b reports | Lane constants in both layout modules; `verify no-crf-leak` exits 2 on a missing lane (red first), no longer flags the Workshop mod name `@CRF_Framework`, and reads the vanilla paks once (8.3 s, was over 5 minutes); the wave gate runs no `make` step; one `apps/mod/References/` deploy exclude pinned by tests; `.gitignore` ignores the lanes and keeps the README; docs, runbooks and open tickets. Orchestrator moved `crf_framework` and `vanilla_reference` into `References/` and copied PlayableSelector there | logs/M1-*, logs/M1b-* |
 | 2026-10-02 | M gate (before OC-mod) | fmt (two files reformatted), workspace clippy, xtask 1374, developer_tools 407, verification_core 188, workspace laws, file-length, enfusion-comments, destroy-target-diagnostics, `relocate --verify`, verify-documentation, `ticket check --strict`, editorconfig: all green. `verify no-crf-leak` runs all three lanes and reports four GUIDs (F-033) | logs/m-gate-* |
 | 2026-10-02 | M gate and commit | Operator regenerated both `.rdb` files in Workbench; `mod compile` clean (387 TBD files, 0 warnings, 0.9 s). Decision D20: fast stage gates, the full set once at S12. Both `.rdb` files enter the M commit | logs/m-gate-05-* |
+| 2026-10-02 | Parallel setup | M1/M2 committed (`ac4101cd3`). Decision D21: S3–S6 in parallel in detached worktrees, S5 and S6 gated on S4, per-stage logs under `stage_logs/`. Retired root build folders and the incremental cache removed | — |
 
 ## Amendments
 
@@ -291,19 +292,24 @@ become tickets at S12.
 
 ## Handoff
 
-M1 and M2 are committed on `main`; S3 (frontend in place) is next.
+S3, S4, S5 and S6 run in parallel (decision D21), each in a detached worktree under its own
+orchestrator session, following the [stage logs protocol](/documentation/restructure/stage_logs/README.md):
 
-Next step, S3:
-1. Write the S3 briefs from the program plan's S3 row and the crate catalogue: F1 alone (the
-   `src/v2` split into foundation, pages and workspaces; api → transport), then F2–F5 in parallel
-   (shell extraction and editor session rename; UI tokens, logout hooks, route table; review
-   workspace, byte formatting, mission review feature; frontend clippy-clean on native and wasm32,
-   F-004).
-2. Gate each stage with decision D20's fast checks; the full gate set runs at S12.
+| Stage | Worktree | Launch prompt (in the worktree) |
+|---|---|---|
+| S3 Frontend in place | `/run/media/system/Disk_2/Projects/tbd-restructure-s3` | `target/restructure-s3/ORCHESTRATOR_PROMPT.md` |
+| S4 Tier 0–1 | `/run/media/system/Disk_2/Projects/tbd-restructure-s4` | `target/restructure-s4/ORCHESTRATOR_PROMPT.md` |
+| S5 Mission and ballistics | `/run/media/system/Disk_2/Projects/tbd-restructure-s5` | `target/restructure-s5/ORCHESTRATOR_PROMPT.md` |
+| S6 World CPU | `/run/media/system/Disk_2/Projects/tbd-restructure-s6` | `target/restructure-s6/ORCHESTRATOR_PROMPT.md` |
+
+S5 and S6 stop at "blocked on S4 (pre-work done)" until the S4 stage commit is on `main`. The
+launch prompts live in the gitignored run folders; if a worktree is lost, rebuild it with
+`GIT_LFS_SKIP_SMUDGE=1 git worktree add --detach <path> main` and rewrite its prompt from this table
+and the stage logs protocol.
 
 Operator items left from S2: the server-side moves and `deploy staging --migrate-single-instance`
 before the next deploy, and the GitHub required checks `api (Rust 1.95 + Postgres 18)` and
-`frontend (Leptos SPA)`. M3 (objective behaviours) can run any time now that M2 is in.
+`frontend (Leptos SPA)`. M3 (objective behaviours) can run any time.
 
 Machine notes (this workstation). The orchestration folder is
 `target/api-progress-checkpoint/2026-10-02-restructure-s1/` (gitignored). Its `env.sh` puts two

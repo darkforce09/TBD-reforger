@@ -17,6 +17,7 @@ documentation/restructure/
 ├── manifests/            the relocation manifests the stages run, and the format sample
 ├── program_plan.md       context, verified findings, binding decisions, execution model, stages, agents, risks
 ├── progress.md           the progress tracker: stage and agent rows, execution log, findings, handoff
+├── stage_logs/           the parallel stages' own logs (S3–S6) and the protocol they follow
 └── target_file_tree.md   the exact end-state file tree and the crate anatomy
 ```
 

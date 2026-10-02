@@ -117,6 +117,7 @@ Each finding was checked against the code. The evidence is in the
 | D18 | S2's A4 repairs the deploy Dockerfile's trimmed workspace (it lacks the root workspace tables and a dev-dependency since S0), proven by the S2 Docker build. |
 | D19 | Lean S2 checkpoint: `ci-local` (with every API integration binary), the Docker build and both deploy dry runs; the browser gates, the test census, the dependency drift and the wasm size probes move to the next checkpoint, S5. |
 | D20 | Gates from M on: each stage runs only fast checks (formatting, clippy, the unit tests of the crates it touched, `relocate --verify`, the documentation gates, and a stage's one-second specifics such as `mod compile`); the full `ci-local`, the API integration suite, the browser gates, the Docker build and `world-boot` run once at S12, or before a real deploy. Supersedes D15 and D19. |
+| D21 | S3, S4, S5 and S6 run in parallel, each in a detached worktree under its own orchestrator; S5 and S6 create crates only after S4 is on `main`; a stage lands by rebasing onto `main` and fast-forwarding it; each stage logs in its own file under `stage_logs/` (protocol in its README). |
 
 ## 4. Execution model: foundations up
 
