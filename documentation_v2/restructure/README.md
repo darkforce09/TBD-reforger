@@ -11,6 +11,7 @@ session, including a fresh one with no chat history, resumes the program from th
 
 ```text
 documentation_v2/restructure/
+├── agent_briefs/         the shared agent brief and the next stage's agent documents
 ├── crate_catalogue.md    every planned crate: category, tier, source paths, dependencies, what it fixes
 ├── laws_and_gates.md     the new repository laws, the standard gate set, gate evolution, end-state checks
 ├── manifests/            the relocation manifests the stages run, and the format sample

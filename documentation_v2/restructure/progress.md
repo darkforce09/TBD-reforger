@@ -13,8 +13,8 @@ session reads the header and the Handoff section first.
 |---|---|
 | Branch | `claude/compassionate-cannon-nz3hts` (the operator merges to `main`) |
 | Current stage | S1 Global renames |
-| Last green commit | 74735b80c (P0; readme-coverage red only on F-001) |
-| Next action | Launch R1 (scripted renames) |
+| Last green commit | b2b317446 (S0) |
+| Next action | Continue on the operator's local machine: S1 agent R1 (see Handoff) |
 | Blocked on | nothing |
 
 Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A status is `pending`,
@@ -237,14 +237,29 @@ become tickets at S12.
 
 ## Handoff
 
-S0 agents T1b, T2, T3, T4 and T5 are done; their work is uncommitted in the working tree and was
-reviewed against each report. The program is paused at the operator's request. Before the S0
-gate:
-1. The operator decides F-012 (the parking folder's name) and F-007 (`unwrap` in tests).
-2. T4b (fail-closed source roots) runs.
-3. F-014 is fixed according to the F-012 decision.
+S0 is committed (`b2b317446`) and pushed; the program continues on the operator's local machine.
 
-Then run GS, the orchestrator's perturbation proofs, the closing-fix items F-005, F-006, F-009 and
-F-010, and commit S0. In a fresh container, first run `git fetch --unshallow`, start `dockerd`, run
-`cargo xtask db up`, pull the Everon DEM through LFS, and reinstall trunk 0.21.14 and
-wasm-bindgen-cli 0.2.126 if they are missing.
+Next step, S1 global renames:
+1. Pull the session branch and run `cargo xtask ci verify-documentation` and
+   `cargo xtask refactor relocate --verify` once, to confirm the checkout is green on that machine.
+2. Launch agent R1 with
+   [its document](/documentation_v2/restructure/agent_briefs/s1_r1_global_renames.md). It runs
+   alone, because it rewrites paths across the whole tree.
+3. When R1 reports, fill the
+   [R2 to R4 template](/documentation_v2/restructure/agent_briefs/s1_r2_to_r4_template.md) from
+   its report and run R2, R3 and R4 in parallel.
+4. Run the stage gate (decision D15) and commit S1.
+
+Plan amendment A1: the ticket engine is renamed to its snake_case tools folder in S1 and is not
+parked under `legacy/`; S11 dissolves it.
+
+Machine notes. This cloud container needed several workarounds:
+- `git fetch --unshallow`;
+- `dockerd` plus a `podman`→`docker` shim (F-018);
+- an Everon Git LFS pull;
+- trunk 0.21.14 and wasm-bindgen-cli 0.2.126;
+- build flags without debug info to fit its disk;
+- `CHROME_HEADLESS_SHELL` for its older Chromium.
+
+A local machine with the usual tool chain needs none of these. The root-permission test failures
+(F-008) and the two browser smoke timeouts (F-019) are expected only in this container.
