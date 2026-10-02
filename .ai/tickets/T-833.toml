@@ -58,8 +58,8 @@ citations = [
 ]
 estimated = ["scope"]
 owns = [
-    "apps/website/frontend/src/editor/mission_editor.rs",
-    "apps/website/frontend/src/editor/tools/select_tool.rs",
+    "apps/frontend/src/editor/mission_editor.rs",
+    "apps/frontend/src/editor/tools/select_tool.rs",
 ]
 
 [scope]

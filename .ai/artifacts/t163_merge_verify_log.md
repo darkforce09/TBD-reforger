@@ -32,7 +32,7 @@ the first time since.
 ## T-163 integration (this commit)
 
 - xtask dead-React purge: `cmds.rs` 8 lines + `check.rs` 2 scan roots. **Closure:**
-  `git grep -cE 'apps/website/frontend|ci-local-frontend' -- xtask/` = **0** (was 10 lines).
+  `git grep -cE 'apps/frontend|ci-local-frontend' -- xtask/` = **0** (was 10 lines).
 - `verify-monorepo-migration.sh` V13 loop `web`→`leptos`.
 - Templates: `CLAUDE_CODE_PROMPT.md` / `HANDOFF_TEMPLATE.md` / `SPEC_TEMPLATE.md` retired-command
   fixes (map-assets-link / React npm → `make ci-local-leptos`).
@@ -61,7 +61,7 @@ the first time since.
 | 14 | `make schema-codegen` | zero drift |
 | 15 | `ticket sync` ×2 | fixed-point (2nd run adds nothing beyond T-163-intended changes) |
 | 16 | `./scripts/ticket check` | exit 1 · **exactly 6 ERROR lines** (T-147/148/149 field debt — accepted A4′ set; T-154 line gone after order fix) |
-| 17 | closure greps | xtask dead refs **0** · `git ls-files apps/website/frontend` **0** |
+| 17 | closure greps | xtask dead refs **0** · `git ls-files apps/frontend` **0** |
 
 ## Pre-existing reds ledger (documented, unchanged)
 

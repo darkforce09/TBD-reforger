@@ -29,7 +29,7 @@ fn a_production_file_may_hold_exactly_500_lines() {
 fn a_test_file_may_hold_exactly_1000_lines_by_folder_or_by_stem() {
     let checkout = TemporaryCheckout::with_law_roots("test-ceiling");
     for rel in [
-        "apps/website/api_v2/tests/integration.rs",
+        "apps/api/tests/integration.rs",
         "tools/xtask/src/fixture_tests.rs",
         "tools/xtask/fixtures/TBD_ScriptPlant_tests.c",
     ] {
@@ -62,13 +62,13 @@ fn an_enfusion_script_meets_the_production_ceiling() {
 fn generated_code_and_website_test_trees_have_no_exemption() {
     let checkout = TemporaryCheckout::with_law_roots("no-exemption");
     checkout.write_lines(
-        "apps/website/api_v2/src/missions/models/generated/mission_row.rs",
+        "apps/api/src/missions/models/generated/mission_row.rs",
         PRODUCTION_MAX_LINES + 1,
     );
-    checkout.write_lines("apps/website/map-engine/tests/cases.rs", TEST_MAX_LINES + 1);
+    checkout.write_lines("legacy/map_engine/tests/cases.rs", TEST_MAX_LINES + 1);
     checkout.write(
         ".coding-standards-allowlist.yaml",
-        "- path: apps/website/map-engine/tests/cases.rs\n",
+        "- path: legacy/map_engine/tests/cases.rs\n",
     );
     assert_eq!(violations(&checkout).len(), 2);
 }

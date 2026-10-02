@@ -39,7 +39,7 @@ otherwise. A missing S15 binary is a failure, never a skipped gate.
 
 - Depends on: the world export pipeline's `binary_emit`, `forest_contours`, `polygon_geometry` and
   `vegetation_density` (`tools/developer_tools/src/world_export_pipeline/`);
-  `website-map-engine`'s chunk parsers (`streaming::loaders::chunk`, `chunk_bin`), prefab maps
+  `map_engine`'s chunk parsers (`streaming::loaders::chunk`, `chunk_bin`), prefab maps
   (`world::environment::buildings::prefab`) and container constants (`io::containers::header`,
   `io::pod::instance`); the fixtures and schemas under `contracts/`.
 - Used by: `cargo xtask schema map-object-golden`, through

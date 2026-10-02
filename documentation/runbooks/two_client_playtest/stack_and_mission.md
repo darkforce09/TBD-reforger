@@ -20,7 +20,7 @@ before the session; it takes about 30 minutes.
   ([Known limitations](/documentation/runbooks/two_client_playtest/known_limitations.md)).
 - A container runtime for Postgres and the Rust toolchain
   ([local development](/documentation/runbooks/local_development.md)).
-- `apps/website/api_v2/.env`, copied from `.env.example`.
+- `apps/api/.env`, copied from `.env.example`.
 - Two Arma Reforger clients on the same game version as the server, each able to load
   `tbd-framework`.
 
@@ -187,7 +187,7 @@ curl -s -w '\n%{http_code}\n' http://127.0.0.1:8080/healthz
 ```
 
 Expected: `{"status":"ok"}` and `200` once the database answers and the migrations are applied
-(`apps/website/api_v2/src/core/observability/health_probe.rs`); `unavailable` comes with `503`. Together with step 14's `200`, the
+(`apps/api/src/core/observability/health_probe.rs`); `unavailable` comes with `503`. Together with step 14's `200`, the
 platform is ready to deploy the mission.
 
 ## Troubleshooting
@@ -196,7 +196,7 @@ platform is ready to deploy the mission.
 |---|---|---|
 | `WORLD BOOT: FAIL` with a `=MISSING` roll-call entry | a component class on `TBD_GameMode.et` did not resolve | read `WORLD (E): Unknown class` in the printed log; fix before the session |
 | `WORLD BOOT: ENV FAIL — …` | no host bridge, no server binary or no dev profile | run on the host; install the server at the path above |
-| `/healthz` answers non-200 or the connection is refused | the API is down; it refuses to boot without `DATABASE_URL` and `JWT_SECRET` | read the `mk rust-api` terminal; check `apps/website/api_v2/.env` |
+| `/healthz` answers non-200 or the connection is refused | the API is down; it refuses to boot without `DATABASE_URL` and `JWT_SECRET` | read the `mk rust-api` terminal; check `apps/api/.env` |
 | the artifact has no `loadout.gear` | the Arsenal edits were not saved into the submitted version | "Save Version", then submit again (step 11) |
 | the event binding answers `server_id does not name a known server` | `SID` is not a server row | take the id from `/admin/server` |
 
@@ -206,7 +206,7 @@ platform is ready to deploy the mission.
   the next runbook: boot this mission's bytes headless.
 - [Local development](/documentation/runbooks/local_development.md) — the API and app stack in
   full.
-- [Arsenal loadout editor](/documentation/website/frontend/apps/editor/arsenal/arsenal_loadout_editor.md)
+- [Arsenal loadout editor](/documentation/apps/frontend/apps/editor/arsenal/arsenal_loadout_editor.md)
   — the Arsenal's fields and rules.
 - [Machine credentials and mission deployment](/documentation/runbooks/game_server_staging/machine_credentials_and_mission_deployment.md)
   — the same credential, event binding and deployment steps against the staging server.

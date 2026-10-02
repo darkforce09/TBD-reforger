@@ -27,13 +27,13 @@ soft-pedal of hollow pins.
 
 | measurement | value | how |
 |---|---|---|
-| HEAD frontend `--list` | **996** | `cargo test -p website-frontend -- --list`, private dir |
+| HEAD frontend `--list` | **996** | `cargo test -p frontend -- --list`, private dir |
 | HEAD frontend run | **996 passed / 0 failed** | same private dir; `--list` == run |
 | base (`d3b8a468`) frontend `--list` | **992** | isolated worktree + private dir |
 | Net frontend delta | **+4** | four new named frontend pins |
-| HEAD `website-api --lib` `--list` | **268** | private dir |
-| HEAD `website-api --lib` run | **268 passed / 0 failed** | `--list` == run |
-| base `website-api --lib` `--list` | **267** | +1 = `t763_compiled_clean_mission_response_carries_diagnostics_count_zero` |
+| HEAD `api --lib` `--list` | **268** | private dir |
+| HEAD `api --lib` run | **268 passed / 0 failed** | `--list` == run |
+| base `api --lib` `--list` | **267** | +1 = `t763_compiled_clean_mission_response_carries_diagnostics_count_zero` |
 | `map-engine-core --all-features` | **642 == 642** (base == HEAD) | prose-only store.rs change; no new pin |
 
 **New frontend pins this wave**
@@ -269,8 +269,8 @@ byte-identical except this append. No fix / commit / ticket filing. No wave clos
 |---|---|
 | frontend `--list` | **997** |
 | frontend run | **997 passed / 0 failed** (`--list` == run) |
-| `website-api --lib` `--list` | **268** |
-| `website-api --lib` run | **268 passed / 0 failed** (`--list` == run) |
+| `api --lib` `--list` | **268** |
+| `api --lib` run | **268 passed / 0 failed** (`--list` == run) |
 
 Net vs original wave-136 verify (996 frontend): **+1** = F1 lasting pin
 `attributes::tests::attrs_update_slot_noops_when_all_none_or_id_missing`.
@@ -286,7 +286,7 @@ Net vs original wave-136 verify (996 frontend): **+1** = F1 lasting pin
 **RED** — `attributes::tests::attrs_update_slot_noops_when_all_none_or_id_missing`:
 
 ```
-thread 'attributes::tests::attrs_update_slot_noops_when_all_none_or_id_missing' (2171541) panicked at apps/website/frontend/src/attributes.rs:1290:13:
+thread 'attributes::tests::attrs_update_slot_noops_when_all_none_or_id_missing' (2171541) panicked at apps/frontend/src/attributes.rs:1290:13:
 T-745: all-None guard must check `role.is_none()` before `let did`; prelude was:
 
 
@@ -295,7 +295,7 @@ test attributes::tests::attrs_update_slot_noops_when_all_none_or_id_missing ... 
 test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 996 filtered out; finished in 0.30s
 ```
 
-**GREEN** after `git checkout -- apps/website/frontend/src/editor_ops.rs`:
+**GREEN** after `git checkout -- apps/frontend/src/editor_ops.rs`:
 `test attributes::tests::attrs_update_slot_noops_when_all_none_or_id_missing ... ok`
 
 ---
@@ -341,7 +341,7 @@ clean /compiled count pin requires the route to call the helper; got:
 **RED:**
 
 ```
-thread 'validation_panel::t761_compile_findings_do_not_survive_mission_switch::clear_compile_findings_is_the_hydrate_reset_seam' (2172895) panicked at apps/website/frontend/src/validation_panel.rs:2235:9:
+thread 'validation_panel::t761_compile_findings_do_not_survive_mission_switch::clear_compile_findings_is_the_hydrate_reset_seam' (2172895) panicked at apps/frontend/src/validation_panel.rs:2235:9:
 T-761: clear_compile_findings must empty via Vec::new() in the production body; got:
 
 
@@ -354,7 +354,7 @@ test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 996 filtered out
 **RED** (`live_code` scrubs the string literal):
 
 ```
-thread 'validation_panel::t761_compile_findings_do_not_survive_mission_switch::clear_compile_findings_is_the_hydrate_reset_seam' (2173263) panicked at apps/website/frontend/src/validation_panel.rs:2236:9:
+thread 'validation_panel::t761_compile_findings_do_not_survive_mission_switch::clear_compile_findings_is_the_hydrate_reset_seam' (2173263) panicked at apps/frontend/src/validation_panel.rs:2236:9:
 T-761: clear_compile_findings must empty via Vec::new() in the production body; got:
 
     let _ =                                       ;
@@ -378,7 +378,7 @@ test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 996 filtered out
 **RED:**
 
 ```
-thread 'eden_dock_right::tests::marker_attributes_selects_by_faction_id_and_id' (2178535) panicked at apps/website/frontend/src/eden_dock_right.rs:4417:9:
+thread 'eden_dock_right::tests::marker_attributes_selects_by_faction_id_and_id' (2178535) panicked at apps/frontend/src/eden_dock_right.rs:4417:9:
 markers_panel click must build addr from both faction_id and id
 test eden_dock_right::tests::marker_attributes_selects_by_faction_id_and_id ... FAILED
 test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 996 filtered out; finished in 0.00s
@@ -400,5 +400,5 @@ test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 996 filtered out
 
 **findings CLOSED:** **4 / 4**  
 **safe to build the next wave on?** **yes**  
-**list/run totals:** frontend **997 == 997**; `website-api --lib` **268 == 268**
+**list/run totals:** frontend **997 == 997**; `api --lib` **268 == 268**
 

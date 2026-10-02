@@ -4,7 +4,7 @@ use std::{collections::BTreeSet, path::Path};
 
 /// Every [`documentation`] item that names locations a checkout must hold, by name, with every
 /// location it names: one for a path constant or a re-export, each element for a list.
-const REQUIRED_DOCUMENTATION_LOCATIONS: [(&str, &[&str]); 18] = [
+const REQUIRED_DOCUMENTATION_LOCATIONS: [(&str, &[&str]); 17] = [
     ("FACTORY_PACK_WAVE", &[documentation::FACTORY_PACK_WAVE]),
     ("HOME_SERVER_RUNBOOK", &[documentation::HOME_SERVER_RUNBOOK]),
     (
@@ -32,7 +32,6 @@ const REQUIRED_DOCUMENTATION_LOCATIONS: [(&str, &[&str]); 18] = [
         "API_READINESS_REGISTER",
         &[documentation::API_READINESS_REGISTER],
     ),
-    ("CODE_TREES", documentation::CODE_TREES),
     ("DOCUMENTATION_ROOT", &[documentation::DOCUMENTATION_ROOT]),
     ("ARCHIVE_DIR", &[documentation::ARCHIVE_DIR]),
     (
@@ -293,13 +292,15 @@ fn the_documentation_areas_sit_inside_the_documentation_root() {
     }
 }
 
-/// The code trees, the documentation root and the retired documentation root are distinct
-/// top-level folders: the documentation gates match them against the first path component.
+/// The documentation root and the retired documentation root are distinct top-level folders: the
+/// documentation gates match them against the first path component, and every other top-level
+/// folder is a code tree.
 #[test]
 fn the_documentation_gate_roots_are_distinct_top_level_folders() {
-    let mut roots: Vec<&str> = documentation::CODE_TREES.to_vec();
-    roots.push(documentation::DOCUMENTATION_ROOT);
-    roots.push(documentation::RETIRED_DOCS_ROOT);
+    let roots = [
+        documentation::DOCUMENTATION_ROOT,
+        documentation::RETIRED_DOCS_ROOT,
+    ];
     for root in &roots {
         assert!(
             !root.is_empty() && !root.contains('/'),

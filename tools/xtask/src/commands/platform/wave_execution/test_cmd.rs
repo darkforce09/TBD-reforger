@@ -2,7 +2,7 @@
 //!
 //! DEFECT: concurrent slice worktrees export the same shared cache
 //! (`CARGO_TARGET_DIR=$HOME/.cache/tbd-target` / `$MAIN_ROOT/target`). `cargo test` BUILDS
-//! AND THEN RUNS a binary, so one worktree can execute another's `website_frontend-<hash>` (one run
+//! AND THEN RUNS a binary, so one worktree can execute another's `frontend-<hash>` (one run
 //! live: arsenal.rs:4733 failure that did not exist in that tree; line tracked a sibling). The
 //! per-slice gate and the wave-gate `test frontend` step already use private dirs; ad-hoc agent
 //! invocations did not, and the brief only ADVISED a private dir — nothing enforced it.
@@ -63,7 +63,7 @@ pub fn cmd_test(ctx: &Ctx, argv: &[String]) -> u8 {
         wprintln!("test: REFUSING — --slice T-nnn is required.");
         wprintln!("        Bare `cargo test` against the shared CARGO_TARGET_DIR is the");
         wprintln!("        cross-worktree false-binary class. Sanctioned path:");
-        wprintln!("          cargo xtask platform wave test --slice <id> -p website-frontend");
+        wprintln!("          cargo xtask platform wave test --slice <id> -p frontend");
         return 2;
     }
     // `case "$tid" in [Tt]-[0-9]*)`
@@ -87,9 +87,7 @@ pub fn cmd_test(ctx: &Ctx, argv: &[String]) -> u8 {
             "        An unbounded invocation would inflate the private dir toward a full workspace"
         );
         wprintln!("        build. Keep ad-hoc dirs lean (frontend-only measured ~2.7 GB).");
-        wprintln!(
-            "        Example: cargo xtask platform wave test --slice {tid} -p website-frontend"
-        );
+        wprintln!("        Example: cargo xtask platform wave test --slice {tid} -p frontend");
         return 2;
     }
 
@@ -103,9 +101,7 @@ pub fn cmd_test(ctx: &Ctx, argv: &[String]) -> u8 {
     });
     if !has_pkg {
         wprintln!("test: REFUSING — cargo test args must include -p / --package <crate>.");
-        wprintln!(
-            "        Example: cargo xtask platform wave test --slice {tid} -p website-frontend"
-        );
+        wprintln!("        Example: cargo xtask platform wave test --slice {tid} -p frontend");
         return 2;
     }
 

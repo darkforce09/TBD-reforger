@@ -29,7 +29,7 @@ resolved and the proof of what resolved it.
 
 ## Code
 
-- [Mission Creator](/apps/website/frontend/src/v2/apps/editor/) — KB-001: the selection and paste
+- [Mission Creator](/apps/frontend/src/v2/apps/editor/) — KB-001: the selection and paste
   paths that replaced the code the defect was seen in.
 - [Browser gate harness](/tools/developer_tools/src/browser_testing/) — KB-002: the Chromium
   build and font cache it launches with.
@@ -51,5 +51,5 @@ resolved and the proof of what resolved it.
 
 - [Editor gates](/documentation/runbooks/editor_gates.md) — the gate's wedge modes and debug
   recipe.
-- [Performance at scale](/documentation/website/frontend/apps/editor/feature_inventory/performance_at_scale.md)
+- [Performance at scale](/documentation/apps/frontend/apps/editor/feature_inventory/performance_at_scale.md)
   — what the Mission Creator does at large slot counts.

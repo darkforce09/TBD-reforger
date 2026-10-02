@@ -29,9 +29,9 @@ check that did not run, never as a pass.
 
 | Verb | Reads | Fails when | Exit codes |
 |---|---|---|---|
-| `engine-layers` | `apps/website/graphics-engine` (sources and `Cargo.toml`), `apps/website/map-engine/src`, `apps/website/frontend` (sources and `Cargo.toml`) | a rule below is broken, a matcher self-probe answers wrongly, or a walk finds no files | 0 pass, 1 breach, 2 a root or manifest missing |
-| `route-tags` | `apps/website/api_v2/src`: the domain `routes.rs` tables, `core/http_router.rs`, every `@route` tag | a tag names no registered route, a route has no tag, or the parse, mount or sentinel guards fail | 0 pass, 1 mismatch, 2 source unreadable |
-| `crate-tiers`, `crate-anatomy`, `strangler`, `frontend-layering`, `tailwind-sources` | the root `Cargo.toml` and every member manifest; the judged crates' sources; the frontend's sources; `apps/website/frontend/style/aegis.css` | a law below is broken | 0 pass, 1 finding, 2 an input missing or unreadable |
+| `engine-layers` | `legacy/graphics_engine` (sources and `Cargo.toml`), `legacy/map_engine/src`, `apps/frontend` (sources and `Cargo.toml`) | a rule below is broken, a matcher self-probe answers wrongly, or a walk finds no files | 0 pass, 1 breach, 2 a root or manifest missing |
+| `route-tags` | `apps/api/src`: the domain `routes.rs` tables, `core/http_router.rs`, every `@route` tag | a tag names no registered route, a route has no tag, or the parse, mount or sentinel guards fail | 0 pass, 1 mismatch, 2 source unreadable |
+| `crate-tiers`, `crate-anatomy`, `strangler`, `frontend-layering`, `tailwind-sources` | the root `Cargo.toml` and every member manifest; the judged crates' sources; the frontend's sources; `apps/frontend/style/aegis.css` | a law below is broken | 0 pass, 1 finding, 2 an input missing or unreadable |
 | `editor-orbat-coherency` | named editor, store and symbology files; `cargo test` runs | a ban matches, a pin is absent, or a test pin fails or runs no test | 0 pass, 1 every failure |
 
 ### Engine layers
@@ -40,7 +40,7 @@ check that did not run, never as a pass.
 `verification_core::repository_laws::engine_layers::check_engine_layers` line for line and exits
 with its code. The eight rules, their matchers, pins and report text live in
 [`tools/verification_core/src/repository_laws/engine_layers/`](/tools/verification_core/src/repository_laws/engine_layers/README.md),
-which the `engineering_laws` test binary of `website-api` reads as well, so the gate and that
+which the `engineering_laws` test binary of `api` reads as well, so the gate and that
 binary judge the tree the same way.
 
 ### Workspace laws
@@ -56,19 +56,19 @@ in order as a step of `ci-local`.
 
 Direction A requires every `/// @route METHOD PATH` tag to name a route that a domain table
 registers on that method for that handler; direction B requires every registered route to carry
-that tag. The route side is the union of the `apps/website/api_v2/src/<domain>/routes.rs` tables
+that tag. The route side is the union of the `apps/api/src/<domain>/routes.rs` tables
 that `api_v1_routes` merges under `/api/v1`; the `route_tags/` README describes the guards.
 
 ### ORBAT coherency
 
 Three bans: `ensure_default_squad` on the placement path (the Mission Creator's arming and
-context files in `apps/website/frontend/src/v2/apps/editor/` and the map engine's
+context files in `apps/frontend/src/v2/apps/editor/` and the map engine's
 `data/store/operations/` and `editing/hosted_commands/`), `loadout: String::new()` in the slot
 template derive, and the strings Standardization, IFAK or Grenade Complement in the ORBAT manager
 modal and the editor chrome. Three pins require the BLUFOR, OPFOR and INDFOR side colours in
-`apps/website/map-engine/src/overlay/symbology/roles/classify.rs`. Then 25 `cargo test` pins run
-named selectors: `website-map-engine --lib` with the `scenario store` or the `render` features,
-and `website-frontend` with none; each must exit 0 and pass at least one test. The gate stops at
+`legacy/map_engine/src/overlay/symbology/roles/classify.rs`. Then 25 `cargo test` pins run
+named selectors: `map_engine --lib` with the `scenario store` or the `render` features,
+and `frontend` with none; each must exit 0 and pass at least one test. The gate stops at
 the first failure.
 
 ## Public surface

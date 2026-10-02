@@ -174,9 +174,9 @@ missing: <dependency>
 
 ## Related documentation
 
-- [Acceptance register](/documentation/website/api_v2/verification_evidence/requirements.json)
+- [Acceptance register](/documentation/apps/api/verification_evidence/requirements.json)
   — every requirement, its implementation paths and the checks that prove it.
-- [Property-test acceptance evidence](/documentation/website/api_v2/verification_evidence/property_test_evidence.md)
+- [Property-test acceptance evidence](/documentation/apps/api/verification_evidence/property_test_evidence.md)
   — why generated cases and test functions are counted apart.
-- [API v2 completion and executable verification](/documentation/website/api_v2/verification_evidence/completion_plan.md)
+- [API v2 completion and executable verification](/documentation/apps/api/verification_evidence/completion_plan.md)
   — the acceptance contract this command enforces.

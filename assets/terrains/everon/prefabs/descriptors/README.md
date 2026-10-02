@@ -18,7 +18,7 @@ assets/terrains/everon/prefabs/descriptors/
   `assets/terrains/everon/objects/prefabs.json.gz`, named by the prefab's index in it (the
   `prefabId` of every chunk row). Plain git blobs.
 - Schema: `contracts/definitions/prefab-descriptor.schema.json`; the reader is `PrefabDescriptor`
-  in `apps/website/map-engine/src/spatial/los/world/descriptor/model.rs`. A file holds
+  in `legacy/map_engine/src/spatial/los/world/descriptor/model.rs`. A file holds
   `schemaVersion`, `prefabId`, `slug`, `resourceName` and `kind` (`building`, `prop`, `rock`,
   `tree`, `vehicle` or `water`); `blocks`, whether anything in the prefab collides, with a
   `reason` when it does not (301 prefabs); `canopy`, whether it is a tree with foliage triangles;
@@ -35,7 +35,7 @@ assets/terrains/everon/prefabs/descriptors/
   `tools/developer_tools/src/blueprint/` (`bvh/prefab_catalog/` and `archive_emission/`).
 - Consumers:
   - the map engine's occluder loader
-    (`apps/website/map-engine/src/streaming/loaders/occluder_loader.rs`), which fetches
+    (`legacy/map_engine/src/streaming/loaders/occluder_loader.rs`), which fetches
     `/map-assets/everon/prefabs/descriptors/<pid>.json` for the blocking prefabs that resident
     chunks place, after booting from the building archive;
   - `cargo xtask map blueprint-from-voxels archive`, which folds every descriptor into
@@ -56,5 +56,5 @@ assets/terrains/everon/prefabs/descriptors/
 
 ## Related documentation
 
-- [Prefab occluder descriptors](/apps/website/map-engine/src/spatial/los/world/descriptor/README.md)
+- [Prefab occluder descriptors](/legacy/map_engine/src/spatial/los/world/descriptor/README.md)
   — the descriptor model, the manifest lookups and the archive rows.

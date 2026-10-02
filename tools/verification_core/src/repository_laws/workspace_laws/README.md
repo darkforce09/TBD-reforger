@@ -42,7 +42,7 @@ verdict line `<LAW>: PASS`, `<LAW>: FAIL (<n> finding(s))` (exit 1) or `<LAW>: F
 | Tailwind sources | `tailwind_sources::check_tailwind_sources(root, stylesheet)` | every member with a `leptos` dependency has an `@source` glob, resolved from the stylesheet's folder, ending in `/**/*.rs` over its `src` folder or an ancestor |
 
 The category matrix (`crate_layout::category_edge_allowed`): foundation → foundation; contracts →
-foundation, contracts; mission → foundation, mission, `crates/geometry`; ballistics → foundation,
+foundation, contracts; mission → foundation, mission, the `geometry` crate; ballistics → foundation,
 ballistics; graphics → foundation, graphics; the other engine categories → foundation, contracts,
 engine; map rendering and paper doll → foundation, contracts, mission, ballistics, engine, map
 rendering, paper doll; mission editing → foundation, mission, ballistics, engine, mission editing;
@@ -51,7 +51,7 @@ tools → foundation, contracts, mission, ballistics, engine crates whose `targe
 tools, never a wasm-only crate, with the staging fixtures tool (tools/staging/staging_fixtures) also reaching api.
 
 The frontend layer table is the caller's: xtask passes the table for
-`apps/website/frontend` (`src/v2/core` foundation, `src/v2/pages` pages, `src/v2/apps`
+`apps/frontend` (`src/v2/core` foundation, `src/v2/pages` pages, `src/v2/apps`
 workspaces, the entry point, route table, platform frame and crate-level tests the shell). Module
 paths are read from `crate::` and `super::` paths after comments and string literals are blanked,
 braced `use` groups included.

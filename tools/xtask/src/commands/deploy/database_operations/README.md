@@ -25,7 +25,7 @@ running, and `require_pg_tool` a tool the image lacks, both naming `cargo xtask 
 
 `is_safe_scratch_database_name` admits `rust_it`, `tbd_gate*`, `*_cold`, `*_it` and `*_probe`, and
 never `tbd_reforger`, the same list as `is_safe_test_database_name` in
-`apps/website/api_v2/tests/common/database.rs`. `refuse_unsafe_restore_target` passes a plain ASCII
+`apps/api/tests/common/database.rs`. `refuse_unsafe_restore_target` passes a plain ASCII
 name on that list, or any name when the confirmation equals it, and otherwise prints the refusal
 and exits 1.
 

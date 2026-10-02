@@ -35,7 +35,7 @@ test doc::store::tests::move_slot_bidirectional ... ok
 ### F3 / F-L6 — ORBAT tree + SL badge (FE)
 
 ```text
-$ cargo test -p website-frontend
+$ cargo test -p frontend
 test outliner::tests::orbat_includes_two_squads_after_place_shaped_rows ... ok
 test outliner::tests::orbat_sl_badge_from_leader_slot_id ... ok
 test result: ok. 79 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
@@ -54,7 +54,7 @@ test squad_links::tests::squad_link_segment_count ... ok
 ### F5 — no FE membership rewrite
 
 ```text
-$ rg -n 'slotIds' apps/website/frontend/src/editor_ops.rs
+$ rg -n 'slotIds' apps/frontend/src/editor_ops.rs
 708:                slot_ids: str_array(o.get("slotIds")),
 941:/// (F-L2 — no FE `slotIds` splice), then the shared dirty tail (orbat_nodes + squad links).
 ```
@@ -64,10 +64,10 @@ Only `squad_rows` **read** + doc comment — no splice/insert of membership.
 ### `make ci-local-leptos`
 
 ```text
-cargo fmt -p website-frontend --check          PASS
-cargo clippy -p website-frontend --target wasm32-unknown-unknown  PASS
+cargo fmt -p frontend --check          PASS
+cargo clippy -p frontend --target wasm32-unknown-unknown  PASS
   (pre-existing warnings only; no new errors)
-cargo test -p website-frontend                 PASS (79)
+cargo test -p frontend                 PASS (79)
 trunk build --release                          PASS
   (make recipe / ambient NO_COLOR=1 → trunk `--no-color` quirk;
    `env -u NO_COLOR -u FORCE_COLOR trunk build --release` ✅)

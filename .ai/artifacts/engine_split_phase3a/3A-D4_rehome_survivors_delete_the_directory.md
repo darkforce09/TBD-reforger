@@ -30,7 +30,7 @@ must never own a `window.confirm`.
 
 ## Naming — Law 4 applies, and "operations" is the word that is going away
 
-Pick homes under `apps/website/frontend/src/editor/state/`. Do **not** carry the name
+Pick homes under `apps/frontend/src/editor/state/`. Do **not** carry the name
 `operations` forward: after this brief nothing in the frontend performs document operations, so a
 module called that would misdescribe itself from the moment you land it.
 
@@ -59,7 +59,7 @@ visibility that no longer needs to be that wide — but never at the cost of a c
 
 ## Watch for
 
-- **`state/operations/` is `#![cfg(target_arch = "wasm32")]`** — `cargo test -p website-frontend`
+- **`state/operations/` is `#![cfg(target_arch = "wasm32")]`** — `cargo test -p frontend`
   is native and never compiles it. The wasm32 and fmt checks below are not optional.
 - Source-text pins `include_str!` these files. Repoint each at whatever the subject became.
   **Never weaken, skip, or delete a pin to make it pass.**
@@ -73,16 +73,16 @@ visibility that no longer needs to be that wide — but never at the cost of a c
 
 ## Done when
 
-`apps/website/frontend/src/editor/state/operations.rs` and
-`apps/website/frontend/src/editor/state/operations/` **do not exist**, every consumer reaches the
+`apps/frontend/src/editor/state/operations.rs` and
+`apps/frontend/src/editor/state/operations/` **do not exist**, every consumer reaches the
 relocated modules, and:
 
 ```
 CARGO_TARGET_DIR=target-container cargo xtask verify engine-layers
-CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p website-frontend
+CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p frontend
 CARGO_TARGET_DIR=target-container cargo fmt --all -- --check
-CARGO_TARGET_DIR=target-container cargo test -p website-map-engine --all-features
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
+CARGO_TARGET_DIR=target-container cargo test -p map_engine --all-features
+CARGO_TARGET_DIR=target-container cargo test -p frontend
 ```
 
 Baseline: `verify engine-layers` PASS on all 8 rules; wasm32 clean at **8 warnings** or fewer;

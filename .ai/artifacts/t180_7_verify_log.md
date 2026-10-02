@@ -6,8 +6,8 @@
 
 ## Shipped
 
-- New [`apps/website/frontend/src/orbat_manager.rs`](../../apps/website/frontend/src/orbat_manager.rs) — Stitch near-fullscreen shell (`w-[min(1100px,95vw)]` + `max-w-6xl`); side tabs; template shell; live stats; search; squad/slot tree; inspector; OPEN ARSENAL → `open_attributes`
-- Thin re-export from [`eden_chrome.rs`](../../apps/website/frontend/src/eden_chrome.rs)
+- New [`apps/frontend/src/orbat_manager.rs`](../../apps/frontend/src/orbat_manager.rs) — Stitch near-fullscreen shell (`w-[min(1100px,95vw)]` + `max-w-6xl`); side tabs; template shell; live stats; search; squad/slot tree; inspector; OPEN ARSENAL → `open_attributes`
+- Thin re-export from [`eden_chrome.rs`](../../apps/frontend/src/eden_chrome.rs)
 - [`format_slot_line`](../../crates/map-engine-core/src/slot_line.rs) in map-engine-core (always-on)
 - `editor_ops` mutators: `orbat_add_squad` / `orbat_add_slot` / `orbat_set_leader` / remove / rename / identity; `orbat_manager_snapshot`; `SquadRow.vehicle_ids`
 - Windowed `__outlinerStats.orbat` for virtual-outliner v5
@@ -37,7 +37,7 @@ test doc::place_orbat::tests::orbat_add_role_increases_squad_slot_ids ... ok
 ### G1 / G2 / G7 / G8 — FE unit
 
 ```text
-$ cargo test -p website-frontend
+$ cargo test -p frontend
 test orbat_manager::tests::g1_dialog_class_near_fullscreen ... ok
 test orbat_manager::tests::g2_set_leader_symbol_in_module_source ... ok
 test outliner::tests::orbat_manager_dialog_class_near_fullscreen ... ok
@@ -49,7 +49,7 @@ test result: ok. 84 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 ### G2 — `set_leader` wiring
 
 ```text
-$ rg -n 'set_leader|orbat_set_leader' apps/website/frontend/src/orbat_manager.rs apps/website/frontend/src/editor_ops.rs
+$ rg -n 'set_leader|orbat_set_leader' apps/frontend/src/orbat_manager.rs apps/frontend/src/editor_ops.rs
 orbat_manager.rs:668: orbat_set_leader(...)
 editor_ops.rs:1120: core.set_leader(&squad_id, &slot_id);
 ```
@@ -57,14 +57,14 @@ editor_ops.rs:1120: core.set_leader(&squad_id, &slot_id);
 ### G4 — no kit-complement UI strings
 
 ```text
-$ rg -ni 'standardization|IFAK|Grenade Complement' apps/website/frontend/src/orbat_manager.rs apps/website/frontend/src/eden_chrome.rs && exit 1 || true
+$ rg -ni 'standardization|IFAK|Grenade Complement' apps/frontend/src/orbat_manager.rs apps/frontend/src/eden_chrome.rs && exit 1 || true
 # (no matches)
 ```
 
 ### G9 — not max-w-xl-only
 
 ```text
-$ rg -n 'max-w-xl' apps/website/frontend/src/orbat_manager.rs apps/website/frontend/src/eden_chrome.rs | head
+$ rg -n 'max-w-xl' apps/frontend/src/orbat_manager.rs apps/frontend/src/eden_chrome.rs | head
 orbat_manager.rs:26: ... comment (replaces T-177 max-w-xl)
 orbat_manager.rs:884: assert!(!DIALOG_CLASS.contains("max-w-xl"));
 # Dialog class uses w-[min(1100px,95vw)] + max-w-6xl
@@ -73,9 +73,9 @@ orbat_manager.rs:884: assert!(!DIALOG_CLASS.contains("max-w-xl"));
 ### `make ci-local-leptos` (fmt + clippy wasm32 + test + trunk)
 
 ```text
-cargo fmt -p website-frontend --check          PASS
-cargo clippy -p website-frontend --target wasm32-unknown-unknown  PASS
-cargo test -p website-frontend                 PASS (84)
+cargo fmt -p frontend --check          PASS
+cargo clippy -p frontend --target wasm32-unknown-unknown  PASS
+cargo test -p frontend                 PASS (84)
 trunk build --release                          PASS
   (ambient NO_COLOR=1 → trunk `--no-color` quirk;
    `env -u NO_COLOR -u FORCE_COLOR trunk build --release` ✅)

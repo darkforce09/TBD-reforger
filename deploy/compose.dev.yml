@@ -1,0 +1,32 @@
+# Local development stack. Works with either `docker compose` or `podman compose`.
+# Brings up Postgres for the Rust API; the API runs the migrations on boot.
+#
+# The project name is set here rather than taken from the folder that holds this file: `api`
+# is the project the development database's volume (`api_tbd_pgdata`) and container
+# (`tbd_reforger_db`) belong to, so they stay the same wherever the file sits; another project
+# name would start from an empty volume and collide with the container's fixed name.
+name: api
+
+services:
+  db:
+    image: docker.io/library/postgres:18-alpine
+    container_name: tbd_reforger_db
+    environment:
+      POSTGRES_USER: tbd
+      POSTGRES_PASSWORD: tbd
+      POSTGRES_DB: tbd_reforger
+    ports:
+      # Host 5434 to avoid colliding with other local Postgres instances on 5432/5433.
+      - "5434:5432"
+    volumes:
+      # Postgres 18+ images store data in a major-version subdir; the mount must be
+      # at /var/lib/postgresql (not .../data). See docker-library/postgres#1259.
+      - tbd_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tbd -d tbd_reforger"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  tbd_pgdata:

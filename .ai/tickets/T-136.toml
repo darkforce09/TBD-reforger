@@ -27,7 +27,7 @@ approach = [
     "Perturbation: unsorted timeline; the ordering test goes red; restore, touch, green.",
 ]
 verify = [
-    "cargo test -p website-api replay",
+    "cargo test -p api replay",
     "cargo xtask mk ci-local-leptos",
     "cargo xtask mk leptos-gates",
     "cargo xtask platform wave gate --slice T-136",
@@ -38,9 +38,9 @@ acceptance = [
 ]
 created_at = "2026-09-05T03:30:00Z"
 owns = [
-    "apps/website/frontend/src/pages/public/deployments.rs",
-    "apps/website/frontend/src/pages/public/aar_replay.rs",
-    "apps/website/frontend/src/pages/public/mod.rs",
+    "apps/frontend/src/pages/public/deployments.rs",
+    "apps/frontend/src/pages/public/aar_replay.rs",
+    "apps/frontend/src/pages/public/mod.rs",
     "apps/website/api/src/handlers/telemetry/replay.rs",
     "apps/website/api/src/handlers/telemetry/mod.rs",
 ]

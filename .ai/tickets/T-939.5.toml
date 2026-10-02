@@ -40,10 +40,10 @@ acceptance = [
 ]
 created_at = "2026-09-05T02:33:18Z"
 owns = [
-    "apps/website/frontend/src/editor/arsenal/asset_catalog.rs",
-    "apps/website/frontend/src/editor/arsenal/squad_templates.rs",
-    "apps/website/frontend/src/editor/arsenal/mod.rs",
-    "apps/website/frontend/src/editor/panels/dock_right.rs",
+    "apps/frontend/src/editor/arsenal/asset_catalog.rs",
+    "apps/frontend/src/editor/arsenal/squad_templates.rs",
+    "apps/frontend/src/editor/arsenal/mod.rs",
+    "apps/frontend/src/editor/panels/dock_right.rs",
 ]
 
 [scope]

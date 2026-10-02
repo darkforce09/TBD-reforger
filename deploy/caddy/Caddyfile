@@ -1,0 +1,54 @@
+# The home server's web site: the built Leptos app, with the API's paths proxied to the API.
+#
+# Served by the `caddy` service of deploy/compose.staging.yml, which mounts this
+# folder read-only at /etc/tbd-caddy and apps/frontend read-only at /srv/tbd-frontend, so
+# the paths below are the container's. `cargo xtask deploy website` rsyncs this file, starts the
+# service and runs `caddy reload` on it, so an edit here reaches the host with the next deploy.
+#
+# A Cloudflare Tunnel targets http://127.0.0.1:3080 (documentation/runbooks/website_deployment.md
+# Phase E).
+#
+# COOP/COEP match Trunk.toml / gate serve — required for Mission Creator wasm
+# SharedArrayBuffer (crossOriginIsolated).
+#
+# Forwarded client addresses: cloudflared reaches Caddy from 127.0.0.1 and sends the visitor's
+# address in X-Forwarded-For. Caddy keeps an incoming X-Forwarded-For only from a trusted proxy and
+# appends the peer it saw, so the API (TRUSTED_PROXIES=127.0.0.1/32) takes the rightmost untrusted
+# hop, the visitor, as the rate-limit key. Every other peer, a LAN client included, has its
+# X-Forwarded-For replaced by its own address and keeps a bucket of its own. Only the tunnel's
+# loopback peer is trusted: with a wider range, a LAN client's own X-Forwarded-For text would
+# travel upstream as though a proxy had written it.
+
+{
+	servers {
+		trusted_proxies static 127.0.0.1/32
+	}
+}
+
+:3080 {
+	# Mission Creator wasm / SharedArrayBuffer parity with `trunk serve`
+	header Cross-Origin-Opener-Policy same-origin
+	header Cross-Origin-Embedder-Policy credentialless
+
+	# The offline service worker loader revalidates on every update check, so a new build's
+	# worker is found on the next visit.
+	header /service_worker.js Cache-Control no-cache
+
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8080
+	}
+	handle /uploads/* {
+		reverse_proxy 127.0.0.1:8080
+	}
+	handle /map-assets/* {
+		reverse_proxy 127.0.0.1:8080
+	}
+	handle /healthz {
+		reverse_proxy 127.0.0.1:8080
+	}
+	handle {
+		root * /srv/tbd-frontend/dist
+		try_files {path} /index.html
+		file_server
+	}
+}

@@ -23,7 +23,7 @@ fn staging_settings_read_the_host_the_fleet_and_the_procedure_keys() {
     assert_eq!(settings.fleet_root(), "/home/deploy/tbd/fleet");
     assert_eq!(
         settings.api_env_file(),
-        "/home/deploy/tbd/repo/apps/website/api_v2/.env"
+        "/home/deploy/tbd/repo/apps/api/.env"
     );
     assert_eq!(settings.api_origin, "http://127.0.0.1:8080");
     assert_eq!(settings.api_unit, "tbd-website-api.service");
@@ -38,7 +38,7 @@ fn staging_settings_read_the_host_the_fleet_and_the_procedure_keys() {
     published.public_address = Some("203.0.113.7".into());
     assert_eq!(published.server_address().unwrap(), "203.0.113.7");
     assert_eq!(settings.game_server_units()[4], "tbd-reforger@5.service");
-    assert_eq!(settings.host_agent_units()[0], "fleet-host-agent@1.service");
+    assert_eq!(settings.host_agent_units()[0], "fleet_host_agent@1.service");
     assert_eq!(
         settings.relay_unit(),
         Some((5, "acknowledgement-dropping-relay@5.service".to_string()))

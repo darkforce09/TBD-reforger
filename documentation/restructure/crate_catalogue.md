@@ -11,10 +11,10 @@ Abbreviations in code spans:
 
 | Prefix | Path |
 |---|---|
-| `me` | `apps/website/map-engine/src/` |
-| `ge` | `apps/website/graphics-engine/src/` |
-| `api` | `apps/website/api_v2/src/` |
-| `fe` | `apps/website/frontend/src/v2/` |
+| `me` | `legacy/map_engine/src/` |
+| `ge` | `legacy/graphics_engine/src/` |
+| `api` | `apps/api/src/` |
+| `fe` | `apps/frontend/src/v2/` |
 | `xt` | `tools/xtask/src/` |
 | `dt` | `tools/developer_tools/src/` |
 | `te` | `tools/ticket_engine/src/` |
@@ -24,6 +24,15 @@ A bare module path such as `world/scene.rs` is relative to the map engine's sour
 wasm-only crate. Tiers follow tier = 1 + the highest dependency tier, and the crate-tiers law
 checks them.
 
+## Built so far
+
+| Stage | Crate | Folder | Tier |
+|---|---|---|---|
+| S2 | http_url_guard | `crates/foundation/http_url_guard/` | 0 |
+| S2 | offline_cache_policy | `crates/contracts/offline_cache_policy/` | 0 |
+
+Every other crate in this catalogue is still planned; its From column names the code it will take.
+
 ## crates/foundation, crates/contracts (T0)
 
 | Crate | From | Fixes |
@@ -32,11 +41,11 @@ checks them.
 | time_source | the 5 clocks (`me diagnostics/timing/gpu.rs:11`, `editing/tools/viewshed_scheduler/host.rs:89`, `streaming/host/viewport.rs:80`, `world_loader/ingest.rs:59,92`, `data/store/crdt/undo_groups/clocks.rs`), `dt timestamp_formatting.rs`, `te timestamp.rs` | One `Clock` trait (system/browser/fixed) and UTC formatting |
 | deterministic_random | SplitMix64 (`store/operations/placement/geometry.rs`, `ballistics/agreement_cases.rs:81`), the LCG (`rows/slot_edits.rs:31`) | One generator |
 | content_digest | `dt content_digest.rs`, 11 ad-hoc SHA helpers, hand-rolled `ballistics/calibration/sha256_digest.rs:32` | sha2 0.11 only |
-| http_url_guard | `fe core/auth/url_guard.rs:66-76`, `api core/text/http_url_guard.rs:62-79`, `apps/website/shared/is_http_url_cases.rs` | One predicate; a `cases` module replaces the 10 `include!` sites |
+| http_url_guard | built in S2: the API's predicate became `http_url.rs`, the frontend's copy was deleted, and the case table of the dissolved website shared folder became `crates/foundation/http_url_guard/src/cases.rs` | One predicate; the `cases` module (behind the `test_fixtures` feature) replaces the 10 `include!` sites |
 | browser_platform (W) | `me diagnostics/platform/console.rs`, `streaming/loaders/fetch.rs`, DEM `gloo_net` use | Breaks the console-macro cycles |
 | fleet_wire_contract | `api server_infrastructure/models/fleet_command.rs:40-262`, agent `ledger_client/ledger_messages.rs:13-56`, both `secret_files.rs` | 3 of the 4 copies merged; the frontend DTO stays separate (D7) |
 | contract_schema_types | the 266 typify files in `api/*/models/generated` and `missions/contract/generated` | Generated (exempt from the ID rule); codegen emits the anatomy files |
-| offline_cache_policy | service-worker lib: `cache_names`, `network_fallback`, `offline_pack`, `request_classification` | `range_slicing` stays in the bin |
+| offline_cache_policy | built in S2 from the service worker's library: `cache_names`, `network_fallback`, `offline_pack`, `request_classification`, plus a new `TerrainId` | `range_slicing` stays in the worker, now a binary-only crate |
 
 ## crates/mission, crates/ballistics
 

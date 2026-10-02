@@ -1,6 +1,6 @@
 use super::*;
 
-const PATH: &str = "/home/deploy/checkout/tools/xtask/deploy/deploy.env";
+const PATH: &str = "/home/deploy/checkout/deploy/deploy.env";
 
 fn pairs(list: &[(&str, &str)]) -> Vec<(String, String)> {
     list.iter()
@@ -83,7 +83,7 @@ fn the_load_errors_name_the_file_and_the_example() {
         .expect_err("no file");
     assert_eq!(
         missing.to_string(),
-        "Missing /nonexistent/deploy.env — copy from tools/xtask/deploy/deploy.env.example"
+        "Missing /nonexistent/deploy.env — copy from deploy/deploy.env.example"
     );
     let absent = DeployEnvironment::load_if_present(Path::new("/nonexistent/deploy.env"))
         .expect("an absent file is allowed here");
@@ -162,7 +162,7 @@ fn the_deploy_host_is_required() {
 /// optional key empty, which would mask the process environment.
 #[test]
 fn the_committed_example_loads_and_masks_nothing() {
-    const EXAMPLE: &str = include_str!("../../../../deploy/deploy.env.example");
+    const EXAMPLE: &str = include_str!("../../../../../../deploy/deploy.env.example");
     let example = settings(Some(EXAMPLE), &[("TBD_SSH_PASS", "exported")]);
     let host = example.deploy_host().expect("the example names a host");
     assert!(host.user().is_some(), "the example names the deploy user");

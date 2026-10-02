@@ -34,7 +34,7 @@ below it; a missing `--cell` or an unreadable file is an error.
 
 ## Boundaries
 
-- Depends on: `website-map-engine`'s world occluder (`spatial::los::world`), BVH sidecars
+- Depends on: `map_engine`'s world occluder (`spatial::los::world`), BVH sidecars
   (`spatial::bvh::sidecar`), chunk parsers (`streaming::loaders`) and elevation sampling
   (`world::terrain::dem`); `crate::repository_layout::terrain_dir`.
 - Used by: `cargo xtask map world-los`, through `tools/xtask/src/commands/map/mod.rs`; the

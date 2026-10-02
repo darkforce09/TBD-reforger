@@ -98,7 +98,7 @@ pub(super) fn run_steps(steps: &[Step]) -> Result<u8> {
             return Ok(128u8.saturating_add(sig as u8));
         }
         let code = status.code().unwrap_or(1);
-        if code != 0 && !step.ignore_error {
+        if code != 0 {
             return Ok(code as u8);
         }
     }
@@ -154,21 +154,21 @@ pub(crate) fn wasm_ci() -> Vec<Step> {
             "fmt",
             "--check",
             "-p",
-            "website-map-engine",
+            "map_engine",
             "-p",
-            "website-graphics-engine",
+            "graphics_engine",
             "-p",
-            "website-offline-service-worker",
+            "offline_service_worker",
         ]),
         Step::new(&[
             "cargo",
             "clippy",
             "-p",
-            "website-map-engine",
+            "map_engine",
             "-p",
-            "website-graphics-engine",
+            "graphics_engine",
             "-p",
-            "website-offline-service-worker",
+            "offline_service_worker",
             "--all-targets",
             "--all-features",
             "--",
@@ -179,36 +179,24 @@ pub(crate) fn wasm_ci() -> Vec<Step> {
             "cargo",
             "clippy",
             "-p",
-            "website-map-engine",
+            "map_engine",
             "-p",
-            "website-graphics-engine",
+            "graphics_engine",
             "-p",
-            "website-offline-service-worker",
+            "offline_service_worker",
             "--target",
             "wasm32-unknown-unknown",
             "--",
             "-D",
             "warnings",
         ]),
+        Step::new(&["cargo", "test", "-p", "map_engine", "--all-features"]),
+        Step::new(&["cargo", "test", "-p", "graphics_engine", "--all-features"]),
         Step::new(&[
             "cargo",
             "test",
             "-p",
-            "website-map-engine",
-            "--all-features",
-        ]),
-        Step::new(&[
-            "cargo",
-            "test",
-            "-p",
-            "website-graphics-engine",
-            "--all-features",
-        ]),
-        Step::new(&[
-            "cargo",
-            "test",
-            "-p",
-            "website-offline-service-worker",
+            "offline_service_worker",
             "--all-features",
         ]),
     ]
@@ -314,90 +302,47 @@ pub(crate) fn ballistics_wasm_agreement() -> Vec<Step> {
 
 pub(crate) fn ci_local_leptos() -> Vec<Step> {
     vec![
-        Step::new(&["cargo", "fmt", "-p", "website-frontend", "--check"]),
+        Step::new(&["cargo", "fmt", "-p", "frontend", "--check"]),
         Step::new(&[
             "cargo",
             "clippy",
             "-p",
-            "website-frontend",
+            "frontend",
             "--target",
             "wasm32-unknown-unknown",
             "--all-targets",
         ]),
-        Step::new(&["cargo", "test", "-p", "website-frontend"]),
+        Step::new(&["cargo", "test", "-p", "frontend"]),
         Step::new(&["trunk", "build", "--release"]).cd(FE),
     ]
 }
 
-/// `rust-test-it` — `cargo xtask db test-it` owns the public target; this is `rust-ci`'s fifth step.
+/// The command `rust-ci`'s fifth step runs: the database lane's complete integration suite.
+const RUST_TEST_IT_COMMAND: &str = "cargo xtask db test-it";
+
+/// `rust-test-it`, `rust-ci`'s fifth step: [`RUST_TEST_IT_COMMAND`], called in process.
 ///
-/// It is duplicated here on purpose and the duplication is the smaller error. `rust-ci` is
-/// `fmt + clippy + build + wasm-ci + test-it`; a composite that silently drops a step reports
-/// success over work it never did, which is the defect this arm exists to make impossible.
-pub(crate) fn rust_test_it() -> Vec<Step> {
-    let psql = |flag: &str, sql: &str| {
-        Step::new(&[
-            "podman",
-            "exec",
-            "tbd_reforger_db",
-            "psql",
-            "-U",
-            "tbd",
-            "-d",
-            "tbd_reforger",
-            flag,
-            sql,
-        ])
-    };
-    vec![
-        // make's leading `-`: the DROP is allowed to fail (first run, no such DB).
-        psql("-qc", "DROP DATABASE IF EXISTS rust_it WITH (FORCE);").ignore_error(),
-        psql("-qc", "CREATE DATABASE rust_it;"),
-        Step::new(&["cargo", "test"]).cd(WEB).env(
-            "TEST_DATABASE_URL",
-            "postgres://tbd:tbd@localhost:5434/rust_it?sslmode=disable",
-        ),
-    ]
+/// The database lane owns the whole run: it resolves the container runtime
+/// (`TBD_CONTAINER_RUNTIME`, `podman`, `docker`, or either through the distrobox bridge), creates
+/// a fresh database for the run and drops it and every per-binary database derived from it after
+/// every outcome. This step therefore names no container runtime and keeps no cleanup of its own.
+fn rust_test_it() -> Result<u8> {
+    println!("{RUST_TEST_IT_COMMAND}");
+    // Flush before the suite writes, or the echo lands after the output it labels.
+    let _ = std::io::stdout().flush();
+    crate::commands::db::operations::test_it::run_complete_suite()
 }
 
-/// The reaper: drop `rust_it` and every per-binary `rust_it_<suite>_it` database.
-///
-/// `@`-prefixed in the Makefile, so it is NOT echoed — and its `while read -r db` loop over psql
-/// output was the one piece of genuinely non-trivial shell in the file. Here it is a captured
-/// string and a `for`, so the bash hazard of a subshell death vanishing into an empty loop is gone.
-pub(super) fn reap_rust_it_databases() {
-    const SELECT: &str = "SELECT datname FROM pg_database WHERE datname = 'rust_it' \
-                          OR datname LIKE 'rust_it\\_%\\_it' ESCAPE '\\'";
-    let listed = Run::new("podman")
-        .args([
-            "exec",
-            "tbd_reforger_db",
-            "psql",
-            "-U",
-            "tbd",
-            "-d",
-            "tbd_reforger",
-            "-Atc",
-            SELECT,
-        ])
-        .output();
-    let Ok(out) = listed else { return };
-    for db in out.stdout.lines().map(str::trim).filter(|s| !s.is_empty()) {
-        // `>/dev/null` in the bash; the drop's own chatter is noise, its failure is not fatal.
-        let _ = Run::new("podman")
-            .args([
-                "exec",
-                "tbd_reforger_db",
-                "psql",
-                "-U",
-                "tbd",
-                "-d",
-                "tbd_reforger",
-                "-qc",
-                &format!("DROP DATABASE IF EXISTS {db} WITH (FORCE);"),
-            ])
-            .output();
-    }
+/// The four step lists `rust-ci` runs before [`rust_test_it`], in order.
+fn rust_ci_recipes() -> [Vec<Step>; 4] {
+    [rust_fmt(), rust_clippy(), rust_build(), wasm_ci()]
+}
+
+/// The lines `rust-ci` runs, in order, as `--dry-run` prints them.
+pub(crate) fn rust_ci_lines() -> Vec<String> {
+    let mut lines: Vec<String> = rust_ci_recipes().iter().flatten().map(Step::echo).collect();
+    lines.push(RUST_TEST_IT_COMMAND.to_string());
+    lines
 }
 
 /// `rust-ci` — fmt + clippy + build + wasm-ci + test-it, in that order, stopping at the first red.
@@ -405,15 +350,13 @@ pub(super) fn reap_rust_it_databases() {
 /// Composed from the same leaf functions the individual targets use, which is what makes a hollow
 /// composite structurally impossible: there is no second copy of the recipe to fall out of date.
 pub(super) fn rust_ci() -> Result<u8> {
-    for steps in [rust_fmt(), rust_clippy(), rust_build(), wasm_ci()] {
+    for steps in rust_ci_recipes() {
         let rc = run_steps(&steps)?;
         if rc != 0 {
             return Ok(rc);
         }
     }
-    let rc = run_steps(&rust_test_it())?;
-    reap_rust_it_databases();
-    Ok(rc)
+    rust_test_it()
 }
 
 /// Does this module own `target`? The seam the database and CI lanes chain onto: chain them

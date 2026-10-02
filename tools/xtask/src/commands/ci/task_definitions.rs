@@ -51,6 +51,8 @@ pub static TASKS: &[Task] = &[
             Step::Task("verify-engine-layers"),
             Step::Task("verify-workspace-laws"),
             Step::Task("rust-ci"),
+            Step::Task("developer-tools-test"),
+            Step::Task("workspace-member-tests"),
             Step::Task("verify-coding-standards"),
             Step::Task("verify-documentation"),
             Step::Task("ci-local-leptos"),
@@ -179,7 +181,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "editor-api-boot",
-        help: "Build and spawn website-api, then wait on /healthz (editor-gates.yml)",
+        help: "Build and spawn api, then wait on /healthz (editor-gates.yml)",
         group: "CI",
         lane: Lane::Ci,
         steps: &[Step::Native {
@@ -187,11 +189,11 @@ pub static TASKS: &[Task] = &[
         }],
     },
     Task {
-        name: "website-api-test",
-        help: "cargo test in apps/website/api_v2 (honours TEST_DATABASE_URL)",
+        name: "api-test",
+        help: "cargo test in apps/api (honours TEST_DATABASE_URL)",
         group: "build",
         lane: Lane::Ci,
-        steps: &[sh!("cd apps/website/api_v2 && cargo test")],
+        steps: &[sh!("cd apps/api && cargo test")],
     },
     // The library suite runs without database, browser, or asset prerequisites.
     Task {
@@ -200,6 +202,16 @@ pub static TASKS: &[Task] = &[
         group: "build",
         lane: Lane::Ci,
         steps: &[sh!("cargo test -p developer_tools --lib")],
+    },
+    // Derived from the workspace: every member no task above tests, one `cargo test -p` each.
+    Task {
+        name: "workspace-member-tests",
+        help: "cargo test -p <package> for every workspace member no dedicated task tests (derived from Cargo.toml)",
+        group: "build",
+        lane: Lane::Ci,
+        steps: &[Step::Native {
+            run: crate::commands::ci::workspace_member_tests::run,
+        }],
     },
     // ── map lane ────────────────────────────────────────────────────────────────────────────
     Task {
@@ -257,7 +269,7 @@ pub static TASKS: &[Task] = &[
         group: "build",
         lane: Lane::Ci,
         steps: &[
-            sh!("cd apps/website/api_v2 && cargo build --release --bin api"),
+            sh!("cd apps/api && cargo build --release --bin api"),
             Step::Task("leptos-build"),
         ],
     },
@@ -386,7 +398,7 @@ pub static TASKS: &[Task] = &[
         group: "build",
         lane: Lane::Borrowed,
         steps: &[
-            sh!("cd apps/website/api_v2 && cargo fmt --check"),
+            sh!("cd apps/api && cargo fmt --check"),
             sh!("cargo fmt --all --check"),
         ],
     },
@@ -396,7 +408,7 @@ pub static TASKS: &[Task] = &[
         group: "build",
         lane: Lane::Borrowed,
         steps: &[sh!(
-            "cd apps/website/api_v2 && cargo clippy --all-targets -- -D warnings"
+            "cd apps/api && cargo clippy --all-targets -- -D warnings"
         )],
     },
     Task {
@@ -404,14 +416,14 @@ pub static TASKS: &[Task] = &[
         help: "Build the Rust backend (all targets)",
         group: "build",
         lane: Lane::Borrowed,
-        steps: &[sh!("cd apps/website/api_v2 && cargo build --all-targets")],
+        steps: &[sh!("cd apps/api && cargo build --all-targets")],
     },
     Task {
         name: "rust-test",
         help: "Run Rust unit tests (no DB)",
         group: "build",
         lane: Lane::Borrowed,
-        steps: &[sh!("cd apps/website/api_v2 && cargo test --lib --bins")],
+        steps: &[sh!("cd apps/api && cargo test --lib --bins")],
     },
     Task {
         name: "wasm-ci",
@@ -422,68 +434,48 @@ pub static TASKS: &[Task] = &[
         // formatted, linted or tested. Both engine crates and the offline service worker are
         // named in every step, wasm32 included, because the browser half is where they ship.
         steps: &[
+            sh!("cargo fmt --check -p map_engine -p graphics_engine -p offline_service_worker"),
             sh!(
-                "cargo fmt --check -p website-map-engine -p website-graphics-engine -p website-offline-service-worker"
+                "cargo clippy -p map_engine -p graphics_engine -p offline_service_worker --all-targets --all-features -- -D warnings"
             ),
             sh!(
-                "cargo clippy -p website-map-engine -p website-graphics-engine -p website-offline-service-worker --all-targets --all-features -- -D warnings"
+                "cargo clippy -p map_engine -p graphics_engine -p offline_service_worker --target wasm32-unknown-unknown -- -D warnings"
             ),
-            sh!(
-                "cargo clippy -p website-map-engine -p website-graphics-engine -p website-offline-service-worker --target wasm32-unknown-unknown -- -D warnings"
-            ),
-            sh!("cargo test -p website-map-engine --all-features"),
-            sh!("cargo test -p website-graphics-engine --all-features"),
-            sh!("cargo test -p website-offline-service-worker --all-features"),
+            sh!("cargo test -p map_engine --all-features"),
+            sh!("cargo test -p graphics_engine --all-features"),
+            sh!("cargo test -p offline_service_worker --all-features"),
         ],
     },
     Task {
         name: "ci-local-leptos",
-        help: "CI gate: Leptos SPA fmt + clippy(wasm32 --all-targets) + native tests + trunk release build (mirrors the ci.yml website-frontend job)",
+        help: "CI gate: Leptos SPA fmt + clippy(wasm32 --all-targets) + native tests + trunk release build (mirrors the ci.yml frontend job)",
         group: "build",
         lane: Lane::Borrowed,
         steps: &[
-            sh!("cargo fmt -p website-frontend --check"),
-            sh!("cargo clippy -p website-frontend --target wasm32-unknown-unknown --all-targets"),
-            sh!("cargo test -p website-frontend"),
-            sh!("cd apps/website/frontend && trunk build --release"),
+            sh!("cargo fmt -p frontend --check"),
+            sh!("cargo clippy -p frontend --target wasm32-unknown-unknown --all-targets"),
+            sh!("cargo test -p frontend"),
+            sh!("cd apps/frontend && trunk build --release"),
         ],
     },
     Task {
         name: "leptos-build",
-        help: "Release-build the Leptos SPA into apps/website/frontend/dist",
+        help: "Release-build the Leptos SPA into apps/frontend/dist",
         group: "build",
         lane: Lane::Borrowed,
-        steps: &[sh!("cd apps/website/frontend && trunk build --release")],
+        steps: &[sh!("cd apps/frontend && trunk build --release")],
     },
     Task {
         name: "rust-test-it",
         help: "Run Rust integration tests against a fresh dedicated DB (needs `cargo xtask db up` @ :5434)",
         group: "db",
         lane: Lane::Borrowed,
-        // `/bin/sh -c`, because the `while read -r db` reaper over psql output is the one step
-        // here whose shape is genuinely a shell pipeline. `ignore_err` on the DROP lets a missing
-        // database pass.
-        steps: &[
-            Step::Shell {
-                silent: false,
-                ignore_err: true,
-                script: "podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc \"DROP DATABASE IF EXISTS rust_it WITH (FORCE);\"",
-            },
-            Step::Shell {
-                silent: false,
-                ignore_err: false,
-                script: "podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc \"CREATE DATABASE rust_it;\"",
-            },
-            Step::Shell {
-                silent: false,
-                ignore_err: false,
-                script: "cd apps/website/api_v2 && TEST_DATABASE_URL=postgres://tbd:tbd@localhost:5434/rust_it?sslmode=disable cargo test",
-            },
-            Step::Shell {
-                silent: true,
-                ignore_err: false,
-                script: "podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -Atc \"SELECT datname FROM pg_database WHERE datname = 'rust_it' OR datname LIKE 'rust_it\\_%\\_it' ESCAPE '\\'\" | while read -r db; do \t[ -n \"$db\" ] || continue; \tpodman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc \"DROP DATABASE IF EXISTS $db WITH (FORCE);\" >/dev/null; done",
-            },
-        ],
+        // The database lane's own command, in process: a fresh database per run, the container
+        // reached through the runtime the lane resolves, and the cleanup after every outcome.
+        steps: &[xt!(
+            "cargo xtask db test-it",
+            false,
+            crate::commands::db::operations::test_it::run_complete_suite
+        )],
     },
 ];

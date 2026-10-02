@@ -46,7 +46,7 @@ sampled rows and the files the log names.
 
 - Depends on: `SchemaSet` and `gunzip_json` from
   `tools/developer_tools/src/world_export_pipeline/mathematical_verification.rs`; the sibling
-  `vegetation_density` and `polygon_geometry` modules; `website-map-engine`'s
+  `vegetation_density` and `polygon_geometry` modules; `map_engine`'s
   `io::density::tbdd` decoder; `crate::repository_layout`; `cargo`, for the two child runs.
 - Used by: `world validate-exports` and `world spike-ops-log`
   (`tools/developer_tools/src/world_export_pipeline/cli.rs`); nothing runs either in CI.

@@ -188,11 +188,11 @@ factory, Cursor orchestrates instead, as [Factory waves](/documentation/runbooks
 describes.
 
 For Mission Creator work, read in this order: the
-[editor documentation index](/documentation/website/frontend/apps/editor/README.md), the
-[roadmap](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md), the
-[decisions](/documentation/website/frontend/apps/editor/decisions.md), the
-[feature inventory](/documentation/website/frontend/apps/editor/feature_inventory/README.md)
-and the [Eden gap analysis](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md).
+[editor documentation index](/documentation/apps/frontend/apps/editor/README.md), the
+[roadmap](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md), the
+[decisions](/documentation/apps/frontend/apps/editor/decisions.md), the
+[feature inventory](/documentation/apps/frontend/apps/editor/feature_inventory/README.md)
+and the [Eden gap analysis](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md).
 
 ## Verify
 

@@ -15,7 +15,7 @@
 //! JSON decode **by construction** rather than by coincidence — including the drops: a row the
 //! loader rejects is absent from both.
 //!
-//! # Why the row encoding lives in `website-map-engine`, not here
+//! # Why the row encoding lives in `map_engine`, not here
 //!
 //! `row_to_archive` and `region_to_archive` are in `world/prefab.rs` and `world/regions.rs`,
 //! next to the readers that invert them. The wire rows have no `Option`s while the parser rows
@@ -26,7 +26,7 @@
 //! # Three files, two of them versioned
 //!
 //! `prefabs.rkyv` and `forest-regions.rkyv` carry `schema_version`. `type-inventory.rkyv` does
-//! not — `TypeInventory` has no such field (`website-map-engine`'s `io::archives`), so the standalone census is
+//! not — `TypeInventory` has no such field (`map_engine`'s `io::archives`), so the standalone census is
 //! the *convenience* copy and the one inside `PrefabCatalogArchive` is the checked one. Both are
 //! written from a single value here, and `standalone_census_matches_the_catalogue` pins that.
 
@@ -34,21 +34,21 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 
-use website_map_engine::io::archives::codec::access_checked;
-use website_map_engine::io::archives::codec::to_bytes;
-use website_map_engine::io::archives::forest::ForestRegionsArchive;
-use website_map_engine::io::archives::prefabs::PrefabCatalogArchive;
-use website_map_engine::io::archives::prefabs::TypeInventory;
-use website_map_engine::io::archives::version::ARCHIVE_SCHEMA_VERSION;
-use website_map_engine::streaming::loaders::store::bytes_to_json;
-use website_map_engine::world::environment::buildings::prefab::catalog_from_bytes;
-use website_map_engine::world::environment::buildings::prefab::inventory_from_bytes;
-use website_map_engine::world::environment::buildings::prefab::inventory_to_archive;
-use website_map_engine::world::environment::buildings::prefab::narrow_prefab_rows;
-use website_map_engine::world::environment::buildings::prefab::row_to_archive;
-use website_map_engine::world::environment::vegetation::regions::parse_regions_payload;
-use website_map_engine::world::environment::vegetation::regions::region_to_archive;
-use website_map_engine::world::environment::vegetation::regions::regions_from_bytes;
+use map_engine::io::archives::codec::access_checked;
+use map_engine::io::archives::codec::to_bytes;
+use map_engine::io::archives::forest::ForestRegionsArchive;
+use map_engine::io::archives::prefabs::PrefabCatalogArchive;
+use map_engine::io::archives::prefabs::TypeInventory;
+use map_engine::io::archives::version::ARCHIVE_SCHEMA_VERSION;
+use map_engine::streaming::loaders::store::bytes_to_json;
+use map_engine::world::environment::buildings::prefab::catalog_from_bytes;
+use map_engine::world::environment::buildings::prefab::inventory_from_bytes;
+use map_engine::world::environment::buildings::prefab::inventory_to_archive;
+use map_engine::world::environment::buildings::prefab::narrow_prefab_rows;
+use map_engine::world::environment::buildings::prefab::row_to_archive;
+use map_engine::world::environment::vegetation::regions::parse_regions_payload;
+use map_engine::world::environment::vegetation::regions::region_to_archive;
+use map_engine::world::environment::vegetation::regions::regions_from_bytes;
 
 /// The gz-JSON prefab catalogue, relative to a terrain directory.
 pub const PREFABS_GZ: &str = "objects/prefabs.json.gz";
@@ -58,7 +58,7 @@ pub const TYPE_INVENTORY_JSON: &str = "objects/type-inventory.json";
 pub const FOREST_REGIONS_GZ: &str = "objects/forest-regions.json.gz";
 
 /// The rkyv catalogue. Matches the manifest's `objects.binary.prefabs`
-/// (`website_map_engine::world::ObjectsBinaryBlock`), which the terrain manifest points the SPA at.
+/// (`map_engine::world::ObjectsBinaryBlock`), which the terrain manifest points the SPA at.
 pub const PREFAB_CATALOG_RKYV: &str = "objects/prefabs.rkyv";
 /// The rkyv census — manifest `objects.binary.typeInventory`.
 pub const TYPE_INVENTORY_RKYV: &str = "objects/type-inventory.rkyv";
@@ -78,7 +78,7 @@ fn read_doc(terrain_dir: &Path, rel: &str) -> Result<serde_json::Value> {
 /// file, so an archive that cannot survive it is a broken file whether or not `to_bytes` returned
 /// `Ok`, and the emitter is the last place that can say so cheaply. (Three concrete functions
 /// rather than one generic: naming the serializer/validator bounds would put `rkyv` in
-/// this crate's dependency list for no gain, and `website-map-engine` deliberately owns that.)
+/// this crate's dependency list for no gain, and `map_engine` deliberately owns that.)
 macro_rules! write_archive {
     ($fn_name:ident, $ty:ty, $what:literal) => {
         /// Serialise `archive`, validate the bytes with `access_checked`, then write them.

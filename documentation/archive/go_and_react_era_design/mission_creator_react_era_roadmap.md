@@ -1,4 +1,4 @@
-**Status:** archived — see [documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md)
+**Status:** archived — see [documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md)
 
 # Mission Creator — ROADMAP
 
@@ -8,7 +8,7 @@
 
 **Route:** `/missions/:id/edit` · **Code (live):** `apps/website/frontend/src/mission_editor.rs` (+ modules) · **Historical React tree:** `features/mission-creator/` + `tactical-map/` (deleted)
 
-**Open work:** [`docs/TICKET_LEAD.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md) (auto-generated queue, dependencies, ready/queued tickets). Eden parity item detail: [`eden/gap_analysis.md`](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) (`eden_id` columns).
+**Open work:** [`docs/TICKET_LEAD.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md) (auto-generated queue, dependencies, ready/queued tickets). Eden parity item detail: [`eden/gap_analysis.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) (`eden_id` columns).
 
 <!-- ticket-sync:next:start -->
 ### Recommended next work (auto-generated)
@@ -108,17 +108,17 @@ Spec: [`t057_map_performance_hotfix.md`](/documentation/tickets/specs/t057_map_p
 | Doc | When to open it |
 |-----|-----------------|
 | **[`docs/TICKET_LEAD.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md)** | **Open work** — ready/queued tickets, dependency graph |
-| **[`agent_execution.md`](/documentation/website/frontend/apps/editor/decisions.md)** | Locked UX decisions, agent phase history, copy-paste agent prompt |
-| **[`feature_inventory.md`](/documentation/website/frontend/apps/editor/feature_inventory/README.md)** | Per-feature code-evidenced status (FEDS) |
+| **[`agent_execution.md`](/documentation/apps/frontend/apps/editor/decisions.md)** | Locked UX decisions, agent phase history, copy-paste agent prompt |
+| **[`feature_inventory.md`](/documentation/apps/frontend/apps/editor/feature_inventory/README.md)** | Per-feature code-evidenced status (FEDS) |
 | **[`engineering_plan.md`](/documentation/archive/go_and_react_era_design/mission_creator_engineering_plan.md)** | Y.Doc schema, compiler, workers, engineering phases 0–9 |
-| **[`ux_spec.md`](/documentation/website/frontend/apps/editor/ux_spec.md)** | Eden docked-shell UX contract |
+| **[`ux_spec.md`](/documentation/apps/frontend/apps/editor/ux_spec.md)** | Eden docked-shell UX contract |
 | **[`problem_statement.md`](/documentation/archive/go_and_react_era_design/mission_creator_problem_statement.md)** | Why 200-slot GPU, DEM, nesting, registry matter |
-| **[`reference/feds_schema.md`](/documentation/website/frontend/apps/editor/feature_inventory/feds_schema.md)** | FEDS v2 feature-entry schema |
-| **[`eden/interactions.md`](/documentation/website/frontend/apps/editor/eden_editor_reference/interactions/README.md)** | Eden interaction reference |
-| **[`eden/ui_anatomy.md`](/documentation/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md)** | Panel-by-panel Eden UI |
-| **[`eden/attributes.md`](/documentation/website/frontend/apps/editor/eden_editor_reference/attributes.md)** | Attribute catalog |
-| **[`eden/gap_analysis.md`](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)** | Eden parity backlog (`eden_id` ↔ ticket mapping) |
-| **[`eden/wiki_manifest.yaml`](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_wiki_scrape_manifest.yaml)** | Scrape manifest — 28 Bohemia Eden Editor wiki pages |
+| **[`reference/feds_schema.md`](/documentation/apps/frontend/apps/editor/feature_inventory/feds_schema.md)** | FEDS v2 feature-entry schema |
+| **[`eden/interactions.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/interactions/README.md)** | Eden interaction reference |
+| **[`eden/ui_anatomy.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/ui_anatomy.md)** | Panel-by-panel Eden UI |
+| **[`eden/attributes.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/attributes.md)** | Attribute catalog |
+| **[`eden/gap_analysis.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)** | Eden parity backlog (`eden_id` ↔ ticket mapping) |
+| **[`eden/wiki_manifest.yaml`](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_wiki_scrape_manifest.yaml)** | Scrape manifest — 28 Bohemia Eden Editor wiki pages |
 | **[`artifacts/eden-wiki/`](/.ai/artifacts/eden-wiki)** | **Cached wiki markdown** (generated; do not hand-edit) |
 | **[`scripts/tools/scrape-eden-wiki.mjs`](https://github.com/darkforce09/TBD-reforger/blob/e7af8ad9f380fbbd159a63ee1463884855f18e6e/scripts/website/tools/scrape-eden-wiki.mjs)** | Regenerate wiki cache from manifest |
 | **[`artifacts/eden-feds-draft.jsonl`](/.ai/artifacts/eden-feds-draft.jsonl)** | Draft FEDS entries derived from wiki research |
@@ -146,8 +146,8 @@ Spec: [`t057_map_performance_hotfix.md`](/documentation/tickets/specs/t057_map_p
 | **[`t050_cursor_z_readout.md`](/documentation/tickets/specs/t050_cursor_z_readout.md)** | **T-050** — Cursor Z readout (shipped) |
 | **[`t049_terrain_title_position.md`](/documentation/tickets/specs/t049_terrain_title_position.md)** | **T-049** — Terrain + title hydrate + numeric position (shipped) |
 | **[`t048_library_create_dialog.md`](/documentation/tickets/specs/t048_library_create_dialog.md)** | T-048 — Library create dialog (shipped) |
-| [`documentation_v2/website/frontend/pages/mission_hub/library/mission_library_page.md`](/documentation/website/frontend/pages/mission_hub/library/mission_library_page.md) | Surface spec for `/missions` (+ create dialog T-048) |
-| [`documentation_v2/website/frontend/apps/editor/ux_spec.md`](/documentation/website/frontend/apps/editor/ux_spec.md) | Surface spec for `/missions/:id/edit` |
+| [`documentation_v2/website/frontend/pages/mission_hub/library/mission_library_page.md`](/documentation/apps/frontend/pages/mission_hub/library/mission_library_page.md) | Surface spec for `/missions` (+ create dialog T-048) |
+| [`documentation_v2/website/frontend/apps/editor/ux_spec.md`](/documentation/apps/frontend/apps/editor/ux_spec.md) | Surface spec for `/missions/:id/edit` |
 | [`documentation_v2/archive/go_and_react_era_design/mission_creator_setup_wizard_page.md`](/documentation/archive/go_and_react_era_design/mission_creator_setup_wizard_page.md) | Archived — wizard moved into library (T-048) |
 | **[`t068_virtual_arsenal_program.md`](/documentation/tickets/specs/t068_virtual_arsenal_program.md)** | **T-068** — Virtual Arsenal program hub (**Phase 1 shipped**; active **T-068.7**) |
 | [`t068_5_1_visual_equip_fix.md`](/documentation/tickets/specs/t068_5_1_visual_equip_fix.md) | **T-068.5.1 shipped** — visual wear on test NPC @ `b233b11` |
@@ -205,8 +205,8 @@ Spec: [`t057_map_performance_hotfix.md`](/documentation/tickets/specs/t057_map_p
 - Hydrate from server `json_payload` (or lossy ORBAT-only fallback)
 
 ### Documentation & Eden wiki research (T-042)
-- FEDS inventory ([`feature_inventory.md`](/documentation/website/frontend/apps/editor/feature_inventory/README.md)), Eden reference ([`eden/`](/documentation/website/frontend/apps/editor/eden_editor_reference/))
-- **Arma 3 Eden Editor wiki scrape:** 28 pages in [`artifacts/eden-wiki/`](/.ai/artifacts/eden-wiki) via [`eden/wiki_manifest.yaml`](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_wiki_scrape_manifest.yaml) + [`scrape-eden-wiki.mjs`](https://github.com/darkforce09/TBD-reforger/blob/e7af8ad9f380fbbd159a63ee1463884855f18e6e/scripts/website/tools/scrape-eden-wiki.mjs); feeds [`eden/interactions.md`](/documentation/website/frontend/apps/editor/eden_editor_reference/interactions/README.md), [`eden/ui_anatomy.md`](/documentation/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md), [`eden/attributes.md`](/documentation/website/frontend/apps/editor/eden_editor_reference/attributes.md), [`eden/gap_analysis.md`](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)
+- FEDS inventory ([`feature_inventory.md`](/documentation/apps/frontend/apps/editor/feature_inventory/README.md)), Eden reference ([`eden/`](/documentation/apps/frontend/apps/editor/eden_editor_reference/))
+- **Arma 3 Eden Editor wiki scrape:** 28 pages in [`artifacts/eden-wiki/`](/.ai/artifacts/eden-wiki) via [`eden/wiki_manifest.yaml`](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_wiki_scrape_manifest.yaml) + [`scrape-eden-wiki.mjs`](https://github.com/darkforce09/TBD-reforger/blob/e7af8ad9f380fbbd159a63ee1463884855f18e6e/scripts/website/tools/scrape-eden-wiki.mjs); feeds [`eden/interactions.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/interactions/README.md), [`eden/ui_anatomy.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/ui_anatomy.md), [`eden/attributes.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/attributes.md), [`eden/gap_analysis.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)
 
 ---
 
@@ -412,7 +412,7 @@ Hub: [`t068_virtual_arsenal_program.md`](/documentation/tickets/specs/t068_virtu
 
 ## NOT DONE — T-068+ Eden backlog
 
-Required to place **real objects**, not just generic slots. **Queue and dependencies:** [`docs/TICKET_LEAD.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md). **Per-feature status:** [`eden/gap_analysis.md`](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md).
+Required to place **real objects**, not just generic slots. **Queue and dependencies:** [`docs/TICKET_LEAD.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md). **Per-feature status:** [`eden/gap_analysis.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md).
 
 | Ticket | Requirement | Status |
 |--------|-------------|--------|
@@ -526,10 +526,10 @@ All linked in **Documentation** section above. Quick pointers:
 | Need | Doc |
 |------|-----|
 | **Open work queue** | [`docs/TICKET_LEAD.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md) |
-| Code-evidenced feature list | [`feature_inventory.md`](/documentation/website/frontend/apps/editor/feature_inventory/README.md) |
-| Eden UI parity backlog | [`eden/gap_analysis.md`](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) |
+| Code-evidenced feature list | [`feature_inventory.md`](/documentation/apps/frontend/apps/editor/feature_inventory/README.md) |
+| Eden UI parity backlog | [`eden/gap_analysis.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) |
 | Engineering ADRs + compiler | [`engineering_plan.md`](/documentation/archive/go_and_react_era_design/mission_creator_engineering_plan.md) |
-| Agent execution + Decisions log | [`agent_execution.md`](/documentation/website/frontend/apps/editor/decisions.md) |
+| Agent execution + Decisions log | [`agent_execution.md`](/documentation/apps/frontend/apps/editor/decisions.md) |
 
 ---
 

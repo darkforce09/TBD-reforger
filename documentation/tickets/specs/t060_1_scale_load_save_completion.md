@@ -4,7 +4,7 @@
 
 **Status:** **T-060 + T-060.1 + T-060.1.1 + T-060.1.2 + T-060.1.3 + T-060.1.4 shipped** — load partial pass @ ~360k; **Save @ ~367k / ~142 MB → 201** (browser + curl 140 MB verified).
 **Git tag on ship:** **T-060** (commit `b1fd25a`, 2026-06-23 — T-060 + T-060.1 + T-060.1.1 + T-060.1.2 + T-060.1.3 + T-060.1.4)
-**Authority:** [MC ROADMAP](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation/website/frontend/apps/editor/decisions.md) §ACTIVE SLICE
+**Authority:** [MC ROADMAP](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation/apps/frontend/apps/editor/decisions.md) §ACTIVE SLICE
 **Builds on:** [t060_fast_initial_load.md](t060_fast_initial_load.md) (T-060 code landed; acceptance slices T-060.1 → **T-060.1.3**)
 
 **Prerequisites:** T-057–T-059 shipped; T-060 **shipped** in `b1fd25a` (256 MB route, bulk sync, chunked compile, overlay + T-060.1..T-060.1.4 acceptance).
@@ -234,12 +234,12 @@ proxy: {
 |-----|--------|
 | [t060_fast_initial_load.md](t060_fast_initial_load.md) | Status + §Shipped timings; blockers table |
 | [t060_1_scale_load_save_completion.md](t060_1_scale_load_save_completion.md) | §Manual verify; §T-060.1.3 + §T-060.1.4 |
-| [agent_execution.md](/documentation/website/frontend/apps/editor/decisions.md) | ACTIVE SLICE → **T-066** worker compile |
+| [agent_execution.md](/documentation/apps/frontend/apps/editor/decisions.md) | ACTIVE SLICE → **T-066** worker compile |
 | [CLAUDE.md](../../../CLAUDE.md) §Status | T-060 bullet + 360k acceptance |
 | [docs/TAGS.md](/documentation/standards/ticket_identifiers.md) | T-060.1 note |
-| [feature_inventory.md](/documentation/website/frontend/apps/editor/feature_inventory/README.md) | PERF-LOAD-001 / PERF-SAVE-001 acceptance |
-| [mission-editor.md](/documentation/website/frontend/apps/editor/ux_spec.md) | PERF-003/004 determinate + 360k gate |
-| [docs/website/frontend/ROADMAP.md](/documentation/website/frontend/README.md) | T-060 acceptance |
+| [feature_inventory.md](/documentation/apps/frontend/apps/editor/feature_inventory/README.md) | PERF-LOAD-001 / PERF-SAVE-001 acceptance |
+| [mission-editor.md](/documentation/apps/frontend/apps/editor/ux_spec.md) | PERF-003/004 determinate + 360k gate |
+| [docs/website/frontend/ROADMAP.md](/documentation/apps/frontend/README.md) | T-060 acceptance |
 | [docs/AGENT_COMMIT_CHECKLIST.md](/documentation/standards/commit_checklist.md) | T-060.1.4 gate before tag |
 
 ---
@@ -676,7 +676,7 @@ curl dies mid-upload → server/middleware. curl **201** → browser/axios/memor
 
 ## Claude Code prompt (copy-paste — T-060.1.4)
 
-Use a **fresh** Claude Code chat. Read §T-060.1.4 + [`agent_execution.md`](/documentation/website/frontend/apps/editor/decisions.md) §ACTIVE SLICE + §Manual verify Save (debug JSON).
+Use a **fresh** Claude Code chat. Read §T-060.1.4 + [`agent_execution.md`](/documentation/apps/frontend/apps/editor/decisions.md) §ACTIVE SLICE + §Manual verify Save (debug JSON).
 
 ```
 T-060.1.4 — Fix mid-upload ERR_NETWORK @ ~367k / ~135 MB
@@ -748,7 +748,7 @@ VERIFY
 
 ## Claude Code prompt (copy-paste — T-060.1.3 — historical)
 
-Use the **same Claude Code chat** (uncommitted stack) or fresh. Read §T-060.1.3 + [`agent_execution.md`](/documentation/website/frontend/apps/editor/decisions.md) §ACTIVE SLICE.
+Use the **same Claude Code chat** (uncommitted stack) or fresh. Read §T-060.1.3 + [`agent_execution.md`](/documentation/apps/frontend/apps/editor/decisions.md) §ACTIVE SLICE.
 
 ```
 T-060.1.3 — Save observability + measured size @ ~360k
@@ -811,7 +811,7 @@ VERIFY
 
 ## Claude Code prompt (copy-paste — T-060.1.1 — shipped in code)
 
-Use a **fresh** Claude Code chat (see §Chat guidance below). Read this file §T-060.1.1 and [`agent_execution.md`](/documentation/website/frontend/apps/editor/decisions.md) §ACTIVE SLICE first.
+Use a **fresh** Claude Code chat (see §Chat guidance below). Read this file §T-060.1.1 and [`agent_execution.md`](/documentation/apps/frontend/apps/editor/decisions.md) §ACTIVE SLICE first.
 
 ```
 T-060.1.1 — Fix stuck-at-0% load bar @ ~300k (IDB restoring phase + paint-friendly progress)

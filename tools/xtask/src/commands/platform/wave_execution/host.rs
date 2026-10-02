@@ -47,7 +47,7 @@
 //! orphaning a cargo build.
 //!
 //! **TEST_DATABASE_URL IS IN THE WHITELIST FOR A REASON — read before removing it.** The whitelist
-//! used to carry `CARGO_TARGET_DIR` alone, and `run "test api"` runs `cargo test -p website-api`.
+//! used to carry `CARGO_TARGET_DIR` alone, and `run "test api"` runs `cargo test -p api`.
 //! Every DB-backed integration test does `let Some(x) = boot() else { eprintln!("skip: …");
 //! return; }`, and `boot()` returns `None` without `TEST_DATABASE_URL` — so 30 of them SKIPPED and
 //! the step printed PASS. Measured 2026-07-26: `TEST_DATABASE_URL=x distrobox-host-exec sh -c

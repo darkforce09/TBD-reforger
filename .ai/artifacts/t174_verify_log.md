@@ -1,6 +1,6 @@
 # T-174 — verify log (MC sat fidelity + heatmap removal + dock guide fix)
 
-**Branch:** `main` · **Depends on:** T-173 (`dddf3158`) · **Scope:** `apps/website/frontend/**` +
+**Branch:** `main` · **Depends on:** T-173 (`dddf3158`) · **Scope:** `apps/frontend/**` +
 `crates/map-engine-*`. **Not** `apps/mod/**`.
 
 **Operator override (plan review):** *"Remove the heatmap, it's not something I want."* → S2 is a
@@ -19,7 +19,7 @@ Inventory: [`t174_inventory.md`](t174_inventory.md).
 
 ## Changes
 
-### S1 — `apps/website/frontend/src/world_assets/satellite.rs`
+### S1 — `apps/frontend/src/world_assets/satellite.rs`
 - `load_satellite`: gate is now `if sat_preview_only() { return; }` (dropped `|| sat_dev_preview_default()`).
   Localhost now runs `try_preview` → `load_unified_full` (full 14-mip chain), same as prod.
 - Deleted the private `sat_dev_preview_default()` fn (localhost-forces-preview default).
@@ -54,7 +54,7 @@ Inventory: [`t174_inventory.md`](t174_inventory.md).
   `heatmap_trees` telemetry key (reports the LOD rung; no consumer asserts it). Net effect: island
   zoom shows forest-mass fill with **no green glow**, at any zoom, without a perf regression.
 
-### S3 — `apps/website/frontend/src/eden_chrome.rs`
+### S3 — `apps/frontend/src/eden_chrome.rs`
 - Prepended `relative` to the 4 escaping guide-host `<div>` class strings: `single_row` Unfiled,
   Faction, Squad, and `palette_rows` folder. Each row is now its own positioning parent, so the
   `guide_spans` `absolute inset-y-0 w-px` stem clips to the row height (short hierarchy stem)
@@ -65,9 +65,9 @@ Inventory: [`t174_inventory.md`](t174_inventory.md).
 | Gate | Result |
 |------|--------|
 | `cargo test -p map-engine-core -p map-engine-render` | **PASS** — core 215, render 44, draw_order `lane_order_pins` 7/7 (DensityHeat removed), residency `class_r_heatmap_*` + `property_never_blank_zoom_ladder` green |
-| `cargo fmt -p website-frontend --check` | **PASS** (exit 0) |
-| `cargo clippy -p website-frontend --target wasm32-unknown-unknown` | **PASS** (exit 0; 16 pre-existing warnings, none from this change) — validates the wasm32-gated `engine.rs` heatmap removal |
-| `cargo test -p website-frontend` | **PASS** — 73 |
+| `cargo fmt -p frontend --check` | **PASS** (exit 0) |
+| `cargo clippy -p frontend --target wasm32-unknown-unknown` | **PASS** (exit 0; 16 pre-existing warnings, none from this change) — validates the wasm32-gated `engine.rs` heatmap removal |
+| `cargo test -p frontend` | **PASS** — 73 |
 | `trunk build --release` | **PASS** — dist regenerated; `upload_density_grid` absent from shipped JS; wasm 8,251,614 B |
 | `make leptos-gates` (editor-suite + v-suite) | _see below_ |
 
@@ -90,7 +90,7 @@ pin `sat_preview_only()`); no smoke/probe reads `heatmap_trees` / `density_heatm
 ### `make ci-local` (full workspace)
 
 Frontend + engine are fully covered by `make ci-local-leptos` + the `map-engine-{core,render}`
-native tests + `make leptos-gates` above; the backend (`website-api`) and schema are **untouched**
+native tests + `make leptos-gates` above; the backend (`api`) and schema are **untouched**
 by T-174 (no dep on any removed symbol — grep-confirmed). Note: the full-workspace `cargo fmt --check`
 in `make ci-local` trips on a **pre-existing local-vs-CI rustfmt drift** in `xtask/src/cmds.rs` (my
 local rustfmt collapses a multi-line `println!` that CI's rustfmt — which green-lit T-173 — keeps

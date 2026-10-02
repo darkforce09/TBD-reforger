@@ -3,7 +3,7 @@
 Read `.ai/artifacts/engine_split_phase3b/00_rules_every_agent_obeys.md` first. Every rule there
 applies to this brief.
 
-At this point the editor tree lives at `apps/website/frontend/src/v2/apps/editor/`, still in its
+At this point the editor tree lives at `apps/frontend/src/v2/apps/editor/`, still in its
 old internal shape. This brief is the one split Phase 1 deliberately left alone.
 
 ## The file
@@ -12,15 +12,15 @@ old internal shape. This brief is the one split Phase 1 deliberately left alone.
 is misnamed — it holds no render sync. It is a pick/lane helper belt, and **every function in it is
 already pure**: document JSON and numbers in, lane vertex arrays, hit answers and id universes out.
 It imports no `leptos`, no `web_sys`, no `wasm_bindgen`, and reaches the engine only through
-`website_map_engine::{data::store, overlay::symbology}`. That is why almost all of it belongs in
-`website-map-engine` and why moving it costs no behaviour.
+`map_engine::{data::store, overlay::symbology}`. That is why almost all of it belongs in
+`map_engine` and why moving it costs no behaviour.
 
 Its internal blocks: connections 50–194, comments 195–466, hover 467–602, routing 603–798,
 selection/SoA 799–942, zone/paste 943–998. Re-derive those bounds; they shift as soon as you edit.
 
 ## Where each piece goes
 
-**To `apps/website/map-engine/src/editing/`** — grouped by subject, per Law 5, every new file under
+**To `legacy/map_engine/src/editing/`** — grouped by subject, per Law 5, every new file under
 the engine's 500-line production ceiling (the engine is at zero violations and must stay there):
 
 | functions | destination |
@@ -33,7 +33,7 @@ the engine's 500-line production ceiling (the engine is at zero violations and m
 
 `editing/lanes/mod.rs` declares the three lane modules; `editing/mod.rs` declares `lanes`,
 `routing` and `selection_universe` in the style of the eight declarations already there.
-`website_map_engine::` prefixes inside the moved code become `crate::`.
+`map_engine::` prefixes inside the moved code become `crate::`.
 
 **Stays in the frontend** — the tab-local hover state machine, which is a cursor policy for one
 browser tab and not a document concept:
@@ -53,7 +53,7 @@ engine. Keep the relationship — do not inline the number.
 lines 46–84 and again at the bottom). **Those re-exports are the seam**: the page's bare call
 sites, the `mission_editor::…` paths in `state/history.rs` and the panel test modules, and the
 evacuated pins' `use super::…` imports all spell the names through them. Repoint every one of
-them at its new home — engine names through `website_map_engine::editing::…`, hover names through
+them at its new home — engine names through `map_engine::editing::…`, hover names through
 `crate::v2::apps::editor::canvas::pointer_hover` — and **keep the `cfg` gates exactly as they
 are**. Do not delete a re-export to "simplify"; that renames a call site in fifty places.
 
@@ -84,10 +84,10 @@ Engine files are audited by nothing that grandfathers them, so they must be clea
 ## Verification — run once, at the end, from the repo root
 
 ```
-CARGO_TARGET_DIR=target-container cargo test -p website-map-engine --all-features
+CARGO_TARGET_DIR=target-container cargo test -p map_engine --all-features
 CARGO_TARGET_DIR=target-container cargo xtask verify engine-layers
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
-CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p website-frontend
+CARGO_TARGET_DIR=target-container cargo test -p frontend
+CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p frontend
 CARGO_TARGET_DIR=target-container cargo fmt --all -- --check
 ```
 

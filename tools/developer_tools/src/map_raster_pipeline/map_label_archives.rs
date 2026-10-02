@@ -27,18 +27,18 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 
-use website_map_engine::io::archives::codec::access_checked;
-use website_map_engine::io::archives::codec::to_bytes;
-use website_map_engine::io::archives::labels::MapLabelsArchive;
-use website_map_engine::io::archives::version::ARCHIVE_SCHEMA_VERSION;
-use website_map_engine::streaming::loaders::store::bytes_to_json;
-use website_map_engine::world::environment::locations::route_labels::parse_road_names_json;
-use website_map_engine::world::environment::locations::route_labels::road_names_to_archive;
-use website_map_engine::world::environment::locations::towns::height_labels_to_archive;
-use website_map_engine::world::environment::locations::towns::parse_height_labels_json;
-use website_map_engine::world::environment::locations::towns::parse_locations_json;
-use website_map_engine::world::environment::locations::towns::towns_to_archive;
-use website_map_engine::world::terrain::roads::network::parse_roads_payload;
+use map_engine::io::archives::codec::access_checked;
+use map_engine::io::archives::codec::to_bytes;
+use map_engine::io::archives::labels::MapLabelsArchive;
+use map_engine::io::archives::version::ARCHIVE_SCHEMA_VERSION;
+use map_engine::streaming::loaders::store::bytes_to_json;
+use map_engine::world::environment::locations::route_labels::parse_road_names_json;
+use map_engine::world::environment::locations::route_labels::road_names_to_archive;
+use map_engine::world::environment::locations::towns::height_labels_to_archive;
+use map_engine::world::environment::locations::towns::parse_height_labels_json;
+use map_engine::world::environment::locations::towns::parse_locations_json;
+use map_engine::world::environment::locations::towns::towns_to_archive;
+use map_engine::world::terrain::roads::network::parse_roads_payload;
 
 use crate::browser_testing::server::repo_root;
 use crate::repository_layout;

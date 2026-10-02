@@ -15,8 +15,8 @@ WHERE THINGS STAND — HEAD is 08b160dad, do not re-derive this:
   3A is ~60% done. Eight commits landed `map-engine/src/editing/{picking.rs, tools/, commands/,
   history/, host.rs, batch.rs}` plus gate rules 5 and 6. All green:
       cargo xtask verify engine-layers   ENGINE-LAYERS: PASS (all 8 rules)
-      cargo test -p website-map-engine --all-features   1290 passed; 0 failed
-      cargo test -p website-frontend                    1316 passed; 0 failed
+      cargo test -p map_engine --all-features   1290 passed; 0 failed
+      cargo test -p frontend                    1316 passed; 0 failed
   Remaining 3A work (~7,200 LOC) is split into four briefs A/B/C/D under
   .ai/artifacts/engine_split_phase3a/. Run order: A first, then B, then C, then D (C must precede
   D). Brief A is a regression fix — the first agent dropped three tests.

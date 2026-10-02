@@ -68,9 +68,9 @@ default state and each furniture record's footprint size (`wire_blueprint`).
 - Depends on:
   - the blueprint root's `types`, `params`, `walls`, `roof`, `march` and `hull` modules, and the
     batch walk, sources and writer in `tools/developer_tools/src/blueprint/bvh/`;
-  - `website_map_engine::world::architecture::blueprint` (the JSON blueprint),
-    `website_map_engine::io::archives` (`BuildingBlueprintArchive`, the codec, the archive schema
-    version) and `website_map_engine::spatial::los::world::descriptor` (descriptors, manifest);
+  - `map_engine::world::architecture::blueprint` (the JSON blueprint),
+    `map_engine::io::archives` (`BuildingBlueprintArchive`, the codec, the archive schema
+    version) and `map_engine::spatial::los::world::descriptor` (descriptors, manifest);
   - `crate::repository_layout`, `jsonschema`, and the schemas in `contracts/definitions/`.
 - Used by: the blueprint root's `run` and `interpret_one`; `run_bvh_batch` in
   `tools/developer_tools/src/blueprint/bvh/batch_processing/run_bvh_batch.rs`; through them
@@ -90,5 +90,5 @@ default state and each furniture record's footprint size (`wire_blueprint`).
 
 - [Everon prefab geometry](/assets/terrains/everon/prefabs/README.md) — the library and archive
   these writers produce.
-- [Prefab occluder descriptors](/apps/website/map-engine/src/spatial/los/world/descriptor/README.md)
+- [Prefab occluder descriptors](/legacy/map_engine/src/spatial/los/world/descriptor/README.md)
   — the descriptor, manifest and archive model the map engine reads.

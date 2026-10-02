@@ -15,7 +15,7 @@ few minutes, most of it the release build and the first download.
   them the pack stays incomplete and the gate fails closed ("assets missing").
 - At least one published ballistics catalog for a manual check
   ([ballistics oracle run](/documentation/runbooks/ballistics_oracle_run.md), step 11); the gate
-  instead serves the recorded catalog reads under `apps/website/frontend/tests/fixtures/api/`.
+  instead serves the recorded catalog reads under `contracts/fixtures/api_goldens/`.
 - A browser with service workers and Cache Storage on a secure origin: `localhost` counts as one,
   a plain-HTTP LAN address does not.
 - About 250 MB of free browser storage for the origin.
@@ -95,13 +95,13 @@ response header, COOP and COEP included.
 
 ## Related
 
-- [Mortar calculator page](/documentation/website/frontend/pages/field_tools/mortar/mortar_calculator_page.md)
+- [Mortar calculator page](/documentation/apps/frontend/pages/field_tools/mortar/mortar_calculator_page.md)
   — the page, its offline behaviour and its save.
-- [Offline core](/apps/website/frontend/src/v2/core/offline/README.md) — the pack download, the
+- [Offline core](/apps/frontend/src/v2/core/offline/README.md) — the pack download, the
   quota check and the offline state.
-- [Offline service worker](/apps/website/offline-service-worker/README.md) — the request classes,
+- [Offline service worker](/apps/offline_service_worker/README.md) — the request classes,
   the caches and the Range answers.
 - [Mortar offline gate](/tools/developer_tools/src/browser_testing/mortar_offline/README.md) —
   what each gate step checks.
-- [Game ballistics design note](/documentation/website/api_v2/verification_evidence/game_ballistics.md#offline-design)
+- [Game ballistics design note](/documentation/apps/api/verification_evidence/game_ballistics.md#offline-design)
   — the offline design and the operator decisions behind it.

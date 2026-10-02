@@ -61,7 +61,7 @@ My own change, and the verify caught it. `frontend_tests_changed` ran through
 `ctx.gate_check_target` = `main_root/target-gate-check`, and `main_root` is deliberately the primary
 checkout **shared by every worktree** (`wave/mod.rs:240-246`). The wave gate refuses that dir for this
 exact command in so many words (`gate.rs:500-508`): *"Two agents (T-193, T-195) independently proved
-that with the shared `CARGO_TARGET_DIR`, `cargo test -p website-frontend` runs a stale
+that with the shared `CARGO_TARGET_DIR`, `cargo test -p frontend` runs a stale
 `website_frontend-<hash>` test binary built from ANOTHER worktree"* — same package name and version
 across worktrees means the same artifact hash — and gives its own step `target-gate-frontend`.
 
@@ -73,7 +73,7 @@ each other either.
 ### 3. BLOCKER — T-946.64's scope silently skipped the file this very wave changed
 
 Also mine. `wasm_scope_touched` is a prefix test over `Cargo.toml` `path =` deps, resolving to
-`apps/website/frontend`, `crates/map-engine-core`, `crates/map-engine-render`. But the frontend suite
+`apps/frontend`, `crates/map-engine-core`, `crates/map-engine-render`. But the frontend suite
 compiles files from **outside** that graph through `include_str!`:
 `packages/tbd-schema/schema/mission.schema.json` (`editor/panels/zones_panel.rs:650`),
 `loadout-export.schema.json` (`arsenal/`), `apps/website/api/src/app.rs` (four `pages/` census tests),
@@ -107,7 +107,7 @@ graphic ahead of a marquee selection; `.69` the whole tactical draw path is unre
 a `panels/` surface or a keybinding that fails two keymap census tests); `.70` a viewshed cap refusal
 is indistinguishable from an empty result; `.71` the wash lane is shipped, tested and unreachable;
 `.72` `tacticalGraphics` never got its `UNREAD_WIRE_FIELDS` row; `.73` T-946.64 fires on
-`map-engine-render` / `map-engine-core doc` changes that `website-frontend` does not link natively;
+`map-engine-render` / `map-engine-core doc` changes that `frontend` does not link natively;
 `.74` the partial disc paints unmarched ground as *proven dead ground* rather than Unknown (the
 sibling `WashJob` uses the honest sentinel); `.75` the terrain cap bounds the raster while the march
 uses the unclamped radius, so 3.9 billion samples can pass a 5,776-cell cap; `.76` the finished disc

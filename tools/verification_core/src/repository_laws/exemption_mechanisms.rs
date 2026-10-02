@@ -5,7 +5,7 @@
 //! table type or constant of exempted paths — anywhere under the law roots, plus exemption files at
 //! the repository root.
 //! **Position:** reads [`super::source_roots`]; consumed by the `engineering_laws` test binary of
-//! `website-api`.
+//! `api`.
 //! **Signals & state:** none; pure functions over the checkout.
 //! **Invariants:** the patterns are anchored on the law-7 subjects (file length, size, line
 //! limit, inline or sibling tests) or on words that only ever name an exemption table, so an

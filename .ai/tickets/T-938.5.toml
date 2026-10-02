@@ -47,9 +47,9 @@ owns = [
     "crates/map-engine-core/src/building_viewshed.rs",
     "crates/map-engine-core/src/building_viewshed_tests.rs",
     "crates/map-engine-core/src/dem/sample.rs",
-    "apps/website/frontend/src/editor/tools/viewshed_scheduler.rs",
-    "apps/website/frontend/src/editor/tools/mod.rs",
-    "apps/website/frontend/src/editor/tools/los_tool.rs",
+    "apps/frontend/src/editor/tools/viewshed_scheduler.rs",
+    "apps/frontend/src/editor/tools/mod.rs",
+    "apps/frontend/src/editor/tools/los_tool.rs",
 ]
 
 [scope]

@@ -11,15 +11,15 @@ T-393 SHIPPED, T-227 SHIPPED, T-090.9 ready. API handlers now nest: apps/website
 - TRUE slot identity stripped — flatten.rs:2404-2419 (SLOT_IDENTITY_DROPS loop only files diagnostics)
 - TRUE $defs/marker additionalProperties:false — packages/tbd-schema/schema/mission.schema.json:1171 (required x,z,icon,label; icon closed 64-key enum)
 - PARTIAL win conditions — flatten.rs:2573-2574 mode "attrition" hardcoded; end_on at :2582 conditional (2+ factions holding slots)
-- TRUE radio synthesized — flatten.rs:1927-1960 (NET_FREQ_BASE_MHZ + STEP * index); zero radio UI in apps/website/frontend/src/editor/panels/
+- TRUE radio synthesized — flatten.rs:1927-1960 (NET_FREQ_BASE_MHZ + STEP * index); zero radio UI in apps/frontend/src/editor/panels/
 
 ## S2 doc store / persist
 - TRUE slotIds/entityIds as Any::Array — crates/map-engine-core/src/doc/store.rs:5162 (retain_ids) + :5171-5191 (append_id) linear scan + clone-rewrite per append
 - TRUE ZeroClock + capture_timeout 0, no undo cap — store.rs:361-371 UndoOptions{capture_timeout_millis:0, timestamp:ZeroClock}; deliberate per :350-360 comment (Yjs parity, T-159.22.1) — decision must be recorded when changing
 - PARTIAL materialize — store.rs:740-820: layer/hidden cached (745-764) but per-slot read_position/read_str×3/read_stance/resolve_slot_side_key at 772-812
-- TRUE existence via materialize — apps/website/frontend/src/editor/state/operations/entity.rs:1885 slot_attrs_exists (same file warns at 1795/1847 that materialize drops hidden slots — must NOT be used for existence)
+- TRUE existence via materialize — apps/frontend/src/editor/state/operations/entity.rs:1885 slot_attrs_exists (same file warns at 1795/1847 that materialize drops hidden slots — must NOT be used for existence)
 - PARTIAL QuotaExceeded — persist.rs:827-832 generic save_state_as Err → console.warn → return; no quota-specific code anywhere. Silent-drop effect real.
-- TRUE pagehide spawn_local — apps/website/frontend/src/editor/state/persist.rs:952-957 (on_hide closure), fire-and-forget
+- TRUE pagehide spawn_local — apps/frontend/src/editor/state/persist.rs:952-957 (on_hide closure), fire-and-forget
 - TRUE note_unreadable lockout — persist.rs:252 (def), :461 (set), :815-826 (run_save refuses forever; only "Reload to retry")
 - TRUE payload schema slots no items — packages/tbd-schema/schema/mission-editor-payload.schema.json:42 "slots":{"type":"array"}; :43 editorLayers same
 - TRUE 8388608 not enforced in editor — pin mission.schema.json:6; enforced only apps/website/api/src/contract/validate.rs:359,749; editor ceiling library/mission_library.rs:1452 UPLOAD_MAX_BYTES = 64<<20
@@ -28,7 +28,7 @@ T-393 SHIPPED, T-227 SHIPPED, T-090.9 ready. API handlers now nest: apps/website
 - TRUE DEM decode buffers — crates/map-engine-core/src/dem/png_decode.rs:58 (u8), :64 (u16), :79 meters_cache f32 + frontend world_assets/mod.rs:620 fetched bytes, :626 hillshade; sync on wasm thread (mod.rs:609-611 admits)
 - PARTIAL cited 4024-4039 = cluster packing (engine.rs:4025-4039) → upload_cluster_lane (4626) → upload_slot_role_lane; alloc is at 4924
 - TRUE upload_slot_role_lane new buffer — crates/map-engine-render/src/engine.rs:4907 fn, :4924 create_buffer_init + :4921 bytes.to_vec() per call; 7 call sites (4565/4577/4610/4627/4642/4693/4870); no pool
-- UNVERIFIED world_host.rs:454-525 chunk-crossing buffer burst — apps/website/frontend/src/editor/world_assets/world_host.rs exists; slice must verify first
+- UNVERIFIED world_host.rs:454-525 chunk-crossing buffer burst — apps/frontend/src/editor/world_assets/world_host.rs exists; slice must verify first
 - TRUE compute cull WorldTrees only — engine.rs:1812-1816 do_compute_trees requires !tree_icons_20.is_empty()
 - TRUE CPU scan per frame — crates/map-engine-render/src/icon_cull_gpu.rs:226 count_icons_in_frustum before early-outs, every encode_cull (compute_cull.rs:79 linear)
 - TRUE atomicAdd single counter — crates/map-engine-render/src/shader.wgsl:315
@@ -37,7 +37,7 @@ T-393 SHIPPED, T-227 SHIPPED, T-090.9 ready. API handlers now nest: apps/website
 - TRUE viewshed 31k sync raycasts — crates/map-engine-core/src/building_viewshed.rs:251-268 wash_band via level_wash:156-175 / level_wash_compound:180-195; defaults :37-41 r=25 m cell 0.25; per level (198-206)
 - TRUE terrain viewshed O((R/C)²) no cap — crates/map-engine-core/src/dem/sample.rs:492-500 OVERSAMPLE=2.0, loop :500-535; no radius clamp
 
-## S4 editor UI (apps/website/frontend/src/editor/)
+## S4 editor UI (apps/frontend/src/editor/)
 - TRUE squad read-only, no faction selector — panels/attributes_modal.rs:1864-1872; faction only as asset-id text (1546-1607, 1749-1842)
 - TRUE outliner single drag — panels/outliner_tree.rs:1110 begin_layer_slot_drag(one String); peers 1022, 664, 1101
 - TRUE no Z gizmo — canvas/overlays.rs:172-198 Translate X/Y only; Rotate 200-210 flat ring; enum total

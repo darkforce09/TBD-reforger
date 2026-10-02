@@ -15,9 +15,9 @@ working context.
 | Work | Read first |
 |---|---|
 | any work | the [ticket](/documentation/glossary/n_to_z.md#ticket), its spec and its plan (`cargo xtask ticket brief <id>`) |
-| the app's pages | [Frontend documentation](/documentation/website/frontend/README.md): every route, its page folder and its feature doc |
-| the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) | its [roadmap](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md) and [decisions](/documentation/website/frontend/apps/editor/decisions.md) |
-| the [API](/documentation/glossary/a_to_f.md#api) | the [API overview](/documentation/website/api_v2/api_overview.md) and the code in `apps/website/api_v2/` |
+| the app's pages | [Frontend documentation](/documentation/apps/frontend/README.md): every route, its page folder and its feature doc |
+| the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) | its [roadmap](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) and [decisions](/documentation/apps/frontend/apps/editor/decisions.md) |
+| the [API](/documentation/glossary/a_to_f.md#api) | the [API overview](/documentation/apps/api/api_overview.md) and the code in `apps/api/` |
 | where a new file goes | [Where does X go?](/documentation/standards/where_does_x_go.md) |
 | comments and cross-boundary tags | [Documentation standards](/documentation/standards/documentation_standards.md) |
 | code rules and their gates | [Coding standards](/documentation/standards/coding_standards/README.md) |
@@ -29,13 +29,13 @@ working context.
 |---|---|
 | a ticket shipped | `cargo xtask ticket ship <id>` (it runs `ticket sync`), then after the commit `cargo xtask ticket stamp-sha <id> <sha>`; the feature doc's Open work |
 | a program's active slice | `cargo xtask ticket advance-slice <id>` |
-| a route added or removed | `apps/website/frontend/src/app_routes.rs` and `apps/website/frontend/src/router.rs`; the route table of the [frontend documentation](/documentation/website/frontend/README.md); the page's feature doc and README |
+| a route added or removed | `apps/frontend/src/app_routes.rs` and `apps/frontend/src/router.rs`; the route table of the [frontend documentation](/documentation/apps/frontend/README.md); the page's feature doc and README |
 | a page's visible surface | the page's feature doc and its code folder's README |
-| the navigation or sidebar | `apps/website/frontend/src/v2/pages/navigation/` and [App layout and navigation](/documentation/website/frontend/pages/navigation/app_layout_and_navigation.md) |
-| an API model | the model in `apps/website/api_v2/src/<domain>/models/`, the DTO in `apps/website/frontend/src/v2/core/api/dto/` and its R-api golden (CLAUDE.md law 9) |
+| the navigation or sidebar | `apps/frontend/src/v2/pages/navigation/` and [App layout and navigation](/documentation/apps/frontend/pages/navigation/app_layout_and_navigation.md) |
+| an API model | the model in `apps/api/src/<domain>/models/`, the DTO in `apps/frontend/src/v2/core/api/dto/` and its R-api golden (CLAUDE.md law 9) |
 | a cross-boundary type or handler | its `@contract`, `@route` or `@authority` tag, per the documentation standards |
 | a schema | the definition in `contracts/definitions/`, its fixture, and the regenerated types (`cargo xtask ci schema-codegen`) |
-| the Mission Creator | [decisions](/documentation/website/frontend/apps/editor/decisions.md), the [feature inventory](/documentation/website/frontend/apps/editor/feature_inventory/README.md) or the [Eden gap analysis](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md), as the change touches them |
+| the Mission Creator | [decisions](/documentation/apps/frontend/apps/editor/decisions.md), the [feature inventory](/documentation/apps/frontend/apps/editor/feature_inventory/README.md) or the [Eden gap analysis](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md), as the change touches them |
 | a code folder's files | its README's Contents, which `cargo xtask verify readme-coverage` checks |
 | work put off | the ticket's status set to `deferred` (`cargo xtask ticket set-status <id> deferred`); never `shipped` before it is verified |
 | documentation only | a commit of its own |
@@ -48,12 +48,12 @@ working context.
   Eden gap analysis is not among them: sync rewrites only gap tables whose header still has a
   `priority` column, and the analysis's tables have a `ticket` column, so that column is edited by
   hand.
-- The generated contract types in the `generated/` folders under `apps/website/api_v2/src/`;
+- The generated contract types in the `generated/` folders under `apps/api/src/`;
   regenerate them.
 - The frozen records: `documentation/tickets/` once a ticket ships or is cancelled, and
   `documentation/archive/`. Only their links change.
 - The design exports in a `visual_references/` folder, which are references, not the source of
-  the UI; the live UI is the Leptos code under `apps/website/frontend/src/v2/`.
+  the UI; the live UI is the Leptos code under `apps/frontend/src/v2/`.
 
 Markdown never goes under a `docs` folder in `apps/`, `contracts/` or `assets/`; it goes in
 `documentation/`, beside the feature it describes.

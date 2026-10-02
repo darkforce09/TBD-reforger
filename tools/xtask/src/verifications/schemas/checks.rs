@@ -15,6 +15,8 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use serde_json::Value;
 
+use verification_core::repository_laws::workspace_members::read_workspace_members;
+
 use developer_tools::repository_layout::{
     contract_catalogs_dir, contract_definitions_dir, definition_path, registry_fixtures_dir,
 };
@@ -31,10 +33,14 @@ use crate::core::repository_root::find_repo_root as repo_root;
 /// go unread while the gate still prints "All @contract citations resolve". Their zeros in the
 /// per-extension breakdown are the visible evidence that the tree holds no Go or Node sources.
 const CODE_EXTS: [&str; 7] = ["c", "go", "js", "mjs", "rs", "ts", "tsx"];
-/// Code roots whose contract citations must resolve: the applications and the tooling tree.
-/// Markdown is excluded because prose examples are not code contract declarations, and the
-/// contract and asset trees are excluded because they hold data, not code that declares a citation.
-const SCAN_ROOTS: [&str; 2] = ["apps", "tools"];
+/// Code folders outside the Cargo workspace whose contract citations must resolve: the Enfusion
+/// mod suite, whose script trees (`.c`) declare `@contract` on their JSON DTO structs.
+///
+/// Every other scan root is derived from the workspace members ([`scan_roots`]), so no member is
+/// left out by a list that was not extended. Markdown is excluded because prose examples are not
+/// code contract declarations, and the contract and asset trees hold data, not code that declares
+/// a citation, so neither is a member or listed here.
+const NON_WORKSPACE_CODE_ROOTS: [&str; 1] = ["apps/mod"];
 const IGNORE_DIRS: [&str; 6] = [
     "node_modules",
     "dist",
@@ -51,6 +57,8 @@ const IGNORE_DIRS: [&str; 6] = [
 /// problems over 0 files" is not a pass — it is the absence of a verdict.
 #[derive(Debug, Default)]
 struct CitationScan {
+    /// The folders walked, as [`scan_roots`] derived them; empty when they could not be derived.
+    roots: Vec<String>,
     citations: usize,
     files_read: usize,
     per_ext: BTreeMap<&'static str, usize>,
@@ -61,8 +69,9 @@ struct CitationScan {
 /// The scope contract, pinned against a fixture tree.
 ///
 /// The failure this guards is a broad claim over a narrow scan, not a bad count. These tests
-/// fail if `rs` leaves [`CODE_EXTS`], if `tools/` leaves [`SCAN_ROOTS`], or if the walker
-/// ever reports a clean verdict over a tree it did not read.
+/// fail if `rs` leaves [`CODE_EXTS`], if a workspace member's top-level folder or a
+/// [`NON_WORKSPACE_CODE_ROOTS`] entry goes unscanned, or if the walker ever reports a clean
+/// verdict over a tree it did not read.
 #[cfg(test)]
 #[path = "../../tests/citation_scope_tests.rs"]
 mod citation_scope_tests;
@@ -304,7 +313,7 @@ use wire_field_readers::UNREAD_WIRE_FIELDS;
 use object_type_inventory::instance_kinds_lockstep_failures;
 
 #[cfg(test)]
-use contract_citations::{citation_scope, scan_citations};
+use contract_citations::{citation_scope, scan_citations, scan_roots};
 
 #[cfg(test)]
 use wire_field_readers::{count_mod_readers, strip_enfusion_comments_and_strings};

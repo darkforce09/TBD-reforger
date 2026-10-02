@@ -1,11 +1,11 @@
 # 3A-B2 — `state/hydrate.rs`: the decidable half crosses into `editing/persist/`
 
-Agent 3 of 8. Your scope is `apps/website/frontend/src/editor/state/hydrate.rs` (1,159 LOC) and
+Agent 3 of 8. Your scope is `apps/frontend/src/editor/state/hydrate.rs` (1,159 LOC) and
 nothing else. `state/persist.rs` was split by `3A-B1` — **do not revisit it.**
 
 ## You are inheriting a settled module
 
-`3A-B1` landed `apps/website/map-engine/src/editing/persist/`, declared in `editing/mod.rs`:
+`3A-B1` landed `legacy/map_engine/src/editing/persist/`, declared in `editing/mod.rs`:
 
 | file | holds |
 |---|---|
@@ -77,9 +77,9 @@ inventing a second pattern.
 
 ```
 CARGO_TARGET_DIR=target-container cargo xtask verify engine-layers
-rg 'web_sys|leptos|wasm_bindgen|idb|gloo' apps/website/map-engine/src/editing     # EMPTY
-CARGO_TARGET_DIR=target-container cargo test -p website-map-engine --all-features
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
+rg 'web_sys|leptos|wasm_bindgen|idb|gloo' legacy/map_engine/src/editing     # EMPTY
+CARGO_TARGET_DIR=target-container cargo test -p map_engine --all-features
+CARGO_TARGET_DIR=target-container cargo test -p frontend
 ```
 
 Baseline: `verify engine-layers` PASS on all 8 rules; map-engine **1318** passed / 0 failed / 2

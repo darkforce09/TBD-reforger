@@ -12,7 +12,7 @@ This blueprint is implemented. `src/` is `lib.rs`, `bin/`, `core/`, `background_
 domain directories, and `tests/architecture_rules.rs`, which checks the boundary rules below against
 the source text on every test run.
 
-**[`README.md`](/apps/website/api_v2/README.md) is the live atlas of the crate** — the real file tree, how the
+**[`README.md`](/apps/api/README.md) is the live atlas of the crate** — the real file tree, how the
 `/api/v1` table is composed, the placement rules for shared logic, the test and codegen conventions,
 and the canonical commands. Each module directory under `src/` also carries its own `README.md`
 listing its files. Read those for what the code *is*; read the sections below for the reasoning that

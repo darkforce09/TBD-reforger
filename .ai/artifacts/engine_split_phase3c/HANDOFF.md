@@ -15,9 +15,9 @@ into `.ai/artifacts/engine_split_phase3c/` rather than rewriting it from the pro
 WHERE THINGS STAND — HEAD is 0f4509186, do not re-derive this:
   Phase 3B is COMPLETE. 15 commits, thirteen subagents, closed with:
       cargo xtask verify engine-layers        PASS, all 8 rules
-      cargo test -p website-map-engine        1436 passed; 0 failed; 2 ignored
-      cargo test -p website-frontend          1334 passed; 0 failed
-      cargo check --target wasm32-unknown-unknown -p website-frontend   8 warnings
+      cargo test -p map_engine        1436 passed; 0 failed; 2 ignored
+      cargo test -p frontend          1334 passed; 0 failed
+      cargo check --target wasm32-unknown-unknown -p frontend   8 warnings
       cargo xtask mk ci-local-leptos          success
       cargo xtask mk leptos-gates             editor-suite 21/21 pass; v-suite red at baseline
       cargo xtask verify file-length          exit 1, the baseline's 9 names
@@ -145,7 +145,7 @@ OPERATOR DECISIONS ALREADY MADE — do not re-ask:
      2027-06-30 for xtask, the largest holder and not shipped code.
   4. Two task chips are already filed and are NOT 3C's work: unifying the three Rust source-masking
      lexers, and fixing `mk ci-local-leptos` leaking a relative `CARGO_TARGET_DIR` into
-     `apps/website/frontend/target-container/` (839 MB, gitignored, structural — the command
+     `apps/frontend/target-container/` (839 MB, gitignored, structural — the command
      reproduces it, it is not agent error).
 
 KNOWN RED BEFORE 3C TOUCHES ANYTHING — not yours, not regressions:
@@ -177,9 +177,9 @@ KNOWN RED BEFORE 3C TOUCHES ANYTHING — not yours, not regressions:
 PHASE 3C ACCEPTANCE:
   CARGO_TARGET_DIR=target-container cargo xtask verify file-length   GREEN, with the 500 tier live
   CARGO_TARGET_DIR=target-container cargo xtask verify engine-layers      PASS, all 8 rules
-  CARGO_TARGET_DIR=target-container cargo test -p website-map-engine --all-features   >= 1436
-  CARGO_TARGET_DIR=target-container cargo test -p website-frontend                    >= 1334
-  CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p website-frontend
+  CARGO_TARGET_DIR=target-container cargo test -p map_engine --all-features   >= 1436
+  CARGO_TARGET_DIR=target-container cargo test -p frontend                    >= 1334
+  CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p frontend
   CARGO_TARGET_DIR=target-container cargo fmt --all -- --check
   CARGO_TARGET_DIR=target-container cargo xtask ci ci-local          GREEN — 3C is what unblocks it
   CARGO_TARGET_DIR=target-container cargo xtask mk ci-local-leptos

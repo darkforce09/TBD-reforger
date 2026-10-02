@@ -2,7 +2,7 @@
 
 Source checks for the deploy commands. One gate lives here:
 `cargo xtask verify staging-compose-paths` holds that the staging compose file,
-`apps/website/docker-compose.staging.yml`, has one owner: every compose command of
+`deploy/compose.staging.yml`, has one owner: every compose command of
 `cargo xtask deploy website` names it, and `cargo xtask deploy staging`, the game server
 [deployment](/documentation/glossary/a_to_f.md#deployment), runs none.
 
@@ -30,12 +30,16 @@ name does not count) and requires, reporting every failure of one run:
 
 1. the website deploy's source holds at least one compose line, and each carries a parseable `-f`
    path;
-2. each of those paths equals `apps/website/docker-compose.staging.yml`;
-3. no compose line names `BAD_PATH`, the same file name under `apps/website/api_v2/`;
-4. the website deploy's source never runs `cd` into `apps/website/api_v2`, under any quoting;
+2. each of those paths equals `deploy/compose.staging.yml`;
+3. no compose line names any other compose file (`COMPOSE_FILE_NAME`, any folder in front): not
+   the development stack `deploy/compose.dev.yml` beside it, and no compose file outside
+   `deploy/`, whether after `-f`, in a second `-f` overlay or in an `--env-file=`;
+4. the website deploy's source never runs `cd` into `deploy/`, under any quoting, where a relative
+   `-f` sits one word from the development stack (a path through another folder of that name,
+   such as `/home/deploy/`, does not count);
 5. no source of the game server deploy holds a compose line, each named by its path;
-6. `apps/website/docker-compose.staging.yml` exists, and nothing, not even a dangling symlink,
-   sits at `BAD_PATH`.
+6. `deploy/compose.staging.yml` exists, and nothing named like a compose file, not even a folder
+   or a dangling symlink, sits in the checkout root, the folder every compose command runs from.
 
 The website deploy prints each command under `--dry-run` from the same string it runs, so no
 separate dry-run text needs pinning. The gate prints each failure, then

@@ -19,7 +19,7 @@ module to the tooling; each crate's README then says what its own folders hold.
   `developer_tools` executables (`enf`, `gate`, `mcpd`, `world`, `map`, `capture`).
 - Related features: the [ticket engine documentation](/documentation/tools/ticket_engine/README.md),
   the [developer tools documentation](/documentation/tools/developer_tools/README.md) and the
-  [ticketboard documentation](/documentation/ticketboard/README.md).
+  [ticketboard documentation](/documentation/apps/ticketboard/README.md).
 
 ## Behaviour
 
@@ -46,7 +46,7 @@ verification_core        ticket_engine ◀──────── ticketboard (
         └──────── xtask ───────┘
                     │
                     ▼
-             developer_tools ──▶ website-map-engine (apps/website/map-engine)
+             developer_tools ──▶ map_engine (legacy/map_engine)
                     │
                     └── mcpd starts ──▶ enfusion_mcp_node_package (after npm ci)
 ```
@@ -55,7 +55,7 @@ verification_core        ticket_engine ◀──────── ticketboard (
    and reasoned about alone (`foundational_engines_have_no_workspace_dependencies`).
 2. `developer_tools` never depends on `xtask`: the router calls the services, never the reverse
    (`tooling_dependency_direction_is_enforced`).
-3. `xtask` never depends on `website-map-engine` or `website-graphics-engine` directly; the map
+3. `xtask` never depends on `map_engine` or `graphics_engine` directly; the map
    engine reaches it only through `developer_tools`, so a graphics change does not rebuild the
    command surface (same test).
 4. Ticket logic has one owner: the xtask `ticket` and `wave` groups delegate to `ticket_engine`

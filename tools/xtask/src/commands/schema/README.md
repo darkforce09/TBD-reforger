@@ -43,7 +43,7 @@ subcommand prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
 
 - Synopsis: `schema codegen`
 - Does: generates Rust serde types with `typify` from the schemas in `contracts/definitions/`
-  into the `generated/` modules of the owning domains under `apps/website/api_v2/src/`; the
+  into the `generated/` modules of the owning domains under `apps/api/src/`; the
   loadout projection stays hand-written.
 - Exit codes: 0 generated.
 - Example: `cargo xtask schema codegen`

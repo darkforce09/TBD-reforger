@@ -48,9 +48,9 @@ These pages already follow the methodology — use as implementation references:
 
 | Pattern | Example | Spec |
 |---------|---------|------|
-| Split-pane master/detail | Event Schedule, Announcements, Wiki | [`event-schedule.md`](/documentation/website/frontend/pages/operations/schedule/event_schedule_page.md) |
-| Create-over-list Dialog | Event Manager "Schedule Operation" | [`event-manager.md`](/documentation/website/frontend/pages/administration/event_manager/event_manager_page.md), `admin.tsx` |
-| Slide-over dossier (no route replace) | Mission Library card → Sheet | [`mission-library.md`](/documentation/website/frontend/pages/mission_hub/library/mission_library_page.md) |
+| Split-pane master/detail | Event Schedule, Announcements, Wiki | [`event-schedule.md`](/documentation/apps/frontend/pages/operations/schedule/event_schedule_page.md) |
+| Create-over-list Dialog | Event Manager "Schedule Operation" | [`event-manager.md`](/documentation/apps/frontend/pages/administration/event_manager/event_manager_page.md), `admin.tsx` |
+| Slide-over dossier (no route replace) | Mission Library card → Sheet | [`mission-library.md`](/documentation/apps/frontend/pages/mission_hub/library/mission_library_page.md) |
 | **Create-over-list Dialog (T-048)** | Mission Library **+ New Mission** → `CreateMissionDialog` | [`t048_library_create_dialog.md`](/documentation/tickets/specs/t048_library_create_dialog.md) |
 
 **Anti-pattern removed by T-048:** standalone `/missions/create` full-page wizard + sidebar "Mission Creator" tab — creation is a transient action on the library surface, not a nav destination.

@@ -44,7 +44,7 @@ estimated = [
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 owns = [
     "apps/website/api/src/realtime.rs",
-    "apps/website/frontend/src/sse.rs",
+    "apps/frontend/src/sse.rs",
     "apps/website/api/src/bin/api.rs",
     "apps/website/api/src/handlers/telemetry.rs",
     "apps/website/api/.env.example",

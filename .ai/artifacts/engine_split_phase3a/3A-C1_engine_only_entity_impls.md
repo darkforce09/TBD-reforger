@@ -25,8 +25,8 @@ Every name is free engine-side — verified, no collisions.
 | `entity/refile.rs` | 85 |
 | `entity/selection_index.rs` | 34 |
 
-Source: `apps/website/frontend/src/editor/state/operations/entity/`.
-Destination: `apps/website/map-engine/src/data/store/operations/entity/`.
+Source: `apps/frontend/src/editor/state/operations/entity/`.
+Destination: `legacy/map_engine/src/data/store/operations/entity/`.
 
 ### Two that need reading before you move them
 
@@ -64,7 +64,7 @@ Match that. Do not write `pub mod`, and do not glob-re-export.
   grows** — that pin is the contract.
 - **Gate rule 7** (the world/data wall) reads **zero in both directions** today and must stay
   zero. Nothing you add under `data/` may name `crate::{camera,frame,io,overlay,spatial,streaming,
-  world}` or `website_graphics_engine`.
+  world}` or `graphics_engine`.
 - Gate rule 5 covers `editing/` only, but anything you land in `data/store/` must still be
   browser-free to be testable at all: no `web_sys`, no `leptos`, no signals.
 - Law 7: everything you create is **born compliant** — under 500 LOC, tests in sibling files via
@@ -76,8 +76,8 @@ The engine holds all seven, the frontend still compiles and passes unchanged, an
 
 ```
 CARGO_TARGET_DIR=target-container cargo xtask verify engine-layers
-CARGO_TARGET_DIR=target-container cargo test -p website-map-engine --all-features
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
+CARGO_TARGET_DIR=target-container cargo test -p map_engine --all-features
+CARGO_TARGET_DIR=target-container cargo test -p frontend
 ```
 
 Baseline: `verify engine-layers` PASS on all 8 rules; map-engine **1351** passed / 0 failed / 2

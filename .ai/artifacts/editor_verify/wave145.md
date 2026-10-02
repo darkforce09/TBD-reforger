@@ -12,7 +12,7 @@ cargo routed through `distrobox-host-exec`. **The target dir was deleted at the 
 
 | Suite | `--list` total | Run total | Result |
 |---|---|---|---|
-| website-frontend | **1065** | **1065** | 1065 passed, 0 failed |
+| frontend | **1065** | **1065** | 1065 passed, 0 failed |
 | map-engine-core `--lib --all-features --no-fail-fast` | **640** | **640** | 639 passed, 0 failed, 1 ignored¹ |
 | map-engine-render | **67** | **67** | 67 passed, 0 failed |
 
@@ -237,7 +237,7 @@ prose NITs above.
 Verified post-mortem (the fix agent died before reporting; everything below re-measured, not
 trusted). Commit is COMPLETE and CORRECT; one prose NIT found.
 
-- MINOR | apps/website/frontend/src/mission_history.rs:315 | The `prune_selection` doc comment
+- MINOR | apps/frontend/src/mission_history.rs:315 | The `prune_selection` doc comment
   names the Class-R pin as `t784_comment_glyph::the_selection_prune_runs_over_the_whole_
   selectable_universe`, but the shipped pin lives in `mission_editor::w145_selection_prune`
   (mission_editor.rs:12569). Proved by grep: the named module holds no such test, so

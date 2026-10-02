@@ -3,7 +3,7 @@
 **Purely additive. Delete nothing.** C adds; [3A-D](3A-D_operations_delete_adapters.md) removes.
 Splitting it this way keeps each commit bisectable and keeps the frontend compiling throughout.
 
-Source: `apps/website/frontend/src/editor/state/operations/` — 29 files, 4,320 LOC, untouched so
+Source: `apps/frontend/src/editor/state/operations/` — 29 files, 4,320 LOC, untouched so
 far. The full per-file audit is in [`01_original_full_3a_brief.md`](01_original_full_3a_brief.md)
 section B. Your half is the 10 files below.
 
@@ -51,7 +51,7 @@ the rest are the session state machine.
   `#[cfg(test)] #[path = "tests/reexports.rs"] mod reexport_pins;` — update it as the surface grows.
 - Gate rule 7 (the world/data wall) reads **zero in both directions** today and must stay zero.
   Nothing you add under `data/` may name `crate::{camera,frame,io,overlay,spatial,streaming,world}`
-  or `website_graphics_engine`.
+  or `graphics_engine`.
 - Gate rule 5 covers `editing/` only, but anything you put in `data/store/` must still be
   browser-free to be testable — no `web_sys`, no signals.
 - Law 7: everything you create is born compliant. Tests in sibling files.
@@ -63,6 +63,6 @@ still in place — D removes them), and:
 
 ```
 CARGO_TARGET_DIR=target-container cargo xtask verify engine-layers
-CARGO_TARGET_DIR=target-container cargo test -p website-map-engine --all-features
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
+CARGO_TARGET_DIR=target-container cargo test -p map_engine --all-features
+CARGO_TARGET_DIR=target-container cargo test -p frontend
 ```

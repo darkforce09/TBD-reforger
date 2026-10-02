@@ -120,7 +120,7 @@ fn lock_rows(
 }
 
 /// Two tickets collide if any owned path overlaps — including prefix containment, so
-/// `apps/website/api_v2/src/` collides with any file under it.
+/// `apps/api/src/` collides with any file under it.
 fn collides(a: &[String], b: &[String]) -> bool {
     wave_lock::collides(a, b)
 }

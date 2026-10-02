@@ -20,7 +20,7 @@
 //! ```
 //!
 //! Four steps narrow, not the two first blamed: touch_changed, wasm32 (frontend), fmt (changed) and
-//! the trunk conditional. `test xtask+developer_tools` and the other unconditional steps are
+//! the trunk conditional. `test workspace members` and the other unconditional steps are
 //! unaffected.
 //!
 //! WHY DERIVE-AND-VERIFY RATHER THAN "MAKE THE BASE MANDATORY".

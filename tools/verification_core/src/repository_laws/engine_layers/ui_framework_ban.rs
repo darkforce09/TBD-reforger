@@ -1,10 +1,10 @@
 //! The map engine's whole-crate UI-framework ban.
 //!
-//! **Role:** checks that `website-map-engine` depends on no UI framework and imports none, in any
+//! **Role:** checks that `map_engine` depends on no UI framework and imports none, in any
 //! module — rule 5 keeps the browser out of `editing/`, this keeps a component framework out of
 //! the whole crate.
 //! **Position:** a sibling of the seven reported rules in [`super`]; it is not part of the
-//! `verify engine-layers` report, and the `engineering_laws` test binary of `website-api` asserts
+//! `verify engine-layers` report, and the `engineering_laws` test binary of `api` asserts
 //! on it. Reads the manifest through [`crate::repository_laws::cargo_manifest`].
 //! **Signals & state:** none; pure functions over the checkout.
 //! **Invariants:** the manifest arm reads every dependency table under the real package name, so
@@ -32,7 +32,7 @@ pub const UI_FRAMEWORK_IMPORT_RE: &str = r"\b(leptos|yew|dioxus|sycamore|egui|ef
 /// Everything one run of the UI-framework ban found.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UiFrameworkScan {
-    /// How many `.rs` files under `apps/website/map-engine/src` the source arm read.
+    /// How many `.rs` files under `legacy/map_engine/src` the source arm read.
     pub source_files: usize,
     /// Every dependency edge on, and every source import of, a UI framework.
     pub findings: Vec<String>,

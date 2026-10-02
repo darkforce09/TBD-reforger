@@ -267,7 +267,7 @@ Markers (**T-069**) deferred.
   + bindings `fastSlotPatchIds` slot-position fast path — pickup/release materially improved
   (no ~10 fps release collapse). Build + lint clean. **Product call:** good enough for Eden-blocking
   work; mega optimizations (**T-094** typed-array, release repack collapse, T-066 worker, **T-110**
-  terrain) deferred — see MC [`ROADMAP.md`](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md)
+  terrain) deferred — see MC [`ROADMAP.md`](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md)
   §Deferred mega optimizations. Spec: [`t061_drag_move_hotfix.md`](/documentation/tickets/specs/t061_drag_move_hotfix.md).
 - T-060 **Mission Creator — fast load + save at scale (API body limit + progress UX)**. Unblocks
   large-mission save/load in the T-059..T-067 scale program (spec:

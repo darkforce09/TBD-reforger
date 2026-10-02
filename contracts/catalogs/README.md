@@ -64,7 +64,7 @@ fill the arsenal with sample data while every test still passes.
   Items") does not register.
 - Consumers:
   - `cargo xtask db registry-import` (`tools/xtask/src/commands/db/operations.rs`), which runs
-    `import-registry` (`apps/website/api_v2/src/bin/import_registry.rs`) with both paths;
+    `import-registry` (`apps/api/src/bin/import_registry.rs`) with both paths;
   - `cargo xtask schema validate`, whose `registry_validation.rs` in
     `tools/xtask/src/verifications/schemas/checks/` validates both files and checks that every
     item's addon is declared, every `variant_of` names another item, and every edge joins two
@@ -72,11 +72,11 @@ fill the arsenal with sample data while every test still passes.
   - `cargo xtask verify object-registry-aliases`
     (`tools/xtask/src/verifications/registry/object_registry_aliases.rs`), which requires a
     spawn registry row for every crate and other item the Mission Creator's objects palette offers;
-  - the API's integration test `apps/website/api_v2/tests/registry_compat.rs`, which imports both
+  - the API's integration test `apps/api/tests/registry_compat.rs`, which imports both
     as ground truth under a test modpack;
   - `contracts/rules/kit-aliases.json`, whose `vehicles` table is derived from the `vehicle`
     items of the items file, and the development seed
-    `apps/website/api_v2/seeds/registry_dev.sql`, a small registry taken from the same export.
+    `apps/api/seeds/registry_dev.sql`, a small registry taken from the same export.
 
 ## Boundaries
 

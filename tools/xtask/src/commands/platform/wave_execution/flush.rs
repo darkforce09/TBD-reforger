@@ -227,7 +227,7 @@ pub(super) fn run_lane_refusal(
     if args.is_empty() {
         return Some(vec![
             "run: REFUSING — no cargo arguments.".into(),
-            "     usage: cargo xtask platform wave run -p website-api --bin api".into(),
+            "     usage: cargo xtask platform wave run -p api --bin api".into(),
             "            cargo xtask platform wave run -p developer_tools --bin world -- reclassify"
                 .into(),
         ]);

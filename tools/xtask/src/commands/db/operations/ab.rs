@@ -177,12 +177,15 @@ pub(crate) fn did_not_run(msg: &str, e: anyhow::Error) -> Verdict {
     )
 }
 
-/// A private clone of `apps/website/api_v2/docker-compose.yml`: different container name, port and
-/// volume, so no arm here can stop or wipe the DB a sibling slice is using.
+/// A private clone of [`crate::core::repository_layout::DEVELOPMENT_COMPOSE_FILE`] under the same
+/// file name, so `db up` with the folder override finds it through the same `-f`: different
+/// container name, port and volume, so no arm here can stop or wipe the DB a sibling slice is
+/// using.
 pub(crate) fn write_scratch_compose(dir: &Path) -> Result<()> {
+    let (_, file_name) = super::development_compose::compose_file_parts();
     fs::create_dir_all(dir)?;
     fs::write(
-        dir.join("docker-compose.yml"),
+        dir.join(file_name),
         "# Selftest scratch project — created by `cargo xtask db selftest`, safe to delete.\n\
          services:\n  \
            db:\n    \

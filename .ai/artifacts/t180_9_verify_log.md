@@ -10,9 +10,9 @@
 
 - [`crates/map-engine-core/src/mission/orbat.rs`](../../crates/map-engine-core/src/mission/orbat.rs) — `Sl.loadout: Option<Value>`; `loadout_summary_from_value` (summary → else primary+launcher `" + "` + basename strip `.et`); derive map uses helper (no `String::new()` hardcode)
 - [`crates/map-engine-core/src/mission/compile.rs`](../../crates/map-engine-core/src/mission/compile.rs) — `compile_export_orbat_loadout` (I6); sort golden empty loadouts kept (slots lack loadout)
-- [`apps/website/frontend/src/editor_ops.rs`](../../apps/website/frontend/src/editor_ops.rs) — `OpsCtx.attrs_tab`; `open_arsenal` sets tab **3** + `attrs_open`
-- [`apps/website/frontend/src/attributes.rs`](../../apps/website/frontend/src/attributes.rs) / [`mission_editor.rs`](../../apps/website/frontend/src/mission_editor.rs) — lift tab signal
-- [`apps/website/frontend/src/orbat_manager.rs`](../../apps/website/frontend/src/orbat_manager.rs) — OPEN ARSENAL → `open_arsenal`; I7 test
+- [`apps/frontend/src/editor_ops.rs`](../../apps/frontend/src/editor_ops.rs) — `OpsCtx.attrs_tab`; `open_arsenal` sets tab **3** + `attrs_open`
+- [`apps/frontend/src/attributes.rs`](../../apps/frontend/src/attributes.rs) / [`mission_editor.rs`](../../apps/frontend/src/mission_editor.rs) — lift tab signal
+- [`apps/frontend/src/orbat_manager.rs`](../../apps/frontend/src/orbat_manager.rs) — OPEN ARSENAL → `open_arsenal`; I7 test
 
 ## Gates
 
@@ -62,7 +62,7 @@ test result: ok. 133 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 ### I7 — Open Arsenal tab 3
 
 ```text
-$ cargo test -p website-frontend open_arsenal_selects_arsenal_tab
+$ cargo test -p frontend open_arsenal_selects_arsenal_tab
 test orbat_manager::tests::open_arsenal_selects_arsenal_tab ... ok
 ```
 
@@ -70,8 +70,8 @@ test orbat_manager::tests::open_arsenal_selects_arsenal_tab ... ok
 
 ```text
 $ rg -ni 'standardization|IFAK|Grenade Complement' \
-    apps/website/frontend/src/orbat_manager.rs \
-    apps/website/frontend/src/eden_chrome.rs
+    apps/frontend/src/orbat_manager.rs \
+    apps/frontend/src/eden_chrome.rs
 # (no matches) → I8 PASS
 ```
 
@@ -82,9 +82,9 @@ PASS (includes `editor_only_orbat_derivation`).
 ### `make ci-local-leptos`
 
 ```text
-cargo fmt -p website-frontend --check          PASS
-cargo clippy -p website-frontend --target wasm32-unknown-unknown  PASS
-cargo test -p website-frontend                 PASS (89)
+cargo fmt -p frontend --check          PASS
+cargo clippy -p frontend --target wasm32-unknown-unknown  PASS
+cargo test -p frontend                 PASS (89)
 trunk build --release                          PASS
 ```
 

@@ -59,7 +59,7 @@ raw instead of as a clap tree: `mk` (the target list lives in
   and `load_registry` for `registry-get`.
 - Used by: `tools/xtask/src/main.rs`, the only caller of `dispatch::run`; people and the CI
   workflows run the binary through the `cargo xtask` alias in `.cargo/config.toml`, the backup
-  units in `tools/xtask/deploy/systemd/` through `cargo run -q -p xtask --`, and the agent
+  units in `deploy/systemd/` through `cargo run -q -p xtask --`, and the agent
   hook in `.claude/settings.json` through the built binary.
 - Rules: a command group's subcommands stay in that group's `cli.rs`, and this folder holds only
   the top-level names and the routing; a top-level name is stable, because workflows, units,

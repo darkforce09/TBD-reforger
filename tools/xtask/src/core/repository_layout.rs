@@ -6,27 +6,32 @@
 //! moves, and a command that reads a file can be traced to the file without a search.
 
 /// Deployment configuration and unit templates for the website and game servers.
-pub const DEPLOY_DIR: &str = "tools/xtask/deploy";
+pub const DEPLOY_DIR: &str = "deploy";
 
 /// Host secrets and remote paths every `cargo xtask deploy` subcommand loads. Gitignored: it
 /// holds credentials, and the deploy excludes it from the rsync so a dev PC cannot overwrite the
 /// server's copy.
-pub const DEPLOY_ENV: &str = "tools/xtask/deploy/deploy.env";
+pub const DEPLOY_ENV: &str = "deploy/deploy.env";
 
 /// The committed template an operator copies to [`DEPLOY_ENV`] and fills in.
-pub const DEPLOY_ENV_EXAMPLE: &str = "tools/xtask/deploy/deploy.env.example";
+pub const DEPLOY_ENV_EXAMPLE: &str = "deploy/deploy.env.example";
 
 /// Caddy reverse proxy serving the SPA and proxying `/api` to the API port. The staging compose
 /// file's `caddy` service runs it, and every `cargo xtask deploy website` starts that service and
 /// reloads the file; `forwarded_for_trust` pins its loopback upstream.
-pub const CADDYFILE: &str = "tools/xtask/deploy/Caddyfile.website";
+pub const CADDYFILE: &str = "deploy/caddy/Caddyfile";
+
+/// The local development stack: the Postgres container `tbd_reforger_db` on host port 5434.
+/// `cargo xtask db up`, `down`, `logs` and `seed` pass it to compose with `-f` and run compose in
+/// its folder, which is the folder its relative paths resolve against.
+pub const DEVELOPMENT_COMPOSE_FILE: &str = "deploy/compose.dev.yml";
 
 /// systemd unit templates an operator installs into `~/.config/systemd/user`.
-pub const SYSTEMD_UNITS_DIR: &str = "tools/xtask/deploy/systemd";
+pub const SYSTEMD_UNITS_DIR: &str = "deploy/systemd";
 
 /// The website API unit. `cargo xtask deploy website` renders this template's repository
 /// placeholder for the remote and restarts the installed unit by name.
-pub const WEBSITE_API_UNIT: &str = "tools/xtask/deploy/systemd/tbd-website-api.service";
+pub const WEBSITE_API_UNIT: &str = "deploy/systemd/tbd-website-api.service";
 
 /// Dedicated-server configuration profiles the mod commands launch a server with.
 pub const DEDICATED_SERVER_PROFILES_DIR: &str = "tools/xtask/dedicated_server_profiles";
@@ -54,13 +59,13 @@ pub mod workspace_laws {
     pub const MANIFEST_SWEEP_ROOTS: &[&str] = &["apps", "crates", "tools", "legacy"];
 
     /// The app stylesheet whose `@source` lines must cover every leptos crate.
-    pub const TAILWIND_STYLESHEET: &str = "apps/website/frontend/style/aegis.css";
+    pub const TAILWIND_STYLESHEET: &str = "apps/frontend/style/aegis.css";
 
     /// The frontend crate's layer table: `src/v2/core` is the foundation, `src/v2/pages` the
     /// pages (one area per section), `src/v2/apps` the workspaces, and the entry point, the route
     /// table, the platform frame and the crate-level tests the shell.
     pub const FRONTEND_LAYERS: &[FrontendCrateLayers] = &[FrontendCrateLayers {
-        crate_path: "apps/website/frontend",
+        crate_path: "apps/frontend",
         rows: &[
             shell("src/main.rs"),
             shell("src/router.rs"),
@@ -130,20 +135,14 @@ pub mod documentation {
     /// here invalidates recorded evidence. The fingerprint matches this prefix with
     /// `starts_with`; the trailing slash keeps a sibling whose name merely begins the same way
     /// out of the inputs.
-    pub const API_READINESS_EVIDENCE_PREFIX: &str =
-        "documentation/website/api_v2/verification_evidence/";
+    pub const API_READINESS_EVIDENCE_PREFIX: &str = "documentation/apps/api/verification_evidence/";
 
     /// The API acceptance register: every requirement, the implementation paths it rests on and
     /// the checks that prove it. `cargo xtask verify api-readiness` reads and validates it before
     /// it judges any evidence. It sits under [`API_READINESS_EVIDENCE_PREFIX`], so the source
     /// fingerprint covers it.
     pub const API_READINESS_REGISTER: &str =
-        "documentation/website/api_v2/verification_evidence/requirements.json";
-
-    /// The top-level folders that hold code. Every tracked folder in them carries a README.md,
-    /// and README.md is the only Markdown they hold; `cargo xtask verify readme-coverage` and
-    /// `cargo xtask verify markdown-placement` enforce both.
-    pub const CODE_TREES: &[&str] = &["apps", "tools", "contracts", "assets"];
+        "documentation/apps/api/verification_evidence/requirements.json";
 
     // Root of the documentation tree: the deeper documents that code READMEs link to. Every
     // tracked folder in it carries a README.md, and every live document in it stays at or under

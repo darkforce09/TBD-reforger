@@ -47,7 +47,7 @@ cargo clippy -p map-engine-core -p map-engine-render -p map-engine-wasm --featur
 cargo test -p map-engine-core --features world  → 152/152
 cargo test -p map-engine-render  → 31/31
 make wasm  → 0
-cd apps/website/frontend && npm test  → 355/355
+cd apps/frontend && npm test  → 355/355
 npm run build && npm run lint  → 0
 ```
 

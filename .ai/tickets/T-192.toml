@@ -46,7 +46,7 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
 owns = [
-    "apps/website/frontend/src/eden_chrome.rs",
+    "apps/frontend/src/eden_chrome.rs",
     "apps/website/api/src/services/mission_compile.rs",
 ]
 

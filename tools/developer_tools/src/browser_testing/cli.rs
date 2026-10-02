@@ -43,7 +43,7 @@ enum Cmd {
     VSuite {
         /// verify | accept  (there is no freeze mode: the reference oracle is non-regenerable)
         mode: String,
-        #[arg(long, default_value = "apps/website/frontend/dist")]
+        #[arg(long, default_value = "apps/frontend/dist")]
         leptos_dir: PathBuf,
         #[arg(long, default_value = "")]
         only: String,
@@ -128,7 +128,7 @@ enum Cmd {
     /// The mortar calculator offline: pack download, service-worker reload, native solution
     #[command(name = "mortar-offline")]
     MortarOffline {
-        #[arg(long, default_value = "apps/website/frontend/dist")]
+        #[arg(long, default_value = "apps/frontend/dist")]
         dist: PathBuf,
         #[arg(long, default_value_t = 5402)]
         port: u16,
@@ -141,7 +141,7 @@ enum Cmd {
     /// The fire-mission solver's wasm build against its native build, case by case
     #[command(name = "ballistics-agreement")]
     BallisticsAgreement {
-        #[arg(long, default_value = "apps/website/frontend/dist")]
+        #[arg(long, default_value = "apps/frontend/dist")]
         dist: PathBuf,
         #[arg(long, default_value_t = 1)]
         seed: u64,

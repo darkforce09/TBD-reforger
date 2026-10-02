@@ -42,7 +42,7 @@ pub(crate) fn base() -> Env {
     }
 }
 
-const SETTINGS_FILE: &str = "/home/deploy/checkout/tools/xtask/deploy/deploy.env";
+const SETTINGS_FILE: &str = "/home/deploy/checkout/deploy/deploy.env";
 
 /// The settings of a `deploy.env` holding `file`, beside the given process variables.
 fn settings(file: &str, process: &[(&str, &str)]) -> Result<DeployEnvironment, String> {

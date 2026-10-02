@@ -47,8 +47,8 @@ completed_at = "2026-09-06T23:38:57Z"
 estimated = ["tokens"]
 owns = [
     "packages/tbd-schema/schema/mission.schema.json",
-    "apps/website/frontend/src/editor/panels/weather_timeline.rs",
-    "apps/website/frontend/src/editor/panels/mod.rs",
+    "apps/frontend/src/editor/panels/weather_timeline.rs",
+    "apps/frontend/src/editor/panels/mod.rs",
     "crates/map-engine-core/src/mission/weather.rs",
     "crates/map-engine-core/src/mission/mod.rs",
     "crates/map-engine-core/src/mission/extensions.rs",

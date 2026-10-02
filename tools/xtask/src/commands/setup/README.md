@@ -33,7 +33,7 @@ against throwaway trees instead of the operator's Steam install or home.
 `staging_server.rs` is not a `setup` subcommand: `tools/xtask/src/commands/mod_ops/dispatch.rs`
 sends `cargo xtask mod bootstrap-staging` to it. It reads `TBD_SSH_HOST`, `TBD_REMOTE_DIR`,
 `TBD_PROFILE_DIR`, `TBD_ADDONS_STAGING`, `TBD_SSH_PASS` and `TBD_SSH_IDENTITY_FILE` from
-`tools/xtask/deploy/deploy.env` through `crate::core::deploy_environment` (the file decides every
+`deploy/deploy.env` through `crate::core::deploy_environment` (the file decides every
 key it assigns, the environment fills the rest, and an absent file leaves everything to the
 environment); the three folders default to `/home/<user>/tbd/repo`, `…/profile` and
 `…/addons-staging` under the user of `TBD_SSH_HOST`. Over SSH it prints the host's disk, the

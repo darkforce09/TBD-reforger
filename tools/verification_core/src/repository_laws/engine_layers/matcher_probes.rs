@@ -1,6 +1,6 @@
 //! The engine-layer matchers, compiled and proved before any of them judges source.
 //!
-//! **Role:** compiles the eight matchers of rules 2 to 7 and runs each over subjects whose
+//! **Role:** compiles the nine matchers of rules 1 to 7 and runs each over subjects whose
 //! answers are known: the shapes it must match and the legitimate spellings it must not.
 //! **Position:** the first step of [`super::check_engine_layers`]; its output feeds
 //! [`super::evaluation::evaluate`].
@@ -19,6 +19,24 @@ pub(super) fn probe_matchers(o: &mut Vec<String>) -> Result<BoundaryPatterns, (u
     // Probe the matcher over a subject whose answer is known, BEFORE it decides anything. The
     // engine is compiled in, so "tool absent" is unreachable — but "the matcher works" is still a
     // claim, and `probe_str` returning a `Result` forces the dead arm to be written down.
+    // Rule 1. The negatives are the renderer's own prose naming the map engine while describing
+    // the wall, and a path through this crate.
+    let map_engine_import = probed(
+        o,
+        "engine-layers rule 1 pattern",
+        MAP_ENGINE_IMPORT_RE,
+        &[
+            "use map_engine::frame::EngineHandle;",
+            "    let engine = map_engine::frame::boot(&device);",
+            "extern crate map_engine;",
+        ],
+        &[
+            "//! `frame/`; `map_engine` speaks it, never the reverse. It must never depend on",
+            "/// `map_engine` and cannot move here: Rust's inherent-impl coherence (E0116) is",
+            "use crate::frame::packet::FramePacket;",
+        ],
+    )?;
+
     let decl = match Pattern::regex(DECL_RE).and_then(Pattern::case_insensitive) {
         Ok(p) => p,
         Err(e) => {
@@ -54,7 +72,7 @@ pub(super) fn probe_matchers(o: &mut Vec<String>) -> Result<BoundaryPatterns, (u
     // does NOT fire on the spelling every call site is supposed to use, which is the one false
     // positive that would make the rule unachievable; `::frames` proves the `\b`, because a pin
     // that can be widened by appending a letter is not a pin.
-    match gate::probe_str(&vocab, "use website_graphics_engine::frame::DrawBatch;") {
+    match gate::probe_str(&vocab, "use graphics_engine::frame::DrawBatch;") {
         Ok(true) => {}
         Ok(false) => {
             say(o, PROBE_FAIL);
@@ -64,7 +82,7 @@ pub(super) fn probe_matchers(o: &mut Vec<String>) -> Result<BoundaryPatterns, (u
     }
     for subject in [
         "use crate::frame::DrawBatch;",
-        "use website_graphics_engine::frames::x;",
+        "use graphics_engine::frames::x;",
     ] {
         match gate::probe_str(&vocab, subject) {
             Ok(false) => {}
@@ -89,10 +107,7 @@ pub(super) fn probe_matchers(o: &mut Vec<String>) -> Result<BoundaryPatterns, (u
     };
     // Two subjects, not one: the positive proves the matcher fires, and `::pipelines` proves the
     // `\b` is real. A pin that can be widened by adding an `s` is not a pin.
-    match gate::probe_str(
-        &gpu,
-        "use website_graphics_engine::pipeline::create_text_pipeline;",
-    ) {
+    match gate::probe_str(&gpu, "use graphics_engine::pipeline::create_text_pipeline;") {
         Ok(true) => {}
         Ok(false) => {
             say(o, PROBE_FAIL);
@@ -100,7 +115,7 @@ pub(super) fn probe_matchers(o: &mut Vec<String>) -> Result<BoundaryPatterns, (u
         }
         Err(cause) => return Err(refuse(o, "engine-layers rule 3b self-probe", cause)),
     }
-    match gate::probe_str(&gpu, "use website_graphics_engine::pipelines::x;") {
+    match gate::probe_str(&gpu, "use graphics_engine::pipelines::x;") {
         Ok(false) => {}
         Ok(true) => {
             say(o, PROBE_FAIL);
@@ -122,7 +137,7 @@ pub(super) fn probe_matchers(o: &mut Vec<String>) -> Result<BoundaryPatterns, (u
             "use crate::data::store::MissionDocCore;",
             "use crate::streaming::loaders::chunk::WorldChunk;",
             "    let b = crate::io::archives::codec::to_bytes(&v);",
-            "use website_graphics_engine::layout::pack::TEXT_UNIFORM_BYTES;",
+            "use graphics_engine::layout::pack::TEXT_UNIFORM_BYTES;",
             "use super::super::super::store::MissionDocCore;",
         ],
         &[
@@ -144,7 +159,7 @@ pub(super) fn probe_matchers(o: &mut Vec<String>) -> Result<BoundaryPatterns, (u
             "use crate::world::terrain::dem::grid::DemVectorGrid;",
             "use crate::streaming::scheduler::state::WorldResidency;",
             "    let hit = crate::spatial::indexing::picking::pick(qx, qy);",
-            "use website_graphics_engine::draw::instances::QuadInstance;",
+            "use graphics_engine::draw::instances::QuadInstance;",
             "use super::super::super::streaming::loaders::chunk::WorldChunk;",
         ],
         &[
@@ -207,20 +222,21 @@ pub(super) fn probe_matchers(o: &mut Vec<String>) -> Result<BoundaryPatterns, (u
         "engine-layers rule 6 pattern",
         GRAPHICS_IMPORT_RE,
         &[
-            "use website_graphics_engine::draw::triangulate;",
-            "    let t = website_graphics_engine::draw::triangulate(&verts);",
-            "extern crate website_graphics_engine;",
+            "use graphics_engine::draw::triangulate;",
+            "    let t = graphics_engine::draw::triangulate(&verts);",
+            "extern crate graphics_engine;",
         ],
         &[
-            "//! loop machinery moved to the renderer's one `RafPump` (`website-graphics-engine`)",
+            "//! loop machinery moved to the renderer's one `RafPump` (`graphics_engine`)",
             "/// this app touches — through the map engine, never by depending on \
-             `website-graphics-engine`",
-            "use website_map_engine::frame::EngineHandle;",
+             `graphics_engine`",
+            "use map_engine::frame::EngineHandle;",
             "use crate::v2::apps::editor::input::tools::ruler_tool::install_seam;",
         ],
     )?;
 
     Ok(BoundaryPatterns {
+        map_engine_import,
         decl,
         vocab,
         gpu,

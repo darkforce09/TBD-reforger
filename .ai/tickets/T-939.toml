@@ -22,7 +22,7 @@ children = [
 main_goal = "Common editing tasks take one gesture, one dialog or one chord, and the canvas shows problems and links where the entities are."
 context = [
     "Master audit S4 (2026-09-04), verified against main @ 072988d57: attributes_modal.rs:1864-1872, outliner_tree.rs:1110, overlays.rs:172-210 and :654-679, top_strip.rs:249-252, dock_left.rs:134-144, asset_catalog.rs:321/:460, outliner.rs:39, vehicles_panel.rs:231-276.",
-    "Frontend dir apps/website/frontend/src/editor/; the editor keymap is the wasm keydown closure in mission_editor.rs (allowlisted SIZE-3 file).",
+    "Frontend dir apps/frontend/src/editor/; the editor keymap is the wasm keydown closure in mission_editor.rs (allowlisted SIZE-3 file).",
     "Existing tickets referenced, not re-minted: T-704 command palette, T-142/T-157/T-158 shell, T-129 floor selector, T-131 route planner, T-141 slot naming, T-080 connection UI, T-070 vehicles placeable, T-309 faction squads.",
 ]
 requirement = [

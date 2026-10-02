@@ -20,7 +20,7 @@ Audit **A15 / O10:** `WorldClassToggles` has **12** keys; Mission Settings expos
 
 ## Touch files (expected)
 
-1. `apps/website/frontend/src/features/mission-creator/layout/MissionSettingsDialog.tsx` — 7 `ToggleField` rows **before** existing five; order per spec L3.
+1. `apps/frontend/src/features/mission-creator/layout/MissionSettingsDialog.tsx` — 7 `ToggleField` rows **before** existing five; order per spec L3.
 2. Tests — keyof `WorldClassToggles` completeness (12/12) + prefs persistence for new keys.
 3. `.ai/artifacts/t152_20_verify_log.md`
 

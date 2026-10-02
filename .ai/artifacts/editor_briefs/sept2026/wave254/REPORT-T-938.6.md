@@ -40,7 +40,7 @@ tree that carries no instrumentation of its own.
 
 A budget query param is *inert on main*: same island, same mip count, same absent readout.
 Structurally, `grep -rnE "memory_budget|fn reserve\(|MemoryBudget|Decision::"` over
-`apps/website/frontend/src/editor/` **exits 1 — no match anywhere**. Every existing `Budget` in
+`apps/frontend/src/editor/` **exits 1 — no match anywhere**. Every existing `Budget` in
 `world_assets` is `BootEvent::Budget`, the *network* progress bar (`dem_load.rs:104`, `fetch.rs:50`,
 `satellite.rs:533`) — bytes on the wire, never bytes in the heap.
 
@@ -141,21 +141,21 @@ test editor::canvas::viewport::memory_budget_pure::t938_6::the_floor_rises_one_l
 
 ---- editor::canvas::viewport::memory_budget_pure::t938_6::the_floor_rises_one_level_per_degrade stdout ----
 
-thread 'editor::canvas::viewport::memory_budget_pure::t938_6::the_floor_rises_one_level_per_degrade' (667093) panicked at apps/website/frontend/src/editor/canvas/../world_assets/memory_budget.rs:732:9:
+thread 'editor::canvas::viewport::memory_budget_pure::t938_6::the_floor_rises_one_level_per_degrade' (667093) panicked at apps/frontend/src/editor/canvas/../world_assets/memory_budget.rs:732:9:
 assertion `left == right` failed: level 0 costs 1,026,523,730 B, which fits a 1024 MiB budget on its own but NOT beside the 163,840,000 B DEM raster — so the floor must rise by exactly one
   left: 0
  right: 1
 
 ---- editor::canvas::viewport::memory_budget_pure::t938_6::decide_separates_shrink_from_never stdout ----
 
-thread 'editor::canvas::viewport::memory_budget_pure::t938_6::decide_separates_shrink_from_never' (667085) panicked at apps/website/frontend/src/editor/canvas/../world_assets/memory_budget.rs:662:9:
+thread 'editor::canvas::viewport::memory_budget_pure::t938_6::decide_separates_shrink_from_never' (667085) panicked at apps/frontend/src/editor/canvas/../world_assets/memory_budget.rs:662:9:
 assertion `left == right` failed: 500 does not fit the 400 that is left but would fit an empty budget — that is the `ask smaller` answer, and collapsing it into Refuse is what would leave the satellite with no ladder to walk
   left: Ok
  right: Degrade
 
 ---- editor::canvas::viewport::memory_budget_pure::t938_6::reserve_records_only_on_ok stdout ----
 
-thread 'editor::canvas::viewport::memory_budget_pure::t938_6::reserve_records_only_on_ok' (667089) panicked at apps/website/frontend/src/editor/canvas/../world_assets/memory_budget.rs:678:9:
+thread 'editor::canvas::viewport::memory_budget_pure::t938_6::reserve_records_only_on_ok' (667089) panicked at apps/frontend/src/editor/canvas/../world_assets/memory_budget.rs:678:9:
 assertion `left == right` failed: reserve and decide answer with the same arm
   left: Ok
  right: Degrade
@@ -167,24 +167,24 @@ Restored with `git checkout --`, then **`touch`ed** the file (a restore alone do
 cargo — the T-421 trap), re-ran:
 
 ```
-   Compiling website-frontend v0.1.0 (.../worktrees/T-938.6/apps/website/frontend)
+   Compiling frontend v0.1.0 (.../worktrees/T-938.6/apps/frontend)
 test result: ok. 1356 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 13.90s
 ```
 
-Both halves show a real `Compiling website-frontend` line from **this worktree's path**, so neither
+Both halves show a real `Compiling frontend` line from **this worktree's path**, so neither
 verdict is a T-596 replay. Baseline before the slice was 1344 passed; the slice adds 12.
 
 ## test / verify output
 
-`hcargo xtask platform wave test --slice T-938.6 -p website-frontend` (private target dir):
+`hcargo xtask platform wave test --slice T-938.6 -p frontend` (private target dir):
 
 ```
-   Compiling website-frontend v0.1.0 (/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/T-938.6/apps/website/frontend)
+   Compiling frontend v0.1.0 (/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/T-938.6/apps/frontend)
 test result: ok. 1356 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 13.90s
 ```
 
-`hcargo fmt -p website-frontend --check` -> clean.
-`hcargo clippy -p website-frontend --target wasm32-unknown-unknown --all-targets` (CI's exact flags)
+`hcargo fmt -p frontend --check` -> clean.
+`hcargo clippy -p frontend --target wasm32-unknown-unknown --all-targets` (CI's exact flags)
 -> **zero warnings from `memory_budget.rs`**; the three touching my other files (`satellite.rs:218`,
 `satellite.rs:388`, `viewport.rs:60`) are all pre-existing, on lines this slice did not change.
 
@@ -264,10 +264,10 @@ is the right direction for a guard — it refuses slightly early rather than sli
 `[]` — none. `git diff --stat main...HEAD` is exactly the four owned files:
 
 ```
- apps/website/frontend/src/editor/canvas/viewport.rs            |  28 +-
- apps/website/frontend/src/editor/world_assets/memory_budget.rs | 878 +++++
- apps/website/frontend/src/editor/world_assets/mod.rs           |  75 +-
- apps/website/frontend/src/editor/world_assets/satellite.rs     |  55 +-
+ apps/frontend/src/editor/canvas/viewport.rs            |  28 +-
+ apps/frontend/src/editor/world_assets/memory_budget.rs | 878 +++++
+ apps/frontend/src/editor/world_assets/mod.rs           |  75 +-
+ apps/frontend/src/editor/world_assets/satellite.rs     |  55 +-
  4 files changed, 1031 insertions(+), 5 deletions(-)
 ```
 
@@ -294,7 +294,7 @@ haystack for Class-R scrubs.
    owns.** Their loaders live in `world_host.rs`, `forest_mass.rs`, `labels.rs`, `water.rs`
    (siblings' or unowned), and wasm linear-memory growth cannot see an allocation served from freed
    pages. The honest instrument is a `GlobalAlloc` wrapper installed in
-   `apps/website/frontend/src/main.rs` that tracks live bytes; that is a crate-wide change and a
+   `apps/frontend/src/main.rs` that tracks live bytes; that is a crate-wide change and a
    different ticket. **Not deferred by me** — outside owns, reported as the brief requires.
 2. **Only the satellite can degrade.** That is the ticket's own `LOCKED` clause, not a decision of
    mine. The DEM/hillshade lane is `hold`-only: by the time its size is known the memory exists, and

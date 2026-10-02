@@ -11,15 +11,15 @@ the integration test database and its options are in
 
 - **TEST-1 (Debuggability) — A change to a handler's behaviour ships with the
   [API](/documentation/glossary/a_to_f.md#api)'s tests green against Postgres.** The integration tests
-  in `apps/website/api_v2/tests/` run against a real database; a clean compile is not proof of the
+  in `apps/api/tests/` run against a real database; a clean compile is not proof of the
   HTTP contract. Locally: `cargo xtask db test-it` (a new randomly named database, dropped at the
   end) or `cargo xtask ci rust-test-it`, the `ci-local` step, both after `cargo xtask db up`. Gate:
-  CI-BLOCK, the `website-api` job of `.github/workflows/ci.yml`, whose test step runs
-  `cargo xtask ci website-api-test` (the API's `cargo test`, unit and integration) against a
+  CI-BLOCK, the `api` job of `.github/workflows/ci.yml`, whose test step runs
+  `cargo xtask ci api-test` (the API's `cargo test`, unit and integration) against a
   Postgres 18 service.
 - **TEST-2 (Debuggability) — Non-trivial frontend logic has a unit test.** Compilers, selectors,
-  transforms and DTO shapes are tested in `website-frontend`. Gate: CI-BLOCK,
-  `cargo test -p website-frontend` inside `cargo xtask mk ci-local-leptos`, the `website-frontend`
+  transforms and DTO shapes are tested in `frontend`. Gate: CI-BLOCK,
+  `cargo test -p frontend` inside `cargo xtask mk ci-local-leptos`, the `frontend`
   job.
 - **TEST-3 (Usability) — A schema or DTO change ships a golden fixture and a green schema gate.**
   A change under `contracts/definitions/` comes with its fixture under `contracts/fixtures/`
@@ -40,9 +40,9 @@ forbidden (CLAUDE.md law 7). Three test suites hold the rule, each in the crate'
 `cargo test` (CI-BLOCK):
 
 - the API: `no_inline_test_modules` in
-  [architecture_rules.rs](/apps/website/api_v2/src/tests/architecture_rules.rs);
+  [architecture_rules.rs](/apps/api/src/tests/architecture_rules.rs);
 - the app's `src/v2/` tree: `v2_production_files_meet_the_documentation_standard` in
-  `apps/website/frontend/src/v2/tests/doc_audit/mod.rs`;
+  `apps/frontend/src/v2/tests/doc_audit/mod.rs`;
 - the four `tools` crates: `tooling_test_modules_live_in_separate_files` in
   `tools/xtask/src/tests/tooling_dependency_boundaries.rs`.
 

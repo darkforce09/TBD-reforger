@@ -21,29 +21,29 @@ Pasted BEFORE any edit, at `HEAD = dc073f7c2`:
 ```
 ### HEAD: dc073f7c2
 ----- set_z_drag_readout -----
-apps/website/frontend/src/editor/canvas/overlays.rs:32:pub(crate) fn set_z_drag_readout(readout: Option<String>) {
+apps/frontend/src/editor/canvas/overlays.rs:32:pub(crate) fn set_z_drag_readout(readout: Option<String>) {
 ----- snap_elevation -----
-apps/website/frontend/src/editor/canvas/gizmo_z.rs:15:pub fn snap_elevation(z: f64, step: f64) -> f64 {
+apps/frontend/src/editor/canvas/gizmo_z.rs:15:pub fn snap_elevation(z: f64, step: f64) -> f64 {
 ----- format_height_readout -----
-apps/website/frontend/src/editor/canvas/gizmo_z.rs:23:pub fn format_height_readout(z: f64) -> String {
+apps/frontend/src/editor/canvas/gizmo_z.rs:23:pub fn format_height_readout(z: f64) -> String {
 ----- dy_to_elevation -----
-apps/website/frontend/src/editor/canvas/gizmo_z.rs:11:pub fn dy_to_elevation(dy: f64, scale: f64) -> f64 {
-apps/website/frontend/src/editor/canvas/gizmo_z.rs:43:        let elev = dy_to_elevation(-10.0, 2.0);
+apps/frontend/src/editor/canvas/gizmo_z.rs:11:pub fn dy_to_elevation(dy: f64, scale: f64) -> f64 {
+apps/frontend/src/editor/canvas/gizmo_z.rs:43:        let elev = dy_to_elevation(-10.0, 2.0);
 ----- plan_drop -----
-apps/website/frontend/src/editor/panels/outliner_drag.rs:9:pub fn plan_drop(
-apps/website/frontend/src/editor/panels/outliner_drag.rs:45:            plan_drop(&drag, "valid", descendants),
-apps/website/frontend/src/editor/panels/outliner_drag.rs:50:        assert_eq!(plan_drop(&drag, "a", descendants), None);
-apps/website/frontend/src/editor/panels/outliner_drag.rs:53:        assert_eq!(plan_drop(&drag, "c", descendants), None);
+apps/frontend/src/editor/panels/outliner_drag.rs:9:pub fn plan_drop(
+apps/frontend/src/editor/panels/outliner_drag.rs:45:            plan_drop(&drag, "valid", descendants),
+apps/frontend/src/editor/panels/outliner_drag.rs:50:        assert_eq!(plan_drop(&drag, "a", descendants), None);
+apps/frontend/src/editor/panels/outliner_drag.rs:53:        assert_eq!(plan_drop(&drag, "c", descendants), None);
 ----- begin_tactical_draw -----
-apps/website/frontend/src/editor/mission_editor_tests/t936_7_tactical_lane_bind.rs:9  (prose)
-apps/website/frontend/src/editor/mission_editor_tests/t936_7_tactical_lane_bind.rs:51 (assert-message string)
-apps/website/frontend/src/editor/state/history.rs:386 (comment)
-apps/website/frontend/src/editor/state/operations/tactical_graphics.rs:44 (doc link)
-apps/website/frontend/src/editor/state/operations/tactical_graphics.rs:188:pub fn begin_tactical_draw(kind: &str) -> bool {
-apps/website/frontend/src/editor/state/operations.rs:83 (comment naming it as uncalled)
+apps/frontend/src/editor/mission_editor_tests/t936_7_tactical_lane_bind.rs:9  (prose)
+apps/frontend/src/editor/mission_editor_tests/t936_7_tactical_lane_bind.rs:51 (assert-message string)
+apps/frontend/src/editor/state/history.rs:386 (comment)
+apps/frontend/src/editor/state/operations/tactical_graphics.rs:44 (doc link)
+apps/frontend/src/editor/state/operations/tactical_graphics.rs:188:pub fn begin_tactical_draw(kind: &str) -> bool {
+apps/frontend/src/editor/state/operations.rs:83 (comment naming it as uncalled)
 ----- duplicate_slot_ids -----
-apps/website/frontend/src/editor/state/operations/slot_ids.rs:4:pub fn duplicate_slot_ids(doc: &MissionDocCore) -> Vec<(String, String)> {
-apps/website/frontend/src/editor/state/operations/slot_ids.rs:55:        let dups = duplicate_slot_ids(&doc);
+apps/frontend/src/editor/state/operations/slot_ids.rs:4:pub fn duplicate_slot_ids(doc: &MissionDocCore) -> Vec<(String, String)> {
+apps/frontend/src/editor/state/operations/slot_ids.rs:55:        let dups = duplicate_slot_ids(&doc);
 ```
 
 A string match is not proof, so residual hits were classified against each file's `#[cfg(test)]`
@@ -134,7 +134,7 @@ the arm only ever resolved `initial_zs` for the slot half.
 ## perturbation
 
 Four loops. Sever -> RED -> restore -> `touch` -> green. Every run showed exactly one
-`Compiling website-frontend` line, so no verdict is a replayed cache (T-596).
+`Compiling frontend` line, so no verdict is a replayed cache (T-596).
 
 ### Loop 1 — .82, sever the pointermove borrow
 `let z_arm = z_drag.borrow().clone();` -> `let z_arm: Option<(…)> = None;`
@@ -142,7 +142,7 @@ Four loops. Sever -> RED -> restore -> `touch` -> green. Every run showed exactl
 ```
 ---- editor::canvas::overlays::t946_86_z_arm::the_z_arm_is_borrowed_by_both_pointer_closures stdout ----
 
-thread 'editor::canvas::overlays::t946_86_z_arm::the_z_arm_is_borrowed_by_both_pointer_closures' (2255280) panicked at apps/website/frontend/src/editor/canvas/overlays.rs:1158:9:
+thread 'editor::canvas::overlays::t946_86_z_arm::the_z_arm_is_borrowed_by_both_pointer_closures' (2255280) panicked at apps/frontend/src/editor/canvas/overlays.rs:1158:9:
 T-946.86 (.82): onpointermove must BORROW the armed z_drag — writing it at pointerdown and never reading it is the wave-255 defect this repairs
 
 
@@ -159,12 +159,12 @@ Restore + `touch` -> `test result: ok. 1412 passed; 0 failed` (Compiling: 1).
 ```
 ---- editor::panels::outliner_tree::t946_86_multi_drop::the_folder_drop_consumes_the_pending_drag_set stdout ----
 
-thread 'editor::panels::outliner_tree::t946_86_multi_drop::the_folder_drop_consumes_the_pending_drag_set' (2274130) panicked at apps/website/frontend/src/editor/panels/outliner_tree.rs:2461:9:
+thread 'editor::panels::outliner_tree::t946_86_multi_drop::the_folder_drop_consumes_the_pending_drag_set' (2274130) panicked at apps/frontend/src/editor/panels/outliner_tree.rs:2461:9:
 T-946.86 (.83): the folder-row drop must consume the multi-select DragSet — completing through the single-id latch alone moves only the anchor
 
 ---- editor::panels::outliner_tree::t946_86_multi_drop::the_single_id_completion_is_the_fallback_not_a_second_commit stdout ----
 
-thread 'editor::panels::outliner_tree::t946_86_multi_drop::the_single_id_completion_is_the_fallback_not_a_second_commit' (2274161) panicked at apps/website/frontend/src/editor/panels/outliner_tree.rs:2480:14:
+thread 'editor::panels::outliner_tree::t946_86_multi_drop::the_single_id_completion_is_the_fallback_not_a_second_commit' (2274161) panicked at apps/frontend/src/editor/panels/outliner_tree.rs:2480:14:
 checked by the pin above
 
 
@@ -179,7 +179,7 @@ test result: FAILED. 1410 passed; 2 failed; 0 ignored; 0 measured; 0 filtered ou
 ```
 ---- editor::panels::zones_panel::t946_86_tactical_trigger::the_panel_arms_the_tactical_draw stdout ----
 
-thread 'editor::panels::zones_panel::t946_86_tactical_trigger::the_panel_arms_the_tactical_draw' (2285217) panicked at apps/website/frontend/src/editor/panels/zones_panel.rs:2081:9:
+thread 'editor::panels::zones_panel::t946_86_tactical_trigger::the_panel_arms_the_tactical_draw' (2285217) panicked at apps/frontend/src/editor/panels/zones_panel.rs:2081:9:
 T-946.86 (.84): a production control must call begin_tactical_draw — the wave-255 state was a complete draw tool with no way to start it
 
 
@@ -193,7 +193,7 @@ test result: FAILED. 1411 passed; 1 failed; 0 ignored; 0 measured; 0 filtered ou
 ```
 ---- editor::state::commands_hotkeys::t946_86_duplicate_guard::save_now_checks_duplicates_before_it_compiles_or_posts stdout ----
 
-thread 'editor::state::commands_hotkeys::t946_86_duplicate_guard::save_now_checks_duplicates_before_it_compiles_or_posts' (2291726) panicked at apps/website/frontend/src/editor/state/commands_hotkeys.rs:2589:14:
+thread 'editor::state::commands_hotkeys::t946_86_duplicate_guard::save_now_checks_duplicates_before_it_compiles_or_posts' (2291726) panicked at apps/frontend/src/editor/state/commands_hotkeys.rs:2589:14:
 T-946.86 (.85): save_now must ask for the duplicate slot ids
 
 
@@ -208,7 +208,7 @@ All four restored + `touch` -> `test result: ok. 1412 passed; 0 failed` (Compili
 
 ### Incidental RED (design correction, not a loop)
 ```
-thread 'editor::mission_editor::t796_comment_drag::the_move_commit_partitions_comments_to_their_own_mutator' (2189146) panicked at apps/website/frontend/src/editor/mission_editor_tests/t796_comment_drag.rs:139:10:
+thread 'editor::mission_editor::t796_comment_drag::the_move_commit_partitions_comments_to_their_own_mutator' (2189146) panicked at apps/frontend/src/editor/mission_editor_tests/t796_comment_drag.rs:139:10:
 T-796: the drag-commit delta guard must survive
 ```
 
@@ -247,9 +247,9 @@ Pins added: 19. Suite: 1392 -> 1415.
 
 `hcargo xtask mk ci-local-leptos` — all four steps, run twice:
 ```
-cargo fmt -p website-frontend --check                                            (silent — pass)
-cargo clippy -p website-frontend --target wasm32-unknown-unknown --all-targets   (0 errors)
-cargo test -p website-frontend
+cargo fmt -p frontend --check                                            (silent — pass)
+cargo clippy -p frontend --target wasm32-unknown-unknown --all-targets   (0 errors)
+cargo test -p frontend
     test result: ok. 1415 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 14.02s
 trunk build --release
     Finished `release` profile [optimized] target(s) in 1m 06s
@@ -323,7 +323,7 @@ was read, never edited.
 
 4. **`gestures.rs` cannot host a test.** `canvas/mod.rs` declares `pub mod gestures` under
    `#[cfg(target_arch = "wasm32")]`, so any `#[cfg(test)]` inside it is never compiled by
-   `cargo test -p website-frontend`. Same for `canvas/commands.rs`. Any future slice told to "add a
+   `cargo test -p frontend`. Same for `canvas/commands.rs`. Any future slice told to "add a
    pin at the bottom of gestures.rs" will write a test that silently never runs. Worked around here;
    the underlying trap belongs in the brief template.
 

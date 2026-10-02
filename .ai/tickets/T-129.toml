@@ -40,9 +40,9 @@ acceptance = [
 ]
 created_at = "2026-09-05T03:30:00Z"
 owns = [
-    "apps/website/frontend/src/editor/tools/floor_selector.rs",
-    "apps/website/frontend/src/editor/tools/mod.rs",
-    "apps/website/frontend/src/editor/world_assets/occluder_host.rs",
+    "apps/frontend/src/editor/tools/floor_selector.rs",
+    "apps/frontend/src/editor/tools/mod.rs",
+    "apps/frontend/src/editor/world_assets/occluder_host.rs",
 ]
 
 [scope]

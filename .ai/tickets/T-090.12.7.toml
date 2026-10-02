@@ -1,7 +1,7 @@
 id = "T-090.12.7"
 kind = "work"
 title = "T-090.12.7 — Docs pass: LOS tool, world-los bench, map-assets, MCP"
-summary = "Cursor documentation pass: documentation/website/frontend/apps/editor/ux_spec.md LOS + viewshed section, new documentation/website/frontend/apps/debug/world_los_page.md + documentation/website/frontend/README.md rows, map-assets README objects/prefabs rows, documentation/runbooks/enfusion_mcp_tooling.md wbcall + TbdBlueprint actions, program hub status line, tbd-export README."
+summary = "Cursor documentation pass: documentation/apps/frontend/apps/editor/ux_spec.md LOS + viewshed section, new documentation/apps/frontend/apps/debug/world_los_page.md + documentation/apps/frontend/README.md rows, map-assets README objects/prefabs rows, documentation/runbooks/enfusion_mcp_tooling.md wbcall + TbdBlueprint actions, program hub status line, tbd-export README."
 class = "docs"
 status = "ready"
 order = 7080
@@ -16,8 +16,8 @@ context = [
     "apps/mod/tbd-export/README.md is a stale copy of the framework README.",
 ]
 requirement = [
-    "documentation/website/frontend/apps/editor/ux_spec.md gains a LOS + viewshed section (object verdict wording, coverage honesty, palette).",
-    "New documentation/website/frontend/apps/debug/world_los_page.md + documentation/website/frontend/README.md rows and count; documentation/website/frontend/apps/debug/building_viewer_page.md gains the T-090.11.6 URL flags.",
+    "documentation/apps/frontend/apps/editor/ux_spec.md gains a LOS + viewshed section (object verdict wording, coverage honesty, palette).",
+    "New documentation/apps/frontend/apps/debug/world_los_page.md + documentation/apps/frontend/README.md rows and count; documentation/apps/frontend/apps/debug/building_viewer_page.md gains the T-090.11.6 URL flags.",
     "packages/map-assets/README.md rows for objects/ (chunks v2, prefabs.json.gz) and prefabs/ (blas, descriptors, blas-manifest).",
     "documentation/runbooks/enfusion_mcp_tooling.md: cargo xtask mcp wbcall + every EMCP_WB_TbdBlueprint action including world-parity; hub status line; tbd-export README.",
     "documentation/runbooks/enfusion_mcp_tooling.md also: wb_execute_action fires the full-export plugin after a compile; map world-los --pairs / --dem / --dump-misses replay lane.",
@@ -31,10 +31,10 @@ verify = ["cargo xtask ci schema-validate (citations); cargo xtask ticket check"
 acceptance = ["Every path in the requirement list is updated and links resolve; no generated TICKET_*.md is hand-edited."]
 created_at = "2026-09-04T01:22:27Z"
 owns = [
-    "documentation/website/frontend/apps/editor/ux_spec.md",
-    "documentation/website/frontend/apps/debug/world_los_page.md",
-    "documentation/website/frontend/apps/debug/building_viewer_page.md",
-    "documentation/website/frontend/README.md",
+    "documentation/apps/frontend/apps/editor/ux_spec.md",
+    "documentation/apps/frontend/apps/debug/world_los_page.md",
+    "documentation/apps/frontend/apps/debug/building_viewer_page.md",
+    "documentation/apps/frontend/README.md",
     "packages/map-assets/README.md",
     "documentation/runbooks/enfusion_mcp_tooling.md",
     "apps/mod/tbd-export/README.md",

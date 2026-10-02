@@ -69,10 +69,10 @@ byte for byte the one match results carry. Each subfolder's README describes its
   `TBD_MissionLoader` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`;
   `TBD_SpawnManager` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/`; the engine's
   `RestContext`, `RestCallback`, `SCR_PlayerIdentityUtils` and `SCR_ChatComponent`. Over HTTP, the
-  API domains `apps/website/api_v2/src/server_infrastructure/` (sessions and fleet executor),
-  `apps/website/api_v2/src/match_telemetry/` (heartbeats, match registration, results and events),
-  `apps/website/api_v2/src/identity_and_access/` (link confirmation),
-  `apps/website/api_v2/src/missions/` and `apps/website/api_v2/src/operations/`.
+  API domains `apps/api/src/server_infrastructure/` (sessions and fleet executor),
+  `apps/api/src/match_telemetry/` (heartbeats, match registration, results and events),
+  `apps/api/src/identity_and_access/` (link confirmation),
+  `apps/api/src/missions/` and `apps/api/src/operations/`.
 - Used by: `TBD_GameRuntimeHttp` by `TBD_DeployedMission`, `TBD_MissionArtifactVerification` and
   `TBD_RosterLoader` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`, by
   `TBD_DeploymentAuthorization`, `TBD_DeploymentRequest`, `TBD_DeploymentRequestQueue` and
@@ -96,13 +96,13 @@ byte for byte the one match results carry. Each subfolder's README describes its
 
 ## Related documentation
 
-- [Server infrastructure domain](/apps/website/api_v2/src/server_infrastructure/README.md) — runtime
+- [Server infrastructure domain](/apps/api/src/server_infrastructure/README.md) — runtime
   sessions, machine credentials and the fleet command ledger on the API side
-- [Match telemetry domain](/apps/website/api_v2/src/match_telemetry/README.md) — how heartbeats
+- [Match telemetry domain](/apps/api/src/match_telemetry/README.md) — how heartbeats
   and match telemetry are taken in
-- [Match telemetry design](/documentation/website/api_v2/verification_evidence/telemetry.md) — match
+- [Match telemetry design](/documentation/apps/api/verification_evidence/telemetry.md) — match
   identity, results revisions, detailed events and the game-runtime queue
-- [Identity and access domain](/apps/website/api_v2/src/identity_and_access/README.md) — the link
+- [Identity and access domain](/apps/api/src/identity_and_access/README.md) — the link
   code handshake the `#tbd link` command completes
 - [Discord identity link specification](/documentation/mod/tbd-framework/UI/discord_identity_link/discord_identity_link_specification.md)
   — the in-game linking flow

@@ -90,8 +90,8 @@ smoke name and a driver fault surface as errors, which the `gate` binary exits 3
 - Depends on: `tools/developer_tools/src/browser_testing/cdp.rs`, `server.rs`,
   `session_tokens.rs`, `fixture_injection.rs` (`FREEZE_SRC` for `render-check`) and
   `dom_oracle/` (`seed_script`, `js_len`); `crate::repository_layout` for the map assets; the
-  fixture corpus in `apps/website/frontend/tests/fixtures/api/`; the Mission Creator's window hooks
-  in `apps/website/frontend/src/v2/apps/editor/`; a live API for `hydrate` and `mutations`.
+  fixture corpus in `contracts/fixtures/api_goldens/`; the Mission Creator's window hooks
+  in `apps/frontend/src/v2/apps/editor/`; a live API for `hydrate` and `mutations`.
 - Used by: the `gate` command line in `tools/developer_tools/src/browser_testing/cli.rs`;
   `cargo xtask mk leptos-gates`, which runs `gate editor-suite`, and
   `.github/workflows/editor-gates.yml` through it.
@@ -108,5 +108,5 @@ smoke name and a driver fault surface as errors, which the `gate` binary exits 3
 
 - [Editor gates](/documentation/runbooks/editor_gates.md) — running the suite, its environment
   and the wedge modes.
-- [Mission Creator](/apps/website/frontend/src/v2/apps/editor/README.md) — the app whose window
+- [Mission Creator](/apps/frontend/src/v2/apps/editor/README.md) — the app whose window
   hooks the smokes read.

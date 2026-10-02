@@ -15,23 +15,22 @@ tracker are in [restructure/](/documentation/restructure/README.md).
 
 ```text
 documentation/
+├── apps/                    documents on the products in apps/: the API, the app, the host agent, ticketboard
 ├── architecture/            the workspace as it stands: top-level folders, members, where everything lives
 ├── archive/                 frozen history, one folder per topic
 ├── assets/                  documents on the terrain export and the map data in assets/
 ├── contracts/               documents on the contracts in contracts/
 ├── design_system/           design tokens, symbology and interaction patterns the website and mod share
-├── fleet_host_agent/        documents on the fleet host agent in apps/fleet_host_agent/
 ├── glossary/                the project's terms and abbreviations, split by first letter
 ├── known_bugs/              the live registry of known bugs
+├── legacy/                  documents on the map and graphics engines parked in legacy/
 ├── mod/                     documents on the Enfusion mod suite in apps/mod/
 ├── product_roadmap.md       the planned product items by area and the open product questions
 ├── restructure/             the active workspace restructure program: plan, target tree, progress
 ├── runbooks/                operator procedures: development, deployment, gates, playtests
 ├── standards/               documentation and code standards, and the templates
-├── ticketboard/             documents on the ticketboard viewer in apps/ticketboard/
 ├── tickets/                 ticket specs and plans, flat, frozen once the ticket closes
-├── tools/                   documents on the developer tools in tools/
-└── website/                 documents on the website in apps/website/
+└── tools/                   documents on the developer tools in tools/
 ```
 
 ## How it works
@@ -39,15 +38,16 @@ documentation/
 Two layers document the code. The README.md in each code folder says what the folder holds, how
 it fits together and where it stops; the documents here go deeper, and each code README links
 them. A document about code sits here at the code's path without `src/`: the documents on
-`tools/developer_tools/` are in `documentation/tools/developer_tools/`. Until the
-[restructure](/documentation/restructure/README.md) moves the apps, a document about code under
-`apps/` also leaves out `apps/`, `src/v2/` and `Scripts/Game/TBD/`: the
-[event](/documentation/glossary/a_to_f.md#event) schedule page in
-`apps/website/frontend/src/v2/pages/operations/schedule/` is documented in
-`website/frontend/pages/operations/schedule/`, the
-[fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) in `apps/fleet_host_agent/` in
-`fleet_host_agent/`, and all [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)
-material sits in `website/frontend/apps/editor/`. What spans the code has a top-level folder of its
+`tools/developer_tools/` are in `documentation/tools/developer_tools/`, and the
+[fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) in `apps/fleet_host_agent/` is
+documented in `apps/fleet_host_agent/`. Two code trees keep a shorter document path until the
+[restructure](/documentation/restructure/README.md) reshapes them: a document about the single-page
+app also leaves out `src/v2/`, so the [event](/documentation/glossary/a_to_f.md#event) schedule page
+in `apps/frontend/src/v2/pages/operations/schedule/` is documented in
+`documentation/apps/frontend/pages/operations/schedule/` and all
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) material sits in
+`documentation/apps/frontend/apps/editor/`; a document about the mod leaves out `apps/` and `Scripts/Game/TBD/`
+and sits in `mod/`. What spans the code has a top-level folder of its
 own: `architecture/`, `runbooks/`, `standards/`, `design_system/`, `known_bugs/`, `tickets/` and
 `archive/`, with the `glossary/` folder and `product_roadmap.md` beside them, and the active
 program has `restructure/`. The
@@ -87,14 +87,14 @@ When two sources disagree, the higher one wins and the lower one is corrected:
 |---|---|
 | what a code folder holds and how to use it | the README.md in that folder |
 | the top-level folders, the workspace members and where code, contracts, assets and documents live | the [workspace layout](/documentation/architecture/workspace_layout.md) |
-| a web page's behaviour, design, open work and decisions | `website/frontend/pages/<area>/<page>/`, indexed by the [frontend README](/documentation/website/frontend/README.md) |
-| the Mission Creator: features, roadmap, UX decisions, Eden reference | [website/frontend/apps/editor/](/documentation/website/frontend/apps/editor/README.md) |
-| the [API](/documentation/glossary/a_to_f.md#api)'s areas and its verification evidence | [website/api_v2/](/documentation/website/api_v2/README.md), starting at the [API overview](/documentation/website/api_v2/api_overview.md) |
-| the map engine and the graphics engine | [website/](/documentation/website/README.md) |
+| a web page's behaviour, design, open work and decisions | `apps/frontend/pages/<area>/<page>/`, indexed by the [frontend README](/documentation/apps/frontend/README.md) |
+| the Mission Creator: features, roadmap, UX decisions, Eden reference | [apps/frontend/apps/editor/](/documentation/apps/frontend/apps/editor/README.md) |
+| the [API](/documentation/glossary/a_to_f.md#api)'s areas and its verification evidence | [apps/api/](/documentation/apps/api/README.md), starting at the [API overview](/documentation/apps/api/api_overview.md) |
+| the map engine and the graphics engine | [legacy/](/documentation/legacy/README.md) |
 | the [mod](/documentation/glossary/g_to_m.md#mod)'s design, screens and export evidence | [mod/](/documentation/mod/README.md) |
 | how a terrain becomes the map data the platform serves | [assets/](/documentation/assets/README.md) |
-| how a game host carries out server commands | [fleet_host_agent/](/documentation/fleet_host_agent/README.md) |
-| the ticket viewer | [ticketboard/](/documentation/ticketboard/README.md) |
+| how a game host carries out server commands | [apps/fleet_host_agent/](/documentation/apps/fleet_host_agent/README.md) |
+| the ticket viewer | [apps/ticketboard/](/documentation/apps/ticketboard/README.md) |
 | the developer tools and the contracts | [tools/](/documentation/tools/README.md) and [contracts/](/documentation/contracts/README.md) |
 | how to run, test, deploy or play-test anything | [runbooks/](/documentation/runbooks/README.md), starting at [local development](/documentation/runbooks/local_development.md) |
 | the rules for code, comments, documents and commits | [standards/](/documentation/standards/README.md) |
@@ -108,13 +108,13 @@ When two sources disagree, the higher one wins and the lower one is corrected:
 
 ## Code
 
-- [Website](/apps/website/README.md) — documented under `website/`.
+- [Applications](/apps/README.md) — the API, the app, the service worker, the host agent and
+  ticketboard, documented under `apps/`.
+- [Parked engines](/legacy/README.md) — the map and graphics engines, documented under `legacy/`.
 - [Mod suite](/apps/mod/README.md) — documented under `mod/`.
 - [Developer tools](/tools/README.md) — documented under `documentation/tools/`.
 - [Contracts](/contracts/README.md) — documented under `documentation/contracts/`.
 - [Assets](/assets/README.md) — documented under `documentation/assets/`.
-- [Fleet host agent](/apps/fleet_host_agent/README.md) — documented under `fleet_host_agent/`.
-- [Ticketboard](/apps/ticketboard/README.md) — documented under `ticketboard/`.
 
 ## Boundaries
 

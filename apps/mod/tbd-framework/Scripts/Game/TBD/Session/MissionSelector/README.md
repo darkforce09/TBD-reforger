@@ -82,7 +82,7 @@ so the screen shows mock missions, separate from the platform's deployable list 
   `apps/mod/tbd-framework/Configs/System/Actions/` and
   `apps/mod/tbd-framework/Configs/System/ActionContext/TBD_BrowserContext.conf`. Over HTTP,
   `GET /api/v1/game-runtime/missions` and `POST /api/v1/game-runtime/deployments` of
-  `apps/website/api_v2/src/missions/`.
+  `apps/api/src/missions/`.
 - Used by: `TBD_AdminCommands` (`#tbd missions`, `#tbd mission`, `#tbd refresh`, `#tbd backend`)
   and `TBD_AdminClient` in `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/`;
   `TBD_FrameworkManager`, which refreshes the list; `TBD_LobbyCatalog` and `TBD_BriefingCatalog`,
@@ -95,7 +95,7 @@ so the screen shows mock missions, separate from the platform's deployable list 
 
 ## Related documentation
 
-- [Missions domain](/apps/website/api_v2/src/missions/README.md) — the deployable list and the
+- [Missions domain](/apps/api/src/missions/README.md) — the deployable list and the
   relayed deployment request on the API side
 - [Mission selection specification](/documentation/mod/tbd-framework/UI/mission_selection/mission_selection_specification.md)
   — the screen as built, its

@@ -46,7 +46,7 @@ for the whole retry window (T-946.54).
 
 **On the test vehicle.** The brief and plan both say "wasm test". This repo has **no
 wasm-bindgen-test harness** (asserted in `world_assets/labels.rs:16`, `attributes_modal.rs:978`,
-`dock_right.rs:3537`, four more), and `website-frontend` links `map-engine-core` with
+`dock_right.rs:3537`, four more), and `frontend` links `map-engine-core` with
 `default-features = false, features = ["mission","blueprint"]` off wasm32 (`Cargo.toml:26`) versus
 `["doc","mission","png","world"]` on it (`:115`) — so **`MissionDocCore` and `yrs` do not exist
 natively**, and `state/persist` is `#[cfg(target_arch = "wasm32")]`. A yrs-level convergence test is
@@ -114,7 +114,7 @@ The one the brief specifies — skip the merge (`merge_before_write(...)` → ba
 ```
 test ...t190_run_save_merges_the_stored_record_before_it_writes ... FAILED
 
-panicked at apps/website/frontend/src/editor/state/tab_lock.rs:802:13:
+panicked at apps/frontend/src/editor/state/tab_lock.rs:802:13:
 run_save must READ the record it is about to overwrite. run=async fn run_save(id: &str, pending: PendingSave) {
     let lock = lock_for(id);
     let _guard = lock.lock().await;
@@ -122,7 +122,7 @@ run_save must READ the record it is about to overwrite. run=async fn run_save(id
 test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1356 filtered out; finished in 0.09s
 ```
 Restored with `git checkout --` **and `touch`ed** (T-421 trap); the green run carries
-`Compiling website-frontend v0.1.0 (.../worktrees/T-190/apps/website/frontend)`.
+`Compiling frontend v0.1.0 (.../worktrees/T-190/apps/frontend)`.
 
 Four more, so no pin here is vacuous — each applied, rebuilt (`Compiling` present every time), RED,
 restored + `touch`ed, green:
@@ -140,7 +140,7 @@ performance guard, not the guarantee. Widened to both sites it went RED: *"a def
 RE-ARMED, not dropped: the read-only tab inherits the writer role when the other tab closes and its
 work has to survive to that point."*
 
-Final state after all restores: `git status --short` empty, fresh `Compiling website-frontend`,
+Final state after all restores: `git status --short` empty, fresh `Compiling frontend`,
 `test result: ok. 1357 passed; 0 failed`.
 
 ## gate_verdict_tail

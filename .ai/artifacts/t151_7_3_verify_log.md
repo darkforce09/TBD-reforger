@@ -13,8 +13,8 @@
 | `wgpu/slotAtlas.ts` | 154 (pack+atlas) | canvas atlas only |
 
 ```
-$ wc -l apps/website/frontend/src/features/tactical-map/wgpu/wgpuSlots.ts
-56 apps/website/frontend/src/features/tactical-map/wgpu/wgpuSlots.ts
+$ wc -l apps/frontend/src/features/tactical-map/wgpu/wgpuSlots.ts
+56 apps/frontend/src/features/tactical-map/wgpu/wgpuSlots.ts
 ```
 
 No TS reimplementation of `pack_slot_instances` / `classifyDragTransition` / `cluster_mode` in `wgpuSlots.ts`.

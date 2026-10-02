@@ -43,7 +43,7 @@ status it prints.
 
 ## Related documentation
 
-- [Staging design note](/documentation/website/api_v2/verification_evidence/staging.md) — the
+- [Staging design note](/documentation/apps/api/verification_evidence/staging.md) — the
   procedures, the receipts and the cases the engines serve.
 - [Staging verification runbooks](/documentation/runbooks/staging_verification/README.md) — how
   the receipts are recorded against the staging host.

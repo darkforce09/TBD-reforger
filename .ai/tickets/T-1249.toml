@@ -1,7 +1,7 @@
 id = "T-1249"
 kind = "work"
 title = "Stop seeding an attended registration on an upcoming golden event"
-summary = "apps/website/api_v2/seeds/content_golden.sql:253 dates event c71a4d1a on 2030-08-01 (seed rule 4) while :1017 keeps its registration attendance_state attended, so My Deployments shows ATTENDED on an upcoming event; the API does not refuse attendance on a future event either."
+summary = "apps/api/seeds/content_golden.sql:253 dates event c71a4d1a on 2030-08-01 (seed rule 4) while :1017 keeps its registration attendance_state attended, so My Deployments shows ATTENDED on an upcoming event; the API does not refuse attendance on a future event either."
 class = "bug"
 status = "idea"
 notes = "Two halves: the seed drops or moves the attended row (frontend goldens and DOM oracle re-baselined through the seed recipe), and an operator decision whether recording attendance before an event starts is refused. Source: milestone V finding V-F113."

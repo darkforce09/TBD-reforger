@@ -6,10 +6,10 @@ use super::*;
 /// A clean map-engine manifest: browser bindings, the renderer and the CRDT crate, no framework.
 const CLEAN_MAP_MANIFEST: &str = "\
 [package]
-name = \"website-map-engine\"
+name = \"map_engine\"
 
 [dependencies]
-website-graphics-engine = { path = \"../graphics-engine\", optional = true }
+graphics_engine = { path = \"../graphics_engine\", optional = true }
 yrs = \"0.25\"
 # leptos = \"0.8\" is prose in a comment, not an edge
 
@@ -22,7 +22,7 @@ web-sys = { version = \"0.3\", features = [
 ";
 
 fn map_manifest(r: &Repo, body: &str) {
-    std::fs::write(r.0.join("apps/website/map-engine/Cargo.toml"), body).unwrap();
+    std::fs::write(r.0.join("legacy/map_engine/Cargo.toml"), body).unwrap();
 }
 
 #[test]
@@ -72,8 +72,8 @@ fn a_ui_framework_import_anywhere_in_the_crate_fails() {
     r.map("streaming/host.rs", "extern crate yew;\n");
     let scan = map_engine_ui_framework_findings(&r.0).unwrap();
     assert_eq!(scan.findings.len(), 2, "{:#?}", scan.findings);
-    assert!(scan.findings[0].starts_with("apps/website/map-engine/src/frame/panel.rs:1:"));
-    assert!(scan.findings[1].starts_with("apps/website/map-engine/src/streaming/host.rs:1:"));
+    assert!(scan.findings[0].starts_with("legacy/map_engine/src/frame/panel.rs:1:"));
+    assert!(scan.findings[1].starts_with("legacy/map_engine/src/streaming/host.rs:1:"));
 }
 
 #[test]
@@ -84,7 +84,7 @@ fn a_missing_manifest_or_source_tree_does_not_run() {
         Err(NotRun::TargetMissing(_))
     ));
     map_manifest(&r, CLEAN_MAP_MANIFEST);
-    std::fs::remove_dir_all(r.0.join("apps/website/map-engine/src")).unwrap();
+    std::fs::remove_dir_all(r.0.join("legacy/map_engine/src")).unwrap();
     assert!(matches!(
         map_engine_ui_framework_findings(&r.0),
         Err(NotRun::TargetMissing(_))

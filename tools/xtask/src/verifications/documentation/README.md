@@ -61,13 +61,18 @@ scope selected nothing to judge.
 
 ### readme-coverage
 
-The README span is every tracked folder at or under the code trees (`CODE_TREES`: `apps`,
-`tools`, `contracts`, `assets`) and the documentation root (`DOCUMENTATION_ROOT`:
-`documentation`), the roots included, minus the exempt folders and everything below them: a
-folder named exactly `tests`, `generated` or `Generated` (the spelling of the Enfusion script
-trees; no other casing), a folder whose name begins with `.`, and the pending-merge area
-(`PENDING_MERGE_DIR`). The repository root's README.md lies outside the span. Both rules judge the
-span alone, so a README.md inside an exempt folder is neither required nor checked.
+The README span is every tracked folder below the repository root, the top-level folders
+included, minus the exempt folders and everything below them: a folder named exactly `tests`,
+`generated` or `Generated` (the spelling of the Enfusion script trees; no other casing), a folder
+whose name begins with `.`, the pending-merge area (`PENDING_MERGE_DIR`) and the retired
+documentation root (`RETIRED_DOCS_ROOT`), which markdown-placement judges. The top-level folders are
+derived from the listing, never from a list of names, so the span fails closed: a top-level folder
+is judged from the moment it is tracked, and only a rule above takes one out. The hidden-folder rule
+covers the tool configuration at the root (`.github`, `.ai`, `.cursor`, `.claude`, `.cargo`), and
+build output such as `target/` is gitignored, so no listing holds it. The repository root itself
+lies outside the span: its README.md is the project's front page, and `CLAUDE.md` maps the root.
+The gate's header names the top-level folders the run judged. Both rules judge the span alone, so a
+README.md inside an exempt folder is neither required nor checked.
 
 1. Coverage: each folder in the span carries a tracked README.md.
 2. Contents: every tracked README.md in the span passes the Contents grammar below.
@@ -110,7 +115,10 @@ check is the only structural rule: section order, headings and wording are not c
 ### markdown-placement
 
 1. The code trees hold no tracked `.md` file, in any letter case, other than README.md, except below a
-   `tests`, `generated`, `Generated` or `.`-prefixed folder.
+   `tests`, `generated`, `Generated` or `.`-prefixed folder. A code tree is every top-level folder
+   but the documentation root (`DOCUMENTATION_ROOT`) and the retired documentation root, derived
+   from the listing like the README span, so Markdown in a new top-level folder is judged at once;
+   a file at the repository root lies in no code tree.
 2. The retired documentation root (`RETIRED_DOCS_ROOT`: `docs`) holds no tracked file.
 3. Every tracked `.md` file, in any letter case, under the documentation root is at most 500 lines,
    except under the [ticket](/documentation/glossary/n_to_z.md#ticket) records

@@ -16,7 +16,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, anyhow, bail};
 use axum::http::Method;
-use website_map_engine::data::scenario::ballistics::catalog::{BallisticsCatalog, ShellRole};
+use map_engine::data::scenario::ballistics::catalog::{BallisticsCatalog, ShellRole};
 
 use crate::browser_testing::server::api_fixture_corpus::corpus_file_name;
 
@@ -25,7 +25,7 @@ pub const COMMITTED_CATALOG: &str = "contracts/catalogs/ballistics/vanilla_morta
 
 /// The recorded API corpus the gate server answers `/api/` from by default, relative to the
 /// repository root.
-pub const API_CORPUS_DIR: &str = "apps/website/frontend/tests/fixtures/api";
+pub const API_CORPUS_DIR: &str = "contracts/fixtures/api_goldens";
 
 /// The terrain the offline pack holds.
 pub const OFFLINE_TERRAIN: &str = "everon";

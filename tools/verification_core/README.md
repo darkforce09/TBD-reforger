@@ -79,7 +79,7 @@ settings belong to its callers: `cargo xtask platform wave` takes the lock path 
   `tools/xtask/src/verifications/`, its command groups under `tools/xtask/src/commands/`
   (the lock holders are the platform wave driver and the MCP broker start in
   `tools/xtask/src/commands/mcp/call.rs`), and `tools/xtask/src/core/`; and
-  `website-api`, by path dev-dependency, whose `apps/website/api_v2/tests/engineering_laws.rs`
+  `api`, by path dev-dependency, whose `apps/api/tests/engineering_laws.rs`
   asserts the `repository_laws` checks over the repository.
 - Rules:
   - the crate depends on no workspace crate (`foundational_engines_have_no_workspace_dependencies`

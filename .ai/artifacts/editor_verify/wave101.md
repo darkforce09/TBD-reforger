@@ -3,7 +3,7 @@
 **VERDICT: 0 BLOCKER / 1 MAJOR / 3 MINOR / 5 NOTE — all 423 frontend + 7/7 lod_gates tests green; no behavioral defect found; the MAJOR is a canonical-doc/claim divergence, not a code bug.**
 
 Verifier: Fable 5, read-only. Tests run under `CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target`
-(distrobox-host-exec): `cargo test -p website-frontend` → **423 passed / 0 failed**;
+(distrobox-host-exec): `cargo test -p frontend` → **423 passed / 0 failed**;
 `cargo test -p map-engine-core --features doc,mission,world lod_gates` → **7 passed**;
 same without `world` → **0 matching** (module compiled out, as claimed);
 `keys_nothing_reads_are_not_authored` → green.
@@ -190,5 +190,5 @@ mission.schema.json never carried the keys; `serverMaxViewDistance`/`networkView
 scripts/mod server configs are an unrelated namespace ✓. apps/mod clean ✓.
 `keys_nothing_reads_are_not_authored` green ✓. 419 (T-663) + 4 (T-662) = 423 — counts coherent ✓.
 
-**Counts (G).** website-frontend **423/423**; lod_gates **7/7** under `--features
+**Counts (G).** frontend **423/423**; lod_gates **7/7** under `--features
 doc,mission,world` (4 new + 3 pre-existing); **0 compiled** without `world` ✓.

@@ -18,7 +18,7 @@ First live world-object Deck layers on the T-090.5.1 spine: **`world-roads`** (P
 | 8 | Glyph atlas load-once | `layers/worldGlyphAtlas.ts` |
 | 9 | Layer assembly (toggles + gates, slots 6–7 order) | `worldmap/useWorldMapLayers.ts` (extended, spine intact) |
 | 10 | Zoom/terrain wire | `TacticalMap.tsx` (`useWorldMapLayers({ terrain, deckZoom })`) |
-| 11 | `@deck.gl/extensions ^9.3.4` (PathStyleExtension dashes) | `apps/website/frontend/package.json` + lock |
+| 11 | `@deck.gl/extensions ^9.3.4` (PathStyleExtension dashes) | `apps/frontend/package.json` + lock |
 
 ## Decisions
 

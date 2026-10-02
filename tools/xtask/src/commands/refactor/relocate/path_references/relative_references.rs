@@ -21,11 +21,14 @@
 //! read from the crate folder, or when it is led by `/../`, where it is read from the file's or the
 //! crate's folder; a token never starts on the letter of a control escape, so `\n../x` yields
 //! `../x`; a token holding a `..` segment after a named one is read from the repository root as
-//! well, because the repository-root spelling pass leaves climbing tokens alone.
+//! well, because the repository-root spelling pass leaves climbing tokens alone; a plain token in a
+//! Rust literal (no relative lead, no `CARGO_MANIFEST_DIR`) counts only where its whole path names
+//! a tracked path ([`RequiredMatch::WholePath`]), every other candidate also where only a leading
+//! part does.
 
 use std::ops::Range;
 
-use super::anchor_resolution::AnchorKind;
+use super::anchor_resolution::{AnchorKind, RequiredMatch};
 use super::markdown_links::link_destinations;
 use super::path_tokens::{is_segment_byte, opens_token, token_end};
 use crate::commands::refactor::relocate::rust_lexer::{
@@ -74,6 +77,8 @@ pub(crate) struct RelativeCandidate {
     pub(crate) leading_slash: bool,
     /// The anchors to read the literal under, in order.
     pub(crate) anchors: &'static [AnchorKind],
+    /// How much of the literal must name a tracked path for a reading to count.
+    pub(crate) required_match: RequiredMatch,
 }
 
 /// The kind of text file, as far as relative references go.
@@ -156,6 +161,7 @@ fn link_path(source: &str, span: Range<usize>) -> Option<RelativeCandidate> {
         span: span.start..span.start + path_length,
         leading_slash: false,
         anchors: FILE_FOLDER,
+        required_match: RequiredMatch::LeadingPart,
     })
 }
 
@@ -177,6 +183,7 @@ fn cargo_path_values(source: &str) -> Vec<RelativeCandidate> {
                 span: start..start + length,
                 leading_slash: false,
                 anchors: FILE_FOLDER,
+                required_match: RequiredMatch::LeadingPart,
             });
             let consumed = at + open + 1 + length + 1;
             rest = &rest[consumed..];
@@ -264,6 +271,7 @@ fn climbing_tokens(
                 span: index + 1..end,
                 leading_slash: true,
                 anchors,
+                required_match: RequiredMatch::LeadingPart,
             }),
             Some(Climb::DotLed | Climb::Interior) => Some(whole_literal(index..end, anchors)),
             None => None,
@@ -308,6 +316,7 @@ fn whole_literal(content: Range<usize>, anchors: &'static [AnchorKind]) -> Relat
         span: content,
         leading_slash: false,
         anchors,
+        required_match: RequiredMatch::LeadingPart,
     }
 }
 
@@ -370,6 +379,7 @@ fn include_candidate(
             span: content.start + 1..content.end,
             leading_slash: true,
             anchors: CRATE_FOLDER,
+            required_match: RequiredMatch::LeadingPart,
         })
 }
 
@@ -398,12 +408,14 @@ fn literal_tokens(
                 span: index + 1..end,
                 leading_slash: true,
                 anchors: CRATE_FOLDER,
+                required_match: RequiredMatch::LeadingPart,
             })
         } else if climb == Some(Climb::SlashLed) {
             Some(RelativeCandidate {
                 span: index + 1..end,
                 leading_slash: true,
                 anchors: FILE_OR_CRATE_FOLDER,
+                required_match: RequiredMatch::LeadingPart,
             })
         } else if climb == Some(Climb::DotLed) {
             let anchors = if manifest_folder {
@@ -413,14 +425,17 @@ fn literal_tokens(
             };
             Some(whole_literal(index..end, anchors))
         } else if !slash_led && token.contains('/') {
-            let anchors = if manifest_folder {
-                CRATE_FOLDER
+            let (anchors, required_match) = if manifest_folder {
+                (CRATE_FOLDER, RequiredMatch::LeadingPart)
             } else if climb == Some(Climb::Interior) {
-                FILE_CRATE_OR_ROOT
+                (FILE_CRATE_OR_ROOT, RequiredMatch::LeadingPart)
             } else {
-                FILE_OR_CRATE_FOLDER
+                (FILE_OR_CRATE_FOLDER, RequiredMatch::WholePath)
             };
-            Some(whole_literal(index..end, anchors))
+            Some(RelativeCandidate {
+                required_match,
+                ..whole_literal(index..end, anchors)
+            })
         } else {
             None
         };

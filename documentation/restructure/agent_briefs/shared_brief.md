@@ -65,9 +65,9 @@ only the parts your prompt names; do not re-derive the plan.
 
 ## Spec (authoritative, verified)
 - Packages today: `xtask` (tools/xtask), `verification_core` (tools/verification_core),
-  `ticket_engine`, `developer_tools`, `website-api` (apps/website/api_v2), `website-frontend`,
-  `website-map-engine`, `website-graphics-engine`, `website-offline-service-worker`,
-  `fleet-host-agent`, `ticketboard`. Rust 1.95.0, edition 2024 except the frontend (2021).
+  `ticket_engine`, `developer_tools`, `api` (apps/api), `frontend`,
+  `map_engine`, `graphics_engine`, `offline_service_worker`,
+  `fleet_host_agent`, `ticketboard`. Rust 1.95.0, edition 2024 except the frontend (2021).
 - `<scratch>` = `<scratch>`.
 - Documents: a live doc starts with `**Status:** live`, stays ≤ 500 lines, uses repository-root
   links (`/documentation/...`), and a backticked path under an existing top-level folder must

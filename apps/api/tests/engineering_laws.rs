@@ -1,0 +1,218 @@
+//! Engineering laws — `CLAUDE.md` laws 6 and 7 held over the whole repository.
+//!
+//! **Role:** asserts that the checkout keeps the structural laws: production files at or under
+//! 500 lines and test files at or under 1000, unit tests only in sibling files, no exemption
+//! mechanism for either rule, the engine layer walls, the dependency direction between the
+//! website crates, and a `failpoints` feature that only test builds compile.
+//! **Position:** an integration binary of `api`, run by
+//! `cargo xtask db test-it --test engineering_laws`; it needs no database. Every law is judged by
+//! `verification_core::repository_laws`, the same code `cargo xtask verify file-length` and
+//! `verify engine-layers` print, so the gates and this binary never disagree about the tree.
+//! **Signals & state:** none; each case reads the checkout and asserts.
+//! **Invariants:** the repository root comes from `CARGO_MANIFEST_DIR`; every case asserts that
+//! its scan read something before it asserts that the scan found nothing, so a moved or empty
+//! tree fails instead of passing.
+
+use std::path::{Path, PathBuf};
+
+use verification_core::repository_laws::cargo_manifest::read_manifest;
+use verification_core::repository_laws::crate_dependencies::{
+    API_RULE, DependencyFinding, FRONTEND_RULE, GRAPHICS_ENGINE_RULE, MAP_ENGINE_RULE,
+    crate_dependency_findings, rule_findings, test_only_feature_findings,
+};
+use verification_core::repository_laws::engine_layers::{
+    EngineLayerReport, EngineLayerRule, check_engine_layers, map_engine_ui_framework_findings,
+};
+use verification_core::repository_laws::exemption_mechanisms::scan_exemption_mechanisms;
+use verification_core::repository_laws::file_length::scan_file_lengths;
+use verification_core::repository_laws::sibling_test_placement::scan_inline_test_modules;
+use verification_core::repository_laws::source_roots::{is_test_file, repository_relative};
+use verification_core::{Pattern, scan};
+
+/// The repository root: two levels above `apps/api`.
+fn repository_root() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .ancestors()
+        .nth(2)
+        .expect("apps/api sits two levels below the repository root")
+        .to_path_buf()
+}
+
+/// The engine-layer judgement of this checkout, with every rule judged.
+fn engine_layer_report() -> EngineLayerReport {
+    let report = check_engine_layers(&repository_root());
+    assert!(
+        report.judged_every_rule(),
+        "the engine-layer walls did not judge every rule:\n{}",
+        report.lines.join("\n")
+    );
+    report
+}
+
+/// Assert that `rule` holds in `report`, printing its findings when it does not.
+fn assert_rule_holds(report: &EngineLayerReport, rule: EngineLayerRule) {
+    let result = report.rule(rule).expect("every rule is judged");
+    assert_eq!(
+        result.findings,
+        0,
+        "engine-layer rule {} is breached:\n{}",
+        rule.number(),
+        result.detail.join("\n")
+    );
+}
+
+/// Render dependency findings one per line.
+fn rendered(findings: &[DependencyFinding]) -> String {
+    findings
+        .iter()
+        .map(DependencyFinding::rendered)
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+#[test]
+fn engineering_laws_production_files_stay_within_500_lines() {
+    let scan = scan_file_lengths(&repository_root()).expect("the file-length walk runs");
+    assert!(!scan.files.is_empty(), "the file-length walk read no file");
+    let over: Vec<String> = scan
+        .violations
+        .iter()
+        .filter(|violation| !violation.is_test_file())
+        .map(|violation| violation.rendered())
+        .collect();
+    assert!(over.is_empty(), "{}", over.join("\n"));
+}
+
+#[test]
+fn engineering_laws_test_files_stay_within_1000_lines() {
+    let root = repository_root();
+    let scan = scan_file_lengths(&root).expect("the file-length walk runs");
+    assert!(
+        scan.files
+            .iter()
+            .any(|file| is_test_file(&repository_relative(&root, file))),
+        "the file-length walk read no test file"
+    );
+    let over: Vec<String> = scan
+        .violations
+        .iter()
+        .filter(|violation| violation.is_test_file())
+        .map(|violation| violation.rendered())
+        .collect();
+    assert!(over.is_empty(), "{}", over.join("\n"));
+}
+
+#[test]
+fn engineering_laws_no_exemption_mechanism_exists() {
+    let scan = scan_exemption_mechanisms(&repository_root()).expect("the exemption scan runs");
+    assert!(
+        scan.files_examined > 0,
+        "the exemption scan examined no file"
+    );
+    let found: Vec<String> = scan.findings.iter().map(|f| f.rendered()).collect();
+    assert!(found.is_empty(), "{}", found.join("\n"));
+}
+
+#[test]
+fn engineering_laws_unit_tests_live_in_sibling_files() {
+    let scan = scan_inline_test_modules(&repository_root()).expect("the placement scan runs");
+    assert!(
+        scan.production_files > 0,
+        "the placement scan read no production file"
+    );
+    let found: Vec<String> = scan.findings.iter().map(|f| f.rendered()).collect();
+    assert!(found.is_empty(), "{}", found.join("\n"));
+}
+
+#[test]
+fn engineering_laws_graphics_engine_knows_no_map_concepts() {
+    let report = engine_layer_report();
+    assert_rule_holds(&report, EngineLayerRule::GraphicsEngineImportsNoMapEngine);
+    assert_rule_holds(&report, EngineLayerRule::GraphicsEngineDeclaresNoMapNoun);
+    let edges = rule_findings(&repository_root(), &GRAPHICS_ENGINE_RULE)
+        .expect("the graphics-engine manifest reads");
+    assert!(edges.is_empty(), "{}", rendered(&edges));
+}
+
+#[test]
+fn engineering_laws_map_engine_has_no_ui_framework_dependency() {
+    let scan = map_engine_ui_framework_findings(&repository_root())
+        .expect("the map-engine manifest and sources read");
+    assert!(
+        scan.source_files > 0,
+        "the UI-framework ban read no map-engine source"
+    );
+    assert!(scan.findings.is_empty(), "{}", scan.findings.join("\n"));
+}
+
+#[test]
+fn engineering_laws_frontend_does_not_depend_on_the_graphics_engine() {
+    let report = engine_layer_report();
+    assert_rule_holds(&report, EngineLayerRule::FrontendImportsNoRenderer);
+    let edges =
+        rule_findings(&repository_root(), &FRONTEND_RULE).expect("the frontend manifest reads");
+    assert!(edges.is_empty(), "{}", rendered(&edges));
+}
+
+#[test]
+fn engineering_laws_api_depends_on_no_graphics_or_frontend_crate() {
+    let root = repository_root();
+    let manifest =
+        read_manifest(&root.join("apps/api/Cargo.toml")).expect("the api manifest reads");
+    assert!(
+        manifest
+            .dependencies
+            .iter()
+            .any(|edge| edge.package == "map_engine"),
+        "the manifest reader found no map_engine edge, so it read nothing"
+    );
+    let edges = rule_findings(&root, &API_RULE).expect("the api manifest reads");
+    assert!(edges.is_empty(), "{}", rendered(&edges));
+}
+
+#[test]
+fn engineering_laws_engine_layer_walls_and_crate_directions_hold() {
+    let report = engine_layer_report();
+    assert_eq!(report.exit_code, 0, "{}", report.lines.join("\n"));
+    let root = repository_root();
+    let edges = rule_findings(&root, &MAP_ENGINE_RULE).expect("the map-engine manifest reads");
+    assert!(edges.is_empty(), "{}", rendered(&edges));
+    let all = crate_dependency_findings(&root).expect("every website manifest reads");
+    assert!(all.is_empty(), "{}", rendered(&all));
+}
+
+#[test]
+fn engineering_laws_failpoints_are_test_only() {
+    let root = repository_root();
+    let manifest =
+        read_manifest(&root.join("apps/api/Cargo.toml")).expect("the api manifest reads");
+    let findings = test_only_feature_findings(&manifest, "failpoints");
+    assert!(findings.is_empty(), "{}", findings.join("\n"));
+
+    // The deploy build compiles the server with no feature flag at all.
+    let deploy = root.join("tools/xtask/src/commands/deploy");
+    let sources = scan::walk_files(&[&deploy], |path| {
+        path.extension().is_some_and(|extension| extension == "rs")
+    })
+    .expect("the deploy command sources walk");
+    let build = Pattern::regex(r"cargo build[^\n]*-p api").unwrap();
+    let builds = scan::matching_lines(&build, &sources).expect("the deploy sources read");
+    assert!(
+        !builds.is_empty(),
+        "no deploy source builds api, so the flag check read nothing"
+    );
+    let flagged: Vec<String> = builds
+        .iter()
+        .filter(|hit| {
+            hit.line.contains("--features")
+                || hit.line.contains("--all-features")
+                || hit.line.contains(" -F ")
+        })
+        .map(|hit| hit.rendered())
+        .collect();
+    assert!(
+        flagged.is_empty(),
+        "the deploy build passes a feature flag:\n{}",
+        flagged.join("\n")
+    );
+}

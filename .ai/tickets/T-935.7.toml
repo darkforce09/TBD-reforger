@@ -51,7 +51,7 @@ owns = [
     "tools/tbd-tools/src/map/labels_emit.rs",
     "tools/tbd-tools/src/map/mod.rs",
     "tools/tbd-tools/src/bin/map.rs",
-    "apps/website/frontend/src/editor/world_assets/labels.rs",
+    "apps/frontend/src/editor/world_assets/labels.rs",
     "crates/map-engine-core/src/world/locations.rs",
     "crates/map-engine-core/src/world/road_labels.rs",
 ]

@@ -3,9 +3,8 @@
 //!
 //! **Role:** builds every remote step's command: the staging compose services (Postgres, and
 //! Caddy with its configuration reload), the API build, the build of the staging host tools
-//! ([`STAGING_HOST_TOOLS`]), the app build, the migration checksum repair, the move of runtime
-//! files into the unit's state folder, and the unit restart; and [`login_shell`], the one quoted
-//! word ssh carries each of them in.
+//! ([`STAGING_HOST_TOOLS`]), the app build, the migration checksum repair and the unit restart;
+//! and [`login_shell`], the one quoted word ssh carries each of them in.
 //!
 //! **Position:** called by [`crate::commands::deploy::website`], which prints each command under
 //! `--dry-run` and sends it through ssh as a [`login_shell`] word otherwise, so the dry run shows
@@ -15,7 +14,7 @@
 //! **Signals & state:** none; pure functions.
 //!
 //! **Invariants:** every compose command runs from the checkout root with
-//! `TBD_POSTGRES_HOST_PORT` exported, names `apps/website/docker-compose.staging.yml`, and runs
+//! `TBD_POSTGRES_HOST_PORT` exported, names `deploy/compose.staging.yml`, and runs
 //! under `docker compose` when the host has docker, else under `podman compose`; the Caddy reload
 //! names the Caddyfile at the path the compose file's `caddy` service mounts it
 //! ([`caddyfile_in_container`]); every cargo build runs in the checkout and ends by proving each
@@ -24,19 +23,16 @@
 use crate::commands::deploy::remote_rust_toolchain::PUT_RUST_TOOLCHAIN_ON_PATH;
 use crate::core::repository_layout;
 
-/// The user-systemd `StateDirectory=` name the API unit declares; `%S/<this>` is where the API
-/// keeps what it writes (CMS uploads, imported equipment data), outside the checkout the rsync
-/// deletes in.
-pub const STATE_DIRECTORY: &str = "tbd-website-api";
-
-/// The Postgres container `apps/website/docker-compose.staging.yml` starts on the server.
+/// The Postgres container `deploy/compose.staging.yml` starts on the server.
 pub const STAGING_DB_CONTAINER: &str = "tbd_staging_db";
 
-/// Where the compose file's `caddy` service mounts [`repository_layout::DEPLOY_DIR`], read-only.
+/// Where the compose file's `caddy` service mounts the folder of [`repository_layout::CADDYFILE`],
+/// read-only. That folder holds the Caddy site alone, so the deploy folder's host secrets
+/// ([`repository_layout::DEPLOY_ENV`]) never enter the container.
 pub const CADDY_CONFIG_MOUNT: &str = "/etc/tbd-caddy";
 
 /// [`repository_layout::CADDYFILE`] as the compose file's `caddy` service sees it: the file in
-/// the deploy folder mounted at [`CADDY_CONFIG_MOUNT`]. The service starts Caddy on this path.
+/// its folder mounted at [`CADDY_CONFIG_MOUNT`]. The service starts Caddy on this path.
 pub fn caddyfile_in_container() -> String {
     let file_name = repository_layout::CADDYFILE
         .rsplit_once('/')
@@ -82,8 +78,8 @@ fn compose_session(remote_dir: &str, postgres_port: &str) -> String {
     format!(
         "cd '{remote_dir}' && export TBD_POSTGRES_HOST_PORT='{postgres_port}' && \
          staging_compose() {{ if command -v docker >/dev/null 2>&1; then \
-         docker compose -f apps/website/docker-compose.staging.yml \"$@\"; else \
-         podman compose -f apps/website/docker-compose.staging.yml \"$@\"; fi; }}"
+         docker compose -f deploy/compose.staging.yml \"$@\"; else \
+         podman compose -f deploy/compose.staging.yml \"$@\"; fi; }}"
     )
 }
 
@@ -112,7 +108,7 @@ pub fn web_server_start_and_reload(remote_dir: &str, postgres_port: &str) -> Str
 /// Build the release API binary in the remote checkout.
 pub fn api_build(remote_dir: &str) -> String {
     format!(
-        "cd '{remote_dir}' &&     {PUT_RUST_TOOLCHAIN_ON_PATH} &&     cargo build --release -p website-api --bin api &&     test -x target/release/api"
+        "cd '{remote_dir}' &&     {PUT_RUST_TOOLCHAIN_ON_PATH} &&     cargo build --release -p api --bin api &&     test -x target/release/api"
     )
 }
 
@@ -130,7 +126,7 @@ pub struct StagingHostTool {
 /// relay instance's host agent.
 pub const STAGING_HOST_TOOLS: [StagingHostTool; 2] = [
     StagingHostTool {
-        package: "website-api",
+        package: "api",
         executable: "staging-fixtures",
     },
     StagingHostTool {
@@ -163,7 +159,7 @@ pub fn staging_host_tools_build(remote_dir: &str) -> String {
 /// Build the Leptos SPA into `frontend/dist`.
 pub fn spa_build(remote_dir: &str) -> String {
     format!(
-        "cd '{remote_dir}/apps/website/frontend' &&     {PUT_RUST_TOOLCHAIN_ON_PATH} &&     trunk build --release"
+        "cd '{remote_dir}/apps/frontend' &&     {PUT_RUST_TOOLCHAIN_ON_PATH} &&     trunk build --release"
     )
 }
 
@@ -177,15 +173,6 @@ pub fn spa_build(remote_dir: &str) -> String {
 pub fn migration_checksum_repair(remote_dir: &str) -> String {
     format!(
         "cd '{remote_dir}' &&     {PUT_RUST_TOOLCHAIN_ON_PATH} &&     TBD_DB_CONTAINER={STAGING_DB_CONTAINER} cargo xtask db repair-migration-checksum --force"
-    )
-}
-
-/// Create the unit's state directory and move any uploads an older layout left inside the
-/// checkout (`apps/website/api_v2/uploads`) into it. Idempotent: with nothing left to move it
-/// only ensures the directory exists.
-pub fn runtime_state_move(remote_dir: &str) -> String {
-    format!(
-        "state=\"${{XDG_STATE_HOME:-$HOME/.local/state}}/{STATE_DIRECTORY}\" &&     mkdir -p \"$state/uploads\" &&     for tree in uploads; do       src='{remote_dir}/apps/website/api_v2/'\"$tree\";       if [ -d \"$src\" ]; then         rsync -a --remove-source-files \"$src/\" \"$state/$tree/\" &&         find \"$src\" -depth -type d -empty -delete;       fi;     done"
     )
 }
 

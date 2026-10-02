@@ -2,7 +2,7 @@
 
 # README template: page
 
-**When to use:** a folder under `apps/website/frontend/src/v2/pages/` that holds a route component.
+**When to use:** a folder under `apps/frontend/src/v2/pages/` that holds a route component.
 The [README standard](/documentation/standards/readme_standard.md) defines every rule this
 template follows; the page kind adds Routes, Data and States.
 
@@ -55,13 +55,13 @@ click or a fetch moves it on, and the invariants that span files.>
 
 ## Related documentation
 
-- [<feature doc title>](/documentation/website/frontend/pages/<area>/<page>/<doc>.md) — <what
+- [<feature doc title>](/documentation/apps/frontend/pages/<area>/<page>/<doc>.md) — <what
   it covers>
 ````
 
 ## Worked sample
 
-Written from `apps/website/frontend/src/v2/pages/operations/schedule/`. The sample sits in a fenced
+Written from `apps/frontend/src/v2/pages/operations/schedule/`. The sample sits in a fenced
 block, so no gate reads it as a README; the folder's own README.md is written from the same code and
 may differ.
 
@@ -74,7 +74,7 @@ with the full hub of the selected event beside it.
 ## Contents
 
 ```text
-apps/website/frontend/src/v2/pages/operations/schedule/
+apps/frontend/src/v2/pages/operations/schedule/
 ├── mod.rs           declares the page and card modules and re-exports `EventSchedulePage`
 ├── page.rs          the route component: list fetch, selection, hub fetch and the split pane
 ├── tests/           the pin that keeps briefings on the shared hub view
@@ -127,14 +127,14 @@ fill bar driven by the server's `percent`, clamped to 0 to 100.
 - Depends on: `crate::v2::core::api` (the `api_get` client, `EventHub`, `Paginated`),
   `crate::v2::core::ui` (`AuthGate`, `SplitPane`, `SplitPaneEmpty`, `MaterialIcon`, the badge
   classes), `crate::v2::core::utils` (countdown and local date formatting), the `AuthStore` context,
-  and `event_hub_view` from `apps/website/frontend/src/v2/pages/operations/event_detail/`.
-- Used by: the `/events` route in `apps/website/frontend/src/app_routes.rs`; the source pins in
-  `apps/website/frontend/src/v2/core/test_support/pins.rs` read its three source files.
+  and `event_hub_view` from `apps/frontend/src/v2/pages/operations/event_detail/`.
+- Used by: the `/events` route in `apps/frontend/src/app_routes.rs`; the source pins in
+  `apps/frontend/src/v2/core/test_support/pins.rs` read its three source files.
 - Rules: briefings render through `event_hub_view`, which `tests/schedule.rs` pins; the detail
   column never shows a hub fetched for another event.
 
 ## Related documentation
 
-- [Event schedule page](/documentation/website/frontend/pages/operations/schedule/event_schedule_page.md)
+- [Event schedule page](/documentation/apps/frontend/pages/operations/schedule/event_schedule_page.md)
   — the page's behaviour and design.
 ````

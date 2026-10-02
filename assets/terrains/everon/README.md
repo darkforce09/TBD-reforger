@@ -26,7 +26,7 @@ assets/terrains/everon/
 ## How it works
 
 Every reader starts at `manifest.json`. The map engine's host fetches
-`/map-assets/everon/manifest.json` first (`apps/website/map-engine/src/streaming/host/bootstrap.rs`)
+`/map-assets/everon/manifest.json` first (`legacy/map_engine/src/streaming/host/bootstrap.rs`)
 and from it loads the elevation model its `dem` block names, the satellite container of
 `tiles.satellite.unified`, the objects its `objects` block and `objects.binary` block name (the
 archive of a pair when the binary block names it, the gzip JSON otherwise), the label archive of
@@ -74,7 +74,7 @@ towns and road names from the archive and finds the spot heights on the elevatio
   `contracts/definitions/locations.schema.json` and
   `contracts/definitions/height-labels.schema.json`; `road-names.json` has no JSON Schema and
   reads as the map engine's route list (`parse_road_names_json` in
-  `apps/website/map-engine/src/world/environment/locations/route_labels.rs`).
+  `legacy/map_engine/src/world/environment/locations/route_labels.rs`).
 - Adding a file: a new kind of asset gets a manifest block, a schema in `contracts/definitions/`
   and an LFS rule in `.gitattributes` before its first file is committed;
   `cargo xtask schema terrain-manifest --terrain everon` then checks that every path the manifest
@@ -97,8 +97,8 @@ towns and road names from the archive and finds the spot heights on the elevatio
     elevation model, the objects and the building blueprints;
   - people: the anchors, `road-names.json`, the scene specs and the hand-kept manifest blocks.
 - Consumers:
-  - the map engine in the browser (`apps/website/map-engine/src/streaming/` and
-    `apps/website/map-engine/src/world/`), over `/map-assets/everon/…`;
+  - the map engine in the browser (`legacy/map_engine/src/streaming/` and
+    `legacy/map_engine/src/world/`), over `/map-assets/everon/…`;
   - the xtask schema gates: `schema validate` (the manifest, `locations.json`, `height-labels.json`,
     the anchors sample and the census), `schema terrain-manifest`, `schema terrain-alignment`,
     `schema height-labels`, `schema locations`, `schema town-labels`, `schema road-names`,
@@ -115,7 +115,7 @@ towns and road names from the archive and finds the spot heights on the elevatio
 - Depends on: the terrain registry entry in `assets/terrains/terrain-registry.json`, which
   names this folder's manifest; the schemas in `contracts/definitions/`; the classification
   rules in `contracts/rules/prefab-classify.json`.
-- Used by: the API's `/map-assets` mount (`apps/website/api_v2/src/core/http_router.rs`), the map
+- Used by: the API's `/map-assets` mount (`apps/api/src/core/http_router.rs`), the map
   engine, the developer tools, the xtask schema, verify and `ci` commands, and the CI workflows
   listed above.
 - Rules: `manifest.json` keeps `worldBounds`, the height range, `storageDecimals` 3 and
@@ -127,9 +127,9 @@ towns and road names from the archive and finds the spot heights on the elevatio
 
 ## Related documentation
 
-- [World asset loaders](/apps/website/map-engine/src/streaming/loaders/README.md) — how the browser
+- [World asset loaders](/legacy/map_engine/src/streaming/loaders/README.md) — how the browser
   fetches, parses and streams these files.
-- [Map streaming host](/apps/website/map-engine/src/streaming/host/README.md) — the boot order.
+- [Map streaming host](/legacy/map_engine/src/streaming/host/README.md) — the boot order.
 - [World Export Pipeline](/tools/developer_tools/src/world_export_pipeline/README.md) — the
   object export commands.
 - [Map Raster Pipeline](/tools/developer_tools/src/map_raster_pipeline/README.md) — the raster,

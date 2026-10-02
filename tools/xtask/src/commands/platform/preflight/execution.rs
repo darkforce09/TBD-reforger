@@ -245,12 +245,9 @@ pub fn run(warn_only: bool) -> Result<u8> {
         } else {
             proc_start_epoch(&api_pid)
         };
-        let newest = git_out(
-            &root,
-            &["log", "-1", "--format=%ct", "--", "apps/website/api_v2"],
-        )
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(0);
+        let newest = git_out(&root, &["log", "-1", "--format=%ct", "--", "apps/api"])
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0);
         if started > 0 && newest > started {
             soft(
                 &mut c,

@@ -41,7 +41,7 @@ integer, workload first.
 - Read by: `tools/xtask/src/commands/staging/load_procedure/` (`staging load --record`,
   `--rehearse-local`, `seed-load`, `action-list load`).
 - Rules: the population's fixture plan equals the host tool's fixed plan in
-  `apps/website/api_v2/src/bin/staging_fixtures/load_fixture_events/fixture_plan.rs`, which a unit
+  `apps/api/src/bin/staging_fixtures/load_fixture_events/fixture_plan.rs`, which a unit
   test of the load procedure holds; no template reaches the game-runtime, fleet-executor or ingest
   routes, which the load engine refuses.
 
@@ -49,5 +49,5 @@ integer, workload first.
 
 - [Staging load procedure](/documentation/runbooks/staging_verification/load_procedure.md) — the
   runbook that seeds, records and cleans with these files.
-- [Staging design note](/documentation/website/api_v2/verification_evidence/staging.md) — the
+- [Staging design note](/documentation/apps/api/verification_evidence/staging.md) — the
   load procedure and its ten cases.

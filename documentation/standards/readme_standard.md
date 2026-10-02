@@ -9,14 +9,16 @@ it stops, and links the documents that go deeper.
 
 ## Which folders carry a README
 
-The README span is every tracked folder at or under the code trees (`apps/`, `tools/`,
-`contracts/`, `assets/`) and the documentation root (`documentation/`), the roots
-included, minus the exempt folders and everything below them:
+The README span is every tracked folder below the repository root, the top-level folders
+included, minus the exempt folders and everything below them. The top-level folders are read from
+git's listing rather than from a list of names, so a new top-level folder is judged from the moment
+it is tracked. The exempt folders are:
 
 - a folder named exactly `tests`, `generated` or `Generated` (the spelling of the Enfusion script
   trees); any other casing, such as `GENERATED`, is an ordinary folder;
 - a folder whose name begins with `.` (tool configuration);
-- the pending-merge area, `pending_merge/` directly under the documentation root.
+- the pending-merge area, `pending_merge/` directly under the documentation root;
+- the retired documentation root (`docs`), which must hold nothing (markdown-placement judges it).
 
 An exempt folder needs no README, and a README.md inside one is neither required nor checked; the
 parent's Contents block describes the exempt folder in one line. The repository root's README.md
@@ -119,7 +121,7 @@ The gate checks the grammar; these conventions keep every block readable the sam
   after the heading as the tree.
 
 ```text
-apps/website/map-engine/src/spatial/los/interior/
+legacy/map_engine/src/spatial/los/interior/
 ├── mod.rs     declares both modules, compiled only with the `io` feature
 ├── tests/     unit tests for the walker and the wash
 ├── walker.rs  observer-to-target traces through a compound building, with blocking and concealment
@@ -134,17 +136,17 @@ table, with a skeleton and a worked sample written from a real folder; the
 
 | Kind | Kind sections, in order | Template | Examples |
 |---|---|---|---|
-| area root | Getting started | `readme_area_root.md` | `apps/website/`, `apps/mod/`, `tools/` |
-| crate, package or addon root | Getting started, Configuration, Public surface | `readme_crate_root.md` | `apps/website/api_v2/`, `tools/enfusion_mcp_node_package/`, `apps/mod/tbd-framework/` |
-| domain or subsystem | Public surface | `readme_domain.md` | `apps/website/api_v2/src/missions/`, `apps/website/map-engine/src/spatial/` |
-| leaf | none | `readme_leaf.md` | `apps/website/map-engine/src/spatial/los/interior/` |
-| page | Routes, Data, States | `readme_page.md` | `apps/website/frontend/src/v2/pages/operations/schedule/` |
-| app | Routes, Public surface | `readme_app.md` | `apps/website/frontend/src/v2/apps/editor/` |
+| area root | Getting started | `readme_area_root.md` | `apps/`, `apps/mod/`, `tools/` |
+| crate, package or addon root | Getting started, Configuration, Public surface | `readme_crate_root.md` | `apps/api/`, `tools/enfusion_mcp_node_package/`, `apps/mod/tbd-framework/` |
+| domain or subsystem | Public surface | `readme_domain.md` | `apps/api/src/missions/`, `legacy/map_engine/src/spatial/` |
+| leaf | none | `readme_leaf.md` | `legacy/map_engine/src/spatial/los/interior/` |
+| page | Routes, Data, States | `readme_page.md` | `apps/frontend/src/v2/pages/operations/schedule/` |
+| app | Routes, Public surface | `readme_app.md` | `apps/frontend/src/v2/apps/editor/` |
 | command-line | Commands | `readme_command_line.md` | `tools/developer_tools/src/bin/`, `tools/xtask/src/commands/db/` |
-| data (contracts, assets, fixtures, migrations, seeds) | Format, Producers and consumers | `readme_data.md` | `contracts/fixtures/missions/`, `apps/website/api_v2/migrations/` |
+| data (contracts, assets, fixtures, migrations, seeds) | Format, Producers and consumers | `readme_data.md` | `contracts/fixtures/missions/`, `apps/api/migrations/` |
 | mod scripts | Authority | `readme_mod_scripts.md` | `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/AI/` |
 | mod assets | Format, Referenced by | `readme_mod_assets.md` | `apps/mod/tbd-framework/Prefabs/` |
-| deploy or config | Configuration, Installed by | `readme_deploy_config.md` | `tools/xtask/deploy/` |
+| deploy or config | Configuration, Installed by | `readme_deploy_config.md` | `deploy/` |
 | documentation folder | Code | `readme_documentation_folder.md` | `documentation/runbooks/` |
 
 ### What each kind section holds
@@ -161,7 +163,7 @@ table, with a skeleton and a worked sample written from a real folder; the
   other folders import, the binaries, the HTTP routes the folder owns. Only what crosses the folder's
   boundary, never an inventory of everything marked `pub`.
 - **`## Routes`**: each browser route the folder renders: path, component, access tier and layout
-  flags, as `apps/website/frontend/src/app_routes.rs` and `apps/website/frontend/src/router.rs`
+  flags, as `apps/frontend/src/app_routes.rs` and `apps/frontend/src/router.rs`
   declare them.
 - **`## Data`**: each API call the page makes (method, path, the DTO it reads or sends), the context
   and storage it reads, and what it writes.
@@ -189,26 +191,25 @@ Go down this list and take the first kind that fits.
 
 1. **documentation folder**: any folder under `documentation/`.
 2. **area root**: the top of a code tree, or a folder that groups several products without being
-   one (`apps/`, `apps/website/`, `apps/mod/`, `tools/`, `contracts/`).
+   one (`apps/`, `apps/mod/`, `tools/`, `contracts/`).
 3. **crate, package or addon root**: the folder that holds a `Cargo.toml`, a `package.json` or an
-   Enfusion `addon.gproj` (`apps/website/api_v2/`, `apps/ticketboard/`,
+   Enfusion `addon.gproj` (`apps/api/`, `apps/ticketboard/`,
    `tools/enfusion_mcp_node_package/`, `apps/mod/tbd-framework/`).
 4. **mod scripts**: a folder at or under an addon's `Scripts/`
    (`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/AI/`).
 5. **mod assets**: any other folder inside an addon (`apps/mod/tbd-framework/Prefabs/`,
    `apps/mod/tbd-framework/Configs/`).
 6. **deploy or config**: templates, service units and profiles that set up a host or a server
-   (`tools/xtask/deploy/`, `tools/xtask/dedicated_server_profiles/`).
+   (`deploy/`, `tools/xtask/dedicated_server_profiles/`).
 7. **data**: schemas, fixtures, migrations, seeds and asset data that code reads rather than runs
-   (`contracts/definitions/`, `apps/website/api_v2/seeds/`, `assets/`, `assets/terrains/`,
-   `apps/website/shared/`).
+   (`contracts/definitions/`, `apps/api/seeds/`, `assets/`, `assets/terrains/`).
 8. **command-line**: a crate's `src/bin/`, and each folder directly under
    `tools/xtask/src/commands/` (`tools/developer_tools/src/bin/`,
-   `apps/website/api_v2/src/bin/`, `tools/xtask/src/commands/db/`). Any other folder that
+   `apps/api/src/bin/`, `tools/xtask/src/commands/db/`). Any other folder that
    parses or runs commands, such as a folder inside a command group, is a domain or a leaf and
    links the command-line README it belongs to.
-9. **app**: a workspace directly under `apps/website/frontend/src/v2/apps/`.
-10. **page**: a folder under `apps/website/frontend/src/v2/pages/` that holds a route component.
+9. **app**: a workspace directly under `apps/frontend/src/v2/apps/`.
+10. **page**: a folder under `apps/frontend/src/v2/pages/` that holds a route component.
 11. **domain or subsystem**: any other folder that has child folders besides exempt ones.
 12. **leaf**: any other folder.
 
@@ -216,25 +217,24 @@ Go down this list and take the first kind that fits.
 
 The first kind that fits sets the sections. When the folder also holds, directly, files of a later
 kind that a reader configures or runs by hand, the README adds that kind's sections after the first
-kind's, in kind-table order, each heading once, covering only those files. `apps/website/` is an
-area root that also holds the API's release `Dockerfile` and the staging compose file, so its README
-adds Configuration and Installed by after Getting started, as the
-[area root template](/documentation/standards/templates/readme_area_root.md) shows. A file nobody
+kind's, in kind-table order, each heading once, covering only those files: an area root that also
+held a release `Dockerfile` would add Configuration and Installed by after Getting started, as the
+[area root template](/documentation/standards/templates/readme_area_root.md) says. A file nobody
 configures or runs by hand, such as a crate's `rustfmt.toml`, needs only its Contents line.
 
 ## Writing rules
 
 - **Truth.** Every claim is checked against the code it describes: paths with `git ls-files`, routes
-  in `apps/website/frontend/src/app_routes.rs` and `apps/website/api_v2/src/<domain>/routes.rs`,
+  in `apps/frontend/src/app_routes.rs` and `apps/api/src/<domain>/routes.rs`,
   commands in the xtask command tree (`tools/xtask/src/cli/` and
   `tools/xtask/src/commands/<group>/cli.rs`) and safe `--help` runs,
-  environment variables in `apps/website/api_v2/.env.example` and the code that reads them, callers
+  environment variables in `apps/api/.env.example` and the code that reads them, callers
   with `git grep`. When a document and the code disagree, the code wins.
 - **Present tense.** A README says what the folder is and does. It holds no history (no dates, no
   "formerly", "previously", "legacy", "migrated" or "renamed from", no phase or wave story) and no
   plans; commit history owns the past, and feature docs own open work.
 - **No tickets.** A README never names or links a ticket.
-- **Links.** Repository-root links, such as `[API overview](/documentation/website/api_v2/api_overview.md)`,
+- **Links.** Repository-root links, such as `[API overview](/documentation/apps/api/api_overview.md)`,
   never `../` climbs.
 - **Paths.** A backticked path to anything outside the README's folder is a full repository path;
   inside the folder, a path relative to it (`src/bin/api.rs`); a bare file name only after the
@@ -274,7 +274,7 @@ configures or runs by hand, such as a crate's `rustfmt.toml`, needs only its Con
 - **Diagrams.** ASCII, in `text` blocks, placed in How it works or a kind section.
 - **Names.** Code identifiers go in backticks exactly as spelled; everything else is plain words.
 - **Hosts and paths.** No IP address of a host, and no personal absolute path. The deploy host is
-  named by `TBD_SSH_HOST` in `tools/xtask/deploy/deploy.env`.
+  named by `TBD_SSH_HOST` in `deploy/deploy.env`.
 - **Length.** A leaf runs about 10 to 60 lines, a domain or subsystem 40 to 200, a root up to 400.
   No README passes 500 lines; one that needs more moves the depth into a feature doc and links it.
 

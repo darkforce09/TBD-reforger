@@ -83,7 +83,6 @@ fn tailwind_sources_reads_quoted_globs_and_skips_not_lines() {
 
 #[test]
 fn tailwind_sources_this_checkout_passes() {
-    let report =
-        check_tailwind_sources(&this_repository(), "apps/website/frontend/style/aegis.css");
+    let report = check_tailwind_sources(&this_repository(), "apps/frontend/style/aegis.css");
     assert_eq!(report.exit_code, 0, "{}", report.lines.join("\n"));
 }

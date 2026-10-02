@@ -13,7 +13,7 @@
 .env
 .env.*
 !.env.example
-tools/xtask/deploy/deploy.env
+deploy/deploy.env
 
 # ==============================================================================
 # 3. Editor & OS Cruft
@@ -51,11 +51,11 @@ __pycache__/
 target-*/
 
 # ==============================================================================
-# 6. Website Suite (apps/website)
+# 6. Frontend Build Output (apps/frontend)
 # ==============================================================================
 # Trunk frontend build outputs
-/apps/website/frontend/dist/
-/apps/website/frontend/dist-debug/
+/apps/frontend/dist/
+/apps/frontend/dist-debug/
 
 # ==============================================================================
 # 7. Mod Suite (apps/mod)

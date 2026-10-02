@@ -6,7 +6,7 @@
 //! same catalog as the committed file.
 //! **Position:** called by [`super::run`] before the browser starts; the [`ServedGoldens`] it
 //! returns are the exact bytes `super::browser_session` fulfils the two reads with. The goldens
-//! live in `apps/website/frontend/tests/fixtures/api/`, captured from the real API.
+//! live in `contracts/fixtures/api_goldens/`, captured from the real API.
 //! **Signals & state:** none; reads files.
 //! **Invariants:** a missing, unreadable or mismatching golden is a failure with its cause, never
 //! a skip; the SHA-256 is of the committed file's bytes, as the API computes `catalog_sha256`
@@ -15,8 +15,8 @@
 
 use std::path::Path;
 
+use map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
 use sha2::{Digest, Sha256};
-use website_map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
 
 /// The captured list golden's file name.
 pub const LIST_GOLDEN: &str = "GET__ballistics-catalogs.json";

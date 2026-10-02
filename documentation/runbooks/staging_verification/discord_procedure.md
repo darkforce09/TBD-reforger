@@ -6,14 +6,14 @@ How the orchestrator and the operator run `cargo xtask staging discord --record`
 before it, the approval of its numbered actions, what to do at each `AWAIT` line of its eight
 procedure steps, what each case proves, and how to put everything back after a stopped run. The
 design of the procedure is in the
-[staging design note](/documentation/website/api_v2/verification_evidence/staging.md#discord-procedure-staging_discord).
+[staging design note](/documentation/apps/api/verification_evidence/staging.md#discord-procedure-staging_discord).
 
 ## Prerequisites
 
 - The [setup checklist](/documentation/runbooks/staging_verification/setup_checklist.md) is
   complete: the partner guild exists with its partner role and invites, the bot is a member of the
   main and the partner guild, and the operator holds the partner role.
-- `tools/xtask/deploy/deploy.env` sets `TBD_STAGING_OPERATOR_DISCORD_ID`,
+- `deploy/deploy.env` sets `TBD_STAGING_OPERATOR_DISCORD_ID`,
   `TBD_STAGING_PARTNER_GUILD_ID`, `TBD_STAGING_PARTNER_ROLE_ID` and `TBD_STAGING_DB_CONTAINER`; a
   missing key refuses the plan before the recording begins.
 - The load and fleet receipts of the same 24-hour window are recorded
@@ -116,7 +116,7 @@ The rest of the cleanup is in
 
 ## Related
 
-- [Staging design note](/documentation/website/api_v2/verification_evidence/staging.md) — the
+- [Staging design note](/documentation/apps/api/verification_evidence/staging.md) — the
   procedures, the receipt format and the witness rules.
 - [Run day](/documentation/runbooks/staging_verification/run_day.md) — where the Discord run sits
   in the 24-hour window.

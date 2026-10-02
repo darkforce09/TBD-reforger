@@ -44,7 +44,7 @@ catalogs/ ──db registry-import──▶ Postgres registry tables ──▶ /
 ```
 
 The API's release image copies `definitions/` and `rules/kit-aliases.json`, since the API embeds
-them at compile time (`apps/website/Dockerfile`).
+them at compile time (`deploy/Dockerfile`).
 
 ## Getting started
 
@@ -66,14 +66,14 @@ once `cargo xtask db up` has started it.
 - Depends on: the mod's spawn registry `apps/mod/tbd-framework/Data/registry.json`, which the kit
   aliases and the mission fixtures must agree with; the registry export plugin in
   `apps/mod/tbd-export/Scripts/WorkbenchGame/`, which produces the catalogues; the binary chunk and
-  density formats of `apps/website/map-engine/src/io/`; and the glyph keys of
+  density formats of `legacy/map_engine/src/io/`; and the glyph keys of
   `assets/glyphs/manifest.json`.
 - Used by:
-  - `apps/website/api_v2/`: generated models, embedded validators, the registry import binary and
+  - `apps/api/`: generated models, embedded validators, the registry import binary and
     the contract test suites;
-  - `apps/website/frontend/`: the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
+  - `apps/frontend/`: the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
     schema embeds for zones and loadout export;
-  - `apps/website/map-engine/`: the embedded kit-alias table and the compiler's fixture tests;
+  - `legacy/map_engine/`: the embedded kit-alias table and the compiler's fixture tests;
   - `apps/mod/`: DTO classes whose `@contract` tags cite the mission, loadout and registry schemas;
   - `apps/fleet_host_agent/`, whose ledger client follows the fleet-command schema;
   - `tools/xtask/` (the schema gates, codegen, `db registry-import` and the `mod` commands that

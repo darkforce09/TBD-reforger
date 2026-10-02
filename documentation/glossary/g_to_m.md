@@ -33,18 +33,18 @@ See: [slice](/documentation/glossary/n_to_z.md#slice), [Testing and CI](/documen
 The API domain of sign-in and the caller's own account: Discord OAuth2 login, token refresh, logout,
 the [dev login](/documentation/glossary/a_to_f.md#dev-login), `/api/v1/me`, and the Discord-to-Arma identity link handshake.
 
-In code: `apps/website/api_v2/src/identity_and_access/`.
+In code: `apps/api/src/identity_and_access/`.
 
-See: [Identity and access domain](/apps/website/api_v2/src/identity_and_access/README.md).
+See: [Identity and access domain](/apps/api/src/identity_and_access/README.md).
 
 ### lane
 
 A draw-order layer of the map: the map engine names 48 lanes (`LaneRole`), basemap first; the
 graphics engine sorts draws by an opaque `LaneId`. Other lanes are named in full (wave lanes).
 
-In code: `LaneRole` in `apps/website/map-engine/src/overlay/lanes.rs`; `LaneId` in `apps/website/graphics-engine/src/frame/ids.rs`.
+In code: `LaneRole` in `legacy/map_engine/src/overlay/lanes.rs`; `LaneId` in `legacy/graphics_engine/src/frame/ids.rs`.
 
-See: [frame packet](/documentation/glossary/a_to_f.md#frame-packet), [Map overlay](/apps/website/map-engine/src/overlay/README.md).
+See: [frame packet](/documentation/glossary/a_to_f.md#frame-packet), [Map overlay](/legacy/map_engine/src/overlay/README.md).
 
 ### load workload
 
@@ -64,9 +64,9 @@ A per-server secret that authenticates one program on a game host: `host_agent` 
 [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) or `mod_runtime` for the [game runtime](#game-runtime). An
 administrator issues one (its secret shows once), lists them without secrets and revokes each alone.
 
-In code: `MachineCredential` and `ExecutorKind` in `apps/website/api_v2/src/server_infrastructure/models/machine_credential.rs`.
+In code: `MachineCredential` and `ExecutorKind` in `apps/api/src/server_infrastructure/models/machine_credential.rs`.
 
-See: [Machine credentials evidence](/documentation/website/api_v2/verification_evidence/machine_credentials.md).
+See: [Machine credentials evidence](/documentation/apps/api/verification_evidence/machine_credentials.md).
 
 ### match telemetry
 
@@ -75,9 +75,9 @@ The API domain that takes in what game servers report, each call authenticated b
 server status, match registrations, numbered results revisions and batches of detailed combat,
 medical and vehicle events. It also serves the read of a match's detailed events.
 
-In code: `apps/website/api_v2/src/match_telemetry/`.
+In code: `apps/api/src/match_telemetry/`.
 
-See: [Match telemetry domain](/apps/website/api_v2/src/match_telemetry/README.md).
+See: [Match telemetry domain](/apps/api/src/match_telemetry/README.md).
 
 ### mission
 
@@ -85,7 +85,7 @@ The platform document a mission maker authors in the [Mission Creator](#mission-
 versions, reviews, [artifacts](/documentation/glossary/a_to_f.md#artifact) and deployments; its status is `draft`, `pending_approval`,
 `live`, `rejected` or `archived`. It is not the [mission header](#mission-header) a server boots.
 
-In code: `Mission`, `MissionVersion` and `MissionStatus` in `apps/website/api_v2/src/missions/models/mission.rs`; `contracts/definitions/mission.schema.json`; some code spells it [scenario](/documentation/glossary/n_to_z.md#scenario).
+In code: `Mission`, `MissionVersion` and `MissionStatus` in `apps/api/src/missions/models/mission.rs`; `contracts/definitions/mission.schema.json`; some code spells it [scenario](/documentation/glossary/n_to_z.md#scenario).
 
 See: [missions](#missions), [event](/documentation/glossary/a_to_f.md#event).
 
@@ -95,9 +95,9 @@ The CAD editor in which mission makers build a [mission](#mission) on a top-down
 `/missions/:id/edit`, for the `mission_maker` [role](/documentation/glossary/n_to_z.md#role) and above; the Arsenal's paper doll is
 its only 3D view. Prose never calls it the Scenario Creator; code identifiers say editor.
 
-In code: `apps/website/frontend/src/v2/apps/editor/`; `MissionEditorPage` in its `mission_editor.rs`.
+In code: `apps/frontend/src/v2/apps/editor/`; `MissionEditorPage` in its `mission_editor.rs`.
 
-See: [Mission Creator documentation](/documentation/website/frontend/apps/editor/README.md).
+See: [Mission Creator documentation](/documentation/apps/frontend/apps/editor/README.md).
 
 ### mission deployment
 
@@ -105,7 +105,7 @@ A request that runs an approved [artifact](/documentation/glossary/a_to_f.md#art
 [fleet command](/documentation/glossary/a_to_f.md#fleet-command) (`load_mission` on the same terrain, `restart_with_mission` for
 another), follows it to confirmation, and cancels it while no executor has claimed it.
 
-In code: `apps/website/api_v2/src/missions/handlers/mission_deployments.rs`; `contracts/definitions/mission-deployment.schema.json`.
+In code: `apps/api/src/missions/handlers/mission_deployments.rs`; `contracts/definitions/mission-deployment.schema.json`.
 
 See: [deployment](/documentation/glossary/a_to_f.md#deployment), [fleet scenario](/documentation/glossary/a_to_f.md#fleet-scenario).
 
@@ -125,9 +125,9 @@ The API domain that owns [missions](#mission): the library, the versions the Mis
 submission and [approvals](/documentation/glossary/a_to_f.md#approvals), artifacts, mission deployments, the [armory](/documentation/glossary/a_to_f.md#armory), the
 faction library, the item [registry](/documentation/glossary/n_to_z.md#registry) and the game-runtime routes that serve artifacts.
 
-In code: `apps/website/api_v2/src/missions/`.
+In code: `apps/api/src/missions/`.
 
-See: [Missions domain](/apps/website/api_v2/src/missions/README.md).
+See: [Missions domain](/apps/api/src/missions/README.md).
 
 ### mod
 
@@ -146,6 +146,6 @@ Workshop link and mod rows (Workshop ID, mod GUID, optional version pin, key dep
 modpack is current. The item [registry](/documentation/glossary/n_to_z.md#registry) is kept per
 modpack.
 
-In code: `Modpack` and `ModpackMod` in `apps/website/api_v2/src/community_content/models/modpack.rs`; the `/api/v1/modpacks` routes in `apps/website/api_v2/src/community_content/routes.rs`; `ModpacksPage` at `/modpacks` in `apps/website/frontend/src/v2/pages/doctrine_and_info/modpacks/`.
+In code: `Modpack` and `ModpackMod` in `apps/api/src/community_content/models/modpack.rs`; the `/api/v1/modpacks` routes in `apps/api/src/community_content/routes.rs`; `ModpacksPage` at `/modpacks` in `apps/frontend/src/v2/pages/doctrine_and_info/modpacks/`.
 
-See: [community content](/documentation/glossary/a_to_f.md#community-content), [Modpacks page](/apps/website/frontend/src/v2/pages/doctrine_and_info/modpacks/README.md).
+See: [community content](/documentation/glossary/a_to_f.md#community-content), [Modpacks page](/apps/frontend/src/v2/pages/doctrine_and_info/modpacks/README.md).

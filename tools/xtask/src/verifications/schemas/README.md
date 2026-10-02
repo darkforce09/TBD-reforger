@@ -22,7 +22,8 @@ tools/xtask/src/verifications/schemas/
 
 - the document suite (`validate`) and the one-file [mission](/documentation/glossary/g_to_m.md#mission) check (`validate-file`), in
   `checks/contract_validation/`;
-- the code-to-schema check (`citations`), which walks `apps/` and `tools/`;
+- the code-to-schema check (`citations`), which walks the top-level folder of every workspace
+  member and `apps/mod/`;
 - the map-object gates (`map-object-enums`, `type-inventory`, `map-glyphs`), which keep the map
   data, the rules and the glyph set inside the closed enums of `map-object-enums.schema.json`.
 
@@ -57,8 +58,8 @@ The Rust contract types generated from the same schemas come from `cargo xtask s
   (`tools/xtask/src/commands/platform/wave_execution/schema.rs`); the `schema` job of
   `.github/workflows/ci.yml` and `.github/workflows/schema.yml`.
 - Rules:
-  - A gate that examined nothing fails: a missing citation root or zero citations, a missing enum
-    `$defs`, a missing fixture file.
+  - A gate that examined nothing fails: an unreadable workspace, a missing citation root or zero
+    citations, a missing enum `$defs`, a missing fixture file.
   - Two pins run inside the gates as well as in the tests, so every gate run checks them:
     `instance_kinds_lockstep_failures` inside `type_inventory` and `unread_wire_field_failures`
     inside `validate_all`.

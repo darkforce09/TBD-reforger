@@ -60,7 +60,7 @@ estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 com
 owns = [
     "crates/map-engine-render/src/draw_order.rs",
     "crates/map-engine-render/src/engine.rs",
-    "apps/website/frontend/src/mission_history.rs",
+    "apps/frontend/src/mission_history.rs",
 ]
 
 [scope]

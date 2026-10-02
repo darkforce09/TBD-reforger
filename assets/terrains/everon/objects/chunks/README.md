@@ -21,7 +21,7 @@ binary template `objects/chunks/{cx}_{cy}.bin`. The map engine's world loader fe
 fetches each cell the viewport needs: the `.bin` when the manifest's `objects.binary` block
 matches the container, version and row shape the build implements
 (`ObjectsBinaryBlock::matches_this_build` in
-`apps/website/map-engine/src/streaming/loaders/manifest.rs`), otherwise the `.json.gz`. Both
+`legacy/map_engine/src/streaming/loaders/manifest.rs`), otherwise the `.json.gz`. Both
 lanes build the same columns.
 
 315 of the 625 cells of the 25 × 25 grid hold objects, 1,216,066 instances in all; an empty cell
@@ -43,8 +43,8 @@ loader's own narrowing.
     `instanceCount`.
 - Schema: the rows follow `contracts/definitions/map-object-instance.schema.json`, which also
   records the byte layout of the binary row; the container header is defined in
-  `apps/website/map-engine/src/io/containers/tbdc.rs` and the row in
-  `apps/website/map-engine/src/io/pod/instance.rs`. `prefabId` indexes the catalogue in the
+  `legacy/map_engine/src/io/containers/tbdc.rs` and the row in
+  `legacy/map_engine/src/io/pod/instance.rs`. `prefabId` indexes the catalogue in the
   parent folder.
 - Adding a file: never by hand. `cargo xtask map export-terrain everon --phase <phase>` rewrites
   the whole set; `cargo run -p developer_tools --bin world -- verify-phase --terrain everon --phase
@@ -57,8 +57,8 @@ loader's own narrowing.
   gate.
 - Consumers:
   - the map engine's world loader and residency
-    (`apps/website/map-engine/src/streaming/loaders/world_loader/`, `chunk_bin.rs`, `chunk.rs` and
-    `residency.rs` in `apps/website/map-engine/src/streaming/loaders/`), fetched as
+    (`legacy/map_engine/src/streaming/loaders/world_loader/`, `chunk_bin.rs`, `chunk.rs` and
+    `residency.rs` in `legacy/map_engine/src/streaming/loaders/`), fetched as
     `/map-assets/everon/objects/chunks/…`;
   - the developer tools' world line-of-sight verification and blueprint instance checks
     (`tools/developer_tools/src/map_verification/world_line_of_sight/`,
@@ -79,7 +79,7 @@ loader's own narrowing.
 
 ## Related documentation
 
-- [Map binary formats](/apps/website/map-engine/src/io/README.md) — the `TBDC` container and the
+- [Map binary formats](/legacy/map_engine/src/io/README.md) — the `TBDC` container and the
   instance row.
-- [World asset loaders](/apps/website/map-engine/src/streaming/loaders/README.md) — how the chunks
+- [World asset loaders](/legacy/map_engine/src/streaming/loaders/README.md) — how the chunks
   are fetched, parsed and made resident.

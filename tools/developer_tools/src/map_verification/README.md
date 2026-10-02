@@ -64,7 +64,7 @@ unreported.
 
 ## Boundaries
 
-- Depends on: `website-map-engine` (the `world`, `streaming`, `io` and `bvh` features): its
+- Depends on: `map_engine` (the `world`, `streaming`, `io` and `bvh` features): its
   manifest, chunk and elevation loaders, label placement, world occluder and container
   constants; the world export pipeline's emitters and geometry
   (`tools/developer_tools/src/world_export_pipeline/`), for the golden gate;

@@ -88,7 +88,7 @@ fn the_matcher_reads_folders_files_and_anchoring_as_rsync_does() {
     assert!(!rsync_excludes("/target-*/", "target-notes.md"));
     assert!(!rsync_excludes(
         "/target-*/",
-        "apps/website/frontend/target-picker/mod.rs"
+        "apps/frontend/target-picker/mod.rs"
     ));
     assert!(rsync_excludes("/.mcp.json", ".mcp.json"));
     assert!(!rsync_excludes("/.mcp.json", "apps/.mcp.json"));

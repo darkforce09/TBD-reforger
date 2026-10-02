@@ -8,17 +8,17 @@
 Verified hit-testing the Z arm above gizmo center returned None prior to implementation.
 
 **changes**:
-1. Added `apps/website/frontend/src/editor/canvas/gizmo_z.rs` with pure math and geometry for Z arm projection, hit testing (`hit_z_arm`), screen dy to elevation (`dy_to_elevation`), snapping step (`snap_elevation`), and height readout formatting.
-2. Registered `pub mod gizmo_z;` in `apps/website/frontend/src/editor/canvas/mod.rs`.
-3. Updated `apps/website/frontend/src/editor/canvas/overlays.rs` to render the vertical Z axis arrow in `WidgetVariant::Translate` mode and display the dynamic height readout during drag.
-4. Updated `apps/website/frontend/src/editor/canvas/gestures.rs` to hit-test the Z arm on pointerdown, route dragging to vertical height adjustment, format readout, and commit atomic Z coordinate updates on pointerup.
+1. Added `apps/frontend/src/editor/canvas/gizmo_z.rs` with pure math and geometry for Z arm projection, hit testing (`hit_z_arm`), screen dy to elevation (`dy_to_elevation`), snapping step (`snap_elevation`), and height readout formatting.
+2. Registered `pub mod gizmo_z;` in `apps/frontend/src/editor/canvas/mod.rs`.
+3. Updated `apps/frontend/src/editor/canvas/overlays.rs` to render the vertical Z axis arrow in `WidgetVariant::Translate` mode and display the dynamic height readout during drag.
+4. Updated `apps/frontend/src/editor/canvas/gestures.rs` to hit-test the Z arm on pointerdown, route dragging to vertical height adjustment, format readout, and commit atomic Z coordinate updates on pointerup.
 
 **perturbation**:
 Inverted dy sign in `gizmo_z.rs`:
 ```
 failures:
 ---- editor::canvas::gizmo_z::tests::test_dy_to_elevation stdout ----
-thread 'editor::canvas::gizmo_z::tests::test_dy_to_elevation' panicked at apps/website/frontend/src/editor/canvas/gizmo_z.rs:60:9:
+thread 'editor::canvas::gizmo_z::tests::test_dy_to_elevation' panicked at apps/frontend/src/editor/canvas/gizmo_z.rs:60:9:
 assertion `left == right` failed
   left: 2.0
  right: -2.0

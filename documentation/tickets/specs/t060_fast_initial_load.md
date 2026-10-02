@@ -10,7 +10,7 @@ progress was **indeterminate** in T-060 code; **T-060.1** added determinate down
 **T-060.1.1** added **`restoring`** phase (rAF slot-count poll + `yieldToUi`). `compileMissionWithProgress`
 is added alongside the sync `compileMission` (export still uses the sync one).
 **Git tag on ship:** T-060 (single commit: T-060 + T-060.1 + T-060.1.1 + T-060.1.2 + T-060.1.3 + **T-060.1.4**)
-**Authority:** [MC ROADMAP](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation/website/frontend/apps/editor/decisions.md) §ACTIVE SLICE
+**Authority:** [MC ROADMAP](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation/apps/frontend/apps/editor/decisions.md) §ACTIVE SLICE
 
 **Prerequisites:** **T-057–T-059** shipped. **Validated (2026-06):** **360k objects @ 100+ fps** pan; repeat **6k paste** smooth.
 

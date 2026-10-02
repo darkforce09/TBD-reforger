@@ -65,7 +65,7 @@ README gives its commands, flags and exit codes.
   `verification_core` crates; the host tools each group names in its README.
 - Used by: `tools/xtask/src/cli/dispatch.rs`; `tools/xtask/src/verifications/`, which reads
   the `ci` table; and, through the command line, people, the GitHub workflows in
-  `.github/workflows/`, the systemd units in `tools/xtask/deploy/systemd/` and the agent hook in
+  `.github/workflows/`, the systemd units in `deploy/systemd/` and the agent hook in
   `.claude/settings.json`.
 - Rules: a group's parsing stays in its own `cli.rs` and its routing in its `dispatch.rs`;
   ticket persistence, wave-lock compilation and engine-backed map work stay in their libraries,

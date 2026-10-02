@@ -65,7 +65,7 @@ comment, and one that is in neither was not recorded and is re-derived from the 
    cargo xtask mk leptos-debug
    ```
 
-   Expected: `trunk serve` in `apps/website/frontend`, listening on `127.0.0.1:3000`. Leave it
+   Expected: `trunk serve` in `apps/frontend`, listening on `127.0.0.1:3000`. Leave it
    running during gates: the wave gate builds into its own `target/gate-dist-frontend` and
    `target/gate-trunk` folders and never touches the served `dist/`.
 

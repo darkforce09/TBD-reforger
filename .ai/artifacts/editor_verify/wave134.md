@@ -25,7 +25,7 @@ ticket and confirm RED. Then probe NEW hollow shapes on the same pins.
 
 | measurement | value | how |
 |---|---|---|
-| HEAD `--list` | **987** | `cargo test -p website-frontend -- --list`, private dir |
+| HEAD `--list` | **987** | `cargo test -p frontend -- --list`, private dir |
 | HEAD run | **987 passed / 0 failed** | same private dir; `--list` == run |
 | base (`44a3b757`) `--list` | **986** | isolated worktree + private dir |
 | Net delta | **+1** | one new named frontend pin |

@@ -11,10 +11,10 @@ APP-6 frames, no echelon modifiers and no civilian side.
 
 ## Where it lives
 
-- Map: [`apps/website/map-engine/src/overlay/symbology/`](/apps/website/map-engine/src/overlay/symbology/README.md):
+- Map: [`legacy/map_engine/src/overlay/symbology/`](/legacy/map_engine/src/overlay/symbology/README.md):
   the role, vehicle and side tables in `roles/classify.rs`, the glyph atlas in `atlas/`, the
   marker glyphs in `markers.rs`, and the marker lane's parse in
-  `apps/website/map-engine/src/editing/lanes/markers.rs`.
+  `legacy/map_engine/src/editing/lanes/markers.rs`.
 - Game: [`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/README.md):
   `TBD_MarkerService.c` (which markers a player may see), `TBD_MarkerWire.c` and
   `TBD_MarkerStyleCodec.c` (the wire), `TBD_MarkerIcons.c` (authored icon to engine icon) and
@@ -104,7 +104,7 @@ Its `label` draws as a caption through the map's text pipeline.
 ### Known discrepancies
 
 - The same marker changes colour between the surfaces: the Mission Creator tints it by side and
-  ignores `color` (`marker_lane_fields` in `apps/website/map-engine/src/editing/lanes/markers.rs`),
+  ignores `color` (`marker_lane_fields` in `legacy/map_engine/src/editing/lanes/markers.rs`),
   while the game draws `color` or orange and ignores the side.
 - The game's own interface paints BLUFOR and OPFOR from Tailwind's blue and red families and has
   no INDFOR tint (`ChipFill`, `FactionRowFill` in `TBD_UITheme.c`), while the map uses the three
@@ -118,7 +118,7 @@ Its `label` draws as a caption through the map's text pipeline.
 - Slot `role` and kit strings, vehicle aliases and faction keys of the mission document feed the
   unit, vehicle and side tables.
 - `cargo xtask verify editor-orbat-coherency` pins the three side tints to their RGBA literals;
-  `every_schema_alias_maps` in `apps/website/map-engine/src/overlay/symbology/tests/markers_tests.rs`
+  `every_schema_alias_maps` in `legacy/map_engine/src/overlay/symbology/tests/markers_tests.rs`
   checks that every schema alias maps to a glyph.
 
 ## Design

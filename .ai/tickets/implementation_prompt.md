@@ -56,13 +56,13 @@ Implement <slice id> — <one-line title>.
   {earlier slices @ commit — one line each}
 
 ═══ LAYER GATE (engine crates vs the Leptos view — MANDATORY on engine and editor work) ═══
-  website-graphics-engine OWNS: pipelines, shaders, bind groups, draw batching. Zero map concepts.
-  website-map-engine OWNS: geometry, LOD, residency, SoA→GPU sync, selection/drag/cluster policy,
+  graphics_engine OWNS: pipelines, shaders, bind groups, draw batching. Zero map concepts.
+  map_engine OWNS: geometry, LOD, residency, SoA→GPU sync, selection/drag/cluster policy,
   camera math, spatial indexes, terrain formats, the mission document model. Zero Leptos.
-  website-frontend ONLY: view components, routing, pointer/keyboard events translated into engine
+  frontend ONLY: view components, routing, pointer/keyboard events translated into engine
   commands, and the canvas mount.
   STOP IF: about to add engine policy / streaming / LOD / camera math under frontend/src/v2/
-  → put it in apps/website/map-engine instead. Do not "just finish it in the view layer".
+  → put it in legacy/map_engine instead. Do not "just finish it in the view layer".
   LOC budget: {the frontend files and their maximum line counts}
 
 ═══ LOCKED ═══
@@ -114,7 +114,7 @@ Implement <slice id> — <one-line title>.
 ## The layer gate
 
 Agents edit the file they already have open. On an engine ticket that is the Leptos component, so
-streaming, LOD and camera policy grows a second home in `apps/website/frontend/src/v2/` and the two
+streaming, LOD and camera policy grows a second home in `apps/frontend/src/v2/` and the two
 copies disagree. The boundary is `CLAUDE.md` law 6, detailed in the
 [engine boundary rules](/documentation/standards/engine_boundary_rules.md) and enforced by
 `cargo xtask verify engine-layers`.
@@ -124,7 +124,7 @@ Whoever writes the prompt:
 1. puts `═══ LAYER GATE ═══` in **every** engine or editor prompt;
 2. lists **explicit frontend line budgets** in VERIFY (`wc -l … ≤ N`);
 3. writes DO steps that name **the engine crate first**, then the thin view adapter;
-4. bans, in DO NOT, growing streaming, LOD or camera policy under `apps/website/frontend/src/v2/`;
+4. bans, in DO NOT, growing streaming, LOD or camera policy under `apps/frontend/src/v2/`;
 5. fixes a hotfix **in the engine crate**, never with a second policy layer.
 
 **The executing agent stops and asks** when the only way it sees to ship is 100 or more lines of

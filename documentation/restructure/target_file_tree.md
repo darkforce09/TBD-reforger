@@ -38,6 +38,9 @@ TBD-reforger/
 ├── .github/workflows/         ci.yml · contracts.yml · editor-gates.yml · mod-gates.yml · schema.yml
 ├── .ai/tickets/               ticket registry
 ├── .gitattributes · .gitignore · .editorconfig · .editorconfig-checker.json
+├── .dockerignore              the API release image's build context: the workspace crates and the
+│                              contract folders they embed
+├── clippy.toml                the clippy settings every crate reads (tests may call unwrap())
 ├── target/                    all build output, one subfolder per purpose (gitignored)
 │
 ├── apps/
@@ -49,9 +52,8 @@ TBD-reforger/
 │   ├── frontend/              Leptos client-side app, the Trunk entry
 │   │   ├── Cargo.toml · README.md · Trunk.toml · index.html · manifest.webmanifest · service_worker.js
 │   │   ├── style/             Tailwind v4; one @source line per frontend crate
-│   │   ├── src/               main.rs · app_routes.rs · shell/ (layout, sidebar, top_nav,
-│   │   │                      membership_status, not_found)
-│   │   └── tests/fixtures/
+│   │   └── src/               main.rs · app_routes.rs · shell/ (layout, sidebar, top_nav,
+│   │                          membership_status, not_found)
 │   ├── offline_service_worker/ the service-worker binary (main.rs and its modules, range slicing)
 │   ├── fleet_host_agent/      agent binary; its wire shapes come from fleet_wire_contract
 │   ├── ticketboard/           egui viewer over ticketboard_model
@@ -133,8 +135,10 @@ TBD-reforger/
 │   └── enfusion_mcp_node_package/   pinned npm package
 │
 ├── deploy/
-│   ├── README.md · Dockerfile · compose.dev.yml · compose.staging.yml · Caddyfile · deploy.env.example
-│   └── systemd/               the API service unit and the backup units and timers
+│   ├── README.md · Dockerfile · compose.dev.yml · compose.staging.yml · deploy.env.example
+│   ├── caddy/                 Caddyfile: the one folder the staging Caddy container mounts
+│   └── systemd/               the API service unit, the game server, host agent and relay unit
+│                              templates, and the backup units and timers
 │
 ├── assets/                    terrains/ (LFS) · glyphs/ · storage_spec/ · scratch/ (gitignored)
 ├── contracts/                 definitions/ · rules/ · catalogs/ · fixtures/ (including api_goldens/)
@@ -151,8 +155,27 @@ TBD-reforger/
     ├── standards/             crate_boundary_rules.md replaces engine_boundary_rules.md
     ├── tickets/               frozen ticket specs and plans
     └── archive/               … plus refactor_v2/ · improved_layout/ · restructure/ ·
-                               restructure_research/ (with the blueprint draft)
+                               restructure_research/ (with the blueprint draft) ·
+                               restructure_agent_briefs/ (each stage's executed agent briefs)
 ```
+
+## The tree between stages
+
+Each stage builds a part of this tree; until the close stage the live tree also holds what the
+later stages have not yet dissolved. After S2 the live tree differs from the end state in these
+places:
+
+- `crates/` holds the first two library crates, both tier 0: `http_url_guard` in
+  `crates/foundation/` (the one URL predicate the API and the single-page app link, with its case
+  table as the `cases` module) and `offline_cache_policy` in `crates/contracts/` (the cache names,
+  request classes, network fallback and offline pack list the service worker and the page share).
+- `legacy/` parks the two engine crates, `legacy/map_engine/` and `legacy/graphics_engine/`
+  (decision D12), until S8 deletes them; no crate under `crates/` depends on them.
+- `apps/` holds the end-state app folders; the frontend keeps its `src/v2/` layer until S3, and
+  `apps/offline_service_worker/` is already the binary-only crate of the end state.
+- `deploy/` is in its end state, `caddy/` included.
+- `tools/` keeps its four single crates (`xtask`, `verification_core`, `ticket_engine`,
+  `developer_tools`) until S4 and S11 split them.
 
 ## Documentation mirror rule
 

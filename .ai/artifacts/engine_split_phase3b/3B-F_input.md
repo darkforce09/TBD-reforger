@@ -44,9 +44,9 @@ keeps a table of `(filename, source, expected count)` rows. Repoint those rows a
 update the filename strings to match; the counts do not change, and if one does, you changed
 behaviour. `t726_window_esc_stack.rs` and `t662_input_traps.rs` pin the same surfaces.
 
-## `website-map-engine` pins `gestures.rs` — this one is not optional
+## `map_engine` pins `gestures.rs` — this one is not optional
 
-`apps/website/map-engine/src/data/store/rows/tests/cases_1.rs` holds an `include_str!` of
+`legacy/map_engine/src/data/store/rows/tests/cases_1.rs` holds an `include_str!` of
 `canvas/gestures.rs`. You are moving that file, so **repoint that pin and run the engine's test
 build**. A sweep scoped to the frontend left this crate's tests uncompilable once already in this
 phase, and nobody noticed until the next brief tripped over it.
@@ -54,9 +54,9 @@ phase, and nobody noticed until the next brief tripped over it.
 ## Verification — run once, at the end, from the repo root
 
 ```
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
-CARGO_TARGET_DIR=target-container cargo test -p website-map-engine --all-features
-CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p website-frontend
+CARGO_TARGET_DIR=target-container cargo test -p frontend
+CARGO_TARGET_DIR=target-container cargo test -p map_engine --all-features
+CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p frontend
 CARGO_TARGET_DIR=target-container cargo fmt --all -- --check
 ```
 

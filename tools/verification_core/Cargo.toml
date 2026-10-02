@@ -1,4 +1,4 @@
-# Dependency-light on purpose. `xtask` links this crate for every gate and the `website-api`
+# Dependency-light on purpose. `xtask` links this crate for every gate and the `api`
 # engineering-law tests link it as a dev-dependency, so anything added here is paid for by both.
 # `regex` puts the matcher inside the gate binary, so no gate depends on an external search tool,
 # and `libc` carries the two primitives the crate cannot do without: killing a timed-out process

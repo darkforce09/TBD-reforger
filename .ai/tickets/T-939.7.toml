@@ -38,8 +38,8 @@ acceptance = [
 ]
 created_at = "2026-09-05T02:33:18Z"
 owns = [
-    "apps/website/frontend/src/editor/panels/vehicles_panel.rs",
-    "apps/website/frontend/src/editor/panels/outliner.rs",
+    "apps/frontend/src/editor/panels/vehicles_panel.rs",
+    "apps/frontend/src/editor/panels/outliner.rs",
 ]
 
 [scope]

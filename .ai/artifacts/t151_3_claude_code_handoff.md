@@ -64,7 +64,7 @@ test "$(git rev-parse --show-toplevel)" = "$(pwd)"
 git status --porcelain             # empty @ a51e9dcb+
 # Do NOT checkout or create branches; do NOT run ./scripts/ticket run
 git lfs pull && make map-assets-link
-cd apps/website/frontend && npm ci && cd ../../..
+cd apps/frontend && npm ci && cd ../../..
 make wasm
 ```
 

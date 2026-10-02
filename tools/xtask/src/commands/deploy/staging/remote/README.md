@@ -29,7 +29,7 @@ deploy(paths, cli)
   ├─ ssh bash -s < fleet_secret_files_check_payload    join password + two credentials per instance
   ├─ without --migrate-single-instance: refuse while tbd-reforger.service or fleet-host-agent.service is installed
   ├─ rsync -avz --delete <checkout>/ <host>:<TBD_REMOTE_DIR>/   (exclusions below)
-  ├─ with --migrate-single-instance: ssh bash -s < migration_payload
+  ├─ with --migrate-single-instance: ssh bash -s < migration_payload (kebab-case single-instance names)
   ├─ per instance: scenario read, local render, ssh bash -s < instance_files_payload, < smoke_payload
   ├─ ssh bash -s < units_install_payload; probe the newest logs; restart every tbd-reforger@N
   ├─ instance_boot_verdicts: poll every 10 s up to TBD_BOOT_VERIFY_TIMEOUT, then a verdict per instance
@@ -53,7 +53,7 @@ untracked reference trees under `apps/mod/` (the Coalition framework, the vanill
 playable selector), a `Tbd_framework` folder and the local test profile, the
 `apps/mod/tbd-export/` and `apps/mod/tbd-emcp/` addons, `node_modules`, the API's `.env` and
 `.tools/`, `deploy.env`, the `assets` terrain, scratch and equipment trees, and
-`apps/website/frontend/dist/`, the app the website deploy built in the same checkout; after them
+`apps/frontend/dist/`, the app the website deploy built in the same checkout; after them
 come the patterns the website deploy excludes too, from
 `tools/xtask/src/commands/deploy/development_machine_only_paths.rs`: what only a development
 machine holds, such as the cargo target folders beside `target/`, worktrees and the local files

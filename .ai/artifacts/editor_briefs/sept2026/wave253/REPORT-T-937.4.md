@@ -9,7 +9,7 @@
 **RED VERBATIM** (status test against the pre-fix persist Err arm):
 
 ```
-thread 'editor::state::save_status::tests::run_save_err_arm_reports_into_save_status' (4114341) panicked at apps/website/frontend/src/editor/state/save_status.rs:298:9:
+thread 'editor::state::save_status::tests::run_save_err_arm_reports_into_save_status' (4114341) panicked at apps/frontend/src/editor/state/save_status.rs:298:9:
 forcing save_state_as Err currently shows no observable state — persist must report every Err into SaveStatus (quota named via format_save_error). arm=if let Err(e) = save_state_as(&pending.owner, id, &bytes).await {
         web_sys::console::warn_1(&JsValue::from_str(&format!(
 
@@ -28,7 +28,7 @@ test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1330 filtered ou
 ```
 
 ## changes
-- New `apps/website/frontend/src/editor/state/save_status.rs` (registered in `state/mod.rs`): `SaveStatus { Saved, Saving, Failed(reason), Unreadable(retries) }`, status chip, one toast per Failed episode, `format_save_error` names quota.
+- New `apps/frontend/src/editor/state/save_status.rs` (registered in `state/mod.rs`): `SaveStatus { Saved, Saving, Failed(reason), Unreadable(retries) }`, status chip, one toast per Failed episode, `format_save_error` names quota.
 - `persist.rs` `run_save` reports every `save_state_as` `Err` via `report_failed(format_save_error(...))`; success → `Saved`; IO start → `Saving`.
 - Idle debounce is `IDLE_DEBOUNCE_MS` (1000). `visibilitychange` hidden still calls `flush_state` immediately; `pagehide` stays fire-and-forget `spawn_local`. `SAVE_IN_FLIGHT` in `run_save` is the shared in-flight guard.
 - `note_unreadable` retries the read three times with `setTimeout` backoff, then lockout; chip Retry re-runs those keys.
@@ -39,7 +39,7 @@ Swallowed `report_failed` in the `run_save` `Err` arm (console.warn + return onl
 **red VERBATIM:**
 
 ```
-thread 'editor::state::save_status::tests::run_save_err_arm_reports_into_save_status' (4178618) panicked at apps/website/frontend/src/editor/state/save_status.rs:299:9:
+thread 'editor::state::save_status::tests::run_save_err_arm_reports_into_save_status' (4178618) panicked at apps/frontend/src/editor/state/save_status.rs:299:9:
 forcing save_state_as Err currently shows no observable state — persist must report every Err into SaveStatus (quota named via format_save_error). arm=if let Err(e) = save_state_as(&pending.owner, id, &bytes).await {
         web_sys::console::warn_1(&JsValue::from_str(&format!(
 

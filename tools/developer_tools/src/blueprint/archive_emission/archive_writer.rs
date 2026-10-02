@@ -4,7 +4,7 @@
 //! Reads what `bvh-batch --all-prefabs` already wrote — `prefabs/blas-manifest.json`,
 //! `prefabs/descriptors/<pid>.json` (1623 files, 19 MB) — plus the extracted blueprints under
 //! `prefabs/buildings/`, and folds them into the
-//! [`BuildingBlueprintArchive`](website_map_engine::world::binary::archives::BuildingBlueprintArchive):
+//! [`BuildingBlueprintArchive`](map_engine::world::binary::archives::BuildingBlueprintArchive):
 //! the descriptor census, the shared BLAS index the descriptors point into, and the tactical
 //! blueprint levels. The loader side is `world::occluder::descriptor` (`BuildingArchiveBytes`,
 //! `PrefabDescriptor::from_archived`) and `building_blueprint::BuildingBlueprint::from_archived`.
@@ -25,21 +25,21 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result, bail};
 
 use crate::repository_layout::terrain_dir;
-use website_map_engine::io::archives::blueprints::BuildingBlueprintArchive;
-use website_map_engine::io::archives::blueprints::BuildingLevel as WireLevel;
-use website_map_engine::io::archives::blueprints::DoorRec as WireDoor;
-use website_map_engine::io::archives::blueprints::FurnitureRec as WireFurniture;
-use website_map_engine::io::archives::blueprints::StairsRec as WireStairs;
-use website_map_engine::io::archives::blueprints::VerticalProfile as WireProfile;
-use website_map_engine::io::archives::blueprints::WallRec as WireWall;
-use website_map_engine::io::archives::blueprints::WindowRec as WireWindow;
-use website_map_engine::io::archives::codec::access_checked;
-use website_map_engine::io::archives::codec::to_bytes;
-use website_map_engine::io::archives::version::ARCHIVE_SCHEMA_VERSION;
-use website_map_engine::spatial::los::world::descriptor::BlasEntry;
-use website_map_engine::spatial::los::world::descriptor::BlasManifest;
-use website_map_engine::spatial::los::world::descriptor::PrefabDescriptor;
-use website_map_engine::world::architecture::blueprint::structure::BuildingBlueprint as JsonBlueprint;
+use map_engine::io::archives::blueprints::BuildingBlueprintArchive;
+use map_engine::io::archives::blueprints::BuildingLevel as WireLevel;
+use map_engine::io::archives::blueprints::DoorRec as WireDoor;
+use map_engine::io::archives::blueprints::FurnitureRec as WireFurniture;
+use map_engine::io::archives::blueprints::StairsRec as WireStairs;
+use map_engine::io::archives::blueprints::VerticalProfile as WireProfile;
+use map_engine::io::archives::blueprints::WallRec as WireWall;
+use map_engine::io::archives::blueprints::WindowRec as WireWindow;
+use map_engine::io::archives::codec::access_checked;
+use map_engine::io::archives::codec::to_bytes;
+use map_engine::io::archives::version::ARCHIVE_SCHEMA_VERSION;
+use map_engine::spatial::los::world::descriptor::BlasEntry;
+use map_engine::spatial::los::world::descriptor::BlasManifest;
+use map_engine::spatial::los::world::descriptor::PrefabDescriptor;
+use map_engine::world::architecture::blueprint::structure::BuildingBlueprint as JsonBlueprint;
 
 use super::batch::write_if_changed;
 
@@ -154,7 +154,7 @@ pub fn build(prefabs: &Path) -> Result<Built> {
 fn wire_blueprint(
     b: &JsonBlueprint,
     prefab_id: u32,
-) -> Result<website_map_engine::io::archives::blueprints::BuildingBlueprint> {
+) -> Result<map_engine::io::archives::blueprints::BuildingBlueprint> {
     let mut levels = Vec::with_capacity(b.levels.len());
     for l in &b.levels {
         levels.push(WireLevel {
@@ -237,21 +237,19 @@ fn wire_blueprint(
                 .collect(),
         });
     }
-    Ok(
-        website_map_engine::io::archives::blueprints::BuildingBlueprint {
-            prefab_id,
-            slug: b.prefab_id.clone(),
-            vertical_profile: WireProfile {
-                pivot_elevation_offset_m: b.vertical_profile.pivot_elevation_offset_m as f32,
-                foundation_skirt_depth_m: b.vertical_profile.foundation_skirt_depth_m as f32,
-                total_height_m: b.vertical_profile.total_height_m as f32,
-                eave_height_m: b.vertical_profile.eave_height_m as f32,
-                ridge_height_m: b.vertical_profile.ridge_height_m as f32,
-                roof_type: b.vertical_profile.roof_type.clone(),
-            },
-            levels,
+    Ok(map_engine::io::archives::blueprints::BuildingBlueprint {
+        prefab_id,
+        slug: b.prefab_id.clone(),
+        vertical_profile: WireProfile {
+            pivot_elevation_offset_m: b.vertical_profile.pivot_elevation_offset_m as f32,
+            foundation_skirt_depth_m: b.vertical_profile.foundation_skirt_depth_m as f32,
+            total_height_m: b.vertical_profile.total_height_m as f32,
+            eave_height_m: b.vertical_profile.eave_height_m as f32,
+            ridge_height_m: b.vertical_profile.ridge_height_m as f32,
+            roof_type: b.vertical_profile.roof_type.clone(),
         },
-    )
+        levels,
+    })
 }
 
 fn pair(p: [f64; 2]) -> [f32; 2] {

@@ -1,8 +1,9 @@
 //! The staging compose file and its one owner, `cargo xtask deploy website`.
 //!
 //! **Role:** holds that every compose command the website deploy sends to the host names
-//! `apps/website/docker-compose.staging.yml`, that the game server deploy sends none, and that
-//! the compose file sits where both expect it.
+//! `deploy/compose.staging.yml` and no other compose file, that the game server deploy sends none,
+//! that the compose file sits where both expect it, and that no compose file sits in the checkout
+//! root the commands run from.
 //!
 //! **Position:** the body of `cargo xtask verify staging-compose-paths`, which `ci-local`, the
 //! wave gate's `VERIFY_STEPS` and the `mod-gates-hosted` job of `.github/workflows/ci.yml` run;
@@ -27,8 +28,8 @@
 //!
 //! 1. a `//` or `#` comment naming the good path counting as a compose command;
 //! 2. a relative `-f` path that looks right but resolves against the wrong folder: the gate
-//!    requires the exact checkout-relative path, and separately bans a `cd` into
-//!    `apps/website/api_v2`.
+//!    requires the exact checkout-relative path, and separately bans a `cd` into `deploy/`,
+//!    where the development stack's `compose.dev.yml` sits one word away from the staging file.
 //!
 //! The website deploy prints each command under `--dry-run` from the same string it runs live, so
 //! there is no separate rehearsal text that could disagree with the real one.
@@ -50,10 +51,11 @@
 //! ── REPOINTING THE PIN ───────────────────────────────────────────────────────────────────────
 //!
 //! **Everything about *what* is pinned lives in the consts below** — [`WEBSITE_DEPLOY_SOURCE`],
-//! [`STAGING_DEPLOY_PIPELINE`], [`STAGING_DEPLOY_MODULE`], [`GOOD_PATH`], [`BAD_PATH`],
-//! [`COMPOSE_COMMAND`] and [`CD_INTO_API`] — and every message is `format!`ed from them. To follow
-//! the deploy code elsewhere, change the sources; if the new code sets its working folder another way,
-//! replace [`CD_INTO_API`] with the equivalent ban rather than deleting it.
+//! [`STAGING_DEPLOY_PIPELINE`], [`STAGING_DEPLOY_MODULE`], [`GOOD_PATH`], [`COMPOSE_FOLDER`],
+//! [`COMPOSE_FILE_NAME`] and [`COMPOSE_COMMAND`] — and every message is `format!`ed from them. To
+//! follow the deploy code elsewhere, change the sources; if the new code sets its working folder
+//! another way, replace the `cd` ban ([`cd_into_compose_folder`]) with the equivalent ban rather
+//! than deleting it.
 
 use std::path::Path;
 
@@ -86,12 +88,20 @@ const STAGING_DEPLOY_MODULE: &str = "tools/xtask/src/commands/deploy/staging";
 /// The one staging compose file. Double duty: the string that must follow `-f`, **and** — joined
 /// onto the repo root — the file that must exist. Two spellings of one contract drift, so there
 /// is exactly one here.
-const GOOD_PATH: &str = "apps/website/docker-compose.staging.yml";
+const GOOD_PATH: &str = "deploy/compose.staging.yml";
 
-/// A staging compose file beside the API. It must appear on no compose line and must not exist on
-/// disk: a file there is what makes the wrong `-f` path a *plausible* edit rather than an obvious
-/// typo, so the gate removes the temptation as well as the reference.
-const BAD_PATH: &str = "apps/website/api_v2/docker-compose.staging.yml";
+/// The folder that holds every compose file of the checkout: [`GOOD_PATH`] and, beside it, the
+/// development stack's `deploy/compose.dev.yml`, which would start the wrong topology on the host
+/// without any error.
+const COMPOSE_FOLDER: &str = "deploy";
+
+/// One word that names a compose file, with any folder in front: `compose.yml`,
+/// `docker-compose.staging.yml`, `deploy/compose.dev.yml`. Every such word on a compose line other
+/// than [`GOOD_PATH`] is a wrong file — the development stack beside it or a compose file outside
+/// [`COMPOSE_FOLDER`] — whether it follows `-f`, a second `-f` overlay (the later file wins for
+/// conflicting keys) or an `--env-file=`; and a file of this name in the checkout root is one
+/// compose loads by itself when `-f` is dropped.
+const COMPOSE_FILE_NAME: &str = r"^(?:.*/)?(?:docker-)?compose(?:\.[A-Za-z0-9_-]+)*\.ya?ml$";
 
 /// A compose command, under either provider and in either spelling: `docker compose`,
 /// `podman compose`, `docker-compose`, `podman-compose`. The word after it must end in a space,
@@ -99,11 +109,17 @@ const BAD_PATH: &str = "apps/website/api_v2/docker-compose.staging.yml";
 /// a command.
 const COMPOSE_COMMAND: &str = r"\b(?:docker|podman)(?:[ \t]+|-)compose(?:[ \t]|$)";
 
-/// A `cd` into `apps/website/api_v2` under any quoting, as the Rust source spells it: single
-/// quotes, escaped double quotes or none, after any prefix such as `{remote_dir}/`. One pattern
-/// for every quoting, because banning one spelling bans nothing.
-const CD_INTO_API: &str =
-    r#"\bcd[ \t]+(?:\\?["'])?[^ \t"'\\;&|]*apps/website/api_v2(?:[/\\"' \t;&|]|$)"#;
+/// A `cd` into [`COMPOSE_FOLDER`] under any quoting, as the Rust source spells it: single quotes,
+/// escaped double quotes or none, after at most one leading segment such as `{remote_dir}/` or
+/// `$TBD_REMOTE_DIR/`. One pattern for every quoting, because banning one spelling bans nothing;
+/// one leading segment, so a path that merely passes through a folder of that name, such as the
+/// `/home/deploy/` of the host's deploy account, is not a `cd` into the checkout's folder.
+fn cd_into_compose_folder() -> String {
+    format!(
+        r#"\bcd[ \t]+(?:\\?["'])?(?:[^ \t"'\\;&|/]*/)?{}(?:[/\\"' \t;&|]|$)"#,
+        regex::escape(COMPOSE_FOLDER)
+    )
+}
 
 #[cfg(test)]
 #[path = "tests/staging_compose_paths/tests.rs"]
@@ -113,4 +129,6 @@ mod source_audit;
 pub use source_audit::verify_staging_compose_paths;
 
 #[cfg(test)]
-use source_audit::{audit, compose_lines, f_path, f_regex, source_basename, strip_comments};
+use source_audit::{
+    audit, compose_lines, f_path, f_regex, source_basename, strip_comments, wrong_compose_files,
+};

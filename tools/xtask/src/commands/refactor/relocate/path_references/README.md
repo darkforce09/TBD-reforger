@@ -30,7 +30,13 @@ alone).
 `anchor_resolution.rs` reads each candidate from its anchors in order — the file's folder, the
 owning crate's manifest folder, the repository root, and any crate folder only when none of those
 names a tracked path. A reading that names a whole tracked path outranks one that names only a
-leading part (a gitignored or planned tail). When two anchors name different paths and would
+leading part (a gitignored or planned tail), and a leading-part reading counts only for a literal
+whose lead (`./`, `../`, `/../`) or place (a link destination, an `include!` or `#[path]` argument,
+a Cargo `path` value, a `CARGO_MANIFEST_DIR` join) makes it relative: a plain token in a Rust
+literal, such as a test's synthetic service unit path, is read from a folder only when its
+whole path is tracked there, and otherwise left to the repository-root spelling pass. A literal of
+separators alone (`/`) names no path; only `.` and `..` segments name a folder without a name.
+When two anchors name different paths and would
 rewrite the literal differently, or a literal that resolved before has no reading after the moves,
 or a `./`, `../` or `/../` literal names a moved path but resolves under none of its anchors, the
 literal is reported unresolved. Otherwise the new literal names the moved target from the same
@@ -58,8 +64,11 @@ destinations in a frozen record, the `spec`, `plan` and `owns` values of a close
 - Used by: `super::relocation_plan` (the pass) and `super::retired_spellings` (`allowed_spans`,
   `path_tokens::classify_occurrence`).
 - Rules: Rust code outside literals and comments is never edited; a URL, a fragment-only link and an
-  absolute path are never relative candidates; a literal whose meaning the moves do not change is
-  never rewritten (`relocate_depth_change_rerelativises_include_and_manifest_dir_literals`,
+  absolute path are never relative candidates; a literal of separators alone and a plain Rust
+  token whose whole path is untracked name nothing
+  (`relocate_lone_separator_literals_name_no_path`,
+  `relocate_plain_fixture_paths_under_a_moved_folder_name_stay_as_written`); a literal whose
+  meaning the moves do not change is never rewritten (`relocate_depth_change_rerelativises_include_and_manifest_dir_literals`,
   `relocate_unresolvable_literal_fails_apply_with_nothing_written`); escape-adjacent spellings,
   `file:` URLs and `/../` pieces are rewritten or unresolved, never skipped
   (`relocate_spellings_after_control_escapes_are_rewritten_and_verified`,

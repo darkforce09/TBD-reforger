@@ -27,7 +27,7 @@ test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 116 filtered out
 ### A3 — zero `ensure_default_squad` in `editor_ops.rs`
 
 ```text
-$ if rg -n 'ensure_default_squad' apps/website/frontend/src/editor_ops.rs; then echo 'A3 FAIL'; exit 1; else echo 'A3 PASS (zero matches)'; fi
+$ if rg -n 'ensure_default_squad' apps/frontend/src/editor_ops.rs; then echo 'A3 FAIL'; exit 1; else echo 'A3 PASS (zero matches)'; fi
 A3 PASS (zero matches)
 ```
 
@@ -54,9 +54,9 @@ Covered by A1 (`faction-OPFOR.key == "OPFOR"`) + FE `FactionRow.key` / `faction_
 ### A7 — `place_at` has no `DEFAULT_SQUAD_ID`
 
 ```text
-$ rg -n 'DEFAULT_SQUAD_ID' apps/website/frontend/src/editor_ops.rs
+$ rg -n 'DEFAULT_SQUAD_ID' apps/frontend/src/editor_ops.rs
 # (no matches)
-$ rg -n 'place_at' apps/website/frontend/src/editor_ops.rs
+$ rg -n 'place_at' apps/frontend/src/editor_ops.rs
 9://! **Placement (T-180.1):** each `place_at` calls
 815:/// Palette leaf `pointerdown` → arm a place. Consumed by [`place_at`] on a canvas release, or
 906:pub fn place_at(x: f64, y: f64) -> bool {
@@ -67,7 +67,7 @@ $ rg -n 'place_at' apps/website/frontend/src/editor_ops.rs
 ### FE + CI
 
 ```text
-$ cargo test -p website-frontend
+$ cargo test -p frontend
 test result: ok. 74 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 
 $ env -u NO_COLOR -u FORCE_COLOR make ci-local-leptos
@@ -82,7 +82,7 @@ Note: sandbox/CI shells that export `NO_COLOR=1` break `trunk 0.21.14` (`invalid
 |------|----------|
 | `set_leader` + `update_slot_identity` | `crates/map-engine-core/src/doc/store.rs` |
 | `place_character_under_side` + A1–A5 | `crates/map-engine-core/src/doc/place_orbat.rs` |
-| `active_side` + `place_at` wire; dump path removed | `apps/website/frontend/src/editor_ops.rs` |
+| `active_side` + `place_at` wire; dump path removed | `apps/frontend/src/editor_ops.rs` |
 | `FactionRow.key` | `outliner.rs` + `faction_rows` |
 | OpsCtx / mission_editor signal | `mission_editor.rs` |
 

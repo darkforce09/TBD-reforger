@@ -1,6 +1,6 @@
 # Fleet host agent
 
-The `fleet-host-agent` crate: the [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent)
+The `fleet_host_agent` crate: the [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent)
 that runs beside each Arma Reforger dedicated server of a game host, one agent per fleet instance.
 It polls the
 [API](/documentation/glossary/a_to_f.md#api) outbound over HTTPS for the
@@ -14,7 +14,7 @@ and reports every step to the API's command ledger.
 
 ```text
 apps/fleet_host_agent/
-├── Cargo.toml  the `fleet-host-agent` package: the `fleet_host_agent` library and the binary of that name
+├── Cargo.toml  the `fleet_host_agent` package: the `fleet_host_agent` library and the binary of that name
 ├── src/        the library modules and the binary's entry point
 └── tests/      integration tests against a stand-in API, systemctl and BattlEye RCon server
 ```
@@ -79,16 +79,16 @@ refuses them. `src/command_execution/README.md` tables each action's success rul
 Run these from the repository root:
 
 ```bash
-cargo test -p fleet-host-agent --locked     # unit and integration tests; loopback sockets only
-cargo build --release -p fleet-host-agent   # target/release/fleet-host-agent
+cargo test -p fleet_host_agent --locked     # unit and integration tests; loopback sockets only
+cargo build --release -p fleet_host_agent   # target/release/fleet_host_agent
 cargo xtask deploy staging --dry-run        # prints the staging plan, the host agent of every fleet instance included
 ```
 
 `cargo xtask deploy staging` runs one agent per fleet instance on the host that `TBD_SSH_HOST`
-names: it builds the agent there, installs it as `~/.local/bin/fleet-host-agent`, writes each
-instance's `~/.config/fleet-host-agent/instance-N/agent.toml` (mode 600 in a mode 700 directory),
-installs the template unit `tools/xtask/deploy/systemd/fleet-host-agent@.service`, enables
-lingering, restarts `fleet-host-agent@N.service` for every instance N from 1 to
+names: it builds the agent there, installs it as `~/.local/bin/fleet_host_agent`, writes each
+instance's `~/.config/fleet_host_agent/instance-N/agent.toml` (mode 600 in a mode 700 directory),
+installs the template unit `deploy/systemd/fleet_host_agent@.service`, enables
+lingering, restarts `fleet_host_agent@N.service` for every instance N from 1 to
 `TBD_FLEET_INSTANCES` and fails unless each is `active`. Each configuration names its instance's
 game server unit `tbd-reforger@N.service`, its `~/tbd/fleet/instance-N/server.config.json` and two
 owner-only files under `~/tbd/fleet/instance-N/secrets/`: `host-agent-credential`, which
@@ -100,16 +100,16 @@ on staging), which polls the acknowledgement-dropping relay on `127.0.0.1:TBD_FL
 itself forwarding to the API.
 
 By hand, as the user that runs the game server units (so `systemctl --user` reaches that user's
-manager): install the binary as `~/.local/bin/fleet-host-agent`, write instance N's configuration
-as `~/.config/fleet-host-agent/instance-N/agent.toml` and its two secret files under
+manager): install the binary as `~/.local/bin/fleet_host_agent`, write instance N's configuration
+as `~/.config/fleet_host_agent/instance-N/agent.toml` and its two secret files under
 `~/tbd/fleet/instance-N/secrets/`, each mode 600 in a mode 700 directory, copy the template unit
 to `~/.config/systemd/user/`, then, for instance 1:
 
 ```bash
 systemctl --user daemon-reload
-systemctl --user enable --now fleet-host-agent@1.service
+systemctl --user enable --now fleet_host_agent@1.service
 loginctl enable-linger "$USER"                  # keep the user manager and the fleet's units running without a login
-journalctl --user -u fleet-host-agent@1.service -f
+journalctl --user -u fleet_host_agent@1.service -f
 ```
 
 The agent stops claiming on SIGTERM or SIGINT, finishes and reports a command in progress, sends
@@ -157,7 +157,7 @@ bits. `src/agent_configuration/README.md` lists every rule. `RUST_LOG` sets the 
 
 ## Public surface
 
-- The `fleet-host-agent` binary: `fleet-host-agent <configuration-file>` runs until SIGTERM or
+- The `fleet_host_agent` binary: `fleet_host_agent <configuration-file>` runs until SIGTERM or
   SIGINT; `--help` or `-h` prints the usage. Exit status 0 after a requested shutdown or `--help`,
   2 for a usage error, 78 for an invalid configuration, 1 when the RCON socket or the API client
   cannot be set up.
@@ -168,14 +168,14 @@ bits. `src/agent_configuration/README.md` lists every rule. `RUST_LOG` sets the 
 
 ## Boundaries
 
-- Depends on: the API's executor routes in `apps/website/api_v2/src/server_infrastructure/`, with
+- Depends on: the API's executor routes in `apps/api/src/server_infrastructure/`, with
   a `host_agent` machine credential; the wire contracts
   `contracts/definitions/fleet-command.schema.json` and
   `contracts/definitions/machine-credential.schema.json`; the calling user's systemd manager;
   the dedicated server's JSON config and its BattlEye RCon port.
 - Used by: `cargo xtask deploy staging` (`tools/xtask/src/commands/deploy/staging/host_agent.rs`),
   which builds it, configures one agent per fleet instance and runs each as an instance of
-  `tools/xtask/deploy/systemd/fleet-host-agent@.service`; over HTTP, the API's fleet command
+  `deploy/systemd/fleet_host_agent@.service`; over HTTP, the API's fleet command
   ledger, which Server Control and mission deployments feed.
 - Rules: the tests in `tests/` need no network beyond the loopback sockets they open, and
   `tests/test_support/` holds their stand-ins; the claim, fencing and reporting rules hold under
@@ -186,11 +186,11 @@ bits. `src/agent_configuration/README.md` lists every rule. `RUST_LOG` sets the 
 
 ## Related documentation
 
-- [Fleet command ledger](/documentation/website/api_v2/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger](/documentation/apps/api/verification_evidence/fleet_command_ledger.md)
   — the API side: command states, leases, fencing and execution windows.
-- [Machine credentials](/documentation/website/api_v2/verification_evidence/machine_credentials.md)
+- [Machine credentials](/documentation/apps/api/verification_evidence/machine_credentials.md)
   — issuing and revoking the credential the agent authenticates with.
 - [Game server staging](/documentation/runbooks/game_server_staging/README.md) — deploying the
   staging game server with the host agent.
-- [Fleet command execution](/documentation/fleet_host_agent/fleet_command_execution.md) — the
+- [Fleet command execution](/documentation/apps/fleet_host_agent/fleet_command_execution.md) — the
   design across the API, the agent and the game runtime, and the open work.

@@ -30,7 +30,7 @@ tools/xtask/src/verifications/schemas/checks/
 
 | Gate | Checks |
 |---|---|
-| `schema citations` | walks `.c`, `.go`, `.js`, `.mjs`, `.rs`, `.ts` and `.tsx` files under `apps/` and `tools/` (skipping `node_modules`, `dist`, `.git`, `build`, `coverage`, `vendor`) for `@contract <file>.schema.json#<pointer>`, and resolves each against `contracts/definitions/`; a missing root or zero citations fails as an unexamined scan |
+| `schema citations` | walks `.c`, `.go`, `.js`, `.mjs`, `.rs`, `.ts` and `.tsx` files under the top-level folder of every workspace member of the root `Cargo.toml` and of `apps/mod/` (skipping `node_modules`, `dist`, `.git`, `build`, `coverage`, `vendor`) for `@contract <file>.schema.json#<pointer>`, and resolves each against `contracts/definitions/`; an unreadable workspace, a missing root or zero citations fails as an unexamined scan |
 | `schema validate` | the suite in `contract_validation/`, with the [mission](/documentation/glossary/g_to_m.md#mission), registry and ballistics sections here; the ballistics section prints `NOT RUN`, never `PASS`, while neither the catalog nor its calibration bundle is committed, and fails when only one is |
 | `schema map-object-enums` | the golden prefabs, `contracts/rules/prefab-classify.json`, the Everon region sample and the glyph manifest keys use only the kinds and classes of `map-object-enums.schema.json` |
 | `schema type-inventory` | `INSTANCE_KINDS` matches the schema's kinds and the world-export pipeline's list, then every committed type inventory passes its schema and invariants I1 to I5 and I7 (kind sums, class sums, closed class keys, a complete census, manifest counts) |
@@ -56,13 +56,16 @@ error, which exits 1.
 ## Boundaries
 
 - Depends on: `developer_tools::repository_layout` (contract, definition, catalog, fixture, glyph
-  and terrain paths) and `developer_tools::world_export_pipeline::INSTANCE_KINDS`; `jsonschema`;
+  and terrain paths) and `developer_tools::world_export_pipeline::INSTANCE_KINDS`;
+  `verification_core::repository_laws::workspace_members` for the citation roots; `jsonschema`;
   `regex`; `walkdir`; `serde_json`.
 - Used by: `checks.rs`, and through it the `schema` command group and the `schema-validate` and
   `verify-citations` rows of `tools/xtask/src/commands/ci/task_definitions.rs`.
 - Rules:
-  - The citation scope is printed from `CODE_EXTS` and `SCAN_ROOTS`, and a scan that read nothing
-    fails (`tools/xtask/src/tests/citation_scope_tests.rs`).
+  - The citation roots are derived from the workspace members plus `NON_WORKSPACE_CODE_ROOTS`, so a
+    member in a new top-level folder is scanned from the moment the root manifest names it; the
+    scope is printed from `CODE_EXTS` and those roots, and a scan that read nothing fails
+    (`tools/xtask/src/tests/citation_scope_tests.rs`).
   - `INSTANCE_KINDS` stays in lockstep with the schema and the export pipeline, checked at run
     time and by `tools/xtask/src/verifications/schemas/tests/checks/instance_kind_lockstep_tests.rs`.
   - The unread-field gate must fire when a reader appears

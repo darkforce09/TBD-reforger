@@ -2,7 +2,9 @@
 //!
 //! **Role:** answers the region questions the gates ask of a repository-relative path: is it
 //! inside a folder, inside a code tree, inside the README span, below a folder exempt by its name,
-//! a Markdown file, or inside an area the size limit leaves alone.
+//! a Markdown file, or inside an area the size limit leaves alone. The code trees and the README
+//! span are derived from where a path sits, never from a list of top-level folder names: every
+//! top-level folder the listing holds is judged from the moment it is tracked.
 //!
 //! **Position:** reads [`crate::core::repository_layout::documentation`]; called by
 //! [`super::readme_coverage`], [`super::markdown_placement`] and [`super::gate_scope`].
@@ -11,10 +13,12 @@
 //!
 //! **Invariants:** a path is inside a folder only when it equals the folder or continues it after
 //! a `/`, so `apps_extra/x` is never inside `apps`; the empty folder is the repository root and
-//! holds every path.
+//! holds every path; a top-level folder is outside the README span or the code trees only through
+//! a rule written here (the hidden-folder exemption, the two documentation roots, the pending-merge
+//! area), so a new top-level folder fails closed: it is judged until a rule says otherwise.
 
 use crate::core::repository_layout::documentation::{
-    ARCHIVE_DIR, CODE_TREES, DOCUMENTATION_ROOT, GAP_ANALYSIS, PENDING_MERGE_DIR, ROADMAP,
+    ARCHIVE_DIR, DOCUMENTATION_ROOT, GAP_ANALYSIS, PENDING_MERGE_DIR, RETIRED_DOCS_ROOT, ROADMAP,
     TICKET_DOCUMENTS_DIR,
 };
 
@@ -28,6 +32,14 @@ pub(super) const README: &str = "README.md";
 /// whose folder names are capitalised; every other casing is an ordinary folder. A folder whose
 /// name starts with `.` (hidden tool configuration) is exempt the same way.
 const EXEMPT_FOLDER_NAMES: [&str; 3] = ["tests", "generated", "Generated"];
+
+/// The top-level folders that are not code trees: the documentation root, whose documents the
+/// size limit judges instead, and the retired documentation root, which must hold nothing and
+/// which `markdown-placement` judges on its own. Every other top-level folder is a code tree, so
+/// none is left out by a list that was not extended; hidden top-level folders (tool
+/// configuration such as `.github`, `.ai`, `.cursor`) are exempt by [`below_exempt_folder`], and
+/// build output such as `target/` is gitignored, so no listing ever holds it.
+const DOCUMENTATION_ROOTS: [&str; 2] = [DOCUMENTATION_ROOT, RETIRED_DOCS_ROOT];
 
 /// Documents `cargo xtask ticket sync` rewrites between markers. Their sync-managed tables stay
 /// in one file whatever their length, so the size limit skips them.
@@ -60,9 +72,11 @@ pub(super) fn join(folder: &str, name: &str) -> String {
     }
 }
 
-/// Whether `path` lies in one of the code trees.
+/// Whether the file at `path` lies in a code tree: a top-level folder other than the
+/// [`DOCUMENTATION_ROOTS`] holds it. A file at the repository root lies in no code tree.
 pub(super) fn in_code_tree(path: &str) -> bool {
-    CODE_TREES.iter().any(|tree| is_within(path, tree))
+    path.split_once('/')
+        .is_some_and(|(top_level_folder, _)| !DOCUMENTATION_ROOTS.contains(&top_level_folder))
 }
 
 /// Whether `path` lies under the documentation root.
@@ -70,14 +84,17 @@ pub(super) fn in_documentation_root(path: &str) -> bool {
     is_within(path, DOCUMENTATION_ROOT)
 }
 
-/// Whether `folder` belongs to the README span, the one set of folders both README rules judge: a
-/// code tree or the documentation root, the roots themselves included, minus the exempt folders
-/// with everything below them — a folder exempt by its name ([`below_exempt_folder`]) and the
-/// pending-merge area. A README.md inside an exempt folder is neither required nor checked.
+/// Whether `folder` belongs to the README span, the one set of folders both README rules judge:
+/// every folder below the repository root, the top-level folders included, minus the exempt
+/// folders with everything below them — a folder exempt by its name ([`below_exempt_folder`]),
+/// the pending-merge area and the retired documentation root. A README.md inside an exempt folder
+/// is neither required nor checked. The repository root is outside the span: its README.md is the
+/// project's front page, and the project instructions map the root.
 pub(super) fn in_readme_span(folder: &str) -> bool {
-    (in_code_tree(folder) || in_documentation_root(folder))
+    !folder.is_empty()
         && !below_exempt_folder(folder)
         && !is_within(folder, PENDING_MERGE_DIR)
+        && !is_within(folder, RETIRED_DOCS_ROOT)
 }
 
 /// Whether any component of `folder` is a test folder, a generated-output folder or a hidden

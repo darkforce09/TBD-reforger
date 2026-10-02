@@ -8,9 +8,9 @@ do not touch anything else.**
 An earlier draft of this brief claimed three tests were dropped. **Only one was.** Measured:
 
 ```
-#[test] in apps/website/frontend/src/editor/     at a4b86912d : 1117
-#[test] in apps/website/frontend/src/editor/     at HEAD      : 1000     -> 117 lost
-#[test] in apps/website/map-engine/src/editing/  at HEAD      :  116     -> 116 gained
+#[test] in apps/frontend/src/editor/     at a4b86912d : 1117
+#[test] in apps/frontend/src/editor/     at HEAD      : 1000     -> 117 lost
+#[test] in legacy/map_engine/src/editing/  at HEAD      :  116     -> 116 gained
                                                                             net -1
 ```
 
@@ -31,11 +31,11 @@ enforced. Operator decision, explicit: **repair, do not duplicate.**
 ### 1 · One test is genuinely gone
 
 `the_exporter_grid_ref_is_the_map_furnitures_own_label_text`, formerly in
-`apps/website/frontend/src/editor/state/commands_hotkeys.rs`. It is the net -1. Recover the
+`apps/frontend/src/editor/state/commands_hotkeys.rs`. It is the net -1. Recover the
 original with:
 
 ```
-git show a4b86912d:apps/website/frontend/src/editor/state/commands_hotkeys.rs
+git show a4b86912d:apps/frontend/src/editor/state/commands_hotkeys.rs
 ```
 
 It is behavioural, not a scrub: it builds an `OrthoCamera`, calls
@@ -54,7 +54,7 @@ also pins one between-the-lines read: `format_grid_ref(1250.0, 4800.0) == "012 0
 
 The frontend may import the engine; the engine may never import the frontend. `format_grid_ref`
 is `pub` under `pub mod selection_digest` in `editing/commands/mod.rs`, so it is reachable as
-`website_map_engine::editing::commands::selection_digest::format_grid_ref` with no re-export
+`map_engine::editing::commands::selection_digest::format_grid_ref` with no re-export
 work needed. Put the test where it can still assert that equality and **give it one line saying
 why it lives there**.
 
@@ -81,12 +81,12 @@ These read as lies today:
 
 | site | cites |
 |---|---|
-| `apps/website/map-engine/src/editing/tools/line_of_sight/tests/capture.rs:152` | `no_los_doc_writes` |
-| `apps/website/map-engine/src/editing/tools/line_of_sight/tests/capture.rs:158` | `no_los_doc_writes` |
-| `apps/website/frontend/src/editor/panels/toolbelt.rs:1369` | `no_ruler_doc_writes` |
+| `legacy/map_engine/src/editing/tools/line_of_sight/tests/capture.rs:152` | `no_los_doc_writes` |
+| `legacy/map_engine/src/editing/tools/line_of_sight/tests/capture.rs:158` | `no_los_doc_writes` |
+| `apps/frontend/src/editor/panels/toolbelt.rs:1369` | `no_ruler_doc_writes` |
 
 Repoint them at the live engine test names. A fourth,
-`apps/website/map-engine/src/editing/commands/selection_digest.rs:24`, cites the test from item 1
+`legacy/map_engine/src/editing/commands/selection_digest.rs:24`, cites the test from item 1
 — it becomes true once you restore that test, so leave the citation and make it accurate.
 
 **Then sweep the whole repo**: no comment anywhere may cite a `#[test]` name that does not exist.
@@ -114,8 +114,8 @@ The same failure mode is waiting in phase 3B: `canvas/render_sync.rs` is `includ
   1117 -> 1001 lost 116, gained 116.
 
 ```
-CARGO_TARGET_DIR=target-container cargo test -p website-map-engine --all-features
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
+CARGO_TARGET_DIR=target-container cargo test -p map_engine --all-features
+CARGO_TARGET_DIR=target-container cargo test -p frontend
 ```
 
 Baseline at `bf7c366d7`: map-engine 1290 passed / 0 failed / 2 ignored, frontend 1316 / 0.

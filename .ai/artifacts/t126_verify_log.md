@@ -29,7 +29,7 @@ Full package green — includes the pre-existing identity/mission/event flows (r
 ok  github.com/tbd-milsim/reforger-backend/internal/handlers  0.855s
 ```
 
-**Frontend** (`apps/website/frontend`, Node 26):
+**Frontend** (`apps/frontend`, Node 26):
 - `npm run build` → ✓ built (tsc + vite; only the pre-existing MissionCreatorPage chunk-size warning).
 - `npm run lint` → clean (no eslint output).
 

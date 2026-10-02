@@ -17,7 +17,7 @@ requirement = [
 ]
 current_state = ["The schema slice pinned the ResolvedWorldObject shape; the frontend resolver in world_assets does not yet produce it for the AI surface."]
 approach = [
-    "Wire the resolver in apps/website/frontend/src/world_assets: prefab plus instance join into the required typed fields, exposed as the AI tool shape.",
+    "Wire the resolver in apps/frontend/src/world_assets: prefab plus instance join into the required typed fields, exposed as the AI tool shape.",
     "Audit-trust fields depend on T-090.4/.6 outputs; absent audits render as explicitly unknown, never as trusted placement.",
 ]
 verify = [
@@ -30,8 +30,8 @@ acceptance = [
 ]
 estimated = ["scope"]
 owns = [
-    "apps/website/frontend/src/editor/world_assets/resolved.rs",
-    "apps/website/frontend/src/editor/world_assets/mod.rs",
+    "apps/frontend/src/editor/world_assets/resolved.rs",
+    "apps/frontend/src/editor/world_assets/mod.rs",
     "packages/tbd-schema/schema/map-object-resolved.schema.json",
 ]
 

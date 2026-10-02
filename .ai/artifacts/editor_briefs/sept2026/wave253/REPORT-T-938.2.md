@@ -66,7 +66,7 @@ SLICE GATE: PASS
 
 ## deviations
 
-- Ticket verify named `cargo xtask mk ci-local-leptos`; brief forbids ci-local / leptos-gates. Ran wasm32 `cargo check -p website-frontend`, `t628` fetch-order pin, `cargo xtask schema validate` is the gate's schema step, and the slice gate.
+- Ticket verify named `cargo xtask mk ci-local-leptos`; brief forbids ci-local / leptos-gates. Ran wasm32 `cargo check -p frontend`, `t628` fetch-order pin, `cargo xtask schema validate` is the gate's schema step, and the slice gate.
 - Did not rebuild the process on `:3000`/`:8080` (leave them up).
 
 ## commits

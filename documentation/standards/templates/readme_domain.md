@@ -47,7 +47,7 @@ that span them. Name each child's part in one clause; the child's own README hol
 
 ## Worked sample
 
-Written from `apps/website/api_v2/src/missions/`. The sample sits in a fenced block, so no gate
+Written from `apps/api/src/missions/`. The sample sits in a fenced block, so no gate
 reads it as a README; the folder's own README.md is written from the same code and may differ.
 
 ````markdown
@@ -61,7 +61,7 @@ running server through immutable artifacts, reviews, approvals and deployments.
 ## Contents
 
 ```text
-apps/website/api_v2/src/missions/
+apps/api/src/missions/
 ├── contract/     JSON Schema validation of every mission document, and the generated contract types
 ├── handlers/     one HTTP handler module per mission surface
 ├── mod.rs        the module tree; re-exports `routes`
@@ -81,7 +81,7 @@ comments take the mission write lock first.
 
 The Mission Creator saves a version with `POST /api/v1/missions/{id}/versions`, whose body limit is
 set for that route alone. Submitting a mission compiles its current version into an immutable
-artifact (`services/mission_compile.rs` adapts the compile in `website_map_engine::data::scenario`)
+artifact (`services/mission_compile.rs` adapts the compile in `map_engine::data::scenario`)
 and opens a review of exactly that artifact, in one transaction with the status change and its
 audit record. An administrator approves or rejects that artifact from the approval queue. A
 deployment selects an approved artifact for a server, is carried out by one fleet command, and
@@ -116,27 +116,27 @@ game server reads the bytes from `/api/v1/game-runtime/artifacts/{artifactId}`.
     authorization, account authority and account locks, `server_infrastructure` for machine
     credentials and the fleet command ledger, `operations` services for the ORBAT templates slot
     bindings read, and `community_content` models for the modpack a registry belongs to;
-  - `website_map_engine::data::scenario`, which compiles and validates mission documents;
+  - `map_engine::data::scenario`, which compiles and validates mission documents;
   - the schemas in `contracts/definitions/`, embedded at compile time.
 - Used by:
   - `core::http_router`, which merges the route table;
-  - the deployment reconciler in `apps/website/api_v2/src/background_workers/` and the
-    `import-registry` binary in `apps/website/api_v2/src/bin/`;
+  - the deployment reconciler in `apps/api/src/background_workers/` and the
+    `import-registry` binary in `apps/api/src/bin/`;
   - `command_center`, `operations`, `match_telemetry` and `server_infrastructure`, through the
     lookups, deployment services and models above;
   - over HTTP, the Mission Creator and the mission hub and approval pages in
-    `apps/website/frontend/`, and the mission loaders of the game server in
+    `apps/frontend/`, and the mission loaders of the game server in
     `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the `routes`
-  table that `core::http_router` merges (`apps/website/api_v2/src/tests/architecture_rules.rs`
+  table that `core::http_router` merges (`apps/api/src/tests/architecture_rules.rs`
   checks both); `contract/generated/` and `models/generated/` are written by
   `cargo xtask ci schema-codegen` and never edited by hand (`cargo xtask ci verify-codegen-fresh`
   checks them), with `contract/loadout_projection.rs` as the one hand-maintained contract model.
 
 ## Related documentation
 
-- [API overview](/documentation/website/api_v2/api_overview.md) — every domain's routes and the
+- [API overview](/documentation/apps/api/api_overview.md) — every domain's routes and the
   layers they share.
-- [Mission artifacts](/documentation/website/api_v2/verification_evidence/mission_artifacts.md)
+- [Mission artifacts](/documentation/apps/api/verification_evidence/mission_artifacts.md)
   — the design of artifacts, their reviews and deployments.
 ````

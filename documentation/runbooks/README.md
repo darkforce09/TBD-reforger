@@ -71,7 +71,7 @@ feature folder, rather than here; this index lists it so every procedure is foun
   `ticket` and `setup`.
 - [Browser testing](/tools/developer_tools/src/browser_testing/) — the gate, doctor and
   capture drivers behind the editor gates and editor capture.
-- [Deploy files](/tools/xtask/deploy/) — the templates and systemd units the deployment
+- [Deploy files](/deploy/) — the templates and systemd units the deployment
   runbooks install.
 - [Enfusion MCP handlers](/apps/mod/tbd-emcp/) — the Workbench side of the MCP bridge.
 - [Cursor rules](/.cursor/rules/) — the project rules the Cursor setup loads.
@@ -80,14 +80,14 @@ feature folder, rather than here; this index lists it so every procedure is foun
 
 - Depends on: the [runbook template](/documentation/standards/templates/runbook.md); the xtask
   command tree (`tools/xtask/src/cli/` and each group's `cli.rs`), which is the final word on
-  every command; `apps/website/api_v2/.env.example` and `tools/xtask/deploy/deploy.env.example`
+  every command; `apps/api/.env.example` and `deploy/deploy.env.example`
   for settings.
 - Used by: xtask code that prints or pins runbook paths (`HOME_SERVER_RUNBOOK`,
   `STAGING_SERVER_RUNBOOK`, `SLICE_WORKFLOW_RUNBOOK`, `PLATFORM_FACTORY_RUNBOOK` and
   `SPAWN_DETERMINISM_RUNBOOK` in `tools/xtask/src/core/repository_layout.rs`;
   `EDITOR_GATE_RUNBOOK` in `tools/developer_tools/src/repository_layout.rs`); comments in the
-  browser testing drivers, the deploy units, `Caddyfile.website`,
-  `apps/website/docker-compose.staging.yml`, `apps/website/api_v2/.env.example` and mod scripts;
+  browser testing drivers, the deploy units, `Caddyfile`,
+  `deploy/compose.staging.yml`, `apps/api/.env.example` and mod scripts;
   the Cursor rules under `.cursor/rules/`; the code READMEs of the folders above; the glossary and
   the entry README.
 - Rules: a runbook path a constant pins keeps its spelling, or the constant changes in the same
@@ -95,7 +95,7 @@ feature folder, rather than here; this index lists it so every procedure is foun
   every pinned path to exist); a runbook stays at or under 500 lines
   (`cargo xtask verify markdown-placement`); every cited command exists in the command tree
   (`cargo xtask verify link-check`); no runbook writes a host address, only `TBD_SSH_HOST` from
-  `tools/xtask/deploy/deploy.env`.
+  `deploy/deploy.env`.
 
 ## Related documentation
 

@@ -6,7 +6,7 @@ How to record the three operational receipts of the API acceptance register (`st
 `staging_discord`, `staging_load`) against the staging host: preparing the five-instance fleet and
 the Discord guilds once, running the three procedures inside one 24-hour window, and handing the
 receipts to `cargo xtask verify api-readiness`. The design, the evidence rules and the case lists are
-in the [staging design note](/documentation/website/api_v2/verification_evidence/staging.md).
+in the [staging design note](/documentation/apps/api/verification_evidence/staging.md).
 
 ## Contents
 
@@ -27,7 +27,7 @@ workstation (repository, hcargo)                 staging host dooley
 ────────────────────────────────                 ───────────────────
 cargo xtask staging <procedure> --record ─ ssh ─▶ read-only psql, journals, console logs, /metrics
    │  AWAIT <step> lines                            staging-fixtures (seeding, aging, bot reads)
-   ▼                                                tbd-reforger@1..5, fleet-host-agent@1..5
+   ▼                                                tbd-reforger@1..5, fleet_host_agent@1..5
 orchestrator in the operator's browser ─ https ─▶ Server Control, events, Discord
 load engine (5 source addresses) ─ http :3080 ──▶ Caddy ─▶ API :8080
    │
@@ -45,7 +45,7 @@ Rules every run follows:
 
 - Every command runs as `hcargo xtask …` from the repository root, so the receipts and the later
   verification see the same PATH and CARGO_TARGET_DIR.
-- Nothing edits the repository, the `.env` files or `tools/xtask/deploy/deploy.env` from the first
+- Nothing edits the repository, the `.env` files or `deploy/deploy.env` from the first
   recording until `verify api-readiness --execute` has finished; the three receipts and that run fit
   in 24 hours of the first recording.
 - The operator approves each procedure run over its numbered action list
@@ -56,7 +56,7 @@ Rules every run follows:
 
 ## Related documentation
 
-- [Staging design note](/documentation/website/api_v2/verification_evidence/staging.md) — the
+- [Staging design note](/documentation/apps/api/verification_evidence/staging.md) — the
   procedures, the receipt format and the witness rules.
 - [Game server staging](/documentation/runbooks/game_server_staging/README.md) — the staging host
   and its deploy.

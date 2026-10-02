@@ -53,8 +53,8 @@ owns = [
     "tools/tbd-tools/src/world/aux.rs",
     "crates/map-engine-core/src/dem/raw.rs",
     "crates/map-engine-core/src/dem/mod.rs",
-    "apps/website/frontend/src/editor/world_assets/dem_load.rs",
-    "apps/website/frontend/src/editor/world_assets/mod.rs",
+    "apps/frontend/src/editor/world_assets/dem_load.rs",
+    "apps/frontend/src/editor/world_assets/mod.rs",
 ]
 
 [scope]

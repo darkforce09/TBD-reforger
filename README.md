@@ -16,6 +16,7 @@ that controls those servers, the contracts and map data they share, and the deve
 ├── .cargo/                      the `cargo xtask` alias
 ├── .claude/                     Claude Code project settings: the `xtask ai guard` hook
 ├── .cursor/                     the Cursor agent rules (`rules/*.mdc`) and MCP server entry (`mcp.json`)
+├── .dockerignore                the build context of the API release image: the workspace crates and the contracts they embed
 ├── .editorconfig                the editor formatting rules `cargo xtask ci verify-editorconfig` checks
 ├── .editorconfig-checker.json   the settings of that check
 ├── .gitattributes               the Git LFS patterns for the terrain datasets
@@ -23,13 +24,17 @@ that controls those servers, the contracts and map data they share, and the deve
 ├── .gitignore                   keeps the deploy settings, build output, export scratch and local reference copies out of git
 ├── .world-boot-warning-baseline the per-mission warning budget of `cargo xtask mod world-boot`
 ├── AGENTS.md                    a symlink to CLAUDE.md for agents that read AGENTS.md
-├── apps/                        the products: website, mod suite, fleet host agent, ticketboard
+├── apps/                        the products: API, single-page app, service worker, mod suite, fleet host agent, ticketboard
 ├── assets/                      terrain datasets and the world-object glyph set, served at `/map-assets`
 ├── Cargo.lock                   the workspace lockfile
-├── Cargo.toml                   the Cargo workspace: the six app crates and four tooling crates
+├── Cargo.toml                   the Cargo workspace: the app, library, engine and tooling crates
 ├── CLAUDE.md                    the agent entry file: project laws, directory atlas, canonical commands
+├── clippy.toml                  the clippy settings every workspace crate reads: tests may call `unwrap()`
 ├── contracts/                   JSON Schemas, rules, catalogs and fixtures of every cross-boundary shape
+├── crates/                      the tiered library crates, grouped by category
+├── deploy/                      the release Dockerfile, compose files, Caddy site, deploy settings template, systemd units
 ├── documentation/               all documentation: feature docs, runbooks, standards, glossary, archive
+├── legacy/                      the map and graphics engines, parked while their code moves into crates/
 ├── rust-toolchain.toml          the pinned Rust toolchain with rustfmt, clippy and the wasm32 target
 └── tools/                       the developer tools: `xtask`, ticket engine, developer tools, verification core
 ```
@@ -46,11 +51,11 @@ pages sit on the same API. `contracts/` defines every shape these programs excha
 `tools/` builds, checks and deploys all of it.
 
 ```text
-browser ── apps/website/frontend (Mission Creator)
+browser ── apps/frontend (Mission Creator)
                        │
                        │ /api/v1, SSE, /map-assets
                        ▼
-           apps/website/api_v2 ──▶ Postgres; serves assets/terrains at /map-assets
+           apps/api ──▶ Postgres; serves assets/terrains at /map-assets
                        ▲
                        │ HTTPS, outbound from the game side
            ┌───────────┴───────────┐
@@ -77,8 +82,8 @@ section 3 of [CLAUDE.md](/CLAUDE.md). `cargo xtask help` lists the build, CI and
 - Used by: community members through the website; the dedicated game servers that load the mod;
   the game hosts that run the fleet host agent; operators who deploy with `cargo xtask deploy`.
 - Rules: the project laws in [CLAUDE.md](/CLAUDE.md), held by review and by the gates
-  `cargo xtask ci ci-local` runs; every folder in `apps/`, `tools/`, `contracts/`, `assets/`
-  and `documentation/` carries a README.md that lists its children
+  `cargo xtask ci ci-local` runs; every folder below the root but the test, generated-output and
+  hidden ones carries a README.md that lists its children
   (`cargo xtask verify readme-coverage`); the code trees hold no Markdown but README.md
   (`cargo xtask verify markdown-placement`); every link, path and cited command resolves (`cargo xtask verify link-check`).
 

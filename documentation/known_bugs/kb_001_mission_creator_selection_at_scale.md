@@ -40,13 +40,13 @@ outliner, while the marquee release in `useSelectTool` put every id `slotSpatial
 returned into `selection.ids`. A six-figure selection then stressed `setSelectionFlags` (a pass over
 every icon), the virtual outliner and the colour attribute of the map layer. It stayed a hypothesis.
 
-The code the entry describes no longer exists: `git ls-files apps/website/frontend/src/features`
+The code the entry describes no longer exists: `git ls-files apps/frontend/src/features`
 lists nothing. In the Rust Mission Creator, the marquee release and a paste still select every id
-they reach with no cap (`apps/website/frontend/src/v2/apps/editor/input/pointer_gestures/pointer_up.rs`,
-`paste_at_cursor` in `apps/website/map-engine/src/editing/hosted_commands/entity_clipboard.rs`), and
+they reach with no cap (`apps/frontend/src/v2/apps/editor/input/pointer_gestures/pointer_up.rs`,
+`paste_at_cursor` in `legacy/map_engine/src/editing/hosted_commands/entity_clipboard.rs`), and
 a selection change patches only the icon rows whose selected state flips (`set_selection` in
-`apps/website/map-engine/src/overlay/symbology/instances/bridge_1.rs`). The
-[performance at scale](/documentation/website/frontend/apps/editor/feature_inventory/performance_at_scale.md)
+`legacy/map_engine/src/overlay/symbology/instances/bridge_1.rs`). The
+[performance at scale](/documentation/apps/frontend/apps/editor/feature_inventory/performance_at_scale.md)
 inventory holds what the Rust pipeline does at scale.
 
 ## Workaround

@@ -19,7 +19,7 @@ Sat/heatmap/guides look good. Remaining:
 
 ## Hottest lead (A1)
 
-`apps/website/frontend/src/world_assets/world_host.rs` — sticky empty glyph upload:
+`apps/frontend/src/world_assets/world_host.rs` — sticky empty glyph upload:
 
 ```text
 if !trees.is_empty() || pin_settled {

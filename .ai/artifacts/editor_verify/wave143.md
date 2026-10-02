@@ -19,7 +19,7 @@ worktree) — **both deleted before this report was written**. Perturbations wer
 | tests/deckgl_ortho_parity.rs | 5 | 5 passed |
 | **tests/paste_keeps_authored_z.rs (NEW)** | **2** | **2 passed** |
 | doc-tests | 3 | 3 passed |
-| website-frontend | 1050 | 1050 passed |
+| frontend | 1050 | 1050 passed |
 
 - List total == run total on every target (no foreign-binary symptom).
 - Lib 637 = the brief's expected 635 **+ 2** new T-743 store tests — consistent.
@@ -46,7 +46,7 @@ this copy.
 seam). Fix shape: "zs[i] is the caller-resolved elevation — since T-777 the frontend passes each
 copied slot's authored z; 0.0 only when the clipboard row carries no finite z."
 
-### F-2 | MINOR | apps/website/frontend/src/dto.rs:847-849 (disclosed by the T-782 slice, outside its owns)
+### F-2 | MINOR | apps/frontend/src/dto.rs:847-849 (disclosed by the T-782 slice, outside its owns)
 **What:** the `max_players` doc comment still says "The editor now shows both side by side rather
 than letting either quietly win; see `eden_settings::PLAYER_COUNT_DISAGREE_NOTE`" — the constant
 was renamed to `PLAYER_COUNT_RULING_NOTE` and the side-by-side presentation is gone.
@@ -60,9 +60,9 @@ and replace "shows both side by side …" with "shows the derived count as the p
 the declared cap below it, labelled".
 
 ### F-3 | NIT (harness bookkeeping, not code)
-**What:** the dispatch's expected website-frontend total (1045) matches neither base nor head.
+**What:** the dispatch's expected frontend total (1045) matches neither base nor head.
 **Proof (derivation):** head measured 1050 (list AND run). The wave diff adds exactly 7 `#[test]`
-to the frontend (`git diff 93d09841..53380c03 -- apps/website/frontend | grep -cE '^\+.*#\[test\]'`
+to the frontend (`git diff 93d09841..53380c03 -- apps/frontend | grep -cE '^\+.*#\[test\]'`
 = 7, removals = 0) → base was 1043. The map-engine-core expectation (635) was correct.
 **Disposition:** correct the number in the wave ledger; nothing to change in code.
 
@@ -75,7 +75,7 @@ No BLOCKER. No MAJOR.
 **T-743.1 — the golden-churn contradiction (attacked hard, clean).** At base 93d09841:
 `PASTE_NUDGE` appears in exactly 5 places — 4 comments/docs and its one consumer, the
 `_ => (PASTE_NUDGE, PASTE_NUDGE)` arm. `git grep` at base over `*.rs`, plus fixture sweeps
-(`crates/map-engine-core/tests/fixtures`, `apps/website/frontend/tests/fixtures`,
+(`crates/map-engine-core/tests/fixtures`, `apps/frontend/tests/fixtures`,
 `tools/tbd-tools/fixtures`, `scripts/mod/fixtures`, all `*.json/*.snap/*.golden`): **zero** test,
 golden or fixture encodes the +20. Both pre-existing `paste_slots` tests at base pass
 `Some(100.0),Some(100.0)` / `Some(100.0),Some(200.0)` anchors. The wave diff modifies **no

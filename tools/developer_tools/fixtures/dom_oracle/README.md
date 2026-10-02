@@ -16,7 +16,7 @@ tools/developer_tools/fixtures/dom_oracle/
 
 Two gates of the `gate` binary read this folder, both from
 `tools/developer_tools/src/browser_testing/`. `gate v-suite verify` captures each route of the
-built app with its API calls answered from `apps/website/frontend/tests/fixtures/api/` and diffs the
+built app with its API calls answered from `contracts/fixtures/api_goldens/` and diffs the
 page's DOM against `oracle-freeze/`; `gate s-routes` compares the router's route table with
 `manifests/routes.csv`. Neither gate regenerates the folder: `gate v-suite accept` replaces one
 route's golden at a time, and `routes.csv` is edited by hand.
@@ -27,7 +27,7 @@ route's golden at a time, and `routes.csv` is edited by hand.
   `manifests/`; each child README gives the layout.
 - Schema: a golden is the tree the serializer in
   `tools/developer_tools/src/browser_testing/fixture_injection.rs` emits; `routes.csv` mirrors
-  the `RouteDef` fields of `apps/website/frontend/src/router.rs`.
+  the `RouteDef` fields of `apps/frontend/src/router.rs`.
 - Adding a file: through `gate v-suite accept` for a golden, by hand for `routes.csv`.
 
 ## Producers and consumers

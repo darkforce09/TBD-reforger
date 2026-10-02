@@ -58,7 +58,7 @@ type-inventory|map-object-enums|terrain-manifest`; `verify blas-manifest`; `veri
 ## Verified code facts (2026-09-04) — cite these anchors, do not re-derive from stale docs
 - Ticket tooling: `cargo xtask ticket ...` (scripts/ticket and registry.json are GONE). Worktrees:
   `cargo xtask platform slice-worktree -- new T-xxx` → .ai/artifacts/worktrees/T-xxx, branch slice/T-xxx.
-- Map loaders: apps/website/frontend/src/editor/world_assets/{world_host.rs (chunks :426, prefabs :133,
+- Map loaders: apps/frontend/src/editor/world_assets/{world_host.rs (chunks :426, prefabs :133,
   roads :146, regions :156, manifest :99), forest_mass.rs:108 (TBDD .bin), mod.rs:619 (DEM PNG via
   fetch_bytes_streamed), satellite.rs (TBDS .tbd-sat via HTTP Range), labels.rs:70/76, occluder_host.rs
   :52/107/134 (blas-manifest.json, descriptors/*.json, *.bvh), fetch.rs (fetch_bytes/_streamed/_text/

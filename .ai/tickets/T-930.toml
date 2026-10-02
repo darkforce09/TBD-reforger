@@ -51,8 +51,8 @@ estimated = [
 ]
 owns = [
     "crates/map-engine-core/src/slots_gpu.rs",
-    "apps/website/frontend/src/editor/state/operations/entity.rs",
-    "apps/website/frontend/src/editor/mission_editor.rs",
+    "apps/frontend/src/editor/state/operations/entity.rs",
+    "apps/frontend/src/editor/mission_editor.rs",
 ]
 
 [scope]

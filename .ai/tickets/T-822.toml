@@ -52,7 +52,7 @@ citations = [
     "pointerdown chrome guard pattern",
 ]
 estimated = ["scope"]
-owns = ["apps/website/frontend/src/editor/mission_editor.rs"]
+owns = ["apps/frontend/src/editor/mission_editor.rs"]
 
 [scope]
 domain = "website"

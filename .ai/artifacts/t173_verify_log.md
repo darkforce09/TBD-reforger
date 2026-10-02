@@ -52,9 +52,9 @@ cost** (below) plus the deterministic counter/fetch gates. Operator G-A is the l
 | fmt | `cargo fmt --check` (4 crates) | **PASS** |
 | clippy core+wasm `-D warnings` | `cargo clippy -p map-engine-core -p map-engine-wasm --all-targets --all-features -- -D warnings` | **PASS** |
 | clippy render wasm32 `-D warnings` | `cargo clippy -p map-engine-render --target wasm32-unknown-unknown -- -D warnings` | **PASS** |
-| clippy frontend wasm32 | `cargo clippy -p website-frontend --target wasm32-unknown-unknown` | **PASS** |
+| clippy frontend wasm32 | `cargo clippy -p frontend --target wasm32-unknown-unknown` | **PASS** |
 | core tests | `cargo test -p map-engine-core --lib --tests --all-features` | **255 passed / 0 failed** |
-| frontend native tests | `cargo test -p website-frontend` | **73 passed / 0 failed** |
+| frontend native tests | `cargo test -p frontend` | **73 passed / 0 failed** |
 | trunk release build | `trunk build --release` | **PASS** — wasm 8,256,081 B |
 | **editor-perf-smoke-strict** | `gate smoke perf-strict` | **pass: true** (S_dup_fetches_zero, S_idle_fetches_zero, S_bench_encode_60_floor, settled, probe_ok, panic_free) |
 | editor-fullmap-smoke | `gate smoke fullmap` | **pass: true** (14/14 — no regression: roads 888, landcover 36, buildings/forest/trees/sat/hillshade all present) |
@@ -91,7 +91,7 @@ the operator's to confirm on real GPU.
 
 Engine/core: `crates/map-engine-core/src/world/residency.rs`, `geometry/polyline_strip.rs`,
 `world/mod.rs`; `crates/map-engine-render/src/{engine.rs,shader.wgsl}`; `crates/map-engine-wasm/src/lib.rs`.
-Frontend: `apps/website/frontend/src/world_assets/{world_host.rs,mod.rs,bridge.rs,forest_mass.rs,satellite.rs,labels.rs}`,
+Frontend: `apps/frontend/src/world_assets/{world_host.rs,mod.rs,bridge.rs,forest_mass.rs,satellite.rs,labels.rs}`,
 `mission_editor.rs`, `eden_chrome.rs`, `missions.rs`, `ui.rs`, `dto.rs`, `editor_ops.rs`,
 `world_layer_prefs.rs`, `main.rs`, `style/aegis.css`(none — blur removed in missions/ui), `index.html`(unchanged).
 Tooling: `tools/tbd-tools/src/smokes.rs` (perf smoke + bench probe), `Makefile`.

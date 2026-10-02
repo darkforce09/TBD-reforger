@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
-use website_map_engine::streaming::loaders::store::WorldError;
-use website_map_engine::streaming::loaders::store::WorldStore;
+use map_engine::streaming::loaders::store::WorldError;
+use map_engine::streaming::loaders::store::WorldStore;
 
 use super::*;
 

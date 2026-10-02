@@ -56,7 +56,7 @@ directory. This is the shape `3A-C1` landed — read commit `ced6a7860` and matc
   `#[cfg(test)] #[path = "tests/reexports.rs"] mod reexport_pins;`. **Update it as the surface
   grows** — that pin is the contract. C1 added a second case there; add yours alongside.
 - **Gate rule 7** reads zero in both directions and must stay zero: nothing under `data/` may name
-  `crate::{camera,frame,io,overlay,spatial,streaming,world}` or `website_graphics_engine`.
+  `crate::{camera,frame,io,overlay,spatial,streaming,world}` or `graphics_engine`.
 - Anything in `data/store/` must be browser-free — no `web_sys`, no `leptos`, no signals.
 - Law 7: everything you create is born compliant, tests in sibling files.
 
@@ -67,8 +67,8 @@ unchanged, and:
 
 ```
 CARGO_TARGET_DIR=target-container cargo xtask verify engine-layers
-CARGO_TARGET_DIR=target-container cargo test -p website-map-engine --all-features
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
+CARGO_TARGET_DIR=target-container cargo test -p map_engine --all-features
+CARGO_TARGET_DIR=target-container cargo test -p frontend
 ```
 
 Baseline: `verify engine-layers` PASS on all 8 rules; map-engine **1384** passed / 0 failed / 2

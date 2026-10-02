@@ -24,7 +24,7 @@ GET /api/v1/ballistics-catalogs/vanilla_mortars/versions/1?x
 
 The file name is the method, `__`, and the path after `/api/v1/` with its trailing slash dropped
 and every `/` replaced by `__`, plus `.json`: the naming of the frontend's recorded API corpus in
-`apps/website/frontend/tests/fixtures/api/`, which the DOM oracle reads through request
+`contracts/fixtures/api_goldens/`, which the DOM oracle reads through request
 interception. A name holding anything but ASCII letters, digits, `-`, `_` and `.`, or holding `..`,
 is refused, so no request reaches outside the directory. With a corpus set, `/api/` never falls
 through to the API proxy or to the single-page fallback.

@@ -5,7 +5,7 @@
 # over UDP, and reports each step to the command ledger. README.md documents the configuration,
 # the safety model and the systemd user service.
 [package]
-name = "fleet-host-agent"
+name = "fleet_host_agent"
 version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true

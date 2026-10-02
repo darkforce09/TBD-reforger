@@ -57,12 +57,12 @@ platform ingests.
 - Consumers:
   - `cargo xtask schema validate`, as above, a step of the `schema-validate` CI task;
   - the API's loadout round-trip tests in
-    `apps/website/api_v2/src/missions/contract/tests/loadout_projection.rs`, which parse both
+    `apps/api/src/missions/contract/tests/loadout_projection.rs`, which parse both
     loadout samples into the hand-written `LoadoutExport` model, serialise them again and require
     an equal JSON value;
-  - the API's faction integration tests in `apps/website/api_v2/tests/factions.rs`, which use
+  - the API's faction integration tests in `apps/api/tests/factions.rs`, which use
     `faction-library.sample.json` as their golden document; the seed
-    `apps/website/api_v2/seeds/faction_library.sql` names it as the source of its OPFOR faction.
+    `apps/api/seeds/faction_library.sql` names it as the source of its OPFOR faction.
 
 ## Boundaries
 

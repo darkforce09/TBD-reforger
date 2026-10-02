@@ -15,7 +15,7 @@ documentation/archive/frontend_v2_migration/
 
 ## Code
 
-- [Frontend domain tree](/apps/website/frontend/src/v2/) — the tree the move produced.
+- [Frontend domain tree](/apps/frontend/src/v2/) — the tree the move produced.
 
 ## Boundaries
 
@@ -25,6 +25,6 @@ documentation/archive/frontend_v2_migration/
 
 ## Related documentation
 
-- [Frontend documentation](/documentation/website/frontend/README.md) — the frontend as it is,
+- [Frontend documentation](/documentation/apps/frontend/README.md) — the frontend as it is,
   with every route and its page folder.
-- [Frontend domain tree README](/apps/website/frontend/src/v2/README.md) — the code layout.
+- [Frontend domain tree README](/apps/frontend/src/v2/README.md) — the code layout.

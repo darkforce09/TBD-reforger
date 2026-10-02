@@ -1,6 +1,6 @@
 //! S-routes gate: the Leptos router's routes against the committed manifest.
 //!
-//! Extracts the route table from `apps/website/frontend/src/router.rs` and diffs it against the
+//! Extracts the route table from `apps/frontend/src/router.rs` and diffs it against the
 //! frozen React oracle manifest `manifests/routes.csv`. Robust to rustfmt line-wrapping: splits
 //! on `RouteDef { … }` blocks and pulls each field by name.
 //!
@@ -14,7 +14,7 @@ use crate::browser_testing::server::repo_root;
 
 pub fn run() -> Result<u8> {
     let root = repo_root();
-    let router = root.join("apps/website/frontend/src/router.rs");
+    let router = root.join("apps/frontend/src/router.rs");
     let oracle_path = root.join("tools/developer_tools/fixtures/dom_oracle/manifests/routes.csv");
 
     let src =

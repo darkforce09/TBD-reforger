@@ -38,7 +38,7 @@ Both commands also read `game.scenarioId` from the profile to name the mission h
 - `tbd-dev-server.config.json`: never installed as it stands. `cargo xtask mod world-boot` and
   `cargo xtask mod playtest` render it into `server.json` in their run directory and start
   `ArmaReforgerServer` with `-config` pointing there. `cargo xtask deploy staging` does not read
-  it: the staging server's config is rendered from `tools/xtask/deploy/deploy.env`.
+  it: the staging server's config is rendered from `deploy/deploy.env`.
 
 ## Boundaries
 

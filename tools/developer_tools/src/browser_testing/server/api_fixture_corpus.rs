@@ -5,7 +5,7 @@
 //! service worker caches exactly like the API.
 //! **Position:** consulted by the gate server's handler (`super`) before the API proxy when
 //! [`super::ServeConfig::api_fixture_corpus`] is set; the directory is the frontend's recorded
-//! API corpus (`apps/website/frontend/tests/fixtures/api`), whose file names are
+//! API corpus (`contracts/fixtures/api_goldens`), whose file names are
 //! `<METHOD>__<path after /api/v1/ with every / as __>.json`.
 //! **Signals & state:** a process-wide set of corpus directories whose API is down
 //! ([`set_api_down`]), which a gate flips to act out a proxy (Caddy in production) whose API

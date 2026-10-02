@@ -81,7 +81,7 @@ owns = [
     "crates/map-engine-core/src/world/prefab_load.rs",
     "crates/map-engine-core/src/world/density_ladder.rs",
     "crates/map-engine-core/src/world/occluder/trace.rs",
-    "apps/website/frontend/src/pages/debug/world_los.rs",
+    "apps/frontend/src/pages/debug/world_los.rs",
     "xtask/src/schema_gates.rs",
     "xtask/src/golden_gate.rs",
     "xtask/src/map_world_los.rs",

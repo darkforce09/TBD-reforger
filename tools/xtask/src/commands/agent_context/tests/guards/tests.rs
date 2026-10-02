@@ -5,13 +5,13 @@ use serde_json::json;
 
 #[test]
 fn uncapped_grep_is_denied() {
-    assert!(guard_bash("rg 'fn place_at' apps/website/frontend/src").is_some());
+    assert!(guard_bash("rg 'fn place_at' apps/frontend/src").is_some());
     assert!(guard_bash("grep -rn TODO .").is_some());
 }
 
 #[test]
 fn bare_file_read_is_denied() {
-    assert!(guard_bash("cat apps/website/frontend/src/v2/apps/editor/mission_editor.rs").is_some());
+    assert!(guard_bash("cat apps/frontend/src/v2/apps/editor/mission_editor.rs").is_some());
     assert!(guard_bash("sed -n '1,200p' tools/xtask/src/main.rs").is_some());
 }
 
@@ -139,7 +139,7 @@ fn verdict_and_failure_lines_always_survive() {
 
 #[test]
 fn only_chatter_is_treated_as_noise() {
-    assert!(is_noise("   Compiling website-frontend v0.1.0"));
+    assert!(is_noise("   Compiling frontend v0.1.0"));
     assert!(is_noise("test mission::places_entity ... ok"));
     assert!(!is_noise("test result: FAILED. 0 passed; 3 failed"));
     assert!(!is_noise("error: could not compile"));

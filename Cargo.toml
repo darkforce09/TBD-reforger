@@ -1,17 +1,20 @@
 # The TBD Reforger workspace: the website applications (API, single-page app, offline service
-# worker), the map engine with the headless mission domain (its `data/` module, behind the
-# `scenario` and `store` features), the pure GPU renderer, the fleet host agent, the ticketboard
-# and the repository tooling.
+# worker), the library crates under `crates/`, the map engine with the headless mission domain
+# (its `data/` module, behind the `scenario` and `store` features), the pure GPU renderer, the
+# fleet host agent, the ticketboard and the repository tooling.
 [workspace]
 resolver = "3"
 members = [
     "apps/fleet_host_agent",
     "apps/ticketboard",
-    "apps/website/api_v2",
-    "apps/website/frontend",
-    "apps/website/map-engine",
-    "apps/website/graphics-engine",
-    "apps/website/offline-service-worker",
+    "apps/api",
+    "apps/frontend",
+    "legacy/map_engine",
+    "legacy/graphics_engine",
+    "apps/offline_service_worker",
+    # The library crates, one folder per category (`crates/<category>/<name>`): every manifest
+    # under `crates/` is a member.
+    "crates/*/*",
     # Dependency-light verification and ticket libraries consumed by repository tooling.
     "tools/verification_core",
     "tools/ticket_engine",
@@ -27,10 +30,11 @@ rust-version = "1.95"
 license = "UNLICENSED"
 publish = false
 
-# External dependencies that two or more members declare with the same version requirement. An
-# entry carries the version and, where they are off, the default features; each member names its
-# own features and `optional` beside `workspace = true`, so a feature stays the choice of the
-# member that needs it. A member whose version requirement differs keeps its own specification.
+# The library crates under `crates/`, by path, and the external dependencies that two or more
+# members declare with the same version requirement. An external entry carries the version and,
+# where they are off, the default features; each member names its own features and `optional`
+# beside `workspace = true`, so a feature stays the choice of the member that needs it. A member
+# whose version requirement differs keeps its own specification.
 [workspace.dependencies]
 anyhow = "1"
 axum = "0.8.9"
@@ -42,11 +46,16 @@ console_error_panic_hook = "0.1"
 flate2 = "1"
 futures = "0.3"
 gloo-net = "0.6"
+# The scheme guard on stored and rendered links (`crates/foundation/http_url_guard`).
+http_url_guard = { path = "crates/foundation/http_url_guard" }
 js-sys = "0.3"
 # Default features off drop the HTTP `$ref` resolver (reqwest and the aws-lc-rs C build): every
 # schema is local or embedded, so core draft 2020-12 validation is all a member needs.
 jsonschema = { version = "0.46.10", default-features = false }
 libc = "0.2"
+# The offline cache policy the service worker and the page share
+# (`crates/contracts/offline_cache_policy`).
+offline_cache_policy = { path = "crates/contracts/offline_cache_policy" }
 png = "0.17"
 proptest = "1"
 rand = "0.10.2"

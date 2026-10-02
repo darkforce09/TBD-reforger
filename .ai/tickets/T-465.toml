@@ -64,7 +64,7 @@ estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 com
 owns = [
     "apps/website/api/src/handlers/cms.rs",
     "apps/website/api/tests/",
-    "apps/website/frontend/src/content.rs",
+    "apps/frontend/src/content.rs",
 ]
 
 [scope]

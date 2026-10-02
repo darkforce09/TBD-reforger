@@ -16,9 +16,9 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - "apps/website/frontend/**"
+      - "apps/frontend/**"
       - "tools/developer_tools/**"
-      - "apps/website/map-engine/**"
+      - "legacy/map_engine/**"
       - ".github/workflows/editor-gates.yml"
 
 concurrency:
@@ -52,7 +52,7 @@ jobs:
           --health-timeout 3s
           --health-retries 10
     env:
-      # The API (apps/website/api_v2) reads these from the environment (config.rs); `.env` is not used in CI.
+      # The API (apps/api) reads these from the environment (config.rs); `.env` is not used in CI.
       DATABASE_URL: postgres://tbd:tbd@localhost:5432/tbd_reforger?sslmode=disable
       APP_ENV: development # exposes GET /auth/dev-login, which the hydrate/mutations smokes use
       PORT: "8080"

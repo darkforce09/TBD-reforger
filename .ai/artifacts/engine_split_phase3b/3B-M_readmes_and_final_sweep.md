@@ -32,7 +32,7 @@ landed shape already matches its atlas. Do not edit it.
 - `rg -n 'src/editor|pages/debug|pages/operations/(orbat|faction)_manager' xtask tools` → empty.
   A stale row in `xtask/src/gate_t180.rs` panics every test in that gate, because its tests
   `fs::copy(...).unwrap()` every path they name.
-- `rg -n 'crate::editor|crate::pages::debug' apps/website/frontend/src` → empty.
+- `rg -n 'crate::editor|crate::pages::debug' apps/frontend/src` → empty.
 - **`.coding-standards-allowlist.yaml` carries rows naming paths Phase 3B moved** — at least
   `frontend/src/pages/debug/building_viewer.rs`, `frontend/src/pages/operations/orbat_manager.rs`
   and `frontend/src/editor/state/operations/entity.rs` (the last stale since 3A). A row whose path
@@ -54,7 +54,7 @@ landed shape already matches its atlas. Do not edit it.
   frontend for every directory name Phase 3B retired (`editor/canvas`, `editor/panels`,
   `editor/state`, `editor/tools`, `editor/world_assets`, `pages/debug`, `mission_editor_tests`).
   Rewrite each to name where the code is now, present tense, per Law 8.
-- **Dead citations to `state/operations`, a module Phase 3A deleted.** `website-map-engine`'s
+- **Dead citations to `state/operations`, a module Phase 3A deleted.** `map_engine`'s
   `editing/commands/merge_report.rs`, `editing/tools/selection/gesture.rs` and
   `editing/tools/selection/pick.rs` carry intra-doc links to `crate::editor::state::operations::…`
   — a path that names a module the engine crate has never had. The frontend carries the same stale
@@ -63,9 +63,9 @@ landed shape already matches its atlas. Do not edit it.
   engine command that does the work now. A broken intra-doc link in the engine is the one of these
   that can actually fail a build.
 - **Stale symbol paths in other crates' prose.** The `arsenal_rules` -> `arsenal::rules` rename left
-  doc comments naming the old spelling in `website-map-engine`
+  doc comments naming the old spelling in `map_engine`
   (`data/scenario/validation/wire_safety/scan.rs`, `data/scenario/validation/validator/loadout.rs`)
-  and in `website-api` (`handlers/missions/registry.rs`). They are prose, not pins, so nothing
+  and in `api` (`handlers/missions/registry.rs`). They are prose, not pins, so nothing
   fails — but they cite a symbol that no longer exists. Re-derive the list and correct them.
 - `xtask/src/gate_engine_layers.rs` holds a `crate::editor::tools::ruler_tool::…` string as a
   negative regex sample. It is a fixture, so nothing fails on it, but it names a module path that
@@ -84,9 +84,9 @@ One at a time, never two cargo commands at once:
 
 ```
 CARGO_TARGET_DIR=target-container cargo xtask verify engine-layers
-CARGO_TARGET_DIR=target-container cargo test -p website-map-engine --all-features
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
-CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p website-frontend
+CARGO_TARGET_DIR=target-container cargo test -p map_engine --all-features
+CARGO_TARGET_DIR=target-container cargo test -p frontend
+CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p frontend
 CARGO_TARGET_DIR=target-container cargo fmt --all -- --check
 CARGO_TARGET_DIR=target-container cargo xtask mk ci-local-leptos
 CARGO_TARGET_DIR=target-container cargo xtask mk leptos-gates
@@ -95,8 +95,8 @@ CARGO_TARGET_DIR=target-container cargo xtask mk leptos-gates
 Expected:
 
 - `verify engine-layers` PASS, all 8 rules.
-- `website-map-engine` >= 1414 passed, 0 failed (brief 3B-D added tests, so it should be higher).
-- `website-frontend` >= 1317 passed, 0 failed.
+- `map_engine` >= 1414 passed, 0 failed (brief 3B-D added tests, so it should be higher).
+- `frontend` >= 1317 passed, 0 failed.
 - wasm32 check clean; `fmt --check` silent.
 - `mk ci-local-leptos` success.
 - `mk leptos-gates`: its `v-suite verify` is red at baseline by operator decision. Diff it against

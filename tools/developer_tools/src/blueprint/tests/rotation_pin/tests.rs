@@ -1,5 +1,5 @@
 use super::*;
-use website_map_engine::world::architecture::compound::transform::Rigid;
+use map_engine::world::architecture::compound::transform::Rigid;
 
 #[test]
 fn rigid_from_enfusion_is_the_y_x_z_hypothesis() {

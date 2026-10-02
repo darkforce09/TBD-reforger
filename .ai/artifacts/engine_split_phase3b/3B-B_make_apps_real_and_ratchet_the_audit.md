@@ -9,19 +9,19 @@ nothing either.
 
 ## Part 1 — `v2/apps/` becomes a compiled module
 
-`apps/website/frontend/src/v2/mod.rs` declares `core` and `pages` only, so `v2/apps/` — 42 READMEs
+`apps/frontend/src/v2/mod.rs` declares `core` and `pages` only, so `v2/apps/` — 42 READMEs
 and zero lines of Rust — is not part of the crate at all.
 
 - add `pub mod apps;` to `v2/mod.rs`, in the same style as the two lines above it, and extend that
   file's `//!` header so its "Role" sentence names what `apps` holds: the standalone CAD
   workspaces, which consume `core` and are reached from `pages`.
-- create `apps/website/frontend/src/v2/apps/mod.rs` with a `//!` header describing the domain
+- create `apps/frontend/src/v2/apps/mod.rs` with a `//!` header describing the domain
   (per CLAUDE.md's atlas: the editor, planner, aar and debug workspaces). It declares nothing yet —
   brief 3B-C adds `pub mod editor;`.
 
 ## Part 2 — the documentation audit gets a dated allowlist
 
-`apps/website/frontend/src/v2/doc_audit_tests.rs` audits every production `.rs` under `src/v2`
+`apps/frontend/src/v2/doc_audit_tests.rs` audits every production `.rs` under `src/v2`
 (skipping directories named `tests`) for five rules:
 
 ```
@@ -100,11 +100,11 @@ moves, no `editor/` file is touched.
 ## Verification — run once, at the end, from the repo root
 
 ```
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
+CARGO_TARGET_DIR=target-container cargo test -p frontend
 CARGO_TARGET_DIR=target-container cargo fmt --all -- --check
 ```
 
-Expected: `website-frontend` >= 1317 passed plus your new mechanism tests, 0 failed. `fmt --check`
+Expected: `frontend` >= 1317 passed plus your new mechanism tests, 0 failed. `fmt --check`
 silent. Paste both verbatim, and paste `git status --porcelain` for the paths you staged.
 
 Commit directly to `main`:

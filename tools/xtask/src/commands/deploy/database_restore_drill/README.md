@@ -31,7 +31,7 @@ run(args)
 The source database is `--db`, else `TBD_BACKUP_DB`, else `tbd_reforger`; the dump folder is
 `--out`, else `TBD_BACKUP_DIR`, else `~/tbd-backups/website`; the scratch database is `--scratch`,
 else `TBD_DRILL_DB`, else `tbd_drill_probe`. The migration folder is `TBD_GATE_MIGRATION_DIR`, else
-`apps/website/api_v2/migrations` of the checkout. A restore without `_sqlx_migrations` fails the
+`apps/api/migrations` of the checkout. A restore without `_sqlx_migrations` fails the
 drill, or only warns with `--lax-migrations` or `TBD_DRILL_STRICT_MIGRATIONS=0`, because sqlx
 would try to apply the first migration over the restored tables. The restore takes its workers from
 `TBD_RESTORE_JOBS` and its row minimum from `TBD_RESTORE_MIN_ROWS`, both default 1.
@@ -44,7 +44,7 @@ would try to apply the first migration over the restored tables. The restore tak
   `crate::core::repository_root`; `sha384sum` where the drill runs.
 - Used by: `tools/xtask/src/commands/deploy/database_operations/execution.rs` (`deploy db
   drill`); `tools/xtask/src/commands/db/operations.rs` (`db backup-drill`); the weekly
-  `tbd-website-backup-drill` unit in `tools/xtask/deploy/systemd/`.
+  `tbd-website-backup-drill` unit in `deploy/systemd/`.
 - Rules: the drill never restores into a database off the scratch allow-list, and passes no
   confirmation; a migration's version is its file name's leading digits without leading zeros
   (`mig_ver_strips_leading_zeros` in

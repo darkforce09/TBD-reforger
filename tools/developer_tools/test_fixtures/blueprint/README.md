@@ -59,7 +59,7 @@ moves one re-blesses the fixture or the assertion on purpose.
   (`<slug>_<kind>.json`); `.golden` marks a blessed output.
 - Schema:
   - `.bvh.golden`: the `TBVH` binary sidecar that `BvhSidecar` in
-    `apps/website/map-engine/src/spatial/bvh/sidecar.rs` parses;
+    `legacy/map_engine/src/spatial/bvh/sidecar.rs` parses;
   - `.instances.golden.json`: `contracts/definitions/building-instances.schema.json`;
   - `_blueprint.golden.json`: `contracts/definitions/building-blueprint.schema.json`;
   - `_children.json`: a recon dump: `prefabFilter`, `slug`, the root's pose and bounds,

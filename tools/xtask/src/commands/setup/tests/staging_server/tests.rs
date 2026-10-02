@@ -4,7 +4,7 @@ use std::path::Path;
 /// Deploy settings from `file` alone, with no process variables.
 fn settings(file: &str) -> DeployEnvironment {
     DeployEnvironment::from_text(
-        Path::new("/home/deploy/checkout/tools/xtask/deploy/deploy.env"),
+        Path::new("/home/deploy/checkout/deploy/deploy.env"),
         Some(file),
         [],
     )

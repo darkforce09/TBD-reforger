@@ -18,7 +18,7 @@ Fix the operator-reported Leptos shell + Mission Creator regressions — **and a
 
 | Bug | Lead |
 |-----|------|
-| A1 user menu dead | `apps/website/frontend/src/layout.rs` — avatar button; comment says dropdown is “a follow-up” |
+| A1 user menu dead | `apps/frontend/src/layout.rs` — avatar button; comment says dropdown is “a follow-up” |
 | A2/A8 sticky nav + breadcrumb | same file — `use_location().pathname.get()` once; comment admits reactive follow-up |
 | A9 narrow sidebar pop-out dead | same file — `SidebarMobileToggle` button has no open state / drawer; `Sidebar` is `hidden lg:flex` only |
 | A4–A6 dead list select | `wiki.rs` / `vehicles.rs` / `modpacks.rs` — selected = first mock, no click→state |

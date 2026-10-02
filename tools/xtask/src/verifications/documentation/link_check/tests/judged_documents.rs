@@ -78,11 +78,11 @@ fn the_project_instructions_and_every_readme_are_judged() {
     );
     assert_eq!(area(README), Some(DocumentArea::Readmes));
     assert_eq!(
-        area("apps/website/frontend/src/v2/README.md"),
+        area("apps/frontend/src/v2/README.md"),
         Some(DocumentArea::Readmes)
     );
-    assert_eq!(area("apps/website/frontend/NOTES.md"), None);
-    assert_eq!(area("apps/website/frontend/readme.md"), None);
+    assert_eq!(area("apps/frontend/NOTES.md"), None);
+    assert_eq!(area("apps/frontend/readme.md"), None);
     assert_eq!(area("apps/CLAUDE.md"), None);
 }
 
@@ -112,4 +112,18 @@ fn only_the_frozen_records_are_frozen_and_every_area_has_a_label() {
         DocumentArea::FrozenDocumentation.label(),
         format!("{DOCUMENTATION_ROOT} frozen records")
     );
+}
+
+/// A README.md in any top-level folder is judged, whatever the folder is called, so the links of a
+/// top-level folder are checked from the moment it is tracked.
+#[test]
+fn a_readme_in_a_top_level_folder_no_list_names_is_judged() {
+    for readme in [
+        "crates/foundation/http_url_guard/README.md",
+        "deploy/README.md",
+        "legacy/map_engine/README.md",
+        "a_folder_born_later/README.md",
+    ] {
+        assert_eq!(area(readme), Some(DocumentArea::Readmes), "{readme}");
+    }
 }

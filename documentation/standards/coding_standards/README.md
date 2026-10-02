@@ -93,8 +93,8 @@ predictable contract for the consumer; Debuggability (De), a failure that says w
 | SIZE-1 | Sc | a soft warning at 600 lines | retired; SIZE-3 replaces it | [file_size_and_complexity.md](/documentation/standards/coding_standards/file_size_and_complexity.md) |
 | SIZE-2 | Sc | file-level exemptions | retired; none exist | [file_size_and_complexity.md](/documentation/standards/coding_standards/file_size_and_complexity.md) |
 | SIZE-3 | Sc | production Rust and pinned mod EnfScript ≤ 500 lines, tests ≤ 1000, no exemption | CI-SCRIPT, `cargo xtask verify file-length` | [file_size_and_complexity.md](/documentation/standards/coding_standards/file_size_and_complexity.md) |
-| TEST-1 | De | a handler change passes the API's tests against Postgres | CI-BLOCK, the `website-api` job | [testing_bar.md](/documentation/standards/coding_standards/testing_bar.md) |
-| TEST-2 | De | non-trivial app logic has a unit test | CI-BLOCK, the `website-frontend` job | [testing_bar.md](/documentation/standards/coding_standards/testing_bar.md) |
+| TEST-1 | De | a handler change passes the API's tests against Postgres | CI-BLOCK, the `api` job | [testing_bar.md](/documentation/standards/coding_standards/testing_bar.md) |
+| TEST-2 | De | non-trivial app logic has a unit test | CI-BLOCK, the `frontend` job | [testing_bar.md](/documentation/standards/coding_standards/testing_bar.md) |
 | TEST-3 | Us | a schema change ships a fixture and a green schema gate | CI-BLOCK, the `schema` job | [testing_bar.md](/documentation/standards/coding_standards/testing_bar.md) |
 | TS-1 | De | the compiler runs in its strictest mode | retired; the Rust compiler carries it | [frontend_code.md](/documentation/standards/coding_standards/frontend_code.md) |
 | TS-2 | Sc | layer boundaries hold | CI-SCRIPT for the engine wall (`cargo xtask verify engine-layers`); the rest unenforced | [frontend_code.md](/documentation/standards/coding_standards/frontend_code.md) |
@@ -146,9 +146,9 @@ now maps to a page:
 - [Schema gates](/tools/xtask/src/verifications/schemas/) — ENF-3, ENF-4, TEST-3.
 - [CI task commands](/tools/xtask/src/commands/ci/) — `ci-local`, `verify-coding-standards`,
   `verify-editorconfig` (FMT-2).
-- [API layout tests](/apps/website/api_v2/src/tests/) — GO-9 and the API's test placement.
-- [Handler errors](/apps/website/api_v2/src/core/error_handling/) — ERR-1 and ERR-4.
-- [Middleware](/apps/website/api_v2/src/core/middleware/) — LOG-3.
+- [API layout tests](/apps/api/src/tests/) — GO-9 and the API's test placement.
+- [Handler errors](/apps/api/src/core/error_handling/) — ERR-1 and ERR-4.
+- [Middleware](/apps/api/src/core/middleware/) — LOG-3.
 - [Workflows](/.github/workflows/) — CI-2 and every CI-BLOCK gate.
 
 ## Boundaries

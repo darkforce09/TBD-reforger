@@ -35,7 +35,7 @@ and the world-row check passes, and 1 otherwise.
 
 - Depends on: the parent's `ReconFile`, `Group`, `Match` and `Report`; the world-row check in
   `tools/developer_tools/src/blueprint/bvh/world_instances.rs`;
-  `website_map_engine::world::architecture::compound` (`InstancesFile`, `InstanceRecord`,
+  `map_engine::world::architecture::compound` (`InstancesFile`, `InstanceRecord`,
   `InstanceKind`, `PlacementSource`, `Rigid`).
 - Used by: `instance_verification.rs`, which re-exports `run_instances_verify`, `load`, `verify`
   and `wrap_deg`; `cargo xtask map instances-verify`, through

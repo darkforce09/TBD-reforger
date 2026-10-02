@@ -4,7 +4,7 @@
 
 **Status:** **Shipped** @ `d2128cf` — T-067.0 bulk paste + scaffolding; **T-067.0.1** CPU viewport cull reverted; follow-ons **T-111** / **T-112** (`idea`).  
 **Git tag:** **T-067** (`d2128cf`)  
-**Authority:** [MC ROADMAP](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation/website/frontend/apps/editor/decisions.md) · [t066_worker_compile.md](t066_worker_compile.md) · [t063_spatial_index.md](t063_spatial_index.md) · [t110_terrain_base_mission_layers.md](t110_terrain_base_mission_layers.md) · [`docs/TICKET_LEAD.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md)
+**Authority:** [MC ROADMAP](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation/apps/frontend/apps/editor/decisions.md) · [t066_worker_compile.md](t066_worker_compile.md) · [t063_spatial_index.md](t063_spatial_index.md) · [t110_terrain_base_mission_layers.md](t110_terrain_base_mission_layers.md) · [`docs/TICKET_LEAD.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md)
 
 **Prerequisites:** T-066 shipped (`53bc2a8`). Repro mission: `70a36667-612f-40c5-ad56-3fb8e0613a17` (~367k slots).
 

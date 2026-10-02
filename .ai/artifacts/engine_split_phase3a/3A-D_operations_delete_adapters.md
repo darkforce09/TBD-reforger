@@ -13,7 +13,7 @@ Every one has the identical shape — no logic of its own:
 ```rust
 pub fn X(args) -> R {
     let r = with_batch("label", || OPS_CTX.with(|c| { /* borrow chain */
-        website_map_engine::data::store::operations::<mod>::X(core, args)
+        map_engine::data::store::operations::<mod>::X(core, args)
     }));
     if changed { mission_history::after_local_edit(); }
     r
@@ -33,7 +33,7 @@ confirm closure; the frontend keeps supplying the DOM one.
 
 ## D2 · Unwind the façade
 
-`apps/website/frontend/src/editor/state/operations.rs` is 98 lines, `#![cfg(target_arch = "wasm32")]`,
+`apps/frontend/src/editor/state/operations.rs` is 98 lines, `#![cfg(target_arch = "wasm32")]`,
 and is a pure re-export surface: eight glob `pub use X::*` lines plus a single
 `pub use entity::{...}` naming **112 symbols**.
 
@@ -63,14 +63,14 @@ frontend**, and 3B moves them. Do not drag them across: gate rule 5 will reject 
 
 ## Done when
 
-`apps/website/frontend/src/editor/state/operations/` and `state/operations.rs` are gone, every
+`apps/frontend/src/editor/state/operations/` and `state/operations.rs` are gone, every
 call site reaches the engine directly, and:
 
 ```
 CARGO_TARGET_DIR=target-container cargo xtask verify engine-layers
-rg 'web_sys|leptos|wasm_bindgen' apps/website/map-engine/src/editing     # EMPTY
-CARGO_TARGET_DIR=target-container cargo test -p website-map-engine --all-features
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
+rg 'web_sys|leptos|wasm_bindgen' legacy/map_engine/src/editing     # EMPTY
+CARGO_TARGET_DIR=target-container cargo test -p map_engine --all-features
+CARGO_TARGET_DIR=target-container cargo test -p frontend
 CARGO_TARGET_DIR=target-container cargo test -p xtask
 CARGO_TARGET_DIR=target-container cargo xtask mk ci-local-leptos
 ```

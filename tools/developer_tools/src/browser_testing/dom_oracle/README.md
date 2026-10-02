@@ -33,7 +33,7 @@ verify: diff_node(golden, capture), at most 40 differences ──▶ PASS / FAIL
 accept: validate_accept_dom ──▶ <slug>.dom.json, <slug>.png, manifest.json row
 ```
 
-`fixture_router.rs` maps a request to the corpus in `apps/website/frontend/tests/fixtures/api/`:
+`fixture_router.rs` maps a request to the corpus in `contracts/fixtures/api_goldens/`:
 the method, two underscores, and the path after `/api/v1/` with every `/` as `__`, then `.json`
 (served minified) or `.sse.txt` (served as `text/event-stream`); the query string never selects a
 fixture. `/api/v1/auth/refresh` gets a complete Bearer token pair from `gate_refresh_answer` in
@@ -58,7 +58,7 @@ route exits 2, never 0.
 
 - Depends on: `tools/developer_tools/src/browser_testing/cdp.rs`, `server.rs`,
   `session_tokens.rs`, and the `FREEZE_SRC` and `DOM_SERIALIZER_SRC` payloads of
-  `fixture_injection.rs`; the fixture corpus in `apps/website/frontend/tests/fixtures/api/`; the
+  `fixture_injection.rs`; the fixture corpus in `contracts/fixtures/api_goldens/`; the
   goldens in `tools/developer_tools/fixtures/dom_oracle/oracle-freeze/`.
 - Used by: `dom_oracle.rs`, which re-exports `routes`, `capture_route`, `diff_node`, `js_len`,
   `validate_accept_dom`, `MissingFixture`, `run` and, to the crate, `seed_script`; `gate v-suite`

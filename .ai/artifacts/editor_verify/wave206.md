@@ -10,7 +10,7 @@ DevTools Protocol; playwright `chromium-1228` `chrome-linux64/chrome` `--headles
 restore/reload isolation ×2, C/C2/C3 T-810 picker, D T-785/T-813 regressions, E register).
 Pixel analysis via a stdlib PNG decoder + crop-diff. Missions created/saved/deleted through the
 same `/api/v1` lifecycle the smokes use; **all `VERIFY206 *` DELETEd (204s), zero leaked**.
-Cargo suite via `wave.sh test --slice T-810 -p website-frontend` into the private
+Cargo suite via `wave.sh test --slice T-810 -p frontend` into the private
 `~/.cache/tbd-target-T-810` (deleted after). **4 pin perturbations across 4 files**, each RED with
 its verbatim message, each restored byte-exact (`git diff --exit-code` clean) + touched.
 
@@ -25,7 +25,7 @@ T-810 vs `47897f26`.
 
 `SEVERITY | file:line | what is wrong | how you proved it`
 
-**NIT | apps/website/frontend/src/eden_top_strip.rs:1652 (data-draft-chip) ← yrs_persist.rs:839 `note_flush_completed` | The "Draft saved just now" chip appears on BOOT of any content-bearing mission (~1 s), BEFORE any operator edit — the hydrate persists the server content to IndexedDB, a real flush completes, and the chip surfaces it. The acceptance line "no chip on a mission that has never been edited" holds only under the code's own definition ("never edited" == content-empty); an operator reopening an unmodified saved mission still sees "Draft saved just now". | Clean fresh-profile boot of a 2-slot saved mission, ZERO operator actions: chip flips `false→true` at t+1.0 s with `last_flush_ms=1786395829672`, while `__editorHistory.can_undo()==false` and `__missionPersist.edit_persist_count()==0` — a flush completed with no edit and no undo step. Honest by construction (a local draft genuinely IS written on hydrate; the T-374 content guard passes because content exists) and the two-layer tooltip explains the model, so this is legibility nuance, not a lie and not a data risk. The TRULY never-edited case is correct: a brand-new EMPTY mission shows NO chip and `last_flush_ms` stays `null` through 8 s of idle (multiple debounce ticks) — the content guard refuses the empty write, so no flush completes.**
+**NIT | apps/frontend/src/eden_top_strip.rs:1652 (data-draft-chip) ← yrs_persist.rs:839 `note_flush_completed` | The "Draft saved just now" chip appears on BOOT of any content-bearing mission (~1 s), BEFORE any operator edit — the hydrate persists the server content to IndexedDB, a real flush completes, and the chip surfaces it. The acceptance line "no chip on a mission that has never been edited" holds only under the code's own definition ("never edited" == content-empty); an operator reopening an unmodified saved mission still sees "Draft saved just now". | Clean fresh-profile boot of a 2-slot saved mission, ZERO operator actions: chip flips `false→true` at t+1.0 s with `last_flush_ms=1786395829672`, while `__editorHistory.can_undo()==false` and `__missionPersist.edit_persist_count()==0` — a flush completed with no edit and no undo step. Honest by construction (a local draft genuinely IS written on hydrate; the T-374 content guard passes because content exists) and the two-layer tooltip explains the model, so this is legibility nuance, not a lie and not a data risk. The TRULY never-edited case is correct: a brand-new EMPTY mission shows NO chip and `last_flush_ms` stays `null` through 8 s of idle (multiple debounce ticks) — the content guard refuses the empty write, so no flush completes.**
 
 No BLOCKER, no MAJOR.
 
@@ -162,7 +162,7 @@ chromium dead, private target dir removed, no DB flip performed.
    `dragged_points_are_the_document_notes_filtered_by_id` ("note-a" vs "note-b").
 Each restored via `git show HEAD:` / `git checkout`, `git diff --exit-code` clean, then touched.
 
-**Suite:** website-frontend **1167 / 0 / 0** (18.23 s, private dir `~/.cache/tbd-target-T-810`,
+**Suite:** frontend **1167 / 0 / 0** (18.23 s, private dir `~/.cache/tbd-target-T-810`,
 deleted after). 19 new `#[test]` fns (asset_catalog 3 · attributes 8 · eden_top_strip 1 ·
 mission_editor 7) — the +19 over wave-205's 1148.
 

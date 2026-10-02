@@ -2,7 +2,7 @@
 //! Domain-specific schemas are generated. The loadout-export model is hand-maintained because
 //! its versioned root `oneOf` is provably lossy (the branches merge and `Wear{}`/`Equipment{}` come
 //! out empty), so it is hand-maintained in
-//! `apps/website/api_v2/src/missions/contract/loadout_projection.rs` and guarded there by serde
+//! `apps/api/src/missions/contract/loadout_projection.rs` and guarded there by serde
 //! round-trip tests against the committed sample fixtures.
 use std::collections::BTreeMap;
 use std::fs;
@@ -20,7 +20,7 @@ mod module_files;
 mod module_plan;
 
 /// Where the generated modules live, relative to the repository root.
-const API_SOURCE_DIR: &str = "apps/website/api_v2/src";
+const API_SOURCE_DIR: &str = "apps/api/src";
 
 /// Each schema file maps to the generated module directory of its owning domain.
 const TARGETS: [(&str, &str); 30] = [

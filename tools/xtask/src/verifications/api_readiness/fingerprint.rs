@@ -60,8 +60,7 @@ const ROOT_INPUTS: &[&str] = &[
 ];
 const CONFIGURATION_FILES: &[&str] = &[
     ".env",
-    "apps/website/.env",
-    "apps/website/api_v2/.env",
+    "apps/api/.env",
     crate::core::repository_layout::DEPLOY_ENV,
 ];
 const CONFIGURATION_ENVIRONMENT: &[&str] = &[

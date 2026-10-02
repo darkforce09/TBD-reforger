@@ -21,7 +21,7 @@ use crate::repository_layout::MapAssetMounts;
 
 mod outliner_drag;
 
-const DIST_DEFAULT: &str = "apps/website/frontend/dist";
+const DIST_DEFAULT: &str = "apps/frontend/dist";
 /// Default editor path for the suite. `sat=preview` keeps smokes off the 152 MB full TBDS GET
 /// (which freezes headless CDP mid-suite once `/map-assets` is live).
 ///

@@ -33,14 +33,14 @@ assets/terrains/<terrain>/manifest.json + dem/everon-dem-16bit.png + locations.j
   localities above importance 0.45; any failure exits 1 without writing. `--dry-run` prints the
   first five rows instead.
 - `export_height_labels` decodes the elevation model with the manifest's scaling, finds peaks with
-  `website_map_engine::world::environment::locations::peaks::find_peaks`, samples the named peaks
+  `map_engine::world::environment::locations::peaks::find_peaks`, samples the named peaks
   and hills of `locations.json`, drops duplicates within 200 m, keeps what `declutter_height_labels`
   draws, and refuses to write an empty set.
 
 ## Boundaries
 
-- Depends on: `website_map_engine::world::environment::locations::peaks` and
-  `website_map_engine::world::terrain::dem` for the elevation model and peak rules;
+- Depends on: `map_engine::world::environment::locations::peaks` and
+  `map_engine::world::terrain::dem` for the elevation model and peak rules;
   `crate::world_export_pipeline::json_number_formatting` for the number spelling;
   `crate::repository_layout` and `crate::browser_testing::server::repo_root` for the folders.
 - Used by: `tools/developer_tools/src/map_raster_pipeline/cli.rs` (`export-locations`,

@@ -83,7 +83,7 @@ node scripts/map-assets/verify-sap-ortho.mjs TERRAIN=everon
 node scripts/map-assets/verify-unified-satellite.mjs TERRAIN=everon
 EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
 make verify-terrain
-cd apps/website/frontend && npm run build && npm run lint
+cd apps/frontend && npm run build && npm run lint
 ```
 
 Log: `.ai/artifacts/t090_1_2_5_1_verify_log.md` — include magick crops for R-FP1, R-FN1, R-REG1.

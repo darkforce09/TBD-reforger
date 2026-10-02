@@ -78,7 +78,7 @@ that network's address with its last byte 0; `ip -4 route` on the host prints bo
    rsync excludes it, so it never leaves the development machine.
 
    ```bash
-   cp tools/xtask/deploy/deploy.env.example tools/xtask/deploy/deploy.env
+   cp deploy/deploy.env.example deploy/deploy.env
    ```
 
    Expected: no output. Set `TBD_SSH_HOST` to `<user>@<host>.local`, then `TBD_SSH_PASS` or
@@ -166,7 +166,7 @@ that network's address with its last byte 0; `ip -4 route` on the host prints bo
     ```
 
     Expected: the deploy plan, with no command sent to the host. The host's
-    `apps/website/api_v2/.env`, which both deploys' rsync excludes, needs `JWT_SECRET` and
+    `apps/api/.env`, which both deploys' rsync excludes, needs `JWT_SECRET` and
     `OBSERVABILITY_TOKEN`; the mod authenticates every call with its machine credential.
 
 13. On the host, let the deploy account's user services run while nobody is logged in; the game
@@ -271,8 +271,9 @@ password, and `cargo xtask deploy staging` writes the rest. Folders are mode 700
         └── rcon-password          generated once on the host by the deploy
 ```
 
-Beside it, the deploy writes each host agent's `~/.config/fleet-host-agent/instance-N/agent.toml`,
-and `--migrate-single-instance` moves the single server's files into
+Beside it, the deploy writes each host agent's `~/.config/fleet_host_agent/instance-N/agent.toml`,
+and `--migrate-single-instance` moves the single server's files, its kebab-case
+`~/.config/fleet-host-agent/` folder and `~/.local/bin/fleet-host-agent` binary included, into
 `~/tbd/retired/single-instance-<UTC time>/`.
 
 - **The join password** is `game.password` of every instance: players type it when they join. It
@@ -329,5 +330,5 @@ to
   Caddy and the host tools on the same host.
 - [Setup command group](/tools/xtask/src/commands/setup/README.md) — what
   `mod bootstrap-staging` and `setup server-profile` do.
-- [Deploy files](/tools/xtask/deploy/README.md) — `deploy.env.example`, the Caddyfile and the
+- [Deploy files](/deploy/README.md) — `deploy.env.example`, the Caddyfile and the
   systemd units.

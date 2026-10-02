@@ -133,13 +133,13 @@ fn farmhouse_golden_parity_is_pinned() {
     struct ParityFile {
         pairs: Vec<(f64, f64, f64, f64, f64, f64, bool)>,
     }
-    let bp: website_map_engine::world::architecture::blueprint::structure::BuildingBlueprint =
+    let bp: map_engine::world::architecture::blueprint::structure::BuildingBlueprint =
         serde_json::from_str(
             &std::fs::read_to_string(fixture("FarmHouse_E_1L01_Wood_blueprint.golden.json"))
                 .expect("read golden"),
         )
         .expect("parse golden");
-    let sidecar = website_map_engine::spatial::bvh::sidecar::BvhSidecar::parse(
+    let sidecar = map_engine::spatial::bvh::sidecar::BvhSidecar::parse(
         &std::fs::read(fixture("FarmHouse_E_1L01_Wood.bvh.golden")).expect("read sidecar"),
     )
     .expect("parse golden sidecar");

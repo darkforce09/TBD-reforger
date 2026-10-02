@@ -14,7 +14,7 @@ First actions matched the brief. EnfusionMCP count was already 19. `export CARGO
 The worktree is `slice/T-936.4` at merge-base + T-942 packing. Before any code:
 
 - `crates/map-engine-core/src/mission/weather.rs` — missing
-- `apps/website/frontend/src/editor/panels/weather_timeline.rs` — missing
+- `apps/frontend/src/editor/panels/weather_timeline.rs` — missing
 - both `TBD_WeatherRuntime.c` — missing
 - `mission.schema.json` — no `weatherTimeline` property
 - `AUTHORED_BLOCKS` keys: `radioPlan`, `winConditions`, `tasks` only
@@ -29,8 +29,8 @@ Weather was one static `environment.weatherPreset`. A payload carrying `weatherT
 | `crates/map-engine-core/src/mission/weather.rs` | NEW. Parse/validate, `WEATHER_PRESETS`, `minutes_strictly_increase` (perturbation target), compile/carrier tests. |
 | `crates/map-engine-core/src/mission/mod.rs` | Register `weather`. |
 | `crates/map-engine-core/src/mission/extensions.rs` | AUTHORED_BLOCKS row `weatherTimeline`; `len()==4`; not in `DOCUMENT_OWNED_BLOCKS`. |
-| `apps/website/frontend/src/editor/panels/weather_timeline.rs` | NEW. Add/edit/delete/reorder, undoable via `update_environment`, refuses equal/out-of-order `atMinutes`. |
-| `apps/website/frontend/src/editor/panels/mod.rs` | Register `weather_timeline`. |
+| `apps/frontend/src/editor/panels/weather_timeline.rs` | NEW. Add/edit/delete/reorder, undoable via `update_environment`, refuses equal/out-of-order `atMinutes`. |
+| `apps/frontend/src/editor/panels/mod.rs` | Register `weather_timeline`. |
 | `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_WeatherRuntime.c` | NEW. Server applies keyframes at `atMinutes` via `ForceWeatherTo`; fog/windDirDeg overrides; logs each transition. Presence is `keyframes.Count()`. |
 | `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_WeatherRuntime.c` | ASCII twin. |
 

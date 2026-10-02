@@ -74,7 +74,7 @@ lines and is split by topic into a folder with a README index when it grows past
 
 ## Worked sample
 
-Written from `apps/website/frontend/src/v2/pages/operations/schedule/`, the API's event handlers
+Written from `apps/frontend/src/v2/pages/operations/schedule/`, the API's event handlers
 and the ticket registry. The sample sits in a fenced block, so no gate reads it; the page's own
 feature doc is written from the same code and may differ.
 
@@ -89,11 +89,11 @@ list.
 
 ## Where it lives
 
-- Code: [`apps/website/frontend/src/v2/pages/operations/schedule/`](/apps/website/frontend/src/v2/pages/operations/schedule/):
+- Code: [`apps/frontend/src/v2/pages/operations/schedule/`](/apps/frontend/src/v2/pages/operations/schedule/):
   `page.rs`, the route component `EventSchedulePage`, and `upcoming_ops.rs`, one event card.
 - Entry: the `/events` route, whose component, access and layout the page README's
-  [Routes](/apps/website/frontend/src/v2/pages/operations/schedule/README.md#routes) gives.
-- Related features: the [event hub page](/documentation/website/frontend/pages/operations/event_detail/event_hub_page.md),
+  [Routes](/apps/frontend/src/v2/pages/operations/schedule/README.md#routes) gives.
+- Related features: the [event hub page](/documentation/apps/frontend/pages/operations/event_detail/event_hub_page.md),
   whose view the schedule embeds.
 
 ## Behaviour
@@ -110,20 +110,20 @@ list.
    the column renders it only while that id is the selected one.
 
 The text of each loading, empty and failed state is in the page README's
-[States](/apps/website/frontend/src/v2/pages/operations/schedule/README.md#states).
+[States](/apps/frontend/src/v2/pages/operations/schedule/README.md#states).
 
 ## Data
 
-The page README's [Data](/apps/website/frontend/src/v2/pages/operations/schedule/README.md#data)
+The page README's [Data](/apps/frontend/src/v2/pages/operations/schedule/README.md#data)
 lists each call with the DTO the page reads. Server-side:
 
 - `GET /api/v1/events` (`list_events` in
-  `apps/website/api_v2/src/operations/handlers/event_listing.rs`): the default scope `upcoming`
+  `apps/api/src/operations/handlers/event_listing.rs`): the default scope `upcoming`
   returns the events that start ahead or are live now, in start order, filtered to those the
   viewer's access admits; each item adds `mission_count`, `registered`, `filled`, `total_slots` and
   `percent` to the event row.
 - `GET /api/v1/events/{id}` (`get_event` in
-  `apps/website/api_v2/src/operations/handlers/event_hub.rs`): once the viewer's access to the
+  `apps/api/src/operations/handlers/event_hub.rs`): once the viewer's access to the
   event is checked, the event and each attached mission's dossier in start order, read in one
   read-only snapshot.
 - `POST` and `DELETE /api/v1/event-missions/{emid}/register`: registration and withdrawal, sent by
@@ -135,7 +135,7 @@ lists each call with the DTO the page reads. Server-side:
   shows the `calendar_month` icon.
 - The fill bar follows the server's `percent`, clamped to 0 to 100, because `total_slots` is zero
   until missions are attached.
-- Design target: the [operations schedule blueprint](/documentation/website/frontend/pages/operations/schedule/visual_references/operations_schedule_blueprint/operations_schedule_blueprint.png).
+- Design target: the [operations schedule blueprint](/documentation/apps/frontend/pages/operations/schedule/visual_references/operations_schedule_blueprint/operations_schedule_blueprint.png).
 
 ## Open work
 

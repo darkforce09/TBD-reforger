@@ -24,7 +24,7 @@ tools/developer_tools/src/browser_testing/mortar_offline/
 ```text
 preflight   dist (index.html, service_worker.js), Everon manifest, DEM, tbd-sat, tiles/map/index.json,
             and the recorded reads named from the committed catalog's catalog_id and version
-serve       dist + /map-assets + /api from apps/website/frontend/tests/fixtures/api (server/)
+serve       dist + /map-assets + /api from contracts/fixtures/api_goldens (server/)
 online      /tools/mortar ─▶ data-offline-state on <html> = ready (incomplete, quota-short,
             unsupported or failed end the run), with data-offline-optional = complete or
             missing (the cross-origin icon font; printed, absent fails) ─▶ an active service worker
@@ -65,7 +65,7 @@ network domain enabled so each response says whether the service worker answered
 
 - Depends on: `crate::browser_testing::cdp` (launch, pages, input, screenshots),
   `crate::browser_testing::server` (the server and its `api_fixture_corpus`),
-  `crate::repository_layout::MapAssetMounts`; `website_map_engine` (`camera::grid_reference`,
+  `crate::repository_layout::MapAssetMounts`; `map_engine` (`camera::grid_reference`,
   `data::scenario::ballistics::{catalog, fire_mission, battery, solver, solution_wording}`); `image` for the
   screenshot; the committed catalog in `contracts/catalogs/ballistics/`.
 - Used by: `gate mortar-offline` in `tools/developer_tools/src/browser_testing/cli.rs`, run by
@@ -74,7 +74,7 @@ network domain enabled so each response says whether the service worker answered
   `data-offline-refresh`, `data-mortar-catalog`, `data-mortar-offline`,
   `data-mortar-input`, `data-mortar-position`, `data-mortar-map-state`, `data-mortar-solution`,
   `data-mortar-problems`, `data-mortar-battery` and `data-mortar-gun`; the page and `expected_solution.rs` both word a
-  solution with `apps/website/map-engine/src/data/scenario/ballistics/solution_wording.rs`, so the
+  solution with `legacy/map_engine/src/data/scenario/ballistics/solution_wording.rs`, so the
   comparison is exact at every shown digit and never a tolerance.
 - The gate runs against the `dist` it is given: run it through `cargo xtask mk mortar-offline-gate`,
   which builds the release app first; a `dist` built before a solver change fails
@@ -82,9 +82,9 @@ network domain enabled so each response says whether the service worker answered
 
 ## Related documentation
 
-- [Mortar calculator page](/apps/website/frontend/src/v2/pages/field_tools/mortar/README.md) — the
+- [Mortar calculator page](/apps/frontend/src/v2/pages/field_tools/mortar/README.md) — the
   page, its inputs and its solution panel.
-- [Offline core](/apps/website/frontend/src/v2/core/offline/README.md) — the pack download and the
+- [Offline core](/apps/frontend/src/v2/core/offline/README.md) — the pack download and the
   `data-offline-state` values.
-- [Offline service worker](/apps/website/offline-service-worker/README.md) — the worker the reload
+- [Offline service worker](/apps/offline_service_worker/README.md) — the worker the reload
   is answered by.

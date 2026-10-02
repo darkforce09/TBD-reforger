@@ -89,9 +89,9 @@ configuration fingerprints of that moment.
 
 The receipts and their logs are in `target/api-readiness/`, the raw journals in
 `target/staging/<check>/<run>/`. Record the verdict, counts, timestamps and paths in the
-[checkpoint](/documentation/website/api_v2/verification_evidence/progress_checkpoint.md) and the
+[checkpoint](/documentation/apps/api/verification_evidence/progress_checkpoint.md) and the
 results section of the
-[staging design note](/documentation/website/api_v2/verification_evidence/staging.md).
+[staging design note](/documentation/apps/api/verification_evidence/staging.md).
 
 ## Troubleshooting
 
@@ -106,5 +106,5 @@ results section of the
 
 - [Recovery and cleanup](/documentation/runbooks/staging_verification/recovery_and_cleanup.md) —
   when a run stops early.
-- [Staging design note](/documentation/website/api_v2/verification_evidence/staging.md) — what
+- [Staging design note](/documentation/apps/api/verification_evidence/staging.md) — what
   each step proves.

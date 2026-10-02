@@ -29,7 +29,7 @@ TBD_Framework ──▶ vanilla 58D0FB3206B6F859
 TBD_EMCP      ──▶ vanilla
 TBD_Export    ──▶ vanilla, TBD_EMCP
 
-dedicated server ── loads ──▶ TBD_Framework ── HTTP ──▶ apps/website/api_v2
+dedicated server ── loads ──▶ TBD_Framework ── HTTP ──▶ apps/api
 Workbench ── opens ──▶ TBD_Export (+ TBD_EMCP) ◀── Net API ── enfusion-mcp, cargo xtask mcp
 ```
 
@@ -66,12 +66,12 @@ cargo xtask mod playtest --mission=<uuid> --admin=<identityId>  # a local dedica
 cargo xtask mod test-game-runtime-api                           # the game-runtime routes, with TBD_MACHINE_CREDENTIAL
 ```
 
-The staging fleet takes `cp tools/xtask/deploy/deploy.env.example tools/xtask/deploy/deploy.env`,
+The staging fleet takes `cp deploy/deploy.env.example deploy/deploy.env`,
 filled with `TBD_SSH_HOST` and the `TBD_FLEET_*` settings; on the host, the machine credentials
 that `cargo xtask staging provision-fleet` writes and the join password in
 `~/tbd/fleet/join-password`; then `cargo xtask deploy staging`. Each fleet instance N runs its own
 dedicated server (`tbd-reforger@N`, game port `TBD_FLEET_GAME_PORT_BASE + N`) beside its own host
-agent (`fleet-host-agent@N`, configured by `~/.config/fleet-host-agent/instance-N/agent.toml`);
+agent (`fleet_host_agent@N`, configured by `~/.config/fleet_host_agent/instance-N/agent.toml`);
 the relay instance's agent (instance 5 on staging) reaches the API through the
 acknowledgement-dropping relay. With `TBD_WORKSHOP_MOD_ID` set, clients Direct Join an instance
 and download the Workshop mod; only instance 1 is listed in the server browser, and a local
@@ -93,13 +93,13 @@ Other mod commands:
 
 ## Boundaries
 
-- Depends on: the vanilla Arma Reforger data addon; the website API in `apps/website/api_v2/`,
+- Depends on: the vanilla Arma Reforger data addon; the website API in `apps/api/`,
   which the framework calls over HTTP; the wire shapes in `contracts/definitions/`; the pinned
   `enfusion-mcp` package in `tools/enfusion_mcp_node_package/`.
 - Used by: the dedicated servers that `cargo xtask mod playtest`, `cargo xtask deploy staging` and
   the fleet host agent in `apps/fleet_host_agent/` boot; the gates in
   `tools/xtask/src/commands/mod_ops/`, run by `.github/workflows/mod-gates.yml`; the Mission
-  Creator in `apps/website/frontend/`, which embeds the framework's alias registry; and the
+  Creator in `apps/frontend/`, which embeds the framework's alias registry; and the
   importers of the Workbench exports in `contracts/catalogs/` and `assets/terrains/`.
 - Rules:
   - No addon depends on `tbd-framework`, and it carries no `Scripts/WorkbenchGame/`

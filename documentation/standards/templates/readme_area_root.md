@@ -3,7 +3,7 @@
 # README template: area root
 
 **When to use:** the top of a code tree, or a folder that groups several products without being one
-(`apps/`, `apps/website/`, `apps/mod/`, `tools/`, `contracts/`, `assets/`). The
+(`apps/`, `apps/mod/`, `tools/`, `contracts/`, `assets/`). The
 [README standard](/documentation/standards/readme_standard.md) defines every rule this template
 follows; the area root kind adds Getting started.
 
@@ -11,7 +11,7 @@ follows; the area root kind adds Getting started.
 
 Copy the block and replace every `<…>` placeholder; each one says what goes there. An area root that
 also holds files of a later kind, such as deploy files, adds that kind's sections after Getting
-started; the worked sample shows one.
+started, in kind-table order.
 
 ````markdown
 # <Name of the area, in plain words: no path, no backticks>
@@ -52,108 +52,70 @@ for. Link the runbook for the full procedure.>
 
 ## Worked sample
 
-Written from `apps/website/`. It is also the standard's example of a folder that is two kinds: an
-area root that holds the API's release `Dockerfile` and the staging compose file, so Configuration
-and Installed by follow Getting started. The sample sits in a fenced block, so no gate reads it as a
-README; the folder's own README.md is written from the same code and may differ.
+Written from `apps/`. The sample sits in a fenced block, so no gate reads it as a README; the
+folder's own README.md is written from the same code and may differ.
 
 ````markdown
-# Website platform
+# Applications
 
-The community's web platform: the REST API, the single-page app, and the two engines they share for
-maps, [missions](/documentation/glossary/g_to_m.md#mission) and GPU rendering. The folder also holds
-the API's release image and the staging compose stack.
+Every product the TBD Reforger platform ships: the website's API, single-page app and service
+worker, the [Enfusion](/documentation/glossary/a_to_f.md#enfusion) mod that game servers run, the
+agent that controls those servers, and the desktop viewer for the ticket registry. Developer
+tooling lives in `tools/`, not here.
 
 ## Contents
 
 ```text
-apps/website/
-├── api_v2/                     the REST API and SSE hub, crate `website-api`
-├── docker-compose.staging.yml  the staging stack: Postgres, Caddy, and the API under the `api` profile
-├── Dockerfile                  the API's release image, built from the repository root
-├── frontend/                   the single-page app, crate `website-frontend`, built by Trunk
-├── graphics-engine/            GPU rendering with no map concept, crate `website-graphics-engine`
-├── map-engine/                 world, streaming and mission domain, crate `website-map-engine`
-└── shared/                     the URL-guard test table that the API and the app both include
+apps/
+├── api/                     the website's REST API and realtime hub, crate `api`
+├── fleet_host_agent/        the game-host agent for fleet commands, crate `fleet_host_agent`
+├── frontend/                the website's single-page app and Mission Creator, crate `frontend`
+├── mod/                     the Enfusion mod suite: game mod, Workbench export addon, MCP bridge
+├── offline_service_worker/  the website's service worker for offline packs, crate `offline_service_worker`
+└── ticketboard/             the native desktop viewer of the ticket registry, crate `ticketboard`
 ```
 
 ## How it works
 
-The four crates are members of the root Cargo workspace. The browser runs `website-frontend`,
-compiled to WebAssembly; it calls `website-api` over `/api/v1` and Server-Sent Events and streams
-terrain from `/map-assets`. Both link `website-map-engine`: the API takes only its `scenario` tier,
-which compiles and validates missions, and the app takes the `world`, `io`, `store` and `editing`
-tiers, and `render` in its browser build, which the
-[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) draws and edits with.
-`website-graphics-engine` sits below the map engine.
+The API is the hub. Members use the single-page app in a browser. On each game host, the dedicated
+server runs the mod, which reads its mission deployment from the API's `/api/v1/game-runtime/`
+routes and reports results to `/api/v1/ingest/`. Beside the server, the
+[fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) polls
+`/api/v1/fleet-executor/` over outbound HTTPS and carries out each fleet command. Ticketboard
+stands apart: it reads `.ai/tickets/` through the `ticket_engine` crate in `tools/`.
 
 ```text
-browser ── website-frontend ── /api/v1, SSE, /map-assets ──▶ website-api ──▶ Postgres
-                  │                                               │
-                  └──────────▶ website-map-engine ◀───────────────┘ (scenario tier)
-                                        │
-                               website-graphics-engine
+browser ── frontend ──▶ api ◀── HTTPS ── fleet_host_agent ─┐ controls
+                        ▲  ▲                               ▼
+                        │  └── game-runtime, ingest ── dedicated server + mod
+                     Postgres
 ```
 
 ## Getting started
 
-Copy `api_v2/.env.example` to `api_v2/.env`, then run these from the repository root, in this
-order:
+Run these from the repository root, in this order (the full procedure is in the local development
+runbook):
 
 ```bash
-cargo xtask db up        # Postgres 18 on host port 5434, in the background
-cargo xtask mk rust-api  # the API on port 8080: applies the migrations, stays in the foreground
-cargo xtask db seed      # a second terminal, once the API logs `migrations applied`
-cargo xtask mk leptos    # the app on 127.0.0.1:3000, a release build; stays in the foreground
+cargo xtask db up        # Postgres on host port 5434
+cargo xtask mk rust-api  # the API on port 8080; stays in the foreground
+cargo xtask mk leptos    # the app on 127.0.0.1:3000; stays in the foreground, in a second terminal
+cargo xtask mod compile  # compile-checks the mod's scripts in a headless Enfusion
 ```
-
-The seeds fill tables the migrations create, and only the API applies the migrations; each psql
-run stops at the first failed statement, so seeding a fresh database before the API's first boot
-stops at the first seed with psql's exit code 3. The app's server proxies `/api` and `/map-assets`
-to the API. In development, `/api/v1/auth/dev-login?role=admin` signs in without Discord.
-
-## Configuration
-
-- `Dockerfile` builds `website-api --bin api` in a trimmed workspace (the API, the two engines,
-  `contracts/definitions/` and `contracts/rules/kit-aliases.json`) from the repository root.
-  The runtime image runs as uid 65534, listens on `PORT` (8080), needs `DATABASE_URL` and
-  `JWT_SECRET`, and does not serve the app.
-- `docker-compose.staging.yml` defines `postgres` (Postgres 18, container `tbd_staging_db`, bound to
-  loopback on `TBD_POSTGRES_HOST_PORT`, 5432 by default, password `POSTGRES_PASSWORD`), `caddy` (the
-  web server on the host's `:3080`, running `tools/xtask/deploy/Caddyfile.website`) and, under
-  the `api` profile, `api`: the image built from the `Dockerfile`, bound to loopback port 8080 and set up
-  from the shell's `APP_ENV`, `JWT_SECRET`, `FRONTEND_URL`, `ALLOWED_ORIGINS`, `OBSERVABILITY_TOKEN`,
-  `TRUSTED_PROXIES` and `DISCORD_*` values, with the terrain and glyph trees mounted read-only and the
-  uploads on a named volume.
-
-## Installed by
-
-- `cargo xtask deploy website` starts the compose file's `postgres` and `caddy` services on the
-  host that `TBD_SSH_HOST` names, with `TBD_POSTGRES_HOST_PORT` taken from
-  `tools/xtask/deploy/deploy.env` (`TBD_SKIP_COMPOSE=1` skips both). The API itself runs there
-  as the `tbd-website-api` systemd unit, not from the image.
-- `cargo xtask deploy staging` runs no compose command; it checks that the API answers on that
-  host.
-- The image is built by that compose file with `--profile api`, or by hand with
-  `docker build -f apps/website/Dockerfile .` from the repository root.
 
 ## Boundaries
 
-- Depends on: `contracts/`, whose schemas and kit-alias rules the API and the map engine embed;
-  `assets/terrains/` and `assets/glyphs/`, served under `/map-assets`; and Postgres 18.
-- Used by: the game servers, through the mod's API bridge in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/API/`; the fleet host agent in `apps/fleet_host_agent/`;
-  the developer tools in `tools/developer_tools/`, which link `website-map-engine` and drive the
-  app in a headless browser; and the build, database and deploy commands of `tools/xtask/`.
-- Rules: the graphics engine imports nothing from the map engine and names no map concept; inside the
-  map engine only the frame-packet boundary names the graphics engine's `frame` module, and nothing
-  names its device, pipelines or shaders (`cargo xtask verify engine-layers` checks these).
+- Depends on: `contracts/`, the schemas shared across the API, the mod and the host agent;
+  `assets/`, the map data the API serves; the engines in `legacy/`; Postgres, Discord and the Arma
+  Reforger dedicated server.
+- Used by: the members' browsers and the game servers at run time; the xtask commands that build,
+  test, check and deploy the products.
+- Rules: the products share data only over the API and through the schemas in `contracts/`; the
+  engine layer rules are held by `cargo xtask verify engine-layers`.
 
 ## Related documentation
 
 - [Local development](/documentation/runbooks/local_development.md) — the full local setup.
-- [Website deployment](/documentation/runbooks/website_deployment.md) — deploying to the home
-  server.
-- [Frontend documentation](/documentation/website/frontend/README.md) and
-  [API documentation](/documentation/website/api_v2/README.md) — the feature docs of each side.
+- [Mod documentation](/documentation/mod/README.md) — the mod's design, screens and export
+  evidence.
 ````

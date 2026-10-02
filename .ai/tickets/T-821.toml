@@ -21,7 +21,7 @@ migration_legacy = ["WAVE-203 VERIFIER FILING (wave203.md MINOR, PRE-EXISTING â€
 
 missing=0
 
-Phase 5 doc writer F05 (verified at HEAD): the FIRST Save Version on a new mission also 409s. POST /missions seeds version 0.1.0 (apps/website/api_v2/src/missions/handlers/mission_lifecycle.rs:126-127, doc :50), and the Mission Creator prefill is still the static '0.1.0' (apps/website/frontend/src/v2/apps/editor/mission_editor.rs:120), so accepting the default on a fresh mission hits 'version already exists' (apps/website/api_v2/src/missions/handlers/mission_versions.rs:105). The file paths in this ticket's body no longer exist; save_semver is declared at apps/website/frontend/src/v2/apps/editor/mission_editor.rs:120. The Export JSON envelope reading the same field is T-1153.
+Phase 5 doc writer F05 (verified at HEAD): the FIRST Save Version on a new mission also 409s. POST /missions seeds version 0.1.0 (apps/api/src/missions/handlers/mission_lifecycle.rs:126-127, doc :50), and the Mission Creator prefill is still the static '0.1.0' (apps/frontend/src/v2/apps/editor/mission_editor.rs:120), so accepting the default on a fresh mission hits 'version already exists' (apps/api/src/missions/handlers/mission_versions.rs:105). The file paths in this ticket's body no longer exist; save_semver is declared at apps/frontend/src/v2/apps/editor/mission_editor.rs:120. The Export JSON envelope reading the same field is T-1153.
 """
 main_goal = "Prefill save version from persisted latest plus patch-bump not static 0.1.0."
 context = [
@@ -61,8 +61,8 @@ citations = [
 ]
 estimated = ["scope"]
 owns = [
-    "apps/website/frontend/src/editor/state/commands_hotkeys.rs",
-    "apps/website/frontend/src/editor/mission_editor.rs",
+    "apps/frontend/src/editor/state/commands_hotkeys.rs",
+    "apps/frontend/src/editor/mission_editor.rs",
 ]
 
 [scope]

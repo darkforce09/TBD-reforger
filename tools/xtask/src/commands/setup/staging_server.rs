@@ -113,7 +113,7 @@ fn next_steps() -> Vec<String> {
             crate::core::repository_layout::documentation::STAGING_SERVER_RUNBOOK
         ),
         "  1. steamcmd +app_update 1890870 on server".into(),
-        "  2. Create apps/website/api_v2/.env on server (JWT_SECRET + OBSERVABILITY_TOKEN)".into(),
+        "  2. Create apps/api/.env on server (JWT_SECRET + OBSERVABILITY_TOKEN)".into(),
         "  3. sudo loginctl enable-linger \"$USER\"   (on the host, as the deploy user)".into(),
         "  4. Register one game server per fleet instance N in Server Control, issue each its".into(),
         "     mod_runtime and host_agent credentials, and write them on the host to".into(),

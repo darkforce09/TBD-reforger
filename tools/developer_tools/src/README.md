@@ -31,14 +31,14 @@ tools/developer_tools/src/
 Each binary in `bin/` calls one subsystem's command-line entry, and the subsystems share three
 foundations: `enfusion_pak` reads the game's archives, `repository_layout` names every folder and
 file they touch, and `repository_paths` (or `browser_testing::server::repo_root`) finds the checkout
-root they resolve against. `website-map-engine` supplies the formats, geometry and spatial code;
+root they resolve against. `map_engine` supplies the formats, geometry and spatial code;
 nothing here is compiled for the browser.
 
 ```text
 bin/enf, bin/mcpd      ──▶ enfusion_tooling             ──┐
 bin/gate, bin/capture  ──▶ browser_testing              ──┤
 bin/world              ──▶ world_export_pipeline        ──┼──▶ enfusion_pak, repository_layout,
-bin/map                ──▶ map_raster_pipeline          ──┤    repository_paths, website_map_engine
+bin/map                ──▶ map_raster_pipeline          ──┤    repository_paths, map_engine
 cargo xtask map, schema ─▶ blueprint, map_verification  ──┘
 
 bin/acknowledgement_dropping_relay ──▶ staging_verification::acknowledgement_relay
@@ -69,7 +69,7 @@ xtask schema` commands call their entry functions directly with the checkout roo
 
 ## Boundaries
 
-- Depends on: `website-map-engine` with its `world`, `streaming`, `io` and `bvh` features; the image
+- Depends on: `map_engine` with its `world`, `streaming`, `io` and `bvh` features; the image
   crates (`image`, `png`, `image-webp`, `webp`, `resvg`, `bcdec_rs`); `tokio`, `tokio-tungstenite`,
   `axum` and `reqwest` for the browser harness and its servers; `clap`, `serde_json`, `jsonschema`,
   `flate2` and `sha2`.

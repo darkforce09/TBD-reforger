@@ -4,7 +4,7 @@
 //! one named `tests` or `test`, or one whose attributes enable it under `cfg(test)` — so the only
 //! test module a production file declares is `#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`.
 //! **Position:** reads the Rust sources of [`super::source_roots`]; consumed by the
-//! `engineering_laws` test binary of `website-api`.
+//! `engineering_laws` test binary of `api`.
 //! **Signals & state:** none; pure functions over source text.
 //! **Invariants:** the check is line-level and `cfg`-aware: the attributes that apply to a module
 //! are the `#[...]` attributes on its own line and on the attribute, doc-comment, comment and blank

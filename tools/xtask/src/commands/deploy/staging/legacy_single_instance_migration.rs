@@ -2,8 +2,8 @@
 //!
 //! **Role:** builds the check that refuses a fleet deploy while the single-instance units are still
 //! installed ([`single_instance_units_absent_payload`]), and the migration that stops and disables
-//! them and archives their unit files, profile, server config and host agent files
-//! ([`migration_payload`]).
+//! them and archives their unit files, the single host agent's configuration folder and binary,
+//! the profile and the server config ([`migration_payload`]).
 //!
 //! **Position:** called by the deploy pipeline in `super::remote`: the check runs before the rsync
 //! when the flag is absent, the migration after the rsync and before any instance file is written
@@ -11,18 +11,28 @@
 //!
 //! **Signals & state:** none.
 //!
-//! **Invariants:** the migration moves and never deletes: everything it retires lands in one new
-//! folder `~/tbd/retired/single-instance-<UTC time>/`; it refuses a profile inside the fleet root;
-//! with nothing left to retire it creates no folder and succeeds; it ends by proving neither
-//! single-instance unit is loaded, because instance 1 takes the ports the single server held.
+//! **Invariants:** every name this module retires is spelled as the single-instance install wrote
+//! it on the host, in kebab-case (`fleet-host-agent.service`, `~/.config/fleet-host-agent/`,
+//! `~/.local/bin/fleet-host-agent`), while everything the fleet installs carries the package's
+//! snake_case name `fleet_host_agent`; so the old configuration folder holds nothing of the fleet
+//! and is retired whole, and this module names no snake_case agent path. The migration moves and
+//! never deletes: everything it retires lands in one new folder
+//! `~/tbd/retired/single-instance-<UTC time>/` under a fixed archive name; it refuses a profile
+//! inside the fleet root; with nothing left to retire it creates no folder and succeeds; it ends
+//! by proving neither single-instance unit is loaded, because instance 1 takes the ports the
+//! single server held.
 
 use super::fleet_instances::FLEET_ROOT_UNDER_HOME;
 
-/// The units of the single-instance server.
+/// The units of the single-instance server, as the host holds them.
 pub const SINGLE_INSTANCE_UNITS: [&str; 2] = ["tbd-reforger.service", "fleet-host-agent.service"];
-/// The single host agent's files under `~/.config/fleet-host-agent/`.
-pub const SINGLE_INSTANCE_AGENT_FILES: [&str; 3] =
-    ["agent.toml", "machine-credential", "rcon-password"];
+/// The single host agent's configuration folder under `$HOME`, retired whole.
+pub const SINGLE_INSTANCE_AGENT_CONFIGURATION: &str = ".config/fleet-host-agent";
+/// The single host agent's binary under `$HOME`.
+pub const SINGLE_INSTANCE_AGENT_BINARY: &str = ".local/bin/fleet-host-agent";
+/// The archive names of the configuration folder and the binary, which share a file name.
+const ARCHIVED_AGENT_CONFIGURATION: &str = "fleet-host-agent-configuration";
+const ARCHIVED_AGENT_BINARY: &str = "fleet-host-agent-binary";
 
 const UNITS_ABSENT: &str = r#"set -uo pipefail
 installed=""
@@ -49,7 +59,6 @@ PROFILE='@PROFILE@'
 SERVER_CONFIG='@SERVER_CONFIG@'
 FLEET="$HOME/@FLEET@"
 UNITS="$HOME/.config/systemd/user"
-AGENT="$HOME/.config/fleet-host-agent"
 case "$PROFILE/" in
   "$FLEET"/*) echo "FAIL: TBD_PROFILE_DIR $PROFILE is inside the fleet root $FLEET; refusing to archive it" >&2; exit 1 ;;
 esac
@@ -61,23 +70,26 @@ for unit in @UNITS@; do
   fi
 done
 retire=()
+archived_as=()
+retire_if_present() {
+  if [ -e "$1" ]; then retire+=("$1"); archived_as+=("$2"); fi
+}
 for unit in @UNITS@; do
-  if [ -e "$UNITS/$unit" ]; then retire+=("$UNITS/$unit"); fi
+  retire_if_present "$UNITS/$unit" "$unit"
 done
-for file in @AGENT_FILES@; do
-  if [ -e "$AGENT/$file" ]; then retire+=("$AGENT/$file"); fi
-done
-if [ -e "$PROFILE" ]; then retire+=("$PROFILE"); fi
-if [ -e "$SERVER_CONFIG" ]; then retire+=("$SERVER_CONFIG"); fi
+retire_if_present "$HOME/@AGENT_CONFIGURATION@" @ARCHIVED_AGENT_CONFIGURATION@
+retire_if_present "$HOME/@AGENT_BINARY@" @ARCHIVED_AGENT_BINARY@
+retire_if_present "$PROFILE" "$(basename "$PROFILE")"
+retire_if_present "$SERVER_CONFIG" "$(basename "$SERVER_CONFIG")"
 if [ "${#retire[@]}" -eq 0 ]; then
   echo "  nothing of the single-instance server is left to archive"
 else
   ARCHIVE="$HOME/tbd/retired/single-instance-$(date -u +%Y%m%dT%H%M%SZ)"
   mkdir -p "$HOME/tbd/retired"
   mkdir "$ARCHIVE"
-  for item in "${retire[@]}"; do
-    mv "$item" "$ARCHIVE/"
-    echo "  archived $item"
+  for i in "${!retire[@]}"; do
+    mv "${retire[$i]}" "$ARCHIVE/${archived_as[$i]}"
+    echo "  archived ${retire[$i]} as ${archived_as[$i]}"
   done
   echo "  single-instance files archived in $ARCHIVE"
 fi
@@ -91,14 +103,39 @@ done
 "#;
 
 /// Stop and disable the single-instance units, then move their unit files, the single agent's
-/// files, `profile_dir` and `server_config` into one timestamped folder under `~/tbd/retired/`.
+/// configuration folder and binary, `profile_dir` and `server_config` into one timestamped folder
+/// under `~/tbd/retired/`.
 pub fn migration_payload(profile_dir: &str, server_config: &str) -> String {
     MIGRATION
         .replace("@PROFILE@", profile_dir)
         .replace("@SERVER_CONFIG@", server_config)
         .replace("@FLEET@", FLEET_ROOT_UNDER_HOME)
         .replace("@UNITS@", &SINGLE_INSTANCE_UNITS.join(" "))
-        .replace("@AGENT_FILES@", &SINGLE_INSTANCE_AGENT_FILES.join(" "))
+        .replace("@AGENT_CONFIGURATION@", SINGLE_INSTANCE_AGENT_CONFIGURATION)
+        .replace(
+            "@ARCHIVED_AGENT_CONFIGURATION@",
+            ARCHIVED_AGENT_CONFIGURATION,
+        )
+        .replace("@AGENT_BINARY@", SINGLE_INSTANCE_AGENT_BINARY)
+        .replace("@ARCHIVED_AGENT_BINARY@", ARCHIVED_AGENT_BINARY)
+}
+
+/// The dry-run line for the check without the flag.
+pub fn units_absent_plan_line() -> String {
+    format!(
+        "[dry-run] refuse while {} is installed",
+        SINGLE_INSTANCE_UNITS.join(" or ")
+    )
+}
+
+/// The dry-run line for the migration with the flag.
+pub fn migration_plan_line(profile_dir: &str, server_config: &str) -> String {
+    format!(
+        "[dry-run] migrate: stop and disable {}; archive their unit files, \
+         ~/{SINGLE_INSTANCE_AGENT_CONFIGURATION}/, ~/{SINGLE_INSTANCE_AGENT_BINARY}, {profile_dir} \
+         and {server_config} under ~/tbd/retired/single-instance-<UTC time>/",
+        SINGLE_INSTANCE_UNITS.join(" and ")
+    )
 }
 
 #[cfg(test)]

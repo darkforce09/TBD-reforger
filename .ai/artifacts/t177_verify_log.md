@@ -8,7 +8,7 @@
 |------|--------|
 | `make ci-local` (full CI mirror, pinned 1.95.0) | **PASS** (exit 0) |
 | `make leptos-gates` (18 editor smokes + v-suite + `gate doctor`) | **PASS** — 20/20, 0 fail |
-| `cargo test -p website-frontend` (incl. new outliner test) | PASS — 74/74 |
+| `cargo test -p frontend` (incl. new outliner test) | PASS — 74/74 |
 | fmt + clippy (frontend wasm32 + tbd-tools) | clean |
 | `gate doctor` (new fail-fast preflight) | OK — chromium/toolchain/RAM ✓, liveness ✓ |
 

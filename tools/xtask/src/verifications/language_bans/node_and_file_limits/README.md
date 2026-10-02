@@ -26,7 +26,7 @@ prints one `SIZE-3:` line on stderr, and the summary line on stdout reads
 `scanned N source file(s) (R .rs, C .c)`. A missing root or an unreadable file is a check that
 did not run, never a pass — an explicit workspace member whose folder is missing included — and
 so is a walk that found no source file at all. The
-`engineering_laws` test binary of `website-api` reads the same scan, so the gate and that binary
+`engineering_laws` test binary of `api` reads the same scan, so the gate and that binary
 judge the tree the same way.
 
 `MOD_SCRIPT_ROOTS` names the three addon script roots (`apps/mod/tbd-framework/Scripts`,

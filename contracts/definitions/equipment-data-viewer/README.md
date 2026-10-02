@@ -20,8 +20,8 @@ contracts/definitions/equipment-data-viewer/
 ## How it works
 
 `cargo xtask ci schema-codegen` generates one Rust module per schema into
-`apps/website/api_v2/src/community_content/models/generated/equipment_data_viewer/`, and the
-handlers in `apps/website/api_v2/src/community_content/handlers/equipment_data_viewer/` answer
+`apps/api/src/community_content/models/generated/equipment_data_viewer/`, and the
+handlers in `apps/api/src/community_content/handlers/equipment_data_viewer/` answer
 the `GET /api/v1/debug/equipment-data/…` routes with those types:
 
 | Schema | Root type | Routes under `/api/v1/debug/equipment-data/` |
@@ -34,8 +34,8 @@ the `GET /api/v1/debug/equipment-data/…` routes with those types:
 | `resource-cards.schema.json` | `EquipmentResourceCardPage` | `resource-cards` |
 
 `download` answers with the dataset file itself and has no schema here. The frontend mirrors each
-root type in `apps/website/frontend/src/v2/core/api/dto/equipment_data_viewer/`, and
-`apps/website/frontend/src/v2/core/api/dto/tests/equipment_data_viewer_parity.rs` decodes every
+root type in `apps/frontend/src/v2/core/api/dto/equipment_data_viewer/`, and
+`apps/frontend/src/v2/core/api/dto/tests/equipment_data_viewer_parity.rs` decodes every
 `positive/` fixture of `contracts/fixtures/equipment-data-viewer/` into its DTO, claiming every
 wire field, and refuses every `negative/` one.
 
@@ -56,13 +56,13 @@ wire field, and refuses every `negative/` one.
 - Producers: people; the schemas are written by hand alongside the viewer's handlers.
 - Consumers:
   - `cargo xtask ci schema-codegen`, which generates the API models;
-  - the API handlers and services under `apps/website/api_v2/src/community_content/`, through
+  - the API handlers and services under `apps/api/src/community_content/`, through
     the generated models;
-  - `apps/website/api_v2/tests/contract_parity_equipment_viewer.rs`, which imports a committed
+  - `apps/api/tests/contract_parity_equipment_viewer.rs`, which imports a committed
     export, validates every route's answer against its schema and requires it to equal its
     golden, the `positive/` fixtures among them;
   - the frontend DTO parity tests named above, and the equipment data viewer bench in
-    `apps/website/frontend/src/v2/apps/debug/data_viewer/`, through the DTOs.
+    `apps/frontend/src/v2/apps/debug/data_viewer/`, through the DTOs.
 
 ## Boundaries
 

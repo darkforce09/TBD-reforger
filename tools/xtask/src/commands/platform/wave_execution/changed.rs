@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 use super::{Ctx, git_stdout_lossy, host, ledger};
 
 /// The SPA crate, repo-relative — the root of the wasm dependency walk.
-pub const FRONTEND_DIR: &str = "apps/website/frontend";
+pub const FRONTEND_DIR: &str = "apps/frontend";
 use crate::{wprint, wprintln};
 
 /// The default diff base — the slice's own range inside a worktree.
@@ -39,3 +39,5 @@ pub use include_consumer_package_dirs::workspace_members;
 
 #[cfg(test)]
 use changed_rs::{file_edition, frontend_include_input_touched, frontend_include_inputs, join_rel};
+#[cfg(test)]
+use include_consumer_package_dirs::include_consumers_under;

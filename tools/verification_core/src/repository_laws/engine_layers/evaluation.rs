@@ -28,6 +28,7 @@ pub(super) fn evaluate(
     results: &mut Vec<EngineLayerRuleResult>,
 ) -> (u8, Vec<String>) {
     let BoundaryPatterns {
+        map_engine_import,
         decl,
         vocab,
         gpu,
@@ -50,14 +51,13 @@ pub(super) fn evaluate(
     } = sources;
 
     o.push(RULE1_HEAD.to_string());
-    let path_use = Pattern::literal(MAP_ENGINE_PATH);
     let mut breaches: Vec<String> = Vec::new();
-    match scan::matching_lines(&path_use, &sources) {
+    match scan::matching_lines(&map_engine_import, &sources) {
         Ok(hits) => breaches.extend(hits.iter().map(|h| rel(repo_root, h))),
         Err(cause) => return refuse(&mut o, "engine-layers rule 1 scan", cause),
     }
     // The manifest arm closes the one hole the source arm has: `[dependencies] r = { package =
-    // "website-map-engine" }` renames the crate, and every `use r::…` then spells something this
+    // "map_engine" }` renames the crate, and every `use r::…` then spells something this
     // gate has never heard of. A `#` line is a comment — naming the other crate in prose is not a
     // dependency edge.
     match scan::matching_lines(&Pattern::literal(MAP_ENGINE_PKG), &manifest_files) {
@@ -223,7 +223,7 @@ pub(super) fn evaluate(
         Err(cause) => return refuse(&mut o, "engine-layers rule 6 scan", cause),
     }
     // The manifest arm closes rule 1's hole from the other side: a renamed dependency
-    // (`g = { package = "website-graphics-engine" }`) makes every `use g::…` invisible to the
+    // (`g = { package = "graphics_engine" }`) makes every `use g::…` invisible to the
     // source arm. A `#` line is a comment — naming the renderer in prose is not an edge.
     match scan::matching_lines(&Pattern::literal(GRAPHICS_PKG), &front_manifest) {
         Ok(hits) => direct.extend(
@@ -236,7 +236,7 @@ pub(super) fn evaluate(
     if direct.is_empty() {
         o.push(format!(
             "  OK — 0 import(s) across {} .rs file(s) and the manifest: the frontend reaches the \
-             renderer through website-map-engine and only through it.",
+             renderer through map_engine and only through it.",
             front_sources.len()
         ));
     } else {
@@ -319,6 +319,7 @@ pub(super) fn evaluate(
 
 /// The eight proved matchers, one per rule scan (rule 1 matches literals).
 pub(super) struct BoundaryPatterns {
+    pub(super) map_engine_import: Pattern,
     pub(super) decl: Pattern,
     pub(super) vocab: Pattern,
     pub(super) gpu: Pattern,

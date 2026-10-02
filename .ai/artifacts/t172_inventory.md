@@ -1,7 +1,7 @@
 # T-172 inventory — Leptos SPA + Mission Creator bug bash (Phase 0, Class-R)
 
 Recon date 2026-07-18. Sources: operator matrix (`docs/platform/t172_leptos_bug_bash.md`),
-screens `01`–`05`, code recon of `apps/website/frontend/src/**`, `crates/map-engine-*`,
+screens `01`–`05`, code recon of `apps/frontend/src/**`, `crates/map-engine-*`,
 `tools/tbd-tools` gates, and React git history (`50bba633^` pre-deletion tree, T-154 commits
 `a65529b3`/`3b3e4d16`).
 

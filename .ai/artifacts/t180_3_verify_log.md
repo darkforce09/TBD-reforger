@@ -48,19 +48,19 @@ test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 103 filtered out
 ### Frontend unit tests
 
 ```text
-$ cargo test -p website-frontend
+$ cargo test -p frontend
 test result: ok. 74 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 ```
 
-Note: package is a bin crate — `--lib` is N/A; `make ci-local-leptos` uses `cargo test -p website-frontend`.
+Note: package is a bin crate — `--lib` is N/A; `make ci-local-leptos` uses `cargo test -p frontend`.
 
 ### `make ci-local-leptos` (clippy + test + trunk)
 
 ```text
-cargo fmt -p website-frontend --check          PASS
-cargo clippy -p website-frontend --target wasm32-unknown-unknown  PASS
+cargo fmt -p frontend --check          PASS
+cargo clippy -p frontend --target wasm32-unknown-unknown  PASS
   (pre-existing warnings only; no new errors)
-cargo test -p website-frontend                 PASS (74)
+cargo test -p frontend                 PASS (74)
 trunk build --release                          PASS
   (make recipe hit env `--no-color=1` quirk; direct `trunk build --release` ✅)
 ```

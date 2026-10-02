@@ -80,7 +80,7 @@ $ grep -rlw stance apps/mod/tbd-framework | wc -l    → 0  files
 
 **Confirmed exactly as recorded.** Every one of the 39 was `instance`.
 
-Frontend, `apps/website/frontend/src` (`grep -rnwE <w> --include=*.rs .`): `combatMode` 0,
+Frontend, `apps/frontend/src` (`grep -rnwE <w> --include=*.rs .`): `combatMode` 0,
 `speedMode` 0, `formation` 1 (prose about a placement anchor, `editor_ops.rs:1324`), `behaviour` 13
 (all prose in doc comments).
 
@@ -264,7 +264,7 @@ activation/condition/timer/effects model.
 ### Waypoint — `WP` (9)
 
 All absent, and more deeply than the id list suggests. `grep -rin waypoint` across
-`apps/website/frontend/src`, `crates/` and `packages/tbd-schema/schema/` returns **exactly 2 hits** —
+`apps/frontend/src`, `crates/` and `packages/tbd-schema/schema/` returns **exactly 2 hits** —
 `mission.schema.json:608`/`:609`, the strings `"waypoint"`/`"waypoint2"` inside the marker **icon
 alias enum**. Glyph names, not entities. `waypoint` word-boundary in `apps/mod` = 1, the same icon file.
 

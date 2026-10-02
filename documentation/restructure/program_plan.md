@@ -10,9 +10,9 @@ and the risks. The goal tree is in
 [laws_and_gates.md](/documentation/restructure/laws_and_gates.md), and live state in
 [progress.md](/documentation/restructure/progress.md).
 
-Abbreviations in code spans: `me/` = `apps/website/map-engine/src/`, `ge/` =
-`apps/website/graphics-engine/src/`, `api/` = `apps/website/api_v2/src/`, `fe/` =
-`apps/website/frontend/src/v2/`, `xt/` = `tools/xtask/src/`, `dt/` =
+Abbreviations in code spans: `me/` = `legacy/map_engine/src/`, `ge/` =
+`legacy/graphics_engine/src/`, `api/` = `apps/api/src/`, `fe/` =
+`apps/frontend/src/v2/`, `xt/` = `tools/xtask/src/`, `dt/` =
 `tools/developer_tools/src/`, `te/` = `tools/ticket_engine/src/`, `vc/` =
 `tools/verification_core/src/`.
 
@@ -115,6 +115,7 @@ Each finding was checked against the code. The evidence is in the
 | D16 | From S1 on, every commit lands directly on `main` (CLAUDE.md law 2); no session branch. |
 | D17 | The fleet host agent takes its snake_case name everywhere in S2: package, binary, systemd units, configuration folder and HTTP user agent, with a host migration run at OC-deploy. |
 | D18 | S2's A4 repairs the deploy Dockerfile's trimmed workspace (it lacks the root workspace tables and a dev-dependency since S0), proven by the S2 Docker build. |
+| D19 | Lean S2 checkpoint: `ci-local` (with every API integration binary), the Docker build and both deploy dry runs; the browser gates, the test census, the dependency drift and the wasm size probes move to the next checkpoint, S5. |
 
 ## 4. Execution model: foundations up
 

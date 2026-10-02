@@ -15,11 +15,11 @@ fn this_repo() -> PathBuf {
 const FIXTURE_WORKSPACE_MEMBERS: &[&str] = &[
     "apps/fleet_host_agent",
     "apps/ticketboard",
-    "apps/website/api_v2",
-    "apps/website/frontend",
-    "apps/website/map-engine",
-    "apps/website/graphics-engine",
-    "apps/website/offline-service-worker",
+    "apps/api",
+    "apps/frontend",
+    "legacy/map_engine",
+    "legacy/graphics_engine",
+    "apps/offline_service_worker",
     "tools/verification_core",
     "tools/ticket_engine",
     "tools/xtask",
@@ -89,8 +89,8 @@ fn walk_is_nonempty_anti_vacuity() {
         "/tools/verification_core/",
         "/tools/ticket_engine/",
         "/apps/ticketboard/src/",
-        "/apps/website/api_v2/src/",
-        "/apps/website/frontend/src/",
+        "/apps/api/src/",
+        "/apps/frontend/src/",
         "/apps/mod/tbd-framework/Scripts/",
         "/apps/mod/tbd-emcp/Scripts/",
     ] {
@@ -154,7 +154,7 @@ fn production_boundary_is_500_lines() {
 #[test]
 fn test_boundary_is_1000_lines_for_directory_and_basename() {
     let d = TmpRepo::new("test-boundary");
-    let directory_test = d.0.join("apps/website/api_v2/tests/integration.rs");
+    let directory_test = d.0.join("apps/api/tests/integration.rs");
     let basename_test = d.0.join("tools/xtask/src/fixture_tests.rs");
     for path in [&directory_test, &basename_test] {
         write_lines(path, SIZE_3_TEST_MAX_LINES);
@@ -163,7 +163,7 @@ fn test_boundary_is_1000_lines_for_directory_and_basename() {
         assert_eq!(verify_file_length_in(&d.0), 1);
         std::fs::remove_file(path).unwrap();
     }
-    assert!(is_test_file("apps/website/api_v2/tests/integration.rs"));
+    assert!(is_test_file("apps/api/tests/integration.rs"));
     assert!(is_test_file("tools/xtask/src/fixture_tests.rs"));
     assert!(!is_test_file("tools/xtask/src/test_helpers.rs"));
 }
@@ -248,12 +248,12 @@ fn mod_script_roots_are_the_three_shipped_addons() {
 #[test]
 fn website_test_roots_and_generated_contracts_are_walked_without_exemption() {
     let d = TmpRepo::new("walk-coverage");
-    let test = d.0.join("apps/website/api_v2/tests/integration.rs");
+    let test = d.0.join("apps/api/tests/integration.rs");
     let generated = [
-        "apps/website/api_v2/src/missions/contract/generated/registry_items/mod.rs",
-        "apps/website/api_v2/src/missions/models/generated/mission_review/mission_row.rs",
-        "apps/website/api_v2/src/operations/models/generated/event_hub/mod.rs",
-        "apps/website/api_v2/src/server_infrastructure/models/generated/fleet_command/error.rs",
+        "apps/api/src/missions/contract/generated/registry_items/mod.rs",
+        "apps/api/src/missions/models/generated/mission_review/mission_row.rs",
+        "apps/api/src/operations/models/generated/event_hub/mod.rs",
+        "apps/api/src/server_infrastructure/models/generated/fleet_command/error.rs",
     ]
     .map(|path| d.0.join(path));
     write_lines(&test, SIZE_3_TEST_MAX_LINES + 1);

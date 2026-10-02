@@ -140,9 +140,7 @@ fn staging_metrics_bearer_is_read_on_the_host_and_piped_to_curl() {
     let script = command.stdin.as_deref().unwrap();
     assert_eq!(command.command_line, "bash -s");
     assert!(
-        script.contains(
-            "s/^OBSERVABILITY_TOKEN=//p' '/home/deploy/tbd/repo/apps/website/api_v2/.env'"
-        ),
+        script.contains("s/^OBSERVABILITY_TOKEN=//p' '/home/deploy/tbd/repo/apps/api/.env'"),
         "{script}"
     );
     assert!(
@@ -190,13 +188,13 @@ fn staging_unit_journal_and_console_readers_build_reads_and_parse_answers() {
         (second.active_state.as_str(), second.main_pid),
         ("inactive", None)
     );
-    let journal = unit_journal_reader::since("fleet-host-agent@1.service", 1_800_000_000);
+    let journal = unit_journal_reader::since("fleet_host_agent@1.service", 1_800_000_000);
     assert_eq!(
         journal.command_line,
-        "'journalctl' '--user' '--unit=fleet-host-agent@1.service' '--since=@1800000000' '--no-pager' '--quiet' '--output=short-unix'"
+        "'journalctl' '--user' '--unit=fleet_host_agent@1.service' '--since=@1800000000' '--no-pager' '--quiet' '--output=short-unix'"
     );
     let lines = unit_journal_reader::parse(
-        "1800000001.250000 host fleet-host-agent[9]: claimed\nnot a line\n",
+        "1800000001.250000 host fleet_host_agent[9]: claimed\nnot a line\n",
     );
     assert_eq!((lines.len(), lines[0].unix_ms), (1, 1_800_000_001_250));
     let console = console_log_reader::newest("/home/deploy/tbd/fleet", 2);

@@ -39,12 +39,19 @@ fn the_migration_stops_disables_and_archives_everything_of_the_single_server() {
     assert!(p.contains("SERVER_CONFIG='/home/deploy/tbd/server.config.json'\n"));
     assert!(p.contains("for unit in tbd-reforger.service fleet-host-agent.service; do\n"));
     assert!(p.contains("    systemctl --user stop \"$unit\" || true\n    systemctl --user disable \"$unit\" 2>/dev/null || true\n"));
-    assert!(p.contains("for file in agent.toml machine-credential rcon-password; do\n"));
+    // The single agent's whole configuration folder and its binary go, each under its own
+    // archive name, because the two share the name `fleet-host-agent`.
+    assert!(p.contains(
+        "retire_if_present \"$HOME/.config/fleet-host-agent\" fleet-host-agent-configuration\n"
+    ));
+    assert!(p.contains(
+        "retire_if_present \"$HOME/.local/bin/fleet-host-agent\" fleet-host-agent-binary\n"
+    ));
     assert!(
         p.contains("ARCHIVE=\"$HOME/tbd/retired/single-instance-$(date -u +%Y%m%dT%H%M%SZ)\"\n")
     );
     // Moved, never deleted, and into a folder that must not exist yet.
-    assert!(p.contains("    mv \"$item\" \"$ARCHIVE/\"\n"));
+    assert!(p.contains("    mv \"${retire[$i]}\" \"$ARCHIVE/${archived_as[$i]}\"\n"));
     assert!(p.contains("  mkdir \"$ARCHIVE\"\n"));
     assert!(!p.contains("rm "), "{p}");
     // A profile inside the fleet root is refused before anything moves.
@@ -63,17 +70,42 @@ fn without_the_flag_an_installed_single_instance_unit_stops_the_deploy() {
     assert!(p.contains("  exit 1\n"));
 }
 
+/// The migration names only what the single instance installed: no snake_case name the fleet
+/// installs appears in it, so it can never retire a fleet instance's unit, folder or binary.
+#[test]
+fn the_migration_never_names_what_the_fleet_installs() {
+    let env = base();
+    for payload in [
+        migration_payload(&env.profile_dir, &env.single_instance_server_config()),
+        single_instance_units_absent_payload(),
+    ] {
+        assert!(!payload.contains("fleet_host_agent"), "{payload}");
+    }
+}
+
 /// Run under a local bash with a scratch HOME and no systemd: the migration moves every
-/// single-instance file into one archive folder, and refuses a profile inside the fleet root.
+/// single-instance file into one archive folder, the agent's configuration folder and binary
+/// included, leaves the fleet's snake_case agent files alone, and refuses a profile inside the
+/// fleet root.
 #[test]
 fn the_migration_moves_the_files_into_one_archive_under_a_local_bash() {
     let home = std::env::temp_dir().join(format!("tbd-migration-home-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&home);
     let agent = home.join(".config/fleet-host-agent");
+    let binary = home.join(".local/bin/fleet-host-agent");
+    let fleet_agent = home.join(".config/fleet_host_agent/instance-1/agent.toml");
+    let units = home.join(".config/systemd/user");
     std::fs::create_dir_all(home.join("tbd/profile/profile")).unwrap();
     std::fs::create_dir_all(&agent).unwrap();
+    std::fs::create_dir_all(binary.parent().unwrap()).unwrap();
+    std::fs::create_dir_all(fleet_agent.parent().unwrap()).unwrap();
+    std::fs::create_dir_all(&units).unwrap();
     std::fs::write(home.join("tbd/server.config.json"), "{}").unwrap();
     std::fs::write(agent.join("agent.toml"), "x").unwrap();
+    std::fs::write(agent.join("machine-credential"), "x").unwrap();
+    std::fs::write(&binary, "x").unwrap();
+    std::fs::write(&fleet_agent, "x").unwrap();
+    std::fs::write(units.join("fleet-host-agent.service"), "x").unwrap();
     let run = |profile: &str| {
         let payload = migration_payload(
             profile,
@@ -114,10 +146,26 @@ fn the_migration_moves_the_files_into_one_archive_under_a_local_bash() {
         .collect();
     assert_eq!(retired.len(), 1, "one archive folder");
     let archive = retired[0].as_ref().unwrap().path();
-    for moved in ["profile", "server.config.json", "agent.toml"] {
+    for moved in [
+        "profile",
+        "server.config.json",
+        "fleet-host-agent.service",
+        "fleet-host-agent-configuration/agent.toml",
+        "fleet-host-agent-configuration/machine-credential",
+        "fleet-host-agent-binary",
+    ] {
         assert!(archive.join(moved).exists(), "{moved} archived");
     }
-    assert!(!home.join("tbd/profile").exists() && !agent.join("agent.toml").exists());
+    assert!(!home.join("tbd/profile").exists());
+    assert!(
+        !agent.exists() && !binary.exists(),
+        "the old folder and binary are retired"
+    );
+    assert!(!units.join("fleet-host-agent.service").exists());
+    assert!(
+        fleet_agent.exists(),
+        "the fleet's snake_case agent files stay"
+    );
     // A second run finds nothing left and creates no second folder.
     assert!(
         run(&format!("{}/tbd/profile", home.display()))

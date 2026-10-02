@@ -141,7 +141,7 @@ impl StagingSettings {
 
     /// The API env file of the host checkout, the file the API unit loads.
     pub(crate) fn api_env_file(&self) -> String {
-        format!("{}/apps/website/api_v2/.env", self.checkout)
+        format!("{}/apps/api/.env", self.checkout)
     }
 
     /// The address the fleet's servers register with: `TBD_PUBLIC_ADDRESS`, else the first IPv4
@@ -178,7 +178,7 @@ impl StagingSettings {
             .collect()
     }
 
-    /// The fleet's host agent units, `fleet-host-agent@1.service` onward.
+    /// The fleet's host agent units, `fleet_host_agent@1.service` onward.
     pub(crate) fn host_agent_units(&self) -> Vec<String> {
         self.fleet
             .instances()

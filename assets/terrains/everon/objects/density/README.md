@@ -20,7 +20,7 @@ assets/terrains/everon/objects/density/
   share their border corners with the next cell. The tree plane is the canopy-blurred grid, not the
   raw count. Plain git blobs, not Git LFS: the last rule of `.gitattributes` exempts this folder
   from the `*.bin` LFS rule.
-- Schema: the codec is `apps/website/map-engine/src/io/density/tbdd.rs`; the terrain manifest's
+- Schema: the codec is `legacy/map_engine/src/io/density/tbdd.rs`; the terrain manifest's
   `objects.densityPath` and `objects.densityCellM` (8) describe the folder.
 - Adding a file: never by hand. `world build-objects` rewrites the set on a density phase (P2 and
   up) and leaves it alone on any other; `cargo run -p developer_tools --bin world -- redensify
@@ -33,12 +33,12 @@ assets/terrains/everon/objects/density/
   `encode_tbdd`; `cargo xtask map export-terrain` runs the first.
 - Consumers:
   - the map engine's vegetation loader
-    (`apps/website/map-engine/src/world/environment/vegetation/loader.rs`), which fetches all 625
+    (`legacy/map_engine/src/world/environment/vegetation/loader.rs`), which fetches all 625
     tiles as `/map-assets/everon/objects/density/{cx}_{cy}.bin`, skips one that fails to decode,
     and uploads the stitched tree plane once;
   - the density codec's tests, which decode every committed tile against a byte-by-byte reference
     (`everon_tiles_decode_bit_identically_to_the_old_loop` in
-    `apps/website/map-engine/src/io/density/tests/tbdd_tests.rs`), and the world export's
+    `legacy/map_engine/src/io/density/tests/tbdd_tests.rs`), and the world export's
     vegetation density tests.
 
 ## Boundaries
@@ -52,7 +52,7 @@ assets/terrains/everon/objects/density/
 
 ## Related documentation
 
-- [Vegetation density tiles](/apps/website/map-engine/src/io/density/README.md) — the `TBDD`
+- [Vegetation density tiles](/legacy/map_engine/src/io/density/README.md) — the `TBDD`
   layout and its decoder.
-- [Vegetation](/apps/website/map-engine/src/world/environment/vegetation/README.md) — how the tiles
+- [Vegetation](/legacy/map_engine/src/world/environment/vegetation/README.md) — how the tiles
   become the forest fill and canopy.

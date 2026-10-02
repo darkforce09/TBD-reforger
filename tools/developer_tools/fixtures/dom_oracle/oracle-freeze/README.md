@@ -16,9 +16,9 @@ tools/developer_tools/fixtures/dom_oracle/oracle-freeze/
 
 ## How it works
 
-`gate v-suite verify` serves `apps/website/frontend/dist`, opens every route of the route list in
+`gate v-suite verify` serves `apps/frontend/dist`, opens every route of the route list in
 `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs` with its API calls answered from
-`apps/website/frontend/tests/fixtures/api/`, serializes the app root until two captures in a row are
+`contracts/fixtures/api_goldens/`, serializes the app root until two captures in a row are
 identical, and diffs that tree against `<slug>.dom.json`. A missing golden or any difference fails
 the route; the screenshots and the manifest are never compared.
 
@@ -51,7 +51,7 @@ build the repository makes.
 
 - Depends on: the serializer `tools/developer_tools/src/browser_testing/fixture_injection.rs`
   injects, which wrote every golden and must stay byte-stable; the API fixtures in
-  `apps/website/frontend/tests/fixtures/api/`, which set the data each page shows.
+  `contracts/fixtures/api_goldens/`, which set the data each page shows.
 - Used by: the DOM oracle gate in `tools/developer_tools/src/browser_testing/dom_oracle/`.
 - Rules: goldens change only through `accept`, one route at a time and with a note; `accept` refuses
   a capture below `MIN_ACCEPT_DOM_JS_LEN` (256 bytes) so an empty page never becomes a golden; a

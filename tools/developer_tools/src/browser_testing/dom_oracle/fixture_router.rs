@@ -14,7 +14,7 @@ use serde_json::{Value, json};
 
 /// The fixture corpus — shared with the frontend's R-api round-trip tests and the editor smokes.
 pub(super) fn fixtures_dir() -> PathBuf {
-    crate::browser_testing::server::repo_root().join("apps/website/frontend/tests/fixtures/api")
+    crate::browser_testing::server::repo_root().join("contracts/fixtures/api_goldens")
 }
 
 /// An API request the fixture corpus does not answer.
@@ -139,7 +139,7 @@ pub(super) fn missing_fixture_error(route_path: &str, missing: &[MissingFixture]
     )];
     for m in missing {
         lines.push(format!(
-            "  {} — add apps/website/frontend/tests/fixtures/api/{}",
+            "  {} — add contracts/fixtures/api_goldens/{}",
             m.url, m.expected_file
         ));
     }

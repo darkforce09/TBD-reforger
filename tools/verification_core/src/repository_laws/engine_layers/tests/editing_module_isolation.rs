@@ -1,7 +1,7 @@
 //! Tests for [`super`] — rules 4 and 7 over the map engine's `editing` module, and the
 //! per-rule results of [`super::EngineLayerReport`].
 //!
-//! `editing` is one of the eleven top-level modules of `website-map-engine`, so the mission
+//! `editing` is one of the eleven top-level modules of `map_engine`, so the mission
 //! compiler under `data/scenario/` and the document under `data/` may name it no more than they
 //! may name `streaming`: the Mission Creator's tools sit above the document, never below it.
 
@@ -23,9 +23,9 @@ fn the_scenario_tree_naming_the_editing_module_fails() {
         &[
             "FAIL: the authored mission reaches outside its own tree:",
             "  unpinned file — 2 site(s):",
-            "apps/website/map-engine/src/data/scenario/compiler/flatten/commands.rs:1:\
+            "legacy/map_engine/src/data/scenario/compiler/flatten/commands.rs:1:\
              use crate::editing::hosted_commands::summarise;",
-            "apps/website/map-engine/src/data/scenario/compiler/flatten/commands.rs:2:\
+            "legacy/map_engine/src/data/scenario/compiler/flatten/commands.rs:2:\
              use super::super::super::editing::history::UndoStack;",
             RULE4_TAIL[0],
             "1 scenario-isolation finding(s)",
@@ -47,9 +47,9 @@ fn the_document_naming_the_editing_module_breaches_the_wall() {
         1,
         &[
             "FAIL: the world/data wall is breached:",
-            "  data/ names the world — apps/website/map-engine/src/data/store/rows/undo.rs:1:\
+            "  data/ names the world — legacy/map_engine/src/data/store/rows/undo.rs:1:\
              use crate::editing::history::UndoStack;",
-            "  data/ names the world — apps/website/map-engine/src/data/store/rows/undo.rs:2:\
+            "  data/ names the world — legacy/map_engine/src/data/store/rows/undo.rs:2:\
              use super::super::super::editing::history::UndoStack;",
             RULE7_TAIL[0],
             "2 world/data finding(s)",
@@ -97,7 +97,7 @@ fn a_clean_checkout_judges_every_rule_at_zero_findings() {
 #[test]
 fn a_breach_is_recorded_against_its_own_rule() {
     let r = Repo::new("results-breach");
-    r.src("lib.rs", "use website_map_engine::frame::DrawBatch;\n");
+    r.src("lib.rs", "use map_engine::frame::DrawBatch;\n");
     let report = check_engine_layers(&r.0);
     assert_eq!(report.exit_code, 1);
     assert!(report.judged_every_rule());
@@ -107,7 +107,7 @@ fn a_breach_is_recorded_against_its_own_rule() {
     assert_eq!(rule_1.findings, 1);
     assert_eq!(
         rule_1.detail,
-        ["apps/website/graphics-engine/src/lib.rs:1:use website_map_engine::frame::DrawBatch;"]
+        ["legacy/graphics_engine/src/lib.rs:1:use map_engine::frame::DrawBatch;"]
     );
     for result in &report.rule_results {
         if result.rule != EngineLayerRule::GraphicsEngineImportsNoMapEngine {

@@ -3,8 +3,8 @@
 Both files are still wholly in the frontend:
 
 ```
-apps/website/frontend/src/editor/state/persist.rs    1719
-apps/website/frontend/src/editor/state/hydrate.rs    1159
+apps/frontend/src/editor/state/persist.rs    1719
+apps/frontend/src/editor/state/hydrate.rs    1159
 ```
 
 ## The cut
@@ -22,8 +22,8 @@ reload; the frontend owns state that dies with the tab.*
 ## There is an unfinished start on disk
 
 ```
-apps/website/map-engine/src/editing/persist/blob.rs        96 LOC
-apps/website/map-engine/src/editing/persist/record_key.rs  43 LOC
+legacy/map_engine/src/editing/persist/blob.rs        96 LOC
+legacy/map_engine/src/editing/persist/record_key.rs  43 LOC
 ```
 
 Uncommitted, and **not declared in `editing/mod.rs`**. The previous agent was interrupted
@@ -44,7 +44,7 @@ and undeclared.
 
 ```
 CARGO_TARGET_DIR=target-container cargo xtask verify engine-layers
-rg 'web_sys|leptos|wasm_bindgen' apps/website/map-engine/src/editing     # EMPTY
-CARGO_TARGET_DIR=target-container cargo test -p website-map-engine --all-features
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
+rg 'web_sys|leptos|wasm_bindgen' legacy/map_engine/src/editing     # EMPTY
+CARGO_TARGET_DIR=target-container cargo test -p map_engine --all-features
+CARGO_TARGET_DIR=target-container cargo test -p frontend
 ```

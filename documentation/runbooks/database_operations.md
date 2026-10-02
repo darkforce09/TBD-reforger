@@ -18,11 +18,11 @@ procedure takes seconds to minutes; a full integration-test run takes several mi
 - The database container running. Locally that is `tbd_reforger_db` from `cargo xtask db up`;
   check with `cargo xtask deploy db require-container`, which exits 0 or names `db up`. On the
   home server, `cargo xtask deploy website` starts `tbd_staging_db` from
-  `apps/website/docker-compose.staging.yml` on `127.0.0.1:${TBD_POSTGRES_HOST_PORT:-5432}`, and
+  `deploy/compose.staging.yml` on `127.0.0.1:${TBD_POSTGRES_HOST_PORT:-5432}`, and
   the commands reach it with `TBD_DB_CONTAINER=tbd_staging_db` exported. `TBD_DB_USER` (default
   `tbd`) names the role.
 - For the server procedures: a shell on the host `TBD_SSH_HOST` names in
-  `tools/xtask/deploy/deploy.env`, in the checkout at `TBD_REMOTE_DIR`, with cargo installed.
+  `deploy/deploy.env`, in the checkout at `TBD_REMOTE_DIR`, with cargo installed.
 
 The commands refuse to write to a database outside the scratch allow-list (`rust_it`,
 `tbd_gate*`, `*_cold`, `*_it`, `*_probe`) unless a confirmation repeats its name, and
@@ -49,7 +49,7 @@ Run every command from the repository root.
 
    ```bash
    cargo xtask deploy db ct-i psql -U tbd -d tbd_reforger \
-     < apps/website/api_v2/seeds/discord_roles.sql
+     < apps/api/seeds/discord_roles.sql
    ```
 
    Expected: psql's command tags, here `DELETE 0` and `INSERT 0 3`, and no `ERROR:` line. psql
@@ -57,7 +57,7 @@ Run every command from the repository root.
 
 ### Load and remove the sample data
 
-`apps/website/api_v2/seeds/mock_data.sql` holds sample users, modpacks and four
+`apps/api/seeds/mock_data.sql` holds sample users, modpacks and four
 [missions](/documentation/glossary/g_to_m.md#mission) with fixed ids. `cargo xtask db seed` never
 applies it.
 
@@ -65,13 +65,13 @@ applies it.
 
    ```bash
    cargo xtask deploy db ct-i psql -U tbd -d tbd_reforger \
-     < apps/website/api_v2/seeds/mock_data.sql
+     < apps/api/seeds/mock_data.sql
    ```
 
    Expected: psql's `INSERT` tags and no `ERROR:` line.
 
 2. Remove the four missions. Their versions, armories and bookmarks go with them
-   (`ON DELETE CASCADE` in `apps/website/api_v2/migrations/0018_foreign_keys.sql`); the sample
+   (`ON DELETE CASCADE` in `apps/api/migrations/0018_foreign_keys.sql`); the sample
    users and modpacks stay.
 
    ```bash
@@ -95,7 +95,7 @@ applies it.
    ```
 
    Expected: the property-test marker line, then `cargo test --locked --no-fail-fast` in
-   `apps/website/api_v2` against a new database named `i<first five letters of the label>_<32
+   `apps/api` against a new database named `i<first five letters of the label>_<32
    hex>_it`, the label being `TBD_IT_BASE_DB` (default `rust_it`). Each suite derives its own
    scratch database from it. Afterwards the command drops every database of the run, whatever the
    tests did, and exits with the test run's code. Two runs never share a database.
@@ -103,14 +103,14 @@ applies it.
    `test-selection: narrowed development run; not a readiness receipt`. The binaries that arm
    the API's `failpoints` feature (`failure_injection_*` and `controlled_races_*`) serialise their
    own cases, so they need no `--test-threads` flag; the
-   [API README](/apps/website/api_v2/README.md#verification-suites) maps every verification
+   [API README](/apps/api/README.md#verification-suites) maps every verification
    suite to its binaries.
 
 ### Repair a migration checksum
 
 sqlx records the SHA-384 of each applied migration file, comments included, and the API refuses to
 boot with `migration N was previously applied but has been modified` once the file changes.
-`apps/website/api_v2/tests/migrations_are_immutable.rs` pins every file's checksum, so the edit
+`apps/api/tests/migrations_are_immutable.rs` pins every file's checksum, so the edit
 fails the tests first. A statement change is never repaired: it is a new migration. The schema is
 fine after a comments-only edit, so never reset the volume for this error.
 
@@ -189,7 +189,7 @@ A drill proves a backup can be recovered and that the API would boot on it.
 
    Expected: `═══ backup restore drill ═══`, the restore into `tbd_drill_probe` (`TBD_DRILL_DB`),
    the table, enum, index and row counts, the boot audit (every `_sqlx_migrations` row has a
-   file in `apps/website/api_v2/migrations/`, succeeded and matches the file's SHA-384; newer
+   file in `apps/api/migrations/`, succeeded and matches the file's SHA-384; newer
    files are listed as pending), then
    `DRILL PASS — <dump> restored into 'tbd_drill_probe' with <rows> row(s) across <n> table(s), and is boot-ready.`
    The scratch database is dropped afterwards. `DRILL FAIL` exits 1; treat it as an incident,
@@ -229,15 +229,15 @@ with rows restores to none.
 ### Schedule the home server's backups
 
 The nightly backup (03:20) and the weekly drill (Sunday 04:10) are systemd user units in
-`tools/xtask/deploy/systemd/`, each running `cargo run -q -p xtask -- deploy db …` in the
+`deploy/systemd/`, each running `cargo run -q -p xtask -- deploy db …` in the
 checkout with `Persistent=true`, so a night the machine was off runs late instead of never. Run
 these on the home server in the checkout; the
-[systemd README](/tools/xtask/deploy/systemd/README.md) describes every unit.
+[systemd README](/deploy/systemd/README.md) describes every unit.
 
 1. Render the backup service with the checkout's absolute path in place of the placeholder.
 
    ```bash
-   sed "s|/TBD_REPO_DIR_PLACEHOLDER|$PWD|g" tools/xtask/deploy/systemd/tbd-website-backup.service \
+   sed "s|/TBD_REPO_DIR_PLACEHOLDER|$PWD|g" deploy/systemd/tbd-website-backup.service \
      > ~/.config/systemd/user/tbd-website-backup.service
    ```
 
@@ -249,7 +249,7 @@ these on the home server in the checkout; the
 
    ```bash
    sed "s|/TBD_REPO_DIR_PLACEHOLDER|$PWD|g" \
-     tools/xtask/deploy/systemd/tbd-website-backup-drill.service \
+     deploy/systemd/tbd-website-backup-drill.service \
      > ~/.config/systemd/user/tbd-website-backup-drill.service
    ```
 
@@ -258,8 +258,8 @@ these on the home server in the checkout; the
 3. Copy both timers.
 
    ```bash
-   cp tools/xtask/deploy/systemd/tbd-website-backup.timer \
-     tools/xtask/deploy/systemd/tbd-website-backup-drill.timer ~/.config/systemd/user/
+   cp deploy/systemd/tbd-website-backup.timer \
+     deploy/systemd/tbd-website-backup-drill.timer ~/.config/systemd/user/
    ```
 
    Expected: no output.
@@ -349,5 +349,5 @@ server, `journalctl --user -u tbd-website-backup.service -n 50` shows the last b
   and its exit codes.
 - [Deploy commands](/tools/xtask/src/commands/deploy/README.md) — every `cargo xtask deploy db`
   command, the dump checks and the drill.
-- [Database migrations](/apps/website/api_v2/migrations/README.md) and
-  [database seeds](/apps/website/api_v2/seeds/README.md) — the schema files and the seed files.
+- [Database migrations](/apps/api/migrations/README.md) and
+  [database seeds](/apps/api/seeds/README.md) — the schema files and the seed files.

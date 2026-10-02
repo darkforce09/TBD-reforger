@@ -3,7 +3,7 @@
 **VERDICT: 0 BLOCKER · 1 MAJOR · 3 MINOR · 8 NOTE — wave passes; the T-638×T-667 deferred ticket must be re-scoped MAJOR (grid-ref labels are position-frozen by the keyed `<For>`, so the collapse slide strands them off their lines).**
 
 Range `8ffac4e3..f1c31273` (three slices, all cut from `8ffac4e3`, merged T-657 → T-659 → T-638).
-Suites at HEAD: `website-frontend` native **519/519**; `map-engine-core --features doc,mission` **385 pass / 1 ignored** (validate filter = **36/36**); `--features mission` (bare) validate **36/36**. Working tree left clean; every re-fire mutation restored and re-verified.
+Suites at HEAD: `frontend` native **519/519**; `map-engine-core --features doc,mission` **385 pass / 1 ignored** (validate filter = **36/36**); `--features mission` (bare) validate **36/36**. Working tree left clean; every re-fire mutation restored and re-verified.
 
 ---
 

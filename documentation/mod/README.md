@@ -79,7 +79,7 @@ and the [agent continuation handoff](/documentation/archive/handoffs_and_kickoff
   `documentation/standards/templates/`.
 - Used by: the [mod suite README](/apps/mod/README.md), which links here.
 - Rules: documents mirror the addon folder they cover; no document names a host address (the
-  staging host is `TBD_SSH_HOST` in `tools/xtask/deploy/deploy.env`); frozen evidence stays in
+  staging host is `TBD_SSH_HOST` in `deploy/deploy.env`); frozen evidence stays in
   `verification_evidence/` folders, indexed and never reworded.
 
 ## Related documentation

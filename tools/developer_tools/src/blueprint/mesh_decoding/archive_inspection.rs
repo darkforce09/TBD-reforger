@@ -9,7 +9,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
-use website_map_engine::spatial::bvh::surface::SurfaceKind;
+use map_engine::spatial::bvh::surface::SurfaceKind;
 
 use super::batch::{decode_asset, open_sources};
 use super::surface_kind::{gamemat_stem, parse_kind_override};

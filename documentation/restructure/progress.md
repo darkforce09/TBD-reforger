@@ -12,9 +12,9 @@ session reads the header and the Handoff section first.
 | Field | Value |
 |---|---|
 | Branch | `main` (decision D16; S0 was merged from the cloud session branch) |
-| Current stage | S2 Apps and deploy |
-| Last green commit | 64f16d1da (S1) |
-| Next action | S2 agent A1 running; then A2 to A6 in parallel (see Handoff) |
+| Current stage | M1, M2 Mod |
+| Last green commit | the S2 stage commit (`refactor(restructure): S2 apps and deploy`) |
+| Next action | M1 and M2, then the operator's OC-mod checkpoint in Workbench (see Handoff) |
 | Blocked on | nothing |
 
 Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A status is `pending`,
@@ -48,14 +48,20 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 - [x] Stage commit — done (see the execution log)
 
 ### S2 Apps and deploy
-- [ ] A1 (M) app flattening, legacy parking, deploy folder — running
-- [ ] A2 (M) xtask deploy, staging and db — pending
-- [ ] A3 (M) wave execution paths — pending
-- [ ] A4 (S) Dockerfile repair (D18), systemd, env example, runtime fallbacks — pending
-- [ ] A5 (M) http_url_guard and offline_cache_policy — pending
-- [ ] A6 (S) documentation — pending
-- [ ] OC-deploy (operator) gitignored env files and server environment file moved — pending
-- [ ] Stage commit — pending
+- [x] A1 (M) app flattening, legacy parking, deploy folder — done, awaiting the stage commit — 3864 row moves, 13104 references, 0 unresolved; 16301 tracked and 2013 LFS files unchanged; workspace compiles
+- [x] A2 (M) xtask deploy, staging and db; ci task id `api-test` — done (A2b finished it), awaiting the stage commit
+- [x] A3 (M) wave execution paths — done, awaiting the stage commit — four fail-open defects fixed on the way (edition, member globs, golden-only changes, include consumers)
+- [x] A4 (S) Dockerfile repair (D18), systemd, env example, runtime fallbacks — done, awaiting the stage commit — image builds; `.dockerignore`; compose files name their projects
+- [x] A5 (M) http_url_guard and offline_cache_policy — done, awaiting the stage commit — both crates pass crate anatomy, tiers and strangler; 10 `include!` sites replaced
+- [x] A6 (S) documentation — done, awaiting the stage commit
+- [x] A7 (S) relocation tool false rewrites (F-030) — done, awaiting the stage commit — separators-only literals name no path; a plain token is read only when its whole path is tracked; clone proof of the S2 manifest clean without the extra row
+- [x] A2b (M) finish A2: `db` compose calls name `deploy/compose.dev.yml`, F-018 closed — done
+- [x] G-S2 (S) fail-closed documentation gate roots, website checkout set — done
+- [x] G2a (M) API test paths, golden index, build-lane runtime, citation roots, member-derived CI tests — done
+- [x] G2b (S) Caddyfile in `deploy/caddy/`, mounted alone — done
+- [x] G2c (M) documentation, executed briefs archived — done
+- [x] OC-deploy (operator) local part — done: ignored files rode along; on request the orchestrator removed five retired keys from the local `deploy/deploy.env`, repointed `EQUIPMENT_DATA_DIR`, deleted the empty old uploads folder. Server steps and GitHub required checks are the operator's, before the next deploy (archived S2 brief, OC-deploy section)
+- [x] Stage commit — done (see the execution log)
 
 ### M1, M2 Mod
 - [ ] M1 (S) References folder — pending
@@ -173,7 +179,7 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 | 2026-10-01 | Research | Explorer, planning and verification reports archived in the restructure research folder | — |
 | 2026-10-01 | Decisions | D1–D12 recorded in the program plan | — |
 | 2026-10-01 | P0 | Program documents written; blueprint draft archived; clone unshallowed. link-check OK (2044), markdown-placement OK (1324), readme-coverage red only on F-001 | session scratchpad |
-| 2026-10-01 | S0 baseline | Pre-change tree (`74735b80c`): fmt OK; workspace clippy `-D warnings` red only in website-frontend native (F-004); frontend wasm32 clippy `-D warnings` red, 253 errors (F-004); editorconfig, no-python, no-node, no-shell, ci-shell, engine-layers, coding-standards, staging-compose-paths, mission-rest-size-limits, ci-schema-parity OK; verify-documentation red only on F-001; ci-local-schema red only because the Everon DEM was an unpulled LFS pointer (pulled afterwards); wasm-ci OK; rust-build OK; db test-it 159 binaries, 1425 passed, 0 failed, 0 ignored; ticket check OK; 2013 LFS files, 16226 tracked files. ci-local-schema, ci-local-leptos and leptos-gates are measured at the S0 gate, and against the base commit only if they fail | session scratchpad logs/s0-baseline-* |
+| 2026-10-01 | S0 baseline | Pre-change tree (`74735b80c`): fmt OK; workspace clippy `-D warnings` red only in frontend native (F-004); frontend wasm32 clippy `-D warnings` red, 253 errors (F-004); editorconfig, no-python, no-node, no-shell, ci-shell, engine-layers, coding-standards, staging-compose-paths, mission-rest-size-limits, ci-schema-parity OK; verify-documentation red only on F-001; ci-local-schema red only because the Everon DEM was an unpulled LFS pointer (pulled afterwards); wasm-ci OK; rust-build OK; db test-it 159 binaries, 1425 passed, 0 failed, 0 ignored; ticket check OK; 2013 LFS files, 16226 tracked files. ci-local-schema, ci-local-leptos and leptos-gates are measured at the S0 gate, and against the base commit only if they fail | session scratchpad logs/s0-baseline-* |
 | 2026-10-01 | S0 launch | T1–T5 launched in parallel from the scratchpad brief and prompts; `db test-it` baseline still running (its build finished before launch) | session scratchpad |
 | 2026-10-01 | S0 T2 report | Root `[workspace.package]`, `[workspace.dependencies]` (identical requirements only) and `[workspace.lints]` (unsafe_code deny; missing_docs, unreachable_pub, dbg_macro, todo, unwrap_used warn); 11 member manifests inherit; `png` removed from xtask, `toml` made a dev-dependency, `earcutr` removed from the map engine; workspace and wasm32 checks pass; lint policy perturbation red on all 6 lints. Reviewed: lock diff and root manifest match the report | logs/T2-* |
 | 2026-10-01 | S0 T3 report | Build output under `target/<purpose>` (dev-api, ci, gate-trunk, gate-dist-frontend, gate-check, gate-schema, gate-api, gate-map-engine, gate-frontend, gate-tools, gate-slice-frontend-<slice>); reclaim deletes retired root folders; `rust-sqlx-prepare` removed; `find_chromium` moved to `cdp/chromium_discovery.rs` and honours `PLAYWRIGHT_BROWSERS_PATH`; 15 tests added; perturbation red on 3 tests and restored. Out-of-list edits reviewed and accepted: `cdp.rs` module wiring and the Chromium and deploy docs (law 10). Reviewed: `.gitignore` and the dev-api pin match the report | logs/T3-* |
@@ -183,7 +189,7 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 | 2026-10-01 | S0 T5 report | Exemption covers `generated` and `Generated` (`path_regions.rs`); the three `SQLX_OFFLINE` lines and two emptied `env:` keys removed from ci.yml (YAML valid); readme standard and documentation standards updated. Reviewed: diff matches the report | logs/T5-* |
 | 2026-10-02 | S0 decisions | Operator: D13 keep `legacy/` with a prose-rule exemption for the folder name; D14 allow `unwrap()` in tests; finish S0 and continue into S1 without pausing. Container restarted: `dockerd` and Postgres restarted, `target/` cleaned (18.5 GiB) | — |
 | 2026-10-02 | S0 T4b report | `law_source_roots` walks every workspace member (nested members once); `FILE_LENGTH_PINS` became `PINNED_SCRIPT_ROOTS` (the mod script roots); perturbation red and restored; renaming a member folder on a scratch copy gives exit 2 | logs/T4b-* |
-| 2026-10-02 | S0 G0 report | Prose rule exempts the parking folder name (`legacy/`, `"legacy"`) only; the retired `crates/(tbd|map)` needle now ends at the hyphen so the planned snake_case category folders are live names (reviewed and accepted: every retired crate folder was hyphenated, a test proves it still bites); root `clippy.toml` allows `unwrap()` in tests; mcp daemon and db selftest build under `target/`; stale docs fixed. Orchestrator fixed the last `target-<slice>` hint in `wave_execution/flush.rs` | logs/G0-* |
+| 2026-10-02 | S0 G0 report | Prose rule exempts the parking folder name (`legacy/`, `"legacy"`) only; the retired crates/(tbd|map) needle now ends at the hyphen so the planned snake_case category folders are live names (reviewed and accepted: every retired crate folder was hyphenated, a test proves it still bites); root `clippy.toml` allows `unwrap()` in tests; mcp daemon and db selftest build under `target/`; stale docs fixed. Orchestrator fixed the last `target-<slice>` hint in `wave_execution/flush.rs` | logs/G0-* |
 | 2026-10-02 | S0 gate (first pass) | fmt OK; workspace clippy `-D warnings` (frontend excluded, F-004) OK; frontend wasm32 warnings 116 + 137, equal to the baseline; relocate --verify OK; crate-tiers, crate-anatomy, strangler, frontend-layering, tailwind-sources, file-length, ci-schema-parity OK; API release check OK; verification_core 185/186 and xtask 1322/1324 (only the root-permission cases, F-008); ci-local stopped at `rust-test-it` because it calls `podman` (environment: a `podman`→`docker` shim added to the program env); ticket_engine round-trip red on T-086 (F-016) and `ticket check --strict` red on a retired id spelling (F-017), both pre-existing; leptos-gates red on satellite, roads and buildings because the Everon LFS objects were not pulled (pulled: all 2013) | logs/s0-gate-* |
 | 2026-10-02 | S0 G0b report | F-016: T-086 rewritten by `ticket set-status` (a pure line move, no value changed); F-017: plan slice ids in the mod modularisation checkpoint respelled; ticket_engine 236 passed, `ticket check --strict` OK, verify-documentation OK | logs/G0b-* |
 | 2026-10-02 | S0 gate (final) | `ci-local` green with a `podman`→`docker` shim: 172 test binaries, 5189 passed, 0 failed (includes API integration tests, trunk release build, documentation gates, the five new laws); browser gates: every smoke passes except outliner-drag and perf, which time out in `Runtime.evaluate`; outliner-drag fails the same way on the pre-S0 commit (F-019). Operator: too much testing — decision D15 (lean gates) | logs/s0-gate-*, s0-smoke-* |
@@ -198,6 +204,13 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 | 2026-10-02 | S1 gate | fmt OK (four app files reformatted after the shorter paths); workspace clippy `-D warnings` (frontend native excluded, F-004) OK; frontend wasm32 clippy 116 + 137, equal to the baseline; per-package tests: xtask 1336, verification_core 187, ticket_engine 236, developer_tools 403 (4 ignored), and R3's app runs (map engine 1665 lib with `--all-features`, frontend 2005, API lib 566, 36 API integration binaries 262); `verify-workspace-laws` OK; file-length 4608 files, 0 violations; `relocate --verify` OK (28 checks); verify-documentation OK; `ticket check --strict` OK; `ci-local-schema` OK; route-tags OK; editorconfig OK; `ci-schema-parity` OK; `git lfs fsck --pointers` OK, 2013 LFS files; 16301 tracked files (16294 + 7 new); no retired spelling outside the archive and ticket records. A workspace-wide `cargo test` fails 24 developer_tools tests on reqwest feature unification (F-028, predates S1) | logs/gate-s1-* |
 | 2026-10-02 | S1 commit | `64f16d1da` pushed to `main`; 9415 files changed; the two `.rdb` files left out | — |
 | 2026-10-02 | S2 launch | Briefs reviewed and finalised: A1 checks that the library-name text rows shadow no binding before its apply; the staging host still runs the single instance (read-only check), so `--migrate-single-instance` stays and carries the D17 rename; A5 runs its own births manifest; A6 added for documentation. The briefs stay in the run folder until the S2 commit (amendment A6) | s2_drafts/ |
+| 2026-10-02 | S2 A1 report | Dry run 1: 32 unresolved literals (synthetic manifest fixtures, relative quotes in `.ai/artifacts/`), fixed before the apply; apply exit 0, planned tree 26/26, verify 54/54; path 22 rows (3864 row moves, 10079 references), rust_path 4 (1648), text 16 (1377); ignored `.env`, `dist/`, `deploy.env` rode along; lock: the 865 packages unchanged apart from the six names; `cargo check --workspace --all-targets --locked`, fmt, crate-tiers, strangler, engine-layers, xtask 1337 ×2, verification_core 187 ×2 OK. The tool now excludes sqlx migrations (they are immutable). 518 leftover hits assigned by owner (394 Markdown) | logs/A1-* |
+| 2026-10-02 | S2 wave 2 | A2–A6 launched from their bodies with amendments; A7 added for the relocation tool's false rewrites | prompt_A2..A7.md |
+| 2026-10-02 | S2 A5 pause | A5 stopped before its apply as amendment A7 asks: three `.ai/tickets` files outside its ownership and six false slash rewrites (F-030). Amendment A8: the ticket files granted, the six literals restored by hand after the apply and every rewritten file diffed, crate anatomy and tiers hard on both new crates (`error.rs`, a serde-transparent `TerrainId`) | logs/A5-* |
+| 2026-10-02 | S2 A7 report | Red first, then fixed: `"http://[::1]/"` and `"deploy/site.service"` no longer rewritten; 43 `relocate_*` tests twice; three perturbations red and restored; the migrations rule proven exact. Clone proof of the S2 manifest at `76aad29d2` without the extra row: one ambiguous literal reported, then clean | logs/A7-* |
+| 2026-10-02 | S2 wave 2 reports | A2 (stopped at budget; A2b finished db compose, F-018), A3 (wave execution; four fail-open defects fixed), A4 (Dockerfile builds, `.dockerignore`, compose project names), A5 (two crates born under their own manifest; ticket files granted; no false slash rewrite occurred), A6 (documentation, D17 prose), A7 (tool false rewrites) | logs/A2..A7-* |
+| 2026-10-02 | S2 closing batch | G-S2: documentation gates judge every tracked top-level folder; website checkout set gains the compile-time `contracts/` inputs. G2a: API test paths, build-lane runtime, citation roots over every member, CI and wave-gate tests derived from the workspace members. G2b: Caddyfile in `deploy/caddy/`, mounted alone. G2c: executed S1 and S2 briefs archived, documentation. Orchestrator: dev compose project `api` (the live volume `api_tbd_pgdata`), `wave.lock` T-251 row, the births manifest's never-retired README row dropped, the compiler identity pinned as the stored literal it was (F-031), the member-glob test, the testing runbook | logs/G*-* |
+| 2026-10-02 | S2 gate (D19) | fmt OK; workspace clippy `-D warnings` (frontend native excluded, F-004) OK; frontend wasm32 116 + 137, equal to the baseline; `ci-local` first run red on one API test that the package rename had rewritten (the stored compiler identity), fixed; rerun green: 188 test binaries, 7715 passed, 0 failed, 9 ignored (every API integration binary, the trunk release build, the documentation gates, the laws, `relocate --verify`); Docker build of `deploy/Dockerfile`; `deploy website --dry-run` and `deploy staging --dry-run` (with and without `--migrate-single-instance`) OK; 16324 tracked and 2013 LFS files | logs/gs-s2-* |
 
 ## Amendments
 
@@ -208,6 +221,8 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 | 2026-10-02 | R3, R5 | A4: R3 also owns the apps' run-time path pieces and the moved-path API integration binaries; R5 is added to fix the relocation tool's blind spots before S2 (F-021, F-022); the CI task id `developer-tools-test` and the `verification-core-*` temporary-folder prefixes stay (kebab-case ids, not package names) |
 | 2026-10-02 | R5 | A5: closed tickets' `owns` entries take path rewrites like `spec` and `plan` (F-023); a file moved into a frozen area takes the frozen treatment (F-024); the clone proof also applies, so the orchestrator copies the archived files and the 10 ticket records from the tool's own output |
 | 2026-10-02 | A1–A6 | A6: the S2 briefs live in `<scratch>/s2_drafts/` until the S2 commit, because their planned paths fail link-check before A1 and A1's apply would rewrite the manifest draft inside them; the S2 commit adds them under `agent_briefs/` with the draft replaced by a pointer to the committed manifest |
+| 2026-10-02 | A2, A4, A5, A7 | A7: A2 renames the ci task id `website-api-test` to `api-test` and owns the workflows; A4 renames the `website-api-tests-` temporary prefix and the `engineering_laws_website_api_…` test, owns `.gitignore`, and settles the development upload default; A5 applies its births manifest only when every rewritten file is its own; A7 is added for the tool's false rewrites. The deployed unit `tbd-website-api.service` and `website_api_health_check` keep their names (the website's API service, not a package) |
+| 2026-10-02 | A6 | A9: runbooks spell no retired path; the one-time OC-deploy moves live in the S2 brief, archived at the S2 commit under `documentation/archive/restructure_agent_briefs/` together with the S1 briefs, and the runbooks link to that section |
 
 ## Open findings
 
@@ -222,7 +237,7 @@ become tickets at S12.
   the S0 commit.
 - **F-005 (FIX, closing batch): `documentation/standards/where_does_x_go.md:82` names only the
   lowercase `generated` exemption.** Reported by T5; the file was outside its ownership.
-- **F-006 (FIX, closing batch): the map engine READMEs still list `earcutr`** (`apps/website/map-engine/README.md:103`, `apps/website/map-engine/src/README.md:86`). Reported by T2.
+- **F-006 (FIX, closing batch): the map engine READMEs still list `earcutr`** (`legacy/map_engine/README.md:103`, `legacy/map_engine/src/README.md:86`). Reported by T2.
 - **F-007 (decided, D14): `clippy::unwrap_used` in the workspace lint policy also fires in `#[cfg(test)]` code.** New crates' tests then use `expect`. The alternative is a root `clippy.toml` with `allow-unwrap-in-tests = true`. Reported by T2.
 - **F-008 (NOTE, environment): one verification_core `file_length` test fails in this container because it runs as root, which can read a mode-000 file.** The test assumes a non-root user, as CI is. Gates run here record it as environmental. Reported by T2.
 - **F-009 (FIX, closing batch): two tools still create root-level build folders.** `tools/xtask/src/commands/mcp/daemon.rs:96` (`target-dev-mcpd`) and `tools/xtask/src/commands/db/operations/selftest.rs:365` (`target-mk-db-selftest`) move under `target/`. Reported by T3.
@@ -230,7 +245,7 @@ become tickets at S12.
 - **F-011 (NOTE, environment): eight developer_tools library tests read Git LFS objects this container has not pulled.** The S0 gate pulls the LFS objects those tests need before running them.
 - **F-012 (decided, D13): the name of the parking folder.** The repository's prose rule (`tools/xtask/src/tests/tooling_prose_rules.rs:65`) bans the word "legacy" as history vocabulary, which is the planned folder name of decision D12. The laws T4 wrote name that folder, so one xtask prose test fails now. Either rename the parking folder to a present-tense name, or exempt the folder name from the rule. Reported by T4.
 - **F-013 (NOTE, S2): a legacy map engine that re-exports the graphics engine would show about 28 shims.** The S2 and S4 prompts must cut or switch them in the stage that creates them. Reported by T4.
-- **F-014 (FIX, before the S0 gate): the xtask prose-rule tests fail on T4's law files.** `tools/xtask/src/tests/tooling_prose_rules.rs` flags the word "legacy" (see F-012) and planned paths such as `crates/map_rendering` and `prelude.rs` written in prose. Reported by T1b and T4.
+- **F-014 (FIX, before the S0 gate): the xtask prose-rule tests fail on T4's law files.** `tools/xtask/src/tests/tooling_prose_rules.rs` flags the word "legacy" (see F-012) and planned paths such as crates/map_rendering and `prelude.rs` written in prose. Reported by T1b and T4.
 - **F-015 (NOTE): a relocation `path` row never rewrites `mod` declarations**; each stage's author edits them. Reported by T1b.
 - **F-016 (FIX, done by G0b): `.ai/tickets/T-086.toml` was not in canonical form** (hand-edited in milestone S), so the ticket store's round-trip test failed.
 - **F-017 (FIX, done by G0b): `ticket check --strict` rejected plan slice ids** in `documentation/mod/script_modularisation_progress_checkpoint.md` that match the retired priority-backlog id pattern.
@@ -246,6 +261,9 @@ become tickets at S12.
 - **F-027 (NOTE): the slice-execution stub test failed once with "Text file busy"**, a race that predates the program. Reported by R2.
 - **F-028 (NOTE): a workspace-wide `cargo test` fails 24 developer_tools tests with "No rustls crypto provider"** because feature unification adds `rustls-no-provider` to reqwest (fleet host agent, API) while developer_tools installs no provider. CI and `ci-local` test per package, where they pass. Predates S1.
 - **F-029 (NOTE, S12): README indexes under the archive and ticket-document folders are live documents** (`documentation/standards/readme_standard.md`), but the relocation tool gives them the frozen treatment, so their Contents blocks need hand fixes after a move (R4 fixed 21; three restored after the clone copy). Reported by R4 and R5.
+- **F-030 (FIX, A7): the relocation tool makes two false rewrites its dry run cannot see**: a lone `"/"` Rust literal is read as a path, and a synthetic fixture path is re-anchored when only its leading folder is tracked. Reported by A1.
+- **F-031 (FIX, done in S2): the package rename rewrote the stored compiler identity.** `COMPILER_PACKAGE_VERSION` was built from the package name, so the text row changed the value recorded with every artifact and hashed into its digest (seed digests, goldens, tests). It is now the literal `website-map-engine 0.1.0`, the value every stored artifact carries; later stages keep it when the compiler moves crates.
+- **F-032 (NOTE): stage manifests are not the place for one-time operator moves.** Runbooks link the archived S2 brief's OC-deploy section for the server-side moves and the GitHub required checks, which stay the operator's until the next deploy.
 - **F-002 (CLOSE, P0): shallow clone.** The container's clone was shallow, so 353 archive
   permalinks failed link-check as unknown objects. `git fetch --unshallow` in P0 fixed it, and
   link-check passes (2044 checks). A fresh container clones shallow again, so every new session
@@ -258,22 +276,26 @@ become tickets at S12.
     the wasm build.
   - The wasm32 build has 253 errors (116 bin, 137 test).
   - CI lints the frontend for wasm32 only, without `-D warnings`, so this predates the program.
-  - Until S3, GS step 2 runs with `--exclude website-frontend`, and step 3 may not raise the wasm
+  - Until S3, GS step 2 runs with `--exclude frontend`, and step 3 may not raise the wasm
     warning count above the baseline.
   - S3 makes the frontend clean on both targets, because it touches every frontend file. From S3
     the GS steps apply in full.
 
 ## Handoff
 
-S1 is committed on `main`; S2 is next on the operator's local machine.
+S2 is committed on `main`; M1 and M2 are next.
 
-Next step, S2 apps and deploy:
-1. Launch A1 alone with its brief, `<scratch>/s2_drafts/s2_a1_apps_and_deploy.md` (amendment
-   A6; `<scratch>` is the run folder named under machine notes).
-2. When A1 reports, run A2 to A6 in parallel from `<scratch>/s2_drafts/s2_a2_to_a6.md`.
-3. Pause at OC-deploy: the operator moves the gitignored and server-side files and runs the host
-   migration of the fleet host agent (D17).
-4. Run the full gate set GS (S2 is a checkpoint stage) and commit S2.
+Next step, M1 and M2 (mod):
+1. Write the M1 and M2 briefs (program plan, M1, M2 row): M1 the References folder and every tool
+   path to it, failing closed; M2 the `Objectives/Engine/` grouping and the seven pinned xtask paths.
+2. Run them, then pause at OC-mod: the operator moves the ignored reference folders, regenerates
+   `resourceDatabase.rdb` in Workbench, compiles and boots the world.
+3. The two dirty `resourceDatabase.rdb` files still sit outside every commit; OC-mod regenerates them.
+
+Operator items left from S2: the server-side moves and `deploy staging --migrate-single-instance`
+before the next deploy, and the GitHub required checks `api (Rust 1.95 + Postgres 18)` and
+`frontend (Leptos SPA)` (the archived S2 brief's OC-deploy section). The browser gates run at S5
+(decision D19).
 
 Machine notes (this workstation). The orchestration folder is
 `target/api-progress-checkpoint/2026-10-02-restructure-s1/` (gitignored). Its `env.sh` puts two

@@ -84,7 +84,7 @@ impl LedgerApi {
         headers.insert(AUTHORIZATION, authorization);
         let http = Client::builder()
             .default_headers(headers)
-            .user_agent(concat!("fleet-host-agent/", env!("CARGO_PKG_VERSION")))
+            .user_agent(concat!("fleet_host_agent/", env!("CARGO_PKG_VERSION")))
             .redirect(reqwest::redirect::Policy::none())
             .https_only(api_base_url.scheme() == "https")
             .connect_timeout(CONNECT_TIMEOUT)

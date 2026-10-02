@@ -62,7 +62,7 @@ the flip needs, without the destructive flip itself.
 - **The default flip** — set `SPA_DIST_DIR` in the prod `.env`, flip `FRONTEND_URL` /
   `ALLOWED_ORIGINS` / Discord redirect, staging soak. Needs real OAuth + a real 142 MB save over a
   real network + a rollback artifact (the last React dist).
-- **React deletion** — delete `apps/website/frontend/`, purge the npm CI job, re-home the 16 `_wasm`
+- **React deletion** — delete `apps/frontend/`, purge the npm CI job, re-home the 16 `_wasm`
   parity oracles → `cargo test`, and the **V DOM/PNG oracle freeze** (capture the React DOM for all
   26 routes as goldens before the comparator is deleted). These are the `.29`-delete phase, gated on
   operator go per the finish plan.

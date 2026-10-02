@@ -2,7 +2,7 @@
 //!
 //! ── NOTHING IN THIS FILE RUNS OUTSIDE A LIVE DEPLOY ──────────────────────────────────────────
 //!
-//! `tools/xtask/deploy/deploy.env` is absent on every development machine — it is gitignored
+//! `deploy/deploy.env` is absent on every development machine — it is gitignored
 //! AND rsync-excluded by design, so the credential exists only on the operator's PC. Every
 //! function below that spawns `ssh`, `rsync`, `systemctl` or `curl` is therefore
 //! live-unverified. What IS verified:

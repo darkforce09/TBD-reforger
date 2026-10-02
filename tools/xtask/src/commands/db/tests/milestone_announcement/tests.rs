@@ -4,13 +4,13 @@ fn fixture_root(tag: &str) -> PathBuf {
     let root = std::env::temp_dir().join(format!("seed-announcement-{tag}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(root.join(".ai/tickets")).unwrap();
-    fs::create_dir_all(root.join("apps/website/api_v2")).unwrap();
+    fs::create_dir_all(root.join("apps/api")).unwrap();
     fs::write(root.join(".ai/tickets/ROOT"), "{}").unwrap();
     root
 }
 
 fn write_env(root: &Path, body: &str) {
-    fs::write(root.join("apps/website/api_v2/.env"), body).unwrap();
+    fs::write(root.join("apps/api/.env"), body).unwrap();
 }
 
 fn chmod_755(path: &Path) {
@@ -126,7 +126,7 @@ fn bad_database_url_forwards_psql_rc() {
 fn the_api_directory_resolves_against_the_given_root() {
     let root = PathBuf::from("/tmp/fake-mono");
     let p = Paths::from_root(&root);
-    assert_eq!(p.web, root.join("apps/website/api_v2"));
+    assert_eq!(p.web, root.join("apps/api"));
 }
 
 /// The title and the body name the same event day, Saturday 22 August 2026.

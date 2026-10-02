@@ -8,16 +8,16 @@ Developers and agents read it before writing a class string, a layout colour or 
 
 ## Where it lives
 
-- Website: [`apps/website/frontend/style/aegis.css`](/apps/website/frontend/style/README.md), the
+- Website: [`apps/frontend/style/aegis.css`](/apps/frontend/style/README.md), the
   Tailwind CSS 4 entry. Its `@theme` block defines the `--color-*`, `--font-*`, `--text-*`,
   spacing and radius tokens, which become classes such as `bg-surface-container` and
   `text-label-sm`; its `:root` block sets the shadcn-style variables that `@theme inline` maps.
-  `apps/website/frontend/index.html` puts `class="dark"` on `<html>` and loads the Material
+  `apps/frontend/index.html` puts `class="dark"` on `<html>` and loads the Material
   Symbols Outlined font.
 - [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) chrome: the class constants in
-  `apps/website/frontend/src/v2/apps/editor/shell/layout.rs` (`HOVER_FILL`, `TOGGLED_PLATE`,
+  `apps/frontend/src/v2/apps/editor/shell/layout.rs` (`HOVER_FILL`, `TOGGLED_PLATE`,
   `DISABLED_GLYPH`, the dock and strip panels), which the form controls in
-  [`apps/website/frontend/src/v2/core/ui/`](/apps/website/frontend/src/v2/core/ui/README.md) also
+  [`apps/frontend/src/v2/core/ui/`](/apps/frontend/src/v2/core/ui/README.md) also
   import.
 - Mod: `TBD_UITheme` in
   [`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/`](/apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/README.md)
@@ -38,7 +38,7 @@ The palette has two blues, and a surface uses one of them for one purpose.
   `bg-action text-on-action` button such as "Schedule Operation" in the event manager or the
   content manager's publish button, usually with a blue glow shadow written inline.
 
-`badge_class` in `apps/website/frontend/src/v2/core/ui/badge.rs` maps the status pill variants
+`badge_class` in `apps/frontend/src/v2/core/ui/badge.rs` maps the status pill variants
 onto the palette: `primary`, `tertiary`, `warning` (`tactical-yellow`), `success`, `error`
 (`error-alert`) and a neutral fallback.
 
@@ -86,15 +86,15 @@ stylesheet declares no `@font-face` and `index.html` links only Material Symbols
 renders in Inter only where the viewer has it installed. `text-label-sm` is the metadata and pill
 size, the most used token of the scale; `font-mono` carries coordinates, timers, IDs and values.
 Icons are Material Symbols Outlined glyphs through `MaterialIcon`
-(`apps/website/frontend/src/v2/core/ui/icons.rs`), set by `.material-symbols-outlined` to
+(`apps/frontend/src/v2/core/ui/icons.rs`), set by `.material-symbols-outlined` to
 `FILL 0`, `wght 400`, `GRAD 0`, `opsz 24`. How timestamps read is in the
-[utilities README](/apps/website/frontend/src/v2/core/utils/README.md).
+[utilities README](/apps/frontend/src/v2/core/utils/README.md).
 
 ### Spacing and radii
 
 `@theme` defines `--spacing-navbar-height` (4rem), `--spacing-gutter` (1.5rem) and
 `--spacing-container-max` (90rem), but no Rust view uses them: the top bar is `h-16` (64px) and
-the sidebar `w-80` (320px) in `apps/website/frontend/src/v2/pages/navigation/`, and everything
+the sidebar `w-80` (320px) in `apps/frontend/src/v2/pages/navigation/`, and everything
 else uses Tailwind's 4px spacing scale. `SplitPane`'s master column defaults to `22rem`.
 
 `--radius` is 0.375rem, and the `@theme inline` block derives the radius classes from it, which
@@ -189,7 +189,7 @@ value takes 8): `RADIUS_PANEL` 12, `RADIUS_PILL` 10, `RADIUS_ROW` 8 and `RADIUS_
 ## Data
 
 No call reads the tokens: Tailwind compiles them into the stylesheet that Trunk writes into
-`apps/website/frontend/dist/`, and the mod compiles them into its scripts. `cargo xtask verify
+`apps/frontend/dist/`, and the mod compiles them into its scripts. `cargo xtask verify
 editor-orbat-coherency` pins the map's side tints to their RGBA literals; nothing checks that
 `TBD_UITheme` matches `aegis.css`. The `save-dialog-rect` editor smoke
 (`tools/developer_tools/src/browser_testing/editor_smoke_tests/save_dialog_rect.rs`) measures

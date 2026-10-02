@@ -30,7 +30,7 @@ pub(super) fn rel(repo_root: &Path, hit: &Hit) -> String {
 
 /// Build output is not source.
 ///
-/// A stray `apps/website/graphics-engine/src/target-container/` (536 MB of wasm artifacts, one
+/// A stray `legacy/graphics_engine/src/target-container/` (536 MB of wasm artifacts, one
 /// a generated `thiserror` module among them) exists in this checkout today, and a gate that
 /// reported on a dependency's generated code would be reporting on code nobody in this repo wrote.
 /// `.gitignore` covers `/target/` and `target-*/` anywhere in the tree, so a pruned directory can

@@ -98,13 +98,13 @@ pub(crate) enum VerifyCmd {
     #[command(name = "ci-schema-parity")]
     CiSchemaParity,
     /// documentation/standards/engine_boundary_rules.md §5 rules 1, 2, 3a, 3b, 4, 5, 6 and 7:
-    /// apps/website/graphics-engine may not import website_map_engine, and may not declare a
+    /// legacy/graphics_engine may not import map_engine, and may not declare a
     /// type/fn/mod name containing terrain, symbology, mission, orbat or arma; under
-    /// apps/website/map-engine only the enumerated packet boundary may name
-    /// website_graphics_engine::frame, only the pinned seams may name its device / pipeline /
+    /// legacy/map_engine only the enumerated packet boundary may name
+    /// graphics_engine::frame, only the pinned seams may name its device / pipeline /
     /// shaders / r#loop modules, data/scenario imports nothing outside itself, editing/ names no
     /// web_sys / leptos / wasm_bindgen, and data/ and world/ name each other nowhere; and
-    /// apps/website/frontend neither imports nor depends on website_graphics_engine. (§5 spells it
+    /// apps/frontend neither imports nor depends on graphics_engine. (§5 spells it
     /// `verify-engine-layers`; every sibling here is `verify <name>`, and the
     /// `verify-engine-layers` task row aliases both.)
     #[command(name = "engine-layers")]

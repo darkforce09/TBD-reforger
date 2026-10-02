@@ -1,6 +1,6 @@
 ---
 description: HARD GATE — no application source edits in a Cursor chat without the operator's explicit word to write code
-globs: apps/website/api_v2/src/**/*.rs,apps/website/frontend/src/**/*.rs,apps/mod/**/*.{c,et,conf,lua}
+globs: apps/api/src/**/*.rs,apps/frontend/src/**/*.rs,apps/mod/**/*.{c,et,conf,lua}
 alwaysApply: false
 ---
 
@@ -27,7 +27,7 @@ agent that writes the code updates the documentation it changes in the same comm
 
 ## Forbidden unless the operator clearly says to write the code (for example "Cursor, you write the code")
 
-- Any patch under `apps/website/api_v2/src/`, `apps/website/frontend/src/` or `apps/mod/`.
+- Any patch under `apps/api/src/`, `apps/frontend/src/` or `apps/mod/`.
 - "Fixing" audit findings yourself.
 - Completing plan steps that belong to the coding agent.
 

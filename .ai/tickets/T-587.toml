@@ -83,7 +83,7 @@ owns = [
     "apps/website/api/src/services/mortar.rs",
     "apps/website/api/src/handlers/field_tools.rs",
     "apps/website/api/migrations",
-    "apps/website/frontend/src/mortar.rs",
+    "apps/frontend/src/mortar.rs",
 ]
 
 [scope]

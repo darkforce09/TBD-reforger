@@ -22,7 +22,7 @@ tools/developer_tools/src/browser_testing/ballistics_agreement/
 
 ```text
 contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json ──▶ native_cases(seed, count)
-apps/website/frontend/tests/fixtures/api/GET__ballistics-catalogs*.json
+contracts/fixtures/api_goldens/GET__ballistics-catalogs*.json
    └─ check_served_goldens ──▶ Fetch.requestPaused answers ──▶ /debug/ballistics-agreement
                                                                  └─ <pre data-ballistics-agreement>
 judge_reading(native, reading) ──▶ case ballistics_wasm_agreement_<id> ... ok|FAILED
@@ -33,7 +33,7 @@ judge_reading(native, reading) ──▶ case ballistics_wasm_agreement_<id> ...
    `catalog_version` name the run.
 2. `check_served_goldens` reads `GET__ballistics-catalogs.json` and
    `GET__ballistics-catalogs__<catalog_id>__versions__<version>.json` from
-   `apps/website/frontend/tests/fixtures/api/`: the list must name the version with the SHA-256 of
+   `contracts/fixtures/api_goldens/`: the list must name the version with the SHA-256 of
    the committed file's bytes, and the document must decode to the committed catalog (the API
    re-serialises the stored document, so it is compared decoded).
 3. `native_cases` draws the agreement cases with the map engine's `agreement_cases`, turns each
@@ -54,11 +54,11 @@ judge_reading(native, reading) ──▶ case ballistics_wasm_agreement_<id> ...
 
 | Option | Default | Meaning |
 |---|---|---|
-| `--dist` | `apps/website/frontend/dist` | the built app; relative paths resolve against the repository root |
+| `--dist` | `apps/frontend/dist` | the built app; relative paths resolve against the repository root |
 | `--seed` | 1 | seed of the case lattice |
 | `--count` | 32 | number of cases |
 | `--catalog` | `contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json` | the committed catalog |
-| `--api-goldens` | `apps/website/frontend/tests/fixtures/api` | the folder of captured API goldens the catalog reads are answered from |
+| `--api-goldens` | `contracts/fixtures/api_goldens` | the folder of captured API goldens the catalog reads are answered from |
 | `--port`, `--debug-port` | 5407, 9407 | the static server and Chromium's debugging port |
 | `--timeout-s` | 600 | longest wait for the bench |
 
@@ -68,21 +68,21 @@ or a case disagrees; 3 the committed catalog is unreadable or a driver error.
 
 ## Boundaries
 
-- Depends on: `website_map_engine::data::scenario::ballistics` (`agreement_cases`, `catalog`,
+- Depends on: `map_engine::data::scenario::ballistics` (`agreement_cases`, `catalog`,
   `fire_mission`, `fire_mission_comparison`), through the `scenario` feature of
   `tools/developer_tools/Cargo.toml`; `crate::browser_testing::server` and
   `crate::browser_testing::cdp`; `sha2`, `serde_json`, `tokio`.
 - Used by: `crate::browser_testing::cli` (`gate ballistics-agreement`) and
   `cargo xtask mk ballistics-wasm-agreement`, which runs `trunk build --release` first.
 - Rules: the case-to-inputs mapping, the lead summary and the bit walk are the map engine's
-  (`agreement_cases.rs` of `apps/website/map-engine/src/data/scenario/ballistics/`, tested there),
+  (`agreement_cases.rs` of `legacy/map_engine/src/data/scenario/ballistics/`, tested there),
   called by both the gate and the bench, so they cannot drift; `bench_reading.rs` mirrors the
-  reading of `apps/website/frontend/src/v2/apps/debug/ballistics_agreement/agreement_report.rs`
+  reading of `apps/frontend/src/v2/apps/debug/ballistics_agreement/agreement_report.rs`
   and decodes it strictly. A missing golden fails the gate; nothing is skipped.
 
 ## Related documentation
 
-- [Ballistics agreement bench](/apps/website/frontend/src/v2/apps/debug/ballistics_agreement/README.md) —
+- [Ballistics agreement bench](/apps/frontend/src/v2/apps/debug/ballistics_agreement/README.md) —
   the browser half and its reading.
 - [Build and development-server commands](/tools/xtask/src/commands/build/README.md) —
   `cargo xtask mk ballistics-wasm-agreement`.

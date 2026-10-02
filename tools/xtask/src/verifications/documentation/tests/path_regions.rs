@@ -1,8 +1,21 @@
 use super::*;
 use crate::core::repository_layout::documentation::{
-    ARCHIVE_DIR, CODE_TREES, DOCUMENTATION_ROOT, GAP_ANALYSIS, PENDING_MERGE_DIR, ROADMAP,
+    ARCHIVE_DIR, DOCUMENTATION_ROOT, GAP_ANALYSIS, PENDING_MERGE_DIR, RETIRED_DOCS_ROOT, ROADMAP,
     TICKET_DOCUMENTS_DIR,
 };
+
+/// Top-level folders the span derives rather than lists: today's code trees, the ones the
+/// workspace restructure adds, and one no list has ever named.
+const DERIVED_TOP_LEVEL_FOLDERS: [&str; 8] = [
+    "apps",
+    "tools",
+    "contracts",
+    "assets",
+    "crates",
+    "deploy",
+    "legacy",
+    "a_folder_born_later",
+];
 
 #[test]
 fn a_path_is_within_a_folder_only_at_a_component_boundary() {
@@ -27,20 +40,51 @@ fn paths_split_into_folder_and_name() {
     assert_eq!(join("", README), "README.md");
 }
 
+/// The span is every folder below the repository root, so a top-level folder is judged the moment
+/// it is tracked; the exempt folders and the retired documentation root stay outside it.
 #[test]
-fn the_readme_span_is_the_code_trees_and_the_documentation_root() {
-    for tree in CODE_TREES {
-        assert!(in_code_tree(tree));
-        assert!(in_readme_span(tree));
-        assert!(in_readme_span(&format!("{tree}/deep/folder")));
+fn the_readme_span_is_every_folder_below_the_repository_root() {
+    for top_level in DERIVED_TOP_LEVEL_FOLDERS
+        .into_iter()
+        .chain([DOCUMENTATION_ROOT])
+    {
+        assert!(in_readme_span(top_level), "{top_level} is judged");
+        let deep = format!("{top_level}/deep/folder");
+        assert!(in_readme_span(&deep), "{deep} is judged");
     }
-    assert!(in_readme_span(DOCUMENTATION_ROOT));
     assert!(in_readme_span(ARCHIVE_DIR));
-    assert!(!in_code_tree(DOCUMENTATION_ROOT));
     assert!(!in_readme_span(PENDING_MERGE_DIR));
     assert!(!in_readme_span(&format!("{PENDING_MERGE_DIR}/writer")));
-    assert!(!in_readme_span(".ai/tickets"));
+    assert!(!in_readme_span(RETIRED_DOCS_ROOT));
+    assert!(!in_readme_span(&format!("{RETIRED_DOCS_ROOT}/images")));
+    for hidden in [
+        ".ai",
+        ".ai/tickets",
+        ".github/workflows",
+        ".cursor/rules",
+        ".cargo",
+    ] {
+        assert!(!in_readme_span(hidden), "{hidden} is hidden");
+    }
     assert!(!in_readme_span(""));
+}
+
+/// A file lies in a code tree when any top-level folder but the two documentation roots holds
+/// it; a file at the repository root lies in none.
+#[test]
+fn every_top_level_folder_but_the_documentation_roots_is_a_code_tree() {
+    for top_level in DERIVED_TOP_LEVEL_FOLDERS {
+        let file = format!("{top_level}/area/NOTES.md");
+        assert!(in_code_tree(&file), "{file} lies in a code tree");
+    }
+    for outside in [
+        format!("{DOCUMENTATION_ROOT}/runbooks/deploy.md"),
+        format!("{RETIRED_DOCS_ROOT}/guide.md"),
+        "CLAUDE.md".to_string(),
+        README.to_string(),
+    ] {
+        assert!(!in_code_tree(&outside), "{outside} lies in no code tree");
+    }
 }
 
 #[test]

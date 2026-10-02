@@ -29,7 +29,7 @@ hold those rules. The subfolders mirror the crate folders that have documents of
 | `developer_tools`, the six heavy executables | [`tools/developer_tools/`](/tools/developer_tools/README.md) | [`developer_tools/`](/documentation/tools/developer_tools/README.md) |
 | `enfusion_mcp_node_package`, the pinned MCP server | [`tools/enfusion_mcp_node_package/`](/tools/enfusion_mcp_node_package/README.md) | [Enfusion MCP tooling runbook](/documentation/runbooks/enfusion_mcp_tooling.md) |
 
-The [ticketboard](/documentation/ticketboard/README.md), the desktop viewer that links
+The [ticketboard](/documentation/apps/ticketboard/README.md), the desktop viewer that links
 `ticket_engine`, has its own top-level folder because its code lives in `apps/ticketboard/`.
 Procedures that run the tooling are runbooks, not documents here: the
 [factory waves](/documentation/runbooks/factory_waves/README.md), the

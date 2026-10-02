@@ -81,14 +81,14 @@ test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 123 filtered out
 ### FE + CI
 
 ```text
-$ cargo test -p website-frontend
+$ cargo test -p frontend
 test result: ok. 74 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 
 $ env -u NO_COLOR -u FORCE_COLOR make ci-local-leptos
 # fmt check + clippy wasm32 + cargo test + trunk build --release → ✅ success
 ```
 
-Note: `cargo test -p website-frontend --lib` fails with `no library targets` (bin/wasm package); use bare `cargo test -p website-frontend` as in T-180.1.
+Note: `cargo test -p frontend --lib` fails with `no library targets` (bin/wasm package); use bare `cargo test -p frontend` as in T-180.1.
 
 ## Shipped
 

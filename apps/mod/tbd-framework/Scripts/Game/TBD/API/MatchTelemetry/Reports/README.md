@@ -71,5 +71,5 @@ absent field keeps the stored value, while a malformed one would refuse the whol
 
 - [Match results](/apps/mod/tbd-framework/Scripts/Game/TBD/API/Results/README.md) — the stage watch that registers
   and reports each round
-- [Match telemetry design](/documentation/website/api_v2/verification_evidence/telemetry.md) — match identity,
+- [Match telemetry design](/documentation/apps/api/verification_evidence/telemetry.md) — match identity,
   results revisions and detailed events

@@ -120,7 +120,7 @@ string of a step may name the placeholders `{account_index}`, `{discord_id}`, `{
 
 ## Related documentation
 
-- [Staging design note](/documentation/website/api_v2/verification_evidence/staging.md) — the
+- [Staging design note](/documentation/apps/api/verification_evidence/staging.md) — the
   load procedure, its ten cases and how the report maps onto them.
 - [Staging verification engines](/tools/developer_tools/src/staging_verification/README.md) —
   the folder this engine sits in.

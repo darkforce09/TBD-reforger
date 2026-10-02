@@ -21,7 +21,7 @@ left byte-clean (`git status` empty; HEAD unchanged).
 
 | measurement | value | how |
 |---|---|---|
-| HEAD `--list` | **985** | `cargo test -p website-frontend -- --list`, private dir |
+| HEAD `--list` | **985** | `cargo test -p frontend -- --list`, private dir |
 | HEAD run | **985 passed / 0 failed** | same private dir; `--list` == run |
 | base (`210afb3f`) `--list` | **981** | isolated worktree + private dir |
 | Net delta | **+4** | four new named frontend pins |
@@ -46,7 +46,7 @@ in `map-engine-core` (`--features doc,mission`) — not in the frontend suite co
 
 ## FINDINGS (Evidence → Impact → Disposition; NO-DEFERRAL)
 
-### F1 — MAJOR | `apps/website/frontend/src/eden_settings.rs` (`set_presentation` Ok/Briefing arm) — **T-766 blank clear is unreachable under a non-blank call-site gate (hollow wire)**
+### F1 — MAJOR | `apps/frontend/src/eden_settings.rs` (`set_presentation` Ok/Briefing arm) — **T-766 blank clear is unreachable under a non-blank call-site gate (hollow wire)**
 
 **Evidence.**  
 (a) Live code calls `mirror_briefing_into_document(&next)` unconditionally on PATCH-Ok Briefing

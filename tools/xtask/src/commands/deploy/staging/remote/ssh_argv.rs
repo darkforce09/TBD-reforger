@@ -32,8 +32,8 @@ pub fn rsync_argv(base: &SshBase, mono_root: &Path, host: &str, remote_dir: &str
         "--exclude=apps/mod/Tbd_framework/".into(),
         "--exclude=apps/mod/.local-test-profile/".into(),
         "--exclude=**/node_modules/".into(),
-        "--exclude=apps/website/api_v2/.tools/".into(),
-        "--exclude=apps/website/api_v2/.env".into(),
+        "--exclude=apps/api/.tools/".into(),
+        "--exclude=apps/api/.env".into(),
         "--exclude=apps/mod/tbd-export/".into(),
         "--exclude=apps/mod/tbd-emcp/".into(),
         format!("--exclude={}", crate::core::repository_layout::DEPLOY_ENV),
@@ -47,7 +47,7 @@ pub fn rsync_argv(base: &SshBase, mono_root: &Path, host: &str, remote_dir: &str
         // The app `cargo xtask deploy website` built on the host, in the checkout both deploys
         // share, and which the staging Caddy serves: this rsync must neither replace it with the
         // development machine's build nor delete it.
-        "--exclude=apps/website/frontend/dist/".into(),
+        "--exclude=apps/frontend/dist/".into(),
     ];
     argv.extend(crate::commands::deploy::development_machine_only_paths::exclude_arguments());
     argv.push(format!("{}/", mono_root.display()));

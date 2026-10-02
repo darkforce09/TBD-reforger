@@ -18,7 +18,7 @@
 
 | measurement | value | how |
 |---|---|---|
-| HEAD `--list` | **977** | `cargo test -p website-frontend -- --list`, private dir |
+| HEAD `--list` | **977** | `cargo test -p frontend -- --list`, private dir |
 | HEAD run | **977 passed / 0 failed** | same private dir; `--list` == run |
 | base (`0e2e05da`) `--list` | **972** | isolated worktree + private dir |
 | Net delta | **+5** | +6 new names − 1 renamed pin |
@@ -37,7 +37,7 @@
 
 ## FINDINGS (Evidence → Impact → Disposition; NO-DEFERRAL)
 
-### F1 — NIT | `apps/website/frontend/src/arsenal.rs:1943-1946` — **T-771 leaves a stale comment beside a redundant counter-note (outside owns)**
+### F1 — NIT | `apps/frontend/src/arsenal.rs:1943-1946` — **T-771 leaves a stale comment beside a redundant counter-note (outside owns)**
 
 **Evidence.**  
 (a) Live Attributes banner (`attributes.rs:392-394`) now says pick/cargo = one entity **and** Copy/Apply/Remove Everything = whole selection.  
@@ -50,7 +50,7 @@
 
 ---
 
-### F2 — NIT | `apps/website/frontend/src/asset_catalog.rs:631-632` — **`ß → ss` lore in GlobPattern::parse is false**
+### F2 — NIT | `apps/frontend/src/asset_catalog.rs:631-632` — **`ß → ss` lore in GlobPattern::parse is false**
 
 **Evidence.**  
 (a) Comment claims ``char::to_lowercase` can expand (ß → ss)``.  

@@ -87,8 +87,8 @@ nothing restarts.
   `TBD_MissionArtifactCache` and `TBD_RuntimeDeploymentStruct` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`; `TBD_AdminAudit` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/`; the engine's `GameStateTransitions`.
-  Over HTTP, the executor routes of `apps/website/api_v2/src/server_infrastructure/` and
-  `GET /api/v1/game-runtime/deployment` of `apps/website/api_v2/src/missions/`.
+  Over HTTP, the executor routes of `apps/api/src/server_infrastructure/` and
+  `GET /api/v1/game-runtime/deployment` of `apps/api/src/missions/`.
 - Used by: `TBD_RuntimeSessionLifecycle` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/`, which starts and stops the poller.
 - Rules: `executing` is admitted before any effect starts, and an effect never repeats; one command
@@ -99,5 +99,5 @@ nothing restarts.
 
 ## Related documentation
 
-- [Server infrastructure domain](/apps/website/api_v2/src/server_infrastructure/README.md) — the
+- [Server infrastructure domain](/apps/api/src/server_infrastructure/README.md) — the
   command ledger and the executor routes these scripts call

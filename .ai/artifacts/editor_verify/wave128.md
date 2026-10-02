@@ -12,7 +12,7 @@ else). Main left untouched: `git status --porcelain` empty at exit; this file is
 
 **Harness-lie discipline (T-742):** everything ran in a private
 `CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target-verify128` (worktree attacks in
-`…-verify128-wt`), built from scratch. Reconciliation: `cargo test -p website-frontend -- --list`
+`…-verify128-wt`), built from scratch. Reconciliation: `cargo test -p frontend -- --list`
 = **919 tests**; run = **919 passed / 0 failed** — totals AGREE, and all six new tests are present
 by name in the listed binary (2× asset_catalog T-764, 4× arsenal_rules T-735; T-774 adds none, as
 claimed). `cargo test -p map-engine-core --all-features` on MAIN: **625 passed** (+5/+5/+3 in the
@@ -238,7 +238,7 @@ on PATH (the post-checkout hook errors; checkouts themselves complete). All buil
 here went through `org.freedesktop.Sdk//25.08` (flatpak) for the link step only — rustc is the
 pinned 1.95.0 host toolchain, so codegen (and therefore stack-frame measurements) is unchanged.
 
-**Suite reconciliation (both totals, both crates):** `website-frontend` `--list` = **921**, run =
+**Suite reconciliation (both totals, both crates):** `frontend` `--list` = **921**, run =
 **921 passed / 0 failed** — matches the expected 921 (919 at my audit + the 2 chain/cycle pins).
 `map-engine-core --all-features` `--list` = **639**, run = **638 passed + 1 ignored** (625+5+5+3),
 including `dem::peaks::tests::everon_peaks_max_above_350` — **ok on MAIN**. All four load-bearing
@@ -276,7 +276,7 @@ byte-identical at exit). All 7 green. What was attacked:
 
 **One finding, out of the two commits but inside the attack surface I was told to sweep:**
 
-MINOR | apps/website/frontend/src/arsenal_rules.rs:1371-1373 (`schema_deref`) | RFC 6901 escaped
+MINOR | apps/frontend/src/arsenal_rules.rs:1371-1373 (`schema_deref`) | RFC 6901 escaped
 tokens are neither unescaped nor refused, and when a LITERAL key containing `~1`/`~0` exists the
 pointer resolves to the wrong node — accepting a document the schema, read per spec, rejects. |
 Proved executable: shipped schema + `$defs` keys `"a/b"` = `{"minLength": 9999}` (the spec target
@@ -341,7 +341,7 @@ fail-closed fix above before close.
 
 ### VERIFIED-CLEAN REGISTER (this pass)
 
-1. Suite integrity: website-frontend 921 `--list` == 921 run; map-engine-core 639 `--list` ==
+1. Suite integrity: frontend 921 `--list` == 921 run; map-engine-core 639 `--list` ==
    638 passed + 1 ignored, `everon_peaks_max_above_350` ok on MAIN; fresh private-dir build.
 2. $ref chain refusal: fail-closed at every constructed depth and position (5 subschema
    positions, unreferenced $defs, sibling-carrying middle hops, boolean targets, 8 pointer edge

@@ -79,9 +79,9 @@ solid intervals for wall extraction.
   `tools/developer_tools/src/blueprint/architectural_analysis/surface_classification.rs`, and
   `Params` and `SolidInterval` from `tools/developer_tools/src/blueprint/voxel_processing/`;
   the pak reader in `tools/developer_tools/src/enfusion_pak/`; `crate::repository_layout`;
-  `website_map_engine::spatial::bvh` (the sidecar codec, the BVH and `SurfaceKind`),
-  `website_map_engine::world::architecture::compound` (instances, doors, `CompoundBuilding`,
-  `Rigid`) and `website_map_engine::spatial::los::interior::walker`; the contract
+  `map_engine::spatial::bvh` (the sidecar codec, the BVH and `SurfaceKind`),
+  `map_engine::world::architecture::compound` (instances, doors, `CompoundBuilding`,
+  `Rigid`) and `map_engine::spatial::los::interior::walker`; the contract
   `contracts/definitions/building-instances.schema.json`.
 - Used by: the blueprint root's re-exports and `cargo xtask map` (`bvh-batch`, `bvh-emit`,
   `bvh-parity`, `instances-verify`, `rotation-pin`); the prefab library and archive writer in
@@ -102,9 +102,9 @@ solid intervals for wall extraction.
 
 ## Related documentation
 
-- [Triangle mesh bounding volume hierarchy](/apps/website/map-engine/src/spatial/bvh/README.md) —
+- [Triangle mesh bounding volume hierarchy](/legacy/map_engine/src/spatial/bvh/README.md) —
   the `TBVH` sidecar format these commands write.
-- [Building architecture](/apps/website/map-engine/src/world/architecture/README.md) — the
+- [Building architecture](/legacy/map_engine/src/world/architecture/README.md) — the
   compound building and instance model the instances files feed.
 - [Everon building models](/assets/terrains/everon/prefabs/buildings/README.md) — the committed
   shell sidecar, instances and scene files.

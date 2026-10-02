@@ -49,10 +49,10 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 owns = [
-    "apps/website/frontend/src/nav.rs",
-    "apps/website/frontend/src/faction_manager.rs",
-    "apps/website/frontend/src/app_routes.rs",
-    "apps/website/frontend/src/missions.rs",
+    "apps/frontend/src/nav.rs",
+    "apps/frontend/src/faction_manager.rs",
+    "apps/frontend/src/app_routes.rs",
+    "apps/frontend/src/missions.rs",
 ]
 
 [scope]

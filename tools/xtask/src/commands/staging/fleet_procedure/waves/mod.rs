@@ -41,7 +41,7 @@ pub(crate) struct FleetServer {
     pub name: String,
     /// The game server unit, `tbd-reforger@<instance>.service`.
     pub unit: String,
-    /// The host agent unit, `fleet-host-agent@<instance>.service`.
+    /// The host agent unit, `fleet_host_agent@<instance>.service`.
     pub host_agent_unit: String,
 }
 

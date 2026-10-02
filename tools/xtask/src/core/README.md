@@ -34,7 +34,7 @@ dedicated-server profiles, the MCP transcript fixtures, the ticket locations re-
 runbooks that refusals cite, the [API](/documentation/glossary/a_to_f.md#api) readiness register, and the roots and exemptions of the
 documentation gates.
 
-`deploy_environment` is the only reader of `tools/xtask/deploy/deploy.env`, the file that names
+`deploy_environment` is the only reader of `deploy/deploy.env`, the file that names
 the deploy host (`TBD_SSH_HOST`) and nothing else in the repository does. `deploy_environment_path`
 takes the file from `DEPLOY_ENV` when that is set (made absolute against the working directory),
 else from `DEPLOY_ENV` in `repository_layout`. `DeployEnvironment` answers each key under one rule

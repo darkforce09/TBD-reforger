@@ -11,8 +11,8 @@ session, including a fresh one with no chat history, resumes the program from th
 
 ```text
 documentation/restructure/
-├── agent_briefs/         the shared agent brief and the next stage's agent documents
-├── crate_catalogue.md    every planned crate: category, tier, source paths, dependencies, what it fixes
+├── agent_briefs/         the shared agent brief, and a running stage's agent documents
+├── crate_catalogue.md    every crate, built or planned: category, tier, source paths, dependencies, what it fixes
 ├── laws_and_gates.md     the new repository laws, the standard gate set, gate evolution, end-state checks
 ├── manifests/            the relocation manifests the stages run, and the format sample
 ├── program_plan.md       context, verified findings, binding decisions, execution model, stages, agents, risks
@@ -47,9 +47,9 @@ tree. The research the plan rests on is archived in
 
 ## Code
 
-- [Map engine](/apps/website/map-engine/) and [graphics engine](/apps/website/graphics-engine/) —
+- [Map engine](/legacy/map_engine/) and [graphics engine](/legacy/graphics_engine/) —
   the monoliths the program dissolves into tiered crates.
-- [API](/apps/website/api_v2/), [frontend](/apps/website/frontend/) and
+- [API](/apps/api/), [frontend](/apps/frontend/) and
   [tooling](/tools/) — the other monoliths split into kernel, domain, page and tool crates.
 - [Mod](/apps/mod/) — the reference-folder consolidation and the objective behaviour classes.
 
@@ -70,5 +70,7 @@ tree. The research the plan rests on is archived in
   this program corrects and supersedes.
 - [Restructure research](/documentation/archive/restructure_research/README.md) — the explorer,
   planning and verification reports behind every finding.
+- [Archived agent briefs](/documentation/archive/restructure_agent_briefs/README.md) — the briefs
+  the finished stages' agents ran.
 - [Workspace layout](/documentation/architecture/workspace_layout.md) — the workspace as it stands
   after the latest stage.

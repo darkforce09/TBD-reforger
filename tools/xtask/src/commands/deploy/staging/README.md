@@ -55,7 +55,7 @@ under `~/tbd/fleet/instance-N/`: `server.config.json`, `profile/`, and `secrets/
 `mod-runtime-credential`, `host-agent-credential` and `rcon-password`, folders mode 700 and files
 mode 600. It runs as `tbd-reforger@N.service` from the experimental server install
 (`TBD_SERVER_DIR`, Steam app 1890870) with the shared `-addonsDir`, and its host agent as
-`fleet-host-agent@N.service` with `~/.config/fleet-host-agent/instance-N/agent.toml`. The agent of
+`fleet_host_agent@N.service` with `~/.config/fleet_host_agent/instance-N/agent.toml`. The agent of
 `TBD_FLEET_RELAY_INSTANCE` polls `127.0.0.1:TBD_FLEET_RELAY_PORT`, where
 `acknowledgement-dropping-relay@N.service` forwards to the API.
 
@@ -89,10 +89,10 @@ as a bearer token on curl's stdin, else from the single `TBD_WORKSHOP_MOD_ID`.
 
 - Depends on: `crate::core::repository_root` and `crate::core::deploy_environment` (the settings
   file, the deploy host and the remote folder defaults); `verification_core::proc`; `serde_json` and
-  `regex`; the three template units of `tools/xtask/deploy/systemd/`, embedded by
+  `regex`; the three template units of `deploy/systemd/`, embedded by
   `fleet_units.rs`; on the host, the website API that `cargo xtask deploy website` runs there, the
   credential files `cargo xtask staging provision-fleet` writes, `cargo xtask setup server-profile`,
-  the `fleet-host-agent` crate, the `acknowledgement-dropping-relay` executable of
+  the `fleet_host_agent` crate, the `acknowledgement-dropping-relay` executable of
   `tools/developer_tools` and the dedicated server; and `cargo xtask mod remote-logs --file` for
   the last check.
 - Used by: `tools/xtask/src/commands/deploy/dispatch.rs`; people deploying the staging fleet;

@@ -28,3 +28,32 @@ fn both_gates_run_the_same_ten_class_r_verifies() {
             .any(|(_, n)| *n == "player-identity-comments")
     );
 }
+
+/// The wave gate tests every workspace member: `test workspace members` derives every member
+/// outside the dedicated packages, every dedicated package is a workspace member, and the step
+/// that tests each dedicated package is wired into the gate.
+#[test]
+fn the_wave_gate_tests_every_workspace_member() {
+    let root = crate::core::repository_root::test_repo_root();
+    let derived = crate::commands::ci::workspace_member_tests::member_packages_except(
+        &root,
+        &gate_dispatch::WAVE_GATE_DEDICATED_TEST_PACKAGES,
+    )
+    .expect("every dedicated package is a workspace member");
+    assert!(!derived.is_empty(), "the derived step names no package");
+    let source = include_str!("../../gate/gate_dispatch.rs")
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
+    for wired in [
+        r#"r.run("test api", || db::gate_test_api(ctx));"#,
+        r#""cargo", "test", "-p", "map_engine","#,
+        r#""cargo", "test", "-p", "frontend","#,
+        r#"r.run("test workspace members", ||"#,
+    ] {
+        assert!(
+            source.contains(wired),
+            "the wave gate lost the step `{wired}`"
+        );
+    }
+}

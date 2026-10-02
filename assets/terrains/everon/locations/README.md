@@ -14,7 +14,7 @@ assets/terrains/everon/locations/
 ## Format
 
 - Encoding: an rkyv archive, little-endian and validated whole on read, of
-  `MapLabelsArchive` (`apps/website/map-engine/src/io/archives/labels.rs`) at archive schema
+  `MapLabelsArchive` (`legacy/map_engine/src/io/archives/labels.rs`) at archive schema
   version 1: a lane of towns, a lane of spot heights, and a lane of road-name anchors, each with
   its position, angle and road class baked in. Stored in Git LFS (`.gitattributes`:
   `assets/terrains/**/*.rkyv`).
@@ -32,7 +32,7 @@ assets/terrains/everon/locations/
   road names with the same code the browser would, reads the archive back before writing it, and
   refuses to write one with every lane empty or a road-name list without its road file.
 - Consumers:
-  - the map engine's label host (`apps/website/map-engine/src/world/environment/locations/`),
+  - the map engine's label host (`legacy/map_engine/src/world/environment/locations/`),
     which fetches `/map-assets/everon/locations/map_labels.rkyv` when the manifest's `labels`
     block names it, and takes the towns and road names from it (spot heights it finds on the
     elevation model itself);
@@ -51,7 +51,7 @@ assets/terrains/everon/locations/
 
 ## Related documentation
 
-- [Map labels: towns, roads and heights](/apps/website/map-engine/src/world/environment/locations/README.md)
+- [Map labels: towns, roads and heights](/legacy/map_engine/src/world/environment/locations/README.md)
   — how the labels are chosen and placed.
-- [Map data archives](/apps/website/map-engine/src/io/archives/README.md) — the rkyv archives and
+- [Map data archives](/legacy/map_engine/src/io/archives/README.md) — the rkyv archives and
   their validating reader.

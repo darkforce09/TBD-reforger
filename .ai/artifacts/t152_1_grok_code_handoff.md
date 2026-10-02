@@ -39,7 +39,7 @@ Rust-owned **map text lane** (SDF or canvas→texture) + **importance-distance d
 | `crates/map-engine-core/src/label/` | `LabelSpec`, declutter |
 | `crates/map-engine-render/src/text/` | Font/atlas + TextLane + shader |
 | `crates/map-engine-wasm/` | wasm exports |
-| `apps/website/frontend/src/features/tactical-map/wgpu/wgpuTextLane.ts` | Thin bridge ≤80 LOC |
+| `apps/frontend/src/features/tactical-map/wgpu/wgpuTextLane.ts` | Thin bridge ≤80 LOC |
 | `.ai/artifacts/t152_1_verify_log.md` | G1–G8 PASS table |
 
 ---

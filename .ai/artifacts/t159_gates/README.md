@@ -6,13 +6,13 @@ moved to their consumers (the T-171 fixture convention — fixtures live crate-l
 
 | Corpus | New home | Consumer |
 |--------|----------|----------|
-| R-api response goldens (21 + `_index.tsv`) | `apps/website/frontend/tests/fixtures/api/` | `dto.rs` R-api cargo tests (`include_str!`) + `gate` smokes |
+| R-api response goldens (21 + `_index.tsv`) | `contracts/fixtures/api_goldens/` | `dto.rs` R-api cargo tests (`include_str!`) + `gate` smokes |
 | S-gate manifests (`routes.csv`, `hooks.csv`, `components.csv`, `css_tokens.txt`, `deps.csv`) | `tools/tbd-tools/fixtures/t159/manifests/` | `gate s-routes` |
 | V-suite frozen React DOM oracle (25 routes + `manifest.json`) | `tools/tbd-tools/fixtures/t159/oracle-freeze/` | `gate v-suite verify` / `accept` |
 
 The oracle is **non-regenerable** (captured from the final React dist at T-159.29.1; the React
 app was deleted at T-159.29.3). `gate v-suite freeze` was retired at T-171 for exactly that
-reason — `apps/website/frontend/dist` is now the live Leptos dist, and a re-freeze would
+reason — `apps/frontend/dist` is now the live Leptos dist, and a re-freeze would
 overwrite the oracle. Route-level intentional divergence goes through
 `gate v-suite accept --only <slug> --note "<why>"`.
 

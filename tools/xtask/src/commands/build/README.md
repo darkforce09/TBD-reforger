@@ -43,21 +43,21 @@ since half of them cover that module's pin.
   | `print-cargo-target-dir` | prints the resolved shared target directory |
   | `verify-cargo-target` | checks that the shared target-directory pin is intact, that `rust-build` sets no directory of its own and that `rust-api` builds into this checkout's `target/dev-api` |
   | `reclaim-target-ci` | deletes the primary checkout's `target/ci/` and the retired root-level `target-ci/`, refusing any other path |
-  | `rust-api` | `cargo run --bin api` in `apps/website/api_v2`; stays in the foreground |
-  | `rust-build` | `cargo build --all-targets` in `apps/website/api_v2` |
-  | `rust-test` | `cargo test --lib --bins` in `apps/website/api_v2`, no database |
-  | `rust-fmt` | `cargo fmt --check` in `apps/website/api_v2`, then `cargo fmt --all --check` |
-  | `rust-clippy` | `cargo clippy --all-targets -- -D warnings` in `apps/website/api_v2` |
-  | `rust-ci` | `rust-fmt`, `rust-clippy`, `rust-build`, `wasm-ci`, then the integration tests against a fresh `rust_it` database; needs `cargo xtask db up` |
-  | `wasm-ci` | fmt, clippy (native with all features, and `wasm32-unknown-unknown`) and tests of `website-map-engine`, `website-graphics-engine` and `website-offline-service-worker` |
-  | `leptos` | `trunk serve --release` in `apps/website/frontend`; stays in the foreground on :3000 |
+  | `rust-api` | `cargo run --bin api` in `apps/api`; stays in the foreground |
+  | `rust-build` | `cargo build --all-targets` in `apps/api` |
+  | `rust-test` | `cargo test --lib --bins` in `apps/api`, no database |
+  | `rust-fmt` | `cargo fmt --check` in `apps/api`, then `cargo fmt --all --check` |
+  | `rust-clippy` | `cargo clippy --all-targets -- -D warnings` in `apps/api` |
+  | `rust-ci` | `rust-fmt`, `rust-clippy`, `rust-build`, `wasm-ci`, then `cargo xtask db test-it` in process: the API's complete integration suite against a fresh database; needs `cargo xtask db up` |
+  | `wasm-ci` | fmt, clippy (native with all features, and `wasm32-unknown-unknown`) and tests of `map_engine`, `graphics_engine` and `offline_service_worker` |
+  | `leptos` | `trunk serve --release` in `apps/frontend`; stays in the foreground on :3000 |
   | `leptos-debug` | `trunk serve`, a debug build; stays in the foreground |
-  | `leptos-build` | `trunk build --release` into `apps/website/frontend/dist` |
+  | `leptos-build` | `trunk build --release` into `apps/frontend/dist` |
   | `gate-doctor` | `leptos-build`, then `gate doctor` from `developer_tools` |
   | `leptos-gates` | `leptos-build` once, `gate doctor`, `gate editor-suite` and `gate v-suite verify` |
   | `mortar-offline-gate` | `leptos-build`, then `gate mortar-offline`: the mortar calculator's offline pack, a reload with the server gone, and the page's solution against the native one; needs the Everon tile index and the recorded catalog reads |
   | `ballistics-wasm-agreement` | `leptos-build`, then `gate ballistics-agreement`: the seeded agreement cases solved by the browser bench `/debug/ballistics-agreement` against the native solves, one `case ballistics_wasm_agreement_<id>` line each; needs the recorded catalog reads |
-  | `ci-local-leptos` | `website-frontend` fmt, wasm32 clippy of all targets, native tests, then `trunk build --release` |
+  | `ci-local-leptos` | `frontend` fmt, wasm32 clippy of all targets, native tests, then `trunk build --release` |
 
 - Exit codes: 0 done, or a dry run printed; 2 no target, or an unknown one (`--list` with no
   target exits 0); the failing step's own code; 1 an ABI refusal or a spawn error; 127 a tool
@@ -67,9 +67,10 @@ since half of them cover that module's pin.
 ## Boundaries
 
 - Depends on: `tools/xtask/src/core/cargo_target_directory.rs` (the pin, the ABI guard,
-  `verify-cargo-target` and `reclaim-target-ci`); `verification_core` for verdicts; cargo, trunk,
-  podman and, through `gate`, the `developer_tools` crate; the `tbd_reforger_db` container for
-  `rust-ci`.
+  `verify-cargo-target` and `reclaim-target-ci`); `verification_core` for verdicts; cargo, trunk
+  and, through `gate`, the `developer_tools` crate; the database lane's `db test-it`
+  (`tools/xtask/src/commands/db/operations/test_it.rs`) for `rust-ci`'s integration tests, which
+  resolves the container runtime and reaches the `tbd_reforger_db` container.
 - Used by:
   - `tools/xtask/src/cli/dispatch.rs`, for `cargo xtask mk`;
   - `tools/xtask/src/commands/ci/task_runner/split_cmd.rs`, whose `help` prints `TARGETS`, and
@@ -79,10 +80,14 @@ since half of them cover that module's pin.
   - people, for the servers and the rest.
 - Rules: a target in `TARGETS` must dispatch (`every_advertised_target_dispatches`); only
   `rust-api` sets its own target directory (`only_rust_api_sets_a_private_target_dir`); the
-  printed line is rendered from the fields that run (`echo_matches_make`). The rows `rust-ci`,
-  `rust-fmt`, `rust-clippy`, `rust-build`, `rust-test`, `wasm-ci`, `ci-local-leptos` and
-  `leptos-build` of the `cargo xtask ci` table repeat these recipes, and no test compares the two
-  copies, so a change here is made there too.
+  printed line is rendered from the fields that run (`echo_matches_make`); no recipe line names a
+  container runtime (`no_recipe_line_names_a_bare_container_runtime`), so the database is reached
+  through the database lane only. The rows `rust-ci`, `rust-fmt`, `rust-clippy`, `rust-build`,
+  `rust-test`, `wasm-ci`, `ci-local-leptos`, `leptos-build` and `rust-test-it` of the
+  `cargo xtask ci` table repeat these recipes. Two pairs are compared by tests (`wasm-ci` in
+  `wasm_ci_recipe_and_ci_task_row_run_the_same_lines`, the integration-test step in
+  `rust_ci_and_the_ci_rust_test_it_row_run_the_database_lane`); for the others a change here is
+  made there too.
 
 ## Related documentation
 

@@ -70,13 +70,13 @@ fn every_static_arm_can_go_red() {
     red_append("ban1", EDITOR_OPS, "\nensure_default_squad\n", BANS[0].0);
     red_append(
         "ban1-domain",
-        "apps/website/map-engine/src/data/store/operations/entity/placement.rs",
+        "legacy/map_engine/src/data/store/operations/entity/placement.rs",
         "\nensure_default_squad\n",
         BANS[0].0,
     );
     red_append(
         "ban1-host",
-        "apps/website/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/map_release.rs",
+        "apps/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/map_release.rs",
         "\nensure_default_squad\n",
         BANS[0].0,
     );
@@ -111,7 +111,7 @@ fn a_missing_target_never_reads_as_a_pass() {
 /// the two shapes that must still HOLD, so the classifier is not merely red on everything.
 #[test]
 fn every_cargo_pin_arm_can_go_red() {
-    let label = "-p website-map-engine --lib zzz -- --quiet";
+    let label = "-p map_engine --lib zzz -- --quiet";
     let red = |status, out: &str| classify(label, status, out).unwrap_err();
     let empty = "\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; \
                  0 measured; 277 filtered out; finished in 0.00s\n\n";
@@ -154,7 +154,7 @@ fn the_argv_rendering_and_the_pin_table_match_the_script() {
         "--lib",
         "x",
     ];
-    let want = "-p website-map-engine --features scenario store --lib x";
+    let want = "-p map_engine --features scenario store --lib x";
     assert_eq!(shown(&args), want);
     assert_eq!(CARGO_PINS.len(), 25);
     assert_eq!(CARGO_PINS.iter().filter(|p| p.4.is_some()).count(), 5);
@@ -170,14 +170,14 @@ fn the_argv_rendering_and_the_pin_table_match_the_script() {
     assert!(
         !CARGO_PINS
             .iter()
-            .any(|p| p.0 == "website-map-engine" && p.1.is_none()),
-        "every website-map-engine pin must name its feature tier"
+            .any(|p| p.0 == "map_engine" && p.1.is_none()),
+        "every map_engine pin must name its feature tier"
     );
 }
 
 /// `2>&1` is one pipe, not two strings glued together — the interleaving is the contract. The
 /// large case runs well past a 64 KiB pipe buffer on both streams at once: the six
-/// website-frontend pins each replay ~110 lines of warnings, so a wedged capture is not
+/// frontend pins each replay ~110 lines of warnings, so a wedged capture is not
 /// hypothetical. And bash reported an absent cargo as `exited 127` and a SIGKILLed one as
 /// `exited 137`; neither is an exit code, and neither may reach a caller as a plain failure.
 #[test]

@@ -10,7 +10,7 @@ Baseline: **T-174 @ `bbb99526`** (sat progressive, density-heatmap glow removed,
 
 ### A1 (P0) — tree glyphs sticky on zoom-out
 Two independent leaks; both fixed.
-1. **Host skip** — `apps/website/frontend/src/world_assets/world_host.rs:458-465` (`push_to_engine`):
+1. **Host skip** — `apps/frontend/src/world_assets/world_host.rs:458-465` (`push_to_engine`):
    `if !trees.is_empty() || pin_settled { e.upload_icon_lane(0,&trees,true) }` (same props `:461`,
    badges `:464`). `pin_settled = residency.pin_settled()` (`residency.rs:1569-1573`, derived: all
    pinned chunks resident). On zoom-out the LOD clears trees (heatmap rung / below band → empty vec)
@@ -31,7 +31,7 @@ Two independent leaks; both fixed.
   Same lod-off gate applied to the building fill guard (`world_host.rs:428-429 skip_buildings`).
 
 ### A2 (P1) — forest mass delay after zoom-out too long
-`apps/website/frontend/src/world_assets/forest_mass.rs:128-138` (`fetch_missing`): despite the
+`apps/frontend/src/world_assets/forest_mass.rs:128-138` (`fetch_missing`): despite the
 `FETCH_CONCURRENCY` name it awaits every `.bin` **sequentially** (`for batch in ids.chunks(N) { for
 id in batch { fetch_bytes(id).await } }`). Zoom-out to island needs a large new chunk set → dozens of
 serial RTTs in one `run_viewport` pass before a single `push_composite`. The `present`-count memo
@@ -40,7 +40,7 @@ serial fetch.
 - **Fix:** fetch each batch concurrently (`join_all`) + push after each batch (progressive fill).
 
 ### A3 (P1) — contour lines too dark
-`apps/website/frontend/src/world_assets/dem_vectors.rs:20 CONTOUR_RGBA = [90,70,40,180]` (luma ~72,
+`apps/frontend/src/world_assets/dem_vectors.rs:20 CONTOUR_RGBA = [90,70,40,180]` (luma ~72,
 α180), only consumer `:114` (`compose_contour_hairlines` → flat rgba on every vertex). Contours are
 native 1px `LineList` (`engine.rs:519`) — wgpu cannot widen a line, so color/alpha is the only lever.
 No major/minor tiers. Draw order 5 over Satellite(1)/Sea/Hillshade/Landcover → the dark hairline sits
@@ -65,7 +65,7 @@ per-instance importance `z >= importanceZoom` (continuous, T-152.21) + **min-px 
 ## B — interaction / document
 
 ### B1 (P0) — first-load slots at wrong position
-`apps/website/frontend/src/mission_editor.rs`: engine task (`:439-526`, first bind `slots_bind_soa`
+`apps/frontend/src/mission_editor.rs`: engine task (`:439-526`, first bind `slots_bind_soa`
 `:490-494`) and doc task (`:365-437`) run as independent `spawn_local`s; the engine task does not
 await doc restore. The IDB restore swap (`:375-382`) replaces the doc then calls only `refresh_hud()`
 (`:389`) — **not** a rebind. If engine-create wins the race, `:494` binds the seed SoA; restored

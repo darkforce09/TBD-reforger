@@ -36,12 +36,12 @@ scene file under `?scene=1`; without the sidecar it draws the plan from the blue
 
 - Encoding: UTF-8 JSON in camelCase, and one little-endian binary: `FarmHouse_E_1L01_Wood.bvh` is
   a `TBVH` sidecar, version 2, with a surface kind per triangle
-  (`apps/website/map-engine/src/spatial/bvh/sidecar.rs`). Every file here is a plain git blob:
+  (`legacy/map_engine/src/spatial/bvh/sidecar.rs`). Every file here is a plain git blob:
   the `.gitattributes` BVH rule covers only `prefabs/blas/`.
 - Schema: blueprints follow `contracts/definitions/building-blueprint.schema.json` and read as
-  `BuildingBlueprint` (`apps/website/map-engine/src/world/architecture/blueprint/`); the instances
+  `BuildingBlueprint` (`legacy/map_engine/src/world/architecture/blueprint/`); the instances
   and scene files follow `contracts/definitions/building-instances.schema.json` and read as
-  `InstancesFile` (`apps/website/map-engine/src/world/architecture/compound/instances.rs`). A
+  `InstancesFile` (`legacy/map_engine/src/world/architecture/compound/instances.rs`). A
   scene file has an empty `shellBvh`.
 - Adding a file: a blueprint comes from `cargo xtask map blueprint-from-voxels` or
   `cargo xtask map ingest-blueprints`, both of which validate it against `BuildingBlueprint`; the
@@ -60,13 +60,13 @@ scene file under `?scene=1`; without the sidecar it draws the plan from the blue
   profile (`apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/Buildings/`).
 - Consumers:
   - the debug building viewer and interior bench
-    (`apps/website/frontend/src/v2/apps/debug/building_viewer/`,
-    `apps/website/frontend/src/v2/apps/debug/building_interior.rs`), over `/map-assets`, and their
+    (`apps/frontend/src/v2/apps/debug/building_viewer/`,
+    `apps/frontend/src/v2/apps/debug/building_interior.rs`), over `/map-assets`, and their
     tests, which read `FarmHouse_E_1L01.json` from disk;
   - `cargo xtask map blueprint-from-voxels archive`, which folds every blueprint here into
     `prefabs/building_blueprints.rkyv`;
   - the map engine's blueprint and section tests
-    (`apps/website/map-engine/src/world/architecture/`), which read `FarmHouse_E_1L01.json` and
+    (`legacy/map_engine/src/world/architecture/`), which read `FarmHouse_E_1L01.json` and
     the shell sidecar;
   - the blueprint compiler's sidecar, compound, instance and world-row tests, which pin the
     wooden farmhouse's sidecar and instances.
@@ -82,7 +82,7 @@ scene file under `?scene=1`; without the sidecar it draws the plan from the blue
 
 ## Related documentation
 
-- [Building architecture](/apps/website/map-engine/src/world/architecture/README.md) — the
+- [Building architecture](/legacy/map_engine/src/world/architecture/README.md) — the
   blueprint, compound and section model these files feed.
-- [Building viewer bench](/apps/website/frontend/src/v2/apps/debug/building_viewer/README.md) —
+- [Building viewer bench](/apps/frontend/src/v2/apps/debug/building_viewer/README.md) —
   the debug bench that draws them.

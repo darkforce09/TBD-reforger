@@ -69,103 +69,101 @@ use verification_core::{NotRun, Pattern, Verdict, gate};
 // read and stripped back for the message, rather than mutating this process's cwd — tests run in
 // parallel threads.
 #[cfg(test)]
-const EDITOR_OPS: &str =
-    "apps/website/frontend/src/v2/apps/editor/bridge/host_state/editor_context/mod.rs";
+const EDITOR_OPS: &str = "apps/frontend/src/v2/apps/editor/bridge/host_state/editor_context/mod.rs";
 // The place path spans two crates: the document mutations in the map engine
 // (`data/store/operations` and the hosted commands that drive them) and the host half in the
 // frontend that arms a placement and commits it. Both sides are scanned together, and the scratch
 // fixtures perturb one of each, so moving a mutation across the crate boundary cannot bypass the
 // ban.
 const EDITOR_OPS_SPLIT: &[&str] = &[
-    "apps/website/frontend/src/v2/apps/editor/arsenal/loadout_commands.rs",
-    "apps/website/frontend/src/v2/apps/editor/bridge/tactical_graphics_authoring.rs",
-    "apps/website/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/map_release.rs",
-    "apps/website/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/mod.rs",
-    "apps/website/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/palette_arming.rs",
-    "apps/website/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/zone_draw.rs",
-    "apps/website/frontend/src/v2/apps/editor/bridge/host_state/editor_context/attributes_modal.rs",
-    "apps/website/frontend/src/v2/apps/editor/bridge/host_state/editor_context/dock_mirrors.rs",
-    "apps/website/frontend/src/v2/apps/editor/bridge/host_state/editor_context/document_fields.rs",
-    "apps/website/frontend/src/v2/apps/editor/bridge/host_state/editor_context/installation.rs",
-    "apps/website/frontend/src/v2/apps/editor/bridge/host_state/editor_context/mod.rs",
-    "apps/website/frontend/src/v2/apps/editor/bridge/host_state/entity_selection.rs",
-    "apps/website/frontend/src/v2/apps/editor/bridge/host_state/undo_grouped_gestures.rs",
-    "apps/website/map-engine/src/data/store/operations/apply_faction/apply.rs",
-    "apps/website/map-engine/src/data/store/operations/apply_faction/authorship.rs",
-    "apps/website/map-engine/src/data/store/operations/apply_faction/library.rs",
-    "apps/website/map-engine/src/data/store/operations/apply_faction/mod.rs",
-    "apps/website/map-engine/src/data/store/operations/assets.rs",
-    "apps/website/map-engine/src/data/store/operations/attrs.rs",
-    "apps/website/map-engine/src/data/store/operations/cargo.rs",
-    "apps/website/map-engine/src/data/store/operations/cargo_rules.rs",
-    "apps/website/map-engine/src/data/store/operations/compositions.rs",
-    "apps/website/map-engine/src/data/store/operations/document_index.rs",
-    "apps/website/map-engine/src/data/store/operations/entity/clipboard.rs",
-    "apps/website/map-engine/src/data/store/operations/entity/comments.rs",
-    "apps/website/map-engine/src/data/store/operations/entity/connections.rs",
-    "apps/website/map-engine/src/data/store/operations/entity/factions.rs",
-    "apps/website/map-engine/src/data/store/operations/entity/identity.rs",
-    "apps/website/map-engine/src/data/store/operations/entity/markers.rs",
-    "apps/website/map-engine/src/data/store/operations/entity/mod.rs",
-    "apps/website/map-engine/src/data/store/operations/entity/placement.rs",
-    "apps/website/map-engine/src/data/store/operations/entity/roster.rs",
-    "apps/website/map-engine/src/data/store/operations/entity/selection.rs",
-    "apps/website/map-engine/src/data/store/operations/entity/vehicles.rs",
-    "apps/website/map-engine/src/data/store/operations/entity/zones.rs",
-    "apps/website/map-engine/src/data/store/operations/environment.rs",
-    "apps/website/map-engine/src/data/store/operations/faction_library.rs",
-    "apps/website/map-engine/src/data/store/operations/mod.rs",
-    "apps/website/map-engine/src/data/store/operations/place_orbat/mod.rs",
-    "apps/website/map-engine/src/data/store/operations/place_orbat/placement.rs",
-    "apps/website/map-engine/src/data/store/operations/placement/alignment.rs",
-    "apps/website/map-engine/src/data/store/operations/placement/garrison.rs",
-    "apps/website/map-engine/src/data/store/operations/placement/geometry.rs",
-    "apps/website/map-engine/src/data/store/operations/placement/mod.rs",
-    "apps/website/map-engine/src/data/store/operations/placement/patterns.rs",
-    "apps/website/map-engine/src/data/store/operations/projections.rs",
-    "apps/website/map-engine/src/data/store/operations/reassign.rs",
-    "apps/website/map-engine/src/data/store/operations/rotation.rs",
-    "apps/website/map-engine/src/data/store/operations/rows.rs",
-    "apps/website/map-engine/src/data/store/operations/slot_ids/duplicates.rs",
-    "apps/website/map-engine/src/data/store/operations/slot_ids/mod.rs",
-    "apps/website/map-engine/src/data/store/operations/tactical_graphics.rs",
-    "apps/website/map-engine/src/data/store/operations/transform.rs",
-    "apps/website/map-engine/src/data/store/operations/zones.rs",
-    "apps/website/map-engine/src/editing/hosted_commands/composition_library.rs",
-    "apps/website/map-engine/src/editing/hosted_commands/document_edit.rs",
-    "apps/website/map-engine/src/editing/hosted_commands/document_search.rs",
-    "apps/website/map-engine/src/editing/hosted_commands/editor_layers.rs",
-    "apps/website/map-engine/src/editing/hosted_commands/entity_clipboard.rs",
-    "apps/website/map-engine/src/editing/hosted_commands/entity_connections.rs",
-    "apps/website/map-engine/src/editing/hosted_commands/map_comments.rs",
-    "apps/website/map-engine/src/editing/hosted_commands/map_markers.rs",
-    "apps/website/map-engine/src/editing/hosted_commands/map_triggers.rs",
-    "apps/website/map-engine/src/editing/hosted_commands/mod.rs",
-    "apps/website/map-engine/src/editing/hosted_commands/orbat_roster.rs",
-    "apps/website/map-engine/src/editing/hosted_commands/placed_vehicles.rs",
-    "apps/website/map-engine/src/editing/hosted_commands/selection_transform.rs",
-    "apps/website/map-engine/src/editing/hosted_commands/slot_attributes.rs",
-    "apps/website/map-engine/src/editing/hosted_commands/slot_loadouts.rs",
-    "apps/website/map-engine/src/editing/hosted_commands/squad_reassignment.rs",
-    "apps/website/map-engine/src/editing/hosted_commands/zone_authoring.rs",
+    "apps/frontend/src/v2/apps/editor/arsenal/loadout_commands.rs",
+    "apps/frontend/src/v2/apps/editor/bridge/tactical_graphics_authoring.rs",
+    "apps/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/map_release.rs",
+    "apps/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/mod.rs",
+    "apps/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/palette_arming.rs",
+    "apps/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/zone_draw.rs",
+    "apps/frontend/src/v2/apps/editor/bridge/host_state/editor_context/attributes_modal.rs",
+    "apps/frontend/src/v2/apps/editor/bridge/host_state/editor_context/dock_mirrors.rs",
+    "apps/frontend/src/v2/apps/editor/bridge/host_state/editor_context/document_fields.rs",
+    "apps/frontend/src/v2/apps/editor/bridge/host_state/editor_context/installation.rs",
+    "apps/frontend/src/v2/apps/editor/bridge/host_state/editor_context/mod.rs",
+    "apps/frontend/src/v2/apps/editor/bridge/host_state/entity_selection.rs",
+    "apps/frontend/src/v2/apps/editor/bridge/host_state/undo_grouped_gestures.rs",
+    "legacy/map_engine/src/data/store/operations/apply_faction/apply.rs",
+    "legacy/map_engine/src/data/store/operations/apply_faction/authorship.rs",
+    "legacy/map_engine/src/data/store/operations/apply_faction/library.rs",
+    "legacy/map_engine/src/data/store/operations/apply_faction/mod.rs",
+    "legacy/map_engine/src/data/store/operations/assets.rs",
+    "legacy/map_engine/src/data/store/operations/attrs.rs",
+    "legacy/map_engine/src/data/store/operations/cargo.rs",
+    "legacy/map_engine/src/data/store/operations/cargo_rules.rs",
+    "legacy/map_engine/src/data/store/operations/compositions.rs",
+    "legacy/map_engine/src/data/store/operations/document_index.rs",
+    "legacy/map_engine/src/data/store/operations/entity/clipboard.rs",
+    "legacy/map_engine/src/data/store/operations/entity/comments.rs",
+    "legacy/map_engine/src/data/store/operations/entity/connections.rs",
+    "legacy/map_engine/src/data/store/operations/entity/factions.rs",
+    "legacy/map_engine/src/data/store/operations/entity/identity.rs",
+    "legacy/map_engine/src/data/store/operations/entity/markers.rs",
+    "legacy/map_engine/src/data/store/operations/entity/mod.rs",
+    "legacy/map_engine/src/data/store/operations/entity/placement.rs",
+    "legacy/map_engine/src/data/store/operations/entity/roster.rs",
+    "legacy/map_engine/src/data/store/operations/entity/selection.rs",
+    "legacy/map_engine/src/data/store/operations/entity/vehicles.rs",
+    "legacy/map_engine/src/data/store/operations/entity/zones.rs",
+    "legacy/map_engine/src/data/store/operations/environment.rs",
+    "legacy/map_engine/src/data/store/operations/faction_library.rs",
+    "legacy/map_engine/src/data/store/operations/mod.rs",
+    "legacy/map_engine/src/data/store/operations/place_orbat/mod.rs",
+    "legacy/map_engine/src/data/store/operations/place_orbat/placement.rs",
+    "legacy/map_engine/src/data/store/operations/placement/alignment.rs",
+    "legacy/map_engine/src/data/store/operations/placement/garrison.rs",
+    "legacy/map_engine/src/data/store/operations/placement/geometry.rs",
+    "legacy/map_engine/src/data/store/operations/placement/mod.rs",
+    "legacy/map_engine/src/data/store/operations/placement/patterns.rs",
+    "legacy/map_engine/src/data/store/operations/projections.rs",
+    "legacy/map_engine/src/data/store/operations/reassign.rs",
+    "legacy/map_engine/src/data/store/operations/rotation.rs",
+    "legacy/map_engine/src/data/store/operations/rows.rs",
+    "legacy/map_engine/src/data/store/operations/slot_ids/duplicates.rs",
+    "legacy/map_engine/src/data/store/operations/slot_ids/mod.rs",
+    "legacy/map_engine/src/data/store/operations/tactical_graphics.rs",
+    "legacy/map_engine/src/data/store/operations/transform.rs",
+    "legacy/map_engine/src/data/store/operations/zones.rs",
+    "legacy/map_engine/src/editing/hosted_commands/composition_library.rs",
+    "legacy/map_engine/src/editing/hosted_commands/document_edit.rs",
+    "legacy/map_engine/src/editing/hosted_commands/document_search.rs",
+    "legacy/map_engine/src/editing/hosted_commands/editor_layers.rs",
+    "legacy/map_engine/src/editing/hosted_commands/entity_clipboard.rs",
+    "legacy/map_engine/src/editing/hosted_commands/entity_connections.rs",
+    "legacy/map_engine/src/editing/hosted_commands/map_comments.rs",
+    "legacy/map_engine/src/editing/hosted_commands/map_markers.rs",
+    "legacy/map_engine/src/editing/hosted_commands/map_triggers.rs",
+    "legacy/map_engine/src/editing/hosted_commands/mod.rs",
+    "legacy/map_engine/src/editing/hosted_commands/orbat_roster.rs",
+    "legacy/map_engine/src/editing/hosted_commands/placed_vehicles.rs",
+    "legacy/map_engine/src/editing/hosted_commands/selection_transform.rs",
+    "legacy/map_engine/src/editing/hosted_commands/slot_attributes.rs",
+    "legacy/map_engine/src/editing/hosted_commands/slot_loadouts.rs",
+    "legacy/map_engine/src/editing/hosted_commands/squad_reassignment.rs",
+    "legacy/map_engine/src/editing/hosted_commands/zone_authoring.rs",
 ];
-const ORBAT_RS: &str =
-    "apps/website/map-engine/src/data/scenario/ast/factions/orbat_slot_template.rs";
-const ORBAT_MGR: &str = "apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager.rs";
-const EDEN_CHROME: &str = "apps/website/frontend/src/v2/apps/editor/shell/eden_chrome.rs";
-const SLOTS_GPU: &str = "apps/website/map-engine/src/overlay/symbology/roles/classify.rs";
+const ORBAT_RS: &str = "legacy/map_engine/src/data/scenario/ast/factions/orbat_slot_template.rs";
+const ORBAT_MGR: &str = "apps/frontend/src/v2/apps/editor/ui/modals/orbat_manager.rs";
+const EDEN_CHROME: &str = "apps/frontend/src/v2/apps/editor/shell/eden_chrome.rs";
+const SLOTS_GPU: &str = "legacy/map_engine/src/overlay/symbology/roles/classify.rs";
 
 /// Every UI source that can render the banned ORBAT copy, plus the editor shell.
 const ORBAT_UI_BAN_TARGETS: &[&str] = &[
     ORBAT_MGR,
-    "apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager/dialog.rs",
-    "apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager/dialog_lifecycle.rs",
-    "apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager/faction_templates.rs",
-    "apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager/slot_inspector.rs",
-    "apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager/snapshot.rs",
-    "apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager/stats.rs",
-    "apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager/tree_panel.rs",
-    "apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager/tree_rows.rs",
+    "apps/frontend/src/v2/apps/editor/ui/modals/orbat_manager/dialog.rs",
+    "apps/frontend/src/v2/apps/editor/ui/modals/orbat_manager/dialog_lifecycle.rs",
+    "apps/frontend/src/v2/apps/editor/ui/modals/orbat_manager/faction_templates.rs",
+    "apps/frontend/src/v2/apps/editor/ui/modals/orbat_manager/slot_inspector.rs",
+    "apps/frontend/src/v2/apps/editor/ui/modals/orbat_manager/snapshot.rs",
+    "apps/frontend/src/v2/apps/editor/ui/modals/orbat_manager/stats.rs",
+    "apps/frontend/src/v2/apps/editor/ui/modals/orbat_manager/tree_panel.rs",
+    "apps/frontend/src/v2/apps/editor/ui/modals/orbat_manager/tree_rows.rs",
     EDEN_CHROME,
 ];
 
@@ -197,15 +195,15 @@ const PINS: &[(&str, &str)] = &[
     ("SIDE_INDFOR_RGBA pin missing", r"SIDE_INDFOR_RGBA: \[u8; 4\] = \[34, 197, 94, 255\]"),
 ];
 
-const MEC: &str = "website-map-engine";
-const MER: &str = "website-map-engine";
-const FE: &str = "website-frontend";
+const MEC: &str = "map_engine";
+const MER: &str = "map_engine";
+const FE: &str = "frontend";
 /// `MC` names the same package as `MEC` / `MER`. They stay apart because the FEATURE tier
 /// differs, and that is what these rows actually pin.
 ///
 /// One argv element, not two, so the failure text reads `--features scenario store`. Rendered by
 /// `shown`.
-const MC: &str = "website-map-engine";
+const MC: &str = "map_engine";
 /// The mission-authoring feature tier.
 const MSN: Option<&str> = Some("scenario store");
 /// The crate default is `scenario` alone, so the graphics tier has to be named: `render` reaches
@@ -266,7 +264,7 @@ const CARGO_PINS: &[PinRow] = &[
     (FE, NOF, false, "objects_chip", None),
     (FE, NOF, false, "open_arsenal", None),
     (FE, NOF, false, "g1_dialog", None),
-    (FE, NOF, false, "orbat_", Some("website-frontend Eden/ORBAT gates")),
+    (FE, NOF, false, "orbat_", Some("frontend Eden/ORBAT gates")),
 ];
 
 // ── Static bans and pins ─────────────────────────────────────────────────────────────────────

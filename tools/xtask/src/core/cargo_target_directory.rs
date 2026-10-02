@@ -125,11 +125,11 @@ pub(crate) const GATE_FRONTEND_DIST_SUBFOLDER: &str = "gate-dist-frontend";
 pub(crate) const GATE_CHECK_SUBFOLDER: &str = "gate-check";
 /// The wave gate's schema step `CARGO_TARGET_DIR`; `TBD_GATE_SCHEMA_TARGET` overrides it.
 pub(crate) const GATE_SCHEMA_SUBFOLDER: &str = "gate-schema";
-/// The wave gate's `website-api` test `CARGO_TARGET_DIR`.
+/// The wave gate's `api` test `CARGO_TARGET_DIR`.
 pub(crate) const GATE_API_SUBFOLDER: &str = "gate-api";
-/// The wave gate's `website-map-engine` test `CARGO_TARGET_DIR`.
+/// The wave gate's `map_engine` test `CARGO_TARGET_DIR`.
 pub(crate) const GATE_MAP_ENGINE_SUBFOLDER: &str = "gate-map-engine";
-/// The wave gate's `website-frontend` test `CARGO_TARGET_DIR`.
+/// The wave gate's `frontend` test `CARGO_TARGET_DIR`.
 pub(crate) const GATE_FRONTEND_SUBFOLDER: &str = "gate-frontend";
 /// The wave gate's `xtask` and `developer_tools` test `CARGO_TARGET_DIR`.
 pub(crate) const GATE_TOOLS_SUBFOLDER: &str = "gate-tools";

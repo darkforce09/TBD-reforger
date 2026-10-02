@@ -30,9 +30,9 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
 use anyhow::{Result, anyhow, bail};
+use map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
 use serde_json::{Value, json};
 use tokio::sync::mpsc::UnboundedReceiver;
-use website_map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
 
 use crate::browser_testing::cdp::{self, Browser, Page};
 use crate::browser_testing::server::{ServeConfig, repo_root, start_server};

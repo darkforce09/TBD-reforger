@@ -87,7 +87,7 @@ to 5.
 
 **Default response:** code runs through the ticket tooling. Say `cargo xtask ticket run` (after
 `--dry-run`), or print the prompt with `cargo xtask ticket prompt <id>`. Do not patch application
-sources (`apps/website/api_v2/src/`, `apps/website/frontend/src/`, `apps/mod/`) in this chat unless
+sources (`apps/api/src/`, `apps/frontend/src/`, `apps/mod/`) in this chat unless
 the operator **clearly** says so: *"Cursor, you write the code"*. When the operator does, the code,
 its tests and its documentation land together in one commit.
 
@@ -115,8 +115,8 @@ from a vague "implement this" — ask one line when it is not explicit.
 Before writing files, state the **mode (A/B/C/F)** and list **every path** you will touch.
 
 If the list includes any of:
-- `apps/website/api_v2/src/**`
-- `apps/website/frontend/src/**`
+- `apps/api/src/**`
+- `apps/frontend/src/**`
 - `apps/mod/**`
 
 and the operator has not explicitly authorized code in this chat → **STOP**.

@@ -82,7 +82,7 @@ Run each as `cargo xtask verify <verb>` from the repository root.
 
 - Synopsis: `verify staging-compose-paths`
 - Does: every compose command of `cargo xtask deploy website` names
-  `apps/website/docker-compose.staging.yml`, and `cargo xtask deploy staging` runs none. Body:
+  `deploy/compose.staging.yml`, and `cargo xtask deploy staging` runs none. Body:
   `tools/xtask/src/verifications/deployment/`.
 - Example: `cargo xtask verify staging-compose-paths`
 

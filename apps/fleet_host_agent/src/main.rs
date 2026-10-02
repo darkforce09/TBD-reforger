@@ -1,4 +1,4 @@
-//! `fleet-host-agent <configuration-file>`: runs the fleet host agent until SIGTERM or SIGINT.
+//! `fleet_host_agent <configuration-file>`: runs the fleet host agent until SIGTERM or SIGINT.
 //!
 //! Exit status: 0 after a requested shutdown or `--help`, 2 for a usage error, 78 (EX_CONFIG)
 //! for an invalid configuration, 1 when the agent cannot start.
@@ -16,7 +16,7 @@ use tokio::signal::unix::{SignalKind, signal};
 use tracing::{error, info};
 use tracing_subscriber::EnvFilter;
 
-const USAGE: &str = "usage: fleet-host-agent <configuration-file>";
+const USAGE: &str = "usage: fleet_host_agent <configuration-file>";
 const EXIT_USAGE: u8 = 2;
 const EXIT_CONFIGURATION: u8 = 78;
 

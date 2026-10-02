@@ -1,0 +1,37 @@
+//! Role: lib.
+//! Position: `legacy/graphics_engine/src` — the pure renderer.
+//! Signals & state: GPU handles and geometry only.
+//! Invariants: this crate never learns a map noun. It defines the frame vocabulary in
+//! `frame/`; `map_engine` speaks it, never the reverse. It must never depend on
+//! `map_engine` — enforced by `cargo xtask verify engine-layers` rule 1.
+//!
+//! Module declarations here are UNGATED on purpose. `wgpu` is a `cfg(target_arch = "wasm32")`
+//! dependency, so the browser half is gated file by file, where the compiler can see exactly
+//! which item needs a GPU. Gating at this level instead would delete whole modules from the
+//! native build — including the pure geometry and packing the native test suite covers.
+
+/// GPU resource ownership.
+pub mod device;
+
+/// Geometry assembly and the draw path.
+pub mod draw;
+
+/// The frame vocabulary — see `frame/mod.rs` for the rule that governs it.
+pub mod frame;
+
+/// The shared binary contract — POD layouts and bit-packing, enumerated in one file.
+pub mod layout;
+
+/// The frame pump — one rAF loop, shared by every canvas the app mounts.
+// `loop` is a keyword, so the module is a raw identifier; the directory is plain `loop/`,
+// which is the name the split program's target tree gives it.
+pub mod r#loop;
+
+/// Render pipeline constructors.
+pub mod pipeline;
+
+/// WGSL shader sources.
+pub mod shaders;
+
+/// Glyph rasterisation and packing.
+pub mod text;

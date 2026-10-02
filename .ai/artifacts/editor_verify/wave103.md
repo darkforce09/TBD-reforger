@@ -89,14 +89,14 @@ Options are **all** placed slots (`placed_slot_choices` = `slot_rows`), so the e
 | Cross-slice: materialize with no engine | SAFE — `after_doc_change` engine access is Option-guarded |
 | Cross-slice: T-641 labels behind Failed | SAFE — `world_assets::bootstrap` only runs in the engine Ok arm (:1373) |
 | allow() growth | +1, the documented `cfg_attr(not(wasm32), allow(dead_code))` on `advance` |
-| clippy | map-engine-core (doc,mission,world, all-targets): clean. website-frontend native: 91 pre-existing warnings, none in range-touched lines (CI gates wasm32 clippy) |
+| clippy | map-engine-core (doc,mission,world, all-targets): clean. frontend native: 91 pre-existing warnings, none in range-touched lines (CI gates wasm32 clippy) |
 
 ## Suite counts at HEAD
 
 - `map-engine-core --features doc,mission`: **345 passed, 1 ignored** (+5+5+3 aux/doctests)
 - `map-engine-core --features doc,mission,world`: **474 passed, 1 ignored**
 - `map-engine-core …,png everon_peaks`: **1 passed** (11.3 s)
-- `website-frontend`: **442 passed** (includes 4× t631, 1× seat_model, 6× store crew via core)
+- `frontend`: **442 passed** (includes 4× t631, 1× seat_model, 6× store crew via core)
 - `map-engine-render text_layout`: **13 passed**
 
 *Verifier process note: three temporary perturbations + one temporary probe module were applied and fully reverted (`git status` clean, range diffstat unchanged). The git-lfs post-checkout hook errors during restore are cosmetic (no LFS paths touched).*
@@ -105,7 +105,7 @@ Options are **all** placed slots (`placed_slot_choices` = `slot_rows`), so the e
 
 ## Re-verification of 5f92cc4a
 
-**VERDICT: CLEARED — BLOCKER-1 resolved through the real path; no new defect. 3 NOTE.** Adversarial pass on `5f92cc4a` ("T-076 fix: crew mutators hydrate-proof", HEAD, exactly `crates/map-engine-core/src/doc/store.rs` 213+/27−, no drive-bys, no import churn; `load_row` and compile untouched). All probes below were temporary edits to the tests mod, run, then reverted — `git status` clean under `crates/` at finish, suite re-confirmed **349 passed + 1 ignored** at pristine HEAD (claim 345→349 TRUE); clippy `-D warnings` (doc,mission,world, all-targets) clean; `website-frontend` **442/442** unchanged.
+**VERDICT: CLEARED — BLOCKER-1 resolved through the real path; no new defect. 3 NOTE.** Adversarial pass on `5f92cc4a` ("T-076 fix: crew mutators hydrate-proof", HEAD, exactly `crates/map-engine-core/src/doc/store.rs` 213+/27−, no drive-bys, no import churn; `load_row` and compile untouched). All probes below were temporary edits to the tests mod, run, then reverted — `git status` clean under `crates/` at finish, suite re-confirmed **349 passed + 1 ignored** at pristine HEAD (claim 345→349 TRUE); clippy `-D warnings` (doc,mission,world, all-targets) clean; `frontend` **442/442** unchanged.
 
 **The three original failure modes re-fired independently at HEAD — all pass** (`probe_original_three_failure_modes_at_head`, built on `compile_payload → hydrate`, not on the shipped tests): post-hydrate unboard clears the seat (collateral seat kept); post-hydrate board preserves the loaded crew AND the merged crew survives a SECOND save/reload (the wipe no longer round-trips); the one-seat scan evicts from a hydrated crew (no soldier in two vehicles). The shipped `hydrated_with_crew` helper routes through the REAL serializer — `crate::mission::compile::compile_payload(&small_maps_json(), &slots_json(), false)` → fresh core → `hydrate` (store.rs:5333) — not a hand-built `Any`, and its precondition asserts pin the hydrated read.
 

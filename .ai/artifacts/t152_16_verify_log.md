@@ -19,7 +19,7 @@ Authority: audit `t152_11_fidelity_audit_report.md` §6.3 (S8, D9, A6) · spec `
 | `scripts/map-assets/verify-height-labels.mjs` | New G2 floor (all rows), G3 named-merge + DEM completeness, G4 200 m dedupe; skip-not-fail when wasm/DEM absent; ASL oracle over all rows. |
 | `packages/tbd-schema/schema/height-labels.schema.json` (new) + `scripts/validate.mjs` | Additive schema (optional `name`); live everon sidecar validated in `make schema-validate`. |
 | `Makefile` | `schema-validate` now runs `verify-height-labels.mjs`. |
-| `apps/website/frontend/src/features/tactical-map/wgpu/wgpuHeightLabels.ts` | `HeightLabelRow.name?` (type only — name round-trips through wasm declutter/pack unchanged; `useWgpuHeightLabels` needs no logic change). |
+| `apps/frontend/src/features/tactical-map/wgpu/wgpuHeightLabels.ts` | `HeightLabelRow.name?` (type only — name round-trips through wasm declutter/pack unchanged; `useWgpuHeightLabels` needs no logic change). |
 | `packages/map-assets/everon/height-labels.json` | Regenerated: 10 unnamed knolls → 26 credible rows. |
 
 ## Gate results — automated, all PASS

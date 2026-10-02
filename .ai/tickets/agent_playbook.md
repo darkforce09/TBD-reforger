@@ -16,9 +16,9 @@ with the derived files the verb wrote and the code and documentation the work ch
 - A ticket file is created only by `cargo xtask ticket add` or `ticket add-child`.
 - Never edit by hand what `cargo xtask ticket sync` writes: `.ai/tickets/queue.json` and the
   next-work block between `<!-- ticket-sync:next:start -->` and `<!-- ticket-sync:next:end -->` in
-  [the Mission Creator roadmap](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md).
+  [the Mission Creator roadmap](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md).
   The ticket column of the
-  [Eden gap analysis](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)
+  [Eden gap analysis](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)
   is kept by hand.
 - Never edit `.ai/tickets/wave.lock`; `cargo xtask wave repack` writes it.
 

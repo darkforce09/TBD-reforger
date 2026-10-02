@@ -1,7 +1,7 @@
 id = "T-1244"
 kind = "work"
 title = "Retire the PATCH /admin/users/{discordId} role route"
-summary = "apps/website/api_v2/src/administration/handlers/role_management.rs:44-69 update_user always answers 409 because website roles derive from Discord, and no frontend page calls it; decide whether to remove the route, its tag, contract and route-acceptance spec."
+summary = "apps/api/src/administration/handlers/role_management.rs:44-69 update_user always answers 409 because website roles derive from Discord, and no frontend page calls it; decide whether to remove the route, its tag, contract and route-acceptance spec."
 class = "audit"
 status = "idea"
 notes = "Route acceptance records it with an explicit refusal-only success shape. Operator decision. Source: milestone V finding V-F81 (administration route acceptance)."

@@ -6,7 +6,7 @@ removal of the density-heatmap glow (no toggle), keeping the load-bearing over-b
 
 ## S1 — low-res satellite (localhost preview-stuck)
 
-Load path (`apps/website/frontend/src/world_assets/satellite.rs`):
+Load path (`apps/frontend/src/world_assets/satellite.rs`):
 
 - `load_satellite` ran `try_preview` (coarse Range mip, `PREVIEW_MAX_EDGE = 1024`) then, unless
   gated, `load_unified_full` (full 14-mip 152 MB chain). **Preview→full progressive already
@@ -62,7 +62,7 @@ renders nothing) + the residency `stats_json` `heatmap_trees` telemetry key (rep
 
 ## S3 — full-dock-height guide rails
 
-`apps/website/frontend/src/eden_chrome.rs` `guide_spans` (`:646`) emits per-depth
+`apps/frontend/src/eden_chrome.rs` `guide_spans` (`:646`) emits per-depth
 `absolute inset-y-0 w-px bg-white/25` stems. `inset-y-0` spans the nearest **positioned** ancestor.
 
 - `ROW` / `ROW_ACTIVE` recipes are `relative` (`:636-637`) → for slot / outliner-folder / palette-leaf

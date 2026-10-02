@@ -12,7 +12,10 @@
 //!
 //! **Invariants:** a literal resolves fully when the whole literal names a tracked path, partly
 //! when only a leading part of its named segments does (a gitignored or planned tail); a full
-//! resolution outranks every partial one; a literal that resolves under two anchors to different
+//! resolution outranks every partial one; a partial resolution counts only for a literal whose lead
+//! or place makes it relative ([`RequiredMatch::LeadingPart`]), so a plain spelling such as a
+//! synthetic fixture path that merely starts with a tracked folder's name is never re-anchored; a
+//! literal of separators alone (`/`) names no path; a literal that resolves under two anchors to different
 //! places is ambiguous, and an error only when the two readings rewrite it differently; the new
 //! literal keeps the old one's `./` lead, trailing `/` and leading `/`, and a literal that climbs
 //! back out of a folder it named (`apps/../from`) keeps everything through its last `..` when the
@@ -49,6 +52,20 @@ impl AnchorKind {
             AnchorKind::EveryCrateFolder => "a crate folder",
         }
     }
+}
+
+/// How much of a literal must name a tracked path for a reading of it to count.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum RequiredMatch {
+    /// The whole literal: a plain spelling with no relative lead, which is a repository-root
+    /// spelling unless its whole path names a tracked path under another anchor. A synthetic path
+    /// such as a test's `deploy/site.service` that only starts with a tracked folder's name names
+    /// nothing and stays as written.
+    WholePath,
+    /// A leading part of it too, with an untracked tail (a gitignored or planned file): a literal
+    /// whose lead (`./`, `../`, `/../`) or place (a link destination, an `include!` or `#[path]`
+    /// argument, a Cargo `path` value, a `CARGO_MANIFEST_DIR` join) makes it relative.
+    LeadingPart,
 }
 
 /// The trees and mapping one file's literals are judged against.
@@ -96,14 +113,16 @@ struct Resolution {
     full: bool,
 }
 
-/// The outcome of the moves for `literal`, read under `anchors` in order.
+/// The outcome of the moves for `literal`, read under `anchors` in order, counting the readings
+/// `required` allows.
 pub(crate) fn resolve_and_rewrite(
     literal: &str,
     leading_slash: bool,
     anchors: &[AnchorKind],
+    required: RequiredMatch,
     context: &ResolutionContext<'_>,
 ) -> ReferenceOutcome {
-    let readings = readings(literal, anchors, context);
+    let readings = readings(literal, anchors, required, context);
     if readings.is_empty() {
         return ReferenceOutcome::NotAReference;
     }
@@ -133,10 +152,11 @@ pub(crate) fn resolve_and_rewrite(
 }
 
 /// Every reading of `literal` worth keeping: the full ones when any exist, otherwise the deepest
-/// partial ones.
+/// partial ones when `required` counts them.
 fn readings(
     literal: &str,
     anchors: &[AnchorKind],
+    required: RequiredMatch,
     context: &ResolutionContext<'_>,
 ) -> Vec<Resolution> {
     let mut seen_folders = Vec::new();
@@ -152,7 +172,8 @@ fn readings(
                 continue;
             }
             seen_folders.push(folder.clone());
-            let reading = read_under(literal, *anchor, &folder, context.before);
+            let reading = read_under(literal, *anchor, &folder, context.before)
+                .filter(|reading| reading.full || required == RequiredMatch::LeadingPart);
             let fallback_reads_unmoved = *anchor == AnchorKind::EveryCrateFolder
                 && reading
                     .as_ref()
@@ -196,7 +217,8 @@ fn read_under(
     }
     let base = normalize(folder, &segments[..lead].join("/"))?;
     if named.is_empty() {
-        let only_climbs = anchor == AnchorKind::FileFolder && literal.contains('/');
+        // Only `.` and `..` segments name a folder; separators alone (`/`) name none.
+        let only_climbs = anchor == AnchorKind::FileFolder && lead > 0 && literal.contains('/');
         return (only_climbs && before.contains(&base)).then(|| Resolution {
             anchor,
             anchor_folder: folder.to_string(),

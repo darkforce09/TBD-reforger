@@ -77,5 +77,5 @@ plan file is missing, and defaults an unset `plan` to the id-derived path.
 - [Documentation standards](/documentation/standards/documentation_standards.md) — the
   document lifecycle and status lines.
 - [Ticket registry](/.ai/tickets/README.md) — the ticket files that cite these documents.
-- [Ticketboard viewer](/documentation/ticketboard/ticketboard_viewer.md) — the board's
+- [Ticketboard viewer](/documentation/apps/ticketboard/ticketboard_viewer.md) — the board's
   behaviour, including the Mark ready form that sets a ticket's spec.

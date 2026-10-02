@@ -25,7 +25,7 @@ tools/xtask/src/commands/deploy/website/
   stops on the second or on any other answer, printing the `mv` commands for the second.
 - `rsync_argv`: `rsync -e <ssh> -avz --delete` of the checkout root with exclusions for `.git/`,
   build output (`target/`, which holds the gates' private folders too, `node_modules`,
-  `apps/website/frontend/dist/`), the server's secrets (the API's `.env` and `.tools/`,
+  `apps/frontend/dist/`), the server's secrets (the API's `.env` and `.tools/`,
   `deploy.env`), the served terrain tree `assets/terrains/`, the scratch and equipment asset
   trees, `packages/`, the untracked reference trees under `apps/mod/` and the local test profile,
   followed by the patterns `deploy staging` excludes too, from
@@ -38,21 +38,20 @@ tools/xtask/src/commands/deploy/website/
   in argv order, which is what `--dry-run` prints.
 - `remote_steps`: every compose step `cd`s into `TBD_REMOTE_DIR`, exports
   `TBD_POSTGRES_HOST_PORT` and defines `staging_compose`, a shell function that runs
-  `apps/website/docker-compose.staging.yml` under docker compose when the host has docker, else
+  `deploy/compose.staging.yml` under docker compose when the host has docker, else
   under podman compose. The steps are: `staging_compose up -d postgres`; `cargo build --release -p
-  website-api --bin api`; the staging host tools of `STAGING_HOST_TOOLS`, `cargo build --release
-  -p website-api --bin staging-fixtures` and `cargo build --release -p developer_tools --bin
+  api --bin api`; the staging host tools of `STAGING_HOST_TOOLS`, `cargo build --release
+  -p api --bin staging-fixtures` and `cargo build --release -p developer_tools --bin
   acknowledgement-dropping-relay`, each proven by `test -x target/release/<executable>`, so the
   staging harness and `cargo xtask deploy staging` find them built from the same checkout;
-  `trunk build --release` in `apps/website/frontend`;
+  `trunk build --release` in `apps/frontend`;
   `staging_compose up -d caddy`, then `staging_compose exec -T caddy caddy reload --config
-  /etc/tbd-caddy/Caddyfile.website --adapter caddyfile`, tried up to `CADDY_RELOAD_ATTEMPTS` (5)
+  /etc/tbd-caddy/Caddyfile --adapter caddyfile`, tried up to `CADDY_RELOAD_ATTEMPTS` (5)
   times a second apart, because `up -d` returns before Caddy's admin endpoint listens;
-  `TBD_DB_CONTAINER=tbd_staging_db cargo xtask db repair-migration-checksum --force`; the move of
-  any `uploads` folder left in `apps/website/api_v2/` into the unit's state folder
-  `tbd-website-api`; and the `systemctl --user restart` of the unit followed by `is-active`.
-  `website.rs` orders them: Postgres, the API build, the host tools build, the app build, Caddy,
-  the checksum repair and the state move. `TBD_SKIP_COMPOSE=1` drops both compose steps;
+  `TBD_DB_CONTAINER=tbd_staging_db cargo xtask db repair-migration-checksum --force`; and the
+  `systemctl --user restart` of the unit followed by `is-active`.
+  `website.rs` orders them: Postgres, the API build, the host tools build, the app build, Caddy and
+  the checksum repair. `TBD_SKIP_COMPOSE=1` drops both compose steps;
   `TBD_SKIP_API_BUILD=1` drops both cargo steps; `TBD_SKIP_SPA_BUILD=1` drops only the app
   build, so Caddy still starts, reloads and serves the build already on the host. The Caddyfile's
   global options trust a forwarded client address from the tunnel's loopback peer
@@ -71,10 +70,10 @@ tools/xtask/src/commands/deploy/website/
 
 - Depends on: `crate::core::repository_layout` (`DEPLOY_ENV`, `WEBSITE_API_UNIT`,
   `SYSTEMD_UNITS_DIR`); `crate::commands::deploy::development_machine_only_paths` for the
-  exclusions both deploys share; the `[[bin]]` names of `apps/website/api_v2/Cargo.toml` and
+  exclusions both deploys share; the `[[bin]]` names of `apps/api/Cargo.toml` and
   `tools/developer_tools/Cargo.toml` for the host tools; `tools/xtask/src/commands/deploy/website.rs` reads the
   settings through `crate::core::deploy_environment`; on the host, the `postgres` and `caddy`
-  services of `apps/website/docker-compose.staging.yml` and the Caddyfile the `caddy` service
+  services of `deploy/compose.staging.yml` and the Caddyfile the `caddy` service
   mounts.
 - Used by: `tools/xtask/src/commands/deploy/website.rs`; `cargo xtask verify
   staging-compose-paths`, which reads `remote_steps.rs` as text.
@@ -84,8 +83,8 @@ tools/xtask/src/commands/deploy/website/
   path (`rsync_excludes_every_development_machine_only_path`), the dry run prints every exclusion
   (`the_dry_run_prints_every_exclusion_the_development_machine_only_paths_included`), and the argv
   ends with source and destination
-  (`rsync_argv_keeps_source_and_destination_last`); the plan ends with the checksum repair and the
-  state move (`the_remote_plan_ends_with_the_checksum_repair_and_the_state_move`), and the Caddy
+  (`rsync_argv_keeps_source_and_destination_last`); the plan ends with the checksum repair
+  (`the_remote_plan_ends_with_the_checksum_repair`), and the Caddy
   step follows compose, not the app build (`the_web_server_step_follows_compose_and_not_the_app_build`);
   the host tools build after the API and skip with it
   (`the_staging_host_tools_build_after_the_api_and_skip_with_it`), each is built and proven
@@ -99,9 +98,11 @@ tools/xtask/src/commands/deploy/website/
   the host's login shell whole (`a_remote_step_reaches_the_login_shell_as_one_word`); the Caddy
   reload names the Caddyfile where the compose service mounts it, and the Caddyfile's site root
   is where it mounts the app (`the_caddy_service_serves_what_the_caddyfile_and_the_reload_name`);
-  the state folder is the one the API unit declares
-  (`the_unit_template_declares_the_state_directory_the_deploy_moves_into`); the
-  `apps/website/api_v2/.env.example` the host's `.env` starts from sets none of the variables the
+  the service mounts the Caddyfile's own folder and no folder that holds `deploy.env`
+  (`the_caddy_service_mounts_no_folder_holding_the_deploy_secrets`);
+  the API unit keeps its runtime files in its own state folder
+  (`the_unit_template_keeps_the_runtime_files_in_its_state_directory`); the
+  `apps/api/.env.example` the host's `.env` starts from sets none of the variables the
   API unit pins, since a value in the `.env` overrides the unit's
   (`the_env_template_sets_none_of_the_variables_the_unit_pins`); the install command
   renders the shipped template (`the_unit_install_command_renders_the_shipped_template_for_the_remote_dir`).

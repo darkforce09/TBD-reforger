@@ -26,8 +26,8 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result};
-use website_map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
-use website_map_engine::data::scenario::ballistics::fire_mission::SOLVER_REVISION;
+use map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
+use map_engine::data::scenario::ballistics::fire_mission::SOLVER_REVISION;
 
 use crate::browser_testing::server::repo_root;
 use bench_reading::decode_bench_reading;
@@ -40,7 +40,7 @@ use native_reference::native_cases;
 pub const COMMITTED_CATALOG: &str = "contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json";
 /// The captured API goldens (the default of [`AgreementArgs::api_goldens`]), relative to the
 /// repository root.
-pub const API_GOLDENS: &str = "apps/website/frontend/tests/fixtures/api";
+pub const API_GOLDENS: &str = "contracts/fixtures/api_goldens";
 /// The bench's route.
 pub const BENCH_ROUTE: &str = "/debug/ballistics-agreement";
 

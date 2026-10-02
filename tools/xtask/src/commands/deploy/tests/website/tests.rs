@@ -40,7 +40,7 @@ fn rsync_excludes_the_secrets_asset_and_scratch_trees() {
     for needed in [
         ".git/",
         "target/",
-        "apps/website/api_v2/.env",
+        "apps/api/.env",
         crate::core::repository_layout::DEPLOY_ENV,
         // The served terrain tree, and the 1.5 GB of gitignored export intermediates beside it.
         "assets/terrains/",
@@ -190,21 +190,19 @@ fn plan_for(skip_compose: bool, skip_api: bool, skip_spa: bool) -> Vec<String> {
 /// The checksum repair and the state move follow every build and precede the restart, which
 /// `execute` issues only after the plan drains. With every build skipped they are the whole plan.
 #[test]
-fn the_remote_plan_ends_with_the_checksum_repair_and_the_state_move() {
+fn the_remote_plan_ends_with_the_checksum_repair() {
     let full = plan_for(false, false, false);
-    assert_eq!(full.len(), 7, "{full:?}");
+    assert_eq!(full.len(), 6, "{full:?}");
     assert!(full[0].contains("Postgres"));
     assert!(full[1].contains("cargo build"));
     assert!(full[2].contains("staging host tools"));
     assert!(full[3].contains("trunk build"));
     assert!(full[4].contains("Caddy"));
     assert!(full[5].contains("checksums"));
-    assert!(full[6].contains("state directory"));
 
     let builds_skipped = plan_for(true, true, true);
-    assert_eq!(builds_skipped.len(), 2, "{builds_skipped:?}");
+    assert_eq!(builds_skipped.len(), 1, "{builds_skipped:?}");
     assert!(builds_skipped[0].contains("checksums"));
-    assert!(builds_skipped[1].contains("state directory"));
 }
 
 /// The web server step belongs to compose, not to the app build: skipping the build keeps Caddy
@@ -212,11 +210,11 @@ fn the_remote_plan_ends_with_the_checksum_repair_and_the_state_move() {
 #[test]
 fn the_web_server_step_follows_compose_and_not_the_app_build() {
     let spa_skipped = plan_for(false, false, true);
-    assert_eq!(spa_skipped.len(), 6, "{spa_skipped:?}");
+    assert_eq!(spa_skipped.len(), 5, "{spa_skipped:?}");
     assert!(spa_skipped[3].contains("Caddy"), "{spa_skipped:?}");
 
     let compose_skipped = plan_for(true, false, false);
-    assert_eq!(compose_skipped.len(), 5, "{compose_skipped:?}");
+    assert_eq!(compose_skipped.len(), 4, "{compose_skipped:?}");
     assert!(
         !compose_skipped
             .iter()
@@ -240,7 +238,7 @@ fn the_staging_host_tools_build_after_the_api_and_skip_with_it() {
     }
 
     let api_skipped = plan_for(false, true, false);
-    assert_eq!(api_skipped.len(), 5, "{api_skipped:?}");
+    assert_eq!(api_skipped.len(), 4, "{api_skipped:?}");
     assert!(
         !api_skipped
             .iter()
@@ -260,7 +258,7 @@ fn the_staging_host_tools_step_builds_and_proves_every_executable() {
     );
     assert!(command.starts_with(&preamble), "{command}");
     for (package, executable) in [
-        ("website-api", "staging-fixtures"),
+        ("api", "staging-fixtures"),
         ("developer_tools", "acknowledgement-dropping-relay"),
     ] {
         let build = format!("cargo build --release -p {package} --bin {executable}");
@@ -278,10 +276,10 @@ fn the_staging_host_tools_step_builds_and_proves_every_executable() {
 /// host never builds or runs a name that no longer exists.
 #[test]
 fn every_staging_host_tool_is_an_executable_its_package_declares() {
-    const WEBSITE_API: &str = include_str!("../../../../../../../apps/website/api_v2/Cargo.toml");
+    const WEBSITE_API: &str = include_str!("../../../../../../../apps/api/Cargo.toml");
     const DEVELOPER_TOOLS: &str = include_str!("../../../../../../developer_tools/Cargo.toml");
     const RELAY_UNIT: &str =
-        include_str!("../../../../../deploy/systemd/acknowledgement-dropping-relay@.service");
+        include_str!("../../../../../../../deploy/systemd/acknowledgement-dropping-relay@.service");
     for tool in &remote_steps::STAGING_HOST_TOOLS {
         let manifest: toml::Value = [WEBSITE_API, DEVELOPER_TOOLS]
             .iter()
@@ -330,8 +328,8 @@ fn every_compose_step_runs_the_staging_compose_file_from_the_checkout() {
         assert!(
             command.contains(
                 "if command -v docker >/dev/null 2>&1; then \
-                 docker compose -f apps/website/docker-compose.staging.yml \"$@\"; else \
-                 podman compose -f apps/website/docker-compose.staging.yml \"$@\"; fi;"
+                 docker compose -f deploy/compose.staging.yml \"$@\"; else \
+                 podman compose -f deploy/compose.staging.yml \"$@\"; fi;"
             ),
             "{command}"
         );
@@ -386,16 +384,22 @@ fn a_remote_step_reaches_the_login_shell_as_one_word() {
 }
 
 /// The compose file's `caddy` service, the Caddyfile and the reload agree: the service mounts the
-/// deploy folder where the reload looks for the Caddyfile and starts Caddy on that file, and it
-/// mounts the app's folder where the Caddyfile's site root points.
+/// Caddyfile's folder where the reload looks for the Caddyfile and starts Caddy on that file, and
+/// it mounts the app's folder where the Caddyfile's site root points.
 #[test]
 fn the_caddy_service_serves_what_the_caddyfile_and_the_reload_name() {
-    const COMPOSE: &str =
-        include_str!("../../../../../../../apps/website/docker-compose.staging.yml");
-    const CADDYFILE: &str = include_str!("../../../../../deploy/Caddyfile.website");
+    const COMPOSE: &str = include_str!("../../../../../../../deploy/compose.staging.yml");
+    const CADDYFILE: &str = include_str!("../../../../../../../deploy/caddy/Caddyfile");
     let in_container = remote_steps::caddyfile_in_container();
-    assert_eq!(in_container, "/etc/tbd-caddy/Caddyfile.website");
+    assert_eq!(in_container, "/etc/tbd-caddy/Caddyfile");
     let mount = remote_steps::CADDY_CONFIG_MOUNT;
+    // The compose file lives in the deploy folder, so the Caddyfile's folder is named from there.
+    let (caddyfile_folder, _) = repository_layout::CADDYFILE
+        .rsplit_once('/')
+        .expect("the Caddyfile sits in a folder");
+    let from_compose = caddyfile_folder
+        .strip_prefix(&format!("{}/", repository_layout::DEPLOY_DIR))
+        .expect("the Caddyfile's folder sits in the deploy folder");
     for line in [
         "  caddy:\n".to_string(),
         "    container_name: tbd_staging_caddy\n".to_string(),
@@ -403,16 +407,80 @@ fn the_caddy_service_serves_what_the_caddyfile_and_the_reload_name() {
         format!(
             "    command: [\"caddy\", \"run\", \"--config\", \"{in_container}\", \"--adapter\", \"caddyfile\"]\n"
         ),
-        format!(
-            "      - ../../{}:{mount}:ro\n",
-            crate::core::repository_layout::DEPLOY_DIR
-        ),
-        "      - ./frontend:/srv/tbd-frontend:ro\n".to_string(),
+        format!("      - ./{from_compose}:{mount}:ro\n"),
+        "      - ../apps/frontend:/srv/tbd-frontend:ro\n".to_string(),
     ] {
         assert!(COMPOSE.contains(&line), "the compose file lacks {line:?}");
     }
     assert!(CADDYFILE.contains("\t\troot * /srv/tbd-frontend/dist\n"));
     assert!(CADDYFILE.contains(":3080 {\n"));
+}
+
+/// The `caddy` service is given no folder that holds the deploy secrets: none of its bind mounts,
+/// read from the compose file's folder, is [`repository_layout::DEPLOY_ENV`]'s folder or a folder
+/// above it. A host keeps its `deploy.env` there, and whatever a mount covers is readable inside
+/// the container.
+#[test]
+fn the_caddy_service_mounts_no_folder_holding_the_deploy_secrets() {
+    const COMPOSE: &str = include_str!("../../../../../../../deploy/compose.staging.yml");
+    let mounted = caddy_service_bind_mounts(COMPOSE);
+    assert!(!mounted.is_empty(), "the caddy service mounts no folder");
+    for folder in &mounted {
+        let shown = if folder.is_empty() {
+            "the checkout root"
+        } else {
+            folder.as_str()
+        };
+        assert!(
+            !(folder.is_empty()
+                || repository_layout::DEPLOY_ENV.starts_with(&format!("{folder}/"))),
+            "the caddy service mounts {shown}, which holds {}",
+            repository_layout::DEPLOY_ENV
+        );
+    }
+}
+
+/// The repository paths of the `caddy` service's bind mounts in the staging compose file, each
+/// read from the compose file's folder, [`repository_layout::DEPLOY_DIR`]; an empty path is the
+/// checkout root. Named volumes are skipped; an absolute host path fails, since it cannot be
+/// placed in the checkout.
+fn caddy_service_bind_mounts(compose: &str) -> Vec<String> {
+    let (_, service) = compose
+        .split_once("\n  caddy:\n")
+        .expect("the caddy service");
+    // The service's keys sit four spaces deep; its end is the next line indented less that is
+    // neither blank nor a comment.
+    let service: Vec<&str> = service
+        .lines()
+        .take_while(|line| {
+            line.is_empty() || line.starts_with("    ") || line.trim_start().starts_with('#')
+        })
+        .collect();
+    let volumes_at = service
+        .iter()
+        .position(|line| *line == "    volumes:")
+        .expect("the caddy service's volumes");
+    service[volumes_at + 1..]
+        .iter()
+        .take_while(|line| line.starts_with("      "))
+        .filter_map(|line| line.trim_start().strip_prefix("- "))
+        .map(|entry| entry.split(':').next().unwrap_or(entry))
+        .filter(|source| source.starts_with('.') || source.starts_with('/'))
+        .map(|source| {
+            assert!(!source.starts_with('/'), "an absolute bind mount: {source}");
+            let mut parts: Vec<&str> = repository_layout::DEPLOY_DIR.split('/').collect();
+            for part in source.split('/') {
+                match part {
+                    "" | "." => {}
+                    ".." => {
+                        parts.pop().expect("a bind mount inside the checkout");
+                    }
+                    name => parts.push(name),
+                }
+            }
+            parts.join("/")
+        })
+        .collect()
 }
 
 /// The Caddyfile trusts a forwarded client address from the tunnel's loopback peer alone: its
@@ -421,7 +489,7 @@ fn the_caddy_service_serves_what_the_caddyfile_and_the_reload_name() {
 /// though a proxy had written it.
 #[test]
 fn the_caddyfile_trusts_forwarded_addresses_only_from_the_tunnel_peer() {
-    const CADDYFILE: &str = include_str!("../../../../../deploy/Caddyfile.website");
+    const CADDYFILE: &str = include_str!("../../../../../../../deploy/caddy/Caddyfile");
     let first_block = CADDYFILE
         .lines()
         .find(|line| !line.is_empty() && !line.starts_with('#'))
@@ -453,32 +521,13 @@ fn the_checksum_repair_runs_in_the_remote_checkout_against_the_staging_container
     );
 }
 
+/// The unit keeps the API's runtime files in its own state folder, outside the checkout the
+/// rsync `--delete` deletes in: it declares the folder and points the API's upload and equipment
+/// folders into it.
 #[test]
-fn the_state_move_targets_the_unit_state_directory_and_is_idempotent() {
-    let cmd = remote_steps::runtime_state_move("/home/deploy/tbd/repo");
-    assert!(
-        cmd.contains("${XDG_STATE_HOME:-$HOME/.local/state}/tbd-website-api"),
-        "{cmd}"
-    );
-    assert!(cmd.contains("for tree in uploads;"), "{cmd}");
-    assert!(
-        cmd.contains("'/home/deploy/tbd/repo/apps/website/api_v2/'"),
-        "{cmd}"
-    );
-    assert!(
-        cmd.contains("if [ -d \"$src\" ]"),
-        "the move must be conditional: {cmd}"
-    );
-    assert!(cmd.contains("--remove-source-files"), "{cmd}");
-}
-
-/// The unit template and the deploy agree on where the runtime files live: the unit points the
-/// API there through its environment, the deploy moves the files there, and both spell the same
-/// `StateDirectory=` name.
-#[test]
-fn the_unit_template_declares_the_state_directory_the_deploy_moves_into() {
-    const UNIT: &str = include_str!("../../../../../deploy/systemd/tbd-website-api.service");
-    let state = remote_steps::STATE_DIRECTORY;
+fn the_unit_template_keeps_the_runtime_files_in_its_state_directory() {
+    const UNIT: &str = include_str!("../../../../../../../deploy/systemd/tbd-website-api.service");
+    let state = "tbd-website-api";
     assert!(
         UNIT.contains(&format!("StateDirectory={state}\n")),
         "{UNIT}"
@@ -496,9 +545,8 @@ fn the_unit_template_declares_the_state_directory_the_deploy_moves_into() {
 /// development one, which the API refuses outside development.
 #[test]
 fn the_env_template_sets_none_of_the_variables_the_unit_pins() {
-    const UNIT: &str = include_str!("../../../../../deploy/systemd/tbd-website-api.service");
-    const ENV_TEMPLATE: &str =
-        include_str!("../../../../../../../apps/website/api_v2/.env.example");
+    const UNIT: &str = include_str!("../../../../../../../deploy/systemd/tbd-website-api.service");
+    const ENV_TEMPLATE: &str = include_str!("../../../../../../../apps/api/.env.example");
     let pinned: Vec<&str> = UNIT
         .lines()
         .filter_map(|line| line.strip_prefix("Environment="))

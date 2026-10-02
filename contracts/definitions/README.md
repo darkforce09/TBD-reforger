@@ -29,11 +29,11 @@ A schema reaches code in one of three ways:
   and fails on any missing, changed or stray file; it runs in `ci-local-schema` and in the
   `contracts.yml` workflow. `loadout-export.schema.json` stays out of codegen, because its
   versioned root `oneOf` does not survive typify; its model is hand-written in
-  `apps/website/api_v2/src/missions/contract/loadout_projection.rs`.
+  `apps/api/src/missions/contract/loadout_projection.rs`.
 - **Embedded validators.** Code embeds a schema with `include_str!` and validates at runtime: the
   API checks the editor payload of `POST /api/v1/missions/{id}/versions`, every compiled
   [artifact](/documentation/glossary/a_to_f.md#artifact), faction documents and registry envelopes
-  (`apps/website/api_v2/src/missions/contract/schema_validators.rs`); the
+  (`apps/api/src/missions/contract/schema_validators.rs`); the
   [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) embeds `mission.schema.json` for
   its zone vocabulary and `loadout-export.schema.json` for its loadout export; the xtask
   equipment-export commands embed `equipment-vehicle-export.schema.json`. An unknown key in a closed
@@ -44,7 +44,7 @@ A schema reaches code in one of three ways:
   `$id`, and holds the committed ballistics catalog and its calibration bundle to one game build,
   export generation and catalog SHA-256; the developer tools' map verifications read the terrain, label and geometry schemas; and
   the API's contract suites validate live responses, request bodies and the frontend's captured
-  API goldens (`apps/website/api_v2/tests/contract_support/mod.rs`).
+  API goldens (`apps/api/tests/contract_support/mod.rs`).
 
 `cargo xtask schema citations` (the `verify-citations` CI task) resolves every
 `@contract <schema>#<pointer>` tag in `.c`, `.rs` and the other code files under `apps/` and
@@ -56,9 +56,9 @@ A schema reaches code in one of three ways:
 | Web API responses without generated types | `service-health`, `session-token`, `profile-update`, `arma-link`, `personnel-actions`, `command-center`, `service-record`, `leave-request`, `event-schedule`, `reservation-actions`, `member-directory`, `fire-mission`, `announcement`, `modpack`, `mission-library`, `mission-default-overrides`, `arsenal-envelopes`, `server-intel`, `runtime-heartbeat-receipt` | the `@contract` tags of the hand-written API models and handlers; the API's route-acceptance and golden parity tests |
 | Fleet and machine credentials | `machine-credential`, `fleet-command` | generated API models; the fleet host agent's ledger client; API contract tests |
 | Game runtime | `game-runtime-session`, `game-runtime-roster`, `game-runtime-deployment` | generated API models; API contract tests; the [mod](/documentation/glossary/g_to_m.md#mod)'s API bridge, which calls these routes |
-| Administration | `personnel-roster`, `audit-log` | generated API models in `apps/website/api_v2/src/administration/models/generated/`; API contract tests; the web app's DTOs |
-| Community content | `vehicle-database`, `wiki-page`, `content-upload` | generated API models in `apps/website/api_v2/src/community_content/models/generated/`; API contract tests; the web app's DTOs |
-| Match telemetry | `match-telemetry` | generated API models in `apps/website/api_v2/src/match_telemetry/models/generated/match_telemetry/`; the API's ingest decoders and the integration suites; the web app's DTOs; the mod's telemetry reports, queue and event wire |
+| Administration | `personnel-roster`, `audit-log` | generated API models in `apps/api/src/administration/models/generated/`; API contract tests; the web app's DTOs |
+| Community content | `vehicle-database`, `wiki-page`, `content-upload` | generated API models in `apps/api/src/community_content/models/generated/`; API contract tests; the web app's DTOs |
+| Match telemetry | `match-telemetry` | generated API models in `apps/api/src/match_telemetry/models/generated/match_telemetry/`; the API's ingest decoders and the integration suites; the web app's DTOs; the mod's telemetry reports, queue and event wire |
 | Missions | `mission`, `mission-editor-payload`, `mission-review`, `mission-deployment` | API validators and generated models; the mod's mission DTOs; the Mission Creator; the map engine's tests |
 | Arsenal and factions | `registry-items`, `registry-compat`, `registry`, `loadout-export`, `faction-library` | API validators, generated and hand-written models; the registry export plugin; the mod's loadout equip path; the Mission Creator's [arsenal](/documentation/glossary/a_to_f.md#arsenal) |
 | Terrain | `terrain-manifest`, `terrain-anchors`, `terrain-registry`, `locations`, `height-labels` | the schema gate; the developer tools' map verifications |
@@ -119,15 +119,15 @@ other map-object schemas, the prefab classification rules and the glyph keys all
 - Producers: people; a schema change ships with its regenerated types and updated fixtures.
 - Consumers:
   - the typify codegen in `tools/xtask/src/commands/generate/`, and the generated modules under
-    `apps/website/api_v2/src/*/models/generated/` and
-    `apps/website/api_v2/src/missions/contract/generated/`;
+    `apps/api/src/*/models/generated/` and
+    `apps/api/src/missions/contract/generated/`;
   - the API's embedded validators in
-    `apps/website/api_v2/src/missions/contract/schema_validators.rs` and
-    `apps/website/api_v2/src/missions/handlers/mission_default_overrides.rs`, and its contract tests
-    under `apps/website/api_v2/tests/`;
+    `apps/api/src/missions/contract/schema_validators.rs` and
+    `apps/api/src/missions/handlers/mission_default_overrides.rs`, and its contract tests
+    under `apps/api/tests/`;
   - the Mission Creator's embeds in
-    `apps/website/frontend/src/v2/apps/editor/ui/inspector/zones_panel/zone_schema_vocabulary.rs`
-    and `apps/website/frontend/src/v2/apps/editor/arsenal/rules/export_schema_contract.rs`;
+    `apps/frontend/src/v2/apps/editor/ui/inspector/zones_panel/zone_schema_vocabulary.rs`
+    and `apps/frontend/src/v2/apps/editor/arsenal/rules/export_schema_contract.rs`;
   - the xtask schema gates in `tools/xtask/src/verifications/schemas/checks/` and the
     equipment-export validation in
     `tools/xtask/src/commands/mod_ops/equipment_vehicle_export/validation.rs`;
@@ -139,7 +139,7 @@ other map-object schemas, the prefab classification rules and the glyph keys all
   - the mod's scripts, whose `@contract` tags cite `mission.schema.json`,
     `loadout-export.schema.json` and the two registry schemas, and the fleet host agent in
     `apps/fleet_host_agent/`, whose ledger client follows `fleet-command.schema.json`;
-  - the API's release image, which copies the whole folder (`apps/website/Dockerfile`).
+  - the API's release image, which copies the whole folder (`deploy/Dockerfile`).
 
 ## Boundaries
 

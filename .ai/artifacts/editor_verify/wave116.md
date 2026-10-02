@@ -1,8 +1,8 @@
 # Wave 116 adversarial verification — T-069 / T-690 / T-696
 
 Range: 619e5a14 → 013bb78f. Suites re-run on merged main:
-`map-engine-core --all-features` **616 pass / 0 fail** (T-747 trap avoided), `website-frontend`
-**817 pass / 0 fail**, `website-api` unit **267 pass / 0 fail**. The one API failure
+`map-engine-core --all-features` **616 pass / 0 fail** (T-747 trap avoided), `frontend`
+**817 pass / 0 fail**, `api` unit **267 pass / 0 fail**. The one API failure
 (`aar_replay_url_backfill`) is environmental — T-542 hard-requires `TEST_DATABASE_URL`/`TBD_GATE_DB`,
 which my shell does not have; it is a pre-wave-116 gate fixture, not a regression. Tree left clean;
 this file is the only write.
@@ -11,7 +11,7 @@ this file is the only write.
 
 ## Findings
 
-### 1. MAJOR | apps/website/frontend/src/eden_dock_left.rs:1107–1130 (`the_index_and_the_fly_to_reuse_the_shipped_paths`), :1083–1101 (`the_dock_has_two_tabs_and_defaults_to_layers`) | T-696's headline source pins are hollow — they match their own source
+### 1. MAJOR | apps/frontend/src/eden_dock_left.rs:1107–1130 (`the_index_and_the_fly_to_reuse_the_shipped_paths`), :1083–1101 (`the_dock_has_two_tabs_and_defaults_to_layers`) | T-696's headline source pins are hollow — they match their own source
 
 **Evidence.** `SRC = include_str!("eden_dock_left.rs")` — the whole file, test module included.
 Every POSITIVE needle in these two tests (`"parse_locations_json"`, `"__editorCamSet"`,
@@ -51,7 +51,7 @@ equivalent, so the gap currently lives nowhere but this report.
 map-engine-render work next wave) or an explicit registry note that RIGHT-MODE-006 excludes the
 glyph.
 
-### 3. MINOR | apps/website/frontend/src/validation_panel.rs:524 | compile findings are never cleared on mission switch — a stale build report follows the operator across missions
+### 3. MINOR | apps/frontend/src/validation_panel.rs:524 | compile findings are never cleared on mission switch — a stale build report follows the operator across missions
 
 **Evidence.** `COMPILE_FINDINGS` is a thread_local written only by `publish_compile_findings`, whose
 only production caller is `export_compiled_now`. Nothing on editor mount, doc hydrate, or route
@@ -64,7 +64,7 @@ the next export.
 **Disposition.** Follow-up: clear (or key by mission id) on editor mount. One line in the hydrate
 path plus a pin.
 
-### 4. MINOR | apps/website/frontend/src/eden_dock_left.rs:821–844 (`fly_to`) | production feature rides the T-166 smoke hook, and every failure mode is silent
+### 4. MINOR | apps/frontend/src/eden_dock_left.rs:821–844 (`fly_to`) | production feature rides the T-166 smoke hook, and every failure mode is silent
 
 **Evidence.** `fly_to` resolves `window.__editorCamSet` via `Reflect::get` with let-else `return` at
 every step. The hook is installed by `mission_editor.rs:4572 register_editor_cam`, called
@@ -105,7 +105,7 @@ actual axum response and asserts `x-compile-diagnostics-count: 0` on a clean mis
 "always present, `0` included" claim by reading: the insert is unconditional and
 `HeaderValue::from_str` over `usize::to_string` cannot fail. Correct today; unpinned behaviourally.
 
-### 7. NIT | apps/website/frontend/src/eden_dock_right.rs:2809 (Attributes lookup), editor_ops.rs `marker_rows` | marker selection is by id alone; a hydrated foreign payload can carry the same marker id under two factions
+### 7. NIT | apps/frontend/src/eden_dock_right.rs:2809 (Attributes lookup), editor_ops.rs `marker_rows` | marker selection is by id alone; a hydrated foreign payload can carry the same marker id under two factions
 
 `mint_marker_id` guarantees uniqueness across factions for markers minted HERE, but briefing markers
 hydrate with whatever ids the stored payload carries; two factions with `mk-1` would make

@@ -41,7 +41,7 @@ it.
 `node_and_file_limits/` holds the `no-node` and `file-length` bodies; its README gives their
 rules. The file-length roots, ceilings and test-file rule live in
 `verification_core::repository_laws` and are shared with the `engineering_laws` test binary of
-`website-api`.
+`api`.
 
 ## Public surface
 

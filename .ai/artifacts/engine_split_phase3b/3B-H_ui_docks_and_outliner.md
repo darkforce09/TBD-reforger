@@ -59,8 +59,8 @@ repointed, never deleted. `xtask/` and `tools/` grepped for any path you moved.
 ## Verification — run once, at the end, from the repo root
 
 ```
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
-CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p website-frontend
+CARGO_TARGET_DIR=target-container cargo test -p frontend
+CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p frontend
 CARGO_TARGET_DIR=target-container cargo fmt --all -- --check
 ```
 

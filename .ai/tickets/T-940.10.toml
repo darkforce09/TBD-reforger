@@ -42,13 +42,13 @@ created_at = "2026-09-05T02:33:18Z"
 completed_at = "2026-09-28T16:08:33Z"
 estimated = ["tokens"]
 owns = [
-    "apps/website/map-engine/src/data/scenario/ballistics/mod.rs",
-    "apps/website/api_v2/src/operations/services/fire_mission_resolve.rs",
-    "apps/website/api_v2/src/operations/handlers/fire_missions/save.rs",
-    "apps/website/frontend/src/v2/pages/field_tools/mortar/page.rs",
-    "apps/website/frontend/src/v2/pages/field_tools/mortar/solve_bridge.rs",
-    "apps/website/frontend/src/v2/core/offline/mod.rs",
-    "apps/website/offline-service-worker/src/lib.rs",
+    "legacy/map_engine/src/data/scenario/ballistics/mod.rs",
+    "apps/api/src/operations/services/fire_mission_resolve.rs",
+    "apps/api/src/operations/handlers/fire_missions/save.rs",
+    "apps/frontend/src/v2/pages/field_tools/mortar/page.rs",
+    "apps/frontend/src/v2/pages/field_tools/mortar/solve_bridge.rs",
+    "apps/frontend/src/v2/core/offline/mod.rs",
+    "crates/contracts/offline_cache_policy/src/lib.rs",
 ]
 
 [scope]

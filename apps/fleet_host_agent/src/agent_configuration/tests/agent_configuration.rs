@@ -62,7 +62,7 @@ impl SecretDirectory {
 }
 
 fn parse(text: &str) -> Result<AgentConfiguration, ConfigurationError> {
-    AgentConfiguration::parse(text, Path::new("/etc/fleet-host-agent/agent.toml"))
+    AgentConfiguration::parse(text, Path::new("/etc/fleet_host_agent/agent.toml"))
 }
 
 #[test]

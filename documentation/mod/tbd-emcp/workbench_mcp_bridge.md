@@ -113,7 +113,7 @@ this path: its plugin writes `$profile:TBD_RegistryItems.json` and `$profile:TBD
 which are copied into `contracts/catalogs/registry-items.workbench.json` and
 `registry-compat.workbench.json`, checked with `cargo xtask ci schema-validate` and loaded into the
 development database with `cargo xtask db registry-import`; `cargo xtask db seed` applies
-`apps/website/api_v2/seeds/registry_dev.sql` instead for a smoke run without Workbench. That
+`apps/api/seeds/registry_dev.sql` instead for a smoke run without Workbench. That
 plugin's menu entry is commented out today, so the registry step has no entry point.
 
 ### Known discrepancies

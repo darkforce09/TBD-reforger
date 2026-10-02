@@ -434,7 +434,7 @@ fn staging_fleet_lists_number_every_wave_and_the_recovery() {
         "12. [harness (host)] W11: the harness stages a new host_agent credential of TBD Staging 1"
     ));
     assert!(text.contains("'rotate-credential' '--instance' '1' '--executor' 'host_agent'"));
-    assert!(text.contains("systemctl --user restart 'fleet-host-agent@1.service'"));
+    assert!(text.contains("systemctl --user restart 'fleet_host_agent@1.service'"));
     assert!(text.contains("setup server-profile \"$INSTANCE/profile\""));
     assert!(text.contains(
         "18. [harness (host), then orchestrator (browser)] W13: the harness arms the relay of TBD Staging 5"

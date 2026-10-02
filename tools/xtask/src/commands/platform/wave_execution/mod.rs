@@ -110,12 +110,12 @@ const UNKNOWN_HELP_BODY: &str = r##"#
 #                                         # `wave N CLOSED` commit — pass one only to widen,
 #                                         # a narrowing base is refused
 #   cargo xtask platform wave gate --slice <ticket-id>   # cheap per-slice gate
-#   cargo xtask platform wave test --slice <ticket-id> -p website-frontend
+#   cargo xtask platform wave test --slice <ticket-id> -p frontend
 #                                         # ad-hoc cargo test into a PER-SLICE private
 #                                         # CARGO_TARGET_DIR. Never bare cargo test against
 #                                         # the shared cache — that is how one worktree runs
 #                                         # another's binary.
-#   cargo xtask platform wave run -p website-api --bin api
+#   cargo xtask platform wave run -p api --bin api
 #                                         # build AND LAUNCH into $CARGO_TARGET_DIR/run-main,
 #                                         # stamped `tbd-built-from <sha> <checkout>`.
 #                                         # Refuses from a worktree: run-main is main's.

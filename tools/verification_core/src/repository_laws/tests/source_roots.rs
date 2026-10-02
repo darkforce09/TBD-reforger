@@ -41,7 +41,7 @@ fn source_roots_the_walks_keep_only_their_extensions() {
 
 #[test]
 fn source_roots_a_test_file_is_a_tests_component_or_a_tests_stem() {
-    assert!(is_test_file("apps/website/api_v2/tests/integration.rs"));
+    assert!(is_test_file("apps/api/tests/integration.rs"));
     assert!(is_test_file("tools/xtask/src/fixture_tests.rs"));
     assert!(is_test_file(
         "apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Hash_tests.c"

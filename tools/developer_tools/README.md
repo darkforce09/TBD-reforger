@@ -30,7 +30,7 @@ for `acknowledgement-dropping-relay`. The `blueprint` and `map_verification` mod
 the checkout root. Every subsystem but the staging verification engines, which speak only to the
 staging API, reads the game's `.pak` archives through `enfusion_pak`, resolves repository paths
 through `repository_layout`, and takes its formats, geometry and spatial indexes from
-`website-map-engine`, the one workspace crate it depends on; `xtask` depends on it in turn.
+`map_engine`, the one workspace crate it depends on; `xtask` depends on it in turn.
 
 Binary formats, schema versions, numeric thresholds, operation order and the emitted bytes are
 contracts the unit tests pin against the inputs in `test_fixtures/` and against synthetic data; the
@@ -69,7 +69,7 @@ ci-local` nor the CI workflow runs them.
 | `STUB_MODE`, `STUB_DAEMON`, `STUB_LINGER` | `success`, off, 1 s | `src/enfusion_tooling/mcp_broker.rs`: the offline stub's behaviour |
 | `CHROME_HEADLESS_SHELL` | the Chromium the harness finds | `src/browser_testing/cdp/chromium_discovery.rs`: the browser executable |
 | `PLAYWRIGHT_BROWSERS_PATH` | `~/.cache/ms-playwright` | `src/browser_testing/cdp/chromium_discovery.rs`: the Playwright browser folder searched before the default cache |
-| `LEPTOS_DIST` | `apps/website/frontend/dist` | `src/browser_testing/editor_smoke_tests/mutations.rs`: the built app `gate r-auth` serves without `--dist` |
+| `LEPTOS_DIST` | `apps/frontend/dist` | `src/browser_testing/editor_smoke_tests/mutations.rs`: the built app `gate r-auth` serves without `--dist` |
 | `TOKEN`, `REFRESH` | none; the smoke exits 2 without them | `src/browser_testing/editor_smoke_tests/mutations.rs`: dev-login tokens for `gate smoke mutations` |
 | `PROFILE`, `ENFUSION_PROFILE_PATH` | none | `src/world_export_pipeline/export_preparation/export_profile.rs`: the [Workbench](/documentation/glossary/n_to_z.md#workbench) profile `world copy-export-profile` reads |
 
@@ -85,7 +85,7 @@ ci-local` nor the CI workflow runs them.
 
 ## Boundaries
 
-- Depends on: `website-map-engine` (`apps/website/map-engine`, with its `world`, `streaming`, `io`
+- Depends on: `map_engine` (`legacy/map_engine`, with its `world`, `streaming`, `io`
   and `bvh` features); the pinned enfusion-mcp npm package in `tools/enfusion_mcp_node_package/`;
   Chromium for the browser gates; an Arma Reforger install or its cached `addons/` for the pak
   readers; and the crates `Cargo.toml` lists.

@@ -4,7 +4,7 @@
 
 **Status:** **shipped + verified** — automated gates + manual @ 367,529 objects: **~94.8 MB estimated** compiled (was ~141 MB pre-dedup, **~33% smaller**); Save dialog + size readout confirmed 2026-06-24.  
 **Git tag on ship:** **T-062.1.1** (`4baf5fa`)  
-**Authority:** [MC ROADMAP](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation/website/frontend/apps/editor/decisions.md) §ACTIVE SLICE · [t062_1_idb_streaming_load.md](t062_1_idb_streaming_load.md) · [t060_1_scale_load_save_completion.md](t060_1_scale_load_save_completion.md) §Payload dedup
+**Authority:** [MC ROADMAP](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation/apps/frontend/apps/editor/decisions.md) §ACTIVE SLICE · [t062_1_idb_streaming_load.md](t062_1_idb_streaming_load.md) · [t060_1_scale_load_save_completion.md](t060_1_scale_load_save_completion.md) §Payload dedup
 
 **Prerequisites:** T-062.1 shipped (`4ad27fe`).
 

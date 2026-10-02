@@ -45,7 +45,7 @@ kind, may leave the section out (README.md not counted).>
 
 ## Worked sample
 
-Written from `apps/website/map-engine/src/spatial/los/interior/`, a leaf of three source files and
+Written from `legacy/map_engine/src/spatial/los/interior/`, a leaf of three source files and
 a `tests/` folder: it leaves out How it works, and it has no Related documentation because no
 document covers this module. The sample sits in a fenced block, so no gate reads it as a README; the
 folder's own README.md is written from the same code and may differ.
@@ -59,7 +59,7 @@ target past walls, glass panes and foliage, and which cells of each floor an obs
 ## Contents
 
 ```text
-apps/website/map-engine/src/spatial/los/interior/
+legacy/map_engine/src/spatial/los/interior/
 ├── mod.rs     declares both modules, compiled only with the `io` feature
 ├── tests/     unit tests for the walker and the wash
 ├── walker.rs  observer-to-target traces through a compound building, with blocking and concealment
@@ -75,8 +75,8 @@ apps/website/map-engine/src/spatial/los/interior/
 - Used by: `crate::spatial::los::world`, whose world occluder reuses the walker's trace and
   concealment helpers; `crate::editing::tools::viewshed_scheduler`, whose building-wash lane runs a
   `WashJob` in budgeted steps; the debug building viewer
-  (`apps/website/frontend/src/v2/apps/debug/building_viewer.rs`); the Mission Creator's
-  line-of-sight tool (`apps/website/frontend/src/v2/apps/editor/input/tools/los_world_wasm.rs`);
+  (`apps/frontend/src/v2/apps/debug/building_viewer.rs`); the Mission Creator's
+  line-of-sight tool (`apps/frontend/src/v2/apps/editor/input/tools/los_world_wasm.rs`);
   and the blueprint tooling (`tools/developer_tools/src/blueprint/bvh/construction.rs`).
 - Rules: `wash_cap_check` refuses a wash radius above `MAX_WASH_RADIUS_M` (400 m)
   (`over_cap_wash_radius_is_refused_with_a_message` in `tests/wash.rs`); a `WashJob` may pause at

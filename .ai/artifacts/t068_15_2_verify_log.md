@@ -53,7 +53,7 @@ defaults at place / apply-kit / Arsenal-open under a strict idempotency rule.
 
 ```bash
 make schema-validate            # PASS (no schema change this slice — regression only)
-cargo test -p website-frontend  # 94 passed (+5 new: container mapping, aggregation,
+cargo test -p frontend  # 94 passed (+5 new: container mapping, aggregation,
                                 #   seed idempotency, cargo round-trip+budget, key-presence)
 make ci-local-leptos            # fmt + clippy(wasm32, -D warnings) + tests + trunk release PASS
 make leptos-gates               # gate doctor + editor smokes + frozen V-suite (headless Chrome)

@@ -14,16 +14,16 @@
 //! heights.
 
 use anyhow::{Result, anyhow};
-use serde::Deserialize;
-use website_map_engine::data::scenario::ballistics::battery::GunFireSolution;
-use website_map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
-use website_map_engine::data::scenario::ballistics::fire_mission::{
+use map_engine::data::scenario::ballistics::battery::GunFireSolution;
+use map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
+use map_engine::data::scenario::ballistics::fire_mission::{
     FireMissionGunPosition, FireMissionInputs, FireMissionPoint, FireMissionSolution,
     FireMissionWind, HeightSource, solve_fire_mission,
 };
-use website_map_engine::data::scenario::ballistics::solution_wording::{
+use map_engine::data::scenario::ballistics::solution_wording::{
     BatteryLineWords, ChargeRowWords, battery_line_words, charge_row_words, gun_heading, laid_rings,
 };
+use serde::Deserialize;
 
 /// The tables of one solution as the page shows them.
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]

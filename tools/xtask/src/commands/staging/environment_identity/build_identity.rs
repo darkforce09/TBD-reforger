@@ -27,7 +27,7 @@ pub(crate) fn host_files(settings: &StagingSettings) -> RemoteCommand {
         format!(
             "set -uo pipefail\n\
              echo \"api_binary_sha256=$(sha256sum {api} 2>/dev/null | cut -d ' ' -f 1)\"\n\
-             echo \"host_agent_binary_sha256=$(sha256sum \"$HOME/.local/bin/fleet-host-agent\" 2>/dev/null | cut -d ' ' -f 1)\"\n\
+             echo \"host_agent_binary_sha256=$(sha256sum \"$HOME/.local/bin/fleet_host_agent\" 2>/dev/null | cut -d ' ' -f 1)\"\n\
              echo \"main_guild_id=$(sed -n 's/^{MAIN_GUILD_KEY}=//p' {env_file} 2>/dev/null | tail -n 1 | tr -d '\"\\r')\"\n"
         ),
     )

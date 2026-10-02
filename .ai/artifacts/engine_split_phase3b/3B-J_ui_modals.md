@@ -41,7 +41,7 @@ Re-derive every line number; they move the moment you edit.
 5. `shell/eden_chrome.rs` re-exports `OrbatManagerDialog`. **Repoint the re-export; do not delete
    it** — a symbol search for the dialog lands on it, and the editor's mount path depends on it.
 
-`xtask/src/gate_t180.rs`'s `ORBAT_MGR` const names `apps/website/frontend/src/pages/operations/
+`xtask/src/gate_t180.rs`'s `ORBAT_MGR` const names `apps/frontend/src/pages/operations/
 orbat_manager.rs` and its tests `fs::copy(...).unwrap()` it, so a stale path panics every test in
 that gate. Repoint it, then grep the rest of `xtask/` and `tools/`.
 
@@ -63,8 +63,8 @@ same commit. Anchored pins repointed. Every `crate::pages::operations::{orbat,fa
 ## Verification — run once, at the end, from the repo root
 
 ```
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
-CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p website-frontend
+CARGO_TARGET_DIR=target-container cargo test -p frontend
+CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p frontend
 CARGO_TARGET_DIR=target-container cargo fmt --all -- --check
 CARGO_TARGET_DIR=target-container cargo test -p xtask
 ```

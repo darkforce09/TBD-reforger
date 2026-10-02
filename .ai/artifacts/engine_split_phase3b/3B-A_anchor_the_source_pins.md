@@ -16,7 +16,7 @@ declarations and `use` paths only.
 
 ## The idiom — already live in this crate
 
-`apps/website/frontend/src/v2/core/test_support/editor_operations.rs` already does exactly this:
+`apps/frontend/src/v2/core/test_support/editor_operations.rs` already does exactly this:
 
 ```rust
 include_str!(concat!(
@@ -25,12 +25,12 @@ include_str!(concat!(
 ))
 ```
 
-`CARGO_MANIFEST_DIR` is `apps/website/frontend`, so the suffixes are:
+`CARGO_MANIFEST_DIR` is `apps/frontend`, so the suffixes are:
 
 | pin target | anchored suffix |
 |---|---|
 | anything under the frontend's `src/` | `"/src/..."` |
-| `website-map-engine` sources | `"/../map-engine/src/..."` |
+| `map_engine` sources | `"/../../legacy/map_engine/src/..."` |
 | the frontend's own test fixtures | `"/tests/fixtures/..."` |
 | `packages/tbd-schema/schema/*.json` | `"/../../../packages/tbd-schema/schema/..."` |
 | `apps/mod/tbd-framework/Data/registry.json` | `"/../../../apps/mod/tbd-framework/Data/registry.json"` |
@@ -39,7 +39,7 @@ include_str!(concat!(
 
 **254 cross-file `include_str!` sites across 53 files.** A *cross-file* pin is one whose resolved
 target is a file other than the file holding it. Derive the list yourself with this script, run
-from `apps/website/frontend`:
+from `apps/frontend`:
 
 ```python
 import re, os, collections
@@ -91,12 +91,12 @@ only modified `.rs` files, no adds and no deletes.
 ## Verification — run once, at the end, from the repo root
 
 ```
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
-CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p website-frontend
+CARGO_TARGET_DIR=target-container cargo test -p frontend
+CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p frontend
 CARGO_TARGET_DIR=target-container cargo fmt --all -- --check
 ```
 
-Expected: `website-frontend` >= 1317 passed, 0 failed (it was 1317 at HEAD `9ae1eedf0`; the count
+Expected: `frontend` >= 1317 passed, 0 failed (it was 1317 at HEAD `9ae1eedf0`; the count
 must not drop — a pin that stopped being compiled is a pin you deleted). wasm32 check clean.
 `fmt --check` silent.
 

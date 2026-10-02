@@ -69,7 +69,7 @@ back byte for byte. `ticket check` runs the same round trip and requires both ro
 
 - [Ticket registry](/.ai/tickets/README.md) — `queue.json` and the other files in the ticket
   folder.
-- [Mission Creator roadmap](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md)
+- [Mission Creator roadmap](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md)
   — the document that carries the next-work block.
-- [Eden gap analysis](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)
+- [Eden gap analysis](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)
   — the tables the ticket column writer reads; their ticket column is kept by hand.

@@ -40,7 +40,7 @@ estimated = [
     "shipped_at",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s); shipped_at git_subject-mined from 3 commit subject(s)"
-owns = ["apps/website/frontend/src/arsenal.rs"]
+owns = ["apps/frontend/src/arsenal.rs"]
 
 [scope]
 domain = "website"

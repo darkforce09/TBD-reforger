@@ -3,7 +3,7 @@
 //! ── WHAT THE GATE IS FOR ─────────────────────────────────────────────────────────────────────
 //!
 //! Class-R. The cold and schema gates validate `faction-library.sample.json`, but nothing else
-//! pins that the seeder actually applies `apps/website/api_v2/seeds/faction_library.sql` — so
+//! pins that the seeder actually applies `apps/api/seeds/faction_library.sql` — so
 //! deleting the seed from the seeder's list greens every one of them.
 //!
 //! Three facts must hold together: (1) the seed file carries a **live**
@@ -72,7 +72,7 @@ const RECIPE_CONST: &str = "tools/xtask/src/commands/db/operations.rs SEEDS";
 /// matched by EQUALITY so a parked `faction_library.sql.bak` cannot satisfy the pin.
 const SEED_ENTRY: &str = "faction_library.sql";
 /// The seed the seeder must apply, repo-relative.
-const SEED_REL: &str = "apps/website/api_v2/seeds/faction_library.sql";
+const SEED_REL: &str = "apps/api/seeds/faction_library.sql";
 /// The wave driver whose two gate paths must both invoke this gate: `VERIFY_STEPS`, iterated by
 /// `gate_slice` and `cmd_gate`.
 const WAVE_REL: &str = "tools/xtask/src/commands/platform/wave_execution/gate.rs";

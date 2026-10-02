@@ -89,7 +89,7 @@ doesn't hit — the known-empty policy still removes that pathology by construct
 ## Port-parity sweep (H-rows — every row is implemented in T-173)
 
 Method: every `RenderEngine` `pub fn upload_*`/`set_*`/`ensure_*`/`clear_*` (30 fns) + every
-`WorldResidency` pub fn grepped against `apps/website/frontend/src/**` call sites.
+`WorldResidency` pub fn grepped against `apps/frontend/src/**` call sites.
 
 | H | Gap | Evidence | Fix phase |
 |---|-----|----------|-----------|

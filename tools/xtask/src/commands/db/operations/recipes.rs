@@ -6,31 +6,40 @@
 //!
 //! Everything here is derived from the same consts and argument builders the runners use
 //! ([`super::WEB`], [`super::SEEDS`], [`super::IT_BASE_DB`], [`super::seed_psql_arguments`],
-//! `super::reap_select`), so a change to what the port RUNS necessarily changes what it CLAIMS to
-//! run — the two cannot drift apart quietly, which is the failure mode a hand-copied "expected
-//! output" table always ends in.
+//! [`super::development_compose::ComposeLine`], `super::reap_select`), so a change to what the
+//! port RUNS necessarily changes what it CLAIMS to run — the two cannot drift apart quietly, which
+//! is the failure mode a hand-copied "expected output" table always ends in.
 
+use super::development_compose::ComposeLine;
 use super::test_it::reap_select;
-use super::{IT_BASE_DB, IT_MAINT_DB, SEEDS, WEB, seed_psql_arguments};
+use super::{IT_BASE_DB, IT_MAINT_DB, SEEDS, WEB, seed_file, seed_psql_arguments};
 
-/// Every recipe line the port reproduces, rendered with make's own variable values
-/// (`$(WEB)` → `apps/website/api_v2`, `$(COMPOSE)` → `podman compose` on a host with no docker).
+/// Every line the lane echoes, rendered with `podman` as the runtime and `apps/api` as the API
+/// folder ([`WEB`]). The compose lines come from the [`ComposeLine`] the runner echoes with: they
+/// enter the development compose file's folder and name the file with `-f`.
 ///
 /// The four `deploy db` wrappers are deliberately absent: their recipes are make's own
 /// `cargo run -q -p xtask -- deploy db …` transport, which the port replaces with an in-process
 /// call rather than reproducing. Their argv mapping is proved by running both sides — see the
 /// slice's acceptance notes — not by a text pin of a command the port never issues.
 pub(crate) fn rendered_recipes() -> Vec<(&'static str, Vec<String>)> {
-    let c = "podman compose";
-    let seed_command = seed_psql_arguments().join(" ");
+    let compose = ComposeLine::of_checkout();
+    let seed_arguments = seed_psql_arguments();
+    let seed_arguments: Vec<&str> = seed_arguments.iter().map(String::as_str).collect();
     let seed_lines: Vec<String> = SEEDS
         .iter()
-        .map(|f| format!("cd {WEB} && {c} {seed_command} < seeds/{f}"))
+        .map(|f| compose.render("podman", &seed_arguments, Some(&seed_file(f))))
         .collect();
     vec![
-        ("db-up", vec![format!("cd {WEB} && {c} up -d db")]),
-        ("db-down", vec![format!("cd {WEB} && {c} down")]),
-        ("db-logs", vec![format!("cd {WEB} && {c} logs -f db")]),
+        (
+            "db-up",
+            vec![compose.render("podman", &["up", "-d", "db"], None)],
+        ),
+        ("db-down", vec![compose.render("podman", &["down"], None)]),
+        (
+            "db-logs",
+            vec![compose.render("podman", &["logs", "-f", "db"], None)],
+        ),
         ("seed", seed_lines),
         (
             "rust-test-it",

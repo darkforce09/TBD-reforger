@@ -24,7 +24,7 @@ this pass re-ran the *measurements* the slices could not (T-785 shipped with no 
 ## FINDINGS
 
 ### F1 — the F-02 layer rename is NOT fixed; T-785's fix landed on a different widget
-`MAJOR | apps/website/frontend/src/eden_tree.rs:462,840 | the ticket's named "layer rename"
+`MAJOR | apps/frontend/src/eden_tree.rs:462,840 | the ticket's named "layer rename"
 acceptance surface is untouched and still fully broken | live CDP, both flows, plus diff-stat`
 
 - Evidence: T-785's slice (6051a2ec) changed only `attributes.rs`, `eden_dock_left.rs`,
@@ -47,7 +47,7 @@ acceptance surface is untouched and still fully broken | live CDP, both flows, p
   door (NodeRef + on_load focus+select).
 
 ### F2 — the bookmark rename T-785 DID fix now destroys the typed name (last-char-only)
-`MAJOR | apps/website/frontend/src/eden_dock_left.rs:310-360 | typing a name commits only its
+`MAJOR | apps/frontend/src/eden_dock_left.rs:310-360 | typing a name commits only its
 final character | live CDP: typed "Ridge OP Two", committed row is named "o"`
 
 - Evidence: the rename input is controlled through the `renaming` signal, and the whole bookmark
@@ -64,7 +64,7 @@ final character | live CDP: typed "Ridge OP Two", committed row is named "o"`
   on_load band-aid masks it instead of fixing it.
 
 ### F3 — multi-edit differing field: focus + blur with ZERO typing wipes the field on every selected slot
-`MAJOR | apps/website/frontend/src/attributes.rs:795-801 | the differing-field exemption defeats
+`MAJOR | apps/frontend/src/attributes.rs:795-801 | the differing-field exemption defeats
 the no-op skip and stamps the empty draft across the selection | live CDP with digest/undo depth`
 
 - Evidence: `text_commit` skips the write only when `!gate.differs()`; a differing field's draft
@@ -81,7 +81,7 @@ the no-op skip and stamps the empty draft across the selection | live CDP with d
   stamp") needs a "did the operator actually edit the draft" latch, not a blanket differs-exemption.
 
 ### F4 — O-5 exclusivity and "one Esc, one layer" fail for every dialog not opened from the strip
-`MAJOR | apps/website/frontend/src/eden_top_strip.rs:758-767,787 | close_transients only guards
+`MAJOR | apps/frontend/src/eden_top_strip.rs:758-767,787 | close_transients only guards
 the strip's own three open paths, and the any_open() Esc guard is defeated by listener order |
 live CDP at single-keydown granularity`
 
@@ -102,7 +102,7 @@ live CDP at single-keydown granularity`
   any_open()).
 
 ### F5 — Esc over arsenal-on-ORBAT closes the HIDDEN dialog first
-`MINOR | apps/website/frontend/src/ui.rs:466-474 vs :566-571 | mount-order Esc + open-order z
+`MINOR | apps/frontend/src/ui.rs:466-474 vs :566-571 | mount-order Esc + open-order z
 diverge on the flagship acceptance pair | live CDP ladder`
 
 - Evidence: ORBAT (z-40, underneath) + Arsenal (z-50, on top): Esc1 → ORBAT closed, Arsenal
@@ -113,7 +113,7 @@ diverge on the flagship acceptance pair | live CDP ladder`
   exact O-3 acceptance pair.
 
 ### F6 — Escape inside a focused attribute field abandons the draft AND closes the modal in one press
-`MINOR | apps/website/frontend/src/attributes.rs:834-845 + :230-236 | field-level and modal-level
+`MINOR | apps/frontend/src/attributes.rs:834-845 + :230-236 | field-level and modal-level
 Escape both consume the same keydown | live CDP`
 
 - Evidence: typed 11 chars into Asset id, pressed Escape: draft abandoned with no write and no
@@ -123,7 +123,7 @@ Escape both consume the same keydown | live CDP`
   with number_field pre-wave; T-785 extended the shape to text fields.
 
 ### F7 — the bookmark ADD ("name this view") input in the fixed file still has the F-02 defect
-`MINOR | apps/website/frontend/src/eden_dock_left.rs:275-304 | bare autofocus on a reactive
+`MINOR | apps/frontend/src/eden_dock_left.rs:275-304 | bare autofocus on a reactive
 insert, no NodeRef/on_load | live CDP`
 
 - Evidence: click "Bookmark this view" → naming input mounts (`dock-left-bookmark-name`),

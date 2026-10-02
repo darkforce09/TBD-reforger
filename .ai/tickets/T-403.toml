@@ -64,8 +64,8 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
 owns = [
-    "apps/website/frontend/src/dto.rs",
-    "apps/website/frontend/tests/fixtures/api/GET__events__c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7.json",
+    "apps/frontend/src/dto.rs",
+    "contracts/fixtures/api_goldens/GET__events__c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7.json",
 ]
 
 [scope]

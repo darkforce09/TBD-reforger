@@ -59,23 +59,23 @@ default, whether it is required, and the file that reads it.>
 
 ## Worked sample
 
-Written from `apps/website/api_v2/`. The sample sits in a fenced block, so no gate reads it as a
+Written from `apps/api/`. The sample sits in a fenced block, so no gate reads it as a
 README; the folder's own README.md is written from the same code and may differ.
 
 ````markdown
 # Website API
 
-The `website-api` crate: the Axum REST API and Server-Sent Events hub behind the web platform. It
+The `api` crate: the Axum REST API and Server-Sent Events hub behind the web platform. It
 serves `/api/v1` to the single-page app, the game servers and the fleet host agent, owns the
 Postgres schema through its migrations, and serves uploads and terrain assets.
 
 ## Contents
 
 ```text
-apps/website/api_v2/
+apps/api/
 ├── .env.example         the template the gitignored `.env` is copied from, with development values
 ├── .gitignore           keeps `.env` and editor folders out of git
-├── Cargo.toml           the `website-api` package: its library and `api` and `import-registry` bins
+├── Cargo.toml           the `api` package: its library and `api` and `import-registry` bins
 ├── docker-compose.yml   the local Postgres 18 service `db`, container `tbd_reforger_db`, port 5434
 ├── migrations/          the SQL schema migrations, embedded at compile time and applied at boot
 ├── rust-toolchain.toml  pins Rust 1.95.0 with rustfmt and clippy
@@ -135,7 +135,7 @@ required too.
 
 ## Public surface
 
-- The library `website_api` (`src/lib.rs`): `core`, `background_workers` and the eight domain
+- The library `api` (`src/lib.rs`): `core`, `background_workers` and the eight domain
   modules. Its users are this crate's binaries and integration suites.
 - The `api` binary: the server described above.
 - The `import-registry` binary: ingests registry envelopes (`--items`, `--compat`) into Postgres for
@@ -146,14 +146,14 @@ required too.
 
 ## Boundaries
 
-- Depends on: `website-map-engine` with its default `scenario` tier, which compiles and validates
+- Depends on: `map_engine` with its default `scenario` tier, which compiles and validates
   missions; the schemas in `contracts/definitions/`, embedded at compile time; Postgres 18;
   Discord's OAuth2 and REST APIs; and, at run time, the asset trees in `assets/terrains/` and
   `assets/glyphs/`.
-- Used by: the single-page app in `apps/website/frontend/`; the game servers, through the mod's
+- Used by: the single-page app in `apps/frontend/`; the game servers, through the mod's
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/`; the fleet host agent in `apps/fleet_host_agent/`;
   the `mk rust-api`, `db` and `deploy website` commands of `tools/xtask/`; and the release image
-  that `apps/website/Dockerfile` builds.
+  that `deploy/Dockerfile` builds.
 - Rules: `core` imports no domain except in `src/core/application_state.rs` and
   `src/core/http_router.rs`, a domain's handlers never import another domain's handlers, and
   `background_workers` is imported only by `src/bin/api.rs` (`src/tests/architecture_rules.rs`
@@ -161,7 +161,7 @@ required too.
 
 ## Related documentation
 
-- [API overview](/documentation/website/api_v2/api_overview.md) — the routes of every domain and
+- [API overview](/documentation/apps/api/api_overview.md) — the routes of every domain and
   the layers they share.
 - [Local development](/documentation/runbooks/local_development.md) — the full local setup.
 - [Website deployment](/documentation/runbooks/website_deployment.md) — building and running the

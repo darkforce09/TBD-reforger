@@ -12,7 +12,7 @@ run, and reverted with `git checkout --`; final `git status` shows only that reg
 | Suite | `--list` total | Run total | Result |
 |---|---|---|---|
 | map-engine-core `--lib --all-features --no-fail-fast` | **639** | **639** (638 pass, 1 ignored, 0 fail) | PASS |
-| website-frontend (native) | **1052** | **1052** (all pass) | PASS |
+| frontend (native) | **1052** | **1052** (all pass) | PASS |
 
 - Core 639 = expected 639. The 1 ignored is `mission::flatten::tests::regen_compiler_shaped_fixture`
   ("manual golden regeneration") — standing, not a wave artifact.
@@ -21,14 +21,14 @@ run, and reverted with `git checkout --`; final `git status` shows only that reg
 - Frontend 1052 = 1050 base + 2. Derivation: measured 1052 by `--list` AND by run; the wave diff
   contains exactly two new frontend `#[test]` fns (`a_composition_captures_comments_and_authored_elevation`,
   `the_seam_mechanism_is_defined_exactly_once_in_the_crate`) — counted with `grep -c '^+    #\[test\]'`
-  over `git diff de30a70e..HEAD -- apps/website/frontend`. Core likewise +2 (the two T-781 behavioural
+  over `git diff de30a70e..HEAD -- apps/frontend`. Core likewise +2 (the two T-781 behavioural
   pins), 637→639.
-- wasm32: `cargo check --target wasm32-unknown-unknown -p website-frontend` **clean** (8 warnings,
+- wasm32: `cargo check --target wasm32-unknown-unknown -p frontend` **clean** (8 warnings,
   all pre-existing dead-code in editor_ops/mission_commands/ui — none in the wave's files).
 
 ## FINDINGS
 
-### F-1 | MAJOR (pre-existing, disclosed — NOT a wave-144 regression) | apps/website/frontend/src/editor_ops.rs:4220, 4244–4252 | mint uniqueness is proven against a universe that omits hidden slots — a place can silently upsert a hidden slot away
+### F-1 | MAJOR (pre-existing, disclosed — NOT a wave-144 regression) | apps/frontend/src/editor_ops.rs:4220, 4244–4252 | mint uniqueness is proven against a universe that omits hidden slots — a place can silently upsert a hidden slot away
 
 **Evidence.** `mint_id` (editor_ops.rs:4220) and `mint_ids` (4244) build `existing` from
 `core.materialize().ids`. `materialize()` (crates/map-engine-core/src/doc/store.rs:740–786)
@@ -54,7 +54,7 @@ include hidden slots, the same source `capture_selection_entities` was pointed a
 reason — instead of `materialize().ids`. ~6 lines, no contract change. Not fixed here (verifier
 does not fix); flagged for the wave-close fix pass since the NO-DEFERRAL regime applies.
 
-### F-2 | MINOR | apps/website/frontend/src/eden_dock_right.rs:1723–1728, 1738 | the composable-comments gap is TOTAL in the UI, and the new panel copy advertises it — the found_not_fixed (and the T-784 draft) understate it
+### F-2 | MINOR | apps/frontend/src/eden_dock_right.rs:1723–1728, 1738 | the composable-comments gap is TOTAL in the UI, and the new panel copy advertises it — the found_not_fixed (and the T-784 draft) understate it
 
 **Evidence.** The slice's found_not_fixed says the only lane into selecting a comment is the T-697
 selection-filter apply. Verified, and it is **worse**: (1) outliner comment row is `ROW_STATIC`

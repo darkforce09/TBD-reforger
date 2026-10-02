@@ -29,11 +29,11 @@ pub(crate) const DEVELOPMENT_MACHINE_ONLY_PATHS: &[&str] = &[
     "/target-*/",
     // The same folders beside the app, where cargo puts them when trunk builds the app under a
     // relative `CARGO_TARGET_DIR`.
-    "/apps/website/frontend/target-*/",
+    "/apps/frontend/target-*/",
     // The retired root-level gate app builds (`dist-gate-frontend/`, deleted by the same reclaim)
     // and a debug build of the app.
     "/dist-gate-*/",
-    "/apps/website/frontend/dist-debug/",
+    "/apps/frontend/dist-debug/",
     // The vanilla script count `cargo xtask mod compile` calibrates once per machine.
     "/.compile-vanilla-baseline",
     // Slice and ticket worktrees, each a whole checkout, and the wave gate's receipts.

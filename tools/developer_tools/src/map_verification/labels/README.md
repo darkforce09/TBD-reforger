@@ -35,7 +35,7 @@ height). With `strict` set, both cases fail, as does a file with fewer than 10 a
 
 ## Boundaries
 
-- Depends on: `website-map-engine`'s elevation decoding and sampling
+- Depends on: `map_engine`'s elevation decoding and sampling
   (`world::terrain::dem`), peak declutter (`world::environment::locations::peaks`), town-label
   importance (`overlay::symbology::labels::importance`) and road-name placement
   (`world::environment::locations::route_*`); the schemas in `contracts/definitions/`;

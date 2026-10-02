@@ -11,7 +11,8 @@ than repeats.
 
 ## 1. Scope and authority
 
-- The rules apply to every comment in `apps/` and `tools/` and to every document under
+- The rules apply to every comment in `apps/`, `crates/`, `legacy/` and `tools/` and to every
+  document under
   `documentation/`; the audience is developers and AI agents.
 - When sources disagree, the running code wins, then `CLAUDE.md`, then the rest of the
   [authority ladder](/documentation/README.md#authority-ladder) in the entry README.
@@ -27,21 +28,21 @@ what that definition is and how its projections stay true to it.
   editor payload, the registry and loadout exports, fleet commands, machine credentials and the
   rest of `contracts/definitions/`) is defined once there, as a JSON Schema, and every
   projection follows it; a new field goes into the schema first. The REST API's other request and
-  response bodies are defined by the Rust models in `apps/website/api_v2/src/<domain>/models/`
+  response bodies are defined by the Rust models in `apps/api/src/<domain>/models/`
   (law 9).
 - **Projections.** `cargo xtask ci schema-codegen` generates Rust types from the schemas into the
-  API's `generated/` folders (`apps/website/api_v2/src/missions/contract/generated/` and each
+  API's `generated/` folders (`apps/api/src/missions/contract/generated/` and each
   domain's `models/generated/`), which nobody edits by hand; `cargo xtask ci verify-codegen-fresh`
   fails when they drift from the schemas. The web app's DTOs in
-  `apps/website/frontend/src/v2/core/api/dto/` are hand-written and held to the API's answers by
-  the golden responses in `apps/website/frontend/tests/fixtures/api/`
-  (`apps/website/frontend/src/v2/core/api/dto/tests/r_api.rs`). EnfScript has no code generator:
+  `apps/frontend/src/v2/core/api/dto/` are hand-written and held to the API's answers by
+  the golden responses in `contracts/fixtures/api_goldens/`
+  (`apps/frontend/src/v2/core/api/dto/tests/r_api.rs`). EnfScript has no code generator:
   its DTOs are hand-written, carry `@contract`, and the golden missions in
   `contracts/fixtures/missions/` are validated against the schemas by
   `cargo xtask schema validate`.
 - **Runtime validation.** `POST /api/v1/missions/:id/versions` validates the payload against
   `mission-editor-payload.schema.json` before it stores anything and answers 400 with the
-  violations (`apps/website/api_v2/src/missions/handlers/mission_versions.rs`).
+  violations (`apps/api/src/missions/handlers/mission_versions.rs`).
 - **Three version fields.** The canonical mission document (`mission.schema.json`, what the mod
   loads) carries `schemaVersion` as a string; the editor payload
   (`mission-editor-payload.schema.json`, what the version save accepts) carries `schemaVersion` as
@@ -50,7 +51,7 @@ what that definition is and how its projections stay true to it.
   own document does.
 - **Published data is immutable.** A mission version is written once, unique per mission and
   semver, and a database trigger refuses any update
-  (`apps/website/api_v2/migrations/0052_mission_version_immutability.sql`). A contract change is a
+  (`apps/api/migrations/0052_mission_version_immutability.sql`). A contract change is a
   schema change plus regeneration, never an edit of a stored payload.
 
 Wire casing is fixed per document:
@@ -102,7 +103,7 @@ code as it stands, in the present tense.
 - A change that alters documented behaviour updates the comment in the same diff.
 
 Two test suites hold parts of these rules, and run with their crate's tests:
-`apps/website/api_v2/src/tests/prose_rules.rs` refuses ticket identifiers, delivery vocabulary,
+`apps/api/src/tests/prose_rules.rs` refuses ticket identifiers, delivery vocabulary,
 narrative about another implementation and retired paths in the API crate's sources, tests,
 `.env.example`, seeds and migration comments; `tools/xtask/src/tests/tooling_prose_rules.rs`
 refuses ticket identifiers, retired names and deleted script names in every tracked file under
@@ -118,13 +119,14 @@ invariant that follows from it
 
 ## 5. Rust comments
 
-These rules cover every Rust crate of the workspace, under `apps/` and `tools/`.
+These rules cover every Rust crate of the workspace, under `apps/`, `crates/`, `legacy/` and
+`tools/`.
 
 **Module header.** A non-trivial module opens with a `//!` summary line and the four-point
 contract: `**Role:**` (its responsibility), `**Position:**` (its boundary layer, what feeds it and
 who consumes it), `**Signals & state:**` (mutable state, reactive signals and thread ownership, or
 none) and `**Invariants:**` (the guarantees a change must keep). From
-`apps/website/frontend/src/app_routes.rs:1-11`:
+`apps/frontend/src/app_routes.rs:1-11`:
 
 ```rust
 //! The router's route table, in render form.
@@ -143,7 +145,7 @@ none) and `**Invariants:**` (the guarantees a change must keep). From
 **Symbol docs.** Every public type, function, method and enum carries a `///` Markdown doc
 comment, and names other items as intra-doc links (``[`crate::path::Type`]``) that rustdoc
 resolves. No gate runs rustdoc, so review holds this rule. From
-`apps/website/api_v2/src/core/observability/metrics_registry.rs:90-96`:
+`apps/api/src/core/observability/metrics_registry.rs:90-96`:
 
 ```rust
 /// One registry per [`crate::core::http_router::router`] call.
@@ -160,7 +162,7 @@ written at column 0 in the doc comment of a column-0 `pub fn` or `pub async fn`,
 `/api/v1` path; a path parameter is written `:name` or `{name}` with the router's name. The
 route-tag check fails a tag no route table registers for that method and handler, a registered
 route whose handler has no matching tag, and a tag with no handler under it. From
-`apps/website/api_v2/src/administration/handlers/audit_logs.rs:66-69`:
+`apps/api/src/administration/handlers/audit_logs.rs:66-69`:
 
 ```rust
 /// `GET /api/v1/admin/audit-logs` — newest-first, keyset pagination via `?before=`.
@@ -183,11 +185,11 @@ Two optional parts follow, in this order and each after one space:
 The grammar is closed: a tag of any other shape is an error. `cargo xtask schema citations`
 resolves the schema and pointer of every tag, and the API's `contract_parity_mod_wire` suite reads
 the whole tag on the mod scripts, parsed by
-`apps/website/api_v2/tests/enfscript_source_support/contract_tag.rs`: every field name and `//!<`
+`apps/api/tests/enfscript_source_support/contract_tag.rs`: every field name and `//!<`
 JSON key binding of a tagged class must be a property of the cited node, and a class without
 `partial` must carry every required one. A module of such types carries the tag in its `//!`
-header (`apps/website/api_v2/src/missions/models/registry.rs:4`); a single type in its `///`
-comment (`apps/website/api_v2/src/administration/models/audit_stream.rs:19-21`):
+header (`apps/api/src/missions/models/registry.rs:4`); a single type in its `///`
+comment (`apps/api/src/administration/models/audit_stream.rs:19-21`):
 
 ```rust
 /// @contract audit-log.schema.json#/definitions/AuditStreamReady
@@ -311,10 +313,11 @@ documentation/
 ├── architecture/          the workspace layout as it stands
 ├── glossary/              project terms and abbreviations, one file per letter range
 ├── product_roadmap.md     the operator-curated plan
-├── website/               mirrors apps/website/: api_v2/, frontend/ (pages/<area>/,
-│                          apps/editor/ for the Mission Creator), map-engine/, graphics-engine/
+├── apps/                  mirrors apps/: api/, frontend/ (pages/<area>/, apps/editor/ for the
+│                          Mission Creator), fleet_host_agent/, ticketboard/
+├── legacy/                mirrors legacy/: map_engine/, graphics_engine/
 ├── mod/                   mirrors apps/mod/: tbd-framework/, tbd-export/, tbd-emcp/
-├── ticketboard/  fleet_host_agent/  tools/<crate>/  contracts/  assets/
+├── tools/<crate>/  crates/<tier>/<crate>/  contracts/  assets/
 ├── design_system/         tokens, typography, colour, symbology, token exports
 ├── runbooks/              every operator procedure
 ├── standards/             this document, the README standard, templates/, coding standards,
@@ -331,11 +334,13 @@ documentation/
   documents here; a documentation README indexes its folder.
 - **Mirror naming.** A feature's documents sit at the documentation root plus the path of its
   code without `src/`, keeping the code's folder spellings: the documents on
-  `tools/developer_tools/src/` are in `documentation/tools/developer_tools/`. Until stages S2
-  and S3 of the [workspace restructure](/documentation/restructure/README.md) move the apps and
-  split the frontend's `src/v2/` layer, a mirror of code under `apps/` also leaves out `apps/`,
-  `src/v2/` and `Scripts/Game/TBD/`: `apps/website/frontend/src/v2/pages/operations/schedule/` is
-  documented under `documentation/website/frontend/pages/operations/schedule/`. The grain is chosen
+  `tools/developer_tools/src/` are in `documentation/tools/developer_tools/`, and those on
+  `apps/api/src/` in `documentation/apps/api/`. Two mirrors keep a shorter path until a stage of
+  the [workspace restructure](/documentation/restructure/README.md) reshapes their code: until S3
+  splits the frontend's `src/v2/` layer, a mirror of the single-page app also leaves out
+  `src/v2/` (`apps/frontend/src/v2/pages/operations/schedule/` is documented under
+  `documentation/apps/frontend/pages/operations/schedule/`), and until M1 a mirror of the mod
+  leaves out `apps/` and `Scripts/Game/TBD/` and sits under `documentation/mod/`. The grain is chosen
   per case: one `pages/account/` folder covers login, the auth callback and settings, while
   administration has a folder per page.
 - **Mirror moves.** A [relocation manifest](/documentation/restructure/manifests/README.md) that
@@ -343,7 +348,7 @@ documentation/
   documents never fall behind the code they mirror.
 - **Feature grouping.** Everything about one feature lives together: behaviour, interface design,
   the design target and its `visual_references/`, roadmap, research and evidence. All Mission
-  Creator material sits under `documentation/website/frontend/apps/editor/`.
+  Creator material sits under `documentation/apps/frontend/apps/editor/`.
 - **Feature docs.** Each feature doc is its own file beside its folder's README index, built from
   the [feature doc template](/documentation/standards/templates/feature_doc.md): a page's doc is
   `<page component>_page.md` (`personnel_roster_page.md`), the account pages share
@@ -355,13 +360,14 @@ documentation/
   `visual_references/` folder of the feature it depicts; a mod screen's in-game captures sit in
   `reference_screenshots/` beside its sets. Design references are the only images.
 - **Evidence.** Verification evidence sits in a `verification_evidence/` folder of its feature
-  (`documentation/website/api_v2/verification_evidence/`); hyphenated evidence JSON names keep
+  (`documentation/apps/api/verification_evidence/`); hyphenated evidence JSON names keep
   their spelling.
 
 ### 8.2 Placement
 
-Documents live under `documentation/`, the single documentation root. The code trees (`apps/`,
-`tools/`, `contracts/`, `assets/`) hold no Markdown besides README.md files, except below
+Documents live under `documentation/`, the single documentation root. The code trees (every
+top-level folder but `documentation/` and the retired `docs`, read from git's listing so a new one
+is judged at once) hold no Markdown besides README.md files, except below
 a `tests`, `generated`, `Generated` or dot-folder, which `cargo xtask verify markdown-placement` enforces; the
 repository root keeps its own README.md and `CLAUDE.md`. `cargo xtask ci verify-documentation`, a
 `ci-local` step, and the `language-gates` job of `ci.yml` run it with readme-coverage and
@@ -380,18 +386,18 @@ link-check, so no application grows a documentation tree of its own.
   with a README.md index. Frozen and archived documents are exempt, and so are the two documents
   `cargo xtask ticket sync` targets (`SYNC_MANAGED_DOCUMENTS` in
   `tools/xtask/src/verifications/documentation/path_regions.rs`):
-  `documentation/website/frontend/apps/editor/mission_creator_roadmap.md`, whose next-work
+  `documentation/apps/frontend/apps/editor/mission_creator_roadmap.md`, whose next-work
   block it rewrites between markers, and
-  `documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md`,
+  `documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md`,
   whose tables its ticket-column writer parses but leaves unchanged, since their header has no
   `priority` column; that ticket column is kept by hand.
 - **Links.** Links are repository-root (`[README standard](/documentation/standards/readme_standard.md)`,
-  `[API](/apps/website/api_v2/README.md)`), never `../` climbs. A frozen or archived document's
+  `[API](/apps/api/README.md)`), never `../` climbs. A frozen or archived document's
   link to code that no longer exists becomes a GitHub permalink with the full commit id,
   `https://github.com/darkforce09/TBD-reforger/blob/<commit>/<path>`.
 - **Paths and commands.** A path written in backticks is repository-relative
-  (`apps/website/api_v2/src/missions/`), and must name a tracked file or folder, or one git
-  ignores on purpose, such as `tools/xtask/deploy/deploy.env`; a `cargo xtask` command written
+  (`apps/api/src/missions/`), and must name a tracked file or folder, or one git
+  ignores on purpose, such as `deploy/deploy.env`; a `cargo xtask` command written
   in a document must exist in the command tree. A README writes paths inside its own folder
   relative to it, as the README standard says.
 - **Terms.** The editor is the Mission Creator; the document a mission maker authors is a mission;
@@ -401,7 +407,7 @@ link-check, so no application grows a documentation tree of its own.
   spells them.
 - **Diagrams.** ASCII, in `text` blocks.
 - **Hosts and paths.** No IP address of a host and no personal absolute path: the deploy host is
-  whatever `TBD_SSH_HOST` names in `tools/xtask/deploy/deploy.env`.
+  whatever `TBD_SSH_HOST` names in `deploy/deploy.env`.
 
 ## 9. Document lifecycle
 

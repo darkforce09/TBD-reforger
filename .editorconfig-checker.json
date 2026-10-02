@@ -7,7 +7,7 @@
     "node_modules",
     "dist",
     "apps/mod/",
-    "apps/website/frontend/tests/fixtures/",
+    "contracts/fixtures/api_goldens/",
     "tools/developer_tools/fixtures/",
     "\\.ai/artifacts/",
     "documentation/.*/visual_references/",

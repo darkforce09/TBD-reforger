@@ -19,7 +19,7 @@ of the `staging_fleet` receipt.
   load procedure; the relay's executable `acknowledgement-dropping-relay`, whose `serve` command the
   unit `acknowledgement-dropping-relay@N` runs and whose `control` command the fleet procedure runs
   on the host ([executables README](/tools/developer_tools/src/bin/README.md#acknowledgement-dropping-relay)).
-- Related features: the [staging design note](/documentation/website/api_v2/verification_evidence/staging.md),
+- Related features: the [staging design note](/documentation/apps/api/verification_evidence/staging.md),
   which defines the procedures, the cases and the receipts; the
   [staging verification runbooks](/documentation/runbooks/staging_verification/README.md), which
   record them against the staging host.

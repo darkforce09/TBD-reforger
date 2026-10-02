@@ -9,8 +9,8 @@ editor tree owes no header or `pub`-item documentation.
 
 ## What this brief does — and what it deliberately does not
 
-This is a **relocation, not a reshape**. `apps/website/frontend/src/editor/` moves to
-`apps/website/frontend/src/v2/apps/editor/` with its internal shape byte-identical: `panels/` is
+This is a **relocation, not a reshape**. `apps/frontend/src/editor/` moves to
+`apps/frontend/src/v2/apps/editor/` with its internal shape byte-identical: `panels/` is
 still `panels/`, `canvas/` is still `canvas/`, `state/` is still `state/`. The reshape into
 `ui/ input/ bridge/ shell/ arsenal/` is briefs 3B-E through 3B-K, one destination folder at a time.
 
@@ -59,11 +59,11 @@ half-moved.
    wrong thing. Rules 1 and 3 are otherwise already at zero: brief 3B-C1 paid that debt. Every row carries a real `reason`
    naming what Phase 3C will do to that file, and `expires: 2026-12-31`.
 9. **Repoint the gates outside the frontend.** `xtask/src/gate_t180.rs` holds 15
-   `apps/website/frontend/src/editor/...` rows plus `EDITOR_OPS`, `ORBAT_MGR` and `EDEN_CHROME`
+   `apps/frontend/src/editor/...` rows plus `EDITOR_OPS`, `ORBAT_MGR` and `EDEN_CHROME`
    consts, and its tests `fs::copy(...).unwrap()` every row — **one stale path panics every test
    in that gate**. `xtask/src/ai.rs:438` asserts on a literal
-   `"cat apps/website/frontend/src/editor/mission_editor.rs"`. `xtask/src/migrate_v2.rs:736` names
-   `apps/website/frontend/src/editor_ops.rs`; read what that table means before touching it and
+   `"cat apps/frontend/src/editor/mission_editor.rs"`. `xtask/src/migrate_v2.rs:736` names
+   `apps/frontend/src/editor_ops.rs`; read what that table means before touching it and
    only repoint rows that name a live path. `ORBAT_MGR` still points at
    `src/pages/operations/orbat_manager.rs` after this brief — brief 3B-J moves that file.
    Finish by grepping all of `xtask/` and `tools/` for `src/editor` and pasting the result.
@@ -76,21 +76,21 @@ Module *names* and item *names*. No file is split, renamed (except `mission_edit
 ## Verification — run once, at the end, from the repo root
 
 ```
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
-CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p website-frontend
+CARGO_TARGET_DIR=target-container cargo test -p frontend
+CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p frontend
 CARGO_TARGET_DIR=target-container cargo fmt --all -- --check
 CARGO_TARGET_DIR=target-container cargo test -p xtask
 ```
 
-Expected: `website-frontend` pass count unchanged from brief 3B-C1's, 0 failed — a drop means a
+Expected: `frontend` pass count unchanged from brief 3B-C1's, 0 failed — a drop means a
 `#[path]` declaration or a `mod` line stopped compiling a test file. wasm32 clean. fmt silent.
 `cargo test -p xtask` fails **only** the eight known names listed in the rules file; judge by name
 set, never by count, and a `gate_t180` failure is yours.
 
 Also paste:
 ```
-git -C . status --porcelain apps/website/frontend/src | head -40
-rg -n 'crate::editor' apps/website/frontend/src | wc -l        # must be 0
+git -C . status --porcelain apps/frontend/src | head -40
+rg -n 'crate::editor' apps/frontend/src | wc -l        # must be 0
 rg -n 'src/editor' xtask tools --type rust                     # must be empty
 ```
 

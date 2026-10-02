@@ -471,7 +471,7 @@ fn everon_canopy() -> (Vec<u32>, usize) {
                 p.display(),
                 bytes.len()
             );
-            let g = website_map_engine::io::density::tbdd::decode_tbdd(&bytes)
+            let g = map_engine::io::density::tbdd::decode_tbdd(&bytes)
                 .unwrap_or_else(|e| panic!("{}: {e}", p.display()));
             assert_eq!(
                 (g.cols, g.rows, g.cell_m, g.version),

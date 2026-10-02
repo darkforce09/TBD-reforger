@@ -9,8 +9,8 @@
 slice/T-939.4
 ```
 Clean at start. All cargo/rustfmt via `hcargo`/`hrustfmt`; tests via
-`hcargo xtask platform wave test --slice T-939.4 -p website-frontend` (private dir
-`tbd-target-T-939.4`). Every green quoted carries its own `Compiling website-frontend` line (T-596).
+`hcargo xtask platform wave test --slice T-939.4 -p frontend` (private dir
+`tbd-target-T-939.4`). Every green quoted carries its own `Compiling frontend` line (T-596).
 
 The brief is **not in the worktree** — it was committed to `main` after the branch point (merge-base
 `dc073f7c2`). Read read-only from the main checkout.
@@ -19,17 +19,17 @@ The brief is **not in the worktree** — it was committed to `main` after the br
 Two tests written first, compiling against unmodified code, both RED (committed as `1be6bad1a`
 before any production code):
 ```
-   Compiling website-frontend v0.1.0 (…/worktrees/T-939.4/apps/website/frontend)
+   Compiling frontend v0.1.0 (…/worktrees/T-939.4/apps/frontend)
 running 2 tests
 test editor::panels::context_menu::t939_4_arrange_in_the_context_menu::a_multi_selection_offers_arrange ... FAILED
 test editor::mission_editor::t939_4_arrange_chords::the_editor_keydown_binds_the_arrange_chords ... FAILED
 
 ---- …::a_multi_selection_offers_arrange stdout ----
-panicked at apps/website/frontend/src/editor/panels/context_menu.rs:1853:9:
+panicked at apps/frontend/src/editor/panels/context_menu.rs:1853:9:
 T-939.4: the right-click menu over a multi-selection offers no Arrange row — the align / space / orient tools are reachable only from the top strip. Rows: ["Connect", "Go Here", "Play as the Character", "Select", "Edit", "Transform", "Grid", "Log", "Connections...", "Save Custom Composition...", "Find in Asset Browser...", "Find in Config Viewer...", "Edit Loadout...", "Reset Loadout", "Attributes..."]
 
 ---- …::the_editor_keydown_binds_the_arrange_chords stdout ----
-panicked at apps/website/frontend/src/editor/mission_editor.rs:3580:13:
+panicked at apps/frontend/src/editor/mission_editor.rs:3580:13:
 T-939.4: the editor keydown has no `"KeyL" if !modk && ev.alt_key() && !ev.shift_key() =>` arm — the Arrange chord is ignored and align / space are reachable only with the mouse
 
 test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 1392 filtered out; finished in 0.23s
@@ -88,39 +88,39 @@ Native suite: **1408 passed, 0 failed** (1394 at branch point).
 ## perturbation
 Dropped the `Alt+T` / Align Top arm, nothing else. RED verbatim:
 ```
-   Compiling website-frontend v0.1.0 (…/worktrees/T-939.4/apps/website/frontend)
+   Compiling frontend v0.1.0 (…/worktrees/T-939.4/apps/frontend)
 test editor::mission_editor::t939_4_arrange_chords::every_chord_arm_is_a_thin_caller_of_the_shared_invoker ... FAILED
 test editor::mission_editor::t939_4_arrange_chords::the_editor_keydown_binds_the_arrange_chords ... FAILED
 test editor::mission_editor::t669_clipboard_completion::the_help_blurb_counts_the_bindings_correctly ... FAILED
 test editor::panels::help_modal::t692_help_covers_every_binding::no_help_entry_invents_a_binding ... FAILED
 test editor::panels::help_modal::keymap_census::the_prose_census_numbers_are_derived ... FAILED
 failures:
-thread '…::every_chord_arm_is_a_thin_caller_of_the_shared_invoker' (2270679) panicked at apps/website/frontend/src/editor/mission_editor.rs:3759:9:
+thread '…::every_chord_arm_is_a_thin_caller_of_the_shared_invoker' (2270679) panicked at apps/frontend/src/editor/mission_editor.rs:3759:9:
 assertion `left == right` failed: T-939.4: every one of the 6 arms must hand off to the shared helper. Body:
   left: 5
  right: 6
-thread '…::the_editor_keydown_binds_the_arrange_chords' (2270681) panicked at apps/website/frontend/src/editor/mission_editor.rs:3660:13:
+thread '…::the_editor_keydown_binds_the_arrange_chords' (2270681) panicked at apps/frontend/src/editor/mission_editor.rs:3660:13:
 T-939.4: the editor keydown has no `"KeyT" if !modk && ev.alt_key() && !ev.shift_key() =>` arm — the Arrange chord is ignored and align / space are reachable only with the mouse
-thread '…::the_help_blurb_counts_the_bindings_correctly' (2270388) panicked at apps/website/frontend/src/editor/mission_editor_tests/t669_clipboard_completion.rs:235:5:
+thread '…::the_help_blurb_counts_the_bindings_correctly' (2270388) panicked at apps/frontend/src/editor/mission_editor_tests/t669_clipboard_completion.rs:235:5:
 assertion `left == right` failed: T-740: the help table documents 26 distinct codes but the editor binds 25 ({"ArrowDown", "ArrowUp", "Backspace", "BracketLeft", "BracketRight", "Delete", "Digit1", "Digit2", "Digit3", "Enter", "Escape", "KeyA", "KeyB", "KeyC", "KeyD", "KeyE", "KeyG", "KeyH", "KeyL", "KeyR", "KeyV", "KeyX", "KeyY", "KeyZ", "Space"}) — the count in `eden_help`'s header cannot be right about both
   left: 26
  right: 25
-thread '…::no_help_entry_invents_a_binding' (2271388) panicked at apps/website/frontend/src/editor/panels/help_modal.rs:1644:9:
-thread '…::the_prose_census_numbers_are_derived' (2271368) panicked at apps/website/frontend/src/editor/panels/help_modal.rs:1443:13:
+thread '…::no_help_entry_invents_a_binding' (2271388) panicked at apps/frontend/src/editor/panels/help_modal.rs:1644:9:
+thread '…::the_prose_census_numbers_are_derived' (2271368) panicked at apps/frontend/src/editor/panels/help_modal.rs:1443:13:
 test result: FAILED. 1403 passed; 5 failed; 0 ignored; 0 measured; 0 filtered out; finished in 27.58s
 ```
 Five pins fired on one dropped arm — three pre-existing. `KeyT` vanishing from the bound-code set in
 the `t669` message is the census reading the live listener, not a string match. Restored
 (`git checkout --`), `touch`ed, re-ran:
 ```
-   Compiling website-frontend v0.1.0 (…/worktrees/T-939.4/apps/website/frontend)
+   Compiling frontend v0.1.0 (…/worktrees/T-939.4/apps/frontend)
 test result: ok. 1408 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 17.65s
 ```
 
 ## gate_verdict_tail
 `hcargo xtask mk ci-local-leptos` — all four steps pass:
 ```
-:225  cargo clippy -p website-frontend --target wasm32-unknown-unknown --all-targets
+:225  cargo clippy -p frontend --target wasm32-unknown-unknown --all-targets
 :3750 test result: ok. 1408 passed; 0 failed; …
 :4220     Finished `release` profile [optimized] target(s) in 1m 45s
 :4222 INFO applying new distribution / INFO ✅ success
@@ -181,11 +181,11 @@ touched.
 ## deviations
 
 1. **`mk leptos-gates` was NOT run** — stated explicitly, not silently skipped. The operator's
-   `trunk serve --release` is live: **pid 1264262, cwd `…/apps/website/frontend`, listening
+   `trunk serve --release` is live: **pid 1264262, cwd `…/apps/frontend`, listening
    `127.0.0.1:3000`**. The instruction was to run it only if that server is stopped, while also
    leaving `:3000`/`:8080` up — both cannot hold. Two things that bear on the stated reason:
    `Trunk.toml` has `dist = "dist"` (relative), so this worktree's `trunk build --release` writes
-   `…/worktrees/T-939.4/apps/website/frontend/dist`, not the main checkout's — the `ci-local-leptos`
+   `…/worktrees/T-939.4/apps/frontend/dist`, not the main checkout's — the `ci-local-leptos`
    run above did exactly that with the operator's server serving normally — and `gate serve` defaults
    to port 5198, not 3000. So the dist/port collision may not actually bite from a worktree; I still
    did not run it because of the instruction **and** because `gate editor-suite`'s
@@ -249,7 +249,7 @@ Re-checked independently before acceptance, 2026-09-08:
 - `files_outside_owns []` — **true**. Exactly the four owned files, working tree clean.
 - **The stale-anchor finding is CONFIRMED, and the brief was wrong.** On `main`,
   `add_event_listener_with_callback("keydown"` has exactly two sites under
-  `apps/website/frontend/src/editor/` — `state/history.rs:789` and `canvas/commands.rs:470` — and
+  `apps/frontend/src/editor/` — `state/history.rs:789` and `canvas/commands.rs:470` — and
   `mission_editor.rs` contains **0** occurrences of `KeyboardEvent`. The stale claim originated in
   T-939.4's own `context` line and was propagated into the brief unverified.
 - **Deviation 2 is accepted for this wave, not endorsed.** Re-homing the six arms into

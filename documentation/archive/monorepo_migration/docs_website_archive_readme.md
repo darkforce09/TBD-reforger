@@ -32,5 +32,5 @@ Each archived item: **Status: archived** · **When to use:** historical referenc
 
 ## Related
 
-- [Frontend master](/documentation/website/frontend/README.md) — links stitch + blueprints
+- [Frontend master](/documentation/apps/frontend/README.md) — links stitch + blueprints
 - [Platform doc hub](/documentation/README.md)

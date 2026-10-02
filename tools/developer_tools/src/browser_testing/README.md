@@ -47,7 +47,7 @@ capture:             the running app on :3000   ◀── cdp::launch_with_gpu (
 
 `cli::run` pins the gate font cache before any thread starts, parses with clap, runs the command on
 a Tokio runtime, and exits with the code the command returns, or 3 when it returns an error. The
-gates render the built app from `apps/website/frontend/dist` through `server.rs`, which sends
+gates render the built app from `apps/frontend/dist` through `server.rs`, which sends
 `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Embedder-Policy: credentialless` and
 `Cache-Control: no-store`, answers an extensionless path with `index.html`, streams `/api/`
 requests to an optional upstream so an [SSE](/documentation/glossary/n_to_z.md#sse) response arrives
@@ -58,7 +58,7 @@ frame by frame, and serves `/map-assets/` from the terrain and glyph folders wit
 | `gate doctor` | `diagnostics/` | Chromium, pins, memory, stray processes and fonts, then a 15 s Mission Creator liveness probe | 0, 1 |
 | `gate v-suite verify` | `dom_oracle/` | each of 26 routes' normalised DOM equals its golden, with every [API](/documentation/glossary/a_to_f.md#api) call fed from fixtures | 0, 1, 2 |
 | `gate v-suite accept` | `dom_oracle/` | replaces one route's golden, with a note | 0, 2 |
-| `gate s-routes` | `route_drift.rs` | the `ROUTES` table of `apps/website/frontend/src/router.rs` equals `manifests/routes.csv` | 0, 1 |
+| `gate s-routes` | `route_drift.rs` | the `ROUTES` table of `apps/frontend/src/router.rs` equals `manifests/routes.csv` | 0, 1 |
 | `gate smoke <name>`, `gate editor-suite` | `editor_smoke_tests/` | the Mission Creator smokes, one or all in `EDITOR_SUITE` order | 0, 1, 2 |
 | `gate r-auth` | `editor_smoke_tests/` | a refused session refreshes exactly once | 0, 1, 2 |
 | `gate render-check` | `editor_smoke_tests/` | a path renders, contains `--expect` and passes `--assert-js` | 0, 1 |
@@ -75,7 +75,7 @@ make a capture deterministic: `FREEZE_SRC` fixes the clock at 1 700 000 000 000 
 `Math.random` and `crypto.getRandomValues`, and stops animations; `DOM_SERIALIZER_SRC` defines
 `window.__domOracleSerialize`, which the goldens were serialised with.
 
-`cargo xtask mk leptos-gates` runs `trunk build --release` in `apps/website/frontend/`, then
+`cargo xtask mk leptos-gates` runs `trunk build --release` in `apps/frontend/`, then
 `gate doctor`, `gate editor-suite` and `gate v-suite verify`, each through
 `cargo run -q -p developer_tools --bin gate`, stopping at the first failure;
 `cargo xtask mk gate-doctor` runs the build and the doctor alone. The `hydrate` smoke in the suite
@@ -103,7 +103,7 @@ gate's server, its fixtures or its request interception.
 - Depends on: `crate::repository_layout` for the map asset and glyph folders; `tokio`, `axum`,
   `reqwest`, `tokio-tungstenite`, `clap`, `image` and `sha2`; a Chromium build from
   `CHROME_HEADLESS_SHELL`, `PLAYWRIGHT_BROWSERS_PATH` or the Playwright cache; the pins in `tools/developer_tools/gate-env.json`; the built
-  app in `apps/website/frontend/dist`, the fixtures in `apps/website/frontend/tests/fixtures/api/`
+  app in `apps/frontend/dist`, the fixtures in `contracts/fixtures/api_goldens/`
   and the goldens in `tools/developer_tools/fixtures/dom_oracle/`.
 - Used by: `tools/developer_tools/src/bin/gate.rs` and `capture.rs`; `repo_root` in
   `tools/developer_tools/src/enfusion_tooling/mcp_broker.rs`; `cargo xtask mk gate-doctor` and

@@ -408,3 +408,24 @@ fn frozen_records_are_never_judged_by_the_rule() {
             .contains(&"    backticked path names nothing: 1".to_string())
     );
 }
+
+/// The top-level folders come from the listing, so a backticked path under a folder no list names
+/// is judged like one under `apps/`.
+#[test]
+fn a_path_under_a_top_level_folder_no_list_names_is_judged() {
+    let mut fixture = checkout("derived-top-level");
+    fixture.tracked("a_folder_born_later/settings.toml", "");
+    let text =
+        "# Doc\n\n`a_folder_born_later/settings.toml` and `a_folder_born_later/gone.toml`.\n";
+    let (breaks, not_run, _) = judge_documents(
+        &mut fixture,
+        &[("apps/tool/README.md", text)],
+        &FakeIgnoreRules::default(),
+        &[],
+    );
+    assert_eq!(not_run, 0);
+    assert_eq!(
+        breaks,
+        ["apps/tool/README.md:3: backticked path names nothing: `a_folder_born_later/gone.toml`"]
+    );
+}

@@ -21,14 +21,14 @@ Verifier: Cursor Grok 4.5, 2026-08-11. Verified MERGED MAIN at **00eea875** (`gi
 ## FINDINGS
 
 ### F1 — Orphaned Placed-strip UI remains in `eden_vehicles_panel.rs`
-`NIT | apps/website/frontend/src/eden_vehicles_panel.rs:1-98 (+ wasm/native stubs) | strip deleted from DockRight as claimed, but the old panel fn + seat/cargo constants remain with \`#![allow(dead_code)]\` and stale module prose that still says cargo lives under the Vehicles tab | source audit`
+`NIT | apps/frontend/src/eden_vehicles_panel.rs:1-98 (+ wasm/native stubs) | strip deleted from DockRight as claimed, but the old panel fn + seat/cargo constants remain with \`#![allow(dead_code)]\` and stale module prose that still says cargo lives under the Vehicles tab | source audit`
 
 - Evidence: `rg 'placed_vehicles_panel\('` — **no call sites** outside the function definitions and the T-818 negative Class-R assert in `eden_dock_right.rs`. Module header still claims the Placed section is “where authored vehicle cargo is entered” / “lives in the Vehicles tab rather than in the Attributes modal.” `attributes.rs` duplicated `FIXED_SEATS` / `DEFAULT_CARGO_SEATS` / `VEHICLE_CARGO_KINDS` (byte-equal to the dead panel today).
 - Impact: No live strip; operator claim “Placed strip dies” holds for DockRight. Dead code + stale comments are a drift hazard if someone later re-wires the panel without noticing Attributes owns the editor.
 - Disposition: **NIT** — do not block; optional cleanup of the orphan module / shared seat-model helper. Not filed (verifier does not file tickets).
 
 ### F2 — Attributes (incl. new vehicle body) still hard-codes `z-50`, not `modal_stack::z_class`
-`NIT | apps/website/frontend/src/attributes.rs:~434,~775 | Esc is modal_stack-gated (T-726); overlay paint still literal z-50 | source audit`
+`NIT | apps/frontend/src/attributes.rs:~434,~775 | Esc is modal_stack-gated (T-726); overlay paint still literal z-50 | source audit`
 
 - Evidence: `AttributesModal` registers + `is_topmost_open` + unregister (Class-R `attributes_modal_gates_escape_on_modal_stack` green). Both slot `modal_view` and T-818 `vehicle_attrs_view` overlays use `z-50` classes. OrbatManager is the surface pinned to `modal_stack::z_class` (`ui.rs` O-3). This is **pre-existing Attributes pattern**, inherited by the moved vehicle editor — not a new Esc break.
 - Impact: Ticket trap named z_class; Esc consumption is correct. Stacked paint order vs Arsenal/ORBAT still relies on hardcoded tiers for Attributes.
@@ -76,7 +76,7 @@ T-818 moved the vehicle editor into Attributes and removed the DockRight Placed 
 | Completion scrub-anchor landmine | **PASS** | `ddbdcddd` splits `MissionEditorPage` anchor; unbroken full signature count in file = **1**; t819 uses `format!("{}{}", "pub fn Mission", "EditorPage()…")` |
 | T-802 hover cache pin vs crewed hide | **PASS** | `00eea875` retargets pin to `map_render_slot_soa`; `hover_hit` body uses it (not bare `materialize()`); `the_point_sets_are_cached_against_the_lane_binding_tick` green — pin would fail if hover reverted to `materialize()` |
 
-`cargo xtask ai run -- 'cargo test -p website-frontend t819_crewed'`: **8 passed**.
+`cargo xtask ai run -- 'cargo test -p frontend t819_crewed'`: **8 passed**.
 
 ### T-836 — Seed veh: aliases
 

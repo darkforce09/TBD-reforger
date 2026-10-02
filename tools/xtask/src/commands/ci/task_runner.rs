@@ -51,8 +51,6 @@
 //!   would silently split the 52 GB cache per worktree. The build lane owns the *assertion* half
 //!   (`verify-cargo-target`); this is the derivation half, and the two should become one helper
 //!   when the lanes merge.
-//! * **`-podman …`** in `rust-test-it` (`Makefile:205`) ignores failure; [`Step::Shell`] keeps the
-//!   `ignore_err` flag rather than "fixing" a deliberate tolerance.
 //!
 //! **make's own framing is NOT reproduced**, deliberately, and it is the one place where output
 //! differs. GNU make prints `make[1]: Entering directory …` around every sub-make and collapses
@@ -116,14 +114,6 @@ pub enum Step {
     /// (`verify-editorconfig`, `verify-codegen-fresh`, `ci-chrome`, `editor-api-boot`). Never
     /// echoed: it has no command line of its own.
     Native { run: fn() -> i32 },
-    /// A recipe line handed to `/bin/sh -c` verbatim — **only** for [`Lane::Borrowed`] rows.
-    /// Not a port and not claimed as one: it is the same shell make ran, kept byte-faithful
-    /// (including `sh: podman: not found`) until the owning slice ports it properly.
-    Shell {
-        script: &'static str,
-        silent: bool,
-        ignore_err: bool,
-    },
 }
 
 pub struct Task {

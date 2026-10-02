@@ -27,12 +27,12 @@ fn identical_names_in_different_test_binaries_count_separately() {
 
 #[test]
 fn repeated_headers_cases_and_entire_cargo_output_do_not_inflate_counts() {
-    let first = unit_header("target/debug/deps/website_api-a123");
+    let first = unit_header("target/debug/deps/api-a123");
     let second = integration_header("integration", "target/debug/deps/integration-b456");
     let output = format!(
         "{first}test same_name ... ok\ntest same_name ... ok\n\
          {first}test same_name ... ok\ntest unit_only ... ok\n\
-         {second}test same_name ... ok\n   Doc-tests website_api\n\
+         {second}test same_name ... ok\n   Doc-tests api\n\
          test src/lib.rs - example (line 10) ... ok\n",
     );
     assert_eq!(successful_cases(&rust_cases(), &output), 4);
@@ -42,9 +42,9 @@ fn repeated_headers_cases_and_entire_cargo_output_do_not_inflate_counts() {
 #[test]
 fn unit_integration_and_documentation_suites_have_independent_identities() {
     let output = format!(
-        "{}test same ... ok\n{}test same ... ok\n   Doc-tests website_api\n\
+        "{}test same ... ok\n{}test same ... ok\n   Doc-tests api\n\
          test same ... ok\n   Doc-tests other_crate\ntest same ... ok\n",
-        unit_header("target/debug/deps/website_api-a123"),
+        unit_header("target/debug/deps/api-a123"),
         integration_header("api", "target/debug/deps/api-b456"),
     );
     assert_eq!(successful_cases(&rust_cases(), &output), 4);
@@ -106,7 +106,7 @@ fn crlf_runner_headers_and_cargo_profile_paths_are_recognized() {
         "test same ... ok\r\n",
         "Running tests/api.rs (/tmp/build-output/debug/deps/api-b456)\r\n",
         "test same ... ok\r\n",
-        "\tDoc-tests website_api\r\n",
+        "\tDoc-tests api\r\n",
         "test same ... ok\r\n",
     );
     assert_eq!(successful_cases(&rust_cases(), output), 3);
@@ -131,7 +131,7 @@ fn malformed_and_embedded_runner_headers_do_not_create_new_scopes() {
     ] {
         let output = format!(
             "{}test same ... ok\n{malformed}\ntest same ... ok\n",
-            unit_header("target/debug/deps/website_api-a123"),
+            unit_header("target/debug/deps/api-a123"),
         );
         assert_eq!(successful_cases(&rust_cases(), &output), 1, "{malformed}");
     }

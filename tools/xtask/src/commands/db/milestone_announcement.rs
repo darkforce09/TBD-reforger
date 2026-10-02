@@ -1,7 +1,7 @@
 //! `cargo xtask mod seed-announcement` — insert the pinned first-milestone website announcement
 //! when it is not already there.
 //!
-//! `DATABASE_URL` comes from the process environment, overlaid by `apps/website/api_v2/.env`,
+//! `DATABASE_URL` comes from the process environment, overlaid by `apps/api/.env`,
 //! which is parsed as `KEY=VALUE` and never executed.
 //!
 //! What it refuses and what it tolerates:
@@ -64,7 +64,7 @@ struct Paths {
 impl Paths {
     fn from_root(root: &Path) -> Self {
         Self {
-            web: root.join("apps/website/api_v2"),
+            web: root.join("apps/api"),
         }
     }
 }

@@ -110,7 +110,7 @@ the trim and the checks a few minutes.
 10. Prove the flight model reproduces the new bundle.
 
     ```bash
-    cargo test -p website-map-engine --all-features --locked data::scenario::ballistics::calibration
+    cargo test -p map_engine --all-features --locked data::scenario::ballistics::calibration
     ```
 
     Expected: every `data::scenario::ballistics::calibration::tests::…` case `ok`, the seven
@@ -156,7 +156,7 @@ Expected: `200`, `etag` equal to the catalog sha256 the trim printed, and
   — the edit-mode half, its dialog and its output.
 - [Ballistics trim](/tools/xtask/src/commands/ballistics/README.md) — the trim command's rules
   and exit codes.
-- [Game ballistics design note](/documentation/website/api_v2/verification_evidence/game_ballistics.md)
+- [Game ballistics design note](/documentation/apps/api/verification_evidence/game_ballistics.md)
   — the fixture lifecycle, the calibration criterion and the operator decisions.
-- [Ballistics catalogs page](/documentation/website/frontend/pages/administration/ballistics_catalogs/ballistics_catalogs_page.md)
+- [Ballistics catalogs page](/documentation/apps/frontend/pages/administration/ballistics_catalogs/ballistics_catalogs_page.md)
   — the upload screen of step 11.

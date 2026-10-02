@@ -52,18 +52,18 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 owns = [
-    "apps/website/frontend/src/eden_chrome.rs",
-    "apps/website/frontend/src/eden_layout.rs",
-    "apps/website/frontend/src/eden_top_strip.rs",
-    "apps/website/frontend/src/eden_env.rs",
-    "apps/website/frontend/src/eden_tree.rs",
-    "apps/website/frontend/src/eden_dock_left.rs",
-    "apps/website/frontend/src/eden_dock_right.rs",
-    "apps/website/frontend/src/eden_vehicles_panel.rs",
-    "apps/website/frontend/src/eden_zones.rs",
-    "apps/website/frontend/src/eden_toolbelt.rs",
-    "apps/website/frontend/src/eden_settings.rs",
-    "apps/website/frontend/src/main.rs",
+    "apps/frontend/src/eden_chrome.rs",
+    "apps/frontend/src/eden_layout.rs",
+    "apps/frontend/src/eden_top_strip.rs",
+    "apps/frontend/src/eden_env.rs",
+    "apps/frontend/src/eden_tree.rs",
+    "apps/frontend/src/eden_dock_left.rs",
+    "apps/frontend/src/eden_dock_right.rs",
+    "apps/frontend/src/eden_vehicles_panel.rs",
+    "apps/frontend/src/eden_zones.rs",
+    "apps/frontend/src/eden_toolbelt.rs",
+    "apps/frontend/src/eden_settings.rs",
+    "apps/frontend/src/main.rs",
 ]
 
 [scope]

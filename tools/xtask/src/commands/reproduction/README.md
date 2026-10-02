@@ -37,7 +37,7 @@ mission-upload   (API, ROLE and SIZES_MB from the environment)
 with `APP_ENV=development` so the [dev login](/documentation/glossary/a_to_f.md#dev-login) answers. A
 failed upload prints `curl exit <n>` and the loop goes on, because a connection the server cuts
 is the result being reproduced; the version route's body limit comes from
-`mission_version_body_limit` in `apps/website/api_v2/src/core/configuration/mod.rs`. The temp
+`mission_version_body_limit` in `apps/api/src/core/configuration/mod.rs`. The temp
 folder is removed on exit.
 
 ## Commands

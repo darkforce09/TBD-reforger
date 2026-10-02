@@ -50,7 +50,7 @@ wired by the modules they test.
   `tools/xtask/Cargo.toml`.
 - Used by: `tools/xtask/Cargo.toml`, whose one `[[bin]]` is `src/main.rs`.
 - Rules:
-  - xtask never depends on `website-map-engine` or `website-graphics-engine`, and
+  - xtask never depends on `map_engine` or `graphics_engine`, and
     `developer_tools` never depends on xtask (`tooling_dependency_direction_is_enforced`);
   - a production file stays under 500 lines, `main.rs` under 150 and a separate test file under
     1000 (`tooling_source_files_stay_below_their_structural_limits`), and no test module is inline

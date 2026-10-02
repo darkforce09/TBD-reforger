@@ -6,7 +6,7 @@ const COMMIT: &str = "0123456789abcdef0123456789abcdef01234567";
 fn tree() -> TrackedTree {
     TrackedTree::from_listing(
         "documentation/runbooks/deploy.md\0documentation/My Notes/plan.md\0\
-         apps/website/api_v2/src/main.rs\0README.md",
+         apps/api/src/main.rs\0README.md",
     )
 }
 
@@ -66,7 +66,7 @@ fn other_schemes_and_hosts_are_external() {
 
 #[test]
 fn a_code_view_of_this_repository_is_a_permalink_or_unpinned() {
-    let blob = format!("{PERMALINK_BASE}{COMMIT}/apps/website/api_v2/src/main.rs#L3");
+    let blob = format!("{PERMALINK_BASE}{COMMIT}/apps/api/src/main.rs#L3");
     assert!(matches!(classify(&blob), Destination::Permalink(_)));
     let tree = PERMALINK_BASE.replace("/blob/", &format!("/tree/{COMMIT}/apps"));
     assert!(matches!(classify(&tree), Destination::Permalink(_)));
@@ -135,20 +135,16 @@ fn a_path_resolves_from_the_root_or_from_the_document_folder() {
         Resolution::File("documentation/runbooks/deploy.md".to_string())
     );
     assert_eq!(
-        resolve(document, "/apps/website/api_v2/src/main.rs", &tree),
-        Resolution::File("apps/website/api_v2/src/main.rs".to_string())
+        resolve(document, "/apps/api/src/main.rs", &tree),
+        Resolution::File("apps/api/src/main.rs".to_string())
     );
     assert_eq!(
         resolve(document, "../../README.md", &tree),
         Resolution::File("README.md".to_string())
     );
     assert_eq!(
-        resolve(
-            "README.md",
-            "apps//website/./api_v2/../api_v2/src/main.rs",
-            &tree
-        ),
-        Resolution::File("apps/website/api_v2/src/main.rs".to_string())
+        resolve("README.md", "apps//api/./src/../src/main.rs", &tree),
+        Resolution::File("apps/api/src/main.rs".to_string())
     );
 }
 
@@ -156,8 +152,8 @@ fn a_path_resolves_from_the_root_or_from_the_document_folder() {
 fn a_folder_holding_a_tracked_file_is_a_target() {
     let tree = tree();
     assert_eq!(
-        resolve("README.md", "/apps/website/", &tree),
-        Resolution::Folder("apps/website".to_string())
+        resolve("README.md", "/apps/api/", &tree),
+        Resolution::Folder("apps/api".to_string())
     );
     assert_eq!(
         resolve("README.md", "/", &tree),

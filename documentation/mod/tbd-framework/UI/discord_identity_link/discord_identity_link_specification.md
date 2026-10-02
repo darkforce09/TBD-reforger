@@ -16,7 +16,7 @@ private chat command; the [mod](/documentation/glossary/g_to_m.md#mod) draws no 
 - Entry: `#tbd link <code>` in chat, intercepted on the server by `TBD_AdminCommands` before the
   game forwards the line; unlike the other `#tbd` commands it is open to every player.
 - Website half: the account settings page's "Generate Link Code", reached from the top bar's
-  "Link Arma Identity"; the [account pages](/documentation/website/frontend/pages/account/account_pages.md)
+  "Link Arma Identity"; the [account pages](/documentation/apps/frontend/pages/account/account_pages.md)
   document it.
 - Layout: none; replies go to the player alone through `SCR_ChatComponent.SendPrivateMessage`.
 
@@ -65,10 +65,10 @@ None found: each reply matches the status the platform's handler returns.
 ## Data
 
 - `POST /api/v1/me/link` (`create_link_code` in
-  `apps/website/api_v2/src/identity_and_access/handlers/arma_link_codes.rs`): signed-in member
+  `apps/api/src/identity_and_access/handlers/arma_link_codes.rs`): signed-in member
   tier; issues the 6-digit code with a 10-minute expiry.
 - `POST /api/v1/ingest/link-confirm` (`ingest_link_confirm` in
-  `apps/website/api_v2/src/identity_and_access/handlers/arma_link_confirmation.rs`): machine tier,
+  `apps/api/src/identity_and_access/handlers/arma_link_confirmation.rs`): machine tier,
   called by the game server with its `mod_runtime` machine credential as
   `Authorization: Bearer`; body `code`, `arma_id` and `arma_character`. It consumes the code, sets
   the member's game identity, attributes their earlier history and recomputes statistics, writes an

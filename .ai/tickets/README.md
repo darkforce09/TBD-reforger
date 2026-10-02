@@ -52,7 +52,7 @@ whole file again.
 **Derived files are never edited by hand.** `cargo xtask ticket sync` regenerates `queue.json`
 and the next-work block of the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)
 roadmap, between `<!-- ticket-sync:next:start -->` and `<!-- ticket-sync:next:end -->` in
-`documentation/website/frontend/apps/editor/mission_creator_roadmap.md`. The ticket column of
+`documentation/apps/frontend/apps/editor/mission_creator_roadmap.md`. The ticket column of
 the Eden gap analysis is kept by hand: sync's column writer rewrites only a table headed with a
 `priority` column, which that table does not have. `wave.lock` is written only by
 `cargo xtask wave repack` (which `ticket ship` and `ticket set-status` run). The run receipts under

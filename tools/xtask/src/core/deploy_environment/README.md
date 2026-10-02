@@ -1,6 +1,6 @@
 # Deploy settings loader
 
-The parts of the one reader of `tools/xtask/deploy/deploy.env`: the file's grammar, the deploy
+The parts of the one reader of `deploy/deploy.env`: the file's grammar, the deploy
 host it names, and the remote folders that default under that host's user.
 `tools/xtask/src/core/deploy_environment.rs` declares the three files, holds the loader and the
 precedence rule, and re-exports `DeployHost`, `first_ipv4_address` and `DeployHostFolder`.

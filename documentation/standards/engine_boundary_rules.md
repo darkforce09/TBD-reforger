@@ -16,20 +16,20 @@ The web platform draws its map with three crates, each with one job:
 
 | Crate | Code | Job |
 |---|---|---|
-| `website-graphics-engine` | [`apps/website/graphics-engine/`](/apps/website/graphics-engine/README.md) | the renderer: device buffers, pipelines, the WGSL shader, draw batching, text packing, sprite culling and the animation-frame pump; it knows no map concept |
-| `website-map-engine` | [`apps/website/map-engine/`](/apps/website/map-engine/README.md) | the [mission](/documentation/glossary/g_to_m.md#mission) domain, the static world, streaming, spatial queries, the overlay, the cameras, the headless editing layer and `RenderEngine`, which builds each frame |
-| `website-frontend` | [`apps/website/frontend/`](/apps/website/frontend/README.md) | the single-page app, including the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator): pages, UI, input and the browser shell |
+| `graphics_engine` | [`legacy/graphics_engine/`](/legacy/graphics_engine/README.md) | the renderer: device buffers, pipelines, the WGSL shader, draw batching, text packing, sprite culling and the animation-frame pump; it knows no map concept |
+| `map_engine` | [`legacy/map_engine/`](/legacy/map_engine/README.md) | the [mission](/documentation/glossary/g_to_m.md#mission) domain, the static world, streaming, spatial queries, the overlay, the cameras, the headless editing layer and `RenderEngine`, which builds each frame |
+| `frontend` | [`apps/frontend/`](/apps/frontend/README.md) | the single-page app, including the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator): pages, UI, input and the browser shell |
 
-The [API](/documentation/glossary/a_to_f.md#api) (`website-api`) links the map engine too, for the
+The [API](/documentation/glossary/a_to_f.md#api) (`api`) links the map engine too, for the
 mission compiler and validator alone.
 
 ### Dependency direction — non-negotiable
 
 ```text
-website-api      ──► website-map-engine {scenario}                  native, no GPU crate
-website-frontend ──► website-map-engine {world, io, store, editing}  every target
+api      ──► map_engine {scenario}                  native, no GPU crate
+frontend ──► map_engine {world, io, store, editing}  every target
                                         {render, streaming}          wasm32
-                     website-map-engine ──► website-graphics-engine  from the world tier up
+                     map_engine ──► graphics_engine  from the world tier up
 ```
 
 - The arrow runs from the map engine to the graphics engine and never back. The graphics engine
@@ -38,21 +38,21 @@ website-frontend ──► website-map-engine {world, io, store, editing}  every
   [rule 2](#rule-2-no-map-noun-in-a-graphics-engine-declaration)).
 - The frontend never depends on the graphics engine. It hands the map engine a canvas, and
   reaches the render loop through the map engine's re-export of `RafPump` and `FrameTarget`
-  (`apps/website/map-engine/src/frame/mod.rs`, `frame/pump.rs`)
+  (`legacy/map_engine/src/frame/mod.rs`, `frame/pump.rs`)
   ([rule 6](#rule-6-the-frontend-never-imports-the-graphics-engine)).
 - Nothing in the compiler enforces either direction: a dependency edge pointing back would still
   build. The gate is the only wall.
 
 The graphics engine's own layout and public surface are in its
-[README](/apps/website/graphics-engine/README.md); the map engine's modules and feature tiers are
-in its [README](/apps/website/map-engine/README.md) and [source README](/apps/website/map-engine/src/README.md).
+[README](/legacy/graphics_engine/README.md); the map engine's modules and feature tiers are
+in its [README](/legacy/map_engine/README.md) and [source README](/legacy/map_engine/src/README.md).
 
 ### Where state lives
 
 > The map engine owns state that survives a reload. The frontend owns state that dies with the
 > tab.
 
-| Survives a reload: `website-map-engine` | Dies with the tab: `website-frontend` |
+| Survives a reload: `map_engine` | Dies with the tab: `frontend` |
 |---|---|
 | the mission document, its entities and its undo stack (`data/store/`, `editing/history/`) | hover and drag in progress |
 | the selection (`editing/host.rs`) | the pointer gesture state machine (`editor/input/`) |
@@ -61,32 +61,32 @@ in its [README](/apps/website/map-engine/README.md) and [source README](/apps/we
 | the decisions behind serialising and hydrating a draft (`editing/persist/`) | the tab lock, the save-status signal and the title (`editor/shell/`) |
 
 A file whose home is unclear goes where this rule sends it. The frontend paths are under
-`apps/website/frontend/src/v2/apps/editor/`; the map engine paths under
-`apps/website/map-engine/src/`. Where the bytes of a draft are stored (IndexedDB) and how they
+`apps/frontend/src/v2/apps/editor/`; the map engine paths under
+`legacy/map_engine/src/`. Where the bytes of a draft are stored (IndexedDB) and how they
 travel is the frontend's; what they mean is the map engine's.
 
 ### Feature tiers
 
 A consumer takes only the tier it needs; the feature table and its consumers are in the map
-engine README's [Configuration](/apps/website/map-engine/README.md#configuration). Three facts of
+engine README's [Configuration](/legacy/map_engine/README.md#configuration). Three facts of
 the tiers are boundary rules:
 
 - `scenario`, the default, is the tier the API links, and it pulls no graphics crate, PNG
   decoder, `rkyv` or `flate2`. [Rule 4](#rule-4-the-mission-compiler-imports-nothing-outside-itself)
   keeps it that way.
-- `world` turns the graphics engine on, not `render` alone (`apps/website/map-engine/Cargo.toml:34`):
+- `world` turns the graphics engine on, not `render` alone (`legacy/map_engine/Cargo.toml:34`):
   the upload belts of `world/`, `overlay/` and `spatial/` import the renderer's byte layouts and
   geometry helpers directly (Kind B in [2C.1](#2c1-what-may-name-a-graphics-type)), and the
-  frontend's debug building viewer calls `website_map_engine::world::mesh::triangulate`, the
-  map engine's re-export of `website_graphics_engine::draw::triangulate`
-  (`apps/website/map-engine/src/world/mesh.rs:17`).
+  frontend's debug building viewer calls `map_engine::world::mesh::triangulate`, the
+  map engine's re-export of `graphics_engine::draw::triangulate`
+  (`legacy/map_engine/src/world/mesh.rs:17`).
 - `editing` takes `store`, `world` and `streaming`, because the line-of-sight tool tests cells
   against the streamed world's occluder under `spatial/los/world/`
-  (`apps/website/map-engine/Cargo.toml:43`).
+  (`legacy/map_engine/Cargo.toml:43`).
 
 ## 2. Walls inside the map engine
 
-The map engine is one crate of eleven top-level modules (`apps/website/map-engine/src/lib.rs`).
+The map engine is one crate of eleven top-level modules (`legacy/map_engine/src/lib.rs`).
 Four walls inside it replace the crate boundaries a split into more crates would have drawn.
 
 ### 2A The API's thin tier
@@ -105,7 +105,7 @@ drive, the draft decisions and the tool state machines. Every one of them is ans
 `cargo test` with no browser. What only a host can supply (a clock, a frame pump, a prompt, a
 storage read) crosses as an injected closure or function pointer, so the tree names no browser
 crate. [Rule 5](#rule-5-no-browser-crate-in-the-editing-layer) enforces it; the layer itself is
-described in the [editing layer doc](/documentation/website/map-engine/editing_layer.md).
+described in the [editing layer doc](/documentation/legacy/map_engine/editing_layer.md).
 
 The rest of the crate is a wasm crate that reaches the browser on purpose (the streaming host,
 the readback diagnostics, the doll renderer, the render engine), so the browser ban covers
@@ -113,7 +113,7 @@ the readback diagnostics, the doll renderer, the render engine), so the browser 
 
 ### 2C The packet boundary
 
-`apps/website/map-engine/src/frame/` builds the graphics engine's `FramePacket` from the world,
+`legacy/map_engine/src/frame/` builds the graphics engine's `FramePacket` from the world,
 the document and the overlay, and it holds `RenderEngine`. Four rules keep the frame path cheap.
 Breaking any of them costs frame time, and no functional test notices: the picture stays the
 same.
@@ -126,25 +126,25 @@ same.
    field (`frame/encode.rs:168-177`).
 2. **Handles and ranges only.** A `DrawBatch` carries a lane id, a visibility flag, a pipeline id
    and a payload of GPU buffer handles with a stride, count and offset
-   (`apps/website/graphics-engine/src/frame/batch.rs`, `frame/buffers.rs`), never owned geometry.
+   (`legacy/graphics_engine/src/frame/batch.rs`, `frame/buffers.rs`), never owned geometry.
    Owned geometry would copy it every frame.
 3. **Damage tracking survives.** `render` returns before acquiring a surface texture when
    `RenderDamage` says the frame is clean and not continuous, and every lane mutation marks the
    frame damaged. If packet building became "walk the world, rebuild every batch", the
    damage-driven renderer would turn immediate-mode, and every test would still pass.
 4. **One call per frame across the crate boundary.** `encode_main_pass` hands the whole packet to
-   `website_graphics_engine::draw::encode::encode` once a frame, never per batch or per instance:
+   `graphics_engine::draw::encode::encode` once a frame, never per batch or per instance:
    without link-time optimisation a chatty boundary is thousands of calls that are not inlined.
 
 Rule 3 is the one whose breach is invisible, so it is pinned in the source:
-`apps/website/map-engine/src/frame/tests/damage_discipline.rs` reads `frame/lifecycle.rs`,
+`legacy/map_engine/src/frame/tests/damage_discipline.rs` reads `frame/lifecycle.rs`,
 `frame/encode.rs` and `frame/engine.rs` at compile time and fails if `render` stops refusing an
 undamaged frame (`render_refuses_to_submit_an_undamaged_frame`), a lane mutation stops marking
 damage (`every_lane_mutation_marks_the_frame_damaged`), the packet stops reading the persistent
 list (`the_packet_reads_the_persistent_batch_list`) or the tables are rebuilt rather than refilled
 (`the_packets_lookup_tables_are_refilled_not_rebuilt`). `RenderEngine` needs a GPU device, so no
 native test can build one; the source pin is the proof that remains. The damage state machine
-itself is tested in the graphics engine (`apps/website/graphics-engine/src/frame/tests/`).
+itself is tested in the graphics engine (`legacy/graphics_engine/src/frame/tests/`).
 
 ### 2C.1 What may name a graphics type
 
@@ -159,13 +159,13 @@ rule:
 - **Kind B: byte layouts and packing.** The shared binary contract between the crates (instance
   layouts, vertex and geometry packing, text metrics and layout) is imported directly by the
   upload belts that sit next to their data, in `world/`, `overlay/`, `spatial/` and
-  `diagnostics/`. The graphics engine publishes it as one list, `website_graphics_engine::layout`,
+  `diagnostics/`. The graphics engine publishes it as one list, `graphics_engine::layout`,
   beside `draw` and `text`. No rule restricts Kind B: routing it through `frame/` would put
   vegetation and symbology knowledge into `frame/` and make it a god module.
 - **Kind C: the packet vocabulary.** `FramePacket`, `DrawBatch`, `DrawPayload`, `InstanceBuffer`,
   `LaneId`, `CameraUniform` and the rest of the graphics engine's `frame` module reach the map
   engine through `crate::frame` only, re-exported by name (never a glob) in
-  `apps/website/map-engine/src/frame/mod.rs`, so the crate's whole graphics interface is one list
+  `legacy/map_engine/src/frame/mod.rs`, so the crate's whole graphics interface is one list
   a reviewer reads on one screen, and widening it is a diff to that list
   ([rule 3a](#rule-3a-only-the-packet-boundary-names-the-frame-vocabulary)). `frame/`'s own
   submodules import `crate::frame::DrawBatch` like every other module.
@@ -187,19 +187,19 @@ anything tries to persist it.
 
 ## 3. The graphics engine: a pure renderer
 
-`website-graphics-engine` binds and draws what it is told. It defines the frame vocabulary, and
+`graphics_engine` binds and draws what it is told. It defines the frame vocabulary, and
 its eight modules (`device`, `draw`, `frame`, `layout`, `loop`, `pipeline`, `shaders`, `text`)
 hold geometry, GPU handles and byte layouts only. The map engine decides what to draw, in which
 order and with which pipeline, and keys every batch on an opaque `LaneId`; the lane roles and
-their paint order live in `apps/website/map-engine/src/overlay/lanes.rs`. A map noun in a
+their paint order live in `legacy/map_engine/src/overlay/lanes.rs`. A map noun in a
 declared name means a domain decision crossed the wall: move the decision to the map engine and
-leave the packing in the renderer. The [graphics engine overview](/documentation/website/graphics-engine/graphics_engine_overview.md)
+leave the packing in the renderer. The [graphics engine overview](/documentation/legacy/graphics_engine/graphics_engine_overview.md)
 describes the crate.
 
 ## 4. The frontend: a thin browser app
 
 The frontend owns presentation, input and the browser shell. It reaches the renderer through
-`website-map-engine` only, because the map engine owns the frame vocabulary (rule 3a) and the GPU
+`map_engine` only, because the map engine owns the frame vocabulary (rule 3a) and the GPU
 resources (rule 3b): a frontend that imported the renderer would make both walls optional. It
 supplies what only a browser has (the canvas, preference readers, clocks, storage) to the map
 engine as values and closures, and keeps the state [section 1](#where-state-lives) gives it.
@@ -217,15 +217,15 @@ messages in `report_text.rs`, the walks in `crate_walks.rs` and the pin arithmet
 `scanning.rs`, as its [README](/tools/verification_core/src/repository_laws/engine_layers/README.md)
 lists. `tools/xtask/src/verifications/architecture/engine_layer_boundaries.rs` prints that
 library's report for `cargo xtask verify engine-layers`, and the `engineering_laws` test binary of
-`website-api` reads the same library; the
+`api` reads the same library; the
 [architecture gates README](/tools/xtask/src/verifications/architecture/README.md) summarises
 all three architecture gates.
 
 ### How the gate judges
 
-- **Inputs.** It walks the `.rs` files under `apps/website/graphics-engine/src`,
-  `apps/website/map-engine/src` and `apps/website/frontend/src`, and reads
-  `apps/website/graphics-engine/Cargo.toml` and `apps/website/frontend/Cargo.toml`. Untracked
+- **Inputs.** It walks the `.rs` files under `legacy/graphics_engine/src`,
+  `legacy/map_engine/src` and `apps/frontend/src`, and reads
+  `legacy/graphics_engine/Cargo.toml` and `apps/frontend/Cargo.toml`. Untracked
   files count. A folder below the repository root named `target` or starting with `target-` is
   build output and is pruned.
 - **Self-probes.** Every matcher is a compiled constant, and before it judges source it runs over
@@ -244,30 +244,30 @@ all three architecture gates.
 
 | Rule | Subject | Must hold |
 |---|---|---|
-| 1 | `apps/website/graphics-engine` | no `website_map_engine` in source, no `website-map-engine` edge in `Cargo.toml` |
-| 2 | `apps/website/graphics-engine` | no declared name (after `struct`, `enum`, `trait`, `type`, `fn`, `const`, `static`, `mod`) containing terrain, symbology, mission, orbat or arma, case-insensitive |
-| 3a | `apps/website/map-engine/src` | `website_graphics_engine::frame` appears only in `frame/mod.rs`, exactly 8 times |
-| 3b | `apps/website/map-engine/src` | `website_graphics_engine::` followed by `device`, `pipeline`, `shaders` or `r#loop` appears only at the pinned sites: 3 in `frame/mod.rs`, 2 in `frame/pump.rs` |
-| 4 | `data/scenario` | names none of `crate::` `camera`, `diagnostics`, `doll`, `editing`, `frame`, `io`, `overlay`, `spatial`, `streaming`, `world`, `data::store`, nor `website_graphics_engine`, nor a `super::` chain ending on one of them (`diagnostics` excepted), outside two pinned `cfg(feature = "store")` test files |
+| 1 | `legacy/graphics_engine` | no `map_engine` in source, no `map_engine` edge in `Cargo.toml` |
+| 2 | `legacy/graphics_engine` | no declared name (after `struct`, `enum`, `trait`, `type`, `fn`, `const`, `static`, `mod`) containing terrain, symbology, mission, orbat or arma, case-insensitive |
+| 3a | `legacy/map_engine/src` | `graphics_engine::frame` appears only in `frame/mod.rs`, exactly 8 times |
+| 3b | `legacy/map_engine/src` | `graphics_engine::` followed by `device`, `pipeline`, `shaders` or `r#loop` appears only at the pinned sites: 3 in `frame/mod.rs`, 2 in `frame/pump.rs` |
+| 4 | `data/scenario` | names none of `crate::` `camera`, `diagnostics`, `doll`, `editing`, `frame`, `io`, `overlay`, `spatial`, `streaming`, `world`, `data::store`, nor `graphics_engine`, nor a `super::` chain ending on one of them (`diagnostics` excepted), outside two pinned `cfg(feature = "store")` test files |
 | 5 | `editing` | no `web_sys`, `leptos` or `wasm_bindgen`, prose included |
-| 6 | `apps/website/frontend` | no `website_graphics_engine::` path or `extern crate`, no `website-graphics-engine` edge in `Cargo.toml` |
+| 6 | `apps/frontend` | no `graphics_engine::` path or `extern crate`, no `graphics_engine` edge in `Cargo.toml` |
 | 7 | `data` and `world` | `data/` names none of the ten sibling modules of rule 4 nor the graphics engine; `world/` names neither `crate::data` nor `yrs::` |
 
-The paths of rules 4, 5 and 7 are under `apps/website/map-engine/src/`.
+The paths of rules 4, 5 and 7 are under `legacy/map_engine/src/`.
 
 ### Rule 1: the graphics engine never imports the map engine
 
-- Subject: the `.rs` files under `apps/website/graphics-engine/src` and its `Cargo.toml`.
-- Forbids: the text `website_map_engine` in source, and `website-map-engine` on a manifest line
+- Subject: the `.rs` files under `legacy/graphics_engine/src` and its `Cargo.toml`.
+- Forbids: the text `map_engine` in source, and `map_engine` on a manifest line
   that is not a `#` comment. The manifest arm closes the rename hole: a dependency renamed with
-  `package = "website-map-engine"` would make every `use` spell a name the source arm never sees.
+  `package = "map_engine"` would make every `use` spell a name the source arm never sees.
 - Why: [dependency direction](#dependency-direction--non-negotiable). A reverse edge turns the
   arrow into a cycle.
 - Exemptions and pins: none.
 
 ### Rule 2: no map noun in a graphics engine declaration
 
-- Subject: the `.rs` files under `apps/website/graphics-engine/src`.
+- Subject: the `.rs` files under `legacy/graphics_engine/src`.
 - Forbids: a declaration keyword (`struct`, `enum`, `trait`, `type`, `fn`, `const`, `static`,
   `mod`), whitespace, then a name containing `terrain`, `symbology`, `mission`, `orbat` or
   `arma`, case-insensitive (`DECL_RE`). `struct TerrainBlob` and `fn submit_mission` fail;
@@ -280,40 +280,40 @@ The paths of rules 4, 5 and 7 are under `apps/website/map-engine/src/`.
 
 ### Rule 3a: only the packet boundary names the frame vocabulary
 
-- Subject: the `.rs` files under `apps/website/map-engine/src`.
-- Forbids: `website_graphics_engine::frame` followed by a word boundary (`FRAME_VOCAB_RE`), in
+- Subject: the `.rs` files under `legacy/map_engine/src`.
+- Forbids: `graphics_engine::frame` followed by a word boundary (`FRAME_VOCAB_RE`), in
   code or prose, outside the pin. `crate::frame::DrawBatch` and a module named `frames` do not
   match.
 - Why: Kind C of [2C.1](#2c1-what-may-name-a-graphics-type). A directory rule ("anything under
   `frame/`") would pass thirteen files each importing what they liked; a per-file pin keeps the
   interface one list.
-- Pin (`RULE3A_PIN`): `apps/website/map-engine/src/frame/mod.rs`, 8 lines, the enumerated packet
+- Pin (`RULE3A_PIN`): `legacy/map_engine/src/frame/mod.rs`, 8 lines, the enumerated packet
   vocabulary. The file's own prose never spells the path, so the count is exactly the size of the
   interface list.
 
 ### Rule 3b: no GPU-resource module in the map engine
 
-- Subject: the `.rs` files under `apps/website/map-engine/src`.
-- Forbids: `website_graphics_engine::` followed by `device`, `pipeline`, `shaders` or `r#loop`
+- Subject: the `.rs` files under `legacy/map_engine/src`.
+- Forbids: `graphics_engine::` followed by `device`, `pipeline`, `shaders` or `r#loop`
   and a word boundary (`GPU_MODULE_RE`), outside the pins.
 - Why: Kind A of [2C.1](#2c1-what-may-name-a-graphics-type). These modules create and own GPU
   resources; the fix for a new site is to move the construction into the graphics engine, not to
   add a pin row.
 - Pins (`RULE3B_PIN`), all caused by `RenderEngine` living in the map engine:
-  - `apps/website/map-engine/src/frame/mod.rs`, 3: the `device::buffers` and `pipeline` aliases,
+  - `legacy/map_engine/src/frame/mod.rs`, 3: the `device::buffers` and `pipeline` aliases,
     one seam each for 3 and 18 call sites, and the doc line on the `r#loop` re-export the
     frontend reaches the pump through;
-  - `apps/website/map-engine/src/frame/pump.rs`, 2: `impl FrameTarget for RenderEngine`, which
+  - `legacy/map_engine/src/frame/pump.rs`, 2: `impl FrameTarget for RenderEngine`, which
     must live in the crate that defines the type (E0116), and `#[wasm_bindgen]` refuses trait
     impls.
   Moving `RenderEngine` into the graphics engine is the only change that empties this list.
 
 ### Rule 4: the mission compiler imports nothing outside itself
 
-- Subject: the `.rs` files under `apps/website/map-engine/src/data/scenario`.
+- Subject: the `.rs` files under `legacy/map_engine/src/data/scenario`.
 - Forbids (`RULE4_RE`): `crate::` followed by `camera`, `diagnostics`, `doll`, `editing`,
   `frame`, `io`, `overlay`, `spatial`, `streaming`, `world` or `data::store`;
-  `website_graphics_engine`; and a `super::` chain of any length ending on `store`, `camera`,
+  `graphics_engine`; and a `super::` chain of any length ending on `store`, `camera`,
   `doll`, `editing`, `frame`, `io`, `overlay`, `spatial`, `streaming` or `world`. `diagnostics` is left out of the `super::` arm because
   `data/scenario/compiler/flatten/diagnostics.rs` is a module inside the tree.
 - Why: [2A](#2a-the-apis-thin-tier). The `super::` arm exists because a `crate::`-only matcher
@@ -327,7 +327,7 @@ The paths of rules 4, 5 and 7 are under `apps/website/map-engine/src/`.
 
 ### Rule 5: no browser crate in the editing layer
 
-- Subject: the `.rs` files under `apps/website/map-engine/src/editing`.
+- Subject: the `.rs` files under `legacy/map_engine/src/editing`.
 - Forbids: the bare words `web_sys`, `leptos` and `wasm_bindgen` (`DOM_RE`), in code or prose;
   `web_sysfs` or `leptosaur` would not match.
 - Why: [2B](#2b-the-headless-editing-layer). Inside this tree a comment telling the next reader to
@@ -336,20 +336,20 @@ The paths of rules 4, 5 and 7 are under `apps/website/map-engine/src/`.
 
 ### Rule 6: the frontend never imports the graphics engine
 
-- Subject: the `.rs` files under `apps/website/frontend/src` and `apps/website/frontend/Cargo.toml`.
-- Forbids: a `website_graphics_engine::` path or `extern crate website_graphics_engine`
-  (`GRAPHICS_IMPORT_RE`), and `website-graphics-engine` on a manifest line that is not a `#`
+- Subject: the `.rs` files under `apps/frontend/src` and `apps/frontend/Cargo.toml`.
+- Forbids: a `graphics_engine::` path or `extern crate graphics_engine`
+  (`GRAPHICS_IMPORT_RE`), and `graphics_engine` on a manifest line that is not a `#`
   comment. Prose naming the crate while describing the boundary passes.
 - Why: [section 4](#4-the-frontend-a-thin-browser-app).
 - Exemptions and pins: none.
 
 ### Rule 7: the static world and the authored document share nothing
 
-- Subject: the `.rs` files under `apps/website/map-engine/src/data` and
-  `apps/website/map-engine/src/world`, judged as one rule with one findings list.
+- Subject: the `.rs` files under `legacy/map_engine/src/data` and
+  `legacy/map_engine/src/world`, judged as one rule with one findings list.
 - Forbids: under `data/` (`RULE7_DATA_RE`), `crate::` followed by `camera`, `diagnostics`, `doll`,
   `editing`, `frame`, `io`, `overlay`, `spatial`, `streaming` or `world`,
-  `website_graphics_engine`, or a `super::` chain ending on one of them but `diagnostics`; under
+  `graphics_engine`, or a `super::` chain ending on one of them but `diagnostics`; under
   `world/` (`RULE7_WORLD_RE`), `crate::data`, `yrs::` or a `super::` chain ending on `data`.
   `yrs::` rather than the bare word, so "3 yrs" in prose passes.
 - Why: [2D](#2d-static-world-and-authored-document). A build of `--features store` alone compiles
@@ -375,7 +375,7 @@ The paths of rules 4, 5 and 7 are under `apps/website/map-engine/src/`.
 
 - **Rule 2's noun list is short.** Declared names such as `BuildingInstance`,
   `create_building_pipeline`, `create_forest_density_pipeline` and `create_map_shader` name map
-  concepts the five nouns do not catch (`apps/website/graphics-engine/src/draw/instances.rs`,
+  concepts the five nouns do not catch (`legacy/graphics_engine/src/draw/instances.rs`,
   `pipeline/`).
 - **The wave gate does not run it.** `VERIFY_STEPS` in
   `tools/xtask/src/commands/platform/wave_execution/gate.rs:59` has no engine-layers row; only
@@ -392,9 +392,9 @@ Tickets:
 
 ## Related documentation
 
-- [Map engine documentation](/documentation/website/map-engine/README.md) — the crate's layers,
+- [Map engine documentation](/documentation/legacy/map_engine/README.md) — the crate's layers,
   streaming, editing layer and draft persistence.
-- [Graphics engine documentation](/documentation/website/graphics-engine/README.md) — the pure
+- [Graphics engine documentation](/documentation/legacy/graphics_engine/README.md) — the pure
   renderer.
 - [Architecture gates](/tools/xtask/src/verifications/architecture/README.md) — the gate's
   inputs, exit codes and unit tests.

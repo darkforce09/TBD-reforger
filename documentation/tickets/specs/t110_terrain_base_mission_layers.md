@@ -4,7 +4,7 @@
 
 **Status:** **future / not started** — do **not** implement before **T-090/T-091** hosted assets unless product explicitly reprioritizes.
 **Git tag on ship:** *(none — not started)*
-**Authority:** [ROADMAP.md](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [engineering_plan.md](/documentation/archive/go_and_react_era_design/mission_creator_engineering_plan.md)
+**Authority:** [ROADMAP.md](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [engineering_plan.md](/documentation/archive/go_and_react_era_design/mission_creator_engineering_plan.md)
 **Relates to:** External “Base + Delta / event sourcing” proposal (2026-06) — **adopt the good parts here**, not as a rewrite of the current Y.Doc mission model.
 
 ---
@@ -99,7 +99,7 @@ flowchart TB
 
 | Tag | Focus | Depends on |
 |-----|-------|------------|
-| **T-068+** | Eden parity (locked before this) | [`eden/gap_analysis.md`](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) ticket column |
+| **T-068+** | Eden parity (locked before this) | [`eden/gap_analysis.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) ticket column |
 | **T-110** | Terrain base asset pipeline + read-only render | **T-090**/**T-091**, hosted binaries |
 | **T-071** | Terrain delta CRUD + sparse save | T-070 |
 | **T-072** | Server compile worker (Enfusion export) | T-066, export schema |
@@ -132,4 +132,4 @@ If the 360k test mission is **authored units**, stay on mission-layer fixes. If 
 
 ## Documentation sync
 
-When T-070 work starts, update: [ROADMAP.md](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md), [CLAUDE.md](../../../CLAUDE.md) §Status, [TAGS.md](/documentation/standards/ticket_identifiers.md), [engineering_plan.md](/documentation/archive/go_and_react_era_design/mission_creator_engineering_plan.md).
+When T-070 work starts, update: [ROADMAP.md](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md), [CLAUDE.md](../../../CLAUDE.md) §Status, [TAGS.md](/documentation/standards/ticket_identifiers.md), [engineering_plan.md](/documentation/archive/go_and_react_era_design/mission_creator_engineering_plan.md).

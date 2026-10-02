@@ -21,7 +21,7 @@ migration_legacy = ["OPERATOR EYE-PASS BUG (wave-205, 2026-08-10): a placed vehi
 
 missing=0
 
-Phase 5 doc writer F06 (verified at HEAD): the delete path is worse than a no-op for a selected vehicle. apps/website/map-engine/src/data/store/operations/entity/clipboard.rs:27-29 delete_selection calls remove_connections_touching for every non-comment id, vehicles included, and :31-33 then passes the ids to remove_slots (apps/website/map-engine/src/data/store/rows/slot_edits.rs:201-210), which removes only slot rows. Delete on a vehicle therefore strips its Sync to, Group to and trigger-owner connections and leaves the vehicle on the map, as one undo step. Ctrl+X does the same (T-1157).
+Phase 5 doc writer F06 (verified at HEAD): the delete path is worse than a no-op for a selected vehicle. legacy/map_engine/src/data/store/operations/entity/clipboard.rs:27-29 delete_selection calls remove_connections_touching for every non-comment id, vehicles included, and :31-33 then passes the ids to remove_slots (legacy/map_engine/src/data/store/rows/slot_edits.rs:201-210), which removes only slot rows. Delete on a vehicle therefore strips its Sync to, Group to and trigger-owner connections and leaves the vehicle on the map, as one undo step. Ctrl+X does the same (T-1157).
 """
 main_goal = "Wire vehicle delete via Del, context menu, and outliner row."
 context = [
@@ -63,10 +63,10 @@ citations = [
 ]
 estimated = ["scope"]
 owns = [
-    "apps/website/frontend/src/editor/state/operations/entity.rs",
-    "apps/website/frontend/src/editor/mission_editor.rs",
-    "apps/website/frontend/src/editor/panels/context_menu.rs",
-    "apps/website/frontend/src/editor/panels/outliner_tree.rs",
+    "apps/frontend/src/editor/state/operations/entity.rs",
+    "apps/frontend/src/editor/mission_editor.rs",
+    "apps/frontend/src/editor/panels/context_menu.rs",
+    "apps/frontend/src/editor/panels/outliner_tree.rs",
 ]
 
 [scope]

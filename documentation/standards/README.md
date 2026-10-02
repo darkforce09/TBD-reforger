@@ -47,8 +47,8 @@ these answers; a rule that fits an existing standard goes into it.
   standards cite: file length, README coverage, link check, markdown placement, route tags,
   contract citations and the engine layer walls.
 - [CI task list](/tools/xtask/src/commands/ci/) — the `ci-local` steps that run those gates.
-- [Graphics engine](/apps/website/graphics-engine/), [map engine](/apps/website/map-engine/) and
-  [frontend](/apps/website/frontend/) — the crates the engine boundary rules govern.
+- [Graphics engine](/legacy/graphics_engine/), [map engine](/legacy/map_engine/) and
+  [frontend](/apps/frontend/) — the crates the engine boundary rules govern.
 - [Ticket engine](/tools/ticket_engine/) — the id, spec and plan paths the ticket identifiers
   standard describes.
 

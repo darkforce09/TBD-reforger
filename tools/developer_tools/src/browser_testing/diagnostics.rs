@@ -27,7 +27,7 @@ use crate::browser_testing::cdp;
 use crate::browser_testing::server::{ServeConfig, start_server};
 
 const EDIT_PATH: &str = "/missions/smoke/edit?force=webgl&sat=preview";
-const DEFAULT_DIST: &str = "apps/website/frontend/dist";
+const DEFAULT_DIST: &str = "apps/frontend/dist";
 
 /// The stderr line chromium prints when fontconfig hands it an empty font set.
 const NO_FONT_MARKER: &str = "Could not find any font";

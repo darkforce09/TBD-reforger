@@ -6,12 +6,12 @@ How to record the `staging_load` receipt: 1,100 synthetic members seeded on the 
 measured minutes of member load from five workstation addresses through Caddy on the LAN, and the
 game operations measured beside it; then the cleanup. The cases and the measurement rules are in
 the
-[staging design note](/documentation/website/api_v2/verification_evidence/staging.md#load-procedure-staging_load);
+[staging design note](/documentation/apps/api/verification_evidence/staging.md#load-procedure-staging_load);
 the committed workload and population are in `tools/xtask/staging/`.
 
 ## Before you start
 
-- `tools/xtask/deploy/deploy.env` names `TBD_LOAD_TARGET_ORIGIN` (the Caddy listener on the LAN,
+- `deploy/deploy.env` names `TBD_LOAD_TARGET_ORIGIN` (the Caddy listener on the LAN,
   plain HTTP) and the five `TBD_LOAD_SOURCE_ADDRESSES`, the first being the workstation's own.
 - The host's API env file has an empty `DISCORD_BOT_TOKEN` and a `TRUSTED_PROXIES` that covers
   `127.0.0.1` (Caddy) and none of the source addresses.

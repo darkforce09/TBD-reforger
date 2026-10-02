@@ -31,7 +31,7 @@ names every region over `MAX_AREA_DRIFT` or with a capped offset.
 ## Boundaries
 
 - Depends on: the sibling `vegetation_density` (`DENSITY_CELL_M`, the corner sampler the emit
-  wraps as the probe) and `forest_contours::js_num`; `website-map-engine`'s
+  wraps as the probe) and `forest_contours::js_num`; `map_engine`'s
   `world::environment::vegetation::mass::CANOPY_MASS_ISO`.
 - Used by: `build_world_objects_opt` in
   `tools/developer_tools/src/world_export_pipeline/chunk_partitioner/build_world_objects_opt.rs`,

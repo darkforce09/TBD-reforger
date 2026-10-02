@@ -2,7 +2,7 @@
 
 # README template: app
 
-**When to use:** a workspace directly under `apps/website/frontend/src/v2/apps/`, a standalone tool
+**When to use:** a workspace directly under `apps/frontend/src/v2/apps/`, a standalone tool
 that mounts full screen from its own routes. The
 [README standard](/documentation/standards/readme_standard.md) defines every rule this template
 follows; the app kind adds Routes and Public surface.
@@ -49,13 +49,13 @@ clause; the child's own README holds the detail.>
 
 ## Related documentation
 
-- [<document title>](/documentation/website/frontend/apps/<workspace>/<doc>.md) — <what it
+- [<document title>](/documentation/apps/frontend/apps/<workspace>/<doc>.md) — <what it
   covers>
 ````
 
 ## Worked sample
 
-Written from `apps/website/frontend/src/v2/apps/editor/`. The sample sits in a fenced block, so no
+Written from `apps/frontend/src/v2/apps/editor/`. The sample sits in a fenced block, so no
 gate reads it as a README; the folder's own README.md is written from the same code and may differ.
 
 ````markdown
@@ -69,7 +69,7 @@ the interactive map tools, the loadout editor and the browser session they all r
 ## Contents
 
 ```text
-apps/website/frontend/src/v2/apps/editor/
+apps/frontend/src/v2/apps/editor/
 ├── arsenal/           the loadout editor: loadout rows, compatibility, asset catalog, paper doll
 ├── bridge/            the engine seam: boot, document host, viewport, overlays, tactical graphics
 ├── input/             pointer and keyboard events turned into map-engine commands; the map tools
@@ -116,26 +116,26 @@ it and every write path refuses.
 ## Boundaries
 
 - Depends on: `crate::v2::core` (the API client and DTOs, the auth store, the UI primitives, the test
-  support), `website_map_engine` (its `data`, `editing`, `streaming`, `overlay`, `frame`, `camera`,
+  support), `map_engine` (its `data`, `editing`, `streaming`, `overlay`, `frame`, `camera`,
   `spatial`, `world` and `doll` modules) and `web_sys` in the browser build.
 - Used by:
-  - `apps/website/frontend/src/app_routes.rs`, the route table;
-  - `apps/website/frontend/src/v2/pages/mission_hub/review_workspace/page.rs`, for the page and the
+  - `apps/frontend/src/app_routes.rs`, the route table;
+  - `apps/frontend/src/v2/pages/mission_hub/review_workspace/page.rs`, for the page and the
     review mode;
-  - in `apps/website/frontend/src/v2/pages/mission_hub/library/`, `dossier_upload.rs` and
+  - in `apps/frontend/src/v2/pages/mission_hub/library/`, `dossier_upload.rs` and
     `dossier_upload_panel.rs`, for `format_bytes`;
-  - `apps/website/frontend/src/v2/core/auth/store.rs`, for `purge_local_documents`;
-  - the core search box, select and slider in `apps/website/frontend/src/v2/core/ui/`, for the
+  - `apps/frontend/src/v2/core/auth/store.rs`, for `purge_local_documents`;
+  - the core search box, select and slider in `apps/frontend/src/v2/core/ui/`, for the
     layout classes;
   - the headless editor gates in `tools/developer_tools/src/browser_testing/`, which drive the
     `/missions/:id/edit` route.
-- Rules: a document mutation goes through `website_map_engine::editing`, never straight out of a
+- Rules: a document mutation goes through `map_engine::editing`, never straight out of a
   panel; a module that touches `web_sys` or a live engine handle is `#[cfg(target_arch = "wasm32")]`,
   and so is its `pub mod` line; no sibling workspace reaches in.
 
 ## Related documentation
 
-- [Mission Creator documentation](/documentation/website/frontend/apps/editor/README.md) — the
+- [Mission Creator documentation](/documentation/apps/frontend/apps/editor/README.md) — the
   feature inventory, the UX specification, the decisions and the roadmap.
 - [Editor gates runbook](/documentation/runbooks/editor_gates.md) — running the headless editor
   gates.

@@ -34,7 +34,7 @@ name in tbd-emcp (the MCP broker calls them by name).
 
 Another session holds uncommitted work in `apps/mod/tbd-export`, `tools/xtask`
 (`commands/mod_ops`, `commands/deploy`, `commands/generate`, `Cargo.toml`), `tools/developer_tools`,
-`apps/website`, `contracts`, the untracked `equipment` folder of `assets`, `CLAUDE.md`, `.gitignore` and `Cargo.lock`.
+`apps/api`, `apps/frontend`, `contracts`, the untracked `equipment` folder of `assets`, `CLAUDE.md`, `.gitignore` and `Cargo.lock`.
 Commits of this program stage by pathspec only.
 
 ## Roster
@@ -225,7 +225,7 @@ a deleted file); ticket ids in four runtime log strings and one attribute desc; 
 Remaining, outside P3-C's paths:
 
 - `TBD_MissionLoader.GetSpawnZoneForFaction` has no callers; kept (the loader's static read API keeps its names), ticketed as T-1219.
-- Stale member names in files no slice owns: `.world-boot-warning-baseline:41` (`TBD_FrameworkManager.ArmRoundClock`), `apps/website/map-engine/src/data/scenario/compiler/flatten/tests/cases_4.rs` lines 256, 264 and 268 (assert messages naming `OnEnterBriefing`, `ArmRoundClock`, the JIP door on `TBD_SpawnManager`), `apps/website/frontend/src/v2/apps/editor/ui/inspector/env.rs:154` (`TBD_FrameworkManager.ArmRoundClock`), `apps/website/map-engine/src/data/scenario/extensions/modules/spawns.rs:11` (`SpawnManager's EngineFactionKey`, now `TBD_SlotBodyMaterializer`).
+- Stale member names in files no slice owns: `.world-boot-warning-baseline:41` (`TBD_FrameworkManager.ArmRoundClock`), `legacy/map_engine/src/data/scenario/compiler/flatten/tests/cases_4.rs` lines 256, 264 and 268 (assert messages naming `OnEnterBriefing`, `ArmRoundClock`, the JIP door on `TBD_SpawnManager`), `apps/frontend/src/v2/apps/editor/ui/inspector/env.rs:154` (`TBD_FrameworkManager.ArmRoundClock`), `legacy/map_engine/src/data/scenario/extensions/modules/spawns.rs:11` (`SpawnManager's EngineFactionKey`, now `TBD_SlotBodyMaterializer`).
 - All slices: run `hcargo fmt --check -p xtask` or format only owned files; never plain `fmt -p xtask` while another session has xtask edits.
 
 ## Ticket batch

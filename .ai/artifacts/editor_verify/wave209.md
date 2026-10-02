@@ -17,13 +17,13 @@ seeded 8-slot smoke doc; fresh chrome profile per probe). Zero wasm panics in ev
 (`window.__panics` empty throughout; SwiftShader avoids the known `__editorCamSet` headless-vulkan
 artifact). Probe scripts + raw JSON live in the session scratchpad (`probe_811/812/813a/813b/814/
 814_s8/815/geo` + `*.json`). Pin perturbations were run via `bash scripts/platform/wave.sh test
---slice T-999 -p website-frontend <filter>` into a private CARGO_TARGET_DIR (deleted class — private
+--slice T-999 -p frontend <filter>` into a private CARGO_TARGET_DIR (deleted class — private
 `$HOME/.cache/tbd-target-T-999`, not the shared root).
 
 ## FINDINGS
 
 ### F1 — T-814's O-3 wiring pin is DISARMED: a stray second `#[test]` orphaned the real test fn
-`MAJOR | apps/website/frontend/src/ui.rs:1400-1434 | the pin the T-786/T-814 O-3 acceptance depends on
+`MAJOR | apps/frontend/src/ui.rs:1400-1434 | the pin the T-786/T-814 O-3 acceptance depends on
 (ORBAT must derive z from modal_stack::z_class) never runs; a duplicate-named test runs twice in its
 place | proven by name-filtered cargo test: 0 vs 2`
 
@@ -47,7 +47,7 @@ place | proven by name-filtered cargo test: 0 vs 2`
   `z_class(modal_id)` call at orbat_manager.rs:344 is present and correct; only the pin is dead.)
 
 ### F2 — T-811's layer-rename pin is HOLLOW: raw `include_str` self-matches its own literals
-`MAJOR | apps/website/frontend/src/eden_tree.rs:1542-1565 | the pin claims to verify the layer-rename
+`MAJOR | apps/frontend/src/eden_tree.rs:1542-1565 | the pin claims to verify the layer-rename
 NodeRef/on_load/testid wiring but examines only its own assertion strings; it survives deletion of the
 production widget | proven by perturbation: removed production node_ref=rename_ref → pin still GREEN`
 
@@ -207,7 +207,7 @@ scratchpad profiles) is confirmed dead.
 Scope: commit 27343f82 only ("T-814/T-811: re-arm the O-3 wiring pin, un-hollow the layer-rename pin"), fixing F1/F2 from the pass above. Tree was clean at 27343f82 before and after this pass.
 
 ### 1. Scope purity — PASS
-`git diff --stat 5f47c7a2..27343f82` touches exactly two files: `apps/website/frontend/src/eden_tree.rs` (+10/−7) and `apps/website/frontend/src/ui.rs` (+6/−6). Every hunk sits inside a `#[cfg(test)] mod tests` block:
+`git diff --stat 5f47c7a2..27343f82` touches exactly two files: `apps/frontend/src/eden_tree.rs` (+10/−7) and `apps/frontend/src/ui.rs` (+6/−6). Every hunk sits inside a `#[cfg(test)] mod tests` block:
 - ui.rs: `#[cfg(test)]/mod tests` opens at 973/974 (both commits); hunks at old lines 1387–1408 and 1426–1441. Production half (lines 1..972) extracted from both commits and `cmp`-compared: **byte-identical**.
 - eden_tree.rs: `#[cfg(test)]/mod tests` opens at 1260/1261 (both commits); hunk at old lines 1535–1570. Production half (lines 1..1259) `cmp`-compared: **byte-identical**.
 - The production layer-rename input perturbed-and-restored in the prior pass is intact: `node_ref=rename_ref` present at eden_tree.rs:883 and covered by the byte-identical production comparison.
@@ -216,7 +216,7 @@ Scope: commit 27343f82 only ("T-814/T-811: re-arm the O-3 wiring pin, un-hollow 
 ### 2. F1 — re-armed O-3 wiring pin: RESOLVED
 Attribute audit at HEAD: `#[test]` at ui.rs:1396 → `fn opening_an_overlay_fires_registered_transient_closers` (1397); `#[test]` at ui.rs:1433 → `fn orbat_manager_overlay_derives_z_from_the_modal_stack` (1434). Exactly one each (was 2 and 0).
 
-Name-filtered runs (`wave.sh test --slice T-814 -p website-frontend -- <name>`), both now report **`running 1 test`** (was 0 and 2):
+Name-filtered runs (`wave.sh test --slice T-814 -p frontend -- <name>`), both now report **`running 1 test`** (was 0 and 2):
 - `orbat_manager_overlay_derives_z_from_the_modal_stack`: ok. 1 passed; 0 failed; 1085 filtered out.
 - `opening_an_overlay_fires_registered_transient_closers`: ok. 1 passed; 0 failed; 1085 filtered out.
 
@@ -224,12 +224,12 @@ Perturbation: replaced `let z = crate::ui::modal_stack::z_class(modal_id);` (orb
 
 ```
 test ui::tests::orbat_manager_overlay_derives_z_from_the_modal_stack ... FAILED
-thread 'ui::tests::orbat_manager_overlay_derives_z_from_the_modal_stack' (729030) panicked at apps/website/frontend/src/ui.rs:1438:9:
+thread 'ui::tests::orbat_manager_overlay_derives_z_from_the_modal_stack' (729030) panicked at apps/frontend/src/ui.rs:1438:9:
 OrbatManagerDialog must take its overlay z from modal_stack::z_class (T-786 O-3). Body was: ...
 test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1085 filtered out; finished in 0.10s
 ```
 
-Restored via `git checkout -- apps/website/frontend/src/orbat_manager.rs` (restore verified: `git diff` empty, `z_class(modal_id)` back at :344; the repo's post-checkout LFS hook complained about a missing git-lfs binary — cosmetic, no LFS file involved), `touch`ed, re-run: **ok. 1 passed; 0 failed** — green.
+Restored via `git checkout -- apps/frontend/src/orbat_manager.rs` (restore verified: `git diff` empty, `z_class(modal_id)` back at :344; the repo's post-checkout LFS hook complained about a missing git-lfs binary — cosmetic, no LFS file involved), `touch`ed, re-run: **ok. 1 passed; 0 failed** — green.
 
 ### 3. F2 — un-hollowed layer-rename pin: RESOLVED
 The pin now reads a scrubbed haystack: `let tree = crate::arsenal::class_r_scrub::live_source(TREE);` and all five asserts consume `tree`, so the test module's own assertion strings can no longer satisfy the needles.
@@ -238,17 +238,17 @@ Perturbation: deleted the production line `node_ref=rename_ref` (eden_tree.rs:88
 
 ```
 test eden_tree::tests::source_pins::layer_rename_uses_noderef_onload_and_decoupled_draft ... FAILED
-thread 'eden_tree::tests::source_pins::layer_rename_uses_noderef_onload_and_decoupled_draft' (733295) panicked at apps/website/frontend/src/eden_tree.rs:1549:13:
+thread 'eden_tree::tests::source_pins::layer_rename_uses_noderef_onload_and_decoupled_draft' (733295) panicked at apps/frontend/src/eden_tree.rs:1549:13:
 the NodeRef must be attached via node_ref=rename_ref
 test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1085 filtered out; finished in 0.11s
 ```
 
 (Before the fix this deletion stayed green — the hollow self-match. It now trips exactly the assert the fix rewired.)
 
-Restored via `git checkout -- apps/website/frontend/src/eden_tree.rs` after confirming `git status` showed that file as the only modification (restore verified: `git diff` empty, `node_ref=rename_ref` back at :883, occurrence count 3 matching HEAD), `touch`ed, re-run: **ok. 1 passed; 0 failed** — green.
+Restored via `git checkout -- apps/frontend/src/eden_tree.rs` after confirming `git status` showed that file as the only modification (restore verified: `git diff` empty, `node_ref=rename_ref` back at :883, occurrence count 3 matching HEAD), `touch`ed, re-run: **ok. 1 passed; 0 failed** — green.
 
 ### 4. Foreign-binary discipline — PASS
-`--list` on the website-frontend suite: **1086 tests, 0 benchmarks**. Full unfiltered run: **ok. 1086 passed; 0 failed; 0 ignored; 0 filtered out** (23.97s). List total == run total == expected 1086; every filtered run above also reconciles (1 passed + 1085 filtered = 1086).
+`--list` on the frontend suite: **1086 tests, 0 benchmarks**. Full unfiltered run: **ok. 1086 passed; 0 failed; 0 ignored; 0 filtered out** (23.97s). List total == run total == expected 1086; every filtered run above also reconciles (1 passed + 1085 filtered = 1086).
 
 ### Verdict
 F1 and F2 are both RESOLVED at 27343f82 by a test-only commit (production byte-identical to 5f47c7a2); both pins are live (red under targeted production perturbation, green restored); wave 209 verdict upgrades to **safe — no open findings**. Tree left clean at 27343f82; private target dir `~/.cache/tbd-target-T-814` deleted.

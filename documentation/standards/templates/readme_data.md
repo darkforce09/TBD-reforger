@@ -3,8 +3,8 @@
 # README template: data
 
 **When to use:** a folder of schemas, fixtures, migrations, seeds or asset data that code reads
-rather than runs: `contracts/definitions/`, a fixture folder, `apps/website/api_v2/migrations/`,
-`apps/website/api_v2/seeds/`, `assets/terrains/`. The
+rather than runs: `contracts/definitions/`, a fixture folder, `apps/api/migrations/`,
+`apps/api/seeds/`, `assets/terrains/`. The
 [README standard](/documentation/standards/readme_standard.md) defines every rule this template
 follows; the data kind adds Format, and Producers and consumers.
 
@@ -115,8 +115,8 @@ name.
     `contracts/`; `cargo xtask mod dev-server` only names `valid/bridgehead-at-levie.json` in its
     usage text, as the offline `--artifact-file` for `cargo xtask mod playtest`;
   - tests that load one mission by name: the map engine's compiler flatten tests
-    (`apps/website/map-engine/src/data/scenario/compiler/flatten/tests/`), the API's schema
-    validator test (`apps/website/api_v2/src/missions/contract/tests/schema_validators.rs`), and the
+    (`legacy/map_engine/src/data/scenario/compiler/flatten/tests/`), the API's schema
+    validator test (`apps/api/src/missions/contract/tests/schema_validators.rs`), and the
     xtask schema and mission-test tests, which reach `valid/` through `mission_fixtures_valid_dir`.
 
 ## Boundaries

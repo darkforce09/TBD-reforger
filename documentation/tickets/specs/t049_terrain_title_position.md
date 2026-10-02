@@ -4,7 +4,7 @@
 
 **Status:** shipped (T-049)  
 **Git tag on ship:** T-049  
-**Authority:** [MC ROADMAP](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md) · [eden/gap_analysis.md](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) (`MAP-TERRAIN-001`, `TOP-TITLE-001`, `DATA-HYD-TITLE-001`, `ATTR-FIELD-OBJ-POSITION`) · [engineering_plan.md](/documentation/archive/go_and_react_era_design/mission_creator_engineering_plan.md) §2
+**Authority:** [MC ROADMAP](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) · [eden/gap_analysis.md](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) (`MAP-TERRAIN-001`, `TOP-TITLE-001`, `DATA-HYD-TITLE-001`, `ATTR-FIELD-OBJ-POSITION`) · [engineering_plan.md](/documentation/archive/go_and_react_era_design/mission_creator_engineering_plan.md) §2
 
 ---
 
@@ -323,11 +323,11 @@ Use [`docs/AGENT_COMMIT_CHECKLIST.md`](/documentation/standards/commit_checklist
 
 | Doc | Change |
 |-----|--------|
-| [`docs/website/frontend/pages/mission-editor.md`](/documentation/website/frontend/apps/editor/ux_spec.md) | Transform editable; terrain wired; toolbelt selection readout |
-| [`docs/specs/.../feature_inventory.md`](/documentation/website/frontend/apps/editor/feature_inventory/README.md) | Update TOP-TITLE-001, MAP-TERRAIN-001, ATTR-FIELD-OBJ-POSITION rows |
-| [`eden/gap_analysis.md`](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) | Mark MAP-TERRAIN-001 / TOP-TITLE-001 / ATTR-FIELD-OBJ-POSITION **partial→match** where appropriate |
-| [`ROADMAP.md`](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md) | Phase 1 row → ✅ T-049; add DONE T-049 section |
-| [`docs/website/frontend/ROADMAP.md`](/documentation/website/frontend/README.md) | mission-editor notes |
+| [`docs/website/frontend/pages/mission-editor.md`](/documentation/apps/frontend/apps/editor/ux_spec.md) | Transform editable; terrain wired; toolbelt selection readout |
+| [`docs/specs/.../feature_inventory.md`](/documentation/apps/frontend/apps/editor/feature_inventory/README.md) | Update TOP-TITLE-001, MAP-TERRAIN-001, ATTR-FIELD-OBJ-POSITION rows |
+| [`eden/gap_analysis.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) | Mark MAP-TERRAIN-001 / TOP-TITLE-001 / ATTR-FIELD-OBJ-POSITION **partial→match** where appropriate |
+| [`ROADMAP.md`](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) | Phase 1 row → ✅ T-049; add DONE T-049 section |
+| [`docs/website/frontend/ROADMAP.md`](/documentation/apps/frontend/README.md) | mission-editor notes |
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-049 bullet |
 | **This file** | Status → **shipped** |
 
@@ -371,5 +371,5 @@ Commit on main as T-049 with Co-Authored-By when I ask. Do not commit until I sa
 ## Related
 
 - Prior UX: [t048_library_create_dialog.md](t048_library_create_dialog.md)
-- Eden backlog (deferred): [`eden/gap_analysis.md`](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) ticket column → T-068+
+- Eden backlog (deferred): [`eden/gap_analysis.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) ticket column → T-068+
 - **T-090** / **T-091** map tiles + DEM — blocked on hosted assets

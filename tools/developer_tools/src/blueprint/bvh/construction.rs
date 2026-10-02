@@ -1,6 +1,6 @@
 //! `cargo xtask map bvh-parity` + `map bvh-emit` — CLI for the 3D-occlusion lane.
 //!
-//! The BVH raycaster and the `.bvh` sidecar codec live in `website_map_engine::bvh`
+//! The BVH raycaster and the `.bvh` sidecar codec live in `map_engine::bvh`
 //! (step 2 moved them there; this file kept only the xtask plumbing). `bvh-parity`
 //! replays the Workbench parity oracle over either the COLL trimesh of a `.xob`
 //! (`--mesh`) or an emitted sidecar (`--sidecar`) — the two lanes must print identical
@@ -27,20 +27,20 @@ use std::sync::Arc;
 use anyhow::{Context, Result, bail};
 
 use crate::repository_layout::terrain_dir;
-use website_map_engine::spatial::bvh::node::dot;
-use website_map_engine::spatial::bvh::node::sub;
-use website_map_engine::spatial::bvh::sidecar::BvhSidecar;
-use website_map_engine::spatial::bvh::sidecar::emit_bytes;
-use website_map_engine::spatial::bvh::sidecar::lift_verts;
-use website_map_engine::spatial::bvh::sidecar::quantize_verts;
-use website_map_engine::spatial::bvh::surface::SurfaceKind;
-use website_map_engine::spatial::bvh::traversal::Bvh;
-use website_map_engine::spatial::los::interior::walker::Owner;
-use website_map_engine::world::architecture::compound::assembly::CompoundBuilding;
-use website_map_engine::world::architecture::compound::doors::DoorState;
-use website_map_engine::world::architecture::compound::instances::InstanceKind;
-use website_map_engine::world::architecture::compound::instances::InstanceRecord;
-use website_map_engine::world::architecture::compound::instances::InstancesFile;
+use map_engine::spatial::bvh::node::dot;
+use map_engine::spatial::bvh::node::sub;
+use map_engine::spatial::bvh::sidecar::BvhSidecar;
+use map_engine::spatial::bvh::sidecar::emit_bytes;
+use map_engine::spatial::bvh::sidecar::lift_verts;
+use map_engine::spatial::bvh::sidecar::quantize_verts;
+use map_engine::spatial::bvh::surface::SurfaceKind;
+use map_engine::spatial::bvh::traversal::Bvh;
+use map_engine::spatial::los::interior::walker::Owner;
+use map_engine::world::architecture::compound::assembly::CompoundBuilding;
+use map_engine::world::architecture::compound::doors::DoorState;
+use map_engine::world::architecture::compound::instances::InstanceKind;
+use map_engine::world::architecture::compound::instances::InstanceRecord;
+use map_engine::world::architecture::compound::instances::InstancesFile;
 
 use super::xob;
 use crate::blueprint::parity_report::ParityFile;
@@ -240,11 +240,11 @@ pub fn run_bvh_parity(_root: &std::path::Path, args: &[String]) -> Result<u8> {
                     .into_iter()
                     .find(|e| e.kind == SurfaceKind::Opaque)
                     .map_or(
-                        website_map_engine::spatial::bvh::traversal::Hit {
+                        map_engine::spatial::bvh::traversal::Hit {
                             t: f64::NAN,
                             tri: u32::MAX,
                         },
-                        |e| website_map_engine::spatial::bvh::traversal::Hit {
+                        |e| map_engine::spatial::bvh::traversal::Hit {
                             t: e.t,
                             tri: match e.owner {
                                 Owner::Shell => e.tri,
@@ -409,7 +409,7 @@ pub fn run_bvh_emit(root: &std::path::Path, args: &[String]) -> Result<u8> {
 
     let bytes = fs::read(&mesh_path).with_context(|| mesh_path.display().to_string())?;
     let parsed = xob::parse_coll(&bytes)?;
-    // Determinism authority (see website_map_engine::bvh): quantize to the stored f32s FIRST
+    // Determinism authority (see map_engine::bvh): quantize to the stored f32s FIRST
     // and build over their lifted values, so loader-side raycasts are bit-identical.
     let verts_f32 = quantize_verts(&parsed.verts);
     if verts_f32.iter().flatten().any(|c| !c.is_finite()) {

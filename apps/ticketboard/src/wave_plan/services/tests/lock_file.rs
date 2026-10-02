@@ -19,7 +19,7 @@ future_wave_key = 7
 
 [owns]
 "T-915.2" = ["apps/ticketboard"]
-T-146 = ["apps/website/frontend/src/asset_browser.rs"]
+T-146 = ["apps/frontend/src/asset_browser.rs"]
 
 [depends_on]
 "T-915.2" = ["T-915.1"]

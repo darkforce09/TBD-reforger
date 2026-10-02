@@ -20,7 +20,7 @@ Satellite panning: **~40 fps** (static ~165 fps) + **tiles pop in / flicker**. R
 4. **Optional:** decode VP8L in **Worker** if main-thread decode is the 40 fps bottleneck  
 5. Keep `MAX_VISIBLE_BASEMAP_TILES=64` behavior; don’t regress T-057 pan fps contract (**≥55 fps** target while panning)
 
-**Primary files:** `apps/website/frontend/src/features/tactical-map/layers/useTerrainBasemapLayer.ts`, possibly new `basemapTileCache.ts`
+**Primary files:** `apps/frontend/src/features/tactical-map/layers/useTerrainBasemapLayer.ts`, possibly new `basemapTileCache.ts`
 
 ## Do not
 
@@ -31,7 +31,7 @@ Satellite panning: **~40 fps** (static ~165 fps) + **tiles pop in / flicker**. R
 ## Verify
 
 ```bash
-cd apps/website/frontend && npm run build && npm run lint && npm test
+cd apps/frontend && npm run build && npm run lint && npm test
 make ci-local-frontend
 ```
 

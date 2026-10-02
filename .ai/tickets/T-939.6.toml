@@ -42,9 +42,9 @@ acceptance = [
 ]
 created_at = "2026-09-05T02:33:18Z"
 owns = [
-    "apps/website/frontend/src/editor/canvas/overlays.rs",
-    "apps/website/frontend/src/editor/canvas/diagnostics_overlay.rs",
-    "apps/website/frontend/src/editor/canvas/mod.rs",
+    "apps/frontend/src/editor/canvas/overlays.rs",
+    "apps/frontend/src/editor/canvas/diagnostics_overlay.rs",
+    "apps/frontend/src/editor/canvas/mod.rs",
 ]
 
 [scope]

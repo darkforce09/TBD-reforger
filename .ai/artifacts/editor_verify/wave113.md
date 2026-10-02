@@ -6,7 +6,7 @@ clean; the two pin-firing experiments below were working-tree edits reverted wit
 (confirmed clean before and after).
 
 Runs: `cargo test -p map-engine-core --all-features` → 599 passed / 0 failed;
-`cargo test -p website-frontend` (native) → 739 passed / 0 failed.
+`cargo test -p frontend` (native) → 739 passed / 0 failed.
 
 ---
 
@@ -30,7 +30,7 @@ Runs: `cargo test -p map-engine-core --all-features` → 599 passed / 0 failed;
   soften the help copy, or defer an exact-coordinate variant as its own ticket. The three documents
   above need the factual correction either way. **The row as literally named is not closed.**
 
-### F-2 MINOR | crates/map-engine-core/src/doc/store.rs:596-599 + apps/website/frontend/src/attributes.rs:236-240 | hiding a slot closes its open Attributes modal, indistinguishable from undo-away (cross-slice, claim 15 confirmed)
+### F-2 MINOR | crates/map-engine-core/src/doc/store.rs:596-599 + apps/frontend/src/attributes.rs:236-240 | hiding a slot closes its open Attributes modal, indistinguishable from undo-away (cross-slice, claim 15 confirmed)
 
 - **Evidence.** `materialize()` drops layer-hidden (T-665) and `editorHidden` (T-701) slots before
   any column is pushed; `read_attrs` positions on `soa.ids` → `None`; the modal's `None` arm calls
@@ -42,7 +42,7 @@ Runs: `cargo test -p map-engine-core --all-features` → 599 passed / 0 failed;
   rows (which T-082 now parses anyway) instead of the SoA for existence. Not this wave's regression
   — T-082 found and reported it, did not cause it.
 
-### F-3 NIT | apps/website/frontend/src/editor_ops.rs:1855-1880 (`attrs_update_slot`) | single-target commit fires the history tail unconditionally
+### F-3 NIT | apps/frontend/src/editor_ops.rs:1855-1880 (`attrs_update_slot`) | single-target commit fires the history tail unconditionally
 
 - **Evidence.** `did` is `true` whenever ctx+doc exist — an all-`None` call, or a call against a
   nonexistent slot id, still runs `after_local_edit()` (dirty + persist arm) with zero doc change.
@@ -59,7 +59,7 @@ Runs: `cargo test -p map-engine-core --all-features` → 599 passed / 0 failed;
   mandatory, but the registry summary still claims one file.
 - **Impact.** Bookkeeping only. **Disposition.** Doc correction alongside F-1's.
 
-### F-5 NIT | apps/website/frontend/src/eden_settings.rs (`ShapeMirror::load` / `set_game_mode`) | no single-flight between the open-GET and an in-flight PATCH
+### F-5 NIT | apps/frontend/src/eden_settings.rs (`ShapeMirror::load` / `set_game_mode`) | no single-flight between the open-GET and an in-flight PATCH
 
 - **Evidence.** `load()` fires one GET per open edge (no storm — verified the `Effect` tracks only
   `open`); a reopen while a `set_game_mode` PATCH is in flight can land a pre-PATCH row after the

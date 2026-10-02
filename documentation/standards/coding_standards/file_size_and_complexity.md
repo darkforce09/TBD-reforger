@@ -27,8 +27,9 @@ are in the [file length and Node ban README](/tools/xtask/src/verifications/lang
 - **COMP-1 (Readability) — A function has at most 15 independent paths.** A function past that is
   split into named helpers; the only escape is a per-function opt-out with the reason beside it.
   Status: live, unenforced: it was gated by the Go and TypeScript linters, and no Rust complexity
-  lint is configured (no `clippy.toml`, no `[lints]` table); a few functions carry
-  `#[allow(clippy::too_many_lines)]` for a lint that is not switched on.
+  lint is configured (the root `clippy.toml` sets only `allow-unwrap-in-tests`, and the
+  `[workspace.lints]` policy of the root `Cargo.toml` switches on no complexity lint); a few
+  functions carry `#[allow(clippy::too_many_lines)]` for a lint that is not switched on.
 
 ## What the walk covers
 
@@ -45,7 +46,7 @@ files included, since it reads the working tree, and prints
 
 A pinned root or an explicit member folder that is missing, an unreadable file or a walk that
 finds no source file is a check that did not run (exit 2 or 1), never a pass. Generated Rust is
-not excluded: the contract types under `apps/website/api_v2/src/missions/contract/generated/` are
+not excluded: the contract types under `apps/api/src/missions/contract/generated/` are
 held to the same limit.
 
 Outside the walk, and so unenforced by this gate:
@@ -58,13 +59,14 @@ Outside the walk, and so unenforced by this gate:
   are pinned, and `apps/mod/tbd-export/Scripts` follows at P6-C. The gitignored
   references `apps/mod/crf_framework` and `apps/mod/vanilla_reference` are never pinned; a
   compile-time assertion rejects any `apps/mod` pin outside the three roots.
-- Rust files outside every member folder: `apps/website/shared/is_http_url_cases.rs`, a shared
-  case table that member crates include, is the one such file.
+- Rust files outside every member folder: none exist. The URL case table the API and the
+  single-page app share is `crates/foundation/http_url_guard/src/cases.rs`, a module of a member
+  crate, so the walk covers it.
 - Markdown. Live documents under `documentation/` have their own 500-line limit, checked by
   `cargo xtask verify markdown-placement`.
 
 The app's `src/v2/` tree has a second 500-line check in its own tests,
 `v2_production_files_meet_the_documentation_standard` in
-`apps/website/frontend/src/v2/tests/doc_audit/mod.rs`. That audit has no allowlist and no
+`apps/frontend/src/v2/tests/doc_audit/mod.rs`. That audit has no allowlist and no
 exemption path: it judges every production file, and a file that breaks a rule is fixed, never
 listed.

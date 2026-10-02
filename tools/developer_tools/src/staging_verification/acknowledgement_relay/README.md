@@ -97,7 +97,7 @@ takes the command id from the route and the fencing token from the report the ag
 
 ## Related documentation
 
-- [Staging design note](/documentation/website/api_v2/verification_evidence/staging.md) — the
+- [Staging design note](/documentation/apps/api/verification_evidence/staging.md) — the
   fleet procedure's waves W13 and W14 and the lost-acknowledgement cases they judge.
 - [Staging verification engines](/tools/developer_tools/src/staging_verification/README.md) —
   the folder this engine sits in.

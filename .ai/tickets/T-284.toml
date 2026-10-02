@@ -47,7 +47,7 @@ owns = [
     "apps/website/api/src/handlers/deployments.rs",
     "apps/website/api/tests/events.rs",
     "apps/website/api/tests/null_tolerance.rs",
-    "apps/website/frontend/src/event_hub.rs",
+    "apps/frontend/src/event_hub.rs",
 ]
 
 [scope]

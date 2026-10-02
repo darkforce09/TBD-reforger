@@ -21,7 +21,7 @@ image-webp = "0.2"
 png = { workspace = true }
 resvg = { version = "0.45", default-features = false }
 webp = "0.3"
-website-map-engine = { path = "../../apps/website/map-engine", default-features = false, features = [
+map_engine = { path = "../../legacy/map_engine", default-features = false, features = [
     "world",
     "streaming",
     "io",

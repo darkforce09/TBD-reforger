@@ -19,14 +19,14 @@ re-exports the two step functions.
 - `gate_db_migrate_claim_body` reads migration 0016, strips SQL comments and requires the claim
   `UPDATE` of `public.match_player_stats` and its conditions to be present. Its default path is a
   0016 file name that the migrations folder does not hold (the tracked file is
-  `apps/website/api_v2/migrations/0016_backfill_linked_match_stats.sql`). A missing file fails the
+  `apps/api/migrations/0016_backfill_linked_match_stats.sql`). A missing file fails the
   step, so the step fails unless `TBD_GATE_MIGRATION_0016` names the tracked file.
 - `gate_db_migrate_persist(mode)` works on the database `tbd_gate_migrate_persist`
   (`TBD_GATE_MIGRATE_PERSIST_DB`), which no run drops, with migrations from
-  `apps/website/api_v2/migrations/` (`TBD_GATE_MIGRATION_DIR`). It audits every applied
+  `apps/api/migrations/` (`TBD_GATE_MIGRATION_DIR`). It audits every applied
   migration's sha384 against the file on disk, then applies the pending ones through `psql`, one
   transaction per migration with its bookkeeping row. Last it re-applies
-  `apps/website/api_v2/seeds/content_golden.sql` and checks a population floor, including a
+  `apps/api/seeds/content_golden.sql` and checks a population floor, including a
   claimed [ORBAT](/documentation/glossary/n_to_z.md#orbat) seat.
 - `audit` mode, from the slice gate, and `platform wave gate --migrate-persist audit` roll each
   pending migration back. `advance` mode, from the wave gate on merged `main` and

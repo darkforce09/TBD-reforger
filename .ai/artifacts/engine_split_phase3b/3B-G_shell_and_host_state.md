@@ -26,7 +26,7 @@ locks, autosave persistence, session preferences", `bridge/` is the engine seam.
 | `eden_chrome.rs` | `eden_chrome.rs` |
 
 `state/commands_hotkeys.rs` binds no hotkeys — 3A moved the command half into
-`website_map_engine::editing::commands`, and what remains is the browser transport: the authed
+`map_engine::editing::commands`, and what remains is the browser transport: the authed
 POST, the file download, the clipboard write, the toast, the merge report and the
 `window.__editorCommands` smoke bridge. Its own header says exactly that. The rename is Law 4, and
 its `state/tests/exporter_grid_reference.rs` sibling travels with it as `shell/tests/…`.
@@ -75,8 +75,8 @@ points at and repoints it then.
 ## Verification — run once, at the end, from the repo root
 
 ```
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
-CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p website-frontend
+CARGO_TARGET_DIR=target-container cargo test -p frontend
+CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p frontend
 CARGO_TARGET_DIR=target-container cargo fmt --all -- --check
 CARGO_TARGET_DIR=target-container cargo test -p xtask
 ```

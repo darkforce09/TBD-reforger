@@ -30,7 +30,7 @@ does not match the atlas. Delete them; brief 3B-M writes the new set against the
 children, and `pages/operations/mod.rs` declaring nothing at all — brief 3B-J emptied it when the
 ORBAT and faction dialogs moved. At HEAD the only references to `crate::pages` in the entire crate
 are `main.rs:9`, and `app_routes.rs`'s two `crate::pages::debug::…` view paths, which you are
-repointing anyway. Verify that yourself before deleting — `rg 'crate::pages' apps/website/frontend/src`
+repointing anyway. Verify that yourself before deleting — `rg 'crate::pages' apps/frontend/src`
 filtered to exclude `crate::v2::pages` must come back with nothing but those three lines — then
 delete the directory. A module husk left behind is exactly what Phase 3A deleted `state/picking/`
 for, and leaving one here would strand the last `pages/` reference in a tree that has fully moved.
@@ -65,8 +65,8 @@ Grep the crate, `xtask/` and `tools/` for `pages/debug` and paste the empty resu
 ## Verification — run once, at the end, from the repo root
 
 ```
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
-CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p website-frontend
+CARGO_TARGET_DIR=target-container cargo test -p frontend
+CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p frontend
 CARGO_TARGET_DIR=target-container cargo fmt --all -- --check
 ```
 

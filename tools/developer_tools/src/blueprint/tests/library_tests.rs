@@ -306,7 +306,7 @@ fn only_kind_and_limit_select_rows() {
 /// record of `FarmHouse_E_1L01_Wood.instances.json` is in the descriptor unchanged.
 #[test]
 fn committed_farmhouse_descriptor_reproduces_its_instances_file() {
-    use website_map_engine::world::architecture::compound::instances::InstancesFile;
+    use map_engine::world::architecture::compound::instances::InstancesFile;
     let root = crate::repository_paths::test_repo_root();
     let prefabs = terrain_dir(&root, "everon").join("prefabs");
     let manifest: BlasManifest =

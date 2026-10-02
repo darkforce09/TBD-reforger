@@ -2,7 +2,7 @@
 
 **Operator go:** 2026-07-17 ("delete the react"). **Worktree:** `.ai/artifacts/worktrees/TBD-T-159`
 · branch `t-159-leptos-ui`. **Executor:** claude-code (solo session). **Result: PASS —
-`apps/website/frontend/` is deleted; the Leptos SPA is the only frontend.**
+`apps/frontend/` is deleted; the Leptos SPA is the only frontend.**
 
 Order was freeze → re-home → delete, so the oracle was captured while it still existed and every
 step left the branch green.
@@ -45,7 +45,7 @@ Disposition of the 24 wasm-importing vitest files (16 `_wasm/*.parity.test.ts` +
 
 ## T-159.29.3 — the deletion (this commit)
 
-- **`git rm -r apps/website/frontend`** — 299 tracked files; node_modules/dist purged from disk.
+- **`git rm -r apps/frontend`** — 299 tracked files; node_modules/dist purged from disk.
   Also deleted: `scripts/website/verify-wgpu-gpu.mjs` + its make target (drove the React dev
   harness; superseded by `selfcheck_editor.mjs` + the smokes) and the driver's oracle-era
   `smoke.mjs`.
@@ -97,7 +97,7 @@ Disposition of the 24 wasm-importing vitest files (16 `_wasm/*.parity.test.ts` +
   T-152-lane tool (that program runs in its own worktree); revisit at merge.
 - `scripts/lib/ticket_registry.py` T-091-era brief templates quote old FE commands — archival
   strings for closed tickets.
-- CLAUDE.md §Status history + old specs/verify-logs cite `apps/website/frontend` — history, kept.
+- CLAUDE.md §Status history + old specs/verify-logs cite `apps/frontend` — history, kept.
 
 ## Still HELD for operator (the flip — NOT done)
 

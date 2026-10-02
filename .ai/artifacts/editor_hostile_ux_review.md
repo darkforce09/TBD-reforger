@@ -581,7 +581,7 @@ currently filled by a control that does nothing.
 | `XFORM-DEL-001` | `INFERRED`, never verified — "Delete with a vehicle selected removes nothing" | **CONFIRMED in source, and slightly worse** — see below |
 
 **`XFORM-DEL-001` — the census's open lead, now settled (source-verified, browser-unverified).**
-`delete_selection` (`apps/website/frontend/src/editor_ops.rs:485-552`) partitions the selection into
+`delete_selection` (`apps/frontend/src/editor_ops.rs:485-552`) partitions the selection into
 comments and "ids", removes the comments, cascades connection edges, then calls
 `core.remove_slots(ids)` — **slots only, no vehicle branch**. It then clears the *entire* selection
 and returns `true` unconditionally, so `after_local_edit()` fires. A selected vehicle therefore

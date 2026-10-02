@@ -3,7 +3,7 @@
 # README template: deploy or config
 
 **When to use:** a folder of templates, service units and profiles that set up a host or a server:
-`tools/xtask/deploy/`, its `systemd/` folder, `tools/xtask/dedicated_server_profiles/`. The
+`deploy/`, its `systemd/` folder, `tools/xtask/dedicated_server_profiles/`. The
 [README standard](/documentation/standards/readme_standard.md) defines every rule this template
 follows; the deploy or config kind adds Configuration and Installed by.
 
@@ -57,7 +57,7 @@ required, and the code that reads it.>
 
 ## Worked sample
 
-Written from `tools/xtask/deploy/`. The sample covers the two files beside the `systemd/` folder
+Written from `deploy/`. The sample covers the two files beside the `systemd/` folder
 in full and gives `systemd/` one line under Installed by, because that folder's own README says
 what installs each unit. The sample sits in a fenced block, so no gate reads it as a README; the
 folder's own README.md is written from the same code and may differ.
@@ -72,8 +72,8 @@ commands read these files or print how to install them.
 ## Contents
 
 ```text
-tools/xtask/deploy/
-├── Caddyfile.website   the Caddy site on :3080: the built app, with API paths proxied to :8080
+deploy/
+├── Caddyfile   the Caddy site on :3080: the built app, with API paths proxied to :8080
 ├── deploy.env.example  the settings template, copied to the gitignored deploy.env beside it
 └── systemd/            user units for the API, game server, fleet host agent and database backups
 ```
@@ -113,7 +113,7 @@ copy. The commands parse it as `KEY=VALUE` lines and never execute it. The deplo
   `TBD_RCON_PASSWORD` are required; `TBD_RCON_PORT` defaults to 19999 and
   `TBD_HOST_AGENT_API_URL` to `TBD_BACKEND_URL`.
 
-`Caddyfile.website` listens on `:3080`, sends the cross-origin isolation headers the Mission
+`Caddyfile` listens on `:3080`, sends the cross-origin isolation headers the Mission
 Creator's WebAssembly needs (`Cross-Origin-Opener-Policy: same-origin`,
 `Cross-Origin-Embedder-Policy: credentialless`), proxies `/api/*`, `/uploads/*`, `/map-assets/*`
 and `/healthz` to `127.0.0.1:8080`, and serves every other path from the built app's `dist` folder
@@ -127,9 +127,9 @@ and the app's folder read-only, so the site root holds wherever the checkout sit
   `cargo xtask mod bootstrap-staging`, `cargo xtask mod remote-logs`,
   `cargo xtask debug direct-join`, `cargo xtask debug a2s-probe` and
   `cargo xtask setup client-addons`.
-- `Caddyfile.website`: served by the `caddy` service of `apps/website/docker-compose.staging.yml`,
+- `Caddyfile`: served by the `caddy` service of `deploy/compose.staging.yml`,
   which `cargo xtask deploy website` starts and then reloads, so an edit applies with the next
-  deploy. `apps/website/api_v2/tests/forwarded_for_trust.rs` pins its `reverse_proxy
+  deploy. `apps/api/tests/forwarded_for_trust.rs` pins its `reverse_proxy
   127.0.0.1:8080` upstream.
 - `systemd/`: each unit's install command is in its header and in that folder's README.
 

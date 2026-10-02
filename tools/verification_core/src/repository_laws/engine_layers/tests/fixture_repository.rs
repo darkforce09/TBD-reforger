@@ -25,7 +25,7 @@ pub fn pack_batch(b: &DrawBatch) -> u32 {
 }
 "#;
 pub(super) const MANIFEST: &str =
-    "[package]\nname = \"website-graphics-engine\"\n\n[dependencies]\nbytemuck = \"1\"\n";
+    "[package]\nname = \"graphics_engine\"\n\n[dependencies]\nbytemuck = \"1\"\n";
 
 /// The map engine's pinned residue, at exactly the counts [`RULE3B_PIN`] and [`RULE3A_PIN`]
 /// claim — 3 GPU-module sites and 2 more in `pump.rs`, and 8 frame-vocabulary re-exports.
@@ -34,24 +34,24 @@ pub(super) const MANIFEST: &str =
 /// matching it. The prose line below is the one that names `r#loop` and no `frame` path —
 /// that asymmetry is real, and deliberate, in the file this mirrors.
 pub(super) const MAP_FRAME_MOD: &str = "\
-pub use website_graphics_engine::device::buffers;
-pub use website_graphics_engine::pipeline as pipelines;
-/// Re-export `website_graphics_engine::r#loop::{FrameTarget, RafPump}`.
+pub use graphics_engine::device::buffers;
+pub use graphics_engine::pipeline as pipelines;
+/// Re-export `graphics_engine::r#loop::{FrameTarget, RafPump}`.
 pub use pump::{FrameTarget, RafPump};
-pub use website_graphics_engine::frame::damage;
-pub use website_graphics_engine::frame::packet;
-pub use website_graphics_engine::frame::present;
-pub use website_graphics_engine::frame::CameraUniform;
-pub use website_graphics_engine::frame::{BindGroupId, LaneId, PipelineId};
-pub use website_graphics_engine::frame::{DrawBatch, DrawPayload, FramePacket, IndirectDraw};
-pub use website_graphics_engine::frame::{IndexedMesh, InstanceBuffer, VertexStream};
-pub use website_graphics_engine::frame::{
+pub use graphics_engine::frame::damage;
+pub use graphics_engine::frame::packet;
+pub use graphics_engine::frame::present;
+pub use graphics_engine::frame::CameraUniform;
+pub use graphics_engine::frame::{BindGroupId, LaneId, PipelineId};
+pub use graphics_engine::frame::{DrawBatch, DrawPayload, FramePacket, IndirectDraw};
+pub use graphics_engine::frame::{IndexedMesh, InstanceBuffer, VertexStream};
+pub use graphics_engine::frame::{
     GlyphAtlasGpu, TextAtlasGpu, TextRun, create_glyph_atlas, create_text_atlas,
 };
 ";
 pub(super) const MAP_FRAME_PUMP: &str = "\
-pub use website_graphics_engine::r#loop::FrameTarget;
-pub use website_graphics_engine::r#loop::RafPump;
+pub use graphics_engine::r#loop::FrameTarget;
+pub use graphics_engine::r#loop::RafPump;
 ";
 
 /// The authored document, clean: `data/` names `crate::data` and nothing else in the crate.
@@ -106,10 +106,10 @@ pub fn step(now: &dyn Fn() -> f64) -> f64 {
 /// Rule 6's root, green: the frontend reaching the renderer through the map engine, and saying so
 /// in prose — with the CARGO spelling, which is exactly the shape the matcher must not fire on.
 pub(super) const FRONT_SRC: &str = "\
-//! The canvas mount. The render loop is the renderer's one `RafPump` (`website-graphics-engine`),
+//! The canvas mount. The render loop is the renderer's one `RafPump` (`graphics_engine`),
 //! reached through the map engine and never by depending on it directly.
 
-use website_map_engine::frame::EngineHandle;
+use map_engine::frame::EngineHandle;
 
 pub fn mount(engine: EngineHandle) {
     let _ = engine;
@@ -119,10 +119,10 @@ pub fn mount(engine: EngineHandle) {
 /// Rule 6's manifest arm, green: the map engine and no renderer edge.
 pub(super) const FRONT_MANIFEST: &str = "\
 [package]
-name = \"website-frontend\"
+name = \"frontend\"
 
 [dependencies]
-website-map-engine = { path = \"../map-engine\" }
+map_engine = { path = \"../../legacy/map_engine\" }
 ";
 
 pub(super) struct Repo(pub(super) PathBuf);
@@ -131,7 +131,7 @@ impl Repo {
         let mut p = std::env::temp_dir();
         p.push(format!("tbd-el-{}-{name}", std::process::id()));
         let _ = std::fs::remove_dir_all(&p);
-        std::fs::create_dir_all(p.join("apps/website/graphics-engine/src/draw")).unwrap();
+        std::fs::create_dir_all(p.join("legacy/graphics_engine/src/draw")).unwrap();
         let r = Repo(p);
         r.src("draw/mod.rs", CLEAN);
         r.manifest(MANIFEST);
@@ -160,30 +160,30 @@ impl Repo {
 
     /// Write a file under the frontend — rule 6's root.
     pub(super) fn front(&self, rel: &str, body: &str) {
-        let p = self.0.join("apps/website/frontend/src").join(rel);
+        let p = self.0.join("apps/frontend/src").join(rel);
         std::fs::create_dir_all(p.parent().unwrap()).unwrap();
         std::fs::write(p, body).unwrap();
     }
 
     /// Write the frontend manifest — rule 6's dependency-edge arm.
     pub(super) fn front_manifest(&self, body: &str) {
-        let p = self.0.join("apps/website/frontend/Cargo.toml");
+        let p = self.0.join("apps/frontend/Cargo.toml");
         std::fs::create_dir_all(p.parent().unwrap()).unwrap();
         std::fs::write(p, body).unwrap();
     }
     /// Write a file under the map engine — rule 3b's root.
     pub(super) fn map(&self, rel: &str, body: &str) {
-        let p = self.0.join("apps/website/map-engine/src").join(rel);
+        let p = self.0.join("legacy/map_engine/src").join(rel);
         std::fs::create_dir_all(p.parent().unwrap()).unwrap();
         std::fs::write(p, body).unwrap();
     }
     pub(super) fn src(&self, rel: &str, body: &str) {
-        let p = self.0.join("apps/website/graphics-engine/src").join(rel);
+        let p = self.0.join("legacy/graphics_engine/src").join(rel);
         std::fs::create_dir_all(p.parent().unwrap()).unwrap();
         std::fs::write(p, body).unwrap();
     }
     pub(super) fn manifest(&self, body: &str) {
-        let p = self.0.join("apps/website/graphics-engine/Cargo.toml");
+        let p = self.0.join("legacy/graphics_engine/Cargo.toml");
         std::fs::write(p, body).unwrap();
     }
     /// Run; assert the exit code and every expected line; hand back the joined output.

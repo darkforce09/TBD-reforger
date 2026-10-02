@@ -10,7 +10,7 @@
 //!
 //! | arm | subject | its RED proof |
 //! |---|---|---|
-//! | 1 frozen baseline | the port's rendered recipes vs the pinned `make -n` text (seed lines with `-v ON_ERROR_STOP=1`) | the baseline is a separate literal; drift in either direction fails |
+//! | 1 frozen baseline | the port's rendered lines vs the pinned baseline (compose lines with `-f`, seed lines with `-v ON_ERROR_STOP=1`) | the baseline is a separate literal; drift in either direction fails |
 //! | 2 Makefile pin | the LIVE `Makefile` recipe bodies vs the same renderers | any edit to the recipes fails the arm until the port follows |
 //! | 3 allow-list refusal | `TBD_IT_BASE_DB=tbd_reforger cargo xtask db test-it` | asserts rc≠0 AND that `tbd_reforger` still exists afterwards |
 //! | 4 reap | two `<base>_<suite>_it` databases really disappear | asserts they EXISTED first, and that an unrelated database survives |
@@ -55,31 +55,32 @@ use crate::core::cargo_target_directory::{
 };
 use crate::core::repository_root::find_repo_root;
 
-/// The pinned recipe text the whole lane is measured against: what `make -n` printed at the repo
-/// root, with each `seed` line carrying the `-v ON_ERROR_STOP=1` the port passes so a failed seed
-/// statement ends the run. It is a literal held apart from [`rendered_recipes`], so arm 1 keeps
-/// its comparison with no `Makefile` in the checkout.
+/// The pinned text of every line the lane echoes, as run from the repository root: the compose
+/// lines enter the folder of the development compose file and name the file with `-f`, and each
+/// `seed` line carries the `-v ON_ERROR_STOP=1` that ends the run at a failed seed statement. It
+/// is a literal held apart from [`rendered_recipes`], so arm 1 keeps its comparison with no
+/// `Makefile` in the checkout.
 const BASELINE: &[(&str, &[&str])] = &[
     (
         "db-up",
-        &["cd apps/website/api_v2 && podman compose up -d db"],
+        &["cd deploy && podman compose -f compose.dev.yml up -d db"],
     ),
     (
         "db-down",
-        &["cd apps/website/api_v2 && podman compose down"],
+        &["cd deploy && podman compose -f compose.dev.yml down"],
     ),
     (
         "db-logs",
-        &["cd apps/website/api_v2 && podman compose logs -f db"],
+        &["cd deploy && podman compose -f compose.dev.yml logs -f db"],
     ),
     (
         "seed",
         &[
-            "cd apps/website/api_v2 && podman compose exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < seeds/discord_roles.sql",
-            "cd apps/website/api_v2 && podman compose exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < seeds/registry_dev.sql",
-            "cd apps/website/api_v2 && podman compose exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < seeds/faction_library.sql",
-            "cd apps/website/api_v2 && podman compose exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < seeds/vehicle_database.sql",
-            "cd apps/website/api_v2 && podman compose exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < seeds/wiki_pages.sql",
+            "cd deploy && podman compose -f compose.dev.yml exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < ../apps/api/seeds/discord_roles.sql",
+            "cd deploy && podman compose -f compose.dev.yml exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < ../apps/api/seeds/registry_dev.sql",
+            "cd deploy && podman compose -f compose.dev.yml exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < ../apps/api/seeds/faction_library.sql",
+            "cd deploy && podman compose -f compose.dev.yml exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < ../apps/api/seeds/vehicle_database.sql",
+            "cd deploy && podman compose -f compose.dev.yml exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < ../apps/api/seeds/wiki_pages.sql",
         ],
     ),
     (
@@ -87,7 +88,7 @@ const BASELINE: &[(&str, &[&str])] = &[
         &[
             "podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc \"DROP DATABASE IF EXISTS rust_it WITH (FORCE);\"",
             "podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc \"CREATE DATABASE rust_it;\"",
-            "cd apps/website/api_v2 && TEST_DATABASE_URL=postgres://tbd:tbd@localhost:5434/rust_it?sslmode=disable cargo test",
+            "cd apps/api && TEST_DATABASE_URL=postgres://tbd:tbd@localhost:5434/rust_it?sslmode=disable cargo test",
             "podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -Atc \"SELECT datname FROM pg_database WHERE datname = 'rust_it' OR (left(datname, 8) = 'rust_it_' AND right(datname, 3) = '_it' AND length(datname) > 11)\"",
         ],
     ),
@@ -131,7 +132,7 @@ fn arm_frozen_baseline() -> Verdict {
         };
         if got.len() != want.len() {
             return Verdict::failed(format!(
-                "arm 1: `{target}` renders {} line(s), the 2026-08-12 baseline has {}",
+                "arm 1: `{target}` renders {} line(s), the frozen baseline has {}",
                 got.len(),
                 want.len()
             ));
@@ -139,13 +140,13 @@ fn arm_frozen_baseline() -> Verdict {
         for (i, (g, w)) in got.iter().zip(want.iter()).enumerate() {
             if g != w {
                 return Verdict::failed(format!(
-                    "arm 1: `{target}` line {i} drifted from the make baseline\n      make: {w}\n      port: {g}"
+                    "arm 1: `{target}` line {i} drifted from the frozen baseline\n      baseline: {w}\n      port:     {g}"
                 ));
             }
         }
     }
     println!(
-        "arm 1 OK — {} targets match the frozen `make -n` text",
+        "arm 1 OK — {} targets match the frozen baseline",
         BASELINE.len()
     );
     Verdict::Held

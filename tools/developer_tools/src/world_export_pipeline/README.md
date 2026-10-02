@@ -86,7 +86,7 @@ not certify the builder with its own code.
 
 ## Boundaries
 
-- Depends on: `website-map-engine`'s archives, containers, density codec and POD row
+- Depends on: `map_engine`'s archives, containers, density codec and POD row
   (`io::archives`, `io::containers`, `io::density`, `io::pod`), its loaders
   (`streaming::loaders`) and its prefab, region, road and elevation code (`world::environment`,
   `world::terrain`); `crate::enfusion_pak`; `crate::repository_layout`;

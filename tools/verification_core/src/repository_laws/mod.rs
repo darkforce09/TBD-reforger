@@ -13,7 +13,7 @@
 //! **Position:** a library layer of `verification_core`. `cargo xtask verify file-length` and
 //! `cargo xtask verify engine-layers` render these results as their gate output, as do the five
 //! workspace-law gates (`cargo xtask verify crate-tiers` and its siblings), and the
-//! `engineering_laws` test binary of `website-api` asserts on them directly. It reads files and
+//! `engineering_laws` test binary of `api` asserts on them directly. It reads files and
 //! nothing else: no process, no network, no environment variable.
 //!
 //! **Signals & state:** none. Every public function takes the repository root and returns

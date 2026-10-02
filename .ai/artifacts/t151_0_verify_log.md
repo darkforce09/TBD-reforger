@@ -27,9 +27,9 @@ conversion was required.
 ## Merged wasm byte size
 
 ```
-baseline  (make wasm, pre-merge):  931424  apps/website/frontend/src/wasm/pkg/map_engine_wasm_bg.wasm
-merged    (post-merge, pre-batch): 3657508 apps/website/frontend/src/wasm/pkg/map_engine_wasm_bg.wasm
-merged    (post-batch-refactor):   3658383 apps/website/frontend/src/wasm/pkg/map_engine_wasm_bg.wasm
+baseline  (make wasm, pre-merge):  931424  apps/frontend/src/wasm/pkg/map_engine_wasm_bg.wasm
+merged    (post-merge, pre-batch): 3657508 apps/frontend/src/wasm/pkg/map_engine_wasm_bg.wasm
+merged    (post-batch-refactor):   3658383 apps/frontend/src/wasm/pkg/map_engine_wasm_bg.wasm
 ```
 
 Delta baseline→merged = +2,726,959 bytes (≈ 2.6 MB engine payload — within the expected ~2.8 MB).
@@ -96,7 +96,7 @@ build EXIT 0
 ### `make wasm`
 ```
 [INFO]: ✨   Done in 36.34s
-[INFO]: 📦   Your wasm pkg is ready to publish at apps/website/frontend/src/wasm/pkg.
+[INFO]: 📦   Your wasm pkg is ready to publish at apps/frontend/src/wasm/pkg.
 wasm EXIT 0
 ```
 
@@ -161,13 +161,13 @@ Rust: `crates/map-engine-render/Cargo.toml` (crate-type → `["rlib"]`),
 `crates/map-engine-render/src/engine.rs` (batch list), `crates/map-engine-wasm/Cargo.toml`
 (+ render dep), `crates/map-engine-wasm/src/lib.rs` (`cfg(wasm32) pub use RenderEngine`),
 `Cargo.lock`.
-Build/ignore: `Makefile` (dropped `wasm-render`), `.gitignore`, `apps/website/frontend/eslint.config.js`.
+Build/ignore: `Makefile` (dropped `wasm-render`), `.gitignore`, `apps/frontend/eslint.config.js`.
 TS: `features/_spike/wgpu/wasmRender.ts` → **moved** to `features/tactical-map/wgpu/wasmRender.ts`
 (init memoization deleted; creation mutex + `deviceSize` + `WHEEL_ZOOM_PER_PX` kept);
 `features/_spike/wgpu/deviceSize.test.ts` → **moved** to `features/tactical-map/wgpu/deviceSize.test.ts`;
 `features/_spike/wgpu/WgpuCanvas.tsx` (import repoint only); **new**
 `features/tactical-map/WgpuTacticalMap.tsx`; `features/mission-creator/MissionCreatorPage.tsx`
-(engine flag switch). Generated `apps/website/frontend/src/wasm/render/` deleted.
+(engine flag switch). Generated `apps/frontend/src/wasm/render/` deleted.
 
 Cursor-owned files (`docs/**`, `.ai/tickets/registry.json`, `docs/TICKET_*.md`, the handoff) were
 **not** touched — any modifications to them in the working tree pre-date this slice and are left

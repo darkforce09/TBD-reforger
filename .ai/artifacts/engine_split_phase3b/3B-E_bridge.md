@@ -2,7 +2,7 @@
 
 Read `00_rules_every_agent_obeys.md` first. Every rule there applies to this brief.
 
-The editor now lives at `apps/website/frontend/src/v2/apps/editor/` in its old internal shape, and
+The editor now lives at `apps/frontend/src/v2/apps/editor/` in its old internal shape, and
 `render_sync.rs` is gone. This brief is the first of the reshape briefs, one destination folder
 each. CLAUDE.md's atlas defines `bridge/` as the canvas mount, DPR scaling and rAF heartbeat
 connector — the frontend's side of the engine seam.
@@ -52,8 +52,8 @@ line carries the same `cfg` gate as the code it declares (`world_assets` is
 ## Verification — run once, at the end, from the repo root
 
 ```
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
-CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p website-frontend
+CARGO_TARGET_DIR=target-container cargo test -p frontend
+CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p frontend
 CARGO_TARGET_DIR=target-container cargo fmt --all -- --check
 ```
 

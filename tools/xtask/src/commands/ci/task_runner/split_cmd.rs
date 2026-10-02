@@ -25,7 +25,6 @@ pub fn step_echo(s: &Step) -> Option<&'static str> {
     match s {
         Step::Cmd { line, .. } => Some(line),
         Step::Xtask { echo, .. } => Some(echo),
-        Step::Shell { script, .. } => Some(script),
         Step::Task(_) | Step::Native { .. } => None,
     }
 }
@@ -122,17 +121,6 @@ pub(super) fn run_step(s: &Step, all: &[Task]) -> i32 {
             let rc = run();
             flush();
             rc
-        }
-        Step::Shell {
-            silent,
-            script,
-            ignore_err,
-        } => {
-            if !silent {
-                echo(script);
-            }
-            let rc = spawn(None, &["/bin/sh", "-c", script]);
-            if *ignore_err { 0 } else { rc }
         }
     }
 }

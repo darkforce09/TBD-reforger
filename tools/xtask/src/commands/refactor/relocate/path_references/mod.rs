@@ -69,7 +69,13 @@ pub(crate) fn path_reference_edits(
             continue;
         }
         let literal = &source[candidate.span.clone()];
-        match resolve_and_rewrite(literal, candidate.leading_slash, candidate.anchors, context) {
+        match resolve_and_rewrite(
+            literal,
+            candidate.leading_slash,
+            candidate.anchors,
+            candidate.required_match,
+            context,
+        ) {
             ReferenceOutcome::Rewritten {
                 replacement,
                 row_line,

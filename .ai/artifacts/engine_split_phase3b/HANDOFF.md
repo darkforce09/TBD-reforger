@@ -15,12 +15,12 @@ WHERE THINGS STAND — HEAD is 9ae1eedf0, do not re-derive this:
   Phase 3A is COMPLETE. 21 commits, nine subagents, closed with the full gate green:
       cargo xtask mk ci-local-leptos          success (fmt + wasm32 clippy + test + trunk release)
       cargo xtask verify engine-layers        PASS, all 8 rules
-      cargo test -p website-map-engine        1414 passed; 0 failed; 2 ignored
-      cargo test -p website-frontend          1317 passed; 0 failed
-      cargo check --target wasm32-unknown-unknown -p website-frontend   8 warnings
+      cargo test -p map_engine        1414 passed; 0 failed; 2 ignored
+      cargo test -p frontend          1317 passed; 0 failed
+      cargo check --target wasm32-unknown-unknown -p frontend   8 warnings
       cargo test -p xtask                     826 passed; 8 failed (the known-red eight, by name)
 
-  `apps/website/frontend/src/editor/state/operations/` and `state/operations.rs` NO LONGER EXIST.
+  `apps/frontend/src/editor/state/operations/` and `state/operations.rs` NO LONGER EXIST.
   Every document mutation reaches the engine directly through
   `map-engine/src/editing/hosted_commands/` (17 files). 124 new native tests now cover logic that
   previously needed a browser.
@@ -30,7 +30,7 @@ WHERE THINGS STAND — HEAD is 9ae1eedf0, do not re-derive this:
 
 PHASE 3B — reshape the frontend into `v2/apps/editor/`
 
-  `apps/website/frontend/src/editor/` is 110 files / 86,968 LOC. `v2/apps/` is 42 READMEs and
+  `apps/frontend/src/editor/` is 110 files / 86,968 LOC. `v2/apps/` is 42 READMEs and
   ZERO lines of Rust, and is not even compiled — `v2/mod.rs` declares only `core` and `pages`.
 
   Scope, per the plan's §3B:
@@ -150,9 +150,9 @@ KNOWN RED BEFORE 3B TOUCHES ANYTHING — not yours, not regressions:
 
 PHASE 3B ACCEPTANCE:
   CARGO_TARGET_DIR=target-container cargo xtask verify engine-layers      PASS, all 8 rules
-  CARGO_TARGET_DIR=target-container cargo test -p website-map-engine --all-features   >= 1414
-  CARGO_TARGET_DIR=target-container cargo test -p website-frontend                    >= 1317
-  CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p website-frontend
+  CARGO_TARGET_DIR=target-container cargo test -p map_engine --all-features   >= 1414
+  CARGO_TARGET_DIR=target-container cargo test -p frontend                    >= 1317
+  CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p frontend
   CARGO_TARGET_DIR=target-container cargo fmt --all -- --check
   CARGO_TARGET_DIR=target-container cargo xtask mk ci-local-leptos
   CARGO_TARGET_DIR=target-container cargo xtask mk leptos-gates

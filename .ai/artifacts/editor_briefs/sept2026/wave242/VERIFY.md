@@ -10,7 +10,7 @@ Do NOT run `cargo test -p xtask` while `cargo xtask mod compile` is running — 
 KNOWN AND ALREADY FILED — do not re-report: the shared cache can serve a stale/foreign artifact (T-979); `dem::peaks` fails on an LFS-pointer DEM in a worktree but must PASS on main (T-972); `v-suite verify` fails 22/25 on drifted oracles (T-986); frontend wasm clippy has 76 pre-existing errors (T-987); `verify file-length` has 10 pre-existing SIZE-3 violations; the editor renders no forest regions (T-995).
 
 THE SPAN. Base marker `cd37d1a78` (wave 241 CLOSED). Landed:
-- `fc19f80f9` T-935.14 — `crates/map-engine-core/src/world/{prefab_load.rs (new),residency.rs,mod.rs}`, `apps/website/frontend/src/editor/world_assets/world_host.rs`: the prefab catalogue archive reaches the residency, with a gzip-vs-rkyv sniff and a JSON fallback.
+- `fc19f80f9` T-935.14 — `crates/map-engine-core/src/world/{prefab_load.rs (new),residency.rs,mod.rs}`, `apps/frontend/src/editor/world_assets/world_host.rs`: the prefab catalogue archive reaches the residency, with a gzip-vs-rkyv sniff and a JSON fallback.
 - `69508bacc` T-935.12 — `packages/tbd-schema/schema/{terrain-manifest,map-object-instance}.schema.json`, `packages/tbd-schema/golden/map-objects/map-object-chunk-sample.bin` (new), `xtask/src/{golden_gate.rs,schema_gates.rs}`, `.gitattributes`: the binary formats become schema-described, golden-gated and LFS-routed.
 - `757f9e3fa` T-674.2 — six files across BOTH mod trees: the Enfusion reader for slot identity and squad leader.
 

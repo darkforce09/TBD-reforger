@@ -135,7 +135,7 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
 - Does: sets up the MCP game root, installs the pinned `enfusion-mcp` package, launches Workbench
   on `apps/mod/tbd-export/addon.gproj` when its Net API port (`ENFUSION_WORKBENCH_PORT`, 5775) is
   closed, warms the MCP daemon, checks `wb_connect`, and validates both addons. `--api` runs
-  `podman start tbdevent-postgres` and a detached `npm run dev` in `apps/website/api_v2/`;
+  `podman start tbdevent-postgres` and a detached `npm run dev` in `apps/api/`;
   `--server` runs `setup server-profile` and then `mod dev-server` with no arguments. Every step
   but the Net API check and `wb_connect` reports a failure and continues.
 - Exit codes: 0 ready; 1 the Net API never opened, `wb_connect` failed, or the `tbd-emcp`
@@ -163,7 +163,7 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
 
 - Synopsis: `mod bootstrap-staging`
 - Does: discovers the staging host named by `TBD_SSH_HOST` in
-  `tools/xtask/deploy/deploy.env` and creates the folders the deploy expects there (by default
+  `deploy/deploy.env` and creates the folders the deploy expects there (by default
   under `/home/<user>/tbd/`).
 - Exit codes: 0 done; 1 no host, a deploy file that does not load, or a folder that cannot be
   resolved or is refused; 127 no `ssh` or `sshpass`.
@@ -173,7 +173,7 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
 
 - Synopsis: `mod seed-announcement`
 - Does: inserts the pinned first-milestone announcement into the website database when it is not
-  there, using `DATABASE_URL` from the environment or `apps/website/api_v2/.env`.
+  there, using `DATABASE_URL` from the environment or `apps/api/.env`.
 - Exit codes: 0 inserted or present; 1 no `psql` and no database container, or no `DATABASE_URL`.
 - Example: `cargo xtask mod seed-announcement`
 

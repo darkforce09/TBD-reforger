@@ -9,7 +9,7 @@ nothing committed, no tickets filed. All `VERIFY207 *` missions deleted (final A
 Zero chromium processes at exit; my probe profiles removed.
 
 **Surface used:** live `:3000` (trunk serve with a STALLED watcher, serving agent C's 01:46 dist).
-Verified before trusting: served wasm is **byte-identical** to `apps/website/frontend/dist`
+Verified before trusting: served wasm is **byte-identical** to `apps/frontend/dist`
 (sha256 `9a6c8395…` both sides), contains `wrap_deg_180` ×4; served CSS carries `overlay-fade` ×4 +
 `prefers-reduced-motion`. The dist is a **dev-profile build** (agent C's trunk_build.log) — pixel
 semantics identical to release; perf numbers below are debug-lane, within-build comparisons only.
@@ -65,7 +65,7 @@ only holds for renames that break the signature PREFIX | proven by perturbation`
   is real: planting the sig in a comment → `not unique … would pin the wrong body`, RED.
 
 ### F3 — (pre-existing, out-of-wave, unfiled) Delete on a selected vehicle is a silent no-op
-`OBSERVATION | apps/website/frontend/src/editor_ops.rs:485-506 | delete_selection partitions the
+`OBSERVATION | apps/frontend/src/editor_ops.rs:485-506 | delete_selection partitions the
 selection into comments and slot-ids only; a vehicle id falls through remove_slots and the
 keypress is swallowed | measured live: click v-m → selection ["v-m"], Delete → document AND pixels
 unchanged (crop delta 0.0)`. Vehicles predate this wave as pick-only (T-425); no wave-207 claim
@@ -181,7 +181,7 @@ touched, verbatim reds on file):
 6. scene.rs — FLAG_DX +3.0 → `marker_glyphs_are_centred_and_unclipped` RED at 3.01 px.
 Plus the stylesheet class: the full pre-fix aegis sheet → smoke RED 16/24 (above).
 
-**Suites** (private target dirs): website-frontend **1186/0** (wave's +19 over 1167) ×2 runs
+**Suites** (private target dirs): frontend **1186/0** (wave's +19 over 1167) ×2 runs
 (before probes and after all restores) · map-engine-core **673/0 --all-features** ×2 ·
 map-engine-render **77/0** ×2. Register smokes re-run: save-dialog-rect PASS · select PASS ·
 entrance-motion-rect PASS · cur FAIL (F1) · undo FAIL (F1).

@@ -26,7 +26,7 @@ assets/terrains/everon/satellite/
   `tbd-sat-v1`, the base size, the level count and the byte size
   (`contracts/definitions/terrain-manifest.schema.json`). The reader, which also reads the
   version 2 layout (a 32-byte header and an rkyv index), is
-  `apps/website/map-engine/src/world/terrain/satellite/streamer/`.
+  `legacy/map_engine/src/world/terrain/satellite/streamer/`.
 - Adding a file: the committed file is written with `map build-unified --container-version 1`.
   `cargo xtask ci map-water-everon` rebuilds the image from the stitched mosaic in the gitignored
   export scratch and patches the manifest's byte count, but it runs `map build-unified` without
@@ -40,7 +40,7 @@ assets/terrains/everon/satellite/
   water composite steps.
 - Consumers:
   - the map engine's satellite loader
-    (`apps/website/map-engine/src/world/terrain/satellite/quadtree/`), which reads the header and
+    (`legacy/map_engine/src/world/terrain/satellite/quadtree/`), which reads the header and
     the index with HTTP Range requests on `/map-assets/everon/satellite/everon-sat.tbd-sat`, shows
     a preview level first, then fetches every tile from the first level that fits the device's
     texture limit and memory budget down to 1 × 1; the
@@ -62,5 +62,5 @@ assets/terrains/everon/satellite/
 
 ## Related documentation
 
-- [Satellite container format](/apps/website/map-engine/src/world/terrain/satellite/streamer/README.md)
+- [Satellite container format](/legacy/map_engine/src/world/terrain/satellite/streamer/README.md)
   — both container versions and how a level is picked.

@@ -9,28 +9,28 @@ use crate::repository_laws::temporary_checkout::TemporaryCheckout;
 fn layered_checkout(name: &str) -> TemporaryCheckout {
     let checkout = TemporaryCheckout::empty(name);
     checkout.write(
-        "apps/website/graphics-engine/Cargo.toml",
-        "[package]\nname = \"website-graphics-engine\"\n\n[dependencies]\nwgpu = \"29\"\n",
+        "legacy/graphics_engine/Cargo.toml",
+        "[package]\nname = \"graphics_engine\"\n\n[dependencies]\nwgpu = \"29\"\n",
     );
     checkout.write(
-        "apps/website/map-engine/Cargo.toml",
-        "[package]\nname = \"website-map-engine\"\n\n[dependencies]\n\
-         website-graphics-engine = { path = \"../graphics-engine\", optional = true }\n",
+        "legacy/map_engine/Cargo.toml",
+        "[package]\nname = \"map_engine\"\n\n[dependencies]\n\
+         graphics_engine = { path = \"../graphics_engine\", optional = true }\n",
     );
     checkout.write(
-        "apps/website/frontend/Cargo.toml",
-        "[package]\nname = \"website-frontend\"\n\n[dependencies]\n\
-         website-map-engine = { path = \"../map-engine\" }\n\
-         # website-graphics-engine is reached through the map engine\n",
+        "apps/frontend/Cargo.toml",
+        "[package]\nname = \"frontend\"\n\n[dependencies]\n\
+         map_engine = { path = \"../../legacy/map_engine\" }\n\
+         # graphics_engine is reached through the map engine\n",
     );
     checkout.write(
-        "apps/website/api_v2/Cargo.toml",
-        "[package]\nname = \"website-api\"\n\n[dependencies]\n\
-         website-map-engine = { path = \"../map-engine\" }\n",
+        "apps/api/Cargo.toml",
+        "[package]\nname = \"api\"\n\n[dependencies]\n\
+         map_engine = { path = \"../../legacy/map_engine\" }\n",
     );
     checkout.write(
-        "apps/website/offline-service-worker/Cargo.toml",
-        "[package]\nname = \"website-offline-service-worker\"\n\n[dependencies]\n\
+        "apps/offline_service_worker/Cargo.toml",
+        "[package]\nname = \"offline_service_worker\"\n\n[dependencies]\n\
          serde = \"1\"\n",
     );
     checkout
@@ -48,31 +48,36 @@ fn the_layer_order_holds_with_no_finding() {
 
 #[test]
 fn a_forbidden_edge_in_any_table_or_spelling_is_a_finding() {
-    for (crate_rel, package_name, edge) in [
+    for (crate_rel, package_name, edge, forbidden) in [
         (
-            "apps/website/graphics-engine",
-            "website-graphics-engine",
-            "[dependencies]\nm = { package = \"website-map-engine\", path = \"../map-engine\" }",
+            "legacy/graphics_engine",
+            "graphics_engine",
+            "[dependencies]\nm = { package = \"map_engine\", path = \"../map_engine\" }",
+            "map_engine",
         ),
         (
-            "apps/website/map-engine",
-            "website-map-engine",
-            "[dev-dependencies]\nwebsite-api = { path = \"../api_v2\" }",
+            "legacy/map_engine",
+            "map_engine",
+            "[dev-dependencies]\napi = { path = \"../../apps/api\" }",
+            "api",
         ),
         (
-            "apps/website/frontend",
-            "website-frontend",
-            "[target.'cfg(target_arch = \"wasm32\")'.dependencies]\nwebsite-graphics-engine = { path = \"../graphics-engine\" }",
+            "apps/frontend",
+            "frontend",
+            "[target.'cfg(target_arch = \"wasm32\")'.dependencies]\ngraphics_engine = { path = \"../../legacy/graphics_engine\" }",
+            "graphics_engine",
         ),
         (
-            "apps/website/api_v2",
-            "website-api",
-            "[dependencies.website-frontend]\npath = \"../frontend\"",
+            "apps/api",
+            "api",
+            "[dependencies.frontend]\npath = \"../../apps/frontend\"",
+            "frontend",
         ),
         (
-            "apps/website/api_v2",
-            "website-api",
-            "[build-dependencies]\nwebsite-graphics-engine = { path = \"../graphics-engine\" }",
+            "apps/api",
+            "api",
+            "[build-dependencies]\ngraphics_engine = { path = \"../../legacy/graphics_engine\" }",
+            "graphics_engine",
         ),
     ] {
         let checkout = layered_checkout("directions-breach");
@@ -83,8 +88,11 @@ fn a_forbidden_edge_in_any_table_or_spelling_is_a_finding() {
         let findings = crate_dependency_findings(checkout.root()).unwrap();
         assert_eq!(findings.len(), 1, "{edge}: {findings:#?}");
         assert!(findings[0].manifest.starts_with(crate_rel));
+        assert_eq!(findings[0].package, forbidden, "{edge}");
         assert!(
-            findings[0].rendered().contains(" depends on website-"),
+            findings[0]
+                .rendered()
+                .contains(&format!(" depends on {forbidden} ")),
             "{findings:#?}"
         );
     }
@@ -92,25 +100,25 @@ fn a_forbidden_edge_in_any_table_or_spelling_is_a_finding() {
 
 #[test]
 fn the_offline_service_worker_may_link_none_of_the_server_page_or_renderer() {
-    for (forbidden, folder) in [
-        ("website-api", "api_v2"),
-        ("website-frontend", "frontend"),
-        ("website-graphics-engine", "graphics-engine"),
+    for (forbidden, path) in [
+        ("api", "../api"),
+        ("frontend", "../frontend"),
+        ("graphics_engine", "../../legacy/graphics_engine"),
     ] {
         let checkout = layered_checkout("directions-offline-worker");
         checkout.write(
-            "apps/website/offline-service-worker/Cargo.toml",
+            "apps/offline_service_worker/Cargo.toml",
             &format!(
-                "[package]\nname = \"website-offline-service-worker\"\n\n\
+                "[package]\nname = \"offline_service_worker\"\n\n\
                  [target.'cfg(target_arch = \"wasm32\")'.dependencies]\n\
-                 {forbidden} = {{ path = \"../{folder}\" }}\n"
+                 {forbidden} = {{ path = \"{path}\" }}\n"
             ),
         );
         let findings = crate_dependency_findings(checkout.root()).unwrap();
         assert_eq!(findings.len(), 1, "{forbidden}: {findings:#?}");
         assert_eq!(
             findings[0].manifest,
-            "apps/website/offline-service-worker/Cargo.toml"
+            "apps/offline_service_worker/Cargo.toml"
         );
         assert_eq!(findings[0].package, forbidden);
         assert_eq!(findings[0].reason, OFFLINE_SERVICE_WORKER_RULE.reason);
@@ -121,7 +129,7 @@ fn the_offline_service_worker_may_link_none_of_the_server_page_or_renderer() {
 #[test]
 fn a_missing_manifest_is_a_check_that_did_not_run() {
     let checkout = layered_checkout("directions-missing");
-    std::fs::remove_file(checkout.root().join("apps/website/frontend/Cargo.toml")).unwrap();
+    std::fs::remove_file(checkout.root().join("apps/frontend/Cargo.toml")).unwrap();
     assert!(matches!(
         crate_dependency_findings(checkout.root()),
         Err(NotRun::TargetMissing(_))
@@ -130,13 +138,13 @@ fn a_missing_manifest_is_a_check_that_did_not_run() {
 
 const TEST_ONLY: &str = "\
 [package]
-name = \"website-api\"
+name = \"api\"
 
 [features]
 failpoints = []
 
 [dev-dependencies]
-website-api = { path = \".\", features = [\"failpoints\"] }
+api = { path = \".\", features = [\"failpoints\"] }
 ";
 
 #[test]
@@ -157,22 +165,19 @@ fn every_path_out_of_the_test_build_is_a_finding() {
         (
             TEST_ONLY.replace(
                 "failpoints = []",
-                "failpoints = []\nchaos = [\"website-api/failpoints\"]",
+                "failpoints = []\nchaos = [\"api/failpoints\"]",
             ),
             "feature `chaos` enables",
         ),
         (
             format!(
-                "{TEST_ONLY}\n[dependencies]\nwebsite-api = {{ path = \".\", features = [\"failpoints\"] }}\n"
+                "{TEST_ONLY}\n[dependencies]\napi = {{ path = \".\", features = [\"failpoints\"] }}\n"
             ),
-            "[dependencies] website-api enables",
+            "[dependencies] api enables",
         ),
         (
-            TEST_ONLY.replace(
-                "website-api = { path",
-                "other = { package = \"other\", path",
-            ),
-            "no dev-dependency of `website-api` on itself",
+            TEST_ONLY.replace("api = { path", "other = { package = \"other\", path"),
+            "no dev-dependency of `api` on itself",
         ),
         (
             TEST_ONLY.replace("failpoints = []\n", ""),

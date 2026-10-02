@@ -23,7 +23,7 @@ documentation/runbooks/game_server_staging/
 
 ## How it works
 
-The staging host is the machine `TBD_SSH_HOST` names in `tools/xtask/deploy/deploy.env`. It runs
+The staging host is the machine `TBD_SSH_HOST` names in `deploy/deploy.env`. It runs
 the platform's API and Postgres and a fleet of up to five dedicated game servers, the instances.
 Each instance's mod asks the API which
 [mission deployment](/documentation/glossary/g_to_m.md#mission-deployment) it runs and fetches
@@ -49,7 +49,7 @@ tbd-reforger@N ── ArmaReforgerServer (Steam app 1890870 in TBD_SERVER_DIR), 
   │ -addonsDir TBD_ADDONS_STAGING (links the checkout's tbd-framework)
   │ -config ~/tbd/fleet/instance-N/server.config.json (game.mods[], game.admins[], join password)
   └── machineCredential ──▶ API 127.0.0.1:8080 ──▶ Postgres
-fleet-host-agent@N ── RCON 127.0.0.1:19998+N, polls the API
+fleet_host_agent@N ── RCON 127.0.0.1:19998+N, polls the API
   (instance 5 through acknowledgement-dropping-relay@5 on 127.0.0.1:18085, which forwards to the API)
 Arma client ── Direct Join <public address>:2000+N, join password ──▶ instance N
 ```
@@ -67,14 +67,17 @@ Run the topic runbooks in this order the first time; afterwards a redeploy is
 
 A fresh host and a host that ran the single server take the first fleet deploy in one order:
 `cargo xtask deploy website`, `cargo xtask staging provision-fleet`, the operator's join password
-in `~/tbd/fleet/join-password`, then `cargo xtask deploy staging --migrate-single-instance`. The
+in `~/tbd/fleet/join-password`, then `cargo xtask deploy staging --migrate-single-instance`, which
+also retires the single server's kebab-case host agent names (`fleet-host-agent.service`,
+`~/.config/fleet-host-agent/`) for the fleet's snake_case `fleet_host_agent@N.service`
+([staging deploy](/documentation/runbooks/game_server_staging/staging_deploy.md) step 3). The
 [setup checklist](/documentation/runbooks/staging_verification/setup_checklist.md) runs this
 order as its steps 3 to 5.
 
 Facts every topic relies on:
 
 - **Five instances.** `TBD_FLEET_INSTANCES` instances run (default 5, at most 5). Instance N runs
-  as the user units `tbd-reforger@N.service` and `fleet-host-agent@N.service` and is named
+  as the user units `tbd-reforger@N.service` and `fleet_host_agent@N.service` and is named
   "TBD Staging N". Only instance 1 is listed in the server browser; instances 2 to 5 carry
   `visible: false` and take Direct Join only. The relay instance (`TBD_FLEET_RELAY_INSTANCE`, 5)
   also runs `acknowledgement-dropping-relay@N.service` on `127.0.0.1:TBD_FLEET_RELAY_PORT`
@@ -130,8 +133,8 @@ Facts every topic relies on:
   `setup client-addons` and the `mod bootstrap-staging` discovery.
 - [Mod commands](/tools/xtask/src/commands/mod_ops/) — `mod bootstrap-staging`,
   `mod remote-logs`, `mod test-game-runtime-api` and `mod playtest`.
-- [Deploy files](/tools/xtask/deploy/) — `deploy.env.example` and the systemd units.
-- [Staging fixtures host tool](/apps/website/api_v2/src/bin/staging_fixtures/README.md) — the
+- [Deploy files](/deploy/) — `deploy.env.example` and the systemd units.
+- [Staging fixtures host tool](/apps/api/src/bin/staging_fixtures/README.md) — the
   `provision-fleet` and `rotate-credential` subcommands `cargo xtask staging` runs on the host.
 - [Game runtime transport](/apps/mod/tbd-framework/Scripts/Game/TBD/API/) — what the mod sends
   with its machine credential.
@@ -141,7 +144,7 @@ Facts every topic relies on:
 
 - Depends on: the [runbook template](/documentation/standards/templates/runbook.md); the xtask
   `deploy`, `staging`, `mod`, `setup` and `debug` command trees;
-  `tools/xtask/deploy/deploy.env.example`; the website on the same host, which
+  `deploy/deploy.env.example`; the website on the same host, which
   `cargo xtask deploy website` puts there with the host tools; the mod's log lines under
   `apps/mod/tbd-framework/Scripts/Game/TBD/`.
 - Used by: `cargo xtask mod bootstrap-staging` and `cargo xtask mod dev-server`, which print this
@@ -163,7 +166,7 @@ Facts every topic relies on:
   checklist and the run-day procedures that drive the fleet.
 - [Two-client playtest](/documentation/runbooks/two_client_playtest/README.md) — a joinable,
   mod-loaded server on a development machine with `cargo xtask mod playtest`.
-- [Fleet host agent](/documentation/fleet_host_agent/README.md) — the agent every instance runs,
+- [Fleet host agent](/documentation/apps/fleet_host_agent/README.md) — the agent every instance runs,
   and how it runs fleet commands.
 - [Mod documentation](/documentation/mod/README.md) — the addons the servers load.
 - [Spawn determinism](/documentation/runbooks/spawn_determinism.md) and

@@ -4,7 +4,7 @@
 
 **Status:** **shipped + verified** — FE build/lint clean; manual @ ~367k: outliner visible on first paint, scrollable virtual slot list, no tab freeze (2026-06-24).  
 **Git tag on ship:** **T-064** (`8838e58`, 2026-06-24)  
-**Authority:** [MC ROADMAP](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation/website/frontend/apps/editor/decisions.md) §ACTIVE SLICE · [t059_bulk_paste_operations.md](t059_bulk_paste_operations.md) (outliner cap origin) · [t063_spatial_index.md](t063_spatial_index.md) (prior slice)
+**Authority:** [MC ROADMAP](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation/apps/frontend/apps/editor/decisions.md) §ACTIVE SLICE · [t059_bulk_paste_operations.md](t059_bulk_paste_operations.md) (outliner cap origin) · [t063_spatial_index.md](t063_spatial_index.md) (prior slice)
 
 **Prerequisites:** T-063 shipped (`078960e`). Repro mission: `70a36667-612f-40c5-ad56-3fb8e0613a17` (~367k slots).
 

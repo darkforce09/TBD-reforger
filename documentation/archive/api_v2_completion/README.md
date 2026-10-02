@@ -25,7 +25,7 @@ now. Paths, counts and log names in the records are as they stood when each row 
 
 ## Code
 
-- [API crate](/apps/website/api_v2/) — the crate the milestones completed.
+- [API crate](/apps/api/) — the crate the milestones completed.
 - [API readiness check](/tools/xtask/src/verifications/api_readiness/) — the verifier that
   judges the register the milestones fill.
 
@@ -38,7 +38,7 @@ now. Paths, counts and log names in the records are as they stood when each row 
 
 ## Related documentation
 
-- [Verification checkpoint](/documentation/website/api_v2/verification_evidence/progress_checkpoint.md)
+- [Verification checkpoint](/documentation/apps/api/verification_evidence/progress_checkpoint.md)
   — the live state of the program and the records of the milestones still in it.
-- [API verification evidence](/documentation/website/api_v2/verification_evidence/README.md) —
+- [API verification evidence](/documentation/apps/api/verification_evidence/README.md) —
   the register, the design notes and the program records.

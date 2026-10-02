@@ -1,7 +1,7 @@
 # Phase 3A remaining work — four briefs, eight agents
 
-Phase 3A pulls the editor's engine logic out of `apps/website/frontend/src/editor/` and into
-`apps/website/map-engine/src/editing/` and `data/store/operations/`. A first agent landed eight
+Phase 3A pulls the editor's engine logic out of `apps/frontend/src/editor/` and into
+`legacy/map_engine/src/editing/` and `data/store/operations/`. A first agent landed eight
 commits and was stopped partway; the work left over is split here.
 
 ## Naming
@@ -65,8 +65,8 @@ Commit `bf7c366d7`. All green:
 cargo xtask verify engine-layers                  ENGINE-LAYERS: PASS (all 8 rules)
   rule 5 — 0 site(s) across 60 .rs file(s) under editing/
   rule 6 — 0 import(s) across 377 .rs file(s) and the manifest
-cargo test -p website-map-engine --all-features    1290 passed; 0 failed; 2 ignored
-cargo test -p website-frontend                     1316 passed; 0 failed
+cargo test -p map_engine --all-features    1290 passed; 0 failed; 2 ignored
+cargo test -p frontend                     1316 passed; 0 failed
 ```
 
 Already landed and not to be revisited: `editing/picking.rs`, `editing/tools/*`,

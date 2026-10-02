@@ -17,9 +17,9 @@ assets/
 ## How it works
 
 The API mounts `terrains/` at `/map-assets` and `glyphs/` at `/map-assets/glyphs`
-(`apps/website/api_v2/src/core/http_router.rs`). Their directories come from `MAP_ASSETS_DIR` and
+(`apps/api/src/core/http_router.rs`). Their directories come from `MAP_ASSETS_DIR` and
 `GLYPH_ASSETS_DIR`, and default to `../../../assets/terrains` and `../../../assets/glyphs`,
-which resolve here from the API's working directory `apps/website/api_v2/`. Both mounts sit below
+which resolve here from the API's working directory `apps/api/`. Both mounts sit below
 the API's rate limiter, so streaming a terrain spends no request tokens. In development the app's
 Trunk server proxies `/map-assets` to the API.
 
@@ -28,7 +28,7 @@ developer tools ──write──▶ terrains/   glyphs/
                                 │         │
              API  /map-assets ◀─┘         └─▶ /map-assets/glyphs
                          │
-browser: website-frontend ─▶ website-map-engine (fetch, decode, stream) ─▶ website-graphics-engine
+browser: frontend ─▶ map_engine (fetch, decode, stream) ─▶ graphics_engine
 ```
 
 A terrain is reached only through the manifest its registry entry names, so a dataset may ship a
@@ -43,7 +43,7 @@ reads it yet.
   - `terrains/`: JSON (the registry, manifests, labels, locations, prefab descriptors, some of it
     gzipped) and binary payloads: a 16-bit PNG height map, `TBDC` object chunks and `TBDD`
     forest-density tiles (`.bin`), the `.tbd-sat` satellite bundle, `rkyv` archives and `.bvh`
-    building hierarchies. `apps/website/map-engine/src/io/` defines the binary formats. The
+    building hierarchies. `legacy/map_engine/src/io/` defines the binary formats. The
     binaries are stored in Git LFS (`.gitattributes`), except the forest-density tiles, which are
     plain git blobs.
   - `glyphs/`: SVG sources, a WebP atlas with a JSON rectangle index, and a JSON manifest.
@@ -67,8 +67,8 @@ reads it yet.
   `tools/developer_tools/src/repository_layout.rs`. The glyph SVG sources are hand-authored.
 - Consumers:
   - the API's `/map-assets` and `/map-assets/glyphs` mounts, in
-    `apps/website/api_v2/src/core/http_router.rs`;
-  - the map engine in `apps/website/map-engine/`, which fetches and decodes the datasets in the
+    `apps/api/src/core/http_router.rs`;
+  - the map engine in `legacy/map_engine/`, which fetches and decodes the datasets in the
     browser and reads them from disk in its native tests;
   - the developer tools' map verifications (`tools/developer_tools/src/map_verification/`) and
     the xtask schema gates;
@@ -76,7 +76,7 @@ reads it yet.
     satellite bundle from LFS;
   - `cargo xtask deploy website`, whose rsync leaves `terrains/` out (each host keeps its own copy,
     checked by its asset preflight) and ships `glyphs/`;
-  - the staging compose file `apps/website/docker-compose.staging.yml`, which mounts both trees
+  - the staging compose file `deploy/compose.staging.yml`, which mounts both trees
     read-only into the API container.
 
 ## Boundaries

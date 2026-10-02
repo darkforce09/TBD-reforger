@@ -58,8 +58,8 @@ citations = [
 ]
 estimated = ["scope"]
 owns = [
-    "apps/website/frontend/src/core/ui.rs",
-    "apps/website/frontend/src/editor/panels/top_strip.rs",
+    "apps/frontend/src/core/ui.rs",
+    "apps/frontend/src/editor/panels/top_strip.rs",
 ]
 
 [scope]

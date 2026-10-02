@@ -4,7 +4,7 @@
 
 **Status:** **shipped** — manual verify @ ~360k (Firefox dev): alt-tab extended period → no automatic load overlay; edits preserved  
 **Git tag on ship:** **T-062.2** (`693e227`)  
-**Authority:** [MC ROADMAP](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation/website/frontend/apps/editor/decisions.md) §ACTIVE SLICE · [t062_incremental_bindings.md](t062_incremental_bindings.md)
+**Authority:** [MC ROADMAP](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation/apps/frontend/apps/editor/decisions.md) §ACTIVE SLICE · [t062_incremental_bindings.md](t062_incremental_bindings.md)
 
 **Prerequisites:** T-062 shipped (`a5a651d`). Repro mission: `70a36667-612f-40c5-ad56-3fb8e0613a17` (~360k slots).
 

@@ -39,7 +39,6 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 
 use anyhow::Result;
-use verification_core::proc::Run;
 use verification_core::{Kind, NotRun, Verdict};
 
 use crate::core::cargo_target_directory::{
@@ -59,8 +58,6 @@ pub(crate) struct Step {
     cwd: Option<String>,
     envs: Vec<(String, String)>,
     argv: Vec<String>,
-    /// make's leading `-`: run it, ignore a non-zero status. Used by `rust-test-it`'s first DROP.
-    ignore_error: bool,
 }
 
 impl Step {
@@ -69,7 +66,6 @@ impl Step {
             cwd: None,
             envs: Vec::new(),
             argv: argv.iter().map(|s| (*s).to_string()).collect(),
-            ignore_error: false,
         }
     }
     pub(crate) fn cd(mut self, dir: &str) -> Step {
@@ -78,10 +74,6 @@ impl Step {
     }
     pub(crate) fn env(mut self, k: &str, v: &str) -> Step {
         self.envs.push((k.to_string(), v.to_string()));
-        self
-    }
-    fn ignore_error(mut self) -> Step {
-        self.ignore_error = true;
         self
     }
 
@@ -104,9 +96,9 @@ impl Step {
     /// the tool then narrates something it is not doing. Here there is only one source.
     ///
     /// `shell_word` re-quotes arguments containing whitespace because make echoed the recipe
-    /// *text*, and every such argument in this lane was written quoted (the three `psql -qc "…"`
-    /// calls). Nothing here contains a `"` or a `$`, so the naive rule is exact; a future argument
-    /// that does would need real quoting, and `tests::echo_matches_make` would catch it.
+    /// *text*, where every such argument is written quoted. Nothing here contains a `"` or a `$`,
+    /// so the naive rule is exact; a future argument that does would need real quoting, and
+    /// `tests::echo_matches_make` would catch it.
     pub(crate) fn echo(&self) -> String {
         let mut s = String::new();
         if let Some(d) = &self.cwd {
@@ -131,8 +123,8 @@ impl Step {
 
 // ── THE RECIPES ──────────────────────────────────────────────────────────────────────────────
 
-pub(crate) const WEB: &str = "apps/website/api_v2";
-const FE: &str = "apps/website/frontend";
+pub(crate) const WEB: &str = "apps/api";
+const FE: &str = "apps/frontend";
 
 // ── DISPATCH ─────────────────────────────────────────────────────────────────────────────────
 
@@ -172,13 +164,16 @@ use shell_word::run_steps;
 pub(crate) use shell_word::rust_api;
 pub(crate) use shell_word::rust_build;
 use shell_word::rust_ci;
+pub(crate) use shell_word::rust_ci_lines;
 pub(crate) use shell_word::rust_clippy;
 pub(crate) use shell_word::rust_fmt;
 pub(crate) use shell_word::rust_test;
-pub(crate) use shell_word::rust_test_it;
 use shell_word::shell_word;
 use shell_word::unknown_target;
 pub(crate) use shell_word::wasm_ci;
 
 mod execution;
+// The recipe tests scan every target's lines through the function `--dry-run` prints them with.
+#[cfg(test)]
+pub(crate) use execution::recipe_lines;
 pub(crate) use execution::run;

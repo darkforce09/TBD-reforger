@@ -36,8 +36,8 @@ acceptance = [
 ]
 created_at = "2026-09-05T03:30:00Z"
 owns = [
-    "apps/website/frontend/src/editor/panels/dock_left.rs",
-    "apps/website/frontend/src/editor/panels/top_strip.rs",
+    "apps/frontend/src/editor/panels/dock_left.rs",
+    "apps/frontend/src/editor/panels/top_strip.rs",
 ]
 
 [scope]

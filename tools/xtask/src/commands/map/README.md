@@ -136,7 +136,7 @@ holds for each command, except on `export-terrain`, which takes `--help` as an a
   (`parse_phase_and_default`, `parse_unknown_arg` in `tests/terrain_export/tests.rs`); `tile-index`
   never writes an index over a missing or empty pyramid, and what it writes validates against
   `map-tile-index.schema.json` (`tests/tile_index/tests.rs`); the crate
-  takes no dependency on `website-map-engine`
+  takes no dependency on `map_engine`
   (`tools/xtask/src/tests/tooling_dependency_boundaries.rs`), so engine-backed work stays in
   `developer_tools`.
 

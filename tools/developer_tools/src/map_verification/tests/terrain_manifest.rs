@@ -181,10 +181,9 @@ fn the_live_everon_manifest_declares_the_cutover_blocks_and_passes() {
 #[test]
 fn occluder_init_still_fetches_the_blas_manifest_for_hot_chunks() {
     let root = repo_root().expect("repo root");
-    let src = fs::read_to_string(
-        root.join("apps/website/map-engine/src/streaming/loaders/occluder_loader.rs"),
-    )
-    .expect("occluder_host.rs");
+    let src =
+        fs::read_to_string(root.join("legacy/map_engine/src/streaming/loaders/occluder_loader.rs"))
+            .expect("occluder_host.rs");
     let init = src
         .split("pub async fn init(")
         .nth(1)

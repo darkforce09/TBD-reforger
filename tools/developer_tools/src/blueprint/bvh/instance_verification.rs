@@ -23,12 +23,12 @@ use std::fs;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result, bail};
+use map_engine::world::architecture::compound::assembly::PlacementSource;
+use map_engine::world::architecture::compound::instances::InstanceKind;
+use map_engine::world::architecture::compound::instances::InstanceRecord;
+use map_engine::world::architecture::compound::instances::InstancesFile;
+use map_engine::world::architecture::compound::transform::Rigid;
 use serde::Deserialize;
-use website_map_engine::world::architecture::compound::assembly::PlacementSource;
-use website_map_engine::world::architecture::compound::instances::InstanceKind;
-use website_map_engine::world::architecture::compound::instances::InstanceRecord;
-use website_map_engine::world::architecture::compound::instances::InstancesFile;
-use website_map_engine::world::architecture::compound::transform::Rigid;
 
 pub const POS_TOL_M: f64 = 0.02;
 pub const YAW_TOL_DEG: f64 = 1.0;

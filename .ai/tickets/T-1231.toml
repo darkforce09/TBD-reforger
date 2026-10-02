@@ -1,7 +1,7 @@
 id = "T-1231"
 kind = "work"
 title = "Make the content golden seed re-apply over API-changed reservations"
-summary = "apps/website/api_v2/seeds/content_golden.sql:66-70 documents that re-applying it after an API promotion or withdrawal has its registration statement refused by the allocation check, so the recipe (:1443) requires a fresh database."
+summary = "apps/api/seeds/content_golden.sql:66-70 documents that re-applying it after an API promotion or withdrawal has its registration statement refused by the allocation check, so the recipe (:1443) requires a fresh database."
 class = "chore"
 status = "idea"
 notes = "Decide whether the registration statement should converge over rows the API changed (skip or reconcile them) or whether the seed refuses re-application explicitly with a clear message. Source: milestone V finding V-F13."

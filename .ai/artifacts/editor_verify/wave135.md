@@ -26,7 +26,7 @@ filing assert gap are reported honestly below — including where the slice alre
 
 | measurement | value | how |
 |---|---|---|
-| HEAD `--list` | **992** | `cargo test -p website-frontend -- --list`, private dir |
+| HEAD `--list` | **992** | `cargo test -p frontend -- --list`, private dir |
 | HEAD run | **992 passed / 0 failed** | same private dir; `--list` == run |
 | base (`1edb1d72`) `--list` | **987** | isolated worktree + private dir |
 | Net delta | **+5** | five new named frontend pins |

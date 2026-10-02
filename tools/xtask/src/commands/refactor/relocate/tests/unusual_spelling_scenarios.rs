@@ -1,8 +1,9 @@
 //! Whole relocation runs on throwaway checkouts for the spellings a plain path scan misses: a path
 //! glued to a `\n`, `\t`, `\r` or `\0` escape, a `file://` URL, a `/../` piece joined to a base, a
 //! token that climbs back out of a folder (`apps/../from`), the live README beside the manifests,
-//! frozen areas the tool names by their place after the moves, and the dry run's verification of
-//! the planned tree.
+//! frozen areas the tool names by their place after the moves, the dry run's verification of the
+//! planned tree, and the spellings that look like paths and name none: a lone `/` and a synthetic
+//! fixture path that only starts with a moved folder's name.
 
 use super::file_treatment::manifests_folder;
 use super::fixture_repository::FixtureRepository;
@@ -253,4 +254,53 @@ fn relocate_dry_run_verifies_the_planned_tree_and_fails_on_a_hidden_leftover() {
     assert_eq!(apply(repo.root(), &manifest), 1);
     assert!(repo.exists("old_assets/a.json"), "nothing moved");
     assert_eq!(repo.read("README.md"), "Data: alpha/a.json\n");
+}
+
+#[test]
+fn relocate_lone_separator_literals_name_no_path() {
+    let repo = FixtureRepository::new("lone-separator");
+    let cases = "pub const CASES: &[(&str, bool)] = &[\n    (\"http://[::1]/\", true),\n    (\"/\", false),\n    (\"//\", false),\n];\n";
+    repo.write("web_shared/url_cases.rs", cases)
+        .write("web_shared/README.md", "# Shared URL cases\n")
+        .write("web_shared/kept.rs", "pub const KEPT: bool = true;\n")
+        .track();
+    let manifest = repo.manifest(
+        "path\tweb_shared/url_cases.rs\tguard/src/cases.rs\t\npath\tweb_shared/README.md\tguard/README.md\t\n",
+    );
+
+    assert_eq!(dry_run(repo.root(), &manifest), 0);
+    assert_eq!(apply(repo.root(), &manifest), 0);
+    assert_eq!(repo.read("guard/src/cases.rs"), cases);
+    assert_eq!(verify(repo.root(), Some(&manifest)), 0);
+}
+
+#[test]
+fn relocate_plain_fixture_paths_under_a_moved_folder_name_stay_as_written() {
+    let repo = FixtureRepository::new("synthetic-fixtures");
+    let fixtures = "fn fixture(repo: &Repo) {\n    repo.write(\"deploy/site.service\", \"[Unit]\\n\");\n    repo.ignore(\"deploy/secrets.env\");\n    // Writes deploy/site.service beside the tracked deploy/units/agent.service.\n    let tracked = \"deploy/units/agent.service\";\n    let from_root = \"tools_dir/checker/deploy/units/agent.service\";\n}\n";
+    let expected = fixtures
+        .replace(
+            "tracked = \"deploy/units/agent.service\"",
+            "tracked = \"../../deploy/units/agent.service\"",
+        )
+        .replace(
+            "\"tools_dir/checker/deploy/units/agent.service\"",
+            "\"deploy/units/agent.service\"",
+        );
+    repo.write(
+        "tools_dir/checker/Cargo.toml",
+        "[package]\nname = \"checker\"\n",
+    )
+    .write("tools_dir/checker/deploy/units/agent.service", "[Unit]\n")
+    .write("tools_dir/checker/src/tests/fixtures.rs", fixtures)
+    .track();
+    let manifest = repo.manifest("path\ttools_dir/checker/deploy\tdeploy\t\n");
+
+    assert_eq!(dry_run(repo.root(), &manifest), 0);
+    assert_eq!(apply(repo.root(), &manifest), 0);
+    assert_eq!(
+        repo.read("tools_dir/checker/src/tests/fixtures.rs"),
+        expected
+    );
+    assert_eq!(verify(repo.root(), Some(&manifest)), 0);
 }

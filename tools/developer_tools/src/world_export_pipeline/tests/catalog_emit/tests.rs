@@ -1,11 +1,11 @@
-use website_map_engine::streaming::loaders::manifest::parse_manifest_binary;
+use map_engine::streaming::loaders::manifest::parse_manifest_binary;
 
 use super::*;
 use crate::browser_testing::server::repo_root;
 use crate::repository_layout::terrain_dir;
 
 /// The committed everon export: 1623 prefabs, 36 land-cover regions, 1,216,066 instances.
-/// (`website-map-engine`'s census pin says the same three numbers.) Re-pin
+/// (`map_engine`'s census pin says the same three numbers.) Re-pin
 /// deliberately if the export changes — a silently shrinking corpus is how a parity test
 /// stops proving anything.
 const EVERON_PREFABS: usize = 1623;
@@ -69,7 +69,7 @@ fn everon_catalog_archives_emit_and_read_back_as_their_json() {
     // The order half is not decoration. `by_id` below is a hash map, so it is blind to a
     // reordered catalogue — measured: a `rows_from_archive` that rotates the row vector by one
     // leaves every assertion on `by_id` passing. The reader side of that is pinned in
-    // `website-map-engine`'s `everon_catalogue_archive_equals_the_json_rows`; what is pinned HERE
+    // `map_engine`'s `everon_catalogue_archive_equals_the_json_rows`; what is pinned HERE
     // is the writer side, JSON order → archive order → file bytes.
     let json_rows = narrow_prefab_rows(&read_doc(&dir, PREFABS_GZ).expect("prefabs json"));
     assert_eq!(json_rows.len(), EVERON_PREFABS);
@@ -238,7 +238,7 @@ fn a_census_from_another_export_is_refused() {
 /// binary lane is switched off".
 ///
 /// This is also the only place both halves are visible: the emitter constants live in
-/// this crate, the manifest parser in `website-map-engine`.
+/// this crate, the manifest parser in `map_engine`.
 ///
 /// The second half: the committed everon manifest names the same paths this
 /// emitter writes. If they drift, this fails here rather than by the editor fetching the

@@ -1,4 +1,4 @@
-**Status:** archived — see [documentation_v2/website/frontend/apps/editor/decisions.md](/documentation/website/frontend/apps/editor/decisions.md)
+**Status:** archived — see [documentation_v2/website/frontend/apps/editor/decisions.md](/documentation/apps/frontend/apps/editor/decisions.md)
 
 ---
 name: Mission Creator — Agent Execution Plan
@@ -34,7 +34,7 @@ todos:
 isProject: false
 ---
 
-**Status:** archived — the execution half of the Mission Creator agent execution plan; its decisions log lives in [decisions.md](/documentation/website/frontend/apps/editor/decisions.md)
+**Status:** archived — the execution half of the Mission Creator agent execution plan; its decisions log lives in [decisions.md](/documentation/apps/frontend/apps/editor/decisions.md)
 
 # AGENT EXECUTION CONTRACT
 
@@ -123,7 +123,7 @@ Visual target: **Arma 3 Eden Editor** layout + interactions, **modernized with A
 | `frontend/src/pages/missions.tsx` | Mission library (entry to editor) + **CreateMissionDialog** launch (T-048) |
 | `frontend/src/features/mission-creator/CreateMissionDialog.tsx` | Create-mission dialog on `/missions` (T-048; replaced the `/missions/create` wizard) |
 
-**STEP 0:** Done — this file is in the repo. Shell phases PRE-3.5–9 are DONE (T-033–T-040); new sessions start at **[`ROADMAP.md`](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md)** and execute only OPEN items.
+**STEP 0:** Done — this file is in the repo. Shell phases PRE-3.5–9 are DONE (T-033–T-040); new sessions start at **[`ROADMAP.md`](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md)** and execute only OPEN items.
 
 ---
 
@@ -556,7 +556,7 @@ Hub: [`t144_arma3_map_architecture_study.md`](/documentation/tickets/specs/t144_
 
 1. Start a new Agent session in this repo.
 2. Paste the [one-line prompt](#one-line-prompt-copy-this) from the top of this file.
-3. Shell phases PRE-3.5–9 are DONE (T-033–T-040) — open [`ROADMAP.md`](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md) and execute only OPEN items.
+3. Shell phases PRE-3.5–9 are DONE (T-033–T-040) — open [`ROADMAP.md`](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) and execute only OPEN items.
 4. To resume a specific shell phase for reference: `Continue agent_execution.md from PHASE 7b`.
 5. To commit after a phase passes verification: `commit with tag T-033`.
 

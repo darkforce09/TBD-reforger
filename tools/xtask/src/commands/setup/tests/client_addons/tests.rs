@@ -154,12 +154,12 @@ fn the_join_hint_names_the_host_its_address_or_the_setting_to_fill() {
          (no IPv4 address from here: Name or service not known)"
     );
     let not_configured = DirectJoinTarget::NotConfigured {
-        path: PathBuf::from("/home/deploy/checkout/tools/xtask/deploy/deploy.env"),
+        path: PathBuf::from("/home/deploy/checkout/deploy/deploy.env"),
     };
     assert_eq!(
         direct_join_hint(&not_configured),
         "Restart the game, then Direct Join → the staging host, port 2001 \
-         (set TBD_SSH_HOST in /home/deploy/checkout/tools/xtask/deploy/deploy.env to print its address)"
+         (set TBD_SSH_HOST in /home/deploy/checkout/deploy/deploy.env to print its address)"
     );
 }
 

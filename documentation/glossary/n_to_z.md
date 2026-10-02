@@ -16,9 +16,9 @@ start, every observation with the SHA-256 of its raw artifact, and one case line
 It passes only when every declared case is ok and the judge accepts it; a partial run still writes
 a failing receipt that names its missing dependencies.
 
-In code: `tools/xtask/src/verifications/api_readiness/operational_recording.rs` and `operational_log.rs`; the operational checks in `documentation/website/api_v2/verification_evidence/requirements.json`.
+In code: `tools/xtask/src/verifications/api_readiness/operational_recording.rs` and `operational_log.rs`; the operational checks in `documentation/apps/api/verification_evidence/requirements.json`.
 
-See: [Verification evidence](/documentation/website/api_v2/verification_evidence/README.md), [API readiness judge](/tools/xtask/src/verifications/api_readiness/README.md).
+See: [Verification evidence](/documentation/apps/api/verification_evidence/README.md), [API readiness judge](/tools/xtask/src/verifications/api_readiness/README.md).
 
 ### operations
 
@@ -27,9 +27,9 @@ reservations and the waitlist, member search, [service records](#service-record)
 the API domain also serves the ballistics catalogs, the mortar fire missions and the game-runtime
 roster and deployments.
 
-In code: `apps/website/api_v2/src/operations/`; `apps/website/frontend/src/v2/pages/operations/`.
+In code: `apps/api/src/operations/`; `apps/frontend/src/v2/pages/operations/`.
 
-See: [Operations domain](/apps/website/api_v2/src/operations/README.md).
+See: [Operations domain](/apps/api/src/operations/README.md).
 
 ### oracle
 
@@ -50,9 +50,9 @@ See: [Enfusion script oracle](/tools/developer_tools/src/enfusion_tooling/README
 The order of battle: the factions, squads and role [slots](#slot) of one mission within an event. A
 mission carries it in its document; each event mission holds it as `orbat_slots` rows.
 
-In code: `OrbatSlot` in `apps/website/api_v2/src/operations/models/event.rs`; `apps/website/api_v2/src/operations/handlers/orbat_view.rs`.
+In code: `OrbatSlot` in `apps/api/src/operations/models/event.rs`; `apps/api/src/operations/handlers/orbat_view.rs`.
 
-See: [ORBAT selection page](/apps/website/frontend/src/v2/pages/operations/orbat_selection/README.md).
+See: [ORBAT selection page](/apps/frontend/src/v2/pages/operations/orbat_selection/README.md).
 
 ### orchestrator
 
@@ -70,9 +70,9 @@ The `/admin/personnel` page, titled Personnel Roster: the paged member roster be
 dossier, where administrators ban and warn members with a reason and run the Discord role resync. A
 member's [role](#role) follows their Discord roles, so the dossier explains it and never sets it.
 
-In code: `PersonnelRosterPage` in `apps/website/frontend/src/v2/pages/administration/personnel/`.
+In code: `PersonnelRosterPage` in `apps/frontend/src/v2/pages/administration/personnel/`.
 
-See: [Personnel roster page](/documentation/website/frontend/pages/administration/personnel/personnel_roster_page.md).
+See: [Personnel roster page](/documentation/apps/frontend/pages/administration/personnel/personnel_roster_page.md).
 
 ### perturbation proof
 
@@ -91,9 +91,9 @@ deviation; the mortar calculator reports it along range and along deflection wit
 ellipse. The platform derives it from the game's dispersion parameters, a documented
 interpretation that no engine call verifies, not from measured impacts.
 
-In code: `charge_dispersion` in `apps/website/map-engine/src/data/scenario/ballistics/dispersion.rs`; the dispersion card in `apps/website/frontend/src/v2/pages/field_tools/mortar/solution/dispersion_card.rs`.
+In code: `charge_dispersion` in `legacy/map_engine/src/data/scenario/ballistics/dispersion.rs`; the dispersion card in `apps/frontend/src/v2/pages/field_tools/mortar/solution/dispersion_card.rs`.
 
-See: [charge ring](/documentation/glossary/a_to_f.md#charge-ring), [Game ballistics engine](/documentation/website/map-engine/data/scenario/ballistics/game_ballistics_engine.md).
+See: [charge ring](/documentation/glossary/a_to_f.md#charge-ring), [Game ballistics engine](/documentation/legacy/map_engine/data/scenario/ballistics/game_ballistics_engine.md).
 
 ### RCON
 
@@ -102,7 +102,7 @@ agent](/documentation/glossary/a_to_f.md#fleet-host-agent) uses it to list playe
 [console command](/documentation/glossary/a_to_f.md#console-command), one line transmitted once. Broadcasts and kicks run in the
 [game runtime](/documentation/glossary/g_to_m.md#game-runtime), and Reforger's RCON has no broadcast command.
 
-In code: `apps/fleet_host_agent/src/rcon/`; `FleetAction` in `apps/website/api_v2/src/server_infrastructure/models/fleet_command.rs`.
+In code: `apps/fleet_host_agent/src/rcon/`; `FleetAction` in `apps/api/src/server_infrastructure/models/fleet_command.rs`.
 
 See: [fleet command](/documentation/glossary/a_to_f.md#fleet-command), [console command](/documentation/glossary/a_to_f.md#console-command).
 
@@ -112,7 +112,7 @@ Most often the item registry: one modpack's flat catalog of the engine items the
 [arsenal](/documentation/glossary/a_to_f.md#arsenal) offers, with a graph of what fits in or on what, exported from Workbench and
 imported into Postgres. Other registries are named in full (ticket, server, fleet scenario).
 
-In code: `RegistryItem` and `RegistryCompatEdge` in `apps/website/api_v2/src/missions/models/registry.rs`; `contracts/catalogs/`.
+In code: `RegistryItem` and `RegistryCompatEdge` in `apps/api/src/missions/models/registry.rs`; `contracts/catalogs/`.
 
 See: [Contract catalogs](/contracts/catalogs/README.md).
 
@@ -121,9 +121,9 @@ See: [Contract catalogs](/contracts/catalogs/README.md).
 The map engine's drawing object, owner of the GPU device, canvas surface, camera and draw batches;
 it hands the graphics engine a [frame packet](/documentation/glossary/a_to_f.md#frame-packet) when something changed.
 
-In code: `RenderEngine` in `apps/website/map-engine/src/frame/engine.rs`.
+In code: `RenderEngine` in `legacy/map_engine/src/frame/engine.rs`.
 
-See: [Render engine and frame packet](/apps/website/map-engine/src/frame/README.md).
+See: [Render engine and frame packet](/legacy/map_engine/src/frame/README.md).
 
 ### role
 
@@ -131,7 +131,7 @@ An account's tier on the permission ladder, lowest first: `guest`, `enlisted`, `
 `mission_maker`, `admin`; a route's access tier is the lowest role it admits. A member's role
 follows their Discord roles through the `discord_roles` mappings; the website sets none itself.
 
-In code: `Role` in `apps/website/frontend/src/v2/core/auth/role.rs`; `role_rank` in `apps/website/api_v2/src/core/middleware/mod.rs`.
+In code: `Role` in `apps/frontend/src/v2/core/auth/role.rs`; `role_rank` in `apps/api/src/core/middleware/mod.rs`.
 
 See: [dev login](/documentation/glossary/a_to_f.md#dev-login), [personnel](#personnel).
 
@@ -142,7 +142,7 @@ API records it. Starting one takes the server's next generation and supersedes i
 heartbeats every 15 s carry a strictly rising sequence; a session silent for 60 s expires and its
 server goes offline; ending a session ends the player lives still open in it.
 
-In code: `apps/website/api_v2/src/server_infrastructure/services/runtime_sessions.rs` (table `server_runtime_sessions`); `POST /api/v1/game-runtime/sessions` and its `/end` in `game_runtime_sessions.rs` beside it under `handlers/`; the heartbeat route in `apps/website/api_v2/src/match_telemetry/routes.rs`; `apps/website/api_v2/src/background_workers/runtime_session_expiry.rs`; `apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSession.c`.
+In code: `apps/api/src/server_infrastructure/services/runtime_sessions.rs` (table `server_runtime_sessions`); `POST /api/v1/game-runtime/sessions` and its `/end` in `game_runtime_sessions.rs` beside it under `handlers/`; the heartbeat route in `apps/api/src/match_telemetry/routes.rs`; `apps/api/src/background_workers/runtime_session_expiry.rs`; `apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSession.c`.
 
 See: [machine credential](/documentation/glossary/g_to_m.md#machine-credential), [server infrastructure](#server-infrastructure).
 
@@ -163,7 +163,7 @@ A code spelling, never a prose term. Platform code that says scenario means a [m
 (the map engine's mission domain); fleet code means a [mission header](/documentation/glossary/g_to_m.md#mission-header); Enfusion's
 own names (`scenarioId`, the `SCR_EScenario*` types) keep it. Prose says mission or mission header.
 
-In code: `apps/website/map-engine/src/data/scenario/`; `apps/website/api_v2/src/server_infrastructure/handlers/fleet_scenarios.rs`.
+In code: `legacy/map_engine/src/data/scenario/`; `apps/api/src/server_infrastructure/handlers/fleet_scenarios.rs`.
 
 See: [fleet scenario](/documentation/glossary/a_to_f.md#fleet-scenario).
 
@@ -174,9 +174,9 @@ where administrators register, edit, deactivate and reactivate a server, and, fo
 server, its [fleet commands](/documentation/glossary/a_to_f.md#fleet-command), [mission deployments](/documentation/glossary/g_to_m.md#mission-deployment) and
 [machine credentials](/documentation/glossary/g_to_m.md#machine-credential), with the [fleet scenario](/documentation/glossary/a_to_f.md#fleet-scenario) registry.
 
-In code: `ServerControlPage` in `apps/website/frontend/src/v2/pages/administration/server_control/`.
+In code: `ServerControlPage` in `apps/frontend/src/v2/pages/administration/server_control/`.
 
-See: [Server control page](/documentation/website/frontend/pages/administration/server_control/server_control_page.md).
+See: [Server control page](/documentation/apps/frontend/pages/administration/server_control/server_control_page.md).
 
 ### server infrastructure
 
@@ -184,18 +184,18 @@ The API domain of the game servers: the server registry, each server's status an
 feed, [machine credentials](/documentation/glossary/g_to_m.md#machine-credential), the [fleet command](/documentation/glossary/a_to_f.md#fleet-command) ledger and its
 executor routes, runtime sessions and the [fleet scenario](/documentation/glossary/a_to_f.md#fleet-scenario) registry.
 
-In code: `apps/website/api_v2/src/server_infrastructure/`.
+In code: `apps/api/src/server_infrastructure/`.
 
-See: [RCON](#rcon), [Server infrastructure domain](/apps/website/api_v2/src/server_infrastructure/README.md).
+See: [RCON](#rcon), [Server infrastructure domain](/apps/api/src/server_infrastructure/README.md).
 
 ### service record
 
 A member's own record at `/deployments` (My Deployments): matches played, upcoming deployments, past
 matches and leave requests; no combat figures, though the API sends kills, deaths and K/D.
 
-In code: `apps/website/api_v2/src/operations/handlers/member_service_record.rs`; `DeploymentsPage` in `apps/website/frontend/src/v2/pages/operations/deployments/`.
+In code: `apps/api/src/operations/handlers/member_service_record.rs`; `DeploymentsPage` in `apps/frontend/src/v2/pages/operations/deployments/`.
 
-See: [Deployments page](/documentation/website/frontend/pages/operations/deployments/deployments_page.md).
+See: [Deployments page](/documentation/apps/frontend/pages/operations/deployments/deployments_page.md).
 
 ### service worker pack
 
@@ -204,9 +204,9 @@ published ballistics catalog version, the Everon manifest, elevation, imagery an
 about 248 MB. The Rust service worker answers from it with no connection; the page calls it the
 offline pack and shows its state in `data-offline-state`.
 
-In code: `apps/website/offline-service-worker/` (the worker); `offline_pack` and `offline_manifest` in `apps/website/frontend/src/v2/core/offline/`; `cargo xtask map tile-index` writes the tile list the pack reads.
+In code: `apps/offline_service_worker/` (the worker); `offline_pack` and `offline_manifest` in `apps/frontend/src/v2/core/offline/`; `cargo xtask map tile-index` writes the tile list the pack reads.
 
-See: [Offline mortar page](/documentation/runbooks/offline_mortar_page.md), [Mortar calculator page](/documentation/website/frontend/pages/field_tools/mortar/mortar_calculator_page.md).
+See: [Offline mortar page](/documentation/runbooks/offline_mortar_page.md), [Mortar calculator page](/documentation/apps/frontend/pages/field_tools/mortar/mortar_calculator_page.md).
 
 ### slice
 
@@ -226,7 +226,7 @@ One fillable position in an [ORBAT](#orbat): a faction, squad, callsign, role an
 member occupies, and in the game a spawn position. Slotting fills them: members reserve a slot or
 join the waitlist, squad managers assign seats, and players claim their slot in the game's lobby.
 
-In code: `OrbatSlot` in `apps/website/api_v2/src/operations/models/event.rs`; `slot_registration.rs` and `slot_assignment.rs` in `apps/website/api_v2/src/operations/handlers/`.
+In code: `OrbatSlot` in `apps/api/src/operations/models/event.rs`; `slot_registration.rs` and `slot_assignment.rs` in `apps/api/src/operations/handlers/`.
 
 See: [event](/documentation/glossary/a_to_f.md#event), [arsenal](/documentation/glossary/a_to_f.md#arsenal).
 
@@ -235,7 +235,7 @@ See: [event](/documentation/glossary/a_to_f.md#event), [arsenal](/documentation/
 Server-Sent Events: the one-way HTTP streams on which the API pushes live updates, such as a
 server's status feed and the audit log feed. An SSE event is one message, never an [event](/documentation/glossary/a_to_f.md#event).
 
-In code: `Hub` in `apps/website/api_v2/src/core/realtime_hub/mod.rs` (the status feed); the audit feed's `LISTEN audit_log` in `apps/website/api_v2/src/administration/services/audit_notifier.rs`; the clients in `apps/website/frontend/src/v2/core/api/sse.rs` (the status feed) and `apps/website/frontend/src/v2/core/api/audit_stream.rs` (the audit feed, resumed from the last event id it received).
+In code: `Hub` in `apps/api/src/core/realtime_hub/mod.rs` (the status feed); the audit feed's `LISTEN audit_log` in `apps/api/src/administration/services/audit_notifier.rs`; the clients in `apps/frontend/src/v2/core/api/sse.rs` (the status feed) and `apps/frontend/src/v2/core/api/audit_stream.rs` (the audit feed, resumed from the last event id it received).
 
 See: [audit logs](/documentation/glossary/a_to_f.md#audit-logs), [server infrastructure](#server-infrastructure).
 
@@ -249,7 +249,7 @@ and polls its read-only observers (host shell, database, unit journal, console l
 member reads, saved Chrome page reads) until the effect shows or the deadline passes, without ever
 reading stdin.
 
-In code: `tools/xtask/src/commands/staging/` with `procedure_runner/` and the `fleet_procedure/`, `discord_procedure/` and `load_procedure/` step tables; the host tool `staging-fixtures` in `apps/website/api_v2/src/bin/staging_fixtures/`.
+In code: `tools/xtask/src/commands/staging/` with `procedure_runner/` and the `fleet_procedure/`, `discord_procedure/` and `load_procedure/` step tables; the host tool `staging-fixtures` in `apps/api/src/bin/staging_fixtures/`.
 
 See: [fleet instance](/documentation/glossary/a_to_f.md#fleet-instance), [acknowledgement-dropping relay](/documentation/glossary/a_to_f.md#acknowledgement-dropping-relay), [load workload](/documentation/glossary/g_to_m.md#load-workload), [Staging harness](/tools/xtask/src/commands/staging/README.md).
 
@@ -261,7 +261,7 @@ set in the `visual_references/` folder of the feature it depicts. A set is named
 `<set>.png` and, when the export carries tokens, `design_tokens.md`. The built interface wins; the
 [feature doc](/documentation/glossary/a_to_f.md#feature-doc)'s Design section says how it differs.
 
-In code: none; the built styles a set is compared with are `apps/website/frontend/style/aegis.css` on the website and `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UITheme.c` in the mod.
+In code: none; the built styles a set is compared with are `apps/frontend/style/aegis.css` on the website and `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UITheme.c` in the mod.
 
 See: [Design system](/documentation/design_system/README.md), [Stitch token exports](/documentation/design_system/token_exports/README.md).
 
@@ -273,7 +273,7 @@ One of the 1,100 member accounts the staging load run signs in as, created by
 reserved accounts only. Seeding refuses while the API's Discord bot token is set or when any reserved
 id already exists.
 
-In code: `apps/website/api_v2/src/bin/staging_fixtures/reserved_accounts.rs` and `load_population/`; `tools/xtask/staging/load_population.json`; `account_rotation.rs` in `tools/developer_tools/src/staging_verification/load_generation/`.
+In code: `apps/api/src/bin/staging_fixtures/reserved_accounts.rs` and `load_population/`; `tools/xtask/staging/load_population.json`; `account_rotation.rs` in `tools/developer_tools/src/staging_verification/load_generation/`.
 
 See: [load workload](/documentation/glossary/g_to_m.md#load-workload), [staging harness](#staging-harness).
 
@@ -306,9 +306,9 @@ rings whose time lies inside the window. A refused setting carries no time and n
 outside the window, or the burst point out of reach (above the apex, beyond range, inside the
 minimum range).
 
-In code: `TimeFuze` (`min_s`, `max_s`, `default_s`) in `apps/website/map-engine/src/data/scenario/ballistics/catalog/shell.rs`; `solve_time_fuze_over_charges` and `FuzeRefusal` in `apps/website/map-engine/src/data/scenario/ballistics/fuze.rs`; `FuzeSetting` and `FuzeRefusal` in `contracts/definitions/fire-mission.schema.json`.
+In code: `TimeFuze` (`min_s`, `max_s`, `default_s`) in `legacy/map_engine/src/data/scenario/ballistics/catalog/shell.rs`; `solve_time_fuze_over_charges` and `FuzeRefusal` in `legacy/map_engine/src/data/scenario/ballistics/fuze.rs`; `FuzeSetting` and `FuzeRefusal` in `contracts/definitions/fire-mission.schema.json`.
 
-See: [charge ring](/documentation/glossary/a_to_f.md#charge-ring), [Game ballistics engine](/documentation/website/map-engine/data/scenario/ballistics/game_ballistics_engine.md).
+See: [charge ring](/documentation/glossary/a_to_f.md#charge-ring), [Game ballistics engine](/documentation/legacy/map_engine/data/scenario/ballistics/game_ballistics_engine.md).
 
 ### wave
 

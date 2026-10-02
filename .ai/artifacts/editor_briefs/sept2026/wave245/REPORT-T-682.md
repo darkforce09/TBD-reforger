@@ -18,7 +18,7 @@ Verified on this worktree at `65f4d44f3` (slice base, before any T-682 commits) 
 | `ModEnvironment` serialises only `dateTime` / `weatherPreset`; no `windDirDeg` / `fog` / `wind` / `viewDistance` fields | `crates/map-engine-core/src/mission/flatten.rs:407` (`pub struct ModEnvironment` was two skip-empty strings) | `rg -n 'windDirDeg\|struct ModEnvironment' crates/map-engine-core/src/mission/flatten.rs` — zero `windDirDeg` hits |
 | No Enfusion environment reader | (file absent) | `ls apps/mod/tbd-framework/Scripts/Game/TBD/Backend/` — no `TBD_EnvironmentReader.c` |
 | Loader does not bind or apply environment | `TBD_MissionLoader.c` document struct ended at `settings` | `rg -n 'environment\|fog\|wind\|viewDistance' apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` — zero hits |
-| Editor still refuses to author those keys (must stay that way) | `apps/website/frontend/src/editor/panels/env.rs:328` `keys_nothing_reads_are_not_authored` | left untouched; test still passes |
+| Editor still refuses to author those keys (must stay that way) | `apps/frontend/src/editor/panels/env.rs:328` `keys_nothing_reads_are_not_authored` | left untouched; test still passes |
 
 ## changes
 
@@ -34,7 +34,7 @@ Verified on this worktree at `65f4d44f3` (slice base, before any T-682 commits) 
 | `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | 359, 1094 | `environment` on `TBD_MissionDocumentStruct`; `TBD_EnvironmentReader.Apply()` after `ApplyMissionSettings()` |
 | `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | 359, 1094 | Same code (comments already ASCII-divergent from framework, as before) |
 
-Not touched: `packages/tbd-schema/**`, `apps/website/frontend/src/editor/panels/env.rs`, `.ai/tickets/`.
+Not touched: `packages/tbd-schema/**`, `apps/frontend/src/editor/panels/env.rs`, `.ai/tickets/`.
 
 ## perturbation
 

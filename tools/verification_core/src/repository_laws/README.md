@@ -5,7 +5,7 @@ test placement, the absence of any exemption mechanism, the engine layer walls, 
 direction between the website crates, and the workspace laws over the members of the root
 manifest. `cargo xtask verify file-length`, `cargo xtask verify engine-layers` and the five
 workspace-law verbs (`cargo xtask verify crate-tiers` and its siblings) print these results, and
-the `engineering_laws` test binary of `website-api` asserts on them, so the gates and that binary
+the `engineering_laws` test binary of `api` asserts on them, so the gates and that binary
 never disagree about the tree.
 
 ## Contents
@@ -90,7 +90,7 @@ package name, and a `#` comment never produces an edge.
 - Used by: `tools/xtask/src/verifications/language_bans/node_and_file_limits/` (`verify
   file-length`), `tools/xtask/src/verifications/architecture/engine_layer_boundaries.rs`
   (`verify engine-layers`), `tools/xtask/src/verifications/architecture/workspace_laws.rs`
-  (the five workspace-law verbs), and `apps/website/api_v2/tests/engineering_laws.rs`.
+  (the five workspace-law verbs), and `apps/api/tests/engineering_laws.rs`.
 - Rules:
   - a missing root or unreadable file is `NotRun`, never zero findings
     (`a_missing_pin_is_a_walk_that_did_not_run`, `an_unreadable_file_is_a_scan_that_did_not_run`,

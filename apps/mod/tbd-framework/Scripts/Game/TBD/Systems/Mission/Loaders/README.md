@@ -123,8 +123,8 @@ world's fetch is dropped.
     `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Ingestion/`;
   - over HTTP with the `mod_runtime` credential, the API's [game runtime](/documentation/glossary/g_to_m.md#game-runtime)
     routes: `/api/v1/game-runtime/deployment` and `/api/v1/game-runtime/artifacts/{artifactId}`
-    (`apps/website/api_v2/src/missions/routes.rs`), and `/api/v1/game-runtime/events/{id}/roster`
-    (`apps/website/api_v2/src/operations/routes.rs`);
+    (`apps/api/src/missions/routes.rs`), and `/api/v1/game-runtime/events/{id}/roster`
+    (`apps/api/src/operations/routes.rs`);
   - the wire shapes in `contracts/definitions/mission.schema.json`,
     `contracts/definitions/mission-deployment.schema.json` and
     `contracts/definitions/game-runtime-roster.schema.json`.

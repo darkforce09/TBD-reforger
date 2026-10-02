@@ -3,7 +3,7 @@
 The eight engine-layer rules of the
 [engine boundary rules](/documentation/standards/engine_boundary_rules.md) §5, judged over a
 checkout, with the report text `cargo xtask verify engine-layers` prints; and the map engine's
-whole-crate UI-framework ban, which the `engineering_laws` test binary of `website-api` asserts.
+whole-crate UI-framework ban, which the `engineering_laws` test binary of `api` asserts.
 
 ## Contents
 
@@ -23,18 +23,18 @@ tools/verification_core/src/repository_laws/engine_layers/
 ## How it works
 
 `check_engine_layers(repo_root)` proves every matcher, walks
-`apps/website/graphics-engine` (sources and `Cargo.toml`), `apps/website/map-engine/src` and
-`apps/website/frontend` (sources and `Cargo.toml`), then judges:
+`legacy/graphics_engine` (sources and `Cargo.toml`), `legacy/map_engine/src` and
+`apps/frontend` (sources and `Cargo.toml`), then judges:
 
 | Rule | Subject | Must hold |
 |---|---|---|
-| 1 | `apps/website/graphics-engine` | no `website_map_engine` in source, no `website-map-engine` edge in `Cargo.toml` |
-| 2 | `apps/website/graphics-engine` | no declared name (after `struct`, `enum`, `trait`, `type`, `fn`, `const`, `static`, `mod`) containing terrain, symbology, mission, orbat or arma, case-insensitive |
-| 3a | `apps/website/map-engine/src` | `website_graphics_engine::frame` appears only in `frame/mod.rs`, exactly 8 times |
-| 3b | `apps/website/map-engine/src` | `website_graphics_engine::` followed by `device`, `pipeline`, `shaders` or `r#loop` appears only at the pinned sites: 3 in `frame/mod.rs`, 2 in `frame/pump.rs` |
-| 4 | `data/scenario` | names none of `crate::` `camera`, `diagnostics`, `doll`, `editing`, `frame`, `io`, `overlay`, `spatial`, `streaming`, `world`, `data::store`, nor `website_graphics_engine`, nor a `super::` chain ending on one of them (`diagnostics` excepted, which names a module inside the tree), outside two pinned `cfg(feature = "store")` test files |
+| 1 | `legacy/graphics_engine` | no `map_engine` in source, no `map_engine` edge in `Cargo.toml` |
+| 2 | `legacy/graphics_engine` | no declared name (after `struct`, `enum`, `trait`, `type`, `fn`, `const`, `static`, `mod`) containing terrain, symbology, mission, orbat or arma, case-insensitive |
+| 3a | `legacy/map_engine/src` | `graphics_engine::frame` appears only in `frame/mod.rs`, exactly 8 times |
+| 3b | `legacy/map_engine/src` | `graphics_engine::` followed by `device`, `pipeline`, `shaders` or `r#loop` appears only at the pinned sites: 3 in `frame/mod.rs`, 2 in `frame/pump.rs` |
+| 4 | `data/scenario` | names none of `crate::` `camera`, `diagnostics`, `doll`, `editing`, `frame`, `io`, `overlay`, `spatial`, `streaming`, `world`, `data::store`, nor `graphics_engine`, nor a `super::` chain ending on one of them (`diagnostics` excepted, which names a module inside the tree), outside two pinned `cfg(feature = "store")` test files |
 | 5 | `editing` | no `web_sys`, `leptos` or `wasm_bindgen`, prose included |
-| 6 | `apps/website/frontend` | no `website_graphics_engine::` path or `extern crate`, no `website-graphics-engine` edge in `Cargo.toml` |
+| 6 | `apps/frontend` | no `graphics_engine::` path or `extern crate`, no `graphics_engine` edge in `Cargo.toml` |
 | 7 | `data` and `world` | `data/` names none of the ten sibling modules of rule 4 nor the graphics engine; `world/` names neither `crate::data` nor `yrs::` |
 
 A pin is a ratchet: an unpinned file that matches fails, and so does a pinned file whose count
@@ -64,7 +64,7 @@ frameworks.
 - Depends on: `crate::scan`, `crate::gate`, `crate::Pattern`, `crate::Verdict` and `NotRun`;
   `crate::repository_laws::cargo_manifest` for the UI-framework ban.
 - Used by: `tools/xtask/src/verifications/architecture/engine_layer_boundaries.rs`, which
-  prints the report; `apps/website/api_v2/tests/engineering_laws.rs`.
+  prints the report; `apps/api/tests/engineering_laws.rs`.
 - Rules:
   - the report text is the gate's output contract and is byte-stable;
   - a root that is missing is "did not run" (exit 2) and an empty root or subset is a failure

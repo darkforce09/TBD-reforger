@@ -103,7 +103,7 @@ The hooks and the events they become:
 
 ## Related documentation
 
-- [Match telemetry design](/documentation/website/api_v2/verification_evidence/telemetry.md) — the seven
+- [Match telemetry design](/documentation/apps/api/verification_evidence/telemetry.md) — the seven
   event kinds, their payloads and how the API stores them
 - [Match telemetry transport](/apps/mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry/README.md) — the
   durable queue that carries the batches

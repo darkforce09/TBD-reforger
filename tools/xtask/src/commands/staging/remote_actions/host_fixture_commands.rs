@@ -6,7 +6,7 @@
 //!
 //! **Position:** called by `dispatch.rs` for the confirmed actions, by the procedures' host
 //! action steps, and by `remote_observers/discord_member_reader.rs`; the tool itself lives in
-//! `apps/website/api_v2/src/bin/staging_fixtures/` and is built in the host checkout.
+//! `apps/api/src/bin/staging_fixtures/` and is built in the host checkout.
 //!
 //! **Signals & state:** none; pure builders.
 //!

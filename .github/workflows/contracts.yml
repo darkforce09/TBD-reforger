@@ -7,13 +7,21 @@ name: contracts
 on:
   push:
     paths:
-      - "apps/website/**"
+      - "apps/api/**"
+      - "apps/frontend/**"
+      - "apps/offline_service_worker/**"
+      - "legacy/**"
+      - "crates/**"
       - "contracts/**"
       - "apps/mod/**"
       - ".github/workflows/contracts.yml"
   pull_request:
     paths:
-      - "apps/website/**"
+      - "apps/api/**"
+      - "apps/frontend/**"
+      - "apps/offline_service_worker/**"
+      - "legacy/**"
+      - "crates/**"
       - "contracts/**"
       - "apps/mod/**"
       - ".github/workflows/contracts.yml"

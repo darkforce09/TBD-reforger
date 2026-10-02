@@ -20,7 +20,7 @@ tools/xtask/src/commands/generate/
 ## How it works
 
 `schema_types.rs` holds `TARGETS`, a table from each schema file to the generated module folder
-of its owning domain under `apps/website/api_v2/src/`, such as
+of its owning domain under `apps/api/src/`, such as
 `missions/contract/generated/registry_items` or `operations/models/generated/event_hub`. For each
 target it parses the schema, runs `typify` (deriving `Debug`; the date-time strings of
 `current-profile.schema.json` stay `String` to keep their exact precision), splits and renders the
@@ -34,7 +34,7 @@ contracts/definitions/<schema>.json
 ```
 
 The loadout export model is not generated: its versioned root `oneOf` does not survive typify, so
-`apps/website/api_v2/src/missions/contract/loadout_projection.rs` is written by hand, and
+`apps/api/src/missions/contract/loadout_projection.rs` is written by hand, and
 `codegen` says so when it finishes.
 
 ## Commands
@@ -75,7 +75,7 @@ The loadout export model is not generated: its versioned root `oneOf` does not s
     `tools/xtask/src/commands/ci/task_definitions.rs` (`ci schema-codegen`);
   - `verify_codegen_fresh` in `tools/xtask/src/commands/ci/editor_api.rs`
     (`ci verify-codegen-fresh`, a step of `ci ci-local-schema` and so of `ci ci-local`).
-- Rules: the `generated/` folders under `apps/website/api_v2/src/` are written only by
+- Rules: the `generated/` folders under `apps/api/src/` are written only by
   `schema codegen` and never edited by hand, which `ci verify-codegen-fresh` checks; a target
   never keeps a single-file form beside its folder
   (`schema_codegen_removes_what_the_schemas_no_longer_produce` in `tests/schema_types.rs`); every

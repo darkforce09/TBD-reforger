@@ -35,8 +35,8 @@ Harness: `scripts/map-assets/verify-spike-*.mjs`, `verify-spike-all.sh`, `TBD_Te
 
 | Area | Path |
 |------|------|
-| Basemap today | `apps/website/frontend/src/features/tactical-map/layers/useBaseMapLayer.ts` |
-| Terrains | `apps/website/frontend/src/features/tactical-map/coords/terrains.ts` |
-| Map host | `apps/website/frontend/src/features/tactical-map/TacticalMap.tsx` |
+| Basemap today | `apps/frontend/src/features/tactical-map/layers/useBaseMapLayer.ts` |
+| Terrains | `apps/frontend/src/features/tactical-map/coords/terrains.ts` |
+| Map host | `apps/frontend/src/features/tactical-map/TacticalMap.tsx` |
 | Manifest schema | `packages/tbd-schema/schema/terrain-manifest.schema.json` |
 | Dev static | `make map-assets-link` |

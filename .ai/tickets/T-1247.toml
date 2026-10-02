@@ -1,10 +1,10 @@
 id = "T-1247"
 kind = "work"
 title = "Document the equipment viewer configuration and service module headers"
-summary = "documentation/website/api_v2/environment_variables.md lists neither EQUIPMENT_DATA_DIR nor EQUIPMENT_EXPORT_SOURCE_DIR, which apps/website/api_v2/src/core/configuration/mod.rs:151,155 reads; community_content/services/mod.rs:1-2 names only the webhook and modpack services; 23 modules under community_content/services/equipment_data_viewer/ lack the Role/Position/Signals & state/Invariants header."
+summary = "documentation/apps/api/environment_variables.md lists neither EQUIPMENT_DATA_DIR nor EQUIPMENT_EXPORT_SOURCE_DIR, which apps/api/src/core/configuration/mod.rs:151,155 reads; community_content/services/mod.rs:1-2 names only the webhook and modpack services; 23 modules under community_content/services/equipment_data_viewer/ lack the Role/Position/Signals & state/Invariants header."
 class = "docs"
 status = "idea"
-notes = "Paths under apps/website/api_v2/src unless named in full. The two variables configure the development-only equipment data viewer; the headers follow CLAUDE.md law 8. Source: milestone V finding V-F110."
+notes = "Paths under apps/api/src unless named in full. The two variables configure the development-only equipment data viewer; the headers follow CLAUDE.md law 8. Source: milestone V finding V-F110."
 created_at = "2026-09-28T01:59:09Z"
 
 [scope]

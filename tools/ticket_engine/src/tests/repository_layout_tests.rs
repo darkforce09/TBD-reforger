@@ -7,8 +7,12 @@ fn required_documentation_locations() -> Vec<(&'static str, Vec<&'static str>)> 
     vec![
         ("TREE_DIR", vec![documentation::TREE_DIR]),
         (
-            "WEBSITE_DOCUMENTATION_DIR",
-            vec![documentation::WEBSITE_DOCUMENTATION_DIR],
+            "APPS_DOCUMENTATION_DIR",
+            vec![documentation::APPS_DOCUMENTATION_DIR],
+        ),
+        (
+            "LEGACY_DOCUMENTATION_DIR",
+            vec![documentation::LEGACY_DOCUMENTATION_DIR],
         ),
         (
             "MOD_DOCUMENTATION_DIR",
@@ -81,6 +85,67 @@ fn the_root_sparse_set_carries_the_task_surface() {
     for expected in ["tools", ".cargo", TICKETS_DIR, ARTIFACTS_DIR] {
         assert!(root_set.contains(&expected), "root set lacks {expected}");
     }
+}
+
+/// A website slice checks out the three website applications, the trees they reach through
+/// `path =` dependencies, the deployment folder, the API golden responses its contract tests read,
+/// and the documentation mirrors of `apps/` and `legacy/`.
+#[test]
+fn the_website_sparse_set_carries_the_applications_their_dependencies_and_their_mirrors() {
+    let (_, website_set) = SPARSE_CHECKOUT_SETS
+        .iter()
+        .find(|(name, _)| *name == "website")
+        .expect("a website target");
+    for expected in [
+        "apps/api",
+        "apps/frontend",
+        "apps/offline_service_worker",
+        "legacy",
+        "crates",
+        "deploy",
+        "contracts/fixtures/api_goldens",
+        documentation::APPS_DOCUMENTATION_DIR,
+        documentation::LEGACY_DOCUMENTATION_DIR,
+    ] {
+        assert!(
+            website_set.contains(&expected),
+            "website set lacks {expected}"
+        );
+    }
+}
+
+/// Every `contracts/` file a website crate compiles in through `include_str!` or `include_bytes!`
+/// lies inside the website set. A website slice builds and tests those crates, so a compile-time
+/// input missing from its checkout fails the build; the inputs are read from the crates' own
+/// sources, so a new include is judged without a list to extend.
+#[test]
+fn the_website_sparse_set_carries_every_contracts_file_the_website_crates_compile_in() {
+    let root = find_repo_root().expect("repository root");
+    let (_, website_set) = SPARSE_CHECKOUT_SETS
+        .iter()
+        .find(|(name, _)| *name == "website")
+        .expect("a website target");
+    let source_trees: Vec<&str> = website_set
+        .iter()
+        .copied()
+        .filter(|entry| {
+            !lies_within(entry, CONTRACTS_DIR) && !lies_within(entry, documentation::TREE_DIR)
+        })
+        .collect();
+    let compiled_in = contracts_files_compiled_in(&root, &source_trees);
+    assert!(
+        !compiled_in.is_empty(),
+        "no website crate compiles in a `{CONTRACTS_DIR}/` file: the include scan read nothing"
+    );
+    let uncovered: Vec<String> = compiled_in
+        .iter()
+        .filter(|(input, _)| !website_set.iter().any(|entry| lies_within(input, entry)))
+        .map(|(input, source)| format!("{input} <- {source}"))
+        .collect();
+    assert!(
+        uncovered.is_empty(),
+        "compile-time inputs outside the website sparse set: {uncovered:#?}"
+    );
 }
 
 /// A ticket's plan path is derived, not stored: lowercase id with dots as underscores, under the
@@ -207,4 +272,143 @@ fn declared_documentation_items(source: &str) -> BTreeSet<&str> {
                 .next()
         })
         .collect()
+}
+
+/// The folder of the shapes that cross a process or language boundary.
+const CONTRACTS_DIR: &str = "contracts";
+
+/// The macros whose argument names a file the compiler reads into the crate.
+const FILE_INCLUDE_MACROS: [&str; 2] = ["include_str!(", "include_bytes!("];
+
+/// Whether the repository path `path` is `folder` or lies below it; a trailing `/` on `folder`
+/// is ignored.
+fn lies_within(path: &str, folder: &str) -> bool {
+    let folder = folder.trim_end_matches('/');
+    path == folder
+        || path
+            .strip_prefix(folder)
+            .is_some_and(|rest| rest.starts_with('/'))
+}
+
+/// Every repository path under [`CONTRACTS_DIR`] that a Rust source below `trees` names in a file
+/// include, each with the source that names it.
+fn contracts_files_compiled_in(root: &Path, trees: &[&str]) -> BTreeSet<(String, String)> {
+    let mut sources = Vec::new();
+    for tree in trees {
+        collect_rust_sources(&root.join(tree.trim_end_matches('/')), &mut sources);
+    }
+    let mut found = BTreeSet::new();
+    for source in sources {
+        let text = std::fs::read_to_string(&source)
+            .unwrap_or_else(|error| panic!("{} could not be read: {error}", source.display()));
+        for argument in include_arguments(&text) {
+            let input = resolve_include(root, &source, &argument);
+            if lies_within(&input, CONTRACTS_DIR) {
+                let named_by = source.strip_prefix(root).unwrap_or(&source);
+                found.insert((input, named_by.display().to_string()));
+            }
+        }
+    }
+    found
+}
+
+/// Every `.rs` file below `folder`, skipping cargo's `target` output and hidden folders.
+fn collect_rust_sources(folder: &Path, sources: &mut Vec<PathBuf>) {
+    let entries = std::fs::read_dir(folder)
+        .unwrap_or_else(|error| panic!("{} could not be listed: {error}", folder.display()));
+    for entry in entries {
+        let path = entry.expect("a folder entry").path();
+        let name = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("");
+        if path.is_dir() {
+            if name != "target" && !name.starts_with('.') {
+                collect_rust_sources(&path, sources);
+            }
+        } else if name.ends_with(".rs") {
+            sources.push(path);
+        }
+    }
+}
+
+/// The argument text of every file include in `text`, up to its balancing parenthesis.
+fn include_arguments(text: &str) -> Vec<String> {
+    let mut arguments = Vec::new();
+    for macro_open in FILE_INCLUDE_MACROS {
+        let mut rest = text;
+        while let Some(start) = rest.find(macro_open) {
+            let after = &rest[start + macro_open.len()..];
+            let (argument, remainder) = split_at_balancing_parenthesis(after);
+            arguments.push(argument.to_string());
+            rest = remainder;
+        }
+    }
+    arguments
+}
+
+/// `text` split after the parenthesis that closes an already-open one, string literals skipped.
+fn split_at_balancing_parenthesis(text: &str) -> (&str, &str) {
+    let mut depth = 1usize;
+    let mut in_string = false;
+    let mut escaped = false;
+    for (index, character) in text.char_indices() {
+        match (in_string, escaped, character) {
+            (true, true, _) => escaped = false,
+            (true, false, '\\') => escaped = true,
+            (true, false, '"') | (false, _, '"') => in_string = !in_string,
+            (false, _, '(') => depth += 1,
+            (false, _, ')') => {
+                depth -= 1;
+                if depth == 0 {
+                    return (&text[..index], &text[index + 1..]);
+                }
+            }
+            _ => {}
+        }
+    }
+    (text, "")
+}
+
+/// The environment variable a file include starts from to name a path from its crate's manifest
+/// folder.
+const MANIFEST_FOLDER_VARIABLE: &str = "CARGO_MANIFEST_DIR";
+
+/// The repository path a file include in `source` reads: its path literals joined, from the
+/// crate's manifest folder when the argument starts at [`MANIFEST_FOLDER_VARIABLE`], otherwise
+/// from the source's own folder, as the compiler resolves it.
+fn resolve_include(root: &Path, source: &Path, argument: &str) -> String {
+    let starts_at_manifest = argument.contains(MANIFEST_FOLDER_VARIABLE);
+    let literals: String = argument
+        .split('"')
+        .skip(1)
+        .step_by(2)
+        .filter(|literal| *literal != MANIFEST_FOLDER_VARIABLE)
+        .collect();
+    let source_folder = source.parent().expect("a source has a folder");
+    let base = if starts_at_manifest {
+        source_folder
+            .ancestors()
+            .find(|folder| folder.join("Cargo.toml").is_file())
+            .expect("a source sits in a crate")
+    } else {
+        source_folder
+    };
+    let relative = base
+        .strip_prefix(root)
+        .expect("a source sits in the checkout");
+    let mut components: Vec<&str> = relative
+        .iter()
+        .map(|component| component.to_str().expect("a UTF-8 path"))
+        .collect();
+    for part in literals.split('/') {
+        match part {
+            "" | "." => {}
+            ".." => {
+                components.pop();
+            }
+            part => components.push(part),
+        }
+    }
+    components.join("/")
 }

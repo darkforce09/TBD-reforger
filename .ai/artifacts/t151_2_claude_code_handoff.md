@@ -63,7 +63,7 @@ test "$(git rev-parse --show-toplevel)" = "$(pwd)"
 git status --porcelain             # empty @ 3ab81587+
 # Do NOT checkout or create branches; do NOT run ./scripts/ticket run
 git lfs pull && make map-assets-link
-cd apps/website/frontend && npm ci && cd ../../..
+cd apps/frontend && npm ci && cd ../../..
 make wasm
 ```
 
@@ -74,7 +74,7 @@ Toolchain: same as T-151.0/1 (rustc 1.95, wasm-pack 0.15, node 26). Map assets m
 
 | Concern | Path |
 |---|---|
-| JS parse oracle (parseChunk) | `apps/website/frontend/src/features/tactical-map/workers/worldObjectsCore.ts:571–617` |
+| JS parse oracle (parseChunk) | `apps/frontend/src/features/tactical-map/workers/worldObjectsCore.ts:571–617` |
 | Classify + prefab narrow | same file `:48–66`, `:291–404` |
 | Worker tests / fixtures | `workers/worldObjectsCore.test.ts` |
 | Road centerline oracle | `worldmap/roadLayer.ts:72–124` + `roadLayer.test.ts` |
@@ -101,7 +101,7 @@ Toolchain: same as T-151.0/1 (rustc 1.95, wasm-pack 0.15, node 26). Map assets m
 - **Gunzip:** real chunk files are `.json.gz`; parity test reads raw bytes; Rust parser should
   accept gzip (sniff magic) like `bytesToJson` in worldObjectsCore.
 - **275-chunk test runtime:** use vitest with adequate timeout; log wall time in verify log. Run
-  from `apps/website/frontend` with cwd-relative path to `packages/map-assets` (same as
+  from `apps/frontend` with cwd-relative path to `packages/map-assets` (same as
   `worldObjectsCore.test.ts:35`).
 - **Road count:** `parseRoadsPayload` drops degenerate segments — assert **888** centerlined
   segments, not raw export row count.

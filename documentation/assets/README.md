@@ -49,7 +49,7 @@ describes a tier no code implements yet. Both follow the
 
 ## Related documentation
 
-- [Map streaming](/documentation/website/map-engine/map_streaming.md) — how the browser loads
+- [Map streaming](/documentation/legacy/map_engine/map_streaming.md) — how the browser loads
   what the manifests name.
 - [Local development](/documentation/runbooks/local_development.md) — pulling the LFS map assets
   and serving them to the app.

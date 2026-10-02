@@ -236,3 +236,33 @@ fn a_failed_listing_or_an_empty_scope_did_not_run() {
     assert!(failures(&outside)[0].starts_with("FAIL: markdown-placement judged nothing in .ai"));
     assert_eq!(outside.print(), 2);
 }
+
+/// Every top-level folder but the documentation roots is a code tree, so Markdown in a folder no
+/// list names is placed like Markdown in `apps/`; the repository root and hidden folders are not
+/// code trees.
+#[test]
+fn markdown_in_a_top_level_folder_no_list_names_is_placed() {
+    let mut fixture = FixtureCheckout::new("placement-derived-code-trees");
+    fixture
+        .tracked("README.md", "# Project\n")
+        .tracked("CLAUDE.md", "# Instructions\n")
+        .tracked("deploy/README.md", "# Deploy\n")
+        .tracked("deploy/NOTES.md", "# Notes\n")
+        .tracked("legacy/old_tool/guide.md", "# Guide\n")
+        .tracked(".github/pull_request_template.md", "# Template\n");
+    let run = run(&fixture, &[]);
+    assert_eq!(
+        failures(&run),
+        [
+            "FAIL: deploy/NOTES.md: Markdown in a code tree; a code tree holds only README.md, \
+             and documents live under documentation/",
+            "FAIL: legacy/old_tool/guide.md: Markdown in a code tree; a code tree holds only \
+             README.md, and documents live under documentation/",
+        ]
+    );
+    assert_eq!(
+        run.totals[0],
+        "  code trees: 3 Markdown file(s) judged, 2 other than README.md"
+    );
+    assert_eq!(run.print(), 1);
+}

@@ -1,6 +1,8 @@
 use super::*;
 use crate::commands::platform::wave_execution::gate_folder;
 use crate::core::cargo_target_directory;
+use verification_core::repository_laws::cargo_manifest::read_manifest;
+use verification_core::repository_laws::workspace_members::read_workspace_members;
 
 /// The changed-Rust-file list, and the one distinction the change-scoped steps kept getting wrong.
 ///
@@ -17,8 +19,9 @@ use crate::core::cargo_target_directory;
 ///   * [`super::super::touch::touch_changed`] — touches the owning crate's Cargo.toml (or `include!`
 ///     consumers) so cargo fingerprints still invalidate; refuses only when nothing at all can be
 ///     touched.
-///   * [`super::super::touch::clippy_changed`] — resolves the crate from the path (or `include!` consumers
-///     for orphan fragments like `apps/website/shared/*.rs`); refuses only when zero crates resolve.
+///   * [`super::super::touch::clippy_changed`] — resolves the crate from the path (or `include!`
+///     consumers for an orphan fragment: a `.rs` file outside every package that crates pull in
+///     through `include!`); refuses only when zero crates resolve.
 ///
 /// The signature-defect refuse that remains is "listed Rust changes, examined NOTHING" — not
 /// "listed deletions, rustfmt had no file to open".
@@ -38,40 +41,33 @@ pub fn changed_rs(base: &str) -> Result<Vec<String>, i32> {
     Ok(all)
 }
 
-/// Resolve a file's edition from the nearest `Cargo.toml` above it.
+/// Resolve a file's edition from the nearest `Cargo.toml` above it that states one.
 ///
-/// Edition is NOT fixed across this workspace: `apps/website/api_v2` is edition 2024, most other
-/// crates are 2021, and the two style editions sort a mixed-case brace import differently.
-/// Hardcoding `--edition 2021` made every slice touching an edition-2024 file fail a gate it did
-/// not cause — main's own `use axum::http::{HeaderMap, HeaderValue, StatusCode, header};` already
-/// fails the 2021 form.
+/// Edition is NOT fixed across this workspace: `apps/api` is edition 2024, the frontend is 2021,
+/// and the two style editions sort a mixed-case brace import differently. Hardcoding
+/// `--edition 2021` made every slice touching an edition-2024 file fail a gate it did not cause —
+/// main's own `use axum::http::{HeaderMap, HeaderValue, StatusCode, header};` already fails the
+/// 2021 form.
+///
+/// A member that inherits its edition (`edition.workspace = true`) states none, so the walk goes
+/// on up to the root manifest, whose `[workspace.package]` table states it; the walk includes the
+/// root itself (the empty ancestor of a repository-relative path). With no manifest stating an
+/// edition (a path outside the workspace) the answer is 2021, the oldest edition a member
+/// declares.
 pub fn file_edition(f: &str) -> String {
-    let mut d = Path::new(f)
-        .parent()
-        .map(Path::to_path_buf)
-        .unwrap_or_else(|| PathBuf::from("."));
-    loop {
-        let ds = d.display().to_string();
-        if ds == "." || ds == "/" || ds.is_empty() {
-            break;
-        }
-        let manifest = d.join("Cargo.toml");
-        if manifest.is_file()
-            && let Ok(body) = std::fs::read_to_string(&manifest)
-        {
-            // The FIRST line starting with `edition`, reduced to its digits.
-            // `edition.workspace = true` therefore yields the empty string and the walk
-            // continues upward, which is the behaviour that matters.
-            if let Some(line) = body.lines().find(|l| l.starts_with("edition")) {
-                let e: String = line.chars().filter(char::is_ascii_digit).collect();
-                if !e.is_empty() {
-                    return e;
-                }
+    let start = Path::new(f).parent().unwrap_or_else(|| Path::new(""));
+    for dir in start.ancestors() {
+        let Ok(body) = std::fs::read_to_string(dir.join("Cargo.toml")) else {
+            continue;
+        };
+        // The FIRST line starting with `edition`, reduced to its digits.
+        // `edition.workspace = true` therefore yields the empty string and the walk continues
+        // upward.
+        if let Some(line) = body.lines().find(|l| l.starts_with("edition")) {
+            let e: String = line.chars().filter(char::is_ascii_digit).collect();
+            if !e.is_empty() {
+                return e;
             }
-        }
-        match d.parent() {
-            Some(p) => d = p.to_path_buf(),
-            None => break,
         }
     }
     "2021".into()
@@ -80,7 +76,7 @@ pub fn file_edition(f: &str) -> String {
 /// Format-check ONLY the files this slice changed against main.
 ///
 /// Workspace-wide `cargo fmt --all --check` is the local/CI FMT-1 gate (`cargo xtask mk rust-fmt` /
-/// `.github/workflows/ci.yml` website-api). The wave gate
+/// `.github/workflows/ci.yml` api). The wave gate
 /// stays diff-scoped so a slice only fails on files it touched — not a substitute for CI `--all`.
 ///
 /// The base defaults to `main...HEAD`, which is correct inside a WORKTREE (the slice gate) and
@@ -135,49 +131,54 @@ pub fn fmt_changed(ctx: &Ctx, base: &str) -> i32 {
     rc
 }
 
-/// Native `cargo check --workspace` does NOT compile the frontend: `apps/website/frontend/src` is
+/// Native `cargo check --workspace` does NOT compile the frontend: `apps/frontend/src` is
 /// `#![cfg(target_arch = "wasm32")]`, so a native check walks straight past it and reports PASS on
 /// a file it never looked at. Any slice touching the frontend must be
 /// checked for wasm32 or the gate is decorative. Warm cost measured: 0.16s.
 /// The frontend crate directory, and every WORKSPACE crate it depends on, transitively.
 ///
 /// THE PATH PREFIX WAS NEVER THE RIGHT QUESTION. `wasm_changed` and the `trunk build` step
-/// both asked "did anything under `apps/website/frontend/` change", but the SPA compiles half the
-/// engine into its own wasm binary. Wave 237 changed `apps/website/map-engine` — a rewritten
+/// both asked "did anything under `apps/frontend/` change", but the SPA compiles half the
+/// engine into its own wasm binary. Wave 237 changed `legacy/map_engine` — a rewritten
 /// `geometry/tbdd.rs` and a dependency that stopped being optional — touched no frontend path, and
 /// the gate printed `wasm32 (frontend) PASS` alongside `trunk build SKIP (frontend untouched this
 /// wave)`. Neither had compiled a line of it. `Runner::run` discards a passing step's output, so
 /// the reason never even reached the log: the vacuity was invisible in the transcript.
 ///
 /// The scope is DERIVED, not listed, because a hand-kept list is the same bug with a slower fuse:
-/// walk `path = "…"` dependencies out of `apps/website/frontend/Cargo.toml` and keep walking. Today
-/// that reaches `apps/website/map-engine` and, through it, `apps/website/graphics-engine`; when it
-/// reaches more, this follows without an edit. (T-0xx Phase 2A folded `apps/website/mission-core`
-/// into map-engine — the scope followed by itself, which is the point of deriving it.) A crate that cannot be read contributes nothing rather than silently
-/// narrowing the scope — the caller treats an empty walk as "check anyway", never as "skip".
+/// walk the dependency edges out of `apps/frontend/Cargo.toml` and keep walking. An edge leads to
+/// a workspace crate when it names a `path`, or when it takes its source from
+/// `[workspace.dependencies]` (`workspace = true`) and names a workspace member's package — the
+/// shared crates under `crates/` are reached that way. Today the walk reaches
+/// `legacy/map_engine` and, through it, `legacy/graphics_engine`, plus every `crates/` member the
+/// frontend depends on; when it reaches more, this follows without an edit. Every dependency
+/// table counts: the target-specific tables carry the engine, and the development tables carry
+/// what the frontend's test suite compiles. A manifest that cannot be read contributes nothing;
+/// the scope always holds the frontend itself, and a workspace whose manifests do not parse fails
+/// the gate's `cargo check` step before this scope matters.
 pub fn wasm_scope_prefixes(root: &Path) -> Vec<String> {
+    let members = read_workspace_members(root).unwrap_or_default();
     let mut seen: Vec<String> = vec![FRONTEND_DIR.to_string()];
     let mut queue: Vec<String> = vec![FRONTEND_DIR.to_string()];
     while let Some(dir) = queue.pop() {
-        let Ok(text) = std::fs::read_to_string(root.join(&dir).join("Cargo.toml")) else {
+        let Ok(manifest) = read_manifest(&root.join(&dir).join("Cargo.toml")) else {
             continue;
         };
-        for line in text.lines() {
-            let Some(rest) = line.split("path").nth(1) else {
+        for edge in &manifest.dependencies {
+            let dependency_dir = match &edge.path {
+                Some(relative) => join_rel(&dir, relative),
+                None if edge.from_workspace => members
+                    .iter()
+                    .find(|member| member.package_name == edge.package)
+                    .map(|member| member.path.clone()),
+                None => None,
+            };
+            let Some(dependency_dir) = dependency_dir else {
                 continue;
             };
-            let Some(open) = rest.find('"') else { continue };
-            let after = &rest[open + 1..];
-            let Some(close) = after.find('"') else {
-                continue;
-            };
-            let rel = &after[..close];
-            let Some(joined) = join_rel(&dir, rel) else {
-                continue;
-            };
-            if !seen.contains(&joined) {
-                seen.push(joined.clone());
-                queue.push(joined);
+            if !seen.contains(&dependency_dir) {
+                seen.push(dependency_dir.clone());
+                queue.push(dependency_dir);
             }
         }
     }
@@ -241,7 +242,7 @@ pub fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
             "cargo",
             "check",
             "-p",
-            "website-frontend",
+            "frontend",
             "--target",
             "wasm32-unknown-unknown",
             "--quiet",
@@ -270,14 +271,14 @@ pub fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
 /// "the gate does not run the tests" is not a longer brief.
 ///
 /// **Scope is [`wasm_scope_touched`] PLUS the SPA's `include_str!`/`include_bytes!` inputs.**
-/// `wasm_scope_touched` walks the SPA's `Cargo.toml` path dependencies, so `website-map-engine` is
+/// `wasm_scope_touched` walks the SPA's `Cargo.toml` path dependencies, so `map_engine` is
 /// inside it — which is precisely how a core-crate edit reaches a frontend test, and why a
-/// literal `apps/website/frontend/` prefix would have missed the very case this step exists for.
+/// literal `apps/frontend/` prefix would have missed the very case this step exists for.
 ///
 /// But the dependency graph is not the whole input set, and the wave-255 verify caught the hole:
 /// the suite compiles files from OUTSIDE that graph, through `include_str!` —
 /// `contracts/definitions/mission.schema.json` (`v2/apps/editor/ui/inspector/zones_panel/zone_schema_vocabulary.rs`),
-/// `loadout-export.schema.json` (`arsenal/`), `apps/website/api_v2/src/<domain>/routes.rs` (four `pages/`
+/// `loadout-export.schema.json` (`arsenal/`), `apps/api/src/<domain>/routes.rs` (four `pages/`
 /// census tests), `apps/mod/tbd-framework/Data/registry.json` (`arsenal/asset_catalog.rs`). Wave 255 itself
 /// changed `mission.schema.json`; a slice whose diff was only that file would have printed
 /// "frontend untouched" and skipped, while `zone_rule_fields_cover_the_whole_vocabulary` compiles
@@ -285,7 +286,7 @@ pub fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
 ///
 /// So the include inputs are added — but SCOPED to the wasm-scope crates via
 /// [`include_inputs_under`], not taken wholesale from [`compiled_include_input_paths`]. Wholesale
-/// would drag `apps/website/api_v2/**` into the frontend's scope, which this module's own test
+/// would drag `apps/api/**` into the frontend's scope, which this module's own test
 /// deliberately asserts must never happen.
 ///
 /// Native `cargo test`, not `--target wasm32-unknown-unknown`: the wasm target has no test runner
@@ -294,9 +295,9 @@ pub fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
 ///
 /// **A PRIVATE, PER-SLICE target dir — not [`Ctx::gate_check_target`].** `gate_check_target` is
 /// `main_root/target/gate-check`, and `main_root` is the primary checkout SHARED BY EVERY WORKTREE —
-/// so five concurrent slice gates would all build `website-frontend` into one directory. That is
+/// so five concurrent slice gates would all build `frontend` into one directory. That is
 /// the exact condition [`super::super::gate::cmd_gate`] refuses in so many words: two runs measured
-/// `cargo test -p website-frontend` running a stale `website_frontend-<hash>` binary built from
+/// `cargo test -p frontend` running a stale `frontend-<hash>` binary built from
 /// ANOTHER worktree (same package name + version across worktrees = same artifact hash =
 /// clobbering), and the wave gate gives its own frontend step `target/gate-frontend` for it. A
 /// *test* step reporting another worktree's cached PASS is worse than no step at all. Keyed by
@@ -333,10 +334,9 @@ pub fn frontend_tests_changed(ctx: &Ctx, base: &str, slice: &str) -> i32 {
             cargo_target_directory::GATE_SLICE_FRONTEND_PREFIX
         ),
     );
-    let argv = ctx.host.checkrun_argv(
-        &private,
-        &host::v(&["cargo", "test", "-p", "website-frontend"]),
-    );
+    let argv = ctx
+        .host
+        .checkrun_argv(&private, &host::v(&["cargo", "test", "-p", "frontend"]));
     let (out, rc) = host::capture(&argv);
     wprint!("{out}");
     rc
@@ -346,7 +346,7 @@ pub fn frontend_tests_changed(ctx: &Ctx, base: &str, slice: &str) -> i32 {
 ///
 /// The companion to [`wasm_scope_touched`] — see [`frontend_tests_changed`] for why the dependency
 /// graph alone is not the frontend suite's input set. Scoped deliberately: passing
-/// `wasm_scope_prefixes` rather than `workspace_members` keeps `apps/website/api_v2/**` out of the
+/// `wasm_scope_prefixes` rather than `workspace_members` keeps `apps/api/**` out of the
 /// frontend's scope even though the API has plenty of include inputs of its own.
 pub(super) fn frontend_include_input_touched<'a>(
     root: &Path,
@@ -379,8 +379,9 @@ pub(super) fn frontend_include_inputs(root: &Path) -> HashSet<PathBuf> {
 
 /// Directory of the `[package]` `Cargo.toml` owning a `.rs` path, or `None`.
 ///
-/// Walk-up first; orphan fragments (`apps/website/shared/*.rs`) have no package ancestor — those
-/// are handled by the `include!`-consumer path in `clippy_changed` / the touch fallback.
+/// Walk-up first; an orphan fragment (a `.rs` file outside every package, pulled into crates
+/// through `include!`) has no package ancestor — those are handled by the `include!`-consumer
+/// path in `clippy_changed` / the touch fallback.
 pub fn owning_package_dir(f: &str) -> Option<String> {
     let mut d = Path::new(f)
         .parent()

@@ -93,7 +93,7 @@ None: Workbench runs these scripts in the editor.
 
 ## Related documentation
 
-- [Water: bathymetry, inland water and the sea mesh](/apps/website/map-engine/src/world/terrain/water/README.md)
+- [Water: bathymetry, inland water and the sea mesh](/legacy/map_engine/src/world/terrain/water/README.md)
   — how the map engine reads the water archives built from this export.
 - [Map export](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
   the file names `map water` expects and the missing staging step.

@@ -69,7 +69,7 @@ registration is unanswered).
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/`; `TBD_Authority` and `TBD_Log` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; the engine's `SCR_BaseGameMode`,
   `TimeAndWeatherManagerEntity` and `ServerInfo`. Over HTTP, the session routes of
-  `apps/website/api_v2/src/server_infrastructure/`.
+  `apps/api/src/server_infrastructure/`.
 - Used by: `TBD_DeployedMission` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`
   (the loaded-artifact report); `TBD_DeploymentAuthorization` and `TBD_DeploymentRequestQueue` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/` (`CanHoldSession`, `GetSessionId`,
@@ -82,7 +82,7 @@ registration is unanswered).
 ## Related documentation
 
 - [Platform bridge](/apps/mod/tbd-framework/Scripts/Game/TBD/API/README.md) — how the session fits the other backend clients
-- [Server infrastructure domain](/apps/website/api_v2/src/server_infrastructure/README.md) — runtime
+- [Server infrastructure domain](/apps/api/src/server_infrastructure/README.md) — runtime
   sessions on the API side
-- [Match telemetry domain](/apps/website/api_v2/src/match_telemetry/README.md) — how heartbeats are
+- [Match telemetry domain](/apps/api/src/match_telemetry/README.md) — how heartbeats are
   taken in

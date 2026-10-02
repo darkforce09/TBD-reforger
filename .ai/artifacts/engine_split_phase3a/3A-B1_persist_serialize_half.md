@@ -1,11 +1,11 @@
 # 3A-B1 — `state/persist.rs`: the decidable half crosses into `editing/persist/`
 
-Agent 2 of 8. Your scope is `apps/website/frontend/src/editor/state/persist.rs` (1,719 LOC) and
+Agent 2 of 8. Your scope is `apps/frontend/src/editor/state/persist.rs` (1,719 LOC) and
 nothing else. `state/hydrate.rs` belongs to `3A-B2` — do not touch it.
 
 ## The cut
 
-**Crosses into `apps/website/map-engine/src/editing/persist/`:** serialization, deserialization,
+**Crosses into `legacy/map_engine/src/editing/persist/`:** serialization, deserialization,
 key arithmetic, and the merge / conflict policy. Everything decidable without a browser, so it
 becomes natively `cargo test`-able.
 
@@ -44,9 +44,9 @@ Everything naming `idb::` — `open_db`, `put_raw`, `read_raw`, `get_raw`, `has_
 ## There is an unfinished start on disk — you own the decision
 
 ```
-apps/website/map-engine/src/editing/persist/blob.rs         96 LOC
-apps/website/map-engine/src/editing/persist/record_key.rs   43 LOC
-apps/website/map-engine/src/editing/persist/tests/          EMPTY
+legacy/map_engine/src/editing/persist/blob.rs         96 LOC
+legacy/map_engine/src/editing/persist/record_key.rs   43 LOC
+legacy/map_engine/src/editing/persist/tests/          EMPTY
 ```
 
 Untracked, and **`persist` is not declared in `editing/mod.rs`**. A previous agent was interrupted
@@ -77,9 +77,9 @@ this module, so leave it settled.
 
 ```
 CARGO_TARGET_DIR=target-container cargo xtask verify engine-layers
-rg 'web_sys|leptos|wasm_bindgen|idb' apps/website/map-engine/src/editing     # EMPTY
-CARGO_TARGET_DIR=target-container cargo test -p website-map-engine --all-features
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
+rg 'web_sys|leptos|wasm_bindgen|idb' legacy/map_engine/src/editing     # EMPTY
+CARGO_TARGET_DIR=target-container cargo test -p map_engine --all-features
+CARGO_TARGET_DIR=target-container cargo test -p frontend
 ```
 
 Baseline: `verify engine-layers` PASS on all 8 rules; map-engine 1290 passed / 0 failed / 2

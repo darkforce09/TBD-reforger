@@ -10,6 +10,7 @@ stage it into a game server.
 
 ```text
 contracts/fixtures/
+├── api_goldens/            recorded API responses (and request bodies) per route, indexed by `_index.tsv`
 ├── ballistics/             calibration bundles of the ballistics catalogs, and bundles that must fail
 ├── bridge_samples/         voice bridge messages across a voice session's lifecycle
 ├── enfusion_samples/       one sample per mission-schema definition the mod's JSON classes read
@@ -21,7 +22,8 @@ contracts/fixtures/
 
 ## How it works
 
-`cargo xtask schema validate` reads every folder here but `equipment-data-viewer/`: it validates
+`cargo xtask schema validate` reads every folder here but `api_goldens/` and
+`equipment-data-viewer/`: it validates
 each sample against its schema in `contracts/definitions/`, requires each invalid mission to
 fail its named gate at its named pointer, and cross-checks kit aliases and registry references.
 `cargo xtask schema map-object-golden` adds the world export's semantic gates over `map/`, including
@@ -31,7 +33,11 @@ the byte-level checks of its binary twins. Both run in the `schema-validate` CI 
 and the xtask [mod](/documentation/glossary/g_to_m.md#mod) commands stage missions from
 `missions/valid/` into a game server. The equipment data viewer's pages are held by the
 API's `contract_parity_equipment_viewer` test binary, which reproduces every accepted page from a
-committed export, and by the frontend's DTO parity tests.
+committed export, and by the frontend's DTO parity tests. The recorded responses in
+`api_goldens/` are captured from a fresh database seeded with `apps/api/seeds/content_golden.sql`;
+the API's `contract_parity_goldens` test binary replays them against the live router, the
+frontend's golden and page tests embed them, and the headless browser gates answer the app's
+requests from them.
 
 The negative fixtures matter as much as the positive ones. Each invalid mission isolates one
 defect at one pointer, so a gate that grows permissive fails here, naming the rule that broke,
@@ -57,14 +63,14 @@ instead of letting malformed missions through until one reaches a live
     map-object golden gates in `tools/developer_tools/src/map_verification/object_goldens/`,
     which reach these folders through `tools/developer_tools/src/repository_layout.rs`;
   - the xtask mod commands `world-boot`, `test-mission` and `dev-server`;
-  - tests in `apps/website/api_v2/`, `apps/website/frontend/`, `apps/website/map-engine/` and
+  - tests in `apps/api/`, `apps/frontend/`, `legacy/map_engine/` and
     `tools/`, named in each folder's README.
 
 ## Boundaries
 
 - Depends on: the schemas in `contracts/definitions/`, the spawn registry
   `apps/mod/tbd-framework/Data/registry.json`, and the binary formats of
-  `apps/website/map-engine/src/io/`.
+  `legacy/map_engine/src/io/`.
 - Used by: the xtask schema gates, the developer tools' map verification, the xtask mod commands
   and the crate tests above.
 - Rules: a schema change keeps every fixture it validates passing, in the same change

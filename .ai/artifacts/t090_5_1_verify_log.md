@@ -35,7 +35,7 @@ Scaffold only — zero Deck world-object layers, zero chunk fetch, export pipeli
 **Targeted vitest** (`npm run test -- styleModes lodGates chunkMath worldLayerPrefs basemapView`):
 
 ```
- RUN  v4.1.9 apps/website/frontend
+ RUN  v4.1.9 apps/frontend
  Test Files  5 passed (5)
       Tests  36 passed (36)
    Duration  103ms

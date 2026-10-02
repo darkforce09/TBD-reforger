@@ -23,3 +23,28 @@ fn make_error_lines_are_told_from_recipe_output() {
     assert_eq!(make_error_rc("Error: executing podman-compose: 255"), None);
     assert_eq!(make_error_rc("make: nothing to be done"), None);
 }
+
+/// The private clone carries the development compose file's own name, so `db up` pointed at the
+/// clone's folder finds it through the same `-f` it passes in the checkout.
+#[test]
+fn the_scratch_clone_carries_the_development_compose_file_name() {
+    let folder =
+        std::env::temp_dir().join(format!("xtask-db-scratch-clone-{}", std::process::id()));
+    write_scratch_compose(&folder).expect("write the scratch clone");
+    let file_name = crate::core::repository_layout::DEVELOPMENT_COMPOSE_FILE
+        .rsplit('/')
+        .next()
+        .expect("the layout constant names a file");
+    let present: Vec<String> = fs::read_dir(&folder)
+        .expect("read the scratch folder")
+        .map(|entry| {
+            entry
+                .expect("scratch entry")
+                .file_name()
+                .to_string_lossy()
+                .into_owned()
+        })
+        .collect();
+    let _ = fs::remove_dir_all(&folder);
+    assert_eq!(present, [file_name], "the scratch folder holds {present:?}");
+}

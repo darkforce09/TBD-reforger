@@ -1,8 +1,8 @@
 //! Unit tests for the judgement of the browser's reading against the native solves.
 
+use map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
+use map_engine::data::scenario::ballistics::fire_mission::SOLVER_REVISION;
 use serde_json::{Value, json};
-use website_map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
-use website_map_engine::data::scenario::ballistics::fire_mission::SOLVER_REVISION;
 
 use super::*;
 use crate::browser_testing::ballistics_agreement::COMMITTED_CATALOG;

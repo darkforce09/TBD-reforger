@@ -33,7 +33,7 @@ tools/xtask/src/commands/deploy/
 `website`, `staging`, `db backup`, `db drill`, `db ct` and `db ct-i` commands take their arguments
 raw and parse them themselves; the other `db` commands parse with clap.
 
-Both deploys read `tools/xtask/deploy/deploy.env` (or the file `DEPLOY_ENV` names), which is
+Both deploys read `deploy/deploy.env` (or the file `DEPLOY_ENV` names), which is
 gitignored and excluded from both rsyncs, through `crate::core::deploy_environment`: parsed as
 `KEY=VALUE` lines and never executed, the file deciding every key it assigns and the process
 environment filling only the others; a missing file exits 1 and names `deploy.env.example`. The
@@ -52,7 +52,7 @@ none of them.
 ```text
 deploy website: asset probe ─▶ rsync --delete ─▶ compose postgres ─▶ API build ─▶ host tools build
                 ─▶ app build ─▶ compose caddy, then its reload ─▶ checksum repair
-                ─▶ uploads to the state folder ─▶ restart the unit ─▶ hints
+                ─▶ restart the unit ─▶ hints
 deploy staging: settings check ─▶ website API check ─▶ secret files ─▶ single-instance check
                 ─▶ rsync --delete ─▶ per instance: files and runtime smoke ─▶ units, restart
                 ─▶ boot verdict per instance ─▶ relay ─▶ host agents ─▶ log check per instance
@@ -78,7 +78,7 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
   and over ssh brings up the staging Postgres (`TBD_POSTGRES_HOST_PORT`, default 5432), builds the
   release API, the staging host tools `staging-fixtures` and `acknowledgement-dropping-relay`
   into `target/release/` and the app, starts the staging Caddy and reloads its Caddyfile, repoints
-  comments-only migration checksums, moves uploads into the unit's state folder and restarts
+  comments-only migration checksums and restarts
   `TBD_WEBSITE_SYSTEMD_UNIT` (default `tbd-website-api.service`). Set to 1, `TBD_SKIP_COMPOSE`
   skips both compose steps (Postgres and Caddy), `TBD_SKIP_API_BUILD` both cargo builds and
   `TBD_SKIP_SPA_BUILD` the app build, after which Caddy serves the build already on the host. A
@@ -100,7 +100,7 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
   `tbd-reforger@N.service` with `-addonsDir` and its own `-config` and `-profile` under
   `~/tbd/fleet/instance-N/`, beside its
   [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent)
-  `fleet-host-agent@N.service`; the relay instance's agent polls the API through
+  `fleet_host_agent@N.service`; the relay instance's agent polls the API through
   `acknowledgement-dropping-relay@N.service`. Each instance's boot is judged from its own log:
   the synced addon won, a room registered and the config loaded. The machine credentials are
   files `cargo xtask staging provision-fleet` writes on the host after `deploy website` built its
@@ -108,7 +108,9 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
   `~/tbd/fleet/join-password`; the deploy refuses a missing one, and refuses the retired
   single-server settings such as `TBD_MOD_RUNTIME_CREDENTIAL` without printing their values.
   While the single-server units `tbd-reforger.service` and `fleet-host-agent.service` are
-  installed it refuses, and `--migrate-single-instance` stops, disables and archives them first.
+  installed it refuses, and `--migrate-single-instance` stops, disables and archives them first,
+  with the single agent's `~/.config/fleet-host-agent/` and `~/.local/bin/fleet-host-agent`: the
+  kebab-case names the single-instance install wrote, which no fleet name shares.
   It runs no compose command: the website stack on the host is `deploy website`'s.
   `--render-only` writes every instance's `instance-N/server.config.json` into a local directory
   after the settings check; `--verify-boot` judges a log you already have;
@@ -155,7 +157,7 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
 ## Boundaries
 
 - Depends on: `crate::core::repository_root` and `crate::core::repository_layout` (the deploy
-  files under `tools/xtask/deploy/`); `verification_core` for runs and verdicts; ssh, sshpass
+  files under `deploy/`); `verification_core` for runs and verdicts; ssh, sshpass
   and rsync on the development machine; a container runtime and the Postgres container; on the
   host, cargo, trunk, docker or podman compose, systemd user units and the dedicated server.
 - Used by:
@@ -163,7 +165,7 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
   - `tools/xtask/src/commands/db/`, which runs backup, verify, drill and restore in process and
     uses the container helpers;
   - the `tbd-website-backup` and `tbd-website-backup-drill` units in
-    `tools/xtask/deploy/systemd/`, which run `deploy db backup` and `deploy db drill`;
+    `deploy/systemd/`, which run `deploy db backup` and `deploy db drill`;
   - the operator, for both deploys.
 - Rules: `deploy.env` is never executed and never rsynced (both exclude lists name `DEPLOY_ENV`);
   both rsyncs exclude every development-machine-only path, no such path matches a tracked file,
@@ -185,7 +187,7 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
   API unit, Caddy and the website deploy.
 - [Game server staging](/documentation/runbooks/game_server_staging/README.md) — the staging
   game server and its host agent.
-- [Deployment templates](/tools/xtask/deploy/README.md) — `deploy.env`, the Caddy site and the
+- [Deployment templates](/deploy/README.md) — `deploy.env`, the Caddy site and the
   systemd units these commands read or print.
 - [Database operations](/documentation/runbooks/database_operations.md) — the `deploy db` backups,
   restore drills and restores, run by hand and by the backup timers.

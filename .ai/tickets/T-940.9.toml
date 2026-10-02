@@ -52,7 +52,7 @@ owns = [
     "apps/website/api/src/handlers/content/wiki.rs",
     "apps/website/api/src/services/wiki_markup.rs",
     "apps/website/api/src/services/mod.rs",
-    "apps/website/frontend/src/pages/public/wiki.rs",
+    "apps/frontend/src/pages/public/wiki.rs",
     "apps/website/api/migrations/0026_wiki_revisions.sql",
 ]
 

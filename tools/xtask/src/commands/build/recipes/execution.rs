@@ -37,7 +37,38 @@ pub(crate) fn run(args: &[String]) -> Result<u8> {
         _ => {}
     }
 
-    let steps = match target.as_str() {
+    // `None` is reachable only if TARGETS advertises something with no recipe — which
+    // `tests::every_advertised_target_dispatches` forbids. Reported, never panicked.
+    if dry {
+        let Some(lines) = recipe_lines(&target) else {
+            return unknown_target(&target);
+        };
+        for line in lines {
+            println!("{line}");
+        }
+        return Ok(0);
+    }
+    if target == "rust-ci" {
+        return rust_ci();
+    }
+    let Some(steps) = recipe_steps(&target) else {
+        return unknown_target(&target);
+    };
+    run_steps(&steps)
+}
+
+/// The lines a recipe target runs, in order, as `--dry-run` prints them; `None` for the three
+/// targets that compute or delete instead of running a recipe, and for a name that is no target.
+pub(crate) fn recipe_lines(target: &str) -> Option<Vec<String>> {
+    if target == "rust-ci" {
+        return Some(rust_ci_lines());
+    }
+    recipe_steps(target).map(|steps| steps.iter().map(Step::echo).collect())
+}
+
+/// The step list of every recipe target but the `rust-ci` composite, which [`rust_ci`] runs.
+fn recipe_steps(target: &str) -> Option<Vec<Step>> {
+    Some(match target {
         "rust-api" => rust_api(),
         "rust-build" => rust_build(),
         "rust-test" => rust_test(),
@@ -52,33 +83,6 @@ pub(crate) fn run(args: &[String]) -> Result<u8> {
         "mortar-offline-gate" => mortar_offline_gate(),
         "ballistics-wasm-agreement" => ballistics_wasm_agreement(),
         "ci-local-leptos" => ci_local_leptos(),
-        "rust-ci" => {
-            if dry {
-                let mut all = Vec::new();
-                for s in [
-                    rust_fmt(),
-                    rust_clippy(),
-                    rust_build(),
-                    wasm_ci(),
-                    rust_test_it(),
-                ] {
-                    all.extend(s);
-                }
-                all
-            } else {
-                return rust_ci();
-            }
-        }
-        // Reachable only if TARGETS advertises something with no recipe — which
-        // `tests::every_advertised_target_dispatches` forbids. Reported, never panicked.
-        other => return unknown_target(other),
-    };
-
-    if dry {
-        for s in &steps {
-            println!("{}", s.echo());
-        }
-        return Ok(0);
-    }
-    run_steps(&steps)
+        _ => return None,
+    })
 }

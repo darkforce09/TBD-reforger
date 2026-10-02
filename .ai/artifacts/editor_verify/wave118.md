@@ -3,7 +3,7 @@
 Range: `4e362214` (base, wave 117 closed) → `86921ad4` (HEAD).
 Merges verified: T-637 `4d0fa47b`, T-698 `1e8bf5e6`, T-699 `86921ad4`. Merge topology is clean
 (three single-parent branches off base, no duplicated trees — `4d0fa47b^{tree} == e0fcaec4^{tree}`).
-Verifier ran `cargo test -p website-frontend` at HEAD before and after all perturbations:
+Verifier ran `cargo test -p frontend` at HEAD before and after all perturbations:
 **877 passed / 0 failed** both times; working tree byte-identical to `86921ad4` at close
 (`git status` clean, `git diff HEAD` empty). `map-engine-core` untouched by this range — not re-run
 (pre-existing `dem::peaks` / clippy debt not re-reported per instruction).
@@ -12,7 +12,7 @@ Verifier ran `cargo test -p website-frontend` at HEAD before and after all pertu
 
 ## Findings
 
-### MAJOR | apps/website/frontend/src/eden_tree.rs:323–330 | the `CONTAINER_H` justification is false, and the defect it excused is real
+### MAJOR | apps/frontend/src/eden_tree.rs:323–330 | the `CONTAINER_H` justification is false, and the defect it excused is real
 
 **Evidence.** The shipped comment (eden_tree.rs:324–329) and the slice's argument claim the T-169
 smoke "asserts `rendered < total` at a seeded 80 slots — a check that a tall enough window would
@@ -45,7 +45,7 @@ the scroller from the region and raise/parametrise the smoke's `<= 60` cap in th
 keep the cap and say the true reason (the smoke's rendered cap, not `rendered < total`). The
 comment at eden_tree.rs:324–329 should not survive the next wave as written.
 
-### MINOR | apps/website/frontend/src/arsenal.rs:1100–1110, editor_ops.rs:2083, store.rs:2733 | "counts what the sink actually took" is stronger prose than the code
+### MINOR | apps/frontend/src/arsenal.rs:1100–1110, editor_ops.rs:2083, store.rs:2733 | "counts what the sink actually took" is stronger prose than the code
 
 **Evidence.** `commit_writes` increments `done` once per closure **invocation**, unconditionally.
 The production sink `MissionDocCore::update_slot_loadout` (crates/map-engine-core/src/doc/
@@ -66,7 +66,7 @@ with no test noticing.
 **Disposition.** Latent, documented here so the T-732 batch-write fix returns a real count
 (`update_slot_loadout` → `bool`) instead of inheriting the invocation counter.
 
-### MINOR | apps/website/frontend/src/attributes.rs:374 vs arsenal.rs:1909–1911 | the T-649 honesty banner is now false for three verbs (item 18, rated)
+### MINOR | apps/frontend/src/attributes.rs:374 vs arsenal.rs:1909–1911 | the T-649 honesty banner is now false for three verbs (item 18, rated)
 
 **Evidence.** On a multi-selection the Loadout tab shows the T-649 banner "Loadout edits apply to
 this one entity (id), not to the whole selection" — and, lower in the same panel, three T-699
@@ -98,7 +98,7 @@ remediation off that residue line. The kernel of truth: a future pin that bypass
 and greps raw `include_str!` output IS exposed — the two raw-`include_str!` pins this wave added
 (eden_layout.rs:1147, 1193) are negative-contains with assembled needles, which is the safe shape.
 
-### NIT | apps/website/frontend/src/eden_help.rs:244 | the ControlsHint close button shrank with the shared recipe
+### NIT | apps/frontend/src/eden_help.rs:244 | the ControlsHint close button shrank with the shared recipe
 
 `BTN_ICON`'s `p-1.5 → p-0.5` shrinks the close button's hit box from ~36 px to ~20 px. Behaviour
 intact (it composes `HOVER_FILL` at the call site, so the hover fill and transition the old baked

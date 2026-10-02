@@ -30,7 +30,7 @@ finding.
 
 | measurement | value | how |
 |---|---|---|
-| HEAD frontend `--list` | **1014** | `cargo test -p website-frontend -- --list`, private dir |
+| HEAD frontend `--list` | **1014** | `cargo test -p frontend -- --list`, private dir |
 | HEAD frontend run | **1014 passed / 0 failed** | same private dir; `--list` == run |
 | base (`57f7f970`) frontend `--list` | **1006** | isolated worktree + private dir |
 | Net frontend delta | **+8** | all T-726 pins (cite retarget adds no tests; T-732/T-747 add none on frontend list) |
@@ -62,7 +62,7 @@ finding.
 **Evidence.** Live host path still loops per-id mutators:
 
 ```text
-apps/website/frontend/src/editor_ops.rs:1454–1493
+apps/frontend/src/editor_ops.rs:1454–1493
   rustdoc: "exposes no atomic multi-slot position API, so an N-slot commit is N undo steps"
   body: for id in ids { core.update_slot_position(id, …); }
 ```

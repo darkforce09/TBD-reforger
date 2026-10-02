@@ -1,4 +1,4 @@
-**Status:** archived — see [documentation_v2/website/frontend/apps/editor/ux_spec.md](/documentation/website/frontend/apps/editor/ux_spec.md)
+**Status:** archived — see [documentation_v2/website/frontend/apps/editor/ux_spec.md](/documentation/apps/frontend/apps/editor/ux_spec.md)
 
 # Mission Creator — Eden Editor UX Spec
 **Document:** `ux_spec.md`

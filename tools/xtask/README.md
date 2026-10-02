@@ -12,7 +12,6 @@ timers all run it.
 tools/xtask/
 ├── Cargo.toml                  the `xtask` package: one binary, path dependencies on three tooling crates
 ├── dedicated_server_profiles/  the dedicated-server profile the local mod servers start from
-├── deploy/                     deploy settings template, Caddy site and systemd units for the hosts
 ├── fixtures/                   recorded tool output that the commands' selftests replay
 ├── src/                        the binary: command tree, command groups, verifications, shared core
 └── staging/                    committed load workload and population the staging load receipt runs
@@ -25,8 +24,9 @@ the crate if needed and runs `src/main.rs`. The binary parses the command line w
 (`src/cli/`), finds the checkout by walking up from the working directory to `.ai/tickets/ROOT`,
 and hands the command to its group under `src/commands/`, which does the work, runs checks from
 `src/verifications/`, or calls a library crate. The data folders beside `src/` are what the
-commands read: `deploy/` for the deploys, `dedicated_server_profiles/` for the local game servers,
-`fixtures/` for the MCP selftest; `src/core/repository_layout.rs` names each of them once.
+commands read: `dedicated_server_profiles/` for the local game servers and `fixtures/` for the MCP
+selftest; the deploys read the repository root's `deploy/`. `src/core/repository_layout.rs` names
+each of them once.
 
 The crate owns repository operations and the orchestration of checks. Ticket storage and the wave
 lock belong to `ticket_engine`, process and verdict primitives to `verification_core`, and
@@ -75,9 +75,6 @@ The crate has no features and reads no configuration file of its own. What it re
 
 - The `xtask` binary and its command groups, listed in the
   [command line README](/tools/xtask/src/cli/README.md); the crate has no library target.
-- The files other tools read directly: `deploy/Caddyfile.website`, pinned by
-  `apps/website/api_v2/tests/forwarded_for_trust.rs`, and `deploy/systemd/`, installed on the
-  hosts.
 
 ## Boundaries
 
@@ -92,7 +89,7 @@ The crate has no features and reads no configuration file of its own. What it re
   - the PreToolUse hook in `.claude/settings.json`, which runs the built binary's `ai guard`;
   - the ticketboard in `apps/ticketboard/`, which runs `cargo xtask ticket` commands.
 - Rules:
-  - xtask never depends on `website-map-engine` or `website-graphics-engine`, `developer_tools`
+  - xtask never depends on `map_engine` or `graphics_engine`, `developer_tools`
     never depends on xtask, and `ticket_engine` and `verification_core` depend on no workspace
     crate (`tooling_dependency_direction_is_enforced` and
     `foundational_engines_have_no_workspace_dependencies` in

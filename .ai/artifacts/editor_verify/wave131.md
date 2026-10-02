@@ -16,7 +16,7 @@
 
 | measurement | value | how |
 |---|---|---|
-| HEAD `--list` | **971** | `cargo test -p website-frontend -- --list`, private dir |
+| HEAD `--list` | **971** | `cargo test -p frontend -- --list`, private dir |
 | HEAD run | **971 passed / 0 failed** | same private dir; `--list` == run |
 | base (`10124eed`) `--list` | **967** | isolated worktree + private dir |
 | New frontend pins this wave | **4** | all T-746 (`a_get_that_races…`, `shape_mirror_wires…`, `t746_row_id_predicate…`, `t746_row_hydrate…`) |
@@ -28,7 +28,7 @@
 
 ## FINDINGS (Evidence → Impact → Disposition; NO-DEFERRAL)
 
-### F1 — MAJOR | `apps/website/frontend/src/world_assets/mod.rs:139` + `:156` — **T-762 RENDER_CTX / LabelHost bodies are unpinned (hollow Class-R)**
+### F1 — MAJOR | `apps/frontend/src/world_assets/mod.rs:139` + `:156` — **T-762 RENDER_CTX / LabelHost bodies are unpinned (hollow Class-R)**
 
 **Evidence.**  
 (a) Live code: `world_assets::fly_to` runs `RENDER_CTX` → `set_view` → `on_camera_changed` → `flush_viewport` (`mod.rs:139-149`). `named_locations` reads `mh.labels.towns()` (`mod.rs:156-162`). Dock forwards to those seams (`eden_dock_left.rs:1230`, `:1240`).  
@@ -42,7 +42,7 @@
 
 ---
 
-### F2 — MAJOR | `apps/website/frontend/src/mission_commands.rs:1582` (`t746_row_hydrate_keeps_game_mode_beside_meta`) — **ROW_HYDRATE `game_mode` fill is a hollow source pin**
+### F2 — MAJOR | `apps/frontend/src/mission_commands.rs:1582` (`t746_row_hydrate_keeps_game_mode_beside_meta`) — **ROW_HYDRATE `game_mode` fill is a hollow source pin**
 
 **Evidence.**  
 (a) Production `set_row_meta` does fill `HydratedRow { game_mode: detail.game_mode.clone(), … }` into `ROW_HYDRATE` (`mission_commands.rs:529-536`).  

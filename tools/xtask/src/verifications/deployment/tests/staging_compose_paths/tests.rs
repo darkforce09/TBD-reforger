@@ -50,20 +50,20 @@ impl Tree {
 
 /// A compose helper shaped like the website deploy's, comments included — the comments are the
 /// point: they name the good path, so a gate grepping the raw file would pass on them alone.
-const GOOD_WEBSITE_SOURCE: &str = r##"/// Every step runs docker compose -f apps/website/docker-compose.staging.yml.
+const GOOD_WEBSITE_SOURCE: &str = r##"/// Every step runs docker compose -f deploy/compose.staging.yml.
 fn compose_session(remote_dir: &str) -> String {
-    // podman compose -f apps/website/docker-compose.staging.yml when the host has no docker
+    // podman compose -f deploy/compose.staging.yml when the host has no docker
     format!(
         "cd '{remote_dir}' && staging_compose() {{ if command -v docker >/dev/null 2>&1; then \
-         docker compose -f apps/website/docker-compose.staging.yml \"$@\"; else \
-         podman compose -f apps/website/docker-compose.staging.yml \"$@\"; fi; }}"
+         docker compose -f deploy/compose.staging.yml \"$@\"; else \
+         podman compose -f deploy/compose.staging.yml \"$@\"; fi; }}"
     )
 }
 "##;
 
 /// A game server pipeline shaped like the real one: it mentions compose only in a comment, and
 /// only in the comment may it.
-const GOOD_STAGING_SOURCE: &str = r##"// The website deploy runs docker compose -f apps/website/docker-compose.staging.yml.
+const GOOD_STAGING_SOURCE: &str = r##"// The website deploy runs docker compose -f deploy/compose.staging.yml.
 println!("==> website API ({health_url} on the host)");
 "##;
 
@@ -106,9 +106,17 @@ fn the_live_deploy_sources_hold() {
     assert_eq!(verify_staging_compose_paths(root).unwrap(), 0);
 }
 
+/// The development stack beside the staging file.
+const DEVELOPMENT_COMPOSE: &str = "deploy/compose.dev.yml";
+
 #[test]
 fn a_correct_tree_holds() {
     assert_eq!(Tree::good("ok").text(), "");
+    // The development stack belongs in the compose folder too; only naming it on a staging line
+    // is wrong.
+    let with_development = Tree::good("ok-development");
+    with_development.write(DEVELOPMENT_COMPOSE, "services: {}\n");
+    assert_eq!(with_development.text(), "");
     assert_eq!(
         verify_staging_compose_paths(&Tree::good("ok2").0).unwrap(),
         0
@@ -123,25 +131,48 @@ fn every_website_source_perturbation_bites() {
         "relative",
         WEBSITE_DEPLOY_SOURCE,
         &GOOD_WEBSITE_SOURCE.replace(GOOD_PATH, "docker-compose.staging.yml"),
-        &[
-            "FAIL: compose -f path must be apps/website/docker-compose.staging.yml \
-             (got: docker-compose.staging.yml)",
-        ],
+        &["FAIL: compose -f path must be deploy/compose.staging.yml \
+             (got: docker-compose.staging.yml)"],
     );
-    // One provider's line regresses to the API folder's file while the other stays clean. Both
-    // messages must fire — wrong path and the reference itself.
+    // One provider's line regresses to the development stack beside the staging file while the
+    // other stays clean. Both messages must fire — wrong path and the reference itself.
     let podman = format!("podman compose -f {GOOD_PATH}");
     bites(
-        "api-folder",
+        "development-stack",
         WEBSITE_DEPLOY_SOURCE,
-        &GOOD_WEBSITE_SOURCE.replace(&podman, &podman.replace(GOOD_PATH, BAD_PATH)),
+        &GOOD_WEBSITE_SOURCE.replace(&podman, &podman.replace(GOOD_PATH, DEVELOPMENT_COMPOSE)),
         &[
-            "FAIL: compose -f path must be apps/website/docker-compose.staging.yml \
-                 (got: apps/website/api_v2/docker-compose.staging.yml)",
-            "FAIL: compose line still references \
-                 apps/website/api_v2/docker-compose.staging.yml",
+            "FAIL: compose -f path must be deploy/compose.staging.yml \
+                 (got: deploy/compose.dev.yml)",
+            "FAIL: compose line names deploy/compose.dev.yml, which is not \
+                 deploy/compose.staging.yml:\n      podman compose -f deploy/compose.dev.yml",
         ],
     );
+    // The right first `-f`, then an overlay or an env file from outside the compose folder: the
+    // `-f` pin holds, the name ban does not.
+    let docker = format!("docker compose -f {GOOD_PATH}");
+    for (name, extra, wrong) in [
+        (
+            "overlay-outside",
+            " -f apps/api/docker-compose.staging.yml",
+            "apps/api/docker-compose.staging.yml",
+        ),
+        ("overlay-root", " -f 'compose.yml'", "compose.yml"),
+        (
+            "env-file-development",
+            " --env-file=deploy/compose.dev.yml",
+            "deploy/compose.dev.yml",
+        ),
+    ] {
+        bites(
+            name,
+            WEBSITE_DEPLOY_SOURCE,
+            &GOOD_WEBSITE_SOURCE.replace(&docker, &format!("{docker}{extra}")),
+            &[&format!(
+                "FAIL: compose line names {wrong}, which is not deploy/compose.staging.yml:"
+            )],
+        );
+    }
     // The false-green this gate exists for: the good path present ONLY in `#` and `//` comments.
     bites(
         "comment-only",
@@ -167,26 +198,21 @@ fn every_website_source_perturbation_bites() {
     );
 }
 
-/// The `cd` into the API folder, under every quoting the Rust source can spell it with.
+/// The `cd` into the compose folder, under every quoting the Rust source can spell it with.
 #[test]
-fn a_cd_into_the_api_folder_bites_under_every_quoting() {
+fn a_cd_into_the_compose_folder_bites_under_every_quoting() {
     let message = format!(
-        "FAIL: {} cds into apps/website/api_v2 (compose runs from the checkout root)",
+        "FAIL: {} cds into deploy (compose runs from the checkout root)",
         source_basename(WEBSITE_DEPLOY_SOURCE)
     );
     for (name, line) in [
-        (
-            "cd-sq",
-            "let c = \"cd '{remote_dir}/apps/website/api_v2' && true\";",
-        ),
+        ("cd-sq", "let c = \"cd '{remote_dir}/deploy' && true\";"),
         (
             "cd-dq",
-            "let c = \"cd \\\"{remote_dir}/apps/website/api_v2\\\" && true\";",
+            "let c = \"cd \\\"{remote_dir}/deploy\\\" && true\";",
         ),
-        (
-            "cd-bare",
-            "let c = \"cd $TBD_REMOTE_DIR/apps/website/api_v2 && true\";",
-        ),
+        ("cd-bare", "let c = \"cd $TBD_REMOTE_DIR/deploy && true\";"),
+        ("cd-relative", "let c = \"cd deploy/systemd && true\";"),
     ] {
         bites(
             name,
@@ -195,15 +221,22 @@ fn a_cd_into_the_api_folder_bites_under_every_quoting() {
             &[&message],
         );
     }
-    // A path that only passes through the folder's name is not a cd into it.
-    let t = Tree::good("cd-elsewhere");
-    t.write(
-        WEBSITE_DEPLOY_SOURCE,
-        &format!(
-            "{GOOD_WEBSITE_SOURCE}let c = \"cd '{{remote_dir}}/apps/website/frontend' && true\";\n"
+    // Another folder of the checkout, and a path that only passes through a folder of the same
+    // name, are not a cd into the compose folder.
+    for (name, line) in [
+        (
+            "cd-elsewhere",
+            "let c = \"cd '{remote_dir}/apps/frontend' && true\";",
         ),
-    );
-    assert_eq!(t.text(), "");
+        ("cd-home", "let c = \"cd /home/deploy/tbd/repo && true\";"),
+    ] {
+        let t = Tree::good(name);
+        t.write(
+            WEBSITE_DEPLOY_SOURCE,
+            &format!("{GOOD_WEBSITE_SOURCE}{line}\n"),
+        );
+        assert_eq!(t.text(), "", "[{name}]");
+    }
 }
 
 /// The game server deploy may name compose in a comment and nowhere else, under either provider
@@ -217,7 +250,7 @@ fn a_compose_command_in_the_game_server_deploy_bites() {
     for (name, line) in [
         (
             "staging-docker",
-            "&[format!(\"cd '{}' && docker compose -f apps/website/docker-compose.staging.yml up -d\", dir)],",
+            "&[format!(\"cd '{}' && docker compose -f deploy/compose.staging.yml up -d\", dir)],",
         ),
         ("staging-podman-hyphen", "let c = \"podman-compose up -d\";"),
     ] {
@@ -230,12 +263,25 @@ fn a_compose_command_in_the_game_server_deploy_bites() {
     }
 }
 
+/// Every compose file a line names besides the staging one, as whole words under any quoting;
+/// the staging file itself, other YAML and a longer word that merely contains it are not.
+#[test]
+fn every_other_compose_file_on_a_line_is_named_whole() {
+    let line = "docker compose -f deploy/compose.staging.yml -f \\\"deploy/compose.dev.yml\\\" \
+                --env-file='../compose.yaml' cat x/docker-compose.yml.bak deploy/caddy.yml \
+                deploy/compose.staging.yml";
+    assert_eq!(
+        wrong_compose_files(line).unwrap(),
+        vec!["deploy/compose.dev.yml", "../compose.yaml"]
+    );
+}
+
 /// The compose file's own name is not a compose command, and neither is the helper the website
 /// deploy calls its steps through.
 #[test]
 fn the_compose_recognizer_takes_commands_and_not_file_names() {
     let text = "docker compose -f a.yml\npodman compose up\ndocker-compose up\npodman-compose\n\
-                cat apps/website/docker-compose.staging.yml\nstaging_compose up -d caddy\n";
+                cat deploy/compose.staging.yml\nstaging_compose up -d caddy\n";
     assert_eq!(
         compose_lines(text).unwrap(),
         vec![
@@ -247,8 +293,9 @@ fn the_compose_recognizer_takes_commands_and_not_file_names() {
     );
 }
 
-/// The on-disk pair: the compose file moved away (`-f`), and a second one restored beside the
-/// API (`-e`). Neither uses [`bites`] — one needs a tree that is deliberately not good.
+/// The on-disk checks: the compose file moved away, and a compose file — or a folder or a dangling
+/// symlink of that name — in the checkout root. Neither uses [`bites`] — one needs a tree that is
+/// deliberately not good.
 #[test]
 fn the_on_disk_compose_pair_bites() {
     let gone = Tree::new("no-compose");
@@ -257,11 +304,34 @@ fn the_on_disk_compose_pair_bites() {
     assert_eq!(gone.text(), format!("FAIL: missing {GOOD_PATH}\n"));
     assert_eq!(verify_staging_compose_paths(&gone.0).unwrap(), 1);
 
-    let second = Tree::good("second");
-    second.write(BAD_PATH, "services: {}\n");
-    assert_eq!(
-        second.text(),
-        format!("FAIL: unexpected {BAD_PATH}: the staging compose file is {GOOD_PATH} alone\n")
+    for (name, root_entry) in [
+        ("root-file", "compose.yml"),
+        ("root-docker-file", "docker-compose.staging.yaml"),
+        ("root-folder", "compose.staging.yml/"),
+    ] {
+        let second = Tree::good(name);
+        if let Some(folder) = root_entry.strip_suffix('/') {
+            std::fs::create_dir_all(second.0.join(folder)).unwrap();
+        } else {
+            second.write(root_entry, "services: {}\n");
+        }
+        let entry = root_entry.trim_end_matches('/');
+        assert_eq!(
+            second.text(),
+            format!(
+                "FAIL: unexpected {entry} in the checkout root: compose runs there, and the \
+                 staging compose file is {GOOD_PATH} alone\n"
+            ),
+            "[{name}]"
+        );
+        assert_eq!(verify_staging_compose_paths(&second.0).unwrap(), 1);
+    }
+    let dangling = Tree::good("root-dangling-symlink");
+    std::os::unix::fs::symlink("nowhere/compose.yml", dangling.0.join("compose.yml")).unwrap();
+    assert!(
+        dangling
+            .text()
+            .contains("FAIL: unexpected compose.yml in the checkout root")
     );
 }
 

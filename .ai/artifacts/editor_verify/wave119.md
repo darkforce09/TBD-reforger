@@ -1,7 +1,7 @@
 # Wave 119 — adversarial verification (editor factory, LAST wave)
 
 Range: `6dfe4ade` → `63b3bb4f` (T-697 `dc3acbf6`, T-700 `9484d5ce`, T-703 `63b3bb4f`).
-Suite on merged HEAD: **905 passed / 0 failed** (`cargo test -p website-frontend` via xtask, exit 0).
+Suite on merged HEAD: **905 passed / 0 failed** (`cargo test -p frontend` via xtask, exit 0).
 Nothing was fixed, committed, or filed. `main` is exactly as found.
 
 ---

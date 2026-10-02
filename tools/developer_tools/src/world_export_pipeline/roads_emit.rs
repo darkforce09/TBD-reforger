@@ -26,7 +26,7 @@
 //!
 //! `road_class` is a byte on the wire. The table is
 //! `road_class_code` /
-//! `road_class_name` in `website-map-engine` — *one*
+//! `road_class_name` in `map_engine` — *one*
 //! table, linked by both the writer here and the reader in `world::roads`, so they cannot drift
 //! into disagreeing about what a byte means. A class the table cannot code is a hard error here
 //! and a hard error there; neither side invents a fallback.
@@ -35,15 +35,15 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 
-use website_map_engine::io::archives::codec::access_checked;
-use website_map_engine::io::archives::codec::to_bytes;
-use website_map_engine::io::archives::roads::RoadNetworkArchive;
-use website_map_engine::io::archives::roads::RoadSegmentArchive;
-use website_map_engine::io::archives::version::ARCHIVE_SCHEMA_VERSION;
-use website_map_engine::streaming::loaders::store::bytes_to_json;
-use website_map_engine::world::environment::locations::route_placement::road_class_code;
-use website_map_engine::world::terrain::roads::network::RoadSegment;
-use website_map_engine::world::terrain::roads::network::parse_roads_payload;
+use map_engine::io::archives::codec::access_checked;
+use map_engine::io::archives::codec::to_bytes;
+use map_engine::io::archives::roads::RoadNetworkArchive;
+use map_engine::io::archives::roads::RoadSegmentArchive;
+use map_engine::io::archives::version::ARCHIVE_SCHEMA_VERSION;
+use map_engine::streaming::loaders::store::bytes_to_json;
+use map_engine::world::environment::locations::route_placement::road_class_code;
+use map_engine::world::terrain::roads::network::RoadSegment;
+use map_engine::world::terrain::roads::network::parse_roads_payload;
 
 use crate::browser_testing::server::repo_root;
 use crate::repository_layout::terrain_dir;
@@ -52,7 +52,7 @@ use crate::repository_layout::terrain_dir;
 pub const ROADS_GZ: &str = "objects/roads.json.gz";
 
 /// The rkyv road network, relative to a terrain directory. Matches the manifest's
-/// `objects.binary.roads` path (`website_map_engine::world::ObjectsBinaryBlock`), which the manifest
+/// `objects.binary.roads` path (`map_engine::world::ObjectsBinaryBlock`), which the manifest
 /// will point the SPA at.
 pub const ROAD_NETWORK_RKYV: &str = "roads/road_network.rkyv";
 

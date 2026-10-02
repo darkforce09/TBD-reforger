@@ -52,7 +52,7 @@ request, so nothing blocks the stage machine.
   `TBD_MatchEventRecorder` and `TBD_MatchTelemetryTally` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/MatchEvents/`. Over HTTP,
   through the telemetry queue, the match registration and results of
-  `apps/website/api_v2/src/match_telemetry/`.
+  `apps/api/src/match_telemetry/`.
 - Used by: `TBD_MissionLoader` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`
   (`Arm`).
 - Rules: every `arma_id` comes from `TBD_PlayerIdentity.GetArmaId`; `outcome` is always a member of
@@ -66,7 +66,7 @@ request, so nothing blocks the stage machine.
 - [Platform bridge](/apps/mod/tbd-framework/Scripts/Game/TBD/API/README.md) — the machine-credential tier every report uses
 - [Match telemetry transport](/apps/mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry/README.md) — the durable queue
   and its delivery
-- [Match telemetry design](/documentation/website/api_v2/verification_evidence/telemetry.md) — registration,
+- [Match telemetry design](/documentation/apps/api/verification_evidence/telemetry.md) — registration,
   results revisions and the queue
-- [Match telemetry domain](/apps/website/api_v2/src/match_telemetry/README.md) — how match results
+- [Match telemetry domain](/apps/api/src/match_telemetry/README.md) — how match results
   are taken in

@@ -51,12 +51,19 @@ Two views of the ticket files serve two kinds of command:
 - Timestamps everywhere are RFC 3339 in UTC, written with `Z` or `+00:00` and an upper-case `T`
   (`timestamp.rs`); a malformed stamp is a load error, never replaced with the current time.
 - `repository.rs` is one of the three modules allowed to spell a repository path; its
-  `documentation` submodule holds every document the crate names (`TREE_DIR`, `SPECS_DIR`,
-  `PLANS_DIR`, `PLAN_TEMPLATE`, `ROADMAP`, `GAP_ANALYSIS`, `TOKEN_ESTIMATE_FACTOR_DOC`, the scan
-  roots and exemptions, `ARCHIVED_WAVE_PLANS`, `RETIRED_QUEUE_VIEW_PREFIX`), and
-  `SPARSE_CHECKOUT_SETS` names the folders a sparse checkout needs per ticket target (`website`,
-  `mod`, `shared`, `root`). `find_repo_root` walks up from the working directory to the folder
-  that holds `.ai/tickets/ROOT`.
+  `documentation` submodule holds every document the crate names (`TREE_DIR`, the documentation
+  mirrors `APPS_DOCUMENTATION_DIR`, `LEGACY_DOCUMENTATION_DIR` and `MOD_DOCUMENTATION_DIR`,
+  `SPECS_DIR`, `PLANS_DIR`, `PLAN_TEMPLATE`, `ROADMAP`, `GAP_ANALYSIS`,
+  `TOKEN_ESTIMATE_FACTOR_DOC`, the scan roots and exemptions, `ARCHIVED_WAVE_PLANS`,
+  `RETIRED_QUEUE_VIEW_PREFIX`), and `SPARSE_CHECKOUT_SETS` names the folders a sparse checkout
+  needs per ticket target (`website`, `mod`, `shared`, `root`): a `website` slice gets the three
+  website applications, `legacy/`, `crates/`, `deploy/`, every `contracts/` file those crates
+  compile in through `include_str!` or `include_bytes!` (`contracts/definitions/`, the API golden
+  responses, the ballistics, mission and registry fixtures, the ballistics catalog, the equipment
+  matching rules and `contracts/rules/kit-aliases.json`; a test derives the inputs from the crates'
+  sources and fails on one the set lacks) and the `apps/` and `legacy/` documentation mirrors.
+  `find_repo_root` walks up from the working directory to the folder that holds
+  `.ai/tickets/ROOT`.
 
 ## Public surface
 

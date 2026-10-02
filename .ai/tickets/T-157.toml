@@ -37,10 +37,10 @@ acceptance = [
 ]
 created_at = "2026-09-05T03:30:00Z"
 owns = [
-    "apps/website/frontend/src/editor/library/create_dialog.rs",
-    "apps/website/frontend/src/editor/library/mission_library.rs",
-    "apps/website/frontend/src/editor/library/map_picker.rs",
-    "apps/website/frontend/src/editor/library/mod.rs",
+    "apps/frontend/src/editor/library/create_dialog.rs",
+    "apps/frontend/src/editor/library/mission_library.rs",
+    "apps/frontend/src/editor/library/map_picker.rs",
+    "apps/frontend/src/editor/library/mod.rs",
 ]
 
 [scope]

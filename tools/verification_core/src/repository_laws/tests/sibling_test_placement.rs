@@ -78,21 +78,21 @@ fn attributes_parse_as_cfg_predicates() {
 fn the_scan_reads_production_files_and_skips_the_sibling_test_files() {
     let checkout = TemporaryCheckout::with_law_roots("placement");
     let inline = "//! Header.\n#[cfg(test)]\nmod tests {}\n";
-    checkout.write("apps/website/api_v2/src/core/clock.rs", inline);
-    checkout.write("apps/website/api_v2/src/core/tests/clock.rs", inline);
+    checkout.write("apps/api/src/core/clock.rs", inline);
+    checkout.write("apps/api/src/core/tests/clock.rs", inline);
     checkout.write("tools/xtask/src/clock_tests.rs", inline);
     let scan = scan_inline_test_modules(checkout.root()).unwrap();
     assert_eq!(
         scan.findings,
         [InlineTestModule {
-            path: "apps/website/api_v2/src/core/clock.rs".into(),
+            path: "apps/api/src/core/clock.rs".into(),
             line_no: 3,
             module: "tests".into(),
         }]
     );
     assert_eq!(
         scan.findings[0].rendered(),
-        "apps/website/api_v2/src/core/clock.rs:3: inline test module `tests` — move its body to \
+        "apps/api/src/core/clock.rs:3: inline test module `tests` — move its body to \
          a sibling tests/ file"
     );
     assert!(scan.production_files > 0);

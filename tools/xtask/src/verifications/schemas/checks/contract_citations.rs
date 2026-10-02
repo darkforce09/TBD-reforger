@@ -27,16 +27,41 @@ pub(super) fn pointer_resolves(doc: &Value, pointer: &str) -> bool {
     true
 }
 
-/// The gate's own scope, rendered from the constants above so the printed claim cannot drift
-/// from what the walker actually reads (a hardcoded summary sentence
+/// The gate's own scope, rendered from [`CODE_EXTS`] and the roots the scan walked, so the printed
+/// claim cannot drift from what the walker actually reads (a hardcoded summary sentence
 /// outlived its configuration by two full-codebase rewrites).
-pub(super) fn citation_scope() -> String {
+pub(super) fn citation_scope(roots: &[String]) -> String {
     let exts: Vec<String> = CODE_EXTS.iter().map(|e| format!(".{e}")).collect();
-    let roots: Vec<String> = SCAN_ROOTS.iter().map(|r| format!("{r}/")).collect();
+    let roots: Vec<String> = roots.iter().map(|r| format!("{r}/")).collect();
     format!("{} under {}", exts.join("/"), roots.join(", "))
 }
 
-/// Walk `root`'s [`SCAN_ROOTS`] for `@contract` tags and resolve each against `schema_dir`.
+/// The folders the scan walks under `root`, sorted: the top-level folder of every workspace
+/// member and of every [`NON_WORKSPACE_CODE_ROOTS`] entry.
+///
+/// Derived from the root manifest rather than listed, so a member in a new top-level folder is
+/// scanned from the moment the workspace names it. A workspace that cannot be read (no root
+/// manifest, no `[workspace]` table, a member folder or manifest missing) is an error naming the
+/// manifest, never a smaller set of roots.
+pub(super) fn scan_roots(root: &Path) -> Result<Vec<String>, String> {
+    let manifest = root.join("Cargo.toml");
+    let members = read_workspace_members(root).map_err(|why| {
+        format!(
+            "the workspace members cannot be read from {} ({why:?}) — the scan roots are derived \
+             from them, so the gate cannot say which trees to read",
+            manifest.display()
+        )
+    })?;
+    let roots: BTreeSet<String> = members
+        .iter()
+        .map(|member| member.path.as_str())
+        .chain(NON_WORKSPACE_CODE_ROOTS)
+        .map(|path| path.split('/').next().unwrap_or(path).to_string())
+        .collect();
+    Ok(roots.into_iter().collect())
+}
+
+/// Walk `root`'s [`scan_roots`] for `@contract` tags and resolve each against `schema_dir`.
 ///
 /// Split out of [`citations`] so the scope contract — which extensions, which roots,
 /// and what counts as "no verdict" — is testable against a fixture tree rather than only
@@ -53,7 +78,19 @@ pub(super) fn scan_citations(root: &Path, schema_dir: &Path) -> Result<CitationS
     let mut problems: Vec<String> = Vec::new();
     let mut scope_errors: Vec<String> = Vec::new();
 
-    for scan in SCAN_ROOTS {
+    let roots = scan_roots(root).unwrap_or_else(|why| {
+        scope_errors.push(why);
+        Vec::new()
+    });
+    for code_root in NON_WORKSPACE_CODE_ROOTS {
+        if !root.join(code_root).is_dir() {
+            scope_errors.push(format!(
+                "scan root {code_root}/ does not exist under {} — the gate cannot vouch for a tree it never read",
+                root.display()
+            ));
+        }
+    }
+    for scan in &roots {
         let base = root.join(scan);
         if !base.exists() {
             // This used to `continue` in silence, so renaming a scan root would have
@@ -130,6 +167,7 @@ pub(super) fn scan_citations(root: &Path, schema_dir: &Path) -> Result<CitationS
     }
 
     Ok(CitationScan {
+        roots,
         citations,
         files_read,
         per_ext,
@@ -142,6 +180,7 @@ pub fn citations() -> Result<u8> {
     let root = repo_root()?;
     let schema_dir = contract_definitions_dir(&root);
     let CitationScan {
+        roots,
         citations,
         files_read,
         per_ext,
@@ -151,7 +190,7 @@ pub fn citations() -> Result<u8> {
 
     // The summary states its own scope. The old two lines ("Checked N …" +
     // "All @contract citations resolve.") were a broad claim over a narrow scan: true count,
-    // false confidence. Every clause below is generated from CODE_EXTS / SCAN_ROOTS.
+    // false confidence. Every clause below is generated from CODE_EXTS and the derived roots.
     let breakdown = per_ext
         .iter()
         .map(|(e, n)| format!("{e}={n}"))
@@ -159,7 +198,7 @@ pub fn citations() -> Result<u8> {
         .join(" ");
     println!(
         "Checked {citations} @contract citation(s) in {files_read} file(s) — scope: {}.",
-        citation_scope()
+        citation_scope(&roots)
     );
     println!("  by extension: {breakdown}");
     println!(

@@ -15,20 +15,25 @@ tools/xtask/src/commands/platform/wave_execution/changed/
 ## How it works
 
 `tools/xtask/src/commands/platform/wave_execution/changed.rs` holds `DEFAULT_BASE`
-(`main...HEAD`) and `FRONTEND_DIR` (`apps/website/frontend`) and re-exports both files.
+(`main...HEAD`) and `FRONTEND_DIR` (`apps/frontend`) and re-exports both files.
 
 - `changed_rs(base)` is the union of the committed diff against the base and the working tree's
   changes. A listed path may be a deletion, so each caller decides what absence means.
 - `fmt_changed` runs `rustfmt --check` on each changed file that exists, with the edition of the
-  crate that owns it; a range of deletions only is a named skip.
-- `wasm_scope_prefixes` walks the frontend crate's path dependencies (today the map engine and the
-  graphics engine) instead of a fixed list. `wasm_changed` runs `cargo check` for
+  crate that owns it (read up to the root manifest when the crate inherits it); a range of
+  deletions only is a named skip.
+- `wasm_scope_prefixes` walks the frontend crate's dependency edges, `path` ones and
+  `workspace = true` ones that name a workspace member (today the map engine, the graphics engine
+  and the `crates/` members the frontend depends on), instead of a fixed list. `wasm_changed` runs `cargo check` for
   `wasm32-unknown-unknown` when the range touches that scope, and prints a skip otherwise.
   `frontend_tests_changed` also counts the scope's `include_str!` inputs, and runs the frontend
   tests into a per-slice private target folder.
-- `include_consumer_package_dirs` finds the crates that `include!` a changed fragment.
-  `compiled_include_input_paths` lists the JSON, WGSL and SQL files that `include_str!` and
-  `include_bytes!` pull in, so touching them invalidates the owning crate.
+- `workspace_members` reads the root manifest's members through `verification_core`, globs such as
+  `crates/*/*` expanded and `exclude` entries removed; an unreadable workspace is an error.
+- `include_consumer_package_dirs` finds the workspace crates that `include!` a changed fragment
+  with no package of its own. `compiled_include_input_paths` lists the JSON, WGSL and SQL files
+  that `include_str!` and `include_bytes!` pull in, and every file under a folder prefix a macro
+  completes per call site (the golden responses), so touching them invalidates the owning crate.
 
 The slice gate passes no base and gets `main...HEAD`, the slice's own diff inside its worktree.
 The wave gate passes `<base>..HEAD` from `super::base`, because `main...HEAD` is empty on merged
@@ -36,12 +41,14 @@ The wave gate passes `<base>..HEAD` from `super::base`, because `main...HEAD` is
 
 ## Boundaries
 
-- Depends on: `super::host` (host runs), `super::ledger`, the workspace and crate `Cargo.toml`
-  manifests, `git`, `cargo` and `rustfmt`.
+- Depends on: `super::host` (host runs), `super::ledger`, the manifest and workspace member readers
+  of `verification_core::repository_laws`, the workspace and crate `Cargo.toml` manifests, `git`,
+  `cargo` and `rustfmt`.
 - Used by: `super::gate` (both gate drivers) and `super::touch` (`touch_changed`,
   `touch_workspace`).
-- Rules: the wasm scope is derived, never hard-coded, and an unreadable crate widens the check
-  instead of skipping it; the frontend scope holds the frontend's include inputs and not the
+- Rules: the wasm scope is derived, never hard-coded, and always holds the frontend itself; a
+  manifest that cannot be read adds nothing to it, and the gate's `cargo check` step fails on
+  such a workspace first; the frontend scope holds the frontend's include inputs and not the
   API's (`the_frontends_include_str_inputs_are_in_scope_and_the_apis_are_not`); the tests are in
   `tools/xtask/src/commands/platform/wave_execution/tests/changed/tests.rs`.
 

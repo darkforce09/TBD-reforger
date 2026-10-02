@@ -16,7 +16,7 @@
 //!   private --dist only                     15/15 clean. The ticket records this as a disproven
 //!                                           dead end; it did not reproduce here. Do not read that
 //!                                           as safe — $CARGO_TARGET_DIR/wasm-opt/<profile>/
-//!                                           website-frontend_bg.wasm is still one path two writers
+//!                                           frontend_bg.wasm is still one path two writers
 //!                                           share, and the adversarial verifier lost a build there.
 //!                                           A window that is merely narrow is the exact thing that
 //!                                           costs an unattended agent its retry budget.
@@ -60,7 +60,7 @@ use super::{Ctx, host};
 use crate::{wprint, wprintln};
 
 pub fn gate_trunk_build(ctx: &Ctx) -> i32 {
-    let fdir = ctx.root.join("apps/website/frontend");
+    let fdir = ctx.root.join("apps/frontend");
     // Refuse to build UN-ISOLATED rather than race. Once either private path is collapsed onto a
     // shared one, every trunk failure past this line is an environment race wearing a compile
     // error's clothes, and the agent reading it has no way to tell.
@@ -68,7 +68,7 @@ pub fn gate_trunk_build(ctx: &Ctx) -> i32 {
     // TWO CORRECTIONS, both measured 2026-07-26:
     //   * The dist this guard must protect is the one `trunk serve` OWNS, which is MAIN's — but
     //     $ROOT inside a worktree is the WORKTREE, so the old compare checked
-    //     .ai/artifacts/worktrees/T-nnn/apps/website/frontend/dist and never looked at the path the
+    //     .ai/artifacts/worktrees/T-nnn/apps/frontend/dist and never looked at the path the
     //     dev server actually writes. Check both: main's (the collision that matters) and this
     //     tree's (still not somewhere a gate should be writing).
     //   * Both compares were plain strings, so a symlink or a `./` spelling of the same directory
@@ -82,7 +82,7 @@ pub fn gate_trunk_build(ctx: &Ctx) -> i32 {
     let c_shared = canon(&ctx.cargo_target_dir);
     let c_serve = canon(
         &ctx.main_root
-            .join("apps/website/frontend/dist")
+            .join("apps/frontend/dist")
             .display()
             .to_string(),
     );

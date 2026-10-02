@@ -47,7 +47,7 @@ remembered is dropped.
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry/Reports/`; `TBD_GameRuntimeHttp` and
   `TBD_GameRuntimeAnswer` in `apps/mod/tbd-framework/Scripts/Game/TBD/API/Http/`; `TBD_Authority`
   and `TBD_Log` in `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`. Over HTTP, the ingest routes of
-  `apps/website/api_v2/src/match_telemetry/`.
+  `apps/api/src/match_telemetry/`.
 - Used by: `TBD_RuntimeHeartbeat` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/Heartbeat/`.
 - Rules: answers are read by status and `details.code`, never by message text; the body and the
@@ -58,5 +58,5 @@ remembered is dropped.
 
 - [Telemetry queue](/apps/mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry/Queue/README.md) — what is sent
   and how entries are dropped
-- [Match telemetry design](/documentation/website/api_v2/verification_evidence/telemetry.md) — the answer
+- [Match telemetry design](/documentation/apps/api/verification_evidence/telemetry.md) — the answer
   table this delivery applies

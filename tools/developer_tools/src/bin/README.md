@@ -37,7 +37,7 @@ map.rs      ──▶ map_raster_pipeline::cli::entrypoint
 acknowledgement_dropping_relay.rs ──▶ staging_verification::acknowledgement_relay::entrypoint
 ```
 
-Default paths such as `apps/website/frontend/dist` and `.ai/artifacts/enf-index` are relative to the
+Default paths such as `apps/frontend/dist` and `.ai/artifacts/enf-index` are relative to the
 working directory, so the commands run from the repository root.
 
 ## Commands

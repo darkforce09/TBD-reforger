@@ -69,8 +69,8 @@ folder's README.
 - Depends on: `tools/developer_tools/src/blueprint/voxel_processing/` (`Params`, `VoxelDump`,
   `VerticalScan`, `PlanGrid`), the face pairing in
   `tools/developer_tools/src/blueprint/bvh/instance_pairs.rs`, and
-  `website_map_engine::world::architecture::blueprint` (`FloorPolygon`, `RoofGrid`) and
-  `website_map_engine::spatial::bvh::surface::SurfaceKind`.
+  `map_engine::world::architecture::blueprint` (`FloorPolygon`, `RoofGrid`) and
+  `map_engine::spatial::bvh::surface::SurfaceKind`.
 - Used by: the blueprint root (`run`, `interpret_one`, `build_bands`); the blueprint assembly in
   `tools/developer_tools/src/blueprint/archive_emission/` (walls, roof, `r2`) and its prefab
   library (`hull_triangles`); the COLL reader in

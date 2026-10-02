@@ -22,7 +22,7 @@ parent = "T-935"
 main_goal = "A chunking slice can be judged, because both of its acceptance instruments actually read something."
 context = [
     "T-938.2's counter lives only in world_assets/world_host.rs: CrossingAllocProbe:58-108, chunk_alloc_log_enabled:867-879, publish_crossing_probe:881-921.",
-    'world_assets/mod.rs:4 is #![cfg(target_arch = "wasm32")], so cargo test -p website-frontend never compiles it, and the file has no wasm_bindgen_test.',
+    'world_assets/mod.rs:4 is #![cfg(target_arch = "wasm32")], so cargo test -p frontend never compiles it, and the file has no wasm_bindgen_test.',
     "The only harness that can drive it is smokes.rs PERF_PROBE:3710-3800, which never reads window.__t9382 — the only non-doc t9382 references are the seven lines in world_host.rs.",
     "smokes.rs:3777 counts fetches matching the literal '/objects/chunks/', so it reads vacuously zero once chunk URLs stop existing.",
     "build.rs:176-186 refuses without packages/map-assets/everon/staging/export/raw-entities.jsonl; .gitignore:18 keeps staging out of git and the file is 358 MB.",

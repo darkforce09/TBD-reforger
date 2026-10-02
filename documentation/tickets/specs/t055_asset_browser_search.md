@@ -4,7 +4,7 @@
 
 **Status:** shipped (T-055)  
 **Git tag on ship:** T-055  
-**Authority:** [MC ROADMAP](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md) · [eden/gap_analysis.md](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) (`RIGHT-SEARCH-001`) · [feature_inventory.md](/documentation/website/frontend/apps/editor/feature_inventory/README.md) RIGHT-SEARCH-001
+**Authority:** [MC ROADMAP](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) · [eden/gap_analysis.md](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) (`RIGHT-SEARCH-001`) · [feature_inventory.md](/documentation/apps/frontend/apps/editor/feature_inventory/README.md) RIGHT-SEARCH-001
 
 ---
 
@@ -120,10 +120,10 @@ Use [`docs/AGENT_COMMIT_CHECKLIST.md`](/documentation/standards/commit_checklist
 |-----|--------|
 | **This file** | Status → **shipped** |
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-055 bullet + bump `latest feature work` line + Next-slices line |
-| [`feature_inventory.md`](/documentation/website/frontend/apps/editor/feature_inventory/README.md) | **New `RIGHT-SEARCH-001` FEDS entry** (Status working; Evidence `AssetBrowser.tsx`) |
-| [`agent_execution.md`](/documentation/website/frontend/apps/editor/decisions.md) | Decisions log row **Asset browser search (T-055)**; refresh one-line prompt Next-slices |
-| [`ROADMAP.md`](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md) | DONE T-055 section + spec index row; Eden execution-order line; refresh Next |
-| [`eden/gap_analysis.md`](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) | T-055 → ✅ shipped T-055; RIGHT-SEARCH-001 table row → built |
+| [`feature_inventory.md`](/documentation/apps/frontend/apps/editor/feature_inventory/README.md) | **New `RIGHT-SEARCH-001` FEDS entry** (Status working; Evidence `AssetBrowser.tsx`) |
+| [`agent_execution.md`](/documentation/apps/frontend/apps/editor/decisions.md) | Decisions log row **Asset browser search (T-055)**; refresh one-line prompt Next-slices |
+| [`ROADMAP.md`](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) | DONE T-055 section + spec index row; Eden execution-order line; refresh Next |
+| [`eden/gap_analysis.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) | T-055 → ✅ shipped T-055; RIGHT-SEARCH-001 table row → built |
 
 **Do not update:** archive stitch, Eden wiki artifacts, historical CLAUDE bullets.
 

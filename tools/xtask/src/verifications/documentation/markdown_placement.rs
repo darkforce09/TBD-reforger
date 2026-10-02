@@ -1,9 +1,11 @@
 //! Markdown placement: documents live in the documentation tree, and live documents stay short.
 //!
 //! **Role:** the `markdown-placement` gate. Over the tracked files the scope selects it judges
-//! three rules: the code trees hold no Markdown file but README.md (test, generated-output and
-//! hidden folders excepted); the retired documentation root holds no tracked file; and every live
-//! Markdown document under the documentation root is at most [`LIVE_DOCUMENT_LINE_LIMIT`] lines.
+//! three rules: the code trees — every top-level folder but the documentation root and the
+//! retired documentation root, derived from the listing so a new top-level folder is judged at
+//! once — hold no Markdown file but README.md (test, generated-output and hidden folders
+//! excepted); the retired documentation root holds no tracked file; and every live Markdown
+//! document under the documentation root is at most [`LIVE_DOCUMENT_LINE_LIMIT`] lines.
 //!
 //! **Position:** `cargo xtask verify markdown-placement [--path <dir>]... [--with-untracked]`
 //! calls [`verify_markdown_placement`]; every region comes from [`super::path_regions`].

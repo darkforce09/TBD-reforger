@@ -36,9 +36,9 @@ pub fn rsync_argv(rsync_e: &str, mono: &str, dest: &str) -> Vec<String> {
         // `target/` (one subfolder per purpose).
         "--exclude=target/".into(),
         "--exclude=**/node_modules/".into(),
-        "--exclude=apps/website/frontend/dist/".into(),
-        "--exclude=apps/website/api_v2/.env".into(),
-        "--exclude=apps/website/api_v2/.tools/".into(),
+        "--exclude=apps/frontend/dist/".into(),
+        "--exclude=apps/api/.env".into(),
+        "--exclude=apps/api/.tools/".into(),
         format!("--exclude={}", crate::core::repository_layout::DEPLOY_ENV),
         // The served terrain tree: ~590 MB of LFS content plus the gitignored tile pyramids
         // nested under it. The server carries its own copy; it is never pushed from a dev PC.

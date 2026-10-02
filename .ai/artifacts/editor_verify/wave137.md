@@ -28,7 +28,7 @@ soft-pedal of hollow pins.
 
 | measurement | value | how |
 |---|---|---|
-| HEAD frontend `--list` | **1003** | `cargo test -p website-frontend -- --list`, private dir |
+| HEAD frontend `--list` | **1003** | `cargo test -p frontend -- --list`, private dir |
 | HEAD frontend run | **1003 passed / 0 failed** | same private dir; `--list` == run |
 | base (`68b06355`) frontend `--list` | **997** | isolated worktree + private dir |
 | Net frontend delta | **+6** | four T-741 + two T-772; T-749 modified an existing pin (no +1) |
@@ -91,7 +91,7 @@ Keep the helper behaviour pin and banner/`attrs_multi_ids` pins. Perturbations (
 T-749 owns only `eden_top_strip.rs`. Strip production comment and settle-pin claim were corrected
 (`Settled/authored HH:MM… is NOT live drag feedback`; needle tightened to
 `{move || env.get().time}`).  
-`apps/website/frontend/src/ui.rs` **still** says (Slider rustdoc ~148–149):
+`apps/frontend/src/ui.rs` **still** says (Slider rustdoc ~148–149):
 
 > A caller that needs live-drag feedback should render its own readout from the same signal
 > (which is what the top strip's `HH:MM` label does)
@@ -202,7 +202,7 @@ from this append. No fix / commit / ticket filing. **No wave close.**
 
 | measurement | value | how |
 |---|---|---|
-| frontend `--list` | **1003** | `cargo test -p website-frontend -- --list` → `1003 tests, 0 benchmarks` |
+| frontend `--list` | **1003** | `cargo test -p frontend -- --list` → `1003 tests, 0 benchmarks` |
 | frontend run | **1003 passed / 0 failed** | `test result: ok. 1003 passed; 0 failed; … finished in 12.18s` |
 | list ↔ run | **match** | 1003 == 1003 |
 

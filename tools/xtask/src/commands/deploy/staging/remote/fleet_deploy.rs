@@ -24,7 +24,8 @@ use super::super::fleet_server_config::{fleet_mods_json, render_instance_server_
 use super::super::fleet_units::{game_servers_restart_payload, units_install_payload};
 use super::super::host_agent::host_agents_install_payload;
 use super::super::legacy_single_instance_migration::{
-    migration_payload, single_instance_units_absent_payload,
+    migration_payload, migration_plan_line, single_instance_units_absent_payload,
+    units_absent_plan_line,
 };
 use super::super::payloads::{
     fleet_secret_files_check_payload, instance_files_payload, smoke_payload,
@@ -41,20 +42,16 @@ pub(crate) fn dry_run_plan(env: &Env, instances: &[FleetInstance], migrate: bool
         "[dry-run] check on the host: ~/tbd/fleet/join-password and each instance's two credential files (mode 600, expected shape, never printed)".to_string(),
     ];
     if !migrate {
-        plan.push(
-            "[dry-run] refuse while tbd-reforger.service or fleet-host-agent.service is installed"
-                .into(),
-        );
+        plan.push(units_absent_plan_line());
     }
     plan.push(format!(
         "[dry-run] rsync -avz --delete ... {}/",
         env.remote_dir
     ));
     if migrate {
-        plan.push(format!(
-            "[dry-run] migrate: stop and disable tbd-reforger.service and fleet-host-agent.service; archive their unit files, ~/.config/fleet-host-agent/{{agent.toml,machine-credential,rcon-password}}, {} and {} under ~/tbd/retired/single-instance-<UTC time>/",
-            env.profile_dir,
-            env.single_instance_server_config()
+        plan.push(migration_plan_line(
+            &env.profile_dir,
+            &env.single_instance_server_config(),
         ));
     }
     plan.push(format!(
@@ -79,7 +76,7 @@ pub(crate) fn dry_run_plan(env: &Env, instances: &[FleetInstance], migrate: bool
         ));
     }
     plan.push(format!(
-        "[dry-run] install tbd-reforger@.service (server {}, -addonsDir {}), fleet-host-agent@.service, acknowledgement-dropping-relay@.service; restart {}",
+        "[dry-run] install tbd-reforger@.service (server {}, -addonsDir {}), fleet_host_agent@.service, acknowledgement-dropping-relay@.service; restart {}",
         env.server_dir,
         env.addons_staging,
         super::super::fleet_units::unit_list(instances, FleetInstance::game_server_unit)
@@ -92,7 +89,7 @@ pub(crate) fn dry_run_plan(env: &Env, instances: &[FleetInstance], migrate: bool
         ));
     }
     plan.push(format!(
-        "[dry-run] build fleet-host-agent; write ~/.config/fleet-host-agent/instance-N/agent.toml; restart {}",
+        "[dry-run] build fleet_host_agent; write ~/.config/fleet_host_agent/instance-N/agent.toml; restart {}",
         super::super::fleet_units::unit_list(instances, FleetInstance::host_agent_unit)
     ));
     plan.push("[dry-run] mod remote-logs --file over each instance's console.log".into());

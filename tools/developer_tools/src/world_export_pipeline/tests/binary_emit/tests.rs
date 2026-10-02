@@ -1,10 +1,10 @@
 use std::path::PathBuf;
 
+use map_engine::io::containers::header::HEADER_BYTES;
+use map_engine::io::pod::instance::POD_BYTES;
+use map_engine::streaming::loaders::chunk::parse_chunk;
+use map_engine::streaming::loaders::store::bytes_to_json;
 use serde_json::json;
-use website_map_engine::io::containers::header::HEADER_BYTES;
-use website_map_engine::io::pod::instance::POD_BYTES;
-use website_map_engine::streaming::loaders::chunk::parse_chunk;
-use website_map_engine::streaming::loaders::store::bytes_to_json;
 
 use super::*;
 use crate::browser_testing::server::repo_root;

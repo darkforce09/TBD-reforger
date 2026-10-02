@@ -1,8 +1,8 @@
 //! README coverage: every folder in the README span carries a README.md whose Contents block
 //! matches the folder.
 //!
-//! **Role:** the `readme-coverage` gate. Over every tracked folder of the README span (the code
-//! trees and the documentation root, minus the exempt folders) that the scope selects, it judges
+//! **Role:** the `readme-coverage` gate. Over every tracked folder of the README span (every
+//! folder below the repository root, minus the exempt folders) that the scope selects, it judges
 //! two rules: the folder carries a tracked README.md, and that README.md has a Contents block that
 //! lists exactly the folder's tracked direct children.
 //!
@@ -14,9 +14,11 @@
 //! **Signals & state:** none; one pass over the tracked tree per run.
 //!
 //! **Invariants:** only the listed files count, as children and as READMEs: the tracked ones,
-//! and under `--with-untracked` the untracked ones git does not ignore; both rules judge the same
-//! folders, so an exempt folder (test, generated-output, hidden, pending-merge) and the README.md
-//! it holds are judged by neither; every Contents violation prints as `path:line: message`; a
+//! and under `--with-untracked` the untracked ones git does not ignore; the span is derived from
+//! the listing, so a top-level folder is judged from the moment it is listed and never waits on a
+//! list of names; both rules judge the same folders, so an exempt folder (test, generated-output,
+//! hidden, pending-merge, the retired documentation root) and the README.md it holds are judged
+//! by neither; every Contents violation prints as `path:line: message`; a
 //! README that cannot be read is "did not run", never a pass.
 
 mod contents_block;
@@ -30,7 +32,6 @@ use verification_core::{Finding, Kind, NotRun, Verdict};
 use super::path_regions::{README, in_readme_span, join};
 use super::tracked_tree::{FolderChildren, TrackedTree};
 use super::{GateRequest, GateRun, Tally, judged_nothing, prepare, read_tracked, scope_line};
-use crate::core::repository_layout::documentation::{CODE_TREES, DOCUMENTATION_ROOT};
 
 /// The gate's name on its header and summary lines.
 const GATE: &str = "readme-coverage";
@@ -74,8 +75,9 @@ fn judge(repo_root: &Path, listing: Result<TrackedTree, NotRun>, request: &GateR
         request.untracked,
         vec![
             format!(
-                "==> {GATE}: every folder of {} carries a {README} whose Contents block matches it",
-                span_names()
+                "==> {GATE}: every folder below the repository root carries a {README} whose \
+                 Contents block matches it (top-level folders: {})",
+                judged_top_level_folders(&tree)
             ),
             scope_line(&scope, &tree),
         ],
@@ -172,11 +174,21 @@ fn contents_violations(readme: &str, folder: &str, children: &FolderChildren) ->
     violations
 }
 
-/// The span's top-level folders, for the header.
-fn span_names() -> String {
-    let mut names: Vec<&str> = CODE_TREES.to_vec();
-    names.push(DOCUMENTATION_ROOT);
-    names.join(", ")
+/// The top-level folders of `tree` the span holds, in name order, for the header: the operator
+/// sees which roots the run judged without reading a list in the source.
+fn judged_top_level_folders(tree: &TrackedTree) -> String {
+    let judged: Vec<&str> = tree
+        .children("")
+        .into_iter()
+        .flat_map(|root| root.folders.iter())
+        .map(String::as_str)
+        .filter(|folder| in_readme_span(folder))
+        .collect();
+    if judged.is_empty() {
+        "none".to_string()
+    } else {
+        judged.join(", ")
+    }
 }
 
 #[cfg(test)]

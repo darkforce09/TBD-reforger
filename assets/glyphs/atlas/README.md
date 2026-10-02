@@ -32,14 +32,14 @@ assets/glyphs/atlas/
   the WebP header before writing, and refuses to overwrite the atlas with an empty image.
 - Consumers:
   - the map engine's world boot, `load_glyph_atlas` in
-    `apps/website/map-engine/src/streaming/loaders/world_loader/atlas.rs`, which fetches
+    `legacy/map_engine/src/streaming/loaders/world_loader/atlas.rs`, which fetches
     `/map-assets/glyphs/atlas/world-glyphs.json` and `world-glyphs.webp`, turns each rectangle into
     a UV quad in sorted key order and uploads the pixels through `RenderEngine::upload_glyph_atlas`;
   - `cargo xtask schema map-glyphs`
     (`tools/xtask/src/verifications/schemas/checks/map_glyphs.rs`), which checks the canvas size,
     every rectangle and anchor, and the WebP header;
   - the map engine's native residency tests in
-    `apps/website/map-engine/src/streaming/scheduler/residency/t152_3_tests/`, which require the
+    `legacy/map_engine/src/streaming/scheduler/residency/t152_3_tests/`, which require the
     index keys to equal the manifest keys.
 
 ## Boundaries

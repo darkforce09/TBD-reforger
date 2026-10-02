@@ -45,7 +45,7 @@ impl Paths {
             mod_root: root.join("apps/mod"),
             enfusion_mcp_node_package:
                 developer_tools::repository_layout::enfusion_mcp_node_package_dir(root),
-            web: root.join("apps/website/api_v2"),
+            web: root.join("apps/api"),
         }
     }
 }

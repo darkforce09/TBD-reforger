@@ -54,8 +54,8 @@ In code: the `SCR_MissionHeader` configs in `apps/mod/tbd-framework/Missions/`, 
 `TBD_Dev_POC.conf`, resource `{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf`; the dedicated-server
 config's `game.scenarioId`, which names that resource
 (`tools/xtask/dedicated_server_profiles/tbd-dev-server.config.json`), and `TBD_SCENARIO` in
-`tools/xtask/deploy/deploy.env`; the API's fleet scenario registry, `/api/v1/fleet/scenarios`
-(`apps/website/api_v2/src/server_infrastructure/handlers/fleet_scenarios.rs`), which records the
+`deploy/deploy.env`; the API's fleet scenario registry, `/api/v1/fleet/scenarios`
+(`apps/api/src/server_infrastructure/handlers/fleet_scenarios.rs`), which records the
 mission header the fleet runs for each terrain. These code identifiers say scenario, and
 Enfusion's own names (`scenarioId`, the `SCR_EScenario*` types) keep that spelling.
 

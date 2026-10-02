@@ -524,8 +524,8 @@ fn prose_rules_legacy_folder_name_is_not_history() {
     let parking_folder = parking_folder_name_pattern();
     for line in [
         "//! no member outside `legacy/` depends on a member under `legacy/`",
-        "    workspace.member(\"legacy/website_map_engine\", &manifest);",
-        "website_map_engine = { path = \"../../legacy/website_map_engine\" }",
+        "    workspace.member(\"legacy/map_engine\", &manifest);",
+        "map_engine = { path = \"../../legacy/map_engine\" }",
         r#"pub const MANIFEST_SWEEP_ROOTS: &[&str] = &["apps", "crates", "legacy"];"#,
         r#"pub const LEGACY_ROOT: &str = "legacy";"#,
         "    findings.extend(strangler::legacy_dependency_findings(&members));",

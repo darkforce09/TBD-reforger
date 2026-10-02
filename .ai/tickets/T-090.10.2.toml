@@ -35,7 +35,7 @@ verify = [
     "cargo test -p map-engine-render",
     "cargo xtask ci schema-validate",
     "cargo xtask verify terrain-manifest",
-    "rg -n 'tiles/map|load_map_basemap' apps/website/frontend/src crates/map-engine-render/src prints nothing",
+    "rg -n 'tiles/map|load_map_basemap' apps/frontend/src crates/map-engine-render/src prints nothing",
 ]
 acceptance = [
     "No map-view branch remains in world_assets, settings or the engine stats; the style toggle offers vector layers only.",
@@ -48,9 +48,9 @@ citations = [
 ]
 estimated = ["scope"]
 owns = [
-    "apps/website/frontend/src/editor/world_assets/mod.rs",
-    "apps/website/frontend/src/editor/world_assets/satellite.rs",
-    "apps/website/frontend/src/editor/panels/settings_modal.rs",
+    "apps/frontend/src/editor/world_assets/mod.rs",
+    "apps/frontend/src/editor/world_assets/satellite.rs",
+    "apps/frontend/src/editor/panels/settings_modal.rs",
     "crates/map-engine-render/src/engine.rs",
     "packages/map-assets/everon/manifest.json",
     "packages/tbd-schema/schema/terrain-manifest.schema.json",

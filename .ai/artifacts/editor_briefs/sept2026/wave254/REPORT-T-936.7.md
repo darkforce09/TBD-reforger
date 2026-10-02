@@ -106,7 +106,7 @@ validates it.
 
 **C · `drawn_polyline` stops tessellating `curved_arrow`**
 ```
-   Compiling website-frontend v0.1.0 (...)
+   Compiling frontend v0.1.0 (...)
 assertion `left == right` failed
   left: 4
  right: 26
@@ -142,7 +142,7 @@ Suites run directly (the gate's test step is frontend-only):
   `dem::peaks::tests::everon_peaks_max_above_350`, `Decode("Invalid PNG signature.")` —
   `everon-dem-16bit.png` is an unmaterialised LFS pointer in this worktree (verified: file begins
   `version https://git-lfs.github.com/spec/`). Pre-existing, environmental.
-- `website-frontend` → **1357 passed, 0 failed**.
+- `frontend` → **1357 passed, 0 failed**.
 - `schema validate` → `All contracts valid.`
 - clippy core (all-features, all-targets) → zero warnings, with a `Checking map-engine-core` line
   after a touch. clippy frontend wasm32 → no errors; `manual_contains` @ `gestures.rs:629` and

@@ -9,10 +9,10 @@ Range `5432cca1..HEAD` = T-701 (slice `a16e9188`, merge `27b8cbc7`) + T-706 (sli
 | Check | Result |
 |---|---|
 | `cargo test -p map-engine-core --features mission,doc` | **464 passed** (claim: 464 store) + 1 pre-existing ignored; all-features run: 597 |
-| `cargo test -p website-frontend` (native) | **691 passed** (claim: 691); incl. `eden_env::keys_nothing_reads_are_not_authored` green |
+| `cargo test -p frontend` (native) | **691 passed** (claim: 691); incl. `eden_env::keys_nothing_reads_are_not_authored` green |
 | `cargo test -p xtask` (unread module) | 5/5 gate unit tests green (6th match on filter is unrelated `…unreadable`) |
 | `cargo run -p xtask -- schema validate` | rc=0; all 7 goldens PASS incl. new `schema-1_3-wire-fields.json`; 6 negative goldens still correctly rejected; "T-706 unread 1.3 wire fields: PASS 45 field(s)" — gate IS wired into `validate_all` |
-| `cargo test -p website-api contract::` | 16/16 — `validate.rs` `include_str!`s the LIVE `mission.schema.json`, so the API accepts 1.3 on rebuild; **no codegen step involved** (`contract/generated/` has no mission.rs; typify set = editor-payload/registry×2/faction-library/loadout). 1.2 propagated the same way + a mod-struct edit — which is exactly the half missing now (see M-1) |
+| `cargo test -p api contract::` | 16/16 — `validate.rs` `include_str!`s the LIVE `mission.schema.json`, so the API accepts 1.3 on rebuild; **no codegen step involved** (`contract/generated/` has no mission.rs; typify set = editor-payload/registry×2/faction-library/loadout). 1.2 propagated the same way + a mod-struct edit — which is exactly the half missing now (see M-1) |
 | store.rs `#[test]` count | 112 → 120 (+8 = the eight claimed T-701 tests, all read) |
 | `additionalProperties: false` | 25 → 35 = +10, one per new object def; sole open object = `editorTrigger.effects[].params`, documented open-by-design — the "preserved everywhere" claim holds with that one stated exception |
 | 1.1/1.2 goldens | untouched by the range diff (only the new golden added) ✓ additive claim |

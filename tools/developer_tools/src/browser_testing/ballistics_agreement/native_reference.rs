@@ -7,7 +7,7 @@
 //! the reference [`super::case_verdict`] judges the browser's reading against. The drawing, the
 //! case-to-inputs mapping and the bit walk are the map engine's (`agreement_cases`,
 //! `fire_mission_inputs`, `case_bit_patterns` of
-//! `website_map_engine::data::scenario::ballistics::agreement_cases`), the same functions the
+//! `map_engine::data::scenario::ballistics::agreement_cases`), the same functions the
 //! browser bench that produces the reading calls.
 //! **Signals & state:** none; pure functions over a borrowed catalog.
 //! **Invariants:** a native case's inputs are `fire_mission_inputs` of the drawn case and its
@@ -15,11 +15,11 @@
 
 use std::collections::BTreeMap;
 
-use website_map_engine::data::scenario::ballistics::agreement_cases::{
+use map_engine::data::scenario::ballistics::agreement_cases::{
     AgreementCase, agreement_cases, case_bit_patterns, fire_mission_inputs,
 };
-use website_map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
-use website_map_engine::data::scenario::ballistics::fire_mission::{
+use map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
+use map_engine::data::scenario::ballistics::fire_mission::{
     FireMissionInputs, FireMissionSolution, solve_fire_mission,
 };
 

@@ -4,7 +4,7 @@
 
 The design token sheets that Stitch exported with the mockups: design-phase references kept for
 colour and layout context, not implementation sources. The built interface is the Leptos code under
-`apps/website/frontend/src/v2/` and the mod's `TBD_UITheme`; the
+`apps/frontend/src/v2/` and the mod's `TBD_UITheme`; the
 [design tokens](/documentation/design_system/design_tokens.md) document says what the code
 uses.
 
@@ -41,7 +41,7 @@ several screens share it; one screen's tokens go into its set's `design_tokens.m
 
 ## Code
 
-- [Aegis stylesheet](/apps/website/frontend/style/README.md) — the website's built tokens, which
+- [Aegis stylesheet](/apps/frontend/style/README.md) — the website's built tokens, which
   follow the Aegis export.
 - [Mod interface core](/apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/README.md) — `TBD_UITheme`,
   which mirrors the website's tokens and carries the mod mockups' extra colours.
@@ -59,7 +59,7 @@ several screens share it; one screen's tokens go into its set's `design_tokens.m
 
 ## Related documentation
 
-- [Mission Creator visual references](/documentation/website/frontend/apps/editor/visual_references/README.md)
+- [Mission Creator visual references](/documentation/apps/frontend/apps/editor/visual_references/README.md)
   — the mockups the Aegis export belongs to.
 - [Spectator visual references](/documentation/mod/tbd-framework/UI/spectator/visual_references/README.md),
   [end screen visual references](/documentation/mod/tbd-framework/UI/end_screen/visual_references/README.md)

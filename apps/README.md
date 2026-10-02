@@ -1,6 +1,7 @@
 # Applications
 
-Every product the TBD Reforger platform ships: the web platform, the
+Every product the TBD Reforger platform ships: the website's API, single-page app and service
+worker, the
 [Enfusion](/documentation/glossary/a_to_f.md#enfusion) [mod](/documentation/glossary/g_to_m.md#mod) that
 game servers run, the agent that controls those servers, and the desktop viewer for the
 [ticket](/documentation/glossary/n_to_z.md#ticket) registry. Developer tooling lives in `tools/`,
@@ -10,10 +11,12 @@ not here.
 
 ```text
 apps/
-├── fleet_host_agent/  the game-host agent for fleet commands, crate `fleet-host-agent`
-├── mod/               the Enfusion mod suite: game mod, Workbench export addon, MCP bridge
-├── ticketboard/       the native desktop viewer of the ticket registry, crate `ticketboard`
-└── website/           the web platform: REST API, single-page app, map and graphics engines
+├── api/                     the website's REST API and realtime hub, crate `api`
+├── fleet_host_agent/        the game-host agent for fleet commands, crate `fleet_host_agent`
+├── frontend/                the website's single-page app and Mission Creator, crate `frontend`
+├── mod/                     the Enfusion mod suite: game mod, Workbench export addon, MCP bridge
+├── offline_service_worker/  the website's service worker for offline packs, crate `offline_service_worker`
+└── ticketboard/             the native desktop viewer of the ticket registry, crate `ticketboard`
 ```
 
 ## How it works
@@ -35,22 +38,24 @@ reads `.ai/tickets/` through the `ticket_engine` crate in `tools/` and talks to 
 others.
 
 ```text
-browser ── website/frontend ──▶ website/api_v2 ◀── HTTPS ── fleet_host_agent ─┐ controls
-                                  ▲    ▲                                      ▼
-                                  │    └── game-runtime, ingest ─────── dedicated server + mod
-                               Postgres
+browser ── frontend ──▶ api ◀── HTTPS ── fleet_host_agent ─┐ controls
+   │                     ▲  ▲                               ▼
+   └ offline_service_worker  └── game-runtime, ingest ── dedicated server + mod
+                         │
+                      Postgres
 
 ticketboard ──▶ ticket_engine (tools/) ──▶ .ai/tickets/
 ```
 
-The six Rust crates (`website-api`, `website-frontend`, `website-map-engine`,
-`website-graphics-engine`, `fleet-host-agent` and `ticketboard`) are members of the root Cargo
-workspace; the mod is Enfusion script and data, built and checked by the xtask `mod` commands.
+The five Rust crates (`api`, `frontend`, `offline_service_worker`, `fleet_host_agent` and
+`ticketboard`) are members of the root Cargo workspace; the frontend and the API link the map and
+graphics engines parked in `legacy/`. The mod is Enfusion script and data, built and checked by
+the xtask `mod` commands.
 
 ## Getting started
 
 Run these from the repository root. The website, in this order (the full procedure is in
-`apps/website/README.md`):
+[local development](/documentation/runbooks/local_development.md)):
 
 ```bash
 cargo xtask db up        # Postgres on host port 5434
@@ -62,7 +67,7 @@ The other products:
 
 ```bash
 cargo xtask mod compile           # compile-checks the mod's scripts in a headless Enfusion
-cargo test -p fleet-host-agent    # the host agent's tests
+cargo test -p fleet_host_agent    # the host agent's tests
 cargo run -p ticketboard          # opens the ticket registry viewer; stays in the foreground
 ```
 
@@ -75,9 +80,10 @@ cargo run -p ticketboard          # opens the ticket registry viewer; stays in t
   `tools/xtask/` that build, test, check and deploy the products; and the developer tools in
   `tools/developer_tools/`, which link the map engine and drive the app in a headless browser.
 - Rules: the products share data only over the API and through the schemas in `contracts/`: no
-  crate here depends on a crate of another product (the only cross-folder path dependencies are
-  inside `apps/website/` and ticketboard's on `tools/ticket_engine/`); the engine layer rules
-  of `apps/website/` are held by `cargo xtask verify engine-layers`.
+  crate here depends on a crate of another product, apart from the website's three (the frontend
+  links `offline_service_worker`); the path dependencies leaving `apps/` go to `legacy/` (the
+  engines), `crates/` and `tools/` (`verification_core` for the API, `ticket_engine` for
+  ticketboard); the engine layer rules are held by `cargo xtask verify engine-layers`.
 
 ## Related documentation
 

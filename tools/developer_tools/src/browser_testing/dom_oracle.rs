@@ -3,7 +3,7 @@
 //! Captures the normalized DOM — through the serializer `fixture_injection` injects — plus a PNG
 //! for every leaf route, and diffs both against the frozen goldens under
 //! `tools/developer_tools/fixtures/dom_oracle/oracle-freeze/`. `verify` is the regression gate;
-//! `accept` re-sources ONE route's golden from the current `apps/website/frontend/dist` with a
+//! `accept` re-sources ONE route's golden from the current `apps/frontend/dist` with a
 //! recorded note. There is no whole-tree re-freeze: the goldens are not regenerable from any dist
 //! this repository still builds, so a bulk overwrite would destroy the oracle it exists to check.
 //!

@@ -69,7 +69,7 @@ container's does not run inside that container.
    ```
 
    Expected: the four commands in order, as `--dry-run` prints them:
-   `cd apps/website/frontend && trunk build --release`, then
+   `cd apps/frontend && trunk build --release`, then
    `cargo run -q -p developer_tools --bin gate -- doctor`, `… -- editor-suite` and
    `… -- v-suite verify`; the doctor ends `== gate doctor: OK — 0 warning(s)`, each smoke prints
    its JSON verdict, and the run exits 0. It stops at the first step that fails, with that step's
@@ -156,7 +156,7 @@ Expected: `26/26 routes match the frozen oracle` and exit 0.
 | `✗ liveness    editor page did not become ready within the budget` | a slow or stalled page, a missing build or low memory | check the `dist` and `memory` lines, then the debug recipe |
 | `smoke_hydrate: backend not reachable on :8080`, exit 2 | the API is not running; a gate that could not run never reports green | step 2 |
 | `DOM never stabilized at <path>` | the route's DOM changed on every read for 60 tries | find the animation or poll that keeps it changing; the freeze script covers the clock and random numbers only |
-| a route fails with a list of unanswered `/api/v1/` URLs | the fixture corpus lacks a response the page requests | add the named fixture file under `apps/website/frontend/tests/fixtures/api/`, then verify again |
+| a route fails with a list of unanswered `/api/v1/` URLs | the fixture corpus lacks a response the page requests | add the named fixture file under `contracts/fixtures/api_goldens/`, then verify again |
 | `gate: driver error: cdp: ws call timed out (Runtime.evaluate)` after about 130 s | a call to a browser that died or blocked; the per-call timeout is 130 s | run the doctor, then P-1 |
 
 ### Known wedge modes
@@ -204,13 +204,13 @@ Expected: `26/26 routes match the frozen oracle` and exit 0.
   for EOF on pipes that Chromium's zygote and crashpad children inherit.
 - **`innerText` returns the text CSS renders.** Under `text-transform: uppercase`, `innerText`
   reads `ATTACHED MISSIONS` where `textContent` reads `Attached Missions` (the heading in
-  `apps/website/frontend/src/v2/pages/administration/event_manager/mission_picker.rs:216` carries
+  `apps/frontend/src/v2/pages/administration/event_manager/mission_picker.rs:216` carries
   the `uppercase` class). `render-check --expect` matches against `document.body.innerText`; use
   `textContent` in `--assert-js` for source-exact text, or compare case-insensitively.
 - **`aside` is ambiguous.** The desktop sidebar
-  (`apps/website/frontend/src/v2/pages/navigation/sidebar.rs:47`), the mobile drawer
-  (`apps/website/frontend/src/v2/pages/navigation/layout.rs:135`) and the membership notice
-  (`apps/website/frontend/src/v2/pages/navigation/membership_status.rs:96`) are all `<aside>`, and
+  (`apps/frontend/src/v2/pages/navigation/sidebar.rs:47`), the mobile drawer
+  (`apps/frontend/src/v2/pages/navigation/layout.rs:135`) and the membership notice
+  (`apps/frontend/src/v2/pages/navigation/membership_status.rs:96`) are all `<aside>`, and
   `document.querySelector('aside')` returns the first in DOM order whether or not it is shown.
   Select on a discriminating class or scope to a landmark.
 - **`render-check` proxies `/api` to a live API.** `--api-proxy` defaults to
@@ -239,7 +239,7 @@ check first.
   `Received signal`:
 
   ```bash
-  cargo run -q -p developer_tools --bin gate -- serve --dir apps/website/frontend/dist --port 5199 --api-proxy http://127.0.0.1:8080 --map-assets assets/terrains
+  cargo run -q -p developer_tools --bin gate -- serve --dir apps/frontend/dist --port 5199 --api-proxy http://127.0.0.1:8080 --map-assets assets/terrains
   ```
 
 - **P3: renderer thread state.** While it hangs, field 3 (state) of

@@ -44,7 +44,7 @@ assets/terrains/arland/
     which walks every registry entry and skips Arland because the manifest has no objects export;
   - the map engine, when a [mission](/documentation/glossary/g_to_m.md#mission) names the `arland`
     terrain: the mission library's create dialog offers it
-    (`apps/website/frontend/src/v2/pages/mission_hub/create_dialog/dialog.rs`), and the host
+    (`apps/frontend/src/v2/pages/mission_hub/create_dialog/dialog.rs`), and the host
     fetches `/map-assets/arland/manifest.json`, then finds none of the files it names. The map
     engine also sizes its grid, density tiles and label scaling for Everon's 12,800 m, whatever
     the manifest's bounds.

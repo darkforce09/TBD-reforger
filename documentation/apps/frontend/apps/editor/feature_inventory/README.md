@@ -1,0 +1,101 @@
+**Status:** live
+
+# Mission Creator feature inventory
+
+Every feature of the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator), one area
+per file: what the mission maker does, what the code does in reply, and whether the committed code
+ships it. Developers and agents read it to find a feature's code and state, and the Eden gap
+analysis reads it to pair each feature with its Eden counterpart.
+
+## Contents
+
+```text
+documentation/apps/frontend/apps/editor/feature_inventory/
+├── attributes_and_settings.md          the Attributes dialog: transform, identity, states, arsenal, vehicles
+├── bottom_toolbelt.md                  the mode toolbar, the status bar read-outs, the edge grid references
+├── connections.md                      the Connect flow, Sync to, Group to, Trigger Owner, lines and panel
+├── data_persistence_and_compile.md     the local draft, boot hydrate, conflict dialog, compile, tab lock
+├── editor_route_loading.md             the editor route, its access tier and the boot overlay
+├── feds_schema.md                      the entry schema: feature IDs, entry format, terms, gap rows
+├── keyboard_shortcuts.md               every key binding, the field guard and the shortcut list
+├── left_sidebar.md                     the left dock: editor layers, Locations, and the ORBAT tree
+├── map_basemap_and_world_objects.md    the basemap, the world-object layers and their switches
+├── map_viewport_and_camera.md          the map view: pan, zoom, grid, centring, cursor, terrain
+├── performance_at_scale.md             bulk paste, windowed trees, clusters, picks, redraw, load and save
+├── placement.md                        the palette pick-up and map release, crew, picker, areas, comments
+├── right_asset_palette.md              the right dock's seven tabs, chips, search, favourites, factions
+├── selection.md                        click, marquee, modifier, tree and context-menu selection
+├── shell_route_and_layout.md           the chromeless route, the chrome layout, review mode, map notices
+├── top_command_strip.md                menus, title, undo, save, export, environment, settings
+└── transform_and_delete.md             move, rotate, elevation, snap, arrange, formation and delete
+```
+
+## How it works
+
+Each area file is a [feature doc](/documentation/standards/templates/feature_doc.md) whose
+Behaviour holds the area's entries, in the format the [feature entry schema](/documentation/apps/frontend/apps/editor/feature_inventory/feds_schema.md)
+sets: a table of IDs and statuses, one `###` section per ID with numbered steps, and the area's
+known discrepancies. IDs follow the schema's `{DOMAIN}-{SUBDOMAIN}-{NNN}` pattern and are never
+reused; a feature the code has and the inventory lacks gets a new ID in its area's file.
+
+| Status | Meaning |
+|---|---|
+| shipped | the committed code does what the entry says |
+| partial | part of the entry works; the steps say which part does not |
+| not built | nothing in the code does it, or a visible control has no action |
+
+| Area | File | Entries | Verified against the code |
+|---|---|---|---|
+| MAP — viewport and camera | [map_viewport_and_camera.md](/documentation/apps/frontend/apps/editor/feature_inventory/map_viewport_and_camera.md) | 7: 5 shipped, 2 partial | yes |
+| MAP — basemap and world objects | [map_basemap_and_world_objects.md](/documentation/apps/frontend/apps/editor/feature_inventory/map_basemap_and_world_objects.md) | 13: 5 shipped, 1 partial, 7 not built | yes |
+| LEFT — left dock and ORBAT tree | [left_sidebar.md](/documentation/apps/frontend/apps/editor/feature_inventory/left_sidebar.md) | 21: 18 shipped, 1 partial, 2 not built | yes |
+| BOTTOM — toolbelt | [bottom_toolbelt.md](/documentation/apps/frontend/apps/editor/feature_inventory/bottom_toolbelt.md) | 9: 8 shipped, 1 not built | yes |
+| ATTR — Attributes dialog | [attributes_and_settings.md](/documentation/apps/frontend/apps/editor/feature_inventory/attributes_and_settings.md) | 7: 6 shipped, 1 not built | yes |
+| DATA — persistence and compile | [data_persistence_and_compile.md](/documentation/apps/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) | 11: 8 shipped, 1 partial, 2 not built | yes |
+| KEY — keyboard | [keyboard_shortcuts.md](/documentation/apps/frontend/apps/editor/feature_inventory/keyboard_shortcuts.md) | 14: 13 shipped, 1 partial | yes |
+| FILE — route and boot | [editor_route_loading.md](/documentation/apps/frontend/apps/editor/feature_inventory/editor_route_loading.md) | 2: 1 shipped, 1 not built | yes |
+| SHELL — route and layout | [shell_route_and_layout.md](/documentation/apps/frontend/apps/editor/feature_inventory/shell_route_and_layout.md) | 7: 6 shipped, 1 not built | yes |
+| SEL — selection | [selection.md](/documentation/apps/frontend/apps/editor/feature_inventory/selection.md) | 11: 10 shipped, 1 partial | yes |
+| XFORM — transform and delete | [transform_and_delete.md](/documentation/apps/frontend/apps/editor/feature_inventory/transform_and_delete.md) | 11: 8 shipped, 2 partial, 1 not built | yes |
+| CONN — connections | [connections.md](/documentation/apps/frontend/apps/editor/feature_inventory/connections.md) | 8: 5 shipped, 3 partial | yes |
+| PLACE — placement | [placement.md](/documentation/apps/frontend/apps/editor/feature_inventory/placement.md) | 13: 11 shipped, 2 partial | yes |
+| RIGHT — asset palette | [right_asset_palette.md](/documentation/apps/frontend/apps/editor/feature_inventory/right_asset_palette.md) | 14: 13 shipped, 1 not built | yes |
+| TOP — command strip | [top_command_strip.md](/documentation/apps/frontend/apps/editor/feature_inventory/top_command_strip.md) | 19: 14 shipped, 1 partial, 4 not built | yes |
+| PERF — behaviour at scale | [performance_at_scale.md](/documentation/apps/frontend/apps/editor/feature_inventory/performance_at_scale.md) | 12: 4 shipped, 5 partial, 3 not built | yes |
+
+Features Eden has no counterpart for carry the `TBD-` domain inside their area: TBD-LAYER-001 in
+the left sidebar, TBD-CONFLICT-001 in data persistence, TBD-SAVE-001 and TBD-EXPORT-001 in the top
+command strip.
+
+## Code
+
+- [Mission Creator](/apps/frontend/src/v2/apps/editor/) — every area: the page, docks,
+  inspectors, input and browser session.
+- [Map engine editing](/legacy/map_engine/src/editing/) — the hosted commands, undo history,
+  tools and persistence the areas call.
+- [Map engine data](/legacy/map_engine/src/data/) — the mission document and the payload
+  compiler.
+
+## Boundaries
+
+- Depends on: the [feature entry schema](/documentation/apps/frontend/apps/editor/feature_inventory/feds_schema.md)
+  and the [feature doc template](/documentation/standards/templates/feature_doc.md); the
+  committed code under the folders above; the ticket registry in `.ai/tickets/` for Open work.
+- Used by: the Related documentation of the in-code READMEs under
+  `apps/frontend/src/v2/apps/editor/` and of `legacy/map_engine/src/editing/` and
+  `legacy/map_engine/src/data/store/`; the
+  [Eden gap analysis](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md),
+  which pairs its rows with Eden's by ID; the [roadmap](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md)
+  and the [decisions log](/documentation/apps/frontend/apps/editor/decisions.md).
+- Rules: one area per file, each within 500 lines (`cargo xtask verify markdown-placement`);
+  every file here has a Contents line (`cargo xtask verify readme-coverage`); an ID is never
+  reused or renumbered; a status is read from the committed code, never from a ticket.
+
+## Related documentation
+
+- [Mission Creator documentation](/documentation/apps/frontend/apps/editor/README.md) — the
+  entry point to the roadmap, the specifications and the decisions.
+- [Mission Creator UX specification](/documentation/apps/frontend/apps/editor/ux_spec.md) —
+  the layout, the interaction contract and the shortcuts the areas are built against.
+- [Eden interactions reference](/documentation/apps/frontend/apps/editor/eden_editor_reference/interactions/README.md)
+  — the Eden catalogue the inventory is compared with.

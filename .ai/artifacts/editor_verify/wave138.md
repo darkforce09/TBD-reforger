@@ -27,7 +27,7 @@ soft-pedal of hollow pins or found_not_fixed.
 
 | measurement | value | how |
 |---|---|---|
-| HEAD frontend `--list` | **1006** | `cargo test -p website-frontend -- --list`, private dir |
+| HEAD frontend `--list` | **1006** | `cargo test -p frontend -- --list`, private dir |
 | HEAD frontend run | **1006 passed / 0 failed** | same private dir; `--list` == run |
 | base (`89bfe0a8`) frontend `--list` | **1003** | isolated worktree + private dir |
 | Net frontend delta | **+3** | three T-739 pins; T-742/T-752 add no tests |
@@ -55,7 +55,7 @@ Executable proof:
 
 ```text
 export CARGO_TARGET_DIR=$HOME/.cache/tbd-target-T-742
-bash scripts/platform/wave.sh test --slice T-742 -p website-frontend -- --list
+bash scripts/platform/wave.sh test --slice T-742 -p frontend -- --list
 → rc=2
 → REFUSING — private dir collapsed onto the shared CARGO_TARGET_DIR (.../tbd-target-T-742)
 ```
@@ -81,11 +81,11 @@ already points there.
 
 ```text
 TBD_ADHOC_TARGET_DIR=$HOME/.cache/tbd-target-T-739 \
-  bash scripts/platform/wave.sh test --slice T-999 -p website-frontend -- --list
+  bash scripts/platform/wave.sh test --slice T-999 -p frontend -- --list
 → ACCEPTS
 → CARGO_TARGET_DIR=.../tbd-target-T-739  (private — not the shared cache)
 → delete before report: rm -rf '.../tbd-target-T-739'
-→ began Compiling website-frontend from main into T-739’s cache
+→ began Compiling frontend from main into T-739’s cache
 ```
 
 Collapse check only equality-matches the three “shared” roots; any other existing slice cache is
@@ -110,7 +110,7 @@ from `--slice` / is in the live worktree set.
 1. Built clean HEAD binary from main into a clean private dir (t739 pins GREEN).  
 2. Contaminated shared probe from a detached HEAD worktree with
    `it suppresses on a multi-selection` restored in `editor_ops.rs` → t739 editor_ops pin RED;
-   binary hash `2ce34f6f…`; `Compiling website-frontend` from the perturb path.  
+   binary hash `2ce34f6f…`; `Compiling frontend` from the perturb path.  
 3. Main tree confirmed clean (`rg` → no suppress phrase).  
 4. From **main**, `CARGO_TARGET_DIR=<sharedprobe> cargo test … editor_ops_must_not_reclaim…`:
 
@@ -164,7 +164,7 @@ path at all.
 | `wave.sh` `clippy frontend` / `clippy_changed` (T-742) | `--all-targets` |
 | `.github/workflows/ci.yml:141` | `--target wasm32-unknown-unknown` **only** — no `--all-targets` |
 
-Makefile comment still says “mirrors ci.yml website-frontend; T-752”. Live clippy
+Makefile comment still says “mirrors ci.yml frontend; T-752”. Live clippy
 `--all-targets` on HEAD: **rc 0**, **111** warnings (advisory; no `-D` — matches ticket). Named
 residue gone (`NodeKind` import, orphaned `#[test]` attribute placement, `title_id`/`cat_id`,
 `int_plus_one` span bound). CI path still cannot see `#[cfg(test)]` lints.
@@ -173,7 +173,7 @@ residue gone (`NodeKind` import, orphaned `#[test]` attribute placement, `title_
 claim that test-target lints are “no longer invisible” is false for the CI surface the Makefile
 says it mirrors. Hollow alignment.
 
-**Disposition — fix this wave.** Add `--all-targets` to `ci.yml` website-frontend clippy (still no
+**Disposition — fix this wave.** Add `--all-targets` to `ci.yml` frontend clippy (still no
 `-D`, warn mode), or stop claiming CI mirror until that lands. Outside prior owns — NO-DEFERRAL
 in-wave.
 
@@ -302,7 +302,7 @@ per-slice even if env already points there.
 
 ```text
 export CARGO_TARGET_DIR=$HOME/.cache/tbd-target-T-742
-bash scripts/platform/wave.sh test --slice T-742 -p website-frontend -- --list
+bash scripts/platform/wave.sh test --slice T-742 -p frontend -- --list
 → rc=0
 → ═══ ad-hoc test T-742 ═══
 → CARGO_TARGET_DIR=.../tbd-target-T-742  (private — not the shared cache)
@@ -319,7 +319,7 @@ bash scripts/platform/wave.sh test --slice T-742 -p website-frontend -- --list
 
 ```text
 TBD_ADHOC_TARGET_DIR=$HOME/.cache/tbd-target-T-739 \
-  bash scripts/platform/wave.sh test --slice T-999 -p website-frontend -- --list
+  bash scripts/platform/wave.sh test --slice T-999 -p frontend -- --list
 → rc=2
 → test: REFUSING — TBD_ADHOC_TARGET_DIR is not the default per-slice path (.../tbd-target-T-739).
 →         Foreign-slice token 'T-739' != --slice 'T-999'.
@@ -339,12 +339,12 @@ worktrees” as mitigator — measured false. Paired with F1/F2 + brief.
    binary sha256 `74cbb547…`.
 2. Detached worktree at HEAD: inject `/// (it suppresses on a multi-selection)` into
    `rotate_selection_to_face` doc → rebuild into **same** sharedprobe →
-   `Compiling website-frontend` from worktree path; pin RED; binary sha256 `df94b17d…`.
+   `Compiling frontend` from worktree path; pin RED; binary sha256 `df94b17d…`.
 3. Main tree confirmed clean (`rg` → no suppress phrase).
 4. From **main**, same sharedprobe:
 
 ```text
-Finished `test` profile … in 0.09s          # NO Compiling website-frontend
+Finished `test` profile … in 0.09s          # NO Compiling frontend
 Running …/website_frontend-1f1c05fc9a9eab73
 test …editor_ops_must_not_reclaim_suppress_on_multi ... FAILED
 ```
@@ -354,7 +354,7 @@ Same artifact path/hash as contaminating build (`df94b17d…`).
 5. Main + **private** `~/.cache/tbd-target-w138-reverify`:
 
 ```text
-Compiling website-frontend … (from main)
+Compiling frontend … (from main)
 test …editor_ops_must_not_reclaim_suppress_on_multi ... ok
 ```
 
@@ -382,14 +382,14 @@ only.
 
 ### F5 — MAJOR | `ci.yml` missing `--all-targets` → **CLOSED**
 
-**Disposition (original):** add `--all-targets` to ci.yml website-frontend clippy (warn, no `-D`).
+**Disposition (original):** add `--all-targets` to ci.yml frontend clippy (warn, no `-D`).
 
 **Re-probe:**
 
 ```text
 .github/workflows/ci.yml:141–142:
   # --all-targets: see #[cfg(test)] / native-shell lints (T-752; warn mode, no -D).
-  run: cargo clippy -p website-frontend --target wasm32-unknown-unknown --all-targets
+  run: cargo clippy -p frontend --target wasm32-unknown-unknown --all-targets
 Makefile ci-local-leptos: mirrors ci.yml … clippy --all-targets; T-752
 ```
 
@@ -434,7 +434,7 @@ bash scripts/platform/wave.sh test --slice T-742
 bash scripts/platform/wave.sh test --slice T-742 --list
 → rc=2  REFUSING — cargo test args must include -p / --package <crate>.
 
-bash scripts/platform/wave.sh test --slice T-742 website-frontend -- --list
+bash scripts/platform/wave.sh test --slice T-742 frontend -- --list
 → rc=2  REFUSING — cargo test args must include -p / --package <crate>.
 ```
 

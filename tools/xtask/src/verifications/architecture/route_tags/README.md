@@ -17,11 +17,11 @@ tools/xtask/src/verifications/architecture/route_tags/
 ## How it works
 
 `verify_route_tags.rs` probes its literal matcher, then pins the shape of
-`apps/website/api_v2/src/core/http_router.rs`: it defines `fn api_v1_routes` and nests it at
-`/api/v1`. `route_and_tag_extraction.rs` finds every `apps/website/api_v2/src/<domain>/routes.rs`
+`apps/api/src/core/http_router.rs`: it defines `fn api_v1_routes` and nests it at
+`/api/v1`. `route_and_tag_extraction.rs` finds every `apps/api/src/<domain>/routes.rs`
 holding exactly one column-0 `pub fn routes(`, reads each `.route(` registration into
 `METHOD PATH HANDLER` rows, reads the `.merge(crate::<domain>::routes(` lines of
-`api_v1_routes`, and sweeps every `.rs` file under `apps/website/api_v2/src` for column-0
+`api_v1_routes`, and sweeps every `.rs` file under `apps/api/src` for column-0
 `/// @route METHOD PATH` tags on the `pub fn` below them. A line it cannot read becomes an
 `UNPARSED` or `ORPHAN` row instead of disappearing.
 

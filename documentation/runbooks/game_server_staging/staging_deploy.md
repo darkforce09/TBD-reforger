@@ -16,7 +16,7 @@ takes a few minutes, most of it the rsync and the engines' boot.
 - A prepared host with the website deployed, so the API answers `/healthz` at `TBD_BACKEND_URL`
   ([host preparation](/documentation/runbooks/game_server_staging/host_preparation.md),
   [website deployment](/documentation/runbooks/website_deployment.md)).
-- `tools/xtask/deploy/deploy.env` filled in with the settings below; no machine credential,
+- `deploy/deploy.env` filled in with the settings below; no machine credential,
   RCON password or join password goes in it.
 - On the host, every instance's two credential files from `cargo xtask staging provision-fleet`,
   and the join password in `~/tbd/fleet/join-password`
@@ -138,14 +138,20 @@ from its own files.
    the unit install line ending with every `tbd-reforger@N.service`,
    `[dry-run] boot verdict per instance over the console.log of its new boot`, the relay line
    `[dry-run] relay: acknowledgement-dropping-relay@5 on 127.0.0.1:18085 forwarding to <origin>`,
-   the host agent line ending with every `fleet-host-agent@N.service`, and
+   the host agent line ending with every `fleet_host_agent@N.service`, and
    `[dry-run] mod remote-logs --file over each instance's console.log`, exit 0. With
    `--migrate-single-instance` the refusal line gives way to
    `[dry-run] migrate: stop and disable tbd-reforger.service and fleet-host-agent.service; …`.
 
 3. The first fleet deploy of a host retires the single-instance server: without the flag, the
    deploy refuses while its units are installed, because instance 1 takes their ports. On a fresh
-   host the migration finds nothing and the deploy goes on.
+   host the migration finds nothing and the deploy goes on. The migration also carries the
+   [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent)'s names from the
+   single server's kebab-case `fleet-host-agent.service`, `~/.config/fleet-host-agent/` and
+   `~/.local/bin/fleet-host-agent` to the fleet's snake_case `fleet_host_agent@N.service`,
+   `~/.config/fleet_host_agent/instance-N/` and `~/.local/bin/fleet_host_agent`; no other step
+   renames them. A host whose checkout is not yet in the layout of restructure stage S2 first
+   takes the one-time host step S1 of the [S2 operator steps](/documentation/archive/restructure_agent_briefs/s2_a2_to_a6.md#oc-deploy-operator-steps).
 
    ```bash
    cargo xtask deploy staging --migrate-single-instance
@@ -174,8 +180,8 @@ The stages, in order:
 | website API | on the host, `curl -sSf --max-time 10 <TBD_BACKEND_URL>/healthz`; any failure, a 503 from an API whose database is down included, stops the deploy with exit 1 before anything on the host changes, naming `cargo xtask deploy website` |
 | secret files | checks `~/tbd/fleet/join-password` and each instance's `mod-runtime-credential` and `host-agent-credential`: a regular file with no group or other permission, holding the expected shape; one line per file (`  ok      <label>`, `  MISSING …`, `  INVALID …`), never a value |
 | single-instance units | without `--migrate-single-instance`: refuses while `tbd-reforger.service` or `fleet-host-agent.service` is installed |
-| rsync | the checkout to `TBD_REMOTE_DIR` with `--delete`, excluding `.git/`, `target/`, `node_modules/`, the reference mods, `apps/mod/tbd-export/`, `apps/mod/tbd-emcp/`, the terrain, scratch and equipment asset trees, `apps/website/api_v2/.env`, the app the website deploy built (`apps/website/frontend/dist/`), `deploy.env`, and what only the development machine holds, which the website deploy excludes too (the other cargo `target-*/` folders, worktrees, and the local files of Claude Code, Codex and `.mcp.json`); excluded paths on the host survive `--delete` |
-| migration | with `--migrate-single-instance`: stops and disables the two single-instance units and moves their unit files, `~/.config/fleet-host-agent/{agent.toml,machine-credential,rcon-password}`, `TBD_PROFILE_DIR` and the `server.config.json` beside it into one new folder `~/tbd/retired/single-instance-<UTC time>/`, deleting nothing; refuses a `TBD_PROFILE_DIR` inside `~/tbd/fleet`, and ends by proving neither unit is loaded |
+| rsync | the checkout to `TBD_REMOTE_DIR` with `--delete`, excluding `.git/`, `target/`, `node_modules/`, the reference mods, `apps/mod/tbd-export/`, `apps/mod/tbd-emcp/`, the terrain, scratch and equipment asset trees, `apps/api/.env`, the app the website deploy built (`apps/frontend/dist/`), `deploy.env`, and what only the development machine holds, which the website deploy excludes too (the other cargo `target-*/` folders, worktrees, and the local files of Claude Code, Codex and `.mcp.json`); excluded paths on the host survive `--delete` |
+| migration | with `--migrate-single-instance`: stops and disables the two single-instance units and moves their unit files, the whole `~/.config/fleet-host-agent/` folder, the `~/.local/bin/fleet-host-agent` binary, `TBD_PROFILE_DIR` and the `server.config.json` beside it into one new folder `~/tbd/retired/single-instance-<UTC time>/`, deleting nothing; refuses a `TBD_PROFILE_DIR` inside `~/tbd/fleet`, and ends by proving neither unit is loaded |
 | instance files, per instance | keeps the live config's `scenarioId` (`  keeping the deployed scenario … (TBD_SCENARIO seeds only a new instance)`), renders and checks the config; on the host, makes the folders mode 700, links `TBD_ADDONS_STAGING/tbd-framework` to the synced `apps/mod/tbd-framework`, generates the RCON password once (32 lowercase hex digits, mode 600), runs `cargo xtask setup server-profile ~/tbd/fleet/instance-N/profile` with the instance's `mod_runtime` credential in its environment, sets `backendUrl`, fills both passwords into the config and moves it into place, mode 600 |
 | game-runtime smoke, per instance | with the instance's credential, V2: `GET /api/v1/game-runtime/deployment` answers 200, or 404 `NO_DEPLOYMENT`; V3: with a deployment, the artifact's bytes hash to `artifact_sha256`; V4: the read without a credential answers 401 |
 | units and restart | writes the three template units to `~/.config/systemd/user/`, enables linger, reloads, disables and stops the units of instances above `TBD_FLEET_INSTANCES` and every relay unit but the relay instance's, then enables and restarts every `tbd-reforger@N.service` |
@@ -184,9 +190,9 @@ The stages, in order:
 | host agents | the install under Host agent |
 | V6, per instance | on the development machine, `cargo xtask mod remote-logs --file` over a fresh pull of the instance's new `console.log`; 0 (a player was seated) and 2 (booted, nobody joined yet) pass, 1 and 3 fail the deploy |
 
-The deploy writes the templates `tbd-reforger@.service`, `fleet-host-agent@.service` and
+The deploy writes the templates `tbd-reforger@.service`, `fleet_host_agent@.service` and
 `acknowledgement-dropping-relay@.service` of
-[the systemd folder](/tools/xtask/deploy/systemd/README.md), embedded in `xtask` when it is
+[the systemd folder](/deploy/systemd/README.md), embedded in `xtask` when it is
 built: the game server template with `TBD_SERVER_DIR` and `TBD_ADDONS_STAGING` in place of its
 two placeholders, the other two byte for byte. Its `ExecStart`, where `%h` is the deploy account's
 home and `%i` the instance number:
@@ -198,7 +204,7 @@ home and `%i` the instance number:
 ## Host agent
 
 Every instance runs its own [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent)
-as `fleet-host-agent@N.service`. It claims the host side of its server's
+as `fleet_host_agent@N.service`. It claims the host side of its server's
 [fleet commands](/documentation/glossary/a_to_f.md#fleet-command) in
 [server control](/documentation/glossary/n_to_z.md#server-control): `start`, `stop`, `restart`
 and `list_players`, `console_command`, and the restart of a
@@ -208,17 +214,17 @@ which rewrites the config's `scenarioId` to that terrain's
 [game runtime](/documentation/glossary/g_to_m.md#game-runtime) runs `broadcast`, `kick` and
 `load_mission`. No action changes the map by name: a mission on another terrain reaches the
 instance through its mission deployment. The
-[fleet command ledger](/documentation/website/api_v2/verification_evidence/fleet_command_ledger.md#commands)
-and [fleet command execution](/documentation/fleet_host_agent/fleet_command_execution.md#who-runs-what)
+[fleet command ledger](/documentation/apps/api/verification_evidence/fleet_command_ledger.md#commands)
+and [fleet command execution](/documentation/apps/fleet_host_agent/fleet_command_execution.md#who-runs-what)
 hold the executor table. The install stage:
 
-- builds `fleet-host-agent` in the synced checkout and installs it as `~/.local/bin/fleet-host-agent`;
-- writes every instance's `~/.config/fleet-host-agent/instance-N/agent.toml` (mode 600, folder
+- builds `fleet_host_agent` in the synced checkout and installs it as `~/.local/bin/fleet_host_agent`;
+- writes every instance's `~/.config/fleet_host_agent/instance-N/agent.toml` (mode 600, folder
   mode 700), which names files, never secrets: the instance's `secrets/host-agent-credential` and
   `secrets/rcon-password`, its unit `tbd-reforger@N.service` and its `server.config.json`, RCON on
   `127.0.0.1` at its RCON port, the origin it polls and a poll interval of 5 s;
-- enables and restarts every `fleet-host-agent@N.service` and reads each state back after 3 s:
-  `  fleet-host-agent@N.service active`, or `FAIL: fleet-host-agent@N.service is '<state>', not
+- enables and restarts every `fleet_host_agent@N.service` and reads each state back after 3 s:
+  `  fleet_host_agent@N.service active`, or `FAIL: fleet_host_agent@N.service is '<state>', not
   active.` with the unit's last 20 journal lines, which fails the deploy.
 
 With `TBD_FLEET_RELAY_INSTANCE` set, the relay stage runs just before: it builds and installs
@@ -237,7 +243,7 @@ without control characters, and never starts with `@`. The command is not idempo
 is never resent, not even after a new RCON login; its execution window is 30 s; its outcome is the
 server's reply, cut at 4096 bytes with `response_truncated` saying so, and a line with no reply
 fails with "no RCON response; the command may or may not have run". The request's audit row
-carries the line; [fleet command execution](/documentation/fleet_host_agent/fleet_command_execution.md#rcon)
+carries the line; [fleet command execution](/documentation/apps/fleet_host_agent/fleet_command_execution.md#rcon)
 has the full rules.
 
 Then issue **restart** from `/admin/server` on one instance's server; the command's receipt goes
@@ -249,7 +255,7 @@ On the host, every unit of the default five-instance fleet runs, the game and A2
 on every address and the RCON ports on loopback only:
 
 ```bash
-ssh <TBD_SSH_HOST> 'systemctl --user is-active tbd-reforger@{1..5}.service fleet-host-agent@{1..5}.service acknowledgement-dropping-relay@5.service && ss -ulnp | grep -E ":(200[1-5]|1777[7-9]|1778[01]|19999|2000[0-3]) "'
+ssh <TBD_SSH_HOST> 'systemctl --user is-active tbd-reforger@{1..5}.service fleet_host_agent@{1..5}.service acknowledgement-dropping-relay@5.service && ss -ulnp | grep -E ":(200[1-5]|1777[7-9]|1778[01]|19999|2000[0-3]) "'
 ```
 
 Expected: eleven `active` lines, then one UDP listener on `0.0.0.0` for each game port 2001 to
@@ -259,7 +265,7 @@ Expected: eleven `active` lines, then one UDP listener on `0.0.0.0` for each gam
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `Missing …deploy.env — copy from tools/xtask/deploy/deploy.env.example` | no deploy file | [host preparation](/documentation/runbooks/game_server_staging/host_preparation.md) step 6 |
+| `Missing …deploy.env — copy from deploy/deploy.env.example` | no deploy file | [host preparation](/documentation/runbooks/game_server_staging/host_preparation.md) step 6 |
 | `<path>:<line>: <KEY>: is no longer read (…); delete the assignment`, exit 1 | the deploy file, or the process environment, still assigns a retired single-server setting | delete the line or unset the variable; credentials and passwords live on the host ([machine credentials](/documentation/runbooks/game_server_staging/machine_credentials_and_mission_deployment.md)) |
 | `ERROR: <TBD_BACKEND_URL>/healthz does not answer on the staging host (probe exit <n>).`, exit 1 | the website is not deployed on the host or its API is down: 7 means nothing listens, 22 an error status such as the 503 of an API without its database | `cargo xtask deploy website` ([website deployment](/documentation/runbooks/website_deployment.md)), then deploy staging again |
 | `TBD_PUBLIC_ADDRESS is unset and <host> has no IPv4 address from here …` | the development machine cannot resolve `TBD_SSH_HOST` to IPv4: avahi is not running on the host, or mDNS does not reach this machine | start avahi-daemon on the host, or set `TBD_PUBLIC_ADDRESS` |
@@ -278,14 +284,14 @@ Expected: eleven `active` lines, then one UDP listener on `0.0.0.0` for each gam
 | `FAIL: instance <N> wrote no new log folder under …/logs.` | the unit never started | `systemctl --user status tbd-reforger@<N>.service` on the host |
 | `FAIL: instance <N> is NOT serving what was deployed, or is not joinable; log kept at <path>` | its boot verdict failed | read the FAIL lines above it; [boot and log verification](/documentation/runbooks/game_server_staging/boot_and_log_verification.md) |
 | `FAIL: acknowledgement-dropping-relay@<N>.service is '<state>', not active.` | the relay did not start | the journal lines printed below it name the cause |
-| `FAIL: fleet-host-agent@<N>.service is '<state>', not active.` | the agent did not start: exit 78 is a configuration it refuses, which a restart cannot fix | the journal lines below it; the instance's `agent.toml` and secret files |
+| `FAIL: fleet_host_agent@<N>.service is '<state>', not active.` | the agent did not start: exit 78 is a configuration it refuses, which a restart cannot fix | the journal lines below it; the instance's `agent.toml` and secret files |
 | `V6 ENVIRONMENT — the log could not be obtained …`, or `V6 instance <N>: could not pull …` | no log was examined | check SSH, then `cargo xtask mod remote-logs --instance <N>` |
 
 ## Related
 
 - [Staging deploy code](/tools/xtask/src/commands/deploy/staging/README.md) — the module
   layout, the settings check and the tests that pin each payload.
-- [Deploy files](/tools/xtask/deploy/README.md) — `deploy.env.example` and the systemd units.
-- [Fleet host agent](/documentation/fleet_host_agent/README.md) — the agent's configuration and
+- [Deploy files](/deploy/README.md) — `deploy.env.example` and the systemd units.
+- [Fleet host agent](/documentation/apps/fleet_host_agent/README.md) — the agent's configuration and
   command execution.
 - [Game server staging](/documentation/runbooks/game_server_staging/README.md) — the index.

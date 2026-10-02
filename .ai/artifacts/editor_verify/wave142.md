@@ -9,7 +9,7 @@ perturbation below was restored and re-verified with `git status --porcelain` (e
 
 | Suite | `--list` total | run total | verdict |
 |---|---|---|---|
-| website-frontend | **1041** | **1041 passed, 0 failed** | agree, matches expected 1041 |
+| frontend | **1041** | **1041 passed, 0 failed** | agree, matches expected 1041 |
 | map-engine-render | **67** | **67 passed, 0 failed** | agree, matches expected 67 |
 
 `dem::peaks::tests::everon_peaks_max_above_350` **PASSES on main** (11.66 s — real DEM decode, so
@@ -18,7 +18,7 @@ the LFS blob is a real file here, not a pointer). Derivation note: the test is b
 `0 passed … filtered out` because the test is not compiled at all — that is a feature gate, not a
 skip, but do not read the bare invocation as a pass.
 
-`cargo check -p website-frontend --target wasm32-unknown-unknown` on main: clean (see close).
+`cargo check -p frontend --target wasm32-unknown-unknown` on main: clean (see close).
 
 ---
 

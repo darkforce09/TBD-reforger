@@ -26,9 +26,9 @@ The defect still existed. T-936.2 / T-115 are shipped; they do not implement T-1
 | `crates/map-engine-core/src/mission/tasks.rs` | 133-177 | `Schedule {start_after_s, window_s}`, `window_is_legal` (`window_s > 0`, perturbation target), `validate_schedule` (window, non-negative start, start strictly inside mission length when length > 0) |
 | `crates/map-engine-core/src/mission/tasks.rs` | 294, 306, 354+ | parse `schedule` on `AuthoredTask`; `KNOWN_KEYS` includes `schedule` (the tasks schema block that lives in this file) |
 | `crates/map-engine-core/src/mission/tasks.rs` | 708-775 | validator tests: round-trip, omit-key, zero window (perturbation), negative window/start, start at/past mission length, T+0, non-object, unknown property, missing windowS |
-| `apps/website/frontend/src/editor/panels/tasks_panel.rs` | 198-263 | `with_schedule` / `schedule_seconds`; empty-empty clears; half-filled refused; calls `validate_schedule(..., Some(mission_length_s))` |
-| `apps/website/frontend/src/editor/panels/tasks_panel.rs` | 529-574 | unmounted panel still authors Start after (s) / Window (s); wasm reads `flow.timeLimitSeconds` (default 5400) |
-| `apps/website/frontend/src/editor/panels/tasks_panel.rs` | 725-761 | wasm-native tests for write, zero-window refusal copy, start-past-length refusal copy, clear, half-fill |
+| `apps/frontend/src/editor/panels/tasks_panel.rs` | 198-263 | `with_schedule` / `schedule_seconds`; empty-empty clears; half-filled refused; calls `validate_schedule(..., Some(mission_length_s))` |
+| `apps/frontend/src/editor/panels/tasks_panel.rs` | 529-574 | unmounted panel still authors Start after (s) / Window (s); wasm reads `flow.timeLimitSeconds` (default 5400) |
+| `apps/frontend/src/editor/panels/tasks_panel.rs` | 725-761 | wasm-native tests for write, zero-window refusal copy, start-past-length refusal copy, clear, half-fill |
 | `apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c` | 26-34, 87-90, 202-203, 231, 267, 386-499 | `TBD_TaskScheduleStruct` with ABSENT sentinels; LIVE mission clock; inactive before `startAfterS`; evaluate inside `windowS`; fail when the window closes; log `[TBD][Task] id=<n> t=<s> -> <state>` |
 | `apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c` | same | export twin, identical ASCII |
 

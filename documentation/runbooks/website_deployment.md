@@ -15,20 +15,20 @@ the server-side builds; every later one is the single command under
 
 ```text
 browser ──▶ Cloudflare Tunnel (optional, Phase E) ──▶ Caddy :3080  (container tbd_staging_caddy, host network)
-            cloudflared on 127.0.0.1, the one peer    │  site: tools/xtask/deploy/Caddyfile.website
+            cloudflared on 127.0.0.1, the one peer    │  site: deploy/caddy/Caddyfile
             whose X-Forwarded-For Caddy keeps         │
                                                       ├── /api/*, /uploads/*, /map-assets/*, /healthz
                                                       │     ──▶ API 0.0.0.0:8080  (tbd-website-api.service, Phase D)
-                                                      └── every other path ──▶ apps/website/frontend/dist
+                                                      └── every other path ──▶ apps/frontend/dist
 API ──▶ Postgres tbd_staging_db on 127.0.0.1:${TBD_POSTGRES_HOST_PORT:-5432}
 API uploads ──▶ ~/.local/state/tbd-website-api/uploads  (outside the checkout)
 API equipment data ──▶ ~/.local/state/tbd-website-api/equipment  (outside the checkout)
 host tools ──▶ target/release/staging-fixtures  (the staging verification harness runs it)
            ──▶ target/release/acknowledgement-dropping-relay  (cargo xtask deploy staging installs it)
-apps/website/docker-compose.staging.yml runs tbd_staging_caddy and tbd_staging_db (restart: unless-stopped)
+deploy/compose.staging.yml runs tbd_staging_caddy and tbd_staging_db (restart: unless-stopped)
 ```
 
-The host is whatever `TBD_SSH_HOST` names in `tools/xtask/deploy/deploy.env`; this runbook
+The host is whatever `TBD_SSH_HOST` names in `deploy/deploy.env`; this runbook
 writes it, and the checkout folder `TBD_REMOTE_DIR`, as placeholders.
 
 ## Prerequisites
@@ -51,7 +51,7 @@ sets up on Ubuntu:
   must start at boot, because it is what restarts Postgres and Caddy: `systemctl is-enabled docker`
   prints `enabled`; on a Podman host, `systemctl --user enable podman-restart.service` does it for
   the deploy user.
-- No Caddy install: Caddy runs in the `caddy` service of `apps/website/docker-compose.staging.yml`,
+- No Caddy install: Caddy runs in the `caddy` service of `deploy/compose.staging.yml`,
   and the deploy pulls its image.
 - A C toolchain (`build-essential`) and rustup under `~/.cargo/bin`, with Trunk installed there
   too: the remote build steps put only `$HOME/.cargo/bin` on `PATH`. The root
@@ -79,10 +79,10 @@ Run the development-machine steps from the repository root; a step that runs on 
    `TBD_POSTGRES_HOST_PORT`. The file is gitignored and never rsynced; the commands parse it as
    `KEY=VALUE` lines and never run it. A key the file sets beats the process environment, and an
    empty value there counts as unset. Every key the website deploy reads is in the
-   [deployment templates README](/tools/xtask/deploy/README.md#configuration).
+   [deployment templates README](/deploy/README.md#configuration).
 
    ```bash
-   cp tools/xtask/deploy/deploy.env.example tools/xtask/deploy/deploy.env
+   cp deploy/deploy.env.example deploy/deploy.env
    ```
 
    Expected: no output. A `DEPLOY_ENV` environment variable points `deploy website`, and every
@@ -96,14 +96,14 @@ Run the development-machine steps from the repository root; a step that runs on 
 
    Expected, exit 0: `==> deploy-website → <TBD_SSH_HOST>:<TBD_REMOTE_DIR>`, then the map-asset
    probe, the rsync with one `[dry-run]   --exclude=` line per protected path (`.git/`,
-   `target/`, the gate build folders, `node_modules/`, `apps/website/frontend/dist/`, the server's
-   `apps/website/api_v2/.env`, `tools/xtask/deploy/deploy.env`, `assets/terrains/`,
+   `target/`, the gate build folders, `node_modules/`, `apps/frontend/dist/`, the server's
+   `apps/api/.env`, `deploy/deploy.env`, `assets/terrains/`,
    `assets/scratch/`, `packages/` and the reference mod folders, then what only the
    development machine holds, anchored at the checkout root: `/target-*/` and the other build
    folders, the worktrees under `.ai/artifacts/worktrees/`, the wave gate's receipts, and the
-   local files of Claude Code, Codex and `.mcp.json`), the seven remote steps below,
+   local files of Claude Code, Codex and `.mcp.json`), the six remote steps below,
    `==> remote: restart tbd-website-api.service`,
-   `==> unit: tools/xtask/deploy/systemd/tbd-website-api.service is installed by hand (see documentation/runbooks/website_deployment.md Phase D)`,
+   `==> unit: deploy/systemd/tbd-website-api.service is installed by hand (see documentation/runbooks/website_deployment.md Phase D)`,
    the smoke hints and `==> done`. The printed list is the authority; the code is
    `tools/xtask/src/commands/deploy/website/rsync_argv.rs`, and the development-machine-only
    paths, which `cargo xtask deploy staging` excludes too, are in
@@ -111,13 +111,12 @@ Run the development-machine steps from the repository root; a step that runs on 
 
    | Remote step, as printed | What runs on the host |
    |---|---|
-   | `staging Postgres (docker compose)` | `compose -f apps/website/docker-compose.staging.yml up -d postgres` with `TBD_POSTGRES_HOST_PORT`; skipped by `TBD_SKIP_COMPOSE=1` |
-   | `cargo build --release -p website-api --bin api` | the release API into `target/release/api`; skipped by `TBD_SKIP_API_BUILD=1` |
-   | `cargo build --release: the staging host tools (staging-fixtures, acknowledgement-dropping-relay)` | `cargo build --release -p website-api --bin staging-fixtures`, then `-p developer_tools --bin acknowledgement-dropping-relay`, each proven by `test -x target/release/<executable>`: the staging verification harness runs `staging-fixtures` on the host, and `cargo xtask deploy staging` installs the relay; skipped by `TBD_SKIP_API_BUILD=1` |
-   | `trunk build --release (Leptos SPA → frontend/dist)` | the app into `apps/website/frontend/dist`; skipped by `TBD_SKIP_SPA_BUILD=1` |
-   | `staging Caddy on :3080 (docker compose), then reload its Caddyfile` | `compose … up -d caddy`, then `compose … exec -T caddy caddy reload --config /etc/tbd-caddy/Caddyfile.website --adapter caddyfile`, up to 5 attempts a second apart; skipped by `TBD_SKIP_COMPOSE=1`, and still run with `TBD_SKIP_SPA_BUILD=1`, serving the `dist` already on the host |
+   | `staging Postgres (docker compose)` | `compose -f deploy/compose.staging.yml up -d postgres` with `TBD_POSTGRES_HOST_PORT`; skipped by `TBD_SKIP_COMPOSE=1` |
+   | `cargo build --release -p api --bin api` | the release API into `target/release/api`; skipped by `TBD_SKIP_API_BUILD=1` |
+   | `cargo build --release: the staging host tools (staging-fixtures, acknowledgement-dropping-relay)` | `cargo build --release -p api --bin staging-fixtures`, then `-p developer_tools --bin acknowledgement-dropping-relay`, each proven by `test -x target/release/<executable>`: the staging verification harness runs `staging-fixtures` on the host, and `cargo xtask deploy staging` installs the relay; skipped by `TBD_SKIP_API_BUILD=1` |
+   | `trunk build --release (Leptos SPA → frontend/dist)` | the app into `apps/frontend/dist`; skipped by `TBD_SKIP_SPA_BUILD=1` |
+   | `staging Caddy on :3080 (docker compose), then reload its Caddyfile` | `compose … up -d caddy`, then `compose … exec -T caddy caddy reload --config /etc/tbd-caddy/Caddyfile --adapter caddyfile`, up to 5 attempts a second apart; skipped by `TBD_SKIP_COMPOSE=1`, and still run with `TBD_SKIP_SPA_BUILD=1`, serving the `dist` already on the host |
    | `repoint the checksums of comments-only migration edits` | `TBD_DB_CONTAINER=tbd_staging_db cargo xtask db repair-migration-checksum --force` |
-   | `move runtime files into the unit's state directory` | creates `~/.local/state/tbd-website-api/uploads` and moves an `uploads` folder left inside `apps/website/api_v2/` into it |
 
    Every compose step runs from `<TBD_REMOTE_DIR>` with `TBD_POSTGRES_HOST_PORT` exported, under
    `docker compose` when the host has docker and `podman compose` otherwise.
@@ -170,7 +169,7 @@ the password its volume was first created with. The database listens on the host
    while the unit is missing, and `==> done` either way.
 
 The rsync mirrors the checkout with `--delete`: a file on the host outside the excluded paths
-disappears at the next deploy, so the server keeps its own files only at `apps/website/api_v2/.env`,
+disappears at the next deploy, so the server keeps its own files only at `apps/api/.env`,
 under `assets/terrains/` and outside the checkout. The glyph atlas `assets/glyphs/` is not
 excluded; it is tracked and arrives with every deploy. An excluded path that is already on the
 host is neither updated nor deleted: a development machine's build folder or tool state found
@@ -188,12 +187,12 @@ checkout, with `terrain-registry.json` at its top; see
 6. On the host, create the server's API settings from the template that arrived with the rsync.
 
    ```bash
-   install -m 600 <TBD_REMOTE_DIR>/apps/website/api_v2/.env.example <TBD_REMOTE_DIR>/apps/website/api_v2/.env
+   install -m 600 <TBD_REMOTE_DIR>/apps/api/.env.example <TBD_REMOTE_DIR>/apps/api/.env
    ```
 
    Expected: no output; the file is readable by the deploy user only. Set these values; the full
    list, with defaults and failure modes, is
-   [API environment variables](/documentation/website/api_v2/environment_variables.md).
+   [API environment variables](/documentation/apps/api/environment_variables.md).
 
    | Variable | Value on the host |
    |---|---|
@@ -226,14 +225,14 @@ checkout, with `terrain-registry.json` at its top; see
    `/TBD_REPO_DIR_PLACEHOLDER/…`.
 
    ```bash
-   sed 's|TBD_REPO_DIR_PLACEHOLDER|<TBD_REMOTE_DIR without its leading slash>|g' tools/xtask/deploy/systemd/tbd-website-api.service > ~/.config/systemd/user/tbd-website-api.service
+   sed 's|TBD_REPO_DIR_PLACEHOLDER|<TBD_REMOTE_DIR without its leading slash>|g' deploy/systemd/tbd-website-api.service > ~/.config/systemd/user/tbd-website-api.service
    ```
 
-   Expected: no output. The unit runs `target/release/api` from `apps/website/api_v2`, loads that
+   Expected: no output. The unit runs `target/release/api` from `apps/api`, loads that
    folder's `.env`, pins `MAP_ASSETS_DIR` and `GLYPH_ASSETS_DIR` to the checkout's
    `assets/terrains` and `assets/glyphs`, and keeps uploads and the imported equipment data
    under its state directory (`StateDirectory=tbd-website-api`); the
-   [systemd README](/tools/xtask/deploy/systemd/README.md#configuration) explains each line.
+   [systemd README](/deploy/systemd/README.md#configuration) explains each line.
    When a deploy's restart fails, the deploy prints steps 7 to 10 as one line
    (`install_command` in `tools/xtask/src/commands/deploy/website/systemd_unit.rs`).
 
@@ -263,7 +262,7 @@ checkout, with `terrain-registry.json` at its top; see
     setting stops the boot with `<VARIABLE> is required` (see Troubleshooting).
 
 The staging compose file also carries an `api` profile that runs the API in a container
-(`apps/website/Dockerfile`), with its settings in the compose `environment` block and its uploads in
+(`deploy/Dockerfile`), with its settings in the compose `environment` block and its uploads in
 a named volume. The deploy does not use it, and it binds the same `127.0.0.1:8080` as the unit, so
 run one or the other.
 
@@ -271,9 +270,9 @@ run one or the other.
 
 12. On the host, check that Caddy serves the app. Nothing is installed or started by hand: the
     deploy starts the compose file's `caddy` service, container `tbd_staging_caddy`, and reloads
-    `tools/xtask/deploy/Caddyfile.website` in it, so an edited Caddyfile applies with the next
-    deploy. The service mounts `tools/xtask/deploy/` at `/etc/tbd-caddy` and
-    `apps/website/frontend/` at `/srv/tbd-frontend`, both read-only, and serves
+    `deploy/caddy/Caddyfile` in it, so an edited Caddyfile applies with the next
+    deploy. The service mounts `deploy/caddy/` at `/etc/tbd-caddy` and
+    `apps/frontend/` at `/srv/tbd-frontend`, both read-only, and serves
     `/srv/tbd-frontend/dist`, wherever the checkout sits.
 
     ```bash
@@ -315,6 +314,9 @@ run one or the other.
 
 ### Redeploy
 
+A host whose checkout is not yet in the layout of restructure stage S2 takes the one-time host
+steps W1 to W3 of the [S2 operator steps](/documentation/archive/restructure_agent_briefs/s2_a2_to_a6.md#oc-deploy-operator-steps) around its next deploy.
+
 16. Deploy the current checkout. This is the whole procedure after the first deployment.
 
     ```bash
@@ -349,7 +351,7 @@ is shown once, and revoking it stops its executor at the next request.
 | Executor | Credential kind | File on the host | Commands it runs |
 |---|---|---|---|
 | the game runtime (the mod) | `mod_runtime` | `~/tbd/fleet/instance-N/secrets/mod-runtime-credential`, written into the instance profile's `TBD_BackendConfig.json` as `machineCredential` | `broadcast`, `kick`, `load_mission`; runtime sessions, heartbeats, roster reads |
-| the [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) | `host_agent` | `~/tbd/fleet/instance-N/secrets/host-agent-credential`, named by `~/.config/fleet-host-agent/instance-N/agent.toml` | `start`, `stop`, `restart`, `list_players`, `restart_with_mission`, `console_command` (one line to the server's RCON console, sent once) |
+| the [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) | `host_agent` | `~/tbd/fleet/instance-N/secrets/host-agent-credential`, named by `~/.config/fleet_host_agent/instance-N/agent.toml` | `start`, `stop`, `restart`, `list_players`, `restart_with_mission`, `console_command` (one line to the server's RCON console, sent once) |
 
 Which mission a server runs is a
 [mission deployment](/documentation/glossary/g_to_m.md#mission-deployment). The fleet, its
@@ -396,7 +398,7 @@ host. From the repository root, in one shell:
 proof="$(mktemp -d)" && printf '{\n\tadmin off\n}\n\n:8080 {\n\tbind 127.0.0.1\n\trespond "x-forwarded-for={header.X-Forwarded-For}"\n}\n' > "$proof/Caddyfile.echo"
 podman network create tbd-forwarding-proof && podman pod create --name tbd-forwarding-proof --network tbd-forwarding-proof
 podman run -d --pod tbd-forwarding-proof --name tbd-forwarding-proof-echo --security-opt label=disable -v "$proof:/etc/proof:ro" docker.io/library/caddy:2 caddy run --config /etc/proof/Caddyfile.echo --adapter caddyfile
-podman run -d --pod tbd-forwarding-proof --name tbd-forwarding-proof-caddy --security-opt label=disable -v "$PWD/tools/xtask/deploy:/etc/tbd-caddy:ro" docker.io/library/caddy:2 caddy run --config /etc/tbd-caddy/Caddyfile.website --adapter caddyfile
+podman run -d --pod tbd-forwarding-proof --name tbd-forwarding-proof-caddy --security-opt label=disable -v "$PWD/deploy/caddy:/etc/tbd-caddy:ro" docker.io/library/caddy:2 caddy run --config /etc/tbd-caddy/Caddyfile --adapter caddyfile
 podman exec tbd-forwarding-proof-echo wget -qO- --header 'X-Forwarded-For: 203.0.113.7' http://127.0.0.1:3080/api/forwarding-proof
 podman run --rm --network tbd-forwarding-proof docker.io/library/caddy:2 sh -c 'hostname -i; wget -qO- --header "X-Forwarded-For: 203.0.113.7" http://tbd-forwarding-proof:3080/api/forwarding-proof'
 podman pod rm -f tbd-forwarding-proof && podman network rm tbd-forwarding-proof && rm -r "$proof"
@@ -425,7 +427,7 @@ On a Podman host, `podman exec` takes the same arguments.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `Missing <path> — copy from tools/xtask/deploy/deploy.env.example`, exit 1 | no `deploy.env`, or `DEPLOY_ENV` names a missing file | step 1 |
+| `Missing <path> — copy from deploy/deploy.env.example`, exit 1 | no `deploy.env`, or `DEPLOY_ENV` names a missing file | step 1 |
 | `TBD_SSH_HOST is not set: add it to <path>`, exit 1 | the value is missing, or empty in the file | set the value |
 | `<path>:<line>: TBD_SSH_HOST: …`, or `<path>:<line>: <message>`, exit 1 | the value on that line of the file is not `user@host`, or the line is not `KEY=VALUE` | fix that line |
 | `Refusing to deploy: TBD_SSH_HOST must name the deploy user (user@host) …`, exit 1 | `TBD_SSH_HOST` names no user, so there is no `/home/<user>/tbd/` to hold `TBD_REMOTE_DIR` | write `user@host` |
@@ -443,10 +445,10 @@ On a Podman host, `podman exec` takes the same arguments.
 | every `/map-assets` request answers 404 and the journal says nothing | the terrain tree is missing, or the API runs with another working directory; the asset server never checks its root | put the tree at `assets/terrains/`, and run the API through the unit, which pins both folders |
 | the Mission Creator reports that `SharedArrayBuffer` is missing | the page is not served through the Caddyfile, so it lacks the cross-origin isolation headers | open the site through Caddy on port 3080 or the tunnel (step 12) |
 | the deploy stops at `staging Caddy on :3080 …`, and `docker logs tbd_staging_caddy` shows `address already in use` | another process holds port 3080 or Caddy's admin port 2019 on the host, such as a Caddy started outside the compose file | stop it (`caddy stop` for such a Caddy; `ss -tlnp` names the holder), then deploy again |
-| the deploy stops at the Caddy step with `adapting config using caddyfile: …` | the Caddyfile does not parse; a running Caddy keeps its previous configuration | fix `tools/xtask/deploy/Caddyfile.website`, then deploy again |
+| the deploy stops at the Caddy step with `adapting config using caddyfile: …` | the Caddyfile does not parse; a running Caddy keeps its previous configuration | fix `deploy/caddy/Caddyfile`, then deploy again |
 | the deploy stops at `cargo build --release: the staging host tools …` | the checkout does not build `staging-fixtures` or `acknowledgement-dropping-relay`, or a package no longer declares that `[[bin]]` | fix the build on the development machine (`cargo build --release -p <package> --bin <executable>`), then deploy again; `TBD_SKIP_API_BUILD=1` skips both cargo steps |
 | `rate_limit_buckets` gains only `strict\|127.0.0.1` rows for tunnel traffic | Caddy runs a Caddyfile without the `servers { trusted_proxies … }` block, or cloudflared reaches Caddy from an address other than `127.0.0.1` | deploy again so the Caddy step reloads the committed Caddyfile; point the tunnel's service at `http://127.0.0.1:3080` (step 14) |
-| every page but the API paths answers 404 | there is no `apps/website/frontend/dist` on the host: the app build was skipped (`TBD_SKIP_SPA_BUILD=1`) or never ran | deploy without `TBD_SKIP_SPA_BUILD` |
+| every page but the API paths answers 404 | there is no `apps/frontend/dist` on the host: the app build was skipped (`TBD_SKIP_SPA_BUILD=1`) or never ran | deploy without `TBD_SKIP_SPA_BUILD` |
 | Caddy and Postgres are gone after a reboot | the container runtime does not start at boot | `sudo systemctl enable --now docker`; on a Podman host, `systemctl --user enable --now podman-restart.service` with lingering on (step 4) |
 | the API stops when the deploy user logs out | lingering is off | step 4 |
 | the backup timers fail to find their container | the backup units name `tbd_reforger_db`; the deploy's compose starts `tbd_staging_db` | [Database operations](/documentation/runbooks/database_operations.md#schedule-the-home-servers-backups) |
@@ -463,8 +465,8 @@ On a Podman host, `podman exec` takes the same arguments.
   that call the host tools this deploy builds.
 - [Testing and CI](/documentation/runbooks/testing_and_ci.md) — the gates a change passes before
   it is deployed.
-- [API environment variables](/documentation/website/api_v2/environment_variables.md) — every
+- [API environment variables](/documentation/apps/api/environment_variables.md) — every
   setting of the server's `.env`.
-- [Deployment templates](/tools/xtask/deploy/README.md) — `deploy.env`, the Caddyfile and the
+- [Deployment templates](/deploy/README.md) — `deploy.env`, the Caddyfile and the
   units; [the deploy commands](/tools/xtask/src/commands/deploy/website/README.md) — how
   `deploy website` works.

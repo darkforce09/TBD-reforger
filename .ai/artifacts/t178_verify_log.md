@@ -8,7 +8,7 @@
 |------|--------|
 | `make leptos-gates` (`gate doctor` + 18 editor smokes) | **PASS** — all `pass: true` |
 | `make ci-local` | **PASS** (exit 0) |
-| `cargo test -p website-frontend` | **74/74** |
+| `cargo test -p frontend` | **74/74** |
 | `cargo test -p map-engine-core density_island` | **4/4** (stitch / pack / Y-flip / dims) |
 | fmt + clippy (wasm32 + api) | clean |
 

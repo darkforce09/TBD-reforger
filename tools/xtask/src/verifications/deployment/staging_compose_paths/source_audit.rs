@@ -54,7 +54,7 @@ pub fn verify_staging_compose_paths(repo_root: &Path) -> Result<u8> {
 }
 
 /// Every check, in the order the report prints them: the website deploy's compose pins and its
-/// `cd` ban, the game server deploy's compose ban per source, then the two on-disk file checks.
+/// `cd` ban, the game server deploy's compose ban per source, then the on-disk file checks.
 ///
 /// Split out from [`verify_staging_compose_paths`] so the contract is testable against a scratch
 /// tree without capturing stdout, and returning a LIST rather than stopping at the first failure:
@@ -67,7 +67,7 @@ pub(super) fn audit(repo_root: &Path) -> Result<Vec<Verdict>> {
         Ok(source) => {
             let stripped = strip_comments(&source);
             out.extend(pin_compose_lines(&stripped)?);
-            out.push(ban_cd_into_api(&stripped)?);
+            out.push(ban_cd_into_compose_folder(&stripped)?);
         }
         Err(unread) => out.push(unread),
     }
@@ -82,7 +82,7 @@ pub(super) fn audit(repo_root: &Path) -> Result<Vec<Verdict>> {
     }
     // Checked whatever happened above: the operator should still learn whether the compose file
     // is where it belongs.
-    out.extend(compose_files_on_disk(repo_root));
+    out.extend(compose_files_on_disk(repo_root)?);
     Ok(out)
 }
 
@@ -282,10 +282,10 @@ pub(super) fn f_path<'a>(re: &Regex, line: &'a str) -> Option<&'a str> {
 }
 
 /// The pin proper over the website deploy's source: at least one compose command, and every one
-/// names [`GOOD_PATH`] after `-f` and [`BAD_PATH`] nowhere.
+/// names [`GOOD_PATH`] after `-f` and no other compose file anywhere.
 ///
 /// A line gets every message that applies to it, in this order: no parseable `-f`, then the wrong
-/// path, then the reference to the API folder's file.
+/// path, then each other compose file it names.
 pub(super) fn pin_compose_lines(stripped: &str) -> Result<Vec<Verdict>> {
     let lines = compose_lines(stripped)?;
     let f_re = f_regex()?;
@@ -300,7 +300,6 @@ pub(super) fn pin_compose_lines(stripped: &str) -> Result<Vec<Verdict>> {
         )));
     }
 
-    let bad = Pattern::literal(BAD_PATH);
     for line in lines {
         match f_path(&f_re, line) {
             // A compose command whose `-f` has no argument, or no `-f` at all. Kept distinct from
@@ -310,7 +309,7 @@ pub(super) fn pin_compose_lines(stripped: &str) -> Result<Vec<Verdict>> {
                 vec![line.to_string()],
             )),
             // THE HEADLINE CONTRACT. Equality, not a substring test: a relative
-            // `docker-compose.staging.yml`, a `../`-prefixed one and the API folder's file are all
+            // `compose.staging.yml`, a `../`-prefixed one and the development stack's file are all
             // simply "not GOOD_PATH". Each reports the value actually found, so the operator can
             // see which edit went wrong.
             Some(path) if path != GOOD_PATH => out.push(Verdict::failed(format!(
@@ -319,35 +318,51 @@ pub(super) fn pin_compose_lines(stripped: &str) -> Result<Vec<Verdict>> {
             Some(_) => {}
         }
         // Belt and braces over the equality check above, which compares the extracted `-f`
-        // argument; this rejects the API folder's file ANYWHERE on the line: in an `--env-file`,
-        // in a second `-f` (compose accepts overlays, and the later file wins for conflicting
-        // keys), or in a `cd` sharing the line. `gate::ban_str` so the decision stays in the
-        // library and only the prose is local.
-        out.push(with_detail(
-            gate::ban_str(
-                &format!("compose line still references {BAD_PATH}"),
-                &bad,
-                line,
-            ),
-            vec![line.to_string()],
-        ));
+        // argument; this rejects every other compose file ANYWHERE on the line: in an
+        // `--env-file`, in a second `-f` (compose accepts overlays, and the later file wins for
+        // conflicting keys), or in a `cd` sharing the line.
+        for wrong in wrong_compose_files(line)? {
+            out.push(detailed(
+                &format!("compose line names {wrong}, which is not {GOOD_PATH}:"),
+                vec![line.to_string()],
+            ));
+        }
     }
 
     Ok(out)
 }
 
-/// The ban on a `cd` into `apps/website/api_v2` in the website deploy's source ([`CD_INTO_API`]).
+/// Every word of `line` that names a compose file ([`COMPOSE_FILE_NAME`]) other than
+/// [`GOOD_PATH`], in order. A word ends at whitespace, a quote, `=`, a shell operator or a
+/// backslash, so a quoted, assigned or escaped name is still one whole word and is compared whole.
+pub(super) fn wrong_compose_files(line: &str) -> Result<Vec<&str>> {
+    let compose_file = Pattern::regex(COMPOSE_FILE_NAME)?;
+    let mut wrong = Vec::new();
+    for word in line.split(|c: char| c.is_whitespace() || "'\"=;&|()\\".contains(c)) {
+        if word.is_empty() || word == GOOD_PATH {
+            continue;
+        }
+        if gate::probe_str(&compose_file, word).map_err(|cause| anyhow::anyhow!("{cause:?}"))? {
+            wrong.push(word);
+        }
+    }
+    Ok(wrong)
+}
+
+/// The ban on a `cd` into [`COMPOSE_FOLDER`] in the website deploy's source
+/// ([`cd_into_compose_folder`]).
 ///
-/// Not redundant with the `-f` pin: `cd api && docker compose -f docker-compose.staging.yml` puts
-/// a plausible-looking relative filename in front of the wrong directory. The `-f` argument alone
+/// Not redundant with the `-f` pin: `cd deploy && docker compose -f compose.dev.yml` puts a
+/// plausible-looking relative filename in front of the folder that holds both stacks, and
+/// `cd deploy` in front of [`GOOD_PATH`] opens a file that does not exist. The `-f` argument alone
 /// cannot tell you which file compose opens; only the pair can.
-pub(super) fn ban_cd_into_api(stripped: &str) -> Result<Verdict> {
+pub(super) fn ban_cd_into_compose_folder(stripped: &str) -> Result<Verdict> {
     Ok(gate::ban_str(
         &format!(
-            "{} cds into apps/website/api_v2 (compose runs from the checkout root)",
+            "{} cds into {COMPOSE_FOLDER} (compose runs from the checkout root)",
             source_basename(WEBSITE_DEPLOY_SOURCE)
         ),
-        &Pattern::regex(CD_INTO_API)?,
+        &Pattern::regex(&cd_into_compose_folder())?,
         stripped,
     ))
 }
@@ -370,28 +385,60 @@ pub(super) fn ban_compose_in_the_game_server_deploy(
     ))
 }
 
-/// The two on-disk assertions: the good compose file exists, the API folder's one does not.
+/// The on-disk assertions: the good compose file exists, and no entry named like a compose file
+/// ([`COMPOSE_FILE_NAME`]) sits in the checkout root, the folder every compose command runs from:
+/// compose loads such a file by itself when `-f` is dropped, and a bare relative `-f` resolves
+/// there.
 ///
 /// Both `Failed`, never `DidNotRun`: here the file's *existence* IS the assertion, so a missing
 /// compose file is a check that ran and found a violation. (Contrast a missing deploy source in
 /// [`verify_staging_compose_paths`], where absence blinds the gate and "did not run" is the honest
-/// answer.) The API folder's path is tested for ANY entry, not just a file: a *directory* left
-/// there is just as much a second compose location, and the wider test suits a ban.
-pub(super) fn compose_files_on_disk(repo_root: &Path) -> Vec<Verdict> {
+/// answer.) A root that cannot be listed is the did-not-run verdict that names it. Every root
+/// entry is judged by name, whatever it is: a directory or a dangling symlink of that name is just
+/// as much a second compose location, and the listing reports a symlink without following it.
+pub(super) fn compose_files_on_disk(repo_root: &Path) -> Result<Vec<Verdict>> {
     let mut out = Vec::new();
     if !repo_root.join(GOOD_PATH).is_file() {
         out.push(Verdict::failed(format!("missing {GOOD_PATH}")));
     }
-    // `symlink_metadata`, not `exists()`: `exists()` follows symlinks, so a *dangling* symlink at
-    // the API folder's path would report absent. A symlink there is exactly how someone points an
-    // old command line at the new file, so it must trip the ban. This cannot change the verdict
-    // on any tree where the path is a real file or genuinely absent.
-    if repo_root.join(BAD_PATH).symlink_metadata().is_ok() {
-        out.push(Verdict::failed(format!(
-            "unexpected {BAD_PATH}: the staging compose file is {GOOD_PATH} alone"
-        )));
+    let unlisted = |cause: std::io::Error| {
+        Verdict::did_not_run(
+            format!("cannot list {}", repo_root.display()),
+            Kind::Pin,
+            NotRun::Unreadable {
+                path: repo_root.to_path_buf(),
+                source: cause,
+            },
+        )
+    };
+    let entries = match std::fs::read_dir(repo_root) {
+        Ok(entries) => entries,
+        Err(cause) => {
+            out.push(unlisted(cause));
+            return Ok(out);
+        }
+    };
+    let compose_file = Pattern::regex(COMPOSE_FILE_NAME)?;
+    let mut names = Vec::new();
+    for entry in entries {
+        match entry {
+            Ok(entry) => names.push(entry.file_name().to_string_lossy().into_owned()),
+            Err(cause) => {
+                out.push(unlisted(cause));
+                return Ok(out);
+            }
+        }
     }
-    out
+    names.sort();
+    for name in names {
+        if gate::probe_str(&compose_file, &name).map_err(|cause| anyhow::anyhow!("{cause:?}"))? {
+            out.push(Verdict::failed(format!(
+                "unexpected {name} in the checkout root: compose runs there, and the staging \
+                 compose file is {GOOD_PATH} alone"
+            )));
+        }
+    }
+    Ok(out)
 }
 
 /// An audited source's filename, as the messages quote it. Derived from the path constant so a
@@ -410,20 +457,4 @@ pub(super) fn detailed(headline: &str, detail: Vec<String>) -> Verdict {
         headline: headline.to_string(),
         detail,
     })
-}
-
-/// Attach continuation lines to a verdict the library decided. Keeping the DECISION in `gate::*`
-/// and only the PROSE here is the point — a hand-rolled `if line.contains(BAD_PATH)` would
-/// re-open exactly the fail-quiet hole `verification_core` exists to close. `DidNotRun` passes through
-/// untouched: its detail already names the cause, and a hint about the compose line would mislead
-/// when nothing was read.
-pub(super) fn with_detail(verdict: Verdict, detail: Vec<String>) -> Verdict {
-    match verdict {
-        Verdict::Held => Verdict::Held,
-        Verdict::Failed(mut finding) => {
-            finding.detail = detail;
-            Verdict::Failed(finding)
-        }
-        Verdict::DidNotRun(cause, finding) => Verdict::DidNotRun(cause, finding),
-    }
 }

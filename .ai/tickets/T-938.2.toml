@@ -39,7 +39,7 @@ shipped_at = "8c5457178bb9d0e4c6f9ffd3925ad2fdfd9fe983"
 created_at = "2026-09-05T02:09:02Z"
 completed_at = "2026-09-07T12:57:25Z"
 estimated = ["tokens"]
-owns = ["apps/website/frontend/src/editor/world_assets/world_host.rs"]
+owns = ["apps/frontend/src/editor/world_assets/world_host.rs"]
 
 [scope]
 domain = "website"

@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
-use website_map_engine::io::containers::header::HEADER_BYTES;
-use website_map_engine::world::terrain::dem::png::decode_png_gray16;
-use website_map_engine::world::terrain::dem::raw::RawDem;
+use map_engine::io::containers::header::HEADER_BYTES;
+use map_engine::world::terrain::dem::png::decode_png_gray16;
+use map_engine::world::terrain::dem::raw::RawDem;
 
 use super::*;
 use crate::repository_layout::{terrain_dir, terrain_manifest_path};
@@ -179,7 +179,7 @@ fn elevation_dem_falls_back_to_the_v4_range_when_meta_omits_it() {
 /// vanishing into an ignore count.
 #[test]
 fn everon_elevation_dem_matches_the_shipped_png() {
-    use website_map_engine::world::terrain::dem::sampling::uint16_to_meters;
+    use map_engine::world::terrain::dem::sampling::uint16_to_meters;
 
     let root = repo_root();
     let png = terrain_dir(&root, "everon").join("dem/everon-dem-16bit.png");

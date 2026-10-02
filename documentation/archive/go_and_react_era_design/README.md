@@ -38,24 +38,24 @@ live document took over a file's subject, the file's status line links it:
 
 | Archived files | Live replacement |
 |---|---|
-| the frontend documentation index, readme, roadmap and work tracking | [frontend documentation](/documentation/website/frontend/README.md) |
+| the frontend documentation index, readme, roadmap and work tracking | [frontend documentation](/documentation/apps/frontend/README.md) |
 | the frontend page spec template | [feature doc template](/documentation/standards/templates/feature_doc.md) |
 | the macOS UX methodology | [design system](/documentation/design_system/README.md) |
-| the Mission Creator roadmap | [Mission Creator roadmap](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md) |
-| the Mission Creator UX spec and the editor page spec | [Mission Creator UX spec](/documentation/website/frontend/apps/editor/ux_spec.md) |
-| the setup wizard page | [mission library page](/documentation/website/frontend/pages/mission_hub/library/mission_library_page.md) |
+| the Mission Creator roadmap | [Mission Creator roadmap](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) |
+| the Mission Creator UX spec and the editor page spec | [Mission Creator UX spec](/documentation/apps/frontend/apps/editor/ux_spec.md) |
+| the setup wizard page | [mission library page](/documentation/apps/frontend/pages/mission_hub/library/mission_library_page.md) |
 
 The [event](/documentation/glossary/a_to_f.md#event) registration redesign, the Go backend plan, the
 Mission Creator design, engineering plan and problem statement, and the platform context handoff
-have no single replacement: the [API documentation](/documentation/website/api_v2/README.md) and
-the [Mission Creator documentation](/documentation/website/frontend/apps/editor/README.md)
+have no single replacement: the [API documentation](/documentation/apps/api/README.md) and
+the [Mission Creator documentation](/documentation/apps/frontend/apps/editor/README.md)
 describe what was built.
 
 ## Code
 
-- [Frontend](/apps/website/frontend/) and [API](/apps/website/api_v2/) — the Rust code that
+- [Frontend](/apps/frontend/) and [API](/apps/api/) — the Rust code that
   implements the platform these documents planned.
-- [Mission Creator](/apps/website/frontend/src/v2/apps/editor/) — the editor the Mission Creator
+- [Mission Creator](/apps/frontend/src/v2/apps/editor/) — the editor the Mission Creator
   documents planned.
 
 ## Boundaries
@@ -72,8 +72,8 @@ describe what was built.
 
 ## Related documentation
 
-- [Frontend documentation](/documentation/website/frontend/README.md) — every route and its
+- [Frontend documentation](/documentation/apps/frontend/README.md) — every route and its
   feature doc.
-- [Mission Creator documentation](/documentation/website/frontend/apps/editor/README.md) — the
+- [Mission Creator documentation](/documentation/apps/frontend/apps/editor/README.md) — the
   live editor documents.
-- [API documentation](/documentation/website/api_v2/README.md) — the backend as built.
+- [API documentation](/documentation/apps/api/README.md) — the backend as built.

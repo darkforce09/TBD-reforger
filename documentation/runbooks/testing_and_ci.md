@@ -16,8 +16,8 @@ runbook does not repeat it.
   root prints `1.95.0`.
 - Trunk, for the app build: `trunk --version`.
 - The local database for the integration tests. `ci-local` reaches it through
-  `podman exec tbd_reforger_db` (the `rust-test-it` steps name podman and the container directly)
-  and on host port 5434. Start it as in
+  `cargo xtask db test-it`, which resolves the container runtime itself (the `rust-test-it` step
+  runs it in process), on host port 5434. Start it as in
   [Local development](/documentation/runbooks/local_development.md), step 2.
 - The Everon elevation raster from Git LFS: the map engine's tests and the `height-labels` schema
   gate decode it. Check: `file assets/terrains/everon/dem/everon-dem-16bit.png` prints
@@ -39,7 +39,7 @@ Run every command from the repository root.
    cargo xtask db up
    ```
 
-   Expected: `cd apps/website/api_v2 && podman compose up -d db` (with the runtime it found),
+   Expected: `cd apps/api && podman compose up -d db` (with the runtime it found),
    then compose starts `tbd_reforger_db` on host port 5434. Without a compose provider it exits
    125 with "looking up compose provider failed"; an existing container then starts with
    `podman start tbd_reforger_db`.
@@ -89,7 +89,7 @@ Run every command from the repository root.
    ```
 
    Expected: the four command lines in turn, exit 0. Clippy runs without `-D warnings` here and in
-   the `website-frontend` job, so a warning prints and does not fail; the [API](/documentation/glossary/a_to_f.md#api) and engine lanes
+   the `frontend` job, so a warning prints and does not fail; the [API](/documentation/glossary/a_to_f.md#api) and engine lanes
    deny warnings.
 
 6. Run the API's integration tests on a database of their own.
@@ -186,13 +186,14 @@ the wave gate and the slice gate. Rule ids (FMT-2, LANG-1, TEST-1 and the rest) 
 | Enfusion comment card (ECM-1 to ECM-9) | `cargo xtask verify enfusion-comments` | in `verify-coding-standards` | `language-gates` | no |
 | no `SELECT *` | `cargo xtask verify no-select-star` | in `verify-coding-standards` | no | no |
 | `@route` tags (GO-7) | `cargo xtask verify route-tags` | in `verify-coding-standards` | no | both |
-| Rust formatting | `cargo xtask mk rust-fmt` | in `rust-ci` | `website-api` | changed files |
-| API clippy, `-D warnings` | `cargo xtask mk rust-clippy` | in `rust-ci` | `website-api` | changed crates (slice); API (wave) |
-| API build | `cargo xtask mk rust-build` | in `rust-ci` | `website-api` | `cargo check` |
+| Rust formatting | `cargo xtask mk rust-fmt` | in `rust-ci` | `api` | changed files |
+| API clippy, `-D warnings` | `cargo xtask mk rust-clippy` | in `rust-ci` | `api` | changed crates (slice); API (wave) |
+| API build | `cargo xtask mk rust-build` | in `rust-ci` | `api` | `cargo check` |
 | map and graphics engines and the offline service worker: fmt, clippy `-D warnings` (host and wasm32), tests | `cargo xtask mk wasm-ci` | in `rust-ci` | `map-engine` | clippy and tests (wave) |
-| API tests with Postgres (TEST-1) | `cargo xtask ci rust-test-it`; `cargo xtask db test-it` | in `rust-ci` | `website-api` (`cargo xtask ci website-api-test`) | wave |
-| developer_tools library tests | `cargo xtask ci developer-tools-test` | no | `website-api` | wave, with the xtask tests |
-| app: fmt, clippy (wasm32), tests, Trunk build (TEST-2) | `cargo xtask mk ci-local-leptos` | yes | `website-frontend` | wasm32 check, clippy and tests; Trunk when the app changed |
+| API tests with Postgres (TEST-1) | `cargo xtask ci rust-test-it`; `cargo xtask db test-it` | in `rust-ci` | `api` (`cargo xtask ci api-test`) | wave |
+| developer_tools library tests | `cargo xtask ci developer-tools-test` | yes | `api` | wave, with the xtask tests |
+| tests of every workspace member without a dedicated task (derived from `Cargo.toml`, so a new member is tested by default) | `cargo xtask ci workspace-member-tests` | yes | `workspace-members` | wave, from the workspace members |
+| app: fmt, clippy (wasm32), tests, Trunk build (TEST-2) | `cargo xtask mk ci-local-leptos` | yes | `frontend` | wasm32 check, clippy and tests; Trunk when the app changed |
 | generated contract types current | `cargo xtask ci verify-codegen-fresh` | in `ci-local-schema` | `schema`; `contracts.yml` | no |
 | schema validation (TEST-3, ENF-4) | `cargo xtask ci schema-validate` | in `ci-local-schema` | `schema`; `schema.yml` runs `cargo xtask schema validate` only | both |
 | `@contract` citations (TS-6, ENF-3) | `cargo xtask ci verify-citations` | in `ci-local-schema` | `schema`; `contracts.yml` | both, with the schema step |
@@ -224,6 +225,11 @@ cargo xtask ci ci-local
 
 Expected: every step passes and the command exits 0. A change to the app or the map engine also
 passes step 7; a change to documentation passes steps 8 to 10.
+
+GitHub's branch protection rule for `main` names its required status checks by the job names of
+`.github/workflows/ci.yml`: the API job is `api (Rust 1.95 + Postgres 18)` and the app's job
+`frontend (Leptos SPA)`; the one-time update of the rule to these names is step G1 of the
+[S2 operator steps](/documentation/archive/restructure_agent_briefs/s2_a2_to_a6.md#oc-deploy-operator-steps).
 
 ## Troubleshooting
 

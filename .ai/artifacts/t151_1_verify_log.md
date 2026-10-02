@@ -35,7 +35,7 @@ Finished `dev` profile
 $ make wasm
 map_engine_wasm_bg.wasm = 3,723,192 bytes                       (baseline 3,658,383 → +64,809 B)
 
-$ npm test                                                       (apps/website/frontend)
+$ npm test                                                       (apps/frontend)
 Test Files  41 passed (41)
      Tests  334 passed (334)                                     (baseline 317 → +17 W1 tests)
 

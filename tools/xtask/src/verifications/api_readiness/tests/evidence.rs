@@ -171,7 +171,7 @@ fn register_paths_cannot_escape_the_repository() {
     for path in ["", "../outside", "/absolute", "valid/../../outside"] {
         assert!(!register::relative_path(path));
     }
-    assert!(register::relative_path("apps/website/api_v2"));
+    assert!(register::relative_path("apps/api"));
 }
 
 fn scratch() -> std::path::PathBuf {

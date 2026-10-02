@@ -29,7 +29,7 @@ test result: FAILED. 0 passed; 1 failed
 
 `settings_modal.rs:949` renders `{win_conditions_card(ctrl)}` then `render_prefs_section`. `rg tasks_panel settings_modal.rs` → no hits. `panels/mod.rs:33` only `pub mod tasks_panel`. Slice comment (`tasks_panel.rs:10-12`) and REPORT-T-936.2 admit the T-936.1 pattern: wait for CC to mount. Wave 243 CC mounted the win-conditions card. Wave 245 CC (`ee7f4a234`) did not.
 
-Operator cannot author tasks in Mission Settings. Unit tests (`cargo test -p website-frontend tasks_panel` → 10 passed) exercise `add_task` / env_patch off-screen.
+Operator cannot author tasks in Mission Settings. Unit tests (`cargo test -p frontend tasks_panel` → 10 passed) exercise `add_task` / env_patch off-screen.
 
 **Fix:** `{tasks_panel(ctrl)}` immediately after `{win_conditions_card(ctrl)}`.
 
@@ -52,7 +52,7 @@ So the only body that skips `DisableBodyAI` is a **player** LIVE rematerialize i
 
 ## Attacked and FAILED to break
 
-- **Gate vacuity / unexamined code (BLOCKER class):** `tbd_wave245_cold` exists; `missions_it` is 35 tables / 38 missions / 22 migrations. `target-gate-mapengine` fingerprints `2026-09-06 21:19` (after CC `21:16`). Gate test binary lists `t682_*` (4) and `mission::tasks::tests::*` (16) plus `an_unlisted_environment_key_is_not_promoted_to_the_payload_root`. `test api` cannot see this wave's files (no website-api diff) — expected, not the only step. Wave gate still does not run `mod compile` (T-946.17; they ran it by hand). Not re-filed.
+- **Gate vacuity / unexamined code (BLOCKER class):** `tbd_wave245_cold` exists; `missions_it` is 35 tables / 38 missions / 22 migrations. `target-gate-mapengine` fingerprints `2026-09-06 21:19` (after CC `21:16`). Gate test binary lists `t682_*` (4) and `mission::tasks::tests::*` (16) plus `an_unlisted_environment_key_is_not_promoted_to_the_payload_root`. `test api` cannot see this wave's files (no api diff) — expected, not the only step. Wave gate still does not run `mod compile` (T-946.17; they ran it by hand). Not re-filed.
 - **T-936.2 still editing flatten.rs / compile.rs after revert:** `git log ddc49daaa..HEAD -- flatten.rs` = `2f998c3f4` (T-682) only. `compile.rs` = `ee7f4a234` dummy-key retarget only. Merge `fb50b757a` has neither file. Owns breach stayed reverted. The hole is the missing one-liner (finding 1), not a leftover edit.
 - **AUTHORED_BLOCKS / ExtensionBlocks drop tasks:** row present (`extensions.rs:81`). `copy_authored_blocks` and `from_payload` tests pass. `cargo test -p map-engine-core --all-features --lib -- mission::tasks an_unlisted_environment_key` → **17 passed**. Dummy retarget probe: restoring `tasks` as the unlisted key **fails** with payload root `"tasks":[{"id":"t1"}]` — compile-side promotion works; flatten is the break.
 - **compile.rs dummy still `tasks` (map-engine-core red on main):** live dummy is `audio` (`compile.rs:1315-1322`). After restore, `an_unlisted_environment_key_is_not_promoted_to_the_payload_root` **ok**.
@@ -61,7 +61,7 @@ So the only body that skips `DisableBodyAI` is a **player** LIVE rematerialize i
 - **Export twins / T-946.26:** new files byte-identical ASCII (`cmp -s` on WaypointRuntime, EnvironmentReader, TaskStateMachine, TaskHud). SpawnManager/Loader twins differ only in pre-existing comment punctuation (emdash vs hyphen), not the T-677/T-682 hunks (`ShouldEnableAIAtSpawn` both at `:1241`).
 - **UNREAD tripwires:** `fog`/`wind`/`viewDistance`/`waypoints`/`vehicleUid`/`speedMode`/`behaviour` have **no** `UNREAD_WIRE_FIELDS` rows. `combatMode`/`formation` remain expected 0 (T-678). `size` expected 3, `shape` expected 34. `formation` hits in WaypointRuntime are `//!` comments only. `cargo test -p xtask all_1_3_fields_are_unread_on_the_live_tree` → **ok**.
 - **Schema still saying NOTHING reads this wave's fields:** `fog`/`wind`/`viewDistance`/`waypoints`/`vehicleUid`/`environment`/`tasks` descriptions say READ SINCE T-682/T-677/T-936.2. Group `behaviour`/`speedMode` note global identifier count. `$defs/waypoint.behaviour`/`speedMode` lack a READ SINCE line (NIT only; they do not claim unread).
-- **env.rs author_env / T-682 added controls:** `git diff ddc49daaa..HEAD -- env.rs` empty. `CARRIED_ENV_KEYS` still five (`time`/`weather`/hillshade/grid). `keys_nothing_reads_are_not_authored` still names `viewDistance`/`thermals`/`windDirDeg`/`fog`/`wind`. `cargo test -p website-frontend keys_nothing_reads_are_not_authored` → **ok**.
+- **env.rs author_env / T-682 added controls:** `git diff ddc49daaa..HEAD -- env.rs` empty. `CARRIED_ENV_KEYS` still five (`time`/`weather`/hillshade/grid). `keys_nothing_reads_are_not_authored` still names `viewDistance`/`thermals`/`windDirDeg`/`fog`/`wind`. `cargo test -p frontend keys_nothing_reads_are_not_authored` → **ok**.
 
 NIT (not a finding row): invalid AUTHORED_BLOCKS refusals still go through `diagnostics.win_conditions` / subject `/winConditions` (`flatten.rs:1252-1258,3611-3618`), so a bad `tasks` block is labelled as a win-conditions warning.
 

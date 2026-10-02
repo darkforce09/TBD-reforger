@@ -98,7 +98,7 @@ fn private_target_dir_violation_bites() {
     ];
     assert_eq!(
         private_target_dir_violation(&bad).as_deref(),
-        Some("cd apps/website/api_v2 && CARGO_TARGET_DIR=/tmp/private cargo build --all-targets")
+        Some("cd apps/api && CARGO_TARGET_DIR=/tmp/private cargo build --all-targets")
     );
 }
 
@@ -129,36 +129,39 @@ fn only_rust_api_sets_a_private_target_dir() {
 fn echo_matches_make() {
     assert_eq!(
         rust_build()[0].echo(),
-        "cd apps/website/api_v2 && cargo build --all-targets"
+        "cd apps/api && cargo build --all-targets"
     );
     assert_eq!(rust_fmt()[1].echo(), "cargo fmt --all --check");
     assert_eq!(
         rust_clippy()[0].echo(),
-        "cd apps/website/api_v2 && cargo clippy --all-targets -- -D warnings"
+        "cd apps/api && cargo clippy --all-targets -- -D warnings"
     );
     assert_eq!(
         leptos()[0].echo(),
-        "cd apps/website/frontend && trunk serve --release"
+        "cd apps/frontend && trunk serve --release"
     );
     assert_eq!(
         ci_local_leptos()[3].echo(),
-        "cd apps/website/frontend && trunk build --release"
+        "cd apps/frontend && trunk build --release"
     );
     assert_eq!(
         wasm_ci()[2].echo(),
-        "cargo clippy -p website-map-engine -p website-graphics-engine \
-         -p website-offline-service-worker --target wasm32-unknown-unknown -- -D warnings"
+        "cargo clippy -p map_engine -p graphics_engine \
+         -p offline_service_worker --target wasm32-unknown-unknown -- -D warnings"
     );
-    // The quoted psql argument: make echoed the recipe TEXT, quotes included.
+    // An argument holding whitespace: make echoed the recipe TEXT, quotes included.
     assert_eq!(
-        rust_test_it()[1].echo(),
-        "podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc \
-         \"CREATE DATABASE rust_it;\""
+        Step::new(&["psql", "-qc", "CREATE DATABASE rust_it;"]).echo(),
+        "psql -qc \"CREATE DATABASE rust_it;\""
+    );
+    assert_eq!(
+        rust_ci_lines().last().map(String::as_str),
+        Some("cargo xtask db test-it")
     );
     assert_eq!(
         rust_api()[0].echo(),
         format!(
-            "cd apps/website/api_v2 && CARGO_TARGET_DIR={}/target/dev-api cargo run --bin api",
+            "cd apps/api && CARGO_TARGET_DIR={}/target/dev-api cargo run --bin api",
             cwd_root().display()
         )
     );
@@ -172,13 +175,13 @@ fn wasm_ci_gates_the_offline_service_worker_in_every_step() {
     for prefix in [
         "cargo fmt --check",
         "cargo clippy",
-        "cargo test -p website-offline-service-worker",
+        "cargo test -p offline_service_worker",
     ] {
         assert!(
             lines
                 .iter()
-                .any(|l| l.starts_with(prefix) && l.contains("-p website-offline-service-worker")),
-            "no `{prefix}` step names website-offline-service-worker: {lines:?}"
+                .any(|l| l.starts_with(prefix) && l.contains("-p offline_service_worker")),
+            "no `{prefix}` step names offline_service_worker: {lines:?}"
         );
     }
     let clippy: Vec<&String> = lines
@@ -189,7 +192,7 @@ fn wasm_ci_gates_the_offline_service_worker_in_every_step() {
     assert!(
         clippy
             .iter()
-            .all(|l| l.contains("-p website-offline-service-worker")),
+            .all(|l| l.contains("-p offline_service_worker")),
         "{clippy:?}"
     );
     assert!(
@@ -227,7 +230,7 @@ fn mortar_offline_gate_builds_then_runs_the_offline_gate() {
     assert_eq!(
         lines,
         vec![
-            "cd apps/website/frontend && trunk build --release".to_string(),
+            "cd apps/frontend && trunk build --release".to_string(),
             "cargo run -q -p developer_tools --bin gate -- mortar-offline".to_string(),
         ]
     );
@@ -244,7 +247,7 @@ fn ballistics_wasm_agreement_builds_then_runs_the_agreement_gate() {
     assert_eq!(
         lines,
         vec![
-            "cd apps/website/frontend && trunk build --release".to_string(),
+            "cd apps/frontend && trunk build --release".to_string(),
             "cargo run -q -p developer_tools --bin gate -- ballistics-agreement".to_string(),
         ]
     );
@@ -343,4 +346,68 @@ fn every_advertised_target_dispatches() {
         assert_eq!(rc, 0, "{t} --dry-run");
     }
     assert_eq!(run(&["no-such-target".to_string()]).unwrap(), 2);
+}
+
+/// The container runtimes a recipe line never runs itself.
+const CONTAINER_RUNTIMES: &[&str] = &["podman", "docker", "podman-compose", "docker-compose"];
+
+/// Every `<target>: <line>` whose line names a container runtime as a word, wherever in the line
+/// it stands: first, after `cd … &&`, or inside a pipeline.
+fn bare_container_runtime_lines(targets: &[&str]) -> Vec<String> {
+    let mut offences = Vec::new();
+    for target in targets {
+        for line in recipe_lines(target).unwrap_or_default() {
+            let named = line
+                .split(|c: char| c.is_whitespace() || ";|&()<>\"'`\\".contains(c))
+                .any(|word| CONTAINER_RUNTIMES.contains(&word));
+            if named {
+                offences.push(format!("{target}: {line}"));
+            }
+        }
+    }
+    offences
+}
+
+/// The database lane resolves the container runtime (`TBD_CONTAINER_RUNTIME`, `podman`, `docker`,
+/// or either through the distrobox bridge). A recipe line that names a runtime itself fails
+/// wherever the runtime is reachable only through the bridge, so every recipe reaches the database
+/// through the database lane instead.
+#[test]
+fn no_recipe_line_names_a_bare_container_runtime() {
+    for target in TARGETS {
+        let computed = matches!(
+            *target,
+            "print-cargo-target-dir" | "verify-cargo-target" | "reclaim-target-ci"
+        );
+        assert_eq!(
+            recipe_lines(target).is_some(),
+            !computed,
+            "{target}: every recipe target, and only those, lists its lines"
+        );
+    }
+    let offences = bare_container_runtime_lines(TARGETS);
+    assert!(
+        offences.is_empty(),
+        "these recipe lines run a container runtime themselves instead of the database lane:\n{}",
+        offences.join("\n")
+    );
+}
+
+/// `rust-ci`'s integration-test step and the `rust-test-it` row of `cargo xtask ci` are one
+/// command spelled twice: the same line, and the ci row runs the database lane's own function.
+#[test]
+fn rust_ci_and_the_ci_rust_test_it_row_run_the_database_lane() {
+    use crate::commands::ci::task_runner::{Step as CiStep, TASKS};
+    let row = TASKS
+        .iter()
+        .find(|t| t.name == "rust-test-it")
+        .expect("the ci task table has a rust-test-it row");
+    let [CiStep::Xtask { echo, run, .. }] = row.steps else {
+        panic!("the rust-test-it row is one in-process xtask step");
+    };
+    assert!(std::ptr::fn_addr_eq(
+        *run,
+        crate::commands::db::operations::test_it::run_complete_suite as fn() -> Result<u8>
+    ));
+    assert_eq!(rust_ci_lines().last().map(String::as_str), Some(*echo));
 }

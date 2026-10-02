@@ -1,4 +1,4 @@
-//! Boot website-api for editor-gates.yml and wait on `/healthz`.
+//! Boot api for editor-gates.yml and wait on `/healthz`.
 //!
 //! The workflow used to background `cargo run` with `|| true`, then `seq`/`curl` in a loop.
 //! `|| true` is the forbidden shape: a spawn failure would read as "API is starting". This
@@ -41,7 +41,7 @@ fn run_inner() -> Result<(), String> {
         .unwrap_or(8080);
 
     let st = Command::new("cargo")
-        .args(["build", "-p", "website-api", "--bin", "api"])
+        .args(["build", "-p", "api", "--bin", "api"])
         .current_dir(&root)
         .status()
         .map_err(|e| format!("cargo build: {e}"))?;
@@ -53,7 +53,7 @@ fn run_inner() -> Result<(), String> {
     let log_err = log.try_clone().map_err(|e| format!("{LOG} clone: {e}"))?;
     let mut child = Command::new("cargo");
     child
-        .args(["run", "-q", "-p", "website-api", "--bin", "api"])
+        .args(["run", "-q", "-p", "api", "--bin", "api"])
         .current_dir(&root)
         .stdin(Stdio::null())
         .stdout(Stdio::from(log))

@@ -19,9 +19,9 @@ repeat it.
 
   | Job | Runs | Rules |
   |---|---|---|
-  | `website-api` | `cargo xtask mk rust-fmt`, `mk rust-clippy`, `mk rust-build`, `ci developer-tools-test`, then `ci website-api-test` (the API's `cargo test`) against a Postgres 18 service | FMT-1, GO-2, GO-8, GO-9, TEST-1 |
+  | `api` | `cargo xtask mk rust-fmt`, `mk rust-clippy`, `mk rust-build`, `ci developer-tools-test`, then `ci api-test` (the API's `cargo test`) against a Postgres 18 service | FMT-1, GO-2, GO-8, GO-9, TEST-1 |
   | `map-engine` | `cargo xtask mk wasm-ci`: format, clippy with `-D warnings` on the host and `wasm32`, tests | FMT-1 |
-  | `website-frontend` | `cargo xtask mk ci-local-leptos`: format, clippy for `wasm32`, tests, release Trunk build | TEST-2, TS-6 |
+  | `frontend` | `cargo xtask mk ci-local-leptos`: format, clippy for `wasm32`, tests, release Trunk build | TEST-2, TS-6 |
   | `schema` | `cargo xtask ci ci-local-schema`: generated types current, schema validation, `@contract` citations | TEST-3, ENF-3, ENF-4 |
   | `editorconfig` | `cargo xtask ci verify-editorconfig` | FMT-2 |
   | `language-gates` | `verify no-python`, `no-node`, `file-length`, `enfusion-comments`, `no-shell`, `ci-shell`, `engine-layers`, `crate-tiers`, `crate-anatomy`, `strangler`, `frontend-layering`, `tailwind-sources`, `ticket check --strict`, then `verify readme-coverage`, `link-check`, `markdown-placement` | LANG-1, LANG-2, LANG-3, SIZE-3, WS-1 to WS-5 |
@@ -110,7 +110,7 @@ lower the ceiling.
 ### WS-5 Tailwind sources
 
 `cargo xtask verify tailwind-sources` fails when a workspace member that depends on `leptos` has no
-`@source` line in `apps/website/frontend/style/aegis.css` whose glob, resolved from the
+`@source` line in `apps/frontend/style/aegis.css` whose glob, resolved from the
 stylesheet's folder, covers its `src/**/*.rs`.
 
 ## verify-documentation

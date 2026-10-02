@@ -28,7 +28,8 @@ defects. Paths and line counts are as they stood when each audit was written.
 
 ## Code
 
-- [Website](/apps/website/) — the frontend, the API and the engine crates the audits read.
+- [API](/apps/api/), [frontend](/apps/frontend/), [map engine](/legacy/map_engine/) and
+  [graphics engine](/legacy/graphics_engine/) — the website crates the audits read.
 - [Mod](/apps/mod/) — the addons the codebase audit also covered.
 
 ## Boundaries

@@ -2,7 +2,7 @@
 
 **VERDICT: 1 BLOCKER · 2 MAJOR · 4 MINOR · 7 NOTE.** Range `a167ba54..369aefa3` (three slice merges).
 Suites at HEAD: map-engine-core `--features doc,mission` **453 + 1 ignored** (+5+5+3 doctest bins) green ×2
-(before and after all perturbations); website-frontend native **690/690** green ×2; validate **68/68 under
+(before and after all perturbations); frontend native **690/690** green ×2; validate **68/68 under
 BOTH `--features mission` and `--features doc,mission`**. Three re-fires (one per slice) went RED with the
 predicted shapes and were restored byte-exact; `git status` at exit = the pre-existing operator-log
 modification only. Verification used temporary scratch perturbations + one temporary integration-test file
@@ -107,7 +107,7 @@ than an "unavailable" state. **Disposition:** reword the claims; consider a visi
 ## MINOR-2 (T-655) — the no-severity-on-clean pin does not bind the panel's own evaluation seam
 
 **Evidence.** Perturbation: made `evaluate_source` unconditionally append a fabricated Warning row →
-`cargo test -p website-frontend validation_panel` = **20/20 GREEN**. `a_clean_payload_produces_an_empty_panel`
+`cargo test -p frontend validation_panel` = **20/20 GREEN**. `a_clean_payload_produces_an_empty_panel`
 and `..._with_a_supplied_catalogue` call `default_registry().evaluate*` directly (engine level), and
 `evaluate_source_runs_the_engine_and_flattens` only asserts a known finding EXISTS — so a panel-layer
 fabrication/duplication bug is invisible to the suite despite the doc's "asserted at the panel level"
@@ -281,6 +281,6 @@ two-rows-one-mint regression would still surface through the row-count + report-
 tests pin. NOTE-level observation only, no action needed.
 
 **6 · Suites at HEAD.** map-engine-core `--features doc,mission`: **456 + 1 ignored** (+5+5+3 doctest
-bins) green; website-frontend: **691/691** green — both exactly as the commit claims. Exit state:
+bins) green; frontend: **691/691** green — both exactly as the commit claims. Exit state:
 working tree = the pre-existing operator-log/doc modifications only; probe test and perturbation both
 removed.

@@ -65,7 +65,7 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-owns = ["apps/website/frontend/src/orbat_manager.rs"]
+owns = ["apps/frontend/src/orbat_manager.rs"]
 
 [scope]
 domain = "website"

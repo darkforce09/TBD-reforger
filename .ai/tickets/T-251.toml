@@ -42,8 +42,8 @@ estimated = [
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 owns = [
     "scripts/deploy/deploy-website.sh",
-    "apps/website/Dockerfile",
-    "apps/website/docker-compose.staging.yml",
+    "deploy/Dockerfile",
+    "deploy/compose.staging.yml",
     "scripts/deploy/deploy.env.example",
     "scripts/deploy/Caddyfile.website",
 ]

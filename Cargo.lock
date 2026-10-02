@@ -293,6 +293,50 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2a4385e2e34eb35d6b3efe798b9eb88096925d87726c0798709bf56d9ed84af3"
 
 [[package]]
+name = "api"
+version = "0.1.0"
+dependencies = [
+ "ammonia",
+ "anyhow",
+ "api",
+ "async-stream",
+ "axum",
+ "axum-extra",
+ "chrono",
+ "csv",
+ "dotenvy",
+ "futures",
+ "governor",
+ "hex",
+ "http_url_guard",
+ "jsonschema",
+ "jsonwebtoken",
+ "map_engine",
+ "proptest",
+ "pulldown-cmark",
+ "rand 0.10.2",
+ "regress 0.10.5",
+ "reqwest",
+ "rust_decimal",
+ "rustls",
+ "serde",
+ "serde_json",
+ "sha2 0.11.0",
+ "sqlx",
+ "subtle",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-stream",
+ "tower",
+ "tower-http 0.7.0",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+ "uuid",
+ "verification_core",
+]
+
+[[package]]
 name = "arboard"
 version = "3.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1578,6 +1622,7 @@ dependencies = [
  "image-webp",
  "jsonschema",
  "libc",
+ "map_engine",
  "png 0.17.16",
  "regex",
  "reqwest",
@@ -1588,7 +1633,6 @@ dependencies = [
  "tokio",
  "tokio-tungstenite",
  "webp",
- "website-map-engine",
 ]
 
 [[package]]
@@ -2236,7 +2280,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "fleet-host-agent"
+name = "fleet_host_agent"
 version = "0.1.0"
 dependencies = [
  "axum",
@@ -2350,6 +2394,30 @@ checksum = "e076045bb43dac435333ed5f04caf35c7463631d0dae2deb2638d94dd0a5b872"
 dependencies = [
  "lazy_static",
  "num",
+]
+
+[[package]]
+name = "frontend"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "console_error_panic_hook",
+ "futures",
+ "gloo-net",
+ "gloo-timers",
+ "http_url_guard",
+ "idb",
+ "js-sys",
+ "leptos",
+ "leptos_router",
+ "map_engine",
+ "offline_cache_policy",
+ "serde",
+ "serde_json",
+ "url",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]
@@ -2740,6 +2808,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "graphics_engine"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "earcutr",
+ "js-sys",
+ "wasm-bindgen",
+ "web-sys",
+ "wgpu 29.0.4",
+]
+
+[[package]]
 name = "group"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2990,6 +3070,13 @@ name = "http-range-header"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9171a2ea8a68358193d15dd5d70c1c10a2afc3e7e4c5bc92bc9f025cebd7359c"
+
+[[package]]
+name = "http_url_guard"
+version = "0.1.0"
+dependencies = [
+ "url",
+]
 
 [[package]]
 name = "httparse"
@@ -3840,6 +3927,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "map_engine"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "console_error_panic_hook",
+ "flate2",
+ "futures",
+ "gloo-net",
+ "graphics_engine",
+ "js-sys",
+ "jsonschema",
+ "libm",
+ "png 0.17.16",
+ "rkyv 0.8.18",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "wgpu 29.0.4",
+ "yrs",
+]
+
+[[package]]
 name = "maplit"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4592,6 +4704,27 @@ checksum = "ed0423ff9973dea4d6bd075934fdda86ebb8c05bdf9d6b0507067d4a1226371d"
 dependencies = [
  "serde",
  "thiserror 2.0.18",
+]
+
+[[package]]
+name = "offline_cache_policy"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "url",
+]
+
+[[package]]
+name = "offline_service_worker"
+version = "0.1.0"
+dependencies = [
+ "js-sys",
+ "offline_cache_policy",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]
@@ -8203,122 +8336,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf85cb06032201fa7c6f829d7db5a7e5aa45bcc0655327713065f6f0576731bf"
 dependencies = [
  "rustls-pki-types",
-]
-
-[[package]]
-name = "website-api"
-version = "0.1.0"
-dependencies = [
- "ammonia",
- "anyhow",
- "async-stream",
- "axum",
- "axum-extra",
- "chrono",
- "csv",
- "dotenvy",
- "futures",
- "governor",
- "hex",
- "jsonschema",
- "jsonwebtoken",
- "proptest",
- "pulldown-cmark",
- "rand 0.10.2",
- "regress 0.10.5",
- "reqwest",
- "rust_decimal",
- "rustls",
- "serde",
- "serde_json",
- "sha2 0.11.0",
- "sqlx",
- "subtle",
- "thiserror 2.0.18",
- "tokio",
- "tokio-stream",
- "tower",
- "tower-http 0.7.0",
- "tracing",
- "tracing-subscriber",
- "url",
- "uuid",
- "verification_core",
- "website-api",
- "website-map-engine",
-]
-
-[[package]]
-name = "website-frontend"
-version = "0.1.0"
-dependencies = [
- "base64",
- "console_error_panic_hook",
- "futures",
- "gloo-net",
- "gloo-timers",
- "idb",
- "js-sys",
- "leptos",
- "leptos_router",
- "serde",
- "serde_json",
- "url",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
- "website-map-engine",
- "website-offline-service-worker",
-]
-
-[[package]]
-name = "website-graphics-engine"
-version = "0.1.0"
-dependencies = [
- "bytemuck",
- "earcutr",
- "js-sys",
- "wasm-bindgen",
- "web-sys",
- "wgpu 29.0.4",
-]
-
-[[package]]
-name = "website-map-engine"
-version = "0.1.0"
-dependencies = [
- "bytemuck",
- "console_error_panic_hook",
- "flate2",
- "futures",
- "gloo-net",
- "js-sys",
- "jsonschema",
- "libm",
- "png 0.17.16",
- "rkyv 0.8.18",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
- "website-graphics-engine",
- "wgpu 29.0.4",
- "yrs",
-]
-
-[[package]]
-name = "website-offline-service-worker"
-version = "0.1.0"
-dependencies = [
- "js-sys",
- "serde",
- "serde_json",
- "url",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
 ]
 
 [[package]]

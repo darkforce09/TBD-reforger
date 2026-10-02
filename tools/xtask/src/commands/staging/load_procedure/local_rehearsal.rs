@@ -322,7 +322,7 @@ impl RehearsalEnvironment for LocalStack {
             "--quiet",
             "--release",
             "-p",
-            "website-api",
+            "api",
             "--bin",
             "staging-fixtures",
             "--",
@@ -334,7 +334,7 @@ impl RehearsalEnvironment for LocalStack {
         let answer = Run::new("cargo")
             .args(&words)
             // From the checkout root, as on the staging host: the tool reads the API env file at
-            // `apps/website/api_v2/.env` relative to its working directory.
+            // `apps/api/.env` relative to its working directory.
             .cwd(&self.root)
             .timeout(Duration::from_secs(1_800))
             .output()

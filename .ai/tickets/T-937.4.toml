@@ -43,9 +43,9 @@ created_at = "2026-09-05T02:09:02Z"
 completed_at = "2026-09-07T12:55:51Z"
 estimated = ["tokens"]
 owns = [
-    "apps/website/frontend/src/editor/state/persist.rs",
-    "apps/website/frontend/src/editor/state/save_status.rs",
-    "apps/website/frontend/src/editor/state/mod.rs",
+    "apps/frontend/src/editor/state/persist.rs",
+    "apps/frontend/src/editor/state/save_status.rs",
+    "apps/frontend/src/editor/state/mod.rs",
 ]
 
 [scope]

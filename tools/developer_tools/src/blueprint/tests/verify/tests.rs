@@ -1,6 +1,6 @@
 use super::*;
-use website_map_engine::world::architecture::compound::assembly::CoverTier;
-use website_map_engine::world::architecture::compound::instances::LocalTransform;
+use map_engine::world::architecture::compound::assembly::CoverTier;
+use map_engine::world::architecture::compound::instances::LocalTransform;
 
 fn inst(
     id: &str,

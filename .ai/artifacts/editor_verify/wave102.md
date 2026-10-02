@@ -4,7 +4,7 @@
 
 Verifier: Fable 5, read-only (this file is the only write). Tests under
 `CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target` via distrobox-host-exec:
-`cargo test -p website-frontend` → **437/437**;
+`cargo test -p frontend` → **437/437**;
 `cargo test -p map-engine-core --features doc,mission,world` → **465 lib (1 ignored) + 5 + 5 + 3 doctests, 0 failed**;
 `--features doc,mission --lib` → **336**; default features → **122**;
 spot re-fires: `per_peak_selects_one_highest_closed_ring_each` → ok,
@@ -227,7 +227,7 @@ inheriting stale numbers.
 
 ## F-13 NOTE — T-640 claim nit: `forest_mass.rs:159` depends on `compose_contour_hairlines`, not `contour_segments` — which now has zero production callers
 
-`apps/website/frontend/src/world_assets/forest_mass.rs:159` calls
+`apps/frontend/src/world_assets/forest_mass.rs:159` calls
 `compose_contour_hairlines` (unchanged ✓, the single-colour compose the claim meant).
 `contour_segments` itself (`contours.rs:395`) is untouched ✓ but after T-640 its only callers
 are its own tests — a retained Class-R oracle that is now production-dead alongside its private

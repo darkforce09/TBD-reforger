@@ -22,9 +22,9 @@ use anyhow::{Context, Result};
 use serde_json::Value;
 
 use crate::repository_layout::{contract_definitions_dir, terrain_dir};
-use website_map_engine::spatial::bvh::sidecar::BvhSidecar;
-use website_map_engine::spatial::los::world::descriptor::BlasManifest;
-use website_map_engine::spatial::los::world::descriptor::PrefabDescriptor;
+use map_engine::spatial::bvh::sidecar::BvhSidecar;
+use map_engine::spatial::los::world::descriptor::BlasManifest;
+use map_engine::spatial::los::world::descriptor::PrefabDescriptor;
 
 const TERRAIN: &str = "everon";
 const FARMHOUSE_SLUG: &str = "FarmHouse_E_1L01_Wood";

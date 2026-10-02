@@ -52,7 +52,7 @@ at the crate's measured 1.03 µs/ray). Over-cap is refused on every surface: `wa
 wash and **casts no ray** (asserted with a counting blocker), `level_wash*` inherit it,
 `WashJob::new` returns the message-bearing `Err`.
 
-**`apps/website/frontend/src/editor/tools/viewshed_scheduler.rs`** (new, 448 lines) —
+**`apps/frontend/src/editor/tools/viewshed_scheduler.rs`** (new, 448 lines) —
 `VIEWSHED_BUDGET_MS = 4.0`; `ViewshedTool{Terrain,BuildingWash}` keys the slots so there is one
 active job per tool and a submit cancels only its own. `submit_terrain` builds the job from the same
 manifest and params `compute_viewshed_for` uses, bumps the generation, drops the previous job before
@@ -68,7 +68,7 @@ pumps is over the finished terrain, not the first batch. The wash lane
 the building's BVH cannot be parked in a `'static` thread-local. `last_refusal()` surfaces the cap
 message.
 
-**`apps/website/frontend/src/editor/tools/los_tool.rs`** (+13 net) — `place_viewshed` submits and
+**`apps/frontend/src/editor/tools/los_tool.rs`** (+13 net) — `place_viewshed` submits and
 encodes, nothing more; the inline `ViewshedState` write is extracted **verbatim** as
 `publish_viewshed_raster` so the scheduler can repeat it on completion; `everon_manifest` becomes
 `pub(crate)`. `compute_viewshed_for` untouched. No banned Class-R token introduced; both RGBA
@@ -137,7 +137,7 @@ The one failure is `dem::peaks::tests::everon_peaks_max_above_350` —
 `decode: Decode("Invalid PNG signature.")` because `everon-dem-16bit.png` is a 133-byte unfetched LFS
 pointer in a worktree. Pre-existing and environmental.
 
-`cargo test -p website-frontend`: **1348 passed, 0 failed** — including `t644_viewshed_wiring` (the
+`cargo test -p frontend`: **1348 passed, 0 failed** — including `t644_viewshed_wiring` (the
 pin requiring `place_viewshed(` to precede `.viewshed_upload(` in the untouched `gestures.rs`),
 `t090_12_world_los_wiring`, `los_world_tests`' 58 `assert_eq!`, and `building_viewer`'s per-cell
 `Visibility` + census-band + 1e-9 rect goldens. Clippy clean on both crates.

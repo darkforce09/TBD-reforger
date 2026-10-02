@@ -5,7 +5,7 @@
 //!
 //! **Role:** renders each instance's `agent.toml` ([`agent_configuration`]) and the payload that
 //! builds and installs the agent binary, writes every configuration, restarts every
-//! `fleet-host-agent@N` and reads each unit's state back ([`host_agents_install_payload`]).
+//! `fleet_host_agent@N` and reads each unit's state back ([`host_agents_install_payload`]).
 //!
 //! **Position:** called by the deploy pipeline in `super::remote` after every boot verdict holds and
 //! after the relay is up; the unit template itself is written by `super::fleet_units`.
@@ -52,15 +52,15 @@ pub fn host_agents_install_payload(remote_dir: &str, instances: &[FleetInstance]
         "set -euo pipefail\n\
          {toolchain}\n\
          umask 077\n\
-         mkdir -p \"$HOME/.local/bin\" \"$HOME/.config/fleet-host-agent\"\n\
-         chmod 700 \"$HOME/.config/fleet-host-agent\"\n\
-         (cd '{remote_dir}' && cargo build --release -q -p fleet-host-agent)\n\
-         install -m 755 '{remote_dir}/target/release/fleet-host-agent' \"$HOME/.local/bin/fleet-host-agent\"\n",
+         mkdir -p \"$HOME/.local/bin\" \"$HOME/.config/fleet_host_agent\"\n\
+         chmod 700 \"$HOME/.config/fleet_host_agent\"\n\
+         (cd '{remote_dir}' && cargo build --release -q -p fleet_host_agent)\n\
+         install -m 755 '{remote_dir}/target/release/fleet_host_agent' \"$HOME/.local/bin/fleet_host_agent\"\n",
         toolchain = crate::commands::deploy::remote_rust_toolchain::PUT_RUST_TOOLCHAIN_ON_PATH,
     );
     for instance in instances {
         payload.push_str(&format!(
-            "AGENT_DIR=\"$HOME/.config/fleet-host-agent/instance-{n}\"\n\
+            "AGENT_DIR=\"$HOME/.config/fleet_host_agent/instance-{n}\"\n\
              mkdir -p \"$AGENT_DIR\"\n\
              chmod 700 \"$AGENT_DIR\"\n\
              cat > \"$AGENT_DIR/agent.toml\" <<AGENTTOML\n\

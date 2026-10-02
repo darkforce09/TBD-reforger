@@ -29,5 +29,5 @@ tools/xtask/src/verifications/map_assets/
     `verify-terrain` and `verify-terrain-strict` tasks run the Everon terrain manifest and
     alignment.
 - Rules: each adapter returns the exit status the developer_tools check returns, unchanged; xtask
-  never depends on `website-map-engine` (`tooling_dependency_direction_is_enforced` in
+  never depends on `map_engine` (`tooling_dependency_direction_is_enforced` in
   `tools/xtask/src/tests/tooling_dependency_boundaries.rs`).

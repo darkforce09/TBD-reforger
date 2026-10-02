@@ -73,7 +73,7 @@ complete and agrees with the manifest.
   version 1 on request; both carry byte-identical tile payloads. It prints the manifest block and
   never edits `manifest.json` itself.
 - The binary formats are the map engine's: the lanes write through
-  `website_map_engine::io`, so the reader and the writer cannot drift apart.
+  `map_engine::io`, so the reader and the writer cannot drift apart.
 
 ### Known discrepancies
 

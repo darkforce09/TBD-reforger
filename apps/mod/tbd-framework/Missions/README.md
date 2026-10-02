@@ -63,9 +63,9 @@ changes its terrain, so the fleet host agent restarts the server process for it.
 - `tools/xtask/dedicated_server_profiles/tbd-dev-server.config.json` names it as
   `game.scenarioId`; `cargo xtask mod playtest` and `cargo xtask mod world-boot` boot from that
   profile, and the world-boot verdict expects the header in the server log.
-- `tools/xtask/deploy/deploy.env.example` sets `TBD_SCENARIO` to it, and
+- `deploy/deploy.env.example` sets `TBD_SCENARIO` to it, and
   `cargo xtask deploy staging` uses it as the default (`tools/xtask/src/commands/deploy/staging/config.rs`).
-- `apps/website/api_v2/seeds/content_golden.sql` seeds it as the `everon` fleet scenario, which the
+- `apps/api/seeds/content_golden.sql` seeds it as the `everon` fleet scenario, which the
   platform sends to the fleet host agent in `apps/fleet_host_agent/` when it deploys a mission.
 - `cargo xtask setup server-profile` names `Missions/TBD_Dev_POC.conf` in its Workbench checklist.
 - `TBD_Dev_POC_Arland.conf` is named by no committed file: a server boots it when the fleet
@@ -77,7 +77,7 @@ changes its terrain, so the fleet host agent restarts the server process for it.
   `apps/mod/tbd-framework/worlds/TBD_Dev_POC_Arland.ent`, and through them the vanilla Eden and
   Arland worlds and the framework game mode prefab.
 - Used by: the dedicated-server profiles and deploy settings in `tools/xtask/`, the fleet
-  scenario seeds in `apps/website/api_v2/seeds/`, and every server that boots the framework.
+  scenario seeds in `apps/api/seeds/`, and every server that boots the framework.
 - Rules: the resource names `{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf` and
   `{9716613D6210414A}Missions/TBD_Dev_POC_Arland.conf` stay stable; a header and its `.meta` are
   committed together; the header carries no mission data, which comes from the

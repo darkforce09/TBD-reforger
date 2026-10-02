@@ -4,12 +4,12 @@ use super::*;
 
 const MANIFEST: &str = r#"
 [package]
-name = "website-api" # the server
+name = "api" # the server
 
 [dependencies]
 axum = { version = "0.8", features = ["macros", "multipart"] }
-# website-frontend = { path = "../frontend" } is a comment, not an edge
-renderer = { package = "website-graphics-engine", path = "../graphics-engine" }
+# frontend = { path = "../../apps/frontend" } is a comment, not an edge
+renderer = { package = "graphics_engine", path = "../../legacy/graphics_engine" }
 shared.workspace = true
 "quoted-name" = "1"
 
@@ -19,8 +19,8 @@ web-sys = { version = "0.3", features = [
     "Document",
 ] }
 
-[dependencies.website-map-engine]
-path = "../map-engine"
+[dependencies.map_engine]
+path = "../../legacy/map_engine"
 default-features = false
 features = ["scenario"]
 
@@ -30,7 +30,7 @@ failpoints = []
 extra = ["failpoints", "dep:serde", "axum/tokio"]
 
 [dev-dependencies]
-website-api = { path = ".", features = ["failpoints"] }
+api = { path = ".", features = ["failpoints"] }
 "#;
 
 fn edge<'a>(manifest: &'a CargoManifest, package: &str) -> &'a DependencyEdge {
@@ -45,7 +45,7 @@ fn edge<'a>(manifest: &'a CargoManifest, package: &str) -> &'a DependencyEdge {
 fn the_package_name_ignores_a_trailing_comment() {
     assert_eq!(
         parse_manifest(MANIFEST).package_name.as_deref(),
-        Some("website-api")
+        Some("api")
     );
 }
 
@@ -61,17 +61,20 @@ fn every_dependency_table_and_spelling_yields_an_edge() {
         packages,
         [
             "axum",
-            "website-graphics-engine",
+            "graphics_engine",
             "shared",
             "quoted-name",
             "web-sys",
-            "website-map-engine",
-            "website-api",
+            "map_engine",
+            "api",
         ]
     );
-    let renamed = edge(&manifest, "website-graphics-engine");
+    let renamed = edge(&manifest, "graphics_engine");
     assert_eq!(renamed.key, "renderer");
-    assert_eq!(renamed.path.as_deref(), Some("../graphics-engine"));
+    assert_eq!(
+        renamed.path.as_deref(),
+        Some("../../legacy/graphics_engine")
+    );
     assert_eq!(
         edge(&manifest, "web-sys").table,
         "target.'cfg(target_arch = \"wasm32\")'.dependencies"
@@ -84,16 +87,16 @@ fn every_dependency_table_and_spelling_yields_an_edge() {
 #[test]
 fn a_dependency_subtable_collects_its_fields() {
     let manifest = parse_manifest(MANIFEST);
-    let map_engine = edge(&manifest, "website-map-engine");
+    let map_engine = edge(&manifest, "map_engine");
     assert_eq!(map_engine.table, "dependencies");
-    assert_eq!(map_engine.path.as_deref(), Some("../map-engine"));
+    assert_eq!(map_engine.path.as_deref(), Some("../../legacy/map_engine"));
     assert_eq!(map_engine.features, ["scenario"]);
 }
 
 #[test]
 fn a_dev_dependency_edge_is_recognised_as_one() {
     let manifest = parse_manifest(MANIFEST);
-    let self_edge = edge(&manifest, "website-api");
+    let self_edge = edge(&manifest, "api");
     assert!(self_edge.is_dev_dependency());
     assert_eq!(self_edge.features, ["failpoints"]);
     assert!(!edge(&manifest, "axum").is_dev_dependency());

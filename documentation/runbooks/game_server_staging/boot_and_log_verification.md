@@ -11,7 +11,7 @@ runbook runs them by hand, over one instance's newest log or any saved one. Each
 
 ## Prerequisites
 
-- For the remote log: `TBD_SSH_HOST` in `tools/xtask/deploy/deploy.env` or in the
+- For the remote log: `TBD_SSH_HOST` in `deploy/deploy.env` or in the
   environment; a key the file sets wins, and the environment fills only keys the file never sets.
   Instance N writes its log to `~/tbd/fleet/instance-N/profile/logs/logs_<time>/console.log`
   (`mod remote-logs` also looks under `…/profile/profile/logs/`), and `--instance N` picks it

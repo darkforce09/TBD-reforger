@@ -107,12 +107,37 @@ pub fn is_repo_root(candidate: &Path) -> bool {
 ///
 /// `root` carries the whole tooling tree because `cargo xtask` is the task surface: a root slice
 /// that cannot build xtask cannot run a single gate. `.cargo` rides with it for the command
-/// aliases that make `cargo xtask` resolve at all. A `website` or `mod` slice checks out its
-/// documentation mirror beside the code, because documentation ships with the code it describes.
+/// aliases that make `cargo xtask` resolve at all.
+///
+/// A `website` slice carries the three website applications, everything they depend on through
+/// `path =` dependencies (the parked engines under `legacy/` and the shared crates under
+/// `crates/`), the deployment folder that builds and serves them, and every `contracts/` file
+/// those crates compile in through `include_str!` or `include_bytes!`: the JSON Schemas (which
+/// the API's typed models are also generated from), the API golden responses, the ballistics
+/// catalog and calibration fixtures, the mission and registry fixtures, the equipment matching
+/// rules and the kit aliases. A `website` or `mod` slice checks out its documentation mirror
+/// beside the code, because documentation ships with the code it describes.
 pub const SPARSE_CHECKOUT_SETS: &[(&str, &[&str])] = &[
     (
         "website",
-        &["apps/website", documentation::WEBSITE_DOCUMENTATION_DIR],
+        &[
+            "apps/api",
+            "apps/frontend",
+            "apps/offline_service_worker",
+            "legacy",
+            "crates",
+            "deploy",
+            "contracts/definitions",
+            "contracts/fixtures/api_goldens",
+            "contracts/fixtures/ballistics",
+            "contracts/fixtures/missions",
+            "contracts/fixtures/registry",
+            "contracts/catalogs/ballistics",
+            "contracts/rules/equipment-gameplay",
+            "contracts/rules/kit-aliases.json",
+            documentation::APPS_DOCUMENTATION_DIR,
+            documentation::LEGACY_DOCUMENTATION_DIR,
+        ],
     ),
     ("mod", &["apps/mod", documentation::MOD_DOCUMENTATION_DIR]),
     ("shared", &["contracts"]),
@@ -140,9 +165,14 @@ pub mod documentation {
     /// Root of the committed documentation tree.
     pub const TREE_DIR: &str = "documentation";
 
-    /// The website's documentation, which mirrors `apps/website`. A `website` slice checks it out
-    /// beside the code.
-    pub const WEBSITE_DOCUMENTATION_DIR: &str = "documentation/website";
+    /// The applications' documentation, which mirrors `apps/` (the game mod's documentation sits
+    /// at [`MOD_DOCUMENTATION_DIR`]). A `website` slice checks it out beside the code.
+    pub const APPS_DOCUMENTATION_DIR: &str = "documentation/apps";
+
+    /// The parked engines' documentation, which mirrors `legacy/`, spelled as a folder prefix. A
+    /// `website` slice checks it out beside the code, because the website's applications depend on
+    /// those engines.
+    pub const LEGACY_DOCUMENTATION_DIR: &str = "documentation/legacy/";
 
     /// The game mod's documentation, which mirrors `apps/mod`. A `mod` slice checks it out beside
     /// the code.
@@ -170,13 +200,12 @@ pub mod documentation {
 
     /// The Mission Creator roadmap carrying the auto-generated "recommended next work" block that
     /// `ticket sync` injects between its markers.
-    pub const ROADMAP: &str =
-        "documentation/website/frontend/apps/editor/mission_creator_roadmap.md";
+    pub const ROADMAP: &str = "documentation/apps/frontend/apps/editor/mission_creator_roadmap.md";
 
     /// The Eden gap-analysis table whose ticket column `ticket sync` keeps in step with the
     /// registry.
     pub const GAP_ANALYSIS: &str =
-        "documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md";
+        "documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md";
 
     /// The document of record for the tokens-per-line-changed factor. A test asserts the document
     /// quotes the compiled constant verbatim, so the two can never drift.
@@ -266,7 +295,7 @@ pub mod documentation {
              included",
         ),
         (
-            "apps/website/api_v2/migrations/0011_events_server_modpack.sql",
+            "apps/api/migrations/0011_events_server_modpack.sql",
             "committed migrations are checksum-frozen; rewording a comment in one breaks every \
              checkout that already applied it",
         ),

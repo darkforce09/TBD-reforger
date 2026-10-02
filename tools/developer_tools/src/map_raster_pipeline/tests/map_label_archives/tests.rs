@@ -1,11 +1,11 @@
-use website_map_engine::world::environment::locations::route_labels::build_road_label_draw_set_from_archive;
-use website_map_engine::world::environment::locations::route_labels::parse_road_names_json;
-use website_map_engine::world::environment::locations::route_labels::road_names_from_archive;
-use website_map_engine::world::environment::locations::route_placement::build_road_label_draw_set;
-use website_map_engine::world::environment::locations::towns::height_labels_from_archive;
-use website_map_engine::world::environment::locations::towns::locations_to_label_specs;
-use website_map_engine::world::environment::locations::towns::towns_from_archive;
-use website_map_engine::world::terrain::roads::network::RoadSegment;
+use map_engine::world::environment::locations::route_labels::build_road_label_draw_set_from_archive;
+use map_engine::world::environment::locations::route_labels::parse_road_names_json;
+use map_engine::world::environment::locations::route_labels::road_names_from_archive;
+use map_engine::world::environment::locations::route_placement::build_road_label_draw_set;
+use map_engine::world::environment::locations::towns::height_labels_from_archive;
+use map_engine::world::environment::locations::towns::locations_to_label_specs;
+use map_engine::world::environment::locations::towns::towns_from_archive;
+use map_engine::world::terrain::roads::network::RoadSegment;
 
 use super::*;
 

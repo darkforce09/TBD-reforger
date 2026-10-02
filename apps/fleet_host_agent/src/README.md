@@ -1,6 +1,6 @@
 # Fleet host agent source
 
-The `fleet_host_agent` library and the `fleet-host-agent` binary: everything the
+The `fleet_host_agent` library and the `fleet_host_agent` binary: everything the
 [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) does between reading its
 configuration and reporting a [fleet command](/documentation/glossary/a_to_f.md#fleet-command)'s
 outcome to the [API](/documentation/glossary/a_to_f.md#api).
@@ -53,7 +53,7 @@ their own protocol.
 
 ## Public surface
 
-- The `fleet-host-agent` binary (`main.rs`), described in the crate README.
+- The `fleet_host_agent` binary (`main.rs`), described in the crate README.
 - The library `fleet_host_agent` (`lib.rs`) makes every module public: `action_verdict`,
   `agent_configuration`, `command_execution`, `dedicated_server_config`, `ledger_client`,
   `process_control`, `rcon` and `secret_text`. Its users are the binary and the integration tests

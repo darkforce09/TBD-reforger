@@ -35,7 +35,7 @@ fn the_game_server_unit_starts_instance_i_from_its_own_folder() {
 fn the_host_agent_unit_reads_the_instance_configuration() {
     assert_eq!(
         exec_start(HOST_AGENT_TEMPLATE),
-        "%h/.local/bin/fleet-host-agent %h/.config/fleet-host-agent/instance-%i/agent.toml"
+        "%h/.local/bin/fleet_host_agent %h/.config/fleet_host_agent/instance-%i/agent.toml"
     );
     assert!(HOST_AGENT_TEMPLATE.contains("\nRestartPreventExitStatus=78\n"));
     assert!(HOST_AGENT_TEMPLATE.contains("\nTimeoutStopSec=200\n"));
@@ -63,7 +63,7 @@ fn the_install_writes_all_three_units_verbatim_and_enables_every_game_server() {
         game_server_unit(&env)
     )));
     assert!(p.contains(&format!(
-        "cat > \"$UNITS/fleet-host-agent@.service\" <<'UNITEOF'\n{HOST_AGENT_TEMPLATE}UNITEOF\n"
+        "cat > \"$UNITS/fleet_host_agent@.service\" <<'UNITEOF'\n{HOST_AGENT_TEMPLATE}UNITEOF\n"
     )));
     assert!(p.contains(&format!(
         "cat > \"$UNITS/acknowledgement-dropping-relay@.service\" <<'UNITEOF'\n{RELAY_TEMPLATE}UNITEOF\n"
@@ -84,7 +84,7 @@ fn a_smaller_fleet_retires_the_instances_above_it() {
     env.fleet.relay = None;
     let p = units_install_payload(&env, &env.fleet.instances());
     assert!(p.contains(
-        "for n in 4 5; do\n  systemctl --user disable --now \"tbd-reforger@$n.service\" \"fleet-host-agent@$n.service\""
+        "for n in 4 5; do\n  systemctl --user disable --now \"tbd-reforger@$n.service\" \"fleet_host_agent@$n.service\""
     ));
     assert!(p.contains("for n in 1 2 3 4 5; do\n  systemctl --user disable --now \"acknowledgement-dropping-relay@$n.service\""));
     assert_eq!(

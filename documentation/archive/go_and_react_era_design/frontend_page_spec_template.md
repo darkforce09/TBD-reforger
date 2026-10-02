@@ -16,7 +16,7 @@
 - **Min role:** `enlisted` | `mission_maker` | `admin` | `public-nav`
 - **Blueprint ref:** [docs/platform/context_handoff.md](/documentation/archive/go_and_react_era_design/platform_context_handoff.md) §4.x (if applicable)
 
-**Doc hub:** [docs/website/frontend/README.md](/documentation/website/frontend/README.md)
+**Doc hub:** [docs/website/frontend/README.md](/documentation/apps/frontend/README.md)
 
 ## Element Inventory
 

@@ -7,7 +7,7 @@
  * Position: called by every screen, component and HUD painter under UI and Session; tint and
  * state lookups live in `TBD_UITintColours` and `TBD_UIStateColours`.
  * State: the memoised linear `Color` per token (`m_mColours`), for the life of the script VM.
- * Invariants: token names follow the design tokens of `apps/website/frontend/style/aegis.css`
+ * Invariants: token names follow the design tokens of `apps/frontend/style/aegis.css`
  * (the known value differences are listed in documentation/design_system/design_tokens.md);
  * tokens are sRGB 0xAARRGGBB and reach the engine through `Color.FromSRGBA`, never
  * `SetColorInt`; alpha is composited in sRGB by `Over`, and only `PaintAlpha` sends engine alpha.

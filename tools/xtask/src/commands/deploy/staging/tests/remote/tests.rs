@@ -89,7 +89,7 @@ fn rsync_argv_keeps_every_exclude_in_order() {
         "--exclude=apps/mod/vanilla_reference/",
         "--exclude=apps/mod/playable_selector/",
         &deploy_env_exclude,
-        "--exclude=apps/website/api_v2/.env",
+        "--exclude=apps/api/.env",
         "--exclude=apps/mod/tbd-export/",
         "--exclude=apps/mod/tbd-emcp/",
         // Build output and map assets: a game-server host needs neither, and `--delete` would
@@ -99,7 +99,7 @@ fn rsync_argv_keeps_every_exclude_in_order() {
         "--exclude=assets/scratch/",
         "--exclude=assets/equipment/",
         // The app the website deploy built on the host, which the staging Caddy serves.
-        "--exclude=apps/website/frontend/dist/",
+        "--exclude=apps/frontend/dist/",
     ] {
         assert!(argv.iter().any(|a| a == needed), "missing {needed}");
     }
@@ -120,7 +120,7 @@ fn rsync_argv_excludes_every_development_machine_only_path() {
     );
     let last_own_exclusion = argv
         .iter()
-        .position(|a| a == "--exclude=apps/website/frontend/dist/")
+        .position(|a| a == "--exclude=apps/frontend/dist/")
         .expect("the lane's own last exclusion");
     for pattern in DEVELOPMENT_MACHINE_ONLY_PATHS {
         let needed = format!("--exclude={pattern}");
@@ -187,9 +187,24 @@ fn the_dry_run_plan_walks_every_instance_and_prints_no_secret() {
         "{plan}"
     );
     assert!(plan.contains("[dry-run] relay: acknowledgement-dropping-relay@5 on 127.0.0.1:18085"));
-    assert!(plan.contains(
-        "[dry-run] migrate: stop and disable tbd-reforger.service and fleet-host-agent.service"
-    ));
+    // The migration retires the single instance's kebab-case names; the fleet installs the
+    // snake_case ones.
+    assert!(
+        plan.contains(
+            "[dry-run] migrate: stop and disable tbd-reforger.service and fleet-host-agent.service; \
+             archive their unit files, ~/.config/fleet-host-agent/, ~/.local/bin/fleet-host-agent, \
+             /home/deploy/tbd/profile and /home/deploy/tbd/server.config.json under \
+             ~/tbd/retired/single-instance-<UTC time>/"
+        ),
+        "{plan}"
+    );
+    assert!(plan.contains("fleet_host_agent@.service"), "{plan}");
+    assert!(
+        plan.contains(
+            "[dry-run] build fleet_host_agent; write ~/.config/fleet_host_agent/instance-N/agent.toml"
+        ),
+        "{plan}"
+    );
     assert!(
         !plan.contains("refuse while"),
         "the migration replaces the refusal"
@@ -255,7 +270,7 @@ fn the_website_api_check_names_the_health_route_and_the_website_deploy() {
     );
     // A trailing `/` in the setting is dropped once, by the one reading the deploy's `Env` holds.
     let settings = crate::core::deploy_environment::DeployEnvironment::from_text(
-        std::path::Path::new("/home/deploy/checkout/tools/xtask/deploy/deploy.env"),
+        std::path::Path::new("/home/deploy/checkout/deploy/deploy.env"),
         Some("TBD_SSH_HOST=deploy@192.0.2.10\nTBD_BACKEND_URL=https://api.example.test/\n"),
         std::iter::empty(),
     )

@@ -277,15 +277,12 @@ fn crate_tiers_a_missing_declaration_wrong_category_or_name_is_rule_2_or_3() {
 #[test]
 fn crate_tiers_legacy_edges_and_dev_edges_onto_apps_are_rules_7_and_8() {
     let mut workspace = green_workspace("tiers-parked-member");
-    workspace.member(
-        "legacy/website_frontend",
-        &application_manifest("website_frontend", ""),
-    );
+    workspace.member("legacy/frontend", &application_manifest("frontend", ""));
     workspace.layout_crate(
         "crates/frontend/pages/account_pages",
         0,
         "any",
-        &[normal("website_frontend")],
+        &[normal("frontend")],
     );
     workspace.layout_crate(
         "crates/foundation/deterministic_random",

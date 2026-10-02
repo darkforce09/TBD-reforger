@@ -55,7 +55,7 @@ cargo clippy --all-targets --all-features -- -D warnings       # clean
 cargo clippy -p map-engine-render --target wasm32-unknown-unknown -- -D warnings  # clean
 cargo test -p map-engine-core --all-features                   # 206 + 5 + 5 pass, 0 fail
 make wasm                                                       # ok (bundler pkg regenerated)
-cd apps/website/frontend && npm test                           # 48 files / 356 tests pass
+cd apps/frontend && npm test                           # 48 files / 356 tests pass
 npm run build                                                  # tsc -b + vite build ok
 npm run lint                                                   # clean
 ```
@@ -75,7 +75,7 @@ npm run lint                                                   # clean
   `rebuild_buffers`; `fill_color` bridge arm removed; G2/G3/G5/G6 + casing tests.
 - `crates/map-engine-wasm/src/lib.rs` — `piers_visible`, `strips_visible`,
   `pier_strip_segment_count` passthrough; `fences_visible` doc corrected.
-- `apps/website/frontend/src/features/tactical-map/wgpu/wgpuWorldLoader.ts` — strip-lane upload
+- `apps/frontend/src/features/tactical-map/wgpu/wgpuWorldLoader.ts` — strip-lane upload
   gate `fences_visible()` → `strips_visible()` (R4; policy stays in Rust).
 
 ## Manual acceptance

@@ -31,7 +31,7 @@ writes them. The building models in
 `buildings/` and their meshes come from single-building runs of the same compiler.
 
 In the browser the occluder loader
-(`apps/website/map-engine/src/streaming/loaders/occluder_loader.rs`) boots from the archive the
+(`legacy/map_engine/src/streaming/loaders/occluder_loader.rs`) boots from the archive the
 terrain manifest's `buildings.archive` names, taking the non-blocking prefabs from its census. It
 then fetches `blas-manifest.json`, prefetches the `hot` descriptors and their meshes, and as chunks
 become resident fetches the descriptors of the blocking prefabs they place, then the meshes those
@@ -57,12 +57,12 @@ that places its model.
   `descriptors[]` (each prefab's `pid`, `path`, `kind`, `blocks`, `canopy`, mesh paths and
   instance counts, sorted by `pid`), `hot[]` and `totals`. `building_blueprints.rkyv` is a
   little-endian rkyv archive of `BuildingBlueprintArchive`
-  (`apps/website/map-engine/src/io/archives/blueprints.rs`) at archive schema version 1,
+  (`legacy/map_engine/src/io/archives/blueprints.rs`) at archive schema version 1,
   validated whole on read, about 275 KB. The archive is in Git LFS (`.gitattributes`:
   `assets/terrains/**/*.rkyv`); the manifest is a plain git blob. The children's formats are in
   their READMEs.
 - Schema: `contracts/definitions/blas-manifest.schema.json` for the manifest, read as
-  `BlasManifest` (`apps/website/map-engine/src/spatial/los/world/descriptor/manifest.rs`); the
+  `BlasManifest` (`legacy/map_engine/src/spatial/los/world/descriptor/manifest.rs`); the
   archive has no JSON Schema, and its Rust type is the contract. The terrain manifest's
   `buildings` block names the archive and the mesh folder
   (`contracts/definitions/terrain-manifest.schema.json`).
@@ -78,8 +78,8 @@ that places its model.
   `cargo xtask map blueprint-from-voxels archive` (`archive_emission/archive_writer.rs`).
 - Consumers:
   - the map engine's occluder loader and world occluder
-    (`apps/website/map-engine/src/streaming/loaders/occluder_loader.rs`,
-    `apps/website/map-engine/src/spatial/los/world/`), over `/map-assets/everon/prefabs/…`;
+    (`legacy/map_engine/src/streaming/loaders/occluder_loader.rs`,
+    `legacy/map_engine/src/spatial/los/world/`), over `/map-assets/everon/prefabs/…`;
   - `cargo xtask verify blas-manifest`
     (`tools/developer_tools/src/map_verification/blas_manifest.rs`), which checks every listed
     mesh and every catalogue descriptor, and `cargo xtask map world-los`;
@@ -104,9 +104,9 @@ that places its model.
 
 ## Related documentation
 
-- [Prefab occluder descriptors](/apps/website/map-engine/src/spatial/los/world/descriptor/README.md)
+- [Prefab occluder descriptors](/legacy/map_engine/src/spatial/los/world/descriptor/README.md)
   — the descriptor, manifest and archive model.
 - [Blueprint compilation](/tools/developer_tools/src/blueprint/README.md) — the commands that
   write this folder.
-- [Building architecture](/apps/website/map-engine/src/world/architecture/README.md) — the
+- [Building architecture](/legacy/map_engine/src/world/architecture/README.md) — the
   blueprint and compound model the building files feed.

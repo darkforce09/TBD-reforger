@@ -1,0 +1,27 @@
+# The scheme guard on every link the platform stores or renders: `is_http_url`, called by the API
+# at the write boundary of every URL column and by the single-page app at every `href` and `src`
+# it renders, plus the shared table of inputs and verdicts that pins it.
+[package]
+name = "http_url_guard"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Whether a string is an absolute http or https URL a browser follows, and the case table that pins the answer."
+
+[package.metadata.layout]
+category = "crates/foundation"
+tier = 0
+targets = "any"
+
+[features]
+# Exposes `cases`, the table of inputs and verdicts, to the tests of the crates that call the
+# guard; enabled only from `[dev-dependencies]`.
+test_fixtures = []
+
+[dependencies]
+url = { workspace = true }
+
+[lints]
+workspace = true

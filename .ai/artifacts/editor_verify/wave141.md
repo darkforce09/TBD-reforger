@@ -75,9 +75,9 @@ Base had **neither** T-738 pin name nor any `t748` / `mission_comments` render p
 **Evidence.** Slice commit message and ticket claim this residue. Live on HEAD:
 
 ```text
-apps/website/frontend/src/outliner.rs:101
+apps/frontend/src/outliner.rs:101
   comment is in no selection lane and has no Attributes modal
-apps/website/frontend/src/editor_ops.rs:3294
+apps/frontend/src/editor_ops.rs:3294
   place_comment: This does NOT touch the selection.
 ```
 

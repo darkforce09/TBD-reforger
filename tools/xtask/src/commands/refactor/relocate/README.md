@@ -48,9 +48,11 @@ move with their folders unread.
 
 `file_treatment.rs` sorts each file before any pass runs. Live files take every rewrite. Markdown
 under the archive and the ticket documents takes link destination rewrites only; other files there,
-the `.tsv` manifests of the manifests folder (their `from` columns name retired paths on purpose)
-and the manifest being run take none; the rest of the manifests folder, its README included, is
-live. A ticket record whose `status` the ticket engine calls shipped or cancelled takes rewrites on
+the `.tsv` manifests of the manifests folder (their `from` columns name retired paths on purpose),
+the manifest being run and every SQL migration (a `.sql` file directly in a `migrations` folder,
+the files `sqlx` reads and pins by checksum once applied) take none; the rest of the manifests
+folder, its README included, is live, and so is every other `.sql` file (a seed, a file in a
+subfolder of a `migrations` folder) and every other file of a `migrations` folder. A ticket record whose `status` the ticket engine calls shipped or cancelled takes rewrites on
 its `spec`, `plan` and `owns` values only (a multi-line `owns` array through its closing line), the
 fields the ticket engine resolves against the tree and the wave lock; an open ticket is live. A
 file is treated by where it lies after the moves, with the areas moved where the manifest puts
@@ -96,7 +98,13 @@ no finding.
 - Used by: `tools/xtask/src/commands/refactor/dispatch.rs` only.
 - Rules: nothing is written before the whole plan is computed, free of unresolved items
   (`relocate_unresolvable_literal_fails_apply_with_nothing_written`) and its planned tree verifies
-  clean (`relocate_dry_run_verifies_the_planned_tree_and_fails_on_a_hidden_leftover`); the passes
+  clean (`relocate_dry_run_verifies_the_planned_tree_and_fails_on_a_hidden_leftover`); a SQL
+  migration moves byte-identical and is never judged, while every other `.sql` file is live
+  (`relocate_sql_migrations_move_byte_identical_and_are_not_verified`); a spelling that only looks
+  like a path is never rewritten: a literal of separators alone and a plain fixture path that only
+  starts with a moved folder's name stay as written
+  (`relocate_lone_separator_literals_name_no_path`,
+  `relocate_plain_fixture_paths_under_a_moved_folder_name_stay_as_written`); the passes
   and the verification share `file_treatment.rs`, `path_references::allowed_spans` and
   `path_tokens::classify_occurrence`, so they judge the same bytes the same way; tests are named
   `relocate_*` and run on throwaway checkouts, never on this one.

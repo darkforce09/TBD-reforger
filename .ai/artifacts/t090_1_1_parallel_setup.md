@@ -34,7 +34,7 @@ make map-cartographic-everon
 VIEW=map node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
 make schema-validate
 make verify-terrain
-cd apps/website/frontend && npm run build && npm run lint
+cd apps/frontend && npm run build && npm run lint
 ```
 
 Manual: Mission Settings → Map → alignment contact sheet (M3/M4) · FpsCounter (M9).

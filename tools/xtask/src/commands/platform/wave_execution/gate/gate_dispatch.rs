@@ -132,11 +132,11 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     // `cargo clippy --workspace --all-targets -- -D warnings` is still red on clean main, so a
     // workspace-wide gate would be red before a single slice merged and nothing could ever land.
     //
-    // The remaining errors on clean main are in `website-frontend` linted natively, not in
+    // The remaining errors on clean main are in `frontend` linted natively, not in
     // tools: xtask and developer_tools are clean and are gated by the
     // `clippy xtask+developer_tools` step below.
     //
-    // ci.yml gates per-crate (:59 website-api, :91 map-engine, :112 website-frontend on wasm32) and
+    // ci.yml gates per-crate (:59 api, :91 map-engine, :112 frontend on wasm32) and
     // the three steps here mirror it; the fourth (below) covers what ci.yml has no job for at all.
     r.run("clippy api", || {
         checkrun(
@@ -145,7 +145,7 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
                 "cargo",
                 "clippy",
                 "-p",
-                "website-api",
+                "api",
                 "--all-targets",
                 "--quiet",
                 "--",
@@ -165,7 +165,7 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
                 "cargo",
                 "clippy",
                 "-p",
-                "website-map-engine",
+                "map_engine",
                 "--all-features",
                 "--all-targets",
                 "--quiet",
@@ -175,7 +175,7 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
             ],
         )
     });
-    // NOTE: no `-D warnings` here, deliberately — ci.yml website-frontend clippy runs WITHOUT it,
+    // NOTE: no `-D warnings` here, deliberately — ci.yml frontend clippy runs WITHOUT it,
     // so warnings are advisory upstream. Adding -D here would make the gate stricter than CI and
     // red on arrival. --all-targets is load-bearing for `#[cfg(test)]` code and benches, and keeps
     // this step aligned with clippy_changed and `ci-local-leptos`; -D stays off to match CI.
@@ -186,7 +186,7 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
                 "cargo",
                 "clippy",
                 "-p",
-                "website-frontend",
+                "frontend",
                 "--target",
                 "wasm32-unknown-unknown",
                 "--all-targets",
@@ -213,8 +213,8 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
         migrate::gate_db_migrate_persist(ctx, &state, "advance") as i32
     });
     r.run("test api", || db::gate_test_api(ctx));
-    // --all-features is REQUIRED. `website-map-engine`'s default feature is `scenario` alone, so
-    // a bare `cargo test -p website-map-engine` compiles a fraction of the crate and is a vacuous
+    // --all-features is REQUIRED. `map_engine`'s default feature is `scenario` alone, so
+    // a bare `cargo test -p map_engine` compiles a fraction of the crate and is a vacuous
     // pass; the merged tripwire REDs on it. `ci-local` and this gate must match. Private target
     // dir for the same reason as `test api` and `test frontend`: this step RUNS test binaries.
     let mapengine_dir = format!(
@@ -234,14 +234,14 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
                 "cargo",
                 "test",
                 "-p",
-                "website-map-engine",
+                "map_engine",
                 "--all-features",
                 "--quiet",
             ],
         )
     });
     // Frontend tests get a PRIVATE target dir. With a shared CARGO_TARGET_DIR,
-    // `cargo test -p website-frontend` runs a stale `website_frontend-<hash>` test binary built by
+    // `cargo test -p frontend` runs a stale `frontend-<hash>` test binary built by
     // ANOTHER worktree, reporting that worktree's test count. Same package name + version across
     // worktrees = same artifact hash = clobbering.
     let frontend_dir = format!(
@@ -260,36 +260,22 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
                 "cargo",
                 "test",
                 "-p",
-                "website-frontend",
+                "frontend",
                 "--quiet",
             ],
         )
     });
-    // ci.yml's `test` step is a bare `cargo test` under the website-api job, whose
-    // `defaults.run.working-directory` is `apps/website/api_v2`; cargo with no `-p` selects the
-    // package in the CWD, so no workflow job runs the xtask or developer_tools test suites. This
-    // step is the only thing that does.
+    // Every workspace member the three test steps above do not run, derived from the root
+    // manifest: a member the workspace gains is tested here from the moment the manifest names
+    // it, never only once someone extends a list. One `cargo test -p` per package, so features
+    // never unify across packages.
     // PRIVATE TARGET DIR, same reason and not negotiable: this step BUILDS AND RUNS test binaries.
     let tools_dir = format!(
         "CARGO_TARGET_DIR={}",
         gate_folder(&ctx.main_root, cargo_target_directory::GATE_TOOLS_SUBFOLDER)
     );
-    r.run("test xtask+developer_tools", || {
-        hostrun(
-            ctx,
-            &[
-                "env",
-                &tools_dir,
-                "CARGO_INCREMENTAL=0",
-                "cargo",
-                "test",
-                "-p",
-                "xtask",
-                "-p",
-                "developer_tools",
-                "--quiet",
-            ],
-        )
+    r.run("test workspace members", || {
+        test_workspace_members(ctx, &tools_dir)
     });
     // The linting half of the same gap: no workflow job lints these two crates either.
     // `checkrun`, not `hostrun`: this is a check-class step and shares the check-class exposure.
@@ -379,7 +365,7 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     //
     // `verify no-python` and `verify no-shell` run the same TrackedLanguageBan table (hard zero),
     // so they cannot disagree; both CLI names stay because CI job names use them. xtask is already
-    // built by `test xtask+developer_tools` above.
+    // built by `test workspace members` above.
     r.run("no-python", || {
         checkrun(
             ctx,
@@ -427,4 +413,46 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     }
     state.verdict("PASS", "GATE");
     0
+}
+
+/// The members whose tests a step of [`cmd_gate`] other than `test workspace members` runs:
+/// `test api` against the gate database, `test map-engine` with every feature on and
+/// `test frontend`.
+pub(super) const WAVE_GATE_DEDICATED_TEST_PACKAGES: [&str; 3] = ["api", "map_engine", "frontend"];
+
+/// `test workspace members`: `cargo test -p <package>` in `target_dir_assignment`'s private target
+/// directory for every workspace member outside [`WAVE_GATE_DEDICATED_TEST_PACKAGES`], each its
+/// own run; the first red package's code, after every package ran. A workspace whose members
+/// cannot be derived is red, never an empty step.
+fn test_workspace_members(ctx: &Ctx, target_dir_assignment: &str) -> i32 {
+    let packages = match crate::commands::ci::workspace_member_tests::member_packages_except(
+        &ctx.root,
+        &WAVE_GATE_DEDICATED_TEST_PACKAGES,
+    ) {
+        Ok(packages) => packages,
+        Err(error) => {
+            wprintln!("    {error:#}");
+            return 1;
+        }
+    };
+    let mut first_red = 0;
+    for package in &packages {
+        let rc = hostrun(
+            ctx,
+            &[
+                "env",
+                target_dir_assignment,
+                "CARGO_INCREMENTAL=0",
+                "cargo",
+                "test",
+                "-p",
+                package,
+                "--quiet",
+            ],
+        );
+        if rc != 0 && first_red == 0 {
+            first_red = rc;
+        }
+    }
+    first_red
 }

@@ -1,7 +1,7 @@
 use super::*;
 use crate::repository_layout::{density_fixtures_dir, terrain_dir};
-use website_map_engine::io::density::tbdd::decode_tbdd;
-use website_map_engine::io::density::tbdd::encode_tbdd;
+use map_engine::io::density::tbdd::decode_tbdd;
+use map_engine::io::density::tbdd::encode_tbdd;
 
 /// The 625 committed everon density tiles (`objects/density/*.bin`), sorted.
 ///
@@ -31,7 +31,7 @@ fn everon_density_tiles() -> Vec<std::path::PathBuf> {
 ///
 /// Decode each tile with the new `cast_slice` decoder and re-emit it through the *unchanged*
 /// `encode_tbdd`; the result must be the file, byte for byte. This is the independent half of
-/// the parity pin in `website_map_engine::world`: that one proves the two decoders agree
+/// the parity pin in `map_engine::world`: that one proves the two decoders agree
 /// with each other, this one proves the pair still agrees with what is on disk — the emitter
 /// and the decoder could have drifted together and neither test alone would notice.
 #[test]

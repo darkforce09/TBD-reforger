@@ -36,11 +36,11 @@ fn the_install_writes_every_configuration_and_reads_every_unit_back() {
         p.starts_with("set -euo pipefail\nexport PATH=\"$HOME/.cargo/bin:$PATH\"\numask 077\n")
     );
     assert!(p.contains(
-        "(cd '/home/deploy/tbd/repo' && cargo build --release -q -p fleet-host-agent)\n"
+        "(cd '/home/deploy/tbd/repo' && cargo build --release -q -p fleet_host_agent)\n"
     ));
     for n in 1..=5 {
         assert!(p.contains(&format!(
-            "AGENT_DIR=\"$HOME/.config/fleet-host-agent/instance-{n}\"\nmkdir -p \"$AGENT_DIR\"\nchmod 700 \"$AGENT_DIR\"\n"
+            "AGENT_DIR=\"$HOME/.config/fleet_host_agent/instance-{n}\"\nmkdir -p \"$AGENT_DIR\"\nchmod 700 \"$AGENT_DIR\"\n"
         )));
     }
     assert_eq!(p.matches("<<AGENTTOML\n").count(), 5);
@@ -48,8 +48,8 @@ fn the_install_writes_every_configuration_and_reads_every_unit_back() {
         p.matches("chmod 600 \"$AGENT_DIR/agent.toml\"\n").count(),
         5
     );
-    let units = "fleet-host-agent@1.service fleet-host-agent@2.service fleet-host-agent@3.service \
-                 fleet-host-agent@4.service fleet-host-agent@5.service";
+    let units = "fleet_host_agent@1.service fleet_host_agent@2.service fleet_host_agent@3.service \
+                 fleet_host_agent@4.service fleet_host_agent@5.service";
     assert!(p.contains(&format!("systemctl --user restart {units}\n")));
     assert!(p.contains(&format!("for unit in {units}; do\n")));
     assert!(p.contains("show -p ActiveState --value \"$unit\""));

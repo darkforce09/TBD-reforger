@@ -68,7 +68,7 @@ class whose native type must equal or inherit the accepted one.
   sequence number within the section folder.
 - Schema: no JSON Schema; the shapes are the `Class`, `Rule` and `Field` structures of `policy.rs`
   and the `Rule` structure of
-  `apps/website/api_v2/src/community_content/services/equipment_data_viewer/queries/native_matches.rs`.
+  `apps/api/src/community_content/services/equipment_data_viewer/queries/native_matches.rs`.
   The published generation the policy selects follows the schemas in
   `contracts/definitions/equipment-gameplay/`.
 - Adding a file: put the rows in the section's folder, list the file in `class_files`, update

@@ -27,6 +27,7 @@ documentation/archive/
 ├── product_plans/              the platform build plan, the mod milestones and a milestone post
 ├── redirect_stubs/             stubs of retired docs/ paths, each pointing at its document
 ├── refactor_v2/                plan, brief, style lock, manifest and checkpoint of the documentation program
+├── restructure_agent_briefs/   the executed agent briefs of the workspace restructure's finished stages
 ├── restructure_research/       explorer, planning and verification reports of the workspace restructure
 ├── shipped_history/            the shipped-work log kept out of the agent instruction file
 └── tools_v2_refactor/          inventory, plan and phase records of the tooling restructuring
@@ -49,15 +50,16 @@ authority.
 
 | Topic | Live replacement |
 |---|---|
-| API completion program | [API verification evidence](/documentation/website/api_v2/verification_evidence/README.md) |
-| API restructuring | [API documentation](/documentation/website/api_v2/README.md) |
+| API completion program | [API verification evidence](/documentation/apps/api/verification_evidence/README.md) |
+| API restructuring | [API documentation](/documentation/apps/api/README.md) |
 | Assets and contracts moves | [assets](/documentation/assets/README.md), [contracts](/documentation/contracts/README.md) |
 | Documentation move | [documentation entry](/documentation/README.md), [documentation standards](/documentation/standards/documentation_standards.md) |
 | Documentation program records | [documentation entry](/documentation/README.md), [documentation standards](/documentation/standards/documentation_standards.md) |
 | Engine split | [engine boundary rules](/documentation/standards/engine_boundary_rules.md) |
 | Factory runs | [factory waves](/documentation/runbooks/factory_waves/README.md) |
-| Frontend move and Go and React era designs | [frontend documentation](/documentation/website/frontend/README.md), [Mission Creator](/documentation/website/frontend/apps/editor/README.md), [design system](/documentation/design_system/README.md) |
+| Frontend move and Go and React era designs | [frontend documentation](/documentation/apps/frontend/README.md), [Mission Creator](/documentation/apps/frontend/apps/editor/README.md), [design system](/documentation/design_system/README.md) |
 | Improved layout proposals | [restructure program](/documentation/restructure/README.md), [workspace layout](/documentation/architecture/workspace_layout.md) |
+| Restructure agent briefs | [restructure program](/documentation/restructure/README.md), [shared agent brief](/documentation/restructure/agent_briefs/shared_brief.md) |
 | Tooling restructuring | [tooling documentation](/documentation/tools/README.md) |
 
 Audits, handoffs, the monorepo merge, the product plans and the shipped history have no single

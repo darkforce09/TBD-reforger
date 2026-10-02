@@ -11,7 +11,7 @@ changes the staging host is approved by the operator first, one numbered list pe
 
 - The staging tooling is committed and gated (`git status --short` shows only the two Workbench
   `resourceDatabase.rdb` files).
-- `tools/xtask/deploy/deploy.env` names the host and the fleet, and none of the retired
+- `deploy/deploy.env` names the host and the fleet, and none of the retired
   single-server keys (the deploy refuses them)
   ([staging deploy settings](/documentation/runbooks/game_server_staging/staging_deploy.md)).
 - The operator's Chrome runs the Claude extension, signed in to the site as an administrator and to
@@ -62,7 +62,7 @@ changes the staging host is approved by the operator first, one numbered list pe
    cargo xtask deploy staging --migrate-single-instance
    ```
 
-   Expected: `tbd-reforger@1` … `@5` and `fleet-host-agent@1` … `@5` active, the relay unit active
+   Expected: `tbd-reforger@1` … `@5` and `fleet_host_agent@1` … `@5` active, the relay unit active
    for instance 5, and each instance's console log showing `session-started`.
 
 6. In the browser: deactivate "TBD Staging POC"; create the partner guild "TBD Staging Partner" with

@@ -4,7 +4,7 @@
 //! the tool's `discord-member-read {json}` answer line into a [`MemberReadLine`].
 //!
 //! **Position:** runs `staging-fixtures observe-discord-member`
-//! (`apps/website/api_v2/src/bin/staging_fixtures/discord_member_probe/`) through
+//! (`apps/api/src/bin/staging_fixtures/discord_member_probe/`) through
 //! `remote_actions/host_fixture_commands.rs`; used by the Discord procedure's steps and
 //! `staging preflight --discord`.
 //!

@@ -19,9 +19,9 @@ assets/terrains/
 
 The API mounts this folder at `/map-assets` from `MAP_ASSETS_DIR`, whose default
 `../../../assets/terrains` resolves here from the API's working directory
-`apps/website/api_v2/` (`apps/website/api_v2/src/core/http_router.rs`). The mount sits below the
+`apps/api/` (`apps/api/src/core/http_router.rs`). The mount sits below the
 rate limiter, so streaming a terrain spends no request tokens, and in development the app's Trunk
-server proxies `/map-assets` to the API (`apps/website/frontend/Trunk.toml`).
+server proxies `/map-assets` to the API (`apps/frontend/Trunk.toml`).
 
 ```text
 tbd-export plugins in Workbench ──raw exports──▶ developer tools ──write──▶ <terrain>/
@@ -33,7 +33,7 @@ browser: mission's terrain id ──▶ /map-assets/<terrain>/manifest.json ◀�
 
 The browser reaches a terrain by the id its [mission](/documentation/glossary/g_to_m.md#mission)
 names: the Mission Creator boots `/map-assets/<terrain>/manifest.json` directly
-(`apps/website/map-engine/src/streaming/host/bootstrap.rs`) and never reads the registry. Inside a
+(`legacy/map_engine/src/streaming/host/bootstrap.rs`) and never reads the registry. Inside a
 terrain the manifest names every asset, so a dataset may ship a subset and the map engine loads
 what the manifest lists; the few names the readers fix themselves are listed in the
 [Everon README](/assets/terrains/everon/README.md). Coordinates are world metres from `0, 0`,
@@ -84,7 +84,7 @@ check branches on `status`, which records how far a terrain's export has come.
   [Workbench](/documentation/glossary/n_to_z.md#workbench) plugins.
 - Consumers:
   - the API's `/map-assets` mount, and its test
-    `apps/website/api_v2/tests/map_assets_rate_limit_exemption.rs`, which fetches
+    `apps/api/tests/map_assets_rate_limit_exemption.rs`, which fetches
     `terrain-registry.json` to prove the mount is outside the rate limiter;
   - the map engine in the browser, per terrain, over `/map-assets/<terrain>/…`;
   - the world export steps above (`tools/developer_tools/src/world_export_pipeline/`) and
@@ -93,9 +93,9 @@ check branches on `status`, which records how far a terrain's export has come.
     copy, and whose asset preflight treats a host's `assets/terrains/terrain-registry.json` as
     the sign that its copy is in place
     (`tools/xtask/src/commands/deploy/website/asset_preflight.rs`);
-  - the staging compose file `apps/website/docker-compose.staging.yml`, which mounts this folder
+  - the staging compose file `deploy/compose.staging.yml`, which mounts this folder
     read-only into the API container as `MAP_ASSETS_DIR`, and the API's systemd unit
-    `tools/xtask/deploy/systemd/tbd-website-api.service`, which points `MAP_ASSETS_DIR` here.
+    `deploy/systemd/tbd-website-api.service`, which points `MAP_ASSETS_DIR` here.
 
 ## Boundaries
 

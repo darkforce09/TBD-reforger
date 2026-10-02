@@ -84,7 +84,7 @@ error instead, and an error any entry returns reaches xtask as a failure.
 ## Boundaries
 
 - Depends on:
-  - `website_map_engine` for every contract type: the blueprint
+  - `map_engine` for every contract type: the blueprint
     (`world::architecture::blueprint`), the compound building and instances
     (`world::architecture::compound`), the sidecar and BVH (`spatial::bvh`), the descriptors and
     manifest (`spatial::los::world::descriptor`) and the archive (`io::archives`);
@@ -113,7 +113,7 @@ error instead, and an error any entry returns reaches xtask as a failure.
   commands that run these entries.
 - [Everon prefab geometry](/assets/terrains/everon/prefabs/README.md) — the committed output
   and how the map engine loads it.
-- [Building architecture](/apps/website/map-engine/src/world/architecture/README.md) — the
+- [Building architecture](/legacy/map_engine/src/world/architecture/README.md) — the
   blueprint and compound model the output feeds.
 - [Blueprint prefab fixtures](/tools/developer_tools/test_fixtures/blueprint/prefab/README.md) —
   the `.et` files the resolver tests read.

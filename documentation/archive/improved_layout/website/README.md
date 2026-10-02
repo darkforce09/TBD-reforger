@@ -52,5 +52,5 @@ responsibilities, unified deployment configurations, shared typed wire contracts
 
 ## Related documentation
 
-- [Website documentation](/documentation/website/README.md) — index of platform documents.
+- [Website documentation](/documentation/apps/README.md) — index of platform documents.
 - [Code-tree anchor](/documentation/archive/improved_layout/website_code_tree_anchor.md) — code-tree index file.

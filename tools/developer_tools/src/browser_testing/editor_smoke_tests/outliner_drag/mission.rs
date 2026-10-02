@@ -96,10 +96,10 @@ pub(super) async fn intercept(page: &Arc<Page>) -> Result<Arc<StdMutex<u64>>> {
     });
     let posts = Arc::new(StdMutex::new(0));
     let me: Value = serde_json::from_str(&std::fs::read_to_string(
-        repo_root().join("apps/website/frontend/tests/fixtures/api/GET__me.json"),
+        repo_root().join("contracts/fixtures/api_goldens/GET__me.json"),
     )?)?;
     let registry: Value = serde_json::from_str(&std::fs::read_to_string(
-        repo_root().join("apps/website/frontend/tests/fixtures/api/GET__registry.json"),
+        repo_root().join("contracts/fixtures/api_goldens/GET__registry.json"),
     )?)?;
     page.send(
         "Fetch.enable",

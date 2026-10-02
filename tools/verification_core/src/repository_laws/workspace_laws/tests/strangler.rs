@@ -10,15 +10,15 @@ fn workspace(name: &str) -> FixtureWorkspace {
     let mut workspace = FixtureWorkspace::new(name);
     workspace.layout_crate("crates/mission/mission_model", 0, "any", &[]);
     workspace.member(
-        "legacy/website_map_engine",
-        &application_manifest("website_map_engine", ""),
+        "legacy/map_engine",
+        &application_manifest("map_engine", ""),
     );
-    workspace.write("legacy/website_map_engine/src/lib.rs", "pub mod data;\n");
+    workspace.write("legacy/map_engine/src/lib.rs", "pub mod data;\n");
     workspace.member(
         "apps/frontend",
         &application_manifest(
             "frontend",
-            "website_map_engine = { path = \"../../legacy/website_map_engine\" }\n",
+            "map_engine = { path = \"../../legacy/map_engine\" }\n",
         ),
     );
     workspace
@@ -39,24 +39,24 @@ fn strangler_a_new_crate_depending_on_legacy_is_a_finding() {
         "crates/mission/mission_payload",
         0,
         "any",
-        &[normal("website_map_engine")],
+        &[normal("map_engine")],
     );
     let found = strangler_outcome(workspace.root()).unwrap().findings;
     assert_eq!(found.len(), 1, "{found:#?}");
     assert!(found[0].starts_with("crates/mission/mission_payload/Cargo.toml:"));
-    assert!(found[0].contains("depends on legacy/website_map_engine"));
+    assert!(found[0].contains("depends on legacy/map_engine"));
 }
 
 #[test]
 fn strangler_a_reexport_of_a_new_crate_inside_legacy_is_a_shim() {
     let workspace = workspace("strangler-shim");
     workspace.write(
-        "legacy/website_map_engine/src/data.rs",
+        "legacy/map_engine/src/data.rs",
         "pub use mission_model::Mission;\npub(crate) use mission_model::Unit;\npub use std::fmt;\n",
     );
     let report = check_strangler(workspace.root());
     assert_eq!(report.exit_code, 1, "{}", report.lines.join("\n"));
-    assert!(report.lines.iter().any(|line| line == "FAIL: legacy/website_map_engine/src/data.rs:1: shim — a member under legacy/ re-exports `mission_model`; move the callers instead"));
+    assert!(report.lines.iter().any(|line| line == "FAIL: legacy/map_engine/src/data.rs:1: shim — a member under legacy/ re-exports `mission_model`; move the callers instead"));
     assert_eq!(
         report
             .lines

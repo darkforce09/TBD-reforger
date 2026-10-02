@@ -12,7 +12,7 @@ Download JSON, not just a doll swap.
 |------|--------|
 | `make leptos-gates` | **exit 0** — 18/18 editor smokes PASS + v-suite **25/25 routes byte-equal to the frozen React oracle, zero accepts** (`scratch gates2.log`) |
 | `make ci-local` | **exit 0** — editorconfig, no-python, no-node, rust-ci (fmt/clippy/build/wasm/test-it), coding standards, ci-local-leptos (fmt + clippy wasm32 + cargo test + trunk release), schema + citations |
-| Native unit tests | website-frontend **69** + map-engine-core (incl. new: `is_active`/`classify_frame`, `resolve_wiki_selection`, `search_matches`, `filter_catalog_rules`, `flatten_visible_collapse_hides_subtree`, `sample_grid_meters` ×2, `retint_fill_alpha`, `slot_atlas` ×2, `time_scrubber_roundtrip`, `mission_size` ×3) |
+| Native unit tests | frontend **69** + map-engine-core (incl. new: `is_active`/`classify_frame`, `resolve_wiki_selection`, `search_matches`, `filter_catalog_rules`, `flatten_visible_collapse_hides_subtree`, `sample_grid_meters` ×2, `retint_fill_alpha`, `slot_atlas` ×2, `time_scrubber_roundtrip`, `mission_size` ×3) |
 
 Deliberate smoke edits (all green): `arsenal` (Forge layout + 3D doll proof), `outliner-palette`
 (expands `US_Army` first — palette now honors `default_expanded`), `doc` (asserts

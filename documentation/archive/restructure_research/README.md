@@ -31,8 +31,8 @@ carry the result. A report is never edited after it lands.
 
 ## Code
 
-- [Map engine](/apps/website/map-engine/), [API](/apps/website/api_v2/),
-  [frontend](/apps/website/frontend/) and [tooling](/tools/) — the code the reports measured.
+- [Map engine](/legacy/map_engine/), [API](/apps/api/),
+  [frontend](/apps/frontend/) and [tooling](/tools/) — the code the reports measured.
 
 ## Boundaries
 

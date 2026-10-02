@@ -16,7 +16,7 @@ agent's 20-second timeout and then closes the connection, so the staging fleet c
 lost acknowledgement neither repeats nor loses a [fleet command](#fleet-command); it never stores or
 logs the `Authorization` header.
 
-In code: the `acknowledgement-dropping-relay` executable (`serve`; `control arm drop-next-claim-response|drop-next-result-response`, `disarm`, `status`) in `tools/developer_tools/src/staging_verification/acknowledgement_relay/`; `tools/xtask/deploy/systemd/acknowledgement-dropping-relay@.service`.
+In code: the `acknowledgement-dropping-relay` executable (`serve`; `control arm drop-next-claim-response|drop-next-result-response`, `disarm`, `status`) in `tools/developer_tools/src/staging_verification/acknowledgement_relay/`; `deploy/systemd/acknowledgement-dropping-relay@.service`.
 
 See: [staging harness](/documentation/glossary/n_to_z.md#staging-harness), [Acknowledgement relay](/tools/developer_tools/src/staging_verification/acknowledgement_relay/README.md).
 
@@ -25,7 +25,7 @@ See: [staging harness](/documentation/glossary/n_to_z.md#staging-harness), [Ackn
 The administrator-only side of the platform: the API domain of the member roster, bans, warnings,
 membership grace, the Discord role resync and the audit log, and the seven `/admin/*` pages.
 
-In code: `apps/website/api_v2/src/administration/`; `apps/website/frontend/src/v2/pages/administration/`.
+In code: `apps/api/src/administration/`; `apps/frontend/src/v2/pages/administration/`.
 
 See: [event manager](#event-manager), [approvals](#approvals), [server control](/documentation/glossary/n_to_z.md#server-control), [personnel](/documentation/glossary/n_to_z.md#personnel), [content manager](#content-manager), [audit logs](#audit-logs).
 
@@ -34,19 +34,19 @@ See: [event manager](#event-manager), [approvals](#approvals), [server control](
 The review of a finished match, abbreviated AAR: in the game, the END banner and the DEBRIEF
 scoreboard; on the website, a map replay that is planned and not built, with a reserved workspace.
 
-In code: `apps/mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/`; `apps/website/frontend/src/v2/apps/aar/`.
+In code: `apps/mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/`; `apps/frontend/src/v2/apps/aar/`.
 
-See: [After-action review](/documentation/website/frontend/apps/aar/after_action_review.md).
+See: [After-action review](/documentation/apps/frontend/apps/aar/after_action_review.md).
 
 ### API
 
 The website's backend: the Axum REST API under `/api/v1` and its Server-Sent Events streams over
 Postgres, in eight domains beside a shared `core` and the [background workers](#background-workers).
-Documents say the API; the crate is `website-api`, in the folder `api_v2`.
+Documents say the API; the crate is `api`, in the folder `apps/api/`.
 
-In code: `apps/website/api_v2/` (library `website_api`, binaries `api` and `import-registry`); `apps/website/api_v2/src/core/http_router.rs` merges the domain route tables.
+In code: `apps/api/` (library `api`, binaries `api` and `import-registry`); `apps/api/src/core/http_router.rs` merges the domain route tables.
 
-See: [Website API](/apps/website/api_v2/README.md).
+See: [Website API](/apps/api/README.md).
 
 ### approvals
 
@@ -54,18 +54,18 @@ The mission approval queue at `/admin/approvals`, titled Mission Approvals: an a
 reviews the [artifact](#artifact) a mission maker submitted and approves it into the live library,
 optionally with conditions, or returns it to the author with a reason.
 
-In code: `MissionApprovalsPage` in `apps/website/frontend/src/v2/pages/administration/approvals/`; `apps/website/api_v2/src/missions/handlers/approvals_queue.rs`.
+In code: `MissionApprovalsPage` in `apps/frontend/src/v2/pages/administration/approvals/`; `apps/api/src/missions/handlers/approvals_queue.rs`.
 
-See: [Mission approvals page](/documentation/website/frontend/pages/administration/approvals/mission_approvals_page.md).
+See: [Mission approvals page](/documentation/apps/frontend/pages/administration/approvals/mission_approvals_page.md).
 
 ### armory
 
 The weapons, vehicles and equipment a [mission](/documentation/glossary/g_to_m.md#mission) makes available per faction, each with an
 optional quantity (none is unlimited), shown on the mission overview; not the [arsenal](#arsenal).
 
-In code: `MissionArmory` in `apps/website/api_v2/src/missions/models/mission.rs`; `apps/website/api_v2/src/missions/handlers/mission_armory.rs`.
+In code: `MissionArmory` in `apps/api/src/missions/models/mission.rs`; `apps/api/src/missions/handlers/mission_armory.rs`.
 
-See: [Mission overview page](/documentation/website/frontend/pages/mission_hub/overview/mission_overview_page.md).
+See: [Mission overview page](/documentation/apps/frontend/pages/mission_hub/overview/mission_overview_page.md).
 
 ### arsenal
 
@@ -73,7 +73,7 @@ The Mission Creator's Arsenal tab, where a mission maker edits one [slot](/docum
 wear, attachments, cargo) with a doll preview and weight and validity checks. Its catalog is the
 item [registry](/documentation/glossary/n_to_z.md#registry), which the code calls the Virtual Arsenal catalog.
 
-In code: `apps/website/frontend/src/v2/apps/editor/arsenal/`.
+In code: `apps/frontend/src/v2/apps/editor/arsenal/`.
 
 See: [armory](#armory), [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator).
 
@@ -83,9 +83,9 @@ The immutable compiled form of one [mission](/documentation/glossary/g_to_m.md#m
 current version into an artifact, a review decides exactly that artifact, and a
 [mission deployment](/documentation/glossary/g_to_m.md#mission-deployment) runs an approved one on a server, which fetches it by ID.
 
-In code: `MissionArtifact` in `apps/website/api_v2/src/missions/services/mission_artifacts/artifact_store.rs`; `mission_submission.rs` and `game_runtime_missions.rs` in `apps/website/api_v2/src/missions/handlers/`.
+In code: `MissionArtifact` in `apps/api/src/missions/services/mission_artifacts/artifact_store.rs`; `mission_submission.rs` and `game_runtime_missions.rs` in `apps/api/src/missions/handlers/`.
 
-See: [Mission artifacts evidence](/documentation/website/api_v2/verification_evidence/mission_artifacts.md).
+See: [Mission artifacts evidence](/documentation/apps/api/verification_evidence/mission_artifacts.md).
 
 ### audit logs
 
@@ -95,9 +95,9 @@ loads older entries a page at a time, shows each entry once whichever way it arr
 loaded entries by text in the browser and inspects one entry. The API also serves a CSV export,
 which the page does not use.
 
-In code: `AuditLogsPage` in `apps/website/frontend/src/v2/pages/administration/audit_logs/`; `apps/website/frontend/src/v2/core/api/audit_stream.rs`; `apps/website/api_v2/src/administration/handlers/audit_logs.rs`.
+In code: `AuditLogsPage` in `apps/frontend/src/v2/pages/administration/audit_logs/`; `apps/frontend/src/v2/core/api/audit_stream.rs`; `apps/api/src/administration/handlers/audit_logs.rs`.
 
-See: [Audit logs page](/documentation/website/frontend/pages/administration/audit_logs/audit_logs_page.md).
+See: [Audit logs page](/documentation/apps/frontend/pages/administration/audit_logs/audit_logs_page.md).
 
 ### background workers
 
@@ -105,9 +105,9 @@ The interval tasks the [API](#api) binary starts at boot and never awaits: token
 lifecycle, leaderboards, server status, Discord roles and membership, rate limits, audit
 publication, reservations, runtime sessions, fleet commands and mission deployments.
 
-In code: `spawn_all` and `WorkerHandles` in `apps/website/api_v2/src/background_workers/mod.rs`.
+In code: `spawn_all` and `WorkerHandles` in `apps/api/src/background_workers/mod.rs`.
 
-See: [Background workers](/apps/website/api_v2/src/background_workers/README.md).
+See: [Background workers](/apps/api/src/background_workers/README.md).
 
 ### charge ring
 
@@ -116,9 +116,9 @@ charge, and each charge multiplies the shell's initial speed by its own coeffici
 charges are listed by ring count in a ballistics catalog, with one marked default; the firing
 solver solves every charge and recommends the one with the fewest rings that reaches the target.
 
-In code: `Charge` (`rings`, `init_speed_coef`, `is_default`) in `apps/website/map-engine/src/data/scenario/ballistics/catalog/shell.rs`; `charges` in `contracts/definitions/ballistics-catalog.schema.json`; the game's `SCR_MortarShellGadgetComponent` `m_aChargeRingConfig`.
+In code: `Charge` (`rings`, `init_speed_coef`, `is_default`) in `legacy/map_engine/src/data/scenario/ballistics/catalog/shell.rs`; `charges` in `contracts/definitions/ballistics-catalog.schema.json`; the game's `SCR_MortarShellGadgetComponent` `m_aChargeRingConfig`.
 
-See: [probable error](/documentation/glossary/n_to_z.md#probable-error), [time fuze](/documentation/glossary/n_to_z.md#time-fuze), [Game ballistics engine](/documentation/website/map-engine/data/scenario/ballistics/game_ballistics_engine.md).
+See: [probable error](/documentation/glossary/n_to_z.md#probable-error), [time fuze](/documentation/glossary/n_to_z.md#time-fuze), [Game ballistics engine](/documentation/legacy/map_engine/data/scenario/ballistics/game_ballistics_engine.md).
 
 ### closing-fix batch
 
@@ -137,18 +137,18 @@ See: [orchestrator](/documentation/glossary/n_to_z.md#orchestrator), [Sub-agent 
 The web app's landing area (the dashboard at `/`, server intel, announcements) and the API domain of
 the dashboard, leaderboards and player statistics; not the [orchestrator](/documentation/glossary/n_to_z.md#orchestrator).
 
-In code: `apps/website/frontend/src/v2/pages/command_center/`; `apps/website/api_v2/src/command_center/`.
+In code: `apps/frontend/src/v2/pages/command_center/`; `apps/api/src/command_center/`.
 
-See: [Command center domain](/apps/website/api_v2/src/command_center/README.md).
+See: [Command center domain](/apps/api/src/command_center/README.md).
 
 ### community content
 
 The API domain of what the community reads (announcements, the doctrine wiki, the vehicle database,
 modpack manifests) and the CMS routes the [content manager](#content-manager) writes through.
 
-In code: `apps/website/api_v2/src/community_content/`.
+In code: `apps/api/src/community_content/`.
 
-See: [Community content domain](/apps/website/api_v2/src/community_content/README.md).
+See: [Community content domain](/apps/api/src/community_content/README.md).
 
 ### console command
 
@@ -159,18 +159,18 @@ The agent may repeat the login but transmits the line once and never resends it;
 the reply up to 4,096 bytes with a truncation flag, and without a reply the command may or may not
 have run.
 
-In code: `FleetAction::ConsoleCommand` in `apps/website/api_v2/src/server_infrastructure/models/fleet_command.rs`; `HostCommand::ConsoleCommand` in `apps/fleet_host_agent/src/command_execution/host_command.rs` and `SessionRequest::ExecuteOnce` in `apps/fleet_host_agent/src/rcon/rcon_session.rs`; `console_command_form.rs` in `apps/website/frontend/src/v2/pages/administration/server_control/fleet_commands/`.
+In code: `FleetAction::ConsoleCommand` in `apps/api/src/server_infrastructure/models/fleet_command.rs`; `HostCommand::ConsoleCommand` in `apps/fleet_host_agent/src/command_execution/host_command.rs` and `SessionRequest::ExecuteOnce` in `apps/fleet_host_agent/src/rcon/rcon_session.rs`; `console_command_form.rs` in `apps/frontend/src/v2/pages/administration/server_control/fleet_commands/`.
 
-See: [RCON](/documentation/glossary/n_to_z.md#rcon), [API decisions](/documentation/website/api_v2/decisions.md).
+See: [RCON](/documentation/glossary/n_to_z.md#rcon), [API decisions](/documentation/apps/api/decisions.md).
 
 ### content manager
 
 The `/admin/content` page, whose breadcrumb reads Comms Broadcaster: administrators write, publish,
 edit and delete announcements, upload a hero image, and push a post to Discord.
 
-In code: `ContentManagerPage` in `apps/website/frontend/src/v2/pages/administration/content_manager/`.
+In code: `ContentManagerPage` in `apps/frontend/src/v2/pages/administration/content_manager/`.
 
-See: [Content manager page](/documentation/website/frontend/pages/administration/content_manager/content_manager_page.md).
+See: [Content manager page](/documentation/apps/frontend/pages/administration/content_manager/content_manager_page.md).
 
 ### damage-driven render
 
@@ -178,7 +178,7 @@ The rendering rule of every map canvas and of the Arsenal's doll: a frame is enc
 only while something that would be drawn has changed (the damage flag) or continuous rendering is
 on, so an idle `requestAnimationFrame` tick returns without touching the GPU.
 
-In code: `RenderDamage` and `FrameDecision` in `apps/website/graphics-engine/src/frame/damage.rs`; `mark_dirty` and `set_continuous_render` on the [render engine](/documentation/glossary/n_to_z.md#render-engine) in `apps/website/map-engine/src/frame/lifecycle.rs`; the frame pump in `apps/website/graphics-engine/src/loop/`; the pins in `apps/website/map-engine/src/frame/tests/damage_discipline.rs`.
+In code: `RenderDamage` and `FrameDecision` in `legacy/graphics_engine/src/frame/damage.rs`; `mark_dirty` and `set_continuous_render` on the [render engine](/documentation/glossary/n_to_z.md#render-engine) in `legacy/map_engine/src/frame/lifecycle.rs`; the frame pump in `legacy/graphics_engine/src/loop/`; the pins in `legacy/map_engine/src/frame/tests/damage_discipline.rs`.
 
 See: [frame packet](#frame-packet), [Engine boundary rules](/documentation/standards/engine_boundary_rules.md).
 
@@ -188,9 +188,9 @@ Digital elevation model: a terrain's ground height as a raster. Everon's is one 
 greyscale image at 2 m per pixel, which the map engine decodes into metres for the hillshade, the
 contour lines, the sea band, the height readout and line-of-sight walks.
 
-In code: `apps/website/map-engine/src/world/terrain/dem/` (`DemVectorGrid` in `grid.rs`); `apps/website/map-engine/src/editing/tools/line_of_sight/terrain_survey.rs`; `assets/terrains/everon/dem/everon-dem-16bit.png`.
+In code: `legacy/map_engine/src/world/terrain/dem/` (`DemVectorGrid` in `grid.rs`); `legacy/map_engine/src/editing/tools/line_of_sight/terrain_survey.rs`; `assets/terrains/everon/dem/everon-dem-16bit.png`.
 
-See: [Elevation model](/apps/website/map-engine/src/world/terrain/dem/README.md), [Everon elevation model](/assets/terrains/everon/dem/README.md).
+See: [Elevation model](/legacy/map_engine/src/world/terrain/dem/README.md), [Everon elevation model](/assets/terrains/everon/dem/README.md).
 
 ### deployment
 
@@ -198,7 +198,7 @@ Four meanings: a [mission deployment](/documentation/glossary/g_to_m.md#mission-
 server; a member's deployments are the events on their [service record](/documentation/glossary/n_to_z.md#service-record); a
 game-runtime deployment puts one player life into a slot; a website deployment ships the platform.
 
-In code: `mission_deployments.rs` in `apps/website/api_v2/src/missions/handlers/`; `member_service_record.rs` and `game_runtime_deployments.rs` in `apps/website/api_v2/src/operations/handlers/`.
+In code: `mission_deployments.rs` in `apps/api/src/missions/handlers/`; `member_service_record.rs` and `game_runtime_deployments.rs` in `apps/api/src/operations/handlers/`.
 
 See: [Website deployment runbook](/documentation/runbooks/website_deployment.md).
 
@@ -208,7 +208,7 @@ A development-only sign-in without Discord: with `APP_ENV=development`, the dev-
 as a local account of the requested [role](/documentation/glossary/n_to_z.md#role) (`admin` for an unknown one) and redirects to
 `/auth/callback` with the token in the URL fragment; elsewhere it answers 404.
 
-In code: `dev_login` in `apps/website/api_v2/src/identity_and_access/handlers/developer_login.rs`, serving `GET /api/v1/auth/dev-login?role=<role>`.
+In code: `dev_login` in `apps/api/src/identity_and_access/handlers/developer_login.rs`, serving `GET /api/v1/auth/dev-login?role=<role>`.
 
 See: [Local development](/documentation/runbooks/local_development.md).
 
@@ -219,9 +219,9 @@ Most often the Eden editor, Arma 3's scenario editor: the design the
 catalogued interaction by interaction with an ID each. In [Enfusion](#enfusion) resource paths,
 Eden is also Everon's world, `worlds/Eden/Eden.ent`, which the mod's worlds inherit.
 
-In code: the Mission Creator's shell measurements taken from Eden in `apps/website/frontend/src/v2/apps/editor/shell/layout.rs`; `apps/mod/tbd-framework/worlds/TBD_Dev_POC.ent` and `apps/mod/tbd-export/worlds/TBD_Export_Everon.ent`, whose parent is `worlds/Eden/Eden.ent`.
+In code: the Mission Creator's shell measurements taken from Eden in `apps/frontend/src/v2/apps/editor/shell/layout.rs`; `apps/mod/tbd-framework/worlds/TBD_Dev_POC.ent` and `apps/mod/tbd-export/worlds/TBD_Export_Everon.ent`, whose parent is `worlds/Eden/Eden.ent`.
 
-See: [Eden editor reference](/documentation/website/frontend/apps/editor/eden_editor_reference/README.md), [Eden gap analysis](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md).
+See: [Eden editor reference](/documentation/apps/frontend/apps/editor/eden_editor_reference/README.md), [Eden gap analysis](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md).
 
 ### EnfScript
 
@@ -248,18 +248,18 @@ A scheduled community session record: start time, briefing, attached [missions](
 own start times, their [ORBAT](/documentation/glossary/n_to_z.md#orbat) slots, sign-ups and waitlist. "Event" alone means this record
 (never an SSE or DOM event); code and screen titles also say operation.
 
-In code: `Event` and `EventMission` in `apps/website/api_v2/src/operations/models/event.rs`; the `event_*.rs` handlers in `apps/website/api_v2/src/operations/handlers/`.
+In code: `Event` and `EventMission` in `apps/api/src/operations/models/event.rs`; the `event_*.rs` handlers in `apps/api/src/operations/handlers/`.
 
-See: [slot](/documentation/glossary/n_to_z.md#slot), [Event schedule page](/documentation/website/frontend/pages/operations/schedule/event_schedule_page.md).
+See: [slot](/documentation/glossary/n_to_z.md#slot), [Event schedule page](/documentation/apps/frontend/pages/operations/schedule/event_schedule_page.md).
 
 ### event manager
 
 The `/admin/events` page, titled the operations calendar: a month grid and a day panel from which
 administrators schedule, edit and cancel [events](#event), attach missions and set who may join.
 
-In code: `EventManagerPage` in `apps/website/frontend/src/v2/pages/administration/event_manager/`; `apps/website/api_v2/src/operations/handlers/event_create_update.rs`.
+In code: `EventManagerPage` in `apps/frontend/src/v2/pages/administration/event_manager/`; `apps/api/src/operations/handlers/event_create_update.rs`.
 
-See: [Event manager page](/documentation/website/frontend/pages/administration/event_manager/event_manager_page.md).
+See: [Event manager page](/documentation/apps/frontend/pages/administration/event_manager/event_manager_page.md).
 
 ### factory
 
@@ -280,7 +280,7 @@ where it lives, behaviour, data, design, open work and decisions. It sits beside
 README index and is named after what it covers (`<page component>_page.md`,
 `<screen>_specification.md` or a subject name); the code README links it and never repeats it.
 
-In code: none; the code README of the folder a feature doc describes links it under Related documentation, as `apps/website/frontend/src/v2/pages/administration/personnel/README.md` links `personnel_roster_page.md`.
+In code: none; the code README of the folder a feature doc describes links it under Related documentation, as `apps/frontend/src/v2/pages/administration/personnel/README.md` links `personnel_roster_page.md`.
 
 See: [Feature doc template](/documentation/standards/templates/feature_doc.md), [README standard](/documentation/standards/readme_standard.md).
 
@@ -290,7 +290,7 @@ One operator command to one game server (`start`, `stop`, `restart`, `list_playe
 `kick`, `console_command`), kept in the API's command ledger from acceptance through an executor's claim to its
 outcome; [mission deployments](/documentation/glossary/g_to_m.md#mission-deployment) alone issue `load_mission` and `restart_with_mission`.
 
-In code: `FleetAction` in `apps/website/api_v2/src/server_infrastructure/models/fleet_command.rs`; `fleet_commands.rs` and `fleet_executor.rs` in `apps/website/api_v2/src/server_infrastructure/handlers/`.
+In code: `FleetAction` in `apps/api/src/server_infrastructure/models/fleet_command.rs`; `fleet_commands.rs` and `fleet_executor.rs` in `apps/api/src/server_infrastructure/handlers/`.
 
 See: [fleet host agent](#fleet-host-agent), [console command](#console-command), [game runtime](/documentation/glossary/g_to_m.md#game-runtime), [server control](/documentation/glossary/n_to_z.md#server-control).
 
@@ -300,8 +300,10 @@ The program beside each Arma Reforger dedicated server of a game host, one per f
 polls the API outbound over HTTPS for the [fleet commands](#fleet-command) addressed to its server,
 performs process control, [RCON](/documentation/glossary/n_to_z.md#rcon) commands and scenario switches, and reports each step; the API never connects in.
 
-In code: `apps/fleet_host_agent/`; `tools/xtask/deploy/systemd/fleet-host-agent@.service`, one
-`fleet-host-agent@N.service` per fleet instance.
+In code: `apps/fleet_host_agent/`; `deploy/systemd/fleet_host_agent@.service`, one
+`fleet_host_agent@N.service` per fleet instance. The package name `fleet_host_agent` is also the
+binary, the configuration folder `~/.config/fleet_host_agent/instance-N/` and the HTTP user agent
+`fleet_host_agent/<version>`.
 
 See: [machine credential](/documentation/glossary/g_to_m.md#machine-credential), [Fleet host agent](/apps/fleet_host_agent/README.md).
 
@@ -310,10 +312,10 @@ See: [machine credential](/documentation/glossary/g_to_m.md#machine-credential),
 One of the game servers a staging host runs side by side, numbered 1 to `TBD_FLEET_INSTANCES`
 (five on staging): instance N is the registered server "TBD Staging N", with its own dedicated server
 unit `tbd-reforger@N.service`, its own [fleet host agent](#fleet-host-agent)
-`fleet-host-agent@N.service`, its own [machine credentials](/documentation/glossary/g_to_m.md#machine-credential) and RCON password, and the game port
+`fleet_host_agent@N.service`, its own [machine credentials](/documentation/glossary/g_to_m.md#machine-credential) and RCON password, and the game port
 2000+N, the A2S port 17776+N and the loopback RCON port 19998+N.
 
-In code: `tools/xtask/src/commands/deploy/staging/fleet_instances.rs`; `tools/xtask/deploy/systemd/tbd-reforger@.service` and `fleet-host-agent@.service`; on the host, `~/tbd/fleet/instance-N/`.
+In code: `tools/xtask/src/commands/deploy/staging/fleet_instances.rs`; `deploy/systemd/tbd-reforger@.service` and `fleet_host_agent@.service`; on the host, `~/tbd/fleet/instance-N/`.
 
 See: [acknowledgement-dropping relay](#acknowledgement-dropping-relay), [Deploy staging](/tools/xtask/src/commands/deploy/staging/README.md).
 
@@ -322,7 +324,7 @@ See: [acknowledgement-dropping relay](#acknowledgement-dropping-relay), [Deploy 
 An entry of the registry that names, for each terrain, the [mission header](/documentation/glossary/g_to_m.md#mission-header) the
 fleet boots; a mission deployment to a terrain without one is refused. The code says scenario here.
 
-In code: `apps/website/api_v2/src/server_infrastructure/handlers/fleet_scenarios.rs`.
+In code: `apps/api/src/server_infrastructure/handlers/fleet_scenarios.rs`.
 
 See: [scenario](/documentation/glossary/n_to_z.md#scenario), [server control](/documentation/glossary/n_to_z.md#server-control).
 
@@ -331,6 +333,6 @@ See: [scenario](/documentation/glossary/n_to_z.md#scenario), [server control](/d
 One frame's whole draw list for the graphics engine: camera, clear colour, batches, glyph runs and
 indirect draws in ascending [lane](/documentation/glossary/g_to_m.md#lane) order, and the pipelines and bind groups they use.
 
-In code: `FramePacket` in `apps/website/graphics-engine/src/frame/packet.rs`.
+In code: `FramePacket` in `legacy/graphics_engine/src/frame/packet.rs`.
 
-See: [Graphics engine frame](/apps/website/graphics-engine/src/frame/README.md).
+See: [Graphics engine frame](/legacy/graphics_engine/src/frame/README.md).

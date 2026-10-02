@@ -1,0 +1,6 @@
+# Stage S2 — executed agent briefs into the archive. Paths name the tree before the moves (after s2_caddy_folder.tsv).
+kind	from	to	scope
+#
+# the S1 briefs ran at the S1 commit; executed briefs leave the live agent_briefs folder
+path	documentation/restructure/agent_briefs/s1_r1_global_renames.md	documentation/archive/restructure_agent_briefs/s1_r1_global_renames.md
+path	documentation/restructure/agent_briefs/s1_r2_to_r4_template.md	documentation/archive/restructure_agent_briefs/s1_r2_to_r4_template.md

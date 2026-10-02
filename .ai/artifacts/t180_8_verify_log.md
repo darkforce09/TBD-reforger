@@ -42,7 +42,7 @@ test draw_order::lane_order_pins::mission_vehicles_sit_between_squad_links_and_s
 ### H5 / H6 / H7 / H8 — FE unit
 
 ```text
-$ cargo test -p website-frontend
+$ cargo test -p frontend
 test orbat_manager::tests::apply_cancel_noop ... ok
 test orbat_manager::tests::save_faction_roles_match_side ... ok
 test orbat_manager::tests::template_options_exclude_civ_and_other_sides ... ok
@@ -57,9 +57,9 @@ PASS (factions CRUD suite remains green).
 ### `make ci-local-leptos`
 
 ```text
-cargo fmt -p website-frontend --check          PASS
-cargo clippy -p website-frontend --target wasm32-unknown-unknown  PASS (warnings only)
-cargo test -p website-frontend                 PASS (88)
+cargo fmt -p frontend --check          PASS
+cargo clippy -p frontend --target wasm32-unknown-unknown  PASS (warnings only)
+cargo test -p frontend                 PASS (88)
 trunk build --release                          PASS
   (ambient NO_COLOR=1 → trunk `--no-color` quirk;
    `env -u NO_COLOR -u FORCE_COLOR make ci-local-leptos` ✅)

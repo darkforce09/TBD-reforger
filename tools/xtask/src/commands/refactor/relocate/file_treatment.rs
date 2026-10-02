@@ -6,8 +6,10 @@
 //! values only, the fields the ticket engine resolves against the tree (`spec` and `plan` must
 //! exist, `owns` must match the wave lock); the relocation manifests (the
 //! `.tsv` files of the manifests folder, whose `from` columns name retired paths on purpose), the
-//! manifest being run and every other file in a frozen area receive nothing. The rest of the
-//! manifests folder, such as its README, is live.
+//! manifest being run, every SQL migration (a `.sql` file directly in a `migrations` folder;
+//! `sqlx` refuses to boot on an applied migration whose checksum changed) and every other file in
+//! a frozen area receive nothing. The rest of the manifests folder, such as its README, is live,
+//! and so is every other `.sql` file and every other file of a `migrations` folder.
 //!
 //! **Position:** consulted by the plan builder ([`super::relocation_plan`]) before any pass runs
 //! and by the verification ([`super::retired_spellings`]), both with the areas where the
@@ -38,6 +40,12 @@ const MANIFESTS_BELOW_DOCUMENTATION: &str = "restructure/manifests";
 
 /// The extension of a relocation manifest.
 const MANIFEST_EXTENSION: &str = ".tsv";
+
+/// The folder name `sqlx` reads a crate's migrations from.
+const MIGRATIONS_FOLDER_NAME: &str = "migrations";
+
+/// The extension of a SQL migration.
+const MIGRATION_EXTENSION: &str = ".sql";
 
 /// The top-level ticket fields the ticket engine resolves against the tree.
 const CHECKED_TICKET_FIELDS: [&str; 3] = ["spec", "plan", "owns"];
@@ -100,7 +108,7 @@ impl TreatmentAreas {
     pub(crate) fn treatment_of(&self, path: &str, text: &str) -> FileTreatment {
         let is_manifest =
             is_at_or_below(path, &self.manifests) && path.ends_with(MANIFEST_EXTENSION);
-        if is_manifest || self.run_manifest.as_deref() == Some(path) {
+        if is_manifest || self.run_manifest.as_deref() == Some(path) || is_sql_migration(path) {
             return FileTreatment::Excluded;
         }
         if is_at_or_below(path, &self.archive) || is_at_or_below(path, &self.ticket_documents) {
@@ -121,6 +129,15 @@ impl TreatmentAreas {
         let name = path.rsplit('/').next().unwrap_or(path);
         parent_folder(path) == self.tickets && name.starts_with("T-") && name.ends_with(".toml")
     }
+}
+
+/// Whether `path` is a SQL migration: a `.sql` file directly in a folder named `migrations`,
+/// wherever that folder lies. `sqlx` records the checksum of every applied migration and refuses
+/// to start when a file changes, so a migration moves byte-identical and keeps the spellings it
+/// was applied with.
+fn is_sql_migration(path: &str) -> bool {
+    path.ends_with(MIGRATION_EXTENSION)
+        && parent_folder(path).rsplit('/').next() == Some(MIGRATIONS_FOLDER_NAME)
 }
 
 /// Whether `path` names a Markdown file.

@@ -52,8 +52,8 @@ previews an override. `pak-cat` prints one pak entry of any type to stdout, the 
   `AssetSource`); the source stack and asset decoder of
   `tools/developer_tools/src/blueprint/bvh/batch_processing.rs`; the surface classification and
   convex hulls in `tools/developer_tools/src/blueprint/architectural_analysis/`;
-  `website_map_engine::world::architecture::compound::transform::Rigid` and
-  `website_map_engine::spatial::bvh::surface::SurfaceKind`.
+  `map_engine::world::architecture::compound::transform::Rigid` and
+  `map_engine::spatial::bvh::surface::SurfaceKind`.
 - Used by: the sidecar and prefab commands in `tools/developer_tools/src/blueprint/bvh/`, the
   prefab library in `tools/developer_tools/src/blueprint/archive_emission/`, and
   `voxels-from-mesh` in `tools/developer_tools/src/blueprint/voxel_processing/`; the

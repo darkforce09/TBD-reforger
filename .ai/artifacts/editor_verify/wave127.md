@@ -13,7 +13,7 @@ the host via `host-spawn` + `cargo xtask ai run`, per the runbook. All rebuilds 
 
 ## FINDINGS
 
-### F-1 · MAJOR · apps/website/frontend/src/attributes.rs:593-644
+### F-1 · MAJOR · apps/frontend/src/attributes.rs:593-644
 **The browser's native number-input stepper still destroys authored precision — the T-775 defect
 class survives through ArrowUp/ArrowDown and the spinner.**
 - **Evidence.** The input at attributes.rs:593 is `type="number"` with **no `step` attribute** and
@@ -36,7 +36,7 @@ class survives through ArrowUp/ArrowDown and the spinner.**
   PageUp/PageDown so modifiers scale consistently. Extend the T-775 source pin to require
   `step="any"` (or the Arrow interception) so it cannot regress.
 
-### F-2 · MAJOR · crates/map-engine-core/src/doc/store.rs:2779-2783 (reachable from apps/website/frontend/src/attributes.rs:803-816)
+### F-2 · MAJOR · crates/map-engine-core/src/doc/store.rs:2779-2783 (reachable from apps/frontend/src/attributes.rs:803-816)
 **CONFIRMED (T-775's unfixed claim, item 4): a deliberate X or Y edit in the Attributes tab
 silently discards a manually authored Z.**
 - **Evidence.** `update_slot_position` (store.rs:2779-2783): `if z is None && (x.is_some() ||
@@ -59,7 +59,7 @@ silently discards a manually authored Z.**
   JS-side" comments (editor_ops.rs:1303, attributes.rs:573-575) which launder the zeroing as
   temporary.
 
-### F-3 · MINOR · apps/website/frontend/src/attributes.rs:583 (pin at :1395-1401)
+### F-3 · MINOR · apps/frontend/src/attributes.rs:583 (pin at :1395-1401)
 **The `!gate.differs()` multi-stamp exemption is pinned by source scan only — nothing behavioural.**
 - **Evidence.** The only guard is the string assert
   `commit.contains("let unchanged = !gate.differs() && n == value;")` in
@@ -74,7 +74,7 @@ silently discards a manually authored Z.**
   — call it from `commit`, and add a behavioural test (differs+equal ⇒ commit; agree+equal ⇒ skip;
   non-finite ⇒ refuse). Keep the source pin only for "commit calls should_commit".
 
-### F-4 · NIT · apps/website/frontend/src/eden_settings.rs:2532-2534
+### F-4 · NIT · apps/frontend/src/eden_settings.rs:2532-2534
 **Stale doc comment describes the pre-T-753 mirror arrangement.**
 - **Evidence.** "`eden_env` holds `FLOW_DEFAULT_TIMELIMIT_S = 5400` and friends — but those
   **mirror the literals** `mission::flatten`'s `ModFlow` splices in". Since aa9f5762 they mirror
@@ -179,7 +179,7 @@ as claimed. Cross-module resolution of `crate::mission_commands::write_clipboard
 server_intel's wasm-only closure proven by the wasm32 check (exit 0).
 
 **T-742 rebuild race.** All six wave files `touch`ed before the first trusted run.
-`cargo test -p website-frontend`: **909 passed / 0 failed / 0 ignored**, and all five new tests
+`cargo test -p frontend`: **909 passed / 0 failed / 0 ignored**, and all five new tests
 confirmed IN THE BINARY by exact-name `--list` (attributes ×2, eden_env flow mirror,
 mission_commands class_r, server_intel t773). `cargo test -p map-engine-core --all-features`:
 **625 passed / 0 failed / 1 ignored** (the ignored one is `regen_compiler_shaped_fixture`, a
@@ -220,7 +220,7 @@ proven by embedded-string content, not mtime.
 
 ### Findings
 
-- MINOR | apps/website/frontend/src/editor_ops.rs:642 (`paste_at_cursor`) | Ctrl+V writes
+- MINOR | apps/frontend/src/editor_ops.rs:642 (`paste_at_cursor`) | Ctrl+V writes
   `zs.push(0.0)` for every pasted slot ("DEM not ready — byte-parity"), and the extras filter
   explicitly drops `position.z`, so a copy of a rooftop slot pastes at z=0 while the same paste
   preserves every OTHER authored key (T-220) — the same "nothing re-samples after the React
@@ -229,7 +229,7 @@ proven by embedded-string content, not mtime.
   only, original keeps its z), and no fix commit claims this path. Filed so the z-family ledger is
   complete, not as a defect in the fixes. Same class: `place_composition` (store.rs:2394/2409)
   stamps z=0.0 for both slots AND vehicles on composition drop (symmetric, capture never stored z).
-- NIT | apps/website/frontend/src/mission_editor.rs:8265-8293 | The F-6 order pin proves `zs` is
+- NIT | apps/frontend/src/mission_editor.rs:8265-8293 | The F-6 order pin proves `zs` is
   built from `slot_ids.iter().map(` and that the same `slot_ids` token is passed to the call, but
   it cannot see an edit BETWEEN the two statements (e.g. an inserted `slot_ids.sort()` /
   `retain()` would keep both greps green while breaking `zs[i]`↔`slot_ids[i]`). On current main
@@ -249,7 +249,7 @@ host; not a main defect.
 ### VERIFIED-CLEAN REGISTER (re-proved first-hand, not taken on trust)
 
 1. **The z-family is closed.** `.move_entities(` has ZERO frontend call sites (method-call grep
-   over apps/website/frontend/src; only comments/pin literals mention it).
+   over apps/frontend/src; only comments/pin literals mention it).
    `.move_entities_and_vehicles(` has exactly ONE — mission_editor.rs:3826, the fixed arm.
    `core.update_slot_position(` has exactly five: editor_ops.rs:1391 and 1443 (F-2, z resolved
    via `keep_z_rows`/`slot_z` before the write), 1701 (F-5, resolved), 1514 and 1897

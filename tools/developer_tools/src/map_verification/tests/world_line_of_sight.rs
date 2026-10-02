@@ -3,15 +3,15 @@
 use std::fs;
 use std::sync::Arc;
 
-use website_map_engine::spatial::bvh::sidecar::BvhSidecar;
-use website_map_engine::spatial::los::world::coverage_1::BlockPolicy;
-use website_map_engine::spatial::los::world::coverage_1::map_to_engine;
-use website_map_engine::spatial::los::world::descriptor::PrefabDescriptor;
-use website_map_engine::spatial::los::world::state::WorldOccluder;
-use website_map_engine::streaming::loaders::chunk::WorldChunk;
-use website_map_engine::streaming::scheduler::chunk_math::TerrainSizeM;
-use website_map_engine::world::architecture::compound::instances::InstanceKind;
-use website_map_engine::world::architecture::compound::transform::Rigid;
+use map_engine::spatial::bvh::sidecar::BvhSidecar;
+use map_engine::spatial::los::world::coverage_1::BlockPolicy;
+use map_engine::spatial::los::world::coverage_1::map_to_engine;
+use map_engine::spatial::los::world::descriptor::PrefabDescriptor;
+use map_engine::spatial::los::world::state::WorldOccluder;
+use map_engine::streaming::loaders::chunk::WorldChunk;
+use map_engine::streaming::scheduler::chunk_math::TerrainSizeM;
+use map_engine::world::architecture::compound::instances::InstanceKind;
+use map_engine::world::architecture::compound::transform::Rigid;
 
 use super::*;
 use crate::blueprint::parity_report::ParityFile;
@@ -112,7 +112,7 @@ fn farmhouse_descriptor_placed_at_a_yaw_replays_the_door_parity_fixture() {
     let r = occ.evaluate_los(rigid.point([-14.0, 1.6, 0.0]), rigid.point([0.0, 1.6, 0.0]));
     assert_ne!(
         r.verdict,
-        website_map_engine::spatial::los::world::coverage_1::WorldVerdict::Clear
+        map_engine::spatial::los::world::coverage_1::WorldVerdict::Clear
     );
     assert!(r.hits[0].id.starts_with("132:1_1:0"), "{}", r.hits[0].id);
 }

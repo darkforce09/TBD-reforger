@@ -11,9 +11,9 @@ TWO ENVIRONMENT TRAPS BOTH HIT THIS WAVE — do not let either fool you, and do 
  - `dem::peaks::everon_peaks_max_above_350` fails in a slice worktree because the DEM PNG is an LFS pointer there. ON MAIN it must PASS. Filed as T-972.
 
 THE SPAN. Base marker `ad9b22890` (wave 237 CLOSED). Landed:
-- `38e89e47f` T-935.4 — `crates/map-engine-core/src/dem/raw.rs` (new), `dem/mod.rs`, `tools/tbd-tools/src/world/aux.rs`, `apps/website/frontend/src/editor/world_assets/dem_load.rs` (new) + `mod.rs`: a TBDE raw u16 DEM, dual-emitted beside the PNG and streamed into one `Vec<u16>`.
-- `efc03d036` T-935.7 — `tools/tbd-tools/src/map/labels_emit.rs` (new) + `map/mod.rs` + `bin/map.rs`, `crates/map-engine-core/src/world/{locations,road_labels,mod}.rs`, `apps/website/frontend/src/editor/world_assets/labels.rs`: town/height/road labels into one rkyv archive.
-- `aaa0b86d9` T-935.8 — `xtask/src/map_blueprint/archive_emit.rs` (new) + `library_cli.rs` + `mod.rs`, `crates/map-engine-core/src/{building_blueprint.rs,world/occluder/descriptor.rs}`, `apps/website/frontend/src/editor/world_assets/occluder_host.rs`: a building-blueprint archive and an occluder boot path.
+- `38e89e47f` T-935.4 — `crates/map-engine-core/src/dem/raw.rs` (new), `dem/mod.rs`, `tools/tbd-tools/src/world/aux.rs`, `apps/frontend/src/editor/world_assets/dem_load.rs` (new) + `mod.rs`: a TBDE raw u16 DEM, dual-emitted beside the PNG and streamed into one `Vec<u16>`.
+- `efc03d036` T-935.7 — `tools/tbd-tools/src/map/labels_emit.rs` (new) + `map/mod.rs` + `bin/map.rs`, `crates/map-engine-core/src/world/{locations,road_labels,mod}.rs`, `apps/frontend/src/editor/world_assets/labels.rs`: town/height/road labels into one rkyv archive.
+- `aaa0b86d9` T-935.8 — `xtask/src/map_blueprint/archive_emit.rs` (new) + `library_cli.rs` + `mod.rs`, `crates/map-engine-core/src/{building_blueprint.rs,world/occluder/descriptor.rs}`, `apps/frontend/src/editor/world_assets/occluder_host.rs`: a building-blueprint archive and an occluder boot path.
 All three inherited commits from predecessors killed by a session limit; the successors were told they own that code.
 
 Highest-risk claims to attack:

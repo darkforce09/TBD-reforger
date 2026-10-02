@@ -16,15 +16,16 @@ tools/xtask/src/commands/ci/
 ├── task_definitions.rs  `TASKS`: every task with its help line, group, lane and steps
 ├── task_runner/         the runner, the child environment, `help`, the gate list
 ├── task_runner.rs       the `Task`, `Step` and `Lane` types, re-exports
-└── tests/               unit tests for the frozen `ci-local` set, composite failure, `help` and parity
+├── tests/               unit tests for the frozen `ci-local` set, composite failure, `help`, parity and member coverage
+└── workspace_member_tests.rs  the `workspace-member-tests` task: `cargo test -p` for every member no dedicated task tests
 ```
 
 ## How it works
 
 `TASKS` in `task_definitions.rs` is pure data and `run_task_in` in `task_runner/split_cmd.rs` is its
 only interpreter. A step is another task by name (`Step::Task`, so a composite runs the very row
-its standalone command runs), a subprocess line, an in-process xtask call, a native Rust step, or
-a `/bin/sh -c` script, which only borrowed rows use. The runner prints each step's line before it
+its standalone command runs), a subprocess line, an in-process xtask call or a native Rust step; no
+step runs a shell script. The runner prints each step's line before it
 runs (a native step prints its own), stops at the first non-zero code and returns that code.
 
 Each row carries a lane, which `help` prints as a tag:
@@ -36,11 +37,23 @@ Each row carries a lane, which `help` prints as a tag:
   `wasm-ci`, `ci-local-leptos` and `leptos-build`, and the `rust-test-it` integration run.
 
 `ci-local` runs, in this order: `verify-editorconfig`, `verify-no-python`, `verify-no-node`,
-`verify-no-shell`, `verify-ci-shell`, `verify-engine-layers`, `rust-ci`, `verify-coding-standards`,
+`verify-no-shell`, `verify-ci-shell`, `verify-engine-layers`, `verify-workspace-laws`, `rust-ci`,
+`developer-tools-test`, `workspace-member-tests`, `verify-coding-standards`,
 `verify-documentation`, `ci-local-leptos`, `ci-local-schema`, `verify-staging-compose-paths`,
 `verify-mission-rest-size-limits`, and `cargo xtask verify ci-schema-parity` in process.
 `ci_local_step_set_is_frozen` in `tests/task_runner.rs` fails when a step is added, dropped or
 moved. The browser gates of `cargo xtask mk leptos-gates` are not part of it.
+
+Every workspace member is tested. `DEDICATED_TEST_TASKS` in `workspace_member_tests.rs` names the
+members a dedicated task tests (`api` by `api-test`, `developer_tools` by `developer-tools-test`,
+`frontend` by `ci-local-leptos`, and `graphics_engine`, `map_engine` and `offline_service_worker`
+by `wasm-ci`); `workspace-member-tests` reads the root `Cargo.toml` workspace and runs
+`cargo test -p <package>` once for every other member, so a member the workspace gains is tested
+from the moment the manifest names it. A dedicated entry that names no member, or a workspace that
+cannot be read, fails the task. `every_dedicated_test_task_tests_its_package`,
+`ci_local_tests_every_workspace_member` and `the_ci_workflow_tests_every_workspace_member` fail
+when a dedicated task stops testing its package, or when `ci-local` or `.github/workflows/ci.yml`
+leaves a member untested.
 
 ## Commands
 
@@ -54,7 +67,7 @@ moved. The browser gates of `cargo xtask mk leptos-gates` are not part of it.
   | `ci-local` | CI, ci | the composite above; needs `cargo xtask db up` first |
   | `ci-local-schema` | CI, ci | `verify-codegen-fresh`, `schema-validate`, `verify-citations` |
   | `ci-chrome` | CI, ci | the Chrome for Testing version from `tools/developer_tools/gate-env.json` (or `CHROME_VERSION`), its system libraries through `sudo apt-get`, unpacked into `~/cft`; prints `CHROME_HEADLESS_SHELL=` and appends it to `GITHUB_ENV` when set |
-  | `editor-api-boot` | CI, ci | builds and starts the `api` binary of `website-api` in its own session, logging to `/tmp/api.log`, and waits up to 60 s for `GET /healthz` on `PORT` (8080); the API keeps running |
+  | `editor-api-boot` | CI, ci | builds and starts the `api` binary of `api` in its own session, logging to `/tmp/api.log`, and waits up to 60 s for `GET /healthz` on `PORT` (8080); the API keeps running |
   | `schema-validate` | schema, ci | `schema validate`, `map-object-golden`, `map-glyphs`, `height-labels`, `map-object-enums`, `type-inventory`, in process |
   | `schema-codegen` | schema, ci | `schema codegen`: regenerates the contract types from `contracts/definitions/` |
   | `verify-citations` | schema, ci | `schema citations`: the `@contract` citations in code |
@@ -69,12 +82,13 @@ moved. The browser gates of `cargo xtask mk leptos-gates` are not part of it.
   | `map-cartographic-everon` | map, ci | builds the cartographic ortho and its tile pyramid, patches the manifest, then `map-cartographic-verify` |
   | `map-cartographic-verify` | map, ci | `map verify-pyramid --terrain everon --view-map` |
   | `lfs-dem`, `lfs-sat` | map, ci | `git lfs pull` of the Everon elevation raster or satellite container |
-  | `website-api-test` | build, ci | `cargo test` in `apps/website/api_v2`, honouring `TEST_DATABASE_URL` |
+  | `api-test` | build, ci | `cargo test` in `apps/api`, honouring `TEST_DATABASE_URL` |
   | `developer-tools-test` | build, ci | `cargo test -p developer_tools --lib` |
+  | `workspace-member-tests` | build, ci | `cargo test -p <package>`, one run per workspace member outside `DEDICATED_TEST_TASKS`, derived from the root `Cargo.toml`; every package runs, and the exit is the first red package's code |
   | `test` | build, ci | `rust-test` |
-  | `build` | build, ci | `cargo build --release --bin api` in `apps/website/api_v2`, then `leptos-build` |
+  | `build` | build, ci | `cargo build --release --bin api` in `apps/api`, then `leptos-build` |
   | `rust-ci`, `rust-fmt`, `rust-clippy`, `rust-build`, `rust-test`, `wasm-ci`, `ci-local-leptos`, `leptos-build` | build, borrowed | the `cargo xtask mk` recipe of the same name, spelled as lines |
-  | `rust-test-it` | db, borrowed | drops and creates `rust_it` in `tbd_reforger_db`, runs the API's tests against it on port 5434, then drops every `rust_it` database |
+  | `rust-test-it` | db, borrowed | `cargo xtask db test-it` in process: the API's tests against a fresh database on port 5434, then that run's databases dropped |
 
 - Exit codes: 0 the task passed, or the listing printed; the first failing step's code otherwise
   (1 for an in-process step that returned an error; 127 a tool that could not start; 128 plus
@@ -97,7 +111,9 @@ moved. The browser gates of `cargo xtask mk leptos-gates` are not part of it.
   `codegen` in `tools/xtask/src/commands/generate/schema_types.rs`, called in process; the
   `map` binary of `developer_tools`, cargo, trunk, podman, git-lfs, go, curl, unzip and apt-get as
   subprocesses; `TARGETS` of `tools/xtask/src/commands/build/recipes.rs` and `LANE_COMMANDS` of
-  `tools/xtask/src/commands/db/operations.rs` for `help`.
+  `tools/xtask/src/commands/db/operations.rs` for `help`;
+  `verification_core::repository_laws::workspace_members` for the members `workspace-member-tests`
+  derives.
 - Used by:
   - `tools/xtask/src/cli/dispatch.rs`, for `ci` and `help`;
   - `tools/xtask/src/commands/schema/dispatch.rs`, whose `schema list-gates` prints the
@@ -105,8 +121,10 @@ moved. The browser gates of `cargo xtask mk leptos-gates` are not part of it.
     which checks the wave gate's list against them;
   - `tools/xtask/src/verifications/ci/schema_parity/source_audit.rs`, which reads the
     `ci-local`, `ci-local-schema` and `verify-mission-rest-size-limits` rows;
-  - `.github/workflows/ci.yml` (`developer-tools-test`, `website-api-test`, `ci-local-schema`,
-    `verify-editorconfig`; its `language-gates` job runs the `verify` commands of the
+  - `tools/xtask/src/commands/platform/wave_execution/gate/gate_dispatch.rs`, whose
+    `test workspace members` step derives its packages through `member_packages_except`;
+  - `.github/workflows/ci.yml` (`developer-tools-test`, `api-test`, `workspace-member-tests`,
+    `ci-local-schema`, `verify-editorconfig`; its `language-gates` job runs the `verify` commands of the
     `verify-documentation` row one step each), `.github/workflows/contracts.yml` (`verify-codegen-fresh`) and
     `.github/workflows/editor-gates.yml` (`ci-chrome`, `editor-api-boot`).
 - Rules: the `ci-local` step set changes only together with `ci_local_step_set_is_frozen`;
@@ -114,7 +132,8 @@ moved. The browser gates of `cargo xtask mk leptos-gates` are not part of it.
   `ci-local-schema` run `schema-validate` and `verify-citations`, and that the `ci.yml` schema job
   run `cargo xtask ci ci-local-schema`;
   every `Step::Task` names an existing row (`every_composite_step_resolves`); a subprocess line
-  carries no shell syntax beyond a leading `cd <dir> && ` (`cmd_lines_are_shell_free`); the
+  carries no shell syntax beyond a leading `cd <dir> && ` (`cmd_lines_are_shell_free`); no step
+  names a container runtime itself (`no_task_step_names_a_bare_container_runtime`); the
   borrowed rows repeat the `mk` recipes with no test comparing the two, so a recipe change is made
   in both places.
 

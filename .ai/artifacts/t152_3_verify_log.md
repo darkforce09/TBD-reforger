@@ -47,7 +47,7 @@ cargo clippy -p map-engine-core --all-features --all-targets -- -D warnings  →
 cargo test -p map-engine-core --all-features  → 163/163
 cargo test -p map-engine-render  → 29/29
 make wasm  → 0
-cd apps/website/frontend && npm test  → 339/339
+cd apps/frontend && npm test  → 339/339
 npm run build && npm run lint  → 0
 ```
 

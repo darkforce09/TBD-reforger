@@ -9,21 +9,21 @@
 //! enforces. Continuation lines are indented by six spaces, as every gate's are.
 
 pub(super) const RULE1_HEAD: &str =
-    "==> engine-layers rule 1 — apps/website/graphics-engine must not import website_map_engine";
+    "==> engine-layers rule 1 — legacy/graphics_engine must not import map_engine";
 pub(super) const RULE2_HEAD: &str =
-    "==> engine-layers rule 2 — no map noun in a declared name under apps/website/graphics-engine";
+    "==> engine-layers rule 2 — no map noun in a declared name under legacy/graphics_engine";
 pub(super) const RULE3A_HEAD: &str = "==> engine-layers rule 3a — only the enumerated packet boundary may \
-     name website_graphics_engine::frame under apps/website/map-engine/src";
+     name graphics_engine::frame under legacy/map_engine/src";
 pub(super) const RULE3B_HEAD: &str = "==> engine-layers rule 3b — no GPU-resource module of \
-     website-graphics-engine named under apps/website/map-engine/src";
-pub(super) const RULE4_HEAD: &str = "==> engine-layers rule 4 — apps/website/map-engine/src/data/scenario \
+     graphics_engine named under legacy/map_engine/src";
+pub(super) const RULE4_HEAD: &str = "==> engine-layers rule 4 — legacy/map_engine/src/data/scenario \
      imports nothing outside itself";
 pub(super) const RULE5_HEAD: &str = "==> engine-layers rule 5 — no web_sys / leptos / wasm_bindgen under \
-     apps/website/map-engine/src/editing";
+     legacy/map_engine/src/editing";
 pub(super) const RULE6_HEAD: &str =
-    "==> engine-layers rule 6 — apps/website/frontend must not import website_graphics_engine";
+    "==> engine-layers rule 6 — apps/frontend must not import graphics_engine";
 pub(super) const RULE7_HEAD: &str = "==> engine-layers rule 7 — the static world and the authored document \
-     share nothing under apps/website/map-engine/src";
+     share nothing under legacy/map_engine/src";
 
 pub(super) const RULE1_TAIL: &[&str] = &[
     "      The arrow runs map-engine -> graphics-engine and only that way. Compute it in",
@@ -50,7 +50,7 @@ pub(super) const RULE3B_TAIL: &[&str] = &[
     "      (documentation/standards/engine_boundary_rules.md §5 rule 3b).",
 ];
 pub(super) const RULE4_TAIL: &[&str] = &[
-    "      website-api links this crate at the `scenario` feature alone — that is why its tree",
+    "      api links this crate at the `scenario` feature alone — that is why its tree",
     "      carries no wgpu, png, rkyv or flate2. One import here drags a whole tier into an HTTP",
     "      server. Pass the value in as an argument",
     "      (documentation/standards/engine_boundary_rules.md §5 rule 4).",
@@ -63,7 +63,7 @@ pub(super) const RULE5_TAIL: &[&str] = &[
     "      (documentation/standards/engine_boundary_rules.md §5 rule 5).",
 ];
 pub(super) const RULE6_TAIL: &[&str] = &[
-    "      The frontend reaches the renderer through website-map-engine and only through it —",
+    "      The frontend reaches the renderer through map_engine and only through it —",
     "      that crate owns the frame vocabulary (rule 3a) and the GPU resources (rule 3b). Ask",
     "      the map engine for the answer; do not import the renderer",
     "      (documentation/standards/engine_boundary_rules.md §5 rule 6).",

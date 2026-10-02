@@ -10,10 +10,10 @@ Design artifacts and Mission Creator engineering. Split concerns:
 
 | Concern | Hub |
 |---------|-----|
-| Frontend surfaces + living specs | [`docs/website/frontend/README.md`](/documentation/website/frontend/README.md) |
-| Backend architecture + API | [`docs/backend/README.md`](/documentation/website/api_v2/README.md) |
+| Frontend surfaces + living specs | [`docs/website/frontend/README.md`](/documentation/apps/frontend/README.md) |
+| Backend architecture + API | [`docs/backend/README.md`](/documentation/apps/api/README.md) |
 | Historical mockups | [`docs/archive/README.md`](/documentation/archive/monorepo_migration/docs_website_archive_readme.md) |
-| Mission Creator (editor) | [`Mission_Creator_Architecture/README.md`](/documentation/website/frontend/apps/editor/README.md) |
+| Mission Creator (editor) | [`Mission_Creator_Architecture/README.md`](/documentation/apps/frontend/apps/editor/README.md) |
 
 ## Folders
 

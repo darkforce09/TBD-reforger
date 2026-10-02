@@ -42,9 +42,9 @@ Smoke (no SSH):
   cargo xtask deploy website --dry-run   # needs a filled deploy.env
 
 Compose validate (local):
-  docker compose -f apps/website/docker-compose.staging.yml config
+  docker compose -f deploy/compose.staging.yml config
   # on hosts with Podman only:
-  podman compose -f apps/website/docker-compose.staging.yml config
+  podman compose -f deploy/compose.staging.yml config
 ",
         deploy_env = repository_layout::DEPLOY_ENV
     )

@@ -29,7 +29,7 @@ TBD_RuntimeStatusReadings (every online heartbeat)
 entry and keeps the next entry id, the drop total and the per-match results revision and event
 sequence counters in two alternating state slots. `Delivery/` posts the head entry and settles
 the answer: acknowledge, send the match's registration first, drop, or keep and back off. The
-[match telemetry design](/documentation/website/api_v2/verification_evidence/telemetry.md) is
+[match telemetry design](/documentation/apps/api/verification_evidence/telemetry.md) is
 the contract; each subfolder's README describes its part.
 
 ## Authority
@@ -48,7 +48,7 @@ the contract; each subfolder's README describes its part.
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/`; `TBD_Sha256` and `TBD_Log` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; `TBD_DeployedMission` and `TBD_MissionLoader`
   in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`. Over HTTP, the ingest
-  routes of `apps/website/api_v2/src/match_telemetry/`.
+  routes of `apps/api/src/match_telemetry/`.
 - Used by: `TBD_ResultsReporter` in `apps/mod/tbd-framework/Scripts/Game/TBD/API/Results/`;
   `TBD_MatchEventRecorder` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/MatchEvents/`;
   `TBD_RuntimeStatusReadings` in `apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/`;
@@ -59,8 +59,8 @@ the contract; each subfolder's README describes its part.
 
 ## Related documentation
 
-- [Match telemetry design](/documentation/website/api_v2/verification_evidence/telemetry.md) — match identity,
+- [Match telemetry design](/documentation/apps/api/verification_evidence/telemetry.md) — match identity,
   results revisions, detailed events and the queue's answer table
-- [Match telemetry domain](/apps/website/api_v2/src/match_telemetry/README.md) — how the ingest routes take the
+- [Match telemetry domain](/apps/api/src/match_telemetry/README.md) — how the ingest routes take the
   reports in
 - [Platform bridge](/apps/mod/tbd-framework/Scripts/Game/TBD/API/README.md) — the machine-credential transport

@@ -1,6 +1,6 @@
 # TASK: Phase 3A — pull editing into the engine
 
-Create `apps/website/map-engine/src/editing/` and move the editor's engine logic into it.
+Create `legacy/map_engine/src/editing/` and move the editor's engine logic into it.
 Everything below is measured fact, already verified. Do NOT re-derive it; DO verify anything
 you are about to depend on.
 
@@ -53,7 +53,7 @@ tests. Audited verdicts:
      attrs, compositions, reassign, slot_ids, transform,
      entity/{mod, comments, connections, markers, roster, selection, vehicles, zones}
      Shape: with_batch("label", || OPS_CTX.with(|c| ...borrow chain...
-            website_map_engine::data::store::operations::<mod>::<same fn>(core, args)))
+            map_engine::data::store::operations::<mod>::<same fn>(core, args)))
             then `if changed { mission_history::after_local_edit(); }`
 
   3 SECOND IMPL, but ADDITIVE -- they add host/session state the engine does not model.
@@ -72,7 +72,7 @@ tests. Audited verdicts:
 `transform.rs` passes a `confirm_bulk` callback (a `window.confirm`) INTO the engine fn. Keep
 that inversion: the engine keeps taking a confirm closure, the frontend keeps supplying the DOM one.
 
-`apps/website/map-engine/src/data/store/mod.rs` pins its public surface with
+`legacy/map_engine/src/data/store/mod.rs` pins its public surface with
 `#[cfg(test)] #[path = "tests/reexports.rs"] mod reexport_pins;` -- update that pin.
 
 ## C. The one true dedupe
@@ -114,9 +114,9 @@ PointerEvent, a leptos signal, or an element ref.
   - any `pub mod editing;` in map-engine/src/lib.rs (add it `#[cfg(feature = "editing")]`,
     matching the style of the other nine gated modules at lib.rs:14-62)
   - the frontend requesting it. Add `editing` to the SHARED dependency block,
-    `apps/website/frontend/Cargo.toml:32` (currently `features = ["world", "io", "store"]`).
+    `apps/frontend/Cargo.toml:32` (currently `features = ["world", "io", "store"]`).
     Do not move it to the wasm32 block -- `store` is deliberately in the shared block so
-    native `cargo test -p website-frontend` keeps compiling these paths.
+    native `cargo test -p frontend` keeps compiling these paths.
 
 ## F. Gate rules 5 and 6 -- you write them
 
@@ -125,12 +125,12 @@ implements rules 1, 2, 3a, 3b, 4, 7. Rules 5 and 6 are PROSE ONLY at lines 28-30
 following the existing rule style exactly (a `const` matcher, a self-probe, anti-vacuity file
 counting, and `against_pin` if a pin list is needed).
 
-  Rule 5: no `web_sys`, `leptos`, or `wasm_bindgen` under `apps/website/map-engine/src/editing`.
+  Rule 5: no `web_sys`, `leptos`, or `wasm_bindgen` under `legacy/map_engine/src/editing`.
           **SCOPE IT TO editing/, NOT THE WHOLE CRATE.** map-engine carries 266 such hits across
           57 files (streaming/host, diagnostics/readback, doll/renderer, frame/*, ...) and a
           crate-wide rule 5 can never be green. The program's own acceptance line says
-          `rg ... apps/website/map-engine/src/editing` -> empty. Hard zero, no allowlist.
-  Rule 6: `apps/website/frontend/**` may not import `website_graphics_engine`. Its subject is
+          `rg ... legacy/map_engine/src/editing` -> empty. Hard zero, no allowlist.
+  Rule 6: `apps/frontend/**` may not import `graphics_engine`. Its subject is
           already zero (4 hits exist, all prose in comments/READMEs, zero code imports) -- so
           match on import syntax, not the bare word, or those comments will trip it.
 
@@ -141,15 +141,15 @@ list -- do not rename or reorder the `verify-engine-layers` step.
 ## G. Verification -- run ALL of these, paste output VERBATIM
 
     CARGO_TARGET_DIR=target-container cargo xtask verify engine-layers
-    rg 'web_sys|leptos|wasm_bindgen' apps/website/map-engine/src/editing     # must be EMPTY
-    CARGO_TARGET_DIR=target-container cargo test -p website-map-engine --all-features
-    CARGO_TARGET_DIR=target-container cargo test -p website-frontend
+    rg 'web_sys|leptos|wasm_bindgen' legacy/map_engine/src/editing     # must be EMPTY
+    CARGO_TARGET_DIR=target-container cargo test -p map_engine --all-features
+    CARGO_TARGET_DIR=target-container cargo test -p frontend
     CARGO_TARGET_DIR=target-container cargo test -p xtask
     CARGO_TARGET_DIR=target-container cargo xtask mk ci-local-leptos
 
 Known-good baselines on the commit you start from (do not regress these):
     verify engine-layers            ENGINE-LAYERS: PASS   (rules 1,2,3a,3b,4,7)
-    cargo test -p website-frontend  ok. 1433 passed; 0 failed
+    cargo test -p frontend  ok. 1433 passed; 0 failed
 Known-RED before you start, NOT yours to fix and NOT a regression if still red:
     cargo xtask verify file-length  exit 1, 9 unallowlisted SIZE-3 (3C fixes this)
     gate v-suite verify             21 of 25 routes fail (T-986, operator-deferred)

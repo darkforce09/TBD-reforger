@@ -87,6 +87,6 @@ identical, so these are additive — no doc migration when they land.
 
 All non-destructive T-159 finish-program streams (.24–.29 + .27) are complete and green. The remaining
 work is **operator-gated + destructive**: the default SPA flip (prod `.env` + OAuth origin + staging
-soak + real 142 MB save) and the React deletion (purge `apps/website/frontend/`, npm CI job, re-home
+soak + real 142 MB save) and the React deletion (purge `apps/frontend/`, npm CI job, re-home
 the `_wasm` parity oracles → `cargo test`, freeze the V DOM/PNG oracle). See `t159_29_verify_log.md`
 §HELD and the hub doc.

@@ -45,9 +45,9 @@ completed_at = "2026-09-07T21:45:58Z"
 estimated = ["tokens"]
 owns = [
     "packages/tbd-schema/schema/mission-editor-payload.schema.json",
-    "apps/website/frontend/src/editor/library/mission_library.rs",
-    "apps/website/frontend/src/editor/state/operations/slot_ids.rs",
-    "apps/website/frontend/src/editor/state/operations.rs",
+    "apps/frontend/src/editor/library/mission_library.rs",
+    "apps/frontend/src/editor/state/operations/slot_ids.rs",
+    "apps/frontend/src/editor/state/operations.rs",
 ]
 
 [scope]

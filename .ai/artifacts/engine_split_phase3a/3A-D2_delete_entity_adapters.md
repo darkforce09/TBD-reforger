@@ -29,7 +29,7 @@ surviving `3A-C1` shim) are different files — do not confuse them.
 
 ## Follow D1's landing pattern
 
-`3A-D1` put the adapter bodies in `apps/website/map-engine/src/editing/hosted_commands/`, reaching
+`3A-D1` put the adapter bodies in `legacy/map_engine/src/editing/hosted_commands/`, reaching
 `editing::host::{with_host, with_doc, selection_ids}`, `editing::batch::with_batch` and
 `editing::history::after_local_edit` instead of `OPS_CTX` + `mission_history`. It is a sibling of
 `editing/commands/` rather than part of it, because that module's invariant is "every function
@@ -57,7 +57,7 @@ this brief — and say which you chose and why. (`state/title_prefer.rs:185` als
 
 ## Watch for
 
-- **`state/operations/` is `#![cfg(target_arch = "wasm32")]`.** `cargo test -p website-frontend`
+- **`state/operations/` is `#![cfg(target_arch = "wasm32")]`.** `cargo test -p frontend`
   is native and **never compiles it**. Your primary artifact is invisible to that suite — the
   wasm32 check and the fmt check in the verification list below are not optional extras.
 - Cross-boundary types are verified re-exports, not duplicate definitions: `MissionEnv`,
@@ -81,10 +81,10 @@ repointed call site reaches the engine directly, and:
 
 ```
 CARGO_TARGET_DIR=target-container cargo xtask verify engine-layers
-CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p website-frontend
+CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p frontend
 CARGO_TARGET_DIR=target-container cargo fmt --all -- --check
-CARGO_TARGET_DIR=target-container cargo test -p website-map-engine --all-features
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
+CARGO_TARGET_DIR=target-container cargo test -p map_engine --all-features
+CARGO_TARGET_DIR=target-container cargo test -p frontend
 ```
 
 Baseline: `verify engine-layers` PASS on all 8 rules; wasm32 clean at **19 warnings** (the same 19

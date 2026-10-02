@@ -1,7 +1,7 @@
-use website_map_engine::world::terrain::water::vectors::Bathymetry;
-use website_map_engine::world::terrain::water::vectors::WaterAt;
-use website_map_engine::world::terrain::water::vectors::WaterMask;
-use website_map_engine::world::terrain::water::vectors::WaterVectors;
+use map_engine::world::terrain::water::vectors::Bathymetry;
+use map_engine::world::terrain::water::vectors::WaterAt;
+use map_engine::world::terrain::water::vectors::WaterMask;
+use map_engine::world::terrain::water::vectors::WaterVectors;
 
 use super::*;
 

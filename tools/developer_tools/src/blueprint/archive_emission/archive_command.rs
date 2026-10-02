@@ -11,7 +11,7 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 
 use crate::repository_layout::{contract_definitions_dir, terrain_dir};
-use website_map_engine::spatial::los::world::descriptor::BlasEntry;
+use map_engine::spatial::los::world::descriptor::BlasEntry;
 
 use super::batch::open_sources;
 use super::library::{

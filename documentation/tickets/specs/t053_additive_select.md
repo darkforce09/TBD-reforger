@@ -4,7 +4,7 @@
 
 **Status:** shipped (T-053)  
 **Git tag on ship:** T-053  
-**Authority:** [MC ROADMAP](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md) · [eden/gap_analysis.md](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) (`SEL-MOD-001`) · [feature_inventory.md](/documentation/website/frontend/apps/editor/feature_inventory/README.md) SEL-MOD-001
+**Authority:** [MC ROADMAP](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) · [eden/gap_analysis.md](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) (`SEL-MOD-001`) · [feature_inventory.md](/documentation/apps/frontend/apps/editor/feature_inventory/README.md) SEL-MOD-001
 
 ---
 
@@ -129,10 +129,10 @@ Use [`docs/AGENT_COMMIT_CHECKLIST.md`](/documentation/standards/commit_checklist
 |-----|--------|
 | **This file** | Status → **shipped** |
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-053 bullet + bump `latest feature work` line |
-| [`feature_inventory.md`](/documentation/website/frontend/apps/editor/feature_inventory/README.md) | SEL-MOD-001 → **working** (Trigger, Procedure, Evidence, acceptance); SEL-SYNC-001 stays partial |
-| [`agent_execution.md`](/documentation/website/frontend/apps/editor/decisions.md) | Decisions log row **Additive select (T-053)** |
-| [`ROADMAP.md`](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md) | Move T-053 → shipped; §Status "Next" leads with T-055 asset search |
-| [`eden/gap_analysis.md`](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) | SEL-MOD-001 + T-053 → ✅ shipped T-053 |
+| [`feature_inventory.md`](/documentation/apps/frontend/apps/editor/feature_inventory/README.md) | SEL-MOD-001 → **working** (Trigger, Procedure, Evidence, acceptance); SEL-SYNC-001 stays partial |
+| [`agent_execution.md`](/documentation/apps/frontend/apps/editor/decisions.md) | Decisions log row **Additive select (T-053)** |
+| [`ROADMAP.md`](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) | Move T-053 → shipped; §Status "Next" leads with T-055 asset search |
+| [`eden/gap_analysis.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) | SEL-MOD-001 + T-053 → ✅ shipped T-053 |
 
 **Do not update:** archive stitch, Eden wiki artifacts, historical CLAUDE bullets.
 

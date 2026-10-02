@@ -51,7 +51,7 @@ instead of re-running the suite, so a paraphrase destroys the only evidence ther
 
 ## The doc_audit ratchet - the thing that makes 3B different from 3A
 
-`apps/website/frontend/src/v2/doc_audit_tests.rs` audits EVERY production `.rs` under `src/v2`
+`apps/frontend/src/v2/doc_audit_tests.rs` audits EVERY production `.rs` under `src/v2`
 (it skips directories literally named `tests`) and enforces five rules:
 
 ```
@@ -112,27 +112,27 @@ breaks the pins that read it. After that brief:
 
 ## Other crates pin frontend source — sweep the WHOLE repo, not just `xtask/`
 
-`website-map-engine`'s own tests `include_str!` frontend files. Three of them named the pre-move
+`map_engine`'s own tests `include_str!` frontend files. Three of them named the pre-move
 `frontend/src/editor/` tree and were missed by a sweep scoped to `xtask/` and `tools/`, so
-`cargo test -p website-map-engine` stopped compiling and nobody knew until the next brief tried to
+`cargo test -p map_engine` stopped compiling and nobody knew until the next brief tried to
 run it.
 
 **After any move, grep every crate for paths under the tree you touched** — at minimum
-`apps/website/map-engine`, `apps/website/api`, `xtask/` and `tools/`:
+`legacy/map_engine`, `apps/website/api`, `xtask/` and `tools/`:
 
 ```
 rg -n 'frontend/src/(editor|pages)' apps xtask tools crates
 ```
 
-If a hit is inside `website-map-engine`, repoint it AND add
-`CARGO_TARGET_DIR=target-container cargo test -p website-map-engine --all-features` to your
+If a hit is inside `map_engine`, repoint it AND add
+`CARGO_TARGET_DIR=target-container cargo test -p map_engine --all-features` to your
 verification — a crate whose test build you broke is not green just because your own suite passed.
 Convert any bare relative pin you find to the anchored `CARGO_MANIFEST_DIR` form while you are
 there.
 
 ## Gates outside the frontend name frontend paths
 
-`xtask/src/gate_t180.rs` holds a table of `apps/website/frontend/src/editor/...` paths and
+`xtask/src/gate_t180.rs` holds a table of `apps/frontend/src/editor/...` paths and
 `fs::copy(...).unwrap()`s every row, so ONE stale path panics EVERY test in that gate. `ai.rs`
 and `migrate_v2.rs` also carry `src/editor/` string literals. **Grep `xtask/` and `tools/` for
 any path under the tree you touch before you finish.**
@@ -150,12 +150,12 @@ cross-crate `cargo check` passes on your own initiative - with ONE exception bel
 
 ## wasm32-gated code is invisible to the native suite
 
-Large parts of the editor carry `#[cfg(target_arch = "wasm32")]`, so `cargo test -p website-frontend`
+Large parts of the editor carry `#[cfg(target_arch = "wasm32")]`, so `cargo test -p frontend`
 never compiles them. If anything your brief moves or edits is wasm-gated, these two are part of
 your verification, not extras:
 
 ```
-CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p website-frontend
+CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p frontend
 CARGO_TARGET_DIR=target-container cargo fmt --all -- --check
 ```
 

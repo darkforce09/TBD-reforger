@@ -19,7 +19,7 @@ tools/developer_tools/src/browser_testing/editor_smoke_tests/outliner_drag/
 
 `run` starts the shared `Harness` on ports 5396 and 9496 with the map assets and no API proxy.
 `mission::intercept` answers every `/api/v1/` request itself: the fixture user and registry from
-`apps/website/frontend/tests/fixtures/api/`, a token refresh, one of four missions by id (five slots
+`contracts/fixtures/api_goldens/`, a token refresh, one of four missions by id (five slots
 with a vehicle, the same with a duplicated slot id, a large one, and a mixed one), an empty list
 for anything else, and a 400 for a version save, which it counts. It also accepts any unload
 dialog so the next mission can load.

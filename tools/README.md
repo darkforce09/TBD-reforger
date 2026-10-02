@@ -35,13 +35,13 @@ that library and passes it the checkout root:
 - `developer_tools` holds the heavy work in six executables (`enf`, `gate`, `mcpd`, `world`, `map`,
   `capture`) and a library: Enfusion archive and script tooling, the headless browser gates, the
   blueprint compiler, the world export and raster pipelines, and engine-backed map verification.
-  It is the one tooling crate that links `website-map-engine`.
+  It is the one tooling crate that links `map_engine`.
 - `enfusion_mcp_node_package` is data, not a crate: `npm ci` there installs the pinned server that
   `mcpd` and `cargo xtask mcp` start. It sits outside every crate root, so no crate-scoped walk
   reads its `node_modules/`.
 
 ```text
-xtask ──▶ developer_tools ──▶ website-map-engine (apps/website/map-engine)
+xtask ──▶ developer_tools ──▶ map_engine (legacy/map_engine)
   │               │
   │               └── mcpd starts ──▶ enfusion_mcp_node_package (node_modules, after npm ci)
   ├────▶ ticket_engine ◀── ticketboard (apps/ticketboard)
@@ -69,17 +69,17 @@ Each crate's README lists its own commands and checks.
 
 ## Boundaries
 
-- Depends on: `apps/website/map-engine/`, through `developer_tools` alone; the checkout's data
+- Depends on: `legacy/map_engine/`, through `developer_tools` alone; the checkout's data
   (`.ai/tickets/`, `contracts/`, `assets/`, `documentation/`); and the external tools
   individual commands run: git, Docker or Podman, Postgres, Chromium, Trunk, npm and Node.js, ssh
   and rsync, the Arma Reforger tools.
 - Used by: developers and AI agents at the command line; the GitHub workflows in `.github/`; the
-  backup and backup-drill units in `tools/xtask/deploy/systemd/`, which run
+  backup and backup-drill units in `deploy/systemd/`, which run
   `cargo xtask deploy db backup` and `cargo xtask deploy db drill`; and `apps/ticketboard/`, which
   links `ticket_engine`.
 - Rules: each held by a test in `tools/xtask/src/tests/`:
   - `developer_tools` never depends on `xtask`, and `xtask` never depends on
-    `website-map-engine` or `website-graphics-engine` directly
+    `map_engine` or `graphics_engine` directly
     (`tooling_dependency_direction_is_enforced` in `tooling_dependency_boundaries.rs`);
   - `ticket_engine` and `verification_core` depend on no workspace crate
     (`foundational_engines_have_no_workspace_dependencies`), and ticket logic has one owner, the

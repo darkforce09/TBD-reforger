@@ -28,10 +28,10 @@ fn a_pure_renderer_passes_and_prose_does_not_trip_it() {
                  module, 1 under world/ name neither crate::data nor yrs.",
             "  OK — 0 site(s) across 1 .rs file(s) under editing/:",
             "  OK — 0 import(s) across 1 .rs file(s) and the manifest:",
-            "  scanned 1 .rs file(s) + apps/website/graphics-engine/Cargo.toml, \
-                 8 .rs file(s) under apps/website/map-engine/src — of those 4 under data/ \
+            "  scanned 1 .rs file(s) + legacy/graphics_engine/Cargo.toml, \
+                 8 .rs file(s) under legacy/map_engine/src — of those 4 under data/ \
                  (3 under data/scenario), 1 under world/ and 1 under editing/ — plus 1 .rs \
-                 file(s) + Cargo.toml under apps/website/frontend",
+                 file(s) + Cargo.toml under apps/frontend",
             "ENGINE-LAYERS: PASS",
         ],
     );
@@ -42,12 +42,12 @@ fn a_pure_renderer_passes_and_prose_does_not_trip_it() {
 #[test]
 fn importing_the_map_engine_fails() {
     let r = Repo::new("rule1");
-    r.src("draw/bad.rs", "use website_map_engine::x;\n");
+    r.src("draw/bad.rs", "use map_engine::x;\n");
     r.expect(
         1,
         &[
             "FAIL: graphics-engine reaches back into the map engine:",
-            "  apps/website/graphics-engine/src/draw/bad.rs:1:use website_map_engine::x;",
+            "  legacy/graphics_engine/src/draw/bad.rs:1:use map_engine::x;",
             RULE1_TAIL[0],
             "ENGINE-LAYERS: FAIL — 1 wall breach(es), 0 map-noun declaration(s), \
                  0 frame-vocab finding(s), 0 GPU-module finding(s), \
@@ -56,25 +56,37 @@ fn importing_the_map_engine_fails() {
     );
 }
 
+/// RULE 1's false positives: prose naming the map engine while describing the wall is not an
+/// import, whichever comment form carries it.
+#[test]
+fn rule_1_matches_imports_and_not_the_prose_that_describes_the_wall() {
+    let r = Repo::new("rule1-prose");
+    r.src(
+        "lib.rs",
+        "//! `map_engine` speaks the frame vocabulary, never the reverse.\n\
+         /// `map_engine`'s `RenderEngine` owns the atlas slots.\n\
+         pub mod frame;\n",
+    );
+    r.expect(0, &["ENGINE-LAYERS: PASS"]);
+}
+
 /// RULE 1, the manifest arm: a dependency edge is a breach even with no `use` anywhere, and a
 /// `#` comment naming the other crate is not.
 #[test]
 fn a_dependency_edge_is_a_breach_and_a_comment_is_not() {
     let r = Repo::new("rule1-manifest");
-    r.manifest(&format!(
-        "{MANIFEST}me = {{ package = \"website-map-engine\" }}\n"
-    ));
+    r.manifest(&format!("{MANIFEST}me = {{ package = \"map_engine\" }}\n"));
     r.expect(
         1,
         &[
-            "  apps/website/graphics-engine/Cargo.toml:6:me = { package = \"website-map-engine\" }",
+            "  legacy/graphics_engine/Cargo.toml:6:me = { package = \"map_engine\" }",
             "ENGINE-LAYERS: FAIL — 1 wall breach(es), 0 map-noun declaration(s), \
                  0 frame-vocab finding(s), 0 GPU-module finding(s), \
                  0 scenario-isolation finding(s), 0 browser-in-editing site(s), 0 direct-renderer import(s), 0 world/data finding(s)",
         ],
     );
     r.manifest(&format!(
-        "{MANIFEST}# website-map-engine depends on us, never the reverse\n"
+        "{MANIFEST}# map_engine depends on us, never the reverse\n"
     ));
     r.expect(0, &["ENGINE-LAYERS: PASS"]);
 }
@@ -91,8 +103,8 @@ fn map_nouns_in_declared_names_fail() {
         1,
         &[
             "FAIL: map nouns declared inside the pure renderer:",
-            "  apps/website/graphics-engine/src/draw/bad.rs:1:pub struct TerrainBlob;",
-            "  apps/website/graphics-engine/src/draw/bad.rs:2:pub fn pack_mission() {}",
+            "  legacy/graphics_engine/src/draw/bad.rs:1:pub struct TerrainBlob;",
+            "  legacy/graphics_engine/src/draw/bad.rs:2:pub fn pack_mission() {}",
             RULE2_TAIL[0],
             "ENGINE-LAYERS: FAIL — 0 wall breach(es), 2 map-noun declaration(s), \
                  0 frame-vocab finding(s), 0 GPU-module finding(s), \
@@ -147,11 +159,11 @@ fn inputs_that_were_never_read_do_not_pass() {
     // src/ present but empty of Rust: `walk_files` returns Ok(vec![]) and every grep finds
     // nothing, which is the shape that would report a clean wall over zero bytes of source.
     let r = Repo::new("empty");
-    std::fs::remove_file(r.0.join("apps/website/graphics-engine/src/draw/mod.rs")).unwrap();
+    std::fs::remove_file(r.0.join("legacy/graphics_engine/src/draw/mod.rs")).unwrap();
     r.expect(
         1,
         &[
-            "FAIL: engine-layers walked 0 .rs file(s) under apps/website/graphics-engine/src",
+            "FAIL: engine-layers walked 0 .rs file(s) under legacy/graphics_engine/src",
             NOTHING_TAIL[0],
             "ENGINE-LAYERS: FAIL (no inputs)",
         ],
@@ -159,12 +171,12 @@ fn inputs_that_were_never_read_do_not_pass() {
 
     // Rule 3b's root has the same hole, and it is the one phase 2B reshaped on purpose.
     let r = Repo::new("empty-map");
-    std::fs::remove_dir_all(r.0.join("apps/website/map-engine/src")).unwrap();
-    std::fs::create_dir_all(r.0.join("apps/website/map-engine/src")).unwrap();
+    std::fs::remove_dir_all(r.0.join("legacy/map_engine/src")).unwrap();
+    std::fs::create_dir_all(r.0.join("legacy/map_engine/src")).unwrap();
     r.expect(
         1,
         &[
-            "FAIL: engine-layers walked 0 .rs file(s) under apps/website/map-engine/src",
+            "FAIL: engine-layers walked 0 .rs file(s) under legacy/map_engine/src",
             "ENGINE-LAYERS: FAIL (no inputs)",
         ],
     );
@@ -181,8 +193,8 @@ fn inputs_that_were_never_read_do_not_pass() {
 #[test]
 fn an_absent_half_of_the_wall_is_not_a_clean_wall() {
     for (name, dir) in [
-        ("no-data", "apps/website/map-engine/src/data"),
-        ("no-world", "apps/website/map-engine/src/world"),
+        ("no-data", "legacy/map_engine/src/data"),
+        ("no-world", "legacy/map_engine/src/world"),
     ] {
         let r = Repo::new(name);
         std::fs::remove_dir_all(r.0.join(dir)).unwrap();
@@ -198,12 +210,12 @@ fn an_absent_half_of_the_wall_is_not_a_clean_wall() {
     // vanished *tree* has to be caught by the count, because an empty walk finds no hits to
     // group and the pin's own arm would then report two stale rows instead of "no inputs".
     let r = Repo::new("no-scenario");
-    std::fs::remove_dir_all(r.0.join("apps/website/map-engine/src/data/scenario")).unwrap();
+    std::fs::remove_dir_all(r.0.join("legacy/map_engine/src/data/scenario")).unwrap();
     r.expect(
         1,
         &[
             "FAIL: engine-layers walked 0 .rs file(s) under \
-                 apps/website/map-engine/src/data/scenario",
+                 legacy/map_engine/src/data/scenario",
             "ENGINE-LAYERS: FAIL (no inputs)",
         ],
     );
@@ -223,7 +235,7 @@ fn the_scenario_tree_reaching_outside_itself_fails() {
         &[
             "FAIL: the authored mission reaches outside its own tree:",
             "  unpinned file — 1 site(s):",
-            "apps/website/map-engine/src/data/scenario/compiler/flatten/terrain.rs:1:\
+            "legacy/map_engine/src/data/scenario/compiler/flatten/terrain.rs:1:\
                  use crate::streaming::loaders::chunk::WorldChunk;",
             RULE4_TAIL[0],
             "1 scenario-isolation finding(s)",
@@ -242,7 +254,7 @@ fn the_rule_4_pin_is_a_ratchet_in_both_directions() {
     r.expect(
         1,
         &[
-            "apps/website/map-engine/src/data/scenario/compiler/flatten/tests/mod.rs: \
+            "legacy/map_engine/src/data/scenario/compiler/flatten/tests/mod.rs: \
                  pinned at 1 site(s), found 2",
             "1 scenario-isolation finding(s)",
         ],
@@ -256,7 +268,7 @@ fn the_rule_4_pin_is_a_ratchet_in_both_directions() {
     r.expect(
         1,
         &[
-            "apps/website/map-engine/src/data/scenario/compiler/payload/tests/cases_1.rs: \
+            "legacy/map_engine/src/data/scenario/compiler/payload/tests/cases_1.rs: \
                  pinned at 1 site(s), found 0 — the pin is stale, delete the row.",
             "1 scenario-isolation finding(s)",
         ],
@@ -280,7 +292,7 @@ fn rule_4_matches_only_what_is_outside_the_scenario_tree() {
         "use crate::camera::orbit::Orbit;",
         "use crate::diagnostics::bench::Sample;",
         "use crate::doll::pose::Pose;",
-        "use website_graphics_engine::layout::pack::TEXT_UNIFORM_BYTES;",
+        "use graphics_engine::layout::pack::TEXT_UNIFORM_BYTES;",
         // The `super::` chain, at three depths — the bypass a `crate::`-anchored matcher
         // would leave open. Depth is irrelevant to the match; the destination is what tells.
         "use super::store::MissionDocCore;",
@@ -327,11 +339,11 @@ fn the_world_data_wall_fails_in_either_direction() {
         1,
         &[
             "FAIL: the world/data wall is breached:",
-            "  data/ names the world — apps/website/map-engine/src/data/store/rows/\
+            "  data/ names the world — legacy/map_engine/src/data/store/rows/\
                  chunked.rs:1:use crate::streaming::scheduler::chunk_math::Bbox;",
-            "  world/ names the document — apps/website/map-engine/src/world/terrain/dem/\
+            "  world/ names the document — legacy/map_engine/src/world/terrain/dem/\
                  edited.rs:1:use yrs::Doc;",
-            "  world/ names the document — apps/website/map-engine/src/world/terrain/dem/\
+            "  world/ names the document — legacy/map_engine/src/world/terrain/dem/\
                  edited.rs:2:let t = crate::data::store::MissionDocCore::new();",
             RULE7_TAIL[0],
             "3 world/data finding(s)",
@@ -355,7 +367,7 @@ fn rule_7_matches_the_wall_and_not_the_legal_traffic() {
         "use crate::overlay::lod::class_visible;",
         "use crate::frame::DrawPayload;",
         "    let c = crate::camera::ortho::Ortho::default();",
-        "use website_graphics_engine::draw::instances::QuadInstance;",
+        "use graphics_engine::draw::instances::QuadInstance;",
         "use super::super::super::streaming::loaders::chunk::WorldChunk;",
         "use super::world::terrain::dem::grid::DemVectorGrid;",
     ] {
@@ -409,21 +421,21 @@ fn naming_the_frame_vocabulary_outside_the_boundary_fails() {
     let r = Repo::new("rule3a-new");
     r.map(
         "world/environment/vegetation/buffers.rs",
-        "use website_graphics_engine::frame::DrawPayload;\n",
+        "use graphics_engine::frame::DrawPayload;\n",
     );
     r.map(
         "diagnostics/readback/scene.rs",
-        "let p = website_graphics_engine::frame::FramePacket { camera };\n",
+        "let p = graphics_engine::frame::FramePacket { camera };\n",
     );
     r.expect(
         1,
         &[
             "FAIL: the frame vocabulary is named outside the packet boundary:",
             "  unpinned file — 1 site(s):",
-            "apps/website/map-engine/src/world/environment/vegetation/buffers.rs:1:\
-                 use website_graphics_engine::frame::DrawPayload;",
-            "apps/website/map-engine/src/diagnostics/readback/scene.rs:1:\
-                 let p = website_graphics_engine::frame::FramePacket { camera };",
+            "legacy/map_engine/src/world/environment/vegetation/buffers.rs:1:\
+                 use graphics_engine::frame::DrawPayload;",
+            "legacy/map_engine/src/diagnostics/readback/scene.rs:1:\
+                 let p = graphics_engine::frame::FramePacket { camera };",
             RULE3A_TAIL[0],
             "2 frame-vocab finding(s)",
         ],
@@ -443,12 +455,12 @@ fn the_rule_3a_pin_is_a_ratchet_in_both_directions() {
     let r = Repo::new("rule3a-grow");
     r.map(
         "frame/mod.rs",
-        &format!("{MAP_FRAME_MOD}pub use website_graphics_engine::frame::Extra;\n"),
+        &format!("{MAP_FRAME_MOD}pub use graphics_engine::frame::Extra;\n"),
     );
     r.expect(
         1,
         &[
-            "apps/website/map-engine/src/frame/mod.rs: pinned at 8 site(s), found 9",
+            "legacy/map_engine/src/frame/mod.rs: pinned at 8 site(s), found 9",
             "1 frame-vocab finding(s)",
         ],
     );
@@ -458,12 +470,12 @@ fn the_rule_3a_pin_is_a_ratchet_in_both_directions() {
     // sites — stays, so this isolates the 3a count and nothing else moves.
     r.map(
         "frame/mod.rs",
-        &MAP_FRAME_MOD.replace("pub use website_graphics_engine::frame::present;\n", ""),
+        &MAP_FRAME_MOD.replace("pub use graphics_engine::frame::present;\n", ""),
     );
     r.expect(
         1,
         &[
-            "apps/website/map-engine/src/frame/mod.rs: pinned at 8 site(s), found 7",
+            "legacy/map_engine/src/frame/mod.rs: pinned at 8 site(s), found 7",
             "1 frame-vocab finding(s)",
         ],
     );
@@ -473,7 +485,7 @@ fn the_rule_3a_pin_is_a_ratchet_in_both_directions() {
     let all = r.expect(
         1,
         &[
-            "apps/website/map-engine/src/frame/mod.rs: pinned at 8 site(s), found 0 — \
+            "legacy/map_engine/src/frame/mod.rs: pinned at 8 site(s), found 0 — \
                  the pin is stale, delete the row.",
             "1 frame-vocab finding(s)",
         ],
@@ -491,12 +503,12 @@ fn the_rule_3a_pin_is_a_ratchet_in_both_directions() {
 fn rule_3a_matches_the_frame_path_and_not_the_crate_local_one() {
     let p = Pattern::regex(FRAME_VOCAB_RE).unwrap();
     for bad in [
-        "use website_graphics_engine::frame::DrawBatch;",
-        "pub use website_graphics_engine::frame::{BindGroupId, LaneId, PipelineId};",
-        "pub use website_graphics_engine::frame::damage;",
-        "    camera: website_graphics_engine::frame::CameraUniform::new(mvp),",
-        "pub fn lane_id(r: R) -> website_graphics_engine::frame::LaneId {",
-        "//! the opaque `website_graphics_engine::frame::LaneId`",
+        "use graphics_engine::frame::DrawBatch;",
+        "pub use graphics_engine::frame::{BindGroupId, LaneId, PipelineId};",
+        "pub use graphics_engine::frame::damage;",
+        "    camera: graphics_engine::frame::CameraUniform::new(mvp),",
+        "pub fn lane_id(r: R) -> graphics_engine::frame::LaneId {",
+        "//! the opaque `graphics_engine::frame::LaneId`",
     ] {
         assert!(p.is_match(bad), "should fail the gate: {bad}");
     }
@@ -504,10 +516,10 @@ fn rule_3a_matches_the_frame_path_and_not_the_crate_local_one() {
         "use crate::frame::DrawBatch;",
         "use crate::frame::{DrawBatch, DrawPayload, InstanceBuffer};",
         "pub(crate) use crate::frame::TextAtlasGpu;",
-        "use website_graphics_engine::frames::x;",
-        "use website_graphics_engine::frame_stats::x;",
-        "use website_graphics_engine::layout::pack::TEXT_UNIFORM_BYTES;",
-        "use website_graphics_engine::draw::instances::QuadInstance;",
+        "use graphics_engine::frames::x;",
+        "use graphics_engine::frame_stats::x;",
+        "use graphics_engine::layout::pack::TEXT_UNIFORM_BYTES;",
+        "use graphics_engine::draw::instances::QuadInstance;",
         "// the frame vocabulary lives one crate over",
     ] {
         assert!(!p.is_match(ok), "should pass the gate: {ok}");
@@ -520,15 +532,15 @@ fn a_new_gpu_module_import_in_the_map_engine_fails() {
     let r = Repo::new("rule3b-new");
     r.map(
         "overlay/symbology/atlas.rs",
-        "use website_graphics_engine::pipeline::create_glyph_pipeline;\n",
+        "use graphics_engine::pipeline::create_glyph_pipeline;\n",
     );
     r.expect(
         1,
         &[
             "FAIL: GPU-resource modules named inside the map engine:",
             "  unpinned file — 1 site(s):",
-            "apps/website/map-engine/src/overlay/symbology/atlas.rs:1:\
-                 use website_graphics_engine::pipeline::create_glyph_pipeline;",
+            "legacy/map_engine/src/overlay/symbology/atlas.rs:1:\
+                 use graphics_engine::pipeline::create_glyph_pipeline;",
             RULE3B_TAIL[0],
             "1 GPU-module finding(s)",
         ],
@@ -542,12 +554,12 @@ fn the_rule_3b_pin_is_a_ratchet_in_both_directions() {
     let r = Repo::new("rule3b-grow");
     r.map(
         "frame/pump.rs",
-        &format!("{MAP_FRAME_PUMP}use website_graphics_engine::device::x;\n"),
+        &format!("{MAP_FRAME_PUMP}use graphics_engine::device::x;\n"),
     );
     r.expect(
         1,
         &[
-            "apps/website/map-engine/src/frame/pump.rs: pinned at 2 site(s), found 3",
+            "legacy/map_engine/src/frame/pump.rs: pinned at 2 site(s), found 3",
             "1 GPU-module finding(s)",
         ],
     );
@@ -557,7 +569,7 @@ fn the_rule_3b_pin_is_a_ratchet_in_both_directions() {
     r.expect(
         1,
         &[
-            "apps/website/map-engine/src/frame/pump.rs: pinned at 2 site(s), found 0 — \
+            "legacy/map_engine/src/frame/pump.rs: pinned at 2 site(s), found 0 — \
                  the pin is stale, delete the row.",
             "1 GPU-module finding(s)",
         ],
@@ -570,20 +582,20 @@ fn the_rule_3b_pin_is_a_ratchet_in_both_directions() {
 fn rule_3b_matches_the_four_gpu_modules_and_nothing_adjacent() {
     let p = Pattern::regex(GPU_MODULE_RE).unwrap();
     for bad in [
-        "pub use website_graphics_engine::device::buffers;",
-        "pub use website_graphics_engine::pipeline as pipelines;",
-        "website_graphics_engine::shaders::SHADER_WGSL",
-        "pub use website_graphics_engine::r#loop::RafPump;",
+        "pub use graphics_engine::device::buffers;",
+        "pub use graphics_engine::pipeline as pipelines;",
+        "graphics_engine::shaders::SHADER_WGSL",
+        "pub use graphics_engine::r#loop::RafPump;",
     ] {
         assert!(p.is_match(bad), "should fail the gate: {bad}");
     }
     for ok in [
-        "use website_graphics_engine::pipelines::x;",
-        "use website_graphics_engine::frame::{DrawBatch, TextRun};",
-        "use website_graphics_engine::layout::pack::TEXT_UNIFORM_BYTES;",
-        "use website_graphics_engine::draw::instances::QuadInstance;",
-        "use website_graphics_engine::text::metrics::TextGlyphInstance;",
-        "// the device lives in website_graphics_engine, one crate over",
+        "use graphics_engine::pipelines::x;",
+        "use graphics_engine::frame::{DrawBatch, TextRun};",
+        "use graphics_engine::layout::pack::TEXT_UNIFORM_BYTES;",
+        "use graphics_engine::draw::instances::QuadInstance;",
+        "use graphics_engine::text::metrics::TextGlyphInstance;",
+        "// the device lives in graphics_engine, one crate over",
     ] {
         assert!(!p.is_match(ok), "should pass the gate: {ok}");
     }
@@ -593,7 +605,7 @@ fn rule_3b_matches_the_four_gpu_modules_and_nothing_adjacent() {
 #[test]
 fn a_missing_manifest_does_not_read_as_clean() {
     let r = Repo::new("no-manifest");
-    std::fs::remove_file(r.0.join("apps/website/graphics-engine/Cargo.toml")).unwrap();
+    std::fs::remove_file(r.0.join("legacy/graphics_engine/Cargo.toml")).unwrap();
     let (code, out) = super::run(&r.0);
     let all = out.join("\n");
     assert_eq!(code, 2, "{all}");
@@ -613,10 +625,7 @@ fn build_output_is_pruned_but_only_below_the_root() {
 
     let root = Path::new("/home/x/target-container/checkout");
     assert!(
-        is_source(
-            root,
-            &root.join("apps/website/graphics-engine/src/draw/mod.rs")
-        ),
+        is_source(root, &root.join("legacy/graphics_engine/src/draw/mod.rs")),
         "the prune must not see the root's own path components"
     );
     assert!(!is_source(root, &root.join("src/target-container/x.rs")));
@@ -641,8 +650,8 @@ fn a_browser_name_inside_the_engines_editing_tree_fails() {
         1,
         &[
             "FAIL: the browser reached into the engine's editing tree:",
-            "  apps/website/map-engine/src/editing/tools/ruler/chain.rs:1:use web_sys::window;",
-            "  apps/website/map-engine/src/editing/tools/ruler/chain.rs:3:// park the leptos \
+            "  legacy/map_engine/src/editing/tools/ruler/chain.rs:1:use web_sys::window;",
+            "  legacy/map_engine/src/editing/tools/ruler/chain.rs:3:// park the leptos \
              signal here",
             RULE5_TAIL[0],
             "0 direct-renderer import(s)",
@@ -675,11 +684,11 @@ fn rule_5_is_scoped_to_editing_and_not_the_whole_crate() {
 #[test]
 fn an_absent_editing_tree_is_not_a_clean_rule_5() {
     let r = Repo::new("rule5-empty");
-    std::fs::remove_dir_all(r.0.join("apps/website/map-engine/src/editing")).unwrap();
+    std::fs::remove_dir_all(r.0.join("legacy/map_engine/src/editing")).unwrap();
     let all = r.expect(
         1,
         &[
-            "FAIL: engine-layers walked 0 .rs file(s) under apps/website/map-engine/src/editing",
+            "FAIL: engine-layers walked 0 .rs file(s) under legacy/map_engine/src/editing",
             "ENGINE-LAYERS: FAIL (no inputs)",
         ],
     );
@@ -692,14 +701,14 @@ fn the_frontend_importing_the_renderer_fails() {
     let r = Repo::new("rule6-red");
     r.front(
         "canvas/bad.rs",
-        "use website_graphics_engine::draw::triangulate;\n\
-         pub fn t(v: &[f32]) -> Vec<u32> { website_graphics_engine::draw::triangulate(v) }\n",
+        "use graphics_engine::draw::triangulate;\n\
+         pub fn t(v: &[f32]) -> Vec<u32> { graphics_engine::draw::triangulate(v) }\n",
     );
     let all = r.expect(
         1,
         &[
             "FAIL: the frontend imports the renderer directly:",
-            "  apps/website/frontend/src/canvas/bad.rs:1:use website_graphics_engine::draw::\
+            "  apps/frontend/src/canvas/bad.rs:1:use graphics_engine::draw::\
              triangulate;",
             RULE6_TAIL[0],
         ],
@@ -707,17 +716,17 @@ fn the_frontend_importing_the_renderer_fails() {
     assert!(all.contains("2 direct-renderer import(s)"), "{all}");
 
     // The manifest arm, which is the one a rename would otherwise walk straight through:
-    // `g = { package = "website-graphics-engine" }` makes every `use g::…` invisible to the
+    // `g = { package = "graphics_engine" }` makes every `use g::…` invisible to the
     // source arm.
     let r = Repo::new("rule6-manifest");
     r.front_manifest(
-        "[dependencies]\ng = { path = \"../graphics-engine\", package = \"website-graphics-engine\" }\n",
+        "[dependencies]\ng = { path = \"../../legacy/graphics_engine\", package = \"graphics_engine\" }\n",
     );
     r.expect(
         1,
         &[
             "FAIL: the frontend imports the renderer directly:",
-            "apps/website/frontend/Cargo.toml:2:g = { path",
+            "apps/frontend/Cargo.toml:2:g = { path",
         ],
     );
 }
@@ -731,13 +740,13 @@ fn rule_6_matches_imports_and_not_the_prose_that_describes_the_wall() {
     let r = Repo::new("rule6-prose");
     r.front(
         "canvas/viewport.rs",
-        "//! loop machinery moved to the renderer's one `RafPump` (`website-graphics-engine`)\n\
-         /// through the map engine, never by depending on `website-graphics-engine`\n\
-         use website_map_engine::frame::EngineHandle;\n",
+        "//! loop machinery moved to the renderer's one `RafPump` (`graphics_engine`)\n\
+         /// through the map engine, never by depending on `graphics_engine`\n\
+         use map_engine::frame::EngineHandle;\n",
     );
     r.front_manifest(
-        "[dependencies]\n# website-graphics-engine is reached through the map engine\n\
-         website-map-engine = { path = \"../map-engine\" }\n",
+        "[dependencies]\n# graphics_engine is reached through the map engine\n\
+         map_engine = { path = \"../../legacy/map_engine\" }\n",
     );
     r.expect(0, &["ENGINE-LAYERS: PASS"]);
 }
@@ -747,18 +756,18 @@ fn rule_6_matches_imports_and_not_the_prose_that_describes_the_wall() {
 #[test]
 fn an_absent_frontend_is_not_a_clean_rule_6() {
     let r = Repo::new("rule6-empty");
-    std::fs::remove_file(r.0.join("apps/website/frontend/src/canvas/mount.rs")).unwrap();
+    std::fs::remove_file(r.0.join("apps/frontend/src/canvas/mount.rs")).unwrap();
     let all = r.expect(
         1,
         &[
-            "FAIL: engine-layers walked 0 .rs file(s) under apps/website/frontend/src",
+            "FAIL: engine-layers walked 0 .rs file(s) under apps/frontend/src",
             "ENGINE-LAYERS: FAIL (no inputs)",
         ],
     );
     assert!(!all.contains("ENGINE-LAYERS: PASS"), "{all}");
 
     let r = Repo::new("rule6-no-manifest");
-    std::fs::remove_file(r.0.join("apps/website/frontend/Cargo.toml")).unwrap();
+    std::fs::remove_file(r.0.join("apps/frontend/Cargo.toml")).unwrap();
     let (code, out) = super::run(&r.0);
     let all = out.join("\n");
     assert_eq!(code, 2, "{all}");

@@ -24,7 +24,6 @@ returns 2. Each step kind runs as follows:
 | `Cmd { line }` | the line, unless silent | `split_cmd` splits a leading `cd <dir> && ` off and spawns the rest by whitespace, no shell |
 | `Xtask { echo, run }` | the echo, unless silent | `run()` in process; an `Err` prints `xtask: <error chain>` and counts as 1 |
 | `Native { run }` | nothing | `run()` in process |
-| `Shell { script }` | the script, unless silent | `/bin/sh -c <script>`; `ignore_err` turns a failure into 0 |
 
 `spawn` runs a child in the checkout (or the `cd` folder under it) with inherited stdio, sets
 `PWD` to that folder, strips the variables `cargo run` injects (`CARGO_RUN_INJECTED` and every

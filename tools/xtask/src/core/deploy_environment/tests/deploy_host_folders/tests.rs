@@ -1,7 +1,7 @@
 use super::*;
 use std::path::Path;
 
-const PATH: &str = "/home/deploy/checkout/tools/xtask/deploy/deploy.env";
+const PATH: &str = "/home/deploy/checkout/deploy/deploy.env";
 
 fn environment(file: &str) -> DeployEnvironment {
     DeployEnvironment::from_text(Path::new(PATH), Some(file), []).expect("parses")

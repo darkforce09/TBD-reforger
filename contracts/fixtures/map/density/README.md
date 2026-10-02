@@ -14,7 +14,7 @@ contracts/fixtures/map/density/
 ## Format
 
 - Encoding: `density-fixture.bin` is one binary `TBDD` tile as
-  `apps/website/map-engine/src/io/density/` encodes it (16916 bytes at the current cell size), a
+  `legacy/map_engine/src/io/density/` encodes it (16916 bytes at the current cell size), a
   plain git blob rather than LFS. `density-fixture.json` is UTF-8 JSON with `description`,
   `worldSizeM`, `chunk` (`cx`, `cy`), `treePositions` and `rockPositions` (`x`, `y` in world
   metres), `expectedCorners` (sparse `i`, `j`, `tree`, `rock` counts) and `expectedFileBytes`.
@@ -42,7 +42,7 @@ contracts/fixtures/map/density/
 
 ## Boundaries
 
-- Depends on: the `TBDD` encoder and decoder in `apps/website/map-engine/src/io/density/` and the
+- Depends on: the `TBDD` encoder and decoder in `legacy/map_engine/src/io/density/` and the
   density cell size of the world export pipeline.
 - Used by: the map-object golden gate and the developer tools' tests above.
 - Rules: the two files agree byte for byte through the encoder (gate S13 of

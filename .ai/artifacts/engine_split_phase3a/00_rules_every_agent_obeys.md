@@ -105,13 +105,13 @@ and every extra cargo invocation is minutes of wall clock on a locked target dir
 
 ## `state/operations/` is wasm32-only — the native suites cannot see it
 
-`apps/website/frontend/src/editor/state/operations.rs` carries
-`#![cfg(target_arch = "wasm32")]`, so **`cargo test -p website-frontend` never compiles that
+`apps/frontend/src/editor/state/operations.rs` carries
+`#![cfg(target_arch = "wasm32")]`, so **`cargo test -p frontend` never compiles that
 directory**. Any brief whose primary artifact lives there is committed untypechecked unless you
 also run:
 
 ```
-CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p website-frontend
+CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p frontend
 CARGO_TARGET_DIR=target-container cargo fmt --all -- --check
 ```
 

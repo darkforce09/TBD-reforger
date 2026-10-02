@@ -18,34 +18,34 @@
 //!
 //! ── WHAT THIS DEFENDS ────────────────────────────────────────────────────────────────────────
 //!
-//! `website-graphics-engine` is only a renderer: device, pipelines, shaders, draw batching, text
+//! `graphics_engine` is only a renderer: device, pipelines, shaders, draw batching, text
 //! packing, the rAF pump. The map domain (terrain, symbology, spatial, streaming, the mission
-//! document) lives in `website-map-engine`. The dependency arrow is one-way:
+//! document) lives in `map_engine`. The dependency arrow is one-way:
 //!
 //! ```text
-//! frontend ──► website-map-engine ──► website-graphics-engine
+//! frontend ──► map_engine ──► graphics_engine
 //! ```
 //!
-//! Nothing in the compiler enforces that: `website-graphics-engine` could add a dependency edge
-//! back to `website-map-engine` and everything would still build. These rules are the wall.
+//! Nothing in the compiler enforces that: `graphics_engine` could add a dependency edge
+//! back to `map_engine` and everything would still build. These rules are the wall.
 //!
 //! | # | rule | what rots without it |
 //! |---|------|----------------------|
-//! | 1 | `apps/website/graphics-engine/**` may not import `website_map_engine` | the arrow turns into a cycle |
+//! | 1 | `legacy/graphics_engine/**` may not import `map_engine` | the arrow turns into a cycle |
 //! | 2 | no `terrain` / `symbology` / `mission` / `orbat` / `arma` in a declared name there | "pure renderer" becomes a claim in a README rather than a property of the code |
-//! | 3a | only one enumerated file of `apps/website/map-engine/src` names `website_graphics_engine::frame` | the packet boundary scatters into imports across the crate |
-//! | 3b | no module of `apps/website/map-engine/src` names `website_graphics_engine::{device, pipeline, shaders, r#loop}` beyond the pin | GPU resource creation drifts back to the caller one import at a time |
-//! | 4 | `apps/website/map-engine/src/data/scenario/**` imports nothing outside itself | the `website-api` build stops being thin |
-//! | 5 | no `web_sys` / `leptos` / `wasm_bindgen` under `apps/website/map-engine/src/editing` | editing logic grows a browser and stops being testable without one |
-//! | 6 | `apps/website/frontend/**` may not import `website_graphics_engine` | the frontend drives the GPU directly and the middle crate becomes optional |
+//! | 3a | only one enumerated file of `legacy/map_engine/src` names `graphics_engine::frame` | the packet boundary scatters into imports across the crate |
+//! | 3b | no module of `legacy/map_engine/src` names `graphics_engine::{device, pipeline, shaders, r#loop}` beyond the pin | GPU resource creation drifts back to the caller one import at a time |
+//! | 4 | `legacy/map_engine/src/data/scenario/**` imports nothing outside itself | the `api` build stops being thin |
+//! | 5 | no `web_sys` / `leptos` / `wasm_bindgen` under `legacy/map_engine/src/editing` | editing logic grows a browser and stops being testable without one |
+//! | 6 | `apps/frontend/**` may not import `graphics_engine` | the frontend drives the GPU directly and the middle crate becomes optional |
 //! | 7 | `data/**` names no world module and `world/**` names no document module | the static world and the authored document fuse into one |
 //!
 //! ── RULES 1 AND 6 — A MANIFEST ARM BESIDE THE SOURCE ARM ─────────────────────────────────────
 //!
-//! A renamed dependency (`r = { package = "website-map-engine" }`) makes every `use r::…` invisible
+//! A renamed dependency (`r = { package = "map_engine" }`) makes every `use r::…` invisible
 //! to a source matcher, so both rules also read the crate's `Cargo.toml` for the package name; a
 //! `#` comment line naming the other crate is prose, not an edge. Rule 6's source arm matches the
-//! two shapes that are an import — a `website_graphics_engine::` path and an `extern crate` —
+//! two shapes that are an import — a `graphics_engine::` path and an `extern crate` —
 //! because the frontend's prose names the renderer by its Cargo spelling while describing the
 //! boundary it respects, and a gate that turns correct comments red teaches people to delete them.
 //!
@@ -73,7 +73,7 @@
 //! and a directory rule cannot. `frame/mod.rs`'s own prose does not spell the path, so the pinned
 //! count is exactly the size of the interface list.
 //!
-//! Rule 3b's five pinned sites share one cause: `RenderEngine` is defined in `website-map-engine`
+//! Rule 3b's five pinned sites share one cause: `RenderEngine` is defined in `map_engine`
 //! (`frame/engine.rs`) and holds every GPU resource the renderer owns. `impl FrameTarget for
 //! RenderEngine` must live in the crate that defines the type (E0116) and `#[wasm_bindgen]`
 //! refuses trait impls, so `frame/pump.rs` names `r#loop` and `frame/mod.rs` documents the
@@ -86,13 +86,13 @@
 //!
 //! ── RULE 4 — THE MISSION COMPILER THE SERVER LINKS ───────────────────────────────────────────
 //!
-//! `website-api` links `website-map-engine` at the `scenario` feature alone, which is why its
+//! `api` links `map_engine` at the `scenario` feature alone, which is why its
 //! dependency tree carries no `wgpu`, `png`, `rkyv` or `flate2`. One import of
 //! `crate::streaming` inside `data/scenario/` would drag that whole tier into an HTTP server.
 //! "Outside itself" is enumerable because the crate declares exactly eleven top-level modules
 //! (`camera`, `data`, `diagnostics`, `doll`, `editing`, `frame`, `io`, `overlay`, `spatial`,
 //! `streaming`, `world`): ten of them are outside `data`, `data::store` is the eleventh's other
-//! half, and `website_graphics_engine` is outside the crate. That list is the matcher.
+//! half, and `graphics_engine` is outside the crate. That list is the matcher.
 //!
 //! Two test sites are pinned: both are `#[cfg(feature = "store")]` and build a real
 //! `MissionDocCore` to push through the compiler, and the `scenario` tier compiles neither. A third
@@ -100,7 +100,7 @@
 //!
 //! ── RULE 5 — ONE DIRECTORY, HARD ZERO ────────────────────────────────────────────────────────
 //!
-//! `website-map-engine` is a wasm crate whose streaming host, readback diagnostics, doll renderer
+//! `map_engine` is a wasm crate whose streaming host, readback diagnostics, doll renderer
 //! and frame code reach the browser on purpose, so "no DOM in the map engine" taken crate-wide
 //! could never hold. `editing/` holds the Mission Creator's decisions — tool state machines, the
 //! undo drive, the command formatting — and every one of them must be answerable by `cargo test`
@@ -159,11 +159,11 @@ pub use ui_framework_ban::{
 /// One engine-layer rule of the report.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EngineLayerRule {
-    /// Rule 1: `website-graphics-engine` neither imports nor depends on `website-map-engine`.
+    /// Rule 1: `graphics_engine` neither imports nor depends on `map_engine`.
     GraphicsEngineImportsNoMapEngine,
-    /// Rule 2: no map noun in a name declared under `website-graphics-engine`.
+    /// Rule 2: no map noun in a name declared under `graphics_engine`.
     GraphicsEngineDeclaresNoMapNoun,
-    /// Rule 3a: only the enumerated packet boundary names `website_graphics_engine::frame`.
+    /// Rule 3a: only the enumerated packet boundary names `graphics_engine::frame`.
     FrameVocabularyStaysAtThePacketBoundary,
     /// Rule 3b: GPU-resource modules of the renderer are named only at the pinned sites.
     GpuResourceModulesStayPinned,
@@ -171,7 +171,7 @@ pub enum EngineLayerRule {
     ScenarioTreeIsSelfContained,
     /// Rule 5: no browser binding or UI framework named under `editing/`.
     EditingTreeNamesNoBrowser,
-    /// Rule 6: the frontend neither imports nor depends on `website-graphics-engine`.
+    /// Rule 6: the frontend neither imports nor depends on `graphics_engine`.
     FrontendImportsNoRenderer,
     /// Rule 7: `data/` names no world module and `world/` names no document module.
     WorldAndDocumentShareNothing,

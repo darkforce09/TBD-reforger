@@ -38,7 +38,7 @@ direct_join::run(run_id)
 
 Local probes are soft: a missing manifest reads `unknown`, a missing symlink `missing` and a failed
 ping `fail`. The host, `TBD_SSH_PASS` and `TBD_PROFILE_DIR` (default `/home/<user>/tbd/profile`)
-come from `tools/xtask/deploy/deploy.env` through `crate::core::deploy_environment`: the file
+come from `deploy/deploy.env` through `crate::core::deploy_environment`: the file
 decides every key it assigns and the environment fills the rest. With no host, or a file that does
 not load, the remote, ping and A2S probes record `skipped`, one stderr line names the file, and the
 command still exits 0. The remote probe reports the state of `tbd-reforger.service`, the UDP

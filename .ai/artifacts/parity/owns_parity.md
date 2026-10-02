@@ -26,7 +26,7 @@ its head and nothing on disk.
   hits actually were**.
 - `NEW:` marks a file the ticket creates. A new file collides with nothing, which materially
   improves packing.
-- Frontend paths abbreviate `apps/website/frontend/src/` as **`FE/`** in the *Why* column only; the
+- Frontend paths abbreviate `apps/frontend/src/` as **`FE/`** in the *Why* column only; the
   `owns` column is always written out in full.
 
 ### The one thing this file does differently: everything is POST-SPLIT
@@ -55,9 +55,9 @@ silently breaks the packing, and this program has five confirmed errors of exact
 One structural fact worth pinning before the tables: **`virtual_tree` has exactly one call site.**
 
 ```
-$ grep -rn 'virtual_tree(' apps/website/frontend/src --include='*.rs'
-apps/website/frontend/src/eden_chrome.rs:1711    ← the definition
-apps/website/frontend/src/eden_chrome.rs:2844    ← the only call, inside DockLeft
+$ grep -rn 'virtual_tree(' apps/frontend/src --include='*.rs'
+apps/frontend/src/eden_chrome.rs:1711    ← the definition
+apps/frontend/src/eden_chrome.rs:2844    ← the only call, inside DockLeft
 ```
 
 So a per-row control (a layer eye, a lock glyph) is an `eden_tree.rs` edit and **not** an
@@ -66,7 +66,7 @@ distinction moves two tickets out of collision with each other.
 
 ### `main.rs` — the collision the file graph hides, restated
 
-`apps/website/frontend/src/main.rs` carries **57** module declarations
+`apps/frontend/src/main.rs` carries **57** module declarations
 (`grep -c '^mod \|^pub mod ' main.rs` → 57). Rust has no implicit module discovery, so **every
 ticket creating a new module adds a line there.** The sibling's recommendation — have the wave-0
 split ticket pre-declare empty stubs — applies to my new modules too, and §5 assumes it. Where it
@@ -79,7 +79,7 @@ calls it.**
 
 ```
 $ grep -rn 'add_editor_layer\|rename_editor_layer\|reparent_editor_layer\|remove_editor_layer' \
-    apps/website/frontend/src crates/ --include='*.rs' | grep -v 'doc/store.rs'
+    apps/frontend/src crates/ --include='*.rs' | grep -v 'doc/store.rs'
 outliner.rs:131          ← doc comment
 main.rs:30               ← doc comment
 editor_ops.rs:842        ← doc comment
@@ -115,7 +115,7 @@ ticket and lives in §3). **N2 is already derived** — see the note below the t
 
 #### N1 — Mission presentation: briefing text + thumbnail (`SCN-OVERVIEW-TEXT`, `SCN-PICTURE`)
 ```
-apps/website/frontend/src/eden_settings.rs; apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/create_mission_dialog.rs
+apps/frontend/src/eden_settings.rs; apps/frontend/src/eden_top_strip.rs; apps/frontend/src/create_mission_dialog.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -130,13 +130,13 @@ row in the sweep.
 
 > **Product call the operator should make before this is filed.** If briefing is authored in the
 > **Mission Library dossier** instead of the editor, `owns` becomes
-> `apps/website/frontend/src/mission_overview.rs` (1,412 lines) alone and the ticket becomes
+> `apps/frontend/src/mission_overview.rs` (1,412 lines) alone and the ticket becomes
 > **collision-free against the entire program**. The editor-side design above collides with three
 > tickets on `eden_top_strip.rs`. Both are defensible; the library version packs better.
 
 #### N3 — Editor layer flags: visibility + transform lock (`LYR-ENABLE-VIS`, `LYR-ENABLE-XFORM`)
 ```
-crates/map-engine-core/src/doc/store.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/outliner.rs; apps/website/frontend/src/eden_tree.rs
+crates/map-engine-core/src/doc/store.rs; apps/frontend/src/editor_ops.rs; apps/frontend/src/outliner.rs; apps/frontend/src/eden_tree.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -152,14 +152,14 @@ mask and keeps this ticket out of a 6,302-line file.
 
 #### N9 — Cleanup: dead `view_distance` / `thermals` DTO fields
 ```
-apps/website/frontend/src/dto.rs; apps/website/frontend/src/editor_ops.rs
+apps/frontend/src/dto.rs; apps/frontend/src/editor_ops.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
 | `FE/dto.rs` | `MissionEnv.view_distance` `:991`, `.thermals` `:992`, and their `Default` arms `:1007-1008`. No writer since T-193 (`b30f5490`) | **high** |
 | `FE/editor_ops.rs` | Still parsed in `read_env` — `:205-208` (`viewDistance`, default 1600) and `:209-212` (`thermals`) | **high** |
 
-`grep -rn 'view_distance\|thermals' apps/website/frontend/src --include='*.rs'` → **14 hits, all
+`grep -rn 'view_distance\|thermals' apps/frontend/src --include='*.rs'` → **14 hits, all
 read.** Four are the declarations/defaults above, two are the parse, and the remaining eight are in
 `eden_chrome.rs` (`:206`, `:218`, `:220`, `:289`, `:4599`, `:4612`, `:4624`, `:4825`) — **every one
 is a doc comment or a test asserting the keys are NOT authored.** The `keys_nothing_reads_are_not_authored`
@@ -175,7 +175,7 @@ and the three ids `CMT-TITLE` / `CMT-TOOLTIP` / `CMT-POSITION` are exactly its c
 T-651; translated to post-split its `owns` is:
 
 ```
-crates/map-engine-core/src/doc/store.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/outliner.rs; apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/mission_editor.rs
+crates/map-engine-core/src/doc/store.rs; apps/frontend/src/editor_ops.rs; apps/frontend/src/outliner.rs; apps/frontend/src/eden_dock_right.rs; apps/frontend/src/mission_editor.rs
 ```
 
 The sibling's `eden_chrome.rs` row was justified as *"RMB-empty → Place Comment; the context menu
@@ -192,7 +192,7 @@ those are marked **⇄ merge** and derived once, here, in post-split terms.
 
 #### P-3 — Right-click context menu *(the unblocking slice)*
 ```
-apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/context_menu.rs; apps/website/frontend/src/main.rs
+apps/frontend/src/mission_editor.rs; apps/frontend/src/context_menu.rs; apps/frontend/src/main.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -206,7 +206,7 @@ would collide P-3 with the docks for no reason, and P-3 gates six other tickets 
 
 #### P-6 — Outliner layer authoring (5 ids)
 ```
-apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/eden_dock_left.rs; apps/website/frontend/src/eden_tree.rs
+apps/frontend/src/editor_ops.rs; apps/frontend/src/eden_dock_left.rs; apps/frontend/src/eden_tree.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -222,7 +222,7 @@ value-per-line available, and not claiming `store.rs` keeps it off T-651's and N
 
 #### P-10 — Clipboard completion: `Ctrl+X` cut, `Ctrl+Shift+V` paste-at-original
 ```
-apps/website/frontend/src/mission_editor.rs
+apps/frontend/src/mission_editor.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -233,7 +233,7 @@ of only three tickets in the combined program that touch exactly one file.
 
 #### P-11 — Scale readout in the toolbelt (`STATUS-ZOOM-001`)
 ```
-apps/website/frontend/src/eden_toolbelt.rs; apps/website/frontend/src/mission_editor.rs
+apps/frontend/src/eden_toolbelt.rs; apps/frontend/src/mission_editor.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -245,7 +245,7 @@ the sweep implies. Worth stating; the sweep's *"one `<span>`"* is the toolbelt h
 
 #### P-9 — Backspace collision + hide-UI (`KEY-HIDE-UI-001`)
 ```
-apps/website/frontend/src/mission_editor.rs
+apps/frontend/src/mission_editor.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -255,7 +255,7 @@ apps/website/frontend/src/mission_editor.rs
 
 #### P-1 / P-2 / P-7 — Placement + Attributes entry points ⇄ **merge with T-647**
 ```
-apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/editor_ops.rs
+apps/frontend/src/mission_editor.rs; apps/frontend/src/editor_ops.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -268,7 +268,7 @@ the map means". **File one ticket, not two.** T-647 already carries `PLACE-003`;
 
 #### P-5 — Select All in view (`SEL-ALL-001`) ⇄ **merge with T-649**
 ```
-apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/select_tool.rs
+apps/frontend/src/mission_editor.rs; apps/frontend/src/select_tool.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -281,7 +281,7 @@ nothing.
 
 #### P-4 — Map-surface grouping: `Ctrl` + drag character→character (`CONN-GROUP-001` map half)
 ```
-apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/editor_ops.rs
+apps/frontend/src/mission_editor.rs; apps/frontend/src/editor_ops.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -295,7 +295,7 @@ files. **Note the sibling records T-647 as superseding T-072** — so P-4 folds 
 
 #### P-8 — Snapping grids: translation grid toggle + step (`KEY-GRID-001`) ⇄ **merge with T-648**
 ```
-apps/website/frontend/src/select_tool.rs; apps/website/frontend/src/mission_editor.rs
+apps/frontend/src/select_tool.rs; apps/frontend/src/mission_editor.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -309,7 +309,7 @@ word-boundary hits are all `let snap = read_snapshot()`.
 
 #### P-12 — `Ctrl+F` focuses asset search *(no `interactions.md` id)*
 ```
-apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/eden_dock_right.rs
+apps/frontend/src/mission_editor.rs; apps/frontend/src/eden_dock_right.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -334,7 +334,7 @@ label}`. Marker *style* (size/rotation/shape/brush/colour/alpha) is a `$defs/mar
 workbench, §4.
 
 ```
-apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/mission_editor.rs; crates/map-engine-core/src/doc/store.rs; crates/map-engine-render/src/draw_order.rs; crates/map-engine-render/src/engine.rs
+apps/frontend/src/eden_dock_right.rs; apps/frontend/src/editor_ops.rs; apps/frontend/src/mission_editor.rs; crates/map-engine-core/src/doc/store.rs; crates/map-engine-render/src/draw_order.rs; crates/map-engine-render/src/engine.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -357,7 +357,7 @@ makes half of it cross-boundary.** See §1 correction 2.
 
 **T-076a — crew authoring UI (factory-safe)**
 ```
-apps/website/frontend/src/eden_vehicles_panel.rs; apps/website/frontend/src/editor_ops.rs; crates/map-engine-core/src/doc/store.rs; apps/website/frontend/src/eden_dock_right.rs
+apps/frontend/src/eden_vehicles_panel.rs; apps/frontend/src/editor_ops.rs; crates/map-engine-core/src/doc/store.rs; apps/frontend/src/eden_dock_right.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -370,11 +370,11 @@ apps/website/frontend/src/eden_vehicles_panel.rs; apps/website/frontend/src/edit
 
 ### T-077 — Alt + empty vehicle (`PLACE-CREW-001`)
 ```
-apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/editor_ops.rs
+apps/frontend/src/mission_editor.rs; apps/frontend/src/editor_ops.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
-| `FE/mission_editor.rs` | **`Alt` is genuinely free.** `grep -rnw 'alt_key' apps/website/frontend/src --include='*.rs'` → **3 hits, all read**: `mission_history.rs:490` (an undo guard that *excludes* alt), `mission_editor.rs:1020` and `:1023` (the same exclusion on Ctrl+C / Ctrl+V). **Not one is a placement modifier.** The flag is read where the place is consumed, `onpointerup` `:1644` | **high** |
+| `FE/mission_editor.rs` | **`Alt` is genuinely free.** `grep -rnw 'alt_key' apps/frontend/src --include='*.rs'` → **3 hits, all read**: `mission_history.rs:490` (an undo guard that *excludes* alt), `mission_editor.rs:1020` and `:1023` (the same exclusion on Ctrl+C / Ctrl+V). **Not one is a placement modifier.** The flag is read where the place is consumed, `onpointerup` `:1644` | **high** |
 | `FE/editor_ops.rs` | A with/without-crew flag threaded `begin_place_vehicle` `:1044` → `place_at` `:2191` (the `take()` is at `:2204`) | **high** |
 
 **Depends on T-076a** — there must be a crew to suppress. **And the sibling records T-647 as
@@ -389,7 +389,7 @@ one modifier.
 ticket. Post-split, T-650's `owns` becomes:
 
 ```
-apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/editor_ops.rs; crates/map-engine-core/src/doc/store.rs
+apps/frontend/src/eden_dock_right.rs; apps/frontend/src/editor_ops.rs; crates/map-engine-core/src/doc/store.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -402,7 +402,7 @@ apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/editor_o
 > and a category are **user-scoped rows, not mission-document state.** If the operator accepts that
 > framing, T-650 loses `store.rs` and gains
 > `NEW: apps/website/api/src/handlers/compositions.rs` + `NEW: apps/website/api/migrations/<n>_compositions.sql`
-> + `apps/website/api/src/models/mod.rs` + `apps/website/frontend/src/dto.rs`. That version is
+> + `apps/website/api/src/models/mod.rs` + `apps/frontend/src/dto.rs`. That version is
 > **better for packing** (two of four paths are new files) and is still `claude-code` — the Rust
 > workspace, not `packages/` or `apps/mod/`. Graded **low** either way; this is a design decision,
 > not a search result.
@@ -414,7 +414,7 @@ Split per §5.3 of that sweep. **T-079b is excluded (§4); T-079c cannot be size
 
 **T-079a — triggers (`RIGHT-MODE-003`, `CONN-TRG-OWNER-001`)**
 ```
-apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/eden_zones.rs; apps/website/frontend/src/editor_ops.rs; crates/map-engine-core/src/doc/store.rs
+apps/frontend/src/eden_dock_right.rs; apps/frontend/src/eden_zones.rs; apps/frontend/src/editor_ops.rs; crates/map-engine-core/src/doc/store.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -427,7 +427,7 @@ apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/eden_zon
 
 **T-079c — systems / modules (`RIGHT-MODE-005`)**
 ```
-apps/website/frontend/src/eden_dock_right.rs
+apps/frontend/src/eden_dock_right.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -439,7 +439,7 @@ tickets are queued for.
 
 **T-079d — connection graph (`CONN-START-001`, `CONN-SYNC-001`, `CONN-DEL-001`, `ACTION-FORM-001`, `CTX-FORMATION-001`)**
 ```
-apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/context_menu.rs; crates/map-engine-core/src/doc/store.rs; crates/map-engine-render/src/draw_order.rs
+apps/frontend/src/mission_editor.rs; apps/frontend/src/editor_ops.rs; apps/frontend/src/context_menu.rs; crates/map-engine-core/src/doc/store.rs; crates/map-engine-render/src/draw_order.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -453,7 +453,7 @@ apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/editor_op
 
 ### T-082 — Full attribute fields — **scoped to build-class (a), or it absorbs 20 workbench ids**
 ```
-apps/website/frontend/src/attributes.rs; apps/website/frontend/src/editor_ops.rs
+apps/frontend/src/attributes.rs; apps/frontend/src/editor_ops.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -471,7 +471,7 @@ apps/website/frontend/src/attributes.rs; apps/website/frontend/src/editor_ops.rs
 
 ### T-084 — Classname / mod prefix search — the cheapest ratio in the sweep
 ```
-apps/website/frontend/src/asset_catalog.rs; apps/website/frontend/src/eden_dock_right.rs
+apps/frontend/src/asset_catalog.rs; apps/frontend/src/eden_dock_right.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -479,7 +479,7 @@ apps/website/frontend/src/asset_catalog.rs; apps/website/frontend/src/eden_dock_
 | `FE/eden_dock_right.rs` *(post-split)* | Three call sites, all inside `DockRight`: `:3163` (Objects), `:3218` (Factions), `:3306` (Vehicles); the two `type="search"` inputs are `:3112` (shared Factions/Objects, signals `search` `:2990` / `object_search` `:3012`) and `:3253` (`vehicle_search` `:3009`). Placeholder/hint copy changes here | **medium** |
 
 **Fold P-12 (`Ctrl+F` focuses asset search) in** — same file, same concern. That adds
-`apps/website/frontend/src/mission_editor.rs` for the `preventDefault`, and T-084 becomes three
+`apps/frontend/src/mission_editor.rs` for the `preventDefault`, and T-084 becomes three
 files. Four ids plus the highest-frequency Eden shortcut, in one ticket.
 
 ---
@@ -551,18 +551,18 @@ A file with *n* claimants forces at least *n* waves — it admits one agent per 
 
 | File | Claimants | Share | Sibling | Mine |
 |---|---|---|---|---|
-| **`apps/website/frontend/src/mission_editor.rs`** | **17** | **40%** | 11 | 6 |
-| **`apps/website/frontend/src/editor_ops.rs`** | **16** | 38% | 8 | 8 |
-| `apps/website/frontend/src/eden_dock_right.rs` *(post-split)* | 7 | 17% | 3 | 4 |
+| **`apps/frontend/src/mission_editor.rs`** | **17** | **40%** | 11 | 6 |
+| **`apps/frontend/src/editor_ops.rs`** | **16** | 38% | 8 | 8 |
+| `apps/frontend/src/eden_dock_right.rs` *(post-split)* | 7 | 17% | 3 | 4 |
 | `crates/map-engine-core/src/doc/store.rs` | 7 | 17% | 2 | 5 |
-| `apps/website/frontend/src/eden_top_strip.rs` *(post-split)* | 5 | 12% | 4 | 1 |
-| `apps/website/frontend/src/eden_toolbelt.rs` *(post-split)* | 5 | 12% | 4 | 1 |
-| `apps/website/frontend/src/main.rs` *(one `mod` line each)* | 5 | 12% | 4 | 1 |
-| `apps/website/frontend/src/select_tool.rs` | 4 | 10% | 4 | 0 |
+| `apps/frontend/src/eden_top_strip.rs` *(post-split)* | 5 | 12% | 4 | 1 |
+| `apps/frontend/src/eden_toolbelt.rs` *(post-split)* | 5 | 12% | 4 | 1 |
+| `apps/frontend/src/main.rs` *(one `mod` line each)* | 5 | 12% | 4 | 1 |
+| `apps/frontend/src/select_tool.rs` | 4 | 10% | 4 | 0 |
 | `crates/map-engine-core/src/mission/validate.rs` *(new)* | 4 | 10% | 4 | 0 |
-| `apps/website/frontend/src/eden_tree.rs` *(post-split)* | 3 | 7% | 1 | 2 |
-| `apps/website/frontend/src/eden_dock_left.rs` *(post-split)* | 3 | 7% | 2 | 1 |
-| `apps/website/frontend/src/context_menu.rs` *(new)* | 3 | 7% | 1 | 2 |
+| `apps/frontend/src/eden_tree.rs` *(post-split)* | 3 | 7% | 1 | 2 |
+| `apps/frontend/src/eden_dock_left.rs` *(post-split)* | 3 | 7% | 2 | 1 |
+| `apps/frontend/src/context_menu.rs` *(new)* | 3 | 7% | 1 | 2 |
 | 8 files at 2 | `attributes` · `outliner` · `asset_catalog` · `dem_vectors` · `dem/sample` · `los_tool` · `engine` · `draw_order` | — | — | — |
 | 17 files at 1 | incl. `eden_layout` · `eden_zones` · `eden_settings` · `eden_vehicles_panel` · `dto` · `ui` | — | — | — |
 
@@ -654,7 +654,7 @@ After  the split (sibling, 27 tickets) : mission_editor.rs     11 claimants → 
 After  the split (combined, 42 tickets): mission_editor.rs     17 claimants → 17 waves (+ wave 0)
 ```
 
-**`apps/website/frontend/src/mission_editor.rs` is the new binding constraint — 17 of 42
+**`apps/frontend/src/mission_editor.rs` is the new binding constraint — 17 of 42
 code-bearing tickets, 40%.** The sibling predicted this file would inherit the bottleneck the
 moment `eden_chrome.rs` stopped being it, and adding the parity program made it worse, not better:
 six of my fourteen rows claim it, because **every map gesture and every keyboard binding in the
@@ -719,21 +719,21 @@ paths.** Wave numbers deliberately omitted; §5.3 has them. The sibling's append
 T-631…T-660 pre-split — **where the two disagree, this one is post-split and wins.**
 
 ```
-T-630.5	apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/eden_layout.rs; apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/eden_env.rs; apps/website/frontend/src/eden_tree.rs; apps/website/frontend/src/eden_dock_left.rs; apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/eden_vehicles_panel.rs; apps/website/frontend/src/eden_zones.rs; apps/website/frontend/src/eden_toolbelt.rs; apps/website/frontend/src/eden_settings.rs; apps/website/frontend/src/main.rs
-W1-UNBLOCK	apps/website/frontend/src/mission_editor.rs
-N1	apps/website/frontend/src/eden_settings.rs; apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/create_mission_dialog.rs
-N3	crates/map-engine-core/src/doc/store.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/outliner.rs; apps/website/frontend/src/eden_tree.rs
-N9	apps/website/frontend/src/dto.rs; apps/website/frontend/src/editor_ops.rs
-P-3	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/context_menu.rs
-P-6	apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/eden_dock_left.rs; apps/website/frontend/src/eden_tree.rs
-P-10	apps/website/frontend/src/mission_editor.rs
-P-11	apps/website/frontend/src/eden_toolbelt.rs; apps/website/frontend/src/mission_editor.rs
-T-069	apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/mission_editor.rs; crates/map-engine-core/src/doc/store.rs; crates/map-engine-render/src/draw_order.rs; crates/map-engine-render/src/engine.rs
-T-076a	apps/website/frontend/src/eden_vehicles_panel.rs; apps/website/frontend/src/editor_ops.rs; crates/map-engine-core/src/doc/store.rs; apps/website/frontend/src/eden_dock_right.rs
-T-079a	apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/eden_zones.rs; apps/website/frontend/src/editor_ops.rs; crates/map-engine-core/src/doc/store.rs
-T-079d	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/context_menu.rs; crates/map-engine-core/src/doc/store.rs; crates/map-engine-render/src/draw_order.rs
-T-082	apps/website/frontend/src/attributes.rs; apps/website/frontend/src/editor_ops.rs
-T-084	apps/website/frontend/src/asset_catalog.rs; apps/website/frontend/src/eden_dock_right.rs
+T-630.5	apps/frontend/src/eden_chrome.rs; apps/frontend/src/eden_layout.rs; apps/frontend/src/eden_top_strip.rs; apps/frontend/src/eden_env.rs; apps/frontend/src/eden_tree.rs; apps/frontend/src/eden_dock_left.rs; apps/frontend/src/eden_dock_right.rs; apps/frontend/src/eden_vehicles_panel.rs; apps/frontend/src/eden_zones.rs; apps/frontend/src/eden_toolbelt.rs; apps/frontend/src/eden_settings.rs; apps/frontend/src/main.rs
+W1-UNBLOCK	apps/frontend/src/mission_editor.rs
+N1	apps/frontend/src/eden_settings.rs; apps/frontend/src/eden_top_strip.rs; apps/frontend/src/create_mission_dialog.rs
+N3	crates/map-engine-core/src/doc/store.rs; apps/frontend/src/editor_ops.rs; apps/frontend/src/outliner.rs; apps/frontend/src/eden_tree.rs
+N9	apps/frontend/src/dto.rs; apps/frontend/src/editor_ops.rs
+P-3	apps/frontend/src/mission_editor.rs; apps/frontend/src/context_menu.rs
+P-6	apps/frontend/src/editor_ops.rs; apps/frontend/src/eden_dock_left.rs; apps/frontend/src/eden_tree.rs
+P-10	apps/frontend/src/mission_editor.rs
+P-11	apps/frontend/src/eden_toolbelt.rs; apps/frontend/src/mission_editor.rs
+T-069	apps/frontend/src/eden_dock_right.rs; apps/frontend/src/editor_ops.rs; apps/frontend/src/mission_editor.rs; crates/map-engine-core/src/doc/store.rs; crates/map-engine-render/src/draw_order.rs; crates/map-engine-render/src/engine.rs
+T-076a	apps/frontend/src/eden_vehicles_panel.rs; apps/frontend/src/editor_ops.rs; crates/map-engine-core/src/doc/store.rs; apps/frontend/src/eden_dock_right.rs
+T-079a	apps/frontend/src/eden_dock_right.rs; apps/frontend/src/eden_zones.rs; apps/frontend/src/editor_ops.rs; crates/map-engine-core/src/doc/store.rs
+T-079d	apps/frontend/src/mission_editor.rs; apps/frontend/src/editor_ops.rs; apps/frontend/src/context_menu.rs; crates/map-engine-core/src/doc/store.rs; crates/map-engine-render/src/draw_order.rs
+T-082	apps/frontend/src/attributes.rs; apps/frontend/src/editor_ops.rs
+T-084	apps/frontend/src/asset_catalog.rs; apps/frontend/src/eden_dock_right.rs
 ```
 
 **Empty deliberately** — `T-213` (merged into T-069), `T-077` / `T-072` (superseded by T-647),
@@ -744,25 +744,25 @@ T-084	apps/website/frontend/src/asset_catalog.rs; apps/website/frontend/src/eden
 change; the rest are unchanged from `owns_and_waves.md`'s appendix):
 
 ```
-T-632	apps/website/frontend/src/eden_dock_right.rs
-T-633	apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/ui.rs
-T-634	apps/website/frontend/src/eden_top_strip.rs
-T-636	apps/website/frontend/src/eden_toolbelt.rs; apps/website/frontend/src/mission_editor.rs
-T-637	apps/website/frontend/src/eden_dock_left.rs; apps/website/frontend/src/eden_tree.rs
-T-638	apps/website/frontend/src/eden_layout.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/select_tool.rs
-T-641b	apps/website/frontend/src/eden_toolbelt.rs
-T-642	apps/website/frontend/src/eden_toolbelt.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/select_tool.rs; apps/website/frontend/src/ruler_tool.rs
-T-643	apps/website/frontend/src/eden_toolbelt.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/los_tool.rs; crates/map-engine-core/src/dem/sample.rs
-T-645	apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/place_helpers.rs
-T-646	apps/website/frontend/src/asset_catalog.rs; apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/editor_ops.rs
-T-650	apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/editor_ops.rs; crates/map-engine-core/src/doc/store.rs
-T-651	crates/map-engine-core/src/doc/store.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/outliner.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/context_menu.rs
-T-659	apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/editor_ops.rs
+T-632	apps/frontend/src/eden_dock_right.rs
+T-633	apps/frontend/src/eden_top_strip.rs; apps/frontend/src/ui.rs
+T-634	apps/frontend/src/eden_top_strip.rs
+T-636	apps/frontend/src/eden_toolbelt.rs; apps/frontend/src/mission_editor.rs
+T-637	apps/frontend/src/eden_dock_left.rs; apps/frontend/src/eden_tree.rs
+T-638	apps/frontend/src/eden_layout.rs; apps/frontend/src/mission_editor.rs; apps/frontend/src/select_tool.rs
+T-641b	apps/frontend/src/eden_toolbelt.rs
+T-642	apps/frontend/src/eden_toolbelt.rs; apps/frontend/src/mission_editor.rs; apps/frontend/src/select_tool.rs; apps/frontend/src/ruler_tool.rs
+T-643	apps/frontend/src/eden_toolbelt.rs; apps/frontend/src/mission_editor.rs; apps/frontend/src/los_tool.rs; crates/map-engine-core/src/dem/sample.rs
+T-645	apps/frontend/src/editor_ops.rs; apps/frontend/src/eden_top_strip.rs; apps/frontend/src/place_helpers.rs
+T-646	apps/frontend/src/asset_catalog.rs; apps/frontend/src/eden_dock_right.rs; apps/frontend/src/editor_ops.rs
+T-650	apps/frontend/src/eden_dock_right.rs; apps/frontend/src/editor_ops.rs; crates/map-engine-core/src/doc/store.rs
+T-651	crates/map-engine-core/src/doc/store.rs; apps/frontend/src/editor_ops.rs; apps/frontend/src/outliner.rs; apps/frontend/src/mission_editor.rs; apps/frontend/src/context_menu.rs
+T-659	apps/frontend/src/eden_top_strip.rs; apps/frontend/src/editor_ops.rs
 ```
 
 `main.rs` is **omitted from every row above** on the assumption that wave 0 pre-declares the five
 `mod` stubs (§5.4 item 1). If it does not, add
-`apps/website/frontend/src/main.rs` to P-3, T-642, T-643, T-645 and T-655 — and split wave 11.
+`apps/frontend/src/main.rs` to P-3, T-642, T-643, T-645 and T-655 — and split wave 11.
 
 ---
 

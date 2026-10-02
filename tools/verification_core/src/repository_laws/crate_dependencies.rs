@@ -8,7 +8,7 @@
 //! and that a test-only feature is declared, off by default and enabled only by the
 //! crate's own dev-dependency on itself.
 //! **Position:** reads manifests through [`super::cargo_manifest`]; consumed by the
-//! `engineering_laws` test binary of `website-api`.
+//! `engineering_laws` test binary of `api`.
 //! **Signals & state:** none; pure functions over the checkout.
 //! **Invariants:** every dependency table counts — normal, dev, build and target-specific — and
 //! a renamed dependency counts under its real package name, so no spelling of an edge slips past.
@@ -32,40 +32,40 @@ pub struct CrateDependencyRule {
 
 /// The renderer: pure GPU primitives, no map concept, no page, no server.
 pub const GRAPHICS_ENGINE_RULE: CrateDependencyRule = CrateDependencyRule {
-    crate_rel: "apps/website/graphics-engine",
-    forbidden_packages: &["website-map-engine", "website-frontend", "website-api"],
+    crate_rel: "legacy/graphics_engine",
+    forbidden_packages: &["map_engine", "frontend", "api"],
     reason: "the renderer knows no map concept, no page and no server; the arrow runs \
              map-engine -> graphics-engine only",
 };
 
 /// The map engine: map graphics and the mission domain, no page and no server.
 pub const MAP_ENGINE_RULE: CrateDependencyRule = CrateDependencyRule {
-    crate_rel: "apps/website/map-engine",
-    forbidden_packages: &["website-frontend", "website-api"],
+    crate_rel: "legacy/map_engine",
+    forbidden_packages: &["frontend", "api"],
     reason: "the map engine serves the frontend and the server and depends on neither",
 };
 
 /// The frontend: presentation over the map engine, never the renderer or the server directly.
 pub const FRONTEND_RULE: CrateDependencyRule = CrateDependencyRule {
-    crate_rel: "apps/website/frontend",
-    forbidden_packages: &["website-graphics-engine", "website-api"],
-    reason: "the frontend reaches the renderer through website-map-engine and the server over \
+    crate_rel: "apps/frontend",
+    forbidden_packages: &["graphics_engine", "api"],
+    reason: "the frontend reaches the renderer through map_engine and the server over \
              HTTP, never by linking either",
 };
 
 /// The server: the map engine's mission domain only, never the renderer or the frontend.
-pub const WEBSITE_API_RULE: CrateDependencyRule = CrateDependencyRule {
-    crate_rel: "apps/website/api_v2",
-    forbidden_packages: &["website-graphics-engine", "website-frontend"],
-    reason: "the server links website-map-engine for the mission domain alone and links neither \
+pub const API_RULE: CrateDependencyRule = CrateDependencyRule {
+    crate_rel: "apps/api",
+    forbidden_packages: &["graphics_engine", "frontend"],
+    reason: "the server links map_engine for the mission domain alone and links neither \
              the renderer nor the frontend",
 };
 
 /// The offline service worker: cache policy the page also links, never the server, the page or
 /// the renderer.
 pub const OFFLINE_SERVICE_WORKER_RULE: CrateDependencyRule = CrateDependencyRule {
-    crate_rel: "apps/website/offline-service-worker",
-    forbidden_packages: &["website-api", "website-frontend", "website-graphics-engine"],
+    crate_rel: "apps/offline_service_worker",
+    forbidden_packages: &["api", "frontend", "graphics_engine"],
     reason: "the offline service worker is a leaf the frontend links; it reaches the server over \
              HTTP and links neither the page nor the renderer",
 };
@@ -75,7 +75,7 @@ pub const CRATE_DEPENDENCY_RULES: &[CrateDependencyRule] = &[
     GRAPHICS_ENGINE_RULE,
     MAP_ENGINE_RULE,
     FRONTEND_RULE,
-    WEBSITE_API_RULE,
+    API_RULE,
     OFFLINE_SERVICE_WORKER_RULE,
 ];
 

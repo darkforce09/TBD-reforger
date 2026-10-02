@@ -56,7 +56,7 @@ owns = [
     "tools/tbd-tools/src/world/build.rs",
     "crates/map-engine-core/src/world/prefab.rs",
     "crates/map-engine-core/src/world/regions.rs",
-    "apps/website/frontend/src/editor/world_assets/world_host.rs",
+    "apps/frontend/src/editor/world_assets/world_host.rs",
 ]
 
 [scope]

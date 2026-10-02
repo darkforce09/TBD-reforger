@@ -27,7 +27,7 @@
 //! on the website therefore had no path to a running server.
 //!
 //! THE SOURCE IS THE API, and specifically the bytes of `GET /api/v1/modpacks/current`
-//! (`apps/website/api_v2/src/core/http_router.rs` → `handlers/modpacks.rs::get_current_modpack`) whose `mods[]`
+//! (`apps/api/src/core/http_router.rs` → `handlers/modpacks.rs::get_current_modpack`) whose `mods[]`
 //! rows carry exactly the fields a Reforger `game.mods[]` entry needs — `workshop_id`, `mod_guid`,
 //! `version` — added in `migrations/0012_modpack_mods_workshop.sql`, whose header says
 //! verbatim: "keep both so a future renderer can choose".

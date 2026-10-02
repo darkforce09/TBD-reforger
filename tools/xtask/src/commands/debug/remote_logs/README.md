@@ -21,7 +21,7 @@ tools/xtask/src/commands/debug/remote_logs/
 `--selftest` is ENVIRONMENT, because nothing is fetched. `--selftest` writes five fixture logs to a temp
 folder and checks each verdict. `--file <log>` grades that file. With neither, `cmd_remote` takes
 `TBD_SSH_HOST`, `TBD_PROFILE_DIR` (default `/home/<user>/tbd/profile`), `TBD_SSH_PASS` and
-`TBD_SSH_IDENTITY_FILE` from `tools/xtask/deploy/deploy.env` (or the file `DEPLOY_ENV` names)
+`TBD_SSH_IDENTITY_FILE` from `deploy/deploy.env` (or the file `DEPLOY_ENV` names)
 through `crate::core::deploy_environment`: the file decides every key it assigns and the
 environment fills the rest. With `--instance N` (1 to `TBD_FLEET_INSTANCES`, default 5) the
 profile is fleet instance N's, `~/tbd/fleet/instance-N/profile`, and `TBD_PROFILE_DIR` is not read;

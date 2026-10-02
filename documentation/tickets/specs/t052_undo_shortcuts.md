@@ -4,7 +4,7 @@
 
 **Status:** shipped (T-052)  
 **Git tag on ship:** T-052  
-**Authority:** [MC ROADMAP](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md) · [eden/gap_analysis.md](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) (`TOP-UNDO-001 / KEY-UNDO-001`) · [feature_inventory.md](/documentation/website/frontend/apps/editor/feature_inventory/README.md) TOP-UNDO-001 / TOP-REDO-001 / KEY-UNDO-001
+**Authority:** [MC ROADMAP](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) · [eden/gap_analysis.md](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) (`TOP-UNDO-001 / KEY-UNDO-001`) · [feature_inventory.md](/documentation/apps/frontend/apps/editor/feature_inventory/README.md) TOP-UNDO-001 / TOP-REDO-001 / KEY-UNDO-001
 
 ---
 
@@ -148,12 +148,12 @@ Use [`docs/AGENT_COMMIT_CHECKLIST.md`](/documentation/standards/commit_checklist
 | **This file** | Status → **shipped** |
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-052 bullet + bump `latest feature work` line |
 | [`docs/TAGS.md`](/documentation/standards/ticket_identifiers.md) | T-052 row (planned → shipped) |
-| [`docs/website/frontend/pages/mission-editor.md`](/documentation/website/frontend/apps/editor/ux_spec.md) | Element #2 note keyboard undo/redo; **Behavior → Keyboard** subsection; M3.7 milestone `[x]` |
-| [`feature_inventory.md`](/documentation/website/frontend/apps/editor/feature_inventory/README.md) | TOP-UNDO-001 / TOP-REDO-001 edge cases + acceptance; KEY-UNDO-001 → **working** |
-| [`agent_execution.md`](/documentation/website/frontend/apps/editor/decisions.md) | Decisions log row **Undo keyboard (T-052)** |
-| [`ROADMAP.md`](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md) | Move **PLANNED T-052** → **DONE T-052**; line ~80 note keyboard undo |
-| [`docs/website/frontend/ROADMAP.md`](/documentation/website/frontend/README.md) | Recently shipped T-052 |
-| [`eden/gap_analysis.md`](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) | TOP-UNDO-001 → ✅ shipped T-052; TOOLBAR-UNDO-001 parity → match or partial→match |
+| [`docs/website/frontend/pages/mission-editor.md`](/documentation/apps/frontend/apps/editor/ux_spec.md) | Element #2 note keyboard undo/redo; **Behavior → Keyboard** subsection; M3.7 milestone `[x]` |
+| [`feature_inventory.md`](/documentation/apps/frontend/apps/editor/feature_inventory/README.md) | TOP-UNDO-001 / TOP-REDO-001 edge cases + acceptance; KEY-UNDO-001 → **working** |
+| [`agent_execution.md`](/documentation/apps/frontend/apps/editor/decisions.md) | Decisions log row **Undo keyboard (T-052)** |
+| [`ROADMAP.md`](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) | Move **PLANNED T-052** → **DONE T-052**; line ~80 note keyboard undo |
+| [`docs/website/frontend/ROADMAP.md`](/documentation/apps/frontend/README.md) | Recently shipped T-052 |
+| [`eden/gap_analysis.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) | TOP-UNDO-001 → ✅ shipped T-052; TOOLBAR-UNDO-001 parity → match or partial→match |
 | [`t050_cursor_z_readout.md`](t050_cursor_z_readout.md) | Related: prior shipped slice (T-050) |
 
 **Do not update:** archive stitch, Eden wiki artifacts, historical T-049 CLAUDE bullet.

@@ -20,7 +20,7 @@ Registry character rows lack Eden side tags usable for palette filter. Catalog s
 ### E1 / E2 / E3 / E5 — FE unit
 
 ```text
-$ cargo test -p website-frontend
+$ cargo test -p frontend
 test eden_chrome::tests::eden_side_chips_labels_no_civ ... ok
 test eden_chrome::tests::apply_eden_chip_opfor_sets_active_side ... ok
 test eden_chrome::tests::objects_chip_empty_copy_and_mode ... ok
@@ -38,7 +38,7 @@ test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 133 filtered out
 ### E1 — no F-key palette row (UI)
 
 ```text
-$ rg -n 'F1|F2|F3|F4|F5|F6' apps/website/frontend/src/eden_chrome.rs | head
+$ rg -n 'F1|F2|F3|F4|F5|F6' apps/frontend/src/eden_chrome.rs | head
 ```
 
 Matches are **comments + unit-test ban asserts only** — no F1–F6 mode row / buttons in DockRight.
@@ -46,10 +46,10 @@ Matches are **comments + unit-test ban asserts only** — no F1–F6 mode row / 
 ### `make ci-local-leptos`
 
 ```text
-cargo fmt -p website-frontend --check          PASS
-cargo clippy -p website-frontend --target wasm32-unknown-unknown  PASS
+cargo fmt -p frontend --check          PASS
+cargo clippy -p frontend --target wasm32-unknown-unknown  PASS
   (pre-existing warnings only; no new errors)
-cargo test -p website-frontend                 PASS (77)
+cargo test -p frontend                 PASS (77)
 trunk build --release                          PASS
   (make recipe / ambient NO_COLOR=1 → trunk `--no-color` quirk;
    `env -u NO_COLOR -u FORCE_COLOR trunk build --release` ✅)

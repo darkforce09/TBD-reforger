@@ -17,7 +17,7 @@ restores, the checksum repair, sample data) is in
   call in the checkout. Check: `rustc --version` from the repository root prints `1.95.0`.
 - Trunk, for the app: `trunk --version`. The gate harness pins 0.21.14
   (`tools/developer_tools/gate-env.json`); Trunk fetches the Tailwind 4.3.2 binary that
-  `apps/website/frontend/Trunk.toml` names by itself.
+  `apps/frontend/Trunk.toml` names by itself.
 - A container runtime with a compose provider. `cargo xtask db` takes `TBD_CONTAINER_RUNTIME`
   when set, then `podman`, then `docker`, then `distrobox-host-exec podman` or `docker` from
   inside a distrobox container. `podman compose` also needs `podman-compose` or the
@@ -39,12 +39,12 @@ Run every command from the repository root unless a step says otherwise.
    the main checkout's `.env` into it instead when it holds real Discord values.
 
    ```bash
-   cp apps/website/api_v2/.env.example apps/website/api_v2/.env
+   cp apps/api/.env.example apps/api/.env
    ```
 
-   Expected: no output; `apps/website/api_v2/.env` exists. Every variable, its default and its
+   Expected: no output; `apps/api/.env` exists. Every variable, its default and its
    failure mode is in
-   [API environment variables](/documentation/website/api_v2/environment_variables.md).
+   [API environment variables](/documentation/apps/api/environment_variables.md).
 
 2. Start Postgres 18 in the background.
 
@@ -52,8 +52,8 @@ Run every command from the repository root unless a step says otherwise.
    cargo xtask db up
    ```
 
-   Expected: `cd apps/website/api_v2 && podman compose up -d db` (with the runtime it found),
-   then compose starts the `tbd_reforger_db` container from `postgres:18-alpine`, listening on
+   Expected: the echoed compose command, `up -d db` against `deploy/compose.dev.yml` with the
+   runtime it found, then compose starts the `tbd_reforger_db` container from `postgres:18-alpine`, listening on
    host port 5434 with the user, password and database `tbd`, `tbd` and `tbd_reforger`.
 
 3. Run the API. It builds the `api` binary into `target/dev-api/` in this checkout, applies the
@@ -64,7 +64,7 @@ Run every command from the repository root unless a step says otherwise.
    ```
 
    Expected: the line
-   `cd apps/website/api_v2 && CARGO_TARGET_DIR=<checkout>/target/dev-api cargo run --bin api`,
+   `cd apps/api && CARGO_TARGET_DIR=<checkout>/target/dev-api cargo run --bin api`,
    the build, then the log lines `migrations applied` and `listening on 0.0.0.0:8080`. Restart it
    after a change to the API; `cargo run` does not reload.
 
@@ -77,9 +77,9 @@ Run every command from the repository root unless a step says otherwise.
    cargo xtask db seed
    ```
 
-   Expected: one line per file, from
-   `cd apps/website/api_v2 && podman compose exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < seeds/discord_roles.sql`
-   through `registry_dev.sql`, `faction_library.sql` and `vehicle_database.sql` to
+   Expected: one echoed compose command per file, each running
+   `exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger` against `deploy/compose.dev.yml`
+   with the seed on stdin, from `apps/api/seeds/discord_roles.sql` through `registry_dev.sql`, `faction_library.sql` and `vehicle_database.sql` to
    `wiki_pages.sql`, each followed by psql's command tags (`INSERT 0 3` for the roles), and exit 0.
    Each psql run stops at its first failed statement, so an `ERROR:` line ends the command with
    psql's exit code 3 at that file. The seeds upsert, so running them again converges.
@@ -93,7 +93,7 @@ Run every command from the repository root unless a step says otherwise.
    cargo xtask mk leptos
    ```
 
-   Expected: `cd apps/website/frontend && trunk serve --release`, the build, then Trunk serving
+   Expected: `cd apps/frontend && trunk serve --release`, the build, then Trunk serving
    on `http://127.0.0.1:3000`.
 
 6. Sign in without Discord. Open the dev login in the browser; `role` is one of `guest`,
@@ -134,7 +134,7 @@ Run every command from the repository root unless a step says otherwise.
    [artifact](/documentation/glossary/a_to_f.md#artifact) reads the same way from
    `GET /api/v1/missions/{id}/reviews` and
    `GET /api/v1/missions/{id}/artifacts/{artifact_id}/document`; every route is listed in the
-   [API overview](/documentation/website/api_v2/api_overview.md).
+   [API overview](/documentation/apps/api/api_overview.md).
 
 ### Load the full item registry
 
@@ -152,7 +152,7 @@ The seed holds 21 items and 4 vehicles. The committed Workbench export holds 1,8
    `contracts/catalogs/registry-compat.workbench.json`, applying pending migrations first.
    The import upserts, so it can run again. The binary itself takes `--items`, `--compat`,
    `--modpack <uuid>` and `--prune`
-   (the [API README](/apps/website/api_v2/README.md#public-surface)).
+   (the [API README](/apps/api/README.md#public-surface)).
 
 ### Fetch the terrain assets
 
@@ -165,7 +165,7 @@ collision hierarchies (`*.bvh`) and the `*.rkyv` archives. The 625 forest-densit
 `objects/density/` are ordinary git blobs. A clone without the LFS objects has pointer files
 instead: manifests and JSON load, and the elevation, satellite and object layers do not.
 
-1. Pull the elevation raster, which the `website-map-engine` tests and the hillshade need.
+1. Pull the elevation raster, which the `map_engine` tests and the hillshade need.
 
    ```bash
    cargo xtask ci lfs-dem
@@ -206,10 +206,10 @@ in the [terrains README](/assets/terrains/README.md).
 The dev login needs none of this. This procedure proves the real Discord sign-in: the
 `oauth_state` cookie, the token exchange and the guild role mapping. It needs a browser and a
 person at Discord's consent screen. The request and response of each call are in
-[account pages](/documentation/website/frontend/pages/account/account_pages.md).
+[account pages](/documentation/apps/frontend/pages/account/account_pages.md).
 
 1. Register the redirect. In the Discord Developer Portal, under the application's OAuth2
-   Redirects, add exactly the value of `DISCORD_REDIRECT_URL` in `apps/website/api_v2/.env`:
+   Redirects, add exactly the value of `DISCORD_REDIRECT_URL` in `apps/api/.env`:
 
    ```text
    http://localhost:8080/api/v1/auth/discord/callback
@@ -218,18 +218,18 @@ person at Discord's consent screen. The request and response of each call are in
    Expected: the portal lists it. Discord compares it byte for byte twice, on the authorize URL
    and on the token exchange: scheme, host, port and a trailing slash all count. The API builds
    its own authorize URL with the scopes `identify guilds.members.read` (`OAUTH_SCOPES` in
-   `apps/website/api_v2/src/identity_and_access/services/discord_client.rs`), so the portal's URL
+   `apps/api/src/identity_and_access/services/discord_client.rs`), so the portal's URL
    generator and a bot are not involved.
 
 2. Fill the credentials and align the hosts. Set `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` and
-   `DISCORD_GUILD_ID` in `apps/website/api_v2/.env`, and keep `FRONTEND_URL` on the same host as
+   `DISCORD_GUILD_ID` in `apps/api/.env`, and keep `FRONTEND_URL` on the same host as
    `DISCORD_REDIRECT_URL`: the template's `http://localhost:3000` and `http://localhost:8080/…`
    agree. The cookie is host-only (`Path=/; Max-Age=600; HttpOnly; SameSite=Lax`, no `Secure` in
    development), and `localhost` and `127.0.0.1` are different cookie hosts; ports do not matter.
    Change `FRONTEND_URL` rather than the redirect, which must stay equal to the portal entry.
 
    ```bash
-   grep -E '^(FRONTEND_URL|DISCORD_REDIRECT_URL)=' apps/website/api_v2/.env
+   grep -E '^(FRONTEND_URL|DISCORD_REDIRECT_URL)=' apps/api/.env
    ```
 
    Expected: both values name the same host. In development the API refuses to start the flow
@@ -240,7 +240,7 @@ person at Discord's consent screen. The request and response of each call are in
    secret; the command reads both from `.env` and never puts them on the command line.
 
    ```bash
-   cd apps/website/api_v2 && set -a && . ./.env && set +a && \
+   cd apps/api && set -a && . ./.env && set +a && \
      curl -s -o /dev/null -w '%{http_code}\n' -u "$DISCORD_CLIENT_ID:$DISCORD_CLIENT_SECRET" \
      -d grant_type=client_credentials -d scope=identify https://discord.com/api/oauth2/token
    ```
@@ -280,7 +280,7 @@ person at Discord's consent screen. The request and response of each call are in
    guild's Command Staff (`admin`), Mission Maker (`mission_maker`) and Player (`enlisted`)
    roles; no Squad Leader (`leader`) role id is committed. For another guild, or for `leader`,
    read your role ids from `user_discord_roles` after a sign-in and insert the mapping, as the
-   header of `apps/website/api_v2/seeds/discord_roles.sql` shows.
+   header of `apps/api/seeds/discord_roles.sql` shows.
 
    ```sql
    INSERT INTO discord_roles (discord_role_id, name, mapped_role, priority)
@@ -336,7 +336,7 @@ and says where each one also runs.
 |---|---|---|
 | `db up` stops with `FATAL:` and exit 1 | no container runtime resolved from `TBD_CONTAINER_RUNTIME`, podman, docker or `distrobox-host-exec` | install podman or docker, or set `TBD_CONTAINER_RUNTIME` |
 | `db up` or `db seed` exits 125 with "looking up compose provider failed" | podman has no compose provider | install `podman-compose` or the `docker-compose` plugin; for an existing container, `podman start tbd_reforger_db` starts it, and [Database operations](/documentation/runbooks/database_operations.md) seeds without compose |
-| the API exits with `DATABASE_URL is required` or `JWT_SECRET is required` | no `apps/website/api_v2/.env`, as in a new worktree | step 1 |
+| the API exits with `DATABASE_URL is required` or `JWT_SECRET is required` | no `apps/api/.env`, as in a new worktree | step 1 |
 | the API exits with `migration N was previously applied but has been modified` | an applied migration file changed, comments included | [Database operations](/documentation/runbooks/database_operations.md), Repair a migration checksum; never reset the volume for this |
 | `db seed` prints `relation "discord_roles" does not exist` and exits 0 | the seeds ran before the API migrated the database | step 3, then step 4 again |
 | the map shows no elevation or satellite layer | the LFS objects are pointer files | Fetch the terrain assets |
@@ -358,9 +358,9 @@ and says where each one also runs.
   data, the checksum repair, backups and restores.
 - [Editor gates](/documentation/runbooks/editor_gates.md) — `cargo xtask mk gate-doctor` and
   the browser gates of the Mission Creator.
-- [API environment variables](/documentation/website/api_v2/environment_variables.md) — every
+- [API environment variables](/documentation/apps/api/environment_variables.md) — every
   variable `.env` can set.
-- [Website API](/apps/website/api_v2/README.md) — the crate, its binaries and its configuration.
+- [Website API](/apps/api/README.md) — the crate, its binaries and its configuration.
 - [Database commands](/tools/xtask/src/commands/db/README.md) and
   [build and development-server commands](/tools/xtask/src/commands/build/README.md) — every
   `cargo xtask db` and `cargo xtask mk` command.

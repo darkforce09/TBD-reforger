@@ -20,7 +20,7 @@
 //!
 //! ```text
 //! $ make db-up
-//! cd apps/website/api_v2 && podman compose up -d db
+//! cd apps/api && podman compose up -d db
 //! /bin/sh: 1: podman: not found
 //! make: *** [Makefile:70: db-up] Error 127
 //! ```
@@ -89,7 +89,7 @@
 //!   `rust_it` is safe by construction; the port adds `TBD_IT_BASE_DB` (the selftest needs a
 //!   scratch base to avoid racing sibling slices), which would be a loaded gun without a guard. It
 //!   goes through the SAME drop allow-list the integration harness carries
-//!   (`apps/website/api_v2/tests/common/mod.rs:87` ⇄ [`crate::commands::deploy::database_operations::
+//!   (`apps/api/tests/common/mod.rs:87` ⇄ [`crate::commands::deploy::database_operations::
 //!   is_safe_scratch_database_name`]), and every individual name is re-checked immediately before
 //!   its `DROP`. `tbd_reforger` is refused twice over.
 //! - **The reap was skipped on exactly the runs that leak.** `cargo test` failing aborts the make
@@ -108,8 +108,10 @@ use clap::{Parser, Subcommand};
 
 use crate::commands::deploy::database_operations as dbc;
 use crate::core::repository_root::find_repo_root;
+use development_compose::{ComposeProject, compose_argv};
 
 pub mod ab;
+pub mod development_compose;
 pub mod recipes;
 pub mod repair_migration_checksum;
 pub mod selftest;
@@ -121,8 +123,8 @@ pub mod test_it;
 // with no Makefile beside them, the consts are what survives — which is why the pin lives here and not
 // only in a test that reads a file that is going away.
 
-/// `WEB := apps/website/api_v2` (Makefile:3).
-pub(crate) const WEB: &str = "apps/website/api_v2";
+/// `WEB := apps/api` (Makefile:3).
+pub(crate) const WEB: &str = "apps/api";
 
 /// `seed:` — five appliers, in order (Makefile:78-83). Order is contractual: `registry_dev`
 /// references roles seeded by `discord_roles`.
@@ -133,6 +135,11 @@ pub(crate) const SEEDS: &[&str] = &[
     "vehicle_database.sql",
     "wiki_pages.sql",
 ];
+
+/// The repository-relative path of one of the [`SEEDS`]: the API crate's `seeds/` folder.
+pub(crate) fn seed_file(file: &str) -> String {
+    format!("{WEB}/seeds/{file}")
+}
 
 /// Every `cargo xtask db <cmd>` spelling, in [`DbCmd`] order.
 ///
@@ -295,29 +302,17 @@ fn push_opt(argv: &mut Vec<String>, flag: &str, val: Option<&str>) {
     }
 }
 
-// ── $(WEB) AND $(COMPOSE) ────────────────────────────────────────────────────────────────────
+// ── THE API FOLDER AND THE CONTAINER RUNTIME ────────────────────────────────────────────────────
 
-/// `$(WEB)` as make would echo it, alongside the absolute path the child actually runs in.
+/// The API crate folder ([`WEB`]) as the echoed lines name it, alongside the absolute path the
+/// child runs in: `db test-it` and `db registry-import` run cargo there.
 pub(crate) struct Web {
     pub(crate) rel: String,
     pub(crate) abs: PathBuf,
 }
 
-/// `TBD_MK_WEB` is this port's stand-in for `make db-up WEB=<dir>`: the acceptance arms need a
-/// throwaway compose project so `db down` in an A/B run cannot stop the `tbd_reforger_db` that
-/// sibling slices are testing against. Same precedent as `TBD_FETCH_ROOT` in `gate_fetch_*`.
-/// Relative values resolve against the CWD, matching `make`'s own root-relative `cd $(WEB)`.
+/// The API crate folder of this checkout.
 pub(crate) fn web() -> Result<Web> {
-    if let Some(v) = std::env::var_os("TBD_MK_WEB").filter(|v| !v.is_empty()) {
-        let rel = v.to_string_lossy().into_owned();
-        let p = PathBuf::from(&rel);
-        let abs = if p.is_absolute() {
-            p
-        } else {
-            std::env::current_dir().context("cwd")?.join(p)
-        };
-        return Ok(Web { rel, abs });
-    }
     let root = find_repo_root()?;
     Ok(Web {
         rel: WEB.to_string(),
@@ -366,29 +361,24 @@ pub(crate) fn finish_status(label: &str, st: std::process::ExitStatus) -> u8 {
 
 // ── COMPOSE LANE: db-up / db-down / db-logs / seed ───────────────────────────────────────────
 
-/// `cd $(WEB) && $(COMPOSE) <args> [< redirect]` — the whole compose lane in one shape.
-fn compose(args: &[&str], redirect_in: Option<&str>) -> Result<u8> {
-    let web = web()?;
+/// `cd <folder> && <runtime> compose -f <file> <args> [< stdin]` — the whole compose lane in one
+/// shape. [`ComposeProject`] resolves the folder and file and renders the line; `stdin_from_root`
+/// is a repository-relative file read on stdin.
+fn compose(args: &[&str], stdin_from_root: Option<&str>) -> Result<u8> {
+    let project = ComposeProject::resolve()?;
     let (rt, logical) = runtime();
-    let tail = args.join(" ");
-    let suffix = redirect_in.map(|f| format!(" < {f}")).unwrap_or_default();
-    echo(&format!(
-        "cd {web_rel} && {logical} compose {tail}{suffix}",
-        web_rel = web.rel
-    ));
+    echo(&project.shown.render(&logical, args, stdin_from_root));
 
-    let mut argv: Vec<String> = rt.clone();
-    argv.push("compose".into());
-    argv.extend(args.iter().map(|a| a.to_string()));
+    let argv = compose_argv(&rt, args);
     trace(&argv);
 
     let mut cmd = Command::new(&argv[0]);
-    cmd.args(&argv[1..]).current_dir(&web.abs);
-    match redirect_in {
-        // The redirect is make's shell doing `< seeds/x.sql`; here the file is opened directly.
-        // A missing file is dash's "cannot open …" rc 2 — same rc, honest text (no shell ran).
-        Some(rel) => {
-            let path = web.abs.join(rel);
+    cmd.args(&argv[1..]).current_dir(&project.folder);
+    match stdin_from_root {
+        // The line's shell redirect, opened directly: the same path, resolved against the folder.
+        // A missing file is a shell's "cannot open …" rc 2 — same rc, honest text (no shell ran).
+        Some(from_root) => {
+            let path = project.stdin_file(from_root);
             match std::fs::File::open(&path) {
                 Ok(f) => {
                     cmd.stdin(Stdio::from(f));
@@ -422,7 +412,7 @@ fn seed() -> Result<u8> {
     let arguments = seed_psql_arguments();
     let arguments: Vec<&str> = arguments.iter().map(String::as_str).collect();
     for file in SEEDS {
-        let rc = compose(&arguments, Some(&format!("seeds/{file}")))?;
+        let rc = compose(&arguments, Some(&seed_file(file)))?;
         if rc != 0 {
             return Ok(rc);
         }
@@ -437,8 +427,8 @@ fn seed() -> Result<u8> {
 /// the echo is reproduced exactly, tabs included.
 fn registry_import() -> Result<u8> {
     let web = web()?;
-    const ITEMS: &str = "../../../contracts/catalogs/registry-items.workbench.json";
-    const COMPAT: &str = "../../../contracts/catalogs/registry-compat.workbench.json";
+    const ITEMS: &str = "../../contracts/catalogs/registry-items.workbench.json";
+    const COMPAT: &str = "../../contracts/catalogs/registry-compat.workbench.json";
     echo(&format!(
         "cd {} && cargo run --bin import-registry -- \\\n\t--items {ITEMS} \\\n\t--compat {COMPAT}",
         web.rel

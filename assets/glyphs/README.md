@@ -59,22 +59,22 @@ hands the pixels to the graphics engine's glyph-atlas texture for the instanced 
 - Producers: people write `manifest.json` and the SVGs; `build_glyph_atlas` in
   `tools/developer_tools/src/map_raster_pipeline/glyphs.rs` writes `atlas/`.
 - Consumers:
-  - the API's `/map-assets/glyphs` mount in `apps/website/api_v2/src/core/http_router.rs`, whose
+  - the API's `/map-assets/glyphs` mount in `apps/api/src/core/http_router.rs`, whose
     folder comes from `GLYPH_ASSETS_DIR` (default `../../../assets/glyphs`, from the API's
     working directory) and sits below the rate limiter;
   - the map engine's world boot in
-    `apps/website/map-engine/src/streaming/loaders/world_loader/atlas.rs`, which reads `atlas/`;
+    `legacy/map_engine/src/streaming/loaders/world_loader/atlas.rs`, which reads `atlas/`;
   - `cargo xtask schema map-glyphs`, which also requires every `render.iconKey` in
     `contracts/fixtures/map/map-object-prefabs-sample.json` and in the committed Everon
     catalogue `assets/terrains/everon/objects/prefabs.json.gz` to have a manifest entry, and
     `cargo xtask schema map-object-enums`; both run in the `schema-validate` CI task;
-  - the map engine's native tests in `apps/website/map-engine/src/streaming/loaders/tests/` and
-    `apps/website/map-engine/src/streaming/scheduler/residency/t152_3_tests/`, which read the
+  - the map engine's native tests in `legacy/map_engine/src/streaming/loaders/tests/` and
+    `legacy/map_engine/src/streaming/scheduler/residency/t152_3_tests/`, which read the
     manifest's keys;
   - the headless-browser test server in `tools/developer_tools/src/browser_testing/server.rs`,
     which serves `/map-assets/glyphs/` itself;
   - `cargo xtask deploy website`, whose rsync ships this folder (it excludes `assets/terrains/`),
-    and the staging compose file `apps/website/docker-compose.staging.yml`, which mounts it
+    and the staging compose file `deploy/compose.staging.yml`, which mounts it
     read-only into the API container.
 
 ## Boundaries

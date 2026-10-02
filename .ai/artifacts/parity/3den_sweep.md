@@ -106,7 +106,7 @@ Every row cites a catalogue section. Every `have` cites `file:line` in the live 
 prefixed `INFERRED:`. Two facts were verified rather than inherited, because both are load-bearing and
 both are easy to get wrong:
 
-- **TBD has no snapping.** `grep -rn snap apps/website/frontend/src --include=*.rs` returns 11 hits and
+- **TBD has no snapping.** `grep -rn snap apps/frontend/src --include=*.rs` returns 11 hits and
   **every one is `read_snapshot()` / `snapshot` prose** (`orbat_manager.rs:283`, `select_tool.rs:5`,
   `yrs_persist.rs:29`…). There is no grid, no surface snap, no alignment guide. `gap_analysis.md`
   scores `XFORM-SNAP-001` as `na` for a different and correct reason (the mod grounds every spawn by
@@ -347,7 +347,7 @@ index for §3. What is left is policy, and one genuinely transferable piece of e
 
 ### 2.12 `3DEN-PREF` — the Preferences block (§7.1, §7.2, §7.4)
 
-**TBD has no editor preferences at all** — `grep -rniw Preferences apps/website/frontend/src` returns
+**TBD has no editor preferences at all** — `grep -rniw Preferences apps/frontend/src` returns
 zero. Everything user-scoped in the mod is `profileNamespace`-backed and never written to the mission,
 which is exactly the seam TBD is missing: today the 12 world-layer toggles and the time scrubber are
 per-*mission* (`world_layer_prefs.rs:63-74`, `eden_chrome.rs:1084`), so a viewing preference is stored

@@ -17,7 +17,7 @@
 //!
 //! [`derive_object_alias`] and [`object_alias_slug`] hand-copy `asset_catalog.rs` with no compiler
 //! joining the copies, deliberately: the point is to *independently* recompute what the frontend
-//! computes, and importing `website-frontend` would make the gate agree by construction and check
+//! computes, and importing `frontend` would make the gate agree by construction and check
 //! nothing. Two pins guard the mirror, so the derivation cannot be renamed away while the copy
 //! here still describes the old one.
 //!
@@ -61,7 +61,7 @@ use verification_core::{Finding, Kind, NotRun, Pattern, Verdict, gate};
 /// What `SpawnMissionEntities` actually reads at mission load.
 const MOD_REL: &str = "apps/mod/tbd-framework/Data/registry.json";
 /// The mission-domain derivation used by the frontend; pinned independently of this mirror.
-const FE_REL: &str = "apps/website/map-engine/src/data/store/operations/assets.rs";
+const FE_REL: &str = "legacy/map_engine/src/data/store/operations/assets.rs";
 /// Kinds the Objects palette offers. Anything else is a character, vehicle or gear item, and
 /// belongs to a different palette with a different alias namespace.
 const OBJECT_KINDS: &[&str] = &["crate", "other"];

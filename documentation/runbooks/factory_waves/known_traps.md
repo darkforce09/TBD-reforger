@@ -21,7 +21,7 @@ input it never examined.** Each instance looks like a green check.
 | a golden file under `#[serde(flatten)]` | a deleted field is re-emitted and the JSON stays byte-identical | read what the golden covers, not only that it matches |
 | the collision analysis | tickets with no plan row are never candidates | `slice-collisions` warns about dispatchable tickets missing from the lock |
 | a health check that is a TCP connect | a six-hour-old API binary reports as up | preflight reads `/healthz` and compares the API process's age with the newest API commit |
-| a test that `include_str!`s its own file and greps for a literal | the needle matches the test's own assertion, forever | scrub the test module out of the haystack with `class_r_scrub::live_source` or `live_code` (`apps/website/frontend/src/v2/core/test_support/class_r_scrub/`) |
+| a test that `include_str!`s its own file and greps for a literal | the needle matches the test's own assertion, forever | scrub the test module out of the haystack with `class_r_scrub::live_source` or `live_code` (`apps/frontend/src/v2/core/test_support/class_r_scrub/`) |
 | `cargo check` under lock contention | it replays a cached verdict and prints `Finished`, exit 0, over code that does not compile | the gate checks into its own `target/gate-check` folder and invalidates fingerprints first |
 | a piped gate (`cargo check … \| tail -5`) | the pipeline returns `tail`'s exit status | never pipe a gate or test; the wave driver captures each step's status itself |
 | a grep loop that reads exit 2 as "no match" | an invalid pattern becomes a pass | read the exit status: 0 match, 1 no match, 2 error, 127 tool absent; the last two fail closed |
@@ -90,8 +90,8 @@ ends `SLICE GATE: PASS`. A report without the red output is asserted, not verifi
 - **The shared cache replays verdicts.** Under lock contention the sign is `Blocking waiting for
   file lock`, then `Finished` with no `Compiling` or `Checking` line. `--quiet` hides that line,
   so a hand-run `cargo check --quiet` has no tell at all.
-- **Feature-gated crates.** `website-map-engine`'s default feature is `scenario` alone; a bare
-  `cargo test -p website-map-engine` compiles only that tier. Pass `--all-features`;
+- **Feature-gated crates.** `map_engine`'s default feature is `scenario` alone; a bare
+  `cargo test -p map_engine` compiles only that tier. Pass `--all-features`;
   `platform wave test --slice` isolates the folder but does not add features.
 - **Editions differ.** The frontend crate is edition 2021 and the other workspace crates 2024,
   and their import orders differ; the gate runs rustfmt on each changed file with its own crate's
@@ -146,10 +146,10 @@ ends `SLICE GATE: PASS`. A report without the red output is asserted, not verifi
 - **Parallel arrays.** Build ids, positions, headings and tints in one pass over one sorted
   source; `vehicle_rows()` is id-sorted while `vehicle_xy_flat()` follows map order, and mixing
   them gives every vehicle another's heading.
-- **The z policy.** `update_slot_position` (`apps/website/map-engine/src/data/store/rows/transforms.rs`)
+- **The z policy.** `update_slot_position` (`legacy/map_engine/src/data/store/rows/transforms.rs`)
   resets z to 0 when an edit moves x or y without a z, by design. A caller that must keep a
   manual z reuses `keep_z_rows` and `slot_z`
-  (`apps/website/map-engine/src/data/store/operations/attrs.rs`) and reads z from the slot rows,
+  (`legacy/map_engine/src/data/store/operations/attrs.rs`) and reads z from the slot rows,
   never from the flattened arrays.
 - **Scrubbed pins can go blind.** `class_r_scrub` cuts from the first `#[cfg(test)]` to the end of
   the file, so a file with a test-only item inside a production module is examined only up to

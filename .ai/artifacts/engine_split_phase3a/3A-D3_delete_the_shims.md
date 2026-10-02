@@ -64,7 +64,7 @@ direction: delete `host.rs`'s copies and use the `data/` ones. Do it while you a
 
 ## Watch for
 
-- **`state/operations/` is `#![cfg(target_arch = "wasm32")]`.** `cargo test -p website-frontend`
+- **`state/operations/` is `#![cfg(target_arch = "wasm32")]`.** `cargo test -p frontend`
   is native and **never compiles it**. The wasm32 and fmt checks below are not optional extras.
 - Known pre-existing dead code your deletions will clear: `arming::mint_id` and five orphaned
   imports in `entity/mod.rs` — six of the current 18 wasm32 warnings.
@@ -83,10 +83,10 @@ host state has a named home outside `state/operations/`, `editing/host.rs` no lo
 
 ```
 CARGO_TARGET_DIR=target-container cargo xtask verify engine-layers
-CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p website-frontend
+CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p frontend
 CARGO_TARGET_DIR=target-container cargo fmt --all -- --check
-CARGO_TARGET_DIR=target-container cargo test -p website-map-engine --all-features
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
+CARGO_TARGET_DIR=target-container cargo test -p map_engine --all-features
+CARGO_TARGET_DIR=target-container cargo test -p frontend
 ```
 
 Baseline: `verify engine-layers` PASS on all 8 rules; wasm32 clean at **18 warnings** or fewer;

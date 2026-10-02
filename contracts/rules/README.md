@@ -71,7 +71,7 @@ policy's digest.
   `tools/developer_tools/src/world_export_pipeline/classify.rs`, and its `kind` and `class`
   values must belong to the enums of `contracts/definitions/map-object-enums.schema.json`.
   `kit-aliases.json` is read into the `KitAliasesRaw` structure of
-  `apps/website/map-engine/src/data/scenario/compiler/kit/aliases.rs`.
+  `legacy/map_engine/src/data/scenario/compiler/kit/aliases.rs`.
 - Adding a file: a new table needs a reader in code; add rows to the existing tables, then run
   `cargo xtask schema validate` and `cargo xtask schema map-object-enums`.
 
@@ -90,9 +90,9 @@ policy's digest.
   - the [wave](/documentation/glossary/n_to_z.md#wave) gate's catalogue-drift step in
     `tools/xtask/src/commands/platform/wave_execution/gate/checkrun.rs`, which runs `reclassify`;
   - the map engine's mission compiler, which embeds `kit-aliases.json`
-    (`apps/website/map-engine/src/data/scenario/compiler/kit/aliases.rs`), and through it the
+    (`legacy/map_engine/src/data/scenario/compiler/kit/aliases.rs`), and through it the
     [API](/documentation/glossary/a_to_f.md#api)'s mission compile; the API's release image copies the
-    file (`apps/website/Dockerfile`);
+    file (`deploy/Dockerfile`);
   - `cargo xtask schema validate`
     (`tools/xtask/src/verifications/schemas/checks/mission_validation.rs`), which requires every
     `kit:` alias of the spawn registry to appear in `kits` with the same prefab and the reverse, and

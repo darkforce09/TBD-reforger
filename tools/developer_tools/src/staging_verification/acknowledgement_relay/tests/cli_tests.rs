@@ -16,7 +16,7 @@ use super::{ControlRequest, RelayCommand, RelayCommandLine, run};
 use crate::repository_paths::find_repo_root;
 
 /// The unit the staging deploy installs, relative to the checkout root.
-const RELAY_UNIT: &str = "tools/xtask/deploy/systemd/acknowledgement-dropping-relay@.service";
+const RELAY_UNIT: &str = "deploy/systemd/acknowledgement-dropping-relay@.service";
 
 fn parse(arguments: &[&str]) -> Result<RelayCommand, clap::Error> {
     let mut argv = vec!["acknowledgement-dropping-relay"];

@@ -37,17 +37,17 @@ test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 45 filtered out
 ### Frontend unit tests
 
 ```text
-$ cargo test -p website-frontend
+$ cargo test -p frontend
 test result: ok. 74 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 ```
 
 ### `make ci-local-leptos` (clippy + test + trunk)
 
 ```text
-cargo fmt -p website-frontend --check          PASS
-cargo clippy -p website-frontend --target wasm32-unknown-unknown  PASS
+cargo fmt -p frontend --check          PASS
+cargo clippy -p frontend --target wasm32-unknown-unknown  PASS
   (pre-existing warnings only; no new errors)
-cargo test -p website-frontend                 PASS (74)
+cargo test -p frontend                 PASS (74)
 trunk build --release                          PASS
   (make recipe / ambient NO_COLOR=1 → trunk `--no-color` quirk;
    `env -u NO_COLOR -u FORCE_COLOR trunk build --release` ✅)

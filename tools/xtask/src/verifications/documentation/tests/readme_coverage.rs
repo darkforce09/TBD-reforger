@@ -415,3 +415,40 @@ fn a_refused_or_empty_scope_did_not_run() {
     assert!(failures(&outside)[0].starts_with("FAIL: readme-coverage judged nothing in .ai"));
     assert_eq!(outside.print(), 2);
 }
+
+/// The span comes from the listing, not from a list of names: a top-level folder nothing names
+/// is judged like `apps/`, while the repository root, hidden folders and the retired
+/// documentation root are not.
+#[test]
+fn a_top_level_folder_no_list_names_is_judged_by_default() {
+    let mut fixture = FixtureCheckout::new("coverage-derived-span");
+    fixture
+        .tracked("README.md", "# Project\n")
+        .tracked("Cargo.toml", "")
+        .tracked(
+            "apps/README.md",
+            &readme_with_contents("apps/", &["└── main.rs  entry point"]),
+        )
+        .tracked("apps/main.rs", "")
+        .tracked(
+            "a_folder_born_later/README.md",
+            &readme_with_contents("a_folder_born_later/", &["└── settings.toml  settings"]),
+        )
+        .tracked("a_folder_born_later/settings.toml", "")
+        .tracked("deploy/compose.yml", "")
+        .tracked(".github/workflows/ci.yml", "")
+        .tracked("docs/images/map.png", "");
+    let run = run(&fixture, &[]);
+    assert_eq!(failures(&run), ["FAIL: deploy/: no tracked README.md"]);
+    assert_eq!(
+        outcome_counts(&run),
+        (4, 1, 0),
+        "apps and a_folder_born_later hold both rules, deploy fails coverage"
+    );
+    assert_eq!(
+        run.header[0],
+        "==> readme-coverage: every folder below the repository root carries a README.md whose \
+         Contents block matches it (top-level folders: a_folder_born_later, apps, deploy)"
+    );
+    assert_eq!(run.print(), 1);
+}

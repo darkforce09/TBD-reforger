@@ -22,7 +22,7 @@ cargo run -q -p developer_tools --bin enf -- lookup UpdateSlotPlayerID
 
 | Arma 3 | TBD Reforger |
 |---|---|
-| Eden editor | the website [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) (`apps/website/frontend`) |
+| Eden editor | the website [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) (`apps/frontend`) |
 | `.pbo` mission file | the compiled [mission](/documentation/glossary/g_to_m.md#mission) [artifact](/documentation/glossary/a_to_f.md#artifact), which the game server fetches from `GET /api/v1/game-runtime/artifacts/{artifactId}` |
 | Engine-native lobby, briefing, slotting, respawn, spectator | **Reforger ships none of it** |
 | Mission calls into a framework | the mission document drives slots, loadouts, objectives, AO, radio and win conditions |
@@ -53,7 +53,7 @@ Reforger hands it nothing. **That gap is the program.**
   configs (520 files with their `.meta`) are replaced by per-slot loadout data.
 - **The UI is ours.** macOS design *methodology* — direct manipulation, one obvious primary
   action, immediate feedback, progressive disclosure, nothing blocking — rendered in the
-  website's **Aegis** tokens (`apps/website/frontend/style/aegis.css`), which `TBD_UITheme`
+  website's **Aegis** tokens (`apps/frontend/style/aegis.css`), which `TBD_UITheme`
   mirrors. CRF's `.layout` files are behavioural reference only; their look never ships. The
   [mod UI index](/documentation/mod/tbd-framework/UI/README.md) says where each screen lives.
 - **CRF is an oracle, never a dependency.** Arma Public License: indexed, cited, never vendored.

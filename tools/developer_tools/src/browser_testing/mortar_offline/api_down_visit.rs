@@ -19,8 +19,8 @@ use std::path::Path;
 use std::time::Duration;
 
 use anyhow::{Result, bail};
+use map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
 use serde_json::{Value, json};
-use website_map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
 
 use super::mission_entry::{enter_mission, solution_matches_native};
 use super::page_driver::{wait_for_pack_ready, wait_true};

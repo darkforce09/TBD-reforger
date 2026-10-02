@@ -75,7 +75,7 @@ HTTPS, and installs the `ring` TLS provider once.
   `crate::action_verdict` and `crate::secret_text`; the `reqwest` (rustls without a bundled
   provider), `rustls`, `serde`, `serde_json`, `chrono`, `uuid`, `rand`, `tokio` and `tracing`
   crates; the API's `/api/v1/fleet-executor/` routes in
-  `apps/website/api_v2/src/server_infrastructure/routes.rs`.
+  `apps/api/src/server_infrastructure/routes.rs`.
 - Used by: `apps/fleet_host_agent/src/main.rs`, which runs the loop until SIGTERM or SIGINT, and
   `apps/fleet_host_agent/tests/host_agent_ledger.rs`, which runs it against a stand-in of the
   executor routes.
@@ -85,5 +85,5 @@ HTTPS, and installs the `ring` TLS provider once.
 
 ## Related documentation
 
-- [Fleet command ledger](/documentation/website/api_v2/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger](/documentation/apps/api/verification_evidence/fleet_command_ledger.md)
   — the API side of the ledger: states, leases, fencing and execution windows.

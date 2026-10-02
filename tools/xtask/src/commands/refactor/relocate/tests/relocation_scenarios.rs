@@ -224,6 +224,49 @@ fn relocate_frozen_documents_rewrite_links_and_keep_backticks() {
 }
 
 #[test]
+fn relocate_sql_migrations_move_byte_identical_and_are_not_verified() {
+    let repo = FixtureRepository::new("migrations");
+    let migration = "-- Pinned by old_api/tests/pins.rs.\n\
+                     COMMENT ON TABLE t IS 'see old_api/tests/pins.rs';\n";
+    repo.write("old_api/tests/pins.rs", "// pins\n")
+        .write("old_api/migrations/0001_comment.sql", migration)
+        .write(
+            "old_api/seeds/dev.sql",
+            "-- loads after old_api/migrations/\n",
+        )
+        .write(
+            "old_api/migrations/drafts/0002_draft.sql",
+            "-- unread by sqlx; pinned by old_api/tests/pins.rs\n",
+        )
+        .write(
+            "old_api/migrations/README.md",
+            "Pinned by `old_api/tests/pins.rs`.\n",
+        )
+        .track();
+    let manifest = repo.manifest("path\told_api\tnew_api\t\n");
+
+    assert_eq!(dry_run(repo.root(), &manifest), 0);
+    assert_eq!(apply(repo.root(), &manifest), 0);
+    assert_eq!(repo.read("new_api/migrations/0001_comment.sql"), migration);
+    assert_eq!(
+        repo.read("new_api/seeds/dev.sql"),
+        "-- loads after new_api/migrations/\n",
+        "a SQL file outside a migrations folder is live"
+    );
+    assert_eq!(
+        repo.read("new_api/migrations/drafts/0002_draft.sql"),
+        "-- unread by sqlx; pinned by new_api/tests/pins.rs\n",
+        "a SQL file below a migrations folder's own children is live"
+    );
+    assert_eq!(
+        repo.read("new_api/migrations/README.md"),
+        "Pinned by `new_api/tests/pins.rs`.\n",
+        "a migrations folder's other files are live"
+    );
+    assert_eq!(verify(repo.root(), Some(&manifest)), 0);
+}
+
+#[test]
 fn relocate_closed_tickets_rewrite_only_spec_plan_and_owns() {
     let repo = FixtureRepository::new("tickets");
     let closed = format!("{TICKETS_DIR}/T-901.toml");

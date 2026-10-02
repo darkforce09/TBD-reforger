@@ -68,13 +68,13 @@ scan::walk_files + matching_lines ──► Result<Vec<Hit>, NotRun>   (the call
   and `mod.rs`, which resolves `GATE_LOCK_RELPATH`) and the MCP broker start
   (`tools/xtask/src/commands/mcp/call.rs`, one lock per socket).
 - `repository_laws`: `verify file-length`, `verify engine-layers` and the five workspace-law
-  verbs (`verify crate-tiers` and its siblings) in `tools/xtask/src/verifications/`, and `apps/website/api_v2/tests/engineering_laws.rs`; its
+  verbs (`verify crate-tiers` and its siblings) in `tools/xtask/src/verifications/`, and `apps/api/tests/engineering_laws.rs`; its
   [README](/tools/verification_core/src/repository_laws/README.md) lists every law.
 
 ## Boundaries
 
 - Depends on: `std`, `regex` and `libc` only.
-- Used by: `tools/xtask/`; and `website-api` as a dev-dependency, whose `engineering_laws`
+- Used by: `tools/xtask/`; and `api` as a dev-dependency, whose `engineering_laws`
   test binary reads `repository_laws`.
 - Rules:
   - "did not run" never folds into a pass: a missing target is `DidNotRun`

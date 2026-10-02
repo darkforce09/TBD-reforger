@@ -40,8 +40,8 @@ Old `mod tests`: 36 `#[test]`. New: eden_zones 8, eden_env 10, eden_top_strip 12
 eden_vehicles_panel 1, eden_dock_right 5 = **36, names identical** (sorted-name diff empty).
 Assertion bodies byte-identical per the line multiset, except the two claimed `include_str!`
 retargets. Suite run:
-`cargo test -p website-frontend --quiet` → **`419 passed; 0 failed` in 5.60 s** (exact match to
-the claim). wasm32: `cargo clippy -p website-frontend --target wasm32-unknown-unknown` rc=0.
+`cargo test -p frontend --quiet` → **`419 passed; 0 failed` in 5.60 s** (exact match to
+the claim). wasm32: `cargo clippy -p frontend --target wasm32-unknown-unknown` rc=0.
 
 ## The 33-vs-0 discrepancy (C) — sourced
 
@@ -93,7 +93,7 @@ says "wave 0 pre-declares the stub"; all five tickets sit in the run-log wave pl
 `verify no-node` OK (zero tracked .mjs/.cjs; tools/editor-capture holds only README.md).
 `verify no-shell` OK — "59 shell scripts, none new" (58 by `.sh` extension + shebang census;
 the commit message's 59 is the gate's own figure). `cargo clippy -p tbd-tools -- -D warnings`
-rc=0. `cargo fmt -p tbd-tools -p website-frontend --check` rc=0. No conflict markers or TODOs in
+rc=0. `cargo fmt -p tbd-tools -p frontend --check` rc=0. No conflict markers or TODOs in
 any wave file.
 
 ---

@@ -2,6 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use syn::parse::{ParseStream, Parser};
 use toml::Value;
+use verification_core::repository_laws::workspace_members::read_workspace_members;
 
 fn rejects_dependency(value: &Value, forbidden: &str) {
     let Some(table) = value.as_table() else {
@@ -32,8 +33,8 @@ fn tooling_dependency_direction_is_enforced() {
         toml::from_str(&fs::read_to_string(root.join(format!("tools/{name}/Cargo.toml"))).unwrap())
             .unwrap()
     };
-    rejects_dependency(&read("xtask"), "website-map-engine");
-    rejects_dependency(&read("xtask"), "website-graphics-engine");
+    rejects_dependency(&read("xtask"), "map_engine");
+    rejects_dependency(&read("xtask"), "graphics_engine");
     rejects_dependency(&read("developer_tools"), "xtask");
     assert_eq!(
         read("xtask")["dependencies"]["developer_tools"]["path"].as_str(),
@@ -85,17 +86,14 @@ fn the_tooling_tree_holds_its_executables_manifests_and_layout_modules() {
 #[test]
 fn foundational_engines_have_no_workspace_dependencies() {
     let root = crate::core::repository_root::test_repo_root();
-    let workspace: Value =
-        toml::from_str(&fs::read_to_string(root.join("Cargo.toml")).unwrap()).unwrap();
     for name in ["ticket_engine", "verification_core"] {
         let engine: Value = toml::from_str(
             &fs::read_to_string(root.join(format!("tools/{name}/Cargo.toml"))).unwrap(),
         )
         .unwrap();
-        for member in workspace["workspace"]["members"].as_array().unwrap() {
+        for member in read_workspace_members(&root).unwrap() {
             let manifest: Value = toml::from_str(
-                &fs::read_to_string(root.join(member.as_str().unwrap()).join("Cargo.toml"))
-                    .unwrap(),
+                &fs::read_to_string(root.join(&member.path).join("Cargo.toml")).unwrap(),
             )
             .unwrap();
             rejects_dependency(&engine, manifest["package"]["name"].as_str().unwrap());

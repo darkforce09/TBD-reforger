@@ -142,7 +142,7 @@ pub fn gate_schema(ctx: &Ctx) -> i32 {
     // differs. Content, not mtime — mtime is the thing that lies.
     let stamp_roots = [
         "tools/xtask/src",
-        "apps/website/map-engine/src",
+        "legacy/map_engine/src",
         "tools/developer_tools/src",
     ];
     let mut srcs: Vec<PathBuf> = Vec::new();
@@ -174,7 +174,7 @@ pub fn gate_schema(ctx: &Ctx) -> i32 {
     }
     for m in [
         "tools/xtask/Cargo.toml",
-        "apps/website/map-engine/Cargo.toml",
+        "legacy/map_engine/Cargo.toml",
         "tools/developer_tools/Cargo.toml",
         "Cargo.lock",
     ] {

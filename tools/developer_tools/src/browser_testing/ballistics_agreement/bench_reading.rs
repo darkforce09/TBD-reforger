@@ -3,7 +3,7 @@
 //!
 //! **Role:** the typed shape of the bench's JSON reading and its strict decoder.
 //! **Position:** mirrors `AgreementReport` and `AgreementCaseReport` of
-//! `apps/website/frontend/src/v2/apps/debug/ballistics_agreement/agreement_report.rs`; fed by
+//! `apps/frontend/src/v2/apps/debug/ballistics_agreement/agreement_report.rs`; fed by
 //! [`super::browser_session`], consumed by [`super::case_verdict`].
 //! **Signals & state:** none.
 //! **Invariants:** decoding refuses unknown keys and missing required keys, so a drift between
@@ -14,10 +14,10 @@
 use std::collections::BTreeMap;
 
 use anyhow::{Context, Result};
-use serde::{Deserialize, Serialize};
-use website_map_engine::data::scenario::ballistics::fire_mission::{
+use map_engine::data::scenario::ballistics::fire_mission::{
     FireMissionInputs, FireMissionSolution,
 };
+use serde::{Deserialize, Serialize};
 
 /// One run of the bench.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

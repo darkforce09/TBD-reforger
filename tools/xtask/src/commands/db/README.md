@@ -26,9 +26,9 @@ killed by a signal is reported as such and exits 1.
 
 ```text
 DbCmd ──▶ operations::run
-  ├─ up · down · logs · seed ─▶ <runtime> compose … in apps/website/api_v2 (service `db`)
+  ├─ up · down · logs · seed ─▶ <runtime> compose -f compose.dev.yml … in deploy (service `db`)
   ├─ backup · restore · backup-drill · backup-verify ─▶ the deploy database commands, in process
-  ├─ registry-import ─▶ cargo run --bin import-registry in apps/website/api_v2
+  ├─ registry-import ─▶ cargo run --bin import-registry in apps/api
   └─ test-it · repair-migration-checksum · selftest ─▶ operations/
 ```
 
@@ -36,10 +36,11 @@ The container runtime comes from `resolve_runtime` in
 `tools/xtask/src/commands/deploy/database_operations/`: `TBD_CONTAINER_RUNTIME` when set, then
 `podman`, `docker`, and `distrobox-host-exec podman` or `docker` from inside a container; with none,
 the command stops with `FATAL:` and exit 1. The echoed line names the runtime without the bridge
-prefix, and `TBD_MK_TRACE=1` prints the real argv to stderr. `TBD_MK_WEB` points the compose
-commands at another project folder, which the self-test uses so it never stops the shared
-database. The compose file is `apps/website/api_v2/docker-compose.yml`, whose `db` service is the
-`tbd_reforger_db` container on host port 5434.
+prefix, and `TBD_MK_TRACE=1` prints the real argv to stderr. Each compose command names
+`deploy/compose.dev.yml` with `-f` and runs in `deploy/`, the folder its relative paths resolve
+against; the project name comes from the file's own `name:`. Its `db` service is the
+`tbd_reforger_db` container on host port 5434. `TBD_MK_WEB` points the compose commands at another
+folder holding a `compose.dev.yml`, which the self-test uses so it never stops the shared database.
 
 `LANE_COMMANDS` in `operations.rs` repeats the command names for `cargo xtask help`, which prints
 them as the database lane's index.
@@ -62,7 +63,7 @@ A clap usage error exits 2.
 
 - Synopsis: `cargo xtask db seed`
 - Does: applies `discord_roles.sql`, `registry_dev.sql`, `faction_library.sql`,
-  `vehicle_database.sql` and `wiki_pages.sql` from `apps/website/api_v2/seeds/`, in that order
+  `vehicle_database.sql` and `wiki_pages.sql` from `apps/api/seeds/`, in that order
   (`registry_dev.sql` references the roles the first file seeds), each through
   `compose exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger`, so a failed statement
   ends that file with a non-zero exit and the command stops there. Needs `db up` and the tables
@@ -91,11 +92,11 @@ A clap usage error exits 2.
 ### registry-import
 
 - Synopsis: `cargo xtask db registry-import`
-- Does: runs the API's `import-registry` binary in `apps/website/api_v2` over
+- Does: runs the API's `import-registry` binary in `apps/api` over
   `contracts/catalogs/registry-items.workbench.json` and
   `contracts/catalogs/registry-compat.workbench.json`, loading the item
   [registry](/documentation/glossary/n_to_z.md#registry) into the database `DATABASE_URL` names (the
-  environment or `apps/website/api_v2/.env`), after applying pending migrations.
+  environment or `apps/api/.env`), after applying pending migrations.
 - Exit codes: cargo's own code.
 - Example: `cargo xtask db registry-import`
 
@@ -139,7 +140,7 @@ A clap usage error exits 2.
   `milestone_announcement.rs`.
 - Does: inserts the pinned "Milestone #1" website announcement unless one titled `Milestone #1%`
   exists. It takes `DATABASE_URL` from the environment, overridden by
-  `apps/website/api_v2/.env` (read as `KEY=VALUE`, never executed), and runs `psql` with it; with
+  `apps/api/.env` (read as `KEY=VALUE`, never executed), and runs `psql` with it; with
   no `psql`, it runs `podman exec -i tbdevent-postgres psql -U tbdevent -d tbdevent` when that
   container is running.
 - Exit codes: 0 inserted or already present; 1 no `psql` and no such container, no
@@ -149,9 +150,10 @@ A clap usage error exits 2.
 ## Boundaries
 
 - Depends on: `crate::commands::deploy` (the database helpers, backup, restore and drill);
-  `crate::core::repository_root` and `crate::core::host_execution`;
-  `crate::verifications::property_test_configuration`; `verification_core`; the compose file,
-  seeds and migrations of `apps/website/api_v2/`; a container runtime, cargo and git.
+  `crate::core::repository_root`, `crate::core::repository_layout` and
+  `crate::core::host_execution`; `crate::verifications::property_test_configuration`;
+  `verification_core`; `deploy/compose.dev.yml`; the seeds and migrations of `apps/api/`; a
+  container runtime, cargo and git.
 - Used by:
   - `tools/xtask/src/cli/dispatch.rs` and `tools/xtask/src/commands/mod_ops/dispatch.rs`;
   - `tools/xtask/src/commands/ci/task_runner/split_cmd.rs`, which prints `LANE_COMMANDS`;

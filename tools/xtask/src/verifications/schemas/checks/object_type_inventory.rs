@@ -87,7 +87,7 @@ pub fn type_inventory() -> Result<u8> {
 
     // The lockstep pin for INSTANCE_KINDS, RUN rather than merely written down. It is here
     // and not only in a #[test] because nothing runs xtask's tests: the wave gate tests
-    // website-api / map-engine-* / website-frontend, and CI mirrors that. `xtask schema
+    // api / map-engine-* / frontend, and CI mirrors that. `xtask schema
     // type-inventory` is in GATE_SCHEMA_VALIDATE_GATES, so this executes in both gate halves.
     // First, before any inventory is examined — if the kind list is wrong then every I1 verdict
     // below it is computed over the wrong set of buckets and must not be believed.

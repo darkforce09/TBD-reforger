@@ -25,7 +25,7 @@ assets/terrains/everon/dem/
 - Schema: the manifest's `dem` block describes the file (`path`, `widthPx`, `heightPx`,
   `encoding` `uint16-linear`, the height range, `source` `mod-getsurfacey-resample` and
   `axisFlip`), following `contracts/definitions/terrain-manifest.schema.json`. The decoder is
-  `decode_png_to_meters` in `apps/website/map-engine/src/world/terrain/dem/`.
+  `decode_png_to_meters` in `legacy/map_engine/src/world/terrain/dem/`.
 - Adding a file: a re-export replaces the image and the manifest's `dem` block together, then
   `cargo xtask schema terrain-alignment --terrain everon --strict` checks it against the anchors.
 
@@ -37,7 +37,7 @@ assets/terrains/everon/dem/
   raw-u16-dem-png --raster <grid> --meta <meta> --out <png>` packs them into this image.
 - Consumers:
   - the map engine's elevation loader, which fetches `/map-assets/everon/dem/everon-dem-16bit.png`
-    at boot (`apps/website/map-engine/src/world/terrain/dem/`), and its spot-height and relief
+    at boot (`legacy/map_engine/src/world/terrain/dem/`), and its spot-height and relief
     code;
   - the map raster pipeline's height-label export and inland water analysis
     (`tools/developer_tools/src/map_raster_pipeline/`);
@@ -58,5 +58,5 @@ assets/terrains/everon/dem/
 
 ## Related documentation
 
-- [Elevation model](/apps/website/map-engine/src/world/terrain/dem/README.md) — decoding, sampling
+- [Elevation model](/legacy/map_engine/src/world/terrain/dem/README.md) — decoding, sampling
   and the vector grid.

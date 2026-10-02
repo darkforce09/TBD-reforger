@@ -19,7 +19,7 @@ Wire badge/glyph path: `deck_zoom ≥ importance_zoom` overrides `BUILDING_BADGE
 - `crates/map-engine-core/src/world/residency.rs` — badge emission gate
 - `crates/map-engine-core/src/world/glyph_math.rs` — `BADGE_SIZE_MIN_PX` floor at coarse zoom
 - `lod_gates.rs` / fill de-emphasis as spec
-- `apps/website/frontend/.../lodGates.ts` — wire or delete dead `landmarkVisible()`
+- `apps/frontend/.../lodGates.ts` — wire or delete dead `landmarkVisible()`
 - Tests: lighthouse @ z=−2, class R census
 
 ## Deferred

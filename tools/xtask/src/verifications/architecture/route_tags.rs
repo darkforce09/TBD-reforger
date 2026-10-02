@@ -98,10 +98,10 @@ use verification_core::{Kind, NotRun, Pattern, Verdict, gate, scan};
 
 /// The router assembly. Relative, because the script `cd`s to `$ROOT` and printed relative paths.
 /// Read for its SHAPE only — the registrations live in the domain tables it merges.
-const ROUTER_RS_REL: &str = "apps/website/api_v2/src/core/http_router.rs";
+const ROUTER_RS_REL: &str = "apps/api/src/core/http_router.rs";
 /// The tree swept for `@route` tags — the whole `src/`, not just `handlers/`. Also the tree the
 /// domain route tables are discovered in.
-const SRC_DIR_REL: &str = "apps/website/api_v2/src";
+const SRC_DIR_REL: &str = "apps/api/src";
 /// The nest prefix every `@route` tag is written against. Asserted, never assumed: if
 /// `http_router.rs`
 /// stops nesting the merged tables here, every extracted path is silently wrong.

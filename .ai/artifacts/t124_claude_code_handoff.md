@@ -20,7 +20,7 @@ Five commits on `main` (single-ticket mode):
 
 ```bash
 nvm use   # reads .nvmrc → 26
-cd apps/website/frontend && npm run build && npm run lint && npm run test   # 21/21
+cd apps/frontend && npm run build && npm run lint && npm run test   # 21/21
 make build && make db-up && make test-it
 make schema-codegen
 cd packages/tbd-schema && npm run validate

@@ -41,15 +41,15 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result, bail};
 use serde_json::Value;
 
-use website_map_engine::io::archives::codec::access_checked;
-use website_map_engine::io::archives::codec::to_bytes;
-use website_map_engine::io::archives::version::ARCHIVE_SCHEMA_VERSION;
-use website_map_engine::io::archives::water::WaterBody;
-use website_map_engine::io::archives::water::WaterLine;
-use website_map_engine::io::archives::water::WaterVectorsArchive;
-use website_map_engine::io::containers::header::ContainerHeader;
-use website_map_engine::io::containers::tbdb::TbdbHeader;
-use website_map_engine::world::terrain::water::vectors::downsample_index;
+use map_engine::io::archives::codec::access_checked;
+use map_engine::io::archives::codec::to_bytes;
+use map_engine::io::archives::version::ARCHIVE_SCHEMA_VERSION;
+use map_engine::io::archives::water::WaterBody;
+use map_engine::io::archives::water::WaterLine;
+use map_engine::io::archives::water::WaterVectorsArchive;
+use map_engine::io::containers::header::ContainerHeader;
+use map_engine::io::containers::tbdb::TbdbHeader;
+use map_engine::world::terrain::water::vectors::downsample_index;
 
 use crate::browser_testing::server::repo_root;
 

@@ -86,12 +86,12 @@ G-A (interactive gesture).
 
 | Gate | Result |
 |------|--------|
-| `cargo check -p website-frontend --target wasm32` | PASS |
+| `cargo check -p frontend --target wasm32` | PASS |
 | `cargo test -p map-engine-core --all-features` | PASS (5/5; `density_iso_is_two` intact) |
 | `make schema-validate` (incl. S13 density fixture) | PASS |
 | `leptos-build` (release, in leptos-gates) | PASS (optimized build, my changes) |
 | `gate editor-suite` (headless smokes) | ⚠ CDP `Runtime.evaluate` timeout — documented headless software-WebGPU/lavapipe wedge (`t166-editor-smoke-webgl`), pre-existing, not T-176 code. On-GPU render = operator G-A (established T-17x division). |
-| `make ci-local` | **PASS** — editorconfig, no-python, no-node, rust-ci (wasm-ci clippy `-D warnings` on map-engine-core/render + all backend tests), coding-standards, ci-local-leptos (website-frontend fmt + clippy wasm32 + tests + trunk `--release`), ci-local-schema (validate + 16 @contract citations). No errors. |
+| `make ci-local` | **PASS** — editorconfig, no-python, no-node, rust-ci (wasm-ci clippy `-D warnings` on map-engine-core/render + all backend tests), coding-standards, ci-local-leptos (frontend fmt + clippy wasm32 + tests + trunk `--release`), ci-local-schema (validate + 16 @contract citations). No errors. |
 
 ## Manual notes vs screens 01–03 (operator G-A)
 

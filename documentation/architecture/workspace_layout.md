@@ -20,7 +20,12 @@ stage; this document follows each stage's commit, and its last section says what
 
 ```text
 TBD-reforger/
-├── apps/            the products: website, Enfusion mod suite, fleet host agent, ticketboard
+├── apps/            the products: API, single-page app, service worker, Enfusion mod suite,
+│                    fleet host agent, ticketboard
+├── crates/          the tiered library crates, grouped by category (foundation/, contracts/)
+├── legacy/          the map and graphics engines, parked while their code moves into crates/
+├── deploy/          the release Dockerfile, compose files, Caddy site (caddy/), deploy settings,
+│                    systemd units
 ├── tools/           the developer tools: xtask, verification_core, ticket_engine, developer_tools,
 │                    and the pinned Enfusion MCP npm package
 ├── contracts/       JSON Schemas, rules, catalogs and fixtures of every shape that crosses a boundary
@@ -34,7 +39,7 @@ TBD-reforger/
 ```
 
 The root files are the workspace manifest and lockfile, the toolchain pin, `clippy.toml`, the
-editor and checker settings (`.editorconfig`, `.editorconfig-checker.json`), the Git LFS patterns
+build context of the API's release image (`.dockerignore`), the editor and checker settings (`.editorconfig`, `.editorconfig-checker.json`), the Git LFS patterns
 (`.gitattributes`), the ignore rules (`.gitignore`), the per-mission warning budget of the mod
 world-boot gate (`.world-boot-warning-baseline`), the root `README.md`, and `CLAUDE.md` with
 `AGENTS.md` as a symlink to it. Build output is never tracked: `target/` and every `target-*/`
@@ -47,27 +52,34 @@ rust-version 1.95 from `[workspace.package]`, except the frontend, which declare
 
 | Folder | Package | What it is |
 |---|---|---|
-| [`apps/website/api_v2/`](/apps/website/api_v2/README.md) | `website-api` | the Axum and sqlx REST API and SSE hub, with the `api` server and the registry import and staging fixture tools |
-| [`apps/website/frontend/`](/apps/website/frontend/README.md) | `website-frontend` | the Leptos single-page app, compiled to WebAssembly and served by Trunk |
-| [`apps/website/map-engine/`](/apps/website/map-engine/README.md) | `website-map-engine` | map graphics, spatial computation, terrain formats, streaming and the mission domain |
-| [`apps/website/graphics-engine/`](/apps/website/graphics-engine/README.md) | `website-graphics-engine` | GPU rendering primitives with no map concept |
-| [`apps/website/offline-service-worker/`](/apps/website/offline-service-worker/README.md) | `website-offline-service-worker` | the WebAssembly service worker behind offline packs |
-| [`apps/fleet_host_agent/`](/apps/fleet_host_agent/README.md) | `fleet-host-agent` | the agent beside each game-server instance that carries out fleet commands |
+| [`apps/api/`](/apps/api/README.md) | `api` | the Axum and sqlx REST API and SSE hub, with the `api` server and the registry import and staging fixture tools |
+| [`apps/frontend/`](/apps/frontend/README.md) | `frontend` | the Leptos single-page app, compiled to WebAssembly and served by Trunk |
+| [`legacy/map_engine/`](/legacy/map_engine/README.md) | `map_engine` | map graphics, spatial computation, terrain formats, streaming and the mission domain |
+| [`legacy/graphics_engine/`](/legacy/graphics_engine/README.md) | `graphics_engine` | GPU rendering primitives with no map concept |
+| [`apps/offline_service_worker/`](/apps/offline_service_worker/README.md) | `offline_service_worker` | the WebAssembly service worker behind offline packs |
+| [`apps/fleet_host_agent/`](/apps/fleet_host_agent/README.md) | `fleet_host_agent` | the agent beside each game-server instance that carries out fleet commands |
 | [`apps/ticketboard/`](/apps/ticketboard/README.md) | `ticketboard` | the egui desktop viewer of the ticket registry |
+| [`crates/foundation/http_url_guard/`](/crates/foundation/http_url_guard/README.md) | `http_url_guard` | the HTTP(S) URL check the API and the single-page app share |
+| [`crates/contracts/offline_cache_policy/`](/crates/contracts/offline_cache_policy/README.md) | `offline_cache_policy` | the offline cache names, request classes and fallback rules the service worker applies |
 | [`tools/xtask/`](/tools/xtask/README.md) | `xtask` | the `cargo xtask` command router: builds, gates, deploys, repository verifications |
 | [`tools/verification_core/`](/tools/verification_core/README.md) | `verification_core` | fail-closed verdicts, pattern scans, process isolation and the verification lock |
 | [`tools/ticket_engine/`](/tools/ticket_engine/README.md) | `ticket_engine` | ticket storage, validation, queue and roadmap sync |
 | [`tools/developer_tools/`](/tools/developer_tools/README.md) | `developer_tools` | the heavy executables: script index, browser gates, MCP broker, world export, map assets, capture |
 
-The tool packages and folders are snake_case; the website packages keep their hyphenated
-`website-*` names until the restructure renames them. The mod suite under `apps/mod/` is not
+Every package is named after its folder, in snake_case. A crate under `crates/` sits in the
+folder of its category and declares its tier in its manifest, and none depends on a crate in
+`legacy/` (`cargo xtask verify crate-tiers`,
+`cargo xtask verify strangler`). The mod suite under `apps/mod/` is not
 Cargo code: its three Enfusion addons are built by Workbench and checked by `cargo xtask mod compile`.
 
 ## Where things live
 
 ```text
 code ─────────── apps/<product>/            products, one folder each
+                 crates/<category>/<crate>/ library crates, by category
+                 legacy/<engine>/           the two engines while their code moves to crates/
                  tools/<tool>/              repository tooling
+deploy ───────── deploy/                    release image, compose files, Caddy, systemd units
 shapes ───────── contracts/definitions/     JSON Schemas, the source of generated contract types
                  contracts/fixtures/        golden test data, positive and negative
 data ─────────── assets/terrains/           built-in islands, served at /map-assets (Git LFS)
@@ -87,9 +99,17 @@ work tracking ── .ai/tickets/               one TOML per ticket, the queue a
 - **Assets.** Terrain datasets are Git LFS objects matched by `.gitattributes`; export scratch,
   equipment exports and terrain tiles are ignored and rebuilt by the export tools.
 - **Documentation.** Every document lives under `documentation/`. A feature doc sits at the
-  documentation root plus its code path without `src/`; mirrors of code under `apps/` also leave
-  out `apps/`, `src/v2/` and `Scripts/Game/TBD/` until the restructure moves those trees, as the
+  documentation root plus its code path without `src/`: `documentation/apps/api/` for `apps/api/`,
+  `documentation/legacy/map_engine/` for `legacy/map_engine/`. Two mirrors keep a shorter path
+  until a stage reshapes their code: the single-page app's documents also leave out `src/v2/`
+  (until S3), and the mod's leave out `apps/` and `Scripts/Game/TBD/` and sit in
+  `documentation/mod/` (until M1), as the
   [documentation standards](/documentation/standards/documentation_standards.md) set out.
+- **Deployment.** `deploy/` holds what runs the platform outside a developer machine: the API's
+  release `Dockerfile` (its build context narrowed by the root `.dockerignore`), the development
+  and staging compose files, the Caddy site in `deploy/caddy/` (the one folder the staging Caddy
+  container mounts, so a host's `deploy.env` stays outside it), the `deploy.env.example` that
+  `cargo xtask deploy` reads, and the systemd units and timers in `deploy/systemd/`.
 - **Agent configuration.** `CLAUDE.md` holds the project laws, the atlas and the canonical
   commands; `.cursor/rules/` the Cursor rules; `.claude/settings.json` the Claude Code settings.
 
@@ -99,15 +119,20 @@ The [restructure program](/documentation/restructure/README.md) runs in stages, 
 with its [relocation manifest](/documentation/restructure/manifests/README.md). Stage S1 renamed
 the four top-level folders to `assets/`, `contracts/`, `documentation/` and `tools/`, gave the tool
 crates snake_case names and archived the finished documentation program and the earlier layout
-proposals. The stages after it:
+proposals. Stage S2 moved the API, the frontend and the service worker directly under `apps/`,
+parked the map and graphics engines in `legacy/`, named every package after its folder (the fleet
+host agent's binary, systemd units and configuration folder included), gathered the deployment
+files in `deploy/` with the Caddy site in its own `deploy/caddy/` folder, moved the recorded API
+responses to `contracts/fixtures/api_goldens/` and created the first two crates under `crates/`:
+`http_url_guard`, the one URL check the API and the single-page app link, and
+`offline_cache_policy`, the cache policy the service worker and the page share. The stages after
+it:
 
-- S2 moves the API, the frontend and the service worker directly under apps/, parks the map and
-  graphics engines in a legacy folder, gives every package a snake_case name and adds a top-level
-  deploy folder.
 - S3 splits the frontend's `src/v2/` layer in place.
-- S4 to S11 build the tiered crates under a new crates folder, from the foundations through the
-  mission, world, streaming, rendering, API, frontend and tool crates, and delete the legacy
-  engines and the ticket engine.
+- S4 to S11 build the tiered crates under `crates/`, from the foundations through the
+  mission, world, streaming, rendering, API, frontend and tool crates, and delete `legacy/` and
+  the ticket engine.
+- M1 and M2 reshape the mod suite's folders; M1 also brings its documents to the full code path.
 - S12 closes the program; this document then describes its end state.
 
 Each stage that moves code also moves the code's documentation mirror. The end state is the

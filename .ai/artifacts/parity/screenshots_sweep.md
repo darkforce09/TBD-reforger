@@ -45,7 +45,7 @@ The images were **not** re-read. Every Eden-side claim traces to a batch documen
 
 ### 1.2 Ground truth for `match` / `partial`
 
-Read from `apps/website/frontend/src/` this session, not inherited:
+Read from `apps/frontend/src/` this session, not inherited:
 
 | Live surface | Where | What is actually there |
 |---|---|---|

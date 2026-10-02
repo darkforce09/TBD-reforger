@@ -14,7 +14,7 @@ parent = "T-940"
 main_goal = "Attendance history survives withdrawals and unlinked players."
 context = [
     "Anchor 2026-09-04: events.rs:2037-2041 DELETE FROM event_registrations on withdraw; models/event.rs:56 defines no_show with no writer; pages/public/deployments.rs:55 renders it.",
-    "Depends on T-940.1 (events.rs). apps/website/frontend/src/core/dto.rs is the frontend R-api golden mirror of models/event.rs.",
+    "Depends on T-940.1 (events.rs). apps/frontend/src/core/dto.rs is the frontend R-api golden mirror of models/event.rs.",
     "Related, not re-minted: T-393 (shipped) identity link, T-311 leaderboard tie-breaker.",
 ]
 requirement = [
@@ -44,7 +44,7 @@ created_at = "2026-09-05T02:33:18Z"
 owns = [
     "apps/website/api/src/handlers/events/events.rs",
     "apps/website/api/src/models/event.rs",
-    "apps/website/frontend/src/core/dto.rs",
+    "apps/frontend/src/core/dto.rs",
     "apps/website/api/migrations/0023_registration_tombstones.sql",
 ]
 

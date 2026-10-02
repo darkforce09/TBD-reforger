@@ -104,13 +104,13 @@ pub fn touch_changed(base: &str) -> i32 {
 /// never opened, and both of the ticket's repros are that one sentence:
 ///
 ///   A. MEASURED 2026-07-26. Append `THIS IS NOT RUST AND CANNOT COMPILE ###` to
-///      a `website-map-engine` source file, then `touch -r` it back to its ORIGINAL mtime.
+///      a `map_engine` source file, then `touch -r` it back to its ORIGINAL mtime.
 ///      `cargo check --workspace --quiet` -> rc 0. `touch` it (identical bytes) -> rc 101,
 ///      "reserved multi-hash token is forbidden". The gate's own clippy line: same, 0 then 101.
 ///   B. MEASURED 2026-07-26. A sibling worktree added a const and built into the shared dir. From a
-///      tree that does not contain that symbol, `cargo check -p website-map-engine --features
+///      tree that does not contain that symbol, `cargo check -p map_engine --features
 ///      doc,mission,world` reported `Finished in 0.06s`, and `--message-format=json` named
-///      `libwebsite_map_engine-<hash>.rmeta` as its own artifact — an rmeta that greps 1 for the
+///      `libmap_engine-<hash>.rmeta` as its own artifact — an rmeta that greps 1 for the
 ///      foreign symbol while the tree greps 0. The check stood on another tree's work and said
 ///      PASS.
 ///
@@ -125,7 +125,7 @@ pub fn touch_changed(base: &str) -> i32 {
 /// WHY THE WHOLE WORKSPACE AND NOT JUST THE DIFF. [`touch_changed`] already covers `$base..HEAD`
 /// union `git status --porcelain`, and that defence is real — keep it. What it cannot cover is a
 /// crate this slice did not touch but some OTHER tree did: wave 5's own 12/12 run touched only
-/// website-map-engine, website-frontend and xtask, so website-api and every other member's verdict
+/// map_engine, frontend and xtask, so api and every other member's verdict
 /// rested on artifacts of unidentified provenance. Provenance is not a property of the diff, so the
 /// invalidation cannot be scoped to the diff.
 ///
@@ -134,7 +134,21 @@ pub fn touch_changed(base: &str) -> i32 {
 /// graph is what makes a cold build expensive and NONE of it is touched. `cargo check --workspace`
 /// goes 0.19 s warm -> 1.09 s touched. Nine tenths of a second buys a verdict about this tree.
 pub fn touch_workspace(ctx: &Ctx) -> i32 {
-    let dirs = workspace_members();
+    let dirs = match workspace_members() {
+        Ok(dirs) => dirs,
+        Err(reason) => {
+            wprintln!(
+                "  touch_workspace: REFUSING — the workspace members could not be read out of Cargo.toml"
+            );
+            wprintln!(
+                "                   ({reason:?}), so no fingerprint was invalidated and every"
+            );
+            wprintln!(
+                "                   cargo step below could report on another tree's artifacts."
+            );
+            return 1;
+        }
+    };
     // Non-vacuity, first layer: a manifest reformat that parses to the empty set would "succeed"
     // here and touch nothing, which is the same lie one level up.
     if dirs.is_empty() {
@@ -194,7 +208,18 @@ pub fn touch_workspace(ctx: &Ctx) -> i32 {
         );
         return 1;
     }
-    let incl_paths = compiled_include_input_paths();
+    let incl_paths = match compiled_include_input_paths() {
+        Ok(paths) => paths,
+        Err(reason) => {
+            wprintln!(
+                "  touch_workspace: REFUSING — the include_str!/include_bytes! inputs could not be"
+            );
+            wprintln!(
+                "                   listed ({reason:?}), so their fingerprints stay as they were."
+            );
+            return 1;
+        }
+    };
     let existing: Vec<PathBuf> = incl_paths.into_iter().filter(|p| p.is_file()).collect();
     let incl_n = existing.len();
     touch_paths(&existing);
@@ -249,7 +274,7 @@ fn package_name(dir: &str) -> Option<String> {
 ///
 /// Scoped to changed crates rather than the workspace because `clippy --workspace -D warnings` is
 /// red on clean main — a gate nothing can pass teaches agents that gate failures are noise. A re-measure
-/// re-measured 2026-07-31: 60 errors, ALL of them website-frontend linted natively, none in
+/// re-measured 2026-07-31: 60 errors, ALL of them frontend linted natively, none in
 /// tools/developer_tools or xtask (this note used to blame those two; they are clean and the wave gate
 /// now lints them by name). Frontend goes through wasm32 with NO `-D`, matching ci.yml:113;
 /// everything else takes `-D warnings`, matching the wave gate.
@@ -264,10 +289,9 @@ pub fn clippy_changed(ctx: &Ctx, base: &str) -> i32 {
         return 0;
     }
     // Map each file to its owning crate by walking up to the nearest Cargo.toml with a [package]
-    // name. Orphan fragments (apps/website/shared/*.rs) have no package ancestor — the walk stops
-    // at '.' — but they are include!'d into real crates (`is_http_url_cases.rs` reaches website-api
-    // and website-frontend). An empty-crates refusal false-reds that shape; resolve via include!
-    // consumers before refusing.
+    // name. An orphan fragment (a `.rs` file outside every package) has no package ancestor — the
+    // walk stops at '.' — but `include!` pulls it into real crates, one or several. An
+    // empty-crates refusal false-reds that shape; resolve via include! consumers before refusing.
     let mut crates: Vec<String> = Vec::new();
     let push_unique = |crates: &mut Vec<String>, c: String| {
         if !crates.contains(&c) {
@@ -312,14 +336,14 @@ pub fn clippy_changed(ctx: &Ctx, base: &str) -> i32 {
         let argv: Vec<String> = match c.as_str() {
             // --all-targets is load-bearing (see function header) — without it, #[cfg(test)]
             // lints are invisible here and certain to land red once CI learns the
-            // same flag. NO -D warnings: ci.yml website-frontend clippy is advisory (no -D),
+            // same flag. NO -D warnings: ci.yml frontend clippy is advisory (no -D),
             // matching the wave-gate `clippy frontend` step. Align -D with CI intent, not with the
             // other crates.
-            "website-frontend" => host::v(&[
+            "frontend" => host::v(&[
                 "cargo",
                 "clippy",
                 "-p",
-                "website-frontend",
+                "frontend",
                 "--target",
                 "wasm32-unknown-unknown",
                 "--all-targets",
@@ -327,7 +351,7 @@ pub fn clippy_changed(ctx: &Ctx, base: &str) -> i32 {
             ]),
             // THE TOOLING CRATES ARE NOT SKIPPED HERE. A skip reading "red on main, ungated by
             // CI" is false on both halves. Measured: the 60 workspace errors are ALL
-            // website-frontend, and the wave gate lints the tooling crates by name. Re-verified
+            // frontend, and the wave gate lints the tooling crates by name. Re-verified
             // 2026-08-01 through this very function, both directions: with a skip arm in place, a
             // `format!("{}", "verify")` injected into
             // tools/developer_tools/src/enfusion_tooling/apidoc.rs and into an xtask module
@@ -349,7 +373,7 @@ pub fn clippy_changed(ctx: &Ctx, base: &str) -> i32 {
             // `error: useless use of format!` with them. The adversarial verifier found this; the
             // gate did not.
             // T-0xx Phase 2A: `website-mission-core` was the other arm here and no longer exists.
-            engine @ ("website-map-engine" | "website-graphics-engine") => host::v(&[
+            engine @ ("map_engine" | "graphics_engine") => host::v(&[
                 "cargo",
                 "clippy",
                 "-p",

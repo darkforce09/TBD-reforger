@@ -35,14 +35,14 @@ Fix landed in `c4c299100`, loosening `id` to `"id": { "type": "string" }` to mai
 
 ### MAJOR:
 - **T-946.82 — Canvas Z gizmo arm never advances or commits elevation:**
-  `T-939.3` added `apps/website/frontend/src/editor/canvas/gizmo_z.rs` (math & hit-testing) and updated `overlays.rs` to draw the Z arm SVG. In `gestures.rs:626`, clicking the Z arm sets `z_drag = Some(...)` and requests pointer capture.
+  `T-939.3` added `apps/frontend/src/editor/canvas/gizmo_z.rs` (math & hit-testing) and updated `overlays.rs` to draw the Z arm SVG. In `gestures.rs:626`, clicking the Z arm sets `z_drag = Some(...)` and requests pointer capture.
   However:
   - `z_drag` is captured but **never read** in `onpointermove` (lines 374-520) — the elevation readout is never updated and `set_z_drag_readout` has 0 callers in the codebase.
   - `z_drag` is captured but **never read or cleared** in `onpointerup` (lines 832-930) — no document mutation is ever committed, no undo transaction is opened, and pointer capture is not reliably released.
   - `dy_to_elevation`, `snap_elevation`, and `format_height_readout` have 0 production call sites outside unit tests.
 
 - **T-946.83 — Outliner multi-select drag still drops single item; `plan_drop` uncalled:**
-  `T-939.1` created `apps/website/frontend/src/editor/panels/outliner_drag.rs` with `DragSet` and `plan_drop`.
+  `T-939.1` created `apps/frontend/src/editor/panels/outliner_drag.rs` with `DragSet` and `plan_drop`.
   However:
   - On drop in `outliner_tree.rs:1060`, the pointerup handler still unconditionally invokes `crate::editor::state::operations::complete_layer_drop_onto_folder(id_up.clone())`. That function reads `PENDING_LAYER_DRAG`, which only holds the single clicked `id_down`.
   - `plan_drop` has **0 production call sites** in the entire repository.
@@ -54,7 +54,7 @@ Fix landed in `c4c299100`, loosening `id` to `"id": { "type": "string" }` to mai
   Inspection of commit `d164435caa5a` shows **no such button was added**, and `begin_tactical_draw` still has 0 call sites across the codebase.
 
 - **T-946.85 — Duplicate slot ID guard uncalled on editor save path:**
-  `T-937.5` implemented `duplicate_slot_ids(doc: &MissionDocCore) -> Vec<(String, String)>` in `apps/website/frontend/src/editor/state/operations/slot_ids.rs`.
+  `T-937.5` implemented `duplicate_slot_ids(doc: &MissionDocCore) -> Vec<(String, String)>` in `apps/frontend/src/editor/state/operations/slot_ids.rs`.
   However:
   - `duplicate_slot_ids` is never called on the live editor's `save_now` path (`commands_hotkeys.rs:955`).
   - File upload was protected via an ad-hoc private function `check_duplicate_slot_ids_in_payload(&Value)` in `mission_library.rs`, leaving `duplicate_slot_ids` with 0 production callers.

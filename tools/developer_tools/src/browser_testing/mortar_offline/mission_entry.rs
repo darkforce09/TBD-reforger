@@ -11,8 +11,8 @@
 //! with the map engine's `solution_wording`); a difference names the page's input values.
 
 use anyhow::{Result, anyhow, bail};
-use website_map_engine::camera::grid_reference::{GridFigures, format_grid, parse_grid};
-use website_map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
+use map_engine::camera::grid_reference::{GridFigures, format_grid, parse_grid};
+use map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
 
 use super::expected_solution::{TypedMission, expected_tables, solve_natively, table_differences};
 use super::mission_plan::{

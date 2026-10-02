@@ -47,7 +47,7 @@ missing from the registry, an unknown phase, or one past the entry's `importPhas
 
 - Depends on: the sibling modules `chunk_partitioner` (the builders E6 reruns, `phase_kinds`,
   `gunzip`), `classify`, `forest_contours`, `polygon_geometry`, `vegetation_density` and
-  `json_number_formatting`; `website-map-engine`'s `io::density::tbdd` decoder;
+  `json_number_formatting`; `map_engine`'s `io::density::tbdd` decoder;
   `crate::repository_layout`; `jsonschema`.
 - Used by: `world verify-phase` and `world phase-gate`
   (`tools/developer_tools/src/world_export_pipeline/cli.rs`); `cargo xtask map export-terrain`

@@ -13,7 +13,7 @@ adapters adapt now lives engine-side.
 | `reassign.rs` | 103 | 4 |
 | `slot_ids.rs` | 7 | 1 (a bare `pub use`) |
 
-Under `apps/website/frontend/src/editor/state/operations/`. The eight `entity/` adapters belong to
+Under `apps/frontend/src/editor/state/operations/`. The eight `entity/` adapters belong to
 `3A-D2`; the façade and the `3A-C` shims belong to `3A-D3`. **Touch neither.**
 
 ## How the call sites actually look — read this before planning
@@ -31,7 +31,7 @@ Every adapter has the identical shape, no logic of its own:
 ```rust
 pub fn X(args) -> R {
     let r = with_batch("label", || OPS_CTX.with(|c| { /* borrow chain */
-        website_map_engine::data::store::operations::<mod>::X(core, args)
+        map_engine::data::store::operations::<mod>::X(core, args)
     }));
     if changed { mission_history::after_local_edit(); }
     r
@@ -97,8 +97,8 @@ Your five files are gone, every one of their call sites reaches the engine direc
 
 ```
 CARGO_TARGET_DIR=target-container cargo xtask verify engine-layers
-CARGO_TARGET_DIR=target-container cargo test -p website-map-engine --all-features
-CARGO_TARGET_DIR=target-container cargo test -p website-frontend
+CARGO_TARGET_DIR=target-container cargo test -p map_engine --all-features
+CARGO_TARGET_DIR=target-container cargo test -p frontend
 ```
 
 Baseline: `verify engine-layers` PASS on all 8 rules; map-engine **1414** passed / 0 failed / 2

@@ -54,7 +54,7 @@ crates/map-engine-wasm/          # wasm-bindgen shim (cdylib+rlib); features=["p
 apps/website/                    # Axum backend; depends on map-engine-core (features=["mission"])
   src/services/mission_compile.rs  # THIN wrapper over core flatten (+ its G6 schema test)
   src/services/mod.rs, src/contract/mod.rs  # re-export orbat/kit/flatten from core (call sites unchanged)
-apps/website/frontend/           # TS UI shell
+apps/frontend/           # TS UI shell
   src/wasm/pkg/                  # wasm-pack output (gitignored; `make wasm` regenerates)
   src/features/_wasm/            # parity.ts + *.parity.test.ts (differential harness)
   vite.config.ts, vitest.config.ts
@@ -65,7 +65,7 @@ apps/website/frontend/           # TS UI shell
 - `make wasm` — build the wasm pkg (release). Run before any frontend build/test if pkg is stale (it's gitignored).
 - `make wasm-ci` — fmt + clippy `--all-features -D warnings` + test on core+wasm.
 - `make rust-test-it` — backend integration vs the `rust_it` DB. **Capture the true exit**: `make rust-test-it > /tmp/x.log 2>&1; echo $?` — **do NOT `| tail`** (the pipe masks the exit code AND truncates).
-- Frontend: `cd apps/website/frontend && npm run test` / `npm run lint` / `npm run build`. Filter a suite: `npm run test -- <substr>` (plain substring, no regex/`\|`).
+- Frontend: `cd apps/frontend && npm run test` / `npm run lint` / `npm run build`. Filter a suite: `npm run test -- <substr>` (plain substring, no regex/`\|`).
 - `cargo fmt` does **not** accept `--manifest-path`; run `cargo fmt -p <pkg>` from the workspace root, or `make rust-fmt` (backend) / `make wasm-ci` (core+wasm).
 
 ## Correctness contract (parity classes)
@@ -73,7 +73,7 @@ apps/website/frontend/           # TS UI shell
 - **R rational** (`+ − × ÷`, compare, `floor/min/max`, `sqrt`): f64 with the JS op-order, `as f32` at the JS store boundary → **bit-identical** (memcmp). Helper `f32BytesEqual`.
 - **T transcendental** (`atan/atan2/sin/cos`, `Math.hypot`): NOT bit-identical across libm → **≤ 1 ULP / ≤ 1 gray level**. Helper `maxAbsDiff`/`ulpDistanceF64`.
 - **S structural** (rbush/supercluster/yrs swaps): **result-set equality**, not layout identity.
-- Harness: `apps/website/frontend/src/features/_wasm/parity.ts`.
+- Harness: `apps/frontend/src/features/_wasm/parity.ts`.
 
 ## Gotchas (hard-won — don't rediscover)
 

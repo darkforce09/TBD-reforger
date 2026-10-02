@@ -93,7 +93,7 @@ owns = [
     "scripts/platform/wave.sh",
     "tools/tbd-tools/src/enf",
     ".github/workflows/ci.yml",
-    "apps/website/frontend/src/arsenal.rs",
+    "apps/frontend/src/arsenal.rs",
 ]
 
 [scope]

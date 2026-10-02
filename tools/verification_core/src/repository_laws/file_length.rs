@@ -4,7 +4,7 @@
 //! each file over its ceiling, together with the rendered lines `cargo xtask verify file-length`
 //! prints.
 //! **Position:** reads [`super::source_roots`]; consumed by the `verify file-length` gate in
-//! `tools/xtask` and by the `engineering_laws` test binary of `website-api`.
+//! `tools/xtask` and by the `engineering_laws` test binary of `api`.
 //! **Signals & state:** none; pure functions over the checkout.
 //! **Invariants:** the ceilings are exactly [`PRODUCTION_MAX_LINES`] and [`TEST_MAX_LINES`] with
 //! no exemption of any kind. An unreadable file is [`NotRun::Unreadable`], never a file of zero

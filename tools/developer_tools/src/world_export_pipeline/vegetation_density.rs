@@ -1,5 +1,5 @@
 //! TBDD corner-density grid.
-//! Pure + deterministic; the byte codec itself lives in `website_map_engine::geometry::tbdd`
+//! Pure + deterministic; the byte codec itself lives in `map_engine::geometry::tbdd`
 //! (`encode_tbdd`/`decode_tbdd`) — this module carries the density-grid constants + the global
 //! corner accumulation/slicing used by the world builder + gates.
 //!
@@ -18,7 +18,7 @@ pub const DENSITY_ROWS: u16 = 65;
 /// Canopy box-blur radius in cells applied to the tree channel at bake time (global,
 /// pre-slice → seamless per-chunk marching). At 8 m cells r=1 = a 3×3 (~24 m) window: bridges the
 /// normal tree spacing (~11 m on Everon) into solid canopy while leaving clearings ≥ ~24 m as holes.
-/// Tune together with `website_map_engine::geometry::forest_mass::CANOPY_MASS_ISO`.
+/// Tune together with `map_engine::geometry::forest_mass::CANOPY_MASS_ISO`.
 pub const CANOPY_KERNEL_RADIUS_CELLS: usize = 1;
 pub const DENSITY_CHANNELS: [&str; 2] = ["tree", "rock"];
 pub const TBDD_VERSION: u16 = 1;

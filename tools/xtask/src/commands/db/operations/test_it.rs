@@ -169,6 +169,16 @@ pub(crate) fn cargo_test_arguments(selection: &TestSelection) -> Result<Vec<Stri
     Ok(arguments)
 }
 
+/// `cargo xtask db test-it` with no selection: the complete suite against a fresh database, then
+/// the cleanup. The ci `rust-test-it` task runs this in process.
+pub(crate) fn run_complete_suite() -> Result<u8> {
+    run(TestSelection {
+        binaries: Vec::new(),
+        library: false,
+        name_filter: None,
+    })
+}
+
 pub(crate) fn run(selection: TestSelection) -> Result<u8> {
     let property_configuration = crate::verifications::property_test_configuration::PropertyTestConfiguration::from_environment()?;
     println!("{}", property_configuration.marker());

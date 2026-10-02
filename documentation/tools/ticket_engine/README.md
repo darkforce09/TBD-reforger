@@ -53,5 +53,5 @@ crate boundaries to the [tooling architecture](/documentation/tools/tooling_arch
 
 - [Factory waves](/documentation/runbooks/factory_waves/README.md) — the ship, stamp-sha and
   repack order that writes estimates during a wave.
-- [Ticketboard documentation](/documentation/ticketboard/README.md) — the viewer that shows
+- [Ticketboard documentation](/documentation/apps/ticketboard/README.md) — the viewer that shows
   measured and estimated tokens apart.

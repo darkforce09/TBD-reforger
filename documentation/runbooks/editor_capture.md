@@ -21,7 +21,7 @@ binary of `tools/developer_tools`, described in the
   [Local development](/documentation/runbooks/local_development.md): `cargo xtask db up`,
   `cargo xtask mk rust-api`, then `cargo xtask mk leptos` (release) or `cargo xtask mk leptos-debug`
   (`trunk serve` without `--release`). Check: `http://localhost:3000/` answers.
-- `APP_ENV=development` in `apps/website/api_v2/.env`, for the
+- `APP_ENV=development` in `apps/api/.env`, for the
   [dev login](/documentation/glossary/a_to_f.md#dev-login) the capture signs in with.
 - The id of a [mission](/documentation/glossary/g_to_m.md#mission) to open, from the mission library.
 
@@ -110,7 +110,7 @@ Three facts about headless Chromium that the capture encodes; changing any of th
 ### Camera caveat
 
 `window.__editorCamSet(x, y, zoom)` (installed by
-`apps/website/frontend/src/v2/apps/editor/bridge/viewport.rs`) panics the render engine under
+`apps/frontend/src/v2/apps/editor/bridge/viewport.rs`) panics the render engine under
 headless Vulkan: after the first call every `__editorCam()` returns `undefined` and every canvas
 read is a black rectangle of about 44 KB. In a real browser the call works and the editor renders
 at full frame rate, so this is an artifact of the headless Vulkan surface, not an engine defect.

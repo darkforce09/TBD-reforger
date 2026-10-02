@@ -39,8 +39,8 @@
 //! The TBDD format, its header and its writers are untouched — this module only ever *reads*
 //! `density::sample_corners`.
 
+use map_engine::world::environment::vegetation::mass::CANOPY_MASS_ISO;
 use serde_json::Value;
-use website_map_engine::world::environment::vegetation::mass::CANOPY_MASS_ISO;
 
 use crate::world_export_pipeline::forest_contours::js_num;
 use crate::world_export_pipeline::vegetation_density as density;
