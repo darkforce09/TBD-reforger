@@ -48,5 +48,5 @@ of the saved body.
 
 ## Related documentation
 
-- [Doctrine wiki page](/documentation_v2/website/frontend/pages/doctrine_and_info/wiki/wiki_page.md)
+- [Doctrine wiki page](/documentation/website/frontend/pages/doctrine_and_info/wiki/wiki_page.md)
   — reading, editing and the draft rules.

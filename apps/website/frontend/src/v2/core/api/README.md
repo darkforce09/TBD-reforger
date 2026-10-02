@@ -1,8 +1,8 @@
 # API layer
 
-Everything the app talks to the [API](/documentation_v2/glossary/a_to_f.md#api) through: the HTTP client,
+Everything the app talks to the [API](/documentation/glossary/a_to_f.md#api) through: the HTTP client,
 the typed endpoint calls, the wire types they carry, and the two
-[SSE](/documentation_v2/glossary/n_to_z.md#sse) streams: one server's live status and the live audit
+[SSE](/documentation/glossary/n_to_z.md#sse) streams: one server's live status and the live audit
 log. A page imports one path to fetch and one path to name what comes back.
 
 ## Contents
@@ -36,8 +36,8 @@ the path and the body and calls the same verbs. The client injects the bearer to
 `(status, message)` pair, or as an `ApiRefusal` that keeps the reason for the callers that branch
 on it. Every `/api/v1` request the app makes goes through `client/`, with three exceptions: the
 status stream in `sse.rs`, the audit stream in `audit_stream.rs`, and the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s measured fetch of a
-[mission](/documentation_v2/glossary/g_to_m.md#mission), which reads a 2xx answer itself for its progress
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s measured fetch of a
+[mission](/documentation/glossary/g_to_m.md#mission), which reads a 2xx answer itself for its progress
 bar and hands anything else to `api_get`.
 
 `sse.rs` holds the one long-lived connection. `stream_server_status` opens
@@ -112,10 +112,10 @@ stream's bookkeeping compile natively, so the native `cargo test` covers them.
 
 ## Related documentation
 
-- [API overview](/documentation_v2/website/api_v2/api_overview.md) — every domain's routes.
-- [Server intel page](/documentation_v2/website/frontend/pages/command_center/server_intel/server_intel_page.md)
+- [API overview](/documentation/website/api_v2/api_overview.md) — every domain's routes.
+- [Server intel page](/documentation/website/frontend/pages/command_center/server_intel/server_intel_page.md)
   — the page that reads the live status stream.
-- [Audit logs page](/documentation_v2/website/frontend/pages/administration/audit_logs/audit_logs_page.md)
+- [Audit logs page](/documentation/website/frontend/pages/administration/audit_logs/audit_logs_page.md)
   — the page that reads the live audit stream.
-- [Frontend documentation](/documentation_v2/website/frontend/README.md#shared-foundations) — the shared foundations
+- [Frontend documentation](/documentation/website/frontend/README.md#shared-foundations) — the shared foundations
   among the routes, pages and workspaces of the app.

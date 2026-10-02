@@ -1,11 +1,11 @@
 # Operations models
 
-The rows and wire shapes of the [operations](/documentation_v2/glossary/n_to_z.md#operations) domain: the
-[event](/documentation_v2/glossary/a_to_f.md#event) with its
-[missions](/documentation_v2/glossary/g_to_m.md#mission), [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat)
+The rows and wire shapes of the [operations](/documentation/glossary/n_to_z.md#operations) domain: the
+[event](/documentation/glossary/a_to_f.md#event) with its
+[missions](/documentation/glossary/g_to_m.md#mission), [ORBAT](/documentation/glossary/n_to_z.md#orbat)
 seats and registrations, access policies and groups, reservation pools and allocations, the
-[game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime)'s roster and player
-[deployments](/documentation_v2/glossary/a_to_f.md#deployment), leave requests, saved fire missions and
+[game runtime](/documentation/glossary/g_to_m.md#game-runtime)'s roster and player
+[deployments](/documentation/glossary/a_to_f.md#deployment), leave requests, saved fire missions and
 the ballistics catalog versions they are solved against.
 Keys are snake_case, absent values are skipped and timestamps are RFC 3339.
 
@@ -40,7 +40,7 @@ container of missions in sequence, each an `EventMission` with its own start tim
 `OrbatSlot` seats. No struct carries a soft-delete column; the queries filter deleted rows.
 
 An `EventAccessPolicy` is a list of grants, each a list of conditions; a missing squad or
-[slot](/documentation_v2/glossary/n_to_z.md#slot) policy inherits, and an empty grant list admits nobody.
+[slot](/documentation/glossary/n_to_z.md#slot) policy inherits, and an empty grant list admits nobody.
 `validate` bounds a policy to 32 grants of 1 to 16 conditions each, and every Discord or account id
 to 1 to 128 unpadded bytes. A pool limit of zero closes the pool and an explicit `null` leaves it
 uncapped. A registration answer reports the reservation and the attendance separately, and a refused
@@ -51,14 +51,14 @@ player deployment is a `DeploymentDecision` with its `DeploymentDenial`, not an 
 - Depends on: `core::wire_format` for timestamps; serde and sqlx. `generated/` follows the
   schemas `event-access-administration`, `event-viewer-access`, `event-hub`, `event-orbat`,
   `waitlist-promotion-response`, `game-runtime-roster`, `game-runtime-deployment` and
-  `reservation-response` in `contracts_v2/definitions/`. The hand-written wire types carry
+  `reservation-response` in `contracts/definitions/`. The hand-written wire types carry
   `@contract` tags: `event.rs` cites `event-schedule.schema.json` (`Event`, `EventStatus`,
   `EventMission`) and `reservation-actions.schema.json` (`SquadReservation`),
   `leave_request.rs` cites `leave-request.schema.json`, `fire_mission.rs` cites
   `fire-mission.schema.json` and `ballistics_catalog.rs` cites `ballistics-catalog.schema.json`;
   `cargo xtask schema citations` resolves them.
 - Used by: the domain's handlers and services; the dashboard in `command_center` (`Event`,
-  `EventMission`, `OrbatSlot`); the [API](/documentation_v2/glossary/a_to_f.md#api) tests
+  `EventMission`, `OrbatSlot`); the [API](/documentation/glossary/a_to_f.md#api) tests
   `apps/website/api_v2/tests/models_serde.rs`, `apps/website/api_v2/tests/event_access_contract.rs`,
   `apps/website/api_v2/tests/game_runtime_contract.rs` and
   `apps/website/api_v2/tests/reservation_attendance_transactions.rs`, which decode live answers into

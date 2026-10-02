@@ -112,11 +112,11 @@ fn relevance_filter_matches_the_watched_surfaces_only() {
     // Elsewhere: the one ROADMAP marker file, and nothing beside it.
     assert!(relevant(
         root,
-        Path::new("/repo/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md")
+        Path::new("/repo/documentation/website/frontend/apps/editor/mission_creator_roadmap.md")
     ));
     assert!(!relevant(
         root,
-        Path::new("/repo/documentation_v2/website/frontend/apps/editor/other.md")
+        Path::new("/repo/documentation/website/frontend/apps/editor/other.md")
     ));
     assert!(!relevant(
         Path::new("/elsewhere"),

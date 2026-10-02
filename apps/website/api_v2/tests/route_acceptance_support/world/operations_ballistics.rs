@@ -8,8 +8,8 @@
 //!
 //! **Position:** mounted by `tests/route_acceptance_operations_ballistics.rs` with `#[path]`.
 //! Every catalog pair is minted from the committed vanilla pair
-//! (`contracts_v2/catalogs/ballistics/vanilla_mortars.v1.catalog.json` and
-//! `contracts_v2/fixtures/ballistics/vanilla_mortars.v1/calibration.json`) by renaming its
+//! (`contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json` and
+//! `contracts/fixtures/ballistics/vanilla_mortars.v1/calibration.json`) by renaming its
 //! `catalog_id` in both documents and re-pinning the bundle's `catalog_sha256` to the renamed
 //! catalog bytes, so the calibration still flies every case of the committed bundle. Each client
 //! solution is solved with the same map-engine assembler the mortar calculator runs.
@@ -39,10 +39,10 @@ use crate::route_acceptance_support::spec::{Actor, Role};
 use crate::route_acceptance_support::world::{Fixture, PartWorld, WorldCore};
 
 /// The committed catalog, relative to the repository root.
-const COMMITTED_CATALOG: &str = "contracts_v2/catalogs/ballistics/vanilla_mortars.v1.catalog.json";
+const COMMITTED_CATALOG: &str = "contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json";
 /// The committed calibration bundle, relative to the repository root.
 const COMMITTED_CALIBRATION: &str =
-    "contracts_v2/fixtures/ballistics/vanilla_mortars.v1/calibration.json";
+    "contracts/fixtures/ballistics/vanilla_mortars.v1/calibration.json";
 /// The committed pair's catalog id, as both documents spell it.
 const COMMITTED_CATALOG_ID: &str = "\"catalog_id\": \"vanilla_mortars\"";
 /// The upload route.

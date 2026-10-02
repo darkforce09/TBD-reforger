@@ -26,7 +26,7 @@ fn inherits(types: &Value, class: &str, base: &str) -> bool {
 
 pub async fn list(dataset: &Dataset, query: &ViewerQuery) -> Result<Value> {
     let policy: Policy = serde_json::from_str(include_str!(
-        "../../../../../../../../contracts_v2/rules/equipment-gameplay/native-matching.json"
+        "../../../../../../../../contracts/rules/equipment-gameplay/native-matching.json"
     ))?;
     let source=sqlx::query("SELECT r.resource_id,r.resource_name,n.node_id,n.class_name,e.property,t.class_name native_type FROM resources r JOIN nodes n ON n.resource=r.id JOIN edges e ON e.node=n.id JOIN nodes t ON t.id=e.target WHERE r.resource_id=? AND n.view='effective' AND e.relationship='property' AND e.property IN ('AttachmentType','MagazineWell') ORDER BY n.ordinal,e.ordinal")
         .bind(query.resource()?).fetch_all(&dataset.pool).await?;

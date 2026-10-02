@@ -1,6 +1,6 @@
 # Database seeds
 
-Development data for the [API](/documentation_v2/glossary/a_to_f.md#api)'s Postgres database: the five
+Development data for the [API](/documentation/glossary/a_to_f.md#api)'s Postgres database: the five
 files `cargo xtask db seed` applies to a fresh local database, the golden content the frontend's
 recorded API fixtures come from, and sample data applied by hand.
 
@@ -23,18 +23,18 @@ apps/website/api_v2/seeds/
 `cargo xtask db seed` pipes five files, in this order, into
 `psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger` inside the compose `db` container:
 `discord_roles.sql`, `registry_dev.sql`, `faction_library.sql`, `vehicle_database.sql`,
-`wiki_pages.sql`. The order is the `SEEDS` list in `tools_v2/xtask/src/commands/db/operations.rs`.
+`wiki_pages.sql`. The order is the `SEEDS` list in `tools/xtask/src/commands/db/operations.rs`.
 Each `psql` run stops at its first failed statement and exits 3, and the command stops at that
 file with that code. The tables come from the migrations, which only the API applies, so seed
 after the API has logged `migrations applied`; seeding earlier fails on the first statement of
 `discord_roles.sql`. Each of the five upserts on its key, so running it again converges.
 
-`discord_roles.sql` decides members' [roles](/documentation_v2/glossary/n_to_z.md#role): a member's role
+`discord_roles.sql` decides members' [roles](/documentation/glossary/n_to_z.md#role): a member's role
 is the mapped role of their highest-priority matching Discord role, and `enlisted` when none
 matches. Its role ids are the TBD guild's, so another guild replaces them. `registry_dev.sql`
 upserts the current modpack itself, so it needs no other seed, and pins every item's id, so the
 recorded `GET__registry.json` fixture reproduces on a fresh database. `faction_library.sql` owns its
-factions by the Discord id the admin [dev login](/documentation_v2/glossary/a_to_f.md#dev-login) signs
+factions by the Discord id the admin [dev login](/documentation/glossary/a_to_f.md#dev-login) signs
 in as, so they show once that account exists. `wiki_pages.sql` also writes revision 1 of each of
 its pages into `wiki_page_revisions`; running it again refreshes a page and its revision 1 only
 while the page is still at revision 1, so a page saved through the wiki keeps its content and its
@@ -47,8 +47,8 @@ renders.
 its event stream included. Its closing comment holds the capture recipe: boot an API of its own on
 a fresh database, take a dev-login token, apply `registry_dev.sql` and then this file, and request
 each row of the fixtures' `_index.tsv` in order, reads first and writes last, uploading the
-committed vanilla ballistics catalog pair (`contracts_v2/catalogs/ballistics/vanilla_mortars.v1.catalog.json`
-as part `catalog`, `contracts_v2/fixtures/ballistics/vanilla_mortars.v1/calibration.json` as part
+committed vanilla ballistics catalog pair (`contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json`
+as part `catalog`, `contracts/fixtures/ballistics/vanilla_mortars.v1/calibration.json` as part
 `calibration`) through `POST /api/v1/ballistics-catalogs` before the first catalog row. A write's JSON body
 is the fixture's sibling `<file stem>.request.json`, and each captured body is written key-sorted
 and two-space indented. Its sections follow foreign-key order, because `psql` runs each statement
@@ -84,7 +84,7 @@ value.
   crate's prose rules, which `apps/website/api_v2/src/tests/prose_rules.rs` checks.
 - Schema: the tables the migrations in `apps/website/api_v2/migrations/` create. The OPFOR
   document of `faction_library.sql` is the faction library sample,
-  `contracts_v2/fixtures/registry/faction-library.sample.json`, and the BLUFOR one holds the same
+  `contracts/fixtures/registry/faction-library.sample.json`, and the BLUFOR one holds the same
   JSON as `faction_library.blufor.json`.
 - Adding a file: write idempotent statements (`ON CONFLICT … DO UPDATE` or `DO NOTHING`) that name
   only parents inserted earlier; for `cargo xtask db seed` to apply it, add it to `SEEDS` in
@@ -97,9 +97,9 @@ value.
   `wiki-formatting-guide` page and the revision rows included, repeat the matching rows of
   `content_golden.sql`, so a change to one changes the other.
 - Consumers:
-  - `cargo xtask db seed`, through `SEEDS` in `tools_v2/xtask/src/commands/db/operations.rs`;
+  - `cargo xtask db seed`, through `SEEDS` in `tools/xtask/src/commands/db/operations.rs`;
   - `cargo xtask verify wiki-seeds` and `cargo xtask verify faction-library-seeds`
-    (`tools_v2/xtask/src/verifications/database/`), which check that `SEEDS` lists the wiki and
+    (`tools/xtask/src/verifications/database/`), which check that `SEEDS` lists the wiki and
     faction seeds and that the files hold the `field-manual` page and the `US Army 1980s` faction;
   - `apps/website/api_v2/tests/leaderboards_paging.rs`, which embeds `content_golden.sql`,
     applies it to its own scratch database and adds thirty tied players on top;
@@ -107,7 +107,7 @@ value.
     reads the `wiki-formatting-guide` body out of `wiki_pages.sql` and checks it saves with no
     finding and shows every construct;
   - the migration step of `cargo xtask platform wave gate`
-    (`tools_v2/xtask/src/commands/platform/wave_execution/migrate.rs`), which applies
+    (`tools/xtask/src/commands/platform/wave_execution/migrate.rs`), which applies
     `content_golden.sql` after each run so its database stays populated;
   - the capture recipe that closes `content_golden.sql`, which applies `registry_dev.sql` and then
     `content_golden.sql` to rebuild the frontend's API fixtures, and people applying
@@ -127,7 +127,7 @@ value.
 
 ## Related documentation
 
-- [Local development](/documentation_v2/runbooks/local_development.md) — seeding a local database
+- [Local development](/documentation/runbooks/local_development.md) — seeding a local database
   and mapping the guild's roles.
-- [Database commands](/tools_v2/xtask/src/commands/db/README.md) — `cargo xtask db` and its seed
+- [Database commands](/tools/xtask/src/commands/db/README.md) — `cargo xtask db` and its seed
   step.

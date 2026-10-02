@@ -30,7 +30,7 @@ apps/mod/tbd-framework/Scripts/Game/TBD/API/Http/
 | `machineCredential` | none | `Authorization: Bearer tbdm_...` | every `/api/v1/game-runtime/`, `/api/v1/fleet-executor/` and `/api/v1/ingest/` route |
 
 The `machineCredential` is this server's `mod_runtime`
-[machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential), issued by an administrator.
+[machine credential](/documentation/glossary/g_to_m.md#machine-credential), issued by an administrator.
 A value that does not start with `tbdm_`, such as the example's placeholder, counts as unset: no
 deployment is read, no runtime session starts, no roster loads, no fleet command is claimed, no
 link is confirmed and the telemetry queue holds its entries.
@@ -39,7 +39,7 @@ not read or parse; the loops that wait on the platform (`TBD_DeployedMission` an
 `TBD_RosterLoader` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`) call it,
 so a credential pasted in later is picked up without a restart. `SetBackend`, behind the admin
 chat command `#tbd backend <url>`, repoints the URL, keeps the credential and saves the file. The
-credential is never logged. The mission and its [event](/documentation_v2/glossary/a_to_f.md#event) are not configured here:
+credential is never logged. The mission and its [event](/documentation/glossary/a_to_f.md#event) are not configured here:
 they come with the deployment the platform holds for this server.
 
 ### The machine-credential transport

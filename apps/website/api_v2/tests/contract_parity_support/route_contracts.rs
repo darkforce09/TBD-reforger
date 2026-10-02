@@ -1,7 +1,7 @@
 //! Route contracts: which schema a golden answers to, and every way a golden breaks it.
 //!
 //! **Role:** resolves a golden's method and path to its [`RouteContract`] and validates the
-//! golden's JSON body, envelope rows or event-stream frames against the `contracts_v2`
+//! golden's JSON body, envelope rows or event-stream frames against the `contracts`
 //! definitions that contract names.
 //!
 //! **Position:** reads the table in [`super::route_contract_table`] and the schema files through
@@ -20,7 +20,7 @@ use super::event_stream_frames;
 use super::route_contract_table::route_contracts;
 use crate::contract_support;
 
-/// Where a schema lives inside its `contracts_v2/definitions` file.
+/// Where a schema lives inside its `contracts/definitions` file.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SchemaLocation {
     /// The file's root schema.
@@ -29,10 +29,10 @@ pub enum SchemaLocation {
     Definition(&'static str),
 }
 
-/// One schema: a `contracts_v2/definitions` file and the location inside it.
+/// One schema: a `contracts/definitions` file and the location inside it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SchemaRef {
-    /// Path relative to `contracts_v2/definitions`.
+    /// Path relative to `contracts/definitions`.
     pub file: &'static str,
     /// The schema inside that file.
     pub location: SchemaLocation,

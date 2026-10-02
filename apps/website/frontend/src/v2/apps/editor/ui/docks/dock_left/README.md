@@ -1,7 +1,7 @@
 # Left dock
 
-The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s left dock: the Layers tab,
-which shows the editor layers tree, searches the [mission](/documentation_v2/glossary/g_to_m.md#mission)
+The [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s left dock: the Layers tab,
+which shows the editor layers tree, searches the [mission](/documentation/glossary/g_to_m.md#mission)
 and narrows a selection, and the Locations tab, which holds the author's camera bookmarks and the
 terrain's named locations. The module root is
 `apps/website/frontend/src/v2/apps/editor/ui/docks/dock_left.rs`: it declares these files, holds the
@@ -71,7 +71,7 @@ view and selection state: none of them edits the document or adds an undo step.
   - the browser's local storage, through `web_sys`.
 - Used by: the chrome re-export and the editor page above; the tests in
   `apps/website/frontend/src/v2/apps/editor/ui/docks/tests/dock_left/`; and the outliner smoke
-  test in `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/outliner_palette.rs`,
+  test in `tools/developer_tools/src/browser_testing/editor_smoke_tests/outliner_palette.rs`,
   which finds the dock by its "Layers" and "Locations" tabs.
 - Rules: the tests in
   `apps/website/frontend/src/v2/apps/editor/ui/docks/tests/dock_left/` hold these:
@@ -94,6 +94,6 @@ view and selection state: none of them edits the document or adds an undo step.
 
 ## Related documentation
 
-- [Mission Creator UX specification](/documentation_v2/website/frontend/apps/editor/ux_spec.md) —
+- [Mission Creator UX specification](/documentation/website/frontend/apps/editor/ux_spec.md) —
   the dock layout and the outliner interactions.
-- [Mission Creator feature inventory: left sidebar and ORBAT tree](/documentation_v2/website/frontend/apps/editor/feature_inventory/left_sidebar.md) — the dock's tabs, trees and folder actions.
+- [Mission Creator feature inventory: left sidebar and ORBAT tree](/documentation/website/frontend/apps/editor/feature_inventory/left_sidebar.md) — the dock's tabs, trees and folder actions.

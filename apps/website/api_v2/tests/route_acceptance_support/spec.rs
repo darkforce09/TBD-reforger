@@ -133,7 +133,7 @@ impl Dimension {
 /// The shape of a success response.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Contract {
-    /// A JSON body validated against a schema file of `contracts_v2/definitions/` — its root
+    /// A JSON body validated against a schema file of `contracts/definitions/` — its root
     /// when `definition` is `None`, else that entry of `definitions` or `$defs`.
     Schema {
         file: &'static str,

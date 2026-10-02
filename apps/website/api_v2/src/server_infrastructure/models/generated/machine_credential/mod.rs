@@ -1,7 +1,7 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/machine-credential.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/machine-credential.schema.json — regenerate with: cargo xtask ci schema-codegen
 
-//! Types generated from `contracts_v2/definitions/machine-credential.schema.json`, one module per schema definition.
+//! Types generated from `contracts/definitions/machine-credential.schema.json`, one module per schema definition.
 
 pub mod error;
 mod executor_kind;

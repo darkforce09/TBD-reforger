@@ -10,7 +10,7 @@ const MINIMAL_CATALOG_JSON: &str = include_str!("minimal_catalog.json");
 /// The contract the catalog types project; a missing file fails the build, not the test.
 const CATALOG_SCHEMA_JSON: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../contracts_v2/definitions/ballistics-catalog.schema.json"
+    "/../../../contracts/definitions/ballistics-catalog.schema.json"
 ));
 
 fn sample_value() -> Value {

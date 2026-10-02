@@ -138,8 +138,8 @@ OPERATOR DECISIONS ALREADY MADE — do not re-ask:
      committed baseline: set equality on failing route names, and the four clean routes (notfound,
      eventmgr, callback, login) must still pass. Pass -> fail is a hard stop.
   2. Leave the dirty working tree alone. ~70 files are modified/untracked that are NOT ours
-     (apps/mod/** is out of scope per §7, plus CLAUDE.md, xtask/src/*, documentation_v2/,
-     tools_v2/). Stage ONLY files you authored. Never `git add -A`.
+     (apps/mod/** is out of scope per §7, plus CLAUDE.md, xtask/src/*, documentation/,
+     tools/). Stage ONLY files you authored. Never `git add -A`.
   3. The gate ratchets **repo-wide**, not just over the paths Phase 3 touched. Stagger the expiry
      dates by tree — the program document suggests 2027-01-31 for api/tools/crates/ticketboard and
      2027-06-30 for xtask, the largest holder and not shipped code.

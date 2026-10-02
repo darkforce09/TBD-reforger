@@ -47,8 +47,8 @@ name: mod-gates
 #          branches: [main]
 #          paths:
 #            - "apps/mod/**"
-#            - "tools_v2/xtask/**"
-#            - "contracts_v2/fixtures/missions/valid/**"
+#            - "tools/xtask/**"
+#            - "contracts/fixtures/missions/valid/**"
 #            - ".github/workflows/mod-gates.yml"
 #
 # ── WHAT THIS WORKFLOW DOES NOT RUN, AND WHY ───────────────────────────────────────────────

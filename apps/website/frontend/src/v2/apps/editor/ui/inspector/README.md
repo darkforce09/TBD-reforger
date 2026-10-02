@@ -1,8 +1,8 @@
 # Mission Creator inspectors
 
-The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s editing surfaces for one
-subject at a time: the Attributes dialog for placed [slots](/documentation_v2/glossary/n_to_z.md#slot) and
-vehicles, the zones tab, the live validation of the [mission](/documentation_v2/glossary/g_to_m.md#mission),
+The [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s editing surfaces for one
+subject at a time: the Attributes dialog for placed [slots](/documentation/glossary/n_to_z.md#slot) and
+vehicles, the zones tab, the live validation of the [mission](/documentation/glossary/g_to_m.md#mission),
 and the panels that author the mission's own settings blocks (win conditions, spawn modules, radio
 nets, tasks, audio, weather timeline).
 
@@ -48,7 +48,7 @@ apps/website/frontend/src/v2/apps/editor/ui/inspector/
 `tasks`, `audio`, `weatherTimeline`, `spawnModules`, `winConditions`): its panel reads the key back
 through the bridge's `editor_context::read_env_value` and writes the whole rebuilt block as a merge
 patch through `editor_context::update_environment`, with `null` to clear it, and its `*_READERS`
-table names the key's readers from the compiler to the [mod](/documentation_v2/glossary/g_to_m.md#mod).
+table names the key's readers from the compiler to the [mod](/documentation/glossary/g_to_m.md#mod).
 Single keys that the top strip and the Mission Settings dialog write go through `env::author_env`,
 which refuses any key missing from `CARRIED_ENV_KEYS` (`time`, `weather`, `showHillshade`,
 `hillshadeOpacity`, `showGrid`) and `AUTHORED_FLOW_KEYS` (`briefingSeconds`, `safeStartSeconds`,
@@ -89,11 +89,11 @@ handlers, and each view has a native stand-in that renders nothing.
     modules `validate`, `radio_plan`, `tasks`, `audio`, `weather`, `spawn_modules`,
     `win_conditions`, `flatten`, `compile` and `tactical_graphics`; `data::store::operations`;
   - the editor's bridge (`host_state::editor_context`, `host_state::armed_placement`,
-    `tactical_graphics_authoring`), the [Arsenal](/documentation_v2/glossary/a_to_f.md#arsenal)
+    `tactical_graphics_authoring`), the [Arsenal](/documentation/glossary/a_to_f.md#arsenal)
     (`ArsenalTab`, `asset_catalog`, `rules::CompatFeed`), the outliner's row classes and
     `shell::layout::HOVER_FILL`;
   - `crate::v2::core`: `ui::modal_stack`, `MaterialIcon`, `cn` and the `RegistryItem` DTO;
-  - `contracts_v2/definitions/mission.schema.json`, embedded for the zone vocabulary.
+  - `contracts/definitions/mission.schema.json`, embedded for the zone vocabulary.
 - Used by:
   - the editor page, `apps/website/frontend/src/v2/apps/editor/mission_editor.rs`, and, in
     `apps/website/frontend/src/v2/apps/editor/mission_editor/`, `canvas_mount.rs`,
@@ -114,6 +114,6 @@ handlers, and each view has a native stand-in that renders nothing.
 
 ## Related documentation
 
-- [Mission Creator feature inventory: attributes dialog](/documentation_v2/website/frontend/apps/editor/feature_inventory/attributes_and_settings.md) — the Attributes dialog and its tabs.
-- [Eden attribute catalog](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/attributes.md)
+- [Mission Creator feature inventory: attributes dialog](/documentation/website/frontend/apps/editor/feature_inventory/attributes_and_settings.md) — the Attributes dialog and its tabs.
+- [Eden attribute catalog](/documentation/website/frontend/apps/editor/eden_editor_reference/attributes.md)
   — the Arma 3 Eden attributes the inspectors are measured against.

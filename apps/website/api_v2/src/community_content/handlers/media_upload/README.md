@@ -44,13 +44,13 @@ contract type `UploadResponseUrl` before it is sent.
   limit; over HTTP, the hero upload of the content manager under
   `apps/website/frontend/src/v2/pages/administration/content_manager/`.
 - Rules: this folder is the only writer of the upload directory, which `core::http_router` serves
-  at `/uploads`; the wire shapes are `contracts_v2/definitions/content-upload.schema.json`.
+  at `/uploads`; the wire shapes are `contracts/definitions/content-upload.schema.json`.
 
 ## Related documentation
 
-- [Administration and community content design](/documentation_v2/website/api_v2/verification_evidence/administration_and_content.md)
+- [Administration and community content design](/documentation/website/api_v2/verification_evidence/administration_and_content.md)
   — the upload semantics this handler implements.
-- [API environment variables](/documentation_v2/website/api_v2/environment_variables.md) —
+- [API environment variables](/documentation/website/api_v2/environment_variables.md) —
   `UPLOAD_DIR`.
-- [Content manager page](/documentation_v2/website/frontend/pages/administration/content_manager/content_manager_page.md)
+- [Content manager page](/documentation/website/frontend/pages/administration/content_manager/content_manager_page.md)
   — the page that uploads through this route.

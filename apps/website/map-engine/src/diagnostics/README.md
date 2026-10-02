@@ -2,7 +2,7 @@
 
 How the render engine measures itself in the browser: byte-exact readback checks of its pipelines,
 the calibration check, the frame benchmark and engine statistics, the frame clocks, and the console
-macros the crate logs with. The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)
+macros the crate logs with. The [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)
 publishes the checks and the benchmark to the editor gate.
 
 ## Contents
@@ -63,7 +63,7 @@ macros.
   - the Mission Creator's viewport bridge
     (`apps/website/frontend/src/v2/apps/editor/bridge/viewport.rs`) and canvas boot, and the debug
     benches under `apps/website/frontend/src/v2/apps/debug/`;
-  - the editor gate's smokes in `tools_v2/developer-tools/src/browser_testing/`, which
+  - the editor gate's smokes in `tools/developer_tools/src/browser_testing/`, which
     `cargo xtask mk leptos-gates` runs.
 - Rules: a check never writes the engine's frame tables, camera uniform or batch list, so it can
   run beside the live render loop; expected pixels are exact bytes, except the ±1 the marquee's

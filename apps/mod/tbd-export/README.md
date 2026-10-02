@@ -1,11 +1,11 @@
 # TBD Export
 
-`TBD_Export`, the [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) tooling addon of the
-[mod](/documentation_v2/glossary/g_to_m.md#mod): exporters that read Arma Reforger's loaded worlds,
+`TBD_Export`, the [Workbench](/documentation/glossary/n_to_z.md#workbench) tooling addon of the
+[mod](/documentation/glossary/g_to_m.md#mod): exporters that read Arma Reforger's loaded worlds,
 prefabs and configs and write the terrain, building, equipment, vehicle and item
-[registry](/documentation_v2/glossary/n_to_z.md#registry) data the platform ingests. Nothing here
+[registry](/documentation/glossary/n_to_z.md#registry) data the platform ingests. Nothing here
 ships to players or servers; it runs inside Workbench, and its road exporter inside a world that
-plays the export [mission header](/documentation_v2/glossary/g_to_m.md#mission-header).
+plays the export [mission header](/documentation/glossary/g_to_m.md#mission-header).
 
 ## Contents
 
@@ -40,14 +40,14 @@ Missions/TBD_Export_Everon.conf ──▶ worlds/TBD_Export_Everon.ent ──▶
               Scripts/Game/ ballistics oracle simulation ──▶ $profile:TBD_BallisticsOracle/<generation id>/
 ```
 
-The [EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript) under `Scripts/` holds two modules:
+The [EnfScript](/documentation/glossary/a_to_f.md#enfscript) under `Scripts/` holds two modules:
 `Scripts/Game/` compiles into the game and holds the runtime road network export and the
 ballistics oracle's simulation run, which the export game mode components run once the export
 world plays; `Scripts/WorkbenchGame/` compiles
 into Workbench and holds the map layer exporters, the equipment and vehicle source exporter with
 its diagnostic menu entries, the item registry export and the ballistics oracle menu entry. `Missions/`, `worlds/` and `Prefabs/`
 exist for the road export: the header boots the export world, a sub-scene of vanilla
-[Eden](/documentation_v2/glossary/a_to_f.md#eden) (Everon), whose layer places the export game mode
+[Eden](/documentation/glossary/a_to_f.md#eden) (Everon), whose layer places the export game mode
 and Eden's AI world. The developer tools read the exports from the Workbench profile folder, which
 under Proton is Steam's prefix for app 1874910
 (`…/compatdata/1874910/pfx/drive_c/users/steamuser/Documents/My Games/ArmaReforgerWorkbench/profile/`).
@@ -72,12 +72,12 @@ Vehicles) or over the Net API, and hand its output to the tools:
 ```bash
 cargo xtask mod validate-equipment-vehicle-export --input <generation_directory>
 cargo xtask mod publish-equipment-vehicle-export --input <generation_directory>
-cargo xtask map ingest-blueprints    # building blueprints from the profile into assets_v2/terrains/
-cargo xtask db registry-import       # the registry catalogs, once copied into contracts_v2/catalogs/
+cargo xtask map ingest-blueprints    # building blueprints from the profile into assets/terrains/
+cargo xtask db registry-import       # the registry catalogs, once copied into contracts/catalogs/
 ```
 
 `cargo xtask mod compile` compiles only the framework addon
-(`tools_v2/xtask/src/commands/mod_ops/compile/execution.rs`), so these scripts compile only when
+(`tools/xtask/src/commands/mod_ops/compile/execution.rs`), so these scripts compile only when
 Workbench, or a game, loads `tbd-export`.
 
 ## Configuration
@@ -112,29 +112,29 @@ Workbench, or a game, loads `tbd-export`.
 ## Boundaries
 
 - Depends on: vanilla Arma Reforger, including the Eden world and its AI world prefab; `TBD_EMCP`
-  in `apps/mod/tbd-emcp/`, for the Net API bridge; the export schemas in `contracts_v2/definitions/`
+  in `apps/mod/tbd-emcp/`, for the Net API bridge; the export schemas in `contracts/definitions/`
   that its files follow. Nothing from `apps/mod/tbd-framework/`.
 - Used by: `cargo xtask mod dev-bootstrap`, which opens this project
-  (`tools_v2/xtask/src/commands/mod_ops/development_bootstrap.rs`); `cargo xtask mcp wbcall`; the
+  (`tools/xtask/src/commands/mod_ops/development_bootstrap.rs`); `cargo xtask mcp wbcall`; the
   map commands and world export pipeline that read the map exports
-  (`tools_v2/xtask/src/commands/map/`, `tools_v2/developer-tools/src/world_export_pipeline/`); the
-  equipment and vehicle validation in `tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/`;
-  and, through the copied catalogs in `contracts_v2/catalogs/`, `cargo xtask db registry-import`.
+  (`tools/xtask/src/commands/map/`, `tools/developer_tools/src/world_export_pipeline/`); the
+  equipment and vehicle validation in `tools/xtask/src/commands/mod_ops/equipment_vehicle_export/`;
+  and, through the copied catalogs in `contracts/catalogs/`, `cargo xtask db registry-import`.
 - Rules: the dependencies stay vanilla and `TBD_EMCP`, never `TBD_Framework`, and the addon holds
   no copy of a framework class; the addon never ships: `cargo xtask deploy staging` excludes
-  `apps/mod/tbd-export/` (`tools_v2/xtask/src/commands/deploy/staging/remote/ssh_argv.rs`);
+  `apps/mod/tbd-export/` (`tools/xtask/src/commands/deploy/staging/remote/ssh_argv.rs`);
   `resourceDatabase.rdb` belongs to Workbench and is never edited by hand; no upstream framework
   identifier or reused GUID enters the scripts (`cargo xtask verify no-crf-leak`).
 
 ## Related documentation
 
-- [Export addon documentation](/documentation_v2/mod/tbd-export/README.md) — every exporter, its
+- [Export addon documentation](/documentation/mod/tbd-export/README.md) — every exporter, its
   entry point and its documents.
-- [Map export](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
+- [Map export](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
   every map layer and the pipeline to committed terrain data.
-- [Terrain export runbook](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/MapExport/terrain_export_runbook.md)
+- [Terrain export runbook](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/terrain_export_runbook.md)
   — a full world-object export through to rebuilt terrain data.
-- [Enfusion MCP tooling](/documentation_v2/runbooks/enfusion_mcp_tooling.md) — bringing Workbench and
+- [Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md) — bringing Workbench and
   the MCP bridge up, and calling Net API handlers.
-- [Workbench MCP bridge](/documentation_v2/mod/tbd-emcp/workbench_mcp_bridge.md) — how the bridge
+- [Workbench MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md) — how the bridge
   loads through this addon's dependency.

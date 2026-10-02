@@ -62,7 +62,7 @@ pure and covered by the native tests.
 - Used by: the `/debug/data-viewer` route in `apps/website/frontend/src/app_routes.rs`, with its
   row in `apps/website/frontend/src/router.rs` (full-bleed, chromeless, route tier `none`); the live
   check `gate equipment-data-viewer` in
-  `tools_v2/developer-tools/src/browser_testing/equipment_data_viewer/`.
+  `tools/developer_tools/src/browser_testing/equipment_data_viewer/`.
 - Rules: the viewer only reads, anonymously, and never touches the session; a location keeps
   exact source identities (`equipment_viewer_locations_preserve_opaque_identity_and_back_context`
   in `tests/navigation.rs`); a dataset switch drops dataset-specific documents

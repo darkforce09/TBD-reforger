@@ -24,7 +24,7 @@ apps/website/map-engine/src/data/scenario/ballistics/calibration/
 
 `PinnedCatalog::from_json_slice` decodes a catalog and hashes the exact bytes it was given.
 `CalibrationBundle::from_json_slice` decodes a bundle
-(`contracts_v2/definitions/ballistics-calibration.schema.json`). `evaluate(pinned, bundle)`
+(`contracts/definitions/ballistics-calibration.schema.json`). `evaluate(pinned, bundle)`
 answers a `CalibrationReport {cases, failures}`; the catalog is accepted when `failures` is empty.
 
 Provenance comes first and adds failures, never cases: the bundle names the catalog's id and
@@ -97,7 +97,7 @@ Measured on the committed bundle of game build 1.8.0.13 (generation 6A6F008DC539
 - Used by: this module's tests; `evaluate` is the judge of the API's catalog upload
   (`POST /api/v1/ballistics-catalogs`).
 - Rules: the committed catalog, bundle and the four `negative/` variants of
-  `contracts_v2/fixtures/ballistics/vanilla_mortars.v1/` are read through `include_str!`; one
+  `contracts/fixtures/ballistics/vanilla_mortars.v1/` are read through `include_str!`; one
   test per shell requires every case of that shell to pass; each negative variant fails with its
   own failure (the provenance variants with nothing else); a SHA-256 mismatch, a game-build mismatch, missing coverage, a
   resource with two digests and an unknown shell are red; SHA-256 matches the FIPS 180-2 vectors;

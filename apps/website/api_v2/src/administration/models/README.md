@@ -20,8 +20,8 @@ apps/website/api_v2/src/administration/models/
 ## Boundaries
 
 - Depends on: `core::wire_format` for timestamps, serde and sqlx. `generated/` follows
-  `contracts_v2/definitions/personnel-roster.schema.json` (`PersonnelPage`, `PersonnelRow`) and
-  `contracts_v2/definitions/audit-log.schema.json` (`AuditLogEntry`, `AuditLogPage`,
+  `contracts/definitions/personnel-roster.schema.json` (`PersonnelPage`, `PersonnelRow`) and
+  `contracts/definitions/audit-log.schema.json` (`AuditLogEntry`, `AuditLogPage`,
   `AuditStreamReady`, `AuditStreamReset`).
 - Used by: the domain's handlers and services; `command_center`, `community_content`,
   `match_telemetry`, `missions` and `server_infrastructure`, which pass `AuditSeverity` to the

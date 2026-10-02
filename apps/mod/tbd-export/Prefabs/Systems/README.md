@@ -2,7 +2,7 @@
 
 The game mode the export world places: a plain vanilla game mode that carries the runtime road
 exporter and the ballistics oracle simulation run as components, so playing the export
-[mission header](/documentation_v2/glossary/g_to_m.md#mission-header) runs the road export and,
+[mission header](/documentation/glossary/g_to_m.md#mission-header) runs the road export and,
 when the Workbench ballistics oracle has recorded a generation, the simulation run.
 
 ## Contents
@@ -32,7 +32,7 @@ respawn (`m_bAutoPlayerRespawn 0`) and faction changes (`m_bAllowFactionChange 0
   `Name "{C3D4E5F6A7B80001}Prefabs/Systems/TBD_Export_GameMode.et"`; the world layer refers to the
   prefab by that GUID, so it never changes.
 - Naming: `TBD_Export_<Subject>.et` for the export addon's system entities.
-- Adding a prefab: create it in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) inside this
+- Adding a prefab: create it in [Workbench](/documentation/glossary/n_to_z.md#workbench) inside this
   addon, which writes the `.meta` with a new GUID, and commit the `.et` and its `.meta` together.
 
 ## Referenced by

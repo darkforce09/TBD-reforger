@@ -5,12 +5,12 @@ summary = "T-090.3 — Map asset export (Workbench → repo)"
 class = "feature"
 status = "deferred"
 order = 900
-spec = "documentation_v2/tickets/specs/t090_3_map_asset_export.md"
+spec = "documentation/tickets/specs/t090_3_map_asset_export.md"
 executor = "claude-code"
 parent = "T-090"
 citations = [
-    "Design: documentation_v2/tickets/specs/t090_phased_object_import.md.",
-    "Design: documentation_v2/tickets/specs/t090_terrain_export_pipeline.md.",
+    "Design: documentation/tickets/specs/t090_phased_object_import.md.",
+    "Design: documentation/tickets/specs/t090_terrain_export_pipeline.md.",
 ]
 
 [scope]

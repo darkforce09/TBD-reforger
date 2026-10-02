@@ -1,8 +1,8 @@
 # Mission compiler
 
-The two compile steps of a [mission](/documentation_v2/glossary/g_to_m.md#mission): the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s document into the editor payload
-a version saves, and a saved payload into the document the [mod](/documentation_v2/glossary/g_to_m.md#mod)
+The two compile steps of a [mission](/documentation/glossary/g_to_m.md#mission): the
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s document into the editor payload
+a version saves, and a saved payload into the document the [mod](/documentation/glossary/g_to_m.md#mod)
 loads, with characters and vehicles resolved through the kit-alias table.
 
 ## Contents
@@ -10,7 +10,7 @@ loads, with characters and vehicles resolved through the kit-alias table.
 ```text
 apps/website/map-engine/src/data/scenario/compiler/
 ├── flatten/  a saved payload into the compiled mission document, with findings and substitutions
-├── kit/      the kit and vehicle alias table embedded from `contracts_v2/rules/kit-aliases.json`
+├── kit/      the kit and vehicle alias table embedded from `contracts/rules/kit-aliases.json`
 ├── mod.rs    the module tree
 └── payload/  the editor payload from the document, the export envelope, the version-save body
 ```
@@ -29,9 +29,9 @@ ModMissionDocument ─▶ the artifact bytes the game server loads, plus finding
 
 The Mission Creator runs the first step on every save and both steps for its compiled export, so
 the file it offers comes from the same code as the server's. The
-[API](/documentation_v2/glossary/a_to_f.md#api) runs the second step when a mission is submitted, and the
-bytes become the mission's [artifact](/documentation_v2/glossary/a_to_f.md#artifact). The Export path
-adds the derived [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) to the payload and wraps it in
+[API](/documentation/glossary/a_to_f.md#api) runs the second step when a mission is submitted, and the
+bytes become the mission's [artifact](/documentation/glossary/a_to_f.md#artifact). The Export path
+adds the derived [ORBAT](/documentation/glossary/n_to_z.md#orbat) to the payload and wraps it in
 `compile::compile_export`'s envelope; a saved payload carries no ORBAT, which the API derives
 itself.
 
@@ -53,24 +53,24 @@ The three modules are reached through the aliases of `data::scenario`:
 - Depends on: `crate::data::scenario::ast` (the payload and document shapes, the ORBAT
   derivation), `crate::data::scenario::extensions` (the authored blocks),
   `crate::data::scenario::validate` (`Finding`) and `crate::data::scenario::wire_safety`;
-  `contracts_v2/rules/kit-aliases.json`; `serde`, `serde_json` and `thiserror`.
+  `contracts/rules/kit-aliases.json`; `serde`, `serde_json` and `thiserror`.
 - Used by: the Mission Creator in `apps/website/frontend/src/v2/apps/editor/` and the mission
   library in `apps/website/frontend/src/v2/pages/mission_hub/library/`; the
-  [missions](/documentation_v2/glossary/g_to_m.md#missions) domain in
+  [missions](/documentation/glossary/g_to_m.md#missions) domain in
   `apps/website/api_v2/src/missions/`; inside the crate, `crate::data::store::operations`,
   `crate::editing::persist` and `crate::data::scenario::validate` (`terrain_bounds`,
   `compile_payload`).
-- Rules: `contracts_v2/fixtures/missions/valid/compiler-shaped-two-faction.json` is this
+- Rules: `contracts/fixtures/missions/valid/compiler-shaped-two-faction.json` is this
   compiler's output byte for byte (`compiler_shaped_golden_is_a_fresh_emitter_output` in
   `flatten/tests/cases_3.rs`), and `cargo xtask schema validate` checks it against
-  `contracts_v2/definitions/mission.schema.json`; a saved payload has no `orbat` key
+  `contracts/definitions/mission.schema.json`; a saved payload has no `orbat` key
   (`save_payload_omits_orbat_and_has_editor_shape` in `payload/tests/cases_1.rs`).
 
 ## Related documentation
 
-- [Mission schema](/contracts_v2/definitions/mission.schema.json) — the compiled document.
-- [Mission editor payload schema](/contracts_v2/definitions/mission-editor-payload.schema.json) —
+- [Mission schema](/contracts/definitions/mission.schema.json) — the compiled document.
+- [Mission editor payload schema](/contracts/definitions/mission-editor-payload.schema.json) —
   the saved payload.
-- [Mission artifacts](/documentation_v2/website/api_v2/verification_evidence/mission_artifacts.md)
+- [Mission artifacts](/documentation/website/api_v2/verification_evidence/mission_artifacts.md)
   — what the API does with a compiled document.
-- [Mission Creator feature inventory: data persistence and compile](/documentation_v2/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) — when the editor compiles and what Save Version sends.
+- [Mission Creator feature inventory: data persistence and compile](/documentation/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) — when the editor compiles and what Save Version sends.

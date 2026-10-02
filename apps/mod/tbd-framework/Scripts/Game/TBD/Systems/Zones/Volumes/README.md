@@ -49,7 +49,7 @@ any zone whose `minHeight` is above its `maxHeight` (that volume contains nobody
   under `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/`; `TBD_Objective` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`; `TBD_DeclaredFactions` and
   `TBD_Log` under `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; `#/$defs/zoneRules` in
-  `contracts_v2/definitions/mission.schema.json`.
+  `contracts/definitions/mission.schema.json`.
 - Used by: `TBD_ObjectiveRegistry` and `TBD_ObjectivesComponent` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`; `TBD_EntityQuery` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Core/World/`.

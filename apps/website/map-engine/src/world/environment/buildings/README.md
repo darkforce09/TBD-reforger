@@ -20,7 +20,7 @@ apps/website/map-engine/src/world/environment/buildings/
 ## How it works
 
 The catalogue is `objects/prefabs.json.gz` or its archive `objects/prefabs.rkyv`, in a terrain's
-asset folder such as `assets_v2/terrains/everon/`. `narrow_prefab_rows` keeps each row with a
+asset folder such as `assets/terrains/everon/`. `narrow_prefab_rows` keeps each row with a
 numeric `prefabId` and a string `kind` (a missing `class` reads `unknown`) as a `PrefabRow`, and
 `build_prefab_maps` gives each its render-class code (`render_class_for_prefab` in
 `apps/website/map-engine/src/world/environment/classify.rs`), keyed by the bits of its f64 id so a
@@ -57,8 +57,8 @@ positions made relative to the scene anchor.
     methods;
   - `crate::spatial::los::world`, whose occluder takes its proxy boxes and labels from
     `PrefabRow`;
-  - the world export and checks in `tools_v2/developer-tools/src/world_export_pipeline/` and
-    `tools_v2/developer-tools/src/map_verification/`, which write and compare the catalogue
+  - the world export and checks in `tools/developer_tools/src/world_export_pipeline/` and
+    `tools/developer_tools/src/map_verification/`, which write and compare the catalogue
     archive.
 - Rules: the archive decodes to exactly the rows the JSON gives
   (`everon_catalogue_archive_equals_the_json_rows` in `tests/prefab_tests.rs`); a catalogue built
@@ -72,5 +72,5 @@ positions made relative to the scene anchor.
 
 ## Related documentation
 
-- [Map object prefab schema](/contracts_v2/definitions/map-object-prefab.schema.json) — the rows
+- [Map object prefab schema](/contracts/definitions/map-object-prefab.schema.json) — the rows
   of the prefab catalogue.

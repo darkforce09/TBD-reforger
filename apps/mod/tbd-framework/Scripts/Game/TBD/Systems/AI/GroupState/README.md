@@ -38,7 +38,7 @@ An unknown token, or a group without the component, is one WARNING and keeps the
 
 - Depends on: `TBD_MissionJsonPass`, `TBD_MissionLoader` (mission id, slots),
   `TBD_FrameworkManager`, `TBD_SpawnManager`, `TBD_AIWireEnums`, `TBD_Log`, `TBD_AnnounceOnce`;
-  `$defs/group` in `contracts_v2/definitions/mission.schema.json`; the groups
+  `$defs/group` in `contracts/definitions/mission.schema.json`; the groups
   [`TBD_WaypointRuntime`](../Waypoints/README.md) arms.
 - Used by: `TBD_RuntimeHeartbeat` (`Clear`, `Tick`, `TICK_MS`).
 - Rules: nothing here spawns groups, enables AI or rewrites waypoints; absent attributes leave the

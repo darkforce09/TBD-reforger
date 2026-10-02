@@ -1,8 +1,8 @@
 # New mission dialog
 
-The one-step "New Mission" dialog the [mission](/documentation_v2/glossary/g_to_m.md#mission) library
+The one-step "New Mission" dialog the [mission](/documentation/glossary/g_to_m.md#mission) library
 opens: it creates a draft mission from a title and its environment, then hands the author to the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator).
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator).
 
 ## Contents
 
@@ -26,7 +26,7 @@ Submitting with an empty title shows the toast "Title is required". Otherwise th
 `POST /api/v1/missions` with `title`, `terrain`, `game_mode`, `weather`, `time_of_day`,
 `max_players` and the trimmed `briefing`, reads the reply as `serde_json::Value`, shows "Mission
 created", closes, and loads `/missions/{id}/edit` as a full page. A failure shows the
-[API](/documentation_v2/glossary/a_to_f.md#api)'s message, or "Failed to create mission". The button reads
+[API](/documentation/glossary/a_to_f.md#api)'s message, or "Failed to create mission". The button reads
 "Creating…" while the request is in flight and "Create Mission Draft" otherwise. Every field resets
 whenever the dialog closes. The submit runs in the browser build only.
 
@@ -43,5 +43,5 @@ whenever the dialog closes. The submit runs in the browser build only.
 
 ## Related documentation
 
-- [Mission library page](/documentation_v2/website/frontend/pages/mission_hub/library/mission_library_page.md#creating-a-mission)
+- [Mission library page](/documentation/website/frontend/pages/mission_hub/library/mission_library_page.md#creating-a-mission)
   — the library that opens this dialog, and the create flow with what the API checks.

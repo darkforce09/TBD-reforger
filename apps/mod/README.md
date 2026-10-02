@@ -1,25 +1,24 @@
 # Mod suite
 
-The Arma Reforger [mod](/documentation_v2/glossary/g_to_m.md#mod) of the TBD platform, as three
-[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) addons: the game mod that runs every TBD
-session from the [mission](/documentation_v2/glossary/g_to_m.md#mission) JSON the platform deploys, and
-two [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) addons, one that exports the game data
+The Arma Reforger [mod](/documentation/glossary/g_to_m.md#mod) of the TBD platform, as three
+[Enfusion](/documentation/glossary/a_to_f.md#enfusion) addons: the game mod that runs every TBD
+session from the [mission](/documentation/glossary/g_to_m.md#mission) JSON the platform deploys, and
+two [Workbench](/documentation/glossary/n_to_z.md#workbench) addons, one that exports the game data
 the platform ingests and one that lets the Enfusion MCP tools drive Workbench.
 
 ## Contents
 
 ```text
 apps/mod/
-├── improved_layout/  the planning anchor for the mod suite's directory reorganization, no code
-├── tbd-emcp/         addon `TBD_EMCP`: the Workbench Net API handlers the MCP `wb_*` tools call
-├── tbd-export/       addon `TBD_Export`: Workbench map, equipment, vehicle and registry export tooling
-└── tbd-framework/    addon `TBD_Framework`: the game mod dedicated servers run
+├── tbd-emcp/       addon `TBD_EMCP`: the Workbench Net API handlers the MCP `wb_*` tools call
+├── tbd-export/     addon `TBD_Export`: Workbench map, equipment, vehicle and registry export tooling
+└── tbd-framework/  addon `TBD_Framework`: the game mod dedicated servers run
 ```
 
 ## How it works
 
 Only `tbd-framework/` reaches players and servers. A dedicated server loads it as a loose addon or
-from the Workshop, boots its [mission header](/documentation_v2/glossary/g_to_m.md#mission-header), and the
+from the Workshop, boots its [mission header](/documentation/glossary/g_to_m.md#mission-header), and the
 framework fetches the mission deployed to that server from the website API, verifies it and runs it.
 The other two addons run inside Workbench only: `tbd-export/` holds the export plugins and its own
 export world, and `tbd-emcp/` holds the Net API handlers of the Enfusion MCP bridge.
@@ -36,15 +35,15 @@ Workbench ── opens ──▶ TBD_Export (+ TBD_EMCP) ◀── Net API ─�
 
 No addon depends on the framework, and the framework carries no Workbench scripts, so the shipping
 mod stays free of editor tooling. Every command that builds, checks, boots or deploys the addons is
-a `cargo xtask mod`, `mcp`, `setup` or `deploy` command in `tools_v2/xtask/`.
+a `cargo xtask mod`, `mcp`, `setup` or `deploy` command in `tools/xtask/`.
 
 | Item | Value |
 |---|---|
 | Addon GUIDs | `TBD_Framework` `B2C3D4E5F6A78901`, `TBD_Export` `C3D4E5F6A7B89012`, `TBD_EMCP` `D4E5F6A7B8C90123` |
 | Development mission header | `{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf` |
 | Development world | `{F652B97A6F497348}worlds/TBD_Dev_POC.ent`, a sub-scene of Eden |
-| Golden mission | `msn_8f3a2c`, "Bridgehead at Levie", 18 slots (`contracts_v2/fixtures/missions/valid/bridgehead-at-levie.json`) |
-| Development server game port | 2001 (`tools_v2/xtask/dedicated_server_profiles/tbd-dev-server.config.json`) |
+| Golden mission | `msn_8f3a2c`, "Bridgehead at Levie", 18 slots (`contracts/fixtures/missions/valid/bridgehead-at-levie.json`) |
+| Development server game port | 2001 (`tools/xtask/dedicated_server_profiles/tbd-dev-server.config.json`) |
 
 ## Getting started
 
@@ -67,7 +66,7 @@ cargo xtask mod playtest --mission=<uuid> --admin=<identityId>  # a local dedica
 cargo xtask mod test-game-runtime-api                           # the game-runtime routes, with TBD_MACHINE_CREDENTIAL
 ```
 
-The staging fleet takes `cp tools_v2/xtask/deploy/deploy.env.example tools_v2/xtask/deploy/deploy.env`,
+The staging fleet takes `cp tools/xtask/deploy/deploy.env.example tools/xtask/deploy/deploy.env`,
 filled with `TBD_SSH_HOST` and the `TBD_FLEET_*` settings; on the host, the machine credentials
 that `cargo xtask staging provision-fleet` writes and the join password in
 `~/tbd/fleet/join-password`; then `cargo xtask deploy staging`. Each fleet instance N runs its own
@@ -95,13 +94,13 @@ Other mod commands:
 ## Boundaries
 
 - Depends on: the vanilla Arma Reforger data addon; the website API in `apps/website/api_v2/`,
-  which the framework calls over HTTP; the wire shapes in `contracts_v2/definitions/`; the pinned
-  `enfusion-mcp` package in `tools_v2/enfusion_mcp_node_package/`.
+  which the framework calls over HTTP; the wire shapes in `contracts/definitions/`; the pinned
+  `enfusion-mcp` package in `tools/enfusion_mcp_node_package/`.
 - Used by: the dedicated servers that `cargo xtask mod playtest`, `cargo xtask deploy staging` and
   the fleet host agent in `apps/fleet_host_agent/` boot; the gates in
-  `tools_v2/xtask/src/commands/mod_ops/`, run by `.github/workflows/mod-gates.yml`; the Mission
+  `tools/xtask/src/commands/mod_ops/`, run by `.github/workflows/mod-gates.yml`; the Mission
   Creator in `apps/website/frontend/`, which embeds the framework's alias registry; and the
-  importers of the Workbench exports in `contracts_v2/catalogs/` and `assets_v2/terrains/`.
+  importers of the Workbench exports in `contracts/catalogs/` and `assets/terrains/`.
 - Rules:
   - No addon depends on `tbd-framework`, and it carries no `Scripts/WorkbenchGame/`
     (`cargo xtask mod compile` exits 1 otherwise); no upstream reference code or upstream-only
@@ -113,27 +112,27 @@ Other mod commands:
     guessed; the upstream reference copies that `.gitignore` excludes are read only and never
     opened in Workbench.
   - A dedicated server takes `-config` or `-addons`, never both; `-addonsDir` combines with
-    `-config` (`tools_v2/xtask/src/commands/deploy/staging/remote/ssh_argv.rs`).
+    `-config` (`tools/xtask/src/commands/deploy/staging/remote/ssh_argv.rs`).
   - `resourceDatabase.rdb` in each addon is written by Workbench only.
 
 ## Related documentation
 
-- [Mod documentation](/documentation_v2/mod/README.md) — the index of the mod's deeper documents.
-- [Mod design](/documentation_v2/mod/tbd-framework/mod_design.md) — what the framework is for and
+- [Mod documentation](/documentation/mod/README.md) — the index of the mod's deeper documents.
+- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — what the framework is for and
   its non-negotiables.
-- [Mod slice workflow](/documentation_v2/runbooks/mod_slice_workflow.md) — how mod work runs
+- [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — how mod work runs
   through Workbench and the gates.
-- [Enfusion MCP tooling](/documentation_v2/runbooks/enfusion_mcp_tooling.md) — the MCP call path
+- [Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md) — the MCP call path
   and its checks.
-- [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — deploying to the
+- [Game server staging](/documentation/runbooks/game_server_staging/README.md) — deploying to the
   staging server and Direct Join.
-- [Boot and log verification](/documentation_v2/runbooks/game_server_staging/boot_and_log_verification.md)
+- [Boot and log verification](/documentation/runbooks/game_server_staging/boot_and_log_verification.md)
   — which build a server loaded, and the mod's log lines to match.
-- [Client join and mod updates](/documentation_v2/runbooks/game_server_staging/client_join_and_mod_updates.md)
+- [Client join and mod updates](/documentation/runbooks/game_server_staging/client_join_and_mod_updates.md)
   — getting a script change to the staging server and to players.
-- [Two-client playtest](/documentation_v2/runbooks/two_client_playtest/README.md) — a local
+- [Two-client playtest](/documentation/runbooks/two_client_playtest/README.md) — a local
   playtest.
-- [Export addon documentation](/documentation_v2/mod/tbd-export/README.md) — the map export,
+- [Export addon documentation](/documentation/mod/tbd-export/README.md) — the map export,
   the terrain export runbook and the equipment exporter's acceptance evidence.
-- [Enfusion MCP bridge](/documentation_v2/mod/tbd-emcp/workbench_mcp_bridge.md) — the two ways to reach
+- [Enfusion MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md) — the two ways to reach
   Workbench, the bootstrap and the handler loading rules.

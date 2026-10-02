@@ -1,9 +1,9 @@
 # Kit and vehicle aliases
 
-The table that turns an [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) resource name into the
-alias the [mod](/documentation_v2/glossary/g_to_m.md#mod) spawns: a placed character's `kit:` alias, a
+The table that turns an [Enfusion](/documentation/glossary/a_to_f.md#enfusion) resource name into the
+alias the [mod](/documentation/glossary/g_to_m.md#mod) spawns: a placed character's `kit:` alias, a
 placed vehicle's `veh:` alias, and each side's default kit and preset. The table is
-`contracts_v2/rules/kit-aliases.json`, embedded at compile time; the module is exposed as
+`contracts/rules/kit-aliases.json`, embedded at compile time; the module is exposed as
 `data::scenario::kit`.
 
 ## Contents
@@ -26,11 +26,11 @@ strings when the table has neither.
 
 ## Boundaries
 
-- Depends on: `contracts_v2/rules/kit-aliases.json` through `include_str!`; `serde` and
+- Depends on: `contracts/rules/kit-aliases.json` through `include_str!`; `serde` and
   `serde_json`.
 - Used by: `crate::data::scenario::flatten`, which resolves every
-  [slot](/documentation_v2/glossary/n_to_z.md#slot)'s kit, every vehicle's alias and every side's default
-  kit and preset; the [API](/documentation_v2/glossary/a_to_f.md#api), which re-exports `KitAliases` and
+  [slot](/documentation/glossary/n_to_z.md#slot)'s kit, every vehicle's alias and every side's default
+  kit and preset; the [API](/documentation/glossary/a_to_f.md#api), which re-exports `KitAliases` and
   `load_kit_aliases` from `apps/website/api_v2/src/missions/contract/mod.rs`.
 - Rules: a resource name matches only exactly, and an unknown vehicle resolves to nothing rather
   than to a substitute (`resolves_known_kits_and_faction_defaults`,
@@ -41,5 +41,5 @@ strings when the table has neither.
 
 ## Related documentation
 
-- [Contract rules](/contracts_v2/rules/README.md) — the kit-alias table and the other lookup
+- [Contract rules](/contracts/rules/README.md) — the kit-alias table and the other lookup
   tables beside it.

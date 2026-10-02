@@ -73,14 +73,14 @@ level; findings are ordered by line.
   `details.findings` of `422 wiki_markup_refused`; `community_content/models/wiki.rs`, whose
   article and revision embed `WikiBlock` and whose refusal embeds `WikiMarkupFinding`.
 - Rules: the serialized tree and findings match `WikiBlock`, `WikiInline` and `WikiMarkupFinding`
-  in `contracts_v2/definitions/wiki-page.schema.json`, which the goldens under `tests/` check
+  in `contracts/definitions/wiki-page.schema.json`, which the goldens under `tests/` check
   every output against; the blocks never carry a construct a save refuses; the formatting guide
   page in `apps/website/api_v2/seeds/wiki_pages.sql` reads with no finding and shows every block
   type, inline type and callout kind (`tests/wiki_markup.rs` checks it).
 
 ## Related documentation
 
-- [Administration and community content](/documentation_v2/website/api_v2/verification_evidence/administration_and_content.md)
+- [Administration and community content](/documentation/website/api_v2/verification_evidence/administration_and_content.md)
   — the wiki markup, revision and save design.
-- [Wiki page](/documentation_v2/website/frontend/pages/doctrine_and_info/wiki/wiki_page.md) — the
+- [Wiki page](/documentation/website/frontend/pages/doctrine_and_info/wiki/wiki_page.md) — the
   page that renders the blocks.

@@ -298,9 +298,8 @@ fn an_unknown_refusal_fails_the_read() {
 /// contract's set is exactly the one the DTO reads.
 #[test]
 fn every_contract_fuze_refusal_round_trips() {
-    const SCHEMA: &str = include_str!(
-        "../../../../../../../../../contracts_v2/definitions/fire-mission.schema.json"
-    );
+    const SCHEMA: &str =
+        include_str!("../../../../../../../../../contracts/definitions/fire-mission.schema.json");
     let schema: Value = serde_json::from_str(SCHEMA).unwrap();
     let values = schema["definitions"]["FuzeRefusal"]["enum"]
         .as_array()

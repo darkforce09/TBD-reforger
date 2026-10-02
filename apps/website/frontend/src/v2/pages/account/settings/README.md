@@ -1,6 +1,6 @@
 # Account settings page
 
-The `/settings` page: the signed-in viewer's profile and [role](/documentation_v2/glossary/n_to_z.md#role),
+The `/settings` page: the signed-in viewer's profile and [role](/documentation/glossary/n_to_z.md#role),
 the link between their Discord account and their Arma identity, and their attendance figures.
 
 ## Contents
@@ -66,7 +66,7 @@ puts the shipped placeholder in place of anything else. The Arma Identity card c
   `apps/website/frontend/src/router.rs`; the top bar's account menu in
   `apps/website/frontend/src/v2/pages/navigation/top_nav.rs`, which links `/settings` and
   `/settings#arma-link`; the DOM oracle's `settings` capture in
-  `tools_v2/developer-tools/src/browser_testing/dom_oracle/routes.rs`.
+  `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`.
 - Rules: the cards wait for both fetches; the avatar source passes through `safe_avatar_url`
   (`profile_avatar_src_only_keeps_http_urls` in `tests/settings.rs`, over the cases in
   `apps/website/shared/is_http_url_cases.rs`); the Arma Identity card keeps the id `arma-link`
@@ -74,5 +74,5 @@ puts the shipped placeholder in place of anything else. The Arma Identity card c
 
 ## Related documentation
 
-- [Account pages](/documentation_v2/website/frontend/pages/account/account_pages.md) — the
+- [Account pages](/documentation/website/frontend/pages/account/account_pages.md) — the
   behaviour and design of the account pages.

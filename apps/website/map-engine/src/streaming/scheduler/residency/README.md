@@ -28,7 +28,7 @@ through `use super::*`.
 |---|---|---|
 | `tests/` | the lifecycle: requested set, pin key, known-empty chunks, retry cap, LRU eviction, apply-frame accounting, picking, draw set, tree heatmap, glyph memo | synthetic gzip chunks on a 25 × 25 grid of 512 m cells |
 | `t151_11_3_tests/` | the ingest budget, the buildings toggle, the building zoom gate | one synthetic building |
-| `t152_3_tests/` | the glyph lookup, atlas keys, badges, landmarks, fill de-emphasis, strips | the export under `assets_v2/terrains/everon/` and the glyphs under `assets_v2/glyphs/` |
+| `t152_3_tests/` | the glyph lookup, atlas keys, badges, landmarks, fill de-emphasis, strips | the export under `assets/terrains/everon/` and the glyphs under `assets/glyphs/` |
 
 ## Public surface
 

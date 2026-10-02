@@ -1,6 +1,6 @@
 # Request middleware and authentication extractors
 
-The layers every request of the [API](/documentation_v2/glossary/a_to_f.md#api) passes through
+The layers every request of the [API](/documentation/glossary/a_to_f.md#api) passes through
 (correlation id, access log, CORS, rate limiting) and the extractors through which a handler
 states who may call it.
 
@@ -24,7 +24,7 @@ apps/website/api_v2/src/core/middleware/
 `crate::core::http_router` applies the chain, outermost first: `request_id`, `logging`, the
 metrics observer of `crate::core::observability`, panic recovery, `cors`, the default body limit
 `MAX_JSON_BODY` (1 MiB), and `rate_limit`. The `/api/v1/cms/uploads` route raises its own limit to
-`MAX_MULTIPART_BODY` (6 MiB), the [mission](/documentation_v2/glossary/g_to_m.md#mission) version save
+`MAX_MULTIPART_BODY` (6 MiB), the [mission](/documentation/glossary/g_to_m.md#mission) version save
 route takes the limit that `MISSION_VERSION_MAX_BODY_BYTES` sets, and the ballistics catalog
 upload `POST /api/v1/ballistics-catalogs` takes `MAX_CATALOG_UPLOAD_BODY_BYTES` (17 MiB + 64 KiB:
 the `calibration` part's 16 MiB cap, the `catalog` part's 1 MiB cap and 64 KiB of multipart
@@ -53,7 +53,7 @@ unauthenticated family. That prefix also passes the durable tier, `PgRateLimiter
 `429` with `Retry-After` and `{"error": "rate limit exceeded"}`; a durable tier that cannot reach
 Postgres answers `503` instead of letting the request through. `/map-assets` and
 `/map-assets/glyphs` are mounted below the layer and never reach it; `/uploads` stays limited. The
-`ratelimit_cleanup_worker` [background worker](/documentation_v2/glossary/a_to_f.md#background-workers)
+`ratelimit_cleanup_worker` [background worker](/documentation/glossary/a_to_f.md#background-workers)
 deletes buckets idle for an hour. `/api/v1/game-runtime/` and `/api/v1/ingest/` stay on the global
 tier: every caller there is a game server with its own machine credential, several servers can share
 one host address, and a mission start or an event batch arrives in a burst.
@@ -62,11 +62,11 @@ Authentication is not a layer. A handler takes an extractor, and the tier travel
 `AuthUser` needs `Authorization: Bearer <token>`, verifies the token and asks the session
 authority in `AppState` for the member's current session (401 when either fails); `LeaderUser`,
 `MissionMakerUser` and `AdminUser` also need a `role_rank` at least that of their
-[role](/documentation_v2/glossary/n_to_z.md#role) (403 otherwise). The ranks run `guest` 0, `enlisted`
+[role](/documentation/glossary/n_to_z.md#role) (403 otherwise). The ranks run `guest` 0, `enlisted`
 1, `leader` 2, `mission_maker` 3, `admin` 4, and an unknown role ranks below `guest`. The other
 callers' extractors live with the code that owns them: `MachineCaller` for game hosts in
 `server_infrastructure`, and `ObservabilityAuth` for the operator's scraper in
-`crate::core::observability`. `authorize_event_stream` wraps an [SSE](/documentation_v2/glossary/n_to_z.md#sse)
+`crate::core::observability`. `authorize_event_stream` wraps an [SSE](/documentation/glossary/n_to_z.md#sse)
 stream: before each delivery, and at least every five seconds, it asks the session authority
 again, and it ends the stream with an `authorization_expired` SSE event as soon as the session or
 its role stops qualifying. It also races the stream against
@@ -84,9 +84,9 @@ reconnects with `Last-Event-ID` as after any end of stream.
 - Used by:
   - `crate::core::http_router`, which mounts the chain and the exempt asset mounts;
   - the handlers of all eight domains, through the extractors and `json_error`; `role_rank` in the
-    mission write lock, [mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment), the
+    mission write lock, [mission deployments](/documentation/glossary/g_to_m.md#mission-deployment), the
     approval queue, reservation authority,
-    [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command) and the server intel's
+    [fleet commands](/documentation/glossary/a_to_f.md#fleet-command) and the server intel's
     inactive-server scoping; `MAX_MULTIPART_BODY` in the `community_content` route table;
   - `crate::core::observability::observability_auth`, through `json_error`;
   - `authorize_event_stream`, in the audit log feed of `administration` and the server status
@@ -111,5 +111,5 @@ reconnects with `Last-Event-ID` as after any end of stream.
 
 ## Related documentation
 
-- [Identity transactions](/documentation_v2/website/api_v2/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/website/api_v2/verification_evidence/identity_transactions.md)
   — how a bearer token's persisted session supplies the caller's current authority.

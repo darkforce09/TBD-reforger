@@ -25,10 +25,10 @@ use super::spec::Contract;
 use crate::contract_support;
 
 fn definitions_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../contracts_v2/definitions")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../contracts/definitions")
 }
 
-/// The parsed schema document `file` of `contracts_v2/definitions/`.
+/// The parsed schema document `file` of `contracts/definitions/`.
 pub fn load_schema_document(file: &str) -> Result<Value, String> {
     let path = definitions_dir().join(file);
     let raw =

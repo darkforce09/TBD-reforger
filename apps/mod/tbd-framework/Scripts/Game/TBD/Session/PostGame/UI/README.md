@@ -60,7 +60,7 @@ order.
 
 ## Related documentation
 
-- [End screen specification](/documentation_v2/mod/tbd-framework/UI/end_screen/end_screen_specification.md)
+- [End screen specification](/documentation/mod/tbd-framework/UI/end_screen/end_screen_specification.md)
   — the END banner as built, how a round ends and the design target
-- [Debrief specification](/documentation_v2/mod/tbd-framework/UI/debrief_after_action_review/debrief_after_action_review_specification.md)
+- [Debrief specification](/documentation/mod/tbd-framework/UI/debrief_after_action_review/debrief_after_action_review_specification.md)
   — the DEBRIEF scoreboard as built, kill counting and the design target

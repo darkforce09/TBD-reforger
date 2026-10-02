@@ -3,7 +3,7 @@
 The terrain's elevation model: the manifest that places the height raster on the world, the
 decoders that turn the 16-bit PNG or the raw `TBDE` grid into a metres cache, bilinear sampling,
 and the downsampled grid that contours, the sea band, the airfield apron and the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s height readout read.
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s height readout read.
 
 ## Contents
 
@@ -24,7 +24,7 @@ apps/website/map-engine/src/world/terrain/dem/
 ## How it works
 
 A terrain manifest's `dem` block names the PNG and its encoding. Everon's
-(`assets_v2/terrains/everon/manifest.json`) names `dem/everon-dem-16bit.png`: 6400 × 6400 samples
+(`assets/terrains/everon/manifest.json`) names `dem/everon-dem-16bit.png`: 6400 × 6400 samples
 at 2 m, `uint16-linear` from −204.78 m to 375.53 m, no axis flip. A manifest may also declare a
 `raw` block (`dem/elevation.dem`, encoding `tbde-v1`). At boot `crate::streaming::host` asks
 `load_declared_raw` for the raw grid first, which streams it only when the block names an encoding
@@ -82,10 +82,10 @@ fire-planning map uses); the Mission Creator's full scope leaves the handle empt
     `DemManifest`;
   - the Mission Creator's canvas and pointer handlers in
     `apps/website/frontend/src/v2/apps/editor/`, which read heights with `sample_grid_meters`;
-  - the world export in `tools_v2/developer-tools/src/world_export_pipeline/`, which writes
+  - the world export in `tools/developer_tools/src/world_export_pipeline/`, which writes
     `dem/elevation.dem` with `raw::to_bytes`, and the label and alignment checks in
-    `tools_v2/developer-tools/src/map_raster_pipeline/` and
-    `tools_v2/developer-tools/src/map_verification/`.
+    `tools/developer_tools/src/map_raster_pipeline/` and
+    `tools/developer_tools/src/map_verification/`.
 - Rules: `png.rs` compiles with the `world` feature, `raw.rs` with `io` and `loader.rs` only for
   wasm32 with `render`; the raw grid decodes the same in any chunk size and from a misaligned
   buffer (`streamed_in_any_chunk_size_matches_the_whole_buffer`,

@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/match-telemetry.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/match-telemetry.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///Match-level fields of a results revision. A present field replaces the stored value, an absent one keeps it; outcome is always present.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

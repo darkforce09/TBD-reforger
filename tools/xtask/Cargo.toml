@@ -1,0 +1,38 @@
+[package]
+name = "xtask"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Repository command router, verifications and platform execution (cargo xtask)"
+
+[[bin]]
+name = "xtask"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+flate2 = { workspace = true }
+tar = "0.4"
+clap = { workspace = true, features = ["derive"] }
+regex = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["preserve_order", "raw_value"] }
+serde_norway = "0.9"
+walkdir = { workspace = true }
+jsonschema = { workspace = true }
+developer_tools = { path = "../developer_tools" }
+verification_core = { path = "../verification_core" }
+ticket_engine = { path = "../ticket_engine" }
+libc = { workspace = true }
+typify = "0.7"
+schemars = "0.8"
+prettyplease = "0.2"
+syn = { version = "2", features = ["full", "visit"] }
+heck = "0.5"
+sha2 = "0.10"
+
+[dev-dependencies]
+# Manifest parsing in the tooling dependency-boundary and deploy tests.
+toml = { workspace = true }

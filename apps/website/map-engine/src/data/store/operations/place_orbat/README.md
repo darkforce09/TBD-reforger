@@ -1,8 +1,8 @@
 # Character placement into the ORBAT
 
-Files a character placed on the map into its side's [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat)
-in the [mission](/documentation_v2/glossary/g_to_m.md#mission) document: the side's faction, the squad the
-new [slot](/documentation_v2/glossary/n_to_z.md#slot) joins, its place in that squad and its leadership.
+Files a character placed on the map into its side's [ORBAT](/documentation/glossary/n_to_z.md#orbat)
+in the [mission](/documentation/glossary/g_to_m.md#mission) document: the side's faction, the squad the
+new [slot](/documentation/glossary/n_to_z.md#slot) joins, its place in that squad and its leadership.
 
 ## Contents
 
@@ -45,4 +45,4 @@ from the document on every call, so it is right again after an undo.
 
 ## Related documentation
 
-- [Mission Creator feature inventory: placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) — where a placed character lands in the ORBAT.
+- [Mission Creator feature inventory: placement](/documentation/website/frontend/apps/editor/feature_inventory/placement.md) — where a placed character lands in the ORBAT.

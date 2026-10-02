@@ -1,6 +1,6 @@
 # Framework input actions
 
-The framework [mod](/documentation_v2/glossary/g_to_m.md#mod)'s own key actions: each file binds one
+The framework [mod](/documentation/glossary/g_to_m.md#mod)'s own key actions: each file binds one
 named action to one keyboard key, and the scripts listen for the action by name while its input
 context is active.
 
@@ -70,7 +70,7 @@ four admin and mission keys to `TBD_BrowserContext`, the five spectator keys to
 
 ## Related documentation
 
-- [Spectator specification](/documentation_v2/mod/tbd-framework/UI/spectator/spectator_specification.md)
+- [Spectator specification](/documentation/mod/tbd-framework/UI/spectator/spectator_specification.md)
   — the spectator controls.
-- [In-game menu specification](/documentation_v2/mod/tbd-framework/UI/in_game_menu/in_game_menu_specification.md)
+- [In-game menu specification](/documentation/mod/tbd-framework/UI/in_game_menu/in_game_menu_specification.md)
   — the admin screen F8 opens.

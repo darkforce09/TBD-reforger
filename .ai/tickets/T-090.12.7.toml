@@ -1,29 +1,29 @@
 id = "T-090.12.7"
 kind = "work"
 title = "T-090.12.7 — Docs pass: LOS tool, world-los bench, map-assets, MCP"
-summary = "Cursor documentation pass: documentation_v2/website/frontend/apps/editor/ux_spec.md LOS + viewshed section, new documentation_v2/website/frontend/apps/debug/world_los_page.md + documentation_v2/website/frontend/README.md rows, map-assets README objects/prefabs rows, documentation_v2/runbooks/enfusion_mcp_tooling.md wbcall + TbdBlueprint actions, program hub status line, tbd-export README."
+summary = "Cursor documentation pass: documentation/website/frontend/apps/editor/ux_spec.md LOS + viewshed section, new documentation/website/frontend/apps/debug/world_los_page.md + documentation/website/frontend/README.md rows, map-assets README objects/prefabs rows, documentation/runbooks/enfusion_mcp_tooling.md wbcall + TbdBlueprint actions, program hub status line, tbd-export README."
 class = "docs"
 status = "ready"
 order = 7080
-spec = "documentation_v2/tickets/specs/t090_091_map_terrain_program.md"
-plan = "documentation_v2/tickets/plans/t-090_12_7_plan.md"
+spec = "documentation/tickets/specs/t090_091_map_terrain_program.md"
+plan = "documentation/tickets/plans/t-090_12_7_plan.md"
 executor = "documentation"
 depends_on = ["T-090.12.6"]
 parent = "T-090"
 main_goal = "Every surface the program changed is documented where the doc hub says it lives."
 context = [
-    "packages/map-assets/README.md has no objects/ or prefabs/ rows; documentation_v2/runbooks/enfusion_mcp_tooling.md never mentions mcp wbcall or EMCP_WB_TbdBlueprint.",
+    "packages/map-assets/README.md has no objects/ or prefabs/ rows; documentation/runbooks/enfusion_mcp_tooling.md never mentions mcp wbcall or EMCP_WB_TbdBlueprint.",
     "apps/mod/tbd-export/README.md is a stale copy of the framework README.",
 ]
 requirement = [
-    "documentation_v2/website/frontend/apps/editor/ux_spec.md gains a LOS + viewshed section (object verdict wording, coverage honesty, palette).",
-    "New documentation_v2/website/frontend/apps/debug/world_los_page.md + documentation_v2/website/frontend/README.md rows and count; documentation_v2/website/frontend/apps/debug/building_viewer_page.md gains the T-090.11.6 URL flags.",
+    "documentation/website/frontend/apps/editor/ux_spec.md gains a LOS + viewshed section (object verdict wording, coverage honesty, palette).",
+    "New documentation/website/frontend/apps/debug/world_los_page.md + documentation/website/frontend/README.md rows and count; documentation/website/frontend/apps/debug/building_viewer_page.md gains the T-090.11.6 URL flags.",
     "packages/map-assets/README.md rows for objects/ (chunks v2, prefabs.json.gz) and prefabs/ (blas, descriptors, blas-manifest).",
-    "documentation_v2/runbooks/enfusion_mcp_tooling.md: cargo xtask mcp wbcall + every EMCP_WB_TbdBlueprint action including world-parity; hub status line; tbd-export README.",
-    "documentation_v2/runbooks/enfusion_mcp_tooling.md also: wb_execute_action fires the full-export plugin after a compile; map world-los --pairs / --dem / --dump-misses replay lane.",
-    "documentation_v2/runbooks/editor_gates.md: gate render-check --shot / --map-assets / --inject-js / --no-freeze, the dev-login seed, LoS button is pointerdown.",
-    "documentation_v2/tickets/specs/t090_11_architectural_interiors.md: a collision-presets section (projectile layer policy, census, --all-layers).",
-    "documentation_v2/runbooks/local_development.md: copy-export-profile --full stamps the Steam build id as workbenchVersion; packages/map-assets README: scale column, schemaVersion 1.1.0.",
+    "documentation/runbooks/enfusion_mcp_tooling.md: cargo xtask mcp wbcall + every EMCP_WB_TbdBlueprint action including world-parity; hub status line; tbd-export README.",
+    "documentation/runbooks/enfusion_mcp_tooling.md also: wb_execute_action fires the full-export plugin after a compile; map world-los --pairs / --dem / --dump-misses replay lane.",
+    "documentation/runbooks/editor_gates.md: gate render-check --shot / --map-assets / --inject-js / --no-freeze, the dev-login seed, LoS button is pointerdown.",
+    "documentation/tickets/specs/t090_11_architectural_interiors.md: a collision-presets section (projectile layer policy, census, --all-layers).",
+    "documentation/runbooks/local_development.md: copy-export-profile --full stamps the Steam build id as workbenchVersion; packages/map-assets README: scale column, schemaVersion 1.1.0.",
 ]
 current_state = ["Not started."]
 approach = ["Read the T-090.12 commit bodies (Docs for Cursor lines) and the program plan doc; write the documents; sync INDEX and TAGS only if a spec doc is added."]
@@ -31,12 +31,12 @@ verify = ["cargo xtask ci schema-validate (citations); cargo xtask ticket check"
 acceptance = ["Every path in the requirement list is updated and links resolve; no generated TICKET_*.md is hand-edited."]
 created_at = "2026-09-04T01:22:27Z"
 owns = [
-    "documentation_v2/website/frontend/apps/editor/ux_spec.md",
-    "documentation_v2/website/frontend/apps/debug/world_los_page.md",
-    "documentation_v2/website/frontend/apps/debug/building_viewer_page.md",
-    "documentation_v2/website/frontend/README.md",
+    "documentation/website/frontend/apps/editor/ux_spec.md",
+    "documentation/website/frontend/apps/debug/world_los_page.md",
+    "documentation/website/frontend/apps/debug/building_viewer_page.md",
+    "documentation/website/frontend/README.md",
     "packages/map-assets/README.md",
-    "documentation_v2/runbooks/enfusion_mcp_tooling.md",
+    "documentation/runbooks/enfusion_mcp_tooling.md",
     "apps/mod/tbd-export/README.md",
 ]
 

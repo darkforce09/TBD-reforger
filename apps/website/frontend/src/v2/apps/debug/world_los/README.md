@@ -44,7 +44,7 @@ east, up, north), `&eye=` (the cut height above the ground, default 1.8 m) and `
   `WorldResidency`.
 - `GET /map-assets/everon/objects/chunks/{cx}_{cy}.json.gz` for every chunk the radius covers.
 - The descriptors and BLAS files `OccluderHost` fetches for the resident chunks.
-- The `/map-assets` paths are static files the [API](/documentation_v2/glossary/a_to_f.md#api) serves,
+- The `/map-assets` paths are static files the [API](/documentation/glossary/a_to_f.md#api) serves,
   proxied by Trunk in development; the bench calls no `/api/v1` route, reads no context or
   storage, and writes nothing.
 
@@ -74,14 +74,14 @@ east, up, north), `&eye=` (the cut height above the ground, default 1.8 m) and `
   browser build and calls `live::mount` from `WorldLosPage`, the component of the
   `/debug/world-los` route in `apps/website/frontend/src/app_routes.rs`.
 - Rules: the bench reads committed assets only and never touches the
-  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s code; it loads objects
+  [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s code; it loads objects
   through the same `OccluderHost` the Mission Creator's line-of-sight tool reads.
   No test covers these browser-only files; the pure scene code they call is tested in
   `apps/website/frontend/src/v2/apps/debug/tests/world_los_scene/`. The route's row in
   `apps/website/frontend/src/router.rs` must match
-  `tools_v2/developer-tools/fixtures/dom_oracle/manifests/routes.csv` (`gate s-routes`).
+  `tools/developer_tools/fixtures/dom_oracle/manifests/routes.csv` (`gate s-routes`).
 
 ## Related documentation
 
-- [World line-of-sight bench](/documentation_v2/website/frontend/apps/debug/world_los_page.md) —
+- [World line-of-sight bench](/documentation/website/frontend/apps/debug/world_los_page.md) —
   the bench's purpose and behaviour.

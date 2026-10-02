@@ -10,7 +10,7 @@ fn strings(list: &[&str]) -> Vec<String> {
 fn everon_manifest() -> String {
     let path = concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../../assets_v2/terrains/everon/manifest.json"
+        "/../../../assets/terrains/everon/manifest.json"
     );
     std::fs::read_to_string(path).expect("committed Everon manifest")
 }

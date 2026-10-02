@@ -76,6 +76,6 @@ serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"
 # The editing layer hands a host-supplied async read to `editing::persist::merge_policy`, so a
 # native test of that ordering needs an executor to drive the future to completion.
 futures = { workspace = true }
-# The catalog tests validate their sample against `contracts_v2/definitions/ballistics-catalog.schema.json`
+# The catalog tests validate their sample against `contracts/definitions/ballistics-catalog.schema.json`
 # with the same validator the xtask schema checks use.
 jsonschema = { workspace = true }

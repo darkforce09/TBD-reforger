@@ -1455,9 +1455,9 @@ ON CONFLICT (id) DO NOTHING;
 --      take none). Before the first /api/v1/ballistics-catalogs row, upload the
 --      committed vanilla catalog pair with the same token: POST
 --      /api/v1/ballistics-catalogs as multipart/form-data, part `catalog` from
---      contracts_v2/catalogs/ballistics/vanilla_mortars.v1.catalog.json and part
+--      contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json and part
 --      `calibration` from
---      contracts_v2/fixtures/ballistics/vanilla_mortars.v1/calibration.json, each
+--      contracts/fixtures/ballistics/vanilla_mortars.v1/calibration.json, each
 --      declared application/json; this file holds no catalog row, because a
 --      catalog enters only through that route's calibration. The reads come
 --      first and the writes last, in index order,

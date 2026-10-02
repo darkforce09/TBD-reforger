@@ -69,7 +69,7 @@ event batch    lock_registered_match ─► conflict probe ─► insert ON CONF
 
 ## Related documentation
 
-- [Match telemetry, fleet status and derived statistics](/documentation_v2/website/api_v2/verification_evidence/telemetry.md)
+- [Match telemetry, fleet status and derived statistics](/documentation/website/api_v2/verification_evidence/telemetry.md)
   — the revision table, the event rules and the lock order these services implement.
-- [Identity transactions](/documentation_v2/website/api_v2/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/website/api_v2/verification_evidence/identity_transactions.md)
   — the identity and account lock order the results transaction shares.

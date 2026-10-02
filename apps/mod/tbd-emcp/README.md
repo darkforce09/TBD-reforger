@@ -2,8 +2,8 @@
 
 The `TBD_EMCP` Enfusion addon: the Workbench Net API handlers of the
 [enfusion-mcp](https://www.npmjs.com/package/enfusion-mcp) bridge, packaged on their own so a
-[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) session gets the `wb_*` MCP tools without any
-other addon of the [mod](/documentation_v2/glossary/g_to_m.md#mod) carrying editor-only code. Nothing in
+[Workbench](/documentation/glossary/n_to_z.md#workbench) session gets the `wb_*` MCP tools without any
+other addon of the [mod](/documentation/glossary/g_to_m.md#mod) carrying editor-only code. Nothing in
 it ships to players or servers.
 
 ## Contents
@@ -61,10 +61,10 @@ script list when it loads the project.
 
 ### Upgrading enfusion-mcp
 
-1. Set the new version in `tools_v2/enfusion_mcp_node_package/package.json` and run `npm ci` in
+1. Set the new version in `tools/enfusion_mcp_node_package/package.json` and run `npm ci` in
    that folder.
 2. Compare the package's handlers with these:
-   `diff -r tools_v2/enfusion_mcp_node_package/node_modules/enfusion-mcp/mod/Scripts/WorkbenchGame/EnfusionMCP apps/mod/tbd-emcp/Scripts/WorkbenchGame/EnfusionMCP`.
+   `diff -r tools/enfusion_mcp_node_package/node_modules/enfusion-mcp/mod/Scripts/WorkbenchGame/EnfusionMCP apps/mod/tbd-emcp/Scripts/WorkbenchGame/EnfusionMCP`.
    The expected local differences are the comment card, the `Wire` class names, the separate
    `EMCP_WB_GetEntityResponseWire.c`, the `ModifyEntity/` split and `getAllText`; every other
    difference is an upstream change.
@@ -78,10 +78,10 @@ script list when it loads the project.
 - `addon.gproj`: ID `TBD_EMCP`, GUID `D4E5F6A7B8C90123`, title "TBD EMCP", one dependency, the
   vanilla data addon `58D0FB3206B6F859`, and empty `PC` and `HEADLESS` configurations.
 - `ENFUSION_WORKBENCH_HOST` and `ENFUSION_WORKBENCH_PORT` (defaults `127.0.0.1` and `5775`): where
-  `cargo xtask mcp wbcall` reaches the Net API (`tools_v2/xtask/src/commands/mcp/netapi.rs`);
+  `cargo xtask mcp wbcall` reaches the Net API (`tools/xtask/src/commands/mcp/netapi.rs`);
   `mod dev-bootstrap` and `mod spawn-determinism` read the port too.
 - `TBD_WB_WAIT_SEC` (default 180): how long `mod dev-bootstrap` waits for the Net API port after
-  launching Workbench (`tools_v2/xtask/src/commands/mod_ops/development_bootstrap.rs`).
+  launching Workbench (`tools/xtask/src/commands/mod_ops/development_bootstrap.rs`).
 
 ## Public surface
 
@@ -97,9 +97,9 @@ script list when it loads the project.
 
 - Depends on: the vanilla Arma Reforger data addon and Workbench's script API.
 - Used by: `apps/mod/tbd-export/addon.gproj`, its one dependent addon; the `enfusion-mcp` package
-  pinned in `tools_v2/enfusion_mcp_node_package/`; and the `cargo xtask mcp` commands and the
+  pinned in `tools/enfusion_mcp_node_package/`; and the `cargo xtask mcp` commands and the
   `mod dev-bootstrap`, `mod spawn-verify` and `mod spawn-determinism` commands in
-  `tools_v2/xtask/src/commands/`.
+  `tools/xtask/src/commands/`.
 - Rules: the handlers are committed here and loaded from here only. The MCP's `wb_launch` with
   `gprojPath` copies a second set into the addon it names, which Workbench rejects as a
   "Multiple declaration" and which kills the bridge; `cargo xtask mod compile` exits 1 when such a
@@ -110,11 +110,11 @@ script list when it loads the project.
 
 ## Related documentation
 
-- [Enfusion MCP tooling](/documentation_v2/runbooks/enfusion_mcp_tooling.md) — the MCP call path,
+- [Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md) — the MCP call path,
   the daemon, exit codes and the live checks.
-- [Mod slice workflow](/documentation_v2/runbooks/mod_slice_workflow.md) — how mod work runs in
+- [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — how mod work runs in
   Workbench and the gates.
-- [Enfusion MCP bridge](/documentation_v2/mod/tbd-emcp/workbench_mcp_bridge.md) — `mcp call` against
+- [Enfusion MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md) — `mcp call` against
   `mcp wbcall`, the bootstrap order, the loading rules and the known gaps.
-- [Spawn determinism](/documentation_v2/runbooks/spawn_determinism.md) — the Workbench gate that
+- [Spawn determinism](/documentation/runbooks/spawn_determinism.md) — the Workbench gate that
   plays the framework world through these handlers.

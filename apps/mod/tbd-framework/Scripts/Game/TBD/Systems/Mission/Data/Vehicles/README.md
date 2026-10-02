@@ -1,6 +1,6 @@
 # Mission vehicle roster and vehicle state
 
-The mission-placed vehicles of a loaded [mission](/documentation_v2/glossary/g_to_m.md#mission):
+The mission-placed vehicles of a loaded [mission](/documentation/glossary/g_to_m.md#mission):
 the `vehicles[]` rows with their crew plans, the roster that puts exactly one world vehicle behind
 each row and seats its crew, and the reader that applies each vehicle's authored lock, fuel and
 ammo. The server runs all of it while a mission's slot bodies materialize.
@@ -62,7 +62,7 @@ when true, because an absent bool and an authored false bind the same.
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/` (`GetSlotBody`); `TBD_Registry`
   (alias to prefab); `TBD_EntityQuery`; `TBD_MissionJsonPass`; the engine's compartment,
   `VehicleControllerComponent`, `FuelManagerComponent` and weapon and magazine classes; the
-  `$defs/vehicle` definition in `contracts_v2/definitions/mission.schema.json`.
+  `$defs/vehicle` definition in `contracts/definitions/mission.schema.json`.
 - Used by: `TBD_MissionDocumentStruct.vehicles`; `TBD_MissionWorldApplier` (`ResetIndex`,
   `RecordEntitySpawn`); `TBD_SlotBodyMaterializer` (`SeatAuthoredCrews`, `ApplySpawned`);
   `TBD_VehicleSpawnDefaults` (`Apply`, `TBD_VehicleStateWireStruct.ABSENT`).

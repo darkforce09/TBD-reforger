@@ -1,10 +1,10 @@
 # Ticket agent playbook
 
-The recipes an agent, or a person, follows for each [ticket](/documentation_v2/glossary/n_to_z.md#ticket)
+The recipes an agent, or a person, follows for each [ticket](/documentation/glossary/n_to_z.md#ticket)
 task: filing, filling, queuing, writing the spec and plan, running, shipping, cancelling. The
 source of truth is one `.ai/tickets/T-<id>.toml` file per ticket; the
 [ticket registry README](/.ai/tickets/README.md) describes the folder, and
-[Taking a ticket from idea to shipped](/documentation_v2/runbooks/ticket_run_pipeline.md) gives
+[Taking a ticket from idea to shipped](/documentation/runbooks/ticket_run_pipeline.md) gives
 every step with its expected output.
 
 ## Golden rule
@@ -16,9 +16,9 @@ with the derived files the verb wrote and the code and documentation the work ch
 - A ticket file is created only by `cargo xtask ticket add` or `ticket add-child`.
 - Never edit by hand what `cargo xtask ticket sync` writes: `.ai/tickets/queue.json` and the
   next-work block between `<!-- ticket-sync:next:start -->` and `<!-- ticket-sync:next:end -->` in
-  [the Mission Creator roadmap](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md).
+  [the Mission Creator roadmap](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md).
   The ticket column of the
-  [Eden gap analysis](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)
+  [Eden gap analysis](/documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)
   is kept by hand.
 - Never edit `.ai/tickets/wave.lock`; `cargo xtask wave repack` writes it.
 
@@ -57,12 +57,12 @@ conversation. A complete-outcome ask ("replace the whole surface", "finish the p
 
 ### Write the spec and plan, and mark it ready
 
-1. Spec: `documentation_v2/tickets/specs/t<id>_<subject>.md` from
+1. Spec: `documentation/tickets/specs/t<id>_<subject>.md` from
    [`spec_template.md`](/.ai/tickets/spec_template.md). When the spec should feed
    `cargo xtask ticket prompt`, add its prompt block per
    [`implementation_prompt.md`](/.ai/tickets/implementation_prompt.md).
 2. Plan: copy [`plan_template.md`](/.ai/tickets/plan_template.md) to
-   `documentation_v2/tickets/plans/t-<id, lowercased, dots as underscores>_plan.md` and fill its
+   `documentation/tickets/plans/t-<id, lowercased, dots as underscores>_plan.md` and fill its
    four sections.
 3. Handoff, only when the operator's context does not fit in the spec:
    `.ai/artifacts/<slug>_claude_code_handoff.md` from
@@ -87,7 +87,7 @@ print its prompt with `cargo xtask ticket prompt <id>` and deliver it as one fen
 ### Ship it
 
 1. Verify against the ticket's own `verify` lines (`cargo xtask ticket get <id> verify`) and the
-   checks the [commit checklist](/documentation_v2/standards/commit_checklist.md) lists.
+   checks the [commit checklist](/documentation/standards/commit_checklist.md) lists.
 2. `cargo xtask ticket ship <id>`.
 3. Commit the code, the documentation it changes and the ticket files together, with the ticket id
    in the subject: documentation ships in the same commit as the code it describes. Update the

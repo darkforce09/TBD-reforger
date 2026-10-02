@@ -14,7 +14,7 @@ apps/mod/tbd-framework/UI/layouts/Session/Spectator/
 ## Format
 
 - File type: none here; a layout added for the spectator interface alone is an
-  [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) widget layout with its `.layout.meta`, named
+  [Enfusion](/documentation/glossary/a_to_f.md#enfusion) widget layout with its `.layout.meta`, named
   `TBD_Spectator<Element>.layout`, with a block from the ledger in
   `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UILayouts.c` and a `TBD_UILayouts`
   constant.
@@ -34,5 +34,5 @@ None: no resource refers to this folder. The `TBD_Spectator` preset in
 
 ## Related documentation
 
-- [Spectator specification](/documentation_v2/mod/tbd-framework/UI/spectator/spectator_specification.md)
+- [Spectator specification](/documentation/mod/tbd-framework/UI/spectator/spectator_specification.md)
   — the spectator as built, its policies and controls, and the design target

@@ -22,7 +22,7 @@ apps/website/map-engine/src/world/architecture/blueprint/
 ## How it works
 
 A blueprint is `prefabs/buildings/<slug>.json` in a terrain's asset folder, such as
-`assets_v2/terrains/everon/prefabs/buildings/FarmHouse_E_1L01.json`: camelCase JSON that serde reads
+`assets/terrains/everon/prefabs/buildings/FarmHouse_E_1L01.json`: camelCase JSON that serde reads
 into `BuildingBlueprint` (`structure.rs`). Its `VerticalProfile` gives the pivot offset,
 foundation skirt, eave, ridge and total heights and the roof type; its `OverallFootprint` the plan
 polygon, bounding box and area; an optional `RoofGrid` the top surface. Each `BuildingLevel` covers
@@ -86,7 +86,7 @@ so those come back empty or zero.
   - the debug building viewer and line-of-sight benches in
     `apps/website/frontend/src/v2/apps/debug/`, which fetch the blueprint JSON from
     `/map-assets/everon/prefabs/buildings/`;
-  - the blueprint tooling in `tools_v2/developer-tools/src/blueprint/`:
+  - the blueprint tooling in `tools/developer_tools/src/blueprint/`:
     `cargo xtask map blueprint-from-voxels` writes the blueprint JSON, and its `archive` action
     writes the archive.
 - Rules: every file compiles only with the `io` feature; the Everon farmhouse JSON parses into the
@@ -101,5 +101,5 @@ so those come back empty or zero.
 
 ## Related documentation
 
-- [Building blueprint schema](/contracts_v2/definitions/building-blueprint.schema.json) — the
+- [Building blueprint schema](/contracts/definitions/building-blueprint.schema.json) — the
   blueprint JSON.

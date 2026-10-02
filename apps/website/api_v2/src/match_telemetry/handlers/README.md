@@ -22,7 +22,7 @@ apps/website/api_v2/src/match_telemetry/handlers/
 ## How it works
 
 - **Caller.** Every handler that writes takes a `MachineCaller` that must be a `mod_runtime`
-  [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential); the server is the
+  [machine credential](/documentation/glossary/g_to_m.md#machine-credential); the server is the
   credential's, never a value in the body, and a body that names `server_id` is a 400.
 - **Heartbeat.** `ingest_server_status` decodes `ServerStatusInput`
   (`server_heartbeat_contract.rs`, which refuses unknown keys). The body names the runtime
@@ -36,7 +36,7 @@ apps/website/api_v2/src/match_telemetry/handlers/
   `backlog` at most `capacity`) and is stored with its `reported_at`; an absent block keeps the
   stored reading. The handler appends a `server_status_histories` sample, writes a
   `server.low_fps` warning when the server falls below 20 FPS, and publishes the stored row on the
-  server's [SSE](/documentation_v2/glossary/n_to_z.md#sse) topic.
+  server's [SSE](/documentation/glossary/n_to_z.md#sse) topic.
 - **Ingests.** `ingest_match_registration`, `ingest_match_results` and `ingest_match_events` take
   the body as raw JSON, validate it whole through the decoders in `models/` (the first invalid entry
   is a 400 naming its index and field), and call the matching transaction in `services/`. The
@@ -52,7 +52,7 @@ apps/website/api_v2/src/match_telemetry/handlers/
   `publish_server_status_by_id`); `administration` (the low-FPS audit writer); the domain's
   models and services; `core` for errors and `AuthUser`.
 - Used by: the domain's `routes.rs`; over HTTP, the
-  [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime)'s session loop in
+  [game runtime](/documentation/glossary/g_to_m.md#game-runtime)'s session loop in
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSession.c` and its results reporter in
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/Results/TBD_ResultsReporter.c`. The reporter's
   registrations and results revisions and the recorded event batches reach the ingests through the

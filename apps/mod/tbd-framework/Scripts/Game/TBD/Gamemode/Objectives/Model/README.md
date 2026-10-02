@@ -51,5 +51,5 @@ partial percentage.
   `TBD_EObjectiveKind`.
 - Rules: no geometry here, containment is the zone's; an untyped objective leaves every typed field
   empty and renders exactly its label and status; board text stays ASCII (`--`, never an arrow
-  glyph); `tools_v2/xtask/src/verifications/schemas/tests/checks/side_fallback_tests.rs` runs
+  glyph); `tools/xtask/src/verifications/schemas/tests/checks/side_fallback_tests.rs` runs
   `RoleOf`, `TitleFor`, `TaskTextFor` and `MayOwn` from this source.

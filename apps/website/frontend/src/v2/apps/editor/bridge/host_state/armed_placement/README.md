@@ -1,9 +1,9 @@
 # Armed placement
 
-The in-flight placement of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator):
+The in-flight placement of the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator):
 what the operator picked up from a palette and has not yet dropped on the map, the zone and trigger
 draw that rides the same arm, and the map release that commits it to the
-[mission](/documentation_v2/glossary/g_to_m.md#mission).
+[mission](/documentation/glossary/g_to_m.md#mission).
 
 ## Contents
 
@@ -71,10 +71,10 @@ write. An arm itself is never document state and never an undo step.
   since the tab can change between the pick-up and the commit; every file here is on the place path
   that `cargo xtask verify editor-orbat-coherency` scans, which bans `ensure_default_squad` and
   fails when a listed file is missing, so a renamed file updates the gate's list in
-  `tools_v2/xtask/src/verifications/architecture/editor_orbat_coherency.rs`.
+  `tools/xtask/src/verifications/architecture/editor_orbat_coherency.rs`.
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
+- [Mission Creator feature inventory](/documentation/website/frontend/apps/editor/feature_inventory/README.md)
   — palette placement and click-to-place.
-- [Mission Creator feature inventory: placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) — the pick-up, release, repeat and cancel rules, one entry each.
+- [Mission Creator feature inventory: placement](/documentation/website/frontend/apps/editor/feature_inventory/placement.md) — the pick-up, release, repeat and cancel rules, one entry each.

@@ -1,10 +1,10 @@
 # Map symbology
 
 The map engine's cartographic vocabulary: the bespoke unit-role and vehicle glyphs with their side
-tints, the glyph atlases, the icon instances and [slot](/documentation_v2/glossary/n_to_z.md#slot) GPU
+tints, the glyph atlases, the icon instances and [slot](/documentation/glossary/n_to_z.md#slot) GPU
 bridge, map labels, squad tether links,
 briefing marker glyphs and captions, and the label text packing. It holds what the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) and the streamed world draw, so the
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) and the streamed world draw, so the
 graphics engine only ever sees cells, instances and uniforms.
 
 ## Contents
@@ -41,7 +41,7 @@ RenderEngine lanes (instances/ bridge, frame/)  ──► website-graphics-engin
 The symbology is bespoke: five unit roles, three vehicle kinds and three side tints, with no
 MIL-STD-2525 or APP-6 frames. `markers.rs` maps every marker `icon` alias of the mission schema to
 one of `MARKER_GLYPH_COUNT` (11) glyphs, folding case and separators and falling back to the disc,
-the same downgrade the game [mod](/documentation_v2/glossary/g_to_m.md#mod) makes; its atlas shares cells 0
+the same downgrade the game [mod](/documentation/glossary/g_to_m.md#mod) makes; its atlas shares cells 0
 and 1 (ring, disc) with the slot
 atlas. Captions and place names go through one text pipeline: `text_packing.rs` lays glyphs of the
 graphics engine's baked ASCII atlas beside their anchors, and hands `LabelSpec` labels to the
@@ -61,7 +61,7 @@ UI framework or editor state; browser I/O (the atlas upload, the lane binds) com
   `crate::frame`, `crate::camera::viewport`, the streaming world loader and the Mission Creator.
 - `labels`, `text_metrics` and `text_packing`, for `crate::streaming`, the location loaders in
   `crate::world::environment::locations`, `crate::frame` and `crate::diagnostics`, and the
-  town-label verification in `tools_v2/developer-tools/src/map_verification/labels/`.
+  town-label verification in `tools/developer_tools/src/map_verification/labels/`.
 
 ## Boundaries
 
@@ -71,7 +71,7 @@ UI framework or editor state; browser I/O (the atlas upload, the lane binds) com
   `wasm_bindgen`.
 - Used by: `crate::editing` (lanes, picking), `crate::frame`, `crate::camera`, `crate::streaming`,
   `crate::world::environment::locations`, `crate::diagnostics`; the Mission Creator in
-  `apps/website/frontend/src/v2/apps/editor/`; `tools_v2/developer-tools/`.
+  `apps/website/frontend/src/v2/apps/editor/`; `tools/developer_tools/`.
 - Rules: every marker alias of the schema maps to a glyph (`every_schema_alias_maps` in
   `tests/markers_tests.rs`); marker atlas cells 0 and 1 equal the slot atlas
   (`marker_atlas_cells_0_and_1_match_slot_atlas`); the committed label data has no glyph without
@@ -81,7 +81,7 @@ UI framework or editor state; browser I/O (the atlas upload, the lane binds) com
 
 ## Related documentation
 
-- [Map symbology](/documentation_v2/design_system/map_symbology.md) — the unit, vehicle and
+- [Map symbology](/documentation/design_system/map_symbology.md) — the unit, vehicle and
   marker symbols and side tints, and how the game draws the same markers.
-- [Design tokens](/documentation_v2/design_system/design_tokens.md) — the palette the side tints
+- [Design tokens](/documentation/design_system/design_tokens.md) — the palette the side tints
   come from.

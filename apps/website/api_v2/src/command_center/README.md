@@ -1,11 +1,11 @@
 # Command center domain
 
-The [API](/documentation_v2/glossary/a_to_f.md#api)'s
-[command center](/documentation_v2/glossary/a_to_f.md#command-center) domain: the platform's read surfaces.
+The [API](/documentation/glossary/a_to_f.md#api)'s
+[command center](/documentation/glossary/a_to_f.md#command-center) domain: the platform's read surfaces.
 It serves the members' dashboard, which composes many best-effort lookups into one answer, the
 ranked community leaderboards and one player's statistics card, and it owns the derived figures
 behind them. The ingest that produces those figures belongs to `match_telemetry`, and the
-[events](/documentation_v2/glossary/a_to_f.md#event) they are attributed to belong to `operations`.
+[events](/documentation/glossary/a_to_f.md#event) they are attributed to belong to `operations`.
 
 ## Contents
 
@@ -65,11 +65,11 @@ players and capacity, and sum every reported telemetry queue's backlog and drops
 
 ## Related documentation
 
-- [API overview](/documentation_v2/website/api_v2/api_overview.md) — every domain's routes.
-- [API environment variables](/documentation_v2/website/api_v2/environment_variables.md)
+- [API overview](/documentation/website/api_v2/api_overview.md) — every domain's routes.
+- [API environment variables](/documentation/website/api_v2/environment_variables.md)
   — `LEADERBOARD_REFRESH_INTERVAL_SECS`,
   the cadence of the scheduled leaderboard refresh.
-- [Match telemetry, fleet status and derived statistics](/documentation_v2/website/api_v2/verification_evidence/telemetry.md)
+- [Match telemetry, fleet status and derived statistics](/documentation/website/api_v2/verification_evidence/telemetry.md)
   — the fleet block and when the derived statistics are recomputed.
-- [Reservation and attendance separation](/documentation_v2/website/api_v2/verification_evidence/reservation_attendance.md)
+- [Reservation and attendance separation](/documentation/website/api_v2/verification_evidence/reservation_attendance.md)
   — what counts as attendance, which the statistics summarise.

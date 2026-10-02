@@ -1,6 +1,6 @@
 # Ballistics oracle plugin
 
-The [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) menu entry that asks the engine's
+The [Workbench](/documentation/glossary/n_to_z.md#workbench) menu entry that asks the engine's
 own ballistic tables, in the editor, how far and how long each vanilla mortar shell flies at every
 charge and elevation, and records the raw answers with the game build, so the platform's
 trajectory model can be calibrated against the game. The play-mode half, which records the
@@ -115,7 +115,7 @@ None: Workbench runs these scripts in the editor.
 
 ## Related documentation
 
-- [Ballistics oracle](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/ballistics_oracle.md)
+- [Ballistics oracle](/documentation/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/ballistics_oracle.md)
   — what the oracle measures, why, and how its outputs become calibration fixtures.
 - [Ballistics oracle game scripts](/apps/mod/tbd-export/Scripts/Game/TBD/Export/BallisticsOracle/README.md)
   — the play-mode simulation run, the shared classes and the simulation output.

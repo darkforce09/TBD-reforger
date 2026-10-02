@@ -36,12 +36,12 @@ any other path              ──▶ chrome: sidebar + top bar + <main>
 ```
 
 The chromeless paths are the four rows `apps/website/frontend/src/router.rs` flags: the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator), the review workspace and the two
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator), the review workspace and the two
 debug benches. Moving between two chromed routes swaps only the page inside `<main>`. The
 membership banner and the toast viewport sit beside the frame, so a frame swap never unmounts them.
 
 The sidebar renders `NAVIGATION` top to bottom through the browse-mode check `has_min_role`: a
-signed-out visitor, whose [role](/documentation_v2/glossary/n_to_z.md#role) is unknown, sees every
+signed-out visitor, whose [role](/documentation/glossary/n_to_z.md#role) is unknown, sees every
 section, the "Administration" section included; a signed-in viewer sees the links their role
 clears, so "Administration" shows only for `admin`, and `guest` sees no link, since every other one
 asks for `enlisted`. `is_active` marks one link: `/` only on `/`, any other link on its own path and
@@ -62,7 +62,7 @@ The top bar shows the route's breadcrumb from `router::breadcrumb`. Its account 
 memo of the name, avatar and linked Arma identity, so a profile poll that changes none of them
 leaves an open menu alone. Signing out clears the local session at once, removes the stored session
 under the refresh lock when it belongs to this session, then asks the
-[API](/documentation_v2/glossary/a_to_f.md#api) to revoke the refresh token. `MembershipStatus` refetches
+[API](/documentation/glossary/a_to_f.md#api) to revoke the refresh token. `MembershipStatus` refetches
 the profile every 30 seconds while a session is held, which keeps the membership flags current, and
 shows its banner while the membership is stale or the profile says the viewer may extend access.
 
@@ -110,7 +110,7 @@ shows its banner while the membership is stale or the profile says the viewer ma
 - Used by: `apps/website/frontend/src/main.rs`, which mounts `AppLayout`; the fallback of
   `apps/website/frontend/src/app_routes.rs` and the `*` row of
   `apps/website/frontend/src/router.rs`, which name `NotFoundPage`; the DOM oracle's `notfound`
-  capture in `tools_v2/developer-tools/src/browser_testing/dom_oracle/routes.rs`, whose captures of
+  capture in `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`, whose captures of
   the chromed pages hold the frame too.
 - Rules: `classify_frame` is the one place a frame is chosen, naming only `/login` and
   `/auth/callback` and reading every other layout from the route table (`classify_frame_kinds` in
@@ -122,9 +122,9 @@ shows its banner while the membership is stale or the profile says the viewer ma
 
 ## Related documentation
 
-- [App layout and navigation](/documentation_v2/website/frontend/pages/navigation/app_layout_and_navigation.md)
+- [App layout and navigation](/documentation/website/frontend/pages/navigation/app_layout_and_navigation.md)
   — the behaviour and design of the layout, the sidebar, the top bar and the not-found page.
-- [Top bar blueprint](/documentation_v2/website/frontend/pages/navigation/visual_references/topbar_blueprint/README.md)
+- [Top bar blueprint](/documentation/website/frontend/pages/navigation/visual_references/topbar_blueprint/README.md)
   — the design-phase reference of the top bar and how the built bar differs.
-- [Account pages](/documentation_v2/website/frontend/pages/account/account_pages.md) — the
+- [Account pages](/documentation/website/frontend/pages/account/account_pages.md) — the
   sign-in pages the frame renders bare and the settings page the account menu opens.

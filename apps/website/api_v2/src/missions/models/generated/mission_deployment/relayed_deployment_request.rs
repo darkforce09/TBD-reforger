@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/mission-deployment.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/mission-deployment.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///POST /api/v1/game-runtime/deployments body (mod_runtime credential): an in-game administrator's selection. The Arma identity must be linked to an unbanned platform administrator (403 IDENTITY_NOT_LINKED or NOT_AN_ADMINISTRATOR), who becomes the requester; the selection is validated as DeploymentRequest is. Answered 202 with the MissionDeployment.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/event-access-administration.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/event-access-administration.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///One element of GET /api/v1/events/:id/access/participants (an array): why each participant is or is not eligible.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

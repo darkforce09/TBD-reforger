@@ -1,7 +1,7 @@
 # Administration handlers
 
 The HTTP handlers of the administrator's console: the member roster, bans and warnings, the
-Discord [role](/documentation_v2/glossary/n_to_z.md#role) resync, the membership grace extension and the
+Discord [role](/documentation/glossary/n_to_z.md#role) resync, the membership grace extension and the
 audit log with its live feed.
 
 ## Contents
@@ -33,16 +33,16 @@ Discord is unreachable and their own snapshot is stale.
   case.
 - **Discipline.** A ban requires a non-blank reason; it locks both accounts, sets the ban, revokes
   the member's refresh tokens, queues a re-evaluation of their
-  [event](/documentation_v2/glossary/a_to_f.md#event) reservations and appends the `user.ban` audit in one
+  [event](/documentation/glossary/a_to_f.md#event) reservations and appends the `user.ban` audit in one
   transaction. A ban lift clears the ban, queues the same re-evaluation and appends `user.unban` the
   same way; a warning writes a `warnings` row and a best-effort audit line.
 - **Roles.** A member's role follows their Discord roles: `PATCH /api/v1/admin/users/{discordId}`
   validates the requested role and then always answers 409, and `POST /api/v1/admin/roles/sync`
   re-applies the `discord_roles` mapping to every account and audits `roles.resync`.
-- **[Audit logs](/documentation_v2/glossary/a_to_f.md#audit-logs).** The list reads newest first with
+- **[Audit logs](/documentation/glossary/a_to_f.md#audit-logs).** The list reads newest first with
   `?severity=` (`info`, `warn`, `crit`), `?q=` over the message and `?before=` keyset paging. The
   CSV export prefixes cells that would open as spreadsheet formulas. The stream is
-  [SSE](/documentation_v2/glossary/n_to_z.md#sse) and opens with `event: ready`, whose id is the start
+  [SSE](/documentation/glossary/n_to_z.md#sse) and opens with `event: ready`, whose id is the start
   cursor (the `Last-Event-ID`, or the tail without one) and whose data is
   `{resume_after, retained_after}`. Each audit row follows as an unnamed event whose id is its
   publication sequence and whose data is the list route's row JSON. A cursor beyond the tail

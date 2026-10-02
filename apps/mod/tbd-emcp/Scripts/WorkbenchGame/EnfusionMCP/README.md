@@ -2,7 +2,7 @@
 
 The Workbench side of the Enfusion MCP bridge: nineteen Net API handlers that let the `wb_*` tools
 of the pinned `enfusion-mcp` package, and `cargo xtask mcp wbcall`, read and drive a running
-[Workbench](/documentation_v2/glossary/n_to_z.md#workbench). They derive from the handlers
+[Workbench](/documentation/glossary/n_to_z.md#workbench). They derive from the handlers
 `enfusion-mcp@0.6.1` ships; How it works lists where they differ.
 
 ## Contents
@@ -71,7 +71,7 @@ None: Workbench runs these scripts in the editor.
 - Depends on: Workbench's script API (`NetApiHandler`, `JsonApiStruct`, the `WorldEditor`,
   `ScriptEditor`, `ResourceManager` and `LocalizationEditor` modules) and nothing of the framework.
 - Used by: the `wb_*` tools of `enfusion-mcp`, pinned in
-  `tools_v2/enfusion_mcp_node_package/package.json`, which `cargo xtask mcp call` runs through the
+  `tools/enfusion_mcp_node_package/package.json`, which `cargo xtask mcp call` runs through the
   MCP daemon; `cargo xtask mcp smoke` (`wb_connect`, `wb_state`); `cargo xtask mod dev-bootstrap`,
   which refuses a checkout without `EMCP_WB_Ping.c` and then calls `wb_connect`;
   `cargo xtask mod spawn-verify` and `cargo xtask mod spawn-determinism` (`wb_play`, `wb_stop`);
@@ -86,5 +86,5 @@ None: Workbench runs these scripts in the editor.
 
 ## Related documentation
 
-- [Enfusion MCP tooling](/documentation_v2/runbooks/enfusion_mcp_tooling.md) — the MCP call
+- [Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md) — the MCP call
   path, the daemon, exit codes and the live checks.

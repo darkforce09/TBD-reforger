@@ -13,5 +13,5 @@ alwaysApply: true
 - The one exception is the `slice/<id>` branches that the xtask tooling creates, merges and
   deletes itself: `cargo xtask platform slice-worktree` creates and drops them, and
   `cargo xtask mod wave` (the mod program) or `cargo xtask platform wave` (the platform) lands them
-  ([Mod slice workflow](/documentation_v2/runbooks/mod_slice_workflow.md)).
+  ([Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md)).
 - A stray branch found on the remote or in the checkout is merged into `main` and deleted.

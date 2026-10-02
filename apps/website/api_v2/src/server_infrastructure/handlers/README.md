@@ -1,10 +1,10 @@
 # Server infrastructure handlers
 
 The HTTP handlers of the game server fleet: the server intel reads and the
-[registry](/documentation_v2/glossary/n_to_z.md#registry) writes,
-[machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential), the
-[fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) ledger for operators and for executors,
-runtime sessions, the [fleet scenario](/documentation_v2/glossary/a_to_f.md#fleet-scenario) registry and
+[registry](/documentation/glossary/n_to_z.md#registry) writes,
+[machine credentials](/documentation/glossary/g_to_m.md#machine-credential), the
+[fleet command](/documentation/glossary/a_to_f.md#fleet-command) ledger for operators and for executors,
+runtime sessions, the [fleet scenario](/documentation/glossary/a_to_f.md#fleet-scenario) registry and
 the live status stream.
 
 ## Contents
@@ -30,10 +30,10 @@ Administrators (`AdminUser`) write the registry, the credentials, the commands a
 scenarios; every write that changes a credential, a command or a scenario takes its locks, rechecks
 the administrator on that transaction (`authorize_on_connection`) and audits inside it. The programs
 on a game host present a machine credential (`MachineCaller`): the
-[fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) and the
-[game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) claim and report commands, and the game
+[fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) and the
+[game runtime](/documentation/glossary/g_to_m.md#game-runtime) claim and report commands, and the game
 runtime starts and ends its runtime session, reporting the
-[artifact](/documentation_v2/glossary/a_to_f.md#artifact) it loaded; each acts only for its own server and
+[artifact](/documentation/glossary/a_to_f.md#artifact) it loaded; each acts only for its own server and
 executor kind.
 
 - `server_intel.rs` composes one card per server (the registration, its live status row with the
@@ -49,7 +49,7 @@ executor kind.
 - `fleet_commands.rs` answers 202 with the receipt, 404 for the command list of an unknown server
   (as `machine_credentials.rs` does for its credential list), and 400 for `load_mission` and
   `restart_with_mission`, which only a
-  [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) issues; `fleet_executor.rs`
+  [mission deployment](/documentation/glossary/g_to_m.md#mission-deployment) issues; `fleet_executor.rs`
   answers 204 when nothing is claimable.
 - `fleet_scenarios.rs` keys a scenario by a terrain key (lowercase ASCII, digits and underscores,
   starting with a letter, at most 64 bytes) and a `{16 uppercase hex}` resource ending in `.conf`.
@@ -64,13 +64,13 @@ executor kind.
 - Depends on: the domain's models and services; `identity_and_access` (`authorize_on_connection`,
   `lock_accounts`); `community_content` (`load_modpack`, `ModpackDto`, `Modpack`);
   `missions::models::mission::TerrainType`; `administration` (audit writers); `core` for the
-  extractors, `role_rank`, errors and the authorized [SSE](/documentation_v2/glossary/n_to_z.md#sse)
+  extractors, `role_rank`, errors and the authorized [SSE](/documentation/glossary/n_to_z.md#sse)
   stream.
 - Used by: the domain's `routes.rs`; over HTTP, the server control page and its fleet command,
   deployment and credential panels in `apps/website/frontend/src/v2/pages/administration/server_control/`,
   the server intel page in `apps/website/frontend/src/v2/pages/command_center/server_intel/`, the
   host agent's ledger client in `apps/fleet_host_agent/src/ledger_client/`, and the game runtime's
-  [API](/documentation_v2/glossary/a_to_f.md#api) scripts in
+  [API](/documentation/glossary/a_to_f.md#api) scripts in
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/`.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
   imports another domain's handlers (`apps/website/api_v2/src/tests/architecture_rules.rs`); the

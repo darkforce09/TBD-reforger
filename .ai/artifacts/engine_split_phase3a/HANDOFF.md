@@ -32,8 +32,8 @@ OPERATOR DECISIONS ALREADY MADE — do not re-ask:
      oracle. Acceptance is a diff against the committed baseline: set equality on failing route
      names, and the four clean routes (notfound, eventmgr, callback, login) must still pass.
   2. Leave the dirty working tree alone. ~69 files are modified/untracked that are NOT ours
-     (apps/mod/** is out of scope per §7, plus CLAUDE.md, xtask/src/*, documentation_v2/,
-     tools_v2/). Stage ONLY files you authored, with explicit `git add <path>`. Never `git add -A`.
+     (apps/mod/** is out of scope per §7, plus CLAUDE.md, xtask/src/*, documentation/,
+     tools/). Stage ONLY files you authored, with explicit `git add <path>`. Never `git add -A`.
   3. pages/operations/{orbat_manager,faction_manager}.rs → v2/apps/editor/ui/modals/ (they are
      unrouted editor modals, not pages). Keep distinct from v2/pages/operations/orbat_selection/.
   4. Law 7 ratchets repo-wide in 3C: two thresholds (500 production / 1000 test), SIZE-1 retired,

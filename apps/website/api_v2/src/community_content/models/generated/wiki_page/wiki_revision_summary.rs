@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/wiki-page.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/wiki-page.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///One entry of a page's revision history. author_id is the Discord id of the editor, absent when unknown; a page's first revision predating the history takes the page's last editor and update time.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

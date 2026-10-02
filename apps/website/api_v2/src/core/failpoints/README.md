@@ -1,6 +1,6 @@
 # Failpoints
 
-Fault injection for the test builds of the [API](/documentation_v2/glossary/a_to_f.md#api):
+Fault injection for the test builds of the [API](/documentation/glossary/a_to_f.md#api):
 named points on the commit and external-effect paths where a test makes the path fail or pause,
 so the failure and race suites reach, on demand, the states a live request reaches only by bad
 luck: a transaction that dies before its commit, a response lost after it, two requests

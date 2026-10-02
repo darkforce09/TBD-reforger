@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/fleet-command.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/fleet-command.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///broadcast, kick and load_mission run on the mod runtime; every other action on the host agent. Reforger's RCON has no broadcast command.
 #[derive(

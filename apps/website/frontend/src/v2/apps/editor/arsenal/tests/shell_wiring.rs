@@ -542,7 +542,7 @@ mod t739 {
     fn gap_src() -> &'static str {
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../../documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md"
+            "/../../../documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md"
         ))
     }
 

@@ -1,13 +1,13 @@
 # Match telemetry domain
 
-The [API](/documentation_v2/glossary/a_to_f.md#api)'s
-[match telemetry](/documentation_v2/glossary/g_to_m.md#match-telemetry) domain: the write half of the
+The [API](/documentation/glossary/a_to_f.md#api)'s
+[match telemetry](/documentation/glossary/g_to_m.md#match-telemetry) domain: the write half of the
 game-server channel and the read of a match's detailed events. A running
-[game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) posts its live server status as
+[game runtime](/documentation/glossary/g_to_m.md#game-runtime) posts its live server status as
 heartbeats within its runtime session, registers each match it plays, and reports the match as
 numbered results revisions and batches of detailed combat, medical and vehicle events. Presenting
 these figures back to members belongs to `command_center`; the server
-[registry](/documentation_v2/glossary/n_to_z.md#registry), the runtime sessions and the live status
+[registry](/documentation/glossary/n_to_z.md#registry), the runtime sessions and the live status
 topic belong to `server_infrastructure`.
 
 ## Contents
@@ -24,13 +24,13 @@ apps/website/api_v2/src/match_telemetry/
 ## How it works
 
 Every write is authenticated by the server's `mod_runtime`
-[machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential); the server is the
+[machine credential](/documentation/glossary/g_to_m.md#machine-credential); the server is the
 credential's, and a body that names `server_id` is a 400.
 
 - **Heartbeat.** Fenced by the runtime session's generation and a sequence that strictly increases
   within the session; the fence, the partial status update (the telemetry queue reading included)
   and the history sample commit together, a low-FPS warning follows best-effort, and the stored row
-  is then published on the server's [SSE](/documentation_v2/glossary/n_to_z.md#sse) topic.
+  is then published on the server's [SSE](/documentation/glossary/n_to_z.md#sse) topic.
 - **Registration.** `POST /ingest/matches` creates a `pending` match at revision 0 for a
   `(server, source_match_id)` pair, or answers the existing one when the same body repeats; a
   different body is a 409 `REGISTRATION_CONFLICT`.
@@ -38,8 +38,8 @@ credential's, and a body that names `server_id` is a 400.
   body is validated before the transaction; under the match row lock a strictly higher revision is
   applied, the same revision is inert with the same digest and a conflict with another, and a lower
   one is stale. An applied revision writes the match and its player lines, reconciles attendance for
-  the registrants of the [event](/documentation_v2/glossary/a_to_f.md#event)
-  [mission](/documentation_v2/glossary/g_to_m.md#mission), audits unlinked identities and recomputes
+  the registrants of the [event](/documentation/glossary/a_to_f.md#event)
+  [mission](/documentation/glossary/g_to_m.md#mission), audits unlinked identities and recomputes
   the statistics and the leaderboard in the same transaction.
 - **Detailed events.** `POST /ingest/match-events` stores a batch of 1–500 events idempotently and
   counts only the rows it inserts into the per-identity totals and the match's event count;
@@ -59,9 +59,9 @@ mod treats as permanent. Reports about a source the server has not registered ar
   - `POST /api/v1/ingest/match-events`: `mod_runtime` machine credential; a detailed event batch.
   - `GET /api/v1/matches/{matchId}/events`: any signed-in user; a page of the match's events.
 - `models::match_record`: `Match`, `MissionOutcome` and `MatchPlayerStat`, read by the member
-  [service record](/documentation_v2/glossary/n_to_z.md#service-record) in `operations`.
+  [service record](/documentation/glossary/n_to_z.md#service-record) in `operations`.
 - `models::generated::match_telemetry`: the types generated from
-  `contracts_v2/definitions/match-telemetry.schema.json`, which the integration tests deserialize
+  `contracts/definitions/match-telemetry.schema.json`, which the integration tests deserialize
   live answers into.
 
 ## Boundaries
@@ -89,12 +89,12 @@ mod treats as permanent. Reports about a source the server has not registered ar
 
 ## Related documentation
 
-- [Match telemetry, fleet status and derived statistics](/documentation_v2/website/api_v2/verification_evidence/telemetry.md)
+- [Match telemetry, fleet status and derived statistics](/documentation/website/api_v2/verification_evidence/telemetry.md)
   — registration, revisions, detailed events, the lock order and the game runtime's queue.
-- [API overview](/documentation_v2/website/api_v2/api_overview.md) — every domain's routes.
-- [Machine credentials and runtime sessions](/documentation_v2/website/api_v2/verification_evidence/machine_credentials.md)
+- [API overview](/documentation/website/api_v2/api_overview.md) — every domain's routes.
+- [Machine credentials and runtime sessions](/documentation/website/api_v2/verification_evidence/machine_credentials.md)
   — the credential every ingest requires and the session fence a heartbeat passes.
-- [Reservation and attendance separation](/documentation_v2/website/api_v2/verification_evidence/reservation_attendance.md)
+- [Reservation and attendance separation](/documentation/website/api_v2/verification_evidence/reservation_attendance.md)
   — how a match report attributes and corrects attendance.
-- [Identity transactions](/documentation_v2/website/api_v2/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/website/api_v2/verification_evidence/identity_transactions.md)
   — the lock order and gameplay attribution a report shares with identity linking.

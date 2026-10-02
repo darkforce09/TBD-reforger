@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/wiki-page.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/wiki-page.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///One page in the doctrine navigation. revision is the page's current revision; icon is absent when the page has none.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

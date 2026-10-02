@@ -43,7 +43,7 @@ const WIRE_EPSILON: f64 = 1e-9;
 
 fn vanilla_catalog_bytes() -> Vec<u8> {
     let path = format!(
-        "{}/../../../contracts_v2/catalogs/ballistics/vanilla_mortars.v1.catalog.json",
+        "{}/../../../contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json",
         env!("CARGO_MANIFEST_DIR")
     );
     std::fs::read(&path).unwrap_or_else(|error| panic!("read committed catalog {path}: {error}"))

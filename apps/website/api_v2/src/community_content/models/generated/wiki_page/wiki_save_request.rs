@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/wiki-page.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/wiki-page.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///PUT /api/v1/wiki/{slug} body (administrator); the slug matches ^[a-z0-9-]{1,64}$, else 400. base_revision null creates the page and answers 409 when it already exists; a number must equal the page's current revision, else 409 wiki_revision_conflict with current_revision. A body_md over 262 144 bytes answers 400 wiki_body_too_large; an unsafe link or image URL, raw HTML or nesting deeper than 16 answers 422 wiki_markup_refused with every finding; unknown keys answer 400. icon is empty for a page without one. An accepted save updates the page, appends its revision and an audit line in one transaction, records the caller as the editor, and answers the WikiArticle: 200 for an update, 201 for a create.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

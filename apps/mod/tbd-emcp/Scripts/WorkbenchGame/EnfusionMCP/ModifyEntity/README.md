@@ -3,7 +3,7 @@
 The Net API handler behind the `wb_entity_modify` MCP tool: it moves, rotates, renames and
 reparents a named entity in the open world, and sets, clears, reads and lists its properties,
 object-array members and object classes, whenever a call reaches a running
-[Workbench](/documentation_v2/glossary/n_to_z.md#workbench).
+[Workbench](/documentation/glossary/n_to_z.md#workbench).
 
 ## Contents
 
@@ -56,5 +56,5 @@ None: Workbench runs these scripts in the editor.
 
 ## Related documentation
 
-- [Enfusion MCP bridge](/documentation_v2/mod/tbd-emcp/workbench_mcp_bridge.md) — the call path
+- [Enfusion MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md) — the call path
   from the MCP tools to these handlers, and the upgrade rules.

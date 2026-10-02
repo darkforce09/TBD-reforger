@@ -88,12 +88,12 @@ total fits or nothing more may go.
     (`apps/website/map-engine/src/streaming/loaders/occluder_loader.rs`), the world loader's
     viewport and the host queries that lend the occluder out;
   - `crate::editing::tools::line_of_sight`, whose object wash places points with `map_to_engine`;
-  - the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s line-of-sight tool
+  - the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s line-of-sight tool
     (`apps/website/frontend/src/v2/apps/editor/input/tools/los_world_wasm.rs`) and the debug world
     line-of-sight bench (`apps/website/frontend/src/v2/apps/debug/world_los/`);
   - the world line-of-sight check
-    (`tools_v2/developer-tools/src/map_verification/world_line_of_sight.rs`) and the blueprint
-    tooling in `tools_v2/developer-tools/src/blueprint/archive_emission/`.
+    (`tools/developer_tools/src/map_verification/world_line_of_sight.rs`) and the blueprint
+    tooling in `tools/developer_tools/src/blueprint/archive_emission/`.
 - Rules:
   - the TLAS returns exactly the boxes the brute-force scan returns, the observer-inside case
     included (`tlas_matches_brute_force_including_the_observer_inside_case` in
@@ -112,6 +112,6 @@ total fits or nothing more may go.
 
 ## Related documentation
 
-- [Prefab descriptor schema](/contracts_v2/definitions/prefab-descriptor.schema.json) and
-  [BLAS manifest schema](/contracts_v2/definitions/blas-manifest.schema.json) — the library files
+- [Prefab descriptor schema](/contracts/definitions/prefab-descriptor.schema.json) and
+  [BLAS manifest schema](/contracts/definitions/blas-manifest.schema.json) — the library files
   the occluder loads.

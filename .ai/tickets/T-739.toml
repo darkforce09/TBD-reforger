@@ -61,7 +61,7 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 6 commit subject(s)"
 owns = [
-    "documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md",
+    "documentation/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md",
     "apps/website/frontend/src/editor_ops.rs",
     "apps/website/frontend/src/arsenal.rs",
 ]

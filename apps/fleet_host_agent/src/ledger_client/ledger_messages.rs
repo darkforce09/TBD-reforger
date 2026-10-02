@@ -1,4 +1,4 @@
-//! Wire messages of the executor routes (`contracts_v2/definitions/fleet-command.schema.json`:
+//! Wire messages of the executor routes (`contracts/definitions/fleet-command.schema.json`:
 //! ClaimedFleetCommand, ExecutionStart, ExecutionResult) and the API's error envelope.
 
 use chrono::{DateTime, Utc};

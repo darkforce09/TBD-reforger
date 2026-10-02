@@ -1,15 +1,15 @@
 # Server infrastructure domain
 
-The [API](/documentation_v2/glossary/a_to_f.md#api)'s
-[server infrastructure](/documentation_v2/glossary/n_to_z.md#server-infrastructure) domain: the game server
-fleet. It holds the [registry](/documentation_v2/glossary/n_to_z.md#registry) row that describes a server
+The [API](/documentation/glossary/a_to_f.md#api)'s
+[server infrastructure](/documentation/glossary/n_to_z.md#server-infrastructure) domain: the game server
+fleet. It holds the [registry](/documentation/glossary/n_to_z.md#registry) row that describes a server
 and the modpack it requires, the per-server
-[machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential) of its host agent and
-[game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime), the runtime sessions that fence each
-boot of the game runtime, the [fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) ledger
+[machine credentials](/documentation/glossary/g_to_m.md#machine-credential) of its host agent and
+[game runtime](/documentation/glossary/g_to_m.md#game-runtime), the runtime sessions that fence each
+boot of the game runtime, the [fleet command](/documentation/glossary/a_to_f.md#fleet-command) ledger
 through which operators control servers and executors report what they did, the
-[fleet scenario](/documentation_v2/glossary/a_to_f.md#fleet-scenario) registry, the server intel reads, and
-the [SSE](/documentation_v2/glossary/n_to_z.md#sse) feed of one server's live status.
+[fleet scenario](/documentation/glossary/a_to_f.md#fleet-scenario) registry, the server intel reads, and
+the [SSE](/documentation/glossary/n_to_z.md#sse) feed of one server's live status.
 
 ## Contents
 
@@ -39,10 +39,10 @@ domain's, so `core` names no server concept.
 
 Operators never reach a game host directly. An administrator's command becomes a durable row in
 the ledger, and the program that performs it polls the API outbound with its own machine
-credential: the [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) runs process
-control, the [RCON](/documentation_v2/glossary/n_to_z.md#rcon) player list and console commands, and the
-game runtime runs broadcasts, kicks and in-process [mission](/documentation_v2/glossary/g_to_m.md#mission)
-loads. A [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) in `missions`
+credential: the [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) runs process
+control, the [RCON](/documentation/glossary/n_to_z.md#rcon) player list and console commands, and the
+game runtime runs broadcasts, kicks and in-process [mission](/documentation/glossary/g_to_m.md#mission)
+loads. A [mission deployment](/documentation/glossary/g_to_m.md#mission-deployment) in `missions`
 issues its `load_mission` or `restart_with_mission` command through the same ledger and needs a
 fleet scenario for its terrain. A console command (`console_command`) is the one free-text action:
 a single line for the server's RCON console, gated to 1 to 256 bytes, one line, no control
@@ -79,7 +79,7 @@ action.
   `/api/v1/fleet-executor/*` and `/api/v1/ingest/*` handler takes, in this domain,
   `match_telemetry`, `identity_and_access`, `missions` and `operations`.
 - `services::runtime_sessions`: the heartbeat fence for `match_telemetry`, the open-session share
-  lock for live [slot](/documentation_v2/glossary/n_to_z.md#slot) occupancy in `operations`, and silence
+  lock for live [slot](/documentation/glossary/n_to_z.md#slot) occupancy in `operations`, and silence
   expiry for its worker.
 - `services::status_broadcast`: `publish_server_status`, `publish_server_status_by_id` and
   `publish_all_server_statuses`, for the heartbeat and the status workers, and
@@ -106,7 +106,7 @@ action.
     `apps/website/api_v2/src/background_workers/`;
   - `match_telemetry`, `identity_and_access`, `missions`, `operations` and `command_center`,
     through the surface above;
-  - over HTTP, the [server control](/documentation_v2/glossary/n_to_z.md#server-control) and server intel
+  - over HTTP, the [server control](/documentation/glossary/n_to_z.md#server-control) and server intel
     pages in `apps/website/frontend/src/v2/pages/`, the fleet host agent in
     `apps/fleet_host_agent/`, and the game runtime in `apps/mod/tbd-framework/Scripts/Game/TBD/API/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
@@ -117,16 +117,16 @@ action.
 
 ## Related documentation
 
-- [API overview](/documentation_v2/website/api_v2/api_overview.md) — every domain's routes.
-- [API decisions](/documentation_v2/website/api_v2/decisions.md) — why game hosts are reached only
+- [API overview](/documentation/website/api_v2/api_overview.md) — every domain's routes.
+- [API decisions](/documentation/website/api_v2/decisions.md) — why game hosts are reached only
   through commands they claim.
-- [Machine credentials and runtime sessions](/documentation_v2/website/api_v2/verification_evidence/machine_credentials.md)
+- [Machine credentials and runtime sessions](/documentation/website/api_v2/verification_evidence/machine_credentials.md)
   — credentials, the session fence and their consumers.
-- [Match telemetry, fleet status and derived statistics](/documentation_v2/website/api_v2/verification_evidence/telemetry.md)
+- [Match telemetry, fleet status and derived statistics](/documentation/website/api_v2/verification_evidence/telemetry.md)
   — the telemetry queue reading on the status and the configured fleet's scoping.
-- [Fleet command ledger](/documentation_v2/website/api_v2/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger](/documentation/website/api_v2/verification_evidence/fleet_command_ledger.md)
   — the ledger's commands, states, rules and executors.
-- [Live slot occupancy](/documentation_v2/website/api_v2/verification_evidence/live_occupancy.md)
+- [Live slot occupancy](/documentation/website/api_v2/verification_evidence/live_occupancy.md)
   — how player lives hold a runtime session open.
-- [Server control page](/documentation_v2/website/frontend/pages/administration/server_control/server_control_page.md)
+- [Server control page](/documentation/website/frontend/pages/administration/server_control/server_control_page.md)
   — the administrators' console over these routes.

@@ -1,8 +1,8 @@
 # Ticketboard source
 
-The source tree of the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) binary: the entry
+The source tree of the [ticketboard](/documentation/glossary/n_to_z.md#ticketboard) binary: the entry
 point, one composition module, one module of shared foundations, and seven feature modules, each
-owning one part of the viewer of the [ticket](/documentation_v2/glossary/n_to_z.md#ticket) registry.
+owning one part of the viewer of the [ticket](/documentation/glossary/n_to_z.md#ticket) registry.
 
 ## Contents
 
@@ -43,7 +43,7 @@ main.rs ──▶ application ──▶ the six features: ticket_browser, ticket
                 ▼                          ▼
           ticket_registry ◀────────────────┘
 
-every module but core and document_viewer ──▶ ticket_engine (tools_v2/ticket-engine)
+every module but core and document_viewer ──▶ ticket_engine (tools/ticket_engine)
 any module ──▶ core (process, time, ui)
 ```
 

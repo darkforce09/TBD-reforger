@@ -1,8 +1,8 @@
 # Event access administration
 
 The storage behind the access settings an administrator manages for one
-[event](/documentation_v2/glossary/a_to_f.md#event): the event, squad and
-[slot](/documentation_v2/glossary/n_to_z.md#slot) access policies, the event's groups and their rosters,
+[event](/documentation/glossary/a_to_f.md#event): the event, squad and
+[slot](/documentation/glossary/n_to_z.md#slot) access policies, the event's groups and their rosters,
 and the member, guest and open reservation pools, with the evidence that explains why each
 participant is or is not admitted.
 
@@ -42,5 +42,5 @@ effective policy, the grants that hold and the provenance of each membership fac
 
 ## Related documentation
 
-- [Event eligibility and allocation](/documentation_v2/website/api_v2/verification_evidence/event_eligibility_allocation.md)
+- [Event eligibility and allocation](/documentation/website/api_v2/verification_evidence/event_eligibility_allocation.md)
   — policies, groups, quotas and how changes re-evaluate reservations.

@@ -8,7 +8,7 @@
 //! **Two scopes are excluded from the walk.**
 //!
 //! * `missions/contract/generated/` — emitted by `cargo xtask ci schema-codegen` from
-//!   `contracts_v2`. Its prose belongs to the generator, so the prose rules would only ever
+//!   `contracts`. Its prose belongs to the generator, so the prose rules would only ever
 //!   report the generator's own habits at a file no one edits.
 //! * the rule files under `tests/` — this one and `prose_rules.rs` — which hold every forbidden
 //!   token as a literal needle, so scanning them would make each rule report itself.

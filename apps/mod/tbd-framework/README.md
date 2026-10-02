@@ -1,8 +1,8 @@
 # TBD Framework addon
 
-The `TBD_Framework` Enfusion addon: the shipping game [mod](/documentation_v2/glossary/g_to_m.md#mod)
+The `TBD_Framework` Enfusion addon: the shipping game [mod](/documentation/glossary/g_to_m.md#mod)
 that runs TBD sessions on a dedicated server. It loads the
-[mission](/documentation_v2/glossary/g_to_m.md#mission) the platform deploys to the server, stands up its
+[mission](/documentation/glossary/g_to_m.md#mission) the platform deploys to the server, stands up its
 slots, loadouts, objectives, zones and radio nets, and gives players the lobby, briefing, spectator
 and admin screens. It holds only TBD's own code and depends on vanilla Arma Reforger alone.
 
@@ -23,7 +23,7 @@ apps/mod/tbd-framework/
 
 ## How it works
 
-A dedicated server boots the [mission header](/documentation_v2/glossary/g_to_m.md#mission-header)
+A dedicated server boots the [mission header](/documentation/glossary/g_to_m.md#mission-header)
 `Missions/TBD_Dev_POC.conf`. Its world, `worlds/TBD_Dev_POC.ent`, is a sub-scene of vanilla Eden
 whose layer places `Prefabs/Systems/TBD_GameMode.et`, and that game mode carries the framework's
 manager components, so every system in `Scripts/Game/TBD/` starts from it. A vanilla scenario with
@@ -94,7 +94,7 @@ For Workbench, `cargo xtask setup workbench` links the Steam game data to `~/Arm
 for Workbench's "Locate base game" prompt; then open `apps/mod/tbd-framework/addon.gproj`.
 Workbench builds its script list when it loads a project, so a new `.c` file needs a Workbench
 restart. `cargo xtask mod test-mission <golden>` stages a golden mission found under
-`contracts_v2/` as the Workbench profile's cached artifact, and
+`contracts/` as the Workbench profile's cached artifact, and
 `cargo xtask mod spawn-verify` plays the world through the MCP bridge and scans the log for the
 slot spawn lines.
 
@@ -142,12 +142,12 @@ minute apart, so a credential pasted in later takes effect without a restart.
 ## Boundaries
 
 - Depends on: the vanilla Arma Reforger data addon; over HTTP, the API's
-  [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) routes with the server's
-  `mod_runtime` [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential), which
-  also authenticates its ingest routes; the wire shapes in `contracts_v2/definitions/`.
+  [game runtime](/documentation/glossary/g_to_m.md#game-runtime) routes with the server's
+  `mod_runtime` [machine credential](/documentation/glossary/g_to_m.md#machine-credential), which
+  also authenticates its ingest routes; the wire shapes in `contracts/definitions/`.
 - Used by: the dedicated servers that `cargo xtask mod playtest`, `cargo xtask deploy staging` and
   the fleet host agent in `apps/fleet_host_agent/` boot; the gates of `cargo xtask mod` in
-  `tools_v2/xtask/src/commands/mod_ops/`, which `.github/workflows/mod-gates.yml` runs; and the
+  `tools/xtask/src/commands/mod_ops/`, which `.github/workflows/mod-gates.yml` runs; and the
   Mission Creator in `apps/website/frontend/`, through `Data/registry.json`.
 - Rules: `addon.gproj` names the vanilla data addon as its only dependency, and the addon carries no
   `Scripts/WorkbenchGame/` (`cargo xtask mod compile`); no upstream reference code or upstream-only
@@ -156,20 +156,20 @@ minute apart, so a credential pasted in later takes effect without a restart.
 
 ## Related documentation
 
-- [Mod design](/documentation_v2/mod/tbd-framework/mod_design.md) — what the framework is for,
+- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — what the framework is for,
   its non-negotiables and the Enfusion facts it relies on.
-- [Mod UI documentation](/documentation_v2/mod/tbd-framework/UI/README.md) — the specification of
+- [Mod UI documentation](/documentation/mod/tbd-framework/UI/README.md) — the specification of
   each in-game screen.
-- [Capability verdicts](/documentation_v2/mod/tbd-framework/capability_verdicts.md) — the TBD
+- [Capability verdicts](/documentation/mod/tbd-framework/capability_verdicts.md) — the TBD
   verdict for every CRF capability and the check that enforces it.
-- [TBD Framework documentation](/documentation_v2/mod/tbd-framework/README.md) — the index of the
+- [TBD Framework documentation](/documentation/mod/tbd-framework/README.md) — the index of the
   framework's design documents.
-- [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — booting the
+- [Game server staging](/documentation/runbooks/game_server_staging/README.md) — booting the
   framework on the staging server, and the log lines of a healthy boot.
-- [Two-client playtest](/documentation_v2/runbooks/two_client_playtest/README.md) — a local
+- [Two-client playtest](/documentation/runbooks/two_client_playtest/README.md) — a local
   playtest with `cargo xtask mod playtest`.
-- [Playtest session steps](/documentation_v2/runbooks/two_client_playtest/session_join_to_deploy.md)
-  and [known limitations](/documentation_v2/runbooks/two_client_playtest/known_limitations.md) —
+- [Playtest session steps](/documentation/runbooks/two_client_playtest/session_join_to_deploy.md)
+  and [known limitations](/documentation/runbooks/two_client_playtest/known_limitations.md) —
   the framework's log lines as two players meet them, and what the session cannot yet prove.
-- [Mod slice workflow](/documentation_v2/runbooks/mod_slice_workflow.md) — how mod work runs
+- [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — how mod work runs
   through Workbench and the gates.

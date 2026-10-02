@@ -1,7 +1,7 @@
 # Detailed match events
 
 Records what happens in a live round, one detailed event at a time, for the platform's
-[match telemetry](/documentation_v2/glossary/g_to_m.md#match-telemetry): kills and deaths,
+[match telemetry](/documentation/glossary/g_to_m.md#match-telemetry): kills and deaths,
 players going unconscious and coming round, vehicles destroyed, entered and left. It also keeps
 the round's per-player combat tally that the match results and the DEBRIEF scoreboard report.
 
@@ -89,7 +89,7 @@ The hooks and the events they become:
   `SCR_InstigatorContextData`, `SCR_CharacterControllerComponent`,
   `SCR_CompartmentAccessComponent`, `BaseCompartmentSlot`, `BaseWeaponManagerComponent` and
   `SCR_VehicleDamageManagerComponent`; the `MatchEvent` definitions in
-  `contracts_v2/definitions/match-telemetry.schema.json`.
+  `contracts/definitions/match-telemetry.schema.json`.
 - Used by: `TBD_ResultsReporter` and `TBD_ResultsPayload` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/Results/`; `TBD_RuntimeHeartbeat` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/Heartbeat/`;
@@ -103,7 +103,7 @@ The hooks and the events they become:
 
 ## Related documentation
 
-- [Match telemetry design](/documentation_v2/website/api_v2/verification_evidence/telemetry.md) — the seven
+- [Match telemetry design](/documentation/website/api_v2/verification_evidence/telemetry.md) — the seven
   event kinds, their payloads and how the API stores them
 - [Match telemetry transport](/apps/mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry/README.md) — the
   durable queue that carries the batches

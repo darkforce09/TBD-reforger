@@ -29,7 +29,7 @@ use proxy_network::parse_trusted_proxies;
 const DEFAULT_MISSION_VERSION_MAX_BODY_BYTES: i64 = 256 << 20;
 
 /// Development default for `UPLOAD_DIR`, relative to the crate directory the developer runs from.
-const DEVELOPMENT_UPLOAD_DIR: &str = "../../../assets_v2/scratch/website-api/uploads";
+const DEVELOPMENT_UPLOAD_DIR: &str = "../../../assets/scratch/website-api/uploads";
 
 /// All runtime settings for the API.
 #[derive(Debug, Clone)]
@@ -59,21 +59,21 @@ pub struct Config {
     /// = don't serve a SPA (dev uses `trunk serve`; the API is API-only).
     pub spa_dist_dir: String,
     /// The map-assets dir served at `/map-assets` when a SPA is served (the editor's DEM /
-    /// basemap / world chunks). Empty defaults to `../../../assets_v2/terrains` relative to the
+    /// basemap / world chunks). Empty defaults to `../../../assets/terrains` relative to the
     /// CWD, which is correct only when the process runs from `apps/website/api_v2/`. Production
-    /// sets this to an absolute path — see `tools_v2/xtask/deploy/systemd/tbd-website-api.service`.
+    /// sets this to an absolute path — see `tools/xtask/deploy/systemd/tbd-website-api.service`.
     pub map_assets_dir: String,
     /// The glyph dir served at `/map-assets/glyphs` (the tactical marker atlas, shared by every
-    /// terrain). Empty defaults to `../../../assets_v2/glyphs` relative to the CWD.
+    /// terrain). Empty defaults to `../../../assets/glyphs` relative to the CWD.
     pub glyph_assets_dir: String,
 
     // Runtime storage — what the API writes. Never inside the source tree in production.
     /// Directory the CMS thumbnail upload writes into and `/uploads` serves from. In development
-    /// an empty value means `../../../assets_v2/scratch/website-api/uploads` relative to the CWD
+    /// an empty value means `../../../assets/scratch/website-api/uploads` relative to the CWD
     /// (the repository's gitignored scratch tree when the process runs from
     /// `apps/website/api_v2/`); outside development it is required and must be absolute, because
     /// the process working directory is a deployment detail and the checkout is what the deploy
-    /// rsyncs with `--delete` — see `tools_v2/xtask/deploy/systemd/tbd-website-api.service`.
+    /// rsyncs with `--delete` — see `tools/xtask/deploy/systemd/tbd-website-api.service`.
     pub upload_dir: String,
 
     /// Original published exports and rebuildable viewer indexes.
@@ -149,7 +149,7 @@ impl Config {
             ),
             equipment_data_dir: runtime_storage_dir(
                 &env::var("EQUIPMENT_DATA_DIR").unwrap_or_default(),
-                "../../../assets_v2/equipment",
+                "../../../assets/equipment",
                 &app_env,
             ),
             equipment_export_source_dir: env::var("EQUIPMENT_EXPORT_SOURCE_DIR")

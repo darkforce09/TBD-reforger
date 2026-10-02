@@ -1,8 +1,8 @@
 # Audit logs page
 
-The `/admin/audit` page: administrators read the [audit logs](/documentation_v2/glossary/a_to_f.md#audit-logs),
+The `/admin/audit` page: administrators read the [audit logs](/documentation/glossary/a_to_f.md#audit-logs),
 the trail of administrative actions, newest first, with new entries arriving live over the
-[SSE](/documentation_v2/glossary/n_to_z.md#sse) stream and older ones a page at a time; they filter
+[SSE](/documentation/glossary/n_to_z.md#sse) stream and older ones a page at a time; they filter
 the loaded entries by text and inspect one entry's actor, target and metadata. Nothing on the page
 writes or removes an entry.
 
@@ -53,7 +53,7 @@ Entries are typed `AuditLogEntry` rows; the severity is one of `info`, `warn` an
 `INFO`, `WARN` or `CRIT` (`level_label`). The filter runs in the browser over the loaded entries
 only: `haystack` joins an entry's local stamp, level, action, actor name, message and target type,
 `search_matches` compares them case-insensitively, and the text is never sent to the
-[API](/documentation_v2/glossary/a_to_f.md#api). An entry carries every field the inspector shows, so
+[API](/documentation/glossary/a_to_f.md#api). An entry carries every field the inspector shows, so
 opening one fetches nothing, and a filter hides lines but never the open entry. The stream and
 every request run in the browser build only; a native build renders the waiting state.
 
@@ -61,7 +61,7 @@ every request run in the browser build only; a native build renders the waiting 
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/admin/audit` | `AuditLogsPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` [role](/documentation_v2/glossary/n_to_z.md#role) only | full-bleed inside the navigation frame; breadcrumb Administration / Audit Logs; sidebar entry "Audit Logs" |
+| `/admin/audit` | `AuditLogsPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` [role](/documentation/glossary/n_to_z.md#role) only | full-bleed inside the navigation frame; breadcrumb Administration / Audit Logs; sidebar entry "Audit Logs" |
 
 ## Data
 
@@ -101,13 +101,13 @@ every request run in the browser build only; a native build renders the waiting 
   `audit_stream`), `crate::v2::core::auth` (`AuthStore`), `crate::v2::core::ui` (`AdminGate`,
   `SplitPane`, `SplitPaneEmpty`, `search_matches`, `badge_class`, `MaterialIcon`, `cn`) and
   `crate::v2::core::utils::datefmt` (`log_stamp`); over HTTP, the audit log routes of the
-  [administration](/documentation_v2/glossary/a_to_f.md#administration) domain.
+  [administration](/documentation/glossary/a_to_f.md#administration) domain.
 - Used by: the `/admin/audit` route in `apps/website/frontend/src/app_routes.rs` and
   `apps/website/frontend/src/router.rs`; the sidebar's "Audit Logs" link in
   `apps/website/frontend/src/v2/pages/navigation/nav_config.rs`; `audit_source` in
   `apps/website/frontend/src/v2/core/test_support/pins.rs`, which joins the page's sources for its
   tests; the DOM oracle's `audit` capture in
-  `tools_v2/developer-tools/src/browser_testing/dom_oracle/routes.rs`, which answers the stream
+  `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`, which answers the stream
   from `apps/website/frontend/tests/fixtures/api/GET__admin__audit-logs__stream.sse.txt`.
 - Rules, all in `tests/`: the paths and the continuation (`first_page_path_has_no_before`,
   `continuation_path_forwards_cursor_as_before`, `merge_appends_and_returns_cursor`,
@@ -120,7 +120,7 @@ every request run in the browser build only; a native build renders the waiting 
 
 ## Related documentation
 
-- [Audit logs page](/documentation_v2/website/frontend/pages/administration/audit_logs/audit_logs_page.md)
+- [Audit logs page](/documentation/website/frontend/pages/administration/audit_logs/audit_logs_page.md)
   — the page's behaviour, what the trail holds server-side, its design, open work and decisions.
 - [Administration domain](/apps/website/api_v2/src/administration/README.md) — the audit log
   routes, the export and the live feed.

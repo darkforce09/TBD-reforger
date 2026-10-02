@@ -1,8 +1,8 @@
 # Fleet command console
 
-The "Fleet commands" section of the [server control](/documentation_v2/glossary/n_to_z.md#server-control)
-card: an administrator requests a [fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) for
-the selected server, sends one line to its [RCON](/documentation_v2/glossary/n_to_z.md#rcon) console,
+The "Fleet commands" section of the [server control](/documentation/glossary/n_to_z.md#server-control)
+card: an administrator requests a [fleet command](/documentation/glossary/a_to_f.md#fleet-command) for
+the selected server, sends one line to its [RCON](/documentation/glossary/n_to_z.md#rcon) console,
 follows each command until an executor reports how it ended, reads the server's command history and
 cancels a command no executor has claimed.
 
@@ -37,9 +37,9 @@ follow through its generation. Only `succeeded` is announced as a success; `inde
 announced as an unknown outcome that nothing repeats, and a state this build does not know is
 announced as unknown rather than followed forever. The request controls offer only the seven actions
 an operator may request, never the two a
-[mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) issues, and
+[mission deployment](/documentation/glossary/g_to_m.md#mission-deployment) issues, and
 `validated_broadcast`, `validated_kick` and `validated_console_line` check a request as the
-[API](/documentation_v2/glossary/a_to_f.md#api) does before it is sent: a broadcast of 1 to 256 bytes
+[API](/documentation/glossary/a_to_f.md#api) does before it is sent: a broadcast of 1 to 256 bytes
 without line breaks or control characters; a kick with an Arma identity and an optional reason
 of at most 128 bytes each and a runtime session id; and a console line with no control character
 and no line or paragraph separator in what was typed, 1 to 256 bytes once trimmed, and no leading
@@ -47,7 +47,7 @@ and no line or paragraph separator in what was typed, 1 to 256 bytes once trimme
 confirmed the server's newest confirmed deployment, and fills neither on its own.
 
 The console box sits under the process-control buttons, since the
-[fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) carries out a
+[fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) carries out a
 `console_command` over RCON as it does the player list. "Send" and Enter in the field both submit
 it; nothing is sent while another request is in flight, and a sent line leaves the field, because
 the host agent transmits a line once and nothing repeats it. A succeeded console command's reply
@@ -67,7 +67,7 @@ Only a queued command offers "Cancel". Every request runs in the browser build o
   `executor_label` from
   `apps/website/frontend/src/v2/pages/administration/server_control/machine_credentials/`; over
   HTTP, the fleet command routes of the
-  [server infrastructure](/documentation_v2/glossary/n_to_z.md#server-infrastructure) domain.
+  [server infrastructure](/documentation/glossary/n_to_z.md#server-infrastructure) domain.
 - Used by: `server_cards.rs` in
   `apps/website/frontend/src/v2/pages/administration/server_control/`, which builds the console
   and renders `command_requests` and `command_history`; the deployments panel in
@@ -87,7 +87,7 @@ Only a queued command offers "Cancel". Every request runs in the browser build o
 
 ## Related documentation
 
-- [Server control page](/documentation_v2/website/frontend/pages/administration/server_control/server_control_page.md)
+- [Server control page](/documentation/website/frontend/pages/administration/server_control/server_control_page.md)
   — the console's behaviour and what each command route means server-side.
-- [Fleet command ledger evidence](/documentation_v2/website/api_v2/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger evidence](/documentation/website/api_v2/verification_evidence/fleet_command_ledger.md)
   — the ledger's states, claims and expiry.

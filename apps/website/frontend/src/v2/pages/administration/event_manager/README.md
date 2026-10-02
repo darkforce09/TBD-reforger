@@ -1,9 +1,9 @@
 # Event manager page
 
-The `/admin/events` page, the [event manager](/documentation_v2/glossary/a_to_f.md#event-manager), headed
-"Operations Calendar": administrators schedule [events](/documentation_v2/glossary/a_to_f.md#event), which
+The `/admin/events` page, the [event manager](/documentation/glossary/a_to_f.md#event-manager), headed
+"Operations Calendar": administrators schedule [events](/documentation/glossary/a_to_f.md#event), which
 the screen calls operations, on a month grid, attach
-[missions](/documentation_v2/glossary/g_to_m.md#mission) to them, choose the game server each runs on, edit
+[missions](/documentation/glossary/g_to_m.md#mission) to them, choose the game server each runs on, edit
 and delete them, and open the access sheet that decides who may join each one.
 
 ## Contents
@@ -49,10 +49,10 @@ The edit form compares start times as instants, sends an empty string to clear t
 banner, sends `server_id` only when the chosen game server differs from the operation's (`null`
 clears it), and sends nothing when nothing changed. While the servers are unread the choice cannot
 change, so a failed read never clears an operation's server. Its Status picker offers only the moves
-`lifecycle::can_transition` allows, which mirror the [API](/documentation_v2/glossary/a_to_f.md#api)'s
+`lifecycle::can_transition` allows, which mirror the [API](/documentation/glossary/a_to_f.md#api)'s
 rules; a rule the browser cannot check comes back as the API's own sentence. The game server an
 operation runs on is the one whose game runtime reads its roster and whose
-[mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment) may bind its seats.
+[mission deployments](/documentation/glossary/g_to_m.md#mission-deployment) may bind its seats.
 Neither form sets an event's modpack, and neither posts to Discord. The detach confirmation renders last
 because it shares a stacking level with the edit form that opens it. Every request runs in the
 browser build only; a native build resolves each fetch to nothing.
@@ -61,7 +61,7 @@ browser build only; a native build resolves each fetch to nothing.
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/admin/events` | `EventManagerPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` [role](/documentation_v2/glossary/n_to_z.md#role) only | padded, not full-bleed, inside the navigation frame; breadcrumb Administration / Event Manager; sidebar entry "Event Manager" |
+| `/admin/events` | `EventManagerPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` [role](/documentation/glossary/n_to_z.md#role) only | padded, not full-bleed, inside the navigation frame; breadcrumb Administration / Event Manager; sidebar entry "Event Manager" |
 
 ## Data
 
@@ -146,15 +146,15 @@ browser build only; a native build resolves each fetch to nothing.
   endpoint module), `crate::v2::core::auth` (`AuthStore`), `crate::v2::core::ui`
   (`AdminGate`, `Dialog`, `MaterialIcon`, the badge classes, the toast queue) and
   `crate::v2::core::utils` (local date formatting); over HTTP, the events, event mission and access
-  routes of the [operations](/documentation_v2/glossary/n_to_z.md#operations) domain, the mission
+  routes of the [operations](/documentation/glossary/n_to_z.md#operations) domain, the mission
   library of the missions domain and the server list of the
-  [server infrastructure](/documentation_v2/glossary/n_to_z.md#server-infrastructure) domain.
+  [server infrastructure](/documentation/glossary/n_to_z.md#server-infrastructure) domain.
 - Used by: the `/admin/events` route in `apps/website/frontend/src/app_routes.rs` and
   `apps/website/frontend/src/router.rs`; the sidebar's "Event Manager" link in
   `apps/website/frontend/src/v2/pages/navigation/nav_config.rs`; `event_manager_source` in
   `apps/website/frontend/src/v2/core/test_support/pins.rs`, which joins the page's sources for its
   tests; the DOM oracle's `eventmgr` capture in
-  `tools_v2/developer-tools/src/browser_testing/dom_oracle/routes.rs`.
+  `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`.
 - Rules: the edit form sends only changed fields and clears the briefing and banner with an empty
   string (`edit_dialog_reattach_and_empty_string_clear_are_wired`); the delete confirmation never
   promises a permanent cascade (`delete_confirm_copy_matches_the_soft_delete_handler`), both in
@@ -165,7 +165,7 @@ browser build only; a native build resolves each fetch to nothing.
 
 ## Related documentation
 
-- [Event manager page](/documentation_v2/website/frontend/pages/administration/event_manager/event_manager_page.md)
+- [Event manager page](/documentation/website/frontend/pages/administration/event_manager/event_manager_page.md)
   — the page's behaviour, what each call means server-side, its design, open work and decisions.
 - [Operations domain](/apps/website/api_v2/src/operations/README.md) — the event, attachment and
   access routes this page calls.

@@ -51,7 +51,7 @@ seat once the round is live; every other body stays parked.
 - Depends on: `TBD_MissionJsonPass`, `TBD_MissionLoader` (mission id, slots, vehicles),
   `TBD_FrameworkManager`, `TBD_SpawnManager`, `TBD_AIGroupFactory`, `TBD_AIWireEnums`,
   `TBD_EntityQuery`, `TBD_Log`, `TBD_AnnounceOnce`; `$defs/waypoint` in
-  `contracts_v2/definitions/mission.schema.json`.
+  `contracts/definitions/mission.schema.json`.
 - Used by: `TBD_RuntimeHeartbeat` (`Clear`, `Tick`, `TICK_MS`); `TBD_SlotBodyMaterializer`
   (`ShouldEnableAIAtSpawn`); `TBD_GroupState` finds the groups armed here.
 - Rules: player-claimed seats never join a group; groups without waypoints are never enabled;

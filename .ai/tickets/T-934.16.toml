@@ -5,7 +5,7 @@ summary = "Full gate sweep, stale owns remap on queued tickets, wave repack, Cur
 class = "chore"
 status = "shipped"
 order = 6100
-spec = "documentation_v2/tickets/specs/t934_website_reorganisation_program.md"
+spec = "documentation/tickets/specs/t934_website_reorganisation_program.md"
 executor = "claude-code"
 notes = '''
 CURSOR HANDOFF (doc writes are Cursor's per the 2026-06 split):

@@ -8,7 +8,7 @@
  * State: none; a static builder.
  * Invariants: where a mockup names a thing vanilla does not ship (BMP-2, T-72B, GAZ-66; the CDF
  * and VDV uniforms) the row keeps the mockup's words and the 3D preview uses a vanilla prefab on
- * record (`contracts_v2/catalogs/registry-items.workbench.json`, `Data/registry.json`), so the
+ * record (`contracts/catalogs/registry-items.workbench.json`, `Data/registry.json`), so the
  * previews are real renders.
  */
 

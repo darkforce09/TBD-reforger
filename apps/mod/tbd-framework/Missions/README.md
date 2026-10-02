@@ -1,9 +1,9 @@
 # Framework mission headers
 
-The framework's [mission headers](/documentation_v2/glossary/g_to_m.md#mission-header): the Enfusion
+The framework's [mission headers](/documentation/glossary/g_to_m.md#mission-header): the Enfusion
 configs a dedicated server or Workbench boots to load one of the framework's worlds, Everon or
 Arland, with the framework game mode. The
-[mission](/documentation_v2/glossary/g_to_m.md#mission) played in it is not here; the running game loads
+[mission](/documentation/glossary/g_to_m.md#mission) played in it is not here; the running game loads
 it from the platform.
 
 ## Contents
@@ -55,16 +55,16 @@ changes its terrain, so the fleet host agent restarts the server process for it.
 - Naming: `TBD_<Name>.conf`, one header per world the framework boots.
 - Adding a header: create it in Workbench inside this addon, which writes the `.meta` with a new
   GUID; commit the pair with the rewritten `apps/mod/tbd-framework/resourceDatabase.rdb`, and
-  register its resource name as a [fleet scenario](/documentation_v2/glossary/a_to_f.md#fleet-scenario) for
+  register its resource name as a [fleet scenario](/documentation/glossary/a_to_f.md#fleet-scenario) for
   its terrain so the platform can boot it.
 
 ## Referenced by
 
-- `tools_v2/xtask/dedicated_server_profiles/tbd-dev-server.config.json` names it as
+- `tools/xtask/dedicated_server_profiles/tbd-dev-server.config.json` names it as
   `game.scenarioId`; `cargo xtask mod playtest` and `cargo xtask mod world-boot` boot from that
   profile, and the world-boot verdict expects the header in the server log.
-- `tools_v2/xtask/deploy/deploy.env.example` sets `TBD_SCENARIO` to it, and
-  `cargo xtask deploy staging` uses it as the default (`tools_v2/xtask/src/commands/deploy/staging/config.rs`).
+- `tools/xtask/deploy/deploy.env.example` sets `TBD_SCENARIO` to it, and
+  `cargo xtask deploy staging` uses it as the default (`tools/xtask/src/commands/deploy/staging/config.rs`).
 - `apps/website/api_v2/seeds/content_golden.sql` seeds it as the `everon` fleet scenario, which the
   platform sends to the fleet host agent in `apps/fleet_host_agent/` when it deploys a mission.
 - `cargo xtask setup server-profile` names `Missions/TBD_Dev_POC.conf` in its Workbench checklist.
@@ -76,7 +76,7 @@ changes its terrain, so the fleet host agent restarts the server process for it.
 - Depends on: the worlds `apps/mod/tbd-framework/worlds/TBD_Dev_POC.ent` and
   `apps/mod/tbd-framework/worlds/TBD_Dev_POC_Arland.ent`, and through them the vanilla Eden and
   Arland worlds and the framework game mode prefab.
-- Used by: the dedicated-server profiles and deploy settings in `tools_v2/xtask/`, the fleet
+- Used by: the dedicated-server profiles and deploy settings in `tools/xtask/`, the fleet
   scenario seeds in `apps/website/api_v2/seeds/`, and every server that boots the framework.
 - Rules: the resource names `{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf` and
   `{9716613D6210414A}Missions/TBD_Dev_POC_Arland.conf` stay stable; a header and its `.meta` are
@@ -85,7 +85,7 @@ changes its terrain, so the fleet host agent restarts the server process for it.
 
 ## Related documentation
 
-- [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — booting the
+- [Game server staging](/documentation/runbooks/game_server_staging/README.md) — booting the
   header on the staging server.
-- [Two-client playtest](/documentation_v2/runbooks/two_client_playtest/README.md) — booting it
+- [Two-client playtest](/documentation/runbooks/two_client_playtest/README.md) — booting it
   locally with `cargo xtask mod playtest`.

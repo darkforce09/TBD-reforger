@@ -190,7 +190,7 @@ fn engineering_laws_failpoints_are_test_only() {
     assert!(findings.is_empty(), "{}", findings.join("\n"));
 
     // The deploy build compiles the server with no feature flag at all.
-    let deploy = root.join("tools_v2/xtask/src/commands/deploy");
+    let deploy = root.join("tools/xtask/src/commands/deploy");
     let sources = scan::walk_files(&[&deploy], |path| {
         path.extension().is_some_and(|extension| extension == "rs")
     })

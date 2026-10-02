@@ -8,13 +8,13 @@ comparable across tickets, instead of each chat inventing its own send-off.
 
 | Layer | Path | Role | Written |
 |---|---|---|---|
-| **Spec** | `documentation_v2/tickets/specs/t<id>_<subject>.md` | source of truth: problem, locked decisions, verify commands, acceptance, and the prompt block | always, from [`spec_template.md`](/.ai/tickets/spec_template.md) |
+| **Spec** | `documentation/tickets/specs/t<id>_<subject>.md` | source of truth: problem, locked decisions, verify commands, acceptance, and the prompt block | always, from [`spec_template.md`](/.ai/tickets/spec_template.md) |
 | **Handoff** | `.ai/artifacts/<slug>_claude_code_handoff.md` | long-form context: the operator's report, the execution order, the file map | only when the context does not fit in the spec, from [`handoff_template.md`](/.ai/tickets/handoff_template.md) |
 
 **The canonical prompt text is a fenced block in the spec**, under a heading that starts
 `## Claude Code prompt` (for example `## Claude Code prompt — <slice id>`).
 `cargo xtask ticket prompt <id> [--slice <slice id>]` prints the first fenced block after that
-heading; the heading text is fixed by the extractor in `tools_v2/ticket-engine/src/cli/prompt.rs`,
+heading; the heading text is fixed by the extractor in `tools/ticket_engine/src/cli/prompt.rs`,
 so keep it even when another agent runs the prompt. `--header` also prints the handoff path.
 
 `cargo xtask ticket run` does not read the block: `cargo xtask platform slice-run` gives the agent a
@@ -24,7 +24,7 @@ agent started by hand in a chat.
 
 The handoff slug is `t`, the slice id without `T-`, dots as underscores, lowercased: slice
 `T-<n>.<m>` → `.ai/artifacts/t<n>_<m>_claude_code_handoff.md` (`slice_id_to_artifact_slug` in
-`tools_v2/ticket-engine/src/registry/mod.rs`).
+`tools/ticket_engine/src/registry/mod.rs`).
 
 ## Prompt skeleton
 
@@ -41,11 +41,11 @@ Read CLAUDE.md first.
 Implement <slice id> — <one-line title>.
 
 ═══ PREFLIGHT ═══
-  git pull && git lfs pull  # Trunk and the API serve /map-assets straight from assets_v2/
+  git pull && git lfs pull  # Trunk and the API serve /map-assets straight from assets/
   cargo xtask ticket brief <ticket id>
 
 ═══ READ (in order — the spec wins on conflict) ═══
-  1. documentation_v2/tickets/specs/<spec file>
+  1. documentation/tickets/specs/<spec file>
   2. .ai/artifacts/<slug>_claude_code_handoff.md   (only when it exists)
   {3. a key source file — only if the spec or handoff lists it}
 
@@ -116,7 +116,7 @@ Implement <slice id> — <one-line title>.
 Agents edit the file they already have open. On an engine ticket that is the Leptos component, so
 streaming, LOD and camera policy grows a second home in `apps/website/frontend/src/v2/` and the two
 copies disagree. The boundary is `CLAUDE.md` law 6, detailed in the
-[engine boundary rules](/documentation_v2/standards/engine_boundary_rules.md) and enforced by
+[engine boundary rules](/documentation/standards/engine_boundary_rules.md) and enforced by
 `cargo xtask verify engine-layers`.
 
 Whoever writes the prompt:

@@ -1,7 +1,7 @@
 # Mission Settings dialog parts
 
-The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s Mission Settings dialog for
-the open [mission](/documentation_v2/glossary/g_to_m.md#mission), and the two dialogs it raises: the
+The [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s Mission Settings dialog for
+the open [mission](/documentation/glossary/g_to_m.md#mission), and the two dialogs it raises: the
 read-only All Settings list and the per-browser Editor Preferences. The parent module,
 `apps/website/frontend/src/v2/apps/editor/ui/modals/settings_modal.rs`, declares these modules and
 re-exports `MissionSettingsDialog` and the settings catalog.
@@ -36,17 +36,17 @@ the document on every `doc_tick`, so an undo refreshes it, and it holds three ki
 - **Row settings.** "Presentation" (briefing and thumbnail link) and "Mission shape" (game mode)
   live on the mission's row: `ShapeMirror` reads `GET /api/v1/missions/{id}` and writes each change
   with `PATCH /api/v1/missions/{id}`, optimistically, putting the stored value back and raising a
-  toast when the [API](/documentation_v2/glossary/a_to_f.md#api) refuses. `ShapeSeq` drops a load that
+  toast when the [API](/documentation/glossary/a_to_f.md#api) refuses. `ShapeSeq` drops a load that
   would overwrite a patch in flight. A saved briefing is also mirrored into the document's meta. The
-  players figure is the count of [slots](/documentation_v2/glossary/n_to_z.md#slot) placed, beside the
+  players figure is the count of [slots](/documentation/glossary/n_to_z.md#slot) placed, beside the
   maximum declared at creation. In a review workspace the dialog shows the row values the
-  [artifact](/documentation_v2/glossary/a_to_f.md#artifact) compiled from.
+  [artifact](/documentation/glossary/a_to_f.md#artifact) compiled from.
 - **Browser settings.** "Editor Preferences" (basemap and world layers) are saved to this browser
   through `shell::world_layer_prefs`, never to the mission.
 
 "All settings in this mission" opens `AllSettingsDialog`: `aggregate_settings` walks the document
 for every authored setting, whichever entity owns it, and compares each with the default that
-`contracts_v2/definitions/mission.schema.json` declares; "Changed from default" hides the provably
+`contracts/definitions/mission.schema.json` declares; "Changed from default" hides the provably
 unchanged rows, and a row whose owner can be selected selects it through the validation router.
 
 ## Boundaries
@@ -60,7 +60,7 @@ unchanged rows, and a row whose owner can be selected selects it through the val
   `MaterialIcon`, the `MissionEnv` DTO); over HTTP, `/api/v1/missions/{id}`.
 - Used by: the parent module, whose `MissionSettingsDialog` `shell::eden_chrome` re-exports for
   `apps/website/frontend/src/v2/apps/editor/mission_editor.rs`; the smoke test
-  `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/cur.rs`, which finds the dialog
+  `tools/developer_tools/src/browser_testing/editor_smoke_tests/cur.rs`, which finds the dialog
   by its "Mission Settings" heading.
 - Rules: all three dialogs answer Escape only while topmost
   (`settings_dialogs_gate_escape_on_modal_stack`), a row load that races a patch never applies
@@ -72,4 +72,4 @@ unchanged rows, and a row whose owner can be selected selects it through the val
 
 - [Missions domain](/apps/website/api_v2/src/missions/README.md) — the mission row routes the
   dialog reads and patches.
-- [Mission Creator feature inventory: top command strip](/documentation_v2/website/frontend/apps/editor/feature_inventory/top_command_strip.md) — the Mission Settings dialog, and why it has no view distance or thermals control.
+- [Mission Creator feature inventory: top command strip](/documentation/website/frontend/apps/editor/feature_inventory/top_command_strip.md) — the Mission Settings dialog, and why it has no view distance or thermals control.

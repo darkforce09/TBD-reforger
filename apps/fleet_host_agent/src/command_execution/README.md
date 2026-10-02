@@ -1,8 +1,8 @@
 # Command execution
 
-The [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command) as this host performs them: the
+The [fleet commands](/documentation/glossary/a_to_f.md#fleet-command) as this host performs them: the
 second validation of every claimed command's action and arguments, and the executor that carries
-out a validated command through process control, [RCON](/documentation_v2/glossary/n_to_z.md#rcon) or the
+out a validated command through process control, [RCON](/documentation/glossary/n_to_z.md#rcon) or the
 dedicated server's config.
 
 ## Contents
@@ -22,7 +22,7 @@ apps/fleet_host_agent/src/command_execution/
 
 ## How it works
 
-The [API](/documentation_v2/glossary/a_to_f.md#api) validated a command when it accepted it; the agent
+The [API](/documentation/glossary/a_to_f.md#api) validated a command when it accepted it; the agent
 checks it again, by the same rules, before anything reaches systemctl, the server config or RCON,
 so no text from the API can widen what the host runs. `HostCommand::from_claim` accepts six
 actions, each with exactly its own argument keys:
@@ -37,13 +37,13 @@ actions, each with exactly its own argument keys:
 | `console_command` | `line` (`ConsoleLine`) | the line over RCON in a single transmission (`RconClient::execute_once`) | the server answered | `response` (at most 4096 bytes), `response_truncated` |
 
 `broadcast`, `kick` and `load_mission` run in the
-[game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) and are refused as
+[game runtime](/documentation/glossary/g_to_m.md#game-runtime) and are refused as
 `GameRuntimeAction`; any other action is `UnsupportedAction`. A refusal quotes at most 64
 characters of the name it rejects.
 
 A `restart_with_mission` command is a cross-terrain
-[mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment): the server restarts on the
-[mission header](/documentation_v2/glossary/g_to_m.md#mission-header) of another terrain. Its arguments
+[mission deployment](/documentation/glossary/g_to_m.md#mission-deployment): the server restarts on the
+[mission header](/documentation/glossary/g_to_m.md#mission-header) of another terrain. Its arguments
 are exactly `deployment_id` and `artifact_id` (UUIDs in the 36-character hyphenated form),
 `artifact_sha256` (64 lowercase hex digits) and `scenario_id`, a mission header resource matching
 `^\{[0-9A-F]{16}\}[A-Za-z0-9_./-]+\.conf$` such as `{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf`.
@@ -58,7 +58,7 @@ are exactly `deployment_id` and `artifact_id` (UUIDs in the 36-character hyphena
    `systemctl` added, and a reason saying the config already names the new mission header, which
    the next start of the unit runs.
 
-The agent never fetches the [artifact](/documentation_v2/glossary/a_to_f.md#artifact); the ids and the
+The agent never fetches the [artifact](/documentation/glossary/a_to_f.md#artifact); the ids and the
 digest only identify the deployment in the log. The game runtime reads its deployment when it
 boots, loads and verifies the artifact and reports it, and that report confirms the deployment.
 
@@ -91,7 +91,7 @@ fails it with the RCON error, and then nothing was sent.
   BattlEye RCon server.
 - Rules: the command loop calls `FleetActionExecutor::execute` only after the ledger acknowledged
   the `executing` report; the accepted actions and argument keys match the API's rules in
-  `contracts_v2/definitions/fleet-command.schema.json` (`tests/host_command.rs`,
+  `contracts/definitions/fleet-command.schema.json` (`tests/host_command.rs`,
   `tests/console_line.rs` and `tests/mission_deployment.rs` hold every refusal); the
   `scenario_id` reaches the host only as a JSON string value in the config, never on a command
   line; the console line reaches only the RCON port, in one packet, and a reply never exceeds

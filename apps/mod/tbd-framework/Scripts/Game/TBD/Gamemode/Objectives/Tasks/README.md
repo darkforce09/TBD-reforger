@@ -49,7 +49,7 @@ logged and ignored. Every transition logs `[TBD][Task] id=<n> t=<s> -> <state>`.
 - Depends on: `TBD_MissionLoader` (the mission id), `TBD_MissionJsonPass`, `TBD_TriggerRuntime` and
   `TBD_Zone` (trigger state and zone centres), `TBD_FrameworkManager` (the stage),
   `TBD_TaskHud`, `TBD_AnnounceOnce`, `TBD_Rounding` and `TBD_Log`; the `task` and `taskSchedule`
-  definitions in `contracts_v2/definitions/mission.schema.json`.
+  definitions in `contracts/definitions/mission.schema.json`.
 - Used by: `TBD_RuntimeHeartbeat` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/Heartbeat/` (`Clear`, `Tick`,
   `TICK_MS`); `TBD_TaskHud` (`GetAll`, `IconFor`, `StateName`, `TBD_Task`, `TBD_ETaskState`);

@@ -1,11 +1,11 @@
 # Mission domain
 
-The [mission](/documentation_v2/glossary/g_to_m.md#mission) as data, shared by the browser and the server:
+The [mission](/documentation/glossary/g_to_m.md#mission) as data, shared by the browser and the server:
 the shapes of the saved payload and of the compiled document, the compiler between them, the
 validation and wire-safety checks, the optional authored blocks, a plain-text line per
-[slot](/documentation_v2/glossary/n_to_z.md#slot) of an [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) and
+[slot](/documentation/glossary/n_to_z.md#slot) of an [ORBAT](/documentation/glossary/n_to_z.md#orbat) and
 the mortar solver. The module name keeps the code spelling
-[scenario](/documentation_v2/glossary/n_to_z.md#scenario); prose says mission.
+[scenario](/documentation/glossary/n_to_z.md#scenario); prose says mission.
 
 ## Contents
 
@@ -23,7 +23,7 @@ apps/website/map-engine/src/data/scenario/
 ## How it works
 
 A mission moves through this module from the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s document to the bytes a game
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s document to the bytes a game
 server loads:
 
 ```text
@@ -46,7 +46,7 @@ artifact: the compiled bytes, their findings and COMPILER_PACKAGE_VERSION ──
 The Mission Creator also runs `flatten` itself for its compiled export, and its inspector panels
 validate each authored block with the `extensions` modules as the author edits it. The module keeps
 no state beyond the kit-alias table it parses once from the embedded
-`contracts_v2/rules/kit-aliases.json`. The [API](/documentation_v2/glossary/a_to_f.md#api) links the
+`contracts/rules/kit-aliases.json`. The [API](/documentation/glossary/a_to_f.md#api) links the
 crate with its default feature, `scenario`, which adds only `serde`, `serde_json` and `thiserror`,
 so the server's build carries no graphics crate.
 
@@ -56,11 +56,11 @@ so the server's build carries no graphics crate.
 boundary, so moving one is a change for its callers:
 
 - `orbat` (`ast::factions`): the ORBAT templates, for the API's
-  [event](/documentation_v2/glossary/a_to_f.md#event) attachment, reservation restore and
-  [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) slot bindings.
+  [event](/documentation/glossary/a_to_f.md#event) attachment, reservation restore and
+  [mission deployment](/documentation/glossary/g_to_m.md#mission-deployment) slot bindings.
 - `compile` (`compiler::payload`), `flatten` and `kit`: the payload, the compiled document and the
   alias table, for the Mission Creator, the mission library's upload and the API's save, compile
-  and [artifact](/documentation_v2/glossary/a_to_f.md#artifact) code.
+  and [artifact](/documentation/glossary/a_to_f.md#artifact) code.
 - `validate` (`validation::validator`) and `wire_safety`: the rule list for the Mission Creator's
   validation panel, and the scans the API runs on save and compile.
 - `audio`, `weather`, `spawn_modules`, `tasks`, `win_conditions`, `radio_plan` and
@@ -74,10 +74,10 @@ boundary, so moving one is a change for its callers:
 ## Boundaries
 
 - Depends on: `serde`, `serde_json` and `thiserror`, the `scenario` feature's dependencies;
-  `contracts_v2/rules/kit-aliases.json` at build time; no other module of the crate.
+  `contracts/rules/kit-aliases.json` at build time; no other module of the crate.
 - Used by:
-  - the API's [missions](/documentation_v2/glossary/g_to_m.md#missions) and
-    [operations](/documentation_v2/glossary/n_to_z.md#operations) domains in
+  - the API's [missions](/documentation/glossary/g_to_m.md#missions) and
+    [operations](/documentation/glossary/n_to_z.md#operations) domains in
     `apps/website/api_v2/src/missions/` and `apps/website/api_v2/src/operations/`;
   - the Mission Creator in `apps/website/frontend/src/v2/apps/editor/`, the mission library in
     `apps/website/frontend/src/v2/pages/mission_hub/library/` and the DTOs of
@@ -91,14 +91,14 @@ boundary, so moving one is a change for its callers:
   - no browser API, graphics device or Leptos state: callers pass every input; the payload keeps
     the document's `entityOrder`, and the compiled document keeps the authored faction, squad and
     slot order (`flatten_matches_locked_contract` in `compiler/flatten/tests/cases_1.rs`);
-  - `contracts_v2/fixtures/missions/valid/compiler-shaped-two-faction.json` is the compiler's own
+  - `contracts/fixtures/missions/valid/compiler-shaped-two-faction.json` is the compiler's own
     output (`compiler_shaped_golden_is_a_fresh_emitter_output` in
     `compiler/flatten/tests/cases_3.rs`).
 
 ## Related documentation
 
-- [Mission schema](/contracts_v2/definitions/mission.schema.json) — the compiled document.
-- [Mission editor payload schema](/contracts_v2/definitions/mission-editor-payload.schema.json) —
+- [Mission schema](/contracts/definitions/mission.schema.json) — the compiled document.
+- [Mission editor payload schema](/contracts/definitions/mission-editor-payload.schema.json) —
   the saved payload.
-- [Mission artifacts](/documentation_v2/website/api_v2/verification_evidence/mission_artifacts.md)
+- [Mission artifacts](/documentation/website/api_v2/verification_evidence/mission_artifacts.md)
   — how a compiled mission becomes an artifact, a review and a deployment.

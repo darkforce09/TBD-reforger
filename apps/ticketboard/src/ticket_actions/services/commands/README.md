@@ -1,7 +1,7 @@
 # Ticket command rules
 
-The egui-free rules behind every change the [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)
-makes to a [ticket](/documentation_v2/glossary/n_to_z.md#ticket): one builder per `cargo xtask ticket`
+The egui-free rules behind every change the [ticketboard](/documentation/glossary/n_to_z.md#ticketboard)
+makes to a [ticket](/documentation/glossary/n_to_z.md#ticket): one builder per `cargo xtask ticket`
 verb, the file-change guard, the single-flight queue, and which transitions each status offers.
 
 ## Contents
@@ -78,5 +78,5 @@ forgiven; `descendants` lists the corpus ids that extend an id with a dot, in nu
 
 ## Related documentation
 
-- [Ticket commands](/tools_v2/xtask/src/commands/ticket/README.md) — the `cargo xtask ticket`
+- [Ticket commands](/tools/xtask/src/commands/ticket/README.md) — the `cargo xtask ticket`
   verbs these builders call.

@@ -30,11 +30,11 @@ offset to the south, which fails if the map is drawn upside down. The promise re
 - Depends on: `crate::frame` (the engine's device, queue, shader module, layouts, unit-quad and
   calibration buffers, `CLEAR_COLOR` and the quad pipeline constructor), `crate::camera::ortho`
   and `crate::world::scene::ANCHOR`.
-- Used by: the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
+- Used by: the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
   `window.__selfChecks.calibration`, published by
   `register_self_checks` in `apps/website/frontend/src/v2/apps/editor/bridge/viewport.rs`; the
   editor gate's `selfcheck` smoke
-  (`tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/editor_boot_scenarios.rs`)
+  (`tools/developer_tools/src/browser_testing/editor_smoke_tests/editor_boot_scenarios.rs`)
   calls it under WebGL2, and `cargo xtask mk leptos-gates` runs that smoke.
 - Rules: the check uses its own target, uniform and pipeline and leaves the engine's frame state
   alone, so it can run beside the live render loop; the expected bytes are exact, which holds

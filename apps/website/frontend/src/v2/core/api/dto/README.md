@@ -1,6 +1,6 @@
 # Wire types
 
-The data transfer objects: one Rust shape per JSON body the [API](/documentation_v2/glossary/a_to_f.md#api)
+The data transfer objects: one Rust shape per JSON body the [API](/documentation/glossary/a_to_f.md#api)
 sends or accepts, grouped by domain. Most files are re-exported flat from `mod.rs`, so a caller names
 the type (`MissionDetail`) rather than the file it lives in; the administration, ballistics catalog,
 vehicle, wiki and equipment data viewer types are named by their module (`dto::wiki::WikiArticle`).
@@ -37,7 +37,7 @@ apps/website/frontend/src/v2/core/api/dto/
 ## How it works
 
 The DTOs mirror the snake_case models of the API in `apps/website/api_v2/src/<domain>/models/`,
-and the API wins a disagreement. A DTO that projects a definition in `contracts_v2/definitions/`
+and the API wins a disagreement. A DTO that projects a definition in `contracts/definitions/`
 names it in an `@contract` line of its docs, which `cargo xtask schema citations` resolves. They
 are plain `serde` data, and all of them compile into the native test build. `tests/r_api.rs` holds each DTO to a captured answer from
 `apps/website/frontend/tests/fixtures/api/`: re-serialising reproduces the capture canonically,
@@ -48,20 +48,20 @@ files hold one domain's goldens each; `tests/shapes.rs` checks the shapes that n
 modules, check the stream events, write bodies and refusals no capture carries.
 
 - A value set the API may extend (review states,
-  [fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) actions and states,
-  [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) states, leave statuses,
+  [fleet command](/documentation/glossary/a_to_f.md#fleet-command) actions and states,
+  [mission deployment](/documentation/glossary/g_to_m.md#mission-deployment) states, leave statuses,
   reservation values) travels as a string, so a new value lists instead of failing the read.
 - A null the capture carries stays explicit when serialising: an unclaimed
-  [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) [slot](/documentation_v2/glossary/n_to_z.md#slot), a
+  [ORBAT](/documentation/glossary/n_to_z.md#orbat) [slot](/documentation/glossary/n_to_z.md#slot), a
   finding with no subject, a pool with no limit, an unmeasured K/D ratio, a saved fire mission's
   unrecorded coordinates and solution figures.
 - A text field the API skips when empty (a modpack's `workshop_url`, a mod's `workshop_id`,
   `mod_guid` and `version`, an announcement's `snippet`, `thumbnail_url` and
   `discord_message_id`) reads as an empty string and is left out again when serialising; an
   announcement's tag and status travel as strings, like the other extensible value sets.
-- The [event](/documentation_v2/glossary/a_to_f.md#event) access conditions and group sources are tagged
+- The [event](/documentation/glossary/a_to_f.md#event) access conditions and group sources are tagged
   by `kind` and refuse unknown fields, because the
-  [event manager](/documentation_v2/glossary/a_to_f.md#event-manager) sends them back and must not
+  [event manager](/documentation/glossary/a_to_f.md#event-manager) sends them back and must not
   rewrite a shape it does not know; `MissionDetail` has no catch-all either.
 - A match event's `kind` and `payload` decode together into one `MatchEventDetail` variant per
   kind, so a payload cannot be read under the wrong kind; an unknown kind fails the read, and a
@@ -91,12 +91,12 @@ modules, check the stream events, write bodies and refusals no capture carries.
 - The audit stream's `ready` and `reset` events carry publication sequences, never audit line ids;
   an audit line's `metadata` is carried as the writer recorded it.
 - `IssuedMachineCredential`, the one answer that carries a
-  [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential)'s secret, derives no
+  [machine credential](/documentation/glossary/g_to_m.md#machine-credential)'s secret, derives no
   `Debug`, so the secret cannot reach a log line.
-- `decode_server_status_frame` turns one [SSE](/documentation_v2/glossary/n_to_z.md#sse) frame into a
+- `decode_server_status_frame` turns one [SSE](/documentation/glossary/n_to_z.md#sse) frame into a
   status or a named rejection, here rather than beside the browser-only stream reader so the
   native tests reach it; `compiled_meta` on `MissionDetail` and `ArtifactMetadata` gives the
-  metadata the shared [mission](/documentation_v2/glossary/g_to_m.md#mission) compiler reads.
+  metadata the shared [mission](/documentation/glossary/g_to_m.md#mission) compiler reads.
 
 ## Boundaries
 
@@ -107,7 +107,7 @@ modules, check the stream events, write bodies and refusals no capture carries.
   `apps/website/frontend/src/v2/core/api/`, the auth store in
   `apps/website/frontend/src/v2/core/auth/store.rs`, the pages under
   `apps/website/frontend/src/v2/pages/`, the
-  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) under
+  [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) under
   `apps/website/frontend/src/v2/apps/editor/`, and the equipment data viewer under
   `apps/website/frontend/src/v2/apps/debug/data_viewer/`.
 - Rules: the API model changes first and the DTO follows; a golden round-trips, and its unread
@@ -117,5 +117,5 @@ modules, check the stream events, write bodies and refusals no capture carries.
 
 ## Related documentation
 
-- [Documentation standards](/documentation_v2/standards/documentation_standards.md#2-contracts-behind-the-tags)
+- [Documentation standards](/documentation/standards/documentation_standards.md#2-contracts-behind-the-tags)
   — how the API's models, the schemas and these DTOs stay one contract.

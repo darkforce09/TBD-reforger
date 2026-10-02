@@ -1,4 +1,4 @@
-//! Types generated from `contracts_v2/definitions/match-telemetry.schema.json` by `typify`;
+//! Types generated from `contracts/definitions/match-telemetry.schema.json` by `typify`;
 //! contract tests deserialize live requests and responses into them.
 //!
 //! DO NOT EDIT the per-schema files — regenerate them with `cargo xtask ci schema-codegen`, and

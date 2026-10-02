@@ -37,7 +37,7 @@ const VERSION_BODY_LIMIT: i64 = 2 << 20;
 /// The committed faction-library sample every faction body starts from.
 const FACTION_SAMPLE: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../contracts_v2/fixtures/registry/faction-library.sample.json"
+    "/../../../contracts/fixtures/registry/faction-library.sample.json"
 );
 const RIFLE: &str = "{00000000000000A1}Prefabs/Weapons/Rifles/Rifle_RouteAcceptance.et";
 const MAGAZINE: &str = "{00000000000000A2}Prefabs/Weapons/Magazines/Magazine_RouteAcceptance.et";

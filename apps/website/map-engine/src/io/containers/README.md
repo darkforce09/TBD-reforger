@@ -61,11 +61,11 @@ tile offsets count from `tiles_offset()`, the end of the index.
     `crate::world::terrain::dem::raw` (`TBDE`), `crate::world::terrain::water` (`TBDB`) and
     `crate::world::terrain::satellite::streamer` (`TBDS`); `crate::streaming::loaders::manifest`
     compares the manifest's `containerVersion` with `CONTAINER_VERSION`;
-  - the developer tools' writers: `tools_v2/developer-tools/src/world_export_pipeline/binary_emit.rs`
-    (`TBDC`), `tools_v2/developer-tools/src/world_export_pipeline/export_preparation/dem_elevation.rs`
-    (`TBDE`), `tools_v2/developer-tools/src/map_raster_pipeline/inland_water_archive.rs` (`TBDB`)
-    and `tools_v2/developer-tools/src/map_raster_pipeline/satellite_archive_container.rs`
-    (`TBDS`), plus the map verifications in `tools_v2/developer-tools/src/map_verification/`.
+  - the developer tools' writers: `tools/developer_tools/src/world_export_pipeline/binary_emit.rs`
+    (`TBDC`), `tools/developer_tools/src/world_export_pipeline/export_preparation/dem_elevation.rs`
+    (`TBDE`), `tools/developer_tools/src/map_raster_pipeline/inland_water_archive.rs` (`TBDB`)
+    and `tools/developer_tools/src/map_raster_pipeline/satellite_archive_container.rs`
+    (`TBDS`), plus the map verifications in `tools/developer_tools/src/map_verification/`.
 - Rules:
   - every header is 32 bytes (a compile-time assertion in each file, and
     `all_headers_are_thirty_two_bytes` in `headers/tests/cases_1.rs`);
@@ -76,6 +76,6 @@ tile offsets count from `tiles_offset()`, the end of the index.
 
 ## Related documentation
 
-- [Terrain assets](/assets_v2/terrains/README.md) — the served terrain tree the containers sit in.
+- [Terrain assets](/assets/terrains/README.md) — the served terrain tree the containers sit in.
 - [Map loaders](/apps/website/map-engine/src/streaming/loaders/README.md) — the chunk and manifest
   parsers that read `TBDC`.

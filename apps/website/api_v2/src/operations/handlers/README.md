@@ -1,12 +1,12 @@
 # Operations handlers
 
-The HTTP handlers of the [operations](/documentation_v2/glossary/n_to_z.md#operations) domain, one module
-per surface: the [event](/documentation_v2/glossary/a_to_f.md#event) calendar and its hub, event writes and
-[mission](/documentation_v2/glossary/g_to_m.md#mission) attachments, access administration, the
-[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) and its [slots](/documentation_v2/glossary/n_to_z.md#slot),
-the member directory, the [service record](/documentation_v2/glossary/n_to_z.md#service-record), leave
-requests, fire missions, and the [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime)'s roster
-and player [deployments](/documentation_v2/glossary/a_to_f.md#deployment).
+The HTTP handlers of the [operations](/documentation/glossary/n_to_z.md#operations) domain, one module
+per surface: the [event](/documentation/glossary/a_to_f.md#event) calendar and its hub, event writes and
+[mission](/documentation/glossary/g_to_m.md#mission) attachments, access administration, the
+[ORBAT](/documentation/glossary/n_to_z.md#orbat) and its [slots](/documentation/glossary/n_to_z.md#slot),
+the member directory, the [service record](/documentation/glossary/n_to_z.md#service-record), leave
+requests, fire missions, and the [game runtime](/documentation/glossary/g_to_m.md#game-runtime)'s roster
+and player [deployments](/documentation/glossary/a_to_f.md#deployment).
 
 ## Contents
 
@@ -55,9 +55,9 @@ server.
   `services::event_authoring::mission_attachment`; the `staging-fixtures` host tool writes through
   the same services.
 - `event_mission_attachment.rs` copies the mission's ORBAT into `orbat_slots` rows of the new event
-  mission, the only ORBAT the [API](/documentation_v2/glossary/a_to_f.md#api) writes, so it refuses an
+  mission, the only ORBAT the [API](/documentation/glossary/a_to_f.md#api) writes, so it refuses an
   unreadable template, one that seats nobody, and a blank or padded faction, which no
-  [armory](/documentation_v2/glossary/a_to_f.md#armory) line could match.
+  [armory](/documentation/glossary/a_to_f.md#armory) line could match.
 - `game_runtime_roster.rs` reads the slot bindings of the deployment the server runs and compiles
   nothing; `game_runtime_deployments.rs` answers a refused player life with 200 and
   `decision = "denied"`.
@@ -81,7 +81,7 @@ server.
   ballistics.
 - Used by: the domain's `routes.rs`; over HTTP, the operations pages in
   `apps/website/frontend/src/v2/pages/operations/`, the
-  [event manager](/documentation_v2/glossary/a_to_f.md#event-manager) in
+  [event manager](/documentation/glossary/a_to_f.md#event-manager) in
   `apps/website/frontend/src/v2/pages/administration/event_manager/`, the mortar calculator in
   `apps/website/frontend/src/v2/pages/field_tools/mortar/`, the endpoint helpers in
   `apps/website/frontend/src/v2/core/api/endpoints/`, and the game runtime's roster loader in
@@ -101,8 +101,8 @@ server.
 
 ## Related documentation
 
-- [Event eligibility and allocation](/documentation_v2/website/api_v2/verification_evidence/event_eligibility_allocation.md)
+- [Event eligibility and allocation](/documentation/website/api_v2/verification_evidence/event_eligibility_allocation.md)
   — access, visibility, pools, promotion and re-evaluation.
-- [Event hub page](/documentation_v2/website/frontend/pages/operations/event_detail/event_hub_page.md)
-  and [Event manager page](/documentation_v2/website/frontend/pages/administration/event_manager/event_manager_page.md)
+- [Event hub page](/documentation/website/frontend/pages/operations/event_detail/event_hub_page.md)
+  and [Event manager page](/documentation/website/frontend/pages/administration/event_manager/event_manager_page.md)
   — the pages over the event routes.

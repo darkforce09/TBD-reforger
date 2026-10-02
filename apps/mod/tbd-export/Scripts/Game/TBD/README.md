@@ -1,7 +1,7 @@
 # Export addon game scripts
 
-The export addon's [EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript) that compiles into the game
-rather than into [Workbench](/documentation_v2/glossary/n_to_z.md#workbench): the runtime road network
+The export addon's [EnfScript](/documentation/glossary/a_to_f.md#enfscript) that compiles into the game
+rather than into [Workbench](/documentation/glossary/n_to_z.md#workbench): the runtime road network
 export and the ballistics oracle's simulation run, which run inside a playing export world.
 
 ## Contents
@@ -15,7 +15,7 @@ apps/mod/tbd-export/Scripts/Game/TBD/
 
 The folder holds one subsystem, `Export/`. The export game mode prefab
 carries `TBD_RoadExportComponent`; playing the export
-[mission header](/documentation_v2/glossary/g_to_m.md#mission-header) starts it, and it writes the road
+[mission header](/documentation/glossary/g_to_m.md#mission-header) starts it, and it writes the road
 files to `$profile:TBD_Export/everon/roads/`. It also carries
 `TBD_BallisticsOracleSimulationComponent`, which samples the engine's projectile simulation into
 `$profile:TBD_BallisticsOracle/<generation id>/` when the Workbench ballistics oracle has recorded
@@ -40,6 +40,6 @@ a generation.
 
 ## Related documentation
 
-- [Map export](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
+- [Map export](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
   the runtime road export among the addon's exporters, and the files it shares with the
   Workbench road layer.

@@ -250,7 +250,7 @@ class TBD_MenuStack
 		if (index < 0)
 			return;
 
-		// Enfusion arrays remove BY INDEX (documentation_v2/mod/tbd-framework/mod_design.md
+		// Enfusion arrays remove BY INDEX (documentation/mod/tbd-framework/mod_design.md
 		// section 5), never by value.
 		m_aStack.Remove(index);
 		OnTopChanged();

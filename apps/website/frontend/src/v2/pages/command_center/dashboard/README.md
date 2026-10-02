@@ -1,8 +1,8 @@
 # Dashboard page
 
 The `/` page, the members' landing screen in the
-[command center](/documentation_v2/glossary/a_to_f.md#command-center): the countdown to the next
-[event](/documentation_v2/glossary/a_to_f.md#event), the configured fleet of game servers with its
+[command center](/documentation/glossary/a_to_f.md#command-center): the countdown to the next
+[event](/documentation/glossary/a_to_f.md#event), the configured fleet of game servers with its
 totals, the viewer's own assignment, the current modpack and the latest announcements, all from one fetch.
 
 ## Contents
@@ -92,5 +92,5 @@ contract requires fails the fetch instead of rendering blank.
 
 ## Related documentation
 
-- [Dashboard page](/documentation_v2/website/frontend/pages/command_center/dashboard/dashboard_page.md)
+- [Dashboard page](/documentation/website/frontend/pages/command_center/dashboard/dashboard_page.md)
   — the page's behaviour and design.

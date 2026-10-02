@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/vehicle-database.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/vehicle-database.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 use super::VehicleDatabaseContract;
 

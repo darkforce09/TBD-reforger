@@ -1,9 +1,9 @@
 # Slot bodies, deployment and one life
 
-Owns every player spawn in a framework world: stands one body per [mission](/documentation_v2/glossary/g_to_m.md#mission)
-[slot](/documentation_v2/glossary/n_to_z.md#slot) in the world, hands each player onto the body of the
+Owns every player spawn in a framework world: stands one body per [mission](/documentation/glossary/g_to_m.md#mission)
+[slot](/documentation/glossary/n_to_z.md#slot) in the world, hands each player onto the body of the
 slot they hold, keeps one life per player, asks the platform to authorize each deployment into an
-[event](/documentation_v2/glossary/a_to_f.md#event) seat, and stands the vanilla respawn flow down. It
+[event](/documentation/glossary/a_to_f.md#event) seat, and stands the vanilla respawn flow down. It
 also runs the mission's AI spawn modules.
 
 ## Contents
@@ -160,10 +160,10 @@ groups live; a `garrison` spawns once and is not restocked. A module names eithe
   - `TBD_FrameworkManager` (the stage and the framework-world test), `TBD_Registry`, `TBD_Log`;
   - `TBD_GameRuntimeHttp`, `TBD_RuntimeSession` and `TBD_PlayerIdentity` in
     `apps/mod/tbd-framework/Scripts/Game/TBD/API/`;
-  - over HTTP with the `mod_runtime` [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential),
+  - over HTTP with the `mod_runtime` [machine credential](/documentation/glossary/g_to_m.md#machine-credential),
     `/api/v1/game-runtime/sessions/{sessionId}/deployments` and its `/{occupancyId}/end` route
     (`apps/website/api_v2/src/operations/routes.rs`), shaped by
-    `contracts_v2/definitions/game-runtime-deployment.schema.json`;
+    `contracts/definitions/game-runtime-deployment.schema.json`;
   - the engine's spawn classes (`SCR_RespawnSystemComponent`, `SCR_MenuSpawnLogic`,
     `SCR_PossessSpawnHandlerComponent`, `SCR_PossessSpawnData`) and `SCR_AIGroup`.
 - Used by: `TBD_FrameworkManager` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/`;
@@ -184,7 +184,7 @@ groups live; a `garrison` spawns once and is not restocked. A module names eithe
 
 ## Related documentation
 
-- [Mod design](/documentation_v2/mod/tbd-framework/mod_design.md) — one life, the possess deploy
+- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — one life, the possess deploy
   and the vanilla respawn stand-down among the framework's non-negotiables
-- [Spawn determinism](/documentation_v2/runbooks/spawn_determinism.md) — the Workbench gate that
+- [Spawn determinism](/documentation/runbooks/spawn_determinism.md) — the Workbench gate that
   checks spawn and equip give the same outcome across fresh Workbench processes

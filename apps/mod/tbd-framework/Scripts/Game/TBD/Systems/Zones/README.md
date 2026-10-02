@@ -1,6 +1,6 @@
 # Mission zones, play area and triggers
 
-Turns a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s zones into prepared shapes the server
+Turns a [mission](/documentation/glossary/g_to_m.md#mission)'s zones into prepared shapes the server
 can test positions against, confines players to the authored play area with a warning, a grace
 countdown and the authored penalty, and runs the mission's editor triggers and the effects they
 fire. The objective system reads the same zones.
@@ -108,7 +108,7 @@ follows them.
   `TBD_PlayerFaction`, `TBD_CharacterUtil`, `TBD_DeclaredFactions` and `TBD_EntityQuery` under
   `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; the engine's `SCR_ChatComponent`,
   `SCR_CharacterDamageManagerComponent`, `SCR_UISoundEntity` and world queries; the `zone`,
-  `zoneRules` and `editorTrigger` definitions in `contracts_v2/definitions/mission.schema.json`.
+  `zoneRules` and `editorTrigger` definitions in `contracts/definitions/mission.schema.json`.
 - Used by: `TBD_ObjectiveRegistry`, `TBD_ObjectivesComponent` and `TBD_TaskStateMachine` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`; `TBD_WinConditionEvaluator` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/`; `TBD_RuntimeHeartbeat` in
@@ -124,5 +124,5 @@ follows them.
 
 ## Related documentation
 
-- [Play area warning specification](/documentation_v2/mod/tbd-framework/UI/play_area_warning/play_area_warning_specification.md)
+- [Play area warning specification](/documentation/mod/tbd-framework/UI/play_area_warning/play_area_warning_specification.md)
   — the design of the out-of-bounds warning the player sees

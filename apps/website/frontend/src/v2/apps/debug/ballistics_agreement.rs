@@ -9,7 +9,7 @@
 //! **Position:** a routed workspace under `v2::apps::debug`, mounted by `app_routes.rs`. The pure
 //! half ([`agreement_report`], [`bench_query`]) builds the reading and parses the URL on every
 //! target; the browser half (`live`) fetches and schedules the solves. The native agreement gate
-//! `gate ballistics-agreement` of `tools_v2/developer-tools/` reads the `<pre>` over the
+//! `gate ballistics-agreement` of `tools/developer_tools/` reads the `<pre>` over the
 //! DevTools protocol and compares it with its own native solves.
 //! **Signals & state:** three Leptos `RwSignal`s — the bench state, the status line and the
 //! reading's JSON — written by the browser half and read by the view.

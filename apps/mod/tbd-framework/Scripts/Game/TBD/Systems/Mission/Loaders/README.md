@@ -1,10 +1,10 @@
 # Deployed mission loading and the event roster
 
-Boots every world into the [mission](/documentation_v2/glossary/g_to_m.md#mission) deployed to this server
-on the platform: reads the [deployment](/documentation_v2/glossary/a_to_f.md#deployment) in effect, takes
-its [artifact](/documentation_v2/glossary/a_to_f.md#artifact) from the local cache or the platform, loads
+Boots every world into the [mission](/documentation/glossary/g_to_m.md#mission) deployed to this server
+on the platform: reads the [deployment](/documentation/glossary/a_to_f.md#deployment) in effect, takes
+its [artifact](/documentation/glossary/a_to_f.md#artifact) from the local cache or the platform, loads
 it only when the SHA-256 of its exact bytes matches, then parses and validates it and reads the
-[event](/documentation_v2/glossary/a_to_f.md#event) roster that seats players and authorizes their
+[event](/documentation/glossary/a_to_f.md#event) roster that seats players and authorizes their
 deployments.
 
 ## Contents
@@ -43,7 +43,7 @@ TBD_MissionLoader.LoadDocument ──> TBD_LoadedArtifactReport: the runtime ses
 stage machine leaves LOADING ──> TBD_RosterLoader.BeginLoad (event roster, when the deployment names an event)
 ```
 
-A deployment that cannot be read (no [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential),
+A deployment that cannot be read (no [machine credential](/documentation/glossary/g_to_m.md#machine-credential),
 no answer, a refusal) runs the last verified cached artifact with a WARNING; without one no mission
 runs (ERROR). Reads and fetches repeat with backoff from 2 s to 60 s after no answer and every 60 s
 otherwise, re-reading the backend config each time. The engine's `RestCallback` exposes no response
@@ -55,7 +55,7 @@ deployment for the roster, deployment authorization and the results report.
 `TBD_MissionArtifactCache` keeps `$profile:TBD_MissionArtifactCache/document.json` (the exact
 bytes), `identity.json` (the deployment) and `received.json` (bytes being verified). It is written
 only after a verification succeeds, by the boot sequence and by the `load_mission`
-[fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) (`TBD_FleetLoadMissionAction`); a write
+[fleet command](/documentation/glossary/a_to_f.md#fleet-command) (`TBD_FleetLoadMissionAction`); a write
 removes the identity first and writes it last, so an interrupted write leaves no cached artifact.
 A read returns the document as text and as bytes (`FileHandle.ReadArray`), and the bytes are hashed
 again before anything loads them.
@@ -63,7 +63,7 @@ again before anything loads them.
 ### Parse and validation
 
 `LoadDocument` in `Mission/` refuses a document over `MISSION_FILE_MAX_BYTES` (8 MiB, the same
-ceiling as `x-tbd-missionFileMaxBytes` in `contracts_v2/definitions/mission.schema.json`), parses it
+ceiling as `x-tbd-missionFileMaxBytes` in `contracts/definitions/mission.schema.json`), parses it
 into `TBD_MissionDocumentStruct` (`Data/Document/`), filters it to its active variant set, and runs
 `TBD_MissionValidator.Run` in `Validation/`. An ERROR (the mission cannot be played) discards the
 document, so the stage machine never leaves `LOADING`; a WARNING (it can be played but may not end)
@@ -121,13 +121,13 @@ world's fetch is dropped.
     `TBD_Log` and `TBD_Registry`;
   - the structs and readers in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/` and
     `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Ingestion/`;
-  - over HTTP with the `mod_runtime` credential, the API's [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime)
+  - over HTTP with the `mod_runtime` credential, the API's [game runtime](/documentation/glossary/g_to_m.md#game-runtime)
     routes: `/api/v1/game-runtime/deployment` and `/api/v1/game-runtime/artifacts/{artifactId}`
     (`apps/website/api_v2/src/missions/routes.rs`), and `/api/v1/game-runtime/events/{id}/roster`
     (`apps/website/api_v2/src/operations/routes.rs`);
-  - the wire shapes in `contracts_v2/definitions/mission.schema.json`,
-    `contracts_v2/definitions/mission-deployment.schema.json` and
-    `contracts_v2/definitions/game-runtime-roster.schema.json`.
+  - the wire shapes in `contracts/definitions/mission.schema.json`,
+    `contracts/definitions/mission-deployment.schema.json` and
+    `contracts/definitions/game-runtime-roster.schema.json`.
 - Used by: `TBD_FrameworkManager` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/`
   (`BeginLoad`, `IsLoaded`, `IsValid`, the roster settle); `TBD_FleetLoadMissionAction`,
   `TBD_ResultsReporter`, `TBD_IdentityLink` and `TBD_PlayerIdentity` in

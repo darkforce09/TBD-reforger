@@ -1,7 +1,7 @@
 # Interactive map tools
 
 The headless state machines, geometry and verdicts of the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s interactive map tools: select,
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s interactive map tools: select,
 ruler, line of sight and its viewshed, and the placement vocabulary the arrange commands share. A
 tool here holds phase and geometry, driven by explicit world coordinates; the browser half, with
 the pointer events, overlays and frame pump, lives in
@@ -32,7 +32,7 @@ the ruler chain or the line-of-sight capture. A viewshed placement goes through
 line-of-sight state.
 
 The ruler and line-of-sight results are measurements, held for the session and never written to
-the [mission](/documentation_v2/glossary/g_to_m.md#mission) document; selection is app state. Edits that
+the [mission](/documentation/glossary/g_to_m.md#mission) document; selection is app state. Edits that
 arrange a selection run as hosted commands in `crate::editing::hosted_commands::selection_transform`
 over the same `placement` vocabulary the arrange strip names, so a preview and its commit use one
 set of patterns, edges, axes and thresholds.
@@ -55,7 +55,7 @@ set of patterns, edges, axes and thresholds.
 ## Boundaries
 
 - Depends on: `crate::data::store`
-  (the [slot](/documentation_v2/glossary/n_to_z.md#slot) projection, the grid cell, the placement algebra),
+  (the [slot](/documentation/glossary/n_to_z.md#slot) projection, the grid cell, the placement algebra),
   `crate::camera::ortho` for the frozen camera, `crate::spatial` (the point index and the terrain,
   world and interior line-of-sight cores), `crate::world::terrain::dem::manifest`, and
   `crate::editing::picking`.
@@ -66,7 +66,7 @@ set of patterns, edges, axes and thresholds.
     toolbelt, the right dock, the arrange strip and the outliner;
   - the debug building viewer in `apps/website/frontend/src/v2/apps/debug/building_viewer/`;
   - `crate::editing::hosted_commands::selection_transform`, through `placement`;
-  - the headless editor gates in `tools_v2/developer-tools/src/browser_testing/`, through the
+  - the headless editor gates in `tools/developer_tools/src/browser_testing/`, through the
     selection self-checks.
 - Rules: no tool here holds a pointer event, a reactive signal or an element handle; the ruler and
   line-of-sight trees name no document mutator (`ruler/tests/session_local.rs` and
@@ -76,5 +76,5 @@ set of patterns, edges, axes and thresholds.
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
+- [Mission Creator feature inventory](/documentation/website/frontend/apps/editor/feature_inventory/README.md)
   — the toolbelt, selection and arrange features these tools back.

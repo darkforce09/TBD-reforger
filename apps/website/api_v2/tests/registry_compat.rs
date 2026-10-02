@@ -30,11 +30,11 @@ const TEST_MP2: &str = "00000000-0000-4000-a000-00000000c0d2";
 
 const ITEMS_PATH: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../contracts_v2/catalogs/registry-items.workbench.json"
+    "/../../../contracts/catalogs/registry-items.workbench.json"
 );
 const COMPAT_PATH: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../contracts_v2/catalogs/registry-compat.workbench.json"
+    "/../../../contracts/catalogs/registry-compat.workbench.json"
 );
 
 async fn setup() -> Option<(Router, PgPool, String, String)> {

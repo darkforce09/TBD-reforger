@@ -1,8 +1,8 @@
 # Right dock
 
-The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s right dock, its asset
+The [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s right dock, its asset
 browser: seven tabs from which an author places characters, vehicles, objects, compositions,
-markers and trigger and zone areas into the [mission](/documentation_v2/glossary/g_to_m.md#mission), with
+markers and trigger and zone areas into the [mission](/documentation/glossary/g_to_m.md#mission), with
 the side chips, favourites and recently placed assets beside them. The module root is
 `apps/website/frontend/src/v2/apps/editor/ui/docks/dock_right.rs`: it declares these folders so
 they share one scope, holds the vehicle tab's "Place with crew" checkbox, re-exports the items
@@ -25,7 +25,7 @@ apps/website/frontend/src/v2/apps/editor/ui/docks/dock_right/
 ## How it works
 
 `DockRight` in `shell/` receives what the editor page loads and owns (the catalog states, the
-[registry](/documentation_v2/glossary/n_to_z.md#registry) rows, `doc_tick`, `active_side`, `objects_mode`
+[registry](/documentation/glossary/n_to_z.md#registry) rows, `doc_tick`, `active_side`, `objects_mode`
 and the collapse flag) and draws one tab body at a time:
 
 | Tab | Drawn by |
@@ -57,7 +57,7 @@ registers both at mount, and each cleanup removes only its own registration.
 - `record_placed`: adds an off-dock placement to the recently placed list; called by the canvas
   release in
   `apps/website/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/map_release.rs` and
-  the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) manager's vehicle picker in
+  the [ORBAT](/documentation/glossary/n_to_z.md#orbat) manager's vehicle picker in
   `apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager/tree_rows.rs`.
 - `marker_icon_is_authorable`: the closed marker icon test `begin_place_marker` applies in
   `apps/website/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/palette_arming.rs`.
@@ -70,15 +70,15 @@ registers both at mount, and each cleanup removes only its own registration.
     catalog in `arsenal::asset_catalog`, `bridge::host_state` (`armed_placement`,
     `editor_context`), the inspector's zones panel, the outliner's tree rows and styles, and the
     left dock's `collapse_chevron`;
-  - `crate::v2::core`: the [API](/documentation_v2/glossary/a_to_f.md#api) client and `RegistryItem`, the
+  - `crate::v2::core`: the [API](/documentation/glossary/a_to_f.md#api) client and `RegistryItem`, the
     auth store and `MaterialIcon`;
   - `website_map_engine`: `editing::hosted_commands`, `editing::host`, `editing::tools::selection`,
     `streaming::host` and `overlay::symbology::markers`;
-  - `contracts_v2/definitions/mission.schema.json`, through the zones panel's embed, and the
+  - `contracts/definitions/mission.schema.json`, through the zones panel's embed, and the
     browser's local storage.
 - Used by: the callers above; the tests in
   `apps/website/frontend/src/v2/apps/editor/ui/docks/tests/dock_right/`; the outliner smoke test
-  in `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/outliner_palette.rs`, which
+  in `tools/developer_tools/src/browser_testing/editor_smoke_tests/outliner_palette.rs`, which
   drives the Factions tab and drags a leaf onto the map.
 - Rules: the dock's source checks read the production files listed in
   `DOCK_RIGHT_PRODUCTION_SOURCE` in
@@ -89,10 +89,10 @@ registers both at mount, and each cleanup removes only its own registration.
 
 ## Related documentation
 
-- [Mission Creator UX specification](/documentation_v2/website/frontend/apps/editor/ux_spec.md) —
+- [Mission Creator UX specification](/documentation/website/frontend/apps/editor/ux_spec.md) —
   the right palette's place in the layout and its interactions.
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
+- [Mission Creator feature inventory](/documentation/website/frontend/apps/editor/feature_inventory/README.md)
   — the asset palette's features, one entry each.
-- [Eden editor UI anatomy](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md)
+- [Eden editor UI anatomy](/documentation/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md)
   — the Eden asset browser this dock follows.
-- [Mission Creator feature inventory: placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) — what a palette pick-up does on the map.
+- [Mission Creator feature inventory: placement](/documentation/website/frontend/apps/editor/feature_inventory/placement.md) — what a palette pick-up does on the map.

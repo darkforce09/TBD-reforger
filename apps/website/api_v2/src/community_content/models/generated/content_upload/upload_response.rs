@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/content-upload.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/content-upload.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///POST /api/v1/cms/uploads (administrator; multipart/form-data with one file field), answered 201. The file is a JPEG, PNG or WebP image: its extension is jpg, jpeg, png or webp and its leading bytes match that format, else 415. A missing file field answers 400 and a body over the upload limit 413. The file is written under a temporary name and renamed into place, so no partial file is ever served; a storage failure answers 503 storage_unavailable. url is the site-relative path the image is served at.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

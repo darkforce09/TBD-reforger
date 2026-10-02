@@ -39,7 +39,7 @@ life (`POST .../deployments/{occupancyId}/end`).
 - Depends on: `TBD_GameRuntimeHttp`, `TBD_RuntimeSession`, `TBD_PlayerIdentity`,
   `TBD_DeployedMission`, `TBD_RosterLoader`, `TBD_PlayerChat`, `TBD_AdminAudit`, and
   `TBD_SpawnManager` with its helpers; over HTTP the game-runtime deployment routes, shaped by
-  `contracts_v2/definitions/game-runtime-deployment.schema.json`.
+  `contracts/definitions/game-runtime-deployment.schema.json`.
 - Used by: `TBD_DeployExecutor` (`Admits`, `Refusal`), `TBD_SlotClaimBook` (seat changes and
   releases), `TBD_SpawnManager` (life ends on death, disconnect, round and world end), and the lobby
   and admin services in `apps/mod/tbd-framework/Scripts/Game/TBD/Session/`.

@@ -13,7 +13,7 @@ apps/mod/tbd-framework/UI/layouts/Session/Admin/
 ## Format
 
 - File type: none here; a layout added for the admin menu alone is an
-  [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) widget layout with its `.layout.meta`, named
+  [Enfusion](/documentation/glossary/a_to_f.md#enfusion) widget layout with its `.layout.meta`, named
   `TBD_Admin<Element>.layout`, with a block from the ledger in
   `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UILayouts.c` and a `TBD_UILayouts`
   constant.
@@ -33,7 +33,7 @@ None: no resource refers to this folder. The `TBD_UIAdmin` preset in
 
 ## Related documentation
 
-- [In-game menu specification](/documentation_v2/mod/tbd-framework/UI/in_game_menu/in_game_menu_specification.md)
+- [In-game menu specification](/documentation/mod/tbd-framework/UI/in_game_menu/in_game_menu_specification.md)
   — the pause menu and admin screen as built, and the design target
-- [Admin help ticket specification](/documentation_v2/mod/tbd-framework/UI/admin_help_ticket/admin_help_ticket_specification.md)
+- [Admin help ticket specification](/documentation/mod/tbd-framework/UI/admin_help_ticket/admin_help_ticket_specification.md)
   — the admin help ticket and tickets module, designed and not built

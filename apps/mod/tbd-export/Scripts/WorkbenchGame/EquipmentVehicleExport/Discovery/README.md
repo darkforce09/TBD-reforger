@@ -2,7 +2,7 @@
 
 Finds the prefabs a complete equipment and vehicle export starts from: every loaded addon's
 `Prefabs` tree is searched, and each prefab is classed as equipment, a vehicle or neither by the
-native classes of its components. It runs in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)
+native classes of its components. It runs in [Workbench](/documentation/glossary/n_to_z.md#workbench)
 at the start of a generation and of a diagnostic action.
 
 ## Contents
@@ -50,4 +50,4 @@ None: Workbench runs these scripts in the editor.
 - Rules: a class counts by native inheritance, never by name alone; the census written into
   `generation.json` must be exported in full, which the validator's
   `missing_discovery_and_dependency_resources_fail` test
-  (`tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/tests/validation.rs`) holds.
+  (`tools/xtask/src/commands/mod_ops/equipment_vehicle_export/tests/validation.rs`) holds.

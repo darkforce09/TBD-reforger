@@ -1,7 +1,7 @@
 # Briefing builder and wire
 
 The server side of the briefing: it builds the briefing one player may read from the loaded
-[mission](/documentation_v2/glossary/g_to_m.md#mission) and that player's slot, flattens it to one
+[mission](/documentation/glossary/g_to_m.md#mission) and that player's slot, flattens it to one
 string for the reply, and proves once per process that the string format keeps empty fields.
 
 ## Contents

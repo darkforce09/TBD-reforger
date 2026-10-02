@@ -3,7 +3,7 @@
 The parsers and browser loaders for a terrain's served files: the manifest's object and binary
 blocks, prefab catalogues, object chunks in gzip JSON or `TBDC` binary form, roads and regions,
 the HTTP fetch helpers, and the two loaders that keep the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map fed: world objects and the
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s map fed: world objects and the
 line-of-sight occluder. The parsers compile natively for the tools and tests; `fetch.rs`,
 `occluder_loader.rs` and `world_loader/` compile only for wasm32 with the `render` feature.
 
@@ -95,13 +95,13 @@ session.
   `crate::diagnostics::platform::console`; `serde`, `serde_json`, `flate2`, `bytemuck`,
   `thiserror`, `futures`, `gloo-net` and the browser bindings; the files under
   `/map-assets/<terrain>/`, whose manifest follows
-  `contracts_v2/definitions/terrain-manifest.schema.json`.
+  `contracts/definitions/terrain-manifest.schema.json`.
 - Used by:
   - `crate::streaming::host`; `crate::streaming::scheduler` (`WorldChunk`, `ObjectsManifest`,
     `DEFAULT_CHUNK_SIZE_M`); `crate::spatial::los::world`; and the DEM, water, label, vegetation
     and satellite loaders and tests under `crate::world`;
   - the debug world line-of-sight bench in `apps/website/frontend/src/v2/apps/debug/world_los/`;
-  - the developer tools in `tools_v2/developer-tools/src/`: the world export pipeline, the map
+  - the developer tools in `tools/developer_tools/src/`: the world export pipeline, the map
     raster pipeline and the map verifications.
 - Rules:
   - the binary and JSON lanes build the same data: chunk columns and residencies
@@ -116,6 +116,6 @@ session.
   - a catalogue for another terrain or with a repeated prefab id is refused
     (`a_catalogue_for_another_terrain_is_refused_by_the_sniff`,
     `a_catalogue_with_a_duplicate_prefab_id_is_refused`);
-  - the tests read the committed Everon export in `assets_v2/terrains/everon/` and the goldens in
-    `contracts_v2/fixtures/map/`, and pin its census (`full_island_census_matches_pinned_inventory`,
+  - the tests read the committed Everon export in `assets/terrains/everon/` and the goldens in
+    `contracts/fixtures/map/`, and pin its census (`full_island_census_matches_pinned_inventory`,
     `everon_manifest_parses_unchanged`).

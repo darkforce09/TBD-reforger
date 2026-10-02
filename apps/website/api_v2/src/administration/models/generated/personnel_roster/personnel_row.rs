@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/personnel-roster.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/personnel-roster.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///One member as the roster lists them. username, discord_handle and arma_character are empty strings when unset, and arma_id is null until the member links an Arma identity. role is the platform permission level, lowest first. warnings counts the member's disciplinary warnings; total_deployments is the member's recorded deployment tally.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

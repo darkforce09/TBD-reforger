@@ -1,8 +1,8 @@
 # Authored-block list and carrier
 
-The one list of the optional blocks a [mission](/documentation_v2/glossary/g_to_m.md#mission) author
+The one list of the optional blocks a [mission](/documentation/glossary/g_to_m.md#mission) author
 writes, each with its check, and the code that moves them: from the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s document onto the saved payload,
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s document onto the saved payload,
 and from the saved payload into the compiled document. Its items are reached as
 `data::scenario::extensions`, which re-exports them.
 
@@ -18,7 +18,7 @@ apps/website/map-engine/src/data/scenario/extensions/authored/
 ## How it works
 
 `AUTHORED_BLOCKS` holds one `AuthoredBlock` per block, its top-level key as
-`contracts_v2/definitions/mission.schema.json` spells it and its check, in this order: `radioPlan`,
+`contracts/definitions/mission.schema.json` spells it and its check, in this order: `radioPlan`,
 `winConditions`, `tasks`, `weatherTimeline`, `audio`, `spawnModules`, `tacticalGraphics`. The
 Mission Creator keeps each block in the document's environment bag, `meta.environment`, and clears
 one by writing `null`. Three steps read the list:
@@ -45,8 +45,8 @@ payload root ── EditorPayload's named fields ──▶ authored_blocks_root
 
 Both readers answer a refused block as `(key, clause)`: the compiler drops the block and reports
 a warning finding under `COMPILE-WIN-CONDITIONS`, whichever block it names, and a warning keeps
-the [API](/documentation_v2/glossary/a_to_f.md#api) from making an
-[artifact](/documentation_v2/glossary/a_to_f.md#artifact) of that version. A listed key reaches the
+the [API](/documentation/glossary/a_to_f.md#api) from making an
+[artifact](/documentation/glossary/a_to_f.md#artifact) of that version. A listed key reaches the
 readers only through its named field and `authored_block_value` arm in `EditorPayload`
 (`apps/website/map-engine/src/data/scenario/ast/authoring.rs`).
 
@@ -72,7 +72,7 @@ readers only through its named field and `authored_block_value` arm in `EditorPa
 
 ## Related documentation
 
-- [Mission schema](/contracts_v2/definitions/mission.schema.json) — the seven blocks' definitions
+- [Mission schema](/contracts/definitions/mission.schema.json) — the seven blocks' definitions
   and where each sits in the compiled document.
-- [Mission editor payload schema](/contracts_v2/definitions/mission-editor-payload.schema.json) —
+- [Mission editor payload schema](/contracts/definitions/mission-editor-payload.schema.json) —
   the saved payload's open root and its account of the authored-block copy.

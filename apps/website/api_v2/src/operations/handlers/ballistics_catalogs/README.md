@@ -49,7 +49,7 @@ apps/website/api_v2/src/operations/handlers/ballistics_catalogs/
 
 ## Related documentation
 
-- [Ballistics catalog contract](/contracts_v2/definitions/ballistics-catalog.schema.json) — the
+- [Ballistics catalog contract](/contracts/definitions/ballistics-catalog.schema.json) — the
   catalog document, the summaries and the upload report.
-- [Vanilla mortar calibration bundle](/contracts_v2/fixtures/ballistics/vanilla_mortars.v1/README.md)
+- [Vanilla mortar calibration bundle](/contracts/fixtures/ballistics/vanilla_mortars.v1/README.md)
   — the committed pair and its refused variants.

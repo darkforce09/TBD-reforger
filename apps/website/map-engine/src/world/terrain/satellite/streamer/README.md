@@ -46,9 +46,9 @@ one before, tiles inside their level that cover it exactly, and a chain that end
 `pick_preview_level` the first whose long edge fits a preview size; each falls back to the last
 level.
 
-Everon's container, `assets_v2/terrains/everon/satellite/everon-sat.tbd-sat`, is version 1: a
+Everon's container, `assets/terrains/everon/satellite/everon-sat.tbd-sat`, is version 1: a
 12 800 × 12 800 base in 14 levels, about 153 MB, stored in Git LFS. The `build-unified` command of
-the `map` binary (`tools_v2/developer-tools/src/map_raster_pipeline/`) writes either version.
+the `map` binary (`tools/developer_tools/src/map_raster_pipeline/`) writes either version.
 
 ## Public surface
 
@@ -62,7 +62,7 @@ the `map` binary (`tools_v2/developer-tools/src/map_raster_pipeline/`) writes ei
 - Depends on: `crate::io::containers` (the `TBDS` header) and `crate::io::archives` (the archived
   index and its validation); `serde_json` for the version 1 index.
 - Used by: `crate::world::terrain::satellite::quadtree`, which reads the index and picks the
-  levels; and the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s tests in
+  levels; and the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s tests in
   `apps/website/frontend/src/v2/apps/editor/tests/`, which parse Everon's index and check the level
   choice.
 - Rules: the folder compiles only with the `streaming` feature; both container versions of one
@@ -72,5 +72,5 @@ the `map` binary (`tools_v2/developer-tools/src/map_raster_pipeline/`) writes ei
 
 ## Related documentation
 
-- [Everon dataset](/assets_v2/terrains/everon/README.md) — the terrain files, the satellite
+- [Everon dataset](/assets/terrains/everon/README.md) — the terrain files, the satellite
   container among them.

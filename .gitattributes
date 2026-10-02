@@ -1,9 +1,9 @@
 # Terrain assets — large binaries in Git LFS.
-# Tile pyramids (assets_v2/terrains/**/tiles/) are gitignored: local build output, not LFS.
-assets_v2/terrains/**/*.png filter=lfs diff=lfs merge=lfs -text
-assets_v2/terrains/**/*.r16 filter=lfs diff=lfs merge=lfs -text
-assets_v2/terrains/**/*.tbd-sat filter=lfs diff=lfs merge=lfs -text
-assets_v2/terrains/**/prefabs/blas/*.bvh filter=lfs diff=lfs merge=lfs -text
+# Tile pyramids (assets/terrains/**/tiles/) are gitignored: local build output, not LFS.
+assets/terrains/**/*.png filter=lfs diff=lfs merge=lfs -text
+assets/terrains/**/*.r16 filter=lfs diff=lfs merge=lfs -text
+assets/terrains/**/*.tbd-sat filter=lfs diff=lfs merge=lfs -text
+assets/terrains/**/prefabs/blas/*.bvh filter=lfs diff=lfs merge=lfs -text
 
 # Map binary storage — the raw-POD / rkyv / container payloads. `.bin` = TBDC object chunks,
 # `.rkyv` = the Tier-2 archives (prefab catalogue, roads, labels, water vectors, forest regions,
@@ -14,17 +14,17 @@ assets_v2/terrains/**/prefabs/blas/*.bvh filter=lfs diff=lfs merge=lfs -text
 # A rule must land here BEFORE the first such file is committed: a binary added while the filter is
 # unspecified goes into git as raw bytes, and the rule never retroactively applies to it.
 #
-# Scope is assets_v2/terrains only. contracts_v2/fixtures/**/*.bin are small committed fixtures that
+# Scope is assets/terrains only. contracts/fixtures/**/*.bin are small committed fixtures that
 # every gate (and every slice worktree) must be able to read as real bytes, so they stay ordinary
 # blobs.
-assets_v2/terrains/**/*.bin filter=lfs diff=lfs merge=lfs -text
-assets_v2/terrains/**/*.rkyv filter=lfs diff=lfs merge=lfs -text
-assets_v2/terrains/**/*.dem filter=lfs diff=lfs merge=lfs -text
-assets_v2/terrains/**/*.tbd-bath filter=lfs diff=lfs merge=lfs -text
+assets/terrains/**/*.bin filter=lfs diff=lfs merge=lfs -text
+assets/terrains/**/*.rkyv filter=lfs diff=lfs merge=lfs -text
+assets/terrains/**/*.dem filter=lfs diff=lfs merge=lfs -text
+assets/terrains/**/*.tbd-bath filter=lfs diff=lfs merge=lfs -text
 
 # EXCEPTION, and it must stay LAST (git takes the final matching line). The 625 TBDD forest-density
 # tiles are RAW git blobs, committed before any LFS rule covered `.bin`. Letting the rule above
 # claim them would show all 625 as modified in every clone and every worktree without one byte
 # changing, because the clean filter would produce a pointer that differs from the stored blob.
 # Converting them is its own migration, never a side effect of another change.
-assets_v2/terrains/**/objects/density/*.bin -filter -diff -merge -text
+assets/terrains/**/objects/density/*.bin -filter -diff -merge -text

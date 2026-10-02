@@ -1,9 +1,9 @@
 # Server intel page
 
 The `/server-intel` page in the
-[command center](/documentation_v2/glossary/a_to_f.md#command-center): one game server's live state, its
+[command center](/documentation/glossary/a_to_f.md#command-center): one game server's live state, its
 connect address, population, theatre and environment, kept current by the server's
-[SSE](/documentation_v2/glossary/n_to_z.md#sse) status stream.
+[SSE](/documentation/glossary/n_to_z.md#sse) status stream.
 
 ## Contents
 
@@ -90,7 +90,7 @@ feed. The map backdrop and the theatre tile are images on `lh3.googleusercontent
 
 ## Related documentation
 
-- [Server intel page](/documentation_v2/website/frontend/pages/command_center/server_intel/server_intel_page.md)
+- [Server intel page](/documentation/website/frontend/pages/command_center/server_intel/server_intel_page.md)
   — the page's behaviour and design.
 - [Server infrastructure domain](/apps/website/api_v2/src/server_infrastructure/README.md) — the
   server list and status stream routes.

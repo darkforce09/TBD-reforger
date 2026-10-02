@@ -1,7 +1,7 @@
 # Round orchestrator
 
 The framework manager: the game mode component that loads the deployed
-[mission](/documentation_v2/glossary/g_to_m.md#mission), owns the round's stage machine, applies the
+[mission](/documentation/glossary/g_to_m.md#mission), owns the round's stage machine, applies the
 mission's pacing, weather and settings, runs the round clock and the elimination check, and keeps
 the end banner and debrief board the post-game screens show.
 
@@ -21,7 +21,7 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/
 `TBD_FrameworkManager` is a `SCR_BaseGameModeComponent` on
 `apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et`. `GetInstance()` and `IsFrameworkWorld()`
 resolve it off the live game mode on every call, never from a static, because statics outlive a
-world and a `load_mission` [fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) restarts the
+world and a `load_mission` [fleet command](/documentation/glossary/a_to_f.md#fleet-command) restarts the
 world in-process; every modded vanilla class in the addon asks `IsFrameworkWorld()` before it acts.
 The manager keeps the engine hooks, the six replicated fields and the public surface; its
 constructor creates one instance of each helper in `Stage/`, and `OnDelete` cancels every
@@ -81,7 +81,7 @@ LOBBY ──▶ BRIEFING ──▶ SAFE_START ── countdown ──▶ LIVE �
   and `TBD_ClockText` under `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; `TBD_DeployableMissionList`,
   `TBD_BriefingService`, `TBD_EndScreen` and `TBD_DebriefScreen` under
   `apps/mod/tbd-framework/Scripts/Game/TBD/Session/`; the `flow`, `settings`, `environment` and
-  `winConditions` definitions in `contracts_v2/definitions/mission.schema.json`.
+  `winConditions` definitions in `contracts/definitions/mission.schema.json`.
 - Used by: nearly every script under `apps/mod/tbd-framework/Scripts/Game/TBD/` through
   `GetInstance()`, `GetStage()` or `IsFrameworkWorld()`; `TBD_SafestartManager`,
   `TBD_WinConditionEvaluator`, `TBD_TriggerRuntime` and `TBD_SpawnManager`, which call `SetStage`;
@@ -100,10 +100,10 @@ LOBBY ──▶ BRIEFING ──▶ SAFE_START ── countdown ──▶ LIVE �
 
 ## Related documentation
 
-- [Mod design](/documentation_v2/mod/tbd-framework/mod_design.md) — the event loop and one life
-- [End screen specification](/documentation_v2/mod/tbd-framework/UI/end_screen/end_screen_specification.md)
+- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the event loop and one life
+- [End screen specification](/documentation/mod/tbd-framework/UI/end_screen/end_screen_specification.md)
   — the END banner the replicated winner and reason feed
-- [Debrief specification](/documentation_v2/mod/tbd-framework/UI/debrief_after_action_review/debrief_after_action_review_specification.md)
+- [Debrief specification](/documentation/mod/tbd-framework/UI/debrief_after_action_review/debrief_after_action_review_specification.md)
   — the DEBRIEF scoreboard the packed board feeds
-- [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — the stage log
+- [Game server staging](/documentation/runbooks/game_server_staging/README.md) — the stage log
   lines of a healthy boot

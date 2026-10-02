@@ -1,7 +1,7 @@
 # Objective and task HUD
 
 The live-round displays a player sees: the objective board with its capture bar, drawn over the
-game, and the [mission](/documentation_v2/glossary/g_to_m.md#mission)'s assigned tasks, drawn as markers
+game, and the [mission](/documentation/glossary/g_to_m.md#mission)'s assigned tasks, drawn as markers
 on the map. The server composes both and sends each client its own snapshot.
 
 ## Contents
@@ -60,7 +60,7 @@ not side-scoped: every player gets the same snapshot.
   `TBD_UITheme` and `TBD_ListBox` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/` and
   `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Controls/`; `TBD_Log`;
   the engine's `SCR_MapMarkerManagerComponent`; the `task` definition in
-  `contracts_v2/definitions/mission.schema.json`.
+  `contracts/definitions/mission.schema.json`.
 - Used by: `TBD_ObjectiveHudPublisher`, which pushes the objective board; `TBD_TaskStateMachine`,
   which pushes task changes, clears the markers when a world starts and runs the client request
   tick; `apps/mod/tbd-framework/UI/layouts/Hud/TBD_ObjectiveHud.layout`, which attaches
@@ -72,7 +72,7 @@ not side-scoped: every player gets the same snapshot.
 
 ## Related documentation
 
-- [Objective capture HUD specification](/documentation_v2/mod/tbd-framework/UI/objective_capture_hud/objective_capture_hud_specification.md)
+- [Objective capture HUD specification](/documentation/mod/tbd-framework/UI/objective_capture_hud/objective_capture_hud_specification.md)
   — the objective board and capture bar as built, their delivery and design target
-- [Tactical marker palette specification](/documentation_v2/mod/tbd-framework/UI/tactical_marker_palette/tactical_marker_palette_specification.md)
+- [Tactical marker palette specification](/documentation/mod/tbd-framework/UI/tactical_marker_palette/tactical_marker_palette_specification.md)
   — the map markers each side sees, task markers included, and the unbuilt marker palette

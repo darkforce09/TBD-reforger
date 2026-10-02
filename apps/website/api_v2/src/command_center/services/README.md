@@ -36,8 +36,8 @@ apps/website/api_v2/src/command_center/services/
   `SELECT_FLEET_STATUSES`) for the fleet's statuses; `core` for errors.
 - Used by: the dashboard handler in `apps/website/api_v2/src/command_center/handlers/`
   (`load_fleet_overview`); `match_telemetry`'s match-results ingest and `identity_and_access`'s identity linking
-  (both `_on_connection` functions); `operations`' [event](/documentation_v2/glossary/a_to_f.md#event)
-  administration and [mission](/documentation_v2/glossary/g_to_m.md#mission) restoration
+  (both `_on_connection` functions); `operations`' [event](/documentation/glossary/a_to_f.md#event)
+  administration and [mission](/documentation/glossary/g_to_m.md#mission) restoration
   (`recompute_user_stats_on_connection`); `identity_and_access::services::user_lookup`
   (`ATTENDANCE_RATE_SQL`); the `leaderboard_refresher` worker in
   `apps/website/api_v2/src/background_workers/` (`refresh_leaderboard`); the integration tests in

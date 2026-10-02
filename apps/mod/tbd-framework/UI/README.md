@@ -15,7 +15,7 @@ apps/mod/tbd-framework/UI/
 
 ## How it works
 
-[Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) resolves a resource by the GUID in its `.meta`
+[Enfusion](/documentation/glossary/a_to_f.md#enfusion) resolves a resource by the GUID in its `.meta`
 file, or by its path inside the addon, through the addon's resource database. Screens never spell
 a path: `TBD_UILayouts`
 (`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UILayouts.c`) holds one constant per layout
@@ -49,7 +49,7 @@ is a committed PNG imported here.
   screen that uses them, textures under `Textures/TBD/`.
 - Adding or moving an asset: create or `git mv` it with its `.meta`, keep the `.meta` `Name` equal
   to the new path, update the `TBD_UILayouts` constant and, for a menu shell, the
-  menu config's preset, then let [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) open
+  menu config's preset, then let [Workbench](/documentation/glossary/n_to_z.md#workbench) open
   the addon and rewrite `apps/mod/tbd-framework/resourceDatabase.rdb`, since the game finds a
   non-script resource at a new path only through that database.
 
@@ -74,9 +74,9 @@ is a committed PNG imported here.
 
 ## Related documentation
 
-- [Mod UI structure](/documentation_v2/mod/tbd-framework/UI/README.md)
+- [Mod UI structure](/documentation/mod/tbd-framework/UI/README.md)
   — where each UI file goes and which mockup panel lands in which folder
-- [Mod design](/documentation_v2/mod/tbd-framework/mod_design.md)
+- [Mod design](/documentation/mod/tbd-framework/mod_design.md)
   — the design rules the theme and layouts encode
-- [Design tokens](/documentation_v2/design_system/design_tokens.md) — the website tokens
+- [Design tokens](/documentation/design_system/design_tokens.md) — the website tokens
   `TBD_UITheme` mirrors, the mod's fonts, radii and spacing, and where the two differ

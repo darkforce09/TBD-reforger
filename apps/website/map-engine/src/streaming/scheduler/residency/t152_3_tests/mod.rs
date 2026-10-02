@@ -30,12 +30,12 @@ const FIXTURE_CHUNK: &str = "2_12";
 const N_MIN_BUILDING_GLYPH_LOOKUP: usize = 15;
 
 fn map_assets() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../assets_v2/terrains")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../assets/terrains")
 }
 
 /// Glyphs are shared by every terrain, so they sit beside the terrain tree rather than inside one.
 fn glyph_assets() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../assets_v2/glyphs")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../assets/glyphs")
 }
 
 fn glyph_keys_from_manifest() -> Vec<String> {

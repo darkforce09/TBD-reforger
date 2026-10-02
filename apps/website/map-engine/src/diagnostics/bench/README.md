@@ -31,7 +31,7 @@ every textured lane's texture and the lane pool.
 generation, upload and GPU frame times (`gpu_frame_ms` is `null` unless the timestamp timer has a
 sample), the basemap mode, tiles and bytes, the world buildings' instance and outline counts, the
 instance count of each sprite lane (trees, props, badges,
-[slots](/documentation_v2/glossary/n_to_z.md#slot), the slot drag, clusters and vehicles, taken from the
+[slots](/documentation/glossary/n_to_z.md#slot), the slot drag, clusters and vehicles, taken from the
 compute cull when it runs), the vector-lane counts, atlas bytes, the upload counters, the
 compute-cull counters, and the CPU render time of the last frame with its moving average.
 `set_vector_stat` records a vector lane's count for it; the upload belts in `crate::frame::upload`
@@ -43,10 +43,10 @@ and `clear_vector_lane` call it.
   compute cull), `crate::overlay::lanes` (lane ids), `crate::world::scene` (the anchor and the
   stress quads), `crate::diagnostics::timing` and `crate::diagnostics::readback::scene` (clocks and
   the async sleep), and `website_graphics_engine::layout::CHUNK_CAPACITY`.
-- Used by: the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s viewport bridge
+- Used by: the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s viewport bridge
   (`apps/website/frontend/src/v2/apps/editor/bridge/viewport.rs`), which publishes `render_bench`
   as `window.__editorBench(n)` and shows `stats()` in its debug HUD once a second; the editor
-  gate's smoke harness in `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests.rs`,
+  gate's smoke harness in `tools/developer_tools/src/browser_testing/editor_smoke_tests.rs`,
   which calls `window.__editorBench` when it exists; the upload belts, through `set_vector_stat`.
   No code in the repository calls `seed_stress` or `clear_stress`.
 - Rules: `stats()` is one flat JSON object whose keys the HUD reads by name (`chunks`,

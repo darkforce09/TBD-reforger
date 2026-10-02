@@ -78,14 +78,14 @@ const BURST: usize = 200;
 
 /// The map-asset directory, resolved from the manifest rather than the process CWD.
 ///
-/// `Config::map_assets_dir` empty makes `http_router::router` fall back to `../../../assets_v2/terrains`,
+/// `Config::map_assets_dir` empty makes `http_router::router` fall back to `../../../assets/terrains`,
 /// which is correct for the shipped binary and CWD-dependent for a test harness. Setting it
 /// explicitly is the same code path a deployment with `MAP_ASSETS_DIR` set takes.
-const MAP_ASSETS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../../assets_v2/terrains");
+const MAP_ASSETS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../../assets/terrains");
 
 /// The glyph directory, resolved the same way. Glyphs are shared by every terrain, so they sit
 /// beside the terrain tree on disk and are joined to it at the router.
-const GLYPH_ASSETS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../../assets_v2/glyphs");
+const GLYPH_ASSETS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../../assets/glyphs");
 
 /// A committed, non-LFS glyph asset, chosen for the same reason as [`EXEMPT_ASSET`].
 const EXEMPT_GLYPH: &str = "/map-assets/glyphs/manifest.json";

@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/game-runtime-session.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/game-runtime-session.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///POST /api/v1/game-runtime/sessions (mod_runtime machine credential, Authorization: Bearer tbdm_...). Starting a session ends the server's open one as superseded and takes the next generation. Heartbeats are due every heartbeat_interval_seconds; a session silent for expires_after_seconds ends as expired.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

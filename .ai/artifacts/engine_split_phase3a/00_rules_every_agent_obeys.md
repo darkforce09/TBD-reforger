@@ -31,7 +31,7 @@ LAW 8 - Comments describe what the code does NOW and WHY. Absolutely no "moved f
 
 THE WORKING TREE IS DIRTY AND THAT IS DELIBERATE. ~70 files are modified/untracked that are
 NOT yours: `apps/mod/**` (42 files, explicitly out of scope), `CLAUDE.md`, `xtask/src/{check,
-constants,gate_mod_compile,sync}.rs`, untracked `documentation_v2/`, `tools_v2/`,
+constants,gate_mod_compile,sync}.rs`, untracked `documentation/`, `tools/`,
 `docs/platform/ENGINE_SPLIT_PROGRAM.md`, and already-deleted `v2/map_engine/` READMEs.
 **Stage ONLY files you yourself authored or edited.** Use explicit `git add <path>`; never
 `git add -A`, never `git add .`, never `git commit -a`.

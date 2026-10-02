@@ -1,7 +1,7 @@
 # Symbology instances and the slot GPU bridge
 
-Packs the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map entities
-([slots](/documentation_v2/glossary/n_to_z.md#slot), vehicles, comments, briefing markers, clusters) into
+Packs the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s map entities
+([slots](/documentation/glossary/n_to_z.md#slot), vehicles, comments, briefing markers, clusters) into
 20-byte icon instances, and the browser-side bridge on `RenderEngine` that binds, patches and drags
 those lanes on the GPU. Compiled with the `streaming` feature; the bridge and lane files only on
 `wasm32` with `render`.
@@ -79,4 +79,4 @@ which converts world positions to the scene anchor.
 
 ## Related documentation
 
-- [Mission Creator feature inventory: performance at scale](/documentation_v2/website/frontend/apps/editor/feature_inventory/performance_at_scale.md) — the selection patches, drag overlay and clusters at scale.
+- [Mission Creator feature inventory: performance at scale](/documentation/website/frontend/apps/editor/feature_inventory/performance_at_scale.md) — the selection patches, drag overlay and clusters at scale.

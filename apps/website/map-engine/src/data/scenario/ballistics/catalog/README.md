@@ -19,7 +19,7 @@ apps/website/map-engine/src/data/scenario/ballistics/catalog/
 ## How it works
 
 Every type mirrors a definition of
-[`ballistics-catalog.schema.json`](/contracts_v2/definitions/ballistics-catalog.schema.json) field
+[`ballistics-catalog.schema.json`](/contracts/definitions/ballistics-catalog.schema.json) field
 for field and refuses unknown fields. `BallisticsCatalog::from_json_slice` decodes one document
 and refuses any `schema_version` but 1; it checks shape, not the schema's value ranges or the
 cross-references between weapons and shells.

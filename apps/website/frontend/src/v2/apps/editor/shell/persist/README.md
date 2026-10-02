@@ -1,7 +1,7 @@
 # Draft writer parts
 
-The local draft store of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator):
-IndexedDB records of each open [mission](/documentation_v2/glossary/g_to_m.md#mission) under the signed-in
+The local draft store of the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator):
+IndexedDB records of each open [mission](/documentation/glossary/g_to_m.md#mission) under the signed-in
 account, and the debounced write that never replaces a good record with a worse one. The parent
 module, `apps/website/frontend/src/v2/apps/editor/shell/persist.rs` (wasm only), declares these
 files, re-exports their entry points, and holds the database coordinates, the write counters, the
@@ -55,7 +55,7 @@ request. `window.__missionPersist` gives the headless harness `ready`, `loaded_f
   warm-session marker in `apps/website/frontend/src/v2/apps/editor/shell/session.rs`; the top strip
   in `apps/website/frontend/src/v2/apps/editor/ui/docks/top_strip/`, which reads the last flush time
   through `set_last_flush_signal`; the headless editor gates in
-  `tools_v2/developer-tools/src/browser_testing/`, through `window.__missionPersist`.
+  `tools/developer_tools/src/browser_testing/`, through `window.__missionPersist`.
 - Rules: the tests in `apps/website/frontend/src/v2/apps/editor/shell/tests/` pin these: a stored
   record from another tab is merged, never overwritten, and a read-only tab defers instead of
   writing (`t190_a_foreign_record_is_merged_not_overwritten` and
@@ -67,4 +67,4 @@ request. `window.__missionPersist` gives the headless harness `ready`, `loaded_f
 
 ## Related documentation
 
-- [Mission Creator feature inventory: data persistence and compile](/documentation_v2/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) — the local draft as the mission maker sees it.
+- [Mission Creator feature inventory: data persistence and compile](/documentation/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) — the local draft as the mission maker sees it.

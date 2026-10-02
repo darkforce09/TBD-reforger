@@ -1,7 +1,7 @@
 # Right dock markers
 
 The right dock's Markers tab: the closed marker icon vocabulary read from the
-[mission](/documentation_v2/glossary/g_to_m.md#mission) schema, the icon picker that arms a marker
+[mission](/documentation/glossary/g_to_m.md#mission) schema, the icon picker that arms a marker
 placement, the list of authored markers and the selected marker's form. A marker belongs to one
 side's briefing.
 
@@ -17,7 +17,7 @@ apps/website/frontend/src/v2/apps/editor/ui/docks/dock_right/markers/
 ## How it works
 
 `marker_icons` reads the closed `$defs/marker.icon` enum once, in schema order, from the schema the
-zones panel embeds (`contracts_v2/definitions/mission.schema.json`). `marker_icon_is_authorable` is
+zones panel embeds (`contracts/definitions/mission.schema.json`). `marker_icon_is_authorable` is
 the exact, case-sensitive test every marker write passes, and `default_marker_icon` is the enum's
 first entry. The picker shows one row per glyph the map draws (`CANONICAL_MARKER_SLUGS`, 11 of
 them): it folds every alias through the map engine's `marker_glyph_for_alias`, so the preview and
@@ -55,5 +55,5 @@ nothing.
 
 ## Related documentation
 
-- [Mission Creator feature inventory: asset palette](/documentation_v2/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) — the Markers tab.
-- [Mission Creator feature inventory: placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) — dropping a briefing marker.
+- [Mission Creator feature inventory: asset palette](/documentation/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) — the Markers tab.
+- [Mission Creator feature inventory: placement](/documentation/website/frontend/apps/editor/feature_inventory/placement.md) — dropping a briefing marker.

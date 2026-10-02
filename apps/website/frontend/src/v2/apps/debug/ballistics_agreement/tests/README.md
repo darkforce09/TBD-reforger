@@ -14,7 +14,7 @@ apps/website/frontend/src/v2/apps/debug/ballistics_agreement/tests/
 ## Boundaries
 
 - Depends on: the committed catalog
-  `contracts_v2/catalogs/ballistics/vanilla_mortars.v1.catalog.json`; an unreadable catalog fails
+  `contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json`; an unreadable catalog fails
   the tests.
 - Used by: nothing. Test files are mounted, never imported.
 - Rules: these run on the native target; the browser half is covered by the gate

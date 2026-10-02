@@ -11,7 +11,7 @@ use crate::data::scenario::ballistics::fuze::FuzeError;
 /// The contract the solution and the inputs project; a missing file fails the build.
 const FIRE_MISSION_SCHEMA_JSON: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../contracts_v2/definitions/fire-mission.schema.json"
+    "/../../../contracts/definitions/fire-mission.schema.json"
 ));
 
 /// The hand-written test catalog (`test-mortars` v3: `m252` fires `m821-he` rings 0/1/2 and
@@ -411,7 +411,7 @@ fn malformed_missions_are_refused() {
 /// at rings 1 to 4, fuze window 10–40 s); a missing file fails the build.
 const VANILLA_CATALOG_JSON: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../contracts_v2/catalogs/ballistics/vanilla_mortars.v1.catalog.json"
+    "/../../../contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json"
 ));
 
 fn vanilla_catalog() -> BallisticsCatalog {

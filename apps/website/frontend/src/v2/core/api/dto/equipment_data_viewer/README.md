@@ -2,7 +2,7 @@
 
 The read-only answers of the `/api/v1/debug/equipment-data/*` routes that the equipment data
 viewer decodes, one module per family of endpoints, each mirroring its schema in
-`contracts_v2/definitions/equipment-data-viewer/`.
+`contracts/definitions/equipment-data-viewer/`.
 
 ## Contents
 
@@ -21,7 +21,7 @@ apps/website/frontend/src/v2/core/api/dto/equipment_data_viewer/
 
 The types are plain `serde` data named by their module (`dto::equipment_data_viewer::EquipmentSourcePage`),
 not re-exported flat into `dto`. `equipment_data_viewer_parity.rs` in the sibling `tests/`
-folder decodes the positive and negative fixtures of `contracts_v2/fixtures/equipment-data-viewer/`
+folder decodes the positive and negative fixtures of `contracts/fixtures/equipment-data-viewer/`
 into each page type, claiming every wire field, and expects each negative fixture to fail.
 
 ## Boundaries

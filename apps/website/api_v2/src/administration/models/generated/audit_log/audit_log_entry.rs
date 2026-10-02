@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/audit-log.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/audit-log.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///One audit line, the same shape in the history list and on the live stream. id is the line's allocation order, which is not the stream's delivery order. actor_id is absent on system lines; actor_name, target_type and target_id are absent when empty; metadata, when present, is the structured context the writer recorded.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

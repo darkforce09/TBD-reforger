@@ -5,7 +5,7 @@ name: editor-gates
 # software-GL headless chrome), so it runs nightly + on demand, and on PRs that touch the gate or the
 # editor. This exists so gate-infra regressions are caught by machines, not by a person mid-change.
 #
-# The pinned chromium version stays in lockstep with tools_v2/developer-tools/gate-env.json (single
+# The pinned chromium version stays in lockstep with tools/developer_tools/gate-env.json (single
 # source of truth for the dev box; mirrored here because CI installs Chrome-for-Testing directly,
 # Node-free).
 
@@ -17,7 +17,7 @@ on:
     branches: [main]
     paths:
       - "apps/website/frontend/**"
-      - "tools_v2/developer-tools/**"
+      - "tools/developer_tools/**"
       - "apps/website/map-engine/**"
       - ".github/workflows/editor-gates.yml"
 
@@ -29,7 +29,7 @@ permissions:
   contents: read
 
 env:
-  # Keep in lockstep with tools_v2/developer-tools/gate-env.json → chromium.version.
+  # Keep in lockstep with tools/developer_tools/gate-env.json → chromium.version.
   CHROME_VERSION: "149.0.7827.55"
 
 jobs:
@@ -60,7 +60,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: fetch map-assets (Everon — DEM + satellite + world objects for the fullmap/hillshade smokes)
-        run: git lfs pull --include "assets_v2/terrains/everon/**"
+        run: git lfs pull --include "assets/terrains/everon/**"
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "1.95.0" # matches root rust-toolchain.toml / gate-env.json

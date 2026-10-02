@@ -35,4 +35,4 @@ apps/website/frontend/src/v2/apps/editor/ui/docks/dock_left/view/
 
 ## Related documentation
 
-- [Mission Creator feature inventory: left sidebar and ORBAT tree](/documentation_v2/website/frontend/apps/editor/feature_inventory/left_sidebar.md) — the expanded dock's tabs, strip, search and tree.
+- [Mission Creator feature inventory: left sidebar and ORBAT tree](/documentation/website/frontend/apps/editor/feature_inventory/left_sidebar.md) — the expanded dock's tabs, strip, search and tree.

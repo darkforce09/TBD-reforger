@@ -1,9 +1,9 @@
 # Mission Creator interface
 
-Every surface of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) drawn around
+Every surface of the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) drawn around
 the map, grouped by what it draws: the chrome docked around the viewport, the Editor Layers
 outliner the docks host, the inspectors that edit one subject of the
-[mission](/documentation_v2/glossary/g_to_m.md#mission), the [Arsenal](/documentation_v2/glossary/a_to_f.md#arsenal)
+[mission](/documentation/glossary/g_to_m.md#mission), the [Arsenal](/documentation/glossary/a_to_f.md#arsenal)
 panels, and the dialogs raised over all of it.
 
 ## Contents
@@ -67,18 +67,18 @@ compiles every surface.
 - Depends on: `website_map_engine` (`editing::hosted_commands` and `editing::host`, the
   `data::scenario` and `data::store` modules); the editor's `arsenal/`, `bridge/` and `shell/` in
   `apps/website/frontend/src/v2/apps/editor/`; `crate::v2::core` (the
-  [API](/documentation_v2/glossary/a_to_f.md#api) client and DTOs, the auth store, `modal_stack` and the
-  UI primitives); `contracts_v2/definitions/mission.schema.json`, embedded for the zone and
+  [API](/documentation/glossary/a_to_f.md#api) client and DTOs, the auth store, `modal_stack` and the
+  UI primitives); `contracts/definitions/mission.schema.json`, embedded for the zone and
   settings vocabulary; `web_sys` in the browser build.
 - Used by:
   - in `apps/website/frontend/src/v2/apps/editor/`: `mission_editor.rs` and `mission_editor/`,
     `shell/eden_chrome.rs`, `shell/layout.rs`, `shell/document_commands/imp/exports.rs`,
     `arsenal/mod.rs`, the `bridge/` document host, host state, overlays, viewport and world assets,
     and the context menu gesture and the measuring tools under `input/`;
-  - the headless editor gates in `tools_v2/developer-tools/src/browser_testing/`, which drive these
+  - the headless editor gates in `tools/developer_tools/src/browser_testing/`, which drive these
     surfaces through the DOM;
   - `cargo xtask verify editor-orbat-coherency`
-    (`tools_v2/xtask/src/verifications/architecture/editor_orbat_coherency.rs`), which scans
+    (`tools/xtask/src/verifications/architecture/editor_orbat_coherency.rs`), which scans
     `modals/orbat_manager.rs` and every source file in `modals/orbat_manager/` for banned
     interface text;
   - the test `orbat_manager_overlay_derives_z_from_the_modal_stack` in
@@ -91,9 +91,9 @@ compiles every surface.
 
 ## Related documentation
 
-- [Mission Creator UX specification](/documentation_v2/website/frontend/apps/editor/ux_spec.md)
+- [Mission Creator UX specification](/documentation/website/frontend/apps/editor/ux_spec.md)
   — the layout, the interaction contract and the keyboard shortcuts.
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
+- [Mission Creator feature inventory](/documentation/website/frontend/apps/editor/feature_inventory/README.md)
   — every feature of the editor's surfaces.
-- [Eden editor UI anatomy](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md)
+- [Eden editor UI anatomy](/documentation/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md)
   — the Arma 3 Eden workspace these surfaces are mapped against.

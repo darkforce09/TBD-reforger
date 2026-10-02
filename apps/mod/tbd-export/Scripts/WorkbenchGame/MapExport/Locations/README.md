@@ -1,7 +1,7 @@
 # Location export
 
 The place layers of the map export: the named towns and villages of the world open in
-[Workbench](/documentation_v2/glossary/n_to_z.md#workbench), read from its location compositions, and the
+[Workbench](/documentation/glossary/n_to_z.md#workbench), read from its location compositions, and the
 landmark anchors in `Anchors/`.
 
 ## Contents
@@ -46,8 +46,8 @@ None: Workbench runs these scripts in the editor.
   `TBD_MapExportJson` in `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Core/`; the engine's
   `BaseWorld.QueryEntitiesByAABB`.
 - Used by: `TBD_MapExportPlugin` in `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Plugins/`.
-  No committed tool reads the file: the committed `assets_v2/terrains/everon/locations.json` comes
-  from `map export-locations` in `tools_v2/developer-tools/src/map_raster_pipeline/map_labels/`,
+  No committed tool reads the file: the committed `assets/terrains/everon/locations.json` comes
+  from `map export-locations` in `tools/developer_tools/src/map_raster_pipeline/map_labels/`,
   which reads the staged full world-object export, not this output.
 - Rules: a place's name and importance are decided in the script, keyed on Everon's prefab names;
   lines added stay ASCII. `cargo xtask mod compile` compiles only the framework addon, so these
@@ -55,5 +55,5 @@ None: Workbench runs these scripts in the editor.
 
 ## Related documentation
 
-- [Everon terrain dataset](/assets_v2/terrains/everon/README.md) — the committed `locations.json`
+- [Everon terrain dataset](/assets/terrains/everon/README.md) — the committed `locations.json`
   and the tools that build it.

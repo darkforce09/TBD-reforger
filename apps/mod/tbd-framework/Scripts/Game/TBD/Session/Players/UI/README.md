@@ -41,5 +41,5 @@ and red from 80 ms.
 
 ## Related documentation
 
-- [Briefing specification](/documentation_v2/mod/tbd-framework/UI/briefing/briefing_specification.md)
+- [Briefing specification](/documentation/mod/tbd-framework/UI/briefing/briefing_specification.md)
   — the briefing's design target, the players panel included

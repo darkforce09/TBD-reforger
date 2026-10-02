@@ -46,5 +46,5 @@ current revision — and hands it to `../saving/`, which reports a refusal like 
 
 ## Related documentation
 
-- [Doctrine wiki page](/documentation_v2/website/frontend/pages/doctrine_and_info/wiki/wiki_page.md)
+- [Doctrine wiki page](/documentation/website/frontend/pages/doctrine_and_info/wiki/wiki_page.md)
   — the history and the restore.

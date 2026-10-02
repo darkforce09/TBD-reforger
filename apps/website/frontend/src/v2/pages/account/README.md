@@ -1,8 +1,8 @@
 # Account pages
 
 The pages that act on the viewer's own session rather than on
-[mission](/documentation_v2/glossary/g_to_m.md#mission) or
-[operations](/documentation_v2/glossary/n_to_z.md#operations) data: sign-in, the callback the sign-in
+[mission](/documentation/glossary/g_to_m.md#mission) or
+[operations](/documentation/glossary/n_to_z.md#operations) data: sign-in, the callback the sign-in
 redirect lands on, and the account settings.
 
 ## Contents
@@ -45,8 +45,8 @@ imports another.
   `crate::v2::core::api` (the request client and the shapes in
   `apps/website/frontend/src/v2/core/api/dto/auth.rs`) and
   `crate::v2::core::ui` (`AuthGate`, the page header, the toast queue); over HTTP, the
-  [identity and access](/documentation_v2/glossary/g_to_m.md#identity-and-access) routes of the
-  [API](/documentation_v2/glossary/a_to_f.md#api).
+  [identity and access](/documentation/glossary/g_to_m.md#identity-and-access) routes of the
+  [API](/documentation/glossary/a_to_f.md#api).
 - Used by: the route table in `apps/website/frontend/src/app_routes.rs` and
   `apps/website/frontend/src/router.rs`; the frame in
   `apps/website/frontend/src/v2/pages/navigation/`, which renders `/login` and `/auth/callback`
@@ -58,11 +58,11 @@ imports another.
 
 ## Related documentation
 
-- [Account pages](/documentation_v2/website/frontend/pages/account/account_pages.md) — the
+- [Account pages](/documentation/website/frontend/pages/account/account_pages.md) — the
   behaviour and design of sign-in, the callback and settings.
 - [Identity and access domain](/apps/website/api_v2/src/identity_and_access/README.md) — the API
   routes behind these pages.
-- [App layout and navigation](/documentation_v2/website/frontend/pages/navigation/app_layout_and_navigation.md)
+- [App layout and navigation](/documentation/website/frontend/pages/navigation/app_layout_and_navigation.md)
   — the frame that renders sign-in bare and the account menu that links settings.
-- [Local development](/documentation_v2/runbooks/local_development.md) — the dev login and the
+- [Local development](/documentation/runbooks/local_development.md) — the dev login and the
   Discord sign-in on a workstation.

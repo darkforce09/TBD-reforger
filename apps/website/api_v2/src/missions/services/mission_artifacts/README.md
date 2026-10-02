@@ -1,7 +1,7 @@
 # Mission artifacts
 
-Compiles one version of a [mission](/documentation_v2/glossary/g_to_m.md#mission) into an immutable
-[artifact](/documentation_v2/glossary/a_to_f.md#artifact), the compiled mission document together with
+Compiles one version of a [mission](/documentation/glossary/g_to_m.md#mission) into an immutable
+[artifact](/documentation/glossary/a_to_f.md#artifact), the compiled mission document together with
 every input that determined it, and reads artifacts and their exact bytes back.
 
 ## Contents
@@ -25,7 +25,7 @@ answers 422 with a `code`:
 
 | Code | Cause |
 |---|---|
-| `NO_PLACED_SLOTS` | the version places no [slot](/documentation_v2/glossary/n_to_z.md#slot) |
+| `NO_PLACED_SLOTS` | the version places no [slot](/documentation/glossary/n_to_z.md#slot) |
 | `UNCOMPILABLE_VERSION` | the payload does not compile, or its cargo exceeds the catalog's capacity |
 | `UNSUPPORTED_AUTHORED_DATA` | the version authors gameplay data the mission document cannot carry |
 | `DOCUMENT_CONTRACT_VIOLATION` | the compiled bytes break `mission.schema.json` or pass 8 MiB |
@@ -61,5 +61,5 @@ digest never depends on storage order.
 
 ## Related documentation
 
-- [Mission artifacts, reviews and deployment](/documentation_v2/website/api_v2/verification_evidence/mission_artifacts.md)
+- [Mission artifacts, reviews and deployment](/documentation/website/api_v2/verification_evidence/mission_artifacts.md)
   — what an artifact records, and how reviews decide it and servers load it.

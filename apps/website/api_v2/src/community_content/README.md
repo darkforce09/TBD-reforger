@@ -1,7 +1,7 @@
 # Community content domain
 
-The [API](/documentation_v2/glossary/a_to_f.md#api)'s
-[community content](/documentation_v2/glossary/a_to_f.md#community-content) domain: what members read and
+The [API](/documentation/glossary/a_to_f.md#api)'s
+[community content](/documentation/glossary/a_to_f.md#community-content) domain: what members read and
 administrators author. It holds the announcement feed and the CMS that writes it, the push that
 mirrors an announcement to Discord, CMS image uploads, the doctrine wiki, the vehicle database, and
 the modpack manifests that game servers and players resolve against. In development it also
@@ -22,7 +22,7 @@ apps/website/api_v2/src/community_content/
 
 Reads take `AuthUser`, so any signed-in member sees the published feed, the wiki, the vehicle
 table and the modpacks; every write takes `AdminUser`. The CMS routes under `/api/v1/cms/*` serve
-the [content manager](/documentation_v2/glossary/a_to_f.md#content-manager) page: an announcement is pushed
+the [content manager](/documentation/glossary/a_to_f.md#content-manager) page: an announcement is pushed
 to Discord through `services::discord_webhook::WebhookService` when it is published, and archiving
 it keeps the row. An uploaded image lands in the directory `UPLOAD_DIR` names
 (`Config::upload_dir`), which `core::http_router` serves at `/uploads`. A modpack is always written
@@ -70,7 +70,7 @@ nesting deeper than 16, and records each accepted save as a numbered revision.
 - `services::wiki_markup::read_markup`: a wiki page's markdown as safe blocks and refusal
   findings, used by the wiki handlers.
 - `models`: `Announcement`, read by the dashboard, and `Modpack` with `ModpackMod`, read by
-  `server_infrastructure` and by the [registry](/documentation_v2/glossary/n_to_z.md#registry) items in
+  `server_infrastructure` and by the [registry](/documentation/glossary/n_to_z.md#registry) items in
   `missions`.
 
 ## Boundaries
@@ -93,9 +93,9 @@ nesting deeper than 16, and records each accepted save as a numbered revision.
 
 ## Related documentation
 
-- [API overview](/documentation_v2/website/api_v2/api_overview.md) — every domain's routes.
-- [API environment variables](/documentation_v2/website/api_v2/environment_variables.md)
+- [API overview](/documentation/website/api_v2/api_overview.md) — every domain's routes.
+- [API environment variables](/documentation/website/api_v2/environment_variables.md)
   — `DISCORD_WEBHOOK_URL` and
   `UPLOAD_DIR`, which the announcement push and the uploads read.
-- [Content manager page](/documentation_v2/website/frontend/pages/administration/content_manager/content_manager_page.md)
+- [Content manager page](/documentation/website/frontend/pages/administration/content_manager/content_manager_page.md)
   — the CMS that writes announcements and uploads.

@@ -2,7 +2,7 @@
 
 The vegetation layers of the map export: trees, rocks, bushes, wild plants, crops, and stumps with
 other deadwood, each found among the placed entities of the open world in
-[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) and written as one JSON file per layer, with a
+[Workbench](/documentation/glossary/n_to_z.md#workbench) and written as one JSON file per layer, with a
 summary file for the whole run.
 
 ## Contents
@@ -64,7 +64,7 @@ None: Workbench runs these scripts in the editor.
   `BaseWorld.QueryEntitiesByAABB` and Workbench's `WorldEditorAPI.GetTerrainSurfaceY`.
 - Used by: `TBD_MapExportPlugin` in `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Plugins/`.
   No committed tool reads these files: the vegetation in the committed object chunks
-  (`assets_v2/terrains/everon/objects/`) comes from the full world-object export in
+  (`assets/terrains/everon/objects/`) comes from the full world-object export in
   `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/` and `world build-objects`.
 - Rules: a layer's classifier decides its membership, keyed on prefab paths and file names; each
   file is written as JSON text by hand, flushed every 8,000 characters. Lines added stay ASCII, and
@@ -72,5 +72,5 @@ None: Workbench runs these scripts in the editor.
 
 ## Related documentation
 
-- [Everon terrain dataset](/assets_v2/terrains/everon/README.md) — the committed terrain data,
+- [Everon terrain dataset](/assets/terrains/everon/README.md) — the committed terrain data,
   object chunks included, and the tools that build it.

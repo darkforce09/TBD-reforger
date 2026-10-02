@@ -1,6 +1,6 @@
 # Typed mission document
 
-The classes a [mission](/documentation_v2/glossary/g_to_m.md#mission) document is parsed into on the
+The classes a [mission](/documentation/glossary/g_to_m.md#mission) document is parsed into on the
 server: the document root with its header and factions, zones, the ORBAT, briefings, placed
 entities, pacing and win conditions, policy settings and named variants. They hold data only; the
 loader fills them once per load and every system reads them.
@@ -49,7 +49,7 @@ array. A `ref array<>` field is null when its key is absent.
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/`, `TBD_MissionEnvironmentStruct`
   and `TBD_MissionParamStruct` beside the readers that apply them, `TBD_MissionRadioPlanStruct` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Radio/`, and the wire shape in
-  `contracts_v2/definitions/mission.schema.json`.
+  `contracts/definitions/mission.schema.json`.
 - Used by: the loader, variant filter, ORBAT query, world applier and validator in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`; the zone registry, volumes and
   play area under `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Zones/`; the objective registry

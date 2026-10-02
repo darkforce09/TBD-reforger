@@ -6,7 +6,7 @@
 //!
 //! **Position:** rows of the subcommand table in `main.rs`. `population_seeding` writes through the
 //! services the API's own sign-in uses and hands the refresh tokens to `account_file`, whose file
-//! the `staging load` harness hands to the developer-tools load engine; `population_cleanup`
+//! the `staging load` harness hands to the developer_tools load engine; `population_cleanup`
 //! deletes what the population and a load run leave behind, and undoes a failed seeding.
 //!
 //! **Signals & state:** none; plain values.

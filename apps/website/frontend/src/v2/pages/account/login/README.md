@@ -1,7 +1,7 @@
 # Sign-in page
 
 The `/login` page: the card a signed-out visitor lands on, whose one button hands the browser to
-the Discord sign-in the [API](/documentation_v2/glossary/a_to_f.md#api) runs.
+the Discord sign-in the [API](/documentation/glossary/a_to_f.md#api) runs.
 
 ## Contents
 
@@ -37,14 +37,14 @@ apps/website/frontend/src/v2/pages/account/login/
   `apps/website/frontend/src/v2/core/ui/gates.rs`, of the top bar in
   `apps/website/frontend/src/v2/pages/navigation/top_nav.rs` and of the sign-in callback's failure
   view; the DOM oracle's `login` capture in
-  `tools_v2/developer-tools/src/browser_testing/dom_oracle/routes.rs`.
+  `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`.
 - Rules: the flow starts with a full-page navigation, never a request, since it continues off-site;
   the path stays reachable signed out and stays named in the frame's `classify_frame`
   (`classify_frame_kinds` in `apps/website/frontend/src/v2/pages/navigation/tests/layout.rs`).
 
 ## Related documentation
 
-- [Account pages](/documentation_v2/website/frontend/pages/account/account_pages.md) — the
+- [Account pages](/documentation/website/frontend/pages/account/account_pages.md) — the
   behaviour and design of the account pages.
 - [Identity and access domain](/apps/website/api_v2/src/identity_and_access/README.md) — the
   Discord sign-in routes the button starts.

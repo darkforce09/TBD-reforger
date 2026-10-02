@@ -1,6 +1,6 @@
 # Equipment and vehicle export menu entries
 
-The [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) menu entries that run the gameplay
+The [Workbench](/documentation/glossary/n_to_z.md#workbench) menu entries that run the gameplay
 export and the complete source export of equipment and vehicles, and the shared runner that exports
 a selected set of resources through the same pipeline.
 
@@ -49,5 +49,5 @@ None: Workbench runs these scripts in the editor.
   or its gameplay subclass, so there is one reader and one identity; a diagnostic generation never
   publishes, which the
   validator's `partial_and_unverified_exports_cannot_publish` test
-  (`tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/tests/validation.rs`) holds. A new
+  (`tools/xtask/src/commands/mod_ops/equipment_vehicle_export/tests/validation.rs`) holds. A new
   plugin class appears in the menu after a Workbench cold restart.

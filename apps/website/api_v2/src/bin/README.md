@@ -1,7 +1,7 @@
 # API executables
 
 The three binaries of the `website-api` crate: the `api` server behind the web platform,
-`import-registry`, which loads the item [registry](/documentation_v2/glossary/n_to_z.md#registry) that
+`import-registry`, which loads the item [registry](/documentation/glossary/n_to_z.md#registry) that
 Workbench exports into Postgres, and `staging-fixtures`, the host tool that stages the fixtures of a
 staging verification run.
 
@@ -49,10 +49,10 @@ checkout root, where its default API env file, `apps/website/api_v2/.env`, resol
 - Does: sets the log filter from `RUST_LOG` (`info` when unset), loads the configuration, connects
   to Postgres, applies the pending migrations unless `SKIP_MIGRATE` is set and logs
   `migrations applied`, arms the
-  [background workers](/documentation_v2/glossary/a_to_f.md#background-workers), and serves every route
+  [background workers](/documentation/glossary/a_to_f.md#background-workers), and serves every route
   on `0.0.0.0:$PORT`. It stays in the foreground until SIGINT or SIGTERM. The signal begins
   `core::process_lifecycle::process_shutdown`: the server stops accepting connections, every open
-  [SSE](/documentation_v2/glossary/n_to_z.md#sse) stream (the audit log feed, the server status
+  [SSE](/documentation/glossary/n_to_z.md#sse) stream (the audit log feed, the server status
   streams) ends its body at once with no further event, and the requests in flight drain, so the
   process exits without waiting for the service manager's kill timeout. A client of the audit
   log feed reconnects with `Last-Event-ID` and misses no row. It needs Postgres running.
@@ -66,7 +66,7 @@ checkout root, where its default API env file, `apps/website/api_v2/.env`, resol
 - Synopsis: `import-registry [--items <path>] [--compat <path>] [--modpack <uuid>] [--prune]`
 - Does: reads `DATABASE_URL`, connects, applies the pending migrations, then imports the item
   envelope (`--items`) and the compatibility-edge envelope (`--compat`), each checked against its
-  schema in `contracts_v2/definitions/`, into the registry tables of the envelope's `modpackId`,
+  schema in `contracts/definitions/`, into the registry tables of the envelope's `modpackId`,
   or of `--modpack` when given. Re-running an envelope updates rows in place; `--prune` also
   deletes that modpack's rows the envelope does not hold. It prints the total, unique, inserted,
   updated and pruned counts of each envelope. At least one of `--items` and `--compat` is
@@ -75,8 +75,8 @@ checkout root, where its default API env file, `apps/website/api_v2/.env`, resol
   malformed `--modpack`, neither envelope given, an unset `DATABASE_URL`, an unreadable file, or
   a failed import.
 - Example: `cargo xtask db registry-import`, which imports
-  `contracts_v2/catalogs/registry-items.workbench.json` and
-  `contracts_v2/catalogs/registry-compat.workbench.json`.
+  `contracts/catalogs/registry-items.workbench.json` and
+  `contracts/catalogs/registry-compat.workbench.json`.
 
 ### staging-fixtures
 
@@ -179,10 +179,10 @@ checkout root, where its default API env file, `apps/website/api_v2/.env`, resol
   `operations::services::event_authoring::{event_creation, mission_attachment}` and
   `administration::services::required_audit` for `staging-fixtures`.
 - Used by: `cargo xtask mk rust-api` and `cargo xtask db registry-import`
-  (`tools_v2/xtask/src/commands/build/recipes/shell_word.rs` and
-  `tools_v2/xtask/src/commands/db/operations.rs`); the `editor-api-boot` task of `cargo xtask ci`;
+  (`tools/xtask/src/commands/build/recipes/shell_word.rs` and
+  `tools/xtask/src/commands/db/operations.rs`); the `editor-api-boot` task of `cargo xtask ci`;
   the release image built by `apps/website/Dockerfile`, whose entry point is `api`; the systemd
-  unit `tools_v2/xtask/deploy/systemd/tbd-website-api.service`, which runs the release `api`;
+  unit `tools/xtask/deploy/systemd/tbd-website-api.service`, which runs the release `api`;
   `apps/website/api_v2/tests/audit_replay_shutdown.rs`, which starts the `api` binary and stops
   it with SIGTERM; `apps/website/api_v2/tests/staging_fixtures_fleet.rs`,
   `apps/website/api_v2/tests/staging_fixtures_fixture_events.rs`,
@@ -197,7 +197,7 @@ checkout root, where its default API env file, `apps/website/api_v2/.env`, resol
 
 ## Related documentation
 
-- [Local development](/documentation_v2/runbooks/local_development.md) — running the
-  [API](/documentation_v2/glossary/a_to_f.md#api) and importing the registry locally.
-- [Website deployment](/documentation_v2/runbooks/website_deployment.md) — building and running
+- [Local development](/documentation/runbooks/local_development.md) — running the
+  [API](/documentation/glossary/a_to_f.md#api) and importing the registry locally.
+- [Website deployment](/documentation/runbooks/website_deployment.md) — building and running
   the release `api` on the home server.

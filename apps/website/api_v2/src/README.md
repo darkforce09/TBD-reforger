@@ -1,7 +1,7 @@
 # Website API source
 
 The source of the `website-api` crate: the `website_api` library, split into a shared `core`,
-eight domains and the [background workers](/documentation_v2/glossary/a_to_f.md#background-workers),
+eight domains and the [background workers](/documentation/glossary/a_to_f.md#background-workers),
 and the two binaries built on it.
 
 ## Contents
@@ -26,7 +26,7 @@ apps/website/api_v2/src/
 ## How it works
 
 The crate is split by domain, not by layer. `core` is the floor every other module stands on.
-Each of the eight domains owns one slice of the [API](/documentation_v2/glossary/a_to_f.md#api) with
+Each of the eight domains owns one slice of the [API](/documentation/glossary/a_to_f.md#api) with
 the same shape: `mod.rs`, a `routes.rs` that exports `pub fn routes`, and `handlers/`,
 `services/` and `models/` folders (`command_center` has no models of its own); `missions` adds
 `contract/` and `validation/`.
@@ -44,10 +44,10 @@ Dependencies point one way. A domain's handlers, services and models may use `co
 domain's services and models, never its handlers. Logic that more than one domain needs goes to
 `core` when it names no domain concept (pagination, SQLSTATE checks, wire formats, the URL guard);
 logic that names one stays in its domain's `services/`, and the other domains call it there: the
-user lookup of `identity_and_access`, the [mission](/documentation_v2/glossary/g_to_m.md#mission)
+user lookup of `identity_and_access`, the [mission](/documentation/glossary/g_to_m.md#mission)
 lookups and cargo catalog of `missions`, the audit writer of `administration`, the modpack lookup
 of `community_content`, the status broadcast of `server_infrastructure`, and the
-[event](/documentation_v2/glossary/a_to_f.md#event) status rules of `operations`. Mortar ballistics live
+[event](/documentation/glossary/a_to_f.md#event) status rules of `operations`. Mortar ballistics live
 in the map engine's `apps/website/map-engine/src/data/scenario/ballistics/`.
 
 A new endpoint is a handler in `<domain>/handlers/` carrying its `/// @route <METHOD> <path>` tag,
@@ -56,7 +56,7 @@ in that domain's `services/`. Unit tests live in sibling files under a `tests/` 
 from the production file with `#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`. The
 `generated/` folders under `missions/contract/` and under the `models/` of `identity_and_access`,
 `missions`, `operations` and `server_infrastructure` hold types generated from
-`contracts_v2/definitions/`.
+`contracts/definitions/`.
 
 ## Public surface
 
@@ -70,13 +70,13 @@ from the production file with `#[cfg(test)] #[path = "tests/<file>.rs"] mod test
 ## Boundaries
 
 - Depends on: the crates of `apps/website/api_v2/Cargo.toml`, `website-map-engine` among them for
-  the mission compiler; the schemas in `contracts_v2/definitions/`, embedded at compile time; the
+  the mission compiler; the schemas in `contracts/definitions/`, embedded at compile time; the
   migrations in `apps/website/api_v2/migrations/`.
 - Used by: the integration suites in `apps/website/api_v2/tests/`; through the binaries, the
   `cargo xtask` recipes, the release image and the systemd unit that run them; over HTTP, the
   single-page app in `apps/website/frontend/`, the game servers through
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/`, and the
-  [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) in `apps/fleet_host_agent/`.
+  [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) in `apps/fleet_host_agent/`.
 - Rules:
   - `core` imports no domain outside `core/application_state.rs` and `core/http_router.rs`; a
     domain never imports another domain's handlers; only `bin/api.rs` (and `lib.rs`, which
@@ -99,6 +99,6 @@ from the production file with `#[cfg(test)] #[path = "tests/<file>.rs"] mod test
 
 ## Related documentation
 
-- [API overview](/documentation_v2/website/api_v2/api_overview.md) — the routes of every domain.
-- [Documentation standards](/documentation_v2/standards/documentation_standards.md) — the
+- [API overview](/documentation/website/api_v2/api_overview.md) — the routes of every domain.
+- [Documentation standards](/documentation/standards/documentation_standards.md) — the
   module headers and the `@route` and `@contract` tags the source carries.

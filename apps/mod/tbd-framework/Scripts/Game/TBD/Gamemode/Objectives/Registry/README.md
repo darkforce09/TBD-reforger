@@ -68,7 +68,7 @@ declares it, through `TBD_ObjectiveEndConditions`, and returns the trigger and t
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/`; `TBD_Registry`, `TBD_Log`,
   `TBD_EntityQuery` and `TBD_DeclaredFactions` in `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`;
   the `zone`, `zoneRules`, `objective` and `objectiveFraming` definitions in
-  `contracts_v2/definitions/mission.schema.json`.
+  `contracts/definitions/mission.schema.json`.
 - Used by: `TBD_ObjectivesComponent` and `TBD_ObjectiveProgression` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Runtime/`; `TBD_FrameworkManager`
   (`EvaluateEndTriggers`, `TRIGGER_*`); `TBD_MissionValidator` (`KindOf`, `TYPE_*`, `TRIGGER_*`);
@@ -78,5 +78,5 @@ declares it, through `TBD_ObjectiveEndConditions`, and returns the trigger and t
   or length goes inert rather than guessing when the round ends; statics outlive a world, so
   `TBD_ObjectivesComponent.OnDelete` calls `Clear`. `cargo xtask verify destroy-target-diagnostics`
   pins the destroy-target reasons in `TBD_ObjectiveDestroyTargets.c`, and
-  `tools_v2/xtask/src/verifications/schemas/tests/checks/staged_golden_tests.rs` requires every
+  `tools/xtask/src/verifications/schemas/tests/checks/staged_golden_tests.rs` requires every
   key the staged 1.3 golden authors under `objectives[]` to be a member of the reader's structs.

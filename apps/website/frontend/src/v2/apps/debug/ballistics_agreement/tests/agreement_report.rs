@@ -6,7 +6,7 @@ use website_map_engine::data::scenario::ballistics::agreement_cases::agreement_c
 
 /// The committed catalog the agreement gate solves natively.
 const COMMITTED_CATALOG: &str =
-    "../../../contracts_v2/catalogs/ballistics/vanilla_mortars.v1.catalog.json";
+    "../../../contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json";
 const SEED: u64 = 0x5EED_0000_0000_0001;
 
 fn committed_catalog() -> BallisticsCatalog {

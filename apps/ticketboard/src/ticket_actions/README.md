@@ -1,7 +1,7 @@
 # Ticket actions
 
-The [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) feature that changes
-[tickets](/documentation_v2/glossary/n_to_z.md#ticket): it builds each `cargo xtask ticket` command,
+The [ticketboard](/documentation/glossary/n_to_z.md#ticketboard) feature that changes
+[tickets](/documentation/glossary/n_to_z.md#ticket): it builds each `cargo xtask ticket` command,
 guards it against a ticket file changed on disk, queues commands one at a time, and renders the
 menus, dialogs and command feedback. It never writes a ticket file itself.
 
@@ -79,5 +79,5 @@ TicketCommandQueue ──idle──▶ cargo run --package xtask -- ticket <verb
 
 - [Ticket registry](/.ai/tickets/README.md) — the ticket files, statuses and commands these
   actions run.
-- [Ticket commands](/tools_v2/xtask/src/commands/ticket/README.md) — the `cargo xtask ticket`
+- [Ticket commands](/tools/xtask/src/commands/ticket/README.md) — the `cargo xtask ticket`
   verbs.

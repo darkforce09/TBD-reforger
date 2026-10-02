@@ -1,8 +1,8 @@
 # ORBAT selection page
 
-One [mission](/documentation_v2/glossary/g_to_m.md#mission)'s slotting on a page of its own, reachable
-directly by link: the same [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) selector the
-[event](/documentation_v2/glossary/a_to_f.md#event) hub page embeds, under the mission's heading and the
+One [mission](/documentation/glossary/g_to_m.md#mission)'s slotting on a page of its own, reachable
+directly by link: the same [ORBAT](/documentation/glossary/n_to_z.md#orbat) selector the
+[event](/documentation/glossary/a_to_f.md#event) hub page embeds, under the mission's heading and the
 viewer's standing on it.
 
 ## Contents
@@ -20,7 +20,7 @@ the event and looks the mission up in it by `event_mission_id` for the heading a
 `MissionStanding` (reservation state, waiting position, seat eligibility and place outlook). A path
 naming a mission the event does not carry, or a failed fetch, still renders, with the generic
 heading and `MissionStanding::unlisted`, which withholds no action and leaves the decision to the
-[API](/documentation_v2/glossary/a_to_f.md#api). The page has no roster of its own: it mounts
+[API](/documentation/glossary/a_to_f.md#api). The page has no roster of its own: it mounts
 `OrbatSelector` from the event hub page unchanged, and only when the path carries a mission id; the
 selector's change callback fetches the event again, so the notices stay live.
 
@@ -57,7 +57,7 @@ selector's change callback fetches the event again, so the notices stay live.
   `AuthStore` context and `use_params_map`.
 - Used by: the `/events/:id/missions/:emid/orbat` route in
   `apps/website/frontend/src/app_routes.rs`; the
-  [deployments](/documentation_v2/glossary/a_to_f.md#deployment) page's active orders link to it
+  [deployments](/documentation/glossary/a_to_f.md#deployment) page's active orders link to it
   (`apps/website/frontend/src/v2/pages/operations/deployments/active_orders.rs`).
 - Rules: the slotting tree is the event hub page's selector, never a second implementation; the
   mission and the standing are looked up in the fetched event, so a stale link renders instead of
@@ -65,7 +65,7 @@ selector's change callback fetches the event again, so the notices stay live.
 
 ## Related documentation
 
-- [ORBAT selection page](/documentation_v2/website/frontend/pages/operations/orbat_selection/orbat_selection_page.md)
+- [ORBAT selection page](/documentation/website/frontend/pages/operations/orbat_selection/orbat_selection_page.md)
   — the page's behaviour, stale links and design.
-- [Event hub page](/documentation_v2/website/frontend/pages/operations/event_detail/event_hub_page.md)
+- [Event hub page](/documentation/website/frontend/pages/operations/event_detail/event_hub_page.md)
   — the event dossier and its slotting, which this page mounts.

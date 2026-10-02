@@ -1,7 +1,7 @@
 # Mission planner workspace
 
 The folder reserved for the mission planner, a tactical whiteboard on which a briefing draws its
-plan over a published [mission](/documentation_v2/glossary/g_to_m.md#mission) without editing it. It
+plan over a published [mission](/documentation/glossary/g_to_m.md#mission) without editing it. It
 holds no code: only this README.
 
 ## Contents
@@ -32,4 +32,4 @@ compiles.
 
 ## Related documentation
 
-- [Mission planner](/documentation_v2/website/frontend/apps/planner/mission_planner.md) — the planned workspace's design notes and open work.
+- [Mission planner](/documentation/website/frontend/apps/planner/mission_planner.md) — the planned workspace's design notes and open work.

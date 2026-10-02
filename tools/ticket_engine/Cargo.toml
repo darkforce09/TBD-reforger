@@ -1,0 +1,25 @@
+[package]
+name = "ticket_engine"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Ticket storage, validation, operations, queue and document sync, scheduling, and metrics"
+
+[dependencies]
+anyhow = { workspace = true }
+regex = { workspace = true }
+serde_json = { workspace = true, features = ["preserve_order"] }
+walkdir = { workspace = true }
+jsonschema = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+# Timestamp parse and format: `time` is also a transitive dependency of the workspace, so this
+# edge adds no supply chain; its Rfc3339 parser is strict and exposes the offset for the UTC-only
+# rule.
+time = { workspace = true, features = ["parsing", "formatting"] }
+toml = { workspace = true, features = ["preserve_order"] }
+
+[dev-dependencies]
+proptest = { workspace = true }
+trybuild = "1"

@@ -30,7 +30,7 @@ text, the read/edit mode, the per-slug drafts and the page-list resource — tha
 A memo over the list decides between the loading line, the failure line and the board, so a
 refetch after a save keeps the board and the open manual mounted. The route's `:slug` picks the
 open manual when it names one in the list; otherwise the first row opens, which the
-[API](/documentation_v2/glossary/a_to_f.md#api) orders by `nav_order`, then title, then slug. A click
+[API](/documentation/glossary/a_to_f.md#api) orders by `nav_order`, then title, then slug. A click
 in the index navigates to `/wiki/<slug>`; a change of manual mounts a fresh article pane and
 returns the mode to reading.
 
@@ -51,7 +51,7 @@ article pages through the history ten at a time; choosing a revision shows its b
 the current text.
 
 `is_admin` is a memo over `has_min_role_authed` and the session's
-[role](/documentation_v2/glossary/n_to_z.md#role), so "[ READ ]", "[ EDIT ]", "Save" and "Restore
+[role](/documentation/glossary/n_to_z.md#role), so "[ READ ]", "[ EDIT ]", "Save" and "Restore
 this revision" appear only for a signed-in administrator. Typing starts a draft that records the
 revision it began from; "Save" sends that `base_revision`, so a manual that moved on answers 409
 and the notice offers to discard the draft and load the latest revision. A restore sends the old
@@ -122,7 +122,7 @@ red ("CAUTION", "CRITICAL RULE").
   `apps/website/frontend/src/v2/pages/navigation/nav_config.rs`; `wiki_source` in
   `apps/website/frontend/src/v2/core/test_support/pins.rs`, which joins every production file of
   the page for its guard tests; the DOM oracle's `wiki` and `wikislug` captures in
-  `tools_v2/developer-tools/src/browser_testing/dom_oracle/routes.rs`, answered from
+  `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`, answered from
   `GET__wiki.json`, `GET__wiki__field-manual.json` and `GET__wiki__field-manual__revisions.json`.
 - Rules: the edit, save and restore controls are gated by the `is_admin` memo over
   `has_min_role_authed`, never by the browse-mode `has_min_role`
@@ -137,9 +137,9 @@ red ("CAUTION", "CRITICAL RULE").
 
 ## Related documentation
 
-- [Doctrine wiki page](/documentation_v2/website/frontend/pages/doctrine_and_info/wiki/wiki_page.md)
+- [Doctrine wiki page](/documentation/website/frontend/pages/doctrine_and_info/wiki/wiki_page.md)
   — the page's behaviour and design.
 - [Community content domain](/apps/website/api_v2/src/community_content/README.md) — the wiki
   routes.
-- [Administration and community content](/documentation_v2/website/api_v2/verification_evidence/administration_and_content.md#wiki-markup-and-revisions)
+- [Administration and community content](/documentation/website/api_v2/verification_evidence/administration_and_content.md#wiki-markup-and-revisions)
   — the markup service, the revision storage and the save refusals.

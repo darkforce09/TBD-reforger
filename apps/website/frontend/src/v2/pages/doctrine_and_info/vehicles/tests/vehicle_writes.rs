@@ -8,7 +8,7 @@ use serde_json::json;
 /// The vehicle database contract, whose `VehicleWrite` names every key a write body may carry.
 const VEHICLE_CONTRACT: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../contracts_v2/definitions/vehicle-database.schema.json"
+    "/../../../contracts/definitions/vehicle-database.schema.json"
 ));
 
 const STORED_ID: &str = "00000000-0000-4000-3000-000000000002";

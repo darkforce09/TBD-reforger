@@ -1,6 +1,6 @@
 # Road network export
 
-Exports the open world's road network from [Workbench](/documentation_v2/glossary/n_to_z.md#workbench), one
+Exports the open world's road network from [Workbench](/documentation/glossary/n_to_z.md#workbench), one
 JSON file per road class, and joins the classes into one junction graph in a metadata file. Each
 class folder decides which entities belong to it; this folder runs them together.
 
@@ -73,8 +73,8 @@ None: Workbench runs these scripts in the editor.
   `RoadNetworkManager`, `BaseRoad`, `SplineShapeEntity` and `BaseWorld.QueryEntitiesByAABB`.
 - Used by: `TBD_MapExportPlugin` in `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Plugins/`.
   No committed tool reads these files: the road archive the map engine draws
-  (`assets_v2/terrains/everon/roads/`) comes from `world build-roads`, which decodes the road
-  topology from the game paks (`tools_v2/developer-tools/src/world_export_pipeline/roads_emit.rs`).
+  (`assets/terrains/everon/roads/`) comes from `world build-roads`, which decodes the road
+  topology from the game paks (`tools/developer_tools/src/world_export_pipeline/roads_emit.rs`).
 - Rules: each class exporter returns its records to the coordinator and keeps the shared dataset
   format; a class's classifier decides membership alone, and nothing stops two classifiers accepting
   one entity. Lines added stay ASCII, and the scripts compile only when Workbench loads
@@ -82,5 +82,5 @@ None: Workbench runs these scripts in the editor.
 
 ## Related documentation
 
-- [Everon road network archive](/assets_v2/terrains/everon/roads/README.md) — the road data the map
+- [Everon road network archive](/assets/terrains/everon/roads/README.md) — the road data the map
   engine loads, and how it is built.

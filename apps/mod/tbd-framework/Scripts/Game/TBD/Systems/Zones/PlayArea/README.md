@@ -1,6 +1,6 @@
 # Play area enforcement
 
-Keeps players inside the [mission](/documentation_v2/glossary/g_to_m.md#mission)'s play area while the
+Keeps players inside the [mission](/documentation/glossary/g_to_m.md#mission)'s play area while the
 round is live: a player outside a boundary zone, or inside another side's base-protection zone, is
 warned in chat, given a grace countdown and then handed the zone's penalty.
 
@@ -72,5 +72,5 @@ empty list confines every class; a zone that leaves a class out does not confine
 
 ## Related documentation
 
-- [Play area warning specification](/documentation_v2/mod/tbd-framework/UI/play_area_warning/play_area_warning_specification.md)
+- [Play area warning specification](/documentation/mod/tbd-framework/UI/play_area_warning/play_area_warning_specification.md)
   — the design of the out-of-bounds warning the player sees

@@ -55,7 +55,7 @@ drops the draft so the editor opens on the latest text; a refused restore keeps 
 
 ## Related documentation
 
-- [Doctrine wiki page](/documentation_v2/website/frontend/pages/doctrine_and_info/wiki/wiki_page.md)
+- [Doctrine wiki page](/documentation/website/frontend/pages/doctrine_and_info/wiki/wiki_page.md)
   — editing, conflicts and restores.
-- [Administration and community content](/documentation_v2/website/api_v2/verification_evidence/administration_and_content.md#saving)
+- [Administration and community content](/documentation/website/api_v2/verification_evidence/administration_and_content.md#saving)
   — the server's save rules and refusals.

@@ -1,7 +1,7 @@
 # Session and access
 
 The browser side of signing in: the session the app holds as signals, the slice of it that
-survives a reload, the [role](/documentation_v2/glossary/n_to_z.md#role) ladder every gate measures
+survives a reload, the [role](/documentation/glossary/n_to_z.md#role) ladder every gate measures
 against, the guard that keeps a viewer off a route their role does not clear, and the guard on
 every link the app renders.
 
@@ -25,12 +25,12 @@ apps/website/frontend/src/v2/core/auth/
 ## How it works
 
 The app layout provides one `AuthStore`, which installs the route guard and starts out
-bootstrapping; the [API](/documentation_v2/glossary/a_to_f.md#api) client's `bootstrap` restores the
+bootstrapping; the [API](/documentation/glossary/a_to_f.md#api) client's `bootstrap` restores the
 `tbd-auth` blob under the cross-tab refresh lock and fetches the profile. The auth callback page
 adopts a new token pair with `set_tokens`; `clear_session`, which the top bar's sign-out and a
 failed refresh call, purges the departing account's local
-[mission](/documentation_v2/glossary/g_to_m.md#mission) drafts through the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s `purge_local_documents`.
+[mission](/documentation/glossary/g_to_m.md#mission) drafts through the
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s `purge_local_documents`.
 
 The store's fields are `RwSignal`s, so it is `Copy`. The blob keeps the refresh token, the user,
 the expiry and the session id, never the access token, and its key names are fixed: renaming one
@@ -73,9 +73,9 @@ or surrounding whitespace, the same rule as the API's
 
 ## Related documentation
 
-- [Account pages](/documentation_v2/website/frontend/pages/account/account_pages.md) — sign-in,
+- [Account pages](/documentation/website/frontend/pages/account/account_pages.md) — sign-in,
   the auth callback and settings.
-- [Identity transactions](/documentation_v2/website/api_v2/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/website/api_v2/verification_evidence/identity_transactions.md)
   — sessions, refresh rotation and replay revocation in the API, and the browser's generations.
-- [Frontend documentation](/documentation_v2/website/frontend/README.md#route-table) — the route table
+- [Frontend documentation](/documentation/website/frontend/README.md#route-table) — the route table
   whose access tiers the route guard enforces.

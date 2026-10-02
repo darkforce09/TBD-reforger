@@ -1,6 +1,6 @@
 # Event groups section
 
-The Groups tab of an [event](/documentation_v2/glossary/a_to_f.md#event)'s access sheet: the named sets of
+The Groups tab of an [event](/documentation/glossary/a_to_f.md#event)'s access sheet: the named sets of
 accounts an access policy can admit, each a roster administrators maintain or the bot-verified
 members of a partner Discord guild, with the forms that create, edit and delete them.
 
@@ -20,7 +20,7 @@ apps/website/frontend/src/v2/pages/administration/event_manager/access/groups/
 loaded access view. Every write goes through the access panel's change path (`AccessPanel::apply`
 and `apply_then` in
 `apps/website/frontend/src/v2/pages/administration/event_manager/access/state.rs`), which names the
-access revision and adopts the view the [API](/documentation_v2/glossary/a_to_f.md#api) answers; the
+access revision and adopts the view the [API](/documentation/glossary/a_to_f.md#api) answers; the
 section rebuilds from each new view, so a saved change shows at once. The create form clears and
 closes only once the group exists, so a refused create leaves it filled for correction.
 
@@ -58,5 +58,5 @@ participant evidence name to a display name, and an unknown id shows as itself.
 
 ## Related documentation
 
-- [Event manager page](/documentation_v2/website/frontend/pages/administration/event_manager/event_manager_page.md)
+- [Event manager page](/documentation/website/frontend/pages/administration/event_manager/event_manager_page.md)
   — the access sheet's behaviour and what each access call means server-side.

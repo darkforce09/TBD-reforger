@@ -1,7 +1,7 @@
 # Equipment gameplay dataset
 
 The part of the equipment and vehicle exporter that produces the published gameplay dataset: the
-reviewed selection policy compiled into [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)
+reviewed selection policy compiled into [Workbench](/documentation/glossary/n_to_z.md#workbench)
 tables, the generation that applies it, and the compact per-resource files it writes.
 
 ## Contents
@@ -16,7 +16,7 @@ apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Gameplay/
 ## How it works
 
 ```text
-contracts_v2/rules/equipment-gameplay/
+contracts/rules/equipment-gameplay/
         │  cargo xtask mod generate-equipment-gameplay-policy
         ▼
 Policy/Generated/ selection tables, compiled into the addon
@@ -59,11 +59,11 @@ None: Workbench runs these scripts in the editor.
   a gameplay generation is validated and published by
   `cargo xtask mod validate-equipment-vehicle-export` and `publish-equipment-vehicle-export`, which
   read its `gameplay_generation` document type; the files follow the schemas in
-  `contracts_v2/definitions/equipment-gameplay/`.
+  `contracts/definitions/equipment-gameplay/`.
 
 ## Related documentation
 
-- [Equipment gameplay selection policy](/contracts_v2/rules/equipment-gameplay/README.md) — the
+- [Equipment gameplay selection policy](/contracts/rules/equipment-gameplay/README.md) — the
   reviewed rows the tables are generated from.
-- [Equipment gameplay commands](/tools_v2/xtask/src/commands/mod_ops/equipment_gameplay/README.md)
+- [Equipment gameplay commands](/tools/xtask/src/commands/mod_ops/equipment_gameplay/README.md)
   — table generation, projection and validation of gameplay generations.

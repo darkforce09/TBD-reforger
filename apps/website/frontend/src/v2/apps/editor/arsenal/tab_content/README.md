@@ -1,8 +1,8 @@
 # Arsenal tab sections
 
-The three sections of the [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal)'s loaded view, which the
+The three sections of the [arsenal](/documentation/glossary/a_to_f.md#arsenal)'s loaded view, which the
 parent file `apps/website/frontend/src/v2/apps/editor/arsenal/tab_content.rs` stacks around the
-cargo editor and the action bar once the [registry](/documentation_v2/glossary/n_to_z.md#registry) has
+cargo editor and the action bar once the [registry](/documentation/glossary/n_to_z.md#registry) has
 loaded.
 
 ## Contents
@@ -25,7 +25,7 @@ regions, the active region's items behind a filter box, the doll from `doll_view
 `compat_panel`; a pick goes back through the `pick_item` callback the parent passes in, which
 writes the loadout at once. The status section lists every refusal of an import or an Apply, or
 the receipt of what landed, and ends with the persistence line: the last pick was refused, the
-[mission](/documentation_v2/glossary/g_to_m.md#mission) has unsaved changes, or it has none.
+[mission](/documentation/glossary/g_to_m.md#mission) has unsaved changes, or it has none.
 
 ## Boundaries
 
@@ -44,6 +44,6 @@ the receipt of what landed, and ends with the persistence line: the last pick wa
 
 ## Related documentation
 
-- [Arsenal loadout editor](/documentation_v2/website/frontend/apps/editor/arsenal/arsenal_loadout_editor.md) — the
+- [Arsenal loadout editor](/documentation/website/frontend/apps/editor/arsenal/arsenal_loadout_editor.md) — the
   loaded view section by section, with its design references.
-- [Mission Creator feature inventory: attributes dialog](/documentation_v2/website/frontend/apps/editor/feature_inventory/attributes_and_settings.md) — the Arsenal tab as the mission maker uses it.
+- [Mission Creator feature inventory: attributes dialog](/documentation/website/frontend/apps/editor/feature_inventory/attributes_and_settings.md) — the Arsenal tab as the mission maker uses it.

@@ -130,5 +130,5 @@ under.
 
 - [Offline service worker](/apps/website/offline-service-worker/README.md) — the worker, its
   request classes and caches, and the terrain pack list.
-- [Contract definitions](/contracts_v2/definitions/README.md) — `map-tile-index` and
+- [Contract definitions](/contracts/definitions/README.md) — `map-tile-index` and
   `ballistics-catalog`, the two server documents the pack list reads.

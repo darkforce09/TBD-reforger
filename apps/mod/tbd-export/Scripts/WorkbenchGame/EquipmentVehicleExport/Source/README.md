@@ -1,6 +1,6 @@
 # Equipment and vehicle source reader
 
-Reads one [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) resource's configuration tree, as [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)
+Reads one [Enfusion](/documentation/glossary/a_to_f.md#enfusion) resource's configuration tree, as [Workbench](/documentation/glossary/n_to_z.md#workbench)
 has it loaded, into typed source facts: every property of every container, with its native type,
 value, origin and the native method that read it. The result is the source snapshot of a resource
 and the raw material of its organized record.
@@ -73,12 +73,12 @@ None: Workbench runs these scripts in the editor.
   validator's `explicit_zero_false_and_empty_values_are_preserved`,
   `shared_ancestor_objects_cannot_replace_effective_objects` and
   `native_enums_vectors_units_and_precision_survive_without_conversion` tests
-  (`tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/tests/validation.rs`) hold the
+  (`tools/xtask/src/commands/mod_ops/equipment_vehicle_export/tests/validation.rs`) hold the
   written form.
 
 ## Related documentation
 
-- [Export contract](/contracts_v2/definitions/equipment-vehicle-export.schema.json) — the
+- [Export contract](/contracts/definitions/equipment-vehicle-export.schema.json) — the
   `source_snapshot` document, facts, nodes and references.
-- [Acceptance evidence](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/README.md)
+- [Acceptance evidence](/documentation/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/README.md)
   — the recorded reader checks and field mapping.

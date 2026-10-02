@@ -1,7 +1,7 @@
 //! The success contract of every route that answers JSON, one row per route.
 //!
 //! **Role:** the table [`super::route_contracts::contract_for`] resolves a golden's method and
-//! path against, so every golden in the frontend corpus names the `contracts_v2/definitions`
+//! path against, so every golden in the frontend corpus names the `contracts/definitions`
 //! shape its route promises.
 //!
 //! **Position:** one row per `/// @route` handler whose success answer is JSON or an event

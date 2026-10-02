@@ -1,12 +1,12 @@
 //! The account file of a load population: every synthetic account's refresh token, in account
-//! order, in the format the developer-tools load engine reads.
+//! order, in the format the developer_tools load engine reads.
 //!
 //! **Role:** checks where the file goes before anything is written, renders the population's
 //! tokens, and writes the file through `secret_files`.
 //!
 //! **Position:** `population_seeding` checks the target in every run and writes the file once
 //! every account holds its refresh session; the `staging load` harness hands the file to the load
-//! engine (`staging_verification::load_generation::account_rotation` in developer-tools), which
+//! engine (`staging_verification::load_generation::account_rotation` in developer_tools), which
 //! reads it once.
 //!
 //! **Signals & state:** none; the tokens stay in the caller's memory until the file holds them.

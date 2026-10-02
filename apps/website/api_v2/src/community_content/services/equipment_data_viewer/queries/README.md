@@ -32,7 +32,7 @@ reads through document expansion.
 
 `relationships` answers the native-type matches instead of references when `kind` is
 `native_type_match`, through `native_matches.rs`, which embeds
-`contracts_v2/rules/equipment-gameplay/native-matching.json`. `selection` applies only to a
+`contracts/rules/equipment-gameplay/native-matching.json`. `selection` applies only to a
 gameplay generation, whose selection report and receipt it reads. The queries that read source
 documents (`selection`, `source_inspection`, `resource_cards`) hold one of the service's two
 reader permits while they read, and parse on a blocking thread. `values.rs` keeps a number's
@@ -42,7 +42,7 @@ original text and every array entry, so an expanded value is byte-faithful to th
 
 - Depends on: the `Dataset` and `EquipmentDataService` of `service_state.rs` (index pool, manifest,
   definitions, document cache, reader permits), the source readers in `source/`, and the rule file
-  `contracts_v2/rules/equipment-gameplay/native-matching.json`, embedded at compile time.
+  `contracts/rules/equipment-gameplay/native-matching.json`, embedded at compile time.
 - Used by: the handlers in
   `apps/website/api_v2/src/community_content/handlers/equipment_data_viewer/`, which re-read every
   answer as its generated contract type.

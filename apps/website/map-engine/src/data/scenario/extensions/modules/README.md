@@ -1,6 +1,6 @@
 # Spawn modules
 
-The check on a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s authored `spawnModules` block:
+The check on a [mission](/documentation/glossary/g_to_m.md#mission)'s authored `spawnModules` block:
 the AI groups the game spawns once the round is live, either as a `wave` that restocks on an
 interval or as a `garrison` that spawns once and holds. The module is exposed as
 `data::scenario::spawn_modules`.
@@ -16,7 +16,7 @@ apps/website/map-engine/src/data/scenario/extensions/modules/
 
 ## How it works
 
-`parse` reads a non-empty array of modules as `contracts_v2/definitions/mission.schema.json`
+`parse` reads a non-empty array of modules as `contracts/definitions/mission.schema.json`
 shapes each one in `$defs/spawnModule`: `{id, kind, factionKey, groupTemplate, x and z or zoneId,
 count, intervalSeconds?, maxAlive?, triggerId?}`. `kind` is one of `KINDS` (`wave`, `garrison`),
 and `factionKey` one of `FACTION_KEYS` (`blufor`, `opfor`, `indfor`, `civ`), the four sides the
@@ -39,7 +39,7 @@ under the same cap of 32.
 
 - Depends on: `serde_json`.
 - Used by: `crate::data::scenario::extensions`, whose `spawnModules` row calls `validate`; the
-  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s spawn modules panel
+  [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s spawn modules panel
   (`apps/website/frontend/src/v2/apps/editor/ui/inspector/spawn_modules.rs`), which offers `KINDS`
   and `FACTION_KEYS`, bounds counts by `MAX_ALIVE` and checks each edit with `validate`, and whose
   tests use `placement_is_exclusive`.
@@ -48,11 +48,11 @@ under the same cap of 32.
   `incomplete_position_is_refused` in `tests/cases_1.rs`); a count outside 1 to 32 is refused
   (`zero_and_over_cap_counts_are_refused`); the vocabularies and the cap are pinned
   (`spawn_modules_is_registered_on_the_carrier`), and `MAX_ALIVE` equals the
-  [mod](/documentation_v2/glossary/g_to_m.md#mod) spawner's own `MAX_ALIVE`; a mission that authors no
+  [mod](/documentation/glossary/g_to_m.md#mod) spawner's own `MAX_ALIVE`; a mission that authors no
   module compiles with no `spawnModules` key
   (`an_unauthored_payload_still_omits_the_spawn_modules_key`).
 
 ## Related documentation
 
-- [Mission schema](/contracts_v2/definitions/mission.schema.json) — `spawnModules` and
+- [Mission schema](/contracts/definitions/mission.schema.json) — `spawnModules` and
   `$defs/spawnModule`, the shape this module checks.

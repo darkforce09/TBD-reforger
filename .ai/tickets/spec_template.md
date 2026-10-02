@@ -2,13 +2,13 @@
 
 # T-<id> — {title}
 
-{Copy this file to `documentation_v2/tickets/specs/t<id>_<subject>.md`: the ticket id without
+{Copy this file to `documentation/tickets/specs/t<id>_<subject>.md`: the ticket id without
 `T-`, dots as underscores, then a snake_case subject. Name that path in the ticket's `spec` field
 with `cargo xtask ticket mark-ready <id> <spec path>`. The spec stays live, and is corrected as the
 design settles, while the ticket is `idea`, `queued` or `ready`. When the ticket ships or is
 cancelled, the landing commit sets the status line to `**Status:** frozen record`, and from then
 on only the spec's links change; the knowledge that outlasts the ticket moves into the feature doc
-of the code it describes. Links are repository-root (`/documentation_v2/…`, `/apps/…`); no
+of the code it describes. Links are repository-root (`/documentation/…`, `/apps/…`); no
 personal absolute path and no host address. Delete this paragraph and every `{…}` hint.}
 
 ## In one sentence
@@ -60,7 +60,7 @@ documentation. The ticket's `verify` field lists the same commands.}
 {The documents this ticket changes, updated in the same commit as the code they describe: the
 comments of the code it alters, the README.md of every folder whose contents, surface, commands or
 boundaries change, the feature docs whose behaviour changes, and the `## Open work` line that
-links this ticket. The [commit checklist](/documentation_v2/standards/commit_checklist.md) lists
+links this ticket. The [commit checklist](/documentation/standards/commit_checklist.md) lists
 them by kind of change.}
 
 ## Claude Code prompt — T-<id> (copy-paste)
@@ -80,7 +80,7 @@ Implement T-<id> — {one-line title}.
   cargo xtask ticket brief T-<id>
 
 ═══ READ (in order — the spec wins on conflict) ═══
-  1. documentation_v2/tickets/specs/t<id>_<subject>.md
+  1. documentation/tickets/specs/t<id>_<subject>.md
 
 ═══ PROBLEM ═══
   {2–4 sentences}

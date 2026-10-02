@@ -13,7 +13,7 @@
 //! **Signals & state:** none; pure functions over decoded documents.
 //!
 //! **Invariants:**
-//! - Field names and shapes match `contracts_v2/definitions/ballistics-calibration.schema.json`;
+//! - Field names and shapes match `contracts/definitions/ballistics-calibration.schema.json`;
 //!   every object refuses unknown fields, except an oracle sample's `inputs` and `outputs`, which
 //!   keep the oracle's own names.
 //! - Provenance is judged first ([`provenance`]); flight cases follow shell by shell in catalog

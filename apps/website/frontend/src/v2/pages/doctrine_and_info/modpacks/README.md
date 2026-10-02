@@ -27,12 +27,12 @@ The detail pane shows the read dossier (`mod_table.rs`), or the edit form (`pack
 administrator switches to editing.
 
 `is_admin` is a memo over `has_min_role_authed` and the session's
-[role](/documentation_v2/glossary/n_to_z.md#role), so the create, edit, activate and delete controls
+[role](/documentation/glossary/n_to_z.md#role), so the create, edit, activate and delete controls
 appear only for a signed-in administrator, never for a signed-out visitor or while the session
 restores. The edit form seeds its signals from the pack once, so an edit in progress survives a
 refetch of the list; an empty name falls back to the stored name and an empty version to `0.0.0`.
 `PackEdit::to_put_body` stamps each addon row's index as its `sort_order`, so the draft's order is
-the stored order. Every write to the [API](/documentation_v2/glossary/a_to_f.md#api) refetches the list,
+the stored order. Every write to the [API](/documentation/glossary/a_to_f.md#api) refetches the list,
 and a create selects the new pack. Sizes print as `x.x GB` from a gigabyte up and as whole `MB`
 below.
 
@@ -87,7 +87,7 @@ below.
   `apps/website/frontend/src/v2/pages/navigation/nav_config.rs`; `modpacks_source` in
   `apps/website/frontend/src/v2/core/test_support/pins.rs`, which joins the seven source files for
   the page's test; the DOM oracle's `modpacks` capture in
-  `tools_v2/developer-tools/src/browser_testing/dom_oracle/routes.rs`.
+  `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`.
 - Rules: the write controls are gated by the `is_admin` memo over `has_min_role_authed`, never by
   the browse-mode `has_min_role` (`admin_affordance_uses_authed_reactive_role` in
   `tests/modpacks.rs`); both panes read the one fetched list; the make-current button never shows
@@ -95,7 +95,7 @@ below.
 
 ## Related documentation
 
-- [Modpacks page](/documentation_v2/website/frontend/pages/doctrine_and_info/modpacks/modpacks_page.md)
+- [Modpacks page](/documentation/website/frontend/pages/doctrine_and_info/modpacks/modpacks_page.md)
   — the page's behaviour and design.
 - [Community content domain](/apps/website/api_v2/src/community_content/README.md) — the modpack
   routes this page calls.

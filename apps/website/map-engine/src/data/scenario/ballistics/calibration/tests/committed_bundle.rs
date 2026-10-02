@@ -1,6 +1,6 @@
 //! The committed vanilla mortar catalog and its calibration bundle, judged whole.
 //!
-//! Every document comes from `contracts_v2` through `include_str!`, so a missing fixture fails
+//! Every document comes from `contracts` through `include_str!`, so a missing fixture fails
 //! the build and a regenerated fixture is judged as committed.
 
 use std::collections::BTreeMap;
@@ -13,27 +13,27 @@ use super::*;
 
 const CATALOG_JSON: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../contracts_v2/catalogs/ballistics/vanilla_mortars.v1.catalog.json"
+    "/../../../contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json"
 ));
 const BUNDLE_JSON: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../contracts_v2/fixtures/ballistics/vanilla_mortars.v1/calibration.json"
+    "/../../../contracts/fixtures/ballistics/vanilla_mortars.v1/calibration.json"
 ));
 const SKEWED_NATIVE_ROW_JSON: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../contracts_v2/fixtures/ballistics/vanilla_mortars.v1/negative/skewed_native_row.calibration.json"
+    "/../../../contracts/fixtures/ballistics/vanilla_mortars.v1/negative/skewed_native_row.calibration.json"
 ));
 const WRONG_GAME_BUILD_JSON: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../contracts_v2/fixtures/ballistics/vanilla_mortars.v1/negative/wrong_game_build.calibration.json"
+    "/../../../contracts/fixtures/ballistics/vanilla_mortars.v1/negative/wrong_game_build.calibration.json"
 ));
 const MISSING_SHELL_JSON: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../contracts_v2/fixtures/ballistics/vanilla_mortars.v1/negative/missing_shell.calibration.json"
+    "/../../../contracts/fixtures/ballistics/vanilla_mortars.v1/negative/missing_shell.calibration.json"
 ));
 const STALE_CATALOG_SHA_JSON: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../contracts_v2/fixtures/ballistics/vanilla_mortars.v1/negative/stale_catalog_sha.calibration.json"
+    "/../../../contracts/fixtures/ballistics/vanilla_mortars.v1/negative/stale_catalog_sha.calibration.json"
 ));
 
 fn pinned() -> &'static PinnedCatalog {

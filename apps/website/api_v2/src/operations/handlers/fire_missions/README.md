@@ -2,7 +2,7 @@
 
 The HTTP handlers of saved fire missions: the save the mortar calculator sends, which the server
 re-solves against the pinned ballistics catalog before storing it, and the list of an
-[event](/documentation_v2/glossary/a_to_f.md#event)'s saved fire missions.
+[event](/documentation/glossary/a_to_f.md#event)'s saved fire missions.
 
 ## Contents
 
@@ -53,6 +53,6 @@ apps/website/api_v2/src/operations/handlers/fire_missions/
 
 ## Related documentation
 
-- [Fire-mission contract](/contracts_v2/definitions/fire-mission.schema.json) — the save body,
+- [Fire-mission contract](/contracts/definitions/fire-mission.schema.json) — the save body,
   the solution, the stored mission and the list.
 - [Ballistics catalog handlers](../ballistics_catalogs/README.md) — the catalogs a save pins.

@@ -12,7 +12,7 @@ use crate::data::scenario::ballistics::fire_mission::solve_fire_mission;
 /// build.
 const VANILLA_CATALOG_JSON: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../contracts_v2/catalogs/ballistics/vanilla_mortars.v1.catalog.json"
+    "/../../../contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json"
 ));
 /// Seed of the mapping and bit-walk tests.
 const MAPPING_SEED: u64 = 0x5EED_0000_0000_0001;

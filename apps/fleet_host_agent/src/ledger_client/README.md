@@ -1,9 +1,9 @@
 # Ledger client
 
-The executor side of the [API](/documentation_v2/glossary/a_to_f.md#api)'s
-[fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) ledger: claim the next command for
+The executor side of the [API](/documentation/glossary/a_to_f.md#api)'s
+[fleet command](/documentation/glossary/a_to_f.md#fleet-command) ledger: claim the next command for
 this server, report that its effect is starting, perform it, and report its outcome, over
-outbound HTTPS with this host's [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential).
+outbound HTTPS with this host's [machine credential](/documentation/glossary/g_to_m.md#machine-credential).
 
 ## Contents
 
@@ -38,7 +38,7 @@ FleetActionExecutor::execute ──▶ result {succeeded, outcome, failure_reaso
 The three calls are `POST /api/v1/fleet-executor/commands/claim` with the body `{}`,
 `POST /api/v1/fleet-executor/commands/{commandId}/executing` and
 `POST /api/v1/fleet-executor/commands/{commandId}/result`, whose messages follow
-`contracts_v2/definitions/fleet-command.schema.json`; an absent outcome or failure reason is left
+`contracts/definitions/fleet-command.schema.json`; an absent outcome or failure reason is left
 out of the JSON rather than sent as null.
 
 `classify_refusal` sorts every answer that is not a success: a 409 whose `details.code` is
@@ -81,9 +81,9 @@ HTTPS, and installs the `ring` TLS provider once.
   executor routes.
 - Rules: the executing-before-effect, stale-claim, retry and refusal rules above
   (`tests/ledger_api.rs` and the `host_agent_ledger_*` tests); the messages match
-  `contracts_v2/definitions/fleet-command.schema.json`.
+  `contracts/definitions/fleet-command.schema.json`.
 
 ## Related documentation
 
-- [Fleet command ledger](/documentation_v2/website/api_v2/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger](/documentation/website/api_v2/verification_evidence/fleet_command_ledger.md)
   — the API side of the ledger: states, leases, fencing and execution windows.

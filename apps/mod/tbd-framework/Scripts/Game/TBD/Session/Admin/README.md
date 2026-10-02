@@ -3,7 +3,7 @@
 The powers listed admins hold over a running round, and the two surfaces that reach them: the
 `#tbd` chat commands and the admin screen. Every power passes one server-side permission gate and
 lands in one audit trail, because under one life a respawn or a forced stage decides the
-[event](/documentation_v2/glossary/a_to_f.md#event).
+[event](/documentation/glossary/a_to_f.md#event).
 
 ## Contents
 
@@ -108,7 +108,7 @@ with `.` so no field is ever empty on the wire. A non-admin's payload holds the 
 
 ## Related documentation
 
-- [In-game menu specification](/documentation_v2/mod/tbd-framework/UI/in_game_menu/in_game_menu_specification.md)
+- [In-game menu specification](/documentation/mod/tbd-framework/UI/in_game_menu/in_game_menu_specification.md)
   — the pause menu and admin screen as built, and the admin suite design target
-- [Admin help ticket specification](/documentation_v2/mod/tbd-framework/UI/admin_help_ticket/admin_help_ticket_specification.md)
+- [Admin help ticket specification](/documentation/mod/tbd-framework/UI/admin_help_ticket/admin_help_ticket_specification.md)
   — the admin help ticket and tickets module, designed and not built

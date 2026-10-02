@@ -3,8 +3,8 @@
 The mortar ballistics behind the field tools, driven by a catalog of the game's own weapon and
 shell values: the shell flight model, its inverse (the firing solver, which answers the azimuth and
 an elevation per charge from a gun to a target), and the angle and wind conventions they share.
-The [API](/documentation_v2/glossary/a_to_f.md#api) serves solutions to the mortar calculator and
-records solved fire missions against an [event](/documentation_v2/glossary/a_to_f.md#event).
+The [API](/documentation/glossary/a_to_f.md#api) serves solutions to the mortar calculator and
+records solved fire missions against an [event](/documentation/glossary/a_to_f.md#event).
 
 ## Contents
 
@@ -91,7 +91,7 @@ pointer, as the 16 hexadecimal digits of its IEEE 754 bits).
   `apps/website/api_v2/tests/game_ballistics_fire_missions.rs`); the mortar calculator in
   `apps/website/frontend/src/v2/pages/field_tools/mortar/`; the agreement bench
   `apps/website/frontend/src/v2/apps/debug/ballistics_agreement/` and the agreement gate
-  `tools_v2/developer-tools/src/browser_testing/ballistics_agreement/`, which both draw, map and
+  `tools/developer_tools/src/browser_testing/ballistics_agreement/`, which both draw, map and
   walk the cases through `agreement_cases.rs`.
 - Rules: each module's rules and the tests that pin them are listed in its own README
   ([`solver/`](solver/README.md), [`flight_model/`](flight_model/README.md),
@@ -116,6 +116,6 @@ pointer, as the 16 hexadecimal digits of its IEEE 754 bits).
 
 ## Related documentation
 
-- [Game ballistics documentation](/documentation_v2/website/map-engine/data/scenario/ballistics/README.md) —
+- [Game ballistics documentation](/documentation/website/map-engine/data/scenario/ballistics/README.md) —
   the feature documentation of the flight model, the solver, the calibration and the assembled
   fire-mission solution.

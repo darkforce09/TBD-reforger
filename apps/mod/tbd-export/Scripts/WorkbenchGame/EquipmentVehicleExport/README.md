@@ -1,6 +1,6 @@
 # Equipment and vehicle source export
 
-The [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) exporter that captures the installed
+The [Workbench](/documentation/glossary/n_to_z.md#workbench) exporter that captures the installed
 equipment, vehicles and their gameplay dependencies as source-backed records: every native value
 as the loaded configuration holds it, with its inheritance, its authored overrides and the method
 that read it. It computes nothing: no inventory grids, loaded mass, tracer ratios, horsepower,
@@ -54,7 +54,7 @@ holds the detail.
 The source generation above is the full diagnostic dataset. The published gameplay dataset comes
 from `Gameplay/`: "Export Equipment and Vehicles" and the `start` action of `EMCP_WB_SourceExport`
 run a `TBD_GameplayExportGeneration`, which uses the same discovery and source reader but keeps
-only the classes and fields the reviewed selection policy in `contracts_v2/rules/equipment-gameplay/`
+only the classes and fields the reviewed selection policy in `contracts/rules/equipment-gameplay/`
 selects, follows only the references it approves, and writes compact resource files under
 `equipment_vehicle_exports/gameplay/generations/<generation id>/`. The same two `cargo xtask`
 commands validate and publish either kind; a gameplay generation publishes inside `gameplay/`.
@@ -97,10 +97,10 @@ None: Workbench runs these scripts in the editor.
 - Depends on: Workbench's `WorkbenchPlugin`, `NetApiHandler` and resource search; the engine's
   `BaseContainer` reflection, `TypeName`, `WidgetManager`, `GameProject`, `JsonSaveContext` and
   `FileIO`; the loaded addons' prefabs and configs; the selection tables generated from
-  `contracts_v2/rules/equipment-gameplay/`; nothing from `tbd-framework`.
+  `contracts/rules/equipment-gameplay/`; nothing from `tbd-framework`.
 - Used by: people, through the two Workbench menu entries; `cargo xtask mcp wbcall`, which reaches
   `EMCP_WB_SourceExport`; the
-  validation and publication commands in `tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/`,
+  validation and publication commands in `tools/xtask/src/commands/mod_ops/equipment_vehicle_export/`,
   which read the generation files.
 - Rules: the exporter writes source facts only and every consumer derives its own values from
   them; every enumerated property is read or fails the extraction, and an unread property cannot
@@ -108,19 +108,19 @@ None: Workbench runs these scripts in the editor.
   complete, verified generation publishes (`partial_and_unverified_exports_cannot_publish`); the
   published bytes are sealed by their hashes
   (`finalized_hashes_detect_consistent_but_tampered_facts`); all three tests are in
-  `tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/tests/validation.rs`, which also
+  `tools/xtask/src/commands/mod_ops/equipment_vehicle_export/tests/validation.rs`, which also
   covers provenance, reference closure, repeated installations, statuses, publication and
-  rollback. The schema `contracts_v2/definitions/equipment-vehicle-export.schema.json` is the
+  rollback. The schema `contracts/definitions/equipment-vehicle-export.schema.json` is the
   contract for every file a generation writes. The scripts compile only when Workbench loads
   `tbd-export`; `cargo xtask mod compile` compiles the framework addon alone
-  (`tools_v2/xtask/src/commands/mod_ops/compile/execution.rs`).
+  (`tools/xtask/src/commands/mod_ops/compile/execution.rs`).
 
 ## Related documentation
 
-- [Export validation and publication](/tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/README.md)
+- [Export validation and publication](/tools/xtask/src/commands/mod_ops/equipment_vehicle_export/README.md)
   — every check the validator runs and the publication steps.
-- [Equipment and vehicle export documentation](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/README.md)
+- [Equipment and vehicle export documentation](/documentation/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/README.md)
   — the exporter's documentation index.
-- [Acceptance evidence](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/README.md)
+- [Acceptance evidence](/documentation/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/README.md)
   — the frozen acceptance record, the field mapping and the before-and-after examples.
-- [MCP commands](/tools_v2/xtask/src/commands/mcp/README.md) — `cargo xtask mcp wbcall`.
+- [MCP commands](/tools/xtask/src/commands/mcp/README.md) — `cargo xtask mcp wbcall`.

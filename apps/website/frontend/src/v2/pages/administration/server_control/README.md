@@ -1,13 +1,13 @@
 # Server control page
 
-The `/admin/server` page, [server control](/documentation_v2/glossary/n_to_z.md#server-control):
+The `/admin/server` page, [server control](/documentation/glossary/n_to_z.md#server-control):
 administrators register game servers, change their registration and take them out of service or
 back, pick one of the configured servers, read its live state, issue
-[fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command) to it, deploy a
-[mission](/documentation_v2/glossary/g_to_m.md#mission)'s approved
-[artifact](/documentation_v2/glossary/a_to_f.md#artifact) to it, keep the
-[fleet scenario](/documentation_v2/glossary/a_to_f.md#fleet-scenario) registry, and issue and revoke its
-[machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential).
+[fleet commands](/documentation/glossary/a_to_f.md#fleet-command) to it, deploy a
+[mission](/documentation/glossary/g_to_m.md#mission)'s approved
+[artifact](/documentation/glossary/a_to_f.md#artifact) to it, keep the
+[fleet scenario](/documentation/glossary/a_to_f.md#fleet-scenario) registry, and issue and revoke its
+[machine credentials](/documentation/glossary/g_to_m.md#machine-credential).
 
 ## Contents
 
@@ -40,14 +40,14 @@ changes: it reads its row from the registry, so a registration, change, deactiva
 reactivation shows at once and keeps the console's and panels' state.
 
 Nothing here reaches a host directly. A command or a deployment is a request the
-[API](/documentation_v2/glossary/a_to_f.md#api) records and answers with 202; the page then reads its
+[API](/documentation/glossary/a_to_f.md#api) records and answers with 202; the page then reads its
 receipt every two seconds and announces the outcome only once an executor or a runtime session
 reports it. The card shows only what the server row carries: a server with no status reads as
 zeros and dashes, a server that never reported a telemetry queue reading reads "No reading" in
 the queue column, an inactive server carries an "Inactive" badge in the picker and the card, the terrain is capitalised or a dash between matches, and "Active Mission" shows
 the current match id, since the row names no mission. The launch control only says the game client
 is needed. The console box sends one line to the server's
-[RCON](/documentation_v2/glossary/n_to_z.md#rcon) console as a `console_command` fleet command, which
+[RCON](/documentation/glossary/n_to_z.md#rcon) console as a `console_command` fleet command, which
 the host agent carries out, and shows the reply the host agent reports; the page itself calls no
 RCON route. Every request runs in the browser build only; a native build renders the failure branch.
 
@@ -55,7 +55,7 @@ RCON route. Every request runs in the browser build only; a native build renders
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/admin/server` | `ServerControlPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` [role](/documentation_v2/glossary/n_to_z.md#role) only | full-bleed inside the navigation frame, over the topographic backdrop; breadcrumb Administration / Server Control; sidebar entry "Server Control" |
+| `/admin/server` | `ServerControlPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` [role](/documentation/glossary/n_to_z.md#role) only | full-bleed inside the navigation frame, over the topographic backdrop; breadcrumb Administration / Server Control; sidebar entry "Server Control" |
 
 ## Data
 
@@ -82,7 +82,7 @@ RCON route. Every request runs in the browser build only; a native build renders
     (`response`, `response_truncated`).
   - `GET /api/v1/servers/{id}/commands/{commandId}`: the followed receipt, every two seconds.
   - `POST /api/v1/servers/{id}/commands/{commandId}/cancel` with `{}`: read as the receipt.
-- [Mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment) (`mission_deployments/`):
+- [Mission deployments](/documentation/glossary/g_to_m.md#mission-deployment) (`mission_deployments/`):
   - `GET /api/v1/servers/{id}/deployments`: read as `MissionDeploymentPage` of `MissionDeployment`.
   - `POST /api/v1/servers/{id}/deployments`: sends a `DeploymentRequest` (`mission_id`,
     `artifact_id`, optional `event_mission_id`), read back as the `MissionDeployment`.
@@ -92,7 +92,7 @@ RCON route. Every request runs in the browser build only; a native build renders
   - The form's choices, read when it first opens: `GET /api/v1/missions?limit=100`
     (`Paginated<MissionCard>`), `GET /api/v1/events?scope=upcoming&limit=100`
     (`Paginated<EventListItem>`), and `GET /api/v1/events/{id}` (`EventHub`) for each
-    [event](/documentation_v2/glossary/a_to_f.md#event) whose `server_id` is this server.
+    [event](/documentation/glossary/a_to_f.md#event) whose `server_id` is this server.
 - Fleet scenarios (`fleet_scenarios/`): `GET /api/v1/fleet/scenarios`, read as
   `FleetScenarioList`; `PUT /api/v1/fleet/scenarios/{terrainKey}`, sending a `FleetScenarioUpdate`
   (`scenario_id`, `display_name`); `DELETE` on the same path.
@@ -185,16 +185,16 @@ RCON route. Every request runs in the browser build only; a native build renders
   `crate::v2::core::auth` (`AuthStore`), `crate::v2::core::ui` (`AdminGate`, `SplitPane`, `Sheet`,
   `MaterialIcon`, `cn`, the toast queue) and `crate::v2::core::utils` (`utc_timestamp`,
   `clipboard`); over HTTP, the server, command, scenario and credential routes of the
-  [server infrastructure](/documentation_v2/glossary/n_to_z.md#server-infrastructure) domain, the
-  deployment routes and mission library of the [missions](/documentation_v2/glossary/g_to_m.md#missions)
-  domain, the event reads of the [operations](/documentation_v2/glossary/n_to_z.md#operations) domain,
+  [server infrastructure](/documentation/glossary/n_to_z.md#server-infrastructure) domain, the
+  deployment routes and mission library of the [missions](/documentation/glossary/g_to_m.md#missions)
+  domain, the event reads of the [operations](/documentation/glossary/n_to_z.md#operations) domain,
   and the modpack list of the community content domain.
 - Used by: the `/admin/server` route in `apps/website/frontend/src/app_routes.rs` and
   `apps/website/frontend/src/router.rs`; the sidebar's "Server Control" link in
   `apps/website/frontend/src/v2/pages/navigation/nav_config.rs`; `server_control_source` in
   `apps/website/frontend/src/v2/core/test_support/pins.rs`, which joins the page's sources for its
   tests; the DOM oracle's `servercontrol` capture in
-  `tools_v2/developer-tools/src/browser_testing/dom_oracle/routes.rs`.
+  `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`.
 - Rules: the page never calls an RCON route (`no_rcon_route_is_called_or_served`) and shows no
   invented server or console (`no_mock_servers_or_fabricated_console`); every card builds the
   state of its own server and is keyed on the selection alone
@@ -205,7 +205,7 @@ RCON route. Every request runs in the browser build only; a native build renders
 
 ## Related documentation
 
-- [Server control page](/documentation_v2/website/frontend/pages/administration/server_control/server_control_page.md)
+- [Server control page](/documentation/website/frontend/pages/administration/server_control/server_control_page.md)
   — the page's behaviour, what each call means server-side, its design, open work and decisions.
 - [Server infrastructure domain](/apps/website/api_v2/src/server_infrastructure/README.md) — the
   server registry, command, scenario and credential routes.

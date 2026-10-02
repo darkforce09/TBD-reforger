@@ -1,7 +1,7 @@
 # Shared URL-guard test table
 
 The one table of inputs and expected verdicts for `is_http_url`, the scheme guard that the
-[API](/documentation_v2/glossary/a_to_f.md#api) and the single-page app each implement. Both crates'
+[API](/documentation/glossary/a_to_f.md#api) and the single-page app each implement. Both crates'
 tests include this file, so the two implementations cannot drift apart without a test failing.
 
 ## Contents
@@ -65,7 +65,7 @@ its reason.
 
 - Depends on: nothing; the file is plain literals.
 - Used by: the API and frontend tests listed above; the wave tooling in
-  `tools_v2/xtask/src/commands/platform/wave_execution/`, which resolves a change to a file here to
+  `tools/xtask/src/commands/platform/wave_execution/`, which resolves a change to a file here to
   the crates that include it, since the folder has no `Cargo.toml` of its own.
 - Rules: the constant keeps its name and type, `IS_HTTP_URL_CASES: &[(&str, bool)]`, because every
   consumer names it; the include paths are relative to each test file or to the crate's

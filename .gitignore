@@ -3,7 +3,7 @@
 # ==============================================================================
 # Ticket pipeline worktrees (git worktree add — not committed; see worktrees/README.md)
 .ai/artifacts/worktrees/TBD-*/
-# Slice worktrees (documentation_v2/runbooks/mod_slice_workflow.md). Live checkouts;
+# Slice worktrees (documentation/runbooks/mod_slice_workflow.md). Live checkouts;
 # staging one causes git to treat it as an embedded repository.
 .ai/artifacts/worktrees/T-*/
 
@@ -13,7 +13,7 @@
 .env
 .env.*
 !.env.example
-tools_v2/xtask/deploy/deploy.env
+tools/xtask/deploy/deploy.env
 
 # ==============================================================================
 # 3. Editor & OS Cruft
@@ -24,7 +24,7 @@ tools_v2/xtask/deploy/deploy.env
 *.swp
 *.swo
 *~
-# Local enfusion-mcp IDE config (machine paths — see documentation_v2/runbooks/mod_slice_workflow.md)
+# Local enfusion-mcp IDE config (machine paths — see documentation/runbooks/mod_slice_workflow.md)
 .mcp.json
 
 # ==============================================================================
@@ -86,21 +86,21 @@ target-*/
 apps/mod/tbd-export/tools/*.mjs
 
 # ==============================================================================
-# 8. Assets & Pipeline Intermediates (assets_v2)
+# 8. Assets & Pipeline Intermediates (assets/)
 # ==============================================================================
 # Map-export scratch (local intermediates)
-assets_v2/scratch/
+assets/scratch/
 # Satellite/map tile pyramids
-assets_v2/terrains/**/tiles/
+assets/terrains/**/tiles/
 
 # Equipment viewer originals and rebuildable disk indexes
-/assets_v2/equipment/
+/assets/equipment/
 
 # ==============================================================================
-# 9. Tooling & Pipeline Artifacts (.ai, tools_v2)
+# 9. Tooling & Pipeline Artifacts (.ai/, tools/)
 # ==============================================================================
 # Ticket engine trybuild test output
-/tools_v2/ticket-engine/wip/
+/tools/ticket_engine/wip/
 
 # T-159 gate run artifacts only (regenerable)
 /.ai/artifacts/t159_gates/v/

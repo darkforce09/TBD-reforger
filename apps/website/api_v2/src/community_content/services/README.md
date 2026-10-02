@@ -37,7 +37,7 @@ generation; nothing in it reads Postgres.
 
 - Depends on: the domain's models; `core` for the HTTP retry helper, errors and the content URL
   policy; reqwest; pulldown-cmark (`wiki_markup/`); `sqlx` with SQLite and
-  `contracts_v2/rules/equipment-gameplay/native-matching.json` (`equipment_data_viewer/`).
+  `contracts/rules/equipment-gameplay/native-matching.json` (`equipment_data_viewer/`).
 - Used by: the domain's handlers, the wiki handlers reading and saving through `wiki_markup/`;
   `core::application_state`, which holds the one `WebhookService` and the `EquipmentDatasets`;
   the `equipment_export_watcher` background worker;

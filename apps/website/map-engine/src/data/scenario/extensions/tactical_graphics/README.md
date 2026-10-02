@@ -1,6 +1,6 @@
 # Tactical graphics
 
-The check on a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s authored `tacticalGraphics`
+The check on a [mission](/documentation/glossary/g_to_m.md#mission)'s authored `tacticalGraphics`
 block: the control measures a one-point map marker cannot draw (phase lines, boundaries, axes of
 advance and curved arrows), each an ordered run of world vertices with an optional label, side and
 stroke style. The module is exposed as `data::scenario::tactical_graphics`.
@@ -17,7 +17,7 @@ apps/website/map-engine/src/data/scenario/extensions/tactical_graphics/
 
 ## How it works
 
-`parse` reads a non-empty array of graphics as `contracts_v2/definitions/mission.schema.json`
+`parse` reads a non-empty array of graphics as `contracts/definitions/mission.schema.json`
 shapes each one in `$defs/tacticalGraphic`: `{id, kind, points, label?, sideKey?, style?}`. `kind`
 is one of `KINDS` (`phase_line`, `boundary`, `axis_of_advance`, `curved_arrow`). `points` holds
 `[x, z]` pairs of finite numbers, from `min_points(kind)` (2, or 3 for a `curved_arrow`, a floor
@@ -32,8 +32,8 @@ refuses the block. The first problem found is the answer, a sentence with its pa
 `validate` is `parse` with the value dropped: the check of the `tacticalGraphics` row of
 `AUTHORED_BLOCKS` in `crate::data::scenario::extensions`. The compile carries a valid block
 verbatim to the compiled document's root, where it stops: no script of the
-[mod](/documentation_v2/glossary/g_to_m.md#mod) reads it. The
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) draws the graphics on its map,
+[mod](/documentation/glossary/g_to_m.md#mod) reads it. The
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) draws the graphics on its map,
 and its draw tool takes the same floor and cap, so a drawn graphic always has a vertex count this
 check accepts.
 
@@ -56,5 +56,5 @@ check accepts.
 
 ## Related documentation
 
-- [Mission schema](/contracts_v2/definitions/mission.schema.json) — `tacticalGraphics`,
+- [Mission schema](/contracts/definitions/mission.schema.json) — `tacticalGraphics`,
   `$defs/tacticalGraphic` and `$defs/tacticalGraphicStyle`, the shape this module checks.

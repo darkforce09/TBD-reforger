@@ -1,9 +1,9 @@
 # Slot loadout equipping and kit preview
 
-Dresses characters in the loadout a [slot](/documentation_v2/glossary/n_to_z.md#slot) authors: on the
+Dresses characters in the loadout a [slot](/documentation/glossary/n_to_z.md#slot) authors: on the
 server, the equip pass that puts a slot body's gear, weapons and cargo on it and verifies they
 arrived; on the client, the lobby's kit preview doll wearing the same kit and loadout; and a
-development harness that equips an [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) export file.
+development harness that equips an [arsenal](/documentation/glossary/a_to_f.md#arsenal) export file.
 
 ## Contents
 
@@ -72,7 +72,7 @@ denominator), `AreasForLabel` (a vest may land in the armored vest area), `IsRoo
   prefabs); `TBD_Log` and `TBD_WarnOnce`; the engine's `SCR_InventoryStorageManagerComponent`,
   `EquipedLoadoutStorageComponent`, `EquipedWeaponStorageComponent`, `AttachmentSlotComponent` and
   `ItemPreviewManagerEntity`; the harness's file shape in
-  `contracts_v2/definitions/loadout-export.schema.json`.
+  `contracts/definitions/loadout-export.schema.json`.
 - Used by: `TBD_SlotBodyMaterializer`, `TBD_SlotLoadoutSettle` and `TBD_DeployExecutor` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/` (`TBD_LoadoutApplication`,
   `HasBlockingFailure`, `ShortfallBrief`); `TBD_KitPreviewComponent` in

@@ -1,14 +1,14 @@
 # Operations domain
 
-The [API](/documentation_v2/glossary/a_to_f.md#api)'s
-[operations](/documentation_v2/glossary/n_to_z.md#operations) domain: the calendar of
-[events](/documentation_v2/glossary/a_to_f.md#event) and each event's hub, the
-[missions](/documentation_v2/glossary/g_to_m.md#mission) attached to an event with their
-[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat), event access and reservation pools,
-[slot](/documentation_v2/glossary/n_to_z.md#slot) reservations with the waiting list and its promotion, the
-member directory leaders seat from, the [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime)'s
-roster and player [deployments](/documentation_v2/glossary/a_to_f.md#deployment), attendance derived from
-match results, a member's own [service record](/documentation_v2/glossary/n_to_z.md#service-record) and
+The [API](/documentation/glossary/a_to_f.md#api)'s
+[operations](/documentation/glossary/n_to_z.md#operations) domain: the calendar of
+[events](/documentation/glossary/a_to_f.md#event) and each event's hub, the
+[missions](/documentation/glossary/g_to_m.md#mission) attached to an event with their
+[ORBAT](/documentation/glossary/n_to_z.md#orbat), event access and reservation pools,
+[slot](/documentation/glossary/n_to_z.md#slot) reservations with the waiting list and its promotion, the
+member directory leaders seat from, the [game runtime](/documentation/glossary/g_to_m.md#game-runtime)'s
+roster and player [deployments](/documentation/glossary/a_to_f.md#deployment), attendance derived from
+match results, a member's own [service record](/documentation/glossary/n_to_z.md#service-record) and
 leave requests, and the saved mortar fire missions.
 
 ## Contents
@@ -43,8 +43,8 @@ account union, then an authority recheck), and producers outside the domain, suc
 membership changes, only queue a re-evaluation that a worker runs event-first. An event's status is
 derived inside Postgres from its schedule and the database's clock, so no read waits on the sweep
 that stores it. The roster and deployment authorization read the slot bindings a
-[mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) recorded, so the game, the
-roster and seat authorization name one [artifact](/documentation_v2/glossary/a_to_f.md#artifact). The
+[mission deployment](/documentation/glossary/g_to_m.md#mission-deployment) recorded, so the game, the
+roster and seat authorization name one [artifact](/documentation/glossary/a_to_f.md#artifact). The
 ballistics of the fire missions live in `website_map_engine::data::scenario::ballistics`; this
 domain re-solves every saved fire mission through them against the stored catalog version it
 pins, refuses a client solution that disagrees, and stores the server's solution.
@@ -134,7 +134,7 @@ pins, refuses a client solution that disagrees, and stores the server's solution
   - `administration`, `command_center`, `identity_and_access`, `match_telemetry` and `missions`,
     through the surface above;
   - over HTTP, the operations pages in `apps/website/frontend/src/v2/pages/operations/`, the
-    [event manager](/documentation_v2/glossary/a_to_f.md#event-manager) in
+    [event manager](/documentation/glossary/a_to_f.md#event-manager) in
     `apps/website/frontend/src/v2/pages/administration/event_manager/`, the mortar calculator in
     `apps/website/frontend/src/v2/pages/field_tools/mortar/`, and the game runtime's roster loader
     and deployment queues in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/`.
@@ -148,15 +148,15 @@ pins, refuses a client solution that disagrees, and stores the server's solution
 
 ## Related documentation
 
-- [API overview](/documentation_v2/website/api_v2/api_overview.md) — every domain's routes and the
+- [API overview](/documentation/website/api_v2/api_overview.md) — every domain's routes and the
   layers they share.
-- [Event eligibility and allocation](/documentation_v2/website/api_v2/verification_evidence/event_eligibility_allocation.md)
+- [Event eligibility and allocation](/documentation/website/api_v2/verification_evidence/event_eligibility_allocation.md)
   — access, visibility, pools, promotion, re-evaluation and derived attendance.
-- [Event administration transactions](/documentation_v2/website/api_v2/verification_evidence/event_administration.md)
+- [Event administration transactions](/documentation/website/api_v2/verification_evidence/event_administration.md)
   — the locks every event change takes.
-- [Live slot occupancy](/documentation_v2/website/api_v2/verification_evidence/live_occupancy.md)
+- [Live slot occupancy](/documentation/website/api_v2/verification_evidence/live_occupancy.md)
   — player deployment authorization.
-- [Event schedule page](/documentation_v2/website/frontend/pages/operations/schedule/event_schedule_page.md),
-  [Event hub page](/documentation_v2/website/frontend/pages/operations/event_detail/event_hub_page.md)
-  and [Deployments page](/documentation_v2/website/frontend/pages/operations/deployments/deployments_page.md)
+- [Event schedule page](/documentation/website/frontend/pages/operations/schedule/event_schedule_page.md),
+  [Event hub page](/documentation/website/frontend/pages/operations/event_detail/event_hub_page.md)
+  and [Deployments page](/documentation/website/frontend/pages/operations/deployments/deployments_page.md)
   — the member pages over these routes.

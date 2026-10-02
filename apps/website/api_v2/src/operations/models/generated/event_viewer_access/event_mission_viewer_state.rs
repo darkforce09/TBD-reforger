@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/event-viewer-access.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/event-viewer-access.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///Viewer fields of each hub mission: viewer_eligible (some seat admits the viewer now), my_reservation_state, my_attendance_state, my_slot_id, my_release_reason and my_withdrawn_at (a released signup keeps its tombstone), my_waiting_position (one-based queue position while waitlisted). Absent fields have no value.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

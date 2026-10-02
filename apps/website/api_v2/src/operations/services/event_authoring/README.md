@@ -1,8 +1,8 @@
 # Event authoring services
 
-The write paths that bring an [event](/documentation_v2/glossary/a_to_f.md#event) and its seats into
-being: creating the event row, and attaching a [mission](/documentation_v2/glossary/g_to_m.md#mission)
-with a snapshot of its [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat). The administrator routes
+The write paths that bring an [event](/documentation/glossary/a_to_f.md#event) and its seats into
+being: creating the event row, and attaching a [mission](/documentation/glossary/g_to_m.md#mission)
+with a snapshot of its [ORBAT](/documentation/glossary/n_to_z.md#orbat). The administrator routes
 and the `staging-fixtures` host tool write through the same code.
 
 ## Contents
@@ -30,7 +30,7 @@ validators to the fields it changes.
 `mission_attachment.rs` resolves an `AttachmentTemplate`: the caller's explicit `orbat`, or the
 ORBAT of the mission's current published version. It refuses a template that seats nobody (400 for
 a requested one, 409 for the mission's), an `orbat` the API cannot read, and a squad whose faction
-is blank or padded, which no [armory](/documentation_v2/glossary/a_to_f.md#armory) line could match.
+is blank or padded, which no [armory](/documentation/glossary/a_to_f.md#armory) line could match.
 `attach_mission` takes only such a template:
 
 ```text

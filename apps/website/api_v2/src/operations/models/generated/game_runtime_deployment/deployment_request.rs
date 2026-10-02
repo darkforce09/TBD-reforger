@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/game-runtime-deployment.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/game-runtime-deployment.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///POST /api/v1/game-runtime/sessions/:sessionId/deployments body. event_mission_id and orbat_slot_id come from the roster's slots; player_life_id is chosen by the runtime per spawn attempt and identifies retries.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

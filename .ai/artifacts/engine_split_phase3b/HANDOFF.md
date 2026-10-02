@@ -118,8 +118,8 @@ OPERATOR DECISIONS ALREADY MADE — do not re-ask:
      against the committed baseline: set equality on failing route names, and the four clean
      routes (notfound, eventmgr, callback, login) must still pass. Pass -> fail is a hard stop.
   2. Leave the dirty working tree alone. ~70 files are modified/untracked that are NOT ours
-     (apps/mod/** is out of scope per §7, plus CLAUDE.md, xtask/src/*, documentation_v2/,
-     tools_v2/, v2/** READMEs). Stage ONLY files you authored. Never `git add -A`.
+     (apps/mod/** is out of scope per §7, plus CLAUDE.md, xtask/src/*, documentation/,
+     tools/, v2/** READMEs). Stage ONLY files you authored. Never `git add -A`.
   3. `pages/operations/{orbat_manager,faction_manager}.rs` -> `v2/apps/editor/ui/modals/` (unrouted
      editor modals, not pages). Keep distinct from `v2/pages/operations/orbat_selection/`.
   4. `v2/apps/`'s 42 existing READMEs describe a `features/` + `ui/{top,left,right,bottom,canvas,

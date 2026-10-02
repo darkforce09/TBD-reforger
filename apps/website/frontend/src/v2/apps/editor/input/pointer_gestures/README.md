@@ -1,6 +1,6 @@
 # Canvas gesture handlers
 
-The six DOM event closures the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
+The six DOM event closures the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
 map answers: wheel zoom, pointerdown, pointermove and pointerup (pan, the left-button gesture
 machine, the elevation and vertex drags and the armed place), contextmenu and dblclick. The parent
 module, `apps/website/frontend/src/v2/apps/editor/input/pointer_gestures.rs`, declares them, holds
@@ -51,7 +51,7 @@ and runs the hover-cursor machine, which stays quiet while a gesture, an armed p
 tool is active. The armed place's release maps the pointer to the world only inside the map area
 left by the docks, the top strip and the toolbelt band, read from `shell::layout`'s live accessors
 (`dock_left_px`, `dock_right_px`, `strip_top_px`, `toolbelt_band_px`). A committed move writes
-dragged comments through `move_comment` and the [slots](/documentation_v2/glossary/n_to_z.md#slot) and
+dragged comments through `move_comment` and the [slots](/documentation/glossary/n_to_z.md#slot) and
 vehicles with one `move_entities_and_vehicles` call inside one undo group, then runs
 `after_local_edit`; the other commits go through `website_map_engine::editing::hosted_commands`.
 
@@ -87,9 +87,9 @@ None: the handlers are private to the parent module, which exposes `EditorGestur
 
 ## Related documentation
 
-- [Mission Creator feature inventory: map viewport and camera](/documentation_v2/website/frontend/apps/editor/feature_inventory/map_viewport_and_camera.md) — pan, wheel zoom and double-click.
-- [Mission Creator UX specification](/documentation_v2/website/frontend/apps/editor/ux_spec.md) —
+- [Mission Creator feature inventory: map viewport and camera](/documentation/website/frontend/apps/editor/feature_inventory/map_viewport_and_camera.md) — pan, wheel zoom and double-click.
+- [Mission Creator UX specification](/documentation/website/frontend/apps/editor/ux_spec.md) —
   the interaction contract.
-- [Mission Creator feature inventory: selection](/documentation_v2/website/frontend/apps/editor/feature_inventory/selection.md) — the click, marquee, double-click and right-click picks.
-- [Mission Creator feature inventory: transform and delete](/documentation_v2/website/frontend/apps/editor/feature_inventory/transform_and_delete.md) — the drag-move, rotate and elevation commits.
-- [Mission Creator feature inventory: placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) — the armed place release.
+- [Mission Creator feature inventory: selection](/documentation/website/frontend/apps/editor/feature_inventory/selection.md) — the click, marquee, double-click and right-click picks.
+- [Mission Creator feature inventory: transform and delete](/documentation/website/frontend/apps/editor/feature_inventory/transform_and_delete.md) — the drag-move, rotate and elevation commits.
+- [Mission Creator feature inventory: placement](/documentation/website/frontend/apps/editor/feature_inventory/placement.md) — the armed place release.

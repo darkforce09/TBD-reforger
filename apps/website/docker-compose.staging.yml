@@ -3,7 +3,7 @@
 #
 # `cargo xtask deploy website` starts `postgres` before it builds on the host and `caddy` after the
 # app build, then reloads Caddy's configuration; the API itself runs as the systemd user unit
-# tools_v2/xtask/deploy/systemd/tbd-website-api.service (documentation_v2/runbooks/website_deployment.md
+# tools/xtask/deploy/systemd/tbd-website-api.service (documentation/runbooks/website_deployment.md
 # Phase D). `restart: unless-stopped` brings both services back when the container runtime starts
 # at boot.
 #
@@ -17,7 +17,7 @@
 #   docker compose -f apps/website/docker-compose.staging.yml config   # validate
 #
 # Host Postgres port: TBD_POSTGRES_HOST_PORT (default 5432), which `deploy website` exports from
-# tools_v2/xtask/deploy/deploy.env. The development stack is apps/website/api_v2/docker-compose.yml
+# tools/xtask/deploy/deploy.env. The development stack is apps/website/api_v2/docker-compose.yml
 # on host port 5434.
 
 services:
@@ -43,7 +43,7 @@ services:
       retries: 10
 
   # The web server: serves the built app on :3080 and proxies the API paths to the API on
-  # 127.0.0.1:8080, as tools_v2/xtask/deploy/Caddyfile.website says.
+  # 127.0.0.1:8080, as tools/xtask/deploy/Caddyfile.website says.
   caddy:
     image: docker.io/library/caddy:2
     container_name: tbd_staging_caddy
@@ -60,14 +60,14 @@ services:
       # `dist`, and a bind mount keeps the object it was started with. A missing source folder
       # would also be created by the container runtime as root, which the deploy user's build
       # could then not write. Both folders always exist in the checkout.
-      - ../../tools_v2/xtask/deploy:/etc/tbd-caddy:ro
+      - ../../tools/xtask/deploy:/etc/tbd-caddy:ro
       - ./frontend:/srv/tbd-frontend:ro
       # Caddy's own state: /data is its storage, /config the last configuration it loaded.
       - tbd_staging_caddy_data:/data
       - tbd_staging_caddy_config:/config
 
   # Optional — enable with `--profile api`. The deploy runs the API as the host's systemd unit
-  # (documentation_v2/runbooks/website_deployment.md Phase D); this profile is the containerized
+  # (documentation/runbooks/website_deployment.md Phase D); this profile is the containerized
   # alternative and binds the same 127.0.0.1:8080, so run one or the other.
   api:
     profiles: ["api"]
@@ -108,8 +108,8 @@ services:
     volumes:
       # Read-only: the API serves these, it never writes them. The terrain tree is the server's own
       # copy (the deploy rsync excludes it); the glyph atlas arrives with the rsync.
-      - ../../assets_v2/terrains:/srv/assets/terrains:ro
-      - ../../assets_v2/glyphs:/srv/assets/glyphs:ro
+      - ../../assets/terrains:/srv/assets/terrains:ro
+      - ../../assets/glyphs:/srv/assets/glyphs:ro
       - tbd_staging_api_state:/srv/state
 
 volumes:

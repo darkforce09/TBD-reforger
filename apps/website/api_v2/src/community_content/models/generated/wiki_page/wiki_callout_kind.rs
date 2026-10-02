@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/wiki-page.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/wiki-page.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///The kind of a callout. The GitHub alerts give note, tip, important, warning and caution; the legacy markers add info and critical.
 #[derive(

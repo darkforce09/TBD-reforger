@@ -1,9 +1,9 @@
 # Line-of-sight tool
 
-The headless half of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
+The headless half of the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
 line-of-sight tool: the two-click sight ray and the one-click viewshed disc, the terrain and object
 verdicts over them, and the bytes and screen geometry the browser draws. A sight check is a
-measurement, never [mission](/documentation_v2/glossary/g_to_m.md#mission) content.
+measurement, never [mission](/documentation/glossary/g_to_m.md#mission) content.
 
 ## Contents
 
@@ -92,4 +92,4 @@ the ruler's point-capture arm (`crate::editing::tools::ruler::should_begin_ruler
 
 ## Related documentation
 
-- [Mission Creator feature inventory: bottom toolbelt](/documentation_v2/website/frontend/apps/editor/feature_inventory/bottom_toolbelt.md) — the Line of Sight tool, ray and viewshed.
+- [Mission Creator feature inventory: bottom toolbelt](/documentation/website/frontend/apps/editor/feature_inventory/bottom_toolbelt.md) — the Line of Sight tool, ray and viewshed.

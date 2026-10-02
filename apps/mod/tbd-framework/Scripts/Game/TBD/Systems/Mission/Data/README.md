@@ -1,6 +1,6 @@
 # Mission data structs and state readers
 
-The typed shape of a loaded [mission](/documentation_v2/glossary/g_to_m.md#mission)'s slots and vehicles,
+The typed shape of a loaded [mission](/documentation/glossary/g_to_m.md#mission)'s slots and vehicles,
 and the readers that apply the per-row states the primary parse does not bind: entity and vehicle
 state, player gadget flags and launch parameters. The server fills and applies them while a mission
 loads and while its slot bodies materialize.
@@ -83,7 +83,7 @@ id with one WARNING.
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/` (slot bodies and seating);
   `TBD_Log`; the engine's `DamageManagerComponent`, `VehicleControllerComponent`,
   `FuelManagerComponent`, `BaseWeaponManagerComponent`, `SCR_GadgetManagerComponent` and
-  compartment classes; the wire shape in `contracts_v2/definitions/mission.schema.json`.
+  compartment classes; the wire shape in `contracts/definitions/mission.schema.json`.
 - Used by: `TBD_MissionLoader` (document fields, `Resolve`) and `TBD_MissionWorldApplier`
   (`ResetIndex`, `RecordSpawn`, `Bind`); `TBD_SlotBodyMaterializer` (`ApplySpawned`); the loadout scripts in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Loadouts/`; `TBD_WaypointRuntime` (vehicle rows);

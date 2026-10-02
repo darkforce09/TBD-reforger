@@ -58,7 +58,7 @@ in the browser build only; a native build renders the failed state.
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/admin/ballistics-catalogs` | `BallisticsCatalogsPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` [role](/documentation_v2/glossary/n_to_z.md#role) only | padded inside the navigation frame; breadcrumb Administration / Ballistics Catalogs; sidebar entry "Ballistics Catalogs" |
+| `/admin/ballistics-catalogs` | `BallisticsCatalogsPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` [role](/documentation/glossary/n_to_z.md#role) only | padded inside the navigation frame; breadcrumb Administration / Ballistics Catalogs; sidebar entry "Ballistics Catalogs" |
 
 ## Data
 
@@ -90,5 +90,5 @@ short SHA and count label, and the route's tier, breadcrumb, sidebar entry and m
 
 ## Related documentation
 
-- [Ballistics catalogs page documentation](/documentation_v2/website/frontend/pages/administration/ballistics_catalogs/README.md) —
+- [Ballistics catalogs page documentation](/documentation/website/frontend/pages/administration/ballistics_catalogs/README.md) —
   the page's feature documentation.

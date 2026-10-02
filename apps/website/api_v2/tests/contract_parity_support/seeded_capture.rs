@@ -63,11 +63,11 @@ const BALLISTICS_CATALOGS: &str = "/api/v1/ballistics-catalogs";
 const COMMITTED_CATALOG_PAIR: [(&str, &str); 2] = [
     (
         "catalog",
-        "contracts_v2/catalogs/ballistics/vanilla_mortars.v1.catalog.json",
+        "contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json",
     ),
     (
         "calibration",
-        "contracts_v2/fixtures/ballistics/vanilla_mortars.v1/calibration.json",
+        "contracts/fixtures/ballistics/vanilla_mortars.v1/calibration.json",
     ),
 ];
 

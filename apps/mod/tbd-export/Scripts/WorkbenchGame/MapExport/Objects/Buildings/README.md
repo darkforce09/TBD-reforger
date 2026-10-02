@@ -1,6 +1,6 @@
 # Building blueprint export
 
-Turns the buildings of the world open in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) into
+Turns the buildings of the world open in [Workbench](/documentation/glossary/n_to_z.md#workbench) into
 building blueprints (floors, walls, doors, windows, stairs, furniture and roof heights), measures
 line-of-sight reference pairs against the engine, and lists every placed building by type. A Net
 API handler lets the developer tools drive the blueprint steps from outside Workbench.
@@ -103,11 +103,11 @@ None: Workbench runs these scripts in the editor.
   `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/`; the engine's `NetApiHandler`,
   `JsonApiStruct`, `BaseWorld.TraceMove` and `QueryEntitiesByAABB`.
 - Used by:
-  - `cargo xtask mcp wbcall` (`tools_v2/xtask/src/commands/mcp/netapi.rs`), which calls the
+  - `cargo xtask mcp wbcall` (`tools/xtask/src/commands/mcp/netapi.rs`), which calls the
     handler over the Net API;
-  - `cargo xtask map ingest-blueprints` (`tools_v2/developer-tools/src/blueprint/ingest.rs`), which
+  - `cargo xtask map ingest-blueprints` (`tools/developer_tools/src/blueprint/ingest.rs`), which
     copies `prefabs/buildings/*.json` from the profile into
-    `assets_v2/terrains/everon/prefabs/buildings/`, validated against the `BuildingBlueprint`
+    `assets/terrains/everon/prefabs/buildings/`, validated against the `BuildingBlueprint`
     contract;
   - `cargo xtask map blueprint-from-voxels`, which reads `prefabs/dumps/<slug>_voxels.jsonl`;
   - `cargo xtask map parity-report`, `map bvh-parity` and `map world-los`, which replay the parity
@@ -115,18 +115,18 @@ None: Workbench runs these scripts in the editor.
 - Rules: the handler stays in this addon, out of any `EnfusionMCP/` folder, which the MCP's
   `wb_cleanup` deletes; a blueprint number comes from a trace against the building's own collision,
   never a constant, in the measured path; the dump stays uninterpreted, so extraction rules change
-  in `tools_v2/developer-tools/src/blueprint/`, not here. Lines added stay ASCII.
+  in `tools/developer_tools/src/blueprint/`, not here. Lines added stay ASCII.
   `cargo xtask mod compile` compiles only the framework addon, so these scripts compile only when
   Workbench loads `tbd-export`, and a changed handler answers only after Workbench recompiles it.
 
 ## Related documentation
 
-- [Building blueprints](/assets_v2/terrains/everon/prefabs/buildings/README.md) — the committed
+- [Building blueprints](/assets/terrains/everon/prefabs/buildings/README.md) — the committed
   blueprints and sidecars, and their consumers.
-- [Blueprint compiler](/tools_v2/developer-tools/src/blueprint/README.md) — the offline
+- [Blueprint compiler](/tools/developer_tools/src/blueprint/README.md) — the offline
   interpretation of the dumps and the parity tools.
-- [Map commands](/tools_v2/xtask/src/commands/map/README.md) — the `cargo xtask map` blueprint and
+- [Map commands](/tools/xtask/src/commands/map/README.md) — the `cargo xtask map` blueprint and
   parity commands.
-- [MCP commands](/tools_v2/xtask/src/commands/mcp/README.md) — `cargo xtask mcp wbcall`.
-- [Enfusion MCP bridge](/documentation_v2/mod/tbd-emcp/workbench_mcp_bridge.md) — the Net API that
+- [MCP commands](/tools/xtask/src/commands/mcp/README.md) — `cargo xtask mcp wbcall`.
+- [Enfusion MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md) — the Net API that
   `cargo xtask mcp wbcall` reaches.

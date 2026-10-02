@@ -52,7 +52,7 @@ poll never remounts the page under it. `Toasts`, provided once at the shell root
 through `success`, `error` or `message` that removes itself after four seconds, and its viewport
 renders no DOM while the list is empty. `SearchBox`, `Select` and `Slider` take their hover and
 disabled classes, `HOVER_FILL` and `DISABLED_GLYPH`, from the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
 `apps/website/frontend/src/v2/apps/editor/shell/layout.rs`.
 
 ## Boundaries
@@ -75,9 +75,9 @@ disabled classes, `HOVER_FILL` and `DISABLED_GLYPH`, from the
 
 ## Related documentation
 
-- [Design tokens](/documentation_v2/design_system/design_tokens.md) — the design token
+- [Design tokens](/documentation/design_system/design_tokens.md) — the design token
   reference: palette, typography, spacing, radii and motion.
-- [Interaction patterns](/documentation_v2/design_system/interaction_patterns.md) — the split
+- [Interaction patterns](/documentation/design_system/interaction_patterns.md) — the split
   pane, create-over-list dialog and slide-over sheet the pages build from these primitives.
-- [Frontend documentation](/documentation_v2/website/frontend/README.md#design) — the design references
+- [Frontend documentation](/documentation/website/frontend/README.md#design) — the design references
   and tokens the primitives follow.

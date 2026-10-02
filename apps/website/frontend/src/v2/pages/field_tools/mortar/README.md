@@ -5,7 +5,7 @@ battery of one to twelve guns (the contract's cap on a saved battery) and a targ
 reference, give the wind and, for a time-fuzed shell, the
 burst height, and the page solves every gun's firing solution on the device with the map engine's
 solver. The page is open to every viewer; a signed-in viewer also sees the
-[event](/documentation_v2/glossary/a_to_f.md#event) picker and the fire missions saved against the
+[event](/documentation/glossary/a_to_f.md#event) picker and the fire missions saved against the
 selected event.
 
 ## Contents
@@ -140,7 +140,7 @@ one gun from its coordinates or its legacy `x, y` grid text. The selected event 
   `apps/website/frontend/src/router.rs`; the sidebar's "Mortar Calculator" link in
   `apps/website/frontend/src/v2/pages/navigation/nav_config.rs`; the offline pack trigger in
   `apps/website/frontend/src/v2/core/offline/offline_pack.rs`; the DOM oracle's `mortar` capture
-  in `tools_v2/developer-tools/src/browser_testing/dom_oracle/routes.rs`.
+  in `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`.
 - Rules:
   - the page's solution is the engine's `solve_fire_mission` answer byte for byte
     (`the_solution_is_the_engine_fire_mission_solution_byte_for_byte`), from inputs pinned to the
@@ -161,7 +161,7 @@ one gun from its coordinates or its legacy `x, y` grid text. The selected event 
 
 ## Related documentation
 
-- [Mortar calculator page](/documentation_v2/website/frontend/pages/field_tools/mortar/mortar_calculator_page.md)
+- [Mortar calculator page](/documentation/website/frontend/pages/field_tools/mortar/mortar_calculator_page.md)
   — the page's behaviour and design.
 - [Firing solver](/apps/website/map-engine/src/data/scenario/ballistics/solver/README.md) — the
   solver the page runs.

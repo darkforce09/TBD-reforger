@@ -1,10 +1,10 @@
 # Mission editing
 
 The headless editing layer of the map engine, behind the crate's `editing` feature: the editing
-host that holds the live [mission](/documentation_v2/glossary/g_to_m.md#mission) document, the commands
+host that holds the live [mission](/documentation/glossary/g_to_m.md#mission) document, the commands
 and undo drive that edit it, the overlay lanes and picks drawn from it, the decisions behind local
 drafts, and the interactive map tools. The
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) supplies everything a browser owns
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) supplies everything a browser owns
 (clocks, frame pumps, prompts, storage) as closures and function pointers, so every decision here
 is answerable by `cargo test`.
 
@@ -55,7 +55,7 @@ redo end in the same hook. `with_batch` closes its undo group through a drop gua
 return or an unwind never leaves the document grouping. The picks in `picking.rs` turn a frozen
 camera and a pixel into a world query, ask `crate::spatial::indexing::picking` for rows, and let
 `MissionDocCore` map rows to ids and break ties
-(a [slot](/documentation_v2/glossary/n_to_z.md#slot) beats a vehicle at equal distance).
+(a [slot](/documentation/glossary/n_to_z.md#slot) beats a vehicle at equal distance).
 `selection_universe.rs` reads membership from the post-change document's raw maps rather than the
 materialized slots, so hiding a slot never deselects it, and `routing.rs` answers the affordance
 probe and the click with one resolution, so a row is clickable only when a click reaches something.
@@ -88,9 +88,9 @@ probe and the click with one resolution, so a row is clickable only when a click
   - the Mission Creator in `apps/website/frontend/src/v2/apps/editor/` (canvas mount, bridge,
     input, shell, docks, inspector, outliner, modals, arsenal) and the debug building viewer in
     `apps/website/frontend/src/v2/apps/debug/building_viewer/`;
-  - the headless editor gates in `tools_v2/developer-tools/src/browser_testing/`, through the
+  - the headless editor gates in `tools/developer_tools/src/browser_testing/`, through the
     selection self-checks the select tool publishes;
-  - the `engine-layers` and `editor-orbat-coherency` gates of `tools_v2/xtask/`, which scan this
+  - the `engine-layers` and `editor-orbat-coherency` gates of `tools/xtask/`, which scan this
     tree.
 - Rules:
   - no `web_sys`, `leptos` or `wasm_bindgen` anywhere under this folder (rule 5 of
@@ -101,17 +101,18 @@ probe and the click with one resolution, so a row is clickable only when a click
     slots before vehicles (`square_slots_circular_vehicles_and_equal_distance_policy` in
     `tests/picking_selection.rs`);
   - the ruler and line-of-sight measurements never write the document (the `session_local` tests
-    of `tools/ruler/` and `tools/line_of_sight/`).
+    of `apps/website/map-engine/src/editing/tools/ruler/` and
+    `apps/website/map-engine/src/editing/tools/line_of_sight/`).
 
 ## Related documentation
 
 - [Mission document store](/apps/website/map-engine/src/data/store/README.md) — the document this
   layer edits and the operations it calls.
-- [Architecture gates](/tools_v2/xtask/src/verifications/architecture/README.md) — the
+- [Architecture gates](/tools/xtask/src/verifications/architecture/README.md) — the
   `engine-layers` and `editor-orbat-coherency` gates that scan this tree.
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
+- [Mission Creator feature inventory](/documentation/website/frontend/apps/editor/feature_inventory/README.md)
   — the Mission Creator features this layer backs.
-- [Editing layer](/documentation_v2/website/map-engine/editing_layer.md) — the host, hosted
+- [Editing layer](/documentation/website/map-engine/editing_layer.md) — the host, hosted
   commands, undo and tools as flows, with open work and decisions.
-- [Draft persistence](/documentation_v2/website/map-engine/draft_persistence.md) — how the
+- [Draft persistence](/documentation/website/map-engine/draft_persistence.md) — how the
   Mission Creator opens, reconciles, adopts, snapshots and saves a draft through `persist/`.

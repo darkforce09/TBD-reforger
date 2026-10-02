@@ -20,8 +20,8 @@ apps/website/map-engine/src/streaming/scheduler/residency/t152_3_tests/
   `crate::overlay` for the class gates and the glyph keys; `crate::world` for the class codes, the
   footprint colours, the bridge fills and the strip geometry; `crate::streaming::buffers::revision`
   for `norm`; and the committed data it reads from disk: the manifest, prefab catalogue, chunk
-  index and chunks under `assets_v2/terrains/everon/`, and `assets_v2/glyphs/manifest.json` with
-  the atlas key file `assets_v2/glyphs/atlas/world-glyphs.json`.
+  index and chunks under `assets/terrains/everon/`, and `assets/glyphs/manifest.json` with
+  the atlas key file `assets/glyphs/atlas/world-glyphs.json`.
 - Used by: nothing outside the folder;
   `apps/website/map-engine/src/streaming/scheduler/residency/mod.rs` compiles it only in test
   builds (`#[cfg(test)] mod t152_3_tests;`).

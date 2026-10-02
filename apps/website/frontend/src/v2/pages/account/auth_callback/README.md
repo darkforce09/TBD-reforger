@@ -1,9 +1,9 @@
 # Sign-in callback page
 
 The `/auth/callback` page that the sign-in redirect lands on: it reads the session the
-[API](/documentation_v2/glossary/a_to_f.md#api) put in the URL fragment, stores it, loads the viewer's
+[API](/documentation/glossary/a_to_f.md#api) put in the URL fragment, stores it, loads the viewer's
 profile and sends the browser on to the dashboard. The Discord callback and the
-[dev login](/documentation_v2/glossary/a_to_f.md#dev-login) both redirect here.
+[dev login](/documentation/glossary/a_to_f.md#dev-login) both redirect here.
 
 ## Contents
 
@@ -73,7 +73,7 @@ profile fetch fails the stored tokens stay, so a reload can still restore the se
   `apps/website/frontend/src/router.rs`; the frame in
   `apps/website/frontend/src/v2/pages/navigation/layout.rs`, which renders this path bare; the DOM
   oracle's `callback` capture in
-  `tools_v2/developer-tools/src/browser_testing/dom_oracle/routes.rs`; over redirects, the Discord
+  `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`; over redirects, the Discord
   callback and the dev login in `apps/website/api_v2/src/identity_and_access/handlers/`.
 - Rules: the fragment is scrubbed with a history replace, never a push; the path stays reachable
   signed out and stays named in the frame's `classify_frame` (`classify_frame_kinds` in
@@ -82,9 +82,9 @@ profile fetch fails the stored tokens stay, so a reload can still restore the se
 
 ## Related documentation
 
-- [Account pages](/documentation_v2/website/frontend/pages/account/account_pages.md) — the
+- [Account pages](/documentation/website/frontend/pages/account/account_pages.md) — the
   behaviour and design of the account pages.
 - [Identity and access domain](/apps/website/api_v2/src/identity_and_access/README.md) — the
   sign-in routes that redirect here.
-- [Local development](/documentation_v2/runbooks/local_development.md) — the dev login, which
+- [Local development](/documentation/runbooks/local_development.md) — the dev login, which
   lands here with the same fragment as the Discord sign-in.

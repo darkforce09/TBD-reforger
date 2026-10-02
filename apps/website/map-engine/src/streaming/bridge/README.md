@@ -1,7 +1,7 @@
 # Streaming bridge to the page
 
 What crosses between the streaming layer and the page that embeds it: the preference readers the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) supplies, the boot progress the
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) supplies, the boot progress the
 loaders report, the asset counters published at `window.__mapAssets`, and the world-layer
 toggles the residency applies.
 
@@ -30,7 +30,7 @@ apps/website/map-engine/src/streaming/bridge/
   `WorldLayerPrefs` holds twelve serialised switches (`townLabels` and `roadNames` in camelCase),
   all on by default except props.
 - **Progress out.** Loaders report `BootEvent`s against four `BootSeg`ments
-  ([mission](/documentation_v2/glossary/g_to_m.md#mission), terrain, satellite, world): `Budget` sets a
+  ([mission](/documentation/glossary/g_to_m.md#mission), terrain, satellite, world): `Budget` sets a
   segment's byte total from a `content-length` or the satellite index, `Files` declares a file
   count, `Done` counts units landed and `Finish` closes it. `STREAM_REPORT_BYTES` (512 KiB)
   batches a streamed body's reports; `split_range` cuts a tile into inclusive `Range` spans of
@@ -53,7 +53,7 @@ apps/website/map-engine/src/streaming/bridge/
   `apps/website/frontend/src/v2/apps/editor/` (its world-asset bridge builds the
   `HostPreferences`, its boot machine and preference store re-export the progress types and
   `WorldLayerPrefs`, and its hydrate reports the mission segment); the editor smoke tests in
-  `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/`, which read
+  `tools/developer_tools/src/browser_testing/editor_smoke_tests/`, which read
   `window.__mapAssets`.
 - Rules:
   - `split_range` spans are inclusive, contiguous and cover the tile exactly, and `Ordered`
@@ -65,4 +65,4 @@ apps/website/map-engine/src/streaming/bridge/
   - `strips_visible` follows the toggles and the zoom only, never the buffer contents, so an empty
     strip buffer mid-hydration uploads as visible instead of blanking the lane;
   - the `window.__mapAssets` keys are the ones the editor smoke tests assert on
-    (`tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/fullmap.rs`).
+    (`tools/developer_tools/src/browser_testing/editor_smoke_tests/fullmap.rs`).

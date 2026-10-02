@@ -1,6 +1,6 @@
 # Fleet command ledger
 
-The durable ledger of [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command): an operator's
+The durable ledger of [fleet commands](/documentation/glossary/a_to_f.md#fleet-command): an operator's
 command to one server is recorded before any executor can act on it, claimed under a lease and a
 fencing token, reported as starting and finished, and reconciled by time when an executor goes
 silent.
@@ -31,13 +31,13 @@ cancelled         new fencing token      otherwise: indeterminate
 ```
 
 `command_ledger.rs` accepts an operator's command with arguments that passed
-`command_arguments.rs`; the actions only a [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment)
+`command_arguments.rs`; the actions only a [mission deployment](/documentation/glossary/g_to_m.md#mission-deployment)
 issues (`load_mission`, `restart_with_mission`) arrive through `enqueue_deployment_command`, which
 commits with the deployment. `executor_claims.rs` hands the oldest claimable command to the
 executor whose kind the action needs, checks that the requester still holds administrator
 authority, and requires the current fencing token on every later report, so an executor whose
 lease lapsed cannot overwrite a newer claim; a
-[game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) names its open runtime session, and a
+[game runtime](/documentation/glossary/g_to_m.md#game-runtime) names its open runtime session, and a
 command bound to another session fails. In a test build `record_result` passes the failpoint
 `FleetCommandResultBeforeCommit` after the outcome's audit row; the executor handlers pass
 `FleetCommandClaimAfterCommit` and `FleetCommandResultAfterCommit` after their commits.
@@ -67,5 +67,5 @@ servers, skipping rows another transaction holds. Lock order: server, runtime se
 
 ## Related documentation
 
-- [Fleet command ledger](/documentation_v2/website/api_v2/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger](/documentation/website/api_v2/verification_evidence/fleet_command_ledger.md)
   — the ledger's states, rules and executors.

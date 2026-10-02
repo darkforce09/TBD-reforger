@@ -1,7 +1,7 @@
 # Equipment and vehicle export verification and Net API
 
 The checks that prove the source reader reads what the engine holds before any generation starts,
-and the Net API handler that lets tools outside [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)
+and the Net API handler that lets tools outside [Workbench](/documentation/glossary/n_to_z.md#workbench)
 drive an export, step it, and probe single resources.
 
 ## Contents
@@ -64,19 +64,19 @@ None: Workbench runs these scripts in the editor.
   `TBD_SourceExportJson` in `Serialization/`; the engine's `NetApiHandler`, `JsonApiStruct`,
   `BaseContainerTools` and `JsonLoadContext`; the installed vanilla prefabs the checks name.
 - Used by: `TBD_SourceExportGeneration` in `Generation/`, which runs the verification; over the Net
-  API, `cargo xtask mcp wbcall` (`tools_v2/xtask/src/commands/mcp/`). `cargo xtask verify no-crf-leak`
+  API, `cargo xtask mcp wbcall` (`tools/xtask/src/commands/mcp/`). `cargo xtask verify no-crf-leak`
   scans this folder with the rest of the addon and reports the backpack prefab GUID the checks name
-  (`tools_v2/xtask/src/verifications/licensing/README.md`).
+  (`tools/xtask/src/verifications/licensing/README.md`).
 - Rules: a generation whose reader verification did not pass never publishes
   (`partial_and_unverified_exports_cannot_publish` in
-  `tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/tests/validation.rs`); the handler
+  `tools/xtask/src/commands/mod_ops/equipment_vehicle_export/tests/validation.rs`); the handler
   answers only while Workbench has `apps/mod/tbd-export/addon.gproj` open, the one project that
   compiles these scripts. The Unicode fixture string is the one non-ASCII literal, and it is
   deliberate.
 
 ## Related documentation
 
-- [Acceptance evidence](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/README.md)
+- [Acceptance evidence](/documentation/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/README.md)
   — the recorded verification, Workbench acceptance and repeatability runs.
-- [Workbench MCP bridge](/documentation_v2/mod/tbd-emcp/workbench_mcp_bridge.md) — the Net API
+- [Workbench MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md) — the Net API
   and the calls that reach this handler.

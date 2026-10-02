@@ -1,13 +1,13 @@
 # Fleet host agent
 
-The `fleet-host-agent` crate: the [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent)
+The `fleet-host-agent` crate: the [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent)
 that runs beside each Arma Reforger dedicated server of a game host, one agent per fleet instance.
 It polls the
-[API](/documentation_v2/glossary/a_to_f.md#api) outbound over HTTPS for the
-[fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command) addressed to its server, performs each
-one through fixed process-control actions, [RCON](/documentation_v2/glossary/n_to_z.md#rcon) reads, an
+[API](/documentation/glossary/a_to_f.md#api) outbound over HTTPS for the
+[fleet commands](/documentation/glossary/a_to_f.md#fleet-command) addressed to its server, performs each
+one through fixed process-control actions, [RCON](/documentation/glossary/n_to_z.md#rcon) reads, an
 operator's console line sent once over RCON, or a
-[mission header](/documentation_v2/glossary/g_to_m.md#mission-header) switch in the server's JSON config,
+[mission header](/documentation/glossary/g_to_m.md#mission-header) switch in the server's JSON config,
 and reports every step to the API's command ledger.
 
 ## Contents
@@ -23,7 +23,7 @@ apps/fleet_host_agent/
 
 The API never connects to the host: a host behind NAT or a firewall needs only outbound HTTPS.
 The agent authenticates with a `host_agent`
-[machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential) and runs one loop, one
+[machine credential](/documentation/glossary/g_to_m.md#machine-credential) and runs one loop, one
 command at a time:
 
 1. `POST /api/v1/fleet-executor/commands/claim` with the body `{}`. A 204 means nothing is
@@ -47,9 +47,9 @@ the unit state read back after a dwell rather than by `systemctl`'s exit status;
 over RCON (`#players`); `console_command`, one operator line for the game server's console,
 transmitted once over RCON with its reply of at most 4096 bytes as the outcome; and
 `restart_with_mission`, a cross-terrain
-[mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) that rewrites only
+[mission deployment](/documentation/glossary/g_to_m.md#mission-deployment) that rewrites only
 `game.scenarioId` in the server config and then restarts the unit. `broadcast`, `kick` and
-`load_mission` run in the [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime), and the agent
+`load_mission` run in the [game runtime](/documentation/glossary/g_to_m.md#game-runtime), and the agent
 refuses them. `src/command_execution/README.md` tables each action's success rule and outcome.
 
 ### Safety model
@@ -87,7 +87,7 @@ cargo xtask deploy staging --dry-run        # prints the staging plan, the host 
 `cargo xtask deploy staging` runs one agent per fleet instance on the host that `TBD_SSH_HOST`
 names: it builds the agent there, installs it as `~/.local/bin/fleet-host-agent`, writes each
 instance's `~/.config/fleet-host-agent/instance-N/agent.toml` (mode 600 in a mode 700 directory),
-installs the template unit `tools_v2/xtask/deploy/systemd/fleet-host-agent@.service`, enables
+installs the template unit `tools/xtask/deploy/systemd/fleet-host-agent@.service`, enables
 lingering, restarts `fleet-host-agent@N.service` for every instance N from 1 to
 `TBD_FLEET_INSTANCES` and fails unless each is `active`. Each configuration names its instance's
 game server unit `tbd-reforger@N.service`, its `~/tbd/fleet/instance-N/server.config.json` and two
@@ -170,12 +170,12 @@ bits. `src/agent_configuration/README.md` lists every rule. `RUST_LOG` sets the 
 
 - Depends on: the API's executor routes in `apps/website/api_v2/src/server_infrastructure/`, with
   a `host_agent` machine credential; the wire contracts
-  `contracts_v2/definitions/fleet-command.schema.json` and
-  `contracts_v2/definitions/machine-credential.schema.json`; the calling user's systemd manager;
+  `contracts/definitions/fleet-command.schema.json` and
+  `contracts/definitions/machine-credential.schema.json`; the calling user's systemd manager;
   the dedicated server's JSON config and its BattlEye RCon port.
-- Used by: `cargo xtask deploy staging` (`tools_v2/xtask/src/commands/deploy/staging/host_agent.rs`),
+- Used by: `cargo xtask deploy staging` (`tools/xtask/src/commands/deploy/staging/host_agent.rs`),
   which builds it, configures one agent per fleet instance and runs each as an instance of
-  `tools_v2/xtask/deploy/systemd/fleet-host-agent@.service`; over HTTP, the API's fleet command
+  `tools/xtask/deploy/systemd/fleet-host-agent@.service`; over HTTP, the API's fleet command
   ledger, which Server Control and mission deployments feed.
 - Rules: the tests in `tests/` need no network beyond the loopback sockets they open, and
   `tests/test_support/` holds their stand-ins; the claim, fencing and reporting rules hold under
@@ -186,11 +186,11 @@ bits. `src/agent_configuration/README.md` lists every rule. `RUST_LOG` sets the 
 
 ## Related documentation
 
-- [Fleet command ledger](/documentation_v2/website/api_v2/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger](/documentation/website/api_v2/verification_evidence/fleet_command_ledger.md)
   — the API side: command states, leases, fencing and execution windows.
-- [Machine credentials](/documentation_v2/website/api_v2/verification_evidence/machine_credentials.md)
+- [Machine credentials](/documentation/website/api_v2/verification_evidence/machine_credentials.md)
   — issuing and revoking the credential the agent authenticates with.
-- [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — deploying the
+- [Game server staging](/documentation/runbooks/game_server_staging/README.md) — deploying the
   staging game server with the host agent.
-- [Fleet command execution](/documentation_v2/fleet_host_agent/fleet_command_execution.md) — the
+- [Fleet command execution](/documentation/fleet_host_agent/fleet_command_execution.md) — the
   design across the API, the agent and the game runtime, and the open work.

@@ -1,8 +1,8 @@
 # Arsenal panels
 
-The views the [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) draws around one
-[slot](/documentation_v2/glossary/n_to_z.md#slot)'s loadout inside the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s Attributes dialog: the doll that
+The views the [arsenal](/documentation/glossary/a_to_f.md#arsenal) draws around one
+[slot](/documentation/glossary/n_to_z.md#slot)'s loadout inside the
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s Attributes dialog: the doll that
 previews the loadout in 3D with a flat SVG fallback, the compatibility panel with its attachment
 toggles, and the cargo editor.
 
@@ -55,7 +55,7 @@ pending edit.
     which imports the three views, and `tab_content.rs` and `tab_content/selection_grid.rs`, which
     render them;
   - the source pins in `apps/website/frontend/src/v2/apps/editor/arsenal/tests/shell_wiring.rs`;
-  - the Arsenal smoke test in `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/arsenal.rs`,
+  - the Arsenal smoke test in `tools/developer_tools/src/browser_testing/editor_smoke_tests/arsenal.rs`,
     which clicks the compatibility panel's buttons by `data-value`.
 - Rules: a panel renders and reports; the loadout rules, the serialisation and the document write
   stay in the Arsenal. Every option button carries `data-value` with its resource name, which the
@@ -65,6 +65,6 @@ pending edit.
 
 ## Related documentation
 
-- [Mission Creator feature inventory: attributes dialog](/documentation_v2/website/frontend/apps/editor/feature_inventory/attributes_and_settings.md) — the Arsenal tab the panels draw.
-- [Arsenal loadout editor](/documentation_v2/website/frontend/apps/editor/arsenal/arsenal_loadout_editor.md)
+- [Mission Creator feature inventory: attributes dialog](/documentation/website/frontend/apps/editor/feature_inventory/attributes_and_settings.md) — the Arsenal tab the panels draw.
+- [Arsenal loadout editor](/documentation/website/frontend/apps/editor/arsenal/arsenal_loadout_editor.md)
   — the loadout editor these panels belong to: its behaviour, data and design.

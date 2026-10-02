@@ -1,6 +1,6 @@
 # Authored win rule
 
-The runtime of a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s `winConditions.mode`: the
+The runtime of a [mission](/documentation/glossary/g_to_m.md#mission)'s `winConditions.mode`: the
 arm-time checks for every mode, and the evaluation of the two modes nothing else observes,
 `extraction` and `vip`.
 
@@ -47,7 +47,7 @@ is set before `SetStage(END)`, so a condition that stays true ends the round onc
   `TBD_SpawnManager`, `TBD_MissionLoader`, `TBD_MissionJsonPass` and `TBD_ZoneRegistry` under
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/`; `TBD_Log` and `TBD_AnnounceOnce` under
   `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; the `winConditions` definition in
-  `contracts_v2/definitions/mission.schema.json`.
+  `contracts/definitions/mission.schema.json`.
 - Used by: `TBD_RuntimeHeartbeat` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/Heartbeat/`.
 - Rules: the latch and the rule clear on the way into a world, because statics outlive a world; no
@@ -56,5 +56,5 @@ is set before `SetStage(END)`, so a condition that stays true ends the round onc
 
 ## Related documentation
 
-- [End screen specification](/documentation_v2/mod/tbd-framework/UI/end_screen/end_screen_specification.md)
+- [End screen specification](/documentation/mod/tbd-framework/UI/end_screen/end_screen_specification.md)
   — the END banner that names the win rule's endings

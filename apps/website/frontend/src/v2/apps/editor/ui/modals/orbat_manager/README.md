@@ -1,9 +1,9 @@
 # ORBAT Manager parts
 
-The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
-[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) Manager: a near-full-screen dialog over the live ORBAT
-of the open [mission](/documentation_v2/glossary/g_to_m.md#mission), its sides, squads,
-[slots](/documentation_v2/glossary/n_to_z.md#slot) and squad vehicles, with a slot inspector beside the
+The [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
+[ORBAT](/documentation/glossary/n_to_z.md#orbat) Manager: a near-full-screen dialog over the live ORBAT
+of the open [mission](/documentation/glossary/g_to_m.md#mission), its sides, squads,
+[slots](/documentation/glossary/n_to_z.md#slot) and squad vehicles, with a slot inspector beside the
 tree and the faction library templates a side loads from or saves to. The parent module,
 `apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager.rs`, declares these modules,
 re-exports `OrbatManagerDialog` and the template helpers, and holds the tree's row constants.
@@ -32,8 +32,8 @@ filtered by "Search entities..."; the header counts the slots against the server
 and turns to the alert colour above it. The rows and the slot inspector edit through the map
 engine's `orbat_*` hosted commands (squads added, renamed and removed; slots added, removed, refiled
 and made squad leader; vehicles added from the item
-[registry](/documentation_v2/glossary/n_to_z.md#registry)), and the inspector opens the
-[Arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) on the selected slot. A tree longer than
+[registry](/documentation/glossary/n_to_z.md#registry)), and the inspector opens the
+[Arsenal](/documentation/glossary/a_to_f.md#arsenal) on the selected slot. A tree longer than
 `VIRTUAL_SLOT_THRESHOLD` rows renders only the rows in view plus an overscan, and `stats.rs` writes
 the counts to `window.__outlinerStats.orbat`.
 
@@ -52,15 +52,15 @@ and writes it with `PUT /api/v1/factions/{id}`; "Save as" creates a faction from
   `apps/website/frontend/src/v2/apps/editor/ui/outliner/` (the node model, `flatten_visible`, the
   side filter, the dialog class, the drag latch); the bridge's `entity_selection` and
   `editor_context::open_attributes`/`open_arsenal`; `crate::v2::core` (the
-  [API](/documentation_v2/glossary/a_to_f.md#api) client, `AuthStore`, `FactionDoc`, `UserFaction`,
+  [API](/documentation/glossary/a_to_f.md#api) client, `AuthStore`, `FactionDoc`, `UserFaction`,
   `RegistryItem`, `modal_stack`, `MaterialIcon`); over HTTP, the faction library of the API's
-  [missions](/documentation_v2/glossary/g_to_m.md#missions) domain.
+  [missions](/documentation/glossary/g_to_m.md#missions) domain.
 - Used by: the parent module, whose `OrbatManagerDialog` `shell::eden_chrome` re-exports for
   `apps/website/frontend/src/v2/apps/editor/mission_editor.rs`; the headless editor gates in
-  `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/`, which open the dialog by the
+  `tools/developer_tools/src/browser_testing/editor_smoke_tests/`, which open the dialog by the
   "ORBAT Manager" label and read its heading, rows and `window.__outlinerStats`;
   `cargo xtask verify editor-orbat-coherency`
-  (`tools_v2/xtask/src/verifications/architecture/editor_orbat_coherency.rs`), which scans the
+  (`tools/xtask/src/verifications/architecture/editor_orbat_coherency.rs`), which scans the
   parent module and every source file in this folder; the test
   `orbat_manager_overlay_derives_z_from_the_modal_stack` in
   `apps/website/frontend/src/v2/core/ui/tests/ui.rs`, which reads `dialog.rs`.
@@ -77,5 +77,5 @@ and writes it with `PUT /api/v1/factions/{id}`; "Save as" creates a faction from
 
 - [Missions domain](/apps/website/api_v2/src/missions/README.md) — the `/api/v1/factions` routes
   the templates read and write.
-- [Mission Creator feature inventory: left sidebar and ORBAT tree](/documentation_v2/website/frontend/apps/editor/feature_inventory/left_sidebar.md) — the ORBAT tree and squad authoring.
-- [Mission Creator feature inventory: selection](/documentation_v2/website/frontend/apps/editor/feature_inventory/selection.md) — selecting from the ORBAT Manager tree.
+- [Mission Creator feature inventory: left sidebar and ORBAT tree](/documentation/website/frontend/apps/editor/feature_inventory/left_sidebar.md) — the ORBAT tree and squad authoring.
+- [Mission Creator feature inventory: selection](/documentation/website/frontend/apps/editor/feature_inventory/selection.md) — selecting from the ORBAT Manager tree.

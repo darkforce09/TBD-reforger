@@ -32,9 +32,9 @@ Every function is total: an input it cannot read gives a placeholder, never a pa
 | `clipboard.rs` | `write_clipboard` (browser-only): awaits `navigator.clipboard.writeText`, then toasts the caller's success message, or the browser's reason when the write is refused |
 
 Every surface that copies text calls `write_clipboard`, so "did the copy land" has one answer:
-the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s clipboard exporters, the
+the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s clipboard exporters, the
 server intel page's copy button and the
-[server control](/documentation_v2/glossary/n_to_z.md#server-control) page's credential sheet.
+[server control](/documentation/glossary/n_to_z.md#server-control) page's credential sheet.
 
 ## Boundaries
 
@@ -60,5 +60,5 @@ server intel page's copy button and the
 
 ## Related documentation
 
-- [Frontend documentation](/documentation_v2/website/frontend/README.md#shared-foundations) — the shared foundations
+- [Frontend documentation](/documentation/website/frontend/README.md#shared-foundations) — the shared foundations
   among the routes, pages and workspaces of the app.

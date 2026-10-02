@@ -2,10 +2,8 @@
 
 use super::*;
 
-const EVERON_MANIFEST: &str =
-    include_str!("../../../../../assets_v2/terrains/everon/manifest.json");
-const ARLAND_MANIFEST: &str =
-    include_str!("../../../../../assets_v2/terrains/arland/manifest.json");
+const EVERON_MANIFEST: &str = include_str!("../../../../../assets/terrains/everon/manifest.json");
+const ARLAND_MANIFEST: &str = include_str!("../../../../../assets/terrains/arland/manifest.json");
 const ROOT: &str = "/map-assets";
 
 /// A full pyramid index for zoom levels `0..=max_zoom`, every tile 100 bytes.

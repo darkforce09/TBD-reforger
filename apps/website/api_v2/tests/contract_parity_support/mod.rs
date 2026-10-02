@@ -13,7 +13,7 @@
 //! `mod contract_parity_support;`; `contract_parity_equipment_viewer` compiles
 //! [`json_difference`] alone through a `#[path]` module. This directory adds no binary of its
 //! own. It reads `apps/website/frontend/tests/fixtures/api/`, `apps/website/api_v2/seeds/` and
-//! `contracts_v2/definitions/`, and writes only the binary's own database.
+//! `contracts/definitions/`, and writes only the binary's own database.
 //!
 //! **Signals & state:** the capture in [`seeded_capture`] is the only state: taken once per
 //! process, shared read-only by the cases that need it.

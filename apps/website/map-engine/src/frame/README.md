@@ -67,7 +67,7 @@ it culls.
 
 - `RenderEngine` (at `engine::RenderEngine` and re-exported here) and `EngineHandle`, the shared
   and optional holder a host keeps it in: for the
-  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s canvas, bridge and input
+  [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s canvas, bridge and input
   handlers, the debug benches, and `crate::editing`'s selection gesture.
 - `RenderEngine::create`, `render`, `mark_dirty`, `set_continuous_render`, `backend`,
   `set_place_preview`, `clear_place_preview`, `clear_vector_lane` and `hide_calibration`, plus the
@@ -93,7 +93,7 @@ it culls.
     `crate::doll` and `crate::editing`;
   - the Mission Creator under `apps/website/frontend/src/v2/apps/editor/` (canvas mount, bridge,
     input and tools) and the debug benches under `apps/website/frontend/src/v2/apps/debug/`;
-  - the engine-layers gate in `tools_v2/xtask/src/verifications/architecture/`, which pins this
+  - the engine-layers gate in `tools/xtask/src/verifications/architecture/`, which pins this
     folder's imports of the graphics engine.
 - Rules:
   - `mod.rs` is the only file of the crate that names `website_graphics_engine::frame`, on exactly
@@ -109,7 +109,7 @@ it culls.
 
 ## Related documentation
 
-- [Map engine overview](/documentation_v2/website/map-engine/map_engine_overview.md) — the path
+- [Map engine overview](/documentation/website/map-engine/map_engine_overview.md) — the path
   from a mounted canvas to a drawn frame.
-- [Engine boundary rules](/documentation_v2/standards/engine_boundary_rules.md) — the four
+- [Engine boundary rules](/documentation/standards/engine_boundary_rules.md) — the four
   frame-path rules (§2C) and the frame vocabulary this module alone names (§2C.1, rule 3a).

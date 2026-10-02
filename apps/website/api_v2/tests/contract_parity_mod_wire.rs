@@ -40,7 +40,7 @@ const UNCONTRACTED_JSON: &[(&str, &str, &str)] = &[
     (
         "Game/TBD/API/Http/TBD_GameRuntimeAnswer.c",
         "TBD_GameRuntimeErrorBody",
-        "the `{error, details}` error envelope has no definition in contracts_v2/definitions",
+        "the `{error, details}` error envelope has no definition in contracts/definitions",
     ),
     (
         "Game/TBD/API/Http/TBD_GameRuntimeAnswer.c",

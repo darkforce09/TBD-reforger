@@ -5,7 +5,7 @@ summary = "Rewire cmds.rs onto typed ops + parity harness + child verbs"
 class = "feature"
 status = "shipped"
 order = 5952
-spec = "documentation_v2/tickets/specs/t915_ticketboard_design.md"
+spec = "documentation/tickets/specs/t915_ticketboard_design.md"
 executor = "claude-code"
 notes = """
 Preserved asymmetries (do NOT rationalize here): set-status writes queue.json + repack only, mark-ready syncs without repack, ship full-syncs. phase2::save_tree / value_to_ticket demote to migration/test-only with the T-912.2 regression pin retargeted. cmd_get mirrored output stays untouched (external parsers). shipped_at SHA stays hand-edited; stamp-sha is future work.

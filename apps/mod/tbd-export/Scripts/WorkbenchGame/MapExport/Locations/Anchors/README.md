@@ -1,7 +1,7 @@
 # Landmark anchor export
 
 Finds tall landmark structures (churches, lighthouses, control towers, radio masts, castles) in the
-world open in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) and records where each stands,
+world open in [Workbench](/documentation/glossary/n_to_z.md#workbench) and records where each stands,
 the ground height under it and how high it rises, as reference points for checking a map against
 the engine.
 
@@ -55,13 +55,13 @@ None: Workbench runs these scripts in the editor.
   `BaseWorld.QueryEntitiesByAABB` and Workbench's `WorldEditorAPI.GetTerrainSurfaceY`.
 - Used by: `TBD_MapExportPlugin` in `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Plugins/`.
   No committed tool reads the file. The committed Everon anchors
-  (`assets_v2/terrains/everon/anchors/verification.json`) share its name but not its shape: they
-  follow `contracts_v2/definitions/terrain-anchors.schema.json` and are probed by hand.
+  (`assets/terrains/everon/anchors/verification.json`) share its name but not its shape: they
+  follow `contracts/definitions/terrain-anchors.schema.json` and are probed by hand.
 - Rules: a landmark's category is decided by its prefab name alone; lines added stay ASCII.
   `cargo xtask mod compile` compiles only the framework addon, so these scripts compile only when
   Workbench loads `tbd-export`.
 
 ## Related documentation
 
-- [Everon surface anchors](/assets_v2/terrains/everon/anchors/README.md) — the committed anchors
+- [Everon surface anchors](/assets/terrains/everon/anchors/README.md) — the committed anchors
   and the gate that checks the elevation model against them.

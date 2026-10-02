@@ -1,7 +1,7 @@
 //! Unit coverage for the app's content URL policy: the same case lists as the backend policy's
 //! tests (`apps/website/api_v2/src/core/text/tests/content_url_policy.rs`), and a sweep of every
 //! character in every position against the character classes of the contract patterns in
-//! `contracts_v2/definitions/wiki-page.schema.json`.
+//! `contracts/definitions/wiki-page.schema.json`.
 //!
 //! The case tables are lists on purpose: the next scheme trick or character is one more line, and
 //! a failure names the exact input.

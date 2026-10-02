@@ -54,5 +54,5 @@ real run, else hides the slot and warns once through `TBD_WarnOnce`.
 
 ## Related documentation
 
-- [Design tokens](/documentation_v2/design_system/design_tokens.md) — the token vocabulary shared
+- [Design tokens](/documentation/design_system/design_tokens.md) — the token vocabulary shared
   with the website, and the known differences

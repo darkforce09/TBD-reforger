@@ -1,6 +1,6 @@
 # Runtime configuration
 
-The [API](/documentation_v2/glossary/a_to_f.md#api)'s settings, read once from the environment at boot
+The [API](/documentation/glossary/a_to_f.md#api)'s settings, read once from the environment at boot
 into `Config`, with the checks that stop a misconfigured process before it serves a request.
 
 ## Contents
@@ -51,8 +51,8 @@ resolution in `crate::core::middleware` is the only reader.
     `crate::core::database::connection_pool` reports through `ConfigError`;
   - the domains, through `AppState::cfg`; `identity_and_access`, `missions` and `operations` also
     name `Config` directly, in the OAuth host guard, session authorization, the
-    [mission](/documentation_v2/glossary/g_to_m.md#mission) write lock,
-    [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) requests and the
+    [mission](/documentation/glossary/g_to_m.md#mission) write lock,
+    [mission deployment](/documentation/glossary/g_to_m.md#mission-deployment) requests and the
     reservation scope;
   - the integration suites under `apps/website/api_v2/tests/`, through `Config::for_tests`.
 - Rules: a variable is added together with the code that reads it, so `Config` holds no setting
@@ -62,5 +62,5 @@ resolution in `crate::core::middleware` is the only reader.
 
 ## Related documentation
 
-- [API environment variables](/documentation_v2/website/api_v2/environment_variables.md) — every
+- [API environment variables](/documentation/website/api_v2/environment_variables.md) — every
   variable the API reads, with its default, when it is required and what an unusable value does.

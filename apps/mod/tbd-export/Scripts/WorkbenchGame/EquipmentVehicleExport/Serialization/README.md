@@ -2,7 +2,7 @@
 
 The JSON encoding every part of the equipment and vehicle source exporter writes through: quoted
 strings, scalars at full native precision, typed arrays, JSON Pointer segments and checked file
-writes. It runs in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) whenever a generation,
+writes. It runs in [Workbench](/documentation/glossary/n_to_z.md#workbench) whenever a generation,
 a probe or a verification writes a file.
 
 ## Contents
@@ -42,9 +42,9 @@ None: Workbench runs these scripts in the editor.
   `generation.json`; the reader verification in `Verification/` round-trips 2,001 escaped and
   Unicode strings through `Strings` on every export start. The scripts compile only when Workbench
   loads `tbd-export`; `cargo xtask mod compile` compiles the framework addon alone
-  (`tools_v2/xtask/src/commands/mod_ops/compile/execution.rs`).
+  (`tools/xtask/src/commands/mod_ops/compile/execution.rs`).
 
 ## Related documentation
 
-- [Export contract](/contracts_v2/definitions/equipment-vehicle-export.schema.json) — the schema
+- [Export contract](/contracts/definitions/equipment-vehicle-export.schema.json) — the schema
   the written documents follow.

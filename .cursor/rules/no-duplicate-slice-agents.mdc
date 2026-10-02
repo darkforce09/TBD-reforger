@@ -15,7 +15,7 @@ preference.
 ❌ A sub-agent for ticket <id> while any earlier sub-agent for <id> is still running
 ❌ A "fresh redo" / "interrupt and take over" / second agent on the same
    .ai/artifacts/worktrees/<id> because the first looks slow or stuck
-❌ Parallel agents that both write the same file (tools_v2/xtask/src/main.rs, or any path in
+❌ Parallel agents that both write the same file (tools/xtask/src/main.rs, or any path in
    the ticket's owns list) for the same ticket, even if you think the first is idle
 ❌ Reading a short transcript, a long silence or "only untracked files" as permission to spawn
    a replacement
@@ -31,7 +31,7 @@ preference.
    still in flight in this conversation. If one is → **do not dispatch**.
 5. The factory's orchestrator gates, lands and verifies completed commits only; it never "helps" a
    live slice agent by opening a second coding agent on its tree
-   ([Factory waves](/documentation_v2/runbooks/factory_waves/README.md)).
+   ([Factory waves](/documentation/runbooks/factory_waves/README.md)).
 
 ## Operator override (the only legal exception)
 

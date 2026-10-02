@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/fleet-command.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/fleet-command.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///The arguments of console_command as the ledger stores them and the host agent receives them: one line for the server's RCON console. The API trims surrounding whitespace from the requested line and answers 400 for a line outside 1 to 256 bytes, one holding a control character or a line or paragraph separator, and one starting with @, which begins Reforger's custom RCON commands for the RCON session itself (@logout), a session the host agent owns. The host agent transmits the line at most once and never resends it.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

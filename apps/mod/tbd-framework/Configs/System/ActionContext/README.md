@@ -1,6 +1,6 @@
 # Framework input contexts
 
-The two input contexts of the framework [mod](/documentation_v2/glossary/g_to_m.md#mod): each groups the
+The two input contexts of the framework [mod](/documentation/glossary/g_to_m.md#mod): each groups the
 framework's own key actions into a layer that scripts switch on by name, so the keys fire only while
 that layer is active and never collide with gameplay bindings.
 
@@ -57,7 +57,7 @@ active.
 
 ## Related documentation
 
-- [Spectator specification](/documentation_v2/mod/tbd-framework/UI/spectator/spectator_specification.md)
+- [Spectator specification](/documentation/mod/tbd-framework/UI/spectator/spectator_specification.md)
   — the spectator controls the context serves.
-- [Mission selection specification](/documentation_v2/mod/tbd-framework/UI/mission_selection/mission_selection_specification.md)
+- [Mission selection specification](/documentation/mod/tbd-framework/UI/mission_selection/mission_selection_specification.md)
   — the screen `TBD_MissionSelector` opens.

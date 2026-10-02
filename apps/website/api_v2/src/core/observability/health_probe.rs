@@ -47,15 +47,15 @@ pub(super) async fn probe_db(pool: &PgPool) -> (bool, Duration, Option<String>) 
 /// # Two payloads, one status (the reason `detailed` exists)
 ///
 /// This route is **unauthenticated and published through Caddy**
-/// (`tools_v2/xtask/deploy/Caddyfile.website`). The full report names the exact build, how recently
+/// (`tools/xtask/deploy/Caddyfile.website`). The full report names the exact build, how recently
 /// the process restarted, the connection-pool depth and the migration count — for example
 /// `version=0.1.0  uptime=396  pool={connections:5, idle:4}  migrations.applied=18`. Served to any
 /// caller who finds the URL, that is reconnaissance handed over for free.
 ///
 /// Putting auth in front of the whole route is the wrong fix: `/healthz` is probed **without
-/// credentials** by `cargo xtask platform preflight`, `tools_v2/xtask/deploy/Caddyfile.website`,
+/// credentials** by `cargo xtask platform preflight`, `tools/xtask/deploy/Caddyfile.website`,
 /// `.github/workflows/editor-gates.yml:95` and
-/// `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests.rs:2714`, and it stays open
+/// `tools/developer_tools/src/browser_testing/editor_smoke_tests.rs:2714`, and it stays open
 /// for exactly that reason while `/metrics` sits behind the `OBSERVABILITY_TOKEN` bearer.
 ///
 /// So the split is by **payload**, never by status code:

@@ -1,7 +1,7 @@
 # Server hydrate parts
 
-How the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) reconciles the local draft
-with the server's saved version of the [mission](/documentation_v2/glossary/g_to_m.md#mission) at boot, and
+How the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) reconciles the local draft
+with the server's saved version of the [mission](/documentation/glossary/g_to_m.md#mission) at boot, and
 the snapshot pair that is the way back from a server adopt or a restore. The parent module,
 `apps/website/frontend/src/v2/apps/editor/shell/hydrate.rs` (wasm only), declares both files,
 re-exports their entry points and publishes the snapshot pair as `window.__missionBackup`.
@@ -66,4 +66,4 @@ sign-out deletes every local document of the departing account (`purge_local_doc
 
 ## Related documentation
 
-- [Mission Creator feature inventory: data persistence and compile](/documentation_v2/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) — the boot restore and the load-conflict dialog.
+- [Mission Creator feature inventory: data persistence and compile](/documentation/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) — the boot restore and the load-conflict dialog.

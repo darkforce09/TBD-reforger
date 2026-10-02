@@ -16,8 +16,8 @@
  * Run: Workbench > Plugins > TBD > "Export TBD Registry Items"
  *   (or NetAPI: wb_execute_action menuPath "Plugins,TBD,Export TBD Registry Items").
  * Then copy the two $profile: files to
- *   contracts_v2/catalogs/registry-items.workbench.json
- *   contracts_v2/catalogs/registry-compat.workbench.json
+ *   contracts/catalogs/registry-items.workbench.json
+ *   contracts/catalogs/registry-compat.workbench.json
  *
  * @contract registry-items.schema.json#/
  * @contract registry-compat.schema.json#/

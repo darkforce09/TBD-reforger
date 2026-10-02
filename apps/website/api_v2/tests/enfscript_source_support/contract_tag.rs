@@ -1,7 +1,7 @@
 //! The `//! @contract` tag grammar of the mod scripts and the schema view each tag cites.
 //!
 //! **Role:** parses `@contract <schema>#<pointer>[ (<sub-path>)][ partial]` banner lines and
-//! resolves each against `contracts_v2/definitions` into a [`SchemaView`]: the property names a
+//! resolves each against `contracts/definitions` into a [`SchemaView`]: the property names a
 //! wire key may take, the properties the cited object requires, its enum values, and every
 //! property name reachable below it.
 //!
@@ -27,7 +27,7 @@ use serde_json::{Value, json};
 
 /// One parsed `@contract` tag.
 pub struct ContractTag {
-    /// The schema file name in `contracts_v2/definitions`.
+    /// The schema file name in `contracts/definitions`.
     pub schema_file: String,
     /// The RFC 6901 pointer, with its leading `#`.
     pub pointer: String,
@@ -121,7 +121,7 @@ fn parse_tag(text: &str) -> Result<ContractTag, String> {
 }
 
 fn definitions_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../contracts_v2/definitions")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../contracts/definitions")
 }
 
 /// The schema document `file`.

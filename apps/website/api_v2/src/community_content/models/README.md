@@ -30,17 +30,17 @@ details, which carry `WikiMarkupFinding`s.
 
 - Depends on: `core::wire_format` for timestamps, serde and sqlx; `services::wiki_markup` for the
   wiki blocks and findings. `generated/` follows the
-  schemas under `contracts_v2/definitions/equipment-data-viewer/`, and
+  schemas under `contracts/definitions/equipment-data-viewer/`, and
   `vehicle-database.schema.json` (`Vehicle`, `VehicleList`, `VehicleWrite`, `VehiclePatch`),
   `wiki-page.schema.json` (summaries, the article with its typed `WikiBlock` and `WikiInline`
   tree, the save and its refusal, the revisions) and `content-upload.schema.json`
-  (`UploadResponse`, `ContentError`, `ContentRefusal`) in `contracts_v2/definitions/`.
+  (`UploadResponse`, `ContentError`, `ContentRefusal`) in `contracts/definitions/`.
   `announcement.rs` cites `announcement.schema.json` (`Announcement`, `AnnouncementTag`,
   `AnnouncementStatus`) and `modpack.rs` cites `modpack.schema.json` (`Modpack`, `ModpackMod`)
   with `@contract` tags, which `cargo xtask schema citations` resolves.
 - Used by: the domain's handlers and services; `command_center`'s dashboard (`Announcement`);
   `server_infrastructure`'s server intel (`Modpack`, `ModpackMod`); `missions`'
-  [registry](/documentation_v2/glossary/n_to_z.md#registry) items (`Modpack`); the web app's
+  [registry](/documentation/glossary/n_to_z.md#registry) items (`Modpack`); the web app's
   `apps/website/frontend/src/v2/core/api/dto/content.rs` mirrors the modpack wire shape.
 - Rules: an enum here and its Postgres enum in `apps/website/api_v2/migrations/` change together;
   `generated/` is written by `cargo xtask ci schema-codegen` and never edited by hand

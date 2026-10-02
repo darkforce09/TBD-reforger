@@ -13,8 +13,7 @@ use website_api::{
 };
 mod common;
 const GOLDEN: &str = include_str!("../../frontend/tests/fixtures/api/GET__me.json");
-const SCHEMA: &str =
-    include_str!("../../../../contracts_v2/definitions/current-profile.schema.json");
+const SCHEMA: &str = include_str!("../../../../contracts/definitions/current-profile.schema.json");
 
 #[tokio::test]
 async fn current_profile_handler_schema_generated_types_and_frontend_golden_agree() {

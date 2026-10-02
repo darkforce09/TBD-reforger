@@ -41,5 +41,5 @@ A ray that never enters the band returns an empty lane.
 
 ## Related documentation
 
-- [Building viewer](/documentation_v2/website/frontend/apps/debug/building_viewer_page.md) — the
+- [Building viewer](/documentation/website/frontend/apps/debug/building_viewer_page.md) — the
   bench's purpose and behaviour.

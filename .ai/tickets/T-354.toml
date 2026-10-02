@@ -84,7 +84,7 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
 owns = [
-    "documentation_v2/runbooks/editor_gates.md",
+    "documentation/runbooks/editor_gates.md",
     "tools/tbd-tools/src/cdp.rs",
 ]
 

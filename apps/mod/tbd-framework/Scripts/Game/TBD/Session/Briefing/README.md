@@ -1,7 +1,7 @@
 # Briefing
 
 The pre-game briefing: the server builds each player's side-specific briefing from the loaded
-[mission](/documentation_v2/glossary/g_to_m.md#mission) and sends it to that player alone, tallies who has
+[mission](/documentation/glossary/g_to_m.md#mission) and sends it to that player alone, tallies who has
 marked ready, and opens the Briefing screen on every client when the round enters `BRIEFING`.
 
 ## Contents
@@ -79,8 +79,8 @@ parameters, assets and uniforms for both sides, and plans. Its `Get()` builds it
 
 ## Related documentation
 
-- [Briefing specification](/documentation_v2/mod/tbd-framework/UI/briefing/briefing_specification.md)
+- [Briefing specification](/documentation/mod/tbd-framework/UI/briefing/briefing_specification.md)
   — the screen as built, its
   data, design target, open work and decisions
-- [Briefing design references](/documentation_v2/mod/tbd-framework/UI/briefing/visual_references/README.md)
+- [Briefing design references](/documentation/mod/tbd-framework/UI/briefing/visual_references/README.md)
   — the Stitch mockup sets and the Arma 3 captures the screen started from

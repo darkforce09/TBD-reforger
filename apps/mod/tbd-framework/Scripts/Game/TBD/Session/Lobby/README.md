@@ -1,8 +1,8 @@
 # Lobby and slotting
 
 The pre-game lobby: the stage watcher that raises the pre-game screens, the
-[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) roster wire through which a player claims, releases and
-deploys into a [slot](/documentation_v2/glossary/n_to_z.md#slot) under one life, the catalog behind the
+[ORBAT](/documentation/glossary/n_to_z.md#orbat) roster wire through which a player claims, releases and
+deploys into a [slot](/documentation/glossary/n_to_z.md#slot) under one life, the catalog behind the
 Lobby screen, and the overlook camera a player without a body sees.
 
 ## Contents
@@ -99,9 +99,9 @@ the terrain instead of a black screen, and steps aside for a body or the spectat
 
 ## Related documentation
 
-- [Lobby specification](/documentation_v2/mod/tbd-framework/UI/lobby/lobby_specification.md) — the screen as built, its
+- [Lobby specification](/documentation/mod/tbd-framework/UI/lobby/lobby_specification.md) — the screen as built, its
   data, design target, open work and decisions
-- [Lobby design references](/documentation_v2/mod/tbd-framework/UI/lobby/visual_references/README.md)
+- [Lobby design references](/documentation/mod/tbd-framework/UI/lobby/visual_references/README.md)
   — the Stitch mockup sets and the Arma 3 captures the screen started from
 - [Spawning](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/README.md) — the slot map,
   one-life bookkeeping and deployment the lobby wire calls into

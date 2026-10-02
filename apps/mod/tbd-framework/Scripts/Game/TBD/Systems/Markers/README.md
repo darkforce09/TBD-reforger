@@ -1,6 +1,6 @@
 # Mission map markers
 
-Puts a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s briefing markers on the in-game map: the
+Puts a [mission](/documentation/glossary/g_to_m.md#mission)'s briefing markers on the in-game map: the
 server sends each player only their own side's markers, and each client draws them as the engine's
 own placed markers.
 
@@ -69,7 +69,7 @@ TBD_MarkerClient: every 5 s until served, and on each map open (at most every 3 
   `TBD_SpawnManager` (the caller's slot) under `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/`;
   `TBD_Log`, `TBD_Rounding` and `TBD_Authority` under `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; the engine's `SCR_MapMarkerManagerComponent`, `SCR_MapMarkerBase`,
   `SCR_MapMarkerEntryPlaced` and `SCR_MapEntity`; the `marker` definition in
-  `contracts_v2/definitions/mission.schema.json`.
+  `contracts/definitions/mission.schema.json`.
 - Used by: `TBD_TaskHud` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/`
   (`TBD_MarkerClient.FindMarkerManager`, `TBD_MarkerIcons.Resolve`, `MARKER_COLOR`);
   `apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et`, which attaches `TBD_MarkerComponent`.
@@ -80,7 +80,7 @@ TBD_MarkerClient: every 5 s until served, and on each map open (at most every 3 
 
 ## Related documentation
 
-- [Tactical marker palette specification](/documentation_v2/mod/tbd-framework/UI/tactical_marker_palette/tactical_marker_palette_specification.md)
+- [Tactical marker palette specification](/documentation/mod/tbd-framework/UI/tactical_marker_palette/tactical_marker_palette_specification.md)
   — the design for player-placed tactical markers on the same map
-- [Map symbology](/documentation_v2/design_system/map_symbology.md) — the marker symbols and colours
+- [Map symbology](/documentation/design_system/map_symbology.md) — the marker symbols and colours
   in game beside the Mission Creator's, and where the two disagree.

@@ -1,8 +1,8 @@
 # Arsenal
 
-The [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) of the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator): the Attributes dialog's Arsenal
-tab, where a mission maker edits one [slot](/documentation_v2/glossary/n_to_z.md#slot)'s loadout, and the
+The [arsenal](/documentation/glossary/a_to_f.md#arsenal) of the
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator): the Attributes dialog's Arsenal
+tab, where a mission maker edits one [slot](/documentation/glossary/n_to_z.md#slot)'s loadout, and the
 loadout domain behind it. The folder also holds the asset catalog trees every palette and picker
 of the Mission Creator reads.
 
@@ -28,7 +28,7 @@ apps/website/frontend/src/v2/apps/editor/arsenal/
 
 The Attributes dialog, `apps/website/frontend/src/v2/apps/editor/ui/inspector/attributes_modal.rs`,
 mounts `ArsenalTab` with the slot's id, its `loadout` JSON, the
-[registry](/documentation_v2/glossary/n_to_z.md#registry) rows and the compatibility feed. In the browser
+[registry](/documentation/glossary/n_to_z.md#registry) rows and the compatibility feed. In the browser
 build the tab first asks the map engine to seed the character's default cargo when the loadout has
 no `cargo` key, then turns the JSON into picks and holds the picks, the cargo and every outcome in
 `ArsenalTabState`. It shows "Loading catalog…" until the registry arrives; `tab_content.rs` then
@@ -44,7 +44,7 @@ Remove Everything ──> loadout::plan_remove ──> map engine: commit_loadou
 ```
 
 The Arsenal has no Save button: every pick and cargo edit is written to the
-[mission](/documentation_v2/glossary/g_to_m.md#mission) document at once, as one undo step, and the tab
+[mission](/documentation/glossary/g_to_m.md#mission) document at once, as one undo step, and the tab
 repeats the mission's unsaved state because the dialog's backdrop hides the top strip's marker. A
 write the document refuses, because the entity is gone, shows its own warning instead. `rules/`
 decides the options, validity, capacity and weight, `loadout/` serialises and gates, and `doll.rs`
@@ -78,7 +78,7 @@ more than ten slots, through the bridge's `confirm_bulk_n_step`.
   - `website_map_engine`: `editing::hosted_commands` (the loadout reads and writes, the copy
     buffer, the cargo seed), `editing::host::with_doc`, `data::store::operations` (`assets`,
     `cargo`, `cargo_rules`) and `doll`;
-  - `contracts_v2/definitions/loadout-export.schema.json` and
+  - `contracts/definitions/loadout-export.schema.json` and
     `apps/mod/tbd-framework/Data/registry.json`, embedded at compile time; `web_sys` in the browser
     build.
 - Used by:
@@ -88,9 +88,9 @@ more than ten slots, through the bridge's `confirm_bulk_n_step`.
     the viewport, the armed placement, the editor context), `mission_editor.rs` and
     `mission_editor/` (the registry loading and the canvas mount), and the page tests under
     `tests/`;
-  - `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/arsenal.rs`, which drives the
+  - `tools/developer_tools/src/browser_testing/editor_smoke_tests/arsenal.rs`, which drives the
     tab in a headless browser;
-  - `tools_v2/xtask/src/verifications/architecture/editor_orbat_coherency.rs`, which scans
+  - `tools/xtask/src/verifications/architecture/editor_orbat_coherency.rs`, which scans
     `loadout_commands.rs`.
 - Rules:
   - a pick reaches the document only through `loadout_commands` and the map engine's hosted
@@ -107,8 +107,8 @@ more than ten slots, through the bridge's `confirm_bulk_n_step`.
 
 ## Related documentation
 
-- [Arsenal loadout editor](/documentation_v2/website/frontend/apps/editor/arsenal/arsenal_loadout_editor.md) — the tab's
+- [Arsenal loadout editor](/documentation/website/frontend/apps/editor/arsenal/arsenal_loadout_editor.md) — the tab's
   flows, rules, data, design references, open work and decisions.
-- [Mission Creator feature inventory: attributes dialog](/documentation_v2/website/frontend/apps/editor/feature_inventory/attributes_and_settings.md) — the Attributes dialog and its Arsenal tab.
-- [Mission Creator documentation](/documentation_v2/website/frontend/apps/editor/README.md) — the
+- [Mission Creator feature inventory: attributes dialog](/documentation/website/frontend/apps/editor/feature_inventory/attributes_and_settings.md) — the Attributes dialog and its Arsenal tab.
+- [Mission Creator documentation](/documentation/website/frontend/apps/editor/README.md) — the
   Mission Creator's documents, starting from its roadmap.

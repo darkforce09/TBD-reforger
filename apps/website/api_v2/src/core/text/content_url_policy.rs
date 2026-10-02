@@ -7,8 +7,8 @@
 //! **Position:** a `core` text rule with no caller-specific knowledge. The community-content
 //! writers (the vehicle database image, the wiki markup checks at save time and the typed wiki
 //! tree at render time) call it; on the wire the same rule is the `pattern` of the link `href`
-//! and image `src` in `contracts_v2/definitions/wiki-page.schema.json` and of
-//! `profile_image_url` in `contracts_v2/definitions/vehicle-database.schema.json`.
+//! and image `src` in `contracts/definitions/wiki-page.schema.json` and of
+//! `profile_image_url` in `contracts/definitions/vehicle-database.schema.json`.
 //!
 //! **Signals & state:** none; pure functions over the candidate string.
 //!

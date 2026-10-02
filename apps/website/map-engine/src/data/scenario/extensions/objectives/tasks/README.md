@@ -1,6 +1,6 @@
 # Authored tasks
 
-The check on a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s authored `tasks` block: the
+The check on a [mission](/documentation/glossary/g_to_m.md#mission)'s authored `tasks` block: the
 primary, secondary and optional assignments the game's HUD and briefing list, each starting
 `assigned` and ending `succeeded` or `failed`, with the transition table between those states and
 the rules for a timed window. The module is exposed as `data::scenario::tasks`.
@@ -16,13 +16,13 @@ apps/website/map-engine/src/data/scenario/extensions/objectives/tasks/
 
 ## How it works
 
-`parse` reads an array of tasks as `contracts_v2/definitions/mission.schema.json` shapes each one in
+`parse` reads an array of tasks as `contracts/definitions/mission.schema.json` shapes each one in
 `$defs/task`: `{id, title, tier, state, triggerId?, markerId?, description?, schedule?}`, with
 `tier` one of `TIERS` (`primary`, `secondary`, `optional`), `state` one of `STATES` (`assigned`,
 `succeeded`, `failed`), every string non-blank once trimmed and every id unique. A key the schema
 does not declare refuses the block, and the first problem found is the answer, a sentence with its
 path. Unlike the other list blocks, an empty array passes, as the schema allows; the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) clears the block with `null`
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) clears the block with `null`
 instead.
 
 A `schedule` is `{startAfterS, windowS}` in whole seconds from mission start. `validate_schedule`
@@ -56,5 +56,5 @@ each assigned task.
 
 ## Related documentation
 
-- [Mission schema](/contracts_v2/definitions/mission.schema.json) — `$defs/task` and
+- [Mission schema](/contracts/definitions/mission.schema.json) — `$defs/task` and
   `$defs/taskSchedule`, the shape this module checks.

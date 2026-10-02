@@ -22,7 +22,7 @@ apps/website/map-engine/src/world/architecture/compound/
 
 The instances file `prefabs/buildings/<slug>.instances.json` sits beside the blueprint JSON in a
 terrain's asset folder
-(`assets_v2/terrains/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.instances.json`) and reads
+(`assets/terrains/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.instances.json`) and reads
 into `InstancesFile`, at `INSTANCES_SCHEMA_VERSION` (1.0.0). It names the shell's sidecar
 (`shellBvh`, relative to the file) and lists one `InstanceRecord` per placed entity: an id (the
 prefab child's `ID` chain joined by `/`), an `InstanceKind`, the child's prefab, its BLAS sidecar
@@ -78,9 +78,9 @@ transformed box.
     `Rigid`s, and its coverage reads `Instance` and `InstanceKind`;
   - the debug building viewer and interior bench in `apps/website/frontend/src/v2/apps/debug/`,
     which assemble a compound from `<slug>.instances.json` and open and close its doors;
-  - the blueprint tooling in `tools_v2/developer-tools/src/blueprint/`, where
+  - the blueprint tooling in `tools/developer_tools/src/blueprint/`, where
     `cargo xtask map bvh-batch` writes `<slug>.instances.json`, and the world line-of-sight checks
-    in `tools_v2/developer-tools/src/map_verification/tests/world_line_of_sight.rs`.
+    in `tools/developer_tools/src/map_verification/tests/world_line_of_sight.rs`.
 - Rules: the folder compiles only with the `io` feature; assembly is all or nothing and `append`
   keeps the instances already placed (`assemble_is_atomic_and_append_adds_scene_trees` in
   `apps/website/map-engine/src/spatial/los/interior/tests/walker.rs`); a door fraction clamps to
@@ -95,5 +95,5 @@ transformed box.
 
 ## Related documentation
 
-- [Building instances schema](/contracts_v2/definitions/building-instances.schema.json) — the
+- [Building instances schema](/contracts/definitions/building-instances.schema.json) — the
   instances JSON.

@@ -1,6 +1,6 @@
 # Mission document load and queries
 
-Turns the verified bytes of the deployed [mission](/documentation_v2/glossary/g_to_m.md#mission)
+Turns the verified bytes of the deployed [mission](/documentation/glossary/g_to_m.md#mission)
 artifact into the document this world runs: parses it, reduces it to its active variants, has it
 validated, and answers every query other systems ask of it; the world applier places its entities
 and applies its settings when the stage machine puts the document into force. It runs once per
@@ -22,7 +22,7 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/Mission/
 `TBD_MissionLoader.BeginLoad` clears the previous world's document and starts
 `TBD_DeployedMission`, which calls `LoadDocument` with the artifact bytes once their SHA-256
 matches. `LoadDocument` refuses a document over `MISSION_FILE_MAX_BYTES` (8 MiB, equal to
-`x-tbd-missionFileMaxBytes` in `contracts_v2/definitions/mission.schema.json`), then
+`x-tbd-missionFileMaxBytes` in `contracts/definitions/mission.schema.json`), then
 `ParseMissionJson`:
 
 1. parses the text into `TBD_MissionDocumentStruct` with `JsonLoadContext`;

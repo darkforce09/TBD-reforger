@@ -9,7 +9,7 @@
 //!
 //! **Position:** used by `contract_parity_registry_row_constraints_match_the_catalogue_schemas` in
 //! `tests/contract_parity_goldens.rs`; reads `arsenal-envelopes.schema.json`,
-//! `registry-items.schema.json` and `registry-compat.schema.json` from `contracts_v2/definitions`.
+//! `registry-items.schema.json` and `registry-compat.schema.json` from `contracts/definitions`.
 //!
 //! **Signals & state:** none; pure functions over committed schema files.
 //!
@@ -40,7 +40,7 @@ const REFERENCE_HOPS: usize = 8;
 pub struct RowCopy {
     /// The row definition, a JSON pointer into [`ROW_SCHEMA_FILE`].
     pub row: &'static str,
-    /// The catalogue schema file under `contracts_v2/definitions`.
+    /// The catalogue schema file under `contracts/definitions`.
     pub catalogue_file: &'static str,
     /// The catalogue definition, a JSON pointer into `catalogue_file`.
     pub catalogue: &'static str,
@@ -60,14 +60,14 @@ pub const ROW_COPIES: &[RowCopy] = &[
     },
 ];
 
-/// One committed schema file of `contracts_v2/definitions`, parsed.
+/// One committed schema file of `contracts/definitions`, parsed.
 ///
 /// # Panics
 ///
 /// When the file is missing or is not JSON.
 pub fn read_schema(file: &str) -> Value {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../contracts_v2/definitions")
+        .join("../../../contracts/definitions")
         .join(file);
     let text = std::fs::read_to_string(&path)
         .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));

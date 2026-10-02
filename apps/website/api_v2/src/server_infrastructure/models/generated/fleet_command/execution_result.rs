@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/fleet-command.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/fleet-command.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///POST /api/v1/fleet-executor/commands/:commandId/result body. succeeded requires a prior executing report; a failure names failure_reason (1 to 512 bytes). list_players reports outcome {players:[{arma_id, name, ...}]}; a succeeded console_command reports ConsoleCommandOutcome, and any other console_command outcome answers 400.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

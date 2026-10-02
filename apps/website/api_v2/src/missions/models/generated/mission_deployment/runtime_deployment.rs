@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/mission-deployment.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/mission-deployment.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///GET /api/v1/game-runtime/deployment (mod_runtime credential): what the server runs — the deployment in flight, else the latest confirmed one; 404 NO_DEPLOYMENT when there is none. The artifact's exact bytes are GET /api/v1/game-runtime/artifacts/:artifactId, with their SHA-256 as the strong entity tag and the compile's findings in x-compile-diagnostics-count and x-compile-diagnostics-rules.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

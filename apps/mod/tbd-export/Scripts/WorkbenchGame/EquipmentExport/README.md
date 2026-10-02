@@ -1,6 +1,6 @@
 # Standard equipment exports
 
-The [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) exporter that sweeps every loaded
+The [Workbench](/documentation/glossary/n_to_z.md#workbench) exporter that sweeps every loaded
 addon for equipment and writes one JSON catalog per class of hardware under
 `$profile:TBD_Export/equipment/`: weapons, static weapons, wearables, inventory items, weapon
 attachments, optics and ammunition, plus a discovery catalog of every equipment prefab.
@@ -61,11 +61,11 @@ None: Workbench runs these scripts in the editor.
 - Used by: people, through the Workbench menu; the `TBD_StandardExportVerification` Net API handler
   in `Core/`, which runs the scanners into an isolated folder; the first publication of a source
   export, which moves the unversioned `equipment/` folder into its archive
-  (`tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/publication.rs`).
+  (`tools/xtask/src/commands/mod_ops/equipment_vehicle_export/publication.rs`).
 - Rules: dependencies run one way, plugin to scanner to extractor to model to `Core/`, and no
   domain uses another domain's classes; the scripts compile only when Workbench loads `tbd-export`,
   and a new script file appears after a Workbench cold restart. `cargo xtask mod compile` compiles
-  the framework addon alone (`tools_v2/xtask/src/commands/mod_ops/compile/execution.rs`).
+  the framework addon alone (`tools/xtask/src/commands/mod_ops/compile/execution.rs`).
 
 ## Related documentation
 

@@ -64,7 +64,7 @@ axis, and none narrower than `STRIP_MIN_PX` (1.5) pixels.
   whose strip and glyph packers draw the strips and gate airfield structures, and whose toggles
   recompute the box; `crate::world::environment::locations`, whose road labels follow
   `RoadSegment`s; the debug benches in `apps/website/frontend/src/v2/apps/debug/`, which stroke
-  lines with `expand_polyline_strip`; and `tools_v2/developer-tools/src/`, whose world export
+  lines with `expand_polyline_strip`; and `tools/developer_tools/src/`, whose world export
   writes the archive from the JSON and whose label pipeline and checks read the network.
 - Rules: `airfield.rs`, `cartographic_strip.rs` and `network.rs` compile only with the `streaming`
   feature; the archive reader refuses a class code it cannot name, another schema version and

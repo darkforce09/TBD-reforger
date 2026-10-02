@@ -42,5 +42,5 @@ are released with `forget` and stay attached to the window and the canvas.
 
 ## Related documentation
 
-- [Building viewer](/documentation_v2/website/frontend/apps/debug/building_viewer_page.md) — the
+- [Building viewer](/documentation/website/frontend/apps/debug/building_viewer_page.md) — the
   bench's purpose and behaviour.

@@ -5,7 +5,7 @@ summary = "T-853 Phase 3: Makefile ci lane -> xtask"
 class = "docs"
 status = "shipped"
 order = 5760
-spec = "documentation_v2/tickets/specs/t853_shell_to_xtask_waves.md"
+spec = "documentation/tickets/specs/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
 notes = """
 --- HEAD migration_legacy (verbatim) ---

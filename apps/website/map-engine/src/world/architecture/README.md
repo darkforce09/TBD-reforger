@@ -17,7 +17,7 @@ apps/website/map-engine/src/world/architecture/
 
 ## How it works
 
-A building of a terrain's asset folder (`assets_v2/terrains/everon/prefabs/` for Everon) is four
+A building of a terrain's asset folder (`assets/terrains/everon/prefabs/` for Everon) is four
 kinds of file, and each child reads its part:
 
 ```text
@@ -59,9 +59,9 @@ compound flattened at its current door states.
     (the world occluder, its descriptors and residency);
   - the debug building viewer, interior bench and world line-of-sight bench in
     `apps/website/frontend/src/v2/apps/debug/`;
-  - the blueprint tooling in `tools_v2/developer-tools/src/blueprint/`, which writes the blueprint
+  - the blueprint tooling in `tools/developer_tools/src/blueprint/`, which writes the blueprint
     JSON, the instances files and the blueprint archive, and the map checks in
-    `tools_v2/developer-tools/src/map_verification/`.
+    `tools/developer_tools/src/map_verification/`.
 - Rules: the module compiles only with the `io` feature
   (`apps/website/map-engine/src/world/mod.rs`); it holds the model and no query of the world: no
   file here imports `crate::spatial::los`, which depends on this module and never the reverse.

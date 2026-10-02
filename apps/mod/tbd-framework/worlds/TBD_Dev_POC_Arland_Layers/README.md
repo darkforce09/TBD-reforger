@@ -12,7 +12,7 @@ apps/mod/tbd-framework/worlds/TBD_Dev_POC_Arland_Layers/
 
 ## Format
 
-- File type: an [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) world layer (`.layer`), plain
+- File type: an [Enfusion](/documentation/glossary/a_to_f.md#enfusion) world layer (`.layer`), plain
   text, one `<class> <name> : "<prefab resource>" { coords x y z }` block per placed entity. The
   layer places four entities, all at `2048 0 2048`, the centre of the 4,096 m Arland terrain:
   - `SCR_BaseGameMode TBD_GameMode`, from `{7A5B8572ECC15707}Prefabs/Systems/TBD_GameMode.et`;
@@ -24,14 +24,14 @@ apps/mod/tbd-framework/worlds/TBD_Dev_POC_Arland_Layers/
   `<world>_Layers/default.layer`, and carries no `.meta`.
 - Naming: the folder is named after its world, `TBD_Dev_POC_Arland.ent`; `default.layer` is the
   layer Enfusion loads with the world.
-- Adding an entity: place it in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) with this
+- Adding an entity: place it in [Workbench](/documentation/glossary/n_to_z.md#workbench) with this
   world open and save, which rewrites the layer; hand edits keep the block syntax and a prefab's
   `{GUID}path` resource name.
 
 ## Referenced by
 
 - `apps/mod/tbd-framework/worlds/TBD_Dev_POC_Arland.ent`, whose layers these are, by folder name.
-- Through the world, the [mission header](/documentation_v2/glossary/g_to_m.md#mission-header)
+- Through the world, the [mission header](/documentation/glossary/g_to_m.md#mission-header)
   `apps/mod/tbd-framework/Missions/TBD_Dev_POC_Arland.conf` and every server that boots it.
 
 ## Boundaries

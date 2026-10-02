@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/game-runtime-deployment.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/game-runtime-deployment.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///A refusal and its reason; occupancy_id names the open life that blocks a player already deployed.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

@@ -26,7 +26,7 @@ expensive tier. The expensive tier is for hard analysis and for coding when dele
 | Plan review, critique, tickets, specs, plans, documentation passes | in the Cursor chat (modes A and B below) |
 | Application code for a ticket | through the ticket tooling — `cargo xtask ticket run`, or `cargo xtask platform slice-run <id>` for one ticket — with any AI coding agent, or in the chat when the operator says so (mode C) |
 | Application code in the platform factory | slice agents the orchestrator dispatches into `slice/<id>` worktrees (mode F) |
-| Documentation of changed code | the agent or person who changes the code, in the same commit ([commit checklist](/documentation_v2/standards/commit_checklist.md)) |
+| Documentation of changed code | the agent or person who changes the code, in the same commit ([commit checklist](/documentation/standards/commit_checklist.md)) |
 
 **Executor gate:** act on a ticket only when its `executor` is `claude-code` (any AI coding agent)
 or `documentation` (a ticket, spec or documentation pass). `workbench`, `human` or `ci` — **stop
@@ -70,9 +70,9 @@ canonical form; its spec from [`spec_template.md`](/.ai/tickets/spec_template.md
 from [`plan_template.md`](/.ai/tickets/plan_template.md); the spec's copy-paste prompt block per
 [`implementation_prompt.md`](/.ai/tickets/implementation_prompt.md); a handoff from
 [`handoff_template.md`](/.ai/tickets/handoff_template.md) when the context is too long for the
-spec; an audit report the operator approved; documentation under `documentation_v2/`. Then
+spec; an audit report the operator approved; documentation under `documentation/`. Then
 `cargo xtask ticket check --strict`. The steps are
-[Taking a ticket from idea to shipped](/documentation_v2/runbooks/ticket_run_pipeline.md) steps 1
+[Taking a ticket from idea to shipped](/documentation/runbooks/ticket_run_pipeline.md) steps 1
 to 5.
 
 **FORBIDDEN:** application source edits. Many tickets at once, unless the operator asks.
@@ -99,7 +99,7 @@ orchestrator: it dispatches slice agents into git worktrees, integrates, gates, 
 adversarial verifier, triages and pushes — and never implements.
 
 Read [`platform-factory-mode.mdc`](/.cursor/rules/platform-factory-mode.mdc), then
-[Factory waves](/documentation_v2/runbooks/factory_waves/README.md). Do **not** infer factory mode
+[Factory waves](/documentation/runbooks/factory_waves/README.md). Do **not** infer factory mode
 from a vague "implement this" — ask one line when it is not explicit.
 
 ## Danger patterns — still read carefully
@@ -145,7 +145,7 @@ and the operator has not explicitly authorized code in this chat → **STOP**.
 
 - Commit only when the operator asks.
 - A commit carries the code and the documentation it changes together, on `main`, with the
-  ticket id in the subject ([commit checklist](/documentation_v2/standards/commit_checklist.md)).
+  ticket id in the subject ([commit checklist](/documentation/standards/commit_checklist.md)).
 
 ## When you mess up
 

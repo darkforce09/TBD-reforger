@@ -5,7 +5,7 @@ summary = "T-853 port: 49-line shim over cargo xtask ticket"
 class = "docs"
 status = "shipped"
 order = 5640
-spec = "documentation_v2/tickets/specs/t853_shell_to_xtask_waves.md"
+spec = "documentation/tickets/specs/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
 notes = """
 --- HEAD migration_legacy (verbatim) ---

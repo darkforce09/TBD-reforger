@@ -1,7 +1,7 @@
 # Field tools pages
 
 The standalone tactical aids: pages that stand on their own rather than hanging off a
-[mission](/documentation_v2/glossary/g_to_m.md#mission) or an [event](/documentation_v2/glossary/a_to_f.md#event).
+[mission](/documentation/glossary/g_to_m.md#mission) or an [event](/documentation/glossary/a_to_f.md#event).
 The folder holds one page, the mortar calculator.
 
 ## Contents
@@ -17,8 +17,8 @@ apps/website/frontend/src/v2/pages/field_tools/
 Each page here owns a route under `/tools/`, its own fetches and its own signals; outside the
 folder only the route table and the sidebar's "Field Tools" section refer to it, so a page can be
 removed without touching the rest of the tree. The mortar calculator reads the public
-ballistics catalogs of the [operations](/documentation_v2/glossary/n_to_z.md#operations) domain of the
-[API](/documentation_v2/glossary/a_to_f.md#api) (or the offline copy of them), solves the firing
+ballistics catalogs of the [operations](/documentation/glossary/n_to_z.md#operations) domain of the
+[API](/documentation/glossary/a_to_f.md#api) (or the offline copy of them), solves the firing
 solution on the device with the map engine's solver, and lists the fire missions saved against an
 event for a signed-in viewer. The debug benches at `/debug/building-viewer`, `/debug/world-los`
 and `/debug/ballistics-agreement` are apps, in `apps/website/frontend/src/v2/apps/debug/`, not field tools.
@@ -44,6 +44,6 @@ and `/debug/ballistics-agreement` are apps, in `apps/website/frontend/src/v2/app
 
 ## Related documentation
 
-- [Mortar calculator page](/documentation_v2/website/frontend/pages/field_tools/mortar/mortar_calculator_page.md)
+- [Mortar calculator page](/documentation/website/frontend/pages/field_tools/mortar/mortar_calculator_page.md)
   — the mortar page's behaviour and design.
 - [Operations domain](/apps/website/api_v2/src/operations/README.md) — the fire-mission routes.

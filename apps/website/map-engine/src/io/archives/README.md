@@ -36,14 +36,14 @@ their readers refuse any other value with `UnsupportedVersion`; `TypeInventory` 
 
 | Archive | File under a terrain's folder | Writer | Reader in the map engine |
 |---|---|---|---|
-| `RoadNetworkArchive` | `roads/road_network.rkyv` | `tools_v2/developer-tools/src/world_export_pipeline/roads_emit.rs` | `crate::world::terrain::roads` |
-| `MapLabelsArchive` | `locations/map_labels.rkyv` | `tools_v2/developer-tools/src/map_raster_pipeline/map_label_archives.rs` | `crate::world::environment::locations` |
-| `WaterVectorsArchive` | `water/water_vectors.rkyv` | `tools_v2/developer-tools/src/map_raster_pipeline/inland_water_archive.rs` | `crate::world::terrain::water` |
-| `PrefabCatalogArchive` | `objects/prefabs.rkyv` | `tools_v2/developer-tools/src/world_export_pipeline/catalog_emit.rs` | `crate::world::environment::buildings`, `crate::streaming::loaders` |
-| `TypeInventory` | `objects/type-inventory.rkyv` | `tools_v2/developer-tools/src/world_export_pipeline/catalog_emit.rs` | none; the same census is embedded in the prefab catalogue |
-| `ForestRegionsArchive` | `objects/forest-regions.rkyv` | `tools_v2/developer-tools/src/world_export_pipeline/catalog_emit.rs` | `crate::world::environment::vegetation` |
-| `BuildingBlueprintArchive` | `prefabs/building_blueprints.rkyv` | `tools_v2/developer-tools/src/blueprint/archive_emission/archive_writer.rs` | `crate::world::architecture`, `crate::spatial::los::world` |
-| `TbdSatIndexV2` | inside `satellite/{terrain}-sat.tbd-sat` | `tools_v2/developer-tools/src/map_raster_pipeline/satellite_archive_container.rs` | `crate::world::terrain::satellite` |
+| `RoadNetworkArchive` | `roads/road_network.rkyv` | `tools/developer_tools/src/world_export_pipeline/roads_emit.rs` | `crate::world::terrain::roads` |
+| `MapLabelsArchive` | `locations/map_labels.rkyv` | `tools/developer_tools/src/map_raster_pipeline/map_label_archives.rs` | `crate::world::environment::locations` |
+| `WaterVectorsArchive` | `water/water_vectors.rkyv` | `tools/developer_tools/src/map_raster_pipeline/inland_water_archive.rs` | `crate::world::terrain::water` |
+| `PrefabCatalogArchive` | `objects/prefabs.rkyv` | `tools/developer_tools/src/world_export_pipeline/catalog_emit.rs` | `crate::world::environment::buildings`, `crate::streaming::loaders` |
+| `TypeInventory` | `objects/type-inventory.rkyv` | `tools/developer_tools/src/world_export_pipeline/catalog_emit.rs` | none; the same census is embedded in the prefab catalogue |
+| `ForestRegionsArchive` | `objects/forest-regions.rkyv` | `tools/developer_tools/src/world_export_pipeline/catalog_emit.rs` | `crate::world::environment::vegetation` |
+| `BuildingBlueprintArchive` | `prefabs/building_blueprints.rkyv` | `tools/developer_tools/src/blueprint/archive_emission/archive_writer.rs` | `crate::world::architecture`, `crate::spatial::los::world` |
+| `TbdSatIndexV2` | inside `satellite/{terrain}-sat.tbd-sat` | `tools/developer_tools/src/map_raster_pipeline/satellite_archive_container.rs` | `crate::world::terrain::satellite` |
 
 `BinaryError` covers every way a buffer can be wrong: `Truncated`, `BadMagic`,
 `UnsupportedVersion`, `Misaligned` (recoverable by copying into an aligned buffer),
@@ -70,7 +70,7 @@ magic as a byte string (`b"TBDC"`).
 - Rules:
   - an archive is read only through `access_checked`, never unchecked;
   - a change to a field's meaning raises `ARCHIVE_SCHEMA_VERSION` rather than reusing the field
-    (the doc comment in `version.rs`), and every archive committed under `assets_v2/terrains/` is
+    (the doc comment in `version.rs`), and every archive committed under `assets/terrains/` is
     then written again, since the readers accept only the current version;
   - each archive round-trips and refuses corrupted bytes and the bytes of another archive type
     (`models/tests/cases_1.rs`); every `BinaryError` variant renders
@@ -78,6 +78,6 @@ magic as a byte string (`b"TBDC"`).
 
 ## Related documentation
 
-- [Terrain assets](/assets_v2/terrains/README.md) — the served terrain tree the archives sit in.
+- [Terrain assets](/assets/terrains/README.md) — the served terrain tree the archives sit in.
 - [Satellite terrain](/apps/website/map-engine/src/world/terrain/satellite/README.md) — the
   satellite streamer that reads the index.

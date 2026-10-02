@@ -1,9 +1,9 @@
 # RCON client
 
 A BattlEye RCon client for the Arma Reforger dedicated server's own
-[RCON](/documentation_v2/glossary/n_to_z.md#rcon) port (the `rcon` block of the server config, UDP 19999
+[RCON](/documentation/glossary/n_to_z.md#rcon) port (the `rcon` block of the server config, UDP 19999
 by default), written from the protocol specification. The
-[fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) reads the player list through it,
+[fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) reads the player list through it,
 sends an operator's console line through it once, and logs out through it on shutdown.
 
 ## Contents

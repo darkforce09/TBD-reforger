@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/content-upload.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/content-upload.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///The details of a content request refused before its handler reads it, or by the upload store: request_too_large (413) for a JSON body over the request limit, storage_unavailable (503) when the upload store fails. A missing or wrong JSON content type answers 415, and any other unreadable JSON body 400 with the reason as its error.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

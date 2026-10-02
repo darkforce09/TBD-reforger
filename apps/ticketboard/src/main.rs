@@ -1,6 +1,6 @@
 //! Ticketboard — a native egui projection of the `.ai/tickets/` registry.
 //!
-//! Every `T-*.toml`, parents AND children, is parsed through `ticket-engine` and rendered as a
+//! Every `T-*.toml`, parents AND children, is parsed through `ticket_engine` and rendered as a
 //! status board with a full-field detail panel, verbatim wave lanes off `wave.lock`, a program
 //! tree, composable filters and the owns-collision explainer.
 //!

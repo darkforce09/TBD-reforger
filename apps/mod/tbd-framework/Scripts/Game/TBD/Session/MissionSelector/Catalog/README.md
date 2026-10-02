@@ -47,5 +47,5 @@ or the key itself. `TBD_MissionSummary.GetSlotTotal` sums the faction rows and f
 
 ## Related documentation
 
-- [Mission selection specification](/documentation_v2/mod/tbd-framework/UI/mission_selection/mission_selection_specification.md)
+- [Mission selection specification](/documentation/mod/tbd-framework/UI/mission_selection/mission_selection_specification.md)
   — the screen as built, its data, design target, open work and decisions

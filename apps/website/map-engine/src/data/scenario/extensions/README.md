@@ -1,10 +1,10 @@
 # Authored mission blocks
 
-The optional blocks a [mission](/documentation_v2/glossary/g_to_m.md#mission) maker writes beside the
-[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) and the map: the radio plan, the win rule, tasks, the
+The optional blocks a [mission](/documentation/glossary/g_to_m.md#mission) maker writes beside the
+[ORBAT](/documentation/glossary/n_to_z.md#orbat) and the map: the radio plan, the win rule, tasks, the
 weather timeline, audio, spawn modules and tactical graphics. A module per block types and checks
 it, and `authored/` lists every block and moves them from the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s document to the saved payload
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s document to the saved payload
 and on to the compiled document.
 
 ## Contents
@@ -40,8 +40,8 @@ and checks each edit with the block's `validate`. On save, `compile_payload` cop
 block onto the payload root unchecked, so work in progress survives, and an unlisted key stays in
 the bag. On compile, each block is checked again: the two document-owned blocks are parsed into
 the document's typed fields, the other five are carried verbatim to its root, and a refused block
-is dropped with a warning finding, which keeps the [API](/documentation_v2/glossary/a_to_f.md#api) from
-making an [artifact](/documentation_v2/glossary/a_to_f.md#artifact) of that version. `authored/` holds
+is dropped with a warning finding, which keeps the [API](/documentation/glossary/a_to_f.md#api) from
+making an [artifact](/documentation/glossary/a_to_f.md#artifact) of that version. `authored/` holds
 that path in detail.
 
 Every block module has one shape: `parse` types the block from a `serde_json::Value` and answers
@@ -56,7 +56,7 @@ empty carrier emits nothing.
 
 1. A module with `parse` and `validate` in this folder, given an alias in
    `apps/website/map-engine/src/data/scenario/mod.rs`, and the block's definition in
-   `contracts_v2/definitions/mission.schema.json`.
+   `contracts/definitions/mission.schema.json`.
 2. A row in `AUTHORED_BLOCKS`, plus an entry in `DOCUMENT_OWNED_BLOCKS` and a parse arm in
    `AuthoredBlocks::parse` only when the compiled document gets a typed field for the block.
 3. A named field and an `authored_block_value` arm in `EditorPayload`
@@ -107,7 +107,7 @@ rows change with it.
 
 ## Related documentation
 
-- [Mission schema](/contracts_v2/definitions/mission.schema.json) — the seven blocks' definitions
+- [Mission schema](/contracts/definitions/mission.schema.json) — the seven blocks' definitions
   in the compiled document.
-- [Mission editor payload schema](/contracts_v2/definitions/mission-editor-payload.schema.json) —
+- [Mission editor payload schema](/contracts/definitions/mission-editor-payload.schema.json) —
   the saved payload, whose open root carries the blocks.

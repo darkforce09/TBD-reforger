@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/game-runtime-session.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/game-runtime-session.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///409 details of a refused heartbeat or deployment: code STALE_GENERATION (with generation), STALE_SEQUENCE (with last_sequence) or RUNTIME_SESSION_ENDED (with end_reason).
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

@@ -1,6 +1,6 @@
 # Controls hint and shortcut catalog
 
-The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s floating "Controls —
+The [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s floating "Controls —
 keyboard shortcuts" card and the catalog of every editor key binding it lists. The parent module,
 `apps/website/frontend/src/v2/apps/editor/ui/modals/help_modal.rs`, declares both modules,
 re-exports their public items and mounts the keymap census and its tests.
@@ -36,6 +36,6 @@ menu"), each row carrying its `KeyboardEvent` codes in `data-codes`.
 
 ## Related documentation
 
-- [Mission Creator UX specification](/documentation_v2/website/frontend/apps/editor/ux_spec.md)
+- [Mission Creator UX specification](/documentation/website/frontend/apps/editor/ux_spec.md)
   — the editor's layout, interaction contract and shipped keyboard shortcuts.
-- [Mission Creator feature inventory: keyboard shortcuts](/documentation_v2/website/frontend/apps/editor/feature_inventory/keyboard_shortcuts.md) — the bindings the shortcut list documents.
+- [Mission Creator feature inventory: keyboard shortcuts](/documentation/website/frontend/apps/editor/feature_inventory/keyboard_shortcuts.md) — the bindings the shortcut list documents.

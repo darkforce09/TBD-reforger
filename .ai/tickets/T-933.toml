@@ -5,8 +5,8 @@ summary = "mk leptos-gates exits non-zero after editor-suite 20/20 because v-sui
 class = "bug"
 status = "cancelled"
 order = 8320
-spec = "documentation_v2/tickets/specs/t933_leptos_gates_exit.md"
-plan = "documentation_v2/tickets/plans/t-933_plan.md"
+spec = "documentation/tickets/specs/t933_leptos_gates_exit.md"
+plan = "documentation/tickets/plans/t-933_plan.md"
 executor = "claude-code"
 notes = """
 2026-09-28 (milestone V): cancelled, already fixed. cargo xtask mk leptos-gates exits 0 with the editor suite 21/21 and the v-suite DOM oracle 25/25 (documentation_v2/website/api_v2/verification_evidence/progress_checkpoint.md:74 and :272, 2026-09-27); the milestone V phase gate runs it again.
@@ -43,8 +43,8 @@ completed_at = "2026-09-28T01:15:49Z"
 estimated = ["scope"]
 owns = [
     "xtask/src/mk_build.rs",
-    "documentation_v2/runbooks/factory_waves/README.md",
-    "documentation_v2/runbooks/editor_gates.md",
+    "documentation/runbooks/factory_waves/README.md",
+    "documentation/runbooks/editor_gates.md",
 ]
 
 [scope]

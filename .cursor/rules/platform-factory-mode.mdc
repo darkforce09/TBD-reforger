@@ -11,7 +11,7 @@ pushes. Any capable coding agent can fill that role or a slice agent's; nothing 
 which product runs it.
 
 **Runbook — read it before doing anything factory-related:**
-[Factory waves](/documentation_v2/runbooks/factory_waves/README.md), then its topic runbooks in the
+[Factory waves](/documentation/runbooks/factory_waves/README.md), then its topic runbooks in the
 order its table gives (cold start and preflight, wave planning, running a wave, the slice agent
 brief, the adversarial verifier brief, known traps).
 
@@ -29,7 +29,7 @@ application code.
 
 | Rule | Normally | In factory mode |
 |---|---|---|
-| [`application-code-forbidden.mdc`](/.cursor/rules/application-code-forbidden.mdc) | no application source edits in the chat | **slice agents edit** `apps/**` and `contracts_v2/**`, each inside its own slice worktree and scoped to its ticket's `owns` paths |
+| [`application-code-forbidden.mdc`](/.cursor/rules/application-code-forbidden.mdc) | no application source edits in the chat | **slice agents edit** `apps/**` and `contracts/**`, each inside its own slice worktree and scoped to its ticket's `owns` paths |
 | [`cursor-agent-workflow.mdc`](/.cursor/rules/cursor-agent-workflow.mdc) mode C | code runs through `cargo xtask ticket run` | **the orchestrator dispatches slice agents** and integrates their work |
 
 **Branches.** Factory mode stays inside `CLAUDE.md` law 2: commits land on `main`, and the one

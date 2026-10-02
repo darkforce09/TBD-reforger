@@ -56,7 +56,7 @@ fn request(tail: Vec<String>) -> TicketCommand {
     }
 }
 
-// ---- builders (one per CLI verb — arg shapes mirror tools_v2/xtask/src/main.rs TicketCmd) ----
+// ---- builders (one per CLI verb — arg shapes mirror tools/xtask/src/main.rs TicketCmd) ----
 
 /// `ticket ship <id>` — status→shipped, stamps completed_at, clears active.
 pub fn ship(id: &str) -> TicketCommand {

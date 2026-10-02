@@ -2,7 +2,7 @@
 
 How server administrators pick what runs next from inside the game: the list of missions the
 platform lets this server deploy, the admin browser keys that step through it, and the deployment
-request relayed to the platform as a [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment).
+request relayed to the platform as a [mission deployment](/documentation/glossary/g_to_m.md#mission-deployment).
 The folder also holds the Mission Selector screen's catalog, its last pick, and the session keys.
 
 ## Contents
@@ -39,7 +39,7 @@ sends the admin's `arma_id` from `TBD_PlayerIdentity`; the platform decides whet
 belongs to a platform administrator and validates the pick as it validates a website deployment.
 Picking the mission this world runs for an event names the running event mission, so its seats and
 reservations are kept. The relay restarts nothing: an accepted deployment runs when its
-[fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) does, as a `load_mission` in
+[fleet command](/documentation/glossary/a_to_f.md#fleet-command) does, as a `load_mission` in
 `apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/` or a host restart. A refusal is told in
 words for its `details.code` (`IDENTITY_NOT_LINKED`, `NOT_AN_ADMINISTRATOR`,
 `DEPLOYMENT_IN_PROGRESS`, `ARTIFACT_NOT_APPROVED`, `EVENT_MISSION_NOT_ON_SERVER`, `SERVER_INACTIVE`,
@@ -89,7 +89,7 @@ so the screen shows mock missions, separate from the platform's deployable list 
   which read `TBD_SessionSelection`.
 - Rules: every server half of an RPC takes the caller from `GetPlayerId()` and checks the admin
   list; the relay never restarts anything itself; the request and list shapes follow
-  `contracts_v2/definitions/mission-deployment.schema.json`
+  `contracts/definitions/mission-deployment.schema.json`
   (`RelayedDeploymentRequest`, `MissionDeployment`, `DeployableMissionList`); lines added stay ASCII and
   `cargo xtask mod compile` checks that the scripts compile.
 
@@ -97,8 +97,8 @@ so the screen shows mock missions, separate from the platform's deployable list 
 
 - [Missions domain](/apps/website/api_v2/src/missions/README.md) — the deployable list and the
   relayed deployment request on the API side
-- [Mission selection specification](/documentation_v2/mod/tbd-framework/UI/mission_selection/mission_selection_specification.md)
+- [Mission selection specification](/documentation/mod/tbd-framework/UI/mission_selection/mission_selection_specification.md)
   — the screen as built, its
   data, design target, open work and decisions
-- [Mission selection design references](/documentation_v2/mod/tbd-framework/UI/mission_selection/visual_references/README.md)
+- [Mission selection design references](/documentation/mod/tbd-framework/UI/mission_selection/visual_references/README.md)
   — the Stitch mockup sets and the Arma 3 captures the screen started from

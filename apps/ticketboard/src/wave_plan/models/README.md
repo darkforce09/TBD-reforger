@@ -1,7 +1,7 @@
 # Wave plan display models
 
-The projection of the recorded [wave](/documentation_v2/glossary/n_to_z.md#wave) plan that the
-[ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)'s Waves tab paints: the lanes exactly as
+The projection of the recorded [wave](/documentation/glossary/n_to_z.md#wave) plan that the
+[ticketboard](/documentation/glossary/n_to_z.md#ticketboard)'s Waves tab paints: the lanes exactly as
 the lock stores them, wave 0, and the dispatchable tickets no wave holds.
 
 ## Contents
@@ -26,7 +26,7 @@ the copy button.
 
 The unplanned bucket is derived from the ticket files, not the lock: every dispatchable ticket
 that no wave (wave 0 included) lists, in numeric id order. `dispatchable` copies the rule of
-`TicketView::dispatchable` in `tools_v2/ticket-engine/src/wave_lock/model.rs`: a work ticket with
+`TicketView::dispatchable` in `tools/ticket_engine/src/wave_lock/model.rs`: a work ticket with
 a live status (`queued`, `ready`, `running`, `review`) whose executor is `claude-code`, the default
 when unset.
 

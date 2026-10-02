@@ -5,7 +5,7 @@ use super::r_api::assert_golden;
 #[test]
 fn equipment_viewer_dataset_parity() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../contracts_v2/fixtures/equipment-data-viewer");
+        .join("../../../contracts/fixtures/equipment-data-viewer");
     let text = std::fs::read_to_string(root.join("positive/dataset.json")).unwrap();
     assert_golden::<EquipmentDatasetStatus>(&text, &[]);
     assert!(serde_json::from_str::<EquipmentDatasetStatus>(
@@ -16,7 +16,7 @@ fn equipment_viewer_dataset_parity() {
 #[test]
 fn equipment_viewer_resources_parity() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../contracts_v2/fixtures/equipment-data-viewer");
+        .join("../../../contracts/fixtures/equipment-data-viewer");
     let text = std::fs::read_to_string(root.join("positive/resources.json")).unwrap();
     assert_golden::<EquipmentResourcePage>(&text, &[]);
     assert!(serde_json::from_str::<EquipmentResourcePage>(
@@ -27,7 +27,7 @@ fn equipment_viewer_resources_parity() {
 #[test]
 fn equipment_viewer_source_inspection_parity() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../contracts_v2/fixtures/equipment-data-viewer");
+        .join("../../../contracts/fixtures/equipment-data-viewer");
     let text = std::fs::read_to_string(root.join("positive/source-inspection.json")).unwrap();
     assert_golden::<EquipmentSourcePage>(&text, &[]);
     assert!(serde_json::from_str::<EquipmentSourcePage>(
@@ -38,7 +38,7 @@ fn equipment_viewer_source_inspection_parity() {
 #[test]
 fn equipment_viewer_relationships_parity() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../contracts_v2/fixtures/equipment-data-viewer");
+        .join("../../../contracts/fixtures/equipment-data-viewer");
     let text = std::fs::read_to_string(root.join("positive/relationships.json")).unwrap();
     assert_golden::<EquipmentRelationshipPage>(&text, &[]);
     assert!(serde_json::from_str::<EquipmentRelationshipPage>(
@@ -49,7 +49,7 @@ fn equipment_viewer_relationships_parity() {
 #[test]
 fn equipment_viewer_field_inventory_parity() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../contracts_v2/fixtures/equipment-data-viewer");
+        .join("../../../contracts/fixtures/equipment-data-viewer");
     let text = std::fs::read_to_string(root.join("positive/field-inventory.json")).unwrap();
     assert_golden::<EquipmentFieldPage>(&text, &[]);
     assert!(serde_json::from_str::<EquipmentFieldPage>(
@@ -61,7 +61,7 @@ fn equipment_viewer_field_inventory_parity() {
 #[test]
 fn equipment_viewer_resource_cards_parity() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../contracts_v2/fixtures/equipment-data-viewer");
+        .join("../../../contracts/fixtures/equipment-data-viewer");
     assert_golden::<EquipmentResourceCardPage>(
         &std::fs::read_to_string(root.join("positive/resource-cards.json")).unwrap(),
         &[],

@@ -3,7 +3,7 @@
 //! The case tables are lists on purpose: the next scheme trick or character is one more line, and
 //! a failure names the exact input. The agreement tests compile the `pattern` of the wiki link
 //! `href`, the wiki image `src` and the vehicle `profile_image_url` straight out of
-//! `contracts_v2/definitions/` with `regress`, the ECMA-262 engine the generated contract types
+//! `contracts/definitions/` with `regress`, the ECMA-262 engine the generated contract types
 //! validate with, and require the policy to answer exactly as those patterns do.
 
 use std::collections::BTreeSet;
@@ -13,9 +13,9 @@ use serde_json::Value;
 use super::*;
 
 const WIKI_PAGE_SCHEMA: &str =
-    include_str!("../../../../../../../contracts_v2/definitions/wiki-page.schema.json");
+    include_str!("../../../../../../../contracts/definitions/wiki-page.schema.json");
 const VEHICLE_DATABASE_SCHEMA: &str =
-    include_str!("../../../../../../../contracts_v2/definitions/vehicle-database.schema.json");
+    include_str!("../../../../../../../contracts/definitions/vehicle-database.schema.json");
 
 /// Strings that are neither a safe image source nor a safe link target.
 const UNSAFE_EVERYWHERE: &[&str] = &[

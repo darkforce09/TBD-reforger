@@ -1,10 +1,10 @@
 # Selection tool
 
-The headless half of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s select
+The headless half of the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s select
 tool: the left-button gesture model, the click and marquee picks over
-[slots](/documentation_v2/glossary/n_to_z.md#slot) and placed vehicles, the drag-move math, and the
+[slots](/documentation/glossary/n_to_z.md#slot) and placed vehicles, the drag-move math, and the
 brute-force self-checks of the spatial index. Selection is app state: a
-[mission](/documentation_v2/glossary/g_to_m.md#mission) is the same mission whatever is highlighted.
+[mission](/documentation/glossary/g_to_m.md#mission) is the same mission whatever is highlighted.
 
 ## Contents
 
@@ -59,7 +59,7 @@ when the dragged entity is selected, otherwise that entity alone.
     bridge's host state and overlays, the right dock, the toolbelt and the outliner under
     `apps/website/frontend/src/v2/apps/editor/`;
   - the headless marquee gate
-    (`tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/marquee_drag.rs`), which
+    (`tools/developer_tools/src/browser_testing/editor_smoke_tests/marquee_drag.rs`), which
     calls `marquee_selfcheck` through the browser.
 - Rules: slot hits are square, vehicle hits circular, ties go to the slot and a marquee lists slots
   before vehicles (`square_slots_circular_vehicles_and_equal_distance_policy` and
@@ -69,7 +69,7 @@ when the dragged entity is selected, otherwise that entity alone.
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
+- [Mission Creator feature inventory](/documentation/website/frontend/apps/editor/feature_inventory/README.md)
   — selection, marquee, move and rotate among the Mission Creator's features.
-- [Mission Creator feature inventory: selection](/documentation_v2/website/frontend/apps/editor/feature_inventory/selection.md) — the click, marquee and modifier rules as the mission maker meets them.
-- [Mission Creator feature inventory: transform and delete](/documentation_v2/website/frontend/apps/editor/feature_inventory/transform_and_delete.md) — the drag-move and the rotate gesture.
+- [Mission Creator feature inventory: selection](/documentation/website/frontend/apps/editor/feature_inventory/selection.md) — the click, marquee and modifier rules as the mission maker meets them.
+- [Mission Creator feature inventory: transform and delete](/documentation/website/frontend/apps/editor/feature_inventory/transform_and_delete.md) — the drag-move and the rotate gesture.

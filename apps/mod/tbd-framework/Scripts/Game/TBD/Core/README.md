@@ -1,6 +1,6 @@
 # Framework core utilities
 
-The small utilities every other part of the TBD framework [mod](/documentation_v2/glossary/g_to_m.md#mod)
+The small utilities every other part of the TBD framework [mod](/documentation/glossary/g_to_m.md#mod)
 leans on: the structured log, the alias-to-prefab resolver, server-to-player chat, the replication
 side test, SHA-256 in script, and the small shared helpers in the subfolders (character, faction and
 player lookups, once-per-key logging, rounding, clock text, the RPC record codec and world queries).
@@ -49,7 +49,7 @@ is not empty. `TBD_Authority.IsClient()` and `IsServer()` wrap `RplSession.Mode(
 `RplMode.Client`, and everything else (dedicated, listen host, single-player) is the server. Chat is the one
 channel that reaches a player on a dedicated server without a menu preset, so replies, refusals and
 announcements go through it. `Hashing/` holds the SHA-256 that gates every mission
-[artifact](/documentation_v2/glossary/a_to_f.md#artifact).
+[artifact](/documentation/glossary/a_to_f.md#artifact).
 
 ## Authority
 
@@ -80,10 +80,10 @@ announcements go through it. `Hashing/` holds the SHA-256 that gates every missi
   `TBD_RegistryPocComponent`.
 - Rules: every log line starts `[TBD][<channel>]`, and log scrapers such as
   `cargo xtask mod remote-logs` pin that prefix, never the sentence; the registry's shape follows
-  `contracts_v2/definitions/registry.schema.json`; the proof-of-concept spawn stays off in a shipped
+  `contracts/definitions/registry.schema.json`; the proof-of-concept spawn stays off in a shipped
   prefab; lines added stay ASCII and `cargo xtask mod compile` checks that the scripts compile.
 
 ## Related documentation
 
-- [Mod design](/documentation_v2/mod/tbd-framework/mod_design.md) — the framework's thesis, its
+- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the framework's thesis, its
   non-negotiables and the event loop it serves

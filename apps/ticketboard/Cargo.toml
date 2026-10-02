@@ -1,6 +1,6 @@
 # Ticketboard — native egui projection of the ticket registry.
 #
-# Parses every .ai/tickets/T-*.toml via `ticket-engine` and renders a status board +
+# Parses every .ai/tickets/T-*.toml via `ticket_engine` and renders a status board +
 # detail panel; every mutation shells a `cargo xtask ticket <verb>` subprocess —
 # the app itself writes NO ticket bytes anywhere under the repo; the only direct
 # file write is the preference store (eframe Storage in the user config dir,
@@ -41,16 +41,16 @@ notify = "8"
 # Native folder picker for the no-repo refusal screen (xdg-portal + pollster on Linux;
 # no async runtime).
 rfd = "0.17.2"
-# wave.lock mirror parse: the same serde derive and toml 0.8 workspace entries ticket-engine
+# wave.lock mirror parse: the same serde derive and toml 0.8 workspace entries ticket_engine
 # writes the lock with, so the verbatim lock render never disagrees with the writer on TOML
 # dialect.
 serde = { workspace = true, features = ["derive"] }
 # The metrics dashboard's run-receipt JSON parse: the same parser `ticket check` reads the
 # receipts with, so the two never disagree on JSON dialect.
 serde_json = { workspace = true }
-ticket-engine = { path = "../../tools_v2/ticket-engine" }
+ticket_engine = { path = "../../tools/ticket_engine" }
 # Elapsed derivation (finished − started at query time): the same RFC 3339 parser
-# tools_v2/ticket-engine/src/metrics/ uses, so elapsed never disagrees with the checker.
+# tools/ticket_engine/src/metrics/ uses, so elapsed never disagrees with the checker.
 time = { workspace = true, features = ["parsing"] }
 toml = { workspace = true }
 

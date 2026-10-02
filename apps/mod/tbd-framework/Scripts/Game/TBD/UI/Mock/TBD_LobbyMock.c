@@ -11,7 +11,7 @@
  * State: none; a static builder.
  * Invariants: every kit but `crew` also carries its wire half, a kit alias and a
  * `TBD_SlotLoadoutStruct` of GUID-pinned vanilla prefabs (read off
- * contracts_v2/fixtures/missions/valid/slot-loadout-coverage.json, Character_USSR_AT.et and
+ * contracts/fixtures/missions/valid/slot-loadout-coverage.json, Character_USSR_AT.et and
  * Character_USSR_SL.et), so the 3D doll wears what the server would spawn; `crew` is kit-only;
  * counts the UI shows (`0 / 92`, `2/3`) are computed by the screen from these rows.
  */

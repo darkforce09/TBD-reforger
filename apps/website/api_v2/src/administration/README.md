@@ -1,9 +1,9 @@
 # Administration domain
 
-The [API](/documentation_v2/glossary/a_to_f.md#api)'s
-[administration](/documentation_v2/glossary/a_to_f.md#administration) domain: the member roster and the
+The [API](/documentation/glossary/a_to_f.md#api)'s
+[administration](/documentation/glossary/a_to_f.md#administration) domain: the member roster and the
 moderation taken against it (bans, ban lifts, warnings), the Discord
-[role](/documentation_v2/glossary/n_to_z.md#role) resync, the membership grace extension, and the audit
+[role](/documentation/glossary/n_to_z.md#role) resync, the membership grace extension, and the audit
 log that records every privileged action, with its live feed. The identity behind a member (sign-in,
 tokens, the account row) belongs to `identity_and_access`.
 
@@ -52,7 +52,7 @@ audit id, and reloads the history on `reset`.
   - `POST /api/v1/admin/roles/sync`: re-apply the Discord role mapping.
   - `GET /api/v1/admin/audit-logs`: the filtered, keyset-paged audit list.
   - `GET /api/v1/admin/audit-logs/export.csv`: the CSV export.
-  - `GET /api/v1/admin/audit-logs/stream`: the live [SSE](/documentation_v2/glossary/n_to_z.md#sse)
+  - `GET /api/v1/admin/audit-logs/stream`: the live [SSE](/documentation/glossary/n_to_z.md#sse)
     feed: `ready`, unnamed row events, and `reset`.
 - `services::required_audit`: `append_required_audit`, `append_actor_audit`,
   `append_actor_audit_with_severity` and `append_system_audit`, the transactional audit append
@@ -72,22 +72,22 @@ audit id, and reloads the history on `reset`.
   - `core::http_router`, which merges the route table, and the `audit_publication_worker` in
     `apps/website/api_v2/src/background_workers/`;
   - every other domain, through the audit services and `AuditSeverity`;
-  - over HTTP, the [personnel](/documentation_v2/glossary/n_to_z.md#personnel) and
-    [audit logs](/documentation_v2/glossary/a_to_f.md#audit-logs) pages in
+  - over HTTP, the [personnel](/documentation/glossary/n_to_z.md#personnel) and
+    [audit logs](/documentation/glossary/a_to_f.md#audit-logs) pages in
     `apps/website/frontend/src/v2/pages/administration/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`apps/website/api_v2/src/tests/architecture_rules.rs` checks both); every handler
   carries its `/// @route` tag (`cargo xtask verify route-tags`); no Rust code outside `services/`
   inserts into `audit_logs`, which keeps one audit path for the crate's code; the wire shapes follow
-  `contracts_v2/definitions/personnel-roster.schema.json` and
-  `contracts_v2/definitions/audit-log.schema.json`.
+  `contracts/definitions/personnel-roster.schema.json` and
+  `contracts/definitions/audit-log.schema.json`.
 
 ## Related documentation
 
-- [API overview](/documentation_v2/website/api_v2/api_overview.md) — every domain's routes.
-- [Administration and community content](/documentation_v2/website/api_v2/verification_evidence/administration_and_content.md)
+- [API overview](/documentation/website/api_v2/api_overview.md) — every domain's routes.
+- [Administration and community content](/documentation/website/api_v2/verification_evidence/administration_and_content.md)
   — the roster paging, the audit stream's replay, reset and recovery semantics.
-- [Personnel roster page](/documentation_v2/website/frontend/pages/administration/personnel/personnel_roster_page.md)
+- [Personnel roster page](/documentation/website/frontend/pages/administration/personnel/personnel_roster_page.md)
   — the roster, discipline and resync as administrators use them.
-- [Audit logs page](/documentation_v2/website/frontend/pages/administration/audit_logs/audit_logs_page.md)
+- [Audit logs page](/documentation/website/frontend/pages/administration/audit_logs/audit_logs_page.md)
   — the audit console that reads these routes.

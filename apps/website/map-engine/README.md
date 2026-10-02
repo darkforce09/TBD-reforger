@@ -1,9 +1,9 @@
 # Map engine
 
 The `website-map-engine` crate: everything between the platform's map data and the pixels, and
-the [mission](/documentation_v2/glossary/g_to_m.md#mission) domain the
-[API](/documentation_v2/glossary/a_to_f.md#api) and the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) share. It holds the mission
+the [mission](/documentation/glossary/g_to_m.md#mission) domain the
+[API](/documentation/glossary/a_to_f.md#api) and the
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) share. It holds the mission
 compiler and CRDT document, the headless editing tools, the static world streamed from a terrain's
 assets, spatial queries and line of sight, the map's lanes and symbology, the cameras, and the
 render engine that hands frame packets to `website-graphics-engine`. It depends on no UI
@@ -61,7 +61,7 @@ cargo xtask verify engine-layers # the layer rules between the engine crates and
 `cargo test -p website-map-engine --all-features` runs this crate's tests alone. Without
 `--all-features` the tripwire test `map_engine_tests_require_all_features` fails, since the
 default tier compiles only a fraction of the crate. The tests read the Everon terrain under
-`assets_v2/terrains/everon/` from disk. The crate has no binary of its own: the Mission Creator
+`assets/terrains/everon/` from disk. The crate has no binary of its own: the Mission Creator
 runs it in the browser, inside the single-page app that `cargo xtask mk leptos` builds and serves,
 and `cargo xtask mk leptos-gates` runs the editor gate, whose `selfcheck` smoke calls the render
 engine's readback checks.
@@ -74,10 +74,10 @@ Cargo features, in `Cargo.toml`:
 |---|---|---|
 | `scenario` (default) | `serde`, `serde_json`, `thiserror`, `libm`; `data::scenario` | the API |
 | `store` | `scenario`, `yrs`; `data::store` | the frontend |
-| `bvh` | no crate; gates `spatial::bvh`, which also needs `world` | implied by `world`; `tools_v2/developer-tools` names it too |
-| `world` | `bvh`, `png`, `website-graphics-engine`; `world`, `spatial`, `overlay`, `frame` | the frontend, `tools_v2/developer-tools` |
-| `io` | `world`, `scenario`, rkyv and float round trips in `serde_json`; `io` and `streaming`'s bridge | the frontend, `tools_v2/developer-tools` |
-| `streaming` | `io`, `flate2`; the loaders, scheduler, buffers and memory ledger | the frontend on wasm32 and in its tests, `tools_v2/developer-tools` |
+| `bvh` | no crate; gates `spatial::bvh`, which also needs `world` | implied by `world`; `tools/developer_tools` names it too |
+| `world` | `bvh`, `png`, `website-graphics-engine`; `world`, `spatial`, `overlay`, `frame` | the frontend, `tools/developer_tools` |
+| `io` | `world`, `scenario`, rkyv and float round trips in `serde_json`; `io` and `streaming`'s bridge | the frontend, `tools/developer_tools` |
+| `streaming` | `io`, `flate2`; the loaders, scheduler, buffers and memory ledger | the frontend on wasm32 and in its tests, `tools/developer_tools` |
 | `render` | `streaming`, `website-graphics-engine`; the GPU frame path, `diagnostics`, `doll` | the frontend on wasm32 |
 | `editing` | `store`, `world`, `streaming`; `editing` | the frontend |
 
@@ -85,7 +85,7 @@ In the browser the crate also reads the page's query string: `memBudgetMb` sets 
 memory budget in MiB (or `window.__memBudgetMb`; default 1536), `sat=preview` loads the satellite
 imagery by range requests alone and never fetches the whole bundle, and `t9382=1` (or
 `window.__t9382Log`) logs chunk allocation. At build time `data::scenario` embeds
-`contracts_v2/rules/kit-aliases.json`.
+`contracts/rules/kit-aliases.json`.
 
 ## Public surface
 
@@ -102,17 +102,17 @@ imagery by range requests alone and never fetches the whole bundle, and `t9382=1
 - Depends on: `website-graphics-engine` (optional, from the `world` tier up); `serde`,
   `serde_json`, `thiserror`, `libm`, `yrs`, `png`, `rkyv`, `flate2` and `bytemuck`; on
   wasm32, `wgpu`, `wasm-bindgen`, `wasm-bindgen-futures`, `js-sys`, `web-sys`, `gloo-net`,
-  `futures` and `console_error_panic_hook`; `contracts_v2/rules/kit-aliases.json`; and at run
-  time the terrain assets of `assets_v2/terrains/`, which the API serves under `/map-assets`.
+  `futures` and `console_error_panic_hook`; `contracts/rules/kit-aliases.json`; and at run
+  time the terrain assets of `assets/terrains/`, which the API serves under `/map-assets`.
   Its tests also use `jsonschema` (dev-dependency), which validates the ballistics catalog sample
-  against `contracts_v2/definitions/ballistics-catalog.schema.json`.
+  against `contracts/definitions/ballistics-catalog.schema.json`.
 - Used by:
   - the API (`apps/website/api_v2/Cargo.toml`), at the default `scenario` tier;
   - the frontend (`apps/website/frontend/Cargo.toml`): `world`, `io`, `store` and `editing` on
     every target, `render` and `streaming` on wasm32, and `streaming` for its native tests;
-  - `tools_v2/developer-tools/Cargo.toml`: `world`, `streaming`, `io` and `bvh`, for the world
+  - `tools/developer_tools/Cargo.toml`: `world`, `streaming`, `io` and `bvh`, for the world
     export, the blueprint tooling and the map checks;
-  - `tools_v2/xtask/`: the `wasm-ci` lane and the `engine-layers` gate.
+  - `tools/xtask/`: the `wasm-ci` lane and the `engine-layers` gate.
 - Rules:
   - the arrow is one-way: `apps/website/graphics-engine/` never imports this crate (rule 1 of
     `cargo xtask verify engine-layers`) and the frontend never imports the graphics engine (rule
@@ -125,11 +125,11 @@ imagery by range requests alone and never fetches the whole bundle, and `t9382=1
 
 ## Related documentation
 
-- [Local development](/documentation_v2/runbooks/local_development.md) — the terrain assets: what
+- [Local development](/documentation/runbooks/local_development.md) — the terrain assets: what
   Git LFS holds, how `/map-assets` is served, and the LFS pulls.
-- [Editor gates](/documentation_v2/runbooks/editor_gates.md) — running the editor gate, whose
+- [Editor gates](/documentation/runbooks/editor_gates.md) — running the editor gate, whose
   `selfcheck` smoke calls the render engine's readback checks.
-- [Map engine documentation](/documentation_v2/website/map-engine/README.md) — the crate's
+- [Map engine documentation](/documentation/website/map-engine/README.md) — the crate's
   overview, map streaming, the editing layer and draft persistence.
-- [Engine boundary rules](/documentation_v2/standards/engine_boundary_rules.md) — the layer rules
+- [Engine boundary rules](/documentation/standards/engine_boundary_rules.md) — the layer rules
   `cargo xtask verify engine-layers` enforces, and why.

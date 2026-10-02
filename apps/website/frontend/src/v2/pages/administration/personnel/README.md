@@ -1,9 +1,9 @@
 # Personnel roster page
 
-The `/admin/personnel` page, [personnel](/documentation_v2/glossary/n_to_z.md#personnel), titled
+The `/admin/personnel` page, [personnel](/documentation/glossary/n_to_z.md#personnel), titled
 "Personnel Roster": administrators search the member roster and page through it, open one member's
 dossier beside it, ban, unban or warn a member, and resync every member's
-[role](/documentation_v2/glossary/n_to_z.md#role) from Discord. A role follows the member's
+[role](/documentation/glossary/n_to_z.md#role) from Discord. A role follows the member's
 Discord roles, so the dossier explains it and never sets it.
 
 ## Contents
@@ -53,7 +53,7 @@ the page has no role picker and never calls the role route. "Sync Roles" posts t
 reports the `updated` count it answers; an answer without the count is reported as unexpected,
 never as a completed sync. The dossier and its dialogs work on the loaded page: a selected member
 on another page leaves the dossier pane empty until their page is back. Every
-[API](/documentation_v2/glossary/a_to_f.md#api) request runs in the browser build only; a native
+[API](/documentation/glossary/a_to_f.md#api) request runs in the browser build only; a native
 build renders the failure branch.
 
 ## Routes
@@ -104,13 +104,13 @@ build renders the failure branch.
   `MaterialIcon`, `Select`, `cn`, the toast queue), `leptos_router` (`use_query_map`,
   `use_location`, `use_navigate`) and the `url` crate's form encoding; over HTTP,
   the roster, ban, warning and role resync routes of the
-  [administration](/documentation_v2/glossary/a_to_f.md#administration) domain.
+  [administration](/documentation/glossary/a_to_f.md#administration) domain.
 - Used by: the `/admin/personnel` route in `apps/website/frontend/src/app_routes.rs` and
   `apps/website/frontend/src/router.rs`; the sidebar's "Personnel Roster" link in
   `apps/website/frontend/src/v2/pages/navigation/nav_config.rs`; `personnel_source` in
   `apps/website/frontend/src/v2/core/test_support/pins.rs`, which joins the page's sources for its
   tests; the DOM oracle's `personnel` capture in
-  `tools_v2/developer-tools/src/browser_testing/dom_oracle/routes.rs`.
+  `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`.
 - Rules: the role note offers no website override, with no picker, no input and no role request
   (`role_ui_explains_discord_authority_without_website_override`); a ban or a warning is never sent
   without a trimmed reason (`ok_with_blank_is_refused_before_any_request`,
@@ -126,7 +126,7 @@ build renders the failure branch.
 
 ## Related documentation
 
-- [Personnel roster page](/documentation_v2/website/frontend/pages/administration/personnel/personnel_roster_page.md)
+- [Personnel roster page](/documentation/website/frontend/pages/administration/personnel/personnel_roster_page.md)
   — the page's behaviour, what each call means server-side, its design, open work and decisions.
 - [Administration domain](/apps/website/api_v2/src/administration/README.md) — the roster, ban,
   warning and role resync routes.

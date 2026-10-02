@@ -21,7 +21,7 @@ apps/website/map-engine/src/world/terrain/
 Every child reads files of one terrain's asset folder, which the terrain's `manifest.json` names
 and the API serves under `/map-assets/<terrain>/`:
 
-| Child | Files it reads (Everon, `assets_v2/terrains/everon/`) |
+| Child | Files it reads (Everon, `assets/terrains/everon/`) |
 |---|---|
 | `dem/` | `dem/everon-dem-16bit.png`, or a raw `dem/elevation.dem` when the manifest declares one |
 | `relief/` | none: it draws from the elevation model's metres cache and vector grid |
@@ -32,7 +32,7 @@ and the API serves under `/map-assets/<terrain>/`:
 `crate::streaming::host` drives the loads at boot. The elevation model and the satellite image
 load side by side: the elevation model becomes the hillshade texture, after which
 `relief::host::DemVectors` builds the 8 m vector grid that the contours, the sea band, the airfield
-apron and the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s height readout
+apron and the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s height readout
 sample, and the satellite image fills the basemap texture. The roads load with the world's
 objects, and the water files when the manifest declares them. Positions are world metres inside
 the manifest's `worldBounds` (0 to 12 800 m on both axes for Everon).
@@ -77,7 +77,7 @@ feature; the rest is plain computation that the native tools reuse:
     read the satellite container and loading code; the debug benches in
     `apps/website/frontend/src/v2/apps/debug/`, which stroke lines with the road strips;
   - the world export, the map raster pipeline and the map checks in
-    `tools_v2/developer-tools/src/`, which write and verify the terrain files.
+    `tools/developer_tools/src/`, which write and verify the terrain files.
 - Rules: the module compiles only with the `world` feature and each file under its gate above; a
   binary file is validated before it is read, and one of another schema or container version is
   refused rather than guessed, as each child's tests hold; a manifest block this build cannot read
@@ -85,4 +85,4 @@ feature; the rest is plain computation that the native tools reuse:
 
 ## Related documentation
 
-- [Everon dataset](/assets_v2/terrains/everon/README.md) — the terrain files this module reads.
+- [Everon dataset](/assets/terrains/everon/README.md) — the terrain files this module reads.

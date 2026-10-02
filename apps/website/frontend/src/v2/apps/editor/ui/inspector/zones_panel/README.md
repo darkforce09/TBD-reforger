@@ -1,6 +1,6 @@
 # Zones panel parts
 
-The zones tab of the right dock: the zones a [mission](/documentation_v2/glossary/g_to_m.md#mission)
+The zones tab of the right dock: the zones a [mission](/documentation/glossary/g_to_m.md#mission)
 declares (play areas, objectives and the other zone types of the mission schema), drawn on the map
 as circles or polygons and edited here with their label, faction and rules, plus the tactical
 graphics draw. The parent module,
@@ -29,7 +29,7 @@ where "Redraw circle" and "Redraw polygon" reshape it and keep its label, factio
 `tactical_graphics_authoring`. Writes go through `website_map_engine::editing::hosted_commands`,
 and each bumps the document tick so the panel re-reads.
 
-The vocabulary comes from `contracts_v2/definitions/mission.schema.json`, embedded at compile time
+The vocabulary comes from `contracts/definitions/mission.schema.json`, embedded at compile time
 as `MISSION_SCHEMA`: `zone_types` reads the `zone` type enum and `zone_rule_fields` the properties
 of `zoneRules`, each rule becoming a checkbox, a choice, a number or a text control. Geometry is
 held to the document's 0.1 m grid (`ZONE_GRID_M`): a circle radius must survive that rounding
@@ -59,5 +59,5 @@ held to the document's 0.1 m grid (`ZONE_GRID_M`): a circle radius must survive 
 
 ## Related documentation
 
-- [Mission Creator feature inventory: placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) — drawing a zone area.
-- [Mission Creator feature inventory: asset palette](/documentation_v2/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) — the Zones tab.
+- [Mission Creator feature inventory: placement](/documentation/website/frontend/apps/editor/feature_inventory/placement.md) — drawing a zone area.
+- [Mission Creator feature inventory: asset palette](/documentation/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) — the Zones tab.

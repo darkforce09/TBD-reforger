@@ -105,7 +105,7 @@ owns = [
     "scripts/mod/slice-collisions.py",
     "xtask/src",
     "Makefile",
-    "documentation_v2/standards/coding_standards/README.md",
+    "documentation/standards/coding_standards/README.md",
     "scripts/platform/wave.sh",
     "docs/platform/wave_plan.tsv",
 ]

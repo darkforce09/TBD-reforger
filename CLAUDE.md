@@ -2,7 +2,7 @@
 
 Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event / ORBAT scheduling, mission library, the Mission Creator (a top-down 2D mission editor), game-server fleet control and telemetry, leaderboards, doctrine wiki, the TBD game mod, and Enfusion mod tooling.
 
-> **Active program — workspace restructure.** The repository is being rebuilt into standard, fine-grained Rust crates (flat `apps/`, tiered crates, no `_v2` names). Before any work, read [documentation_v2/restructure/README.md](/documentation_v2/restructure/README.md), then [progress.md](/documentation_v2/restructure/progress.md) for the current stage and the next step. Commits land directly on `main` (law 2), one green commit per stage.
+> **Active program — workspace restructure.** The repository is being rebuilt into standard, fine-grained Rust crates (flat `apps/`, tiered crates, no `_v2` names). Before any work, read [documentation/restructure/README.md](/documentation/restructure/README.md), then [progress.md](/documentation/restructure/progress.md) for the current stage and the next step. Commits land directly on `main` (law 2), one green commit per stage.
 
 ---
 
@@ -32,7 +32,7 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
 8. **In-Code Documentation Standards (Rust & Enfusion)**:
    - **Present-Tense, Context-Free Invariants (Universal)**:
      Comments and docstrings must describe strictly what the code does *now* and *why* (invariants, mathematical models, engine/hardware constraints, failure modes). Never document historical transitions (no "rewritten from X", "fixed in Y"), ticket references in source comments, or references to retired codebases (no "mirrors old TS file"). Commit history owns history.
-   - **Rust Code Standards (`rustdoc` — `apps/website/`, `tools_v2/`)**:
+   - **Rust Code Standards (`rustdoc` — `apps/website/`, `tools/`)**:
      - **Module Headers (`//!`)**: Non-trivial modules must carry a 4-point architectural contract header:
        - `**Role:**` Primary responsibility of this module in the subsystem.
        - `**Position:**` Boundary layer and data flow context (what feeds it, who consumes it).
@@ -55,17 +55,19 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
        - REST API call sites MUST declare `//! @route <METHOD> <path>`.
 9. **API & Contract Parity**:
    - Backend Rust models (`apps/website/api_v2/src/<domain>/models/`) are the snake_case API source of truth.
-   - Contract types are generated from `contracts_v2/definitions/*.json` via `cargo xtask ci schema-codegen`.
+   - Contract types are generated from `contracts/definitions/*.json` via `cargo xtask ci schema-codegen`.
    - Frontend DTOs (`apps/website/frontend/src/v2/core/api/dto/`) mirror models with strict R-api golden test parity.
 10. **Documentation Ships With the Code**:
     - Documentation lands in the same commit as the code it describes, whichever agent writes that code: the comments of the code it alters, the README.md of every folder whose contents, surface, commands or boundaries change, and the feature docs whose behaviour changes.
-    - [documentation_v2/README.md](/documentation_v2/README.md) is the documentation entry (map and authority ladder); [documentation_v2/standards/](/documentation_v2/standards/README.md) holds the documentation, README and coding standards and the templates.
-    - Terms follow the [glossary](/documentation_v2/glossary/README.md): the editor is the **Mission Creator**; the authored document is a **mission** (never "scenario" in prose; code identifiers stay quoted as spelled); Enfusion's world plus game-mode config is the **mission header**; an **event** is a scheduled session record; **operations** is its domain.
+    - [documentation/README.md](/documentation/README.md) is the documentation entry (map and authority ladder); [documentation/standards/](/documentation/standards/README.md) holds the documentation, README and coding standards and the templates.
+    - Terms follow the [glossary](/documentation/glossary/README.md): the editor is the **Mission Creator**; the authored document is a **mission** (never "scenario" in prose; code identifiers stay quoted as spelled); Enfusion's world plus game-mode config is the **mission header**; an **event** is a scheduled session record; **operations** is its domain.
     - Before committing, run the three documentation gates over what changed (§3).
 
 ---
 
 ## 2. Monorepo Directory Atlas
+
+The [workspace layout](/documentation/architecture/workspace_layout.md) explains the top-level folders and the workspace members as they stand; the [target file tree](/documentation/restructure/target_file_tree.md) is where the restructure takes them.
 
 ```text
 apps/
@@ -194,49 +196,51 @@ apps/
             ├── shaders/                 <-- WGSL: every vertex, fragment and compute entry point
             └── text/                    <-- Bitmap font, ASCII glyph atlas bake, glyph layout, sprite packing
 
-tools_v2/                               <-- Every developer tool in the repository; four crates plus one npm package
-├── verification-core/                  <-- Fail-closed verdicts, pattern scans, process isolation, repository verification lock
-├── ticket-engine/                      <-- Ticket storage, validation, queue and roadmap sync, wave lock, metrics
-├── developer-tools/                    <-- Heavy async CLI suite, blueprint compiler, map verification
-│   ├── src/bin/                        <-- Executables: enf, gate, mcpd, world, map, capture, acknowledgement-dropping-relay
-│   │   ├── enf                         <-- Symbol indexes, lookups and checks over Enfusion scripts
-│   │   ├── gate                        <-- Headless CDP Chrome gates of the single-page app
-│   │   ├── mcpd                        <-- Enfusion MCP broker daemon
-│   │   ├── world                       <-- World-export pipeline and its verification gates
-│   │   ├── map                         <-- Satellite, cartographic, label, water and glyph map assets
-│   │   ├── capture                     <-- Mission Creator screenshots, zoom sweeps, crops
+tools/                                   <-- Every developer tool in the repository; four crates plus one npm package
+├── verification_core/                   <-- Fail-closed verdicts, pattern scans, process isolation, repository verification lock
+├── ticket_engine/                       <-- Ticket storage, validation, queue and roadmap sync, wave lock, metrics
+├── developer_tools/                     <-- Heavy async CLI suite, blueprint compiler, map verification
+│   ├── src/bin/                         <-- Executables: enf, gate, mcpd, world, map, capture, acknowledgement-dropping-relay
+│   │   ├── enf                          <-- Symbol indexes, lookups and checks over Enfusion scripts
+│   │   ├── gate                         <-- Headless CDP Chrome gates of the single-page app
+│   │   ├── mcpd                         <-- Enfusion MCP broker daemon
+│   │   ├── world                        <-- World-export pipeline and its verification gates
+│   │   ├── map                          <-- Satellite, cartographic, label, water and glyph map assets
+│   │   ├── capture                      <-- Mission Creator screenshots, zoom sweeps, crops
 │   │   └── acknowledgement-dropping-relay <-- Staging fault injection: withholds one fleet executor answer
-│   ├── fixtures/dom_oracle/            <-- DOM goldens, screenshots and route inventories the browser gates compare against
-│   └── test_fixtures/blueprint/        <-- Prefab and world-object inputs for the blueprint compiler tests
-├── xtask/                              <-- `cargo xtask` command router, repository verifications, platform execution
-│   ├── deploy/                         <-- deploy.env.example, Caddyfile.website, systemd/ units and timers
-│   ├── dedicated_server_profiles/      <-- Dedicated-server profile the local mod servers start from
-│   ├── fixtures/mcp/                   <-- Recorded MCP transcripts `cargo xtask mcp selftest` replays
-│   └── staging/                        <-- Committed load workload and population of the staging load receipt
-└── enfusion_mcp_node_package/          <-- Pinned enfusion-mcp npm package (node_modules gitignored)
+│   ├── fixtures/dom_oracle/             <-- DOM goldens, screenshots and route inventories the browser gates compare against
+│   └── test_fixtures/blueprint/         <-- Prefab and world-object inputs for the blueprint compiler tests
+├── xtask/                               <-- `cargo xtask` command router, repository verifications, platform execution
+│   ├── deploy/                          <-- deploy.env.example, Caddyfile.website, systemd/ units and timers
+│   ├── dedicated_server_profiles/       <-- Dedicated-server profile the local mod servers start from
+│   ├── fixtures/mcp/                    <-- Recorded MCP transcripts `cargo xtask mcp selftest` replays
+│   └── staging/                         <-- Committed load workload and population of the staging load receipt
+└── enfusion_mcp_node_package/           <-- Pinned enfusion-mcp npm package (node_modules gitignored)
 
-contracts_v2/                            <-- Every shape that crosses a network, process, or language boundary
+contracts/                               <-- Every shape that crosses a network, process, or language boundary
 ├── definitions/                         <-- Authoritative JSON Schemas (missions, events, registry, loadouts, map objects, terrain, fleet)
 ├── rules/                               <-- Prefab classification and mission kit aliases
 ├── catalogs/                            <-- Live Workbench exports the platform ingests; ballistics catalogs
 └── fixtures/                            <-- Golden test data, positive and negative
 
-assets_v2/                               <-- Terrain datasets and the world-object glyph set
+assets/                                  <-- Terrain datasets and the world-object glyph set
 ├── terrains/                            <-- Built-in islands (Everon, Arland) and the terrain registry, served at /map-assets
 ├── glyphs/                              <-- World-object glyph atlas and SVG sources
 ├── scratch/                             <-- Local export intermediates (gitignored)
 └── storage_spec/                        <-- Production persistent volume specification (not yet built)
 
-documentation_v2/                        <-- All documentation; entry, map and authority ladder: README.md
-├── website/ mod/ tools_v2/ contracts_v2/ assets_v2/ fleet_host_agent/ ticketboard/
-│                                        <-- Feature docs at the code's path minus apps/, src/, src/v2/, Scripts/Game/TBD/
+documentation/                           <-- All documentation; entry, map and authority ladder: README.md
+├── architecture/                        <-- Workspace layout as it stands: top-level folders, members, where code, contracts, assets and docs live
+├── website/ mod/ tools/ contracts/ assets/ fleet_host_agent/ ticketboard/
+│                                        <-- Feature docs at the code's path minus src/ (until the restructure moves the apps, apps/ docs also drop apps/, src/v2/, Scripts/Game/TBD/)
+├── restructure/                         <-- Active workspace restructure program: plan, target tree, crate catalogue, relocation manifests, progress
 ├── runbooks/                            <-- Procedures: local development, deployment, gates, playtests
 ├── standards/                           <-- Documentation, README and coding standards; document templates
 ├── glossary/                            <-- Project terms, one file per letter range
 ├── design_system/                       <-- Design tokens, map symbology, interaction patterns
 ├── known_bugs/                          <-- Live known-bug registry
 ├── tickets/                             <-- Ticket specs and plans (flat; frozen once the ticket closes)
-├── archive/                             <-- Frozen history, one folder per topic
+├── archive/                             <-- Frozen history, one folder per topic (finished program records, superseded layout plans, research)
 └── product_roadmap.md                   <-- Planned product items and open product questions
 .ai/tickets/                             <-- Ticket registry: one TOML per ticket, queue.json, ticket templates
 ```
@@ -245,7 +249,7 @@ documentation_v2/                        <-- All documentation; entry, map and a
 
 ## 3. Canonical Commands (`cargo xtask`)
 
-Configuration lives in `apps/website/api_v2/.env`, copied from `apps/website/api_v2/.env.example` (`APP_ENV=development`, Postgres on port 5434). Step-by-step setup: [local development](/documentation_v2/runbooks/local_development.md).
+Configuration lives in `apps/website/api_v2/.env`, copied from `apps/website/api_v2/.env.example` (`APP_ENV=development`, Postgres on port 5434). Step-by-step setup: [local development](/documentation/runbooks/local_development.md).
 
 ```bash
 # Local stack, in this order (Postgres :5434)
@@ -277,12 +281,12 @@ cargo xtask ticket check       # Validate ticket registry structure
 cargo xtask ticket next        # Show the active slice and the next five ready or queued tickets
 cargo xtask ticket sync        # Regenerate queue.json and the roadmap next-work block (the gap-analysis ticket column is kept by hand)
 
-# Deployment (tools_v2/xtask/deploy/deploy.env)
+# Deployment (tools/xtask/deploy/deploy.env)
 cargo xtask deploy website --dry-run  # Print the plan: asset preflight, rsync excludes, remote steps
 cargo xtask deploy website     # Rsync, build the API + SPA on the server, restart the unit
 cargo xtask deploy staging     # Five game-server instances, their host agents and the relay on the staging host
 
-# Staging verification (documentation_v2/runbooks/staging_verification/)
+# Staging verification (documentation/runbooks/staging_verification/)
 cargo xtask staging preflight  # Read-only: every precondition of the fleet, Discord and load procedures
 cargo xtask staging action-list <fleet|discord|load>  # The numbered real actions a procedure run asks approval for
 cargo xtask staging load --rehearse-local  # The load path against the local stack; records nothing

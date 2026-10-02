@@ -1,6 +1,6 @@
 # Equipment data viewer service
 
-Imports the equipment datasets the [Workbench](/documentation_v2/glossary/n_to_z.md#workbench)
+Imports the equipment datasets the [Workbench](/documentation/glossary/n_to_z.md#workbench)
 equipment export publishes, verified byte for byte, into a local data directory with a
 rebuildable navigation index, and answers the bounded, generation-pinned read queries behind the
 development-only equipment data viewer routes.
@@ -64,7 +64,7 @@ continuation cursor; a row too large for a page is refused and read through docu
 ## Boundaries
 
 - Depends on: `sqlx` with SQLite for the index, `tokio`, `serde_json` and `sha2`; the rule file
-  `contracts_v2/rules/equipment-gameplay/native-matching.json`, embedded at compile time; and, at
+  `contracts/rules/equipment-gameplay/native-matching.json`, embedded at compile time; and, at
   run time, the export publication under `EQUIPMENT_EXPORT_SOURCE_DIR` and the data directory
   under `EQUIPMENT_DATA_DIR`.
 - Used by: `core::application_state`, the domain's equipment data viewer handlers,
@@ -76,5 +76,5 @@ continuation cursor; a row too large for a page is refused and read through docu
 
 ## Related documentation
 
-- [Equipment data viewer contracts](/contracts_v2/definitions/equipment-data-viewer/README.md) —
+- [Equipment data viewer contracts](/contracts/definitions/equipment-data-viewer/README.md) —
   the page schemas the queries answer in.

@@ -1,6 +1,6 @@
 # API core
 
-The foundations every domain of the [API](/documentation_v2/glossary/a_to_f.md#api) rests on:
+The foundations every domain of the [API](/documentation/glossary/a_to_f.md#api) rests on:
 configuration, the database pool and migrations, the shared application state, the handler error
 type, the router with its middleware chain, authentication primitives, observability, and the
 HTTP, text and wire-format helpers the domains reuse instead of writing their own.
@@ -32,10 +32,10 @@ apps/website/api_v2/src/core/
 
 The `api` binary loads `Config`, opens the pool with `database::connect`, applies the migrations
 with `database::migrate`, builds `AppState::new(pool, config)`, arms the
-[background workers](/documentation_v2/glossary/a_to_f.md#background-workers), and
+[background workers](/documentation/glossary/a_to_f.md#background-workers), and
 serves `http_router::router(state)`. On SIGINT or SIGTERM it begins
 `process_lifecycle::process_shutdown`, which closes every open
-[SSE](/documentation_v2/glossary/n_to_z.md#sse) stream so the graceful drain completes.
+[SSE](/documentation/glossary/n_to_z.md#sse) stream so the graceful drain completes.
 `AppState` is the one dependency container: handlers and middleware extract it whole or take one
 part (the pool, the config, the token manager, the hub, the Discord and webhook clients, the
 session authority) through its `FromRef` implementations.
@@ -78,7 +78,7 @@ answers axum's plain-text rejection body.
 - `error_handling::api_error::ApiError`: the error every domain returns, with the
   `from_json_rejection`, `from_query_rejection` and `from_path_rejection` mappings.
 - `middleware`: the extractors, `json_error`, `role_rank`, `MAX_MULTIPART_BODY`,
-  `authorized_event_stream::authorize_event_stream` for [SSE](/documentation_v2/glossary/n_to_z.md#sse)
+  `authorized_event_stream::authorize_event_stream` for [SSE](/documentation/glossary/n_to_z.md#sse)
   handlers, and `PgRateLimiter` for the
   bucket-pruning worker.
 - `authentication_primitives`: `Manager` and `Claims`, `hash_token`, `random_token`,
@@ -117,4 +117,4 @@ answers axum's plain-text rejection body.
 
 ## Related documentation
 
-- [API overview](/documentation_v2/website/api_v2/api_overview.md) — the routes of every domain.
+- [API overview](/documentation/website/api_v2/api_overview.md) — the routes of every domain.

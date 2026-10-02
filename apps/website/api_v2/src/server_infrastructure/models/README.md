@@ -1,9 +1,9 @@
 # Server infrastructure models
 
 The rows and wire shapes of the game server fleet: the server registration and its live status, the
-[fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command) and their receipts, the
-[machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential) without their secrets, and
-the [fleet scenario registry](/documentation_v2/glossary/a_to_f.md#fleet-scenario). Keys are snake_case,
+[fleet commands](/documentation/glossary/a_to_f.md#fleet-command) and their receipts, the
+[machine credentials](/documentation/glossary/g_to_m.md#machine-credential) without their secrets, and
+the [fleet scenario registry](/documentation/glossary/a_to_f.md#fleet-scenario). Keys are snake_case,
 absent values are skipped and timestamps are RFC 3339.
 
 ## Contents
@@ -21,12 +21,12 @@ apps/website/api_v2/src/server_infrastructure/models/
 ## How it works
 
 `FleetAction` holds the rules of each action: which executor performs it (`broadcast`, `kick` and
-`load_mission` run in the [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime), everything
-else on the host agent, since Reforger's [RCON](/documentation_v2/glossary/n_to_z.md#rcon) has no
+`load_mission` run in the [game runtime](/documentation/glossary/g_to_m.md#game-runtime), everything
+else on the host agent, since Reforger's [RCON](/documentation/glossary/n_to_z.md#rcon) has no
 broadcast), whether repeating it is harmless (`start`, `stop`, `list_players`), whether it changes
 the server process (at most one such command runs per server; a `console_command` counts, since a
 console line can stop or restart the server), whether only a
-[mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment) may issue it (`load_mission`,
+[mission deployment](/documentation/glossary/g_to_m.md#mission-deployment) may issue it (`load_mission`,
 `restart_with_mission`), and how long its execution may take (30 to 180 seconds).
 `ConsoleCommandArguments` is the stored console line (at most `LINE_MAX_BYTES`, 256) and
 `ConsoleCommandOutcome` the reply a succeeded console command reports (at most
@@ -42,9 +42,9 @@ conversion folds the five `telemetry_queue_*` columns, all set or all null, into
 ## Boundaries
 
 - Depends on: `core::wire_format` for timestamps, serde and sqlx; `generated/` follows
-  `contracts_v2/definitions/fleet-command.schema.json`,
-  `contracts_v2/definitions/game-runtime-session.schema.json` (whose `RuntimeHeartbeat` carries the
-  optional `telemetry_queue` block) and `contracts_v2/definitions/machine-credential.schema.json`;
+  `contracts/definitions/fleet-command.schema.json`,
+  `contracts/definitions/game-runtime-session.schema.json` (whose `RuntimeHeartbeat` carries the
+  optional `telemetry_queue` block) and `contracts/definitions/machine-credential.schema.json`;
   `TelemetryQueueStatus` cites `match-telemetry.schema.json#/definitions/TelemetryQueueStatus`.
   `fleet_command.rs`, `machine_credential.rs` and `fleet_scenario.rs` carry `@contract` tags for
   the fleet command, machine credential and `mission-deployment.schema.json` fleet scenario

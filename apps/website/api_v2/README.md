@@ -1,9 +1,9 @@
 # Website API
 
-The `website-api` crate: the Axum REST [API](/documentation_v2/glossary/a_to_f.md#api) and
-[SSE](/documentation_v2/glossary/n_to_z.md#sse) streams behind the web platform. It serves `/api/v1` to
+The `website-api` crate: the Axum REST [API](/documentation/glossary/a_to_f.md#api) and
+[SSE](/documentation/glossary/n_to_z.md#sse) streams behind the web platform. It serves `/api/v1` to
 the single-page app, the game servers and the
-[fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent), owns the Postgres schema
+[fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent), owns the Postgres schema
 through its migrations, and serves uploads and terrain assets.
 
 ## Contents
@@ -24,7 +24,7 @@ apps/website/api_v2/
 ## How it works
 
 `src/bin/api.rs` loads the configuration, opens the Postgres pool, applies `migrations/` unless
-`SKIP_MIGRATE` is set, arms the [background workers](/documentation_v2/glossary/a_to_f.md#background-workers)
+`SKIP_MIGRATE` is set, arms the [background workers](/documentation/glossary/a_to_f.md#background-workers)
 and serves the router on `0.0.0.0:$PORT` until SIGINT or SIGTERM. The router nests the eight
 domains' route tables under `/api/v1` and wraps everything in one middleware chain, outermost
 first: request id, access log, Prometheus metrics, panic recovery, CORS, body limit, rate limit.
@@ -33,14 +33,14 @@ The terrain and glyph mounts under `/map-assets` sit below the rate limit. Each 
 where the router and the application state compose them.
 
 A route's access tier is the extractor its handler takes: a signed-in member, a member of at
-least a given [role](/documentation_v2/glossary/n_to_z.md#role), or a per-server
-[machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential), with which the
-[game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) (heartbeats, match telemetry, link
+least a given [role](/documentation/glossary/n_to_z.md#role), or a per-server
+[machine credential](/documentation/glossary/g_to_m.md#machine-credential), with which the
+[game runtime](/documentation/glossary/g_to_m.md#game-runtime) (heartbeats, match telemetry, link
 confirmation, fleet commands) and the fleet host agent authenticate. `/metrics` and the detailed
 `/healthz` take the operator's `OBSERVABILITY_TOKEN` bearer, which no other route accepts.
-The [mission](/documentation_v2/glossary/g_to_m.md#mission) compiler and the mortar ballistics come from
+The [mission](/documentation/glossary/g_to_m.md#mission) compiler and the mortar ballistics come from
 `website-map-engine`, which the crate takes with its default `scenario` tier alone. Game servers
-fetch compiled mission [artifacts](/documentation_v2/glossary/a_to_f.md#artifact) over HTTPS from
+fetch compiled mission [artifacts](/documentation/glossary/a_to_f.md#artifact) over HTTPS from
 `/api/v1/game-runtime/artifacts/{artifactId}`; nothing is staged on disk for them.
 
 The integration suites in `tests/` build one test binary per top-level file. A binary that needs
@@ -62,7 +62,7 @@ name starts with its group's prefix, which the verification register counts.
 | properties | `session_authority_properties`, `mission_artifact_properties`, `telemetry_revision_properties`, `fleet_command_properties`, `audit_publication_properties`, `reservation_transaction_properties` | `common::property_evidence`, the recorder every property runs through; `session_authority_support/` |
 | controlled races | `controlled_races_identity`, `controlled_races_reservations`, `controlled_races_missions_and_telemetry`, `controlled_races_audit` | `failpoint_and_race_support/`: arming, interleavings, row-lock barriers, persisted-state checks |
 | failure injection | `failure_injection_<area>` for `identity`, `operations`, `missions`, `telemetry`, `fleet`, `audit` and `discord`, and `failure_injection_self_checks` | `failpoint_and_race_support/` |
-| engineering laws | `engineering_laws` | the `verification-core` dev-dependency |
+| engineering laws | `engineering_laws` | the `verification_core` dev-dependency |
 
 The design note linked under Related documentation specifies each group.
 
@@ -84,12 +84,12 @@ migrations create. Each `psql` run stops at the first failed statement, so seedi
 API's first boot stops at the first seed with psql's exit code 3. `db test-it` needs only
 `db up`: it creates the scratch databases, and each suite applies the migrations itself.
 `cargo xtask db registry-import` loads the committed Workbench
-[registry](/documentation_v2/glossary/n_to_z.md#registry) exports into the local database,
+[registry](/documentation/glossary/n_to_z.md#registry) exports into the local database,
 `cargo xtask mk leptos` serves the single-page app on port 3000, proxying `/api` and
 `/map-assets` to the API, `cargo xtask db down` stops Postgres and keeps its volume, and
 `cargo xtask ci ci-local` replays the whole CI suite once `db up` has run.
 
-With `APP_ENV=development`, the [dev login](/documentation_v2/glossary/a_to_f.md#dev-login)
+With `APP_ENV=development`, the [dev login](/documentation/glossary/a_to_f.md#dev-login)
 `GET /api/v1/auth/dev-login?role=<role>` signs in without Discord
 (`guest`, `enlisted`, `leader`, `mission_maker` or `admin`; any other value signs in as `admin`)
 and answers with a 302 to the app's `/auth/callback`, the session's `access_token` in the URL
@@ -120,10 +120,10 @@ compiles every fault point to nothing. The `engineering_laws` suite holds both h
 | `ALLOWED_ORIGINS` | the value of `FRONTEND_URL`; a comma-separated CORS allow-list | no | `Config::load` |
 | `TRUSTED_PROXIES` | empty, which trusts no `X-Forwarded-For`; comma-separated addresses and CIDR blocks | no | `Config::load` |
 | `SPA_DIST_DIR` | empty; when set, the built app is served with an `index.html` fallback | no | `Config::load` |
-| `MAP_ASSETS_DIR` | `../../../assets_v2/terrains`, relative to the working directory | no | `Config::load` |
-| `GLYPH_ASSETS_DIR` | `../../../assets_v2/glyphs`, relative to the working directory | no | `Config::load` |
-| `UPLOAD_DIR` | `../../../assets_v2/scratch/website-api/uploads` in development; the systemd unit sets its state directory | outside development, absolute | `Config::load` |
-| `EQUIPMENT_DATA_DIR` | `../../../assets_v2/equipment` in development, empty otherwise, which leaves the equipment datasets unconfigured; the systemd unit sets its state directory; the imported equipment datasets and their indexes | no; when set outside development, absolute | `Config::load` |
+| `MAP_ASSETS_DIR` | `../../../assets/terrains`, relative to the working directory | no | `Config::load` |
+| `GLYPH_ASSETS_DIR` | `../../../assets/glyphs`, relative to the working directory | no | `Config::load` |
+| `UPLOAD_DIR` | `../../../assets/scratch/website-api/uploads` in development; the systemd unit sets its state directory | outside development, absolute | `Config::load` |
+| `EQUIPMENT_DATA_DIR` | `../../../assets/equipment` in development, empty otherwise, which leaves the equipment datasets unconfigured; the systemd unit sets its state directory; the imported equipment datasets and their indexes | no; when set outside development, absolute | `Config::load` |
 | `EQUIPMENT_EXPORT_SOURCE_DIR` | empty, which disables importing; the Workbench equipment export publication the import worker polls | no; when set outside development, absolute | `Config::load` |
 | `DATABASE_URL` | none | yes | `Config::load`; `import-registry`; `staging-fixtures`, from the API env file |
 | `TBD_DB_POOL_MAX_CONNECTIONS` | `25` | no | `src/core/database/connection_pool.rs` |
@@ -165,18 +165,18 @@ compiles every fault point to nothing. The `engineering_laws` suite holds both h
 
 - Depends on: `website-map-engine` with its default `scenario` tier, which compiles and validates
   missions and solves fire missions; the schemas in
-  `contracts_v2/definitions/`, embedded at compile time; Postgres 18; Discord's OAuth2 and REST
-  APIs and a channel webhook; and, at run time, the asset trees in `assets_v2/terrains/` and
-  `assets_v2/glyphs/`.
+  `contracts/definitions/`, embedded at compile time; Postgres 18; Discord's OAuth2 and REST
+  APIs and a channel webhook; and, at run time, the asset trees in `assets/terrains/` and
+  `assets/glyphs/`.
 - Used by:
   - the single-page app in `apps/website/frontend/`, whose Trunk server proxies `/api` and
     `/map-assets` to the API on `127.0.0.1:8080` in development;
   - the game servers, through the mod's `apps/mod/tbd-framework/Scripts/Game/TBD/API/`, and the
     fleet host agent in `apps/fleet_host_agent/`;
-  - the `mk rust-api`, `db`, `ci` and `deploy website` commands of `tools_v2/xtask/`;
+  - the `mk rust-api`, `db`, `ci` and `deploy website` commands of `tools/xtask/`;
   - the release image that `apps/website/Dockerfile` builds, the optional `api` service of
     `apps/website/docker-compose.staging.yml`, and the systemd unit
-    `tools_v2/xtask/deploy/systemd/tbd-website-api.service`.
+    `tools/xtask/deploy/systemd/tbd-website-api.service`.
 - Rules: `core` imports no domain except in `src/core/application_state.rs` and
   `src/core/http_router.rs`, a domain's handlers never import another domain's handlers, and
   `background_workers` is imported only by `src/bin/api.rs` (`src/tests/architecture_rules.rs`
@@ -188,23 +188,23 @@ compiles every fault point to nothing. The `engineering_laws` suite holds both h
 
 ## Related documentation
 
-- [API overview](/documentation_v2/website/api_v2/api_overview.md) — the routes of every domain
+- [API overview](/documentation/website/api_v2/api_overview.md) — the routes of every domain
   and the layers they share.
-- [API environment variables](/documentation_v2/website/api_v2/environment_variables.md)
+- [API environment variables](/documentation/website/api_v2/environment_variables.md)
   — every variable the API reads, with
   its default, requirement and failure mode.
-- [API decisions](/documentation_v2/website/api_v2/decisions.md) — the cross-domain design
+- [API decisions](/documentation/website/api_v2/decisions.md) — the cross-domain design
   decisions and their consequences.
-- [Local development](/documentation_v2/runbooks/local_development.md) — the full local setup,
+- [Local development](/documentation/runbooks/local_development.md) — the full local setup,
   Discord sign-in included.
-- [Database operations](/documentation_v2/runbooks/database_operations.md) — the integration
+- [Database operations](/documentation/runbooks/database_operations.md) — the integration
   tests, the migration checksum repair, sample data, backups and restores.
-- [Website deployment](/documentation_v2/runbooks/website_deployment.md) — building and running
+- [Website deployment](/documentation/runbooks/website_deployment.md) — building and running
   the API on the home server.
-- [API completion and verification](/documentation_v2/website/api_v2/verification_evidence/completion_plan.md)
+- [API completion and verification](/documentation/website/api_v2/verification_evidence/completion_plan.md)
   — the acceptance contract and requirement register the API is verified against.
-- [Verification completeness](/documentation_v2/website/api_v2/verification_evidence/verification_completeness.md)
+- [Verification completeness](/documentation/website/api_v2/verification_evidence/verification_completeness.md)
   — the route acceptance, contract parity, property, race, failure injection and engineering-law
   suites, and the failpoint catalogue.
-- [API verification evidence](/documentation_v2/website/api_v2/verification_evidence/README.md)
+- [API verification evidence](/documentation/website/api_v2/verification_evidence/README.md)
   — the index of the register, the program records and the design notes.

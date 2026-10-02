@@ -1,7 +1,7 @@
 # Load fixture events
 
 The `seed-load-fixture-events` and `clean-load-fixture-events` subcommands of the `staging-fixtures`
-host tool: the ten [events](/documentation_v2/glossary/a_to_f.md#event) the synthetic load population
+host tool: the ten [events](/documentation/glossary/a_to_f.md#event) the synthetic load population
 registers on during a staging load run, and their removal afterwards.
 
 ## Contents
@@ -19,10 +19,10 @@ apps/website/api_v2/src/bin/staging_fixtures/load_fixture_events/
 
 The seeding creates the events `[Load fixture] 01` to `[Load fixture] 10`, open for registration,
 the first starting 14 days after the seeding minute and each later one an hour after the one before.
-Each is capped at 128 places and attaches the [mission](/documentation_v2/glossary/g_to_m.md#mission)
-`--mission` names with the fixture [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat): factions
+Each is capped at 128 places and attaches the [mission](/documentation/glossary/g_to_m.md#mission)
+`--mission` names with the fixture [ORBAT](/documentation/glossary/n_to_z.md#orbat): factions
 `Load A` and `Load B`, each with squads `<faction> Squad 1` to `<faction> Squad 8` of eight
-[slots](/documentation_v2/glossary/n_to_z.md#slot). Slot s of an event is faction s div 64, squad
+[slots](/documentation/glossary/n_to_z.md#slot). Slot s of an event is faction s div 64, squad
 (s mod 64) div 8 + 1 and slot index s mod 8, the order `(faction, squad, slot_index)` sorts the rows
 into; the load workload sends account k of the 1,100-account population to event k mod 10 and slot
 k div 10, so each event seats 110 accounts and keeps 18 slots free.

@@ -46,16 +46,16 @@ fn repository_file(relative: &str) -> Vec<u8> {
 }
 
 fn vanilla_catalog() -> Vec<u8> {
-    repository_file("contracts_v2/catalogs/ballistics/vanilla_mortars.v1.catalog.json")
+    repository_file("contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json")
 }
 
 fn vanilla_calibration() -> Vec<u8> {
-    repository_file("contracts_v2/fixtures/ballistics/vanilla_mortars.v1/calibration.json")
+    repository_file("contracts/fixtures/ballistics/vanilla_mortars.v1/calibration.json")
 }
 
 fn negative_calibration(name: &str) -> Vec<u8> {
     repository_file(&format!(
-        "contracts_v2/fixtures/ballistics/vanilla_mortars.v1/negative/{name}.calibration.json"
+        "contracts/fixtures/ballistics/vanilla_mortars.v1/negative/{name}.calibration.json"
     ))
 }
 

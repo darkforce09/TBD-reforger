@@ -1,8 +1,8 @@
 # Authored audio
 
-The check on a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s authored `audio` block: the
+The check on a [mission](/documentation/glossary/g_to_m.md#mission)'s authored `audio` block: the
 positional sound emitters and the music cues the author places, typed from JSON and refused with a
-readable sentence when the [mod](/documentation_v2/glossary/g_to_m.md#mod) could not play them as
+readable sentence when the [mod](/documentation/glossary/g_to_m.md#mod) could not play them as
 written. The module is exposed as `data::scenario::audio`.
 
 ## Contents
@@ -16,7 +16,7 @@ apps/website/map-engine/src/data/scenario/extensions/environment/audio/
 
 ## How it works
 
-`parse` reads the block as `contracts_v2/definitions/mission.schema.json` shapes it in
+`parse` reads the block as `contracts/definitions/mission.schema.json` shapes it in
 `$defs/audio`: an object with exactly the keys `emitters` and `musicCues`, both arrays, not both
 empty, since an empty block is left out rather than stored. An emitter is
 `{id, x, z, y?, sound, radiusM, loop, triggerId?}` with non-empty strings, finite coordinates, a
@@ -36,7 +36,7 @@ plays the cues.
 
 - Depends on: `serde_json`.
 - Used by: `crate::data::scenario::extensions`, whose `audio` row calls `validate`; the
-  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s audio panel
+  [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s audio panel
   (`apps/website/frontend/src/v2/apps/editor/ui/inspector/audio_emitters.rs` and its `view.rs`),
   which checks each edit with `validate` and offers `MUSIC_EVENTS` as the cue list.
 - Rules: a radius of zero or below is refused, as the schema's `exclusiveMinimum: 0` refuses it
@@ -48,5 +48,5 @@ plays the cues.
 
 ## Related documentation
 
-- [Mission schema](/contracts_v2/definitions/mission.schema.json) — `$defs/audio`,
+- [Mission schema](/contracts/definitions/mission.schema.json) — `$defs/audio`,
   `$defs/audioEmitter` and `$defs/musicCue`, the shape this module checks.

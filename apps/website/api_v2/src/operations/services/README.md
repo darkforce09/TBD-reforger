@@ -1,9 +1,9 @@
 # Operations services
 
-The logic the [operations](/documentation_v2/glossary/n_to_z.md#operations) handlers share and other
-domains call: the derived status of an [event](/documentation_v2/glossary/a_to_f.md#event) and the sweep
+The logic the [operations](/documentation/glossary/n_to_z.md#operations) handlers share and other
+domains call: the derived status of an [event](/documentation/glossary/a_to_f.md#event) and the sweep
 that stores it, access evaluation and administration, every reservation writer, the live
-occupancy of [slots](/documentation_v2/glossary/n_to_z.md#slot) by player lives in a running game, and the
+occupancy of [slots](/documentation/glossary/n_to_z.md#slot) by player lives in a running game, and the
 attendance derived from match results.
 
 ## Contents
@@ -30,7 +30,7 @@ apps/website/api_v2/src/operations/services/
 
 An event's status is derived, not stored: `EFFECTIVE_STATUS_SQL` computes it inside Postgres from
 the stored status, the start times of the event and its
-[missions](/documentation_v2/glossary/g_to_m.md#mission), and `statement_timestamp()`, so every read and
+[missions](/documentation/glossary/g_to_m.md#mission), and `statement_timestamp()`, so every read and
 the registration guard see the current answer whether or not a background task has run. A pre-start
 event becomes `live` at its start time and `completed` six hours after the latest start among the
 event and its missions; `cancelled`, `open` and `locked` are an operator's to set, and the
@@ -39,7 +39,7 @@ The `event_lifecycle_sweeper` worker runs `sweep_once` to store the derived stat
 automatic move, and `event_lifecycle_transition.rs` stores it before a schedule change could alter
 the derivation.
 
-`live_slot_occupancy.rs` decides a [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime)'s
+`live_slot_occupancy.rs` decides a [game runtime](/documentation/glossary/g_to_m.md#game-runtime)'s
 request to deploy a player into a slot: allowed when the player's own active reservation is for that
 slot, or when the slot is unreserved and its effective policy admits the player; the identity must
 be linked, the account available and the slot free of any other open life. An allowed decision is
@@ -75,7 +75,7 @@ too.
   tool's load fixture events.
 - `parse_orbat_template`, `OrbatSquadTemplate` and `OrbatSlotTemplate`, re-exported from
   `website_map_engine::data::scenario::orbat`, for the
-  [deployment](/documentation_v2/glossary/a_to_f.md#deployment) slot bindings in `missions`.
+  [deployment](/documentation/glossary/a_to_f.md#deployment) slot bindings in `missions`.
 
 ## Boundaries
 
@@ -92,7 +92,7 @@ too.
     `apps/website/api_v2/src/background_workers/`;
   - the `staging-fixtures` host tool in `apps/website/api_v2/src/bin/staging_fixtures/`, through
     `event_authoring`;
-  - the [API](/documentation_v2/glossary/a_to_f.md#api) tests
+  - the [API](/documentation/glossary/a_to_f.md#api) tests
     `apps/website/api_v2/tests/attendance_no_show_derivation.rs`,
     `apps/website/api_v2/tests/event_access_context.rs`,
     `apps/website/api_v2/tests/event_administration_transactions.rs`,
@@ -106,9 +106,9 @@ too.
 
 ## Related documentation
 
-- [Event eligibility and allocation](/documentation_v2/website/api_v2/verification_evidence/event_eligibility_allocation.md)
+- [Event eligibility and allocation](/documentation/website/api_v2/verification_evidence/event_eligibility_allocation.md)
   — access, pools, promotion, re-evaluation and derived attendance.
-- [Live slot occupancy](/documentation_v2/website/api_v2/verification_evidence/live_occupancy.md)
+- [Live slot occupancy](/documentation/website/api_v2/verification_evidence/live_occupancy.md)
   — deployment authorization and ended lives.
-- [Reservation and attendance separation](/documentation_v2/website/api_v2/verification_evidence/reservation_attendance.md)
+- [Reservation and attendance separation](/documentation/website/api_v2/verification_evidence/reservation_attendance.md)
   — how a reservation and its attendance stay apart.

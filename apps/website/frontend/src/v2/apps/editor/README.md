@@ -1,9 +1,9 @@
 # Mission Creator
 
-The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator): the top-down 2D CAD
-workspace in which mission makers build a [mission](/documentation_v2/glossary/g_to_m.md#mission) on the
+The [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator): the top-down 2D CAD
+workspace in which mission makers build a [mission](/documentation/glossary/g_to_m.md#mission) on the
 map. This folder holds the editor page, the chrome docked around the map, the canvas mount and its overlays,
-the interactive map tools, the [arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) loadout editor and
+the interactive map tools, the [arsenal](/documentation/glossary/a_to_f.md#arsenal) loadout editor and
 the browser session they all run in.
 
 ## Contents
@@ -26,7 +26,7 @@ apps/website/frontend/src/v2/apps/editor/
 `MissionEditorPage` creates the page signals and hands them to the canvas mount in
 `mission_editor/`, which in the browser boots the render engine through `bridge/` while it
 restores the mission document from the server and the local draft (`shell/`), then loads the item
-[registry](/documentation_v2/glossary/n_to_z.md#registry) and the compatibility feed and raises the docks,
+[registry](/documentation/glossary/n_to_z.md#registry) and the compatibility feed and raises the docks,
 toolbelt and overlays around the map. `mission_editor/` holds no `mod.rs`: `mission_editor.rs`
 declares each of its files by path.
 
@@ -36,7 +36,7 @@ the undo history, the selection and the armed placement; the panels read signals
 the document themselves. A module that touches `web_sys` or a live engine handle compiles for
 `wasm32` only, and its `pub mod` line carries the same gate, so the native test build still
 compiles the pure half of the workspace. When the review workspace opens an
-[artifact](/documentation_v2/glossary/a_to_f.md#artifact)'s version, the review mode in `shell/` holds it
+[artifact](/documentation/glossary/a_to_f.md#artifact)'s version, the review mode in `shell/` holds it
 and every write path refuses.
 
 ## Routes
@@ -61,7 +61,7 @@ and every write path refuses.
 
 ## Boundaries
 
-- Depends on: `crate::v2::core` (the [API](/documentation_v2/glossary/a_to_f.md#api) client and DTOs, the
+- Depends on: `crate::v2::core` (the [API](/documentation/glossary/a_to_f.md#api) client and DTOs, the
   auth store, the UI primitives and utilities, the test support), `website_map_engine` (its
   `data`, `editing`, `streaming`, `overlay`, `frame`, `camera`, `spatial`, `world` and `doll`
   modules) and `web_sys` in the browser build.
@@ -78,7 +78,7 @@ and every write path refuses.
     `apps/website/frontend/src/v2/core/test_support/editor_operations.rs`,
     `apps/website/frontend/src/v2/core/ui/tests/ui.rs` and two map-engine tests under
     `apps/website/map-engine/src/`;
-  - the headless editor gates in `tools_v2/developer-tools/src/browser_testing/`, which drive the
+  - the headless editor gates in `tools/developer_tools/src/browser_testing/`, which drive the
     `/missions/:id/edit` route, and `cargo xtask verify editor-orbat-coherency`, which scans named
     files under `arsenal/`, `bridge/`, `shell/` and `ui/modals/`.
 - Rules: a document mutation goes through `website_map_engine::editing`, never straight out of a
@@ -91,13 +91,13 @@ and every write path refuses.
 
 ## Related documentation
 
-- [Mission Creator documentation](/documentation_v2/website/frontend/apps/editor/README.md) — the
+- [Mission Creator documentation](/documentation/website/frontend/apps/editor/README.md) — the
   entry point to the roadmap, the specifications and the decisions.
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md) — every feature by area, with its status in the code.
-- [Mission Creator UX specification](/documentation_v2/website/frontend/apps/editor/ux_spec.md) —
+- [Mission Creator feature inventory](/documentation/website/frontend/apps/editor/feature_inventory/README.md) — every feature by area, with its status in the code.
+- [Mission Creator UX specification](/documentation/website/frontend/apps/editor/ux_spec.md) —
   the layout, the gestures, the shortcuts and the load and save flow.
-- [Mission Creator roadmap](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md)
+- [Mission Creator roadmap](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md)
   — what the editor ships by area, and the open and deferred work.
-- [Editor gates runbook](/documentation_v2/runbooks/editor_gates.md) — running the headless editor
+- [Editor gates runbook](/documentation/runbooks/editor_gates.md) — running the headless editor
   gates.
-- [Mission Creator feature inventory: shell route and layout](/documentation_v2/website/frontend/apps/editor/feature_inventory/shell_route_and_layout.md) — the chromeless route, the chrome layout and the review workspace.
+- [Mission Creator feature inventory: shell route and layout](/documentation/website/frontend/apps/editor/feature_inventory/shell_route_and_layout.md) — the chromeless route, the chrome layout and the review workspace.

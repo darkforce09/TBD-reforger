@@ -1,7 +1,7 @@
 # Map overlays
 
 The floating controls and dialogs the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) lays over the map: the transform
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) lays over the map: the transform
 widget with its mode hint and snap readout, the elevation drag, the empty-ground asset picker, the
 comment editor, the Connections panel and the dialog that settles a local draft against the server's
 version. The parent module, `apps/website/frontend/src/v2/apps/editor/bridge/overlays.rs`, declares
@@ -38,7 +38,7 @@ registers with `register_widget_pivot`, to the screen with the engine's camera, 
 translate or rotate handles with the elevation arm. The elevation drag keeps its start state in
 `ZDrag`: `z_drag_elevation_delta` and `z_drag_snap_step` turn the vertical pointer motion into a
 snapped height change for both the live readout and the commit, and `ZDrag::commit` writes every
-dragged [slot](/documentation_v2/glossary/n_to_z.md#slot) and vehicle height inside one undo group.
+dragged [slot](/documentation/glossary/n_to_z.md#slot) and vehicle height inside one undo group.
 
 ## Boundaries
 
@@ -66,7 +66,7 @@ dragged [slot](/documentation_v2/glossary/n_to_z.md#slot) and vehicle height ins
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
+- [Mission Creator feature inventory](/documentation/website/frontend/apps/editor/feature_inventory/README.md)
   — the load conflict dialog and the transform features.
-- [Mission Creator feature inventory: transform and delete](/documentation_v2/website/frontend/apps/editor/feature_inventory/transform_and_delete.md) — the transform widget, the snap read-out and the elevation drag.
-- [Mission Creator feature inventory: placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) — the empty-ground asset picker.
+- [Mission Creator feature inventory: transform and delete](/documentation/website/frontend/apps/editor/feature_inventory/transform_and_delete.md) — the transform widget, the snap read-out and the elevation drag.
+- [Mission Creator feature inventory: placement](/documentation/website/frontend/apps/editor/feature_inventory/placement.md) — the empty-ground asset picker.

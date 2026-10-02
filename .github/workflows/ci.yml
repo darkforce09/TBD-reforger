@@ -1,6 +1,6 @@
 name: ci
 
-# Primary full-repo gate (documentation_v2/standards/coding_standards/README.md §0.3
+# Primary full-repo gate (documentation/standards/coding_standards/README.md §0.3
 # CI-2 + TEST-1/2/3 + FMT-1/2/3).
 # Required on every push + PR to `main` — NO `paths:` filter. This is what distinguishes
 # it from contracts.yml / schema.yml, which stay as path-scoped supplements (do NOT merge
@@ -28,7 +28,7 @@ jobs:
   # fmt (FMT-1): `cargo fmt --check` on website-api, then `cargo fmt --all --check` on every
   # workspace member. clippy (GO-2..8 analog): `cargo clippy --all-targets -- -D warnings` on
   # website-api (host target, default features), so any warning fails the job. build:
-  # `cargo build --all-targets` on website-api. tests: `cargo test -p developer-tools --lib`,
+  # `cargo build --all-targets` on website-api. tests: `cargo test -p developer_tools --lib`,
   # then website-api's `cargo test` (unit + integration, TEST-1) against the Postgres service
   # below.
   website-api:
@@ -76,7 +76,7 @@ jobs:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
       # workspace --all (matches `cargo xtask mk rust-fmt`). Job default cwd is
-      # apps/website/api_v2 — override so tools_v2 drift cannot slip past CI.
+      # apps/website/api_v2 — override so formatting drift under tools/ cannot slip past CI.
       - name: fmt (FMT-1 analog — workspace --all)
         working-directory: .
         run: cargo xtask mk rust-fmt
@@ -84,8 +84,8 @@ jobs:
         run: cargo xtask mk rust-clippy
       - name: build
         run: cargo xtask mk rust-build
-      # The developer-tools library suite. The mod gate scopes itself to
-      # `--lib enfusion_tooling::` and the wave gate's `test xtask+developer-tools` step is
+      # The developer_tools library suite. The mod gate scopes itself to
+      # `--lib enfusion_tooling::` and the wave gate's `test xtask+developer_tools` step is
       # local-only, so this is the only push-triggered check of the density grid and the world
       # export unit tests.
       # `working-directory: .` for the same reason as the fmt step: the job default is
@@ -97,7 +97,7 @@ jobs:
       # Quoted like the verify-ci-shell step below: `density:: ` is a colon-space, which YAML
       # reads as a mapping value inside a plain scalar; `verify ci-shell` fails on unparseable
       # YAML rather than returning an empty result.
-      - name: "developer-tools lib tests (density:: + world::)"
+      - name: "developer_tools lib tests (density:: + world::)"
         working-directory: .
         run: cargo xtask ci developer-tools-test
       # `rust_it`, matching the `services.db` POSTGRES_DB above and the `rust-test-it` task.
@@ -120,7 +120,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: fetch LFS test fixture (Everon DEM only)
-        run: git lfs pull --include assets_v2/terrains/everon/dem/everon-dem-16bit.png
+        run: git lfs pull --include assets/terrains/everon/dem/everon-dem-16bit.png
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "1.95.0" # pinned; matches root rust-toolchain.toml / gate-env.json
@@ -177,7 +177,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: fetch LFS fixture for height-labels (Everon DEM only)
-        run: git lfs pull --include assets_v2/terrains/everon/dem/everon-dem-16bit.png
+        run: git lfs pull --include assets/terrains/everon/dem/everon-dem-16bit.png
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "1.95.0" # pinned; matches root rust-toolchain.toml / gate-env.json
@@ -247,17 +247,17 @@ jobs:
         run: cargo xtask verify no-shell
       - name: "verify-ci-shell (GitHub Actions run: blocks)"
         run: cargo xtask verify ci-shell
-      # documentation_v2/standards/engine_boundary_rules.md §5 rules 1, 2, 3a, 3b, 4, 5, 6 and 7,
-      # judged by tools_v2/verification-core/src/repository_laws/engine_layers/. The map engine
+      # documentation/standards/engine_boundary_rules.md §5 rules 1, 2, 3a, 3b, 4, 5, 6 and 7,
+      # judged by tools/verification_core/src/repository_laws/engine_layers/. The map engine
       # depends on apps/website/graphics-engine in one direction only (map-engine ->
       # graphics-engine), and NOTHING in the compiler enforces it: a dependency line pointing back
       # still builds, and map-domain types would seep into the renderer a type at a time. It runs
       # here, not on the 25-minute API job, for the same reason the language gates do: it reads
       # the working tree, needs no DB/LFS/wasm target, and takes seconds.
-      - name: verify-engine-layers (documentation_v2/standards/engine_boundary_rules.md §5 rules 1, 2, 3a, 3b, 4, 5, 6, 7)
+      - name: verify-engine-layers (documentation/standards/engine_boundary_rules.md §5 rules 1, 2, 3a, 3b, 4, 5, 6, 7)
         run: cargo xtask verify engine-layers
-      # The workspace laws of documentation_v2/restructure/laws_and_gates.md, judged by
-      # tools_v2/verification-core/src/repository_laws/workspace_laws/ over the members the root
+      # The workspace laws of documentation/restructure/laws_and_gates.md, judged by
+      # tools/verification_core/src/repository_laws/workspace_laws/ over the members the root
       # manifest names; seconds-long reads of the working tree, like the engine-layer walls.
       - name: verify-crate-tiers (workspace membership, layout, tiers, category matrix, firewalls)
         run: cargo xtask verify crate-tiers

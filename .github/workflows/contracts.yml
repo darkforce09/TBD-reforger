@@ -1,6 +1,6 @@
 name: contracts
 
-# Cross-boundary contract gates (documentation_v2/standards/documentation_standards.md §10).
+# Cross-boundary contract gates (documentation/standards/documentation_standards.md §10).
 # Complements schema.yml
 # (which validates the golden fixtures). Triggers on the code boundaries that carry @contract
 # tags + generated projections.
@@ -8,13 +8,13 @@ on:
   push:
     paths:
       - "apps/website/**"
-      - "contracts_v2/**"
+      - "contracts/**"
       - "apps/mod/**"
       - ".github/workflows/contracts.yml"
   pull_request:
     paths:
       - "apps/website/**"
-      - "contracts_v2/**"
+      - "contracts/**"
       - "apps/mod/**"
       - ".github/workflows/contracts.yml"
 

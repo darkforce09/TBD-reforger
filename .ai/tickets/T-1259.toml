@@ -4,7 +4,7 @@ title = "Route staging instance paths and unit names through one owner"
 summary = "Deploy staging still spells fleet instance paths, the boot hint's instance number, the unit names and the smoke URL in several files instead of one InstanceFolder and fleet_units owner."
 class = "chore"
 status = "idea"
-notes = "Paths under tools_v2/xtask/src/commands/deploy/staging. The fleet instance folder paths are spelled per file instead of through InstanceFolder: payloads.rs, host_agent.rs, remote/deployed_scenario.rs, remote/instance_boot_verdict.rs and fleet_server_config.rs. The boot hint prints a fixed instance number instead of the instance that failed; the unit names that fleet_units.rs owns are repeated elsewhere; the deploy smoke URL is built at payloads.rs:208 instead of from backend_url. Route each through its one owner (InstanceFolder, fleet_units.rs, backend_url) with tests. Source: milestone S design review (G4), note N-a."
+notes = "Paths under tools/xtask/src/commands/deploy/staging. The fleet instance folder paths are spelled per file instead of through InstanceFolder: payloads.rs, host_agent.rs, remote/deployed_scenario.rs, remote/instance_boot_verdict.rs and fleet_server_config.rs. The boot hint prints a fixed instance number instead of the instance that failed; the unit names that fleet_units.rs owns are repeated elsewhere; the deploy smoke URL is built at payloads.rs:208 instead of from backend_url. Route each through its one owner (InstanceFolder, fleet_units.rs, backend_url) with tests. Source: milestone S design review (G4), note N-a."
 created_at = "2026-09-29T16:28:24Z"
 
 [scope]

@@ -2,7 +2,7 @@
 //! importer and router.
 //!
 //! **Role:** proves every committed answer of the twelve `GET /api/v1/debug/equipment-data/*`
-//! routes (the six `positive/` samples in `contracts_v2/fixtures/equipment-data-viewer/`, the
+//! routes (the six `positive/` samples in `contracts/fixtures/equipment-data-viewer/`, the
 //! route answers in `tests/fixtures/equipment_data_viewer/route_responses/` and the downloaded
 //! document) is exactly what the API serves after importing the committed export, and that every
 //! positive sample and every route has such a golden.
@@ -65,7 +65,7 @@ const HANDLER_FOLDER: &str = "src/community_content/handlers/equipment_data_view
 
 /// Where a JSON golden lives.
 enum GoldenFile {
-    /// A `positive/` sample of `contracts_v2/fixtures/equipment-data-viewer/`.
+    /// A `positive/` sample of `contracts/fixtures/equipment-data-viewer/`.
     ContractSample(&'static str),
     /// An answer under `tests/fixtures/equipment_data_viewer/route_responses/`.
     RouteResponse(&'static str),
@@ -211,7 +211,7 @@ fn fixture_root() -> PathBuf {
 /// The contract samples the frontend's DTO parity tests also read.
 fn contract_samples() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../contracts_v2/fixtures/equipment-data-viewer/positive")
+        .join("../../../contracts/fixtures/equipment-data-viewer/positive")
 }
 
 impl GoldenFile {

@@ -7,7 +7,7 @@ alwaysApply: true
 
 **Standard:** A plan is wrong until every numeric claim, API name, LOD assert, smoke check, and scope boundary has **file:line or command evidence** from *this* checkout. "Looks right", "should be", "typically", and soft optionals are failures.
 
-Applies to: Plan mode, CreatePlan, finish/audit plans, ticket plans (`documentation_v2/tickets/plans/`), specs and handoffs, acceptance matrices, mode A critiques that propose acceptance, any "how we'll know done" table.
+Applies to: Plan mode, CreatePlan, finish/audit plans, ticket plans (`documentation/tickets/plans/`), specs and handoffs, acceptance matrices, mode A critiques that propose acceptance, any "how we'll know done" table.
 
 Complements: [no-silent-deferrals.mdc](/.cursor/rules/no-silent-deferrals.mdc) (scope), [cursor-agent-workflow.mdc](/.cursor/rules/cursor-agent-workflow.mdc) (which mode may write code). This rule owns **plan truth**.
 
@@ -53,12 +53,12 @@ For **each** number or enum the plan will assert:
 | Kind | How to measure (examples) |
 |------|---------------------------|
 | Asset bytes | `stat` **and** manifest field — both; must match |
-| Census counts | Class-R tests in crates + `ls \| wc` on `assets_v2/terrains/` — prefer live over any document |
+| Census counts | Class-R tests in crates + `ls \| wc` on `assets/terrains/` — prefer live over any document |
 | LOD constants | Read `apps/website/map-engine/src/overlay/lod.rs` / residency aliases — quote exact values |
 | Default camera | Read the editor mount (`INITIAL_ZOOM`, target, terrain bounds) |
 | Engine counters | Read the stats format string (`stats()` in `apps/website/map-engine/src/diagnostics/bench/frame_2.rs`) — **exact snake_case keys** |
 | Routes | `apps/website/api_v2/src/<domain>/routes.rs` or `apps/website/frontend/src/app_routes.rs` + handler signature + query struct fields |
-| Smoke today | Exact assert expressions + line numbers in `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/` |
+| Smoke today | Exact assert expressions + line numbers in `tools/developer_tools/src/browser_testing/editor_smoke_tests/` |
 | Parity with a git-history tip | `git show <tag>:path` — key **lists and orders** separately |
 
 Put a **Verified constants** table in the plan: `pin | value | evidence`.
@@ -87,7 +87,7 @@ Re-derive from code each time; do not memorize lore.
 |--------------------|-------|
 | CamelCase invent (`roadSegments`) | The live `stats()` keys and bridge keys |
 | Wasm-only type as Leptos host API (`DemGrid`) | What `website-map-engine` (`apps/website/map-engine`) exports (`DemVectorGrid`, …) |
-| A census remembered from an older tree | Live `assets_v2/terrains/` + current Class-R test |
+| A census remembered from an older tree | Live `assets/terrains/` + current Class-R test |
 | Equating two lanes (`landcover_polygons` == `forest_polygons`) | Separate counters, separate uploads |
 | Same keys ⇒ same order (`LOADOUT_ROWS` == `RAIL_REGIONS`) | Lock **both** orders |
 | Comment lore (`squads.length === 0`) | Actual smoke check name/expression (`emptyGraph`, …) |
@@ -144,7 +144,7 @@ Omit only if the artifact is Mode A critique-only (still include evidence for ev
 4. **Must-ship matrix** — every fold/spec lane; close conditions
 5. **Headless CDP matrix** — smoke name, path/query, exact asserts, suite membership, false-green notes
 6. **Infra prerequisites** — e.g. Range/206 on gate serve before sat preview CI
-7. **Ship checklist** — the ticket's own `verify` lines (`cargo xtask ticket get <id> verify`), the checks the [commit checklist](/documentation_v2/standards/commit_checklist.md) lists for what the change touches (`cargo xtask mk leptos-gates` for the editor, `cargo xtask ci ci-local` for the whole suite), a verify log with the pasted JSON and pins, the documentation the change touches in the same commit, `cargo xtask ticket ship <id>`, the commit, `cargo xtask ticket stamp-sha <id> <sha>`, push, CI watch
+7. **Ship checklist** — the ticket's own `verify` lines (`cargo xtask ticket get <id> verify`), the checks the [commit checklist](/documentation/standards/commit_checklist.md) lists for what the change touches (`cargo xtask mk leptos-gates` for the editor, `cargo xtask ci ci-local` for the whole suite), a verify log with the pasted JSON and pins, the documentation the change touches in the same commit, `cargo xtask ticket ship <id>`, the commit, `cargo xtask ticket stamp-sha <id> <sha>`, push, CI watch
 8. **Explicit not-in-plan** — only legal outs (ticket IDs / quoted deferrals)
 9. **WIP / dirty tree** — if checkout already half-done, first execute step restores buildability
 

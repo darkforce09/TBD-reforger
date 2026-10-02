@@ -46,7 +46,7 @@ apps/website/map-engine/src/overlay/symbology/labels/
     streaming host's `named_locations`;
   - the location loaders in `crate::world::environment::locations` (towns and peaks);
   - the town-label map verification in
-    `tools_v2/developer-tools/src/map_verification/labels/town_labels.rs`.
+    `tools/developer_tools/src/map_verification/labels/town_labels.rs`.
 - Rules: yaw wraps rather than clamps, so 270° and 180° stay distinct
   (`yaw_snorm16_wraps_not_clamps`, `world_rotation_270_differs_from_180` in
   `tests/glyph_math_tests.rs`); an icon instance is 20 bytes (`pack_icon_instance_is_20_bytes`);

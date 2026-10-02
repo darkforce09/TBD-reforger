@@ -1,7 +1,7 @@
 # Right dock compositions
 
 The right dock's Compositions tab: reusable multi-entity stamps saved from the current selection
-into the [mission](/documentation_v2/glossary/g_to_m.md#mission) document, listed by category, armed from
+into the [mission](/documentation/glossary/g_to_m.md#mission) document, listed by category, armed from
 their row and stamped onto the map.
 
 ## Contents
@@ -44,5 +44,5 @@ browser build; the native `compositions_panel` draws nothing.
 
 ## Related documentation
 
-- [Mission Creator feature inventory: asset palette](/documentation_v2/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) — the Compositions tab.
-- [Mission Creator feature inventory: placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) — stamping a composition.
+- [Mission Creator feature inventory: asset palette](/documentation/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) — the Compositions tab.
+- [Mission Creator feature inventory: placement](/documentation/website/frontend/apps/editor/feature_inventory/placement.md) — stamping a composition.

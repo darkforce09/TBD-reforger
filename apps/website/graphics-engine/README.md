@@ -4,7 +4,7 @@ The `website-graphics-engine` crate: the web platform's WebGPU renderer, which k
 concept. It defines the frame vocabulary a caller describes a frame in, and supplies the render
 pipelines, the WGSL shader, geometry and text packing, sprite culling and the shared animation
 loop. Its one caller is `website-map-engine`, which draws the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map with it.
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s map with it.
 
 ## Contents
 
@@ -75,10 +75,10 @@ Rust 1.95.
     optional dependency turned on by its `world` and `render` features;
   - through the map engine, and never by a direct dependency, the frontend in
     `apps/website/frontend/` (the `world` tier natively, `render` in the browser) and the
-    developer tools in `tools_v2/developer-tools/` (the `world` tier); `website-api` takes the
+    developer tools in `tools/developer_tools/` (the `world` tier); `website-api` takes the
     map engine's `scenario` tier and does not link this crate, although `apps/website/Dockerfile`
     copies it into the image's trimmed workspace;
-  - `tools_v2/xtask/`, whose `mk wasm-ci` recipe and `verify engine-layers` gate name it.
+  - `tools/xtask/`, whose `mk wasm-ci` recipe and `verify engine-layers` gate name it.
 - Rules:
   - this crate never imports `website_map_engine` (`cargo xtask verify engine-layers`, rule 1);
   - no declared type, function, constant or module name contains `terrain`, `symbology`,
@@ -90,7 +90,7 @@ Rust 1.95.
 
 ## Related documentation
 
-- [Graphics engine overview](/documentation_v2/website/graphics-engine/graphics_engine_overview.md)
+- [Graphics engine overview](/documentation/website/graphics-engine/graphics_engine_overview.md)
   — one frame across the modules, the design and the open work.
-- [Engine boundary rules](/documentation_v2/standards/engine_boundary_rules.md) — the one-way
+- [Engine boundary rules](/documentation/standards/engine_boundary_rules.md) — the one-way
   arrow and the rules `cargo xtask verify engine-layers` holds this crate to.

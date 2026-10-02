@@ -1,8 +1,8 @@
 # Token estimates
 
-The [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)'s reading of the token estimates in
+The [ticketboard](/documentation/glossary/n_to_z.md#ticketboard)'s reading of the token estimates in
 `.ai/tickets/estimates/`, the counts reconstructed for shipped
-[tickets](/documentation_v2/glossary/n_to_z.md#ticket) that have no run receipt: each file checked, summed
+[tickets](/documentation/glossary/n_to_z.md#ticket) that have no run receipt: each file checked, summed
 per class and per domain in a model of its own, and projected into the estimated rows of the ticket
 details.
 
@@ -58,7 +58,7 @@ only when `tokens` is listed, and says so when no valid estimate file backs it.
     types, so no code path adds them to a measured total without an explicit unwrap
     (`the_law_no_code_path_combines_measured_and_estimated` in `tests/estimated.rs`);
   - `validate_file` is a copy of `validate_estimate` in
-    `tools_v2/ticket-engine/src/metrics/estimates/model.rs` plus the patterns of
+    `tools/ticket_engine/src/metrics/estimates/model.rs` plus the patterns of
     `.ai/tickets/estimates.schema.json`, kept by hand
     (`checker_mirror_rules_each_produce_a_named_error_row`);
   - `ESTIMATE_GLYPH` equals the scope breadcrumb's `SCOPE_ESTIMATED_GLYPH`

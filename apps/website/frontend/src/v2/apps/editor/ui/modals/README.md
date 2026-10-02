@@ -1,8 +1,8 @@
 # Mission Creator dialogs
 
-The dialogs the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) raises over the
+The dialogs the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) raises over the
 whole workspace instead of framing the map: the Mission Settings dialog for the open
-[mission](/documentation_v2/glossary/g_to_m.md#mission), the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat)
+[mission](/documentation/glossary/g_to_m.md#mission), the [ORBAT](/documentation/glossary/n_to_z.md#orbat)
 Manager, the Faction Manager for the faction library, and the floating controls hint with its
 shortcut catalog.
 
@@ -38,7 +38,7 @@ hosted commands.
 
 The Faction Manager edits the signed-in mission maker's own faction library: each faction's side,
 name, role templates (role, tag and a character from the item
-[registry](/documentation_v2/glossary/n_to_z.md#registry)) and vehicles (a vehicle and an optional label);
+[registry](/documentation/glossary/n_to_z.md#registry)) and vehicles (a vehicle and an optional label);
 a stored role's loadout is kept as it is. It loads
 the library with `GET /api/v1/factions`, saves a new faction with `POST /api/v1/factions` and an
 existing one with `PUT /api/v1/factions/{id}`, and deletes with `DELETE /api/v1/factions/{id}`
@@ -68,18 +68,18 @@ checks every such editor binding against the others and against the shortcut cat
   - the editor's shell in `apps/website/frontend/src/v2/apps/editor/shell/` (`layout` classes,
     `document_commands`, `review_mode`, `world_layer_prefs`) and its bridge (`editor_context`,
     `entity_selection`, the document handle);
-  - `crate::v2::core`: the [API](/documentation_v2/glossary/a_to_f.md#api) client and DTOs, `AuthStore`,
+  - `crate::v2::core`: the [API](/documentation/glossary/a_to_f.md#api) client and DTOs, `AuthStore`,
     `modal_stack`, `Dialog`, toasts, `MaterialIcon`; over HTTP, `/api/v1/missions/{id}` and
-    `/api/v1/factions` of the API's [missions](/documentation_v2/glossary/g_to_m.md#missions) domain.
+    `/api/v1/factions` of the API's [missions](/documentation/glossary/g_to_m.md#missions) domain.
 - Used by:
   - `apps/website/frontend/src/v2/apps/editor/mission_editor.rs` and
     `apps/website/frontend/src/v2/apps/editor/shell/eden_chrome.rs`;
   - the top strip in `apps/website/frontend/src/v2/apps/editor/ui/docks/top_strip/`, for the
     controls hint;
-  - the headless editor smoke tests in `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/`,
+  - the headless editor smoke tests in `tools/developer_tools/src/browser_testing/editor_smoke_tests/`,
     which find the Mission Settings and ORBAT Manager dialogs by their headings;
   - `cargo xtask verify editor-orbat-coherency`
-    (`tools_v2/xtask/src/verifications/architecture/editor_orbat_coherency.rs`), which scans
+    (`tools/xtask/src/verifications/architecture/editor_orbat_coherency.rs`), which scans
     `orbat_manager.rs` and every source file in `orbat_manager/` for banned interface text;
   - the test `orbat_manager_overlay_derives_z_from_the_modal_stack` in
     `apps/website/frontend/src/v2/core/ui/tests/ui.rs`, which reads `orbat_manager/dialog.rs`.
@@ -91,9 +91,9 @@ checks every such editor binding against the others and against the shortcut cat
 
 ## Related documentation
 
-- [Mission Creator UX specification](/documentation_v2/website/frontend/apps/editor/ux_spec.md)
+- [Mission Creator UX specification](/documentation/website/frontend/apps/editor/ux_spec.md)
   — the editor's layout, interaction contract and keyboard shortcuts.
 - [Missions domain](/apps/website/api_v2/src/missions/README.md) — the mission row and faction
   library routes the dialogs call.
-- [Mission Creator feature inventory: asset palette](/documentation_v2/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) — the Faction Manager behind "Manage factions".
-- [Mission Creator feature inventory: top command strip](/documentation_v2/website/frontend/apps/editor/feature_inventory/top_command_strip.md) — the Mission Settings dialog.
+- [Mission Creator feature inventory: asset palette](/documentation/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) — the Faction Manager behind "Manage factions".
+- [Mission Creator feature inventory: top command strip](/documentation/website/frontend/apps/editor/feature_inventory/top_command_strip.md) — the Mission Settings dialog.

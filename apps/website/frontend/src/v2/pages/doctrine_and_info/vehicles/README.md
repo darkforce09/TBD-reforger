@@ -27,7 +27,7 @@ apps/website/frontend/src/v2/pages/doctrine_and_info/vehicles/
 `Vehicle` rows; both panes of the `GlassSplit` read that one list, held in a signal. The selection
 starts on the first row and falls back to it whenever the selected id names no vehicle.
 `faction_order` groups the rows by faction in the order each faction first appears, which is the
-name order the [API](/documentation_v2/glossary/a_to_f.md#api) returns; a row without a faction is
+name order the [API](/documentation/glossary/a_to_f.md#api) returns; a row without a faction is
 left out of the list. The search matches a vehicle's name, armour class or faction, and a group
 whose rows all filter out disappears. The dossier renders every optional field as possibly empty:
 the photograph loads only when `safe_image_src` admits the stored URL (`https://…` or a site path
@@ -36,7 +36,7 @@ reads "—" in the readouts, and an empty threat shows a fixed line. The amphibi
 for yes, `y` or `true`, a success for no, `n` or `false`, and neutral otherwise.
 
 `is_admin` is a memo over `has_min_role_authed` and the session's
-[role](/documentation_v2/glossary/n_to_z.md#role), so "Add vehicle" and the dossier's Edit and
+[role](/documentation/glossary/n_to_z.md#role), so "Add vehicle" and the dossier's Edit and
 Delete appear only for a signed-in administrator, never for anyone else or while the session
 restores. One form dialog serves both writes: its `FormTarget` seeds the text (empty, or the stored
 row) and picks the request (`POST` a new vehicle, `PUT` a stored one); every opening re-creates the
@@ -100,7 +100,7 @@ selection falls back to the first row. Paths carry the id percent-encoded as one
 - Used by: the `/vehicles` route in `apps/website/frontend/src/app_routes.rs` and
   `apps/website/frontend/src/router.rs`; the sidebar's "Vehicle Database" link in
   `apps/website/frontend/src/v2/pages/navigation/nav_config.rs`; the DOM oracle's `vehicles`
-  capture in `tools_v2/developer-tools/src/browser_testing/dom_oracle/routes.rs`.
+  capture in `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`.
 - Rules: groups keep the order each faction first appears (`factions_preserve_first_seen_order` in
   `tests/vehicle_grid.rs`); the form's rules match the backend validator's boundaries
   (`each_limit_admits_its_boundary_and_refuses_one_character_more` and
@@ -114,9 +114,9 @@ selection falls back to the first row. Paths carry the id percent-encoded as one
 
 ## Related documentation
 
-- [Vehicle database page](/documentation_v2/website/frontend/pages/doctrine_and_info/vehicles/vehicle_database_page.md)
+- [Vehicle database page](/documentation/website/frontend/pages/doctrine_and_info/vehicles/vehicle_database_page.md)
   — the page's behaviour and design.
 - [Vehicle database handlers](/apps/website/api_v2/src/community_content/handlers/vehicle_database/README.md)
   — the routes, the validator and the soft delete.
-- [Vehicle database contract](/contracts_v2/definitions/vehicle-database.schema.json) — the row,
+- [Vehicle database contract](/contracts/definitions/vehicle-database.schema.json) — the row,
   the list and the write bodies.

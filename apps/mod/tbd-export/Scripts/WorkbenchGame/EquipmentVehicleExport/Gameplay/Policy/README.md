@@ -2,7 +2,7 @@
 
 The Workbench side of the gameplay selection policy: the class that answers which classes and
 fields enter the gameplay dataset, and the tables generated from the reviewed rules in
-`contracts_v2/rules/equipment-gameplay/`.
+`contracts/rules/equipment-gameplay/`.
 
 ## Contents
 
@@ -40,11 +40,11 @@ None: Workbench runs these scripts in the editor.
   `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Gameplay/Serialization/`, and
   `TBD_SourceContainerReader` in `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Source/`.
 - Rules: `Generated/` is written only by `cargo xtask mod generate-equipment-gameplay-policy` from
-  `contracts_v2/rules/equipment-gameplay/policy.json` and its class files, one section folder per
+  `contracts/rules/equipment-gameplay/policy.json` and its class files, one section folder per
   policy section with at most 180 table lines per class; `--check` fails on drift or on any file
   the generator did not write.
 
 ## Related documentation
 
-- [Equipment gameplay selection policy](/contracts_v2/rules/equipment-gameplay/README.md) — the
+- [Equipment gameplay selection policy](/contracts/rules/equipment-gameplay/README.md) — the
   reviewed rows, their dispositions and sections.

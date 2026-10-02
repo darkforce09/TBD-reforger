@@ -1,8 +1,8 @@
 # Ticket registry
 
-Every [ticket](/documentation_v2/glossary/n_to_z.md#ticket) of the project as one TOML file, the
+Every [ticket](/documentation/glossary/n_to_z.md#ticket) of the project as one TOML file, the
 schemas and derived files around them, and the templates and instructions agents follow to write a
-ticket's spec, plan, handoff and prompt. The `ticket-engine` crate reads and writes the folder
+ticket's spec, plan, handoff and prompt. The `ticket_engine` crate reads and writes the folder
 through `cargo xtask ticket`; the [ticketboard](/apps/ticketboard/README.md) shows it.
 
 ## Contents
@@ -29,10 +29,10 @@ through `cargo xtask ticket`; the [ticketboard](/apps/ticketboard/README.md) sho
 ## How it works
 
 **The ticket files are the source of truth.** `.ai/tickets/T-<id>.toml` holds one ticket: its
-`kind` (`program` with child [slices](/documentation_v2/glossary/n_to_z.md#slice), or `work`), `status`, `order`, `spec`, `plan`, `executor`,
+`kind` (`program` with child [slices](/documentation/glossary/n_to_z.md#slice), or `work`), `status`, `order`, `spec`, `plan`, `executor`,
 body fields and `[scope]` table, validated against `schema.json` and `scope-vocab.toml`. The ticket
 engine renders every file in one canonical form (`TicketFile` in
-`tools_v2/ticket-engine/src/encoding.rs`), and every command that writes a ticket renders the
+`tools/ticket_engine/src/encoding.rs`), and every command that writes a ticket renders the
 whole file again.
 
 - A ticket file is created only by `cargo xtask ticket add` or `ticket add-child`, which mint the
@@ -40,7 +40,7 @@ whole file again.
 - `status`, `order`, `shipped_at` and `completed_at` change only through the verbs (`reorder`,
   `set-status`, `mark-ready`, `ship`, `stamp-sha`), which check what they write.
 - A hand edit of the body fields keeps the canonical key order and adds no key the schema lacks;
-  [Editing a ticket file by hand](/documentation_v2/runbooks/ticket_run_pipeline.md#editing-a-ticket-file-by-hand)
+  [Editing a ticket file by hand](/documentation/runbooks/ticket_run_pipeline.md#editing-a-ticket-file-by-hand)
   gives the order.
 - The verbs that write a ticket file (`add`, `add-child`, `remove`, `reorder`, `set-status`,
   `mark-ready`, `advance-slice`, `ship`, and `done` through `ship`) refuse, and write nothing,
@@ -50,9 +50,9 @@ whole file again.
   without a check.
 
 **Derived files are never edited by hand.** `cargo xtask ticket sync` regenerates `queue.json`
-and the next-work block of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)
+and the next-work block of the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)
 roadmap, between `<!-- ticket-sync:next:start -->` and `<!-- ticket-sync:next:end -->` in
-`documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md`. The ticket column of
+`documentation/website/frontend/apps/editor/mission_creator_roadmap.md`. The ticket column of
 the Eden gap analysis is kept by hand: sync's column writer rewrites only a table headed with a
 `priority` column, which that table does not have. `wave.lock` is written only by
 `cargo xtask wave repack` (which `ticket ship` and `ticket set-status` run). The run receipts under
@@ -78,8 +78,8 @@ run through the ticket tooling, whoever makes it (a ticket without one counts as
 stops and waits for that party. `ticket run` runs `claude-code` tickets only.
 
 **Specs, plans and templates.** A ticket's spec is
-`documentation_v2/tickets/specs/t<id>_<subject>.md`, written from `spec_template.md`, and its plan
-is `documentation_v2/tickets/plans/t-<id>_plan.md`, copied from `plan_template.md`; `mark-ready`
+`documentation/tickets/specs/t<id>_<subject>.md`, written from `spec_template.md`, and its plan
+is `documentation/tickets/plans/t-<id>_plan.md`, copied from `plan_template.md`; `mark-ready`
 refuses while either is missing. Both are live while the ticket is `idea`, `queued` or `ready`, and
 become frozen records once it ships or is cancelled; the knowledge that outlasts the ticket then
 moves into the feature doc of the code it describes, whose `## Open work` section links the open
@@ -93,14 +93,14 @@ ticket add ─▶ fill the body ─▶ reorder (idea → queued) ─▶ spec + p
   ─▶ ticket run ─▶ verify ─▶ ticket ship (→ shipped) ─▶ commit ─▶ ticket stamp-sha ─▶ commit
 ```
 
-[Taking a ticket from idea to shipped](/documentation_v2/runbooks/ticket_run_pipeline.md) runs
-that lifecycle step by step; [Factory waves](/documentation_v2/runbooks/factory_waves/README.md)
+[Taking a ticket from idea to shipped](/documentation/runbooks/ticket_run_pipeline.md) runs
+that lifecycle step by step; [Factory waves](/documentation/runbooks/factory_waves/README.md)
 runs many tickets at once.
 
 ## Commands
 
 Every command is `cargo xtask ticket <verb>`, run from the repository root; the
-[ticket command group README](/tools_v2/xtask/src/commands/ticket/README.md) gives every flag and
+[ticket command group README](/tools/xtask/src/commands/ticket/README.md) gives every flag and
 exit code.
 
 | Command | What it does |
@@ -128,24 +128,24 @@ exit code.
 
 ## Boundaries
 
-- Depends on: the `ticket-engine` crate (`tools_v2/ticket-engine/`), which owns the storage,
+- Depends on: the `ticket_engine` crate (`tools/ticket_engine/`), which owns the storage,
   validation, sync and wave packing; the xtask `ticket`, `wave` and `platform` command groups.
 - Used by: `cargo xtask ticket`, `cargo xtask wave`, `cargo xtask slice-collisions` and the
   platform and mod wave drivers; the ticketboard; the `language-gates` job of
   `.github/workflows/ci.yml` (`ticket check --strict`); agents and people.
 - Rules: the ticket files, `queue.json` and `wave.lock` change only through the commands above,
   apart from hand edits of body fields in canonical form; `cargo xtask ticket check --strict` passes
-  after every change; `cargo test -p ticket-engine corpus_roundtrip_real_tree_byte_identical` proves
+  after every change; `cargo test -p ticket_engine corpus_roundtrip_real_tree_byte_identical` proves
   every file is in canonical form.
 
 ## Related documentation
 
-- [Taking a ticket from idea to shipped](/documentation_v2/runbooks/ticket_run_pipeline.md) — the
+- [Taking a ticket from idea to shipped](/documentation/runbooks/ticket_run_pipeline.md) — the
   lifecycle, `ticket run` and the run receipts.
-- [Ticket identifiers](/documentation_v2/standards/ticket_identifiers.md) — ids, fields, spec and
+- [Ticket identifiers](/documentation/standards/ticket_identifiers.md) — ids, fields, spec and
   plan names, ids in commit subjects.
-- [Ticket specs and plans](/documentation_v2/tickets/README.md) — the spec and plan folders and
+- [Ticket specs and plans](/documentation/tickets/README.md) — the spec and plan folders and
   their lifecycle.
-- [Commit checklist](/documentation_v2/standards/commit_checklist.md) — what a landing commit
+- [Commit checklist](/documentation/standards/commit_checklist.md) — what a landing commit
   carries.
-- [Ticket engine](/tools_v2/ticket-engine/README.md) — the crate behind the registry.
+- [Ticket engine](/tools/ticket_engine/README.md) — the crate behind the registry.

@@ -1,0 +1,71 @@
+**Status:** frozen record
+
+# T-090.1.2.x — Satellite basemap backlog (resume guide)
+
+**Program hub:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)  
+**Registry active slice:** `./scripts/ticket brief T-090` → **T-090.1.1.1** (Map land-cover) · **queued:** **T-090.1.2.9** (Satellite roads)  
+**Water (good enough):** **T-090.1.2.5.2** @ `1c07d97a` · `cargo xtask ci map-water-everon`  
+**Map cartographic:** **T-090.1.1** @ `6e06e679` · `cargo xtask ci map-cartographic-everon`  
+**Last shipped:** **T-090.2** @ `691d9b26`
+
+---
+
+## What the editor shows today
+
+| Aspect | State |
+|--------|--------|
+| **Source** | SAP supertexture stitch + T-090.1.2.2 apron-bridge — **locked** (engine ortho dead end) |
+| **Delivery** | **Unified** `everon-sat.tbd-sat` (205.9 MB LFS) — one fetch + GPU mip chain; pyramid fallback via `delivery: "pyramid"` |
+| **Detail @ max zoom** | Acceptable; residual soft ~256 m band is BI-baked (not fixable without new source) |
+| **Pan / zoom feel** | **T-090.1.2.8 shipped** — no tile pop-in by construction (single BitmapLayer + trilinear mips) |
+| **Water** | **T-090.1.2.5.2** @ `1c07d97a` — **good enough** (`cargo xtask ci map-water-everon`); perfect water → **T-143** (`idea`) |
+| **Hillshade** | **T-090.1.2.6** shipped @ `b958e3b4` (Mission Settings strength slider) |
+| **Map view** | **T-090.1.1** @ `6e06e679` — cartographic pyramid + Mission Settings **Map** radio (`cargo xtask ci map-cartographic-everon`) |
+
+**Format spike:** [`.ai/artifacts/t090_1_2_8_format_spike.json`](../../../.ai/artifacts/t090_1_2_8_format_spike.json) · **Verify:** [`.ai/artifacts/t090_1_2_8_verify_log.md`](../../../.ai/artifacts/t090_1_2_8_verify_log.md)
+
+---
+
+## Execution order (normative)
+
+```text
+1. T-090.1.2.8  Unified satellite texture     ✓ @ db9057ef
+2. T-090.1.2.5  Satellite water composite     ✓ @ 6396960f
+2b. T-090.1.2.5.1  Inland mask refine        ✓ @ 82488c6f
+2c. T-090.1.2.5.2  .topo road guard + button ✓ @ 1c07d97a (operator: good enough)
+3. T-090.1.2.6  Hillshade blend control       ✓ @ b958e3b4
+4. T-090.1.1    Map cartographic view         ✓ @ 6e06e679
+4b. T-090.1.1.1 Map land-cover compose        ← ACTIVE (forest/field tints)
+4c. T-090.1.2.9 Satellite road overlay       ← queued (.topo strokes on SAP ortho)
+—  T-090.1.2.3  Tile prefetch (legacy pyramid interim only)
+```
+
+**Shipped dead end:** T-090.1.2.4 @ `0d6fe485` — do not re-open engine ortho without new engine API evidence.
+
+**Parallel (platform):** **T-090.2** map object taxonomy — [`t090_2_parallel_setup.md`](../../../.ai/artifacts/t090_2_parallel_setup.md) · Fable audit remainder **T-130** — [`t130_fable_audit_remainder.md`](/documentation/tickets/specs/t130_fable_audit_remainder.md)
+
+---
+
+## Slice index
+
+| Slice | Status | Spec | Send-off |
+|-------|--------|------|----------|
+| **T-090.1.2.8** | shipped @ `db9057ef` | [`t090_1_2_8_unified_satellite_texture.md`](t090_1_2_8_unified_satellite_texture.md) | verify log |
+| **T-090.1.2.5.2** | shipped @ `1c07d97a` | [`t090_1_2_5_2_water_topo_refine.md`](t090_1_2_5_2_water_topo_refine.md) | verify log + crops |
+| **T-090.1.2.5.1** | shipped @ `82488c6f` | [`t090_1_2_5_1_water_mask_refine.md`](t090_1_2_5_1_water_mask_refine.md) | verify log |
+| **T-090.2** | shipped @ `691d9b26` | [`t090_2_map_object_taxonomy.md`](t090_2_map_object_taxonomy.md) | verify log |
+| **T-090.1.1** | shipped @ `6e06e679` | [`t090_1_1_map_cartographic_view.md`](t090_1_1_map_cartographic_view.md) · UX [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) | verify log + contact sheet |
+| **T-090.1.1.1** | **ready** | [`t090_1_1_1_map_landcover_compose.md`](t090_1_1_1_map_landcover_compose.md) | Map forest/field tints |
+| **T-090.1.2.9** | queued | [`t090_1_2_9_satellite_road_overlay.md`](t090_1_2_9_satellite_road_overlay.md) | Satellite road bake — no buildings |
+| **T-090.1.2.5** | shipped @ `6396960f` | [`t090_1_2_5_satellite_water_composite.md`](t090_1_2_5_satellite_water_composite.md) | verify log |
+| **T-090.1.2.6** | shipped @ `b958e3b4` | [`t090_1_2_6_hillshade_blend_control.md`](t090_1_2_6_hillshade_blend_control.md) | verify log |
+
+**Shipped:** T-090.1.2.5 @ `6396960f` · T-090.1.2.6 @ `b958e3b4` · T-090.1.2.8 @ `db9057ef` · T-090.1.2.4 @ `0d6fe485` (FAIL) · T-090.1.2.2 @ `a3efdf6` · T-090.1.2.1 @ `19bc785`
+
+---
+
+## Operator manual (U1–U4)
+
+**PASS** @ 2026-07-02 — operator: no flicker, no stutter; satellite delivery accepted.
+
+See [`.ai/artifacts/t090_1_2_8_verify_log.md`](../../../.ai/artifacts/t090_1_2_8_verify_log.md).

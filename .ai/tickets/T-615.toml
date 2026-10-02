@@ -107,7 +107,7 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 owns = [
-    "documentation_v2/standards/documentation_standards.md",
+    "documentation/standards/documentation_standards.md",
     "docs/specs/Mission_Creator_Architecture/t123_documentation_standards_rollout.md",
     "apps/mod/tbd-framework/Missions/TBD_Dev_POC.conf",
 ]

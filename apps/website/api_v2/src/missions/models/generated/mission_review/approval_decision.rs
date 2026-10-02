@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/mission-review.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/mission-review.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///POST /api/v1/approvals/:id/approve body (administrator): the artifact under review and any conditions. Answers the decided MissionRow; a different artifact answers 409 REVIEWED_ARTIFACT_CHANGED naming the artifact under review.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

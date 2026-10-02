@@ -63,7 +63,7 @@ only for wasm32 with the `render` feature; the rest is plain computation the nat
   - `crate::overlay::symbology`, which packs the labels, and `crate::world::terrain::roads` and
     `crate::world::mesh`;
   - the world export, the map raster pipeline and the map checks in
-    `tools_v2/developer-tools/src/`.
+    `tools/developer_tools/src/`.
 - Rules: the render class order is a wire format and never changes
   (`class_codes_match_wire_order` in `tests/classify_tests.rs`); a kind the table does not map is
   never drawn, so a new catalogue kind needs its row (`render_class_truth_table`); a missing or

@@ -2,7 +2,7 @@
 
 Where the equipment catalogs go and how every one of them is written: the destination settings,
 path creation under `$profile:`, JSON escaping and checked writes, the run's metadata, and a
-[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) Net API handler that runs the standard
+[Workbench](/documentation/glossary/n_to_z.md#workbench) Net API handler that runs the standard
 scanners into an isolated folder for verification.
 
 ## Contents

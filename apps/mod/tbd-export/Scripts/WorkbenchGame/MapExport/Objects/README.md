@@ -1,7 +1,7 @@
 # World object export
 
 The placed-object layers of the map export, read from the world open in
-[Workbench](/documentation_v2/glossary/n_to_z.md#workbench): the full world-object export the developer
+[Workbench](/documentation/glossary/n_to_z.md#workbench): the full world-object export the developer
 tools build the map's object data from, a classified object export, building blueprints,
 infrastructure, and a line-of-sight reference sampler.
 
@@ -31,10 +31,10 @@ name, class name, position, `GetAngles` as `pitchDeg`, `headingDeg` and `rollDeg
 TBD_WorldFullExportPlugin ──▶ $profile:TBD_WorldExport_full.jsonl + ..._full_meta.json
         │
         ▼  world copy-export-profile --full
-assets_v2/scratch/<terrain>/export/raw-entities.jsonl
+assets/scratch/<terrain>/export/raw-entities.jsonl
         │
         ▼  cargo xtask map export-terrain <terrain> --phase <P>
-world build-objects, world build-roads ──▶ assets_v2/terrains/<terrain>/objects/, roads/
+world build-objects, world build-roads ──▶ assets/terrains/<terrain>/objects/, roads/
 ```
 
 ### Full world-object export
@@ -47,10 +47,10 @@ writes `$profile:TBD_WorldExport_full_meta.json` last, as the completion sentine
 `exportVersion` 2, `worldSizeM`, `cellSizeM`, `cells`, `aabbHitCount`, `keptCount`, `withPrefab`,
 `withScale`, `outOfBounds`, `elapsedMs`, and the angle, scale and partition rules as text. A failed
 write deletes the partial file and writes no meta. The cell rule matches `cell_of` in
-`tools_v2/developer-tools/src/world_export_pipeline/polygon_geometry.rs`.
+`tools/developer_tools/src/world_export_pipeline/polygon_geometry.rs`.
 
 `world copy-export-profile --full`
-(`tools_v2/developer-tools/src/world_export_pipeline/export_preparation/export_profile.rs`) refuses
+(`tools/developer_tools/src/world_export_pipeline/export_preparation/export_profile.rs`) refuses
 to stage the file without the meta, or when `keptCount` differs from the file's line count, and
 stages it as `raw-entities.jsonl` for `cargo xtask map export-terrain`. The plugin's
 `[WorkbenchPluginAttribute]` (menu "Export TBD World Objects (full)") is commented out and no Net
@@ -107,7 +107,7 @@ None: Workbench runs these scripts in the editor.
   - `TBD_MapExportPlugin` in `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Plugins/`;
   - `world copy-export-profile --full`, which stages the full export, and through it
     `cargo xtask map export-terrain` and `map export-locations`
-    (`tools_v2/developer-tools/src/map_raster_pipeline/map_labels/importance_by_name.rs`);
+    (`tools/developer_tools/src/map_raster_pipeline/map_labels/importance_by_name.rs`);
   - `cargo xtask map world-los`, which replays the world parity file. No committed tool reads the
     classified export.
 - Rules: both world sweeps here keep an entity only in the cell of its origin, with the same clamp
@@ -117,11 +117,11 @@ None: Workbench runs these scripts in the editor.
 
 ## Related documentation
 
-- [World export pipeline](/tools_v2/developer-tools/src/world_export_pipeline/README.md) — staging
+- [World export pipeline](/tools/developer_tools/src/world_export_pipeline/README.md) — staging
   the full export and building the object and road data from it.
-- [Everon object data](/assets_v2/terrains/everon/objects/README.md) — the committed chunks and
+- [Everon object data](/assets/terrains/everon/objects/README.md) — the committed chunks and
   catalogue the full export feeds.
-- [Map commands](/tools_v2/xtask/src/commands/map/README.md) — `cargo xtask map export-terrain` and
+- [Map commands](/tools/xtask/src/commands/map/README.md) — `cargo xtask map export-terrain` and
   the parity commands.
-- [Terrain export runbook](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/MapExport/terrain_export_runbook.md) —
+- [Terrain export runbook](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/terrain_export_runbook.md) —
   the full export through `copy-export-profile`, `export-terrain` and `verify-phase`.

@@ -94,14 +94,14 @@ build `unversioned`. `Cargo.toml` pins edition 2024 and Rust 1.95.
 
 - Depends on: `serde`, `serde_json` and `url`; `wasm-bindgen`, `wasm-bindgen-futures`, `js-sys`
   and `web-sys` on `wasm32`. No workspace crate. The unit tests read the committed Everon and
-  Arland manifests under `assets_v2/terrains/`.
+  Arland manifests under `assets/terrains/`.
 - Used by: `apps/website/frontend/index.html`, which builds the binary as a Trunk worker, and
   `apps/website/frontend/service_worker.js`, which loads it; the frontend's offline core links the
   library.
 - Rules:
   - the crate depends on none of `website-api`, `website-frontend` or `website-graphics-engine`
     (`OFFLINE_SERVICE_WORKER_RULE` in
-    `tools_v2/verification-core/src/repository_laws/crate_dependencies.rs`, test
+    `tools/verification_core/src/repository_laws/crate_dependencies.rs`, test
     `the_offline_service_worker_may_link_none_of_the_server_page_or_renderer`);
   - the loader holds no policy: every decision lives in this crate's library and is unit-tested
     natively;
@@ -113,5 +113,5 @@ build `unversioned`. `Cargo.toml` pins edition 2024 and Rust 1.95.
 
 ## Related documentation
 
-- [Engine boundary rules](/documentation_v2/standards/engine_boundary_rules.md) — the dependency
+- [Engine boundary rules](/documentation/standards/engine_boundary_rules.md) — the dependency
   directions between the website crates.

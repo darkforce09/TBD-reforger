@@ -52,7 +52,7 @@ its panels with `Mount` or `MountHandler`, and fills `GetScreenTitle`, `GetSessi
   through `Repaint()`; `TBD_UIButton` and `TBD_ListBoxRow` derive from it.
 - `TBD_ListBox` creates each row once per index from `TBD_ListRow.layout` (its `[Attribute]`) and
   afterwards only re-binds text and colour, hiding surplus rows, so a list refreshed on every
-  [slot](/documentation_v2/glossary/n_to_z.md#slot) claim costs no widget churn. A build is `BeginUpdate`,
+  [slot](/documentation/glossary/n_to_z.md#slot) claim costs no widget churn. A build is `BeginUpdate`,
   `AddSection` and `AddItem`, `EndUpdate`.
 - `TBD_UIScrollBar` is mounted by the owner of a scroll widget with
   `Mount(dock, scroll, content, ground)` into the list's 4 px `ScrollBarDock`, repainted with
@@ -72,7 +72,7 @@ its panels with `Mount` or `MountHandler`, and fills `GetScreenTitle`, `GetSessi
   square.
 - `TBD_UITheme` holds the colour tokens, named after the design tokens of
   `apps/website/frontend/style/aegis.css` (the known value differences are listed in
-  [design tokens](/documentation_v2/design_system/design_tokens.md)), under three laws: tokens are sRGB and reach the engine
+  [design tokens](/documentation/design_system/design_tokens.md)), under three laws: tokens are sRGB and reach the engine
   through `Color.FromSRGBA`, never `SetColorInt`; alpha is composited in sRGB by `Over(top, ground)`
   (`Paint` over the panel ground, `PaintOver` over a given ground), and only `PaintAlpha` sends
   real alpha, for surfaces over the 3D world; fonts are set in the layouts, and the `FONT_*`
@@ -109,14 +109,14 @@ its panels with `Mount` or `MountHandler`, and fills `GetScreenTitle`, `GetSessi
 - Rules: a layout or texture resource is named once, in `TBD_UILayouts`, and a new GUID block is
   checked against the ledger in its class banner; a colour is a `TBD_UITheme` token or a `TBD_EUITint`,
   never a literal, and a translucent token is composited over its ground; a moved or new layout is
-  invisible to the engine until [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) rewrites
+  invisible to the engine until [Workbench](/documentation/glossary/n_to_z.md#workbench) rewrites
   `resourceDatabase.rdb`, while a new script compiles without it; lines added to a script stay
   ASCII, and `cargo xtask mod compile` checks that the scripts compile, while how a screen looks is
   checked in Workbench.
 
 ## Related documentation
 
-- [Mod UI documentation](/documentation_v2/mod/tbd-framework/UI/README.md) — where each screen's
+- [Mod UI documentation](/documentation/mod/tbd-framework/UI/README.md) — where each screen's
   scripts and layouts go, the dock shell, and the layout rules
-- [Mod design](/documentation_v2/mod/tbd-framework/mod_design.md) — the design methodology the
+- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the design methodology the
   interaction and colour rules encode

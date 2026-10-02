@@ -1,4 +1,4 @@
-//! Types generated from `contracts_v2/definitions` by `typify`; contract tests deserialize live
+//! Types generated from `contracts/definitions` by `typify`; contract tests deserialize live
 //! responses into them.
 //!
 //! DO NOT EDIT the per-schema files — regenerate them with `cargo xtask ci schema-codegen`, and

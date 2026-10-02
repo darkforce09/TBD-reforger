@@ -31,5 +31,5 @@ dispersion card carries "Interpretation, not verified in-engine".
 
 ## Related documentation
 
-- [Mortar calculator page](/documentation_v2/website/frontend/pages/field_tools/mortar/mortar_calculator_page.md)
+- [Mortar calculator page](/documentation/website/frontend/pages/field_tools/mortar/mortar_calculator_page.md)
   — the page's behaviour, its data and its decisions.

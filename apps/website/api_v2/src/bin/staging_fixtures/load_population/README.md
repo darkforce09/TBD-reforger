@@ -35,7 +35,7 @@ all accounts ─▶ account_file: {"accounts":[{"discord_id","refresh_token"},�
 
 The services commit one by one, so a failure at any step deletes every account of the range
 (`population_cleanup::delete_synthetic_accounts`) and the file the run wrote, and exits 1 naming
-what happened. The account file is the format `account_rotation.rs` of the developer-tools load
+what happened. The account file is the format `account_rotation.rs` of the developer_tools load
 engine decodes: account `k` at index `k`, which also fixes its fixture event (`k mod 10`) and slot
 (`k div 10`).
 
@@ -65,7 +65,7 @@ a `staging.load_population_cleaned` audit row; audit rows naming the accounts st
 
 ## Related documentation
 
-- [Staging acceptance](/documentation_v2/website/api_v2/verification_evidence/staging.md) — the
+- [Staging acceptance](/documentation/website/api_v2/verification_evidence/staging.md) — the
   load procedure the population serves.
 - [API executables](/apps/website/api_v2/src/bin/README.md#staging-fixtures) — the subcommands'
   flags and exit codes.

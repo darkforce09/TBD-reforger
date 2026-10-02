@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/equipment-data-viewer/dataset.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/equipment-data-viewer/dataset.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///`EquipmentDatasetStatus`
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

@@ -1,12 +1,12 @@
 # Missions handlers
 
-The HTTP handlers of the [missions](/documentation_v2/glossary/g_to_m.md#missions) domain, one module per
-surface: the [mission](/documentation_v2/glossary/g_to_m.md#mission) library and its lifecycle, the
-versions the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) saves, the
-[armory](/documentation_v2/glossary/a_to_f.md#armory), submission, reviews and
-[approvals](/documentation_v2/glossary/a_to_f.md#approvals), the faction library, the item
-[registry](/documentation_v2/glossary/n_to_z.md#registry),
-[mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment) and the game-runtime routes.
+The HTTP handlers of the [missions](/documentation/glossary/g_to_m.md#missions) domain, one module per
+surface: the [mission](/documentation/glossary/g_to_m.md#mission) library and its lifecycle, the
+versions the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) saves, the
+[armory](/documentation/glossary/a_to_f.md#armory), submission, reviews and
+[approvals](/documentation/glossary/a_to_f.md#approvals), the faction library, the item
+[registry](/documentation/glossary/n_to_z.md#registry),
+[mission deployments](/documentation/glossary/g_to_m.md#mission-deployment) and the game-runtime routes.
 
 ## Contents
 
@@ -34,7 +34,7 @@ apps/website/api_v2/src/missions/handlers/
 ## How it works
 
 The extractor a handler takes sets its tier: `AuthUser` for reads, `MissionMakerUser` for authored
-writes, `AdminUser` for the queue, the [deployments](/documentation_v2/glossary/a_to_f.md#deployment) and
+writes, `AdminUser` for the queue, the [deployments](/documentation/glossary/a_to_f.md#deployment) and
 the default-override aggregate, and `MachineCaller` with the `mod_runtime` executor kind for the
 game-runtime routes. A mission row is visible to everyone once it is `live` and before that to its
 author and administrators (`validation::access`); a read of a hidden mission answers 404 like a
@@ -42,14 +42,14 @@ missing one, and a write by someone who may not edit the mission answers 403.
 
 - `mission_lifecycle.rs` creates a `draft` with version `0.1.0`, and a patch may only archive or
   unarchive; archiving a mission attached to an upcoming
-  [event](/documentation_v2/glossary/a_to_f.md#event), or deleting one attached to any event, answers 409.
+  [event](/documentation/glossary/a_to_f.md#event), or deleting one attached to any event, answers 409.
   The patch, the delete, submission and review comments take `services::mission_write_lock`, which
-  rechecks the [role](/documentation_v2/glossary/n_to_z.md#role) and ownership after the lock wait.
+  rechecks the [role](/documentation/glossary/n_to_z.md#role) and ownership after the lock wait.
 - `mission_versions.rs` holds `validate_payload`, the one gate of every stored version payload (the
   editor schema, cargo capacity against the current catalog, the compiler's type scan), and a save
   also refuses a malformed semver, a vacuous payload and a duplicate version (409).
 - `mission_submission.rs` alone writes `pending_approval`: it compiles the current version into an
-  [artifact](/documentation_v2/glossary/a_to_f.md#artifact) under review, and `approvals_queue.rs` decides
+  [artifact](/documentation/glossary/a_to_f.md#artifact) under review, and `approvals_queue.rs` decides
   exactly that artifact, both through `services::mission_reviews`.
 - `mission_armory.rs` validates every row before its transaction deletes the armory, so a
   malformed body (a blank name or faction, a negative `quantity`) never clears it.
@@ -66,15 +66,15 @@ missing one, and a write by someone who may not edit the mission answers 403.
   extractors, errors, pagination and wire formats; `administration` for the audit rows;
   `identity_and_access` for the reviewer recheck; `server_infrastructure` for `MachineCaller`;
   `community_content::models` for a registry's modpack; `website_map_engine::data::scenario` for
-  the save-time type scan; `contracts_v2/definitions/mission.schema.json`, embedded.
+  the save-time type scan; `contracts/definitions/mission.schema.json`, embedded.
 - Used by: the domain's `routes.rs`; over HTTP, the Mission Creator in
   `apps/website/frontend/src/v2/apps/editor/`, the mission hub pages in
   `apps/website/frontend/src/v2/pages/mission_hub/`, the approvals and
-  [server control](/documentation_v2/glossary/n_to_z.md#server-control) pages in
+  [server control](/documentation/glossary/n_to_z.md#server-control) pages in
   `apps/website/frontend/src/v2/pages/administration/`, the
-  [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) in
+  [game runtime](/documentation/glossary/g_to_m.md#game-runtime) in
   `apps/mod/tbd-framework/Scripts/Game/TBD/`, and the `cargo xtask mod` commands' client in
-  `tools_v2/xtask/src/commands/mod_ops/website_api_client/`.
+  `tools/xtask/src/commands/mod_ops/website_api_client/`.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
   imports another domain's handlers (`apps/website/api_v2/src/tests/architecture_rules.rs`); every
   mission write takes `MissionMakerUser` as well as ownership, so a demotion revokes it
@@ -88,7 +88,7 @@ missing one, and a write by someone who may not edit the mission answers 403.
 
 ## Related documentation
 
-- [Mission artifacts, reviews and deployment](/documentation_v2/website/api_v2/verification_evidence/mission_artifacts.md)
+- [Mission artifacts, reviews and deployment](/documentation/website/api_v2/verification_evidence/mission_artifacts.md)
   — submission, review decisions, artifact reads and deployments.
-- [Mission approvals page](/documentation_v2/website/frontend/pages/administration/approvals/mission_approvals_page.md)
+- [Mission approvals page](/documentation/website/frontend/pages/administration/approvals/mission_approvals_page.md)
   — the review queue as administrators use it.

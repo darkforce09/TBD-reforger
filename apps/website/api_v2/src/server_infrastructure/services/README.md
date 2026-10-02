@@ -1,10 +1,10 @@
 # Server infrastructure services
 
 The logic behind the game server fleet: the
-[machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential) that authenticate the
+[machine credentials](/documentation/glossary/g_to_m.md#machine-credential) that authenticate the
 programs on a game host, the runtime sessions that fence each boot of a
-[game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime), the
-[fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) ledger, and the publisher of each
+[game runtime](/documentation/glossary/g_to_m.md#game-runtime), the
+[fleet command](/documentation/glossary/a_to_f.md#fleet-command) ledger, and the publisher of each
 server's live status topic.
 
 ## Contents
@@ -58,14 +58,14 @@ too. The ledger in `fleet_commands/` has its own README.
 - `machine_credentials::issue_machine_credential` for the credential routes and for the
   `staging-fixtures` host tool, which writes each secret into a mode-600 file.
 - `runtime_sessions`: `admit_heartbeat` and `HeartbeatFence` for the heartbeat in `match_telemetry`;
-  `share_open_session` for the live [slot](/documentation_v2/glossary/n_to_z.md#slot) occupancy in
+  `share_open_session` for the live [slot](/documentation/glossary/n_to_z.md#slot) occupancy in
   `operations`; `expire_silent_runtime_sessions` for the `runtime_session_expiry` worker.
 - `status_broadcast`: `publish_server_status_by_id` for the heartbeat in `match_telemetry` and the
   `runtime_session_expiry` worker, `publish_all_server_statuses` for the `server_status_publisher`
   worker, `publish_server_status` for a status already read; `SELECT_SERVER_STATUS` for the
   stream's snapshot and `SELECT_FLEET_STATUSES` for `command_center::services::fleet_overview`.
 - `fleet_commands::command_ledger`: `enqueue_deployment_command` and `cancel_command` for
-  [mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment) in `missions`;
+  [mission deployments](/documentation/glossary/g_to_m.md#mission-deployment) in `missions`;
   `fleet_commands::command_reconciliation::reconcile_fleet_commands` for the
   `fleet_command_reconciler` worker.
 
@@ -83,7 +83,7 @@ too. The ledger in `fleet_commands/` has its own README.
 
 ## Related documentation
 
-- [Machine credentials and runtime sessions](/documentation_v2/website/api_v2/verification_evidence/machine_credentials.md)
+- [Machine credentials and runtime sessions](/documentation/website/api_v2/verification_evidence/machine_credentials.md)
   — the credential format, the session fence and their consumers.
-- [Fleet command ledger](/documentation_v2/website/api_v2/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger](/documentation/website/api_v2/verification_evidence/fleet_command_ledger.md)
   — the ledger's design.

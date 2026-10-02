@@ -315,7 +315,7 @@ fn runtime_dirs_with_surrounding_whitespace_are_rejected_in_every_env() {
 /// operator's omission is reported as such instead of silently becoming a path inside the tree.
 #[test]
 fn the_development_default_never_applies_outside_development() {
-    let default = "../../../assets_v2/scratch/website-api/uploads";
+    let default = "../../../assets/scratch/website-api/uploads";
     assert_eq!(runtime_storage_dir("", default, "development"), default);
     assert_eq!(runtime_storage_dir("", default, "production"), "");
     assert_eq!(
@@ -327,7 +327,7 @@ fn the_development_default_never_applies_outside_development() {
 #[test]
 fn development_accepts_a_relative_runtime_dir_and_production_an_absolute_one() {
     let mut dev = Config::for_tests("postgres://x/x", "jwt-secret");
-    dev.upload_dir = "../../../assets_v2/scratch/website-api/uploads".into();
+    dev.upload_dir = "../../../assets/scratch/website-api/uploads".into();
     assert!(dev.validate().is_ok());
 
     let mut prod = production_base();

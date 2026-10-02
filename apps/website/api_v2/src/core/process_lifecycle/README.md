@@ -1,8 +1,8 @@
 # Process lifecycle
 
-The process-wide shutdown signal of the [API](/documentation_v2/glossary/a_to_f.md#api): the one
+The process-wide shutdown signal of the [API](/documentation/glossary/a_to_f.md#api): the one
 flag the `api` binary raises when it is asked to stop, so the
-[SSE](/documentation_v2/glossary/n_to_z.md#sse) streams that would otherwise hold a graceful
+[SSE](/documentation/glossary/n_to_z.md#sse) streams that would otherwise hold a graceful
 shutdown open end with it.
 
 ## Contents

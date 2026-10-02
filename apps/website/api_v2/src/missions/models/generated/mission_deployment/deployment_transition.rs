@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/mission-deployment.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/mission-deployment.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///scenario_restart: the runtime already runs the artifact's terrain and restarts its scenario in-process (fleet action load_mission). host_restart: the host agent restarts the server on the terrain's registered scenario (fleet action restart_with_mission).
 #[derive(

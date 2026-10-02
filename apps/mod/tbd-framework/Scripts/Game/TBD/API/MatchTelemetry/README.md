@@ -29,7 +29,7 @@ TBD_RuntimeStatusReadings (every online heartbeat)
 entry and keeps the next entry id, the drop total and the per-match results revision and event
 sequence counters in two alternating state slots. `Delivery/` posts the head entry and settles
 the answer: acknowledge, send the match's registration first, drop, or keep and back off. The
-[match telemetry design](/documentation_v2/website/api_v2/verification_evidence/telemetry.md) is
+[match telemetry design](/documentation/website/api_v2/verification_evidence/telemetry.md) is
 the contract; each subfolder's README describes its part.
 
 ## Authority
@@ -53,13 +53,13 @@ the contract; each subfolder's README describes its part.
   `TBD_MatchEventRecorder` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/MatchEvents/`;
   `TBD_RuntimeStatusReadings` in `apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/`;
   `TBD_RuntimeHeartbeat` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/Heartbeat/`.
-- Rules: the wire shapes follow `contracts_v2/definitions/match-telemetry.schema.json`; every body
+- Rules: the wire shapes follow `contracts/definitions/match-telemetry.schema.json`; every body
   is hand-built and carries a `@contract` tag; the credential and the bodies are never logged;
   lines added stay ASCII and `cargo xtask mod compile` checks that the scripts compile.
 
 ## Related documentation
 
-- [Match telemetry design](/documentation_v2/website/api_v2/verification_evidence/telemetry.md) — match identity,
+- [Match telemetry design](/documentation/website/api_v2/verification_evidence/telemetry.md) — match identity,
   results revisions, detailed events and the queue's answer table
 - [Match telemetry domain](/apps/website/api_v2/src/match_telemetry/README.md) — how the ingest routes take the
   reports in

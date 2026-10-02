@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/content-upload.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/content-upload.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///The error envelope of the content routes (vehicle database, wiki, announcements and uploads), as of every API route: error is a message for people, and details, when present, is an object whose code names the refusal for machines. ContentRefusal and the WikiSaveRefusal of wiki-page.schema.json describe the content codes. Anonymous callers get 401 and signed-in members 403 on the administrator's writes.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

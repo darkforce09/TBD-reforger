@@ -35,8 +35,8 @@ looks or behaves differently, that is a bug in your work.
 
 THE WORKING TREE IS DIRTY AND THAT IS DELIBERATE. ~70 files are modified/untracked that are
 NOT yours: `apps/mod/**` (explicitly out of scope per spec section 7), `CLAUDE.md`,
-`xtask/src/{check,constants,gate_mod_compile,sync}.rs`, untracked `documentation_v2/`,
-`tools_v2/`, `docs/platform/ENGINE_SPLIT_PROGRAM.md`, and the `v2/**` READMEs.
+`xtask/src/{check,constants,gate_mod_compile,sync}.rs`, untracked `documentation/`,
+`tools/`, `docs/platform/ENGINE_SPLIT_PROGRAM.md`, and the `v2/**` READMEs.
 **Stage ONLY files you yourself authored or edited.** Use explicit `git add <path>`; never
 `git add -A`, never `git add .`, never `git commit -a`.
 

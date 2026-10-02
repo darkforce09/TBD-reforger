@@ -1,9 +1,9 @@
 # Administration pages
 
-The [administration](/documentation_v2/glossary/a_to_f.md#administration) pages, the last section of the
-sidebar and the only one reserved for the `admin` [role](/documentation_v2/glossary/n_to_z.md#role):
-the operations calendar of [events](/documentation_v2/glossary/a_to_f.md#event), the
-[mission](/documentation_v2/glossary/g_to_m.md#mission) approval queue, the game servers, the member
+The [administration](/documentation/glossary/a_to_f.md#administration) pages, the last section of the
+sidebar and the only one reserved for the `admin` [role](/documentation/glossary/n_to_z.md#role):
+the operations calendar of [events](/documentation/glossary/a_to_f.md#event), the
+[mission](/documentation/glossary/g_to_m.md#mission) approval queue, the game servers, the member
 roster, the announcements, the audit trail and the ballistics catalogs.
 
 ## Contents
@@ -39,13 +39,13 @@ signed-out viewer and "Admin access required." below `admin`, in place of the pa
 its own fetches and signals, and nothing is shared between pages. Every request runs in the browser
 build only; a native build resolves each fetch to nothing and renders the failure branch.
 
-The pages reach five [API](/documentation_v2/glossary/a_to_f.md#api) domains: `operations` for events,
+The pages reach five [API](/documentation/glossary/a_to_f.md#api) domains: `operations` for events,
 their missions and their access, and for the ballistics catalogs; `missions` for
-[approvals](/documentation_v2/glossary/a_to_f.md#approvals), reviews, the library and mission
-[deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment); `server_infrastructure` for
-servers, [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command),
-[fleet scenarios](/documentation_v2/glossary/a_to_f.md#fleet-scenario) and
-[machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential); `administration` for the
+[approvals](/documentation/glossary/a_to_f.md#approvals), reviews, the library and mission
+[deployments](/documentation/glossary/g_to_m.md#mission-deployment); `server_infrastructure` for
+servers, [fleet commands](/documentation/glossary/a_to_f.md#fleet-command),
+[fleet scenarios](/documentation/glossary/a_to_f.md#fleet-scenario) and
+[machine credentials](/documentation/glossary/g_to_m.md#machine-credential); `administration` for the
 paged roster, bans, warnings, the role resync, the audit trail and its live stream;
 `community_content` for announcements and uploads.
 
@@ -66,7 +66,7 @@ paged roster, bans, warnings, the role resync, the audit trail and its live stre
   and breadcrumbs `apps/website/frontend/src/router.rs` declares; the Administration section of
   `apps/website/frontend/src/v2/pages/navigation/nav_config.rs`; the source pins in
   `apps/website/frontend/src/v2/core/test_support/pins.rs`; the DOM oracle captures in
-  `tools_v2/developer-tools/src/browser_testing/dom_oracle/routes.rs`.
+  `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`.
 - Rules: every page renders its body inside `AdminGate`, and an `admin` route has no denial
   redirect (`denial_redirects_to_overview_with_role_notice` in
   `apps/website/frontend/src/tests/route_authorization.rs`); every route here declares the `admin`
@@ -75,7 +75,7 @@ paged roster, bans, warnings, the role resync, the audit trail and its live stre
 
 ## Related documentation
 
-- [Administration pages](/documentation_v2/website/frontend/pages/administration/README.md) — the
+- [Administration pages](/documentation/website/frontend/pages/administration/README.md) — the
   six pages' feature docs and design references.
 - [Administration domain](/apps/website/api_v2/src/administration/README.md) — the roster,
   moderation and audit routes.

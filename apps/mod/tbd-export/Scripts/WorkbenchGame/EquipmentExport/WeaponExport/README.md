@@ -1,6 +1,6 @@
 # Weapon exports
 
-Twelve [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) extractors, one per weapon
+Twelve [Workbench](/documentation/glossary/n_to_z.md#workbench) extractors, one per weapon
 domain, that read the loaded addon set and write the weapon half of the equipment catalogs under
 `$profile:TBD_Export/equipment/`.
 

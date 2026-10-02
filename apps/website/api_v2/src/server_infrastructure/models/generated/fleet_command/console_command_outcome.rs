@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/fleet-command.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/fleet-command.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///The outcome a succeeded console_command reports: the server's reply to the line, cut by the host agent on a character boundary at 4096 bytes, and whether it was cut. The API answers 400 for any other shape and for a response over 4096 bytes. A failed console_command may omit it; a line the server never answered fails with failure_reason "no RCON response; the command may or may not have run".
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

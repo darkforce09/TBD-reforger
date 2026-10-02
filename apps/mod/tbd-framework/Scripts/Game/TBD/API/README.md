@@ -1,7 +1,7 @@
 # Platform API bridge
 
-The dedicated server's side of the platform [API](/documentation_v2/glossary/a_to_f.md#api): the
-[game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) session with its heartbeats, the shared
+The dedicated server's side of the platform [API](/documentation/glossary/a_to_f.md#api): the
+[game runtime](/documentation/glossary/g_to_m.md#game-runtime) session with its heartbeats, the shared
 transport of every `/api/v1/game-runtime/`, `/api/v1/fleet-executor/` and `/api/v1/ingest/` call,
 in-game identity linking, the end-of-round match results and the durable match telemetry queue.
 
@@ -89,9 +89,9 @@ byte for byte the one match results carry. Each subfolder's README describes its
   callback thread, so an answer may change the world, a player or the chat; a world's session
   starts only after its artifact report is decided and the previous session has closed; the wire
   shapes follow
-  `contracts_v2/definitions/game-runtime-session.schema.json`,
-  `contracts_v2/definitions/match-telemetry.schema.json` and
-  `contracts_v2/definitions/fleet-command.schema.json`; lines added stay ASCII and
+  `contracts/definitions/game-runtime-session.schema.json`,
+  `contracts/definitions/match-telemetry.schema.json` and
+  `contracts/definitions/fleet-command.schema.json`; lines added stay ASCII and
   `cargo xtask mod compile` checks that the scripts compile.
 
 ## Related documentation
@@ -100,9 +100,9 @@ byte for byte the one match results carry. Each subfolder's README describes its
   sessions, machine credentials and the fleet command ledger on the API side
 - [Match telemetry domain](/apps/website/api_v2/src/match_telemetry/README.md) — how heartbeats
   and match telemetry are taken in
-- [Match telemetry design](/documentation_v2/website/api_v2/verification_evidence/telemetry.md) — match
+- [Match telemetry design](/documentation/website/api_v2/verification_evidence/telemetry.md) — match
   identity, results revisions, detailed events and the game-runtime queue
 - [Identity and access domain](/apps/website/api_v2/src/identity_and_access/README.md) — the link
   code handshake the `#tbd link` command completes
-- [Discord identity link specification](/documentation_v2/mod/tbd-framework/UI/discord_identity_link/discord_identity_link_specification.md)
+- [Discord identity link specification](/documentation/mod/tbd-framework/UI/discord_identity_link/discord_identity_link_specification.md)
   — the in-game linking flow

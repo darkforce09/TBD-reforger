@@ -1,7 +1,7 @@
 id = "T-1236"
 kind = "work"
 title = "Add schemas for the game-runtime error and fleet refusal envelopes"
-summary = "No contracts_v2 definition covers the error envelope {error, details} the mod reads (apps/mod/tbd-framework/Scripts/Game/TBD/API/Http/TBD_GameRuntimeAnswer.c:37) or the fleet executor refusal details {code, state} (api_v2 server_infrastructure/services/fleet_commands/executor_claims.rs:198)."
+summary = "No contracts definition covers the error envelope {error, details} the mod reads (apps/mod/tbd-framework/Scripts/Game/TBD/API/Http/TBD_GameRuntimeAnswer.c:37) or the fleet executor refusal details {code, state} (api_v2 server_infrastructure/services/fleet_commands/executor_claims.rs:198)."
 class = "feature"
 status = "idea"
 notes = "With definitions in place, the mod classes can cite them with @contract and contract_parity_mod_wire checks them. Source: milestone V finding V-F27 (mod wire parity pass)."

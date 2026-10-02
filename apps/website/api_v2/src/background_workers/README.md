@@ -1,11 +1,11 @@
 # Background workers
 
-The interval tasks the [API](/documentation_v2/glossary/a_to_f.md#api) binary starts at boot and never
+The interval tasks the [API](/documentation/glossary/a_to_f.md#api) binary starts at boot and never
 awaits. Each keeps shared state current when no request would: expired credentials, the stored
-[event](/documentation_v2/glossary/a_to_f.md#event) status, the leaderboard view, live server status,
-silent [game runtimes](/documentation_v2/glossary/g_to_m.md#game-runtime),
-[fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command) and
-[mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment) in flight, queued
+[event](/documentation/glossary/a_to_f.md#event) status, the leaderboard view, live server status,
+silent [game runtimes](/documentation/glossary/g_to_m.md#game-runtime),
+[fleet commands](/documentation/glossary/a_to_f.md#fleet-command) and
+[mission deployments](/documentation/glossary/g_to_m.md#mission-deployment) in flight, queued
 reservation re-evaluations, unpublished audit facts, Discord changes nobody signed in to pick
 up, and new equipment export publications.
 
@@ -81,9 +81,9 @@ never handle the same account or request at once.
 
 ## Related documentation
 
-- [Fleet command ledger](/documentation_v2/website/api_v2/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger](/documentation/website/api_v2/verification_evidence/fleet_command_ledger.md)
   — the leases and expiries the fleet command reconciler enforces.
-- [Mission artifacts](/documentation_v2/website/api_v2/verification_evidence/mission_artifacts.md)
+- [Mission artifacts](/documentation/website/api_v2/verification_evidence/mission_artifacts.md)
   — how a mission deployment settles.
-- [Event eligibility and allocation](/documentation_v2/website/api_v2/verification_evidence/event_eligibility_allocation.md)
+- [Event eligibility and allocation](/documentation/website/api_v2/verification_evidence/event_eligibility_allocation.md)
   — the re-evaluation requests the reservation worker drains.

@@ -1,7 +1,7 @@
 # Debug benches
 
 URL-only benches that drive one part of the map engine in isolation, with none of the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s document, persistence or
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s document, persistence or
 chrome around it: the building viewer, which loads one extracted building blueprint and probes
 line of sight and the viewshed through it, and the world line-of-sight bench, which loads the
 committed object catalogue around a map point and probes one segment through it. Beside them, the
@@ -74,23 +74,23 @@ build covers, and a browser half (the `live` modules), which compiles for `wasm3
   `apps/website/frontend/src/router.rs`; nothing in the navigation links to them.
 - Rules: a map bench reads committed assets and engine code only, and the data viewer only reads
   the API anonymously; no bench writes a
-  [mission](/documentation_v2/glossary/g_to_m.md#mission) document or persists anything, and none
+  [mission](/documentation/glossary/g_to_m.md#mission) document or persists anything, and none
   imports from a page or a sibling workspace. The native `role_id` mirror in `building_interior.rs` must
   equal `apps/website/map-engine/src/overlay/lanes.rs` (`lane_ids_match_the_render_crate` in
   `tests/building_interior.rs`), and no wall may land on a borrowed lane
   (`walls_never_use_borrowed_lanes`). The ballistics agreement bench's reading and case mapping
   are mirrored by the gate `gate ballistics-agreement` in
-  `tools_v2/developer-tools/src/browser_testing/ballistics_agreement/`. The four route rows must match
-  `tools_v2/developer-tools/fixtures/dom_oracle/manifests/routes.csv`, which the route-drift gate
-  `gate s-routes` of `tools_v2/developer-tools/` compares.
+  `tools/developer_tools/src/browser_testing/ballistics_agreement/`. The four route rows must match
+  `tools/developer_tools/fixtures/dom_oracle/manifests/routes.csv`, which the route-drift gate
+  `gate s-routes` of `tools/developer_tools/` compares.
 
 ## Related documentation
 
-- [Debug benches documentation](/documentation_v2/website/frontend/apps/debug/README.md) — the
+- [Debug benches documentation](/documentation/website/frontend/apps/debug/README.md) — the
   index of the benches' feature docs.
-- [Building viewer](/documentation_v2/website/frontend/apps/debug/building_viewer_page.md) — the
+- [Building viewer](/documentation/website/frontend/apps/debug/building_viewer_page.md) — the
   building bench's purpose and behaviour.
-- [World line-of-sight bench](/documentation_v2/website/frontend/apps/debug/world_los_page.md) —
+- [World line-of-sight bench](/documentation/website/frontend/apps/debug/world_los_page.md) —
   the world bench's purpose and behaviour.
-- [Ballistics agreement bench](/documentation_v2/website/frontend/apps/debug/ballistics_agreement_page.md) —
+- [Ballistics agreement bench](/documentation/website/frontend/apps/debug/ballistics_agreement_page.md) —
   the agreement bench's purpose and behaviour.

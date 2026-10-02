@@ -1,6 +1,6 @@
 # Mission flow
 
-The reader of a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s `flow` block: how long the
+The reader of a [mission](/documentation/glossary/g_to_m.md#mission)'s `flow` block: how long the
 briefing, the safe start and the round run, and who may still join a round in progress.
 
 ## Contents
@@ -47,7 +47,7 @@ the authored briefing length; nothing advances on it.
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/`; `TBD_SafestartManager` under
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/`; `TBD_Log`, `TBD_PlayerChat` and
   `TBD_ClockText` under `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; the `flow` definition in
-  `contracts_v2/definitions/mission.schema.json`.
+  `contracts/definitions/mission.schema.json`.
 - Used by: `TBD_LoadingGate`, `TBD_RoundClock`, `TBD_FactionElimination` and `TBD_EndBanner` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/Stage/`; `TBD_FrameworkManager`;
   the win rule under `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/`; the join door and

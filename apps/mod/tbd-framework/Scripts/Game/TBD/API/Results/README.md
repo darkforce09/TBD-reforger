@@ -66,7 +66,7 @@ request, so nothing blocks the stage machine.
 - [Platform bridge](/apps/mod/tbd-framework/Scripts/Game/TBD/API/README.md) — the machine-credential tier every report uses
 - [Match telemetry transport](/apps/mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry/README.md) — the durable queue
   and its delivery
-- [Match telemetry design](/documentation_v2/website/api_v2/verification_evidence/telemetry.md) — registration,
+- [Match telemetry design](/documentation/website/api_v2/verification_evidence/telemetry.md) — registration,
   results revisions and the queue
 - [Match telemetry domain](/apps/website/api_v2/src/match_telemetry/README.md) — how match results
   are taken in

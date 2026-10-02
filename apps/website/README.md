@@ -1,10 +1,10 @@
 # Website platform
 
-The community's web platform: Discord sign-in, [events](/documentation_v2/glossary/a_to_f.md#event) and
-[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) slotting, the
-[mission](/documentation_v2/glossary/g_to_m.md#mission) library and the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator), server telemetry, the doctrine
-wiki and the admin tools. The folder holds the REST [API](/documentation_v2/glossary/a_to_f.md#api),
+The community's web platform: Discord sign-in, [events](/documentation/glossary/a_to_f.md#event) and
+[ORBAT](/documentation/glossary/n_to_z.md#orbat) slotting, the
+[mission](/documentation/glossary/g_to_m.md#mission) library and the
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator), server telemetry, the doctrine
+wiki and the admin tools. The folder holds the REST [API](/documentation/glossary/a_to_f.md#api),
 the single-page app, the two engines they share for maps, missions and GPU rendering, and the
 API's release image and staging stack.
 
@@ -17,7 +17,6 @@ apps/website/
 ├── Dockerfile                  the API's release image, built from the repository root
 ├── frontend/                   the single-page app, crate `website-frontend`, built by Trunk
 ├── graphics-engine/            GPU rendering with no map concept, crate `website-graphics-engine`
-├── improved_layout/            the planning anchor for the platform's directory reorganization, no code
 ├── map-engine/                 world, streaming and mission domain, crate `website-map-engine`
 ├── offline-service-worker/     the offline service worker, crate `website-offline-service-worker`
 └── shared/                     the URL-guard test table that the API and the app both include
@@ -27,7 +26,7 @@ apps/website/
 
 The four crates are members of the root Cargo workspace. The browser runs `website-frontend`, a
 Leptos 0.8 app compiled to WebAssembly; it calls `website-api`, an Axum and sqlx server on
-Postgres, over `/api/v1` and [SSE](/documentation_v2/glossary/n_to_z.md#sse), and streams terrain from
+Postgres, over `/api/v1` and [SSE](/documentation/glossary/n_to_z.md#sse), and streams terrain from
 `/map-assets`. Both link `website-map-engine`: the API takes only its default `scenario` tier,
 which compiles and validates missions, and the app takes the `world`, `io`, `store` and `editing`
 tiers, adding `render` and `streaming` in its browser build, which the Mission Creator draws and
@@ -67,7 +66,7 @@ guide to frame rate. The map needs the Everon height map and satellite bundle fr
 ## Configuration
 
 - `Dockerfile` builds `website-api --bin api` from the repository root in a trimmed workspace (the
-  API, the two engines, `contracts_v2/definitions/` and `contracts_v2/rules/kit-aliases.json`) on
+  API, the two engines, `contracts/definitions/` and `contracts/rules/kit-aliases.json`) on
   Rust 1.95.0, and copies the binary into a Debian bookworm-slim image. The image runs as uid
   65534, listens on `PORT` (8080), needs `DATABASE_URL` and `JWT_SECRET`, creates `/srv/state`
   for uploads, and does not serve the app.
@@ -75,14 +74,14 @@ guide to frame rate. The map needs the Everon height map and satellite bundle fr
   - `postgres`: Postgres 18, container `tbd_staging_db`, user `tbd`, database `tbd_reforger`,
     password `POSTGRES_PASSWORD`, bound to loopback on `TBD_POSTGRES_HOST_PORT` (5432 by default);
   - `caddy`: the `caddy:2` image, container `tbd_staging_caddy`, on the host's network, running
-    `tools_v2/xtask/deploy/Caddyfile.website`: it serves the built app on `:3080` and proxies the
-    API's paths to `127.0.0.1:8080`. It mounts `tools_v2/xtask/deploy/` at `/etc/tbd-caddy` and
+    `tools/xtask/deploy/Caddyfile.website`: it serves the built app on `:3080` and proxies the
+    API's paths to `127.0.0.1:8080`. It mounts `tools/xtask/deploy/` at `/etc/tbd-caddy` and
     `frontend/` at `/srv/tbd-frontend`, both read-only and both folders rather than the Caddyfile
     or `dist` themselves, which the rsync and Trunk replace; its state lives on two named volumes;
   - `api`, under the `api` profile only: the image built from the `Dockerfile`, container
     `tbd_staging_api`, bound to loopback port 8080, set up from the shell's `APP_ENV`, `JWT_SECRET`,
     `FRONTEND_URL`, `ALLOWED_ORIGINS`, `OBSERVABILITY_TOKEN`, `TRUSTED_PROXIES` and `DISCORD_*` values,
-    with `assets_v2/terrains/` and `assets_v2/glyphs/` mounted read-only and the uploads on a named
+    with `assets/terrains/` and `assets/glyphs/` mounted read-only and the uploads on a named
     volume.
 
   `postgres` and `caddy` restart `unless-stopped`, so the container runtime brings them back at
@@ -92,7 +91,7 @@ guide to frame rate. The map needs the Everon height map and satellite bundle fr
 ## Installed by
 
 - `cargo xtask deploy website` rsyncs the checkout to the host that `TBD_SSH_HOST` names in
-  `tools_v2/xtask/deploy/deploy.env`, starts the compose file's `postgres` service there with
+  `tools/xtask/deploy/deploy.env`, starts the compose file's `postgres` service there with
   `TBD_POSTGRES_HOST_PORT` from that file, builds the API and a release build of the app there,
   starts the `caddy` service and has it reload the Caddyfile (`TBD_SKIP_COMPOSE=1` skips both
   compose steps), and restarts the API's systemd unit, `tbd-website-api` by default; the deployed
@@ -104,14 +103,14 @@ guide to frame rate. The map needs the Everon height map and satellite bundle fr
 
 ## Boundaries
 
-- Depends on: `contracts_v2/`, whose schemas and kit-alias rules the API and the map engine embed;
-  `assets_v2/terrains/` and `assets_v2/glyphs/`, served under `/map-assets`; Postgres 18; and
+- Depends on: `contracts/`, whose schemas and kit-alias rules the API and the map engine embed;
+  `assets/terrains/` and `assets/glyphs/`, served under `/map-assets`; Postgres 18; and
   Discord's OAuth2 and REST APIs.
-- Used by: the game servers, through the [mod](/documentation_v2/glossary/g_to_m.md#mod)'s API bridge in
+- Used by: the game servers, through the [mod](/documentation/glossary/g_to_m.md#mod)'s API bridge in
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/`; the
-  [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent) in `apps/fleet_host_agent/`;
-  the developer tools in `tools_v2/developer-tools/`, which link `website-map-engine` and drive the
-  app in a headless browser; and the build, database and deploy commands of `tools_v2/xtask/`.
+  [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) in `apps/fleet_host_agent/`;
+  the developer tools in `tools/developer_tools/`, which link `website-map-engine` and drive the
+  app in a headless browser; and the build, database and deploy commands of `tools/xtask/`.
 - Rules: the graphics engine imports nothing from the map engine and names no map concept; inside
   the map engine only its `frame` module names the graphics engine's frame vocabulary and GPU
   modules; the app never imports the graphics engine (`cargo xtask verify engine-layers` checks
@@ -119,14 +118,14 @@ guide to frame rate. The map needs the Everon height map and satellite bundle fr
 
 ## Related documentation
 
-- [Local development](/documentation_v2/runbooks/local_development.md) — the full local setup.
-- [Website deployment](/documentation_v2/runbooks/website_deployment.md) — deploying to the home
+- [Local development](/documentation/runbooks/local_development.md) — the full local setup.
+- [Website deployment](/documentation/runbooks/website_deployment.md) — deploying to the home
   server.
-- [Website documentation](/documentation_v2/website/README.md) — the index of the platform's
+- [Website documentation](/documentation/website/README.md) — the index of the platform's
   deeper documents.
-- [API documentation](/documentation_v2/website/api_v2/README.md), starting at the
-  [API overview](/documentation_v2/website/api_v2/api_overview.md) — every domain's routes.
-- [Frontend documentation](/documentation_v2/website/frontend/README.md) — the feature docs of each
+- [API documentation](/documentation/website/api_v2/README.md), starting at the
+  [API overview](/documentation/website/api_v2/api_overview.md) — every domain's routes.
+- [Frontend documentation](/documentation/website/frontend/README.md) — the feature docs of each
   page and app.
-- [Mission Creator roadmap](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md)
+- [Mission Creator roadmap](/documentation/website/frontend/apps/editor/mission_creator_roadmap.md)
   — where the editor is going.

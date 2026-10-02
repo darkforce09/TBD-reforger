@@ -19,7 +19,7 @@ apps/website/frontend/src/v2/
 
 `apps/website/frontend/src/app_routes.rs` binds each path to a route component: a page under
 `pages/`, or a workspace under `apps/` for the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) and the debug benches. The
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) and the debug benches. The
 navigation frame in `pages/` wraps every route, and pages and workspaces fetch, gate and draw
 through `core/`. The imports between the three run mostly one way:
 
@@ -37,8 +37,8 @@ which walks every production file of the tree.
 
 ## Public surface
 
-- `core`: the [API](/documentation_v2/glossary/a_to_f.md#api) client, the wire types, the session store
-  and [role](/documentation_v2/glossary/n_to_z.md#role) checks, the interface primitives and the
+- `core`: the [API](/documentation/glossary/a_to_f.md#api) client, the wire types, the session store
+  and [role](/documentation/glossary/n_to_z.md#role) checks, the interface primitives and the
   utilities, read by `apps/website/frontend/src/router.rs` and throughout this tree.
 - `pages` and `apps`: the route components that `apps/website/frontend/src/app_routes.rs` mounts,
   and `pages::navigation::layout::AppLayout`, which `apps/website/frontend/src/main.rs` mounts at
@@ -57,7 +57,7 @@ which walks every production file of the tree.
     visible item, holds no inline test module and names no ticket or wave in a comment
     (`v2_production_files_meet_the_documentation_standard` in `tests/doc_audit/mod.rs`);
   - nothing imports `website_graphics_engine` (`cargo xtask verify engine-layers`, rule 6 of the
-    [engine boundary rules](/documentation_v2/standards/engine_boundary_rules.md); the map engine's
+    [engine boundary rules](/documentation/standards/engine_boundary_rules.md); the map engine's
     packet boundary, section 2C there, is the only path to the renderer);
   - a workspace imports from `core/` and `website-map-engine`, never from `pages/` or a sibling
     workspace, and nothing in `core/` imports from `pages/`; `core/` does import the Mission
@@ -66,9 +66,9 @@ which walks every production file of the tree.
 
 ## Related documentation
 
-- [Frontend documentation](/documentation_v2/website/frontend/README.md) — the route table: each
+- [Frontend documentation](/documentation/website/frontend/README.md) — the route table: each
   route with its code folder and feature doc.
-- [Page areas](/documentation_v2/website/frontend/pages/README.md) — the documentation of `pages/`,
+- [Page areas](/documentation/website/frontend/pages/README.md) — the documentation of `pages/`,
   one folder per navigation area.
-- [Mission Creator documentation](/documentation_v2/website/frontend/apps/editor/README.md) — the
+- [Mission Creator documentation](/documentation/website/frontend/apps/editor/README.md) — the
   Mission Creator's documents, starting from its roadmap.

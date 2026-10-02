@@ -1,8 +1,8 @@
 # Shared foundations
 
 The building blocks every page and workspace of the single-page app shares, with no business
-logic of their own: the transport to the [API](/documentation_v2/glossary/a_to_f.md#api) and its wire
-types, the session and its [role](/documentation_v2/glossary/n_to_z.md#role) checks, the interface
+logic of their own: the transport to the [API](/documentation/glossary/a_to_f.md#api) and its wire
+types, the session and its [role](/documentation/glossary/n_to_z.md#role) checks, the interface
 primitives, small utilities, and the helpers the crate's own tests share.
 
 ## Contents
@@ -40,7 +40,7 @@ on its item or on its `pub mod` line, so `cargo test -p website-frontend` runs t
 it without a browser. `test_support/` compiles only in test builds.
 
 Nothing here imports from `pages`. Four places reach into the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator): the auth store purges a
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator): the auth store purges a
 departing account's local drafts through
 `crate::v2::apps::editor::shell::hydrate::purge_local_documents`, and the search box, select and
 slider take their hover and disabled classes from `crate::v2::apps::editor::shell::layout`. The
@@ -96,5 +96,5 @@ route guard in `auth/` reads the route table of `crate::router`.
 
 ## Related documentation
 
-- [Frontend documentation](/documentation_v2/website/frontend/README.md#shared-foundations) — where these foundations
+- [Frontend documentation](/documentation/website/frontend/README.md#shared-foundations) — where these foundations
   sit among the routes, pages and workspaces they serve.

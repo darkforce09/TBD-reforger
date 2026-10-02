@@ -29,7 +29,7 @@ walker and reduces the crossings the same way: an opaque surface stops the ray, 
 add concealment. The world occluder's `blocked_fn` has the shape of blocking test the interior's
 `wash_band` takes, so a floor-style raster can be washed over the streamed world's objects
 (`the_blocked_closure_drives_a_wash_over_two_chunks` in `world/tests/occluder.rs`). The
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s line-of-sight tool instead
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s line-of-sight tool instead
 refines the terrain viewshed with its own budgeted pass in `crate::editing::tools::line_of_sight`,
 asking the world occluder cell by cell.
 
@@ -62,7 +62,7 @@ cancelled; `crate::editing::tools::viewshed_scheduler` runs them.
   - `crate::world::terrain::dem::sample`, which re-exports the terrain profile and viewshed items;
   - the Mission Creator's input handlers in `apps/website/frontend/src/v2/apps/editor/input/`, and
     the debug benches in `apps/website/frontend/src/v2/apps/debug/`;
-  - the blueprint tooling and the map checks in `tools_v2/developer-tools/src/`.
+  - the blueprint tooling and the map checks in `tools/developer_tools/src/`.
 - Rules: the three layers stay three modules; a request over a cap is refused with one
   `ViewshedCapRefused` that names the cap and the measured value
   (`over_cap_viewshed_is_refused_with_a_message` in

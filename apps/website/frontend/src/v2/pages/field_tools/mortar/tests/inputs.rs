@@ -356,7 +356,7 @@ fn guns_are_added_with_the_lowest_free_label_up_to_the_limit() {
 
 /// The contract every saved fire mission is checked against.
 const FIRE_MISSION_SCHEMA: &str =
-    include_str!("../../../../../../../../../contracts_v2/definitions/fire-mission.schema.json");
+    include_str!("../../../../../../../../../contracts/definitions/fire-mission.schema.json");
 
 #[test]
 fn the_battery_cap_is_the_contract_cap_on_saved_guns() {

@@ -1,6 +1,6 @@
 # Database migrations
 
-The Postgres schema of the [API](/documentation_v2/glossary/a_to_f.md#api), as the ordered SQL migrations
+The Postgres schema of the [API](/documentation/glossary/a_to_f.md#api), as the ordered SQL migrations
 that build it. The binaries embed this folder when they compile and apply what a database lacks
 before they use it.
 
@@ -58,10 +58,10 @@ No file holds versions 0022, 0023 and 0024, and none may.
     `0021_rate_limit_buckets.sql` against `RATE_LIMIT_BUCKETS_DDL`, and the `*_migration.rs`
     suites check individual data migrations;
   - `cargo xtask db repair-migration-checksum`
-    (`tools_v2/xtask/src/commands/db/operations/repair_migration_checksum.rs`), which repoints a
+    (`tools/xtask/src/commands/db/operations/repair_migration_checksum.rs`), which repoints a
     recorded checksum only after proving from git history that the statements are unchanged;
   - the migration step of `cargo xtask platform wave gate`
-    (`tools_v2/xtask/src/commands/platform/wave_execution/migrate.rs`), which audits the recorded
+    (`tools/xtask/src/commands/platform/wave_execution/migrate.rs`), which audits the recorded
     checksums and applies pending migrations to a database it never drops;
   - `GET /healthz`, which turns red when `_sqlx_migrations` records a failed migration;
   - the prose rules in `apps/website/api_v2/src/tests/prose_rules.rs`, which read the comment
@@ -80,5 +80,5 @@ No file holds versions 0022, 0023 and 0024, and none may.
 
 ## Related documentation
 
-- [Local development](/documentation_v2/runbooks/local_development.md) — recovering a local
+- [Local development](/documentation/runbooks/local_development.md) — recovering a local
   database that refuses to start over a modified migration.

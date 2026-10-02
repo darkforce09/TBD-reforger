@@ -83,7 +83,7 @@ estimated = [
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 owns = [
     "scripts/mod/remote-log-grep.sh",
-    "documentation_v2/runbooks/game_server_staging/README.md",
+    "documentation/runbooks/game_server_staging/README.md",
     "scripts/mod/run-playtest-server.sh",
 ]
 

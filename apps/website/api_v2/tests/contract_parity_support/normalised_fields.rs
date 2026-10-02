@@ -5,7 +5,7 @@
 //! check and its placeholder ([`super::golden_normalisation::NormalisedKind`]).
 //!
 //! **Position:** read by [`super::golden_normalisation`]; the "Normalisation table" of
-//! `documentation_v2/website/api_v2/verification_evidence/verification_completeness.md` lists the
+//! `documentation/website/api_v2/verification_evidence/verification_completeness.md` lists the
 //! same rows with each reason.
 //!
 //! **Signals & state:** none; one constant.

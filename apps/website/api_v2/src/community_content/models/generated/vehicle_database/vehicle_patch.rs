@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/vehicle-database.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/vehicle-database.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///PATCH /api/v1/vehicle-database/{id} body (administrator, answered 200): an absent key leaves its field unchanged, and null or an empty value clears an optional field; null or a blank value for name, faction or armor_type answers 400. The limits and trimming of VehicleWrite apply, unknown keys answer 400, and the write appends an audit line in its transaction. DELETE /api/v1/vehicle-database/{id} (administrator) soft-deletes the row and answers 200 with it.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

@@ -1,7 +1,7 @@
 # Pre-game screen mock data
 
 The mock catalogs behind the rebuilt pre-game screens: fixed datasets taken from the Stitch mockups
-that the [mission](/documentation_v2/glossary/g_to_m.md#mission) selector, lobby, briefing and players
+that the [mission](/documentation/glossary/g_to_m.md#mission) selector, lobby, briefing and players
 screens render when no live catalog has been handed to them.
 
 ## Contents
@@ -33,7 +33,7 @@ The catalog paths are under `apps/mod/tbd-framework/Scripts/Game/TBD/`. Counts a
 in a catalog. The previews render real vanilla prefabs: the briefing's vehicles are GUID-pinned
 vanilla prefabs standing in for the mockup's names, and each lobby kit except `crew` carries a
 `TBD_SlotLoadoutStruct` of GUID-pinned vanilla items, read off
-`contracts_v2/fixtures/missions/valid/slot-loadout-coverage.json` and the vanilla
+`contracts/fixtures/missions/valid/slot-loadout-coverage.json` and the vanilla
 `Character_USSR_*.et` prefabs, so the 3D doll wears what the server would spawn. The players mock
 names the mockup's first nine players per side and generates the rest up to the lane count.
 
@@ -63,9 +63,9 @@ names the mockup's first nine players per side and generates the rest up to the 
 
 ## Related documentation
 
-- [Mission selection specification](/documentation_v2/mod/tbd-framework/UI/mission_selection/mission_selection_specification.md)
+- [Mission selection specification](/documentation/mod/tbd-framework/UI/mission_selection/mission_selection_specification.md)
   — the design the selector mock reproduces
-- [Lobby specification](/documentation_v2/mod/tbd-framework/UI/lobby/lobby_specification.md) — the
+- [Lobby specification](/documentation/mod/tbd-framework/UI/lobby/lobby_specification.md) — the
   design the lobby mock reproduces
-- [Briefing specification](/documentation_v2/mod/tbd-framework/UI/briefing/briefing_specification.md)
+- [Briefing specification](/documentation/mod/tbd-framework/UI/briefing/briefing_specification.md)
   — the design the briefing and players mocks reproduce

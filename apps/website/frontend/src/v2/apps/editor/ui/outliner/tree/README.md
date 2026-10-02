@@ -26,7 +26,7 @@ Up to `VIRTUAL_SLOT_THRESHOLD` (50) rows it draws them all; above that it draws 
 of 16 px rows (`ROW_H`), plus six rows of overscan, between two spacers in a measured scroller
 (`data-testid="outliner-window-scroller"`), and publishes its counts to `window.__outlinerStats`.
 The "Placed vehicles" rows close the list and select and open their attributes like
-[slot](/documentation_v2/glossary/n_to_z.md#slot) rows.
+[slot](/documentation/glossary/n_to_z.md#slot) rows.
 
 `single_row` draws one row by kind. The "Unfiled" root and faction headers are inert. A folder
 click makes the folder the active layer and selects its direct slots, or its whole subtree with Alt
@@ -52,11 +52,11 @@ window blur or unmounting the tree cancels them at once.
   `apps/website/frontend/src/v2/apps/editor/ui/docks/dock_left/view/full_dock.rs`, the only caller
   of `virtual_tree`; the right dock (`apps/website/frontend/src/v2/apps/editor/ui/docks/dock_right.rs`
   and its panels) and the zones panel in `apps/website/frontend/src/v2/apps/editor/ui/inspector/`,
-  for the row helpers and classes; the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) manager in
+  for the row helpers and classes; the [ORBAT](/documentation/glossary/n_to_z.md#orbat) manager in
   `apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager/`, for `drag_set_for`;
   `apps/website/frontend/src/v2/apps/editor/bridge/host_state/entity_selection.rs`, for the folder
   slot reads; the outliner smoke tests in
-  `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/`, which read the stats, the
+  `tools/developer_tools/src/browser_testing/editor_smoke_tests/`, which read the stats, the
   scroller and the guide toggles.
 - Rules: the tests in `apps/website/frontend/src/v2/apps/editor/ui/outliner/tests/tree/` hold
   these: every row class states the one height `ROW_H` reads back
@@ -68,5 +68,5 @@ window blur or unmounting the tree cancels them at once.
 
 ## Related documentation
 
-- [Mission Creator feature inventory: left sidebar and ORBAT tree](/documentation_v2/website/frontend/apps/editor/feature_inventory/left_sidebar.md) — selecting, renaming, deleting and dragging rows.
-- [Mission Creator feature inventory: performance at scale](/documentation_v2/website/frontend/apps/editor/feature_inventory/performance_at_scale.md) — the windowed tree at scale.
+- [Mission Creator feature inventory: left sidebar and ORBAT tree](/documentation/website/frontend/apps/editor/feature_inventory/left_sidebar.md) — selecting, renaming, deleting and dragging rows.
+- [Mission Creator feature inventory: performance at scale](/documentation/website/frontend/apps/editor/feature_inventory/performance_at_scale.md) — the windowed tree at scale.

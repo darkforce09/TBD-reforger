@@ -1,6 +1,6 @@
 # Audit stream transport
 
-The browser half of the live [audit logs](/documentation_v2/glossary/a_to_f.md#audit-logs) stream:
+The browser half of the live [audit logs](/documentation/glossary/a_to_f.md#audit-logs) stream:
 the connection the audit logs page holds open to `GET /api/v1/admin/audit-logs/stream`, and the
 loop that reconnects it. The protocol it applies (what each event means, the resume cursor, the
 reconnect wait, what an answer status means) is the parent file
@@ -56,7 +56,7 @@ every callback.
 
 ## Related documentation
 
-- [Audit logs page](/documentation_v2/website/frontend/pages/administration/audit_logs/audit_logs_page.md)
+- [Audit logs page](/documentation/website/frontend/pages/administration/audit_logs/audit_logs_page.md)
   — what the page does with the stream.
-- [Audit replay and reset](/documentation_v2/website/api_v2/verification_evidence/administration_and_content.md#audit-replay-and-reset)
+- [Audit replay and reset](/documentation/website/api_v2/verification_evidence/administration_and_content.md#audit-replay-and-reset)
   — the server side of the protocol.

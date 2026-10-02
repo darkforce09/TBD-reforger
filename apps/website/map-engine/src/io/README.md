@@ -2,7 +2,7 @@
 
 The on-disk formats of a terrain's served map data, shared by the developer tools that write them
 and the map engine that reads them in the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator): the fixed-header containers, the
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator): the fixed-header containers, the
 object instance row, the rkyv archives and the vegetation density tiles. Every format is
 little-endian and validated on read.
 
@@ -20,10 +20,10 @@ apps/website/map-engine/src/io/
 ## How it works
 
 ```text
-tools_v2/developer-tools (world export, map raster pipeline, blueprint tooling)
+tools/developer_tools (world export, map raster pipeline, blueprint tooling)
    │ encode_tbdd, TbdcHeader + instances_to_bytes, Tbd*Header::new, to_bytes
    ▼
-assets_v2/terrains/<terrain>/   served under /map-assets
+assets/terrains/<terrain>/   served under /map-assets
    │ objects/chunks/*.bin (TBDC)   objects/density/*.bin (TBDD)   *.rkyv   *.tbd-sat (TBDS)
    │ dem/elevation.dem (TBDE)      water/bathymetry.tbd-bath (TBDB)
    ▼
@@ -59,11 +59,11 @@ it.
   - `crate::streaming::loaders` (chunks, the manifest's row check, the prefab catalogue),
     `crate::world` (DEM, water, satellite, roads, labels, prefabs, forest regions, density tiles,
     building blueprints) and `crate::spatial::los::world` (building descriptors);
-  - the developer tools in `tools_v2/developer-tools/src/`: the world export pipeline, the map
+  - the developer tools in `tools/developer_tools/src/`: the world export pipeline, the map
     raster pipeline, the blueprint archive writer and the map verifications, as writers and
     checkers.
 - Rules:
-  - a committed file under `assets_v2/terrains/` or `contracts_v2/fixtures/map/` must keep
+  - a committed file under `assets/terrains/` or `contracts/fixtures/map/` must keep
     reading, so a layout change comes with a new version, a reader for it and regenerated files;
   - rkyv stays `little_endian` with `bytecheck` (`apps/website/map-engine/Cargo.toml`), and the
     `Pod` layouts refuse to compile on a big-endian target;
@@ -72,8 +72,8 @@ it.
 
 ## Related documentation
 
-- [Terrain assets](/assets_v2/terrains/README.md) — the served terrain tree these formats make up.
-- [Terrain manifest schema](/contracts_v2/definitions/terrain-manifest.schema.json) — the manifest
+- [Terrain assets](/assets/terrains/README.md) — the served terrain tree these formats make up.
+- [Terrain manifest schema](/contracts/definitions/terrain-manifest.schema.json) — the manifest
   block that names the container, its version and the row shape.
 - [BVH sidecars](/apps/website/map-engine/src/spatial/bvh/README.md) — the `TBVH` building sidecar,
   a binary format that lives with the spatial index rather than here.

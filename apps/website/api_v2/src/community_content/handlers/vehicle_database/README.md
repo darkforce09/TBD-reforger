@@ -61,12 +61,12 @@ apps/website/api_v2/src/community_content/handlers/vehicle_database/
   (`cargo xtask verify route-tags`); every statement on `vehicle_databases` lives in
   `vehicle_rows.rs`, and every select list `COALESCE`s the optional columns
   (`apps/website/api_v2/tests/null_tolerance_select_scan.rs`); the wire shapes are
-  `contracts_v2/definitions/vehicle-database.schema.json`.
+  `contracts/definitions/vehicle-database.schema.json`.
 
 ## Related documentation
 
-- [Administration and community content design](/documentation_v2/website/api_v2/verification_evidence/administration_and_content.md)
+- [Administration and community content design](/documentation/website/api_v2/verification_evidence/administration_and_content.md)
   — the vehicle semantics these handlers implement.
-- [Vehicle database page](/documentation_v2/website/frontend/pages/doctrine_and_info/vehicles/vehicle_database_page.md)
+- [Vehicle database page](/documentation/website/frontend/pages/doctrine_and_info/vehicles/vehicle_database_page.md)
   — the page that reads and writes these routes.
-- [API overview](/documentation_v2/website/api_v2/api_overview.md) — every domain's routes.
+- [API overview](/documentation/website/api_v2/api_overview.md) — every domain's routes.

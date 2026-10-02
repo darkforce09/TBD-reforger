@@ -42,8 +42,8 @@ draw path       overlay: lanes, symbols ──▶ frame ◀── camera
                                    website-graphics-engine
 ```
 
-`data` holds the [mission](/documentation_v2/glossary/g_to_m.md#mission) domain and the CRDT document the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) edits; it reads no other module
+`data` holds the [mission](/documentation/glossary/g_to_m.md#mission) domain and the CRDT document the
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) edits; it reads no other module
 of the crate. `world` holds the static ground and never names `data`, so inside the crate the
 authored mission and the streamed world meet only in `editing`, which drives the document and the
 map tools with no browser in reach and asks `spatial` where a click or a sight line lands.
@@ -53,7 +53,7 @@ composes the ground and what stands on it, and `spatial` answers geometric queri
 render engine, which uploads the lanes both sides produce and hands the graphics engine a frame
 packet whenever something changed; `camera` places the view. `diagnostics` measures the render
 engine, and `doll` is a second, small renderer for the
-[arsenal](/documentation_v2/glossary/a_to_f.md#arsenal)'s preview, with its WGSL in `shaders/`.
+[arsenal](/documentation/glossary/a_to_f.md#arsenal)'s preview, with its WGSL in `shaders/`.
 
 `lib.rs` gates each module on the lowest tier that holds everything it needs:
 
@@ -69,7 +69,7 @@ engine, and `doll` is a second, small renderer for the
 ## Public surface
 
 - `data::scenario`: the mission compiler and validator, for the
-  [API](/documentation_v2/glossary/a_to_f.md#api) at the default `scenario` tier and for the Mission
+  [API](/documentation/glossary/a_to_f.md#api) at the default `scenario` tier and for the Mission
   Creator.
 - `data::store` and `editing`: the mission's Yjs document and the headless editing layer, for the
   Mission Creator.
@@ -77,19 +77,19 @@ engine, and `doll` is a second, small renderer for the
   `spatial` and `world`: the map canvas of the Mission Creator and the debug benches.
 - `doll`: the arsenal's preview.
 - `world`, `io`, `spatial`, `streaming` and `overlay`: the offline tools in
-  `tools_v2/developer-tools/`.
+  `tools/developer_tools/`.
 
 ## Boundaries
 
 - Depends on: `website-graphics-engine` from the `world` tier up; `serde`, `serde_json` and
   `thiserror`; `yrs` for `store`; `png`, `rkyv` and `flate2` for the world, archive and streaming
   tiers; `bytemuck` always; `wgpu`, `wasm-bindgen`, `js-sys`, `web-sys` and
-  `gloo-net` on wasm32; `contracts_v2/rules/kit-aliases.json`, embedded at build time; the terrain
-  assets in `assets_v2/terrains/`, fetched as `/map-assets` at run time and read by the tests.
+  `gloo-net` on wasm32; `contracts/rules/kit-aliases.json`, embedded at build time; the terrain
+  assets in `assets/terrains/`, fetched as `/map-assets` at run time and read by the tests.
 - Used by: the API's missions and operations domains under `apps/website/api_v2/src/` (`data`
   only); the Mission Creator, the mission library, the DTOs and the debug benches under
-  `apps/website/frontend/src/v2/`; the tools in `tools_v2/developer-tools/src/`; and the gates in
-  `tools_v2/xtask/src/verifications/` that read this tree.
+  `apps/website/frontend/src/v2/`; the tools in `tools/developer_tools/src/`; and the gates in
+  `tools/xtask/src/verifications/` that read this tree.
 - Rules:
   - the crate's tests run with `--all-features` (`map_engine_tests_require_all_features` in
     `tests/feature_gate_tripwire.rs`);

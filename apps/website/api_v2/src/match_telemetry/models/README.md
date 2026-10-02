@@ -53,9 +53,9 @@ services compare these digests to tell an inert retry from a conflict.
 - Depends on: `core::wire_format` for timestamps and the canonical digest, `core::text` for the URL
   guard on `aar_replay_url`, `core::error_handling` for the refusals;
   `missions::models::mission::TerrainType`; serde and sqlx. `generated/` follows
-  `contracts_v2/definitions/match-telemetry.schema.json`.
+  `contracts/definitions/match-telemetry.schema.json`.
 - Used by: the domain's handlers and services; the member's
-  [service record](/documentation_v2/glossary/n_to_z.md#service-record) in
+  [service record](/documentation/glossary/n_to_z.md#service-record) in
   `apps/website/api_v2/src/operations/handlers/member_service_record.rs` (`Match`,
   `MatchPlayerStat`); the integration tests in `apps/website/api_v2/tests/`
   (`telemetry_revisions.rs`, `detailed_events.rs` and `telemetry_queue.rs` decode live answers

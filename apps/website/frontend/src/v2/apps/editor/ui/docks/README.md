@@ -1,7 +1,7 @@
 # Mission Creator docked chrome
 
-The five surfaces that frame the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
-map: the left dock (the editor layers tree, the [mission](/documentation_v2/glossary/g_to_m.md#mission)
+The five surfaces that frame the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
+map: the left dock (the editor layers tree, the [mission](/documentation/glossary/g_to_m.md#mission)
 search, bookmarks and named locations), the right dock (the seven-tab asset browser), the top
 command strip, the bottom toolbelt with its mode toolbar, status bar and grid references, and the
 right-click context menu.
@@ -76,12 +76,12 @@ native test build compiles all five surfaces.
     `bridge` (placement, selection, the editor context, the document history), the asset catalog
     in `arsenal`, the outliner, the inspector's zones panel, validation panel and environment
     update, `ui::modals::help_modal`, and the page's toolbar dispatch in `mission_editor`;
-  - `crate::v2::core`: the [API](/documentation_v2/glossary/a_to_f.md#api) client and DTOs, the auth
+  - `crate::v2::core`: the [API](/documentation/glossary/a_to_f.md#api) client and DTOs, the auth
     store, the UI primitives, the modal stack and the toasts;
   - `website_map_engine`: `editing::hosted_commands`, `editing::host`, `editing::tools`,
     `streaming::host`, `camera`, `overlay::symbology::markers` and
     `data::store::operations::document_index`;
-  - `contracts_v2/definitions/mission.schema.json`, through the zones panel's embed; the browser's
+  - `contracts/definitions/mission.schema.json`, through the zones panel's embed; the browser's
     local storage; over HTTP, `PATCH /api/v1/missions/{id}` and `GET /api/v1/registry`.
 - Used by:
   - the editor page, `apps/website/frontend/src/v2/apps/editor/mission_editor.rs`, and in
@@ -93,10 +93,10 @@ native test build compiles all five surfaces.
     `apps/website/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/`;
   - the right-click gesture in
     `apps/website/frontend/src/v2/apps/editor/input/pointer_gestures/context_menu.rs`;
-  - the Mission Settings and [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) manager dialogs in
+  - the Mission Settings and [ORBAT](/documentation/glossary/n_to_z.md#orbat) manager dialogs in
     `apps/website/frontend/src/v2/apps/editor/ui/modals/`;
   - the headless editor smoke tests in
-    `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/`, which drive the docks
+    `tools/developer_tools/src/browser_testing/editor_smoke_tests/`, which drive the docks
     through the DOM.
 - Rules:
   - a surface's tests live in `tests/<surface>/`, mounted from its module root with `#[path]`;
@@ -110,10 +110,10 @@ native test build compiles all five surfaces.
 
 ## Related documentation
 
-- [Mission Creator UX specification](/documentation_v2/website/frontend/apps/editor/ux_spec.md) —
+- [Mission Creator UX specification](/documentation/website/frontend/apps/editor/ux_spec.md) —
   the layout of the docks, the strip and the toolbelt, and the interaction contract.
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
+- [Mission Creator feature inventory](/documentation/website/frontend/apps/editor/feature_inventory/README.md)
   — the features of the left sidebar, the asset palette, the command strip and the toolbelt.
-- [Eden editor UI anatomy](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md)
+- [Eden editor UI anatomy](/documentation/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md)
   — the Eden entity list, asset browser, menu bar, context menu and status bar these surfaces
   follow.

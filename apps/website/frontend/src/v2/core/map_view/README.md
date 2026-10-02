@@ -3,7 +3,7 @@
 The shared seam every page uses to put a live terrain map on a canvas: canvas sizing, render
 engine creation, the camera fitted to a terrain's world bounds, the damage-driven frame pump,
 resize tracking, drag-pan, wheel-zoom, click-to-pick in map metres, and ground heights at the
-terrain's native 2 m resolution. The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)
+terrain's native 2 m resolution. The [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)
 builds its canvas mount from these parts; a map picker mounts a whole view with one call.
 
 ## Contents

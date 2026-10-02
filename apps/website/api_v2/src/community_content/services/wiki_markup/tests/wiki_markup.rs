@@ -1,5 +1,5 @@
 //! Block goldens: one pinned JSON tree per block type the markup service builds, each checked
-//! against the `WikiBlock` definition of `contracts_v2/definitions/wiki-page.schema.json`.
+//! against the `WikiBlock` definition of `contracts/definitions/wiki-page.schema.json`.
 
 use serde_json::{Value, json};
 
@@ -9,7 +9,7 @@ use super::read_markup;
 fn wiki_page_schema() -> Value {
     let path = concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../../contracts_v2/definitions/wiki-page.schema.json"
+        "/../../../contracts/definitions/wiki-page.schema.json"
     );
     let raw = std::fs::read_to_string(path).expect("read wiki-page.schema.json");
     serde_json::from_str(&raw).expect("wiki-page.schema.json is JSON")

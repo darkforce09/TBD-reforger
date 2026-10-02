@@ -1,6 +1,6 @@
 # Runtime session
 
-This server's [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) session on the
+This server's [game runtime](/documentation/glossary/g_to_m.md#game-runtime) session on the
 platform: one session per world, fenced by a per-server generation, started once the world has
 decided what it runs, kept alive by heartbeats and closed when the world ends.
 
@@ -32,8 +32,8 @@ SCR_BaseGameMode.OnGameEnd
      heartbeat, then POST /api/v1/game-runtime/sessions/{sessionId}/end
 ```
 
-The start reports the loaded [artifact](/documentation_v2/glossary/a_to_f.md#artifact), and that report
-confirms a [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment); a report the
+The start reports the loaded [artifact](/documentation/glossary/a_to_f.md#artifact), and that report
+confirms a [mission deployment](/documentation/glossary/g_to_m.md#mission-deployment); a report the
 platform rejects (422 `UNKNOWN_ARTIFACT`, 400) is an ERROR and the session starts without one.
 Starting a session ends the server's previous one as `superseded`. The heartbeat sequence rises
 strictly within a session, and one start or heartbeat is in flight at a time. A refused heartbeat
@@ -76,7 +76,7 @@ registration is unanswered).
   `ReportSessionEnded`); the fleet commands in
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/`.
 - Rules: a world's session starts only after its artifact report is decided and the previous session
-  has closed; the wire shapes follow `contracts_v2/definitions/game-runtime-session.schema.json`;
+  has closed; the wire shapes follow `contracts/definitions/game-runtime-session.schema.json`;
   lines added stay ASCII and `cargo xtask mod compile` checks that the scripts compile.
 
 ## Related documentation

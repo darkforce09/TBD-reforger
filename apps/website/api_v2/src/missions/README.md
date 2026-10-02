@@ -1,14 +1,14 @@
 # Missions domain
 
-The [API](/documentation_v2/glossary/a_to_f.md#api)'s [missions](/documentation_v2/glossary/g_to_m.md#missions)
-domain: the library of [missions](/documentation_v2/glossary/g_to_m.md#mission) and the versions the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) saves, the
-[armory](/documentation_v2/glossary/a_to_f.md#armory), the faction library, the item
-[registry](/documentation_v2/glossary/n_to_z.md#registry) with its compatibility graph, the export
+The [API](/documentation/glossary/a_to_f.md#api)'s [missions](/documentation/glossary/g_to_m.md#missions)
+domain: the library of [missions](/documentation/glossary/g_to_m.md#mission) and the versions the
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) saves, the
+[armory](/documentation/glossary/a_to_f.md#armory), the faction library, the item
+[registry](/documentation/glossary/n_to_z.md#registry) with its compatibility graph, the export
 document, and the path from a saved version to a running server through immutable
-[artifacts](/documentation_v2/glossary/a_to_f.md#artifact), reviews,
-[approvals](/documentation_v2/glossary/a_to_f.md#approvals) and
-[mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment).
+[artifacts](/documentation/glossary/a_to_f.md#artifact), reviews,
+[approvals](/documentation/glossary/a_to_f.md#approvals) and
+[mission deployments](/documentation/glossary/g_to_m.md#mission-deployment).
 
 ## Contents
 
@@ -28,7 +28,7 @@ apps/website/api_v2/src/missions/
 A request reaches a handler through `routes.rs`, and the extractor the handler takes sets its
 tier: `AuthUser`, `MissionMakerUser`, `AdminUser`, or `MachineCaller` with the `mod_runtime`
 executor kind on `/api/v1/game-runtime/*`. A mission document crosses three boundaries (the Mission
-Creator, this API and the [mod](/documentation_v2/glossary/g_to_m.md#mod)), so this is the only domain
+Creator, this API and the [mod](/documentation/glossary/g_to_m.md#mod)), so this is the only domain
 with a `contract/` and a `validation/` folder: authored input passes the `validation/` predicates
 and the schemas in `contract/` before a row is written, and the compiled document is checked
 against `mission.schema.json` before it is stored.
@@ -48,11 +48,11 @@ Submission writes the artifact, the review, the status and the audit row in one 
 the mission write lock that the metadata patch, the delete and review comments also take. The
 compile itself lives in `website_map_engine::data::scenario`; `services/mission_compile.rs` only
 adapts a mission row and its payload to it. An approved artifact stays the one
-[deployments](/documentation_v2/glossary/a_to_f.md#deployment) load while its author saves later versions.
+[deployments](/documentation/glossary/a_to_f.md#deployment) load while its author saves later versions.
 A deployment runs as a `load_mission` or `restart_with_mission`
-[fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) of `server_infrastructure`, and its
-[slot](/documentation_v2/glossary/n_to_z.md#slot) bindings pair the
-[event](/documentation_v2/glossary/a_to_f.md#event)'s [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) seats
+[fleet command](/documentation/glossary/a_to_f.md#fleet-command) of `server_infrastructure`, and its
+[slot](/documentation/glossary/n_to_z.md#slot) bindings pair the
+[event](/documentation/glossary/a_to_f.md#event)'s [ORBAT](/documentation/glossary/n_to_z.md#orbat) seats
 with the artifact's compiled slots, which the event roster in `operations` reads.
 
 ## Public surface
@@ -130,7 +130,7 @@ with the artifact's compiled slots, which the event roster in `operations` reads
     `FleetAction` and the fleet command ledger, `operations::services` for the ORBAT template a
     deployment binds, and `community_content::models` for the modpack a registry belongs to;
   - `website_map_engine::data::scenario`, which compiles and checks mission documents;
-  - the schemas in `contracts_v2/definitions/`, embedded at compile time.
+  - the schemas in `contracts/definitions/`, embedded at compile time.
 - Used by:
   - `core::http_router`, which merges the route table;
   - the `mission_deployment_reconciler` worker in `apps/website/api_v2/src/background_workers/`
@@ -139,12 +139,12 @@ with the artifact's compiled slots, which the event roster in `operations` reads
     surface above;
   - over HTTP, the Mission Creator in `apps/website/frontend/src/v2/apps/editor/`, the mission hub
     pages in `apps/website/frontend/src/v2/pages/mission_hub/`, the
-    [event manager](/documentation_v2/glossary/a_to_f.md#event-manager), approvals and
-    [server control](/documentation_v2/glossary/n_to_z.md#server-control) pages in
+    [event manager](/documentation/glossary/a_to_f.md#event-manager), approvals and
+    [server control](/documentation/glossary/n_to_z.md#server-control) pages in
     `apps/website/frontend/src/v2/pages/administration/`, the
-    [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) in
+    [game runtime](/documentation/glossary/g_to_m.md#game-runtime) in
     `apps/mod/tbd-framework/Scripts/Game/TBD/`, and the `cargo xtask mod` commands through
-    `tools_v2/xtask/src/commands/mod_ops/website_api_client/`.
+    `tools/xtask/src/commands/mod_ops/website_api_client/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`domain_handlers_import_no_foreign_handlers` and
   `every_domain_exports_a_route_table` in `apps/website/api_v2/src/tests/architecture_rules.rs`);
@@ -155,13 +155,13 @@ with the artifact's compiled slots, which the event roster in `operations` reads
 
 ## Related documentation
 
-- [API overview](/documentation_v2/website/api_v2/api_overview.md) — every domain's routes and the
+- [API overview](/documentation/website/api_v2/api_overview.md) — every domain's routes and the
   layers they share.
-- [API decisions](/documentation_v2/website/api_v2/decisions.md) — why game servers fetch artifacts over
+- [API decisions](/documentation/website/api_v2/decisions.md) — why game servers fetch artifacts over
   HTTPS rather than from staged files.
-- [Mission artifacts, reviews and deployment](/documentation_v2/website/api_v2/verification_evidence/mission_artifacts.md)
+- [Mission artifacts, reviews and deployment](/documentation/website/api_v2/verification_evidence/mission_artifacts.md)
   — the design of artifacts, their reviews and deployments.
-- [Mission library page](/documentation_v2/website/frontend/pages/mission_hub/library/mission_library_page.md),
-  [Mission overview page](/documentation_v2/website/frontend/pages/mission_hub/overview/mission_overview_page.md)
-  and [Mission approvals page](/documentation_v2/website/frontend/pages/administration/approvals/mission_approvals_page.md)
+- [Mission library page](/documentation/website/frontend/pages/mission_hub/library/mission_library_page.md),
+  [Mission overview page](/documentation/website/frontend/pages/mission_hub/overview/mission_overview_page.md)
+  and [Mission approvals page](/documentation/website/frontend/pages/administration/approvals/mission_approvals_page.md)
   — the pages over these routes.

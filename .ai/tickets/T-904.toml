@@ -5,7 +5,7 @@ summary = "T-853 Phase 7b: flip the ratchet to a HARD ZERO"
 class = "docs"
 status = "shipped"
 order = 5840
-spec = "documentation_v2/tickets/specs/t853_shell_to_xtask_waves.md"
+spec = "documentation/tickets/specs/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
 notes = """
 --- HEAD migration_legacy (verbatim) ---
@@ -77,7 +77,7 @@ owns = [
     ".github/workflows",
     "scripts/shell-inventory.txt",
     "scripts/python-inventory.txt",
-    "documentation_v2/standards/coding_standards/README.md",
+    "documentation/standards/coding_standards/README.md",
 ]
 
 [scope]

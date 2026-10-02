@@ -1,6 +1,6 @@
 //! Route table — the single source of truth for the app's routes, mirroring router.tsx. It drives
 //! the leptos_router `<Routes>` (T-159.4b) and is extracted for the S-routes gate (diffed against
-//! tools_v2/developer-tools/fixtures/dom_oracle/manifests/routes.csv). Paths use the React shape ("/events/:id") so the
+//! tools/developer_tools/fixtures/dom_oracle/manifests/routes.csv). Paths use the React shape ("/events/:id") so the
 //! extracted manifest diffs byte-equal to the React oracle.
 //!
 //! Each route's `auth` tier is enforced client-side. [`role_may_enter`] decides whether a viewer's

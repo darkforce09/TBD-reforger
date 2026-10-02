@@ -3,8 +3,8 @@
 The reference pages the community consults: the doctrine wiki of standard operating procedures and
 manuals, the vehicle identification index, and the modpack manifests a server expects a client to
 have. Their data comes from the
-[community content](/documentation_v2/glossary/a_to_f.md#community-content) domain of the
-[API](/documentation_v2/glossary/a_to_f.md#api).
+[community content](/documentation/glossary/a_to_f.md#community-content) domain of the
+[API](/documentation/glossary/a_to_f.md#api).
 
 ## Contents
 
@@ -27,7 +27,7 @@ pane, both reading the one fetched list. The wiki and the vehicles decode typed 
 JSON. The wiki's detail pane also fetches the open manual, whose `blocks` are the server's parse of
 its Markdown, and pages through its revision history. Each page gives an administrator its writes,
 gated by a memo over `has_min_role_authed` and the session's
-[role](/documentation_v2/glossary/n_to_z.md#role), so a signed-out visitor never sees them: the
+[role](/documentation/glossary/n_to_z.md#role), so a signed-out visitor never sees them: the
 wiki edits a manual, saves it against the revision the edit started from and restores an older
 revision; the vehicle index adds, edits and deletes vehicles; the modpacks page edits the packs.
 The wiki's links and images and the vehicle photographs pass `crate::v2::core::utils::safe_url`
@@ -58,11 +58,11 @@ first, so an unsafe URL renders as text or a placeholder.
 
 ## Related documentation
 
-- [Doctrine wiki page](/documentation_v2/website/frontend/pages/doctrine_and_info/wiki/wiki_page.md)
+- [Doctrine wiki page](/documentation/website/frontend/pages/doctrine_and_info/wiki/wiki_page.md)
   — the wiki's behaviour and design.
-- [Vehicle database page](/documentation_v2/website/frontend/pages/doctrine_and_info/vehicles/vehicle_database_page.md)
+- [Vehicle database page](/documentation/website/frontend/pages/doctrine_and_info/vehicles/vehicle_database_page.md)
   — the vehicle index's behaviour and design.
-- [Modpacks page](/documentation_v2/website/frontend/pages/doctrine_and_info/modpacks/modpacks_page.md)
+- [Modpacks page](/documentation/website/frontend/pages/doctrine_and_info/modpacks/modpacks_page.md)
   — the modpacks page's behaviour and design.
 - [Community content domain](/apps/website/api_v2/src/community_content/README.md) — the routes
   these pages read and write.

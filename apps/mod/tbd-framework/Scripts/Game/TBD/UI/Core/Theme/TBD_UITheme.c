@@ -8,7 +8,7 @@
  * state lookups live in `TBD_UITintColours` and `TBD_UIStateColours`.
  * State: the memoised linear `Color` per token (`m_mColours`), for the life of the script VM.
  * Invariants: token names follow the design tokens of `apps/website/frontend/style/aegis.css`
- * (the known value differences are listed in documentation_v2/design_system/design_tokens.md);
+ * (the known value differences are listed in documentation/design_system/design_tokens.md);
  * tokens are sRGB 0xAARRGGBB and reach the engine through `Color.FromSRGBA`, never
  * `SetColorInt`; alpha is composited in sRGB by `Over`, and only `PaintAlpha` sends engine alpha.
  */
@@ -31,7 +31,7 @@
 //!
 //! Layouts carry absolute font sizes against a 1920x1080 reference surface, so the CSS px scale
 //! maps across unchanged; the TEXT_* ladder is copied by hand into the `.layout` files and is kept
-//! in step with them. Design law (documentation_v2/mod/tbd-framework/mod_design.md section 2):
+//! in step with them. Design law (documentation/mod/tbd-framework/mod_design.md section 2):
 //! one accent colour (ACTION is the single high-priority trigger blue, PRIMARY the everyday
 //! active and selected blue), and generous whitespace (the spacing ladder starts at 8 and the
 //! screen gutter is 24).

@@ -48,7 +48,7 @@ anchored so they resize with the dock. Each dock takes a `TBD_PlayerLane`, whose
 
 ## Format
 
-- File type: [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) widget layouts (`.layout`), plain
+- File type: [Enfusion](/documentation/glossary/a_to_f.md#enfusion) widget layouts (`.layout`), plain
   text, each beside a `.layout.meta` whose `Name` holds
   `{GUID}UI/layouts/Session/Shared/<file>.layout`. The bars carry their handler as a component on
   the root; every `*Border` and `*BG` is an empty `FrameWidgetClass` dock that the handler fills
@@ -61,7 +61,7 @@ anchored so they resize with the dock. Each dock takes a `TBD_PlayerLane`, whose
   or when any screen may host it, as with the players panel.
 - Adding a layout: take a free block from the ledger, author the layout and its `.meta`, add a
   `TBD_UILayouts` constant, and commit both files; the game finds a new path only after
-  [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) has rewritten `resourceDatabase.rdb`.
+  [Workbench](/documentation/glossary/n_to_z.md#workbench) has rewritten `resourceDatabase.rdb`.
 
 ## Referenced by
 
@@ -83,7 +83,7 @@ anchored so they resize with the dock. Each dock takes a `TBD_PlayerLane`, whose
 
 ## Related documentation
 
-- [Briefing specification](/documentation_v2/mod/tbd-framework/UI/briefing/briefing_specification.md)
+- [Briefing specification](/documentation/mod/tbd-framework/UI/briefing/briefing_specification.md)
   — the briefing's design target, the players panel included
-- [Lobby specification](/documentation_v2/mod/tbd-framework/UI/lobby/lobby_specification.md)
+- [Lobby specification](/documentation/mod/tbd-framework/UI/lobby/lobby_specification.md)
   — the lobby's design target, its bottom bar included

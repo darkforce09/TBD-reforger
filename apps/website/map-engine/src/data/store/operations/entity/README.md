@@ -1,8 +1,8 @@
 # Entity authoring operations
 
-The headless operations the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) runs
-on each kind of placed thing in the [mission](/documentation_v2/glossary/g_to_m.md#mission) document:
-[slots](/documentation_v2/glossary/n_to_z.md#slot) and the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat)
+The headless operations the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) runs
+on each kind of placed thing in the [mission](/documentation/glossary/g_to_m.md#mission) document:
+[slots](/documentation/glossary/n_to_z.md#slot) and the [ORBAT](/documentation/glossary/n_to_z.md#orbat)
 manager, vehicles, world objects, markers, comments, connections, zones and triggers, layer
 folders, the clipboard, and what a map release commits for an armed placement.
 
@@ -104,5 +104,5 @@ ring below three vertices.
 
 ## Related documentation
 
-- [Mission Creator feature inventory: placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) — what a map release commits, per kind.
-- [Mission Creator feature inventory: transform and delete](/documentation_v2/website/frontend/apps/editor/feature_inventory/transform_and_delete.md) — what Delete removes.
+- [Mission Creator feature inventory: placement](/documentation/website/frontend/apps/editor/feature_inventory/placement.md) — what a map release commits, per kind.
+- [Mission Creator feature inventory: transform and delete](/documentation/website/frontend/apps/editor/feature_inventory/transform_and_delete.md) — what Delete removes.

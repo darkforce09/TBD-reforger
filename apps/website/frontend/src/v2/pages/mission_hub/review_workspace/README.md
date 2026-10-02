@@ -1,7 +1,7 @@
 # Review workspace page
 
-The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) opened read-only on exactly
-the version an [artifact](/documentation_v2/glossary/a_to_f.md#artifact) compiled from, so a reviewer or
+The [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) opened read-only on exactly
+the version an [artifact](/documentation/glossary/a_to_f.md#artifact) compiled from, so a reviewer or
 the author inspects what was submitted with every editor tool and saves nothing.
 
 ## Contents
@@ -18,8 +18,8 @@ apps/website/frontend/src/v2/pages/mission_hub/review_workspace/
 
 `ReviewWorkspacePage` renders inside `AuthGate`. The signed-in half reads `:id` and `:artifact_id`
 once and fetches the workspace: the artifact and its version, which the
-[API](/documentation_v2/glossary/a_to_f.md#api) verifies against the payload digest the artifact recorded
-and serves only to the [mission](/documentation_v2/glossary/g_to_m.md#mission)'s author and administrators.
+[API](/documentation/glossary/a_to_f.md#api) verifies against the payload digest the artifact recorded
+and serves only to the [mission](/documentation/glossary/g_to_m.md#mission)'s author and administrators.
 Only once it has arrived does the page open the editor's review mode (`review_mode::open` with a
 `ReviewedVersion`) and mount `MissionEditorPage` with the banner over it, so the editor's boot
 always finds the reviewed version instead of restoring a draft; leaving the route closes review
@@ -34,7 +34,7 @@ open, since the editor otherwise looks like the Mission Creator: it names the ar
 digest and the version, states that nothing is saved, gives the mission title, compile time and
 document digest, and lists the compile findings (rule, severity, subject, message) in a disclosure.
 Links to this route come from the review record's history and from the
-[approvals](/documentation_v2/glossary/a_to_f.md#approvals) drawer.
+[approvals](/documentation/glossary/a_to_f.md#approvals) drawer.
 
 ## Routes
 
@@ -82,7 +82,7 @@ Links to this route come from the review record's history and from the
 
 ## Related documentation
 
-- [Review workspace page](/documentation_v2/website/frontend/pages/mission_hub/review_workspace/review_workspace_page.md)
+- [Review workspace page](/documentation/website/frontend/pages/mission_hub/review_workspace/review_workspace_page.md)
   — the page's behaviour, the digest check behind it and its open work.
-- [Mission Creator documentation](/documentation_v2/website/frontend/apps/editor/README.md) — the
+- [Mission Creator documentation](/documentation/website/frontend/apps/editor/README.md) — the
   editor this page opens read-only.

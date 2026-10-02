@@ -1,7 +1,7 @@
 # Terrain rasterization export
 
 Renders the open world into a flat-coloured cartographic image with Enfusion's `MapDataExporter` in
-[Workbench](/documentation_v2/glossary/n_to_z.md#workbench), and records the call and its parameters in a
+[Workbench](/documentation/glossary/n_to_z.md#workbench), and records the call and its parameters in a
 metadata file. The image is a shaded land, sea, forest and other-area map, not a photograph of the
 ground textures.
 
@@ -44,7 +44,7 @@ None: Workbench runs these scripts in the editor.
   `MapDataExporter` and `SCR_WorldMapExportTool.GetReportMessage`.
 - Used by: `TBD_MapExportPlugin` in `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Plugins/`.
   No committed tool reads `rasterization.tga` or `satellite_meta.json`; the satellite image the map
-  engine streams (`assets_v2/terrains/everon/satellite/`) is built by the map raster pipeline from
+  engine streams (`assets/terrains/everon/satellite/`) is built by the map raster pipeline from
   the game's own textures.
 - Rules: the image path handed to `MapDataExporter` is a native path, never a `$profile:` path; the
   Proton prefix path is the constant in `TBD_MapExportPaths`. Lines added stay ASCII, and the
@@ -52,5 +52,5 @@ None: Workbench runs these scripts in the editor.
 
 ## Related documentation
 
-- [Everon satellite image](/assets_v2/terrains/everon/satellite/README.md) — the basemap the map
+- [Everon satellite image](/assets/terrains/everon/satellite/README.md) — the basemap the map
   engine streams, and how it is built.

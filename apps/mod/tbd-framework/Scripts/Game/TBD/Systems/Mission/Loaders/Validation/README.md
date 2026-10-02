@@ -1,6 +1,6 @@
 # Mission validation
 
-Checks a freshly parsed [mission](/documentation_v2/glossary/g_to_m.md#mission) document in one pass
+Checks a freshly parsed [mission](/documentation/glossary/g_to_m.md#mission) document in one pass
 and reports every problem at once, so an author fixes a broken mission in one edit. An error
 rejects the mission and the server stays in the loading stage; a warning lets the round run. Admins
 replay the findings in game with `#tbd validate`.

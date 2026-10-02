@@ -1564,7 +1564,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "developer-tools"
+name = "developer_tools"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -7082,7 +7082,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ticket-engine"
+name = "ticket_engine"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -7108,7 +7108,7 @@ dependencies = [
  "rfd",
  "serde",
  "serde_json",
- "ticket-engine",
+ "ticket_engine",
  "time",
  "toml 0.8.23",
 ]
@@ -7841,7 +7841,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "verification-core"
+name = "verification_core"
 version = "0.1.0"
 dependencies = [
  "libc",
@@ -8243,7 +8243,7 @@ dependencies = [
  "tracing-subscriber",
  "url",
  "uuid",
- "verification-core",
+ "verification_core",
  "website-api",
  "website-map-engine",
 ]
@@ -9129,7 +9129,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
- "developer-tools",
+ "developer_tools",
  "flate2",
  "heck",
  "jsonschema",
@@ -9143,10 +9143,10 @@ dependencies = [
  "sha2 0.10.9",
  "syn 2.0.118",
  "tar",
- "ticket-engine",
+ "ticket_engine",
  "toml 0.8.23",
  "typify",
- "verification-core",
+ "verification_core",
  "walkdir",
 ]
 

@@ -1,7 +1,7 @@
 # Fleet command executor
 
-The [game runtime](/documentation_v2/glossary/g_to_m.md#game-runtime) as an executor of
-[fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command): while this world holds a runtime
+The [game runtime](/documentation/glossary/g_to_m.md#game-runtime) as an executor of
+[fleet commands](/documentation/glossary/a_to_f.md#fleet-command): while this world holds a runtime
 session, it claims the commands addressed to it and runs `broadcast`, `kick` and `load_mission`,
 each through the same report-before-effect protocol.
 
@@ -93,7 +93,7 @@ nothing restarts.
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/`, which starts and stops the poller.
 - Rules: `executing` is admitted before any effect starts, and an effect never repeats; one command
   at a time; the argument checks match the platform's validation in
-  `contracts_v2/definitions/fleet-command.schema.json` (`ClaimRequest`, `ClaimedFleetCommand`,
+  `contracts/definitions/fleet-command.schema.json` (`ClaimRequest`, `ClaimedFleetCommand`,
   `ExecutionStart`, `ExecutionResult`); lines added stay ASCII and `cargo xtask mod compile` checks
   that the scripts compile.
 

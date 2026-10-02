@@ -1,8 +1,8 @@
 # Canvas mount parts
 
-The parts the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s canvas mount runs
+The parts the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s canvas mount runs
 once the canvas element loads: the document setup, the two boot tasks and their handshake, the
-review workspace's restore, the item [registry](/documentation_v2/glossary/n_to_z.md#registry) loading,
+review workspace's restore, the item [registry](/documentation/glossary/n_to_z.md#registry) loading,
 the chrome and dock reflow, and the page-level input listeners. Canvas sizing, engine creation,
 the frame pump and resize tracking come from the shared map seam,
 `apps/website/frontend/src/v2/core/map_view/`. The parent module,
@@ -25,7 +25,7 @@ apps/website/frontend/src/v2/apps/editor/mission_editor/canvas_mount/
 ## How it works
 
 `document_setup::initialize` builds the seeded document, writes the template comments of a new
-[mission](/documentation_v2/glossary/g_to_m.md#mission), publishes `window.__missionDoc` and hands the
+[mission](/documentation/glossary/g_to_m.md#mission), publishes `window.__missionDoc` and hands the
 document to the session's document commands. `boot_tasks::start` then runs two tasks that meet in a
 handshake:
 
@@ -81,5 +81,5 @@ when a dock reflow moves the pane centre, shifts the camera so the world under i
 
 ## Related documentation
 
-- [Mission Creator feature inventory: map viewport and camera](/documentation_v2/website/frontend/apps/editor/feature_inventory/map_viewport_and_camera.md) — the map view, terrain and camera at boot.
-- [Mission Creator feature inventory: editor route and boot loading](/documentation_v2/website/frontend/apps/editor/feature_inventory/editor_route_loading.md) — the boot overlay.
+- [Mission Creator feature inventory: map viewport and camera](/documentation/website/frontend/apps/editor/feature_inventory/map_viewport_and_camera.md) — the map view, terrain and camera at boot.
+- [Mission Creator feature inventory: editor route and boot loading](/documentation/website/frontend/apps/editor/feature_inventory/editor_route_loading.md) — the boot overlay.

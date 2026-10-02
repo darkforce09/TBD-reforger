@@ -20,7 +20,7 @@ Copy the skeleton below into the new file.
 
 **Slice:** <slice id> · **Executor:** claude-code · **Branch:** `main`
 **Earlier slice shipped:** <slice id> @ `{sha}`
-**Spec (authority):** [`documentation_v2/tickets/specs/<spec file>`](/documentation_v2/tickets/specs/<spec file>)
+**Spec (authority):** [`documentation/tickets/specs/<spec file>`](/documentation/tickets/specs/<spec file>)
 
 ## Operator report
 
@@ -48,7 +48,7 @@ N. Update the documentation the change touches and commit with <slice id> in the
 ## Preflight
 
 ```bash
-git pull && git lfs pull  # Trunk and the API serve /map-assets straight from assets_v2/
+git pull && git lfs pull  # Trunk and the API serve /map-assets straight from assets/
 cargo xtask ticket brief <ticket id>
 ```
 

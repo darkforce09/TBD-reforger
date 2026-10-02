@@ -103,7 +103,7 @@ owns = [
     "scripts/mod/tbd-spawn-determinism.sh",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Log.c",
-    "documentation_v2/tickets/specs",
+    "documentation/tickets/specs",
     "apps/mod/README.md",
     "apps/mod/tbd-framework/README.md",
 ]

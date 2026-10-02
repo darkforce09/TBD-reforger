@@ -1,10 +1,10 @@
 # Export addon Workbench module
 
-The export addon's [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) script module: the
-[EnfScript](/documentation_v2/glossary/a_to_f.md#enfscript) that Workbench compiles into the editor
+The export addon's [Workbench](/documentation/glossary/n_to_z.md#workbench) script module: the
+[EnfScript](/documentation/glossary/a_to_f.md#enfscript) that Workbench compiles into the editor
 and nowhere else. It holds every exporter that reads the loaded game data from inside the editor:
 the map layers, the equipment and vehicle source export with its diagnostics, and the item
-[registry](/documentation_v2/glossary/n_to_z.md#registry) export.
+[registry](/documentation/glossary/n_to_z.md#registry) export.
 
 ## Contents
 
@@ -42,8 +42,8 @@ refines kinds and arsenal types from the addons' entity catalogs, derives compat
 engine data only (magazine wells, attachment slot types, vehicle weapon slot chains, character
 loadout slots), and writes the items file and then the compat file, which doubles as the
 run-complete marker. It refuses to write an empty item or edge list. The two files are copied by
-hand to `contracts_v2/catalogs/registry-items.workbench.json` and
-`contracts_v2/catalogs/registry-compat.workbench.json`. It writes JSON through `TBD_ExportJson`, the
+hand to `contracts/catalogs/registry-items.workbench.json` and
+`contracts/catalogs/registry-compat.workbench.json`. It writes JSON through `TBD_ExportJson`, the
 short alias of the map export's JSON helper in `MapExport/Core/`.
 
 ## Authority
@@ -56,23 +56,23 @@ None: Workbench runs these scripts in the editor.
   search; the engine's world, container and file classes; the loaded addons' prefabs, configs and
   entity catalogs; nothing from `tbd-framework`.
 - Used by: people, through the Workbench menu; `cargo xtask mcp wbcall`, which reaches the two Net
-  API handlers (`tools_v2/xtask/src/commands/mcp/`); the developer tools that read the map exports
+  API handlers (`tools/xtask/src/commands/mcp/`); the developer tools that read the map exports
   (listed in the [map export README](/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/README.md)); `cargo xtask mod validate-equipment-vehicle-export` and
   `publish-equipment-vehicle-export`, which read the source export
-  (`tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/`); and, through the copied
+  (`tools/xtask/src/commands/mod_ops/equipment_vehicle_export/`); and, through the copied
   catalogs, `cargo xtask db registry-import` and `cargo xtask schema validate`.
 - Rules: nothing under `Scripts/Game/` may name a class from here, because a game never compiles
   this module; the scripts compile only when Workbench loads `tbd-export`, since
   `cargo xtask mod compile` compiles the framework addon alone
-  (`tools_v2/xtask/src/commands/mod_ops/compile/execution.rs`); a new script file needs a
+  (`tools/xtask/src/commands/mod_ops/compile/execution.rs`); a new script file needs a
   Workbench cold restart before its class exists; a Net API handler stays out of any `EnfusionMCP/`
   folder, which the MCP's `wb_cleanup` deletes.
 
 ## Related documentation
 
-- [Export addon Workbench exporter documentation](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/README.md)
+- [Export addon Workbench exporter documentation](/documentation/mod/tbd-export/Scripts/WorkbenchGame/README.md)
   — the exporter families and their documents.
-- [Map export](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
+- [Map export](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
   every map layer, its entry point and the pipeline to committed data.
-- [Contract catalogs](/contracts_v2/catalogs/README.md) — the item registry catalogs the registry
+- [Contract catalogs](/contracts/catalogs/README.md) — the item registry catalogs the registry
   export feeds.

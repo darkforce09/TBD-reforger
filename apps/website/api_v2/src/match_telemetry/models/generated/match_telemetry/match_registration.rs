@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/match-telemetry.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/match-telemetry.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///POST /api/v1/ingest/matches body (mod_runtime machine credential). Registers a server-scoped source match before any report about it. The same body again is inert; another body for a registered source answers 409 REGISTRATION_CONFLICT. server_id is refused: the credential names the server.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

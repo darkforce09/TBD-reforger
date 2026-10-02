@@ -51,7 +51,7 @@ estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 7 com
 owns = [
     "scripts/mod/deploy-staging.sh",
     "scripts/mod/verify-t438-deploy-staging-compose-path.sh",
-    "documentation_v2/runbooks/website_deployment.md",
+    "documentation/runbooks/website_deployment.md",
 ]
 
 [scope]

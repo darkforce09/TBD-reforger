@@ -1,12 +1,12 @@
 # Typed endpoint calls
 
-One typed call per [API](/documentation_v2/glossary/a_to_f.md#api) route for
-[event](/documentation_v2/glossary/a_to_f.md#event) access and registration,
-[machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential),
-[mission](/documentation_v2/glossary/g_to_m.md#mission) reviews,
-[fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command),
-[mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment),
-[fleet scenarios](/documentation_v2/glossary/a_to_f.md#fleet-scenario) and the game-server registry, each
+One typed call per [API](/documentation/glossary/a_to_f.md#api) route for
+[event](/documentation/glossary/a_to_f.md#event) access and registration,
+[machine credentials](/documentation/glossary/g_to_m.md#machine-credential),
+[mission](/documentation/glossary/g_to_m.md#mission) reviews,
+[fleet commands](/documentation/glossary/a_to_f.md#fleet-command),
+[mission deployments](/documentation/glossary/g_to_m.md#mission-deployment),
+[fleet scenarios](/documentation/glossary/a_to_f.md#fleet-scenario) and the game-server registry, each
 naming its route's path, body and answer in one place: a page calls
 `put_event_access_policy(store, event, &change)` instead of assembling a path, a body and a verb.
 
@@ -58,9 +58,9 @@ deactivation answers 204 with no body.
   `crate::v2::core::api::dto`, `crate::v2::core::auth::AuthStore`, and `serde` and `serde_json`
   for the bodies.
 - Used by: the pages under `apps/website/frontend/src/v2/pages/`: the
-  [approvals](/documentation_v2/glossary/a_to_f.md#approvals) review drawer, the
-  [event manager](/documentation_v2/glossary/a_to_f.md#event-manager)'s access panel and game server
-  choice, the [server control](/documentation_v2/glossary/n_to_z.md#server-control) panels and server
+  [approvals](/documentation/glossary/a_to_f.md#approvals) review drawer, the
+  [event manager](/documentation/glossary/a_to_f.md#event-manager)'s access panel and game server
+  choice, the [server control](/documentation/glossary/n_to_z.md#server-control) panels and server
   registry, the mission hub's submit
   action, review record and review workspace, and the event hub's registration and waitlist
   controls.
@@ -74,5 +74,5 @@ deactivation answers 204 with no body.
 
 ## Related documentation
 
-- [API overview](/documentation_v2/website/api_v2/api_overview.md) — the routes of every API
+- [API overview](/documentation/website/api_v2/api_overview.md) — the routes of every API
   domain.

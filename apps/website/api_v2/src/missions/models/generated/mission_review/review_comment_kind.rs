@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/mission-review.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/mission-review.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///A thread comment, the feedback of a rejection, or the conditions of an approval.
 #[derive(

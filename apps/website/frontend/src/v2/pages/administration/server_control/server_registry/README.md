@@ -1,11 +1,11 @@
 # Server registry
 
-The [server control](/documentation_v2/glossary/n_to_z.md#server-control) page's server registry:
+The [server control](/documentation/glossary/n_to_z.md#server-control) page's server registry:
 the configured game servers as read, which one the card shows, and the side sheet that registers a
 server, changes its registration, and takes it out of service or puts it back. A registered server
-is what the page issues [machine credentials](/documentation_v2/glossary/g_to_m.md#machine-credential)
-to, sends [fleet commands](/documentation_v2/glossary/a_to_f.md#fleet-command) and deploys
-[missions](/documentation_v2/glossary/g_to_m.md#mission) to.
+is what the page issues [machine credentials](/documentation/glossary/g_to_m.md#machine-credential)
+to, sends [fleet commands](/documentation/glossary/a_to_f.md#fleet-command) and deploys
+[missions](/documentation/glossary/g_to_m.md#mission) to.
 
 ## Contents
 
@@ -26,7 +26,7 @@ from the registry, so a write updates the card's header and telemetry band while
 console, deployments panel and credential sheet keep their state. Every accepted write changes
 only the row it concerns: `register` appends the answered row and selects it, `save_change` and
 `reactivate` replace the row with the answered one, and `deactivate`, answered with 204 and no
-body, marks the row inactive, the one field the [API](/documentation_v2/glossary/a_to_f.md#api)
+body, marks the row inactive, the one field the [API](/documentation/glossary/a_to_f.md#api)
 changes. Each then closes the sheet and toasts; a refusal leaves the rows alone and shows the
 API's sentence in the sheet.
 
@@ -54,7 +54,7 @@ browser build only; a native build reads the list as failed.
   `ModpackDto`, `api_error_message`, and the endpoint module `server_registry`),
   `crate::v2::core::auth` (`AuthStore`) and `crate::v2::core::ui` (`Sheet`, `MaterialIcon`,
   `Toasts`); over HTTP, the `/api/v1/servers` routes of the
-  [server infrastructure](/documentation_v2/glossary/n_to_z.md#server-infrastructure) domain and the
+  [server infrastructure](/documentation/glossary/n_to_z.md#server-infrastructure) domain and the
   modpack list of the community content domain.
 - Used by: `page.rs` and `server_cards.rs` in
   `apps/website/frontend/src/v2/pages/administration/server_control/`, which build the registry,
@@ -70,7 +70,7 @@ browser build only; a native build reads the list as failed.
 
 ## Related documentation
 
-- [Server control page](/documentation_v2/website/frontend/pages/administration/server_control/server_control_page.md)
+- [Server control page](/documentation/website/frontend/pages/administration/server_control/server_control_page.md)
   — the registry's behaviour and what the registry routes mean server-side.
-- [Give the staging server its credentials and a mission](/documentation_v2/runbooks/game_server_staging/machine_credentials_and_mission_deployment.md)
+- [Give the staging server its credentials and a mission](/documentation/runbooks/game_server_staging/machine_credentials_and_mission_deployment.md)
   — registering the staging server from this sheet.

@@ -1,7 +1,7 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/mission-editor-payload.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/mission-editor-payload.schema.json — regenerate with: cargo xtask ci schema-codegen
 
-//! Types generated from `contracts_v2/definitions/mission-editor-payload.schema.json`, one module per schema definition.
+//! Types generated from `contracts/definitions/mission-editor-payload.schema.json`, one module per schema definition.
 
 mod editor_faction;
 pub mod error;

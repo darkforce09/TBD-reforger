@@ -52,7 +52,7 @@ pub mod upload;
 // here. This alias is one of the two `device`/`pipeline` seams engine-layer rule 3b allows, named
 // once here rather than at its three call sites, which spell it `crate::frame::buffers`. The
 // pinned list is `RULE3B_PIN` in
-// `tools_v2/verification-core/src/repository_laws/engine_layers/rules.rs`.
+// `tools/verification_core/src/repository_laws/engine_layers/rules.rs`.
 pub use website_graphics_engine::device::buffers;
 
 /// Pipelines.
@@ -69,7 +69,7 @@ pub use website_graphics_engine::pipeline as pipelines;
 // §2C.1 Kind C. Everything the renderer's `frame` module publishes that this crate consumes,
 // enumerated. **The eight `pub use` lines below are the only places in `website-map-engine`
 // that spell the path they spell** — engine-layer rule 3a (`RULE3A_PIN` in
-// `tools_v2/verification-core/src/repository_laws/engine_layers/rules.rs`) pins that in both
+// `tools/verification_core/src/repository_laws/engine_layers/rules.rs`) pins that in both
 // directions, at exactly eight, so a ninth import is a diff to this list and a lost one is a
 // stale pin. Every other module of the crate reads `use crate::frame::DrawBatch;`. (This prose
 // never spells the path, so the pinned count is exactly the size of the re-export list and a

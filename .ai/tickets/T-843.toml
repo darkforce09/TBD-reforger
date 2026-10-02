@@ -69,8 +69,8 @@ owns = [
     "tools/tbd-tools/src/smokes.rs",
     "xtask/src/mk_build.rs",
     "xtask/src/wave/",
-    "documentation_v2/runbooks/factory_waves/README.md",
-    "documentation_v2/runbooks/editor_gates.md",
+    "documentation/runbooks/factory_waves/README.md",
+    "documentation/runbooks/editor_gates.md",
 ]
 
 [scope]

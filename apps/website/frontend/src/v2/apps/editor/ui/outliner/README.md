@@ -1,9 +1,9 @@
 # Editor layers outliner
 
-The [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s view of the
-[mission](/documentation_v2/glossary/g_to_m.md#mission) as editor layers: the folders an author files
-[slots](/documentation_v2/glossary/n_to_z.md#slot), comments and other layers into, and the
-[ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) tree of factions, squads and slots. This folder holds
+The [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s view of the
+[mission](/documentation/glossary/g_to_m.md#mission) as editor layers: the folders an author files
+[slots](/documentation/glossary/n_to_z.md#slot), comments and other layers into, and the
+[ORBAT](/documentation/glossary/n_to_z.md#orbat) tree of factions, squads and slots. This folder holds
 the node model built from the document, the windowed tree the left dock draws, and the drag latch
 through which rows are refiled and reparented.
 
@@ -79,7 +79,7 @@ to the top level through the map engine's single-folder latch.
     `apps/website/frontend/src/v2/apps/editor/ui/docks/`, the zones panel in
     `apps/website/frontend/src/v2/apps/editor/ui/inspector/`, and the ORBAT manager in
     `apps/website/frontend/src/v2/apps/editor/ui/modals/`;
-  - the outliner smoke tests in `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/`.
+  - the outliner smoke tests in `tools/developer_tools/src/browser_testing/editor_smoke_tests/`.
 - Rules: the tests in `tests/` hold these:
   - the tree's shape (Unfiled root, folder order, dangling ids, cycles, inherited flags, comment
     placement) is fixed by `tests/outliner_model/outliner_hierarchy_visibility_and_comments.rs`;
@@ -92,8 +92,8 @@ to the top level through the map engine's single-folder latch.
 
 ## Related documentation
 
-- [Mission Creator UX specification](/documentation_v2/website/frontend/apps/editor/ux_spec.md) —
+- [Mission Creator UX specification](/documentation/website/frontend/apps/editor/ux_spec.md) —
   the editor layers panel and its interactions.
-- [Mission Creator feature inventory: left sidebar and ORBAT tree](/documentation_v2/website/frontend/apps/editor/feature_inventory/left_sidebar.md) — the layers tree and the ORBAT tree, entry by entry.
-- [Eden editor UI anatomy](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md)
+- [Mission Creator feature inventory: left sidebar and ORBAT tree](/documentation/website/frontend/apps/editor/feature_inventory/left_sidebar.md) — the layers tree and the ORBAT tree, entry by entry.
+- [Eden editor UI anatomy](/documentation/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md)
   — the Eden entity list this tree follows.

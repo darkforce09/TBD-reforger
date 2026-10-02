@@ -73,8 +73,8 @@ null and left off the wire.
 
 ## Related documentation
 
-- [Wiki page](/documentation_v2/website/frontend/pages/doctrine_and_info/wiki/wiki_page.md) — the
+- [Wiki page](/documentation/website/frontend/pages/doctrine_and_info/wiki/wiki_page.md) — the
   page that reads and writes these routes.
-- [Administration and community content](/documentation_v2/website/api_v2/verification_evidence/administration_and_content.md)
+- [Administration and community content](/documentation/website/api_v2/verification_evidence/administration_and_content.md)
   — the wiki markup, revision and save design.
-- [API overview](/documentation_v2/website/api_v2/api_overview.md) — every domain's routes.
+- [API overview](/documentation/website/api_v2/api_overview.md) — every domain's routes.

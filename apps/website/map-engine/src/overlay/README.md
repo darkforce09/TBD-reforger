@@ -31,8 +31,8 @@ browser API u32
 `lane_order` ranks every `LaneRole` from the basemap up: satellite, sea, hillshade, landcover and
 contours, roads, buildings, fences and forest, world glyphs and labels, the building interior
 lanes, the viewshed and the interior probe, the 1 km grid, then the
-[mission](/documentation_v2/glossary/g_to_m.md#mission) lanes (zones, markers,
-comments, connections, squad links, vehicles, [slots](/documentation_v2/glossary/n_to_z.md#slot), place
+[mission](/documentation/glossary/g_to_m.md#mission) lanes (zones, markers,
+comments, connections, squad links, vehicles, [slots](/documentation/glossary/n_to_z.md#slot), place
 preview, drag, clusters) and the marquee
 on top. `lane_id` doubles the rank so `Stress` and `Calibration`, which share rank 0, get distinct
 keys. The browser speaks two disjoint `u32` namespaces: `role_id` for the vector-lane uploads and
@@ -52,7 +52,7 @@ its lanes, `set_lane_opacity` re-tints a texture lane in place, and `set_grid` b
 
 - `lanes`: `LaneRole`, `lane_order`, `lane_id`, `ALL_LANES`, `role_id`, `tex_role_id` and their
   `u32` conversions, for `crate::frame`, `crate::streaming`, `crate::world`, `crate::spatial`,
-  `crate::diagnostics`, the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
+  `crate::diagnostics`, the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
   document host and tools, and the debug apps in
   `apps/website/frontend/src/v2/apps/debug/`.
 - `lod`: the zoom gates, `REF_ZOOM`, `INSTANCE_BUDGET` and the contour interval, for
@@ -77,7 +77,7 @@ its lanes, `set_lane_opacity` re-tints a texture lane in place, and `set_grid` b
 - Used by: `crate::frame`, `crate::streaming`, `crate::world`, `crate::spatial::los::terrain`,
   `crate::diagnostics`, `crate::editing`, `crate::camera`; the Mission Creator and the debug apps
   under `apps/website/frontend/src/v2/apps/`; the architecture tests in
-  `tools_v2/xtask/src/verifications/architecture/tests/`.
+  `tools/xtask/src/verifications/architecture/tests/`.
 - Rules: the `role_id` and `tex_role_id` wire ids never change (`wire_ids_are_pinned`,
   `tex_wire_ids_are_pinned` in `tests/draw_order.rs`); `ALL_LANES` covers every variant
   (`all_lanes_covers_every_variant`); each lane keeps its neighbours in paint order (the `*_sit_*`

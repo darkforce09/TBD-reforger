@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/mission-review.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/mission-review.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///POST /api/v1/approvals/:id/reject body (administrator). The reason becomes the rejection comment of the review. Answers the decided MissionRow.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

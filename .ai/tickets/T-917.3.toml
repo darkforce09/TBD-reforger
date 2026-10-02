@@ -5,7 +5,7 @@ summary = "Wall quarantine + word caps + shrink-only ratchet"
 class = "chore"
 status = "shipped"
 order = 5973
-spec = "documentation_v2/tickets/specs/t917_ticket_schema_v2.md"
+spec = "documentation/tickets/specs/t917_ticket_schema_v2.md"
 executor = "claude-code"
 notes = """
 No sentence-splitting into semantic fields — that is laundering unsorted prose as classified data; decomposition is Program T. Caps enforced in check, never parse (old revisions must stay readable). Docs/TICKET_*.md regenerate in-commit (sync copies summaries verbatim).

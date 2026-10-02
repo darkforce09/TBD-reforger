@@ -13,10 +13,10 @@ members = [
     "apps/website/graphics-engine",
     "apps/website/offline-service-worker",
     # Dependency-light verification and ticket libraries consumed by repository tooling.
-    "tools_v2/verification-core",
-    "tools_v2/ticket-engine",
-    "tools_v2/xtask",
-    "tools_v2/developer-tools",
+    "tools/verification_core",
+    "tools/ticket_engine",
+    "tools/xtask",
+    "tools/developer_tools",
 ]
 
 # Package fields a member inherits with `<field>.workspace = true`. The frontend declares its own

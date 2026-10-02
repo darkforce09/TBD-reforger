@@ -2,7 +2,7 @@
 
 The warmup shield that keeps everyone unhurt from `LOBBY` until the round goes `LIVE`, because TBD
 rounds are one life and a negligent discharge before the start would end somebody's
-[event](/documentation_v2/glossary/a_to_f.md#event).
+[event](/documentation/glossary/a_to_f.md#event).
 
 ## Contents
 
@@ -20,7 +20,7 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/Safestart/
 one `TBD_SafestartWatchdog`.
 
 1. Arm (`LOBBY`, `BRIEFING` or `SAFE_START`, once per run): the protection sweeps every player body,
-   every AI agent's body and every unpossessed [slot](/documentation_v2/glossary/n_to_z.md#slot) body
+   every AI agent's body and every unpossessed [slot](/documentation/glossary/n_to_z.md#slot) body
    from `TBD_SpawnManager`. Each body gets a `TBD_SafestartHold` recording its damage-handling value
    before the first change, then `EnableDamageHandling(false)`, weapon safety on, and shot and
    grenade handlers that delete the projectile the moment it exists. A re-sweep every 3 s covers
@@ -69,5 +69,5 @@ impacts to the damage switch alone.
 
 ## Related documentation
 
-- [Safe start HUD specification](/documentation_v2/mod/tbd-framework/UI/safe_start_hud/safe_start_hud_specification.md)
+- [Safe start HUD specification](/documentation/mod/tbd-framework/UI/safe_start_hud/safe_start_hud_specification.md)
   — the safe start notices as built and their design target

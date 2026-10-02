@@ -19,7 +19,7 @@ use crate::data::scenario::ballistics::wind::Wind;
 /// The committed vanilla catalog; a missing file fails the build.
 const VANILLA_CATALOG_JSON: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../contracts_v2/catalogs/ballistics/vanilla_mortars.v1.catalog.json"
+    "/../../../contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json"
 ));
 
 /// Draws per test; ten tests make the 10,000.

@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/vehicle-database.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/vehicle-database.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///POST /api/v1/vehicle-database (administrator, answered 201) and PUT /api/v1/vehicle-database/{id} (administrator, answered 200) body; PUT replaces every field. Each value is trimmed before its limit applies: name, faction and armor_type are required and not blank; an absent or empty optional field is stored as none. profile_image_url is an https URL or a site-relative /path. Unknown keys answer 400. Every accepted write appends an audit line in the same transaction.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

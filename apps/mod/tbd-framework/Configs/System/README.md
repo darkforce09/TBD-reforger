@@ -1,6 +1,6 @@
 # Framework system configs
 
-The engine-level configs of the framework [mod](/documentation_v2/glossary/g_to_m.md#mod): the menu
+The engine-level configs of the framework [mod](/documentation/glossary/g_to_m.md#mod): the menu
 presets that bind each framework screen to its layout and script class, and the input contexts and
 key actions its screens and spectator camera listen to.
 
@@ -70,5 +70,5 @@ the contexts in `ActionContext/`; scripts activate a context and listen for its 
 
 ## Related documentation
 
-- [Mod UI documentation](/documentation_v2/mod/tbd-framework/UI/README.md) — the specification of
+- [Mod UI documentation](/documentation/mod/tbd-framework/UI/README.md) — the specification of
   each framework screen these presets open.

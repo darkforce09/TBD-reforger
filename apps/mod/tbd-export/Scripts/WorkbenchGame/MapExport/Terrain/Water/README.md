@@ -1,6 +1,6 @@
 # Water export
 
-Reads the open world's water in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) two ways: a
+Reads the open world's water in [Workbench](/documentation/glossary/n_to_z.md#workbench) two ways: a
 full-map raster of water class and depth probed from the engine's water surfaces, and vector records
 of the rivers, lakes and ponds the world places. Each lands as ASCII or JSON files in the export
 profile.
@@ -79,9 +79,9 @@ None: Workbench runs these scripts in the editor.
   `BaseWorld.QueryEntitiesByAABB` and `WorldEditorAPI.GetTerrainSurfaceY`.
 - Used by: `TBD_MapExportPlugin` in `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Plugins/`.
   The developer tools' `map water` command
-  (`tools_v2/developer-tools/src/map_raster_pipeline/inland_water_archive.rs`) builds
+  (`tools/developer_tools/src/map_raster_pipeline/inland_water_archive.rs`) builds
   `water_vectors.rkyv` and `bathymetry.tbd-bath` from a water export staged in
-  `assets_v2/scratch/<terrain>/water/` under other names: `TBD_InlandWaterExport_mask.txt`,
+  `assets/scratch/<terrain>/water/` under other names: `TBD_InlandWaterExport_mask.txt`,
   `_depth.txt`, `_meta.json` (it reads `widthPx`, `heightPx` and `depthScaleToMeters`) and one
   `_vectors.json` holding `lakes`, `rivers` and `ponds` or `inlandWaterBodies`. No committed step
   renames or merges this folder's files into that layout, and its river reader expects `nodes` with
@@ -95,5 +95,5 @@ None: Workbench runs these scripts in the editor.
 
 - [Water: bathymetry, inland water and the sea mesh](/apps/website/map-engine/src/world/terrain/water/README.md)
   — how the map engine reads the water archives built from this export.
-- [Map export](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
+- [Map export](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
   the file names `map water` expects and the missing staging step.

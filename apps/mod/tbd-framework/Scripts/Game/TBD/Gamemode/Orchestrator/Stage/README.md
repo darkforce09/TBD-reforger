@@ -2,7 +2,7 @@
 
 The work the framework manager delegates: carrying the round out of `LOADING`, the checks and the
 clock that end a live round, the END banner, and the
-[mission](/documentation_v2/glossary/g_to_m.md#mission)'s wind and night-vision rules.
+[mission](/documentation/glossary/g_to_m.md#mission)'s wind and night-vision rules.
 
 ## Contents
 
@@ -25,8 +25,8 @@ the manager passed in, and cancelled from its `OnDelete` through `CancelCallback
   spectator policy, the authored environment and the gadget-flag spawn hook), then
   `TBD_MissionFlowReport.Apply`, `TBD_StageEnvironment.ApplyAuthoredWeather` (whose wind direction
   overrides the environment's) and the manager's `LatchAuthoredSettings`; it loads the registry,
-  materializes the [slot](/documentation_v2/glossary/n_to_z.md#slot) bodies (which claim the placed
-  vehicles) and starts the [event](/documentation_v2/glossary/a_to_f.md#event) roster fetch; every
+  materializes the [slot](/documentation/glossary/n_to_z.md#slot) bodies (which claim the placed
+  vehicles) and starts the [event](/documentation/glossary/a_to_f.md#event) roster fetch; every
   500 ms it then waits for the roster (force-settled after 2 s) and the loadout settle (up to 24
   polls) and asks for `LOBBY`. The poll runs on the main thread from the call queue, after the
   world has created its entities, and it is the only place the loaded document reaches the world:

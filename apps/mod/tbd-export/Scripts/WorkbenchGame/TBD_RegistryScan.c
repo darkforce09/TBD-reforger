@@ -1462,7 +1462,7 @@ class TBD_RegistryScanner
 	// folds up) + longest strict filename-stem prefix parent + equal magazine wells + equal
 	// attachment-slot-type set + equal base mesh. Any differing/unresolvable evidence => not a
 	// variant (fail-safe keep). Contract spec:
-	// documentation_v2/tickets/specs/t068_10_5_weapon_families.md.
+	// documentation/tickets/specs/t068_10_5_weapon_families.md.
 
 	int m_iVariants;
 

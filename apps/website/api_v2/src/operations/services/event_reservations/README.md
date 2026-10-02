@@ -1,6 +1,6 @@
 # Event reservations
 
-Every writer of [event](/documentation_v2/glossary/a_to_f.md#event) reservations, interactive and
+Every writer of [event](/documentation/glossary/a_to_f.md#event) reservations, interactive and
 background alike: one lock order, pure planning, the quota allocation each participant holds, seat
 claims, releases, waitlist promotion and the re-evaluation of eligibility.
 
@@ -41,7 +41,7 @@ lock the scope ──▶ scope_snapshot ──▶ reservation_planning (no datab
 ```
 
 - A new claim needs current authority for the seat, a quota place, event and
-  [mission](/documentation_v2/glossary/g_to_m.md#mission) capacity, and must leave every seatless place
+  [mission](/documentation/glossary/g_to_m.md#mission) capacity, and must leave every seatless place
   holder seatable (`seat_matching.rs`, a bipartite matching in priority order); an existing
   reservation keeps its allocation and is never charged twice.
 - A participant holds one allocation per event, shared by their reservations in every mission of
@@ -66,7 +66,7 @@ lock the scope ──▶ scope_snapshot ──▶ reservation_planning (no datab
   locks and session authorization; `administration` for the audit rows; `command_center` for the
   user-statistics recompute (`services::user_stats::recompute_user_stats_on_connection`); `core`
   for configuration, errors and `AuthUser`.
-- Used by: the [operations](/documentation_v2/glossary/n_to_z.md#operations) handlers for registration,
+- Used by: the [operations](/documentation/glossary/n_to_z.md#operations) handlers for registration,
   assignment, promotion, events, attachments, access administration and the event hub;
   `operations::services::access_administration`; the ban handler in
   `apps/website/api_v2/src/administration/handlers/disciplinary.rs` and the membership cache in
@@ -85,8 +85,8 @@ lock the scope ──▶ scope_snapshot ──▶ reservation_planning (no datab
 
 ## Related documentation
 
-- [Event eligibility and allocation](/documentation_v2/website/api_v2/verification_evidence/event_eligibility_allocation.md)
+- [Event eligibility and allocation](/documentation/website/api_v2/verification_evidence/event_eligibility_allocation.md)
   — pools, allocations, promotion, re-evaluation and the lock order.
-- [Reservation transaction design](/documentation_v2/website/api_v2/verification_evidence/reservation_transaction_design.md)
-  and [Reservation mutation authority and capacity](/documentation_v2/website/api_v2/verification_evidence/reservation_mutation_guards.md)
+- [Reservation transaction design](/documentation/website/api_v2/verification_evidence/reservation_transaction_design.md)
+  and [Reservation mutation authority and capacity](/documentation/website/api_v2/verification_evidence/reservation_mutation_guards.md)
   — the transaction and authority design of the reservation writers.

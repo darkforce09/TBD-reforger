@@ -2,8 +2,8 @@
 
 The `website-frontend` crate: the web platform's single-page app, written in Rust with Leptos 0.8
 and rendered in the browser as WebAssembly. It holds every page members use, the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator), and the client that talks to the
-[API](/documentation_v2/glossary/a_to_f.md#api); Trunk builds it into a static bundle that the dev server,
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator), and the client that talks to the
+[API](/documentation/glossary/a_to_f.md#api); Trunk builds it into a static bundle that the dev server,
 the API or the deployed host serves.
 
 ## Contents
@@ -77,14 +77,14 @@ cargo xtask mk leptos-gates     # release build, then gate doctor, editor-suite 
 
 The workspace `rust-toolchain.toml` pins Rust 1.95.0 with the `wasm32-unknown-unknown` target, so
 rustup installs the target itself. Trunk has to be on `PATH`; the gates pin Trunk 0.21.14 and
-`wasm-bindgen` 0.2.126 in `tools_v2/developer-tools/gate-env.json`, and Trunk fetches the
+`wasm-bindgen` 0.2.126 in `tools/developer_tools/gate-env.json`, and Trunk fetches the
 `wasm-bindgen` and Tailwind CSS versions it needs on its first build, with no npm involved.
 `cargo xtask mk leptos-debug` serves an unoptimised build that rebuilds faster but whose frame
 rates mean nothing, and `cargo xtask mk leptos-build` writes a release build into `dist/` without
-serving it. `cargo run -q -p developer-tools --bin gate -- render-check --dir apps/website/frontend/dist`
+serving it. `cargo run -q -p developer_tools --bin gate -- render-check --dir apps/website/frontend/dist`
 checks that a built bundle mounts and renders in a headless browser.
 
-To sign in without Discord through the [dev login](/documentation_v2/glossary/a_to_f.md#dev-login), open
+To sign in without Discord through the [dev login](/documentation/glossary/a_to_f.md#dev-login), open
 `/api/v1/auth/dev-login?role=admin` on the host `FRONTEND_URL` names (`http://localhost:3000` in
 `apps/website/api_v2/.env.example`); the proxy hands the redirect to `/auth/callback` back
 unfollowed, so the session in its URL fragment reaches the app.
@@ -107,7 +107,7 @@ The app reads no environment variable: the settings are the build files'.
 | API root | `/api/v1` on the page's origin, `API_BASE` | the client's verbs, from `src/v2/core/api/client/mod.rs` |
 | stored session | the `tbd-auth` key of local storage; `tbd-auth-refresh` names the Web Lock and the broadcast channel of a token refresh | `src/v2/core/auth/session.rs` and `src/v2/core/api/client/refresh.rs` |
 
-The [mission](/documentation_v2/glossary/g_to_m.md#mission) store and compiler are in the native build
+The [mission](/documentation/glossary/g_to_m.md#mission) store and compiler are in the native build
 too, so `cargo test` checks the metadata the Mission Creator's export compiles from
 (`compiled_meta_is_the_row_the_server_compiles_from` in
 `src/v2/core/api/dto/tests/r_api_missions.rs`). The token refresh needs the Web Locks API, which
@@ -118,7 +118,7 @@ only a secure context offers: `localhost`, `127.0.0.1` or HTTPS.
 - The `website-frontend` binary, with no library: `start_app` in `src/main.rs` is its WebAssembly
   start function, and no other crate links it.
 - The bundle in `dist/`, served by `trunk serve` in development, by the API when `SPA_DIST_DIR` is
-  set, and by Caddy on the deployed host through `tools_v2/xtask/deploy/Caddyfile.website`.
+  set, and by Caddy on the deployed host through `tools/xtask/deploy/Caddyfile.website`.
 - The browser routes that `src/router.rs` declares, listed with their access tiers in the
   [source root README](/apps/website/frontend/src/README.md).
 - The captured responses in `tests/fixtures/api/`, which the API's contract tests and the browser
@@ -139,12 +139,12 @@ only a secure context offers: `localhost`, `127.0.0.1` or HTTPS.
     `apps/website/shared/is_http_url_cases.rs`.
 - Used by:
   - the `mk leptos`, `mk leptos-debug`, `mk leptos-build`, `mk ci-local-leptos` and
-    `mk leptos-gates` recipes of `tools_v2/xtask/`, `cargo xtask ci ci-local` through
+    `mk leptos-gates` recipes of `tools/xtask/`, `cargo xtask ci ci-local` through
     `ci-local-leptos`, and `cargo xtask deploy website`, which runs `trunk build --release` on the
-    deploy host that `TBD_SSH_HOST` names in `tools_v2/xtask/deploy/deploy.env`;
+    deploy host that `TBD_SSH_HOST` names in `tools/xtask/deploy/deploy.env`;
   - the `website-frontend` job of `.github/workflows/ci.yml` and the editor gates of
     `.github/workflows/editor-gates.yml`;
-  - the headless browser gates in `tools_v2/developer-tools/src/browser_testing/`, which serve
+  - the headless browser gates in `tools/developer_tools/src/browser_testing/`, which serve
     `dist/`, read `src/router.rs` and answer the app's requests from `tests/fixtures/api/`;
   - the API, whose `SPA_DIST_DIR` serves `dist/`, and whose contract tests in
     `apps/website/api_v2/tests/` read `tests/fixtures/api/`.
@@ -164,12 +164,12 @@ only a secure context offers: `localhost`, `127.0.0.1` or HTTPS.
 
 ## Related documentation
 
-- [Frontend documentation](/documentation_v2/website/frontend/README.md) — the route table: each
+- [Frontend documentation](/documentation/website/frontend/README.md) — the route table: each
   route with its code folder and feature doc, and the page areas and workspaces.
-- [Local development](/documentation_v2/runbooks/local_development.md) — the full local setup,
+- [Local development](/documentation/runbooks/local_development.md) — the full local setup,
   Discord sign-in included.
-- [Editor gates](/documentation_v2/runbooks/editor_gates.md) — running the headless editor gates
+- [Editor gates](/documentation/runbooks/editor_gates.md) — running the headless editor gates
   and their environment.
-- [Website deployment](/documentation_v2/runbooks/website_deployment.md) — building and serving
+- [Website deployment](/documentation/runbooks/website_deployment.md) — building and serving
   the bundle on the home server.
-- [Design tokens](/documentation_v2/design_system/design_tokens.md) — the design token reference.
+- [Design tokens](/documentation/design_system/design_tokens.md) — the design token reference.

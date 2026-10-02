@@ -1,7 +1,7 @@
 # Browser session
 
-Everything the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) keeps per browser
-tab rather than in the [mission](/documentation_v2/glossary/g_to_m.md#mission) document: the IndexedDB
+Everything the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) keeps per browser
+tab rather than in the [mission](/documentation/glossary/g_to_m.md#mission) document: the IndexedDB
 draft writer and its save status, the server hydrate and the snapshots that undo it, the cross-tab
 writer role, the read-only review mode, the warm-session marker, the chrome layout, the world-layer
 preferences, the payload-size readout, and the browser transport behind Save, Export, the merge and
@@ -46,7 +46,7 @@ Save Version / Export / merge ──> document_commands ──> API, download, t
 ```
 
 Review mode is opened by the review workspace page before it mounts the editor, on the version an
-[artifact](/documentation_v2/glossary/a_to_f.md#artifact) compiled from, and closed when that page goes
+[artifact](/documentation/glossary/a_to_f.md#artifact) compiled from, and closed when that page goes
 away. While it is open every write path consults `review_mode::writes_mission`: the boot restores
 the reviewed version instead of the draft and the server's current version, the draft writer is
 never armed, the writer role reads as read-only without an election, the unload prompt stays off,
@@ -59,7 +59,7 @@ collapsed stub, and the 96 px toolbelt band. The live accessors (`dock_left_px`,
 the pointer gestures and the select tool read them to tell the map from the chrome; the collapse and
 hidden flags last as long as the page. The world-layer and basemap preferences persist in
 `localStorage` under `tbd-mc-editor-prefs`. The warm-session marker records, per account, that this
-tab finished booting a mission (its id, [slot](/documentation_v2/glossary/n_to_z.md#slot) count and time);
+tab finished booting a mission (its id, [slot](/documentation/glossary/n_to_z.md#slot) count and time);
 only the `__missionPersist.warm()` probe reads it back. The in-memory state here (the save status,
 the tab role, the snapshot cache, the review cell) dies with the tab, while the drafts, snapshots,
 preferences and marker it stores outlive it.
@@ -81,7 +81,7 @@ preferences and marker it stores outlive it.
   toolbelt directly), and the four inset constants, which every reader takes from `layout` instead.
 - `tab_lock::TabLockBanner` for the page; `world_layer_prefs` for the world-assets host and the
   preferences dialog; `document_commands` for the top strip, the
-  [Arsenal](/documentation_v2/glossary/a_to_f.md#arsenal) tab, the mission-row mirrors and the boot;
+  [Arsenal](/documentation/glossary/a_to_f.md#arsenal) tab, the mission-row mirrors and the boot;
   `persist` and `session` for the boot.
 
 ## Boundaries
@@ -92,7 +92,7 @@ preferences and marker it stores outlive it.
   `operations::slot_ids::duplicate_slot_ids`), `streaming::bridge` for the boot progress and the
   preference types; the `DocHandle` and undo driver of
   `apps/website/frontend/src/v2/apps/editor/bridge/document_host/`; `crate::v2::core` (the
-  [API](/documentation_v2/glossary/a_to_f.md#api) client and DTOs, the auth store, the toasts, the
+  [API](/documentation/glossary/a_to_f.md#api) client and DTOs, the auth store, the toasts, the
   clipboard helper); `idb`, `gloo_net`, `web_sys` and `js_sys`; over HTTP,
   `GET /api/v1/missions/{id}`, `POST /api/v1/missions/{id}/versions` and
   `GET /api/v1/missions?scope=mine`.
@@ -104,7 +104,7 @@ preferences and marker it stores outlive it.
     `apps/website/frontend/src/v2/core/auth/store.rs` (the sign-out purge), the upload panel in
     `apps/website/frontend/src/v2/pages/mission_hub/library/` (`format_bytes`), and the search box,
     select and slider in `apps/website/frontend/src/v2/core/ui/` (the class recipes);
-  - the headless editor gates in `tools_v2/developer-tools/src/browser_testing/`, through
+  - the headless editor gates in `tools/developer_tools/src/browser_testing/`, through
     `window.__missionPersist` and `window.__editorCommands`;
   - `cargo xtask verify editor-orbat-coherency`, which scans `eden_chrome.rs`.
 - Rules:
@@ -121,9 +121,9 @@ preferences and marker it stores outlive it.
 
 ## Related documentation
 
-- [Mission Creator feature inventory: data persistence and compile](/documentation_v2/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) — the local draft, hydrate, conflict dialog and tab lock.
-- [Mission Creator feature inventory: map basemap and world objects](/documentation_v2/website/frontend/apps/editor/feature_inventory/map_basemap_and_world_objects.md) — the per-user basemap and world-layer preferences.
-- [Mission Creator decisions](/documentation_v2/website/frontend/apps/editor/decisions.md) — the
+- [Mission Creator feature inventory: data persistence and compile](/documentation/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) — the local draft, hydrate, conflict dialog and tab lock.
+- [Mission Creator feature inventory: map basemap and world objects](/documentation/website/frontend/apps/editor/feature_inventory/map_basemap_and_world_objects.md) — the per-user basemap and world-layer preferences.
+- [Mission Creator decisions](/documentation/website/frontend/apps/editor/decisions.md) — the
   load-conflict, autosave, undo and editor-session decisions.
-- [Mission Creator feature inventory: shell route and layout](/documentation_v2/website/frontend/apps/editor/feature_inventory/shell_route_and_layout.md) — the review mode and the chrome layout.
-- [Mission Creator feature inventory: performance at scale](/documentation_v2/website/frontend/apps/editor/feature_inventory/performance_at_scale.md) — the load, save and warm-session behaviour at scale.
+- [Mission Creator feature inventory: shell route and layout](/documentation/website/frontend/apps/editor/feature_inventory/shell_route_and_layout.md) — the review mode and the chrome layout.
+- [Mission Creator feature inventory: performance at scale](/documentation/website/frontend/apps/editor/feature_inventory/performance_at_scale.md) — the load, save and warm-session behaviour at scale.

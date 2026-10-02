@@ -36,7 +36,7 @@ pub struct ModInput {
     #[serde(default)]
     pub workshop_id: String,
     /// Local addon GUID (distinct from Workshop id — see
-    /// `documentation_v2/runbooks/game_server_staging/README.md`).
+    /// `documentation/runbooks/game_server_staging/README.md`).
     #[serde(default)]
     pub mod_guid: String,
     /// Optional version pin for `game.mods[].version`.

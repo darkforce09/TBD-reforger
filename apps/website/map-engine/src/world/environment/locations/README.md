@@ -37,7 +37,7 @@ LabelHost::push(zoom, layer toggles)
   └─► the town, road and height label lanes of the engine
 ```
 
-The sources sit in the terrain's asset folder (`assets_v2/terrains/everon/` for Everon, served
+The sources sit in the terrain's asset folder (`assets/terrains/everon/` for Everon, served
 under `/map-assets/`). `LabelHost::init` reads its `manifest.json`: when the `labels` block names
 an archive of encoding `rkyv-map-labels-v1`, the towns and the baked road name candidates come
 from that archive, and stay empty if it fails to load; when the manifest names none, they come
@@ -80,9 +80,9 @@ constant 150 px on screen), at most `PEAK_LABEL_MAX` (48), and only between zoom
   - `crate::overlay::symbology`, whose text packer and text metrics pack the three label lanes;
   - `crate::world::terrain::roads`, whose road network names classes with `road_class_name`;
   - the map tooling: the labels archive and the height label export in
-    `tools_v2/developer-tools/src/map_raster_pipeline/`, the road export
-    (`tools_v2/developer-tools/src/world_export_pipeline/roads_emit.rs`) and the label checks in
-    `tools_v2/developer-tools/src/map_verification/`.
+    `tools/developer_tools/src/map_raster_pipeline/`, the road export
+    (`tools/developer_tools/src/world_export_pipeline/roads_emit.rs`) and the label checks in
+    `tools/developer_tools/src/map_verification/`.
 - Rules:
   - the labels archive reads exactly the JSON it was baked from, including an empty lane, at any
     buffer offset, and a truncated file or another schema version is an error
@@ -96,7 +96,7 @@ constant 150 px on screen), at most `PEAK_LABEL_MAX` (48), and only between zoom
 
 ## Related documentation
 
-- [Locations schema](/contracts_v2/definitions/locations.schema.json) — the rows of
+- [Locations schema](/contracts/definitions/locations.schema.json) — the rows of
   `locations.json`.
-- [Height labels schema](/contracts_v2/definitions/height-labels.schema.json) — the rows of
+- [Height labels schema](/contracts/definitions/height-labels.schema.json) — the rows of
   `height-labels.json`, the source of the archive's height lane.

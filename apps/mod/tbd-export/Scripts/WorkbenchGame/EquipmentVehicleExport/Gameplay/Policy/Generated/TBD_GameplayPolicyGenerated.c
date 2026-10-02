@@ -1,4 +1,4 @@
-// Generated from contracts_v2/rules/equipment-gameplay.
+// Generated from contracts/rules/equipment-gameplay.
 class TBD_GameplayPolicyGenerated
 {
 	static const int VERSION = 1;

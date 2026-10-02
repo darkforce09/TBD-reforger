@@ -1,8 +1,8 @@
 # Engine seam
 
-The frontend's side of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s
+The frontend's side of the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
 boundary with the map engine: the boot machine and its progress, the viewport and frame-timing belt,
-the hosted [mission](/documentation_v2/glossary/g_to_m.md#mission) document with its undo driver, the host
+the hosted [mission](/documentation/glossary/g_to_m.md#mission) document with its undo driver, the host
 signal state the engine's commands read, the overlays laid over the map, the tactical-graphics lane
 and the map-asset host.
 
@@ -44,7 +44,7 @@ canvas mount
 progress events the engine's streaming bridge reports, and names a failed segment in the error
 overlay. `viewport.rs` also publishes the harness gates (`__selfChecks`, `__editorBench`,
 `__editorCam`, `__editorCamSet`, `__wgpuSlotStats`) and keeps `registry_session`, a tab cache of the
-item [registry](/documentation_v2/glossary/n_to_z.md#registry) and its compatibility feed that a second
+item [registry](/documentation/glossary/n_to_z.md#registry) and its compatibility feed that a second
 editor mount reuses. `world_assets.rs` boots the streaming host in its full scope with the live world-layer, basemap
 and hillshade preferences and registers the engine and host pair with a cleanup that clears only the
 pair it registered. The tactical-graphics lane parses the `tacticalGraphics` environment rows once
@@ -90,7 +90,7 @@ the document.
   - the source pins in `apps/website/frontend/src/v2/core/test_support/editor_operations.rs`,
     `apps/website/map-engine/src/overlay/tests/tests/draw_order_t748_comments_bind_feed.rs` and the
     editor's own tests in `apps/website/frontend/src/v2/apps/editor/tests/`;
-  - the headless editor gates in `tools_v2/developer-tools/src/browser_testing/`, through the window
+  - the headless editor gates in `tools/developer_tools/src/browser_testing/`, through the window
     gates.
 - Rules: a module that touches `web_sys` or a live engine handle is
   `#[cfg(target_arch = "wasm32")]`, and so is its `pub mod` line, so the native test build compiles
@@ -102,7 +102,7 @@ the document.
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
+- [Mission Creator feature inventory](/documentation/website/frontend/apps/editor/feature_inventory/README.md)
   — the viewport, the boot and load features, the FPS debug HUD and the transform tools.
-- [Mission Creator UX specification](/documentation_v2/website/frontend/apps/editor/ux_spec.md) —
+- [Mission Creator UX specification](/documentation/website/frontend/apps/editor/ux_spec.md) —
   the layout and the interaction contract.

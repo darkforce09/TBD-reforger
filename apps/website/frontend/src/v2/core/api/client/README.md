@@ -1,6 +1,6 @@
 # API client
 
-The one HTTP client the app calls the [API](/documentation_v2/glossary/a_to_f.md#api) through: the request
+The one HTTP client the app calls the [API](/documentation/glossary/a_to_f.md#api) through: the request
 verbs with their bearer token and their single retry, the failure types they return, and the
 refresh policy that keeps a session alive across tabs without spending a refresh token twice.
 
@@ -60,7 +60,7 @@ uses them, and the pages read a failure as the `(status, message)` pair through
 - Used by: the endpoint calls in `apps/website/frontend/src/v2/core/api/endpoints/`; the session
   in `apps/website/frontend/src/v2/core/auth/session.rs`, for the refresh lock; the pages under
   `apps/website/frontend/src/v2/pages/`, the app layout's `bootstrap` among them; the
-  [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator) under
+  [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) under
   `apps/website/frontend/src/v2/apps/editor/`; `public_get`, by the equipment data viewer in
   `apps/website/frontend/src/v2/apps/debug/data_viewer/data/`.
 - Rules:
@@ -82,5 +82,5 @@ uses them, and the pages read a failure as the `(status, message)` pair through
 
 ## Related documentation
 
-- [Identity transactions](/documentation_v2/website/api_v2/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/website/api_v2/verification_evidence/identity_transactions.md)
   — sessions, refresh rotation and replay revocation in the API, and the browser's generations.

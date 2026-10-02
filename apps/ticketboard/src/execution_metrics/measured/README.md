@@ -1,8 +1,8 @@
 # Measured run receipts
 
-The [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard)'s reading of the measured run receipts
+The [ticketboard](/documentation/glossary/n_to_z.md#ticketboard)'s reading of the measured run receipts
 under `.ai/tickets/metrics/<id>/`: each file checked by the same rules `cargo xtask ticket check`
-applies, then summed per [ticket](/documentation_v2/glossary/n_to_z.md#ticket), per agent and in total,
+applies, then summed per [ticket](/documentation/glossary/n_to_z.md#ticket), per agent and in total,
 with every malformed file named instead of counted.
 
 ## Contents
@@ -49,7 +49,7 @@ broken by key name.
   `valid_ticket_id` and `valid_git_sha`; `crate::execution_metrics::ui`, `models` and `events`.
 - Rules:
   - the receipt check is a copy of `validate_record` in
-    `tools_v2/ticket-engine/src/metrics/model.rs` plus the patterns of
+    `tools/ticket_engine/src/metrics/model.rs` plus the patterns of
     `.ai/tickets/metrics.schema.json`, kept by hand
     (`checker_mirror_rules_each_produce_a_named_error_row`,
     `unknown_field_is_an_error_row_mirroring_the_schema`, `ticket_id_and_sha_pattern_mirrors` in

@@ -1,6 +1,6 @@
 # Mission environment and placement readers
 
-Applies a loaded [mission](/documentation_v2/glossary/g_to_m.md#mission)'s authored environment to the
+Applies a loaded [mission](/documentation/glossary/g_to_m.md#mission)'s authored environment to the
 world: fog, wind and view distance at load, the weather timeline while the round is live, and the
 placement scatter that jitters slot spawn positions.
 
@@ -58,7 +58,7 @@ whose root the caller reads into its own struct, or null with `NO_DOCUMENT` or `
   (the raw JSON and `GetMissionId`); `TBD_AnnounceOnce`; `TBD_FrameworkManager` (the game stage and the framework-world
   test); `TBD_Log`; the engine's `BaseWeatherManagerEntity`, `TimeAndWeatherManagerEntity` and
   `ChimeraGame`; the `environment`, `weatherTimeline`, slot and group definitions in
-  `contracts_v2/definitions/mission.schema.json`.
+  `contracts/definitions/mission.schema.json`.
 - Used by: `TBD_MissionWorldApplier`, which calls `TBD_EnvironmentReader.Apply`;
   `TBD_MissionLoader`, whose parse binds `TBD_MissionEnvironmentStruct` as the document's
   `environment`; `TBD_SlotBodyMaterializer` in

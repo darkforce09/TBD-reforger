@@ -2,7 +2,7 @@
 
 The stage vocabulary of a TBD round, the safe start that keeps everyone unhurt from the lobby until
 the round goes live, and the evaluator that ends the round on a
-[mission](/documentation_v2/glossary/g_to_m.md#mission)'s authored `extraction` or `vip` win rule.
+[mission](/documentation/glossary/g_to_m.md#mission)'s authored `extraction` or `vip` win rule.
 
 ## Contents
 
@@ -50,9 +50,9 @@ admin `#tbd stage next` order. `TBD_FrameworkManager` in
 
 ## Related documentation
 
-- [Safe start HUD specification](/documentation_v2/mod/tbd-framework/UI/safe_start_hud/safe_start_hud_specification.md)
+- [Safe start HUD specification](/documentation/mod/tbd-framework/UI/safe_start_hud/safe_start_hud_specification.md)
   — the safe start notices as built and their design target
-- [End screen specification](/documentation_v2/mod/tbd-framework/UI/end_screen/end_screen_specification.md)
+- [End screen specification](/documentation/mod/tbd-framework/UI/end_screen/end_screen_specification.md)
   — the END banner that names the win rule's endings
-- [Mod design](/documentation_v2/mod/tbd-framework/mod_design.md) — one life and the
-  [event](/documentation_v2/glossary/a_to_f.md#event) loop the stages follow
+- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — one life and the
+  [event](/documentation/glossary/a_to_f.md#event) loop the stages follow

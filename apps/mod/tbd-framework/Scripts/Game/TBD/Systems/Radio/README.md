@@ -1,6 +1,6 @@
 # Mission radio nets
 
-Gives each player their side's radio nets from the [mission](/documentation_v2/glossary/g_to_m.md#mission)'s
+Gives each player their side's radio nets from the [mission](/documentation/glossary/g_to_m.md#mission)'s
 radio plan: the server picks the nets for the player's side, tunes them into the radios the player
 carries and verifies each tune by reading it back, and the client shows the list with the truth
 about what was tuned.
@@ -79,7 +79,7 @@ TBD_FrameworkManager stage change ──> TBD_RadioBridgeStub.OnStageChanged ─
   changes); `TBD_Log` and `TBD_Rounding`; the engine's `SCR_GadgetManagerComponent`, `BaseRadioComponent`,
   `BaseTransceiver`, `ChimeraWorld.GetRadioManager`, `SCR_HintManagerComponent` and
   `SCR_PopUpNotification`; the `radioPlan` and `net` definitions in
-  `contracts_v2/definitions/mission.schema.json`.
+  `contracts/definitions/mission.schema.json`.
 - Used by: `TBD_FrameworkManager` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/`
   (`TBD_RadioBridgeStub.OnStageChanged`);
   `apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et`, which attaches `TBD_RadioComponent`.
@@ -90,7 +90,7 @@ TBD_FrameworkManager stage change ──> TBD_RadioBridgeStub.OnStageChanged ─
 
 ## Related documentation
 
-- [Briefing specification](/documentation_v2/mod/tbd-framework/UI/briefing/briefing_specification.md)
+- [Briefing specification](/documentation/mod/tbd-framework/UI/briefing/briefing_specification.md)
   — the briefing screen design, with its Frequencies section
-- [Mod design](/documentation_v2/mod/tbd-framework/mod_design.md) — why radio uses the engine's own
+- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — why radio uses the engine's own
   transceivers and no partner mod

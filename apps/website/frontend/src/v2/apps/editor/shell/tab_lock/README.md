@@ -1,7 +1,7 @@
 # Tab lock browser transport
 
-The browser half of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s cross-tab
-writer role: which tab writes the local draft of a [mission](/documentation_v2/glossary/g_to_m.md#mission)
+The browser half of the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s cross-tab
+writer role: which tab writes the local draft of a [mission](/documentation/glossary/g_to_m.md#mission)
 that several tabs have open. The parent module,
 `apps/website/frontend/src/v2/apps/editor/shell/tab_lock.rs`, holds the pure half (the roles, the
 message and stamp types, `decide_save`, the fallback `elect`, the banner and its copy) and declares
@@ -48,4 +48,4 @@ choose a write-through or a merge. `register_bridge` publishes `window.__mission
 
 ## Related documentation
 
-- [Mission Creator feature inventory: data persistence and compile](/documentation_v2/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) — one writer tab per mission.
+- [Mission Creator feature inventory: data persistence and compile](/documentation/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) — one writer tab per mission.

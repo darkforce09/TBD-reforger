@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/reservation-response.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/reservation-response.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///POST /api/v1/event-missions/:id/register. state is the compatibility attendance-or-reservation projection; consumers use reservation_state for actions.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

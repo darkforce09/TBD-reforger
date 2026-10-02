@@ -16,7 +16,7 @@ Each `.layout` sits beside its `.layout.meta`, so every line covers the pair.
 
 ## Format
 
-- File type: [Enfusion](/documentation_v2/glossary/a_to_f.md#enfusion) widget layouts (`.layout`), plain
+- File type: [Enfusion](/documentation/glossary/a_to_f.md#enfusion) widget layouts (`.layout`), plain
   text, each beside a `.layout.meta` whose `Name` holds
   `{GUID}UI/layouts/Session/PostGame/<file>.layout`. Both follow the shape of
   `apps/mod/tbd-framework/UI/layouts/Common/TBD_ScreenShell.layout`: a `Backdrop` image, a
@@ -33,7 +33,7 @@ Each `.layout` sits beside its `.layout.meta`, so every line covers the pair.
 - Naming: `TBD_<Stage>Screen.layout`, one per post-game stage.
 - Adding a layout: take a free block from the ledger, author the layout and its `.meta`, add a
   `TBD_UILayouts` constant, and commit both files; the game finds a new path only after
-  [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) has rewritten `resourceDatabase.rdb`.
+  [Workbench](/documentation/glossary/n_to_z.md#workbench) has rewritten `resourceDatabase.rdb`.
 
 ## Referenced by
 
@@ -54,7 +54,7 @@ Each `.layout` sits beside its `.layout.meta`, so every line covers the pair.
 
 ## Related documentation
 
-- [End screen specification](/documentation_v2/mod/tbd-framework/UI/end_screen/end_screen_specification.md)
+- [End screen specification](/documentation/mod/tbd-framework/UI/end_screen/end_screen_specification.md)
   — the END banner as built, how a round ends and the design target
-- [Debrief specification](/documentation_v2/mod/tbd-framework/UI/debrief_after_action_review/debrief_after_action_review_specification.md)
+- [Debrief specification](/documentation/mod/tbd-framework/UI/debrief_after_action_review/debrief_after_action_review_specification.md)
   — the DEBRIEF scoreboard as built, kill counting and the design target

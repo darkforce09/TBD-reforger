@@ -5,7 +5,7 @@ summary = "Trust banner + file watch"
 class = "docs"
 status = "shipped"
 order = 5963
-spec = "documentation_v2/tickets/specs/t915_ticketboard_design.md"
+spec = "documentation/tickets/specs/t915_ticketboard_design.md"
 executor = "claude-code"
 notes = """
 The app never re-implements check; it invokes it. Subprocesses run with explicit current_dir at the discovered repo root and robust cargo resolution (GUI PATH is bare).

@@ -1,6 +1,6 @@
 # Vehicle exports
 
-The [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) exporter that discovers every
+The [Workbench](/documentation/glossary/n_to_z.md#workbench) exporter that discovers every
 vehicle platform and variant in the loaded addons and writes their catalog and engineering data
 under `$profile:TBD_Export/vehicles/`: mobility and drivetrain, armour hit zones, crew compartments,
 turrets and mounted weapons, and fuel, storage, communications, electrical and AI configuration.
@@ -70,7 +70,7 @@ None: Workbench runs these scripts in the editor.
   `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/Core/ExportDestination/`, which runs
   `TBD_VehicleDeepExportPlugin.ExportTo` and probes doors through `TBD_VehicleCompartmentExtractor`;
   the first publication of a source export, which moves the unversioned `vehicles/` folder into its
-  archive (`tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/publication.rs`).
+  archive (`tools/xtask/src/commands/mod_ops/equipment_vehicle_export/publication.rs`).
 - Rules: a value the configuration does not declare stays null; every installed instance keeps its
   own record. The scripts compile only when Workbench loads `tbd-export`, and a new script file
   appears after a Workbench cold restart.

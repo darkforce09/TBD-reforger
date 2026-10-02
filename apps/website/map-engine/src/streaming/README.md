@@ -1,7 +1,7 @@
 # Map streaming
 
 Everything that gets a terrain's served map data into the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s map and keeps it there:
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s map and keeps it there:
 fetching the files under `/map-assets`, deciding which world chunks stay resident, composing their
 draw buffers, accounting for the memory they hold, and reporting progress and statistics to the
 page. It hands finished data to the render engine and depends on no UI crate.
@@ -87,14 +87,14 @@ and the crate's tests use them.
     `crate::camera` or `crate::doll`;
   - `serde`, `serde_json`, `flate2`, `bytemuck`, `thiserror` and `futures`, and on wasm32
     `gloo-net`, `web-sys`, `js-sys`, `wasm-bindgen` and `wasm-bindgen-futures`;
-  - the [API](/documentation_v2/glossary/a_to_f.md#api)'s `/map-assets` mount, which serves
-    `assets_v2/terrains/` and `assets_v2/glyphs/` unless `MAP_ASSETS_DIR` or `GLYPH_ASSETS_DIR`
+  - the [API](/documentation/glossary/a_to_f.md#api)'s `/map-assets` mount, which serves
+    `assets/terrains/` and `assets/glyphs/` unless `MAP_ASSETS_DIR` or `GLYPH_ASSETS_DIR`
     names another folder (`apps/website/api_v2/src/core/http_router.rs`).
 - Used by:
   - `crate::world` and `crate::spatial::los::world`;
   - the Mission Creator in `apps/website/frontend/src/v2/apps/editor/` and the debug world
     line-of-sight bench in `apps/website/frontend/src/v2/apps/debug/world_los/`;
-  - the developer tools in `tools_v2/developer-tools/src/` (the world export pipeline, the map
+  - the developer tools in `tools/developer_tools/src/` (the world export pipeline, the map
     raster pipeline, the map verifications) and their editor smoke tests, which read
     `window.__mapAssets`.
 - Rules:
@@ -111,8 +111,8 @@ and the crate's tests use them.
 
 ## Related documentation
 
-- [Terrain assets](/assets_v2/terrains/README.md) — the served terrain tree the loaders read.
-- [Architecture gates](/tools_v2/xtask/src/verifications/architecture/README.md) — the
+- [Terrain assets](/assets/terrains/README.md) — the served terrain tree the loaders read.
+- [Architecture gates](/tools/xtask/src/verifications/architecture/README.md) — the
   `engine-layers` gate that scans this tree.
-- [Map streaming](/documentation_v2/website/map-engine/map_streaming.md) — the boot sequence,
+- [Map streaming](/documentation/website/map-engine/map_streaming.md) — the boot sequence,
   viewport passes, residency, memory budget and loaders as one flow, with open work and decisions.

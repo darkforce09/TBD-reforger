@@ -48,5 +48,5 @@ whether the view is limited to the viewer's own side, and the status line explai
 
 ## Related documentation
 
-- [Spectator specification](/documentation_v2/mod/tbd-framework/UI/spectator/spectator_specification.md)
+- [Spectator specification](/documentation/mod/tbd-framework/UI/spectator/spectator_specification.md)
   — the spectator as built, its policies and controls, and the design target

@@ -1,7 +1,7 @@
 # Terrain export
 
 The terrain layers of the map export: ground height, a cartographic rasterization, the road network
-and water, each read from the open world in [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) and
+and water, each read from the open world in [Workbench](/documentation/glossary/n_to_z.md#workbench) and
 written as text, JSON or image files to the export profile.
 
 ## Contents
@@ -41,8 +41,8 @@ None: Workbench runs these scripts in the editor.
   river, spline shape and entity query classes.
 - Used by: `TBD_MapExportPlugin` in `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Plugins/`.
   Outside the addon, the elevation files feed the world tool's `raw-u16-dem-png` command
-  (`tools_v2/developer-tools/src/world_export_pipeline/`) and the water rasters feed the map tool's
-  `water` command (`tools_v2/developer-tools/src/map_raster_pipeline/`), which reads them under
+  (`tools/developer_tools/src/world_export_pipeline/`) and the water rasters feed the map tool's
+  `water` command (`tools/developer_tools/src/map_raster_pipeline/`), which reads them under
   other names from the export scratch; no committed tool reads the road or rasterization files, and
   no committed step moves any of them out of the profile.
 - Rules: the layers write only below the config's destination folder, through `TBD_MapExportPaths`;
@@ -51,5 +51,5 @@ None: Workbench runs these scripts in the editor.
 
 ## Related documentation
 
-- [Everon terrain dataset](/assets_v2/terrains/everon/README.md) — the committed terrain data and
+- [Everon terrain dataset](/assets/terrains/everon/README.md) — the committed terrain data and
   the tools that build it.

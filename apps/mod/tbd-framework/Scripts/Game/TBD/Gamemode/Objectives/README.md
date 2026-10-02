@@ -1,6 +1,6 @@
 # Mission objectives and tasks
 
-Runs a [mission](/documentation_v2/glossary/g_to_m.md#mission)'s objectives on the server while the round
+Runs a [mission](/documentation/glossary/g_to_m.md#mission)'s objectives on the server while the round
 is live: capture, hold and destroy objectives on the mission's zones, with per-side task text, the
 objective end triggers the round can end on, and the mission's `tasks[]` that follow its editor
 triggers.
@@ -89,12 +89,12 @@ it asks for the snapshot each second.
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Zones/`; `TBD_MissionLoader` (the raw JSON,
   factions, entities and `HasEndTrigger`), `TBD_MissionJsonPass` and `TBD_MissionVariants` under
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/`; `TBD_SpawnManager` (a player's
-  [slot](/documentation_v2/glossary/n_to_z.md#slot), side and life); `TBD_FrameworkManager` (the
+  [slot](/documentation/glossary/n_to_z.md#slot), side and life); `TBD_FrameworkManager` (the
   stage); `TBD_Registry`, `TBD_Log`, `TBD_AnnounceOnce`, `TBD_EntityQuery`, `TBD_CharacterUtil`,
   `TBD_PlayerFaction`, `TBD_DeclaredFactions`, `TBD_PlayerChat` and `TBD_Rounding` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; `TBD_ObjectiveHud` and `TBD_TaskHud` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/`; the `zone`, `zoneRules`, `objective`, `task`
-  and `winConditions` definitions in `contracts_v2/definitions/mission.schema.json`.
+  and `winConditions` definitions in `contracts/definitions/mission.schema.json`.
 - Used by: `TBD_FactionElimination` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/Stage/`,
   which calls `EvaluateEndTriggers` to end the round, and `TBD_EndBanner`, which infers an admin end;
   `TBD_TriggerRuntime` (the `objective_complete` condition and `set_objective` effect) and
@@ -112,5 +112,5 @@ it asks for the snapshot each second.
 
 ## Related documentation
 
-- [Objective capture HUD specification](/documentation_v2/mod/tbd-framework/UI/objective_capture_hud/objective_capture_hud_specification.md)
+- [Objective capture HUD specification](/documentation/mod/tbd-framework/UI/objective_capture_hud/objective_capture_hud_specification.md)
   — the objective board and capture bar as built, their delivery and design target

@@ -74,7 +74,7 @@ estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject
 owns = [
     "tools/tbd-tools/src/doctor.rs",
     "tools/tbd-tools/src/smokes.rs",
-    "documentation_v2/runbooks/editor_gates.md",
+    "documentation/runbooks/editor_gates.md",
 ]
 
 [scope]

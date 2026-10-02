@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/audit-log.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/audit-log.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///`event: reset` on the audit stream, whose id is the tail: the requested history cannot be replayed. cursor_ahead: the cursor is beyond the newest publication. history_unavailable: the cursor is below the retained floor, at open or when a later wake finds the floor above the stream's cursor. The stream continues after resume_after, the tail, and the client reloads history from the list route.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

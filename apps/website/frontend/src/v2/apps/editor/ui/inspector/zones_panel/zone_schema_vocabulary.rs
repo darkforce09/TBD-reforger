@@ -5,7 +5,7 @@ use super::*;
 /// Embedded mission schema used for zone types and rule fields.
 pub(crate) const MISSION_SCHEMA: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../contracts_v2/definitions/mission.schema.json"
+    "/../../../contracts/definitions/mission.schema.json"
 ));
 
 /// One editable zone rule derived from the mission schema.

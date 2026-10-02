@@ -142,7 +142,7 @@ trigger.
   `TBD_AnnounceOnce`, `TBD_PlayerChat`, `TBD_PlayerFaction`, `TBD_CharacterUtil` and
   `TBD_EntityQuery` under `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; the engine's
   `SCR_UISoundEntity` and `SCR_EntityHelper`; `#/$defs/editorTrigger` in
-  `contracts_v2/definitions/mission.schema.json`.
+  `contracts/definitions/mission.schema.json`.
 - Used by: `TBD_RuntimeHeartbeat` (`Clear`, `Tick`, `TICK_MS`); `TBD_TaskStateMachine`,
   `TBD_AudioEmitter` and `TBD_DynamicSpawner` (`IsBuilt`, `GetAll`, `FindById`, `HasFired` and the
   `TBD_Trigger` fields).

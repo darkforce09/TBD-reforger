@@ -1,7 +1,7 @@
 # Execution metrics
 
-The [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) feature that shows what running
-[tickets](/documentation_v2/glossary/n_to_z.md#ticket) cost: the measured run receipts in
+The [ticketboard](/documentation/glossary/n_to_z.md#ticketboard) feature that shows what running
+[tickets](/documentation/glossary/n_to_z.md#ticket) cost: the measured run receipts in
 `.ai/tickets/metrics/<id>/` and the historical token estimates in `.ai/tickets/estimates/`, loaded,
 checked, summed and drawn as two datasets that never share a total.
 
@@ -75,5 +75,5 @@ order, and a ticket link selects that ticket on the board.
 
 ## Related documentation
 
-- [Token estimate factor](/documentation_v2/tools_v2/ticket-engine/token_estimate_factor.md) — how
+- [Token estimate factor](/documentation/tools/ticket_engine/token_estimate_factor.md) — how
   the estimates are made.

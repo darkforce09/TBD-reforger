@@ -1,9 +1,9 @@
 # Agent configuration
 
-Loads and validates the [fleet host agent](/documentation_v2/glossary/a_to_f.md#fleet-host-agent)'s TOML
+Loads and validates the [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent)'s TOML
 configuration file and reads the two secrets it names, the
-[machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential) and the
-[RCON](/documentation_v2/glossary/n_to_z.md#rcon) password, so a misconfigured agent stops at startup
+[machine credential](/documentation/glossary/g_to_m.md#machine-credential) and the
+[RCON](/documentation/glossary/n_to_z.md#rcon) password, so a misconfigured agent stops at startup
 with a named error instead of failing its first command.
 
 ## Contents
@@ -52,5 +52,5 @@ code, not configured.
 - Used by: `apps/fleet_host_agent/src/main.rs`, which loads the file named on the command line and
   exits 78 on a `ConfigurationError`.
 - Rules: no error message quotes a secret; every key is validated at load time, never at first
-  use; the credential format matches `contracts_v2/definitions/machine-credential.schema.json`
+  use; the credential format matches `contracts/definitions/machine-credential.schema.json`
   (the tests in `tests/agent_configuration.rs` hold each rule).

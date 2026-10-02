@@ -1,6 +1,6 @@
 # Text handling
 
-Text rules the whole [API](/documentation_v2/glossary/a_to_f.md#api) shares: the guard every stored URL
+Text rules the whole [API](/documentation/glossary/a_to_f.md#api) shares: the guard every stored URL
 passes before it is written, the policy for the links and images of authored content, and the HTML
 sanitizer with the preview helpers that shorten text for lists and Discord messages.
 
@@ -20,8 +20,8 @@ apps/website/api_v2/src/core/text/
 `is_http_url` accepts an absolute URL whose scheme is `http` or `https` and whose host is not
 empty, and refuses anything holding an ASCII control character or surrounding whitespace, so the
 bytes checked are the bytes a browser will follow. Code that stores a URL (an announcement
-thumbnail, an [event](/documentation_v2/glossary/a_to_f.md#event) banner, a
-[mission](/documentation_v2/glossary/g_to_m.md#mission) thumbnail, a Discord avatar, the
+thumbnail, an [event](/documentation/glossary/a_to_f.md#event) banner, a
+[mission](/documentation/glossary/g_to_m.md#mission) thumbnail, a Discord avatar, the
 `aar_replay_url` of a match results revision, checked by its decoder before the transaction opens)
 refuses a failing value instead of storing it. The guard is not a server-side request forgery
 check: a loopback or metadata address passes.
@@ -34,8 +34,8 @@ and `file:` included, and so is any value holding a backslash, a control charact
 anywhere. The prefixes match in lowercase only, so `HTTPS://` is refused rather than normalised.
 `is_external_link` is true for the safe absolute `http`, `https` and `mailto` targets. The rule is
 the same one the `href`, `src` and `profile_image_url` patterns of
-`contracts_v2/definitions/wiki-page.schema.json` and
-`contracts_v2/definitions/vehicle-database.schema.json` state for the wire.
+`contracts/definitions/wiki-page.schema.json` and
+`contracts/definitions/vehicle-database.schema.json` state for the wire.
 
 `snippet` collapses whitespace and cuts to a number of characters, `truncate` cuts and appends
 `…`, and `cap_runes` cuts so that the result, ellipsis included, never exceeds the cap.
@@ -48,8 +48,8 @@ as text.
 - Depends on: `url` and `ammonia`; its tests read the case table
   `apps/website/shared/is_http_url_cases.rs`, which the single-page app's own guard in
   `apps/website/frontend/src/v2/core/auth/url_guard.rs` is tested against too, and compile the
-  link and image patterns of `contracts_v2/definitions/wiki-page.schema.json` and
-  `contracts_v2/definitions/vehicle-database.schema.json` with `regress`.
+  link and image patterns of `contracts/definitions/wiki-page.schema.json` and
+  `contracts/definitions/vehicle-database.schema.json` with `regress`.
 - Used by: `community_content` (the announcement thumbnail check, the previews and the Discord
   webhook's caps, and the content URL policy for the vehicle database image and the wiki markup),
   `identity_and_access` (the Discord avatar), `match_telemetry` (the results

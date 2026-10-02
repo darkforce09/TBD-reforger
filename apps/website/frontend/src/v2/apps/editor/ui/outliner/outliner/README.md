@@ -1,8 +1,8 @@
 # Outliner rows, active folder and ORBAT tree
 
 Two parts of the outliner's node model: the flat rows the windowed tree renders, with the
-operations on the active folder, and the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) tree of
-factions, squads and [slots](/documentation_v2/glossary/n_to_z.md#slot). The node model itself,
+operations on the active folder, and the [ORBAT](/documentation/glossary/n_to_z.md#orbat) tree of
+factions, squads and [slots](/documentation/glossary/n_to_z.md#slot). The node model itself,
 `OutlinerNode` and the layers tree, is the module root
 `apps/website/frontend/src/v2/apps/editor/ui/outliner/outliner.rs`, which declares these files and
 re-exports their items.
@@ -63,4 +63,4 @@ matching the key and never the name.
 
 ## Related documentation
 
-- [Mission Creator feature inventory: left sidebar and ORBAT tree](/documentation_v2/website/frontend/apps/editor/feature_inventory/left_sidebar.md) — the trees these builders produce.
+- [Mission Creator feature inventory: left sidebar and ORBAT tree](/documentation/website/frontend/apps/editor/feature_inventory/left_sidebar.md) — the trees these builders produce.

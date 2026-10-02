@@ -1,7 +1,7 @@
 # T-251 — release image for the Axum `api` binary (`website-api`).
 #
 # Build from the **monorepo root** (required: `website-map-engine` path dep +
-# `contracts_v2` compile-time `include_str!` embeds in validate.rs / kit.rs):
+# `contracts` compile-time `include_str!` embeds in validate.rs / kit.rs):
 #
 #   docker build -f apps/website/Dockerfile -t tbd-website-api .
 #   # or:
@@ -9,7 +9,7 @@
 #
 # Runtime listens on 0.0.0.0:$PORT (default 8080). Supply at least DATABASE_URL and
 # JWT_SECRET (see apps/website/api_v2/.env.example). This image does **not** serve the
-# Leptos SPA — use tools_v2/xtask/deploy/Caddyfile.website (COOP/COEP + /api reverse-proxy).
+# Leptos SPA — use tools/xtask/deploy/Caddyfile.website (COOP/COEP + /api reverse-proxy).
 
 # syntax=docker/dockerfile:1
 
@@ -17,7 +17,7 @@ FROM docker.io/library/rust:1.95.0-bookworm AS builder
 WORKDIR /src
 
 # Trimmed workspace: only the crates the `api` binary links. Paths under apps/
-# and contracts_v2/ stay monorepo-shaped so include_str! relatives resolve.
+# and contracts/ stay monorepo-shaped so include_str! relatives resolve.
 COPY Cargo.lock ./
 RUN printf '%s\n' \
   '[workspace]' \
@@ -32,8 +32,8 @@ RUN printf '%s\n' \
 COPY apps/website/api_v2 ./apps/website/api_v2
 COPY apps/website/map-engine ./apps/website/map-engine
 COPY apps/website/graphics-engine ./apps/website/graphics-engine
-COPY contracts_v2/definitions ./contracts_v2/definitions
-COPY contracts_v2/rules/kit-aliases.json ./contracts_v2/rules/kit-aliases.json
+COPY contracts/definitions ./contracts/definitions
+COPY contracts/rules/kit-aliases.json ./contracts/rules/kit-aliases.json
 
 ENV CARGO_TERM_COLOR=never
 RUN cargo build --release -p website-api --bin api \

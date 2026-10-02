@@ -4,7 +4,7 @@ Turns a resource's source facts into its organized record: the facts grouped by 
 (inventory, weapon, magazine, sights, vehicle systems and the rest) under snake_case field names,
 its English names, its references and the native types it uses. It also resolves class inheritance
 for the whole exporter and writes the generation's type hierarchy. It runs in
-[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) once per exported resource.
+[Workbench](/documentation/glossary/n_to_z.md#workbench) once per exported resource.
 
 ## Contents
 
@@ -66,12 +66,12 @@ None: Workbench runs these scripts in the editor.
   `organized_capability_cannot_silently_omit_properties`,
   `ancestor_installations_cannot_leak_into_effective_capabilities` and
   `type_inventory_and_hierarchy_must_close` tests
-  (`tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/tests/validation.rs`) hold the
+  (`tools/xtask/src/commands/mod_ops/equipment_vehicle_export/tests/validation.rs`) hold the
   written form, and the capability names are the schema's closed list.
 
 ## Related documentation
 
-- [Export contract](/contracts_v2/definitions/equipment-vehicle-export.schema.json) — the
+- [Export contract](/contracts/definitions/equipment-vehicle-export.schema.json) — the
   `resource_record` document and the capability names.
-- [Field mapping](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/field-mapping/README.md)
+- [Field mapping](/documentation/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/field-mapping/README.md)
   — which source facts each organized field carries.

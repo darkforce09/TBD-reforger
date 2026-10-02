@@ -1,6 +1,6 @@
 # Interactive map tools
 
-The browser half of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s measure
+The browser half of the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s measure
 and selection tools: the ruler and line-of-sight overlays, the seam between the line-of-sight object
 layer and the streamed world occluder, the frame pump of the viewshed scheduler, and the select
 tool's drag preview and smoke bridge. Each tool's state machine, geometry and verdicts live in
@@ -61,7 +61,7 @@ headless gates; the pick and the marquee themselves belong to
     preview, object wash);
   - `viewport.rs` and `world_assets.rs` in `apps/website/frontend/src/v2/apps/editor/bridge/` (the
     wash tick, the HUD suffix, the render-context seam);
-  - the headless editor gates in `tools_v2/developer-tools/src/browser_testing/`, through
+  - the headless editor gates in `tools/developer_tools/src/browser_testing/`, through
     `window.__editorSelection`; `window.__editorObjectWash`, the wash's status probe, has no reader
     in the repository.
 - Rules: the decidable half of a tool stays in `website_map_engine::editing::tools`, and this folder
@@ -74,4 +74,4 @@ headless gates; the pick and the marquee themselves belong to
 
 ## Related documentation
 
-- [Mission Creator feature inventory: bottom toolbelt](/documentation_v2/website/frontend/apps/editor/feature_inventory/bottom_toolbelt.md) — the Select, Ruler and Line of Sight tools.
+- [Mission Creator feature inventory: bottom toolbelt](/documentation/website/frontend/apps/editor/feature_inventory/bottom_toolbelt.md) — the Select, Ruler and Line of Sight tools.

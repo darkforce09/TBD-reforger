@@ -1,6 +1,6 @@
 # Map export
 
-The [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) scripts that read a terrain's data out of
+The [Workbench](/documentation/glossary/n_to_z.md#workbench) scripts that read a terrain's data out of
 the world open in the editor: ground height, rasters, roads and water, vegetation, placed objects
 and buildings, places, and prefab catalogs. They write text, JSON and image files to the Workbench
 profile, where the developer tools pick up the ones the platform's terrain data is built from.
@@ -61,13 +61,13 @@ None: Workbench runs these scripts in the editor.
 - Depends on: Workbench's `WorldEditor` module and `WorldEditorAPI`; the engine's world, road,
   water, trace and file classes; nothing from `tbd-framework`.
 - Used by: the developer tools, which read these files from the profile or from the export scratch
-  under `assets_v2/scratch/<terrain>/`:
+  under `assets/scratch/<terrain>/`:
   - `world copy-export-profile --full` stages the full world-object export for
-    `cargo xtask map export-terrain`, which builds `assets_v2/terrains/<terrain>/objects/` and
+    `cargo xtask map export-terrain`, which builds `assets/terrains/<terrain>/objects/` and
     `roads/`; without `--full` it reads a `TBD_WorldExport_subregion.jsonl` that no script here
     writes;
   - `world raw-u16-dem-png` packs the elevation files into the terrain's elevation model;
-  - the map tool's `water` command (`tools_v2/developer-tools/src/map_raster_pipeline/`) reads
+  - the map tool's `water` command (`tools/developer_tools/src/map_raster_pipeline/`) reads
     water rasters from the export scratch, under file names the water layer does not write;
   - `cargo xtask map ingest-blueprints`, `map blueprint-from-voxels`, `map parity-report`,
     `map world-los` and `map instances-verify` read the building and parity outputs;
@@ -77,21 +77,21 @@ None: Workbench runs these scripts in the editor.
 - Rules: a layer writes only below the config's destination, through `TBD_MapExportPaths`; the
   addon holds no copy of a framework class; sources stay ASCII. `cargo xtask mod compile` compiles
   only the framework addon
-  (`tools_v2/xtask/src/commands/mod_ops/compile/execution.rs`), so these scripts compile only when
+  (`tools/xtask/src/commands/mod_ops/compile/execution.rs`), so these scripts compile only when
   Workbench loads `tbd-export`.
 
 ## Related documentation
 
-- [Terrain datasets](/assets_v2/terrains/README.md) — the committed terrain data these exports
+- [Terrain datasets](/assets/terrains/README.md) — the committed terrain data these exports
   feed, and the tools between them.
-- [World export pipeline](/tools_v2/developer-tools/src/world_export_pipeline/README.md) — staging
+- [World export pipeline](/tools/developer_tools/src/world_export_pipeline/README.md) — staging
   the full export and building the object and road data.
-- [Blueprint compiler](/tools_v2/developer-tools/src/blueprint/README.md) — the offline building
+- [Blueprint compiler](/tools/developer_tools/src/blueprint/README.md) — the offline building
   blueprint steps.
-- [Map commands](/tools_v2/xtask/src/commands/map/README.md) — the `cargo xtask map` commands that
+- [Map commands](/tools/xtask/src/commands/map/README.md) — the `cargo xtask map` commands that
   read these exports.
-- [MCP commands](/tools_v2/xtask/src/commands/mcp/README.md) — `cargo xtask mcp wbcall`.
-- [Map export](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
+- [MCP commands](/tools/xtask/src/commands/mcp/README.md) — `cargo xtask mcp wbcall`.
+- [Map export](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
   every layer, its entry point, the pipeline to committed data and its known gaps.
-- [Terrain export runbook](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/MapExport/terrain_export_runbook.md) —
+- [Terrain export runbook](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/terrain_export_runbook.md) —
   full export, stage, build, verify and open the next import phase.

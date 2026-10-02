@@ -1,7 +1,7 @@
 # Terrain elevation export
 
 Samples the open world's ground height on a regular grid in
-[Workbench](/documentation_v2/glossary/n_to_z.md#workbench) and writes it as an ASCII 16-bit height matrix
+[Workbench](/documentation/glossary/n_to_z.md#workbench) and writes it as an ASCII 16-bit height matrix
 with a metadata file. The developer tools pack that matrix into the terrain's elevation model.
 
 ## Contents
@@ -53,10 +53,10 @@ None: Workbench runs these scripts in the editor.
 - Used by: `TBD_MapExportPlugin` in `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Plugins/`.
   The two files are the input of
   `world raw-u16-dem-png --raster <matrix> --meta <meta> --out <png>`, run through
-  `cargo run -p developer-tools --bin world --`
-  (`tools_v2/developer-tools/src/world_export_pipeline/export_preparation/dem_elevation.rs`). It
+  `cargo run -p developer_tools --bin world --`
+  (`tools/developer_tools/src/world_export_pipeline/export_preparation/dem_elevation.rs`). It
   reads `widthPx`, `heightPx` and the `heightRange*` keys, and writes the 16-bit PNG that
-  `assets_v2/terrains/everon/dem/` commits, with an `elevation.dem` beside it. No committed command
+  `assets/terrains/everon/dem/` commits, with an `elevation.dem` beside it. No committed command
   moves the files out of the profile; the operator passes their paths.
 - Rules: the encoding range written to `dem_meta.json` is the one the samples were quantised
   against, and the converter falls back to the same fixed range when the keys are absent; the matrix
@@ -66,9 +66,9 @@ None: Workbench runs these scripts in the editor.
 
 ## Related documentation
 
-- [Everon elevation model](/assets_v2/terrains/everon/dem/README.md) — the committed image this
+- [Everon elevation model](/assets/terrains/everon/dem/README.md) — the committed image this
   export feeds, and its consumers.
 - [Elevation model](/apps/website/map-engine/src/world/terrain/dem/README.md) — how the map engine
   decodes and samples it.
-- [Map export](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
+- [Map export](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
   the elevation row order and the missing staging step.

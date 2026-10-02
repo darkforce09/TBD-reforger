@@ -1,8 +1,8 @@
 # Ticketboard
 
 The `ticketboard` crate: the native egui/eframe desktop viewer of the
-[ticket](/documentation_v2/glossary/n_to_z.md#ticket) registry in `.ai/tickets/`. It shows every parent
-and child ticket on a status board, the recorded [wave](/documentation_v2/glossary/n_to_z.md#wave) lanes,
+[ticket](/documentation/glossary/n_to_z.md#ticket) registry in `.ai/tickets/`. It shows every parent
+and child ticket on a status board, the recorded [wave](/documentation/glossary/n_to_z.md#wave) lanes,
 the program tree, measured run receipts and historical estimates, with each ticket's details and
 the repository's Markdown documents beside the board. Developers and operators run it on a
 desktop.
@@ -11,13 +11,13 @@ desktop.
 
 ```text
 apps/ticketboard/
-├── Cargo.toml  the `ticketboard` package: one binary, the `glow` feature, the `ticket-engine` path dependency
+├── Cargo.toml  the `ticketboard` package: one binary, the `glow` feature, the `ticket_engine` path dependency
 └── src/        the entry point, the application, the shared core and the seven feature modules
 ```
 
 ## How it works
 
-The viewer reads the registry only through the `ticket-engine` crate in `tools_v2/ticket-engine/`
+The viewer reads the registry only through the `ticket_engine` crate in `tools/ticket_engine/`
 and changes it only by running `cargo xtask ticket <verb>` as a subprocess, one command at a time,
 behind a check that the ticket file has not changed since the action was offered. It writes no
 file under the repository: its one direct write is its preferences, kept in eframe storage in the
@@ -76,7 +76,7 @@ cargo xtask verify file-length
 
 ## Boundaries
 
-- Depends on: `tools_v2/ticket-engine/` for the ticket model, validation, repository paths and the
+- Depends on: `tools/ticket_engine/` for the ticket model, validation, repository paths and the
   wave lock format; `cargo xtask ticket` and `git`, run as subprocesses; the files under
   `.ai/tickets/`; the `eframe`, `egui_commonmark`, `egui_extras`, `notify`, `rfd`, `serde`,
   `serde_json`, `time` and `toml` crates.
@@ -91,7 +91,7 @@ cargo xtask verify file-length
 
 - [Ticket registry](/.ai/tickets/README.md) — the ticket files, statuses and commands the viewer
   shows and runs.
-- [Factory waves](/documentation_v2/runbooks/factory_waves/README.md) — how waves are packed and
+- [Factory waves](/documentation/runbooks/factory_waves/README.md) — how waves are packed and
   run.
-- [Ticketboard viewer](/documentation_v2/ticketboard/ticketboard_viewer.md) — the flows, the
+- [Ticketboard viewer](/documentation/ticketboard/ticketboard_viewer.md) — the flows, the
   reasons behind them and the open work.

@@ -1,8 +1,8 @@
 # Wave plan
 
-The [ticketboard](/documentation_v2/glossary/n_to_z.md#ticketboard) feature behind the Waves tab: it
-reads `.ai/tickets/wave.lock` itself, shows the recorded [wave](/documentation_v2/glossary/n_to_z.md#wave)
-lanes exactly as stored, lists the dispatchable [tickets](/documentation_v2/glossary/n_to_z.md#ticket)
+The [ticketboard](/documentation/glossary/n_to_z.md#ticketboard) feature behind the Waves tab: it
+reads `.ai/tickets/wave.lock` itself, shows the recorded [wave](/documentation/glossary/n_to_z.md#wave)
+lanes exactly as stored, lists the dispatchable [tickets](/documentation/glossary/n_to_z.md#ticket)
 no wave holds, and supplies the ownership collision rule the ticket comparison explains.
 
 ## Contents
@@ -60,9 +60,9 @@ it writes. The same lock reader's `collides` and `colliding_pairs` give the deta
 
 ## Related documentation
 
-- [Wave lock command group](/tools_v2/xtask/src/commands/wave/README.md) — the commands that
+- [Wave lock command group](/tools/xtask/src/commands/wave/README.md) — the commands that
   write and check the lock.
-- [Wave lock](/tools_v2/ticket-engine/src/wave_lock/README.md) — the packing and collision
+- [Wave lock](/tools/ticket_engine/src/wave_lock/README.md) — the packing and collision
   rules this viewer mirrors.
-- [Factory waves](/documentation_v2/runbooks/factory_waves/README.md) — how waves are packed and
+- [Factory waves](/documentation/runbooks/factory_waves/README.md) — how waves are packed and
   run.

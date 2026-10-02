@@ -17,7 +17,7 @@ fn reads_world_bounds_from_a_manifest_document() {
 fn reads_the_committed_everon_manifest() {
     let doc = include_bytes!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../../assets_v2/terrains/everon/manifest.json"
+        "/../../../assets/terrains/everon/manifest.json"
     ));
     assert_eq!(WorldBounds::from_manifest_json(doc), Some(everon()));
 }

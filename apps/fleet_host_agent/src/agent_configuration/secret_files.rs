@@ -14,7 +14,7 @@ use crate::secret_text::SecretText;
 const SECRET_FILE_MAX_BYTES: u64 = 4096;
 /// Group and other permission bits.
 const SHARED_PERMISSIONS: u32 = 0o077;
-/// The shape of a machine credential secret (contracts_v2 machine-credential.schema.json).
+/// The shape of a machine credential secret (contracts machine-credential.schema.json).
 const CREDENTIAL_PREFIX: &str = "tbdm_";
 const CREDENTIAL_ID_HEX_DIGITS: usize = 32;
 const CREDENTIAL_RANDOM_HEX_DIGITS: usize = 64;

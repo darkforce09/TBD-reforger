@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/game-runtime-session.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/game-runtime-session.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///POST /api/v1/game-runtime/sessions body (mod_runtime credential). A runtime that loaded a mission artifact reports it; both fields come together, and the SHA-256 is of the exact document bytes it loaded. An empty body starts a session that runs no artifact. An unknown artifact answers 422 UNKNOWN_ARTIFACT.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

@@ -31,4 +31,4 @@ references into this crate's functions.
   `crate::frame::buffers` in `apps/website/map-engine/src/frame/mod.rs`.
 - Rules: the map engine names `website_graphics_engine::device` only at that re-export
   (`cargo xtask verify engine-layers`, rule 3b, whose pin `RULE3B_PIN` in
-  `tools_v2/verification-core/src/repository_laws/engine_layers/rules.rs` counts it).
+  `tools/verification_core/src/repository_laws/engine_layers/rules.rs` counts it).

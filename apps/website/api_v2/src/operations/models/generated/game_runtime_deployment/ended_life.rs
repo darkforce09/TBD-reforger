@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/game-runtime-deployment.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/game-runtime-deployment.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///POST /api/v1/game-runtime/sessions/:sessionId/deployments/:occupancyId/end response. Ending names exactly one life; repeating it reports how that life ended.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

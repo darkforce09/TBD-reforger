@@ -14,26 +14,28 @@ alwaysApply: true
 - Layout: `apps/website/api_v2/` (Axum, package `website-api`) · `apps/website/frontend/` (Leptos
   and Trunk, package `website-frontend`) · `apps/website/map-engine/` (package
   `website-map-engine`) · `apps/website/graphics-engine/` (package `website-graphics-engine`) ·
-  `apps/mod/` (the Enfusion addons). Where a new file goes:
-  [Where does X go?](/documentation_v2/standards/where_does_x_go.md).
+  `apps/mod/` (the Enfusion addons) · `tools/` (packages `xtask`, `verification_core`,
+  `ticket_engine`, `developer_tools`) · `contracts/` · `assets/`; the
+  [workspace layout](/documentation/architecture/workspace_layout.md) describes the whole tree.
+  Where a new file goes: [Where does X go?](/documentation/standards/where_does_x_go.md).
 - **Documentation ships with its code.** A change updates, in the same commit, the comments of the
   code it alters, the README.md of every folder whose contents, surface, commands or boundaries it
   changes, and the feature docs whose behaviour it changes — whichever agent or person writes the
-  code. Documentation lives in `documentation_v2/` (entry:
-  [documentation_v2/README.md](/documentation_v2/README.md)); its rules are in
-  [documentation_v2/standards/](/documentation_v2/standards/README.md): the
-  [documentation standards](/documentation_v2/standards/documentation_standards.md), the
-  [README standard](/documentation_v2/standards/readme_standard.md) and the
-  [commit checklist](/documentation_v2/standards/commit_checklist.md). The code trees hold no
+  code. Documentation lives in `documentation/` (entry:
+  [documentation/README.md](/documentation/README.md)); its rules are in
+  [documentation/standards/](/documentation/standards/README.md): the
+  [documentation standards](/documentation/standards/documentation_standards.md), the
+  [README standard](/documentation/standards/readme_standard.md) and the
+  [commit checklist](/documentation/standards/commit_checklist.md). The code trees hold no
   Markdown but README.md files (`cargo xtask verify markdown-placement`, run by
   `cargo xtask ci verify-documentation`), so no application grows a documentation tree. Mission Creator documentation lives under
-  [documentation_v2/website/frontend/apps/editor/](/documentation_v2/website/frontend/apps/editor/README.md).
+  [documentation/website/frontend/apps/editor/](/documentation/website/frontend/apps/editor/README.md).
 - **Tickets.** One `.ai/tickets/T-<id>.toml` file per ticket, parent and child alike, beside the
   `.ai/tickets/ROOT` marker; the [ticket registry README](/.ai/tickets/README.md) lists the folder
   and the commands. A ticket file is created only by `cargo xtask ticket add` (or `add-child`); a
   hand edit keeps the ticket engine's canonical form; then run `cargo xtask ticket check --strict`.
   The whole lifecycle is
-  [Taking a ticket from idea to shipped](/documentation_v2/runbooks/ticket_run_pipeline.md).
+  [Taking a ticket from idea to shipped](/documentation/runbooks/ticket_run_pipeline.md).
 - **Executor gate.** A ticket's `executor` says who may take it: `claude-code` means any AI coding
   agent run through the ticket tooling, whoever makes it; `documentation` a ticket, spec or
   documentation pass; `workbench`, `human` and `ci` mean stop and wait for that party.
@@ -45,4 +47,4 @@ alwaysApply: true
 - **Factory mode.** When the operator starts the platform factory,
   [`platform-factory-mode.mdc`](/.cursor/rules/platform-factory-mode.mdc) applies and the
   orchestrating session follows
-  [Factory waves](/documentation_v2/runbooks/factory_waves/README.md).
+  [Factory waves](/documentation/runbooks/factory_waves/README.md).

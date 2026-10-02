@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/game-runtime-session.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/game-runtime-session.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///POST /api/v1/game-runtime/sessions/:sessionId/heartbeats body. generation must equal the session's generation and sequence must exceed every sequence the session already admitted; gaps are allowed. At least one reading is required. server_id is refused: the credential identifies the server. current_match_id: absent keeps, empty string clears, a uuid sets.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

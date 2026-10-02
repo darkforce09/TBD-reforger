@@ -20,7 +20,7 @@ apps/website/map-engine/src/world/terrain/water/
 
 A terrain manifest's `water` block names `water/water_vectors.rkyv`, `water/bathymetry.tbd-bath`
 and the encoding `tbdb-v1`; `WaterHost::init` skips a block with another encoding or an empty
-path, and Everon's manifest (`assets_v2/terrains/everon/manifest.json`) has none. Nothing here
+path, and Everon's manifest (`assets/terrains/everon/manifest.json`) has none. Nothing here
 generates water: the sea on the map is the sea band of `crate::world::terrain::relief`, and lakes,
 rivers and ponds exist only in a terrain's archive, which the host loads and keeps but does not
 draw.
@@ -47,7 +47,7 @@ rings with their per-vertex colours at the layer's opacity.
   `crate::streaming` (the manifest's water block, Range fetches, boot progress).
 - Used by: `crate::streaming::host`, which owns the `WaterHost` and answers `is_water` and
   `is_known_dry_land` from its mask; `crate::world::terrain::relief`, whose host draws the sea
-  mesh; and the inland water pipeline in `tools_v2/developer-tools/src/map_raster_pipeline/`,
+  mesh; and the inland water pipeline in `tools/developer_tools/src/map_raster_pipeline/`,
   which writes both files with `downsample_index` and reads them back in its tests.
 - Rules: `vectors.rs` and `mesh.rs` compile only with the `streaming` feature and `loader.rs` only
   for wasm32 with `render`; every level agrees with level 0

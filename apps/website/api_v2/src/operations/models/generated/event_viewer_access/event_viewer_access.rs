@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/event-viewer-access.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/event-viewer-access.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///The viewer_access object of GET /api/v1/events/:id. A hidden event answers 404 exactly like a missing one. A partial viewer (admitted only by squad or slot policies) sees only admitted missions and seats and no event briefing. The hub also carries reservation_quotas (ReservationQuotaAvailability per pool, in member, guest, open order) and remaining_event_places (null when the event is uncapped); each ORBAT slot of GET /api/v1/event-missions/:emid/orbat carries SlotViewerEligibility flattened into the slot.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

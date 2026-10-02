@@ -36,7 +36,7 @@ apps/website/frontend/style/
   `apps/website/frontend/index.html`, which runs Tailwind CSS 4.3.2, the version
   `apps/website/frontend/Trunk.toml` pins, and writes the compiled stylesheet into the ignored
   `apps/website/frontend/dist/`; the headless editor gates of
-  `tools_v2/developer-tools/src/browser_testing/`, which measure the compiled styles in the built
+  `tools/developer_tools/src/browser_testing/`, which measure the compiled styles in the built
   app.
 
 ## Boundaries
@@ -53,7 +53,7 @@ apps/website/frontend/style/
 
 ## Related documentation
 
-- [Design tokens](/documentation_v2/design_system/design_tokens.md) — the design token
+- [Design tokens](/documentation/design_system/design_tokens.md) — the design token
   reference: palette, typography, spacing, radii and motion, and how the mod mirrors them.
-- [Design system](/documentation_v2/design_system/README.md) — the index of the design documents
+- [Design system](/documentation/design_system/README.md) — the index of the design documents
   and the Stitch token exports this file's tokens follow.

@@ -23,14 +23,14 @@ a sub-mode, and `custom_chip_visible` shows the disabled "Custom" chip under the
 placeholder ends in `SEARCH_PLACEHOLDER_GRAMMAR`: the grammar of `class:`, `mod:`, wildcards and
 `/…/` expressions the asset catalog's filter reads. `catalog_failure_view` names why a catalog is
 empty ("No modpack is configured, so the … is empty. Set a current modpack, then retry." when the
-[registry](/documentation_v2/glossary/n_to_z.md#registry) answers 404, otherwise
+[registry](/documentation/glossary/n_to_z.md#registry) answers 404, otherwise
 "Could not load the …. The request to the registry failed.") and offers "Retry", which bumps
 `registry_fetch_gen` so the editor fetches the registry again.
 
 ## Boundaries
 
 - Depends on: the `dock_right` scope (Leptos signals and views); no engine or
-  [API](/documentation_v2/glossary/a_to_f.md#api) call.
+  [API](/documentation/glossary/a_to_f.md#api) call.
 - Used by: the Factions tab in
   `apps/website/frontend/src/v2/apps/editor/ui/docks/dock_right/shell/factions_panel.rs` and the
   Vehicles tab in `apps/website/frontend/src/v2/apps/editor/ui/docks/dock_right/shell/layout.rs`;
@@ -47,4 +47,4 @@ empty ("No modpack is configured, so the … is empty. Set a current modpack, th
 
 ## Related documentation
 
-- [Mission Creator feature inventory: asset palette](/documentation_v2/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) — the side chips, the search grammar and the failure view.
+- [Mission Creator feature inventory: asset palette](/documentation/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) — the side chips, the search grammar and the failure view.

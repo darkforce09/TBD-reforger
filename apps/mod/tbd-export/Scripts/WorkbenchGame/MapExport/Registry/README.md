@@ -1,8 +1,8 @@
 # Prefab and weapon catalog export
 
 Two catalog layers of the map export: a taxonomy of every prefab placed in the world open in
-[Workbench](/documentation_v2/glossary/n_to_z.md#workbench), with its size and cover class, and a fixed
-list of weapons and magazines. Neither is the item [registry](/documentation_v2/glossary/n_to_z.md#registry)
+[Workbench](/documentation/glossary/n_to_z.md#workbench), with its size and cover class, and a fixed
+list of weapons and magazines. Neither is the item [registry](/documentation/glossary/n_to_z.md#registry)
 the platform imports, which another Workbench plugin of the addon writes.
 
 ## Contents
@@ -64,7 +64,7 @@ None: Workbench runs these scripts in the editor.
   `BaseWorld.QueryEntitiesByAABB` and `FileIO`.
 - Used by: `TBD_MapExportPlugin` in `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Plugins/`.
   No committed tool reads `prefabs.json` or `arsenal.json`: the platform's item catalog is
-  `contracts_v2/catalogs/`, and the map's prefab catalogue comes from the full world-object export
+  `contracts/catalogs/`, and the map's prefab catalogue comes from the full world-object export
   and `world build-objects`.
 - Rules: the prefab taxonomy keys on prefab and class names only, and keeps one record per resource
   name; lines added stay ASCII. `cargo xtask mod compile` compiles only the framework addon, so
@@ -72,5 +72,5 @@ None: Workbench runs these scripts in the editor.
 
 ## Related documentation
 
-- [Contract catalogs](/contracts_v2/catalogs/README.md) — the item registry the platform imports,
+- [Contract catalogs](/contracts/catalogs/README.md) — the item registry the platform imports,
   and the plugin that exports it.

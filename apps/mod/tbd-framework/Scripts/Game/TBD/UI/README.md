@@ -57,12 +57,12 @@ panels live under `apps/mod/tbd-framework/Scripts/Game/TBD/Session/` and use thi
 - Used by: the screens and panels under `apps/mod/tbd-framework/Scripts/Game/TBD/Session/`; the
   objective and task runners, which push the HUD; the layouts that attach the handlers by class.
 - Rules: `UI/` holds view code only, and wire code stays in the feature modules; a screen reads a
-  catalog or a client cache, never the [mission](/documentation_v2/glossary/g_to_m.md#mission) document or
+  catalog or a client cache, never the [mission](/documentation/glossary/g_to_m.md#mission) document or
   a service; layout paths are named once, in `TBD_UILayouts`; colour is a `TBD_UITheme` token or a
   `TBD_EUITint`; lines added to a script stay ASCII, and `cargo xtask mod compile` checks that the
   scripts compile.
 
 ## Related documentation
 
-- [Mod UI documentation](/documentation_v2/mod/tbd-framework/UI/README.md) — where each screen's
+- [Mod UI documentation](/documentation/mod/tbd-framework/UI/README.md) — where each screen's
   scripts and layouts go, the dock shell, and the specification of each in-game screen

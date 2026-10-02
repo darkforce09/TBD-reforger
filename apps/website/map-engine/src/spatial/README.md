@@ -47,10 +47,10 @@ map point and its elevation.
     viewshed scheduler), `crate::overlay` (the cluster layer), `crate::streaming` (the world
     object index and the occluder loader), `crate::world::architecture` (the BVH) and
     `crate::world::terrain::dem::sample` (terrain line-of-sight re-exports);
-  - the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator)'s line-of-sight tool and
+  - the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s line-of-sight tool and
     input handlers in `apps/website/frontend/src/v2/apps/editor/input/`, and the debug benches in
     `apps/website/frontend/src/v2/apps/debug/`;
-  - the blueprint tooling and the map checks in `tools_v2/developer-tools/src/`.
+  - the blueprint tooling and the map checks in `tools/developer_tools/src/`.
 - Rules: the module compiles only with the `world` feature (`apps/website/map-engine/src/lib.rs`),
   since the terrain layer reads `crate::world::terrain::dem`; nothing here depends on Leptos or on
   the Mission Creator's state, and the one file that reaches the browser,

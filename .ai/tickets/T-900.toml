@@ -5,7 +5,7 @@ summary = "T-853 Phase 4: retire doc references to things that no longer exist"
 class = "docs"
 status = "shipped"
 order = 5800
-spec = "documentation_v2/tickets/specs/t853_shell_to_xtask_waves.md"
+spec = "documentation/tickets/specs/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
 notes = """
 --- HEAD migration_legacy (verbatim) ---
@@ -67,7 +67,7 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 owns = [
-    "documentation_v2",
+    "documentation",
     "apps/mod/README.md",
     "CLAUDE.md",
     "README.md",

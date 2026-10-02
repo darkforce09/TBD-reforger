@@ -68,8 +68,8 @@ every menu through `TBD_MenuStack.CloseAll`. Load Plan logs the chosen plan id; 
 
 ## Related documentation
 
-- [Briefing specification](/documentation_v2/mod/tbd-framework/UI/briefing/briefing_specification.md)
+- [Briefing specification](/documentation/mod/tbd-framework/UI/briefing/briefing_specification.md)
   — the screen as built, its
   data, design target, open work and decisions
-- [Briefing design references](/documentation_v2/mod/tbd-framework/UI/briefing/visual_references/README.md)
+- [Briefing design references](/documentation/mod/tbd-framework/UI/briefing/visual_references/README.md)
   — the Stitch mockup sets and the Arma 3 captures the screen started from

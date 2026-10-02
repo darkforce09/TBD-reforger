@@ -18,7 +18,7 @@ apps/website/map-engine/src/spatial/los/world/descriptor/
 
 ## How it works
 
-The files sit in a terrain's asset folder, such as `assets_v2/terrains/everon/`, and the browser
+The files sit in a terrain's asset folder, such as `assets/terrains/everon/`, and the browser
 fetches them from the same paths under `/map-assets/<terrain>/`. A `PrefabDescriptor` is the JSON
 of `prefabs/descriptors/<pid>.json`: the prefab's catalogue id, slug, resource name and kind;
 whether anything in it collides (`blocks`, with a `reason` when it does not); whether it is a
@@ -55,9 +55,9 @@ come back separately through `archived_blas_paths`.
   descriptors into traceable occluders; the occluder loader
   (`apps/website/map-engine/src/streaming/loaders/occluder_loader.rs`), which boots from the
   archive and fetches the manifest and the blocking descriptors; the blueprint tooling in
-  `tools_v2/developer-tools/src/blueprint/archive_emission/`, which writes the descriptors, the
+  `tools/developer_tools/src/blueprint/archive_emission/`, which writes the descriptors, the
   manifest and the archive; and the library checks in
-  `tools_v2/developer-tools/src/map_verification/`.
+  `tools/developer_tools/src/map_verification/`.
 - Rules: `blocks` is true exactly when `localBounds` is present, and the projection refuses a
   descriptor that breaks this or names a BLAS outside the library
   (`projection_refuses_bounds_that_disagree_with_blocks_and_an_unknown_blas` in
@@ -66,12 +66,12 @@ come back separately through `archived_blas_paths`.
   (`a_future_archive_schema_is_refused_rather_than_read`); a row whose BLAS list does not fully
   resolve is dropped whole, never placed with a part missing (`archived_blas_paths`); the JSON
   shapes follow the two schemas below, which
-  `tools_v2/developer-tools/src/map_verification/blas_manifest.rs` checks the committed library
+  `tools/developer_tools/src/map_verification/blas_manifest.rs` checks the committed library
   against.
 
 ## Related documentation
 
-- [Prefab descriptor schema](/contracts_v2/definitions/prefab-descriptor.schema.json) — the shape
+- [Prefab descriptor schema](/contracts/definitions/prefab-descriptor.schema.json) — the shape
   of `prefabs/descriptors/<pid>.json`.
-- [BLAS manifest schema](/contracts_v2/definitions/blas-manifest.schema.json) — the shape of
+- [BLAS manifest schema](/contracts/definitions/blas-manifest.schema.json) — the shape of
   `prefabs/blas-manifest.json`.

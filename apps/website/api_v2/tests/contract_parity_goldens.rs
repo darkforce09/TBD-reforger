@@ -2,7 +2,7 @@
 //!
 //! **Role:** proves the chain the frontend's typed DTOs rest on: every golden in
 //! `apps/website/frontend/tests/fixtures/api/` is what the API answers over the committed seeds,
-//! every golden satisfies its route's `contracts_v2` schema, and every golden decodes into the
+//! every golden satisfies its route's `contracts` schema, and every golden decodes into the
 //! type generated from that schema; and the registry row definitions those goldens answer to
 //! carry every constraint of the catalogue definitions they copy.
 //!

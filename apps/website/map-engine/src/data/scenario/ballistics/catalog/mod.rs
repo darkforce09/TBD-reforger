@@ -10,7 +10,7 @@
 //! **Signals & state:** none; plain data and pure functions.
 //!
 //! **Invariants:**
-//! - Field names and shapes match `contracts_v2/definitions/ballistics-catalog.schema.json`;
+//! - Field names and shapes match `contracts/definitions/ballistics-catalog.schema.json`;
 //!   every object refuses unknown fields.
 //! - [`BallisticsCatalog::from_json_slice`] accepts only [`CATALOG_SCHEMA_VERSION`].
 //! - Values are carried exactly as decoded; nothing is rounded, reordered or defaulted except an

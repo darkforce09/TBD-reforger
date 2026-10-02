@@ -3,7 +3,7 @@
 //! the classes `JsonLoadContext`/`JsonSaveContext` read or write.
 //!
 //! **Role:** turns `apps/mod/tbd-framework/Scripts/**/*.c` into [`ScriptFile`] outlines, so the
-//! contract parity suite judges the mod's wire classes against `contracts_v2/definitions` without
+//! contract parity suite judges the mod's wire classes against `contracts/definitions` without
 //! an EnfScript compiler.
 //!
 //! **Position:** compiled into each suite that writes `mod enfscript_source_support;`; read by

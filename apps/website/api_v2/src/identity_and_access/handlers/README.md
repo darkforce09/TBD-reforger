@@ -32,12 +32,12 @@ apps/website/api_v2/src/identity_and_access/handlers/
   and every exit after the state check clears the cookie with `OAUTH_STATE_CLEAR`; a callback
   query string that does not decode (a repeated `code` or `state`) redirects with `missing_code`
   and clears the cookie too.
-- **[Dev login](/documentation_v2/glossary/a_to_f.md#dev-login).** `dev_login` is registered only in
+- **[Dev login](/documentation/glossary/a_to_f.md#dev-login).** `dev_login` is registered only in
   development and answers 404 when the configuration says otherwise. `?role=` takes `guest`,
   `enlisted`, `leader`, `mission_maker` or `admin`; anything else signs in as `admin`, and a query
   string that does not decode (a repeated `role`) answers 400 in the `{error}` envelope
   (`ApiError::from_query_rejection`). Each
-  [role](/documentation_v2/glossary/n_to_z.md#role) has its own fixed Discord id and Arma id, and the
+  [role](/documentation/glossary/n_to_z.md#role) has its own fixed Discord id and Arma id, and the
   redirect is the one the Discord callback sends.
 - **Sessions.** `POST /api/v1/auth/refresh` rotates a single-use refresh token and answers the new
   access token, its expiry and the next refresh token; replaying a consumed token revokes the
@@ -54,7 +54,7 @@ apps/website/api_v2/src/identity_and_access/handlers/
   whether a code is pending; `DELETE /api/v1/me/link` removes the link. The game server spends the
   code with `POST /api/v1/ingest/link-confirm` (`{code, arma_id, arma_character}`, unknown fields
   refused, the body read through `ApiError::from_json_rejection`), authenticated by its `mod_runtime`
-  [machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential) (`MachineCaller`);
+  [machine credential](/documentation/glossary/g_to_m.md#machine-credential) (`MachineCaller`);
   the `identity.link` audit row names the confirming server.
 
 ## Boundaries
@@ -66,7 +66,7 @@ apps/website/api_v2/src/identity_and_access/handlers/
   `server_infrastructure` (`MachineCaller`, `ExecutorKind`) for the link confirmation's caller.
 - Used by: the domain's `routes.rs`; over HTTP, the account pages (login, auth callback, settings)
   and the navigation frame under `apps/website/frontend/src/v2/pages/`, the
-  [API](/documentation_v2/glossary/a_to_f.md#api) client's token refresh in
+  [API](/documentation/glossary/a_to_f.md#api) client's token refresh in
   `apps/website/frontend/src/v2/core/api/client/refresh.rs`, and the mod's
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/Identity/TBD_IdentityLink.c`, which confirms link codes.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
@@ -75,7 +75,7 @@ apps/website/api_v2/src/identity_and_access/handlers/
 
 ## Related documentation
 
-- [Identity transactions](/documentation_v2/website/api_v2/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/website/api_v2/verification_evidence/identity_transactions.md)
   — session authorization, linking and their transactions.
-- [Local development](/documentation_v2/runbooks/local_development.md) — the dev login and the
+- [Local development](/documentation/runbooks/local_development.md) — the dev login and the
   Discord OAuth2 round trip.

@@ -1,6 +1,6 @@
 # Zone registry
 
-Turns the loaded [mission](/documentation_v2/glossary/g_to_m.md#mission)'s `zones[]` into prepared
+Turns the loaded [mission](/documentation/glossary/g_to_m.md#mission)'s `zones[]` into prepared
 zones once per world and answers the in-bounds questions the play area, triggers and objectives ask.
 
 ## Contents

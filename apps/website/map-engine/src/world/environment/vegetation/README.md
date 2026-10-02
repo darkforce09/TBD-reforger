@@ -22,7 +22,7 @@ apps/website/map-engine/src/world/environment/vegetation/
 ## How it works
 
 `ForestMassHost` builds the forest mass once per terrain. It fetches the 625 density bins
-`objects/density/{cx}_{cy}.bin` from the terrain's asset folder (`assets_v2/terrains/everon/` for
+`objects/density/{cx}_{cy}.bin` from the terrain's asset folder (`assets/terrains/everon/` for
 Everon, served under `/map-assets/`), twelve at a time with up to three attempts each, and
 stitches each bin's 65 × 65 tree-count corners into one `ISLAND_CORNERS` × `ISLAND_CORNERS`
 (1601) grid of 8 m cells, neighbouring chunks sharing their border corners. Only when every bin
@@ -58,7 +58,7 @@ The grid dimensions are Everon's: `CHUNKS_PER_AXIS` (25) chunks of 512 m a side,
   - `crate::streaming`: the host owns the `ForestMassHost`, the buffer packer takes the tree
     counts, and the world loader and the store read the regions;
   - `crate::world::mesh`, whose forest compose takes the marching squares' `ForestMassGeometry`;
-  - the world export in `tools_v2/developer-tools/src/world_export_pipeline/`, which writes the
+  - the world export in `tools/developer_tools/src/world_export_pipeline/`, which writes the
     regions archive and smooths the forest at `CANOPY_MASS_ISO`.
 - Rules: chunk borders stitch without a seam and north is texture row 0
   (`stitch_shared_border_identity`, `y_flip_north_is_tex_row_zero`, `island_dims_pin` in

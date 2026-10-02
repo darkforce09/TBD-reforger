@@ -1,6 +1,6 @@
 # AI group runtime
 
-Moves the AI groups a [mission](/documentation_v2/glossary/g_to_m.md#mission) authors: reads each group's
+Moves the AI groups a [mission](/documentation/glossary/g_to_m.md#mission) authors: reads each group's
 waypoints and AI defaults from the loaded mission, puts the unclaimed seats of waypointed groups
 under AI control when the round goes live, and issues their waypoints in order.
 
@@ -53,7 +53,7 @@ and stealth to walk, aware to run and combat to sprint, and `SpeedFromWire` lets
   player claims), `TBD_EntityQuery`, `TBD_Log` and `TBD_AnnounceOnce`, and the engine's AI classes
   (`SCR_AIGroup`, `AIWaypoint`, `AIWaypointCycle`, `SCR_EntityWaypoint`, the ScenarioFramework
   waypoint prefabs); the `waypoint` and `group` definitions in
-  `contracts_v2/definitions/mission.schema.json`.
+  `contracts/definitions/mission.schema.json`.
 - Used by: `TBD_RuntimeHeartbeat` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/Heartbeat/`
   (`Clear`, `Tick`, `TICK_MS`); `TBD_SlotBodyMaterializer` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Slots/`, which calls

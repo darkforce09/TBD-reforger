@@ -81,6 +81,6 @@ failpoints = []
 [dev-dependencies]
 proptest = { workspace = true }
 # The repository-law scanners the `engineering_laws` suite runs.
-verification-core = { path = "../../../tools_v2/verification-core" }
+verification_core = { path = "../../../tools/verification_core" }
 # The crate itself with `failpoints` on, for the lib unit tests and every `tests/*.rs` binary.
 website-api = { path = ".", features = ["failpoints"] }

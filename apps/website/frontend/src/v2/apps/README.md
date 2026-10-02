@@ -1,7 +1,7 @@
 # Full-screen workspaces
 
 The full-screen applications the web app hosts beside its routed pages: the
-[Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator), the debug benches, and two
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator), the debug benches, and two
 folders reserved for workspaces that hold no code. Each workspace mounts its own canvas, drives
 the map engine directly and owns its whole surface: docks, toolbelts, dialogs, inspectors and the
 canvas mount.
@@ -30,7 +30,7 @@ it renders without the sidebar and the top bar:
 | `aar/`, `planner/` | no route; `mod.rs` declares no module for them | not routed |
 
 A workspace creates its own `RenderEngine` from `website_map_engine::frame` and reaches the
-graphics engine only through the map engine. The [mission](/documentation_v2/glossary/g_to_m.md#mission)
+graphics engine only through the map engine. The [mission](/documentation/glossary/g_to_m.md#mission)
 document lives in the map engine's store, which the Mission Creator hosts in `editor/bridge/`; a
 workspace keeps the view and session state around it. Code that touches `web_sys` or a live engine
 handle compiles for `wasm32` only, so the native test build covers each workspace's pure half.
@@ -54,7 +54,7 @@ handle compiles for `wasm32` only, so the native test build covers each workspac
     payload-size formatter;
   - `crate::v2::core`: the auth store and the search box, select and slider reuse the Mission
     Creator's shell;
-  - the headless editor gates in `tools_v2/developer-tools/src/browser_testing/`.
+  - the headless editor gates in `tools/developer_tools/src/browser_testing/`.
 - Rules: a workspace imports from `crate::v2::core` and `website_map_engine`, never from a page or
   a sibling workspace, and no gate checks it; nothing here imports `website_graphics_engine`
   (`cargo xtask verify engine-layers`); a workspace's module line in `mod.rs` carries the same `cfg`
@@ -65,7 +65,7 @@ handle compiles for `wasm32` only, so the native test build covers each workspac
 
 ## Related documentation
 
-- [Mission Creator documentation](/documentation_v2/website/frontend/apps/editor/README.md) — the
+- [Mission Creator documentation](/documentation/website/frontend/apps/editor/README.md) — the
   Mission Creator's roadmap, specifications and decisions.
-- [Building viewer](/documentation_v2/website/frontend/apps/debug/building_viewer_page.md) — the
+- [Building viewer](/documentation/website/frontend/apps/debug/building_viewer_page.md) — the
   building bench's purpose and behaviour.

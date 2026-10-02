@@ -406,7 +406,7 @@ async fn late_aggregate_failure_rolls_back_participation_and_retry_recovers_once
 
 fn assert_response_contract(value: &Value) {
     let schema: Value = serde_json::from_str(include_str!(
-        "../../../../contracts_v2/definitions/reservation-response.schema.json"
+        "../../../../contracts/definitions/reservation-response.schema.json"
     ))
     .unwrap();
     let validator = jsonschema::options()

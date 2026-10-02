@@ -1,12 +1,12 @@
 # Identity and access domain
 
-The [API](/documentation_v2/glossary/a_to_f.md#api)'s
-[identity and access](/documentation_v2/glossary/g_to_m.md#identity-and-access) domain: who the caller is
+The [API](/documentation/glossary/a_to_f.md#api)'s
+[identity and access](/documentation/glossary/g_to_m.md#identity-and-access) domain: who the caller is
 and how they prove it. It holds Discord OAuth2 sign-in with its cookie-host and CSRF guards, the
 single-use rotating refresh token, the caller's own profile, the
-[dev login](/documentation_v2/glossary/a_to_f.md#dev-login), the six-digit handshake that links a Discord
+[dev login](/documentation/glossary/a_to_f.md#dev-login), the six-digit handshake that links a Discord
 account to an Arma identity, and the Discord membership snapshot every account's
-[role](/documentation_v2/glossary/n_to_z.md#role) comes from.
+[role](/documentation/glossary/n_to_z.md#role) comes from.
 
 ## Contents
 
@@ -32,7 +32,7 @@ which PostgreSQL decides from the verified Discord snapshot rather than from `us
 Refresh rotates the token once; replaying a spent token revokes the account's sessions. A member
 links their Arma identity by asking for a code on the website and typing it in the game, whose
 server confirms it with its `mod_runtime`
-[machine credential](/documentation_v2/glossary/g_to_m.md#machine-credential); the confirmation
+[machine credential](/documentation/glossary/g_to_m.md#machine-credential); the confirmation
 attributes past matches and attendance to the account in the same transaction, and its audit row
 names the confirming server. The account row lives here; what an
 administrator does to a member lives in `administration`.
@@ -58,16 +58,16 @@ administrator does to a member lives in `administration`.
 - `services::identity_ownership`: `lock_accounts` and `lock_identities`, the lock order every
   identity, reservation and telemetry transaction takes.
 - `services::account_authority::holds_administrator_authority`, read by
-  [mission deployments](/documentation_v2/glossary/g_to_m.md#mission-deployment) and
-  [fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) claims;
-  `services::cached_membership_permissions`, read by [event](/documentation_v2/glossary/a_to_f.md#event)
+  [mission deployments](/documentation/glossary/g_to_m.md#mission-deployment) and
+  [fleet command](/documentation/glossary/a_to_f.md#fleet-command) claims;
+  `services::cached_membership_permissions`, read by [event](/documentation/glossary/a_to_f.md#event)
   access in `operations`; `services::discord_membership_enrollment`, called by event administration
   and slotting.
 - `services::discord_client::DiscordService`: the Discord HTTP client `core::application_state`
   holds.
 - `services::discord_role_sync::resync_all_roles`, `services::refresh_token_purge` and
   `services::discord_rest_reconciliation`: run by the
-  [background workers](/documentation_v2/glossary/a_to_f.md#background-workers); `resync_all_roles` also by
+  [background workers](/documentation/glossary/a_to_f.md#background-workers); `resync_all_roles` also by
   `POST /api/v1/admin/roles/sync`; `services::membership_grace_overrides`, behind the administration
   grace route.
 - `services::user_lookup::load_user`: the one read of the account row behind a Discord id.
@@ -98,11 +98,11 @@ administrator does to a member lives in `administration`.
 
 ## Related documentation
 
-- [API overview](/documentation_v2/website/api_v2/api_overview.md) — every domain's routes.
-- [Identity transactions](/documentation_v2/website/api_v2/verification_evidence/identity_transactions.md)
+- [API overview](/documentation/website/api_v2/api_overview.md) — every domain's routes.
+- [Identity transactions](/documentation/website/api_v2/verification_evidence/identity_transactions.md)
   — session authorization, Discord observations, linking and attribution.
-- [API environment variables](/documentation_v2/website/api_v2/environment_variables.md)
+- [API environment variables](/documentation/website/api_v2/environment_variables.md)
   — the Discord, token and
   session settings, and what an empty one does.
-- [Local development](/documentation_v2/runbooks/local_development.md) — the dev login and the
+- [Local development](/documentation/runbooks/local_development.md) — the dev login and the
   Discord OAuth2 round trip.

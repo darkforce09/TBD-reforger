@@ -31,4 +31,4 @@ compiles.
 
 ## Related documentation
 
-- [After-action review](/documentation_v2/website/frontend/apps/aar/after_action_review.md) — the planned replay's design notes, the telemetry it needs and its open work.
+- [After-action review](/documentation/website/frontend/apps/aar/after_action_review.md) — the planned replay's design notes, the telemetry it needs and its open work.

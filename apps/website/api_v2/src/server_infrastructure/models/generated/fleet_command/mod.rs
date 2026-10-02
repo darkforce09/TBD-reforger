@@ -1,7 +1,7 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/fleet-command.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/fleet-command.schema.json — regenerate with: cargo xtask ci schema-codegen
 
-//! Types generated from `contracts_v2/definitions/fleet-command.schema.json`, one module per schema definition.
+//! Types generated from `contracts/definitions/fleet-command.schema.json`, one module per schema definition.
 
 mod claim_request;
 pub mod error;

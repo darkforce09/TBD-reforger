@@ -29,13 +29,13 @@ use crate::data::scenario::ballistics::wind::Wind;
 /// The committed vanilla catalog; a missing file fails the build.
 const VANILLA_CATALOG_JSON: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../contracts_v2/catalogs/ballistics/vanilla_mortars.v1.catalog.json"
+    "/../../../contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json"
 ));
 
 /// The committed calibration bundle of that catalog; a missing file fails the build.
 const CALIBRATION_BUNDLE_JSON: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../contracts_v2/fixtures/ballistics/vanilla_mortars.v1/calibration.json"
+    "/../../../contracts/fixtures/ballistics/vanilla_mortars.v1/calibration.json"
 ));
 
 /// One mil of the 6400 convention, radians.

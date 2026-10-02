@@ -1,6 +1,6 @@
 # Handler errors
 
-`ApiError`, the failure type the [API](/documentation_v2/glossary/a_to_f.md#api)'s handlers and services
+`ApiError`, the failure type the [API](/documentation/glossary/a_to_f.md#api)'s handlers and services
 return, and the JSON envelope it renders into: `{"error": "<message>"}`, with a `details` value when the failure carries one.
 
 ## Contents
@@ -54,7 +54,7 @@ classifies as a server error (the extractor does not match the route's parameter
   their query string rejections through `from_query_rejection`; `crate::core::http::path_parameters`,
   whose extractor maps every path rejection through `from_path_rejection`; the `event_reservation_reevaluator`
   and `runtime_session_expiry`
-  [background workers](/documentation_v2/glossary/a_to_f.md#background-workers);
+  [background workers](/documentation/glossary/a_to_f.md#background-workers);
   `crate::core::authentication_primitives`, whose `SessionAuthority` refuses with it; two
   integration suites under `apps/website/api_v2/tests/`; and, over HTTP, the single-page app, which
   reads `error` and a string-array `details` in
@@ -62,6 +62,6 @@ classifies as a server error (the extractor does not match the route's parameter
 - Rules: `error` stays a string and `details` stays optional, the shape the single-page app
   parses; a database error never reaches the client as text; the rejection mapping answers `413`,
   `415` and `400` exactly as `ContentRefusal` in
-  `contracts_v2/definitions/content-upload.schema.json` describes, and an undecodable query string
+  `contracts/definitions/content-upload.schema.json` describes, and an undecodable query string
   or path segment answers `400` in the envelope (`tests/api_error.rs`,
   `../http/tests/path_parameters.rs`).

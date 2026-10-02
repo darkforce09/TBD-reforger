@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: contracts_v2/definitions/wiki-page.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts/definitions/wiki-page.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 ///One construct a save refuses. line is the 1-based line of body_md where it starts; code names the rule (an unsafe link URL, an unsafe image URL, raw HTML, or nesting deeper than 16); detail explains it to the author.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

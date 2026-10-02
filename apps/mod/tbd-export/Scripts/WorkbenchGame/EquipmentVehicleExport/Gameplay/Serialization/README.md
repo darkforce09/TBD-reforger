@@ -27,5 +27,5 @@ None: Workbench runs these scripts in the editor.
   `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Gameplay/Generation/`.
 - Rules: a resource document holds its nodes, its fields grouped by policy section, its English
   names (the writer switches the language to `en_us` and restores it), its references and its
-  parent prefab; the documents follow `contracts_v2/definitions/equipment-gameplay/resource.schema.json`
-  and `contracts_v2/definitions/equipment-gameplay/field-definitions.schema.json`.
+  parent prefab; the documents follow `contracts/definitions/equipment-gameplay/resource.schema.json`
+  and `contracts/definitions/equipment-gameplay/field-definitions.schema.json`.
